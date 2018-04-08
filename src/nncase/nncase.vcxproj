@@ -20,9 +20,18 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\datatypes.hpp" />
+    <ClInclude Include="include\io\weights_container.h" />
     <ClInclude Include="include\layer.hpp" />
+    <ClInclude Include="include\layers\add.hpp" />
+    <ClInclude Include="include\layers\batch_normalization.hpp" />
     <ClInclude Include="include\layers\conv1d.hpp" />
+    <ClInclude Include="include\layers\leaky_relu.hpp" />
+    <ClInclude Include="include\model.hpp" />
     <ClInclude Include="include\nncase.hpp" />
+    <ClInclude Include="include\utils\ctc_decoder.hpp" />
+    <ClInclude Include="include\utils\dr_wav.h" />
+    <ClInclude Include="include\utils\fft.hpp" />
+    <ClInclude Include="include\utils\mfcc.hpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>15.0</VCProjectVersion>

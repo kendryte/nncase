@@ -18,6 +18,6 @@ namespace nncase
 		vec_t inout;
 		size_t width;
 
-		virtual const vec_t& get_weights(const std::string& name) = 0;
+		virtual vec_t get_weights(const std::string& name, size_t size) = 0;
 	};
 }

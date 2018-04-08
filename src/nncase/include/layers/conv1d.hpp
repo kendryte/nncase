@@ -1,7 +1,7 @@
 #pragma once
 
-#include "../datatypes.hpp"
 #include "../layer.hpp"
+#include <array>
 
 namespace nncase
 {
@@ -50,15 +50,20 @@ namespace nncase
 		class conv1d : public layer
 		{
 		public:
-			void forward(forward_ctx& ctx)
+			using layer::layer;
+
+			virtual void forward(forward_ctx& ctx) override
 			{
+				// load weights
+				auto W = ctx.get_weights(get_name() + "/W", kernel_size * input_dim * output_dim);
+
 				// padding
 				const auto padded_width = details::padding<kernel_size, input_dim>(ctx.width, ctx.inout);
 
-				vec_t output(width * output_dim, static_cast<float>(0));
+				vec_t output(ctx.width * output_dim, static_cast<float>(0));
 
 				auto out_p = output.begin();
-				auto w_p = W.vec.cbegin();
+				auto w_p = W.cbegin();
 				for (size_t od = 0; od < output_dim; od++)
 				{
 					for (size_t id = 0; id < input_dim; id++)
@@ -67,9 +72,9 @@ namespace nncase
 						auto i_p = ctx.inout.cbegin() + id * padded_width;
 						auto i_arr = details::load<float, kernel_size, 1>(i_p);
 
-						for (size_t x = 0; x < width; x++)
+						for (size_t x = 0; x < ctx.width; x++)
 						{
-							details::shift_load<float>(i_arr, i_p, -offset_input);
+							details::shift_load<float>(i_arr, i_p);
 
 							float sum = 0;
 							for (size_t k = 0; k < kernel_size; k++)
@@ -79,7 +84,7 @@ namespace nncase
 						}
 					}
 
-					out_p += width;
+					out_p += ctx.width;
 				}
 
 				ctx.inout.swap(output);

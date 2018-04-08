@@ -27,5 +27,32 @@
     <ClInclude Include="include\datatypes.hpp">
       <Filter>头文件</Filter>
     </ClInclude>
+    <ClInclude Include="include\model.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\io\weights_container.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\layers\add.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\layers\batch_normalization.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\layers\leaky_relu.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\utils\ctc_decoder.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\utils\dr_wav.h">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\utils\fft.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
+    <ClInclude Include="include\utils\mfcc.hpp">
+      <Filter>头文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
