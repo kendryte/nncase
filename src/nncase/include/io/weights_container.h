@@ -34,4 +34,18 @@ namespace nncase
 	private:
 		TFileStream filestream_;
 	};
+
+    class zero_weights_container : public weights_container
+    {
+    public:
+        virtual void begin_inferrence() override
+        {
+        }
+
+        virtual vec_t get_weights(const std::string& name, size_t size) override
+        {
+            vec_t weights(size);
+            return weights;
+        }
+    };
 }

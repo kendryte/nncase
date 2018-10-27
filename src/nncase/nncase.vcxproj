@@ -26,6 +26,8 @@
     <ClInclude Include="include\layers\batch_normalization.hpp" />
     <ClInclude Include="include\layers\conv1d.hpp" />
     <ClInclude Include="include\layers\leaky_relu.hpp" />
+    <ClInclude Include="include\layers\matmul.hpp" />
+    <ClInclude Include="include\layers\sigmoid.hpp" />
     <ClInclude Include="include\model.hpp" />
     <ClInclude Include="include\nncase.hpp" />
     <ClInclude Include="include\utils\ctc_decoder.hpp" />

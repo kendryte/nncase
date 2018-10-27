@@ -264,3 +264,4 @@ src/**/*.txt
 .vscode/
 
 *.diagsession
+/src/nntest
