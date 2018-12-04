@@ -29,7 +29,7 @@ namespace NnCase.Converter.Model.Layers
 
         public int InputChannels => Weights.Dimensions[1];
 
-        public int OutputChannels => Weights.Dimensions[0];
+        public int OutputChannels => InputChannels;
 
         public DepthwiseConv2d(ReadOnlySpan<int> dimensions, Tensor<float> weights, Tensor<float> bias, Padding padding, int strideWidth, int strideHeight, ActivationFunctionType fusedActivationFunction)
         {
