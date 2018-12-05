@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Numerics.Tensors;
 using System.Text;
+using TensorFlow;
 
 namespace NnCase.Converter.Model.Layers.K210
 {
@@ -41,18 +42,7 @@ namespace NnCase.Converter.Model.Layers.K210
             Weights = weights;
             Bias = bias;
 
-            int stride;
-            switch (poolType)
-            {
-                case K210PoolType.None:
-                    stride = 1;
-                    break;
-                case K210PoolType.LeftTop:
-                    stride = 2;
-                    break;
-                default:
-                    throw new NotSupportedException();
-            }
+            var stride = GetStride();
 
             Input = AddInput("input", dimensions);
             Output = AddOutput("output", new[] {
@@ -70,11 +60,42 @@ namespace NnCase.Converter.Model.Layers.K210
             var weights = Weights.ToHWIO();
             var bias = Bias.ToNHWC();
 
-            var y = graph.SpaceToBatchND(input, graph.Const(new[] { 1, 1 }), graph.Const(new[,] { { 1, 1 }, { 1, 1 } }));
-            y = Conv2dType == K210Conv2dType.Conv2d
-                ? graph.Conv2D(y, graph.Const(weights), new long[] { 1, 2, 2, 1 }, "VALID")
-                : graph.DepthwiseConv2dNative(y, graph.Const(weights), new long[] { 1, 2, 2, 1 }, "VALID");
+            TFOutput y;
+            if(GetStride() == 1)
+            {
+                y = Conv2dType == K210Conv2dType.Conv2d
+                    ? graph.Conv2D(input, graph.Const(weights), new long[] { 1, 1, 1, 1 }, "SAME")
+                    : graph.DepthwiseConv2dNative(input, graph.Const(weights), new long[] { 1, 1, 1, 1 }, "SAME");
+            }
+            else
+            {
+                y = graph.SpaceToBatchND(input, graph.Const(new[] { 1, 1 }), graph.Const(new[,] { { 1, 1 }, { 1, 1 } }));
+                y = Conv2dType == K210Conv2dType.Conv2d
+                    ? graph.Conv2D(y, graph.Const(weights), new long[] { 1, 2, 2, 1 }, "VALID")
+                    : graph.DepthwiseConv2dNative(y, graph.Const(weights), new long[] { 1, 2, 2, 1 }, "VALID");
+            }
+
             context.TFOutputs[Output] = graph.AddActivation(graph.BiasAdd(y, graph.Const(bias)), FusedActivationFunction);
+
+            Console.WriteLine($"K210 Conv {string.Join('x', Input.Dimensions.ToArray())}");
+        }
+
+        private int GetStride()
+        {
+            int stride;
+            switch (PoolType)
+            {
+                case K210PoolType.None:
+                    stride = 1;
+                    break;
+                case K210PoolType.LeftTop:
+                    stride = 2;
+                    break;
+                default:
+                    throw new NotSupportedException();
+            }
+
+            return stride;
         }
     }
 }

@@ -53,6 +53,7 @@ namespace NnCase.Converter.Transforms
             do
             {
                 conti = false;
+                processMap.Clear();
                 foreach (var layer in graph.Outputs)
                     conti |= Process(layer, transforms, processMap);
             } while (conti);

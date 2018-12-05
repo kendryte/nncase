@@ -17,8 +17,9 @@ namespace NnCase.Converter
             var tfc = new TfLiteToGraphConverter(model, model.Subgraphs(0).Value);
             tfc.Convert();
             var graph = tfc.Graph;
-            Transform.Process(graph, new[] {
-                new K210SpaceToBatchNdAndValidConv2dTransform()
+            Transform.Process(graph, new Transform[] {
+                new K210SpaceToBatchNdAndValidConv2dTransform(),
+                new K210SameConv2dTransform()
             });
             var ctx = new GraphPlanContext();
             graph.Plan(ctx);
