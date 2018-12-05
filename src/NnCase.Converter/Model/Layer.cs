@@ -10,6 +10,9 @@ namespace NnCase.Converter.Model
         private readonly List<InputConnector> _inputConnectors = new List<InputConnector>();
         private readonly List<OutputConnector> _outputConnectors = new List<OutputConnector>();
 
+        public IReadOnlyList<InputConnector> InputConnectors => _inputConnectors;
+        public IReadOnlyList<OutputConnector> OutputConnectors => _outputConnectors;
+
         public InputConnector AddInput(string name, ReadOnlySpan<int> dimensions)
         {
             var conn = new InputConnector(name, dimensions, this);

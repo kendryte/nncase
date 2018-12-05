@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.IO;
 using NnCase.Converter.Converters;
 using NnCase.Converter.Model;
+using NnCase.Converter.Transforms;
+using NnCase.Converter.Transforms.K210;
 
 namespace NnCase.Converter
 {
@@ -15,6 +17,9 @@ namespace NnCase.Converter
             var tfc = new TfLiteToGraphConverter(model, model.Subgraphs(0).Value);
             tfc.Convert();
             var graph = tfc.Graph;
+            Transform.Process(graph, new[] {
+                new K210SpaceToBatchNdAndValidConv2dTransform()
+            });
             var ctx = new GraphPlanContext();
             graph.Plan(ctx);
 
