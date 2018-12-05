@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <PackageReference Include="System.Numerics.Tensors" Version="0.1.0" />
+    <PackageReference Include="TensorflowSharp" Version="1.11.0" />
   </ItemGroup>
 
   <ItemGroup>

@@ -15,9 +15,7 @@ namespace NnCase.Converter.Model
 
         public string Name { get; }
 
-        private readonly List<Connection> _connections = new List<Connection>();
-
-        public IReadOnlyList<Connection> Connections => _connections;
+        public Connection Connection { get; private set; }
 
         public InputConnector(string name, ReadOnlySpan<int> dimensions, Layer owner)
         {
@@ -26,20 +24,29 @@ namespace NnCase.Converter.Model
             Owner = owner;
         }
 
-        public Connection AddConnection(OutputConnector from)
+        public Connection SetConnection(OutputConnector from)
         {
-            var conn = _connections.FirstOrDefault(o => o.From == from);
-            if (conn != null) return conn;
-            conn = new Connection(from, this);
-            _connections.Add(conn);
+            if (Connection != null)
+            {
+                if (Connection.From == from)
+                    return Connection;
+                else
+                    ClearConnection();
+            }
+
+            Connection = new Connection(from, this);
             from.AddConnection(this);
-            return conn;
+            return Connection;
         }
 
-        public void RemoveConnection(OutputConnector from)
+        public void ClearConnection()
         {
-            _connections.RemoveAll(o => o.From == from);
-            from.RemoveConnection(this);
+            if (Connection != null)
+            {
+                var from = Connection.From;
+                Connection = null;
+                from.RemoveConnection(this);
+            }
         }
     }
 }

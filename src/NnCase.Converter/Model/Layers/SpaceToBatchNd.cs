@@ -23,5 +23,13 @@ namespace NnCase.Converter.Model.Layers
             Input = AddInput("input", dimensions);
             Output = AddOutput("output", new[] { dimensions[0], dimensions[1], dimensions[2] + 2, dimensions[3] + 2 });
         }
+
+        protected override void OnPlanning(GraphPlanContext context)
+        {
+            var graph = context.TFGraph;
+            var input = context.TFOutputs[Input.Connection.From];
+
+            context.TFOutputs[Output] = graph.SpaceToBatchND(input, graph.Const(BlockShape.ToTFTensor()), graph.Const(Paddings.ToTFTensor()));
+        }
     }
 }

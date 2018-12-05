@@ -51,5 +51,17 @@ namespace NnCase.Converter.Model.Layers
                 dimensions[3]
             });
         }
+
+        protected override void OnPlanning(GraphPlanContext context)
+        {
+            var graph = context.TFGraph;
+            var input = context.TFOutputs[Input.Connection.From];
+            var weights = Weights.ToHWIO();
+            var bias = Bias.ToNHWC();
+
+            var y = graph.DepthwiseConv2dNative(input, graph.Const(weights),
+                new long[] { 1, StrideHeight, StrideWidth, 1 }, Padding.ToString().ToUpperInvariant());
+            context.TFOutputs[Output] = graph.AddActivation(graph.BiasAdd(y, graph.Const(bias)), FusedActivationFunction);
+        }
     }
 }

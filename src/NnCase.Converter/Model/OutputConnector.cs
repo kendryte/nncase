@@ -32,14 +32,14 @@ namespace NnCase.Converter.Model
             if (conn != null) return conn;
             conn = new Connection(this, to);
             _connections.Add(conn);
-            to.AddConnection(this);
+            to.SetConnection(this);
             return conn;
         }
 
         public void RemoveConnection(InputConnector to)
         {
             _connections.RemoveAll(o => o.To == to);
-            to.RemoveConnection(this);
+            to.ClearConnection();
         }
     }
 }

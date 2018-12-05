@@ -16,6 +16,10 @@ namespace NnCase.Converter.Model.Layers
 
         public int StrideHeight { get; }
 
+        public int FilterWidth { get; }
+
+        public int FilterHeight { get; }
+
         public ActivationFunctionType FusedActivationFunction { get; }
 
         public AveragePool2d(ReadOnlySpan<int> dimensions, Padding padding, int filterWidth, int filterHeight, int strideWidth, int strideHeight, ActivationFunctionType fusedActivationFunction)
@@ -23,6 +27,8 @@ namespace NnCase.Converter.Model.Layers
             Padding = padding;
             StrideWidth = strideWidth;
             StrideHeight = strideHeight;
+            FilterWidth = filterWidth;
+            FilterHeight = filterHeight;
             FusedActivationFunction = fusedActivationFunction;
 
             Input = AddInput("input", dimensions);
@@ -32,6 +38,15 @@ namespace NnCase.Converter.Model.Layers
                 (dimensions[2] - (padding == Padding.Valid ? filterWidth - 1 : 0)) / strideWidth,
                 dimensions[3]
             });
+        }
+
+        protected override void OnPlanning(GraphPlanContext context)
+        {
+            var graph = context.TFGraph;
+            var input = context.TFOutputs[Input.Connection.From];
+
+            context.TFOutputs[Output] = graph.AvgPool(input, new long[] { 1, FilterHeight, FilterWidth, 1 },
+                new long[] { 1, StrideHeight, StrideWidth, 1 }, Padding.ToString().ToUpperInvariant());
         }
     }
 }

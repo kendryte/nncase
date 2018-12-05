@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using TensorFlow;
 
 namespace NnCase.Converter.Model
 {
@@ -21,6 +22,22 @@ namespace NnCase.Converter.Model
             var conn = new OutputConnector(name, dimensions, this);
             _outputConnectors.Add(conn);
             return conn;
+        }
+
+        public void Plan(GraphPlanContext context)
+        {
+            if (!context.Planning.GetValueOrDefault(this))
+            {
+                context.Planning[this] = true;
+                foreach (var input in _inputConnectors)
+                    input.Connection?.From.Owner.Plan(context);
+
+                OnPlanning(context);
+            }
+        }
+
+        protected virtual void OnPlanning(GraphPlanContext context)
+        {
         }
     }
 }

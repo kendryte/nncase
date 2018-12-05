@@ -9,7 +9,7 @@ using NnCase.Converter.Model.Layers;
 
 namespace NnCase.Converter.Converters
 {
-    public class TfLiteConverter
+    public class TfLiteToGraphConverter
     {
         private readonly tflite.Model _model;
         private readonly tflite.SubGraph _graph;
@@ -19,7 +19,7 @@ namespace NnCase.Converter.Converters
 
         public Graph Graph { get; private set; }
 
-        public TfLiteConverter(tflite.Model model, tflite.SubGraph graph)
+        public TfLiteToGraphConverter(tflite.Model model, tflite.SubGraph graph)
         {
             _model = model;
             _graph = graph;
@@ -35,12 +35,26 @@ namespace NnCase.Converter.Converters
             {
                 if (_outputs.TryGetValue(inputPair.Value, out var output))
                 {
-                    inputPair.Key.AddConnection(output);
+                    inputPair.Key.SetConnection(output);
                 }
             }
 
-            var inputs = _inputs.Keys.Where(o => !o.Connections.Any()).ToList();
-            var outputs = _outputs.Values.Where(o => !o.Connections.Any()).ToList();
+            var inputs = new List<InputLayer>();
+            foreach(var conn in _inputs.Keys.Where(o => o.Connection == null))
+            {
+                var input = new InputLayer(conn.Dimensions);
+                conn.SetConnection(input.Output);
+                inputs.Add(input);
+            }
+
+            var outputs = new List<OutputLayer>();
+            foreach(var conn in _outputs.Values.Where(o => !o.Connections.Any()))
+            {
+                var output = new OutputLayer(conn.Dimensions);
+                conn.AddConnection(output.Input);
+                outputs.Add(output);
+            }
+
             Graph = new Graph(inputs, outputs);
         }
 

@@ -33,5 +33,11 @@ namespace NnCase.Converter.Model.Layers
 
             Output = AddOutput("output", _newShape);
         }
+
+        protected override void OnPlanning(GraphPlanContext context)
+        {
+            var input = context.TFOutputs[Input.Connection.From];
+            context.TFOutputs[Output] = context.TFGraph.Reshape(input, context.TFGraph.Const(NewShape.ToNHWC()));
+        }
     }
 }
