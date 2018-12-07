@@ -3,6 +3,7 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Text;
+using System.Threading.Tasks;
 using TensorFlow;
 
 namespace NnCase.Converter.Model
@@ -24,11 +25,19 @@ namespace NnCase.Converter.Model
             TFGraph = new TFGraph();
         }
 
-        public void Save(Stream stream)
+        public ValueTask SaveAsync(Stream stream)
         {
             var buffer = new TFBuffer();
             TFGraph.ToGraphDef(buffer);
-            stream.Write(buffer.ToArray());
+            return stream.WriteAsync(buffer.ToArray());
+        }
+
+        public void Reset()
+        {
+            Inputs.Clear();
+            Outputs.Clear();
+            TFOutputs.Clear();
+            Planning.Clear();
         }
     }
 

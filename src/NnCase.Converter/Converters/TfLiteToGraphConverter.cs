@@ -75,6 +75,8 @@ namespace NnCase.Converter.Converters
                     return ConvertReshape(op);
                 case tflite.BuiltinOperator.L2_NORMALIZATION:
                     return ConvertL2Normalization(op);
+                case tflite.BuiltinOperator.ADD:
+                    return ConvertAdd(op);
                 default:
                     throw new NotSupportedException();
             }
@@ -155,6 +157,19 @@ namespace NnCase.Converter.Converters
 
             var layer = new L2Normalization(input.GetShapeArray());
             _inputs.Add(layer.Input, inputs[0]);
+            _outputs.Add(op.Outputs(0), layer.Output);
+            return layer;
+        }
+
+        private Layer ConvertAdd(tflite.Operator op)
+        {
+            var inputs = op.GetInputsArray();
+            var inputA = _graph.Tensors(inputs[0]).Value;
+            var inputB = _graph.Tensors(inputs[1]).Value;
+
+            var layer = new Add(inputA.GetShapeArray().ToNCHW(), inputB.GetShapeArray().ToNCHW());
+            _inputs.Add(layer.InputA, inputs[0]);
+            _inputs.Add(layer.InputB, inputs[1]);
             _outputs.Add(op.Outputs(0), layer.Output);
             return layer;
         }

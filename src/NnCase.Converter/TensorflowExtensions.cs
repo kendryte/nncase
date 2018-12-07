@@ -13,20 +13,20 @@ namespace NnCase.Converter
         {
             var dims = new long[shape.Length];
 
-            // NC
             if (shape.Length == 1)
             {
                 dims[0] = shape[0];
             }
+            // NC
             else if (shape.Length == 2)
             {
-                dims[0] = shape[0];
+                dims[0] = -1;// shape[0];
                 dims[1] = shape[1];
             }
             // NCHW
             else if (shape.Length == 4)
             {
-                dims[0] = shape[0];
+                dims[0] = -1;// shape[0];
                 dims[1] = shape[2];
                 dims[2] = shape[3];
                 dims[3] = shape[1];

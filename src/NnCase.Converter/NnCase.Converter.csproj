@@ -10,13 +10,29 @@
     <LangVersion>7.3</LangVersion>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
   <ItemGroup>
+    <PackageReference Include="Accord.Statistics" Version="3.8.0" />
+    <PackageReference Include="AsyncEnumerator" Version="2.2.1" />
+    <PackageReference Include="RazorLight" Version="2.0.0-beta1" />
+    <PackageReference Include="SixLabors.ImageSharp" Version="1.0.0-beta0005" />
     <PackageReference Include="System.Numerics.Tensors" Version="0.1.0" />
     <PackageReference Include="TensorflowSharp" Version="1.11.0" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\FlatBuffers\FlatBuffers.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Templates\K210\" />
   </ItemGroup>
 
 </Project>
