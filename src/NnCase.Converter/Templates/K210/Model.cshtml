@@ -1,0 +1,151 @@
+﻿@using Microsoft.AspNetCore.Html
+@using RazorLight
+@using NnCase.Converter.Converters
+@inherits TemplatePage<K210CodeGenerationContext>
+#include <stdint.h>
+#include <kpu.h>
+
+@for (int i = 0; i < Model.Layers.Count; i++)
+{
+    var layer = Model.Layers[i];
+@:static const uint8_t layer_@(i)_weights[] __attribute__((aligned(128))) = {
+    WriteLiteral("    ");
+    for (int j = 0; j < layer.Weights.Length; j++)
+    {
+        if(j != 0 && j % 64 == 0)
+        {
+            WriteLiteral("\n    ");
+        }
+        WriteLiteral($"0x{layer.Weights[j]:X2}, ");
+    }
+    WriteLiteral("\n");
+@:};
+    WriteLiteral("\n");
+}
+
+@for (int i = 0; i < Model.Layers.Count; i++)
+{
+    var layer = Model.Layers[i];
+@:static const kpu_batchnorm_argument_t layer_@(i)_bn[] __attribute__((aligned(128))) = {
+    foreach (var bn in layer.BNConfigs)
+    {
+    @:{.batchnorm.data = {.norm_mul = @bn.Mul, .norm_add = @bn.Add, .norm_shift = @bn.Shift}},
+    }
+@:};
+}
+
+@for (int i = 0; i < Model.Layers.Count; i++)
+{
+    var layer = Model.Layers[i];
+@:static const kpu_activate_table_t layer_@(i)_act[] __attribute__((aligned(128))) = {
+@: .activate_para = {
+@:  {.data = {.shift_number=0, .y_mul=0, .x_start=0x800000000 }},
+@:  {.data = {.shift_number=29, .y_mul=31266, .x_start=0x0 }},
+@:  {.data = {.shift_number=29, .y_mul=31266, .x_start=0x47442 }},
+@:  {.data = {.shift_number=29, .y_mul=31266, .x_start=0x8e885 }},
+@:  {.data = {.shift_number=29, .y_mul=31266, .x_start=0xd5cc7 }},
+@:  {.data = {.shift_number=29, .y_mul=31266, .x_start=0x11d10a }},
+@:  {.data = {.shift_number=29, .y_mul=31266, .x_start=0x16454c }},
+@:  {.data = {.shift_number=29, .y_mul=31266, .x_start=0x1ab98e }},
+@:  {.data = {.shift_number=29, .y_mul=31266, .x_start=0x1f2dd1 }},
+@:  {.data = {.shift_number=29, .y_mul=31266, .x_start=0x23a213 }},
+@:  {.data = {.shift_number=29, .y_mul=31266, .x_start=0x281655 }},
+@:  {.data = {.shift_number=29, .y_mul=31266, .x_start=0x2c8a98 }},
+@:  {.data = {.shift_number=29, .y_mul=31266, .x_start=0x30feda }},
+@:  {.data = {.shift_number=29, .y_mul=31266, .x_start=0x35731d }},
+@:  {.data = {.shift_number=29, .y_mul=31266, .x_start=0x39e75f }},
+@:  {.data = {.shift_number=29, .y_mul=31266, .x_start=0x3e5ba1 }}
+@: },
+@: .activate_para_bias0.data = {
+@:  .result_bias = {0,0,17,34,51,68,85,102}
+@: },
+@: .activate_para_bias1.data = {
+@:  .result_bias = {119,136,153,170,187,204,221,238}
+@: }
+@:};
+}
+
+static kpu_layer_argument_t layers[] = {
+    @for (int i = 0; i < Model.Layers.Count; i++)
+    {
+        var layer = Model.Layers[i];
+        WriteLiteral($"// {i}\n{{\n");
+@:  .interrupt_enabe.data = {
+@:    .int_en = 0,
+@:    .ram_flag = 0,
+@:    .full_add = 0,
+@:    .depth_wise_layer = @(layer.IsDepthwise ? 1 : 0)
+@:  },
+@:  .image_addr.data = {
+@:    .image_src_addr = @layer.InputAddress.ToString("X"),
+@:    .image_dst_addr = @layer.OutputAddress.ToString("X")
+@:  },
+@:  .image_channel_num.data = {
+@:    .i_ch_num = @(layer.InputChannels - 1),
+@:    .o_ch_num = @(layer.OutputChannels - 1),
+@:    .o_ch_num_coef = @(layer.OutputChannelsOnTime - 1)
+@:  },
+@:  .image_size.data = {
+@:    .i_row_wid = @(layer.InputWidth - 1),
+@:    .i_col_high = @(layer.InputHeight - 1),
+@:    .o_row_wid = @(layer.OutputWidth - 1),
+@:    .o_col_high = @(layer.OutputHeight - 1)
+@:  },
+@:  .kernel_pool_type_cfg.data = {
+@:    .kernel_type = @layer.KernelType,
+@:    .pad_type = 0,
+@:    .pool_type = @layer.PoolType,
+@:    .first_stride = 0,
+@:    .bypass_conv = 0,
+@:    .load_para = 1,
+@:    .dma_burst_size = 15,
+@:    .pad_value = 0,
+@:    .bwsx_base_addr = 0
+@:  },
+@:  .kernel_load_cfg.data = {
+@:     .load_coor = 1,
+@:     .load_time = @(layer.LoadTimes - 1),
+@:     .para_size = @layer.OneLoadKernelsSize,
+@:     .para_start_addr = 0
+@:  },
+@:  .kernel_offset.data = {
+@:     .coef_column_offset = 0,
+@:     .coef_row_offset = 0
+@:  },
+@:  .kernel_calc_type_cfg.data = {
+@:    .channel_switch_addr = @(layer.InputRowLength * layer.InputHeight),
+@:    .row_switch_addr = @layer.InputRowLength,
+@:    .coef_size = 0,
+@:    .coef_group = @layer.InputGroups,
+@:    .load_act = 1,
+@:    .active_addr = 0
+@:  },
+@:  .write_back_cfg.data = {
+@:    .wb_channel_switch_addr = @(layer.OutputRowLength * layer.OutputHeight),
+@:    .wb_row_switch_addr = @layer.OutputRowLength,
+@:    .wb_group = @layer.OutputGroups
+@:  },
+@:  .conv_value.data = {
+@:    .shr_w = @layer.ShiftW,
+@:    .shr_x = @layer.ShiftX,
+@:    .arg_w = @layer.ArgW,
+@:    .arg_x = @layer.ArgX
+@:  },
+@:  .conv_value2.data = {
+@:    .arg_add = @layer.ArgAdd
+@:  },
+@:  .dma_parameter.data = {
+@:   .send_data_out = 0,
+@:   .channel_byte_num = @(layer.OutputWidth * layer.OutputHeight - 1),
+@:   .dma_total_byte = @(layer.OutputWidth * layer.OutputHeight * layer.OutputChannels - 1)
+@:  }
+        WriteLiteral("},\n");
+    }
+};
+
+void kpu_task_@(Model.Prefix)_init(kpu_task_t* task) {
+    @for (int i = 0; i < Model.Layers.Count; i++)
+    {
+@:
+    }
+}

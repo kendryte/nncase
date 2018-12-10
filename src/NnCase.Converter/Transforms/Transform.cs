@@ -53,33 +53,34 @@ namespace NnCase.Converter.Transforms
             do
             {
                 conti = false;
-                processMap.Clear();
-                foreach (var layer in graph.Outputs)
-                    conti |= Process(layer, transforms, processMap);
+
+                foreach (var transform in transforms)
+                {
+                    processMap.Clear();
+                    foreach (var layer in graph.Outputs)
+                        conti |= Process(layer, transform, processMap);
+                }
             } while (conti);
         }
 
-        private static bool Process(Layer layer, IReadOnlyList<Transform> transforms, Dictionary<Layer, bool> processMap)
+        private static bool Process(Layer layer, Transform transform, Dictionary<Layer, bool> processMap)
         {
             if (processMap.GetValueOrDefault(layer))
                 return false;
             processMap[layer] = true;
 
             bool processed = false;
-            foreach (var transform in transforms)
+            var context = new TransformContext();
+            if (transform.TryMatch(layer, context))
             {
-                var context = new TransformContext();
-                if (transform.TryMatch(layer, context))
-                {
-                    transform.Process(context);
-                    processed = true;
-                }
+                transform.Process(context);
+                processed = true;
             }
 
             foreach (var input in layer.InputConnectors)
             {
                 if (input.Connection != null)
-                    processed |= Process(input.Connection.From.Owner, transforms, processMap);
+                    processed |= Process(input.Connection.From.Owner, transform, processMap);
             }
 
             return processed;

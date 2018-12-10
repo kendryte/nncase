@@ -24,14 +24,14 @@ namespace NnCase.Converter.Transforms.K210
                     {
                         if (nextLayer is Conv2d conv2d)
                         {
-                            if (conv2d.KernelWidth != 3 || conv2d.KernelHeight != 3 || conv2d.StrideHeight != 2 || conv2d.StrideWidth != 2 ||
+                            if (conv2d.KernelWidth != 3 || conv2d.KernelHeight != 3 ||
                                 conv2d.Padding != Padding.Valid)
                                 continue;
                             context.Outputs.Add(conv2d.Output);
                         }
                         else if (nextLayer is DepthwiseConv2d dwConv2d)
                         {
-                            if (dwConv2d.KernelWidth != 3 || dwConv2d.KernelHeight != 3 || dwConv2d.StrideHeight != 2 || dwConv2d.StrideWidth != 2 ||
+                            if (dwConv2d.KernelWidth != 3 || dwConv2d.KernelHeight != 3 || dwConv2d.StrideWidth != 1 || dwConv2d.StrideHeight != 1 ||
                                 dwConv2d.Padding != Padding.Valid)
                                 continue;
                             context.Outputs.Add(dwConv2d.Output);
@@ -68,12 +68,12 @@ namespace NnCase.Converter.Transforms.K210
             var conv = context.MatchedLayers[1];
             if (conv is Conv2d conv2d)
             {
-                newLayer = new K210Conv2d(input.Dimensions, K210Conv2dType.Conv2d, conv2d.Weights, conv2d.Bias, K210PoolType.LeftTop, conv2d.FusedActivationFunction);
+                newLayer = new K210Conv2d(input.Dimensions, K210Conv2dType.Conv2d, conv2d.Weights, conv2d.Bias, conv2d.StrideWidth == 2 ? K210PoolType.LeftTop : K210PoolType.None, conv2d.FusedActivationFunction);
                 output = conv2d.Output;
             }
             else if (conv is DepthwiseConv2d dwConv2d)
             {
-                newLayer = new K210Conv2d(input.Dimensions, K210Conv2dType.DepthwiseConv2d, dwConv2d.Weights, dwConv2d.Bias, K210PoolType.LeftTop, dwConv2d.FusedActivationFunction);
+                newLayer = new K210Conv2d(input.Dimensions, K210Conv2dType.DepthwiseConv2d, dwConv2d.Weights, dwConv2d.Bias, K210PoolType.None, dwConv2d.FusedActivationFunction);
                 output = dwConv2d.Output;
             }
             else

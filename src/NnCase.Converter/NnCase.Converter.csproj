@@ -3,6 +3,8 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>netcoreapp2.1</TargetFramework>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <PreserveCompilationContext>true</PreserveCompilationContext>
   </PropertyGroup>
 
   <PropertyGroup>
@@ -10,18 +12,14 @@
     <LangVersion>7.3</LangVersion>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|AnyCPU'">
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-  </PropertyGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Templates\K210\Model.cshtml" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Accord.Statistics" Version="3.8.0" />
     <PackageReference Include="AsyncEnumerator" Version="2.2.1" />
-    <PackageReference Include="RazorLight" Version="2.0.0-beta1" />
+    <PackageReference Include="RazorLight.Unofficial" Version="2.0.0-beta1.3" />
     <PackageReference Include="SixLabors.ImageSharp" Version="1.0.0-beta0005" />
     <PackageReference Include="System.Numerics.Tensors" Version="0.1.0" />
     <PackageReference Include="TensorflowSharp" Version="1.11.0" />
@@ -29,10 +27,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FlatBuffers\FlatBuffers.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Templates\K210\" />
   </ItemGroup>
 
 </Project>

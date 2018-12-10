@@ -59,12 +59,14 @@ namespace NnCase.Converter.Transforms.K210
                 newLayer = new K210Conv2d(conv2d.Input.Dimensions, K210Conv2dType.Conv2d, conv2d.Weights, conv2d.Bias, K210PoolType.None, conv2d.FusedActivationFunction);
                 input = conv2d.Input.Connection.From;
                 output = conv2d.Output;
+                conv2d.Input.ClearConnection();
             }
             else if (conv is DepthwiseConv2d dwConv2d)
             {
                 newLayer = new K210Conv2d(dwConv2d.Input.Dimensions, K210Conv2dType.DepthwiseConv2d, dwConv2d.Weights, dwConv2d.Bias, K210PoolType.None, dwConv2d.FusedActivationFunction);
                 input = dwConv2d.Input.Connection.From;
                 output = dwConv2d.Output;
+                dwConv2d.Input.ClearConnection();
             }
             else
                 throw new InvalidOperationException();

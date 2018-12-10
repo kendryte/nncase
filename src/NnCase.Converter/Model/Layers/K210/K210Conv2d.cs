@@ -34,8 +34,19 @@ namespace NnCase.Converter.Model.Layers.K210
 
         public ActivationFunctionType FusedActivationFunction { get; }
 
+        public int KernelWidth => Weights.Dimensions[3];
+
+        public int KernelHeight => Weights.Dimensions[2];
+
+        public int InputChannels => Weights.Dimensions[1];
+
+        public int OutputChannels => Conv2dType == K210Conv2dType.Conv2d ? Weights.Dimensions[0] : InputChannels;
+
         public K210Conv2d(ReadOnlySpan<int> dimensions, K210Conv2dType conv2dType, Tensor<float> weights, Tensor<float> bias, K210PoolType poolType, ActivationFunctionType fusedActivationFunction)
         {
+            if (conv2dType == K210Conv2dType.DepthwiseConv2d && poolType != K210PoolType.None)
+                throw new ArgumentOutOfRangeException("Downsampling is not supported in dwConv2d.");
+
             Conv2dType = conv2dType;
             PoolType = poolType;
             FusedActivationFunction = fusedActivationFunction;
@@ -61,11 +72,17 @@ namespace NnCase.Converter.Model.Layers.K210
             var bias = Bias.ToNHWC();
 
             TFOutput y;
-            if(GetStride() == 1)
+            if (GetStride() == 1)
             {
                 y = Conv2dType == K210Conv2dType.Conv2d
                     ? graph.Conv2D(input, graph.Const(weights), new long[] { 1, 1, 1, 1 }, "SAME")
                     : graph.DepthwiseConv2dNative(input, graph.Const(weights), new long[] { 1, 1, 1, 1 }, "SAME");
+            }
+            else if (KernelWidth == 1)
+            {
+                y = Conv2dType == K210Conv2dType.Conv2d
+                    ? graph.Conv2D(input, graph.Const(weights), new long[] { 1, 2, 2, 1 }, "SAME")
+                    : graph.DepthwiseConv2dNative(input, graph.Const(weights), new long[] { 1, 2, 2, 1 }, "SAME");
             }
             else
             {

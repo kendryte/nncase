@@ -33,6 +33,9 @@ namespace NnCase.Converter.Model
             conn = new Connection(this, to);
             _connections.Add(conn);
             to.SetConnection(this);
+
+            //if (_connections.Count > 1)
+            //    throw new InvalidOperationException();
             return conn;
         }
 
