@@ -26,6 +26,9 @@ namespace NnCase.Converter.Model
 
         public Connection SetConnection(OutputConnector from)
         {
+            if (!from.Dimensions.SequenceEqual(Dimensions))
+                throw new InvalidOperationException("Dimensions must be equal.");
+
             if (Connection != null)
             {
                 if (Connection.From == from)

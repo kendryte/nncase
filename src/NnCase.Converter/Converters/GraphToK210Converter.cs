@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Async;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
@@ -8,7 +7,6 @@ using System.Numerics.Tensors;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-using Accord.Statistics.Moving;
 using NnCase.Converter.Data;
 using NnCase.Converter.Model;
 using NnCase.Converter.Model.Layers;
@@ -19,7 +17,6 @@ using TensorFlow;
 
 namespace NnCase.Converter.Converters
 {
-
     public class K210LayerBNConfig
     {
         public int Mul { get; set; }
@@ -80,6 +77,18 @@ namespace NnCase.Converter.Converters
         public int LoadTimes { get; set; }
 
         public int OneLoadKernelsSize { get; set; }
+
+        public int PadValue { get; set; }
+
+        public double OutputScale { get; set; }
+
+        public double OutputBias { get; set; }
+
+        public int InputSize { get; set; }
+
+        public int OutputSize { get; set; }
+
+        public int BNUpScale { get; set; }
     }
 
     public class K210CodeGenerationContext
@@ -107,24 +116,22 @@ namespace NnCase.Converter.Converters
             _graph.Plan(planContext);
 
             var quantize = await GetMinMaxVars(dataset, planContext);
-            //planContext.Reset();
-            //Transform.Process(_graph, new Transform[]
-            //{
-
-            //});
-
             var context = new ConvertContext { Quantization = quantize };
             foreach (var layer in _graph.Outputs)
                 ConvertLayer(layer, context);
 
+            context.ProcessMap.Clear();
+            foreach (var layer in _graph.Outputs)
+                InferenceLayer(layer, context);
+
             var codeGenContext = new K210CodeGenerationContext
             {
-                Layers = context.Layers.Values.ToList(),
+                Layers = context.InferenceOrders,
                 Prefix = prefix
             };
 
             var code = await _templateEngine.CompileRenderAsync("Model", codeGenContext);
-            await File.WriteAllTextAsync(Path.Combine(outputDir, $"{prefix}.c"), code);
+            File.WriteAllText(Path.Combine(outputDir, $"{prefix}.c"), code);
         }
 
         private void ConvertLayer(Layer layer, ConvertContext context)
@@ -140,6 +147,7 @@ namespace NnCase.Converter.Converters
                     case AveragePool2d _:
                     case L2Normalization _:
                     case Reshape _:
+                    case FullyConnected _:
                         break;
                     case K210Conv2d l:
                         ConvertK210Conv2d(l, context);
@@ -163,7 +171,7 @@ namespace NnCase.Converter.Converters
             (var sw, var bw) = QuantizeWeights(layer.Weights, config);
             (var sx, var bx) = QuantizeInput(context.Quantization.Distributions[layer.Input.Connection.From], config);
             config.ArgAdd = (int)Math.Round(bw * bx * layer.KernelWidth * layer.KernelHeight);
-            QuantizeBiasAndOutput(layer.Bias, context.Quantization.Distributions[layer.Output], sw * sx, config);
+            (var so, var bo) = QuantizeBiasAndOutput(layer.Bias, context.Quantization.Distributions[layer.Output], sw * sx, config);
 
             config.InputChannels = layer.InputChannels;
             config.OutputChannels = layer.OutputChannels;
@@ -179,21 +187,109 @@ namespace NnCase.Converter.Converters
             config.IsDepthwise = layer.Conv2dType == K210Conv2dType.DepthwiseConv2d;
             config.PoolType = (int)layer.PoolType;
 
+            config.PadValue = (int)Math.Round(-bx);
+
             if (layer.Conv2dType == K210Conv2dType.Conv2d)
             {
                 var kernelSize = (int)layer.Weights.Length;
                 var oneChannelSize = layer.KernelWidth * layer.KernelHeight * layer.InputChannels;
-                var oneLoadChannels = (int)Math.Floor(30 * 1024.0 / oneChannelSize);
+                var oneLoadChannels = Math.Min(layer.OutputChannels, (int)Math.Floor(30 * 1024.0 / oneChannelSize));
                 config.OneLoadKernelsSize = oneChannelSize * oneLoadChannels;
                 config.LoadTimes = (int)Math.Ceiling(layer.OutputChannels / (double)oneLoadChannels);
+                config.OutputChannelsOnTime = oneLoadChannels;
             }
             else
             {
                 config.OneLoadKernelsSize = (int)layer.Weights.Length;
                 config.LoadTimes = 1;
+                config.OutputChannelsOnTime = layer.OutputChannels;
             }
 
+            config.OutputScale = so;
+            config.OutputBias = bo;
+
+            var inputOneLineChannels = Math.Min(layer.InputChannels, config.InputGroups);
+            config.InputSize = config.InputRowLength * config.InputHeight * config.InputChannels / inputOneLineChannels;
+            var outputOneLineChannels = Math.Min(layer.OutputChannels, config.OutputGroups);
+            config.OutputSize = config.OutputRowLength * config.OutputHeight * config.OutputChannels / outputOneLineChannels;
+
             context.Layers.Add(layer, config);
+        }
+
+        private void InferenceLayer(Layer layer, ConvertContext context)
+        {
+            if (!context.ProcessMap.GetValueOrDefault(layer))
+            {
+                context.ProcessMap[layer] = true;
+
+                foreach (var conn in layer.InputConnectors)
+                {
+                    var inputLayer = conn.Connection?.From.Owner;
+                    if (inputLayer != null)
+                        InferenceLayer(inputLayer, context);
+                }
+
+                foreach (var output in layer.OutputConnectors)
+                {
+                    if (context.KPUMemoryMap.TryGetValue(output, out var node))
+                    {
+                        node.AddRef();
+                    }
+                    else
+                    {
+                        switch (layer)
+                        {
+                            case InputLayer l:
+                                InferenceInputLayer(l, context);
+                                break;
+                            case OutputLayer _:
+                            case AveragePool2d _:
+                            case L2Normalization _:
+                            case Reshape _:
+                            case Conv2d _:
+                            case FullyConnected _:
+                                break;
+                            case K210Conv2d l:
+                                InferenceK210Conv2d(l, context);
+                                break;
+                            default:
+                                throw new NotSupportedException(nameof(layer));
+                        }
+                    }
+                }
+
+                foreach (var conn in layer.InputConnectors)
+                {
+                    var output = conn.Connection?.From;
+                    if (output != null)
+                    {
+                        if (context.KPUMemoryMap.TryGetValue(output, out var node))
+                            node.Release();
+                    }
+                }
+            }
+        }
+
+        private void InferenceInputLayer(InputLayer layer, ConvertContext context)
+        {
+            var k210ConvOut = layer.Output.Connections.Select(o => o.To.Owner).OfType<K210Conv2d>().FirstOrDefault();
+            if (k210ConvOut != null)
+            {
+                var node = context.MemoryAllocator.Allocate(context.Layers[k210ConvOut].InputSize);
+                context.KPUMemoryMap[layer.Output] = node;
+            }
+        }
+
+        private void InferenceK210Conv2d(K210Conv2d layer, ConvertContext context)
+        {
+            var config = context.Layers[layer];
+            var inputNode = context.KPUMemoryMap[layer.Input.Connection.From];
+            var outputNode = context.MemoryAllocator.Allocate(config.OutputSize);
+            context.KPUMemoryMap[layer.Output] = outputNode;
+
+            config.InputAddress = inputNode.Start;
+            config.OutputAddress = outputNode.Start;
+            context.InferenceOrders.Add(config);
         }
 
         private static (int groups, int rowLength) GetRowLayout(int width)
@@ -234,7 +330,7 @@ namespace NnCase.Converter.Converters
                 }
 
                 var quantizationContext = new QuantizationContext { Outputs = connectors, PlanContext = planContext };
-                await dataset.GetBatchesAsync().ForEachAsync(batch =>
+                await foreach (var batch in dataset.GetBatchesAsync())
                 {
                     var input = batch.ToNHWC();
                     var runner = session.GetRunner();
@@ -245,7 +341,7 @@ namespace NnCase.Converter.Converters
 
                     var outputs = runner.Run();
                     RecordOutputs(new[] { input }.Concat(outputs).ToList(), quantizationContext);
-                });
+                }
 
                 return quantizationContext;
             }
@@ -286,12 +382,13 @@ namespace NnCase.Converter.Converters
             return (scale, bias);
         }
 
-        private static void QuantizeBiasAndOutput(Tensor<float> bias, Range range, double scale, K210LayerConfig config)
+        private static (double scale, double bias) QuantizeBiasAndOutput(Tensor<float> bias, Range range, double scale, K210LayerConfig config)
         {
             (var so, var bo) = range.GetScaleBias();
             var scomb = so / scale;
+            var upscale = 5;
 
-            (var mul, var shift) = ExtractValueAndShift(scomb, 24, 15);
+            (var mul, var shift) = ExtractValueAndShift(scomb, 24, 15 + upscale);
             for (int i = 0; i < config.BNConfigs.Length; i++)
             {
                 var b = bias[i];
@@ -299,10 +396,13 @@ namespace NnCase.Converter.Converters
                 config.BNConfigs[i] = new K210LayerBNConfig
                 {
                     Mul = (int)Math.Round(mul),
-                    Shift = shift,
-                    Add = (int)Math.Round(b * so - bo)
+                    Shift = shift - upscale,
+                    Add = (int)Math.Round((b * so - bo) * Math.Pow(2, upscale))
                 };
+                config.BNUpScale = upscale;
             }
+
+            return (so, bo);
         }
 
         private static byte[] Quantize(Span<float> data, double scale, double bias)
@@ -366,9 +466,11 @@ namespace NnCase.Converter.Converters
                 return new Range { Min = alpha * range.Min + (1 - alpha) * Min, Max = alpha * range.Max + (1 - alpha) * Max };
             }
 
-            public (double scale, double bias) GetScaleBias()
+            public (double scale, double bias) GetScaleBias() => GetScaleBias(8);
+
+            public (double scale, double bias) GetScaleBias(int maxBits)
             {
-                var scale = byte.MaxValue / (Max - Min);
+                var scale = ((1 << maxBits) - 1) / (Max - Min);
                 var bias = Min * scale;
                 return (scale, bias);
             }
@@ -390,6 +492,105 @@ namespace NnCase.Converter.Converters
             public Dictionary<Layer, bool> ProcessMap = new Dictionary<Layer, bool>();
 
             public Dictionary<Layer, K210LayerConfig> Layers { get; } = new Dictionary<Layer, K210LayerConfig>();
+
+            public KPUMemoryAllocator MemoryAllocator { get; } = new KPUMemoryAllocator();
+
+            public List<K210LayerConfig> InferenceOrders { get; } = new List<K210LayerConfig>();
+
+            public Dictionary<OutputConnector, KPUMemoryNode> KPUMemoryMap { get; } = new Dictionary<OutputConnector, KPUMemoryNode>();
+        }
+
+        private class KPUMemoryAllocator
+        {
+            private List<KPUMemoryNode> _nodes = new List<KPUMemoryNode>();
+
+            public KPUMemoryAllocator()
+            {
+                _nodes.Add(new KPUMemoryNode(this) { Start = 0, Size = 2 * 1024 * 1024 / 64 });
+            }
+
+            public KPUMemoryNode Allocate(int size)
+            {
+                var firstFreeIdx = _nodes.FindIndex(o => !o.IsUsed && o.Size >= size);
+                if (firstFreeIdx == -1)
+                    throw new InvalidOperationException("KPU is out of memory.");
+                var firstFree = _nodes[firstFreeIdx];
+                if (firstFree.Size == size)
+                {
+                    firstFree.AddRef();
+                    return firstFree;
+                }
+                else
+                {
+                    var newNode = new KPUMemoryNode(this)
+                    {
+                        Start = firstFree.Start,
+                        Size = size
+                    };
+                    newNode.AddRef();
+
+                    firstFree.Size -= size;
+                    firstFree.Start += size;
+                    _nodes.Insert(firstFreeIdx, newNode);
+                    return newNode;
+                }
+            }
+
+            public void Free(KPUMemoryNode node)
+            {
+                Debug.Assert(!node.IsUsed);
+                var idx = _nodes.IndexOf(node);
+                if (idx != 0)
+                {
+                    var before = _nodes[idx - 1];
+                    if (!before.IsUsed)
+                    {
+                        before.Size += node.Size;
+                        _nodes.RemoveAt(idx);
+                        idx--;
+                        node = _nodes[idx];
+                    }
+                }
+                if (idx != _nodes.Count - 1)
+                {
+                    var after = _nodes[idx + 1];
+                    if (!after.IsUsed)
+                    {
+                        node.Size += after.Size;
+                        _nodes.RemoveAt(idx + 1);
+                    }
+                }
+            }
+        }
+
+        private class KPUMemoryNode
+        {
+            private readonly KPUMemoryAllocator _memoryAllocator;
+            private int _useCount;
+
+            public int Start { get; set; }
+
+            public int Size { get; set; }
+
+            public bool IsUsed => _useCount != 0;
+
+            public KPUMemoryNode(KPUMemoryAllocator memoryAllocator)
+            {
+                _memoryAllocator = memoryAllocator;
+            }
+
+            public void AddRef()
+            {
+                _useCount++;
+            }
+
+            public void Release()
+            {
+                if (--_useCount == 0)
+                {
+                    _memoryAllocator.Free(this);
+                }
+            }
         }
     }
 }

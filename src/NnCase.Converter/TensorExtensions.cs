@@ -20,8 +20,11 @@ namespace NnCase.Converter
                 extendedPerm[i + outputExtSize] = axes[i] + inputExtSize;
 
             Span<int> outSizes = stackalloc int[4];
+            Span<int> oldDims = stackalloc int[4] { 1, 1, 1, 1 };
+            for (int i = 4 - tensor.Dimensions.Length; i < 4; i++)
+                oldDims[i] = tensor.Dimensions[i - (4 - tensor.Dimensions.Length)];
             for (int i = 0; i < 4; i++)
-                outSizes[i] = tensor.Dimensions[extendedPerm[i]];
+                outSizes[i] = oldDims[extendedPerm[i]];
 
             Span<int> outp = stackalloc int[4];
             Span<int> inp = stackalloc int[4];
@@ -29,7 +32,8 @@ namespace NnCase.Converter
             var destDimensions = new int[tensor.Dimensions.Length];
             for (int i = 0; i < axes.Length; i++)
                 destDimensions[i] = tensor.Dimensions[axes[i]];
-            var output = new DenseTensor<T>(buffer, destDimensions);
+            var output = new DenseTensor<T>(buffer, outSizes);
+            tensor = tensor.Reshape(oldDims);
 
             for (outp[3] = 0; outp[3] < outSizes[3]; outp[3]++)
             {
@@ -49,7 +53,7 @@ namespace NnCase.Converter
                 }
             }
 
-            return output;
+            return output.Reshape(destDimensions);
         }
 
         public static int GetSize(this ReadOnlySpan<int> shape)

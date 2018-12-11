@@ -34,9 +34,9 @@ namespace NnCase.Converter.Model.Layers
             Input = AddInput("input", dimensions);
             Output = AddOutput("output", new[] {
                 dimensions[0],
-                (dimensions[1] - (padding == Padding.Valid ? filterHeight - 1 : 0)) / strideHeight,
-                (dimensions[2] - (padding == Padding.Valid ? filterWidth - 1 : 0)) / strideWidth,
-                dimensions[3]
+                dimensions[1],
+                (dimensions[2] - (padding == Padding.Valid ? filterHeight - 1 : 0)) / strideHeight,
+                (dimensions[3] - (padding == Padding.Valid ? filterWidth - 1 : 0)) / strideWidth
             });
         }
 

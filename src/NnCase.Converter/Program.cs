@@ -27,15 +27,15 @@ namespace NnCase.Converter
             });
             var ctx = new GraphPlanContext();
             graph.Plan(ctx);
-            //var k210c = new GraphToK210Converter(graph);
-            //await k210c.ConvertAsync(new ImageDataset(
-            //    @"D:\Work\Repository\models\test", 
-            //    new[] { 3, 128, 128 }, 
-            //    1,
-            //    PostprocessMethods.NormalizeMinus1To1), 
-            //    ctx,
-            //    @"D:\Work\Repository\models\compiled\",
-            //    "test");
+            var k210c = new GraphToK210Converter(graph);
+            await k210c.ConvertAsync(new ImageDataset(
+                @"D:\Work\Repository\models\img",
+                new[] { 3, 128, 128 },
+                1,
+                PostprocessMethods.NormalizeMinus1To1),
+                ctx,
+                @"D:\Work\Repository\kendryte-standalone-sdk\src\kpu6\",
+                "test");
 
             using (var f = File.Open(@"D:\Work\Repository\models\mobilev1_facenet_optimized.pb", FileMode.Create, FileAccess.Write))
                 await ctx.SaveAsync(f);

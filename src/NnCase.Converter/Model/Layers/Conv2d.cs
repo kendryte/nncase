@@ -56,7 +56,7 @@ namespace NnCase.Converter.Model.Layers
             Input = AddInput("input", dimensions);
             Output = AddOutput("output", new[] {
                 dimensions[0],
-                dimensions[1],
+                Weights.Dimensions[0],
                 (dimensions[2] - (padding == Padding.Valid ? KernelHeight - 1 : 0)) / strideHeight,
                 (dimensions[3] - (padding == Padding.Valid ? KernelWidth - 1 : 0)) / strideWidth
             });

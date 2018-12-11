@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Async;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -43,28 +42,25 @@ namespace NnCase.Converter.Data
             _postprocessMethod = postprocessMethod;
         }
 
-        public IAsyncEnumerable<Tensor<float>> GetBatchesAsync()
+        public async IAsyncEnumerable<Tensor<float>> GetBatchesAsync()
         {
-            return new AsyncEnumerable<Tensor<float>>(async yield =>
+            var dimensions = new[] { _batchSize }.Concat(_dimensions).ToArray();
+            var oneSize = Dimensions.GetSize();
+
+            for (int i = 0; i < _fileNames.Count / _batchSize; i++)
             {
-                var dimensions = new[] { _batchSize }.Concat(_dimensions).ToArray();
-                var oneSize = Dimensions.GetSize();
-
-                for (int i = 0; i < _fileNames.Count / _batchSize; i++)
+                var tensor = new DenseTensor<float>(dimensions);
+                var sources = await Task.WhenAll(from j in Enumerable.Range(i * _batchSize, _batchSize)
+                                                 select File.ReadAllBytesAsync(_fileNames[j]));
+                Parallel.For(0, _batchSize, j =>
                 {
-                    var tensor = new DenseTensor<float>(dimensions);
-                    var sources = await Task.WhenAll(from j in Enumerable.Range(i * _batchSize, _batchSize)
-                                                     select File.ReadAllBytesAsync(_fileNames[j]));
-                    Parallel.For(0, _batchSize, j =>
-                    {
-                        var buffer = tensor.Buffer.Slice(j * oneSize);
-                        Process(sources[j], buffer.Span);
-                        Postprocess(buffer.Span, _postprocessMethod);
-                    });
+                    var buffer = tensor.Buffer.Slice(j * oneSize);
+                    Process(sources[j], buffer.Span);
+                    Postprocess(buffer.Span, _postprocessMethod);
+                });
 
-                    await yield.ReturnAsync(tensor);
-                }
-            });
+                yield return tensor;
+            }
         }
 
         private void Postprocess(Span<float> data, PostprocessMethods postprocessMethod)

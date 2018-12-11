@@ -46,6 +46,8 @@ namespace NnCase.Converter.Model.Layers.K210
         {
             if (conv2dType == K210Conv2dType.DepthwiseConv2d && poolType != K210PoolType.None)
                 throw new ArgumentOutOfRangeException("Downsampling is not supported in dwConv2d.");
+            if (dimensions[2] < 4 || dimensions[3] < 4)
+                throw new ArgumentOutOfRangeException("Lower than 4x4 input is not supported in dwConv2d.");
 
             Conv2dType = conv2dType;
             PoolType = poolType;
@@ -55,10 +57,13 @@ namespace NnCase.Converter.Model.Layers.K210
 
             var stride = GetStride();
 
+            if (dimensions[2] / stride < 4 || dimensions[3] / stride < 4)
+                throw new ArgumentOutOfRangeException("Lower than 4x4 output is not supported in dwConv2d.");
+
             Input = AddInput("input", dimensions);
             Output = AddOutput("output", new[] {
                 dimensions[0],
-                dimensions[1],
+                OutputChannels,
                 dimensions[2] / stride,
                 dimensions[3] / stride
             });

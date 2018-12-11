@@ -14,13 +14,13 @@
     {
         if(j != 0 && j % 64 == 0)
         {
-            WriteLiteral("\n    ");
+            WriteLiteral(Environment.NewLine + "    ");
         }
         WriteLiteral($"0x{layer.Weights[j]:X2}, ");
     }
-    WriteLiteral("\n");
+    WriteLiteral(Environment.NewLine);
 @:};
-    WriteLiteral("\n");
+    WriteLiteral(Environment.NewLine);
 }
 
 @for (int i = 0; i < Model.Layers.Count; i++)
@@ -37,24 +37,24 @@
 @for (int i = 0; i < Model.Layers.Count; i++)
 {
     var layer = Model.Layers[i];
-@:static const kpu_activate_table_t layer_@(i)_act[] __attribute__((aligned(128))) = {
+@:static const kpu_activate_table_t layer_@(i)_act __attribute__((aligned(128))) = {
 @: .activate_para = {
-@:  {.data = {.shift_number=0, .y_mul=0, .x_start=0x800000000 }},
-@:  {.data = {.shift_number=29, .y_mul=31266, .x_start=0x0 }},
-@:  {.data = {.shift_number=29, .y_mul=31266, .x_start=0x47442 }},
-@:  {.data = {.shift_number=29, .y_mul=31266, .x_start=0x8e885 }},
-@:  {.data = {.shift_number=29, .y_mul=31266, .x_start=0xd5cc7 }},
-@:  {.data = {.shift_number=29, .y_mul=31266, .x_start=0x11d10a }},
-@:  {.data = {.shift_number=29, .y_mul=31266, .x_start=0x16454c }},
-@:  {.data = {.shift_number=29, .y_mul=31266, .x_start=0x1ab98e }},
-@:  {.data = {.shift_number=29, .y_mul=31266, .x_start=0x1f2dd1 }},
-@:  {.data = {.shift_number=29, .y_mul=31266, .x_start=0x23a213 }},
-@:  {.data = {.shift_number=29, .y_mul=31266, .x_start=0x281655 }},
-@:  {.data = {.shift_number=29, .y_mul=31266, .x_start=0x2c8a98 }},
-@:  {.data = {.shift_number=29, .y_mul=31266, .x_start=0x30feda }},
-@:  {.data = {.shift_number=29, .y_mul=31266, .x_start=0x35731d }},
-@:  {.data = {.shift_number=29, .y_mul=31266, .x_start=0x39e75f }},
-@:  {.data = {.shift_number=29, .y_mul=31266, .x_start=0x3e5ba1 }}
+@:  {.data = {.shift_number=@layer.BNUpScale, .y_mul=0, .x_start=0x800000000 }},
+@:  {.data = {.shift_number=@layer.BNUpScale, .y_mul=1, .x_start=0x0 }},
+@:  {.data = {.shift_number=@layer.BNUpScale, .y_mul=1, .x_start=0x47442 }},
+@:  {.data = {.shift_number=@layer.BNUpScale, .y_mul=1, .x_start=0x8e885 }},
+@:  {.data = {.shift_number=@layer.BNUpScale, .y_mul=1, .x_start=0xd5cc7 }},
+@:  {.data = {.shift_number=@layer.BNUpScale, .y_mul=1, .x_start=0x11d10a }},
+@:  {.data = {.shift_number=@layer.BNUpScale, .y_mul=1, .x_start=0x16454c }},
+@:  {.data = {.shift_number=@layer.BNUpScale, .y_mul=1, .x_start=0x1ab98e }},
+@:  {.data = {.shift_number=@layer.BNUpScale, .y_mul=1, .x_start=0x1f2dd1 }},
+@:  {.data = {.shift_number=@layer.BNUpScale, .y_mul=1, .x_start=0x23a213 }},
+@:  {.data = {.shift_number=@layer.BNUpScale, .y_mul=1, .x_start=0x281655 }},
+@:  {.data = {.shift_number=@layer.BNUpScale, .y_mul=1, .x_start=0x2c8a98 }},
+@:  {.data = {.shift_number=@layer.BNUpScale, .y_mul=1, .x_start=0x30feda }},
+@:  {.data = {.shift_number=@layer.BNUpScale, .y_mul=1, .x_start=0x35731d }},
+@:  {.data = {.shift_number=@layer.BNUpScale, .y_mul=1, .x_start=0x39e75f }},
+@:  {.data = {.shift_number=@layer.BNUpScale, .y_mul=1, .x_start=0x3e5ba1 }}
 @: },
 @: .activate_para_bias0.data = {
 @:  .result_bias = {0,0,17,34,51,68,85,102}
@@ -69,7 +69,7 @@ static kpu_layer_argument_t layers[] = {
     @for (int i = 0; i < Model.Layers.Count; i++)
     {
         var layer = Model.Layers[i];
-        WriteLiteral($"// {i}\n{{\n");
+        WriteLiteral($"// {i} so: {layer.OutputScale}, sb: {layer.OutputBias}{Environment.NewLine}{{{Environment.NewLine}");
 @:  .interrupt_enabe.data = {
 @:    .int_en = 0,
 @:    .ram_flag = 0,
@@ -77,8 +77,8 @@ static kpu_layer_argument_t layers[] = {
 @:    .depth_wise_layer = @(layer.IsDepthwise ? 1 : 0)
 @:  },
 @:  .image_addr.data = {
-@:    .image_src_addr = @layer.InputAddress.ToString("X"),
-@:    .image_dst_addr = @layer.OutputAddress.ToString("X")
+@:    .image_src_addr = @($"0x{layer.InputAddress:X}"),
+@:    .image_dst_addr = @($"0x{layer.OutputAddress:X}")
 @:  },
 @:  .image_channel_num.data = {
 @:    .i_ch_num = @(layer.InputChannels - 1),
@@ -99,7 +99,7 @@ static kpu_layer_argument_t layers[] = {
 @:    .bypass_conv = 0,
 @:    .load_para = 1,
 @:    .dma_burst_size = 15,
-@:    .pad_value = 0,
+@:    .pad_value = @layer.PadValue,
 @:    .bwsx_base_addr = 0
 @:  },
 @:  .kernel_load_cfg.data = {
@@ -139,13 +139,16 @@ static kpu_layer_argument_t layers[] = {
 @:   .channel_byte_num = @(layer.OutputWidth * layer.OutputHeight - 1),
 @:   .dma_total_byte = @(layer.OutputWidth * layer.OutputHeight * layer.OutputChannels - 1)
 @:  }
-        WriteLiteral("},\n");
+        WriteLiteral("}," + Environment.NewLine);
     }
 };
 
 void kpu_task_@(Model.Prefix)_init(kpu_task_t* task) {
     @for (int i = 0; i < Model.Layers.Count; i++)
     {
-@:
+@:    layers[@(i)].kernel_pool_type_cfg.data.bwsx_base_addr = (uint64_t)&layer_@(i)_bn;
+@:    layers[@(i)].kernel_calc_type_cfg.data.active_addr = (uint64_t)&layer_@(i)_act;
+@:    layers[@(i)].kernel_load_cfg.data.para_start_addr = (uint64_t)&layer_@(i)_weights;
     }
+    task->layers = layers;
 }

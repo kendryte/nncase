@@ -48,7 +48,10 @@ namespace NnCase.Converter
 
         public static TFTensor ToHWIO<T>(this Tensor<T> tensor)
         {
-            tensor = tensor.Transpose(new[] { 2, 3, 1, 0 });
+            if (tensor.Dimensions.Length == 4)
+                tensor = tensor.Transpose(new[] { 2, 3, 1, 0 });
+            else if (tensor.Dimensions.Length == 2)
+                tensor = tensor.Transpose(new[] { 1, 0 });
             return tensor.ToTFTensor();
         }
 

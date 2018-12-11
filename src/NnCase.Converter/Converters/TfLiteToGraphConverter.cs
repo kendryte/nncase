@@ -77,6 +77,8 @@ namespace NnCase.Converter.Converters
                     return ConvertL2Normalization(op);
                 case tflite.BuiltinOperator.ADD:
                     return ConvertAdd(op);
+                case tflite.BuiltinOperator.FULLY_CONNECTED:
+                    return ConvertFullyConnected(op);
                 default:
                     throw new NotSupportedException();
             }
@@ -173,6 +175,21 @@ namespace NnCase.Converter.Converters
             _outputs.Add(op.Outputs(0), layer.Output);
             return layer;
         }
+
+        private Layer ConvertFullyConnected(tflite.Operator op)
+        {
+            var inputs = op.GetInputsArray();
+            var input = _graph.Tensors(inputs[0]).Value;
+            var options = op.BuiltinOptions<tflite.FullyConnectedOptions>().Value;
+            var weights = _graph.Tensors(inputs[1]).Value;
+            var bias = _graph.Tensors(inputs[2]).Value;
+
+            var layer = new FullyConnected(input.GetShapeArray().ToNCHW(), _model.GetTensor<float>(weights), _model.GetTensor<float>(bias),
+                options.FusedActivationFunction.ToActivationFunction());
+            _inputs.Add(layer.Input, inputs[0]);
+            _outputs.Add(op.Outputs(0), layer.Output);
+            return layer;
+        }
     }
 
     static class TfLiteExtensions
@@ -193,6 +210,14 @@ namespace NnCase.Converter.Converters
         public static int[] ToNCHW(this int[] shape)
         {
             return new[] { shape[0], shape[3], shape[1], shape[2] };
+        }
+
+        public static int[] ToNC(this int[] shape)
+        {
+            if (shape.Length == 2)
+                return shape;
+            else
+                return new[] { shape[0], shape[3] * shape[1] * shape[2] };
         }
 
         public static Tensor<T> ToOIHW<T>(this Tensor<T> weights)
