@@ -39,28 +39,28 @@
     var layer = Model.Layers[i];
 @:static const kpu_activate_table_t layer_@(i)_act __attribute__((aligned(128))) = {
 @: .activate_para = {
-@:  {.data = {.shift_number=@layer.BNUpScale, .y_mul=0, .x_start=0x800000000 }},
-@:  {.data = {.shift_number=@layer.BNUpScale, .y_mul=1, .x_start=0x0 }},
-@:  {.data = {.shift_number=@layer.BNUpScale, .y_mul=1, .x_start=0x47442 }},
-@:  {.data = {.shift_number=@layer.BNUpScale, .y_mul=1, .x_start=0x8e885 }},
-@:  {.data = {.shift_number=@layer.BNUpScale, .y_mul=1, .x_start=0xd5cc7 }},
-@:  {.data = {.shift_number=@layer.BNUpScale, .y_mul=1, .x_start=0x11d10a }},
-@:  {.data = {.shift_number=@layer.BNUpScale, .y_mul=1, .x_start=0x16454c }},
-@:  {.data = {.shift_number=@layer.BNUpScale, .y_mul=1, .x_start=0x1ab98e }},
-@:  {.data = {.shift_number=@layer.BNUpScale, .y_mul=1, .x_start=0x1f2dd1 }},
-@:  {.data = {.shift_number=@layer.BNUpScale, .y_mul=1, .x_start=0x23a213 }},
-@:  {.data = {.shift_number=@layer.BNUpScale, .y_mul=1, .x_start=0x281655 }},
-@:  {.data = {.shift_number=@layer.BNUpScale, .y_mul=1, .x_start=0x2c8a98 }},
-@:  {.data = {.shift_number=@layer.BNUpScale, .y_mul=1, .x_start=0x30feda }},
-@:  {.data = {.shift_number=@layer.BNUpScale, .y_mul=1, .x_start=0x35731d }},
-@:  {.data = {.shift_number=@layer.BNUpScale, .y_mul=1, .x_start=0x39e75f }},
-@:  {.data = {.shift_number=@layer.BNUpScale, .y_mul=1, .x_start=0x3e5ba1 }}
+@:  {.data = { .shift_number = 0,.y_mul = 0,.x_start = 0x800000000 }},
+@:  {.data = { .shift_number = 0,.y_mul = 0,.x_start = 0xf7d4cf4b8 }},
+@:  {.data = { .shift_number = 0,.y_mul = 0,.x_start = 0xf8ed5a20c }},
+@:  {.data = { .shift_number = 0,.y_mul = 0,.x_start = 0xfa05e4f60 }},
+@:  {.data = { .shift_number = 0,.y_mul = 0,.x_start = 0xfb2e05baa }},
+@:  {.data = { .shift_number = 0,.y_mul = 0,.x_start = 0xfc46908fe }},
+@:  {.data = { .shift_number = 0,.y_mul = 0,.x_start = 0xfd5f1b652 }},
+@:  {.data = { .shift_number = 0,.y_mul = 0,.x_start = 0xfe77a63a6 }},
+@:  {.data = { .shift_number = 0,.y_mul = 0,.x_start = 0xff9fc6ff0 }},
+@:  {.data = { .shift_number = 0,.y_mul = 0,.x_start = 0xfffd4a9b7 }},
+@:  {.data = { .shift_number = @layer.ActShift,.y_mul = @layer.ActMul,.x_start = 0 }},
+@:  {.data = { .shift_number = 0,.y_mul = 0,.x_start = 0x1d0dca98  }},
+@:  {.data = { .shift_number = 0,.y_mul = 0,.x_start = 0x2e9677ec  }},
+@:  {.data = { .shift_number = 0,.y_mul = 0,.x_start = 0x401f253f  }},
+@:  {.data = { .shift_number = 0,.y_mul = 0,.x_start = 0x52a1318a  }},
+@:  {.data = { .shift_number = 0,.y_mul = 0,.x_start = 0x6429dedd  }}
 @: },
 @: .activate_para_bias0.data = {
-@:  .result_bias = {0,0,17,34,51,68,85,102}
+@:  .result_bias = {0,0,0,0,0,0,0,0}
 @: },
 @: .activate_para_bias1.data = {
-@:  .result_bias = {119,136,153,170,187,204,221,238}
+@:  .result_bias = {0,0,0,0,0,0,0,0}
 @: }
 @:};
 }
@@ -69,7 +69,7 @@ static kpu_layer_argument_t layers[] = {
     @for (int i = 0; i < Model.Layers.Count; i++)
     {
         var layer = Model.Layers[i];
-        WriteLiteral($"// {i} so: {layer.OutputScale}, sb: {layer.OutputBias}{Environment.NewLine}{{{Environment.NewLine}");
+        WriteLiteral($"// {i} si: {layer.InputScale} bi: {layer.InputBias} so: {layer.OutputScale}, bo: {layer.OutputBias}{Environment.NewLine}{{{Environment.NewLine}");
 @:  .interrupt_enabe.data = {
 @:    .int_en = 0,
 @:    .ram_flag = 0,

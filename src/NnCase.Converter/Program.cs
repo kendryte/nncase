@@ -23,13 +23,15 @@ namespace NnCase.Converter
                 new K210SeprableConv2dTransform(),
                 new K210SpaceToBatchNdAndValidConv2dTransform(),
                 new K210SameConv2dTransform(),
-                new K210Stride2Conv2dTransform()
+                new K210Stride2Conv2dTransform(),
+                new K210GlobalAveragePoolTransform(),
+                new K210FullyConnectedTransform()
             });
             var ctx = new GraphPlanContext();
             graph.Plan(ctx);
             var k210c = new GraphToK210Converter(graph);
             await k210c.ConvertAsync(new ImageDataset(
-                @"D:\Work\Repository\models\img",
+                @"D:\Work\Repository\models\test",
                 new[] { 3, 128, 128 },
                 1,
                 PostprocessMethods.NormalizeMinus1To1),

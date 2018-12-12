@@ -26,7 +26,7 @@ namespace NnCase.Converter.Converters
         public int Add { get; set; }
     }
 
-    public class K210LayerConfig
+    public class K210ConvLayerConfig
     {
         public byte[] Weights { get; set; }
 
@@ -80,6 +80,10 @@ namespace NnCase.Converter.Converters
 
         public int PadValue { get; set; }
 
+        public double InputScale { get; set; }
+
+        public double InputBias { get; set; }
+
         public double OutputScale { get; set; }
 
         public double OutputBias { get; set; }
@@ -88,12 +92,29 @@ namespace NnCase.Converter.Converters
 
         public int OutputSize { get; set; }
 
-        public int BNUpScale { get; set; }
+        public int ActMul { get; set; }
+
+        public int ActShift { get; set; }
+    }
+
+    public class K210GlobalAveragePoolConfig
+    {
+        public int KernelSize { get; set; }
+
+        public double InputScale { get; set; }
+
+        public double InputBias { get; set; }
+
+        public double OutputScale { get; set; }
+
+        public double OutputBias { get; set; }
+
+        public ulong OutputAddress { get; set; }
     }
 
     public class K210CodeGenerationContext
     {
-        public IReadOnlyList<K210LayerConfig> Layers { get; set; }
+        public IReadOnlyList<K210ConvLayerConfig> Layers { get; set; }
         public string Prefix { get; set; }
     }
 
@@ -147,10 +168,15 @@ namespace NnCase.Converter.Converters
                     case AveragePool2d _:
                     case L2Normalization _:
                     case Reshape _:
-                    case FullyConnected _:
                         break;
                     case K210Conv2d l:
                         ConvertK210Conv2d(l, context);
+                        break;
+                    case K210GlobalAveragePool l:
+                        ConvertK210GlobalAveragePool(l, context);
+                        break;
+                    case K210AddPadding _:
+                    case K210RemovePadding _:
                         break;
                     default:
                         throw new NotSupportedException(nameof(layer));
@@ -167,7 +193,7 @@ namespace NnCase.Converter.Converters
 
         private void ConvertK210Conv2d(K210Conv2d layer, ConvertContext context)
         {
-            var config = new K210LayerConfig { BNConfigs = new K210LayerBNConfig[layer.OutputChannels] };
+            var config = new K210ConvLayerConfig { BNConfigs = new K210LayerBNConfig[layer.OutputChannels] };
             (var sw, var bw) = QuantizeWeights(layer.Weights, config);
             (var sx, var bx) = QuantizeInput(context.Quantization.Distributions[layer.Input.Connection.From], config);
             config.ArgAdd = (int)Math.Round(bw * bx * layer.KernelWidth * layer.KernelHeight);
@@ -205,7 +231,9 @@ namespace NnCase.Converter.Converters
                 config.OutputChannelsOnTime = layer.OutputChannels;
             }
 
-            config.OutputScale = so;
+            config.InputScale = 1 / sx;
+            config.InputBias = bx;
+            config.OutputScale = 1 / so;
             config.OutputBias = bo;
 
             var inputOneLineChannels = Math.Min(layer.InputChannels, config.InputGroups);
@@ -214,6 +242,15 @@ namespace NnCase.Converter.Converters
             config.OutputSize = config.OutputRowLength * config.OutputHeight * config.OutputChannels / outputOneLineChannels;
 
             context.Layers.Add(layer, config);
+        }
+
+        private void ConvertK210GlobalAveragePool(K210GlobalAveragePool layer, ConvertContext context)
+        {
+            var config = new K210GlobalAveragePoolConfig
+            {
+            };
+
+
         }
 
         private void InferenceLayer(Layer layer, ConvertContext context)
@@ -246,11 +283,18 @@ namespace NnCase.Converter.Converters
                             case AveragePool2d _:
                             case L2Normalization _:
                             case Reshape _:
-                            case Conv2d _:
-                            case FullyConnected _:
                                 break;
                             case K210Conv2d l:
                                 InferenceK210Conv2d(l, context);
+                                break;
+                            case K210GlobalAveragePool l:
+                                InferenceK210GlobalAveragePool(l, context);
+                                break;
+                            case K210AddPadding l:
+                                InferenceK210AddPadding(l, context);
+                                break;
+                            case K210RemovePadding l:
+                                InferenceK210RemovePadding(l, context);
                                 break;
                             default:
                                 throw new NotSupportedException(nameof(layer));
@@ -290,6 +334,42 @@ namespace NnCase.Converter.Converters
             config.InputAddress = inputNode.Start;
             config.OutputAddress = outputNode.Start;
             context.InferenceOrders.Add(config);
+        }
+
+        private void InferenceK210GlobalAveragePool(K210GlobalAveragePool layer, ConvertContext context)
+        {
+            //var config = context.Layers[layer];
+            var inputNode = context.KPUMemoryMap[layer.Input.Connection.From];
+            //var outputNode = context.MemoryAllocator.Allocate(config.OutputSize);
+            context.KPUMemoryMap[layer.Output] = inputNode;
+
+            //config.InputAddress = inputNode.Start;
+            //config.OutputAddress = outputNode.Start;
+            //context.InferenceOrders.Add(config);
+        }
+
+        private void InferenceK210AddPadding(K210AddPadding layer, ConvertContext context)
+        {
+            //var config = context.Layers[layer];
+            var inputNode = context.KPUMemoryMap[layer.Input.Connection.From];
+            //var outputNode = context.MemoryAllocator.Allocate(config.OutputSize);
+            context.KPUMemoryMap[layer.Output] = inputNode;
+
+            //config.InputAddress = inputNode.Start;
+            //config.OutputAddress = outputNode.Start;
+            //context.InferenceOrders.Add(config);
+        }
+
+        private void InferenceK210RemovePadding(K210RemovePadding layer, ConvertContext context)
+        {
+            //var config = context.Layers[layer];
+            var inputNode = context.KPUMemoryMap[layer.Input.Connection.From];
+            //var outputNode = context.MemoryAllocator.Allocate(config.OutputSize);
+            context.KPUMemoryMap[layer.Output] = inputNode;
+
+            //config.InputAddress = inputNode.Start;
+            //config.OutputAddress = outputNode.Start;
+            //context.InferenceOrders.Add(config);
         }
 
         private static (int groups, int rowLength) GetRowLayout(int width)
@@ -361,7 +441,7 @@ namespace NnCase.Converter.Converters
             }
         }
 
-        private static (double scale, double bias) QuantizeWeights(Tensor<float> weights, K210LayerConfig config)
+        private static (double scale, double bias) QuantizeWeights(Tensor<float> weights, K210ConvLayerConfig config)
         {
             var buffer = weights.ToDenseTensor().Buffer.Span;
             (var scale, var bias) = GetRange(buffer).GetScaleBias();
@@ -373,7 +453,7 @@ namespace NnCase.Converter.Converters
             return (scale, bias);
         }
 
-        private static (double scale, double bias) QuantizeInput(Range range, K210LayerConfig config)
+        private static (double scale, double bias) QuantizeInput(Range range, K210ConvLayerConfig config)
         {
             (var scale, var bias) = range.GetScaleBias();
             (var mul, var shift) = ExtractValueAndShift(bias, 24, 15);
@@ -382,13 +462,15 @@ namespace NnCase.Converter.Converters
             return (scale, bias);
         }
 
-        private static (double scale, double bias) QuantizeBiasAndOutput(Tensor<float> bias, Range range, double scale, K210LayerConfig config)
+        private static (double scale, double bias) QuantizeBiasAndOutput(Tensor<float> bias, Range range, double scale, K210ConvLayerConfig config)
         {
             (var so, var bo) = range.GetScaleBias();
             var scomb = so / scale;
             var upscale = 5;
 
             (var mul, var shift) = ExtractValueAndShift(scomb, 24, 15 + upscale);
+            var postMul = Math.Round(mul) / mul * Math.Pow(2, upscale);
+
             for (int i = 0; i < config.BNConfigs.Length; i++)
             {
                 var b = bias[i];
@@ -397,12 +479,19 @@ namespace NnCase.Converter.Converters
                 {
                     Mul = (int)Math.Round(mul),
                     Shift = shift - upscale,
-                    Add = (int)Math.Round((b * so - bo) * Math.Pow(2, upscale))
+                    Add = (int)Math.Round((b * so - bo) * postMul)
                 };
-                config.BNUpScale = upscale;
             }
 
+            QuantizeActivation(postMul, upscale, config);
             return (so, bo);
+        }
+
+        private static void QuantizeActivation(double postMul, int upScale, K210ConvLayerConfig config)
+        {
+            (var mul, var shift) = ExtractValueAndShift(1 / postMul, 16, 10);
+            config.ActMul = (int)Math.Round(mul);
+            config.ActShift = shift;
         }
 
         private static byte[] Quantize(Span<float> data, double scale, double bias)
@@ -491,11 +580,11 @@ namespace NnCase.Converter.Converters
 
             public Dictionary<Layer, bool> ProcessMap = new Dictionary<Layer, bool>();
 
-            public Dictionary<Layer, K210LayerConfig> Layers { get; } = new Dictionary<Layer, K210LayerConfig>();
+            public Dictionary<Layer, K210ConvLayerConfig> Layers { get; } = new Dictionary<Layer, K210ConvLayerConfig>();
 
             public KPUMemoryAllocator MemoryAllocator { get; } = new KPUMemoryAllocator();
 
-            public List<K210LayerConfig> InferenceOrders { get; } = new List<K210LayerConfig>();
+            public List<K210ConvLayerConfig> InferenceOrders { get; } = new List<K210ConvLayerConfig>();
 
             public Dictionary<OutputConnector, KPUMemoryNode> KPUMemoryMap { get; } = new Dictionary<OutputConnector, KPUMemoryNode>();
         }

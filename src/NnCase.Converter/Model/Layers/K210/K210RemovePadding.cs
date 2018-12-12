@@ -4,20 +4,18 @@ using System.Text;
 
 namespace NnCase.Converter.Model.Layers.K210
 {
-    public class K210GlobalAveragePool : Layer
+    public class K210RemovePadding : Layer
     {
         public InputConnector Input { get; }
 
         public OutputConnector Output { get; }
 
-        public K210GlobalAveragePool(ReadOnlySpan<int> dimensions)
+        public K210RemovePadding(ReadOnlySpan<int> dimensions)
         {
             Input = AddInput("input", dimensions);
             Output = AddOutput("output", new[] {
                 dimensions[0],
-                dimensions[1],
-                1,
-                1
+                dimensions[1]
             });
         }
 
@@ -26,8 +24,8 @@ namespace NnCase.Converter.Model.Layers.K210
             var graph = context.TFGraph;
             var input = context.TFOutputs[Input.Connection.From];
 
-            context.TFOutputs[Output] = graph.AvgPool(input, new long[] { 1, Input.Dimensions[2], Input.Dimensions[3], 1 },
-                new long[] { 1, 1, 1, 1 }, "VALID");
+            var y = graph.MaxPool(input, new long[] { 1, 1, 1, 1 }, new long[] { 1, 4, 4, 1 }, "VALID");
+            context.TFOutputs[Output] = graph.Reshape(y, graph.Const(new[] { -1, Input.Dimensions[1] }));
         }
     }
 }
