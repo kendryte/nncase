@@ -232,9 +232,9 @@ namespace NnCase.Converter.Converters
             }
 
             config.InputScale = 1 / sx;
-            config.InputBias = bx;
+            config.InputBias = bx / sx;
             config.OutputScale = 1 / so;
-            config.OutputBias = bo;
+            config.OutputBias = bo / so;
 
             var inputOneLineChannels = Math.Min(layer.InputChannels, config.InputGroups);
             config.InputSize = config.InputRowLength * config.InputHeight * config.InputChannels / inputOneLineChannels;
@@ -435,7 +435,7 @@ namespace NnCase.Converter.Converters
                 var span = new Span<float>(outputs[i].Data.ToPointer(), (int)outputs[i].TensorByteSize / 4);
                 var newRange = GetRange(span);
                 if (context.Distributions.TryGetValue(conn, out var range))
-                    context.Distributions[conn] = range.EMA(0.1, newRange);
+                    context.Distributions[conn] = range.EMA(0.01, newRange);
                 else
                     context.Distributions.Add(conn, newRange);
             }
@@ -466,9 +466,9 @@ namespace NnCase.Converter.Converters
         {
             (var so, var bo) = range.GetScaleBias();
             var scomb = so / scale;
-            var upscale = 5;
 
-            (var mul, var shift) = ExtractValueAndShift(scomb, 24, 15 + upscale);
+            (var mul, var shift) = ExtractValueAndShift(scomb, 24, 255);
+            var upscale = shift - 15;
             var postMul = Math.Round(mul) / mul * Math.Pow(2, upscale);
 
             for (int i = 0; i < config.BNConfigs.Length; i++)
@@ -478,7 +478,7 @@ namespace NnCase.Converter.Converters
                 config.BNConfigs[i] = new K210LayerBNConfig
                 {
                     Mul = (int)Math.Round(mul),
-                    Shift = shift - upscale,
+                    Shift = 15,
                     Add = (int)Math.Round((b * so - bo) * postMul)
                 };
             }
@@ -489,9 +489,9 @@ namespace NnCase.Converter.Converters
 
         private static void QuantizeActivation(double postMul, int upScale, K210ConvLayerConfig config)
         {
-            (var mul, var shift) = ExtractValueAndShift(1 / postMul, 16, 10);
-            config.ActMul = (int)Math.Round(mul);
-            config.ActShift = shift;
+            (var mul, var shift) = ExtractValueAndShift(1 / postMul, 16, 255);
+            config.ActMul = 2;// (int)Math.Round(mul);
+            config.ActShift = upScale + 1;// shift;
         }
 
         private static byte[] Quantize(Span<float> data, double scale, double bias)
