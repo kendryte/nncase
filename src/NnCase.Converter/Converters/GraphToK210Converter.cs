@@ -600,7 +600,7 @@ namespace NnCase.Converter.Converters
 
             public KPUMemoryNode Allocate(int size)
             {
-                var firstFreeIdx = _nodes.FindIndex(o => !o.IsUsed && o.Size >= size);
+                var firstFreeIdx = _nodes.FindLastIndex(o => !o.IsUsed && o.Size >= size);
                 if (firstFreeIdx == -1)
                     throw new InvalidOperationException("KPU is out of memory.");
                 var firstFree = _nodes[firstFreeIdx];
@@ -611,16 +611,15 @@ namespace NnCase.Converter.Converters
                 }
                 else
                 {
+                    firstFree.Size -= size;
                     var newNode = new KPUMemoryNode(this)
                     {
-                        Start = firstFree.Start,
+                        Start = firstFree.Start + firstFree.Size,
                         Size = size
                     };
                     newNode.AddRef();
-
-                    firstFree.Size -= size;
-                    firstFree.Start += size;
-                    _nodes.Insert(firstFreeIdx, newNode);
+                    
+                    _nodes.Insert(firstFreeIdx + 1, newNode);
                     return newNode;
                 }
             }
