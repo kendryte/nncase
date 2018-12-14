@@ -9,6 +9,8 @@ namespace NnCase.Converter.Model.Layers.K210
     public enum K210PoolType
     {
         None = 0,
+        MaxPool2x2 = 1,
+        MaxPool4x4 = 3,
         LeftTop = 5
     }
 
@@ -112,6 +114,12 @@ namespace NnCase.Converter.Model.Layers.K210
                     break;
                 case K210PoolType.LeftTop:
                     stride = 2;
+                    break;
+                case K210PoolType.MaxPool2x2:
+                    stride = 2;
+                    break;
+                case K210PoolType.MaxPool4x4:
+                    stride = 4;
                     break;
                 default:
                     throw new NotSupportedException();

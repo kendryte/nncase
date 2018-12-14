@@ -197,7 +197,7 @@ namespace NnCase.Converter.Converters
             (var sw, var bw) = QuantizeWeights(layer.Weights, config);
             (var sx, var bx) = QuantizeInput(context.Quantization.Distributions[layer.Input.Connection.From], config);
             config.ArgAdd = (int)Math.Round(bw * bx * layer.KernelWidth * layer.KernelHeight);
-            (var so, var bo) = QuantizeBiasAndOutput(layer.Bias, context.Quantization.Distributions[layer.Output], sw * sx, config);
+            (var so, var bo) = QuantizeBiasAndOutput(layer, layer.Bias, context.Quantization.Distributions[layer.Output], sw * sx, config);
 
             config.InputChannels = layer.InputChannels;
             config.OutputChannels = layer.OutputChannels;
@@ -462,7 +462,7 @@ namespace NnCase.Converter.Converters
             return (scale, bias);
         }
 
-        private static (double scale, double bias) QuantizeBiasAndOutput(Tensor<float> bias, Range range, double scale, K210ConvLayerConfig config)
+        private static (double scale, double bias) QuantizeBiasAndOutput(K210Conv2d layer, Tensor<float> bias, Range range, double scale, K210ConvLayerConfig config)
         {
             (var so, var bo) = range.GetScaleBias();
             var scomb = so / scale;
@@ -483,15 +483,30 @@ namespace NnCase.Converter.Converters
                 };
             }
 
-            QuantizeActivation(postMul, upscale, config);
+            QuantizeActivation(layer, postMul, range, config);
             return (so, bo);
         }
 
-        private static void QuantizeActivation(double postMul, int upScale, K210ConvLayerConfig config)
+        private static void QuantizeActivation(K210Conv2d layer, double postMul, Range range, K210ConvLayerConfig config)
         {
-            (var mul, var shift) = ExtractValueAndShift(1 / postMul, 16, 255);
-            config.ActMul = 2;// (int)Math.Round(mul);
-            config.ActShift = upScale + 1;// shift;
+            Func<double, double> invAct;
+            switch (layer.FusedActivationFunction)
+            {
+                case ActivationFunctionType.Linear:
+                case ActivationFunctionType.Relu:
+                case ActivationFunctionType.Relu6:
+                    invAct = x => x;
+                    break;
+                default:
+                    throw new NotSupportedException($"Activation of {layer.FusedActivationFunction} is not supported.");
+            }
+
+            var yTable = Generator.Step(range.Min, range.Max, 15);
+            var xTable = yTable.Select(invAct).Select(x => x * postMul).ToArray();
+
+            (var mul, var shift) = ExtractValueAndShift(1 / postMul, 16, 25);
+            config.ActMul = (int)Math.Round(mul);
+            config.ActShift = shift;
         }
 
         private static byte[] Quantize(Span<float> data, double scale, double bias)
@@ -602,7 +617,7 @@ namespace NnCase.Converter.Converters
             {
                 var firstFreeIdx = _nodes.FindLastIndex(o => !o.IsUsed && o.Size >= size);
                 if (firstFreeIdx == -1)
-                    throw new InvalidOperationException("KPU is out of memory.");
+                    throw new InvalidOperationException("KPU ran out of memory.");
                 var firstFree = _nodes[firstFreeIdx];
                 if (firstFree.Size == size)
                 {

@@ -79,6 +79,8 @@ namespace NnCase.Converter.Converters
                     return ConvertAdd(op);
                 case tflite.BuiltinOperator.FULLY_CONNECTED:
                     return ConvertFullyConnected(op);
+                case tflite.BuiltinOperator.MAX_POOL_2D:
+                    return ConvertMaxPool2d(op);
                 default:
                     throw new NotSupportedException();
             }
@@ -186,6 +188,19 @@ namespace NnCase.Converter.Converters
 
             var layer = new FullyConnected(input.GetShapeArray().ToNCHW(), _model.GetTensor<float>(weights), _model.GetTensor<float>(bias),
                 options.FusedActivationFunction.ToActivationFunction());
+            _inputs.Add(layer.Input, inputs[0]);
+            _outputs.Add(op.Outputs(0), layer.Output);
+            return layer;
+        }
+
+        private Layer ConvertMaxPool2d(tflite.Operator op)
+        {
+            var inputs = op.GetInputsArray();
+            var input = _graph.Tensors(inputs[0]).Value;
+            var options = op.BuiltinOptions<tflite.Pool2DOptions>().Value;
+
+            var layer = new MaxPool2d(input.GetShapeArray().ToNCHW(), options.Padding.ToPadding(), options.FilterWidth, options.FilterHeight, options.StrideW,
+                options.StrideH, options.FusedActivationFunction.ToActivationFunction());
             _inputs.Add(layer.Input, inputs[0]);
             _outputs.Add(op.Outputs(0), layer.Output);
             return layer;
