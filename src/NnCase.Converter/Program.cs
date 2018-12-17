@@ -14,7 +14,7 @@ namespace NnCase.Converter
     {
         static async Task Main(string[] args)
         {
-            var file = File.ReadAllBytes(@"D:\Work\Repository\models\test.tflite");
+            var file = File.ReadAllBytes(@"D:\Work\Repository\models\mobilev1_alpha_1217.tflite");
             var model = tflite.Model.GetRootAsModel(new FlatBuffers.ByteBuffer(file));
             var tfc = new TfLiteToGraphConverter(model, model.Subgraphs(0).Value);
             tfc.Convert();
@@ -32,15 +32,15 @@ namespace NnCase.Converter
             graph.Plan(ctx);
             var k210c = new GraphToK210Converter(graph);
             await k210c.ConvertAsync(new ImageDataset(
-                @"D:\Work\Repository\models\test",
+                @"D:\Work\Repository\models\img",
                 new[] { 3, 128, 128 },
                 1,
                 PostprocessMethods.NormalizeMinus1To1),
                 ctx,
                 @"D:\Work\Repository\kendryte-standalone-sdk\src\kpu6\",
-                "mbnetv1_facenet");
+                "mobilev1_alpha");
 
-            using (var f = File.Open(@"D:\Work\Repository\models\test2.pb", FileMode.Create, FileAccess.Write))
+            using (var f = File.Open(@"D:\Work\Repository\models\mobilev1_alpha2.pb", FileMode.Create, FileAccess.Write))
                 await ctx.SaveAsync(f);
 
             Console.WriteLine("Hello World!");

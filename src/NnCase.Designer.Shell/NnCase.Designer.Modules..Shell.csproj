@@ -129,9 +129,18 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Modules\Commands\CommandRouter.cs" />
+    <Compile Include="Modules\Commands\CommandService.cs" />
+    <Compile Include="Modules\Commands\CommandsModule.cs" />
+    <Compile Include="Modules\MainMenu\Controls\MenuEx.cs" />
     <Compile Include="Modules\MainMenu\IMenuBuilder.cs" />
     <Compile Include="Modules\MainMenu\MenuBuilder.cs" />
+    <Compile Include="Modules\MainMenu\MenuDefinictions.cs" />
     <Compile Include="Modules\MainMenu\Models\MenuModel.cs" />
+    <Compile Include="Modules\MainMenu\MainMenuModule.cs" />
+    <Compile Include="Modules\MainMenu\ViewModels\MainMenuViewModel.cs" />
+    <Compile Include="Modules\MainMenu\Views\MainMenuView.xaml.cs">
+      <DependentUpon>MainMenuView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Modules\Shell\Controls\LayoutInitializer.cs" />
     <Compile Include="Modules\Shell\Controls\PanesStyleSelector.cs" />
     <Compile Include="Modules\Shell\Controls\PanesTemplateSelector.cs" />
@@ -141,6 +150,10 @@
       <DependentUpon>ShellView.xaml</DependentUpon>
     </Compile>
     <Compile Include="ShellModuleExtensions.cs" />
+    <Page Include="Modules\MainMenu\Views\MainMenuView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Modules\MainWindow\Views\MainWindowView.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -186,10 +199,7 @@
   <ItemGroup>
     <Resource Include="FodyWeavers.xml" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Modules\MainMenu\ViewModels\" />
-    <Folder Include="Modules\MainMenu\Views\" />
-  </ItemGroup>
+  <ItemGroup />
   <ItemGroup>
     <ProjectReference Include="..\NnCase.Designer.Infrastructure\NnCase.Designer.Infrastructure.csproj">
       <Project>{BF4D1924-B6B4-4C7B-B54B-DF771DAEB8B6}</Project>

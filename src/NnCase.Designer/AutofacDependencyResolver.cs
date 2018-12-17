@@ -21,16 +21,9 @@ namespace NnCase.Designer
 
         public object GetService(Type serviceType, string contract = null)
         {
-            try
-            {
-                return string.IsNullOrEmpty(contract)
-                    ? _container.Resolve(serviceType)
-                    : _container.ResolveNamed(contract, serviceType);
-            }
-            catch (DependencyResolutionException)
-            {
-                return null;
-            }
+            return string.IsNullOrEmpty(contract)
+                ? _container.Resolve(serviceType)
+                : _container.ResolveNamed(contract, serviceType);
         }
 
         public IEnumerable<object> GetServices(Type serviceType, string contract = null)
@@ -60,7 +53,7 @@ namespace NnCase.Designer
             {
                 builder.Register(x => factory()).Named(contract, serviceType).AsImplementedInterfaces();
             }
-            
+
             builder.Update(_container);
         }
 

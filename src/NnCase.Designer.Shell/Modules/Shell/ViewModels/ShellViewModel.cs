@@ -11,14 +11,40 @@ namespace NnCase.Designer.Modules.Shell.ViewModels
 {
     public class ShellViewModel : ReactiveObject, IShell
     {
+        public IMenu MainMenu { get; }
+
         public ObservableCollection<IDocument> Documents { get; } = new ObservableCollection<IDocument>();
 
-        public ShellViewModel()
+        private ILayoutItem _activeLayoutItem;
+
+        public ILayoutItem ActiveLayoutItem
         {
+            get => _activeLayoutItem;
+            set
+            {
+                if (_activeLayoutItem != value)
+                {
+                    _activeLayoutItem = value;
+                    if (_activeLayoutItem is IDocument document)
+                        OpenDocument(document);
+                    this.RaisePropertyChanged();
+                }
+            }
         }
 
-        private class TestDocument : Document
+        public ShellViewModel(IMenu mainMenu)
         {
+            MainMenu = mainMenu;
+        }
+
+        public void OpenDocument(IDocument document)
+        {
+            if (ActiveLayoutItem != document)
+            {
+                if (!Documents.Contains(document))
+                    Documents.Add(document);
+                ActiveLayoutItem = document;
+            }
         }
     }
 }

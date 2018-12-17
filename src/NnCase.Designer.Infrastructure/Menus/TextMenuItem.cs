@@ -9,13 +9,13 @@ namespace NnCase.Designer.Menus
 {
     public class TextMenuItem : StandardMenuItem
     {
-        private readonly MenuDefinition _menuDefinition;
+        private readonly MenuDefinitionBase _menuDefinition;
 
         public override string Text => _menuDefinition.Text;
 
         public override ICommand Command => null;
 
-        public TextMenuItem(MenuDefinition menuDefinition)
+        public TextMenuItem(MenuDefinitionBase menuDefinition)
         {
             _menuDefinition = menuDefinition;
         }

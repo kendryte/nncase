@@ -121,9 +121,21 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="Modules\ModelDesigner\Views\GraphView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AutofacDependencyResolver.cs" />
+    <Compile Include="Modules\ModelDesigner\Commands\OpenGraphCommandDefinition.cs" />
+    <Compile Include="Modules\ModelDesigner\Commands\OpenGraphCommandHandler.cs" />
+    <Compile Include="Modules\ModelDesigner\MenuDefinitions.cs" />
+    <Compile Include="Modules\ModelDesigner\ModelDesignerModule.cs" />
+    <Compile Include="Modules\ModelDesigner\ViewModels\GraphViewModel.cs" />
+    <Compile Include="Modules\ModelDesigner\Views\GraphView.xaml.cs">
+      <DependentUpon>GraphView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -151,10 +163,15 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\NnCase.Designer.Infrastructure\NnCase.Designer.Infrastructure.csproj">
+      <Project>{BF4D1924-B6B4-4C7B-B54B-DF771DAEB8B6}</Project>
+      <Name>NnCase.Designer.Infrastructure</Name>
+    </ProjectReference>
     <ProjectReference Include="..\NnCase.Designer.Shell\NnCase.Designer.Modules..Shell.csproj">
       <Project>{64e0124a-5771-4b9c-9e24-eb5a8bc2bee0}</Project>
       <Name>NnCase.Designer.Modules..Shell</Name>
     </ProjectReference>
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

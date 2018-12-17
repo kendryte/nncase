@@ -110,6 +110,8 @@
     <Compile Include="IDocument.cs" />
     <Compile Include="ILayoutItem.cs" />
     <Compile Include="LayoutItemBase.cs" />
+    <Compile Include="Menus\CommandMenuItem.cs" />
+    <Compile Include="Menus\CommandMenuItemDefinition.cs" />
     <Compile Include="Menus\MenuBarDefinition.cs" />
     <Compile Include="Menus\MenuDefinition.cs" />
     <Compile Include="Menus\MenuDefinitionBase.cs" />

@@ -13,27 +13,23 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
-using NnCase.Designer.Modules.Shell.ViewModels;
+using NnCase.Designer.Modules.MainMenu.ViewModels;
 using ReactiveUI;
 
-namespace NnCase.Designer.Modules.Shell.Views
+namespace NnCase.Designer.Modules.MainMenu.Views
 {
     /// <summary>
-    /// ShellView.xaml 的交互逻辑
+    /// MainMenuView.xaml 的交互逻辑
     /// </summary>
-    public partial class ShellView : ReactiveUserControl<ShellViewModel>
+    public partial class MainMenuView : ReactiveUserControl<MainMenuViewModel>
     {
-        public ShellView()
+        public MainMenuView()
         {
             InitializeComponent();
 
             this.WhenActivated(d =>
             {
-                this.OneWayBind(ViewModel, vm => vm.MainMenu, v => v._mainMenu.ViewModel)
-                    .DisposeWith(d);
-                this.OneWayBind(ViewModel, vm => vm.Documents, v => v._dockingManager.DocumentsSource)
-                    .DisposeWith(d);
-                this.Bind(ViewModel, vm => vm.ActiveLayoutItem, v => v._dockingManager.ActiveContent)
+                this.OneWayBind(ViewModel, vm => vm.Items, v => v._menu.ItemsSource)
                     .DisposeWith(d);
             });
         }

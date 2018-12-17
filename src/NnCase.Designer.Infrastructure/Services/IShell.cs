@@ -10,5 +10,7 @@ namespace NnCase.Designer.Services
     public interface IShell
     {
         ObservableCollection<IDocument> Documents { get; }
+
+        void OpenDocument(IDocument document);
     }
 }

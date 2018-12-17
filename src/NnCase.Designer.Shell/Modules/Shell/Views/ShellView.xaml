@@ -13,11 +13,8 @@
     mc:Ignorable="d" 
     d:DesignHeight="450" d:DesignWidth="800">
     <DockPanel LastChildFill="True">
-        <Menu DockPanel.Dock="Top">
-            <MenuItem Header="File">
-
-            </MenuItem>
-        </Menu>
+        <reactiveui:ViewModelViewHost x:Name="_mainMenu" DockPanel.Dock="Top"
+                                      VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch" />
         <StatusBar DockPanel.Dock="Bottom">
 
         </StatusBar>

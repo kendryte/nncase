@@ -5,28 +5,32 @@ using System.Text;
 using System.Threading.Tasks;
 using NnCase.Designer.Menus;
 using NnCase.Designer.Modules.MainMenu.Models;
+using NnCase.Designer.Services;
 
 namespace NnCase.Designer.Modules.MainMenu
 {
     public class MenuBuilder : IMenuBuilder
     {
+        private readonly ICommandService _commandService;
         private readonly MenuBarDefinition[] _menuBars;
         private readonly MenuDefinition[] _menus;
         private readonly MenuItemGroupDefinition[] _menuItemGroups;
         private readonly MenuItemDefinition[] _menuItems;
 
-        public MenuBuilder(IEnumerable<MenuBarDefinition> menuBars,
+        public MenuBuilder(ICommandService commandService,
+            IEnumerable<MenuBarDefinition> menuBars,
             IEnumerable<MenuDefinition> menus,
             IEnumerable<MenuItemGroupDefinition> menuItemGroups,
             IEnumerable<MenuItemDefinition> menuItems)
         {
+            _commandService = commandService;
             _menuBars = menuBars.ToArray();
             _menus = menus.ToArray();
             _menuItemGroups = menuItemGroups.ToArray();
             _menuItems = menuItems.ToArray();
         }
 
-        public void BuildMenuBar(MenuBarDefinition menuBarDefinition, MenuModel menuModel)
+        public void BuildMenuBar(MenuBarDefinition menuBarDefinition, MenuModel result)
         {
             var menus = _menus
                 .Where(x => x.MenuBar == menuBarDefinition)
@@ -34,14 +38,14 @@ namespace NnCase.Designer.Modules.MainMenu
 
             foreach (var menu in menus)
             {
-                var model = new TextMenuItem(menu);
-                AddGroupsRecursive(menu, model);
-                if (model.Children.Any())
-                    menuModel.Items.Add(model);
+                var menuModel = new TextMenuItem(menu);
+                AddGroupsRecursive(menu, menuModel);
+                if (menuModel.Children.Any())
+                    result.Items.Add(menuModel);
             }
         }
 
-        private void AddGroupsRecursive(MenuDefinition menu, TextMenuItem model)
+        private void AddGroupsRecursive(MenuDefinitionBase menu, StandardMenuItem menuModel)
         {
             var groups = _menuItemGroups
                 .Where(x => x.Parent == menu)
@@ -57,15 +61,15 @@ namespace NnCase.Designer.Modules.MainMenu
 
                 foreach (var menuItem in menuItems)
                 {
-                    //var menuItemModel = (menuItem.CommandDefinition != null)
-                    //    ? new CommandMenuItem(_commandService.GetCommand(menu.CommandDefinition), model)
-                    //    : (StandardMenuItem)new TextMenuItem(menu);
-                    //AddGroupsRecursive(menuItem, menuItemModel);
-                    //model.Children.Add(menuItemModel);
+                    var menuItemModel = (menuItem.CommandDefinition != null)
+                        ? new CommandMenuItem(_commandService.GetCommand(menuItem.CommandDefinition), menuModel)
+                        : (StandardMenuItem)new TextMenuItem(menuItem);
+                    AddGroupsRecursive(menuItem, menuItemModel);
+                    menuModel.Children.Add(menuItemModel);
                 }
 
                 if (i < groups.Count - 1 && menuItems.Any())
-                    model.Children.Add(MenuItemBase.Separator);
+                    menuModel.Children.Add(MenuItemBase.Separator);
             }
         }
     }

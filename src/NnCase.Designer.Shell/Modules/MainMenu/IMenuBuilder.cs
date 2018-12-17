@@ -10,6 +10,6 @@ namespace NnCase.Designer.Modules.MainMenu
 {
     public interface IMenuBuilder
     {
-        void BuildMenuBar(MenuBarDefinition menuBarDefinition, MenuModel menuModel);
+        void BuildMenuBar(MenuBarDefinition menuBarDefinition, MenuModel result);
     }
 }
