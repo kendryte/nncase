@@ -201,7 +201,18 @@ namespace NnCase.Converter.Converters
             (var sw, var bw) = QuantizeWeights(layer.Weights, config);
             (var sx, var bx) = QuantizeInput(context.Quantization.Distributions[layer.Input.Connection.From], config);
             config.ArgAdd = (int)Math.Round(bw * bx * layer.KernelWidth * layer.KernelHeight);
-            (var so, var bo) = QuantizeBiasAndOutput(layer, layer.Bias, context.Quantization.Distributions[layer.Output], sw * sx, config);
+            var scale = new double[layer.OutputChannels];
+            if (layer.Conv2dType == K210Conv2dType.Conv2d)
+            {
+                for (int i = 0; i < scale.Length; i++)
+                    scale[i] = sw[i] * sx;
+            }
+            else
+            {
+                for (int i = 0; i < scale.Length; i++)
+                    scale[i] = sw[0] * sx;
+            }
+            (var so, var bo) = QuantizeBiasAndOutput(layer, layer.Bias, context.Quantization.Distributions[layer.Output], scale, config);
 
             config.InputChannels = layer.InputChannels;
             config.OutputChannels = layer.OutputChannels;
@@ -453,8 +464,47 @@ namespace NnCase.Converter.Converters
             }
         }
 
-        private static (double scale, double bias) QuantizeWeights(Tensor<float> weights, K210ConvLayerConfig config)
+        private static (double[] scale, double bias) QuantizeWeights(Tensor<float> weights, K210ConvLayerConfig config)
         {
+#if CHANNEL_WISE
+            var kernels = weights.ToDenseTensor().Buffer.Span;
+            var channels = weights.Dimensions[0];
+            var channelSize = weights.Dimensions.GetSize() / channels;
+            double? bias = 0;
+            var alpha = 0.01;
+
+            for (int i = 0; i < channels; i++)
+            {
+                var buffer = kernels.Slice(i * channelSize, channelSize);
+                (var s, var b) = GetRange(buffer).GetScaleBias();
+                bias = bias.HasValue ? (1 - alpha) * bias + alpha * b : b;
+            }
+
+            var scale = new double[channels];
+            for (int i = 0; i < channels; i++)
+            {
+                var buffer = kernels.Slice(i * channelSize, channelSize);
+                var s = GetRange(buffer).GetScale(bias.Value);
+                scale[i] = s;
+            }
+
+            (var mul, var shift) = ExtractValueAndShift(bias.Value, 24, 15);
+
+            var qWeights = new byte[weights.Length];
+            double diff = 0;
+            for (int i = 0; i < channels; i++)
+            {
+                var buffer = kernels.Slice(i * channelSize, channelSize);
+                diff += Quantize(buffer, new Span<byte>(qWeights, i * channelSize, channelSize), scale[i], bias.Value);
+            }
+
+            diff /= channels;
+
+            config.Weights = qWeights;
+            config.ArgX = (int)Math.Round(mul);
+            config.ShiftX = shift;
+            return (scale, bias.Value);
+#else
             var buffer = weights.ToDenseTensor().Buffer.Span;
             (var scale, var bias) = GetRange(buffer).GetScaleBias();
 
@@ -462,7 +512,8 @@ namespace NnCase.Converter.Converters
             config.Weights = Quantize(buffer, scale, bias);
             config.ArgX = (int)Math.Round(mul);
             config.ShiftX = shift;
-            return (scale, bias);
+            return (Enumerable.Repeat(scale, weights.Dimensions[0]).ToArray(), bias);
+#endif
         }
 
         private static (double scale, double bias) QuantizeInput(Range range, K210ConvLayerConfig config)
@@ -474,10 +525,30 @@ namespace NnCase.Converter.Converters
             return (scale, bias);
         }
 
-        private static (double scale, double bias) QuantizeBiasAndOutput(K210Conv2d layer, Tensor<float> bias, Range range, double scale, K210ConvLayerConfig config)
+        private static (double scale, double bias) QuantizeBiasAndOutput(K210Conv2d layer, Tensor<float> bias, Range range, double[] scale, K210ConvLayerConfig config)
         {
             (var so, var bo) = range.GetScaleBias();
-            var scomb = so / scale;
+#if CHANNEL_WISE
+            var upshift = 8;
+            var postMul = Math.Pow(2, upshift);
+
+            for (int i = 0; i < config.BNConfigs.Length; i++)
+            {
+                var b = bias[i];
+
+                var scomb = so * postMul / scale[i];
+
+                (var mul, var shift) = ExtractValueAndShift(scomb, 24, 15);
+
+                config.BNConfigs[i] = new K210LayerBNConfig
+                {
+                    Mul = (int)Math.Round(mul),
+                    Shift = shift,
+                    Add = (int)Math.Round((b * so - bo) * postMul)
+                };
+            }
+#else
+            var scomb = so / scale[0];
 
             (var mul, var shift) = ExtractValueAndShift(scomb, 24, 255);
             var upscale = shift - 15;
@@ -494,7 +565,7 @@ namespace NnCase.Converter.Converters
                     Add = (int)Math.Round((b * so - bo) * postMul)
                 };
             }
-
+#endif
             QuantizeActivation(layer, postMul, range, config);
             return (so, bo);
         }
@@ -521,17 +592,28 @@ namespace NnCase.Converter.Converters
             config.ActShift = shift;
         }
 
-        private static byte[] Quantize(Span<float> data, double scale, double bias)
+        private static double Quantize(ReadOnlySpan<float> data, Span<byte> dest, double scale, double bias)
         {
-            var q = new byte[data.Length];
             for (int i = 0; i < data.Length; i++)
-                q[i] = (byte)
+                dest[i] = (byte)
 #if NET48
                     FxExtensions
 #else
                     Math
 #endif
                     .Clamp(Math.Round(data[i] * scale - bias), byte.MinValue, byte.MaxValue);
+
+            var diff = new double[data.Length];
+            for (int i = 0; i < data.Length; i++)
+                diff[i] = Math.Abs(((dest[i] + bias) / scale) - data[i]);
+            var avg = diff.Average();
+            return avg;
+        }
+
+        private static byte[] Quantize(ReadOnlySpan<float> data, double scale, double bias)
+        {
+            var q = new byte[data.Length];
+            Quantize(data, q, scale, bias);
             return q;
         }
 
@@ -595,6 +677,13 @@ namespace NnCase.Converter.Converters
                 var scale = ((1 << maxBits) - 1) / (Max - Min);
                 var bias = Min * scale;
                 return (scale, bias);
+            }
+
+            public double GetScale(double bias)
+            {
+                var s1 = bias / Min;
+                var s2 = (bias + 255) / Max;
+                return Math.Max(s1, s2);
             }
         }
 

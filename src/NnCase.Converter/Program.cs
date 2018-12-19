@@ -14,7 +14,7 @@ namespace NnCase.Converter
     {
         static async Task Main(string[] args)
         {
-            var file = File.ReadAllBytes(@"D:\Work\Repository\models\mobilev1_alpha_1217.tflite");
+            var file = File.ReadAllBytes(@"D:\Work\Repository\models\mobilev1_alpha_1219.tflite");
             var model = tflite.Model.GetRootAsModel(new FlatBuffers.ByteBuffer(file));
             var tfc = new TfLiteToGraphConverter(model, model.Subgraphs(0).Value);
             tfc.Convert();
