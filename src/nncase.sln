@@ -15,6 +15,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NnCase.Designer", "NnCase.D
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NnCase.Designer.Infrastructure", "NnCase.Designer.Infrastructure\NnCase.Designer.Infrastructure.csproj", "{BF4D1924-B6B4-4C7B-B54B-DF771DAEB8B6}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NnCase.Designer.Modules.GraphEditor", "NnCase.Designer.Modules.GraphEditor\NnCase.Designer.Modules.GraphEditor.csproj", "{01078143-02A2-4FC2-B810-12C109A68522}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -95,6 +97,18 @@ Global
 		{BF4D1924-B6B4-4C7B-B54B-DF771DAEB8B6}.Release|x64.Build.0 = Release|Any CPU
 		{BF4D1924-B6B4-4C7B-B54B-DF771DAEB8B6}.Release|x86.ActiveCfg = Release|Any CPU
 		{BF4D1924-B6B4-4C7B-B54B-DF771DAEB8B6}.Release|x86.Build.0 = Release|Any CPU
+		{01078143-02A2-4FC2-B810-12C109A68522}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{01078143-02A2-4FC2-B810-12C109A68522}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{01078143-02A2-4FC2-B810-12C109A68522}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{01078143-02A2-4FC2-B810-12C109A68522}.Debug|x64.Build.0 = Debug|Any CPU
+		{01078143-02A2-4FC2-B810-12C109A68522}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{01078143-02A2-4FC2-B810-12C109A68522}.Debug|x86.Build.0 = Debug|Any CPU
+		{01078143-02A2-4FC2-B810-12C109A68522}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{01078143-02A2-4FC2-B810-12C109A68522}.Release|Any CPU.Build.0 = Release|Any CPU
+		{01078143-02A2-4FC2-B810-12C109A68522}.Release|x64.ActiveCfg = Release|Any CPU
+		{01078143-02A2-4FC2-B810-12C109A68522}.Release|x64.Build.0 = Release|Any CPU
+		{01078143-02A2-4FC2-B810-12C109A68522}.Release|x86.ActiveCfg = Release|Any CPU
+		{01078143-02A2-4FC2-B810-12C109A68522}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

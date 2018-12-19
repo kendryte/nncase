@@ -2,7 +2,7 @@
 
   <PropertyGroup>
     <OutputType>Exe</OutputType>
-    <TargetFrameworks>netcoreapp3.0</TargetFrameworks>
+    <TargetFrameworks>net48</TargetFrameworks>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <PreserveCompilationContext>true</PreserveCompilationContext>
     <LangVersion>8.0</LangVersion>
@@ -21,6 +21,11 @@
     <PackageReference Include="SixLabors.ImageSharp" Version="1.0.0-beta0005" />
     <PackageReference Include="System.Numerics.Tensors" Version="0.1.0" />
     <PackageReference Include="TensorflowSharp" Version="1.11.0" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)'=='net48'">
+    <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.1"/>
+    <PackageReference Include="AsyncEnumerator" Version="2.2.1"/>
   </ItemGroup>
 
   <ItemGroup>

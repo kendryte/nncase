@@ -101,7 +101,7 @@ namespace NnCase.Converter.Model.Layers.K210
 
             context.TFOutputs[Output] = graph.AddActivation(graph.BiasAdd(y, graph.Const(bias)), FusedActivationFunction);
 
-            Console.WriteLine($"K210 Conv {string.Join('x', Input.Dimensions.ToArray())}");
+            Console.WriteLine($"K210 Conv {string.Join("x", Input.Dimensions.ToArray())}");
         }
 
         private int GetStride()

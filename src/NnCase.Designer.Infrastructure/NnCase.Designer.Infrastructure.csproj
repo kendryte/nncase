@@ -136,6 +136,7 @@
     <Compile Include="Services\ICommandService.cs" />
     <Compile Include="Services\IMenu.cs" />
     <Compile Include="Services\IShell.cs" />
+    <Compile Include="VisualTreeUtility.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>

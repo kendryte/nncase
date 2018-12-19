@@ -51,12 +51,22 @@
       <HintPath>..\packages\Splat.5.1.4\lib\net461\Splat.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.Buffers, Version=4.0.2.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Buffers.4.4.0\lib\netstandard2.0\System.Buffers.dll</HintPath>
+    </Reference>
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Drawing.Primitives, Version=4.0.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Drawing.Primitives.4.3.0\lib\net45\System.Drawing.Primitives.dll</HintPath>
       <Private>True</Private>
       <Private>True</Private>
+    </Reference>
+    <Reference Include="System.Memory, Version=4.0.1.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Memory.4.5.1\lib\netstandard2.0\System.Memory.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Numerics" />
+    <Reference Include="System.Numerics.Vectors, Version=4.1.3.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Numerics.Vectors.4.4.0\lib\net46\System.Numerics.Vectors.dll</HintPath>
     </Reference>
     <Reference Include="System.Reactive, Version=4.0.0.0, Culture=neutral, PublicKeyToken=94bc3704cddfc263, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Reactive.4.0.0\lib\net46\System.Reactive.dll</HintPath>
@@ -87,6 +97,9 @@
     </Reference>
     <Reference Include="System.Reactive.Windows.Threading, Version=3.0.3000.0, Culture=neutral, PublicKeyToken=94bc3704cddfc263, processorArchitecture=MSIL">
       <HintPath>..\packages\System.Reactive.Windows.Threading.4.0.0\lib\net46\System.Reactive.Windows.Threading.dll</HintPath>
+    </Reference>
+    <Reference Include="System.Runtime.CompilerServices.Unsafe, Version=4.0.4.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Runtime.CompilerServices.Unsafe.4.5.0\lib\netstandard2.0\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
     </Reference>
     <Reference Include="System.ValueTuple, Version=4.0.3.0, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.ValueTuple.4.5.0\lib\net47\System.ValueTuple.dll</HintPath>
@@ -132,10 +145,16 @@
     <Compile Include="Modules\ModelDesigner\Commands\OpenGraphCommandHandler.cs" />
     <Compile Include="Modules\ModelDesigner\MenuDefinitions.cs" />
     <Compile Include="Modules\ModelDesigner\ModelDesignerModule.cs" />
+    <Compile Include="Modules\ModelDesigner\ViewModels\ConnectionViewModel.cs" />
     <Compile Include="Modules\ModelDesigner\ViewModels\GraphViewModel.cs" />
+    <Compile Include="Modules\ModelDesigner\ViewModels\InputConnectorViewModel.cs" />
+    <Compile Include="Modules\ModelDesigner\ViewModels\Layers\InputLayerViewModel.cs" />
+    <Compile Include="Modules\ModelDesigner\ViewModels\LayerViewModel.cs" />
+    <Compile Include="Modules\ModelDesigner\ViewModels\OutputConnectorViewModel.cs" />
     <Compile Include="Modules\ModelDesigner\Views\GraphView.xaml.cs">
       <DependentUpon>GraphView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Modules\ModelDesigner\Views\LayerDataTemplateSelector.cs" />
     <Compile Include="Properties\AssemblyInfo.cs">
       <SubType>Code</SubType>
     </Compile>
@@ -163,9 +182,17 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\NnCase.Converter\NnCase.Converter.csproj">
+      <Project>{5829ab7e-607d-4edf-a7b4-e3b562aa2467}</Project>
+      <Name>NnCase.Converter</Name>
+    </ProjectReference>
     <ProjectReference Include="..\NnCase.Designer.Infrastructure\NnCase.Designer.Infrastructure.csproj">
       <Project>{BF4D1924-B6B4-4C7B-B54B-DF771DAEB8B6}</Project>
       <Name>NnCase.Designer.Infrastructure</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\NnCase.Designer.Modules.GraphEditor\NnCase.Designer.Modules.GraphEditor.csproj">
+      <Project>{01078143-02a2-4fc2-b810-12c109a68522}</Project>
+      <Name>NnCase.Designer.Modules.GraphEditor</Name>
     </ProjectReference>
     <ProjectReference Include="..\NnCase.Designer.Shell\NnCase.Designer.Modules..Shell.csproj">
       <Project>{64e0124a-5771-4b9c-9e24-eb5a8bc2bee0}</Project>

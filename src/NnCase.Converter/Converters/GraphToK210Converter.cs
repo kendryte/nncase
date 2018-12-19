@@ -15,6 +15,10 @@ using NnCase.Converter.Transforms;
 using RazorLight;
 using TensorFlow;
 
+#if NET48
+using System.Collections.Async;
+#endif
+
 namespace NnCase.Converter.Converters
 {
     public class K210LayerBNConfig
@@ -410,18 +414,26 @@ namespace NnCase.Converter.Converters
                 }
 
                 var quantizationContext = new QuantizationContext { Outputs = connectors, PlanContext = planContext };
-                await foreach (var batch in dataset.GetBatchesAsync())
-                {
-                    var input = batch.ToNHWC();
-                    var runner = session.GetRunner();
 
-                    runner.AddInput(planContext.Inputs.Values.First(), input);
-                    foreach (var fetch in toFetches)
-                        runner.Fetch(fetch);
+#if NET48
+                await dataset.GetBatchesAsync().ForEachAsync(async batch =>
+#else
+                    await foreach (var batch in dataset.GetBatchesAsync())
+#endif
+                    {
+                        var input = batch.ToNHWC();
+                        var runner = session.GetRunner();
 
-                    var outputs = runner.Run();
-                    RecordOutputs(new[] { input }.Concat(outputs).ToList(), quantizationContext);
-                }
+                        runner.AddInput(planContext.Inputs.Values.First(), input);
+                        foreach (var fetch in toFetches)
+                            runner.Fetch(fetch);
+
+                        var outputs = runner.Run();
+                        RecordOutputs(new[] { input }.Concat(outputs).ToList(), quantizationContext);
+                    }
+#if NET48
+                );
+#endif
 
                 return quantizationContext;
             }
@@ -504,7 +516,7 @@ namespace NnCase.Converter.Converters
             var yTable = Generator.Step(range.Min, range.Max, 15);
             var xTable = yTable.Select(invAct).Select(x => x * postMul).ToArray();
 
-            (var mul, var shift) = ExtractValueAndShift(1 / postMul, 16, 25);
+            (var mul, var shift) = ExtractValueAndShift(1 / postMul, 16, 20);
             config.ActMul = (int)Math.Round(mul);
             config.ActShift = shift;
         }
@@ -513,7 +525,13 @@ namespace NnCase.Converter.Converters
         {
             var q = new byte[data.Length];
             for (int i = 0; i < data.Length; i++)
-                q[i] = (byte)Math.Clamp(Math.Round(data[i] * scale - bias), byte.MinValue, byte.MaxValue);
+                q[i] = (byte)
+#if NET48
+                    FxExtensions
+#else
+                    Math
+#endif
+                    .Clamp(Math.Round(data[i] * scale - bias), byte.MinValue, byte.MaxValue);
             return q;
         }
 
@@ -633,7 +651,7 @@ namespace NnCase.Converter.Converters
                         Size = size
                     };
                     newNode.AddRef();
-                    
+
                     _nodes.Insert(firstFreeIdx + 1, newNode);
                     return newNode;
                 }

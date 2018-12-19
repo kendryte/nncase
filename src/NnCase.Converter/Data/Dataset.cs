@@ -10,6 +10,10 @@ using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
+#if NET48
+using System.Collections.Async;
+#endif
+
 namespace NnCase.Converter.Data
 {
     public enum PostprocessMethods
@@ -42,25 +46,52 @@ namespace NnCase.Converter.Data
             _postprocessMethod = postprocessMethod;
         }
 
-        public async IAsyncEnumerable<Tensor<float>> GetBatchesAsync()
+
+        public
+#if NET48
+#else
+            async
+#endif
+            IAsyncEnumerable<Tensor<float>> GetBatchesAsync()
         {
             var dimensions = new[] { _batchSize }.Concat(_dimensions).ToArray();
             var oneSize = Dimensions.GetSize();
 
-            for (int i = 0; i < _fileNames.Count / _batchSize; i++)
+            async Task<byte[]> ReadAllBytesAsync(string path)
             {
-                var tensor = new DenseTensor<float>(dimensions);
-                var sources = await Task.WhenAll(from j in Enumerable.Range(i * _batchSize, _batchSize)
-                                                 select File.ReadAllBytesAsync(_fileNames[j]));
-                Parallel.For(0, _batchSize, j =>
+                using (var fs = File.OpenRead(path))
                 {
-                    var buffer = tensor.Buffer.Slice(j * oneSize);
-                    Process(sources[j], buffer.Span);
-                    Postprocess(buffer.Span, _postprocessMethod);
-                });
-
-                yield return tensor;
+                    var buffer = new byte[(int)fs.Length];
+                    await fs.ReadAsync(buffer, 0, buffer.Length);
+                    return buffer;
+                }
             }
+
+#if NET48
+            return new AsyncEnumerable<Tensor<float>>(async yield =>
+            {
+#endif
+                for (int i = 0; i < _fileNames.Count / _batchSize; i++)
+                {
+                    var tensor = new DenseTensor<float>(dimensions);
+                    var sources = await Task.WhenAll(from j in Enumerable.Range(i * _batchSize, _batchSize)
+                                                     select ReadAllBytesAsync(_fileNames[j]));
+                    Parallel.For(0, _batchSize, j =>
+                    {
+                        var buffer = tensor.Buffer.Slice(j * oneSize);
+                        Process(sources[j], buffer.Span);
+                        Postprocess(buffer.Span, _postprocessMethod);
+                    });
+
+#if NET48
+                    await yield.ReturnAsync(tensor);
+#else
+                    yield return tensor;
+#endif
+                }
+#if NET48
+            });
+#endif
         }
 
         private void Postprocess(Span<float> data, PostprocessMethods postprocessMethod)

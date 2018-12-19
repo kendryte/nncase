@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
+#if !NET48
 namespace System.Threading.Tasks
 {
     using System.Runtime.CompilerServices;
@@ -25,3 +26,4 @@ namespace System.Runtime.CompilerServices
 {
     internal interface IStrongBox<T> { ref T Value { get; } }
 }
+#endif
