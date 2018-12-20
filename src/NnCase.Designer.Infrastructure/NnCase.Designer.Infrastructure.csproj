@@ -109,6 +109,7 @@
     <Compile Include="Document.cs" />
     <Compile Include="IDocument.cs" />
     <Compile Include="ILayoutItem.cs" />
+    <Compile Include="ITool.cs" />
     <Compile Include="LayoutItemBase.cs" />
     <Compile Include="Menus\CommandMenuItem.cs" />
     <Compile Include="Menus\CommandMenuItemDefinition.cs" />
@@ -136,6 +137,10 @@
     <Compile Include="Services\ICommandService.cs" />
     <Compile Include="Services\IMenu.cs" />
     <Compile Include="Services\IShell.cs" />
+    <Compile Include="Services\IToolboxService.cs" />
+    <Compile Include="Tool.cs" />
+    <Compile Include="Toolbox\PaneLocation.cs" />
+    <Compile Include="Toolbox\ToolboxItem.cs" />
     <Compile Include="VisualTreeUtility.cs" />
     <EmbeddedResource Include="Properties\Resources.resx">
       <Generator>ResXFileCodeGenerator</Generator>

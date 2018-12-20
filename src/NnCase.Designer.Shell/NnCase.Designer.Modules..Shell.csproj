@@ -149,6 +149,11 @@
     <Compile Include="Modules\Shell\Views\ShellView.xaml.cs">
       <DependentUpon>ShellView.xaml</DependentUpon>
     </Compile>
+    <Compile Include="Modules\Toolbox\IToolbox.cs" />
+    <Compile Include="Modules\Toolbox\ToolboxModule.cs" />
+    <Compile Include="Modules\Toolbox\ToolboxService.cs" />
+    <Compile Include="Modules\Toolbox\ViewModels\ToolboxItemViewModel.cs" />
+    <Compile Include="Modules\Toolbox\ViewModels\ToolboxViewModel.cs" />
     <Compile Include="ShellModuleExtensions.cs" />
     <Page Include="Modules\MainMenu\Views\MainMenuView.xaml">
       <SubType>Designer</SubType>
@@ -199,7 +204,9 @@
   <ItemGroup>
     <Resource Include="FodyWeavers.xml" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Modules\Toolbox\Views\" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\NnCase.Designer.Infrastructure\NnCase.Designer.Infrastructure.csproj">
       <Project>{BF4D1924-B6B4-4C7B-B54B-DF771DAEB8B6}</Project>

@@ -477,8 +477,11 @@ namespace NnCase.Converter.Converters
             {
                 var buffer = kernels.Slice(i * channelSize, channelSize);
                 (var s, var b) = GetRange(buffer).GetScaleBias();
-                bias = bias.HasValue ? (1 - alpha) * bias + alpha * b : b;
+                //bias = bias.HasValue ? (1 - alpha) * bias + alpha * b : b;
+                bias += b;
             }
+
+            bias /= channels;
 
             var scale = new double[channels];
             for (int i = 0; i < channels; i++)
@@ -495,10 +498,8 @@ namespace NnCase.Converter.Converters
             for (int i = 0; i < channels; i++)
             {
                 var buffer = kernels.Slice(i * channelSize, channelSize);
-                diff += Quantize(buffer, new Span<byte>(qWeights, i * channelSize, channelSize), scale[i], bias.Value);
+                diff = Math.Max(diff, Quantize(buffer, new Span<byte>(qWeights, i * channelSize, channelSize), scale[i], bias.Value));
             }
-
-            diff /= channels;
 
             config.Weights = qWeights;
             config.ArgX = (int)Math.Round(mul);
@@ -529,7 +530,7 @@ namespace NnCase.Converter.Converters
         {
             (var so, var bo) = range.GetScaleBias();
 #if CHANNEL_WISE
-            var upshift = 8;
+            var upshift = 20;
             var postMul = Math.Pow(2, upshift);
 
             for (int i = 0; i < config.BNConfigs.Length; i++)
@@ -538,7 +539,7 @@ namespace NnCase.Converter.Converters
 
                 var scomb = so * postMul / scale[i];
 
-                (var mul, var shift) = ExtractValueAndShift(scomb, 24, 15);
+                (var mul, var shift) = ExtractValueAndShift(scomb, 22, 15);
 
                 config.BNConfigs[i] = new K210LayerBNConfig
                 {
@@ -550,8 +551,9 @@ namespace NnCase.Converter.Converters
 #else
             var scomb = so / scale[0];
 
-            (var mul, var shift) = ExtractValueAndShift(scomb, 24, 255);
+            (var mul, var shift) = ExtractValueAndShift(scomb, 22, 255);
             var upscale = shift - 15;
+            Debug.Assert(upscale >= 0);
             var postMul = Math.Round(mul) / mul * Math.Pow(2, upscale);
 
             for (int i = 0; i < config.BNConfigs.Length; i++)
@@ -606,7 +608,7 @@ namespace NnCase.Converter.Converters
             var diff = new double[data.Length];
             for (int i = 0; i < data.Length; i++)
                 diff[i] = Math.Abs(((dest[i] + bias) / scale) - data[i]);
-            var avg = diff.Average();
+            var avg = diff.Max();
             return avg;
         }
 
@@ -683,7 +685,7 @@ namespace NnCase.Converter.Converters
             {
                 var s1 = bias / Min;
                 var s2 = (bias + 255) / Max;
-                return Math.Max(s1, s2);
+                return Math.Min(s1, s2);
             }
         }
 

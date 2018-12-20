@@ -9,7 +9,7 @@
   </PropertyGroup>
 
   <PropertyGroup>
-    <DefineConstants>$(DefineConstants);ENABLE_SPAN_T;UNSAFE_BYTEBUFFER</DefineConstants>
+    <DefineConstants>$(DefineConstants);ENABLE_SPAN_T;UNSAFE_BYTEBUFFER;CHANNEL_WISE</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>
