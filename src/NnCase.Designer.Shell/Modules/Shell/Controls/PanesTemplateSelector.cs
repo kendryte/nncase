@@ -12,12 +12,16 @@ namespace NnCase.Designer.Modules.Shell.Controls
     {
         public DataTemplate DocumentTemplate { get; set; }
 
+        public DataTemplate ToolTemplate { get; set; }
+
         public override DataTemplate SelectTemplate(object item, DependencyObject container)
         {
             switch (item)
             {
                 case IDocument _:
                     return DocumentTemplate;
+                case ITool _:
+                    return ToolTemplate;
                 default:
                     return base.SelectTemplate(item, container);
             }

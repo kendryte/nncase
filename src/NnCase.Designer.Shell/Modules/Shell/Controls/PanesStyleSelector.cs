@@ -12,12 +12,16 @@ namespace NnCase.Designer.Modules.Shell.Controls
     {
         public Style DocumentStyle { get; set; }
 
+        public Style ToolStyle { get; set; }
+
         public override Style SelectStyle(object item, DependencyObject container)
         {
             switch (item)
             {
                 case IDocument _:
                     return DocumentStyle;
+                case ITool _:
+                    return ToolStyle;
                 default:
                     return base.SelectStyle(item, container);
             }

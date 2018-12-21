@@ -145,6 +145,7 @@
     <Compile Include="Modules\ModelDesigner\Commands\OpenGraphCommandHandler.cs" />
     <Compile Include="Modules\ModelDesigner\MenuDefinitions.cs" />
     <Compile Include="Modules\ModelDesigner\ModelDesignerModule.cs" />
+    <Compile Include="Modules\ModelDesigner\Toolbox\ToolboxItems.cs" />
     <Compile Include="Modules\ModelDesigner\ViewModels\ConnectionViewModel.cs" />
     <Compile Include="Modules\ModelDesigner\ViewModels\GraphViewModel.cs" />
     <Compile Include="Modules\ModelDesigner\ViewModels\InputConnectorViewModel.cs" />

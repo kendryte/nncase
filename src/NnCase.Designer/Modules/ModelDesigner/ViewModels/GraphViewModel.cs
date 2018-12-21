@@ -15,11 +15,6 @@ namespace NnCase.Designer.Modules.ModelDesigner.ViewModels
         public GraphViewModel(string title)
         {
             Title = title;
-
-            Layers.Add(new InputLayerViewModel
-            {
-                Name = "image_batch"
-            });
         }
     }
 }

@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Autofac;
 using Autofac.Core;
+using Autofac.Core.Registration;
 using Splat;
 
 namespace NnCase.Designer
@@ -21,9 +22,16 @@ namespace NnCase.Designer
 
         public object GetService(Type serviceType, string contract = null)
         {
-            return string.IsNullOrEmpty(contract)
-                ? _container.Resolve(serviceType)
-                : _container.ResolveNamed(contract, serviceType);
+            try
+            {
+                return string.IsNullOrEmpty(contract)
+                    ? _container.Resolve(serviceType)
+                    : _container.ResolveNamed(contract, serviceType);
+            }
+            catch (ComponentNotRegisteredException)
+            {
+                return null;
+            }
         }
 
         public IEnumerable<object> GetServices(Type serviceType, string contract = null)

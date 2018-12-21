@@ -19,7 +19,10 @@
 									PreviewMouseRightButtonDown="OnGraphControlRightMouseButtonDown"
 									PreviewMouseRightButtonUp="OnGraphControlRightMouseButtonUp"
 									PreviewMouseMove="OnGraphControlMouseMove"
-									PreviewMouseWheel="OnGraphControlMouseWheel">
+									PreviewMouseWheel="OnGraphControlMouseWheel"
+									AllowDrop="True" 
+									DragEnter="OnGraphControlDragEnter"
+									Drop="OnGraphControlDrop">
                     <graphControls:GraphControl.ElementItemContainerStyle>
                         <Style TargetType="{x:Type graphControls:ElementItem}">
                             <Setter Property="X" Value="{Binding X}" />

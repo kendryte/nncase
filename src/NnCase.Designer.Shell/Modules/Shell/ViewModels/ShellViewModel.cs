@@ -6,6 +6,7 @@ using System.Text;
 using System.Threading.Tasks;
 using NnCase.Designer.Services;
 using ReactiveUI;
+using Splat;
 
 namespace NnCase.Designer.Modules.Shell.ViewModels
 {
@@ -16,6 +17,9 @@ namespace NnCase.Designer.Modules.Shell.ViewModels
         public ObservableCollection<IDocument> Documents { get; } = new ObservableCollection<IDocument>();
 
         private ILayoutItem _activeLayoutItem;
+        private IDocument _activeDocument;
+
+        public event EventHandler ActiveDocumentChanged;
 
         public ILayoutItem ActiveLayoutItem
         {
@@ -26,11 +30,31 @@ namespace NnCase.Designer.Modules.Shell.ViewModels
                 {
                     _activeLayoutItem = value;
                     if (_activeLayoutItem is IDocument document)
+                    {
                         OpenDocument(document);
+                        ActiveDocument = document;
+                    }
+
                     this.RaisePropertyChanged();
                 }
             }
         }
+
+        public IDocument ActiveDocument
+        {
+            get => _activeDocument;
+            private set
+            {
+                if (_activeDocument != value)
+                {
+                    _activeDocument = value;
+                    this.RaisePropertyChanged();
+                    ActiveDocumentChanged?.Invoke(this, EventArgs.Empty);
+                }
+            }
+        }
+
+        public ObservableCollection<ITool> Tools { get; } = new ObservableCollection<ITool>();
 
         public ShellViewModel(IMenu mainMenu)
         {
@@ -44,6 +68,21 @@ namespace NnCase.Designer.Modules.Shell.ViewModels
                 if (!Documents.Contains(document))
                     Documents.Add(document);
                 ActiveLayoutItem = document;
+            }
+        }
+
+        public void OpenTool<TTool>() where TTool : ITool
+        {
+            OpenTool(Locator.Current.GetService<TTool>());
+        }
+
+        private void OpenTool(ITool tool)
+        {
+            if (ActiveLayoutItem != tool)
+            {
+                if (!Tools.Contains(tool))
+                    Tools.Add(tool);
+                ActiveLayoutItem = tool;
             }
         }
     }

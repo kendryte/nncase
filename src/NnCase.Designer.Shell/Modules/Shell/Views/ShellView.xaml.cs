@@ -33,6 +33,8 @@ namespace NnCase.Designer.Modules.Shell.Views
                     .DisposeWith(d);
                 this.OneWayBind(ViewModel, vm => vm.Documents, v => v._dockingManager.DocumentsSource)
                     .DisposeWith(d);
+                this.OneWayBind(ViewModel, vm => vm.Tools, v => v._dockingManager.AnchorablesSource)
+                    .DisposeWith(d);
                 this.Bind(ViewModel, vm => vm.ActiveLayoutItem, v => v._dockingManager.ActiveContent)
                     .DisposeWith(d);
             });

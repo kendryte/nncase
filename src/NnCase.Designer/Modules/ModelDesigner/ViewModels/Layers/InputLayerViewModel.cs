@@ -10,6 +10,8 @@ namespace NnCase.Designer.Modules.ModelDesigner.ViewModels.Layers
 {
     public class InputLayerViewModel : LayerViewModel<InputLayer>
     {
+        public override string DefaultNamePrefix => "InputLayer";
+
         public InputLayerViewModel()
         {
         }

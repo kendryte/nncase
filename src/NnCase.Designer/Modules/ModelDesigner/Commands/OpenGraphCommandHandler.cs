@@ -5,6 +5,7 @@ using System.Text;
 using System.Threading.Tasks;
 using NnCase.Designer.Commands;
 using NnCase.Designer.Modules.ModelDesigner.ViewModels;
+using NnCase.Designer.Modules.Toolbox;
 using NnCase.Designer.Services;
 
 namespace NnCase.Designer.Modules.ModelDesigner.Commands
@@ -21,6 +22,7 @@ namespace NnCase.Designer.Modules.ModelDesigner.Commands
         public Task Execute(Command command)
         {
             _shell.OpenDocument(new GraphViewModel("Graph 1"));
+            _shell.OpenTool<IToolbox>();
             return Task.CompletedTask;
         }
 

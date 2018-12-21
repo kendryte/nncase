@@ -19,6 +19,9 @@
 
         </StatusBar>
         <avalonDock:DockingManager x:Name="_dockingManager">
+            <avalonDock:DockingManager.LayoutUpdateStrategy>
+                <controls:LayoutInitializer/>
+            </avalonDock:DockingManager.LayoutUpdateStrategy>
             <avalonDock:DockingManager.LayoutItemTemplateSelector>
                 <controls:PanesTemplateSelector>
                     <controls:PanesTemplateSelector.DocumentTemplate>
@@ -27,6 +30,12 @@
                                                           VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch" />
                         </DataTemplate>
                     </controls:PanesTemplateSelector.DocumentTemplate>
+                    <controls:PanesTemplateSelector.ToolTemplate>
+                        <DataTemplate>
+                            <reactiveui:ViewModelViewHost ViewModel="{Binding}"
+                                                          VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch" />
+                        </DataTemplate>
+                    </controls:PanesTemplateSelector.ToolTemplate>
                 </controls:PanesTemplateSelector>
             </avalonDock:DockingManager.LayoutItemTemplateSelector>
             <avalonDock:DockingManager.LayoutItemContainerStyleSelector>
@@ -38,6 +47,13 @@
                             <Setter Property="IsSelected" Value="{Binding Model.IsSelected, Mode=TwoWay}"/>
                         </Style>
                     </controls:PanesStyleSelector.DocumentStyle>
+                    <controls:PanesStyleSelector.ToolStyle>
+                        <Style TargetType="avalonDock:LayoutAnchorableItem">
+                            <Setter Property="ContentId" Value="{Binding Model.ContentId, Mode=OneWay}"/>
+                            <Setter Property="Title" Value="{Binding Model.Title, Mode=OneWay}"/>
+                            <Setter Property="IsSelected" Value="{Binding Model.IsSelected, Mode=TwoWay}"/>
+                        </Style>
+                    </controls:PanesStyleSelector.ToolStyle>
                 </controls:PanesStyleSelector>
             </avalonDock:DockingManager.LayoutItemContainerStyleSelector>
             <avalonDock:LayoutRoot>

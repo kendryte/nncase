@@ -6,7 +6,8 @@ using System.Threading.Tasks;
 
 namespace NnCase.Designer.Modules.Toolbox
 {
-    public interface IToolbox : ITool
+    public static class ToolboxDragDrop
     {
+        public const string DataFormat = "MnCase.Designer.ToolboxItem";
     }
 }

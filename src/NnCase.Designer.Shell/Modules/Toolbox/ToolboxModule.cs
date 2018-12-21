@@ -14,6 +14,10 @@ namespace NnCase.Designer.Modules.Toolbox
         protected override void Load(ContainerBuilder builder)
         {
             builder.RegisterType<ToolboxService>().As<IToolboxService>().SingleInstance();
+
+            builder.RegisterType<ViewModels.ToolboxViewModel>()
+                .AsSelf().As<IToolbox>();
+            builder.RegisterType<Views.ToolboxView>();
         }
     }
 }

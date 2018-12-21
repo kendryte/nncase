@@ -128,6 +128,7 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Controls\ExpanderEx.cs" />
     <Compile Include="Modules\Commands\CommandRouter.cs" />
     <Compile Include="Modules\Commands\CommandService.cs" />
     <Compile Include="Modules\Commands\CommandsModule.cs" />
@@ -150,6 +151,7 @@
       <DependentUpon>ShellView.xaml</DependentUpon>
     </Compile>
     <Compile Include="Modules\Toolbox\IToolbox.cs" />
+    <Compile Include="Modules\Toolbox\ToolboxDragDrop.cs" />
     <Compile Include="Modules\Toolbox\ToolboxModule.cs" />
     <Compile Include="Modules\Toolbox\ToolboxService.cs" />
     <Compile Include="Modules\Toolbox\ViewModels\ToolboxItemViewModel.cs" />
@@ -177,6 +179,10 @@
       <Generator>MSBuild:Compile</Generator>
     </Page>
     <Page Include="Modules\Toolbox\Views\ToolboxView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Themes\Generic.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>

@@ -15,6 +15,8 @@ using System.Windows.Navigation;
 using System.Windows.Shapes;
 using NnCase.Designer.Modules.GraphEditor.Controls;
 using NnCase.Designer.Modules.ModelDesigner.ViewModels;
+using NnCase.Designer.Modules.Toolbox;
+using NnCase.Designer.Toolbox;
 using ReactiveUI;
 
 namespace NnCase.Designer.Modules.ModelDesigner.Views
@@ -119,23 +121,24 @@ namespace NnCase.Designer.Modules.ModelDesigner.Views
 
         private void OnGraphControlDragEnter(object sender, DragEventArgs e)
         {
-            //if (!e.Data.GetDataPresent(ToolboxDragDrop.DataFormat))
-            //    e.Effects = DragDropEffects.None;
+            if (!e.Data.GetDataPresent(ToolboxDragDrop.DataFormat))
+                e.Effects = DragDropEffects.None;
         }
 
         private void OnGraphControlDrop(object sender, DragEventArgs e)
         {
-            //if (e.Data.GetDataPresent(ToolboxDragDrop.DataFormat))
-            //{
-            //    var mousePosition = e.GetPosition(_graphControl);
+            if (e.Data.GetDataPresent(ToolboxDragDrop.DataFormat))
+            {
+                var mousePosition = e.GetPosition(_graphControl);
 
-            //    var toolboxItem = (ToolboxItem)e.Data.GetData(ToolboxDragDrop.DataFormat);
-            //    var element = (ElementViewModel)Activator.CreateInstance(toolboxItem.ItemType);
-            //    element.X = mousePosition.X;
-            //    element.Y = mousePosition.Y;
+                var toolboxItem = (ToolboxItem)e.Data.GetData(ToolboxDragDrop.DataFormat);
+                var layer = (ILayerViewModel)Activator.CreateInstance(toolboxItem.ItemType);
+                layer.Name = layer.DefaultNamePrefix + ViewModel.Layers.Count(x => x.GetType() == layer.GetType());
+                layer.X = mousePosition.X;
+                layer.Y = mousePosition.Y;
 
-            //    ViewModel.Elements.Add(element);
-            //}
+                ViewModel.Layers.Add(layer);
+            }
         }
     }
 }

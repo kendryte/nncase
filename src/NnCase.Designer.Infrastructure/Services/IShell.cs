@@ -9,8 +9,14 @@ namespace NnCase.Designer.Services
 {
     public interface IShell
     {
+        event EventHandler ActiveDocumentChanged;
+
         ObservableCollection<IDocument> Documents { get; }
 
+        IDocument ActiveDocument { get; }
+
         void OpenDocument(IDocument document);
+
+        void OpenTool<TTool>() where TTool : ITool;
     }
 }

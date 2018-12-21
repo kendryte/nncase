@@ -21,6 +21,9 @@ namespace NnCase.Designer.Modules.ModelDesigner
                 .As<ICommandHandler>()
                 .PreserveExistingDefaults();
 
+            builder.RegisterInstance(Toolbox.ToolboxItems.InputLayer)
+                .PreserveExistingDefaults();
+
             builder.RegisterType<ViewModels.GraphViewModel>();
             builder.RegisterType<Views.GraphView>();
         }

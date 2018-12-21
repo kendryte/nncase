@@ -8,9 +8,44 @@
     xmlns:rxui="http://reactiveui.net"
     xmlns:local="clr-namespace:NnCase.Designer.Modules.Toolbox.Views"
     xmlns:vm="clr-namespace:NnCase.Designer.Modules.Toolbox.ViewModels"
+    xmlns:controls="clr-namespace:NnCase.Designer.Controls"
     mc:Ignorable="d" 
     d:DesignHeight="450" d:DesignWidth="800">
     <Grid>
-        <ListBox x:Name="_toolbox" />
+        <ListBox x:Name="_toolbox"
+                 PreviewMouseLeftButtonDown="Toolbox_PreviewMouseLeftButtonDown"
+                 MouseMove="Toolbox_MouseMove">
+            <ListBox.GroupStyle>
+                <GroupStyle>
+                    <GroupStyle.ContainerStyle>
+                        <Style TargetType="GroupItem">
+                            <Setter Property="Template">
+                                <Setter.Value>
+                                    <ControlTemplate>
+                                        <controls:ExpanderEx Header="{Binding Name}" IsExpanded="True">
+                                            <ItemsPresenter/>
+                                        </controls:ExpanderEx>
+                                    </ControlTemplate>
+                                </Setter.Value>
+                            </Setter>
+                        </Style>
+                    </GroupStyle.ContainerStyle>
+                    <GroupStyle.HeaderTemplate>
+                        <DataTemplate>
+                            <TextBlock FontWeight="Bold" FontSize="15"
+									   Text="{Binding Path=Name}"/>
+                        </DataTemplate>
+                    </GroupStyle.HeaderTemplate>
+                </GroupStyle>
+            </ListBox.GroupStyle>
+            <ListBox.ItemTemplate>
+                <DataTemplate>
+                    <StackPanel Orientation="Horizontal" Margin="18 0 0 0">
+                        <Image Source="{Binding IconSource}" Margin="0 0 5 0" Width="16" />
+                        <TextBlock Text="{Binding Text}" Padding="2" />
+                    </StackPanel>
+                </DataTemplate>
+            </ListBox.ItemTemplate>
+        </ListBox>
     </Grid>
 </rxui:ReactiveUserControl>

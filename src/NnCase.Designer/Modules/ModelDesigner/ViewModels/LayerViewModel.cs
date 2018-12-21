@@ -11,11 +11,21 @@ namespace NnCase.Designer.Modules.ModelDesigner.ViewModels
     public interface ILayerViewModel : IReactiveObject
     {
         Layer Model { get; }
+
+        string DefaultNamePrefix { get; }
+
+        string Name { get; set; }
+
+        double X { get; set; }
+
+        double Y { get; set; }
     }
 
     public abstract class LayerViewModel<TModel> : ReactiveObject, ILayerViewModel
         where TModel : Layer
     {
+        public abstract string DefaultNamePrefix { get; }
+
         public TModel Model { get; protected set; }
 
         private int[] _dimensions = new int[] { 1, 128, 128, 3 };
