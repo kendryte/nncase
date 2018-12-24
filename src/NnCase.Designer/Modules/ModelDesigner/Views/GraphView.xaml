@@ -20,6 +20,10 @@
 									PreviewMouseRightButtonUp="OnGraphControlRightMouseButtonUp"
 									PreviewMouseMove="OnGraphControlMouseMove"
 									PreviewMouseWheel="OnGraphControlMouseWheel"
+									SelectionChanged="OnGraphControlSelectionChanged"
+									ConnectionDragStarted="OnGraphControlConnectionDragStarted"
+									ConnectionDragging="OnGraphControlConnectionDragging"
+									ConnectionDragCompleted="OnGraphControlConnectionDragCompleted"
 									AllowDrop="True" 
 									DragEnter="OnGraphControlDragEnter"
 									Drop="OnGraphControlDrop">
@@ -28,6 +32,30 @@
                             <Setter Property="X" Value="{Binding X}" />
                             <Setter Property="Y" Value="{Binding Y}" />
                             <Setter Property="IsSelected" Value="{Binding IsSelected}" />
+                            <Setter Property="BorderThickness" Value="1"/>
+                            <Setter Property="BorderBrush" Value="Transparent"/>
+                            <Style.Triggers>
+                                <Trigger Property="IsSelected" Value="True">
+                                    <Trigger.Setters>
+                                        <Setter Property="BorderBrush" Value="Blue"/>
+                                    </Trigger.Setters>
+                                </Trigger>
+                            </Style.Triggers>
+                            <Style.Resources>
+                                <Style TargetType="graphControls:ConnectorItem">
+                                    <Setter Property="Position" Value="{Binding Position, Mode=OneWayToSource}" />
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate TargetType="graphControls:ConnectorItem">
+                                                <Border BorderBrush="Gray" Margin="0 5 0 0" Padding="0 5 0 0"
+                                                        BorderThickness="0 1 0 0">
+                                                    <Ellipse Fill="Green" Width="10" Height="10"/>
+                                                </Border>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Style>
+                            </Style.Resources>
                         </Style>
                     </graphControls:GraphControl.ElementItemContainerStyle>
                     <graphControls:GraphControl.ElementItemDataTemplateSelector>
@@ -37,12 +65,26 @@
                                     <Border BorderThickness="1" CornerRadius="5"
                                             BorderBrush="Black" Padding="5"
                                             Background="White">
-                                        <TextBlock Text="{Binding Name}"/>
+                                        <StackPanel>
+                                            <TextBlock Text="{Binding Name}"/>
+                                            <graphControls:ConnectorItem DataContext="{Binding Output}" />
+                                        </StackPanel>
                                     </Border>
                                 </DataTemplate>
                             </local:TypedDataTemplateSelector.Templates>
                         </local:TypedDataTemplateSelector>
                     </graphControls:GraphControl.ElementItemDataTemplateSelector>
+                    <graphControls:GraphControl.ConnectionItemTemplate>
+                        <DataTemplate DataType="vm:ConnectionViewModel">
+                            <Grid>
+                                <graphControls:BezierLine Stroke="LightSkyBlue" StrokeThickness="1"
+									X1="{Binding FromPosition.X}" Y1="{Binding FromPosition.Y}"
+									X2="{Binding ToPosition.X}" Y2="{Binding ToPosition.Y}" />
+                                <!--<TextBlock Margin="15 0 0 0" VerticalAlignment="Center" HorizontalAlignment="Center"
+                                           Text="{Binding From.DimensionsText}"/>-->
+                            </Grid>
+                        </DataTemplate>
+                    </graphControls:GraphControl.ConnectionItemTemplate>
                 </graphControls:GraphControl>
             </graphControls:ZoomAndPanControl>
         </ScrollViewer>

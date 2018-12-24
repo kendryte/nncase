@@ -36,6 +36,8 @@ namespace NnCase.Designer.Modules.ModelDesigner.Views
             {
                 this.OneWayBind(ViewModel, vm => vm.Layers, v => v._graphControl.ElementsSource)
                     .DisposeWith(d);
+                this.OneWayBind(ViewModel, vm => vm.Connections, v => v._graphControl.ConnectionsSource)
+                    .DisposeWith(d);
             });
         }
 
@@ -93,30 +95,30 @@ namespace NnCase.Designer.Modules.ModelDesigner.Views
 
         private void OnGraphControlSelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            //ViewModel.OnSelectionChanged();
+            ViewModel.OnSelectionChanged();
         }
 
         private void OnGraphControlConnectionDragStarted(object sender, ConnectionDragStartedEventArgs e)
         {
-            //var sourceConnector = (ConnectorViewModel)e.SourceConnector.DataContext;
-            //var currentDragPoint = Mouse.GetPosition(_graphControl);
-            //var connection = ViewModel.OnConnectionDragStarted(sourceConnector, currentDragPoint);
-            //e.Connection = connection;
+            var sourceConnector = (OutputConnectorViewModel)e.SourceConnector.DataContext;
+            var currentDragPoint = Mouse.GetPosition(_graphControl);
+            var connection = ViewModel.OnConnectionDragStarted(sourceConnector, currentDragPoint);
+            e.Connection = connection;
         }
 
         private void OnGraphControlConnectionDragging(object sender, ConnectionDraggingEventArgs e)
         {
-            //var currentDragPoint = Mouse.GetPosition(_graphControl);
-            //var connection = (ConnectionViewModel)e.Connection;
-            //ViewModel.OnConnectionDragging(currentDragPoint, connection);
+            var currentDragPoint = Mouse.GetPosition(_graphControl);
+            var connection = (ConnectionViewModel)e.Connection;
+            ViewModel.OnConnectionDragging(currentDragPoint, connection);
         }
 
         private void OnGraphControlConnectionDragCompleted(object sender, ConnectionDragCompletedEventArgs e)
         {
-            //var currentDragPoint = Mouse.GetPosition(_graphControl);
-            //var sourceConnector = (ConnectorViewModel)e.SourceConnector.DataContext;
-            //var newConnection = (ConnectionViewModel)e.Connection;
-            //ViewModel.OnConnectionDragCompleted(currentDragPoint, newConnection, sourceConnector);
+            var currentDragPoint = Mouse.GetPosition(_graphControl);
+            var sourceConnector = (OutputConnectorViewModel)e.SourceConnector.DataContext;
+            var newConnection = (ConnectionViewModel)e.Connection;
+            ViewModel.OnConnectionDragCompleted(currentDragPoint, newConnection, sourceConnector);
         }
 
         private void OnGraphControlDragEnter(object sender, DragEventArgs e)
@@ -133,12 +135,27 @@ namespace NnCase.Designer.Modules.ModelDesigner.Views
 
                 var toolboxItem = (ToolboxItem)e.Data.GetData(ToolboxDragDrop.DataFormat);
                 var layer = (ILayerViewModel)Activator.CreateInstance(toolboxItem.ItemType);
-                layer.Name = layer.DefaultNamePrefix + ViewModel.Layers.Count(x => x.GetType() == layer.GetType());
+                var namePrefix = layer.GetType().Name.Replace("ViewModel", string.Empty);
+                layer.Name = GetDefaultLayerName(namePrefix);
                 layer.X = mousePosition.X;
                 layer.Y = mousePosition.Y;
 
                 ViewModel.Layers.Add(layer);
             }
+        }
+
+        private string GetDefaultLayerName(string namePrefix)
+        {
+            int id = 0;
+            string name;
+            while (true)
+            {
+                name = namePrefix + id;
+                if (ViewModel.Layers.All(x => x.Name != name)) break;
+                id++;
+            }
+
+            return name;
         }
     }
 }

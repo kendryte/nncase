@@ -11,6 +11,8 @@ namespace NnCase.Designer.Services
     {
         event EventHandler ActiveDocumentChanged;
 
+        ILayoutItem ActiveLayoutItem { get; }
+
         ObservableCollection<IDocument> Documents { get; }
 
         IDocument ActiveDocument { get; }

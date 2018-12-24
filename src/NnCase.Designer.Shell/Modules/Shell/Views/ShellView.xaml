@@ -5,7 +5,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-    xmlns:avalonDock="http://schemas.xceed.com/wpf/xaml/avalondock"
+    xmlns:xcad="http://schemas.xceed.com/wpf/xaml/avalondock"
     xmlns:reactiveui="http://reactiveui.net"
     xmlns:local="clr-namespace:NnCase.Designer.Modules.Shell.Views"
     xmlns:vm="clr-namespace:NnCase.Designer.Modules.Shell.ViewModels"
@@ -18,11 +18,11 @@
         <StatusBar DockPanel.Dock="Bottom">
 
         </StatusBar>
-        <avalonDock:DockingManager x:Name="_dockingManager">
-            <avalonDock:DockingManager.LayoutUpdateStrategy>
+        <xcad:DockingManager x:Name="_dockingManager">
+            <xcad:DockingManager.LayoutUpdateStrategy>
                 <controls:LayoutInitializer/>
-            </avalonDock:DockingManager.LayoutUpdateStrategy>
-            <avalonDock:DockingManager.LayoutItemTemplateSelector>
+            </xcad:DockingManager.LayoutUpdateStrategy>
+            <xcad:DockingManager.LayoutItemTemplateSelector>
                 <controls:PanesTemplateSelector>
                     <controls:PanesTemplateSelector.DocumentTemplate>
                         <DataTemplate>
@@ -37,32 +37,32 @@
                         </DataTemplate>
                     </controls:PanesTemplateSelector.ToolTemplate>
                 </controls:PanesTemplateSelector>
-            </avalonDock:DockingManager.LayoutItemTemplateSelector>
-            <avalonDock:DockingManager.LayoutItemContainerStyleSelector>
+            </xcad:DockingManager.LayoutItemTemplateSelector>
+            <xcad:DockingManager.LayoutItemContainerStyleSelector>
                 <controls:PanesStyleSelector>
                     <controls:PanesStyleSelector.DocumentStyle>
-                        <Style TargetType="avalonDock:LayoutItem">
+                        <Style TargetType="xcad:LayoutItem">
                             <Setter Property="ContentId" Value="{Binding Model.ContentId, Mode=OneWay}"/>
                             <Setter Property="Title" Value="{Binding Model.Title, Mode=OneWay}"/>
                             <Setter Property="IsSelected" Value="{Binding Model.IsSelected, Mode=TwoWay}"/>
                         </Style>
                     </controls:PanesStyleSelector.DocumentStyle>
                     <controls:PanesStyleSelector.ToolStyle>
-                        <Style TargetType="avalonDock:LayoutAnchorableItem">
+                        <Style TargetType="xcad:LayoutAnchorableItem">
                             <Setter Property="ContentId" Value="{Binding Model.ContentId, Mode=OneWay}"/>
                             <Setter Property="Title" Value="{Binding Model.Title, Mode=OneWay}"/>
                             <Setter Property="IsSelected" Value="{Binding Model.IsSelected, Mode=TwoWay}"/>
                         </Style>
                     </controls:PanesStyleSelector.ToolStyle>
                 </controls:PanesStyleSelector>
-            </avalonDock:DockingManager.LayoutItemContainerStyleSelector>
-            <avalonDock:LayoutRoot>
-                <avalonDock:LayoutPanel Orientation="Vertical">
-                    <avalonDock:LayoutPanel Orientation="Horizontal">
-                        <avalonDock:LayoutDocumentPane/>
-                    </avalonDock:LayoutPanel>
-                </avalonDock:LayoutPanel>
-            </avalonDock:LayoutRoot>
-        </avalonDock:DockingManager>
+            </xcad:DockingManager.LayoutItemContainerStyleSelector>
+            <xcad:LayoutRoot>
+                <xcad:LayoutPanel Orientation="Vertical">
+                    <xcad:LayoutPanel Orientation="Horizontal">
+                        <xcad:LayoutDocumentPane/>
+                    </xcad:LayoutPanel>
+                </xcad:LayoutPanel>
+            </xcad:LayoutRoot>
+        </xcad:DockingManager>
     </DockPanel>
 </reactiveui:ReactiveUserControl>

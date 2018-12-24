@@ -5,7 +5,7 @@
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="/Xceed.Wpf.AvalonDock.Themes.VS2013;component/LightTheme.xaml" />
+                <ResourceDictionary Source="/NnCase.Designer;component/Themes/VS2013/LightTheme.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Application.Resources>

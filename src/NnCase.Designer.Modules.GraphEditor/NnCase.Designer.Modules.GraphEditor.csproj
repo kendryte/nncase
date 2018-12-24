@@ -53,6 +53,7 @@
       <SubType>Designer</SubType>
     </Page>
     <Compile Include="Controls\AnimationHelper.cs" />
+    <Compile Include="Controls\BezierLine.cs" />
     <Compile Include="Controls\ConnectionDragCompletedEventArgs.cs" />
     <Compile Include="Controls\ConnectionDragEventArgs.cs" />
     <Compile Include="Controls\ConnectionDraggingEventArgs.cs" />
@@ -65,9 +66,6 @@
     <Compile Include="Controls\ElementItemsControl.cs" />
     <Compile Include="Controls\GraphControl.cs" />
     <Compile Include="Controls\ZoomAndPanControl.cs" />
-    <Compile Include="CustomControl1.cs">
-      <SubType>Code</SubType>
-    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs">

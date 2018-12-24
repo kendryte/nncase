@@ -38,9 +38,16 @@
     <Reference Include="Autofac, Version=4.8.1.0, Culture=neutral, PublicKeyToken=17863af14b0044da, processorArchitecture=MSIL">
       <HintPath>..\packages\Autofac.4.8.1\lib\net45\Autofac.dll</HintPath>
     </Reference>
+    <Reference Include="ControlzEx, Version=3.0.2.4, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\ControlzEx.3.0.2.4\lib\net462\ControlzEx.dll</HintPath>
+    </Reference>
     <Reference Include="DynamicData, Version=6.7.0.2529, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\DynamicData.6.7.0.2529\lib\net46\DynamicData.dll</HintPath>
     </Reference>
+    <Reference Include="MahApps.Metro, Version=1.6.5.1, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\MahApps.Metro.1.6.5\lib\net47\MahApps.Metro.dll</HintPath>
+    </Reference>
+    <Reference Include="PresentationFramework.Aero" />
     <Reference Include="ReactiveUI, Version=9.4.0.0, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\ReactiveUI.9.4.1\lib\net461\ReactiveUI.dll</HintPath>
     </Reference>
@@ -106,6 +113,9 @@
     </Reference>
     <Reference Include="System.Windows" />
     <Reference Include="System.Windows.Forms" />
+    <Reference Include="System.Windows.Interactivity, Version=4.5.0.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL">
+      <HintPath>..\packages\ControlzEx.3.0.2.4\lib\net462\System.Windows.Interactivity.dll</HintPath>
+    </Reference>
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Core" />
@@ -118,14 +128,15 @@
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
     <Reference Include="PresentationFramework" />
-    <Reference Include="Xceed.Wpf.AvalonDock, Version=3.4.0.8, Culture=neutral, PublicKeyToken=3e4669d2f30244f4, processorArchitecture=MSIL">
-      <HintPath>..\packages\Dirkster.AvalonDock.Themes.VS2013.3.4.0.8\lib\net4\Xceed.Wpf.AvalonDock.dll</HintPath>
+    <Reference Include="Xceed.Wpf.AvalonDock, Version=3.7.18313.20590, Culture=neutral, PublicKeyToken=ba83ff368b7563c6, processorArchitecture=MSIL">
+      <HintPath>..\packages\Xceed.Wpf.AvalonDock.3.7.18313.20590\lib\net40\Xceed.Wpf.AvalonDock.dll</HintPath>
     </Reference>
-    <Reference Include="Xceed.Wpf.AvalonDock.Themes.VS2013, Version=1.0.3.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\Dirkster.AvalonDock.Themes.VS2013.3.4.0.8\lib\net4\Xceed.Wpf.AvalonDock.Themes.VS2013.dll</HintPath>
+    <Reference Include="Xceed.Wpf.Toolkit, Version=3.7.18313.20590, Culture=neutral, PublicKeyToken=ba83ff368b7563c6, processorArchitecture=MSIL">
+      <HintPath>..\packages\Xceed.Wpf.Toolkit.3.7.18313.20590\lib\net40\Xceed.Wpf.Toolkit.dll</HintPath>
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Themes\VS2013\Controls\Converters\TreeViewIndentConverter.cs" />
     <Page Include="App.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
@@ -135,6 +146,94 @@
       <SubType>Code</SubType>
     </Compile>
     <Page Include="Modules\ModelDesigner\Views\GraphView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Themes\VS2013\BlueTheme.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Themes\VS2013\Brushes.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Themes\VS2013\Controls\Button.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Themes\VS2013\Controls\CheckBox.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Themes\VS2013\Controls\ColorCanvas.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Themes\VS2013\Controls\ColorPicker.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Themes\VS2013\Controls\ComboBox.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Themes\VS2013\Controls\Focus.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Themes\VS2013\Controls\Label.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Themes\VS2013\Controls\Menu.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Themes\VS2013\Controls\Merged.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Themes\VS2013\Controls\ScrollBar.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <None Include="Themes\VS2013\Controls\Slider.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </None>
+    <Page Include="Themes\VS2013\Controls\TextBox.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <None Include="Themes\VS2013\Controls\Toolbar.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </None>
+    <Page Include="Themes\VS2013\Controls\Tooltip.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Themes\VS2013\Controls\TreeView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Themes\VS2013\Controls\Window.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Themes\VS2013\Controls\WindowCommands.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Themes\VS2013\DarkTheme.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Themes\VS2013\LightTheme.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Include="Themes\VS2013\Theme.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
@@ -195,11 +294,57 @@
       <Project>{01078143-02a2-4fc2-b810-12c109a68522}</Project>
       <Name>NnCase.Designer.Modules.GraphEditor</Name>
     </ProjectReference>
+    <ProjectReference Include="..\NnCase.Designer.Modules.Inspector\NnCase.Designer.Modules.Inspector.csproj">
+      <Project>{7cb4ef49-c2ed-46fd-8dc4-41a99d6f0644}</Project>
+      <Name>NnCase.Designer.Modules.Inspector</Name>
+    </ProjectReference>
     <ProjectReference Include="..\NnCase.Designer.Shell\NnCase.Designer.Modules..Shell.csproj">
       <Project>{64e0124a-5771-4b9c-9e24-eb5a8bc2bee0}</Project>
       <Name>NnCase.Designer.Modules..Shell</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Resource Include="Themes\VS2013\Images\DockAnchorableBottom.png" />
+    <Resource Include="Themes\VS2013\Images\DockAnchorableLeft.png" />
+    <Resource Include="Themes\VS2013\Images\DockAnchorableRight.png" />
+    <Resource Include="Themes\VS2013\Images\DockAnchorableTop.png" />
+    <Resource Include="Themes\VS2013\Images\DockDocumentAsAnchorableBottom.png" />
+    <Resource Include="Themes\VS2013\Images\DockDocumentAsAnchorableLeft.png" />
+    <Resource Include="Themes\VS2013\Images\DockDocumentAsAnchorableRight.png" />
+    <Resource Include="Themes\VS2013\Images\DockDocumentAsAnchorableTop.png" />
+    <Resource Include="Themes\VS2013\Images\DockDocumentBottom.png" />
+    <Resource Include="Themes\VS2013\Images\DockDocumentInside.png" />
+    <Resource Include="Themes\VS2013\Images\DockDocumentLeft.png" />
+    <Resource Include="Themes\VS2013\Images\DockDocumentRight.png" />
+    <Resource Include="Themes\VS2013\Images\DockDocumentTop.png" />
+    <Resource Include="Themes\VS2013\Images\DockPaneEmpty.png" />
+    <Resource Include="Themes\VS2013\Images\DockPaneLargeEmpty.png" />
+    <Resource Include="Themes\VS2013\Images\HTabGroup.png" />
+    <Resource Include="Themes\VS2013\Images\Locked.png" />
+    <Resource Include="Themes\VS2013\Images\PinAutoHide.png" />
+    <Resource Include="Themes\VS2013\Images\PinAutoHide_Black.png" />
+    <Resource Include="Themes\VS2013\Images\PinAutoHide_Dark.png" />
+    <Resource Include="Themes\VS2013\Images\PinAutoHide_White.png" />
+    <Resource Include="Themes\VS2013\Images\PinClose.png" />
+    <Resource Include="Themes\VS2013\Images\PinClose_Black.png" />
+    <Resource Include="Themes\VS2013\Images\PinClose_Dark.png" />
+    <Resource Include="Themes\VS2013\Images\PinClose_White.png" />
+    <Resource Include="Themes\VS2013\Images\PinDocMenu.png" />
+    <Resource Include="Themes\VS2013\Images\PinDocMenu_Black.png" />
+    <Resource Include="Themes\VS2013\Images\PinMaximize.png" />
+    <Resource Include="Themes\VS2013\Images\PinMaximize_Black.png" />
+    <Resource Include="Themes\VS2013\Images\PinMaximize_Dark.png" />
+    <Resource Include="Themes\VS2013\Images\PinMenu.png" />
+    <Resource Include="Themes\VS2013\Images\PinMenu_Black.png" />
+    <Resource Include="Themes\VS2013\Images\PinMenu_Dark.png" />
+    <Resource Include="Themes\VS2013\Images\PinMenu_White.png" />
+    <Resource Include="Themes\VS2013\Images\PinRestore.png" />
+    <Resource Include="Themes\VS2013\Images\PinRestore_Black.png" />
+    <Resource Include="Themes\VS2013\Images\PinRestore_Dark.png" />
+    <Resource Include="Themes\VS2013\Images\VTabGroup.png" />
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Modules\ModelDesigner\Controls\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

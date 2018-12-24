@@ -35,7 +35,8 @@ namespace NnCase.Designer
             assemblies.Add(typeof(App).Assembly);
 
             assemblies
-                .AddShell();
+                .AddShell()
+                .AddInspector();
 
             containerBuilder.RegisterAssemblyModules(assemblies.ToArray());
         }

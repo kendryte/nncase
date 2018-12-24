@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using NnCase.Designer.Commands;
+using NnCase.Designer.Modules.Inspector;
 using NnCase.Designer.Modules.ModelDesigner.ViewModels;
 using NnCase.Designer.Modules.Toolbox;
 using NnCase.Designer.Services;
@@ -23,6 +24,7 @@ namespace NnCase.Designer.Modules.ModelDesigner.Commands
         {
             _shell.OpenDocument(new GraphViewModel("Graph 1"));
             _shell.OpenTool<IToolbox>();
+            _shell.OpenTool<IInspectorTool>();
             return Task.CompletedTask;
         }
 

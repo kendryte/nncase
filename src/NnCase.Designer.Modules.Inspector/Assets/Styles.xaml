@@ -1,0 +1,40 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:rxui="http://reactiveui.net"
+                    xmlns:xctk="http://schemas.xceed.com/wpf/xaml/toolkit"
+                    xmlns:xcad="http://schemas.xceed.com/wpf/xaml/avalondock"
+                    xmlns:mycontrols="clr-namespace:NnCase.Designer.Modules.Inspector.Controls">
+    <xctk:InverseBoolConverter x:Key="InverseBoolConverter" />
+    <xcad:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
+    
+    <mycontrols:InspectorItemTemplateSelector x:Key="InspectorItemTemplateSelector">
+        <mycontrols:InspectorItemTemplateSelector.LabelledTemplate>
+            <DataTemplate>
+                <Grid IsEnabled="{Binding IsReadOnly, Converter={StaticResource InverseBoolConverter}}">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="{Binding Path=(mycontrols:InspectorGrid.PropertyNameColumnWidth), Mode=TwoWay}" MinWidth="50" />
+                        <ColumnDefinition Width="5" />
+                        <ColumnDefinition Width="{Binding Path=(mycontrols:InspectorGrid.PropertyValueColumnWidth), Mode=TwoWay}" MinWidth="50" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Label Grid.Column="0" 
+                           ToolTip="{Binding Description}"
+                           HorizontalContentAlignment="Left"
+                           VerticalAlignment="Center">
+                        <TextBlock Text="{Binding Name}" TextTrimming="CharacterEllipsis" Foreground="Black" />
+                    </Label>
+                    <mycontrols:SimpleGridSplitter Grid.Column="1" Width="5" ResizeBehavior="PreviousAndNext" />
+                    <Border Grid.Column="2" Padding="0 2 5 2" VerticalAlignment="Center">
+                        <rxui:ViewModelViewHost ViewModel="{Binding}" IsTabStop="False" HorizontalContentAlignment="Stretch"/>
+                    </Border>
+                </Grid>
+            </DataTemplate>
+        </mycontrols:InspectorItemTemplateSelector.LabelledTemplate>
+        <mycontrols:InspectorItemTemplateSelector.DefaultTemplate>
+            <DataTemplate>
+                <rxui:ViewModelViewHost ViewModel="{Binding}" IsEnabled="{Binding IsReadOnly, Converter={StaticResource InverseBoolConverter}}"
+                                        HorizontalContentAlignment="Stretch"/>
+            </DataTemplate>
+        </mycontrols:InspectorItemTemplateSelector.DefaultTemplate>
+    </mycontrols:InspectorItemTemplateSelector>
+</ResourceDictionary>

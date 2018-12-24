@@ -16,7 +16,7 @@ namespace NnCase.Designer.Modules.Toolbox
             builder.RegisterType<ToolboxService>().As<IToolboxService>().SingleInstance();
 
             builder.RegisterType<ViewModels.ToolboxViewModel>()
-                .AsSelf().As<IToolbox>();
+                .AsSelf().As<IToolbox>().SingleInstance();
             builder.RegisterType<Views.ToolboxView>();
         }
     }
