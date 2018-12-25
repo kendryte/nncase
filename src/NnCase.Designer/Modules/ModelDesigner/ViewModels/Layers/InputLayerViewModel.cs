@@ -12,23 +12,52 @@ namespace NnCase.Designer.Modules.ModelDesigner.ViewModels.Layers
     {
         public OutputConnectorViewModel Output { get; }
 
+        private int _width;
         public int Width
         {
-            get => Output.Dimensions[3];
-            set => Output.SetDimension(3, value);
+            get => _width;
+            set
+            {
+                if (_width != value)
+                {
+                    _width = value;
+                    this.RaisePropertyChanged();
+                    UpdateOutput();
+                }
+            }
         }
 
+        private int _height;
         public int Height
         {
-            get => Output.Dimensions[2];
-            set => Output.SetDimension(2, value);
+            get => _height;
+            set
+            {
+                if (_height != value)
+                {
+                    _height = value;
+                    this.RaisePropertyChanged();
+                    UpdateOutput();
+                }
+            }
         }
 
-        public int Channels => Output.Dimensions[1];
+        public int Channels => 3;
 
         public InputLayerViewModel()
         {
-            Output = AddOutput("output", new[] { 1, 3, 128, 128 });
+            _width = 128;
+            _height = 128;
+            Output = AddOutput("output", new[] { 1, Channels, Height, Width });
+        }
+
+        private void UpdateOutput()
+        {
+            Output.SetDimension(d =>
+            {
+                d[2] = Height;
+                d[3] = Width;
+            });
         }
     }
 }

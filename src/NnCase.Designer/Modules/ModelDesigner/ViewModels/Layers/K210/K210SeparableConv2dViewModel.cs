@@ -43,6 +43,34 @@ namespace NnCase.Designer.Modules.ModelDesigner.ViewModels.Layers.K210
             }
         }
 
+        private K210Conv2dKernelSize _kernelSize;
+        public K210Conv2dKernelSize KernelSize
+        {
+            get => _kernelSize;
+            set
+            {
+                if (_kernelSize != value)
+                {
+                    _kernelSize = value;
+                    this.RaisePropertyChanged();
+                }
+            }
+        }
+
+        private int _outputChannels = 1;
+        public int OutputChannels
+        {
+            get => _outputChannels;
+            set
+            {
+                if (_outputChannels != value)
+                {
+                    _outputChannels = value;
+                    this.RaisePropertyChanged();
+                }
+            }
+        }
+
         public K210SeparableConv2dViewModel()
         {
             Input = AddInput("input");

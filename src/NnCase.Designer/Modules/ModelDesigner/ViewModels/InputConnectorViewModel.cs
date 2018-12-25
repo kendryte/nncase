@@ -44,19 +44,36 @@ namespace NnCase.Designer.Modules.ModelDesigner.ViewModels
             {
                 if (_connection != value)
                 {
-                    if (_connection != null)
-                        _connection.To = null;
+                    var old = _connection;
                     _connection = value;
-                    if (_connection != null)
-                        _connection.To = this;
+                    if (old != null)
+                    {
+                        old.From.Updated -= From_Updated;
+                        old.To = null;
+                    }
+
+                    if (value != null)
+                    {
+                        value.To = this;
+                        value.From.Updated += From_Updated;
+                    }
+
                     this.RaisePropertyChanged();
+                    Updated?.Invoke(this, EventArgs.Empty);
                 }
             }
         }
 
+        public event EventHandler Updated;
+
         public InputConnectorViewModel(string name, ILayerViewModel owner)
         {
             Owner = owner;
+        }
+
+        private void From_Updated(object sender, EventArgs e)
+        {
+            Updated?.Invoke(this, EventArgs.Empty);
         }
     }
 }

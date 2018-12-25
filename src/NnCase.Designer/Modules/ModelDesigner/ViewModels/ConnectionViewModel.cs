@@ -68,7 +68,7 @@ namespace NnCase.Designer.Modules.ModelDesigner.ViewModels
             get
             {
                 var mid = ((Vector)FromPosition + (Vector)ToPosition) / 2;
-                return new Thickness(mid.X + 20, mid.Y - 5, 0, 0);
+                return new Thickness(mid.X + 20, mid.Y - 8, 0, 0);
             }
         }
 

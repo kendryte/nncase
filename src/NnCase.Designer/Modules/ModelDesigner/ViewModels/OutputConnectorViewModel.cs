@@ -40,6 +40,8 @@ namespace NnCase.Designer.Modules.ModelDesigner.ViewModels
 
         public event EventHandler PositionChanged;
 
+        public event EventHandler Updated;
+
         public bool IsInput => false;
 
         public OutputConnectorViewModel(string name, int[] dimensions, ILayerViewModel owner)
@@ -49,11 +51,12 @@ namespace NnCase.Designer.Modules.ModelDesigner.ViewModels
             _dimensions = dimensions;
         }
 
-        public void SetDimension(int index, int value)
+        public void SetDimension(Action<int[]> action)
         {
-            _dimensions[index] = value;
+            action(_dimensions);
             this.RaisePropertyChanged(nameof(Dimensions));
             this.RaisePropertyChanged(nameof(DimensionsText));
+            Updated?.Invoke(this, EventArgs.Empty);
         }
     }
 }
