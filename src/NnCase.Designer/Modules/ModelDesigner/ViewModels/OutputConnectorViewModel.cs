@@ -19,7 +19,7 @@ namespace NnCase.Designer.Modules.ModelDesigner.ViewModels
 
         public ReadOnlySpan<int> Dimensions => _dimensions;
 
-        public string DimensionsText => $"{Dimensions[0]}x{Dimensions[1]}x{Dimensions[2]}x{Dimensions[3]}";
+        public string DimensionsText => $"{Dimensions[1]}x{Dimensions[2]}x{Dimensions[3]}";
 
         public ILayerViewModel Owner { get; }
 
@@ -39,6 +39,8 @@ namespace NnCase.Designer.Modules.ModelDesigner.ViewModels
         }
 
         public event EventHandler PositionChanged;
+
+        public bool IsInput => false;
 
         public OutputConnectorViewModel(string name, int[] dimensions, ILayerViewModel owner)
         {

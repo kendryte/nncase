@@ -21,7 +21,7 @@ namespace NnCase.Converter.Transforms.K210
                         conv2d.StrideHeight != 1 || conv2d.StrideWidth != 1 ||
                         conv2d.Input.Dimensions[2] < 4 || conv2d.Input.Dimensions[3] < 4 ||
                         conv2d.Output.Dimensions[2] < 4 || conv2d.Output.Dimensions[3] < 4 ||
-                        conv2d.Padding != Padding.Same)
+                        (conv2d.KernelWidth == 3 && conv2d.Padding != Padding.Same))
                         return false;
                     context.Inputs.Add(conv2d.Input);
                     context.Outputs.Add(conv2d.Output);
@@ -33,7 +33,7 @@ namespace NnCase.Converter.Transforms.K210
                         dwConv2d.StrideHeight != 1 || dwConv2d.StrideWidth != 1 ||
                         dwConv2d.Input.Dimensions[2] < 4 || dwConv2d.Input.Dimensions[3] < 4 ||
                         dwConv2d.Output.Dimensions[2] < 4 || dwConv2d.Output.Dimensions[3] < 4 ||
-                        dwConv2d.Padding != Padding.Same)
+                        (dwConv2d.KernelWidth == 3 && dwConv2d.Padding != Padding.Same))
                         return false;
                     context.Inputs.Add(dwConv2d.Input);
                     context.Outputs.Add(dwConv2d.Output);

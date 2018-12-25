@@ -27,8 +27,7 @@ namespace NnCase.Converter.Transforms.K210
                                 (maxPool.FilterWidth != 2 && maxPool.FilterHeight != 4) ||
                                 maxPool.StrideWidth != maxPool.StrideHeight ||
                                 maxPool.StrideWidth != maxPool.FilterWidth ||
-                                maxPool.FusedActivationFunction != ActivationFunctionType.Linear ||
-                                maxPool.Padding != Padding.Valid)
+                                maxPool.FusedActivationFunction != ActivationFunctionType.Linear)
                                 continue;
                             context.Outputs.Add(maxPool.Output);
                         }

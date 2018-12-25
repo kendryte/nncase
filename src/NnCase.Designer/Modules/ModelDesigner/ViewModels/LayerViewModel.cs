@@ -65,6 +65,13 @@ namespace NnCase.Designer.Modules.ModelDesigner.ViewModels
 
         public ObservableCollection<OutputConnectorViewModel> OutputConnectors { get; } = new ObservableCollection<OutputConnectorViewModel>();
 
+        protected InputConnectorViewModel AddInput(string name)
+        {
+            var conn = new InputConnectorViewModel(name, this);
+            InputConnectors.Add(conn);
+            return conn;
+        }
+
         protected OutputConnectorViewModel AddOutput(string name, int[] dimensions)
         {
             var conn = new OutputConnectorViewModel(name, dimensions, this);

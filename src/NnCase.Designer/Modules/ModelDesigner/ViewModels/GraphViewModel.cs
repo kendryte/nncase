@@ -84,11 +84,11 @@ namespace NnCase.Designer.Modules.ModelDesigner.ViewModels
                 return;
             }
 
-            //var existingConnection = nearbyConnector.Connection;
-            //if (existingConnection != null)
-            //    Connections.Remove(existingConnection);
-            //
-            //newConnection.To = nearbyConnector;
+            var existingConnection = nearbyConnector.Connection;
+            if (existingConnection != null)
+                Connections.Remove(existingConnection);
+            
+            newConnection.To = nearbyConnector;
         }
     }
 }

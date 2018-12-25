@@ -22,7 +22,7 @@ namespace NnCase.Designer.Modules.Inspector.Conventions
             _inspectorBuilders = new List<PropertyEditorBuilder>
             {
                 //new RangePropertyEditorBuilder(),
-                //new EnumPropertyEditorBuilder(),
+                new EnumPropertyEditorBuilder(),
                 //
                 //new StandardPropertyEditorBuilder<bool, CheckBoxEditorViewModel>(),
                 //new StandardPropertyEditorBuilder<Color, ColorEditorViewModel>(),

@@ -100,10 +100,12 @@ namespace NnCase.Designer.Modules.ModelDesigner.Views
 
         private void OnGraphControlConnectionDragStarted(object sender, ConnectionDragStartedEventArgs e)
         {
-            var sourceConnector = (OutputConnectorViewModel)e.SourceConnector.DataContext;
-            var currentDragPoint = Mouse.GetPosition(_graphControl);
-            var connection = ViewModel.OnConnectionDragStarted(sourceConnector, currentDragPoint);
-            e.Connection = connection;
+            if (e.SourceConnector.DataContext is OutputConnectorViewModel sourceConnector)
+            {
+                var currentDragPoint = Mouse.GetPosition(_graphControl);
+                var connection = ViewModel.OnConnectionDragStarted(sourceConnector, currentDragPoint);
+                e.Connection = connection;
+            }
         }
 
         private void OnGraphControlConnectionDragging(object sender, ConnectionDraggingEventArgs e)

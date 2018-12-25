@@ -120,6 +120,7 @@ namespace NnCase.Converter.Converters
     {
         public IReadOnlyList<K210ConvLayerConfig> Layers { get; set; }
         public string Prefix { get; set; }
+        public int MaxStartAddress { get; set; }
     }
 
     public class GraphToK210Converter
@@ -152,7 +153,8 @@ namespace NnCase.Converter.Converters
             var codeGenContext = new K210CodeGenerationContext
             {
                 Layers = context.InferenceOrders,
-                Prefix = prefix
+                Prefix = prefix,
+                MaxStartAddress = context.MemoryAllocator.MaxStart
             };
 
             var code = await _templateEngine.CompileRenderAsync("Model", codeGenContext);
@@ -473,15 +475,18 @@ namespace NnCase.Converter.Converters
             double? bias = 0;
             var alpha = 0.01;
 
+            var m = new List<(double scale, double bias)>();
+
             for (int i = 0; i < channels; i++)
             {
                 var buffer = kernels.Slice(i * channelSize, channelSize);
                 (var s, var b) = GetRange(buffer).GetScaleBias();
                 //bias = bias.HasValue ? (1 - alpha) * bias + alpha * b : b;
                 bias += b;
+                m.Add((s, b));
             }
 
-            bias /= channels;
+            bias = Math.Round(bias.Value / channels);
 
             var scale = new double[channels];
             for (int i = 0; i < channels; i++)
@@ -608,7 +613,7 @@ namespace NnCase.Converter.Converters
             var diff = new double[data.Length];
             for (int i = 0; i < data.Length; i++)
                 diff[i] = Math.Abs(((dest[i] + bias) / scale) - data[i]);
-            var avg = diff.Max();
+            var avg = diff.Average();
             return avg;
         }
 
@@ -624,6 +629,7 @@ namespace NnCase.Converter.Converters
             double min = double.MaxValue, max = double.MinValue;
             for (int j = 0; j < data.Length; j++)
             {
+                if (Math.Abs(data[j]) > 100) continue;
                 min = Math.Min(min, data[j]);
                 max = Math.Max(max, data[j]);
             }
@@ -677,7 +683,7 @@ namespace NnCase.Converter.Converters
             public (double scale, double bias) GetScaleBias(int maxBits)
             {
                 var scale = ((1 << maxBits) - 1) / (Max - Min);
-                var bias = Min * scale;
+                var bias = Math.Round(Min * scale);
                 return (scale, bias);
             }
 
@@ -717,9 +723,11 @@ namespace NnCase.Converter.Converters
         {
             private List<KPUMemoryNode> _nodes = new List<KPUMemoryNode>();
 
+            public int MaxStart { get; private set; } = 2 * 1024 * 1024 / 64;
+
             public KPUMemoryAllocator()
             {
-                _nodes.Add(new KPUMemoryNode(this) { Start = 0, Size = 2 * 1024 * 1024 / 64 });
+                _nodes.Add(new KPUMemoryNode(this) { Start = 0, Size = MaxStart });
             }
 
             public KPUMemoryNode Allocate(int size)
@@ -728,10 +736,11 @@ namespace NnCase.Converter.Converters
                 if (firstFreeIdx == -1)
                     throw new InvalidOperationException("KPU ran out of memory.");
                 var firstFree = _nodes[firstFreeIdx];
+                KPUMemoryNode node;
                 if (firstFree.Size == size)
                 {
                     firstFree.AddRef();
-                    return firstFree;
+                    node = firstFree;
                 }
                 else
                 {
@@ -744,8 +753,11 @@ namespace NnCase.Converter.Converters
                     newNode.AddRef();
 
                     _nodes.Insert(firstFreeIdx + 1, newNode);
-                    return newNode;
+                    node = newNode;
                 }
+
+                MaxStart = Math.Min(node.Start, MaxStart);
+                return node;
             }
 
             public void Free(KPUMemoryNode node)

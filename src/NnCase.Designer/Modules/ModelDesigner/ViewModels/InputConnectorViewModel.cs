@@ -11,11 +11,9 @@ namespace NnCase.Designer.Modules.ModelDesigner.ViewModels
 {
     public class InputConnectorViewModel : ReactiveObject
     {
-        public InputConnector Model { get; }
+        public InputConnector Model { get; private set; }
 
         public string Name => Model.Name;
-
-        public ReadOnlySpan<int> Dimensions => Model.Dimensions;
 
         public ILayerViewModel Owner { get; }
 
@@ -23,12 +21,41 @@ namespace NnCase.Designer.Modules.ModelDesigner.ViewModels
         public Point Position
         {
             get => _position;
-            set => this.RaiseAndSetIfChanged(ref _position, value);
+            set
+            {
+                if (_position != value)
+                {
+                    _position = value;
+                    this.RaisePropertyChanged();
+                    PositionChanged?.Invoke(this, EventArgs.Empty);
+                }
+            }
         }
 
-        public InputConnectorViewModel(string name, ReadOnlySpan<int> dimensions, ILayerViewModel owner)
+        public event EventHandler PositionChanged;
+
+        public bool IsInput => true;
+
+        private ConnectionViewModel _connection;
+        public ConnectionViewModel Connection
         {
-            Model = new InputConnector(name, dimensions, owner.Model);
+            get => _connection;
+            set
+            {
+                if (_connection != value)
+                {
+                    if (_connection != null)
+                        _connection.To = null;
+                    _connection = value;
+                    if (_connection != null)
+                        _connection.To = this;
+                    this.RaisePropertyChanged();
+                }
+            }
+        }
+
+        public InputConnectorViewModel(string name, ILayerViewModel owner)
+        {
             Owner = owner;
         }
     }

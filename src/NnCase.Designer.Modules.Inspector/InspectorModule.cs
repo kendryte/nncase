@@ -17,6 +17,7 @@ namespace NnCase.Designer.Modules.Inspector
 
             builder.RegisterType<Views.InspectorView>();
             builder.RegisterType<Inspectors.CollapsibleGroupView>();
+            builder.RegisterType<Inspectors.EnumEditorView>();
             builder.RegisterGeneric(typeof(Inspectors.TextBoxEditorView<>));
         }
     }

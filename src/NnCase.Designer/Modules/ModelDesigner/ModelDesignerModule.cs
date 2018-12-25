@@ -23,6 +23,10 @@ namespace NnCase.Designer.Modules.ModelDesigner
 
             builder.RegisterInstance(Toolbox.ToolboxItems.InputLayer)
                 .PreserveExistingDefaults();
+            builder.RegisterInstance(Toolbox.ToolboxItems.K210Conv2d)
+                .PreserveExistingDefaults();
+            builder.RegisterInstance(Toolbox.ToolboxItems.K210SeparableConv2d)
+                .PreserveExistingDefaults();
 
             builder.RegisterType<ViewModels.GraphViewModel>();
             builder.RegisterType<Views.GraphView>();

@@ -48,6 +48,7 @@
       <HintPath>..\packages\Splat.5.1.4\lib\net461\Splat.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Data" />
     <Reference Include="System.Drawing" />
     <Reference Include="System.Drawing.Primitives, Version=4.0.1.0, Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a, processorArchitecture=MSIL">
@@ -118,6 +119,10 @@
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
+    <Page Include="Inspectors\EnumEditorView.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <SubType>Designer</SubType>
+    </Page>
     <Page Include="Inspectors\TextBoxEditorView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -137,6 +142,7 @@
     <Compile Include="Controls\InspectorItemTemplateSelector.cs" />
     <Compile Include="Controls\SimpleGridSplitter.cs" />
     <Compile Include="Conventions\DefaultPropertyInspectors.cs" />
+    <Compile Include="Conventions\EnumPropertyEditorBuilder.cs" />
     <Compile Include="Conventions\PropertyEditorBuilder.cs" />
     <Compile Include="Conventions\StandardPropertyEditorBuilder.cs" />
     <Compile Include="IInspectableObject.cs" />
@@ -152,10 +158,14 @@
     </Compile>
     <Compile Include="Inspectors\CollapsibleGroupViewModel.cs" />
     <Compile Include="Inspectors\EditorBase.cs" />
+    <Compile Include="Inspectors\EnumValueViewModel.cs" />
     <Compile Include="Inspectors\IEditor.cs" />
     <Compile Include="Inspectors\IInspector.cs" />
     <Compile Include="Inspectors\ILabelledInspector.cs" />
     <Compile Include="Inspectors\InspectorBase.cs" />
+    <Compile Include="Inspectors\EnumEditorView.xaml.cs">
+      <DependentUpon>EnumEditorView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Inspectors\TextBoxEditorView.xaml.cs">
       <DependentUpon>TextBoxEditorView.xaml</DependentUpon>
     </Compile>

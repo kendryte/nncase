@@ -12,7 +12,7 @@
     WriteLiteral("    ");
     for (int j = 0; j < layer.Weights.Length; j++)
     {
-        if(j != 0 && j % 64 == 0)
+        if (j != 0 && j % 64 == 0)
         {
             WriteLiteral(Environment.NewLine + "    ");
         }
@@ -142,6 +142,8 @@ static kpu_layer_argument_t layers[] = {
         WriteLiteral("}," + Environment.NewLine);
     }
 };
+
+@{ WriteLiteral($"// Max start address: 0x{Model.MaxStartAddress:X}"); }
 
 void kpu_task_@(Model.Prefix)_init(kpu_task_t* task) {
     @for (int i = 0; i < Model.Layers.Count; i++)

@@ -15,20 +15,61 @@ namespace NnCase.Designer.Modules.ModelDesigner.ViewModels
 
         public OutputConnectorViewModel From { get; }
 
-        public InputConnectorViewModel To { get; }
+        private InputConnectorViewModel _to;
+        public InputConnectorViewModel To
+        {
+            get => _to;
+            set
+            {
+                if (_to != value)
+                {
+                    if (_to != null)
+                    {
+                        _to.Connection = null;
+                        _to.PositionChanged -= To_PositionChanged;
+                    }
+
+                    _to = value;
+                    if (_to != null)
+                    {
+                        _to.Connection = this;
+                        _to.PositionChanged += To_PositionChanged;
+                    }
+
+                    this.RaisePropertyChanged();
+                }
+            }
+        }
 
         private Point _fromPosition;
         public Point FromPosition
         {
             get => _fromPosition;
-            set => this.RaiseAndSetIfChanged(ref _fromPosition, value);
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _fromPosition, value);
+                this.RaisePropertyChanged(nameof(LabelMargin));
+            }
         }
 
         private Point _toPosition;
         public Point ToPosition
         {
             get => _toPosition;
-            set => this.RaiseAndSetIfChanged(ref _toPosition, value);
+            set
+            {
+                this.RaiseAndSetIfChanged(ref _toPosition, value);
+                this.RaisePropertyChanged(nameof(LabelMargin));
+            }
+        }
+
+        public Thickness LabelMargin
+        {
+            get
+            {
+                var mid = ((Vector)FromPosition + (Vector)ToPosition) / 2;
+                return new Thickness(mid.X + 20, mid.Y - 5, 0, 0);
+            }
         }
 
         public ConnectionViewModel(OutputConnectorViewModel from, InputConnectorViewModel to = null)
@@ -38,6 +79,11 @@ namespace NnCase.Designer.Modules.ModelDesigner.ViewModels
             From = from;
             From.PositionChanged += (s, e) => FromPosition = ((OutputConnectorViewModel)s).Position;
             To = to;
+        }
+
+        private void To_PositionChanged(object sender, EventArgs e)
+        {
+            ToPosition = ((InputConnectorViewModel)sender).Position;
         }
     }
 }

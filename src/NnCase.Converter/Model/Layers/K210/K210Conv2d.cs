@@ -85,21 +85,32 @@ namespace NnCase.Converter.Model.Layers.K210
                     ? graph.Conv2D(input, graph.Const(weights), new long[] { 1, 1, 1, 1 }, "SAME")
                     : graph.DepthwiseConv2dNative(input, graph.Const(weights), new long[] { 1, 1, 1, 1 }, "SAME");
             }
-            else if (KernelWidth == 1)
+            else if (PoolType == K210PoolType.LeftTop)
             {
-                y = Conv2dType == K210Conv2dType.Conv2d
-                    ? graph.Conv2D(input, graph.Const(weights), new long[] { 1, 2, 2, 1 }, "SAME")
-                    : graph.DepthwiseConv2dNative(input, graph.Const(weights), new long[] { 1, 2, 2, 1 }, "SAME");
-            }
-            else
-            {
-                y = graph.SpaceToBatchND(input, graph.Const(new[] { 1, 1 }), graph.Const(new[,] { { 1, 1 }, { 1, 1 } }));
+                y = KernelWidth == 1 ? input : graph.SpaceToBatchND(input, graph.Const(new[] { 1, 1 }), graph.Const(new[,] { { 1, 1 }, { 1, 1 } }));
                 y = Conv2dType == K210Conv2dType.Conv2d
                     ? graph.Conv2D(y, graph.Const(weights), new long[] { 1, 2, 2, 1 }, "VALID")
                     : graph.DepthwiseConv2dNative(y, graph.Const(weights), new long[] { 1, 2, 2, 1 }, "VALID");
             }
+            else
+            {
+                y = Conv2dType == K210Conv2dType.Conv2d
+                    ? graph.Conv2D(input, graph.Const(weights), new long[] { 1, 1, 1, 1 }, "SAME")
+                    : graph.DepthwiseConv2dNative(input, graph.Const(weights), new long[] { 1, 1, 1, 1 }, "SAME");
+            }
 
-            context.TFOutputs[Output] = graph.AddActivation(graph.BiasAdd(y, graph.Const(bias)), FusedActivationFunction);
+            y = graph.AddActivation(graph.BiasAdd(y, graph.Const(bias)), FusedActivationFunction);
+
+            if (PoolType == K210PoolType.MaxPool2x2)
+            {
+                y = graph.MaxPool(y, new long[] { 1, 2, 2, 1 }, new long[] { 1, 2, 2, 1 }, "SAME");
+            }
+            else if (PoolType == K210PoolType.MaxPool4x4)
+            {
+                y = graph.MaxPool(y, new long[] { 1, 4, 4, 1 }, new long[] { 1, 4, 4, 1 }, "SAME");
+            }
+
+            context.TFOutputs[Output] = y;
 
             Console.WriteLine($"K210 Conv {string.Join("x", Input.Dimensions.ToArray())}");
         }
