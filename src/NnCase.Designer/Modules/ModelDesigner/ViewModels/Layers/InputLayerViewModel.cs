@@ -8,7 +8,7 @@ using ReactiveUI;
 
 namespace NnCase.Designer.Modules.ModelDesigner.ViewModels.Layers
 {
-    public class InputLayerViewModel : LayerViewModel<InputLayer>
+    public class InputLayerViewModel : LayerViewModel
     {
         public OutputConnectorViewModel Output { get; }
 
@@ -58,6 +58,13 @@ namespace NnCase.Designer.Modules.ModelDesigner.ViewModels.Layers
                 d[2] = Height;
                 d[3] = Width;
             });
+        }
+
+        protected override void BuildModelCore(BuildGraphContext context)
+        {
+            var model = new InputLayer(Output.Dimensions);
+            context.OutputConnectors[Output] = model.Output;
+            context.Layers[this] = new[] { model };
         }
     }
 }

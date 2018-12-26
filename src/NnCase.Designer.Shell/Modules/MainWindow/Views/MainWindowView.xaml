@@ -9,6 +9,6 @@
     xmlns:vm="clr-namespace:NnCase.Designer.Modules.MainWindow.ViewModels"
     xmlns:local="clr-namespace:NnCase.Designer.Modules.MainWindow.Views"
     mc:Ignorable="d"
-    Title="NNCase Designer" Height="450" Width="800">
+    Title="NNCase Designer" Height="768" Width="1366">
     <reactiveui:ViewModelViewHost x:Name="_content" VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch"/>
 </reactiveui:ReactiveWindow>

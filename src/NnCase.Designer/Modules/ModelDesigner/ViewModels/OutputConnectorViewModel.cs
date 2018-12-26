@@ -11,8 +11,6 @@ namespace NnCase.Designer.Modules.ModelDesigner.ViewModels
 {
     public class OutputConnectorViewModel : ReactiveObject
     {
-        public OutputConnector Model { get; private set; }
-
         public string Name { get; }
 
         private readonly int[] _dimensions;
@@ -21,7 +19,7 @@ namespace NnCase.Designer.Modules.ModelDesigner.ViewModels
 
         public string DimensionsText => $"{Dimensions[1]}x{Dimensions[2]}x{Dimensions[3]}";
 
-        public ILayerViewModel Owner { get; }
+        public LayerViewModel Owner { get; }
 
         private Point _position;
         public Point Position
@@ -44,7 +42,7 @@ namespace NnCase.Designer.Modules.ModelDesigner.ViewModels
 
         public bool IsInput => false;
 
-        public OutputConnectorViewModel(string name, int[] dimensions, ILayerViewModel owner)
+        public OutputConnectorViewModel(string name, int[] dimensions, LayerViewModel owner)
         {
             Name = name;
             Owner = owner;

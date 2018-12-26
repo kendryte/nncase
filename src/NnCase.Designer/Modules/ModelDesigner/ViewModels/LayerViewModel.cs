@@ -9,30 +9,8 @@ using ReactiveUI;
 
 namespace NnCase.Designer.Modules.ModelDesigner.ViewModels
 {
-    public interface ILayerViewModel : IReactiveObject
+    public abstract class LayerViewModel: ReactiveObject
     {
-        Layer Model { get; }
-
-        string Name { get; set; }
-
-        double X { get; set; }
-
-        double Y { get; set; }
-
-        bool IsSelected { get; set; }
-
-        ObservableCollection<InputConnectorViewModel> InputConnectors { get; }
-
-        ObservableCollection<OutputConnectorViewModel> OutputConnectors { get; }
-    }
-
-    public abstract class LayerViewModel<TModel> : ReactiveObject, ILayerViewModel
-        where TModel : Layer
-    {
-        public TModel Model { get; protected set; }
-
-        Layer ILayerViewModel.Model => Model;
-
         private double _x;
         public double X
         {
@@ -78,5 +56,31 @@ namespace NnCase.Designer.Modules.ModelDesigner.ViewModels
             OutputConnectors.Add(conn);
             return conn;
         }
+
+        public void BuildModel(BuildGraphContext context)
+        {
+            if (context.Layers.ContainsKey(this)) return;
+            
+            foreach (var input in InputConnectors)
+            {
+                if (input.Connection == null)
+                    throw new InvalidOperationException("Input not satisfied.");
+
+                input.Connection.From.Owner.BuildModel(context);
+            }
+
+            BuildModelCore(context);
+        }
+
+        public void BuildConnections(BuildGraphContext context)
+        {
+            foreach (var input in InputConnectors)
+            {
+                input.Connection.From.Owner.BuildConnections(context);
+                input.Build(context);
+            }
+        }
+
+        protected abstract void BuildModelCore(BuildGraphContext context);
     }
 }

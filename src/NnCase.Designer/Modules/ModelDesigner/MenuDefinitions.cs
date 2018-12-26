@@ -12,5 +12,7 @@ namespace NnCase.Designer.Modules.ModelDesigner
     {
         public static MenuItemDefinition OpenGraphMenuItem = new CommandMenuItemDefinition<OpenGraphCommandDefinition>(
             MainMenu.MenuDefinictions.FileNewOpenMenuGroup, 2);
+        public static MenuItemDefinition ExportScriptMenuItem = new CommandMenuItemDefinition<ExportScriptCommandDefinition>(
+            MainMenu.MenuDefinictions.FileNewOpenMenuGroup, 3);
     }
 }

@@ -14,14 +14,23 @@ namespace NnCase.Designer.Modules.ModelDesigner
         {
             builder.Register(c => MenuDefinitions.OpenGraphMenuItem)
                 .PreserveExistingDefaults();
+            builder.Register(c => MenuDefinitions.ExportScriptMenuItem)
+                .PreserveExistingDefaults();
 
             builder.RegisterType<Commands.OpenGraphCommandDefinition>()
                 .As<CommandDefinitionBase>();
             builder.RegisterType<Commands.OpenGraphCommandHandler>()
                 .As<ICommandHandler>()
                 .PreserveExistingDefaults();
+            builder.RegisterType<Commands.ExportScriptCommandDefinition>()
+                .As<CommandDefinitionBase>();
+            builder.RegisterType<Commands.ExportScriptCommandHandler>()
+                .As<ICommandHandler>()
+                .PreserveExistingDefaults();
 
             builder.RegisterInstance(Toolbox.ToolboxItems.InputLayer)
+                .PreserveExistingDefaults();
+            builder.RegisterInstance(Toolbox.ToolboxItems.OutputLayer)
                 .PreserveExistingDefaults();
             builder.RegisterInstance(Toolbox.ToolboxItems.K210Conv2d)
                 .PreserveExistingDefaults();

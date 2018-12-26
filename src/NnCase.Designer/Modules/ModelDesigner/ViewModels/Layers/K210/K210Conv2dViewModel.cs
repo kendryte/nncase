@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Numerics.Tensors;
 using System.Text;
 using System.Threading.Tasks;
 using NnCase.Converter.Model.Layers;
@@ -26,7 +27,7 @@ namespace NnCase.Designer.Modules.ModelDesigner.ViewModels.Layers.K210
         Size3x3
     }
 
-    public class K210Conv2dViewModel : LayerViewModel<K210Conv2d>
+    public class K210Conv2dViewModel : LayerViewModel
     {
         public InputConnectorViewModel Input { get; }
 
@@ -116,6 +117,18 @@ namespace NnCase.Designer.Modules.ModelDesigner.ViewModels.Layers.K210
                     d[3] = input.Dimensions[3] / stride;
                 });
             }
+        }
+
+        protected override void BuildModelCore(BuildGraphContext context)
+        {
+            var kernelSize = KernelSize == K210Conv2dKernelSize.Size1x1 ? 1 : 3;
+            var pool = Stride == K210Stride.Stride1x1 ? K210PoolType.None : K210PoolType.LeftTop;
+            var weights = new DenseTensor<float>(new[] { OutputChannels, Input.Connection.From.Dimensions[1], kernelSize, kernelSize });
+            var bias = new DenseTensor<float>(new[] { OutputChannels });
+            var model = new K210Conv2d(Input.Connection.From.Dimensions, K210Conv2dType.Conv2d, weights, bias, pool, Activation);
+            context.InputConnectors[Input] = model.Input;
+            context.OutputConnectors[Output] = model.Output;
+            context.Layers[this] = new[] { model };
         }
     }
 }

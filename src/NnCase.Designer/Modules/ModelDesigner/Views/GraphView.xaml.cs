@@ -136,7 +136,7 @@ namespace NnCase.Designer.Modules.ModelDesigner.Views
                 var mousePosition = e.GetPosition(_graphControl);
 
                 var toolboxItem = (ToolboxItem)e.Data.GetData(ToolboxDragDrop.DataFormat);
-                var layer = (ILayerViewModel)Activator.CreateInstance(toolboxItem.ItemType);
+                var layer = (LayerViewModel)Activator.CreateInstance(toolboxItem.ItemType);
                 var namePrefix = layer.GetType().Name.Replace("ViewModel", string.Empty);
                 layer.Name = GetDefaultLayerName(namePrefix);
                 layer.X = mousePosition.X;

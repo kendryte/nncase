@@ -86,6 +86,16 @@
                                         <graphControls:ConnectorItem DataContext="{Binding Output}" />
                                     </StackPanel>
                                 </DataTemplate>
+                                <DataTemplate x:Key="{x:Type layers:OutputLayerViewModel}">
+                                    <StackPanel>
+                                        <graphControls:ConnectorItem DataContext="{Binding Input}" />
+                                        <Border BorderThickness="1" CornerRadius="5"
+                                                BorderBrush="Black" Padding="5"
+                                                Background="{DynamicResource {x:Static SystemColors.ControlLightBrushKey}}">
+                                            <TextBlock Text="{Binding Name}"/>
+                                        </Border>
+                                    </StackPanel>
+                                </DataTemplate>
                                 <DataTemplate x:Key="{x:Type k210Layers:K210Conv2dViewModel}">
                                     <StackPanel>
                                         <graphControls:ConnectorItem DataContext="{Binding Input}" />

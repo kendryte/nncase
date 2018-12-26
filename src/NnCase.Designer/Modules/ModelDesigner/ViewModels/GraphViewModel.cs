@@ -5,6 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using NnCase.Converter.Model;
+using NnCase.Converter.Model.Layers;
 using NnCase.Designer.Modules.Inspector;
 using NnCase.Designer.Modules.ModelDesigner.ViewModels.Layers;
 using Splat;
@@ -15,16 +17,35 @@ namespace NnCase.Designer.Modules.ModelDesigner.ViewModels
     {
         private readonly IInspectorTool _inspectorTool;
 
-        public ObservableCollection<ILayerViewModel> Layers { get; } = new ObservableCollection<ILayerViewModel>();
+        public ObservableCollection<LayerViewModel> Layers { get; } = new ObservableCollection<LayerViewModel>();
 
         public ObservableCollection<ConnectionViewModel> Connections { get; } = new ObservableCollection<ConnectionViewModel>();
 
-        public IEnumerable<ILayerViewModel> SelectedLayers => Layers.Where(x => x.IsSelected);
+        public IEnumerable<LayerViewModel> SelectedLayers => Layers.Where(x => x.IsSelected);
 
         public GraphViewModel(string title)
         {
             Title = title;
             _inspectorTool = Locator.Current.GetService<IInspectorTool>();
+        }
+
+        public void Build(BuildGraphContext context)
+        {
+            var outputLayers = Layers.OfType<OutputLayerViewModel>().ToList();
+            if (outputLayers.Count == 0)
+            {
+                MessageBox.Show("You should place at least 1 output layer.", "NnCase", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            else
+            {
+                foreach (var layer in outputLayers)
+                    layer.BuildModel(context);
+                foreach (var layer in outputLayers)
+                    layer.BuildConnections(context);
+
+                context.Graph = new Graph(context.Layers.Values.OfType<InputLayer>().ToList(),
+                    context.Layers.Values.OfType<OutputLayer>().ToList());
+            }
         }
 
         internal void OnSelectionChanged()

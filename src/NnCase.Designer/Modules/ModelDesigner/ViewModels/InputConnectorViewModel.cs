@@ -11,11 +11,9 @@ namespace NnCase.Designer.Modules.ModelDesigner.ViewModels
 {
     public class InputConnectorViewModel : ReactiveObject
     {
-        public InputConnector Model { get; private set; }
+        public string Name { get; set; }
 
-        public string Name => Model.Name;
-
-        public ILayerViewModel Owner { get; }
+        public LayerViewModel Owner { get; }
 
         private Point _position;
         public Point Position
@@ -66,14 +64,22 @@ namespace NnCase.Designer.Modules.ModelDesigner.ViewModels
 
         public event EventHandler Updated;
 
-        public InputConnectorViewModel(string name, ILayerViewModel owner)
+        public InputConnectorViewModel(string name, LayerViewModel owner)
         {
+            Name = name;
             Owner = owner;
         }
 
         private void From_Updated(object sender, EventArgs e)
         {
             Updated?.Invoke(this, EventArgs.Empty);
+        }
+
+        public void Build(BuildGraphContext context)
+        {
+            var from = context.OutputConnectors[Connection.From];
+            var to = context.InputConnectors[this];
+            to.SetConnection(from);
         }
     }
 }

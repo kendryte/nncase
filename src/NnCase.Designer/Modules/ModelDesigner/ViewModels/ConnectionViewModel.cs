@@ -11,8 +11,6 @@ namespace NnCase.Designer.Modules.ModelDesigner.ViewModels
 {
     public class ConnectionViewModel : ReactiveObject
     {
-        public Connection Model { get; }
-
         public OutputConnectorViewModel From { get; }
 
         private InputConnectorViewModel _to;
@@ -74,8 +72,6 @@ namespace NnCase.Designer.Modules.ModelDesigner.ViewModels
 
         public ConnectionViewModel(OutputConnectorViewModel from, InputConnectorViewModel to = null)
         {
-            if (from != null && to != null)
-                Model = new Connection(from.Model, to.Model);
             From = from;
             From.PositionChanged += (s, e) => FromPosition = ((OutputConnectorViewModel)s).Position;
             To = to;
