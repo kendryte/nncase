@@ -72,7 +72,7 @@ namespace NnCase.Converter
 
             using (var f = File.Open(@"D:\Work\Repository\models\80class2.pb", FileMode.Create, FileAccess.Write))
                 await ctx.SaveAsync(f);
-#else
+#elif false
             var file = File.ReadAllBytes(@"D:\Work\Repository\models\mbnetv1_test.tflite");
             var model = tflite.Model.GetRootAsModel(new FlatBuffers.ByteBuffer(file));
             var tfc = new TfLiteToGraphConverter(model, model.Subgraphs(0).Value);
@@ -84,6 +84,17 @@ namespace NnCase.Converter
             graph.Plan(ctx);
 
             using (var f = File.Open(@"D:\Work\Repository\models\mbnetv1_test2.pb", FileMode.Create, FileAccess.Write))
+                await ctx.SaveAsync(f);
+#else
+            var tfc = new PaddleToGraphConverter(@"D:\Work\Repository\models\MobileNetV1_pretrained");
+            tfc.Convert(0);
+            var graph = tfc.Graph;
+            Transform.Process(graph, new Transform[] {
+            });
+            var ctx = new GraphPlanContext();
+            graph.Plan(ctx);
+
+            using (var f = File.Open(@"D:\Work\Repository\models\mbnetv1_test_paddle.pb", FileMode.Create, FileAccess.Write))
                 await ctx.SaveAsync(f);
 #endif
 
