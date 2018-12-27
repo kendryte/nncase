@@ -8,13 +8,18 @@ using NnCase.Converter.Model;
 using NnCase.Converter.Transforms;
 using NnCase.Converter.Transforms.K210;
 
-namespace NnCase.Converter
+namespace NnCase.Cli
 {
     class Program
     {
-        static async Task Main(string[] args)
+        static void Main(string[] args)
         {
-#if true
+            DoJobAsync().Wait();
+        }
+
+        static async Task DoJobAsync()
+        {
+#if false
             var file = File.ReadAllBytes(@"D:\Work\Repository\models\mbnetv1_test.tflite");
             var model = tflite.Model.GetRootAsModel(new FlatBuffers.ByteBuffer(file));
             var tfc = new TfLiteToGraphConverter(model, model.Subgraphs(0).Value);
