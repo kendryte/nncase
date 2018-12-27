@@ -27,6 +27,13 @@ namespace NnCase.Designer
             resolver.InitializeSplat();
             resolver.InitializeReactiveUI();
             Locator.Current = resolver;
+            DispatcherUnhandledException += App_DispatcherUnhandledException;
+        }
+
+        private void App_DispatcherUnhandledException(object sender, System.Windows.Threading.DispatcherUnhandledExceptionEventArgs e)
+        {
+            e.Handled = true;
+            MessageBox.Show(e.Exception.ToString(), "NnCase", MessageBoxButton.OK, MessageBoxImage.Error);
         }
 
         private void RegisterAssemblies(ContainerBuilder containerBuilder)
