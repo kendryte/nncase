@@ -14,5 +14,7 @@ namespace NnCase.Designer.Modules.ModelDesigner
             MainMenu.MenuDefinictions.FileNewOpenMenuGroup, 2);
         public static MenuItemDefinition ExportScriptMenuItem = new CommandMenuItemDefinition<ExportScriptCommandDefinition>(
             MainMenu.MenuDefinictions.FileNewOpenMenuGroup, 3);
+        public static MenuItemDefinition ExportK210CodeMenuItem = new CommandMenuItemDefinition<ExportK210CodeCommandDefinition>(
+            MainMenu.MenuDefinictions.FileNewOpenMenuGroup, 3);
     }
 }

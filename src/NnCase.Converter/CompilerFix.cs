@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-#if !NET48
+#if !NET471
 namespace System.Threading.Tasks
 {
     using System.Runtime.CompilerServices;

@@ -67,11 +67,13 @@ namespace NnCase.Converter.Model.Layers
             var graph = context.TFGraph;
             var input = context.TFOutputs[Input.Connection.From];
             var weights = Weights.ToHWIO();
-            var bias = Bias.ToNHWC();
+            var bias = Bias?.ToNHWC();
 
             var y = graph.Conv2D(input, graph.Const(weights),
                 new long[] { 1, StrideHeight, StrideWidth, 1 }, Padding.ToString().ToUpperInvariant());
-            context.TFOutputs[Output] = graph.AddActivation(graph.BiasAdd(y, graph.Const(bias)), FusedActivationFunction);
+            if (bias != null)
+                y = graph.BiasAdd(y, graph.Const(bias));
+            context.TFOutputs[Output] = graph.AddActivation(y, FusedActivationFunction);
         }
     }
 }

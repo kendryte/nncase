@@ -8,12 +8,13 @@
     <OutputType>WinExe</OutputType>
     <RootNamespace>NnCase.Designer</RootNamespace>
     <AssemblyName>NnCase.Designer</AssemblyName>
-    <TargetFrameworkVersion>v4.8</TargetFrameworkVersion>
+    <TargetFrameworkVersion>v4.7.1</TargetFrameworkVersion>
     <FileAlignment>512</FileAlignment>
     <ProjectTypeGuids>{60dc8134-eba5-43b8-bcc9-bb4bc16c2548};{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}</ProjectTypeGuids>
     <WarningLevel>4</WarningLevel>
     <AutoGenerateBindingRedirects>true</AutoGenerateBindingRedirects>
     <Deterministic>true</Deterministic>
+    <TargetFrameworkProfile />
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -24,6 +25,7 @@
     <DefineConstants>DEBUG;TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
     <PlatformTarget>AnyCPU</PlatformTarget>
@@ -33,6 +35,7 @@
     <DefineConstants>TRACE</DefineConstants>
     <ErrorReport>prompt</ErrorReport>
     <WarningLevel>4</WarningLevel>
+    <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Autofac, Version=4.8.1.0, Culture=neutral, PublicKeyToken=17863af14b0044da, processorArchitecture=MSIL">
@@ -46,6 +49,9 @@
     </Reference>
     <Reference Include="MahApps.Metro, Version=1.6.5.1, Culture=neutral, processorArchitecture=MSIL">
       <HintPath>..\packages\MahApps.Metro.1.6.5\lib\net47\MahApps.Metro.dll</HintPath>
+    </Reference>
+    <Reference Include="Ookii.Dialogs.Wpf, Version=1.0.0.0, Culture=neutral, PublicKeyToken=0c15020868fd6249, processorArchitecture=MSIL">
+      <HintPath>..\packages\Ookii.Dialogs.1.0\lib\net35\Ookii.Dialogs.Wpf.dll</HintPath>
     </Reference>
     <Reference Include="PresentationFramework.Aero" />
     <Reference Include="ReactiveUI, Version=9.4.0.0, Culture=neutral, processorArchitecture=MSIL">
@@ -141,11 +147,16 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Modules\ModelDesigner\BuildGraphContext.cs" />
+    <Compile Include="Modules\ModelDesigner\Commands\ExportK210CodeCommandDefinition.cs" />
+    <Compile Include="Modules\ModelDesigner\Commands\ExportK210CodeCommandHandler.cs" />
     <Compile Include="Modules\ModelDesigner\Commands\ExportScriptCommandDefinition.cs" />
     <Compile Include="Modules\ModelDesigner\Commands\ExportScriptCommandHandler.cs" />
     <Compile Include="Modules\ModelDesigner\ViewModels\Layers\K210\K210Conv2dViewModel.cs" />
     <Compile Include="Modules\ModelDesigner\ViewModels\Layers\K210\K210SeparableConv2dViewModel.cs" />
     <Compile Include="Modules\ModelDesigner\ViewModels\Layers\OutputLayerViewModel.cs" />
+    <Compile Include="Modules\ModelDesigner\Views\ExportK210CodeView.xaml.cs">
+      <DependentUpon>ExportK210CodeView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Themes\VS2013\Controls\Converters\TreeViewIndentConverter.cs" />
     <Page Include="App.xaml">
       <Generator>MSBuild:Compile</Generator>
@@ -155,6 +166,10 @@
       <DependentUpon>App.xaml</DependentUpon>
       <SubType>Code</SubType>
     </Compile>
+    <Page Include="Modules\ModelDesigner\Views\ExportK210CodeView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Modules\ModelDesigner\Views\GraphView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>

@@ -34,8 +34,7 @@ namespace NnCase.Converter.Transforms.K210
                             {
                                 if (nextLayer2 is Conv2d conv2d)
                                 {
-                                    if (conv2d.KernelWidth != 1 || conv2d.KernelHeight != 1 || conv2d.StrideHeight != 1 || conv2d.StrideWidth != 1 ||
-                                        conv2d.Padding != Padding.Same)
+                                    if (conv2d.KernelWidth != 1 || conv2d.KernelHeight != 1 || conv2d.StrideHeight != 1 || conv2d.StrideWidth != 1)
                                         continue;
                                     context.Outputs.Add(conv2d.Output);
                                 }

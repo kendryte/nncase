@@ -15,7 +15,7 @@ using NnCase.Converter.Transforms;
 using RazorLight;
 using TensorFlow;
 
-#if NET48
+#if NET471
 using System.Collections.Async;
 #endif
 
@@ -428,7 +428,7 @@ namespace NnCase.Converter.Converters
 
                 var quantizationContext = new QuantizationContext { Outputs = connectors, PlanContext = planContext };
 
-#if NET48
+#if NET471
                 await dataset.GetBatchesAsync().ForEachAsync(async batch =>
 #else
                     await foreach (var batch in dataset.GetBatchesAsync())
@@ -444,7 +444,7 @@ namespace NnCase.Converter.Converters
                         var outputs = runner.Run();
                         RecordOutputs(new[] { input }.Concat(outputs).ToList(), quantizationContext);
                     }
-#if NET48
+#if NET471
                 );
 #endif
 
@@ -603,7 +603,7 @@ namespace NnCase.Converter.Converters
         {
             for (int i = 0; i < data.Length; i++)
                 dest[i] = (byte)
-#if NET48
+#if NET471
                     FxExtensions
 #else
                     Math

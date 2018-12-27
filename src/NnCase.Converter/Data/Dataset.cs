@@ -10,7 +10,7 @@ using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
 
-#if NET48
+#if NET471
 using System.Collections.Async;
 #endif
 
@@ -48,7 +48,7 @@ namespace NnCase.Converter.Data
 
 
         public
-#if NET48
+#if NET471
 #else
             async
 #endif
@@ -67,7 +67,7 @@ namespace NnCase.Converter.Data
                 }
             }
 
-#if NET48
+#if NET471
             return new AsyncEnumerable<Tensor<float>>(async yield =>
             {
 #endif
@@ -83,13 +83,13 @@ namespace NnCase.Converter.Data
                         Postprocess(buffer.Span, _postprocessMethod);
                     });
 
-#if NET48
+#if NET471
                     await yield.ReturnAsync(tensor);
 #else
                     yield return tensor;
 #endif
                 }
-#if NET48
+#if NET471
             });
 #endif
         }

@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Numerics.Tensors;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using NnCase.Converter.Model;
@@ -59,6 +61,22 @@ namespace NnCase.Converter.Converters
 
         private Layer ConvertConv2d(paddle.OpDesc op)
         {
+            var padding = GetAttr(op, "paddings").Ints;
+            var strides = GetAttr(op, "paddings").Ints;
+
+            var input = op.Inputs[1].Arguments[0];
+            var weights = op.Inputs[0].Arguments[0];
+            var weightsShape = GetVarShape(weights);
+            var kernelWidth = weightsShape[3];
+            var kernelHeight = weightsShape[2];
+
+            var conv2d = new Conv2d(GetVarShape(input), LoadVarData<float>(weights), null, Padding.Same, strides[1], strides[0], ActivationFunctionType.Linear);
+            if (padding[0] == 1 && padding[1] == 1 && strides[0] == 2 && strides[1] == 2 &&
+                kernelWidth == 3 && kernelHeight == 3)
+            {
+                
+            }
+
             throw new NotImplementedException();
         }
 
@@ -78,6 +96,19 @@ namespace NnCase.Converter.Converters
         {
             var v = GetVar(name);
             return v.Type.LodTensor.Tensor.Dims.Select(x => (int)x).ToArray();
+        }
+
+        private paddle.OpDesc.Types.Attr GetAttr(paddle.OpDesc op, string name)
+        {
+            return op.Attrs.First(x => x.Name == name);
+        }
+
+        private Tensor<T> LoadVarData<T>(string name)
+            where T : unmanaged
+        {
+            var v = GetVar(name);
+            var data = MemoryMarshal.Cast<byte, T>(File.ReadAllBytes(Path.Combine(_modelPath, name)));
+            return new DenseTensor<T>(data.ToArray(), GetVarShape(name));
         }
     }
 }

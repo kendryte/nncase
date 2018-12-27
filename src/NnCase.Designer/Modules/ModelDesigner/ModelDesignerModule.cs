@@ -16,6 +16,8 @@ namespace NnCase.Designer.Modules.ModelDesigner
                 .PreserveExistingDefaults();
             builder.Register(c => MenuDefinitions.ExportScriptMenuItem)
                 .PreserveExistingDefaults();
+            builder.Register(c => MenuDefinitions.ExportK210CodeMenuItem)
+                .PreserveExistingDefaults();
 
             builder.RegisterType<Commands.OpenGraphCommandDefinition>()
                 .As<CommandDefinitionBase>();
@@ -25,6 +27,11 @@ namespace NnCase.Designer.Modules.ModelDesigner
             builder.RegisterType<Commands.ExportScriptCommandDefinition>()
                 .As<CommandDefinitionBase>();
             builder.RegisterType<Commands.ExportScriptCommandHandler>()
+                .As<ICommandHandler>()
+                .PreserveExistingDefaults();
+            builder.RegisterType<Commands.ExportK210CodeCommandDefinition>()
+                .As<CommandDefinitionBase>();
+            builder.RegisterType<Commands.ExportK210CodeCommandHandler>()
                 .As<ICommandHandler>()
                 .PreserveExistingDefaults();
 
