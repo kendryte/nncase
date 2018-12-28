@@ -200,20 +200,14 @@ namespace NnCase.Converter.Converters
         private void ConvertK210Conv2d(K210Conv2d layer, ConvertContext context)
         {
             var config = new K210ConvLayerConfig { BNConfigs = new K210LayerBNConfig[layer.OutputChannels] };
-            (var sw, var bw) = QuantizeWeights(layer.Weights, config);
+            (var sw, var bw) = QuantizeWeights(layer.Conv2dType == K210Conv2dType.Conv2d, layer.Weights, config);
             (var sx, var bx) = QuantizeInput(context.Quantization.Distributions[layer.Input.Connection.From], config);
             config.ArgAdd = (int)Math.Round(bw * bx * layer.KernelWidth * layer.KernelHeight);
+
             var scale = new double[layer.OutputChannels];
-            if (layer.Conv2dType == K210Conv2dType.Conv2d)
-            {
-                for (int i = 0; i < scale.Length; i++)
-                    scale[i] = sw[i] * sx;
-            }
-            else
-            {
-                for (int i = 0; i < scale.Length; i++)
-                    scale[i] = sw[0] * sx;
-            }
+            for (int i = 0; i < scale.Length; i++)
+                scale[i] = sw[i] * sx;
+
             (var so, var bo) = QuantizeBiasAndOutput(layer, layer.Bias, context.Quantization.Distributions[layer.Output], scale, config);
 
             config.InputChannels = layer.InputChannels;
@@ -466,11 +460,11 @@ namespace NnCase.Converter.Converters
             }
         }
 
-        private static (double[] scale, double bias) QuantizeWeights(Tensor<float> weights, K210ConvLayerConfig config)
+        private static (double[] scale, double bias) QuantizeWeights(bool isConv2d, Tensor<float> weights, K210ConvLayerConfig config)
         {
 #if CHANNEL_WISE
             var kernels = weights.ToDenseTensor().Buffer.Span;
-            var channels = weights.Dimensions[0];
+            var channels = weights.Dimensions[isConv2d ? 0 : 1];
             var channelSize = weights.Dimensions.GetSize() / channels;
 
             var totalRange = GetRange(kernels);
@@ -478,9 +472,14 @@ namespace NnCase.Converter.Converters
 
             for (int i = 0; i < channels; i++)
             {
+                double s;
                 var buffer = kernels.Slice(i * channelSize, channelSize);
                 var range = GetRange(buffer);
-                var s = Math.Min(totalRange.Max / range.Max, totalRange.Min / range.Min) * 10;
+
+                var s1 = totalRange.Max / range.Max;
+                var s2 = totalRange.Min / range.Min;
+                s = (s1 < 0 || s2 < 0) ? Math.Max(s1, s2) : Math.Min(s1, s2);
+
                 Debug.Assert(s > 0);
                 for (int j = 0; j < buffer.Length; j++)
                     buffer[j] = (float)(buffer[j] * s);
@@ -522,7 +521,7 @@ namespace NnCase.Converter.Converters
         {
             (var so, var bo) = range.GetScaleBias();
 #if CHANNEL_WISE
-            var upshift = 20;
+            var upshift = 10;
             var postMul = Math.Pow(2, upshift);
 
             for (int i = 0; i < config.BNConfigs.Length; i++)
@@ -620,6 +619,9 @@ namespace NnCase.Converter.Converters
                 min = Math.Min(min, data[j]);
                 max = Math.Max(max, data[j]);
             }
+
+            //if (Math.Abs(min) > 100 || max > 100)
+            //    return new Range { Min = -1, Max = 1 };
 
             return new Range { Min = min, Max = max };
         }

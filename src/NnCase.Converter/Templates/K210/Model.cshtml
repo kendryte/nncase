@@ -153,4 +153,8 @@ void kpu_task_@(Model.Prefix)_init(kpu_task_t* task) {
 @:    layers[@(i)].kernel_load_cfg.data.para_start_addr = (uint64_t)&layer_@(i)_weights;
     }
     task->layers = layers;
+    task->layers_length = @Model.Layers.Count;
+    task->eight_bit_mode = 1;
+    task->output_scale = @Model.Layers.Last().OutputScale;
+    task->output_bias = @Model.Layers.Last().OutputBias;
 }

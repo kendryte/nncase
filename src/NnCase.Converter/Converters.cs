@@ -38,6 +38,7 @@ namespace NnCase.Converter
                 datasetDir,
                 new[] { dim[1], dim[2], dim[3] },
                 1,
+                PreprocessMethods.None,
                 PostprocessMethods.Normalize0To1),
                 ctx,
                 Path.GetDirectoryName(codePath),

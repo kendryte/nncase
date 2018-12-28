@@ -25,6 +25,12 @@ namespace NnCase.Converter.Data
         Whitening
     }
 
+    public enum PreprocessMethods
+    {
+        None,
+        Darknet
+    }
+
     public abstract class Dataset
     {
         private readonly IReadOnlyList<string> _fileNames;
@@ -119,28 +125,41 @@ namespace NnCase.Converter.Data
             ".bmp", ".jpg", ".png"
         };
 
-        public ImageDataset(string path, ReadOnlySpan<int> dimensions, int batchSize, PostprocessMethods postprocessMethod)
+        private readonly PreprocessMethods _preprocessMethods;
+
+        public ImageDataset(string path, ReadOnlySpan<int> dimensions, int batchSize, PreprocessMethods preprocessMethods, PostprocessMethods postprocessMethod)
             : base(path, _allowdExtensions, dimensions, batchSize, postprocessMethod)
         {
+            _preprocessMethods = preprocessMethods;
         }
 
         protected override void Process(byte[] source, Span<float> dest)
         {
             using (var image = Image.Load<Rgb24>(source))
             {
-                image.Mutate(x =>
-                    x.Resize(new ResizeOptions
-                    {
-                        Size = new Size(Dimensions[2], Dimensions[1]),
-                        Sampler = KnownResamplers.Bicubic,
-                        Position = AnchorPositionMode.Center,
-                        Mode = ResizeMode.Max
-                    }));
-                var destImage = new Image<Rgb24>(image.GetConfiguration(), Dimensions[2], Dimensions[1], new Rgb24(127, 127, 127));
-                var leftTop = new Point((destImage.Width - image.Width) / 2, (destImage.Height - image.Height) / 2);
-                destImage.Mutate(x =>
-                    x.DrawImage(GraphicsOptions.Default, image, leftTop));
-                
+                Image<Rgb24> destImage;
+                if (_preprocessMethods == PreprocessMethods.Darknet)
+                {
+                    image.Mutate(x =>
+                        x.Resize(new ResizeOptions
+                        {
+                            Size = new Size(Dimensions[2], Dimensions[1]),
+                            Sampler = KnownResamplers.Bicubic,
+                            Position = AnchorPositionMode.Center,
+                            Mode = ResizeMode.Max
+                        }));
+                    destImage = new Image<Rgb24>(image.GetConfiguration(), Dimensions[2], Dimensions[1], new Rgb24(127, 127, 127));
+                    var leftTop = new Point((destImage.Width - image.Width) / 2, (destImage.Height - image.Height) / 2);
+                    destImage.Mutate(x =>
+                        x.DrawImage(GraphicsOptions.Default, image, leftTop));
+                }
+                else
+                {
+                    image.Mutate(x =>
+                        x.Resize(Dimensions[2], Dimensions[1]));
+                    destImage = image;
+                }
+
                 var pixels = destImage.GetPixelSpan();
                 var channelSize = Dimensions[1] * Dimensions[2];
 
