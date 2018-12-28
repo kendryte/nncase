@@ -20,6 +20,7 @@
     <PackageReference Include="Google.Protobuf" Version="3.6.1" />
     <PackageReference Include="RazorLight.Unofficial" Version="2.0.0-beta1.3" />
     <PackageReference Include="SixLabors.ImageSharp" Version="1.0.0-beta0005" />
+    <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="1.0.0-beta0005" />
     <PackageReference Include="System.Numerics.Tensors" Version="0.1.0" />
     <PackageReference Include="TensorflowSharp" Version="1.11.0" />
   </ItemGroup>

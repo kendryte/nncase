@@ -9,6 +9,7 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Advanced;
 using SixLabors.ImageSharp.PixelFormats;
 using SixLabors.ImageSharp.Processing;
+using SixLabors.Primitives;
 
 #if NET471
 using System.Collections.Async;
@@ -128,8 +129,19 @@ namespace NnCase.Converter.Data
             using (var image = Image.Load<Rgb24>(source))
             {
                 image.Mutate(x =>
-                    x.Resize(Dimensions[2], Dimensions[1]));
-                var pixels = image.GetPixelSpan();
+                    x.Resize(new ResizeOptions
+                    {
+                        Size = new Size(Dimensions[2], Dimensions[1]),
+                        Sampler = KnownResamplers.Bicubic,
+                        Position = AnchorPositionMode.Center,
+                        Mode = ResizeMode.Max
+                    }));
+                var destImage = new Image<Rgb24>(image.GetConfiguration(), Dimensions[2], Dimensions[1], new Rgb24(127, 127, 127));
+                var leftTop = new Point((destImage.Width - image.Width) / 2, (destImage.Height - image.Height) / 2);
+                destImage.Mutate(x =>
+                    x.DrawImage(GraphicsOptions.Default, image, leftTop));
+                
+                var pixels = destImage.GetPixelSpan();
                 var channelSize = Dimensions[1] * Dimensions[2];
 
                 var rChannel = dest.Slice(0, channelSize);

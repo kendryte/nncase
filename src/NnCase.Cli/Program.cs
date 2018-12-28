@@ -19,7 +19,7 @@ namespace NnCase.Cli
 
         static async Task DoJobAsync()
         {
-#if true
+#if false
             var file = File.ReadAllBytes(@"D:\Work\Repository\models\mobilev1_alpha_1219.tflite");
             var model = tflite.Model.GetRootAsModel(new FlatBuffers.ByteBuffer(file));
             var tfc = new TfLiteToGraphConverter(model, model.Subgraphs(0).Value);
@@ -48,7 +48,7 @@ namespace NnCase.Cli
 
             using (var f = File.Open(@"D:\Work\Repository\models\mobilev1_test2.pb", FileMode.Create, FileAccess.Write))
                 await ctx.SaveAsync(f);
-#elif false
+#elif true
             var file = File.ReadAllBytes(@"D:\Work\Repository\models\80class.tflite");
             var model = tflite.Model.GetRootAsModel(new FlatBuffers.ByteBuffer(file));
             var tfc = new TfLiteToGraphConverter(model, model.Subgraphs(0).Value);
