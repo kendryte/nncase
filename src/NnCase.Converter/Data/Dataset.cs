@@ -102,7 +102,7 @@ namespace NnCase.Converter.Data
             else if (postprocessMethod == PostprocessMethods.NormalizeMinus1To1)
             {
                 for (int i = 0; i < data.Length; i++)
-                    data[i] = (data[i] - 0.5f) * 2f;
+                    data[i] = data[i] * 2f - 1f;
             }
             else if (postprocessMethod != PostprocessMethods.None)
                 throw new NotSupportedException(nameof(postprocessMethod));

@@ -19,8 +19,8 @@ namespace NnCase.Cli
 
         static async Task DoJobAsync()
         {
-#if false
-            var file = File.ReadAllBytes(@"D:\Work\Repository\models\mbnetv1_test.tflite");
+#if true
+            var file = File.ReadAllBytes(@"D:\Work\Repository\models\mobilev1_alpha_1219.tflite");
             var model = tflite.Model.GetRootAsModel(new FlatBuffers.ByteBuffer(file));
             var tfc = new TfLiteToGraphConverter(model, model.Subgraphs(0).Value);
             tfc.Convert();
@@ -38,13 +38,13 @@ namespace NnCase.Cli
             graph.Plan(ctx);
             var k210c = new GraphToK210Converter(graph);
             await k210c.ConvertAsync(new ImageDataset(
-                @"D:\Work\Repository\models\test",
+                @"D:\Work\Repository\models\img",
                 new[] { 3, 128, 128 },
                 1,
                 PostprocessMethods.NormalizeMinus1To1),
                 ctx,
                 @"D:\Work\Repository\kendryte-standalone-sdk\src\kpu6\",
-                "mobilev1_test");
+                "mobilev1_alpha");
 
             using (var f = File.Open(@"D:\Work\Repository\models\mobilev1_test2.pb", FileMode.Create, FileAccess.Write))
                 await ctx.SaveAsync(f);

@@ -472,44 +472,31 @@ namespace NnCase.Converter.Converters
             var kernels = weights.ToDenseTensor().Buffer.Span;
             var channels = weights.Dimensions[0];
             var channelSize = weights.Dimensions.GetSize() / channels;
-            double? bias = 0;
-            var alpha = 0.01;
 
-            var m = new List<(double scale, double bias)>();
+            var totalRange = GetRange(kernels);
+            var scales = new double[channels];
 
             for (int i = 0; i < channels; i++)
             {
                 var buffer = kernels.Slice(i * channelSize, channelSize);
-                (var s, var b) = GetRange(buffer).GetScaleBias();
-                //bias = bias.HasValue ? (1 - alpha) * bias + alpha * b : b;
-                bias += b;
-                m.Add((s, b));
+                var range = GetRange(buffer);
+                var s = Math.Min(totalRange.Max / range.Max, totalRange.Min / range.Min) * 10;
+                Debug.Assert(s > 0);
+                for (int j = 0; j < buffer.Length; j++)
+                    buffer[j] = (float)(buffer[j] * s);
+                scales[i] = s;
             }
 
-            bias = Math.Round(bias.Value / channels);
+            (var scale, var bias) = GetRange(kernels).GetScaleBias();
 
-            var scale = new double[channels];
-            for (int i = 0; i < channels; i++)
-            {
-                var buffer = kernels.Slice(i * channelSize, channelSize);
-                var s = GetRange(buffer).GetScale(bias.Value);
-                scale[i] = s;
-            }
-
-            (var mul, var shift) = ExtractValueAndShift(bias.Value, 24, 15);
-
-            var qWeights = new byte[weights.Length];
-            double diff = 0;
-            for (int i = 0; i < channels; i++)
-            {
-                var buffer = kernels.Slice(i * channelSize, channelSize);
-                diff = Math.Max(diff, Quantize(buffer, new Span<byte>(qWeights, i * channelSize, channelSize), scale[i], bias.Value));
-            }
-
-            config.Weights = qWeights;
+            (var mul, var shift) = ExtractValueAndShift(bias, 24, 15);
+            config.Weights = Quantize(kernels, scale, bias);
             config.ArgX = (int)Math.Round(mul);
             config.ShiftX = shift;
-            return (scale, bias.Value);
+
+            for (int i = 0; i < scales.Length; i++)
+                scales[i] *= scale;
+            return (scales, bias);
 #else
             var buffer = weights.ToDenseTensor().Buffer.Span;
             (var scale, var bias) = GetRange(buffer).GetScaleBias();
@@ -613,7 +600,7 @@ namespace NnCase.Converter.Converters
             var diff = new double[data.Length];
             for (int i = 0; i < data.Length; i++)
                 diff[i] = Math.Abs(((dest[i] + bias) / scale) - data[i]);
-            var avg = diff.Average();
+            var avg = diff.Max();
             return avg;
         }
 
@@ -692,6 +679,11 @@ namespace NnCase.Converter.Converters
                 var s1 = bias / Min;
                 var s2 = (bias + 255) / Max;
                 return Math.Min(s1, s2);
+            }
+
+            public override string ToString()
+            {
+                return $"{Min}, {Max}";
             }
         }
 
