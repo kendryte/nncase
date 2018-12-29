@@ -265,3 +265,4 @@ src/**/*.txt
 
 *.diagsession
 /src/nntest
+/src/NnCase.Cli/Properties/launchSettings.json

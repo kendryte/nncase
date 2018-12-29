@@ -5,10 +5,12 @@
     <TargetFramework>netcoreapp3.0</TargetFramework>
     <LangVersion>8.0</LangVersion>
     <PreserveCompilationContext>true</PreserveCompilationContext>
+    <AssemblyName>ncc</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\NnCase.Converter\NnCase.Converter.csproj" />
+    <PackageReference Include="CommandLineParser" Version="2.3.0" />
   </ItemGroup>
 
 </Project>
