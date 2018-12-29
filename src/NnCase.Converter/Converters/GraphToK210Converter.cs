@@ -174,6 +174,7 @@ namespace NnCase.Converter.Converters
                     case AveragePool2d _:
                     case L2Normalization _:
                     case Reshape _:
+                    case Softmax _:
                         break;
                     case K210Conv2d l:
                         ConvertK210Conv2d(l, context);
@@ -294,6 +295,7 @@ namespace NnCase.Converter.Converters
                             case AveragePool2d _:
                             case L2Normalization _:
                             case Reshape _:
+                            case Softmax _:
                                 break;
                             case K210Conv2d l:
                                 InferenceK210Conv2d(l, context);

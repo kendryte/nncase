@@ -9,6 +9,8 @@ namespace NnCase.Converter.Model.Layers
     {
         public InputConnector Input { get; }
 
+        public string Name { get; set; }
+
         public OutputLayer(ReadOnlySpan<int> dimensions)
         {
             Input = AddInput("input", dimensions);
@@ -16,7 +18,7 @@ namespace NnCase.Converter.Model.Layers
 
         protected override void OnPlanning(GraphPlanContext context)
         {
-            context.Outputs[this] = context.TFOutputs[Input.Connection.From];
+            context.Outputs[this] = context.TFGraph.Identity(context.TFOutputs[Input.Connection.From], Name);
         }
     }
 }

@@ -43,7 +43,7 @@ namespace NnCase.Converter.Converters
                 }
             }
 
-            var inputs = new List<InputLayer>();
+            var inputs = new List<InputLayer>(layers.OfType<InputLayer>());
             foreach (var conn in _inputs.Keys.Where(o => o.Connection == null))
             {
                 if (_inputs.TryGetValue(conn, out var varName))
@@ -61,7 +61,7 @@ namespace NnCase.Converter.Converters
                 }
             }
 
-            var outputs = new List<OutputLayer>();
+            var outputs = new List<OutputLayer>(layers.OfType<OutputLayer>());
             foreach (var conn in _outputs.Values.Where(o => !o.Connections.Any()))
             {
                 var output = new OutputLayer(conn.Dimensions);
@@ -102,7 +102,7 @@ namespace NnCase.Converter.Converters
         private Layer ConvertFeed(paddle.OpDesc op)
         {
             var output = op.Outputs[0].Arguments[0];
-            var layer = new InputLayer(GetVarShape(output));
+            var layer = new InputLayer(GetVarShape(output)) { Name = output };
             _outputs.Add(output, layer.Output);
             return layer;
         }
@@ -263,7 +263,8 @@ namespace NnCase.Converter.Converters
         private Layer ConvertFetch(paddle.OpDesc op)
         {
             var input = op.Inputs[0].Arguments[0];
-            var layer = new OutputLayer(GetVarShape(input));
+            var layer = new OutputLayer(GetVarShape(input)) { Name = input };
+            _inputs.Add(layer.Input, input);
             return layer;
         }
 

@@ -81,6 +81,8 @@ namespace NnCase.Converter.Converters
                     return ConvertFullyConnected(op);
                 case tflite.BuiltinOperator.MAX_POOL_2D:
                     return ConvertMaxPool2d(op);
+                case tflite.BuiltinOperator.SOFTMAX:
+                    return ConvertSoftmax(op);
                 default:
                     throw new NotSupportedException();
             }
@@ -205,6 +207,18 @@ namespace NnCase.Converter.Converters
             _outputs.Add(op.Outputs(0), layer.Output);
             return layer;
         }
+
+        private Layer ConvertSoftmax(tflite.Operator op)
+        {
+            var inputs = op.GetInputsArray();
+            var input = _graph.Tensors(inputs[0]).Value;
+            var options = op.BuiltinOptions<tflite.SoftmaxOptions>().Value;
+
+            var layer = new Softmax(input.GetShapeArray().ToNCHW());
+            _inputs.Add(layer.Input, inputs[0]);
+            _outputs.Add(op.Outputs(0), layer.Output);
+            return layer;
+        }
     }
 
     static class TfLiteExtensions
@@ -224,6 +238,8 @@ namespace NnCase.Converter.Converters
 
         public static int[] ToNCHW(this int[] shape)
         {
+            if (shape.Length == 2)
+                return shape;
             return new[] { shape[0], shape[3], shape[1], shape[2] };
         }
 

@@ -28,7 +28,8 @@ namespace NnCase.Converter
                 new K210Stride2Conv2dTransform(),
                 new K210GlobalAveragePoolTransform(),
                 new K210FullyConnectedTransform(),
-                new K210Conv2dWithMaxPoolTransform()
+                new K210Conv2dWithMaxPoolTransform(),
+                new K2101x1Conv2dToFullyConnectedTransform()
             });
             var ctx = new GraphPlanContext();
             graph.Plan(ctx);
