@@ -1,8 +1,30 @@
 nncase
 =========================================
-`nncase` is a fast cross-platform cnn forward & backward framework.
+`nncase` is a cross-platform neural network optimization toolkit for fast inference.
 
-[License (MIT)](https://raw.githubusercontent.com/dotnetGame/nncase/master/LICENSE)
+## NNCase Converter
+A tool to convert models between many formats.
+### Usage
+`ncc -i <input format> -o <output format> [--dataset <dataset path>] <input path> <output path>`
+
+Input formats can be one of `tflite` and `paddle`.
+
+Output formats can be one of `tf`, `tflite` and `k210code`.
+
+### Examples
+- Convert TFLite model to K210 code.
+
+  `ncc -i tflite -o k210code --dataset ./images ./mbnetv1.tflite ./mbnetv1.c`
+
+- Convert PaddlePaddle model to TensorFlow model.
+
+  `ncc -i paddle -o tf ./MobileNetV1_pretrained ./mbnetv1.pb`
+
+- Convert PaddlePaddle model to K210 code.
+
+  `ncc -i paddle -o k210code --dataset ./images ./MobileNetV1_pretrained ./mbnetv1.c`
+
+[License (MIT)](https://raw.githubusercontent.com/kendryte/nncase/master/LICENSE)
 -------------------------------------------------------------------------------
 	MIT License
 
