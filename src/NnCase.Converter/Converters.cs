@@ -22,7 +22,7 @@ namespace NnCase.Converter
             tfc.Convert();
             var graph = tfc.Graph;
             Transform.Process(graph, new Transform[] {
-                new K210SeprableConv2dTransform(),
+                new K210SeparableConv2dTransform(),
                 new K210SpaceToBatchNdAndValidConv2dTransform(),
                 new K210SameConv2dTransform(),
                 new K210Stride2Conv2dTransform(),

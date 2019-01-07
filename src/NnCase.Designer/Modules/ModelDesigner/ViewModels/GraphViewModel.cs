@@ -1,14 +1,17 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
+using NnCase.Converter.Converters;
 using NnCase.Converter.Model;
 using NnCase.Converter.Model.Layers;
 using NnCase.Designer.Modules.Inspector;
 using NnCase.Designer.Modules.ModelDesigner.ViewModels.Layers;
+using Ookii.Dialogs.Wpf;
 using Splat;
 
 namespace NnCase.Designer.Modules.ModelDesigner.ViewModels
@@ -29,7 +32,7 @@ namespace NnCase.Designer.Modules.ModelDesigner.ViewModels
             _inspectorTool = Locator.Current.GetService<IInspectorTool>();
         }
 
-        public void Build(BuildGraphContext context)
+        public async void Build(BuildGraphContext context)
         {
             var outputLayers = Layers.OfType<OutputLayerViewModel>().ToList();
             if (outputLayers.Count == 0)
@@ -38,13 +41,37 @@ namespace NnCase.Designer.Modules.ModelDesigner.ViewModels
             }
             else
             {
-                foreach (var layer in outputLayers)
-                    layer.BuildModel(context);
-                foreach (var layer in outputLayers)
-                    layer.BuildConnections(context);
+                try
+                {
+                    foreach (var layer in outputLayers)
+                        layer.BuildModel(context);
+                    foreach (var layer in outputLayers)
+                        layer.BuildConnections(context);
 
-                context.Graph = new Graph(context.Layers.Values.OfType<InputLayer>().ToList(),
-                    context.Layers.Values.OfType<OutputLayer>().ToList());
+                    context.Graph = new Graph(context.Layers.Values.SelectMany(x => x).OfType<InputLayer>().ToList(),
+                        context.Layers.Values.SelectMany(x => x).OfType<OutputLayer>().ToList());
+
+                    var dlg = new VistaSaveFileDialog
+                    {
+                        Title = "Save script file",
+                        Filter = "Python script (*.py)|*.py",
+                        ValidateNames = true
+                    };
+
+                    if (dlg.ShowDialog() == true)
+                    {
+                        var k210c = new GraphToScriptConverter(context.Graph);
+                        await k210c.ConvertAsync(
+                            Path.GetDirectoryName(dlg.FileName),
+                            Path.GetFileNameWithoutExtension(dlg.FileName));
+                    }
+
+                    MessageBox.Show("Export completed.", "NnCase", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show(ex.Message, "NnCase", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
             }
         }
 
@@ -108,7 +135,7 @@ namespace NnCase.Designer.Modules.ModelDesigner.ViewModels
             var existingConnection = nearbyConnector.Connection;
             if (existingConnection != null)
                 Connections.Remove(existingConnection);
-            
+
             newConnection.To = nearbyConnector;
         }
     }

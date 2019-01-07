@@ -13,8 +13,6 @@ namespace NnCase.Converter.Model.Layers.K210
 
         public OutputConnector Output { get; }
 
-        public K210Conv2dType Conv2dType { get; }
-
         public Tensor<float> DwWeights { get; }
 
         public Tensor<float> PwWeights { get; }

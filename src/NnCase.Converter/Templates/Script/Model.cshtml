@@ -1,0 +1,112 @@
+﻿@using Microsoft.AspNetCore.Html
+@using RazorLight
+@using NnCase.Converter.Converters
+@inherits TemplatePage<ScriptGenerationContext>
+@functions {
+string ToString(long[] dims)
+{
+    var sb = new System.Text.StringBuilder("[");
+    for (int i = 0; i < dims.Length; i++)
+    {
+        sb.Append(dims[i] == -1 ? "None" : dims[i].ToString());
+        if (i != dims.Length - 1)
+            sb.Append(", ");
+    }
+
+    sb.Append(']');
+    return sb.ToString();
+}
+}
+import tensorflow as tf
+save_dir = './@Model.Prefix/'
+
+def add_act(input, act):
+    if act == 'relu':
+        return tf.nn.relu(input)
+    elif act == 'relu6':
+        return tf.nn.relu6(input)
+    else:
+        return input
+
+def conv2d(input, kernel_size, filters, stride, act, is_training):
+    if stride == 2 and kernel_size == 3:
+        out = tf.space_to_batch_nd(input, [1, 1], [[1, 1], [1, 1]])
+        out = tf.layers.conv2d(out, filters, kernel_size, [stride, stride], 'valid', use_bias=False)
+    else:
+        out = tf.layers.conv2d(input, filters, kernel_size, [stride, stride], 'same', use_bias=False)
+    out = tf.layers.batch_normalization(out, training=is_training)
+    return add_act(out, act)
+
+def separable_conv2d(input, kernel_size, filters, stride, act, is_training):
+    if stride == 2 and kernel_size == 3:
+        out = tf.space_to_batch_nd(input, [1, 1], [[1, 1], [1, 1]])
+        out = tf.layers.separable_conv2d(out, filters, kernel_size, [stride, stride], 'valid', use_bias=False)
+    else:
+        out = tf.layers.separable_conv2d(input, filters, kernel_size, [stride, stride], 'same', use_bias=False)
+    out = tf.layers.batch_normalization(out, training=is_training)
+    return add_act(out, act)
+
+def model(is_training):
+    inputs = []
+    outputs = []
+    tensors = {}
+
+@for (int i = 0; i < Model.Layers.Count; i++)
+{
+    switch (Model.Layers[i])
+    {
+        case ScriptInputLayerConfig l:
+    @:tensors[@l.Output] = tf.placeholder(tf.float32, @ToString(l.Dimensions), name='@l.Name')
+    @:inputs.append(tensors[@l.Output])
+            break;
+        case ScriptOutputLayerConfig l:
+    @:outputs.append(tf.identity(tensors[@l.Input], name='@l.Name'))
+            break;
+        case ScriptConv2dLayerConfig l:
+    @:tensors[@l.Output] = conv2d(tensors[@l.Input], @l.KernelSize, @l.Filters, @l.Stride, '@l.Activation.ToString().ToLowerInvariant()', is_training)
+            break;
+        case ScriptSeparableConv2dLayerConfig l:
+    @:tensors[@l.Output] = separable_conv2d(tensors[@l.Input], @l.KernelSize, @l.Filters, @l.Stride, '@l.Activation.ToString().ToLowerInvariant()', is_training)
+            break;
+        default:
+            break;
+    }
+}
+
+    return {
+        'inputs': inputs,
+        'outputs': outputs
+    }
+
+def save():
+    with tf.Session() as sess:
+        model(True)
+
+        init_op = tf.global_variables_initializer()
+        saver = tf.train.Saver()
+        sess.run(init_op)
+
+        save_path = saver.save(sess, save_dir + 'model.ckpt')
+        print("Model saved in path: %s" % save_path)
+
+def freeze():
+    from tensorflow.python.tools import freeze_graph
+
+    with tf.Session() as sess:
+        model(False)
+        # export graph
+        input_graph_name = '@(Model.Prefix).pb'
+        tf.train.write_graph(sess.graph, save_dir, input_graph_name, as_text=False)
+
+        checkpoint_path = tf.train.latest_checkpoint(save_dir)
+        # freeze graph
+        input_graph_path = save_dir + input_graph_name
+        input_saver_def_path = ''
+        input_binary = True
+        output_node_names = '@Model.OutputName'
+        restore_op_name = 'save/restore_all'
+        filename_tensor_name = 'save/Const:0'
+        output_graph_path = save_dir + '@(Model.Prefix).pb'
+        clear_devices = False
+        freeze_graph.freeze_graph(input_graph_path, input_saver_def_path, input_binary, checkpoint_path, output_node_names,
+                                  restore_op_name, filename_tensor_name, output_graph_path, clear_devices, '')

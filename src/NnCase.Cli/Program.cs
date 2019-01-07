@@ -3,11 +3,14 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Numerics.Tensors;
 using System.Threading.Tasks;
 using CommandLine;
 using NnCase.Converter.Converters;
 using NnCase.Converter.Data;
 using NnCase.Converter.Model;
+using NnCase.Converter.Model.Layers;
+using NnCase.Converter.Model.Layers.K210;
 using NnCase.Converter.Transforms;
 using NnCase.Converter.Transforms.K210;
 
@@ -68,6 +71,28 @@ namespace NnCase.Cli
                         graph = tfc.Graph;
                         break;
                     }
+                case "test":
+                    {
+                        var inputs = new[]
+                        {
+                            new InputLayer(new[]{-1,3,8,8}){ Name ="input" }
+                        };
+                        var conv2d = new K210Conv2d(inputs[0].Output.Dimensions, K210Conv2dType.Conv2d,
+                            new DenseTensor<float>(new[] { 32, 3, 3, 3 }), null, K210PoolType.None, ActivationFunctionType.Relu);
+                        conv2d.Input.SetConnection(inputs[0].Output);
+
+                        var spconv2d = new K210SeparableConv2d(conv2d.Output.Dimensions, new DenseTensor<float>(new[] { 1, 32, 3, 3, 3 }),
+                            new DenseTensor<float>(new[] { 32, 64, 1, 1 }), null, K210PoolType.LeftTop, ActivationFunctionType.Relu);
+                        spconv2d.Input.SetConnection(conv2d.Output);
+
+                        var outputs = new[]
+                        {
+                            new OutputLayer(spconv2d.Output.Dimensions){Name = "output"}
+                        };
+                        outputs[0].Input.SetConnection(spconv2d.Output);
+                        graph = new Graph(inputs, outputs);
+                    }
+                    break;
                 default:
                     throw new ArgumentException("input-format");
             }
@@ -104,7 +129,7 @@ namespace NnCase.Cli
                         }
 
                         Transform.Process(graph, new Transform[] {
-                            new K210SeprableConv2dTransform(),
+                            new K210SeparableConv2dTransform(),
                             new K210SpaceToBatchNdAndValidConv2dTransform(),
                             new K210SameConv2dTransform(),
                             new K210Stride2Conv2dTransform(),
@@ -126,6 +151,17 @@ namespace NnCase.Cli
                                 PreprocessMethods.None,
                                 PostprocessMethods.Normalize0To1),
                                 ctx,
+                                Path.GetDirectoryName(options.Output),
+                                Path.GetFileNameWithoutExtension(options.Output));
+                        }
+                        break;
+                    }
+                case "k210script":
+                    {
+                        {
+                            var dim = graph.Inputs.First().Output.Dimensions.ToArray();
+                            var k210c = new GraphToScriptConverter(graph);
+                            await k210c.ConvertAsync(
                                 Path.GetDirectoryName(options.Output),
                                 Path.GetFileNameWithoutExtension(options.Output));
                         }

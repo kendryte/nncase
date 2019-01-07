@@ -8,7 +8,7 @@ using NnCase.Converter.Model.Layers.K210;
 
 namespace NnCase.Converter.Transforms.K210
 {
-    public class K210SeprableConv2dTransform : Transform
+    public class K210SeparableConv2dTransform : Transform
     {
         protected override bool OnTryMatch(Layer layer, TransformContext context)
         {
@@ -73,7 +73,6 @@ namespace NnCase.Converter.Transforms.K210
             var output = conv2d.Output;
 
             space.Input.ClearConnection();
-
             var newDwConv2d = new DepthwiseConv2d(input.Dimensions, dwConv2d.Weights, dwConv2d.Bias, Padding.Same, 1, 1, dwConv2d.FusedActivationFunction);
             var newConv2d = new K210Conv2d(newDwConv2d.Output.Dimensions, K210Conv2dType.Conv2d, conv2d.Weights, conv2d.Bias, K210PoolType.LeftTop, conv2d.FusedActivationFunction);
 

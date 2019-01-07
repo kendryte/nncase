@@ -13,7 +13,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Templates\Script\Model.cshtml" />
+  </ItemGroup>
+
+  <ItemGroup>
     <EmbeddedResource Include="Templates\K210\Model.cshtml" />
+    <EmbeddedResource Include="Templates\Script\Model.cshtml" />
   </ItemGroup>
 
   <ItemGroup>
@@ -32,10 +37,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FlatBuffers\FlatBuffers.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Templates\Script\" />
   </ItemGroup>
 
 </Project>

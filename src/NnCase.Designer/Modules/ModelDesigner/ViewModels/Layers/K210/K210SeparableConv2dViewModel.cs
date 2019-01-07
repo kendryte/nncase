@@ -16,7 +16,7 @@ namespace NnCase.Designer.Modules.ModelDesigner.ViewModels.Layers.K210
 
         public OutputConnectorViewModel Output { get; }
 
-        private ActivationFunctionType _activation;
+        private ActivationFunctionType _activation = ActivationFunctionType.Relu;
         public ActivationFunctionType Activation
         {
             get => _activation;

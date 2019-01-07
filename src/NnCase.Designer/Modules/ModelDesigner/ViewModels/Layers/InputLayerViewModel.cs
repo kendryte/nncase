@@ -62,7 +62,7 @@ namespace NnCase.Designer.Modules.ModelDesigner.ViewModels.Layers
 
         protected override void BuildModelCore(BuildGraphContext context)
         {
-            var model = new InputLayer(Output.Dimensions);
+            var model = new InputLayer(Output.Dimensions) { Name = Name };
             context.OutputConnectors[Output] = model.Output;
             context.Layers[this] = new[] { model };
         }
