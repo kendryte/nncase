@@ -5,16 +5,22 @@ nncase
 ## NNCase Converter
 A tool to convert models between many formats.
 ### Usage
-`ncc -i <input format> -o <output format> [--dataset <dataset path>] <input path> <output path>`
+`ncc -i <input format> -o <output format> [--dataset <dataset path>] [--postprocess <dataset postprocess>] <input path> <output path>`
 
 Input formats can be one of `tflite` and `paddle`.
 
-Output formats can be one of `tf`, `tflite` and `k210code`.
+Output formats can be one of `tf`, `tflite`, `k210code` and `k210model`.
+
+Dataset postprocess can be one of `0to1` (normalize images from 0 to 1) and `n1to1` (normalize images from -1 to 1).
 
 ### Examples
 - Convert TFLite model to K210 code.
 
   `ncc -i tflite -o k210code --dataset ./images ./mbnetv1.tflite ./mbnetv1.c`
+
+- Convert TFLite model to K210 model.
+
+  `ncc -i tflite -o k210model --dataset ./images ./mbnetv1.tflite ./mbnetv1.kmodel`
 
 - Convert PaddlePaddle model to TensorFlow model.
 

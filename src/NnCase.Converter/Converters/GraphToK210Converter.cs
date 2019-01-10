@@ -42,7 +42,7 @@ namespace NnCase.Converter.Converters
 
         public int ShiftW { get; set; }
 
-        public int ArgAdd { get; set; }
+        public long ArgAdd { get; set; }
 
         public int KernelType { get; set; }
 
@@ -119,18 +119,48 @@ namespace NnCase.Converter.Converters
     public class K210CodeGenerationContext
     {
         public IReadOnlyList<K210ConvLayerConfig> Layers { get; set; }
+
         public string Prefix { get; set; }
+
         public int MaxStartAddress { get; set; }
+    }
+
+    public class K210BinGenerationContext
+    {
+        public IReadOnlyList<K210ParamAddress> ParamAddresses { get; set; }
+
+        public string Prefix { get; set; }
+
+        public int MaxStartAddress { get; set; }
+
+        public uint LayersAddress { get; set; }
+
+        public class K210ParamAddress
+        {
+            public uint Weights { get; set; }
+
+            public uint Bn { get; set; }
+
+            public uint Activation { get; set; }
+        }
+    }
+
+    public enum K210ConvertType
+    {
+        Code,
+        KModel
     }
 
     public class GraphToK210Converter
     {
         private readonly Graph _graph;
         private readonly RazorLightEngine _templateEngine;
+        private readonly K210ConvertType _convertType;
 
-        public GraphToK210Converter(Graph graph)
+        public GraphToK210Converter(Graph graph, K210ConvertType convertType)
         {
             _graph = graph;
+            _convertType = convertType;
             _templateEngine = new RazorLightEngineBuilder()
                 .UseMemoryCachingProvider()
                 .UseEmbeddedResourcesProject(typeof(GraphToK210Converter).Assembly, "Templates.K210")
@@ -150,15 +180,33 @@ namespace NnCase.Converter.Converters
             foreach (var layer in _graph.Outputs)
                 InferenceLayer(layer, context);
 
-            var codeGenContext = new K210CodeGenerationContext
+            if (_convertType == K210ConvertType.Code)
             {
-                Layers = context.InferenceOrders,
-                Prefix = prefix,
-                MaxStartAddress = context.MemoryAllocator.MaxStart
-            };
+                var codeGenContext = new K210CodeGenerationContext
+                {
+                    Layers = context.InferenceOrders,
+                    Prefix = prefix,
+                    MaxStartAddress = context.MemoryAllocator.MaxStart
+                };
 
-            var code = await _templateEngine.CompileRenderAsync("Model", codeGenContext);
-            File.WriteAllText(Path.Combine(outputDir, $"{prefix}.c"), code);
+                var code = await _templateEngine.CompileRenderAsync("Code", codeGenContext);
+                File.WriteAllText(Path.Combine(outputDir, $"{prefix}.c"), code);
+            }
+            else
+            {
+                var binGenContext = new K210BinGenerationContext
+                {
+                    ParamAddresses = (from i in Enumerable.Range(0, context.InferenceOrders.Count)
+                                      select new K210BinGenerationContext.K210ParamAddress()).ToList(),
+                    Prefix = prefix,
+                    MaxStartAddress = context.MemoryAllocator.MaxStart
+                };
+
+                using (var bin = File.OpenWrite(Path.Combine(outputDir, $"{prefix}.kmodel")))
+                {
+                    GenerateBin(bin, context.InferenceOrders, binGenContext);
+                }
+            }
         }
 
         private void ConvertLayer(Layer layer, ConvertContext context)
@@ -203,7 +251,7 @@ namespace NnCase.Converter.Converters
             var config = new K210ConvLayerConfig { BNConfigs = new K210LayerBNConfig[layer.OutputChannels] };
             (var sw, var bw) = QuantizeWeights(layer.Conv2dType == K210Conv2dType.Conv2d, layer.Weights, config);
             (var sx, var bx) = QuantizeInput(context.Quantization.Distributions[layer.Input.Connection.From], config);
-            config.ArgAdd = (int)Math.Round(bw * bx * layer.KernelWidth * layer.KernelHeight);
+            config.ArgAdd = (long)Math.Round(bw * bx * layer.KernelWidth * layer.KernelHeight);
 
             var scale = new double[layer.OutputChannels];
             for (int i = 0; i < scale.Length; i++)
@@ -385,6 +433,217 @@ namespace NnCase.Converter.Converters
             //context.InferenceOrders.Add(config);
         }
 
+        private void GenerateBin(Stream bin, IReadOnlyList<K210ConvLayerConfig> layers, K210BinGenerationContext context)
+        {
+            var bw = new BinaryWriter(bin);
+
+            uint version = 1;
+            uint flags = 1;
+            bw.Write(version);
+            bw.Write(flags);
+            bw.Write(layers.Count);
+            bw.Write(context.MaxStartAddress);
+
+            // layer + (w bn act is ib os ob) * layers
+            var placeholder = (1 + 7 * layers.Count) * 4;
+            var fixPosition = bw.BaseStream.Position;
+            bw.BaseStream.Position += placeholder;
+
+            GenerateBinWeights(bw, layers, context);
+            GenerateBinBn(bw, layers, context);
+            GenerateBinActivation(bw, layers, context);
+            GenerateBinLayers(bw, layers, context);
+            FixBinPlaceholder(bw, layers, context, fixPosition);
+        }
+
+        private void GenerateBinWeights(BinaryWriter bw, IReadOnlyList<K210ConvLayerConfig> layers, K210BinGenerationContext context)
+        {
+            for (int i = 0; i < layers.Count; i++)
+            {
+                var layer = layers[i];
+                context.ParamAddresses[i].Weights = AlignStreamPosition(bw.BaseStream, 8);
+                bw.Write(layer.Weights);
+            }
+        }
+
+        private void GenerateBinBn(BinaryWriter bw, IReadOnlyList<K210ConvLayerConfig> layers, K210BinGenerationContext context)
+        {
+            for (int i = 0; i < layers.Count; i++)
+            {
+                var layer = layers[i];
+                context.ParamAddresses[i].Bn = AlignStreamPosition(bw.BaseStream, 8);
+
+                for (int j = 0; j < layer.BNConfigs.Length; j++)
+                {
+                    var bn = layer.BNConfigs[j];
+                    var reg = new K210.kpu_batchnorm_argument_t();
+                    reg.norm_add = (uint)bn.Add;
+                    reg.norm_mul = (uint)bn.Mul;
+                    reg.norm_shift = (byte)bn.Shift;
+
+                    bw.Write(reg.Value);
+                }
+            }
+        }
+
+        private void GenerateBinActivation(BinaryWriter bw, IReadOnlyList<K210ConvLayerConfig> layers, K210BinGenerationContext context)
+        {
+            for (int i = 0; i < layers.Count; i++)
+            {
+                var layer = layers[i];
+                context.ParamAddresses[i].Activation = AlignStreamPosition(bw.BaseStream, 256);
+
+                var reg = new K210.kpu_activate_table_t();
+                var starts = new ulong[]
+                {
+                    0x800000000, 0xf7d4cf4b8, 0xf8ed5a20c, 0xfa05e4f60,
+                    0xfb2e05baa, 0xfc46908fe, 0xfd5f1b652, 0xfe77a63a6,
+                    0xff9fc6ff0, 0xfffd4a9b7, 0, 0x7FFFFFFF0,
+                    0x7FFFFFFF1, 0x7FFFFFFF2, 0x7FFFFFFF3, 0x7FFFFFFF4
+                };
+
+                for (int j = 0; j < starts.Length; j++)
+                {
+                    ref var param = ref reg.activate_para[j];
+                    param.x_start = starts[j];
+                    param.y_mul = 0;
+                    param.shift_number = 0;
+                }
+
+                {
+                    ref var param = ref reg.activate_para[10];
+                    param.y_mul = (ushort)layer.ActMul;
+                    param.shift_number = (byte)layer.ActShift;
+                }
+
+                for (int j = 0; j < starts.Length; j++)
+                    bw.Write(reg.activate_para[j].Value);
+                bw.Write(reg.activate_para_bias0.Value);
+                bw.Write(reg.activate_para_bias1.Value);
+            }
+        }
+
+        private void GenerateBinLayers(BinaryWriter bw, IReadOnlyList<K210ConvLayerConfig> layers, K210BinGenerationContext context)
+        {
+            context.LayersAddress = AlignStreamPosition(bw.BaseStream, 8);
+            for (int i = 0; i < layers.Count; i++)
+            {
+                var layer = layers[i];
+                var reg = new K210.kpu_layer_argument_t();
+
+                reg.interrupt_enabe = new K210.interrupt_enabe_t
+                {
+                    depth_wise_layer = (byte)(layer.IsDepthwise ? 1 : 0)
+                };
+                reg.image_addr = new K210.image_addr_t
+                {
+                    image_src_addr = (ushort)layer.InputAddress,
+                    image_dst_addr = (ushort)layer.OutputAddress
+                };
+                reg.image_channel_num = new K210.image_channel_num_t
+                {
+                    i_ch_num = (ushort)(layer.InputChannels - 1),
+                    o_ch_num = (ushort)(layer.OutputChannels - 1),
+                    o_ch_num_coef = (ushort)(layer.OutputChannelsOnTime - 1)
+                };
+                reg.image_size = new K210.image_size_t
+                {
+                    i_row_wid = (ushort)(layer.InputWidth - 1),
+                    i_col_high = (ushort)(layer.InputHeight - 1),
+                    o_row_wid = (ushort)(layer.OutputWidth - 1),
+                    o_col_high = (ushort)(layer.OutputHeight - 1)
+                };
+                reg.kernel_pool_type_cfg = new K210.kernel_pool_type_cfg_t
+                {
+                    load_para = 1,
+                    kernel_type = (byte)layer.KernelType,
+                    pool_type = (byte)layer.PoolType,
+                    dma_burst_size = 15,
+                    pad_value = (byte)layer.PadValue
+                };
+                reg.kernel_load_cfg = new K210.kernel_load_cfg_t
+                {
+                    load_coor = 1,
+                    load_time = (byte)(layer.LoadTimes - 1),
+                    para_size = (uint)layer.OneLoadKernelsSize
+                };
+                reg.kernel_calc_type_cfg = new K210.kernel_calc_type_cfg_t
+                {
+                    channel_switch_addr = (ushort)(layer.InputRowLength * layer.InputHeight),
+                    row_switch_addr = (byte)layer.InputRowLength,
+                    coef_group = (byte)layer.InputGroups,
+                    load_act = 1
+                };
+                reg.write_back_cfg = new K210.write_back_cfg_t
+                {
+                    wb_channel_switch_addr = (ushort)(layer.OutputRowLength * layer.OutputHeight),
+                    wb_row_switch_addr = (byte)layer.OutputRowLength,
+                    wb_group = (byte)layer.OutputGroups
+                };
+                reg.conv_value = new K210.conv_value_t
+                {
+                    shr_w = (byte)layer.ShiftW,
+                    shr_x = (byte)layer.ShiftX,
+                    arg_w = (uint)layer.ArgW,
+                    arg_x = (uint)layer.ArgX
+                };
+                reg.conv_value2 = new K210.conv_value2_t
+                {
+                    arg_add = (ulong)layer.ArgAdd
+                };
+                reg.dma_parameter = new K210.dma_parameter_t
+                {
+                    channel_byte_num = (ushort)(layer.OutputWidth * layer.OutputHeight - 1),
+                    dma_total_byte = (uint)(layer.OutputWidth * layer.OutputHeight * layer.OutputChannels - 1)
+                };
+
+                bw.Write(reg.interrupt_enabe.Value);
+                bw.Write(reg.image_addr.Value);
+                bw.Write(reg.image_channel_num.Value);
+                bw.Write(reg.image_size.Value);
+                bw.Write(reg.kernel_pool_type_cfg.Value);
+                bw.Write(reg.kernel_load_cfg.Value);
+                bw.Write(reg.kernel_offset.Value);
+                bw.Write(reg.kernel_calc_type_cfg.Value);
+                bw.Write(reg.write_back_cfg.Value);
+                bw.Write(reg.conv_value.Value);
+                bw.Write(reg.conv_value2.Value);
+                bw.Write(reg.dma_parameter.Value);
+            }
+        }
+
+        private void FixBinPlaceholder(BinaryWriter bw, IReadOnlyList<K210ConvLayerConfig> layers, K210BinGenerationContext context, long fixPosition)
+        {
+            var pos = bw.BaseStream.Position;
+            bw.BaseStream.Position = fixPosition;
+
+            bw.Write(context.LayersAddress);
+            for (int i = 0; i < layers.Count; i++)
+            {
+                var layer = layers[i];
+                var addr = context.ParamAddresses[i];
+
+                bw.Write(addr.Weights);
+                bw.Write(addr.Bn);
+                bw.Write(addr.Activation);
+                bw.Write((float)layer.InputScale);
+                bw.Write((float)layer.InputBias);
+                bw.Write((float)layer.OutputScale);
+                bw.Write((float)layer.OutputBias);
+            }
+
+            bw.BaseStream.Position = pos;
+        }
+
+        private uint AlignStreamPosition(Stream stream, int alignment)
+        {
+            var cnt = stream.Position;
+            var rem = cnt % alignment;
+            if (rem != 0)
+                stream.Position = cnt + (alignment - rem);
+            return (uint)stream.Position;
+        }
+
         private static (int groups, int rowLength) GetRowLayout(int width)
         {
             int groups, rowLength;
@@ -427,19 +686,19 @@ namespace NnCase.Converter.Converters
 #if NET471
                 await dataset.GetBatchesAsync().ForEachAsync(async batch =>
 #else
-                    await foreach (var batch in dataset.GetBatchesAsync())
+                await foreach (var batch in dataset.GetBatchesAsync())
 #endif
-                    {
-                        var input = batch.ToNHWC();
-                        var runner = session.GetRunner();
+                {
+                    var input = batch.ToNHWC();
+                    var runner = session.GetRunner();
 
-                        runner.AddInput(planContext.Inputs.Values.First(), input);
-                        foreach (var fetch in toFetches)
-                            runner.Fetch(fetch);
+                    runner.AddInput(planContext.Inputs.Values.First(), input);
+                    foreach (var fetch in toFetches)
+                        runner.Fetch(fetch);
 
-                        var outputs = runner.Run();
-                        RecordOutputs(new[] { input }.Concat(outputs).ToList(), quantizationContext);
-                    }
+                    var outputs = runner.Run();
+                    RecordOutputs(new[] { input }.Concat(outputs).ToList(), quantizationContext);
+                }
 #if NET471
                 );
 #endif

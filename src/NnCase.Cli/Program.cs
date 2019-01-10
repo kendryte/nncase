@@ -27,6 +27,9 @@ namespace NnCase.Cli
         [Option("dataset", Required = false, HelpText = "Dataset path")]
         public string Dataset { get; set; }
 
+        [Option("postprocess", Required = false, HelpText = "Dataset postprocess")]
+        public string Postprocess { get; set; }
+
         [Value(0, MetaName = "input", HelpText = "Input path")]
         public string Input { get; set; }
 
@@ -97,7 +100,8 @@ namespace NnCase.Cli
                     throw new ArgumentException("input-format");
             }
 
-            switch (options.OutputFormat.ToLowerInvariant())
+            var outputFormat = options.OutputFormat.ToLowerInvariant();
+            switch (outputFormat)
             {
                 case "tf":
                     {
@@ -114,7 +118,12 @@ namespace NnCase.Cli
                         break;
                     }
                 case "k210code":
+                case "k210model":
                     {
+                        PostprocessMethods pm = PostprocessMethods.Normalize0To1;
+                        if (options.Postprocess == "n1to1")
+                            pm = PostprocessMethods.NormalizeMinus1To1;
+
                         if (options.InputFormat.ToLowerInvariant() != "tflite")
                         {
                             var tmpTflite = Path.GetTempFileName();
@@ -143,13 +152,13 @@ namespace NnCase.Cli
                             var ctx = new GraphPlanContext();
                             graph.Plan(ctx);
                             var dim = graph.Inputs.First().Output.Dimensions.ToArray();
-                            var k210c = new GraphToK210Converter(graph);
+                            var k210c = new GraphToK210Converter(graph, outputFormat == "k210code" ? K210ConvertType.Code : K210ConvertType.KModel);
                             await k210c.ConvertAsync(new ImageDataset(
                                 options.Dataset,
                                 new[] { dim[1], dim[2], dim[3] },
                                 1,
                                 PreprocessMethods.None,
-                                PostprocessMethods.Normalize0To1),
+                                pm),
                                 ctx,
                                 Path.GetDirectoryName(options.Output),
                                 Path.GetFileNameWithoutExtension(options.Output));
