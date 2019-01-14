@@ -26,6 +26,7 @@ namespace NnCase.Converter.Model.Layers.K210
             var graph = context.TFGraph;
             var input = context.TFOutputs[Input.Connection.From];
 
+            input = graph.Reshape(input, graph.Const(new[] { Input.Dimensions[0], 1, 1, Input.Dimensions[1] }));
             context.TFOutputs[Output] = graph.Pad(input, graph.Const(new[,] { { 0, 0 }, { 0, 3 }, { 0, 3 }, { 0, 0 } }));
         }
     }
