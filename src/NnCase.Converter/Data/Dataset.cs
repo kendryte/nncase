@@ -78,24 +78,24 @@ namespace NnCase.Converter.Data
             return new AsyncEnumerable<Tensor<float>>(async yield =>
             {
 #endif
-                for (int i = 0; i < _fileNames.Count / _batchSize; i++)
+            for (int i = 0; i < _fileNames.Count / _batchSize; i++)
+            {
+                var tensor = new DenseTensor<float>(dimensions);
+                var sources = await Task.WhenAll(from j in Enumerable.Range(i * _batchSize, _batchSize)
+                                                 select ReadAllBytesAsync(_fileNames[j]));
+                Parallel.For(0, _batchSize, j =>
                 {
-                    var tensor = new DenseTensor<float>(dimensions);
-                    var sources = await Task.WhenAll(from j in Enumerable.Range(i * _batchSize, _batchSize)
-                                                     select ReadAllBytesAsync(_fileNames[j]));
-                    Parallel.For(0, _batchSize, j =>
-                    {
-                        var buffer = tensor.Buffer.Slice(j * oneSize);
-                        Process(sources[j], buffer.Span);
-                        Postprocess(buffer.Span, _postprocessMethod);
-                    });
+                    var buffer = tensor.Buffer.Slice(j * oneSize);
+                    Process(sources[j], buffer.Span);
+                    Postprocess(buffer.Span, _postprocessMethod);
+                });
 
 #if NET471
                     await yield.ReturnAsync(tensor);
 #else
-                    yield return tensor;
+                yield return tensor;
 #endif
-                }
+            }
 #if NET471
             });
 #endif
@@ -160,20 +160,39 @@ namespace NnCase.Converter.Data
                     destImage = image;
                 }
 
-                var pixels = destImage.GetPixelSpan();
-                var channelSize = Dimensions[1] * Dimensions[2];
+                if (Dimensions[1] == 3)
+                {
+                    var pixels = destImage.GetPixelSpan();
+                    var channelSize = Dimensions[1] * Dimensions[2];
 
-                var rChannel = dest.Slice(0, channelSize);
-                for (int i = 0; i < channelSize; i++)
-                    rChannel[i] = pixels[i].R / 255.0f;
+                    var rChannel = dest.Slice(0, channelSize);
+                    for (int i = 0; i < channelSize; i++)
+                        rChannel[i] = pixels[i].R / 255.0f;
 
-                var gChannel = dest.Slice(channelSize, channelSize);
-                for (int i = 0; i < channelSize; i++)
-                    gChannel[i] = pixels[i].G / 255.0f;
+                    var gChannel = dest.Slice(channelSize, channelSize);
+                    for (int i = 0; i < channelSize; i++)
+                        gChannel[i] = pixels[i].G / 255.0f;
 
-                var bChannel = dest.Slice(channelSize * 2, channelSize);
-                for (int i = 0; i < channelSize; i++)
-                    bChannel[i] = pixels[i].B / 255.0f;
+                    var bChannel = dest.Slice(channelSize * 2, channelSize);
+                    for (int i = 0; i < channelSize; i++)
+                        bChannel[i] = pixels[i].B / 255.0f;
+                }
+                else if (Dimensions[1] == 1)
+                {
+                    destImage.Mutate(x =>
+                        x.Grayscale());
+
+                    var pixels = destImage.GetPixelSpan();
+                    var channelSize = Dimensions[1] * Dimensions[2];
+
+                    var rChannel = dest.Slice(0, channelSize);
+                    for (int i = 0; i < channelSize; i++)
+                        rChannel[i] = pixels[i].R / 255.0f;
+                }
+                else
+                {
+                    throw new NotSupportedException($"Channels number {Dimensions[1]} is not supported by dataset provider.");
+                }
             }
         }
     }
