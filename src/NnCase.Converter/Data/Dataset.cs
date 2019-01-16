@@ -160,7 +160,7 @@ namespace NnCase.Converter.Data
                     destImage = image;
                 }
 
-                if (Dimensions[1] == 3)
+                if (Dimensions[0] == 3)
                 {
                     var pixels = destImage.GetPixelSpan();
                     var channelSize = Dimensions[1] * Dimensions[2];
@@ -177,7 +177,7 @@ namespace NnCase.Converter.Data
                     for (int i = 0; i < channelSize; i++)
                         bChannel[i] = pixels[i].B / 255.0f;
                 }
-                else if (Dimensions[1] == 1)
+                else if (Dimensions[0] == 1)
                 {
                     destImage.Mutate(x =>
                         x.Grayscale());
@@ -191,7 +191,7 @@ namespace NnCase.Converter.Data
                 }
                 else
                 {
-                    throw new NotSupportedException($"Channels number {Dimensions[1]} is not supported by dataset provider.");
+                    throw new NotSupportedException($"Channels number {Dimensions[0]} is not supported by dataset provider.");
                 }
             }
         }

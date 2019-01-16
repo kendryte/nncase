@@ -150,7 +150,7 @@ namespace NnCase.Converter.Converters
             var input = _graph.Tensors(inputs[0]).Value;
             var options = op.BuiltinOptions<tflite.ReshapeOptions>().Value;
 
-            var layer = new Reshape(input.GetShapeArray().ToNCHW(), options.GetNewShapeArray());
+            var layer = new Reshape(input.GetShapeArray().ToNCHW(), options.GetNewShapeArray().ToNCHW());
             _inputs.Add(layer.Input, inputs[0]);
             _outputs.Add(op.Outputs(0), layer.Output);
             return layer;
