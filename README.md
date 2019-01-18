@@ -7,7 +7,7 @@ A tool to convert models between many formats.
 ### Usage
 `ncc -i <input format> -o <output format> [--dataset <dataset path>] [--postprocess <dataset postprocess>] <input path> <output path>`
 
-Input formats can be one of `tflite` and `paddle`.
+Input formats can be one of `tflite`, `paddle` and `caffe`.
 
 Output formats can be one of `tf`, `tflite`, `k210code` and `k210model`.
 
