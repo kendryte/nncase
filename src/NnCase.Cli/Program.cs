@@ -24,6 +24,12 @@ namespace NnCase.Cli
         [Option('o', "output-format", Required = true, HelpText = "Set the input format.")]
         public string OutputFormat { get; set; }
 
+        [Option("input-node", Required = false, HelpText = "Input node")]
+        public string InputNode { get; set; }
+
+        [Option("output-node", Required = false, HelpText = "Output node")]
+        public string OutputNode { get; set; }
+
         [Option("dataset", Required = false, HelpText = "Dataset path")]
         public string Dataset { get; set; }
 
@@ -58,11 +64,11 @@ namespace NnCase.Cli
             Graph graph;
             switch (options.InputFormat.ToLowerInvariant())
             {
-                case "tflite":
+                case "caffe":
                     {
                         var file = File.ReadAllBytes(options.Input);
-                        var model = tflite.Model.GetRootAsModel(new FlatBuffers.ByteBuffer(file));
-                        var tfc = new TfLiteToGraphConverter(model, model.Subgraphs(0).Value);
+                        var model = Caffe.NetParameter.Parser.ParseFrom(file);
+                        var tfc = new CaffeToGraphConverter(model);
                         tfc.Convert();
                         graph = tfc.Graph;
                         break;
@@ -71,6 +77,15 @@ namespace NnCase.Cli
                     {
                         var tfc = new PaddleToGraphConverter(options.Input);
                         tfc.Convert(0);
+                        graph = tfc.Graph;
+                        break;
+                    }
+                case "tflite":
+                    {
+                        var file = File.ReadAllBytes(options.Input);
+                        var model = tflite.Model.GetRootAsModel(new FlatBuffers.ByteBuffer(file));
+                        var tfc = new TfLiteToGraphConverter(model, model.Subgraphs(0).Value);
+                        tfc.Convert();
                         graph = tfc.Graph;
                         break;
                     }
