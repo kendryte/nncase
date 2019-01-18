@@ -33,7 +33,7 @@ namespace NnCase.Converter.Converters
             var outputs = new List<OutputLayer>();
             foreach (var conn in _outputs.Values.Where(o => !o.Connections.Any()))
             {
-                var output = new OutputLayer(conn.Dimensions);
+                var output = new OutputLayer(conn.Dimensions) { Name = "output" };
                 conn.AddConnection(output.Input);
                 outputs.Add(output);
             }
@@ -53,6 +53,7 @@ namespace NnCase.Converter.Converters
                 case "Split":
                     return ConvertSplit(layerParam);
                 case "Convolution":
+                case "DepthwiseConvolution":
                     return ConvertConvolution(layerParam);
                 case "BatchNorm":
                     return ConvertBatchNorm(layerParam);
@@ -60,10 +61,18 @@ namespace NnCase.Converter.Converters
                     return ConvertScale(layerParam);
                 case "ReLU":
                     return ConvertReLU(layerParam);
+                case "PReLU":
+                    return ConvertPReLU(layerParam);
                 case "Pooling":
                     return ConvertPooling(layerParam);
                 case "Softmax":
                     return ConvertSoftmax(layerParam);
+                case "Eltwise":
+                    return ConvertEltwise(layerParam);
+                case "InnerProduct":
+                    return ConvertInnerProduct(layerParam);
+                case "L2Normalization":
+                    return ConvertL2Normalization(layerParam);
                 default:
                     throw new NotSupportedException();
             }
@@ -73,7 +82,12 @@ namespace NnCase.Converter.Converters
         {
             var dim = layerParam.InputParam.Shape[0].Dim.Select(x => (int)x).ToArray();
             var layer = new InputLayer(dim) { Name = layerParam.Name };
-            _outputs.Add(layerParam.Top[0], layer.Output);
+
+            var weights = new float[,] { { 0, 0, 1 }, { 0, 1, 0 }, { 1, 0, 0 } }.ToTensor().Reshape(new[] { 3, 3, 1, 1 });
+            var conv2d = new Conv2d(layer.Output.Dimensions, weights, null, Padding.Valid, 1, 1, ActivationFunctionType.Linear);
+            conv2d.Input.SetConnection(layer.Output);
+
+            _outputs.Add(layerParam.Top[0], conv2d.Output);
             return layer;
         }
 
@@ -165,13 +179,14 @@ namespace NnCase.Converter.Converters
         {
             var input = _outputs[layerParam.Bottom[0]];
             var param = layerParam.BatchNormParam;
+            var eps = param == null || param.Eps == 0 ? 1e-5f : param.Eps;
 
             var scaleFactor = LoadBlob(layerParam.Blobs[2])[0];
             var mean = LoadBlob(layerParam.Blobs[0], scaleFactor);
             var variance = LoadBlob(layerParam.Blobs[1], scaleFactor);
             var scale = Enumerable.Repeat(1.0f, mean.Dimensions[0]).ToArray().ToTensor();
             var offset = Enumerable.Repeat(0.0f, mean.Dimensions[0]).ToArray().ToTensor();
-            var layer = new BatchNormalization(input.Dimensions, scale, offset, mean, variance, param.Eps == 0 ? 1e-5f : param.Eps);
+            var layer = new BatchNormalization(input.Dimensions, scale, offset, mean, variance, eps);
             layer.Input.SetConnection(input);
             _outputs[layerParam.Top[0]] = layer.Output;
             return layer;
@@ -200,6 +215,20 @@ namespace NnCase.Converter.Converters
             if (param != null && param.NegativeSlope != 0)
                 throw new NotSupportedException();
             var layer = new Relu(input.Dimensions);
+            layer.Input.SetConnection(input);
+            _outputs[layerParam.Top[0]] = layer.Output;
+            return layer;
+        }
+
+        private Layer ConvertPReLU(LayerParameter layerParam)
+        {
+            var input = _outputs[layerParam.Bottom[0]];
+            var param = layerParam.ReluParam;
+
+            var slope = LoadBlob(layerParam.Blobs[0]);
+            if (param != null && param.NegativeSlope != 0)
+                throw new NotSupportedException();
+            var layer = new PRelu(input.Dimensions, slope);
             layer.Input.SetConnection(input);
             _outputs[layerParam.Top[0]] = layer.Output;
             return layer;
@@ -253,6 +282,42 @@ namespace NnCase.Converter.Converters
             var layer = new Softmax(input.Dimensions);
             layer.Input.SetConnection(input);
             _outputs.Add(layerParam.Top[0], layer.Output);
+            return layer;
+        }
+
+        private Layer ConvertEltwise(LayerParameter layerParam)
+        {
+            var a = _outputs[layerParam.Bottom[0]];
+            var b = _outputs[layerParam.Bottom[1]];
+            var param = layerParam.EltwiseParam;
+            
+            var layer = new Add(a.Dimensions, b.Dimensions);
+            layer.InputA.SetConnection(a);
+            layer.InputB.SetConnection(b);
+            _outputs[layerParam.Top[0]] = layer.Output;
+            return layer;
+        }
+
+        private Layer ConvertInnerProduct(LayerParameter layerParam)
+        {
+            var input = _outputs[layerParam.Bottom[0]];
+            var param = layerParam.InnerProductParam;
+
+            var weights = LoadBlob(layerParam.Blobs[0]);
+            var layer = new FullyConnected(input.Dimensions, weights, null, ActivationFunctionType.Linear);
+            layer.Input.SetConnection(input);
+            _outputs[layerParam.Top[0]] = layer.Output;
+            return layer;
+        }
+
+        private Layer ConvertL2Normalization(LayerParameter layerParam)
+        {
+            var input = _outputs[layerParam.Bottom[0]];
+            var param = layerParam.L2NormalizationParam;
+            
+            var layer = new L2Normalization(input.Dimensions);
+            layer.Input.SetConnection(input);
+            _outputs[layerParam.Top[0]] = layer.Output;
             return layer;
         }
 

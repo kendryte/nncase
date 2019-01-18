@@ -44,7 +44,7 @@ namespace NnCase.Converter.Model.Layers
 
             if (Input.Dimensions.Length == 4)
             {
-                context.TFOutputs[Output] = graph.FusedBatchNorm(x, graph.Const(scale), graph.Const(offset), graph.Const(mean), graph.Const(variance), Epsilon).y;
+                context.TFOutputs[Output] = graph.FusedBatchNorm(x, graph.Const(scale), graph.Const(offset), graph.Const(mean), graph.Const(variance), Epsilon, is_training: false).y;
             }
             else
             {
