@@ -24,8 +24,13 @@ namespace NnCase.Converter.Model.Layers
         {
             var graph = context.TFGraph;
             var x = context.TFOutputs[Input.Connection.From];
+            var alpha = graph.Const(Slope.ToNHWC());
+            var zero = graph.Const(0.0f, TensorFlow.TFDataType.Float);
 
-            context.TFOutputs[Output] = graph.Maximum(graph.Mul(x, graph.Const(Slope.ToNHWC())), x);
+            var pos = graph.Maximum(zero, x);
+            var neg = graph.Mul(alpha, graph.Minimum(zero, x));
+
+            context.TFOutputs[Output] = graph.Add(pos, neg);
         }
     }
 }
