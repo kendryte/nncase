@@ -81,6 +81,7 @@ namespace NnCase.Converter.Converters
         private Layer ConvertInput(LayerParameter layerParam)
         {
             var dim = layerParam.InputParam.Shape[0].Dim.Select(x => (int)x).ToArray();
+            dim[0] = 1;
             var layer = new InputLayer(dim) { Name = layerParam.Name };
 
             var weights = new float[,] { { 0, 0, 1 }, { 0, 1, 0 }, { 1, 0, 0 } }.ToTensor().Reshape(new[] { 3, 3, 1, 1 });
@@ -118,27 +119,24 @@ namespace NnCase.Converter.Converters
 
             var padding = GetDefault(param.Pad);
             var strides = GetDefault(param.Stride);
-            var kernelSize = param.KernelSize.Count == 1 ? new[] { param.KernelSize[0], param.KernelSize[0] } : param.KernelSize.ToArray();
+            var kernelSize = param.KernelSize.Count == 1 ? new[] { param.KernelSize[0], param.KernelSize[0] }
+                : (param.KernelSize.Count == 0 ? new[] { param.KernelH, param.KernelW } : param.KernelSize.ToArray());
             var group = param.Group == 0 ? 1 : param.Group;
 
             if (group == 1)
             {
                 var weights = LoadBlob(layerParam.Blobs[0]);
                 Conv2d conv2d;
-                if (padding[0] == 1 && padding[1] == 1 && strides[0] == 2 && strides[1] == 2 &&
-                    kernelSize[0] == 3 && kernelSize[1] == 3)
+                if (padding[0] != 0 || padding[1] != 0)
                 {
-                    var space = new SpaceToBatchNd(input.Dimensions, new[] { 1, 1 }.ToTensor(), new[,] { { 1, 1 }, { 1, 1, } }.ToTensor());
+                    var space = new SpaceToBatchNd(input.Dimensions, new[] { 1, 1 }.ToTensor(), new[,] { { (int)padding[0], (int)padding[0] }, { (int)padding[1], (int)padding[1], } }.ToTensor());
                     conv2d = new Conv2d(space.Output.Dimensions, weights, null, Padding.Valid, (int)strides[1], (int)strides[0], ActivationFunctionType.Linear);
                     space.Input.SetConnection(input);
                     conv2d.Input.SetConnection(space.Output);
                 }
                 else
                 {
-                    if (padding[0] != padding[1] || (padding[0] != 0 && padding[0] != 1))
-                        throw new NotSupportedException();
-
-                    conv2d = new Conv2d(input.Dimensions, weights, null, Padding.Same, (int)strides[1], (int)strides[0], ActivationFunctionType.Linear);
+                    conv2d = new Conv2d(input.Dimensions, weights, null, Padding.Valid, (int)strides[1], (int)strides[0], ActivationFunctionType.Linear);
                     conv2d.Input.SetConnection(input);
                 }
 
@@ -149,20 +147,17 @@ namespace NnCase.Converter.Converters
             {
                 var weights = LoadBlob(layerParam.Blobs[0]).Transpose(new[] { 1, 0, 2, 3 });
                 DepthwiseConv2d dwConv2d;
-                if (padding[0] == 1 && padding[1] == 1 && strides[0] == 2 && strides[1] == 2 &&
-                    kernelSize[0] == 3 && kernelSize[1] == 3)
+
+                if (padding[0] != 0 || padding[1] != 0)
                 {
-                    var space = new SpaceToBatchNd(input.Dimensions, new[] { 1, 1 }.ToTensor(), new[,] { { 1, 1 }, { 1, 1, } }.ToTensor());
+                    var space = new SpaceToBatchNd(input.Dimensions, new[] { 1, 1 }.ToTensor(), new[,] { { (int)padding[0], (int)padding[0] }, { (int)padding[1], (int)padding[1], } }.ToTensor());
                     dwConv2d = new DepthwiseConv2d(space.Output.Dimensions, weights, null, Padding.Valid, (int)strides[1], (int)strides[0], ActivationFunctionType.Linear);
                     space.Input.SetConnection(input);
                     dwConv2d.Input.SetConnection(space.Output);
                 }
                 else
                 {
-                    if (padding[0] != padding[1] || (padding[0] != 0 && padding[0] != 1))
-                        throw new NotSupportedException();
-
-                    dwConv2d = new DepthwiseConv2d(input.Dimensions, weights, null, Padding.Same, (int)strides[1], (int)strides[0], ActivationFunctionType.Linear);
+                    dwConv2d = new DepthwiseConv2d(input.Dimensions, weights, null, Padding.Valid, (int)strides[1], (int)strides[0], ActivationFunctionType.Linear);
                     dwConv2d.Input.SetConnection(input);
                 }
 
