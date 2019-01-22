@@ -129,10 +129,18 @@ namespace NnCase.Converter.Converters
                 Conv2d conv2d;
                 if (padding[0] != 0 || padding[1] != 0)
                 {
-                    var space = new SpaceToBatchNd(input.Dimensions, new[] { 1, 1 }.ToTensor(), new[,] { { (int)padding[0], (int)padding[0] }, { (int)padding[1], (int)padding[1], } }.ToTensor());
-                    conv2d = new Conv2d(space.Output.Dimensions, weights, null, Padding.Valid, (int)strides[1], (int)strides[0], ActivationFunctionType.Linear);
-                    space.Input.SetConnection(input);
-                    conv2d.Input.SetConnection(space.Output);
+                    if (padding[0] == 1 && padding[1] == 1 && strides[0] == 1 && strides[1] == 1)
+                    {
+                        conv2d = new Conv2d(input.Dimensions, weights, null, Padding.Same, 1, 1, ActivationFunctionType.Linear);
+                        conv2d.Input.SetConnection(input);
+                    }
+                    else
+                    {
+                        var space = new SpaceToBatchNd(input.Dimensions, new[] { 1, 1 }.ToTensor(), new[,] { { (int)padding[0], (int)padding[0] }, { (int)padding[1], (int)padding[1], } }.ToTensor());
+                        conv2d = new Conv2d(space.Output.Dimensions, weights, null, Padding.Valid, (int)strides[1], (int)strides[0], ActivationFunctionType.Linear);
+                        space.Input.SetConnection(input);
+                        conv2d.Input.SetConnection(space.Output);
+                    }
                 }
                 else
                 {
@@ -150,10 +158,18 @@ namespace NnCase.Converter.Converters
 
                 if (padding[0] != 0 || padding[1] != 0)
                 {
-                    var space = new SpaceToBatchNd(input.Dimensions, new[] { 1, 1 }.ToTensor(), new[,] { { (int)padding[0], (int)padding[0] }, { (int)padding[1], (int)padding[1], } }.ToTensor());
-                    dwConv2d = new DepthwiseConv2d(space.Output.Dimensions, weights, null, Padding.Valid, (int)strides[1], (int)strides[0], ActivationFunctionType.Linear);
-                    space.Input.SetConnection(input);
-                    dwConv2d.Input.SetConnection(space.Output);
+                    if (padding[0] == 1 && padding[1] == 1 && strides[0] == 1 && strides[1] == 1)
+                    {
+                        dwConv2d = new DepthwiseConv2d(input.Dimensions, weights, null, Padding.Same, 1, 1, ActivationFunctionType.Linear);
+                        dwConv2d.Input.SetConnection(input);
+                    }
+                    else
+                    {
+                        var space = new SpaceToBatchNd(input.Dimensions, new[] { 1, 1 }.ToTensor(), new[,] { { (int)padding[0], (int)padding[0] }, { (int)padding[1], (int)padding[1], } }.ToTensor());
+                        dwConv2d = new DepthwiseConv2d(space.Output.Dimensions, weights, null, Padding.Valid, (int)strides[1], (int)strides[0], ActivationFunctionType.Linear);
+                        space.Input.SetConnection(input);
+                        dwConv2d.Input.SetConnection(space.Output);
+                    }
                 }
                 else
                 {
@@ -285,7 +301,7 @@ namespace NnCase.Converter.Converters
             var a = _outputs[layerParam.Bottom[0]];
             var b = _outputs[layerParam.Bottom[1]];
             var param = layerParam.EltwiseParam;
-            
+
             var layer = new Add(a.Dimensions, b.Dimensions);
             layer.InputA.SetConnection(a);
             layer.InputB.SetConnection(b);
@@ -309,7 +325,7 @@ namespace NnCase.Converter.Converters
         {
             var input = _outputs[layerParam.Bottom[0]];
             var param = layerParam.L2NormalizationParam;
-            
+
             var layer = new L2Normalization(input.Dimensions);
             layer.Input.SetConnection(input);
             _outputs[layerParam.Top[0]] = layer.Output;
