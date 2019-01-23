@@ -461,7 +461,7 @@ namespace NnCase.Converter.Converters
             for (int i = 0; i < layers.Count; i++)
             {
                 var layer = layers[i];
-                context.ParamAddresses[i].Weights = AlignStreamPosition(bw.BaseStream, 8);
+                context.ParamAddresses[i].Weights = AlignStreamPosition(bw.BaseStream, 128);
                 bw.Write(layer.Weights);
             }
         }
@@ -471,7 +471,7 @@ namespace NnCase.Converter.Converters
             for (int i = 0; i < layers.Count; i++)
             {
                 var layer = layers[i];
-                context.ParamAddresses[i].Bn = AlignStreamPosition(bw.BaseStream, 8);
+                context.ParamAddresses[i].Bn = AlignStreamPosition(bw.BaseStream, 128);
 
                 for (int j = 0; j < layer.BNConfigs.Length; j++)
                 {

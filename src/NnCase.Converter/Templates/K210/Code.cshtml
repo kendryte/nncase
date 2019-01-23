@@ -8,7 +8,7 @@
 @for (int i = 0; i < Model.Layers.Count; i++)
 {
     var layer = Model.Layers[i];
-@:static const uint8_t layer_@(i)_weights[] __attribute__((aligned(8))) = {
+@:static const uint8_t layer_@(i)_weights[] __attribute__((aligned(128))) = {
     WriteLiteral("    ");
     for (int j = 0; j < layer.Weights.Length; j++)
     {
@@ -26,7 +26,7 @@
 @for (int i = 0; i < Model.Layers.Count; i++)
 {
     var layer = Model.Layers[i];
-@:static const kpu_batchnorm_argument_t layer_@(i)_bn[] __attribute__((aligned(8))) = {
+@:static const kpu_batchnorm_argument_t layer_@(i)_bn[] __attribute__((aligned(128))) = {
     foreach (var bn in layer.BNConfigs)
     {
     @:{.batchnorm.data = {.norm_mul = @bn.Mul, .norm_add = @bn.Add, .norm_shift = @bn.Shift}},
