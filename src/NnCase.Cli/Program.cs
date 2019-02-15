@@ -36,6 +36,9 @@ namespace NnCase.Cli
         [Option("postprocess", Required = false, HelpText = "Dataset postprocess")]
         public string Postprocess { get; set; }
 
+        [Option("weights-bits", Required = false, HelpText = "Weights quantization bits", Default = 8)]
+        public int WeightsBits { get; set; }
+
         [Value(0, MetaName = "input", HelpText = "Input path")]
         public string Input { get; set; }
 
@@ -167,7 +170,7 @@ namespace NnCase.Cli
                             var ctx = new GraphPlanContext();
                             graph.Plan(ctx);
                             var dim = graph.Inputs.First().Output.Dimensions.ToArray();
-                            var k210c = new GraphToK210Converter(graph, outputFormat == "k210code" ? K210ConvertType.Code : K210ConvertType.KModel);
+                            var k210c = new GraphToK210Converter(graph, outputFormat == "k210code" ? K210ConvertType.Code : K210ConvertType.KModel, options.WeightsBits);
                             await k210c.ConvertAsync(new ImageDataset(
                                 options.Dataset,
                                 new[] { dim[1], dim[2], dim[3] },

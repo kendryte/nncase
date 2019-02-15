@@ -8,6 +8,7 @@
 @for (int i = 0; i < Model.Layers.Count; i++)
 {
     var layer = Model.Layers[i];
+    var format = Model.Is8BitMode ? "0x{0}:X2" : "0x{0}:X4";
 @:static const uint8_t layer_@(i)_weights[] __attribute__((aligned(128))) = {
     WriteLiteral("    ");
     for (int j = 0; j < layer.Weights.Length; j++)
@@ -16,7 +17,7 @@
         {
             WriteLiteral(Environment.NewLine + "    ");
         }
-        WriteLiteral($"0x{layer.Weights[j]:X2}, ");
+        WriteLiteral(string.Format(format, layer.Weights[j]));
     }
     WriteLiteral(Environment.NewLine);
 @:};
@@ -154,7 +155,7 @@ void kpu_task_@(Model.Prefix)_init(kpu_task_t* task) {
     }
     task->layers = layers;
     task->layers_length = @Model.Layers.Count;
-    task->eight_bit_mode = 1;
+    task->eight_bit_mode = @(Model.Is8BitMode ? 1 : 0);
     task->output_scale = @Model.Layers.Last().OutputScale;
     task->output_bias = @Model.Layers.Last().OutputBias;
 }

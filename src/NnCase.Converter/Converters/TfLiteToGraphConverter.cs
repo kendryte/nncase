@@ -84,7 +84,7 @@ namespace NnCase.Converter.Converters
                 case tflite.BuiltinOperator.SOFTMAX:
                     return ConvertSoftmax(op);
                 default:
-                    throw new NotSupportedException();
+                    throw new LayerNotSupportedException(opCode.BuiltinCode.ToString());
             }
         }
 
