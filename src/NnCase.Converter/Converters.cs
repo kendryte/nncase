@@ -34,7 +34,7 @@ namespace NnCase.Converter
             var ctx = new GraphPlanContext();
             graph.Plan(ctx);
             var dim = graph.Inputs.First().Output.Dimensions.ToArray();
-            var k210c = new GraphToK210Converter(graph, K210ConvertType.Code);
+            var k210c = new GraphToK210Converter(graph, K210ConvertType.Code, 16);
             await k210c.ConvertAsync(new ImageDataset(
                 datasetDir,
                 new[] { dim[1], dim[2], dim[3] },

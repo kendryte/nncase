@@ -258,14 +258,14 @@ namespace NnCase.Converter.Converters
         {
             var config = new K210ConvLayerConfig { BNConfigs = new K210LayerBNConfig[layer.OutputChannels] };
             (var sw, var bw) = QuantizeWeights(layer.Conv2dType == K210Conv2dType.Conv2d, layer.Weights, config, _weightsBits);
-            (var sx, var bx) = QuantizeInput(context.Quantization.Distributions[layer.Input.Connection.From], config, _weightsBits);
+            (var sx, var bx) = QuantizeInput(context.Quantization.Distributions[layer.Input.Connection.From], config);
             config.ArgAdd = (long)Math.Round(bw * bx * layer.KernelWidth * layer.KernelHeight);
 
             var scale = new double[layer.OutputChannels];
             for (int i = 0; i < scale.Length; i++)
                 scale[i] = sw[i] * sx;
 
-            (var so, var bo) = QuantizeBiasAndOutput(layer, layer.Bias, context.Quantization.Distributions[layer.Output], scale, config, _weightsBits);
+            (var so, var bo) = QuantizeBiasAndOutput(layer, layer.Bias, context.Quantization.Distributions[layer.Output], scale, config);
 
             config.InputChannels = layer.InputChannels;
             config.OutputChannels = layer.OutputChannels;
@@ -788,18 +788,18 @@ namespace NnCase.Converter.Converters
 #endif
         }
 
-        private static (double scale, double bias) QuantizeInput(Range range, K210ConvLayerConfig config, int weightsBits)
+        private static (double scale, double bias) QuantizeInput(Range range, K210ConvLayerConfig config)
         {
-            (var scale, var bias) = range.GetScaleBias(weightsBits);
+            (var scale, var bias) = range.GetScaleBias(8);
             (var mul, var shift) = ExtractValueAndShift(bias, 24, 15);
             config.ArgW = (int)Math.Round(mul);
             config.ShiftW = shift;
             return (scale, bias);
         }
 
-        private static (double scale, double bias) QuantizeBiasAndOutput(K210Conv2d layer, Tensor<float> bias, Range range, double[] scale, K210ConvLayerConfig config, int weightsBits)
+        private static (double scale, double bias) QuantizeBiasAndOutput(K210Conv2d layer, Tensor<float> bias, Range range, double[] scale, K210ConvLayerConfig config)
         {
-            (var so, var bo) = range.GetScaleBias(weightsBits);
+            (var so, var bo) = range.GetScaleBias(8);
 #if CHANNEL_WISE
             var upshift = 10;
             var postMul = Math.Pow(2, upshift);
