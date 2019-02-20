@@ -144,6 +144,8 @@ namespace NnCase.Converter.Converters
             public uint Bn { get; set; }
 
             public uint Activation { get; set; }
+
+            public uint Size { get; set; }
         }
     }
 
@@ -210,7 +212,7 @@ namespace NnCase.Converter.Converters
                     MaxStartAddress = context.MemoryAllocator.MaxStart
                 };
 
-                using (var bin = File.OpenWrite(Path.Combine(outputDir, $"{prefix}.kmodel")))
+                using (var bin = File.Open(Path.Combine(outputDir, $"{prefix}.kmodel"), FileMode.Create, FileAccess.Write))
                 {
                     GenerateBin(bin, context.InferenceOrders, binGenContext);
                 }
@@ -446,100 +448,97 @@ namespace NnCase.Converter.Converters
         {
             var bw = new BinaryWriter(bin);
 
-            uint version = 1;
+            uint version = 2;
             uint flags = _weightsBits == 8 ? 1u : 0u;
             bw.Write(version);
             bw.Write(flags);
             bw.Write(layers.Count);
             bw.Write(context.MaxStartAddress);
 
-            // layer + (w bn act is ib os ob) * layers
-            var placeholder = (1 + 7 * layers.Count) * 4;
+            // layer + (size w bn act is ib os ob) * layers
+            var placeholder = (1 + 8 * layers.Count) * 4;
             var fixPosition = bw.BaseStream.Position;
             bw.BaseStream.Position += placeholder;
-
-            GenerateBinWeights(bw, layers, context);
-            GenerateBinBn(bw, layers, context);
-            GenerateBinActivation(bw, layers, context);
             GenerateBinLayers(bw, layers, context);
+
+            for (int i = 0; i < layers.Count; i++)
+                GenerateBinLayer(bw, layers[i], context.ParamAddresses[i]);
+
             FixBinPlaceholder(bw, layers, context, fixPosition);
         }
 
-        private void GenerateBinWeights(BinaryWriter bw, IReadOnlyList<K210ConvLayerConfig> layers, K210BinGenerationContext context)
+        private void GenerateBinLayer(BinaryWriter bw, K210ConvLayerConfig layer, K210BinGenerationContext.K210ParamAddress paramAddress)
         {
-            for (int i = 0; i < layers.Count; i++)
-            {
-                var layer = layers[i];
-                context.ParamAddresses[i].Weights = AlignStreamPosition(bw.BaseStream, 128);
+            var start = AlignStreamPosition(bw.BaseStream, 128);
+            GenerateBinWeights(bw, layer, paramAddress);
+            GenerateBinBn(bw, layer, paramAddress);
+            GenerateBinActivation(bw, layer, paramAddress);
+            paramAddress.Size = (uint)(bw.BaseStream.Position - start);
+        }
 
-                if (_weightsBits == 8)
-                {
-                    foreach (var v in layer.Weights)
-                        bw.Write((byte)v);
-                }
-                else
-                {
-                    foreach (var v in layer.Weights)
-                        bw.Write(v);
-                }
+        private void GenerateBinWeights(BinaryWriter bw, K210ConvLayerConfig layer, K210BinGenerationContext.K210ParamAddress paramAddress)
+        {
+            paramAddress.Weights = AlignStreamPosition(bw.BaseStream, 128);
+
+            if (_weightsBits == 8)
+            {
+                foreach (var v in layer.Weights)
+                    bw.Write((byte)v);
+            }
+            else
+            {
+                foreach (var v in layer.Weights)
+                    bw.Write(v);
             }
         }
 
-        private void GenerateBinBn(BinaryWriter bw, IReadOnlyList<K210ConvLayerConfig> layers, K210BinGenerationContext context)
+        private void GenerateBinBn(BinaryWriter bw, K210ConvLayerConfig layer, K210BinGenerationContext.K210ParamAddress paramAddress)
         {
-            for (int i = 0; i < layers.Count; i++)
+            paramAddress.Bn = AlignStreamPosition(bw.BaseStream, 128);
+
+            for (int j = 0; j < layer.BNConfigs.Length; j++)
             {
-                var layer = layers[i];
-                context.ParamAddresses[i].Bn = AlignStreamPosition(bw.BaseStream, 128);
+                var bn = layer.BNConfigs[j];
+                var reg = new K210.kpu_batchnorm_argument_t();
+                reg.norm_add = (uint)bn.Add;
+                reg.norm_mul = (uint)bn.Mul;
+                reg.norm_shift = (byte)bn.Shift;
 
-                for (int j = 0; j < layer.BNConfigs.Length; j++)
-                {
-                    var bn = layer.BNConfigs[j];
-                    var reg = new K210.kpu_batchnorm_argument_t();
-                    reg.norm_add = (uint)bn.Add;
-                    reg.norm_mul = (uint)bn.Mul;
-                    reg.norm_shift = (byte)bn.Shift;
-
-                    bw.Write(reg.Value);
-                }
+                bw.Write(reg.Value);
             }
         }
 
-        private void GenerateBinActivation(BinaryWriter bw, IReadOnlyList<K210ConvLayerConfig> layers, K210BinGenerationContext context)
+        private void GenerateBinActivation(BinaryWriter bw, K210ConvLayerConfig layer, K210BinGenerationContext.K210ParamAddress paramAddress)
         {
-            for (int i = 0; i < layers.Count; i++)
-            {
-                var layer = layers[i];
-                context.ParamAddresses[i].Activation = AlignStreamPosition(bw.BaseStream, 256);
+            paramAddress.Activation = AlignStreamPosition(bw.BaseStream, 256);
 
-                var reg = new K210.kpu_activate_table_t();
-                var starts = new ulong[]
-                {
+            var reg = new K210.kpu_activate_table_t();
+            var starts = new ulong[]
+            {
                     0x800000000, 0xf7d4cf4b8, 0xf8ed5a20c, 0xfa05e4f60,
                     0xfb2e05baa, 0xfc46908fe, 0xfd5f1b652, 0xfe77a63a6,
                     0xff9fc6ff0, 0xfffd4a9b7, 0, 0x7FFFFFFF0,
                     0x7FFFFFFF1, 0x7FFFFFFF2, 0x7FFFFFFF3, 0x7FFFFFFF4
-                };
+            };
 
-                for (int j = 0; j < starts.Length; j++)
-                {
-                    ref var param = ref reg.activate_para[j];
-                    param.x_start = starts[j];
-                    param.y_mul = 0;
-                    param.shift_number = 0;
-                }
-
-                {
-                    ref var param = ref reg.activate_para[10];
-                    param.y_mul = (ushort)layer.ActMul;
-                    param.shift_number = (byte)layer.ActShift;
-                }
-
-                for (int j = 0; j < starts.Length; j++)
-                    bw.Write(reg.activate_para[j].Value);
-                bw.Write(reg.activate_para_bias0.Value);
-                bw.Write(reg.activate_para_bias1.Value);
+            for (int j = 0; j < starts.Length; j++)
+            {
+                ref var param = ref reg.activate_para[j];
+                param.x_start = starts[j];
+                param.y_mul = 0;
+                param.shift_number = 0;
             }
+
+            {
+                ref var param = ref reg.activate_para[10];
+                param.y_mul = (ushort)layer.ActMul;
+                param.shift_number = (byte)layer.ActShift;
+            }
+
+            for (int j = 0; j < starts.Length; j++)
+                bw.Write(reg.activate_para[j].Value);
+            bw.Write(reg.activate_para_bias0.Value);
+            bw.Write(reg.activate_para_bias1.Value);
         }
 
         private void GenerateBinLayers(BinaryWriter bw, IReadOnlyList<K210ConvLayerConfig> layers, K210BinGenerationContext context)
@@ -642,6 +641,7 @@ namespace NnCase.Converter.Converters
                 var layer = layers[i];
                 var addr = context.ParamAddresses[i];
 
+                bw.Write(addr.Size);
                 bw.Write(addr.Weights);
                 bw.Write(addr.Bn);
                 bw.Write(addr.Activation);
