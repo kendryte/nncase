@@ -10,8 +10,12 @@ namespace NnCase.Converter.Model.Layers.K210
     {
         None = 0,
         MaxPool2x2 = 1,
+        AveragePool2x2 = 2,
         MaxPool4x4 = 3,
-        LeftTop = 5
+        AveragePool4x4 = 4,
+        LeftTop = 5,
+        AveragePool2x2Stride1 = 8,
+        MaxPool2x2Stride1 = 9
     }
 
     public enum K210Conv2dType
@@ -79,13 +83,7 @@ namespace NnCase.Converter.Model.Layers.K210
             var bias = Bias.ToNHWC();
 
             TFOutput y;
-            if (GetStride() == 1)
-            {
-                y = Conv2dType == K210Conv2dType.Conv2d
-                    ? graph.Conv2D(input, graph.Const(weights), new long[] { 1, 1, 1, 1 }, "SAME")
-                    : graph.DepthwiseConv2dNative(input, graph.Const(weights), new long[] { 1, 1, 1, 1 }, "SAME");
-            }
-            else if (PoolType == K210PoolType.LeftTop)
+            if (PoolType == K210PoolType.LeftTop)
             {
                 y = KernelWidth == 1 ? input : graph.SpaceToBatchND(input, graph.Const(new[] { 1, 1 }), graph.Const(new[,] { { 1, 1 }, { 1, 1 } }));
                 y = Conv2dType == K210Conv2dType.Conv2d
@@ -101,13 +99,28 @@ namespace NnCase.Converter.Model.Layers.K210
 
             y = graph.AddActivation(graph.BiasAdd(y, graph.Const(bias)), FusedActivationFunction);
 
-            if (PoolType == K210PoolType.MaxPool2x2)
+            switch (PoolType)
             {
-                y = graph.MaxPool(y, new long[] { 1, 2, 2, 1 }, new long[] { 1, 2, 2, 1 }, "SAME");
-            }
-            else if (PoolType == K210PoolType.MaxPool4x4)
-            {
-                y = graph.MaxPool(y, new long[] { 1, 4, 4, 1 }, new long[] { 1, 4, 4, 1 }, "SAME");
+                case K210PoolType.MaxPool2x2:
+                    y = graph.MaxPool(y, new long[] { 1, 2, 2, 1 }, new long[] { 1, 2, 2, 1 }, "VALID");
+                    break;
+                case K210PoolType.AveragePool2x2:
+                    y = graph.AvgPool(y, new long[] { 1, 2, 2, 1 }, new long[] { 1, 2, 2, 1 }, "VALID");
+                    break;
+                case K210PoolType.MaxPool4x4:
+                    y = graph.MaxPool(y, new long[] { 1, 4, 4, 1 }, new long[] { 1, 4, 4, 1 }, "VALID");
+                    break;
+                case K210PoolType.AveragePool4x4:
+                    y = graph.AvgPool(y, new long[] { 1, 4, 4, 1 }, new long[] { 1, 4, 4, 1 }, "VALID");
+                    break;
+                case K210PoolType.MaxPool2x2Stride1:
+                    y = graph.MaxPool(y, new long[] { 1, 2, 2, 1 }, new long[] { 1, 1, 1, 1 }, "SAME");
+                    break;
+                case K210PoolType.AveragePool2x2Stride1:
+                    y = graph.AvgPool(y, new long[] { 1, 2, 2, 1 }, new long[] { 1, 1, 1, 1 }, "SAME");
+                    break;
+                default:
+                    break;
             }
 
             context.TFOutputs[Output] = y;
@@ -121,15 +134,17 @@ namespace NnCase.Converter.Model.Layers.K210
             switch (PoolType)
             {
                 case K210PoolType.None:
+                case K210PoolType.MaxPool2x2Stride1:
+                case K210PoolType.AveragePool2x2Stride1:
                     stride = 1;
                     break;
                 case K210PoolType.LeftTop:
-                    stride = 2;
-                    break;
                 case K210PoolType.MaxPool2x2:
+                case K210PoolType.AveragePool2x2:
                     stride = 2;
                     break;
                 case K210PoolType.MaxPool4x4:
+                case K210PoolType.AveragePool4x4:
                     stride = 4;
                     break;
                 default:
