@@ -35,8 +35,8 @@ namespace NnCase.Converter.Model.Layers
             Output = AddOutput("output", new[] {
                 dimensions[0],
                 dimensions[1],
-                (dimensions[2] - (padding == Padding.Valid ? filterHeight - strideHeight : 0)) / strideHeight,
-                (dimensions[3] - (padding == Padding.Valid ? filterWidth - strideWidth : 0)) / strideWidth
+                GetOutputSize(dimensions[2], filterHeight, strideHeight, padding),
+                GetOutputSize(dimensions[3], filterWidth, strideWidth, padding)
             });
         }
 

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using NnCase.Converter.Model.Layers;
+using System;
 using System.Collections.Generic;
 using System.Text;
 using TensorFlow;
@@ -41,6 +42,14 @@ namespace NnCase.Converter.Model
 
         protected virtual void OnPlanning(GraphPlanContext context)
         {
+        }
+
+        public static int GetOutputSize(int size, int filter, int stride, Padding padding)
+        {
+            if (padding == Padding.Same)
+                return (int)Math.Ceiling(size / (double)stride);
+            else
+                return (int)Math.Ceiling((size - filter + 1) / (double)stride);
         }
     }
 }

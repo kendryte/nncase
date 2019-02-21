@@ -57,8 +57,8 @@ namespace NnCase.Converter.Model.Layers
             Output = AddOutput("output", new[] {
                 dimensions[0],
                 Weights.Dimensions[0],
-                (dimensions[2] - (padding == Padding.Valid ? KernelHeight - 1 : 0)) / strideHeight,
-                (dimensions[3] - (padding == Padding.Valid ? KernelWidth - 1 : 0)) / strideWidth
+                GetOutputSize(dimensions[2], KernelHeight, strideHeight, padding),
+                GetOutputSize(dimensions[3], KernelWidth, strideWidth, padding)
             });
         }
 

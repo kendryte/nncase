@@ -162,7 +162,7 @@ namespace NnCase.Cli
                             new K210Stride2Conv2dTransform(),
                             new K210GlobalAveragePoolTransform(),
                             new K210FullyConnectedTransform(),
-                            new K210Conv2dWithMaxPoolTransform(),
+                            new K210Conv2dWithMaxAvgPoolTransform(),
                             new K2101x1Conv2dToFullyConnectedTransform()
                         });
 
