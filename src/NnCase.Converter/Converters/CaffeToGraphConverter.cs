@@ -74,7 +74,7 @@ namespace NnCase.Converter.Converters
                 case "L2Normalization":
                     return ConvertL2Normalization(layerParam);
                 default:
-                    throw new NotSupportedException();
+                    throw new LayerNotSupportedException(layerParam.Type);
             }
         }
 
@@ -182,7 +182,7 @@ namespace NnCase.Converter.Converters
             }
             else
             {
-                throw new NotSupportedException();
+                throw new NotSupportedException("Grouped conv2d is not supported.");
             }
         }
 
@@ -224,7 +224,7 @@ namespace NnCase.Converter.Converters
             var param = layerParam.ReluParam;
 
             if (param != null && param.NegativeSlope != 0)
-                throw new NotSupportedException();
+                throw new NotSupportedException("Non zero negative slope of relu is not supported.");
             var layer = new Relu(input.Dimensions);
             layer.Input.SetConnection(input);
             _outputs[layerParam.Top[0]] = layer.Output;
@@ -263,7 +263,7 @@ namespace NnCase.Converter.Converters
             }
 
             if (paddings[0] != paddings[1] || (paddings[0] != 0 && paddings[0] != 1))
-                throw new NotSupportedException();
+                throw new NotSupportedException("Custom paddings are not supprted.");
 
             Padding padding = paddings[0] == 0 ? Padding.Valid : Padding.Same;
 
@@ -282,7 +282,7 @@ namespace NnCase.Converter.Converters
                 return layer;
             }
             else
-                throw new NotImplementedException();
+                throw new LayerNotSupportedException(param.Pool.ToString());
         }
 
         private Layer ConvertSoftmax(LayerParameter layerParam)
