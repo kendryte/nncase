@@ -219,7 +219,6 @@ namespace NnCase.Converter.Converters
                 {
                     case InputLayer _:
                     case OutputLayer _:
-                    case AveragePool2d _:
                     case L2Normalization _:
                     case Reshape _:
                     case Softmax _:
@@ -340,7 +339,6 @@ namespace NnCase.Converter.Converters
                                 InferenceInputLayer(l, context);
                                 break;
                             case OutputLayer _:
-                            case AveragePool2d _:
                             case L2Normalization _:
                             case Reshape _:
                             case Softmax _:
