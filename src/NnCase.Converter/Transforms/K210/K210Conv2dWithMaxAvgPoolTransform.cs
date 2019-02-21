@@ -24,11 +24,10 @@ namespace NnCase.Converter.Transforms.K210
                         if (nextLayer is MaxPool2d maxPool)
                         {
                             if (maxPool.FilterWidth != maxPool.FilterHeight ||
-                                (maxPool.FilterWidth != 2 && maxPool.FilterHeight != 4) ||
                                 maxPool.StrideWidth != maxPool.StrideHeight ||
-                                !((maxPool.FilterWidth == 2 && maxPool.StrideWidth == 2) ||
-                                (maxPool.FilterWidth == 2 && maxPool.StrideWidth == 1) ||
-                                (maxPool.FilterWidth == 4 && maxPool.StrideWidth == 4)) ||
+                                !((maxPool.FilterWidth == 2 && maxPool.StrideWidth == 2 && (maxPool.Padding == Padding.Valid || NoReminder(maxPool.Input.Dimensions, 2))) ||
+                                (maxPool.FilterWidth == 2 && maxPool.StrideWidth == 1 && maxPool.Padding == Padding.Same) ||
+                                (maxPool.FilterWidth == 4 && maxPool.StrideWidth == 4 && (maxPool.Padding == Padding.Valid || NoReminder(maxPool.Input.Dimensions, 4)))) ||
                                 maxPool.FusedActivationFunction != ActivationFunctionType.Linear)
                                 continue;
                             context.Outputs.Add(maxPool.Output);
@@ -36,11 +35,10 @@ namespace NnCase.Converter.Transforms.K210
                         else if (nextLayer is AveragePool2d avgPool)
                         {
                             if (avgPool.FilterWidth != avgPool.FilterHeight ||
-                                (avgPool.FilterWidth != 2 && avgPool.FilterHeight != 4) ||
                                 avgPool.StrideWidth != avgPool.StrideHeight ||
-                                !((avgPool.FilterWidth == 2 && avgPool.StrideWidth == 2) ||
-                                (avgPool.FilterWidth == 2 && avgPool.StrideWidth == 1) ||
-                                (avgPool.FilterWidth == 4 && avgPool.StrideWidth == 4)) ||
+                                !((avgPool.FilterWidth == 2 && avgPool.StrideWidth == 2 && (avgPool.Padding == Padding.Valid || NoReminder(avgPool.Input.Dimensions, 2))) ||
+                                (avgPool.FilterWidth == 2 && avgPool.StrideWidth == 1 && avgPool.Padding == Padding.Same) ||
+                                (avgPool.FilterWidth == 4 && avgPool.StrideWidth == 4 && (avgPool.Padding == Padding.Valid || NoReminder(avgPool.Input.Dimensions, 4)))) ||
                                 avgPool.FusedActivationFunction != ActivationFunctionType.Linear)
                                 continue;
                             context.Outputs.Add(avgPool.Output);
@@ -106,6 +104,11 @@ namespace NnCase.Converter.Transforms.K210
             var oldOuts = output.Connections.Select(o => o.To).ToList();
             foreach (var oldOut in oldOuts)
                 oldOut.SetConnection(newConv2d.Output);
+        }
+
+        private static bool NoReminder(ReadOnlySpan<int> dimensions, int divider)
+        {
+            return dimensions[1] % divider == 0 && dimensions[2] % divider == 0;
         }
     }
 }
