@@ -151,7 +151,7 @@ namespace NnCase.Converter.Data
                     destImage = new Image<Rgb24>(image.GetConfiguration(), Dimensions[2], Dimensions[1], new Rgb24(127, 127, 127));
                     var leftTop = new Point((destImage.Width - image.Width) / 2, (destImage.Height - image.Height) / 2);
                     destImage.Mutate(x =>
-                        x.DrawImage(GraphicsOptions.Default, image, leftTop));
+                        x.DrawImage(image, leftTop, GraphicsOptions.Default));
                 }
                 else
                 {
