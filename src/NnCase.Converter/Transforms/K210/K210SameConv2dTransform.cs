@@ -75,10 +75,14 @@ namespace NnCase.Converter.Transforms.K210
             else
                 throw new InvalidOperationException();
 
-            newLayer.Input.SetConnection(input);
+            var quantize = new Quantize(input.Dimensions);
+            var dequantize = new Dequantize(newLayer.Output.Dimensions);
+            quantize.Input.SetConnection(input);
+            newLayer.Input.SetConnection(quantize.Output);
+            dequantize.Input.SetConnection(newLayer.Output);
             var oldOuts = output.Connections.Select(o => o.To).ToList();
             foreach (var oldOut in oldOuts)
-                oldOut.SetConnection(newLayer.Output);
+                oldOut.SetConnection(dequantize.Output);
         }
     }
 }

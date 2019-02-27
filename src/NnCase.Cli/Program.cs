@@ -135,8 +135,8 @@ namespace NnCase.Cli
                         await ConvertToTFLite(graph, options.Output);
                         break;
                     }
-                case "k210code":
                 case "k210model":
+                case "k210pb":
                     {
                         PostprocessMethods pm = PostprocessMethods.Normalize0To1;
                         if (options.Postprocess == "n1to1")
@@ -160,26 +160,38 @@ namespace NnCase.Cli
                             new K210SpaceToBatchNdAndValidConv2dTransform(),
                             new K210SameConv2dTransform(),
                             new K210Stride2Conv2dTransform(),
-                            new K210GlobalAveragePoolTransform(),
+                            new GlobalAveragePoolTransform(),
                             new K210FullyConnectedTransform(),
                             new K210Conv2dWithMaxAvgPoolTransform(),
-                            new K2101x1Conv2dToFullyConnectedTransform()
+                            new Conv2d1x1ToFullyConnectedTransform(),
+                            new K210EliminateAddRemovePaddingTransform(),
+                            new EliminateQuantizeDequantizeTransform(),
+                            new EliminateInputQuantizeTransform(),
+                            //new EliminateDequantizeOutputTransform()
                         });
 
                         {
                             var ctx = new GraphPlanContext();
                             graph.Plan(ctx);
-                            var dim = graph.Inputs.First().Output.Dimensions.ToArray();
-                            var k210c = new GraphToK210Converter(graph, outputFormat == "k210code" ? K210ConvertType.Code : K210ConvertType.KModel, options.WeightsBits);
-                            await k210c.ConvertAsync(new ImageDataset(
-                                options.Dataset,
-                                new[] { dim[1], dim[2], dim[3] },
-                                1,
-                                PreprocessMethods.None,
-                                pm),
-                                ctx,
-                                Path.GetDirectoryName(options.Output),
-                                Path.GetFileNameWithoutExtension(options.Output));
+                            if (outputFormat == "k210model")
+                            {
+                                var dim = graph.Inputs.First().Output.Dimensions.ToArray();
+                                var k210c = new GraphToK210Converter(graph, options.WeightsBits);
+                                await k210c.ConvertAsync(new ImageDataset(
+                                    options.Dataset,
+                                    new[] { dim[1], dim[2], dim[3] },
+                                    1,
+                                    PreprocessMethods.None,
+                                    pm),
+                                    ctx,
+                                    Path.GetDirectoryName(options.Output),
+                                    Path.GetFileNameWithoutExtension(options.Output));
+                            }
+                            else
+                            {
+                                using (var f = File.Open(options.Output, FileMode.Create, FileAccess.Write))
+                                    await ctx.SaveAsync(f);
+                            }
                         }
                         break;
                     }

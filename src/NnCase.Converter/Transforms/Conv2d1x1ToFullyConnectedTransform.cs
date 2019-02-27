@@ -5,9 +5,9 @@ using System.Text;
 using NnCase.Converter.Model;
 using NnCase.Converter.Model.Layers;
 
-namespace NnCase.Converter.Transforms.K210
+namespace NnCase.Converter.Transforms
 {
-    public class K2101x1Conv2dToFullyConnectedTransform : Transform
+    public class Conv2d1x1ToFullyConnectedTransform : Transform
     {
         protected override bool OnTryMatch(Layer layer, TransformContext context)
         {

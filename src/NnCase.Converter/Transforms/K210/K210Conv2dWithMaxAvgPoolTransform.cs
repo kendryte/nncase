@@ -21,35 +21,43 @@ namespace NnCase.Converter.Transforms.K210
 
                     foreach (var nextLayer in conv2d.Output.Connections.Select(o => o.To.Owner))
                     {
-                        if (nextLayer is MaxPool2d maxPool)
+                        if (nextLayer is Dequantize dequantize)
                         {
-                            if (maxPool.FilterWidth != maxPool.FilterHeight ||
-                                maxPool.StrideWidth != maxPool.StrideHeight ||
-                                !((maxPool.FilterWidth == 2 && maxPool.StrideWidth == 2 && (maxPool.Padding == Padding.Valid || NoReminder(maxPool.Input.Dimensions, 2))) ||
-                                (maxPool.FilterWidth == 2 && maxPool.StrideWidth == 1 && maxPool.Padding == Padding.Same) ||
-                                (maxPool.FilterWidth == 4 && maxPool.StrideWidth == 4 && (maxPool.Padding == Padding.Valid || NoReminder(maxPool.Input.Dimensions, 4)))) ||
-                                maxPool.FusedActivationFunction != ActivationFunctionType.Linear)
-                                continue;
-                            context.Outputs.Add(maxPool.Output);
-                        }
-                        else if (nextLayer is AveragePool2d avgPool)
-                        {
-                            if (avgPool.FilterWidth != avgPool.FilterHeight ||
-                                avgPool.StrideWidth != avgPool.StrideHeight ||
-                                !((avgPool.FilterWidth == 2 && avgPool.StrideWidth == 2 && (avgPool.Padding == Padding.Valid || NoReminder(avgPool.Input.Dimensions, 2))) ||
-                                (avgPool.FilterWidth == 2 && avgPool.StrideWidth == 1 && avgPool.Padding == Padding.Same) ||
-                                (avgPool.FilterWidth == 4 && avgPool.StrideWidth == 4 && (avgPool.Padding == Padding.Valid || NoReminder(avgPool.Input.Dimensions, 4)))) ||
-                                avgPool.FusedActivationFunction != ActivationFunctionType.Linear)
-                                continue;
-                            context.Outputs.Add(avgPool.Output);
-                        }
-                        else
-                        {
-                            continue;
-                        }
+                            context.MatchedLayers.Add(nextLayer);
 
-                        context.MatchedLayers.Add(nextLayer);
-                        return true;
+                            foreach (var nextLayer2 in conv2d.Output.Connections.Select(o => o.To.Owner))
+                            {
+                                if (nextLayer is MaxPool2d maxPool)
+                                {
+                                    if (maxPool.FilterWidth != maxPool.FilterHeight ||
+                                        maxPool.StrideWidth != maxPool.StrideHeight ||
+                                        !((maxPool.FilterWidth == 2 && maxPool.StrideWidth == 2 && (maxPool.Padding == Padding.Valid || NoReminder(maxPool.Input.Dimensions, 2))) ||
+                                        (maxPool.FilterWidth == 2 && maxPool.StrideWidth == 1 && maxPool.Padding == Padding.Same) ||
+                                        (maxPool.FilterWidth == 4 && maxPool.StrideWidth == 4 && (maxPool.Padding == Padding.Valid || NoReminder(maxPool.Input.Dimensions, 4)))) ||
+                                        maxPool.FusedActivationFunction != ActivationFunctionType.Linear)
+                                        continue;
+                                    context.Outputs.Add(maxPool.Output);
+                                }
+                                else if (nextLayer is AveragePool2d avgPool)
+                                {
+                                    if (avgPool.FilterWidth != avgPool.FilterHeight ||
+                                        avgPool.StrideWidth != avgPool.StrideHeight ||
+                                        !((avgPool.FilterWidth == 2 && avgPool.StrideWidth == 2 && (avgPool.Padding == Padding.Valid || NoReminder(avgPool.Input.Dimensions, 2))) ||
+                                        (avgPool.FilterWidth == 2 && avgPool.StrideWidth == 1 && avgPool.Padding == Padding.Same) ||
+                                        (avgPool.FilterWidth == 4 && avgPool.StrideWidth == 4 && (avgPool.Padding == Padding.Valid || NoReminder(avgPool.Input.Dimensions, 4)))) ||
+                                        avgPool.FusedActivationFunction != ActivationFunctionType.Linear)
+                                        continue;
+                                    context.Outputs.Add(avgPool.Output);
+                                }
+                                else
+                                {
+                                    continue;
+                                }
+
+                                context.MatchedLayers.Add(nextLayer2);
+                                return true;
+                            }
+                        }
                     }
 
                     return false;
@@ -72,7 +80,7 @@ namespace NnCase.Converter.Transforms.K210
             conv2d.Input.ClearConnection();
 
             K210PoolType poolType;
-            if (context.MatchedLayers[1] is MaxPool2d maxPool)
+            if (context.MatchedLayers[2] is MaxPool2d maxPool)
             {
                 if (maxPool.FilterWidth == 2 && maxPool.StrideWidth == 2)
                     poolType = K210PoolType.MaxPool2x2;
@@ -86,7 +94,7 @@ namespace NnCase.Converter.Transforms.K210
             }
             else
             {
-                var avgPool = (AveragePool2d)context.MatchedLayers[1];
+                var avgPool = (AveragePool2d)context.MatchedLayers[2];
                 if (avgPool.FilterWidth == 2 && avgPool.StrideWidth == 2)
                     poolType = K210PoolType.AveragePool2x2;
                 else if (avgPool.FilterWidth == 2 && avgPool.StrideWidth == 1)
@@ -99,11 +107,12 @@ namespace NnCase.Converter.Transforms.K210
             }
 
             var newConv2d = new K210Conv2d(conv2d.Input.Dimensions, conv2d.Conv2dType, conv2d.Weights, conv2d.Bias, poolType, conv2d.FusedActivationFunction);
-
             newConv2d.Input.SetConnection(input);
+            var newDequantize = new Dequantize(newConv2d.Output.Dimensions);
+            newDequantize.Input.SetConnection(newConv2d.Output);
             var oldOuts = output.Connections.Select(o => o.To).ToList();
             foreach (var oldOut in oldOuts)
-                oldOut.SetConnection(newConv2d.Output);
+                oldOut.SetConnection(newDequantize.Output);
         }
 
         private static bool NoReminder(ReadOnlySpan<int> dimensions, int divider)

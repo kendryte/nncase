@@ -7,7 +7,7 @@ namespace NnCase.Converter.Converters
     public class LayerNotSupportedException : Exception
     {
         public LayerNotSupportedException(string layer)
-            :base($"Layer ${layer} is not supported")
+            :base($"Layer {layer} is not supported")
         {
 
         }

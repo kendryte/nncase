@@ -26,15 +26,15 @@ namespace NnCase.Converter
                 new K210SpaceToBatchNdAndValidConv2dTransform(),
                 new K210SameConv2dTransform(),
                 new K210Stride2Conv2dTransform(),
-                new K210GlobalAveragePoolTransform(),
+                new GlobalAveragePoolTransform(),
                 new K210FullyConnectedTransform(),
                 new K210Conv2dWithMaxAvgPoolTransform(),
-                new K2101x1Conv2dToFullyConnectedTransform()
+                new Conv2d1x1ToFullyConnectedTransform()
             });
             var ctx = new GraphPlanContext();
             graph.Plan(ctx);
             var dim = graph.Inputs.First().Output.Dimensions.ToArray();
-            var k210c = new GraphToK210Converter(graph, K210ConvertType.Code, 16);
+            var k210c = new GraphToK210Converter(graph, 16);
             await k210c.ConvertAsync(new ImageDataset(
                 datasetDir,
                 new[] { dim[1], dim[2], dim[3] },

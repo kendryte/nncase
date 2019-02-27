@@ -6,9 +6,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 
-namespace NnCase.Converter.Transforms.K210
+namespace NnCase.Converter.Transforms
 {
-    public class K210GlobalAveragePoolTransform : Transform
+    public class GlobalAveragePoolTransform : Transform
     {
         protected override bool OnTryMatch(Layer layer, TransformContext context)
         {
@@ -44,7 +44,7 @@ namespace NnCase.Converter.Transforms.K210
 
             avgPool.Input.ClearConnection();
 
-            var newAvg = new K210GlobalAveragePool(input.Dimensions);
+            var newAvg = new GlobalAveragePool(input.Dimensions);
 
             newAvg.Input.SetConnection(input);
             var oldOuts = output.Connections.Select(o => o.To).ToList();

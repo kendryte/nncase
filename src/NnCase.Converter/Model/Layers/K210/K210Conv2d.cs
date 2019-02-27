@@ -124,8 +124,6 @@ namespace NnCase.Converter.Model.Layers.K210
             }
 
             context.TFOutputs[Output] = y;
-
-            Console.WriteLine($"K210 Conv {string.Join("x", Input.Dimensions.ToArray())}");
         }
 
         private int GetStride()

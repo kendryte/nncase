@@ -17,7 +17,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <EmbeddedResource Include="Templates\K210\Code.cshtml" />
     <EmbeddedResource Include="Templates\Script\Model.cshtml" />
   </ItemGroup>
 
@@ -38,6 +37,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\FlatBuffers\FlatBuffers.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Templates\K210\" />
   </ItemGroup>
 
 </Project>

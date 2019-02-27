@@ -74,13 +74,17 @@ namespace NnCase.Converter.Transforms.K210
 
             space.Input.ClearConnection();
             var newDwConv2d = new DepthwiseConv2d(input.Dimensions, dwConv2d.Weights, dwConv2d.Bias, Padding.Same, 1, 1, dwConv2d.FusedActivationFunction);
-            var newConv2d = new K210Conv2d(newDwConv2d.Output.Dimensions, K210Conv2dType.Conv2d, conv2d.Weights, conv2d.Bias, K210PoolType.LeftTop, conv2d.FusedActivationFunction);
+            var quantize = new Quantize(newDwConv2d.Output.Dimensions);
+            var newConv2d = new K210Conv2d(quantize.Output.Dimensions, K210Conv2dType.Conv2d, conv2d.Weights, conv2d.Bias, K210PoolType.LeftTop, conv2d.FusedActivationFunction);
+            var dequantize = new Dequantize(newConv2d.Output.Dimensions);
 
             newDwConv2d.Input.SetConnection(input);
-            newConv2d.Input.SetConnection(newDwConv2d.Output);
+            quantize.Input.SetConnection(newDwConv2d.Output);
+            newConv2d.Input.SetConnection(quantize.Output);
+            dequantize.Input.SetConnection(newConv2d.Output);
             var oldOuts = output.Connections.Select(o => o.To).ToList();
             foreach (var oldOut in oldOuts)
-                oldOut.SetConnection(newConv2d.Output);
+                oldOut.SetConnection(dequantize.Output);
         }
     }
 }

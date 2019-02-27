@@ -2,15 +2,15 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace NnCase.Converter.Model.Layers.K210
+namespace NnCase.Converter.Model.Layers
 {
-    public class K210GlobalAveragePool : Layer
+    public class GlobalAveragePool : Layer
     {
         public InputConnector Input { get; }
 
         public OutputConnector Output { get; }
 
-        public K210GlobalAveragePool(ReadOnlySpan<int> dimensions)
+        public GlobalAveragePool(ReadOnlySpan<int> dimensions)
         {
             Input = AddInput("input", dimensions);
             Output = AddOutput("output", new[] {

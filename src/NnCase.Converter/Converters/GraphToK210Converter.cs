@@ -72,9 +72,9 @@ namespace NnCase.Converter.Converters
 
         public int OutputRowLength { get; set; }
 
-        public int InputAddress { get; set; }
+        public uint InputAddress { get; set; }
 
-        public int OutputAddress { get; set; }
+        public uint OutputAddress { get; set; }
 
         public int OutputChannelsOnTime { get; set; }
 
@@ -83,14 +83,6 @@ namespace NnCase.Converter.Converters
         public int OneLoadKernelsSize { get; set; }
 
         public int PadValue { get; set; }
-
-        public double InputScale { get; set; }
-
-        public double InputBias { get; set; }
-
-        public double OutputScale { get; set; }
-
-        public double OutputBias { get; set; }
 
         public int InputSize { get; set; }
 
@@ -101,79 +93,157 @@ namespace NnCase.Converter.Converters
         public int ActShift { get; set; }
     }
 
-    public class K210GlobalAveragePoolConfig
+    public struct K210QuantizationParam
     {
-        public int KernelSize { get; set; }
+        public float Scale { get; set; }
 
-        public double InputScale { get; set; }
-
-        public double InputBias { get; set; }
-
-        public double OutputScale { get; set; }
-
-        public double OutputBias { get; set; }
-
-        public ulong OutputAddress { get; set; }
+        public float Bias { get; set; }
     }
 
-    public class K210CodeGenerationContext
+    public enum K210LayerType
     {
-        public IReadOnlyList<K210ConvLayerConfig> Layers { get; set; }
+        K210Conv,
+        K210GlobalAveragePool2d,
+        K210AddPadding,
+        K210RemovePadding
+    }
 
-        public string Prefix { get; set; }
+    public class K210LayerHeader
+    {
+        public K210LayerType Type { get; set; }
 
-        public int MaxStartAddress { get; set; }
+        public uint BodySize { get; set; }
+    }
 
-        public bool Is8BitMode { get; set; }
+    public class K210Layer
+    {
+        public K210LayerHeader Header { get; set; }
+
+        public object Body { get; set; }
+    }
+
+    [Flags]
+    public enum K210LayerFlags
+    {
+        None = 0,
+        MainMemoryOutput = 1
+    }
+
+    public class K210Conv2dParamAddress
+    {
+        public uint Layer { get; set; }
+
+        public uint Weights { get; set; }
+
+        public uint Bn { get; set; }
+
+        public uint Activation { get; set; }
+    }
+
+    public class K210Conv2dLayerArgument
+    {
+        public K210LayerFlags Flags { get; set; }
+
+        public uint MainMemoryOutputAddress { get; set; }
+
+        public K210Conv2dParamAddress ParamAddress { get; set; }
+
+        public K210ConvLayerConfig Config { get; set; }
+    }
+
+    public class GlobalAveragePool2dLayerArgument
+    {
+        public K210LayerFlags Flags { get; set; }
+
+        public uint MainMemoryInputAddress { get; set; }
+
+        public uint MainMemoryOutputAddress { get; set; }
+
+        public uint KernelSize { get; set; }
+
+        public uint Channels { get; set; }
+    }
+
+    public class QuantizeLayerArgument
+    {
+        public K210LayerFlags Flags { get; set; }
+
+        public uint MainMemoryInputAddress { get; set; }
+
+        public uint KPUMemoryOutputAddress { get; set; }
+
+        public K210QuantizationParam QuantParam { get; set; }
+    }
+
+    public class DequantizeLayerArgument
+    {
+        public K210LayerFlags Flags { get; set; }
+
+        public uint MainMemoryInputAddress { get; set; }
+
+        public uint MainMemoryOutputAddress { get; set; }
+
+        public K210QuantizationParam QuantParam { get; set; }
+    }
+
+    public class K210AddPaddingLayerArgument
+    {
+        public K210LayerFlags Flags { get; set; }
+
+        public uint MainMemoryInputAddress { get; set; }
+
+        public uint KPUMemoryOutputAddress { get; set; }
+
+        public uint Channels { get; set; }
+    }
+
+    public class K210RemovePaddingLayerArgument
+    {
+        public K210LayerFlags Flags { get; set; }
+
+        public uint MainMemoryInputAddress { get; set; }
+
+        public uint MainMemoryOutputAddress { get; set; }
+
+        public uint Channels { get; set; }
+    }
+
+    public class L2NormalizationLayerArgument
+    {
+        public K210LayerFlags Flags { get; set; }
+
+        public uint MainMemoryInputAddress { get; set; }
+
+        public uint MainMemoryOutputAddress { get; set; }
+
+        public uint Channels { get; set; }
     }
 
     public class K210BinGenerationContext
     {
-        public IReadOnlyList<K210ParamAddress> ParamAddresses { get; set; }
-
         public string Prefix { get; set; }
 
-        public int MaxStartAddress { get; set; }
+        public uint MaxStartAddress { get; set; }
 
-        public uint LayersAddress { get; set; }
+        public uint MainMemoryUsage { get; set; }
 
-        public class K210ParamAddress
-        {
-            public uint Weights { get; set; }
+        public uint MainMemoryOutputAddress { get; set; }
 
-            public uint Bn { get; set; }
-
-            public uint Activation { get; set; }
-
-            public uint Size { get; set; }
-        }
-    }
-
-    public enum K210ConvertType
-    {
-        Code,
-        KModel
+        public uint MainMemoryOutputSize { get; set; }
     }
 
     public class GraphToK210Converter
     {
         private readonly Graph _graph;
-        private readonly RazorLightEngine _templateEngine;
-        private readonly K210ConvertType _convertType;
         private readonly int _weightsBits;
 
-        public GraphToK210Converter(Graph graph, K210ConvertType convertType, int weightsBits)
+        public GraphToK210Converter(Graph graph, int weightsBits)
         {
             if (weightsBits != 8 && weightsBits != 16)
                 throw new ArgumentOutOfRangeException("weightsBits should be 8 or 16");
 
             _graph = graph;
-            _convertType = convertType;
             _weightsBits = weightsBits;
-            _templateEngine = new RazorLightEngineBuilder()
-                .UseMemoryCachingProvider()
-                .UseEmbeddedResourcesProject(typeof(GraphToK210Converter).Assembly, "Templates.K210")
-                .Build();
         }
 
         public async Task ConvertAsync(Dataset dataset, GraphPlanContext planContext, string outputDir, string prefix)
@@ -189,33 +259,18 @@ namespace NnCase.Converter.Converters
             foreach (var layer in _graph.Outputs)
                 InferenceLayer(layer, context);
 
-            if (_convertType == K210ConvertType.Code)
+            var output = context.MainMemoryMap[_graph.Outputs[0].Input.Connection.From];
+            var binGenContext = new K210BinGenerationContext
             {
-                var codeGenContext = new K210CodeGenerationContext
-                {
-                    Layers = context.InferenceOrders,
-                    Prefix = prefix,
-                    MaxStartAddress = context.MemoryAllocator.MaxStart,
-                    Is8BitMode = _weightsBits == 8
-                };
+                Prefix = prefix,
+                MaxStartAddress = context.KPUMemoryAllocator.MaxStart,
+                MainMemoryUsage = context.MainMemoryAllocator.MaxEnd,
+                MainMemoryOutputAddress = output.GetAddress()
+            };
 
-                var code = await _templateEngine.CompileRenderAsync("Code", codeGenContext);
-                File.WriteAllText(Path.Combine(outputDir, $"{prefix}.c"), code);
-            }
-            else
+            using (var bin = File.Open(Path.Combine(outputDir, $"{prefix}.kmodel"), FileMode.Create, FileAccess.Write))
             {
-                var binGenContext = new K210BinGenerationContext
-                {
-                    ParamAddresses = (from i in Enumerable.Range(0, context.InferenceOrders.Count)
-                                      select new K210BinGenerationContext.K210ParamAddress()).ToList(),
-                    Prefix = prefix,
-                    MaxStartAddress = context.MemoryAllocator.MaxStart
-                };
-
-                using (var bin = File.Open(Path.Combine(outputDir, $"{prefix}.kmodel"), FileMode.Create, FileAccess.Write))
-                {
-                    GenerateBin(bin, context.InferenceOrders, binGenContext);
-                }
+                GenerateBin(bin, context.InferenceOrders, binGenContext);
             }
         }
 
@@ -228,22 +283,31 @@ namespace NnCase.Converter.Converters
                 switch (layer)
                 {
                     case InputLayer _:
-                    case OutputLayer _:
-                    case L2Normalization _:
-                    case Reshape _:
-                    case Softmax _:
+                    case OutputLayer l:
                         break;
                     case K210Conv2d l:
                         ConvertK210Conv2d(l, context);
                         break;
-                    case K210GlobalAveragePool l:
-                        ConvertK210GlobalAveragePool(l, context);
+                    case GlobalAveragePool l:
+                        ConvertGlobalAveragePool(l, context);
                         break;
-                    case K210AddPadding _:
-                    case K210RemovePadding _:
+                    case Quantize l:
+                        ConvertQuantize(l, context);
+                        break;
+                    case Dequantize l:
+                        ConvertDequantize(l, context);
+                        break;
+                    case K210AddPadding l:
+                        ConvertK210AddPadding(l, context);
+                        break;
+                    case K210RemovePadding l:
+                        ConvertK210RemovePadding(l, context);
+                        break;
+                    case L2Normalization l:
+                        ConvertL2Normalization(l, context);
                         break;
                     default:
-                        throw new NotSupportedException(nameof(layer));
+                        throw new LayerNotSupportedException(layer.GetType().Name);
                 }
 
                 foreach (var conn in layer.InputConnectors)
@@ -301,26 +365,71 @@ namespace NnCase.Converter.Converters
                 config.OutputChannelsOnTime = layer.OutputChannels;
             }
 
-            config.InputScale = 1 / sx;
-            config.InputBias = bx / sx;
-            config.OutputScale = 1 / so;
-            config.OutputBias = bo / so;
-
             var inputOneLineChannels = Math.Min(layer.InputChannels, config.InputGroups);
             config.InputSize = config.InputRowLength * config.InputHeight * config.InputChannels / inputOneLineChannels;
             var outputOneLineChannels = Math.Min(layer.OutputChannels, config.OutputGroups);
             config.OutputSize = config.OutputRowLength * config.OutputHeight * config.OutputChannels / outputOneLineChannels;
 
-            context.Layers.Add(layer, config);
+            var argument = new K210Conv2dLayerArgument
+            {
+                Config = config
+            };
+            context.LayerArguments.Add(layer, argument);
         }
 
-        private void ConvertK210GlobalAveragePool(K210GlobalAveragePool layer, ConvertContext context)
+        private void ConvertGlobalAveragePool(GlobalAveragePool layer, ConvertContext context)
         {
-            var config = new K210GlobalAveragePoolConfig
+            var argument = new GlobalAveragePool2dLayerArgument
             {
+                KernelSize = (uint)(layer.Input.Dimensions[2] * layer.Input.Dimensions[3]),
+                Channels = (uint)(layer.Input.Dimensions[1])
             };
+            context.LayerArguments.Add(layer, argument);
+        }
 
+        private void ConvertQuantize(Quantize layer, ConvertContext context)
+        {
+            var argument = new QuantizeLayerArgument
+            {
+                QuantParam = context.Quantization.Distributions[layer.Output].GetQuantizationParam(8)
+            };
+            context.LayerArguments.Add(layer, argument);
+        }
 
+        private void ConvertDequantize(Dequantize layer, ConvertContext context)
+        {
+            var argument = new DequantizeLayerArgument
+            {
+                QuantParam = context.Quantization.Distributions[layer.Input.Connection.From].GetQuantizationParam(8)
+            };
+            context.LayerArguments.Add(layer, argument);
+        }
+
+        private void ConvertK210AddPadding(K210AddPadding layer, ConvertContext context)
+        {
+            var argument = new K210AddPaddingLayerArgument
+            {
+                Channels = (uint)layer.Input.Dimensions[1]
+            };
+            context.LayerArguments.Add(layer, argument);
+        }
+
+        private void ConvertK210RemovePadding(K210RemovePadding layer, ConvertContext context)
+        {
+            var argument = new K210RemovePaddingLayerArgument
+            {
+                Channels = (uint)layer.Input.Dimensions[1]
+            };
+            context.LayerArguments.Add(layer, argument);
+        }
+
+        private void ConvertL2Normalization(L2Normalization layer, ConvertContext context)
+        {
+            var argument = new L2NormalizationLayerArgument
+            {
+                Channels = (uint)layer.Input.Dimensions[1]
+            };
+            context.LayerArguments.Add(layer, argument);
         }
 
         private void InferenceLayer(Layer layer, ConvertContext context)
@@ -338,84 +447,134 @@ namespace NnCase.Converter.Converters
 
                 foreach (var output in layer.OutputConnectors)
                 {
-                    if (context.KPUMemoryMap.TryGetValue(output, out var node))
+                    if (context.KPUMemoryMap.TryGetValue(output, out var alloc))
+                        alloc.Node.AddRef();
+                    if (context.MainMemoryMap.TryGetValue(output, out var alloc2))
+                        alloc2.Node.AddRef();
+
+                    foreach (var conn in output.Connections.Select(x => x.To.Owner))
                     {
-                        node.AddRef();
-                    }
-                    else
-                    {
-                        switch (layer)
+                        switch (conn)
                         {
-                            case InputLayer l:
-                                InferenceInputLayer(l, context);
-                                break;
-                            case OutputLayer _:
-                            case L2Normalization _:
-                            case Reshape _:
-                            case Softmax _:
-                                break;
-                            case K210Conv2d l:
-                                InferenceK210Conv2d(l, context);
-                                break;
-                            case K210GlobalAveragePool l:
-                                InferenceK210GlobalAveragePool(l, context);
-                                break;
-                            case K210AddPadding l:
-                                InferenceK210AddPadding(l, context);
-                                break;
-                            case K210RemovePadding l:
-                                InferenceK210RemovePadding(l, context);
-                                break;
                             default:
-                                throw new NotSupportedException(nameof(layer));
+                                AllocateInputMemoryDefault(conn, output, context);
+                                break;
                         }
                     }
                 }
+
+                switch (layer)
+                {
+                    case InputLayer l:
+                    case OutputLayer _:
+                        break;
+                    case K210Conv2d l:
+                        InferenceK210Conv2d(l, context);
+                        break;
+                    case GlobalAveragePool l:
+                        InferenceGlobalAveragePool(l, context);
+                        break;
+                    case Quantize l:
+                        InferenceQuantize(l, context);
+                        break;
+                    case Dequantize l:
+                        InferenceDequantize(l, context);
+                        break;
+                    default:
+                        throw new LayerNotSupportedException(layer.GetType().Name);
+                }
+
+                Console.Write(layer.GetType().Name);
+                if (layer.InputConnectors.Count != 0)
+                    Console.Write($" {string.Join("x", layer.InputConnectors[0].Dimensions.ToArray())}");
+                if (layer.OutputConnectors.Count != 0)
+                    Console.Write($" -> {string.Join("x", layer.OutputConnectors[0].Dimensions.ToArray())}");
+                Console.WriteLine();
 
                 foreach (var conn in layer.InputConnectors)
                 {
                     var output = conn.Connection?.From;
                     if (output != null)
                     {
-                        if (context.KPUMemoryMap.TryGetValue(output, out var node))
-                            node.Release();
+                        if (context.KPUMemoryMap.TryGetValue(output, out var alloc))
+                            alloc.Node.Release();
+                        if (context.MainMemoryMap.TryGetValue(output, out var alloc2))
+                            alloc2.Node.Release();
                     }
                 }
             }
         }
 
-        private void InferenceInputLayer(InputLayer layer, ConvertContext context)
+        private void AllocateInputMemoryDefault(Layer layer, OutputConnector input, ConvertContext context)
         {
-            var k210ConvOut = layer.Output.Connections.Select(o => o.To.Owner).OfType<K210Conv2d>().FirstOrDefault();
-            if (k210ConvOut != null)
+            switch (layer)
             {
-                var node = context.MemoryAllocator.Allocate(context.Layers[k210ConvOut].InputSize);
-                context.KPUMemoryMap[layer.Output] = node;
+                case K210Conv2d _:
+                    GetOrAllocateKPUMemory(context, input);
+                    break;
+                default:
+                    GetOrAllocateMainMemory(context, input);
+                    break;
             }
         }
 
         private void InferenceK210Conv2d(K210Conv2d layer, ConvertContext context)
         {
-            var config = context.Layers[layer];
-            var inputNode = context.KPUMemoryMap[layer.Input.Connection.From];
-            var outputNode = context.MemoryAllocator.Allocate(config.OutputSize);
-            context.KPUMemoryMap[layer.Output] = outputNode;
+            var inputAlloc = context.KPUMemoryMap[layer.Input.Connection.From];
+            var outputAlloc = GetOrAllocateKPUMemory(context, layer.Output);
 
-            config.InputAddress = inputNode.Start;
-            config.OutputAddress = outputNode.Start;
-            context.InferenceOrders.Add(config);
+            var argument = (K210Conv2dLayerArgument)context.LayerArguments[layer];
+            argument.Config.InputAddress = inputAlloc.GetAddress();
+            argument.Config.OutputAddress = outputAlloc.GetAddress();
+
+            if (context.MainMemoryMap.TryGetValue(layer.Output, out var mainAlloc))
+            {
+                argument.Flags = K210LayerFlags.MainMemoryOutput;
+                argument.MainMemoryOutputAddress = mainAlloc.GetAddress();
+            }
+            else
+            {
+                argument.Flags = K210LayerFlags.None;
+            }
+
+            context.InferenceOrders.Add(new K210Layer
+            {
+                Header = new K210LayerHeader { Type = K210LayerType.K210Conv },
+                Body = argument
+            });
         }
 
-        private void InferenceK210GlobalAveragePool(K210GlobalAveragePool layer, ConvertContext context)
+        private void InferenceGlobalAveragePool(GlobalAveragePool layer, ConvertContext context)
         {
-            //var config = context.Layers[layer];
-            var inputNode = context.KPUMemoryMap[layer.Input.Connection.From];
-            //var outputNode = context.MemoryAllocator.Allocate(config.OutputSize);
-            context.KPUMemoryMap[layer.Output] = inputNode;
+            var inputAlloc = context.MainMemoryMap[layer.Input.Connection.From];
+            var outputAlloc = context.MainMemoryMap[layer.Output];
 
-            //config.InputAddress = inputNode.Start;
-            //config.OutputAddress = outputNode.Start;
-            //context.InferenceOrders.Add(config);
+            var argument = (GlobalAveragePool2dLayerArgument)context.LayerArguments[layer];
+            argument.Flags = K210LayerFlags.MainMemoryOutput;
+            argument.MainMemoryInputAddress = inputAlloc.GetAddress();
+            argument.MainMemoryOutputAddress = outputAlloc.GetAddress();
+        }
+
+        private void InferenceQuantize(Quantize layer, ConvertContext context)
+        {
+            var inputAlloc = context.MainMemoryMap[layer.Input.Connection.From];
+            var outputAlloc = context.KPUMemoryMap[layer.Output];
+
+            var argument = (QuantizeLayerArgument)context.LayerArguments[layer];
+            argument.Flags = K210LayerFlags.None;
+            argument.MainMemoryInputAddress = inputAlloc.GetAddress();
+            argument.KPUMemoryOutputAddress = outputAlloc.GetAddress();
+        }
+
+        private void InferenceDequantize(Dequantize layer, ConvertContext context)
+        {
+            var inputAlloc = context.MainMemoryMap[layer.Input.Connection.From];
+            var outputAlloc = context.MainMemoryMap[layer.Output];
+
+            var argument = (DequantizeLayerArgument)context.LayerArguments[layer];
+            argument.Flags = K210LayerFlags.MainMemoryOutput;
+            argument.MainMemoryInputAddress = inputAlloc.GetAddress();
+            argument.MainMemoryOutputAddress = outputAlloc.GetAddress();
         }
 
         private void InferenceK210AddPadding(K210AddPadding layer, ConvertContext context)
@@ -442,39 +601,151 @@ namespace NnCase.Converter.Converters
             //context.InferenceOrders.Add(config);
         }
 
-        private void GenerateBin(Stream bin, IReadOnlyList<K210ConvLayerConfig> layers, K210BinGenerationContext context)
+        private void GenerateBin(Stream bin, IReadOnlyList<K210Layer> layers, K210BinGenerationContext context)
         {
             var bw = new BinaryWriter(bin);
 
-            uint version = 2;
+            uint version = 3;
             uint flags = _weightsBits == 8 ? 1u : 0u;
             bw.Write(version);
             bw.Write(flags);
             bw.Write(layers.Count);
             bw.Write(context.MaxStartAddress);
+            bw.Write(context.MainMemoryUsage);
+            bw.Write(context.MainMemoryOutputAddress);
+            bw.Write(context.MainMemoryOutputSize);
 
-            // layer + (size w bn act is ib os ob) * layers
-            var placeholder = (1 + 8 * layers.Count) * 4;
+            // Headers
             var fixPosition = bw.BaseStream.Position;
-            bw.BaseStream.Position += placeholder;
-            GenerateBinLayers(bw, layers, context);
+            bw.BaseStream.Position += 4 * 2 * layers.Count;
 
             for (int i = 0; i < layers.Count; i++)
-                GenerateBinLayer(bw, layers[i], context.ParamAddresses[i]);
+            {
+                var layer = layers[i];
+                // BodySize
+                var beginPosition = bw.BaseStream.Position;
+                GenerateBinLayerBody(bw, layer);
+                layer.Header.BodySize = (uint)(bw.BaseStream.Position - beginPosition);
+            }
 
-            FixBinPlaceholder(bw, layers, context, fixPosition);
+            var newPosition = bw.BaseStream.Position;
+            bw.BaseStream.Position = fixPosition;
+            for (int i = 0; i < layers.Count; i++)
+            {
+                var header = layers[i].Header;
+                bw.Write((uint)header.Type);
+                bw.Write((uint)header.BodySize);
+            }
+
+            bw.BaseStream.Position = newPosition;
         }
 
-        private void GenerateBinLayer(BinaryWriter bw, K210ConvLayerConfig layer, K210BinGenerationContext.K210ParamAddress paramAddress)
+        private void GenerateBinLayerBody(BinaryWriter bw, K210Layer layer)
         {
-            var start = AlignStreamPosition(bw.BaseStream, 128);
-            GenerateBinWeights(bw, layer, paramAddress);
-            GenerateBinBn(bw, layer, paramAddress);
-            GenerateBinActivation(bw, layer, paramAddress);
-            paramAddress.Size = (uint)(bw.BaseStream.Position - start);
+            switch (layer.Body)
+            {
+                case K210Conv2dLayerArgument l:
+                    GenerateBinConv2d(bw, l);
+                    break;
+                case GlobalAveragePool2dLayerArgument l:
+                    GenerateBinGlobalAveragePool2d(bw, l);
+                    break;
+                case QuantizeLayerArgument l:
+                    GenerateBinQuantize(bw, l);
+                    break;
+                case DequantizeLayerArgument l:
+                    GenerateBinDequantize(bw, l);
+                    break;
+                case K210AddPaddingLayerArgument l:
+                    GenerateBinAddPadding(bw, l);
+                    break;
+                case K210RemovePaddingLayerArgument l:
+                    GenerateBinRemovePadding(bw, l);
+                    break;
+                case L2NormalizationLayerArgument l:
+                    GenerateBinL2Normalization(bw, l);
+                    break;
+                default:
+                    throw new NotSupportedException(layer.Body.GetType().Name);
+            }
+
+            AlignStreamPosition(bw.BaseStream, 8);
         }
 
-        private void GenerateBinWeights(BinaryWriter bw, K210ConvLayerConfig layer, K210BinGenerationContext.K210ParamAddress paramAddress)
+        private void GenerateBinConv2d(BinaryWriter bw, K210Conv2dLayerArgument layer)
+        {
+            bw.Write((uint)layer.Flags);
+            bw.Write(layer.MainMemoryOutputAddress);
+            // BodySize
+            var fixPosition = bw.BaseStream.Position;
+            bw.BaseStream.Position += 4 * 4;
+
+            GenerateBinLayer(bw, layer.Config, layer.ParamAddress);
+            GenerateBinWeights(bw, layer.Config, layer.ParamAddress);
+            GenerateBinBn(bw, layer.Config, layer.ParamAddress);
+            GenerateBinActivation(bw, layer.Config, layer.ParamAddress);
+
+            var newPosition = bw.BaseStream.Position;
+            bw.BaseStream.Position = fixPosition;
+            bw.Write(layer.ParamAddress.Layer);
+            bw.Write(layer.ParamAddress.Weights);
+            bw.Write(layer.ParamAddress.Bn);
+            bw.Write(layer.ParamAddress.Activation);
+            bw.BaseStream.Position = newPosition;
+        }
+
+        private void GenerateBinGlobalAveragePool2d(BinaryWriter bw, GlobalAveragePool2dLayerArgument layer)
+        {
+            bw.Write((uint)layer.Flags);
+            bw.Write(layer.MainMemoryInputAddress);
+            bw.Write(layer.MainMemoryOutputAddress);
+            bw.Write(layer.KernelSize);
+            bw.Write(layer.Channels);
+        }
+
+        private void GenerateBinQuantize(BinaryWriter bw, QuantizeLayerArgument layer)
+        {
+            bw.Write((uint)layer.Flags);
+            bw.Write(layer.MainMemoryInputAddress);
+            bw.Write(layer.KPUMemoryOutputAddress);
+            bw.Write(layer.QuantParam.Scale);
+            bw.Write(layer.QuantParam.Bias);
+        }
+
+        private void GenerateBinDequantize(BinaryWriter bw, DequantizeLayerArgument layer)
+        {
+            bw.Write((uint)layer.Flags);
+            bw.Write(layer.MainMemoryInputAddress);
+            bw.Write(layer.MainMemoryOutputAddress);
+            bw.Write(layer.QuantParam.Scale);
+            bw.Write(layer.QuantParam.Bias);
+        }
+
+        private void GenerateBinAddPadding(BinaryWriter bw, K210AddPaddingLayerArgument layer)
+        {
+            bw.Write((uint)layer.Flags);
+            bw.Write(layer.MainMemoryInputAddress);
+            bw.Write(layer.KPUMemoryOutputAddress);
+            bw.Write(layer.Channels);
+        }
+
+        private void GenerateBinRemovePadding(BinaryWriter bw, K210RemovePaddingLayerArgument layer)
+        {
+            bw.Write((uint)layer.Flags);
+            bw.Write(layer.MainMemoryInputAddress);
+            bw.Write(layer.MainMemoryOutputAddress);
+            bw.Write(layer.Channels);
+        }
+
+        private void GenerateBinL2Normalization(BinaryWriter bw, L2NormalizationLayerArgument layer)
+        {
+            bw.Write((uint)layer.Flags);
+            bw.Write(layer.MainMemoryInputAddress);
+            bw.Write(layer.MainMemoryOutputAddress);
+            bw.Write(layer.Channels);
+        }
+
+        private void GenerateBinWeights(BinaryWriter bw, K210ConvLayerConfig layer, K210Conv2dParamAddress paramAddress)
         {
             paramAddress.Weights = AlignStreamPosition(bw.BaseStream, 128);
 
@@ -490,7 +761,7 @@ namespace NnCase.Converter.Converters
             }
         }
 
-        private void GenerateBinBn(BinaryWriter bw, K210ConvLayerConfig layer, K210BinGenerationContext.K210ParamAddress paramAddress)
+        private void GenerateBinBn(BinaryWriter bw, K210ConvLayerConfig layer, K210Conv2dParamAddress paramAddress)
         {
             paramAddress.Bn = AlignStreamPosition(bw.BaseStream, 128);
 
@@ -506,7 +777,7 @@ namespace NnCase.Converter.Converters
             }
         }
 
-        private void GenerateBinActivation(BinaryWriter bw, K210ConvLayerConfig layer, K210BinGenerationContext.K210ParamAddress paramAddress)
+        private void GenerateBinActivation(BinaryWriter bw, K210ConvLayerConfig layer, K210Conv2dParamAddress paramAddress)
         {
             paramAddress.Activation = AlignStreamPosition(bw.BaseStream, 256);
 
@@ -539,117 +810,90 @@ namespace NnCase.Converter.Converters
             bw.Write(reg.activate_para_bias1.Value);
         }
 
-        private void GenerateBinLayers(BinaryWriter bw, IReadOnlyList<K210ConvLayerConfig> layers, K210BinGenerationContext context)
+        private void GenerateBinLayer(BinaryWriter bw, K210ConvLayerConfig layer, K210Conv2dParamAddress paramAddress)
         {
-            context.LayersAddress = AlignStreamPosition(bw.BaseStream, 8);
-            for (int i = 0; i < layers.Count; i++)
+            paramAddress.Layer = AlignStreamPosition(bw.BaseStream, 8);
+
+            var reg = new K210.kpu_layer_argument_t();
+
+            reg.interrupt_enabe = new K210.interrupt_enabe_t
             {
-                var layer = layers[i];
-                var reg = new K210.kpu_layer_argument_t();
-
-                reg.interrupt_enabe = new K210.interrupt_enabe_t
-                {
-                    depth_wise_layer = (byte)(layer.IsDepthwise ? 1 : 0)
-                };
-                reg.image_addr = new K210.image_addr_t
-                {
-                    image_src_addr = (ushort)layer.InputAddress,
-                    image_dst_addr = (ushort)layer.OutputAddress
-                };
-                reg.image_channel_num = new K210.image_channel_num_t
-                {
-                    i_ch_num = (ushort)(layer.InputChannels - 1),
-                    o_ch_num = (ushort)(layer.OutputChannels - 1),
-                    o_ch_num_coef = (ushort)(layer.OutputChannelsOnTime - 1)
-                };
-                reg.image_size = new K210.image_size_t
-                {
-                    i_row_wid = (ushort)(layer.InputWidth - 1),
-                    i_col_high = (ushort)(layer.InputHeight - 1),
-                    o_row_wid = (ushort)(layer.OutputWidth - 1),
-                    o_col_high = (ushort)(layer.OutputHeight - 1)
-                };
-                reg.kernel_pool_type_cfg = new K210.kernel_pool_type_cfg_t
-                {
-                    load_para = 1,
-                    kernel_type = (byte)layer.KernelType,
-                    pool_type = (byte)layer.PoolType,
-                    dma_burst_size = 15,
-                    pad_value = (byte)layer.PadValue
-                };
-                reg.kernel_load_cfg = new K210.kernel_load_cfg_t
-                {
-                    load_coor = 1,
-                    load_time = (byte)(layer.LoadTimes - 1),
-                    para_size = (uint)layer.OneLoadKernelsSize
-                };
-                reg.kernel_calc_type_cfg = new K210.kernel_calc_type_cfg_t
-                {
-                    channel_switch_addr = (ushort)(layer.InputRowLength * layer.InputHeight),
-                    row_switch_addr = (byte)layer.InputRowLength,
-                    coef_group = (byte)layer.InputGroups,
-                    load_act = 1
-                };
-                reg.write_back_cfg = new K210.write_back_cfg_t
-                {
-                    wb_channel_switch_addr = (ushort)(layer.OutputRowLength * layer.OutputHeight),
-                    wb_row_switch_addr = (byte)layer.OutputRowLength,
-                    wb_group = (byte)layer.OutputGroups
-                };
-                reg.conv_value = new K210.conv_value_t
-                {
-                    shr_w = (byte)layer.ShiftW,
-                    shr_x = (byte)layer.ShiftX,
-                    arg_w = (uint)layer.ArgW,
-                    arg_x = (uint)layer.ArgX
-                };
-                reg.conv_value2 = new K210.conv_value2_t
-                {
-                    arg_add = (ulong)layer.ArgAdd
-                };
-                reg.dma_parameter = new K210.dma_parameter_t
-                {
-                    channel_byte_num = (ushort)(layer.OutputWidth * layer.OutputHeight - 1),
-                    dma_total_byte = (uint)(layer.OutputWidth * layer.OutputHeight * layer.OutputChannels - 1)
-                };
-
-                bw.Write(reg.interrupt_enabe.Value);
-                bw.Write(reg.image_addr.Value);
-                bw.Write(reg.image_channel_num.Value);
-                bw.Write(reg.image_size.Value);
-                bw.Write(reg.kernel_pool_type_cfg.Value);
-                bw.Write(reg.kernel_load_cfg.Value);
-                bw.Write(reg.kernel_offset.Value);
-                bw.Write(reg.kernel_calc_type_cfg.Value);
-                bw.Write(reg.write_back_cfg.Value);
-                bw.Write(reg.conv_value.Value);
-                bw.Write(reg.conv_value2.Value);
-                bw.Write(reg.dma_parameter.Value);
-            }
-        }
-
-        private void FixBinPlaceholder(BinaryWriter bw, IReadOnlyList<K210ConvLayerConfig> layers, K210BinGenerationContext context, long fixPosition)
-        {
-            var pos = bw.BaseStream.Position;
-            bw.BaseStream.Position = fixPosition;
-
-            bw.Write(context.LayersAddress);
-            for (int i = 0; i < layers.Count; i++)
+                depth_wise_layer = (byte)(layer.IsDepthwise ? 1 : 0)
+            };
+            reg.image_addr = new K210.image_addr_t
             {
-                var layer = layers[i];
-                var addr = context.ParamAddresses[i];
+                image_src_addr = (ushort)layer.InputAddress,
+                image_dst_addr = (ushort)layer.OutputAddress
+            };
+            reg.image_channel_num = new K210.image_channel_num_t
+            {
+                i_ch_num = (ushort)(layer.InputChannels - 1),
+                o_ch_num = (ushort)(layer.OutputChannels - 1),
+                o_ch_num_coef = (ushort)(layer.OutputChannelsOnTime - 1)
+            };
+            reg.image_size = new K210.image_size_t
+            {
+                i_row_wid = (ushort)(layer.InputWidth - 1),
+                i_col_high = (ushort)(layer.InputHeight - 1),
+                o_row_wid = (ushort)(layer.OutputWidth - 1),
+                o_col_high = (ushort)(layer.OutputHeight - 1)
+            };
+            reg.kernel_pool_type_cfg = new K210.kernel_pool_type_cfg_t
+            {
+                load_para = 1,
+                kernel_type = (byte)layer.KernelType,
+                pool_type = (byte)layer.PoolType,
+                dma_burst_size = 15,
+                pad_value = (byte)layer.PadValue
+            };
+            reg.kernel_load_cfg = new K210.kernel_load_cfg_t
+            {
+                load_coor = 1,
+                load_time = (byte)(layer.LoadTimes - 1),
+                para_size = (uint)layer.OneLoadKernelsSize
+            };
+            reg.kernel_calc_type_cfg = new K210.kernel_calc_type_cfg_t
+            {
+                channel_switch_addr = (ushort)(layer.InputRowLength * layer.InputHeight),
+                row_switch_addr = (byte)layer.InputRowLength,
+                coef_group = (byte)layer.InputGroups,
+                load_act = 1
+            };
+            reg.write_back_cfg = new K210.write_back_cfg_t
+            {
+                wb_channel_switch_addr = (ushort)(layer.OutputRowLength * layer.OutputHeight),
+                wb_row_switch_addr = (byte)layer.OutputRowLength,
+                wb_group = (byte)layer.OutputGroups
+            };
+            reg.conv_value = new K210.conv_value_t
+            {
+                shr_w = (byte)layer.ShiftW,
+                shr_x = (byte)layer.ShiftX,
+                arg_w = (uint)layer.ArgW,
+                arg_x = (uint)layer.ArgX
+            };
+            reg.conv_value2 = new K210.conv_value2_t
+            {
+                arg_add = (ulong)layer.ArgAdd
+            };
+            reg.dma_parameter = new K210.dma_parameter_t
+            {
+                channel_byte_num = (ushort)(layer.OutputWidth * layer.OutputHeight - 1),
+                dma_total_byte = (uint)(layer.OutputWidth * layer.OutputHeight * layer.OutputChannels - 1)
+            };
 
-                bw.Write(addr.Size);
-                bw.Write(addr.Weights);
-                bw.Write(addr.Bn);
-                bw.Write(addr.Activation);
-                bw.Write((float)layer.InputScale);
-                bw.Write((float)layer.InputBias);
-                bw.Write((float)layer.OutputScale);
-                bw.Write((float)layer.OutputBias);
-            }
-
-            bw.BaseStream.Position = pos;
+            bw.Write(reg.interrupt_enabe.Value);
+            bw.Write(reg.image_addr.Value);
+            bw.Write(reg.image_channel_num.Value);
+            bw.Write(reg.image_size.Value);
+            bw.Write(reg.kernel_pool_type_cfg.Value);
+            bw.Write(reg.kernel_load_cfg.Value);
+            bw.Write(reg.kernel_offset.Value);
+            bw.Write(reg.kernel_calc_type_cfg.Value);
+            bw.Write(reg.write_back_cfg.Value);
+            bw.Write(reg.conv_value.Value);
+            bw.Write(reg.conv_value2.Value);
+            bw.Write(reg.dma_parameter.Value);
         }
 
         private uint AlignStreamPosition(Stream stream, int alignment)
@@ -958,6 +1202,57 @@ namespace NnCase.Converter.Converters
             {
                 return $"{Min}, {Max}";
             }
+
+            public K210QuantizationParam GetQuantizationParam(int maxBits)
+            {
+                (var scale, var bias) = GetScaleBias(maxBits);
+                return new K210QuantizationParam
+                {
+                    Scale = (float)(1 / scale),
+                    Bias = (float)(bias / scale)
+                };
+            }
+        }
+
+        private MemoryAllocation GetOrAllocateKPUMemory(ConvertContext context, OutputConnector output)
+        {
+            if (!context.KPUMemoryMap.TryGetValue(output, out var alloc))
+            {
+                var dimensions = output.Dimensions;
+                (var groups, var rowLength) = GetRowLayout(dimensions[3]);
+                var oneLineChannels = Math.Min(dimensions[1], groups);
+                var size = rowLength * dimensions[2] * dimensions[1] / oneLineChannels;
+                alloc = new MemoryAllocation(context.KPUMemoryAllocator.Allocate((uint)size));
+                context.KPUMemoryMap.Add(output, alloc);
+            }
+
+            return alloc;
+        }
+
+        private MemoryAllocation GetOrAllocateMainMemory(ConvertContext context, OutputConnector output)
+        {
+            if (!context.KPUMemoryMap.TryGetValue(output, out var alloc))
+            {
+                uint elementSize;
+                switch (output.Owner)
+                {
+                    case K210Conv2d _:
+                    case K210AddPadding _:
+                    case K210RemovePadding _:
+                    case Quantize _:
+                        elementSize = 1;
+                        break;
+                    default:
+                        elementSize = 4;
+                        break;
+                }
+
+                var dimensions = output.Dimensions;
+                alloc = new MemoryAllocation(context.MainMemoryAllocator.Allocate((uint)dimensions.GetSize() * elementSize));
+                context.MainMemoryMap.Add(output, alloc);
+            }
+
+            return alloc;
         }
 
         private class QuantizationContext
@@ -969,39 +1264,95 @@ namespace NnCase.Converter.Converters
             public Dictionary<OutputConnector, Range> Distributions { get; } = new Dictionary<OutputConnector, Range>();
         }
 
+        private class MemoryAllocation
+        {
+            public MemoryNode Node { get; set; }
+
+            public uint Offset { get; set; }
+
+            public uint Size { get; set; }
+
+            public uint GetAddress() => Node.Start + Offset;
+
+            public MemoryAllocation(MemoryNode memoryNode)
+            {
+                Node = memoryNode;
+                Size = memoryNode.Size;
+            }
+        }
+
         private class ConvertContext
         {
             public QuantizationContext Quantization { get; set; }
 
             public Dictionary<Layer, bool> ProcessMap = new Dictionary<Layer, bool>();
 
-            public Dictionary<Layer, K210ConvLayerConfig> Layers { get; } = new Dictionary<Layer, K210ConvLayerConfig>();
+            public Dictionary<Layer, object> LayerArguments { get; } = new Dictionary<Layer, object>();
 
-            public KPUMemoryAllocator MemoryAllocator { get; } = new KPUMemoryAllocator();
+            public KPUMemoryAllocator KPUMemoryAllocator { get; } = new KPUMemoryAllocator();
 
-            public List<K210ConvLayerConfig> InferenceOrders { get; } = new List<K210ConvLayerConfig>();
+            public MainMemoryAllocator MainMemoryAllocator { get; } = new MainMemoryAllocator();
 
-            public Dictionary<OutputConnector, KPUMemoryNode> KPUMemoryMap { get; } = new Dictionary<OutputConnector, KPUMemoryNode>();
+            public List<K210Layer> InferenceOrders { get; } = new List<K210Layer>();
+
+            public Dictionary<OutputConnector, MemoryAllocation> KPUMemoryMap { get; } = new Dictionary<OutputConnector, MemoryAllocation>();
+
+            public Dictionary<OutputConnector, MemoryAllocation> MainMemoryMap { get; } = new Dictionary<OutputConnector, MemoryAllocation>();
         }
 
-        private class KPUMemoryAllocator
+        private interface IMemoryAllocator
         {
-            private List<KPUMemoryNode> _nodes = new List<KPUMemoryNode>();
+            void Free(MemoryNode node);
+        }
 
-            public int MaxStart { get; private set; } = 2 * 1024 * 1024 / 64;
+        private class MemoryNode
+        {
+            private readonly IMemoryAllocator _memoryAllocator;
+            private int _useCount;
+
+            public uint Start { get; set; }
+
+            public uint Size { get; set; }
+
+            public bool IsUsed => _useCount != 0;
+
+            public MemoryNode(IMemoryAllocator memoryAllocator)
+            {
+                _memoryAllocator = memoryAllocator;
+            }
+
+            public void AddRef()
+            {
+                _useCount++;
+            }
+
+            public void Release()
+            {
+                if (--_useCount == 0)
+                {
+                    _memoryAllocator.Free(this);
+                }
+            }
+        }
+
+        private class KPUMemoryAllocator : IMemoryAllocator
+        {
+            private List<MemoryNode> _nodes = new List<MemoryNode>();
+
+            public uint MaxStart { get; private set; } = 2 * 1024 * 1024 / 64;
 
             public KPUMemoryAllocator()
             {
-                _nodes.Add(new KPUMemoryNode(this) { Start = 0, Size = MaxStart });
+                _nodes.Add(new MemoryNode(this) { Start = 0, Size = MaxStart });
             }
 
-            public KPUMemoryNode Allocate(int size)
+            public MemoryNode Allocate(uint size)
             {
                 var firstFreeIdx = _nodes.FindLastIndex(o => !o.IsUsed && o.Size >= size);
                 if (firstFreeIdx == -1)
                     throw new InvalidOperationException("KPU ran out of memory.");
                 var firstFree = _nodes[firstFreeIdx];
-                KPUMemoryNode node;
+                MemoryNode node;
                 if (firstFree.Size == size)
                 {
                     firstFree.AddRef();
@@ -1010,7 +1361,7 @@ namespace NnCase.Converter.Converters
                 else
                 {
                     firstFree.Size -= size;
-                    var newNode = new KPUMemoryNode(this)
+                    var newNode = new MemoryNode(this)
                     {
                         Start = firstFree.Start + firstFree.Size,
                         Size = size
@@ -1025,7 +1376,7 @@ namespace NnCase.Converter.Converters
                 return node;
             }
 
-            public void Free(KPUMemoryNode node)
+            public void Free(MemoryNode node)
             {
                 Debug.Assert(!node.IsUsed);
                 var idx = _nodes.IndexOf(node);
@@ -1052,32 +1403,97 @@ namespace NnCase.Converter.Converters
             }
         }
 
-        private class KPUMemoryNode
+        private class MainMemoryAllocator : IMemoryAllocator
         {
-            private readonly KPUMemoryAllocator _memoryAllocator;
-            private int _useCount;
+            private List<MemoryNode> _nodes = new List<MemoryNode>();
 
-            public int Start { get; set; }
+            public uint MaxEnd { get; private set; }
 
-            public int Size { get; set; }
-
-            public bool IsUsed => _useCount != 0;
-
-            public KPUMemoryNode(KPUMemoryAllocator memoryAllocator)
+            public MainMemoryAllocator()
             {
-                _memoryAllocator = memoryAllocator;
             }
 
-            public void AddRef()
+            public MemoryNode Allocate(uint size)
             {
-                _useCount++;
-            }
-
-            public void Release()
-            {
-                if (--_useCount == 0)
+                size = Align(size);
+                Reserve(size);
+                var firstFreeIdx = _nodes.FindLastIndex(o => !o.IsUsed && o.Size >= size);
+                Debug.Assert(firstFreeIdx != -1);
+                var firstFree = _nodes[firstFreeIdx];
+                MemoryNode node;
+                if (firstFree.Size == size)
                 {
-                    _memoryAllocator.Free(this);
+                    firstFree.AddRef();
+                    node = firstFree;
+                }
+                else
+                {
+                    firstFree.Size -= size;
+                    var newNode = new MemoryNode(this)
+                    {
+                        Start = firstFree.Start + firstFree.Size,
+                        Size = size
+                    };
+                    newNode.AddRef();
+
+                    _nodes.Insert(firstFreeIdx + 1, newNode);
+                    node = newNode;
+                }
+
+                return node;
+            }
+
+            private uint Align(uint size)
+            {
+                var remainder = size % 8;
+                if (remainder != 0)
+                    return size - remainder + 8;
+                return size;
+            }
+
+            private void Reserve(uint size)
+            {
+                var firstFreeIdx = _nodes.FindLastIndex(o => !o.IsUsed && o.Size >= size);
+                if (firstFreeIdx == -1)
+                {
+                    if (_nodes.Count == 0 || _nodes.Last().IsUsed)
+                    {
+                        _nodes.Add(new MemoryNode(this) { Start = MaxEnd, Size = size });
+                        MaxEnd += size;
+                    }
+                    else
+                    {
+                        var last = _nodes.Last();
+                        var toEnlarge = size - last.Size;
+                        last.Size += toEnlarge;
+                        MaxEnd += toEnlarge;
+                    }
+                }
+            }
+
+            public void Free(MemoryNode node)
+            {
+                Debug.Assert(!node.IsUsed);
+                var idx = _nodes.IndexOf(node);
+                if (idx != 0)
+                {
+                    var before = _nodes[idx - 1];
+                    if (!before.IsUsed)
+                    {
+                        before.Size += node.Size;
+                        _nodes.RemoveAt(idx);
+                        idx--;
+                        node = _nodes[idx];
+                    }
+                }
+                if (idx != _nodes.Count - 1)
+                {
+                    var after = _nodes[idx + 1];
+                    if (!after.IsUsed)
+                    {
+                        node.Size += after.Size;
+                        _nodes.RemoveAt(idx + 1);
+                    }
                 }
             }
         }
