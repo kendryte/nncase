@@ -25,9 +25,9 @@ namespace NnCase.Converter.Transforms.K210
                         {
                             context.MatchedLayers.Add(nextLayer);
 
-                            foreach (var nextLayer2 in conv2d.Output.Connections.Select(o => o.To.Owner))
+                            foreach (var nextLayer2 in dequantize.Output.Connections.Select(o => o.To.Owner))
                             {
-                                if (nextLayer is MaxPool2d maxPool)
+                                if (nextLayer2 is MaxPool2d maxPool)
                                 {
                                     if (maxPool.FilterWidth != maxPool.FilterHeight ||
                                         maxPool.StrideWidth != maxPool.StrideHeight ||
@@ -38,7 +38,7 @@ namespace NnCase.Converter.Transforms.K210
                                         continue;
                                     context.Outputs.Add(maxPool.Output);
                                 }
-                                else if (nextLayer is AveragePool2d avgPool)
+                                else if (nextLayer2 is AveragePool2d avgPool)
                                 {
                                     if (avgPool.FilterWidth != avgPool.FilterHeight ||
                                         avgPool.StrideWidth != avgPool.StrideHeight ||
@@ -117,7 +117,7 @@ namespace NnCase.Converter.Transforms.K210
 
         private static bool NoReminder(ReadOnlySpan<int> dimensions, int divider)
         {
-            return dimensions[1] % divider == 0 && dimensions[2] % divider == 0;
+            return dimensions[2] % divider == 0 && dimensions[3] % divider == 0;
         }
     }
 }
