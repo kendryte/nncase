@@ -102,8 +102,11 @@ namespace NnCase.Converter.Converters
 
     public enum K210LayerType
     {
+        GlobalAveragePool2d,
+        Quantize,
+        Dequantize,
+        L2Normalization,
         K210Conv,
-        K210GlobalAveragePool2d,
         K210AddPadding,
         K210RemovePadding
     }
@@ -170,7 +173,13 @@ namespace NnCase.Converter.Converters
 
         public uint MainMemoryInputAddress { get; set; }
 
-        public uint KPUMemoryOutputAddress { get; set; }
+        public uint MemoryOutputAddress { get; set; }
+
+        public uint Width { get; set; }
+
+        public uint Height { get; set; }
+
+        public uint Channels { get; set; }
 
         public K210QuantizationParam QuantParam { get; set; }
     }
@@ -182,6 +191,8 @@ namespace NnCase.Converter.Converters
         public uint MainMemoryInputAddress { get; set; }
 
         public uint MainMemoryOutputAddress { get; set; }
+
+        public uint Count { get; set; }
 
         public K210QuantizationParam QuantParam { get; set; }
     }
@@ -265,7 +276,8 @@ namespace NnCase.Converter.Converters
                 Prefix = prefix,
                 MaxStartAddress = context.KPUMemoryAllocator.MaxStart,
                 MainMemoryUsage = context.MainMemoryAllocator.MaxEnd,
-                MainMemoryOutputAddress = output.GetAddress()
+                MainMemoryOutputAddress = output.GetAddress(),
+                MainMemoryOutputSize = output.Size
             };
 
             using (var bin = File.Open(Path.Combine(outputDir, $"{prefix}.kmodel"), FileMode.Create, FileAccess.Write))
@@ -372,7 +384,8 @@ namespace NnCase.Converter.Converters
 
             var argument = new K210Conv2dLayerArgument
             {
-                Config = config
+                Config = config,
+                ParamAddress = new K210Conv2dParamAddress()
             };
             context.LayerArguments.Add(layer, argument);
         }
@@ -391,6 +404,9 @@ namespace NnCase.Converter.Converters
         {
             var argument = new QuantizeLayerArgument
             {
+                Width = (uint)layer.Input.Dimensions[3],
+                Height = (uint)layer.Input.Dimensions[2],
+                Channels = (uint)layer.Input.Dimensions[1],
                 QuantParam = context.Quantization.Distributions[layer.Output].GetQuantizationParam(8)
             };
             context.LayerArguments.Add(layer, argument);
@@ -400,6 +416,7 @@ namespace NnCase.Converter.Converters
         {
             var argument = new DequantizeLayerArgument
             {
+                Count = (uint)(layer.Input.Dimensions.GetSize()),
                 QuantParam = context.Quantization.Distributions[layer.Input.Connection.From].GetQuantizationParam(8)
             };
             context.LayerArguments.Add(layer, argument);
@@ -480,11 +497,20 @@ namespace NnCase.Converter.Converters
                     case Dequantize l:
                         InferenceDequantize(l, context);
                         break;
+                    case K210AddPadding l:
+                        InferenceK210AddPadding(l, context);
+                        break;
+                    case K210RemovePadding l:
+                        InferenceK210RemovePadding(l, context);
+                        break;
+                    case L2Normalization l:
+                        InferenceL2Normalization(l, context);
+                        break;
                     default:
                         throw new LayerNotSupportedException(layer.GetType().Name);
                 }
 
-                Console.Write(layer.GetType().Name);
+                Console.Write($"{context.InferenceId++}: {layer.GetType().Name}");
                 if (layer.InputConnectors.Count != 0)
                     Console.Write($" {string.Join("x", layer.InputConnectors[0].Dimensions.ToArray())}");
                 if (layer.OutputConnectors.Count != 0)
@@ -553,17 +579,41 @@ namespace NnCase.Converter.Converters
             argument.Flags = K210LayerFlags.MainMemoryOutput;
             argument.MainMemoryInputAddress = inputAlloc.GetAddress();
             argument.MainMemoryOutputAddress = outputAlloc.GetAddress();
+
+            context.InferenceOrders.Add(new K210Layer
+            {
+                Header = new K210LayerHeader { Type = K210LayerType.GlobalAveragePool2d },
+                Body = argument
+            });
         }
 
         private void InferenceQuantize(Quantize layer, ConvertContext context)
         {
             var inputAlloc = context.MainMemoryMap[layer.Input.Connection.From];
-            var outputAlloc = context.KPUMemoryMap[layer.Output];
 
             var argument = (QuantizeLayerArgument)context.LayerArguments[layer];
-            argument.Flags = K210LayerFlags.None;
             argument.MainMemoryInputAddress = inputAlloc.GetAddress();
-            argument.KPUMemoryOutputAddress = outputAlloc.GetAddress();
+
+            if (context.MainMemoryMap.TryGetValue(layer.Output, out var mainAlloc))
+            {
+                argument.Flags = K210LayerFlags.MainMemoryOutput;
+                argument.MemoryOutputAddress = mainAlloc.GetAddress();
+            }
+            else if (context.KPUMemoryMap.TryGetValue(layer.Output, out var kpuAlloc))
+            {
+                argument.Flags = K210LayerFlags.None;
+                argument.MemoryOutputAddress = kpuAlloc.GetAddress();
+            }
+            else
+            {
+                throw new InvalidOperationException("No allocation found");
+            }
+
+            context.InferenceOrders.Add(new K210Layer
+            {
+                Header = new K210LayerHeader { Type = K210LayerType.Quantize },
+                Body = argument
+            });
         }
 
         private void InferenceDequantize(Dequantize layer, ConvertContext context)
@@ -575,30 +625,63 @@ namespace NnCase.Converter.Converters
             argument.Flags = K210LayerFlags.MainMemoryOutput;
             argument.MainMemoryInputAddress = inputAlloc.GetAddress();
             argument.MainMemoryOutputAddress = outputAlloc.GetAddress();
+
+            context.InferenceOrders.Add(new K210Layer
+            {
+                Header = new K210LayerHeader { Type = K210LayerType.Dequantize },
+                Body = argument
+            });
         }
 
         private void InferenceK210AddPadding(K210AddPadding layer, ConvertContext context)
         {
-            //var config = context.Layers[layer];
-            var inputNode = context.KPUMemoryMap[layer.Input.Connection.From];
-            //var outputNode = context.MemoryAllocator.Allocate(config.OutputSize);
-            context.KPUMemoryMap[layer.Output] = inputNode;
+            var inputAlloc = context.MainMemoryMap[layer.Input.Connection.From];
+            var outputAlloc = context.KPUMemoryMap[layer.Output];
 
-            //config.InputAddress = inputNode.Start;
-            //config.OutputAddress = outputNode.Start;
-            //context.InferenceOrders.Add(config);
+            var argument = (K210AddPaddingLayerArgument)context.LayerArguments[layer];
+            argument.Flags = K210LayerFlags.None;
+            argument.MainMemoryInputAddress = inputAlloc.GetAddress();
+            argument.KPUMemoryOutputAddress = outputAlloc.GetAddress();
+
+            context.InferenceOrders.Add(new K210Layer
+            {
+                Header = new K210LayerHeader { Type = K210LayerType.K210AddPadding },
+                Body = argument
+            });
         }
 
         private void InferenceK210RemovePadding(K210RemovePadding layer, ConvertContext context)
         {
-            //var config = context.Layers[layer];
-            var inputNode = context.KPUMemoryMap[layer.Input.Connection.From];
-            //var outputNode = context.MemoryAllocator.Allocate(config.OutputSize);
-            context.KPUMemoryMap[layer.Output] = inputNode;
+            var inputAlloc = context.MainMemoryMap[layer.Input.Connection.From];
+            var outputAlloc = context.MainMemoryMap[layer.Output];
 
-            //config.InputAddress = inputNode.Start;
-            //config.OutputAddress = outputNode.Start;
-            //context.InferenceOrders.Add(config);
+            var argument = (K210RemovePaddingLayerArgument)context.LayerArguments[layer];
+            argument.Flags = K210LayerFlags.MainMemoryOutput;
+            argument.MainMemoryInputAddress = inputAlloc.GetAddress();
+            argument.MainMemoryOutputAddress = outputAlloc.GetAddress();
+
+            context.InferenceOrders.Add(new K210Layer
+            {
+                Header = new K210LayerHeader { Type = K210LayerType.K210RemovePadding },
+                Body = argument
+            });
+        }
+
+        private void InferenceL2Normalization(L2Normalization layer, ConvertContext context)
+        {
+            var inputAlloc = context.MainMemoryMap[layer.Input.Connection.From];
+            var outputAlloc = context.MainMemoryMap[layer.Output];
+
+            var argument = (L2NormalizationLayerArgument)context.LayerArguments[layer];
+            argument.Flags = K210LayerFlags.MainMemoryOutput;
+            argument.MainMemoryInputAddress = inputAlloc.GetAddress();
+            argument.MainMemoryOutputAddress = outputAlloc.GetAddress();
+
+            context.InferenceOrders.Add(new K210Layer
+            {
+                Header = new K210LayerHeader { Type = K210LayerType.L2Normalization },
+                Body = argument
+            });
         }
 
         private void GenerateBin(Stream bin, IReadOnlyList<K210Layer> layers, K210BinGenerationContext context)
@@ -707,7 +790,10 @@ namespace NnCase.Converter.Converters
         {
             bw.Write((uint)layer.Flags);
             bw.Write(layer.MainMemoryInputAddress);
-            bw.Write(layer.KPUMemoryOutputAddress);
+            bw.Write(layer.MemoryOutputAddress);
+            bw.Write(layer.Width);
+            bw.Write(layer.Height);
+            bw.Write(layer.Channels);
             bw.Write(layer.QuantParam.Scale);
             bw.Write(layer.QuantParam.Bias);
         }
@@ -717,6 +803,7 @@ namespace NnCase.Converter.Converters
             bw.Write((uint)layer.Flags);
             bw.Write(layer.MainMemoryInputAddress);
             bw.Write(layer.MainMemoryOutputAddress);
+            bw.Write(layer.Count);
             bw.Write(layer.QuantParam.Scale);
             bw.Write(layer.QuantParam.Bias);
         }
@@ -1283,6 +1370,8 @@ namespace NnCase.Converter.Converters
 
         private class ConvertContext
         {
+            public int InferenceId { get; set; }
+
             public QuantizationContext Quantization { get; set; }
 
             public Dictionary<Layer, bool> ProcessMap = new Dictionary<Layer, bool>();
