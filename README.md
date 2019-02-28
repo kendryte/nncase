@@ -9,17 +9,13 @@ A tool to convert models between many formats.
 
 Input formats can be one of `tflite`, `paddle` and `caffe`.
 
-Output formats can be one of `tf`, `tflite`, `k210code` and `k210model`.
+Output formats can be one of `tf`, `tflite` and `k210model`.
 
 Dataset postprocess can be one of `0to1` (normalize images from 0 to 1, default) and `n1to1` (normalize images from -1 to 1).
 
 Weights quantization bits can be one of `8`(default) and `16`.
 
 ### Examples
-- Convert TFLite model to K210 code.
-
-  `ncc -i tflite -o k210code --dataset ./images ./mbnetv1.tflite ./mbnetv1.c`
-
 - Convert TFLite model to K210 model.
 
   `ncc -i tflite -o k210model --dataset ./images ./mbnetv1.tflite ./mbnetv1.kmodel`
@@ -27,10 +23,6 @@ Weights quantization bits can be one of `8`(default) and `16`.
 - Convert PaddlePaddle model to TensorFlow model.
 
   `ncc -i paddle -o tf ./MobileNetV1_pretrained ./mbnetv1.pb`
-
-- Convert PaddlePaddle model to K210 code.
-
-  `ncc -i paddle -o k210code --dataset ./images ./MobileNetV1_pretrained ./mbnetv1.c`
 
 [License (MIT)](https://raw.githubusercontent.com/kendryte/nncase/master/LICENSE)
 -------------------------------------------------------------------------------
