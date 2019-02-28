@@ -17,7 +17,7 @@ namespace NnCase.Converter.Transforms.K210
                 if (layer is Conv2d conv2d)
                 {
                     if (conv2d.KernelWidth != conv2d.KernelHeight ||
-                        (conv2d.KernelWidth != 3) ||
+                        (conv2d.KernelWidth != 3) || conv2d.Input.Dimensions[2] % 2 != 0 || conv2d.Input.Dimensions[3] % 2 != 0 ||
                         conv2d.StrideHeight != 2 || conv2d.StrideWidth != 2 ||
                         conv2d.Padding != Padding.Same)
                         return false;
@@ -27,7 +27,7 @@ namespace NnCase.Converter.Transforms.K210
                 else if (layer is DepthwiseConv2d dwConv2d)
                 {
                     if (dwConv2d.KernelWidth != dwConv2d.KernelHeight ||
-                        (dwConv2d.KernelWidth != 3) ||
+                        (dwConv2d.KernelWidth != 3) || dwConv2d.Input.Dimensions[2] % 2 != 0 || dwConv2d.Input.Dimensions[3] % 2 != 0 ||
                         dwConv2d.StrideHeight != 2 || dwConv2d.StrideWidth != 2 ||
                         dwConv2d.Padding != Padding.Same)
                         return false;
