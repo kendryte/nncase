@@ -83,6 +83,8 @@ namespace NnCase.Converter.Converters
                     return ConvertMaxPool2d(op);
                 case tflite.BuiltinOperator.SOFTMAX:
                     return ConvertSoftmax(op);
+                case tflite.BuiltinOperator.CONCATENATION:
+                    return ConvertConcatenation(op);
                 default:
                     throw new LayerNotSupportedException(opCode.BuiltinCode.ToString());
             }
@@ -216,6 +218,19 @@ namespace NnCase.Converter.Converters
 
             var layer = new Softmax(input.GetShapeArray().ToNCHW());
             _inputs.Add(layer.Input, inputs[0]);
+            _outputs.Add(op.Outputs(0), layer.Output);
+            return layer;
+        }
+
+        private Layer ConvertConcatenation(tflite.Operator op)
+        {
+            var inputs = op.GetInputsArray();
+            var options = op.BuiltinOptions<tflite.ConcatenationOptions>().Value;
+            if (options.Axis != 3)
+                throw new NotSupportedException("Axis of concatenation must be 3.");
+            var layer = new Concatenation(inputs.Select(x => new ReadOnlyMemory<int>(_graph.Tensors(x).Value.GetShapeArray().ToNCHW())));
+            for (int i = 0; i < inputs.Length; i++)
+                _inputs.Add(layer.Inputs[i], inputs[i]);
             _outputs.Add(op.Outputs(0), layer.Output);
             return layer;
         }

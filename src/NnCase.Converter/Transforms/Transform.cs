@@ -18,22 +18,27 @@ namespace NnCase.Converter.Transforms
 
     public abstract class Transform
     {
+        protected virtual bool SkipSelfContainedCheck => false;
+
         public bool TryMatch(Layer layer, TransformContext context)
         {
             if (OnTryMatch(layer, context))
             {
-                var inputs = (from l in context.MatchedLayers
-                              from c in l.InputConnectors
-                              where !context.MatchedLayers.Contains(c.Connection?.From.Owner)
-                              select c).Except(context.Inputs);
-                if (inputs.Any()) return false;
+                if (!SkipSelfContainedCheck)
+                {
+                    var inputs = (from l in context.MatchedLayers
+                                  from c in l.InputConnectors
+                                  where !context.MatchedLayers.Contains(c.Connection?.From.Owner)
+                                  select c).Except(context.Inputs);
+                    if (inputs.Any()) return false;
 
-                var outputs = (from l in context.MatchedLayers
-                               from c in l.OutputConnectors
-                               from con in c.Connections
-                               where !context.MatchedLayers.Contains(con.To.Owner)
-                               select c).Except(context.Outputs);
-                if (outputs.Any()) return false;
+                    var outputs = (from l in context.MatchedLayers
+                                   from c in l.OutputConnectors
+                                   from con in c.Connections
+                                   where !context.MatchedLayers.Contains(con.To.Owner)
+                                   select c).Except(context.Outputs);
+                    if (outputs.Any()) return false;
+                }
 
                 return true;
             }

@@ -230,6 +230,11 @@ namespace NnCase.Converter.Converters
         public uint Channels { get; set; }
     }
 
+    public class ConcatenationLayerArgument
+    {
+
+    }
+
     public class K210BinGenerationContext
     {
         public string Prefix { get; set; }
@@ -263,6 +268,10 @@ namespace NnCase.Converter.Converters
 
             var quantize = await GetMinMaxVars(dataset, planContext);
             var context = new ConvertContext { Quantization = quantize };
+            context.ProcessMap.Clear();
+            foreach (var layer in _graph.Outputs)
+                FixupQuantizationRange(layer, context);
+
             foreach (var layer in _graph.Outputs)
                 ConvertLayer(layer, context);
 
@@ -284,6 +293,35 @@ namespace NnCase.Converter.Converters
             {
                 GenerateBin(bin, context.InferenceOrders, binGenContext);
             }
+        }
+
+        private void FixupQuantizationRange(Layer layer, ConvertContext context)
+        {
+            if (!context.ProcessMap.GetValueOrDefault(layer))
+            {
+                context.ProcessMap[layer] = true;
+
+                switch (layer)
+                {
+                    case Concatenation l:
+                        FixupQuantizationConcatenation(l, context);
+                        break;
+                    default:
+                        break;
+                }
+
+                foreach (var conn in layer.InputConnectors)
+                {
+                    var nextLayer = conn.Connection?.From.Owner;
+                    if (nextLayer != null)
+                        ConvertLayer(nextLayer, context);
+                }
+            }
+        }
+
+        private void FixupQuantizationConcatenation(Concatenation layer, ConvertContext context)
+        {
+            throw new NotImplementedException();
         }
 
         private void ConvertLayer(Layer layer, ConvertContext context)
@@ -1050,7 +1088,6 @@ namespace NnCase.Converter.Converters
 #if NET471
                 );
 #endif
-
                 return quantizationContext;
             }
         }
@@ -1298,6 +1335,12 @@ namespace NnCase.Converter.Converters
                     Scale = (float)(1 / scale),
                     Bias = (float)(bias / scale)
                 };
+            }
+
+            public void UnionWith(Range range)
+            {
+                Min = Math.Min(Min, range.Min);
+                Max = Math.Max(Max, range.Max);
             }
         }
 
