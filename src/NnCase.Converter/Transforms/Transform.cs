@@ -18,22 +18,27 @@ namespace NnCase.Converter.Transforms
 
     public abstract class Transform
     {
+        protected virtual bool SkipSelfContainedCheck => false;
+
         public bool TryMatch(Layer layer, TransformContext context)
         {
             if (OnTryMatch(layer, context))
             {
-                var inputs = (from l in context.MatchedLayers
-                              from c in l.InputConnectors
-                              where !context.MatchedLayers.Contains(c.Connection?.From.Owner)
-                              select c).Except(context.Inputs);
-                if (inputs.Any()) return false;
+                if (!SkipSelfContainedCheck)
+                {
+                    var inputs = (from l in context.MatchedLayers
+                                  from c in l.InputConnectors
+                                  where !context.MatchedLayers.Contains(c.Connection?.From.Owner)
+                                  select c).Except(context.Inputs);
+                    if (inputs.Any()) return false;
 
-                var outputs = (from l in context.MatchedLayers
-                               from c in l.OutputConnectors
-                               from con in c.Connections
-                               where !context.MatchedLayers.Contains(con.To.Owner)
-                               select c).Except(context.Outputs);
-                if (outputs.Any()) return false;
+                    var outputs = (from l in context.MatchedLayers
+                                   from c in l.OutputConnectors
+                                   from con in c.Connections
+                                   where !context.MatchedLayers.Contains(con.To.Owner)
+                                   select c).Except(context.Outputs);
+                    if (outputs.Any()) return false;
+                }
 
                 return true;
             }
@@ -61,6 +66,56 @@ namespace NnCase.Converter.Transforms
                         conti |= Process(layer, transform, processMap);
                 }
             } while (conti);
+
+            RemoveUnusedLayers(graph);
+        }
+
+        private static void RemoveUnusedLayers(Graph graph)
+        {
+            var usedLayers = new HashSet<Layer>();
+            foreach (var layer in graph.Outputs)
+                AddUnsedLayer(layer, usedLayers);
+            var unusedLayers = new HashSet<Layer>();
+            foreach (var layer in graph.Inputs)
+                AddAllLayer(layer, unusedLayers);
+            unusedLayers.ExceptWith(usedLayers);
+
+            foreach (var unusedLayer in unusedLayers)
+                DisconnectLayer(unusedLayer);
+        }
+
+        private static void DisconnectLayer(Layer layer)
+        {
+            foreach (var input in layer.InputConnectors)
+                input.ClearConnection();
+
+            foreach (var output in layer.OutputConnectors)
+            {
+                foreach (var input in output.Connections.ToList())
+                    input.To.ClearConnection();
+            }
+        }
+
+        private static void AddUnsedLayer(Layer layer, HashSet<Layer> layers)
+        {
+            if (layers.Add(layer))
+            {
+                foreach (var inputLayer in from c in layer.InputConnectors
+                                           where c.Connection != null
+                                           select c.Connection.From.Owner)
+                    AddUnsedLayer(inputLayer, layers);
+            }
+        }
+
+        private static void AddAllLayer(Layer layer, HashSet<Layer> layers)
+        {
+            if (layers.Add(layer))
+            {
+                foreach (var outputLayer in from c in layer.OutputConnectors
+                                            from conn in c.Connections
+                                            select conn.To.Owner)
+                    AddAllLayer(outputLayer, layers);
+            }
         }
 
         private static bool Process(Layer layer, Transform transform, Dictionary<Layer, bool> processMap)

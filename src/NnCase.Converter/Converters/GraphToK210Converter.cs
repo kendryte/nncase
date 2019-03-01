@@ -230,6 +230,11 @@ namespace NnCase.Converter.Converters
         public uint Channels { get; set; }
     }
 
+    public class ConcatenationLayerArgument
+    {
+
+    }
+
     public class K210BinGenerationContext
     {
         public string Prefix { get; set; }
@@ -263,6 +268,10 @@ namespace NnCase.Converter.Converters
 
             var quantize = await GetMinMaxVars(dataset, planContext);
             var context = new ConvertContext { Quantization = quantize };
+            context.ProcessMap.Clear();
+            foreach (var layer in _graph.Outputs)
+                FixupQuantizationRange(layer, context);
+
             foreach (var layer in _graph.Outputs)
                 ConvertLayer(layer, context);
 
@@ -276,13 +285,37 @@ namespace NnCase.Converter.Converters
                 Prefix = prefix,
                 MaxStartAddress = context.KPUMemoryAllocator.MaxStart,
                 MainMemoryUsage = context.MainMemoryAllocator.MaxEnd,
-                MainMemoryOutputAddress = output.GetAddress(),
+                MainMemoryOutputAddress = output.GetRawAddress(),
                 MainMemoryOutputSize = output.Size
             };
+
+            Console.WriteLine($"KPU memory usage: {context.KPUMemoryAllocator.MaxUsage * 64} B");
+            Console.WriteLine($"Main memory usage: {context.MainMemoryAllocator.MaxEnd} B");
 
             using (var bin = File.Open(Path.Combine(outputDir, $"{prefix}.kmodel"), FileMode.Create, FileAccess.Write))
             {
                 GenerateBin(bin, context.InferenceOrders, binGenContext);
+            }
+        }
+
+        private void FixupQuantizationRange(Layer layer, ConvertContext context)
+        {
+            if (!context.ProcessMap.GetValueOrDefault(layer))
+            {
+                context.ProcessMap[layer] = true;
+
+                switch (layer)
+                {
+                    default:
+                        break;
+                }
+
+                foreach (var conn in layer.InputConnectors)
+                {
+                    var nextLayer = conn.Connection?.From.Owner;
+                    if (nextLayer != null)
+                        ConvertLayer(nextLayer, context);
+                }
             }
         }
 
@@ -295,7 +328,8 @@ namespace NnCase.Converter.Converters
                 switch (layer)
                 {
                     case InputLayer _:
-                    case OutputLayer l:
+                    case OutputLayer _:
+                    case Concatenation _:
                         break;
                     case K210Conv2d l:
                         ConvertK210Conv2d(l, context);
@@ -464,15 +498,13 @@ namespace NnCase.Converter.Converters
 
                 foreach (var output in layer.OutputConnectors)
                 {
-                    if (context.KPUMemoryMap.TryGetValue(output, out var alloc))
-                        alloc.Node.AddRef();
-                    if (context.MainMemoryMap.TryGetValue(output, out var alloc2))
-                        alloc2.Node.AddRef();
-
                     foreach (var conn in output.Connections.Select(x => x.To.Owner))
                     {
                         switch (conn)
                         {
+                            case Concatenation l:
+                                AllocateInputMemoryConcatenation(l, output, context);
+                                break;
                             default:
                                 AllocateInputMemoryDefault(conn, output, context);
                                 break;
@@ -482,8 +514,9 @@ namespace NnCase.Converter.Converters
 
                 switch (layer)
                 {
-                    case InputLayer l:
+                    case InputLayer _:
                     case OutputLayer _:
+                    case Concatenation _:
                         break;
                     case K210Conv2d l:
                         InferenceK210Conv2d(l, context);
@@ -531,6 +564,21 @@ namespace NnCase.Converter.Converters
             }
         }
 
+        private void AllocateInputMemoryConcatenation(Concatenation layer, OutputConnector input, ConvertContext context)
+        {
+            var totalAlloc = GetOrAllocateMainMemory(context, layer.Output);
+            uint offset = 0;
+
+            foreach (var node in layer.Inputs.Select(x => x.Connection.From))
+            {
+                if (context.MainMemoryMap.ContainsKey(node))
+                    return;
+                uint size = (uint)node.Dimensions.GetSize() * 4;
+                context.MainMemoryMap.Add(node, new MemoryAllocation(totalAlloc.Node, offset, size));
+                offset += size;
+            }
+        }
+
         private void AllocateInputMemoryDefault(Layer layer, OutputConnector input, ConvertContext context)
         {
             switch (layer)
@@ -547,22 +595,24 @@ namespace NnCase.Converter.Converters
         private void InferenceK210Conv2d(K210Conv2d layer, ConvertContext context)
         {
             var inputAlloc = context.KPUMemoryMap[layer.Input.Connection.From];
-            var outputAlloc = GetOrAllocateKPUMemory(context, layer.Output);
+            MemoryAllocation outputAlloc;
 
             var argument = (K210Conv2dLayerArgument)context.LayerArguments[layer];
             argument.Config.InputAddress = inputAlloc.GetAddress();
-            argument.Config.OutputAddress = outputAlloc.GetAddress();
 
             if (context.MainMemoryMap.TryGetValue(layer.Output, out var mainAlloc))
             {
                 argument.Flags = K210LayerFlags.MainMemoryOutput;
                 argument.MainMemoryOutputAddress = mainAlloc.GetAddress();
+                outputAlloc = GetOrAllocateKPUMemory(context, layer.Output);
             }
             else
             {
                 argument.Flags = K210LayerFlags.None;
+                outputAlloc = context.KPUMemoryMap[layer.Output];
             }
 
+            argument.Config.OutputAddress = outputAlloc.GetAddress();
             context.InferenceOrders.Add(new K210Layer
             {
                 Header = new K210LayerHeader { Type = K210LayerType.K210Conv },
@@ -1050,7 +1100,6 @@ namespace NnCase.Converter.Converters
 #if NET471
                 );
 #endif
-
                 return quantizationContext;
             }
         }
@@ -1299,6 +1348,12 @@ namespace NnCase.Converter.Converters
                     Bias = (float)(bias / scale)
                 };
             }
+
+            public void UnionWith(Range range)
+            {
+                Min = Math.Min(Min, range.Min);
+                Max = Math.Max(Max, range.Max);
+            }
         }
 
         private MemoryAllocation GetOrAllocateKPUMemory(ConvertContext context, OutputConnector output)
@@ -1312,13 +1367,17 @@ namespace NnCase.Converter.Converters
                 alloc = new MemoryAllocation(context.KPUMemoryAllocator.Allocate((uint)size));
                 context.KPUMemoryMap.Add(output, alloc);
             }
+            else
+            {
+                alloc.Node.AddRef();
+            }
 
             return alloc;
         }
 
         private MemoryAllocation GetOrAllocateMainMemory(ConvertContext context, OutputConnector output)
         {
-            if (!context.KPUMemoryMap.TryGetValue(output, out var alloc))
+            if (!context.MainMemoryMap.TryGetValue(output, out var alloc))
             {
                 uint elementSize;
                 switch (output.Owner)
@@ -1337,6 +1396,10 @@ namespace NnCase.Converter.Converters
                 var dimensions = output.Dimensions;
                 alloc = new MemoryAllocation(context.MainMemoryAllocator.Allocate((uint)dimensions.GetSize() * elementSize));
                 context.MainMemoryMap.Add(output, alloc);
+            }
+            else
+            {
+                alloc.Node.AddRef();
             }
 
             return alloc;
@@ -1359,12 +1422,21 @@ namespace NnCase.Converter.Converters
 
             public uint Size { get; set; }
 
-            public uint GetAddress() => Node.Start + Offset;
+            public uint GetAddress() => Node.ValidStart + Offset;
+
+            public uint GetRawAddress() => Node.Start + Offset;
 
             public MemoryAllocation(MemoryNode memoryNode)
             {
                 Node = memoryNode;
                 Size = memoryNode.Size;
+            }
+
+            public MemoryAllocation(MemoryNode memoryNode, uint offset, uint size)
+            {
+                Node = memoryNode;
+                Offset = offset;
+                Size = size;
             }
         }
 
@@ -1401,6 +1473,17 @@ namespace NnCase.Converter.Converters
 
             public uint Start { get; set; }
 
+            public uint ValidStart
+            {
+                get
+                {
+                    if (IsUsed)
+                        return Start;
+                    else
+                        throw new InvalidOperationException("Memory node has been free.");
+                }
+            }
+
             public uint Size { get; set; }
 
             public bool IsUsed => _useCount != 0;
@@ -1429,6 +1512,8 @@ namespace NnCase.Converter.Converters
             private List<MemoryNode> _nodes = new List<MemoryNode>();
 
             public uint MaxStart { get; private set; } = 2 * 1024 * 1024 / 64;
+
+            public uint MaxUsage => 2 * 1024 * 1024 / 64 - MaxStart;
 
             public KPUMemoryAllocator()
             {
