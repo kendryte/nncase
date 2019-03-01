@@ -67,3 +67,4 @@ A tool to convert models between many formats.
 | Relu | |
 | Relu6 | |
 | L2Normalization | |
+| Concatenation | |
