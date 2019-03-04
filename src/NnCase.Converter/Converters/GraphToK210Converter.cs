@@ -306,7 +306,7 @@ namespace NnCase.Converter.Converters
                 Prefix = prefix,
                 MaxStartAddress = context.KPUMemoryAllocator.MaxStart,
                 MainMemoryUsage = context.MainMemoryAllocator.MaxEnd,
-                MainMemoryOutputAddress = output.GetRawAddress(),
+                MainMemoryOutputAddress = output.GetAddress(),
                 MainMemoryOutputSize = output.Size
             };
 
@@ -601,15 +601,18 @@ namespace NnCase.Converter.Converters
                     Console.Write($" -> {string.Join("x", layer.OutputConnectors[0].Dimensions.ToArray())}");
                 Console.WriteLine();
 
-                foreach (var conn in layer.InputConnectors)
+                if (!(layer is OutputLayer))
                 {
-                    var output = conn.Connection?.From;
-                    if (output != null)
+                    foreach (var conn in layer.InputConnectors)
                     {
-                        if (context.KPUMemoryMap.TryGetValue(output, out var alloc))
-                            alloc.Node.Release();
-                        if (context.MainMemoryMap.TryGetValue(output, out var alloc2))
-                            alloc2.Node.Release();
+                        var output = conn.Connection?.From;
+                        if (output != null)
+                        {
+                            if (context.KPUMemoryMap.TryGetValue(output, out var alloc))
+                                alloc.Node.Release();
+                            if (!(layer is K210Conv2d) && context.MainMemoryMap.TryGetValue(output, out var alloc2))
+                                alloc2.Node.Release();
+                        }
                     }
                 }
             }
@@ -1534,8 +1537,6 @@ namespace NnCase.Converter.Converters
 
             public uint GetAddress() => Node.ValidStart + Offset;
 
-            public uint GetRawAddress() => Node.Start + Offset;
-
             public MemoryAllocation(MemoryNode memoryNode)
             {
                 Node = memoryNode;
@@ -1614,6 +1615,8 @@ namespace NnCase.Converter.Converters
                 {
                     _memoryAllocator.Free(this);
                 }
+
+                Debug.Assert(_useCount >= 0);
             }
         }
 
