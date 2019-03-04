@@ -227,7 +227,7 @@ namespace NnCase.Cli
             var args = $" --input_file={tmpPb} --input_format=TENSORFLOW_GRAPHDEF --output_file={tflitePath} --output_format=TFLITE --input_shape=1,{dim[2]},{dim[3]},{dim[1]} --input_array={input} --output_array={output} --inference_type=FLOAT";
             using (var toco = Process.Start(new ProcessStartInfo(Path.Combine(binPath, "toco"), args)
             {
-                WorkingDirectory = binPath
+                WorkingDirectory = Path.GetDirectoryName(typeof(Program).Assembly.Location)
             }))
             {
                 toco.WaitForExit();

@@ -102,6 +102,7 @@ namespace NnCase.Converter.Converters
 
     public enum K210LayerType
     {
+        Add,
         GlobalAveragePool2d,
         Quantize,
         Dequantize,
@@ -153,6 +154,19 @@ namespace NnCase.Converter.Converters
         public K210Conv2dParamAddress ParamAddress { get; set; }
 
         public K210ConvLayerConfig Config { get; set; }
+    }
+
+    public class AddLayerArgument
+    {
+        public K210LayerFlags Flags { get; set; }
+
+        public uint MainMemoryInputAAddress { get; set; }
+
+        public uint MainMemoryInputBAddress { get; set; }
+
+        public uint MainMemoryOutputAddress { get; set; }
+
+        public uint Channels { get; set; }
     }
 
     public class GlobalAveragePool2dLayerArgument
@@ -341,6 +355,9 @@ namespace NnCase.Converter.Converters
                     case K210Conv2d l:
                         ConvertK210Conv2d(l, context);
                         break;
+                    case Add l:
+                        ConvertAdd(l, context);
+                        break;
                     case GlobalAveragePool l:
                         ConvertGlobalAveragePool(l, context);
                         break;
@@ -430,6 +447,15 @@ namespace NnCase.Converter.Converters
             {
                 Config = config,
                 ParamAddress = new K210Conv2dParamAddress()
+            };
+            context.LayerArguments.Add(layer, argument);
+        }
+
+        private void ConvertAdd(Add layer, ConvertContext context)
+        {
+            var argument = new AddLayerArgument
+            {
+                Channels = (uint)(layer.Output.Dimensions[1])
             };
             context.LayerArguments.Add(layer, argument);
         }
@@ -540,6 +566,9 @@ namespace NnCase.Converter.Converters
                     case K210Conv2d l:
                         InferenceK210Conv2d(l, context);
                         break;
+                    case Add l:
+                        InferenceAdd(l, context);
+                        break;
                     case GlobalAveragePool l:
                         InferenceGlobalAveragePool(l, context);
                         break;
@@ -638,6 +667,25 @@ namespace NnCase.Converter.Converters
             context.InferenceOrders.Add(new K210Layer
             {
                 Header = new K210LayerHeader { Type = K210LayerType.K210Conv },
+                Body = argument
+            });
+        }
+
+        private void InferenceAdd(Add layer, ConvertContext context)
+        {
+            var inputAAlloc = context.MainMemoryMap[layer.InputA.Connection.From];
+            var inputBAlloc = context.MainMemoryMap[layer.InputB.Connection.From];
+            var outputAlloc = context.MainMemoryMap[layer.Output];
+
+            var argument = (AddLayerArgument)context.LayerArguments[layer];
+            argument.Flags = K210LayerFlags.MainMemoryOutput;
+            argument.MainMemoryInputAAddress = inputAAlloc.GetAddress();
+            argument.MainMemoryInputBAddress = inputBAlloc.GetAddress();
+            argument.MainMemoryOutputAddress = outputAlloc.GetAddress();
+
+            context.InferenceOrders.Add(new K210Layer
+            {
+                Header = new K210LayerHeader { Type = K210LayerType.Add },
                 Body = argument
             });
         }
@@ -819,6 +867,9 @@ namespace NnCase.Converter.Converters
                 case K210Conv2dLayerArgument l:
                     GenerateBinConv2d(bw, l);
                     break;
+                case AddLayerArgument l:
+                    GenerateBinAdd(bw, l);
+                    break;
                 case GlobalAveragePool2dLayerArgument l:
                     GenerateBinGlobalAveragePool2d(bw, l);
                     break;
@@ -867,6 +918,15 @@ namespace NnCase.Converter.Converters
             bw.Write(layer.ParamAddress.Bn);
             bw.Write(layer.ParamAddress.Activation);
             bw.BaseStream.Position = newPosition;
+        }
+
+        private void GenerateBinAdd(BinaryWriter bw, AddLayerArgument layer)
+        {
+            bw.Write((uint)layer.Flags);
+            bw.Write(layer.MainMemoryInputAAddress);
+            bw.Write(layer.MainMemoryInputBAddress);
+            bw.Write(layer.MainMemoryOutputAddress);
+            bw.Write(layer.Channels);
         }
 
         private void GenerateBinGlobalAveragePool2d(BinaryWriter bw, GlobalAveragePool2dLayerArgument layer)
