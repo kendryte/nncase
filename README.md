@@ -66,5 +66,6 @@ A tool to convert models between many formats.
 | BiasAdd | |
 | Relu | |
 | Relu6 | |
-| L2Normalization | |
 | Concatenation | |
+| L2Normalization | |
+| Softmax | |
