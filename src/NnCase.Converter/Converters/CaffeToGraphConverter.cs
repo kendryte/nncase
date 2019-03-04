@@ -250,9 +250,9 @@ namespace NnCase.Converter.Converters
             var input = _outputs[layerParam.Bottom[0]];
             var param = layerParam.PoolingParam;
 
-            var ksizes = new[] { param.KernelH, param.KernelW };
-            var strides = new[] { param.StrideH, param.StrideW };
-            var paddings = new[] { param.PadH, param.PadW };
+            var ksizes = GetCaffeSize(param.KernelH, param.KernelW, param.KernelSize);
+            var strides = GetCaffeSize(param.StrideH, param.StrideW, param.Stride);
+            var paddings = GetCaffeSize(param.PadH, param.PadW, param.Pad);
 
             if (param.GlobalPooling)
             {
@@ -283,6 +283,22 @@ namespace NnCase.Converter.Converters
             }
             else
                 throw new LayerNotSupportedException(param.Pool.ToString());
+        }
+
+        private uint[] GetCaffeSize(uint h, uint w, uint size)
+        {
+            var sizes = new uint[2];
+            if(size == 0)
+            {
+                sizes[0] = h;
+                sizes[1] = w;
+            }
+            else
+            {
+                sizes[0] = sizes[1] = size;
+            }
+
+            return sizes;
         }
 
         private Layer ConvertSoftmax(LayerParameter layerParam)

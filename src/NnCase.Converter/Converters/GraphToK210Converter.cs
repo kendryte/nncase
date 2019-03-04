@@ -106,7 +106,8 @@ namespace NnCase.Converter.Converters
         Quantize,
         Dequantize,
         L2Normalization,
-        K210Conv,
+        Softmax,
+        K210Conv = 10240,
         K210AddPadding,
         K210RemovePadding
     }
@@ -230,9 +231,15 @@ namespace NnCase.Converter.Converters
         public uint Channels { get; set; }
     }
 
-    public class ConcatenationLayerArgument
+    public class SoftmaxLayerArgument
     {
+        public K210LayerFlags Flags { get; set; }
 
+        public uint MainMemoryInputAddress { get; set; }
+
+        public uint MainMemoryOutputAddress { get; set; }
+
+        public uint Channels { get; set; }
     }
 
     public class K210BinGenerationContext
@@ -351,6 +358,9 @@ namespace NnCase.Converter.Converters
                         break;
                     case L2Normalization l:
                         ConvertL2Normalization(l, context);
+                        break;
+                    case Softmax l:
+                        ConvertSoftmax(l, context);
                         break;
                     default:
                         throw new LayerNotSupportedException(layer.GetType().Name);
@@ -483,6 +493,15 @@ namespace NnCase.Converter.Converters
             context.LayerArguments.Add(layer, argument);
         }
 
+        private void ConvertSoftmax(Softmax layer, ConvertContext context)
+        {
+            var argument = new SoftmaxLayerArgument
+            {
+                Channels = (uint)layer.Input.Dimensions[1]
+            };
+            context.LayerArguments.Add(layer, argument);
+        }
+
         private void InferenceLayer(Layer layer, ConvertContext context)
         {
             if (!context.ProcessMap.GetValueOrDefault(layer))
@@ -538,6 +557,9 @@ namespace NnCase.Converter.Converters
                         break;
                     case L2Normalization l:
                         InferenceL2Normalization(l, context);
+                        break;
+                    case Softmax l:
+                        InferenceSoftmax(l, context);
                         break;
                     default:
                         throw new LayerNotSupportedException(layer.GetType().Name);
@@ -734,6 +756,23 @@ namespace NnCase.Converter.Converters
             });
         }
 
+        private void InferenceSoftmax(Softmax layer, ConvertContext context)
+        {
+            var inputAlloc = context.MainMemoryMap[layer.Input.Connection.From];
+            var outputAlloc = context.MainMemoryMap[layer.Output];
+
+            var argument = (L2NormalizationLayerArgument)context.LayerArguments[layer];
+            argument.Flags = K210LayerFlags.MainMemoryOutput;
+            argument.MainMemoryInputAddress = inputAlloc.GetAddress();
+            argument.MainMemoryOutputAddress = outputAlloc.GetAddress();
+
+            context.InferenceOrders.Add(new K210Layer
+            {
+                Header = new K210LayerHeader { Type = K210LayerType.Softmax },
+                Body = argument
+            });
+        }
+
         private void GenerateBin(Stream bin, IReadOnlyList<K210Layer> layers, K210BinGenerationContext context)
         {
             var bw = new BinaryWriter(bin);
@@ -797,6 +836,9 @@ namespace NnCase.Converter.Converters
                     break;
                 case L2NormalizationLayerArgument l:
                     GenerateBinL2Normalization(bw, l);
+                    break;
+                case SoftmaxLayerArgument l:
+                    GenerateBinSoftmax(bw, l);
                     break;
                 default:
                     throw new NotSupportedException(layer.Body.GetType().Name);
@@ -875,6 +917,14 @@ namespace NnCase.Converter.Converters
         }
 
         private void GenerateBinL2Normalization(BinaryWriter bw, L2NormalizationLayerArgument layer)
+        {
+            bw.Write((uint)layer.Flags);
+            bw.Write(layer.MainMemoryInputAddress);
+            bw.Write(layer.MainMemoryOutputAddress);
+            bw.Write(layer.Channels);
+        }
+
+        private void GenerateBinSoftmax(BinaryWriter bw, SoftmaxLayerArgument layer)
         {
             bw.Write((uint)layer.Flags);
             bw.Write(layer.MainMemoryInputAddress);
