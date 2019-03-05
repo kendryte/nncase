@@ -55,6 +55,7 @@ A tool to convert models between many formats.
 | Conv2d | kernel={3x3,1x1} stride={1,2} padding=same|
 | DepthwiseConv2d | kernel={3x3,1x1} stride={1,2} padding=same|
 | FullyConnected | |
+| Add | |
 | MaxPool2d | kernel=2x2 stride=1 padding=same |
 | MaxPool2d | kernel=2x2 stride=2 padding=valid |
 | MaxPool2d | kernel=4x4 stride=2 padding=valid |
