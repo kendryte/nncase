@@ -17,7 +17,7 @@ namespace NnCase.Converter.K210.Converters.Layers
 
         public uint MainMemoryOutputAddress { get; set; }
 
-        public uint Channels { get; set; }
+        public uint Count { get; set; }
     }
 
     [LayerConverter(typeof(Add), K210LayerType.Add)]
@@ -27,7 +27,7 @@ namespace NnCase.Converter.K210.Converters.Layers
         {
             return new AddLayerArgument
             {
-                Channels = (uint)(layer.Output.Dimensions[1])
+                Count = (uint)(layer.Output.Dimensions.GetSize())
             };
         }
 

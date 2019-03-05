@@ -77,9 +77,11 @@ namespace NnCase.Converter.K210.Transforms
                 throw new InvalidOperationException();
 
             var quantize = new Quantize(input.Dimensions);
+            var upload = new K210Upload(input.Dimensions);
             var dequantize = new Dequantize(newLayer.Output.Dimensions);
             quantize.Input.SetConnection(input);
-            newLayer.Input.SetConnection(quantize.Output);
+            upload.Input.SetConnection(quantize.Output);
+            newLayer.Input.SetConnection(upload.Output);
             dequantize.Input.SetConnection(newLayer.Output);
             var oldOuts = output.Connections.Select(o => o.To).ToList();
             foreach (var oldOut in oldOuts)

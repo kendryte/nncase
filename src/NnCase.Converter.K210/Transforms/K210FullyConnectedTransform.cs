@@ -43,6 +43,7 @@ namespace NnCase.Converter.K210.Transforms
             fc.Input.ClearConnection();
 
             var quantize = new Quantize(input.Dimensions);
+            var upload = new K210Upload(input.Dimensions);
             var addPad = new K210AddPadding(input.Dimensions);
             var conv2d = new K210Conv2d(addPad.Output.Dimensions, K210Conv2dType.Conv2d,
                 fc.Weights.Reshape(new[] { fc.Weights.Dimensions[0], fc.Weights.Dimensions[1], 1, 1 }), fc.Bias, K210PoolType.None, fc.FusedActivationFunction);
@@ -50,7 +51,8 @@ namespace NnCase.Converter.K210.Transforms
             var dequantize = new Dequantize(removePad.Output.Dimensions);
 
             quantize.Input.SetConnection(input);
-            addPad.Input.SetConnection(quantize.Output);
+            upload.Input.SetConnection(quantize.Output);
+            addPad.Input.SetConnection(upload.Output);
             conv2d.Input.SetConnection(addPad.Output);
             removePad.Input.SetConnection(conv2d.Output);
             dequantize.Input.SetConnection(removePad.Output);

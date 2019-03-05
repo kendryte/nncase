@@ -59,6 +59,7 @@ namespace NnCase.Converter.K210.Converters.Stages.Inference
                         case K210Conv2d _:
                         case K210AddPadding _:
                         case K210RemovePadding _:
+                        case K210Upload _:
                         case layers.Quantize _:
                             elementSize = 1;
                             break;

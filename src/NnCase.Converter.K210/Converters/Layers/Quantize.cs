@@ -13,13 +13,9 @@ namespace NnCase.Converter.K210.Converters.Layers
 
         public uint MainMemoryInputAddress { get; set; }
 
-        public uint MemoryOutputAddress { get; set; }
+        public uint MainMemoryOutputAddress { get; set; }
 
-        public uint Width { get; set; }
-
-        public uint Height { get; set; }
-
-        public uint Channels { get; set; }
+        public uint Count { get; set; }
 
         public K210QuantizationParam QuantParam { get; set; }
     }
@@ -31,9 +27,7 @@ namespace NnCase.Converter.K210.Converters.Layers
         {
             return new QuantizeLayerArgument
             {
-                Width = (uint)layer.Input.Dimensions[3],
-                Height = (uint)layer.Input.Dimensions[2],
-                Channels = (uint)layer.Input.Dimensions[1],
+                Count = (uint)layer.Input.Dimensions.GetSize(),
                 QuantParam = context.Quantization.Distributions[layer.Output].GetQuantizationParam(8)
             };
         }
@@ -41,23 +35,10 @@ namespace NnCase.Converter.K210.Converters.Layers
         public void Infer(layers.Quantize layer, QuantizeLayerArgument argument, InferenceContext context)
         {
             var inputAlloc = context.MainMemoryMap[layer.Input.Connection.From];
+            var outputAlloc = context.MainMemoryMap[layer.Output];
 
             argument.MainMemoryInputAddress = inputAlloc.GetAddress();
-
-            if (context.MainMemoryMap.TryGetValue(layer.Output, out var mainAlloc))
-            {
-                argument.Flags = K210LayerFlags.MainMemoryOutput;
-                argument.MemoryOutputAddress = mainAlloc.GetAddress();
-            }
-            else if (context.KPUMemoryMap.TryGetValue(layer.Output, out var kpuAlloc))
-            {
-                argument.Flags = K210LayerFlags.None;
-                argument.MemoryOutputAddress = kpuAlloc.GetAddress();
-            }
-            else
-            {
-                throw new InvalidOperationException("No allocation found");
-            }
+            argument.MainMemoryOutputAddress = outputAlloc.GetAddress();
         }
     }
 }

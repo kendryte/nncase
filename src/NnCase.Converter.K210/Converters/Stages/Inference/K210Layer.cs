@@ -8,6 +8,7 @@ namespace NnCase.Converter.K210.Converters.Stages.Inference
     {
         Invalid = 0,
         Add,
+        QuantizedAdd,
         GlobalAveragePool2d,
         Quantize,
         Dequantize,
@@ -15,7 +16,8 @@ namespace NnCase.Converter.K210.Converters.Stages.Inference
         Softmax,
         K210Conv = 10240,
         K210AddPadding,
-        K210RemovePadding
+        K210RemovePadding,
+        K210Upload
     }
 
     public class K210LayerHeader

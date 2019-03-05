@@ -29,14 +29,14 @@ namespace NnCase.Converter.Transforms
                     var inputs = (from l in context.MatchedLayers
                                   from c in l.InputConnectors
                                   where !context.MatchedLayers.Contains(c.Connection?.From.Owner)
-                                  select c).Except(context.Inputs);
+                                  select c).Distinct().Except(context.Inputs);
                     if (inputs.Any()) return false;
 
                     var outputs = (from l in context.MatchedLayers
                                    from c in l.OutputConnectors
                                    from con in c.Connections
                                    where !context.MatchedLayers.Contains(con.To.Owner)
-                                   select c).Except(context.Outputs);
+                                   select c).Distinct().Except(context.Outputs);
                     if (outputs.Any()) return false;
                 }
 
@@ -65,9 +65,9 @@ namespace NnCase.Converter.Transforms
                     foreach (var layer in graph.Outputs)
                         conti |= Process(layer, transform, processMap);
                 }
-            } while (conti);
 
-            RemoveUnusedLayers(graph);
+                RemoveUnusedLayers(graph);
+            } while (conti);
         }
 
         private static void RemoveUnusedLayers(Graph graph)
