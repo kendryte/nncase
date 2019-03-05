@@ -5,15 +5,15 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
-using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Shapes;
 using NnCase.Converter;
+using NnCase.Converter.Converters;
+using NnCase.Converter.Data;
+using NnCase.Converter.K210.Converters;
+using NnCase.Converter.K210.Transforms;
+using NnCase.Converter.Model;
+using NnCase.Converter.Transforms;
 using Ookii.Dialogs.Wpf;
+using Transform = NnCase.Converter.Transforms.Transform;
 
 namespace NnCase.Designer.Modules.ModelDesigner.Views
 {
@@ -71,13 +71,45 @@ namespace NnCase.Designer.Modules.ModelDesigner.Views
         {
             try
             {
-                await GraphConvert.ExportK210Code(_modelPath.Text, _datasetDir.Text, _exportPath.Text);
+                await ExportK210Code(_modelPath.Text, _datasetDir.Text, _exportPath.Text);
                 MessageBox.Show("Export completed.", "NnCase", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch(Exception ex)
             {
                 MessageBox.Show(ex.Message, "NnCase", MessageBoxButton.OK, MessageBoxImage.Error);
             }
+        }
+
+        private static async Task ExportK210Code(string modelPath, string datasetDir, string codePath)
+        {
+            var file = File.ReadAllBytes(modelPath);
+            var model = tflite.Model.GetRootAsModel(new FlatBuffers.ByteBuffer(file));
+            var tfc = new TfLiteToGraphConverter(model, model.Subgraphs(0).Value);
+            tfc.Convert();
+            var graph = tfc.Graph;
+            Transform.Process(graph, new Transform[] {
+                new K210SeparableConv2dTransform(),
+                new K210SpaceToBatchNdAndValidConv2dTransform(),
+                new K210SameConv2dTransform(),
+                new K210Stride2Conv2dTransform(),
+                new GlobalAveragePoolTransform(),
+                new K210FullyConnectedTransform(),
+                new K210Conv2dWithMaxAvgPoolTransform(),
+                new Conv2d1x1ToFullyConnectedTransform()
+            });
+            var ctx = new GraphPlanContext();
+            graph.Plan(ctx);
+            var dim = graph.Inputs.First().Output.Dimensions.ToArray();
+            var k210c = new GraphToK210Converter(graph, 16);
+            await k210c.ConvertAsync(new ImageDataset(
+                datasetDir,
+                new[] { dim[1], dim[2], dim[3] },
+                1,
+                PreprocessMethods.None,
+                PostprocessMethods.Normalize0To1),
+                ctx,
+                Path.GetDirectoryName(codePath),
+                Path.GetFileNameWithoutExtension(codePath));
         }
     }
 }

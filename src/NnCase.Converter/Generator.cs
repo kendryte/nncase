@@ -4,7 +4,7 @@ using System.Text;
 
 namespace NnCase.Converter
 {
-    internal static class Generator
+    public static class Generator
     {
         public static IEnumerable<double> Step(double start, double stop, int count)
         {

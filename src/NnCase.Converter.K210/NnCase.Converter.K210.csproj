@@ -1,0 +1,37 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Library</OutputType>
+    <TargetFrameworks>netcoreapp3.0;net471</TargetFrameworks>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <PreserveCompilationContext>true</PreserveCompilationContext>
+    <LangVersion>8.0</LangVersion>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <DefineConstants>$(DefineConstants);ENABLE_SPAN_T;UNSAFE_BYTEBUFFER;CHANNEL_WISE</DefineConstants>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Templates\Script\Model.cshtml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Templates\Script\Model.cshtml" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BitFields" Version="0.1.0" />
+    <PackageReference Include="RazorLight.Unofficial" Version="2.0.0-beta1.3" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(TargetFramework)'=='net471'">
+    <PackageReference Include="System.Threading.Tasks.Extensions" Version="4.5.1" />
+    <PackageReference Include="AsyncEnumerator" Version="2.2.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NnCase.Converter\NnCase.Converter.csproj" />
+  </ItemGroup>
+
+</Project>

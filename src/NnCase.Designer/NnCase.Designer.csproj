@@ -319,6 +319,14 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="..\FlatBuffers\FlatBuffers.csproj">
+      <Project>{af2e7059-6a62-482b-9760-12f6bdaa7593}</Project>
+      <Name>FlatBuffers</Name>
+    </ProjectReference>
+    <ProjectReference Include="..\NnCase.Converter.K210\NnCase.Converter.K210.csproj">
+      <Project>{a2137e73-0b7b-40b8-9521-9b4f1a6f3926}</Project>
+      <Name>NnCase.Converter.K210</Name>
+    </ProjectReference>
     <ProjectReference Include="..\NnCase.Converter\NnCase.Converter.csproj">
       <Project>{5829ab7e-607d-4edf-a7b4-e3b562aa2467}</Project>
       <Name>NnCase.Converter</Name>

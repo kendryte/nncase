@@ -8,7 +8,7 @@ using System.Text;
 
 namespace NnCase.Converter
 {
-    internal ref struct SpanReader
+    public ref struct SpanReader
     {
         private ReadOnlySpan<byte> _span;
 

@@ -1,6 +1,5 @@
 ﻿using NnCase.Converter.Model;
 using NnCase.Converter.Model.Layers;
-using NnCase.Converter.Model.Layers.K210;
 using System;
 using System.Collections.Generic;
 using System.Linq;

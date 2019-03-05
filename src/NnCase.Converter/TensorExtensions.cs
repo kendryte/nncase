@@ -6,7 +6,7 @@ using System.Text;
 
 namespace NnCase.Converter
 {
-    static class TensorExtensions
+    public static class TensorExtensions
     {
         public static Tensor<T> Transpose<T>(this Tensor<T> tensor, ReadOnlySpan<int> axes)
         {

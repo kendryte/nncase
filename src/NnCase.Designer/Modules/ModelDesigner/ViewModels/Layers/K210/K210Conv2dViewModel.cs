@@ -5,8 +5,8 @@ using System.Linq;
 using System.Numerics.Tensors;
 using System.Text;
 using System.Threading.Tasks;
+using NnCase.Converter.K210.Model.Layers;
 using NnCase.Converter.Model.Layers;
-using NnCase.Converter.Model.Layers.K210;
 using ReactiveUI;
 
 namespace NnCase.Designer.Modules.ModelDesigner.ViewModels.Layers.K210

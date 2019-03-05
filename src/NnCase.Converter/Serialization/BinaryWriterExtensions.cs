@@ -7,7 +7,7 @@ using System.Text;
 
 namespace NnCase.Converter
 {
-    internal static class BinaryWriterExtensions
+    public static class BinaryWriterExtensions
     {
         public static void WriteAsBytes(this BinaryWriter bw, byte[] value)
         {
@@ -50,7 +50,7 @@ namespace NnCase.Converter
         }
     }
 
-    internal static class DataTypeSizeExtensions
+    public static class DataTypeSizeExtensions
     {
         public static uint SizeOfVarInt(this uint value)
         {

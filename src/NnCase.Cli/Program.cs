@@ -8,11 +8,12 @@ using System.Threading.Tasks;
 using CommandLine;
 using NnCase.Converter.Converters;
 using NnCase.Converter.Data;
+using NnCase.Converter.K210.Converters;
+using NnCase.Converter.K210.Model.Layers;
+using NnCase.Converter.K210.Transforms;
 using NnCase.Converter.Model;
 using NnCase.Converter.Model.Layers;
-using NnCase.Converter.Model.Layers.K210;
 using NnCase.Converter.Transforms;
-using NnCase.Converter.Transforms.K210;
 
 namespace NnCase.Cli
 {
@@ -165,6 +166,7 @@ namespace NnCase.Cli
                             new K210Conv2dWithMaxAvgPoolTransform(),
                             new Conv2d1x1ToFullyConnectedTransform(),
                             new K210EliminateAddRemovePaddingTransform(),
+                            new QuantizedAddTransform(),
                             new EliminateQuantizeDequantizeTransform(),
                             new EliminateInputQuantizeTransform(),
                             //new EliminateDequantizeOutputTransform()

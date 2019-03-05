@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace NnCase.Converter
 {
-    internal static class FxExtensions
+    public static class FxExtensions
     {
         public static TValue GetValueOrDefault<TKey, TValue>(this IDictionary<TKey, TValue> dict, TKey key)
         {

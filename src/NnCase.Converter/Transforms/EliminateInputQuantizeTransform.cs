@@ -5,9 +5,8 @@ using System.Numerics.Tensors;
 using System.Text;
 using NnCase.Converter.Model;
 using NnCase.Converter.Model.Layers;
-using NnCase.Converter.Model.Layers.K210;
 
-namespace NnCase.Converter.Transforms.K210
+namespace NnCase.Converter.Transforms
 {
     public class EliminateInputQuantizeTransform : Transform
     {
