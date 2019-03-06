@@ -172,7 +172,6 @@ namespace NnCase.Cli
                             new K210EliminateInputUploadTransform(),
                             new K210EliminateConv2dUploadTransform(),
                             new K210EliminateUploadAddPaddingTransform(),
-                            new K210EliminateQuantizedAddUploadTransform()
                             //new EliminateDequantizeOutputTransform()
                         });
 

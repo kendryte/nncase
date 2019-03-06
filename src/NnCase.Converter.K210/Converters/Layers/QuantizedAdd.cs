@@ -16,13 +16,9 @@ namespace NnCase.Converter.K210.Converters.Layers
 
         public uint MainMemoryInputBAddress { get; set; }
 
-        public uint MemoryOutputAddress { get; set; }
+        public uint MainMemoryOutputAddress { get; set; }
 
-        public uint Width { get; set; }
-
-        public uint Height { get; set; }
-
-        public uint Channels { get; set; }
+        public uint Count { get; set; }
 
         public int InputAOffset { get; set; }
 
@@ -71,9 +67,7 @@ namespace NnCase.Converter.K210.Converters.Layers
                 OutputOffset = (int)(-bo),
                 OutputMul = (int)Math.Round(mulO),
                 OutputShift = shiftO,
-                Width = (uint)(layer.Output.Dimensions[3]),
-                Height = (uint)(layer.Output.Dimensions[2]),
-                Channels = (uint)(layer.Output.Dimensions[1])
+                Count = (uint)(layer.Output.Dimensions.GetSize())
             };
         }
 
@@ -81,24 +75,12 @@ namespace NnCase.Converter.K210.Converters.Layers
         {
             var inputAAlloc = context.MainMemoryMap[layer.InputA.Connection.From];
             var inputBAlloc = context.MainMemoryMap[layer.InputB.Connection.From];
+            var outputAlloc = context.MainMemoryMap[layer.Output];
 
+            argument.Flags = K210LayerFlags.MainMemoryOutput;
             argument.MainMemoryInputAAddress = inputAAlloc.GetAddress();
             argument.MainMemoryInputBAddress = inputBAlloc.GetAddress();
-
-            if (context.MainMemoryMap.TryGetValue(layer.Output, out var mainAlloc))
-            {
-                argument.Flags = K210LayerFlags.MainMemoryOutput;
-                argument.MemoryOutputAddress = mainAlloc.GetAddress();
-            }
-            else if (context.KPUMemoryMap.TryGetValue(layer.Output, out var kpuAlloc))
-            {
-                argument.Flags = K210LayerFlags.None;
-                argument.MemoryOutputAddress = kpuAlloc.GetAddress();
-            }
-            else
-            {
-                throw new InvalidOperationException("No allocation found");
-            }
+            argument.MainMemoryOutputAddress = outputAlloc.GetAddress();
         }
     }
 }
