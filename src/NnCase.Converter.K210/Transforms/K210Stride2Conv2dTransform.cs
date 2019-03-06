@@ -25,16 +25,6 @@ namespace NnCase.Converter.K210.Transforms
                     context.Inputs.Add(conv2d.Input);
                     context.Outputs.Add(conv2d.Output);
                 }
-                else if (layer is DepthwiseConv2d dwConv2d)
-                {
-                    if (dwConv2d.KernelWidth != dwConv2d.KernelHeight ||
-                        (dwConv2d.KernelWidth != 3) || dwConv2d.Input.Dimensions[2] % 2 != 0 || dwConv2d.Input.Dimensions[3] % 2 != 0 ||
-                        dwConv2d.StrideHeight != 2 || dwConv2d.StrideWidth != 2 ||
-                        dwConv2d.Padding != Padding.Same)
-                        return false;
-                    context.Inputs.Add(dwConv2d.Input);
-                    context.Outputs.Add(dwConv2d.Output);
-                }
                 else
                 {
                     return false;
@@ -60,12 +50,6 @@ namespace NnCase.Converter.K210.Transforms
                 newLayer = new K210Conv2d(conv2d.Input.Dimensions, K210Conv2dType.Conv2d, conv2d.Weights, conv2d.Bias, K210PoolType.LeftTop, conv2d.FusedActivationFunction);
                 input = conv2d.Input.Connection.From;
                 output = conv2d.Output;
-            }
-            else if (conv is DepthwiseConv2d dwConv2d)
-            {
-                newLayer = new K210Conv2d(dwConv2d.Input.Dimensions, K210Conv2dType.DepthwiseConv2d, dwConv2d.Weights, dwConv2d.Bias, K210PoolType.LeftTop, dwConv2d.FusedActivationFunction);
-                input = dwConv2d.Input.Connection.From;
-                output = dwConv2d.Output;
             }
             else
                 throw new InvalidOperationException();

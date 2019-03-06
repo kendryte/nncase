@@ -131,6 +131,19 @@ namespace NnCase.Cli
                             await ctx.SaveAsync(f);
                         break;
                     }
+                case "addpad":
+                    {
+                        Transform.Process(graph, new Transform[] {
+                            new Conv2dAddSpaceToBatchNdTransform()
+                        });
+
+                        var ctx = new GraphPlanContext();
+                        graph.Plan(ctx);
+
+                        using (var f = File.Open(options.Output, FileMode.Create, FileAccess.Write))
+                            await ctx.SaveAsync(f);
+                        break;
+                    }
                 case "tflite":
                     {
                         await ConvertToTFLite(graph, options.Output);
@@ -167,6 +180,7 @@ namespace NnCase.Cli
                             new Conv2d1x1ToFullyConnectedTransform(),
                             new K210EliminateAddRemovePaddingTransform(),
                             new QuantizedAddTransform(),
+                            new ExclusiveConcatenationTransform(),
                             new EliminateQuantizeDequantizeTransform(),
                             new EliminateInputQuantizeTransform(),
                             new K210EliminateInputUploadTransform(),

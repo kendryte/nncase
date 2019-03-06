@@ -8,6 +8,7 @@ using NnCase.Converter.Converters;
 using NnCase.Converter.K210.Converters.Layers;
 using NnCase.Converter.K210.Converters.Stages.Inference;
 using NnCase.Converter.Model;
+using NnCase.Converter.Model.Layers;
 
 namespace NnCase.Converter.K210.Converters.Stages.Generate
 {
@@ -133,6 +134,12 @@ namespace NnCase.Converter.K210.Converters.Stages.Generate
                     case K210QuantizationParam v:
                         bw.Write(v.Scale);
                         bw.Write(v.Bias);
+                        break;
+                    case Padding v:
+                        bw.Write((uint)v);
+                        break;
+                    case ActivationFunctionType v:
+                        bw.Write((uint)v);
                         break;
                     default:
                         throw new InvalidOperationException("Invalid argument member.");

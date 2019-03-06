@@ -40,7 +40,7 @@ namespace NnCase.Converter.Converters
             }
 
             var inputs = new List<InputLayer>();
-            foreach(var conn in _inputs.Keys.Where(o => o.Connection == null))
+            foreach (var conn in _inputs.Keys.Where(o => o.Connection == null))
             {
                 var input = new InputLayer(conn.Dimensions);
                 conn.SetConnection(input.Output);
@@ -48,7 +48,7 @@ namespace NnCase.Converter.Converters
             }
 
             var outputs = new List<OutputLayer>();
-            foreach(var conn in _outputs.Values.Where(o => !o.Connections.Any()))
+            foreach (var conn in _outputs.Values.Where(o => !o.Connections.Any()))
             {
                 var output = new OutputLayer(conn.Dimensions);
                 conn.AddConnection(output.Input);
@@ -125,12 +125,28 @@ namespace NnCase.Converter.Converters
             var options = op.BuiltinOptions<tflite.DepthwiseConv2DOptions>().Value;
             var weights = _graph.Tensors(inputs[1]).Value;
             var bias = _graph.Tensors(inputs[2]).Value;
+            var depthMul = options.DepthMultiplier;
 
-            var layer = new DepthwiseConv2d(input.GetShapeArray().ToNCHW(), _model.GetTensor<float>(weights).ToOIHW(), _model.GetTensor<float>(bias),
-                options.Padding.ToPadding(), options.StrideW, options.StrideH, options.FusedActivationFunction.ToActivationFunction());
-            _inputs.Add(layer.Input, inputs[0]);
-            _outputs.Add(op.Outputs(0), layer.Output);
-            return layer;
+            if (input.GetShapeArray().ToNCHW()[1] == 1 && depthMul != 1)
+            {
+                var layer = new Conv2d(input.GetShapeArray().ToNCHW(), _model.GetTensor<float>(weights).ToOIHW().Transpose(new[] { 1, 0, 2, 3 }), _model.GetTensor<float>(bias),
+                    options.Padding.ToPadding(), options.StrideW, options.StrideH, options.FusedActivationFunction.ToActivationFunction());
+                _inputs.Add(layer.Input, inputs[0]);
+                _outputs.Add(op.Outputs(0), layer.Output);
+                return layer;
+            }
+            else if (depthMul != 1)
+            {
+                throw new LayerNotSupportedException("DEPTHWISE_CONV_2D", "depth_multiplier must be 1");
+            }
+
+            {
+                var layer = new DepthwiseConv2d(input.GetShapeArray().ToNCHW(), _model.GetTensor<float>(weights).ToOIHW(), _model.GetTensor<float>(bias),
+                    options.Padding.ToPadding(), options.StrideW, options.StrideH, options.FusedActivationFunction.ToActivationFunction());
+                _inputs.Add(layer.Input, inputs[0]);
+                _outputs.Add(op.Outputs(0), layer.Output);
+                return layer;
+            }
         }
 
         private Layer ConvertAveragePool2d(tflite.Operator op)
