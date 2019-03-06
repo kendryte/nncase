@@ -94,14 +94,16 @@ namespace NnCase.Converter.Converters
                     return ConvertReshape(op);
                 case "softmax":
                     return ConvertSoftmax(op);
+                case "bilinear_interp":
+                    return ConvertBilinearInterp(op);
                 default:
-                    throw new NotSupportedException();
+                    throw new LayerNotSupportedException(op.Type);
             }
         }
 
         private Layer ConvertFeed(paddle.OpDesc op)
         {
-            var output = op.Outputs[0].Arguments[0];
+            var output = GetParameter(op.Outputs, "Out").Arguments[0];
             var layer = new InputLayer(GetVarShape(output)) { Name = output };
             _outputs.Add(output, layer.Output);
             return layer;
@@ -115,12 +117,12 @@ namespace NnCase.Converter.Converters
             if (strides[0] == 0) strides[0] = 1;
             if (strides[1] == 0) strides[1] = 1;
 
-            var input = op.Inputs[1].Arguments[0];
-            var weights = op.Inputs[0].Arguments[0];
+            var input = GetParameter(op.Inputs, "Input").Arguments[0];
+            var weights = GetParameter(op.Inputs, "Filter").Arguments[0];
             var weightsShape = GetVarShape(weights);
             var kernelWidth = weightsShape[3];
             var kernelHeight = weightsShape[2];
-            var output = op.Outputs[0].Arguments[0];
+            var output = GetParameter(op.Outputs, "Output").Arguments[0];
 
             if (groups == 1)
             {
@@ -177,9 +179,9 @@ namespace NnCase.Converter.Converters
 
         private Layer ConvertElementwiseAdd(paddle.OpDesc op)
         {
-            var x = op.Inputs[0].Arguments[0];
-            var y = op.Inputs[1].Arguments[0];
-            var output = op.Outputs[0].Arguments[0];
+            var x = GetParameter(op.Inputs, "X").Arguments[0];
+            var y = GetParameter(op.Inputs, "Y").Arguments[0];
+            var output = GetParameter(op.Outputs, "Out").Arguments[0];
 
             var layer = new Add(GetVarShape(x), GetVarShape(y));
             _inputs.Add(layer.InputA, x);
@@ -240,8 +242,8 @@ namespace NnCase.Converter.Converters
         private Layer ConvertReshape(paddle.OpDesc op)
         {
             var shape = GetAttr(op, "shape").Ints;
-            var x = op.Inputs[1].Arguments[0];
-            var output = op.Outputs[0].Arguments[0];
+            var x = GetParameter(op.Inputs, "X").Arguments[0];
+            var output = GetParameter(op.Outputs, "Out").Arguments[0];
 
             var layer = new Reshape(GetVarShape(x), shape.ToArray());
             _inputs.Add(layer.Input, x);
@@ -251,10 +253,24 @@ namespace NnCase.Converter.Converters
 
         private Layer ConvertSoftmax(paddle.OpDesc op)
         {
-            var x = op.Inputs[0].Arguments[0];
-            var output = op.Outputs[0].Arguments[0];
+            var x = GetParameter(op.Inputs, "X").Arguments[0];
+            var output = GetParameter(op.Outputs, "Out").Arguments[0];
 
             var layer = new Softmax(GetVarShape(x));
+            _inputs.Add(layer.Input, x);
+            _outputs.Add(output, layer.Output);
+            return layer;
+        }
+
+        private Layer ConvertBilinearInterp(paddle.OpDesc op)
+        {
+            var w = GetAttr(op, "out_w").I;
+            var h = GetAttr(op, "out_h").I;
+            var alignCorners = GetAttr(op, "align_corners").B;
+            var x = GetParameter(op.Inputs, "X").Arguments[0];
+            var output = GetParameter(op.Outputs, "Out").Arguments[0];
+
+            var layer = new ResizeBilinear(GetVarShape(x), w, h, alignCorners);
             _inputs.Add(layer.Input, x);
             _outputs.Add(output, layer.Output);
             return layer;
@@ -271,6 +287,11 @@ namespace NnCase.Converter.Converters
         private paddle.VarDesc GetVar(string name)
         {
             return _subgraph.Vars.First(o => o.Name == name);
+        }
+
+        private paddle.OpDesc.Types.Var GetParameter(IEnumerable<paddle.OpDesc.Types.Var> vars, string name)
+        {
+            return vars.First(o => o.Parameter == name);
         }
 
         private int[] GetVarShape(string name)

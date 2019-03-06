@@ -11,5 +11,11 @@ namespace NnCase.Converter.Converters
         {
 
         }
+
+        public LayerNotSupportedException(string layer, string reason)
+            : base($"Layer {layer} is not supported: {reason}")
+        {
+
+        }
     }
 }
