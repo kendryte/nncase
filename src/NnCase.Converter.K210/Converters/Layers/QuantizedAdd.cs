@@ -16,7 +16,7 @@ namespace NnCase.Converter.K210.Converters.Layers
 
         public uint MainMemoryInputBAddress { get; set; }
 
-        public uint MainMemoryOutputAddress { get; set; }
+        public uint MemoryOutputAddress { get; set; }
 
         public uint Width { get; set; }
 
@@ -81,12 +81,24 @@ namespace NnCase.Converter.K210.Converters.Layers
         {
             var inputAAlloc = context.MainMemoryMap[layer.InputA.Connection.From];
             var inputBAlloc = context.MainMemoryMap[layer.InputB.Connection.From];
-            var outputAlloc = context.MainMemoryMap[layer.Output];
 
-            argument.Flags = K210LayerFlags.MainMemoryOutput;
             argument.MainMemoryInputAAddress = inputAAlloc.GetAddress();
             argument.MainMemoryInputBAddress = inputBAlloc.GetAddress();
-            argument.MainMemoryOutputAddress = outputAlloc.GetAddress();
+
+            if (context.MainMemoryMap.TryGetValue(layer.Output, out var mainAlloc))
+            {
+                argument.Flags = K210LayerFlags.MainMemoryOutput;
+                argument.MemoryOutputAddress = mainAlloc.GetAddress();
+            }
+            else if (context.KPUMemoryMap.TryGetValue(layer.Output, out var kpuAlloc))
+            {
+                argument.Flags = K210LayerFlags.None;
+                argument.MemoryOutputAddress = kpuAlloc.GetAddress();
+            }
+            else
+            {
+                throw new InvalidOperationException("No allocation found");
+            }
         }
     }
 }

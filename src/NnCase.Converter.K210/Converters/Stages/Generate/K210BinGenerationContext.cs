@@ -5,6 +5,13 @@ using System.Text;
 
 namespace NnCase.Converter.K210.Converters.Stages.Generate
 {
+    public class K210OutputAddress
+    {
+        public uint Address { get; set; }
+
+        public uint Size { get; set; }
+    }
+
     public class K210BinGenerationContext
     {
         public string Prefix { get; set; }
@@ -15,9 +22,7 @@ namespace NnCase.Converter.K210.Converters.Stages.Generate
 
         public uint MainMemoryUsage { get; set; }
 
-        public uint MainMemoryOutputAddress { get; set; }
-
-        public uint MainMemoryOutputSize { get; set; }
+        public IReadOnlyList<K210OutputAddress> Outputs { get; set; }
 
         public Stream Stream { get; set; }
 

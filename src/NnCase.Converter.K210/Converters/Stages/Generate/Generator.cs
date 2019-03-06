@@ -15,14 +15,18 @@ namespace NnCase.Converter.K210.Converters.Stages.Generate
     {
         public static K210BinGenerationContext GenerateBin(Graph graph, Stream stream, int weightsBits, string prefix, InferenceContext inferenceContext)
         {
-            var output = inferenceContext.MainMemoryMap[graph.Outputs[0].Input.Connection.From];
             var context = new K210BinGenerationContext
             {
                 Prefix = prefix,
                 MaxStartAddress = inferenceContext.KPUMemoryAllocator.MaxStart,
                 MainMemoryUsage = inferenceContext.MainMemoryAllocator.MaxEnd,
-                MainMemoryOutputAddress = output.GetAddress(),
-                MainMemoryOutputSize = output.Size,
+                Outputs = (from o in graph.Outputs
+                           let m = inferenceContext.MainMemoryMap[o.Input.Connection.From]
+                           select new K210OutputAddress
+                           {
+                               Address = m.GetAddress(),
+                               Size = m.Size
+                           }).ToList(),
                 Stream = stream,
                 WeightsBits = weightsBits
             };
@@ -72,8 +76,14 @@ namespace NnCase.Converter.K210.Converters.Stages.Generate
             bw.Write(layers.Count);
             bw.Write(context.MaxStartAddress);
             bw.Write(context.MainMemoryUsage);
-            bw.Write(context.MainMemoryOutputAddress);
-            bw.Write(context.MainMemoryOutputSize);
+
+            // Outputs
+            bw.Write(context.Outputs.Count);
+            foreach (var output in context.Outputs)
+            {
+                bw.Write(output.Address);
+                bw.Write(output.Size);
+            }
 
             // Headers
             var fixPosition = bw.BaseStream.Position;
