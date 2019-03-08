@@ -146,6 +146,9 @@ namespace NnCase.Converter.K210.Converters.Stages.Generate
                         bw.Write(v.Start);
                         bw.Write(v.Size);
                         break;
+                    case byte[] v:
+                        bw.Write(v);
+                        break;
                     case IEnumerable v:
                         foreach (var i in v)
                             WriteValue(i);

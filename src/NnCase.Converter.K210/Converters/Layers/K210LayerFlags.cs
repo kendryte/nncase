@@ -8,7 +8,6 @@ namespace NnCase.Converter.K210.Converters.Layers
     public enum K210LayerFlags
     {
         None = 0,
-        MainMemoryOutput = 1,
-        NeedRequantize = 2
+        MainMemoryOutput = 1
     }
 }

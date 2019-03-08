@@ -19,6 +19,7 @@ namespace NnCase.Converter.K210.Converters.Stages.Inference
         QuantizedAveragePool2d,
         Quantize,
         Dequantize,
+        Requantize,
         L2Normalization,
         Softmax,
         Concatenation,

@@ -7,14 +7,14 @@ using NnCase.Converter.Model;
 
 namespace NnCase.Converter.K210.Converters.Stages.Quantize
 {
-    public struct Range : IEquatable<Range>
+    public struct QuantizationRange : IEquatable<QuantizationRange>
     {
         public double Min;
         public double Max;
 
-        public Range EMA(double alpha, Range range)
+        public QuantizationRange EMA(double alpha, QuantizationRange range)
         {
-            return new Range { Min = alpha * range.Min + (1 - alpha) * Min, Max = alpha * range.Max + (1 - alpha) * Max };
+            return new QuantizationRange { Min = alpha * range.Min + (1 - alpha) * Min, Max = alpha * range.Max + (1 - alpha) * Max };
         }
 
         public (double scale, double bias) GetScaleBias(int maxBits)
@@ -39,28 +39,28 @@ namespace NnCase.Converter.K210.Converters.Stages.Quantize
             };
         }
 
-        public Range Union(Range range)
+        public QuantizationRange Union(QuantizationRange range)
         {
-            return new Range { Min = Math.Min(Min, range.Min), Max = Math.Max(Max, range.Max) };
+            return new QuantizationRange { Min = Math.Min(Min, range.Min), Max = Math.Max(Max, range.Max) };
         }
 
         public override bool Equals(object obj)
         {
-            return obj is Range range && Equals(range);
+            return obj is QuantizationRange range && Equals(range);
         }
 
-        public bool Equals(Range other)
+        public bool Equals(QuantizationRange other)
         {
             return Min == other.Min &&
                    Max == other.Max;
         }
 
-        public static bool operator ==(Range left, Range right)
+        public static bool operator ==(QuantizationRange left, QuantizationRange right)
         {
             return left.Equals(right);
         }
 
-        public static bool operator !=(Range left, Range right)
+        public static bool operator !=(QuantizationRange left, QuantizationRange right)
         {
             return !(left == right);
         }
@@ -72,6 +72,6 @@ namespace NnCase.Converter.K210.Converters.Stages.Quantize
 
         public IReadOnlyList<OutputConnector> Outputs { get; set; }
 
-        public Dictionary<OutputConnector, Range> Distributions { get; } = new Dictionary<OutputConnector, Range>();
+        public Dictionary<OutputConnector, QuantizationRange> Distributions { get; } = new Dictionary<OutputConnector, QuantizationRange>();
     }
 }

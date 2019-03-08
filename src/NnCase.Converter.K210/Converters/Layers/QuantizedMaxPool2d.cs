@@ -40,14 +40,6 @@ namespace NnCase.Converter.K210.Converters.Layers
         public uint PaddingWidth { get; set; }
 
         public uint PaddingHeight { get; set; }
-
-        public int InputOffset { get; set; }
-
-        public int OutputMul { get; set; }
-
-        public int OutputShift { get; set; }
-
-        public int OutputOffset { get; set; }
     }
 
     [LayerConverter(typeof(QuantizedMaxPool2d), K210LayerType.QuantizedMaxPool2d)]
@@ -65,7 +57,6 @@ namespace NnCase.Converter.K210.Converters.Layers
 
             return new QuantizedMaxPool2dLayerArgument
             {
-                Flags = inputRange == outputRange ? K210LayerFlags.None : K210LayerFlags.NeedRequantize,
                 InputWidth = (uint)layer.Input.Dimensions[3],
                 InputHeight = (uint)layer.Input.Dimensions[2],
                 InputChannels = (uint)layer.Input.Dimensions[1],
@@ -77,11 +68,7 @@ namespace NnCase.Converter.K210.Converters.Layers
                 StrideWidth = (uint)layer.StrideWidth,
                 StrideHeight = (uint)layer.StrideHeight,
                 PaddingWidth = (uint)Layer.GetPadding(layer.Input.Dimensions[3], layer.Output.Dimensions[3], layer.StrideWidth, 1, layer.FilterWidth),
-                PaddingHeight = (uint)Layer.GetPadding(layer.Input.Dimensions[2], layer.Output.Dimensions[2], layer.StrideHeight, 1, layer.FilterHeight),
-                InputOffset = (int)ba,
-                OutputOffset = (int)(-bo),
-                OutputMul = (int)Math.Round(mulO),
-                OutputShift = shiftO
+                PaddingHeight = (uint)Layer.GetPadding(layer.Input.Dimensions[2], layer.Output.Dimensions[2], layer.StrideHeight, 1, layer.FilterHeight)
             };
         }
 
@@ -90,7 +77,7 @@ namespace NnCase.Converter.K210.Converters.Layers
             var inputAlloc = context.MainMemoryMap[layer.Input.Connection.From];
             var outputAlloc = context.MainMemoryMap[layer.Output];
 
-            argument.Flags |= K210LayerFlags.MainMemoryOutput;
+            argument.Flags = K210LayerFlags.MainMemoryOutput;
             argument.MainMemoryInputAddress = inputAlloc.GetAddress();
             argument.MainMemoryOutputAddress = outputAlloc.GetAddress();
         }

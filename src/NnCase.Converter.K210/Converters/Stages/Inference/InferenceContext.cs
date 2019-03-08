@@ -66,6 +66,7 @@ namespace NnCase.Converter.K210.Converters.Stages.Inference
                         case K210RemovePadding _:
                         case K210Upload _:
                         case layers.Quantize _:
+                        case layers.Requantize _:
                             elementSize = 1;
                             break;
                         default:

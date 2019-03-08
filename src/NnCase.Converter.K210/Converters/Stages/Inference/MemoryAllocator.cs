@@ -74,6 +74,9 @@ namespace NnCase.Converter.K210.Converters.Stages.Inference
             Node = memoryNode;
             Offset = offset;
             Size = size;
+
+            if (Offset + Size > Node.Size)
+                throw new ArgumentOutOfRangeException(nameof(offset));
         }
     }
 }

@@ -160,11 +160,13 @@ namespace NnCase.Cli
                             new QuantizedAddTransform(),
                             new QuantizedMaxPool2dTransform(),
                             new ExclusiveConcatenationTransform(),
+                            new QuantizedExclusiveConcatenationTransform(),
                             new EliminateQuantizeDequantizeTransform(),
                             new EliminateInputQuantizeTransform(),
                             new K210EliminateInputUploadTransform(),
                             new K210EliminateConv2dUploadTransform(),
                             new K210EliminateUploadAddPaddingTransform(),
+                            new K210EliminateConv2dRequantizeTransform()
                             //new EliminateDequantizeOutputTransform()
                         });
 
