@@ -23,6 +23,7 @@ namespace NnCase.Converter.K210.Converters.Stages.Inference
         L2Normalization,
         Softmax,
         Concatenation,
+        QuantizedConcatenation,
         K210Conv = 10240,
         K210AddPadding,
         K210RemovePadding,
