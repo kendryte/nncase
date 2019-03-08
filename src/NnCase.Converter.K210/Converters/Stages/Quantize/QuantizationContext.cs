@@ -9,6 +9,8 @@ namespace NnCase.Converter.K210.Converters.Stages.Quantize
 {
     public struct QuantizationRange : IEquatable<QuantizationRange>
     {
+        public static readonly QuantizationRange Default = new QuantizationRange { Min = -6, Max = 6 };
+
         public double Min;
         public double Max;
 

@@ -94,14 +94,21 @@ namespace NnCase.Converter.K210.Converters.Stages.Quantize
         public static QuantizationRange GetRange(Span<float> data)
         {
             double min = double.MaxValue, max = double.MinValue;
+            bool used = false;
             for (int j = 0; j < data.Length; j++)
             {
                 if (Math.Abs(data[j]) > 100) continue;
+                used = true;
                 min = Math.Min(min, data[j]);
                 max = Math.Max(max, data[j]);
             }
 
-            return new QuantizationRange { Min = min, Max = max };
+            if (!used || Math.Abs(min) > 100 || Math.Abs(max) > 100)
+                return QuantizationRange.Default;
+            else if (min == max)
+                return new QuantizationRange { Min = -1, Max = 1 };
+            else
+                return new QuantizationRange { Min = min, Max = max };
         }
 
         public static double Quantize(ReadOnlySpan<float> data, Span<ushort> dest, double scale, double bias, int weightsBits)
