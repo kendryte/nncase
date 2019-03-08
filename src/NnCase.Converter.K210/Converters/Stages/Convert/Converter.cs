@@ -39,7 +39,8 @@ namespace NnCase.Converter.K210.Converters.Stages.Convert
                         {
                             var converter = Activator.CreateInstance(info.Type);
                             var layerArg = info.Method.Invoke(converter, new object[] { layer, context });
-                            context.LayerArguments.Add(layer, layerArg);
+                            if (layerArg != null)
+                                context.LayerArguments.Add(layer, layerArg);
                         }
                     }
                     else

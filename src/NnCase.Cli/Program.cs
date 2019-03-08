@@ -93,28 +93,6 @@ namespace NnCase.Cli
                         graph = tfc.Graph;
                         break;
                     }
-                case "test":
-                    {
-                        var inputs = new[]
-                        {
-                            new InputLayer(new[]{-1,3,8,8}){ Name ="input" }
-                        };
-                        var conv2d = new K210Conv2d(inputs[0].Output.Dimensions, K210Conv2dType.Conv2d,
-                            new DenseTensor<float>(new[] { 32, 3, 3, 3 }), null, K210PoolType.None, ActivationFunctionType.Relu);
-                        conv2d.Input.SetConnection(inputs[0].Output);
-
-                        var spconv2d = new K210SeparableConv2d(conv2d.Output.Dimensions, new DenseTensor<float>(new[] { 1, 32, 3, 3, 3 }),
-                            new DenseTensor<float>(new[] { 32, 64, 1, 1 }), null, K210PoolType.LeftTop, ActivationFunctionType.Relu);
-                        spconv2d.Input.SetConnection(conv2d.Output);
-
-                        var outputs = new[]
-                        {
-                            new OutputLayer(spconv2d.Output.Dimensions){Name = "output"}
-                        };
-                        outputs[0].Input.SetConnection(spconv2d.Output);
-                        graph = new Graph(inputs, outputs);
-                    }
-                    break;
                 default:
                     throw new ArgumentException("input-format");
             }
@@ -180,6 +158,7 @@ namespace NnCase.Cli
                             new Conv2d1x1ToFullyConnectedTransform(),
                             new K210EliminateAddRemovePaddingTransform(),
                             new QuantizedAddTransform(),
+                            new QuantizedMaxPool2dTransform(),
                             new ExclusiveConcatenationTransform(),
                             new EliminateQuantizeDequantizeTransform(),
                             new EliminateInputQuantizeTransform(),

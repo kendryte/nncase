@@ -7,7 +7,7 @@ using NnCase.Converter.Model;
 
 namespace NnCase.Converter.K210.Converters.Stages.Quantize
 {
-    public struct Range
+    public struct Range : IEquatable<Range>
     {
         public double Min;
         public double Max;
@@ -42,6 +42,27 @@ namespace NnCase.Converter.K210.Converters.Stages.Quantize
         public Range Union(Range range)
         {
             return new Range { Min = Math.Min(Min, range.Min), Max = Math.Max(Max, range.Max) };
+        }
+
+        public override bool Equals(object obj)
+        {
+            return obj is Range range && Equals(range);
+        }
+
+        public bool Equals(Range other)
+        {
+            return Min == other.Min &&
+                   Max == other.Max;
+        }
+
+        public static bool operator ==(Range left, Range right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(Range left, Range right)
+        {
+            return !(left == right);
         }
     }
 

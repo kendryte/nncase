@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -118,7 +119,7 @@ namespace NnCase.Converter.K210.Converters.Stages.Generate
                           orderby p.MetadataToken
                           select p.GetValue(argument)).ToList();
 
-            foreach (var value in values)
+            void WriteValue(object value)
             {
                 switch (value)
                 {
@@ -141,10 +142,21 @@ namespace NnCase.Converter.K210.Converters.Stages.Generate
                     case ActivationFunctionType v:
                         bw.Write((uint)v);
                         break;
+                    case MemoryRange v:
+                        bw.Write(v.Start);
+                        bw.Write(v.Size);
+                        break;
+                    case IEnumerable v:
+                        foreach (var i in v)
+                            WriteValue(i);
+                        break;
                     default:
                         throw new InvalidOperationException("Invalid argument member.");
                 }
             }
+
+            foreach (var value in values)
+                WriteValue(value);
         }
     }
 }

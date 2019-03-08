@@ -4,7 +4,7 @@ using System.Text;
 
 namespace NnCase.Converter.Model.Layers
 {
-    public class MaxPool2d : Layer
+    public class QuantizedMaxPool2d : Layer
     {
         public InputConnector Input { get; }
 
@@ -22,7 +22,7 @@ namespace NnCase.Converter.Model.Layers
 
         public ActivationFunctionType FusedActivationFunction { get; }
 
-        public MaxPool2d(ReadOnlySpan<int> dimensions, Padding padding, int filterWidth, int filterHeight, int strideWidth, int strideHeight, ActivationFunctionType fusedActivationFunction)
+        public QuantizedMaxPool2d(ReadOnlySpan<int> dimensions, Padding padding, int filterWidth, int filterHeight, int strideWidth, int strideHeight, ActivationFunctionType fusedActivationFunction)
         {
             Padding = padding;
             StrideWidth = strideWidth;
