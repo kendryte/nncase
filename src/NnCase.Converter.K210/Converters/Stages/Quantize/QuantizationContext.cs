@@ -74,6 +74,10 @@ namespace NnCase.Converter.K210.Converters.Stages.Quantize
 
         public IReadOnlyList<OutputConnector> Outputs { get; set; }
 
+        public IReadOnlyList<Guid> AdditionalOutputs { get; set; }
+
         public Dictionary<OutputConnector, QuantizationRange> Distributions { get; } = new Dictionary<OutputConnector, QuantizationRange>();
+
+        public Dictionary<Guid, QuantizationRange> AdditionalDistributions { get; } = new Dictionary<Guid, QuantizationRange>();
     }
 }

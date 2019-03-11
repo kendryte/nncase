@@ -24,6 +24,7 @@ namespace NnCase.Converter.K210.Converters.Stages.Quantize
             using (var session = new TFSession(planContext.TFGraph))
             {
                 var connectors = new List<OutputConnector>();
+                var additionalOutputs = new List<Guid>();
                 var toFetches = new List<TFOutput>();
 
                 foreach (var output in planContext.TFOutputs)
@@ -31,6 +32,12 @@ namespace NnCase.Converter.K210.Converters.Stages.Quantize
                     connectors.Add(output.Key);
                     if (!(output.Key.Owner is InputLayer))
                         toFetches.Add(output.Value);
+                }
+
+                foreach (var additional in planContext.AdditionalTFOutputs)
+                {
+                    additionalOutputs.Add(additional.Key);
+                    toFetches.Add(additional.Value);
                 }
 
                 var quantizationContext = new QuantizationContext { Outputs = connectors, PlanContext = planContext };
@@ -81,13 +88,26 @@ namespace NnCase.Converter.K210.Converters.Stages.Quantize
         {
             for (int i = 0; i < outputs.Count; i++)
             {
-                var conn = context.Outputs[i];
                 var span = new Span<float>(outputs[i].Data.ToPointer(), (int)outputs[i].TensorByteSize / 4);
                 var newRange = GetRange(span);
-                if (context.Distributions.TryGetValue(conn, out var range))
-                    context.Distributions[conn] = range.EMA(0.01, newRange);
+
+                if (i < context.Outputs.Count)
+                {
+                    var conn = context.Outputs[i];
+                    if (context.Distributions.TryGetValue(conn, out var range))
+                        context.Distributions[conn] = range.EMA(0.01, newRange);
+                    else
+                        context.Distributions.Add(conn, newRange);
+                }
                 else
-                    context.Distributions.Add(conn, newRange);
+                {
+                    var idx = i - context.Outputs.Count;
+                    var conn = context.AdditionalOutputs[i];
+                    if (context.AdditionalDistributions.TryGetValue(conn, out var range))
+                        context.AdditionalDistributions[conn] = range.EMA(0.01, newRange);
+                    else
+                        context.AdditionalDistributions.Add(conn, newRange);
+                }
             }
         }
 

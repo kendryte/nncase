@@ -161,6 +161,7 @@ namespace NnCase.Cli
                             new K210Stride2Conv2dTransform(),
                             new GlobalAveragePoolTransform(),
                             options.FloatFc ? (Transform)new DummyTransform() : new K210FullyConnectedTransform(),
+                            new LeakyReluTransform(),
                             new K210Conv2dWithMaxAvgPoolTransform(),
                             new Conv2d1x1ToFullyConnectedTransform(),
                             new K210EliminateAddRemovePaddingTransform(),

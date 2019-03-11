@@ -77,6 +77,8 @@ namespace NnCase.Converter.Converters
                     return ConvertL2Normalization(op);
                 case tflite.BuiltinOperator.ADD:
                     return ConvertAdd(op);
+                case tflite.BuiltinOperator.MUL:
+                    return ConvertMul(op);
                 case tflite.BuiltinOperator.FULLY_CONNECTED:
                     return ConvertFullyConnected(op);
                 case tflite.BuiltinOperator.MAX_POOL_2D:
@@ -85,6 +87,8 @@ namespace NnCase.Converter.Converters
                     return ConvertSoftmax(op);
                 case tflite.BuiltinOperator.CONCATENATION:
                     return ConvertConcatenation(op);
+                case tflite.BuiltinOperator.MAXIMUM:
+                    return ConvertMaximum(op);
                 default:
                     throw new LayerNotSupportedException(opCode.BuiltinCode.ToString());
             }
@@ -198,6 +202,32 @@ namespace NnCase.Converter.Converters
             return layer;
         }
 
+        private Layer ConvertMul(tflite.Operator op)
+        {
+            var inputs = op.GetInputsArray();
+            var inputA = _graph.Tensors(inputs[0]).Value;
+            var inputB = _graph.Tensors(inputs[1]).Value;
+
+            if (inputA.ShapeLength == 0)
+            {
+                var layer = new Mul(inputB.GetShapeArray().ToNCHW(), _model.GetScalar<float>(inputA));
+                _inputs.Add(layer.Input, inputs[1]);
+                _outputs.Add(op.Outputs(0), layer.Output);
+                return layer;
+            }
+            else if (inputB.ShapeLength == 0)
+            {
+                var layer = new Mul(inputA.GetShapeArray().ToNCHW(), _model.GetScalar<float>(inputB));
+                _inputs.Add(layer.Input, inputs[0]);
+                _outputs.Add(op.Outputs(0), layer.Output);
+                return layer;
+            }
+            else
+            {
+                throw new LayerNotSupportedException(op.ToString(), "Only scalar multiply is supported");
+            }
+        }
+
         private Layer ConvertFullyConnected(tflite.Operator op)
         {
             var inputs = op.GetInputsArray();
@@ -250,6 +280,19 @@ namespace NnCase.Converter.Converters
             _outputs.Add(op.Outputs(0), layer.Output);
             return layer;
         }
+
+        private Layer ConvertMaximum(tflite.Operator op)
+        {
+            var inputs = op.GetInputsArray();
+            var inputA = _graph.Tensors(inputs[0]).Value;
+            var inputB = _graph.Tensors(inputs[1]).Value;
+
+            var layer = new Maximum(inputA.GetShapeArray().ToNCHW(), inputB.GetShapeArray().ToNCHW());
+            _inputs.Add(layer.InputA, inputs[0]);
+            _inputs.Add(layer.InputB, inputs[1]);
+            _outputs.Add(op.Outputs(0), layer.Output);
+            return layer;
+        }
     }
 
     static class TfLiteExtensions
@@ -265,6 +308,15 @@ namespace NnCase.Converter.Converters
         {
             var buffer = model.Buffers((int)tensor.Buffer).Value;
             return new DenseTensor<T>(MemoryMarshal.Cast<byte, T>(buffer.GetDataBytes()).ToArray(), tensor.GetShapeArray());
+        }
+
+        public static T GetScalar<T>(this tflite.Model model, tflite.Tensor tensor)
+            where T : unmanaged
+        {
+            if (tensor.ShapeLength != 0)
+                throw new InvalidOperationException("Tensor is not a scalar");
+            var buffer = model.Buffers((int)tensor.Buffer).Value;
+            return MemoryMarshal.Cast<byte, T>(buffer.GetDataBytes())[0];
         }
 
         public static int[] ToNCHW(this int[] shape)

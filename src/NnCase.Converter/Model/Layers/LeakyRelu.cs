@@ -16,6 +16,7 @@ namespace NnCase.Converter.Model.Layers
         {
             Input = AddInput("input", dimensions);
             Output = AddOutput("output", dimensions);
+            Slope = slope;
         }
 
         protected override void OnPlanning(GraphPlanContext context)
