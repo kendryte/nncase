@@ -141,4 +141,13 @@ namespace NnCase.Converter.Transforms
             return processed;
         }
     }
+
+    public class DummyTransform : Transform
+    {
+        public override void Process(TransformContext context)
+        {
+        }
+
+        protected override bool OnTryMatch(Layer layer, TransformContext context) => false;
+    }
 }

@@ -129,6 +129,9 @@ namespace NnCase.Converter.K210.Converters.Stages.Generate
                     case int v:
                         bw.Write(v);
                         break;
+                    case float v:
+                        bw.Write(v);
+                        break;
                     case K210LayerFlags v:
                         bw.Write((uint)v);
                         break;

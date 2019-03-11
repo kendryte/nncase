@@ -63,5 +63,11 @@ namespace NnCase.Converter
                 size *= shape[i];
             return size;
         }
+
+        public static T[] ToArray<T>(this Tensor<T> tensor)
+        {
+            var dense = tensor.ToDenseTensor();
+            return dense.Buffer.ToArray();
+        }
     }
 }

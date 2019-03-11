@@ -37,8 +37,14 @@ namespace NnCase.Cli
         [Option("postprocess", Required = false, HelpText = "Dataset postprocess")]
         public string Postprocess { get; set; }
 
+        [Option("postprocess-op", Required = false, HelpText = "Add postprocess operator")]
+        public string PostprocessOperator { get; set; }
+
         [Option("weights-bits", Required = false, HelpText = "Weights quantization bits", Default = 8)]
         public int WeightsBits { get; set; }
+
+        [Option("float-fc", Required = false, Default = false, HelpText = "Use kpu based fully connected")]
+        public bool FloatFc { get; set; }
 
         [Value(0, MetaName = "input", HelpText = "Input path")]
         public string Input { get; set; }
@@ -154,7 +160,7 @@ namespace NnCase.Cli
                             new K210SameConv2dTransform(),
                             new K210Stride2Conv2dTransform(),
                             new GlobalAveragePoolTransform(),
-                            new K210FullyConnectedTransform(),
+                            options.FloatFc ? (Transform)new DummyTransform() : new K210FullyConnectedTransform(),
                             new K210Conv2dWithMaxAvgPoolTransform(),
                             new Conv2d1x1ToFullyConnectedTransform(),
                             new K210EliminateAddRemovePaddingTransform(),
