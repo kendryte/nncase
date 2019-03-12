@@ -281,16 +281,24 @@ namespace NnCase.Converter.Converters
 
         private Layer ConvertPriorBox(paddle.OpDesc op)
         {
-            var minSizes = GetAttr(op, "min_sizes").Floats;
-            var w = GetAttr(op, "out_w").I;
-            var h = GetAttr(op, "out_h").I;
-            var alignCorners = GetAttr(op, "align_corners").B;
-            var x = GetParameter(op.Inputs, "X").Arguments[0];
-            var output = GetParameter(op.Outputs, "Out").Arguments[0];
+            var image = GetParameter(op.Inputs, "Image").Arguments[0];
+            var imageShape = GetVarShape(image);
 
-            var layer = new ResizeBilinear(GetVarShape(x), w, h, alignCorners);
-            _inputs.Add(layer.Input, x);
-            _outputs.Add(output, layer.Output);
+            var minSizes = GetAttr(op, "min_sizes").Floats.ToArray();
+            var maxSizes = GetAttr(op, "max_sizes").Floats.ToArray();
+            var aspectRatios = GetAttr(op, "aspect_ratios").Floats.ToArray();
+            var variances = GetAttr(op, "variances").Floats.ToArray();
+            var flip = GetAttr(op, "flip").B;
+            var clip = GetAttr(op, "clip").B;
+            var stepWidth = GetAttr(op, "step_w").I;
+            var stepHeight = GetAttr(op, "step_h").I;
+
+            var input = GetParameter(op.Inputs, "Input").Arguments[0];
+            var boxes = GetParameter(op.Outputs, "Boxes").Arguments[0];
+
+            var layer = new PriorBox(GetVarShape(input), imageShape[3], imageShape[2], minSizes, maxSizes);
+            _inputs.Add(layer.Input, input);
+            _outputs.Add(boxes, layer.Output);
             return layer;
         }
 
