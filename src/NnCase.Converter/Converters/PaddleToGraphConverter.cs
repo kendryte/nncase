@@ -81,6 +81,7 @@ namespace NnCase.Converter.Converters
                 case "fetch":
                     return ConvertFetch(op);
                 case "conv2d":
+                case "depthwise_conv2d":
                     return ConvertConv2d(op);
                 case "elementwise_add":
                     return ConvertElementwiseAdd(op);
@@ -96,6 +97,8 @@ namespace NnCase.Converter.Converters
                     return ConvertSoftmax(op);
                 case "bilinear_interp":
                     return ConvertBilinearInterp(op);
+                case "prior_box":
+                    return ConvertPriorBox(op);
                 default:
                     throw new LayerNotSupportedException(op.Type);
             }
@@ -193,12 +196,12 @@ namespace NnCase.Converter.Converters
         private Layer ConvertBatchNorm(paddle.OpDesc op)
         {
             var epsilon = GetAttr(op, "epsilon").F;
-            var offset = op.Inputs[0].Arguments[0];
-            var mean = op.Inputs[1].Arguments[0];
-            var scale = op.Inputs[2].Arguments[0];
-            var variance = op.Inputs[3].Arguments[0];
-            var x = op.Inputs[4].Arguments[0];
-            var output = op.Outputs[4].Arguments[0];
+            var offset = GetParameter(op.Inputs, "Bias").Arguments[0];
+            var mean = GetParameter(op.Inputs, "Mean").Arguments[0];
+            var scale = GetParameter(op.Inputs, "Scale").Arguments[0];
+            var variance = GetParameter(op.Inputs, "Variance").Arguments[0];
+            var x = GetParameter(op.Inputs, "X").Arguments[0];
+            var output = GetParameter(op.Outputs, "Y").Arguments[0];
 
             var layer = new BatchNormalization(GetVarShape(x), LoadVarData<float>(scale), LoadVarData<float>(offset),
                 LoadVarData<float>(mean), LoadVarData<float>(variance), epsilon);
@@ -209,8 +212,8 @@ namespace NnCase.Converter.Converters
 
         private Layer ConvertRelu(paddle.OpDesc op)
         {
-            var x = op.Inputs[0].Arguments[0];
-            var output = op.Outputs[0].Arguments[0];
+            var x = GetParameter(op.Inputs, "X").Arguments[0];
+            var output = GetParameter(op.Outputs, "Out").Arguments[0];
 
             var layer = new Relu(GetVarShape(x));
             layer.Input.SetConnection(_outputs[x]);
@@ -264,6 +267,21 @@ namespace NnCase.Converter.Converters
 
         private Layer ConvertBilinearInterp(paddle.OpDesc op)
         {
+            var w = GetAttr(op, "out_w").I;
+            var h = GetAttr(op, "out_h").I;
+            var alignCorners = GetAttr(op, "align_corners").B;
+            var x = GetParameter(op.Inputs, "X").Arguments[0];
+            var output = GetParameter(op.Outputs, "Out").Arguments[0];
+
+            var layer = new ResizeBilinear(GetVarShape(x), w, h, alignCorners);
+            _inputs.Add(layer.Input, x);
+            _outputs.Add(output, layer.Output);
+            return layer;
+        }
+
+        private Layer ConvertPriorBox(paddle.OpDesc op)
+        {
+            var minSizes = GetAttr(op, "min_sizes").Floats;
             var w = GetAttr(op, "out_w").I;
             var h = GetAttr(op, "out_h").I;
             var alignCorners = GetAttr(op, "align_corners").B;
