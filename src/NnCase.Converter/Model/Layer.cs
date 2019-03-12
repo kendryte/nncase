@@ -51,5 +51,12 @@ namespace NnCase.Converter.Model
             else
                 return (int)Math.Ceiling((size - filter + 1) / (double)stride);
         }
+
+        public static int GetPadding(int inputSize, int outputSize, int stride, int dilationRate, int filter)
+        {
+            int effectiveFilterSize = (filter - 1) * dilationRate + 1;
+            int padding = ((outputSize - 1) * stride + effectiveFilterSize - inputSize) / 2;
+            return padding > 0 ? padding : 0;
+        }
     }
 }

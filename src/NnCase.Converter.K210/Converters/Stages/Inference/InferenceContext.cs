@@ -31,7 +31,12 @@ namespace NnCase.Converter.K210.Converters.Stages.Inference
                 var dimensions = output.Dimensions;
                 (var groups, var rowLength) = K210Helper.GetRowLayout(dimensions[3]);
                 var oneLineChannels = Math.Min(dimensions[1], groups);
-                var size = rowLength * dimensions[2] * dimensions[1] / oneLineChannels;
+                var blocks = (int)Math.Ceiling(dimensions[1] / (double)oneLineChannels);
+                if (dimensions[1] == 921)
+                {
+
+                }
+                var size = rowLength * dimensions[2] * blocks;
                 alloc = new MemoryAllocation(KPUMemoryAllocator.Allocate((uint)size));
                 KPUMemoryMap.Add(output, alloc);
             }
@@ -61,6 +66,7 @@ namespace NnCase.Converter.K210.Converters.Stages.Inference
                         case K210RemovePadding _:
                         case K210Upload _:
                         case layers.Quantize _:
+                        case layers.Requantize _:
                             elementSize = 1;
                             break;
                         default:

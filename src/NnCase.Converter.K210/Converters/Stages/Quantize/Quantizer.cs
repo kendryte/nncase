@@ -2,12 +2,14 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using NnCase.Converter.Data;
 using NnCase.Converter.Model;
 using NnCase.Converter.Model.Layers;
 using TensorFlow;
+using NnCase.Converter.K210.Converters.Layers;
 
 #if NET471
 using System.Collections.Async;
@@ -22,6 +24,7 @@ namespace NnCase.Converter.K210.Converters.Stages.Quantize
             using (var session = new TFSession(planContext.TFGraph))
             {
                 var connectors = new List<OutputConnector>();
+                var additionalOutputs = new List<Guid>();
                 var toFetches = new List<TFOutput>();
 
                 foreach (var output in planContext.TFOutputs)
@@ -31,7 +34,18 @@ namespace NnCase.Converter.K210.Converters.Stages.Quantize
                         toFetches.Add(output.Value);
                 }
 
-                var quantizationContext = new QuantizationContext { Outputs = connectors, PlanContext = planContext };
+                foreach (var additional in planContext.AdditionalTFOutputs)
+                {
+                    additionalOutputs.Add(additional.Key);
+                    toFetches.Add(additional.Value);
+                }
+
+                var quantizationContext = new QuantizationContext
+                {
+                    Outputs = connectors,
+                    AdditionalOutputs = additionalOutputs,
+                    PlanContext = planContext
+                };
 
 #if NET471
                 await dataset.GetBatchesAsync().ForEachAsync(async batch =>
@@ -52,6 +66,25 @@ namespace NnCase.Converter.K210.Converters.Stages.Quantize
 #if NET471
                 );
 #endif
+
+                var converters = (from t in typeof(Quantizer).Assembly.ExportedTypes
+                                  let attrs = t.GetCustomAttributes<LayerConverterAttribute>()
+                                  where attrs.Any()
+                                  from attr in attrs
+                                  select new
+                                  {
+                                      Key = attr.Type,
+                                      Value = new { Type = t, Method = t.GetMethod("FixupQuantization") }
+                                  }).ToDictionary(x => x.Key, x => x.Value);
+                foreach (var layer in planContext.TFOutputs.Keys.Select(x => x.Owner).Distinct())
+                {
+                    if (converters.TryGetValue(layer.GetType(), out var info) && info.Method != null)
+                    {
+                        var converter = Activator.CreateInstance(info.Type);
+                        info.Method.Invoke(converter, new object[] { layer, quantizationContext });
+                    }
+                }
+
                 return quantizationContext;
             }
         }
@@ -60,27 +93,47 @@ namespace NnCase.Converter.K210.Converters.Stages.Quantize
         {
             for (int i = 0; i < outputs.Count; i++)
             {
-                var conn = context.Outputs[i];
                 var span = new Span<float>(outputs[i].Data.ToPointer(), (int)outputs[i].TensorByteSize / 4);
                 var newRange = GetRange(span);
-                if (context.Distributions.TryGetValue(conn, out var range))
-                    context.Distributions[conn] = range.EMA(0.01, newRange);
+
+                if (i < context.Outputs.Count)
+                {
+                    var conn = context.Outputs[i];
+                    if (context.Distributions.TryGetValue(conn, out var range))
+                        context.Distributions[conn] = range.EMA(0.01, newRange);
+                    else
+                        context.Distributions.Add(conn, newRange);
+                }
                 else
-                    context.Distributions.Add(conn, newRange);
+                {
+                    var idx = i - context.Outputs.Count;
+                    var conn = context.AdditionalOutputs[idx];
+                    if (context.AdditionalDistributions.TryGetValue(conn, out var range))
+                        context.AdditionalDistributions[conn] = range.EMA(0.01, newRange);
+                    else
+                        context.AdditionalDistributions.Add(conn, newRange);
+                }
             }
         }
 
-        public static Range GetRange(Span<float> data)
+        public static QuantizationRange GetRange(Span<float> data)
         {
             double min = double.MaxValue, max = double.MinValue;
+            bool used = false;
             for (int j = 0; j < data.Length; j++)
             {
                 if (Math.Abs(data[j]) > 100) continue;
+                used = true;
                 min = Math.Min(min, data[j]);
                 max = Math.Max(max, data[j]);
             }
 
-            return new Range { Min = min, Max = max };
+            if (!used || Math.Abs(min) > 100 || Math.Abs(max) > 100)
+                return QuantizationRange.Default;
+            else if (min == max)
+                return new QuantizationRange { Min = -1, Max = 1 };
+            else
+                return new QuantizationRange { Min = min, Max = max };
         }
 
         public static double Quantize(ReadOnlySpan<float> data, Span<ushort> dest, double scale, double bias, int weightsBits)
@@ -139,6 +192,18 @@ namespace NnCase.Converter.K210.Converters.Stages.Quantize
             Debug.Assert(shift <= maxShift);
             Debug.Assert(Math.Abs(value - mul * Math.Pow(2, -shift)) <= double.Epsilon);
             return (mul, shift);
+        }
+
+        public static byte[] GetRequantizeTable(QuantizationRange inputRange, QuantizationRange outputRange)
+        {
+            (var si, var bi) = inputRange.GetScaleBias(8);
+            (var so, var bo) = outputRange.GetScaleBias(8);
+            var s = so / si;
+
+            var table = new byte[256];
+            for (int i = 0; i < 256; i++)
+                table[i] = (byte)FxExtensions.Clamp(Math.Round((i + bi) * s - bo), 0, 255);
+            return table;
         }
     }
 }

@@ -8,28 +8,10 @@ using NnCase.Converter.Model.Layers;
 
 namespace NnCase.Converter.K210.Converters.Layers
 {
-    public struct MemoryRange
+    [LayerConverter(typeof(QuantizedConcatenation), K210LayerType.QuantizedConcatenation)]
+    public class QuantizedConcatenationConverter
     {
-        public uint Start { get; set; }
-
-        public uint Size { get; set; }
-    }
-
-    public class ConcatenationLayerArgument
-    {
-        public K210LayerFlags Flags { get; set; }
-
-        public uint MainMemoryOutputAddress { get; set; }
-
-        public uint InputCount { get; set; }
-
-        public IReadOnlyList<MemoryRange> InputsMainMemory { get; set; }
-    }
-
-    [LayerConverter(typeof(Concatenation), K210LayerType.Concatenation)]
-    public class ConcatenationConverter
-    {
-        public ConcatenationLayerArgument Convert(Concatenation layer, ConvertContext context)
+        public ConcatenationLayerArgument Convert(QuantizedConcatenation layer, ConvertContext context)
         {
             return new ConcatenationLayerArgument
             {
@@ -37,7 +19,7 @@ namespace NnCase.Converter.K210.Converters.Layers
             };
         }
 
-        public void Infer(Concatenation layer, ConcatenationLayerArgument argument, InferenceContext context)
+        public void Infer(QuantizedConcatenation layer, ConcatenationLayerArgument argument, InferenceContext context)
         {
             var outputAlloc = context.MainMemoryMap[layer.Output];
         

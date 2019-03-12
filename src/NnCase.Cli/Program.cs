@@ -37,8 +37,14 @@ namespace NnCase.Cli
         [Option("postprocess", Required = false, HelpText = "Dataset postprocess")]
         public string Postprocess { get; set; }
 
+        [Option("postprocess-op", Required = false, HelpText = "Add postprocess operator")]
+        public string PostprocessOperator { get; set; }
+
         [Option("weights-bits", Required = false, HelpText = "Weights quantization bits", Default = 8)]
         public int WeightsBits { get; set; }
+
+        [Option("float-fc", Required = false, Default = false, HelpText = "Use kpu based fully connected")]
+        public bool FloatFc { get; set; }
 
         [Value(0, MetaName = "input", HelpText = "Input path")]
         public string Input { get; set; }
@@ -93,28 +99,6 @@ namespace NnCase.Cli
                         graph = tfc.Graph;
                         break;
                     }
-                case "test":
-                    {
-                        var inputs = new[]
-                        {
-                            new InputLayer(new[]{-1,3,8,8}){ Name ="input" }
-                        };
-                        var conv2d = new K210Conv2d(inputs[0].Output.Dimensions, K210Conv2dType.Conv2d,
-                            new DenseTensor<float>(new[] { 32, 3, 3, 3 }), null, K210PoolType.None, ActivationFunctionType.Relu);
-                        conv2d.Input.SetConnection(inputs[0].Output);
-
-                        var spconv2d = new K210SeparableConv2d(conv2d.Output.Dimensions, new DenseTensor<float>(new[] { 1, 32, 3, 3, 3 }),
-                            new DenseTensor<float>(new[] { 32, 64, 1, 1 }), null, K210PoolType.LeftTop, ActivationFunctionType.Relu);
-                        spconv2d.Input.SetConnection(conv2d.Output);
-
-                        var outputs = new[]
-                        {
-                            new OutputLayer(spconv2d.Output.Dimensions){Name = "output"}
-                        };
-                        outputs[0].Input.SetConnection(spconv2d.Output);
-                        graph = new Graph(inputs, outputs);
-                    }
-                    break;
                 default:
                     throw new ArgumentException("input-format");
             }
@@ -124,6 +108,19 @@ namespace NnCase.Cli
             {
                 case "tf":
                     {
+                        var ctx = new GraphPlanContext();
+                        graph.Plan(ctx);
+
+                        using (var f = File.Open(options.Output, FileMode.Create, FileAccess.Write))
+                            await ctx.SaveAsync(f);
+                        break;
+                    }
+                case "addpad":
+                    {
+                        Transform.Process(graph, new Transform[] {
+                            new Conv2dAddSpaceToBatchNdTransform()
+                        });
+
                         var ctx = new GraphPlanContext();
                         graph.Plan(ctx);
 
@@ -157,21 +154,28 @@ namespace NnCase.Cli
                         }
 
                         Transform.Process(graph, new Transform[] {
+                            new EliminateReshapeTransform(),
                             new K210SeparableConv2dTransform(),
                             new K210SpaceToBatchNdAndValidConv2dTransform(),
                             new K210SameConv2dTransform(),
                             new K210Stride2Conv2dTransform(),
                             new GlobalAveragePoolTransform(),
-                            new K210FullyConnectedTransform(),
+                            options.FloatFc ? (Transform)new DummyTransform() : new K210FullyConnectedTransform(),
+                            new LeakyReluTransform(),
                             new K210Conv2dWithMaxAvgPoolTransform(),
                             new Conv2d1x1ToFullyConnectedTransform(),
                             new K210EliminateAddRemovePaddingTransform(),
                             new QuantizedAddTransform(),
+                            new QuantizedMaxPool2dTransform(),
+                            new ExclusiveConcatenationTransform(),
+                            new QuantizedExclusiveConcatenationTransform(),
+                            new QuantizedConcatenationTransform(),
                             new EliminateQuantizeDequantizeTransform(),
                             new EliminateInputQuantizeTransform(),
                             new K210EliminateInputUploadTransform(),
                             new K210EliminateConv2dUploadTransform(),
                             new K210EliminateUploadAddPaddingTransform(),
+                            new K210EliminateConv2dRequantizeTransform()
                             //new EliminateDequantizeOutputTransform()
                         });
 

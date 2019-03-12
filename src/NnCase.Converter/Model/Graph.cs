@@ -16,6 +16,8 @@ namespace NnCase.Converter.Model
 
         public Dictionary<OutputConnector, TFOutput> TFOutputs { get; } = new Dictionary<OutputConnector, TFOutput>();
 
+        public Dictionary<Guid, TFOutput> AdditionalTFOutputs { get; } = new Dictionary<Guid, TFOutput>();
+
         public Dictionary<Layer, bool> Planning { get; } = new Dictionary<Layer, bool>();
 
         public TFGraph TFGraph { get; }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -8,6 +9,7 @@ using NnCase.Converter.Converters;
 using NnCase.Converter.K210.Converters.Layers;
 using NnCase.Converter.K210.Converters.Stages.Inference;
 using NnCase.Converter.Model;
+using NnCase.Converter.Model.Layers;
 
 namespace NnCase.Converter.K210.Converters.Stages.Generate
 {
@@ -117,7 +119,7 @@ namespace NnCase.Converter.K210.Converters.Stages.Generate
                           orderby p.MetadataToken
                           select p.GetValue(argument)).ToList();
 
-            foreach (var value in values)
+            void WriteValue(object value)
             {
                 switch (value)
                 {
@@ -127,6 +129,9 @@ namespace NnCase.Converter.K210.Converters.Stages.Generate
                     case int v:
                         bw.Write(v);
                         break;
+                    case float v:
+                        bw.Write(v);
+                        break;
                     case K210LayerFlags v:
                         bw.Write((uint)v);
                         break;
@@ -134,10 +139,30 @@ namespace NnCase.Converter.K210.Converters.Stages.Generate
                         bw.Write(v.Scale);
                         bw.Write(v.Bias);
                         break;
+                    case Padding v:
+                        bw.Write((uint)v);
+                        break;
+                    case ActivationFunctionType v:
+                        bw.Write((uint)v);
+                        break;
+                    case MemoryRange v:
+                        bw.Write(v.Start);
+                        bw.Write(v.Size);
+                        break;
+                    case byte[] v:
+                        bw.Write(v);
+                        break;
+                    case IEnumerable v:
+                        foreach (var i in v)
+                            WriteValue(i);
+                        break;
                     default:
                         throw new InvalidOperationException("Invalid argument member.");
                 }
             }
+
+            foreach (var value in values)
+                WriteValue(value);
         }
     }
 }

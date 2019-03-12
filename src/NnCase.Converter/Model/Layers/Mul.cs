@@ -11,9 +11,16 @@ namespace NnCase.Converter.Model.Layers
 
         public OutputConnector Output { get; }
 
-        public Tensor<float> Scale { get; }
+        public object Scale { get; }
 
         public Mul(ReadOnlySpan<int> dimensions, Tensor<float> scale)
+        {
+            Input = AddInput("input", dimensions);
+            Output = AddOutput("output", dimensions);
+            Scale = scale;
+        }
+
+        public Mul(ReadOnlySpan<int> dimensions, float scale)
         {
             Input = AddInput("input", dimensions);
             Output = AddOutput("output", dimensions);
@@ -25,7 +32,10 @@ namespace NnCase.Converter.Model.Layers
             var graph = context.TFGraph;
             var input = context.TFOutputs[Input.Connection.From];
 
-            context.TFOutputs[Output] = graph.Mul(input, graph.Const(Scale.ToNHWC()));
+            if (Scale is Tensor<float> tensorScale)
+                context.TFOutputs[Output] = graph.Mul(input, graph.Const(tensorScale.ToNHWC()));
+            else if(Scale is float scalarScale)
+                context.TFOutputs[Output] = graph.Mul(input, graph.Const(scalarScale));
         }
     }
 }

@@ -32,6 +32,8 @@ namespace NnCase.Converter.K210.Model.Layers
 
         public OutputConnector Output { get; }
 
+        public Guid OutputBeforeActivation { get; } = Guid.NewGuid();
+
         public K210Conv2dType Conv2dType { get; }
 
         public Tensor<float> Weights { get; }
@@ -41,6 +43,8 @@ namespace NnCase.Converter.K210.Model.Layers
         public K210PoolType PoolType { get; }
 
         public ActivationFunctionType FusedActivationFunction { get; }
+
+        public Layer NonTrivialActivation { get; set; }
 
         public int KernelWidth => Weights.Dimensions[3];
 
@@ -99,7 +103,9 @@ namespace NnCase.Converter.K210.Model.Layers
                     : graph.DepthwiseConv2dNative(input, graph.Const(weights), new long[] { 1, 1, 1, 1 }, "SAME");
             }
 
-            y = graph.AddActivation(graph.BiasAdd(y, graph.Const(bias)), FusedActivationFunction);
+            y = graph.BiasAdd(y, graph.Const(bias));
+            context.AdditionalTFOutputs[OutputBeforeActivation] = y;
+            y = graph.AddActivation(y, FusedActivationFunction);
 
             switch (PoolType)
             {

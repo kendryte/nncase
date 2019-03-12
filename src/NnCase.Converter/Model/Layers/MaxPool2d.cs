@@ -45,8 +45,8 @@ namespace NnCase.Converter.Model.Layers
             var graph = context.TFGraph;
             var input = context.TFOutputs[Input.Connection.From];
 
-            context.TFOutputs[Output] = graph.MaxPool(input, new long[] { 1, FilterHeight, FilterWidth, 1 },
-                new long[] { 1, StrideHeight, StrideWidth, 1 }, Padding.ToString().ToUpperInvariant());
+            context.TFOutputs[Output] = graph.AddActivation(graph.MaxPool(input, new long[] { 1, FilterHeight, FilterWidth, 1 },
+                new long[] { 1, StrideHeight, StrideWidth, 1 }, Padding.ToString().ToUpperInvariant()), FusedActivationFunction);
         }
     }
 }

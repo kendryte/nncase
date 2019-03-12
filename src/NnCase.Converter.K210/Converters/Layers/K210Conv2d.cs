@@ -12,7 +12,7 @@ using NnCase.Converter.K210.Converters.Stages.Quantize;
 using NnCase.Converter.K210.Model.Hardware;
 using NnCase.Converter.K210.Model.Layers;
 using NnCase.Converter.Model.Layers;
-using Range = NnCase.Converter.K210.Converters.Stages.Quantize.Range;
+using QuantizationRange = NnCase.Converter.K210.Converters.Stages.Quantize.QuantizationRange;
 
 namespace NnCase.Converter.K210.Converters.Layers
 {
@@ -180,7 +180,7 @@ namespace NnCase.Converter.K210.Converters.Layers
 #endif
         }
 
-        private static (double scale, double bias) QuantizeInput(Range range, K210ConvLayerConfig config)
+        private static (double scale, double bias) QuantizeInput(QuantizationRange range, K210ConvLayerConfig config)
         {
             (var scale, var bias) = range.GetScaleBias(8);
             (var mul, var shift) = Quantizer.ExtractValueAndShift(bias, 24, 15);
@@ -189,7 +189,7 @@ namespace NnCase.Converter.K210.Converters.Layers
             return (scale, bias);
         }
 
-        private static (double scale, double bias) QuantizeBiasAndOutput(K210Conv2d layer, Tensor<float> bias, Range range, double[] scale, K210ConvLayerConfig config)
+        private static (double scale, double bias) QuantizeBiasAndOutput(K210Conv2d layer, Tensor<float> bias, QuantizationRange range, double[] scale, K210ConvLayerConfig config)
         {
             (var so, var bo) = range.GetScaleBias(8);
 #if CHANNEL_WISE
@@ -235,7 +235,7 @@ namespace NnCase.Converter.K210.Converters.Layers
             return (so, bo);
         }
 
-        private static void QuantizeActivation(K210Conv2d layer, double postMul, Range range, K210ConvLayerConfig config)
+        private static void QuantizeActivation(K210Conv2d layer, double postMul, QuantizationRange range, K210ConvLayerConfig config)
         {
             Func<double, double> invAct;
             switch (layer.FusedActivationFunction)
