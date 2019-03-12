@@ -36,8 +36,7 @@ namespace NnCase.Converter.Model.Layers
             var input = context.TFOutputs[Input.Connection.From];
             var weights = Weights.ToHWIO();
 
-            var y = graph.Reshape(input, graph.Const(new[] { -1, Weights.Dimensions[1] }));
-            y = graph.MatMul(y, graph.Const(weights));
+            var y = graph.MatMul(input, graph.Const(weights));
             if (Bias != null)
                 y = graph.BiasAdd(y, graph.Const(Bias.ToNHWC()));
 

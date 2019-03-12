@@ -236,11 +236,24 @@ namespace NnCase.Converter.Converters
             var weights = _graph.Tensors(inputs[1]).Value;
             var bias = _graph.Tensors(inputs[2]).Value;
 
-            var layer = new FullyConnected(input.GetShapeArray().ToNCHW(), _model.GetTensor<float>(weights), _model.GetTensor<float>(bias),
-                options.FusedActivationFunction.ToActivationFunction());
-            _inputs.Add(layer.Input, inputs[0]);
-            _outputs.Add(op.Outputs(0), layer.Output);
-            return layer;
+            if (input.ShapeLength == 4)
+            {
+                var flatten = new TensorflowFlatten(input.GetShapeArray().ToNCHW());
+                var layer = new FullyConnected(flatten.Output.Dimensions, _model.GetTensor<float>(weights), _model.GetTensor<float>(bias),
+                    options.FusedActivationFunction.ToActivationFunction());
+                layer.Input.SetConnection(flatten.Output);
+                _inputs.Add(flatten.Input, inputs[0]);
+                _outputs.Add(op.Outputs(0), layer.Output);
+                return layer;
+            }
+            else
+            {
+                var layer = new FullyConnected(input.GetShapeArray().ToNCHW(), _model.GetTensor<float>(weights), _model.GetTensor<float>(bias),
+                    options.FusedActivationFunction.ToActivationFunction());
+                _inputs.Add(layer.Input, inputs[0]);
+                _outputs.Add(op.Outputs(0), layer.Output);
+                return layer;
+            }
         }
 
         private Layer ConvertMaxPool2d(tflite.Operator op)

@@ -26,6 +26,8 @@ namespace NnCase.Converter.K210.Converters.Stages.Inference
         QuantizedConcatenation,
         FullyConnected,
         QuantizedFullyConnected,
+        TensorflowFlatten,
+        QuantizedTensorflowFlatten,
         K210Conv = 10240,
         K210AddPadding,
         K210RemovePadding,
