@@ -40,7 +40,12 @@ namespace NnCase.Converter.K210.Converters.Stages.Quantize
                     toFetches.Add(additional.Value);
                 }
 
-                var quantizationContext = new QuantizationContext { Outputs = connectors, PlanContext = planContext };
+                var quantizationContext = new QuantizationContext
+                {
+                    Outputs = connectors,
+                    AdditionalOutputs = additionalOutputs,
+                    PlanContext = planContext
+                };
 
 #if NET471
                 await dataset.GetBatchesAsync().ForEachAsync(async batch =>
@@ -102,7 +107,7 @@ namespace NnCase.Converter.K210.Converters.Stages.Quantize
                 else
                 {
                     var idx = i - context.Outputs.Count;
-                    var conn = context.AdditionalOutputs[i];
+                    var conn = context.AdditionalOutputs[idx];
                     if (context.AdditionalDistributions.TryGetValue(conn, out var range))
                         context.AdditionalDistributions[conn] = range.EMA(0.01, newRange);
                     else

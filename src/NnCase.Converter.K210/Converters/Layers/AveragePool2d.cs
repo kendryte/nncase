@@ -8,7 +8,7 @@ using NnCase.Converter.Model.Layers;
 
 namespace NnCase.Converter.K210.Converters.Layers
 {
-    public class MaxPool2dLayerArgument
+    public class AveragePool2dLayerArgument
     {
         public K210LayerFlags Flags { get; set; }
 
@@ -43,12 +43,12 @@ namespace NnCase.Converter.K210.Converters.Layers
         public ActivationFunctionType Activation { get; set; }
     }
 
-    [LayerConverter(typeof(MaxPool2d), K210LayerType.MaxPool2d)]
-    public class MaxPool2dConverter
+    [LayerConverter(typeof(AveragePool2d), K210LayerType.AveragePool2d)]
+    public class AveragePool2dConverter
     {
-        public MaxPool2dLayerArgument Convert(MaxPool2d layer, ConvertContext context)
+        public AveragePool2dLayerArgument Convert(AveragePool2d layer, ConvertContext context)
         {
-            return new MaxPool2dLayerArgument
+            return new AveragePool2dLayerArgument
             {
                 InputWidth = (uint)layer.Input.Dimensions[3],
                 InputHeight = (uint)layer.Input.Dimensions[2],
@@ -66,7 +66,7 @@ namespace NnCase.Converter.K210.Converters.Layers
             };
         }
 
-        public void Infer(MaxPool2d layer, MaxPool2dLayerArgument argument, InferenceContext context)
+        public void Infer(AveragePool2d layer, AveragePool2dLayerArgument argument, InferenceContext context)
         {
             var inputAlloc = context.MainMemoryMap[layer.Input.Connection.From];
             var outputAlloc = context.MainMemoryMap[layer.Output];
