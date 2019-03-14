@@ -32,7 +32,10 @@ namespace NnCase.Converter.Model.Layers
             var graph = context.TFGraph;
             var inputs = Inputs.Select(x=> context.TFOutputs[x.Connection.From]).ToArray();
 
-            context.TFOutputs[Output] = graph.Concat(graph.Const(3), inputs);
+            if (inputs.Length == 1)
+                context.TFOutputs[Output] = inputs[0];
+            else
+                context.TFOutputs[Output] = graph.Concat(graph.Const(3), inputs);
         }
     }
 }

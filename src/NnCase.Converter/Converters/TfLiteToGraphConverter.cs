@@ -236,7 +236,7 @@ namespace NnCase.Converter.Converters
             var weights = _graph.Tensors(inputs[1]).Value;
             var bias = _graph.Tensors(inputs[2]).Value;
 
-            if (input.ShapeLength == 4)
+            if (input.ShapeLength == 4 && (input.Shape(1) != 1 || input.Shape(2) != 1))
             {
                 var flatten = new TensorflowFlatten(input.GetShapeArray().ToNCHW());
                 var layer = new FullyConnected(flatten.Output.Dimensions, _model.GetTensor<float>(weights), _model.GetTensor<float>(bias),

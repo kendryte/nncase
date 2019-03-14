@@ -97,13 +97,24 @@ namespace NnCase.Converter.Converters
                     return ConvertSoftmax(op);
                 case "bilinear_interp":
                     return ConvertBilinearInterp(op);
+                case "nearest_interp":
+                    return ConvertNearestInterp(op);
                 case "prior_box":
                     return ConvertPriorBox(op);
                 case "transpose2":
                     return ConvertTranspose2(op);
                 case "reshape2":
                     return ConvertShape2(op);
+                case "concat":
+                    return ConvertConcat(op);
+                case "scale":
+                    return ConvertScale(op);
                 case "assign_value":
+                case "shape":
+                case "slice":
+                case "cast":
+                case "fill_constant":
+                case "elementwise_mul":
                     return null;
                 default:
                     throw new LayerNotSupportedException(op.Type);
@@ -199,6 +210,18 @@ namespace NnCase.Converter.Converters
             return layer;
         }
 
+        private Layer ConvertScale(paddle.OpDesc op)
+        {
+            var x = GetParameter(op.Inputs, "X").Arguments[0];
+            var scale = GetAttr(op, "scale").F;
+            var output = GetParameter(op.Outputs, "Out").Arguments[0];
+
+            var layer = new Mul(GetVarShape(x), scale);
+            _inputs.Add(layer.Input, x);
+            _outputs.Add(output, layer.Output);
+            return layer;
+        }
+
         private Layer ConvertBatchNorm(paddle.OpDesc op)
         {
             var epsilon = GetAttr(op, "epsilon").F;
@@ -242,6 +265,13 @@ namespace NnCase.Converter.Converters
                 _outputs.Add(output, layer.Output);
                 return layer;
             }
+            else if (type == "max")
+            {
+                var layer = new MaxPool2d(GetVarShape(x), Padding.Valid, ksize[1], ksize[0], strides[1], strides[0], ActivationFunctionType.Linear);
+                _inputs.Add(layer.Input, x);
+                _outputs.Add(output, layer.Output);
+                return layer;
+            }
             else
             {
                 throw new NotSupportedException();
@@ -280,6 +310,20 @@ namespace NnCase.Converter.Converters
             var output = GetParameter(op.Outputs, "Out").Arguments[0];
 
             var layer = new ResizeBilinear(GetVarShape(x), w, h, alignCorners);
+            _inputs.Add(layer.Input, x);
+            _outputs.Add(output, layer.Output);
+            return layer;
+        }
+
+        private Layer ConvertNearestInterp(paddle.OpDesc op)
+        {
+            var w = GetAttr(op, "out_w").I;
+            var h = GetAttr(op, "out_h").I;
+            var alignCorners = GetAttr(op, "align_corners").B;
+            var x = GetParameter(op.Inputs, "X").Arguments[0];
+            var output = GetParameter(op.Outputs, "Out").Arguments[0];
+
+            var layer = new ResizeNearestNeighbor(GetVarShape(x), w, h, alignCorners);
             _inputs.Add(layer.Input, x);
             _outputs.Add(output, layer.Output);
             return layer;
@@ -331,6 +375,18 @@ namespace NnCase.Converter.Converters
 
             var layer = new Reshape(GetVarShape(x), shape);
             _inputs.Add(layer.Input, x);
+            _outputs.Add(output, layer.Output);
+            return layer;
+        }
+
+        private Layer ConvertConcat(paddle.OpDesc op)
+        {
+            var x = GetParameter(op.Inputs, "X").Arguments;
+            var output = GetParameter(op.Outputs, "Out").Arguments[0];
+
+            var layer = new Concatenation(x.Select(x => new ReadOnlyMemory<int>(GetVarShape(x))));
+            for (int i = 0; i < x.Count; i++)
+                _inputs.Add(layer.Inputs[i], x[i]);
             _outputs.Add(output, layer.Output);
             return layer;
         }

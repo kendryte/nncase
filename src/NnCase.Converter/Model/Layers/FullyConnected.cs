@@ -33,10 +33,13 @@ namespace NnCase.Converter.Model.Layers
         protected override void OnPlanning(GraphPlanContext context)
         {
             var graph = context.TFGraph;
-            var input = context.TFOutputs[Input.Connection.From];
+            var y = context.TFOutputs[Input.Connection.From];
             var weights = Weights.ToHWIO();
 
-            var y = graph.MatMul(input, graph.Const(weights));
+            if (Input.Dimensions[2] == 1 && Input.Dimensions[3] == 1)
+                y = graph.Reshape(y, graph.Const(new[] { Input.Dimensions[0], Input.Dimensions[1] }));
+
+            y = graph.MatMul(y, graph.Const(weights));
             if (Bias != null)
                 y = graph.BiasAdd(y, graph.Const(Bias.ToNHWC()));
 
