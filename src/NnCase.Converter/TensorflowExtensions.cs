@@ -1,6 +1,7 @@
 ﻿using NnCase.Converter.Model.Layers;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Numerics.Tensors;
 using System.Text;
 using TensorFlow;
@@ -86,6 +87,21 @@ namespace NnCase.Converter
                     return graph.Relu6(input);
                 default:
                     throw new NotSupportedException();
+            }
+        }
+
+        public static int[] ToTFAxes(this ReadOnlySpan<int> axes)
+        {
+            if (axes.Length <= 2)
+                return axes.ToArray();
+            else
+            {
+                var newAxes = new int[axes.Length];
+                newAxes[0] = axes[0];
+                newAxes[1] = axes[axes.Length - 1];
+                for (int i = 2; i < axes.Length - 1; i++)
+                    newAxes[i] = axes[i];
+                return newAxes;
             }
         }
     }

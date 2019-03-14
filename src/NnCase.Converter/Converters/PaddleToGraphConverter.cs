@@ -34,7 +34,7 @@ namespace NnCase.Converter.Converters
         public void Convert(int subgraphIndex)
         {
             _subgraph = _programDesc.Blocks[subgraphIndex];
-            var layers = _subgraph.Ops.Select(ConvertOperator).ToList();
+            var layers = _subgraph.Ops.Select(ConvertOperator).Where(x => x != null).ToList();
             foreach (var inputPair in _inputs)
             {
                 if (_outputs.TryGetValue(inputPair.Value, out var output))
@@ -81,6 +81,7 @@ namespace NnCase.Converter.Converters
                 case "fetch":
                     return ConvertFetch(op);
                 case "conv2d":
+                case "depthwise_conv2d":
                     return ConvertConv2d(op);
                 case "elementwise_add":
                     return ConvertElementwiseAdd(op);
@@ -94,14 +95,24 @@ namespace NnCase.Converter.Converters
                     return ConvertReshape(op);
                 case "softmax":
                     return ConvertSoftmax(op);
+                case "bilinear_interp":
+                    return ConvertBilinearInterp(op);
+                case "prior_box":
+                    return ConvertPriorBox(op);
+                case "transpose2":
+                    return ConvertTranspose2(op);
+                case "reshape2":
+                    return ConvertShape2(op);
+                case "assign_value":
+                    return null;
                 default:
-                    throw new NotSupportedException();
+                    throw new LayerNotSupportedException(op.Type);
             }
         }
 
         private Layer ConvertFeed(paddle.OpDesc op)
         {
-            var output = op.Outputs[0].Arguments[0];
+            var output = GetParameter(op.Outputs, "Out").Arguments[0];
             var layer = new InputLayer(GetVarShape(output)) { Name = output };
             _outputs.Add(output, layer.Output);
             return layer;
@@ -115,12 +126,12 @@ namespace NnCase.Converter.Converters
             if (strides[0] == 0) strides[0] = 1;
             if (strides[1] == 0) strides[1] = 1;
 
-            var input = op.Inputs[1].Arguments[0];
-            var weights = op.Inputs[0].Arguments[0];
+            var input = GetParameter(op.Inputs, "Input").Arguments[0];
+            var weights = GetParameter(op.Inputs, "Filter").Arguments[0];
             var weightsShape = GetVarShape(weights);
             var kernelWidth = weightsShape[3];
             var kernelHeight = weightsShape[2];
-            var output = op.Outputs[0].Arguments[0];
+            var output = GetParameter(op.Outputs, "Output").Arguments[0];
 
             if (groups == 1)
             {
@@ -177,9 +188,9 @@ namespace NnCase.Converter.Converters
 
         private Layer ConvertElementwiseAdd(paddle.OpDesc op)
         {
-            var x = op.Inputs[0].Arguments[0];
-            var y = op.Inputs[1].Arguments[0];
-            var output = op.Outputs[0].Arguments[0];
+            var x = GetParameter(op.Inputs, "X").Arguments[0];
+            var y = GetParameter(op.Inputs, "Y").Arguments[0];
+            var output = GetParameter(op.Outputs, "Out").Arguments[0];
 
             var layer = new Add(GetVarShape(x), GetVarShape(y));
             _inputs.Add(layer.InputA, x);
@@ -191,12 +202,12 @@ namespace NnCase.Converter.Converters
         private Layer ConvertBatchNorm(paddle.OpDesc op)
         {
             var epsilon = GetAttr(op, "epsilon").F;
-            var offset = op.Inputs[0].Arguments[0];
-            var mean = op.Inputs[1].Arguments[0];
-            var scale = op.Inputs[2].Arguments[0];
-            var variance = op.Inputs[3].Arguments[0];
-            var x = op.Inputs[4].Arguments[0];
-            var output = op.Outputs[4].Arguments[0];
+            var offset = GetParameter(op.Inputs, "Bias").Arguments[0];
+            var mean = GetParameter(op.Inputs, "Mean").Arguments[0];
+            var scale = GetParameter(op.Inputs, "Scale").Arguments[0];
+            var variance = GetParameter(op.Inputs, "Variance").Arguments[0];
+            var x = GetParameter(op.Inputs, "X").Arguments[0];
+            var output = GetParameter(op.Outputs, "Y").Arguments[0];
 
             var layer = new BatchNormalization(GetVarShape(x), LoadVarData<float>(scale), LoadVarData<float>(offset),
                 LoadVarData<float>(mean), LoadVarData<float>(variance), epsilon);
@@ -207,8 +218,8 @@ namespace NnCase.Converter.Converters
 
         private Layer ConvertRelu(paddle.OpDesc op)
         {
-            var x = op.Inputs[0].Arguments[0];
-            var output = op.Outputs[0].Arguments[0];
+            var x = GetParameter(op.Inputs, "X").Arguments[0];
+            var output = GetParameter(op.Outputs, "Out").Arguments[0];
 
             var layer = new Relu(GetVarShape(x));
             layer.Input.SetConnection(_outputs[x]);
@@ -240,8 +251,8 @@ namespace NnCase.Converter.Converters
         private Layer ConvertReshape(paddle.OpDesc op)
         {
             var shape = GetAttr(op, "shape").Ints;
-            var x = op.Inputs[1].Arguments[0];
-            var output = op.Outputs[0].Arguments[0];
+            var x = GetParameter(op.Inputs, "X").Arguments[0];
+            var output = GetParameter(op.Outputs, "Out").Arguments[0];
 
             var layer = new Reshape(GetVarShape(x), shape.ToArray());
             _inputs.Add(layer.Input, x);
@@ -251,10 +262,74 @@ namespace NnCase.Converter.Converters
 
         private Layer ConvertSoftmax(paddle.OpDesc op)
         {
-            var x = op.Inputs[0].Arguments[0];
-            var output = op.Outputs[0].Arguments[0];
+            var x = GetParameter(op.Inputs, "X").Arguments[0];
+            var output = GetParameter(op.Outputs, "Out").Arguments[0];
 
             var layer = new Softmax(GetVarShape(x));
+            _inputs.Add(layer.Input, x);
+            _outputs.Add(output, layer.Output);
+            return layer;
+        }
+
+        private Layer ConvertBilinearInterp(paddle.OpDesc op)
+        {
+            var w = GetAttr(op, "out_w").I;
+            var h = GetAttr(op, "out_h").I;
+            var alignCorners = GetAttr(op, "align_corners").B;
+            var x = GetParameter(op.Inputs, "X").Arguments[0];
+            var output = GetParameter(op.Outputs, "Out").Arguments[0];
+
+            var layer = new ResizeBilinear(GetVarShape(x), w, h, alignCorners);
+            _inputs.Add(layer.Input, x);
+            _outputs.Add(output, layer.Output);
+            return layer;
+        }
+
+        private Layer ConvertPriorBox(paddle.OpDesc op)
+        {
+            var image = GetParameter(op.Inputs, "Image").Arguments[0];
+            var imageShape = GetVarShape(image);
+
+            var minSizes = GetAttr(op, "min_sizes").Floats.ToArray();
+            var maxSizes = GetAttr(op, "max_sizes").Floats.ToArray();
+            var aspectRatios = GetAttr(op, "aspect_ratios").Floats.ToArray();
+            var variances = GetAttr(op, "variances").Floats.ToArray();
+            var flip = GetAttr(op, "flip").B;
+            var clip = GetAttr(op, "clip").B;
+            var stepWidth = GetAttr(op, "step_w").I;
+            var stepHeight = GetAttr(op, "step_h").I;
+            var offset = GetAttr(op, "offset").F;
+
+            var input = GetParameter(op.Inputs, "Input").Arguments[0];
+            var boxes = GetParameter(op.Outputs, "Boxes").Arguments[0];
+            var v = GetParameter(op.Outputs, "Variances").Arguments[0];
+
+            var layer = new PriorBox(GetVarShape(input), imageShape[3], imageShape[2], minSizes, maxSizes, aspectRatios, variances, flip, clip, stepWidth, stepHeight, offset);
+            _inputs.Add(layer.Input, input);
+            _outputs.Add(boxes, layer.Boxes);
+            _outputs.Add(v, layer.VariancesOutput);
+            return layer;
+        }
+
+        private Layer ConvertTranspose2(paddle.OpDesc op)
+        {
+            var x = GetParameter(op.Inputs, "X").Arguments[0];
+            var output = GetParameter(op.Outputs, "Out").Arguments[0];
+            var axes = GetAttr(op, "axis").Ints.ToArray();
+
+            var layer = new Transpose(GetVarShape(x), axes);
+            _inputs.Add(layer.Input, x);
+            _outputs.Add(output, layer.Output);
+            return layer;
+        }
+
+        private Layer ConvertShape2(paddle.OpDesc op)
+        {
+            var x = GetParameter(op.Inputs, "X").Arguments[0];
+            var output = GetParameter(op.Outputs, "Out").Arguments[0];
+            var shape = GetAttr(op, "shape").Ints.ToArray();
+
+            var layer = new Reshape(GetVarShape(x), shape);
             _inputs.Add(layer.Input, x);
             _outputs.Add(output, layer.Output);
             return layer;
@@ -271,6 +346,11 @@ namespace NnCase.Converter.Converters
         private paddle.VarDesc GetVar(string name)
         {
             return _subgraph.Vars.First(o => o.Name == name);
+        }
+
+        private paddle.OpDesc.Types.Var GetParameter(IEnumerable<paddle.OpDesc.Types.Var> vars, string name)
+        {
+            return vars.First(o => o.Parameter == name);
         }
 
         private int[] GetVarShape(string name)
