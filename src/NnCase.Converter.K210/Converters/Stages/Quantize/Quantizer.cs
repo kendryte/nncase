@@ -44,7 +44,8 @@ namespace NnCase.Converter.K210.Converters.Stages.Quantize
                 {
                     Outputs = connectors,
                     AdditionalOutputs = additionalOutputs,
-                    PlanContext = planContext
+                    PlanContext = planContext,
+                    DatasetProcess = dataset.PostprocessMethod
                 };
 
 #if NET471

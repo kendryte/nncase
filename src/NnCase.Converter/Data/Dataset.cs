@@ -36,7 +36,8 @@ namespace NnCase.Converter.Data
         private readonly IReadOnlyList<string> _fileNames;
         private readonly int[] _dimensions;
         private readonly int _batchSize;
-        private readonly PostprocessMethods _postprocessMethod;
+
+        public PostprocessMethods PostprocessMethod { get; }
 
         public ReadOnlySpan<int> Dimensions => _dimensions;
 
@@ -50,7 +51,7 @@ namespace NnCase.Converter.Data
                           select f).ToList();
             _dimensions = dimensions.ToArray();
             _batchSize = batchSize;
-            _postprocessMethod = postprocessMethod;
+            PostprocessMethod = postprocessMethod;
         }
 
 
@@ -87,7 +88,7 @@ namespace NnCase.Converter.Data
                 {
                     var buffer = tensor.Buffer.Slice(j * oneSize);
                     Process(sources[j], buffer.Span);
-                    Postprocess(buffer.Span, _postprocessMethod);
+                    Postprocess(buffer.Span, PostprocessMethod);
                 });
 
 #if NET471

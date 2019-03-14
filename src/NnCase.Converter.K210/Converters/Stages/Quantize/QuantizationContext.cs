@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using NnCase.Converter.Data;
 using NnCase.Converter.K210.Converters.Layers;
 using NnCase.Converter.K210.Converters.Stages.Convert;
 using NnCase.Converter.Model;
@@ -79,5 +80,7 @@ namespace NnCase.Converter.K210.Converters.Stages.Quantize
         public Dictionary<OutputConnector, QuantizationRange> Distributions { get; } = new Dictionary<OutputConnector, QuantizationRange>();
 
         public Dictionary<Guid, QuantizationRange> AdditionalDistributions { get; } = new Dictionary<Guid, QuantizationRange>();
+
+        public PostprocessMethods DatasetProcess { get; set; }
     }
 }
