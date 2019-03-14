@@ -226,14 +226,14 @@ namespace NnCase.Cli
             graph.Plan(ctx);
             var dim = graph.Inputs.First().Output.Dimensions.ToArray();
             var input = graph.Inputs.First().Name;
-            var output = graph.Outputs.First().Name;
+            var output = string.Join(',', graph.Outputs.Select(x => x.Name));
 
             var tmpPb = Path.GetTempFileName();
             using (var f = File.Open(tmpPb, FileMode.Create, FileAccess.Write))
                 await ctx.SaveAsync(f);
 
             var binPath = Path.Combine(Path.GetDirectoryName(typeof(Program).Assembly.Location), "bin");
-            var args = $" --input_file={tmpPb} --input_format=TENSORFLOW_GRAPHDEF --output_file={tflitePath} --output_format=TFLITE --input_shape=1,{dim[2]},{dim[3]},{dim[1]} --input_array={input} --output_array={output} --inference_type=FLOAT";
+            var args = $" --input_file={tmpPb} --input_format=TENSORFLOW_GRAPHDEF --output_file={tflitePath} --output_format=TFLITE --input_shape=1,{dim[2]},{dim[3]},{dim[1]} --input_array={input} --output_arrays={output} --inference_type=FLOAT";
             using (var toco = Process.Start(new ProcessStartInfo(Path.Combine(binPath, "toco"), args)
             {
                 WorkingDirectory = Path.GetDirectoryName(typeof(Program).Assembly.Location)

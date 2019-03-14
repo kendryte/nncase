@@ -71,8 +71,6 @@ namespace NnCase.Converter.Converters
                     return ConvertDepthwiseConv2d(op);
                 case tflite.BuiltinOperator.AVERAGE_POOL_2D:
                     return ConvertAveragePool2d(op);
-                case tflite.BuiltinOperator.RESHAPE:
-                    return ConvertReshape(op);
                 case tflite.BuiltinOperator.L2_NORMALIZATION:
                     return ConvertL2Normalization(op);
                 case tflite.BuiltinOperator.ADD:
@@ -89,6 +87,8 @@ namespace NnCase.Converter.Converters
                     return ConvertConcatenation(op);
                 case tflite.BuiltinOperator.MAXIMUM:
                     return ConvertMaximum(op);
+                case tflite.BuiltinOperator.RESIZE_NEAREST_NEIGHBOR:
+                    return ConvertResizeNearestNeighbor(op);
                 default:
                     throw new LayerNotSupportedException(opCode.BuiltinCode.ToString());
             }
@@ -303,6 +303,20 @@ namespace NnCase.Converter.Converters
             var layer = new Maximum(inputA.GetShapeArray().ToNCHW(), inputB.GetShapeArray().ToNCHW());
             _inputs.Add(layer.InputA, inputs[0]);
             _inputs.Add(layer.InputB, inputs[1]);
+            _outputs.Add(op.Outputs(0), layer.Output);
+            return layer;
+        }
+
+        private Layer ConvertResizeNearestNeighbor(tflite.Operator op)
+        {
+            var inputs = op.GetInputsArray();
+            var input = _graph.Tensors(inputs[0]).Value;
+            var newSize = _model.GetTensor<int>(_graph.Tensors(inputs[1]).Value);
+            var options = op.BuiltinOptions<tflite.ResizeNearestNeighborOptions>().Value;
+
+            var blockShape = _graph.Tensors(inputs[1]).Value;
+            var layer = new ResizeNearestNeighbor(input.GetShapeArray().ToNCHW(), newSize[1], newSize[0], options.AlignCorners);
+            _inputs.Add(layer.Input, inputs[0]);
             _outputs.Add(op.Outputs(0), layer.Output);
             return layer;
         }

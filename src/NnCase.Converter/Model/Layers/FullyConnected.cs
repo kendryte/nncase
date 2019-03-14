@@ -36,7 +36,7 @@ namespace NnCase.Converter.Model.Layers
             var y = context.TFOutputs[Input.Connection.From];
             var weights = Weights.ToHWIO();
 
-            if (Input.Dimensions[2] == 1 && Input.Dimensions[3] == 1)
+            if (Input.Dimensions.Length == 4 && Input.Dimensions[2] == 1 && Input.Dimensions[3] == 1)
                 y = graph.Reshape(y, graph.Const(new[] { Input.Dimensions[0], Input.Dimensions[1] }));
 
             y = graph.MatMul(y, graph.Const(weights));

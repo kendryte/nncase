@@ -93,7 +93,7 @@ namespace NnCase.Converter.K210.Converters.Stages.Inference
                             var output = conn.Connection?.From;
                             if (output != null)
                             {
-                                if (context.KPUMemoryMap.TryGetValue(output, out var alloc))
+                                if (context.KPUMemoryMap.TryGetValue(output, out var alloc) && alloc.Node.IsUsed)
                                     alloc.Node.Release();
                                 if (!(layer is K210Conv2d) && context.MainMemoryMap.TryGetValue(output, out var alloc2))
                                     alloc2.Node.Release();

@@ -28,6 +28,8 @@ namespace NnCase.Converter.K210.Converters.Stages.Inference
         QuantizedFullyConnected,
         TensorflowFlatten,
         QuantizedTensorflowFlatten,
+        ResizeNearestNeighbor,
+        QuantizedResizeNearestNeighbor,
         K210Conv = 10240,
         K210AddPadding,
         K210RemovePadding,
