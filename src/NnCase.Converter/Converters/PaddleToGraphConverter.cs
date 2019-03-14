@@ -34,7 +34,7 @@ namespace NnCase.Converter.Converters
         public void Convert(int subgraphIndex)
         {
             _subgraph = _programDesc.Blocks[subgraphIndex];
-            var layers = _subgraph.Ops.Select(ConvertOperator).ToList();
+            var layers = _subgraph.Ops.Select(ConvertOperator).Where(x => x != null).ToList();
             foreach (var inputPair in _inputs)
             {
                 if (_outputs.TryGetValue(inputPair.Value, out var output))
@@ -99,6 +99,12 @@ namespace NnCase.Converter.Converters
                     return ConvertBilinearInterp(op);
                 case "prior_box":
                     return ConvertPriorBox(op);
+                case "transpose2":
+                    return ConvertTranspose2(op);
+                case "reshape2":
+                    return ConvertShape2(op);
+                case "assign_value":
+                    return null;
                 default:
                     throw new LayerNotSupportedException(op.Type);
             }
@@ -292,13 +298,40 @@ namespace NnCase.Converter.Converters
             var clip = GetAttr(op, "clip").B;
             var stepWidth = GetAttr(op, "step_w").I;
             var stepHeight = GetAttr(op, "step_h").I;
+            var offset = GetAttr(op, "offset").F;
 
             var input = GetParameter(op.Inputs, "Input").Arguments[0];
             var boxes = GetParameter(op.Outputs, "Boxes").Arguments[0];
+            var v = GetParameter(op.Outputs, "Variances").Arguments[0];
 
-            var layer = new PriorBox(GetVarShape(input), imageShape[3], imageShape[2], minSizes, maxSizes);
+            var layer = new PriorBox(GetVarShape(input), imageShape[3], imageShape[2], minSizes, maxSizes, aspectRatios, variances, flip, clip, stepWidth, stepHeight, offset);
             _inputs.Add(layer.Input, input);
-            _outputs.Add(boxes, layer.Output);
+            _outputs.Add(boxes, layer.Boxes);
+            _outputs.Add(v, layer.VariancesOutput);
+            return layer;
+        }
+
+        private Layer ConvertTranspose2(paddle.OpDesc op)
+        {
+            var x = GetParameter(op.Inputs, "X").Arguments[0];
+            var output = GetParameter(op.Outputs, "Out").Arguments[0];
+            var axes = GetAttr(op, "axis").Ints.ToArray();
+
+            var layer = new Transpose(GetVarShape(x), axes);
+            _inputs.Add(layer.Input, x);
+            _outputs.Add(output, layer.Output);
+            return layer;
+        }
+
+        private Layer ConvertShape2(paddle.OpDesc op)
+        {
+            var x = GetParameter(op.Inputs, "X").Arguments[0];
+            var output = GetParameter(op.Outputs, "Out").Arguments[0];
+            var shape = GetAttr(op, "shape").Ints.ToArray();
+
+            var layer = new Reshape(GetVarShape(x), shape);
+            _inputs.Add(layer.Input, x);
+            _outputs.Add(output, layer.Output);
             return layer;
         }
 

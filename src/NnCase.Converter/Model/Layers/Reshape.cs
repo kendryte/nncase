@@ -36,8 +36,24 @@ namespace NnCase.Converter.Model.Layers
 
         protected override void OnPlanning(GraphPlanContext context)
         {
-            var input = context.TFOutputs[Input.Connection.From];
-            context.TFOutputs[Output] = context.TFGraph.Reshape(input, context.TFGraph.Const(NewShape.ToNHWC()));
+            var y = context.TFOutputs[Input.Connection.From];
+            var graph = context.TFGraph;
+
+            // To NCH
+            if (Input.Dimensions.Length == 3)
+                y = graph.Transpose(y, graph.Const(new[] { 0, 2, 1 }));
+            // To NCHW
+            else if (Input.Dimensions.Length == 4)
+                y = graph.Transpose(y, graph.Const(new[] { 0, 3, 1, 2 }));
+
+            context.TFOutputs[Output] = context.TFGraph.Reshape(y, context.TFGraph.Const(NewShape.ToArray()));
+
+            // To NHC
+            if (Input.Dimensions.Length == 3)
+                y = graph.Transpose(y, graph.Const(new[] { 0, 2, 1 }));
+            // To NHWC
+            else if (Input.Dimensions.Length == 4)
+                y = graph.Transpose(y, graph.Const(new[] { 0, 2, 3, 1 }));
         }
     }
 }
