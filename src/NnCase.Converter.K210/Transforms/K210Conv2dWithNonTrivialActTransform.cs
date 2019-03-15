@@ -15,7 +15,8 @@ namespace NnCase.Converter.K210.Transforms
         {
             try
             {
-                if (layer is K210Conv2d conv2d && conv2d.FusedActivationFunction == ActivationFunctionType.Linear)
+                if (layer is K210Conv2d conv2d && conv2d.FusedActivationFunction == ActivationFunctionType.Linear &&
+                    conv2d.NonTrivialActivation == null)
                 {
                     context.MatchedLayers.Add(layer);
                     context.Inputs.Add(conv2d.Input);
@@ -57,39 +58,13 @@ namespace NnCase.Converter.K210.Transforms
         public override void Process(TransformContext context)
         {
             var conv2d = (K210Conv2d)context.MatchedLayers[0];
+            var act = context.MatchedLayers[2];
             var input = conv2d.Input.Connection.From;
-            OutputConnector output;
+            var output = act.OutputConnectors[0];
 
             conv2d.Input.ClearConnection();
 
-            K210PoolType poolType;
-            if (context.MatchedLayers[2] is MaxPool2d maxPool)
-            {
-                if (maxPool.FilterWidth == 2 && maxPool.StrideWidth == 2)
-                    poolType = K210PoolType.MaxPool2x2;
-                else if (maxPool.FilterWidth == 2 && maxPool.StrideWidth == 1)
-                    poolType = K210PoolType.MaxPool2x2Stride1;
-                else if (maxPool.FilterWidth == 4 && maxPool.StrideWidth == 4)
-                    poolType = K210PoolType.MaxPool4x4;
-                else
-                    throw new NotSupportedException("Unsupported max pool.");
-                output = maxPool.Output;
-            }
-            else
-            {
-                var avgPool = (AveragePool2d)context.MatchedLayers[2];
-                if (avgPool.FilterWidth == 2 && avgPool.StrideWidth == 2)
-                    poolType = K210PoolType.AveragePool2x2;
-                else if (avgPool.FilterWidth == 2 && avgPool.StrideWidth == 1)
-                    poolType = K210PoolType.AveragePool2x2Stride1;
-                else if (avgPool.FilterWidth == 4 && avgPool.StrideWidth == 4)
-                    poolType = K210PoolType.AveragePool4x4;
-                else
-                    throw new NotSupportedException("Unsupported average pool.");
-                output = avgPool.Output;
-            }
-
-            var newConv2d = new K210Conv2d(conv2d.Input.Dimensions, conv2d.Conv2dType, conv2d.Weights, conv2d.Bias, poolType, conv2d.FusedActivationFunction);
+            var newConv2d = new K210Conv2d(conv2d.Input.Dimensions, conv2d.Conv2dType, conv2d.Weights, conv2d.Bias, conv2d.PoolType, conv2d.FusedActivationFunction, act);
             newConv2d.Input.SetConnection(input);
             var newDequantize = new Dequantize(newConv2d.Output.Dimensions);
             newDequantize.Input.SetConnection(newConv2d.Output);

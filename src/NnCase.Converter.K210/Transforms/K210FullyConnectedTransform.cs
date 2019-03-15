@@ -46,7 +46,7 @@ namespace NnCase.Converter.K210.Transforms
             var upload = new K210Upload(input.Dimensions);
             var addPad = new K210AddPadding(input.Dimensions);
             var conv2d = new K210Conv2d(addPad.Output.Dimensions, K210Conv2dType.Conv2d,
-                fc.Weights.Reshape(new[] { fc.Weights.Dimensions[0], fc.Weights.Dimensions[1], 1, 1 }), fc.Bias, K210PoolType.None, fc.FusedActivationFunction);
+                fc.Weights.Reshape(new[] { fc.Weights.Dimensions[0], fc.Weights.Dimensions[1], 1, 1 }), fc.Bias, K210PoolType.None, fc.FusedActivationFunction, null);
             var removePad = new K210RemovePadding(conv2d.Output.Dimensions);
             var dequantize = new Dequantize(removePad.Output.Dimensions);
 

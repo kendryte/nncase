@@ -24,6 +24,8 @@ namespace NnCase.Converter.K210.Converters.Layers
         public uint OutputWidth { get; set; }
 
         public uint OutputHeight { get; set; }
+
+        public int AlignCorners { get; set; }
     }
 
     [LayerConverter(typeof(ResizeNearestNeighbor), K210LayerType.ResizeNearestNeighbor)]
@@ -38,6 +40,7 @@ namespace NnCase.Converter.K210.Converters.Layers
                 Channels = (uint)layer.Input.Dimensions[1],
                 OutputWidth = (uint)layer.Output.Dimensions[3],
                 OutputHeight = (uint)layer.Output.Dimensions[2],
+                AlignCorners = layer.AlignCorners ? 1 : 0
             };
         }
 

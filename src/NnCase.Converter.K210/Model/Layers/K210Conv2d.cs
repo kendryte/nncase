@@ -54,16 +54,19 @@ namespace NnCase.Converter.K210.Model.Layers
 
         public int OutputChannels => Conv2dType == K210Conv2dType.Conv2d ? Weights.Dimensions[0] : InputChannels;
 
-        public K210Conv2d(ReadOnlySpan<int> dimensions, K210Conv2dType conv2dType, Tensor<float> weights, Tensor<float> bias, K210PoolType poolType, ActivationFunctionType fusedActivationFunction)
+        public K210Conv2d(ReadOnlySpan<int> dimensions, K210Conv2dType conv2dType, Tensor<float> weights, Tensor<float> bias, K210PoolType poolType, ActivationFunctionType fusedActivationFunction, Layer nonTrivalActivation)
         {
             if (conv2dType == K210Conv2dType.DepthwiseConv2d && poolType != K210PoolType.None)
                 throw new ArgumentOutOfRangeException("Downsampling is not supported in dwConv2d.");
             if (dimensions[2] < 4 || dimensions[3] < 4)
                 throw new ArgumentOutOfRangeException("Lower than 4x4 input is not supported in dwConv2d.");
+            if (nonTrivalActivation != null && fusedActivationFunction != ActivationFunctionType.Linear)
+                throw new ArgumentException("There should be only one activation in conv2d.");
 
             Conv2dType = conv2dType;
             PoolType = poolType;
             FusedActivationFunction = fusedActivationFunction;
+            NonTrivialActivation = nonTrivalActivation;
             Weights = weights;
             Bias = bias;
 
@@ -105,7 +108,7 @@ namespace NnCase.Converter.K210.Model.Layers
 
             y = graph.BiasAdd(y, graph.Const(bias));
             context.AdditionalTFOutputs[OutputBeforeActivation] = y;
-            y = graph.AddActivation(y, FusedActivationFunction);
+            y = AddActivation(graph, y, FusedActivationFunction, NonTrivialActivation);
 
             switch (PoolType)
             {
@@ -132,6 +135,23 @@ namespace NnCase.Converter.K210.Model.Layers
             }
 
             context.TFOutputs[Output] = y;
+        }
+
+        private TFOutput AddActivation(TFGraph graph, TFOutput y, ActivationFunctionType fusedActivationFunction, Layer nonTrivialActivation)
+        {
+            if (fusedActivationFunction != ActivationFunctionType.Linear)
+            {
+                y = graph.AddActivation(y, fusedActivationFunction);
+            }
+            else if (nonTrivialActivation != null)
+            {
+                if (nonTrivialActivation is LeakyRelu leakyRelu)
+                {
+                    y = graph.Maximum(y, graph.Mul(y, graph.Const(leakyRelu.Slope)));
+                }
+            }
+
+            return y;
         }
 
         private int GetStride()

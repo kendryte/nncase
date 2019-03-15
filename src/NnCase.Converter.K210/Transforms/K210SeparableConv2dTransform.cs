@@ -77,7 +77,7 @@ namespace NnCase.Converter.K210.Transforms
             var newDwConv2d = new DepthwiseConv2d(input.Dimensions, dwConv2d.Weights, dwConv2d.Bias, Padding.Same, 1, 1, dwConv2d.FusedActivationFunction);
             var quantize = new Quantize(newDwConv2d.Output.Dimensions);
             var upload = new K210Upload(quantize.Output.Dimensions);
-            var newConv2d = new K210Conv2d(upload.Output.Dimensions, K210Conv2dType.Conv2d, conv2d.Weights, conv2d.Bias, K210PoolType.LeftTop, conv2d.FusedActivationFunction);
+            var newConv2d = new K210Conv2d(upload.Output.Dimensions, K210Conv2dType.Conv2d, conv2d.Weights, conv2d.Bias, K210PoolType.LeftTop, conv2d.FusedActivationFunction, null);
             var dequantize = new Dequantize(newConv2d.Output.Dimensions);
 
             newDwConv2d.Input.SetConnection(input);

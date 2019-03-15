@@ -47,7 +47,7 @@ namespace NnCase.Converter.K210.Transforms
             var conv = context.MatchedLayers[0];
             if (conv is Conv2d conv2d)
             {
-                newLayer = new K210Conv2d(conv2d.Input.Dimensions, K210Conv2dType.Conv2d, conv2d.Weights, conv2d.Bias, K210PoolType.LeftTop, conv2d.FusedActivationFunction);
+                newLayer = new K210Conv2d(conv2d.Input.Dimensions, K210Conv2dType.Conv2d, conv2d.Weights, conv2d.Bias, K210PoolType.LeftTop, conv2d.FusedActivationFunction, null);
                 input = conv2d.Input.Connection.From;
                 output = conv2d.Output;
             }

@@ -107,7 +107,7 @@ namespace NnCase.Converter.K210.Transforms
                 output = avgPool.Output;
             }
 
-            var newConv2d = new K210Conv2d(conv2d.Input.Dimensions, conv2d.Conv2dType, conv2d.Weights, conv2d.Bias, poolType, conv2d.FusedActivationFunction);
+            var newConv2d = new K210Conv2d(conv2d.Input.Dimensions, conv2d.Conv2dType, conv2d.Weights, conv2d.Bias, poolType, conv2d.FusedActivationFunction, conv2d.NonTrivialActivation);
             newConv2d.Input.SetConnection(input);
             var newDequantize = new Dequantize(newConv2d.Output.Dimensions);
             newDequantize.Input.SetConnection(newConv2d.Output);
