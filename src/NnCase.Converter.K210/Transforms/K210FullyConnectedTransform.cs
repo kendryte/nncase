@@ -15,7 +15,7 @@ namespace NnCase.Converter.K210.Transforms
         {
             try
             {
-                if (layer is FullyConnected fc)
+                if (layer is FullyConnected fc && fc.Input.Dimensions[1] <= 1024 && fc.Output.Dimensions[1] <= 1024)
                 {
                     context.Inputs.Add(fc.Input);
                     context.Outputs.Add(fc.Output);

@@ -308,18 +308,6 @@ namespace NnCase.Converter.K210.Converters.Layers
             {
                 throw new NotSupportedException($"Activation of {layer.NonTrivialActivation.GetType().Name} is not supported.");
             }
-
-            Func<double, double> invAct;
-            switch (layer.FusedActivationFunction)
-            {
-                case ActivationFunctionType.Linear:
-                case ActivationFunctionType.Relu:
-                case ActivationFunctionType.Relu6:
-                    invAct = x => x;
-                    break;
-                default:
-                    throw new NotSupportedException($"Activation of {layer.FusedActivationFunction} is not supported.");
-            }
         }
 
         private void GenerateBinWeights(BinaryWriter bw, K210ConvLayerConfig layer, K210Conv2dParamAddress paramAddress, K210BinGenerationContext context)
