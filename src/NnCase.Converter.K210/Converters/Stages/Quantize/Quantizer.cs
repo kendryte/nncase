@@ -137,6 +137,11 @@ namespace NnCase.Converter.K210.Converters.Stages.Quantize
                 return new QuantizationRange { Min = min, Max = max };
         }
 
+        public static double Quantize(double value, double scale, double bias)
+        {
+            return value * scale - bias;
+        }
+
         public static double Quantize(ReadOnlySpan<float> data, Span<ushort> dest, double scale, double bias, int weightsBits)
         {
             ushort max = (ushort)((1 << weightsBits) - 1);

@@ -32,7 +32,7 @@ namespace NnCase.Converter.K210.Converters.Layers
     {
         public K210Conv2dLayerArgument Convert(K210Conv2d layer, ConvertContext context)
         {
-            var config = new K210ConvLayerConfig { BNConfigs = new K210LayerBNConfig[layer.OutputChannels] };
+            var config = new K210ConvLayerConfig { BNConfigs = new K210LayerBNConfig[layer.OutputChannels], ActConfigs = new K210LayerActConfig[16] };
             (var sw, var bw) = QuantizeWeights(layer.Conv2dType == K210Conv2dType.Conv2d, layer.Weights, config, context.WeightsBits);
             (var sx, var bx) = QuantizeInput(context.Quantization.Distributions[layer.Input.Connection.From], config);
             config.ArgAdd = (long)Math.Round(bw * bx * layer.KernelWidth * layer.KernelHeight);
@@ -41,7 +41,7 @@ namespace NnCase.Converter.K210.Converters.Layers
             for (int i = 0; i < scale.Length; i++)
                 scale[i] = sw[i] * sx;
 
-            (var so, var bo) = QuantizeBiasAndOutput(layer, layer.Bias, context.Quantization.Distributions[layer.Output], scale, config);
+            QuantizeBiasAndOutput(layer, layer.Bias, context.Quantization.Distributions[layer.Output], context.Quantization.AdditionalDistributions[layer.OutputBeforeActivation], scale, config);
 
             config.InputChannels = layer.InputChannels;
             config.OutputChannels = layer.OutputChannels;
@@ -189,7 +189,7 @@ namespace NnCase.Converter.K210.Converters.Layers
             return (scale, bias);
         }
 
-        private static (double scale, double bias) QuantizeBiasAndOutput(K210Conv2d layer, Tensor<float> bias, QuantizationRange range, double[] scale, K210ConvLayerConfig config)
+        private static (double scale, double bias) QuantizeBiasAndOutput(K210Conv2d layer, Tensor<float> bias, QuantizationRange range, QuantizationRange beforeActRange, double[] scale, K210ConvLayerConfig config)
         {
             (var so, var bo) = range.GetScaleBias(8);
 #if CHANNEL_WISE
@@ -231,12 +231,84 @@ namespace NnCase.Converter.K210.Converters.Layers
                 };
             }
 #endif
-            QuantizeActivation(layer, postMul, range, config);
+            QuantizeActivation(layer, postMul, range, beforeActRange, config);
             return (so, bo);
         }
 
-        private static void QuantizeActivation(K210Conv2d layer, double postMul, QuantizationRange range, K210ConvLayerConfig config)
+        private static void QuantizeActivation(K210Conv2d layer, double postMul, QuantizationRange range, QuantizationRange beforeActRange, K210ConvLayerConfig config)
         {
+            if (layer.NonTrivialActivation == null)
+            {
+                switch (layer.FusedActivationFunction)
+                {
+                    case ActivationFunctionType.Linear:
+                    case ActivationFunctionType.Relu:
+                    case ActivationFunctionType.Relu6:
+                        break;
+                    default:
+                        throw new NotSupportedException($"Activation of {layer.FusedActivationFunction} is not supported.");
+                }
+
+                var starts = new ulong[]
+                {
+                    0x800000000, 0xf7d4cf4b8, 0xf8ed5a20c, 0xfa05e4f60,
+                    0xfb2e05baa, 0xfc46908fe, 0xfd5f1b652, 0xfe77a63a6,
+                    0xff9fc6ff0, 0xfffd4a9b7, 0, 0x7FFFFFFF0,
+                    0x7FFFFFFF1, 0x7FFFFFFF2, 0x7FFFFFFF3, 0x7FFFFFFF4
+                };
+
+                for (int i = 0; i < starts.Length; i++)
+                {
+                    var param = config.ActConfigs[i] = new K210LayerActConfig();
+                    param.StartX = starts[i];
+
+                    if (i == 10)
+                    {
+                        (var mul, var shift) = Quantizer.ExtractValueAndShift(1 / postMul, 16, 20);
+                        param.Mul = (int)Math.Round(mul);
+                        param.Shift = shift;
+                    }
+                }
+            }
+            else if (layer.NonTrivialActivation is LeakyRelu leakyRelu)
+            {
+                (var scale, var bias) = range.GetScaleBias(8);
+                var zero = (long)(Quantizer.Quantize(0, scale, bias) * postMul);
+                var biasTable = Generator.IntegerStep(0, (int)-bias, 15).Take(14).ToArray();
+
+                for (int i = 0; i < 16; i++)
+                {
+                    var param = config.ActConfigs[i] = new K210LayerActConfig();
+                    if (i == 0)
+                    {
+                        param.StartX = 0x800000000;
+                    }
+                    else if (i == 15)
+                    {
+                        (var mul, var shift) = Quantizer.ExtractValueAndShift(1 / postMul, 16, 20);
+                        param.Mul = (int)Math.Round(mul);
+                        param.Shift = shift;
+                        param.Add = (byte)(-bias);
+                    }
+                    else
+                    {
+                        (var mul, var shift) = Quantizer.ExtractValueAndShift(1 / postMul * leakyRelu.Slope, 16, 20);
+                        param.Mul = (int)Math.Round(mul);
+                        param.Shift = shift;
+                        param.Add = (byte)(biasTable[i - 1]);
+
+                        var b = param.Add * postMul;
+                        // (start - zero) * slope + zero = bias
+                        var start = (b - zero) / leakyRelu.Slope + zero;
+                        param.StartX = (ulong)(long)Math.Round(start);
+                    }
+                }
+            }
+            else
+            {
+                throw new NotSupportedException($"Activation of {layer.NonTrivialActivation.GetType().Name} is not supported.");
+            }
+
             Func<double, double> invAct;
             switch (layer.FusedActivationFunction)
             {
@@ -248,13 +320,6 @@ namespace NnCase.Converter.K210.Converters.Layers
                 default:
                     throw new NotSupportedException($"Activation of {layer.FusedActivationFunction} is not supported.");
             }
-
-            var yTable = Generator.Step(range.Min, range.Max, 15);
-            var xTable = yTable.Select(invAct).Select(x => x * postMul).ToArray();
-
-            (var mul, var shift) = Quantizer.ExtractValueAndShift(1 / postMul, 16, 20);
-            config.ActMul = (int)Math.Round(mul);
-            config.ActShift = shift;
         }
 
         private void GenerateBinWeights(BinaryWriter bw, K210ConvLayerConfig layer, K210Conv2dParamAddress paramAddress, K210BinGenerationContext context)
@@ -294,29 +359,30 @@ namespace NnCase.Converter.K210.Converters.Layers
             paramAddress.Activation = context.AlignStreamPosition(256);
 
             var reg = new kpu_activate_table_t();
-            var starts = new ulong[]
-            {
-                    0x800000000, 0xf7d4cf4b8, 0xf8ed5a20c, 0xfa05e4f60,
-                    0xfb2e05baa, 0xfc46908fe, 0xfd5f1b652, 0xfe77a63a6,
-                    0xff9fc6ff0, 0xfffd4a9b7, 0, 0x7FFFFFFF0,
-                    0x7FFFFFFF1, 0x7FFFFFFF2, 0x7FFFFFFF3, 0x7FFFFFFF4
-            };
+            var configs = layer.ActConfigs;
 
-            for (int j = 0; j < starts.Length; j++)
+            for (int i = 0; i < configs.Length; i++)
             {
-                ref var param = ref reg.activate_para[j];
-                param.x_start = starts[j];
-                param.y_mul = 0;
-                param.shift_number = 0;
+                var config = configs[i];
+                ref var param = ref reg.activate_para[i];
+                param.x_start = config.StartX;
+                param.y_mul = (ushort)config.Mul;
+                param.shift_number = (byte)config.Shift;
             }
 
+            for (int i = 0; i < configs.Length; i++)
             {
-                ref var param = ref reg.activate_para[10];
-                param.y_mul = (ushort)layer.ActMul;
-                param.shift_number = (byte)layer.ActShift;
+                var config = configs[i];
+                unsafe
+                {
+                    if (i < 8)
+                        reg.activate_para_bias0.result_bias[i] = (byte)config.Add;
+                    else
+                        reg.activate_para_bias1.result_bias[i - 8] = (byte)config.Add;
+                }
             }
 
-            for (int j = 0; j < starts.Length; j++)
+            for (int j = 0; j < configs.Length; j++)
                 bw.Write(reg.activate_para[j].Value);
             bw.Write(reg.activate_para_bias0.Value);
             bw.Write(reg.activate_para_bias1.Value);

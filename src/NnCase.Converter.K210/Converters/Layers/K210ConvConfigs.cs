@@ -13,6 +13,17 @@ namespace NnCase.Converter.K210.Converters.Layers
         public int Add { get; set; }
     }
 
+    public class K210LayerActConfig
+    {
+        public ulong StartX { get; set; }
+
+        public int Mul { get; set; }
+
+        public int Shift { get; set; }
+
+        public int Add { get; set; }
+    }
+
     public class K210ConvLayerConfig
     {
         public ushort[] Weights { get; set; }
@@ -38,6 +49,8 @@ namespace NnCase.Converter.K210.Converters.Layers
         public int OutputChannels { get; set; }
 
         public K210LayerBNConfig[] BNConfigs { get; set; }
+
+        public K210LayerActConfig[] ActConfigs { get; set; }
 
         public int InputWidth { get; set; }
 
@@ -70,9 +83,5 @@ namespace NnCase.Converter.K210.Converters.Layers
         public int InputSize { get; set; }
 
         public int OutputSize { get; set; }
-
-        public int ActMul { get; set; }
-
-        public int ActShift { get; set; }
     }
 }
