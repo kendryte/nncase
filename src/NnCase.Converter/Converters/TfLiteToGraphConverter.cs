@@ -183,10 +183,22 @@ namespace NnCase.Converter.Converters
             var inputs = op.GetInputsArray();
             var input = _graph.Tensors(inputs[0]).Value;
 
-            var layer = new L2Normalization(input.GetShapeArray());
-            _inputs.Add(layer.Input, inputs[0]);
-            _outputs.Add(op.Outputs(0), layer.Output);
-            return layer;
+            if (input.ShapeLength == 4 && (input.Shape(1) != 1 || input.Shape(2) != 1))
+            {
+                var flatten = new TensorflowFlatten(input.GetShapeArray().ToNCHW());
+                var layer = new L2Normalization(flatten.Output.Dimensions);
+                layer.Input.SetConnection(flatten.Output);
+                _inputs.Add(flatten.Input, inputs[0]);
+                _outputs.Add(op.Outputs(0), layer.Output);
+                return layer;
+            }
+            else
+            {
+                var layer = new L2Normalization(input.GetShapeArray().ToNCHW());
+                _inputs.Add(layer.Input, inputs[0]);
+                _outputs.Add(op.Outputs(0), layer.Output);
+                return layer;
+            }
         }
 
         private Layer ConvertAdd(tflite.Operator op)

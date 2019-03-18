@@ -274,7 +274,7 @@ namespace NnCase.Converter.K210.Converters.Layers
             {
                 (var scale, var bias) = range.GetScaleBias(8);
                 var zero = (long)(Quantizer.Quantize(0, scale, bias) * postMul);
-                var biasTable = Generator.IntegerStep(0, (int)-bias, 15).Take(14).ToArray();
+                var yTable = Generator.IntegerStep(0, (int)-bias, 15).Take(14).ToArray();
 
                 for (int i = 0; i < 16; i++)
                 {
@@ -286,21 +286,25 @@ namespace NnCase.Converter.K210.Converters.Layers
                     else if (i == 15)
                     {
                         (var mul, var shift) = Quantizer.ExtractValueAndShift(1 / postMul, 16, 20);
+                        param.StartX = (ulong)zero;
                         param.Mul = (int)Math.Round(mul);
                         param.Shift = shift;
                         param.Add = (byte)(-bias);
                     }
                     else
                     {
+                        // f(x) = (1 - slope) * zero + x * slope
+                        // f(x1) - f(x0) = (x1 - x0) * slope
+                        // x0 = zero - (zero - y0) / slope
+                        var add = (byte)yTable[i - 1];
+                        var y0 = add * postMul;
+                        var x0 = zero - (zero - y0) / leakyRelu.Slope;
+
                         (var mul, var shift) = Quantizer.ExtractValueAndShift(1 / postMul * leakyRelu.Slope, 16, 20);
+                        param.StartX = (ulong)(long)Math.Floor(x0);
                         param.Mul = (int)Math.Round(mul);
                         param.Shift = shift;
-                        param.Add = (byte)(biasTable[i - 1]);
-
-                        var b = param.Add * postMul;
-                        // (start - zero) * slope + zero = bias
-                        var start = (b - zero) / leakyRelu.Slope + zero;
-                        param.StartX = (ulong)(long)Math.Round(start);
+                        param.Add = add;
                     }
                 }
             }

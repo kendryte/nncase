@@ -31,9 +31,10 @@ namespace NnCase.Converter.Converters
             var inputs = new List<InputLayer>(layers.OfType<InputLayer>());
 
             var outputs = new List<OutputLayer>();
+            int i = 0;
             foreach (var conn in _outputs.Values.Where(o => !o.Connections.Any()))
             {
-                var output = new OutputLayer(conn.Dimensions) { Name = "output" };
+                var output = new OutputLayer(conn.Dimensions) { Name = $"output_{i++}" };
                 conn.AddConnection(output.Input);
                 outputs.Add(output);
             }
@@ -73,6 +74,8 @@ namespace NnCase.Converter.Converters
                     return ConvertInnerProduct(layerParam);
                 case "L2Normalization":
                     return ConvertL2Normalization(layerParam);
+                case "Normalize":
+                    return ConvertNormalize(layerParam);
                 default:
                     throw new LayerNotSupportedException(layerParam.Type);
             }
@@ -341,6 +344,17 @@ namespace NnCase.Converter.Converters
         {
             var input = _outputs[layerParam.Bottom[0]];
             var param = layerParam.L2NormalizationParam;
+
+            var layer = new L2Normalization(input.Dimensions);
+            layer.Input.SetConnection(input);
+            _outputs[layerParam.Top[0]] = layer.Output;
+            return layer;
+        }
+
+        private Layer ConvertNormalize(LayerParameter layerParam)
+        {
+            var input = _outputs[layerParam.Bottom[0]];
+            var param = layerParam.NormalizeParam;
 
             var layer = new L2Normalization(input.Dimensions);
             layer.Input.SetConnection(input);

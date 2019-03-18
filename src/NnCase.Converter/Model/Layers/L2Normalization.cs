@@ -21,7 +21,7 @@ namespace NnCase.Converter.Model.Layers
         {
             var graph = context.TFGraph;
             var x = context.TFOutputs[Input.Connection.From];
-            var y = graph.Sum(graph.Square(x), graph.Const(1), keep_dims: true);
+            var y = graph.Sum(graph.Square(x), graph.Const(Input.Dimensions.Length - 1), keep_dims: true);
             y = graph.Rsqrt(graph.Maximum(y, graph.Const(1e-10f)));
 
             context.TFOutputs[Output] = graph.Mul(x, y);

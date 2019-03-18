@@ -95,7 +95,7 @@ namespace NnCase.Converter.K210.Converters.Stages.Quantize
             for (int i = 0; i < outputs.Count; i++)
             {
                 var span = new Span<float>(outputs[i].Data.ToPointer(), (int)outputs[i].TensorByteSize / 4);
-                var newRange = Clipper.GetClippedRange(span);
+                var newRange = GetClippedRange(span);
 
                 if (i < context.Outputs.Count)
                 {
@@ -117,7 +117,7 @@ namespace NnCase.Converter.K210.Converters.Stages.Quantize
             }
         }
 
-        public static QuantizationRange GetRange(Span<float> data)
+        public static QuantizationRange GetRange(ReadOnlySpan<float> data)
         {
             double min = double.MaxValue, max = double.MinValue;
             bool used = false;
@@ -136,6 +136,9 @@ namespace NnCase.Converter.K210.Converters.Stages.Quantize
             else
                 return new QuantizationRange { Min = min, Max = max };
         }
+
+        public static QuantizationRange GetClippedRange(ReadOnlySpan<float> data) =>
+            Clipper.GetClippedRange(data);
 
         public static double Quantize(double value, double scale, double bias)
         {

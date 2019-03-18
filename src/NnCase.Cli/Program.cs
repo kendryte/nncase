@@ -108,6 +108,10 @@ namespace NnCase.Cli
             {
                 case "tf":
                     {
+                        Transform.Process(graph, new Transform[] {
+                            new LeakyReluTransform()
+                        });
+
                         var ctx = new GraphPlanContext();
                         graph.Plan(ctx);
 
