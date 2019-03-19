@@ -89,6 +89,8 @@ namespace NnCase.Converter.Converters
                     return ConvertMaximum(op);
                 case tflite.BuiltinOperator.RESIZE_NEAREST_NEIGHBOR:
                     return ConvertResizeNearestNeighbor(op);
+                case tflite.BuiltinOperator.LEAKY_RELU:
+                    return ConvertLeakyRelu(op);
                 default:
                     throw new LayerNotSupportedException(opCode.BuiltinCode.ToString());
             }
@@ -328,6 +330,18 @@ namespace NnCase.Converter.Converters
 
             var blockShape = _graph.Tensors(inputs[1]).Value;
             var layer = new ResizeNearestNeighbor(input.GetShapeArray().ToNCHW(), newSize[1], newSize[0], options.AlignCorners);
+            _inputs.Add(layer.Input, inputs[0]);
+            _outputs.Add(op.Outputs(0), layer.Output);
+            return layer;
+        }
+
+        private Layer ConvertLeakyRelu(tflite.Operator op)
+        {
+            var inputs = op.GetInputsArray();
+            var input = _graph.Tensors(inputs[0]).Value;
+            var options = op.BuiltinOptions<tflite.LeakyReluOptions>().Value;
+
+            var layer = new LeakyRelu(input.GetShapeArray().ToNCHW(), options.Alpha);
             _inputs.Add(layer.Input, inputs[0]);
             _outputs.Add(op.Outputs(0), layer.Output);
             return layer;

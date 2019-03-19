@@ -19,6 +19,13 @@ public enum TensorType : sbyte
  BOOL = 6,
  INT16 = 7,
  COMPLEX64 = 8,
+ INT8 = 9,
+};
+
+public enum QuantizationDetails : byte
+{
+ NONE = 0,
+ CustomQuantization = 1,
 };
 
 public enum BuiltinOperator : sbyte
@@ -120,6 +127,21 @@ public enum BuiltinOperator : sbyte
  FLOOR_MOD = 95,
  RANGE = 96,
  RESIZE_NEAREST_NEIGHBOR = 97,
+ LEAKY_RELU = 98,
+ SQUARED_DIFFERENCE = 99,
+ MIRROR_PAD = 100,
+ ABS = 101,
+ SPLIT_V = 102,
+ UNIQUE = 103,
+ CEIL = 104,
+ REVERSE_V2 = 105,
+ ADD_N = 106,
+ GATHER_ND = 107,
+ COS = 108,
+ WHERE = 109,
+ RANK = 110,
+ ELU = 111,
+ REVERSE_SEQUENCE = 112,
 };
 
 public enum BuiltinOptions : byte
@@ -199,6 +221,19 @@ public enum BuiltinOptions : byte
  FloorModOptions = 72,
  RangeOptions = 73,
  ResizeNearestNeighborOptions = 74,
+ LeakyReluOptions = 75,
+ SquaredDifferenceOptions = 76,
+ MirrorPadOptions = 77,
+ AbsOptions = 78,
+ SplitVOptions = 79,
+ UniqueOptions = 80,
+ ReverseV2Options = 81,
+ AddNOptions = 82,
+ GatherNdOptions = 83,
+ CosOptions = 84,
+ WhereOptions = 85,
+ RankOptions = 86,
+ ReverseSequenceOptions = 87,
 };
 
 public enum Padding : sbyte
@@ -243,9 +278,51 @@ public enum CombinerType : sbyte
  SQRTN = 2,
 };
 
+public enum MirrorPadMode : sbyte
+{
+ REFLECT = 0,
+ SYMMETRIC = 1,
+};
+
 public enum CustomOptionsFormat : sbyte
 {
  FLEXBUFFERS = 0,
+};
+
+public struct CustomQuantization : IFlatbufferObject
+{
+  private Table __p;
+  public ByteBuffer ByteBuffer { get { return __p.bb; } }
+  public static CustomQuantization GetRootAsCustomQuantization(ByteBuffer _bb) { return GetRootAsCustomQuantization(_bb, new CustomQuantization()); }
+  public static CustomQuantization GetRootAsCustomQuantization(ByteBuffer _bb, CustomQuantization obj) { return (obj.__assign(_bb.GetInt(_bb.Position) + _bb.Position, _bb)); }
+  public void __init(int _i, ByteBuffer _bb) { __p.bb_pos = _i; __p.bb = _bb; }
+  public CustomQuantization __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
+
+  public byte Custom(int j) { int o = __p.__offset(4); return o != 0 ? __p.bb.Get(__p.__vector(o) + j * 1) : (byte)0; }
+  public int CustomLength { get { int o = __p.__offset(4); return o != 0 ? __p.__vector_len(o) : 0; } }
+#if ENABLE_SPAN_T
+  public Span<byte> GetCustomBytes() { return __p.__vector_as_span(4); }
+#else
+  public ArraySegment<byte>? GetCustomBytes() { return __p.__vector_as_arraysegment(4); }
+#endif
+  public byte[] GetCustomArray() { return __p.__vector_as_array<byte>(4); }
+
+  public static Offset<CustomQuantization> CreateCustomQuantization(FlatBufferBuilder builder,
+      VectorOffset customOffset = default(VectorOffset)) {
+    builder.StartObject(1);
+    CustomQuantization.AddCustom(builder, customOffset);
+    return CustomQuantization.EndCustomQuantization(builder);
+  }
+
+  public static void StartCustomQuantization(FlatBufferBuilder builder) { builder.StartObject(1); }
+  public static void AddCustom(FlatBufferBuilder builder, VectorOffset customOffset) { builder.AddOffset(0, customOffset.Value, 0); }
+  public static VectorOffset CreateCustomVector(FlatBufferBuilder builder, byte[] data) { builder.StartVector(1, data.Length, 1); for (int i = data.Length - 1; i >= 0; i--) builder.AddByte(data[i]); return builder.EndVector(); }
+  public static VectorOffset CreateCustomVectorBlock(FlatBufferBuilder builder, byte[] data) { builder.StartVector(1, data.Length, 1); builder.Add(data); return builder.EndVector(); }
+  public static void StartCustomVector(FlatBufferBuilder builder, int numElems) { builder.StartVector(1, numElems, 1); }
+  public static Offset<CustomQuantization> EndCustomQuantization(FlatBufferBuilder builder) {
+    int o = builder.EndObject();
+    return new Offset<CustomQuantization>(o);
+  }
 };
 
 public struct QuantizationParameters : IFlatbufferObject
@@ -289,21 +366,30 @@ public struct QuantizationParameters : IFlatbufferObject
   public ArraySegment<byte>? GetZeroPointBytes() { return __p.__vector_as_arraysegment(10); }
 #endif
   public long[] GetZeroPointArray() { return __p.__vector_as_array<long>(10); }
+  public QuantizationDetails DetailsType { get { int o = __p.__offset(12); return o != 0 ? (QuantizationDetails)__p.bb.Get(o + __p.bb_pos) : QuantizationDetails.NONE; } }
+  public TTable? Details<TTable>() where TTable : struct, IFlatbufferObject { int o = __p.__offset(14); return o != 0 ? (TTable?)__p.__union<TTable>(o) : null; }
+  public int QuantizedDimension { get { int o = __p.__offset(16); return o != 0 ? __p.bb.GetInt(o + __p.bb_pos) : (int)0; } }
 
   public static Offset<QuantizationParameters> CreateQuantizationParameters(FlatBufferBuilder builder,
       VectorOffset minOffset = default(VectorOffset),
       VectorOffset maxOffset = default(VectorOffset),
       VectorOffset scaleOffset = default(VectorOffset),
-      VectorOffset zero_pointOffset = default(VectorOffset)) {
-    builder.StartObject(4);
+      VectorOffset zero_pointOffset = default(VectorOffset),
+      QuantizationDetails details_type = QuantizationDetails.NONE,
+      int detailsOffset = 0,
+      int quantized_dimension = 0) {
+    builder.StartObject(7);
+    QuantizationParameters.AddQuantizedDimension(builder, quantized_dimension);
+    QuantizationParameters.AddDetails(builder, detailsOffset);
     QuantizationParameters.AddZeroPoint(builder, zero_pointOffset);
     QuantizationParameters.AddScale(builder, scaleOffset);
     QuantizationParameters.AddMax(builder, maxOffset);
     QuantizationParameters.AddMin(builder, minOffset);
+    QuantizationParameters.AddDetailsType(builder, details_type);
     return QuantizationParameters.EndQuantizationParameters(builder);
   }
 
-  public static void StartQuantizationParameters(FlatBufferBuilder builder) { builder.StartObject(4); }
+  public static void StartQuantizationParameters(FlatBufferBuilder builder) { builder.StartObject(7); }
   public static void AddMin(FlatBufferBuilder builder, VectorOffset minOffset) { builder.AddOffset(0, minOffset.Value, 0); }
   public static VectorOffset CreateMinVector(FlatBufferBuilder builder, float[] data) { builder.StartVector(4, data.Length, 4); for (int i = data.Length - 1; i >= 0; i--) builder.AddFloat(data[i]); return builder.EndVector(); }
   public static VectorOffset CreateMinVectorBlock(FlatBufferBuilder builder, float[] data) { builder.StartVector(4, data.Length, 4); builder.Add(data); return builder.EndVector(); }
@@ -320,6 +406,9 @@ public struct QuantizationParameters : IFlatbufferObject
   public static VectorOffset CreateZeroPointVector(FlatBufferBuilder builder, long[] data) { builder.StartVector(8, data.Length, 8); for (int i = data.Length - 1; i >= 0; i--) builder.AddLong(data[i]); return builder.EndVector(); }
   public static VectorOffset CreateZeroPointVectorBlock(FlatBufferBuilder builder, long[] data) { builder.StartVector(8, data.Length, 8); builder.Add(data); return builder.EndVector(); }
   public static void StartZeroPointVector(FlatBufferBuilder builder, int numElems) { builder.StartVector(8, numElems, 8); }
+  public static void AddDetailsType(FlatBufferBuilder builder, QuantizationDetails detailsType) { builder.AddByte(4, (byte)detailsType, 0); }
+  public static void AddDetails(FlatBufferBuilder builder, int detailsOffset) { builder.AddOffset(5, detailsOffset, 0); }
+  public static void AddQuantizedDimension(FlatBufferBuilder builder, int quantizedDimension) { builder.AddInt(6, quantizedDimension, 0); }
   public static Offset<QuantizationParameters> EndQuantizationParameters(FlatBufferBuilder builder) {
     int o = builder.EndObject();
     return new Offset<QuantizationParameters>(o);
@@ -1021,25 +1110,29 @@ public struct BidirectionalSequenceLSTMOptions : IFlatbufferObject
   public float CellClip { get { int o = __p.__offset(6); return o != 0 ? __p.bb.GetFloat(o + __p.bb_pos) : (float)0.0f; } }
   public float ProjClip { get { int o = __p.__offset(8); return o != 0 ? __p.bb.GetFloat(o + __p.bb_pos) : (float)0.0f; } }
   public bool MergeOutputs { get { int o = __p.__offset(10); return o != 0 ? 0!=__p.bb.Get(o + __p.bb_pos) : (bool)false; } }
+  public bool TimeMajor { get { int o = __p.__offset(12); return o != 0 ? 0!=__p.bb.Get(o + __p.bb_pos) : (bool)true; } }
 
   public static Offset<BidirectionalSequenceLSTMOptions> CreateBidirectionalSequenceLSTMOptions(FlatBufferBuilder builder,
       ActivationFunctionType fused_activation_function = ActivationFunctionType.NONE,
       float cell_clip = 0.0f,
       float proj_clip = 0.0f,
-      bool merge_outputs = false) {
-    builder.StartObject(4);
+      bool merge_outputs = false,
+      bool time_major = true) {
+    builder.StartObject(5);
     BidirectionalSequenceLSTMOptions.AddProjClip(builder, proj_clip);
     BidirectionalSequenceLSTMOptions.AddCellClip(builder, cell_clip);
+    BidirectionalSequenceLSTMOptions.AddTimeMajor(builder, time_major);
     BidirectionalSequenceLSTMOptions.AddMergeOutputs(builder, merge_outputs);
     BidirectionalSequenceLSTMOptions.AddFusedActivationFunction(builder, fused_activation_function);
     return BidirectionalSequenceLSTMOptions.EndBidirectionalSequenceLSTMOptions(builder);
   }
 
-  public static void StartBidirectionalSequenceLSTMOptions(FlatBufferBuilder builder) { builder.StartObject(4); }
+  public static void StartBidirectionalSequenceLSTMOptions(FlatBufferBuilder builder) { builder.StartObject(5); }
   public static void AddFusedActivationFunction(FlatBufferBuilder builder, ActivationFunctionType fusedActivationFunction) { builder.AddSbyte(0, (sbyte)fusedActivationFunction, 0); }
   public static void AddCellClip(FlatBufferBuilder builder, float cellClip) { builder.AddFloat(1, cellClip, 0.0f); }
   public static void AddProjClip(FlatBufferBuilder builder, float projClip) { builder.AddFloat(2, projClip, 0.0f); }
   public static void AddMergeOutputs(FlatBufferBuilder builder, bool mergeOutputs) { builder.AddBool(3, mergeOutputs, false); }
+  public static void AddTimeMajor(FlatBufferBuilder builder, bool timeMajor) { builder.AddBool(4, timeMajor, true); }
   public static Offset<BidirectionalSequenceLSTMOptions> EndBidirectionalSequenceLSTMOptions(FlatBufferBuilder builder) {
     int o = builder.EndObject();
     return new Offset<BidirectionalSequenceLSTMOptions>(o);
@@ -1443,6 +1536,23 @@ public struct ExpOptions : IFlatbufferObject
   }
 };
 
+public struct CosOptions : IFlatbufferObject
+{
+  private Table __p;
+  public ByteBuffer ByteBuffer { get { return __p.bb; } }
+  public static CosOptions GetRootAsCosOptions(ByteBuffer _bb) { return GetRootAsCosOptions(_bb, new CosOptions()); }
+  public static CosOptions GetRootAsCosOptions(ByteBuffer _bb, CosOptions obj) { return (obj.__assign(_bb.GetInt(_bb.Position) + _bb.Position, _bb)); }
+  public void __init(int _i, ByteBuffer _bb) { __p.bb_pos = _i; __p.bb = _bb; }
+  public CosOptions __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
+
+
+  public static void StartCosOptions(FlatBufferBuilder builder) { builder.StartObject(0); }
+  public static Offset<CosOptions> EndCosOptions(FlatBufferBuilder builder) {
+    int o = builder.EndObject();
+    return new Offset<CosOptions>(o);
+  }
+};
+
 public struct ReducerOptions : IFlatbufferObject
 {
   private Table __p;
@@ -1528,6 +1638,32 @@ public struct SplitOptions : IFlatbufferObject
   public static Offset<SplitOptions> EndSplitOptions(FlatBufferBuilder builder) {
     int o = builder.EndObject();
     return new Offset<SplitOptions>(o);
+  }
+};
+
+public struct SplitVOptions : IFlatbufferObject
+{
+  private Table __p;
+  public ByteBuffer ByteBuffer { get { return __p.bb; } }
+  public static SplitVOptions GetRootAsSplitVOptions(ByteBuffer _bb) { return GetRootAsSplitVOptions(_bb, new SplitVOptions()); }
+  public static SplitVOptions GetRootAsSplitVOptions(ByteBuffer _bb, SplitVOptions obj) { return (obj.__assign(_bb.GetInt(_bb.Position) + _bb.Position, _bb)); }
+  public void __init(int _i, ByteBuffer _bb) { __p.bb_pos = _i; __p.bb = _bb; }
+  public SplitVOptions __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
+
+  public int NumSplits { get { int o = __p.__offset(4); return o != 0 ? __p.bb.GetInt(o + __p.bb_pos) : (int)0; } }
+
+  public static Offset<SplitVOptions> CreateSplitVOptions(FlatBufferBuilder builder,
+      int num_splits = 0) {
+    builder.StartObject(1);
+    SplitVOptions.AddNumSplits(builder, num_splits);
+    return SplitVOptions.EndSplitVOptions(builder);
+  }
+
+  public static void StartSplitVOptions(FlatBufferBuilder builder) { builder.StartObject(1); }
+  public static void AddNumSplits(FlatBufferBuilder builder, int numSplits) { builder.AddInt(0, numSplits, 0); }
+  public static Offset<SplitVOptions> EndSplitVOptions(FlatBufferBuilder builder) {
+    int o = builder.EndObject();
+    return new Offset<SplitVOptions>(o);
   }
 };
 
@@ -1979,6 +2115,23 @@ public struct ShapeOptions : IFlatbufferObject
   }
 };
 
+public struct RankOptions : IFlatbufferObject
+{
+  private Table __p;
+  public ByteBuffer ByteBuffer { get { return __p.bb; } }
+  public static RankOptions GetRootAsRankOptions(ByteBuffer _bb) { return GetRootAsRankOptions(_bb, new RankOptions()); }
+  public static RankOptions GetRootAsRankOptions(ByteBuffer _bb, RankOptions obj) { return (obj.__assign(_bb.GetInt(_bb.Position) + _bb.Position, _bb)); }
+  public void __init(int _i, ByteBuffer _bb) { __p.bb_pos = _i; __p.bb = _bb; }
+  public RankOptions __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
+
+
+  public static void StartRankOptions(FlatBufferBuilder builder) { builder.StartObject(0); }
+  public static Offset<RankOptions> EndRankOptions(FlatBufferBuilder builder) {
+    int o = builder.EndObject();
+    return new Offset<RankOptions>(o);
+  }
+};
+
 public struct PowOptions : IFlatbufferObject
 {
   private Table __p;
@@ -2104,6 +2257,23 @@ public struct OneHotOptions : IFlatbufferObject
   public static Offset<OneHotOptions> EndOneHotOptions(FlatBufferBuilder builder) {
     int o = builder.EndObject();
     return new Offset<OneHotOptions>(o);
+  }
+};
+
+public struct AbsOptions : IFlatbufferObject
+{
+  private Table __p;
+  public ByteBuffer ByteBuffer { get { return __p.bb; } }
+  public static AbsOptions GetRootAsAbsOptions(ByteBuffer _bb) { return GetRootAsAbsOptions(_bb, new AbsOptions()); }
+  public static AbsOptions GetRootAsAbsOptions(ByteBuffer _bb, AbsOptions obj) { return (obj.__assign(_bb.GetInt(_bb.Position) + _bb.Position, _bb)); }
+  public void __init(int _i, ByteBuffer _bb) { __p.bb_pos = _i; __p.bb = _bb; }
+  public AbsOptions __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
+
+
+  public static void StartAbsOptions(FlatBufferBuilder builder) { builder.StartObject(0); }
+  public static Offset<AbsOptions> EndAbsOptions(FlatBufferBuilder builder) {
+    int o = builder.EndObject();
+    return new Offset<AbsOptions>(o);
   }
 };
 
@@ -2270,6 +2440,199 @@ public struct RangeOptions : IFlatbufferObject
   public static Offset<RangeOptions> EndRangeOptions(FlatBufferBuilder builder) {
     int o = builder.EndObject();
     return new Offset<RangeOptions>(o);
+  }
+};
+
+public struct LeakyReluOptions : IFlatbufferObject
+{
+  private Table __p;
+  public ByteBuffer ByteBuffer { get { return __p.bb; } }
+  public static LeakyReluOptions GetRootAsLeakyReluOptions(ByteBuffer _bb) { return GetRootAsLeakyReluOptions(_bb, new LeakyReluOptions()); }
+  public static LeakyReluOptions GetRootAsLeakyReluOptions(ByteBuffer _bb, LeakyReluOptions obj) { return (obj.__assign(_bb.GetInt(_bb.Position) + _bb.Position, _bb)); }
+  public void __init(int _i, ByteBuffer _bb) { __p.bb_pos = _i; __p.bb = _bb; }
+  public LeakyReluOptions __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
+
+  public float Alpha { get { int o = __p.__offset(4); return o != 0 ? __p.bb.GetFloat(o + __p.bb_pos) : (float)0.0f; } }
+
+  public static Offset<LeakyReluOptions> CreateLeakyReluOptions(FlatBufferBuilder builder,
+      float alpha = 0.0f) {
+    builder.StartObject(1);
+    LeakyReluOptions.AddAlpha(builder, alpha);
+    return LeakyReluOptions.EndLeakyReluOptions(builder);
+  }
+
+  public static void StartLeakyReluOptions(FlatBufferBuilder builder) { builder.StartObject(1); }
+  public static void AddAlpha(FlatBufferBuilder builder, float alpha) { builder.AddFloat(0, alpha, 0.0f); }
+  public static Offset<LeakyReluOptions> EndLeakyReluOptions(FlatBufferBuilder builder) {
+    int o = builder.EndObject();
+    return new Offset<LeakyReluOptions>(o);
+  }
+};
+
+public struct SquaredDifferenceOptions : IFlatbufferObject
+{
+  private Table __p;
+  public ByteBuffer ByteBuffer { get { return __p.bb; } }
+  public static SquaredDifferenceOptions GetRootAsSquaredDifferenceOptions(ByteBuffer _bb) { return GetRootAsSquaredDifferenceOptions(_bb, new SquaredDifferenceOptions()); }
+  public static SquaredDifferenceOptions GetRootAsSquaredDifferenceOptions(ByteBuffer _bb, SquaredDifferenceOptions obj) { return (obj.__assign(_bb.GetInt(_bb.Position) + _bb.Position, _bb)); }
+  public void __init(int _i, ByteBuffer _bb) { __p.bb_pos = _i; __p.bb = _bb; }
+  public SquaredDifferenceOptions __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
+
+
+  public static void StartSquaredDifferenceOptions(FlatBufferBuilder builder) { builder.StartObject(0); }
+  public static Offset<SquaredDifferenceOptions> EndSquaredDifferenceOptions(FlatBufferBuilder builder) {
+    int o = builder.EndObject();
+    return new Offset<SquaredDifferenceOptions>(o);
+  }
+};
+
+public struct MirrorPadOptions : IFlatbufferObject
+{
+  private Table __p;
+  public ByteBuffer ByteBuffer { get { return __p.bb; } }
+  public static MirrorPadOptions GetRootAsMirrorPadOptions(ByteBuffer _bb) { return GetRootAsMirrorPadOptions(_bb, new MirrorPadOptions()); }
+  public static MirrorPadOptions GetRootAsMirrorPadOptions(ByteBuffer _bb, MirrorPadOptions obj) { return (obj.__assign(_bb.GetInt(_bb.Position) + _bb.Position, _bb)); }
+  public void __init(int _i, ByteBuffer _bb) { __p.bb_pos = _i; __p.bb = _bb; }
+  public MirrorPadOptions __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
+
+  public MirrorPadMode Mode { get { int o = __p.__offset(4); return o != 0 ? (MirrorPadMode)__p.bb.GetSbyte(o + __p.bb_pos) : MirrorPadMode.REFLECT; } }
+
+  public static Offset<MirrorPadOptions> CreateMirrorPadOptions(FlatBufferBuilder builder,
+      MirrorPadMode mode = MirrorPadMode.REFLECT) {
+    builder.StartObject(1);
+    MirrorPadOptions.AddMode(builder, mode);
+    return MirrorPadOptions.EndMirrorPadOptions(builder);
+  }
+
+  public static void StartMirrorPadOptions(FlatBufferBuilder builder) { builder.StartObject(1); }
+  public static void AddMode(FlatBufferBuilder builder, MirrorPadMode mode) { builder.AddSbyte(0, (sbyte)mode, 0); }
+  public static Offset<MirrorPadOptions> EndMirrorPadOptions(FlatBufferBuilder builder) {
+    int o = builder.EndObject();
+    return new Offset<MirrorPadOptions>(o);
+  }
+};
+
+public struct UniqueOptions : IFlatbufferObject
+{
+  private Table __p;
+  public ByteBuffer ByteBuffer { get { return __p.bb; } }
+  public static UniqueOptions GetRootAsUniqueOptions(ByteBuffer _bb) { return GetRootAsUniqueOptions(_bb, new UniqueOptions()); }
+  public static UniqueOptions GetRootAsUniqueOptions(ByteBuffer _bb, UniqueOptions obj) { return (obj.__assign(_bb.GetInt(_bb.Position) + _bb.Position, _bb)); }
+  public void __init(int _i, ByteBuffer _bb) { __p.bb_pos = _i; __p.bb = _bb; }
+  public UniqueOptions __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
+
+  public TensorType IdxOutType { get { int o = __p.__offset(4); return o != 0 ? (TensorType)__p.bb.GetSbyte(o + __p.bb_pos) : TensorType.INT32; } }
+
+  public static Offset<UniqueOptions> CreateUniqueOptions(FlatBufferBuilder builder,
+      TensorType idx_out_type = TensorType.INT32) {
+    builder.StartObject(1);
+    UniqueOptions.AddIdxOutType(builder, idx_out_type);
+    return UniqueOptions.EndUniqueOptions(builder);
+  }
+
+  public static void StartUniqueOptions(FlatBufferBuilder builder) { builder.StartObject(1); }
+  public static void AddIdxOutType(FlatBufferBuilder builder, TensorType idxOutType) { builder.AddSbyte(0, (sbyte)idxOutType, 2); }
+  public static Offset<UniqueOptions> EndUniqueOptions(FlatBufferBuilder builder) {
+    int o = builder.EndObject();
+    return new Offset<UniqueOptions>(o);
+  }
+};
+
+public struct ReverseV2Options : IFlatbufferObject
+{
+  private Table __p;
+  public ByteBuffer ByteBuffer { get { return __p.bb; } }
+  public static ReverseV2Options GetRootAsReverseV2Options(ByteBuffer _bb) { return GetRootAsReverseV2Options(_bb, new ReverseV2Options()); }
+  public static ReverseV2Options GetRootAsReverseV2Options(ByteBuffer _bb, ReverseV2Options obj) { return (obj.__assign(_bb.GetInt(_bb.Position) + _bb.Position, _bb)); }
+  public void __init(int _i, ByteBuffer _bb) { __p.bb_pos = _i; __p.bb = _bb; }
+  public ReverseV2Options __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
+
+
+  public static void StartReverseV2Options(FlatBufferBuilder builder) { builder.StartObject(0); }
+  public static Offset<ReverseV2Options> EndReverseV2Options(FlatBufferBuilder builder) {
+    int o = builder.EndObject();
+    return new Offset<ReverseV2Options>(o);
+  }
+};
+
+public struct AddNOptions : IFlatbufferObject
+{
+  private Table __p;
+  public ByteBuffer ByteBuffer { get { return __p.bb; } }
+  public static AddNOptions GetRootAsAddNOptions(ByteBuffer _bb) { return GetRootAsAddNOptions(_bb, new AddNOptions()); }
+  public static AddNOptions GetRootAsAddNOptions(ByteBuffer _bb, AddNOptions obj) { return (obj.__assign(_bb.GetInt(_bb.Position) + _bb.Position, _bb)); }
+  public void __init(int _i, ByteBuffer _bb) { __p.bb_pos = _i; __p.bb = _bb; }
+  public AddNOptions __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
+
+
+  public static void StartAddNOptions(FlatBufferBuilder builder) { builder.StartObject(0); }
+  public static Offset<AddNOptions> EndAddNOptions(FlatBufferBuilder builder) {
+    int o = builder.EndObject();
+    return new Offset<AddNOptions>(o);
+  }
+};
+
+public struct GatherNdOptions : IFlatbufferObject
+{
+  private Table __p;
+  public ByteBuffer ByteBuffer { get { return __p.bb; } }
+  public static GatherNdOptions GetRootAsGatherNdOptions(ByteBuffer _bb) { return GetRootAsGatherNdOptions(_bb, new GatherNdOptions()); }
+  public static GatherNdOptions GetRootAsGatherNdOptions(ByteBuffer _bb, GatherNdOptions obj) { return (obj.__assign(_bb.GetInt(_bb.Position) + _bb.Position, _bb)); }
+  public void __init(int _i, ByteBuffer _bb) { __p.bb_pos = _i; __p.bb = _bb; }
+  public GatherNdOptions __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
+
+
+  public static void StartGatherNdOptions(FlatBufferBuilder builder) { builder.StartObject(0); }
+  public static Offset<GatherNdOptions> EndGatherNdOptions(FlatBufferBuilder builder) {
+    int o = builder.EndObject();
+    return new Offset<GatherNdOptions>(o);
+  }
+};
+
+public struct WhereOptions : IFlatbufferObject
+{
+  private Table __p;
+  public ByteBuffer ByteBuffer { get { return __p.bb; } }
+  public static WhereOptions GetRootAsWhereOptions(ByteBuffer _bb) { return GetRootAsWhereOptions(_bb, new WhereOptions()); }
+  public static WhereOptions GetRootAsWhereOptions(ByteBuffer _bb, WhereOptions obj) { return (obj.__assign(_bb.GetInt(_bb.Position) + _bb.Position, _bb)); }
+  public void __init(int _i, ByteBuffer _bb) { __p.bb_pos = _i; __p.bb = _bb; }
+  public WhereOptions __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
+
+
+  public static void StartWhereOptions(FlatBufferBuilder builder) { builder.StartObject(0); }
+  public static Offset<WhereOptions> EndWhereOptions(FlatBufferBuilder builder) {
+    int o = builder.EndObject();
+    return new Offset<WhereOptions>(o);
+  }
+};
+
+public struct ReverseSequenceOptions : IFlatbufferObject
+{
+  private Table __p;
+  public ByteBuffer ByteBuffer { get { return __p.bb; } }
+  public static ReverseSequenceOptions GetRootAsReverseSequenceOptions(ByteBuffer _bb) { return GetRootAsReverseSequenceOptions(_bb, new ReverseSequenceOptions()); }
+  public static ReverseSequenceOptions GetRootAsReverseSequenceOptions(ByteBuffer _bb, ReverseSequenceOptions obj) { return (obj.__assign(_bb.GetInt(_bb.Position) + _bb.Position, _bb)); }
+  public void __init(int _i, ByteBuffer _bb) { __p.bb_pos = _i; __p.bb = _bb; }
+  public ReverseSequenceOptions __assign(int _i, ByteBuffer _bb) { __init(_i, _bb); return this; }
+
+  public int SeqDim { get { int o = __p.__offset(4); return o != 0 ? __p.bb.GetInt(o + __p.bb_pos) : (int)0; } }
+  public int BatchDim { get { int o = __p.__offset(6); return o != 0 ? __p.bb.GetInt(o + __p.bb_pos) : (int)0; } }
+
+  public static Offset<ReverseSequenceOptions> CreateReverseSequenceOptions(FlatBufferBuilder builder,
+      int seq_dim = 0,
+      int batch_dim = 0) {
+    builder.StartObject(2);
+    ReverseSequenceOptions.AddBatchDim(builder, batch_dim);
+    ReverseSequenceOptions.AddSeqDim(builder, seq_dim);
+    return ReverseSequenceOptions.EndReverseSequenceOptions(builder);
+  }
+
+  public static void StartReverseSequenceOptions(FlatBufferBuilder builder) { builder.StartObject(2); }
+  public static void AddSeqDim(FlatBufferBuilder builder, int seqDim) { builder.AddInt(0, seqDim, 0); }
+  public static void AddBatchDim(FlatBufferBuilder builder, int batchDim) { builder.AddInt(1, batchDim, 0); }
+  public static Offset<ReverseSequenceOptions> EndReverseSequenceOptions(FlatBufferBuilder builder) {
+    int o = builder.EndObject();
+    return new Offset<ReverseSequenceOptions>(o);
   }
 };
 

@@ -13,6 +13,8 @@ namespace NnCase.Converter.K210.Converters.Stages.Inference
 
         public uint MaxUsage => 2 * 1024 * 1024 / 64 - MaxStart;
 
+        public bool _findFromLast = true;
+
         public KPUMemoryAllocator()
         {
             _nodes.Add(new MemoryNode(this) { Start = 0, Size = MaxStart });
@@ -32,16 +34,35 @@ namespace NnCase.Converter.K210.Converters.Stages.Inference
             }
             else
             {
-                firstFree.Size -= size;
-                var newNode = new MemoryNode(this)
+                if (_findFromLast)
                 {
-                    Start = firstFree.Start + firstFree.Size,
-                    Size = size
-                };
-                newNode.AddRef();
+                    firstFree.Size -= size;
+                    var newNode = new MemoryNode(this)
+                    {
+                        Start = firstFree.Start + firstFree.Size,
+                        Size = size
+                    };
+                    newNode.AddRef();
 
-                _nodes.Insert(firstFreeIdx + 1, newNode);
-                node = newNode;
+                    _nodes.Insert(firstFreeIdx + 1, newNode);
+                    node = newNode;
+                }
+                else
+                {
+                    var newNode = new MemoryNode(this)
+                    {
+                        Start = firstFree.Start,
+                        Size = size
+                    };
+                    newNode.AddRef();
+
+                    firstFree.Start += size;
+                    firstFree.Size -= size;
+                    _nodes.Insert(firstFreeIdx, newNode);
+                    node = newNode;
+                }
+
+                _findFromLast = !_findFromLast;
             }
 
             MaxStart = Math.Min(node.Start, MaxStart);
