@@ -29,7 +29,7 @@ namespace NnCase.Converter.K210.Converters.Stages.Inference
             if (!KPUMemoryMap.TryGetValue(output, out var alloc))
             {
                 var dimensions = output.Dimensions;
-                (var groups, var rowLength) = K210Helper.GetRowLayout(dimensions[3]);
+                (var groups, var rowLength, _) = K210Helper.GetRowLayout(dimensions[3]);
                 var oneLineChannels = Math.Min(dimensions[1], groups);
                 var blocks = (int)Math.Ceiling(dimensions[1] / (double)oneLineChannels);
                 if (dimensions[1] == 921)

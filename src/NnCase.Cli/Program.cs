@@ -66,6 +66,10 @@ namespace NnCase.Cli
                 Environment.Exit(-1);
             };
 
+            var emulator = new NnCase.Converter.K210.Emulator.K210Emulator(
+                File.ReadAllBytes(@"D:\Work\Repository\kendryte-standalone-sdk\src\kpu6\mobilev1.kmodel"));
+            await emulator.RunAsync(@"D:\Work\Repository\models\test\face.jpg");
+
             Options options = null;
             Parser.Default.ParseArguments<Options>(args)
                 .WithParsed(o => options = o);
@@ -108,10 +112,6 @@ namespace NnCase.Cli
             {
                 case "tf":
                     {
-                        Transform.Process(graph, new Transform[] {
-                            new LeakyReluTransform()
-                        });
-
                         var ctx = new GraphPlanContext();
                         graph.Plan(ctx);
 

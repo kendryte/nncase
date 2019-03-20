@@ -46,9 +46,22 @@ namespace NnCase.Converter.Data
             if (batchSize < 1)
                 throw new ArgumentOutOfRangeException(nameof(batchSize));
 
-            _fileNames = (from f in Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories)
-                          where allowdExtensions.Contains(Path.GetExtension(f).ToLowerInvariant())
-                          select f).ToList();
+            if (Directory.Exists(path))
+            {
+                _fileNames = (from f in Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories)
+                              where allowdExtensions.Contains(Path.GetExtension(f).ToLowerInvariant())
+                              select f).ToList();
+            }
+            else if (allowdExtensions.Contains(Path.GetExtension(path)))
+            {
+                _fileNames = new[] { path };
+            }
+
+            if (_fileNames == null || _fileNames.Count == 0)
+            {
+                throw new ArgumentException("Invalid dataset.");
+            }
+
             _dimensions = dimensions.ToArray();
             _batchSize = batchSize;
             PostprocessMethod = postprocessMethod;
@@ -102,6 +115,52 @@ namespace NnCase.Converter.Data
 #endif
         }
 
+        public
+#if NET471
+#else
+            async
+#endif
+            IAsyncEnumerable<Tensor<byte>> GetFixedBatchesAsync()
+        {
+            var dimensions = new[] { _batchSize }.Concat(_dimensions).ToArray();
+            var oneSize = Dimensions.GetSize();
+
+            async Task<byte[]> ReadAllBytesAsync(string path)
+            {
+                using (var fs = File.OpenRead(path))
+                {
+                    var buffer = new byte[(int)fs.Length];
+                    await fs.ReadAsync(buffer, 0, buffer.Length);
+                    return buffer;
+                }
+            }
+
+#if NET471
+            return new AsyncEnumerable<Tensor<byte>>(async yield =>
+            {
+#endif
+            for (int i = 0; i < _fileNames.Count / _batchSize; i++)
+            {
+                var tensor = new DenseTensor<byte>(dimensions);
+                var sources = await Task.WhenAll(from j in Enumerable.Range(i * _batchSize, _batchSize)
+                                                 select ReadAllBytesAsync(_fileNames[j]));
+                Parallel.For(0, _batchSize, j =>
+                {
+                    var buffer = tensor.Buffer.Slice(j * oneSize);
+                    Process(sources[j], buffer.Span);
+                });
+
+#if NET471
+                    await yield.ReturnAsync(tensor);
+#else
+                yield return tensor;
+#endif
+            }
+#if NET471
+            });
+#endif
+        }
+
         private void Postprocess(Span<float> data, PostprocessMethods postprocessMethod)
         {
             if (postprocessMethod == PostprocessMethods.Normalize0To1)
@@ -117,6 +176,7 @@ namespace NnCase.Converter.Data
         }
 
         protected abstract void Process(byte[] source, Span<float> dest);
+        protected abstract void Process(byte[] source, Span<byte> dest);
     }
 
     public class ImageDataset : Dataset
@@ -134,7 +194,7 @@ namespace NnCase.Converter.Data
             _preprocessMethods = preprocessMethods;
         }
 
-        protected override void Process(byte[] source, Span<float> dest)
+        protected Image<Rgb24> Process(byte[] source)
         {
             using (var image = Image.Load<Rgb24>(source))
             {
@@ -158,9 +218,17 @@ namespace NnCase.Converter.Data
                 {
                     image.Mutate(x =>
                         x.Resize(Dimensions[2], Dimensions[1]));
-                    destImage = image;
+                    destImage = image.Clone();
                 }
 
+                return destImage;
+            }
+        }
+
+        protected override void Process(byte[] source, Span<float> dest)
+        {
+            using (var destImage = Process(source))
+            {
                 if (Dimensions[0] == 3)
                 {
                     var pixels = destImage.GetPixelSpan();
@@ -189,6 +257,46 @@ namespace NnCase.Converter.Data
                     var rChannel = dest.Slice(0, channelSize);
                     for (int i = 0; i < channelSize; i++)
                         rChannel[i] = pixels[i].R / 255.0f;
+                }
+                else
+                {
+                    throw new NotSupportedException($"Channels number {Dimensions[0]} is not supported by dataset provider.");
+                }
+            }
+        }
+
+        protected override void Process(byte[] source, Span<byte> dest)
+        {
+            using (var destImage = Process(source))
+            {
+                if (Dimensions[0] == 3)
+                {
+                    var pixels = destImage.GetPixelSpan();
+                    var channelSize = Dimensions[1] * Dimensions[2];
+
+                    var rChannel = dest.Slice(0, channelSize);
+                    for (int i = 0; i < channelSize; i++)
+                        rChannel[i] = pixels[i].R;
+
+                    var gChannel = dest.Slice(channelSize, channelSize);
+                    for (int i = 0; i < channelSize; i++)
+                        gChannel[i] = pixels[i].G;
+
+                    var bChannel = dest.Slice(channelSize * 2, channelSize);
+                    for (int i = 0; i < channelSize; i++)
+                        bChannel[i] = pixels[i].B;
+                }
+                else if (Dimensions[0] == 1)
+                {
+                    destImage.Mutate(x =>
+                        x.Grayscale());
+
+                    var pixels = destImage.GetPixelSpan();
+                    var channelSize = Dimensions[1] * Dimensions[2];
+
+                    var rChannel = dest.Slice(0, channelSize);
+                    for (int i = 0; i < channelSize; i++)
+                        rChannel[i] = pixels[i].R;
                 }
                 else
                 {
