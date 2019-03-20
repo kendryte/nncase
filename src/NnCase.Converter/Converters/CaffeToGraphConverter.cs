@@ -334,10 +334,23 @@ namespace NnCase.Converter.Converters
             var param = layerParam.InnerProductParam;
 
             var weights = LoadBlob(layerParam.Blobs[0]);
-            var layer = new FullyConnected(input.Dimensions, weights, null, ActivationFunctionType.Linear);
-            layer.Input.SetConnection(input);
-            _outputs[layerParam.Top[0]] = layer.Output;
-            return layer;
+
+            if (input.Dimensions.Length == 4 && (input.Dimensions[2] != 1 || input.Dimensions[3] != 1))
+            {
+                var flatten = new Reshape(input.Dimensions, new[] { -1, input.Dimensions.GetSize() });
+                var layer = new FullyConnected(flatten.Output.Dimensions, weights, null, ActivationFunctionType.Linear);
+                flatten.Input.SetConnection(input);
+                layer.Input.SetConnection(flatten.Output);
+                _outputs[layerParam.Top[0]] = layer.Output;
+                return layer;
+            }
+            else
+            {
+                var layer = new FullyConnected(input.Dimensions, weights, null, ActivationFunctionType.Linear);
+                layer.Input.SetConnection(input);
+                _outputs[layerParam.Top[0]] = layer.Output;
+                return layer;
+            }
         }
 
         private Layer ConvertL2Normalization(LayerParameter layerParam)

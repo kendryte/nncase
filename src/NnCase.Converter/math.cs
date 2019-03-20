@@ -553,7 +553,7 @@ namespace C
         /// Assert.IsTrue(exponent = -1073);
         /// </code> 
         /// </example>
-        public static double frexp(double number, ref int exponent)
+        public static double frexp(double number, out int exponent)
         {
             long bits = System.BitConverter.DoubleToInt64Bits(number);
             int exp = (int)((bits & math.DBL_EXP_MASK) >> math.DBL_MANT_BITS);
@@ -638,7 +638,7 @@ namespace C
         /// Assert.IsTrue(exponent = -148);
         /// </code> 
         /// </example>
-        public static float frexp(float number, ref int exponent)
+        public static float frexp(float number, out int exponent)
         {
             int bits = math.SingleToInt32Bits(number);
             int exp = (int)((bits & math.FLT_EXP_MASK) >> math.FLT_MANT_BITS);

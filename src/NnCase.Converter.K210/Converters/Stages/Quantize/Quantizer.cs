@@ -179,8 +179,7 @@ namespace NnCase.Converter.K210.Converters.Stages.Quantize
 
             if (Math.Abs(value) > 1)
             {
-                var mulShift = 0;
-                mul = C.math.frexp(value, ref mulShift);
+                mul = C.math.frexp(value, out var mulShift);
                 shift = Math.Min(maxShift, maxBits - 1 - mulShift);
                 mul = mul * Math.Pow(2, shift + mulShift);
             }
@@ -190,8 +189,7 @@ namespace NnCase.Converter.K210.Converters.Stages.Quantize
             }
             else
             {
-                var mulShift = 0;
-                mul = C.math.frexp(value, ref mulShift);
+                mul = C.math.frexp(value, out var mulShift);
                 shift = Math.Min(maxShift + mulShift, maxBits - 1);
                 mul = mul * Math.Pow(2, shift);
                 shift -= mulShift;

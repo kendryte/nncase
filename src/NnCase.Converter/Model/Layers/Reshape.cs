@@ -46,14 +46,15 @@ namespace NnCase.Converter.Model.Layers
             else if (Input.Dimensions.Length == 4)
                 y = graph.Transpose(y, graph.Const(new[] { 0, 3, 1, 2 }));
 
-            context.TFOutputs[Output] = context.TFGraph.Reshape(y, context.TFGraph.Const(NewShape.ToArray()));
+            y = context.TFGraph.Reshape(y, context.TFGraph.Const(NewShape.ToArray()));
 
             // To NHC
-            if (Input.Dimensions.Length == 3)
+            if (NewShape.Length == 3)
                 y = graph.Transpose(y, graph.Const(new[] { 0, 2, 1 }));
             // To NHWC
-            else if (Input.Dimensions.Length == 4)
+            else if (NewShape.Length == 4)
                 y = graph.Transpose(y, graph.Const(new[] { 0, 2, 3, 1 }));
+            context.TFOutputs[Output] = y;
         }
     }
 }
