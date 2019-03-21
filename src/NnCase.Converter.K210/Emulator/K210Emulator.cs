@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Numerics.Tensors;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using NnCase.Converter.Converters;
 using NnCase.Converter.Data;
 using NnCase.Converter.K210.Converters.Layers;
 using NnCase.Converter.K210.Converters.Stages.Generate;
@@ -25,14 +28,19 @@ namespace NnCase.Converter.K210.Emulator
         private int _weightsBits;
         private K210OutputAddress[] _outputAddresses;
         private K210LayerHeader[] _layerHeaders;
+        private readonly K210BinDeserializeContext _deserializeContext;
 
         private int BodyOffset => _outputOffset + _outputAddresses.Length * 4 * 2 + _layerHeaders.Length * 4 * 2;
 
         public K210Emulator(byte[] kmodel)
         {
             _kmodel = kmodel;
-
             ReadHeader();
+            _deserializeContext = new K210BinDeserializeContext
+            {
+                WeightsBits = _weightsBits,
+                KModel = _kmodel
+            };
         }
 
         public async Task RunAsync(string datasetPath)
@@ -55,20 +63,46 @@ namespace NnCase.Converter.K210.Emulator
 
         private void Run(Tensor<byte> batch, K210Conv2dLayerArgument inputArgument)
         {
-            KpuInput(inputArgument, batch.ToArray());
+            var context = new ForwardContext { KpuRam = _kpuRam, MainRam = _mainMemoryBuffer };
+            var converters = (from t in typeof(K210Emulator).Assembly.ExportedTypes
+                              let attrs = t.GetCustomAttributes<LayerConverterAttribute>()
+                              where attrs.Any()
+                              from attr in attrs
+                              where attr.LayerType != K210LayerType.Invalid
+                              select new
+                              {
+                                  Key = attr.LayerType,
+                                  Value = new { Type = t, DeserizalizeMethod = t.GetMethod("DeserializeBin"), ForwardMethod = t.GetMethod("Forward") }
+                              }).ToDictionary(x => x.Key, x => x.Value);
 
+            KpuInput(inputArgument, context, batch.ToArray());
+            
             var currentBodyOffset = BodyOffset;
             foreach (var layerHeader in _layerHeaders)
             {
-                //RunLayer(layerHeader.Type, currentBodyOffset);
+                var type = layerHeader.Type;
+                if (converters.TryGetValue(type, out var info))
+                {
+                    if (info.DeserizalizeMethod != null)
+                    {
+                        var converter = Activator.CreateInstance(info.Type);
+                        var layerArg = info.DeserizalizeMethod.Invoke(converter, new object[] { currentBodyOffset, _deserializeContext });
+                        info.ForwardMethod.Invoke(converter, new object[] { layerArg, context });
+                    }
+                }
+                else
+                {
+                    throw new LayerNotSupportedException(type.ToString());
+                }
+
                 currentBodyOffset += (int)layerHeader.BodySize;
             }
         }
 
-        private void KpuInput(K210Conv2dLayerArgument inputArgument, byte[] data)
+        private void KpuInput(K210Conv2dLayerArgument inputArgument, ForwardContext context, byte[] data)
         {
             var config = inputArgument.Config;
-            K210Helper.KpuUpload(_kpuRam, data, config.InputWidth, config.InputHeight, config.InputChannels);
+            K210Helper.KpuUpload(context.GetKpuRamAt((int)config.InputAddress), data, config.InputWidth, config.InputHeight, config.InputChannels);
         }
 
         private K210Conv2dLayerArgument GetInputArgument()
@@ -76,16 +110,7 @@ namespace NnCase.Converter.K210.Emulator
             if (_layerHeaders[0].Type != K210LayerType.K210Conv)
                 throw new InvalidOperationException("The first layer must be k210 conv");
 
-            return new K210Conv2dConverter().DeserializeBin(BodyOffset, new K210BinDeserializeContext
-            {
-                WeightsBits = _weightsBits,
-                KModel = _kmodel
-            });
-        }
-
-        private SpanReader GetReaderAt(int offset)
-        {
-            return new SpanReader(new ReadOnlySpan<byte>(_kmodel, offset, _kmodel.Length - offset));
+            return new K210Conv2dConverter().DeserializeBin(BodyOffset, _deserializeContext);
         }
 
         private void ReadHeader()

@@ -52,5 +52,21 @@ namespace NnCase.Converter.K210.Converters.Layers
                 }
             }
         }
+
+        public static void KpuDownload(ReadOnlySpan<byte> kpuRam, Span<byte> data, int width, int height, int channels)
+        {
+            (var groups, var rowLength, var rowPadding) = GetRowLayout(width);
+            int srcIdx = 0;
+            for (int oc = 0; oc < channels; oc++)
+            {
+                var channel_origin = oc / groups * rowLength * height * 64 + oc % groups * rowPadding;
+                for (int y = 0; y < height; y++)
+                {
+                    var y_origin = channel_origin + y * rowLength * 64;
+                    for (int x = 0; x < width; x++)
+                         data[srcIdx++] = kpuRam[y_origin + x];
+                }
+            }
+        }
     }
 }

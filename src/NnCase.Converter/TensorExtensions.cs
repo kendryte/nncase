@@ -69,5 +69,13 @@ namespace NnCase.Converter
             var dense = tensor.ToDenseTensor();
             return dense.Buffer.ToArray();
         }
+
+        public static long Sum(this ReadOnlySpan<ushort> span)
+        {
+            long sum = 0;
+            foreach (var item in span)
+                sum += item;
+            return sum;
+        }
     }
 }

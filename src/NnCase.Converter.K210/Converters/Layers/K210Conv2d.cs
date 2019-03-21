@@ -9,6 +9,7 @@ using NnCase.Converter.K210.Converters.Stages.Convert;
 using NnCase.Converter.K210.Converters.Stages.Generate;
 using NnCase.Converter.K210.Converters.Stages.Inference;
 using NnCase.Converter.K210.Converters.Stages.Quantize;
+using NnCase.Converter.K210.Emulator;
 using NnCase.Converter.K210.Model.Hardware;
 using NnCase.Converter.K210.Model.Layers;
 using NnCase.Converter.Model.Layers;
@@ -584,6 +585,100 @@ namespace NnCase.Converter.K210.Converters.Layers
             config.ArgW = ToSigned(reg.conv_value.arg_w, 24);
             config.ArgX = ToSigned(reg.conv_value.arg_x, 24);
             config.ArgAdd = ToSigned(reg.conv_value2.arg_add, 40);
+        }
+
+        public void Forward(K210Conv2dLayerArgument argument, ForwardContext context)
+        {
+            var config = argument.Config;
+            var weights = config.Weights;
+            var argX = config.ArgX;
+            var argW = config.ArgW;
+            var argAdd = config.ArgAdd;
+            var imageSize = config.InputWidth * config.InputHeight;
+
+            var src = new byte[config.InputWidth * config.InputHeight * config.InputChannels];
+            K210Helper.KpuDownload(context.GetKpuRamAt((int)config.InputAddress), src, config.InputWidth, config.InputHeight, config.InputChannels);
+            var workspace = new long[config.InputWidth * config.InputHeight * config.OutputChannels];
+
+            if (config.KernelType == 0)
+            {
+                if (config.IsDepthwise)
+                {
+                    for (int i = 0; i < workspace.Length; i++)
+                    {
+                        var x = src[i];
+                        var w = weights[i];
+                        workspace[i] = x * w + argX * x + argW * w + argAdd;
+                    }
+                }
+                else
+                {
+                    for (int oc = 0; oc < config.OutputChannels; oc++)
+                    {
+                        var localWeights = new ReadOnlySpan<ushort>(weights, oc * config.InputChannels, config.InputChannels);
+                        var sumW = localWeights.Sum();
+
+                        for (int i = 0; i < imageSize; i++)
+                        {
+                            long value = 0;
+                            long sumX = 0;
+                            for (int ic = 0; ic < config.InputChannels; ic++)
+                            {
+                                var x = src[ic * imageSize + i];
+                                sumX += x;
+                                value += localWeights[ic] * x;
+                            }
+
+                            workspace[oc * imageSize + i] = value + argX * sumX + argW * sumW + argAdd;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                if (config.IsDepthwise)
+                {
+                    for (int oc = 0; oc < config.OutputChannels; oc++)
+                    {
+                        var localWeights = new ReadOnlySpan<ushort>(weights, oc * 9, 9);
+                        for (int oy = 0; oy < config.InputHeight; oy++)
+                        {
+                            for (int ox = 0; ox < config.InputWidth; ox++)
+                            {
+                                for (int wy = 0; wy < 3; wy++)
+                                {
+                                    for (int wx = 0; wx < 3; wx++)
+                                    {
+
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    for (int oc = 0; oc < config.OutputChannels; oc++)
+                    {
+                        var localWeights = new ReadOnlySpan<ushort>(weights, oc * config.InputChannels, config.InputChannels);
+                        var sumW = localWeights.Sum();
+
+                        for (int i = 0; i < imageSize; i++)
+                        {
+                            long value = 0;
+                            long sumX = 0;
+                            for (int ic = 0; ic < config.InputChannels; ic++)
+                            {
+                                var x = src[ic * imageSize + i];
+                                sumX += x;
+                                value += localWeights[ic] * x;
+                            }
+
+                            workspace[oc * imageSize + i] = value + argX * sumX + argW * sumW + argAdd;
+                        }
+                    }
+                }
+            }
         }
 
         private static int ToSigned(uint value, int bits)
