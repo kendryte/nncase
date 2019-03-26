@@ -91,6 +91,8 @@ namespace NnCase.Converter.Converters
                     return ConvertResizeNearestNeighbor(op);
                 case tflite.BuiltinOperator.LEAKY_RELU:
                     return ConvertLeakyRelu(op);
+                case tflite.BuiltinOperator.MEAN:
+                    return ConvertMean(op);
                 default:
                     throw new LayerNotSupportedException(opCode.BuiltinCode.ToString());
             }
@@ -342,6 +344,17 @@ namespace NnCase.Converter.Converters
             var options = op.BuiltinOptions<tflite.LeakyReluOptions>().Value;
 
             var layer = new LeakyRelu(input.GetShapeArray().ToNCHW(), options.Alpha);
+            _inputs.Add(layer.Input, inputs[0]);
+            _outputs.Add(op.Outputs(0), layer.Output);
+            return layer;
+        }
+
+        private Layer ConvertMean(tflite.Operator op)
+        {
+            var inputs = op.GetInputsArray();
+            var input = _graph.Tensors(inputs[0]).Value;
+
+            var layer = new GlobalAveragePool(input.GetShapeArray().ToNCHW());
             _inputs.Add(layer.Input, inputs[0]);
             _outputs.Add(op.Outputs(0), layer.Output);
             return layer;
