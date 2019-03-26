@@ -353,11 +353,21 @@ namespace NnCase.Converter.Converters
         {
             var inputs = op.GetInputsArray();
             var input = _graph.Tensors(inputs[0]).Value;
+            var axes = _model.GetTensor<int>(_graph.Tensors(inputs[1]).Value);
 
-            var layer = new GlobalAveragePool(input.GetShapeArray().ToNCHW());
-            _inputs.Add(layer.Input, inputs[0]);
-            _outputs.Add(op.Outputs(0), layer.Output);
-            return layer;
+            if (axes.ToArray().SequenceEqual(new[] { 1, 2 }))
+            {
+                var layer = new GlobalAveragePool(input.GetShapeArray().ToNCHW());
+                _inputs.Add(layer.Input, inputs[0]);
+                var reshape = new Reshape(layer.Output.Dimensions, new[] { -1, layer.Output.Dimensions[1] });
+                reshape.Input.SetConnection(layer.Output);
+                _outputs.Add(op.Outputs(0), layer.Output);
+                return reshape;
+            }
+            else
+            {
+                throw new LayerNotSupportedException(op.ToString(), "Only [1,2] axis mean is supported");
+            }
         }
     }
 
