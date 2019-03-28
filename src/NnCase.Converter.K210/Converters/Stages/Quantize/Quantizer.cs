@@ -109,7 +109,12 @@ namespace NnCase.Converter.K210.Converters.Stages.Quantize
                 {
                     var conn = context.Outputs[i];
                     if (context.Distributions.TryGetValue(conn, out var range))
-                        context.Distributions[conn].EMA(0.01, newRange);
+                    {
+                        if (context.ChannelwiseOutput)
+                            context.Distributions[conn].Union(newRange);
+                        else
+                            context.Distributions[conn].EMA(0.01, newRange);
+                    }
                     else
                         context.Distributions.Add(conn, newRange);
                 }
@@ -118,7 +123,12 @@ namespace NnCase.Converter.K210.Converters.Stages.Quantize
                     var idx = i - context.Outputs.Count;
                     var conn = context.AdditionalOutputs[idx];
                     if (context.AdditionalDistributions.TryGetValue(conn, out var range))
-                        context.AdditionalDistributions[conn].EMA(0.01, newRange);
+                    {
+                        if (context.ChannelwiseOutput)
+                            context.AdditionalDistributions[conn].Union(newRange);
+                        else
+                            context.AdditionalDistributions[conn].EMA(0.01, newRange);
+                    }
                     else
                         context.AdditionalDistributions.Add(conn, newRange);
                 }

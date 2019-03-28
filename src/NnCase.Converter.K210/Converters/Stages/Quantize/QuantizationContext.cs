@@ -92,6 +92,13 @@ namespace NnCase.Converter.K210.Converters.Stages.Quantize
             for (int i = 0; i < Channels.Length; i++)
                 Channels[i] = Channels[i].EMA(alpha, newRange.Channels[i]);
         }
+
+        public void Union(ChannelwiseRange newRange)
+        {
+            Global = Global.Union(newRange.Global);
+            for (int i = 0; i < Channels.Length; i++)
+                Channels[i] = Channels[i].Union(newRange.Channels[i]);
+        }
     }
 
     public class QuantizationContext
