@@ -95,7 +95,7 @@ namespace NnCase.Converter.K210.Converters.Stages.Quantize
             for (int i = 0; i < outputs.Count; i++)
             {
                 var span = new Span<float>(outputs[i].Data.ToPointer(), (int)outputs[i].TensorByteSize / 4);
-                var newRange = GetClippedRange(span);
+                var newRange = GetRange(span);
 
                 if (i < context.Outputs.Count)
                 {
