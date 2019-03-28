@@ -132,13 +132,13 @@ namespace NnCase.Converter.K210.Converters.Stages.Quantize
             for (int i = 0; i < channels; i++)
             {
                 var channelData = data.Slice(i * channelSize, channelSize);
-                range.Channels[i] = GetRange(channelData);
+                range.Channels[i] = GetRange(channelData, range.Global);
             }
 
             return range;
         }
 
-        public static QuantizationRange GetRange(ReadOnlySpan<float> data)
+        public static QuantizationRange GetRange(ReadOnlySpan<float> data, QuantizationRange? defaultRange = null)
         {
             double min = double.MaxValue, max = double.MinValue;
             bool used = false;
@@ -151,9 +151,9 @@ namespace NnCase.Converter.K210.Converters.Stages.Quantize
             }
 
             if (!used || Math.Abs(min) > 100 || Math.Abs(max) > 100)
-                return QuantizationRange.Default;
+                return defaultRange ?? QuantizationRange.Default;
             else if (min == max)
-                return new QuantizationRange { Min = min - 1, Max = max + 1 };
+                return defaultRange ?? new QuantizationRange { Min = min - 1, Max = max + 1 };
             else
                 return new QuantizationRange { Min = min, Max = max };
         }
