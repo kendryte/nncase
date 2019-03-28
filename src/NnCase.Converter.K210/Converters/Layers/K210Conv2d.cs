@@ -34,7 +34,7 @@ namespace NnCase.Converter.K210.Converters.Layers
         {
             var config = new K210ConvLayerConfig { BNConfigs = new K210LayerBNConfig[layer.OutputChannels], ActConfigs = new K210LayerActConfig[16] };
             (var sw, var bw) = QuantizeWeights(layer.Conv2dType == K210Conv2dType.Conv2d, layer.Weights, config, context.WeightsBits);
-            (var sx, var bx) = QuantizeInput(context.Quantization.Distributions[layer.Input.Connection.From], config);
+            (var sx, var bx) = QuantizeInput(context.Quantization.Distributions[layer.Input.Connection.From].Global, config);
             config.ArgAdd = (long)Math.Round(bw * bx * layer.KernelWidth * layer.KernelHeight);
 
             var scale = new double[layer.OutputChannels];
@@ -189,28 +189,51 @@ namespace NnCase.Converter.K210.Converters.Layers
             return (scale, bias);
         }
 
-        private static (double scale, double bias) QuantizeBiasAndOutput(K210Conv2d layer, Tensor<float> bias, QuantizationRange range, QuantizationRange beforeActRange, double[] scale, K210ConvLayerConfig config)
+        private static void QuantizeBiasAndOutput(K210Conv2d layer, Tensor<float> bias, ChannelwiseRange range, ChannelwiseRange beforeActRange, double[] scale, K210ConvLayerConfig config)
         {
-            (var so, var bo) = range.GetScaleBias(8);
-#if CHANNEL_WISE
             var upshift = 10;
             var postMul = Math.Pow(2, upshift);
 
-            for (int i = 0; i < config.BNConfigs.Length; i++)
+            if (layer.IsChannelwiseOutput)
             {
-                var b = bias[i];
-
-                var scomb = so * postMul / scale[i];
-
-                (var mul, var shift) = Quantizer.ExtractValueAndShift(scomb, 22, 15);
-
-                config.BNConfigs[i] = new K210LayerBNConfig
+                for (int i = 0; i < config.BNConfigs.Length; i++)
                 {
-                    Mul = (int)Math.Round(mul),
-                    Shift = shift,
-                    Add = (int)Math.Round((b * so - bo) * postMul)
-                };
+                    (var so, var bo) = range.Channels[i].GetScaleBias(8);
+
+                    var b = bias[i];
+
+                    var scomb = so * postMul / scale[i];
+
+                    (var mul, var shift) = Quantizer.ExtractValueAndShift(scomb, 22, 15);
+
+                    config.BNConfigs[i] = new K210LayerBNConfig
+                    {
+                        Mul = (int)Math.Round(mul),
+                        Shift = shift,
+                        Add = (int)Math.Round((b * so - bo) * postMul)
+                    };
+                }
             }
+            else
+            {
+                (var so, var bo) = range.Global.GetScaleBias(8);
+#if CHANNEL_WISE
+
+                for (int i = 0; i < config.BNConfigs.Length; i++)
+                {
+                    var b = bias[i];
+
+                    var scomb = so * postMul / scale[i];
+
+                    (var mul, var shift) = Quantizer.ExtractValueAndShift(scomb, 22, 15);
+
+                    config.BNConfigs[i] = new K210LayerBNConfig
+                    {
+                        Mul = (int)Math.Round(mul),
+                        Shift = shift,
+                        Add = (int)Math.Round((b * so - bo) * postMul)
+                    };
+                }
 #else
             var scomb = so / scale[0];
 
@@ -231,8 +254,9 @@ namespace NnCase.Converter.K210.Converters.Layers
                 };
             }
 #endif
-            QuantizeActivation(layer, postMul, range, beforeActRange, config);
-            return (so, bo);
+            }
+
+            QuantizeActivation(layer, postMul, range.Global, beforeActRange.Global, config);
         }
 
         private static void QuantizeActivation(K210Conv2d layer, double postMul, QuantizationRange range, QuantizationRange beforeActRange, K210ConvLayerConfig config)

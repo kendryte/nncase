@@ -13,9 +13,9 @@ namespace NnCase.Converter.K210.Converters.Layers
         public void FixupQuantization(InputLayer layer, QuantizationContext context)
         {
             if (context.DatasetProcess == Data.PostprocessMethods.Normalize0To1)
-                context.Distributions[layer.Output] = new QuantizationRange { Min = 0, Max = 1 };
+                context.Distributions[layer.Output] = new ChannelwiseRange(new QuantizationRange { Min = 0, Max = 1 }, layer.Output.Dimensions[1]);
             else if (context.DatasetProcess == Data.PostprocessMethods.NormalizeMinus1To1)
-                context.Distributions[layer.Output] = new QuantizationRange { Min = -1, Max = 1 };
+                context.Distributions[layer.Output] = new ChannelwiseRange(new QuantizationRange { Min = -1, Max = 1 }, layer.Output.Dimensions[1]);
         }
     }
 }

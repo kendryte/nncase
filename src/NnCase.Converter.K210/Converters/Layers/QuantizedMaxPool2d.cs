@@ -47,8 +47,8 @@ namespace NnCase.Converter.K210.Converters.Layers
     {
         public QuantizedMaxPool2dLayerArgument Convert(QuantizedMaxPool2d layer, ConvertContext context)
         {
-            var inputRange = context.Quantization.Distributions[layer.Input.Connection.From];
-            var outputRange = context.Quantization.Distributions[layer.Output];
+            var inputRange = context.Quantization.Distributions[layer.Input.Connection.From].Global;
+            var outputRange = context.Quantization.Distributions[layer.Output].Global;
 
             (var sa, var ba) = inputRange.GetScaleBias(8);
             (var so, var bo) = outputRange.GetScaleBias(8);

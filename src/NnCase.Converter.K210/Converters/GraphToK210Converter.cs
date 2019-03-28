@@ -30,11 +30,11 @@ namespace NnCase.Converter.K210.Converters
             _weightsBits = weightsBits;
         }
 
-        public async Task ConvertAsync(Dataset dataset, GraphPlanContext planContext, string outputDir, string prefix)
+        public async Task ConvertAsync(Dataset dataset, GraphPlanContext planContext, string outputDir, string prefix, bool channelwiseOutput)
         {
             _graph.Plan(planContext);
 
-            var quantize = await Stages.Quantize.Quantizer.QuantizeAsync(dataset, planContext);
+            var quantize = await Stages.Quantize.Quantizer.QuantizeAsync(dataset, planContext, channelwiseOutput);
             var convert = Stages.Convert.Converter.Convert(_graph, quantize, _weightsBits);
             var infer = Stages.Inference.InferExecutor.Infer(_graph, convert);
 

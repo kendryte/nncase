@@ -53,7 +53,6 @@ namespace NnCase.Converter.Transforms
         public static void Process(Graph graph, IReadOnlyList<Transform> transforms)
         {
             bool conti = false;
-            var processMap = new Dictionary<Layer, bool>();
 
             do
             {
@@ -61,12 +60,31 @@ namespace NnCase.Converter.Transforms
 
                 foreach (var transform in transforms)
                 {
-                    processMap.Clear();
-                    foreach (var layer in graph.Outputs)
-                        conti |= Process(layer, transform, processMap);
+                    bool needRetry = false;
+                    do
+                    {
+                        needRetry = false;
+                        var layers = new HashSet<Layer>();
+                        foreach (var layer in graph.Outputs)
+                            AddAllInputLayer(layer, layers);
+
+                        foreach (var layer in layers)
+                        {
+                            var context = new TransformContext();
+                            if (transform.TryMatch(layer, context))
+                            {
+                                transform.Process(context);
+                                needRetry = true;
+                                conti = true;
+                                break;
+                            }
+                        }
+
+                        if (needRetry)
+                            RemoveUnusedLayers(graph);
+                    } while (needRetry);
                 }
 
-                RemoveUnusedLayers(graph);
             } while (conti);
         }
 
@@ -118,27 +136,15 @@ namespace NnCase.Converter.Transforms
             }
         }
 
-        private static bool Process(Layer layer, Transform transform, Dictionary<Layer, bool> processMap)
+        private static void AddAllInputLayer(Layer layer, HashSet<Layer> layers)
         {
-            if (processMap.GetValueOrDefault(layer))
-                return false;
-            processMap[layer] = true;
-
-            bool processed = false;
-            var context = new TransformContext();
-            if (transform.TryMatch(layer, context))
+            if (layers.Add(layer))
             {
-                transform.Process(context);
-                processed = true;
+                foreach (var inputLayer in from c in layer.InputConnectors
+                                           where c.Connection != null
+                                           select c.Connection.From.Owner)
+                    AddAllInputLayer(inputLayer, layers);
             }
-
-            foreach (var input in layer.InputConnectors)
-            {
-                if (input.Connection != null)
-                    processed |= Process(input.Connection.From.Owner, transform, processMap);
-            }
-
-            return processed;
         }
     }
 

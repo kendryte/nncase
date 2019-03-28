@@ -125,7 +125,7 @@ namespace NnCase.Designer.Modules.ModelDesigner.ViewModels.Layers.K210
             var pool = Stride == K210Stride.Stride1x1 ? K210PoolType.None : K210PoolType.LeftTop;
             var weights = new DenseTensor<float>(new[] { OutputChannels, Input.Connection.From.Dimensions[1], kernelSize, kernelSize });
             var bias = new DenseTensor<float>(new[] { OutputChannels });
-            var model = new K210Conv2d(Input.Connection.From.Dimensions, K210Conv2dType.Conv2d, weights, bias, pool, Activation);
+            var model = new K210Conv2d(Input.Connection.From.Dimensions, K210Conv2dType.Conv2d, weights, bias, pool, Activation, null);
             context.InputConnectors[Input] = model.Input;
             context.OutputConnectors[Output] = model.Output;
             context.Layers[this] = new[] { model };

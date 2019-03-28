@@ -44,9 +44,9 @@ namespace NnCase.Converter.K210.Converters.Layers
     {
         public QuantizedAddLayerArgument Convert(QuantizedAdd layer, ConvertContext context)
         {
-            var inputARange = context.Quantization.Distributions[layer.InputA.Connection.From];
-            var inputBRange = context.Quantization.Distributions[layer.InputB.Connection.From];
-            var outputRange = context.Quantization.Distributions[layer.Output];
+            var inputARange = context.Quantization.Distributions[layer.InputA.Connection.From].Global;
+            var inputBRange = context.Quantization.Distributions[layer.InputB.Connection.From].Global;
+            var outputRange = context.Quantization.Distributions[layer.Output].Global;
 
             (var sa, var ba) = inputARange.GetScaleBias(8);
             (var sb, var bb) = inputBRange.GetScaleBias(8);

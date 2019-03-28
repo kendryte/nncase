@@ -47,6 +47,15 @@ namespace NnCase.Converter
             return tensor.ToTFTensor();
         }
 
+        public unsafe static Tensor<float> ToNCHW(this TFTensor tensor)
+        {
+            var span = new Span<float>(tensor.Data.ToPointer(), (int)tensor.TensorByteSize / 4);
+            Tensor<float> dense = new DenseTensor<float>(span.ToArray(), tensor.Shape.Select(x => (int)x).ToArray());
+            if (dense.Dimensions.Length == 4)
+                dense = dense.Transpose(new[] { 0, 3, 1, 2 });
+            return dense;
+        }
+
         public static TFTensor ToHWIO<T>(this Tensor<T> tensor)
         {
             if (tensor.Dimensions.Length == 4)

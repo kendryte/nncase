@@ -19,7 +19,7 @@ namespace NnCase.Converter.K210.Converters.Stages.Quantize
 {
     public static class Quantizer
     {
-        public static async Task<QuantizationContext> QuantizeAsync(Dataset dataset, GraphPlanContext planContext)
+        public static async Task<QuantizationContext> QuantizeAsync(Dataset dataset, GraphPlanContext planContext, bool channelwiseOutput)
         {
             using (var session = new TFSession(planContext.TFGraph))
             {
@@ -45,7 +45,8 @@ namespace NnCase.Converter.K210.Converters.Stages.Quantize
                     Outputs = connectors,
                     AdditionalOutputs = additionalOutputs,
                     PlanContext = planContext,
-                    DatasetProcess = dataset.PostprocessMethod
+                    DatasetProcess = dataset.PostprocessMethod,
+                    ChannelwiseOutput = channelwiseOutput
                 };
 
 #if NET471
@@ -94,14 +95,21 @@ namespace NnCase.Converter.K210.Converters.Stages.Quantize
         {
             for (int i = 0; i < outputs.Count; i++)
             {
-                var span = new Span<float>(outputs[i].Data.ToPointer(), (int)outputs[i].TensorByteSize / 4);
-                var newRange = GetRange(span);
+                var tensor = outputs[i];
+                var data = context.ChannelwiseOutput
+                    ? tensor.ToNCHW().ToArray()
+                    : new Span<float>(tensor.Data.ToPointer(), (int)tensor.TensorByteSize / 4);
+
+                var channels = (int)outputs[i].Shape.Last();
+                var newRange = context.ChannelwiseOutput
+                    ? GetRange(data, channels)
+                    : new ChannelwiseRange(GetRange(data), channels);
 
                 if (i < context.Outputs.Count)
                 {
                     var conn = context.Outputs[i];
                     if (context.Distributions.TryGetValue(conn, out var range))
-                        context.Distributions[conn] = range.EMA(0.01, newRange);
+                        context.Distributions[conn].EMA(0.01, newRange);
                     else
                         context.Distributions.Add(conn, newRange);
                 }
@@ -110,11 +118,24 @@ namespace NnCase.Converter.K210.Converters.Stages.Quantize
                     var idx = i - context.Outputs.Count;
                     var conn = context.AdditionalOutputs[idx];
                     if (context.AdditionalDistributions.TryGetValue(conn, out var range))
-                        context.AdditionalDistributions[conn] = range.EMA(0.01, newRange);
+                        context.AdditionalDistributions[conn].EMA(0.01, newRange);
                     else
                         context.AdditionalDistributions.Add(conn, newRange);
                 }
             }
+        }
+
+        public static ChannelwiseRange GetRange(ReadOnlySpan<float> data, int channels)
+        {
+            var channelSize = data.Length / channels;
+            var range = new ChannelwiseRange { Global = GetRange(data), Channels = new QuantizationRange[channels] };
+            for (int i = 0; i < channels; i++)
+            {
+                var channelData = data.Slice(i * channelSize, channelSize);
+                range.Channels[i] = GetRange(channelData);
+            }
+
+            return range;
         }
 
         public static QuantizationRange GetRange(ReadOnlySpan<float> data)
@@ -132,7 +153,7 @@ namespace NnCase.Converter.K210.Converters.Stages.Quantize
             if (!used || Math.Abs(min) > 100 || Math.Abs(max) > 100)
                 return QuantizationRange.Default;
             else if (min == max)
-                return new QuantizationRange { Min = -1, Max = 1 };
+                return new QuantizationRange { Min = min - 1, Max = max + 1 };
             else
                 return new QuantizationRange { Min = min, Max = max };
         }

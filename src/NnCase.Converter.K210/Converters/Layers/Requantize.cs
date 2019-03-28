@@ -26,8 +26,8 @@ namespace NnCase.Converter.K210.Converters.Layers
     {
         public RequantizeLayerArgument Convert(Requantize layer, ConvertContext context)
         {
-            var ir = context.Quantization.Distributions[layer.Input.Connection.From];
-            var or = context.Quantization.Distributions[layer.Output];
+            var ir = context.Quantization.Distributions[layer.Input.Connection.From].Global;
+            var or = context.Quantization.Distributions[layer.Output].Global;
 
             return new RequantizeLayerArgument
             {

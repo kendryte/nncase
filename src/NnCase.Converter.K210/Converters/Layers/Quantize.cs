@@ -28,7 +28,7 @@ namespace NnCase.Converter.K210.Converters.Layers
             return new QuantizeLayerArgument
             {
                 Count = (uint)layer.Input.Dimensions.GetSize(),
-                QuantParam = context.Quantization.Distributions[layer.Output].GetQuantizationParam(8)
+                QuantParam = context.Quantization.Distributions[layer.Output].Global.GetQuantizationParam(8)
             };
         }
 

@@ -44,7 +44,7 @@ namespace NnCase.Converter.K210.Model.Layers
 
         public ActivationFunctionType FusedActivationFunction { get; }
 
-        public Layer NonTrivialActivation { get; set; }
+        public Layer NonTrivialActivation { get; }
 
         public int KernelWidth => Weights.Dimensions[3];
 
@@ -53,6 +53,8 @@ namespace NnCase.Converter.K210.Model.Layers
         public int InputChannels => Weights.Dimensions[1];
 
         public int OutputChannels => Conv2dType == K210Conv2dType.Conv2d ? Weights.Dimensions[0] : InputChannels;
+
+        public bool IsChannelwiseOutput { get; set; }
 
         public K210Conv2d(ReadOnlySpan<int> dimensions, K210Conv2dType conv2dType, Tensor<float> weights, Tensor<float> bias, K210PoolType poolType, ActivationFunctionType fusedActivationFunction, Layer nonTrivalActivation)
         {

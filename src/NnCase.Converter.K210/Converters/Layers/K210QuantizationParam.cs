@@ -9,5 +9,10 @@ namespace NnCase.Converter.K210.Converters.Layers
         public float Scale { get; set; }
 
         public float Bias { get; set; }
+
+        public override string ToString()
+        {
+            return $"{Scale}, {Bias}";
+        }
     }
 }

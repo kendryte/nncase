@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using NnCase.Converter.Data;
 using NnCase.Converter.K210.Converters.Layers;
@@ -69,6 +70,30 @@ namespace NnCase.Converter.K210.Converters.Stages.Quantize
         }
     }
 
+    public class ChannelwiseRange
+    {
+        public QuantizationRange[] Channels { get; set; }
+
+        public QuantizationRange Global { get; set; }
+
+        public ChannelwiseRange()
+        {
+        }
+
+        public ChannelwiseRange(QuantizationRange range, int channels)
+        {
+            Global = range;
+            Channels = Enumerable.Repeat(range, channels).ToArray();
+        }
+
+        public void EMA(double alpha, ChannelwiseRange newRange)
+        {
+            Global = Global.EMA(alpha, newRange.Global);
+            for (int i = 0; i < Channels.Length; i++)
+                Channels[i] = Channels[i].EMA(alpha, newRange.Channels[i]);
+        }
+    }
+
     public class QuantizationContext
     {
         public GraphPlanContext PlanContext { get; set; }
@@ -77,10 +102,12 @@ namespace NnCase.Converter.K210.Converters.Stages.Quantize
 
         public IReadOnlyList<Guid> AdditionalOutputs { get; set; }
 
-        public Dictionary<OutputConnector, QuantizationRange> Distributions { get; } = new Dictionary<OutputConnector, QuantizationRange>();
+        public Dictionary<OutputConnector, ChannelwiseRange> Distributions { get; } = new Dictionary<OutputConnector, ChannelwiseRange>();
 
-        public Dictionary<Guid, QuantizationRange> AdditionalDistributions { get; } = new Dictionary<Guid, QuantizationRange>();
+        public Dictionary<Guid, ChannelwiseRange> AdditionalDistributions { get; } = new Dictionary<Guid, ChannelwiseRange>();
 
         public PostprocessMethods DatasetProcess { get; set; }
+
+        public bool ChannelwiseOutput { get; set; }
     }
 }

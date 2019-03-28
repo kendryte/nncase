@@ -46,6 +46,9 @@ namespace NnCase.Cli
         [Option("float-fc", Required = false, Default = false, HelpText = "Use kpu based fully connected")]
         public bool FloatFc { get; set; }
 
+        [Option("channelwise-output", Required = false, Default = false, HelpText = "Use channelwise kpu output")]
+        public bool ChannelwiseOutput { get; set; }
+
         [Value(0, MetaName = "input", HelpText = "Input path")]
         public string Input { get; set; }
 
@@ -181,6 +184,7 @@ namespace NnCase.Cli
                             new K210EliminateConv2dUploadTransform(),
                             new K210EliminateUploadAddPaddingTransform(),
                             new K210EliminateConv2dRequantizeTransform(),
+                            options.ChannelwiseOutput ? (Transform)new K210Conv2dToChannelwiseTransform(): new DummyTransform(),
                             //new EliminateDequantizeOutputTransform()
                         });
 
@@ -199,7 +203,8 @@ namespace NnCase.Cli
                                     pm),
                                     ctx,
                                     Path.GetDirectoryName(options.Output),
-                                    Path.GetFileNameWithoutExtension(options.Output));
+                                    Path.GetFileNameWithoutExtension(options.Output),
+                                    options.ChannelwiseOutput);
                             }
                             else
                             {
