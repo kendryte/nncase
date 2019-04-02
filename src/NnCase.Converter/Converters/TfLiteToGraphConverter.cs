@@ -93,6 +93,8 @@ namespace NnCase.Converter.Converters
                     return ConvertLeakyRelu(op);
                 case tflite.BuiltinOperator.MEAN:
                     return ConvertMean(op);
+                case tflite.BuiltinOperator.RESHAPE:
+                    return ConvertReshape(op);
                 default:
                     throw new LayerNotSupportedException(opCode.BuiltinCode.ToString());
             }
@@ -176,7 +178,7 @@ namespace NnCase.Converter.Converters
             var input = _graph.Tensors(inputs[0]).Value;
             var options = op.BuiltinOptions<tflite.ReshapeOptions>().Value;
 
-            var layer = new Reshape(input.GetShapeArray().ToNCHW(), options.GetNewShapeArray().ToNCHW());
+            var layer = new TensorflowReshape(input.GetShapeArray().ToNCHW(), options.GetNewShapeArray().ToNCHW());
             _inputs.Add(layer.Input, inputs[0]);
             _outputs.Add(op.Outputs(0), layer.Output);
             return layer;
@@ -400,6 +402,13 @@ namespace NnCase.Converter.Converters
             if (shape.Length == 2)
                 return shape;
             return new[] { shape[0], shape[3], shape[1], shape[2] };
+        }
+
+        public static int[] ToNHWC(this int[] shape)
+        {
+            if (shape.Length == 2)
+                return shape;
+            return new[] { shape[0], shape[2], shape[3], shape[1] };
         }
 
         public static int[] ToNC(this int[] shape)
