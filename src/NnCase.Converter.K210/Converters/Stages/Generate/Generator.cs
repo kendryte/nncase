@@ -27,7 +27,7 @@ namespace NnCase.Converter.K210.Converters.Stages.Generate
                            select new K210OutputAddress
                            {
                                Address = m.GetAddress(),
-                               Size = m.Size
+                               Size = (uint)o.Input.Dimensions.GetSize() * 4
                            }).ToList(),
                 Stream = stream,
                 WeightsBits = weightsBits
