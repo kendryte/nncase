@@ -14,7 +14,7 @@ namespace NnCase.Converter.Transforms
             try
             {
                 if (layer is TensorflowReshape reshape &&
-                    reshape.Input.Dimensions.GetSize() == reshape.Output.Dimensions[1])
+                    reshape.Input.Dimensions.GetSize() == reshape.Output.Dimensions[1] && reshape.Output.Dimensions.Length == 2)
                 {
                     context.Inputs.Add(reshape.Input);
                     context.Outputs.Add(reshape.Output);
