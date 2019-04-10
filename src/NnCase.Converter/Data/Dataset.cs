@@ -123,7 +123,7 @@ namespace NnCase.Converter.Data
     {
         private static readonly string[] _allowdExtensions = new[]
         {
-            ".bmp", ".jpg", ".png"
+            ".bmp", ".jpeg", ".jpg", ".png"
         };
 
         private readonly PreprocessMethods _preprocessMethods;

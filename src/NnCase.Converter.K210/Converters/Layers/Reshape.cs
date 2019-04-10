@@ -15,7 +15,7 @@ namespace NnCase.Converter.K210.Converters.Layers
     {
         public void AllocateInputMemory(Reshape layer, OutputConnector input, InferenceContext context)
         {
-            context.MainMemoryMap.Add(layer.Output, context.GetOrAllocateMainMemory(layer.Output));
+            context.MainMemoryMap.Add(layer.Output, context.GetOrAllocateMainMemory(layer.Input.Connection.From));
         }
     }
 }

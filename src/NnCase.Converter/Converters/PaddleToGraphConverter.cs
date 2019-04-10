@@ -109,6 +109,8 @@ namespace NnCase.Converter.Converters
                     return ConvertConcat(op);
                 case "scale":
                     return ConvertScale(op);
+                case "mul":
+                    return ConvertMul(op);
                 case "assign_value":
                 case "shape":
                 case "slice":
@@ -222,6 +224,18 @@ namespace NnCase.Converter.Converters
             return layer;
         }
 
+        private Layer ConvertMul(paddle.OpDesc op)
+        {
+            var x = GetParameter(op.Inputs, "X").Arguments[0];
+            var y = GetParameter(op.Inputs, "Y").Arguments[0];
+            var output = GetParameter(op.Outputs, "Out").Arguments[0];
+
+            var layer = new FullyConnected(GetVarShape(x), LoadVarData<float>(y).Transpose(new[] { 1, 0 }), null, ActivationFunctionType.Linear);
+            _inputs.Add(layer.Input, x);
+            _outputs.Add(output, layer.Output);
+            return layer;
+        }
+
         private Layer ConvertBatchNorm(paddle.OpDesc op)
         {
             var epsilon = GetAttr(op, "epsilon").F;
@@ -257,6 +271,13 @@ namespace NnCase.Converter.Converters
             var strides = GetAttr(op, "strides").Ints;
             var x = op.Inputs[0].Arguments[0];
             var output = op.Outputs[0].Arguments[0];
+
+            if (GetAttr(op, "global_pooling").B)
+            {
+                var shape = GetVarShape(x);
+                ksize[0] = shape[2];
+                ksize[1] = shape[3];
+            }
 
             if (type == "avg")
             {
