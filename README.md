@@ -67,3 +67,5 @@ A tool to convert models between many formats.
 | Concatenation | |
 | L2Normalization | |
 | Softmax | |
+| Flatten | |
+| ResizeNearestNeighbor | |
