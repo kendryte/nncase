@@ -41,7 +41,7 @@ A tool to convert models between many formats.
 
 - `--float-fc` Use float fullyconnected kernels.
 
-- `--channelwise-output` Use channelwise quatization for output layers.
+- `--channelwise-output` Use channelwise quantization for output layers.
 
 ### Examples
 - Convert TFLite model to K210 model.
