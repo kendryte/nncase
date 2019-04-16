@@ -1,10 +1,12 @@
 nncase
 =========================================
+[![Build status](https://ci.appveyor.com/api/projects/status/cybsf4av9e2ms447/branch/master?svg=true)](https://ci.appveyor.com/project/sunnycase/nncase/branch/master)
+
 `nncase` is a cross-platform neural network optimization toolkit for fast inference.
 
-## NNCase Converter
-A tool to convert models between many formats.
-### Usage
+## Usage
+Download prebuilt binaries from [Release](https://github.com/kendryte/nncase/releases).
+
 `ncc -i <input format> -o <output format> [--dataset <dataset path>] [--postprocess <dataset postprocess>] [--weights-bits <weights quantization bits>] <input path> <output path>`
 
 - `-i` Input format
@@ -43,7 +45,7 @@ A tool to convert models between many formats.
 
 - `--channelwise-output` Use channelwise quantization for output layers.
 
-### Examples
+## Examples
 - Convert TFLite model to K210 model.
 
   `ncc -i tflite -o k210model --dataset ./images ./mbnetv1.tflite ./mbnetv1.kmodel`
@@ -52,7 +54,11 @@ A tool to convert models between many formats.
 
   `ncc -i paddle -o tf ./MobileNetV1_pretrained ./mbnetv1.pb`
 
-### Supported layers
+- 20 classes object detection example
+
+  See https://github.com/kendryte/nncase/tree/master/src/examples
+
+## Supported layers
 
 | layer | parameters |
 |-------|------------------ |
