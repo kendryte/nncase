@@ -219,7 +219,7 @@ namespace NnCase.Cli
                                 if (options.DatasetFormat == "image")
                                     dataset = new ImageDataset(
                                     options.Dataset,
-                                    new[] { dim[1], dim[2], dim[3] },
+                                    dim.Skip(1).ToArray(),
                                     1,
                                     PreprocessMethods.None,
                                     pm,
@@ -228,7 +228,7 @@ namespace NnCase.Cli
                                 else if (options.DatasetFormat == "raw")
                                     dataset = new RawDataset(
                                     options.Dataset,
-                                    new[] { dim[1], dim[2], dim[3] },
+                                    dim.Skip(1).ToArray(),
                                     1,
                                     PreprocessMethods.None,
                                     pm,
