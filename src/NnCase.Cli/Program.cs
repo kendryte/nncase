@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Numerics.Tensors;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using CommandLine;
 using NnCase.Converter.Converters;
@@ -143,9 +144,23 @@ namespace NnCase.Cli
                 case "k210model":
                 case "k210pb":
                     {
+                        float? mean = null, std = null;
                         PostprocessMethods pm = PostprocessMethods.Normalize0To1;
                         if (options.Postprocess == "n1to1")
                             pm = PostprocessMethods.NormalizeMinus1To1;
+                        else if (!string.IsNullOrWhiteSpace(options.Postprocess))
+                        {
+                            var match = Regex.Match(options.Postprocess, @"mean:(?<mean>(-?\d+)(\.\d+)?),std:(?<std>(-?\d+)(\.\d+)?)");
+                            if (match.Success)
+                            {
+                                mean = float.Parse(match.Groups["mean"].Value);
+                                std = float.Parse(match.Groups["std"].Value);
+                            }
+                            else
+                            {
+                                throw new ArgumentOutOfRangeException("Invalid postprocess method");
+                            }
+                        }
 
                         if (options.InputFormat.ToLowerInvariant() != "tflite")
                         {
@@ -202,7 +217,9 @@ namespace NnCase.Cli
                                     new[] { dim[1], dim[2], dim[3] },
                                     1,
                                     PreprocessMethods.None,
-                                    pm),
+                                    pm,
+                                    mean,
+                                    std),
                                     ctx,
                                     Path.GetDirectoryName(options.Output),
                                     Path.GetFileNameWithoutExtension(options.Output),

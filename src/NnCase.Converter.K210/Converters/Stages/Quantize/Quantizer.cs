@@ -45,7 +45,8 @@ namespace NnCase.Converter.K210.Converters.Stages.Quantize
                     Outputs = connectors,
                     AdditionalOutputs = additionalOutputs,
                     PlanContext = planContext,
-                    DatasetProcess = dataset.PostprocessMethod,
+                    Mean = dataset.Mean,
+                    Std = dataset.Std,
                     ChannelwiseOutput = channelwiseOutput
                 };
 

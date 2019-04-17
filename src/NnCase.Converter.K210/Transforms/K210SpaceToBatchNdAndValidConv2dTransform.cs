@@ -16,12 +16,12 @@ namespace NnCase.Converter.K210.Transforms
         {
             try
             {
-                if (layer is SpaceToBatchNd space)
+                if (layer is SpaceToBatchNd || layer is Pad)
                 {
                     context.MatchedLayers.Add(layer);
-                    context.Inputs.Add(space.Input);
+                    context.Inputs.Add(layer.InputConnectors[0]);
 
-                    foreach (var nextLayer in space.Output.Connections.Select(o => o.To.Owner))
+                    foreach (var nextLayer in layer.OutputConnectors[0].Connections.Select(o => o.To.Owner))
                     {
                         if (nextLayer is Conv2d conv2d)
                         {
@@ -59,10 +59,10 @@ namespace NnCase.Converter.K210.Transforms
 
         public override void Process(TransformContext context)
         {
-            var space = (SpaceToBatchNd)context.MatchedLayers[0];
-            var input = space.Input.Connection.From;
+            var space = context.MatchedLayers[0];
+            var input = space.InputConnectors[0].Connection.From;
 
-            space.Input.ClearConnection();
+            space.InputConnectors[0].ClearConnection();
 
             K210Conv2d newLayer;
             OutputConnector output;

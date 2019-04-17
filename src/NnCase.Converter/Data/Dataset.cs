@@ -37,11 +37,12 @@ namespace NnCase.Converter.Data
         private readonly int[] _dimensions;
         private readonly int _batchSize;
 
-        public PostprocessMethods PostprocessMethod { get; }
+        public float Mean { get; }
+        public float Std { get; }
 
         public ReadOnlySpan<int> Dimensions => _dimensions;
 
-        public Dataset(string path, IReadOnlyCollection<string> allowdExtensions, ReadOnlySpan<int> dimensions, int batchSize, PostprocessMethods postprocessMethod)
+        public Dataset(string path, IReadOnlyCollection<string> allowdExtensions, ReadOnlySpan<int> dimensions, int batchSize, PostprocessMethods postprocessMethod, float? mean = null, float? std = null)
         {
             if (batchSize < 1)
                 throw new ArgumentOutOfRangeException(nameof(batchSize));
@@ -51,7 +52,30 @@ namespace NnCase.Converter.Data
                           select f).ToList();
             _dimensions = dimensions.ToArray();
             _batchSize = batchSize;
-            PostprocessMethod = postprocessMethod;
+            if (mean.HasValue)
+                Mean = mean.Value;
+            if (std.HasValue)
+                Std = std.Value;
+            else
+            {
+                switch (postprocessMethod)
+                {
+                    case PostprocessMethods.None:
+                        break;
+                    case PostprocessMethods.Normalize0To1:
+                        Mean = 0;
+                        Std = 1;
+                        break;
+                    case PostprocessMethods.NormalizeMinus1To1:
+                        Mean = 0.5f;
+                        Std = 0.5f;
+                        break;
+                    case PostprocessMethods.Whitening:
+                        break;
+                    default:
+                        break;
+                }
+            }
         }
 
 
@@ -88,7 +112,7 @@ namespace NnCase.Converter.Data
                 {
                     var buffer = tensor.Buffer.Slice(j * oneSize);
                     Process(sources[j], buffer.Span);
-                    Postprocess(buffer.Span, PostprocessMethod);
+                    Postprocess(buffer.Span);
                 });
 
 #if NET471
@@ -102,18 +126,10 @@ namespace NnCase.Converter.Data
 #endif
         }
 
-        private void Postprocess(Span<float> data, PostprocessMethods postprocessMethod)
+        private void Postprocess(Span<float> data)
         {
-            if (postprocessMethod == PostprocessMethods.Normalize0To1)
-            {
-            }
-            else if (postprocessMethod == PostprocessMethods.NormalizeMinus1To1)
-            {
-                for (int i = 0; i < data.Length; i++)
-                    data[i] = data[i] * 2f - 1f;
-            }
-            else if (postprocessMethod != PostprocessMethods.None)
-                throw new NotSupportedException(nameof(postprocessMethod));
+            for (int i = 0; i < data.Length; i++)
+                data[i] = (data[i] - Mean) / Std;
         }
 
         protected abstract void Process(byte[] source, Span<float> dest);
@@ -128,8 +144,8 @@ namespace NnCase.Converter.Data
 
         private readonly PreprocessMethods _preprocessMethods;
 
-        public ImageDataset(string path, ReadOnlySpan<int> dimensions, int batchSize, PreprocessMethods preprocessMethods, PostprocessMethods postprocessMethod)
-            : base(path, _allowdExtensions, dimensions, batchSize, postprocessMethod)
+        public ImageDataset(string path, ReadOnlySpan<int> dimensions, int batchSize, PreprocessMethods preprocessMethods, PostprocessMethods postprocessMethod, float? mean = null, float? std = null)
+            : base(path, _allowdExtensions, dimensions, batchSize, postprocessMethod, mean, std)
         {
             _preprocessMethods = preprocessMethods;
         }

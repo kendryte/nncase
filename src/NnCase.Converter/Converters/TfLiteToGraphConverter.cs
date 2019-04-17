@@ -95,6 +95,8 @@ namespace NnCase.Converter.Converters
                     return ConvertMean(op);
                 case tflite.BuiltinOperator.RESHAPE:
                     return ConvertReshape(op);
+                case tflite.BuiltinOperator.PAD:
+                    return ConvertPad(op);
                 default:
                     throw new LayerNotSupportedException(opCode.BuiltinCode.ToString());
             }
@@ -108,6 +110,20 @@ namespace NnCase.Converter.Converters
             var paddings = _graph.Tensors(inputs[2]).Value;
 
             var layer = new SpaceToBatchNd(input.GetShapeArray().ToNCHW(), _model.GetTensor<int>(blockShape), _model.GetTensor<int>(paddings));
+            _inputs.Add(layer.Input, inputs[0]);
+            _outputs.Add(op.Outputs(0), layer.Output);
+            return layer;
+        }
+
+        private Layer ConvertPad(tflite.Operator op)
+        {
+            var inputs = op.GetInputsArray();
+            var input = _graph.Tensors(inputs[0]).Value;
+            var paddings = _graph.Tensors(inputs[1]).Value;
+
+            var layer = new Pad(input.GetShapeArray().ToNCHW(), _model.GetTensor<int>(paddings));
+            if (!layer.Paddings.ToArray().SequenceEqual(new[] { 0, 0, 1, 1, 1, 1, 0, 0 }))
+                throw new LayerNotSupportedException("Pad", "Only paddings of [[0,0],[1,1],[1,1],[0,0]] is supported");
             _inputs.Add(layer.Input, inputs[0]);
             _outputs.Add(op.Outputs(0), layer.Output);
             return layer;

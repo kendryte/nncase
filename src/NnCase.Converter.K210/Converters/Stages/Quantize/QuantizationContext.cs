@@ -113,7 +113,9 @@ namespace NnCase.Converter.K210.Converters.Stages.Quantize
 
         public Dictionary<Guid, ChannelwiseRange> AdditionalDistributions { get; } = new Dictionary<Guid, ChannelwiseRange>();
 
-        public PostprocessMethods DatasetProcess { get; set; }
+        public float Mean { get; set; }
+
+        public float Std { get; set; }
 
         public bool ChannelwiseOutput { get; set; }
     }
