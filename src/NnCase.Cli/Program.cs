@@ -35,6 +35,9 @@ namespace NnCase.Cli
         [Option("dataset", Required = false, HelpText = "Dataset path")]
         public string Dataset { get; set; }
 
+        [Option("dataset-format", Required = false, Default = "image", HelpText = "Dataset format")]
+        public string DatasetFormat { get; set; }
+
         [Option("postprocess", Required = false, HelpText = "Dataset postprocess")]
         public string Postprocess { get; set; }
 
@@ -211,15 +214,32 @@ namespace NnCase.Cli
                             if (outputFormat == "k210model")
                             {
                                 var dim = graph.Inputs.First().Output.Dimensions.ToArray();
-                                var k210c = new GraphToK210Converter(graph, options.WeightsBits);
-                                await k210c.ConvertAsync(new ImageDataset(
+
+                                Dataset dataset;
+                                if (options.DatasetFormat == "image")
+                                    dataset = new ImageDataset(
                                     options.Dataset,
                                     new[] { dim[1], dim[2], dim[3] },
                                     1,
                                     PreprocessMethods.None,
                                     pm,
                                     mean,
-                                    std),
+                                    std);
+                                else if (options.DatasetFormat == "raw")
+                                    dataset = new RawDataset(
+                                    options.Dataset,
+                                    new[] { dim[1], dim[2], dim[3] },
+                                    1,
+                                    PreprocessMethods.None,
+                                    pm,
+                                    mean,
+                                    std);
+                                else
+                                    throw new ArgumentException("Invalid dataset format");
+
+                                var k210c = new GraphToK210Converter(graph, options.WeightsBits);
+                                await k210c.ConvertAsync(
+                                    dataset,
                                     ctx,
                                     Path.GetDirectoryName(options.Output),
                                     Path.GetFileNameWithoutExtension(options.Output),

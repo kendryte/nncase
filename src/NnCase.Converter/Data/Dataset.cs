@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Numerics.Tensors;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
 using SixLabors.ImageSharp;
@@ -48,7 +49,7 @@ namespace NnCase.Converter.Data
                 throw new ArgumentOutOfRangeException(nameof(batchSize));
 
             _fileNames = (from f in Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories)
-                          where allowdExtensions.Contains(Path.GetExtension(f).ToLowerInvariant())
+                          where allowdExtensions == null || allowdExtensions.Contains(Path.GetExtension(f).ToLowerInvariant())
                           select f).ToList();
             _dimensions = dimensions.ToArray();
             _batchSize = batchSize;
@@ -211,6 +212,24 @@ namespace NnCase.Converter.Data
                     throw new NotSupportedException($"Channels number {Dimensions[0]} is not supported by dataset provider.");
                 }
             }
+        }
+    }
+
+    public class RawDataset : Dataset
+    {
+        private readonly PreprocessMethods _preprocessMethods;
+
+        public RawDataset(string path, ReadOnlySpan<int> dimensions, int batchSize, PreprocessMethods preprocessMethods, PostprocessMethods postprocessMethod, float? mean = null, float? std = null)
+            : base(path, null, dimensions, batchSize, postprocessMethod, mean, std)
+        {
+            _preprocessMethods = preprocessMethods;
+        }
+
+        protected override void Process(byte[] source, Span<float> dest)
+        {
+            var src = MemoryMarshal.Cast<byte, float>(source);
+            for (int i = 0; i < dest.Length; i++)
+                dest[i] = src[i];
         }
     }
 }
