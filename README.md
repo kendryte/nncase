@@ -21,9 +21,9 @@ Download prebuilt binaries from [Release](https://github.com/kendryte/nncase/rel
 
 | value | description |
 |-------|------------------ |
+|k210model|`.kmodel` K210 model
 |tf|`.pb` TensorFlow model
 |tflite|`.tflite` TFLite model
-|k210model|`.kmodel` K210 model
 
 - `--dataset` Dataset path, *required* when the output format is `k210model`.
 
