@@ -379,7 +379,7 @@ namespace NnCase.Converter.Converters
                 _inputs.Add(layer.Input, inputs[0]);
                 var reshape = new Reshape(layer.Output.Dimensions, new[] { -1, layer.Output.Dimensions[1] });
                 reshape.Input.SetConnection(layer.Output);
-                _outputs.Add(op.Outputs(0), layer.Output);
+                _outputs.Add(op.Outputs(0), reshape.Output);
                 return reshape;
             }
             else

@@ -15,12 +15,12 @@ namespace NnCase.Converter.K210.Transforms
         {
             try
             {
-                if (layer is SpaceToBatchNd space)
+                if (layer is SpaceToBatchNd || layer is Pad)
                 {
                     context.MatchedLayers.Add(layer);
-                    context.Inputs.Add(space.Input);
+                    context.Inputs.Add(layer.InputConnectors[0]);
 
-                    foreach (var nextLayer in space.Output.Connections.Select(o => o.To.Owner))
+                    foreach (var nextLayer in layer.OutputConnectors[0].Connections.Select(o => o.To.Owner))
                     {
                         if (nextLayer is DepthwiseConv2d dwConv2d)
                         {
@@ -67,13 +67,13 @@ namespace NnCase.Converter.K210.Transforms
 
         public override void Process(TransformContext context)
         {
-            var space = (SpaceToBatchNd)context.MatchedLayers[0];
+            var space = context.MatchedLayers[0];
             var dwConv2d = (DepthwiseConv2d)context.MatchedLayers[1];
             var conv2d = (Conv2d)context.MatchedLayers[2];
-            var input = space.Input.Connection.From;
+            var input = space.InputConnectors[0].Connection.From;
             var output = conv2d.Output;
 
-            space.Input.ClearConnection();
+            space.InputConnectors[0].ClearConnection();
             var newDwConv2d = new DepthwiseConv2d(input.Dimensions, dwConv2d.Weights, dwConv2d.Bias, Padding.Same, 1, 1, dwConv2d.FusedActivationFunction);
             var quantize = new Quantize(newDwConv2d.Output.Dimensions);
             var upload = new K210Upload(quantize.Output.Dimensions);
