@@ -1,14 +1,19 @@
 # 20 Classes Object Detection
 ## Usage
-1. Convert your image to c by `image2c.py`.
+1. Download `nncase` from [Release](https://github.com/kendryte/nncase/releases) and extract `ncc-linux-x86_64.tar.gz` to `~/nncase`.
+```bash
+mkdir ~/nncase
+tar xzf ncc-linux-x86_64.tar.gz -C ~/nncase
+```
+2. Convert your image to c by `image2c.py`.
 ```bash
 python img2c.py dog.bmp
 ```
-2. Compile your tflite model to kmodel.
+3. Compile your tflite model to kmodel.
 ```bash
-ncc -i tflite -o k210model --channelwise-output --dataset images model/20classes_yolo.tflite k210/kpu_20classes_example/yolo.kmodel
+~/nncase/ncc -i tflite -o k210model --channelwise-output --dataset images model/20classes_yolo.tflite k210/kpu_20classes_example/yolo.kmodel
 ```
-3. Compile your program and run.
+4. Compile your program and run.
 ```bash
 cmake .. -DPROJ=kpu_20classes_example
 make
