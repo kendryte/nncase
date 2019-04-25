@@ -400,6 +400,9 @@ namespace NnCase.Converter.Converters
         public static Tensor<T> GetTensor<T>(this tflite.Model model, tflite.Tensor tensor)
             where T : unmanaged
         {
+            if (typeof(T) == typeof(float) && tensor.Type != tflite.TensorType.FLOAT32)
+                throw new InvalidOperationException($"expect FLOAT32 tensor but got {tensor.Type}, use '--inference_type=FLOAT' when converting via toco.");
+
             var buffer = model.Buffers((int)tensor.Buffer).Value;
             return new DenseTensor<T>(MemoryMarshal.Cast<byte, T>(buffer.GetDataBytes()).ToArray(), tensor.GetShapeArray());
         }

@@ -67,7 +67,11 @@ namespace NnCase.Cli
             AppDomain.CurrentDomain.UnhandledException += (s, e) =>
             {
                 if (e.ExceptionObject is Exception ex)
+                {
                     Console.WriteLine("Fatal: " + ex.Message);
+
+                    Console.WriteLine(ex.ToString());
+                }
                 else
                     Console.WriteLine("Fatal: Unexpected error occurred.");
                 Environment.Exit(-1);
@@ -195,6 +199,7 @@ namespace NnCase.Cli
                             new K210EliminateAddRemovePaddingTransform(),
                             new QuantizedAddTransform(),
                             new QuantizedMaxPool2dTransform(),
+                            new QuantizedResizeNearestNeighborTransform(),
                             new ExclusiveConcatenationTransform(),
                             new QuantizedExclusiveConcatenationTransform(),
                             new QuantizedConcatenationTransform(),

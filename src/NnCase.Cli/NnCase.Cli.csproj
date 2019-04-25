@@ -12,6 +12,7 @@
     <ProjectReference Include="..\NnCase.Converter.K210\NnCase.Converter.K210.csproj" />
     <ProjectReference Include="..\NnCase.Converter\NnCase.Converter.csproj" />
     <PackageReference Include="CommandLineParser" Version="2.3.0" />
+    <PackageReference Include="Microsoft.Extensions.Hosting" Version="2.2.0" />
   </ItemGroup>
 
 </Project>

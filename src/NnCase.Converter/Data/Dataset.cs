@@ -174,7 +174,12 @@ namespace NnCase.Converter.Data
                 else
                 {
                     image.Mutate(x =>
-                        x.Resize(Dimensions[2], Dimensions[1]));
+                        x.Resize(new ResizeOptions
+                        {
+                            Size = new Size(Dimensions[2], Dimensions[1]),
+                            Sampler = KnownResamplers.Bicubic,
+                            Mode = ResizeMode.Stretch
+                        }));
                     destImage = image;
                 }
 
