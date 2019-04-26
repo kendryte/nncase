@@ -48,11 +48,25 @@ namespace NnCase.Converter.Data
             if (batchSize < 1)
                 throw new ArgumentOutOfRangeException(nameof(batchSize));
 
-            _fileNames = (from f in Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories)
-                          where allowdExtensions == null || allowdExtensions.Contains(Path.GetExtension(f).ToLowerInvariant())
-                          select f).ToList();
+            if (Directory.Exists(path))
+            {
+                _fileNames = (from f in Directory.EnumerateFiles(path, "*.*", SearchOption.AllDirectories)
+                              where allowdExtensions.Contains(Path.GetExtension(f).ToLowerInvariant())
+                              select f).ToList();
+            }
+            else if (allowdExtensions.Contains(Path.GetExtension(path)))
+            {
+                _fileNames = new[] { path };
+            }
+
+            if (_fileNames == null || _fileNames.Count == 0)
+            {
+                throw new ArgumentException("Invalid dataset.");
+            }
+
             _dimensions = dimensions.ToArray();
             _batchSize = batchSize;
+
             if (mean.HasValue)
                 Mean = mean.Value;
             if (std.HasValue)
