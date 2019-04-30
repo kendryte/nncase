@@ -43,7 +43,7 @@ namespace NnCase.Converter.Transforms
 
             conv2d.Input.ClearConnection();
 
-            var fc = new FullyConnected(input.Dimensions, conv2d.Weights, conv2d.Bias, conv2d.FusedActivationFunction);
+            var fc = new FullyConnected(input.Dimensions, conv2d.Weights.Reshape(new[] { conv2d.Weights.Dimensions[0], conv2d.Weights.Dimensions[1] }), conv2d.Bias, conv2d.FusedActivationFunction);
             var reshape = new Reshape(fc.Output.Dimensions, new[] { fc.Output.Dimensions[0], fc.Output.Dimensions[1], 1, 1 });
             fc.Input.SetConnection(input);
             reshape.Input.SetConnection(fc.Output);
