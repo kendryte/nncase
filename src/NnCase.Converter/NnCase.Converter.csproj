@@ -16,7 +16,7 @@
     <PackageReference Include="SixLabors.ImageSharp" Version="1.0.0-beta0006" />
     <PackageReference Include="SixLabors.ImageSharp.Drawing" Version="1.0.0-beta0006" />
     <PackageReference Include="System.Numerics.Tensors" Version="0.1.0" />
-    <PackageReference Include="TensorflowSharp" Version="1.12.0" />
+    <PackageReference Include="TensorflowSharp" Version="1.13.0" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(TargetFramework)'=='net471'">
