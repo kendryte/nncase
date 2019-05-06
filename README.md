@@ -56,7 +56,7 @@ Download prebuilt binaries from [Release](https://github.com/kendryte/nncase/rel
 
 - 20 classes object detection example
 
-  See https://github.com/kendryte/nncase/tree/master/src/examples
+  See https://github.com/kendryte/nncase/tree/master/examples
 
 ## Supported layers
 
