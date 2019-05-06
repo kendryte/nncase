@@ -97,6 +97,8 @@ namespace NnCase.Converter.Converters
                     return ConvertReshape(op);
                 case tflite.BuiltinOperator.PAD:
                     return ConvertPad(op);
+                case tflite.BuiltinOperator.LOGISTIC:
+                    return ConvertLogistic(op);
                 default:
                     throw new LayerNotSupportedException(opCode.BuiltinCode.ToString());
             }
@@ -310,6 +312,17 @@ namespace NnCase.Converter.Converters
             var options = op.BuiltinOptions<tflite.SoftmaxOptions>().Value;
 
             var layer = new Softmax(input.GetShapeArray().ToNCHW());
+            _inputs.Add(layer.Input, inputs[0]);
+            _outputs.Add(op.Outputs(0), layer.Output);
+            return layer;
+        }
+
+        private Layer ConvertLogistic(tflite.Operator op)
+        {
+            var inputs = op.GetInputsArray();
+            var input = _graph.Tensors(inputs[0]).Value;
+
+            var layer = new Logistic(input.GetShapeArray().ToNCHW());
             _inputs.Add(layer.Input, inputs[0]);
             _outputs.Add(op.Outputs(0), layer.Output);
             return layer;

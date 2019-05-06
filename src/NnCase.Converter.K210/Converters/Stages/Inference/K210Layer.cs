@@ -31,6 +31,7 @@ namespace NnCase.Converter.K210.Converters.Stages.Inference
         ResizeNearestNeighbor,
         QuantizedResizeNearestNeighbor,
         ChannelwiseDequantize,
+        Logistic,
         K210Conv = 10240,
         K210AddPadding,
         K210RemovePadding,

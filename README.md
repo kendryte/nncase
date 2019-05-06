@@ -62,8 +62,8 @@ Download prebuilt binaries from [Release](https://github.com/kendryte/nncase/rel
 
 | layer | parameters |
 |-------|------------------ |
-| Conv2d | kernel={3x3,1x1} stride={1,2} padding=same|
-| DepthwiseConv2d | kernel={3x3,1x1} stride={1,2} padding=same|
+| Conv2d | kernel={3x3,1x1} stride={1,2} padding=same *|
+| DepthwiseConv2d | kernel={3x3,1x1} stride={1,2} padding=same *|
 | FullyConnected | |
 | Add | |
 | MaxPool2d | |
@@ -76,6 +76,9 @@ Download prebuilt binaries from [Release](https://github.com/kendryte/nncase/rel
 | LeakyRelu | |
 | Concatenation | |
 | L2Normalization | |
+| Sigmoid | |
 | Softmax | |
 | Flatten | |
 | ResizeNearestNeighbor | |
+
+\* When using TensorFlow Conv2d/DepthwiseConv2d kernel=3x3 stride=2 padding=same, you must first use tf.pad([[0,0],[1,1],[1,1],[0,0]]) to pad the input and then use Conv2d/DepthwiseConv2d with `valid` padding.
