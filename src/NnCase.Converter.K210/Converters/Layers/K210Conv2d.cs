@@ -595,6 +595,7 @@ namespace NnCase.Converter.K210.Converters.Layers
             var argW = config.ArgW;
             var argAdd = config.ArgAdd;
             var imageSize = config.InputWidth * config.InputHeight;
+            var padValue = config.PadValue;
 
             var src = new byte[config.InputWidth * config.InputHeight * config.InputChannels];
             K210Helper.KpuDownload(context.GetKpuRamAt((int)config.InputAddress), src, config.InputWidth, config.InputHeight, config.InputChannels);
@@ -641,17 +642,32 @@ namespace NnCase.Converter.K210.Converters.Layers
                     for (int oc = 0; oc < config.OutputChannels; oc++)
                     {
                         var localWeights = new ReadOnlySpan<ushort>(weights, oc * 9, 9);
+                        var sumW = localWeights.Sum();
+
                         for (int oy = 0; oy < config.InputHeight; oy++)
                         {
                             for (int ox = 0; ox < config.InputWidth; ox++)
                             {
+                                long value = 0;
+                                long sumX = 0;
+
                                 for (int wy = 0; wy < 3; wy++)
                                 {
                                     for (int wx = 0; wx < 3; wx++)
                                     {
+                                        var iy = oy + wy - 1;
+                                        var ix = ox + wx - 1;
 
+                                        var x = iy < 0 || iy >= config.InputHeight || ix < 0 || ix >= config.InputWidth
+                                            ? padValue
+                                            : src[(oc * config.InputHeight + iy) * config.InputWidth + ix];
+                                        var w = localWeights[wy * 3 + wx];
+                                        sumX += x;
+                                        value += w * x;
                                     }
                                 }
+
+                                workspace[(oc * config.InputHeight + oy) * config.InputWidth + ox] = value + argX * sumX + argW * sumW + argAdd;
                             }
                         }
                     }
@@ -660,25 +676,43 @@ namespace NnCase.Converter.K210.Converters.Layers
                 {
                     for (int oc = 0; oc < config.OutputChannels; oc++)
                     {
-                        var localWeights = new ReadOnlySpan<ushort>(weights, oc * config.InputChannels, config.InputChannels);
+                        var localWeights = new ReadOnlySpan<ushort>(weights, oc * config.InputChannels * 9, config.InputChannels * 9);
                         var sumW = localWeights.Sum();
 
-                        for (int i = 0; i < imageSize; i++)
+                        for (int oy = 0; oy < config.InputHeight; oy++)
                         {
-                            long value = 0;
-                            long sumX = 0;
-                            for (int ic = 0; ic < config.InputChannels; ic++)
+                            for (int ox = 0; ox < config.InputWidth; ox++)
                             {
-                                var x = src[ic * imageSize + i];
-                                sumX += x;
-                                value += localWeights[ic] * x;
-                            }
+                                long value = 0;
+                                long sumX = 0;
 
-                            workspace[oc * imageSize + i] = value + argX * sumX + argW * sumW + argAdd;
+                                for (int ic = 0; ic < config.InputChannels; ic++)
+                                {
+                                    for (int wy = 0; wy < 3; wy++)
+                                    {
+                                        for (int wx = 0; wx < 3; wx++)
+                                        {
+                                            var iy = oy + wy - 1;
+                                            var ix = ox + wx - 1;
+
+                                            var x = iy < 0 || iy >= config.InputHeight || ix < 0 || ix >= config.InputWidth
+                                                ? padValue
+                                                : src[(ic * config.InputHeight + iy) * config.InputWidth + ix];
+                                            var w = localWeights[(ic * 3 + wy) * 3 + wx];
+                                            sumX += x;
+                                            value += w * x;
+                                        }
+                                    }
+                                }
+
+                                workspace[(oc * config.InputHeight + oy) * config.InputWidth + ox] = value + argX * sumX + argW * sumW + argAdd;
+                            }
                         }
                     }
                 }
             }
+
+
         }
 
         private static int ToSigned(uint value, int bits)
