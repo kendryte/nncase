@@ -120,7 +120,7 @@ namespace NnCase.Converter.Data
 #else
             async
 #endif
-            IAsyncEnumerable<Tensor<byte>> GetFixedBatchesAsync()
+            IAsyncEnumerable<(string[] filename, Tensor<byte> tensor)> GetFixedBatchesAsync()
         {
             var dimensions = new[] { _batchSize }.Concat(_dimensions).ToArray();
             var oneSize = Dimensions.GetSize();
@@ -136,7 +136,7 @@ namespace NnCase.Converter.Data
             }
 
 #if NET471
-            return new AsyncEnumerable<Tensor<byte>>(async yield =>
+            return new AsyncEnumerable<(string[] filename, Tensor<byte> tensor)>(async yield =>
             {
 #endif
             for (int i = 0; i < _fileNames.Count / _batchSize; i++)
@@ -151,9 +151,9 @@ namespace NnCase.Converter.Data
                 });
 
 #if NET471
-                    await yield.ReturnAsync(tensor);
+                    await yield.ReturnAsync((_fileNames.Skip(i * _batchSize).Take(_batchSize).ToArray(), tensor));
 #else
-                yield return tensor;
+                yield return (_fileNames.Skip(i * _batchSize).Take(_batchSize).ToArray(), tensor);
 #endif
             }
 #if NET471

@@ -762,7 +762,7 @@ namespace NnCase.Converter.K210.Converters.Layers
             {
                 var x = src[i];
                 var apply = config.ActConfigs.Last(o => o.StartX <= x);
-                workspace[i] = (byte)FxExtensions.Clamp(CarryShift(x * apply.Mul, apply.Shift) + apply.Add, 0, 255);
+                workspace[i] = (byte)FxExtensions.Clamp(CarryShift((x - apply.StartX) * apply.Mul, apply.Shift) + apply.Add, 0, 255);
             }
 
             return workspace;

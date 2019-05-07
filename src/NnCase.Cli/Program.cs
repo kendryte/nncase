@@ -66,10 +66,6 @@ namespace NnCase.Cli
                 Environment.Exit(-1);
             };
 
-            var emulator = new NnCase.Converter.K210.Emulator.K210Emulator(
-                File.ReadAllBytes(@"D:\Work\Repository\kendryte-standalone-sdk\src\afnet\afnet.kmodel"));
-            await emulator.RunAsync(@"D:\Work\Repository\kendryte-standalone-sdk\src\afnet\0005.bmp");
-
             Options options = null;
             Parser.Default.ParseArguments<Options>(args)
                 .WithParsed(o => options = o);
@@ -103,6 +99,9 @@ namespace NnCase.Cli
                         graph = tfc.Graph;
                         break;
                     }
+                case "k210model":
+                    graph = null;
+                    break;
                 default:
                     throw new ArgumentException("input-format");
             }
@@ -218,6 +217,16 @@ namespace NnCase.Cli
                                 Path.GetDirectoryName(options.Output),
                                 Path.GetFileNameWithoutExtension(options.Output));
                         }
+                        break;
+                    }
+                case "inference":
+                    {
+                        if (options.InputFormat.ToLowerInvariant() != "k210model")
+                            throw new ArithmeticException("Inference mode only support k210model input.");
+
+                        var emulator = new NnCase.Converter.K210.Emulator.K210Emulator(
+                            File.ReadAllBytes(options.Input));
+                        await emulator.RunAsync(options.Dataset, options.Output);
                         break;
                     }
                 default:

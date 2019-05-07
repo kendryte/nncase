@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using System.Numerics.Tensors;
@@ -43,7 +44,7 @@ namespace NnCase.Converter.K210.Emulator
             };
         }
 
-        public async Task RunAsync(string datasetPath)
+        public async Task RunAsync(string datasetPath, string outputPath)
         {
             var argument = GetInputArgument();
             var dataset = new ImageDataset(datasetPath, new[] { argument.Config.InputChannels, argument.Config.InputHeight, argument.Config.InputWidth }, 1, PreprocessMethods.None, PostprocessMethods.None);
@@ -54,7 +55,17 @@ namespace NnCase.Converter.K210.Emulator
             await foreach (var batch in dataset.GetFixedBatchesAsync())
 #endif
             {
-                Run(batch, argument);
+                Run(batch.tensor, argument);
+                var outputFile = Path.Combine(outputPath, Path.GetFileNameWithoutExtension(batch.filename[0]) + ".bin");
+                using (var bw = new BinaryWriter(File.Open(outputFile, FileMode.Create, FileAccess.Write)))
+                {
+                    foreach (var outputNode in _outputAddresses)
+                    {
+                        var buffer = new byte[outputNode.Size];
+                        Buffer.BlockCopy(_mainMemoryBuffer, (int)outputNode.Address, buffer, 0, buffer.Length);
+                        bw.Write(buffer);
+                    }
+                }
             }
 #if NET471
                 );

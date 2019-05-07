@@ -30,7 +30,7 @@ namespace NnCase.Converter.K210.Converters.Layers
             else
             {
                 groups = 1;
-                rowLength = (int)Math.Ceiling(width / 64.0);
+                rowLength = (width + 63) / 64;
                 rowPadding = 64;
             }
 
