@@ -712,7 +712,7 @@ namespace NnCase.Converter.K210.Converters.Layers
                 }
             }
 
-
+            //K210Helper.KpuUpload(context.GetKpuRamAt((int)config.OutputAddress), wo)
         }
 
         private static int ToSigned(uint value, int bits)
