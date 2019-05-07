@@ -590,15 +590,28 @@ namespace NnCase.Converter.K210.Converters.Layers
         public void Forward(K210Conv2dLayerArgument argument, ForwardContext context)
         {
             var config = argument.Config;
+
+            var src = new byte[config.InputWidth * config.InputHeight * config.InputChannels];
+            K210Helper.KpuDownload(context.GetKpuRamAt((int)config.InputAddress), src, config.InputWidth, config.InputHeight, config.InputChannels);
+
+            var convOut = ForwardConvolution(src, config);
+            var bnOut = ForwardBatchNorm(convOut, config);
+            var actOut = ForwardActivation(bnOut, config);
+
+            //K210Helper.KpuUpload(context.GetKpuRamAt((int)config.OutputAddress), wo)
+        }
+
+        private long[] ForwardConvolution(byte[] src, K210ConvLayerConfig config)
+        {
             var weights = config.Weights;
             var argX = config.ArgX;
+            var shiftX = config.ShiftX;
             var argW = config.ArgW;
+            var shiftW = config.ShiftW;
             var argAdd = config.ArgAdd;
             var imageSize = config.InputWidth * config.InputHeight;
             var padValue = config.PadValue;
 
-            var src = new byte[config.InputWidth * config.InputHeight * config.InputChannels];
-            K210Helper.KpuDownload(context.GetKpuRamAt((int)config.InputAddress), src, config.InputWidth, config.InputHeight, config.InputChannels);
             var workspace = new long[config.InputWidth * config.InputHeight * config.OutputChannels];
 
             if (config.KernelType == 0)
@@ -609,7 +622,7 @@ namespace NnCase.Converter.K210.Converters.Layers
                     {
                         var x = src[i];
                         var w = weights[i];
-                        workspace[i] = x * w + argX * x + argW * w + argAdd;
+                        workspace[i] = x * w + (argX * x >> shiftX) + (argW * w >> shiftW) + argAdd;
                     }
                 }
                 else
@@ -630,7 +643,7 @@ namespace NnCase.Converter.K210.Converters.Layers
                                 value += localWeights[ic] * x;
                             }
 
-                            workspace[oc * imageSize + i] = value + argX * sumX + argW * sumW + argAdd;
+                            workspace[oc * imageSize + i] = value + (argX * sumX >> shiftX) + (argW * sumW >> shiftW) + argAdd * config.InputChannels;
                         }
                     }
                 }
@@ -667,7 +680,7 @@ namespace NnCase.Converter.K210.Converters.Layers
                                     }
                                 }
 
-                                workspace[(oc * config.InputHeight + oy) * config.InputWidth + ox] = value + argX * sumX + argW * sumW + argAdd;
+                                workspace[(oc * config.InputHeight + oy) * config.InputWidth + ox] = value + (argX * sumX >> shiftX) + (argW * sumW >> shiftW) + argAdd;
                             }
                         }
                     }
@@ -705,14 +718,47 @@ namespace NnCase.Converter.K210.Converters.Layers
                                     }
                                 }
 
-                                workspace[(oc * config.InputHeight + oy) * config.InputWidth + ox] = value + argX * sumX + argW * sumW + argAdd;
+                                workspace[(oc * config.InputHeight + oy) * config.InputWidth + ox] = value + (argX * sumX >> shiftX) + (argW * sumW >> shiftW) + argAdd * config.InputChannels;
                             }
                         }
                     }
                 }
             }
 
-            //K210Helper.KpuUpload(context.GetKpuRamAt((int)config.OutputAddress), wo)
+            return workspace;
+        }
+
+        private long[] ForwardBatchNorm(long[] src, K210ConvLayerConfig config)
+        {
+            var imageSize = config.InputWidth * config.InputHeight;
+            var workspace = new long[config.InputWidth * config.InputHeight * config.OutputChannels];
+
+            for (int oc = 0; oc < config.OutputChannels; oc++)
+            {
+                var bn = config.BNConfigs[oc];
+
+                for (int i = 0; i < imageSize; i++)
+                {
+                    var x = src[oc * imageSize + i];
+                    workspace[oc * imageSize + i] = (x * bn.Mul >> bn.Shift) + bn.Add;
+                }
+            }
+
+            return workspace;
+        }
+
+        private byte[] ForwardActivation(long[] src, K210ConvLayerConfig config)
+        {
+            var workspace = new byte[src.Length];
+
+            for (int i = 0; i < src.Length; i++)
+            {
+                var x = src[i];
+                var apply = config.ActConfigs.Last(o => o.StartX <= x);
+                workspace[i] = (byte)FxExtensions.Clamp(CarryShift(x * apply.Mul, apply.Shift) + apply.Add, 0, 255);
+            }
+
+            return workspace;
         }
 
         private static int ToSigned(uint value, int bits)
@@ -737,6 +783,27 @@ namespace NnCase.Converter.K210.Converters.Layers
             }
 
             return (long)value;
+        }
+
+        private static long CarryShift(long value, int shift)
+        {
+            if (shift > 0)
+            {
+                value >>= shift - 1;
+                if ((value & 0x1) != 0)
+                {
+                    if (value < 0)
+                        value = (value >> 1) - 1;
+                    else
+                        value = (value >> 1) + 1;
+                }
+                else
+                {
+                    value >>= 1;
+                }
+            }
+
+            return value;
         }
     }
 }

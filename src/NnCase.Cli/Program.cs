@@ -67,8 +67,8 @@ namespace NnCase.Cli
             };
 
             var emulator = new NnCase.Converter.K210.Emulator.K210Emulator(
-                File.ReadAllBytes(@"D:\Work\Repository\kendryte-standalone-sdk\src\kpu6\mobilev1.kmodel"));
-            await emulator.RunAsync(@"D:\Work\Repository\models\test\face.jpg");
+                File.ReadAllBytes(@"D:\Work\Repository\kendryte-standalone-sdk\src\afnet\afnet.kmodel"));
+            await emulator.RunAsync(@"D:\Work\Repository\kendryte-standalone-sdk\src\afnet\0005.bmp");
 
             Options options = null;
             Parser.Default.ParseArguments<Options>(args)
