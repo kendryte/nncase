@@ -584,6 +584,8 @@ namespace NnCase.Converter.K210.Converters.Layers
             config.InputGroups = reg.kernel_calc_type_cfg.coef_group;
             config.ArgW = ToSigned(reg.conv_value.arg_w, 24);
             config.ArgX = ToSigned(reg.conv_value.arg_x, 24);
+            config.ShiftW = reg.conv_value.shr_w;
+            config.ShiftX = reg.conv_value.shr_x;
             config.ArgAdd = ToSigned(reg.conv_value2.arg_add, 40);
         }
 
@@ -598,7 +600,12 @@ namespace NnCase.Converter.K210.Converters.Layers
             var bnOut = ForwardBatchNorm(convOut, config);
             var actOut = ForwardActivation(bnOut, config);
 
-            //K210Helper.KpuUpload(context.GetKpuRamAt((int)config.OutputAddress), wo)
+            K210Helper.KpuUpload(context.GetKpuRamAt((int)config.OutputAddress), actOut, config.OutputWidth, config.OutputHeight, config.OutputChannels);
+
+            if (argument.Flags.HasFlag(K210LayerFlags.MainMemoryOutput))
+            {
+                K210Helper.KpuDownload(context.GetKpuRamAt((int)config.OutputAddress), context.GetMainRamAt((int)argument.MainMemoryOutputAddress), config.OutputWidth, config.OutputHeight, config.OutputChannels);
+            }
         }
 
         private long[] ForwardConvolution(byte[] src, K210ConvLayerConfig config)

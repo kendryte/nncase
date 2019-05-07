@@ -18,7 +18,7 @@ namespace NnCase.Converter.K210.Emulator
 
         public Span<byte> GetMainRamAt(int address)
         {
-            return new Span<byte>(MainRam, address, KpuRam.Length - address);
+            return new Span<byte>(MainRam, address, MainRam.Length - address);
         }
     }
 }

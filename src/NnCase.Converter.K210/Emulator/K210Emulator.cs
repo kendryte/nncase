@@ -76,19 +76,16 @@ namespace NnCase.Converter.K210.Emulator
                               }).ToDictionary(x => x.Key, x => x.Value);
 
             KpuInput(inputArgument, context, batch.ToArray());
-            
+
             var currentBodyOffset = BodyOffset;
             foreach (var layerHeader in _layerHeaders)
             {
                 var type = layerHeader.Type;
-                if (converters.TryGetValue(type, out var info))
+                if (converters.TryGetValue(type, out var info) && info.DeserizalizeMethod != null)
                 {
-                    if (info.DeserizalizeMethod != null)
-                    {
-                        var converter = Activator.CreateInstance(info.Type);
-                        var layerArg = info.DeserizalizeMethod.Invoke(converter, new object[] { currentBodyOffset, _deserializeContext });
-                        info.ForwardMethod.Invoke(converter, new object[] { layerArg, context });
-                    }
+                    var converter = Activator.CreateInstance(info.Type);
+                    var layerArg = info.DeserizalizeMethod.Invoke(converter, new object[] { currentBodyOffset, _deserializeContext });
+                    info.ForwardMethod.Invoke(converter, new object[] { layerArg, context });
                 }
                 else
                 {
