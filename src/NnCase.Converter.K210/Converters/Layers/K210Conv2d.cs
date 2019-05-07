@@ -771,7 +771,7 @@ namespace NnCase.Converter.K210.Converters.Layers
         private static int ToSigned(uint value, int bits)
         {
             var mask = 1U << (bits - 1);
-            if ((value & mask) != 0)
+            if (bits != 32 && (value & mask) != 0)
             {
                 var sign = 0xFFFFFFFF << bits;
                 return (int)(value | sign);
