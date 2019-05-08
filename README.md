@@ -57,6 +57,7 @@ Download prebuilt binaries from [Release](https://github.com/kendryte/nncase/rel
   `ncc -i paddle -o tf ./MobileNetV1_pretrained ./mbnetv1.pb`
 
 - Inference K210 model and get output binaries.
+
   `-i k210model -o inference --dataset ./images ./mbnetv1.kmodel ./output`
 
 - 20 classes object detection example
