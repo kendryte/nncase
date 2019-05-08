@@ -27,7 +27,7 @@ Download prebuilt binaries from [Release](https://github.com/kendryte/nncase/rel
 |tflite|`.tflite` TFLite model
 |inference|`.bin` Model's raw output (Only support k210model input)
 
-- `--dataset` Dataset path, **required** when the output format is `k210model`.
+- `--dataset` Dataset path, **required** when the output format is `k210model` or `inference`.
 
 - `--postprocess` Dataset postprocess method
 
@@ -58,7 +58,7 @@ Download prebuilt binaries from [Release](https://github.com/kendryte/nncase/rel
 
 - Inference K210 model and get output binaries.
 
-  `-i k210model -o inference --dataset ./images ./mbnetv1.kmodel ./output`
+  `ncc -i k210model -o inference --dataset ./images ./mbnetv1.kmodel ./output`
 
 - 20 classes object detection example
 
