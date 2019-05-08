@@ -35,4 +35,16 @@ namespace NnCase.Converter.K210.Converters.Stages.Generate
             return (uint)Stream.Position;
         }
     }
+
+    public class K210BinDeserializeContext
+    {
+        public int WeightsBits { get; set; }
+
+        public byte[] KModel { get; set; }
+
+        public SpanReader GetReaderAt(int offset)
+        {
+            return new SpanReader(new ReadOnlySpan<byte>(KModel, offset, KModel.Length - offset));
+        }
+    }
 }

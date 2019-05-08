@@ -15,7 +15,7 @@ namespace NnCase.Converter.K210.Converters.Layers
 
     public class K210LayerActConfig
     {
-        public ulong StartX { get; set; }
+        public long StartX { get; set; }
 
         public int Mul { get; set; }
 

@@ -110,6 +110,9 @@ namespace NnCase.Cli
                         graph = tfc.Graph;
                         break;
                     }
+                case "k210model":
+                    graph = null;
+                    break;
                 default:
                     throw new ArgumentException("input-format");
             }
@@ -119,10 +122,6 @@ namespace NnCase.Cli
             {
                 case "tf":
                     {
-                        Transform.Process(graph, new Transform[] {
-                            new LeakyReluTransform()
-                        });
-
                         var ctx = new GraphPlanContext();
                         graph.Plan(ctx);
 
@@ -267,6 +266,16 @@ namespace NnCase.Cli
                                 Path.GetDirectoryName(options.Output),
                                 Path.GetFileNameWithoutExtension(options.Output));
                         }
+                        break;
+                    }
+                case "inference":
+                    {
+                        if (options.InputFormat.ToLowerInvariant() != "k210model")
+                            throw new ArithmeticException("Inference mode only support k210model input.");
+
+                        var emulator = new NnCase.Converter.K210.Emulator.K210Emulator(
+                            File.ReadAllBytes(options.Input));
+                        await emulator.RunAsync(options.Dataset, options.Output);
                         break;
                     }
                 default:

@@ -9,6 +9,7 @@ using NnCase.Converter.K210.Converters.Stages.Convert;
 using NnCase.Converter.K210.Converters.Stages.Generate;
 using NnCase.Converter.K210.Converters.Stages.Inference;
 using NnCase.Converter.K210.Converters.Stages.Quantize;
+using NnCase.Converter.K210.Emulator;
 using NnCase.Converter.K210.Model.Hardware;
 using NnCase.Converter.K210.Model.Layers;
 using NnCase.Converter.Model.Layers;
@@ -48,10 +49,10 @@ namespace NnCase.Converter.K210.Converters.Layers
 
             config.InputWidth = layer.Input.Dimensions[3];
             config.InputHeight = layer.Input.Dimensions[2];
-            (config.InputGroups, config.InputRowLength) = K210Helper.GetRowLayout(config.InputWidth);
+            (config.InputGroups, config.InputRowLength, _) = K210Helper.GetRowLayout(config.InputWidth);
             config.OutputWidth = layer.Output.Dimensions[3];
             config.OutputHeight = layer.Output.Dimensions[2];
-            (config.OutputGroups, config.OutputRowLength) = K210Helper.GetRowLayout(config.OutputWidth);
+            (config.OutputGroups, config.OutputRowLength, _) = K210Helper.GetRowLayout(config.OutputWidth);
 
             config.KernelType = layer.KernelWidth == 3 ? 1 : 0;
             config.IsDepthwise = layer.Conv2dType == K210Conv2dType.DepthwiseConv2d;
@@ -130,6 +131,28 @@ namespace NnCase.Converter.K210.Converters.Layers
             bw.Write(argument.ParamAddress.Bn);
             bw.Write(argument.ParamAddress.Activation);
             bw.BaseStream.Position = newPosition;
+        }
+
+        public K210Conv2dLayerArgument DeserializeBin(int offset, K210BinDeserializeContext context)
+        {
+            var sr = context.GetReaderAt(offset);
+            var argument = new K210Conv2dLayerArgument();
+            argument.Flags = sr.Read<K210LayerFlags>();
+            argument.MainMemoryOutputAddress = sr.Read<uint>();
+            argument.ParamAddress = new K210Conv2dParamAddress
+            {
+                Layer = sr.Read<uint>(),
+                Weights = sr.Read<uint>(),
+                Bn = sr.Read<uint>(),
+                Activation = sr.Read<uint>()
+            };
+
+            DeserializeBinLayer(argument, context);
+            DeserializeBinWeights(argument, context);
+            DeserializeBinBn(argument, context);
+            DeserializeBinActivation(argument, context);
+
+            return argument;
         }
 
         public static (double[] scale, double bias) QuantizeWeights(bool isConv2d, Tensor<float> weights, K210ConvLayerConfig config, int weightsBits)
@@ -273,7 +296,7 @@ namespace NnCase.Converter.K210.Converters.Layers
                         throw new NotSupportedException($"Activation of {layer.FusedActivationFunction} is not supported.");
                 }
 
-                var starts = new ulong[]
+                var starts = new long[]
                 {
                     0x800000000, 0xf7d4cf4b8, 0xf8ed5a20c, 0xfa05e4f60,
                     0xfb2e05baa, 0xfc46908fe, 0xfd5f1b652, 0xfe77a63a6,
@@ -310,7 +333,7 @@ namespace NnCase.Converter.K210.Converters.Layers
                     else if (i == 15)
                     {
                         (var mul, var shift) = Quantizer.ExtractValueAndShift(1 / postMul, 16, 20);
-                        param.StartX = (ulong)zero;
+                        param.StartX = zero;
                         param.Mul = (int)Math.Round(mul);
                         param.Shift = shift;
                         param.Add = (byte)(-bias);
@@ -325,7 +348,7 @@ namespace NnCase.Converter.K210.Converters.Layers
                         var x0 = zero - (zero - y0) / leakyRelu.Slope;
 
                         (var mul, var shift) = Quantizer.ExtractValueAndShift(1 / postMul * leakyRelu.Slope, 16, 20);
-                        param.StartX = (ulong)(long)Math.Floor(x0);
+                        param.StartX = (long)Math.Floor(x0);
                         param.Mul = (int)Math.Round(mul);
                         param.Shift = shift;
                         param.Add = add;
@@ -381,7 +404,7 @@ namespace NnCase.Converter.K210.Converters.Layers
             {
                 var config = configs[i];
                 ref var param = ref reg.activate_para[i];
-                param.x_start = config.StartX;
+                param.x_start = (ulong)config.StartX;
                 param.y_mul = (ushort)config.Mul;
                 param.shift_number = (byte)config.Shift;
             }
@@ -488,6 +511,330 @@ namespace NnCase.Converter.K210.Converters.Layers
             bw.Write(reg.conv_value.Value);
             bw.Write(reg.conv_value2.Value);
             bw.Write(reg.dma_parameter.Value);
+        }
+
+        private void DeserializeBinActivation(K210Conv2dLayerArgument argument, K210BinDeserializeContext context)
+        {
+            var config = argument.Config;
+            var sr = context.GetReaderAt((int)argument.ParamAddress.Activation);
+            var act = config.ActConfigs = new K210LayerActConfig[16];
+            for (int i = 0; i < act.Length; i++)
+            {
+                var reg = sr.Read<activate_para_t>();
+                act[i] = new K210LayerActConfig
+                {
+                    StartX = ToSigned(reg.x_start, 36),
+                    Mul = ToSigned(reg.y_mul, 16),
+                    Shift = reg.shift_number
+                };
+            }
+
+            var bias0 = sr.Read<activate_para_bias0_t>();
+            var bias1 = sr.Read<activate_para_bias1_t>();
+            for (int i = 0; i < act.Length; i++)
+            {
+                unsafe
+                {
+                    if (i < 8)
+                        act[i].Add = bias0.result_bias[i];
+                    else
+                        act[i].Add = bias1.result_bias[i - 8];
+                }
+            }
+        }
+
+        private void DeserializeBinBn(K210Conv2dLayerArgument argument, K210BinDeserializeContext context)
+        {
+            var config = argument.Config;
+            var sr = context.GetReaderAt((int)argument.ParamAddress.Bn);
+            var bn = config.BNConfigs = new K210LayerBNConfig[config.OutputChannels];
+            for (int i = 0; i < bn.Length; i++)
+            {
+                var reg = sr.Read<kpu_batchnorm_argument_t>();
+                bn[i] = new K210LayerBNConfig
+                {
+                    Add = ToSigned(reg.norm_add, 32),
+                    Mul = ToSigned(reg.norm_mul, 24),
+                    Shift = reg.norm_shift
+                };
+            }
+        }
+
+        private void DeserializeBinWeights(K210Conv2dLayerArgument argument, K210BinDeserializeContext context)
+        {
+            var config = argument.Config;
+            var kernelSize = config.KernelType == 0 ? 1 : 3;
+
+            ushort[] weights;
+            if (config.IsDepthwise)
+                weights = new ushort[config.InputChannels * kernelSize * kernelSize];
+            else
+                weights = new ushort[config.InputChannels * config.OutputChannels * kernelSize * kernelSize];
+
+            var sr = context.GetReaderAt((int)argument.ParamAddress.Weights);
+            if (context.WeightsBits == 8)
+            {
+                for (int i = 0; i < weights.Length; i++)
+                    weights[i] = sr.Read<byte>();
+            }
+            else
+            {
+                for (int i = 0; i < weights.Length; i++)
+                    weights[i] = sr.Read<ushort>();
+            }
+
+            config.Weights = weights;
+        }
+
+        private void DeserializeBinLayer(K210Conv2dLayerArgument argument, K210BinDeserializeContext context)
+        {
+            var sr = context.GetReaderAt((int)argument.ParamAddress.Layer);
+            var reg = sr.Read<kpu_layer_argument_t>();
+            var config = argument.Config = new K210ConvLayerConfig();
+
+            config.IsDepthwise = reg.interrupt_enabe.depth_wise_layer == 1;
+            config.InputAddress = reg.image_addr.image_src_addr;
+            config.OutputAddress = reg.image_addr.image_dst_addr;
+            config.InputChannels = reg.image_channel_num.i_ch_num + 1;
+            config.OutputChannels = reg.image_channel_num.o_ch_num + 1;
+            config.InputWidth = reg.image_size.i_row_wid + 1;
+            config.InputHeight = reg.image_size.i_col_high + 1;
+            config.OutputWidth = reg.image_size.o_row_wid + 1;
+            config.OutputHeight = reg.image_size.o_col_high + 1;
+            config.KernelType = reg.kernel_pool_type_cfg.kernel_type;
+            config.PoolType = reg.kernel_pool_type_cfg.pool_type;
+            config.PadValue = reg.kernel_pool_type_cfg.pad_value;
+            config.InputRowLength = reg.kernel_calc_type_cfg.row_switch_addr;
+            config.InputGroups = reg.kernel_calc_type_cfg.coef_group;
+            config.ArgW = ToSigned(reg.conv_value.arg_w, 24);
+            config.ArgX = ToSigned(reg.conv_value.arg_x, 24);
+            config.ShiftW = reg.conv_value.shr_w;
+            config.ShiftX = reg.conv_value.shr_x;
+            config.ArgAdd = ToSigned(reg.conv_value2.arg_add, 40);
+        }
+
+        public void Forward(K210Conv2dLayerArgument argument, ForwardContext context)
+        {
+            var config = argument.Config;
+
+            var src = new byte[config.InputWidth * config.InputHeight * config.InputChannels];
+            K210Helper.KpuDownload(context.GetKpuRamAt((int)config.InputAddress), src, config.InputWidth, config.InputHeight, config.InputChannels);
+
+            var convOut = ForwardConvolution(src, config);
+            var bnOut = ForwardBatchNorm(convOut, config);
+            var actOut = ForwardActivation(bnOut, config);
+
+            K210Helper.KpuUpload(context.GetKpuRamAt((int)config.OutputAddress), actOut, config.OutputWidth, config.OutputHeight, config.OutputChannels);
+
+            if (argument.Flags.HasFlag(K210LayerFlags.MainMemoryOutput))
+            {
+                K210Helper.KpuDownload(context.GetKpuRamAt((int)config.OutputAddress), context.GetMainRamAt((int)argument.MainMemoryOutputAddress), config.OutputWidth, config.OutputHeight, config.OutputChannels);
+            }
+        }
+
+        private long[] ForwardConvolution(byte[] src, K210ConvLayerConfig config)
+        {
+            var weights = config.Weights;
+            var argX = config.ArgX;
+            var shiftX = config.ShiftX;
+            var argW = config.ArgW;
+            var shiftW = config.ShiftW;
+            var argAdd = config.ArgAdd;
+            var imageSize = config.InputWidth * config.InputHeight;
+            var padValue = config.PadValue;
+
+            var workspace = new long[config.InputWidth * config.InputHeight * config.OutputChannels];
+
+            if (config.KernelType == 0)
+            {
+                if (config.IsDepthwise)
+                {
+                    for (int i = 0; i < workspace.Length; i++)
+                    {
+                        var x = src[i];
+                        var w = weights[i];
+                        workspace[i] = x * w + (argX * x >> shiftX) + (argW * w >> shiftW) + argAdd;
+                    }
+                }
+                else
+                {
+                    for (int oc = 0; oc < config.OutputChannels; oc++)
+                    {
+                        var localWeights = new ReadOnlySpan<ushort>(weights, oc * config.InputChannels, config.InputChannels);
+                        var sumW = localWeights.Sum();
+
+                        for (int i = 0; i < imageSize; i++)
+                        {
+                            long value = 0;
+                            long sumX = 0;
+                            for (int ic = 0; ic < config.InputChannels; ic++)
+                            {
+                                var x = src[ic * imageSize + i];
+                                sumX += x;
+                                value += localWeights[ic] * x;
+                            }
+
+                            workspace[oc * imageSize + i] = value + (argX * sumX >> shiftX) + (argW * sumW >> shiftW) + argAdd * config.InputChannels;
+                        }
+                    }
+                }
+            }
+            else
+            {
+                if (config.IsDepthwise)
+                {
+                    for (int oc = 0; oc < config.OutputChannels; oc++)
+                    {
+                        var localWeights = new ReadOnlySpan<ushort>(weights, oc * 9, 9);
+                        var sumW = localWeights.Sum();
+
+                        for (int oy = 0; oy < config.InputHeight; oy++)
+                        {
+                            for (int ox = 0; ox < config.InputWidth; ox++)
+                            {
+                                long value = 0;
+                                long sumX = 0;
+
+                                for (int wy = 0; wy < 3; wy++)
+                                {
+                                    for (int wx = 0; wx < 3; wx++)
+                                    {
+                                        var iy = oy + wy - 1;
+                                        var ix = ox + wx - 1;
+
+                                        var x = iy < 0 || iy >= config.InputHeight || ix < 0 || ix >= config.InputWidth
+                                            ? padValue
+                                            : src[(oc * config.InputHeight + iy) * config.InputWidth + ix];
+                                        var w = localWeights[wy * 3 + wx];
+                                        sumX += x;
+                                        value += w * x;
+                                    }
+                                }
+
+                                workspace[(oc * config.InputHeight + oy) * config.InputWidth + ox] = value + (argX * sumX >> shiftX) + (argW * sumW >> shiftW) + argAdd;
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    for (int oc = 0; oc < config.OutputChannels; oc++)
+                    {
+                        var localWeights = new ReadOnlySpan<ushort>(weights, oc * config.InputChannels * 9, config.InputChannels * 9);
+                        var sumW = localWeights.Sum();
+
+                        for (int oy = 0; oy < config.InputHeight; oy++)
+                        {
+                            for (int ox = 0; ox < config.InputWidth; ox++)
+                            {
+                                long value = 0;
+                                long sumX = 0;
+
+                                for (int ic = 0; ic < config.InputChannels; ic++)
+                                {
+                                    for (int wy = 0; wy < 3; wy++)
+                                    {
+                                        for (int wx = 0; wx < 3; wx++)
+                                        {
+                                            var iy = oy + wy - 1;
+                                            var ix = ox + wx - 1;
+
+                                            var x = iy < 0 || iy >= config.InputHeight || ix < 0 || ix >= config.InputWidth
+                                                ? padValue
+                                                : src[(ic * config.InputHeight + iy) * config.InputWidth + ix];
+                                            var w = localWeights[(ic * 3 + wy) * 3 + wx];
+                                            sumX += x;
+                                            value += w * x;
+                                        }
+                                    }
+                                }
+
+                                workspace[(oc * config.InputHeight + oy) * config.InputWidth + ox] = value + (argX * sumX >> shiftX) + (argW * sumW >> shiftW) + argAdd * config.InputChannels;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return workspace;
+        }
+
+        private long[] ForwardBatchNorm(long[] src, K210ConvLayerConfig config)
+        {
+            var imageSize = config.InputWidth * config.InputHeight;
+            var workspace = new long[config.InputWidth * config.InputHeight * config.OutputChannels];
+
+            for (int oc = 0; oc < config.OutputChannels; oc++)
+            {
+                var bn = config.BNConfigs[oc];
+
+                for (int i = 0; i < imageSize; i++)
+                {
+                    var x = src[oc * imageSize + i];
+                    workspace[oc * imageSize + i] = (x * bn.Mul >> bn.Shift) + bn.Add;
+                }
+            }
+
+            return workspace;
+        }
+
+        private byte[] ForwardActivation(long[] src, K210ConvLayerConfig config)
+        {
+            var workspace = new byte[src.Length];
+
+            for (int i = 0; i < src.Length; i++)
+            {
+                var x = src[i];
+                var apply = config.ActConfigs.Last(o => o.StartX <= x);
+                workspace[i] = (byte)FxExtensions.Clamp(CarryShift((x - apply.StartX) * apply.Mul, apply.Shift) + apply.Add, 0, 255);
+            }
+
+            return workspace;
+        }
+
+        private static int ToSigned(uint value, int bits)
+        {
+            var mask = 1U << (bits - 1);
+            if (bits != 32 && (value & mask) != 0)
+            {
+                var sign = 0xFFFFFFFF << bits;
+                return (int)(value | sign);
+            }
+
+            return (int)value;
+        }
+
+        private static long ToSigned(ulong value, int bits)
+        {
+            var mask = 1UL << (bits - 1);
+            if ((value & mask) != 0)
+            {
+                var sign = 0xFFFFFFFF_FFFFFFFF << bits;
+                return (long)(value | sign);
+            }
+
+            return (long)value;
+        }
+
+        private static long CarryShift(long value, int shift)
+        {
+            if (shift > 0)
+            {
+                value >>= shift - 1;
+                if ((value & 0x1) != 0)
+                {
+                    if (value < 0)
+                        value = (value >> 1) - 1;
+                    else
+                        value = (value >> 1) + 1;
+                }
+                else
+                {
+                    value >>= 1;
+                }
+            }
+
+            return value;
         }
     }
 }

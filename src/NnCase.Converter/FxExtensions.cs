@@ -25,5 +25,10 @@ namespace NnCase.Converter
         {
             return Math.Min(Math.Max(value, min), max);
         }
+
+        public static long Clamp(long value, long min, long max)
+        {
+            return Math.Min(Math.Max(value, min), max);
+        }
     }
 }
