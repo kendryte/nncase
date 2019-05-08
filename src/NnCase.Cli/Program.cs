@@ -183,6 +183,7 @@ namespace NnCase.Cli
 
                         Transform.Process(graph, new Transform[] {
                             new EliminateReshapeTransform(),
+                            new EliminateTwoReshapeTransform(),
                             new EliminateTensorflowReshapeTransform(),
                             new TensorflowReshapeToFlattenTransform(),
                             new K210SeparableConv2dTransform(),

@@ -16,6 +16,7 @@ Download prebuilt binaries from [Release](https://github.com/kendryte/nncase/rel
 |tflite|`.tflite` TFLite model
 |paddle|`__model__` PaddlePaddle model
 |caffe|`.caffemodel` Caffe model
+|k210model|`.kmodel` K210 model (Only supported in inference mode)
 
 - `-o` Output format
 
@@ -24,8 +25,9 @@ Download prebuilt binaries from [Release](https://github.com/kendryte/nncase/rel
 |k210model|`.kmodel` K210 model
 |tf|`.pb` TensorFlow model
 |tflite|`.tflite` TFLite model
+|inference|`.bin` Model's raw output (Only support k210model input)
 
-- `--dataset` Dataset path, *required* when the output format is `k210model`.
+- `--dataset` Dataset path, **required** when the output format is `k210model`.
 
 - `--postprocess` Dataset postprocess method
 
@@ -53,6 +55,9 @@ Download prebuilt binaries from [Release](https://github.com/kendryte/nncase/rel
 - Convert PaddlePaddle model to TensorFlow model.
 
   `ncc -i paddle -o tf ./MobileNetV1_pretrained ./mbnetv1.pb`
+
+- Inference K210 model and get output binaries.
+  `-i k210model -o inference --dataset ./images ./mbnetv1.kmodel ./output`
 
 - 20 classes object detection example
 

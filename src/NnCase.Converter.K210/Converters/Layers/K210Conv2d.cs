@@ -623,8 +623,9 @@ namespace NnCase.Converter.K210.Converters.Layers
             var convOut = ForwardConvolution(src, config);
             var bnOut = ForwardBatchNorm(convOut, config);
             var actOut = ForwardActivation(bnOut, config);
+            var poolOut = config.PoolType == 0 ? actOut : ForwardPooling(actOut, config);
 
-            K210Helper.KpuUpload(context.GetKpuRamAt((int)config.OutputAddress), actOut, config.OutputWidth, config.OutputHeight, config.OutputChannels);
+            K210Helper.KpuUpload(context.GetKpuRamAt((int)config.OutputAddress), poolOut, config.OutputWidth, config.OutputHeight, config.OutputChannels);
 
             if (argument.Flags.HasFlag(K210LayerFlags.MainMemoryOutput))
             {
@@ -787,6 +788,94 @@ namespace NnCase.Converter.K210.Converters.Layers
                 var x = src[i];
                 var apply = config.ActConfigs.Last(o => o.StartX <= x);
                 workspace[i] = (byte)FxExtensions.Clamp(CarryShift((x - apply.StartX) * apply.Mul, apply.Shift) + apply.Add, 0, 255);
+            }
+
+            return workspace;
+        }
+
+        private byte[] ForwardPooling(byte[] src, K210ConvLayerConfig config)
+        {
+            var imageSize = config.InputWidth * config.InputHeight;
+            var workspace = new byte[config.OutputWidth * config.OutputHeight * config.OutputChannels];
+            int stride = 0, kernelSize = 0;
+            string poolType = null;
+            switch (config.PoolType)
+            {
+                case 1:
+                    stride = 2;
+                    kernelSize = 2;
+                    poolType = "max";
+                    break;
+                case 2:
+                    stride = 2;
+                    kernelSize = 2;
+                    poolType = "ave";
+                    break;
+                case 3:
+                    stride = 4;
+                    kernelSize = 4;
+                    poolType = "max";
+                    break;
+                case 4:
+                    stride = 4;
+                    kernelSize = 4;
+                    poolType = "ave";
+                    break;
+                case 5:
+                    stride = 2;
+                    kernelSize = 2;
+                    poolType = "lt";
+                    break;
+                default:
+                    throw new NotImplementedException();
+            }
+
+            var pad = 0;
+
+            for (int oc = 0; oc < config.OutputChannels; oc++)
+            {
+                var channelSrc = new ReadOnlySpan<byte>(src, imageSize * oc, imageSize);
+                for (int oy = 0; oy < config.OutputHeight; oy++)
+                {
+                    for (int ox = 0; ox < config.OutputWidth; ox++)
+                    {
+                        int in_x_origin = (int)(ox * stride) - pad;
+                        int in_y_origin = (int)(oy * stride) - pad;
+                        int kernel_x_start = Math.Max(0, -in_x_origin);
+                        int kernel_x_end = Math.Min(kernelSize, config.InputWidth - in_x_origin);
+                        int kernel_y_start = Math.Max(0, -in_y_origin);
+                        int kernel_y_end = Math.Min(kernelSize, config.InputHeight - in_y_origin);
+                        var values = new List<byte>();
+
+                        int kernel_y, kernel_x;
+                        for (kernel_y = kernel_y_start; kernel_y < kernel_y_end; kernel_y++)
+                        {
+                            for (kernel_x = kernel_x_start; kernel_x < kernel_x_end; kernel_x++)
+                            {
+                                int in_x = in_x_origin + kernel_x;
+                                int in_y = in_y_origin + kernel_y;
+                                values.Add(channelSrc[in_y * config.InputWidth + in_x]);
+                            }
+                        }
+
+                        byte value = 0;
+
+                        switch (poolType)
+                        {
+                            case "max":
+                                value = values.Max();
+                                break;
+                            case "ave":
+                                value = (byte)(values.Sum(x => x) / values.Count);
+                                break;
+                            case "lt":
+                                value = values[0];
+                                break;
+                        }
+
+                        workspace[(oc * config.OutputHeight + oy) * config.OutputWidth + ox] = value;
+                    }
+                }
             }
 
             return workspace;
