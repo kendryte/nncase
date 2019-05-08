@@ -145,6 +145,8 @@ namespace NnCase.Converter.Data
         {
             for (int i = 0; i < data.Length; i++)
                 data[i] = (data[i] - Mean) / Std;
+        }
+
         public
 #if NET471
 #else
@@ -285,24 +287,6 @@ namespace NnCase.Converter.Data
                 }
             }
         }
-    }
-
-    public class RawDataset : Dataset
-    {
-        private readonly PreprocessMethods _preprocessMethods;
-
-        public RawDataset(string path, ReadOnlySpan<int> dimensions, int batchSize, PreprocessMethods preprocessMethods, PostprocessMethods postprocessMethod, float? mean = null, float? std = null)
-            : base(path, null, dimensions, batchSize, postprocessMethod, mean, std)
-        {
-            _preprocessMethods = preprocessMethods;
-        }
-
-        protected override void Process(byte[] source, Span<float> dest)
-        {
-            var src = MemoryMarshal.Cast<byte, float>(source);
-            for (int i = 0; i < dest.Length; i++)
-                dest[i] = src[i];
-        }
 
         protected override void Process(byte[] source, Span<byte> dest)
         {
@@ -342,6 +326,29 @@ namespace NnCase.Converter.Data
                     throw new NotSupportedException($"Channels number {Dimensions[0]} is not supported by dataset provider.");
                 }
             }
+        }
+    }
+
+    public class RawDataset : Dataset
+    {
+        private readonly PreprocessMethods _preprocessMethods;
+
+        public RawDataset(string path, ReadOnlySpan<int> dimensions, int batchSize, PreprocessMethods preprocessMethods, PostprocessMethods postprocessMethod, float? mean = null, float? std = null)
+            : base(path, null, dimensions, batchSize, postprocessMethod, mean, std)
+        {
+            _preprocessMethods = preprocessMethods;
+        }
+
+        protected override void Process(byte[] source, Span<float> dest)
+        {
+            var src = MemoryMarshal.Cast<byte, float>(source);
+            for (int i = 0; i < dest.Length; i++)
+                dest[i] = src[i];
+        }
+
+        protected override void Process(byte[] source, Span<byte> dest)
+        {
+            throw new NotSupportedException();
         }
     }
 }

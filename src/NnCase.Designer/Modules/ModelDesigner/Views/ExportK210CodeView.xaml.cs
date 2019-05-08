@@ -109,7 +109,8 @@ namespace NnCase.Designer.Modules.ModelDesigner.Views
                 PostprocessMethods.Normalize0To1),
                 ctx,
                 Path.GetDirectoryName(codePath),
-                Path.GetFileNameWithoutExtension(codePath));
+                Path.GetFileNameWithoutExtension(codePath),
+                false);
         }
     }
 }
