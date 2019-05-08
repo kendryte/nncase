@@ -214,38 +214,36 @@ namespace NnCase.Converter.Data
 
         protected Image<Rgb24> Process(byte[] source)
         {
-            using (var image = Image.Load<Rgb24>(source))
+            var image = Image.Load<Rgb24>(source);
+            Image<Rgb24> destImage;
+            if (_preprocessMethods == PreprocessMethods.Darknet)
             {
-                Image<Rgb24> destImage;
-                if (_preprocessMethods == PreprocessMethods.Darknet)
-                {
-                    image.Mutate(x =>
-                        x.Resize(new ResizeOptions
-                        {
-                            Size = new Size(Dimensions[2], Dimensions[1]),
-                            Sampler = KnownResamplers.Bicubic,
-                            Position = AnchorPositionMode.Center,
-                            Mode = ResizeMode.Max
-                        }));
-                    destImage = new Image<Rgb24>(image.GetConfiguration(), Dimensions[2], Dimensions[1], new Rgb24(127, 127, 127));
-                    var leftTop = new Point((destImage.Width - image.Width) / 2, (destImage.Height - image.Height) / 2);
-                    destImage.Mutate(x =>
-                        x.DrawImage(image, leftTop, GraphicsOptions.Default));
-                }
-                else
-                {
-                    image.Mutate(x =>
-                        x.Resize(new ResizeOptions
-                        {
-                            Size = new Size(Dimensions[2], Dimensions[1]),
-                            Sampler = KnownResamplers.Bicubic,
-                            Mode = ResizeMode.Stretch
-                        }));
-                    destImage = image;
-                }
-
-                return destImage;
+                image.Mutate(x =>
+                    x.Resize(new ResizeOptions
+                    {
+                        Size = new Size(Dimensions[2], Dimensions[1]),
+                        Sampler = KnownResamplers.Bicubic,
+                        Position = AnchorPositionMode.Center,
+                        Mode = ResizeMode.Max
+                    }));
+                destImage = new Image<Rgb24>(image.GetConfiguration(), Dimensions[2], Dimensions[1], new Rgb24(127, 127, 127));
+                var leftTop = new Point((destImage.Width - image.Width) / 2, (destImage.Height - image.Height) / 2);
+                destImage.Mutate(x =>
+                    x.DrawImage(image, leftTop, GraphicsOptions.Default));
             }
+            else
+            {
+                image.Mutate(x =>
+                    x.Resize(new ResizeOptions
+                    {
+                        Size = new Size(Dimensions[2], Dimensions[1]),
+                        Sampler = KnownResamplers.Bicubic,
+                        Mode = ResizeMode.Stretch
+                    }));
+                destImage = image;
+            }
+
+            return destImage;
         }
 
         protected override void Process(byte[] source, Span<float> dest)
