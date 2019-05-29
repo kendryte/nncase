@@ -38,6 +38,9 @@ namespace NnCase.Cli
         [Option("dataset-format", Required = false, Default = "image", HelpText = "Dataset format")]
         public string DatasetFormat { get; set; }
 
+        [Option("inference-type", Required = false, Default = "uint8", HelpText = "Inference type")]
+        public string InferenceType { get; set; }
+
         [Option("postprocess", Required = false, HelpText = "Dataset postprocess")]
         public string Postprocess { get; set; }
 
@@ -180,38 +183,53 @@ namespace NnCase.Cli
                             tfc.Convert();
                             graph = tfc.Graph;
                         }
-
-                        Transform.Process(graph, new Transform[] {
-                            new EliminateReshapeTransform(),
-                            new EliminateTwoReshapeTransform(),
-                            new EliminateTensorflowReshapeTransform(),
-                            new TensorflowReshapeToFlattenTransform(),
-                            new K210SeparableConv2dTransform(),
-                            new K210SpaceToBatchNdAndValidConv2dTransform(),
-                            new K210SameConv2dTransform(),
-                            new K210Stride2Conv2dTransform(),
-                            new GlobalAveragePoolTransform(),
-                            options.FloatFc ? (Transform)new DummyTransform() : new K210FullyConnectedTransform(),
-                            new LeakyReluTransform(),
-                            new K210Conv2dWithNonTrivialActTransform(),
-                            new K210Conv2dWithMaxAvgPoolTransform(),
-                            new Conv2d1x1ToFullyConnectedTransform(),
-                            new K210EliminateAddRemovePaddingTransform(),
-                            new QuantizedAddTransform(),
-                            new QuantizedMaxPool2dTransform(),
-                            new QuantizedResizeNearestNeighborTransform(),
-                            new ExclusiveConcatenationTransform(),
-                            new QuantizedExclusiveConcatenationTransform(),
-                            new QuantizedConcatenationTransform(),
-                            new EliminateQuantizeDequantizeTransform(),
-                            new EliminateInputQuantizeTransform(),
-                            new K210EliminateInputUploadTransform(),
-                            new K210EliminateConv2dUploadTransform(),
-                            new K210EliminateUploadAddPaddingTransform(),
-                            new K210EliminateConv2dRequantizeTransform(),
-                            options.ChannelwiseOutput ? (Transform)new K210Conv2dToChannelwiseTransform(): new DummyTransform(),
-                            //new EliminateDequantizeOutputTransform()
-                        });
+                        if (options.InferenceType == "float")
+                        {
+                            Transform.Process(graph, new Transform[] {
+                                new EliminateReshapeTransform(),
+                                new EliminateTwoReshapeTransform(),
+                                new EliminateTensorflowReshapeTransform(),
+                                new TensorflowReshapeToFlattenTransform(),
+                                new GlobalAveragePoolTransform(),
+                                new LeakyReluTransform(),
+                                new Conv2d1x1ToFullyConnectedTransform(),
+                                new ExclusiveConcatenationTransform(),
+                            });
+                        }
+                        else
+                        {
+                            Transform.Process(graph, new Transform[] {
+                                new EliminateReshapeTransform(),
+                                new EliminateTwoReshapeTransform(),
+                                new EliminateTensorflowReshapeTransform(),
+                                new TensorflowReshapeToFlattenTransform(),
+                                new K210SeparableConv2dTransform(),
+                                new K210SpaceToBatchNdAndValidConv2dTransform(),
+                                new K210SameConv2dTransform(),
+                                new K210Stride2Conv2dTransform(),
+                                new GlobalAveragePoolTransform(),
+                                options.FloatFc ? (Transform)new DummyTransform() : new K210FullyConnectedTransform(),
+                                new LeakyReluTransform(),
+                                new K210Conv2dWithNonTrivialActTransform(),
+                                new K210Conv2dWithMaxAvgPoolTransform(),
+                                new Conv2d1x1ToFullyConnectedTransform(),
+                                new K210EliminateAddRemovePaddingTransform(),
+                                new QuantizedAddTransform(),
+                                new QuantizedMaxPool2dTransform(),
+                                new QuantizedResizeNearestNeighborTransform(),
+                                new ExclusiveConcatenationTransform(),
+                                new QuantizedExclusiveConcatenationTransform(),
+                                new QuantizedConcatenationTransform(),
+                                new EliminateQuantizeDequantizeTransform(),
+                                new EliminateInputQuantizeTransform(),
+                                new K210EliminateInputUploadTransform(),
+                                new K210EliminateConv2dUploadTransform(),
+                                new K210EliminateUploadAddPaddingTransform(),
+                                new K210EliminateConv2dRequantizeTransform(),
+                                options.ChannelwiseOutput ? (Transform)new K210Conv2dToChannelwiseTransform(): new DummyTransform(),
+                                //new EliminateDequantizeOutputTransform()
+                            });
+                        }
 
                         {
                             var ctx = new GraphPlanContext();
@@ -221,26 +239,33 @@ namespace NnCase.Cli
                                 var dim = graph.Inputs.First().Output.Dimensions.ToArray();
 
                                 Dataset dataset;
-                                if (options.DatasetFormat == "image")
-                                    dataset = new ImageDataset(
-                                    options.Dataset,
-                                    dim.Skip(1).ToArray(),
-                                    1,
-                                    PreprocessMethods.None,
-                                    pm,
-                                    mean,
-                                    std);
-                                else if (options.DatasetFormat == "raw")
-                                    dataset = new RawDataset(
-                                    options.Dataset,
-                                    dim.Skip(1).ToArray(),
-                                    1,
-                                    PreprocessMethods.None,
-                                    pm,
-                                    mean,
-                                    std);
+                                if (options.InferenceType == "float")
+                                {
+                                    dataset = null;
+                                }
                                 else
-                                    throw new ArgumentException("Invalid dataset format");
+                                {
+                                    if (options.DatasetFormat == "image")
+                                        dataset = new ImageDataset(
+                                        options.Dataset,
+                                        dim.Skip(1).ToArray(),
+                                        1,
+                                        PreprocessMethods.None,
+                                        pm,
+                                        mean,
+                                        std);
+                                    else if (options.DatasetFormat == "raw")
+                                        dataset = new RawDataset(
+                                        options.Dataset,
+                                        dim.Skip(1).ToArray(),
+                                        1,
+                                        PreprocessMethods.None,
+                                        pm,
+                                        mean,
+                                        std);
+                                    else
+                                        throw new ArgumentException("Invalid dataset format");
+                                }
 
                                 var k210c = new GraphToK210Converter(graph, options.WeightsBits);
                                 await k210c.ConvertAsync(

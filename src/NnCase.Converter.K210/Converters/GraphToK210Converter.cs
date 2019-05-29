@@ -34,7 +34,9 @@ namespace NnCase.Converter.K210.Converters
         {
             _graph.Plan(planContext);
 
-            var quantize = await Stages.Quantize.Quantizer.QuantizeAsync(dataset, planContext, channelwiseOutput);
+            var quantize = dataset == null
+                ? new Stages.Quantize.QuantizationContext()
+                : await Stages.Quantize.Quantizer.QuantizeAsync(dataset, planContext, channelwiseOutput);
             var convert = Stages.Convert.Converter.Convert(_graph, quantize, _weightsBits);
             var infer = Stages.Inference.InferExecutor.Infer(_graph, convert);
 

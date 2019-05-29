@@ -89,6 +89,8 @@ namespace NnCase.Converter.Converters
                     return ConvertBatchNorm(op);
                 case "relu":
                     return ConvertRelu(op);
+                case "relu6":
+                    return ConvertRelu6(op);
                 case "pool2d":
                     return ConvertPool2d(op);
                 case "reshape":
@@ -259,6 +261,17 @@ namespace NnCase.Converter.Converters
             var output = GetParameter(op.Outputs, "Out").Arguments[0];
 
             var layer = new Relu(GetVarShape(x));
+            layer.Input.SetConnection(_outputs[x]);
+            _outputs[output] = layer.Output;
+            return layer;
+        }
+
+        private Layer ConvertRelu6(paddle.OpDesc op)
+        {
+            var x = GetParameter(op.Inputs, "X").Arguments[0];
+            var output = GetParameter(op.Outputs, "Out").Arguments[0];
+
+            var layer = new Relu6(GetVarShape(x));
             layer.Input.SetConnection(_outputs[x]);
             _outputs[output] = layer.Output;
             return layer;

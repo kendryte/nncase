@@ -27,7 +27,14 @@ Download prebuilt binaries from [Release](https://github.com/kendryte/nncase/rel
 |tflite|`.tflite` TFLite model
 |inference|`.bin` Model's raw output (Only support k210model input)
 
-- `--dataset` Dataset path, **required** when the output format is `k210model` or `inference`.
+- `--inference-type` Inference type
+
+| value | description |
+|-------|------------------ |
+|uint8| Use quantized kernels (default)
+|float| Use float kernels
+
+- `--dataset` Dataset path, **required** when the output format is `inference` or `k210model` with inference type equals `uint8`.
 
 - `--postprocess` Dataset postprocess method
 
@@ -60,7 +67,9 @@ Download prebuilt binaries from [Release](https://github.com/kendryte/nncase/rel
 
   `ncc -i k210model -o inference --dataset ./images ./mbnetv1.kmodel ./output`
 
-- 20 classes object detection example
+- Tutorials
+  - 20 classes object detection
+  - Iris flowers classification
 
   See https://github.com/kendryte/nncase/tree/master/examples
 

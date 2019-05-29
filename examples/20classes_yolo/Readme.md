@@ -1,9 +1,9 @@
 # 20 Classes Object Detection
 ## Usage
-1. Download `nncase` from [Release](https://github.com/kendryte/nncase/releases) and extract `ncc-linux-x86_64.tar.gz` to `~/nncase`.
+1. Download `nncase` from [Release](https://github.com/kendryte/nncase/releases) and extract `ncc-linux-x86_64.tar.xz` to `~/nncase`.
 ```bash
 mkdir ~/nncase
-tar xzf ncc-linux-x86_64.tar.gz -C ~/nncase
+tar xf ncc-linux-x86_64.tar.xz -C ~/nncase
 ```
 2. Convert your image to c by `image2c.py`.
 ```bash
