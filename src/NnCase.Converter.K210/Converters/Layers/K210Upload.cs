@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 using NnCase.Converter.K210.Converters.Stages.Convert;
+using NnCase.Converter.K210.Converters.Stages.Generate;
 using NnCase.Converter.K210.Converters.Stages.Inference;
+using NnCase.Converter.K210.Emulator;
 using NnCase.Converter.K210.Model.Layers;
 
 namespace NnCase.Converter.K210.Converters.Layers
@@ -42,6 +44,30 @@ namespace NnCase.Converter.K210.Converters.Layers
 
             argument.MainMemoryInputAddress = inputAlloc.GetAddress();
             argument.KPUMemoryOutputAddress = outputAlloc.GetAddress();
+        }
+
+        public K210UploadLayerArgument DeserializeBin(int offset, K210BinDeserializeContext context)
+        {
+            var sr = context.GetReaderAt(offset);
+            var argument = new K210UploadLayerArgument
+            {
+                Flags = sr.Read<K210LayerFlags>(),
+                MainMemoryInputAddress = sr.Read<uint>(),
+                KPUMemoryOutputAddress = sr.Read<uint>(),
+                Width = sr.Read<uint>(),
+                Height = sr.Read<uint>(),
+                Channels = sr.Read<uint>()
+            };
+
+            return argument;
+        }
+
+        public void Forward(K210UploadLayerArgument argument, ForwardContext context)
+        {
+            var src = context.GetMainRamAt((int)argument.MainMemoryInputAddress);
+            var dest = context.GetKpuRamAt((int)argument.KPUMemoryOutputAddress);
+
+            K210Helper.KpuUpload(dest, src, (int)argument.Width, (int)argument.Height, (int)argument.Channels);
         }
     }
 }

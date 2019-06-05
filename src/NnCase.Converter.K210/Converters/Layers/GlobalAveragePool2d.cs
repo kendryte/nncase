@@ -48,12 +48,14 @@ namespace NnCase.Converter.K210.Converters.Layers
         public GlobalAveragePool2dLayerArgument DeserializeBin(int offset, K210BinDeserializeContext context)
         {
             var sr = context.GetReaderAt(offset);
-            var argument = new GlobalAveragePool2dLayerArgument();
-            argument.Flags = sr.Read<K210LayerFlags>();
-            argument.MainMemoryInputAddress = sr.Read<uint>();
-            argument.MainMemoryOutputAddress = sr.Read<uint>();
-            argument.KernelSize = sr.Read<uint>();
-            argument.Channels = sr.Read<uint>();
+            var argument = new GlobalAveragePool2dLayerArgument
+            {
+                Flags = sr.Read<K210LayerFlags>(),
+                MainMemoryInputAddress = sr.Read<uint>(),
+                MainMemoryOutputAddress = sr.Read<uint>(),
+                KernelSize = sr.Read<uint>(),
+                Channels = sr.Read<uint>()
+            };
 
             return argument;
         }

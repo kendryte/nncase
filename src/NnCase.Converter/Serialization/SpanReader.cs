@@ -87,6 +87,14 @@ namespace NnCase.Converter
             return value;
         }
 
+        public T[] ReadArray<T>(int count) where T : unmanaged
+        {
+            var array = new T[count];
+            foreach (ref var item in array.AsSpan())
+                item = Read<T>();
+            return array;
+        }
+
         private void Advance(int count)
         {
             _span = _span.Slice(count);

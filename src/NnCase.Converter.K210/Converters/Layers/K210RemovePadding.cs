@@ -2,7 +2,9 @@
 using System.Collections.Generic;
 using System.Text;
 using NnCase.Converter.K210.Converters.Stages.Convert;
+using NnCase.Converter.K210.Converters.Stages.Generate;
 using NnCase.Converter.K210.Converters.Stages.Inference;
+using NnCase.Converter.K210.Emulator;
 using NnCase.Converter.K210.Model.Layers;
 
 namespace NnCase.Converter.K210.Converters.Layers
@@ -37,6 +39,29 @@ namespace NnCase.Converter.K210.Converters.Layers
             argument.Flags = K210LayerFlags.MainMemoryOutput;
             argument.MainMemoryInputAddress = inputAlloc.GetAddress();
             argument.MainMemoryOutputAddress = outputAlloc.GetAddress();
+        }
+
+        public K210RemovePaddingLayerArgument DeserializeBin(int offset, K210BinDeserializeContext context)
+        {
+            var sr = context.GetReaderAt(offset);
+            var argument = new K210RemovePaddingLayerArgument
+            {
+                Flags = sr.Read<K210LayerFlags>(),
+                MainMemoryInputAddress = sr.Read<uint>(),
+                MainMemoryOutputAddress = sr.Read<uint>(),
+                Channels = sr.Read<uint>()
+            };
+
+            return argument;
+        }
+
+        public void Forward(K210RemovePaddingLayerArgument argument, ForwardContext context)
+        {
+            var src = context.GetMainRamAt((int)argument.MainMemoryInputAddress);
+            var dest = context.GetMainRamAt((int)argument.MainMemoryOutputAddress);
+
+            for (int oc = 0; oc < argument.Channels; oc++)
+                dest[oc] = src[oc * 16];
         }
     }
 }

@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using System.Text;
 using NnCase.Converter.K210.Converters.Stages.Convert;
+using NnCase.Converter.K210.Converters.Stages.Generate;
 using NnCase.Converter.K210.Converters.Stages.Inference;
+using NnCase.Converter.K210.Emulator;
 using layers = NnCase.Converter.Model.Layers;
 
 namespace NnCase.Converter.K210.Converters.Layers
@@ -39,6 +42,35 @@ namespace NnCase.Converter.K210.Converters.Layers
 
             argument.MainMemoryInputAddress = inputAlloc.GetAddress();
             argument.MainMemoryOutputAddress = outputAlloc.GetAddress();
+        }
+
+        public QuantizeLayerArgument DeserializeBin(int offset, K210BinDeserializeContext context)
+        {
+            var sr = context.GetReaderAt(offset);
+            var argument = new QuantizeLayerArgument
+            {
+                Flags = sr.Read<K210LayerFlags>(),
+                MainMemoryInputAddress = sr.Read<uint>(),
+                MainMemoryOutputAddress = sr.Read<uint>(),
+                Count = sr.Read<uint>(),
+                QuantParam = sr.Read<K210QuantizationParam>()
+            };
+
+            return argument;
+        }
+
+        public void Forward(QuantizeLayerArgument argument, ForwardContext context)
+        {
+            var src = MemoryMarshal.Cast<byte, float>(context.GetMainRamAt((int)argument.MainMemoryInputAddress));
+            var dest = context.GetMainRamAt((int)argument.MainMemoryOutputAddress);
+            var q = argument.QuantParam;
+            float scale = 1f / q.Scale;
+
+            for (int i = 0; i < argument.Count; i++)
+            {
+                int value = (int)Math.Round((src[i] - q.Bias) * scale);
+                dest[i] = (byte)FxExtensions.Clamp(value, 0, 0xFF);
+            }
         }
     }
 }

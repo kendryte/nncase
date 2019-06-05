@@ -45,11 +45,13 @@ namespace NnCase.Converter.K210.Converters.Layers
         public LogisticLayerArgument DeserializeBin(int offset, K210BinDeserializeContext context)
         {
             var sr = context.GetReaderAt(offset);
-            var argument = new LogisticLayerArgument();
-            argument.Flags = sr.Read<K210LayerFlags>();
-            argument.MainMemoryInputAddress = sr.Read<uint>();
-            argument.MainMemoryOutputAddress = sr.Read<uint>();
-            argument.Channels = sr.Read<uint>();
+            var argument = new LogisticLayerArgument
+            {
+                Flags = sr.Read<K210LayerFlags>(),
+                MainMemoryInputAddress = sr.Read<uint>(),
+                MainMemoryOutputAddress = sr.Read<uint>(),
+                Channels = sr.Read<uint>()
+            };
 
             return argument;
         }

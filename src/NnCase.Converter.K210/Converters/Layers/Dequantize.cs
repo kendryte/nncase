@@ -48,12 +48,14 @@ namespace NnCase.Converter.K210.Converters.Layers
         public DequantizeLayerArgument DeserializeBin(int offset, K210BinDeserializeContext context)
         {
             var sr = context.GetReaderAt(offset);
-            var argument = new DequantizeLayerArgument();
-            argument.Flags = sr.Read<K210LayerFlags>();
-            argument.MainMemoryInputAddress = sr.Read<uint>();
-            argument.MainMemoryOutputAddress = sr.Read<uint>();
-            argument.Count = sr.Read<uint>();
-            argument.QuantParam = sr.Read<K210QuantizationParam>();
+            var argument = new DequantizeLayerArgument
+            {
+                Flags = sr.Read<K210LayerFlags>(),
+                MainMemoryInputAddress = sr.Read<uint>(),
+                MainMemoryOutputAddress = sr.Read<uint>(),
+                Count = sr.Read<uint>(),
+                QuantParam = sr.Read<K210QuantizationParam>()
+            };
 
             return argument;
         }
