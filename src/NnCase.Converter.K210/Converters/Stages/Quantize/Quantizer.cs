@@ -164,7 +164,7 @@ namespace NnCase.Converter.K210.Converters.Stages.Quantize
             if (!used || Math.Abs(min) > 100 || Math.Abs(max) > 100)
                 return defaultRange ?? QuantizationRange.Default;
             else if (min == max)
-                return defaultRange ?? new QuantizationRange { Min = min - 1, Max = max + 1 };
+                return defaultRange ?? new QuantizationRange { Min = min, Max = max + 0.1 };
             else
                 return new QuantizationRange { Min = min, Max = max };
         }
