@@ -34,12 +34,6 @@ namespace NnCase.Converter.K210.Converters.Stages.Quantize
                         toFetches.Add(output.Value);
                 }
 
-                foreach (var additional in planContext.AdditionalTFOutputs)
-                {
-                    additionalOutputs.Add(additional.Key);
-                    toFetches.Add(additional.Value);
-                }
-
                 var quantizationContext = new QuantizationContext
                 {
                     Outputs = connectors,

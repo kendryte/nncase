@@ -6,13 +6,18 @@
     <LangVersion>8.0</LangVersion>
     <PreserveCompilationContext>true</PreserveCompilationContext>
     <AssemblyName>ncc</AssemblyName>
+    <CodeAnalysisRuleSet>../../build/Analyzers.ruleset</CodeAnalysisRuleSet>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors />
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\NnCase.Converter.K210\NnCase.Converter.K210.csproj" />
-    <ProjectReference Include="..\NnCase.Converter\NnCase.Converter.csproj" />
     <PackageReference Include="CommandLineParser" Version="2.3.0" />
     <PackageReference Include="Microsoft.Extensions.Hosting" Version="2.2.0" />
+    <PackageReference Include="StyleCop.Analyzers" Version="1.1.118">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
 </Project>

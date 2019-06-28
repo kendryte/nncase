@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp3.0;net471</TargetFrameworks>
+    <TargetFrameworks>netcoreapp3.0</TargetFrameworks>
     <RootNamespace>FlatBuffers</RootNamespace>
     <AssemblyName>FlatBuffers</AssemblyName>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>

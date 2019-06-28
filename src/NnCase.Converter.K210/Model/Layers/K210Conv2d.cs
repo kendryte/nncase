@@ -32,8 +32,6 @@ namespace NnCase.Converter.K210.Model.Layers
 
         public OutputConnector Output { get; }
 
-        public Guid OutputBeforeActivation { get; } = Guid.NewGuid();
-
         public K210Conv2dType Conv2dType { get; }
 
         public Tensor<float> Weights { get; }
@@ -109,7 +107,6 @@ namespace NnCase.Converter.K210.Model.Layers
             }
 
             y = graph.BiasAdd(y, graph.Const(bias));
-            context.AdditionalTFOutputs[OutputBeforeActivation] = y;
             y = AddActivation(graph, y, FusedActivationFunction, NonTrivialActivation);
 
             switch (PoolType)
