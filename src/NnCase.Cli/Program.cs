@@ -1,52 +1,19 @@
 ﻿using System;
+using System.IO;
 using System.Threading.Tasks;
 using CommandLine;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace NnCase.Cli
 {
-    public class Options
+    public class CommandArgsOptions : IOptions<CommandArgsOptions>
     {
-        [Option('i', "input-format", Required = true, HelpText = "Set the input format.")]
-        public string InputFormat { get; set; }
+        CommandArgsOptions IOptions<CommandArgsOptions>.Value => this;
 
-        [Option('o', "output-format", Required = true, HelpText = "Set the input format.")]
-        public string OutputFormat { get; set; }
-
-        [Option("input-node", Required = false, HelpText = "Input node")]
-        public string InputNode { get; set; }
-
-        [Option("output-node", Required = false, HelpText = "Output node")]
-        public string OutputNode { get; set; }
-
-        [Option("dataset", Required = false, HelpText = "Dataset path")]
-        public string Dataset { get; set; }
-
-        [Option("dataset-format", Required = false, Default = "image", HelpText = "Dataset format")]
-        public string DatasetFormat { get; set; }
-
-        [Option("inference-type", Required = false, Default = "uint8", HelpText = "Inference type")]
-        public string InferenceType { get; set; }
-
-        [Option("postprocess", Required = false, HelpText = "Dataset postprocess")]
-        public string Postprocess { get; set; }
-
-        [Option("postprocess-op", Required = false, HelpText = "Add postprocess operator")]
-        public string PostprocessOperator { get; set; }
-
-        [Option("weights-bits", Required = false, HelpText = "Weights quantization bits", Default = 8)]
-        public int WeightsBits { get; set; }
-
-        [Option("float-fc", Required = false, Default = false, HelpText = "Use kpu based fully connected")]
-        public bool FloatFc { get; set; }
-
-        [Option("channelwise-output", Required = false, Default = false, HelpText = "Use channelwise kpu output")]
-        public bool ChannelwiseOutput { get; set; }
-
-        [Value(0, MetaName = "input", HelpText = "Input path")]
-        public string Input { get; set; }
-
-        [Value(1, MetaName = "output", HelpText = "Output path")]
-        public string Output { get; set; }
+        public string[] Args { get; set; }
     }
 
     public class Program
@@ -69,19 +36,32 @@ namespace NnCase.Cli
                 Environment.Exit(-1);
             };
 
-            Options options = null;
-            Parser.Default.ParseArguments<Options>(args)
-                .WithParsed(o => options = o);
-            if (options == null) return;
+            var hostBuilder = new HostBuilder()
+                .UseContentRoot(Path.GetDirectoryName(typeof(Program).Assembly.Location))
+                .ConfigureLogging(ConfigureLogging)
+                .ConfigureServices(ConfigureServices)
+                .ConfigureServices(c =>
+                {
+                    c.Configure<CommandArgsOptions>(x => x.Args = args);
+                });
 
-            if (options.OutputFormat == "inference")
-            {
-                await Inference.Run(options);
-            }
-            else
-            {
-                await Compile.Run(options);
-            }
+            await hostBuilder.RunConsoleAsync();
+        }
+
+        private static void ConfigureServices(HostBuilderContext context, IServiceCollection services)
+        {
+            services
+                .AddOptions()
+                .AddLogging()
+                .AddCli()
+                .AddHostedService<Interface>();
+        }
+
+        private static void ConfigureLogging(HostBuilderContext context, ILoggingBuilder loggingBuilder)
+        {
+            loggingBuilder
+                .AddConsole()
+                .SetMinimumLevel(LogLevel.Information);
         }
     }
 }

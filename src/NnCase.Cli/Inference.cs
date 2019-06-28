@@ -5,11 +5,16 @@ using System.Threading.Tasks;
 
 namespace NnCase.Cli
 {
-    public static class Inference
+    public class Inference
     {
-        public static Task Run(Options options)
+        public Task Run(Options options)
         {
-            throw new NotImplementedException();
+            switch (options.InputFormat)
+            {
+                case "tflite":
+                default:
+                    throw new ArgumentException($"Unsupported input format: {options.InputFormat}");
+            }
         }
     }
 }

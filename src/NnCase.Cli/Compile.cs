@@ -5,9 +5,9 @@ using System.Threading.Tasks;
 
 namespace NnCase.Cli
 {
-    public static class Compile
+    public class Compile
     {
-        public static Task Run(Options options)
+        public Task Run(Options options)
         {
             throw new NotImplementedException();
         }
