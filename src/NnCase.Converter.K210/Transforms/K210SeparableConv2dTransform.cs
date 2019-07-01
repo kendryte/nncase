@@ -31,21 +31,43 @@ namespace NnCase.Converter.K210.Transforms
                             context.MatchedLayers.Add(nextLayer);
                             context.Inputs.Add(dwConv2d.Input);
 
-                            foreach (var nextLayer2 in dwConv2d.Output.Connections.Select(o => o.To.Owner))
+                            if (dwConv2d.Output.Connections.Count == 1)
                             {
-                                if (nextLayer2 is Conv2d conv2d)
-                                {
-                                    if (conv2d.KernelWidth != 1 || conv2d.KernelHeight != 1 || conv2d.StrideHeight != 1 || conv2d.StrideWidth != 1)
-                                        continue;
-                                    context.Outputs.Add(conv2d.Output);
-                                }
-                                else
-                                {
-                                    continue;
-                                }
+                                var middleLayer = dwConv2d.Output.Connections[0].To.Owner;
 
-                                context.MatchedLayers.Add(nextLayer2);
-                                return true;
+                                while (true)
+                                {
+                                    if (middleLayer is Conv2d conv2d)
+                                    {
+                                        if (conv2d.KernelWidth != 1 || conv2d.KernelHeight != 1 || conv2d.StrideHeight != 1 || conv2d.StrideWidth != 1)
+                                            return false;
+
+                                        context.MatchedLayers.Add(conv2d);
+                                        context.Outputs.Add(conv2d.Output);
+                                        return true;
+                                    }
+                                    else
+                                    {
+                                        if (middleLayer.OutputConnectors.Count == 1 && middleLayer.OutputConnectors[0].Connections.Count == 1)
+                                        {
+                                            switch (middleLayer)
+                                            {
+                                                case Quantize _:
+                                                case Dequantize _:
+                                                case LeakyRelu _:
+                                                    context.MatchedLayers.Add(middleLayer);
+                                                    middleLayer = middleLayer.OutputConnectors[0].Connections[0].To.Owner;
+                                                    break;
+                                                default:
+                                                    return false;
+                                            }
+                                        }
+                                        else
+                                        {
+                                            return false;
+                                        }
+                                    }
+                                }
                             }
                         }
                         else
@@ -69,7 +91,7 @@ namespace NnCase.Converter.K210.Transforms
         {
             var space = context.MatchedLayers[0];
             var dwConv2d = (DepthwiseConv2d)context.MatchedLayers[1];
-            var conv2d = (Conv2d)context.MatchedLayers[2];
+            var conv2d = (Conv2d)context.MatchedLayers.Last();
             var input = space.InputConnectors[0].Connection.From;
             var output = conv2d.Output;
 
@@ -85,9 +107,42 @@ namespace NnCase.Converter.K210.Transforms
             upload.Input.SetConnection(quantize.Output);
             newConv2d.Input.SetConnection(upload.Output);
             dequantize.Input.SetConnection(newConv2d.Output);
+
             var oldOuts = output.Connections.Select(o => o.To).ToList();
-            foreach (var oldOut in oldOuts)
-                oldOut.SetConnection(dequantize.Output);
+            if (context.MatchedLayers.Count == 3)
+            {
+                foreach (var oldOut in oldOuts)
+                    oldOut.SetConnection(dequantize.Output);
+            }
+            else
+            {
+                var newOutput = dequantize.Output;
+
+                foreach (var middleLayer in context.MatchedLayers.Skip(2).Take(context.MatchedLayers.Count - 3))
+                {
+                    Layer newLayer;
+                    switch (middleLayer)
+                    {
+                        case Quantize _:
+                            newLayer = new Quantize(newOutput.Dimensions);
+                            break;
+                        case Dequantize _:
+                            newLayer = new Dequantize(newOutput.Dimensions);
+                            break;
+                        case LeakyRelu l:
+                            newLayer = new LeakyRelu(newOutput.Dimensions, l.Slope);
+                            break;
+                        default:
+                            throw new NotImplementedException();
+                    }
+
+                    newLayer.InputConnectors[0].SetConnection(newOutput);
+                    newOutput = newLayer.OutputConnectors[0];
+                }
+
+                foreach (var oldOut in oldOuts)
+                    oldOut.SetConnection(newOutput);
+            }
         }
     }
 }

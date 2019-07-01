@@ -15,8 +15,7 @@ namespace NnCase.Converter.K210.Transforms
         {
             try
             {
-                if (layer is K210Conv2d conv2d && conv2d.FusedActivationFunction == ActivationFunctionType.Linear &&
-                    conv2d.NonTrivialActivation == null)
+                if (layer is K210Conv2d conv2d && conv2d.FusedActivationFunction == ActivationFunctionType.Linear && (conv2d.NonTrivialActivation == null || conv2d.NonTrivialActivation is LeakyRelu))
                 {
                     context.MatchedLayers.Add(layer);
                     context.Inputs.Add(conv2d.Input);
