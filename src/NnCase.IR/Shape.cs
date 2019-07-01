@@ -1,15 +1,18 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace NnCase.IR
 {
-    public struct Shape : IEquatable<Shape>
+    [DebuggerDisplay("{DebuggerDisplay}")]
+    public class Shape : IEquatable<Shape>
     {
         public const int MaxSmallSize = 4;
 
-        private unsafe fixed int _smallValues[MaxSmallSize];
+        private SmallArray _smallValues;
         private readonly int[] _largeValues;
 
         public int this[int index]
@@ -31,11 +34,29 @@ namespace NnCase.IR
                     return _largeValues[index];
                 }
             }
+
+            set
+            {
+                if (index >= Count)
+                    throw new ArgumentOutOfRangeException(nameof(index));
+
+                if (Count <= MaxSmallSize)
+                {
+                    unsafe
+                    {
+                        _smallValues[index] = value;
+                    }
+                }
+                else
+                {
+                    _largeValues[index] = value;
+                }
+            }
         }
 
         public int Count { get; }
 
-        public unsafe Shape(ReadOnlySpan<int> shape)
+        public Shape(ReadOnlySpan<int> shape)
         {
             Count = shape.Length;
             if (Count <= MaxSmallSize)
@@ -50,11 +71,24 @@ namespace NnCase.IR
             }
         }
 
+        public Shape(int d0, int d1, int d2, int d3)
+        {
+            Count = 4;
+            _largeValues = null;
+            _smallValues[0] = d0;
+            _smallValues[1] = d1;
+            _smallValues[2] = d2;
+            _smallValues[3] = d3;
+        }
+
         public static unsafe implicit operator ReadOnlySpan<int>(Shape shape)
         {
             if (shape.Count <= MaxSmallSize)
             {
-                return new ReadOnlySpan<int>(shape._smallValues, shape.Count);
+                fixed (int* values = shape._smallValues.Values)
+                {
+                    return new ReadOnlySpan<int>(values, shape.Count);
+                }
             }
             else
             {
@@ -62,10 +96,20 @@ namespace NnCase.IR
             }
         }
 
+        public static implicit operator Shape(ReadOnlySpan<int> shape)
+        {
+            return new Shape(shape);
+        }
+
+        public static implicit operator Shape(int[] shape)
+        {
+            return new Shape(shape);
+        }
+
         public Enumerator GetEnumerator()
             => new Enumerator(this);
 
-        public unsafe int[] ToArray()
+        public int[] ToArray()
         {
             if (Count <= MaxSmallSize)
             {
@@ -79,11 +123,6 @@ namespace NnCase.IR
             {
                 return (int[])_largeValues.Clone();
             }
-        }
-
-        public override string ToString()
-        {
-            return $"({string.Join(",", ToArray())})";
         }
 
         public override bool Equals(object obj)
@@ -114,7 +153,7 @@ namespace NnCase.IR
             return false;
         }
 
-        public unsafe override int GetHashCode()
+        public override int GetHashCode()
         {
             int hashCode = 0;
 
@@ -134,6 +173,11 @@ namespace NnCase.IR
             }
 
             return hashCode;
+        }
+
+        public Shape Clone()
+        {
+            return new Shape(this);
         }
 
         public static bool operator ==(Shape left, Shape right)
@@ -171,5 +215,18 @@ namespace NnCase.IR
                 return false;
             }
         }
+
+        private struct SmallArray
+        {
+            public unsafe fixed int Values[MaxSmallSize];
+
+            public ref int this[int index]
+            {
+                get { unsafe { return ref Values[index]; } }
+            }
+        }
+
+        private string DebuggerDisplay =>
+            $"{{{string.Join(",", ToArray())}}}";
     }
 }

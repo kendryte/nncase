@@ -18,12 +18,6 @@ namespace NnCase.Cli
         [Option('o', "output-format", Required = true, HelpText = "Set the input format.")]
         public string OutputFormat { get; set; }
 
-        [Option("input-node", Required = false, HelpText = "Input node")]
-        public string InputNode { get; set; }
-
-        [Option("output-node", Required = false, HelpText = "Output node")]
-        public string OutputNode { get; set; }
-
         [Option("dataset", Required = false, HelpText = "Dataset path")]
         public string Dataset { get; set; }
 
@@ -55,7 +49,7 @@ namespace NnCase.Cli
         public string Output { get; set; }
     }
 
-    public class Interface : IHostedService
+    public class Interface
     {
         private readonly CommandArgsOptions _cmdArgs;
         private readonly Parser _parser;
@@ -68,7 +62,7 @@ namespace NnCase.Cli
             _parser = new Parser();
         }
 
-        public async Task StartAsync(CancellationToken cancellationToken)
+        public async Task RunAsync(CancellationToken cancellationToken)
         {
             Options options = null;
             _parser.ParseArguments<Options>(_cmdArgs.Args)
@@ -83,11 +77,6 @@ namespace NnCase.Cli
             {
                 await _serviceProvider.GetRequiredService<Compile>().Run(options);
             }
-        }
-
-        public Task StopAsync(CancellationToken cancellationToken)
-        {
-            return Task.CompletedTask;
         }
     }
 }

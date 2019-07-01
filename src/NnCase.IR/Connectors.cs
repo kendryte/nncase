@@ -62,6 +62,8 @@ namespace NnCase.IR
     {
         private List<InputConnector> _connections = new List<InputConnector>();
 
+        public IReadOnlyList<InputConnector> Connections => _connections;
+
         public OutputConnector(string name, Node owner, DataType type, Shape shape)
             : base(name, owner, type, shape)
         {

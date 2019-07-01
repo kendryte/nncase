@@ -16,7 +16,8 @@ namespace NnCase.IR
 
         public IReadOnlyList<Node> Nodes => _nodes;
 
-        public void AddNode(Node node)
+        public T AddNode<T>(T node)
+            where T : Node
         {
             _nodes.Add(node);
 
@@ -24,6 +25,7 @@ namespace NnCase.IR
                 _inputs.Add(i);
             else if (node is OutputNode o)
                 _outputs.Add(o);
+            return node;
         }
 
         public void Collect()

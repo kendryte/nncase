@@ -82,17 +82,18 @@ namespace FlatBuffers
         // Get the data of a vector whoses offset is stored at "offset" in this object as an
         // Spant&lt;byte&gt;. If the vector is not present in the ByteBuffer,
         // then an empty span will be returned.
-        public Span<byte> __vector_as_span(int offset)
+        public Span<T> __vector_as_span<T>(int offset)
+            where T : struct
         {
             var o = this.__offset(offset);
             if (0 == o)
             {
-                return new Span<byte>();
+                return new Span<T>();
             }
 
             var pos = this.__vector(o);
             var len = this.__vector_len(o);
-            return bb.ToSpan(pos, len);
+            return bb.ToSpan<T>(pos, len);
         }
 #else
         // Get the data of a vector whoses offset is stored at "offset" in this object as an

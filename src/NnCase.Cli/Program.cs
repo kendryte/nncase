@@ -36,28 +36,24 @@ namespace NnCase.Cli
                 Environment.Exit(-1);
             };
 
-            var hostBuilder = new HostBuilder()
-                .UseContentRoot(Path.GetDirectoryName(typeof(Program).Assembly.Location))
-                .ConfigureLogging(ConfigureLogging)
-                .ConfigureServices(ConfigureServices)
-                .ConfigureServices(c =>
-                {
-                    c.Configure<CommandArgsOptions>(x => x.Args = args);
-                });
+            var services = new ServiceCollection();
+            ConfigureServices(services);
+            services.Configure<CommandArgsOptions>(o => o.Args = args);
 
-            await hostBuilder.RunConsoleAsync();
+            var serviceProvider = services.BuildServiceProvider();
+            var iface = ActivatorUtilities.CreateInstance<Interface>(serviceProvider);
+            await iface.RunAsync(default);
         }
 
-        private static void ConfigureServices(HostBuilderContext context, IServiceCollection services)
+        private static void ConfigureServices(IServiceCollection services)
         {
             services
                 .AddOptions()
-                .AddLogging()
-                .AddCli()
-                .AddHostedService<Interface>();
+                .AddLogging(ConfigureLogging)
+                .AddCli();
         }
 
-        private static void ConfigureLogging(HostBuilderContext context, ILoggingBuilder loggingBuilder)
+        private static void ConfigureLogging(ILoggingBuilder loggingBuilder)
         {
             loggingBuilder
                 .AddConsole()
