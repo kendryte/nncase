@@ -29,6 +29,8 @@ namespace NnCase.Evaluation
         private readonly Dictionary<OutputConnector, MemoryNode> _memoryMap = new Dictionary<OutputConnector, MemoryNode>();
         private readonly Dictionary<OutputConnector, MemoryAllocation> _allocations = new Dictionary<OutputConnector, MemoryAllocation>();
 
+        public IReadOnlyDictionary<OutputConnector, MemoryAllocation> Allocations => _allocations;
+
         public AllocationContext(IReadOnlyDictionary<MemoryType, MemoryAllocator> allocators)
         {
             _allocators = allocators;
@@ -50,11 +52,6 @@ namespace NnCase.Evaluation
                 _memoryMap.Add(output, memoryNode);
                 _allocations.Add(output, new MemoryAllocation { Type = output.MemoryType, Start = memoryNode.Start, Size = size });
             }
-        }
-
-        public MemoryAllocation GetAllocation(OutputConnector output)
-        {
-            return _allocations[output];
         }
 
         public void Release(OutputConnector output)
@@ -84,11 +81,11 @@ namespace NnCase.Evaluation
                     var outputs = new List<MemoryAllocation>();
 
                     foreach (var output in n.Outputs)
-                        outputs.Add(context.GetAllocation(output));
+                        outputs.Add(context.Allocations[output]);
 
                     foreach (var input in n.Inputs)
                     {
-                        var alloc = context.GetAllocation(input.Connection);
+                        var alloc = context.Allocations[input.Connection];
                         Debug.Assert(!outputs.Any(x => x.Overlap(alloc)));
                     }
                 }

@@ -146,7 +146,7 @@ namespace NnCase.Evaluation
                     if (_isFixed)
                         throw new InvalidOperationException("KPU is out of memory");
 
-                    if (_freeNodes.Count == 0)
+                    if (_freeNodes.Count != 0)
                     {
                         node = _freeNodes.Values[_freeNodes.Count - 1];
                         if (node.End == _end)
