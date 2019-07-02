@@ -48,7 +48,12 @@ namespace NnCase.Converter.Model.Layers
             }
             else
             {
-                throw new NotImplementedException();
+                var y = graph.Sub(x, graph.Const(mean));
+                var v = graph.Sqrt(graph.Add(graph.Const(variance), graph.Const(Epsilon)));
+                y = graph.RealDiv(y, v);
+                y = graph.Mul(y, graph.Const(scale));
+
+                context.TFOutputs[Output] = graph.Add(y, graph.Const(offset));
             }
         }
     }
