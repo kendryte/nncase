@@ -16,7 +16,7 @@ namespace NnCase.IR.Operators
         {
             Data = data;
             Shape = shape;
-            Output = AddOutput("output", type, shape);
+            Output = AddOutput("output", type, shape, MemoryType.Constant);
         }
     }
 }

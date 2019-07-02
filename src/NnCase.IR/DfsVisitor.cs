@@ -29,16 +29,16 @@ namespace NnCase.IR
         }
     }
 
-    public class DelegateDfsVisitor : DfsVisitor
+    public class RelayDfsVisitor : DfsVisitor
     {
         private readonly Func<Node, bool> _visitNode;
 
-        public DelegateDfsVisitor(Func<Node, bool> visitNode)
+        public RelayDfsVisitor(Func<Node, bool> visitNode)
         {
             _visitNode = visitNode;
         }
 
-        public DelegateDfsVisitor(Action<Node> visitNode)
+        public RelayDfsVisitor(Action<Node> visitNode)
         {
             _visitNode = n =>
             {

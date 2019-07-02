@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
+using NnCase.IR;
 
 namespace NnCase.Evaluation
 {
@@ -57,18 +59,142 @@ namespace NnCase.Evaluation
         public int Start { get; set; }
 
         public int Size { get; set; }
+
+        public int End => Start + Size;
     }
 
     public class MemoryAllocator
     {
+        private readonly int _alignment;
+        private readonly FreeList _freeList;
+
+        public MemoryAllocator(int alignment = 8, int? fixedSpace = null)
+        {
+            _alignment = alignment;
+            _freeList = new FreeList(fixedSpace);
+        }
+
         public MemoryNode Allocate(int size)
         {
-            throw new NotImplementedException();
+            var alignSize = Align(size, _alignment);
+            var free = _freeList.Allocate(alignSize);
+            var node = new MemoryNode(this, free.Start, free.Size);
+            node.AddRef();
+            return node;
         }
 
         public void Free(MemoryNode memoryNode)
         {
-            throw new NotImplementedException();
+            _freeList.Free(new FreeMemoryNode { Start = memoryNode.Start, Size = memoryNode.Size });
+        }
+
+        public virtual int GetBytes(DataType dataType, Shape shape)
+        {
+            return ShapeUtility.GetBytes(dataType) * ShapeUtility.ComputeSize(shape);
+        }
+
+        private static int Align(int size, int alignment)
+        {
+            var rem = size % alignment;
+            return rem == 0 ? size : size + (alignment - rem);
+        }
+
+        private class FreeList
+        {
+            private readonly bool _isFixed;
+            private readonly SortedList<int, FreeMemoryNode> _freeNodes = new SortedList<int, FreeMemoryNode>();
+            private int _end;
+
+            public FreeList(int? fixedSpace)
+            {
+                _isFixed = fixedSpace.HasValue;
+                if (fixedSpace.HasValue)
+                {
+                    _freeNodes.Add(0, new FreeMemoryNode { Start = 0, Size = fixedSpace.Value });
+                    _end = fixedSpace.Value;
+                }
+            }
+
+            public FreeMemoryNode Allocate(int size)
+            {
+                var node = Reserve(size);
+                if (node.Size == size)
+                {
+                    _freeNodes.Remove(node.Start);
+                    return node;
+                }
+                else
+                {
+                    node.Size -= size;
+                    var newNode = new FreeMemoryNode { Start = node.End, Size = size };
+                    return newNode;
+                }
+            }
+
+            public void Free(FreeMemoryNode node)
+            {
+                _freeNodes.Add(node.Start, node);
+                var index = _freeNodes.IndexOfValue(node);
+                Merge(index);
+            }
+
+            private FreeMemoryNode Reserve(int size)
+            {
+                var node = _freeNodes.Values.FirstOrDefault(x => x.Size >= size);
+                if (node == null)
+                {
+                    if (_isFixed)
+                        throw new InvalidOperationException("KPU is out of memory");
+
+                    if (_freeNodes.Count == 0)
+                    {
+                        node = _freeNodes.Values[_freeNodes.Count - 1];
+                        if (node.End == _end)
+                        {
+                            var enlarge = size - node.Size;
+                            node.Size += enlarge;
+                            _end += enlarge;
+                            return node;
+                        }
+                    }
+                }
+
+                node = new FreeMemoryNode { Start = _end, Size = size };
+                _freeNodes.Add(_end, node);
+                _end += size;
+                return node;
+            }
+
+            private void Merge(int index)
+            {
+                var node = _freeNodes.Values[index];
+
+                if (index > 0)
+                {
+                    var leftIndex = index - 1;
+                    var left = _freeNodes.Values[leftIndex];
+                    if (left.End == node.Start)
+                    {
+                        left.Size += node.Size;
+                        _freeNodes.RemoveAt(index);
+                        Merge(leftIndex);
+                        return;
+                    }
+                }
+
+                if (index < _freeNodes.Count - 1)
+                {
+                    var rightIndex = index + 1;
+                    var right = _freeNodes.Values[rightIndex];
+                    if (node.End == right.Start)
+                    {
+                        node.Size += right.Size;
+                        _freeNodes.RemoveAt(rightIndex);
+                        Merge(index);
+                        return;
+                    }
+                }
+            }
         }
     }
 }

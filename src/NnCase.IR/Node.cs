@@ -23,9 +23,9 @@ namespace NnCase.IR
             return conn;
         }
 
-        protected OutputConnector AddOutput(string name, DataType type, Shape shape)
+        protected OutputConnector AddOutput(string name, DataType type, Shape shape, MemoryType memoryType = MemoryType.Main)
         {
-            var conn = new OutputConnector(name, this, type, shape);
+            var conn = new OutputConnector(name, this, type, shape, memoryType);
             _outputs.Add(conn);
             return conn;
         }

@@ -35,7 +35,7 @@ namespace NnCase.IR
         public void Collect()
         {
             var reachableNodes = new HashSet<Node>();
-            var visitor = new DelegateDfsVisitor(n => reachableNodes.Add(n));
+            var visitor = new RelayDfsVisitor(n => reachableNodes.Add(n));
 
             visitor.Visit(this);
 
@@ -57,7 +57,7 @@ namespace NnCase.IR
         public void AssignNames()
         {
             var names = new HashSet<string>();
-            var visitor = new DelegateDfsVisitor(n =>
+            var visitor = new RelayDfsVisitor(n =>
             {
                 int i = 0;
                 while (string.IsNullOrEmpty(n.Name) || names.Contains(n.Name))
@@ -78,7 +78,7 @@ namespace NnCase.IR
                 nodeDumps.Add(n.Name, context);
             });
             var edges = new List<(string from, string to, Shape shape)>();
-            var edgeVisitor = new DelegateDfsVisitor(n =>
+            var edgeVisitor = new RelayDfsVisitor(n =>
             {
                 foreach (var output in n.Outputs)
                 {

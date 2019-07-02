@@ -64,9 +64,12 @@ namespace NnCase.IR
 
         public IReadOnlyList<InputConnector> Connections => _connections;
 
-        public OutputConnector(string name, Node owner, DataType type, Shape shape)
+        public MemoryType MemoryType { get; }
+
+        public OutputConnector(string name, Node owner, DataType type, Shape shape, MemoryType memoryType)
             : base(name, owner, type, shape)
         {
+            MemoryType = memoryType;
         }
 
         public void Connect(InputConnector connector)

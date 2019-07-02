@@ -44,5 +44,26 @@ namespace NnCase.IR
         {
             return GetTransposedShape(shape, new[] { 0, 2, 3, 1 });
         }
+
+        public static int GetBytes(DataType type)
+        {
+            switch (type)
+            {
+                case DataType.Float32:
+                    return 4;
+                case DataType.UInt8:
+                    return 1;
+                default:
+                    throw new NotSupportedException($"Unsupported datatype: {type}");
+            }
+        }
+
+        public static int ComputeSize(Shape shape)
+        {
+            int size = 1;
+            foreach (var item in shape)
+                size *= item;
+            return size;
+        }
     }
 }

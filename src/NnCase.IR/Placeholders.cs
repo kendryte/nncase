@@ -8,9 +8,9 @@ namespace NnCase.IR
     {
         public OutputConnector Output { get; }
 
-        public InputNode(DataType type, Shape shape)
+        public InputNode(DataType type, Shape shape, MemoryType memoryType)
         {
-            Output = AddOutput("output", type, shape);
+            Output = AddOutput("output", type, shape, memoryType);
         }
     }
 

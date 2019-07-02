@@ -70,14 +70,14 @@ namespace NnCase.Importer
                     // image
                     if (input.Key.Shape.Count == 4)
                     {
-                        var inode = _graph.AddNode(new InputNode(input.Key.Type, ShapeUtility.NHWCToNCHW(input.Key.Shape)));
+                        var inode = _graph.AddNode(new InputNode(input.Key.Type, ShapeUtility.NHWCToNCHW(input.Key.Shape), MemoryType.Main));
                         var surTrans = NCHWToNHWC(inode.Output.Type, inode.Output.Shape);
                         surTrans.Input.Connect(inode.Output);
                         input.Key.Connect(surTrans.Output);
                     }
                     else
                     {
-                        var inode = _graph.AddNode(new InputNode(input.Key.Type, input.Key.Shape));
+                        var inode = _graph.AddNode(new InputNode(input.Key.Type, input.Key.Shape, MemoryType.Main));
                         input.Key.Connect(inode.Output);
                     }
                 }
