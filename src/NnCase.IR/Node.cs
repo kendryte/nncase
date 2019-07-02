@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using NnCase.IR.Serialization;
 
 namespace NnCase.IR
 {
@@ -12,6 +13,8 @@ namespace NnCase.IR
         public IReadOnlyList<InputConnector> Inputs => _inputs;
 
         public IReadOnlyList<OutputConnector> Outputs => _outputs;
+
+        public string Name { get; set; }
 
         protected InputConnector AddInput(string name, DataType type, Shape shape)
         {
@@ -25,6 +28,11 @@ namespace NnCase.IR
             var conn = new OutputConnector(name, this, type, shape);
             _outputs.Add(conn);
             return conn;
+        }
+
+        public virtual void Dump(DumpContext dumpContext)
+        {
+            dumpContext.Title = GetType().Name;
         }
     }
 }

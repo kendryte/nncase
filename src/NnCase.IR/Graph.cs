@@ -1,6 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Text;
+using DotBuilder.Attributes;
+using NnCase.IR.Serialization;
 
 namespace NnCase.IR
 {
@@ -30,12 +34,14 @@ namespace NnCase.IR
 
         public void Collect()
         {
-            var markVisitor = new MarkVisitor();
-            markVisitor.Visit(this);
+            var reachableNodes = new HashSet<Node>();
+            var visitor = new DelegateDfsVisitor(n => reachableNodes.Add(n));
+
+            visitor.Visit(this);
 
             _nodes.RemoveAll(x =>
             {
-                if (!markVisitor.ReachableNodes.Contains(x))
+                if (!reachableNodes.Contains(x))
                 {
                     foreach (var input in x.Inputs)
                         input.ClearConnection();
@@ -48,15 +54,55 @@ namespace NnCase.IR
             });
         }
 
-        private class MarkVisitor : DfsVisitor
+        public void AssignNames()
         {
-            public HashSet<Node> ReachableNodes { get; } = new HashSet<Node>();
-
-            protected override bool Visit(Node node)
+            var names = new HashSet<string>();
+            var visitor = new DelegateDfsVisitor(n =>
             {
-                ReachableNodes.Add(node);
-                return false;
-            }
+                int i = 0;
+                while (string.IsNullOrEmpty(n.Name) || names.Contains(n.Name))
+                    n.Name = $"{n.GetType().Name}_{i++}";
+                names.Add(n.Name);
+            });
+            visitor.Visit(this);
+        }
+
+        public void DumpDotGraph(Stream output)
+        {
+            AssignNames();
+            var nodeDumps = new Dictionary<string, DumpContext>();
+            _nodes.ForEach(n =>
+            {
+                var context = new DumpContext();
+                n.Dump(context);
+                nodeDumps.Add(n.Name, context);
+            });
+            var edges = new List<(string from, string to, Shape shape)>();
+            var edgeVisitor = new DelegateDfsVisitor(n =>
+            {
+                foreach (var output in n.Outputs)
+                {
+                    foreach (var input in output.Connections)
+                    {
+                        edges.Add((n.Name, input.Owner.Name, output.Shape));
+                    }
+                }
+            });
+            edgeVisitor.Visit(this);
+
+            var graph = DotBuilder.Statements.Graph.Directed("graph")
+                .WithNodeAttributesOf(
+                    DotBuilder.Attributes.Shape.Record)
+                .Containing(from n in nodeDumps
+                            let records = new[] { n.Value.Title }.Concat(n.Value.Attributes.Select(x => x.Key + " " + x.Value))
+                            select DotBuilder.Statements.Node.Name(n.Key)
+                            .WithAttributesOf(Label.Set($"{{{string.Join('|', records)}}}")))
+                .Containing(from e in edges
+                            let label = string.Join('x', e.shape.ToArray())
+                            select DotBuilder.Statements.Edge.Between(e.@from, e.to)
+                            .WithAttributesOf(Label.Set(label)));
+            using (var sw = new StreamWriter(output, leaveOpen: true))
+                sw.Write(graph.Render());
         }
     }
 }

@@ -30,6 +30,11 @@ namespace NnCase.Cli
                 default:
                     throw new ArgumentException($"Unsupported input format: {options.InputFormat}");
             }
+
+            using (var stream = File.Create("ir.dot"))
+            {
+                graph.DumpDotGraph(stream);
+            }
         }
     }
 }

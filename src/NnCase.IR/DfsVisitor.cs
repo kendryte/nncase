@@ -28,4 +28,28 @@ namespace NnCase.IR
             return false;
         }
     }
+
+    public class DelegateDfsVisitor : DfsVisitor
+    {
+        private readonly Func<Node, bool> _visitNode;
+
+        public DelegateDfsVisitor(Func<Node, bool> visitNode)
+        {
+            _visitNode = visitNode;
+        }
+
+        public DelegateDfsVisitor(Action<Node> visitNode)
+        {
+            _visitNode = n =>
+            {
+                visitNode(n);
+                return false;
+            };
+        }
+
+        protected override bool Visit(Node node)
+        {
+            return _visitNode(node);
+        }
+    }
 }
