@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 using NnCase.IR;
 using NnCase.IR.Operators;
@@ -11,17 +12,17 @@ namespace NnCase.Evaluation
         private readonly IReadOnlyDictionary<MemoryType, MemoryAllocator> _allocators;
         private readonly IReadOnlyDictionary<OutputConnector, MemoryAllocation> _allocations;
         private readonly IReadOnlyList<Node> _computeSequence;
-
+        private readonly EvaluatorRegistry _evaluatorRegistry;
         private readonly List<MemoryAllocation> _inputs = new List<MemoryAllocation>();
         private readonly List<MemoryAllocation> _outputs = new List<MemoryAllocation>();
         private readonly Dictionary<MemoryType, Memory<byte>> _memoryPools = new Dictionary<MemoryType, Memory<byte>>();
 
-        public Evaluator(IReadOnlyDictionary<MemoryType, MemoryAllocator> allocators, IReadOnlyDictionary<OutputConnector, MemoryAllocation> allocations, IReadOnlyList<Node> computeSequence)
+        public Evaluator(IReadOnlyDictionary<MemoryType, MemoryAllocator> allocators, IReadOnlyDictionary<OutputConnector, MemoryAllocation> allocations, IReadOnlyList<Node> computeSequence, EvaluatorRegistry evaluatorRegistry)
         {
             _allocators = allocators;
             _allocations = allocations;
             _computeSequence = computeSequence;
-
+            _evaluatorRegistry = evaluatorRegistry;
             foreach (var allocator in _allocators)
                 _memoryPools.Add(allocator.Key, new byte[allocator.Value.MaxUsage]);
 
@@ -70,6 +71,18 @@ namespace NnCase.Evaluation
 
         public void Evaluate()
         {
+            var stopwatch = new Stopwatch();
+
+            foreach (var node in _computeSequence)
+            {
+                stopwatch.Restart();
+                if (!_evaluatorRegistry.TryInvoke(node, this))
+                    throw new NotImplementedException($"Evaluator for {node.GetType().Name} is not implemented");
+                stopwatch.Stop();
+
+                var duration = stopwatch.Elapsed;
+                Console.WriteLine($"{node.GetType().Name}: {duration.TotalMilliseconds} ms");
+            }
         }
 
         private void InitializeConstant(Constant constant)

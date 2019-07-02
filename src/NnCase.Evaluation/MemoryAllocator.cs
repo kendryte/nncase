@@ -105,8 +105,8 @@ namespace NnCase.Evaluation
         {
             private readonly bool _isFixed;
             private readonly SortedList<int, FreeMemoryNode> _freeNodes = new SortedList<int, FreeMemoryNode>();
-            private int _end;
-            public int MaxUsage => _end;
+
+            public int MaxUsage { get; private set; }
 
             public FreeList(int? fixedSpace)
             {
@@ -114,7 +114,7 @@ namespace NnCase.Evaluation
                 if (fixedSpace.HasValue)
                 {
                     _freeNodes.Add(0, new FreeMemoryNode { Start = 0, Size = fixedSpace.Value });
-                    _end = fixedSpace.Value;
+                    MaxUsage = fixedSpace.Value;
                 }
             }
 
@@ -152,19 +152,19 @@ namespace NnCase.Evaluation
                     if (_freeNodes.Count != 0)
                     {
                         node = _freeNodes.Values[_freeNodes.Count - 1];
-                        if (node.End == _end)
+                        if (node.End == MaxUsage)
                         {
                             var enlarge = size - node.Size;
                             node.Size += enlarge;
-                            _end += enlarge;
+                            MaxUsage += enlarge;
                             return node;
                         }
                     }
                 }
 
-                node = new FreeMemoryNode { Start = _end, Size = size };
-                _freeNodes.Add(_end, node);
-                _end += size;
+                node = new FreeMemoryNode { Start = MaxUsage, Size = size };
+                _freeNodes.Add(MaxUsage, node);
+                MaxUsage += size;
                 return node;
             }
 

@@ -82,7 +82,7 @@ namespace NnCase.Cli
             var computeSequence = new List<Node>();
             Scheduler.Schedule(graph.Outputs, allocationContext, computeSequence);
 
-            var evaluator = new Evaluator(allocators, allocationContext.Allocations, computeSequence);
+            var evaluator = new Evaluator(allocators, allocationContext.Allocations, computeSequence, EvaluatorRegistry.Default);
 
             var dataset = new ImageDataset(options.Dataset, graph.Inputs[0].Output.Shape, 0.0f, 1.0f);
             await foreach (var batch in dataset.GetBatchesAsync())
@@ -95,6 +95,7 @@ namespace NnCase.Cli
         {
             var input = evaluator.InputAt<float>(0);
             batch.Buffer.Span.CopyTo(input);
+            evaluator.Evaluate();
         }
     }
 }
