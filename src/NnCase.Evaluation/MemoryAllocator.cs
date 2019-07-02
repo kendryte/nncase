@@ -68,6 +68,8 @@ namespace NnCase.Evaluation
         private readonly int _alignment;
         private readonly FreeList _freeList;
 
+        public int MaxUsage => _freeList.MaxUsage;
+
         public MemoryAllocator(int alignment = 8, int? fixedSpace = null)
         {
             _alignment = alignment;
@@ -104,6 +106,7 @@ namespace NnCase.Evaluation
             private readonly bool _isFixed;
             private readonly SortedList<int, FreeMemoryNode> _freeNodes = new SortedList<int, FreeMemoryNode>();
             private int _end;
+            public int MaxUsage => _end;
 
             public FreeList(int? fixedSpace)
             {

@@ -13,8 +13,8 @@ namespace NnCase.Evaluation.Data
 {
     public class ImageDataset : Dataset
     {
-        public ImageDataset(string path, Shape inputShape, float min, float std)
-            : base(path, FilterFileName, inputShape, min, std)
+        public ImageDataset(string path, Shape inputShape, float mean, float std)
+            : base(path, FilterFileName, inputShape, mean, std)
         {
         }
 

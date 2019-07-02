@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Numerics.Tensors;
 using System.Text;
 using System.Threading.Tasks;
 using NnCase.Evaluation;
+using NnCase.Evaluation.Data;
 using NnCase.Importer;
 using NnCase.IR;
 
@@ -27,7 +29,7 @@ namespace NnCase.Cli
             OptimizePass1(graph);
 
             // 3. Quantize
-            Quantize(options, graph);
+            await Quantize(options, graph);
         }
 
         private async Task<Graph> ImportGraph(Options options)
@@ -56,28 +58,43 @@ namespace NnCase.Cli
         {
         }
 
-        private void Quantize(Options options, Graph graph)
+        private async Task Quantize(Options options, Graph graph)
         {
             // 3.1. Add quantization checkpoints
             AddQuantizationCheckpoints(graph);
 
             // 3.2 Get activation ranges
-            GetActivationRanges(options, graph);
+            await GetActivationRanges(options, graph);
         }
 
         private void AddQuantizationCheckpoints(Graph graph)
         {
         }
 
-        private void GetActivationRanges(Options options, Graph graph)
+        private async Task GetActivationRanges(Options options, Graph graph)
         {
-            var allocationContext = new AllocationContext(new Dictionary<MemoryType, MemoryAllocator>
+            var allocators = new Dictionary<MemoryType, MemoryAllocator>
             {
                 { MemoryType.Constant, new MemoryAllocator() },
                 { MemoryType.Main, new MemoryAllocator() }
-            });
+            };
+            var allocationContext = new AllocationContext(allocators);
             var computeSequence = new List<Node>();
             Scheduler.Schedule(graph.Outputs, allocationContext, computeSequence);
+
+            var evaluator = new Evaluator(allocators, allocationContext.Allocations, computeSequence);
+
+            var dataset = new ImageDataset(options.Dataset, graph.Inputs[0].Output.Shape, 0.0f, 1.0f);
+            await foreach (var batch in dataset.GetBatchesAsync())
+            {
+                EvaluateBatch(batch, evaluator);
+            }
+        }
+
+        private void EvaluateBatch(DenseTensor<float> batch, Evaluator evaluator)
+        {
+            var input = evaluator.InputAt<float>(0);
+            batch.Buffer.Span.CopyTo(input);
         }
     }
 }

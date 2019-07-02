@@ -40,7 +40,7 @@ namespace NnCase.Evaluation.Data
                 _fileNames.RemoveRange(samples, _fileNames.Count - samples);
         }
 
-        public async IAsyncEnumerable<Tensor<float>> GetBatchesAsync()
+        public async IAsyncEnumerable<DenseTensor<float>> GetBatchesAsync()
         {
             var sliceShape = _inputShape.Clone();
             sliceShape[0] = 1;
