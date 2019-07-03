@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
 
-namespace NnCase.IR
+namespace NnCase
 {
     [DebuggerDisplay("{{Before}, {After}}")]
     public struct Padding

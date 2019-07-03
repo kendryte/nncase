@@ -18,6 +18,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DotBuilder\DotBuilder.csproj" />
+    <ProjectReference Include="..\NnCase.Core\NnCase.Core.csproj" />
   </ItemGroup>
 
 </Project>

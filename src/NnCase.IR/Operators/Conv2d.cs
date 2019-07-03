@@ -11,9 +11,9 @@ namespace NnCase.IR.Operators
 
         public OutputConnector Output { get; }
 
-        public Tensor<float> Weights { get; }
+        public DenseTensor<float> Weights { get; }
 
-        public Tensor<float> Bias { get; }
+        public DenseTensor<float> Bias { get; }
 
         public int Groups { get; }
 
@@ -31,7 +31,7 @@ namespace NnCase.IR.Operators
 
         public ValueRange<float> FusedActivation { get; }
 
-        public Conv2D(Shape inputShape, Tensor<float> weights, Tensor<float> bias, int groups, Padding paddingH, Padding paddingW, int strideH, int strideW, int dilationH, int dilationW, ValueRange<float> fusedActivation)
+        public Conv2D(Shape inputShape, DenseTensor<float> weights, DenseTensor<float> bias, int groups, Padding paddingH, Padding paddingW, int strideH, int strideW, int dilationH, int dilationW, ValueRange<float> fusedActivation)
         {
             Weights = weights;
             Bias = bias;

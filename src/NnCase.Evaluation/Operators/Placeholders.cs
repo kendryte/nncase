@@ -8,7 +8,7 @@ namespace NnCase.Evaluation.Operators
 {
     internal static partial class DefaultEvaulators
     {
-        static partial void RegisterPartial(EvaluatorRegistry registry)
+        private static void RegisterPlaceholders(EvaluatorRegistry registry)
         {
             registry.Add<InputNode>((n, e) => { });
             registry.Add<OutputNode>((n, e) => { });

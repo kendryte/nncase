@@ -132,7 +132,7 @@ namespace NnCase.Importer
             return _subGraph.Tensors(index).Value;
         }
 
-        private Tensor<T> LoadTensor<T>(tflite.Tensor tensor)
+        private DenseTensor<T> LoadTensor<T>(tflite.Tensor tensor)
             where T : unmanaged
         {
             var buffer = GetBuffer<T>(tensor);

@@ -57,6 +57,12 @@ namespace NnCase.Evaluation
             return MemoryAt<T>(_allocations[connector]);
         }
 
+        public Span<T> MemoryAt<T>(InputConnector connector)
+            where T : unmanaged
+        {
+            return MemoryAt<T>(_allocations[connector.Connection]);
+        }
+
         public Span<T> InputAt<T>(int index)
             where T : unmanaged
         {
@@ -77,11 +83,11 @@ namespace NnCase.Evaluation
             {
                 stopwatch.Restart();
                 if (!_evaluatorRegistry.TryInvoke(node, this))
-                    throw new NotImplementedException($"Evaluator for {node.GetType().Name} is not implemented");
+                    throw new NotSupportedException($"Evaluator for {node.GetType().Name} is not found");
                 stopwatch.Stop();
 
                 var duration = stopwatch.Elapsed;
-                Console.WriteLine($"{node.GetType().Name}: {duration.TotalMilliseconds} ms");
+                Console.WriteLine($"{node.GetType().Name}: {duration.TotalMilliseconds:F2} ms");
             }
         }
 

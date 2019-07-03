@@ -7,7 +7,7 @@ namespace NnCase
 {
     public static class TensorExtensions
     {
-        public static Tensor<T> Transpose<T>(this Tensor<T> tensor, ReadOnlySpan<int> axes)
+        public static DenseTensor<T> Transpose<T>(this DenseTensor<T> tensor, ReadOnlySpan<int> axes)
         {
             int inputExtSize = 4 - tensor.Rank;
             int outputExtSize = 4 - axes.Length;
@@ -35,7 +35,7 @@ namespace NnCase
             for (int i = 0; i < axes.Length; i++)
                 destDimensions[i] = tensor.Dimensions[axes[i]];
             var output = new DenseTensor<T>(buffer, outSizes);
-            tensor = tensor.Reshape(oldDims);
+            var reshapedTensor = tensor.Reshape(oldDims);
 
             for (outp[3] = 0; outp[3] < outSizes[3]; outp[3]++)
             {
@@ -49,13 +49,13 @@ namespace NnCase
                         for (outp[0] = 0; outp[0] < outSizes[0]; outp[0]++)
                         {
                             inp[extendedPerm[0]] = outp[0];
-                            output[outp] = tensor[inp];
+                            output[outp] = reshapedTensor[inp];
                         }
                     }
                 }
             }
 
-            return output.Reshape(destDimensions);
+            return output.Reshape(destDimensions).ToDenseTensor();
         }
     }
 }
