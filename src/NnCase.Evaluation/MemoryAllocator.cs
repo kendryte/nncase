@@ -160,11 +160,13 @@ namespace NnCase.Evaluation
                             return node;
                         }
                     }
+
+                    node = new FreeMemoryNode { Start = MaxUsage, Size = size };
+                    _freeNodes.Add(MaxUsage, node);
+                    MaxUsage += size;
+                    return node;
                 }
 
-                node = new FreeMemoryNode { Start = MaxUsage, Size = size };
-                _freeNodes.Add(MaxUsage, node);
-                MaxUsage += size;
                 return node;
             }
 

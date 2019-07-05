@@ -50,7 +50,7 @@ namespace NnCase.Evaluation
                 var size = allocator.GetBytes(output.Type, output.Shape);
                 memoryNode = allocator.Allocate(size);
                 _memoryMap.Add(output, memoryNode);
-                _allocations.Add(output, new MemoryAllocation { Type = output.MemoryType, Start = memoryNode.Start, Size = size });
+                _allocations.Add(output, new MemoryAllocation { Type = output.MemoryType, Start = memoryNode.SafeStart, Size = size });
             }
         }
 
