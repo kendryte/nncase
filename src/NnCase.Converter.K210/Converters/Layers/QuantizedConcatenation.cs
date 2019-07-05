@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using NnCase.Converter.K210.Converters.Stages.Convert;
+using NnCase.Converter.K210.Converters.Stages.Generate;
 using NnCase.Converter.K210.Converters.Stages.Inference;
+using NnCase.Converter.K210.Emulator;
 using NnCase.Converter.Model.Layers;
 
 namespace NnCase.Converter.K210.Converters.Layers
@@ -32,6 +34,32 @@ namespace NnCase.Converter.K210.Converters.Layers
                                              Start = a.GetAddress(),
                                              Size = a.Size
                                          }).ToList();
+        }
+
+        public ConcatenationLayerArgument DeserializeBin(int offset, K210BinDeserializeContext context)
+        {
+            var sr = context.GetReaderAt(offset);
+            var argument = new ConcatenationLayerArgument
+            {
+                Flags = sr.Read<K210LayerFlags>(),
+                MainMemoryOutputAddress = sr.Read<uint>(),
+                InputCount = sr.Read<uint>()
+            };
+
+            argument.InputsMainMemory = sr.ReadArray<MemoryRange>((int)argument.InputCount);
+            return argument;
+        }
+
+        public void Forward(ConcatenationLayerArgument argument, ForwardContext context)
+        {
+            var dest = context.GetMainRamAt((int)argument.MainMemoryOutputAddress);
+
+            foreach (var input in argument.InputsMainMemory)
+            {
+                var src = context.GetMainRamAt((int)input.Start, (int)input.Size);
+                src.CopyTo(dest);
+                dest = dest.Slice((int)input.Size);
+            }
         }
     }
 }

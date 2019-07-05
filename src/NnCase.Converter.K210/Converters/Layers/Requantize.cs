@@ -2,8 +2,10 @@
 using System.Collections.Generic;
 using System.Text;
 using NnCase.Converter.K210.Converters.Stages.Convert;
+using NnCase.Converter.K210.Converters.Stages.Generate;
 using NnCase.Converter.K210.Converters.Stages.Inference;
 using NnCase.Converter.K210.Converters.Stages.Quantize;
+using NnCase.Converter.K210.Emulator;
 using NnCase.Converter.Model.Layers;
 
 namespace NnCase.Converter.K210.Converters.Layers
@@ -44,6 +46,30 @@ namespace NnCase.Converter.K210.Converters.Layers
             argument.Flags = K210LayerFlags.MainMemoryOutput;
             argument.MainMemoryInputAddress = inputAlloc.GetAddress();
             argument.MainMemoryOutputAddress = outputAlloc.GetAddress();
+        }
+
+        public RequantizeLayerArgument DeserializeBin(int offset, K210BinDeserializeContext context)
+        {
+            var sr = context.GetReaderAt(offset);
+            var argument = new RequantizeLayerArgument
+            {
+                Flags = sr.Read<K210LayerFlags>(),
+                MainMemoryInputAddress = sr.Read<uint>(),
+                MainMemoryOutputAddress = sr.Read<uint>(),
+                Count = sr.Read<uint>(),
+                Table = sr.ReadArray<byte>(256)
+            };
+
+            return argument;
+        }
+
+        public void Forward(RequantizeLayerArgument argument, ForwardContext context)
+        {
+            var src = context.GetMainRamAt((int)argument.MainMemoryInputAddress);
+            var dest = context.GetMainRamAt((int)argument.MainMemoryOutputAddress);
+
+            for (int i = 0; i < argument.Count; i++)
+                dest[i] = argument.Table[src[i]];
         }
     }
 }
