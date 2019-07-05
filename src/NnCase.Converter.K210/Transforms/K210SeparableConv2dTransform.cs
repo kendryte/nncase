@@ -103,7 +103,6 @@ namespace NnCase.Converter.K210.Transforms
             var dequantize = new Dequantize(newConv2d.Output.Dimensions);
 
             newDwConv2d.Input.SetConnection(input);
-            quantize.Input.SetConnection(newDwConv2d.Output);
             upload.Input.SetConnection(quantize.Output);
             newConv2d.Input.SetConnection(upload.Output);
             dequantize.Input.SetConnection(newConv2d.Output);
@@ -111,12 +110,11 @@ namespace NnCase.Converter.K210.Transforms
             var oldOuts = output.Connections.Select(o => o.To).ToList();
             if (context.MatchedLayers.Count == 3)
             {
-                foreach (var oldOut in oldOuts)
-                    oldOut.SetConnection(dequantize.Output);
+                quantize.Input.SetConnection(newDwConv2d.Output);
             }
             else
             {
-                var newOutput = dequantize.Output;
+                var newOutput = newDwConv2d.Output;
 
                 foreach (var middleLayer in context.MatchedLayers.Skip(2).Take(context.MatchedLayers.Count - 3))
                 {
@@ -140,9 +138,11 @@ namespace NnCase.Converter.K210.Transforms
                     newOutput = newLayer.OutputConnectors[0];
                 }
 
-                foreach (var oldOut in oldOuts)
-                    oldOut.SetConnection(newOutput);
+                quantize.Input.SetConnection(newOutput);
             }
+
+            foreach (var oldOut in oldOuts)
+                oldOut.SetConnection(dequantize.Output);
         }
     }
 }
