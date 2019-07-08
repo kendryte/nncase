@@ -50,6 +50,34 @@ namespace NnCase.IR
             return newShape;
         }
 
+        public static Shape GetBinaryOutputShape(Shape inputAShape, Shape inputBShape)
+        {
+            var outShape = new List<int>();
+
+            var destDims = Math.Max(inputAShape.Count, inputBShape.Count);
+            var inAExt = destDims - inputAShape.Count;
+            var inBExt = destDims - inputBShape.Count;
+
+            for (int i = 0; i < destDims; i++)
+            {
+                var inADim = i - inAExt;
+                var inBDim = i - inBExt;
+
+                var inA = inADim < 0 ? 1 : inputAShape[inADim];
+                var inB = inBDim < 0 ? 1 : inputBShape[inBDim];
+                if (inA == inB)
+                    outShape.Add(inA);
+                else if (inA == 1)
+                    outShape.Add(inB);
+                else if (inB == 1)
+                    outShape.Add(inA);
+                else
+                    throw new ArgumentException("inputs are not compatible to broadcast");
+            }
+
+            return new Shape(outShape);
+        }
+
         public static Padding GetWindowedPadding(int input, int filter, int stride, int dilation, bool same)
         {
             return GetWindowedPadding(input, GetWindowedOutputSize(input, filter, stride, dilation, same), filter, stride, dilation);

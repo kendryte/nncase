@@ -31,9 +31,14 @@ namespace NnCase.Importer
             _lowerings = new Dictionary<BuiltinOperator, Action<Operator>>
             {
                 { BuiltinOperator.CONV_2D, ConvertConv2D },
+                { BuiltinOperator.DEPTHWISE_CONV_2D, ConvertDepthwiseConv2D },
                 { BuiltinOperator.MAX_POOL_2D, ConvertMaxPool2D },
                 { BuiltinOperator.AVERAGE_POOL_2D, ConvertAveragePool2D },
-                { BuiltinOperator.RESHAPE, ConvertReshape }
+                { BuiltinOperator.RESHAPE, ConvertReshape },
+                { BuiltinOperator.ADD, ConvertAdd },
+                { BuiltinOperator.SUB, ConvertSub },
+                { BuiltinOperator.MUL, ConvertMul },
+                { BuiltinOperator.DIV, ConvertDiv }
             };
         }
 

@@ -8,6 +8,7 @@ using NnCase.Evaluation;
 using NnCase.Evaluation.Data;
 using NnCase.Importer;
 using NnCase.IR;
+using NnCase.Transforms;
 
 namespace NnCase.Cli
 {
@@ -46,16 +47,28 @@ namespace NnCase.Cli
                     throw new ArgumentException($"Unsupported input format: {options.InputFormat}");
             }
 
-            using (var stream = File.Create("ir.dot"))
-            {
-                graph.DumpDotGraph(stream);
-            }
-
+            DumpGraph(graph, "import");
             return graph;
         }
 
         private void OptimizePass1(Graph graph)
         {
+            var transforms = new Transform[]
+            {
+                new FoldTransposeTransform(),
+                new TransposeBinaryMotionTransform()
+            };
+
+            Transform.TransformGraph(graph, transforms);
+            DumpGraph(graph, "optimize_1");
+        }
+
+        private void DumpGraph(Graph graph, string name)
+        {
+            using (var stream = File.Create($"ir_{name}.dot"))
+            {
+                graph.DumpDotGraph(stream);
+            }
         }
 
         private async Task Quantize(Options options, Graph graph)

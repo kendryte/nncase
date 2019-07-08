@@ -24,10 +24,10 @@ namespace NnCase.Evaluation.Operators
 
                 switch (n.ReduceOperator)
                 {
-                    case ReduceOperator.Mean:
+                    case ReduceOperator.Max:
                         ReduceWindow2D((a, b) => Math.Max(a, b), (v, k) => v);
                         break;
-                    case ReduceOperator.Max:
+                    case ReduceOperator.Mean:
                         ReduceWindow2D((a, b) => a + b, (v, k) => v / k);
                         break;
                     default:

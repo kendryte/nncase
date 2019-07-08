@@ -7,7 +7,7 @@ namespace NnCase.Kernels
 {
     public static partial class DefaultKernels
     {
-        public static void Reshape<T>(ReadOnlySpan<T> input, Span<T> output)
+        public static void MemoryCopy(ReadOnlySpan<byte> input, Span<byte> output)
         {
             input.CopyTo(output);
         }

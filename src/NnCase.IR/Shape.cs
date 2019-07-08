@@ -2,6 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 
@@ -71,6 +72,21 @@ namespace NnCase.IR
             }
         }
 
+        public Shape(IReadOnlyList<int> shape)
+        {
+            Count = shape.Count;
+            if (Count <= MaxSmallSize)
+            {
+                for (int i = 0; i < Count; i++)
+                    _smallValues[i] = shape[i];
+                _largeValues = null;
+            }
+            else
+            {
+                _largeValues = shape.ToArray();
+            }
+        }
+
         public Shape(int d0, int d1, int d2, int d3)
         {
             Count = 4;
@@ -118,7 +134,7 @@ namespace NnCase.IR
 
         public static implicit operator Shape(int[] shape)
         {
-            return new Shape(shape);
+            return new Shape(shape.AsSpan());
         }
 
         public Enumerator GetEnumerator()

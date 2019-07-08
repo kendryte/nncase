@@ -35,7 +35,11 @@ namespace NnCase.IR
         public void Collect()
         {
             var reachableNodes = new HashSet<Node>();
-            var visitor = new RelayDfsVisitor(n => reachableNodes.Add(n));
+            var visitor = new RelayDfsVisitor(n =>
+            {
+                reachableNodes.Add(n);
+                return false;
+            });
 
             visitor.Visit(this);
 

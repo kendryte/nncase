@@ -16,7 +16,7 @@ namespace NnCase.Evaluation.Operators
                 var input = e.MemoryAt<byte>(n.Input);
                 var output = e.MemoryAt<byte>(n.Output);
 
-                DefaultKernels.Reshape(input, output);
+                DefaultKernels.MemoryCopy(input, output);
             });
         }
     }

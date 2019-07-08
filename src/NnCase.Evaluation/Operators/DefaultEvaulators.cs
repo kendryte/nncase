@@ -13,6 +13,7 @@ namespace NnCase.Evaluation.Operators
             RegisterConv2D(registry);
             RegisterReduceWindow2D(registry);
             RegisterReshape(registry);
+            RegisterBinary(registry);
         }
     }
 }

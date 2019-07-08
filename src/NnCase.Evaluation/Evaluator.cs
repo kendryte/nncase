@@ -78,6 +78,7 @@ namespace NnCase.Evaluation
         public void Evaluate()
         {
             var stopwatch = new Stopwatch();
+            var totalDuration = TimeSpan.Zero;
 
             foreach (var node in _computeSequence)
             {
@@ -87,8 +88,11 @@ namespace NnCase.Evaluation
                 stopwatch.Stop();
 
                 var duration = stopwatch.Elapsed;
+                totalDuration += duration;
                 Console.WriteLine($"{node.GetType().Name}: {duration.TotalMilliseconds:F2} ms");
             }
+
+            Console.WriteLine($"Total: {totalDuration.TotalMilliseconds:F2} ms");
         }
 
         private void InitializeConstant(Constant constant)
