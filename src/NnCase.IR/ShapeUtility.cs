@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 
 namespace NnCase.IR
@@ -13,6 +14,11 @@ namespace NnCase.IR
                 return (input + stride - 1) / stride;
             else
                 return (input - effectiveFilterSize + stride) / stride;
+        }
+
+        public static int NormalizeAxis(int ranks, int axis)
+        {
+            return axis >= 0 ? axis : ranks + axis;
         }
 
         public static Shape GetTransposedShape(Shape inputShape, Shape perm)
@@ -76,6 +82,30 @@ namespace NnCase.IR
             }
 
             return new Shape(outShape);
+        }
+
+        public static Shape GetConcatedShape(IEnumerable<Shape> shapes, int axis)
+        {
+            if (!shapes.Any())
+                throw new ArgumentException("there must be at least one input");
+
+            var outShape = shapes.First().Clone();
+
+            foreach (var shape in shapes.Skip(1))
+            {
+                if (shape.Count != shape.Count)
+                    throw new ArgumentException("inputs must have same ranks");
+
+                for (int i = 0; i < shape.Count; i++)
+                {
+                    if (i == axis)
+                        outShape[i] += shape[i];
+                    else if (outShape[i] != shape[i])
+                        throw new ArgumentException("inputs are not compatible to concat");
+                }
+            }
+
+            return outShape;
         }
 
         public static Padding GetWindowedPadding(int input, int filter, int stride, int dilation, bool same)

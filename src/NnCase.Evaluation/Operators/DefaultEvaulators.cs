@@ -14,6 +14,7 @@ namespace NnCase.Evaluation.Operators
             RegisterReduceWindow2D(registry);
             RegisterReshape(registry);
             RegisterBinary(registry);
+            RegisterConcat(registry);
         }
     }
 }

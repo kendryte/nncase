@@ -56,7 +56,8 @@ namespace NnCase.Cli
             var transforms = new Transform[]
             {
                 new FoldTransposeTransform(),
-                new TransposeBinaryMotionTransform()
+                new TransposeBinaryMotionTransform(),
+                new TransposeConcatMotionTransform()
             };
 
             Transform.TransformGraph(graph, transforms);

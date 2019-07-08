@@ -163,6 +163,9 @@ namespace NnCase.IR
 
         public unsafe bool Equals(Shape other)
         {
+            if (other == null)
+                return false;
+
             if (Count == other.Count)
             {
                 if (Count <= MaxSmallSize)
@@ -213,7 +216,7 @@ namespace NnCase.IR
 
         public static bool operator ==(Shape left, Shape right)
         {
-            return left.Equals(right);
+            return ReferenceEquals(left, right) || (left?.Equals(right) ?? false);
         }
 
         public static bool operator !=(Shape left, Shape right)

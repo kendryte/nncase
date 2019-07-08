@@ -43,6 +43,33 @@ namespace NnCase.Evaluation
             }
         }
 
+        public Memory<byte> MemoryAt(MemoryAllocation allocation)
+        {
+            var memoryPool = _memoryPools[allocation.Type];
+            var memory = memoryPool.Slice(allocation.Start, allocation.Size);
+            return memory;
+        }
+
+        public Memory<byte> MemoryAt(OutputConnector connector)
+        {
+            return MemoryAt(_allocations[connector]);
+        }
+
+        public Memory<byte> MemoryAt(InputConnector connector)
+        {
+            return MemoryAt(_allocations[connector.Connection]);
+        }
+
+        public Memory<byte> InputAt(int index)
+        {
+            return MemoryAt(_inputs[index]);
+        }
+
+        public Memory<byte> OutputAt(int index)
+        {
+            return MemoryAt(_outputs[index]);
+        }
+
         public Span<T> MemoryAt<T>(MemoryAllocation allocation)
             where T : unmanaged
         {

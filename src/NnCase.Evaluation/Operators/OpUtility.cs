@@ -39,6 +39,22 @@ namespace NnCase.Evaluation.Operators
             return (rtInShape, rtPerm);
         }
 
+        public static (int innerSize, int outerSize) GetConcatParams(Shape outputShape, int elementSize, int axis)
+        {
+            int innerSize = elementSize;
+            int outerSize = 1;
+
+            for (int i = 0; i < outputShape.Count; i++)
+            {
+                if (i > axis)
+                    innerSize *= outputShape[i];
+                else if (i < axis)
+                    outerSize *= outputShape[i];
+            }
+
+            return (innerSize, outerSize);
+        }
+
         private static void ValidateShape(Shape shape)
         {
             if (shape.Count > 4)

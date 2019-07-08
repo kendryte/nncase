@@ -38,7 +38,8 @@ namespace NnCase.Importer
                 { BuiltinOperator.ADD, ConvertAdd },
                 { BuiltinOperator.SUB, ConvertSub },
                 { BuiltinOperator.MUL, ConvertMul },
-                { BuiltinOperator.DIV, ConvertDiv }
+                { BuiltinOperator.DIV, ConvertDiv },
+                { BuiltinOperator.CONCATENATION, ConvertConcatenation }
             };
         }
 
