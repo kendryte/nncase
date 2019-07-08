@@ -101,6 +101,21 @@ namespace NnCase.IR
             return new Shape(shape);
         }
 
+        public static implicit operator Shape(Span<int> shape)
+        {
+            return new Shape(shape);
+        }
+
+        public static implicit operator Shape(ReadOnlyMemory<int> shape)
+        {
+            return new Shape(shape.Span);
+        }
+
+        public static implicit operator Shape(Memory<int> shape)
+        {
+            return new Shape(shape.Span);
+        }
+
         public static implicit operator Shape(int[] shape)
         {
             return new Shape(shape);

@@ -96,6 +96,11 @@ namespace NnCase.Cli
             var input = evaluator.InputAt<float>(0);
             batch.Buffer.Span.CopyTo(input);
             evaluator.Evaluate();
+
+            using (var sw = File.Create("0.bin"))
+            {
+                sw.Write(evaluator.OutputAt<byte>(0));
+            }
         }
     }
 }

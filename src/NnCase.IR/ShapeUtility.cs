@@ -23,6 +23,33 @@ namespace NnCase.IR
             return newShape;
         }
 
+        public static Shape NormalizeReshape(Shape inputShape, Shape shape)
+        {
+            var newShape = shape.Clone();
+
+            int shapeSize = 1;
+            int nonDetId = -1;
+            for (int i = 0; i < shape.Count; i++)
+            {
+                var v = shape[i];
+                if (v == -1)
+                {
+                    if (nonDetId != -1)
+                        throw new ArgumentException("Reshap can only have 1 non-determined dimension at most");
+                    nonDetId = i;
+                }
+                else
+                {
+                    shapeSize *= v;
+                }
+            }
+
+            if (nonDetId != -1)
+                newShape[nonDetId] = ComputeSize(inputShape) / shapeSize;
+
+            return newShape;
+        }
+
         public static Padding GetWindowedPadding(int input, int filter, int stride, int dilation, bool same)
         {
             return GetWindowedPadding(input, GetWindowedOutputSize(input, filter, stride, dilation, same), filter, stride, dilation);

@@ -30,7 +30,10 @@ namespace NnCase.Importer
 
             _lowerings = new Dictionary<BuiltinOperator, Action<Operator>>
             {
-                { BuiltinOperator.CONV_2D, ConvertConv2D }
+                { BuiltinOperator.CONV_2D, ConvertConv2D },
+                { BuiltinOperator.MAX_POOL_2D, ConvertMaxPool2D },
+                { BuiltinOperator.AVERAGE_POOL_2D, ConvertAveragePool2D },
+                { BuiltinOperator.RESHAPE, ConvertReshape }
             };
         }
 
@@ -124,6 +127,16 @@ namespace NnCase.Importer
                 var v = getter(i);
                 if (v.HasValue)
                     yield return v.Value;
+            }
+        }
+
+        private static IEnumerable<T> Vector<T>(Func<int, T> getter, int count)
+            where T : struct
+        {
+            for (int i = 0; i < count; i++)
+            {
+                var v = getter(i);
+                yield return v;
             }
         }
 

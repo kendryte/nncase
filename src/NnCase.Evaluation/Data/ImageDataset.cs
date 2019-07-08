@@ -20,8 +20,11 @@ namespace NnCase.Evaluation.Data
 
         private static bool FilterFileName(string fileName)
         {
+            var ext = Path.GetExtension(fileName);
+            if (string.IsNullOrEmpty(ext)) return false;
+
             var formatsManager = Configuration.Default.ImageFormatsManager;
-            var format = formatsManager.FindFormatByFileExtension(Path.GetExtension(fileName));
+            var format = formatsManager.FindFormatByFileExtension(ext);
             if (format == null) return false;
             var decoder = formatsManager.FindDecoder(format);
             return decoder != null;

@@ -16,7 +16,6 @@ namespace NnCase.Kernels
             var filterShape = new RuntimeShape(outputChannels, gic, filterH, filterW);
             var outShape = new RuntimeShape(inShape[0], outputChannels, outH, outW);
 
-
             for (int batch = 0; batch < inShape[0]; batch++)
             {
                 for (int og = 0; og < groups; og++)
@@ -29,9 +28,9 @@ namespace NnCase.Kernels
                             {
                                 int inYOrigin = (oy * strideH) - paddingH.Before;
                                 int inXOrigin = (ox * strideW) - paddingW.Before;
-                                int filterYStart = Math.Max(0, -inYOrigin);
+                                int filterYStart = Math.Max(0, (-inYOrigin + dilationH - 1) / dilationH);
                                 int filterYEnd = Math.Min(filterH, inShape[2] - inYOrigin);
-                                int filterXSstart = Math.Max(0, -inXOrigin);
+                                int filterXSstart = Math.Max(0, (-inXOrigin + dilationW - 1) / dilationW);
                                 int filterXEnd = Math.Min(filterW, inShape[3] - inXOrigin);
                                 float value = bias[oc];
 

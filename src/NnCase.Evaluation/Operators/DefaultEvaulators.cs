@@ -11,6 +11,8 @@ namespace NnCase.Evaluation.Operators
             RegisterPlaceholders(registry);
             RegisterTranspose(registry);
             RegisterConv2D(registry);
+            RegisterReduceWindow2D(registry);
+            RegisterReshape(registry);
         }
     }
 }
