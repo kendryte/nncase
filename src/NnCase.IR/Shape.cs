@@ -55,6 +55,18 @@ namespace NnCase.IR
             }
         }
 
+        public int CountIf(Func<int, bool> predicate)
+        {
+            int count = 0;
+            foreach (var v in this)
+            {
+                if (predicate(v))
+                    count++;
+            }
+
+            return count;
+        }
+
         public int Count { get; }
 
         public Shape(ReadOnlySpan<int> shape)
@@ -212,6 +224,17 @@ namespace NnCase.IR
         public Shape Clone()
         {
             return new Shape(this);
+        }
+
+        public bool Contains(int value)
+        {
+            foreach (var v in this)
+            {
+                if (v == value)
+                    return true;
+            }
+
+            return false;
         }
 
         public static bool operator ==(Shape left, Shape right)

@@ -15,6 +15,11 @@ namespace NnCase.Evaluation.Operators
             RegisterReshape(registry);
             RegisterBinary(registry);
             RegisterConcat(registry);
+            RegisterResizeNearestNeighbor(registry);
+            RegisterResizeBilinear(registry);
+            RegisterReduce(registry);
+            RegisterMatMul(registry);
+            RegisterSoftmax(registry);
         }
     }
 }

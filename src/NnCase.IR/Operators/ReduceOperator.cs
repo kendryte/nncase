@@ -12,6 +12,11 @@ namespace NnCase.IR.Operators
         Mean,
 
         /// <summary>
+        /// Min
+        /// </summary>
+        Min,
+
+        /// <summary>
         /// Max
         /// </summary>
         Max

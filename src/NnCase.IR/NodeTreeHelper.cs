@@ -24,5 +24,21 @@ namespace NnCase.IR
             child = null;
             return false;
         }
+
+        public static bool TryGetDirectParent<T>(Node node, out T parent)
+            where T : Node
+        {
+            foreach (var input in node.Inputs)
+            {
+                if (input.Connection?.Owner is T target)
+                {
+                    parent = target;
+                    return true;
+                }
+            }
+
+            parent = null;
+            return false;
+        }
     }
 }

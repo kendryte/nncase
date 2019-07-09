@@ -5,6 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\NnCase.Evaluation\NnCase.Evaluation.csproj" />
     <ProjectReference Include="..\NnCase.IR\NnCase.IR.csproj" />
   </ItemGroup>
 

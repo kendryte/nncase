@@ -24,9 +24,9 @@ namespace NnCase.Kernels
                             int inYOrigin = (oy * strideH) - paddingH.Before;
                             int inXOrigin = (ox * strideW) - paddingW.Before;
                             int filterYStart = Math.Max(0, (-inYOrigin + dilationH - 1) / dilationH);
-                            int filterYEnd = Math.Min(filterH, inShape[2] - inYOrigin);
+                            int filterYEnd = Math.Min(filterH, (inShape[2] - inYOrigin + dilationH - 1) / dilationH);
                             int filterXSstart = Math.Max(0, (-inXOrigin + dilationW - 1) / dilationW);
-                            int filterXEnd = Math.Min(filterW, inShape[3] - inXOrigin);
+                            int filterXEnd = Math.Min(filterW, (inShape[3] - inXOrigin + dilationW - 1) / dilationW);
                             float value = initialValue;
                             int kernelCount = 0;
 

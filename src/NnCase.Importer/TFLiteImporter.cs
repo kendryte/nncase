@@ -39,7 +39,14 @@ namespace NnCase.Importer
                 { BuiltinOperator.SUB, ConvertSub },
                 { BuiltinOperator.MUL, ConvertMul },
                 { BuiltinOperator.DIV, ConvertDiv },
-                { BuiltinOperator.CONCATENATION, ConvertConcatenation }
+                { BuiltinOperator.CONCATENATION, ConvertConcatenation },
+                { BuiltinOperator.RESIZE_NEAREST_NEIGHBOR, ConvertResizeNearestNeighbor },
+                { BuiltinOperator.RESIZE_BILINEAR, ConvertResizeBilinear },
+                { BuiltinOperator.REDUCE_MIN, ConvertReduceMin },
+                { BuiltinOperator.REDUCE_MAX, ConvertReduceMax },
+                { BuiltinOperator.MEAN, ConvertMean },
+                { BuiltinOperator.FULLY_CONNECTED, ConvertFullyConnected },
+                { BuiltinOperator.SOFTMAX, ConvertSoftmax }
             };
         }
 

@@ -29,6 +29,27 @@ namespace NnCase.IR
             return newShape;
         }
 
+        public static Shape NormalizeReduceAxis(Shape axis)
+        {
+            var sorted = axis.ToArray();
+            Array.Sort(sorted);
+            return sorted;
+        }
+
+        public static Shape GetReducedShape(Shape inputShape, Shape axis, bool keepDims)
+        {
+            var shape = new List<int>();
+            for (int i = 0; i < inputShape.Count; i++)
+            {
+                if (!axis.Contains(i))
+                    shape.Add(inputShape[i]);
+                else if (keepDims)
+                    shape.Add(1);
+            }
+
+            return new Shape(shape);
+        }
+
         public static Shape NormalizeReshape(Shape inputShape, Shape shape)
         {
             var newShape = shape.Clone();
