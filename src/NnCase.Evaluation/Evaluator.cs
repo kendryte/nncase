@@ -102,7 +102,7 @@ namespace NnCase.Evaluation
             return MemoryAt<T>(_outputs[index]);
         }
 
-        public void Evaluate(bool dumpDuration = false)
+        public void Evaluate(Quantizer quantizer = null, bool dumpDuration = false)
         {
             var stopwatch = new Stopwatch();
             var totalDuration = TimeSpan.Zero;
@@ -118,6 +118,15 @@ namespace NnCase.Evaluation
                 totalDuration += duration;
                 if (dumpDuration)
                     Console.WriteLine($"{node.GetType().Name}: {duration.TotalMilliseconds:F2} ms");
+
+                if (quantizer != null)
+                {
+                    if (node is FakeQuantize || node is FakeDequantize)
+                    {
+                        var output = node.Outputs[0];
+                        quantizer.Record(output, MemoryAt<float>(output));
+                    }
+                }
             }
 
             if (dumpDuration)

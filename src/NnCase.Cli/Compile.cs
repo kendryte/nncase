@@ -26,6 +26,7 @@ namespace NnCase.Cli
         {
             // 1. Import
             var graph = await ImportGraph(options);
+            var quantizer = new Quantizer();
             var target = new Targets.CPU.CPUTarget();
             target.RegisterEvaluators(EvaluatorRegistry.Default);
 
@@ -36,7 +37,10 @@ namespace NnCase.Cli
             OptimizePass2(graph, target);
 
             // 4. Quantize
-            await Quantize(options, graph);
+            await Quantize(options, graph, target, quantizer);
+
+            // 5. Simulate
+            await Simulate(options, graph);
         }
 
         private async Task<Graph> ImportGraph(Options options)
@@ -88,20 +92,30 @@ namespace NnCase.Cli
             DumpGraph(graph, "optimize_2");
         }
 
-        private async Task Quantize(Options options, Graph graph)
+        private async Task Quantize(Options options, Graph graph, Target target, Quantizer quantizer)
         {
             // 3.1. Add quantization checkpoints
-            AddQuantizationCheckpoints(graph);
+            AddQuantizationCheckpoints(graph, target);
 
             // 3.2 Get activation ranges
-            await GetActivationRanges(options, graph);
+            await GetActivationRanges(options, graph, quantizer);
+
+            // 3.3 Quantize graph
+            QuantizeGraph(graph, target, quantizer);
         }
 
-        private void AddQuantizationCheckpoints(Graph graph)
+        private void QuantizeGraph(Graph graph, Target target, Quantizer quantizer)
         {
+            target.QuantizeGraph(graph, quantizer);
+            DumpGraph(graph, "optimize_3");
         }
 
-        private async Task GetActivationRanges(Options options, Graph graph)
+        private void AddQuantizationCheckpoints(Graph graph, Target target)
+        {
+            target.AddQuantizationCheckpoints(graph);
+        }
+
+        private async Task GetActivationRanges(Options options, Graph graph, Quantizer quantizer)
         {
             var allocators = new Dictionary<MemoryType, MemoryAllocator>
             {
@@ -117,19 +131,42 @@ namespace NnCase.Cli
             var dataset = new ImageDataset(options.Dataset, graph.Inputs[0].Output.Shape, 0.0f, 1.0f);
             await foreach (var batch in dataset.GetBatchesAsync())
             {
-                EvaluateBatch(batch, evaluator);
+                EvaluateBatch(batch, evaluator, quantizer);
             }
         }
 
-        private void EvaluateBatch(DenseTensor<float> batch, Evaluator evaluator)
+        private void EvaluateBatch(DenseTensor<float> batch, Evaluator evaluator, Quantizer quantizer, bool dumpDuration = false, bool dumpOutput = false)
         {
             var input = evaluator.InputAt<float>(0);
             batch.Buffer.Span.CopyTo(input);
-            evaluator.Evaluate(dumpDuration: true);
+            evaluator.Evaluate(quantizer, dumpDuration: dumpDuration);
 
-            using (var sw = File.Create("0.bin"))
+            if (dumpOutput)
             {
-                sw.Write(evaluator.OutputAt<byte>(0));
+                using (var sw = File.Create("0.bin"))
+                {
+                    sw.Write(evaluator.OutputAt<byte>(0));
+                }
+            }
+        }
+
+        private async Task Simulate(Options options, Graph graph)
+        {
+            var allocators = new Dictionary<MemoryType, MemoryAllocator>
+            {
+                { MemoryType.Constant, new MemoryAllocator() },
+                { MemoryType.Main, new MemoryAllocator() }
+            };
+            var allocationContext = new AllocationContext(allocators);
+            var computeSequence = new List<Node>();
+            Scheduler.Schedule(graph.Outputs, allocationContext, computeSequence);
+
+            var evaluator = new Evaluator(allocators, allocationContext.Allocations, computeSequence, EvaluatorRegistry.Default);
+
+            var dataset = new ImageDataset(options.Dataset, graph.Inputs[0].Output.Shape, 0.0f, 1.0f);
+            await foreach (var batch in dataset.GetBatchesAsync())
+            {
+                EvaluateBatch(batch, evaluator, null, dumpOutput: true, dumpDuration: true);
             }
         }
     }

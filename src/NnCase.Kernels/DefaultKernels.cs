@@ -20,6 +20,32 @@ namespace NnCase.Kernels
             return Math.Clamp(value, range.Min, range.Max);
         }
 
+        public static long CarryShift(long value, int shift)
+        {
+            if (shift > 0)
+            {
+                value >>= shift - 1;
+                if ((value & 0x1) != 0)
+                {
+                    if (value < 0)
+                        value = (value >> 1) - 1;
+                    else
+                        value = (value >> 1) + 1;
+                }
+                else
+                {
+                    value >>= 1;
+                }
+            }
+
+            return value;
+        }
+
+        public static int MulAndCarryShift(int value, int mul, int shift)
+        {
+            return (int)CarryShift((long)value * mul, shift);
+        }
+
         public static Exception ThrowUnsupportedDataType()
         {
             return new NotSupportedException("Unsupported datatype");

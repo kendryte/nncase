@@ -11,7 +11,31 @@ namespace NnCase.Targets
     {
         public void OptimizePass2(Graph graph)
         {
-            var transforms = new List<Transform>
+            var transforms = GetDefaultTransforms();
+
+            AddOptimize2Transforms(transforms);
+            Transform.TransformGraph(graph, transforms);
+        }
+
+        public void AddQuantizationCheckpoints(Graph graph)
+        {
+            var transforms = GetDefaultTransforms();
+
+            AddQuantizationCheckpointsTransforms(transforms);
+            Transform.TransformGraph(graph, transforms);
+        }
+
+        public void QuantizeGraph(Graph graph, Quantizer quantizer)
+        {
+            var transforms = GetDefaultTransforms();
+
+            AddQuantizeTransforms(transforms, quantizer);
+            Transform.TransformGraph(graph, transforms);
+        }
+
+        private List<Transform> GetDefaultTransforms()
+        {
+            return new List<Transform>
             {
                 new FoldTransposeTransform(),
                 new FoldNopTransposeTransform(),
@@ -19,11 +43,9 @@ namespace NnCase.Targets
                 new ConstantFoldingTransform(),
                 new TransposeBinaryMotionTransform(),
                 new TransposeConcatMotionTransform(),
-                new TransposeReduceMotionTransform()
+                new TransposeReduceMotionTransform(),
+                new FoldQuantizeTransform()
             };
-
-            AddOptimize2Transforms(transforms);
-            Transform.TransformGraph(graph, transforms);
         }
 
         public virtual void RegisterEvaluators(EvaluatorRegistry registry)
@@ -31,6 +53,14 @@ namespace NnCase.Targets
         }
 
         protected virtual void AddOptimize2Transforms(List<Transform> transforms)
+        {
+        }
+
+        protected virtual void AddQuantizationCheckpointsTransforms(List<Transform> transforms)
+        {
+        }
+
+        protected virtual void AddQuantizeTransforms(List<Transform> transforms, Quantizer quantizer)
         {
         }
     }

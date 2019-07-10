@@ -25,5 +25,21 @@ namespace NnCase.Targets.CPU
         {
             CPUEvaulators.Register(registry);
         }
+
+        protected override void AddQuantizationCheckpointsTransforms(List<Transform> transforms)
+        {
+            transforms.AddRange(new Transform[]
+            {
+                new AddCPUQuantizeCheckpointTransform()
+            });
+        }
+
+        protected override void AddQuantizeTransforms(List<Transform> transforms, Quantizer quantizer)
+        {
+            transforms.AddRange(new Transform[]
+            {
+                new CPUQuantizedConv2DTransform(quantizer)
+            });
+        }
     }
 }

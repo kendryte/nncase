@@ -10,6 +10,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\C.math\C.math.csproj" />
     <ProjectReference Include="..\NnCase.Core\NnCase.Core.csproj" />
     <ProjectReference Include="..\NnCase.IR\NnCase.IR.csproj" />
     <ProjectReference Include="..\NnCase.Kernels\NnCase.Kernels.csproj" />

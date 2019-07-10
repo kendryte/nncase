@@ -20,6 +20,8 @@ namespace NnCase.Evaluation.Operators
             RegisterReduce(registry);
             RegisterMatMul(registry);
             RegisterSoftmax(registry);
+            RegisterFakeQuantize(registry);
+            RegisterQuantize(registry);
         }
     }
 }
