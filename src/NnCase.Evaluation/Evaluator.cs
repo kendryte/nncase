@@ -102,7 +102,7 @@ namespace NnCase.Evaluation
             return MemoryAt<T>(_outputs[index]);
         }
 
-        public void Evaluate()
+        public void Evaluate(bool dumpDuration = false)
         {
             var stopwatch = new Stopwatch();
             var totalDuration = TimeSpan.Zero;
@@ -116,10 +116,12 @@ namespace NnCase.Evaluation
 
                 var duration = stopwatch.Elapsed;
                 totalDuration += duration;
-                Console.WriteLine($"{node.GetType().Name}: {duration.TotalMilliseconds:F2} ms");
+                if (dumpDuration)
+                    Console.WriteLine($"{node.GetType().Name}: {duration.TotalMilliseconds:F2} ms");
             }
 
-            Console.WriteLine($"Total: {totalDuration.TotalMilliseconds:F2} ms");
+            if (dumpDuration)
+                Console.WriteLine($"Total: {totalDuration.TotalMilliseconds:F2} ms");
         }
 
         private void InitializeConstant(Constant constant)

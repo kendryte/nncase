@@ -24,6 +24,7 @@
   <ItemGroup>
     <ProjectReference Include="..\NnCase.Evaluation\NnCase.Evaluation.csproj" />
     <ProjectReference Include="..\NnCase.Importer\NnCase.Importer.csproj" />
+    <ProjectReference Include="..\NnCase.Targets.CPU\NnCase.Targets.CPU.csproj" />
     <ProjectReference Include="..\NnCase.Transforms\NnCase.Transforms.csproj" />
   </ItemGroup>
 

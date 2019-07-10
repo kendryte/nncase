@@ -8,6 +8,7 @@ using NnCase.Evaluation;
 using NnCase.Evaluation.Data;
 using NnCase.Importer;
 using NnCase.IR;
+using NnCase.Targets;
 using NnCase.Transforms;
 
 namespace NnCase.Cli
@@ -25,11 +26,16 @@ namespace NnCase.Cli
         {
             // 1. Import
             var graph = await ImportGraph(options);
+            var target = new Targets.CPU.CPUTarget();
+            target.RegisterEvaluators(EvaluatorRegistry.Default);
 
-            // 2. Optimize Pass 1
+            // 2. Optimize Pass 1 (Generic)
             OptimizePass1(graph);
 
-            // 3. Quantize
+            // 3. Optimize Pass 2 (Target aware)
+            OptimizePass2(graph, target);
+
+            // 4. Quantize
             await Quantize(options, graph);
         }
 
@@ -76,6 +82,12 @@ namespace NnCase.Cli
             }
         }
 
+        private void OptimizePass2(Graph graph, Target target)
+        {
+            target.OptimizePass2(graph);
+            DumpGraph(graph, "optimize_2");
+        }
+
         private async Task Quantize(Options options, Graph graph)
         {
             // 3.1. Add quantization checkpoints
@@ -113,7 +125,7 @@ namespace NnCase.Cli
         {
             var input = evaluator.InputAt<float>(0);
             batch.Buffer.Span.CopyTo(input);
-            evaluator.Evaluate();
+            evaluator.Evaluate(dumpDuration: true);
 
             using (var sw = File.Create("0.bin"))
             {

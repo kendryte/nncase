@@ -1,0 +1,18 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.Numerics.Tensors" Version="0.2.0-preview6.19303.8" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NnCase.IR\NnCase.IR.csproj" />
+    <ProjectReference Include="..\NnCase.Kernels\NnCase.Kernels.csproj" />
+    <ProjectReference Include="..\NnCase.Targets\NnCase.Targets.csproj" />
+    <ProjectReference Include="..\NnCase.Transforms\NnCase.Transforms.csproj" />
+  </ItemGroup>
+
+</Project>
