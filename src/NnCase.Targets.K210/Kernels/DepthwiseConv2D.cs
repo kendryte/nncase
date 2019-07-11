@@ -76,7 +76,7 @@ namespace NnCase.Targets.K210.Kernels
                                     int inX = inXOrigin + kx;
 
                                     float inV = inBatch[(oc * inShape[2] + inY) * inShape[3] + inX];
-                                    float w = wOC[(oc * 3 + ky) * 3 + kx];
+                                    float w = wOC[ky * 3 + kx];
 
                                     value += inV * w;
                                 }

@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace NnCase
 {
     [DebuggerDisplay("{DebuggerDisplay}")]
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
     public unsafe struct RuntimeShape
     {
         private fixed int _dims[4];

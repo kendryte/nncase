@@ -14,7 +14,8 @@ namespace NnCase.Transforms
 
         protected override bool OnTryMatch(Node node, TransformContext context)
         {
-            if (node.Inputs.Any() && node.Inputs.All(x => x.Connection.Owner is Constant))
+            if (node.Inputs.Any() && node.Inputs.All(x => x.Connection.Owner is Constant) &&
+                node.Outputs.All(x => x.MemoryType == MemoryType.Constant || x.MemoryType == MemoryType.Main))
             {
                 context.Outputs.AddRange(node.Outputs);
                 context.MatchedNodes.Add(node);

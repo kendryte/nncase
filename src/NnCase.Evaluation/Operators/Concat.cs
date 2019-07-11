@@ -18,7 +18,7 @@ namespace NnCase.Evaluation.Operators
                 var output = e.MemoryAt<byte>(n.Output);
 
                 (var innerSize, var outerSize) = OpUtility.GetConcatParams(n.Output.Shape, ShapeUtility.GetBytes(n.Output.Type), n.Axis);
-                DefaultKernels.Concat(inputs, output, n.Inputs.Select(x => x.Shape[n.Axis]).ToList(), innerSize, outerSize);
+                DefaultKernels.Concat(inputs, output, n.Inputs.Select(x => x.Shape[n.Axis]).ToArray(), innerSize, outerSize);
             });
         }
     }

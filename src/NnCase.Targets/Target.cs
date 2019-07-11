@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using NnCase.CodeGen;
 using NnCase.Evaluation;
 using NnCase.IR;
 using NnCase.Transforms;
@@ -50,6 +51,16 @@ namespace NnCase.Targets
         }
 
         public virtual void RegisterEvaluators(EvaluatorRegistry registry)
+        {
+        }
+
+        public virtual void AddAllocators(Dictionary<MemoryType, MemoryAllocator> allocators)
+        {
+            allocators.Add(MemoryType.Constant, new MemoryAllocator());
+            allocators.Add(MemoryType.Main, new MemoryAllocator());
+        }
+
+        public virtual void RegisterEmitters(CodeGenRegistry registry)
         {
         }
 

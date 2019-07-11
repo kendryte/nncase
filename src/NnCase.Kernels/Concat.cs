@@ -7,7 +7,7 @@ namespace NnCase.Kernels
 {
     public static partial class DefaultKernels
     {
-        public static void Concat(IReadOnlyList<ReadOnlyMemory<byte>> inputs, Span<byte> output, IReadOnlyList<int> concatDimensions, int innerSize, int outerSize)
+        public static void Concat(IReadOnlyList<ReadOnlyMemory<byte>> inputs, Span<byte> output, ReadOnlySpan<int> concatDimensions, int innerSize, int outerSize)
         {
             var outIdx = 0;
             for (int oc = 0; oc < outerSize; oc++)

@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Text;
 
 namespace NnCase
 {
+    [StructLayout(LayoutKind.Sequential, Pack = 8)]
     public unsafe struct Scalar
     {
         public const int MaxValueSize = 8;

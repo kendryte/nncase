@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace NnCase.IR.Operators
+namespace NnCase
 {
     public enum ReduceOperator
     {

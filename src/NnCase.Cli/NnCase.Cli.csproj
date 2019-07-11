@@ -22,6 +22,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\NnCase.CodeGen\NnCase.CodeGen.csproj" />
     <ProjectReference Include="..\NnCase.Evaluation\NnCase.Evaluation.csproj" />
     <ProjectReference Include="..\NnCase.Importer\NnCase.Importer.csproj" />
     <ProjectReference Include="..\NnCase.Targets.CPU\NnCase.Targets.CPU.csproj" />

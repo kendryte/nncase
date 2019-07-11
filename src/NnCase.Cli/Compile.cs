@@ -4,6 +4,7 @@ using System.IO;
 using System.Numerics.Tensors;
 using System.Text;
 using System.Threading.Tasks;
+using NnCase.CodeGen;
 using NnCase.Evaluation;
 using NnCase.Evaluation.Data;
 using NnCase.Importer;
@@ -40,7 +41,10 @@ namespace NnCase.Cli
             // await Quantize(options, graph, target, quantizer);
 
             // 5. Simulate
-            await Simulate(options, graph);
+            await Simulate(options, graph, target);
+
+            // 6. CodeGen
+            GenerateCode(options, graph, target);
         }
 
         private async Task<Graph> ImportGraph(Options options)
@@ -98,7 +102,7 @@ namespace NnCase.Cli
             AddQuantizationCheckpoints(graph, target);
 
             // 3.2 Get activation ranges
-            await GetActivationRanges(options, graph, quantizer);
+            await GetActivationRanges(options, graph, target, quantizer);
 
             // 3.3 Quantize graph
             QuantizeGraph(graph, target, quantizer);
@@ -115,13 +119,10 @@ namespace NnCase.Cli
             target.AddQuantizationCheckpoints(graph);
         }
 
-        private async Task GetActivationRanges(Options options, Graph graph, Quantizer quantizer)
+        private async Task GetActivationRanges(Options options, Graph graph, Target target, Quantizer quantizer)
         {
-            var allocators = new Dictionary<MemoryType, MemoryAllocator>
-            {
-                { MemoryType.Constant, new MemoryAllocator() },
-                { MemoryType.Main, new MemoryAllocator() }
-            };
+            var allocators = new Dictionary<MemoryType, MemoryAllocator>();
+            target.AddAllocators(allocators);
             var allocationContext = new AllocationContext(allocators);
             var computeSequence = new List<Node>();
             Scheduler.Schedule(graph.Outputs, allocationContext, computeSequence);
@@ -150,13 +151,10 @@ namespace NnCase.Cli
             }
         }
 
-        private async Task Simulate(Options options, Graph graph)
+        private async Task Simulate(Options options, Graph graph, Target target)
         {
-            var allocators = new Dictionary<MemoryType, MemoryAllocator>
-            {
-                { MemoryType.Constant, new MemoryAllocator() },
-                { MemoryType.Main, new MemoryAllocator() }
-            };
+            var allocators = new Dictionary<MemoryType, MemoryAllocator>();
+            target.AddAllocators(allocators);
             var allocationContext = new AllocationContext(allocators);
             var computeSequence = new List<Node>();
             Scheduler.Schedule(graph.Outputs, allocationContext, computeSequence);
@@ -168,6 +166,18 @@ namespace NnCase.Cli
             {
                 EvaluateBatch(batch, evaluator, null, dumpOutput: true, dumpDuration: true);
             }
+        }
+
+        private void GenerateCode(Options options, Graph graph, Target target)
+        {
+            var allocators = new Dictionary<MemoryType, MemoryAllocator>();
+            target.AddAllocators(allocators);
+            var allocationContext = new AllocationContext(allocators);
+            var computeSequence = new List<Node>();
+            Scheduler.Schedule(graph.Outputs, allocationContext, computeSequence);
+
+            var generator = new Generator(allocators, allocationContext.Allocations, computeSequence, CodeGenRegistry.Default);
+            generator.Generate(File.Create(options.Output));
         }
     }
 }
