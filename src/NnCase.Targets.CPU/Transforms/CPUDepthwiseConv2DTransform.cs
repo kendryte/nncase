@@ -17,10 +17,13 @@ namespace NnCase.Targets.CPU.Transforms
             {
                 if (conv2d.Groups == conv2d.Input.Shape[1])
                 {
-                    context.Inputs.Add(conv2d.Input);
-                    context.Outputs.Add(conv2d.Output);
-                    context.MatchedNodes.Add(conv2d);
-                    return true;
+                    if (NodeTreeHelper.TryGetDirectParent<Transpose>(conv2d, out _))
+                    {
+                        context.Inputs.Add(conv2d.Input);
+                        context.Outputs.Add(conv2d.Output);
+                        context.MatchedNodes.Add(conv2d);
+                        return true;
+                    }
                 }
             }
 

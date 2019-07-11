@@ -14,7 +14,6 @@ namespace NnCase.Kernels
             var gic = inShape[1] / groups;
             var goc = outputChannels / groups;
             var filterShape = new RuntimeShape(outputChannels, gic, filterH, filterW);
-            var outShape = new RuntimeShape(inShape[0], outputChannels, outH, outW);
             int outputIdx = 0;
 
             for (int batch = 0; batch < inShape[0]; batch++)

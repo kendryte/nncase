@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 
-namespace NnCase.IR
+namespace NnCase
 {
     public enum DataType
     {

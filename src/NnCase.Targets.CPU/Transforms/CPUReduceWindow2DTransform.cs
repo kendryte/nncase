@@ -15,10 +15,13 @@ namespace NnCase.Targets.CPU.Transforms
         {
             if (node is ReduceWindow2D reduce2D)
             {
-                context.Inputs.Add(reduce2D.Input);
-                context.Outputs.Add(reduce2D.Output);
-                context.MatchedNodes.Add(reduce2D);
-                return true;
+                if (NodeTreeHelper.TryGetDirectParent<Transpose>(reduce2D, out _))
+                {
+                    context.Inputs.Add(reduce2D.Input);
+                    context.Outputs.Add(reduce2D.Output);
+                    context.MatchedNodes.Add(reduce2D);
+                    return true;
+                }
             }
 
             return false;

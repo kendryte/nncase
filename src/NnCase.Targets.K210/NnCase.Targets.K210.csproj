@@ -1,0 +1,15 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp3.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\NnCase.Targets.CPU\NnCase.Targets.CPU.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="IR\Operators\" />
+  </ItemGroup>
+
+</Project>

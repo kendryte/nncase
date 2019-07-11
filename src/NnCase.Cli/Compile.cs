@@ -27,7 +27,7 @@ namespace NnCase.Cli
             // 1. Import
             var graph = await ImportGraph(options);
             var quantizer = new Quantizer();
-            var target = new Targets.CPU.CPUTarget();
+            var target = new Targets.K210.K210Target();
             target.RegisterEvaluators(EvaluatorRegistry.Default);
 
             // 2. Optimize Pass 1 (Generic)
@@ -37,7 +37,7 @@ namespace NnCase.Cli
             OptimizePass2(graph, target);
 
             // 4. Quantize
-            await Quantize(options, graph, target, quantizer);
+            // await Quantize(options, graph, target, quantizer);
 
             // 5. Simulate
             await Simulate(options, graph);

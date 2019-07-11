@@ -21,6 +21,18 @@ namespace NnCase.IR
             return axis >= 0 ? axis : ranks + axis;
         }
 
+        public static Shape GetPaddedShape(Shape inputShape, IReadOnlyList<Padding> paddings)
+        {
+            if (inputShape.Count != paddings.Count)
+                throw new ArgumentException("Paddings rank must be same with input rank");
+
+            var newShape = inputShape.ToArray();
+            for (int i = 0; i < newShape.Length; i++)
+                newShape[i] += paddings[i].Sum;
+
+            return newShape;
+        }
+
         public static Shape GetTransposedShape(Shape inputShape, Shape perm)
         {
             var newShape = inputShape.Clone();

@@ -40,6 +40,8 @@ namespace NnCase.IR
             {
                 if (index >= Count)
                     throw new ArgumentOutOfRangeException(nameof(index));
+                if (value <= 0)
+                    throw new ArgumentOutOfRangeException(nameof(value), "Dimensions must be positive");
 
                 if (Count <= MaxSmallSize)
                 {

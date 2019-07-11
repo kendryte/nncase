@@ -22,6 +22,7 @@ namespace NnCase.Evaluation.Operators
             RegisterSoftmax(registry);
             RegisterFakeQuantize(registry);
             RegisterQuantize(registry);
+            RegisterPad(registry);
         }
     }
 }

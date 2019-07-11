@@ -5,7 +5,7 @@ using System.Text;
 
 namespace NnCase
 {
-    [DebuggerDisplay("{{Before}, {After}}")]
+    [DebuggerDisplay("({Before}, {After})")]
     public struct Padding
     {
         public int Before { get; set; }
@@ -13,5 +13,7 @@ namespace NnCase
         public int After { get; set; }
 
         public int Sum => Before + After;
+
+        public static readonly Padding Zero = default;
     }
 }

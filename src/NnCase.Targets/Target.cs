@@ -40,6 +40,7 @@ namespace NnCase.Targets
                 new FoldTransposeTransform(),
                 new FoldNopTransposeTransform(),
                 new FoldNopReshapeTransform(),
+                new FoldNopPadTransform(),
                 new ConstantFoldingTransform(),
                 new TransposeBinaryMotionTransform(),
                 new TransposeConcatMotionTransform(),

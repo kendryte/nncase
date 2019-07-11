@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 using System.Text;
 
-namespace NnCase.IR
+namespace NnCase
 {
     public unsafe struct Scalar
     {
