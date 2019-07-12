@@ -15,4 +15,15 @@ conan_cmake_run(CONANFILE conanfile.txt
                 BASIC_SETUP CMAKE_TARGETS
                 BUILD missing)
 
+set(THIRD_PARTY ${CMAKE_CURRENT_LIST_DIR}/third_party)
+
+if (MSVC_VERSION GREATER_EQUAL "1900")
+    include(CheckCXXCompilerFlag)
+    CHECK_CXX_COMPILER_FLAG("/std:c++latest" _cpp_latest_flag_supported)
+    if (_cpp_latest_flag_supported)
+        add_compile_options("/std:c++latest")
+        add_definitions(/D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS)
+    endif()
+endif()
+
 add_subdirectory ("src/NnCase.Runtime.Native")

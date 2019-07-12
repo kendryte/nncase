@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Text;
 using NnCase.Evaluation;
+using NnCase.Evaluation.Operators;
 using NnCase.IR;
 using NnCase.IR.Operators;
 using NnCase.Runtime;
@@ -18,6 +19,7 @@ namespace NnCase.CodeGen
         private readonly IReadOnlyDictionary<OutputConnector, MemoryAllocation> _allocations;
         private readonly IReadOnlyList<Node> _computeSequence;
         private readonly CodeGenRegistry _codeGenRegistry;
+        private readonly List<RuntimeShape> _inputShapes = new List<RuntimeShape>();
         private readonly List<MemoryRange> _inputs = new List<MemoryRange>();
         private readonly List<MemoryRange> _outputs = new List<MemoryRange>();
         private readonly Memory<byte> _constants;
@@ -38,6 +40,7 @@ namespace NnCase.CodeGen
                 {
                     case InputNode i:
                         _inputs.Add(MemoryRange(i.Output));
+                        _inputShapes.Add(OpUtility.To(i.Output.Shape));
                         break;
                     case OutputNode o:
                         _outputs.Add(MemoryRange(o.Input.Connection));
@@ -82,6 +85,7 @@ namespace NnCase.CodeGen
         {
             // inputs
             writer.Write(_inputs);
+            writer.Write(_inputShapes);
             // outputs
             writer.Write(_outputs);
             // nodes

@@ -6,6 +6,7 @@ namespace NnCase.Runtime
 {
     public enum TargetId
     {
-        K210
+        CPU = 0,
+        K210 = 1
     }
 }
