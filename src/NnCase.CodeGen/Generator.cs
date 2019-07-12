@@ -88,6 +88,8 @@ namespace NnCase.CodeGen
             writer.Write(_inputShapes);
             // outputs
             writer.Write(_outputs);
+            // constants
+            writer.Write(_constants.Span);
             // nodes
             var nodeHeadersPos = writer.Position;
             var reserved = Unsafe.SizeOf<NodeHeader>() * _nodesCount;

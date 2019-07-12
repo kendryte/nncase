@@ -17,6 +17,7 @@ namespace runtime
 
         size_t inputs_size() const noexcept { return model_header_->inputs; }
         size_t outputs_size() const noexcept { return model_header_->outputs; }
+        size_t nodes_size() const noexcept { return model_header_->nodes; }
 
         const runtime_shape_t &input_shape_at(size_t index) const noexcept { return input_shapes_.at(index); }
         const memory_range &input_at(size_t index) const noexcept { return inputs_[index]; }
@@ -40,6 +41,10 @@ namespace runtime
         xtl::span<const memory_range> inputs_;
         xtl::span<const memory_range> outputs_;
         xtl::span<const runtime_shape_t> input_shapes_;
+        xtl::span<const node_header> node_headers_;
+        xtl::span<const uint8_t> constants_;
+        const uint8_t *node_body_start_;
+        run_callback_t run_callback_;
     };
 }
 }
