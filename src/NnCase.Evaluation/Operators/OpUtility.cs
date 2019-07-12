@@ -19,6 +19,17 @@ namespace NnCase.Evaluation.Operators
             return rtShape;
         }
 
+        public static RuntimePaddings To(IReadOnlyList<Padding> paddings)
+        {
+            var inExt = 4 - paddings.Count;
+            var rtPaddings = new RuntimePaddings();
+            for (int i = 0; i < inExt; i++)
+                rtPaddings[i] = Padding.Zero;
+            for (int i = inExt; i < 4; i++)
+                rtPaddings[i] = paddings[i - inExt];
+            return rtPaddings;
+        }
+
         public static (RuntimeShape rtInShape, RuntimeShape rtPerm) ExtendTransposeShape(Shape inShape, Shape perm)
         {
             ValidateShape(inShape);

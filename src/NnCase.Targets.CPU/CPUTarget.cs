@@ -1,8 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using NnCase.CodeGen;
 using NnCase.Evaluation;
 using NnCase.IR;
+using NnCase.Targets.CPU.CodeGen.Operators;
 using NnCase.Targets.CPU.Evaluation.Operators;
 using NnCase.Targets.CPU.Transforms;
 using NnCase.Transforms;
@@ -24,6 +26,11 @@ namespace NnCase.Targets.CPU
         public override void RegisterEvaluators(EvaluatorRegistry registry)
         {
             CPUEvaulators.Register(registry);
+        }
+
+        public override void RegisterEmitters(CodeGenRegistry registry)
+        {
+            CPUEmitters.Register(registry);
         }
 
         protected override void AddQuantizationCheckpointsTransforms(List<Transform> transforms)

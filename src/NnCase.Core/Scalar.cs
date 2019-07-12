@@ -6,10 +6,10 @@ using System.Text;
 
 namespace NnCase
 {
-    [StructLayout(LayoutKind.Sequential, Pack = 8)]
+    [StructLayout(LayoutKind.Sequential, Pack = 4)]
     public unsafe struct Scalar
     {
-        public const int MaxValueSize = 8;
+        public const int MaxValueSize = 4;
 
         public DataType Type { get; }
 

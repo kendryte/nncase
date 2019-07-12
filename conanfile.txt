@@ -1,0 +1,10 @@
+[generators]
+cmake
+
+[requires]
+opencv/4.1.0@conan/stable
+range-v3/0.5.0@ericniebler/stable
+
+[options]
+
+[imports]

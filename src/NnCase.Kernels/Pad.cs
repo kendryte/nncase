@@ -7,7 +7,7 @@ namespace NnCase.Kernels
 {
     public static partial class DefaultKernels
     {
-        public static void Pad(int elementSize, ReadOnlySpan<byte> input, Span<byte> output, in RuntimeShape inShape, ReadOnlySpan<Padding> paddings, in Scalar padValue)
+        public static void Pad(int elementSize, ReadOnlySpan<byte> input, Span<byte> output, in RuntimeShape inShape, in RuntimePaddings paddings, in Scalar padValue)
         {
             switch (elementSize)
             {
@@ -25,7 +25,7 @@ namespace NnCase.Kernels
             }
         }
 
-        private static void PadImpl<T>(ReadOnlySpan<T> input, Span<T> output, in RuntimeShape inShape, ReadOnlySpan<Padding> paddings, T padValue)
+        private static void PadImpl<T>(ReadOnlySpan<T> input, Span<T> output, in RuntimeShape inShape, in RuntimePaddings paddings, T padValue)
         {
             var outShape = new RuntimeShape(inShape[0] + paddings[0].Sum, inShape[1] + paddings[1].Sum, inShape[2] + paddings[2].Sum, inShape[3] + paddings[3].Sum);
             int outIdx = 0;

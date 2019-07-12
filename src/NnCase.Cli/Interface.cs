@@ -17,6 +17,9 @@ namespace NnCase.Cli
         [Option('o', "output-format", Required = true, HelpText = "Set the input format.")]
         public string OutputFormat { get; set; }
 
+        [Option('t', "target", Required = true, HelpText = "Target", Default = "k210")]
+        public string Target { get; set; }
+
         [Option("dataset", Required = false, HelpText = "Dataset path")]
         public string Dataset { get; set; }
 

@@ -47,6 +47,13 @@ namespace NnCase.Runtime
                 Write(item);
         }
 
+        public void AlignPosition(int alignment)
+        {
+            var rem = Position % alignment;
+            if (rem != 0)
+                Position += alignment - rem;
+        }
+
         public void Dispose()
         {
             _writer.Dispose();

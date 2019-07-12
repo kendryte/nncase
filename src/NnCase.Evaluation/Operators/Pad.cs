@@ -18,7 +18,7 @@ namespace NnCase.Evaluation.Operators
                 var output = e.MemoryAt<byte>(n.Output);
 
                 var elementSize = ShapeUtility.GetBytes(n.Input.Type);
-                DefaultKernels.Pad(elementSize, input, output, OpUtility.To(n.Input.Shape), n.Paddings.ToArray(), n.PadValue);
+                DefaultKernels.Pad(elementSize, input, output, OpUtility.To(n.Input.Shape), OpUtility.To(n.Paddings), n.PadValue);
             });
         }
     }

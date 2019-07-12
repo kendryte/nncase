@@ -104,6 +104,7 @@ namespace NnCase.CodeGen
                 {
                     var start = writer.Position;
                     body.Serialize(writer);
+                    writer.AlignPosition(8);
                     var size = writer.Position - start;
                     nodeHeaders.Add(new NodeHeader { OpCode = body.OpCode, BodySize = (int)size });
                 }

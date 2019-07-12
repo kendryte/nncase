@@ -14,6 +14,14 @@ namespace NnCase.CodeGen.Operators
             RegisterConcat(registry);
             RegisterConv2D(registry);
             RegisterDequantize(registry);
+            RegisterMatMul(registry);
+            RegisterPad(registry);
+            RegisterQuantize(registry);
+            RegisterReduce(registry);
+            RegisterReduceWindow2D(registry);
+            RegisterReshape(registry);
+            RegisterSoftmax(registry);
+            RegisterTranspose(registry);
         }
     }
 }

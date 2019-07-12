@@ -28,8 +28,9 @@ namespace NnCase.Cli
             // 1. Import
             var graph = await ImportGraph(options);
             var quantizer = new Quantizer();
-            var target = new Targets.K210.K210Target();
+            var target = CreateTarget(options);
             target.RegisterEvaluators(EvaluatorRegistry.Default);
+            target.RegisterEmitters(CodeGenRegistry.Default);
 
             // 2. Optimize Pass 1 (Generic)
             OptimizePass1(graph);
@@ -45,6 +46,19 @@ namespace NnCase.Cli
 
             // 6. CodeGen
             GenerateCode(options, graph, target);
+        }
+
+        private Target CreateTarget(Options options)
+        {
+            switch (options.Target)
+            {
+                case "cpu":
+                    return new Targets.CPU.CPUTarget();
+                case "k210":
+                    return new Targets.K210.K210Target();
+                default:
+                    throw new NotSupportedException($"Unsupported target: {options.Target}");
+            }
         }
 
         private async Task<Graph> ImportGraph(Options options)
