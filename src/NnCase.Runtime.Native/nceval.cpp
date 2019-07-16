@@ -53,6 +53,9 @@ struct eval_context
         if (!interp.try_load_model(model.data()))
             throw std::runtime_error("Invalid model");
 
+        if (!std::filesystem::exists(options.output_path))
+            std::filesystem::create_directories(options.output_path);
+
         auto in_shape = interp.input_shape_at(0);
         xt::dynamic_shape<size_t> shape { (size_t)in_shape[0], (size_t)in_shape[1], (size_t)in_shape[2], (size_t)in_shape[3] };
         image_dataset dataset(options.dataset, shape, 0.f, 1.f);
@@ -65,6 +68,7 @@ struct eval_context
             interp.run(done_thunk, on_error_thunk, node_profile_thunk, this);
 
             std::filesystem::path out_filename(options.output_path);
+
             out_filename /= it->filenames[0].filename();
             out_filename.replace_extension(".bin");
 

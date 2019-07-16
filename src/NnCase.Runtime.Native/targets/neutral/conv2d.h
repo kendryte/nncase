@@ -42,6 +42,7 @@ namespace targets
                 reader.read(stride_w);
                 reader.read(dilation_h);
                 reader.read(dilation_w);
+                reader.read(fused_activation);
                 reader.read_span(weights, out_channels * in_shape[1] / groups * filter_h * filter_w);
                 reader.read_span(bias, out_channels);
             }
