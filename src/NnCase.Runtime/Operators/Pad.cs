@@ -10,6 +10,8 @@ namespace NnCase.Runtime.Operators
 
         public MemoryRange Output { get; set; }
 
+        public RuntimeShape InputShape { get; set; }
+
         public RuntimePaddings Paddings { get; set; }
 
         public Scalar PadValue { get; set; }

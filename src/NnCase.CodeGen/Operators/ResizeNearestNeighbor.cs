@@ -21,9 +21,9 @@ namespace NnCase.CodeGen.Operators
                     {
                         Input = g.MemoryRange(n.Input),
                         Output = g.MemoryRange(n.Output),
+                        InputShape = OpUtility.To(n.Input.Shape),
                         OutputHeight = n.OutputHeight,
                         OutputWidth = n.OutputWidth,
-                        ElementSize = ShapeUtility.GetBytes(n.Input.Type),
                         AlignCorners = n.AlignCorners
                     }
                 };

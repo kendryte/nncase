@@ -13,8 +13,6 @@ namespace NnCase.Runtime.Operators
         public RuntimeShape InputShape { get; set; }
 
         public RuntimeShape Perm { get; set; }
-
-        public int ElementSize { get; set; }
     }
 
     public class TransposeOptionsBody : SimpleNodeBody<TransposeOptions>

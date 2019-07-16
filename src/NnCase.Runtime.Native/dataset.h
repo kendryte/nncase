@@ -39,7 +39,7 @@ namespace data
                 if (value_)
                     from_ += dataset_->batch_size();
                 else
-                    *this = dataset_->end();
+                    *this = dataset_->end<T>();
                 return *this;
             }
 
@@ -54,6 +54,14 @@ namespace data
             {
                 if (value_)
                     return *value_;
+
+                throw std::runtime_error("Invalid datast iterator");
+            }
+
+            data_batch<T> *operator->()
+            {
+                if (value_)
+                    return &value_.value();
 
                 throw std::runtime_error("Invalid datast iterator");
             }

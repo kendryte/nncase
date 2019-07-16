@@ -25,8 +25,7 @@ namespace NnCase.CodeGen.Operators
                         Input = g.MemoryRange(n.Input),
                         Output = g.MemoryRange(n.Output),
                         InputShape = rtInShape,
-                        Perm = rtPerm,
-                        ElementSize = elementSize
+                        Perm = rtPerm
                     }
                 };
             });

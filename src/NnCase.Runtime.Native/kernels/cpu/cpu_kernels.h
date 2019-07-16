@@ -1,0 +1,158 @@
+#pragma once
+#include "../utils.h"
+#include <runtime/op_utility.h>
+
+namespace nncase
+{
+namespace kernels
+{
+    namespace cpu
+    {
+        inline void conv2d(const float *input, float *output, const float *weights, const float *bias, const runtime_shape_t &in_shape,
+            int32_t out_channels, int32_t filter_h, int32_t filter_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
+            const padding &padding_h, const padding &padding_w, const value_range<float> &fused_activation)
+        {
+            const auto out_h = details::get_windowed_output_size(in_shape[1], filter_h, stride_h, dilation_h, padding_h);
+            const auto out_w = details::get_windowed_output_size(in_shape[2], filter_w, stride_w, dilation_w, padding_w);
+
+            for (int batch = 0; batch < in_shape[0]; batch++)
+            {
+                auto in_batch = input + batch * in_shape[1] * in_shape[2] * in_shape[3];
+
+                for (int oy = 0; oy < out_h; oy++)
+                {
+                    for (int ox = 0; ox < out_w; ox++)
+                    {
+                        int in_y_origin = (oy * stride_h) - padding_h.before;
+                        int in_x_origin = (ox * stride_w) - padding_w.before;
+                        int filter_y_start = std::max(0, (-in_y_origin + dilation_h - 1) / dilation_h);
+                        int filter_y_end = std::min(filter_h, (in_shape[1] - in_y_origin + dilation_h - 1) / dilation_h);
+                        int filter_xSstart = std::max(0, (-in_x_origin + dilation_w - 1) / dilation_w);
+                        int filter_x_end = std::min(filter_w, (in_shape[2] - in_x_origin + dilation_w - 1) / dilation_w);
+
+                        for (int oc = 0; oc < out_channels; oc++)
+                        {
+                            auto w_oc = weights + oc * filter_h * filter_w * in_shape[3];
+                            float value = bias[oc];
+
+                            for (int ky = filter_y_start; ky < filter_y_end; ky++)
+                            {
+                                for (int kx = filter_xSstart; kx < filter_x_end; kx++)
+                                {
+                                    int in_y = in_y_origin + dilation_h * ky;
+                                    int in_x = in_x_origin + dilation_w * kx;
+
+                                    auto in_pix = in_batch + (in_y * in_shape[2] + in_x) * in_shape[3];
+                                    auto w_pix = w_oc + (ky * filter_w + kx) * in_shape[3];
+
+                                    for (int ic = 0; ic < in_shape[3]; ic++)
+                                        value += in_pix[ic] * w_pix[ic];
+                                }
+                            }
+
+                            *output++ = details::apply_activation(value, fused_activation);
+                        }
+                    }
+                }
+            }
+        }
+
+        inline void depthwise_conv2d(const float *input, float *output, const float *weights, const float *bias, const runtime_shape_t &in_shape,
+            int32_t filter_h, int32_t filter_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
+            const padding &padding_h, const padding &padding_w, const value_range<float> &fused_activation)
+        {
+            const auto out_h = details::get_windowed_output_size(in_shape[1], filter_h, stride_h, dilation_h, padding_h);
+            const auto out_w = details::get_windowed_output_size(in_shape[2], filter_w, stride_w, dilation_w, padding_w);
+
+            for (int batch = 0; batch < in_shape[0]; batch++)
+            {
+                auto in_batch = input + batch * in_shape[1] * in_shape[2] * in_shape[3];
+
+                for (int oy = 0; oy < out_h; oy++)
+                {
+                    for (int ox = 0; ox < out_w; ox++)
+                    {
+                        int in_y_origin = (oy * stride_h) - padding_h.before;
+                        int in_x_origin = (ox * stride_w) - padding_w.before;
+                        int filter_y_start = std::max(0, (-in_y_origin + dilation_h - 1) / dilation_h);
+                        int filter_y_end = std::min(filter_h, (in_shape[1] - in_y_origin + dilation_h - 1) / dilation_h);
+                        int filter_xSstart = std::max(0, (-in_x_origin + dilation_w - 1) / dilation_w);
+                        int filter_x_end = std::min(filter_w, (in_shape[2] - in_x_origin + dilation_w - 1) / dilation_w);
+
+                        for (int oc = 0; oc < in_shape[3]; oc++)
+                        {
+                            auto w_oc = weights + oc * filter_h * filter_w;
+                            float value = bias[oc];
+
+                            for (int ky = filter_y_start; ky < filter_y_end; ky++)
+                            {
+                                for (int kx = filter_xSstart; kx < filter_x_end; kx++)
+                                {
+                                    int in_y = in_y_origin + dilation_h * ky;
+                                    int in_x = in_x_origin + dilation_w * kx;
+
+                                    auto in_pix = in_batch + (in_y * in_shape[2] + in_x) * in_shape[3];
+                                    auto w_pix = w_oc + (ky * filter_w + kx);
+
+                                    value += in_pix[oc] * w_pix[0];
+                                }
+                            }
+
+                            *output++ = details::apply_activation(value, fused_activation);
+                        }
+                    }
+                }
+            }
+        }
+
+        template <class TBinaryOp, class TOutputOp>
+        void reduce_window2d(const float *input, float *output, float init_value, const runtime_shape_t &in_shape,
+            int32_t filter_h, int32_t filter_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
+            const padding &padding_h, const padding &padding_w, const value_range<float> &fused_activation, TBinaryOp &&binary_op, TOutputOp &&window_op)
+        {
+            const auto out_h = details::get_windowed_output_size(in_shape[1], filter_h, stride_h, dilation_h, padding_h);
+            const auto out_w = details::get_windowed_output_size(in_shape[2], filter_w, stride_w, dilation_w, padding_w);
+
+            for (int batch = 0; batch < in_shape[0]; batch++)
+            {
+                auto in_batch = input + batch * in_shape[1] * in_shape[2] * in_shape[3];
+
+                for (int oy = 0; oy < out_h; oy++)
+                {
+                    for (int ox = 0; ox < out_w; ox++)
+                    {
+                        int in_y_origin = (oy * stride_h) - padding_h.before;
+                        int in_x_origin = (ox * stride_w) - padding_w.before;
+                        int filter_y_start = std::max(0, (-in_y_origin + dilation_h - 1) / dilation_h);
+                        int filter_y_end = std::min(filter_h, (in_shape[1] - in_y_origin + dilation_h - 1) / dilation_h);
+                        int filter_xSstart = std::max(0, (-in_x_origin + dilation_w - 1) / dilation_w);
+                        int filter_x_end = std::min(filter_w, (in_shape[2] - in_x_origin + dilation_w - 1) / dilation_w);
+
+                        for (int oc = 0; oc < in_shape[3]; oc++)
+                        {
+                            float value = init_value;
+                            int32_t kernel_count = 0;
+
+                            for (int ky = filter_y_start; ky < filter_y_end; ky++)
+                            {
+                                for (int kx = filter_xSstart; kx < filter_x_end; kx++)
+                                {
+                                    int in_y = in_y_origin + dilation_h * ky;
+                                    int in_x = in_x_origin + dilation_w * kx;
+
+                                    auto in_pix = in_batch + (in_y * in_shape[2] + in_x) * in_shape[3];
+
+                                    value = binary_op(value, in_pix[oc]);
+                                    kernel_count++;
+                                }
+                            }
+
+                            *output++ = details::apply_activation(window_op(value, kernel_count), fused_activation);
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+}

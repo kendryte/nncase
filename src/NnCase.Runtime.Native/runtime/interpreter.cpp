@@ -1,3 +1,5 @@
+#include "kernel_registry.h"
+#include <iostream>
 #include <runtime/interpreter.h>
 
 using namespace nncase;
@@ -33,10 +35,63 @@ bool interpreter::try_load_model(const uint8_t *buffer)
     return true;
 }
 
-void interpreter::run(run_callback_t callback)
+void interpreter::run(run_callback_t callback, error_callback_t on_error, node_profile_callback_t node_profile, void *userdata)
 {
     run_callback_ = callback;
+    on_error_ = on_error;
+    node_profile_ = node_profile;
+    userdata_ = userdata;
+    cnt_node_ = 0;
+    cnt_node_body_ = node_body_start_;
+    total_duration_ = {};
+    last_time_.reset();
+    step();
+}
 
+void interpreter::step()
+{
+    auto result = kcr_done;
+
+    while (result == kcr_done)
+    {
+        if (!last_time_)
+        {
+            last_time_ = clock_t::now();
+        }
+        else
+        {
+            auto now = clock_t::now();
+            auto duration = now - *last_time_;
+            total_duration_ += duration;
+            last_time_ = now;
+
+            if (node_profile_)
+                node_profile_(last_op_, duration, userdata_);
+        }
+
+        if (cnt_node_ == nodes_size())
+        {
+            run_callback_(userdata_);
+            break;
+        }
+        else
+        {
+            auto node_id = cnt_node_++;
+            auto header = node_headers_[node_id];
+            xtl::span<const uint8_t> body(cnt_node_body_, header.body_size);
+            cnt_node_body_ += header.body_size;
+            last_op_ = header.opcode;
+
+            auto result = call_kernel(header.opcode, body, *this, &interpreter::step);
+
+            if (result == kcr_error)
+            {
+                if (on_error_)
+                    on_error_("error occurs in running kernel", userdata_);
+                break;
+            }
+        }
+    }
 }
 
 xtl::span<uint8_t> interpreter::memory_at(const memory_range &range) const noexcept

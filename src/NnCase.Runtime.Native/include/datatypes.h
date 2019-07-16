@@ -74,11 +74,16 @@ struct scalar
     datatype type;
     std::array<uint8_t, 4> storage;
 
+    scalar() = default;
+
     template <class T>
     scalar(T &&value) { as<T>() = value; }
 
     template <class T>
     T &as() noexcept { return *reinterpret_cast<T *>(storage.data()); }
+
+    template <class T>
+    const T &as() const noexcept { return *reinterpret_cast<const T *>(storage.data()); }
 };
 
 struct memory_range

@@ -67,7 +67,7 @@ void image_dataset::process(const std::vector<uint8_t> &src, float *dest, const 
         img.convertTo(f_img, CV_32F);
 
     cv::Mat dest_img;
-    cv::resize(f_img, dest_img, cv::Size(shape[2], shape[1]));
+    cv::resize(f_img, dest_img, cv::Size((int)shape[2], (int)shape[1]));
 
     size_t channel_size = xt::compute_size(xt::dynamic_shape<size_t> { shape[1], shape[2] });
     dest_img.forEach<cv::Vec3f>([&](cv::Vec3f v, const int *idx) {
@@ -89,7 +89,7 @@ void image_dataset::process(const std::vector<uint8_t> &src, uint8_t *dest, cons
         img.convertTo(f_img, CV_8U);
 
     cv::Mat dest_img;
-    cv::resize(f_img, dest_img, cv::Size(shape[2], shape[1]));
+    cv::resize(f_img, dest_img, cv::Size((int)shape[2], (int)shape[1]));
 
     size_t channel_size = xt::compute_size(xt::dynamic_shape<size_t> { shape[1], shape[2] });
     dest_img.forEach<cv::Vec3b>([&](cv::Vec3b v, const int *idx) {

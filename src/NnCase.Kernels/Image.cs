@@ -41,12 +41,12 @@ namespace NnCase.Kernels
 
                     for (int oy = 0; oy < outputHeight; oy++)
                     {
-                        var inY = (int)Math.Min(MathF.Floor(oy * heightScale), inShape[2] - 1);
+                        var inY = Math.Min((int)MathF.Floor(oy * heightScale), inShape[2] - 1);
                         var inRow = inC.Slice(inY * inShape[3], inShape[3]);
 
                         for (int ox = 0; ox < outputWidth; ox++)
                         {
-                            var inX = (int)Math.Min(MathF.Floor(ox * widthScale), inShape[3] - 1);
+                            var inX = Math.Min((int)MathF.Floor(ox * widthScale), inShape[3] - 1);
                             output[destIdx++] = inRow[inX];
                         }
                     }

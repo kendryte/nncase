@@ -60,8 +60,8 @@ namespace NnCase.Targets.CPU.Runtime.Operators
                 FusedActivation = reader.Read<ValueRange<float>>()
             };
 
-            Options.Weights = reader.ReadArray<float>(Options.InputShape[1] * Options.FilterH * Options.FilterW);
-            Options.Bias = reader.ReadArray<float>(Options.InputShape[1]);
+            Options.Weights = reader.ReadArray<float>(Options.InputShape[3] * Options.FilterH * Options.FilterW);
+            Options.Bias = reader.ReadArray<float>(Options.InputShape[3]);
         }
 
         public void Serialize(BinaryWriter writer)

@@ -1,17 +1,25 @@
 #pragma once
 #include "model.h"
-#include <memory>
-#include <xtl/xspan.hpp>
 #include "op_utility.h"
+#include <chrono>
+#include <memory>
+#include <optional>
+#include <xtl/xspan.hpp>
 
 namespace nncase
 {
 namespace runtime
 {
+    class interpreter;
     typedef void (*run_callback_t)(void *userdata);
+    typedef void (*error_callback_t)(const char *err, void *userdata);
+    typedef void (*node_profile_callback_t)(runtime_opcode op, std::chrono::nanoseconds duration, void *userdata);
+    typedef void (interpreter::*interpreter_step_t)();
 
     class interpreter
     {
+        using clock_t = std::chrono::system_clock;
+
     public:
         bool try_load_model(const uint8_t *buffer);
 
@@ -27,10 +35,15 @@ namespace runtime
         xtl::span<T> memory_at(const memory_range &range) const noexcept
         {
             auto span = memory_at(range);
-            return { reinterpret_cast<T>(span.data()), span.size() / get_bytes(range.datatype) };
+            return { reinterpret_cast<T *>(span.data()), span.size() / sizeof(T) };
         }
 
-        void run(run_callback_t callback);
+        std::chrono::nanoseconds total_duration() const noexcept { return total_duration_; }
+
+        void run(run_callback_t callback, error_callback_t on_error, node_profile_callback_t node_profile, void *userdata);
+
+    private:
+        void step();
 
     private:
         xtl::span<uint8_t> memory_at(const memory_range &range) const noexcept;
@@ -44,7 +57,15 @@ namespace runtime
         xtl::span<const node_header> node_headers_;
         xtl::span<const uint8_t> constants_;
         const uint8_t *node_body_start_;
+        error_callback_t on_error_;
         run_callback_t run_callback_;
+        node_profile_callback_t node_profile_;
+        void *userdata_;
+        size_t cnt_node_;
+        const uint8_t *cnt_node_body_;
+        std::chrono::nanoseconds total_duration_;
+        std::optional<clock_t::time_point> last_time_;
+        runtime_opcode last_op_;
     };
 }
 }

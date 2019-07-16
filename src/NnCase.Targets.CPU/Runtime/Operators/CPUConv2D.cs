@@ -63,7 +63,7 @@ namespace NnCase.Targets.CPU.Runtime.Operators
                 FusedActivation = reader.Read<ValueRange<float>>()
             };
 
-            Options.Weights = reader.ReadArray<float>(Options.OutputChannels * Options.InputShape[1] * Options.FilterH * Options.FilterW);
+            Options.Weights = reader.ReadArray<float>(Options.OutputChannels * Options.InputShape[3] * Options.FilterH * Options.FilterW);
             Options.Bias = reader.ReadArray<float>(Options.OutputChannels);
         }
 

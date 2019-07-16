@@ -10,11 +10,11 @@ namespace NnCase.Runtime.Operators
 
         public MemoryRange Output { get; set; }
 
+        public RuntimeShape InputShape { get; set; }
+
         public int OutputWidth { get; set; }
 
         public int OutputHeight { get; set; }
-
-        public int ElementSize { get; set; }
 
         public bool AlignCorners { get; set; }
     }

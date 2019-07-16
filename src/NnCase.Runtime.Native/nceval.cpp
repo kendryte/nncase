@@ -43,13 +43,61 @@ struct eval_options
     }
 };
 
-void eval(const eval_options &options)
+struct eval_context
 {
-    auto model = read_file(options.model_filename);
     interpreter interp;
-    if (!interp.try_load_model(model.data()))
-        throw std::runtime_error("Invalid model");
-}
+
+    void eval(const eval_options &options)
+    {
+        auto model = read_file(options.model_filename);
+        if (!interp.try_load_model(model.data()))
+            throw std::runtime_error("Invalid model");
+
+        auto in_shape = interp.input_shape_at(0);
+        xt::dynamic_shape<size_t> shape { (size_t)in_shape[0], (size_t)in_shape[1], (size_t)in_shape[2], (size_t)in_shape[3] };
+        image_dataset dataset(options.dataset, shape, 0.f, 1.f);
+        for (auto it = dataset.begin<float>(); it != dataset.end<float>(); ++it)
+        {
+            auto input = interp.memory_at<float>(interp.input_at(0));
+            auto &tensor = it->tensor;
+            std::copy(tensor.begin(), tensor.end(), input.begin());
+
+            interp.run(done_thunk, on_error_thunk, node_profile_thunk, this);
+
+            std::filesystem::path out_filename(options.output_path);
+            out_filename /= it->filenames[0].filename();
+            out_filename.replace_extension(".bin");
+
+            std::ofstream of(out_filename, std::ios::binary | std::ios::out);
+            for (size_t i = 0; i < interp.outputs_size(); i++)
+            {
+                auto output = interp.memory_at<const char>(interp.output_at(i));
+                of.write(output.data(), output.size());
+            }
+        }
+
+        std::cout << "Total : " << interp.total_duration().count() / 1e6 << "ms" << std::endl;
+    }
+
+    void on_done()
+    {
+    }
+
+    static void done_thunk(void *userdata)
+    {
+        reinterpret_cast<eval_context *>(userdata)->on_done();
+    }
+
+    static void on_error_thunk(const char *err, void *userdata)
+    {
+        std::cerr << "Fatal: " << err << std::endl;
+    }
+
+    static void node_profile_thunk(runtime_opcode op, std::chrono::nanoseconds duration, void *userdata)
+    {
+        std::cout << node_opcode_names(op) << ": " << duration.count() / 1e6 << "ms" << std::endl;
+    }
+};
 
 int main(int argc, char *argv[])
 {
@@ -61,7 +109,8 @@ int main(int argc, char *argv[])
     {
         try
         {
-            eval(eval_options);
+            eval_context ctx;
+            ctx.eval(eval_options);
         }
         catch (std::exception &ex)
         {

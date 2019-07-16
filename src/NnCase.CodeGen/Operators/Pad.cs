@@ -21,6 +21,7 @@ namespace NnCase.CodeGen.Operators
                     {
                         Input = g.MemoryRange(n.Input),
                         Output = g.MemoryRange(n.Output),
+                        InputShape = OpUtility.To(n.Input.Shape),
                         Paddings = OpUtility.To(n.Paddings),
                         PadValue = n.PadValue
                     }

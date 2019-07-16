@@ -14,6 +14,10 @@ namespace NnCase.Runtime.Operators
 
         public RuntimeShape InputShape { get; set; }
 
+        public Padding PaddingH { get; set; }
+
+        public Padding PaddingW { get; set; }
+
         public int FilterH { get; set; }
 
         public int FilterW { get; set; }
@@ -25,10 +29,6 @@ namespace NnCase.Runtime.Operators
         public int DilationH { get; set; }
 
         public int DilationW { get; set; }
-
-        public Padding PaddingH { get; set; }
-
-        public Padding PaddingW { get; set; }
 
         public float InitialValue { get; set; }
 
