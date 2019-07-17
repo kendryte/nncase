@@ -153,6 +153,105 @@ namespace kernels
                 }
             }
         }
+
+        inline void quantized_conv2d(const uint8_t *input, uint8_t *output, const uint8_t *weights, const int32_t *bias, const runtime_shape_t &in_shape,
+            int32_t out_channels, int32_t filter_h, int32_t filter_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
+            const padding &padding_h, const padding &padding_w, int32_t input_offset, int32_t filter_offset, int32_t output_mul, int32_t output_shift, int32_t output_offset)
+        {
+            const auto out_h = details::get_windowed_output_size(in_shape[1], filter_h, stride_h, dilation_h, padding_h);
+            const auto out_w = details::get_windowed_output_size(in_shape[2], filter_w, stride_w, dilation_w, padding_w);
+
+            for (int batch = 0; batch < in_shape[0]; batch++)
+            {
+                auto in_batch = input + batch * in_shape[1] * in_shape[2] * in_shape[3];
+
+                for (int oy = 0; oy < out_h; oy++)
+                {
+                    for (int ox = 0; ox < out_w; ox++)
+                    {
+                        int in_y_origin = (oy * stride_h) - padding_h.before;
+                        int in_x_origin = (ox * stride_w) - padding_w.before;
+                        int filter_y_start = std::max(0, (-in_y_origin + dilation_h - 1) / dilation_h);
+                        int filter_y_end = std::min(filter_h, (in_shape[1] - in_y_origin + dilation_h - 1) / dilation_h);
+                        int filter_xSstart = std::max(0, (-in_x_origin + dilation_w - 1) / dilation_w);
+                        int filter_x_end = std::min(filter_w, (in_shape[2] - in_x_origin + dilation_w - 1) / dilation_w);
+
+                        for (int oc = 0; oc < out_channels; oc++)
+                        {
+                            auto w_oc = weights + oc * filter_h * filter_w * in_shape[3];
+                            int32_t value = bias[oc];
+
+                            for (int ky = filter_y_start; ky < filter_y_end; ky++)
+                            {
+                                for (int kx = filter_xSstart; kx < filter_x_end; kx++)
+                                {
+                                    int in_y = in_y_origin + dilation_h * ky;
+                                    int in_x = in_x_origin + dilation_w * kx;
+
+                                    auto in_pix = in_batch + (in_y * in_shape[2] + in_x) * in_shape[3];
+                                    auto w_pix = w_oc + (ky * filter_w + kx) * in_shape[3];
+
+                                    for (int ic = 0; ic < in_shape[3]; ic++)
+                                        value += (in_pix[ic] - input_offset) * (w_pix[ic] - filter_offset);
+                                }
+                            }
+
+                            value = runtime::mul_and_carry_shift(value, output_mul, output_shift) + output_offset;
+                            *output++ = (uint8_t)std::clamp(value, 0, 255);
+                        }
+                    }
+                }
+            }
+        }
+
+        inline void quantized_depthwise_conv2d(const uint8_t *input, uint8_t *output, const uint8_t *weights, const int32_t *bias, const runtime_shape_t &in_shape,
+            int32_t filter_h, int32_t filter_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
+            const padding &padding_h, const padding &padding_w, int32_t input_offset, int32_t filter_offset, int32_t output_mul, int32_t output_shift, int32_t output_offset)
+        {
+            const auto out_h = details::get_windowed_output_size(in_shape[1], filter_h, stride_h, dilation_h, padding_h);
+            const auto out_w = details::get_windowed_output_size(in_shape[2], filter_w, stride_w, dilation_w, padding_w);
+
+            for (int batch = 0; batch < in_shape[0]; batch++)
+            {
+                auto in_batch = input + batch * in_shape[1] * in_shape[2] * in_shape[3];
+
+                for (int oy = 0; oy < out_h; oy++)
+                {
+                    for (int ox = 0; ox < out_w; ox++)
+                    {
+                        int in_y_origin = (oy * stride_h) - padding_h.before;
+                        int in_x_origin = (ox * stride_w) - padding_w.before;
+                        int filter_y_start = std::max(0, (-in_y_origin + dilation_h - 1) / dilation_h);
+                        int filter_y_end = std::min(filter_h, (in_shape[1] - in_y_origin + dilation_h - 1) / dilation_h);
+                        int filter_xSstart = std::max(0, (-in_x_origin + dilation_w - 1) / dilation_w);
+                        int filter_x_end = std::min(filter_w, (in_shape[2] - in_x_origin + dilation_w - 1) / dilation_w);
+
+                        for (int oc = 0; oc < in_shape[3]; oc++)
+                        {
+                            auto w_oc = weights + oc * filter_h * filter_w;
+                            int32_t value = bias[oc];
+
+                            for (int ky = filter_y_start; ky < filter_y_end; ky++)
+                            {
+                                for (int kx = filter_xSstart; kx < filter_x_end; kx++)
+                                {
+                                    int in_y = in_y_origin + dilation_h * ky;
+                                    int in_x = in_x_origin + dilation_w * kx;
+
+                                    auto in_pix = in_batch + (in_y * in_shape[2] + in_x) * in_shape[3];
+                                    auto w_pix = w_oc + (ky * filter_w + kx);
+
+                                    value += (in_pix[oc] - input_offset) * (w_pix[0] - filter_offset);
+                                }
+                            }
+
+                            value = runtime::mul_and_carry_shift(value, output_mul, output_shift) + output_offset;
+                            *output++ = (uint8_t)std::clamp(value, 0, 255);
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 }

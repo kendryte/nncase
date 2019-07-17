@@ -54,6 +54,26 @@ namespace targets
                 return kcr_error;
             }
         }
+
+        kernel_call_result cpu_quantized_conv2d(cpu_quantized_conv2d_options &options, interpreter &interpreter, interpreter_step_t step)
+        {
+            auto input = interpreter.memory_at<uint8_t>(options.input);
+            auto output = interpreter.memory_at<uint8_t>(options.output);
+            kernels::cpu::quantized_conv2d(input.data(), output.data(), options.weights.data(), options.bias.data(), options.in_shape, options.out_channels, options.filter_h,
+                options.filter_w, options.stride_h, options.stride_w, options.dilation_h, options.dilation_w, options.padding_h, options.padding_w,
+                options.input_offset, options.filter_offset, options.output_mul, options.output_shift, options.output_offset);
+            return kcr_done;
+        }
+
+        kernel_call_result cpu_quantized_depthwise_conv2d(cpu_quantized_depthwise_conv2d_options &options, interpreter &interpreter, interpreter_step_t step)
+        {
+            auto input = interpreter.memory_at<uint8_t>(options.input);
+            auto output = interpreter.memory_at<uint8_t>(options.output);
+            kernels::cpu::quantized_depthwise_conv2d(input.data(), output.data(), options.weights.data(), options.bias.data(), options.in_shape, options.filter_h,
+                options.filter_w, options.stride_h, options.stride_w, options.dilation_h, options.dilation_w, options.padding_h, options.padding_w,
+                options.input_offset, options.filter_offset, options.output_mul, options.output_shift, options.output_offset);
+            return kcr_done;
+        }
     }
 }
 }

@@ -61,5 +61,10 @@ namespace runtime
 
         return value;
     }
+
+    inline int32_t mul_and_carry_shift(int32_t value, int32_t mul, uint8_t shift)
+    {
+        return (int32_t)carry_shift((int64_t) value * mul, shift);
+    }
 }
 }

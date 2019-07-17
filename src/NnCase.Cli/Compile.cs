@@ -39,10 +39,13 @@ namespace NnCase.Cli
             OptimizePass2(graph, target);
 
             // 4. Quantize
-            // await Quantize(options, graph, target, quantizer);
+            if (options.InferenceType == "uint8")
+            {
+                await Quantize(options, graph, target, quantizer);
+            }
 
             // 5. Simulate
-            await Simulate(options, graph, target);
+            // await Simulate(options, graph, target);
 
             // 6. CodeGen
             GenerateCode(options, graph, target);

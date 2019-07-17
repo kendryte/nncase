@@ -26,7 +26,7 @@ namespace runtime
         {
 #include "runtime_op.def"
         default:
-            return "Invalid";
+            return {};
         }
     }
 

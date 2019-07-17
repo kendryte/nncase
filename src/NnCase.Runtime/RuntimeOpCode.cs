@@ -23,6 +23,8 @@ namespace NnCase.Runtime
 
         CPU_CPUConv2D = 1001,
         CPU_CPUDepthwiseConv2D = 1002,
-        CPU_CPUReduceWindow2D = 1003
+        CPU_CPUReduceWindow2D = 1003,
+        CPU_CPUQuantizedConv2D = 1004,
+        CPU_CPUQuantizedDepthwiseConv2D = 1005
     }
 }

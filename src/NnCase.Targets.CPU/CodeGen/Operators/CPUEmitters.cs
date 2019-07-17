@@ -13,6 +13,8 @@ namespace NnCase.Targets.CPU.CodeGen.Operators
             RegisterCPUConv2D(registry);
             RegisterCPUDepthwiseConv2D(registry);
             RegisterCPUReduceWindow2D(registry);
+            RegisterCPUQuantizedConv2D(registry);
+            RegisterCPUQuantizedDepthwiseConv2D(registry);
         }
     }
 }

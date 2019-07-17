@@ -45,7 +45,8 @@ namespace NnCase.Targets.CPU
         {
             transforms.AddRange(new Transform[]
             {
-                new CPUQuantizedConv2DTransform(quantizer)
+                new CPUQuantizedConv2DTransform(quantizer),
+                new CPUQuantizedDepthwiseConv2DTransform(quantizer)
             });
         }
     }

@@ -87,7 +87,16 @@ void interpreter::step()
             if (result == kcr_error)
             {
                 if (on_error_)
-                    on_error_("error occurs in running kernel", userdata_);
+                {
+                    char buffer[256];
+                    auto name = node_opcode_names(header.opcode);
+                    if (!name.empty())
+                        std::sprintf(buffer, "error occurs in running kernel: %s", name.data());
+                    else
+                        std::sprintf(buffer, "Unknown opcode: (%d)", header.opcode);
+                    on_error_(buffer, userdata_);
+                }
+
                 break;
             }
         }
