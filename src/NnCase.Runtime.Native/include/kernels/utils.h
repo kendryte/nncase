@@ -44,6 +44,12 @@ namespace kernels
 
             return off;
         }
+
+        template <class T, class TRange>
+        struct default_ptr_getter
+        {
+            T *operator()(const TRange &range) const noexcept { return range; }
+        };
     }
 }
 }

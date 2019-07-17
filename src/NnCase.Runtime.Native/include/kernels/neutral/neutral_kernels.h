@@ -34,14 +34,15 @@ namespace kernels
             }
         }
 
-        inline void concat(xtl::span<const uint8_t *> inputs, uint8_t *output, xtl::span<const int32_t> concat_dims, size_t inner_size, size_t outer_size)
+        template <class TRange, class TPtrGetter = details::default_ptr_getter<uint8_t, TRange>>
+        inline void concat(xtl::span<TRange> inputs, uint8_t *output, xtl::span<const int32_t> concat_dims, size_t inner_size, size_t outer_size, TPtrGetter getter = {})
         {
             for (size_t oc = 0; oc < outer_size; oc++)
             {
                 for (size_t i = 0; i < inputs.size(); i++)
                 {
                     auto size = inner_size * concat_dims[i];
-                    auto src = inputs[i] + oc * size;
+                    auto src = getter(inputs[i]) + oc * size;
                     std::copy(src, src + size, output);
                     output += size;
                 }

@@ -59,10 +59,8 @@ namespace targets
         kernel_call_result concat(concat_options &options, interpreter &interpreter, interpreter_step_t step)
         {
             auto output = interpreter.memory_at<uint8_t>(options.output);
-            xtl::span<const uint8_t *> inputs = { (const uint8_t **)alloca(options.inputs_count * sizeof(uint8_t *)), options.inputs_count };
-            for (size_t i = 0; i < options.inputs_count; i++)
-                inputs[i] = interpreter.memory_at<uint8_t>(options.inputs[i]).data();
-            kernels::neutral::concat(inputs, output.data(), options.dims, options.inner_size, options.outer_size);
+            kernels::neutral::concat(options.inputs, output.data(), options.dims, options.inner_size, options.outer_size,
+                [&](const memory_range &range) { return interpreter.memory_at<uint8_t>(range).data(); });
             return kcr_done;
         }
 
