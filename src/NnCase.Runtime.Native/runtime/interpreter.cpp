@@ -1,6 +1,6 @@
-#include "kernel_registry.h"
 #include <iostream>
 #include <runtime/interpreter.h>
+#include <runtime/kernel_registry.h>
 
 using namespace nncase;
 using namespace nncase::runtime;

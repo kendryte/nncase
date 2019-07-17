@@ -1,6 +1,7 @@
 #pragma once
 #include "../utils.h"
-#include <runtime/op_utility.h>
+#include <runtime_op_utility.h>
+#include <xtl/xspan.hpp>
 
 namespace nncase
 {
@@ -140,7 +141,7 @@ namespace kernels
         }
 
         template <class T>
-        void pad_impl(const T *input, T *output, const runtime_shape_t &in_shape, const runtime_paddings_t &paddings, T pad_value)
+        void pad(const T *input, T *output, const runtime_shape_t &in_shape, const runtime_paddings_t &paddings, T pad_value)
         {
             runtime_shape_t out_shape = { in_shape[0] + paddings[0].sum(),
                 in_shape[1] + paddings[1].sum(),
@@ -177,27 +178,6 @@ namespace kernels
                     }
                 }
             }
-        }
-
-        inline runtime::kernel_call_result pad(size_t elem_size, const uint8_t *input, uint8_t *output, const runtime_shape_t &in_shape, const runtime_paddings_t &paddings, const scalar &pad_value)
-        {
-#define PAD_IMPL(T)                                                                                                     \
-    pad_impl(reinterpret_cast<const T *>(input), reinterpret_cast<T *>(output), in_shape, paddings, pad_value.as<T>()); \
-    return runtime::kcr_done;
-
-            switch (elem_size)
-            {
-            case 1:
-                PAD_IMPL(uint8_t);
-            case 2:
-                PAD_IMPL(uint16_t);
-            case 4:
-                PAD_IMPL(uint32_t);
-            default:
-                return runtime::kcr_error;
-            }
-
-#undef PAD_IMPL
         }
 
         template <class TQ>
@@ -289,7 +269,7 @@ namespace kernels
         }
 
         template <class T>
-        void resize_nearest_neighbor_impl(const T *input, T *output, const runtime_shape_t &in_shape, int32_t out_h, int32_t out_w)
+        void resize_nearest_neighbor(const T *input, T *output, const runtime_shape_t &in_shape, int32_t out_h, int32_t out_w)
         {
             auto height_scale = (float)in_shape[2] / out_h;
             auto width_scale = (float)in_shape[3] / out_w;
@@ -315,27 +295,6 @@ namespace kernels
                     }
                 }
             }
-        }
-
-        inline runtime::kernel_call_result resize_nearest_neighbor(size_t elem_size, const uint8_t *input, uint8_t *output, const runtime_shape_t &in_shape, int32_t out_h, int32_t out_w)
-        {
-#define RESIZE_NN_IMPL(T)                                                                                                    \
-    resize_nearest_neighbor_impl(reinterpret_cast<const T *>(input), reinterpret_cast<T *>(output), in_shape, out_h, out_w); \
-    return runtime::kcr_done;
-
-            switch (elem_size)
-            {
-            case 1:
-                RESIZE_NN_IMPL(uint8_t);
-            case 2:
-                RESIZE_NN_IMPL(uint16_t);
-            case 4:
-                RESIZE_NN_IMPL(uint32_t);
-            default:
-                return runtime::kcr_error;
-            }
-
-#undef RESIZE_NN_IMPL
         }
 
         inline void resize_bilinear(const float *input, float *output, const runtime_shape_t &in_shape, int32_t out_h, int32_t out_w, bool align_corners)
@@ -408,7 +367,7 @@ namespace kernels
         }
 
         template <class T>
-        void transpose_impl(const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &perm)
+        void transpose(const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &perm)
         {
             runtime_shape_t out_shape;
             for (size_t i = 0; i < 4; i++)
@@ -432,27 +391,6 @@ namespace kernels
                     }
                 }
             }
-        }
-
-        inline runtime::kernel_call_result transpose(size_t elem_size, const uint8_t *input, uint8_t *output, const runtime_shape_t &in_shape, const runtime_shape_t &perm)
-        {
-#define TRANSPOSE_IMPL(T)                                                                                       \
-    transpose_impl(reinterpret_cast<const T *>(input), reinterpret_cast<T *>(output), in_shape, perm); \
-    return runtime::kcr_done;
-
-            switch (elem_size)
-            {
-            case 1:
-                TRANSPOSE_IMPL(uint8_t);
-            case 2:
-                TRANSPOSE_IMPL(uint16_t);
-            case 4:
-                TRANSPOSE_IMPL(uint32_t);
-            default:
-                return runtime::kcr_error;
-            }
-
-#undef TRANSPOSE_IMPL
         }
     }
 }

@@ -1,6 +1,6 @@
 #pragma once
 #include "../utils.h"
-#include <runtime/op_utility.h>
+#include <runtime_op_utility.h>
 
 namespace nncase
 {

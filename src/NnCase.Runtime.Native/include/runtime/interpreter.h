@@ -1,6 +1,5 @@
 #pragma once
 #include "model.h"
-#include "op_utility.h"
 #include <chrono>
 #include <memory>
 #include <optional>

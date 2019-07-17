@@ -3,7 +3,9 @@
 set(SRCS nceval.cpp
          dataset.cpp
          runtime/interpreter.cpp
-         runtime/kernel_registry.cpp)
+         runtime/kernel_registry.cpp
+         targets/neutral/neutral_ops.cpp
+         targets/cpu/cpu_ops.cpp)
 
 if (MSVC_VERSION GREATER_EQUAL "1900")
     include(CheckCXXCompilerFlag)
