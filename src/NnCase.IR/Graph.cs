@@ -51,6 +51,9 @@ namespace NnCase.IR
                         input.ClearConnection();
                     foreach (var output in x.Outputs)
                         output.ClearConnections();
+
+                    if (x is InputNode i)
+                        _inputs.Remove(i);
                     return true;
                 }
 

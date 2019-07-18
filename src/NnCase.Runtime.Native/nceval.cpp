@@ -7,6 +7,7 @@
 
 using namespace std;
 using namespace clipp;
+using namespace nncase;
 using namespace nncase::data;
 using namespace nncase::runtime;
 
@@ -47,21 +48,12 @@ struct eval_context
 {
     interpreter interp;
 
-    void eval(const eval_options &options)
+    template <class T>
+    void eval(const eval_options &options, dataset &dataset)
     {
-        auto model = read_file(options.model_filename);
-        if (!interp.try_load_model(model.data()))
-            throw std::runtime_error("Invalid model");
-
-        if (!std::filesystem::exists(options.output_path))
-            std::filesystem::create_directories(options.output_path);
-
-        auto in_shape = interp.input_shape_at(0);
-        xt::dynamic_shape<size_t> shape { (size_t)in_shape[0], (size_t)in_shape[1], (size_t)in_shape[2], (size_t)in_shape[3] };
-        image_dataset dataset(options.dataset, shape, 0.f, 1.f);
-        for (auto it = dataset.begin<float>(); it != dataset.end<float>(); ++it)
+        for (auto it = dataset.begin<T>(); it != dataset.end<T>(); ++it)
         {
-            auto input = interp.memory_at<float>(interp.input_at(0));
+            auto input = interp.memory_at<T>(interp.input_at(0));
             auto &tensor = it->tensor;
             std::copy(tensor.begin(), tensor.end(), input.begin());
 
@@ -78,6 +70,32 @@ struct eval_context
                 auto output = interp.memory_at<const char>(interp.output_at(i));
                 of.write(output.data(), output.size());
             }
+        }
+    }
+
+    void eval(const eval_options &options)
+    {
+        auto model = read_file(options.model_filename);
+        if (!interp.try_load_model(model.data()))
+            throw std::runtime_error("Invalid model");
+
+        if (!std::filesystem::exists(options.output_path))
+            std::filesystem::create_directories(options.output_path);
+
+        auto in_shape = interp.input_shape_at(0);
+        xt::dynamic_shape<size_t> shape { (size_t)in_shape[0], (size_t)in_shape[1], (size_t)in_shape[2], (size_t)in_shape[3] };
+        image_dataset dataset(options.dataset, shape, 0.f, 1.f);
+
+        switch (interp.input_at(0).datatype)
+        {
+        case dt_float32:
+            eval<float>(options, dataset);
+            break;
+        case dt_uint8:
+            eval<uint8_t>(options, dataset);
+            break;
+        default:
+            throw std::runtime_error("Unsupported input datatype");
         }
 
         std::cout << "Total : " << interp.total_duration().count() / 1e6 << "ms" << std::endl;

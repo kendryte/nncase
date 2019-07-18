@@ -46,7 +46,9 @@ namespace NnCase.Targets
                 new TransposeBinaryMotionTransform(),
                 new TransposeConcatMotionTransform(),
                 new TransposeReduceMotionTransform(),
-                new FoldQuantizeTransform()
+                new TransposeQuantizeMotionTransform(),
+                new FoldQuantizeTransform(),
+                new FoldInputAndQuantizeTransform(),
             };
         }
 
