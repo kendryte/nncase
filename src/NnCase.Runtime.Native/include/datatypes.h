@@ -5,11 +5,11 @@
 
 namespace nncase
 {
-enum datatype
+typedef enum _datatype
 {
     dt_float32,
     dt_uint8
-};
+} datatype_t;
 
 struct padding
 {
@@ -28,28 +28,28 @@ struct value_range
     T max;
 };
 
-enum reduce_op
+typedef enum _reduce_op
 {
     reduce_mean,
     reduce_min,
     reduce_max
-};
+} reduce_op_t;
 
-enum binary_op
+typedef enum _binary_op
 {
     binary_add,
     binary_sub,
     binary_mul,
     binary_div
-};
+} binary_op_t;
 
-struct quant_param
+typedef struct _quant_param
 {
     int32_t zero_point;
     float scale;
-};
+} quant_param_t;
 
-inline bool operator==(const quant_param &lhs, const quant_param &rhs) noexcept
+inline bool operator==(const quant_param_t &lhs, const quant_param_t &rhs) noexcept
 {
     return lhs.zero_point == rhs.zero_point && lhs.scale == rhs.scale;
 }
@@ -60,18 +60,18 @@ struct fixed_mul
     int8_t shift;
 };
 
-enum memory_type
+typedef enum _memory_type
 {
     mem_const,
     mem_main
-};
+} memory_type_t;
 
 using runtime_shape_t = std::array<int, 4>;
 using runtime_paddings_t = std::array<padding, 4>;
 
 struct scalar
 {
-    datatype type;
+    datatype_t type;
     std::array<uint8_t, 4> storage;
 
     scalar() = default;
@@ -88,8 +88,8 @@ struct scalar
 
 struct memory_range
 {
-    memory_type memory_type;
-    datatype datatype;
+    memory_type_t memory_type;
+    datatype_t datatype;
     uint32_t start;
     uint32_t size;
 };

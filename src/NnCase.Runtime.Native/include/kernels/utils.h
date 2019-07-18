@@ -2,6 +2,7 @@
 #include <cassert>
 #include <cstddef>
 #include <datatypes.h>
+#include <algorithm>
 
 namespace nncase
 {

@@ -38,10 +38,10 @@ namespace runtime
 
         void align_position(size_t alignment)
         {
-            auto pos = position().seekpos();
+            auto pos = position();
             auto rem = pos % alignment;
             if (rem != 0)
-                position(pos + alignment - rem);
+                position(pos + std::streamoff(alignment - rem));
         }
 
     private:

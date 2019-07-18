@@ -12,7 +12,7 @@ namespace targets
             memory_range input_a;
             memory_range input_b;
             memory_range output;
-            binary_op binary_op;
+            binary_op_t binary_op;
             runtime_shape_t in_a_shape;
             runtime_shape_t in_b_shape;
             runtime_shape_t out_shape;
@@ -113,7 +113,7 @@ namespace targets
         {
             memory_range input;
             memory_range output;
-            quant_param quant_param;
+            quant_param_t quant_param;
         };
 
         struct matmul_options
@@ -171,14 +171,14 @@ namespace targets
         {
             memory_range input;
             memory_range output;
-            quant_param quant_param;
+            quant_param_t quant_param;
         };
 
         struct reduce_options : public simple_node_body<reduce_options>
         {
             memory_range input;
             memory_range output;
-            reduce_op reduce_op;
+            reduce_op_t reduce_op;
             runtime_shape_t in_shape;
             runtime_shape_t out_shape;
             float init_value;
@@ -188,7 +188,7 @@ namespace targets
         {
             memory_range input;
             memory_range output;
-            reduce_op reduce_op;
+            reduce_op_t reduce_op;
             runtime_shape_t in_shape;
             padding padding_h;
             padding padding_w;

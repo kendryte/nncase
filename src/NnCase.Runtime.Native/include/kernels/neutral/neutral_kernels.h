@@ -1,5 +1,6 @@
 #pragma once
 #include "../utils.h"
+#include <cmath>
 #include <runtime_op_utility.h>
 #include <xtl/xspan.hpp>
 
@@ -112,7 +113,7 @@ namespace kernels
         }
 
         template <class TQ>
-        void dequantize(const TQ *input, float *output, size_t count, const quant_param &param)
+        void dequantize(const TQ *input, float *output, size_t count, const quant_param_t &param)
         {
             float div = 1.f / param.scale;
 
@@ -182,11 +183,11 @@ namespace kernels
         }
 
         template <class TQ>
-        void quantize(const float *input, TQ *output, size_t count, const quant_param &param)
+        void quantize(const float *input, TQ *output, size_t count, const quant_param_t &param)
         {
             for (size_t i = 0; i < count; i++)
             {
-                int32_t tmp = (int32_t)std::round(input[i] * param.scale + param.zero_point);
+                int32_t tmp = (int32_t)roundf(input[i] * param.scale + param.zero_point);
                 output[i] = std::clamp(tmp, (int32_t)std::numeric_limits<TQ>::lowest(), (int32_t)std::numeric_limits<TQ>::max());
             }
         }
@@ -285,12 +286,12 @@ namespace kernels
 
                     for (int oy = 0; oy < out_h; oy++)
                     {
-                        auto in_y = std::min((int32_t)std::floor(oy * height_scale), in_shape[2] - 1);
+                        auto in_y = std::min((int32_t)floorf(oy * height_scale), in_shape[2] - 1);
                         auto in_row = in_c + in_y * in_shape[3];
 
                         for (int ox = 0; ox < out_w; ox++)
                         {
-                            auto in_x = std::min((int32_t)std::floor(ox * width_scale), in_shape[3] - 1);
+                            auto in_x = std::min((int32_t)floorf(ox * width_scale), in_shape[3] - 1);
                             *output++ = in_row[in_x];
                         }
                     }
@@ -319,13 +320,13 @@ namespace kernels
                     for (int oy = 0; oy < out_h; oy++)
                     {
                         auto in_y = oy * height_scale;
-                        auto in_y0 = (int)std::floor(in_y);
+                        auto in_y0 = (int)floorf(in_y);
                         auto in_y1 = std::min(in_y0 + 1, in_shape[2] - 1);
 
                         for (int ox = 0; ox < out_w; ox++)
                         {
                             auto in_x = ox * width_scale;
-                            auto in_x0 = (int)std::floor(in_x);
+                            auto in_x0 = (int)floorf(in_x);
                             auto in_x1 = std::min(in_x0 + 1, in_shape[3] - 1);
 
                             auto v0 = in_c[in_y0 * in_shape[3] + in_x0];
@@ -357,7 +358,7 @@ namespace kernels
 
                 for (size_t i = 0; i < inner_size; i++)
                 {
-                    auto value = std::exp((src[i] - max) * beta);
+                    auto value = expf((src[i] - max) * beta);
                     sum += value;
                     dest[i] = value;
                 }

@@ -85,7 +85,7 @@ namespace targets
         {
             memory_range input;
             memory_range output;
-            reduce_op reduce_op;
+            reduce_op_t reduce_op;
             runtime_shape_t in_shape;
             padding padding_h;
             padding padding_w;

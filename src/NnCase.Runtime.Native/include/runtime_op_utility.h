@@ -6,7 +6,7 @@ namespace nncase
 {
 namespace runtime
 {
-    inline size_t get_bytes(datatype type)
+    inline size_t get_bytes(datatype_t type)
     {
         size_t element_size;
 
