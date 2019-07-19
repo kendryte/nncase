@@ -17,7 +17,7 @@ namespace NnCase.Targets.CPU.Transforms
             {
                 if (conv2d.Groups == conv2d.Input.Shape[1])
                 {
-                    if (NodeTreeHelper.TryGetDirectParent<Transpose>(conv2d, out _))
+                    //if (NodeTreeHelper.TryGetDirectParent<Transpose>(conv2d, out _))
                     {
                         context.Inputs.Add(conv2d.Input);
                         context.Outputs.Add(conv2d.Output);

@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp3.0</TargetFramework>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
 
   <ItemGroup>
@@ -10,6 +11,10 @@
 
   <ItemGroup>
     <Folder Include="Runtime\Hardware\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BitFields" Version="0.1.0" />
   </ItemGroup>
 
 </Project>

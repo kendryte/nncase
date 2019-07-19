@@ -40,6 +40,13 @@ namespace NnCase.Targets.K210
             return (groups, rowLength, rowPadding);
         }
 
+        public static ushort GetKpuAddress(int memoryAddress)
+        {
+            if (memoryAddress % KPUMemoryLineSize != 0)
+                throw new ArgumentOutOfRangeException(nameof(memoryAddress));
+            return (ushort)(memoryAddress / KPUMemoryLineSize);
+        }
+
         public static int GetBytes(Shape shape)
         {
             return shape[0] * GetBytes(shape[3], shape[2], shape[1]);
@@ -89,6 +96,30 @@ namespace NnCase.Targets.K210
                         data[srcIdx++] = kpuRam[y_origin + x];
                 }
             }
+        }
+
+        public static int ToSigned(uint value, int bits)
+        {
+            var mask = 1U << (bits - 1);
+            if (bits != 32 && (value & mask) != 0)
+            {
+                var sign = 0xFFFFFFFF << bits;
+                return (int)(value | sign);
+            }
+
+            return (int)value;
+        }
+
+        public static long ToSigned(ulong value, int bits)
+        {
+            var mask = 1UL << (bits - 1);
+            if ((value & mask) != 0)
+            {
+                var sign = 0xFFFFFFFF_FFFFFFFF << bits;
+                return (long)(value | sign);
+            }
+
+            return (long)value;
         }
     }
 }

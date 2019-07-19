@@ -56,6 +56,9 @@ namespace NnCase.Runtime
             return subspan.ToArray();
         }
 
+        public void Skip(int size)
+            => Advance(size);
+
         private void Advance(int size)
         {
             _memory = _memory.Slice(size);

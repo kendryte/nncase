@@ -47,11 +47,17 @@ namespace NnCase.Runtime
                 Write(item);
         }
 
-        public void AlignPosition(int alignment)
+        public int AlignPosition(int alignment)
         {
-            var rem = Position % alignment;
+            var rem = (int)(Position % alignment);
             if (rem != 0)
-                Position += alignment - rem;
+            {
+                var offset = alignment - rem;
+                Position += offset;
+                return offset;
+            }
+
+            return 0;
         }
 
         public void Dispose()
