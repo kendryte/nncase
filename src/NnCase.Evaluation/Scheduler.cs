@@ -63,8 +63,9 @@ namespace NnCase.Evaluation
 
     public static class Scheduler
     {
-        public static void Schedule(IEnumerable<OutputNode> roots, AllocationContext context, IList<Node> computeSequence)
+        public static void Schedule(Graph graph, IEnumerable<OutputNode> roots, AllocationContext context, IList<Node> computeSequence)
         {
+            AddIgnoreNodes(graph, roots);
             var visitor = new RelayDfsVisitor(n =>
             {
                 foreach (var output in n.Outputs)
@@ -103,6 +104,22 @@ namespace NnCase.Evaluation
                         {
                             context.Release(output);
                         }
+                    }
+                }
+            });
+            visitor.Visit(roots);
+        }
+
+        private static void AddIgnoreNodes(Graph graph, IEnumerable<OutputNode> roots)
+        {
+            var visitor = new RelayDfsVisitor(n =>
+            {
+                foreach (var output in n.Outputs)
+                {
+                    if (output.Connections.Count == 0)
+                    {
+                        var ignore = graph.AddNode(new IgnoreNode(output.Type, output.Shape));
+                        ignore.Input.Connect(output);
                     }
                 }
             });

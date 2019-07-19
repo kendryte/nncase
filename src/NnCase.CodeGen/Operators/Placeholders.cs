@@ -14,6 +14,7 @@ namespace NnCase.CodeGen.Operators
             registry.DisableRuntime<InputNode>();
             registry.DisableRuntime<OutputNode>();
             registry.DisableRuntime<Constant>();
+            registry.DisableRuntime<IgnoreNode>();
         }
     }
 }

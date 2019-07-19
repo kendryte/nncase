@@ -138,12 +138,7 @@ namespace NnCase.Cli
 
         private async Task GetActivationRanges(Options options, Graph graph, Target target, Quantizer quantizer)
         {
-            var allocators = new Dictionary<MemoryType, MemoryAllocator>();
-            target.AddAllocators(allocators);
-            var allocationContext = new AllocationContext(allocators);
-            var computeSequence = new List<Node>();
-            Scheduler.Schedule(graph.Outputs, allocationContext, computeSequence);
-
+            (var allocators, var allocationContext, var computeSequence) = Schedule(graph, target);
             var evaluator = new Evaluator(allocators, allocationContext.Allocations, computeSequence, EvaluatorRegistry.Default);
 
             var dataset = new ImageDataset(options.Dataset, graph.Inputs[0].Output.Shape, 0.0f, 1.0f);
@@ -170,12 +165,7 @@ namespace NnCase.Cli
 
         private async Task Simulate(Options options, Graph graph, Target target)
         {
-            var allocators = new Dictionary<MemoryType, MemoryAllocator>();
-            target.AddAllocators(allocators);
-            var allocationContext = new AllocationContext(allocators);
-            var computeSequence = new List<Node>();
-            Scheduler.Schedule(graph.Outputs, allocationContext, computeSequence);
-
+            (var allocators, var allocationContext, var computeSequence) = Schedule(graph, target);
             var evaluator = new Evaluator(allocators, allocationContext.Allocations, computeSequence, EvaluatorRegistry.Default);
 
             var dataset = new ImageDataset(options.Dataset, graph.Inputs[0].Output.Shape, 0.0f, 1.0f);
@@ -187,14 +177,20 @@ namespace NnCase.Cli
 
         private void GenerateCode(Options options, Graph graph, Target target)
         {
+            (var allocators, var allocationContext, var computeSequence) = Schedule(graph, target);
+            DumpGraph(graph, "codegen");
+            var generator = new Generator(allocators, allocationContext.Allocations, computeSequence, CodeGenRegistry.Default);
+            generator.Generate(File.Create(options.Output));
+        }
+
+        private (Dictionary<MemoryType, MemoryAllocator> allocators, AllocationContext allocationContext, List<Node> computeSequence) Schedule(Graph graph, Target target)
+        {
             var allocators = new Dictionary<MemoryType, MemoryAllocator>();
             target.AddAllocators(allocators);
             var allocationContext = new AllocationContext(allocators);
             var computeSequence = new List<Node>();
-            Scheduler.Schedule(graph.Outputs, allocationContext, computeSequence);
-
-            var generator = new Generator(allocators, allocationContext.Allocations, computeSequence, CodeGenRegistry.Default);
-            generator.Generate(File.Create(options.Output));
+            Scheduler.Schedule(graph, graph.Outputs, allocationContext, computeSequence);
+            return (allocators, allocationContext, computeSequence);
         }
     }
 }

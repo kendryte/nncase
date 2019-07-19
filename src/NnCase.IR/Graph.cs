@@ -64,14 +64,13 @@ namespace NnCase.IR
         public void AssignNames()
         {
             var names = new HashSet<string>();
-            var visitor = new RelayDfsVisitor(n =>
+            foreach (var node in Nodes)
             {
                 int i = 0;
-                while (string.IsNullOrEmpty(n.Name) || names.Contains(n.Name))
-                    n.Name = $"{n.GetType().Name}_{i++}";
-                names.Add(n.Name);
-            });
-            visitor.Visit(this);
+                while (string.IsNullOrEmpty(node.Name) || names.Contains(node.Name))
+                    node.Name = $"{node.GetType().Name}_{i++}";
+                names.Add(node.Name);
+            }
         }
 
         public void DumpDotGraph(Stream output)

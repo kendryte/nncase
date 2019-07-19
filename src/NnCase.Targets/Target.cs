@@ -36,7 +36,7 @@ namespace NnCase.Targets
 
         private List<Transform> GetDefaultTransforms()
         {
-            return new List<Transform>
+            var transforms = new List<Transform>
             {
                 new FoldTransposeTransform(),
                 new FoldNopTransposeTransform(),
@@ -50,6 +50,9 @@ namespace NnCase.Targets
                 new FoldQuantizeTransform(),
                 new FoldInputAndQuantizeTransform(),
             };
+
+            AddDefaultTransforms(transforms);
+            return transforms;
         }
 
         public virtual void RegisterEvaluators(EvaluatorRegistry registry)
@@ -63,6 +66,10 @@ namespace NnCase.Targets
         }
 
         public virtual void RegisterEmitters(CodeGenRegistry registry)
+        {
+        }
+
+        protected virtual void AddDefaultTransforms(List<Transform> transforms)
         {
         }
 

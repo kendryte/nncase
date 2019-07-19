@@ -23,4 +23,24 @@ namespace NnCase.Targets.K210
         Pool_Mean_2_S1 = 8,
         Pool_Max_2_S1 = 9
     }
+
+    public struct KPUBatchNormSegment
+    {
+        public int Mul { get; set; }
+
+        public int Shift { get; set; }
+
+        public int Add { get; set; }
+    }
+
+    public struct KPUActivationSegment
+    {
+        public long StartX { get; set; }
+
+        public int Mul { get; set; }
+
+        public int Shift { get; set; }
+
+        public int Add { get; set; }
+    }
 }

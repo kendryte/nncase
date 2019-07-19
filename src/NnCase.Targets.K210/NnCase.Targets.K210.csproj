@@ -9,7 +9,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="IR\Operators\" />
+    <Folder Include="Runtime\Hardware\" />
   </ItemGroup>
 
 </Project>

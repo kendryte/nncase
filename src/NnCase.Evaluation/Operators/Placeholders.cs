@@ -13,6 +13,7 @@ namespace NnCase.Evaluation.Operators
             registry.Add<InputNode>((n, e) => { });
             registry.Add<OutputNode>((n, e) => { });
             registry.Add<Constant>((n, e) => { });
+            registry.Add<IgnoreNode>((n, e) => { });
         }
     }
 }

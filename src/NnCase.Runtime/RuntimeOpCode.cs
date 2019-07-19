@@ -25,6 +25,9 @@ namespace NnCase.Runtime
         CPU_CPUDepthwiseConv2D = 1002,
         CPU_CPUReduceWindow2D = 1003,
         CPU_CPUQuantizedConv2D = 1004,
-        CPU_CPUQuantizedDepthwiseConv2D = 1005
+        CPU_CPUQuantizedDepthwiseConv2D = 1005,
+
+        K210_KPUUpload = 2001,
+        K210_KPUConv2D = 2002
     }
 }

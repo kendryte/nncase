@@ -44,7 +44,7 @@ namespace NnCase.Transforms
             };
             var allocationContext = new AllocationContext(allocators);
             var computeSequence = new List<Node>();
-            Scheduler.Schedule(newGraph.Outputs, allocationContext, computeSequence);
+            Scheduler.Schedule(newGraph, newGraph.Outputs, allocationContext, computeSequence);
 
             var evaluator = new Evaluator(allocators, allocationContext.Allocations, computeSequence, EvaluatorRegistry.Default);
             evaluator.Evaluate();

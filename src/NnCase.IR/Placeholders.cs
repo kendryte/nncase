@@ -23,4 +23,14 @@ namespace NnCase.IR
             Input = AddInput("input", type, shape);
         }
     }
+
+    public class IgnoreNode : Node
+    {
+        public InputConnector Input { get; }
+
+        public IgnoreNode(DataType type, Shape shape)
+        {
+            Input = AddInput("input", type, shape);
+        }
+    }
 }

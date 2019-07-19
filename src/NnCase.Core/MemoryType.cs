@@ -14,6 +14,11 @@ namespace NnCase
         /// <summary>
         /// Main memory pool
         /// </summary>
-        Main
+        Main,
+
+        /// <summary>
+        /// K210 KPU dedicated memory
+        /// </summary>
+        K210KPU
     }
 }
