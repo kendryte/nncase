@@ -90,7 +90,7 @@ namespace NnCase.Targets.K210.Transforms
                 {
                     Mul = bnMul.RoundedMul,
                     Shift = 15,
-                    Add = (int)Math.Round((b * yqParam.Scale + yqParam.ZeroPoint) * postMul)
+                    Add = (int)Math.Round((b + yqParam.Scale * yqParam.ZeroPoint) / yqParam.Scale * postMul)
                 };
             }
 

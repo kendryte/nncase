@@ -136,7 +136,7 @@ namespace targets
             case reduce_mean:
             {
                 reduce([](auto a, auto b) { return a + b; });
-                auto mul = (float)input.size() / output.size();
+                auto mul = (float)output.size() / input.size();
                 kernels::neutral::unary(output.data(), output.data(), output.size(), [mul](auto a) { return a * mul; });
                 return kcr_done;
             }

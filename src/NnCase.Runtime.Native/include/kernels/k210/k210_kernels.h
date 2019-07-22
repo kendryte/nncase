@@ -139,12 +139,12 @@ namespace kernels
                     const auto &bn = batchnorm[oc];
                     for (size_t i = 0; i < channel_size; i++)
                     {
-                        auto value = (*src_it * bn.mul >> bn.shift) + bn.add;
+                        auto value = (*src_it++ * bn.mul >> bn.shift) + bn.add;
                         auto &seg = *std::find_if(activation.rbegin(), activation.rend(), [value](const targets::k210::kpu_activation_segment &seg) {
                             return value > seg.start_x;
                         });
                         value = runtime::carry_shift((value - seg.start_x) * seg.mul, seg.shift);
-                        *out_it = (uint8_t)std::clamp(value, int64_t(0), int64_t(255));
+                        *out_it++ = (uint8_t)std::clamp(value, int64_t(0), int64_t(255));
                     }
                 }
             }
@@ -161,7 +161,7 @@ namespace kernels
 
             for (int32_t oc = 0; oc < in_channels; oc++)
             {
-                auto in_c_p = input + oc * in_h * in_w;
+                auto in_c_p = input + (size_t)oc * in_h * in_w;
 
                 for (int32_t oy = 0; oy < out_h; oy++)
                 {

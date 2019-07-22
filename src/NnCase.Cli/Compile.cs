@@ -45,7 +45,7 @@ namespace NnCase.Cli
             }
 
             // 5. Simulate
-            // await Simulate(options, graph, target);
+            await Simulate(options, graph, target);
 
             // 6. CodeGen
             GenerateCode(options, graph, target);
