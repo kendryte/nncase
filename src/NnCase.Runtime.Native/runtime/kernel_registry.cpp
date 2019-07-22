@@ -1,6 +1,7 @@
 #include <runtime/kernel_registry.h>
 #include <runtime/span_reader.h>
 #include <targets/cpu/cpu_ops_body.h>
+#include <targets/k210/k210_ops_body.h>
 #include <targets/neutral/neutral_ops_body.h>
 
 using namespace nncase;
@@ -15,7 +16,7 @@ namespace targets
     {
 
 #define DEFINE_RUNTIME_OP(target, id, name, value) \
-    kernel_call_result id(id##_options &, interpreter &, interpreter_step_t);
+    kernel_call_result id(id##_options &, interpreter_t &, interpreter_step_t);
 
 #define END_DEFINE_TARGET() }
 
@@ -27,7 +28,7 @@ namespace targets
 }
 }
 
-kernel_call_result runtime::call_kernel(runtime_opcode opcode, xtl::span<const uint8_t> body, interpreter &interpreter, interpreter_step_t step)
+kernel_call_result runtime::call_kernel(runtime_opcode opcode, xtl::span<const uint8_t> body, interpreter_t &interpreter, interpreter_step_t step)
 {
     span_reader reader(body);
 

@@ -11,7 +11,7 @@ namespace targets
 {
     namespace cpu
     {
-        kernel_call_result cpu_conv2d(cpu_conv2d_options &options, interpreter &interpreter, interpreter_step_t step)
+        kernel_call_result cpu_conv2d(cpu_conv2d_options &options, interpreter_t &interpreter, interpreter_step_t step)
         {
             auto input = interpreter.memory_at<float>(options.input);
             auto output = interpreter.memory_at<float>(options.output);
@@ -20,7 +20,7 @@ namespace targets
             return kcr_done;
         }
 
-        kernel_call_result cpu_depthwise_conv2d(cpu_depthwise_conv2d_options &options, interpreter &interpreter, interpreter_step_t step)
+        kernel_call_result cpu_depthwise_conv2d(cpu_depthwise_conv2d_options &options, interpreter_t &interpreter, interpreter_step_t step)
         {
             auto input = interpreter.memory_at<float>(options.input);
             auto output = interpreter.memory_at<float>(options.output);
@@ -29,7 +29,7 @@ namespace targets
             return kcr_done;
         }
 
-        runtime::kernel_call_result cpu_reduce_window2d(cpu_reduce_window2d_options &options, runtime::interpreter &interpreter, runtime::interpreter_step_t step)
+        runtime::kernel_call_result cpu_reduce_window2d(cpu_reduce_window2d_options &options, interpreter_t &interpreter, runtime::interpreter_step_t step)
         {
             auto input = interpreter.memory_at<float>(options.input);
             auto output = interpreter.memory_at<float>(options.output);
@@ -55,7 +55,7 @@ namespace targets
             }
         }
 
-        kernel_call_result cpu_quantized_conv2d(cpu_quantized_conv2d_options &options, interpreter &interpreter, interpreter_step_t step)
+        kernel_call_result cpu_quantized_conv2d(cpu_quantized_conv2d_options &options, interpreter_t &interpreter, interpreter_step_t step)
         {
             auto input = interpreter.memory_at<uint8_t>(options.input);
             auto output = interpreter.memory_at<uint8_t>(options.output);
@@ -65,7 +65,7 @@ namespace targets
             return kcr_done;
         }
 
-        kernel_call_result cpu_quantized_depthwise_conv2d(cpu_quantized_depthwise_conv2d_options &options, interpreter &interpreter, interpreter_step_t step)
+        kernel_call_result cpu_quantized_depthwise_conv2d(cpu_quantized_depthwise_conv2d_options &options, interpreter_t &interpreter, interpreter_step_t step)
         {
             auto input = interpreter.memory_at<uint8_t>(options.input);
             auto output = interpreter.memory_at<uint8_t>(options.output);

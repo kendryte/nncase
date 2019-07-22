@@ -14,6 +14,10 @@ conan_check()
 conan_cmake_run(CONANFILE conanfile.txt
                 BASIC_SETUP CMAKE_TARGETS
                 BUILD missing)
+                
+if (NOT NNCASE_TARGET)
+    set(NNCASE_TARGET cpu)
+endif()
 
 set(THIRD_PARTY ${CMAKE_CURRENT_LIST_DIR}/third_party)
 

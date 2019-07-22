@@ -23,3 +23,9 @@ BEGINE_DEFINE_TARGET(cpu)
      DEFINE_RUNTIME_OP(cpu, cpu_quantized_conv2d, CPU_CPUQuantizedConv2D, 1004)
      DEFINE_RUNTIME_OP(cpu, cpu_quantized_depthwise_conv2d, CPU_CPUQuantizedDepthwiseConv2D, 1005)
 END_DEFINE_TARGET()
+
+// K210
+BEGINE_DEFINE_TARGET(k210)
+     DEFINE_RUNTIME_OP(k210, kpu_upload, K210_KPUUpload, 2001)
+     DEFINE_RUNTIME_OP(k210, kpu_conv2d, K210_KPUConv2D, 2002)
+END_DEFINE_TARGET()

@@ -35,7 +35,7 @@ namespace NnCase.Targets.K210.Runtime.Hardware
             set => Value = unchecked((ulong)((Value & ~arg_xMask) | ((((ulong)value) << arg_xShift) & arg_xMask)));
         }
         private const int reserved0Shift = 56;
-        private const ulong reserved0Mask = unchecked((ulong)((1UL << 64) - (1UL << 56)));
+        private const ulong reserved0Mask = unchecked((ulong)(0 - (1UL << 56)));
         public Bit8 reserved0
         {
             get => (Bit8)((Value & reserved0Mask) >> reserved0Shift);

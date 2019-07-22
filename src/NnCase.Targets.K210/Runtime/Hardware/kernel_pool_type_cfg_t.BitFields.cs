@@ -70,7 +70,7 @@ namespace NnCase.Targets.K210.Runtime.Hardware
             set => Value = unchecked((ulong)((Value & ~pad_valueMask) | ((((ulong)value) << pad_valueShift) & pad_valueMask)));
         }
         private const int bwsx_base_addrShift = 32;
-        private const ulong bwsx_base_addrMask = unchecked((ulong)((1UL << 64) - (1UL << 32)));
+        private const ulong bwsx_base_addrMask = unchecked((ulong)(0 - (1UL << 32)));
         public Bit32 bwsx_base_addr
         {
             get => (Bit32)((Value & bwsx_base_addrMask) >> bwsx_base_addrShift);

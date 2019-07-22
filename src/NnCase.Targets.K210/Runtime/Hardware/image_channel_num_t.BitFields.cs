@@ -42,7 +42,7 @@ namespace NnCase.Targets.K210.Runtime.Hardware
             set => Value = unchecked((ulong)((Value & ~o_ch_num_coefMask) | ((((ulong)value) << o_ch_num_coefShift) & o_ch_num_coefMask)));
         }
         private const int reserved2Shift = 58;
-        private const ulong reserved2Mask = unchecked((ulong)((1UL << 64) - (1UL << 58)));
+        private const ulong reserved2Mask = unchecked((ulong)(0 - (1UL << 58)));
         public Bit6 reserved2
         {
             get => (Bit6)((Value & reserved2Mask) >> reserved2Shift);

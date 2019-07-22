@@ -28,7 +28,7 @@ namespace NnCase.Targets.K210.Runtime.Hardware
             set => Value = unchecked((ulong)((Value & ~image_dst_addrMask) | ((((ulong)value) << image_dst_addrShift) & image_dst_addrMask)));
         }
         private const int reserved1Shift = 47;
-        private const ulong reserved1Mask = unchecked((ulong)((1UL << 64) - (1UL << 47)));
+        private const ulong reserved1Mask = unchecked((ulong)(0 - (1UL << 47)));
         public Bit17 reserved1
         {
             get => (Bit17)((Value & reserved1Mask) >> reserved1Shift);

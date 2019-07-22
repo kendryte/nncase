@@ -9,13 +9,13 @@ namespace nncase
 {
 namespace runtime
 {
-    class interpreter;
+    class interpreter_base;
     typedef void (*run_callback_t)(void *userdata);
     typedef void (*error_callback_t)(const char *err, void *userdata);
     typedef void (*node_profile_callback_t)(runtime_opcode op, std::chrono::nanoseconds duration, void *userdata);
-    typedef void (interpreter::*interpreter_step_t)();
+    typedef void (interpreter_base::*interpreter_step_t)();
 
-    class interpreter
+    class interpreter_base
     {
         using clock_t = std::chrono::system_clock;
 
@@ -41,11 +41,12 @@ namespace runtime
 
         void run(run_callback_t callback, error_callback_t on_error, node_profile_callback_t node_profile, void *userdata);
 
-    private:
-        void step();
+    protected:
+        virtual bool initialize();
+        virtual xtl::span<uint8_t> memory_at(const memory_range &range) const noexcept;
 
     private:
-        xtl::span<uint8_t> memory_at(const memory_range &range) const noexcept;
+        void step();
 
     private:
         const model_header *model_header_;

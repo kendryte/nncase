@@ -40,7 +40,7 @@ namespace targets
                 reader.read(dilation_h);
                 reader.read(dilation_w);
                 reader.read(fused_activation);
-                reader.read_span(weights, out_channels * in_shape[3] * filter_h * filter_w);
+                reader.read_span(weights, (size_t)out_channels * in_shape[3] * filter_h * filter_w);
                 reader.read_span(bias, out_channels);
             }
         };
@@ -76,7 +76,7 @@ namespace targets
                 reader.read(dilation_h);
                 reader.read(dilation_w);
                 reader.read(fused_activation);
-                reader.read_span(weights, in_shape[3] * filter_h * filter_w);
+                reader.read_span(weights, (size_t)in_shape[3] * filter_h * filter_w);
                 reader.read_span(bias, in_shape[3]);
             }
         };
@@ -140,7 +140,7 @@ namespace targets
                 reader.read(output_mul);
                 reader.read(output_shift);
                 reader.read(output_offset);
-                reader.read_span(weights, out_channels * in_shape[3] * filter_h * filter_w);
+                reader.read_span(weights, (size_t)out_channels * in_shape[3] * filter_h * filter_w);
                 reader.read_span(bias, out_channels);
             }
         };
@@ -184,7 +184,7 @@ namespace targets
                 reader.read(output_mul);
                 reader.read(output_shift);
                 reader.read(output_offset);
-                reader.read_span(weights, in_shape[3] * filter_h * filter_w);
+                reader.read_span(weights, (size_t)in_shape[3] * filter_h * filter_w);
                 reader.read_span(bias, in_shape[3]);
             }
         };

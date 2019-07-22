@@ -63,7 +63,8 @@ struct fixed_mul
 typedef enum _memory_type
 {
     mem_const,
-    mem_main
+    mem_main,
+    mem_k210_kpu
 } memory_type_t;
 
 using runtime_shape_t = std::array<int, 4>;

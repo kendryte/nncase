@@ -49,7 +49,7 @@ namespace NnCase.Targets.K210.Runtime.Hardware
             set => Value = unchecked((ulong)((Value & ~load_actMask) | ((((ulong)value) << load_actShift) & load_actMask)));
         }
         private const int active_addrShift = 32;
-        private const ulong active_addrMask = unchecked((ulong)((1UL << 64) - (1UL << 32)));
+        private const ulong active_addrMask = unchecked((ulong)(0 - (1UL << 32)));
         public Bit32 active_addr
         {
             get => (Bit32)((Value & active_addrMask) >> active_addrShift);

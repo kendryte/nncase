@@ -28,7 +28,7 @@ namespace NnCase.Targets.K210.Runtime.Hardware
             set => Value = unchecked((ulong)((Value & ~channel_byte_numMask) | ((((ulong)value) << channel_byte_numShift) & channel_byte_numMask)));
         }
         private const int dma_total_byteShift = 32;
-        private const ulong dma_total_byteMask = unchecked((ulong)((1UL << 64) - (1UL << 32)));
+        private const ulong dma_total_byteMask = unchecked((ulong)(0 - (1UL << 32)));
         public Bit32 dma_total_byte
         {
             get => (Bit32)((Value & dma_total_byteMask) >> dma_total_byteShift);

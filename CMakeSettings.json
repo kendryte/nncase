@@ -10,7 +10,12 @@
       "cmakeCommandArgs": "",
       "buildCommandArgs": "-v",
       "ctestCommandArgs": "",
-      "variables": []
+      "variables": [
+        {
+          "name": "NNCASE_TARGET",
+          "value": "k210"
+        }
+      ]
     },
     {
       "name": "x64-Release",
@@ -22,7 +27,12 @@
       "buildCommandArgs": "-v",
       "ctestCommandArgs": "",
       "inheritEnvironments": [ "msvc_x64_x64" ],
-      "variables": []
+      "variables": [
+        {
+          "name": "NNCASE_TARGET",
+          "value": "k210"
+        }
+      ]
     }
   ]
 }

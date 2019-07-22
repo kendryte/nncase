@@ -17,7 +17,7 @@ namespace kernels
 
             for (int batch = 0; batch < in_shape[0]; batch++)
             {
-                auto in_batch = input + batch * in_shape[1] * in_shape[2] * in_shape[3];
+                auto in_batch = input + (size_t)batch * in_shape[1] * in_shape[2] * in_shape[3];
 
                 for (int oy = 0; oy < out_h; oy++)
                 {
@@ -32,7 +32,7 @@ namespace kernels
 
                         for (int oc = 0; oc < out_channels; oc++)
                         {
-                            auto w_oc = weights + oc * filter_h * filter_w * in_shape[3];
+                            auto w_oc = weights + (size_t)oc * filter_h * filter_w * in_shape[3];
                             float value = bias[oc];
 
                             for (int ky = filter_y_start; ky < filter_y_end; ky++)
@@ -42,8 +42,8 @@ namespace kernels
                                     int in_y = in_y_origin + dilation_h * ky;
                                     int in_x = in_x_origin + dilation_w * kx;
 
-                                    auto in_pix = in_batch + (in_y * in_shape[2] + in_x) * in_shape[3];
-                                    auto w_pix = w_oc + (ky * filter_w + kx) * in_shape[3];
+                                    auto in_pix = in_batch + ((size_t)in_y * in_shape[2] + in_x) * in_shape[3];
+                                    auto w_pix = w_oc + ((size_t)ky * filter_w + kx) * in_shape[3];
 
                                     for (int ic = 0; ic < in_shape[3]; ic++)
                                         value += in_pix[ic] * w_pix[ic];
@@ -66,7 +66,7 @@ namespace kernels
 
             for (int batch = 0; batch < in_shape[0]; batch++)
             {
-                auto in_batch = input + batch * in_shape[1] * in_shape[2] * in_shape[3];
+                auto in_batch = input + (size_t)batch * in_shape[1] * in_shape[2] * in_shape[3];
 
                 for (int oy = 0; oy < out_h; oy++)
                 {
@@ -81,7 +81,7 @@ namespace kernels
 
                         for (int oc = 0; oc < in_shape[3]; oc++)
                         {
-                            auto w_oc = weights + oc * filter_h * filter_w;
+                            auto w_oc = weights + (size_t)oc * filter_h * filter_w;
                             float value = bias[oc];
 
                             for (int ky = filter_y_start; ky < filter_y_end; ky++)
@@ -91,8 +91,8 @@ namespace kernels
                                     int in_y = in_y_origin + dilation_h * ky;
                                     int in_x = in_x_origin + dilation_w * kx;
 
-                                    auto in_pix = in_batch + (in_y * in_shape[2] + in_x) * in_shape[3];
-                                    auto w_pix = w_oc + (ky * filter_w + kx);
+                                    auto in_pix = in_batch + ((size_t)in_y * in_shape[2] + in_x) * in_shape[3];
+                                    auto w_pix = w_oc + ((size_t)ky * filter_w + kx);
 
                                     value += in_pix[oc] * w_pix[0];
                                 }
@@ -115,7 +115,7 @@ namespace kernels
 
             for (int batch = 0; batch < in_shape[0]; batch++)
             {
-                auto in_batch = input + batch * in_shape[1] * in_shape[2] * in_shape[3];
+                auto in_batch = input + (size_t)batch * in_shape[1] * in_shape[2] * in_shape[3];
 
                 for (int oy = 0; oy < out_h; oy++)
                 {
@@ -140,7 +140,7 @@ namespace kernels
                                     int in_y = in_y_origin + dilation_h * ky;
                                     int in_x = in_x_origin + dilation_w * kx;
 
-                                    auto in_pix = in_batch + (in_y * in_shape[2] + in_x) * in_shape[3];
+                                    auto in_pix = in_batch + ((size_t)in_y * in_shape[2] + in_x) * in_shape[3];
 
                                     value = binary_op(value, in_pix[oc]);
                                     kernel_count++;
@@ -163,7 +163,7 @@ namespace kernels
 
             for (int batch = 0; batch < in_shape[0]; batch++)
             {
-                auto in_batch = input + batch * in_shape[1] * in_shape[2] * in_shape[3];
+                auto in_batch = input + (size_t)batch * in_shape[1] * in_shape[2] * in_shape[3];
 
                 for (int oy = 0; oy < out_h; oy++)
                 {
@@ -178,7 +178,7 @@ namespace kernels
 
                         for (int oc = 0; oc < out_channels; oc++)
                         {
-                            auto w_oc = weights + oc * filter_h * filter_w * in_shape[3];
+                            auto w_oc = weights + (size_t)oc * filter_h * filter_w * in_shape[3];
                             int32_t value = bias[oc];
 
                             for (int ky = filter_y_start; ky < filter_y_end; ky++)
@@ -188,8 +188,8 @@ namespace kernels
                                     int in_y = in_y_origin + dilation_h * ky;
                                     int in_x = in_x_origin + dilation_w * kx;
 
-                                    auto in_pix = in_batch + (in_y * in_shape[2] + in_x) * in_shape[3];
-                                    auto w_pix = w_oc + (ky * filter_w + kx) * in_shape[3];
+                                    auto in_pix = in_batch + ((size_t)in_y * in_shape[2] + in_x) * in_shape[3];
+                                    auto w_pix = w_oc + ((size_t)ky * filter_w + kx) * in_shape[3];
 
                                     for (int ic = 0; ic < in_shape[3]; ic++)
                                         value += (in_pix[ic] - input_offset) * (w_pix[ic] - filter_offset);
@@ -213,7 +213,7 @@ namespace kernels
 
             for (int batch = 0; batch < in_shape[0]; batch++)
             {
-                auto in_batch = input + batch * in_shape[1] * in_shape[2] * in_shape[3];
+                auto in_batch = input + (size_t)batch * in_shape[1] * in_shape[2] * in_shape[3];
 
                 for (int oy = 0; oy < out_h; oy++)
                 {
@@ -228,7 +228,7 @@ namespace kernels
 
                         for (int oc = 0; oc < in_shape[3]; oc++)
                         {
-                            auto w_oc = weights + oc * filter_h * filter_w;
+                            auto w_oc = weights + (size_t)oc * filter_h * filter_w;
                             int32_t value = bias[oc];
 
                             for (int ky = filter_y_start; ky < filter_y_end; ky++)
@@ -238,8 +238,8 @@ namespace kernels
                                     int in_y = in_y_origin + dilation_h * ky;
                                     int in_x = in_x_origin + dilation_w * kx;
 
-                                    auto in_pix = in_batch + (in_y * in_shape[2] + in_x) * in_shape[3];
-                                    auto w_pix = w_oc + (ky * filter_w + kx);
+                                    auto in_pix = in_batch + ((size_t)in_y * in_shape[2] + in_x) * in_shape[3];
+                                    auto w_pix = w_oc + ((size_t)ky * filter_w + kx);
 
                                     value += (in_pix[oc] - input_offset) * (w_pix[0] - filter_offset);
                                 }

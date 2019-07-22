@@ -35,7 +35,7 @@ namespace NnCase.Targets.K210.Runtime.Hardware
             set => Value = unchecked((ulong)((Value & ~depth_wise_layerMask) | ((((ulong)value) << depth_wise_layerShift) & depth_wise_layerMask)));
         }
         private const int reservedShift = 4;
-        private const ulong reservedMask = unchecked((ulong)((1UL << 64) - (1UL << 4)));
+        private const ulong reservedMask = unchecked((ulong)(0 - (1UL << 4)));
         public Bit60 reserved
         {
             get => (Bit60)((Value & reservedMask) >> reservedShift);

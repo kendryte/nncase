@@ -3,7 +3,7 @@
 #include <clipp.h>
 #include <filesystem>
 #include <fstream>
-#include <runtime/interpreter.h>
+#include <runtime/target_config.h>
 
 using namespace std;
 using namespace clipp;
@@ -46,7 +46,7 @@ struct eval_options
 
 struct eval_context
 {
-    interpreter interp;
+    interpreter_t interp;
 
     template <class T>
     void eval(const eval_options &options, dataset &dataset)

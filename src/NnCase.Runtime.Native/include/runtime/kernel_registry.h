@@ -1,6 +1,6 @@
 #pragma once
+#include "target_config.h"
 #include <datatypes.h>
-#include <runtime/interpreter.h>
 #include <runtime/runtime_op.h>
 #include <xtl/xspan.hpp>
 
@@ -15,6 +15,6 @@ namespace runtime
         kcr_error
     };
 
-    kernel_call_result call_kernel(runtime_opcode opcode, xtl::span<const uint8_t> body, interpreter &interpreter, interpreter_step_t step);
+    kernel_call_result call_kernel(runtime_opcode opcode, xtl::span<const uint8_t> body, interpreter_t &interpreter, interpreter_step_t step);
 }
 }

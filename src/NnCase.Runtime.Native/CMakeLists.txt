@@ -5,7 +5,9 @@ set(SRCS nceval.cpp
          runtime/interpreter.cpp
          runtime/kernel_registry.cpp
          targets/neutral/neutral_ops.cpp
-         targets/cpu/cpu_ops.cpp)
+         targets/cpu/cpu_ops.cpp
+         targets/k210/k210_ops.cpp
+         targets/k210/interpreter.cpp)
 
 if (MSVC_VERSION GREATER_EQUAL "1900")
     include(CheckCXXCompilerFlag)
@@ -14,6 +16,12 @@ if (MSVC_VERSION GREATER_EQUAL "1900")
         add_compile_options("/std:c++latest")
         add_definitions(/D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS)
     endif()
+endif()
+
+if (WIN32)
+    add_definitions(/DNNCASE_TARGET=${NNCASE_TARGET})
+else()
+    add_definitions(-DNNCASE_TARGET=${NNCASE_TARGET})
 endif()
 
 add_executable (nceval ${SRCS})

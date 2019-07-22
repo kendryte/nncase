@@ -1,8 +1,8 @@
 #pragma once
+#include <algorithm>
 #include <cassert>
 #include <cstddef>
 #include <datatypes.h>
-#include <algorithm>
 
 namespace nncase
 {
@@ -10,7 +10,7 @@ namespace kernels
 {
     inline size_t offset(const runtime_shape_t &shape, const runtime_shape_t &index)
     {
-        return ((index[0] * shape[1] + index[1]) * shape[2] + index[2]) * shape[3] + index[3];
+        return (((size_t)index[0] * shape[1] + index[1]) * shape[2] + index[2]) * shape[3] + index[3];
     }
 
     namespace details
@@ -51,6 +51,32 @@ namespace kernels
         {
             T *operator()(const TRange &range) const noexcept { return range; }
         };
+
+        template <int32_t Bits>
+        int32_t to_signed(uint32_t value)
+        {
+            auto mask = uint32_t(1) << (Bits - 1);
+            if (Bits != 32 && (value & mask) != 0)
+            {
+                auto sign = 0xFFFFFFFF << Bits;
+                return (int)(value | sign);
+            }
+
+            return (int32_t)value;
+        }
+
+        template <int32_t Bits>
+        int64_t to_signed(uint64_t value)
+        {
+            auto mask = uint64_t(1) << (Bits - 1);
+            if ((value & mask) != 0)
+            {
+                auto sign = 0xFFFFFFFFFFFFFFFF << Bits;
+                return (int64_t)(value | sign);
+            }
+
+            return (int64_t)value;
+        }
     }
 }
 }

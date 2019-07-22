@@ -37,8 +37,15 @@ namespace runtime
             advance(sizeof(T) * size);
         }
 
+        template <class T, ptrdiff_t N>
+        void read_span(xtl::span<const T, N> &span)
+        {
+            span = { reinterpret_cast<const T *>(span_.data()), N };
+            advance(sizeof(T) * N);
+        }
+
         template <class T>
-        const T *get() const noexcept
+        const T *peek() const noexcept
         {
             return reinterpret_cast<const T *>(span_.data());
         }
@@ -46,8 +53,20 @@ namespace runtime
         template <class T>
         void get_array(const T *&value, size_t size)
         {
-            value = get<T>();
+            value = peek<T>();
             advance(size * sizeof(T));
+        }
+
+        template <class T>
+        void get_ref(const T *&value)
+        {
+            value = peek<T>();
+            advance(sizeof(T));
+        }
+
+        void skip(size_t count)
+        {
+            advance(count);
         }
 
     private:

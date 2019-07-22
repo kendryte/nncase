@@ -35,7 +35,7 @@ namespace NnCase.Targets.K210.Runtime.Hardware
             set => Value = unchecked((ulong)((Value & ~para_sizeMask) | ((((ulong)value) << para_sizeShift) & para_sizeMask)));
         }
         private const int para_start_addrShift = 32;
-        private const ulong para_start_addrMask = unchecked((ulong)((1UL << 64) - (1UL << 32)));
+        private const ulong para_start_addrMask = unchecked((ulong)(0 - (1UL << 32)));
         public Bit32 para_start_addr
         {
             get => (Bit32)((Value & para_start_addrMask) >> para_start_addrShift);

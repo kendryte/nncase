@@ -12,6 +12,10 @@ namespace NnCase.Targets.K210.Runtime.Operators
     {
         public MemoryRange MainMemoryOutput { get; set; }
 
+        public int Batches { get; set; }
+
+        public int Reserved0 { get; set; }
+
         public kpu_layer_argument_t LayerArgument;
 
         public kpu_batchnorm_argument_t[] BatchNorm { get; set; }
@@ -32,6 +36,8 @@ namespace NnCase.Targets.K210.Runtime.Operators
             Options = new KPUConv2DOptions
             {
                 MainMemoryOutput = reader.Read<MemoryRange>(),
+                Batches = reader.Read<int>(),
+                Reserved0 = reader.Read<int>(),
                 LayerArgument = reader.Read<kpu_layer_argument_t>()
             };
 
@@ -58,6 +64,8 @@ namespace NnCase.Targets.K210.Runtime.Operators
         public void Serialize(BinaryWriter writer)
         {
             writer.Write(Options.MainMemoryOutput);
+            writer.Write(Options.Batches);
+            writer.Write(Options.Reserved0);
 
             var layerPos = writer.Position;
             writer.Position += Unsafe.SizeOf<kpu_layer_argument_t>();

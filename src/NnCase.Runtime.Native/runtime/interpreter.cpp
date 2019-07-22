@@ -1,3 +1,4 @@
+#include <cassert>
 #include <iostream>
 #include <runtime/interpreter.h>
 #include <runtime/kernel_registry.h>
@@ -5,7 +6,7 @@
 using namespace nncase;
 using namespace nncase::runtime;
 
-bool interpreter::try_load_model(const uint8_t *buffer)
+bool interpreter_base::try_load_model(const uint8_t *buffer)
 {
     auto offset = buffer;
     model_header_ = reinterpret_cast<const model_header *>(buffer);
@@ -32,10 +33,15 @@ bool interpreter::try_load_model(const uint8_t *buffer)
     offset += sizeof(node_header) * nodes_size();
     node_body_start_ = offset;
 
+    return initialize();
+}
+
+bool interpreter_base::initialize()
+{
     return true;
 }
 
-void interpreter::run(run_callback_t callback, error_callback_t on_error, node_profile_callback_t node_profile, void *userdata)
+void interpreter_base::run(run_callback_t callback, error_callback_t on_error, node_profile_callback_t node_profile, void *userdata)
 {
     run_callback_ = callback;
     on_error_ = on_error;
@@ -48,7 +54,7 @@ void interpreter::run(run_callback_t callback, error_callback_t on_error, node_p
     step();
 }
 
-void interpreter::step()
+void interpreter_base::step()
 {
     auto result = kcr_done;
 
@@ -82,7 +88,7 @@ void interpreter::step()
             cnt_node_body_ += header.body_size;
             last_op_ = header.opcode;
 
-            auto result = call_kernel(header.opcode, body, *this, &interpreter::step);
+            auto result = call_kernel(header.opcode, body, static_cast<interpreter_t &>(*this), &interpreter_base::step);
 
             if (result == kcr_error)
             {
@@ -103,7 +109,7 @@ void interpreter::step()
     }
 }
 
-xtl::span<uint8_t> interpreter::memory_at(const memory_range &range) const noexcept
+xtl::span<uint8_t> interpreter_base::memory_at(const memory_range &range) const noexcept
 {
     uintptr_t base;
 
@@ -117,6 +123,7 @@ xtl::span<uint8_t> interpreter::memory_at(const memory_range &range) const noexc
         break;
     default:
         base = 0;
+        assert(!"Invalid memory type");
         break;
     }
 

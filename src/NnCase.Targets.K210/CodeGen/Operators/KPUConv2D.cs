@@ -101,8 +101,8 @@ namespace NnCase.Targets.K210.CodeGen.Operators
                     };
                     reg.kernel_pool_type_cfg = new kernel_pool_type_cfg_t
                     {
-                        load_para = 1,
                         kernel_type = (byte)n.FilterType,
+                        load_para = 1,
                         pool_type = (byte)n.PoolType,
                         dma_burst_size = 15,
                         pad_value = n.PadValue
@@ -153,6 +153,7 @@ namespace NnCase.Targets.K210.CodeGen.Operators
                     {
                         MainMemoryOutput = n.MainMemoryOutput == null ? new MemoryRange() : g.MemoryRange(n.MainMemoryOutput),
                         LayerArgument = GetLayer(),
+                        Batches = n.Input.Shape[0],
                         BatchNorm = GetBatchNorm(),
                         Activation = GetActivation(),
                         Weights = n.Weights.ToArray()

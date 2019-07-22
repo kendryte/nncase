@@ -27,7 +27,7 @@ namespace targets
 {
     namespace neutral
     {
-        kernel_call_result binary(binary_options &options, interpreter &interpreter, interpreter_step_t step)
+        kernel_call_result binary(binary_options &options, interpreter_t &interpreter, interpreter_step_t step)
         {
             auto input_a = interpreter.memory_at<float>(options.input_a);
             auto input_b = interpreter.memory_at<float>(options.input_b);
@@ -56,7 +56,7 @@ namespace targets
             }
         }
 
-        kernel_call_result concat(concat_options &options, interpreter &interpreter, interpreter_step_t step)
+        kernel_call_result concat(concat_options &options, interpreter_t &interpreter, interpreter_step_t step)
         {
             auto output = interpreter.memory_at<uint8_t>(options.output);
             kernels::neutral::concat(options.inputs, output.data(), options.dims, options.inner_size, options.outer_size,
@@ -64,7 +64,7 @@ namespace targets
             return kcr_done;
         }
 
-        kernel_call_result conv2d(conv2d_options &options, interpreter &interpreter, interpreter_step_t step)
+        kernel_call_result conv2d(conv2d_options &options, interpreter_t &interpreter, interpreter_step_t step)
         {
             auto input = interpreter.memory_at<float>(options.input);
             auto output = interpreter.memory_at<float>(options.output);
@@ -73,7 +73,7 @@ namespace targets
             return kcr_done;
         }
 
-        kernel_call_result dequantize(dequantize_options &options, interpreter &interpreter, interpreter_step_t step)
+        kernel_call_result dequantize(dequantize_options &options, interpreter_t &interpreter, interpreter_step_t step)
         {
             auto input = interpreter.memory_at<uint8_t>(options.input);
             auto output = interpreter.memory_at<float>(options.output);
@@ -82,7 +82,7 @@ namespace targets
             return kcr_done;
         }
 
-        kernel_call_result matmul(matmul_options &options, interpreter &interpreter, interpreter_step_t step)
+        kernel_call_result matmul(matmul_options &options, interpreter_t &interpreter, interpreter_step_t step)
         {
             auto input_a = interpreter.memory_at<float>(options.input_a);
             auto input_b = interpreter.memory_at<float>(options.input_b);
@@ -91,7 +91,7 @@ namespace targets
             return kcr_done;
         }
 
-        kernel_call_result memory_copy(memory_copy_options &options, interpreter &interpreter, interpreter_step_t step)
+        kernel_call_result memory_copy(memory_copy_options &options, interpreter_t &interpreter, interpreter_step_t step)
         {
             auto input = interpreter.memory_at<float>(options.input);
             auto output = interpreter.memory_at<float>(options.output);
@@ -100,7 +100,7 @@ namespace targets
             return kcr_done;
         }
 
-        kernel_call_result pad(pad_options &options, interpreter &interpreter, interpreter_step_t step)
+        kernel_call_result pad(pad_options &options, interpreter_t &interpreter, interpreter_step_t step)
         {
             auto input = interpreter.memory_at<uint8_t>(options.input);
             auto output = interpreter.memory_at<uint8_t>(options.output);
@@ -113,7 +113,7 @@ namespace targets
 #undef PAD_KERNEL
         }
 
-        kernel_call_result quantize(quantize_options &options, interpreter &interpreter, interpreter_step_t step)
+        kernel_call_result quantize(quantize_options &options, interpreter_t &interpreter, interpreter_step_t step)
         {
             auto input = interpreter.memory_at<float>(options.input);
             auto output = interpreter.memory_at<uint8_t>(options.output);
@@ -122,7 +122,7 @@ namespace targets
             return runtime::kcr_done;
         }
 
-        kernel_call_result reduce(reduce_options &options, interpreter &interpreter, interpreter_step_t step)
+        kernel_call_result reduce(reduce_options &options, interpreter_t &interpreter, interpreter_step_t step)
         {
             auto input = interpreter.memory_at<float>(options.input);
             auto output = interpreter.memory_at<float>(options.output);
@@ -151,7 +151,7 @@ namespace targets
             }
         }
 
-        kernel_call_result reduce_window2d(reduce_window2d_options &options, interpreter &interpreter, interpreter_step_t step)
+        kernel_call_result reduce_window2d(reduce_window2d_options &options, interpreter_t &interpreter, interpreter_step_t step)
         {
             auto input = interpreter.memory_at<float>(options.input);
             auto output = interpreter.memory_at<float>(options.output);
@@ -177,7 +177,7 @@ namespace targets
             }
         }
 
-        kernel_call_result resize_bilinear(resize_bilinear_options &options, interpreter &interpreter, interpreter_step_t step)
+        kernel_call_result resize_bilinear(resize_bilinear_options &options, interpreter_t &interpreter, interpreter_step_t step)
         {
             auto input = interpreter.memory_at<float>(options.input);
             auto output = interpreter.memory_at<float>(options.output);
@@ -186,7 +186,7 @@ namespace targets
             return kcr_done;
         }
 
-        kernel_call_result resize_nearest_neighbor(resize_nearest_neighbor_options &options, runtime::interpreter &interpreter, runtime::interpreter_step_t step)
+        kernel_call_result resize_nearest_neighbor(resize_nearest_neighbor_options &options, interpreter_t &interpreter, runtime::interpreter_step_t step)
         {
             auto input = interpreter.memory_at<uint8_t>(options.input);
             auto output = interpreter.memory_at<uint8_t>(options.output);
@@ -199,7 +199,7 @@ namespace targets
 #undef RESIZE_NN_KERNEL
         }
 
-        kernel_call_result softmax(softmax_options &options, interpreter &interpreter, interpreter_step_t step)
+        kernel_call_result softmax(softmax_options &options, interpreter_t &interpreter, interpreter_step_t step)
         {
             auto input = interpreter.memory_at<float>(options.input);
             auto output = interpreter.memory_at<float>(options.output);
@@ -208,7 +208,7 @@ namespace targets
             return kcr_done;
         }
 
-        kernel_call_result transpose(transpose_options &options, interpreter &interpreter, interpreter_step_t step)
+        kernel_call_result transpose(transpose_options &options, interpreter_t &interpreter, interpreter_step_t step)
         {
             auto input = interpreter.memory_at<uint8_t>(options.input);
             auto output = interpreter.memory_at<uint8_t>(options.output);

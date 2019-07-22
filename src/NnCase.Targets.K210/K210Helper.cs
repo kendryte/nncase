@@ -62,8 +62,8 @@ namespace NnCase.Targets.K210
             (var groups, var rowLength, _) = GetRowLayout(width);
             var oneLineChannels = Math.Min(channels, groups);
             var blocks = (int)Math.Ceiling(channels / (double)oneLineChannels);
-            var size = rowLength * height * blocks;
-            return size;
+            var lines = rowLength * height * blocks;
+            return lines * KPUMemoryLineSize;
         }
 
         public static void KpuUpload(Span<byte> kpuRam, ReadOnlySpan<byte> data, int width, int height, int channels)
