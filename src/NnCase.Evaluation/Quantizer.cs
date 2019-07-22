@@ -9,6 +9,7 @@ namespace NnCase.Evaluation
     public class Quantizer
     {
         private const float _floatEpsilon = 1.192092896e-07F;
+        private const float _minQuantizeRange = 0.001f;
 
         private readonly Dictionary<OutputConnector, ValueRange<float>> _quantRnages = new Dictionary<OutputConnector, ValueRange<float>>();
 
@@ -52,8 +53,8 @@ namespace NnCase.Evaluation
                 range.Min = 0;
 
             var r = range.Max - range.Min;
-            if (r < 0.1f)
-                r = 0.1f;
+            if (r < _minQuantizeRange)
+                r = _minQuantizeRange;
 
             var scale = ((1L << bits) - 1) / r;
             var bias = MathF.Round(-range.Min * scale);
