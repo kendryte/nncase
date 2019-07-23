@@ -29,13 +29,15 @@ namespace kernels
                         for (int32_t y = 0; y < in_shape[2]; y++)
                         {
                             auto y_origin = channel_origin + (size_t)y * layout.row_len * 64;
-                            for (int32_t x = 0; x < in_shape[3]; x++)
-                                y_origin[x] = *src++;
+                            std::copy(src, src + in_shape[3], y_origin);
+                            src += in_shape[3];
                         }
                     }
                 }
             }
         }
+
+#if NNCASE_TARGET_K210_SIMULATOR
 
         inline void kpu_download(const uint8_t *src, uint8_t *dest, const runtime_shape_t &in_shape)
         {
@@ -247,6 +249,8 @@ namespace kernels
                 }
             }
         }
+
+#endif
     }
 }
 }

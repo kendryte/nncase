@@ -1,9 +1,67 @@
 #include <kernels/k210/k210_kernels.h>
 #include <runtime/kernel_registry.h>
 #include <targets/k210/k210_ops_body.h>
+#if !NNCASE_TARGET_K210_SIMULATOR
+#include <dmac.h>
+#include <sysctl.h>
+#endif
 
 using namespace nncase;
 using namespace nncase::runtime;
+using namespace nncase::targets::k210;
+
+namespace
+{
+#if !NNCASE_TARGET_K210_SIMULATOR
+void kpu_send_layer(const kpu_layer_argument_t &layer)
+{
+    kpu->layer_argument_fifo = layer.interrupt_enabe.reg;
+    kpu->layer_argument_fifo = layer.image_addr.reg;
+    kpu->layer_argument_fifo = layer.image_channel_num.reg;
+    kpu->layer_argument_fifo = layer.image_size.reg;
+    kpu->layer_argument_fifo = layer.kernel_pool_type_cfg.reg;
+    kpu->layer_argument_fifo = layer.kernel_load_cfg.reg;
+    kpu->layer_argument_fifo = layer.kernel_offset.reg;
+    kpu->layer_argument_fifo = layer.kernel_calc_type_cfg.reg;
+    kpu->layer_argument_fifo = layer.write_back_cfg.reg;
+    kpu->layer_argument_fifo = layer.conv_value.reg;
+    kpu->layer_argument_fifo = layer.conv_value2.reg;
+    kpu->layer_argument_fifo = layer.dma_parameter.reg;
+}
+
+void kpu_conv2d_normal(kpu_layer_argument_t &layer, plic_irq_callback_t callback, void *userdata)
+{
+    kpu->interrupt_clear.reg = 0b111;
+    kpu->interrupt_mask.reg = 0b110;
+    layer.interrupt_enabe.data.int_en = 1;
+    plic_irq_register(IRQN_AI_INTERRUPT, callback, userdata);
+    plic_irq_enable(IRQN_AI_INTERRUPT);
+    kpu_send_layer(layer);
+}
+
+void kpu_conv2d_output(kpu_layer_argument_t &layer, dmac_channel_number_t dma_ch, uint8_t *dest, plic_irq_callback_t callback, void *userdata)
+{
+    kpu->interrupt_clear.reg = 0b111;
+    kpu->interrupt_mask.reg = 0b111;
+    layer.dma_parameter.data.send_data_out = 1;
+    sysctl_dma_select((sysctl_dma_channel_t)dma_ch, SYSCTL_DMA_SELECT_AI_RX_REQ);
+    dmac_set_irq(dma_ch, callback, userdata, 1);
+    dmac_set_single_mode(dma_ch, (void *)(&kpu->fifo_data_out), dest, DMAC_ADDR_NOCHANGE, DMAC_ADDR_INCREMENT,
+        DMAC_MSIZE_8, DMAC_TRANS_WIDTH_64, (layer.dma_parameter.data.dma_total_byte + 8) / 8);
+    kpu_send_layer(layer);
+}
+
+int kpu_plic_thunk(void *userdata)
+{
+    kpu->interrupt_clear.reg = 0b111;
+    kpu->interrupt_mask.reg = 0b111;
+
+    auto &ctx = *reinterpret_cast<k210_interpreter_context *>(userdata);
+    (ctx.interpreter->*ctx.step)();
+    return 0;
+}
+#endif
+}
 
 namespace nncase
 {
@@ -98,6 +156,22 @@ namespace targets
             }
 
             return kcr_done;
+#else
+            auto &ctx = interpreter.context();
+            ctx.interpreter = &interpreter;
+            ctx.step = step;
+
+            if (options.main_mem_output.size)
+            {
+                auto main_output = interpreter.memory_at<uint8_t>(options.main_mem_output);
+                kpu_conv2d_output(options.layer, interpreter.dma_ch(), main_output.data(), kpu_plic_thunk, &ctx);
+            }
+            else
+            {
+                kpu_conv2d_normal(options.layer, kpu_plic_thunk, &ctx);
+            }
+
+            return kcr_async;
 #endif
         }
     }

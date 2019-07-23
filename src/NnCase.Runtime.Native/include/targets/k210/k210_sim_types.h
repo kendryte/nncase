@@ -1,12 +1,13 @@
 #pragma once
-#include <cstdint>
 #include <array>
+#include <cstdint>
 
 #ifdef __riscv64
 #define NNCASE_TARGET_K210_SIMULATOR 0
 #include <kpu.h>
 #else
 #define NNCASE_TARGET_K210_SIMULATOR 1
+#endif
 
 namespace nncase
 {
@@ -14,6 +15,7 @@ namespace targets
 {
     namespace k210
     {
+#if NNCASE_TARGET_K210_SIMULATOR
         typedef struct
         {
             union {
@@ -191,6 +193,7 @@ namespace targets
                 } data;
             } activate_para_bias1;
         } kpu_activate_table_t;
+#endif
 
         typedef struct
         {
@@ -244,5 +247,3 @@ namespace targets
     }
 }
 }
-
-#endif

@@ -48,7 +48,7 @@ namespace targets
                 reader.read_span(weights, weights_size);
 #if !NNCASE_TARGET_K210_SIMULATOR
                 layer.kernel_pool_type_cfg.data.bwsx_base_addr = (uintptr_t)batch_norm.data();
-                layer.kernel_calc_type_cfg.data.active_addr = (uintptr_t)activation.data();
+                layer.kernel_calc_type_cfg.data.active_addr = (uintptr_t)activation;
                 layer.kernel_load_cfg.data.para_start_addr = (uintptr_t)weights.data();
 #endif
             }

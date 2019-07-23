@@ -88,7 +88,7 @@ void interpreter_base::step()
             cnt_node_body_ += header.body_size;
             last_op_ = header.opcode;
 
-            auto result = call_kernel(header.opcode, body, static_cast<interpreter_t &>(*this), &interpreter_base::step);
+            result = call_kernel(header.opcode, body, static_cast<interpreter_t &>(*this), &interpreter_base::step);
 
             if (result == kcr_error)
             {

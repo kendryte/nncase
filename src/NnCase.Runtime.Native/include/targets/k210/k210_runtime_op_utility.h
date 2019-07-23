@@ -67,6 +67,8 @@ namespace targets
             return get_kpu_rows(width, height, channels) * 64;
         }
 
+#if NNCASE_TARGET_K210_SIMULATOR
+
         inline int32_t get_kpu_filter_size(kpu_pool_type_t filter)
         {
             switch (filter)
@@ -125,6 +127,8 @@ namespace targets
                 return { 0, 0 };
             }
         }
+
+#endif
     }
 }
 }
