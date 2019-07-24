@@ -32,22 +32,23 @@ namespace NnCase.Kernels
 
             for (int d0 = 0; d0 < outShape[0]; d0++)
             {
-                var d0Origin = -Math.Min(0, paddings[0].Before);
-                var in0 = input.Slice((d0Origin + d0) * inShape[1] * inShape[2] * inShape[3], inShape[1] * inShape[2] * inShape[3]);
+                var d0Origin = -paddings[0].Before;
+                var in0 = (d0Origin + d0) * inShape[1] * inShape[2] * inShape[3];
 
                 for (int d1 = 0; d1 < outShape[1]; d1++)
                 {
-                    var d1Origin = -Math.Min(0, paddings[1].Before);
-                    var in1 = in0.Slice((d1Origin + d1) * inShape[2] * inShape[3], inShape[2] * inShape[3]);
+                    var d1Origin = -paddings[1].Before;
+                    var in1 = in0 + (d1Origin + d1) * inShape[2] * inShape[3];
 
                     for (int d2 = 0; d2 < outShape[2]; d2++)
                     {
-                        var d2Origin = -Math.Min(0, paddings[2].Before);
-                        var in2 = in1.Slice((d2Origin + d2) * inShape[3], inShape[3]);
+                        var d2Origin = -paddings[2].Before;
+                        var in2 = in1 + (d2Origin + d2) * inShape[3];
 
                         for (int d3 = 0; d3 < outShape[3]; d3++)
                         {
-                            var d3Origin = -Math.Min(0, paddings[3].Before);
+                            var d3Origin = -paddings[3].Before;
+                            var in3 = in2 + (d3Origin + d3);
 
                             if (d0 < paddings[0].Before || d0 >= outShape[0] - paddings[0].After
                                 || d1 < paddings[1].Before || d1 >= outShape[1] - paddings[1].After
@@ -55,7 +56,7 @@ namespace NnCase.Kernels
                                 || d3 < paddings[3].Before || d1 >= outShape[3] - paddings[3].After)
                                 output[outIdx++] = padValue;
                             else
-                                output[outIdx++] = in2[d3Origin + d3];
+                                output[outIdx++] = input[in3];
                         }
                     }
                 }

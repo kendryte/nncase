@@ -21,14 +21,18 @@ namespace NnCase.Targets.K210
             allocators.Add(MemoryType.K210KPU, new KPUMemoryAllocator());
         }
 
-        protected override void AddOptimize2Transforms(List<Transform> transforms)
+        protected override void AddOptimize2Transforms(List<Transform> transforms, string inferenceType)
         {
-            transforms.AddRange(new Transform[]
+            if (inferenceType == "uint8")
             {
-                new KPUFakeConv2DTransform()
-            });
+                transforms.AddRange(new Transform[]
+                {
+                    new KPUFakeConv2DTransform(),
+                    new FuseKPUFakeConv2DStridedSliceTransform()
+                });
+            }
 
-            base.AddOptimize2Transforms(transforms);
+            base.AddOptimize2Transforms(transforms, inferenceType);
         }
 
         public override void RegisterEvaluators(EvaluatorRegistry registry)

@@ -46,7 +46,8 @@ namespace NnCase.Importer
                 { BuiltinOperator.REDUCE_MAX, ConvertReduceMax },
                 { BuiltinOperator.MEAN, ConvertMean },
                 { BuiltinOperator.FULLY_CONNECTED, ConvertFullyConnected },
-                { BuiltinOperator.SOFTMAX, ConvertSoftmax }
+                { BuiltinOperator.SOFTMAX, ConvertSoftmax },
+                { BuiltinOperator.STRIDED_SLICE, ConvertStridedSlice }
             };
         }
 

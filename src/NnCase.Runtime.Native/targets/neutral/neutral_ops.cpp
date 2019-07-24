@@ -220,6 +220,19 @@ namespace targets
             return kcr_done;
 #undef TRANSPOSE_KERNEL
         }
+
+        kernel_call_result strided_slice(strided_slice_options &options, interpreter_t &interpreter, interpreter_step_t step)
+        {
+            auto input = interpreter.memory_at<uint8_t>(options.input);
+            auto output = interpreter.memory_at<uint8_t>(options.output);
+
+#define STRIDED_SLICE_KERNEL(T) \
+    kernels::neutral::strided_slice(reinterpret_cast<const T *>(input.data()), reinterpret_cast<T *>(output.data()), options.in_shape, options.begin, options.end, options.strides);
+
+            ELEM_SIZE_IMPL(options.input.datatype, STRIDED_SLICE_KERNEL);
+            return kcr_done;
+#undef STRIDED_SLICE_KERNEL
+        }
     }
 }
 }

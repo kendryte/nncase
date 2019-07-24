@@ -17,7 +17,6 @@ namespace NnCase.Targets.K210.Transforms
             if (node is Conv2D conv2d)
             {
                 if ((conv2d.Groups == 1 || conv2d.Groups == conv2d.Input.Shape[1])
-                    && conv2d.StrideH == 1 && conv2d.StrideW == 1 /* To Be Removed */
                     && conv2d.DilationH == 1 && conv2d.DilationW == 1 /* To Be Removed */
                     && ((conv2d.Weights.Dimensions[2] == 1 && conv2d.Weights.Dimensions[3] == 1)
                     || (conv2d.Weights.Dimensions[2] == 3 && conv2d.Weights.Dimensions[3] == 3))
@@ -51,12 +50,14 @@ namespace NnCase.Targets.K210.Transforms
             var surPadH = GetPadding(padH, pre: false);
             var surPadW = GetPadding(padW, pre: false);
             var surPad = context.Graph.AddNode(new Pad(DataType.Float32, conv2d.Output.Shape, new[] { Padding.Zero, Padding.Zero, surPadH, surPadW }, 0.0f));
+            var slice = context.Graph.AddNode(new StridedSlice(DataType.Float32, surPad.Output.Shape, new[] { 0, 0, 0, 0 }, new[] { 0, 0, 0, 0 }, new[] { 1, 1, oldConv2D.StrideH, oldConv2D.StrideW }, 15, 15, 0, 0, 0));
             prePad.Input.Connect(output);
             conv2d.Input.Connect(prePad.Output);
             surPad.Input.Connect(conv2d.Output);
+            slice.Input.Connect(surPad.Output);
 
             foreach (var input in inputs.ToList())
-                input.Connect(surPad.Output);
+                input.Connect(slice.Output);
         }
 
         private static Padding GetPadding(Padding pad, bool pre)

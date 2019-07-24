@@ -23,6 +23,7 @@ namespace NnCase.Evaluation.Operators
             RegisterFakeQuantize(registry);
             RegisterQuantize(registry);
             RegisterPad(registry);
+            RegisterStridedSlice(registry);
         }
     }
 }

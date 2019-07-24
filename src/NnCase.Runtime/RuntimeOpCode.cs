@@ -20,6 +20,7 @@ namespace NnCase.Runtime
         ResizeNearestNeighbor = 11,
         Softmax = 12,
         Transpose = 13,
+        StridedSlice = 14,
 
         CPU_CPUConv2D = 1001,
         CPU_CPUDepthwiseConv2D = 1002,

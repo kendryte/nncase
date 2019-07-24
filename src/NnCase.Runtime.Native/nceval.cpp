@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
 {
     eval_options eval_options;
     auto cli = (eval_options.parser(),
-        option("-v", "--version").call([] { cout << "version 1.0" << endl; }).doc("show version"));
+        option("-v", "--version").call([] { cout << "version 0.2" << endl; }).doc("show version"));
 
     if (parse(argc, argv, cli))
     {
@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
     }
     else
     {
-        cout << usage_lines(cli, "ncc") << endl;
+        cout << usage_lines(cli, "nceval") << endl;
     }
 
     return 0;

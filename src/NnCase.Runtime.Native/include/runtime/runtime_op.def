@@ -13,6 +13,7 @@ BEGINE_DEFINE_TARGET(neutral)
     DEFINE_RUNTIME_OP(neutral, resize_nearest_neighbor, ResizeNearestNeighbor, 11)
     DEFINE_RUNTIME_OP(neutral, softmax, Softmax, 12)
     DEFINE_RUNTIME_OP(neutral, transpose, Transpose, 13)
+    DEFINE_RUNTIME_OP(neutral, strided_slice, StridedSlice, 14)
 END_DEFINE_TARGET()
 
 // CPU

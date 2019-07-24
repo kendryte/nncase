@@ -36,7 +36,7 @@ namespace NnCase.Cli
             OptimizePass1(graph);
 
             // 3. Optimize Pass 2 (Target aware)
-            OptimizePass2(graph, target);
+            OptimizePass2(graph, target, options.InferenceType);
 
             // 4. Quantize
             if (options.InferenceType == "uint8")
@@ -107,9 +107,9 @@ namespace NnCase.Cli
             }
         }
 
-        private void OptimizePass2(Graph graph, Target target)
+        private void OptimizePass2(Graph graph, Target target, string inferenceType)
         {
-            target.OptimizePass2(graph);
+            target.OptimizePass2(graph, inferenceType);
             DumpGraph(graph, "optimize_2");
         }
 

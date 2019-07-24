@@ -13,7 +13,7 @@ namespace NnCase.Targets.CPU
 {
     public class CPUTarget : Target
     {
-        protected override void AddOptimize2Transforms(List<Transform> transforms)
+        protected override void AddOptimize2Transforms(List<Transform> transforms, string inferenceType)
         {
             transforms.AddRange(new Transform[]
             {

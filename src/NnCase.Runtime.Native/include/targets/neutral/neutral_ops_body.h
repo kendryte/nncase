@@ -238,6 +238,21 @@ namespace targets
             runtime_shape_t in_shape;
             runtime_shape_t perm;
         };
+
+        struct strided_slice_options : public simple_node_body<strided_slice_options>
+        {
+            memory_range input;
+            memory_range output;
+            runtime_shape_t in_shape;
+            runtime_shape_t begin;
+            runtime_shape_t end;
+            runtime_shape_t strides;
+            int32_t begin_mask;
+            int32_t end_mask;
+            int32_t ellipsis_mask;
+            int32_t new_axis_mask;
+            int32_t shrink_axis_mask;
+        };
     }
 }
 }

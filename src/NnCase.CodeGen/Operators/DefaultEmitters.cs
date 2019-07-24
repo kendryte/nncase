@@ -22,6 +22,7 @@ namespace NnCase.CodeGen.Operators
             RegisterReshape(registry);
             RegisterSoftmax(registry);
             RegisterTranspose(registry);
+            RegisterStridedSlice(registry);
         }
     }
 }

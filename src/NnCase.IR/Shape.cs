@@ -40,8 +40,6 @@ namespace NnCase.IR
             {
                 if (index >= Count)
                     throw new ArgumentOutOfRangeException(nameof(index));
-                if (value <= 0)
-                    throw new ArgumentOutOfRangeException(nameof(value), "Dimensions must be positive");
 
                 if (Count <= MaxSmallSize)
                 {
@@ -67,6 +65,17 @@ namespace NnCase.IR
             }
 
             return count;
+        }
+
+        public bool All(Func<int, bool> predicate)
+        {
+            foreach (var v in this)
+            {
+                if (!predicate(v))
+                    return false;
+            }
+
+            return true;
         }
 
         public int Count { get; }

@@ -158,8 +158,8 @@ namespace kernels
 
             const auto filter = get_kpu_filter_size(pool_type);
             const auto stride = get_kpu_filter_stride(pool_type);
-            const auto out_w = get_kpu_pool_output_size(in_h, pool_type);
-            const auto out_h = get_kpu_pool_output_size(in_w, pool_type);
+            const auto out_h = get_kpu_pool_output_size(in_h, pool_type);
+            const auto out_w = get_kpu_pool_output_size(in_w, pool_type);
 
             for (int32_t oc = 0; oc < in_channels; oc++)
             {

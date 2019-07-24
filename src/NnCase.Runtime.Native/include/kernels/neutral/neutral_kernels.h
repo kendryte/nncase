@@ -152,22 +152,22 @@ namespace kernels
 
             for (int d0 = 0; d0 < out_shape[0]; d0++)
             {
-                auto d0_origin = -std::min(0, paddings[0].before);
-                auto in0 = input + (d0_origin + d0) * in_shape[1] * in_shape[2] * in_shape[3];
+                auto d0_origin = -paddings[0].before;
+                auto in0 = input + ((size_t)d0_origin + d0) * in_shape[1] * in_shape[2] * in_shape[3];
 
                 for (int d1 = 0; d1 < out_shape[1]; d1++)
                 {
-                    auto d1_origin = -std::min(0, paddings[1].before);
-                    auto in1 = in0 + (d1_origin + d1) * in_shape[2] * in_shape[3];
+                    auto d1_origin = -paddings[1].before;
+                    auto in1 = in0 + ((size_t)d1_origin + d1) * in_shape[2] * in_shape[3];
 
                     for (int d2 = 0; d2 < out_shape[2]; d2++)
                     {
-                        auto d2_origin = -std::min(0, paddings[2].before);
-                        auto in2 = in1 + (d2_origin + d2) * in_shape[3];
+                        auto d2_origin = -paddings[2].before;
+                        auto in2 = in1 + ((size_t)d2_origin + d2) * in_shape[3];
 
                         for (int d3 = 0; d3 < out_shape[3]; d3++)
                         {
-                            auto d3_origin = -std::min(0, paddings[3].before);
+                            auto d3_origin = -paddings[3].before;
 
                             if (d0 < paddings[0].before || d0 >= out_shape[0] - paddings[0].after
                                 || d1 < paddings[1].before || d1 >= out_shape[1] - paddings[1].after
@@ -311,11 +311,11 @@ namespace kernels
             auto destIdx = 0;
             for (int batch = 0; batch < in_shape[0]; batch++)
             {
-                auto in_batch = input + batch * in_shape[1] * in_shape[2] * in_shape[3];
+                auto in_batch = input + (size_t)batch * in_shape[1] * in_shape[2] * in_shape[3];
 
                 for (int oc = 0; oc < in_shape[1]; oc++)
                 {
-                    auto in_c = in_batch + oc * in_shape[2] * in_shape[3];
+                    auto in_c = in_batch + (size_t)oc * in_shape[2] * in_shape[3];
 
                     for (int oy = 0; oy < out_h; oy++)
                     {
@@ -390,6 +390,29 @@ namespace kernels
                             i[perm[0]] = o[0];
                             output[offset(out_shape, o)] = input[offset(in_shape, i)];
                         }
+                    }
+                }
+            }
+        }
+
+        template <class T>
+        void strided_slice(const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &begin, const runtime_shape_t &end, const runtime_shape_t &strides)
+        {
+            auto loop_cond = [](int32_t i, int32_t stop, int32_t stride) {
+                return stride > 0 ? i < stop : i > stop;
+            };
+
+            for (int32_t d0 = begin[0]; loop_cond(d0, end[0], strides[0]); d0 += strides[0])
+            {
+                auto d0_origin = input + (size_t)d0 * in_shape[1] * in_shape[2] * in_shape[3];
+                for (int d1 = begin[1]; loop_cond(d1, end[1], strides[1]); d1 += strides[1])
+                {
+                    auto d1_origin = d0_origin + (size_t)d1 * in_shape[2] * in_shape[3];
+                    for (int32_t d2 = begin[2]; loop_cond(d2, end[2], strides[2]); d2 += strides[2])
+                    {
+                        auto d2_origin = d1_origin + (size_t)d2 * in_shape[3];
+                        for (int32_t d3 = begin[3]; loop_cond(d3, end[3], strides[3]); d3 += strides[3])
+                            *output++ = d2_origin[d3];
                     }
                 }
             }

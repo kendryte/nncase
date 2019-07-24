@@ -10,11 +10,11 @@ namespace NnCase.Targets
 {
     public abstract class Target
     {
-        public void OptimizePass2(Graph graph)
+        public void OptimizePass2(Graph graph, string inferenceType)
         {
             var transforms = GetDefaultTransforms();
 
-            AddOptimize2Transforms(transforms);
+            AddOptimize2Transforms(transforms, inferenceType);
             Transform.TransformGraph(graph, transforms);
         }
 
@@ -49,6 +49,11 @@ namespace NnCase.Targets
                 new TransposeQuantizeMotionTransform(),
                 new FoldQuantizeTransform(),
                 new FoldInputAndQuantizeTransform(),
+                new FoldPadStridedSliceTransform(),
+                new FoldNopStridedSliceTransform(),
+                new DequantizeStridedSliceMotionTransform(),
+                new DequantizePadMotionTransform(),
+                new PadQuantizeMotionTransform()
             };
 
             AddDefaultTransforms(transforms);
@@ -73,7 +78,7 @@ namespace NnCase.Targets
         {
         }
 
-        protected virtual void AddOptimize2Transforms(List<Transform> transforms)
+        protected virtual void AddOptimize2Transforms(List<Transform> transforms, string inferenceType)
         {
         }
 

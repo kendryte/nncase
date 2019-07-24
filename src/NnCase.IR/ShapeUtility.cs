@@ -41,6 +41,61 @@ namespace NnCase.IR
             return newShape;
         }
 
+        public static Shape NormalizeStridedSliceBegin(Shape inputShape, Shape begin, Shape strides, int beginMask)
+        {
+            var newShape = inputShape.Clone();
+            for (int i = 0; i < newShape.Count; i++)
+            {
+                var stride = strides[i];
+                newShape[i] = (beginMask & (1 << i)) != 0
+                    ? stride > 0 ? 0 : inputShape[i] - 1
+                    : begin[i];
+            }
+
+            return newShape;
+        }
+
+        public static Shape NormalizeStridedSliceEnd(Shape inputShape, Shape begin, Shape end, Shape strides, int endMask, int shrinkAxisMask)
+        {
+            var newShape = inputShape.Clone();
+            for (int i = 0; i < newShape.Count; i++)
+            {
+                var stride = strides[i];
+                var beginVal = begin[i];
+                var endVal = (endMask & (1 << i)) != 0
+                    ? stride > 0 ? inputShape[i] : -1
+                    : end[i];
+                var shrink = (shrinkAxisMask & (1 << i)) != 0;
+                if (shrink)
+                    endVal = beginVal + 1;
+                newShape[i] = endVal;
+            }
+
+            return newShape;
+        }
+
+        public static Shape GetStridedSliceOutputShape(Shape begin, Shape end, Shape strides, int ellipsisMask, int newAxisMask, int shrinkAxisMask)
+        {
+            if (ellipsisMask != 0)
+                throw new NotSupportedException("Non-zero ellipsisMask is not supported");
+            if (newAxisMask != 0)
+                throw new NotSupportedException("Non-zero newAxisMask is not supported");
+
+            var outputShape = new List<int>();
+            for (int i = 0; i < strides.Count; i++)
+            {
+                var stride = strides[i];
+                var beginVal = begin[i];
+                var endVal = end[i];
+                var shrink = (shrinkAxisMask & (1 << i)) != 0;
+                var dim = (int)MathF.Ceiling((endVal - beginVal) / (float)stride);
+                if (!shrink)
+                    outputShape.Add(dim);
+            }
+
+            return new Shape(outputShape);
+        }
+
         public static Shape NormalizeReduceAxis(Shape axis)
         {
             var sorted = axis.ToArray();

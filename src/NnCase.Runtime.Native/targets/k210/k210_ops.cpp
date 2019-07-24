@@ -147,7 +147,7 @@ namespace targets
             else KPU_CONV2D_IMPL(false, 1);
             else KPU_CONV2D_IMPL(false, 3);
 
-            kernels::k210::kpu_pool2d(conv_output_tmp.get(), output_tmp.get(), in_h, in_w, in_ch, (kpu_pool_type_t)options.layer.kernel_pool_type_cfg.data.pool_type);
+            kernels::k210::kpu_pool2d(conv_output_tmp.get(), output_tmp.get(), in_h, in_w, out_ch, (kpu_pool_type_t)options.layer.kernel_pool_type_cfg.data.pool_type);
             kernels::k210::kpu_upload(output_tmp.get(), kpu_out.data(), out_shape);
             if (options.main_mem_output.size)
             {
