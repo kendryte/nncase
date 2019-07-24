@@ -104,6 +104,7 @@ namespace NnCase.Evaluation
         private class FreeList
         {
             private readonly bool _isFixed;
+            private bool _isPing = true;
             private readonly SortedList<int, FreeMemoryNode> _freeNodes = new SortedList<int, FreeMemoryNode>();
 
             public int MaxUsage { get; private set; }
@@ -121,6 +122,7 @@ namespace NnCase.Evaluation
             public FreeMemoryNode Allocate(int size)
             {
                 var node = Reserve(size);
+
                 if (node.Size == size)
                 {
                     _freeNodes.Remove(node.Start);
@@ -128,8 +130,23 @@ namespace NnCase.Evaluation
                 }
                 else
                 {
-                    node.Size -= size;
-                    var newNode = new FreeMemoryNode { Start = node.End, Size = size };
+                    FreeMemoryNode newNode;
+                    if (_isPing)
+                    {
+                        node.Size -= size;
+                        newNode = new FreeMemoryNode { Start = node.End, Size = size };
+                    }
+                    else
+                    {
+                        _freeNodes.Remove(node.Start);
+                        newNode = new FreeMemoryNode { Start = node.Start, Size = size };
+                        node.Size -= size;
+                        node.Start += size;
+                        _freeNodes.Add(node.Start, node);
+                    }
+
+                    if (_isFixed)
+                        _isPing = !_isPing;
                     return newNode;
                 }
             }
@@ -143,7 +160,10 @@ namespace NnCase.Evaluation
 
             private FreeMemoryNode Reserve(int size)
             {
-                var node = _freeNodes.Values.FirstOrDefault(x => x.Size >= size);
+                var node = _isPing
+                    ? _freeNodes.Values.FirstOrDefault(x => x.Size >= size)
+                    : _freeNodes.Values.LastOrDefault(x => x.Size >= size);
+
                 if (node == null)
                 {
                     if (_isFixed)
