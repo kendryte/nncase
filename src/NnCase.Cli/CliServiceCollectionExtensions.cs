@@ -10,7 +10,6 @@ namespace NnCase.Cli
         public static IServiceCollection AddCli(this IServiceCollection services)
         {
             return services
-                .AddScoped<Inference>()
                 .AddScoped<Compile>();
         }
     }

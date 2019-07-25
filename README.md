@@ -1,99 +1,138 @@
-nncase
-=========================================
+<div align="center">
+<img src="docs/logo.png" width="400" alt="nncase" />
+</div>
+
+[![License](https://img.shields.io/badge/license-Apache%202-blue)](https://raw.githubusercontent.com/kendryte/nncase/master/LICENSE) 
 [![Build status](https://ci.appveyor.com/api/projects/status/cybsf4av9e2ms447/branch/master?svg=true)](https://ci.appveyor.com/project/sunnycase/nncase/branch/master)
 
-`nncase` is a cross-platform neural network optimization toolkit for fast inference.
+`nncase` is a neural network compiler for AI accelerators.
 
-## Usage
+`nncase` 是一个为 AI 加速器设计的神经网络编译器。
+
+## Install
 Download prebuilt binaries from [Release](https://github.com/kendryte/nncase/releases).
 
-`ncc -i <input format> -o <output format> [--dataset <dataset path>] [--postprocess <dataset postprocess>] [--weights-bits <weights quantization bits>] <input path> <output path>`
+## 安装
+下载预编译的二进制文件 [Release](https://github.com/kendryte/nncase/releases)。
 
-- `-i` Input format
+---
 
-| value | description |
+### Support commonly used CNN networks
+### 支持常用的 CNN 网络
+
+- MobileNetV1/V2
+- YOLOV1 YOLOV3
+
+## Features
+
+- Supports multiple inputs and outputs and multi-branch structure
+- Static memory allocation, no heap memory acquired
+- Operators fusion and optimizations
+- Support float and quantized uint8 inference
+- Support post quantization from float model with calibration dataset
+- Flat model with zero copy loading
+
+## 功能
+
+- 支持多输入输出网络，支持多分支结构
+- 静态内存分配，不需要堆内存
+- 算子合并和优化
+- 支持 float 和量化 uint8 推理
+- 支持训练后量化，使用浮点模型和量化校准集
+- 平坦模型，支持零拷贝加载
+
+## Usage
+## 使用方法
+
+[Usage](USAGE.md)
+
+## Supported operators
+## 支持的算子
+
+| Operator | Is Supported |
 |-------|------------------ |
-|tflite|`.tflite` TFLite model
-|paddle|`__model__` PaddlePaddle model
-|caffe|`.caffemodel` Caffe model
-|k210model|`.kmodel` K210 model (Only supported in inference mode)
-
-- `-o` Output format
-
-| value | description |
-|-------|------------------ |
-|k210model|`.kmodel` K210 model
-|tf|`.pb` TensorFlow model
-|tflite|`.tflite` TFLite model
-|inference|`.bin` Model's raw output (Only support k210model input)
-
-- `--inference-type` Inference type
-
-| value | description |
-|-------|------------------ |
-|uint8| Use quantized kernels (default)
-|float| Use float kernels
-
-- `--dataset` Dataset path, **required** when the output format is `inference` or `k210model` with inference type equals `uint8`.
-
-- `--postprocess` Dataset postprocess method
-
-| value | description |
-|-------|------------------ |
-|0to1|normalize images to [0, 1]
-|n1to1|normalize images to [-1, 1]
-
-- `--weights-bits` Weights quantization bits
-
-| value | description |
-|-------|------------------ |
-|8|8bit quantization [0, 255]
-|16|16bit quantization [0, 65535]
-
-- `--float-fc` Use float fullyconnected kernels.
-
-- `--channelwise-output` Use channelwise quantization for output layers.
-
-## Examples
-- Convert TFLite model to K210 model.
-
-  `ncc -i tflite -o k210model --dataset ./images ./mbnetv1.tflite ./mbnetv1.kmodel`
-
-- Convert PaddlePaddle model to TensorFlow model.
-
-  `ncc -i paddle -o tf ./MobileNetV1_pretrained ./mbnetv1.pb`
-
-- Inference K210 model and get output binaries.
-
-  `ncc -i k210model -o inference --dataset ./images ./mbnetv1.kmodel ./output`
-
-- Tutorials
-  - 20 classes object detection
-  - Iris flowers classification
-
-  See https://github.com/kendryte/nncase/tree/master/examples
-
-## Supported layers
-
-| layer | parameters |
-|-------|------------------ |
-| Conv2d | kernel={3x3,1x1} stride={1,2} padding=same *|
-| DepthwiseConv2d | kernel={3x3,1x1} stride={1,2} padding=same *|
-| FullyConnected | |
-| Add | |
-| MaxPool2d | |
-| AveragePool2d | |
-| GlobalAveragePool2d | |
-| BatchNormalization | |
-| BiasAdd | |
-| Relu | |
-| Relu6 | |
-| LeakyRelu | |
-| Concatenation | |
-| L2Normalization | |
-| Sigmoid | |
-| Softmax | |
-| Flatten | |
-| ResizeNearestNeighbor | |
-
-\* When using TensorFlow Conv2d/DepthwiseConv2d kernel=3x3 stride=2 padding=same, you must first use tf.pad([[0,0],[1,1],[1,1],[0,0]]) to pad the input and then use Conv2d/DepthwiseConv2d with `valid` padding.
+| Add |✅|
+| ArgMax |❌|
+| ArgMin |❌|
+| AveragePool2D |✅|
+| BatchToSpaceND |❌|
+| Cast |❌|
+| Concatenation |✅|
+| Conv2D |✅|
+| DepthwiseConv2D |✅|
+| Div |✅|
+| Equal |❌|
+| Exp |✅|
+| ExpandDims |❌|
+| Floor |✅|
+| FullyConnected |✅|
+| Gather |❌|
+| Greater |❌|
+| GreaterEqual |❌|
+| MaxPool2D |✅|
+| Mean |✅|
+| Mul |✅|
+| L2Normalization |❌|
+| L2Pool2D |❌|
+| LessEqual |❌|
+| Log |✅|
+| Logistic |❌|
+| LogSoftmax |❌|
+| Maximum |✅|
+| Minimum |✅|
+| Neg |✅|
+| NotEqual |❌|
+| Pack |❌|
+| Pad |✅|
+| Pow |❌|
+| PRelu |❌|
+| ReduceMax |✅|
+| ReduceProd |❌|
+| Reshape |✅|
+| ResizeBilinear |✅|
+| Rsqrt |✅|
+| Select |❌|
+| Shape |❌|
+| Sin |✅|
+| Slice |❌|
+| Softmax |✅|
+| SpaceToDepth |❌|
+| SpaceToBatchND |❌|
+| SparseToDense |❌|
+| Split |❌|
+| Sqrt |✅|
+| Squeeze |❌|
+| Sub |✅|
+| Sum |✅|
+| Tile |❌|
+| TopK |❌|
+| Transpose |✅|
+| TransposeConv |❌|
+| LogicalOr |❌|
+| OneHot |❌|
+| LogicalAnd |❌|
+| LogicalNot |❌|
+| UnPack |❌|
+| ReduceMin |✅|
+| FloorDiv |❌|
+| ReduceAny |❌|
+| Square |❌|
+| ZerosLike |❌|
+| Fill |❌|
+| FloorMod |❌|
+| Range |❌|
+| ResizeNearesetNeighbor |✅|
+| LeakyRelu |✅|
+| MirrorPad |❌|
+| Abs |✅|
+| SplitV |❌|
+| Unique |❌|
+| Ceil |✅|
+| Reverse |❌|
+| AddN |❌|
+| GatherND |❌|
+| Cos |✅|
+| Where |❌|
+| Rank |❌|
+| Elu |❌|
+| ReverseSequence |❌|

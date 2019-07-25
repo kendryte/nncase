@@ -14,9 +14,6 @@ namespace NnCase.Cli
         [Option('i', "input-format", Required = true, HelpText = "Set the input format.")]
         public string InputFormat { get; set; }
 
-        [Option('o', "output-format", Required = true, HelpText = "Set the input format.")]
-        public string OutputFormat { get; set; }
-
         [Option('t', "target", Required = false, HelpText = "Target", Default = "k210")]
         public string Target { get; set; }
 
@@ -34,9 +31,6 @@ namespace NnCase.Cli
 
         [Option("postprocess-op", Required = false, HelpText = "Add postprocess operator")]
         public string PostprocessOperator { get; set; }
-
-        [Option("weights-bits", Required = false, HelpText = "Weights quantization bits", Default = 8)]
-        public int WeightsBits { get; set; }
 
         [Option("float-fc", Required = false, Default = false, HelpText = "Use kpu based fully connected")]
         public bool FloatFc { get; set; }
@@ -72,14 +66,7 @@ namespace NnCase.Cli
             if (options == null)
                 throw new ArgumentException("Invalid command options");
 
-            if (options.OutputFormat == "inference")
-            {
-                await _serviceProvider.GetRequiredService<Inference>().Run(options);
-            }
-            else
-            {
-                await _serviceProvider.GetRequiredService<Compile>().Run(options);
-            }
+            await _serviceProvider.GetRequiredService<Compile>().Run(options);
         }
     }
 }
