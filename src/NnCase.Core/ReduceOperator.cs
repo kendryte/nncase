@@ -19,6 +19,11 @@ namespace NnCase
         /// <summary>
         /// Max
         /// </summary>
-        Max
+        Max,
+
+        /// <summary>
+        /// Sum
+        /// </summary>
+        Sum
     }
 }

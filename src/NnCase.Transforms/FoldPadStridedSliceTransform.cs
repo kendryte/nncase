@@ -52,7 +52,7 @@ namespace NnCase.Transforms
                 }
                 if (padding.After < 0)
                 {
-                    end[i] += -padding.After;
+                    end[i] += padding.After;
                     padding.After = 0;
                 }
             }

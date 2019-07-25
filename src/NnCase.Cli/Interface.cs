@@ -69,7 +69,8 @@ namespace NnCase.Cli
             Options options = null;
             _parser.ParseArguments<Options>(_cmdArgs.Args)
                 .WithParsed(o => options = o);
-            if (options == null) return;
+            if (options == null)
+                throw new ArgumentException("Invalid command options");
 
             if (options.OutputFormat == "inference")
             {

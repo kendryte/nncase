@@ -8,7 +8,7 @@ using NnCase.IR.Operators;
 namespace NnCase.Importer
 {
     /// <summary>
-    /// TFLite importer convolution ops lowering.
+    /// TFLite importer binary ops lowering.
     /// </summary>
     public partial class TFLiteImporter
     {
@@ -30,6 +30,16 @@ namespace NnCase.Importer
         private void ConvertDiv(tflite.Operator op)
         {
             ConvertBinary(op, BinaryOperator.Div, op.BuiltinOptions<tflite.DivOptions>().Value.FusedActivationFunction);
+        }
+
+        private void ConvertMinimum(tflite.Operator op)
+        {
+            ConvertBinary(op, BinaryOperator.Min, op.BuiltinOptions<tflite.MulOptions>().Value.FusedActivationFunction);
+        }
+
+        private void ConvertMaximum(tflite.Operator op)
+        {
+            ConvertBinary(op, BinaryOperator.Max, op.BuiltinOptions<tflite.DivOptions>().Value.FusedActivationFunction);
         }
 
         private void ConvertBinary(tflite.Operator op, BinaryOperator binaryOperator, tflite.ActivationFunctionType activationFunctionType)

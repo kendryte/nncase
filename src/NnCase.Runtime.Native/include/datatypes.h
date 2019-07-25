@@ -32,7 +32,8 @@ typedef enum _reduce_op
 {
     reduce_mean,
     reduce_min,
-    reduce_max
+    reduce_max,
+    reduce_sum
 } reduce_op_t;
 
 typedef enum _binary_op
@@ -40,7 +41,9 @@ typedef enum _binary_op
     binary_add,
     binary_sub,
     binary_mul,
-    binary_div
+    binary_div,
+    binary_min,
+    binary_max
 } binary_op_t;
 
 typedef struct _quant_param

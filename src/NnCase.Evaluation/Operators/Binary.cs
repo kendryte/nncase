@@ -37,6 +37,12 @@ namespace NnCase.Evaluation.Operators
                     case BinaryOperator.Div:
                         Binary((a, b) => a / b);
                         break;
+                    case BinaryOperator.Min:
+                        Binary((a, b) => Math.Min(a, b));
+                        break;
+                    case BinaryOperator.Max:
+                        Binary((a, b) => Math.Max(a, b));
+                        break;
                     default:
                         throw new NotSupportedException($"Unsupported binary operator: {n.BinaryOperator}");
                 }

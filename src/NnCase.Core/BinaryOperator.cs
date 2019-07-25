@@ -24,6 +24,16 @@ namespace NnCase
         /// <summary>
         /// Div
         /// </summary>
-        Div
+        Div,
+
+        /// <summary>
+        /// Min
+        /// </summary>
+        Min,
+
+        /// <summary>
+        /// Max
+        /// </summary>
+        Max
     }
 }

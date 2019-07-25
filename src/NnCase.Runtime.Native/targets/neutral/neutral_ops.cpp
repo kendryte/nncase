@@ -51,6 +51,12 @@ namespace targets
             case binary_div:
                 binary([](auto a, auto b) { return a / b; });
                 return kcr_done;
+            case binary_min:
+                binary([](auto a, auto b) { return std::min(a, b); });
+                return kcr_done;
+            case binary_max:
+                binary([](auto a, auto b) { return std::max(a, b); });
+                return kcr_done;
             default:
                 return kcr_error;
             }
@@ -145,6 +151,9 @@ namespace targets
                 return kcr_done;
             case reduce_max:
                 reduce([](auto a, auto b) { return std::max(a, b); });
+                return kcr_done;
+            case reduce_sum:
+                reduce([](auto a, auto b) { return a + b; });
                 return kcr_done;
             default:
                 return kcr_error;

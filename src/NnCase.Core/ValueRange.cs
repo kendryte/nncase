@@ -16,4 +16,9 @@ namespace NnCase
 
         private string DebuggerDisplay => $"{{Min = {Min}, Max = {Max}}}";
     }
+
+    public static class ValueRanges
+    {
+        public static ValueRange<float> DefaultFloat { get; } = new ValueRange<float> { Min = float.MinValue, Max = float.MaxValue };
+    }
 }

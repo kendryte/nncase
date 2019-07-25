@@ -110,6 +110,13 @@ namespace NnCase.IR
             }
         }
 
+        public Shape(int d0)
+        {
+            Count = 1;
+            _largeValues = null;
+            _smallValues[0] = d0;
+        }
+
         public Shape(int d0, int d1)
         {
             Count = 2;

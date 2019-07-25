@@ -27,6 +27,11 @@ namespace NnCase.Importer
             ConvertReduce(op, ReduceOperator.Max, float.MaxValue);
         }
 
+        private void ConvertReduceSum(tflite.Operator op)
+        {
+            ConvertReduce(op, ReduceOperator.Sum, 0);
+        }
+
         private void ConvertReduce(tflite.Operator op, ReduceOperator reduceOperator, float initialValue)
         {
             var input = GetTensor(op.Inputs(0));

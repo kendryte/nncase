@@ -106,6 +106,16 @@ namespace NnCase.Evaluation
                         }
                     }
                 }
+
+                // Release Ignore
+                foreach (var output in n.Outputs)
+                {
+                    foreach (var input in output.Connections)
+                    {
+                        if (input.Owner is IgnoreNode ignore)
+                            context.Release(output);
+                    }
+                }
             });
             visitor.Visit(roots);
         }

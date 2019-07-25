@@ -30,24 +30,138 @@ namespace NnCase.Importer
 
             _lowerings = new Dictionary<BuiltinOperator, Action<Operator>>
             {
+                { BuiltinOperator.ADD, ConvertAdd },
+                { BuiltinOperator.AVERAGE_POOL_2D, ConvertAveragePool2D },
+                { BuiltinOperator.CONCATENATION, ConvertConcatenation },
                 { BuiltinOperator.CONV_2D, ConvertConv2D },
                 { BuiltinOperator.DEPTHWISE_CONV_2D, ConvertDepthwiseConv2D },
-                { BuiltinOperator.MAX_POOL_2D, ConvertMaxPool2D },
-                { BuiltinOperator.AVERAGE_POOL_2D, ConvertAveragePool2D },
-                { BuiltinOperator.RESHAPE, ConvertReshape },
-                { BuiltinOperator.ADD, ConvertAdd },
-                { BuiltinOperator.SUB, ConvertSub },
-                { BuiltinOperator.MUL, ConvertMul },
-                { BuiltinOperator.DIV, ConvertDiv },
-                { BuiltinOperator.CONCATENATION, ConvertConcatenation },
-                { BuiltinOperator.RESIZE_NEAREST_NEIGHBOR, ConvertResizeNearestNeighbor },
-                { BuiltinOperator.RESIZE_BILINEAR, ConvertResizeBilinear },
-                { BuiltinOperator.REDUCE_MIN, ConvertReduceMin },
-                { BuiltinOperator.REDUCE_MAX, ConvertReduceMax },
-                { BuiltinOperator.MEAN, ConvertMean },
+
+                // DEQUANTIZE
+                // EMBEDDING_LOOKUP
+                { BuiltinOperator.FLOOR, ConvertFloor },
                 { BuiltinOperator.FULLY_CONNECTED, ConvertFullyConnected },
+
+                // HASHTABLE_LOOKUP
+                // L2_NORMALIZATION
+                // L2_POOL_2D
+                // LOCAL_RESPONSE_NORMALIZATION
+                // LOGISTIC
+                // LSH_PROJECTION
+                // LSTM
+                { BuiltinOperator.MAX_POOL_2D, ConvertMaxPool2D },
+                { BuiltinOperator.MUL, ConvertMul },
+
+                // RELU
+                // RELU_N1_TO_1
+                // RELU6
+                { BuiltinOperator.RESHAPE, ConvertReshape },
+                { BuiltinOperator.RESIZE_BILINEAR, ConvertResizeBilinear },
+
+                // RNN
                 { BuiltinOperator.SOFTMAX, ConvertSoftmax },
-                { BuiltinOperator.STRIDED_SLICE, ConvertStridedSlice }
+
+                // SPACE_TO_DEPTH
+                // SVDF
+                // TANH
+                // CONCAT_EMBEDDINGS
+                // SKIP_GRAM
+                // CALL
+                // CUSTOM
+                // EMBEDDING_LOOKUP_SPARSE
+                { BuiltinOperator.PAD, ConvertPad },
+
+                // UNIDIRECTIONAL_SEQUENCE_RNN
+                // GATHER
+                // BATCH_TO_SPACE_ND
+                // SPACE_TO_BATCH_ND
+                // TRANSPOSE
+                { BuiltinOperator.MEAN, ConvertMean },
+                { BuiltinOperator.SUB, ConvertSub },
+                { BuiltinOperator.DIV, ConvertDiv },
+
+                // SQUEEZE
+                // UNIDIRECTIONAL_SEQUENCE_LSTM
+                { BuiltinOperator.STRIDED_SLICE, ConvertStridedSlice },
+
+                // BIDIRECTIONAL_SEQUENCE_RNN
+                { BuiltinOperator.EXP, ConvertExp },
+
+                // TOPK_V2
+                // SPLIT
+                // LOG_SOFTMAX
+                // DELEGATE
+                // BIDIRECTIONAL_SEQUENCE_LSTM
+                // CAST
+                // PRELU
+                { BuiltinOperator.MAXIMUM, ConvertMaximum },
+
+                // ARG_MAX
+                { BuiltinOperator.MINIMUM, ConvertMinimum },
+
+                // LESS
+                { BuiltinOperator.NEG, ConvertNeg },
+
+                // PADV2
+                // GREATER
+                // GREATER_EQUAL
+                // LESS_EQUAL
+                // SELECT
+                // SLICE
+                { BuiltinOperator.SIN, ConvertSin },
+
+                // TRANSPOSE_CONV
+                // SPARSE_TO_DENSE
+                // TILE
+                // EXPAND_DIMS
+                // EQUAL
+                // NOT_EQUAL
+                { BuiltinOperator.LOG, ConvertLog },
+                { BuiltinOperator.SUM, ConvertReduceSum },
+                { BuiltinOperator.SQRT, ConvertSqrt },
+                { BuiltinOperator.RSQRT, ConvertRsqrt },
+
+                // SHAPE
+                // POW
+                // ARG_MIN
+                // FAKE_QUANT
+                // REDUCE_PROD
+                { BuiltinOperator.REDUCE_MAX, ConvertReduceMax },
+
+                // PACK
+                // LOGICAL_OR
+                // ONE_HOT
+                // LOGICAL_AND
+                // LOGICAL_NOT
+                // UNPACK
+                { BuiltinOperator.REDUCE_MIN, ConvertReduceMin },
+
+                // FLOOR_DIV
+                // REDUCE_ANY
+                // SQUARE
+                // ZEROS_LIKE
+                // FILL
+                // FLOOR_MOD
+                // RANGE
+                { BuiltinOperator.RESIZE_NEAREST_NEIGHBOR, ConvertResizeNearestNeighbor },
+                { BuiltinOperator.LEAKY_RELU, ConvertLeakyRelu },
+
+                // SQUARED_DIFFERENCE
+                // MIRROR_PAD
+                { BuiltinOperator.ABS, ConvertAbs },
+
+                // SPLIT_V
+                // UNIQUE
+                { BuiltinOperator.CEIL, ConvertCeil },
+
+                // REVERSE_V2
+                // ADD_N
+                // GATHER_ND
+                { BuiltinOperator.COS, ConvertCos },
+
+                // WHERE
+                // RANK
+                // ELU
+                // REVERSE_SEQUENCE
             };
         }
 
