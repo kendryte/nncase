@@ -1,7 +1,7 @@
 #pragma once
 #include "../target_config.h"
 
-#include NNCASE_TARGET_HEADER(interpreter.h)
+#include NNCASE_TARGET_HEADER(runtime, interpreter.h)
 
 namespace nncase
 {

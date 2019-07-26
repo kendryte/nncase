@@ -1,16 +1,15 @@
 #include "compile.h"
+#include "registry.h"
+#include "targets/cpu/target.h"
+#include "targets/target.h"
 #include <codegen/codegen.h>
 #include <data/dataset.h>
 #include <fstream>
 #include <importer/importer.h>
 #include <ir/evaluator.h>
 #include <ir/quantizer.h>
-#include <scheduler/main_memory_allocator.h>
 #include <scheduler/scheduler.h>
 #include <string_view>
-#include <transforms/neutral/fold_quantize.h>
-#include <transforms/neutral/fold_transpose.h>
-#include <transforms/neutral/transpose_motion.h>
 
 #define KPU 0
 
@@ -22,9 +21,6 @@ using namespace nncase::codegen;
 using namespace nncase::data;
 using namespace nncase::scheduler;
 using namespace nncase::transforms;
-
-void init_codegen_ops();
-void init_evaluator_ops();
 
 namespace
 {
@@ -50,24 +46,23 @@ void transform_graph(graph &graph, xtl::span<std::unique_ptr<transform>> transfo
     transform_graph(graph, transform_refs);
 }
 
-void simulate(graph &graph, image_dataset &dataset)
-{
-    std::cout << "====== SIMULATION ======" << std::endl;
-
-    main_memory_allocator const_allocator;
-    main_memory_allocator main_allocator;
-
-    std::unordered_map<memory_type_t, memory_allocator *> allocators {
-        { mem_const, &const_allocator },
-        { mem_main, &main_allocator }
-    };
-    allocation_context alloc_ctx(allocators);
-    std::vector<node *> compute_sequence;
-
+#define SCHEDULE_IMPL()                                               \
+    std::vector<std::unique_ptr<memory_allocator>> allocator_holder;  \
+    std::unordered_map<memory_type_t, memory_allocator *> allocators; \
+    target.fill_allocators(allocators, allocator_holder);             \
+    allocation_context alloc_ctx(allocators);                         \
+    std::vector<node *> compute_sequence;                             \
     schedule(graph.outputs(), alloc_ctx, compute_sequence);
 
-    evaluate_context eval_ctx(allocators, alloc_ctx.allocations());
+#define EVAL_IMPL()                                                 \
+    SCHEDULE_IMPL();                                                \
+    evaluate_context eval_ctx(allocators, alloc_ctx.allocations()); \
     evaluator eval(eval_ctx, compute_sequence);
+
+void simulate(target &target, graph &graph, image_dataset &dataset)
+{
+    std::cout << "====== SIMULATION ======" << std::endl;
+    EVAL_IMPL();
 
     int i = 0;
     for (auto &&batch : dataset)
@@ -84,54 +79,36 @@ void simulate(graph &graph, image_dataset &dataset)
     }
 }
 
+std::unique_ptr<target> create_target(const compile_options &compile_options)
+{
+    return std::make_unique<cpu_target>();
+}
+
 graph import(const compile_options &compile_options)
 {
     auto model = read_file(compile_options.input_filename);
     return import_tflite(model);
 }
 
-void optimize_pass1(graph &graph)
+void optimize_pass1(target &target, graph &graph)
 {
-    std::vector<std::unique_ptr<transform>> transforms;
-    transforms.emplace_back(new fold_transpose_transform());
-    transforms.emplace_back(new transpose_motion_transform());
-    transforms.emplace_back(new fold_quantize_transform());
-#if KPU > 0
-    transforms.emplace_back(new replace_strided_conv2d_transform());
-    transforms.emplace_back(new kpu_fake_conv2d_transform());
-    transforms.emplace_back(new kpu_fake_pool2d_transform());
-    transforms.emplace_back(new kpu_fake_conv_with_pool2d_transform());
-#endif
+    std::vector<std::unique_ptr<transforms::transform>> transforms;
+    target.add_default_transforms(transforms);
+    target.add_optimize1_transforms(transforms);
     transform_graph(graph, transforms);
 }
 
-void add_quantization_checkpoints(graph &graph)
+void add_quantization_checkpoints(target &target, graph &graph)
 {
-#if KPU > 0
-    std::vector<std::unique_ptr<transform>> transforms;
-    // add quantization checkpoint
-    transforms.emplace_back(new kpu_add_quant_checkpoint_transform());
+    std::vector<std::unique_ptr<transforms::transform>> transforms;
+    target.add_default_transforms(transforms);
+    target.add_quantization_checkpoint_transforms(transforms);
     transform_graph(graph, transforms);
-    transform_graph(graph, transforms);
-#endif
 }
 
-void get_quantization_ranges(graph &graph, quantizer *quantizer, const compile_options &compile_options)
+void get_quantization_ranges(target &target, graph &graph, quantizer *quantizer, const compile_options &compile_options)
 {
-    main_memory_allocator const_allocator;
-    main_memory_allocator main_allocator;
-
-    std::unordered_map<memory_type_t, memory_allocator *> allocators {
-        { mem_const, &const_allocator },
-        { mem_main, &main_allocator }
-    };
-    allocation_context alloc_ctx(allocators);
-    std::vector<node *> compute_sequence;
-
-    schedule(graph.outputs(), alloc_ctx, compute_sequence);
-
-    evaluate_context eval_ctx(allocators, alloc_ctx.allocations());
-    evaluator eval(eval_ctx, compute_sequence);
+    EVAL_IMPL();
 
     assert(graph.inputs().size() == 1);
     image_dataset dataset(compile_options.dataset, graph.inputs()[0]->output().shape(), 0, 1);
@@ -152,46 +129,31 @@ void get_quantization_ranges(graph &graph, quantizer *quantizer, const compile_o
     }
 }
 
-void quantize(graph &graph, const compile_options &compile_options)
+void quantize(target &target, graph &graph, const compile_options &compile_options)
 {
     // 3.1. Add quantization checkpoints
-    add_quantization_checkpoints(graph);
+    add_quantization_checkpoints(target, graph);
 
     // 3.2 Get activation ranges
-#if KPU > 0
     // quantize
     quantizer quant;
     quant.record(graph.inputs()[0]->output(), { 0.f, 1.f });
-    get_quantization_ranges(graph, &quant, compile_options);
-#else
-    get_quantization_ranges(graph, nullptr, compile_options);
-#endif
+    get_quantization_ranges(target, graph, &quant, compile_options);
+
+    // quantize graph
+    std::vector<std::unique_ptr<transforms::transform>> transforms;
+    target.add_default_transforms(transforms);
+    target.add_quantization_transforms(quant, transforms);
 
 #if KPU > 1
-    // quantize graph
-    transforms.clear();
-    transforms.emplace_back(new kpu_conv2d_transform(quant));
-    transforms.emplace_back(new fold_quantize_transform());
-    transform_graph(graph, transforms);
-
     // simulate
     simulate(graph, dataset);
 #endif
 }
 
-void gencode(graph &graph, const compile_options &compile_options)
+void gencode(target &target, graph &graph, const compile_options &compile_options)
 {
-    main_memory_allocator const_allocator;
-    main_memory_allocator main_allocator;
-
-    std::unordered_map<memory_type_t, memory_allocator *> allocators {
-        { mem_const, &const_allocator },
-        { mem_main, &main_allocator }
-    };
-    allocation_context alloc_ctx(allocators);
-    std::vector<node *> compute_sequence;
-
-    schedule(graph.outputs(), alloc_ctx, compute_sequence);
+    SCHEDULE_IMPL();
 
     std::ofstream outfile(compile_options.output_filename, std::ios::binary | std::ios::out);
     if (outfile.bad())
@@ -208,23 +170,27 @@ group compile_options::parser(mode &mode)
         command("compile").set(mode, mode::compile),
         value("input file", input_filename),
         value("output file", output_filename),
-        option("--dataset") & value("dataset path", dataset));
+        option("--dataset") & value("dataset path", dataset),
+        option("--inference-type") & value("inference type", inference_type).doc("inference type, default is " + inference_type));
 }
 
 void compile(const compile_options &compile_options)
 {
-    init_codegen_ops();
-    init_evaluator_ops();
+    auto target = create_target(compile_options);
+
+    target->registry_codegen_ops();
+    target->registry_evaluator_ops();
 
     // 1. Import
     auto graph = import(compile_options);
 
     // 2. Optimize Pass 1
-    optimize_pass1(graph);
+    optimize_pass1(*target, graph);
 
     // 3. Quantize
-    quantize(graph, compile_options);
+    if (compile_options.inference_type == "uint8")
+        quantize(*target, graph, compile_options);
 
     // 4. CodeGen
-    gencode(graph, compile_options);
+    gencode(*target, graph, compile_options);
 }

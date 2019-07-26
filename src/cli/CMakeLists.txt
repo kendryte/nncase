@@ -2,9 +2,8 @@
 
 set(SRCS cli.cpp
          compile.cpp
-         registry.cpp)
+         targets/cpu/target.cpp)
 
-add_executable (cli ${SRCS})
-target_include_directories(cli PRIVATE ${THIRD_PARTY}/clipp/include)
-target_link_libraries(cli PRIVATE importer data scheduler codegen evaluator transforms)
-#set_target_properties(cli PROPERTIES OUTPUT_NAME "ncc")
+add_executable (ncc ${SRCS})
+target_include_directories(ncc PRIVATE ${THIRD_PARTY}/clipp/include)
+target_link_libraries(ncc PRIVATE importer data scheduler codegen evaluator transforms)
