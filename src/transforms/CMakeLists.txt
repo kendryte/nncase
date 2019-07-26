@@ -1,0 +1,11 @@
+﻿cmake_minimum_required (VERSION 3.8)
+
+set(SRCS transform.cpp
+         neutral/fold_transpose.cpp
+         neutral/transpose_motion.cpp
+         neutral/fold_quantize.cpp)
+
+add_library(transforms STATIC ${SRCS})
+target_include_directories(transforms PUBLIC include)
+target_link_libraries(transforms PUBLIC ir evaluator)
+target_link_libraries(transforms PRIVATE CONAN_PKG::range-v3)

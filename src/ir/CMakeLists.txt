@@ -1,0 +1,23 @@
+﻿cmake_minimum_required (VERSION 3.8)
+
+set(SRCS connectors.cpp
+         node.cpp
+         graph.cpp
+         visitor.cpp
+         ops/conv2d.cpp
+         ops/matmul.cpp
+         ops/transpose.cpp
+         ops/reduce.cpp
+         ops/reduce_window2d.cpp
+         ops/binary.cpp
+         ops/softmax.cpp
+         ops/concat.cpp
+         ops/fake_quantize.cpp
+         ops/fake_dequantize.cpp
+         ops/quantize.cpp
+         ops/dequantize.cpp)
+
+add_library(ir STATIC ${SRCS})
+target_include_directories(ir PUBLIC include)
+target_include_directories(ir PUBLIC ${THIRD_PARTY}/xtensor/include)
+target_link_libraries(ir PUBLIC common)

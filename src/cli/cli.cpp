@@ -1,0 +1,43 @@
+﻿// nncase-cli.cpp: 定义应用程序的入口点。
+//
+
+#include "compile.h"
+#include <iostream>
+#include <string>
+
+using namespace std;
+using namespace clipp;
+
+int main(int argc, char *argv[])
+{
+    mode mode;
+    compile_options compile_options;
+
+    auto cli = (compile_options.parser(mode),
+        option("-v", "--version").call([] { cout << "version 1.0" << endl; }).doc("show version"));
+
+    if (parse(argc, argv, cli))
+    {
+        try
+        {
+            switch (mode)
+            {
+            case mode::compile:
+                compile(compile_options);
+                break;
+            case mode::help:
+                break;
+            }
+        }
+        catch (std::exception &ex)
+        {
+            cerr << "Fatal: " << ex.what() << endl;
+        }
+    }
+    else
+    {
+        cout << usage_lines(cli, "ncc") << endl;
+    }
+
+    return 0;
+}
