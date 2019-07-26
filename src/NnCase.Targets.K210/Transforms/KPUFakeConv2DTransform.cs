@@ -20,7 +20,8 @@ namespace NnCase.Targets.K210.Transforms
                     && conv2d.DilationH == 1 && conv2d.DilationW == 1 /* To Be Removed */
                     && ((conv2d.Weights.Dimensions[2] == 1 && conv2d.Weights.Dimensions[3] == 1)
                     || (conv2d.Weights.Dimensions[2] == 3 && conv2d.Weights.Dimensions[3] == 3))
-                    && KPUShapeUtility.IsSupportedShape(conv2d.Input.Shape))
+                    && KPUShapeUtility.IsSupportedShape(conv2d.Input.Shape)
+                    && KPUShapeUtility.IsSupportedShape(conv2d.Output.Shape))
                 {
                     context.Inputs.Add(conv2d.Input);
                     context.Outputs.Add(conv2d.Output);

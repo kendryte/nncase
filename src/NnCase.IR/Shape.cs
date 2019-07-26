@@ -263,6 +263,11 @@ namespace NnCase.IR
             return false;
         }
 
+        public override string ToString()
+        {
+            return DebuggerDisplay;
+        }
+
         public static bool operator ==(Shape left, Shape right)
         {
             return ReferenceEquals(left, right) || (left?.Equals(right) ?? false);

@@ -95,7 +95,7 @@ namespace NnCase.Targets.K210.IR
 
         public static bool IsSupportedShape(Shape shape)
         {
-            return shape[1] < 1024 && shape[2] >= 4 && shape[2] <= 256 && shape[3] >= 4 && shape[3] <= 512;
+            return shape[1] <= 1024 && shape[2] >= 4 && shape[2] <= 256 && shape[3] >= 4 && shape[3] <= 512;
         }
     }
 }

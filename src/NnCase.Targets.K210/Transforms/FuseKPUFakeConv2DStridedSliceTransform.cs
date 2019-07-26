@@ -40,13 +40,13 @@ namespace NnCase.Targets.K210.Transforms
             var padH = new Padding { Before = oldSlice.Begin[2] % 2, After = 0 };
             // pad to even
             if ((oldConv2D.Input.Shape[2] + padH.Before) % 2 == 1)
-                padH.After = 1;
+                padH.After += 1;
             var padW = new Padding { Before = 0, After = 0 };
             var poolType = oldSlice.Begin[3] % 2 == 0 ? KPUPoolType.Pool_LeftTop_2_S2 : KPUPoolType.Pool_RightTop_2_S2;
             var pad = context.Graph.AddNode(new Pad(DataType.Float32, oldConv2D.Input.Shape, new[] { Padding.Zero, Padding.Zero, padH, padW }, 0.0f));
             var conv2d = context.Graph.AddNode(new KPUFakeConv2D(pad.Output.Shape, oldConv2D.IsDepthwise, oldConv2D.FilterType, poolType, oldConv2D.Weights, oldConv2D.Bias, oldConv2D.FusedActivation));
-            var cropH = new Padding { Before = -(oldSlice.Begin[2] / 2 + padH.Before), After = 0 };
-            var cropW = new Padding { Before = -(oldSlice.Begin[3] / 2), After = 0 };
+            var cropH = new Padding { Before = -(oldSlice.Begin[2] % 2), After = (oldSlice.End[2] - oldSlice.Input.Shape[2]) / 2 };
+            var cropW = new Padding { Before = -(oldSlice.Begin[3] / 2), After = (oldSlice.End[3] - oldSlice.Input.Shape[3]) / 2 };
             var crop = context.Graph.AddNode(new Pad(DataType.Float32, conv2d.Output.Shape, new[] { Padding.Zero, Padding.Zero, cropH, cropW }, 0.0f));
             pad.Input.Connect(output);
             conv2d.Input.Connect(pad.Output);
