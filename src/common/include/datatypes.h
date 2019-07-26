@@ -1,8 +1,9 @@
 #pragma once
+#include "target_config.h"
 #include <array>
+#include <limits>
 #include <optional>
 #include <stdint.h>
-#include "target_config.h"
 
 namespace nncase
 {
@@ -27,13 +28,19 @@ struct value_range
 {
     T min;
     T max;
+
+    static constexpr value_range<T> default() noexcept
+    {
+        return { std::numeric_limits<T>::lowest(), std::numeric_limits<T>::max() };
+    }
 };
 
 typedef enum _reduce_op
 {
     reduce_mean,
     reduce_min,
-    reduce_max
+    reduce_max,
+    reduce_sum
 } reduce_op_t;
 
 typedef enum _binary_op
@@ -41,8 +48,26 @@ typedef enum _binary_op
     binary_add,
     binary_sub,
     binary_mul,
-    binary_div
+    binary_div,
+    binary_min,
+    binary_max
 } binary_op_t;
+
+typedef enum _unary_op
+{
+    unary_exp,
+    unary_floor,
+    unary_log,
+    unary_neg,
+    unary_rsqrt,
+    unary_sin
+} unary_op_t;
+
+typedef enum _image_resize_mode
+{
+    image_resize_bilinear,
+    image_resize_nearest_neighbor
+} image_resize_mode_t;
 
 typedef struct _quant_param
 {

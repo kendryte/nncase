@@ -66,6 +66,32 @@ namespace ir
         return shape;
     }
 
+    inline shape_t normalize_reshape(const shape_t &in_shape, const shape_t &new_shape)
+    {
+        auto result = new_shape;
+
+        size_t shape_size = 1;
+        std::optional<int32_t> non_det_id;
+        for (size_t i = 0; i < new_shape.size(); i++)
+        {
+            auto v = new_shape[i];
+            if (v == -1)
+            {
+                if (non_det_id)
+                    throw std::runtime_error("Reshap can only have 1 non-determined dimension at most");
+                non_det_id = i;
+            }
+            else
+            {
+                shape_size *= v;
+            }
+        }
+
+        if (non_det_id)
+            result[*non_det_id] = xt::compute_size(in_shape) / shape_size;
+        return result;
+    }
+
     inline shape_t get_binary_output_shape(const shape_t &input_a_shape, const shape_t &input_b_shape)
     {
         shape_t out_shape;
@@ -163,6 +189,23 @@ namespace ir
             else if (i < axis)
                 outer_size *= out_shape[i];
         }
+    }
+
+    inline shape_t get_padded_shape(const shape_t &in_shape, const xt::svector<padding> &paddings)
+    {
+        auto new_shape = in_shape;
+        for (size_t i = 0; i < in_shape.size(); i++)
+            new_shape[i] = size_t(int32_t(new_shape[i]) + paddings[i].sum());
+        return new_shape;
+    }
+
+    inline shape_t get_resize_image_shape(const shape_t &in_shape, const std::array<int32_t, 2> &new_size)
+    {
+        auto new_shape = in_shape;
+        auto r = new_shape.rbegin();
+        *r++ = new_size[1];
+        *r++ = new_size[0];
+        return new_shape;
     }
 }
 }

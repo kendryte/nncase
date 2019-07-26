@@ -15,7 +15,10 @@ set(SRCS connectors.cpp
          ops/fake_quantize.cpp
          ops/fake_dequantize.cpp
          ops/quantize.cpp
-         ops/dequantize.cpp)
+         ops/dequantize.cpp
+         ops/unary.cpp
+         ops/pad.cpp
+         ops/reshape.cpp)
 
 add_library(ir STATIC ${SRCS})
 target_include_directories(ir PUBLIC include)
