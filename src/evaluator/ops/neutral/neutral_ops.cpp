@@ -10,7 +10,6 @@
 #include <ir/ops/quantize.h>
 #include <ir/ops/reduce.h>
 #include <ir/ops/reduce_window2d.h>
-#include <ir/ops/softmax.h>
 #include <ir/ops/transpose.h>
 #include <kernels/neutral/neutral_kernels.h>
 
@@ -224,18 +223,6 @@ namespace ir
             default:
                 throw std::runtime_error("Not supported reduce");
             }
-        });
-
-        register_evaluator(op_softmax, [](ir::node &node, evaluate_context &context) {
-            auto &rnode = static_cast<softmax &>(node);
-
-            assert(rnode.input().type() == dt_float32);
-            auto input = context.memory_at<float>(rnode.input());
-            auto output = context.memory_at<float>(rnode.output());
-            auto in_shape = rnode.input().shape();
-            auto inner_size = xt::compute_size(in_shape) / in_shape[0];
-
-            neutral::softmax(input.data(), output.data(), rnode.beta(), in_shape[0], inner_size);
         });
 
         register_evaluator(op_transpose, [](ir::node &node, evaluate_context &context) {

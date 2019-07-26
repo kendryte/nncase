@@ -368,10 +368,10 @@ private:
         }
 
         //auto max = graph_.emplace<reduce>(reduce_max, in_shape)
-        auto sm = graph_.emplace<softmax>(get_shape(*input.shape()), options.beta());
+        //auto sm = graph_.emplace<softmax>(get_shape(*input.shape()), options.beta());
 
-        input_tensors_.emplace(&sm->input(), op.inputs()->Get(0));
-        output_tensors_.emplace(op.outputs()->Get(0), &sm->output());
+        //input_tensors_.emplace(&sm->input(), op.inputs()->Get(0));
+        //output_tensors_.emplace(op.outputs()->Get(0), &sm->output());
     }
 
     void convert_unary(const tflite::Operator &op, unary_op_t unary_op)

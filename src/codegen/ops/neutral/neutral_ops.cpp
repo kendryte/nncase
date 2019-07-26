@@ -10,7 +10,6 @@
 #include <ir/ops/quantize.h>
 #include <ir/ops/reduce.h>
 #include <ir/ops/reduce_window2d.h>
-#include <ir/ops/softmax.h>
 #include <ir/ops/transpose.h>
 #include <runtime/neutral/neutral_ops_body.h>
 
@@ -164,21 +163,6 @@ namespace codegen
             body->dilation_w = rnode.dilation_w();
             body->init_value = rnode.init_value();
             body->fused_activation = rnode.fused_activation();
-
-            return body;
-        });
-
-        register_emitter(op_softmax, [](node &node, codegen_context &context) {
-            auto &rnode = static_cast<softmax &>(node);
-            auto body = std::make_unique<node_body_impl<rop_softmax, softmax_options>>();
-
-            auto in_shape = rnode.input().shape();
-            auto inner_size = (int32_t)xt::compute_size(in_shape) / in_shape[0];
-
-            body->input = context.get_allocation(rnode.input());
-            body->output = context.get_allocation(rnode.output());
-            body->inner_size = inner_size;
-            body->outer_size = (int32_t)rnode.input().shape()[0];
 
             return body;
         });

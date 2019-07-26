@@ -10,7 +10,6 @@ set(SRCS connectors.cpp
          ops/reduce.cpp
          ops/reduce_window2d.cpp
          ops/binary.cpp
-         ops/softmax.cpp
          ops/concat.cpp
          ops/fake_quantize.cpp
          ops/fake_dequantize.cpp
@@ -18,7 +17,8 @@ set(SRCS connectors.cpp
          ops/dequantize.cpp
          ops/unary.cpp
          ops/pad.cpp
-         ops/reshape.cpp)
+         ops/reshape.cpp
+         ops/resize_image.cpp)
 
 add_library(ir STATIC ${SRCS})
 target_include_directories(ir PUBLIC include)
