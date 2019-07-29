@@ -7,9 +7,11 @@
 #include <ir/ops/fake_dequantize.h>
 #include <ir/ops/fake_quantize.h>
 #include <ir/ops/matmul.h>
+#include <ir/ops/pad.h>
 #include <ir/ops/quantize.h>
 #include <ir/ops/reduce.h>
 #include <ir/ops/reduce_window2d.h>
+#include <ir/ops/resize_image.h>
 #include <ir/ops/transpose.h>
 #include <kernels/neutral/neutral_kernels.h>
 
@@ -74,6 +76,12 @@ namespace ir
                 break;
             case binary_div:
                 binary([](auto a, auto b) { return a / b; });
+                break;
+            case binary_min:
+                binary([](auto a, auto b) { return std::min(a, b); });
+                break;
+            case binary_max:
+                binary([](auto a, auto b) { return std::max(a, b); });
                 break;
             default:
                 throw std::runtime_error("Not supported binary");
@@ -153,6 +161,19 @@ namespace ir
         register_evaluator(op_output, nop_evaluator);
         register_evaluator(op_constant, nop_evaluator);
 
+        register_evaluator(op_pad, [](ir::node &node, evaluate_context &context) {
+            auto &rnode = static_cast<pad &>(node);
+
+            auto input = context.memory_at<uint8_t>(rnode.input());
+            auto output = context.memory_at<uint8_t>(rnode.output());
+
+#define PAD_KERNEL(T) \
+    kernels::neutral::pad(reinterpret_cast<const T *>(input.data()), reinterpret_cast<T *>(output.data()), to(rnode.input().shape()), to(rnode.paddings()), rnode.pad_value().as<T>());
+
+            ELEM_SIZE_IMPL(rnode.input().type(), PAD_KERNEL);
+#undef PAD_KERNEL
+        });
+
         register_evaluator(op_quantize, [](ir::node &node, evaluate_context &context) {
             auto &rnode = static_cast<quantize &>(node);
 
@@ -222,6 +243,29 @@ namespace ir
                 break;
             default:
                 throw std::runtime_error("Not supported reduce");
+            }
+        });
+
+        register_evaluator(op_resize_image, [](ir::node &node, evaluate_context &context) {
+            auto &rnode = static_cast<resize_image &>(node);
+
+            if (rnode.mode() == image_resize_bilinear)
+            {
+                auto input = context.memory_at<float>(rnode.input());
+                auto output = context.memory_at<float>(rnode.output());
+
+                kernels::neutral::resize_bilinear(input.data(), output.data(), to(rnode.input().shape()), rnode.new_size()[0], rnode.new_size()[1], rnode.align_corners());
+            }
+            else
+            {
+                auto input = context.memory_at<uint8_t>(rnode.input());
+                auto output = context.memory_at<uint8_t>(rnode.output());
+
+#define RESIZE_NN_KERNEL(T) \
+    kernels::neutral::resize_nearest_neighbor(reinterpret_cast<const T *>(input.data()), reinterpret_cast<T *>(output.data()), to(rnode.input().shape()), rnode.new_size()[0], rnode.new_size()[1]);
+
+                ELEM_SIZE_IMPL(rnode.input().type(), RESIZE_NN_KERNEL);
+#undef RESIZE_NN_KERNEL
             }
         });
 
