@@ -34,7 +34,7 @@ namespace ir
     inline padding get_windowed_padding(int32_t input_size, int32_t filter, int32_t stride, int32_t dilation, bool same)
     {
         auto output_size = get_windowed_output_size(input_size, filter, stride, dilation, same);
-        return get_windowed_padding(input_size, output_size, filter, stride, dilation);
+        return get_windowed_padding(input_size, (int32_t)output_size, filter, stride, dilation);
     }
 
     inline size_t get_bytes(datatype_t type, const shape_t &shape)

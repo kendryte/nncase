@@ -1,5 +1,6 @@
-#pragma once 
+#pragma once
 #include "../node.h"
+#include <runtime/runtime_op_utility.h>
 #include <vector>
 
 namespace nncase
@@ -13,11 +14,18 @@ namespace ir
 
         xtl::span<const uint8_t> data() const noexcept { return data_; }
 
-        template <class TShape>
-        constant(datatype_t type, TShape &&shape, std::vector<uint8_t> data)
-            : data_(std::move(data))
+        template <class TShape, class... TDataArgs>
+        constant(datatype_t type, TShape &&shape, TDataArgs... data_args)
+            : data_(std::forward<TDataArgs>(data_args)...)
         {
             add_output("output", type, std::forward<TShape>(shape));
+        }
+
+        template <class TScalar>
+        constant(TScalar scalar)
+            : data_(reinterpret_cast<const uint8_t *>(&scalar), reinterpret_cast<const uint8_t *>(&scalar) + sizeof(scalar))
+        {
+            add_output("output", runtime::to_datatype_v<TScalar>, shape_t { 1 });
         }
 
         node_opcode opcode() const noexcept override { return op_constant; }

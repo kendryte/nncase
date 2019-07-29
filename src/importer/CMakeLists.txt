@@ -1,6 +1,17 @@
 ﻿cmake_minimum_required (VERSION 3.8)
 
-set(SRCS tflite/tflite_importer.cpp)
+set(SRCS tflite/tflite_importer.cpp
+         tflite/ops/conv2d.cpp
+         tflite/ops/pool2d.cpp
+         tflite/ops/binary.cpp
+         tflite/ops/reduce.cpp
+         tflite/ops/unary.cpp
+         tflite/ops/concat.cpp
+         tflite/ops/matmul.cpp
+         tflite/ops/pad.cpp
+         tflite/ops/reshape.cpp
+         tflite/ops/softmax.cpp
+         tflite/ops/resize_image.cpp)
 
 add_library(importer STATIC ${SRCS})
 target_include_directories(importer PUBLIC include)
