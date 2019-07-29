@@ -22,7 +22,7 @@ bool transpose_motion_transform::on_try_match(node &node, transform_context &con
         context.matched_nodes.emplace_back(&con);
         context.outputs.emplace_back(&con.output());
 
-        shape_t perm;
+        axis_t perm;
         for (auto &&conn : con.inputs())
         {
             if (conn.connection()->owner().opcode() == op_transpose)

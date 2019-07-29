@@ -10,6 +10,11 @@ DEFINE_TFLITE_LOWER(RESIZE_BILINEAR)
     convert_resize_image(op, image_resize_bilinear);
 }
 
+DEFINE_TFLITE_LOWER(RESIZE_NEAREST_NEIGHBOR)
+{
+    convert_resize_image(op, image_resize_nearest_neighbor);
+}
+
 void tflite_importer::convert_resize_image(const tflite::Operator &op, image_resize_mode_t mode)
 {
     auto &input = get_tensor(op.inputs(), 0);

@@ -12,14 +12,14 @@ namespace ir
         input_connector &input() { return input_at(0); }
         output_connector &output() { return output_at(0); }
 
-        const shape_t &perm() const noexcept { return perm_; }
+        const axis_t &perm() const noexcept { return perm_; }
 
-        transpose(datatype_t type, shape_t input_shape, shape_t perm);
+        transpose(datatype_t type, shape_t input_shape, axis_t perm);
 
         node_opcode opcode() const noexcept override { return op_transpose; }
 
     private:
-        shape_t perm_;
+        axis_t perm_;
     };
 }
 }

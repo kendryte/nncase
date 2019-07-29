@@ -7,7 +7,7 @@ namespace nncase
 {
 namespace ir
 {
-    inline shape_t get_transposed_shape(const shape_t &input_shape, const shape_t &perm)
+    inline shape_t get_transposed_shape(const shape_t &input_shape, const axis_t &perm)
     {
         shape_t new_shape(input_shape.size());
         for (size_t i = 0; i < new_shape.size(); i++)
@@ -42,14 +42,14 @@ namespace ir
         return xt::compute_size(shape) * runtime::get_bytes(type);
     }
 
-    inline xt::xtensor<int32_t, 1> normalize_reduce_axis(const xt::xtensor<int32_t, 1> &axis)
+    inline axis_t normalize_reduce_axis(const axis_t &axis)
     {
-        xt::xtensor<int32_t, 1> new_axis = axis;
+        axis_t new_axis = axis;
         std::sort(new_axis.begin(), new_axis.end());
         return new_axis;
     }
 
-    inline shape_t get_reduced_shape(const shape_t &input_shape, const xt::xtensor<int32_t, 1> &axis, bool keep_dims)
+    inline shape_t get_reduced_shape(const shape_t &input_shape, const axis_t &axis, bool keep_dims)
     {
         if (!std::is_sorted(axis.begin(), axis.end()))
             throw std::invalid_argument("axis must be sorted");
@@ -66,12 +66,12 @@ namespace ir
         return shape;
     }
 
-    inline shape_t normalize_reshape(const shape_t &in_shape, const shape_t &new_shape)
+    inline shape_t normalize_reshape(const shape_t &in_shape, const axis_t &new_shape)
     {
-        auto result = new_shape;
+        shape_t result(in_shape.size());
 
         size_t shape_size = 1;
-        std::optional<int32_t> non_det_id;
+        std::optional<size_t> non_det_id;
         for (size_t i = 0; i < new_shape.size(); i++)
         {
             auto v = new_shape[i];
@@ -84,6 +84,7 @@ namespace ir
             else
             {
                 shape_size *= v;
+                result[i] = (size_t)new_shape[i];
             }
         }
 
@@ -149,7 +150,8 @@ namespace ir
         return shape;
     }
 
-    inline runtime_shape_t to(const shape_t &in_shape)
+    template <class TShape>
+    inline runtime_shape_t to(const TShape &in_shape)
     {
         assert(in_shape.size() <= 4);
 
@@ -163,7 +165,7 @@ namespace ir
         return r_in_shape;
     }
 
-    inline void extend_transpose_shape(const shape_t &in_shape, const shape_t &perm, runtime_shape_t &r_in_shape, runtime_shape_t &r_perm)
+    inline void extend_transpose_shape(const shape_t &in_shape, const axis_t &perm, runtime_shape_t &r_in_shape, runtime_shape_t &r_perm)
     {
         assert(perm.size() <= 4);
 

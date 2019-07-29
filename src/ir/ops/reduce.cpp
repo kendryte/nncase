@@ -5,7 +5,7 @@
 using namespace nncase;
 using namespace nncase::ir;
 
-reduce::reduce(reduce_op_t reduce_op, shape_t input_shape, xt::xtensor<int32_t, 1> axis, float init_value, bool keep_dims)
+reduce::reduce(reduce_op_t reduce_op, shape_t input_shape, axis_t axis, float init_value, bool keep_dims)
     : reduce_op_(reduce_op), keep_dims_(keep_dims), axis_(normalize_reduce_axis(axis)), init_value_(init_value)
 {
     add_input("input", dt_float32, input_shape);

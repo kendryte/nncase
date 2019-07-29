@@ -73,6 +73,15 @@ namespace importer
             return xt::adapt(reinterpret_cast<const T *>(buffer.data()->data()), shape);
         }
 
+        template <class T>
+        ir::axis_t load_axis(const tflite::Tensor &tensor)
+        {
+            auto &buffer = get_buffer<T>(tensor);
+            auto begin = buffer.data()->data();
+            auto end = begin + buffer.data()->size();
+            return { reinterpret_cast<const T *>(begin), reinterpret_cast<const T *>(end) };
+        }
+
         template <class T, size_t N>
         xt::xtensor<T, N> load_weights(const tflite::Tensor &tensor)
         {
@@ -108,12 +117,12 @@ namespace importer
 
         ir::transpose *nhwc_to_nchw(datatype_t type, const ir::shape_t &input_shape)
         {
-            return graph_.emplace<ir::transpose>(type, input_shape, ir::shape_t { 0, 3, 1, 2 });
+            return graph_.emplace<ir::transpose>(type, input_shape, ir::axis_t { 0, 3, 1, 2 });
         }
 
         ir::transpose *nchw_to_nhwc(datatype_t type, const ir::shape_t &input_shape)
         {
-            return graph_.emplace<ir::transpose>(type, input_shape, ir::shape_t { 0, 2, 3, 1 });
+            return graph_.emplace<ir::transpose>(type, input_shape, ir::axis_t { 0, 2, 3, 1 });
         }
 
         ir::shape_t nhwc_to_nchw(const ir::shape_t &input_shape)

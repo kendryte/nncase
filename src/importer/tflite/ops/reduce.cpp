@@ -28,7 +28,7 @@ DEFINE_TFLITE_LOWER(SUM)
 void tflite_importer::convert_reduce(const tflite::Operator &op, reduce_op_t reduce_op, float init_value)
 {
     auto &input = get_tensor(op.inputs(), 0);
-    auto axis = load_tensor<int32_t, 1>(get_tensor(op.inputs(), 1));
+    auto axis = load_axis<int32_t>(get_tensor(op.inputs(), 1));
     auto &options = *op.builtin_options_as_ReducerOptions();
 
     auto node = graph_.emplace<reduce>(reduce_op, get_shape(*input.shape()), std::move(axis), init_value, options.keep_dims());

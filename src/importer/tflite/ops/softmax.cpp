@@ -14,7 +14,7 @@ DEFINE_TFLITE_LOWER(SOFTMAX)
     auto &options = *op.builtin_options_as_SoftmaxOptions();
 
     auto in_shape = get_shape(*input.shape());
-    xt::svector<int32_t> reduce_axis;
+    axis_t reduce_axis;
     if (in_shape.size() == 1)
     {
         reduce_axis.push_back(0);
@@ -25,12 +25,23 @@ DEFINE_TFLITE_LOWER(SOFTMAX)
             reduce_axis.push_back(i);
     }
 
-    auto max = graph_.emplace<reduce>(reduce_max, in_shape, xt::adapt(reduce_axis), std::numeric_limits<float>::lowest(), false);
+    auto max = graph_.emplace<reduce>(reduce_max, in_shape, reduce_axis, std::numeric_limits<float>::lowest(), false);
     auto sub = graph_.emplace<binary>(binary_sub, in_shape, max->output().shape(), value_range<float>::default());
     auto beta = graph_.emplace<constant>(options.beta());
     auto mul = graph_.emplace<binary>(binary_mul, sub->output().shape(), beta->output().shape(), value_range<float>::default());
     auto exp = graph_.emplace<unary>(unary_exp, mul->output().shape());
+    auto sum = graph_.emplace<reduce>(reduce_sum, exp->output().shape(), reduce_axis, std::numeric_limits<float>::lowest(), false);
+    auto div = graph_.emplace<binary>(binary_div, exp->output().shape(), sum->output().shape(), value_range<float>::default());
 
-    //input_tensors_.emplace(&sm->input(), op.inputs()->Get(0));
-    //output_tensors_.emplace(op.outputs()->Get(0), &sm->output());
+    sub->input_b().connect(max->output());
+    mul->input_a().connect(sub->output());
+    mul->input_b().connect(beta->output());
+    exp->input().connect(mul->output());
+    sum->input().connect(exp->output());
+    div->input_a().connect(exp->output());
+    div->input_b().connect(sum->output());
+
+    input_tensors_.emplace(&max->input(), op.inputs()->Get(0));
+    input_tensors_.emplace(&sub->input_a(), op.inputs()->Get(0));
+    output_tensors_.emplace(op.outputs()->Get(0), &div->output());
 }

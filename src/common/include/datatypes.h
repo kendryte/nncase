@@ -55,6 +55,9 @@ typedef enum _binary_op
 
 typedef enum _unary_op
 {
+    unary_abs,
+    unary_ceil,
+    unary_cos,
     unary_exp,
     unary_floor,
     unary_log,

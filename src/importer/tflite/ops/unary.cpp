@@ -5,6 +5,21 @@ using namespace nncase;
 using namespace nncase::importer;
 using namespace nncase::ir;
 
+DEFINE_TFLITE_LOWER(ABS)
+{
+    convert_unary(op, unary_abs);
+}
+
+DEFINE_TFLITE_LOWER(CEIL)
+{
+    convert_unary(op, unary_ceil);
+}
+
+DEFINE_TFLITE_LOWER(COS)
+{
+    convert_unary(op, unary_cos);
+}
+
 DEFINE_TFLITE_LOWER(EXP)
 {
     convert_unary(op, unary_exp);

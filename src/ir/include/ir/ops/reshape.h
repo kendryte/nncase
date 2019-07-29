@@ -14,6 +14,7 @@ namespace ir
 
         const shape_t &new_shape() const noexcept { return new_shape_; }
 
+        reshape(datatype_t type, shape_t input_shape, axis_t new_shape);
         reshape(datatype_t type, shape_t input_shape, shape_t new_shape);
 
         node_opcode opcode() const noexcept override { return op_reshape; }

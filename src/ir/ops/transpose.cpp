@@ -5,7 +5,7 @@
 using namespace nncase;
 using namespace nncase::ir;
 
-transpose::transpose(datatype_t type, shape_t input_shape, shape_t perm)
+transpose::transpose(datatype_t type, shape_t input_shape, axis_t perm)
     : perm_(std::move(perm))
 {
     add_input("input", type, input_shape);
