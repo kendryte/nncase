@@ -13,7 +13,7 @@ DEFINE_TFLITE_LOWER(PAD)
 
     xt::svector<padding> new_paddings;
     for (size_t i = 0; i < paddings.shape()[0]; i++)
-        new_paddings.push_back(padding { paddings[i, 0], paddings[i, 1] });
+        new_paddings.push_back(padding { paddings(i, 0), paddings(i, 1) });
 
     auto node = graph_.emplace<pad>(dt_float32, get_shape(*input.shape()), new_paddings, 0.f);
 

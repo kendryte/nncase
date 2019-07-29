@@ -51,6 +51,12 @@ namespace runtime
             case binary_div:
                 binary([](auto a, auto b) { return a / b; });
                 return kcr_done;
+            case binary_min:
+                binary([](auto a, auto b) { return std::min(a, b); });
+                return kcr_done;
+            case binary_max:
+                binary([](auto a, auto b) { return std::max(a, b); });
+                return kcr_done;
             default:
                 return kcr_error;
             }
@@ -146,6 +152,9 @@ namespace runtime
             case reduce_max:
                 reduce([](auto a, auto b) { return std::max(a, b); });
                 return kcr_done;
+            case reduce_sum:
+                reduce([](auto a, auto b) { return a + b; });
+                return kcr_done;
             default:
                 return kcr_error;
             }
@@ -172,31 +181,33 @@ namespace runtime
             case reduce_max:
                 reduce([](auto a, auto b) { return std::max(a, b); }, [](auto v, auto k) { return v; });
                 return kcr_done;
+            case reduce_sum:
+                reduce([](auto a, auto b) { return a + b; }, [](auto v, auto k) { return v; });
+                return kcr_done;
             default:
                 return kcr_error;
             }
         }
 
-        kernel_call_result resize_bilinear(resize_bilinear_options &options, interpreter_t &interpreter, interpreter_step_t step)
+        kernel_call_result resize_image(resize_image_options &options, interpreter_t &interpreter, interpreter_step_t step)
         {
             auto input = interpreter.memory_at<float>(options.input);
             auto output = interpreter.memory_at<float>(options.output);
 
-            kernels::neutral::resize_bilinear(input.data(), output.data(), options.in_shape, options.out_h, options.out_w, options.align_corners);
-            return kcr_done;
-        }
-
-        kernel_call_result resize_nearest_neighbor(resize_nearest_neighbor_options &options, interpreter_t &interpreter, runtime::interpreter_step_t step)
-        {
-            auto input = interpreter.memory_at<uint8_t>(options.input);
-            auto output = interpreter.memory_at<uint8_t>(options.output);
-
+            if (options.mode == image_resize_bilinear)
+            {
+                kernels::neutral::resize_bilinear(input.data(), output.data(), options.in_shape, options.out_h, options.out_w, options.align_corners);
+                return kcr_done;
+            }
+            else
+            {
 #define RESIZE_NN_KERNEL(T) \
     kernels::neutral::resize_nearest_neighbor(reinterpret_cast<const T *>(input.data()), reinterpret_cast<T *>(output.data()), options.in_shape, options.out_h, options.out_w);
 
-            ELEM_SIZE_IMPL(options.input.datatype, RESIZE_NN_KERNEL);
-            return kcr_done;
+                ELEM_SIZE_IMPL(options.input.datatype, RESIZE_NN_KERNEL);
+                return kcr_done;
 #undef RESIZE_NN_KERNEL
+            }
         }
 
         kernel_call_result softmax(softmax_options &options, interpreter_t &interpreter, interpreter_step_t step)

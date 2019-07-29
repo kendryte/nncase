@@ -202,23 +202,14 @@ namespace runtime
             value_range<float> fused_activation;
         };
 
-        struct resize_bilinear_options : public simple_node_body<resize_bilinear_options>
+        struct resize_image_options : public simple_node_body<resize_image_options>
         {
             memory_range input;
             memory_range output;
             runtime_shape_t in_shape;
             int32_t out_h;
             int32_t out_w;
-            bool align_corners;
-        };
-
-        struct resize_nearest_neighbor_options : public simple_node_body<resize_nearest_neighbor_options>
-        {
-            memory_range input;
-            memory_range output;
-            runtime_shape_t in_shape;
-            int32_t out_h;
-            int32_t out_w;
+            image_resize_mode_t mode;
             bool align_corners;
         };
 

@@ -7,9 +7,12 @@
 #include <ir/ops/fake_dequantize.h>
 #include <ir/ops/fake_quantize.h>
 #include <ir/ops/matmul.h>
+#include <ir/ops/pad.h>
 #include <ir/ops/quantize.h>
 #include <ir/ops/reduce.h>
 #include <ir/ops/reduce_window2d.h>
+#include <ir/ops/reshape.h>
+#include <ir/ops/resize_image.h>
 #include <ir/ops/transpose.h>
 #include <runtime/neutral/neutral_ops_body.h>
 
@@ -42,12 +45,16 @@ namespace codegen
         });
 
         register_emitter(op_concat, [](node &node, codegen_context &context) {
-            auto &rnode = static_cast<concat &>(node);
-            auto body = std::make_unique<node_body_impl<rop_concat, concat_options>>();
+            struct concat_options_body : public node_body_impl<rop_concat, concat_options>
+            {
+                std::vector<memory_range> inputs_holder;
+            };
 
-            std::vector<memory_range> inputs;
+            auto &rnode = static_cast<concat &>(node);
+            auto body = std::make_unique<concat_options_body>();
+
             for (auto &&in : rnode.inputs())
-                inputs.emplace_back(context.get_allocation(in));
+                body->inputs_holder.emplace_back(context.get_allocation(in));
 
             auto elem_size = (uint32_t)runtime::get_bytes(rnode.output().type());
             uint64_t inner_size, outer_size;
@@ -56,8 +63,8 @@ namespace codegen
             body->output = context.get_allocation(rnode.output());
             body->inner_size = inner_size;
             body->outer_size = outer_size;
-            body->inputs_count = (uint32_t)inputs.size();
-            body->inputs = inputs;
+            body->inputs_count = (uint32_t)body->inputs_holder.size();
+            body->inputs = body->inputs_holder;
             body->dims = rnode.concat_dims();
 
             return body;
@@ -118,6 +125,18 @@ namespace codegen
         disable_emitter(op_output);
         disable_emitter(op_constant);
 
+        register_emitter(op_pad, [](node &node, codegen_context &context) {
+            auto &rnode = static_cast<pad &>(node);
+            auto body = std::make_unique<node_body_impl<rop_pad, pad_options>>();
+
+            body->input = context.get_allocation(rnode.input());
+            body->output = context.get_allocation(rnode.output());
+            body->in_shape = to(rnode.input().shape());
+            body->paddings = to(rnode.paddings());
+
+            return body;
+        });
+
         register_emitter(op_quantize, [](node &node, codegen_context &context) {
             auto &rnode = static_cast<quantize &>(node);
             auto body = std::make_unique<node_body_impl<rop_quantize, quantize_options>>();
@@ -163,6 +182,31 @@ namespace codegen
             body->dilation_w = rnode.dilation_w();
             body->init_value = rnode.init_value();
             body->fused_activation = rnode.fused_activation();
+
+            return body;
+        });
+
+        register_emitter(op_reshape, [](node &node, codegen_context &context) {
+            auto &rnode = static_cast<reshape &>(node);
+            auto body = std::make_unique<node_body_impl<rop_memory_copy, memory_copy_options>>();
+
+            body->input = context.get_allocation(rnode.input());
+            body->output = context.get_allocation(rnode.output());
+
+            return body;
+        });
+
+        register_emitter(op_resize_image, [](node &node, codegen_context &context) {
+            auto &rnode = static_cast<resize_image &>(node);
+            auto body = std::make_unique<node_body_impl<rop_resize_image, resize_image_options>>();
+
+            body->input = context.get_allocation(rnode.input());
+            body->output = context.get_allocation(rnode.output());
+            body->in_shape = to(rnode.input().shape());
+            body->out_h = rnode.new_size()[0];
+            body->out_w = rnode.new_size()[1];
+            body->mode = rnode.mode();
+            body->align_corners = rnode.align_corners();
 
             return body;
         });

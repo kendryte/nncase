@@ -103,8 +103,8 @@ namespace ir
 
         for (int32_t i = 0; i < dest_dims; i++)
         {
-            const auto in_a_dim = i - in_a_ext;
-            const auto in_b_dim = i - in_b_ext;
+            const int32_t in_a_dim = i - in_a_ext;
+            const int32_t in_b_dim = i - in_b_ext;
 
             const auto in_a = in_a_dim < 0 ? 1 : input_a_shape[in_a_dim];
             const auto in_b = in_b_dim < 0 ? 1 : input_b_shape[in_b_dim];
@@ -150,8 +150,7 @@ namespace ir
         return shape;
     }
 
-    template <class TShape>
-    inline runtime_shape_t to(const TShape &in_shape)
+    inline runtime_shape_t to(const shape_t &in_shape)
     {
         assert(in_shape.size() <= 4);
 
@@ -163,6 +162,20 @@ namespace ir
         for (size_t i = in_ext; i < 4; i++)
             r_in_shape[i] = int32_t(in_shape[i - in_ext]);
         return r_in_shape;
+    }
+
+    inline runtime_paddings_t to(const xt::svector<padding> &paddings)
+    {
+        assert(paddings.size() <= 4);
+
+        runtime_paddings_t r_paddings;
+        const auto in_ext = 4 - r_paddings.size();
+
+        for (int i = 0; i < in_ext; i++)
+            r_paddings[i] = padding::zero();
+        for (size_t i = in_ext; i < 4; i++)
+            r_paddings[i] = r_paddings[i - in_ext];
+        return r_paddings;
     }
 
     inline void extend_transpose_shape(const shape_t &in_shape, const axis_t &perm, runtime_shape_t &r_in_shape, runtime_shape_t &r_perm)
