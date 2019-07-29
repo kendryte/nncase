@@ -1,8 +1,8 @@
-#include <targets/k210/interpreter.h>
+#include <runtime/k210/interpreter.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
-using namespace nncase::targets::k210;
+using namespace nncase::runtime::k210;
 
 interpreter::interpreter()
 #if NNCASE_TARGET_K210_SIMULATOR

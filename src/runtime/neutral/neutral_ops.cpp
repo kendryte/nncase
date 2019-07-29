@@ -1,6 +1,6 @@
 #include <kernels/neutral/neutral_kernels.h>
 #include <runtime/kernel_registry.h>
-#include <targets/neutral/neutral_ops_body.h>
+#include <runtime/neutral/neutral_ops_body.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -23,7 +23,7 @@ using namespace nncase::runtime;
 
 namespace nncase
 {
-namespace targets
+namespace runtime
 {
     namespace neutral
     {

@@ -86,6 +86,8 @@ namespace runtime
             case kpu_pool_mean_4_s4:
             case kpu_pool_left_top_4_s4:
                 return 4;
+            default:
+                NNCASE_THROW(std::runtime_error, "Invalid kpu filter");
             }
         }
 
@@ -107,6 +109,8 @@ namespace runtime
             case kpu_pool_mean_4_s4:
             case kpu_pool_left_top_4_s4:
                 return 4;
+            default:
+                NNCASE_THROW(std::runtime_error, "Invalid kpu pool type");
             }
         }
 
@@ -125,6 +129,8 @@ namespace runtime
                 return { 0, 1 };
             case kpu_pool_left_top_4_s4:
                 return { 0, 0 };
+            default:
+                NNCASE_THROW(std::runtime_error, "Invalid kpu pool type");
             }
         }
 

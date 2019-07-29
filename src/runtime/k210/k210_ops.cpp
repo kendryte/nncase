@@ -1,6 +1,6 @@
 #include <kernels/k210/k210_kernels.h>
 #include <runtime/kernel_registry.h>
-#include <targets/k210/k210_ops_body.h>
+#include <runtime/k210/k210_ops_body.h>
 #if !NNCASE_TARGET_K210_SIMULATOR
 #include <dmac.h>
 #include <sysctl.h>
@@ -8,7 +8,7 @@
 
 using namespace nncase;
 using namespace nncase::runtime;
-using namespace nncase::targets::k210;
+using namespace nncase::runtime::k210;
 
 namespace
 {
@@ -65,7 +65,7 @@ int kpu_plic_thunk(void *userdata)
 
 namespace nncase
 {
-namespace targets
+namespace runtime
 {
     namespace k210
     {

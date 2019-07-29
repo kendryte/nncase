@@ -1,13 +1,13 @@
 #include <kernels/cpu/cpu_kernels.h>
 #include <runtime/kernel_registry.h>
-#include <targets/cpu/cpu_ops_body.h>
+#include <runtime/cpu/cpu_ops_body.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
 
 namespace nncase
 {
-namespace targets
+namespace runtime
 {
     namespace cpu
     {

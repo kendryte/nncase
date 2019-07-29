@@ -1,15 +1,15 @@
+#include <runtime/cpu/cpu_ops_body.h>
+#include <runtime/k210/k210_ops_body.h>
 #include <runtime/kernel_registry.h>
+#include <runtime/neutral/neutral_ops_body.h>
 #include <runtime/span_reader.h>
-#include <targets/cpu/cpu_ops_body.h>
-#include <targets/k210/k210_ops_body.h>
-#include <targets/neutral/neutral_ops_body.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
 
 namespace nncase
 {
-namespace targets
+namespace runtime
 {
 #define BEGINE_DEFINE_TARGET(target) \
     namespace target                 \
@@ -38,9 +38,9 @@ kernel_call_result runtime::call_kernel(runtime_opcode opcode, xtl::span<const u
 #define DEFINE_RUNTIME_OP(target, id, name, value)                      \
     case rop_##id:                                                      \
     {                                                                   \
-        nncase::targets::target::id##_options options;                  \
+        nncase::runtime::target::id##_options options;                  \
         options.deserialize(reader);                                    \
-        return nncase::targets::target::id(options, interpreter, step); \
+        return nncase::runtime::target::id(options, interpreter, step); \
     }
 #define END_DEFINE_TARGET()
 

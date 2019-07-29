@@ -1,7 +1,7 @@
 ﻿// nncase-cli.cpp: 定义应用程序的入口点。
 //
 
-#include "compile.h"
+#include "modes.h"
 #include <iostream>
 #include <string>
 
@@ -12,9 +12,10 @@ int main(int argc, char *argv[])
 {
     mode mode;
     compile_options compile_options;
+    inference_options inference_options;
 
-    auto cli = (compile_options.parser(mode),
-        option("-v", "--version").call([] { cout << "version 1.0" << endl; }).doc("show version"));
+    auto cli = ((compile_options.parser(mode) | inference_options.parser(mode)),
+        option("-v", "--version").call([] { cout << "version 0.2" << endl; }).doc("show version"));
 
     if (parse(argc, argv, cli))
     {
@@ -24,6 +25,9 @@ int main(int argc, char *argv[])
             {
             case mode::compile:
                 compile(compile_options);
+                break;
+            case mode::inference:
+                inference(inference_options);
                 break;
             case mode::help:
                 break;

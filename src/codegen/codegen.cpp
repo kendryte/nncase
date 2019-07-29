@@ -1,4 +1,5 @@
 #include <codegen/codegen.h>
+#include <ir/op_utils.h>
 #include <runtime/model.h>
 #include <string>
 #include <unordered_map>
@@ -58,6 +59,7 @@ void nncase::codegen::gencode(codegen_context &context, xtl::span<ir::node *> co
 {
     std::vector<ir::node *> runtime_nodes;
     std::vector<memory_range> inputs;
+    std::vector<runtime_shape_t> input_shapes;
     std::vector<memory_range> outputs;
     std::vector<ir::node *> constants;
 
@@ -70,6 +72,7 @@ void nncase::codegen::gencode(codegen_context &context, xtl::span<ir::node *> co
         {
         case op_input:
             inputs.emplace_back(context.get_allocation(node->output_at(0)));
+            input_shapes.emplace_back(ir::to(node->output_at(0).shape()));
             break;
         case op_output:
             outputs.emplace_back(context.get_allocation(*node->input_at(0).connection()));
@@ -83,6 +86,7 @@ void nncase::codegen::gencode(codegen_context &context, xtl::span<ir::node *> co
     auto &writer = context.writer();
     // model header
     model_header model_header;
+    model_header.identifier = MODEL_IDENTIFIER;
     model_header.version = MODEL_VERSION;
     model_header.flags = 0;
     model_header.target = MODEL_TARGET_K210;
@@ -97,6 +101,8 @@ void nncase::codegen::gencode(codegen_context &context, xtl::span<ir::node *> co
 
     // inputs
     writer.write_array<memory_range>(inputs);
+    // input shapes
+    writer.write_array<runtime_shape_t>(input_shapes);
     // outputs
     writer.write_array<memory_range>(outputs);
 

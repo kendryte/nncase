@@ -1,7 +1,7 @@
 #pragma once
 #include "../utils.h"
-#include <runtime_op_utility.h>
-#include <targets/k210/k210_runtime_op_utility.h>
+#include <runtime/runtime_op_utility.h>
+#include <runtime/k210/k210_runtime_op_utility.h>
 
 namespace nncase
 {
@@ -11,14 +11,16 @@ namespace kernels
     {
         inline void kpu_upload(const uint8_t *src, uint8_t *dest, const runtime_shape_t &in_shape)
         {
+            using namespace runtime::k210;
+
             if (in_shape[3] % 64 == 0)
             {
                 std::copy(src, src + kernels::details::compute_size(in_shape), dest);
             }
             else
             {
-                auto layout = targets::k210::get_kpu_row_layout(in_shape[3]);
-                auto fmap_size = targets::k210::get_kpu_bytes(in_shape[3], in_shape[2], in_shape[1]);
+                auto layout = get_kpu_row_layout(in_shape[3]);
+                auto fmap_size = get_kpu_bytes(in_shape[3], in_shape[2], in_shape[1]);
 
                 for (int32_t batch = 0; batch < in_shape[0]; batch++)
                 {
@@ -41,14 +43,16 @@ namespace kernels
 
         inline void kpu_download(const uint8_t *src, uint8_t *dest, const runtime_shape_t &in_shape)
         {
+            using namespace runtime::k210;
+
             if (in_shape[3] % 64 == 0)
             {
                 std::copy(src, src + kernels::details::compute_size(in_shape), dest);
             }
             else
             {
-                auto layout = targets::k210::get_kpu_row_layout(in_shape[3]);
-                auto fmap_size = targets::k210::get_kpu_bytes(in_shape[3], in_shape[2], in_shape[1]);
+                auto layout = get_kpu_row_layout(in_shape[3]);
+                auto fmap_size = get_kpu_bytes(in_shape[3], in_shape[2], in_shape[1]);
 
                 for (int32_t batch = 0; batch < in_shape[0]; batch++)
                 {
@@ -69,7 +73,7 @@ namespace kernels
 
         template <bool IsDepthwise, int32_t FilterSize>
         void kpu_conv2d(const uint8_t *input, int64_t *workspace, uint8_t *output, const uint8_t *weights, int32_t in_h, int32_t in_w, int32_t in_channels, int32_t out_channels, uint8_t pad_value, int32_t arg_x,
-            int32_t shift_x, int32_t arg_w, int32_t shift_w, int64_t arg_add, const targets::k210::kpu_batchnorm_segment *batchnorm, const targets::k210::kpu_activation_table_t &activation)
+            int32_t shift_x, int32_t arg_w, int32_t shift_w, int64_t arg_add, const runtime::k210::kpu_batchnorm_segment *batchnorm, const runtime::k210::kpu_activation_table_t &activation)
         {
             const auto channel_size = size_t(in_h) * in_w;
             // conv
@@ -142,7 +146,7 @@ namespace kernels
                     for (size_t i = 0; i < channel_size; i++)
                     {
                         auto value = (*src_it++ * bn.mul >> bn.shift) + bn.add;
-                        auto &seg = *std::find_if(activation.rbegin(), activation.rend(), [value](const targets::k210::kpu_activation_segment &seg) {
+                        auto &seg = *std::find_if(activation.rbegin(), activation.rend(), [value](const runtime::k210::kpu_activation_segment &seg) {
                             return value > seg.start_x;
                         });
                         value = runtime::carry_shift((value - seg.start_x) * seg.mul, seg.shift);
@@ -152,9 +156,9 @@ namespace kernels
             }
         }
 
-        inline void kpu_pool2d(const uint8_t *input, uint8_t *output, int32_t in_h, int32_t in_w, int32_t in_channels, targets::k210::kpu_pool_type_t pool_type)
+        inline void kpu_pool2d(const uint8_t *input, uint8_t *output, int32_t in_h, int32_t in_w, int32_t in_channels, runtime::k210::kpu_pool_type_t pool_type)
         {
-            using namespace targets::k210;
+            using namespace runtime::k210;
 
             const auto filter = get_kpu_filter_size(pool_type);
             const auto stride = get_kpu_filter_stride(pool_type);

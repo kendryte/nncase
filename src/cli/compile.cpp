@@ -1,4 +1,4 @@
-#include "compile.h"
+#include "modes.h"
 #include "registry.h"
 #include "targets/cpu/target.h"
 #include "targets/target.h"
@@ -24,11 +24,11 @@ using namespace nncase::transforms;
 
 namespace
 {
-std::vector<uint8_t> read_file(const std::string &filename)
+std::vector<uint8_t> read_file(const std::filesystem::path &filename)
 {
     std::ifstream infile(filename, std::ios::binary | std::ios::in);
     if (infile.bad())
-        throw std::runtime_error("Cannot open file: " + filename);
+        throw std::runtime_error("Cannot open file: " + filename.string());
 
     infile.seekg(0, std::ios::end);
     size_t length = infile.tellg();
@@ -65,10 +65,11 @@ void simulate(target &target, graph &graph, image_dataset &dataset)
     EVAL_IMPL();
 
     int i = 0;
-    for (auto &&batch : dataset)
+    for (auto it = dataset.begin<float>(); it != dataset.end<float>(); ++it)
     {
         auto input = eval.input_at<float>(0);
-        std::copy(batch.begin(), batch.end(), input.begin());
+        auto &tensor = it->tensor;
+        std::copy(tensor.begin(), tensor.end(), input.begin());
 
         eval.evaluate();
 
@@ -79,14 +80,14 @@ void simulate(target &target, graph &graph, image_dataset &dataset)
     }
 }
 
-std::unique_ptr<target> create_target(const compile_options &compile_options)
+std::unique_ptr<target> create_target(const compile_options &options)
 {
     return std::make_unique<cpu_target>();
 }
 
-graph import(const compile_options &compile_options)
+graph import(const compile_options &options)
 {
-    auto model = read_file(compile_options.input_filename);
+    auto model = read_file(options.input_filename);
     return import_tflite(model);
 }
 
@@ -106,17 +107,18 @@ void add_quantization_checkpoints(target &target, graph &graph)
     transform_graph(graph, transforms);
 }
 
-void get_quantization_ranges(target &target, graph &graph, quantizer *quantizer, const compile_options &compile_options)
+void get_quantization_ranges(target &target, graph &graph, quantizer *quantizer, const compile_options &options)
 {
     EVAL_IMPL();
 
     assert(graph.inputs().size() == 1);
-    image_dataset dataset(compile_options.dataset, graph.inputs()[0]->output().shape(), 0, 1);
+    image_dataset dataset(options.dataset, graph.inputs()[0]->output().shape(), 0, 1);
     int i = 0;
-    for (auto &&batch : dataset)
+    for (auto it = dataset.begin<float>(); it != dataset.end<float>(); ++it)
     {
         auto input = eval.input_at<float>(0);
-        std::copy(batch.begin(), batch.end(), input.begin());
+        auto &tensor = it->tensor;
+        std::copy(tensor.begin(), tensor.end(), input.begin());
 
         eval.evaluate(quantizer);
 
@@ -151,13 +153,13 @@ void quantize(target &target, graph &graph, const compile_options &compile_optio
 #endif
 }
 
-void gencode(target &target, graph &graph, const compile_options &compile_options)
+void gencode(target &target, graph &graph, const compile_options &options)
 {
     SCHEDULE_IMPL();
 
-    std::ofstream outfile(compile_options.output_filename, std::ios::binary | std::ios::out);
+    std::ofstream outfile(options.output_filename, std::ios::binary | std::ios::out);
     if (outfile.bad())
-        throw std::runtime_error("Cannot open file for output: " + compile_options.output_filename);
+        throw std::runtime_error("Cannot open file for output: " + options.output_filename.string());
 
     codegen_context codegen_ctx(outfile, allocators, alloc_ctx.allocations());
     codegen::gencode(codegen_ctx, compute_sequence);
@@ -174,23 +176,23 @@ group compile_options::parser(mode &mode)
         option("--inference-type") & value("inference type", inference_type).doc("inference type, default is " + inference_type));
 }
 
-void compile(const compile_options &compile_options)
+void compile(const compile_options &options)
 {
-    auto target = create_target(compile_options);
+    auto target = create_target(options);
 
     target->registry_codegen_ops();
     target->registry_evaluator_ops();
 
     // 1. Import
-    auto graph = import(compile_options);
+    auto graph = import(options);
 
     // 2. Optimize Pass 1
     optimize_pass1(*target, graph);
 
     // 3. Quantize
-    if (compile_options.inference_type == "uint8")
-        quantize(*target, graph, compile_options);
+    if (options.inference_type == "uint8")
+        quantize(*target, graph, options);
 
     // 4. CodeGen
-    gencode(*target, graph, compile_options);
+    gencode(*target, graph, options);
 }
