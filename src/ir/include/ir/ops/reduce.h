@@ -9,6 +9,8 @@ namespace ir
     class reduce : public node
     {
     public:
+        DEFINE_NODE_OPCODE(op_reduce);
+
         input_connector &input() { return input_at(0); }
         output_connector &output() { return output_at(0); }
 
@@ -18,8 +20,6 @@ namespace ir
         bool keep_dims() const noexcept { return keep_dims_; }
 
         reduce(reduce_op_t reduce_op, shape_t input_shape, axis_t axis, float init_value, bool keep_dims);
-
-        node_opcode opcode() const noexcept override { return op_reduce; }
 
     private:
         reduce_op_t reduce_op_;

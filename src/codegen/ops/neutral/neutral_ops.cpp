@@ -121,8 +121,8 @@ namespace codegen
             return body;
         });
 
-        disable_emitter(op_input);
-        disable_emitter(op_output);
+        disable_emitter(op_input_node);
+        disable_emitter(op_output_node);
         disable_emitter(op_constant);
 
         register_emitter(op_pad, [](node &node, codegen_context &context) {

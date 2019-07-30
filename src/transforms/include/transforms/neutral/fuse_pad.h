@@ -5,8 +5,8 @@ namespace nncase
 {
 namespace transforms
 {
-#define DEFINE_TP_MOTION(name)                                                    \
-    class transpose_##name##_motion_transform : public transform                  \
+#define DEFINE_FP_MOTION(name)                                                    \
+    class fuse_pad_##name##_transform : public transform                          \
     {                                                                             \
     public:                                                                       \
         void process(transform_context &context) override;                        \
@@ -16,11 +16,8 @@ namespace transforms
         bool on_try_match(ir::node &node, transform_context &context) override;   \
     };
 
-    DEFINE_TP_MOTION(binary);
-    DEFINE_TP_MOTION(constant_binary);
-    DEFINE_TP_MOTION(concat);
-    DEFINE_TP_MOTION(pad);
+    DEFINE_FP_MOTION(conv2d);
 
-#undef DEFINE_TP_MOTION
+#undef DEFINE_FP_MOTION
 }
 }

@@ -18,7 +18,7 @@ std::unordered_set<node_opcode> g_disabled_emitters;
 
 std::unique_ptr<node_body> call_emitter(node &node, codegen_context &context)
 {
-    auto opcode = node.opcode();
+    auto opcode = node.runtime_opcode();
     auto it = g_emitters.find(opcode);
     if (it == g_emitters.end())
     {
@@ -65,16 +65,16 @@ void nncase::codegen::gencode(codegen_context &context, xtl::span<ir::node *> co
 
     for (auto &&node : compute_sequence)
     {
-        if (!g_disabled_emitters.contains(node->opcode()))
+        if (!g_disabled_emitters.contains(node->runtime_opcode()))
             runtime_nodes.emplace_back(node);
 
-        switch (node->opcode())
+        switch (node->runtime_opcode())
         {
-        case op_input:
+        case op_input_node:
             inputs.emplace_back(context.get_allocation(node->output_at(0)));
             input_shapes.emplace_back(ir::to(node->output_at(0).shape()));
             break;
-        case op_output:
+        case op_output_node:
             outputs.emplace_back(context.get_allocation(*node->input_at(0).connection()));
             break;
         case op_constant:

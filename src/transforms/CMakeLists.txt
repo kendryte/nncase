@@ -2,8 +2,10 @@
 
 set(SRCS transform.cpp
          neutral/fold_transpose.cpp
-         neutral/transpose_motion.cpp
-         neutral/fold_quantize.cpp)
+         neutral/fold_pad.cpp
+         neutral/fold_quantize.cpp
+         neutral/fuse_pad.cpp
+         neutral/transpose_motion.cpp)
 
 add_library(transforms STATIC ${SRCS})
 target_include_directories(transforms PUBLIC include)

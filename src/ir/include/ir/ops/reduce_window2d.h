@@ -9,6 +9,8 @@ namespace ir
     class reduce_window2d : public node
     {
     public:
+        DEFINE_NODE_OPCODE(op_reduce_window2d);
+
         input_connector &input() { return input_at(0); }
         output_connector &output() { return output_at(0); }
 
@@ -25,8 +27,6 @@ namespace ir
         value_range<float> fused_activation() const noexcept { return fused_activation_; }
 
         reduce_window2d(reduce_op_t reduce_op, shape_t input_shape, float init_value, int32_t filter_h, int32_t filter_w, padding padding_h, padding padding_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w, value_range<float> fused_activation);
-
-        node_opcode opcode() const noexcept override { return op_reduce_window2d; }
 
     private:
         reduce_op_t reduce_op_;

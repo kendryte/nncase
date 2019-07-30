@@ -8,12 +8,12 @@ using namespace nncase::transforms;
 
 bool fold_quantize_transform::on_try_match(node &node, transform_context &context)
 {
-    if (node.opcode() == op_quantize)
+    if (node.runtime_opcode() == op_quantize)
     {
         auto &q = static_cast<quantize &>(node);
         for (auto &&conn : q.output().connections())
         {
-            if (conn->owner().opcode() == op_dequantize)
+            if (conn->owner().runtime_opcode() == op_dequantize)
             {
                 auto &deq = static_cast<dequantize &>(conn->owner());
 
@@ -29,12 +29,12 @@ bool fold_quantize_transform::on_try_match(node &node, transform_context &contex
             }
         }
     }
-    else if (node.opcode() == op_dequantize)
+    else if (node.runtime_opcode() == op_dequantize)
     {
         auto &deq = static_cast<dequantize &>(node);
         for (auto &&conn : deq.output().connections())
         {
-            if (conn->owner().opcode() == op_quantize)
+            if (conn->owner().runtime_opcode() == op_quantize)
             {
                 auto &q = static_cast<quantize &>(conn->owner());
 

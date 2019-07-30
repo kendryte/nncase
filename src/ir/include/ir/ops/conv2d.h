@@ -9,6 +9,8 @@ namespace ir
     class conv2d : public node
     {
     public:
+        DEFINE_NODE_OPCODE(op_conv2d);
+
         input_connector &input() { return input_at(0); }
         output_connector &output() { return output_at(0); }
 
@@ -28,8 +30,6 @@ namespace ir
         value_range<float> fused_activation() const noexcept { return fused_activation_; }
 
         conv2d(shape_t input_shape, xt::xtensor<float, 4> weights, xt::xtensor<float, 1> bias, int32_t groups, padding padding_h, padding padding_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w, value_range<float> fused_activation);
-
-        node_opcode opcode() const noexcept override { return op_conv2d; }
     private:
         xt::xtensor<float, 4> weights_;
         xt::xtensor<float, 1> bias_;

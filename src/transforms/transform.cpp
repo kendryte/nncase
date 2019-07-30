@@ -56,13 +56,14 @@ class transform_apply_visitor : public dfs_ir_visitor
 public:
     using dfs_ir_visitor::visit;
     graph *graph;
+    target *target;
     bool need_retry = false;
     transform *transform;
 
 protected:
     bool visit(node &node) override
     {
-        transform_context context { *graph };
+        transform_context context { *graph, *target };
         if (transform->try_match(node, context))
         {
             transform->process(context);
@@ -75,10 +76,11 @@ protected:
 };
 }
 
-void nncase::transforms::transform_graph(graph &graph, xtl::span<transform *> transforms)
+void nncase::transforms::transform_graph(graph &graph, target &target, xtl::span<transform *> transforms)
 {
     transform_apply_visitor visitor;
     visitor.graph = &graph;
+    visitor.target = &target;
     bool next_pass = false;
 
     do

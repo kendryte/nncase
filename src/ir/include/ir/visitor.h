@@ -32,5 +32,82 @@ namespace ir
 
     private:
     };
+
+    template <class TBaseVisitor, class TVisitor>
+    class relay_ir_visitor : public TBaseVisitor
+    {
+    public:
+        using TBaseVisitor::visit;
+
+        relay_ir_visitor(TVisitor &&visitor)
+            : visitor_(std::forward<TVisitor>(visitor))
+        {
+        }
+
+    protected:
+        virtual bool visit(node &node)
+        {
+            return visit<std::is_void_v<decltype(visitor_(node))>>(node);
+        }
+
+    private:
+        template <bool IsVoid>
+        bool visit(node &node)
+        {
+            if constexpr (IsVoid)
+            {
+                visitor_(node);
+                return false;
+            }
+            else
+            {
+                return visitor_(node);
+            }
+        }
+
+    private:
+        TVisitor visitor_;
+    };
+
+    template <class TBaseVisitor = dfs_ir_visitor, class TVisitor>
+    auto make_relay_ir_visitor(TVisitor &&visitor)
+    {
+        return relay_ir_visitor<TBaseVisitor, TVisitor>(std::forward<TVisitor>(visitor));
+    }
+
+    template <class TNode, class = std::enable_if_t<std::is_base_of_v<node, TNode>>>
+    TNode *try_get_direct_child(node &node)
+    {
+        for (auto &&out : node.outputs())
+        {
+            for (auto &&conn : out.connections())
+            {
+                if (conn->owner().runtime_opcode() == TNode::opcode())
+                    return static_cast<TNode *>(&conn->owner());
+            }
+        }
+
+        return nullptr;
+    }
+
+    template <class TNode, class = std::enable_if_t<std::is_base_of_v<node, TNode>>>
+    TNode *try_get_direct_parent(node &node)
+    {
+        for (auto &&in : node.inputs())
+        {
+            if (in.connection() && in.connection()->owner().runtime_opcode() == TNode::opcode())
+                return static_cast<TNode *>(&in.connection()->owner());
+        }
+
+        return nullptr;
+    }
+
+    template <class TNode, class = std::enable_if_t<std::is_base_of_v<node, TNode>>>
+    TNode *node_cast(node &node)
+    {
+        if (node.runtime_opcode() == TNode::opcode())
+            return static_cast<TNode *>(&node);
+        return nullptr;
+    }
 }
 }

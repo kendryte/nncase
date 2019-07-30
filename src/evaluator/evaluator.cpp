@@ -47,12 +47,12 @@ evaluator::evaluator(evaluate_context &context, xtl::span<ir::node *> compute_se
 {
     for (auto &&node : compute_sequence_)
     {
-        switch (node->opcode())
+        switch (node->runtime_opcode())
         {
-        case op_input:
+        case op_input_node:
             inputs_.emplace_back(&node->output_at(0));
             break;
-        case op_output:
+        case op_output_node:
             outputs_.emplace_back(&node->input_at(0));
             break;
         case op_constant:
@@ -73,17 +73,17 @@ void evaluator::evaluate(quantizer *quantizer)
 
     for (auto &&node : compute_sequence_)
     {
-        auto &evaluator = get_evaluator(node->opcode());
+        auto &evaluator = get_evaluator(node->runtime_opcode());
 
         auto start = clock::now();
         evaluator(*node, context_);
         auto duration = clock::now() - start;
         total_duration += duration;
-        std::cout << node_opcode_names(node->opcode()) << ": " << duration.count() / 1e6 << "ms" << std::endl;
+        std::cout << node_opcode_names(node->runtime_opcode()) << ": " << duration.count() / 1e6 << "ms" << std::endl;
 
-        if (quantizer && node->opcode())
+        if (quantizer && node->runtime_opcode())
         {
-            auto opcode = node->opcode();
+            auto opcode = node->runtime_opcode();
             if (opcode == op_fake_dequantize || opcode == op_fake_quantize)
             {
                 auto &output = node->output_at(0);

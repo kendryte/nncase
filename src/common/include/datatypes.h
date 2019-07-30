@@ -123,4 +123,14 @@ struct memory_range
     uint32_t start;
     uint32_t size;
 };
+
+inline bool operator==(const padding &lhs, const padding &rhs) noexcept
+{
+    return lhs.before == rhs.before && lhs.after == rhs.after;
+}
+
+inline bool operator!=(const padding &lhs, const padding &rhs) noexcept
+{
+    return lhs.before != rhs.before || lhs.after != rhs.after;
+}
 }

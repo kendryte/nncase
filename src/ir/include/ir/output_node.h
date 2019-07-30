@@ -8,6 +8,8 @@ namespace ir
     class output_node : public node
     {
     public:
+        DEFINE_NODE_OPCODE(op_output_node);
+
         input_connector &input() { return input_at(0); }
 
         template <class TShape>
@@ -15,8 +17,6 @@ namespace ir
         {
             add_input("input", type, std::forward<TShape>(shape));
         }
-
-        node_opcode opcode() const noexcept override { return op_output; }
     };
 }
 }

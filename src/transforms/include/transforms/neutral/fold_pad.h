@@ -5,7 +5,7 @@ namespace nncase
 {
 namespace transforms
 {
-    class fold_quantize_transform : public transform
+    class fold_nop_pad_transform : public transform
     {
     public:
         void process(transform_context &context) override;

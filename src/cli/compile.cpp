@@ -39,11 +39,42 @@ std::vector<uint8_t> read_file(const std::filesystem::path &filename)
     return data;
 }
 
-void transform_graph(graph &graph, xtl::span<std::unique_ptr<transform>> transforms)
+void dump_graph(graph &graph, std::ostream &output)
+{
+    graph.assign_names();
+
+    output << "digraph \"graph\" {\n";
+    output << "node [shape=\"record\"]\n";
+
+    for (auto &&node : graph.nodes())
+        output << "\"" << node->name() << "\" [label=\"{" << node_opcode_names(node->runtime_opcode()) << "}\"]\n";
+
+    for (auto &&node : graph.nodes())
+    {
+        for (auto &&out : node->outputs())
+        {
+            auto shape = to_string(out.shape());
+            for (auto &&conn : out.connections())
+            {
+                output << "\"" << node->name() << "\"->\"" << conn->owner().name() << "\" [label=\"" << shape << "\"]\n";
+            }
+        }
+    }
+
+    output << "}" << std::endl;
+}
+
+void dump_graph(graph &graph, std::string_view prefix)
+{
+    std::ofstream file("ir_" + std::string(prefix) + ".dot", std::ios::out);
+    dump_graph(graph, file);
+}
+
+void transform_graph(graph &graph, target &target, xtl::span<std::unique_ptr<transform>> transforms)
 {
     std::vector<transform *> transform_refs;
     std::transform(std::begin(transforms), std::end(transforms), std::back_inserter(transform_refs), [](auto &&t) { return t.get(); });
-    transform_graph(graph, transform_refs);
+    transform_graph(graph, target, transform_refs);
 }
 
 #define SCHEDULE_IMPL()                                               \
@@ -96,7 +127,7 @@ void optimize_pass1(target &target, graph &graph)
     std::vector<std::unique_ptr<transforms::transform>> transforms;
     target.add_default_transforms(transforms);
     target.add_optimize1_transforms(transforms);
-    transform_graph(graph, transforms);
+    transform_graph(graph, target, transforms);
 }
 
 void add_quantization_checkpoints(target &target, graph &graph)
@@ -104,7 +135,7 @@ void add_quantization_checkpoints(target &target, graph &graph)
     std::vector<std::unique_ptr<transforms::transform>> transforms;
     target.add_default_transforms(transforms);
     target.add_quantization_checkpoint_transforms(transforms);
-    transform_graph(graph, transforms);
+    transform_graph(graph, target, transforms);
 }
 
 void get_quantization_ranges(target &target, graph &graph, quantizer *quantizer, const compile_options &options)
@@ -185,13 +216,18 @@ void compile(const compile_options &options)
 
     // 1. Import
     auto graph = import(options);
+    dump_graph(graph, "import");
 
     // 2. Optimize Pass 1
     optimize_pass1(*target, graph);
+    dump_graph(graph, "optimize_1");
 
     // 3. Quantize
     if (options.inference_type == "uint8")
+    {
         quantize(*target, graph, options);
+        dump_graph(graph, "quantize");
+    }
 
     // 4. CodeGen
     gencode(*target, graph, options);

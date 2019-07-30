@@ -8,6 +8,10 @@ namespace nncase
 {
 namespace ir
 {
+#define DEFINE_NODE_OPCODE(value)                                    \
+    static constexpr node_opcode opcode() noexcept { return value; } \
+    node_opcode runtime_opcode() const noexcept override { return value; }
+
     class node
     {
     public:
@@ -15,13 +19,18 @@ namespace ir
         node(node &) = delete;
         virtual ~node();
 
+        const std::string &name() const noexcept { return name_; }
+
+        template <class TArg, class... TArgs>
+        void name(TArg arg, TArgs... args) { name_.assign(std::forward<TArg>(arg), std::forward<TArgs>(args)...); }
+
         xtl::span<input_connector> inputs() noexcept { return input_connectors_; }
         xtl::span<output_connector> outputs() noexcept { return output_connectors_; }
 
         input_connector &input_at(size_t index) { return input_connectors_.at(index); }
         output_connector &output_at(size_t index) { return output_connectors_.at(index); }
 
-        virtual node_opcode opcode() const noexcept = 0;
+        virtual node_opcode runtime_opcode() const noexcept = 0;
 
     protected:
         template <class TName, class TShape>
@@ -37,6 +46,7 @@ namespace ir
         }
 
     private:
+        std::string name_;
         std::vector<input_connector> input_connectors_;
         std::vector<output_connector> output_connectors_;
     };

@@ -9,6 +9,8 @@ namespace ir
     class reshape : public node
     {
     public:
+        DEFINE_NODE_OPCODE(op_reshape);
+
         input_connector &input() { return input_at(0); }
         output_connector &output() { return output_at(0); }
 
@@ -16,8 +18,6 @@ namespace ir
 
         reshape(datatype_t type, shape_t input_shape, axis_t new_shape);
         reshape(datatype_t type, shape_t input_shape, shape_t new_shape);
-
-        node_opcode opcode() const noexcept override { return op_reshape; }
 
     private:
         shape_t new_shape_;

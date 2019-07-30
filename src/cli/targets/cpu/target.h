@@ -1,5 +1,5 @@
 #pragma once
-#include "../target.h"
+#include <targets/target.h>
 
 namespace nncase
 {

@@ -5,30 +5,30 @@
 using namespace nncase;
 using namespace nncase::ir;
 
-namespace
+void graph::assign_names()
 {
-class mark_visitor : public dfs_ir_visitor
-{
-public:
-    using dfs_ir_visitor::visit;
-    std::unordered_set<node *> used_nodes;
+    std::unordered_set<std::string_view> names;
 
-protected:
-    bool visit(node &node) override
+    for (auto &&node : nodes_)
     {
-        used_nodes.emplace(&node);
-        return false;
+        size_t i = 0;
+        while (node->name().empty() || names.contains(node->name()))
+            node->name(std::string(node_opcode_names(node->runtime_opcode())) + "_" + std::to_string(i++));
+        names.emplace(node->name());
     }
-};
 }
 
 void graph::collect()
 {
-    mark_visitor visitor;
+    std::unordered_set<node *> used_nodes;
+
+    auto visitor = make_relay_ir_visitor([&](node &node) {
+        used_nodes.emplace(&node);
+    });
     visitor.visit(*this);
 
     auto end = std::remove_if(std::begin(nodes_), std::end(nodes_), [&](auto &node) {
-        if (!visitor.used_nodes.contains(node.get()))
+        if (!used_nodes.contains(node.get()))
         {
             for (auto &in : node->inputs())
                 in.clear_connection();

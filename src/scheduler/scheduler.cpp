@@ -1,5 +1,5 @@
-#include <ir/ops/constant.h>
 #include <ir/op_utils.h>
+#include <ir/ops/constant.h>
 #include <ir/visitor.h>
 #include <scheduler/scheduler.h>
 #include <unordered_map>
@@ -17,78 +17,6 @@ void nncase::scheduler::register_input_allocator(node_opcode opcode, std::functi
 {
     g_allocators.emplace(opcode, std::move(allocator));
 }
-
-class schedule_visitor : public dfs_ir_visitor
-{
-public:
-    using dfs_ir_visitor::visit;
-
-    schedule_visitor(allocation_context &context, std::vector<node *> &compute_sequence)
-        : context_(context), compute_sequence_(compute_sequence)
-    {
-    }
-
-    bool visit(node &node) override
-    {
-        for (auto &&out : node.outputs())
-        {
-            for (auto &&in : out.connections())
-            {
-                auto &in_node = in->owner();
-                auto it = g_allocators.find(in_node.opcode());
-                if (it != std::end(g_allocators))
-                {
-                    it->second(in_node, out, context_);
-                }
-                else
-                {
-                    context_.allocate_default(out);
-                }
-            }
-        }
-
-        // check overlap
-        {
-            std::vector<memory_allocation> inputs, outputs;
-            for (auto &&out : node.outputs())
-                outputs.emplace_back(context_.allocations().at(&out));
-
-            for (auto &&in : node.inputs())
-                inputs.emplace_back(context_.allocations().at(in.connection()));
-
-            for (auto &&m : inputs)
-            {
-                assert(std::none_of(outputs.begin(), outputs.end(), [&](const memory_allocation rhs) {
-                    return rhs.overlap(m);
-                }));
-            }
-        }
-
-        compute_sequence_.emplace_back(&node);
-
-        // Pin output
-        if (node.opcode() != op_output)
-        {
-            for (auto &&in : node.inputs())
-            {
-                auto out = in.connection();
-                assert(out);
-
-                // Pin constant and input
-                if (out->type() != mem_const && out->owner().opcode() != op_input)
-                {
-                    context_.release(*out);
-                }
-            }
-        }
-
-        return false;
-    }
-
-private:
-    allocation_context &context_;
-    std::vector<node *> &compute_sequence_;
-};
 
 allocation_context::allocation_context(const std::unordered_map<memory_type_t, memory_allocator *> &allocators)
     : allocators_(allocators)
@@ -124,6 +52,59 @@ void allocation_context::release(ir::output_connector &conn)
 
 void nncase::scheduler::schedule(xtl::span<output_node *> outputs, allocation_context &context, std::vector<ir::node *> &compute_sequence)
 {
-    schedule_visitor visitor(context, compute_sequence);
+    auto visitor = make_relay_ir_visitor([&](node &node) {
+        for (auto &&out : node.outputs())
+        {
+            for (auto &&in : out.connections())
+            {
+                auto &in_node = in->owner();
+                auto it = g_allocators.find(in_node.runtime_opcode());
+                if (it != std::end(g_allocators))
+                {
+                    it->second(in_node, out, context);
+                }
+                else
+                {
+                    context.allocate_default(out);
+                }
+            }
+        }
+
+        // check overlap
+        {
+            std::vector<memory_allocation> inputs, outputs;
+            for (auto &&out : node.outputs())
+                outputs.emplace_back(context.allocations().at(&out));
+
+            for (auto &&in : node.inputs())
+                inputs.emplace_back(context.allocations().at(in.connection()));
+
+            for (auto &&m : inputs)
+            {
+                assert(std::none_of(outputs.begin(), outputs.end(), [&](const memory_allocation rhs) {
+                    return rhs.overlap(m);
+                }));
+            }
+        }
+
+        compute_sequence.emplace_back(&node);
+
+        // Pin output
+        if (node.runtime_opcode() != op_output_node)
+        {
+            for (auto &&in : node.inputs())
+            {
+                auto out = in.connection();
+                assert(out);
+
+                // Pin constant and input
+                if (out->type() != mem_const && out->owner().runtime_opcode() != op_input_node)
+                {
+                    context.release(*out);
+                }
+            }
+        }
+    });
+
     visitor.visit(outputs);
 }

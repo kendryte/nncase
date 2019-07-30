@@ -10,6 +10,8 @@ namespace ir
     class constant : public node
     {
     public:
+        DEFINE_NODE_OPCODE(op_constant);
+
         output_connector &output() { return output_at(0); }
 
         xtl::span<const uint8_t> data() const noexcept { return data_; }
@@ -27,8 +29,6 @@ namespace ir
         {
             add_output("output", runtime::to_datatype_v<TScalar>, shape_t { 1 });
         }
-
-        node_opcode opcode() const noexcept override { return op_constant; }
 
     private:
         std::vector<uint8_t> data_;

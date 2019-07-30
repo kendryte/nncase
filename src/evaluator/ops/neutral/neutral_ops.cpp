@@ -157,8 +157,8 @@ namespace ir
             neutral::matmul(input_a.data(), input_b.data(), output.data(), rnode.bias().data(), a_shape[0], a_shape[1], b_shape[1], rnode.fused_activation());
         });
 
-        register_evaluator(op_input, nop_evaluator);
-        register_evaluator(op_output, nop_evaluator);
+        register_evaluator(op_input_node, nop_evaluator);
+        register_evaluator(op_output_node, nop_evaluator);
         register_evaluator(op_constant, nop_evaluator);
 
         register_evaluator(op_pad, [](ir::node &node, evaluate_context &context) {

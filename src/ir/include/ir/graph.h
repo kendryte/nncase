@@ -12,6 +12,7 @@ namespace ir
     class graph
     {
     public:
+        xtl::span<std::unique_ptr<node>> nodes() noexcept { return nodes_; }
         xtl::span<input_node *> inputs() noexcept { return inputs_; }
         xtl::span<output_node *> outputs() noexcept { return outputs_; }
 
@@ -26,6 +27,7 @@ namespace ir
             return node;
         }
 
+        void assign_names();
         void collect();
 
     private:
