@@ -16,3 +16,6 @@ DEFINE_NEUTRAL_OPCODE(dequantize,       Dequantize,       0x0F)
 DEFINE_NEUTRAL_OPCODE(pad,              Pad,              0x10)
 DEFINE_NEUTRAL_OPCODE(reshape,          Reshape,          0x11)
 DEFINE_NEUTRAL_OPCODE(resize_image,     ResizeImage,      0x12)
+DEFINE_NEUTRAL_OPCODE(strided_slice,    StridedSlice,     0x13)
+
+#include NNCASE_TARGET_HEADER(ir/ops, opcode.def)

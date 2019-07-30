@@ -16,7 +16,7 @@ auto &get_evaluator(node_opcode opcode)
 {
     auto it = g_evaluators.find(opcode);
     if (it == std::end(g_evaluators))
-        throw std::runtime_error("Evaluator not found");
+        throw std::runtime_error("Evaluator for " + std::string(node_opcode_names(opcode)) + " is not found");
     return it->second;
 }
 }

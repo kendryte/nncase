@@ -1,4 +1,5 @@
 ﻿cmake_minimum_required (VERSION 3.8)
+include(ops/${NNCASE_TARGET}/src.cmake)
 
 set(SRCS connectors.cpp
          node.cpp
@@ -18,9 +19,10 @@ set(SRCS connectors.cpp
          ops/unary.cpp
          ops/pad.cpp
          ops/reshape.cpp
-         ops/resize_image.cpp)
+         ops/resize_image.cpp
+         ops/strided_slice.cpp)
 
-add_library(ir STATIC ${SRCS})
+add_library(ir STATIC ${SRCS} ${TARGET_SRCS})
 target_include_directories(ir PUBLIC include)
 target_include_directories(ir PUBLIC ${THIRD_PARTY}/xtensor/include)
 target_link_libraries(ir PUBLIC common)

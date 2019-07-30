@@ -9,7 +9,7 @@ void input_connector::connect(output_connector &connector)
         throw std::runtime_error("Type must be same");
 
     if (!xt::same_shape(shape(), connector.shape()))
-        throw std::runtime_error("Shapes must be same");
+        throw std::runtime_error("Shapes must be same, but got [" + to_string(shape()) + "] and [" + to_string(connector.shape()) + "]");
 
     if (connection_ != &connector)
     {
@@ -33,8 +33,8 @@ void output_connector::connect(input_connector &connector)
 {
     if (std::find(std::begin(connections_), std::end(connections_), &connector) == std::end(connections_))
     {
-        connector.connect(*this);
         connections_.emplace_back(&connector);
+        connector.connect(*this);
     }
 }
 

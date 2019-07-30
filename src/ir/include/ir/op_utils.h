@@ -222,5 +222,61 @@ namespace ir
         *r++ = new_size[0];
         return new_shape;
     }
+
+    inline axis_t normalize_strided_slice_begin(const shape_t &in_shape, const axis_t &begin, const axis_t &strides, int32_t begin_mask)
+    {
+        axis_t new_shape(strides.size());
+        for (size_t i = 0; i < new_shape.size(); i++)
+        {
+            auto stride = strides[i];
+            assert(stride);
+            new_shape[i] = (begin_mask & (1 << i)) != 0
+                ? stride > 0 ? 0 : in_shape[i] - 1
+                : begin[i];
+        }
+
+        return new_shape;
+    }
+
+    inline axis_t normalize_strided_slice_end(const shape_t &in_shape, const axis_t &begin, const axis_t &end, const axis_t &strides, int32_t end_mask, int32_t shrink_axis_mask)
+    {
+        axis_t new_shape(strides.size());
+        for (size_t i = 0; i < new_shape.size(); i++)
+        {
+            auto stride = strides[i];
+            auto begin_val = begin[i];
+            auto end_val = (end_mask & (1 << i)) != 0
+                ? stride > 0 ? in_shape[i] : -1
+                : end[i];
+            auto shrink = shrink_axis_mask & (1 << i);
+            if (shrink)
+                end_val = begin_val + 1;
+            new_shape[i] = end_val;
+        }
+
+        return new_shape;
+    }
+
+    inline shape_t get_strided_slice_output_shape(const axis_t &begin, const axis_t &end, const axis_t &strides, int32_t ellipsis_mask, int32_t new_axis_mask, int32_t shrink_axis_mask)
+    {
+        if (ellipsis_mask)
+            NNCASE_THROW(std::invalid_argument, "Non-zero ellipsis_mask is not supported");
+        if (new_axis_mask)
+            NNCASE_THROW(std::invalid_argument, "Non-zero new_axis_mask is not supported");
+
+        shape_t new_shape;
+        for (size_t i = 0; i < strides.size(); i++)
+        {
+            auto stride = strides[i];
+            auto begin_val = begin[i];
+            auto end_val = end[i];
+            auto shrink = (shrink_axis_mask & (1 << i)) != 0;
+            auto dim = (int)std::ceil((end_val - begin_val) / (float)stride);
+            if (!shrink)
+                new_shape.push_back(dim);
+        }
+
+        return new_shape;
+    }
 }
 }

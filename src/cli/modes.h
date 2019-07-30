@@ -15,6 +15,7 @@ struct compile_options
     std::filesystem::path input_filename;
     std::filesystem::path output_filename;
     std::filesystem::path dataset;
+    std::string target = "k210";
     std::string inference_type = "uint8";
 
     clipp::group parser(mode &mode);

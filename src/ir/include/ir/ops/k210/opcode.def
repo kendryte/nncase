@@ -1,0 +1,1 @@
+DEFINE_OPCODE(k210, fake_kpu_conv2d,       FakeKPUConv2D,            0x1001)

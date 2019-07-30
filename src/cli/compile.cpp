@@ -1,6 +1,7 @@
 #include "modes.h"
 #include "registry.h"
 #include "targets/cpu/target.h"
+#include "targets/k210/target.h"
 #include "targets/target.h"
 #include <codegen/codegen.h>
 #include <data/dataset.h>
@@ -113,7 +114,12 @@ void simulate(target &target, graph &graph, image_dataset &dataset)
 
 std::unique_ptr<target> create_target(const compile_options &options)
 {
-    return std::make_unique<cpu_target>();
+    if (options.target == "k210")
+        return std::make_unique<k210_target>();
+    else if (options.target == "cpu")
+        return std::make_unique<cpu_target>();
+    else
+        throw std::invalid_argument("Invalid target: " + options.target);
 }
 
 graph import(const compile_options &options)

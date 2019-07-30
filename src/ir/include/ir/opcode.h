@@ -1,13 +1,14 @@
 #pragma once
 #include <stdexcept>
 #include <string_view>
+#include <target_config.h>
 
 namespace nncase
 {
 namespace ir
 {
 #define DEFINE_NEUTRAL_OPCODE(id, name, value) op_##id = value,
-#define DEFINE_OPCODE(target, id, name, value) op_##target_##id = value,
+#define DEFINE_OPCODE(target, id, name, value) op_##target##_##id = value,
 
     enum node_opcode
     {
@@ -20,7 +21,7 @@ namespace ir
     case op_##id:                              \
         return #name;
 #define DEFINE_OPCODE(target, id, name, value) \
-    case op_##target_##id:                     \
+    case op_##target##_##id:                     \
         return #name;
 
     constexpr std::string_view node_opcode_names(node_opcode opcode)

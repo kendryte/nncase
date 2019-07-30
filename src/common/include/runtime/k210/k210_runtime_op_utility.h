@@ -49,7 +49,20 @@ namespace runtime
             case kpu_filter_3x3:
                 return 3;
             default:
+                NNCASE_THROW(std::runtime_error, "Invalid kpu filter");
+            }
+        }
+
+        inline int32_t get_kpu_padding(kpu_filter_type_t filter)
+        {
+            switch (filter)
+            {
+            case kpu_filter_1x1:
                 return 0;
+            case kpu_filter_3x3:
+                return 1;
+            default:
+                NNCASE_THROW(std::runtime_error, "Invalid kpu filter");
             }
         }
 
@@ -66,8 +79,6 @@ namespace runtime
         {
             return get_kpu_rows(width, height, channels) * 64;
         }
-
-#if NNCASE_TARGET_K210_SIMULATOR
 
         inline int32_t get_kpu_filter_size(kpu_pool_type_t filter)
         {
@@ -133,8 +144,6 @@ namespace runtime
                 NNCASE_THROW(std::runtime_error, "Invalid kpu pool type");
             }
         }
-
-#endif
     }
 }
 }
