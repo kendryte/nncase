@@ -150,7 +150,8 @@ namespace ir
         return shape;
     }
 
-    inline runtime_shape_t to(const shape_t &in_shape)
+    template <class T>
+    runtime_shape_t to(const xt::dynamic_shape<T> &in_shape)
     {
         assert(in_shape.size() <= 4);
 

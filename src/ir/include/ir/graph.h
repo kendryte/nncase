@@ -1,7 +1,6 @@
 #pragma once
-#include "input_node.h"
 #include "node.h"
-#include "output_node.h"
+#include "placeholders.h"
 #include <memory>
 #include <vector>
 

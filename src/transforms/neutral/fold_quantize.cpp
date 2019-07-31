@@ -1,5 +1,5 @@
-#include <ir/ops/quantize.h>
 #include <ir/ops/dequantize.h>
+#include <ir/ops/quantize.h>
 #include <transforms/neutral/fold_quantize.h>
 
 using namespace nncase;
@@ -17,7 +17,7 @@ bool fold_quantize_transform::on_try_match(node &node, transform_context &contex
             {
                 auto &deq = static_cast<dequantize &>(conn->owner());
 
-                if (q.quant_param() == deq.quant_param())
+                if (almost_equal(q.quant_param(), deq.quant_param()))
                 {
                     context.inputs.emplace_back(&q.input());
                     context.outputs.emplace_back(&deq.output());
@@ -38,7 +38,7 @@ bool fold_quantize_transform::on_try_match(node &node, transform_context &contex
             {
                 auto &q = static_cast<quantize &>(conn->owner());
 
-                if (q.quant_param() == deq.quant_param())
+                if (almost_equal(q.quant_param(), deq.quant_param()))
                 {
                     context.inputs.emplace_back(&deq.input());
                     context.outputs.emplace_back(&q.output());

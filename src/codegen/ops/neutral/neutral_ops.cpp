@@ -13,6 +13,7 @@
 #include <ir/ops/reduce_window2d.h>
 #include <ir/ops/reshape.h>
 #include <ir/ops/resize_image.h>
+#include <ir/ops/strided_slice.h>
 #include <ir/ops/transpose.h>
 #include <runtime/neutral/neutral_ops_body.h>
 
@@ -28,6 +29,11 @@ namespace codegen
 {
     void register_netural_emitters()
     {
+        disable_emitter(op_input_node);
+        disable_emitter(op_output_node);
+        disable_emitter(op_ignore_node);
+        disable_emitter(op_constant);
+
         register_emitter(op_binary, [](node &node, codegen_context &context) {
             auto &rnode = static_cast<binary &>(node);
             auto body = std::make_unique<node_body_impl<rop_binary, binary_options>>();
@@ -121,10 +127,6 @@ namespace codegen
             return body;
         });
 
-        disable_emitter(op_input_node);
-        disable_emitter(op_output_node);
-        disable_emitter(op_constant);
-
         register_emitter(op_pad, [](node &node, codegen_context &context) {
             auto &rnode = static_cast<pad &>(node);
             auto body = std::make_unique<node_body_impl<rop_pad, pad_options>>();
@@ -207,6 +209,25 @@ namespace codegen
             body->out_w = rnode.new_size()[1];
             body->mode = rnode.mode();
             body->align_corners = rnode.align_corners();
+
+            return body;
+        });
+
+        register_emitter(op_strided_slice, [](node &node, codegen_context &context) {
+            auto &rnode = static_cast<strided_slice &>(node);
+            auto body = std::make_unique<node_body_impl<rop_strided_slice, strided_slice_options>>();
+
+            body->input = context.get_allocation(rnode.input());
+            body->output = context.get_allocation(rnode.output());
+            body->in_shape = to(rnode.input().shape());
+            body->begin = to(rnode.begin());
+            body->end = to(rnode.begin());
+            body->strides = to(rnode.begin());
+            body->begin_mask = rnode.begin_mask();
+            body->end_mask = rnode.end_mask();
+            body->ellipsis_mask = rnode.ellipsis_mask();
+            body->new_axis_mask = rnode.new_axis_mask();
+            body->shrink_axis_mask = rnode.shrink_axis_mask();
 
             return body;
         });

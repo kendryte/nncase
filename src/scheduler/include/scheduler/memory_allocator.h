@@ -3,6 +3,7 @@
 #include <datatypes.h>
 #include <ir/ir_types.h>
 #include <list>
+#include <optional>
 
 namespace nncase
 {
@@ -53,13 +54,13 @@ namespace scheduler
     class memory_allocator
     {
     public:
-        memory_allocator(size_t alignment = 8);
+        memory_allocator(size_t alignment = 8, std::optional<size_t> fixed_size = std::nullopt);
 
         memory_node &allocate(size_t size);
         void free(memory_node &node);
         size_t max_usage() const noexcept { return freelist_.max_usage(); }
 
-        virtual size_t get_bytes(datatype_t type, const ir::shape_t& shape) const;
+        virtual size_t get_bytes(datatype_t type, const ir::shape_t &shape) const;
 
     private:
         size_t alignment_;

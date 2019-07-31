@@ -24,6 +24,8 @@ namespace ir
         template <class TArg, class... TArgs>
         void name(TArg arg, TArgs... args) { name_.assign(std::forward<TArg>(arg), std::forward<TArgs>(args)...); }
 
+        xtl::span<const input_connector> inputs() const noexcept { return input_connectors_; }
+        xtl::span<const output_connector> outputs() const noexcept { return output_connectors_; }
         xtl::span<input_connector> inputs() noexcept { return input_connectors_; }
         xtl::span<output_connector> outputs() noexcept { return output_connectors_; }
 
@@ -31,6 +33,7 @@ namespace ir
         output_connector &output_at(size_t index) { return output_connectors_.at(index); }
 
         virtual node_opcode runtime_opcode() const noexcept = 0;
+        virtual node_attributes attributes() const noexcept { return node_attr_none; }
 
     protected:
         template <class TName, class TShape>

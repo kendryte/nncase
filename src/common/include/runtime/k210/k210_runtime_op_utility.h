@@ -66,7 +66,7 @@ namespace runtime
             }
         }
 
-        inline int get_kpu_rows(int32_t width, int32_t height, int32_t channels)
+        inline int32_t get_kpu_rows(int32_t width, int32_t height, int32_t channels)
         {
             auto layout = get_kpu_row_layout(width);
             auto one_line_channels = std::min(channels, layout.groups);
@@ -75,9 +75,14 @@ namespace runtime
             return size;
         }
 
-        inline int get_kpu_bytes(int32_t width, int32_t height, int32_t channels)
+        inline int32_t get_kpu_bytes(int32_t width, int32_t height, int32_t channels)
         {
             return get_kpu_rows(width, height, channels) * 64;
+        }
+
+        inline int32_t get_kpu_bytes(const runtime_shape_t &shape)
+        {
+            return get_kpu_bytes(shape[3], shape[2], shape[1]) * shape[0];
         }
 
         inline int32_t get_kpu_filter_size(kpu_pool_type_t filter)

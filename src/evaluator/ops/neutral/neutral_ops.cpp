@@ -12,6 +12,7 @@
 #include <ir/ops/reduce.h>
 #include <ir/ops/reduce_window2d.h>
 #include <ir/ops/resize_image.h>
+#include <ir/ops/strided_slice.h>
 #include <ir/ops/transpose.h>
 #include <kernels/neutral/neutral_kernels.h>
 
@@ -49,6 +50,11 @@ namespace ir
 {
     void register_neutral_evaluators()
     {
+        register_evaluator(op_input_node, nop_evaluator);
+        register_evaluator(op_output_node, nop_evaluator);
+        register_evaluator(op_ignore_node, nop_evaluator);
+        register_evaluator(op_constant, nop_evaluator);
+
         register_evaluator(op_binary, [](ir::node &node, evaluate_context &context) {
             auto &rnode = static_cast<binary &>(node);
 
@@ -157,10 +163,6 @@ namespace ir
             neutral::matmul(input_a.data(), input_b.data(), output.data(), rnode.bias().data(), a_shape[0], a_shape[1], b_shape[1], rnode.fused_activation());
         });
 
-        register_evaluator(op_input_node, nop_evaluator);
-        register_evaluator(op_output_node, nop_evaluator);
-        register_evaluator(op_constant, nop_evaluator);
-
         register_evaluator(op_pad, [](ir::node &node, evaluate_context &context) {
             auto &rnode = static_cast<pad &>(node);
 
@@ -201,7 +203,7 @@ namespace ir
             case reduce_mean:
             {
                 reduce([](auto a, auto b) { return a + b; });
-                auto mul = (float)input.size() / output.size();
+                auto mul = (float)output.size() / input.size();
                 neutral::unary(output.data(), output.data(), output.size(), [mul](auto a) { return a * mul; });
                 break;
             }
@@ -210,6 +212,9 @@ namespace ir
                 break;
             case reduce_max:
                 reduce([](auto a, auto b) { return std::max(a, b); });
+                break;
+            case reduce_sum:
+                reduce([](auto a, auto b) { return a + b; });
                 break;
             default:
                 throw std::runtime_error("Not supported reduce");
@@ -241,6 +246,9 @@ namespace ir
             case reduce_max:
                 reduce([](auto a, auto b) { return std::max(a, b); }, [](auto v, auto k) { return v; });
                 break;
+            case reduce_sum:
+                reduce([](auto a, auto b) { return a + b; }, [](auto v, auto k) { return v; });
+                break;
             default:
                 throw std::runtime_error("Not supported reduce");
             }
@@ -267,6 +275,19 @@ namespace ir
                 ELEM_SIZE_IMPL(rnode.input().type(), RESIZE_NN_KERNEL);
 #undef RESIZE_NN_KERNEL
             }
+        });
+
+        register_evaluator(op_strided_slice, [](ir::node &node, evaluate_context &context) {
+            auto &rnode = static_cast<strided_slice &>(node);
+
+            auto input = context.memory_at<uint8_t>(rnode.input());
+            auto output = context.memory_at<uint8_t>(rnode.output());
+
+#define STRIDED_SLICE_KERNEL(T)                                                                                \
+    neutral::strided_slice<T>(reinterpret_cast<const T *>(input.data()), reinterpret_cast<T *>(output.data()), \
+        to(rnode.input().shape()), to(rnode.begin()), to(rnode.end()), to(rnode.strides()));
+
+            ELEM_SIZE_IMPL(rnode.input().type(), STRIDED_SLICE_KERNEL);
         });
 
         register_evaluator(op_transpose, [](ir::node &node, evaluate_context &context) {

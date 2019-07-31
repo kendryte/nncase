@@ -50,16 +50,23 @@ void nncase::cpu_target::add_default_transforms(std::vector<std::unique_ptr<tran
 {
     transforms.emplace_back(new fold_nop_pad_transform());
     transforms.emplace_back(new fold_nop_transpose_transform());
+    transforms.emplace_back(new fold_pad_strided_slice_transform());
     transforms.emplace_back(new fold_quantize_transform());
     transforms.emplace_back(new fold_transpose_transform());
     transforms.emplace_back(new fuse_pad_conv2d_transform());
+    transforms.emplace_back(new strided_slice_to_pad_transform());
     transforms.emplace_back(new transpose_binary_motion_transform());
     transforms.emplace_back(new transpose_constant_binary_motion_transform());
     transforms.emplace_back(new transpose_concat_motion_transform());
     transforms.emplace_back(new transpose_pad_motion_transform());
+    transforms.emplace_back(new transpose_reduce_motion_transform());
 }
 
 void nncase::cpu_target::add_optimize1_transforms(std::vector<std::unique_ptr<transform>> &transforms)
+{
+}
+
+void nncase::cpu_target::add_optimize2_transforms(std::vector<std::unique_ptr<transform>> &transforms)
 {
 }
 

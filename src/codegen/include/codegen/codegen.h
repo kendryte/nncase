@@ -35,7 +35,7 @@ namespace codegen
     struct node_body
     {
         virtual runtime::runtime_opcode opcode() const noexcept = 0;
-        virtual void serialize(runtime::binary_writer &writer) const = 0;
+        virtual void serialize(runtime::binary_writer &writer) = 0;
     };
 
     template <runtime::runtime_opcode Op, class T>
@@ -46,7 +46,7 @@ namespace codegen
             return Op;
         }
 
-        void serialize(runtime::binary_writer &writer) const override
+        void serialize(runtime::binary_writer &writer) override
         {
             T::serialize(writer);
         }

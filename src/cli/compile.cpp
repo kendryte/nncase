@@ -134,6 +134,16 @@ void optimize_pass1(target &target, graph &graph)
     target.add_default_transforms(transforms);
     target.add_optimize1_transforms(transforms);
     transform_graph(graph, target, transforms);
+    dump_graph(graph, "optimize_1");
+}
+
+void optimize_pass2(target &target, graph &graph)
+{
+    std::vector<std::unique_ptr<transforms::transform>> transforms;
+    target.add_default_transforms(transforms);
+    target.add_optimize2_transforms(transforms);
+    transform_graph(graph, target, transforms);
+    dump_graph(graph, "optimize_2");
 }
 
 void add_quantization_checkpoints(target &target, graph &graph)
@@ -142,6 +152,16 @@ void add_quantization_checkpoints(target &target, graph &graph)
     target.add_default_transforms(transforms);
     target.add_quantization_checkpoint_transforms(transforms);
     transform_graph(graph, target, transforms);
+    dump_graph(graph, "before_quant");
+}
+
+void quantize_graph(target &target, graph &graph, quantizer &quantizer)
+{
+    std::vector<std::unique_ptr<transforms::transform>> transforms;
+    target.add_default_transforms(transforms);
+    target.add_quantization_transforms(quantizer, transforms);
+    transform_graph(graph, target, transforms);
+    dump_graph(graph, "after_quant");
 }
 
 void get_quantization_ranges(target &target, graph &graph, quantizer *quantizer, const compile_options &options)
@@ -179,10 +199,8 @@ void quantize(target &target, graph &graph, const compile_options &compile_optio
     quant.record(graph.inputs()[0]->output(), { 0.f, 1.f });
     get_quantization_ranges(target, graph, &quant, compile_options);
 
-    // quantize graph
-    std::vector<std::unique_ptr<transforms::transform>> transforms;
-    target.add_default_transforms(transforms);
-    target.add_quantization_transforms(quant, transforms);
+    // 3.3 quantize graph
+    quantize_graph(target, graph, quant);
 
 #if KPU > 1
     // simulate
@@ -226,15 +244,15 @@ void compile(const compile_options &options)
 
     // 2. Optimize Pass 1
     optimize_pass1(*target, graph);
-    dump_graph(graph, "optimize_1");
 
-    // 3. Quantize
     if (options.inference_type == "uint8")
     {
+        // 3. Optimize Pass 2
+        optimize_pass2(*target, graph);
+        // 4. Quantize
         quantize(*target, graph, options);
-        dump_graph(graph, "quantize");
     }
 
-    // 4. CodeGen
+    // 5. CodeGen
     gencode(*target, graph, options);
 }

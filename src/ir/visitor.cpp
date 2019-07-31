@@ -51,6 +51,19 @@ bool dfs_ir_visitor::visit_strategry(node &node)
 
         if (visit(node))
             return true;
+
+        for (auto &&out : node.outputs())
+        {
+            for (auto &&in : out.connections())
+            {
+                auto &owner = in->owner();
+                if (owner.attributes() & node_attr_action)
+                {
+                    if (visit_strategry(owner))
+                        return true;
+                }
+            }
+        }
     }
 
     return false;

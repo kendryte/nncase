@@ -15,6 +15,8 @@ namespace runtime
     namespace target                 \
     {
 
+#define DEFINE_NEUTRAL_RUNTIME_OP(id, name, value) \
+    kernel_call_result id(id##_options &, interpreter_t &, interpreter_step_t);
 #define DEFINE_RUNTIME_OP(target, id, name, value) \
     kernel_call_result id(id##_options &, interpreter_t &, interpreter_step_t);
 
@@ -23,6 +25,7 @@ namespace runtime
 #include <runtime/runtime_op.def>
 
 #undef BEGINE_DEFINE_TARGET
+#undef DEFINE_NEUTRAL_RUNTIME_OP
 #undef DEFINE_RUNTIME_OP
 #undef END_DEFINE_TARGET
 }
@@ -35,8 +38,15 @@ kernel_call_result runtime::call_kernel(runtime_opcode opcode, xtl::span<const u
     switch (opcode)
     {
 #define BEGINE_DEFINE_TARGET(...)
+#define DEFINE_NEUTRAL_RUNTIME_OP(id, name, value)                       \
+    case rop_##id:                                                       \
+    {                                                                    \
+        nncase::runtime::neutral::id##_options options;                  \
+        options.deserialize(reader);                                     \
+        return nncase::runtime::neutral::id(options, interpreter, step); \
+    }
 #define DEFINE_RUNTIME_OP(target, id, name, value)                      \
-    case rop_##id:                                                      \
+    case rop_##target##_##id:                                           \
     {                                                                   \
         nncase::runtime::target::id##_options options;                  \
         options.deserialize(reader);                                    \
@@ -47,6 +57,7 @@ kernel_call_result runtime::call_kernel(runtime_opcode opcode, xtl::span<const u
 #include <runtime/runtime_op.def>
 
 #undef BEGINE_DEFINE_TARGET
+#undef DEFINE_NEUTRAL_RUNTIME_OP
 #undef DEFINE_RUNTIME_OP
 #undef END_DEFINE_TARGET
     default:

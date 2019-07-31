@@ -43,8 +43,8 @@ void memory_node::release()
         throw std::runtime_error("Memory node has been freed");
 }
 
-memory_allocator::memory_allocator(size_t alignment)
-    : alignment_(alignment)
+memory_allocator::memory_allocator(size_t alignment, std::optional<size_t> fixed_size)
+    : alignment_(alignment), freelist_(fixed_size)
 {
 }
 

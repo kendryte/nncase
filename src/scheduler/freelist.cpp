@@ -1,9 +1,20 @@
 #include <algorithm>
 #include <cassert>
 #include <scheduler/freelist.h>
+#include <stdexcept>
 
 using namespace nncase;
 using namespace nncase::scheduler;
+
+freelist::freelist(std::optional<size_t> fixed_size)
+    : is_fixed_(fixed_size)
+{
+    if (fixed_size)
+    {
+        free_nodes_.emplace(0, free_memory_node { 0, *fixed_size });
+        heap_end_ = *fixed_size;
+    }
+}
 
 void freelist::free(const free_memory_node &node)
 {
@@ -35,13 +46,14 @@ free_memory_node freelist::allocate(size_t size)
 
 freelist::free_nodes_t::iterator freelist::reserve(size_t size)
 {
-    auto free = std::find_if(free_nodes_.begin(), free_nodes_.end(), [=](const auto &node) {
-        return node.second.size >= size;
-    });
+    auto free = std::find_if(free_nodes_.begin(), free_nodes_.end(), [=](const auto &node) { return node.second.size >= size; });
 
     // Not enough free space
     if (free == free_nodes_.end())
     {
+        if (is_fixed_)
+            throw std::runtime_error("Allocator has ran out of memory");
+
         // No free node
         if (!free_nodes_.empty())
         {

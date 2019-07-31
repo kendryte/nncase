@@ -36,8 +36,8 @@ quant_param_t quantizer::get_quant_param(value_range<float> range, int32_t bits)
         range.min = 0;
 
     auto r = range.max - range.min;
-    if (r < 0.1f)
-        r = 0.1f;
+    if (r < 0.001f)
+        r = 0.001f;
 
     auto scale = ((1LL << bits) - 1) / r;
     auto bias = std::round(-range.min * scale);

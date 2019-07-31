@@ -172,7 +172,7 @@ namespace kernels
                             if (d0 < paddings[0].before || d0 >= out_shape[0] - paddings[0].after
                                 || d1 < paddings[1].before || d1 >= out_shape[1] - paddings[1].after
                                 || d2 < paddings[2].before || d2 >= out_shape[2] - paddings[2].after
-                                || d3 < paddings[3].before || d1 >= out_shape[3] - paddings[3].after)
+                                || d3 < paddings[3].before || d3 >= out_shape[3] - paddings[3].after)
                                 *output++ = pad_value;
                             else
                                 *output++ = in2[d3_origin + d3];

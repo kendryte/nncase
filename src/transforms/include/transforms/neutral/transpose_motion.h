@@ -20,6 +20,7 @@ namespace transforms
     DEFINE_TP_MOTION(constant_binary);
     DEFINE_TP_MOTION(concat);
     DEFINE_TP_MOTION(pad);
+    DEFINE_TP_MOTION(reduce);
 
 #undef DEFINE_TP_MOTION
 }

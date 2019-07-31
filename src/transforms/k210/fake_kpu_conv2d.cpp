@@ -2,6 +2,7 @@
 #include <ir/ops/k210/fake_kpu_conv2d.h>
 #include <ir/ops/pad.h>
 #include <ir/ops/strided_slice.h>
+#include <ir/visitor.h>
 #include <runtime/k210/k210_runtime_op_utility.h>
 #include <transforms/k210/fake_kpu_conv2d.h>
 
@@ -105,4 +106,62 @@ void fake_kpu_conv2d_transform::process(transform_context &context)
 
     for (auto &in : dup(inputs))
         in->connect(slice->output());
+}
+
+bool fuse_fake_kpu_conv2d_strided_slice_transform::on_try_match(node &node, transform_context &context)
+{
+    if (node.runtime_opcode() == op_k210_fake_kpu_conv2d)
+    {
+        auto &conv = static_cast<fake_kpu_conv2d &>(node);
+        if (!conv.is_depthwise())
+        {
+            if (auto slice = try_get_direct_child<strided_slice>(conv))
+            {
+                if (slice->strides() == axis_t { 1, 1, 2, 2 }
+                    && is_supported_in_shape(slice->output().shape()))
+                {
+                    context.inputs.emplace_back(&conv.input());
+                    context.outputs.emplace_back(&slice->output());
+
+                    context.matched_nodes.emplace_back(&conv);
+                    context.matched_nodes.emplace_back(slice);
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
+void fuse_fake_kpu_conv2d_strided_slice_transform::process(transform_context &context)
+{
+    auto &output = *context.inputs[0]->connection();
+    auto inputs = context.outputs[0]->connections();
+    auto &old_conv = static_cast<fake_kpu_conv2d &>(*context.matched_nodes[0]);
+    auto &old_slice = static_cast<strided_slice &>(*context.matched_nodes[1]);
+
+    padding pad_h { old_slice.begin()[2] % 2, 0 };
+    padding pad_w { 0, 0 };
+    // pad to even
+    if ((old_conv.input().shape()[2] + pad_h.before) % 2 == 1)
+        pad_h.after += 1;
+    if (old_conv.input().shape()[3] % 2 == 1)
+        pad_w.after += 1;
+    auto pool_type = old_slice.begin()[3] % 2 == 0 ? kpu_pool_left_top_2_s2 : kpu_pool_right_top_2_s2;
+
+    auto p = context.graph.emplace<pad>(dt_float32, output.shape(), xt::svector<padding> { padding::zero(), padding::zero(), pad_h, pad_w }, 0.f);
+    auto conv = context.graph.emplace<fake_kpu_conv2d>(p->output().shape(), old_conv.is_depthwise(), old_conv.filter_type(), pool_type,
+        old_conv.weights(), old_conv.bias(), old_conv.fused_activation());
+
+    padding crop_h { -(old_slice.begin()[2] / 2 + pad_h.before), (old_slice.end()[2] - old_slice.input().shape()[2]) / 2 };
+    padding crop_w { -(old_slice.begin()[3] / 2), (old_slice.end()[3] - old_slice.input().shape()[3]) / 2 };
+
+    auto crop = context.graph.emplace<pad>(dt_float32, conv->output().shape(), xt::svector<padding> { padding::zero(), padding::zero(), crop_h, crop_w }, 0.f);
+    conv->input().connect(p->output());
+    crop->input().connect(conv->output());
+
+    p->input().connect(output);
+    for (auto &in : dup(inputs))
+        in->connect(crop->output());
 }

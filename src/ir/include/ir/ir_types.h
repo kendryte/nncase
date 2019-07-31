@@ -9,6 +9,12 @@ namespace ir
     using shape_t = xt::dynamic_shape<std::size_t>;
     using axis_t = xt::dynamic_shape<int32_t>;
 
+    enum node_attributes
+    {
+        node_attr_none = 0,
+        node_attr_action = 1
+    };
+
     inline std::string to_string(const shape_t &shape)
     {
         std::string str;

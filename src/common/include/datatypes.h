@@ -1,6 +1,7 @@
 #pragma once
 #include "target_config.h"
 #include <array>
+#include <cmath>
 #include <limits>
 #include <optional>
 #include <stdint.h>
@@ -83,10 +84,17 @@ inline bool operator==(const quant_param_t &lhs, const quant_param_t &rhs) noexc
     return lhs.zero_point == rhs.zero_point && lhs.scale == rhs.scale;
 }
 
+inline bool almost_equal(const quant_param_t &lhs, const quant_param_t &rhs) noexcept
+{
+    return lhs.zero_point == rhs.zero_point && std::abs(lhs.scale - rhs.scale) <= std::numeric_limits<float>::epsilon();
+}
+
 struct fixed_mul
 {
     float mul;
     int8_t shift;
+
+    int32_t rounded_mul() const noexcept { return (int32_t)roundf(mul); }
 };
 
 typedef enum _memory_type

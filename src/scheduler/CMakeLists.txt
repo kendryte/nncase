@@ -2,7 +2,8 @@
 
 set(SRCS scheduler.cpp
          freelist.cpp
-         memory_allocator.cpp)
+         memory_allocator.cpp
+         k210/kpu_memory_allocator.cpp)
 
 add_library(scheduler STATIC ${SRCS})
 target_include_directories(scheduler PUBLIC include)

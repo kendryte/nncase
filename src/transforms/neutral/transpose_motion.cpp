@@ -2,6 +2,7 @@
 #include <ir/ops/concat.h>
 #include <ir/ops/constant.h>
 #include <ir/ops/pad.h>
+#include <ir/ops/reduce.h>
 #include <ir/ops/transpose.h>
 #include <ir/visitor.h>
 #include <transforms/neutral/transpose_motion.h>
@@ -211,6 +212,63 @@ void transpose_pad_motion_transform::process(transform_context &context)
 
     p->input().connect(output);
 
+    for (auto &in : dup(inputs))
+        in->connect(tp->output());
+}
+
+bool transpose_reduce_motion_transform::on_try_match(node &node, transform_context &context)
+{
+    if (node.runtime_opcode() == op_reduce)
+    {
+        auto &r = static_cast<reduce &>(node);
+        if (auto tp = try_get_direct_parent<transpose>(r))
+        {
+            context.inputs.emplace_back(&tp->input());
+            context.outputs.emplace_back(&r.output());
+
+            context.matched_nodes.emplace_back(tp);
+            context.matched_nodes.emplace_back(&r);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void transpose_reduce_motion_transform::process(transform_context &context)
+{
+    auto &output = *context.inputs[0]->connection();
+    auto inputs = context.outputs[0]->connections();
+
+    auto &old_tp = static_cast<transpose &>(*context.matched_nodes[0]);
+    auto &old_r = static_cast<reduce &>(*context.matched_nodes[1]);
+
+    axis_t axis(old_r.axis().size());
+    for (size_t i = 0; i < axis.size(); i++)
+        axis[i] = old_tp.perm()[old_r.axis()[i]];
+
+    axis_t perm;
+    if (old_r.keep_dims())
+    {
+        perm = old_tp.perm();
+    }
+    else
+    {
+        for (auto a : old_tp.perm())
+        {
+            if (std::find(old_r.axis().begin(), old_r.axis().end(), a) == old_r.axis().end())
+            {
+                auto idx = std::distance(old_r.axis().begin(), std::lower_bound(old_r.axis().begin(), old_r.axis().end(), a));
+                perm.push_back((int32_t)(a - idx));
+            }
+        }
+    }
+
+    auto r = context.graph.emplace<reduce>(old_r.reduce_op(), output.shape(), axis, old_r.init_value(), old_r.keep_dims());
+    auto tp = context.graph.emplace<transpose>(r->output().type(), r->output().shape(), perm);
+    tp->input().connect(r->output());
+
+    r->input().connect(output);
     for (auto &in : dup(inputs))
         in->connect(tp->output());
 }

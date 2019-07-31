@@ -36,12 +36,18 @@ namespace runtime
             stream_.seekp(pos);
         }
 
-        void align_position(size_t alignment)
+        std::streamoff align_position(size_t alignment)
         {
             auto pos = position();
             auto rem = pos % alignment;
             if (rem != 0)
-                position(pos + std::streamoff(alignment - rem));
+            {
+                auto off = std::streamoff(alignment - rem);
+                position(pos + off);
+                return off;
+            }
+
+            return 0;
         }
 
     private:
