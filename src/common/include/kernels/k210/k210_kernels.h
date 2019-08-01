@@ -304,7 +304,7 @@ namespace kernels
                             const int32_t filter_y_end = std::min(FilterSize, in_h - in_y_origin);
                             const int32_t filter_x_start = std::max(0, -in_x_origin);
                             const int32_t filter_x_end = std::min(FilterSize, in_w - in_x_origin);
-                            float value = bias[oc];
+                            float value = bias[og * g_oc + oc];
 
                             for (int32_t ic = 0; ic < g_ic; ic++)
                             {

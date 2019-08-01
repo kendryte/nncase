@@ -12,7 +12,7 @@
 #include <scheduler/scheduler.h>
 #include <string_view>
 
-#define KPU 0
+#define EVAL 1
 
 using namespace clipp;
 using namespace nncase;
@@ -91,27 +91,6 @@ void transform_graph(graph &graph, target &target, xtl::span<std::unique_ptr<tra
     evaluate_context eval_ctx(allocators, alloc_ctx.allocations()); \
     evaluator eval(eval_ctx, compute_sequence);
 
-void simulate(target &target, graph &graph, image_dataset &dataset)
-{
-    std::cout << "====== SIMULATION ======" << std::endl;
-    EVAL_IMPL();
-
-    int i = 0;
-    for (auto it = dataset.begin<float>(); it != dataset.end<float>(); ++it)
-    {
-        auto input = eval.input_at<float>(0);
-        auto &tensor = it->tensor;
-        std::copy(tensor.begin(), tensor.end(), input.begin());
-
-        eval.evaluate();
-
-        auto output = eval.output_at<float>(0);
-        std::ofstream result(std::to_string(i) + ".bin", std::ios::binary | std::ios::out);
-        runtime::binary_writer writer(result);
-        writer.write_array<float>(output);
-    }
-}
-
 std::unique_ptr<target> create_target(const compile_options &options)
 {
     if (options.target == "k210")
@@ -169,7 +148,7 @@ void get_quantization_ranges(target &target, graph &graph, quantizer *quantizer,
     EVAL_IMPL();
 
     assert(graph.inputs().size() == 1);
-    image_dataset dataset(options.dataset, graph.inputs()[0]->output().shape(), 0, 1);
+    image_dataset dataset(options.dataset, graph.inputs()[0]->output().shape(), options.input_mean, options.input_std);
     int i = 0;
     for (auto it = dataset.begin<float>(); it != dataset.end<float>(); ++it)
     {
@@ -179,7 +158,7 @@ void get_quantization_ranges(target &target, graph &graph, quantizer *quantizer,
 
         eval.evaluate(quantizer);
 
-#if !KPU
+#if EVAL
         auto output = eval.output_at<float>(0);
         std::ofstream result(std::to_string(i) + ".bin", std::ios::binary | std::ios::out);
         runtime::binary_writer writer(result);
@@ -188,7 +167,7 @@ void get_quantization_ranges(target &target, graph &graph, quantizer *quantizer,
     }
 }
 
-void quantize(target &target, graph &graph, const compile_options &compile_options)
+void quantize(target &target, graph &graph, const compile_options &options)
 {
     // 3.1. Add quantization checkpoints
     add_quantization_checkpoints(target, graph);
@@ -196,16 +175,13 @@ void quantize(target &target, graph &graph, const compile_options &compile_optio
     // 3.2 Get activation ranges
     // quantize
     quantizer quant;
-    quant.record(graph.inputs()[0]->output(), { 0.f, 1.f });
-    get_quantization_ranges(target, graph, &quant, compile_options);
+    auto min = (0.f - options.input_mean) / options.input_std;
+    auto max = (1.f - options.input_mean) / options.input_std;
+    quant.record(graph.inputs()[0]->output(), { min, max });
+    get_quantization_ranges(target, graph, &quant, options);
 
     // 3.3 quantize graph
     quantize_graph(target, graph, quant);
-
-#if KPU > 1
-    // simulate
-    simulate(graph, dataset);
-#endif
 }
 
 void gencode(target &target, graph &graph, const compile_options &options)
@@ -227,8 +203,11 @@ group compile_options::parser(mode &mode)
         command("compile").set(mode, mode::compile),
         value("input file", input_filename),
         value("output file", output_filename),
+        option("-t", "--target") & value("target", target).doc("target architecture, default is " + target),
         option("--dataset") & value("dataset path", dataset),
-        option("--inference-type") & value("inference type", inference_type).doc("inference type, default is " + inference_type));
+        option("--inference-type") & value("inference type", inference_type).doc("inference type, default is " + inference_type),
+        option("--input-mean") & value("input mean", input_mean).doc("input mean, default is 0.0"),
+        option("--input-std") & value("input std", input_std).doc("input std, default is 1.0"));
 }
 
 void compile(const compile_options &options)

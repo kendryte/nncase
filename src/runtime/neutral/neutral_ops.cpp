@@ -244,6 +244,52 @@ namespace runtime
             return kcr_done;
 #undef STRIDED_SLICE_KERNEL
         }
+
+        kernel_call_result unary(unary_options &options, interpreter_t &interpreter, interpreter_step_t step)
+        {
+            auto input = interpreter.memory_at<float>(options.input);
+            auto output = interpreter.memory_at<float>(options.output);
+
+            auto unary = [&](auto unary_op) {
+                kernels::neutral::unary(input.data(), output.data(), input.size(), unary_op);
+            };
+
+            switch (options.unary_op)
+            {
+            case unary_abs:
+                unary([](auto a) { return fabs(a); });
+                return kcr_done;
+            case unary_ceil:
+                unary([](auto a) { return ceilf(a); });
+                return kcr_done;
+            case unary_cos:
+                unary([](auto a) { return cosf(a); });
+                return kcr_done;
+            case unary_exp:
+                unary([](auto a) { return expf(a); });
+                return kcr_done;
+            case unary_floor:
+                unary([](auto a) { return floorf(a); });
+                return kcr_done;
+            case unary_log:
+                unary([](auto a) { return logf(a); });
+                return kcr_done;
+            case unary_neg:
+                unary([](auto a) { return -a; });
+                return kcr_done;
+            case unary_rsqrt:
+                unary([](auto a) { return 1.f / sqrtf(a); });
+                return kcr_done;
+            case unary_sin:
+                unary([](auto a) { return sinf(a); });
+                return kcr_done;
+            case unary_square:
+                unary([](auto a) { return a * a; });
+                return kcr_done;
+            default:
+                return kcr_error;
+            }
+        }
     }
 }
 }

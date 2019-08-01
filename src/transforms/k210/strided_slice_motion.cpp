@@ -28,7 +28,9 @@ bool strided_slice_motion_transform::on_try_match(node &node, transform_context 
         {
             if (auto conv = try_get_direct_child<fake_kpu_conv2d>(slice))
             {
-                if (conv->is_depthwise())
+                if (!conv->is_depthwise()
+                    && conv->filter_type() == kpu_filter_1x1
+                    && conv->pool_type() == kpu_pool_bypass)
                 {
                     context.inputs.emplace_back(&slice.input());
                     context.outputs.emplace_back(&conv->output());
@@ -50,7 +52,7 @@ void strided_slice_motion_transform::process(transform_context &context)
     auto inputs = context.outputs[0]->connections();
 
     auto &old_slice = static_cast<strided_slice &>(*context.matched_nodes[0]);
-    auto &old_conv = static_cast<fake_kpu_conv2d &>(*context.matched_nodes[0]);
+    auto &old_conv = static_cast<fake_kpu_conv2d &>(*context.matched_nodes[1]);
 
     auto conv = context.graph.emplace<fake_kpu_conv2d>(output.shape(), old_conv.is_depthwise(), old_conv.filter_type(), old_conv.pool_type(),
         old_conv.weights(), old_conv.bias(), old_conv.fused_activation());

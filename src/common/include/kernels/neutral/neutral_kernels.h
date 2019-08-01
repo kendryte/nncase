@@ -82,7 +82,7 @@ namespace kernels
                                 const int32_t filter_y_end = std::min(filter_h, (in_shape[2] - in_y_origin + dilation_h - 1) / dilation_h);
                                 const int32_t filter_x_start = std::max(0, (-in_x_origin + dilation_w - 1) / dilation_w);
                                 const int32_t filter_x_end = std::min(filter_w, (in_shape[3] - in_x_origin + dilation_w - 1) / dilation_w);
-                                float value = bias[oc];
+                                float value = bias[og * g_oc + oc];
 
                                 for (int32_t ic = 0; ic < g_ic; ic++)
                                 {

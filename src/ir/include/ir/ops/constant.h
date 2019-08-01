@@ -20,14 +20,14 @@ namespace ir
         constant(datatype_t type, TShape &&shape, TDataArgs... data_args)
             : data_(std::forward<TDataArgs>(data_args)...)
         {
-            add_output("output", type, std::forward<TShape>(shape));
+            add_output("output", type, std::forward<TShape>(shape), mem_const);
         }
 
         template <class TScalar>
         constant(TScalar scalar)
             : data_(reinterpret_cast<const uint8_t *>(&scalar), reinterpret_cast<const uint8_t *>(&scalar) + sizeof(scalar))
         {
-            add_output("output", runtime::to_datatype_v<TScalar>, shape_t { 1 });
+            add_output("output", runtime::to_datatype_v<TScalar>, shape_t { 1 }, mem_const);
         }
 
     private:

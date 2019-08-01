@@ -13,7 +13,9 @@ set(SRCS tflite/tflite_importer.cpp
          tflite/ops/softmax.cpp
          tflite/ops/resize_image.cpp
          tflite/ops/transpose.cpp
-         tflite/ops/leaky_relu.cpp)
+         tflite/ops/leaky_relu.cpp
+         tflite/ops/space_to_batch.cpp
+         tflite/ops/l2_normalization.cpp)
 
 add_library(importer STATIC ${SRCS})
 target_include_directories(importer PUBLIC include)

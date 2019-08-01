@@ -1,5 +1,6 @@
 #include <codegen/codegen.h>
 #include <ir/op_utils.h>
+#include <ir/ops/constant.h>
 #include <runtime/model.h>
 #include <string>
 #include <unordered_map>
@@ -97,7 +98,6 @@ void nncase::codegen::gencode(codegen_context &context, xtl::span<ir::node *> co
     model_header.outputs = outputs.size();
 
     writer.write(model_header);
-    // constants
 
     // inputs
     writer.write_array<memory_range>(inputs);
@@ -105,6 +105,18 @@ void nncase::codegen::gencode(codegen_context &context, xtl::span<ir::node *> co
     writer.write_array<runtime_shape_t>(input_shapes);
     // outputs
     writer.write_array<memory_range>(outputs);
+
+    // constants
+    auto const_mem = std::make_unique<uint8_t[]>(context.constant_usage());
+    for (auto &node : constants)
+    {
+        auto &con = static_cast<constant &>(*node);
+        auto alloc = context.get_allocation(con.output());
+        auto start = const_mem.get() + alloc.start;
+        std::copy(con.data().begin(), con.data().end(), start);
+    }
+
+    writer.write_array(xtl::span<const uint8_t> { const_mem.get(), context.constant_usage() });
 
     // Keep node headers
     std::vector<node_header> node_headers;

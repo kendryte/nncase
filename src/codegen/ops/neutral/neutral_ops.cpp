@@ -15,6 +15,7 @@
 #include <ir/ops/resize_image.h>
 #include <ir/ops/strided_slice.h>
 #include <ir/ops/transpose.h>
+#include <ir/ops/unary.h>
 #include <runtime/neutral/neutral_ops_body.h>
 
 using namespace nncase;
@@ -243,6 +244,17 @@ namespace codegen
             body->output = context.get_allocation(rnode.output());
             body->in_shape = in_shape;
             body->perm = perm;
+
+            return body;
+        });
+
+        register_emitter(op_unary, [](node &node, codegen_context &context) {
+            auto &rnode = static_cast<unary &>(node);
+            auto body = std::make_unique<node_body_impl<rop_unary, unary_options>>();
+
+            body->input = context.get_allocation(rnode.input());
+            body->output = context.get_allocation(rnode.output());
+            body->unary_op = rnode.unary_op();
 
             return body;
         });

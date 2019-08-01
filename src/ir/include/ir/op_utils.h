@@ -68,7 +68,7 @@ namespace ir
 
     inline shape_t normalize_reshape(const shape_t &in_shape, const axis_t &new_shape)
     {
-        shape_t result(in_shape.size());
+        shape_t result(new_shape.size());
 
         size_t shape_size = 1;
         std::optional<size_t> non_det_id;

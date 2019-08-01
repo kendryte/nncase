@@ -244,6 +244,13 @@ namespace runtime
             int32_t new_axis_mask;
             int32_t shrink_axis_mask;
         };
+
+        struct unary_options : public simple_node_body<unary_options>
+        {
+            memory_range input;
+            memory_range output;
+            unary_op_t unary_op;
+        };
     }
 }
 }

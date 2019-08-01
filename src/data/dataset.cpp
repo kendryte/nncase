@@ -27,7 +27,7 @@ std::vector<uint8_t> read_file(const std::filesystem::path &filename)
 }
 
 dataset::dataset(const std::filesystem::path &path, std::function<bool(const std::filesystem::path &)> file_filter, xt::dynamic_shape<size_t> input_shape, float mean, float std)
-    : input_shape_(std::move(input_shape))
+    : input_shape_(std::move(input_shape)), mean_(mean), std_(std)
 {
     if (std::filesystem::is_directory(path))
     {

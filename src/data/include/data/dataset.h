@@ -113,6 +113,11 @@ namespace data
                     auto view = xt::squeeze(sample_view, 0);
                     auto file = read_file(filenames_[from++]);
                     process(file, view.data(), view.shape());
+                    if (std::is_same_v<T, float>)
+                    {
+                        for (auto &v : view)
+                            v = (v - mean_) / std_;
+                    }
                 }
 
                 xtl::span<const std::filesystem::path> filenames(filenames_.data() + start, filenames_.data() + from);
@@ -126,6 +131,8 @@ namespace data
     private:
         std::vector<std::filesystem::path> filenames_;
         xt::dynamic_shape<size_t> input_shape_;
+        float mean_;
+        float std_;
     };
 
     class image_dataset : public dataset

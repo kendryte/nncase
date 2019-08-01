@@ -26,7 +26,7 @@ auto quantize_weights(quantizer &quantizer, fake_kpu_conv2d &conv)
 
     auto out_it = q_weights.begin();
     for (auto w : weights)
-        *out_it++ = (uint8_t)std::clamp((int32_t)(w * q_p.scale + q_p.zero_point), 0, 255);
+        *out_it++ = (uint8_t)std::clamp((int32_t)std::round(w * q_p.scale + q_p.zero_point), 0, 255);
     return std::make_tuple(q_p, std::move(q_weights));
 }
 
@@ -80,7 +80,7 @@ auto quantize_bn_act(quantizer &quantizer, fake_kpu_conv2d &conv, float sa, cons
         bn[i] = {
             bn_mul.rounded_mul(),
             bn_shift,
-            (int32_t)std::round((b + yq_p.scale * yq_p.zero_point) / yq_p.scale * post_mul)
+            (int32_t)std::round((b * yq_p.scale + yq_p.zero_point) * post_mul)
         };
     }
 

@@ -25,12 +25,12 @@ DEFINE_TFLITE_LOWER(SOFTMAX)
             reduce_axis.push_back(i);
     }
 
-    auto max = graph_.emplace<reduce>(reduce_max, in_shape, reduce_axis, std::numeric_limits<float>::lowest(), false);
+    auto max = graph_.emplace<reduce>(reduce_max, in_shape, reduce_axis, std::numeric_limits<float>::lowest(), true);
     auto sub = graph_.emplace<binary>(binary_sub, in_shape, max->output().shape(), value_range<float>::default());
     auto beta = graph_.emplace<constant>(options.beta());
     auto mul = graph_.emplace<binary>(binary_mul, sub->output().shape(), beta->output().shape(), value_range<float>::default());
     auto exp = graph_.emplace<unary>(unary_exp, mul->output().shape());
-    auto sum = graph_.emplace<reduce>(reduce_sum, exp->output().shape(), reduce_axis, std::numeric_limits<float>::lowest(), false);
+    auto sum = graph_.emplace<reduce>(reduce_sum, exp->output().shape(), reduce_axis, 0.f, true);
     auto div = graph_.emplace<binary>(binary_div, exp->output().shape(), sum->output().shape(), value_range<float>::default());
 
     sub->input_b().connect(max->output());

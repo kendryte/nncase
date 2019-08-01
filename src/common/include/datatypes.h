@@ -64,7 +64,8 @@ typedef enum _unary_op
     unary_log,
     unary_neg,
     unary_rsqrt,
-    unary_sin
+    unary_sin,
+    unary_square
 } unary_op_t;
 
 typedef enum _image_resize_mode

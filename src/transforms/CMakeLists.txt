@@ -2,6 +2,7 @@
 
 set(SRCS transform.cpp
          neutral/add_quant_checkpoints.cpp
+         neutral/fold_reshape.cpp
          neutral/fold_transpose.cpp
          neutral/fold_pad.cpp
          neutral/fold_quantize.cpp

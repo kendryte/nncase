@@ -66,7 +66,7 @@ struct eval_context
 
         auto in_shape = interp.input_shape_at(0);
         xt::dynamic_shape<size_t> shape { (size_t)in_shape[0], (size_t)in_shape[1], (size_t)in_shape[2], (size_t)in_shape[3] };
-        image_dataset dataset(options.dataset, shape, 0.f, 1.f);
+        image_dataset dataset(options.dataset, shape, options.input_mean, options.input_std);
 
         switch (interp.input_at(0).datatype)
         {
@@ -110,7 +110,9 @@ group inference_options::parser(mode &mode)
         command("infer").set(mode, mode::inference),
         value("input file", model_filename),
         value("output path", output_path),
-        required("--dataset") & value("dataset path", dataset));
+        required("--dataset") & value("dataset path", dataset),
+        option("--input-mean") & value("input mean", input_mean).doc("input mean, default is 0.0"),
+        option("--input-std") & value("input std", input_std).doc("input std, default is 1.0"));
 }
 
 void inference(const inference_options &options)

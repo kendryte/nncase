@@ -57,6 +57,11 @@ namespace importer
             return { std::begin(shape), std::end(shape) };
         }
 
+        ir::axis_t get_axis(const flatbuffers::Vector<int32_t> &shape)
+        {
+            return { std::begin(shape), std::end(shape) };
+        }
+
         template <class T>
         xt::xarray<T> load_array(const tflite::Tensor &tensor)
         {

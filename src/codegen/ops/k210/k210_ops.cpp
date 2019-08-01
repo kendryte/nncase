@@ -115,7 +115,8 @@ namespace codegen
             layer.kernel_pool_type_cfg.data.load_para = 1;
             layer.kernel_pool_type_cfg.data.pool_type = (uint8_t)rnode.pool_type();
             layer.kernel_pool_type_cfg.data.dma_burst_size = 15;
-            layer.kernel_pool_type_cfg.data.pad_type = rnode.pad_value();
+            layer.kernel_pool_type_cfg.data.pad_type = 0;
+            layer.kernel_pool_type_cfg.data.pad_value = rnode.pad_value();
             layer.kernel_load_cfg.data.load_coor = 1;
             layer.kernel_load_cfg.data.load_time = (uint8_t)(load_times - 1);
             layer.kernel_load_cfg.data.para_size = (uint32_t)one_load_kernel_size;

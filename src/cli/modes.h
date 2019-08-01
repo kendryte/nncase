@@ -17,6 +17,8 @@ struct compile_options
     std::filesystem::path dataset;
     std::string target = "k210";
     std::string inference_type = "uint8";
+    float input_mean = 0.f;
+    float input_std = 1.f;
 
     clipp::group parser(mode &mode);
 };
@@ -26,6 +28,8 @@ struct inference_options
     std::filesystem::path model_filename;
     std::filesystem::path output_path;
     std::filesystem::path dataset;
+    float input_mean = 0.f;
+    float input_std = 1.f;
 
     clipp::group parser(mode &mode);
 };

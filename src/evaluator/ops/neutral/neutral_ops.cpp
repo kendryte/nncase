@@ -11,9 +11,11 @@
 #include <ir/ops/quantize.h>
 #include <ir/ops/reduce.h>
 #include <ir/ops/reduce_window2d.h>
+#include <ir/ops/reshape.h>
 #include <ir/ops/resize_image.h>
 #include <ir/ops/strided_slice.h>
 #include <ir/ops/transpose.h>
+#include <ir/ops/unary.h>
 #include <kernels/neutral/neutral_kernels.h>
 
 using namespace nncase;
@@ -254,6 +256,15 @@ namespace ir
             }
         });
 
+        register_evaluator(op_reshape, [](ir::node &node, evaluate_context &context) {
+            auto &rnode = static_cast<reshape &>(node);
+
+            auto input = context.memory_at<uint8_t>(rnode.input());
+            auto output = context.memory_at<uint8_t>(rnode.output());
+
+            std::copy(input.begin(), input.end(), output.begin());
+        });
+
         register_evaluator(op_resize_image, [](ir::node &node, evaluate_context &context) {
             auto &rnode = static_cast<resize_image &>(node);
 
@@ -303,6 +314,54 @@ namespace ir
     neutral::transpose<T>(reinterpret_cast<const T *>(input.data()), reinterpret_cast<T *>(output.data()), in_shape, perm);
 
             ELEM_SIZE_IMPL(rnode.input().type(), TRANSPOSE_KERNEL);
+        });
+
+        register_evaluator(op_unary, [](ir::node &node, evaluate_context &context) {
+            auto &rnode = static_cast<unary &>(node);
+
+            assert(rnode.input().type() == dt_float32);
+            auto input = context.memory_at<float>(rnode.input());
+            auto output = context.memory_at<float>(rnode.output());
+
+            auto unary = [&](auto unary_op) {
+                neutral::unary(input.data(), output.data(), input.size(), unary_op);
+            };
+
+            switch (rnode.unary_op())
+            {
+            case unary_abs:
+                unary([](auto a) { return fabs(a); });
+                break;
+            case unary_ceil:
+                unary([](auto a) { return ceilf(a); });
+                break;
+            case unary_cos:
+                unary([](auto a) { return cosf(a); });
+                break;
+            case unary_exp:
+                unary([](auto a) { return expf(a); });
+                break;
+            case unary_floor:
+                unary([](auto a) { return floorf(a); });
+                break;
+            case unary_log:
+                unary([](auto a) { return logf(a); });
+                break;
+            case unary_neg:
+                unary([](auto a) { return -a; });
+                break;
+            case unary_rsqrt:
+                unary([](auto a) { return 1.f / sqrtf(a); });
+                break;
+            case unary_sin:
+                unary([](auto a) { return sinf(a); });
+                break;
+            case unary_square:
+                unary([](auto a) { return a * a; });
+                break;
+            default:
+                throw std::runtime_error("Not supported unary");
+            }
         });
     }
 }

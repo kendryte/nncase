@@ -1,3 +1,4 @@
+#include <ir/ops/reshape.h>
 #include <ir/ops/transpose.h>
 #include <ir/visitor.h>
 #include <transforms/neutral/fold_transpose.h>
@@ -91,4 +92,44 @@ void fold_nop_transpose_transform::process(transform_context &context)
 
     for (auto &in : dup(inputs))
         in->connect(output);
+}
+
+bool transpose_to_reshape_transform::on_try_match(node &node, transform_context &context)
+{
+    if (node.runtime_opcode() == op_transpose)
+    {
+        auto &tp = static_cast<transpose &>(node);
+
+        size_t last_sig_dim = 0;
+        for (size_t i = 0; i < tp.perm().size(); i++)
+        {
+            auto i_dim = tp.perm()[i];
+            if (tp.input().shape()[i_dim] != 1)
+            {
+                if (i_dim < last_sig_dim)
+                    return false;
+                last_sig_dim = i_dim;
+            }
+        }
+
+        context.inputs.emplace_back(&tp.input());
+        context.outputs.emplace_back(&tp.output());
+
+        context.matched_nodes.emplace_back(&tp);
+        return true;
+    }
+
+    return false;
+}
+
+void transpose_to_reshape_transform::process(transform_context &context)
+{
+    auto &output = *context.inputs[0]->connection();
+    auto inputs = context.outputs[0]->connections();
+
+    auto rshape = context.graph.emplace<reshape>(output.type(), output.shape(), context.matched_nodes[0]->output_at(0).shape());
+
+    rshape->input().connect(output);
+    for (auto &in : dup(inputs))
+        in->connect(rshape->output());
 }
