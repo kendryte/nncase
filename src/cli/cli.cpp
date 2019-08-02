@@ -32,6 +32,8 @@ int main(int argc, char *argv[])
             case mode::help:
                 break;
             }
+
+            return 0;
         }
         catch (std::exception &ex)
         {
@@ -43,5 +45,5 @@ int main(int argc, char *argv[])
         cout << usage_lines(cli, "ncc") << endl;
     }
 
-    return 0;
+    return -1;
 }

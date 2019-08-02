@@ -79,18 +79,29 @@ void transform_graph(graph &graph, target &target, xtl::span<std::unique_ptr<tra
 
 std::unique_ptr<target> create_target(const compile_options &options)
 {
-    if (options.target == "k210")
-        return std::make_unique<k210_target>();
-    else if (options.target == "cpu")
-        return std::make_unique<cpu_target>();
+    if (options.output_format == "kmodel")
+    {
+        if (options.target == "k210")
+            return std::make_unique<k210_target>();
+        else if (options.output_format == "cpu")
+            return std::make_unique<cpu_target>();
+        else
+            throw std::invalid_argument("Invalid target: " + options.target);
+    }
     else
-        throw std::invalid_argument("Invalid target: " + options.target);
+    {
+        throw std::invalid_argument("Invalid output format: " + options.output_format);
+    }
 }
 
 graph import(const compile_options &options)
 {
     auto model = read_file(options.input_filename);
-    return import_tflite(model);
+
+    if (options.input_format == "tflite")
+        return import_tflite(model);
+    else
+        throw std::invalid_argument("Invalid input format: " + options.input_format);
 }
 
 void optimize_pass1(target &target, graph &graph)
@@ -189,7 +200,9 @@ group compile_options::parser(mode &mode)
         command("compile").set(mode, mode::compile),
         value("input file", input_filename),
         value("output file", output_filename),
-        option("-t", "--target") & value("target", target).doc("target architecture, default is " + target),
+        option("-i", "--input-format") & value("output format", input_format).doc("input format, default is " + input_format),
+        option("-o", "--output-format") & value("input format", output_format).doc("output format, default is " + output_format),
+        option("-t", "--target") & value("target", target).doc("target arch, default is " + target),
         option("--dataset") & value("dataset path", dataset),
         option("--inference-type") & value("inference type", inference_type).doc("inference type, default is " + inference_type),
         option("--input-mean") & value("input mean", input_mean).doc("input mean, default is 0.0"),
