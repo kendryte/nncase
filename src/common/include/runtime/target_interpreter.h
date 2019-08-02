@@ -1,7 +1,9 @@
 #pragma once
 #include "../target_config.h"
 
-#include NNCASE_TARGET_HEADER(runtime, interpreter.h)
+// clang-format off
+#include NNCASE_TARGET_HEADER(runtime,interpreter.h)
+// clang-format on
 
 namespace nncase
 {

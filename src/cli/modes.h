@@ -1,6 +1,5 @@
 #pragma once 
 #include <string>
-#include <filesystem>
 #include <clipp.h>
 
 enum class mode
@@ -12,9 +11,9 @@ enum class mode
 
 struct compile_options
 {
-    std::filesystem::path input_filename;
-    std::filesystem::path output_filename;
-    std::filesystem::path dataset;
+    std::string input_filename;
+    std::string output_filename;
+    std::string dataset;
     std::string target = "k210";
     std::string inference_type = "uint8";
     float input_mean = 0.f;
@@ -25,9 +24,9 @@ struct compile_options
 
 struct inference_options
 {
-    std::filesystem::path model_filename;
-    std::filesystem::path output_path;
-    std::filesystem::path dataset;
+    std::string model_filename;
+    std::string output_path;
+    std::string dataset;
     float input_mean = 0.f;
     float input_std = 1.f;
 

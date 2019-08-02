@@ -8,24 +8,6 @@
 using namespace nncase;
 using namespace nncase::data;
 
-namespace
-{
-std::vector<uint8_t> read_file(const std::filesystem::path &filename)
-{
-    std::ifstream infile(filename, std::ios::binary | std::ios::in);
-    if (infile.bad())
-        throw std::runtime_error("Cannot open file: " + filename.string());
-
-    infile.seekg(0, std::ios::end);
-    size_t length = infile.tellg();
-    infile.seekg(0, std::ios::beg);
-    std::vector<uint8_t> data(length);
-    infile.read(reinterpret_cast<char *>(data.data()), length);
-    infile.close();
-    return data;
-}
-}
-
 dataset::dataset(const std::filesystem::path &path, std::function<bool(const std::filesystem::path &)> file_filter, xt::dynamic_shape<size_t> input_shape, float mean, float std)
     : input_shape_(std::move(input_shape)), mean_(mean), std_(std)
 {

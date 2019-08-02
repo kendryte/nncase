@@ -7,6 +7,7 @@
 #include <data/dataset.h>
 #include <fstream>
 #include <importer/importer.h>
+#include <io_utils.h>
 #include <ir/evaluator.h>
 #include <ir/quantizer.h>
 #include <scheduler/scheduler.h>
@@ -25,21 +26,6 @@ using namespace nncase::transforms;
 
 namespace
 {
-std::vector<uint8_t> read_file(const std::filesystem::path &filename)
-{
-    std::ifstream infile(filename, std::ios::binary | std::ios::in);
-    if (infile.bad())
-        throw std::runtime_error("Cannot open file: " + filename.string());
-
-    infile.seekg(0, std::ios::end);
-    size_t length = infile.tellg();
-    infile.seekg(0, std::ios::beg);
-    std::vector<uint8_t> data(length);
-    infile.read(reinterpret_cast<char *>(data.data()), length);
-    infile.close();
-    return data;
-}
-
 void dump_graph(graph &graph, std::ostream &output)
 {
     graph.assign_names();
@@ -190,7 +176,7 @@ void gencode(target &target, graph &graph, const compile_options &options)
 
     std::ofstream outfile(options.output_filename, std::ios::binary | std::ios::out);
     if (outfile.bad())
-        throw std::runtime_error("Cannot open file for output: " + options.output_filename.string());
+        throw std::runtime_error("Cannot open file for output: " + options.output_filename);
 
     codegen_context codegen_ctx(outfile, allocators, alloc_ctx.allocations());
     codegen::gencode(codegen_ctx, compute_sequence);

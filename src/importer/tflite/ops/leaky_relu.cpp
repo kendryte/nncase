@@ -15,8 +15,8 @@ DEFINE_TFLITE_LOWER(LEAKY_RELU)
     auto in_shape = get_shape(*input.shape());
 
     auto alpha = graph_.emplace<constant>(options.alpha());
-    auto mul = graph_.emplace<binary>(binary_mul, in_shape, alpha->output().shape(), value_range<float>::default());
-    auto max = graph_.emplace<binary>(binary_max, in_shape, mul->output().shape(), value_range<float>::default());
+    auto mul = graph_.emplace<binary>(binary_mul, in_shape, alpha->output().shape(), value_range<float>::full());
+    auto max = graph_.emplace<binary>(binary_max, in_shape, mul->output().shape(), value_range<float>::full());
 
     mul->input_b().connect(alpha->output());
     max->input_b().connect(mul->output());

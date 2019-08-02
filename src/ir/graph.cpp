@@ -12,7 +12,7 @@ void graph::assign_names()
     for (auto &&node : nodes_)
     {
         size_t i = 0;
-        while (node->name().empty() || names.contains(node->name()))
+        while (node->name().empty() || names.find(node->name()) != names.end())
             node->name(std::string(node_opcode_names(node->runtime_opcode())) + "_" + std::to_string(i++));
         names.emplace(node->name());
     }
@@ -28,7 +28,7 @@ void graph::collect()
     visitor.visit(*this);
 
     auto end = std::remove_if(std::begin(nodes_), std::end(nodes_), [&](auto &node) {
-        if (!used_nodes.contains(node.get()))
+        if (used_nodes.find(node.get()) == used_nodes.end())
         {
             for (auto &in : node->inputs())
                 in.clear_connection();

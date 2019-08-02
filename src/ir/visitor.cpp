@@ -21,7 +21,7 @@ void ir_visitor::visit(xtl::span<ir::output_node *> outputs)
 
 bool ir_visitor::visited(node &node) const noexcept
 {
-    return visited_.contains(&node);
+    return visited_.find(&node) != visited_.end();
 }
 
 void ir_visitor::mark_visit(node &node)

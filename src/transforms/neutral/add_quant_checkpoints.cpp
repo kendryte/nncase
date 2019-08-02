@@ -9,7 +9,7 @@ using namespace nncase::transforms;
 
 bool add_quant_checkpoints_transform::on_try_match(node &node, transform_context &context)
 {
-    if (opcodes_.contains(node.runtime_opcode()))
+    if (opcodes_.find(node.runtime_opcode()) != opcodes_.end())
     {
         if (!try_get_direct_child<fake_dequantize>(node))
         {

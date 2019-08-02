@@ -36,6 +36,8 @@ if (MSVC_VERSION GREATER_EQUAL "1900")
         add_compile_options("/std:c++latest")
         add_definitions(/D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS)
     endif()
+else()
+    add_compile_options(-Wno-multichar -std=c++17)
 endif()
 
 add_subdirectory(src/cli)

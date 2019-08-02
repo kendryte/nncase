@@ -106,7 +106,7 @@ namespace importer
             else if constexpr (std::is_same_v<T, int32_t>)
                 return tflite::TensorType_INT32;
             else
-                static_assert(false, "Invalid element type");
+                assert(!"Invalid element type");
         }
 
         constexpr datatype_t to_data_type(tflite::TensorType type)

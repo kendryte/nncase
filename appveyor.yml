@@ -1,0 +1,14 @@
+version: 0.1.0-{build}
+image: Visual Studio 2019
+image: Ubuntu
+install:
+- cmd: pip install conan
+- sh: pip install conan
+build_script:  
+- cmd: .\build.cmd
+- sh: ./build.sh
+artifacts:
+- path: out\build\x64-Release\bin
+  name: win-x64
+- path: out/bin
+  name: linux-x64

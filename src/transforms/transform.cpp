@@ -55,10 +55,10 @@ class transform_apply_visitor : public dfs_ir_visitor
 {
 public:
     using dfs_ir_visitor::visit;
-    graph *graph;
-    target *target;
+    ir::graph *graph;
+    nncase::target *target;
     bool need_retry = false;
-    transform *transform;
+    transforms::transform *transform;
 
 protected:
     bool visit(node &node) override

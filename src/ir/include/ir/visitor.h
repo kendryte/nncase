@@ -47,14 +47,8 @@ namespace ir
     protected:
         virtual bool visit(node &node)
         {
-            return visit<std::is_void_v<decltype(visitor_(node))>>(node);
-        }
-
-    private:
-        template <bool IsVoid>
-        bool visit(node &node)
-        {
-            if constexpr (IsVoid)
+            constexpr auto is_void = std::is_void_v<decltype(visitor_(node))>;
+            if constexpr (is_void)
             {
                 visitor_(node);
                 return false;
@@ -64,6 +58,8 @@ namespace ir
                 return visitor_(node);
             }
         }
+
+    private:
 
     private:
         TVisitor visitor_;

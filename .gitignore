@@ -267,3 +267,4 @@ __pycache__/
 /src/NnCase.Cli/Properties/launchSettings.json
 
 out/
+out_2/

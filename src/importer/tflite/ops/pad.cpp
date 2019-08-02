@@ -8,7 +8,7 @@ using namespace nncase::ir;
 DEFINE_TFLITE_LOWER(PAD)
 {
     auto &input = get_tensor(op.inputs(), 0);
-    auto &paddings = load_tensor<int32_t, 2>(get_tensor(op.inputs(), 1));
+    auto paddings = load_tensor<int32_t, 2>(get_tensor(op.inputs(), 1));
     auto &options = *op.builtin_options_as_PadOptions();
 
     xt::svector<padding> new_paddings;

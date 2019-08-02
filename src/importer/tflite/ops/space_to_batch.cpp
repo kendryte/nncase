@@ -12,7 +12,7 @@ DEFINE_TFLITE_LOWER(SPACE_TO_BATCH_ND)
     auto &input = get_tensor(op.inputs(), 0);
     auto &options = *op.builtin_options_as_SpaceToBatchNDOptions();
     auto block_shape = load_axis<int32_t>(get_tensor(op.inputs(), 1));
-    auto &paddings = load_tensor<int32_t, 2>(get_tensor(op.inputs(), 2));
+    auto paddings = load_tensor<int32_t, 2>(get_tensor(op.inputs(), 2));
     auto in_shape = get_shape(*input.shape());
     auto spatial_size = block_shape.size();
     auto remaining_shape_size = in_shape.size() - spatial_size - 1;

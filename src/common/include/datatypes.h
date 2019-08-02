@@ -30,7 +30,7 @@ struct value_range
     T min;
     T max;
 
-    static constexpr value_range<T> default() noexcept
+    static constexpr value_range<T> full() noexcept
     {
         return { std::numeric_limits<T>::lowest(), std::numeric_limits<T>::max() };
     }

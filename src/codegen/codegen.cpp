@@ -23,7 +23,7 @@ std::unique_ptr<node_body> call_emitter(node &node, codegen_context &context)
     auto it = g_emitters.find(opcode);
     if (it == g_emitters.end())
     {
-        if (!g_disabled_emitters.contains(opcode))
+        if (g_disabled_emitters.find(opcode) == g_disabled_emitters.end())
             throw std::runtime_error(std::string("Emitter for ") + node_opcode_names(opcode).data() + " is not found");
     }
     else
@@ -66,7 +66,7 @@ void nncase::codegen::gencode(codegen_context &context, xtl::span<ir::node *> co
 
     for (auto &&node : compute_sequence)
     {
-        if (!g_disabled_emitters.contains(node->runtime_opcode()))
+        if (g_disabled_emitters.find(node->runtime_opcode()) == g_disabled_emitters.end())
             runtime_nodes.emplace_back(node);
 
         switch (node->runtime_opcode())

@@ -28,9 +28,9 @@ DEFINE_TFLITE_LOWER(L2_NORMALIZATION)
     auto square = graph_.emplace<unary>(unary_square, in_shape);
     auto sum = graph_.emplace<reduce>(reduce_sum, square->output().shape(), reduce_axis, 0.f, true);
     auto epsilon = graph_.emplace<constant>(1e-10f);
-    auto max = graph_.emplace<binary>(binary_max, sum->output().shape(), epsilon->output().shape(), value_range<float>::default());
+    auto max = graph_.emplace<binary>(binary_max, sum->output().shape(), epsilon->output().shape(), value_range<float>::full());
     auto rsqrt = graph_.emplace<unary>(unary_rsqrt, max->output().shape());
-    auto mul = graph_.emplace<binary>(binary_mul, in_shape, rsqrt->output().shape(), value_range<float>::default());
+    auto mul = graph_.emplace<binary>(binary_mul, in_shape, rsqrt->output().shape(), value_range<float>::full());
 
     sum->input().connect(square->output());
     max->input_a().connect(sum->output());

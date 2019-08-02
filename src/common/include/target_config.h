@@ -2,7 +2,9 @@
 #include <cassert>
 
 // clang-format off
-#define NNCASE_CONCAT_3(a, b, c) a/b/c
+#define NNCASE_STRINGFY(x) #x
+#define NNCASE_CONCAT_2(a, b) a/b
+#define NNCASE_CONCAT_3(a, b, c) NNCASE_CONCAT_2(NNCASE_CONCAT_2(a, b), c)
 // clang-format on
 
 #define NNCASE_TARGET_HEADER_(prefix, target, name) <NNCASE_CONCAT_3(prefix, target, name)>
