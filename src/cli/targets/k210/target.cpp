@@ -84,8 +84,8 @@ void nncase::k210_target::add_quantization_checkpoint_transforms(std::vector<std
 
 void nncase::k210_target::add_quantization_transforms(ir::quantizer &quantizer, std::vector<std::unique_ptr<transform>> &transforms)
 {
-    cpu_target::add_quantization_transforms(quantizer, transforms);
     transforms.emplace_back(new kpu_conv2d_transform(quantizer));
     transforms.emplace_back(new fold_kpu_upload_transform());
     transforms.emplace_back(new fuse_kpu_download_transform());
+    cpu_target::add_quantization_transforms(quantizer, transforms);
 }

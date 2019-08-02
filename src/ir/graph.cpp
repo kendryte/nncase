@@ -34,6 +34,8 @@ void graph::collect()
                 in.clear_connection();
             for (auto &out : node->outputs())
                 out.clear_connections();
+            if (node->runtime_opcode() == op_input_node)
+                inputs_.erase(std::find(inputs_.begin(), inputs_.end(), static_cast<input_node *>(node.get())));
             return true;
         }
 
