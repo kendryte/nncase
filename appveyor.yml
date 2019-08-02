@@ -1,6 +1,7 @@
 version: 0.1.0-{build}
-image: Visual Studio 2019
-image: Ubuntu
+image:
+- Visual Studio 2019
+- Ubuntu
 install:
 - cmd: pip install conan
 - sh: pip install conan
