@@ -83,7 +83,7 @@ std::unique_ptr<target> create_target(const compile_options &options)
     {
         if (options.target == "k210")
             return std::make_unique<k210_target>();
-        else if (options.output_format == "cpu")
+        else if (options.target == "cpu")
             return std::make_unique<cpu_target>();
         else
             throw std::invalid_argument("Invalid target: " + options.target);
@@ -131,11 +131,11 @@ void add_quantization_checkpoints(target &target, graph &graph)
     dump_graph(graph, "before_quant");
 }
 
-void quantize_graph(target &target, graph &graph, quantizer &quantizer)
+void quantize_graph(target &target, graph &graph, quantizer &quantizer, const quant_param_t &input_quant_param)
 {
     std::vector<std::unique_ptr<transforms::transform>> transforms;
     target.add_default_transforms(transforms);
-    target.add_quantization_transforms(quantizer, transforms);
+    target.add_quantization_transforms(quantizer, input_quant_param, transforms);
     transform_graph(graph, target, transforms);
     dump_graph(graph, "after_quant");
 }
@@ -174,11 +174,13 @@ void quantize(target &target, graph &graph, const compile_options &options)
     quantizer quant;
     auto min = (0.f - options.input_mean) / options.input_std;
     auto max = (1.f - options.input_mean) / options.input_std;
-    quant.record(graph.inputs()[0]->output(), { min, max });
+    value_range<float> input_range { min, max };
+
+    quant.record(graph.inputs()[0]->output(), input_range);
     get_quantization_ranges(target, graph, &quant, options);
 
     // 3.3 quantize graph
-    quantize_graph(target, graph, quant);
+    quantize_graph(target, graph, quant, quant.get_quant_param(input_range, 8));
 }
 
 void gencode(target &target, graph &graph, const compile_options &options)

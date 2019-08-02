@@ -39,31 +39,74 @@ namespace runtime
         return num_zeroes;
     }
 
-    template <class T>
+    template <class T = uint64_t>
+    inline T bit_mask(uint8_t shift)
+    {
+        return (T(1) << shift) - 1;
+    }
+
+    template <class T, bool Banker = false>
     T carry_shift(T value, uint8_t shift)
     {
         if (shift > 0)
         {
-            value >>= shift - 1;
-            if (value & 0x1)
+            if constexpr (Banker)
             {
-                if (value < 0)
-                    value = (value >> 1) - 1;
+                T result;
+                // Sign |  Int (T - shift - 1 bits) | Frac (shift bits)
+                //  S      IIII                       FFF
+                auto integral = value >> shift;
+                auto fractional = value & bit_mask(shift);
+                auto sign = value < 0 ? -1 : 1;
+                auto half = 1 << (shift - 1);
+
+                // frac < 0.5
+                if (fractional < half)
+                {
+                    return integral;
+                }
+                // frac > 0.5
+                else if (fractional > half)
+                {
+                    return integral + sign;
+                }
+                // frac == 0.5
                 else
-                    value = (value >> 1) + 1;
+                {
+                    // odd
+                    if (integral & 1)
+                        return integral + sign;
+                    // even
+                    else
+                        return integral;
+                }
+
+                return result;
             }
             else
             {
-                value >>= 1;
+                value >>= shift - 1;
+                if (value & 0x1)
+                {
+                    if (value < 0)
+                        value = (value >> 1) - 1;
+                    else
+                        value = (value >> 1) + 1;
+                }
+                else
+                {
+                    value >>= 1;
+                }
             }
         }
 
         return value;
     }
 
+    template <bool Banker = false>
     inline int32_t mul_and_carry_shift(int32_t value, int32_t mul, uint8_t shift)
     {
-        return (int32_t)carry_shift((int64_t)value * mul, shift);
+        return (int32_t)carry_shift<int64_t, Banker>((int64_t)value * mul, shift);
     }
 
     template <class T>

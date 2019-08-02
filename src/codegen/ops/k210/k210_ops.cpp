@@ -94,7 +94,7 @@ namespace codegen
                 auto size_limit = 30;
                 auto one_load_channels = std::min(rnode.output_channels(), (int32_t)std::floor(size_limit * 1024.f / one_channel_size));
                 one_load_kernel_size = one_channel_size * one_load_channels;
-                load_times = (int32_t)std::ceil(rnode.input_channels() / (float)one_load_channels);
+                load_times = (int32_t)std::ceil(rnode.output_channels() / (float)one_load_channels);
                 oc_one_time = one_load_channels;
             }
 
@@ -123,6 +123,7 @@ namespace codegen
             layer.kernel_calc_type_cfg.data.channel_switch_addr = (uint16_t)(in_layout.row_len * rnode.input().shape()[2]);
             layer.kernel_calc_type_cfg.data.row_switch_addr = (uint8_t)in_layout.row_len;
             layer.kernel_calc_type_cfg.data.coef_group = (uint8_t)in_layout.groups;
+            layer.kernel_calc_type_cfg.data.load_act = 1;
             layer.write_back_cfg.data.wb_channel_switch_addr = (uint16_t)(out_layout.row_len * rnode.kpu_output().shape()[2]);
             layer.write_back_cfg.data.wb_row_switch_addr = (uint8_t)out_layout.row_len;
             layer.write_back_cfg.data.wb_group = (uint8_t)out_layout.groups;
@@ -132,7 +133,7 @@ namespace codegen
             layer.conv_value.data.shr_w = (uint32_t)rnode.shift_w();
             layer.conv_value2.data.arg_add = (uint64_t)rnode.arg_add();
             layer.dma_parameter.data.channel_byte_num = (uint16_t)(rnode.kpu_output().shape()[3] * rnode.kpu_output().shape()[2] - 1);
-            layer.dma_parameter.data.channel_byte_num = (uint32_t)(rnode.kpu_output().shape()[3] * rnode.kpu_output().shape()[2] * rnode.kpu_output().shape()[1] - 1);
+            layer.dma_parameter.data.dma_total_byte = (uint32_t)(rnode.kpu_output().shape()[3] * rnode.kpu_output().shape()[2] * rnode.kpu_output().shape()[1] - 1);
             layer.dma_parameter.data.send_data_out = rnode.has_main_mem_output();
 
             body->main_mem_output = rnode.has_main_mem_output() ? context.get_allocation(rnode.main_mem_output()) : memory_range {};

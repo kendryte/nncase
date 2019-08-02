@@ -78,7 +78,7 @@ void nncase::cpu_target::add_quantization_checkpoint_transforms(std::vector<std:
 {
 }
 
-void nncase::cpu_target::add_quantization_transforms(ir::quantizer &quantizer, std::vector<std::unique_ptr<transform>> &transforms)
+void nncase::cpu_target::add_quantization_transforms(ir::quantizer &quantizer, const quant_param_t &input_quant_param, std::vector<std::unique_ptr<transform>> &transforms)
 {
-    transforms.emplace_back(new fold_input_quantize_transform());
+    transforms.emplace_back(new fold_input_quantize_transform(input_quant_param));
 }

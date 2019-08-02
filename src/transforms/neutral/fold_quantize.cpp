@@ -69,12 +69,11 @@ bool fold_input_quantize_transform::on_try_match(node &node, transform_context &
     if (node.runtime_opcode() == op_input_node)
     {
         auto &in = static_cast<input_node &>(node);
-        if (auto q = try_get_direct_child<quantize>(in))
+        if (in.output().type() == dt_float32)
         {
-            context.outputs.emplace_back(&q->output());
+            context.outputs.emplace_back(&in.output());
 
             context.matched_nodes.emplace_back(&in);
-            context.matched_nodes.emplace_back(q);
             return true;
         }
     }
@@ -88,7 +87,9 @@ void fold_input_quantize_transform::process(transform_context &context)
     auto &old_in = static_cast<input_node &>(*context.matched_nodes[0]);
 
     auto input = context.graph.emplace<input_node>(dt_uint8, old_in.output().shape());
+    auto deq = context.graph.emplace<dequantize>(input->output().shape(), quant_param_);
+    deq->input().connect(input->output());
 
     for (auto &in : dup(inputs))
-        in->connect(input->output());
+        in->connect(deq->output());
 }
