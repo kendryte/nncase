@@ -44,7 +44,7 @@ Download prebuilt binaries from [Release](https://github.com/kendryte/nncase/rel
 ## Usage
 ## 使用方法
 
-[Usage](USAGE.md)
+[Usage 使用方法](USAGE.md)
 
 ## Supported operators
 ## 支持的算子
@@ -101,6 +101,7 @@ Download prebuilt binaries from [Release](https://github.com/kendryte/nncase/rel
 | SparseToDense |❌|
 | Split |❌|
 | Sqrt |✅|
+| Square |✅|
 | Squeeze |❌|
 | Sub |✅|
 | Sum |✅|
@@ -116,7 +117,6 @@ Download prebuilt binaries from [Release](https://github.com/kendryte/nncase/rel
 | ReduceMin |✅|
 | FloorDiv |❌|
 | ReduceAny |❌|
-| Square |❌|
 | ZerosLike |❌|
 | Fill |❌|
 | FloorMod |❌|
