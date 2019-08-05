@@ -2,6 +2,7 @@
 #include <data/dataset.h>
 #include <fstream>
 #include <io_utils.h>
+#include <kernels/k210/k210_kernels.h>
 #include <runtime/runtime_op.h>
 #include <runtime/target_interpreter.h>
 
@@ -21,9 +22,24 @@ struct eval_context
     {
         for (auto it = dataset.begin<T>(); it != dataset.end<T>(); ++it)
         {
-            auto input = interp.memory_at<T>(interp.input_at(0));
+            auto input = interp.input_at(0);
+            auto input_mem = interp.memory_at<T>(input);
             auto &tensor = it->tensor;
-            std::copy(tensor.begin(), tensor.end(), input.begin());
+            if (input.memory_type == mem_main)
+            {
+                std::copy(tensor.begin(), tensor.end(), input_mem.begin());
+            }
+            else if (input.memory_type == mem_k210_kpu)
+            {
+                if constexpr (std::is_same_v<T, uint8_t>)
+                    kernels::k210::kpu_upload(tensor.data(), input_mem.data(), interp.input_shape_at(0));
+                else
+                    throw std::runtime_error("K210 only support uint8 input");
+            }
+            else
+            {
+                throw std::runtime_error("Unsupported input memory type");
+            }
 
             interp.run(done_thunk, on_error_thunk, node_profile_thunk, this);
 

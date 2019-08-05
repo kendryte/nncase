@@ -1,6 +1,6 @@
 #include <kernels/k210/k210_kernels.h>
-#include <runtime/kernel_registry.h>
 #include <runtime/k210/k210_ops_body.h>
+#include <runtime/kernel_registry.h>
 #if !NNCASE_TARGET_K210_SIMULATOR
 #include <dmac.h>
 #include <sysctl.h>
@@ -37,6 +37,7 @@ void kpu_conv2d_normal(kpu_layer_argument_t &layer, plic_irq_callback_t callback
     plic_irq_register(IRQN_AI_INTERRUPT, callback, userdata);
     plic_irq_enable(IRQN_AI_INTERRUPT);
     kpu_send_layer(layer);
+    usleep(1);
 }
 
 void kpu_conv2d_output(kpu_layer_argument_t &layer, dmac_channel_number_t dma_ch, uint8_t *dest, plic_irq_callback_t callback, void *userdata)
@@ -60,6 +61,21 @@ int kpu_plic_thunk(void *userdata)
     (ctx.interpreter->*ctx.step)();
     return 0;
 }
+
+void kpu_upload_dma(dmac_channel_number_t dma_ch, const uint8_t *src, uint8_t *dest, size_t input_size, plic_irq_callback_t callback, void *userdata)
+{
+    dmac_set_irq(dma_ch, callback, userdata, 1);
+    dmac_set_single_mode(dma_ch, (void *)src, (void *)dest, DMAC_ADDR_INCREMENT, DMAC_ADDR_INCREMENT,
+        DMAC_MSIZE_16, DMAC_TRANS_WIDTH_64, input_size / 8);
+    usleep(1);
+}
+
+int kpu_dma_plic_thunk(void *userdata)
+{
+    auto &ctx = *reinterpret_cast<k210_interpreter_context *>(userdata);
+    (ctx.interpreter->*ctx.step)();
+    return 0;
+}
 #endif
 }
 
@@ -73,6 +89,16 @@ namespace runtime
         {
             auto input = interpreter.memory_at<uint8_t>(options.input);
             auto output = interpreter.memory_at<uint8_t>(options.output);
+#if !NNCASE_TARGET_K210_SIMULATOR
+            if (options.in_shape[3] % 64 == 0)
+            {
+                auto &ctx = interpreter.context();
+                ctx.interpreter = &interpreter;
+                ctx.step = step;
+                kpu_upload_dma(interpreter.dma_ch(), input.data(), output.data(), input.size(), kpu_dma_plic_thunk, &ctx);
+                return kcr_async;
+            }
+#endif
             kernels::k210::kpu_upload(input.data(), output.data(), options.in_shape);
             return kcr_done;
         }

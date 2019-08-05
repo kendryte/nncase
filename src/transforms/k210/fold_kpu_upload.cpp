@@ -48,3 +48,32 @@ void fold_kpu_upload_transform::process(transform_context &context)
     for (auto &in : dup(inputs))
         in->connect(output);
 }
+
+bool fold_input_kpu_upload_transform::on_try_match(node &node, transform_context &context)
+{
+    if (node.runtime_opcode() == op_input_node)
+    {
+        auto &in = static_cast<input_node &>(node);
+        if (auto up = try_get_direct_child<kpu_upload>(in))
+        {
+            context.outputs.emplace_back(&up->output());
+
+            context.matched_nodes.emplace_back(&in);
+            context.matched_nodes.emplace_back(up);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void fold_input_kpu_upload_transform::process(transform_context &context)
+{
+    auto inputs = context.outputs[0]->connections();
+    auto &old_in = static_cast<input_node &>(*context.matched_nodes[0]);
+
+    auto input = context.graph.emplace<input_node>(dt_uint8, old_in.output().shape(), mem_k210_kpu);
+
+    for (auto &in : dup(inputs))
+        in->connect(input->output());
+}

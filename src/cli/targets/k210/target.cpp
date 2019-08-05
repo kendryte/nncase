@@ -87,5 +87,6 @@ void nncase::k210_target::add_quantization_transforms(ir::quantizer &quantizer, 
     transforms.emplace_back(new kpu_conv2d_transform(quantizer));
     transforms.emplace_back(new fold_kpu_upload_transform());
     transforms.emplace_back(new fuse_kpu_download_transform());
+    transforms.emplace_back(new fold_input_kpu_upload_transform());
     cpu_target::add_quantization_transforms(quantizer, input_quant_param, transforms);
 }
