@@ -114,6 +114,8 @@ graph import(const compile_options &options)
 
     if (options.input_format == "tflite")
         return import_tflite(model);
+    else if (options.input_format == "paddle")
+        return import_paddle(model, std::filesystem::path(options.input_filename).parent_path());
     else
         throw std::invalid_argument("Invalid input format: " + options.input_format);
 }
@@ -216,8 +218,8 @@ group compile_options::parser(mode &mode)
         command("compile").set(mode, mode::compile),
         value("input file", input_filename),
         value("output file", output_filename),
-        option("-i", "--input-format") & value("output format", input_format).doc("input format, default is " + input_format),
-        option("-o", "--output-format") & value("input format", output_format).doc("output format, default is " + output_format),
+        required("-i", "--input-format") & value("input format", input_format),
+        option("-o", "--output-format") & value("output format", output_format).doc("output format, default is " + output_format),
         option("-t", "--target") & value("target", target).doc("target arch, default is " + target),
         option("--dataset") & value("dataset path", dataset),
         option("--inference-type") & value("inference type", inference_type).doc("inference type, default is " + inference_type),

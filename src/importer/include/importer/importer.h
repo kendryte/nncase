@@ -15,11 +15,13 @@
 #pragma once 
 #include <memory>
 #include <ir/graph.h>
+#include <filesystem>
 
 namespace nncase
 {
 namespace importer
 {
     ir::graph import_tflite(xtl::span<const uint8_t> model);
+    ir::graph import_paddle(xtl::span<const uint8_t> model, const std::filesystem::path& params_dir);
 }
 }

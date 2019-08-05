@@ -15,9 +15,11 @@ set(SRCS tflite/tflite_importer.cpp
          tflite/ops/transpose.cpp
          tflite/ops/leaky_relu.cpp
          tflite/ops/space_to_batch.cpp
-         tflite/ops/l2_normalization.cpp)
+         tflite/ops/l2_normalization.cpp
+         paddle/framework.pb.cc
+         paddle/paddle_importer.cpp)
 
 add_library(importer STATIC ${SRCS})
 target_include_directories(importer PUBLIC include)
 target_link_libraries(importer PUBLIC ir)
-target_link_libraries(importer PRIVATE CONAN_PKG::flatbuffers)
+target_link_libraries(importer PRIVATE CONAN_PKG::flatbuffers CONAN_PKG::protobuf)

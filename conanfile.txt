@@ -2,10 +2,17 @@
 cmake
 
 [requires]
-opencv/4.1.0@conan/stable
+opencv/4.1.1@conan/stable
 range-v3/0.5.0@ericniebler/stable
 flatbuffers/1.11.0@google/stable
+protobuf/3.6.1@bincrafters/stable
 
 [options]
+opencv:protobuf=False
+opencv:freetype=False
+opencv:harfbuzz=False
+opencv:webp=False
+opencv:openexr=False
+opencv:dc1394=False
 
 [imports]

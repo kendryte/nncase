@@ -28,7 +28,7 @@ struct compile_options
     std::string input_filename;
     std::string output_filename;
     std::string dataset;
-    std::string input_format = "tflite";
+    std::string input_format;
     std::string output_format = "kmodel";
     std::string target = "k210";
     std::string inference_type = "uint8";
