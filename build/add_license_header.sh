@@ -4,6 +4,6 @@ do
   echo "Processing $f" 
   if ! grep -q Copyright $f
   then
-    cat copyright.txt $f >$f.new && mv $f.new $f
+    cat license_header.txt $f >$f.new && mv $f.new $f
   fi
 done
