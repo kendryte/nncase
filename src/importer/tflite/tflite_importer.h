@@ -49,7 +49,7 @@ namespace importer
 
         const tflite::Tensor &get_tensor(const flatbuffers::Vector<int32_t> *ids, int32_t offset)
         {
-            return *subGraph_->tensors()->Get(ids->Get(offset));
+            return *subgraph_->tensors()->Get(ids->Get(offset));
         }
 
         template <class T>
@@ -173,7 +173,7 @@ namespace importer
 
     private:
         const tflite::Model *model_;
-        const tflite::SubGraph *subGraph_;
+        const tflite::SubGraph *subgraph_;
         ir::graph &graph_;
         std::unordered_map<ir::input_connector *, int32_t> input_tensors_;
         std::unordered_map<int32_t, ir::output_connector *> output_tensors_;

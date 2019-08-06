@@ -22,7 +22,7 @@ using namespace nncase::ir;
 using namespace flatbuffers;
 
 tflite_importer::tflite_importer(xtl::span<const uint8_t> model, graph &graph)
-    : model_(tflite::GetModel(model.data())), subGraph_(model_->subgraphs()->Get(0)), graph_(graph)
+    : model_(tflite::GetModel(model.data())), subgraph_(model_->subgraphs()->Get(0)), graph_(graph)
 {
     flatbuffers::Verifier verifier(model.data(), model.size());
     if (!tflite::VerifyModelBuffer(verifier))
@@ -31,7 +31,7 @@ tflite_importer::tflite_importer(xtl::span<const uint8_t> model, graph &graph)
 
 void tflite_importer::import()
 {
-    auto &operators = *subGraph_->operators();
+    auto &operators = *subgraph_->operators();
     for (auto &&op : operators)
         convert_op(*op);
 
@@ -45,7 +45,7 @@ void tflite_importer::import()
         }
         else
         {
-            auto &tensor = *subGraph_->tensors()->Get(in.second);
+            auto &tensor = *subgraph_->tensors()->Get(in.second);
             auto &buffer = *model_->buffers()->Get(tensor.buffer());
             auto data = buffer.data();
 

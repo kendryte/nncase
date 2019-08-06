@@ -12,28 +12,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../tflite_importer.h"
-#include <ir/ops/concat.h>
+#include "../paddle_importer.h"
+#include <ir/placeholders.h>
 
 using namespace nncase;
 using namespace nncase::importer;
 using namespace nncase::ir;
+using namespace paddle::framework::proto;
 
-DEFINE_TFLITE_LOWER(CONCATENATION)
+DEFINE_PADDLE_LOWER(feed)
 {
-    std::vector<shape_t> inputs_shape;
-    auto &options = *op.builtin_options_as_ConcatenationOptions();
+    auto &output = find_var(op.outputs(), "Out");
 
-    for (auto &&in : *op.inputs())
-    {
-        auto &tensor = *subgraph_->tensors()->Get(in);
-        inputs_shape.emplace_back(get_shape(*tensor.shape()));
-    }
+    auto node = graph_.emplace<input_node>(to_data_type(get_lod_tensor_type(output)), get_var_shape(output));
+    node->name(output.name());
 
-    auto con = graph_.emplace<concat>(dt_float32, inputs_shape, options.axis());
-
-    for (size_t i = 0; i < op.inputs()->size(); i++)
-        input_tensors_.emplace(&con->input_at(i), op.inputs()->Get(i));
-
-    output_tensors_.emplace(op.outputs()->Get(0), &con->output());
+    output_tensors_.emplace(output.name(), &node->output());
 }

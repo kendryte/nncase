@@ -1,0 +1,2 @@
+DEFINE_OPCODE(feed)
+DEFINE_OPCODE(conv2d)

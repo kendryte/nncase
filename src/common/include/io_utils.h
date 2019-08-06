@@ -22,7 +22,7 @@ namespace nncase
 inline std::vector<uint8_t> read_file(const std::filesystem::path &filename)
 {
     std::ifstream infile(filename, std::ios::binary | std::ios::in);
-    if (infile.bad())
+    if (!infile.good())
         throw std::runtime_error("Cannot open file: " + filename.string());
 
     infile.seekg(0, std::ios::end);

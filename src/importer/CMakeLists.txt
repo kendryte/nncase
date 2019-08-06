@@ -17,7 +17,9 @@ set(SRCS tflite/tflite_importer.cpp
          tflite/ops/space_to_batch.cpp
          tflite/ops/l2_normalization.cpp
          paddle/framework.pb.cc
-         paddle/paddle_importer.cpp)
+         paddle/paddle_importer.cpp
+         paddle/ops/placeholders.cpp
+         paddle/ops/conv2d.cpp)
 
 add_library(importer STATIC ${SRCS})
 target_include_directories(importer PUBLIC include)
