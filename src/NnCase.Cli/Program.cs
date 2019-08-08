@@ -206,7 +206,6 @@ namespace NnCase.Cli
                                 new K210SeparableConv2dTransform(),
                                 new K210SpaceToBatchNdAndValidConv2dTransform(),
                                 new K210SameConv2dTransform(),
-                                new K210Stride2Conv2dTransform(),
                                 new GlobalAveragePoolTransform(),
                                 options.FloatFc ? (Transform)new DummyTransform() : new K210FullyConnectedTransform(),
                                 new LeakyReluTransform(),
