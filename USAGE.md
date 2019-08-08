@@ -13,6 +13,6 @@
 |uint8| Use quantized kernels (default)
 |float| Use float kernels
 
-- `--dataset` Dataset path, **required** when inference type `uint8`.
+- `--dataset` Calibration dataset path, **required** when inference type `uint8`.
 
 - `--input-mean` `--input-std` Normalize input images , `y = (x - input_mean) / input_std`

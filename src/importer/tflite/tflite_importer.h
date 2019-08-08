@@ -68,7 +68,10 @@ namespace importer
 
         ir::shape_t get_shape(const flatbuffers::Vector<int32_t> &shape)
         {
-            return { std::begin(shape), std::end(shape) };
+            if (shape.size())
+                return { std::begin(shape), std::end(shape) };
+            else
+                return { 1 };
         }
 
         ir::axis_t get_axis(const flatbuffers::Vector<int32_t> &shape)

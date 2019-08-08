@@ -57,6 +57,17 @@ kpu_filter_type_t get_filter_type(int32_t filter)
 {
     return filter == 1 ? kpu_filter_1x1 : kpu_filter_3x3;
 }
+
+xt::svector<piecewise_linear_segment> clamp_to_piecewise(value_range<float> clamp)
+{
+    xt::svector<piecewise_linear_segment> segs;
+    if (clamp.min != std::numeric_limits<float>::min())
+        segs.push_back({ std::numeric_limits<float>::min(), 0.f, clamp.min });
+    segs.push_back({ clamp.min, 1.f, 0.f });
+    if (clamp.max != std::numeric_limits<float>::max())
+        segs.push_back({ clamp.max, 0.f, clamp.max });
+    return segs;
+}
 }
 
 bool fake_kpu_conv2d_transform::on_try_match(node &node, transform_context &context)
@@ -101,7 +112,7 @@ void fake_kpu_conv2d_transform::process(transform_context &context)
 
     auto pre_pad = context.graph.emplace<pad>(dt_float32, output.shape(), pre_paddings, 0.f);
     auto conv = context.graph.emplace<fake_kpu_conv2d>(pre_pad->output().shape(), is_depthwise, filter_type, kpu_pool_bypass,
-        old_conv.weights(), old_conv.bias(), old_conv.fused_activation());
+        old_conv.weights(), old_conv.bias(), clamp_to_piecewise(old_conv.fused_activation()));
 
     xt::svector<padding> sur_paddings {
         padding::zero(),

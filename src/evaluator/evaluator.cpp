@@ -22,6 +22,8 @@ using namespace nncase::ir;
 using namespace nncase::scheduler;
 namespace chrono = std::chrono;
 
+#define PROFILE 0
+
 namespace
 {
 std::unordered_map<node_opcode, std::function<void(ir::node &, evaluate_context &)>> g_evaluators;
@@ -51,7 +53,7 @@ evaluate_context::evaluate_context(const std::unordered_map<memory_type_t, memor
 
 xtl::span<uint8_t> evaluate_context::memory_at(const scheduler::memory_allocation &allocation)
 {
-    auto& memory_pool = memory_pools_.at(allocation.type);
+    auto &memory_pool = memory_pools_.at(allocation.type);
 
     return { memory_pool.get() + allocation.start, allocation.size };
 }
@@ -93,7 +95,9 @@ void evaluator::evaluate(quantizer *quantizer)
         evaluator(*node, context_);
         auto duration = clock::now() - start;
         total_duration += duration;
+#if PROFILE
         std::cout << node_opcode_names(node->runtime_opcode()) << ": " << duration.count() / 1e6 << "ms" << std::endl;
+#endif
 
         if (quantizer && node->runtime_opcode())
         {
@@ -106,5 +110,7 @@ void evaluator::evaluate(quantizer *quantizer)
         }
     }
 
+#if PROFILE
     std::cout << "Total: " << total_duration.count() / 1e6 << "ms" << std::endl;
+#endif
 }

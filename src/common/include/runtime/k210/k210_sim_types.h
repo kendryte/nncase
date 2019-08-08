@@ -258,6 +258,13 @@ namespace runtime
         };
 
         using kpu_activation_table_t = std::array<kpu_activation_segment, 16>;
+
+        struct piecewise_linear_segment
+        {
+            float start;
+            float mul;
+            float add;
+        };
     }
 }
 }

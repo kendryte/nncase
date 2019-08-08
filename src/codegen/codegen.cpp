@@ -158,4 +158,6 @@ void nncase::codegen::gencode(codegen_context &context, xtl::span<ir::node *> co
     writer.position(node_headers_pos);
     writer.write_array<node_header>(node_headers);
     writer.position(end_pos);
+
+    std::cout << "Main memory usage: " << context.memory_usage() << " B" << std::endl;
 }

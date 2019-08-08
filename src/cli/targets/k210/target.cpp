@@ -16,6 +16,7 @@
 #include <scheduler/k210/kpu_memory_allocator.h>
 #include <scheduler/main_memory_allocator.h>
 #include <transforms/k210/fake_kpu_conv2d.h>
+#include <transforms/k210/fake_piecewise_linear.h>
 #include <transforms/k210/fold_kpu_upload.h>
 #include <transforms/k210/fuse_kpu_download.h>
 #include <transforms/k210/kpu_conv2d.h>
@@ -88,6 +89,8 @@ void nncase::k210_target::add_optimize2_transforms(std::vector<std::unique_ptr<t
     transforms.emplace_back(new fake_kpu_conv2d_transform());
     transforms.emplace_back(new strided_slice_motion_transform());
     transforms.emplace_back(new fuse_fake_kpu_conv2d_strided_slice_transform());
+    transforms.emplace_back(new binary_to_fake_piecewise_linear_transform());
+    transforms.emplace_back(new fake_piecewise_linear_binary_transform());
 }
 
 void nncase::k210_target::add_quantization_checkpoint_transforms(std::vector<std::unique_ptr<transform>> &transforms)

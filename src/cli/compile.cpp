@@ -27,7 +27,7 @@
 #include <scheduler/scheduler.h>
 #include <string_view>
 
-#define EVAL 1
+#define EVAL 0
 
 using namespace clipp;
 using namespace nncase;
@@ -65,10 +65,13 @@ void dump_graph(graph &graph, std::ostream &output)
     output << "}" << std::endl;
 }
 
-void dump_graph(graph &graph, std::string_view prefix)
+void dump_graph(const compile_options &options, graph &graph, std::string_view prefix)
 {
-    std::ofstream file("ir_" + std::string(prefix) + ".dot", std::ios::out);
-    dump_graph(graph, file);
+    if (options.dump_ir)
+    {
+        std::ofstream file("ir_" + std::string(prefix) + ".dot", std::ios::out);
+        dump_graph(graph, file);
+    }
 }
 
 void transform_graph(graph &graph, target &target, xtl::span<std::unique_ptr<transform>> transforms)
@@ -120,40 +123,40 @@ graph import(const compile_options &options)
         throw std::invalid_argument("Invalid input format: " + options.input_format);
 }
 
-void optimize_pass1(target &target, graph &graph)
+void optimize_pass1(const compile_options &options, target &target, graph &graph)
 {
     std::vector<std::unique_ptr<transforms::transform>> transforms;
     target.add_default_transforms(transforms);
     target.add_optimize1_transforms(transforms);
     transform_graph(graph, target, transforms);
-    dump_graph(graph, "optimize_1");
+    dump_graph(options, graph, "optimize_1");
 }
 
-void optimize_pass2(target &target, graph &graph)
+void optimize_pass2(const compile_options &options, target &target, graph &graph)
 {
     std::vector<std::unique_ptr<transforms::transform>> transforms;
     target.add_default_transforms(transforms);
     target.add_optimize2_transforms(transforms);
     transform_graph(graph, target, transforms);
-    dump_graph(graph, "optimize_2");
+    dump_graph(options, graph, "optimize_2");
 }
 
-void add_quantization_checkpoints(target &target, graph &graph)
+void add_quantization_checkpoints(const compile_options &options, target &target, graph &graph)
 {
     std::vector<std::unique_ptr<transforms::transform>> transforms;
     target.add_default_transforms(transforms);
     target.add_quantization_checkpoint_transforms(transforms);
     transform_graph(graph, target, transforms);
-    dump_graph(graph, "before_quant");
+    dump_graph(options, graph, "before_quant");
 }
 
-void quantize_graph(target &target, graph &graph, quantizer &quantizer, const quant_param_t &input_quant_param)
+void quantize_graph(const compile_options &options, target &target, graph &graph, quantizer &quantizer, const quant_param_t &input_quant_param)
 {
     std::vector<std::unique_ptr<transforms::transform>> transforms;
     target.add_default_transforms(transforms);
     target.add_quantization_transforms(quantizer, input_quant_param, transforms);
     transform_graph(graph, target, transforms);
-    dump_graph(graph, "after_quant");
+    dump_graph(options, graph, "after_quant");
 }
 
 void get_quantization_ranges(target &target, graph &graph, quantizer *quantizer, const compile_options &options)
@@ -180,10 +183,10 @@ void get_quantization_ranges(target &target, graph &graph, quantizer *quantizer,
     }
 }
 
-void quantize(target &target, graph &graph, const compile_options &options)
+void quantize(const compile_options &options, target &target, graph &graph)
 {
     // 3.1. Add quantization checkpoints
-    add_quantization_checkpoints(target, graph);
+    add_quantization_checkpoints(options, target, graph);
 
     // 3.2 Get activation ranges
     // quantize
@@ -196,7 +199,7 @@ void quantize(target &target, graph &graph, const compile_options &options)
     get_quantization_ranges(target, graph, &quant, options);
 
     // 3.3 quantize graph
-    quantize_graph(target, graph, quant, quant.get_quant_param(input_range, 8));
+    quantize_graph(options, target, graph, quant, quant.get_quant_param(input_range, 8));
 }
 
 void gencode(target &target, graph &graph, const compile_options &options)
@@ -224,7 +227,8 @@ group compile_options::parser(mode &mode)
         option("--dataset") & value("dataset path", dataset),
         option("--inference-type") & value("inference type", inference_type).doc("inference type, default is " + inference_type),
         option("--input-mean") & value("input mean", input_mean).doc("input mean, default is 0.0"),
-        option("--input-std") & value("input std", input_std).doc("input std, default is 1.0"));
+        option("--input-std") & value("input std", input_std).doc("input std, default is 1.0"),
+        option("--dump-ir").set(dump_ir));
 }
 
 void compile(const compile_options &options)
@@ -236,17 +240,17 @@ void compile(const compile_options &options)
 
     // 1. Import
     auto graph = import(options);
-    dump_graph(graph, "import");
+    dump_graph(options, graph, "import");
 
     // 2. Optimize Pass 1
-    optimize_pass1(*target, graph);
+    optimize_pass1(options, *target, graph);
 
     if (options.inference_type == "uint8")
     {
         // 3. Optimize Pass 2
-        optimize_pass2(*target, graph);
+        optimize_pass2(options, *target, graph);
         // 4. Quantize
-        quantize(*target, graph, options);
+        quantize(options, *target, graph);
     }
 
     // 5. CodeGen

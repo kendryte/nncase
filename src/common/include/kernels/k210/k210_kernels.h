@@ -16,6 +16,7 @@
 #include "../utils.h"
 #include <runtime/k210/k210_runtime_op_utility.h>
 #include <runtime/runtime_op_utility.h>
+#include <xtl/xspan.hpp>
 
 namespace nncase
 {
@@ -291,7 +292,7 @@ namespace kernels
         }
 
         template <bool IsDepthwise, int32_t FilterSize>
-        void fake_kpu_conv2d(const float *input, float *output, const float *weights, const float *bias, int32_t in_h, int32_t in_w, int32_t in_channels, int32_t out_channels, const value_range<float> &fused_activation)
+        void fake_kpu_conv2d(const float *input, float *output, const float *weights, const float *bias, int32_t in_h, int32_t in_w, int32_t in_channels, int32_t out_channels, xtl::span<const runtime::k210::piecewise_linear_segment> fused_activation)
         {
             const auto channel_size = size_t(in_h) * in_w;
 
@@ -340,7 +341,10 @@ namespace kernels
                                 }
                             }
 
-                            *output++ = kernels::details::apply_activation(value, fused_activation);
+                            auto &seg = *std::find_if(fused_activation.rbegin(), fused_activation.rend(), [value](const runtime::k210::piecewise_linear_segment &seg) {
+                                return value > seg.start;
+                            });
+                            *output++ = value * seg.mul + seg.add;
                         }
                     }
                 }

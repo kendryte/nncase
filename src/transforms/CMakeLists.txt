@@ -12,7 +12,8 @@ set(SRCS transform.cpp
          k210/strided_slice_motion.cpp
          k210/kpu_conv2d.cpp
          k210/fuse_kpu_download.cpp
-         k210/fold_kpu_upload.cpp)
+         k210/fold_kpu_upload.cpp
+         k210/fake_piecewise_linear.cpp)
 
 add_library(transforms STATIC ${SRCS})
 target_include_directories(transforms PUBLIC include)

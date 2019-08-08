@@ -34,6 +34,7 @@ struct compile_options
     std::string inference_type = "uint8";
     float input_mean = 0.f;
     float input_std = 1.f;
+    bool dump_ir = false;
 
     clipp::group parser(mode &mode);
 };

@@ -21,6 +21,7 @@ set(SRCS connectors.cpp
          ops/resize_image.cpp
          ops/strided_slice.cpp
          ops/k210/fake_kpu_conv2d.cpp
+         ops/k210/fake_piecewise_linear.cpp
          ops/k210/kpu_conv2d.cpp)
 
 add_library(ir STATIC ${SRCS})
