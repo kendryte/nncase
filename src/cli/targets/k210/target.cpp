@@ -89,8 +89,10 @@ void nncase::k210_target::add_optimize2_transforms(std::vector<std::unique_ptr<t
     transforms.emplace_back(new fake_kpu_conv2d_transform());
     transforms.emplace_back(new strided_slice_motion_transform());
     transforms.emplace_back(new fuse_fake_kpu_conv2d_strided_slice_transform());
+    transforms.emplace_back(new fuse_fake_kpu_conv2d_reduce_window2d_transform());
     transforms.emplace_back(new binary_to_fake_piecewise_linear_transform());
     transforms.emplace_back(new fake_piecewise_linear_binary_transform());
+    transforms.emplace_back(new fuse_fake_kpu_conv2d_piecewise_linear_transform());
 }
 
 void nncase::k210_target::add_quantization_checkpoint_transforms(std::vector<std::unique_ptr<transform>> &transforms)

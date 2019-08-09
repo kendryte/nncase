@@ -15,6 +15,7 @@
 #include <ir/ops/conv2d.h>
 #include <ir/ops/k210/fake_kpu_conv2d.h>
 #include <ir/ops/pad.h>
+#include <ir/ops/reduce_window2d.h>
 #include <ir/ops/strided_slice.h>
 #include <ir/visitor.h>
 #include <runtime/k210/k210_runtime_op_utility.h>
@@ -44,6 +45,13 @@ bool is_supported_filter(int32_t filter_h, int32_t filter_w)
     return (filter_h == filter_w) && (filter_h == 3 || filter_h == 1);
 }
 
+bool is_supported_filter(reduce_op_t op, int32_t filter_h, int32_t filter_w, int32_t stride_h, int32_t stride_w)
+{
+    return (op == reduce_max || op == reduce_mean)
+        && (filter_h == filter_w) && (filter_h == 2 || filter_h == 4)
+        && (stride_h == stride_w) && (stride_h == filter_h);
+}
+
 template <bool Pre>
 padding get_padding(const padding &padding)
 {
@@ -58,11 +66,31 @@ kpu_filter_type_t get_filter_type(int32_t filter)
     return filter == 1 ? kpu_filter_1x1 : kpu_filter_3x3;
 }
 
+kpu_pool_type_t get_filter_type(reduce_op_t op, int32_t filter)
+{
+    if (op == reduce_max)
+    {
+        if (filter == 2)
+            return kpu_pool_max_2_s2;
+        else if (filter == 4)
+            return kpu_pool_max_4_s4;
+    }
+    else if (op == reduce_mean)
+    {
+        if (filter == 2)
+            return kpu_pool_mean_2_s2;
+        else if (filter == 4)
+            return kpu_pool_mean_4_s4;
+    }
+
+    throw std::invalid_argument("Unsupported reduce window");
+}
+
 xt::svector<piecewise_linear_segment> clamp_to_piecewise(value_range<float> clamp)
 {
     xt::svector<piecewise_linear_segment> segs;
-    if (clamp.min != std::numeric_limits<float>::min())
-        segs.push_back({ std::numeric_limits<float>::min(), 0.f, clamp.min });
+    if (clamp.min != std::numeric_limits<float>::lowest())
+        segs.push_back({ std::numeric_limits<float>::lowest(), 0.f, clamp.min });
     segs.push_back({ clamp.min, 1.f, 0.f });
     if (clamp.max != std::numeric_limits<float>::max())
         segs.push_back({ clamp.max, 0.f, clamp.max });
@@ -189,4 +217,50 @@ void fuse_fake_kpu_conv2d_strided_slice_transform::process(transform_context &co
     p->input().connect(output);
     for (auto &in : dup(inputs))
         in->connect(crop->output());
+}
+
+bool fuse_fake_kpu_conv2d_reduce_window2d_transform::on_try_match(node &node, transform_context &context)
+{
+    if (node.runtime_opcode() == op_k210_fake_kpu_conv2d)
+    {
+        auto &conv = static_cast<fake_kpu_conv2d &>(node);
+        if (!conv.is_depthwise() && conv.pool_type() == kpu_pool_bypass)
+        {
+            if (auto reduce = try_get_direct_child<reduce_window2d>(conv))
+            {
+                if (reduce->padding_h() == padding::zero()
+                    && reduce->padding_w() == padding::zero()
+                    && is_supported_in_shape(reduce->output().shape())
+                    && is_supported_filter(reduce->reduce_op(), reduce->filter_h(), reduce->filter_w(), reduce->stride_h(), reduce->stride_w())
+                    && reduce->dilation_h() == 1 && reduce->dilation_w() == 1)
+                {
+                    context.inputs.emplace_back(&conv.input());
+                    context.outputs.emplace_back(&reduce->output());
+
+                    context.matched_nodes.emplace_back(&conv);
+                    context.matched_nodes.emplace_back(reduce);
+                    return true;
+                }
+            }
+        }
+    }
+
+    return false;
+}
+
+void fuse_fake_kpu_conv2d_reduce_window2d_transform::process(transform_context &context)
+{
+    auto &output = *context.inputs[0]->connection();
+    auto inputs = context.outputs[0]->connections();
+    auto &old_conv = static_cast<fake_kpu_conv2d &>(*context.matched_nodes[0]);
+    auto &old_reduce = static_cast<reduce_window2d &>(*context.matched_nodes[1]);
+
+    auto pool_type = get_filter_type(old_reduce.reduce_op(), old_reduce.filter_h());
+
+    auto conv = context.graph.emplace<fake_kpu_conv2d>(old_conv.input().shape(), old_conv.is_depthwise(), old_conv.filter_type(), pool_type,
+        old_conv.weights(), old_conv.bias(), old_conv.fused_activation());
+
+    conv->input().connect(output);
+    for (auto &in : dup(inputs))
+        in->connect(conv->output());
 }

@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <algorithm>
 #include <ir/ops/dequantize.h>
 #include <ir/ops/fake_dequantize.h>
 #include <ir/ops/fake_quantize.h>
@@ -32,6 +33,26 @@ using namespace nncase::transforms::k210;
 
 namespace
 {
+struct line
+{
+    float start_x;
+    float end_x;
+    float k;
+    float b;
+};
+
+xt::svector<line> to_lines(const xt::svector<piecewise_linear_segment> &segs)
+{
+    xt::svector<line> lines;
+    for (size_t i = 0; i < segs.size(); i++)
+    {
+        auto end = i == segs.size() - 1 ? std::numeric_limits<float>::max() : segs[i + 1].start;
+        lines.push_back({ segs[i].start, end, segs[i].mul, segs[i].add });
+    }
+
+    return lines;
+}
+
 auto quantize_weights(quantizer &quantizer, fake_kpu_conv2d &conv)
 {
     auto &weights = conv.weights();
@@ -44,40 +65,62 @@ auto quantize_weights(quantizer &quantizer, fake_kpu_conv2d &conv)
     return std::make_tuple(q_p, std::move(q_weights));
 }
 
-auto quantize_act(quantizer &quantizer, float post_mul)
+xt::svector<piecewise_linear_segment> clamp_act(const quant_param_t &yq_p, const xt::svector<piecewise_linear_segment> &activation)
 {
-    kpu_activation_table_t act;
-    const std::array<int64_t, 16> starts {
-        0x800000000, 0xf7d4cf4b8, 0xf8ed5a20c, 0xfa05e4f60,
-        0xfb2e05baa, 0xfc46908fe, 0xfd5f1b652, 0xfe77a63a6,
-        0xff9fc6ff0, 0xfffd4a9b7, 0, 0x7FFFFFFF0,
-        0x7FFFFFFF1, 0x7FFFFFFF2, 0x7FFFFFFF3, 0x7FFFFFFF4
-    };
+    auto start = (0 - yq_p.zero_point) / yq_p.scale;
+    auto end = (255 - yq_p.zero_point) / yq_p.scale;
+    auto lines = to_lines(activation);
 
-    for (size_t i = 0; i < starts.size(); i++)
+    xt::svector<piecewise_linear_segment> segs;
+    for (auto &&line : lines)
     {
-        auto &seg = act[i];
-        seg.start_x = starts[i];
+        if (line.end_x < start || line.start_x > end)
+            continue;
+        auto x_start = std::max(line.start_x, start);
+        segs.push_back({ x_start, line.k, line.b });
+    }
 
-        if (i == 10)
-        {
-            auto mul = quantizer.get_fixed_mul(1.f / post_mul, 16, 20, true);
-            seg.mul = mul.rounded_mul();
-            seg.shift = mul.shift;
-            seg.add = 0;
-        }
-        else
-        {
-            seg.mul = 0;
-            seg.shift = 0;
-            seg.add = 0;
-        }
+    return segs;
+}
+
+auto quantize_act(quantizer &quantizer, float post_mul, const quant_param_t &yq_p, const xt::svector<piecewise_linear_segment> &activation)
+{
+    auto segs = clamp_act(yq_p, activation);
+    assert(segs.size() < 16);
+    kpu_activation_table_t act;
+    act[0] = { 0x800000000, 0, 0, 0 };
+
+    size_t i;
+    for (i = 0; i < segs.size(); i++)
+    {
+        auto &src = segs[i];
+        auto &dest = act[i + 1];
+
+        auto x0 = src.start * yq_p.scale * post_mul;
+        auto mul = quantizer.get_fixed_mul(src.mul / post_mul, 16, 20, true);
+        auto start_value = src.start * src.mul + src.add;
+        dest.start_x = (int64_t)std::round(x0);
+        dest.mul = mul.rounded_mul();
+        dest.shift = mul.shift;
+        dest.add = std::clamp((int32_t)std::round(start_value * yq_p.scale + yq_p.zero_point), 0, 255);
+    }
+
+    // dummy
+    auto last_seg = segs.back();
+    for (; i < 15; i++)
+    {
+        auto &dest = act[i + 1];
+        dest.start_x = 0x7FFFFFFF0 + i;
+        auto last_value = (dest.start_x / (yq_p.scale * post_mul)) * last_seg.mul + last_seg.add;
+        dest.mul = 0;
+        dest.shift = 0;
+        dest.add = std::clamp((int32_t)std::round(last_value * yq_p.scale + yq_p.zero_point), 0, 255);
     }
 
     return act;
 }
 
-auto quantize_bn_act(quantizer &quantizer, fake_kpu_conv2d &conv, float sa, const quant_param_t &yq_p)
+auto quantize_bn_act(quantizer &quantizer, fake_kpu_conv2d &conv, float sa, const quant_param_t &yq_p, const xt::svector<piecewise_linear_segment> &activation)
 {
     std::vector<kpu_batchnorm_segment> bn(conv.output_channels());
     auto &bias = conv.bias();
@@ -94,11 +137,11 @@ auto quantize_bn_act(quantizer &quantizer, fake_kpu_conv2d &conv, float sa, cons
         bn[i] = {
             bn_mul.rounded_mul(),
             bn_shift,
-            (int32_t)std::round((b * yq_p.scale + yq_p.zero_point) * post_mul)
+            (int32_t)std::round(b * yq_p.scale * post_mul)
         };
     }
 
-    return std::make_tuple(std::move(bn), quantize_act(quantizer, post_mul));
+    return std::make_tuple(std::move(bn), quantize_act(quantizer, post_mul, yq_p, activation));
 }
 }
 
@@ -137,7 +180,7 @@ void kpu_conv2d_transform::process(transform_context &context)
     auto [wq_p, q_weights] = quantize_weights(quantizer_, old_conv);
     auto yq_p = quantizer_.get_quant_param(quantizer_.get(old_deq.output()), 8);
     auto sa = iq_p.scale * wq_p.scale;
-    auto [bn, act] = quantize_bn_act(quantizer_, old_conv, sa, yq_p);
+    auto [bn, act] = quantize_bn_act(quantizer_, old_conv, sa, yq_p, old_conv.fused_activation());
     auto filter = get_kpu_filter_size(old_conv.filter_type());
 
     auto q = context.graph.emplace<quantize>(output.shape(), iq_p);

@@ -40,7 +40,7 @@ namespace transforms
             bool on_try_match(ir::node &node, transform_context &context) override;
         };
 
-        class fake_kpu_conv2d_piecewise_linear_transform : public transform
+        class fuse_fake_kpu_conv2d_piecewise_linear_transform : public transform
         {
         public:
             void process(transform_context &context) override;
