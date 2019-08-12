@@ -46,6 +46,8 @@ Download prebuilt binaries from [Release](https://github.com/kendryte/nncase/rel
 
 [Usage 使用方法](USAGE.md)
 
+[Examples 例子](./examples)
+
 ## Supported operators
 ## 支持的算子
 
@@ -72,7 +74,7 @@ Download prebuilt binaries from [Release](https://github.com/kendryte/nncase/rel
 | MaxPool2D |✅|
 | Mean |✅|
 | Mul |✅|
-| L2Normalization |❌|
+| L2Normalization |✅|
 | L2Pool2D |❌|
 | LessEqual |❌|
 | Log |✅|

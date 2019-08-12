@@ -1,18 +1,35 @@
-`ncc <input path> <output path> -i <input format> [--dataset <calibration dataset path>] [--input-mean <input mean>=0.0] [--input-std <input std>=1.0]`
+```
+DESCRIPTION
+NNCASE model compiler and inference tool.
 
-- `-i` Input format
+SYNOPSIS
+    ncc compile <input file> <output file> -i <input format> [-o <output
+        format>] [-t <target>] [--dataset <dataset path>] [--inference-type
+        <inference type>] [--input-mean <input mean>] [--input-std <input std>]
+        [--dump-ir] [-v]
 
-| value | description |
-|-------|------------------ |
-|tflite|`.tflite` TFLite model
+    ncc infer <input file> <output path> --dataset <dataset path> [--input-mean
+        <input mean>] [--input-std <input std>] [-v]
 
-- `--inference-type` Inference type
+OPTIONS
+    compile
+        <input file>        input file
+        <output file>       output file
+        -i, --input-format  input file format: e.g. tflite
+        -o, --output-format output file format: e.g. kmodel, default is kmodel
+        -t, --target        target arch: e.g. cpu, k210, default is k210
+        --dataset           calibration dataset, used in post quantization
+        --inference-type    inference type: e.g. float, uint8 default is uint8
+        --input-mean        input mean, default is 0.000000
+        --input-std         input std, default is 1.000000
+        --dump-ir           dump nncase ir to .dot files
 
-| value | description |
-|-------|------------------ |
-|uint8| Use quantized kernels (default)
-|float| Use float kernels
+    infer
+        <input file>        input kmodel
+        <output path>       inference result output directory
+        --dataset           input dataset to inference
+        --input-mean        input mean, default is 0.000000
+        --input-std         input std, default is 1.000000
 
-- `--dataset` Calibration dataset path, **required** when inference type `uint8`.
-
-- `--input-mean` `--input-std` Normalize input images , `y = (x - input_mean) / input_std`
+    -v, --version           show version
+```

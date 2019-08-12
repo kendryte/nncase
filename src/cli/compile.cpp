@@ -223,13 +223,13 @@ group compile_options::parser(mode &mode)
         (
             value("input file", input_filename) % "input file",
             value("output file", output_filename) % "output file",
-            required("-i", "--input-format") & value("input format", input_format) % "input file format: e.g. tflite",
-            option("-o", "--output-format") & value("output format", output_format) % ("output file format, default is " + output_format),
-            option("-t", "--target") & value("target", target) % ("target arch, default is " + target),
-            option("--dataset") & value("dataset path", dataset) % "calibration dataset, used in post quantization",
-            option("--inference-type") & value("inference type", inference_type) % ("inference type, default is " + inference_type),
-            option("--input-mean") & value("input mean", input_mean) % ("input mean, default is " + std::to_string(input_mean)),
-            option("--input-std") & value("input std", input_std) % ("input std, default is " + std::to_string(input_std)),
+            required("-i", "--input-format") % "input file format: e.g. tflite" & value("input format", input_format),
+            option("-o", "--output-format") % ("output file format: e.g. kmodel, default is " + output_format) & value("output format", output_format),
+            option("-t", "--target") % ("target arch: e.g. cpu, k210, default is " + target) & value("target", target),
+            option("--dataset") % "calibration dataset, used in post quantization" & value("dataset path", dataset),
+            option("--inference-type") % ("inference type: e.g. float, uint8 default is " + inference_type) & value("inference type", inference_type),
+            option("--input-mean") % ("input mean, default is " + std::to_string(input_mean)) & value("input mean", input_mean),
+            option("--input-std") % ("input std, default is " + std::to_string(input_std)) & value("input std", input_std),
             option("--dump-ir").set(dump_ir) % "dump nncase ir to .dot files"
         ));
 }

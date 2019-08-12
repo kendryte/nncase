@@ -128,9 +128,9 @@ group inference_options::parser(mode &mode)
         (
             value("input file", model_filename) % "input kmodel",
             value("output path", output_path) % "inference result output directory",
-            required("--dataset") & value("dataset path", dataset) % "input dataset to inference",
-            option("--input-mean") & value("input mean", input_mean) % ("input mean, default is " + std::to_string(input_mean)),
-            option("--input-std") & value("input std", input_std) % ("input std, default is " + std::to_string(input_std))
+            required("--dataset") % "input dataset to inference" & value("dataset path", dataset),
+            option("--input-mean") % ("input mean, default is " + std::to_string(input_mean)) & value("input mean", input_mean),
+            option("--input-std") % ("input std, default is " + std::to_string(input_std)) & value("input std", input_std)
         ));
 }
 
