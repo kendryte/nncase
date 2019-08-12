@@ -32,6 +32,7 @@ namespace
 {
 static std::unordered_set<binary_op_t> allowd_ops_ { binary_add, binary_mul, binary_min, binary_max };
 static std::unordered_set<binary_op_t> allowd_combine_ops_ { binary_min, binary_max };
+static std::unordered_set<_kpu_pool_type> allowd_pools_ { kpu_pool_bypass, kpu_pool_left_top_2_s2, kpu_pool_left_top_4_s4, kpu_pool_right_top_2_s2 };
 
 struct line
 {
@@ -147,7 +148,7 @@ bool binary_to_fake_piecewise_linear_transform::on_try_match(node &node, transfo
     if (node.runtime_opcode() == op_k210_fake_kpu_conv2d)
     {
         auto &conv = static_cast<fake_kpu_conv2d &>(node);
-        if (conv.pool_type() != kpu_pool_bypass)
+        if (allowd_pools_.find(conv.pool_type()) == allowd_pools_.end())
             return false;
 
         if (auto bin = try_get_direct_child<binary>(node))
@@ -276,7 +277,7 @@ bool fuse_fake_kpu_conv2d_piecewise_linear_transform::on_try_match(node &node, t
     if (node.runtime_opcode() == op_k210_fake_kpu_conv2d)
     {
         auto &conv = static_cast<fake_kpu_conv2d &>(node);
-        if (conv.pool_type() == kpu_pool_bypass)
+        if (allowd_pools_.find(conv.pool_type()) != allowd_pools_.end())
         {
             if (auto piece = try_get_direct_child<fake_piecewise_linear>(node))
             {

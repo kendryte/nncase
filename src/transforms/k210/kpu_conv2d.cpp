@@ -57,7 +57,8 @@ auto quantize_weights(quantizer &quantizer, fake_kpu_conv2d &conv)
 {
     auto &weights = conv.weights();
     xt::xtensor<uint8_t, 4> q_weights(conv.weights().shape());
-    auto q_p = quantizer.get_quant_param(quantizer.get_range(weights.begin(), weights.end()), 8);
+    auto range = quantizer.get_range(weights.begin(), weights.end());
+    auto q_p = quantizer.get_quant_param(range, 8);
 
     auto out_it = q_weights.begin();
     for (auto w : weights)
@@ -67,19 +68,26 @@ auto quantize_weights(quantizer &quantizer, fake_kpu_conv2d &conv)
 
 xt::svector<piecewise_linear_segment> clamp_act(const quant_param_t &yq_p, const xt::svector<piecewise_linear_segment> &activation)
 {
-    auto start = (0 - yq_p.zero_point) / yq_p.scale;
-    auto end = (255 - yq_p.zero_point) / yq_p.scale;
+    auto y_start = (0 - yq_p.zero_point) / yq_p.scale;
+    auto y_end = (255 - yq_p.zero_point) / yq_p.scale;
     auto lines = to_lines(activation);
 
     xt::svector<piecewise_linear_segment> segs;
     for (auto &&line : lines)
     {
-        if (line.end_x < start || line.start_x > end)
-            continue;
-        auto x_start = std::max(line.start_x, start);
-        segs.push_back({ x_start, line.k, line.b });
+        if (line.k)
+        {
+            auto x_start = (y_start - line.b) / line.k;
+            auto x_end = (y_end - line.b) / line.k;
+            auto [x_min, x_max] = std::minmax(x_start, x_end);
+            auto r_x_min = std::max(x_min, line.start_x);
+            auto r_x_max = std::min(x_max, line.end_x);
+            if (r_x_min < r_x_max)
+                segs.push_back({ r_x_min, line.k, line.b });
+        }
     }
 
+    std::sort(segs.begin(), segs.end(), [](auto &a, auto &b) { return a.start < b.start; });
     return segs;
 }
 
