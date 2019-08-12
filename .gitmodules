@@ -1,0 +1,9 @@
+[submodule "third_party/clipp"]
+	path = third_party/clipp
+	url = https://github.com/muellan/clipp.git
+[submodule "third_party/xtl"]
+	path = third_party/xtl
+	url = https://github.com/QuantStack/xtl.git
+[submodule "third_party/xtensor"]
+	path = third_party/xtensor
+	url = https://github.com/QuantStack/xtensor.git

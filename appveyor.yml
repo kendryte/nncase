@@ -1,25 +1,15 @@
 version: 0.1.0-{build}
-image: Visual Studio 2017
+image:
+- Visual Studio 2019
+- Ubuntu
 install:
-- ps: >-
-    (new-object net.webclient).DownloadFile('https://dot.net/v1/dotnet-install.ps1', 'dotnet-install.ps1')
-
-    dotnet-install.ps1 -Version 3.0.100-preview6-012264
-build_script:
-- ps: >-
-    cd src/NnCase.Cli
-
-    dotnet restore
-
-    dotnet publish -c Release -r win7-x64
-
-    dotnet publish -c Release -r linux-x64
-
-    dotnet publish -c Release -r osx-x64
+- cmd: pip install conan
+- cmd: git submodule update --init --recursive
+- sh: pip install conan --user
+- sh: git submodule update --init --recursive
+build_script:  
+- cmd: .\build.cmd
+- sh: sh build.sh
 artifacts:
-- path: src/NnCase.Cli/bin/Release/netcoreapp3.0/linux-x64/publish
-  name: linux-x64
-- path: src/NnCase.Cli/bin/Release/netcoreapp3.0/win7-x64/publish
-  name: win7-x64
-- path: src/NnCase.Cli/bin/Release/netcoreapp3.0/osx-x64/publish
-  name: osx-x64
+- path: out/bin
+  name: ncc

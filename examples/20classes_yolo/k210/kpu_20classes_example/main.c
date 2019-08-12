@@ -22,7 +22,7 @@
 #define CLASS_NUMBER 20
 
 extern const unsigned char gImage_image[] __attribute__((aligned(128)));
-INCBIN(model, "../src/kpu_20classes_example/yolo.kmodel");
+INCBIN(model, "yolo.kmodel");
 
 kpu_model_context_t task;
 static region_layer_t detect_rl;
@@ -237,6 +237,7 @@ int main(void)
         size_t output_size;
         kpu_get_output(&task, 0, &output, &output_size);
         detect_rl.input = output;
+        output_size /= sizeof(float);
 
         /* start region layer */
         region_layer_run(&detect_rl, NULL);

@@ -258,7 +258,6 @@ paket-files/
 # Python Tools for Visual Studio (PTVS)
 __pycache__/
 *.pyc
-src/**/*.txt
 
 # vscode
 .vscode/
@@ -266,3 +265,6 @@ src/**/*.txt
 *.diagsession
 /src/nntest
 /src/NnCase.Cli/Properties/launchSettings.json
+
+out/
+out_2/

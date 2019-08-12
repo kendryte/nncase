@@ -11,9 +11,10 @@ python img2c.py dog.bmp
 ```
 3. Compile your tflite model to kmodel.
 ```bash
-~/nncase/ncc -i tflite -o k210model --channelwise-output --dataset images model/20classes_yolo.tflite k210/kpu_20classes_example/yolo.kmodel
+~/nncase/ncc compile model/20classes_yolo.tflite k210/kpu_20classes_example/yolo.kmodel -i tflite -o kmodel -t k210 --dataset images
 ```
 4. Compile your program and run.
+Link to your KD233 development board.
 ```bash
 cmake .. -DPROJ=kpu_20classes_example
 make
