@@ -124,11 +124,14 @@ group inference_options::parser(mode &mode)
 {
     return (
         command("infer").set(mode, mode::inference),
-        value("input file", model_filename),
-        value("output path", output_path),
-        required("--dataset") & value("dataset path", dataset),
-        option("--input-mean") & value("input mean", input_mean).doc("input mean, default is 0.0"),
-        option("--input-std") & value("input std", input_std).doc("input std, default is 1.0"));
+        "infer" %
+        (
+            value("input file", model_filename) % "input kmodel",
+            value("output path", output_path) % "inference result output directory",
+            required("--dataset") & value("dataset path", dataset) % "input dataset to inference",
+            option("--input-mean") & value("input mean", input_mean) % ("input mean, default is " + std::to_string(input_mean)),
+            option("--input-std") & value("input std", input_std) % ("input std, default is " + std::to_string(input_std))
+        ));
 }
 
 void inference(const inference_options &options)

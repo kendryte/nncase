@@ -53,7 +53,8 @@ int main(int argc, char *argv[])
     }
     else
     {
-        cout << usage_lines(cli, "ncc") << endl;
+        auto fmt = doc_formatting {}.first_column(4).doc_column(28).last_column(80);
+        cout << make_man_page(cli, "ncc", fmt).prepend_section("DESCRIPTION", "NNCASE model compiler and inference tool.") << endl;
     }
 
     return -1;
