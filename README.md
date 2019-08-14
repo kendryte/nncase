@@ -10,12 +10,19 @@
 `nncase` 是一个为 AI 加速器设计的神经网络编译器。
 
 ## Install
+## 安装
 Download prebuilt binaries from [Release](https://github.com/kendryte/nncase/releases).
 
-## 安装
 下载预编译的二进制文件 [Release](https://github.com/kendryte/nncase/releases)。
 
 ---
+
+## Architecture
+## 架构
+
+<div align="center">
+<img src="docs/arch.png" alt="nncase arch" />
+</div>
 
 ### Support commonly used CNN networks
 ### 支持常用的 CNN 网络
