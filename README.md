@@ -85,7 +85,7 @@ Download prebuilt binaries from [Release](https://github.com/kendryte/nncase/rel
 | L2Pool2D |❌|
 | LessEqual |❌|
 | Log |✅|
-| Logistic |❌|
+| Logistic |✅|
 | LogSoftmax |❌|
 | Maximum |✅|
 | Minimum |✅|

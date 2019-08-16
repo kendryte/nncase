@@ -16,6 +16,7 @@ set(SRCS tflite/tflite_importer.cpp
          tflite/ops/leaky_relu.cpp
          tflite/ops/space_to_batch.cpp
          tflite/ops/l2_normalization.cpp
+         tflite/ops/logistic.cpp
          paddle/framework.pb.cc
          paddle/paddle_importer.cpp
          paddle/ops/placeholders.cpp

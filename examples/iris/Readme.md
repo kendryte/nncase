@@ -7,7 +7,7 @@ tar xf ncc-linux-x86_64.tar.xz -C ~/nncase
 ```
 2. Compile your tflite model to kmodel.
 ```bash
-~/nncase/ncc model/iris.tflite k210/kpu_iris_example/iris.kmodel -i tflite -o kmodel -t k210 --inference-type float
+~/nncase/ncc compile model/iris.tflite k210/kpu_iris_example/iris.kmodel -i tflite -o kmodel -t k210 --inference-type float
 ```
 3. Compile your program and run.
 Link to your KD233 development board.
