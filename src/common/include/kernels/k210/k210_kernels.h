@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 #pragma once
-#include "../utils.h"
+#include "../kernel_utils.h"
 #include <runtime/k210/k210_runtime_op_utility.h>
 #include <runtime/runtime_op_utility.h>
 #include <xtl/xspan.hpp>

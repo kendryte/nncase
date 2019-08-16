@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 #pragma once
-#include "../utils.h"
+#include "../kernel_utils.h"
 #include <runtime/runtime_op_utility.h>
 
 namespace nncase
