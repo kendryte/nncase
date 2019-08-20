@@ -102,7 +102,6 @@ void fold_pad_strided_slice_transform::process(transform_context &context)
         }
         if (padding.after < 0)
         {
-            end[i] += padding.after;
             padding.after = 0;
         }
     }
