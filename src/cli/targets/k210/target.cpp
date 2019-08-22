@@ -98,6 +98,7 @@ void nncase::k210_target::add_optimize2_transforms(std::vector<std::unique_ptr<t
 void nncase::k210_target::add_quantization_checkpoint_transforms(std::vector<std::unique_ptr<transform>> &transforms)
 {
     cpu_target::add_quantization_checkpoint_transforms(transforms);
+    transforms.emplace_back(new revert_piecewise_linear_transform());
     transforms.emplace_back(new add_quant_checkpoints_transform({ op_k210_fake_kpu_conv2d }));
 }
 

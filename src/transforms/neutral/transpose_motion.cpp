@@ -78,7 +78,7 @@ bool transpose_constant_binary_motion_transform::on_try_match(node &node, transf
         constant *con;
         if ((tp = node_cast<transpose>(bin->input_a().connection()->owner()))
             && (con = node_cast<constant>(bin->input_b().connection()->owner()))
-            && con->output().shape() == shape_t { 1 })
+            && con->output().shape().size() == 1)
         {
             context.inputs.emplace_back(&tp->input());
             context.outputs.emplace_back(&bin->output());
@@ -90,7 +90,7 @@ bool transpose_constant_binary_motion_transform::on_try_match(node &node, transf
         }
         else if ((tp = node_cast<transpose>(bin->input_b().connection()->owner()))
             && (con = node_cast<constant>(bin->input_a().connection()->owner()))
-            && con->output().shape() == shape_t { 1 })
+            && con->output().shape().size() == 1)
         {
             context.inputs.emplace_back(&tp->input());
             context.outputs.emplace_back(&bin->output());
@@ -113,13 +113,23 @@ void transpose_constant_binary_motion_transform::process(transform_context &cont
     auto &old_tp = static_cast<transpose &>(*context.matched_nodes[0]);
     auto &old_con = static_cast<constant &>(*context.matched_nodes[1]);
     auto &old_bin = static_cast<binary &>(*context.matched_nodes[2]);
+    auto &old_perm = old_tp.perm();
+    auto expand_dim = old_perm.size() - old_perm[old_perm.size() - 1] - 1;
 
-    auto bin = context.graph.emplace<binary>(old_bin.binary_op(), output.shape(), old_con.output().shape(), old_bin.fused_activation());
+    auto con_shape = old_con.output().shape();
+    if (con_shape[0] != 1)
+    {
+        for (size_t i = 0; i < expand_dim; i++)
+            con_shape.push_back(1);
+    }
+
+    auto con = context.graph.emplace<constant>(old_con.output().type(), con_shape, old_con.data());
+    auto bin = context.graph.emplace<binary>(old_bin.binary_op(), output.shape(), con->output().shape(), old_bin.fused_activation());
     auto tp = context.graph.emplace<transpose>(bin->output().type(), bin->output().shape(), old_tp.perm());
     tp->input().connect(bin->output());
 
     bin->input_a().connect(output);
-    bin->input_b().connect(old_con.output());
+    bin->input_b().connect(con->output());
 
     for (auto &in : dup(inputs))
         in->connect(tp->output());

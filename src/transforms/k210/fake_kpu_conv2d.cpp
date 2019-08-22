@@ -126,7 +126,7 @@ void fake_kpu_conv2d_transform::process(transform_context &context)
     auto inputs = context.outputs[0]->connections();
     auto &old_conv = static_cast<conv2d &>(*context.matched_nodes[0]);
 
-    auto is_depthwise = old_conv.groups() == old_conv.input_channels();
+    auto is_depthwise = old_conv.input_channels() == old_conv.output_channels() == old_conv.groups();
     auto filter_type = get_filter_type(old_conv.filter_h());
     auto kpu_pad = get_kpu_padding(filter_type);
     padding pad_h { old_conv.padding_h().before - kpu_pad, old_conv.padding_h().after - kpu_pad };

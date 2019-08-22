@@ -66,12 +66,26 @@ void image_dataset::process(const std::vector<uint8_t> &src, float *dest, const 
     cv::resize(f_img, dest_img, cv::Size((int)shape[2], (int)shape[1]));
 
     size_t channel_size = xt::compute_size(xt::dynamic_shape<size_t> { shape[1], shape[2] });
-    dest_img.forEach<cv::Vec3f>([&](cv::Vec3f v, const int *idx) {
-        auto i = idx[0] * shape[2] + idx[1];
-        dest[i] = v[2];
-        dest[i + channel_size] = v[1];
-        dest[i + channel_size * 2] = v[0];
-    });
+    if (shape[0] == 3)
+    {
+        dest_img.forEach<cv::Vec3f>([&](cv::Vec3f v, const int *idx) {
+            auto i = idx[0] * shape[2] + idx[1];
+            dest[i] = v[2];
+            dest[i + channel_size] = v[1];
+            dest[i + channel_size * 2] = v[0];
+        });
+    }
+    else if (shape[0] == 1)
+    {
+        dest_img.forEach<cv::Vec3f>([&](cv::Vec3f v, const int *idx) {
+            auto i = idx[0] * shape[2] + idx[1];
+            dest[i] = v[0];
+        });
+    }
+    else
+    {
+        throw std::runtime_error("Unsupported image channels: " + std::to_string(shape[0]));
+    }
 }
 
 void image_dataset::process(const std::vector<uint8_t> &src, uint8_t *dest, const xt::dynamic_shape<size_t> &shape)
@@ -88,10 +102,24 @@ void image_dataset::process(const std::vector<uint8_t> &src, uint8_t *dest, cons
     cv::resize(f_img, dest_img, cv::Size((int)shape[2], (int)shape[1]));
 
     size_t channel_size = xt::compute_size(xt::dynamic_shape<size_t> { shape[1], shape[2] });
-    dest_img.forEach<cv::Vec3b>([&](cv::Vec3b v, const int *idx) {
-        auto i = idx[0] * shape[2] + idx[1];
-        dest[i] = v[2];
-        dest[i + channel_size] = v[1];
-        dest[i + channel_size * 2] = v[0];
-    });
+    if (shape[0] == 3)
+    {
+        dest_img.forEach<cv::Vec3b>([&](cv::Vec3b v, const int *idx) {
+            auto i = idx[0] * shape[2] + idx[1];
+            dest[i] = v[2];
+            dest[i + channel_size] = v[1];
+            dest[i + channel_size * 2] = v[0];
+        });
+    }
+    else if (shape[0] == 1)
+    {
+        dest_img.forEach<cv::Vec3b>([&](cv::Vec3b v, const int *idx) {
+            auto i = idx[0] * shape[2] + idx[1];
+            dest[i] = v[0];
+        });
+    }
+    else
+    {
+        throw std::runtime_error("Unsupported image channels: " + std::to_string(shape[0]));
+    }
 }

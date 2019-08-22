@@ -37,6 +37,13 @@ namespace ir
             add_output("output", type, std::forward<TShape>(shape), mem_const);
         }
 
+        template <class TShape>
+        constant(datatype_t type, TShape &&shape, xtl::span<const uint8_t> data)
+            : data_(data.begin(), data.end())
+        {
+            add_output("output", type, std::forward<TShape>(shape), mem_const);
+        }
+
         template <class TScalar>
         constant(TScalar scalar)
             : data_(reinterpret_cast<const uint8_t *>(&scalar), reinterpret_cast<const uint8_t *>(&scalar) + sizeof(scalar))
