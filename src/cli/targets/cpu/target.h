@@ -28,5 +28,6 @@ public:
     void add_optimize2_transforms(std::vector<std::unique_ptr<transforms::transform>> &transforms) override;
     void add_quantization_checkpoint_transforms(std::vector<std::unique_ptr<transforms::transform>> &transforms) override;
     void add_quantization_transforms(ir::quantizer &quantizer, const quant_param_t &input_quant_param, std::vector<std::unique_ptr<transforms::transform>> &transforms) override;
+    void add_quantization_broadcast(std::unordered_set<ir::node_opcode> &opcodes) override;
 };
 }

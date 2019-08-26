@@ -198,6 +198,11 @@ void quantize(const compile_options &options, target &target, graph &graph)
     quant.record(graph.inputs()[0]->output(), input_range);
     get_quantization_ranges(target, graph, &quant, options);
 
+    // broadcast quant ranges
+    std::unordered_set<ir::node_opcode> opcodes;
+    target.add_quantization_broadcast(opcodes);
+    quant.broadcast_output(graph, opcodes);
+
     // 3.3 quantize graph
     quantize_graph(options, target, graph, quant, quant.get_quant_param(input_range, 8));
 }

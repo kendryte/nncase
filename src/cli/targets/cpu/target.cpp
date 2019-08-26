@@ -13,11 +13,12 @@
  * limitations under the License.
  */
 #include "target.h"
+#include <ir/opcode.h>
 #include <scheduler/main_memory_allocator.h>
 #include <transforms/neutral/fold_pad.h>
 #include <transforms/neutral/fold_quantize.h>
-#include <transforms/neutral/fold_transpose.h>
 #include <transforms/neutral/fold_reshape.h>
+#include <transforms/neutral/fold_transpose.h>
 #include <transforms/neutral/fuse_pad.h>
 #include <transforms/neutral/transpose_motion.h>
 
@@ -95,4 +96,18 @@ void nncase::cpu_target::add_quantization_checkpoint_transforms(std::vector<std:
 void nncase::cpu_target::add_quantization_transforms(ir::quantizer &quantizer, const quant_param_t &input_quant_param, std::vector<std::unique_ptr<transform>> &transforms)
 {
     transforms.emplace_back(new fold_input_quantize_transform(input_quant_param));
+}
+
+void nncase::cpu_target::add_quantization_broadcast(std::unordered_set<ir::node_opcode> &opcodes)
+{
+    using namespace ir;
+    opcodes.emplace(op_input_node);
+    opcodes.emplace(op_fake_quantize);
+    opcodes.emplace(op_fake_dequantize);
+    opcodes.emplace(op_concat);
+    opcodes.emplace(op_reshape);
+    opcodes.emplace(op_transpose);
+    opcodes.emplace(op_pad);
+    opcodes.emplace(op_strided_slice);
+    opcodes.emplace(op_resize_image);
 }

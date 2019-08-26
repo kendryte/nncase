@@ -14,7 +14,9 @@
  */
 #include <chrono>
 #include <ir/ops/constant.h>
+#include <ir/ops/fake_quantize.h>
 #include <ir/quantizer.h>
+#include <ir/visitor.h>
 
 using namespace nncase;
 using namespace nncase::ir;
@@ -44,15 +46,8 @@ void quantizer::record(output_connector &connector, xtl::span<const float> data)
 
 quant_param_t quantizer::get_quant_param(value_range<float> range, int32_t bits) const
 {
-    if (range.max < 0)
-        range.max = 0;
-    if (range.min > 0)
-        range.min = 0;
-
+    range = fixup_range(range);
     auto r = range.max - range.min;
-    if (r < 0.001f)
-        r = 0.001f;
-
     auto scale = ((1LL << bits) - 1) / r;
     auto bias = std::round(-range.min * scale);
     assert(bias >= 0);
@@ -96,4 +91,33 @@ fixed_mul quantizer::get_fixed_mul(float value, int32_t max_bits, uint8_t max_sh
     assert(shift >= 0 && shift <= max_shift);
     assert(std::abs(value - mul * std::pow(2, -shift)) <= std::numeric_limits<float>::epsilon());
     return { mul, static_cast<int8_t>(shift) };
+}
+
+void quantizer::broadcast_output(ir::graph &graph, const std::unordered_set<node_opcode> &ops)
+{
+    auto visitor = make_relay_ir_visitor([&](node &node) {
+        if (node.inputs().size() == 1)
+        {
+            auto it = quant_ranges_.find(node.input_at(0).connection());
+            if (it != quant_ranges_.end())
+                broadcast_output(node, it->second, ops);
+        }
+    });
+    visitor.visit(graph);
+}
+
+void quantizer::broadcast_output(ir::node &node, const value_range<float> &range, const std::unordered_set<node_opcode> &ops)
+{
+    if (ops.find(node.runtime_opcode()) != ops.end())
+    {
+        for (auto &out : node.outputs())
+        {
+            auto it = quant_ranges_.find(&out);
+            if (it != quant_ranges_.end())
+                it->second = range;
+
+            for (auto &con : out.connections())
+                broadcast_output(con->owner(), range, ops);
+        }
+    }
 }

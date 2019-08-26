@@ -23,6 +23,7 @@
 #include <ir/visitor.h>
 #include <runtime/k210/k210_runtime_op_utility.h>
 #include <transforms/k210/kpu_conv2d.h>
+#include <xtensor/xview.hpp>
 
 using namespace nncase;
 using namespace nncase::ir;
@@ -55,15 +56,32 @@ xt::svector<line> to_lines(const xt::svector<piecewise_linear_segment> &segs)
 
 auto quantize_weights(quantizer &quantizer, fake_kpu_conv2d &conv)
 {
-    auto &weights = conv.weights();
+    auto weights = conv.weights();
     xt::xtensor<uint8_t, 4> q_weights(conv.weights().shape());
-    auto range = quantizer.get_range(weights.begin(), weights.end());
-    auto q_p = quantizer.get_quant_param(range, 8);
+    std::vector<float> scales(conv.output_channels());
+    auto total_range = quantizer.fixup_range(quantizer.get_range(weights.begin(), weights.end()));
+    for (size_t oc = 0; oc < conv.output_channels(); oc++)
+    {
+        auto w_ch = xt::view(weights, oc, xt::all());
+        auto range = quantizer.fixup_range(quantizer.get_range(w_ch.begin(), w_ch.end()));
+
+        auto s1 = total_range.max / range.max;
+        auto s2 = total_range.min / range.min;
+        auto s = (s1 < 0 || s2 < 0) ? std::max(s1, s2) : std::min(s1, s2);
+
+        assert(s > 0);
+        for (auto &v : w_ch)
+            v *= s;
+        scales[oc] = s;
+    }
+
+    total_range = quantizer.get_range(weights.begin(), weights.end());
+    auto q_p = quantizer.get_quant_param(total_range, 8);
 
     auto out_it = q_weights.begin();
     for (auto w : weights)
         *out_it++ = (uint8_t)std::clamp((int32_t)std::round(w * q_p.scale + q_p.zero_point), 0, 255);
-    return std::make_tuple(q_p, std::move(q_weights));
+    return std::make_tuple(q_p, std::move(scales), std::move(q_weights));
 }
 
 xt::svector<piecewise_linear_segment> clamp_act(const quant_param_t &yq_p, const xt::svector<piecewise_linear_segment> &activation)
@@ -128,7 +146,7 @@ auto quantize_act(quantizer &quantizer, float post_mul, const quant_param_t &yq_
     return act;
 }
 
-auto quantize_bn_act(quantizer &quantizer, fake_kpu_conv2d &conv, float sa, const quant_param_t &yq_p, const xt::svector<piecewise_linear_segment> &activation)
+auto quantize_bn_act(quantizer &quantizer, fake_kpu_conv2d &conv, float sa, const std::vector<float> w_scales, const quant_param_t &yq_p, const xt::svector<piecewise_linear_segment> &activation)
 {
     std::vector<kpu_batchnorm_segment> bn(conv.output_channels());
     auto &bias = conv.bias();
@@ -137,14 +155,16 @@ auto quantize_bn_act(quantizer &quantizer, fake_kpu_conv2d &conv, float sa, cons
     auto bn_shift = std::min(bn_mul.shift, (int8_t)15);
     auto up_scale = bn_mul.shift - bn_shift;
     assert(up_scale > 0);
-    auto post_mul = bn_mul.rounded_mul() / bn_mul.mul * std::pow(2, up_scale);
+    auto post_mul = bn_mul.rounded_mul() / bn_mul.mul * std::powf(2, up_scale);
 
     for (size_t i = 0; i < bias.size(); i++)
     {
         auto b = bias[i];
+        auto ch_so = so * post_mul / w_scales[i];
+        auto ch_bn_mul = quantizer.get_fixed_mul(ch_so, 22, 15, true);
         bn[i] = {
-            bn_mul.rounded_mul(),
-            bn_shift,
+            ch_bn_mul.rounded_mul(),
+            ch_bn_mul.shift,
             (int32_t)std::round(b * yq_p.scale * post_mul)
         };
     }
@@ -185,10 +205,10 @@ void kpu_conv2d_transform::process(transform_context &context)
     auto &old_deq = static_cast<fake_dequantize &>(*context.matched_nodes[2]);
 
     auto iq_p = quantizer_.get_quant_param(quantizer_.get(old_q.output()), 8);
-    auto [wq_p, q_weights] = quantize_weights(quantizer_, old_conv);
+    auto [wq_p, w_scales, q_weights] = quantize_weights(quantizer_, old_conv);
     auto yq_p = quantizer_.get_quant_param(quantizer_.get(old_deq.output()), 8);
     auto sa = iq_p.scale * wq_p.scale;
-    auto [bn, act] = quantize_bn_act(quantizer_, old_conv, sa, yq_p, old_conv.fused_activation());
+    auto [bn, act] = quantize_bn_act(quantizer_, old_conv, sa, w_scales, yq_p, old_conv.fused_activation());
     auto filter = get_kpu_filter_size(old_conv.filter_type());
 
     auto q = context.graph.emplace<quantize>(output.shape(), iq_p);
