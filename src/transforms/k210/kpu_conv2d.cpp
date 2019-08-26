@@ -155,7 +155,7 @@ auto quantize_bn_act(quantizer &quantizer, fake_kpu_conv2d &conv, float sa, cons
     auto bn_shift = std::min(bn_mul.shift, (int8_t)15);
     auto up_scale = bn_mul.shift - bn_shift;
     assert(up_scale > 0);
-    auto post_mul = bn_mul.rounded_mul() / bn_mul.mul * std::powf(2, up_scale);
+    auto post_mul = bn_mul.rounded_mul() / bn_mul.mul * std::pow(2.f, up_scale);
 
     for (size_t i = 0; i < bias.size(); i++)
     {
