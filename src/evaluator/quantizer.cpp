@@ -22,11 +22,20 @@ using namespace nncase;
 using namespace nncase::ir;
 using namespace nncase::scheduler;
 
+#define COMBINE_METHOD 1
+
 namespace
 {
 value_range<float> combine(const value_range<float> &lhs, const value_range<float> &rhs)
 {
+#if COMBINE_METHOD == 0
     return { std::min(lhs.min, rhs.min), std::max(lhs.max, rhs.max) };
+#elif COMBINE_METHOD == 1
+    const float alpha = 0.01f;
+    return { (1 - alpha) * lhs.min + alpha * rhs.min, (1 - alpha) * lhs.max + alpha * rhs.max };
+#else
+#error "Invalid combine method"
+#endif
 }
 }
 
