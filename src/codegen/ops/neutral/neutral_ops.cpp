@@ -236,8 +236,8 @@ namespace codegen
             body->output = context.get_allocation(rnode.output());
             body->in_shape = to(rnode.input().shape());
             body->begin = to(rnode.begin());
-            body->end = to(rnode.begin());
-            body->strides = to(rnode.begin());
+            body->end = to(rnode.end());
+            body->strides = to(rnode.strides());
             body->begin_mask = rnode.begin_mask();
             body->end_mask = rnode.end_mask();
             body->ellipsis_mask = rnode.ellipsis_mask();
