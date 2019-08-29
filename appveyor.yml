@@ -2,6 +2,14 @@ version: 0.1.0-{build}
 image:
 - Visual Studio 2019
 - Ubuntu
+environment:
+  matrix:
+    - APPVEYOR_BUILD_WORKER_IMAGE: Visual Studio 2019
+      PYTHON: "C:\\Python36"
+      PYTHON_ARCH: "32"
+
+    - APPVEYOR_BUILD_WORKER_IMAGE: Ubuntu
+      PYTHON: "3.6"
 install:
 - cmd: pip install conan
 - cmd: git submodule update --init --recursive
