@@ -98,6 +98,15 @@ xt::svector<piecewise_linear_segment> clamp_to_piecewise(value_range<float> clam
 }
 }
 
+#define GET_PRE_PAD(conv)                                                                  \
+    auto filter_type = get_filter_type(conv.filter_h());                                   \
+    auto kpu_pad = get_kpu_padding(filter_type);                                           \
+    padding pad_h { conv.padding_h().before - kpu_pad, conv.padding_h().after - kpu_pad }; \
+    padding pad_w { conv.padding_w().before - kpu_pad, conv.padding_w().after - kpu_pad }; \
+                                                                                           \
+    auto pre_pad_h = get_padding<true>(pad_h);                                             \
+    auto pre_pad_w = get_padding<true>(pad_w);
+
 bool fake_kpu_conv2d_transform::on_try_match(node &node, transform_context &context)
 {
     if (node.runtime_opcode() == op_conv2d)
@@ -109,11 +118,19 @@ bool fake_kpu_conv2d_transform::on_try_match(node &node, transform_context &cont
             && is_supported_in_shape(conv.input().shape())
             && is_supported_out_shape(conv.output().shape()))
         {
-            context.inputs.emplace_back(&conv.input());
-            context.outputs.emplace_back(&conv.output());
+            GET_PRE_PAD(conv);
+            auto new_in_shape = conv.input().shape();
+            new_in_shape[2] += pre_pad_h.sum();
+            new_in_shape[3] += pre_pad_w.sum();
 
-            context.matched_nodes.emplace_back(&conv);
-            return true;
+            if (is_supported_in_shape(new_in_shape))
+            {
+                context.inputs.emplace_back(&conv.input());
+                context.outputs.emplace_back(&conv.output());
+
+                context.matched_nodes.emplace_back(&conv);
+                return true;
+            }
         }
     }
 
@@ -127,10 +144,7 @@ void fake_kpu_conv2d_transform::process(transform_context &context)
     auto &old_conv = static_cast<conv2d &>(*context.matched_nodes[0]);
 
     auto is_depthwise = old_conv.input_channels() == old_conv.output_channels() && old_conv.output_channels() == old_conv.groups();
-    auto filter_type = get_filter_type(old_conv.filter_h());
-    auto kpu_pad = get_kpu_padding(filter_type);
-    padding pad_h { old_conv.padding_h().before - kpu_pad, old_conv.padding_h().after - kpu_pad };
-    padding pad_w { old_conv.padding_w().before - kpu_pad, old_conv.padding_w().after - kpu_pad };
+    GET_PRE_PAD(old_conv);
     xt::svector<padding> pre_paddings {
         padding::zero(),
         padding::zero(),
@@ -161,6 +175,16 @@ void fake_kpu_conv2d_transform::process(transform_context &context)
         in->connect(slice->output());
 }
 
+#undef GET_PRE_PAD
+#define GET_PRE_PAD(conv, slice)                            \
+    padding pad_h { slice.begin()[2] % 2, 0 };              \
+    padding pad_w { 0, 0 };                                 \
+    /* pad to even */                                       \
+    if ((slice.input().shape()[2] + pad_h.before) % 2 == 1) \
+        pad_h.after += 1;                                   \
+    if (conv.input().shape()[3] % 2 == 1)                   \
+        pad_w.after += 1;
+
 bool fuse_fake_kpu_conv2d_strided_slice_transform::on_try_match(node &node, transform_context &context)
 {
     if (node.runtime_opcode() == op_k210_fake_kpu_conv2d)
@@ -168,17 +192,26 @@ bool fuse_fake_kpu_conv2d_strided_slice_transform::on_try_match(node &node, tran
         auto &conv = static_cast<fake_kpu_conv2d &>(node);
         if (!conv.is_depthwise())
         {
-            if (auto slice = try_get_direct_child<strided_slice>(conv))
+            if (auto slice_p = try_get_direct_child<strided_slice>(conv))
             {
-                if (slice->strides() == axis_t { 1, 1, 2, 2 }
-                    && is_supported_in_shape(slice->output().shape()))
+                auto &slice = *slice_p;
+                if (slice.strides() == axis_t { 1, 1, 2, 2 }
+                    && is_supported_in_shape(slice.output().shape()))
                 {
-                    context.inputs.emplace_back(&conv.input());
-                    context.outputs.emplace_back(&slice->output());
+                    GET_PRE_PAD(conv, slice);
+                    auto new_in_shape = conv.input().shape();
+                    new_in_shape[2] += pad_h.sum();
+                    new_in_shape[3] += pad_w.sum();
 
-                    context.matched_nodes.emplace_back(&conv);
-                    context.matched_nodes.emplace_back(slice);
-                    return true;
+                    if (is_supported_in_shape(new_in_shape))
+                    {
+                        context.inputs.emplace_back(&conv.input());
+                        context.outputs.emplace_back(&slice.output());
+
+                        context.matched_nodes.emplace_back(&conv);
+                        context.matched_nodes.emplace_back(&slice);
+                        return true;
+                    }
                 }
             }
         }
@@ -194,21 +227,15 @@ void fuse_fake_kpu_conv2d_strided_slice_transform::process(transform_context &co
     auto &old_conv = static_cast<fake_kpu_conv2d &>(*context.matched_nodes[0]);
     auto &old_slice = static_cast<strided_slice &>(*context.matched_nodes[1]);
 
-    padding pad_h { old_slice.begin()[2] % 2, 0 };
-    padding pad_w { 0, 0 };
-    // pad to even
-    if ((old_conv.input().shape()[2] + pad_h.before) % 2 == 1)
-        pad_h.after += 1;
-    if (old_conv.input().shape()[3] % 2 == 1)
-        pad_w.after += 1;
+    GET_PRE_PAD(old_conv, old_slice);
     auto pool_type = old_slice.begin()[3] % 2 == 0 ? kpu_pool_left_top_2_s2 : kpu_pool_right_top_2_s2;
 
     auto p = context.graph.emplace<pad>(dt_float32, output.shape(), xt::svector<padding> { padding::zero(), padding::zero(), pad_h, pad_w }, 0.f);
     auto conv = context.graph.emplace<fake_kpu_conv2d>(p->output().shape(), old_conv.is_depthwise(), old_conv.filter_type(), pool_type,
         old_conv.weights(), old_conv.bias(), old_conv.fused_activation());
 
-    padding crop_h { -(old_slice.begin()[2] / 2 + pad_h.before), (old_slice.end()[2] - old_slice.input().shape()[2]) / 2 };
-    padding crop_w { -(old_slice.begin()[3] / 2), (old_slice.end()[3] - old_slice.input().shape()[3]) / 2 };
+    padding crop_h { -(old_slice.begin()[2] / 2 + pad_h.before), (old_slice.end()[2] - (int32_t)old_slice.input().shape()[2]) / 2 };
+    padding crop_w { -(old_slice.begin()[3] / 2), (old_slice.end()[3] - (int32_t)old_slice.input().shape()[3]) / 2 };
 
     auto crop = context.graph.emplace<pad>(dt_float32, conv->output().shape(), xt::svector<padding> { padding::zero(), padding::zero(), crop_h, crop_w }, 0.f);
     conv->input().connect(p->output());

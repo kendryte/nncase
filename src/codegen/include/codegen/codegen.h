@@ -48,6 +48,7 @@ namespace codegen
 
     struct node_body
     {
+        virtual ~node_body() = default;
         virtual runtime::runtime_opcode opcode() const noexcept = 0;
         virtual void serialize(runtime::binary_writer &writer) = 0;
     };
