@@ -40,6 +40,10 @@ else()
     add_compile_options(-Wno-multichar -std=c++17)
 endif()
 
+if (APPLE)
+    add_compile_options(-mmacosx-version-min=10.15)
+endif()
+
 add_subdirectory(src/cli)
 add_subdirectory(src/common)
 add_subdirectory(src/ir)
