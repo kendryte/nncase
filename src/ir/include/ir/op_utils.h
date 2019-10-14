@@ -56,9 +56,21 @@ namespace ir
         return xt::compute_size(shape) * runtime::get_bytes(type);
     }
 
-    inline axis_t normalize_reduce_axis(const axis_t &axis)
+    inline axis_t normalize_axis(const shape_t &input_shape, const axis_t &axis)
     {
         axis_t new_axis = axis;
+        for (auto &a : new_axis)
+        {
+            if (a < 0)
+                a = input_shape.size() + a;
+        }
+
+        return new_axis;
+    }
+
+    inline axis_t normalize_reduce_axis(const shape_t &input_shape, const axis_t &axis)
+    {
+        axis_t new_axis = normalize_axis(input_shape, axis);
         std::sort(new_axis.begin(), new_axis.end());
         return new_axis;
     }
