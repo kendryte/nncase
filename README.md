@@ -8,6 +8,7 @@
 `nncase` is a neural network compiler for AI accelerators.
 
 `nncase` 是一个为 AI 加速器设计的神经网络编译器。
+技术交流 QQ 群：790699378
 
 ## Install
 ## 安装

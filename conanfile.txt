@@ -5,7 +5,8 @@ cmake
 opencv/4.1.1@conan/stable
 range-v3/0.5.0@ericniebler/stable
 flatbuffers/1.11.0@google/stable
-protobuf/3.6.1@bincrafters/stable
+protobuf/3.8.0@sunnycase/testing
+ortools/7.3@sunnycase/testing
 
 [options]
 opencv:protobuf=False
