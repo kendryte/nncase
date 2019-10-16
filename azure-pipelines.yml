@@ -5,10 +5,14 @@
 
 trigger:
 - master
+
 strategy:
   matrix:
     linux:
       imageName: 'ubuntu-16.04'
+      variables:
+        CC: gcc-8
+        CXX: g++-8
     windows:
       imageName: 'win2019'
 
@@ -30,7 +34,6 @@ steps:
 
 - script: |
     mkdir out && cd out
-    sudo update-alternatives --set gcc /usr/bin/gcc-8
     cmake .. -DNNCASE_TARGET=k210 -DCMAKE_BUILD_TYPE=Release
     make -j
     strip bin/ncc
