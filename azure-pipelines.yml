@@ -19,6 +19,12 @@ jobs:
   - checkout: self
     submodules: true
 
+  - script: |
+      add-apt-repository ppa:ubuntu-toolchain-r/test -y
+      apt-get update -y
+      apt-get install g++-8 -y
+    displayName: 'Install GNU C++ compiler'
+
   - task: UsePythonVersion@0
     inputs:
       versionSpec: '3.6' 
@@ -40,16 +46,10 @@ jobs:
 
 - job: Windows
   pool:
-    vmImage: 'win2019'
+    vmImage: 'windows-2019'
   steps:
   - checkout: self
     submodules: true
-
-  - script: |
-      add-apt-repository ppa:ubuntu-toolchain-r/test -y
-      apt-get update -y
-      apt-get install g++-8 -y
-    displayName: 'Install GNU C++ compiler'
 
   - task: UsePythonVersion@0
     inputs:
