@@ -33,3 +33,6 @@ steps:
     msbuildArchitecture: 'x64'
     configuration: 'Release'
     msbuildArguments: '-m'
+
+- publish: out/bin
+  artifact: ncc_win_x64
