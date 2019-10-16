@@ -5,9 +5,15 @@
 
 trigger:
 - master
+strategy:
+  matrix:
+    linux:
+      imageName: 'ubuntu-16.04'
+    windows:
+      imageName: 'win2019'
 
 pool:
-  vmImage: 'windows-2019'
+  vmImage: $(imageName)
 
 steps:
 - checkout: self
@@ -23,8 +29,18 @@ steps:
   displayName: 'Install Conan'
 
 - script: |
+    mkdir out && cd out
+    sudo update-alternatives --set gcc /usr/bin/gcc-8
+    cmake .. -DNNCASE_TARGET=k210 -DCMAKE_BUILD_TYPE=Release
+    make -j
+    strip bin/ncc
+  condition: eq( variables['Agent.OS'], 'Linux' )
+  displayName: 'Build'
+
+- script: |
     md out && cd out
     cmake .. -G "Visual Studio 16 2019" -A x64 -DNNCASE_TARGET=k210 -DCMAKE_BUILD_TYPE=Release
+  condition: eq( variables['Agent.OS'], 'Windows_NT' )
   displayName: 'Build'
 
 - task: MSBuild@1
@@ -35,4 +51,9 @@ steps:
     msbuildArguments: '-m'
 
 - publish: out/bin
+  artifact: ncc_linux_x64
+  condition: eq( variables['Agent.OS'], 'Linux' )
+
+- publish: out/bin
   artifact: ncc_win_x64
+  condition: eq( variables['Agent.OS'], 'Windows_NT' )
