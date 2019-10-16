@@ -6,57 +6,65 @@
 trigger:
 - master
 
-strategy:
-  matrix:
-    linux:
-      imageName: 'ubuntu-16.04'
-      variables:
-        CC: gcc-8
-        CXX: g++-8
-    windows:
-      imageName: 'win2019'
+jobs:
+- job: Linux
+  pool:
+    vmImage: 'ubuntu-16.04'
 
-pool:
-  vmImage: $(imageName)
+  variables:
+    CC: gcc-8
+    CXX: g++-8
 
-steps:
-- checkout: self
-  submodules: true
+  steps:
+  - checkout: self
+    submodules: true
 
-- task: UsePythonVersion@0
-  inputs:
-    versionSpec: '3.6' 
-    addToPath: true 
-    architecture: 'x64'
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.6' 
+      addToPath: true 
+      architecture: 'x64'
 
-- script: pip install conan
-  displayName: 'Install Conan'
+  - script: pip install conan
+    displayName: 'Install Conan'
 
-- script: |
-    mkdir out && cd out
-    cmake .. -DNNCASE_TARGET=k210 -DCMAKE_BUILD_TYPE=Release
-    make -j
-    strip bin/ncc
-  condition: eq( variables['Agent.OS'], 'Linux' )
-  displayName: 'Build'
+  - script: |
+      mkdir out && cd out
+      cmake .. -DNNCASE_TARGET=k210 -DCMAKE_BUILD_TYPE=Release
+      make -j
+      strip bin/ncc
+    displayName: 'Build'
 
-- script: |
-    md out && cd out
-    cmake .. -G "Visual Studio 16 2019" -A x64 -DNNCASE_TARGET=k210 -DCMAKE_BUILD_TYPE=Release
-  condition: eq( variables['Agent.OS'], 'Windows_NT' )
-  displayName: 'Build'
+  - publish: out/bin
+    artifact: ncc_linux_x64
 
-- task: MSBuild@1
-  inputs:
-    solution: 'out/nncase.sln'
-    msbuildArchitecture: 'x64'
-    configuration: 'Release'
-    msbuildArguments: '-m'
+- job: Windows
+  pool:
+    vmImage: 'win2019'
+  steps:
+  - checkout: self
+    submodules: true
 
-- publish: out/bin
-  artifact: ncc_linux_x64
-  condition: eq( variables['Agent.OS'], 'Linux' )
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.6' 
+      addToPath: true 
+      architecture: 'x64'
 
-- publish: out/bin
-  artifact: ncc_win_x64
-  condition: eq( variables['Agent.OS'], 'Windows_NT' )
+  - script: pip install conan
+    displayName: 'Install Conan'
+    
+  - script: |
+      md out && cd out
+      cmake .. -G "Visual Studio 16 2019" -A x64 -DNNCASE_TARGET=k210 -DCMAKE_BUILD_TYPE=Release
+    displayName: 'Build'
+
+  - task: MSBuild@1
+    inputs:
+      solution: 'out/nncase.sln'
+      msbuildArchitecture: 'x64'
+      configuration: 'Release'
+      msbuildArguments: '-m'
+
+  - publish: out/bin
+    artifact: ncc_win_x64
