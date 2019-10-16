@@ -45,6 +45,12 @@ jobs:
   - checkout: self
     submodules: true
 
+  - script: |
+      add-apt-repository ppa:ubuntu-toolchain-r/test -y
+      apt-get update -y
+      apt-get install g++-8 -y
+    displayName: 'Install GNU C++ compiler'
+
   - task: UsePythonVersion@0
     inputs:
       versionSpec: '3.6' 
@@ -53,7 +59,7 @@ jobs:
 
   - script: pip install conan
     displayName: 'Install Conan'
-    
+
   - script: |
       md out && cd out
       cmake .. -G "Visual Studio 16 2019" -A x64 -DNNCASE_TARGET=k210 -DCMAKE_BUILD_TYPE=Release
