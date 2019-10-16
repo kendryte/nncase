@@ -20,9 +20,9 @@ jobs:
     submodules: true
 
   - script: |
-      add-apt-repository ppa:ubuntu-toolchain-r/test -y
-      apt-get update -y
-      apt-get install g++-8 -y
+      sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
+      sudo apt-get update -y
+      sudo apt-get install g++-8 -y
     displayName: 'Install GNU C++ compiler'
 
   - task: UsePythonVersion@0
