@@ -29,7 +29,7 @@ steps:
 
 - task: MSBuild@1
   inputs:
-    solution: 'nncase.sln'
+    solution: 'out/nncase.sln'
     msbuildArchitecture: 'x64'
     configuration: 'Release'
     msbuildArguments: '-m'
