@@ -19,8 +19,17 @@ steps:
     addToPath: true 
     architecture: 'x64'
 
-- script: pip install conan==1.19.1
+- script: pip install conan
   displayName: 'Install Conan'
 
-- script: .\build.cmd
+- script: |
+    md out && cd out
+    cmake .. -G "Visual Studio 16 2019" -A x64 -DNNCASE_TARGET=k210 -DCMAKE_BUILD_TYPE=Release
   displayName: 'Build'
+
+- task: MSBuild@1
+  inputs:
+    solution: 'nncase.sln'
+    msbuildArchitecture: 'x64'
+    configuration: 'Release'
+    msbuildArguments: '-m'
