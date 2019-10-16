@@ -1,0 +1,23 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger:
+- master
+
+pool:
+  vmImage: 'windows-2019'
+
+steps:
+- task: UsePythonVersion@0
+  inputs:
+    versionSpec: '3.7' 
+    addToPath: true 
+    architecture: 'x64' # Options: x86, x64 (this argument applies only on Windows agents)
+
+- script: pip install conan
+  displayName: 'Install Conan'
+
+- script: .\build.cmd
+  displayName: 'Build'
