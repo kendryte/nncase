@@ -15,9 +15,9 @@ steps:
 
 - task: UsePythonVersion@0
   inputs:
-    versionSpec: '3.7' 
+    versionSpec: '3.6' 
     addToPath: true 
-    architecture: 'x64' # Options: x86, x64 (this argument applies only on Windows agents)
+    architecture: 'x64'
 
 - script: pip install conan==1.19.1
   displayName: 'Install Conan'
