@@ -234,8 +234,10 @@ void fuse_fake_kpu_conv2d_strided_slice_transform::process(transform_context &co
     auto conv = context.graph.emplace<fake_kpu_conv2d>(p->output().shape(), old_conv.is_depthwise(), old_conv.filter_type(), pool_type,
         old_conv.weights(), old_conv.bias(), old_conv.fused_activation());
 
-    padding crop_h { -(old_slice.begin()[2] / 2 + pad_h.before), (old_slice.end()[2] - (int32_t)old_slice.input().shape()[2]) / 2 };
-    padding crop_w { -(old_slice.begin()[3] / 2), (old_slice.end()[3] - (int32_t)old_slice.input().shape()[3]) / 2 };
+    padding crop_h { -(old_slice.begin()[2] / 2 + pad_h.before) };
+    padding crop_w { -(old_slice.begin()[3] / 2) };
+    crop_h.after = old_slice.output().shape()[2] - conv->output().shape()[2] - crop_h.before;
+    crop_w.after = old_slice.output().shape()[3] - conv->output().shape()[3] - crop_w.before;
 
     auto crop = context.graph.emplace<pad>(dt_float32, conv->output().shape(), xt::svector<padding> { padding::zero(), padding::zero(), crop_h, crop_w }, 0.f);
     conv->input().connect(p->output());
