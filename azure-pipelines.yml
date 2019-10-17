@@ -42,8 +42,16 @@ jobs:
       chmod +x bin/ncc
     displayName: 'Build'
 
-  - publish: out/bin
-    artifact: ncc_linux_x64
+  - task: ArchiveFiles@2
+    inputs:
+      rootFolderOrFile: 'out/bin' 
+      includeRootFolder: false 
+      archiveType: 'tar' # Options: zip, 7z, tar, wim
+      tarCompression: 'xz' # Optional. Options: gz, bz2, xz, none
+      archiveFile: '$(Build.ArtifactStagingDirectory)/ncc_linux_x64.tar.xz' 
+      replaceExistingArchive: true 
+      verbose: true
+    displayName: 'Publish'
 
 - job: Windows
   pool:
@@ -73,5 +81,12 @@ jobs:
       configuration: 'Release'
       msbuildArguments: '-m'
 
-  - publish: out/bin
-    artifact: ncc_win_x64
+  - task: ArchiveFiles@2
+    inputs:
+      rootFolderOrFile: 'out/bin' 
+      includeRootFolder: false 
+      archiveType: 'zip' # Options: zip, 7z, tar, wim
+      archiveFile: '$(Build.ArtifactStagingDirectory)/ncc_win_x64.zip' 
+      replaceExistingArchive: true 
+      verbose: true
+    displayName: 'Publish'
