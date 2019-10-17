@@ -53,6 +53,10 @@ jobs:
       verbose: true
     displayName: 'Publish'
 
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathToPublish: $(Build.ArtifactStagingDirectory)/ncc_linux_x64.tar.xz
+
 - job: Windows
   pool:
     vmImage: 'windows-2019'
@@ -90,3 +94,7 @@ jobs:
       replaceExistingArchive: true 
       verbose: true
     displayName: 'Publish'
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathToPublish: $(Build.ArtifactStagingDirectory)/ncc_win_x64.zip
