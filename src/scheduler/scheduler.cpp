@@ -49,7 +49,6 @@ void allocation_context::allocate_default(ir::output_connector &conn)
         auto size = allocator->second->get_bytes(conn.type(), conn.shape());
         auto &node = allocator->second->allocate(size);
         memory_map_.emplace(&conn, &node);
-        allocations_.emplace(&conn, memory_allocation { conn.memory_type(), node.safe_start(), size });
     }
     else
     {
@@ -64,9 +63,28 @@ void allocation_context::release(ir::output_connector &conn)
         node->second->release();
 }
 
+void allocation_context::grow_age()
+{
+    for (auto &a : allocators_)
+        a.second->grow_age();
+}
+
+void allocation_context::finish()
+{
+    for (auto &a : allocators_)
+        a.second->finish();
+
+    for (auto &map : memory_map_)
+    {
+        auto conn = map.first;
+        auto node = map.second;
+        allocations_.emplace(conn, memory_allocation { conn->memory_type(), node->start(), node->valid_size() });
+    }
+}
+
 void nncase::scheduler::schedule(xtl::span<output_node *> outputs, allocation_context &context, std::vector<ir::node *> &compute_sequence)
 {
-    auto visitor = make_relay_ir_visitor([&](node &node) {
+    auto alloc_visitor = make_relay_ir_visitor([&](node &node) {
         for (auto &&out : node.outputs())
         {
             for (auto &&in : out.connections())
@@ -84,24 +102,8 @@ void nncase::scheduler::schedule(xtl::span<output_node *> outputs, allocation_co
             }
         }
 
-        // check overlap
-        {
-            std::vector<memory_allocation> inputs, outputs;
-            for (auto &&out : node.outputs())
-                outputs.emplace_back(context.allocations().at(&out));
-
-            for (auto &&in : node.inputs())
-                inputs.emplace_back(context.allocations().at(in.connection()));
-
-            for (auto &&m : inputs)
-            {
-                assert(std::none_of(outputs.begin(), outputs.end(), [&](const memory_allocation rhs) {
-                    return rhs.overlap(m);
-                }));
-            }
-        }
-
         compute_sequence.emplace_back(&node);
+        context.grow_age();
 
         // Pin output
         if (node.runtime_opcode() != op_output_node)
@@ -120,5 +122,27 @@ void nncase::scheduler::schedule(xtl::span<output_node *> outputs, allocation_co
         }
     });
 
-    visitor.visit(outputs);
+    alloc_visitor.visit(outputs);
+    context.finish();
+
+    auto check_visitor = make_relay_ir_visitor([&](node &node) {
+        // check overlap
+        {
+            std::vector<memory_allocation> inputs, outputs;
+            for (auto &&out : node.outputs())
+                outputs.emplace_back(context.allocations().at(&out));
+
+            for (auto &&in : node.inputs())
+                inputs.emplace_back(context.allocations().at(in.connection()));
+
+            for (auto &&m : inputs)
+            {
+                assert(std::none_of(outputs.begin(), outputs.end(), [&](const memory_allocation rhs) {
+                    return rhs.overlap(m);
+                }));
+            }
+        }
+    });
+
+    check_visitor.visit(outputs);
 }
