@@ -54,7 +54,7 @@ void tflite_importer::convert_binary(const tflite::Operator &op, binary_op_t bin
     auto &input_a = get_tensor(op.inputs(), 0);
     auto &input_b = get_tensor(op.inputs(), 1);
 
-    auto add = graph_.emplace<binary>(binary_op, get_shape(*input_a.shape()), get_shape(*input_b.shape()), to_float_clamp_range(activation));
+    auto add = graph_.emplace<binary>(binary_op, get_shape(input_a.shape()), get_shape(input_b.shape()), to_float_clamp_range(activation));
 
     input_tensors_.emplace(&add->input_a(), op.inputs()->Get(0));
     input_tensors_.emplace(&add->input_b(), op.inputs()->Get(1));

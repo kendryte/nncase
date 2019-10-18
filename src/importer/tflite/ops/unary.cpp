@@ -68,7 +68,7 @@ void tflite_importer::convert_unary(const tflite::Operator &op, unary_op_t unary
 {
     auto &input = get_tensor(op.inputs(), 0);
 
-    auto node = graph_.emplace<unary>(unary_op, get_shape(*input.shape()));
+    auto node = graph_.emplace<unary>(unary_op, get_shape(input.shape()));
 
     input_tensors_.emplace(&node->input(), op.inputs()->Get(0));
     output_tensors_.emplace(op.outputs()->Get(0), &node->output());

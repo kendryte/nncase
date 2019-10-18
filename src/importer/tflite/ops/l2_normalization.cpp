@@ -27,7 +27,7 @@ DEFINE_TFLITE_LOWER(L2_NORMALIZATION)
     auto &input = get_tensor(op.inputs(), 0);
     auto &options = *op.builtin_options_as_SoftmaxOptions();
 
-    auto in_shape = get_shape(*input.shape());
+    auto in_shape = get_shape(input.shape());
     axis_t reduce_axis;
     if (in_shape.size() == 1)
     {

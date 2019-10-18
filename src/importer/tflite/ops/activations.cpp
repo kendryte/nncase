@@ -26,7 +26,7 @@ DEFINE_TFLITE_LOWER(RELU)
 {
     auto &input = get_tensor(op.inputs(), 0);
     auto &options = *op.builtin_options_as_LeakyReluOptions();
-    auto in_shape = get_shape(*input.shape());
+    auto in_shape = get_shape(input.shape());
 
     auto zero = graph_.emplace<constant>(0.f);
     auto max = graph_.emplace<binary>(binary_max, in_shape, zero->output().shape(), value_range<float>::full());
@@ -41,7 +41,7 @@ DEFINE_TFLITE_LOWER(LEAKY_RELU)
 {
     auto &input = get_tensor(op.inputs(), 0);
     auto &options = *op.builtin_options_as_LeakyReluOptions();
-    auto in_shape = get_shape(*input.shape());
+    auto in_shape = get_shape(input.shape());
 
     auto alpha = graph_.emplace<constant>(options.alpha());
     auto mul = graph_.emplace<binary>(binary_mul, in_shape, alpha->output().shape(), value_range<float>::full());

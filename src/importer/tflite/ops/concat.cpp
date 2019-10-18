@@ -27,7 +27,7 @@ DEFINE_TFLITE_LOWER(CONCATENATION)
     for (auto &&in : *op.inputs())
     {
         auto &tensor = *subgraph_->tensors()->Get(in);
-        inputs_shape.emplace_back(get_shape(*tensor.shape()));
+        inputs_shape.emplace_back(get_shape(tensor.shape()));
     }
 
     auto con = graph_.emplace<concat>(dt_float32, inputs_shape, options.axis());

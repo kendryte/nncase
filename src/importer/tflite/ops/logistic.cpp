@@ -27,7 +27,7 @@ DEFINE_TFLITE_LOWER(LOGISTIC)
     auto &input = get_tensor(op.inputs(), 0);
     auto &options = *op.builtin_options_as_SoftmaxOptions();
 
-    auto in_shape = get_shape(*input.shape());
+    auto in_shape = get_shape(input.shape());
 
     auto neg = graph_.emplace<unary>(unary_neg, in_shape);
     auto exp = graph_.emplace<unary>(unary_exp, neg->output().shape());

@@ -39,7 +39,6 @@ jobs:
       cmake .. -DNNCASE_TARGET=k210 -DCMAKE_BUILD_TYPE=Release
       make -j
       strip bin/ncc
-      chmod +x bin/ncc
     displayName: 'Build'
 
   - task: ArchiveFiles@2
@@ -56,6 +55,7 @@ jobs:
   - task: PublishBuildArtifacts@1
     inputs:
       pathToPublish: $(Build.ArtifactStagingDirectory)/ncc_linux_x64.tar.xz
+      artifact: ncc_linux_x64
 
 - job: Windows
   pool:
@@ -98,3 +98,4 @@ jobs:
   - task: PublishBuildArtifacts@1
     inputs:
       pathToPublish: $(Build.ArtifactStagingDirectory)/ncc_win_x64.zip
+      artifact: ncc_win_x64

@@ -58,7 +58,7 @@ namespace importer
             auto expect_type = to_tensor_type<T>();
             auto actual_type = tensor.type();
             if (actual_type != expect_type)
-                throw std::runtime_error(std::string("Expect ") + tflite::EnumNameTensorType(expect_type) + " tensor but got " + tflite::EnumNameTensorType(actual_type));
+                throw std::runtime_error(std::string("Tensor (") + tensor.name()->str() + std::string(") Expect ") + tflite::EnumNameTensorType(expect_type) + " tensor but got " + tflite::EnumNameTensorType(actual_type));
 
             auto buffer = model_->buffers()->Get(tensor.buffer());
             if (!buffer)
@@ -66,10 +66,10 @@ namespace importer
             return *buffer;
         }
 
-        ir::shape_t get_shape(const flatbuffers::Vector<int32_t> &shape)
+        ir::shape_t get_shape(const flatbuffers::Vector<int32_t> *shape)
         {
-            if (shape.size())
-                return { std::begin(shape), std::end(shape) };
+            if (shape && shape->size())
+                return { std::begin(*shape), std::end(*shape) };
             else
                 return { 1 };
         }
@@ -83,7 +83,7 @@ namespace importer
         xt::xarray<T> load_array(const tflite::Tensor &tensor)
         {
             auto &buffer = get_buffer<T>(tensor);
-            auto shape = get_shape(*tensor.shape());
+            auto shape = get_shape(tensor.shape());
             return xt::adapt(reinterpret_cast<const T *>(buffer.data()->data()), shape);
         }
 
@@ -91,7 +91,7 @@ namespace importer
         xt::xtensor<T, N> load_tensor(const tflite::Tensor &tensor)
         {
             auto &buffer = get_buffer<T>(tensor);
-            auto shape = get_shape(*tensor.shape());
+            auto shape = get_shape(tensor.shape());
             return xt::adapt(reinterpret_cast<const T *>(buffer.data()->data()), shape);
         }
 

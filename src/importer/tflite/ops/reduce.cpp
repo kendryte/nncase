@@ -45,7 +45,7 @@ void tflite_importer::convert_reduce(const tflite::Operator &op, reduce_op_t red
     auto axis = load_axis<int32_t>(get_tensor(op.inputs(), 1));
     auto &options = *op.builtin_options_as_ReducerOptions();
 
-    auto node = graph_.emplace<reduce>(reduce_op, get_shape(*input.shape()), std::move(axis), init_value, options.keep_dims());
+    auto node = graph_.emplace<reduce>(reduce_op, get_shape(input.shape()), std::move(axis), init_value, options.keep_dims());
 
     input_tensors_.emplace(&node->input(), op.inputs()->Get(0));
     output_tensors_.emplace(op.outputs()->Get(0), &node->output());

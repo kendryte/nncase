@@ -29,7 +29,7 @@ DEFINE_TFLITE_LOWER(PAD)
     for (size_t i = 0; i < paddings.shape()[0]; i++)
         new_paddings.push_back(padding { paddings(i, 0), paddings(i, 1) });
 
-    auto node = graph_.emplace<pad>(dt_float32, get_shape(*input.shape()), new_paddings, 0.f);
+    auto node = graph_.emplace<pad>(dt_float32, get_shape(input.shape()), new_paddings, 0.f);
 
     input_tensors_.emplace(&node->input(), op.inputs()->Get(0));
     output_tensors_.emplace(op.outputs()->Get(0), &node->output());

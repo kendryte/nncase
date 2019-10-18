@@ -25,7 +25,7 @@ DEFINE_TFLITE_LOWER(TRANSPOSE)
     auto &options = *op.builtin_options_as_TransposeOptions();
     auto perm = load_axis<int32_t>(get_tensor(op.inputs(), 1));
 
-    auto node = graph_.emplace<transpose>(to_data_type(input.type()), get_shape(*input.shape()), perm);
+    auto node = graph_.emplace<transpose>(to_data_type(input.type()), get_shape(input.shape()), perm);
 
     input_tensors_.emplace(&node->input(), op.inputs()->Get(0));
     output_tensors_.emplace(op.outputs()->Get(0), &node->output());

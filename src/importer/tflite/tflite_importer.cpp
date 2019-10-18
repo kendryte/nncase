@@ -52,7 +52,7 @@ void tflite_importer::import()
             if (data)
             {
                 auto type = to_data_type(tensor.type());
-                auto shape = get_shape(*tensor.shape());
+                auto shape = get_shape(tensor.shape());
                 auto con = graph_.emplace<constant>(type, shape, std::vector<uint8_t>(data->begin(), data->end()));
                 output_tensors_.emplace(in.second, &con->output());
                 in.first->connect(con->output());

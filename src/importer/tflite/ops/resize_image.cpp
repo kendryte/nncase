@@ -39,7 +39,7 @@ void tflite_importer::convert_resize_image(const tflite::Operator &op, image_res
         ? op.builtin_options_as_ResizeBilinearOptions()->align_corners()
         : op.builtin_options_as_ResizeNearestNeighborOptions()->align_corners();
 
-    auto pre_trans = nhwc_to_nchw(dt_float32, get_shape(*input.shape()));
+    auto pre_trans = nhwc_to_nchw(dt_float32, get_shape(input.shape()));
     auto node = graph_.emplace<resize_image>(to_data_type(input.type()), mode, pre_trans->output().shape(), new_size, align_corners);
     auto sur_trans = nchw_to_nhwc(dt_float32, node->output().shape());
     node->input().connect(pre_trans->output());

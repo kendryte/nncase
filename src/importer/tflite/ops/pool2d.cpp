@@ -34,7 +34,7 @@ void tflite_importer::convert_pool_2d(const tflite::Operator &op, reduce_op_t re
     auto &input = get_tensor(op.inputs(), 0);
     auto &options = *op.builtin_options_as_Pool2DOptions();
 
-    auto pre_trans = nhwc_to_nchw(dt_float32, get_shape(*input.shape()));
+    auto pre_trans = nhwc_to_nchw(dt_float32, get_shape(input.shape()));
 
     auto in_h = pre_trans->output().shape()[2];
     auto in_w = pre_trans->output().shape()[3];
