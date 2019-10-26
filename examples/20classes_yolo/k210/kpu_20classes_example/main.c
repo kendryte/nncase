@@ -12,9 +12,8 @@
 #include "utils.h"
 #include "kpu.h"
 #include "region_layer.h"
-#define INCBIN_STYLE INCBIN_STYLE_SNAKE
-#define INCBIN_PREFIX
-#include "incbin.h"
+#include "w25qxx.h"
+#include "iomem.h"
 
 #define PLL0_OUTPUT_FREQ 800000000UL
 #define PLL1_OUTPUT_FREQ 400000000UL
@@ -22,7 +21,9 @@
 #define CLASS_NUMBER 20
 
 extern const unsigned char gImage_image[] __attribute__((aligned(128)));
-INCBIN(model, "yolo.kmodel");
+
+#define KMODEL_SIZE (1351976)
+uint8_t *model_data;
 
 kpu_model_context_t task;
 static region_layer_t detect_rl;
@@ -197,6 +198,12 @@ int main(void)
     io_mux_init();
     io_set_power();
     plic_init();
+
+    printf("flash init\n");
+    w25qxx_init(3, 0);
+    w25qxx_enable_quad_mode();
+    model_data = (uint8_t *)iomem_malloc(KMODEL_SIZE);
+    w25qxx_read_data(0xA00000, model_data, KMODEL_SIZE, W25QXX_QUAD_FAST);
 
     lable_init();
 
