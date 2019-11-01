@@ -26,7 +26,7 @@ DEFINE_TFLITE_LOWER(CONV_2D)
     auto &bias = get_tensor(op.inputs(), 2);
     auto &options = *op.builtin_options_as_Conv2DOptions();
 
-    auto weights_tensor = xt::transpose(load_tensor<float, 4>(weights), { 0, 3, 1, 2 });
+    auto weights_tensor = xt::transpose(dequantize_tensor<4>(weights), { 0, 3, 1, 2 });
     auto bias_tensor = load_tensor<float, 1>(bias);
 
     auto pre_trans = nhwc_to_nchw(dt_float32, get_shape(input.shape()));
@@ -60,7 +60,7 @@ DEFINE_TFLITE_LOWER(DEPTHWISE_CONV_2D)
     auto &options = *op.builtin_options_as_DepthwiseConv2DOptions();
     auto opname = weights.name()->string_view().substr(0, weights.name()->string_view().find_first_of('/'));
 
-    auto weights_tensor = xt::transpose(load_tensor<float, 4>(weights), { 3, 0, 1, 2 });
+    auto weights_tensor = xt::transpose(dequantize_tensor<4>(weights), { 3, 0, 1, 2 });
     auto bias_tensor = load_tensor<float, 1>(bias);
 
     auto pre_trans = nhwc_to_nchw(dt_float32, get_shape(input.shape()));

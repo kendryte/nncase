@@ -93,6 +93,16 @@ namespace runtime
             return kcr_done;
         }
 
+        kernel_call_result quantized_conv2d(quantized_conv2d_options &options, interpreter_t &interpreter, interpreter_step_t step)
+        {
+            auto input = interpreter.memory_at<uint8_t>(options.input);
+            auto output = interpreter.memory_at<uint8_t>(options.output);
+            kernels::neutral::quantized_conv2d(input.data(), output.data(), options.weights.data(), options.bias.data(), options.input_offset, options.filter_offset,
+                options.output_mul, options.output_shift, options.output_offset, options.in_shape, options.groups, options.out_channels, options.filter_h,
+                options.filter_w, options.stride_h, options.stride_w, options.dilation_h, options.dilation_w, options.padding_h, options.padding_w);
+            return kcr_done;
+        }
+
         kernel_call_result dequantize(dequantize_options &options, interpreter_t &interpreter, interpreter_step_t step)
         {
             auto input = interpreter.memory_at<uint8_t>(options.input);

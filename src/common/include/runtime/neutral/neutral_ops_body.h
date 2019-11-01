@@ -123,6 +123,78 @@ namespace runtime
             }
         };
 
+        struct quantized_conv2d_options
+        {
+            memory_range input;
+            memory_range output;
+            runtime_shape_t in_shape;
+            int32_t groups;
+            int32_t out_channels;
+            padding padding_h;
+            padding padding_w;
+            int32_t filter_h;
+            int32_t filter_w;
+            int32_t stride_h;
+            int32_t stride_w;
+            int32_t dilation_h;
+            int32_t dilation_w;
+            int32_t input_offset;
+            int32_t filter_offset;
+            int32_t output_mul;
+            int32_t output_shift;
+            int32_t output_offset;
+            xtl::span<const int32_t> bias;
+            xtl::span<const uint8_t> weights;
+
+            void deserialize(span_reader &reader)
+            {
+                reader.read(input);
+                reader.read(output);
+                reader.read(in_shape);
+                reader.read(groups);
+                reader.read(out_channels);
+                reader.read(padding_h);
+                reader.read(padding_w);
+                reader.read(filter_h);
+                reader.read(filter_w);
+                reader.read(stride_h);
+                reader.read(stride_w);
+                reader.read(dilation_h);
+                reader.read(dilation_w);
+                reader.read(input_offset);
+                reader.read(filter_offset);
+                reader.read(output_mul);
+                reader.read(output_shift);
+                reader.read(output_offset);
+                reader.read_span(bias, out_channels);
+                reader.read_span(weights, (size_t)out_channels * in_shape[1] / groups * filter_h * filter_w);
+            }
+
+            void serialize(binary_writer &writer) const
+            {
+                writer.write(input);
+                writer.write(output);
+                writer.write(in_shape);
+                writer.write(groups);
+                writer.write(out_channels);
+                writer.write(padding_h);
+                writer.write(padding_w);
+                writer.write(filter_h);
+                writer.write(filter_w);
+                writer.write(stride_h);
+                writer.write(stride_w);
+                writer.write(dilation_h);
+                writer.write(dilation_w);
+                writer.write(input_offset);
+                writer.write(filter_offset);
+                writer.write(output_mul);
+                writer.write(output_shift);
+                writer.write(output_offset);
+                writer.write_array(bias);
+                writer.write_array(weights);
+            }
+        };
+
         struct dequantize_options : public simple_node_body<dequantize_options>
         {
             memory_range input;

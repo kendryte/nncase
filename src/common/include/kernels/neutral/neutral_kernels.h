@@ -126,6 +126,71 @@ namespace kernels
             }
         }
 
+        inline void quantized_conv2d(const uint8_t *input, uint8_t *output, const uint8_t *weights, const int32_t *bias, int32_t input_offset, int32_t filter_offset,
+            int32_t output_mul, int32_t output_shift, int32_t output_offset, const runtime_shape_t &in_shape, int32_t groups, int32_t out_channels,
+            int32_t filter_h, int32_t filter_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
+            const padding &padding_h, const padding &padding_w)
+        {
+            const auto out_h = details::get_windowed_output_size(in_shape[2], filter_h, stride_h, dilation_h, padding_h);
+            const auto out_w = details::get_windowed_output_size(in_shape[3], filter_w, stride_w, dilation_w, padding_w);
+            const auto g_ic = in_shape[1] / groups;
+            const auto g_oc = out_channels / groups;
+
+            for (int32_t batch = 0; batch < in_shape[0]; batch++)
+            {
+                const uint8_t *in_batch_p = input + (size_t)batch * in_shape[1] * in_shape[2] * in_shape[3];
+
+                for (int32_t og = 0; og < groups; og++)
+                {
+                    const uint8_t *in_group_p = in_batch_p + (size_t)og * g_ic * in_shape[2] * in_shape[3];
+                    const uint8_t *w_group_p = weights + (size_t)og * g_oc * g_ic * filter_h * filter_w;
+
+                    for (int32_t oc = 0; oc < g_oc; oc++)
+                    {
+                        const uint8_t *w_oc_p = w_group_p + (size_t)oc * g_ic * filter_h * filter_w;
+
+                        for (int32_t oy = 0; oy < out_h; oy++)
+                        {
+                            for (int32_t ox = 0; ox < out_w; ox++)
+                            {
+                                const int32_t in_y_origin = (oy * stride_h) - padding_h.before;
+                                const int32_t in_x_origin = (ox * stride_w) - padding_w.before;
+                                const int32_t filter_y_start = std::max(0, (-in_y_origin + dilation_h - 1) / dilation_h);
+                                const int32_t filter_y_end = std::min(filter_h, (in_shape[2] - in_y_origin + dilation_h - 1) / dilation_h);
+                                const int32_t filter_x_start = std::max(0, (-in_x_origin + dilation_w - 1) / dilation_w);
+                                const int32_t filter_x_end = std::min(filter_w, (in_shape[3] - in_x_origin + dilation_w - 1) / dilation_w);
+                                int32_t value = bias[og * g_oc + oc];
+
+                                for (int32_t ic = 0; ic < g_ic; ic++)
+                                {
+                                    const uint8_t *in_c_p = in_group_p + (size_t)ic * in_shape[2] * in_shape[3];
+                                    const uint8_t *w_ic_p = w_oc_p + (size_t)ic * filter_h * filter_w;
+
+                                    for (int32_t ky = filter_y_start; ky < filter_y_end; ky++)
+                                    {
+                                        for (int32_t kx = filter_x_start; kx < filter_x_end; kx++)
+                                        {
+                                            const int32_t in_y = in_y_origin + dilation_h * ky;
+                                            const int32_t in_x = in_x_origin + dilation_w * kx;
+
+                                            const int32_t in_v = (int32_t)in_c_p[in_y * in_shape[3] + in_x] + input_offset;
+                                            const int32_t w = (int32_t)w_ic_p[ky * filter_w + kx] + filter_offset;
+
+                                            value += in_v * w;
+                                        }
+                                    }
+                                }
+
+                                auto output_val = static_cast<int32_t>(((int64_t)value * output_mul) >> output_shift);
+                                output_val += output_offset;
+                                *output++ = (uint8_t)std::clamp(output_val, 0, 255);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         template <class TQ>
         void dequantize(const TQ *input, float *output, size_t count, const quant_param_t &param)
         {

@@ -115,6 +115,34 @@ namespace codegen
             return body;
         });
 
+        register_emitter(op_quantized_conv2d, [](node &node, codegen_context &context) {
+            auto &rnode = static_cast<quantized_conv2d &>(node);
+            auto body = std::make_unique<node_body_impl<rop_quantized_conv2d, quantized_conv2d_options>>();
+
+            body->input = context.get_allocation(rnode.input());
+            body->output = context.get_allocation(rnode.output());
+            body->in_shape = to(rnode.input().shape());
+            body->groups = rnode.groups();
+            body->out_channels = rnode.output_channels();
+            body->padding_h = rnode.padding_h();
+            body->padding_w = rnode.padding_w();
+            body->filter_h = rnode.filter_h();
+            body->filter_w = rnode.filter_w();
+            body->stride_h = rnode.stride_h();
+            body->stride_w = rnode.stride_w();
+            body->dilation_h = rnode.dilation_h();
+            body->dilation_w = rnode.dilation_w();
+            body->input_offset = rnode.input_offset();
+            body->filter_offset = rnode.filter_offset();
+            body->output_mul = rnode.output_mul();
+            body->output_shift = rnode.output_shift();
+            body->output_offset = rnode.output_offset();
+            body->weights = rnode.weights();
+            body->bias = rnode.bias();
+
+            return body;
+        });
+
         register_emitter(op_dequantize, [](node &node, codegen_context &context) {
             auto &rnode = static_cast<dequantize &>(node);
             auto body = std::make_unique<node_body_impl<rop_dequantize, dequantize_options>>();

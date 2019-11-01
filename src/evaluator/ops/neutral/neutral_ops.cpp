@@ -137,6 +137,19 @@ namespace ir
                 rnode.dilation_h(), rnode.dilation_w(), rnode.padding_h(), rnode.padding_w(), rnode.fused_activation());
         });
 
+        register_evaluator(op_quantized_conv2d, [](ir::node &node, evaluate_context &context) {
+            auto &rnode = static_cast<quantized_conv2d &>(node);
+
+            assert(rnode.input().type() == dt_uint8);
+            auto input = context.memory_at<uint8_t>(rnode.input());
+            auto output = context.memory_at<uint8_t>(rnode.output());
+
+            neutral::quantized_conv2d(input.data(), output.data(), rnode.weights().data(), rnode.bias().data(), rnode.input_offset(),
+                rnode.filter_offset(), rnode.output_mul(), rnode.output_shift(), rnode.output_offset(), to(rnode.input().shape()),
+                rnode.groups(), rnode.output_channels(), rnode.filter_h(), rnode.filter_w(), rnode.stride_h(), rnode.stride_w(),
+                rnode.dilation_h(), rnode.dilation_w(), rnode.padding_h(), rnode.padding_w());
+        });
+
         register_evaluator(op_dequantize, [](ir::node &node, evaluate_context &context) {
             auto &rnode = static_cast<dequantize &>(node);
 
