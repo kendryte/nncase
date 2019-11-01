@@ -137,7 +137,7 @@ void memory_allocator::finish()
 
     index = 0;
 
-#ifndef NDEBUG
+#if 0
     for (auto &v : node_vars)
     {
         LOG(INFO) << "node_" << index++ << "_y_start = " << SolutionIntegerValue(r, v.y.StartVar());
