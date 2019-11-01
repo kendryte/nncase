@@ -4,7 +4,9 @@
 # https://aka.ms/yaml
 
 trigger:
-- master
+  branches:
+    include:
+    - '*'
 
 jobs:
 - job: Linux
