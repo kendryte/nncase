@@ -16,6 +16,11 @@ Download prebuilt binaries from [Release](https://github.com/kendryte/nncase/rel
 
 下载预编译的二进制文件 [Release](https://github.com/kendryte/nncase/releases)。
 
+## Dependencies
+## 依赖
+
+gcc >= 8, cmake >=3.8, xtensor, xtl, clipp
+
 ---
 
 ## Architecture
