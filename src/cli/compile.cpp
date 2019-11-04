@@ -185,10 +185,12 @@ void get_quantization_ranges(target &target, graph &graph, quantizer *quantizer,
 
 void quantize(const compile_options &options, target &target, graph &graph)
 {
-    // 3.1. Add quantization checkpoints
+    // 4.1. Add quantization checkpoints
+    std::cout << "  4.1. Add quantization checkpoints..." << std::endl;
     add_quantization_checkpoints(options, target, graph);
 
-    // 3.2 Get activation ranges
+    // 4.2 Get activation ranges
+    std::cout << "  4.2. Get activation ranges, this may take a while..." << std::endl;
     // quantize
     quantizer quant;
     auto min = (0.f - options.input_mean) / options.input_std;
@@ -203,7 +205,8 @@ void quantize(const compile_options &options, target &target, graph &graph)
     target.add_quantization_broadcast(opcodes);
     quant.broadcast_output(graph, opcodes);
 
-    // 3.3 quantize graph
+    // 4.3 quantize graph
+    std::cout << "  4.3. Quantize graph..." << std::endl;
     quantize_graph(options, target, graph, quant, quant.get_quant_param(input_range, 8));
 }
 
@@ -247,20 +250,25 @@ void compile(const compile_options &options)
     target->registry_evaluator_ops();
 
     // 1. Import
+    std::cout << "1. Import graph..." << std::endl;
     auto graph = import(options);
     dump_graph(options, graph, "import");
 
     // 2. Optimize Pass 1
+    std::cout << "2. Optimize Pass 1..." << std::endl;
     optimize_pass1(options, *target, graph);
 
     if (options.inference_type == "uint8")
     {
         // 3. Optimize Pass 2
+        std::cout << "3. Optimize Pass 2..." << std::endl;
         optimize_pass2(options, *target, graph);
         // 4. Quantize
+        std::cout << "4. Quantize..." << std::endl;
         quantize(options, *target, graph);
     }
 
     // 5. CodeGen
+    std::cout << "5. Generate code..." << std::endl;
     gencode(*target, graph, options);
 }

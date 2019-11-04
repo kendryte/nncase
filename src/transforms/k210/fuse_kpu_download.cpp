@@ -49,12 +49,27 @@ void fuse_kpu_download_transform::process(transform_context &context)
     auto inputs = context.outputs[0]->connections();
 
     auto &old_conv = static_cast<kpu_conv2d &>(*context.matched_nodes[0]);
+    auto &old_download = static_cast<kpu_download &>(*context.matched_nodes[1]);
 
     auto conv = context.graph.emplace<kpu_conv2d>(true, old_conv.input().shape(), old_conv.is_depthwise(), old_conv.filter_type(), old_conv.pool_type(),
         old_conv.weights(), old_conv.pad_value(), old_conv.arg_x(), old_conv.shift_x(), old_conv.arg_w(), old_conv.shift_w(), old_conv.arg_add(),
         old_conv.batch_norm(), old_conv.activation());
-    auto ignore = context.graph.emplace<ignore_node>(conv->kpu_output().type(), conv->kpu_output().shape());
-    ignore->input().connect(conv->kpu_output());
+
+    bool has_other_inputs = false;
+    for (auto &out : dup(old_conv.kpu_output().connections()))
+    {
+        if (out->owner().runtime_opcode() != op_k210_kpu_download)
+        {
+            out->connect(conv->kpu_output());
+            has_other_inputs = true;
+        }
+    }
+
+    if (!has_other_inputs)
+    {
+        auto ignore = context.graph.emplace<ignore_node>(conv->kpu_output().type(), conv->kpu_output().shape());
+        ignore->input().connect(conv->kpu_output());
+    }
 
     conv->input().connect(output);
     for (auto &in : dup(inputs))

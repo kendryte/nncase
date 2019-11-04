@@ -112,7 +112,8 @@ void nncase::scheduler::schedule(xtl::span<output_node *> outputs, allocation_co
                 assert(out);
 
                 // Pin constant and input
-                if (out->memory_type() != mem_const && out->owner().runtime_opcode() != op_input_node)
+				// TODO: Fix input pin
+                if (out->memory_type() != mem_const/* && out->owner().runtime_opcode() != op_input_node*/)
                 {
                     context.release(*out);
                 }
