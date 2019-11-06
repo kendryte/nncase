@@ -33,7 +33,7 @@ jobs:
       addToPath: true 
       architecture: 'x64'
 
-  - script: pip install conan
+  - script: pip install conan==1.19.2
     displayName: 'Install Conan'
 
   - script: |
@@ -72,7 +72,7 @@ jobs:
       addToPath: true 
       architecture: 'x64'
 
-  - script: pip install conan
+  - script: pip install conan==1.19.2
     displayName: 'Install Conan'
 
   - script: |
