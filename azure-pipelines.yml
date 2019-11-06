@@ -29,7 +29,7 @@ jobs:
 
   - task: UsePythonVersion@0
     inputs:
-      versionSpec: '3.6' 
+      versionSpec: '3.7' 
       addToPath: true 
       architecture: 'x64'
 
@@ -57,7 +57,7 @@ jobs:
   - task: PublishBuildArtifacts@1
     inputs:
       pathToPublish: $(Build.ArtifactStagingDirectory)/ncc_linux_x64.tar.xz
-      artifact: ncc_linux_x64
+      artifactName: ncc_linux_x64
 
 - job: Windows
   pool:
@@ -68,7 +68,7 @@ jobs:
 
   - task: UsePythonVersion@0
     inputs:
-      versionSpec: '3.6' 
+      versionSpec: '3.7' 
       addToPath: true 
       architecture: 'x64'
 
@@ -100,4 +100,4 @@ jobs:
   - task: PublishBuildArtifacts@1
     inputs:
       pathToPublish: $(Build.ArtifactStagingDirectory)/ncc_win_x64.zip
-      artifact: ncc_win_x64
+      artifactName: ncc_win_x64

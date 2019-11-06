@@ -109,6 +109,7 @@ namespace data
         }
 
         size_t batch_size() const noexcept { return input_shape_[0]; }
+        size_t total_size() const noexcept { return filenames_.size(); }
 
     protected:
         virtual void process(const std::vector<uint8_t> &src, float *dest, const xt::dynamic_shape<size_t> &shape) = 0;

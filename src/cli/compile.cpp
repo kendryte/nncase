@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "ProgressBar.hpp"
 #include "modes.h"
 #include "registry.h"
 #include "targets/cpu/target.h"
@@ -87,6 +88,7 @@ void transform_graph(graph &graph, target &target, xtl::span<std::unique_ptr<tra
     target.fill_allocators(allocators, allocator_holder);             \
     allocation_context alloc_ctx(allocators);                         \
     std::vector<node *> compute_sequence;                             \
+    std::cout << "  Plan buffers..." << std::endl;                    \
     schedule(graph.outputs(), alloc_ctx, compute_sequence);
 
 #define EVAL_IMPL()                                                 \
@@ -166,6 +168,11 @@ void get_quantization_ranges(target &target, graph &graph, quantizer *quantizer,
     assert(graph.inputs().size() == 1);
     image_dataset dataset(options.dataset, graph.inputs()[0]->output().shape(), options.input_mean, options.input_std);
     int i = 0;
+    std::cout << "  Run calibration..." << std::endl;
+
+    ProgressBar progress_bar(dataset.total_size(), 50);
+
+    // tell the bar to finish
     for (auto it = dataset.begin<float>(); it != dataset.end<float>(); ++it)
     {
         auto input = eval.input_at<float>(0);
@@ -180,7 +187,11 @@ void get_quantization_ranges(target &target, graph &graph, quantizer *quantizer,
         runtime::binary_writer writer(result);
         writer.write_array<float>(output);
 #endif
+        ++progress_bar;
+        progress_bar.display();
     }
+
+    progress_bar.done();
 }
 
 void quantize(const compile_options &options, target &target, graph &graph)
@@ -218,6 +229,7 @@ void gencode(target &target, graph &graph, const compile_options &options)
     if (outfile.bad())
         throw std::runtime_error("Cannot open file for output: " + options.output_filename);
 
+    std::cout << "  Emit code..." << std::endl;
     codegen_context codegen_ctx(outfile, allocators, alloc_ctx.allocations());
     codegen::gencode(codegen_ctx, compute_sequence);
 }
@@ -227,19 +239,7 @@ group compile_options::parser(mode &mode)
 {
     return (
         command("compile").set(mode, mode::compile),
-        "compile" %
-        (
-            value("input file", input_filename) % "input file",
-            value("output file", output_filename) % "output file",
-            required("-i", "--input-format") % "input file format: e.g. tflite" & value("input format", input_format),
-            option("-o", "--output-format") % ("output file format: e.g. kmodel, default is " + output_format) & value("output format", output_format),
-            option("-t", "--target") % ("target arch: e.g. cpu, k210, default is " + target) & value("target", target),
-            option("--dataset") % "calibration dataset, used in post quantization" & value("dataset path", dataset),
-            option("--inference-type") % ("inference type: e.g. float, uint8 default is " + inference_type) & value("inference type", inference_type),
-            option("--input-mean") % ("input mean, default is " + std::to_string(input_mean)) & value("input mean", input_mean),
-            option("--input-std") % ("input std, default is " + std::to_string(input_std)) & value("input std", input_std),
-            option("--dump-ir").set(dump_ir) % "dump nncase ir to .dot files"
-        ));
+        "compile" % (value("input file", input_filename) % "input file", value("output file", output_filename) % "output file", required("-i", "--input-format") % "input file format: e.g. tflite" & value("input format", input_format), option("-o", "--output-format") % ("output file format: e.g. kmodel, default is " + output_format) & value("output format", output_format), option("-t", "--target") % ("target arch: e.g. cpu, k210, default is " + target) & value("target", target), option("--dataset") % "calibration dataset, used in post quantization" & value("dataset path", dataset), option("--inference-type") % ("inference type: e.g. float, uint8 default is " + inference_type) & value("inference type", inference_type), option("--input-mean") % ("input mean, default is " + std::to_string(input_mean)) & value("input mean", input_mean), option("--input-std") % ("input std, default is " + std::to_string(input_std)) & value("input std", input_std), option("--dump-ir").set(dump_ir) % "dump nncase ir to .dot files"));
 }
 
 void compile(const compile_options &options)
