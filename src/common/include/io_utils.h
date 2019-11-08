@@ -27,6 +27,8 @@ inline std::vector<uint8_t> read_file(const std::filesystem::path &filename)
 
     infile.seekg(0, std::ios::end);
     size_t length = infile.tellg();
+    if (!length)
+        throw std::runtime_error("Invalid file: " + filename.string());
     infile.seekg(0, std::ios::beg);
     std::vector<uint8_t> data(length);
     infile.read(reinterpret_cast<char *>(data.data()), length);
