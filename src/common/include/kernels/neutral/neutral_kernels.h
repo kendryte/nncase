@@ -181,7 +181,7 @@ namespace kernels
                                     }
                                 }
 
-                                auto output_val = static_cast<int32_t>(((int64_t)value * output_mul) >> output_shift);
+                                auto output_val = static_cast<int32_t>(runtime::mul_and_carry_shift(value, output_mul, output_shift));
                                 output_val += output_offset;
                                 *output++ = (uint8_t)std::clamp(output_val, 0, 255);
                             }

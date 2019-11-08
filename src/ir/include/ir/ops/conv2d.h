@@ -85,7 +85,8 @@ namespace ir
         const xt::xtensor<uint8_t, 4> &weights() const noexcept { return weights_; }
         const xt::xtensor<int32_t, 1> &bias() const noexcept { return bias_; }
 
-        quantized_conv2d(shape_t input_shape, xt::xtensor<uint8_t, 4> weights, xt::xtensor<uint8_t, 1> bias, int32_t groups, padding padding_h, padding padding_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w);
+        quantized_conv2d(shape_t input_shape, xt::xtensor<uint8_t, 4> weights, xt::xtensor<int32_t, 1> bias, int32_t groups, padding padding_h, padding padding_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h,
+            int32_t dilation_w, int32_t input_offset, int32_t filter_offset, int32_t output_mul, int32_t output_shift, int32_t output_offset);
 
     private:
         xt::xtensor<uint8_t, 4> weights_;

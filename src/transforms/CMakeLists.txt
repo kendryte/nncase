@@ -9,6 +9,7 @@ set(SRCS transform.cpp
          neutral/fuse_pad.cpp
          neutral/transpose_motion.cpp
          neutral/dequantize_motion.cpp
+         neutral/quantized_conv2d.cpp
          k210/fake_kpu_conv2d.cpp
          k210/strided_slice_motion.cpp
          k210/kpu_conv2d.cpp
