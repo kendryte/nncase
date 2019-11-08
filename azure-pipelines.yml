@@ -44,8 +44,8 @@ jobs:
     displayName: 'Build'
 
   - script: |
-    pip install pytest
-    pytest tests --doctest-modules --junitxml=junit/test-results.xml
+      pip install pytest
+      pytest tests --doctest-modules --junitxml=junit/test-results.xml
     displayName: 'Test'
 
   - task: ArchiveFiles@2
@@ -99,8 +99,8 @@ jobs:
       msbuildArguments: '-m'
 
   - script: |
-    pip install pytest
-    pytest tests --doctest-modules --junitxml=junit/test-results.xml
+      pip install pytest
+      pytest tests --doctest-modules --junitxml=junit/test-results.xml
     displayName: 'Test'
 
   - task: ArchiveFiles@2
