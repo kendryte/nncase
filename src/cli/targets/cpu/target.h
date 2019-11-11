@@ -20,6 +20,8 @@ namespace nncase
 class cpu_target : public target
 {
 public:
+	using target::target;
+
     void fill_allocators(std::unordered_map<memory_type_t, scheduler::memory_allocator *> &allocators, std::vector<std::unique_ptr<scheduler::memory_allocator>> &allocator_holders) override;
     void registry_codegen_ops() override;
     void registry_evaluator_ops() override;

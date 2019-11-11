@@ -13,14 +13,16 @@
  * limitations under the License.
  */
 #pragma once
+#include "../cpu/target.h"
 #include <targets/target.h>
-#include "..//cpu/target.h"
 
 namespace nncase
 {
 class k210_target : public cpu_target
 {
 public:
+    using cpu_target::cpu_target;
+
     void fill_allocators(std::unordered_map<memory_type_t, scheduler::memory_allocator *> &allocators, std::vector<std::unique_ptr<scheduler::memory_allocator>> &allocator_holders) override;
     void registry_codegen_ops() override;
     void registry_evaluator_ops() override;

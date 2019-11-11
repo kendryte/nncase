@@ -4,23 +4,23 @@ import subprocess
 import ncc
 import tensorflow as tf
 
-class SimpeModule(tf.Module):
+class SimpeMatMulModule(tf.Module):
 
   def __init__(self):
-    super(SimpeModule, self).__init__()
-    self.v = tf.constant(9.)
+    super(SimpeMatMulModule, self).__init__()
+    self.v = tf.constant([[1.,2.],[3.,4.]])
 
-  @tf.function(input_signature=[tf.TensorSpec([], tf.float32)])
+  @tf.function(input_signature=[tf.TensorSpec([1,2], tf.float32)])
   def __call__(self, x):
-    return x * self.v
+    return tf.matmul(x, self.v)
 
-module = SimpeModule()
+module = SimpeMatMulModule()
 
 def init_values():
-	ncc.save_input_array('test', [1.])
-	ncc.save_expect_array('test', [9.])
+	ncc.save_input_array('test', [1.,2.])
+	ncc.save_expect_array('test', [7.,10.])
 
-def test_simple():
+def test_simple_matmul():
 	ncc.clear()
 	init_values()
 	ncc.compile(module, ['--inference-type', 'float'])
@@ -28,7 +28,7 @@ def test_simple():
 	ncc.infer(['--dataset-format', 'raw'])
 	ncc.close_to('test', 0)
 	
-def test_simple_quant():
+def test_simple_matmul_quant():
 	ncc.clear()
 	init_values()
 	ncc.compile(module, ['--inference-type', 'uint8',
@@ -39,5 +39,5 @@ def test_simple_quant():
 	ncc.close_to('test', 0)
 
 if __name__ == "__main__":
-	test_simple()
-	test_simple_quant()
+	test_simple_matmul()
+	test_simple_matmul_quant()

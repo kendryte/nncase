@@ -12,9 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#pragma once 
-#include <string>
+#pragma once
 #include <clipp.h>
+#include <string>
 
 enum class mode
 {
@@ -28,6 +28,7 @@ struct compile_options
     std::string input_filename;
     std::string output_filename;
     std::string dataset;
+    std::string dataset_format = "image";
     std::string input_format;
     std::string output_format = "kmodel";
     std::string target = "k210";
@@ -35,6 +36,7 @@ struct compile_options
     float input_mean = 0.f;
     float input_std = 1.f;
     bool dump_ir = false;
+    bool use_float_input = false;
 
     clipp::group parser(mode &mode);
 };
@@ -44,6 +46,7 @@ struct inference_options
     std::string model_filename;
     std::string output_path;
     std::string dataset;
+    std::string dataset_format = "image";
     float input_mean = 0.f;
     float input_std = 1.f;
 

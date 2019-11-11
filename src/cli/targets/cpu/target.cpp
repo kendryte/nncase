@@ -15,13 +15,13 @@
 #include "target.h"
 #include <ir/opcode.h>
 #include <scheduler/main_memory_allocator.h>
+#include <transforms/neutral/dequantize_motion.h>
 #include <transforms/neutral/fold_pad.h>
 #include <transforms/neutral/fold_quantize.h>
 #include <transforms/neutral/fold_reshape.h>
 #include <transforms/neutral/fold_transpose.h>
 #include <transforms/neutral/fuse_pad.h>
 #include <transforms/neutral/transpose_motion.h>
-#include <transforms/neutral/dequantize_motion.h>
 
 using namespace nncase;
 using namespace nncase::scheduler;
@@ -96,7 +96,8 @@ void nncase::cpu_target::add_quantization_checkpoint_transforms(std::vector<std:
 
 void nncase::cpu_target::add_quantization_transforms(ir::quantizer &quantizer, const quant_param_t &input_quant_param, std::vector<std::unique_ptr<transform>> &transforms)
 {
-    transforms.emplace_back(new fold_input_quantize_transform(input_quant_param));
+    if (!options_.use_float_input)
+        transforms.emplace_back(new fold_input_quantize_transform(input_quant_param));
     transforms.emplace_back(new dequantize_transpose_motion_transform());
     transforms.emplace_back(new dequantize_pad_motion_transform());
     transforms.emplace_back(new dequantize_strided_slice_motion_transform());
