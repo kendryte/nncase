@@ -29,11 +29,11 @@ jobs:
 
   - task: UsePythonVersion@0
     inputs:
-      versionSpec: '3.6' 
+      versionSpec: '3.7' 
       addToPath: true 
       architecture: 'x64'
 
-  - script: pip install conan
+  - script: pip install six==1.12 conan==1.19.2 tensorflow==2.0.0
     displayName: 'Install Conan'
 
   - script: |
@@ -42,6 +42,11 @@ jobs:
       make -j
       strip bin/ncc
     displayName: 'Build'
+
+  - script: |
+      pip install pytest
+      pytest tests --doctest-modules --junitxml=junit/test-results.xml
+    displayName: 'Test'
 
   - task: ArchiveFiles@2
     inputs:
@@ -57,7 +62,13 @@ jobs:
   - task: PublishBuildArtifacts@1
     inputs:
       pathToPublish: $(Build.ArtifactStagingDirectory)/ncc_linux_x64.tar.xz
-      artifact: ncc_linux_x64
+      artifactName: ncc_linux_x64
+
+  - task: PublishTestResults@2
+    condition: succeededOrFailed()
+    inputs:
+      testResultsFiles: '**/test-*.xml'
+      testRunTitle: 'Publish test results for Python $(python.version)'
 
 - job: Windows
   pool:
@@ -68,11 +79,11 @@ jobs:
 
   - task: UsePythonVersion@0
     inputs:
-      versionSpec: '3.6' 
+      versionSpec: '3.7' 
       addToPath: true 
       architecture: 'x64'
 
-  - script: pip install conan
+  - script: pip install six==1.12 conan==1.19.2 tensorflow==2.0.0
     displayName: 'Install Conan'
 
   - script: |
@@ -87,6 +98,11 @@ jobs:
       configuration: 'Release'
       msbuildArguments: '-m'
 
+  - script: |
+      pip install pytest
+      pytest tests --doctest-modules --junitxml=junit/test-results.xml
+    displayName: 'Test'
+
   - task: ArchiveFiles@2
     inputs:
       rootFolderOrFile: 'out/bin' 
@@ -100,4 +116,10 @@ jobs:
   - task: PublishBuildArtifacts@1
     inputs:
       pathToPublish: $(Build.ArtifactStagingDirectory)/ncc_win_x64.zip
-      artifact: ncc_win_x64
+      artifactName: ncc_win_x64
+
+  - task: PublishTestResults@2
+    condition: succeededOrFailed()
+    inputs:
+      testResultsFiles: '**/test-*.xml'
+      testRunTitle: 'Publish test results for Python $(python.version)'

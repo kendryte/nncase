@@ -42,26 +42,37 @@ namespace scheduler
     class memory_node
     {
     public:
-        memory_node(memory_allocator &allocator, size_t start, size_t size);
+        memory_node(memory_allocator &allocator, size_t birth, size_t valid_size, size_t size);
 
         memory_node(memory_node &) = delete;
         memory_node(memory_node &&) = default;
         memory_node &operator=(memory_node &) = delete;
 
         long use_count() const noexcept { return use_count_; }
-        size_t start() const noexcept { return start_; }
+        size_t start() const { return *start_; }
+        size_t valid_size() const noexcept { return valid_size_; }
         size_t size() const noexcept { return size_; }
         size_t end() const noexcept { return start() + size(); }
         bool used() const noexcept { return use_count_; }
-        size_t safe_start() const;
+        size_t birth() const noexcept { return birth_; }
+        size_t age() const noexcept { return age_; }
 
         void add_ref();
         void release();
 
     private:
+        void grow_age();
+        void start(size_t value) noexcept { start_ = value; }
+
+    private:
+        friend class memory_allocator;
+
         memory_allocator &allocator_;
-        size_t start_;
+        std::optional<size_t> start_;
+        size_t valid_size_;
         size_t size_;
+        size_t birth_;
+        size_t age_;
         long use_count_;
     };
 
@@ -72,13 +83,17 @@ namespace scheduler
 
         memory_node &allocate(size_t size);
         void free(memory_node &node);
-        size_t max_usage() const noexcept { return freelist_.max_usage(); }
+        void grow_age();
+        void finish();
+        size_t max_usage() const noexcept { return max_usage_; }
 
         virtual size_t get_bytes(datatype_t type, const ir::shape_t &shape) const;
 
     private:
+        std::optional<size_t> fixed_size_;
         size_t alignment_;
-        freelist freelist_;
+        size_t max_usage_;
+        size_t age_;
         std::list<memory_node> nodes_;
     };
 }

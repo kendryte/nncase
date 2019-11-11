@@ -32,6 +32,8 @@ namespace scheduler
 
         void allocate_default(ir::output_connector &conn);
         void release(ir::output_connector &conn);
+        void grow_age();
+        void finish();
 
     private:
         const std::unordered_map<memory_type_t, memory_allocator *> &allocators_;
