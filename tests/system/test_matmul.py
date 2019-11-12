@@ -3,6 +3,7 @@ import os
 import subprocess
 import ncc
 import tensorflow as tf
+import numpy as np
 
 class SimpeMatMulModule(tf.Module):
 
@@ -17,21 +18,24 @@ class SimpeMatMulModule(tf.Module):
 module = SimpeMatMulModule()
 
 def init_values():
-	ncc.save_input_array('test', [1.,2.])
-	ncc.save_expect_array('test', [7.,10.])
+	input = np.asarray([1,2], dtype=np.float32).reshape([1,-1])
+	ncc.save_input_array('test', input)
+	ncc.save_expect_array('test', ncc.run_tflite(input))
 
 def test_simple_matmul():
 	ncc.clear()
+	ncc.save_tflite(module)
 	init_values()
-	ncc.compile(module, ['--inference-type', 'float'])
+	ncc.compile(['--inference-type', 'float'])
 
 	ncc.infer(['--dataset-format', 'raw'])
 	ncc.close_to('test', 0)
 	
 def test_simple_matmul_quant():
 	ncc.clear()
+	ncc.save_tflite(module)
 	init_values()
-	ncc.compile(module, ['--inference-type', 'uint8',
+	ncc.compile(['--inference-type', 'uint8',
 	 '--dataset', ncc.input_dir + '/test.bin', '--dataset-format', 'raw',
 	 '--use-float-input'])
 
@@ -39,5 +43,5 @@ def test_simple_matmul_quant():
 	ncc.close_to('test', 1e-3)
 
 if __name__ == "__main__":
-	#test_simple_matmul()
+	test_simple_matmul()
 	test_simple_matmul_quant()

@@ -18,7 +18,7 @@ def clear():
 		shutil.rmtree('./tmp')
 	os.makedirs('./tmp')
 
-def compile(model, args=[]):
+def save_tflite(model):
 	if not os.path.exists(pb_export_dir):
 		os.makedirs(pb_export_dir)
 	tf.saved_model.save(model, pb_export_dir, model.__call__)
@@ -29,6 +29,7 @@ def compile(model, args=[]):
 	f.write(tflite_model)
 	f.close()
 
+def compile(args=[]):
 	retcode = subprocess.call([ncc, 'compile', tflite_export_file, kmodel_export_file,
 	 '-i', 'tflite', *args])
 	assert retcode is 0
@@ -48,6 +49,18 @@ def save_input_array(name, array):
 	if not os.path.exists(input_dir):
 		os.makedirs(input_dir)
 	np.asarray(array, dtype=np.float32).tofile(input_dir + '/' + name + '.bin')
+
+def load_input_array(name, shape):
+	return np.fromfile(input_dir + '/' + name + '.bin', dtype=np.float32).reshape(shape)
+
+def run_tflite(input):
+	interp = tf.lite.Interpreter(tflite_export_file)
+	interp.allocate_tensors()
+	input_id = interp.get_input_details()[0]["index"]
+	output_id = interp.get_output_details()[0]["index"]
+	interp.set_tensor(input_id, input)
+	interp.invoke()
+	return interp.get_tensor(output_id)
 
 def close_to(name, threshold):
 	expect_arr = np.fromfile(expect_out_dir + '/' + name + '.bin', dtype=np.float32)
