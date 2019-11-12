@@ -36,8 +36,8 @@ def test_simple_matmul_quant():
 	 '--use-float-input'])
 
 	ncc.infer(['--dataset-format', 'raw'])
-	ncc.close_to('test', 0)
+	ncc.close_to('test', 1e-3)
 
 if __name__ == "__main__":
-	test_simple_matmul()
+	#test_simple_matmul()
 	test_simple_matmul_quant()

@@ -31,3 +31,16 @@ matmul::matmul(shape_t input_a_shape, shape_t input_b_shape, xt::xtensor<float, 
     add_input("input_b", dt_float32, input_b_shape);
     add_output("output", dt_float32, shape_t { input_a_shape[0], input_b_shape[1] });
 }
+
+quantized_matmul::quantized_matmul(shape_t input_a_shape, shape_t input_b_shape, xt::xtensor<int32_t, 1> bias, int32_t input_a_offset, int32_t input_b_offset, int32_t output_mul, int32_t output_shift, int32_t output_offset)
+    : bias_(std::move(bias)), input_a_offset_(input_a_offset), input_b_offset_(input_b_offset), output_mul_(output_mul), output_shift_(output_shift), output_offset_(output_offset)
+{
+    if (input_a_shape.size() != 2 || input_b_shape.size() != 2)
+        throw std::invalid_argument("inputs must be 2 rank");
+    if (input_a_shape[1] != input_b_shape[0])
+        throw std::invalid_argument("input a's cols must be equal to input b's rows");
+
+    add_input("input_a", dt_uint8, input_a_shape);
+    add_input("input_b", dt_uint8, input_b_shape);
+    add_output("output", dt_uint8, shape_t { input_a_shape[0], input_b_shape[1] });
+}

@@ -41,7 +41,7 @@ public:
     virtual void add_optimize1_transforms(std::vector<std::unique_ptr<transforms::transform>> &transforms) = 0;
     virtual void add_optimize2_transforms(std::vector<std::unique_ptr<transforms::transform>> &transforms) = 0;
     virtual void add_quantization_checkpoint_transforms(std::vector<std::unique_ptr<transforms::transform>> &transforms) = 0;
-    virtual void add_quantization_transforms(ir::quantizer &quantizer, const quant_param_t &input_quant_param, std::vector<std::unique_ptr<transforms::transform>> &transforms) = 0;
+    virtual void add_quantization_transforms(ir::quantizer &quantizer, std::vector<std::unique_ptr<transforms::transform>> &transforms) = 0;
     virtual void add_quantization_broadcast(std::unordered_set<ir::node_opcode> &opcodes) = 0;
 
 protected:

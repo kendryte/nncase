@@ -121,6 +121,16 @@ namespace runtime
             return kcr_done;
         }
 
+        kernel_call_result quantized_matmul(quantized_matmul_options &options, interpreter_t &interpreter, interpreter_step_t step)
+        {
+            auto input_a = interpreter.memory_at<uint8_t>(options.input_a);
+            auto input_b = interpreter.memory_at<uint8_t>(options.input_b);
+            auto output = interpreter.memory_at<uint8_t>(options.output);
+            kernels::neutral::quantized_matmul(input_a.data(), input_b.data(), output.data(), options.bias.data(), options.a_rows, options.a_cols, options.b_cols,
+                options.input_a_offset, options.input_b_offset, options.output_mul, options.output_shift, options.output_offset);
+            return kcr_done;
+        }
+
         kernel_call_result memory_copy(memory_copy_options &options, interpreter_t &interpreter, interpreter_step_t step)
         {
             auto input = interpreter.memory_at<float>(options.input);

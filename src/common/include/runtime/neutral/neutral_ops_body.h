@@ -238,6 +238,54 @@ namespace runtime
             }
         };
 
+        struct quantized_matmul_options
+        {
+            memory_range input_a;
+            memory_range input_b;
+            memory_range output;
+            int32_t a_rows;
+            int32_t a_cols;
+            int32_t b_cols;
+            int32_t input_a_offset;
+            int32_t input_b_offset;
+            int32_t output_mul;
+            int32_t output_shift;
+            int32_t output_offset;
+            xtl::span<const int32_t> bias;
+
+            void deserialize(span_reader &reader)
+            {
+                reader.read(input_a);
+                reader.read(input_b);
+                reader.read(output);
+                reader.read(a_rows);
+                reader.read(a_cols);
+                reader.read(b_cols);
+                reader.read(input_a_offset);
+                reader.read(input_b_offset);
+                reader.read(output_mul);
+                reader.read(output_shift);
+                reader.read(output_offset);
+                reader.read_span(bias, b_cols);
+            }
+
+            void serialize(binary_writer &writer) const
+            {
+                writer.write(input_a);
+                writer.write(input_b);
+                writer.write(output);
+                writer.write(a_rows);
+                writer.write(a_cols);
+                writer.write(b_cols);
+                writer.write(input_a_offset);
+                writer.write(input_b_offset);
+                writer.write(output_mul);
+                writer.write(output_shift);
+                writer.write(output_offset);
+                writer.write_array(bias);
+            }
+        };
+
         struct memory_copy_options : public simple_node_body<memory_copy_options>
         {
             memory_range input;

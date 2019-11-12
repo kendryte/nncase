@@ -149,17 +149,16 @@ void optimize_pass2(const compile_options &options, target &target, graph &graph
 void add_quantization_checkpoints(const compile_options &options, target &target, graph &graph)
 {
     std::vector<std::unique_ptr<transforms::transform>> transforms;
-    target.add_default_transforms(transforms);
     target.add_quantization_checkpoint_transforms(transforms);
     transform_graph(graph, target, transforms);
     dump_graph(options, graph, "before_quant");
 }
 
-void quantize_graph(const compile_options &options, target &target, graph &graph, quantizer &quantizer, const quant_param_t &input_quant_param)
+void quantize_graph(const compile_options &options, target &target, graph &graph, quantizer &quantizer)
 {
     std::vector<std::unique_ptr<transforms::transform>> transforms;
+    target.add_quantization_transforms(quantizer, transforms);
     target.add_default_transforms(transforms);
-    target.add_quantization_transforms(quantizer, input_quant_param, transforms);
     transform_graph(graph, target, transforms);
     dump_graph(options, graph, "after_quant");
 }
@@ -188,7 +187,7 @@ void get_quantization_ranges(target &target, graph &graph, quantizer *quantizer,
         auto &tensor = it->tensor;
         std::copy(tensor.begin(), tensor.end(), input.begin());
 
-        eval.evaluate(quantizer);
+        eval.evaluate(quantizer, options.use_dataset_as_input_stat);
 
 #if EVAL
         auto output = eval.output_at<float>(0);
@@ -213,11 +212,15 @@ void quantize(const compile_options &options, target &target, graph &graph)
     std::cout << "  4.2. Get activation ranges, this may take a while..." << std::endl;
     // quantize
     quantizer quant;
-    auto min = (0.f - options.input_mean) / options.input_std;
-    auto max = (1.f - options.input_mean) / options.input_std;
-    value_range<float> input_range { min, max };
+    if (!options.use_dataset_as_input_stat)
+    {
+        auto min = (0.f - options.input_mean) / options.input_std;
+        auto max = (1.f - options.input_mean) / options.input_std;
+        value_range<float> input_range { min, max };
 
-    quant.record(graph.inputs()[0]->output(), input_range);
+        quant.record(graph.inputs()[0]->output(), input_range);
+    }
+
     get_quantization_ranges(target, graph, &quant, options);
 
     // broadcast quant ranges
@@ -227,7 +230,7 @@ void quantize(const compile_options &options, target &target, graph &graph)
 
     // 4.3 quantize graph
     std::cout << "  4.3. Quantize graph..." << std::endl;
-    quantize_graph(options, target, graph, quant, quant.get_quant_param(input_range, 8));
+    quantize_graph(options, target, graph, quant);
 }
 
 void gencode(target &target, graph &graph, const compile_options &options)
@@ -258,8 +261,8 @@ group compile_options::parser(mode &mode)
 			option("--dataset") % "calibration dataset, used in post quantization" & value("dataset path", dataset),
 			option("--dataset-format") % ("datset format: e.g. image, raw default is " + dataset_format) & value("dataset format", dataset_format),
 			option("--inference-type") % ("inference type: e.g. float, uint8 default is " + inference_type) & value("inference type", inference_type),
-			option("--input-mean") % ("input mean, default is " + std::to_string(input_mean)) & value("input mean", input_mean),
-			option("--input-std") % ("input std, default is " + std::to_string(input_std)) & value("input std", input_std),
+			option("--input-mean").set(use_float_input, false) % ("input mean, default is " + std::to_string(input_mean)) & value("input mean", input_mean),
+			option("--input-std").set(use_float_input, false) % ("input std, default is " + std::to_string(input_std)) & value("input std", input_std),
 			option("--dump-ir").set(dump_ir) % "dump nncase ir to .dot files",
 			option("--use-float-input").set(use_float_input) % "use float inputs even in non-float inference mode"
 		));

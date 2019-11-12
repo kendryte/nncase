@@ -2,6 +2,7 @@
 
 set(SRCS transform.cpp
          neutral/add_quant_checkpoints.cpp
+         neutral/fold_constant.cpp
          neutral/fold_reshape.cpp
          neutral/fold_transpose.cpp
          neutral/fold_pad.cpp
@@ -10,6 +11,7 @@ set(SRCS transform.cpp
          neutral/transpose_motion.cpp
          neutral/dequantize_motion.cpp
          neutral/quantized_conv2d.cpp
+         neutral/quantized_matmul.cpp
          k210/fake_kpu_conv2d.cpp
          k210/strided_slice_motion.cpp
          k210/kpu_conv2d.cpp

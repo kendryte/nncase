@@ -192,6 +192,22 @@ namespace ir
             neutral::matmul(input_a.data(), input_b.data(), output.data(), rnode.bias().data(), a_shape[0], a_shape[1], b_shape[1], rnode.fused_activation());
         });
 
+        register_evaluator(op_quantized_matmul, [](ir::node &node, evaluate_context &context) {
+            auto &rnode = static_cast<quantized_matmul &>(node);
+
+            assert(rnode.input_a().type() == dt_uint8);
+            assert(rnode.input_b().type() == dt_uint8);
+            auto input_a = context.memory_at<uint8_t>(rnode.input_a());
+            auto input_b = context.memory_at<uint8_t>(rnode.input_b());
+            auto output = context.memory_at<uint8_t>(rnode.output());
+
+            auto &a_shape = rnode.input_a().shape();
+            auto &b_shape = rnode.input_b().shape();
+
+            neutral::quantized_matmul(input_a.data(), input_b.data(), output.data(), rnode.bias().data(), a_shape[0], a_shape[1], b_shape[1],
+                rnode.input_a_offset(), rnode.input_b_offset(), rnode.output_mul(), rnode.output_shift(), rnode.output_offset());
+        });
+
         register_evaluator(op_pad, [](ir::node &node, evaluate_context &context) {
             auto &rnode = static_cast<pad &>(node);
 

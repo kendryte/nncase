@@ -102,11 +102,11 @@ void nncase::k210_target::add_quantization_checkpoint_transforms(std::vector<std
     transforms.emplace_back(new add_quant_checkpoints_transform({ op_k210_fake_kpu_conv2d }));
 }
 
-void nncase::k210_target::add_quantization_transforms(ir::quantizer &quantizer, const quant_param_t &input_quant_param, std::vector<std::unique_ptr<transform>> &transforms)
+void nncase::k210_target::add_quantization_transforms(ir::quantizer &quantizer, std::vector<std::unique_ptr<transform>> &transforms)
 {
     transforms.emplace_back(new kpu_conv2d_transform(quantizer));
     transforms.emplace_back(new fold_kpu_upload_transform());
     transforms.emplace_back(new fuse_kpu_download_transform());
     transforms.emplace_back(new fold_input_kpu_upload_transform());
-    cpu_target::add_quantization_transforms(quantizer, input_quant_param, transforms);
+    cpu_target::add_quantization_transforms(quantizer, transforms);
 }

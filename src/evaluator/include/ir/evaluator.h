@@ -76,7 +76,7 @@ namespace ir
             return context_.memory_at<T>(*outputs_[index]);
         }
 
-        void evaluate(quantizer *quantizer = nullptr);
+        void evaluate(quantizer *quantizer = nullptr, bool add_input_stat = false);
 
     private:
         evaluate_context &context_;

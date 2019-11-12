@@ -15,6 +15,7 @@ BEGINE_DEFINE_TARGET(neutral)
     DEFINE_NEUTRAL_RUNTIME_OP(strided_slice,    StridedSlice,		0x0D)
     DEFINE_NEUTRAL_RUNTIME_OP(unary,            Unary,				0x0E)
     DEFINE_NEUTRAL_RUNTIME_OP(quantized_conv2d, QuantizedConv2D,	0x0F)
+    DEFINE_NEUTRAL_RUNTIME_OP(quantized_matmul, QuantizedMatMul,	0x10)
 END_DEFINE_TARGET()
 
 // CPU

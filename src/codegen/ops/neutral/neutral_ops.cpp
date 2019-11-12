@@ -170,6 +170,26 @@ namespace codegen
             return body;
         });
 
+        register_emitter(op_quantized_matmul, [](node &node, codegen_context &context) {
+            auto &rnode = static_cast<quantized_matmul &>(node);
+            auto body = std::make_unique<node_body_impl<rop_quantized_matmul, quantized_matmul_options>>();
+
+            body->input_a = context.get_allocation(rnode.input_a());
+            body->input_b = context.get_allocation(rnode.input_b());
+            body->output = context.get_allocation(rnode.output());
+            body->a_rows = rnode.input_a().shape()[0];
+            body->a_cols = rnode.input_a().shape()[1];
+            body->b_cols = rnode.input_b().shape()[1];
+            body->input_a_offset = rnode.input_a_offset();
+            body->input_b_offset = rnode.input_b_offset();
+            body->output_mul = rnode.output_mul();
+            body->output_shift = rnode.output_shift();
+            body->output_offset = rnode.output_offset();
+            body->bias = rnode.bias();
+
+            return body;
+        });
+
         register_emitter(op_pad, [](node &node, codegen_context &context) {
             auto &rnode = static_cast<pad &>(node);
             auto body = std::make_unique<node_body_impl<rop_pad, pad_options>>();

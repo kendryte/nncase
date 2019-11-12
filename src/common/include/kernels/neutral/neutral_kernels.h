@@ -221,6 +221,28 @@ namespace kernels
             }
         }
 
+        inline void quantized_matmul(const uint8_t *input_a, const uint8_t *input_b, uint8_t *output, const int32_t *bias, int32_t a_rows, int32_t a_cols, int32_t b_cols, int32_t input_a_offset, int32_t input_b_offset,
+            int32_t output_mul, int32_t output_shift, int32_t output_offset)
+        {
+            for (size_t oy = 0; oy < a_rows; oy++)
+            {
+                for (size_t ox = 0; ox < b_cols; ox++)
+                {
+                    int32_t value = bias[ox];
+                    for (size_t i = 0; i < a_cols; i++)
+                    {
+                        const auto a = (int32_t)input_a[oy * a_cols + i] + input_a_offset;
+                        const auto b = (int32_t)input_b[i * b_cols + ox] + input_b_offset;
+                        value += a * b;
+                    }
+
+                    auto output_val = static_cast<int32_t>(runtime::mul_and_carry_shift(value, output_mul, output_shift));
+                    output_val += output_offset;
+                    output[oy * b_cols + ox] = (uint8_t)std::clamp(output_val, 0, 255);
+                }
+            }
+        }
+
         template <class T>
         void pad(const T *input, T *output, const runtime_shape_t &in_shape, const runtime_paddings_t &paddings, T pad_value)
         {
