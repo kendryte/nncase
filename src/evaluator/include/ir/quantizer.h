@@ -29,12 +29,28 @@ namespace ir
         template <class TIt>
         value_range<float> get_range(TIt begin, TIt end)
         {
-            auto minmax = std::minmax_element(begin, end);
-            return { *minmax.first, *minmax.second };
+            float min = std::numeric_limits<float>::max();
+            float max = std::numeric_limits<float>::min();
+            while (begin != end)
+            {
+                auto value = *begin++;
+                auto fc = std::fpclassify(value);
+                if (fc == FP_NORMAL || fc == FP_SUBNORMAL || fc == FP_ZERO)
+                {
+                    min = std::min(min, value);
+                    max = std::max(max, value);
+                }
+            }
+
+            return { min, max };
         }
 
         value_range<float> fixup_range(value_range<float> range) const
         {
+            if (range.min < -1e3)
+                range.min = -1e3;
+            if (range.max > 1e3)
+                range.max = 1e3;
             auto r = range.max - range.min;
             if (r < 0.001f)
                 r = 0.001f;
