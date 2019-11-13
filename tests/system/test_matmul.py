@@ -5,24 +5,24 @@ import ncc
 import tensorflow as tf
 import numpy as np
 
-class SimpeModule(tf.Module):
+class SimpeMatMulModule(tf.Module):
 
   def __init__(self):
-    super(SimpeModule, self).__init__()
-    self.v = tf.constant(9.)
+    super(SimpeMatMulModule, self).__init__()
+    self.v = tf.constant([[1.,2.],[3.,4.]])
 
-  @tf.function(input_signature=[tf.TensorSpec([], tf.float32)])
+  @tf.function(input_signature=[tf.TensorSpec([1,2], tf.float32)])
   def __call__(self, x):
-    return x * self.v
+    return tf.matmul(x, self.v)
 
-module = SimpeModule()
+module = SimpeMatMulModule()
 
 def init_values():
-	input = np.asarray([1.], dtype=np.float32)
+	input = np.asarray([1,2], dtype=np.float32).reshape([1,-1])
 	ncc.save_input_array('test', input)
-	ncc.save_expect_array('test', ncc.run_tflite(input[0]))
+	ncc.save_expect_array('test', ncc.run_tflite(input))
 
-def test_simple():
+def test_simple_matmul():
 	ncc.clear()
 	ncc.save_tflite(module)
 	init_values()
@@ -31,7 +31,7 @@ def test_simple():
 	ncc.infer(['--dataset-format', 'raw'])
 	ncc.close_to('test', 0)
 	
-def test_simple_quant():
+def test_simple_matmul_quant():
 	ncc.clear()
 	ncc.save_tflite(module)
 	init_values()
@@ -43,5 +43,5 @@ def test_simple_quant():
 	ncc.close_to('test', 1e-3)
 
 if __name__ == "__main__":
-	test_simple()
-	test_simple_quant()
+	test_simple_matmul()
+	test_simple_matmul_quant()

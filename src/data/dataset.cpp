@@ -123,3 +123,36 @@ void image_dataset::process(const std::vector<uint8_t> &src, uint8_t *dest, cons
         throw std::runtime_error("Unsupported image channels: " + std::to_string(shape[0]));
     }
 }
+
+raw_dataset::raw_dataset(const std::filesystem::path &path, xt::dynamic_shape<size_t> input_shape, float mean, float std)
+    : dataset(
+        path, [](const std::filesystem::path &filename) { return true; }, std::move(input_shape), mean, std)
+{
+}
+
+void raw_dataset::process(const std::vector<uint8_t> &src, float *dest, const xt::dynamic_shape<size_t> &shape)
+{
+    auto expected_size = xt::compute_size(shape) * sizeof(float);
+    auto actual_size = src.size();
+    if (expected_size != actual_size)
+    {
+        throw std::runtime_error("Invalid dataset, file size should be "
+            + std::to_string(expected_size) + "B, but got " + std::to_string(actual_size) + "B");
+    }
+
+    auto data = reinterpret_cast<const float *>(src.data());
+    std::copy(data, data + actual_size / sizeof(float), dest);
+}
+
+void raw_dataset::process(const std::vector<uint8_t> &src, uint8_t *dest, const xt::dynamic_shape<size_t> &shape)
+{
+    auto expected_size = xt::compute_size(shape);
+    auto actual_size = src.size();
+    if (expected_size != actual_size)
+    {
+        throw std::runtime_error("Invalid dataset, file size should be "
+            + std::to_string(expected_size) + "B, but got " + std::to_string(actual_size) + "B");
+    }
+
+    std::copy(src.begin(), src.end(), dest);
+}

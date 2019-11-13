@@ -98,12 +98,15 @@ void transform_graph(graph &graph, target &target, xtl::span<std::unique_ptr<tra
 
 std::unique_ptr<target> create_target(const compile_options &options)
 {
+    target_options t_options;
+    t_options.use_float_input = options.use_float_input;
+
     if (options.output_format == "kmodel")
     {
         if (options.target == "k210")
-            return std::make_unique<k210_target>();
+            return std::make_unique<k210_target>(t_options);
         else if (options.target == "cpu")
-            return std::make_unique<cpu_target>();
+            return std::make_unique<cpu_target>(t_options);
         else
             throw std::invalid_argument("Invalid target: " + options.target);
     }
@@ -146,17 +149,16 @@ void optimize_pass2(const compile_options &options, target &target, graph &graph
 void add_quantization_checkpoints(const compile_options &options, target &target, graph &graph)
 {
     std::vector<std::unique_ptr<transforms::transform>> transforms;
-    target.add_default_transforms(transforms);
     target.add_quantization_checkpoint_transforms(transforms);
     transform_graph(graph, target, transforms);
     dump_graph(options, graph, "before_quant");
 }
 
-void quantize_graph(const compile_options &options, target &target, graph &graph, quantizer &quantizer, const quant_param_t &input_quant_param)
+void quantize_graph(const compile_options &options, target &target, graph &graph, quantizer &quantizer)
 {
     std::vector<std::unique_ptr<transforms::transform>> transforms;
+    target.add_quantization_transforms(quantizer, transforms);
     target.add_default_transforms(transforms);
-    target.add_quantization_transforms(quantizer, input_quant_param, transforms);
     transform_graph(graph, target, transforms);
     dump_graph(options, graph, "after_quant");
 }
@@ -166,20 +168,26 @@ void get_quantization_ranges(target &target, graph &graph, quantizer *quantizer,
     EVAL_IMPL();
 
     assert(graph.inputs().size() == 1);
-    image_dataset dataset(options.dataset, graph.inputs()[0]->output().shape(), options.input_mean, options.input_std);
+    std::unique_ptr<dataset> ds;
+    if (options.dataset_format == "image")
+        ds = std::make_unique<image_dataset>(options.dataset, graph.inputs()[0]->output().shape(), options.input_mean, options.input_std);
+    else if (options.dataset_format == "raw")
+        ds = std::make_unique<raw_dataset>(options.dataset, graph.inputs()[0]->output().shape(), options.input_mean, options.input_std);
+    else
+        throw std::runtime_error("Invalid dataset format: " + options.dataset_format);
     int i = 0;
     std::cout << "  Run calibration..." << std::endl;
 
-    ProgressBar progress_bar(dataset.total_size(), 50);
+    ProgressBar progress_bar(ds->total_size(), 50);
 
     // tell the bar to finish
-    for (auto it = dataset.begin<float>(); it != dataset.end<float>(); ++it)
+    for (auto it = ds->begin<float>(); it != ds->end<float>(); ++it)
     {
         auto input = eval.input_at<float>(0);
         auto &tensor = it->tensor;
         std::copy(tensor.begin(), tensor.end(), input.begin());
 
-        eval.evaluate(quantizer);
+        eval.evaluate(quantizer, options.use_dataset_as_input_stat);
 
 #if EVAL
         auto output = eval.output_at<float>(0);
@@ -204,11 +212,15 @@ void quantize(const compile_options &options, target &target, graph &graph)
     std::cout << "  4.2. Get activation ranges, this may take a while..." << std::endl;
     // quantize
     quantizer quant;
-    auto min = (0.f - options.input_mean) / options.input_std;
-    auto max = (1.f - options.input_mean) / options.input_std;
-    value_range<float> input_range { min, max };
+    if (!options.use_dataset_as_input_stat)
+    {
+        auto min = (0.f - options.input_mean) / options.input_std;
+        auto max = (1.f - options.input_mean) / options.input_std;
+        value_range<float> input_range { min, max };
 
-    quant.record(graph.inputs()[0]->output(), input_range);
+        quant.record(graph.inputs()[0]->output(), input_range);
+    }
+
     get_quantization_ranges(target, graph, &quant, options);
 
     // broadcast quant ranges
@@ -218,7 +230,7 @@ void quantize(const compile_options &options, target &target, graph &graph)
 
     // 4.3 quantize graph
     std::cout << "  4.3. Quantize graph..." << std::endl;
-    quantize_graph(options, target, graph, quant, quant.get_quant_param(input_range, 8));
+    quantize_graph(options, target, graph, quant);
 }
 
 void gencode(target &target, graph &graph, const compile_options &options)
@@ -237,9 +249,24 @@ void gencode(target &target, graph &graph, const compile_options &options)
 
 group compile_options::parser(mode &mode)
 {
+    // clang-format off
     return (
         command("compile").set(mode, mode::compile),
-        "compile" % (value("input file", input_filename) % "input file", value("output file", output_filename) % "output file", required("-i", "--input-format") % "input file format: e.g. tflite" & value("input format", input_format), option("-o", "--output-format") % ("output file format: e.g. kmodel, default is " + output_format) & value("output format", output_format), option("-t", "--target") % ("target arch: e.g. cpu, k210, default is " + target) & value("target", target), option("--dataset") % "calibration dataset, used in post quantization" & value("dataset path", dataset), option("--inference-type") % ("inference type: e.g. float, uint8 default is " + inference_type) & value("inference type", inference_type), option("--input-mean") % ("input mean, default is " + std::to_string(input_mean)) & value("input mean", input_mean), option("--input-std") % ("input std, default is " + std::to_string(input_std)) & value("input std", input_std), option("--dump-ir").set(dump_ir) % "dump nncase ir to .dot files"));
+        "compile" % (
+			value("input file", input_filename) % "input file",
+			value("output file", output_filename) % "output file",
+			required("-i", "--input-format") % "input file format: e.g. tflite" & value("input format", input_format),
+			option("-o", "--output-format") % ("output file format: e.g. kmodel, default is " + output_format) & value("output format", output_format),
+			option("-t", "--target") % ("target arch: e.g. cpu, k210, default is " + target) & value("target", target),
+			option("--dataset") % "calibration dataset, used in post quantization" & value("dataset path", dataset),
+			option("--dataset-format") % ("datset format: e.g. image, raw default is " + dataset_format) & value("dataset format", dataset_format),
+			option("--inference-type") % ("inference type: e.g. float, uint8 default is " + inference_type) & value("inference type", inference_type),
+			option("--input-mean").set(use_float_input, false) % ("input mean, default is " + std::to_string(input_mean)) & value("input mean", input_mean),
+			option("--input-std").set(use_float_input, false) % ("input std, default is " + std::to_string(input_std)) & value("input std", input_std),
+			option("--dump-ir").set(dump_ir) % "dump nncase ir to .dot files",
+			option("--use-float-input").set(use_float_input) % "use float inputs even in non-float inference mode"
+		));
+    // clang-format on
 }
 
 void compile(const compile_options &options)

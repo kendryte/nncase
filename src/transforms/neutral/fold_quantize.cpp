@@ -101,7 +101,7 @@ void fold_input_quantize_transform::process(transform_context &context)
     auto &old_in = static_cast<input_node &>(*context.matched_nodes[0]);
 
     auto input = context.graph.emplace<input_node>(dt_uint8, old_in.output().shape());
-    auto deq = context.graph.emplace<dequantize>(input->output().shape(), quant_param_);
+    auto deq = context.graph.emplace<dequantize>(input->output().shape(), quantizer_.get_quant_param(quantizer_.get(old_in.output()), 8));
     deq->input().connect(input->output());
 
     for (auto &in : dup(inputs))

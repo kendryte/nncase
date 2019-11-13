@@ -74,6 +74,22 @@ namespace importer
                 return { 1 };
         }
 
+        template <class TCast, class T, size_t... I>
+        auto get_vector_elements(const flatbuffers::Vector<T> &vector, std::index_sequence<I...>)
+            -> std::array<TCast, sizeof...(I)>
+        {
+            return { (TCast)vector.Get(I)... };
+        }
+
+        template <size_t N, class Indices = std::make_index_sequence<N>>
+        std::array<size_t, N> get_shape(const flatbuffers::Vector<int32_t> *shape)
+        {
+            if (shape && shape->size())
+                return get_vector_elements<size_t>(*shape, Indices {});
+            else
+                return { 1 };
+        }
+
         ir::axis_t get_axis(const flatbuffers::Vector<int32_t> &shape)
         {
             return { std::begin(shape), std::end(shape) };
@@ -93,6 +109,34 @@ namespace importer
             auto &buffer = get_buffer<T>(tensor);
             auto shape = get_shape(tensor.shape());
             return xt::adapt(reinterpret_cast<const T *>(buffer.data()->data()), shape);
+        }
+
+        template <size_t N>
+        xt::xtensor<float, N> dequantize_tensor(const tflite::Tensor &tensor)
+        {
+            auto tensor_type = tensor.type();
+            if (tensor_type == tflite::TensorType_FLOAT32)
+            {
+                return load_tensor<float, N>(tensor);
+            }
+            else if (tensor_type == tflite::TensorType_INT8)
+            {
+                auto src_tensor = load_tensor<int8_t, N>(tensor);
+                auto &quant = *tensor.quantization();
+                auto scale = quant.scale()->Get(0);
+                auto bias = quant.zero_point()->Get(0);
+
+                xt::xtensor<float, N> dest_tensor(get_shape<4>(tensor.shape()));
+                auto src_it = src_tensor.begin();
+                auto dest_it = dest_tensor.begin();
+                while (src_it != src_tensor.end())
+                    *dest_it++ = (*src_it++ - bias) * scale;
+                return dest_tensor;
+            }
+            else
+            {
+                throw std::runtime_error(std::string("Tensor (") + tensor.name()->str() + std::string(") of type ") + tflite::EnumNameTensorType(tensor_type) + " is not supported");
+            }
         }
 
         template <class T>
@@ -122,8 +166,13 @@ namespace importer
                 return tflite::TensorType_FLOAT32;
             else if constexpr (std::is_same_v<T, int32_t>)
                 return tflite::TensorType_INT32;
+            else if constexpr (std::is_same_v<T, int8_t>)
+                return tflite::TensorType_INT8;
             else
+            {
                 assert(!"Invalid element type");
+                std::terminate();
+            }
         }
 
         constexpr datatype_t to_data_type(tflite::TensorType type)

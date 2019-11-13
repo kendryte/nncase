@@ -38,5 +38,32 @@ namespace ir
         xt::xtensor<float, 1> bias_;
         value_range<float> fused_activation_;
     };
+
+    class quantized_matmul : public node
+    {
+    public:
+        DEFINE_NODE_OPCODE(op_quantized_matmul);
+
+        input_connector &input_a() { return input_at(0); }
+        input_connector &input_b() { return input_at(1); }
+        output_connector &output() { return output_at(0); }
+        int32_t input_a_offset() const noexcept { return input_a_offset_; }
+        int32_t input_b_offset() const noexcept { return input_b_offset_; }
+        int32_t output_mul() const noexcept { return output_mul_; }
+        int32_t output_shift() const noexcept { return output_shift_; }
+        int32_t output_offset() const noexcept { return output_offset_; }
+
+        const xt::xtensor<int32_t, 1> &bias() const noexcept { return bias_; }
+
+        quantized_matmul(shape_t input_a_shape, shape_t input_b_shape, xt::xtensor<int32_t, 1> bias, int32_t input_a_offset, int32_t input_b_offset, int32_t output_mul, int32_t output_shift, int32_t output_offset);
+
+    private:
+        xt::xtensor<int32_t, 1> bias_;
+        int32_t input_a_offset_;
+        int32_t input_b_offset_;
+        int32_t output_mul_;
+        int32_t output_shift_;
+        int32_t output_offset_;
+    };
 }
 }

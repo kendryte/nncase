@@ -13,7 +13,8 @@
  * limitations under the License.
  */
 #pragma once
-#include "..//transform.h"
+#include "../transform.h"
+#include <ir/quantizer.h>
 
 namespace nncase
 {
@@ -32,8 +33,8 @@ namespace transforms
     class fold_input_quantize_transform : public transform
     {
     public:
-        fold_input_quantize_transform(quant_param_t quant_param)
-            : quant_param_(quant_param)
+        fold_input_quantize_transform(ir::quantizer &quantizer)
+            : quantizer_(quantizer)
         {
         }
 
@@ -43,7 +44,7 @@ namespace transforms
         bool on_try_match(ir::node &node, transform_context &context) override;
 
     private:
-        quant_param_t quant_param_;
+        ir::quantizer &quantizer_;
     };
 }
 }

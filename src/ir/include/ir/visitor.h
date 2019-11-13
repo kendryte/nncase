@@ -74,7 +74,6 @@ namespace ir
         }
 
     private:
-
     private:
         TVisitor visitor_;
     };
@@ -105,6 +104,19 @@ namespace ir
     {
         for (auto &&in : node.inputs())
         {
+            if (in.connection() && in.connection()->owner().runtime_opcode() == TNode::opcode())
+                return static_cast<TNode *>(&in.connection()->owner());
+        }
+
+        return nullptr;
+    }
+
+    template <class TNode, class = std::enable_if_t<std::is_base_of_v<node, TNode>>>
+    TNode *try_get_direct_parent(node &node, size_t index)
+    {
+        if (index < node.inputs().size())
+        {
+            auto &in = node.input_at(index);
             if (in.connection() && in.connection()->owner().runtime_opcode() == TNode::opcode())
                 return static_cast<TNode *>(&in.connection()->owner());
         }

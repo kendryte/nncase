@@ -82,7 +82,7 @@ evaluator::evaluator(evaluate_context &context, xtl::span<ir::node *> compute_se
     }
 }
 
-void evaluator::evaluate(quantizer *quantizer)
+void evaluator::evaluate(quantizer *quantizer, bool add_input_stat)
 {
     using clock = chrono::high_resolution_clock;
     chrono::nanoseconds total_duration = {};
@@ -102,7 +102,7 @@ void evaluator::evaluate(quantizer *quantizer)
         if (quantizer && node->runtime_opcode())
         {
             auto opcode = node->runtime_opcode();
-            if (opcode == op_fake_dequantize || opcode == op_fake_quantize)
+            if (opcode == op_fake_dequantize || opcode == op_fake_quantize || (opcode == op_input_node && add_input_stat))
             {
                 auto &output = node->output_at(0);
                 quantizer->record(output, context_.memory_at<float>(output));

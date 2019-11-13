@@ -82,21 +82,27 @@ struct eval_context
 
         auto in_shape = interp.input_shape_at(0);
         xt::dynamic_shape<size_t> shape { (size_t)in_shape[0], (size_t)in_shape[1], (size_t)in_shape[2], (size_t)in_shape[3] };
-        image_dataset dataset(options.dataset, shape, options.input_mean, options.input_std);
+        std::unique_ptr<dataset> ds;
+        if (options.dataset_format == "image")
+            ds = std::make_unique<image_dataset>(options.dataset, shape, options.input_mean, options.input_std);
+        else if (options.dataset_format == "raw")
+            ds = std::make_unique<raw_dataset>(options.dataset, shape, options.input_mean, options.input_std);
+        else
+            throw std::runtime_error("Invalid dataset format: " + options.dataset_format);
 
         switch (interp.input_at(0).datatype)
         {
         case dt_float32:
-            eval<float>(options, dataset);
+            eval<float>(options, *ds);
             break;
         case dt_uint8:
-            eval<uint8_t>(options, dataset);
+            eval<uint8_t>(options, *ds);
             break;
         default:
             throw std::runtime_error("Unsupported input datatype");
         }
 
-        std::cout << "Total : " << interp.total_duration().count() / 1e6 << "ms" << std::endl;
+        std::cout << "Total: " << interp.total_duration().count() / 1e6 << "ms" << std::endl;
     }
 
     void on_done()
@@ -124,14 +130,7 @@ group inference_options::parser(mode &mode)
 {
     return (
         command("infer").set(mode, mode::inference),
-        "infer" %
-        (
-            value("input file", model_filename) % "input kmodel",
-            value("output path", output_path) % "inference result output directory",
-            required("--dataset") % "input dataset to inference" & value("dataset path", dataset),
-            option("--input-mean") % ("input mean, default is " + std::to_string(input_mean)) & value("input mean", input_mean),
-            option("--input-std") % ("input std, default is " + std::to_string(input_std)) & value("input std", input_std)
-        ));
+        "infer" % (value("input file", model_filename) % "input kmodel", value("output path", output_path) % "inference result output directory", required("--dataset") % "input dataset to inference" & value("dataset path", dataset), option("--dataset-format") % ("datset format: e.g. image, raw default is " + dataset_format) & value("dataset format", dataset_format), option("--input-mean") % ("input mean, default is " + std::to_string(input_mean)) & value("input mean", input_mean), option("--input-std") % ("input std, default is " + std::to_string(input_std)) & value("input std", input_std)));
 }
 
 void inference(const inference_options &options)

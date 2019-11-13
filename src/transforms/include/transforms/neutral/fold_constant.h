@@ -13,29 +13,26 @@
  * limitations under the License.
  */
 #pragma once
-#include "../transform.h"
+#include "..//transform.h"
 
 namespace nncase
 {
 namespace transforms
 {
-    class fold_reshape_transform : public transform
+    class fold_constant_transform : public transform
     {
     public:
-        void process(transform_context &context) override;
-    protected:
-        bool skip_self_contained_check() const noexcept override { return true; }
-        bool on_try_match(ir::node &node, transform_context &context) override;
-    };
+        fold_constant_transform(target &target)
+            : target_(target) {}
 
-    class fold_nop_reshape_transform : public transform
-    {
-    public:
         void process(transform_context &context) override;
 
     protected:
         bool skip_self_contained_check() const noexcept override { return true; }
         bool on_try_match(ir::node &node, transform_context &context) override;
+
+    private:
+        target &target_;
     };
 }
 }
