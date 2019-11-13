@@ -33,6 +33,26 @@ namespace runtime
             value_range<float> fused_activation;
         };
 
+        struct quantized_binary_options : public simple_node_body<quantized_binary_options>
+        {
+            memory_range input_a;
+            memory_range input_b;
+            memory_range output;
+            binary_op_t binary_op;
+            runtime_shape_t in_a_shape;
+            runtime_shape_t in_b_shape;
+            runtime_shape_t out_shape;
+            int32_t input_a_offset;
+            int32_t input_a_mul;
+            int32_t input_a_shift;
+            int32_t input_b_offset;
+            int32_t input_b_mul;
+            int32_t input_b_shift;
+            int32_t output_offset;
+            int32_t output_mul;
+            int32_t output_shift;
+        };
+
         struct concat_options
         {
             memory_range output;

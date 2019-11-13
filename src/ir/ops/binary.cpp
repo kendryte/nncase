@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <ir/ops/binary.h>
 #include <ir/op_utils.h>
+#include <ir/ops/binary.h>
 #include <xtensor/xarray.hpp>
 
 using namespace nncase;
@@ -25,4 +25,13 @@ binary::binary(binary_op_t binary_op, shape_t input_a_shape, shape_t input_b_sha
     add_input("input_a", dt_float32, input_a_shape);
     add_input("input_b", dt_float32, input_b_shape);
     add_output("output", dt_float32, get_binary_output_shape(input_a_shape, input_b_shape));
+}
+
+quantized_binary::quantized_binary(binary_op_t binary_op, shape_t input_a_shape, shape_t input_b_shape, int32_t input_a_offset, int32_t input_a_mul, int32_t input_a_shift,
+    int32_t input_b_offset, int32_t input_b_mul, int32_t input_b_shift, int32_t output_mul, int32_t output_shift, int32_t output_offset)
+    : binary_op_(binary_op), input_a_offset_(input_a_offset), input_a_mul_(input_a_mul), input_a_shift_(input_a_shift), input_b_offset_(input_b_offset), input_b_mul_(input_b_mul), input_b_shift_(input_b_shift), output_mul_(output_mul), output_shift_(output_shift), output_offset_(output_offset)
+{
+    add_input("input_a", dt_uint8, input_a_shape);
+    add_input("input_b", dt_uint8, input_b_shape);
+    add_output("output", dt_uint8, get_binary_output_shape(input_a_shape, input_b_shape));
 }

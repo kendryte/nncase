@@ -12,6 +12,7 @@ set(SRCS transform.cpp
          neutral/dequantize_motion.cpp
          neutral/quantized_conv2d.cpp
          neutral/quantized_matmul.cpp
+         neutral/quantized_binary.cpp
          k210/fake_kpu_conv2d.cpp
          k210/strided_slice_motion.cpp
          k210/kpu_conv2d.cpp

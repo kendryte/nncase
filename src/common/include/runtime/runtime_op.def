@@ -16,6 +16,7 @@ BEGINE_DEFINE_TARGET(neutral)
     DEFINE_NEUTRAL_RUNTIME_OP(unary,            Unary,				0x0E)
     DEFINE_NEUTRAL_RUNTIME_OP(quantized_conv2d, QuantizedConv2D,	0x0F)
     DEFINE_NEUTRAL_RUNTIME_OP(quantized_matmul, QuantizedMatMul,	0x10)
+    DEFINE_NEUTRAL_RUNTIME_OP(quantized_binary, QuantizedBinary,	0x11)
 END_DEFINE_TARGET()
 
 // CPU

@@ -9,7 +9,7 @@ class SimpeConv2DModule(tf.Module):
 
   def __init__(self):
     super(SimpeConv2DModule, self).__init__()
-    self.w = tf.constant(np.arange(1,10,dtype=np.float32), shape=[3,3,1,1])
+    self.w = tf.constant(np.arange(-1,8,dtype=np.float32), shape=[3,3,1,1])
 
   @tf.function(input_signature=[tf.TensorSpec([1,3,3,1], tf.float32)])
   def __call__(self, x):

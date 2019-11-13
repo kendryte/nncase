@@ -76,6 +76,43 @@ namespace runtime
             }
         }
 
+        kernel_call_result quantized_binary(quantized_binary_options &options, interpreter_t &interpreter, interpreter_step_t step)
+        {
+            auto input_a = interpreter.memory_at<uint8_t>(options.input_a);
+            auto input_b = interpreter.memory_at<uint8_t>(options.input_b);
+            auto output = interpreter.memory_at<uint8_t>(options.output);
+
+            auto binary = [&](auto op) {
+                kernels::neutral::quantized_binary(input_a.data(), input_b.data(), output.data(), options.in_a_shape, options.in_b_shape, options.out_shape,
+                    options.input_a_offset, options.input_a_mul, options.input_a_shift, options.input_b_offset, options.input_b_mul, options.input_b_shift,
+                    options.output_mul, options.output_shift, options.output_offset, op);
+            };
+
+            switch (options.binary_op)
+            {
+            case binary_add:
+                binary([](auto a, auto b) { return a + b; });
+                return kcr_done;
+            case binary_sub:
+                binary([](auto a, auto b) { return a - b; });
+                return kcr_done;
+            case binary_mul:
+                binary([](auto a, auto b) { return a * b; });
+                return kcr_done;
+            case binary_div:
+                binary([](auto a, auto b) { return a / b; });
+                return kcr_done;
+            case binary_min:
+                binary([](auto a, auto b) { return std::min(a, b); });
+                return kcr_done;
+            case binary_max:
+                binary([](auto a, auto b) { return std::max(a, b); });
+                return kcr_done;
+            default:
+                return kcr_error;
+            }
+        }
+
         kernel_call_result concat(concat_options &options, interpreter_t &interpreter, interpreter_step_t step)
         {
             auto output = interpreter.memory_at<uint8_t>(options.output);

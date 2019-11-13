@@ -65,6 +65,30 @@ namespace codegen
             return body;
         });
 
+        register_emitter(op_quantized_binary, [](node &node, codegen_context &context) {
+            auto &rnode = static_cast<quantized_binary &>(node);
+            auto body = std::make_unique<node_body_impl<rop_quantized_binary, quantized_binary_options>>();
+
+            body->input_a = context.get_allocation(rnode.input_a());
+            body->input_b = context.get_allocation(rnode.input_b());
+            body->output = context.get_allocation(rnode.output());
+            body->binary_op = rnode.binary_op();
+            body->in_a_shape = to(rnode.input_a().shape());
+            body->in_b_shape = to(rnode.input_b().shape());
+            body->out_shape = to(rnode.output().shape());
+            body->input_a_offset = rnode.input_a_offset();
+            body->input_a_mul = rnode.input_a_mul();
+            body->input_a_shift = rnode.input_a_shift();
+            body->input_b_offset = rnode.input_b_offset();
+            body->input_b_mul = rnode.input_b_mul();
+            body->input_b_shift = rnode.input_b_shift();
+            body->output_offset = rnode.output_offset();
+            body->output_mul = rnode.output_mul();
+            body->output_shift = rnode.output_shift();
+
+            return body;
+        });
+
         register_emitter(op_concat, [](node &node, codegen_context &context) {
             struct concat_options_body : public node_body_impl<rop_concat, concat_options>
             {

@@ -110,6 +110,46 @@ namespace ir
             }
         });
 
+        register_evaluator(op_quantized_binary, [](ir::node &node, evaluate_context &context) {
+            auto &rnode = static_cast<quantized_binary &>(node);
+
+            assert(rnode.input_a().type() == dt_uint8);
+            assert(rnode.input_b().type() == dt_uint8);
+            auto input_a = context.memory_at<uint8_t>(rnode.input_a());
+            auto input_b = context.memory_at<uint8_t>(rnode.input_b());
+            auto output = context.memory_at<uint8_t>(rnode.output());
+
+            auto binary = [&](auto binary_op) {
+                neutral::quantized_binary(input_a.data(), input_b.data(), output.data(), to(rnode.input_a().shape()), to(rnode.input_b().shape()),
+                    to(rnode.output().shape()), rnode.input_a_offset(), rnode.input_a_mul(), rnode.input_a_shift(), rnode.input_b_offset(),
+                    rnode.input_b_mul(), rnode.input_b_shift(), rnode.output_mul(), rnode.output_shift(), rnode.output_offset(), binary_op);
+            };
+
+            switch (rnode.binary_op())
+            {
+            case binary_add:
+                binary([](auto a, auto b) { return a + b; });
+                break;
+            case binary_sub:
+                binary([](auto a, auto b) { return a - b; });
+                break;
+            case binary_mul:
+                binary([](auto a, auto b) { return a * b; });
+                break;
+            case binary_div:
+                binary([](auto a, auto b) { return a / b; });
+                break;
+            case binary_min:
+                binary([](auto a, auto b) { return std::min(a, b); });
+                break;
+            case binary_max:
+                binary([](auto a, auto b) { return std::max(a, b); });
+                break;
+            default:
+                throw std::runtime_error("Not supported binary");
+            }
+        });
+
         register_evaluator(op_concat, [](ir::node &node, evaluate_context &context) {
             auto &rnode = static_cast<concat &>(node);
 
