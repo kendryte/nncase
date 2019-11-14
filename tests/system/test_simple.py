@@ -35,9 +35,9 @@ def test_simple_quant():
 	ncc.clear()
 	ncc.save_tflite(module)
 	init_values()
-	ncc.compile(['--inference-type', 'uint8',
+	ncc.compile(['--inference-type', 'uint8', '-t', 'cpu',
 	 '--dataset', ncc.input_dir + '/test.bin', '--dataset-format', 'raw',
-	 '--use-float-input'])
+	 '--input-type', 'float'])
 
 	ncc.infer(['--dataset-format', 'raw'])
 	ncc.close_to('test', 1e-3)

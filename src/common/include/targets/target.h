@@ -25,7 +25,7 @@ namespace nncase
 {
 struct target_options
 {
-    bool use_float_input = false;
+    std::string input_type;
 };
 
 class target

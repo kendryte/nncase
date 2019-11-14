@@ -99,7 +99,10 @@ void transform_graph(graph &graph, target &target, xtl::span<std::unique_ptr<tra
 std::unique_ptr<target> create_target(const compile_options &options)
 {
     target_options t_options;
-    t_options.use_float_input = options.use_float_input;
+    if (options.input_type == "default")
+        t_options.input_type = options.inference_type;
+    else
+        t_options.input_type = options.input_type;
 
     if (options.output_format == "kmodel")
     {
@@ -261,10 +264,10 @@ group compile_options::parser(mode &mode)
 			option("--dataset") % "calibration dataset, used in post quantization" & value("dataset path", dataset),
 			option("--dataset-format") % ("datset format: e.g. image, raw default is " + dataset_format) & value("dataset format", dataset_format),
 			option("--inference-type") % ("inference type: e.g. float, uint8 default is " + inference_type) & value("inference type", inference_type),
-			option("--input-mean").set(use_float_input, false) % ("input mean, default is " + std::to_string(input_mean)) & value("input mean", input_mean),
-			option("--input-std").set(use_float_input, false) % ("input std, default is " + std::to_string(input_std)) & value("input std", input_std),
+			option("--input-mean") % ("input mean, default is " + std::to_string(input_mean)) & value("input mean", input_mean),
+			option("--input-std") % ("input std, default is " + std::to_string(input_std)) & value("input std", input_std),
 			option("--dump-ir").set(dump_ir) % "dump nncase ir to .dot files",
-			option("--use-float-input").set(use_float_input) % "use float inputs even in non-float inference mode"
+			option("--input-type").set(input_type) % ("input type: e.g. default, float, uint8, default means equal to inference type") & value("input type", input_type)
 		));
     // clang-format on
 }

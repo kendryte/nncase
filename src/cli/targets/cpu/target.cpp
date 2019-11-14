@@ -104,7 +104,7 @@ void nncase::cpu_target::add_quantization_checkpoint_transforms(std::vector<std:
 
 void nncase::cpu_target::add_quantization_transforms(ir::quantizer &quantizer, std::vector<std::unique_ptr<transform>> &transforms)
 {
-    if (!options_.use_float_input)
+    if (options_.input_type == "uint8")
         transforms.emplace_back(new fold_input_quantize_transform(quantizer));
     transforms.emplace_back(new dequantize_transpose_motion_transform());
     transforms.emplace_back(new dequantize_pad_motion_transform());

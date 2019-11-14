@@ -33,10 +33,10 @@ struct compile_options
     std::string output_format = "kmodel";
     std::string target = "k210";
     std::string inference_type = "uint8";
+    std::string input_type = "default";
     float input_mean = 0.f;
     float input_std = 1.f;
     bool dump_ir = false;
-    bool use_float_input = false;
     bool use_dataset_as_input_stat = true;
 
     clipp::group parser(mode &mode);
