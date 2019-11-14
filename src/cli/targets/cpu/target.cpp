@@ -109,6 +109,7 @@ void nncase::cpu_target::add_quantization_transforms(ir::quantizer &quantizer, s
     transforms.emplace_back(new dequantize_transpose_motion_transform());
     transforms.emplace_back(new dequantize_pad_motion_transform());
     transforms.emplace_back(new dequantize_strided_slice_motion_transform());
+    transforms.emplace_back(new dequantize_resize_image_motion_transform());
     transforms.emplace_back(new quantized_conv2d_transform(quantizer));
     transforms.emplace_back(new quantized_matmul_transform(quantizer));
     transforms.emplace_back(new quantized_binary_transform(quantizer));

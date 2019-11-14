@@ -33,6 +33,7 @@ namespace transforms
     DEFINE_DEQ_MOTION(pad);
     DEFINE_DEQ_MOTION(transpose);
     DEFINE_DEQ_MOTION(strided_slice);
+    DEFINE_DEQ_MOTION(resize_image);
 
 #undef DEFINE_DEQ_MOTION
 }

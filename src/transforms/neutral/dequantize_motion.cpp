@@ -18,6 +18,7 @@
 #include <ir/ops/dequantize.h>
 #include <ir/ops/pad.h>
 #include <ir/ops/reduce.h>
+#include <ir/ops/resize_image.h>
 #include <ir/ops/strided_slice.h>
 #include <ir/ops/transpose.h>
 #include <ir/visitor.h>
@@ -130,6 +131,42 @@ void dequantize_strided_slice_motion_transform::process(transform_context &conte
 
     auto slice = context.graph.emplace<strided_slice>(dt_uint8, old_deq.input().shape(), old_slice.begin(), old_slice.end(), old_slice.strides(),
         old_slice.begin_mask(), old_slice.end_mask(), old_slice.ellipsis_mask(), old_slice.new_axis_mask(), old_slice.shrink_axis_mask());
+    auto deq = context.graph.emplace<dequantize>(slice->output().shape(), old_deq.quant_param());
+    deq->input().connect(slice->output());
+
+    slice->input().connect(output);
+    for (auto &in : dup(inputs))
+        in->connect(deq->output());
+}
+
+bool dequantize_resize_image_motion_transform::on_try_match(node &node, transform_context &context)
+{
+    if (auto deq = node_cast<dequantize>(node))
+    {
+        if (auto resize = try_get_direct_child<resize_image>(*deq))
+        {
+            context.matched_nodes.emplace_back(deq);
+            context.matched_nodes.emplace_back(resize);
+
+            context.inputs.emplace_back(&deq->input());
+            context.outputs.emplace_back(&resize->output());
+
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void dequantize_resize_image_motion_transform::process(transform_context &context)
+{
+    auto &output = *context.inputs[0]->connection();
+    auto inputs = context.outputs[0]->connections();
+
+    auto &old_deq = static_cast<dequantize &>(*context.matched_nodes[0]);
+    auto &old_resize = static_cast<resize_image &>(*context.matched_nodes[1]);
+
+    auto slice = context.graph.emplace<resize_image>(dt_uint8, old_resize.mode(), old_deq.input().shape(), old_resize.new_size(), old_resize.align_corners());
     auto deq = context.graph.emplace<dequantize>(slice->output().shape(), old_deq.quant_param());
     deq->input().connect(slice->output());
 

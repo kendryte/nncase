@@ -35,6 +35,19 @@ using namespace nncase::runtime;
         return kcr_error;             \
     }
 
+#define FP_OR_Q_IMPL(type, KERNEL) \
+    switch (type)                  \
+    {                              \
+    case dt_float32:               \
+        KERNEL(float);             \
+        break;                     \
+    case dt_uint8:                 \
+        KERNEL(uint8_t);           \
+        break;                     \
+    default:                       \
+        return kcr_error;          \
+    }
+
 namespace nncase
 {
 namespace runtime
@@ -100,7 +113,7 @@ namespace runtime
                 binary([](auto a, auto b) { return a * b; });
                 return kcr_done;
             case binary_div:
-                binary([](auto a, auto b) { return a / b; });
+                binary([](auto a, auto b) { return (a + b / 2) / b; });
                 return kcr_done;
             case binary_min:
                 binary([](auto a, auto b) { return std::min(a, b); });
@@ -262,20 +275,24 @@ namespace runtime
 
         kernel_call_result resize_image(resize_image_options &options, interpreter_t &interpreter, interpreter_step_t step)
         {
-            auto input = interpreter.memory_at<float>(options.input);
-            auto output = interpreter.memory_at<float>(options.output);
+            auto input = interpreter.memory_at<uint8_t>(options.input);
+            auto output = interpreter.memory_at<uint8_t>(options.output);
 
             if (options.mode == image_resize_bilinear)
             {
-                kernels::neutral::resize_bilinear(input.data(), output.data(), options.in_shape, options.out_h, options.out_w, options.align_corners);
+#define RESIZE_BL_KERNEL(T) \
+    kernels::neutral::resize_bilinear(reinterpret_cast<const T *>(input.data()), reinterpret_cast<T *>(output.data()), options.in_shape, options.out_h, options.out_w, options.align_corners);
+
+                FP_OR_Q_IMPL(options.input.datatype, RESIZE_BL_KERNEL);
                 return kcr_done;
+#undef RESIZE_BL_KERNEL
             }
             else
             {
 #define RESIZE_NN_KERNEL(T) \
     kernels::neutral::resize_nearest_neighbor(reinterpret_cast<const T *>(input.data()), reinterpret_cast<T *>(output.data()), options.in_shape, options.out_h, options.out_w);
 
-                ELEM_SIZE_IMPL(options.input.datatype, RESIZE_NN_KERNEL);
+                FP_OR_Q_IMPL(options.input.datatype, RESIZE_NN_KERNEL);
                 return kcr_done;
 #undef RESIZE_NN_KERNEL
             }

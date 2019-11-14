@@ -453,7 +453,8 @@ namespace kernels
             }
         }
 
-        inline void resize_bilinear(const float *input, float *output, const runtime_shape_t &in_shape, int32_t out_h, int32_t out_w, bool align_corners)
+        template <class T>
+        inline void resize_bilinear(const T *input, T *output, const runtime_shape_t &in_shape, int32_t out_h, int32_t out_w, bool align_corners)
         {
             auto height_scale = (float)in_shape[2] / out_h;
             auto width_scale = (float)in_shape[3] / out_w;
@@ -493,7 +494,7 @@ namespace kernels
                             auto a2 = (1 - (in_y - in_y0)) * (in_x - in_x0);
                             auto a3 = (in_y - in_y0) * (in_x - in_x0);
 
-                            output[destIdx++] = v0 * a0 + v1 * a1 + v2 * a2 + v3 * a3;
+                            output[destIdx++] = T(v0 * a0 + v1 * a1 + v2 * a2 + v3 * a3);
                         }
                     }
                 }

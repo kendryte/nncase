@@ -53,6 +53,19 @@ using namespace nncase::kernels;
         throw std::runtime_error("Not supported element type"); \
     }
 
+#define FP_OR_Q_IMPL(type, KERNEL)                              \
+    switch (type)                                               \
+    {                                                           \
+    case dt_float32:                                            \
+        KERNEL(float);                                          \
+        break;                                                  \
+    case dt_uint8:                                              \
+        KERNEL(uint8_t);                                        \
+        break;                                                  \
+    default:                                                    \
+        throw std::runtime_error("Not supported element type"); \
+    }
+
 namespace
 {
 void nop_evaluator(ir::node &, evaluate_context &)
@@ -353,10 +366,14 @@ namespace ir
 
             if (rnode.mode() == image_resize_bilinear)
             {
-                auto input = context.memory_at<float>(rnode.input());
-                auto output = context.memory_at<float>(rnode.output());
+                auto input = context.memory_at<uint8_t>(rnode.input());
+                auto output = context.memory_at<uint8_t>(rnode.output());
 
-                kernels::neutral::resize_bilinear(input.data(), output.data(), to(rnode.input().shape()), rnode.new_size()[0], rnode.new_size()[1], rnode.align_corners());
+#define RESIZE_BL_KERNEL(T) \
+    kernels::neutral::resize_bilinear(reinterpret_cast<const T *>(input.data()), reinterpret_cast<T *>(output.data()), to(rnode.input().shape()), rnode.new_size()[0], rnode.new_size()[1], rnode.align_corners());
+
+                FP_OR_Q_IMPL(rnode.input().type(), RESIZE_BL_KERNEL);
+#undef RESIZE_BL_KERNEL
             }
             else
             {
@@ -366,7 +383,7 @@ namespace ir
 #define RESIZE_NN_KERNEL(T) \
     kernels::neutral::resize_nearest_neighbor(reinterpret_cast<const T *>(input.data()), reinterpret_cast<T *>(output.data()), to(rnode.input().shape()), rnode.new_size()[0], rnode.new_size()[1]);
 
-                ELEM_SIZE_IMPL(rnode.input().type(), RESIZE_NN_KERNEL);
+                FP_OR_Q_IMPL(rnode.input().type(), RESIZE_NN_KERNEL);
 #undef RESIZE_NN_KERNEL
             }
         });
