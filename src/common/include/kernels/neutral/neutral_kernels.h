@@ -40,8 +40,12 @@ namespace kernels
                             const auto in_a_off = kernels::details::get_reduced_offset(in_off, in_a_shape);
                             const auto in_b_off = kernels::details::get_reduced_offset(in_off, in_b_shape);
                             const auto a = input_a[offset(in_a_shape, in_a_off)];
+#if FIX_CACHE
+                            float b;
+                            memcpy(&b, &input_b[offset(in_b_shape, in_b_off)], sizeof(float));
+#else
                             const auto b = input_b[offset(in_b_shape, in_b_off)];
-
+#endif
                             output[offset(out_shape, in_off)] = kernels::details::apply_activation(op(a, b), fused_activation);
                         }
                     }
