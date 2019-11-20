@@ -35,6 +35,8 @@ void tflite_importer::import()
     for (auto &&op : operators)
         convert_op(*op);
 
+    std::unordered_map<int32_t, output_connector *> created_inputs;
+
     // connect tensors
     for (auto &&in : input_tensors_)
     {
@@ -65,18 +67,28 @@ void tflite_importer::import()
     {
         if (!in.first->connection())
         {
-            // image
-            if (in.first->shape().size() == 4)
+            auto out_it = created_inputs.find(in.second);
+            if (out_it != created_inputs.end())
             {
-                auto node = graph_.emplace<input_node>(in.first->type(), nhwc_to_nchw(in.first->shape()));
-                auto sur_trans = nchw_to_nhwc(node->output().type(), node->output().shape());
-                sur_trans->input().connect(node->output());
-                in.first->connect(sur_trans->output());
+                in.first->connect(*out_it->second);
             }
             else
             {
-                auto node = graph_.emplace<input_node>(in.first->type(), in.first->shape());
-                in.first->connect(node->output());
+                // image
+                if (in.first->shape().size() == 4)
+                {
+                    auto node = graph_.emplace<input_node>(in.first->type(), nhwc_to_nchw(in.first->shape()));
+                    auto sur_trans = nchw_to_nhwc(node->output().type(), node->output().shape());
+                    sur_trans->input().connect(node->output());
+                    in.first->connect(sur_trans->output());
+                    created_inputs.emplace(in.second, &node->output());
+                }
+                else
+                {
+                    auto node = graph_.emplace<input_node>(in.first->type(), in.first->shape());
+                    in.first->connect(node->output());
+                    created_inputs.emplace(in.second, &node->output());
+                }
             }
         }
     }

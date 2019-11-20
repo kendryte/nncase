@@ -29,15 +29,7 @@ DEFINE_TFLITE_LOWER(SOFTMAX)
 
     auto in_shape = get_shape(input.shape());
     axis_t reduce_axis;
-    if (in_shape.size() == 1)
-    {
-        reduce_axis.push_back(0);
-    }
-    else
-    {
-        for (size_t i = 1; i < in_shape.size(); i++)
-            reduce_axis.push_back(i);
-    }
+    reduce_axis.push_back(in_shape.size() - 1);
 
     auto max = graph_.emplace<reduce>(reduce_max, in_shape, reduce_axis, std::numeric_limits<float>::lowest(), true);
     auto sub = graph_.emplace<binary>(binary_sub, in_shape, max->output().shape(), value_range<float>::full());

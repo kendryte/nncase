@@ -30,7 +30,7 @@ namespace
 {
 auto quantize_bn_act(quantizer &quantizer, matmul &mm, float sa, const quant_param_t &yq_p)
 {
-    xt::xtensor<int32_t, 1> q_bias({ (int32_t)mm.bias().size() });
+    xt::xtensor<int32_t, 1> q_bias(mm.bias().shape());
     auto &bias = mm.bias();
     auto so = yq_p.scale / sa;
     auto bn_mul = quantizer.get_fixed_mul(so, 32, 32, true);

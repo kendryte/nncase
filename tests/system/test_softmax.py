@@ -7,24 +7,23 @@ import sys
 [sys.path.append(i) for i in ['.', '..']]
 import ncc
 
-class SimpeMatMulModule(tf.Module):
+class SoftmaxModule(tf.Module):
 
   def __init__(self):
-    super(SimpeMatMulModule, self).__init__()
-    self.v = tf.constant([[1.,2.],[3.,4.]])
+    super(SoftmaxModule, self).__init__()
 
-  @tf.function(input_signature=[tf.TensorSpec([1,2], tf.float32)])
+  @tf.function(input_signature=[tf.TensorSpec([1,2,3], tf.float32)])
   def __call__(self, x):
-    return tf.matmul(x, self.v)
+    return tf.nn.softmax(x)
 
-module = SimpeMatMulModule()
+module = SoftmaxModule()
 
 def init_values():
-	input = np.asarray([1,2], dtype=np.float32).reshape([1,-1])
+	input = np.asarray([1,-2,3,4,-9,0], dtype=np.float32).reshape([1,2,-1])
 	ncc.save_input_array('test', input)
 	ncc.save_expect_array('test', ncc.run_tflite(input))
 
-def test_simple_matmul():
+def test_softmax():
 	ncc.clear()
 	ncc.save_tflite(module)
 	init_values()
@@ -33,7 +32,7 @@ def test_simple_matmul():
 	ncc.infer(['--dataset-format', 'raw'])
 	ncc.close_to('test', 0)
 	
-def test_simple_matmul_quant():
+def test_softmax_quant():
 	ncc.clear()
 	ncc.save_tflite(module)
 	init_values()
@@ -45,5 +44,5 @@ def test_simple_matmul_quant():
 	ncc.close_to('test', 1e-3)
 
 if __name__ == "__main__":
-	test_simple_matmul()
-	test_simple_matmul_quant()
+	test_softmax()
+	test_softmax_quant()

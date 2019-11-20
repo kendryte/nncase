@@ -99,7 +99,7 @@ void nncase::cpu_target::add_optimize2_transforms(std::vector<std::unique_ptr<tr
 
 void nncase::cpu_target::add_quantization_checkpoint_transforms(std::vector<std::unique_ptr<transform>> &transforms)
 {
-    transforms.emplace_back(new add_quant_checkpoints_transform({ op_conv2d, op_matmul, op_binary }));
+    //transforms.emplace_back(new add_quant_checkpoints_transform({ op_conv2d, op_matmul, op_binary }));
 }
 
 void nncase::cpu_target::add_quantization_transforms(ir::quantizer &quantizer, std::vector<std::unique_ptr<transform>> &transforms)
@@ -109,10 +109,10 @@ void nncase::cpu_target::add_quantization_transforms(ir::quantizer &quantizer, s
     transforms.emplace_back(new dequantize_transpose_motion_transform());
     transforms.emplace_back(new dequantize_pad_motion_transform());
     transforms.emplace_back(new dequantize_strided_slice_motion_transform());
-    transforms.emplace_back(new dequantize_resize_image_motion_transform());
-    transforms.emplace_back(new quantized_conv2d_transform(quantizer));
-    transforms.emplace_back(new quantized_matmul_transform(quantizer));
-    transforms.emplace_back(new quantized_binary_transform(quantizer));
+    //transforms.emplace_back(new dequantize_resize_image_motion_transform());
+    //transforms.emplace_back(new quantized_conv2d_transform(quantizer));
+    //transforms.emplace_back(new quantized_matmul_transform(quantizer));
+    //transforms.emplace_back(new quantized_binary_transform(quantizer));
 }
 
 void nncase::cpu_target::add_quantization_broadcast(std::unordered_set<ir::node_opcode> &opcodes)

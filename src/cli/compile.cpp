@@ -182,6 +182,7 @@ void get_quantization_ranges(target &target, graph &graph, quantizer *quantizer,
     std::cout << "  Run calibration..." << std::endl;
 
     ProgressBar progress_bar(ds->total_size(), 50);
+    progress_bar.display();
 
     // tell the bar to finish
     for (auto it = ds->begin<float>(); it != ds->end<float>(); ++it)
@@ -192,9 +193,9 @@ void get_quantization_ranges(target &target, graph &graph, quantizer *quantizer,
 
         eval.evaluate(quantizer, options.use_dataset_as_input_stat);
 
-#if EVAL
+#if EVAL > 0
         auto output = eval.output_at<float>(0);
-        std::ofstream result(std::to_string(i) + ".bin", std::ios::binary | std::ios::out);
+        std::ofstream result("q1_" + std::to_string(i++) + ".bin", std::ios::binary | std::ios::out);
         runtime::binary_writer writer(result);
         writer.write_array<float>(output);
 #endif
@@ -203,6 +204,61 @@ void get_quantization_ranges(target &target, graph &graph, quantizer *quantizer,
     }
 
     progress_bar.done();
+}
+
+template <class T>
+void run_quantized_graph_impl(evaluator &eval, dataset &ds)
+{
+    ProgressBar progress_bar(ds.total_size(), 50);
+    progress_bar.display();
+
+    int i = 0;
+    // tell the bar to finish
+    for (auto it = ds.begin<T>(); it != ds.end<T>(); ++it)
+    {
+        auto input = eval.input_at<T>(0);
+        auto &tensor = it->tensor;
+        std::copy(tensor.begin(), tensor.end(), input.begin());
+
+        eval.evaluate();
+
+        auto output = eval.output_at<float>(0);
+        std::ofstream result("q2_" + std::to_string(i++) + ".bin", std::ios::binary | std::ios::out);
+        runtime::binary_writer writer(result);
+        writer.write_array<float>(output);
+
+        ++progress_bar;
+        progress_bar.display();
+    }
+
+    progress_bar.done();
+}
+
+void run_quantized_graph(target &target, graph &graph, const compile_options &options)
+{
+    EVAL_IMPL();
+
+    assert(graph.inputs().size() == 1);
+    std::unique_ptr<dataset> ds;
+    if (options.dataset_format == "image")
+        ds = std::make_unique<image_dataset>(options.dataset, graph.inputs()[0]->output().shape(), options.input_mean, options.input_std);
+    else if (options.dataset_format == "raw")
+        ds = std::make_unique<raw_dataset>(options.dataset, graph.inputs()[0]->output().shape(), options.input_mean, options.input_std);
+    else
+        throw std::runtime_error("Invalid dataset format: " + options.dataset_format);
+
+    std::cout << "  Run quantized graph..." << std::endl;
+    switch (graph.inputs()[0]->output().type())
+    {
+    case dt_float32:
+        run_quantized_graph_impl<float>(eval, *ds);
+        break;
+    case dt_uint8:
+        run_quantized_graph_impl<uint8_t>(eval, *ds);
+        break;
+    default:
+        throw std::runtime_error("Unsupported input datatype");
+    }
 }
 
 void quantize(const compile_options &options, target &target, graph &graph)
@@ -234,6 +290,12 @@ void quantize(const compile_options &options, target &target, graph &graph)
     // 4.3 quantize graph
     std::cout << "  4.3. Quantize graph..." << std::endl;
     quantize_graph(options, target, graph, quant);
+
+#if EVAL > 1
+    // 4.4 Run quantized graph
+    std::cout << "  4.4. Run quantized graph..." << std::endl;
+    run_quantized_graph(target, graph, options);
+#endif
 }
 
 void gencode(target &target, graph &graph, const compile_options &options)

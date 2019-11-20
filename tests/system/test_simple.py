@@ -1,9 +1,11 @@
 import pytest
 import os
 import subprocess
-import ncc
 import tensorflow as tf
 import numpy as np
+import sys
+[sys.path.append(i) for i in ['.', '..']]
+import ncc
 
 class SimpeModule(tf.Module):
 

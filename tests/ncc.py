@@ -5,7 +5,7 @@ import tensorflow as tf
 import numpy as np
 import shutil
 
-ncc = os.path.realpath(os.path.dirname(os.path.realpath(__file__)) + "/../../out/bin/ncc")
+ncc = os.path.realpath(os.path.dirname(os.path.realpath(__file__)) + "/../out/bin/ncc")
 pb_export_dir = "./tmp/test_model"
 tflite_export_file = "./tmp/test.tflite"
 kmodel_export_file = "./tmp/test.kmodel"
@@ -17,6 +17,12 @@ def clear():
 	if os.path.exists('./tmp'):
 		shutil.rmtree('./tmp')
 	os.makedirs('./tmp')
+
+def copy_tflite(path):
+	shutil.copyfile(path, tflite_export_file)
+
+def copy_input(path):
+	shutil.copyfile(path, input_dir)
 
 def save_tflite(model):
 	if not os.path.exists(pb_export_dir):
@@ -66,5 +72,8 @@ def close_to(name, threshold):
 	expect_arr = np.fromfile(expect_out_dir + '/' + name + '.bin', dtype=np.float32)
 	actual_arr = np.fromfile(kmodel_out_dir + '/' + name + '.bin', dtype=np.float32)
 	error = np.sum(np.square(expect_arr - actual_arr)) / len(expect_arr)
+	#print(expect_arr - actual_arr)
+	#print(expect_arr)
+	#print(actual_arr)
 	print('error:', error)
 	assert error <= threshold

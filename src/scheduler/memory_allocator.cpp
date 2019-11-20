@@ -15,6 +15,7 @@
 #include <ir/op_utils.h>
 #include <ortools/sat/cp_model.h>
 #include <ortools/sat/cp_model_solver.h>
+#include <scheduler/freelist.h>
 #include <scheduler/memory_allocator.h>
 #include <stdexcept>
 
@@ -129,30 +130,59 @@ void memory_allocator::finish()
     // Tell the solver to enumerate all solutions.
     SatParameters parameters;
     parameters.set_find_multiple_cores(true);
-    parameters.set_max_time_in_seconds(30);
+    parameters.set_max_time_in_seconds(60);
     model.Add(NewSatParameters(parameters));
     auto r = SolveCpModel(builder.Build(), &model);
-    if (r.status() != CpSolverStatus::FEASIBLE && r.status() != CpSolverStatus::OPTIMAL)
-        throw std::runtime_error("Allocator cannot find a feasible layout.");
-
-    index = 0;
-
-#if 0
-    for (auto &v : node_vars)
-    {
-        LOG(INFO) << "node_" << index++ << "_y_start = " << SolutionIntegerValue(r, v.y.StartVar());
-        LOG(INFO) << "node_" << index << "_y_size = " << SolutionIntegerValue(r, v.y.SizeVar());
-        LOG(INFO) << "node_" << index << "_y_end = " << SolutionIntegerValue(r, v.y.EndVar());
-    }
-#endif
 
     size_t max_usage = 0;
-    index = 0;
-    for (auto &n : nodes_)
+    if (r.status() != CpSolverStatus::FEASIBLE && r.status() != CpSolverStatus::OPTIMAL)
     {
-        auto &v = node_vars[index++];
-        n.start(SolutionIntegerValue(r, v.y.StartVar()) * alignment_);
-        max_usage = std::max(max_usage, SolutionIntegerValue(r, v.y.EndVar()) * alignment_);
+        std::cout << "  Allocator cannot solve a optimal layout in " << parameters.max_time_in_seconds()
+                  << "secs, use the first fit method instead." << std::endl;
+
+        freelist fl(std::nullopt);
+        size_t age = 0;
+        size_t allocated_nodes = 0;
+        while (allocated_nodes < nodes_.size())
+        {
+            for (auto &n : nodes_)
+            {
+                if (age == n.birth())
+                {
+                    auto alloc_node = fl.allocate(n.size());
+                    n.start(alloc_node.start);
+                    allocated_nodes++;
+                }
+
+                if (age == n.birth() + n.age())
+                {
+                    fl.free({ n.start(), n.size() });
+                }
+            }
+
+            age++;
+        }
+
+        max_usage = fl.max_usage();
+    }
+    else
+    {
+#if 0
+        index = 0;
+        for (auto &v : node_vars)
+        {
+            LOG(INFO) << "node_" << index++ << "_y_start = " << SolutionIntegerValue(r, v.y.StartVar());
+            LOG(INFO) << "node_" << index << "_y_size = " << SolutionIntegerValue(r, v.y.SizeVar());
+            LOG(INFO) << "node_" << index << "_y_end = " << SolutionIntegerValue(r, v.y.EndVar());
+        }
+#endif
+        index = 0;
+        for (auto &n : nodes_)
+        {
+            auto &v = node_vars[index++];
+            n.start(SolutionIntegerValue(r, v.y.StartVar()) * alignment_);
+            max_usage = std::max(max_usage, SolutionIntegerValue(r, v.y.EndVar()) * alignment_);
+        }
     }
 
     if (fixed_size_ && max_usage > *fixed_size_)

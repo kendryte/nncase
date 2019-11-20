@@ -43,7 +43,7 @@ auto quantize_weights(quantizer &quantizer, conv2d &conv)
 
 auto quantize_bn_act(quantizer &quantizer, conv2d &conv, float sa, const quant_param_t &yq_p)
 {
-    xt::xtensor<int32_t, 1> q_bias({ conv.output_channels() });
+    auto q_bias = xt::xtensor<int32_t, 1>::from_shape({ (size_t)conv.output_channels() });
     auto &bias = conv.bias();
     auto so = yq_p.scale / sa;
     auto bn_mul = quantizer.get_fixed_mul(so, 32, 255, true);

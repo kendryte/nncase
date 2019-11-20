@@ -33,7 +33,7 @@ jobs:
       addToPath: true 
       architecture: 'x64'
 
-  - script: pip install six==1.12 conan==1.19.2 tensorflow==2.0.0
+  - script: pip install six==1.12 conan==1.19.2 tensorflow==2.0.0 matplotlib pillow
     displayName: 'Install Conan'
 
   - script: |
@@ -83,7 +83,7 @@ jobs:
       addToPath: true 
       architecture: 'x64'
 
-  - script: pip install six==1.12 conan==1.19.2 tensorflow==2.0.0
+  - script: pip install six==1.12 conan==1.19.2 tensorflow==2.0.0 matplotlib pillow
     displayName: 'Install Conan'
 
   - script: |

@@ -123,6 +123,14 @@ namespace runtime
         return (int32_t)carry_shift<int64_t, Banker>((int64_t)value * mul, shift);
     }
 
+    template <uint8_t Bits>
+    inline int32_t clamp(int32_t value)
+    {
+        auto min = std::numeric_limits<int32_t>::lowest() >> (32 - Bits);
+        auto max = std::numeric_limits<int32_t>::max() >> (32 - Bits);
+        return std::clamp(value, min, max);
+    }
+
     template <class T>
     struct to_datatype
     {
