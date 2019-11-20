@@ -66,9 +66,33 @@ void quantized_binary_transform::process(transform_context &context)
     auto i1q_p = quantizer_.get_quant_param(quantizer_.get(old_q1.output()), 8);
     auto i2q_p = quantizer_.get_quant_param(quantizer_.get(old_q2.output()), 8);
     auto yq_p = quantizer_.get_quant_param(quantizer_.get(old_deq.output()), 8);
-    auto sa = i1q_p.scale * i2q_p.scale;
-    auto fix_a = quantizer_.get_fixed_mul(i2q_p.scale, 16, 16, true);
-    auto fix_b = quantizer_.get_fixed_mul(i1q_p.scale, 16, 16, true);
+    float sa;
+    fixed_mul fix_a, fix_b;
+
+    switch (old_b.binary_op())
+    {
+    case binary_add:
+    case binary_sub:
+    case binary_min:
+    case binary_max:
+        sa = i1q_p.scale * i2q_p.scale;
+        fix_a = quantizer_.get_fixed_mul(i2q_p.scale, 16, 16, true);
+        fix_b = quantizer_.get_fixed_mul(i1q_p.scale, 16, 16, true);
+        break;
+    case binary_mul:
+        sa = i1q_p.scale * i2q_p.scale;
+        fix_a = { 1.f, 0 };
+        fix_b = { 1.f, 0 };
+        break;
+    case binary_div:
+        sa = i1q_p.scale;
+        fix_a = quantizer_.get_fixed_mul(i2q_p.scale, 16, 16, true);
+        fix_b = { 1.f, 0 };
+        break;
+    default:
+        throw std::runtime_error("Unsupported quantized binary op");
+    }
+
     auto fix_y = quantizer_.get_fixed_mul(yq_p.scale / sa, 32, 32, true);
 
     auto q1 = context.graph.emplace<quantize>(output1.shape(), i1q_p);

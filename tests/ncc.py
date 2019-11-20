@@ -72,8 +72,8 @@ def close_to(name, threshold):
 	expect_arr = np.fromfile(expect_out_dir + '/' + name + '.bin', dtype=np.float32)
 	actual_arr = np.fromfile(kmodel_out_dir + '/' + name + '.bin', dtype=np.float32)
 	error = np.sum(np.square(expect_arr - actual_arr)) / len(expect_arr)
-	#print(expect_arr - actual_arr)
-	#print(expect_arr)
-	#print(actual_arr)
+	print('e-a', expect_arr - actual_arr)
+	print('exp', expect_arr)
+	print('act', actual_arr)
 	print('error:', error)
 	assert error <= threshold

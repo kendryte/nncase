@@ -7,23 +7,24 @@ import sys
 [sys.path.append(i) for i in ['.', '..']]
 import ncc
 
-class SoftmaxModule(tf.Module):
+class MulModule(tf.Module):
 
   def __init__(self):
-    super(SoftmaxModule, self).__init__()
+    super(MulModule, self).__init__()
+    self.v = tf.constant([9., -2., -7.])
 
   @tf.function(input_signature=[tf.TensorSpec([1,2,3], tf.float32)])
   def __call__(self, x):
-    return tf.nn.softmax(x)
+    return x * self.v
 
-module = SoftmaxModule()
+module = MulModule()
 
 def init_values():
 	input = np.asarray([1,-2,3,4,-9,0], dtype=np.float32).reshape([1,2,-1])
 	ncc.save_input_array('test', input)
 	ncc.save_expect_array('test', ncc.run_tflite(input))
 
-def test_softmax():
+def test_mul():
 	ncc.clear()
 	ncc.save_tflite(module)
 	init_values()
@@ -32,7 +33,7 @@ def test_softmax():
 	ncc.infer(['--dataset-format', 'raw'])
 	ncc.close_to('test', 0)
 	
-def test_softmax_quant():
+def test_mul_quant():
 	ncc.clear()
 	ncc.save_tflite(module)
 	init_values()
@@ -41,8 +42,8 @@ def test_softmax_quant():
 	 '--input-type', 'float'])
 
 	ncc.infer(['--dataset-format', 'raw'])
-	ncc.close_to('test', 1e-4)
+	ncc.close_to('test', 0.02)
 
 if __name__ == "__main__":
-	test_softmax()
-	test_softmax_quant()
+	test_mul()
+	test_mul_quant()

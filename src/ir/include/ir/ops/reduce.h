@@ -41,5 +41,27 @@ namespace ir
         float init_value_;
         bool keep_dims_;
     };
+
+    class quantized_reduce : public node
+    {
+    public:
+        DEFINE_NODE_OPCODE(op_quantized_reduce);
+
+        input_connector &input() { return input_at(0); }
+        output_connector &output() { return output_at(0); }
+
+        reduce_op_t reduce_op() const noexcept { return reduce_op_; }
+        const axis_t &axis() const noexcept { return axis_; }
+        float init_value() const noexcept { return init_value_; }
+        bool keep_dims() const noexcept { return keep_dims_; }
+
+        quantized_reduce(reduce_op_t reduce_op, shape_t input_shape, axis_t axis, float init_value, bool keep_dims);
+
+    private:
+        reduce_op_t reduce_op_;
+        axis_t axis_;
+        float init_value_;
+        bool keep_dims_;
+    };
 }
 }

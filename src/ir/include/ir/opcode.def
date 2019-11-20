@@ -21,6 +21,7 @@ DEFINE_NEUTRAL_OPCODE(strided_slice,        StridedSlice,       0x14)
 DEFINE_NEUTRAL_OPCODE(quantized_conv2d,     QuantizedConv2D,    0x15)
 DEFINE_NEUTRAL_OPCODE(quantized_matmul,     QuantizedMatMul,    0x16)
 DEFINE_NEUTRAL_OPCODE(quantized_binary,     QuantizedBinary,    0x17)
-DEFINE_NEUTRAL_OPCODE(table_lookup1d,		TableLookup1D,		0x18)
+DEFINE_NEUTRAL_OPCODE(quantized_reduce,     QuantizedReduce,    0x18)
+DEFINE_NEUTRAL_OPCODE(table_lookup1d,		TableLookup1D,		0x19)
 
 #include "ops/k210/opcode.def"
