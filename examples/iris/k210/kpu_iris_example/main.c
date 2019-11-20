@@ -22,9 +22,13 @@
 #include <float.h>
 #include "uarths.h"
 #include "w25qxx.h"
-#include "iomem.h"
+#define INCBIN_STYLE INCBIN_STYLE_SNAKE
+#define INCBIN_PREFIX
+#include "incbin.h"
 
 #define CLASS10 1
+
+#define LOAD_KMODEL_FROM_FLASH 0
 
 #define PLL0_OUTPUT_FREQ 1000000000UL
 #define PLL1_OUTPUT_FREQ 400000000UL
@@ -36,8 +40,12 @@ const float features[] = {5.1,3.8,1.9,0.4};
 const char *labels[] = { "setosa", "versicolor", "virginica" };
 kpu_model_context_t task1;
 
+#if LOAD_KMODEL_FROM_FLASH
 #define KMODEL_SIZE (720)
 uint8_t *model_data;
+#else
+INCBIN(model, "iris.kmodel");
+#endif
 
 static void ai_done(void* userdata)
 {
@@ -85,13 +93,14 @@ int main()
     uarths_init();
     plic_init();
     sysctl_enable_irq();
-    
+
+#if LOAD_KMODEL_FROM_FLASH
 	printf("flash init\n");
     w25qxx_init(3, 0);
     w25qxx_enable_quad_mode();
-    model_data = (uint8_t *)iomem_malloc(KMODEL_SIZE);
+    model_data = (uint8_t *)malloc(KMODEL_SIZE);
     w25qxx_read_data(0xC00000, model_data, KMODEL_SIZE, W25QXX_QUAD_FAST);
-	
+#endif
     if (kpu_load_kmodel(&task1, model_data) != 0)
     {
         printf("Cannot load kmodel.\n");
