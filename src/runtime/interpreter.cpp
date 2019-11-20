@@ -50,6 +50,17 @@ bool interpreter_base::try_load_model(const uint8_t *buffer)
     return initialize();
 }
 
+uint32_t interpreter_base::model_size(const uint8_t *buffer)
+{
+    uint32_t size = (uint32_t)(node_body_start_ - buffer);
+    for(int i=0; i<nodes_size(); i++)
+    {
+        struct node_header cnt_layer_header = node_headers_[i];;
+        size += cnt_layer_header.body_size;
+    }
+    return size;
+}
+
 bool interpreter_base::initialize()
 {
     return true;

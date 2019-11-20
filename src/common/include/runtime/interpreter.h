@@ -35,6 +35,7 @@ namespace runtime
 
     public:
         bool try_load_model(const uint8_t *buffer);
+        uint32_t model_size(const uint8_t *buffer);
 
         size_t inputs_size() const noexcept { return model_header_->inputs; }
         size_t outputs_size() const noexcept { return model_header_->outputs; }
