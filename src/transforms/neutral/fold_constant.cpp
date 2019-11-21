@@ -18,17 +18,24 @@
 #include <scheduler/scheduler.h>
 #include <targets/target.h>
 #include <transforms/neutral/fold_constant.h>
+#include <unordered_set>
 
 using namespace nncase;
 using namespace nncase::ir;
 using namespace nncase::transforms;
 using namespace nncase::scheduler;
 
+namespace
+{
+std::unordered_set<node_opcode> dontfold_ops { op_fake_dequantize, op_fake_quantize };
+}
+
 bool fold_constant_transform::on_try_match(node &node, transform_context &context)
 {
-    if (node.inputs().size() && std::all_of(node.inputs().begin(), node.inputs().end(), [](input_connector &conn) {
-            return conn.connection()->owner().runtime_opcode() == op_constant;
-        }))
+    if (dontfold_ops.find(node.runtime_opcode()) == dontfold_ops.end()
+        && node.inputs().size() && std::all_of(node.inputs().begin(), node.inputs().end(), [](input_connector &conn) {
+               return conn.connection()->owner().runtime_opcode() == op_constant;
+           }))
     {
         for (auto &in : node.inputs())
             context.inputs.emplace_back(&in);
