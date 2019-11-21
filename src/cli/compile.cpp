@@ -160,8 +160,8 @@ void add_quantization_checkpoints(const compile_options &options, target &target
 void quantize_graph(const compile_options &options, target &target, graph &graph, quantizer &quantizer)
 {
     std::vector<std::unique_ptr<transforms::transform>> transforms;
-    target.add_quantization_transforms(quantizer, transforms);
     target.add_default_transforms(transforms);
+    target.add_quantization_transforms(quantizer, transforms);
     transform_graph(graph, target, transforms);
     dump_graph(options, graph, "after_quant");
 }

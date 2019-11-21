@@ -69,7 +69,7 @@ namespace kernels
                             a = runtime::mul_and_carry_shift(a + input_a_offset, input_a_mul, input_a_shift);
                             b = runtime::mul_and_carry_shift(b + input_b_offset, input_b_mul, input_b_shift);
 
-							auto output_val = runtime::mul_and_carry_shift(op(a, b), output_mul, output_shift);
+                            auto output_val = runtime::mul_and_carry_shift(op(a, b), output_mul, output_shift);
                             output[offset(out_shape, in_off)] = (uint8_t)std::clamp(output_val + output_offset, 0, 255);
                         }
                     }
