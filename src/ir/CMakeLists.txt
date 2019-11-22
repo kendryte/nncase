@@ -5,6 +5,7 @@ set(SRCS connectors.cpp
          graph.cpp
          visitor.cpp
          ops/conv2d.cpp
+         ops/conv2d_transpose.cpp
          ops/matmul.cpp
          ops/transpose.cpp
          ops/reduce.cpp

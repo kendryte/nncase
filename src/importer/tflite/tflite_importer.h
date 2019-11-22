@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 #pragma once
-#include "tflite_schema.h"
+#include "schema_generated.h"
 #include <ir/connectors.h>
 #include <ir/graph.h>
 #include <ir/op_utils.h>
@@ -141,6 +141,15 @@ namespace importer
 
         template <class T>
         ir::axis_t load_axis(const tflite::Tensor &tensor)
+        {
+            auto &buffer = get_buffer<T>(tensor);
+            auto begin = buffer.data()->data();
+            auto end = begin + buffer.data()->size();
+            return { reinterpret_cast<const T *>(begin), reinterpret_cast<const T *>(end) };
+        }
+
+        template <class T>
+        ir::shape_t load_shape(const tflite::Tensor &tensor)
         {
             auto &buffer = get_buffer<T>(tensor);
             auto begin = buffer.data()->data();

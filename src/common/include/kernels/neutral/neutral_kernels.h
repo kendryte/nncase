@@ -219,6 +219,70 @@ namespace kernels
             }
         }
 
+        inline void conv2d_transpose(const float *input, float *output, const float *weights, const float *bias, const runtime_shape_t &in_shape,
+            int32_t groups, const runtime_shape_t &out_shape, int32_t filter_h, int32_t filter_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
+            const padding &padding_h, const padding &padding_w, const value_range<float> &fused_activation)
+        {
+            std::fill(output, output + sizeof(float) * kernels::details::compute_size(out_shape), 0.f);
+            const auto g_ic = in_shape[1] / groups;
+            const auto g_oc = out_shape[1] / groups;
+
+            for (int32_t batch = 0; batch < in_shape[0]; batch++)
+            {
+                float *out_batch_p = output + (size_t)batch * out_shape[1] * out_shape[2] * out_shape[3];
+
+                for (int32_t g = 0; g < groups; g++)
+                {
+                    float *out_group_p = out_batch_p + (size_t)g * g_oc * out_shape[2] * out_shape[3];
+                    const float *w_group_p = weights + (size_t)g * g_oc * g_ic * filter_h * filter_w;
+
+                    for (int32_t ic = 0; ic < g_ic; ic++)
+                    {
+                        for (int32_t iy = 0; iy < in_shape[2]; iy++)
+                        {
+                            for (int32_t ix = 0; ix < in_shape[3]; ix++)
+                            {
+                                const int32_t out_y_origin = (iy * stride_h) - padding_h.before;
+                                const int32_t out_x_origin = (ix * stride_w) - padding_w.before;
+                                const int32_t filter_y_start = std::max(0, (-out_y_origin + dilation_h - 1) / dilation_h);
+                                const int32_t filter_y_end = std::min(filter_h, (out_shape[2] - out_y_origin + dilation_h - 1) / dilation_h);
+                                const int32_t filter_x_start = std::max(0, (-out_x_origin + dilation_w - 1) / dilation_w);
+                                const int32_t filter_x_end = std::min(filter_w, (out_shape[3] - out_x_origin + dilation_w - 1) / dilation_w);
+                                const float in_v = *input++;
+
+                                for (int32_t oc = 0; oc < g_oc; oc++)
+                                {
+                                    float value = bias[g * g_oc + oc];
+                                    float *out_c_p = out_group_p + (size_t)oc * out_shape[2] * out_shape[3];
+                                    const float *w_oc_p = w_group_p + (size_t)oc * g_ic * filter_h * filter_w;
+                                    const float *w_ic_p = w_oc_p + (size_t)ic * filter_h * filter_w;
+
+                                    for (int32_t ky = filter_y_start; ky < filter_y_end; ky++)
+                                    {
+                                        for (int32_t kx = filter_x_start; kx < filter_x_end; kx++)
+                                        {
+                                            const int32_t out_y = out_y_origin + dilation_h * ky;
+                                            const int32_t out_x = out_x_origin + dilation_w * kx;
+
+                                            const float w = w_ic_p[ky * filter_w + kx];
+
+                                            out_c_p[out_y * out_shape[3] + out_x] += in_v * w;
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            if (fused_activation != value_range<float>::full())
+            {
+                for (size_t i = 0; i < kernels::details::compute_size(out_shape); i++)
+                    output[i] = details::apply_activation(output[i], fused_activation);
+            }
+        }
+
         template <class TQ>
         void dequantize(const TQ *input, float *output, size_t count, const quant_param_t &param)
         {

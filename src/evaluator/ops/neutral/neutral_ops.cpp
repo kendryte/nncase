@@ -17,6 +17,7 @@
 #include <ir/ops/binary.h>
 #include <ir/ops/concat.h>
 #include <ir/ops/conv2d.h>
+#include <ir/ops/conv2d_transpose.h>
 #include <ir/ops/dequantize.h>
 #include <ir/ops/fake_dequantize.h>
 #include <ir/ops/fake_quantize.h>
@@ -201,6 +202,18 @@ namespace ir
                 rnode.filter_offset(), rnode.output_mul(), rnode.output_shift(), rnode.output_offset(), to(rnode.input().shape()),
                 rnode.groups(), rnode.output_channels(), rnode.filter_h(), rnode.filter_w(), rnode.stride_h(), rnode.stride_w(),
                 rnode.dilation_h(), rnode.dilation_w(), rnode.padding_h(), rnode.padding_w());
+        });
+
+        register_evaluator(op_conv2d_transpose, [](ir::node &node, evaluate_context &context) {
+            auto &rnode = static_cast<conv2d_transpose &>(node);
+
+            assert(rnode.input().type() == dt_float32);
+            auto input = context.memory_at<float>(rnode.input());
+            auto output = context.memory_at<float>(rnode.output());
+
+            neutral::conv2d_transpose(input.data(), output.data(), rnode.weights().data(), rnode.bias().data(), to(rnode.input().shape()),
+                rnode.groups(), to(rnode.output().shape()), rnode.filter_h(), rnode.filter_w(), rnode.stride_h(), rnode.stride_w(),
+                rnode.dilation_h(), rnode.dilation_w(), rnode.padding_h(), rnode.padding_w(), rnode.fused_activation());
         });
 
         register_evaluator(op_dequantize, [](ir::node &node, evaluate_context &context) {

@@ -25,10 +25,11 @@ conan_cmake_run(CONANFILE conanfile.txt
                 BUILD missing)
 include(ExternalProject)
 find_package(Protobuf REQUIRED)
+include(cmake/flatc.cmake)
 
 set(THIRD_PARTY ${CMAKE_CURRENT_LIST_DIR}/third_party)
 set(CMAKE_CXX_STANDARD 17)
-
+ 
 if (MSVC)
     add_definitions(/D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS /DNOMINMAX)
 else()

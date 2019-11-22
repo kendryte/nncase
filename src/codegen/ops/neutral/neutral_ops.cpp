@@ -17,6 +17,7 @@
 #include <ir/ops/binary.h>
 #include <ir/ops/concat.h>
 #include <ir/ops/conv2d.h>
+#include <ir/ops/conv2d_transpose.h>
 #include <ir/ops/dequantize.h>
 #include <ir/ops/fake_dequantize.h>
 #include <ir/ops/fake_quantize.h>
@@ -161,6 +162,30 @@ namespace codegen
             body->output_mul = rnode.output_mul();
             body->output_shift = rnode.output_shift();
             body->output_offset = rnode.output_offset();
+            body->weights = rnode.weights();
+            body->bias = rnode.bias();
+
+            return body;
+        });
+
+        register_emitter(op_conv2d_transpose, [](node &node, codegen_context &context) {
+            auto &rnode = static_cast<conv2d_transpose &>(node);
+            auto body = std::make_unique<node_body_impl<rop_conv2d_transpose, conv2d_transpose_options>>();
+
+            body->input = context.get_allocation(rnode.input());
+            body->output = context.get_allocation(rnode.output());
+            body->in_shape = to(rnode.input().shape());
+            body->out_shape = to(rnode.output().shape());
+            body->groups = rnode.groups();
+            body->padding_h = rnode.padding_h();
+            body->padding_w = rnode.padding_w();
+            body->filter_h = rnode.filter_h();
+            body->filter_w = rnode.filter_w();
+            body->stride_h = rnode.stride_h();
+            body->stride_w = rnode.stride_w();
+            body->dilation_h = rnode.dilation_h();
+            body->dilation_w = rnode.dilation_w();
+            body->fused_activation = rnode.fused_activation();
             body->weights = rnode.weights();
             body->bias = rnode.bias();
 

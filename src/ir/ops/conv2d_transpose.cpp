@@ -21,6 +21,10 @@ using namespace nncase::ir;
 conv2d_transpose::conv2d_transpose(shape_t input_shape, shape_t output_shape, xt::xtensor<float, 4> weights, xt::xtensor<float, 1> bias, int32_t groups, padding padding_h, padding padding_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w, value_range<float> fused_activation)
     : weights_(std::move(weights)), bias_(std::move(bias)), groups_(groups), padding_h_(padding_h), padding_w_(padding_w), stride_h_(stride_h), stride_w_(stride_w), dilation_h_(dilation_h), dilation_w_(dilation_w), fused_activation_(fused_activation)
 {
+    if (get_windowed_output_size(output_shape[2] + padding_h_.sum(), weights_.shape()[2], stride_h_, dilation_h_, false) != input_shape[2]
+        || get_windowed_output_size(output_shape[3] + padding_w_.sum(), weights_.shape()[3], stride_w_, dilation_w_, false) != input_shape[3])
+        throw std::runtime_error("Invalid conv2d transpose shape");
+
     add_input("input", dt_float32, input_shape);
     add_output("output", dt_float32, output_shape);
 }

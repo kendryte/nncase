@@ -39,11 +39,11 @@ dataset::dataset(const std::filesystem::path &path, std::function<bool(const std
             filenames_.emplace_back(path);
     }
 
-    if (filenames_.empty())
-        throw std::invalid_argument("Invalid dataset, should contain one file at least");
-
     size_t samples = (filenames_.size() / batch_size()) * batch_size();
     filenames_.resize(samples);
+
+    if (filenames_.empty())
+        throw std::invalid_argument("Invalid dataset, should contain one file at least");
 }
 
 image_dataset::image_dataset(const std::filesystem::path &path, xt::dynamic_shape<size_t> input_shape, float mean, float std)

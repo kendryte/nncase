@@ -108,7 +108,7 @@ namespace data
             return { *this, filenames_.size() };
         }
 
-        size_t batch_size() const noexcept { return input_shape_[0]; }
+        size_t batch_size() const noexcept { return input_shape_.size() == 4 ? input_shape_[0] : 1; }
         size_t total_size() const noexcept { return filenames_.size(); }
 
     protected:

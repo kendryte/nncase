@@ -153,6 +153,15 @@ namespace runtime
             return kcr_done;
         }
 
+        kernel_call_result conv2d_transpose(conv2d_transpose_options &options, interpreter_t &interpreter, interpreter_step_t step)
+        {
+            auto input = interpreter.memory_at<float>(options.input);
+            auto output = interpreter.memory_at<float>(options.output);
+            kernels::neutral::conv2d_transpose(input.data(), output.data(), options.weights.data(), options.bias.data(), options.in_shape, options.groups, options.out_shape, options.filter_h,
+                options.filter_w, options.stride_h, options.stride_w, options.dilation_h, options.dilation_w, options.padding_h, options.padding_w, options.fused_activation);
+            return kcr_done;
+        }
+
         kernel_call_result dequantize(dequantize_options &options, interpreter_t &interpreter, interpreter_step_t step)
         {
             auto input = interpreter.memory_at<uint8_t>(options.input);
