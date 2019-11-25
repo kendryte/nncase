@@ -18,6 +18,7 @@
 #include <ir/ops/pad.h>
 #include <ir/ops/reduce.h>
 #include <ir/ops/transpose.h>
+#include <ir/ops/unary.h>
 #include <ir/visitor.h>
 #include <transforms/neutral/transpose_motion.h>
 
@@ -293,6 +294,42 @@ void transpose_reduce_motion_transform::process(transform_context &context)
     tp->input().connect(r->output());
 
     r->input().connect(output);
+    for (auto &in : dup(inputs))
+        in->connect(tp->output());
+}
+
+bool transpose_unary_motion_transform::on_try_match(node &node, transform_context &context)
+{
+    if (node.runtime_opcode() == op_unary)
+    {
+        auto &u = static_cast<unary &>(node);
+        if (auto tp = try_get_direct_parent<transpose>(u))
+        {
+            context.inputs.emplace_back(&tp->input());
+            context.outputs.emplace_back(&u.output());
+
+            context.matched_nodes.emplace_back(tp);
+            context.matched_nodes.emplace_back(&u);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void transpose_unary_motion_transform::process(transform_context &context)
+{
+    auto &output = *context.inputs[0]->connection();
+    auto inputs = context.outputs[0]->connections();
+
+    auto &old_tp = static_cast<transpose &>(*context.matched_nodes[0]);
+    auto &old_u = static_cast<unary &>(*context.matched_nodes[1]);
+
+    auto u = context.graph.emplace<unary>(old_u.unary_op(), output.shape());
+    auto tp = context.graph.emplace<transpose>(u->output().type(), u->output().shape(), old_tp.perm());
+    tp->input().connect(u->output());
+
+    u->input().connect(output);
     for (auto &in : dup(inputs))
         in->connect(tp->output());
 }

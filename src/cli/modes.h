@@ -38,6 +38,7 @@ struct compile_options
     float input_std = 1.f;
     bool dump_ir = false;
     bool use_dataset_as_input_stat = true;
+    uint32_t max_solve_secs = 60;
 
     clipp::group parser(mode &mode);
 };

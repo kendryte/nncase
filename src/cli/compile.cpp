@@ -89,7 +89,7 @@ void transform_graph(graph &graph, target &target, xtl::span<std::unique_ptr<tra
     allocation_context alloc_ctx(allocators);                         \
     std::vector<node *> compute_sequence;                             \
     std::cout << "  Plan buffers..." << std::endl;                    \
-    schedule(graph.outputs(), alloc_ctx, compute_sequence);
+    schedule(graph.outputs(), alloc_ctx, compute_sequence, options.max_solve_secs);
 
 #define EVAL_IMPL()                                                 \
     SCHEDULE_IMPL();                                                \
@@ -127,6 +127,8 @@ graph import(const compile_options &options)
         return import_tflite(model);
     else if (options.input_format == "paddle")
         return import_paddle(model, std::filesystem::path(options.input_filename).parent_path());
+    else if (options.input_format == "caffe")
+        return import_caffe(model);
     else
         throw std::invalid_argument("Invalid input format: " + options.input_format);
 }
@@ -329,7 +331,8 @@ group compile_options::parser(mode &mode)
 			option("--input-mean") % ("input mean, default is " + std::to_string(input_mean)) & value("input mean", input_mean),
 			option("--input-std") % ("input std, default is " + std::to_string(input_std)) & value("input std", input_std),
 			option("--dump-ir").set(dump_ir) % "dump nncase ir to .dot files",
-			option("--input-type").set(input_type) % ("input type: e.g. default, float, uint8, default means equal to inference type") & value("input type", input_type)
+			option("--input-type").set(input_type) % ("input type: e.g. default, float, uint8, default means equal to inference type") & value("input type", input_type),
+			option("--max-allocator-solve-secs") % ("max optimal layout solve time in secs used by allocators, 0 means don't use solver, default is " + std::to_string(max_solve_secs)) & value("max allocator solve secs", max_solve_secs)
 		));
     // clang-format on
 }

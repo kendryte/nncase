@@ -75,11 +75,11 @@ namespace runtime
 
                 auto layer_pos = writer.position();
                 writer.position(layer_pos + std::streamoff(sizeof(layer)));
-                layer.kernel_pool_type_cfg.data.bwsx_base_addr = (uint32_t)writer.align_position(8);
+                layer.kernel_pool_type_cfg.data.bwsx_base_addr = (uint32_t)writer.align_position(256);
                 writer.write_array(batch_norm);
                 layer.kernel_calc_type_cfg.data.active_addr = (uint32_t)writer.align_position(256);
                 writer.write(*activation);
-                layer.kernel_load_cfg.data.para_start_addr = (uint32_t)writer.align_position(128);
+                layer.kernel_load_cfg.data.para_start_addr = (uint32_t)writer.align_position(256);
                 writer.write_array(weights);
 
                 auto end_pos = writer.position();

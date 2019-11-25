@@ -107,39 +107,68 @@ void memory_allocator::grow_age()
     }
 }
 
-void memory_allocator::finish()
+void memory_allocator::finish(uint32_t max_solve_secs)
 {
-    CpModelBuilder builder;
-    auto no_overlap = builder.AddNoOverlap2D();
-
-    std::vector<memory_node_var> node_vars;
-    node_vars.reserve(nodes_.size());
-    int32_t index = 0;
-    for (auto &n : nodes_)
-        node_vars.emplace_back(add_memory_node_var(index++, builder, alignment_, n, no_overlap));
-
-    std::vector<IntVar> all_end_vars;
-    all_end_vars.reserve(nodes_.size());
-    for (auto &v : node_vars)
-        all_end_vars.emplace_back(v.y.EndVar());
-
-    auto cost = LinearExpr::Sum(all_end_vars);
-    builder.Minimize(cost);
-
-    Model model;
-    // Tell the solver to enumerate all solutions.
-    SatParameters parameters;
-    parameters.set_find_multiple_cores(true);
-    parameters.set_max_time_in_seconds(60);
-    model.Add(NewSatParameters(parameters));
-    auto r = SolveCpModel(builder.Build(), &model);
-
+    bool solved = false;
     size_t max_usage = 0;
-    if (r.status() != CpSolverStatus::FEASIBLE && r.status() != CpSolverStatus::OPTIMAL)
-    {
-        std::cout << "  Allocator cannot solve a optimal layout in " << parameters.max_time_in_seconds()
-                  << "secs, use the first fit method instead." << std::endl;
 
+    if (max_solve_secs != 0)
+    {
+        CpModelBuilder builder;
+        auto no_overlap = builder.AddNoOverlap2D();
+
+        std::vector<memory_node_var> node_vars;
+        node_vars.reserve(nodes_.size());
+        int32_t index = 0;
+        for (auto &n : nodes_)
+            node_vars.emplace_back(add_memory_node_var(index++, builder, alignment_, n, no_overlap));
+
+        std::vector<IntVar> all_end_vars;
+        all_end_vars.reserve(nodes_.size());
+        for (auto &v : node_vars)
+            all_end_vars.emplace_back(v.y.EndVar());
+
+        auto cost = LinearExpr::Sum(all_end_vars);
+        builder.Minimize(cost);
+
+        Model model;
+        // Tell the solver to enumerate all solutions.
+        SatParameters parameters;
+        parameters.set_find_multiple_cores(true);
+        parameters.set_max_time_in_seconds(60);
+        model.Add(NewSatParameters(parameters));
+        auto r = SolveCpModel(builder.Build(), &model);
+
+        if (r.status() != CpSolverStatus::FEASIBLE && r.status() != CpSolverStatus::OPTIMAL)
+        {
+            std::cout << "  Allocator cannot solve a optimal layout in " << parameters.max_time_in_seconds()
+                      << "secs, use the first fit method instead." << std::endl;
+        }
+        else
+        {
+#if 0
+            index = 0;
+            for (auto &v : node_vars)
+            {
+                LOG(INFO) << "node_" << index++ << "_y_start = " << SolutionIntegerValue(r, v.y.StartVar());
+                LOG(INFO) << "node_" << index << "_y_size = " << SolutionIntegerValue(r, v.y.SizeVar());
+                LOG(INFO) << "node_" << index << "_y_end = " << SolutionIntegerValue(r, v.y.EndVar());
+            }
+#endif
+            index = 0;
+            for (auto &n : nodes_)
+            {
+                auto &v = node_vars[index++];
+                n.start(SolutionIntegerValue(r, v.y.StartVar()) * alignment_);
+                max_usage = std::max(max_usage, SolutionIntegerValue(r, v.y.EndVar()) * alignment_);
+            }
+        }
+
+        solved = true;
+    }
+
+    if (!solved)
+    {
         freelist fl(std::nullopt);
         size_t age = 0;
         size_t allocated_nodes = 0;
@@ -164,25 +193,6 @@ void memory_allocator::finish()
         }
 
         max_usage = fl.max_usage();
-    }
-    else
-    {
-#if 0
-        index = 0;
-        for (auto &v : node_vars)
-        {
-            LOG(INFO) << "node_" << index++ << "_y_start = " << SolutionIntegerValue(r, v.y.StartVar());
-            LOG(INFO) << "node_" << index << "_y_size = " << SolutionIntegerValue(r, v.y.SizeVar());
-            LOG(INFO) << "node_" << index << "_y_end = " << SolutionIntegerValue(r, v.y.EndVar());
-        }
-#endif
-        index = 0;
-        for (auto &n : nodes_)
-        {
-            auto &v = node_vars[index++];
-            n.start(SolutionIntegerValue(r, v.y.StartVar()) * alignment_);
-            max_usage = std::max(max_usage, SolutionIntegerValue(r, v.y.EndVar()) * alignment_);
-        }
     }
 
     if (fixed_size_ && max_usage > *fixed_size_)

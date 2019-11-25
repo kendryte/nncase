@@ -69,10 +69,10 @@ void allocation_context::grow_age()
         a.second->grow_age();
 }
 
-void allocation_context::finish()
+void allocation_context::finish(uint32_t max_solve_secs)
 {
     for (auto &a : allocators_)
-        a.second->finish();
+        a.second->finish(max_solve_secs);
 
     for (auto &map : memory_map_)
     {
@@ -82,7 +82,7 @@ void allocation_context::finish()
     }
 }
 
-void nncase::scheduler::schedule(xtl::span<output_node *> outputs, allocation_context &context, std::vector<ir::node *> &compute_sequence)
+void nncase::scheduler::schedule(xtl::span<output_node *> outputs, allocation_context &context, std::vector<ir::node *> &compute_sequence, uint32_t max_solve_secs)
 {
     auto alloc_visitor = make_relay_ir_visitor([&](node &node) {
         for (auto &&out : node.outputs())
@@ -124,7 +124,7 @@ void nncase::scheduler::schedule(xtl::span<output_node *> outputs, allocation_co
     });
 
     alloc_visitor.visit(outputs);
-    context.finish();
+    context.finish(max_solve_secs);
 
     auto check_visitor = make_relay_ir_visitor([&](node &node) {
         // check overlap

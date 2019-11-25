@@ -12,17 +12,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#pragma once 
-#include <memory>
-#include <ir/graph.h>
-#include <filesystem>
+#include "../caffe_importer.h"
+#include <ir/placeholders.h>
 
-namespace nncase
+using namespace nncase;
+using namespace nncase::importer;
+using namespace nncase::ir;
+using namespace caffe;
+
+DEFINE_CAFFE_LOWER(Split)
 {
-namespace importer
-{
-    ir::graph import_tflite(xtl::span<const uint8_t> model);
-    ir::graph import_paddle(xtl::span<const uint8_t> model, const std::filesystem::path &params_dir);
-    ir::graph import_caffe(xtl::span<const uint8_t> model);
-}
+    auto &input = *output_tensors_.at(op.bottom(0));
+
+    for (int i = 0; i < op.top_size(); i++)
+        output_tensors_.emplace(op.top(i), &input);
 }

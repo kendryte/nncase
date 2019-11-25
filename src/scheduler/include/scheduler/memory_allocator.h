@@ -84,7 +84,7 @@ namespace scheduler
         memory_node &allocate(size_t size);
         void free(memory_node &node);
         void grow_age();
-        void finish();
+        void finish(uint32_t max_solve_secs);
         size_t max_usage() const noexcept { return max_usage_; }
 
         virtual size_t get_bytes(datatype_t type, const ir::shape_t &shape) const;

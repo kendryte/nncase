@@ -86,6 +86,7 @@ void nncase::cpu_target::add_default_transforms(std::vector<std::unique_ptr<tran
     transforms.emplace_back(new transpose_concat_motion_transform());
     transforms.emplace_back(new transpose_pad_motion_transform());
     transforms.emplace_back(new transpose_reduce_motion_transform());
+    transforms.emplace_back(new transpose_unary_motion_transform());
     transforms.emplace_back(new transpose_to_reshape_transform());
 }
 

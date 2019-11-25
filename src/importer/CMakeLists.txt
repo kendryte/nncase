@@ -21,10 +21,15 @@ set(SRCS tflite/tflite_importer.cpp
          tflite/ops/activations.cpp
          paddle/paddle_importer.cpp
          paddle/ops/placeholders.cpp
-         paddle/ops/conv2d.cpp)
+         paddle/ops/conv2d.cpp
+         caffe/caffe_importer.cpp
+         caffe/ops/placeholders.cpp
+         caffe/ops/convolution.cpp
+         caffe/ops/activations.cpp
+         caffe/ops/split.cpp)
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
-PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS paddle/framework.proto)
+PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS paddle/framework.proto caffe/caffe.proto)
 FLATBUFFERS_GENERATE_C_HEADERS(TFLITE_FB tflite/schema.fbs)
 
 add_library(importer STATIC ${SRCS} ${PROTO_SRCS} ${TFLITE_FB_OUTPUTS})

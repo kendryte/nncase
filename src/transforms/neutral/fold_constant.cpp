@@ -75,7 +75,7 @@ void fold_constant_transform::process(transform_context &context)
         target_.fill_allocators(allocators, allocator_holder);
         allocation_context alloc_ctx(allocators);
         std::vector<node *> compute_sequence;
-        schedule(new_graph.outputs(), alloc_ctx, compute_sequence);
+        schedule(new_graph.outputs(), alloc_ctx, compute_sequence, 0);
         evaluate_context eval_ctx(allocators, alloc_ctx.allocations());
         evaluator eval(eval_ctx, compute_sequence);
         eval.evaluate();

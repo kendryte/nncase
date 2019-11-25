@@ -35,6 +35,7 @@ namespace transforms
     DEFINE_TP_MOTION(concat);
     DEFINE_TP_MOTION(pad);
     DEFINE_TP_MOTION(reduce);
+    DEFINE_TP_MOTION(unary);
 
 #undef DEFINE_TP_MOTION
 }

@@ -1,4 +1,4 @@
-find_package(FlatBuffers REQUIRED)
+find_package(Flatbuffers REQUIRED)
 set(FLATBUFFERS_FLATC_EXECUTABLE "${CONAN_FLATBUFFERS_ROOT}/bin/flatc")
 
 function(FLATBUFFERS_GENERATE_C_HEADERS Name)
