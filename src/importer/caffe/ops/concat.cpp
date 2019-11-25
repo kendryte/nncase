@@ -13,25 +13,24 @@
  * limitations under the License.
  */
 #include "../caffe_importer.h"
-#include <ir/ops/binary.h>
-#include <ir/ops/constant.h>
-#include <ir/ops/reduce.h>
-#include <ir/ops/unary.h>
+#include <ir/ops/concat.h>
 
 using namespace nncase;
 using namespace nncase::importer;
 using namespace nncase::ir;
 using namespace caffe;
 
-DEFINE_CAFFE_LOWER(ReLU)
+DEFINE_CAFFE_LOWER(Concat)
 {
-    auto &input = *output_tensors_.at(op.bottom(0));
-    auto &param = op.relu_param();
+    std::vector<shape_t> input_shapes;
+    for (int i = 0; i < op.bottom_size(); i++)
+        input_shapes.push_back(output_tensors_.at(op.bottom(i))->shape());
 
-    auto zero = graph_.emplace<constant>(0.f);
-    auto max = graph_.emplace<binary>(binary_max, input.shape(), zero->output().shape(), value_range<float>::full());
+    auto &param = op.concat_param();
+    auto con = graph_.emplace<concat>(dt_float32, input_shapes, param.axis());
+    con->name(op.name());
 
-    max->input_b().connect(zero->output());
-    input_tensors_.emplace(&max->input_a(), op.bottom(0));
-    output_tensors_.emplace(op.top(0), &max->output());
+    for (int i = 0; i < op.bottom_size(); i++)
+        input_tensors_.emplace(&con->input_at(i), op.bottom(i));
+    output_tensors_.emplace(op.top(0), &con->output());
 }

@@ -223,7 +223,7 @@ namespace kernels
             int32_t groups, const runtime_shape_t &out_shape, int32_t filter_h, int32_t filter_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
             const padding &padding_h, const padding &padding_w, const value_range<float> &fused_activation)
         {
-            std::fill(output, output + sizeof(float) * kernels::details::compute_size(out_shape), 0.f);
+            std::fill(output, output + kernels::details::compute_size(out_shape), 0.f);
             const auto g_ic = in_shape[1] / groups;
             const auto g_oc = out_shape[1] / groups;
 

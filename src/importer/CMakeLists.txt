@@ -26,7 +26,12 @@ set(SRCS tflite/tflite_importer.cpp
          caffe/ops/placeholders.cpp
          caffe/ops/convolution.cpp
          caffe/ops/activations.cpp
-         caffe/ops/split.cpp)
+         caffe/ops/split.cpp
+         caffe/ops/concat.cpp
+         caffe/ops/binary.cpp
+         caffe/ops/permute.cpp
+         caffe/ops/reshape.cpp
+         caffe/ops/softmax.cpp)
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS paddle/framework.proto caffe/caffe.proto)

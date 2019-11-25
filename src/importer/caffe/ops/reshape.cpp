@@ -13,25 +13,20 @@
  * limitations under the License.
  */
 #include "../caffe_importer.h"
-#include <ir/ops/binary.h>
-#include <ir/ops/constant.h>
-#include <ir/ops/reduce.h>
-#include <ir/ops/unary.h>
+#include <ir/ops/reshape.h>
 
 using namespace nncase;
 using namespace nncase::importer;
 using namespace nncase::ir;
 using namespace caffe;
 
-DEFINE_CAFFE_LOWER(ReLU)
+DEFINE_CAFFE_LOWER(Reshape)
 {
     auto &input = *output_tensors_.at(op.bottom(0));
-    auto &param = op.relu_param();
+    auto &param = op.reshape_param();
 
-    auto zero = graph_.emplace<constant>(0.f);
-    auto max = graph_.emplace<binary>(binary_max, input.shape(), zero->output().shape(), value_range<float>::full());
+    auto rp = graph_.emplace<reshape>(dt_float32, input.shape(), get_axis(param.shape()));
 
-    max->input_b().connect(zero->output());
-    input_tensors_.emplace(&max->input_a(), op.bottom(0));
-    output_tensors_.emplace(op.top(0), &max->output());
+    input_tensors_.emplace(&rp->input(), op.bottom(0));
+    output_tensors_.emplace(op.top(0), &rp->output());
 }

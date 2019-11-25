@@ -54,6 +54,15 @@ namespace importer
             return result;
         }
 
+        static ir::axis_t get_axis(const caffe::BlobShape &shape)
+        {
+            ir::axis_t result;
+            result.reserve(shape.dim_size());
+            for (int i = 0; i < shape.dim_size(); i++)
+                result.push_back((int32_t)shape.dim(i));
+            return result;
+        }
+
         template <class TGetter>
         static uint32_t get_or_default(TGetter &&getter, int32_t size, int32_t index, uint32_t default_val)
         {

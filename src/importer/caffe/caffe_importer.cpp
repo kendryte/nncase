@@ -38,6 +38,32 @@ void caffe_importer::import()
 {
     for (int i = 0; i < model_.layer_size(); i++)
         convert_op(model_.layer(i));
+
+    std::unordered_map<std::string_view, output_connector *> created_inputs;
+
+    // connect tensors
+    for (auto &&in : input_tensors_)
+    {
+        auto out_it = output_tensors_.find(in.second);
+        if (out_it != output_tensors_.end())
+        {
+            in.first->connect(*out_it->second);
+        }
+        else
+        {
+            assert(!"Cannot find associated output node");
+        }
+    }
+
+    // outputs
+    for (auto &&out : output_tensors_)
+    {
+        if (out.second->connections().empty())
+        {
+            auto node = graph_.emplace<output_node>(out.second->type(), out.second->shape());
+            out.second->connect(node->input());
+        }
+    }
 }
 
 void caffe_importer::convert_op(const LayerParameter &op)
