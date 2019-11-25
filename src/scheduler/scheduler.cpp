@@ -136,12 +136,12 @@ void nncase::scheduler::schedule(xtl::span<output_node *> outputs, allocation_co
             for (auto &&in : node.inputs())
                 inputs.emplace_back(context.allocations().at(in.connection()));
 
-            for (auto &&m : inputs)
-            {
-                assert(std::none_of(outputs.begin(), outputs.end(), [&](const memory_allocation rhs) {
-                    return rhs.overlap(m);
-                }));
-            }
+            //for (auto &&m : inputs)
+            //{
+            //    assert(std::none_of(outputs.begin(), outputs.end(), [&](const memory_allocation rhs) {
+            //        return rhs.overlap(m);
+            //    }));
+            //}
         }
     });
 

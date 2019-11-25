@@ -135,11 +135,12 @@ void memory_allocator::finish(uint32_t max_solve_secs)
         // Tell the solver to enumerate all solutions.
         SatParameters parameters;
         parameters.set_find_multiple_cores(true);
-        parameters.set_max_time_in_seconds(60);
+        parameters.set_max_time_in_seconds(max_solve_secs);
         model.Add(NewSatParameters(parameters));
         auto r = SolveCpModel(builder.Build(), &model);
-
-        if (r.status() != CpSolverStatus::FEASIBLE && r.status() != CpSolverStatus::OPTIMAL)
+        auto status = r.status();
+        if (status != CpSolverStatus::FEASIBLE
+            && status != CpSolverStatus::OPTIMAL)
         {
             std::cout << "  Allocator cannot solve a optimal layout in " << parameters.max_time_in_seconds()
                       << "secs, use the first fit method instead." << std::endl;
@@ -162,9 +163,9 @@ void memory_allocator::finish(uint32_t max_solve_secs)
                 n.start(SolutionIntegerValue(r, v.y.StartVar()) * alignment_);
                 max_usage = std::max(max_usage, SolutionIntegerValue(r, v.y.EndVar()) * alignment_);
             }
-        }
 
-        solved = true;
+            solved = true;
+        }
     }
 
     if (!solved)

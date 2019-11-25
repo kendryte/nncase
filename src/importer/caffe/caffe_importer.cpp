@@ -31,7 +31,7 @@ caffe_importer::caffe_importer(xtl::span<const uint8_t> model, ir::graph &graph)
     GOOGLE_PROTOBUF_VERIFY_VERSION;
 
     if (!model_.ParseFromArray(model.data(), (int)model.size()))
-        throw std::runtime_error("Invalid PaddlePaddle model");
+        throw std::runtime_error("Invalid Caffe model");
 }
 
 void caffe_importer::import()
