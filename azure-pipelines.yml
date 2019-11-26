@@ -54,15 +54,15 @@ jobs:
       includeRootFolder: false 
       archiveType: 'tar' # Options: zip, 7z, tar, wim
       tarCompression: 'xz' # Optional. Options: gz, bz2, xz, none
-      archiveFile: '$(Build.ArtifactStagingDirectory)/ncc_linux_x64.tar.xz' 
+      archiveFile: '$(Build.ArtifactStagingDirectory)/ncc_linux_x86_64.tar.xz' 
       replaceExistingArchive: true 
       verbose: true
     displayName: 'Publish'
 
   - task: PublishBuildArtifacts@1
     inputs:
-      pathToPublish: $(Build.ArtifactStagingDirectory)/ncc_linux_x64.tar.xz
-      artifactName: ncc_linux_x64
+      pathToPublish: $(Build.ArtifactStagingDirectory)/ncc_linux_x86_64.tar.xz
+      artifactName: ncc_linux_x86_64
 
   - task: PublishTestResults@2
     condition: succeededOrFailed()
@@ -108,15 +108,56 @@ jobs:
       rootFolderOrFile: 'out/bin' 
       includeRootFolder: false 
       archiveType: 'zip' # Options: zip, 7z, tar, wim
-      archiveFile: '$(Build.ArtifactStagingDirectory)/ncc_win_x64.zip' 
+      archiveFile: '$(Build.ArtifactStagingDirectory)/ncc_win_x86_64.zip' 
       replaceExistingArchive: true 
       verbose: true
     displayName: 'Publish'
 
   - task: PublishBuildArtifacts@1
     inputs:
-      pathToPublish: $(Build.ArtifactStagingDirectory)/ncc_win_x64.zip
-      artifactName: ncc_win_x64
+      pathToPublish: $(Build.ArtifactStagingDirectory)/ncc_win_x86_64.zip
+      artifactName: ncc_win_x86_64
+
+  - task: PublishTestResults@2
+    condition: succeededOrFailed()
+    inputs:
+      testResultsFiles: '**/test-*.xml'
+      testRunTitle: 'Publish test results for Python $(python.version)'
+
+- job: MacOS
+  pool:
+    vmImage: 'macOS-10.14'
+
+  steps:
+  - checkout: self
+    submodules: true
+
+  - task: UsePythonVersion@0
+    inputs:
+      versionSpec: '3.7' 
+      addToPath: true 
+      architecture: 'x64'
+
+  - script: pip install six==1.12 conan==1.19.2 tensorflow==2.0.0 matplotlib pillow
+    displayName: 'Install Conan'
+
+  - script: |
+      mkdir out && cd out
+      cmake .. -DNNCASE_TARGET=k210 -DCMAKE_BUILD_TYPE=Release
+      make -j
+      strip bin/ncc
+      hdiutil create dist/ncc_macos_x86_64.dmg -srcfolder bin/ -ov
+    displayName: 'Build'
+
+  - script: |
+      pip install pytest
+      pytest tests --doctest-modules --junitxml=junit/test-results.xml
+    displayName: 'Test'
+
+  - task: PublishBuildArtifacts@1
+    inputs:
+      pathToPublish: out/dist/ncc_macos_x86_64.dmg
+      artifactName: ncc_macos_x86_64
 
   - task: PublishTestResults@2
     condition: succeededOrFailed()
