@@ -154,11 +154,6 @@ jobs:
       hdiutil create -srcfolder bin ncc_macos_x86_64.dmg
     displayName: 'Build'
 
-  - script: |
-      pip install pytest
-      pytest tests --doctest-modules --junitxml=junit/test-results.xml
-    displayName: 'Test'
-
   - task: PublishBuildArtifacts@1
     inputs:
       pathToPublish: out/ncc_osx_x86_64.dmg
