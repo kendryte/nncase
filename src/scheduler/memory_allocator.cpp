@@ -161,7 +161,7 @@ void memory_allocator::finish(uint32_t max_solve_secs)
             {
                 auto &v = node_vars[index++];
                 n.start(SolutionIntegerValue(r, v.y.StartVar()) * alignment_);
-                max_usage = std::max(max_usage, SolutionIntegerValue(r, v.y.EndVar()) * alignment_);
+                max_usage = std::max(max_usage, (size_t)SolutionIntegerValue(r, v.y.EndVar()) * alignment_);
             }
 
             solved = true;
