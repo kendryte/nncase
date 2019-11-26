@@ -38,13 +38,15 @@ def save_tflite(model):
 def compile(args=[]):
 	retcode = subprocess.call([ncc, 'compile', tflite_export_file, kmodel_export_file,
 	 '-i', 'tflite', *args])
-	assert retcode is 0
+	print('retcode', retcode)
+	assert retcode > 0
 
 def infer(args=[]):
 	if not os.path.exists(kmodel_out_dir):
 		os.makedirs(kmodel_out_dir)
 	retcode = subprocess.call([ncc, 'infer', kmodel_export_file, kmodel_out_dir, '--dataset', input_dir, *args])
-	assert retcode is 0
+	print('retcode', retcode)
+	assert retcode > 0
 
 def save_expect_array(name, array):
 	if not os.path.exists(expect_out_dir):
