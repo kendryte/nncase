@@ -1,3 +1,8 @@
+## Usage
+## 使用方法
+
+### Comannd line
+### 命令行
 ```
 DESCRIPTION
 NNCASE model compiler and inference tool.
@@ -43,3 +48,15 @@ OPTIONS
 
     -v, --version           show version
 ```
+
+### Description
+
+`ncc` is the nncase command line tool. It has two commands: `compile` and `infer`.
+
+`compile` command compile your trained models (`.tflite`, `.caffemodel`) to `.kmodel`.
+- `-i, --input-format` option is used to specify the input model format. nncase supports `tflite` and `caffe` input model currently.
+- `-o, --output-format` option is used to sepecify the output model format. You have only one choice: `kmodel` currently.
+- `-t, --target` option is used to set your desired target device to run the model. `cpu` is the most general target that almost every platform should support. `k210` is the Kendryte K210 SoC platform. If you set this option to `k210`, this model can only run on K210 or be emulated on your PC.
+- `--inference-type` Set to `float` if you want precision, but you need more memory and lost K210 KPU acceleration. Set to `uint8` if you want KPU acceleration and fast speed and you need to provide a quantization calibration dataset to quantize your models later.
+
+### 描述

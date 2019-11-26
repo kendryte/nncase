@@ -14,7 +14,6 @@
  */
 #pragma once
 #include "caffe.pb.h"
-#include <filesystem>
 #include <ir/connectors.h>
 #include <ir/graph.h>
 #include <ir/op_utils.h>
