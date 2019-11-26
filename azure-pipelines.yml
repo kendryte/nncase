@@ -132,6 +132,11 @@ jobs:
   - checkout: self
     submodules: true
 
+  - script: |
+      xcode-select --install
+      sudo xcode-select --switch /Library/Developer/CommandLineTools/
+    displayName: 'Setup XCode'
+
   - task: UsePythonVersion@0
     inputs:
       versionSpec: '3.7' 
@@ -156,8 +161,8 @@ jobs:
 
   - task: PublishBuildArtifacts@1
     inputs:
-      pathToPublish: out/dist/ncc_macos_x86_64.dmg
-      artifactName: ncc_macos_x86_64
+      pathToPublish: out/dist/ncc_osx_x86_64.dmg
+      artifactName: ncc_osx_x86_64
 
   - task: PublishTestResults@2
     condition: succeededOrFailed()
