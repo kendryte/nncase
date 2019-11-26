@@ -322,7 +322,7 @@ group compile_options::parser(mode &mode)
         "compile" % (
 			value("input file", input_filename) % "input file",
 			value("output file", output_filename) % "output file",
-			required("-i", "--input-format") % "input file format: e.g. tflite" & value("input format", input_format),
+			required("-i", "--input-format") % "input file format: e.g. tflite, caffe" & value("input format", input_format),
 			option("-o", "--output-format") % ("output file format: e.g. kmodel, default is " + output_format) & value("output format", output_format),
 			option("-t", "--target") % ("target arch: e.g. cpu, k210, default is " + target) & value("target", target),
 			option("--dataset") % "calibration dataset, used in post quantization" & value("dataset path", dataset),
