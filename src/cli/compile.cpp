@@ -126,7 +126,7 @@ graph import(const compile_options &options)
     if (options.input_format == "tflite")
         return import_tflite(model);
     else if (options.input_format == "paddle")
-        return import_paddle(model, std::filesystem::path(options.input_filename).parent_path());
+        return import_paddle(model, boost::filesystem::path(options.input_filename).parent_path());
     else if (options.input_format == "caffe")
         return import_caffe(model);
     else

@@ -14,7 +14,7 @@
  */
 #pragma once
 #include "framework.pb.h"
-#include <filesystem>
+#include <boost/filesystem.hpp>
 #include <ir/connectors.h>
 #include <ir/graph.h>
 #include <ir/op_utils.h>
@@ -31,7 +31,7 @@ namespace importer
     class paddle_importer
     {
     public:
-        paddle_importer(xtl::span<const uint8_t> model, const std::filesystem::path &params_dir, ir::graph &graph);
+        paddle_importer(xtl::span<const uint8_t> model, const boost::filesystem::path &params_dir, ir::graph &graph);
 
         void import();
 
@@ -114,7 +114,7 @@ namespace importer
 
     private:
         paddle::framework::proto::ProgramDesc model_;
-        std::filesystem::path params_dir_;
+        boost::filesystem::path params_dir_;
         ir::graph &graph_;
         const paddle::framework::proto::BlockDesc *subgraph_;
         std::unordered_map<ir::input_connector *, std::string_view> input_tensors_;

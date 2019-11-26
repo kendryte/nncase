@@ -9,7 +9,3 @@ set(SRCS cli.cpp
 add_executable (ncc ${SRCS})
 target_include_directories(ncc PRIVATE ${THIRD_PARTY}/clipp/include)
 target_link_libraries(ncc PRIVATE importer data scheduler codegen evaluator transforms runtime)
-
-if (NOT WIN32)
-    target_link_libraries(ncc PRIVATE stdc++fs)
-endif()

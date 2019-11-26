@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 #pragma once
-#include <filesystem>
+#include <boost/filesystem.hpp>
 #include <functional>
 #include <io_utils.h>
 #include <optional>
@@ -30,7 +30,7 @@ namespace data
     struct data_batch
     {
         xt::xarray<T> tensor;
-        xtl::span<const std::filesystem::path> filenames;
+        xtl::span<const boost::filesystem::path> filenames;
     };
 
     class dataset
@@ -94,7 +94,7 @@ namespace data
             std::optional<data_batch<T>> value_;
         };
 
-        dataset(const std::filesystem::path &path, std::function<bool(const std::filesystem::path &)> file_filter, xt::dynamic_shape<size_t> input_shape, float mean, float std);
+        dataset(const boost::filesystem::path &path, std::function<bool(const boost::filesystem::path &)> file_filter, xt::dynamic_shape<size_t> input_shape, float mean, float std);
 
         template <class T>
         iterator<T> begin()
@@ -136,7 +136,7 @@ namespace data
                     }
                 }
 
-                xtl::span<const std::filesystem::path> filenames(filenames_.data() + start, filenames_.data() + from);
+                xtl::span<const boost::filesystem::path> filenames(filenames_.data() + start, filenames_.data() + from);
 
                 return data_batch<T> { std::move(batch), filenames };
             }
@@ -145,7 +145,7 @@ namespace data
         }
 
     private:
-        std::vector<std::filesystem::path> filenames_;
+        std::vector<boost::filesystem::path> filenames_;
         xt::dynamic_shape<size_t> input_shape_;
         float mean_;
         float std_;
@@ -154,7 +154,7 @@ namespace data
     class image_dataset : public dataset
     {
     public:
-        image_dataset(const std::filesystem::path &path, xt::dynamic_shape<size_t> input_shape, float mean, float std);
+        image_dataset(const boost::filesystem::path &path, xt::dynamic_shape<size_t> input_shape, float mean, float std);
 
     protected:
         void process(const std::vector<uint8_t> &src, float *dest, const xt::dynamic_shape<size_t> &shape) override;
@@ -164,7 +164,7 @@ namespace data
     class raw_dataset : public dataset
     {
     public:
-        raw_dataset(const std::filesystem::path &path, xt::dynamic_shape<size_t> input_shape, float mean, float std);
+        raw_dataset(const boost::filesystem::path &path, xt::dynamic_shape<size_t> input_shape, float mean, float std);
 
     protected:
         void process(const std::vector<uint8_t> &src, float *dest, const xt::dynamic_shape<size_t> &shape) override;

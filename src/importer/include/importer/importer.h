@@ -12,17 +12,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#pragma once 
-#include <memory>
+#pragma once
+#include <boost/filesystem.hpp>
 #include <ir/graph.h>
-#include <filesystem>
+#include <memory>
 
 namespace nncase
 {
 namespace importer
 {
     ir::graph import_tflite(xtl::span<const uint8_t> model);
-    ir::graph import_paddle(xtl::span<const uint8_t> model, const std::filesystem::path &params_dir);
+    ir::graph import_paddle(xtl::span<const uint8_t> model, const boost::filesystem::path &params_dir);
     ir::graph import_caffe(xtl::span<const uint8_t> model);
 }
 }

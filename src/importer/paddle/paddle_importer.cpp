@@ -25,7 +25,7 @@ using namespace nncase::runtime;
 using namespace paddle::framework::proto;
 using namespace std::string_view_literals;
 
-paddle_importer::paddle_importer(xtl::span<const uint8_t> model, const std::filesystem::path &params_dir, ir::graph &graph)
+paddle_importer::paddle_importer(xtl::span<const uint8_t> model, const boost::filesystem::path &params_dir, ir::graph &graph)
     : graph_(graph), subgraph_(nullptr), params_dir_(params_dir)
 {
     GOOGLE_PROTOBUF_VERIFY_VERSION;
@@ -72,8 +72,8 @@ const VarDesc &paddle_importer::find_var(const google::protobuf::RepeatedPtrFiel
 
 void paddle_importer::load_tensor(std::string_view name, uint8_t *dest, uint8_t *end)
 {
-    auto filename = params_dir_ / name;
-    std::ifstream infile(filename, std::ios::binary | std::ios::in);
+    auto filename = params_dir_ / std::string(name);
+    std::ifstream infile(filename.string(), std::ios::binary | std::ios::in);
     if (!infile.good())
         throw std::runtime_error("Cannot open file: " + filename.string());
 
@@ -129,7 +129,7 @@ shape_t paddle_importer::get_var_shape(const VarDesc &var)
     return shape;
 }
 
-graph nncase::importer::import_paddle(xtl::span<const uint8_t> model, const std::filesystem::path &params_dir)
+graph nncase::importer::import_paddle(xtl::span<const uint8_t> model, const boost::filesystem::path &params_dir)
 {
     graph graph;
     paddle_importer(model, params_dir, graph).import();

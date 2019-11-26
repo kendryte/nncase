@@ -7,6 +7,7 @@ range-v3/0.5.0@ericniebler/stable
 flatbuffers/1.11.0@google/stable
 protobuf/3.8.0@sunnycase/testing
 ortools/7.3@sunnycase/testing
+boost/1.71.0@conan/stable
 
 [options]
 opencv:protobuf=False

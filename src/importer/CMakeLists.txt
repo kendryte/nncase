@@ -39,5 +39,5 @@ FLATBUFFERS_GENERATE_C_HEADERS(TFLITE_FB tflite/schema.fbs)
 
 add_library(importer STATIC ${SRCS} ${PROTO_SRCS} ${TFLITE_FB_OUTPUTS})
 target_include_directories(importer PUBLIC include)
-target_link_libraries(importer PUBLIC ir)
+target_link_libraries(importer PUBLIC ir CONAN_PKG::boost)
 target_link_libraries(importer PRIVATE CONAN_PKG::flatbuffers CONAN_PKG::protobuf)

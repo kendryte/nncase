@@ -57,12 +57,12 @@ struct eval_context
 
             interp.run(done_thunk, on_error_thunk, node_profile_thunk, this);
 
-            std::filesystem::path out_filename(options.output_path);
+            boost::filesystem::path out_filename(options.output_path);
 
             out_filename /= it->filenames[0].filename();
             out_filename.replace_extension(".bin");
 
-            std::ofstream of(out_filename, std::ios::binary | std::ios::out);
+            std::ofstream of(out_filename.string(), std::ios::binary | std::ios::out);
             for (size_t i = 0; i < interp.outputs_size(); i++)
             {
                 auto output = interp.memory_at<const char>(interp.output_at(i));
@@ -77,8 +77,8 @@ struct eval_context
         if (!interp.try_load_model(model.data()))
             throw std::runtime_error("Invalid model");
 
-        if (!std::filesystem::exists(options.output_path))
-            std::filesystem::create_directories(options.output_path);
+        if (!boost::filesystem::exists(options.output_path))
+            boost::filesystem::create_directories(options.output_path);
 
         auto in_shape = interp.input_shape_at(0);
         xt::dynamic_shape<size_t> shape { (size_t)in_shape[0], (size_t)in_shape[1], (size_t)in_shape[2], (size_t)in_shape[3] };
