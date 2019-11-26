@@ -151,7 +151,7 @@ jobs:
       cmake .. -DNNCASE_TARGET=k210 -DCMAKE_BUILD_TYPE=Release
       make -j
       strip bin/ncc
-      hdiutil create dist/ncc_macos_x86_64.dmg -srcfolder bin/ -ov
+      hdiutil create -srcfolder bin ncc_macos_x86_64.dmg
     displayName: 'Build'
 
   - script: |
@@ -161,7 +161,7 @@ jobs:
 
   - task: PublishBuildArtifacts@1
     inputs:
-      pathToPublish: out/dist/ncc_osx_x86_64.dmg
+      pathToPublish: out/ncc_osx_x86_64.dmg
       artifactName: ncc_osx_x86_64
 
   - task: PublishTestResults@2
