@@ -151,7 +151,7 @@ jobs:
       cmake .. -DNNCASE_TARGET=k210 -DCMAKE_BUILD_TYPE=Release
       make -j
       strip bin/ncc
-      hdiutil create -srcfolder bin ncc_macos_x86_64.dmg
+      hdiutil create -srcfolder bin ncc_osx_x86_64.dmg
     displayName: 'Build'
 
   - task: PublishBuildArtifacts@1
