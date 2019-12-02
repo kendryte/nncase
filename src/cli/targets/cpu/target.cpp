@@ -69,32 +69,32 @@ void nncase::cpu_target::registry_evaluator_ops()
     register_neutral_evaluators();
 }
 
-hlir::transforms::pass cpu_target::create_default_pass()
+void cpu_target::add_default_transforms(hlir::transforms::pass &pass)
 {
-    pass p;
-    p.emplace<fold_constant_transform>();
-    p.emplace<fold_nop_pad_transform>();
-    p.emplace<fold_nop_reshape_transform>();
-    p.emplace<fold_nop_transpose_transform>();
-    p.emplace<fold_pad_strided_slice_transform>();
-    p.emplace<fold_quantize_transform>();
-    p.emplace<fold_reshape_transform>();
-    p.emplace<fold_transpose_transform>();
-    p.emplace<fuse_pad_conv2d_transform>();
-    p.emplace<strided_slice_to_pad_transform>();
-    p.emplace<transpose_binary_motion_transform>();
-    p.emplace<transpose_constant_binary_motion_transform>();
-    p.emplace<transpose_concat_motion_transform>();
-    p.emplace<transpose_pad_motion_transform>();
-    p.emplace<transpose_reduce_motion_transform>();
-    p.emplace<transpose_unary_motion_transform>();
-    p.emplace<transpose_to_reshape_transform>();
-    return p;
+    pass.emplace<fold_constant_transform>();
+    pass.emplace<fold_nop_pad_transform>();
+    pass.emplace<fold_nop_reshape_transform>();
+    pass.emplace<fold_nop_transpose_transform>();
+    pass.emplace<fold_pad_strided_slice_transform>();
+    pass.emplace<fold_quantize_transform>();
+    pass.emplace<fold_reshape_transform>();
+    pass.emplace<fold_transpose_transform>();
+    pass.emplace<fuse_pad_conv2d_transform>();
+    pass.emplace<strided_slice_to_pad_transform>();
+    pass.emplace<transpose_binary_motion_transform>();
+    pass.emplace<transpose_constant_binary_motion_transform>();
+    pass.emplace<transpose_concat_motion_transform>();
+    pass.emplace<transpose_pad_motion_transform>();
+    pass.emplace<transpose_reduce_motion_transform>();
+    pass.emplace<transpose_unary_motion_transform>();
+    pass.emplace<transpose_to_reshape_transform>();
 }
 
 void nncase::cpu_target::optimize_target_independent(hlir::transforms::pass_manager &pass_mgr)
 {
-    pass_mgr.add_pass(create_default_pass());
+    pass p;
+    add_default_transforms(p);
+    pass_mgr.add_pass(std::move(p));
 }
 
 void nncase::cpu_target::optimize_target_dependent(hlir::transforms::pass_manager &pass_mgr)
@@ -120,6 +120,7 @@ void nncase::cpu_target::optimize_quantize(hlir::quantizer &quantizer, hlir::tra
     p.emplace<quantized_conv2d_transform>(quantizer);
     p.emplace<quantized_matmul_transform>(quantizer);
     p.emplace<quantized_binary_transform>(quantizer);
+    add_default_transforms(p);
     pass_mgr.add_pass(std::move(p));
 }
 

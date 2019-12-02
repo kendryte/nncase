@@ -32,6 +32,6 @@ public:
     void add_quantization_broadcast(std::unordered_set<hlir::node_opcode> &opcodes) override;
 
 protected:
-    hlir::transforms::pass create_default_pass();
+    void add_default_transforms(hlir::transforms::pass& pass);
 };
 }

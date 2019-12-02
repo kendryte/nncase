@@ -45,13 +45,6 @@ bool is_supported_filter(int32_t filter_h, int32_t filter_w)
     return (filter_h == filter_w) && (filter_h == 3 || filter_h == 1);
 }
 
-bool is_supported_filter(reduce_op_t op, int32_t filter_h, int32_t filter_w, int32_t stride_h, int32_t stride_w)
-{
-    return (op == reduce_max || op == reduce_mean)
-        && (filter_h == filter_w) && (filter_h == 2 || filter_h == 4)
-        && (stride_h == stride_w) && (stride_h == filter_h);
-}
-
 template <bool Pre>
 padding get_padding(const padding &padding)
 {
@@ -66,24 +59,50 @@ kpu_filter_type_t get_filter_type(int32_t filter)
     return filter == 1 ? kpu_filter_1x1 : kpu_filter_3x3;
 }
 
-kpu_pool_type_t get_filter_type(reduce_op_t op, int32_t filter)
+kpu_pool_type_t get_filter_type(reduce_op_t op, int32_t filter, int32_t stride)
 {
     if (op == reduce_max)
     {
         if (filter == 2)
-            return kpu_pool_max_2_s2;
+        {
+            if (stride == 2)
+                return kpu_pool_max_2_s2;
+            else if (stride == 1)
+                return kpu_pool_max_2_s1;
+        }
         else if (filter == 4)
             return kpu_pool_max_4_s4;
     }
     else if (op == reduce_mean)
     {
         if (filter == 2)
-            return kpu_pool_mean_2_s2;
+        {
+            if (stride == 2)
+                return kpu_pool_mean_2_s2;
+            else if (stride == 1)
+                return kpu_pool_mean_2_s1;
+        }
         else if (filter == 4)
             return kpu_pool_mean_4_s4;
     }
 
     throw std::invalid_argument("Unsupported reduce window");
+}
+
+bool is_supported_filter(reduce_op_t op, int32_t filter_h, int32_t filter_w, int32_t stride_h, int32_t stride_w)
+{
+    if (filter_h != filter_w || stride_h != stride_w)
+        return false;
+
+    try
+    {
+        get_filter_type(op, filter_h, stride_h);
+        return true;
+    }
+    catch (...)
+    {
+        return false;
+    }
 }
 
 xt::svector<piecewise_linear_segment> clamp_to_piecewise(value_range<float> clamp)
@@ -248,6 +267,16 @@ void fuse_fake_kpu_conv2d_strided_slice_transform::process(transform_context &co
         in->connect(crop->output());
 }
 
+#define GET_PRE_PAD(reduce)                                                                                \
+    auto filter_type = get_filter_type(reduce->reduce_op(), reduce->filter_h(), reduce->stride_h());       \
+    auto kpu_pad_h = get_kpu_padding(filter_type, reduce->input().shape()[2]);                             \
+    auto kpu_pad_w = get_kpu_padding(filter_type, reduce->input().shape()[3]);                             \
+    padding pad_h { reduce->padding_h().before - kpu_pad_h[0], reduce->padding_h().after - kpu_pad_h[1] }; \
+    padding pad_w { reduce->padding_w().before - kpu_pad_w[0], reduce->padding_w().after - kpu_pad_w[1] }; \
+                                                                                                           \
+    auto pre_pad_h = get_padding<true>(pad_h);                                                             \
+    auto pre_pad_w = get_padding<true>(pad_w);
+
 bool fuse_fake_kpu_conv2d_reduce_window2d_transform::on_try_match(node &node, transform_context &context)
 {
     if (node.runtime_opcode() == op_k210_fake_kpu_conv2d)
@@ -257,18 +286,22 @@ bool fuse_fake_kpu_conv2d_reduce_window2d_transform::on_try_match(node &node, tr
         {
             if (auto reduce = try_get_direct_child<reduce_window2d>(conv))
             {
-                if (reduce->padding_h() == padding::zero()
-                    && reduce->padding_w() == padding::zero()
-                    && is_supported_in_shape(reduce->output().shape())
+                if (is_supported_in_shape(reduce->input().shape())
+                    && is_supported_out_shape(reduce->output().shape())
                     && is_supported_filter(reduce->reduce_op(), reduce->filter_h(), reduce->filter_w(), reduce->stride_h(), reduce->stride_w())
                     && reduce->dilation_h() == 1 && reduce->dilation_w() == 1)
                 {
-                    context.inputs.emplace_back(&conv.input());
-                    context.outputs.emplace_back(&reduce->output());
+                    GET_PRE_PAD(reduce);
 
-                    context.matched_nodes.emplace_back(&conv);
-                    context.matched_nodes.emplace_back(reduce);
-                    return true;
+                    if (pad_h == padding::zero() && pad_w == padding::zero())
+                    {
+                        context.inputs.emplace_back(&conv.input());
+                        context.outputs.emplace_back(&reduce->output());
+
+                        context.matched_nodes.emplace_back(&conv);
+                        context.matched_nodes.emplace_back(reduce);
+                        return true;
+                    }
                 }
             }
         }
@@ -284,7 +317,7 @@ void fuse_fake_kpu_conv2d_reduce_window2d_transform::process(transform_context &
     auto &old_conv = static_cast<fake_kpu_conv2d &>(*context.matched_nodes[0]);
     auto &old_reduce = static_cast<reduce_window2d &>(*context.matched_nodes[1]);
 
-    auto pool_type = get_filter_type(old_reduce.reduce_op(), old_reduce.filter_h());
+    auto pool_type = get_filter_type(old_reduce.reduce_op(), old_reduce.filter_h(), old_reduce.stride_h());
 
     auto conv = context.graph.emplace<fake_kpu_conv2d>(old_conv.input().shape(), old_conv.is_depthwise(), old_conv.filter_type(), pool_type,
         old_conv.weights(), old_conv.bias(), old_conv.fused_activation());

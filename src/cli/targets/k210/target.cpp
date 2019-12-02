@@ -88,6 +88,7 @@ void nncase::k210_target::optimize_target_dependent(hlir::transforms::pass_manag
     p.emplace<binary_to_fake_piecewise_linear_transform>();
     p.emplace<fake_piecewise_linear_binary_transform>();
     p.emplace<fuse_fake_kpu_conv2d_piecewise_linear_transform>();
+    add_default_transforms(p);
     pass_mgr.add_pass(std::move(p));
 }
 
@@ -102,11 +103,20 @@ void nncase::k210_target::add_quantization_checkpoints(hlir::transforms::pass_ma
 
 void nncase::k210_target::optimize_quantize(hlir::quantizer &quantizer, hlir::transforms::pass_manager &pass_mgr)
 {
-    pass p;
-    p.emplace<kpu_conv2d_transform>(quantizer);
-    p.emplace<fold_kpu_upload_transform>();
-    p.emplace<fuse_kpu_download_transform>();
-    p.emplace<fold_input_kpu_upload_transform>();
-    pass_mgr.add_pass(std::move(p));
-    cpu_target::optimize_quantize(quantizer, pass_mgr);
+    {
+        pass p;
+        p.emplace<kpu_conv2d_transform>(quantizer);
+        p.emplace<fold_kpu_upload_transform>();
+        p.emplace<fold_quantize_transform>();
+        pass_mgr.add_pass(std::move(p));
+    }
+    {
+        cpu_target::optimize_quantize(quantizer, pass_mgr);
+
+        pass p;
+        p.emplace<fuse_kpu_download_transform>();
+        p.emplace<fold_input_kpu_upload_transform>();
+        add_default_transforms(p);
+        pass_mgr.add_pass(std::move(p));
+    }
 }

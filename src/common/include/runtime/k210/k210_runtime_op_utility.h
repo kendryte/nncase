@@ -80,6 +80,29 @@ namespace runtime
             }
         }
 
+        inline std::array<int32_t, 2> get_kpu_padding(kpu_pool_type_t filter, int32_t size)
+        {
+            switch (filter)
+            {
+            case kpu_pool_bypass:
+                return { 0, 0 };
+            case kpu_pool_max_2_s2:
+            case kpu_pool_mean_2_s2:
+            case kpu_pool_left_top_2_s2:
+            case kpu_pool_right_top_2_s2:
+                return { 0, 0 };
+            case kpu_pool_max_4_s4:
+            case kpu_pool_mean_4_s4:
+            case kpu_pool_left_top_4_s4:
+                return { 0, 0 };
+            case kpu_pool_mean_2_s1:
+            case kpu_pool_max_2_s1:
+                return { 0, 1 };
+            default:
+                NNCASE_THROW(std::runtime_error, "Invalid kpu pool type");
+            }
+        }
+
         inline int32_t get_kpu_rows(int32_t width, int32_t height, int32_t channels)
         {
             auto layout = get_kpu_row_layout(width);
