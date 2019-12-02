@@ -11,7 +11,7 @@ SYNOPSIS
     ncc compile <input file> <output file> -i <input format> [-o <output
         format>] [-t <target>] [--dataset <dataset path>] [--dataset-format
         <dataset format>] [--inference-type <inference type>] [--input-mean
-        <input mean>] [--input-std <input std>] [--dump-hlir] [--input-type <input
+        <input mean>] [--input-std <input std>] [--dump-ir] [--input-type <input
         type>] [--max-allocator-solve-secs <max allocator solve secs>] [-v]
 
     ncc infer <input file> <output path> --dataset <dataset path>
@@ -30,7 +30,7 @@ OPTIONS
         --inference-type    inference type: e.g. float, uint8 default is uint8
         --input-mean        input mean, default is 0.000000
         --input-std         input std, default is 1.000000
-        --dump-hlir           dump nncase hlir to .dot files
+        --dump-ir           dump nncase ir to .dot files
         --input-type        input type: e.g. default, float, uint8, default
                             means equal to inference type
 
@@ -71,7 +71,7 @@ OPTIONS
 | [0,255] | 0.0039216 | 0 |
 - `--input-type` is to set your desired input data type when do inference. Default is equal to inference type. If `--input-type` is `uint8`, for example you should provide RGB888 uint8 tensors when you do inference. If `--input-type` is `float`, you shold provide RGB float tensors instead.
 - `--max-allocator-solve-secs` is to limit the maximum solving time when do the best fit allocation search. If the search time exceeded, ncc will fallback to use the first fit method. Default is 60 secs, set to 0 to disable search.
-- `--dump-hlir` is a debug option. When it's on, ncc will produce some `.dot` graph files to the working directory. You can use `Graphviz` or [Graphviz Online](https://dreampuf.github.io/GraphvizOnline) to view these files.
+- `--dump-ir` is a debug option. When it's on, ncc will produce some `.dot` graph files to the working directory. You can use `Graphviz` or [Graphviz Online](https://dreampuf.github.io/GraphvizOnline) to view these files.
 
 `infer` command can run your kmodel, and it's often used as debug purpose. ncc will save the model's output tensors to `.bin` files in `NCHW` layout.
 - `<input file>` is your kmodel path.
@@ -101,7 +101,7 @@ OPTIONS
 | [0,255] | 0.0039216 | 0 |
 - `--input-type` 用于设置推理时输入的数据类型。默认和 inference type 相同。如果 `--input-type` 是 `uint8`，推理时你需要提供 RGB888 uint8 张量。如果 `--input-type` 是 `float`，你则需要提供 RGB float 张量。
 - `--max-allocator-solve-secs` 用于限制 ncc 做最优分配时的最大搜索时间。如果搜索超过了这个时间，ncc 会退而使用 first fit 算法。默认是 60 秒，如果要禁用搜索请设置为 0。
-- `--dump-hlir` 是一个调试选项。当它打开时 ncc 会在工作目录产生一些 `.dot` 文件。你可以使用 `Graphviz` 或 [Graphviz Online](https://dreampuf.github.io/GraphvizOnline) 来查看这些文件。
+- `--dump-ir` 是一个调试选项。当它打开时 ncc 会在工作目录产生一些 `.dot` 文件。你可以使用 `Graphviz` 或 [Graphviz Online](https://dreampuf.github.io/GraphvizOnline) 来查看这些文件。
 
 `infer` 命令可以运行你的 kmodel，通常它被用来调试。ncc 会将你模型的输出张量按 `NCHW` 布局保存到 `.bin` 文件。
 - `<input file>` kmodel 的路径。

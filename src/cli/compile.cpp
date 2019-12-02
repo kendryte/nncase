@@ -40,7 +40,8 @@ using namespace nncase::scheduler;
 
 namespace
 {
-void dump_graph(graph &graph, std::ostream &output)
+template <class TGraph>
+void dump_graph(TGraph &graph, std::ostream &output)
 {
     graph.assign_names();
 
@@ -65,7 +66,8 @@ void dump_graph(graph &graph, std::ostream &output)
     output << "}" << std::endl;
 }
 
-void dump_graph(const compile_options &options, graph &graph, std::string_view prefix)
+template <class TGraph>
+void dump_graph(const compile_options &options, TGraph &graph, std::string_view prefix)
 {
     if (options.dump_ir)
     {
@@ -323,7 +325,7 @@ group compile_options::parser(mode &mode)
 			option("--inference-type") % ("inference type: e.g. float, uint8 default is " + inference_type) & value("inference type", inference_type),
 			option("--input-mean") % ("input mean, default is " + std::to_string(input_mean)) & value("input mean", input_mean),
 			option("--input-std") % ("input std, default is " + std::to_string(input_std)) & value("input std", input_std),
-			option("--dump-hlir").set(dump_ir) % "dump nncase hlir to .dot files",
+			option("--dump-ir").set(dump_ir) % "dump nncase ir to .dot files",
 			option("--input-type").set(input_type) % ("input type: e.g. default, float, uint8, default means equal to inference type") & value("input type", input_type),
 			option("--max-allocator-solve-secs") % ("max optimal layout solve time in secs used by allocators, 0 means don't use solver, default is " + std::to_string(max_solve_secs)) & value("max allocator solve secs", max_solve_secs)
 		));
@@ -356,10 +358,11 @@ void compile(const compile_options &options)
         quantize(options, *target, graph);
     }
 
-	// 5. Lowering
+    // 5. Lowering
     std::cout << "5. Lowering..." << std::endl;
     hlir::hlir_compile_context llir;
     graph.compile(llir);
+    dump_graph(options, llir.graph, "lowering");
 
     // 5. CodeGen
     std::cout << "6. Generate code..." << std::endl;
