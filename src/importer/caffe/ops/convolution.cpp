@@ -14,11 +14,11 @@
  */
 #include "../caffe_importer.h"
 #include <functional>
-#include <ir/ops/conv2d.h>
+#include <hlir/ops/conv2d.h>
 
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::ir;
+using namespace nncase::hlir;
 using namespace caffe;
 
 DEFINE_CAFFE_LOWER(Convolution)

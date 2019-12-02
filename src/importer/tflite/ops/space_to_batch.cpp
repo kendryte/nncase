@@ -13,13 +13,13 @@
  * limitations under the License.
  */
 #include "../tflite_importer.h"
-#include <ir/ops/pad.h>
-#include <ir/ops/reshape.h>
-#include <ir/ops/transpose.h>
+#include <hlir/ops/pad.h>
+#include <hlir/ops/reshape.h>
+#include <hlir/ops/transpose.h>
 
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::ir;
+using namespace nncase::hlir;
 
 DEFINE_TFLITE_LOWER(SPACE_TO_BATCH_ND)
 {

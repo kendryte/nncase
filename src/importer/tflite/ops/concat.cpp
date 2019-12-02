@@ -13,11 +13,11 @@
  * limitations under the License.
  */
 #include "../tflite_importer.h"
-#include <ir/ops/concat.h>
+#include <hlir/ops/concat.h>
 
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::ir;
+using namespace nncase::hlir;
 
 DEFINE_TFLITE_LOWER(CONCATENATION)
 {

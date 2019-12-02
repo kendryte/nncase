@@ -14,15 +14,15 @@
  */
 #pragma once
 #include <boost/filesystem.hpp>
-#include <ir/graph.h>
+#include <hlir/graph.h>
 #include <memory>
 
 namespace nncase
 {
 namespace importer
 {
-    ir::graph import_tflite(xtl::span<const uint8_t> model);
-    ir::graph import_paddle(xtl::span<const uint8_t> model, const boost::filesystem::path &params_dir);
-    ir::graph import_caffe(xtl::span<const uint8_t> model);
+    hlir::graph import_tflite(xtl::span<const uint8_t> model);
+    hlir::graph import_paddle(xtl::span<const uint8_t> model, const boost::filesystem::path &params_dir);
+    hlir::graph import_caffe(xtl::span<const uint8_t> model);
 }
 }

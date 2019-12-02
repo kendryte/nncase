@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 #include <codegen/codegen.h>
-#include <ir/op_utils.h>
-#include <ir/ops/constant.h>
+#include <llir/op_utils.h>
+#include <llir/ops/constant.h>
 #include <runtime/model.h>
 #include <string>
 #include <unordered_map>
@@ -22,7 +22,7 @@
 
 using namespace nncase;
 using namespace nncase::codegen;
-using namespace nncase::ir;
+using namespace nncase::llir;
 using namespace nncase::scheduler;
 using namespace nncase::runtime;
 
@@ -54,12 +54,12 @@ void nncase::codegen::register_emitter(node_opcode opcode, emitter_t emitter)
     g_emitters.emplace(opcode, std::move(emitter));
 }
 
-void nncase::codegen::disable_emitter(ir::node_opcode opcode)
+void nncase::codegen::disable_emitter(llir::node_opcode opcode)
 {
     g_disabled_emitters.emplace(opcode);
 }
 
-codegen_context::codegen_context(std::ostream &output, const std::unordered_map<memory_type_t, memory_allocator *> &allocators, const std::unordered_map<ir::output_connector *, memory_allocation> &allocations)
+codegen_context::codegen_context(std::ostream &output, const std::unordered_map<memory_type_t, memory_allocator *> &allocators, const std::unordered_map<llir::output_connector *, memory_allocation> &allocations)
     : writer_(output), allocators_(allocators), allocations_(allocations)
 {
 }
@@ -70,13 +70,13 @@ memory_range codegen_context::get_allocation(output_connector &conn) const
     return { alloc.type, conn.type(), (uint32_t)alloc.start, (uint32_t)alloc.size };
 }
 
-void nncase::codegen::gencode(codegen_context &context, xtl::span<ir::node *> compute_sequence)
+void nncase::codegen::gencode(codegen_context &context, xtl::span<llir::node *> compute_sequence)
 {
-    std::vector<ir::node *> runtime_nodes;
+    std::vector<llir::node *> runtime_nodes;
     std::vector<memory_range> inputs;
     std::vector<runtime_shape_t> input_shapes;
     std::vector<memory_range> outputs;
-    std::vector<ir::node *> constants;
+    std::vector<llir::node *> constants;
 
     for (auto &&node : compute_sequence)
     {
@@ -87,7 +87,7 @@ void nncase::codegen::gencode(codegen_context &context, xtl::span<ir::node *> co
         {
         case op_input_node:
             inputs.emplace_back(context.get_allocation(node->output_at(0)));
-            input_shapes.emplace_back(ir::to(node->output_at(0).shape()));
+            input_shapes.emplace_back(llir::to(node->output_at(0).shape()));
             break;
         case op_output_node:
             outputs.emplace_back(context.get_allocation(*node->input_at(0).connection()));

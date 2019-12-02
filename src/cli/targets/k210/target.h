@@ -26,10 +26,9 @@ public:
     void fill_allocators(std::unordered_map<memory_type_t, scheduler::memory_allocator *> &allocators, std::vector<std::unique_ptr<scheduler::memory_allocator>> &allocator_holders) override;
     void registry_codegen_ops() override;
     void registry_evaluator_ops() override;
-    void add_default_transforms(std::vector<std::unique_ptr<transforms::transform>> &transforms) override;
-    void add_optimize1_transforms(std::vector<std::unique_ptr<transforms::transform>> &transforms) override;
-    void add_optimize2_transforms(std::vector<std::unique_ptr<transforms::transform>> &transforms) override;
-    void add_quantization_checkpoint_transforms(std::vector<std::unique_ptr<transforms::transform>> &transforms) override;
-    void add_quantization_transforms(ir::quantizer &quantizer, std::vector<std::unique_ptr<transforms::transform>> &transforms) override;
+    void optimize_target_independent(hlir::transforms::pass_manager &pass_mgr) override;
+    void optimize_target_dependent(hlir::transforms::pass_manager &pass_mgr) override;
+    void add_quantization_checkpoints(hlir::transforms::pass_manager &pass_mgr) override;
+    void optimize_quantize(hlir::quantizer &quantizer, hlir::transforms::pass_manager &pass_mgr) override;
 };
 }

@@ -15,7 +15,7 @@
 #pragma once
 #include "memory_allocator.h"
 #include <functional>
-#include <ir/graph.h>
+#include <llir/graph.h>
 #include <unordered_map>
 #include <vector>
 
@@ -28,20 +28,20 @@ namespace scheduler
     public:
         allocation_context(const std::unordered_map<memory_type_t, memory_allocator *> &allocators);
 
-        const std::unordered_map<ir::output_connector *, memory_allocation> &allocations() const noexcept { return allocations_; }
+        const std::unordered_map<llir::output_connector *, memory_allocation> &allocations() const noexcept { return allocations_; }
 
-        void allocate_default(ir::output_connector &conn);
-        void release(ir::output_connector &conn);
+        void allocate_default(llir::output_connector &conn);
+        void release(llir::output_connector &conn);
         void grow_age();
         void finish(uint32_t max_solve_secs);
 
     private:
         const std::unordered_map<memory_type_t, memory_allocator *> &allocators_;
-        std::unordered_map<ir::output_connector *, memory_node *> memory_map_;
-        std::unordered_map<ir::output_connector *, memory_allocation> allocations_;
+        std::unordered_map<llir::output_connector *, memory_node *> memory_map_;
+        std::unordered_map<llir::output_connector *, memory_allocation> allocations_;
     };
 
-    void register_input_allocator(ir::node_opcode opcode, std::function<void(ir::node &, ir::output_connector &, allocation_context)> allocator);
-    void schedule(xtl::span<ir::output_node *> outputs, allocation_context &context, std::vector<ir::node *> &compute_sequence, uint32_t max_solve_secs);
+    void register_input_allocator(llir::node_opcode opcode, std::function<void(llir::node &, llir::output_connector &, allocation_context)> allocator);
+    void schedule(xtl::span<llir::output_node *> outputs, allocation_context &context, std::vector<llir::node *> &compute_sequence, uint32_t max_solve_secs);
 }
 }

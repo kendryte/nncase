@@ -13,11 +13,11 @@
  * limitations under the License.
  */
 #include "../caffe_importer.h"
-#include <ir/ops/reshape.h>
+#include <hlir/ops/reshape.h>
 
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::ir;
+using namespace nncase::hlir;
 using namespace caffe;
 
 DEFINE_CAFFE_LOWER(Reshape)

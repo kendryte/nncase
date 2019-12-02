@@ -13,12 +13,11 @@
  * limitations under the License.
  */
 #include <chrono>
-#include <ir/evaluator.h>
-#include <ir/ops/constant.h>
-#include <ir/quantizer.h>
+#include <llir/evaluator.h>
+#include <llir/ops/constant.h>
 
 using namespace nncase;
-using namespace nncase::ir;
+using namespace nncase::llir;
 using namespace nncase::scheduler;
 namespace chrono = std::chrono;
 
@@ -26,7 +25,7 @@ namespace chrono = std::chrono;
 
 namespace
 {
-std::unordered_map<node_opcode, std::function<void(ir::node &, evaluate_context &)>> g_evaluators;
+std::unordered_map<node_opcode, std::function<void(llir::node &, evaluate_context &)>> g_evaluators;
 
 auto &get_evaluator(node_opcode opcode)
 {
@@ -37,12 +36,12 @@ auto &get_evaluator(node_opcode opcode)
 }
 }
 
-void nncase::ir::register_evaluator(ir::node_opcode opcode, std::function<void(ir::node &, evaluate_context &)> evaluator)
+void nncase::llir::register_evaluator(llir::node_opcode opcode, std::function<void(llir::node &, evaluate_context &)> evaluator)
 {
     g_evaluators.emplace(opcode, std::move(evaluator));
 }
 
-evaluate_context::evaluate_context(const std::unordered_map<memory_type_t, memory_allocator *> &allocators, const std::unordered_map<ir::output_connector *, memory_allocation> &allocations)
+evaluate_context::evaluate_context(const std::unordered_map<memory_type_t, memory_allocator *> &allocators, const std::unordered_map<llir::output_connector *, memory_allocation> &allocations)
     : allocators_(allocators), allocations_(allocations)
 {
     for (auto &&allocator : allocators_)
@@ -58,7 +57,7 @@ xtl::span<uint8_t> evaluate_context::memory_at(const scheduler::memory_allocatio
     return { memory_pool.get() + allocation.start, allocation.size };
 }
 
-evaluator::evaluator(evaluate_context &context, xtl::span<ir::node *> compute_sequence)
+evaluator::evaluator(evaluate_context &context, xtl::span<llir::node *> compute_sequence)
     : context_(context), compute_sequence_(compute_sequence)
 {
     for (auto &&node : compute_sequence_)
@@ -82,7 +81,7 @@ evaluator::evaluator(evaluate_context &context, xtl::span<ir::node *> compute_se
     }
 }
 
-void evaluator::evaluate(quantizer *quantizer, bool add_input_stat)
+void evaluator::evaluate(hlir::quantizer *quantizer, std::unordered_map<llir::output_connector *, hlir::output_connector *> *outputs, bool add_input_stat)
 {
     using clock = chrono::high_resolution_clock;
     chrono::nanoseconds total_duration = {};
@@ -99,13 +98,20 @@ void evaluator::evaluate(quantizer *quantizer, bool add_input_stat)
         std::cout << node_opcode_names(node->runtime_opcode()) << ": " << duration.count() / 1e6 << "ms" << std::endl;
 #endif
 
-        if (quantizer && node->runtime_opcode())
+        if (quantizer && node->outputs().size() > 0)
         {
-            auto opcode = node->runtime_opcode();
-            if (opcode == op_fake_dequantize || opcode == op_fake_quantize || (opcode == op_input_node && add_input_stat))
+            auto &l_output = node->output_at(0);
+            auto hl_output = outputs->find(&l_output);
+            if (hl_output != outputs->end())
             {
-                auto &output = node->output_at(0);
-                quantizer->record(output, context_.memory_at<float>(output));
+                auto &hl_node = hl_output->second->owner();
+                auto opcode = hl_node.runtime_opcode();
+                if (opcode == hlir::op_fake_dequantize
+                    || opcode == hlir::op_fake_quantize
+                    || (opcode == hlir::op_input_node && add_input_stat))
+                {
+                    quantizer->record(*hl_output->second, context_.memory_at<float>(l_output));
+                }
             }
         }
     }

@@ -14,11 +14,11 @@
  */
 #include "tflite_importer.h"
 #include <importer/importer.h>
-#include <ir/ops/constant.h>
+#include <hlir/ops/constant.h>
 
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::ir;
+using namespace nncase::hlir;
 using namespace flatbuffers;
 
 tflite_importer::tflite_importer(xtl::span<const uint8_t> model, graph &graph)

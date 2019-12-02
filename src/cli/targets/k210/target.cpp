@@ -13,27 +13,27 @@
  * limitations under the License.
  */
 #include "target.h"
+#include <hlir/transforms/k210/fake_kpu_conv2d.h>
+#include <hlir/transforms/k210/fake_piecewise_linear.h>
+#include <hlir/transforms/k210/fold_kpu_upload.h>
+#include <hlir/transforms/k210/fuse_kpu_download.h>
+#include <hlir/transforms/k210/kpu_conv2d.h>
+#include <hlir/transforms/k210/strided_slice_motion.h>
+#include <hlir/transforms/neutral/add_quant_checkpoints.h>
+#include <hlir/transforms/neutral/fold_pad.h>
+#include <hlir/transforms/neutral/fold_quantize.h>
+#include <hlir/transforms/neutral/fold_transpose.h>
+#include <hlir/transforms/neutral/fuse_pad.h>
+#include <hlir/transforms/neutral/transpose_motion.h>
 #include <scheduler/k210/kpu_memory_allocator.h>
 #include <scheduler/main_memory_allocator.h>
-#include <transforms/k210/fake_kpu_conv2d.h>
-#include <transforms/k210/fake_piecewise_linear.h>
-#include <transforms/k210/fold_kpu_upload.h>
-#include <transforms/k210/fuse_kpu_download.h>
-#include <transforms/k210/kpu_conv2d.h>
-#include <transforms/k210/strided_slice_motion.h>
-#include <transforms/neutral/add_quant_checkpoints.h>
-#include <transforms/neutral/fold_pad.h>
-#include <transforms/neutral/fold_quantize.h>
-#include <transforms/neutral/fold_transpose.h>
-#include <transforms/neutral/fuse_pad.h>
-#include <transforms/neutral/transpose_motion.h>
 
 using namespace nncase;
-using namespace nncase::ir;
+using namespace nncase::hlir;
 using namespace nncase::scheduler;
 using namespace nncase::scheduler::k210;
-using namespace nncase::transforms;
-using namespace nncase::transforms::k210;
+using namespace nncase::hlir::transforms;
+using namespace nncase::hlir::transforms::k210;
 
 namespace nncase
 {
@@ -45,7 +45,7 @@ namespace codegen
 
 namespace nncase
 {
-namespace ir
+namespace llir
 {
     void register_k210_evaluators();
 }
@@ -67,46 +67,46 @@ void nncase::k210_target::registry_codegen_ops()
 
 void nncase::k210_target::registry_evaluator_ops()
 {
-    using namespace nncase::ir;
+    using namespace nncase::llir;
 
     cpu_target::registry_evaluator_ops();
     register_k210_evaluators();
 }
 
-void nncase::k210_target::add_default_transforms(std::vector<std::unique_ptr<transform>> &transforms)
+void nncase::k210_target::optimize_target_independent(hlir::transforms::pass_manager &pass_mgr)
 {
-    cpu_target::add_default_transforms(transforms);
+    cpu_target::optimize_target_independent(pass_mgr);
 }
 
-void nncase::k210_target::add_optimize1_transforms(std::vector<std::unique_ptr<transform>> &transforms)
+void nncase::k210_target::optimize_target_dependent(hlir::transforms::pass_manager &pass_mgr)
 {
-    cpu_target::add_optimize1_transforms(transforms);
+    pass p;
+    p.emplace<fake_kpu_conv2d_transform>();
+    p.emplace<strided_slice_motion_transform>();
+    p.emplace<fuse_fake_kpu_conv2d_strided_slice_transform>();
+    p.emplace<fuse_fake_kpu_conv2d_reduce_window2d_transform>();
+    p.emplace<binary_to_fake_piecewise_linear_transform>();
+    p.emplace<fake_piecewise_linear_binary_transform>();
+    p.emplace<fuse_fake_kpu_conv2d_piecewise_linear_transform>();
+    pass_mgr.add_pass(std::move(p));
 }
 
-void nncase::k210_target::add_optimize2_transforms(std::vector<std::unique_ptr<transform>> &transforms)
+void nncase::k210_target::add_quantization_checkpoints(hlir::transforms::pass_manager &pass_mgr)
 {
-    cpu_target::add_optimize2_transforms(transforms);
-    transforms.emplace_back(new fake_kpu_conv2d_transform());
-    transforms.emplace_back(new strided_slice_motion_transform());
-    transforms.emplace_back(new fuse_fake_kpu_conv2d_strided_slice_transform());
-    transforms.emplace_back(new fuse_fake_kpu_conv2d_reduce_window2d_transform());
-    transforms.emplace_back(new binary_to_fake_piecewise_linear_transform());
-    transforms.emplace_back(new fake_piecewise_linear_binary_transform());
-    transforms.emplace_back(new fuse_fake_kpu_conv2d_piecewise_linear_transform());
+    pass p;
+    p.emplace<revert_piecewise_linear_transform>();
+    p.emplace<add_quant_checkpoints_transform>(op_k210_fake_kpu_conv2d);
+    pass_mgr.add_pass(std::move(p));
+    cpu_target::add_quantization_checkpoints(pass_mgr);
 }
 
-void nncase::k210_target::add_quantization_checkpoint_transforms(std::vector<std::unique_ptr<transform>> &transforms)
+void nncase::k210_target::optimize_quantize(hlir::quantizer &quantizer, hlir::transforms::pass_manager &pass_mgr)
 {
-    cpu_target::add_quantization_checkpoint_transforms(transforms);
-    transforms.emplace_back(new revert_piecewise_linear_transform());
-    transforms.emplace_back(new add_quant_checkpoints_transform({ op_k210_fake_kpu_conv2d }));
-}
-
-void nncase::k210_target::add_quantization_transforms(ir::quantizer &quantizer, std::vector<std::unique_ptr<transform>> &transforms)
-{
-    transforms.emplace_back(new kpu_conv2d_transform(quantizer));
-    transforms.emplace_back(new fold_kpu_upload_transform());
-    transforms.emplace_back(new fuse_kpu_download_transform());
-    transforms.emplace_back(new fold_input_kpu_upload_transform());
-    cpu_target::add_quantization_transforms(quantizer, transforms);
+    pass p;
+    p.emplace<kpu_conv2d_transform>(quantizer);
+    p.emplace<fold_kpu_upload_transform>();
+    p.emplace<fuse_kpu_download_transform>();
+    p.emplace<fold_input_kpu_upload_transform>();
+    pass_mgr.add_pass(std::move(p));
+    cpu_target::optimize_quantize(quantizer, pass_mgr);
 }

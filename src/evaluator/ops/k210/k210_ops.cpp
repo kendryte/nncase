@@ -12,22 +12,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <ir/evaluator.h>
-#include <ir/ops/k210/fake_kpu_conv2d.h>
 #include <kernels/k210/k210_kernels.h>
+#include <llir/evaluator.h>
+#include <llir/ops/k210/fake_kpu_conv2d.h>
 
 using namespace nncase;
 using namespace nncase::scheduler;
-using namespace nncase::ir;
-using namespace nncase::ir::k210;
+using namespace nncase::llir;
+using namespace nncase::llir::k210;
 
 namespace nncase
 {
-namespace ir
+namespace llir
 {
     void register_k210_evaluators()
     {
-        register_evaluator(op_k210_fake_kpu_conv2d, [](ir::node &node, evaluate_context &context) {
+        register_evaluator(op_k210_fake_kpu_conv2d, [](llir::node &node, evaluate_context &context) {
             auto &rnode = static_cast<fake_kpu_conv2d &>(node);
 
             assert(rnode.input().type() == dt_float32);
@@ -40,8 +40,8 @@ namespace ir
 
             auto conv_output_tmp = std::make_unique<float[]>(conv_out_fmap_size);
 
-#define KPU_CONV2D_IMPL(is_depthwise_val, filter_size_val)                                                                                        \
-    if (rnode.is_depthwise() == is_depthwise_val && runtime::k210::get_kpu_filter_size(rnode.filter_type()) == filter_size_val)                                                                       \
+#define KPU_CONV2D_IMPL(is_depthwise_val, filter_size_val)                                                                         \
+    if (rnode.is_depthwise() == is_depthwise_val && runtime::k210::get_kpu_filter_size(rnode.filter_type()) == filter_size_val)    \
     kernels::k210::fake_kpu_conv2d<is_depthwise_val, filter_size_val>(input.data(), conv_output_tmp.get(), rnode.weights().data(), \
         rnode.bias().data(), in_shape[2], in_shape[3], in_shape[1], rnode.output_channels(), rnode.fused_activation())
 

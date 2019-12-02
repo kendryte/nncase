@@ -12,22 +12,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <ir/op_utils.h>
-#include <ir/ops/constant.h>
-#include <ir/visitor.h>
+#include <hlir/op_utils.h>
+#include <llir/ops/constant.h>
+#include <llir/visitor.h>
 #include <scheduler/scheduler.h>
 #include <unordered_map>
 
 using namespace nncase;
-using namespace nncase::ir;
+using namespace nncase::llir;
 using namespace nncase::scheduler;
 
 namespace
 {
-std::unordered_map<node_opcode, std::function<void(ir::node &, ir::output_connector &, allocation_context)>> g_allocators;
+std::unordered_map<node_opcode, std::function<void(llir::node &, llir::output_connector &, allocation_context)>> g_allocators;
 }
 
-void nncase::scheduler::register_input_allocator(node_opcode opcode, std::function<void(ir::node &, ir::output_connector &, allocation_context)> allocator)
+void nncase::scheduler::register_input_allocator(node_opcode opcode, std::function<void(llir::node &, llir::output_connector &, allocation_context)> allocator)
 {
     g_allocators.emplace(opcode, std::move(allocator));
 }
@@ -37,7 +37,7 @@ allocation_context::allocation_context(const std::unordered_map<memory_type_t, m
 {
 }
 
-void allocation_context::allocate_default(ir::output_connector &conn)
+void allocation_context::allocate_default(llir::output_connector &conn)
 {
     auto allocator = allocators_.find(conn.memory_type());
     if (allocator == allocators_.end())
@@ -56,7 +56,7 @@ void allocation_context::allocate_default(ir::output_connector &conn)
     }
 }
 
-void allocation_context::release(ir::output_connector &conn)
+void allocation_context::release(llir::output_connector &conn)
 {
     auto node = memory_map_.find(&conn);
     if (node != memory_map_.end())
@@ -82,7 +82,7 @@ void allocation_context::finish(uint32_t max_solve_secs)
     }
 }
 
-void nncase::scheduler::schedule(xtl::span<output_node *> outputs, allocation_context &context, std::vector<ir::node *> &compute_sequence, uint32_t max_solve_secs)
+void nncase::scheduler::schedule(xtl::span<output_node *> outputs, allocation_context &context, std::vector<llir::node *> &compute_sequence, uint32_t max_solve_secs)
 {
     auto alloc_visitor = make_relay_ir_visitor([&](node &node) {
         for (auto &&out : node.outputs())
@@ -136,12 +136,12 @@ void nncase::scheduler::schedule(xtl::span<output_node *> outputs, allocation_co
             for (auto &&in : node.inputs())
                 inputs.emplace_back(context.allocations().at(in.connection()));
 
-            //for (auto &&m : inputs)
-            //{
-            //    assert(std::none_of(outputs.begin(), outputs.end(), [&](const memory_allocation rhs) {
-            //        return rhs.overlap(m);
-            //    }));
-            //}
+            for (auto &&m : inputs)
+            {
+                assert(std::none_of(outputs.begin(), outputs.end(), [&](const memory_allocation rhs) {
+                    return rhs.overlap(m);
+                }));
+            }
         }
     });
 

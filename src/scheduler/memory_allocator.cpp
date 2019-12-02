@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <ir/op_utils.h>
+#include <hlir/op_utils.h>
 #include <ortools/sat/cp_model.h>
 #include <ortools/sat/cp_model_solver.h>
 #include <scheduler/freelist.h>
@@ -201,7 +201,7 @@ void memory_allocator::finish(uint32_t max_solve_secs)
     max_usage_ = max_usage;
 }
 
-size_t memory_allocator::get_bytes(datatype_t type, const ir::shape_t &shape) const
+size_t memory_allocator::get_bytes(datatype_t type, const hlir::shape_t &shape) const
 {
     return runtime::get_bytes(type) * xt::compute_size(shape);
 }

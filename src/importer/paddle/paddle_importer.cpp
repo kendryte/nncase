@@ -15,17 +15,17 @@
 #include "paddle_importer.h"
 #include <fstream>
 #include <importer/importer.h>
-#include <ir/ops/constant.h>
+#include <hlir/ops/constant.h>
 #include <runtime/binary_reader.h>
 
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::ir;
+using namespace nncase::hlir;
 using namespace nncase::runtime;
 using namespace paddle::framework::proto;
 using namespace std::string_view_literals;
 
-paddle_importer::paddle_importer(xtl::span<const uint8_t> model, const boost::filesystem::path &params_dir, ir::graph &graph)
+paddle_importer::paddle_importer(xtl::span<const uint8_t> model, const boost::filesystem::path &params_dir, hlir::graph &graph)
     : graph_(graph), subgraph_(nullptr), params_dir_(params_dir)
 {
     GOOGLE_PROTOBUF_VERIFY_VERSION;

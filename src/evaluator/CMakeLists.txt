@@ -7,4 +7,4 @@ set(SRCS evaluator.cpp
 
 add_library(evaluator STATIC ${SRCS})
 target_include_directories(evaluator PUBLIC include)
-target_link_libraries(evaluator PUBLIC ir scheduler)
+target_link_libraries(evaluator PUBLIC hlir scheduler)

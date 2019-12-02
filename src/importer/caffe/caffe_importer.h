@@ -14,10 +14,10 @@
  */
 #pragma once
 #include "caffe.pb.h"
-#include <ir/connectors.h>
-#include <ir/graph.h>
-#include <ir/op_utils.h>
-#include <ir/ops/transpose.h>
+#include <hlir/connectors.h>
+#include <hlir/graph.h>
+#include <hlir/op_utils.h>
+#include <hlir/ops/transpose.h>
 #include <unordered_map>
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xarray.hpp>
@@ -30,7 +30,7 @@ namespace importer
     class caffe_importer
     {
     public:
-        caffe_importer(xtl::span<const uint8_t> model, ir::graph &graph);
+        caffe_importer(xtl::span<const uint8_t> model, hlir::graph &graph);
 
         void import();
 
@@ -44,18 +44,18 @@ namespace importer
         void load_tensor(std::string_view name, uint8_t *begin, uint8_t *end);
 
     private:
-        static ir::shape_t get_shape(const caffe::BlobShape &shape)
+        static hlir::shape_t get_shape(const caffe::BlobShape &shape)
         {
-            ir::shape_t result;
+            hlir::shape_t result;
             result.reserve(shape.dim_size());
             for (int i = 0; i < shape.dim_size(); i++)
                 result.push_back((size_t)shape.dim(i));
             return result;
         }
 
-        static ir::axis_t get_axis(const caffe::BlobShape &shape)
+        static hlir::axis_t get_axis(const caffe::BlobShape &shape)
         {
-            ir::axis_t result;
+            hlir::axis_t result;
             result.reserve(shape.dim_size());
             for (int i = 0; i < shape.dim_size(); i++)
                 result.push_back((int32_t)shape.dim(i));
@@ -84,9 +84,9 @@ namespace importer
 
     private:
         caffe::NetParameter model_;
-        ir::graph &graph_;
-        std::unordered_map<ir::input_connector *, std::string_view> input_tensors_;
-        std::unordered_map<std::string_view, ir::output_connector *> output_tensors_;
+        hlir::graph &graph_;
+        std::unordered_map<hlir::input_connector *, std::string_view> input_tensors_;
+        std::unordered_map<std::string_view, hlir::output_connector *> output_tensors_;
     };
 }
 }

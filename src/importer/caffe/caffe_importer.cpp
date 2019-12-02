@@ -15,17 +15,17 @@
 #include "caffe_importer.h"
 #include <fstream>
 #include <importer/importer.h>
-#include <ir/ops/constant.h>
+#include <hlir/ops/constant.h>
 #include <runtime/binary_reader.h>
 
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::ir;
+using namespace nncase::hlir;
 using namespace nncase::runtime;
 using namespace caffe;
 using namespace std::string_view_literals;
 
-caffe_importer::caffe_importer(xtl::span<const uint8_t> model, ir::graph &graph)
+caffe_importer::caffe_importer(xtl::span<const uint8_t> model, hlir::graph &graph)
     : graph_(graph)
 {
     GOOGLE_PROTOBUF_VERIFY_VERSION;

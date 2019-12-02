@@ -13,11 +13,11 @@
  * limitations under the License.
  */
 #include "../tflite_importer.h"
-#include <ir/ops/reshape.h>
+#include <hlir/ops/reshape.h>
 
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::ir;
+using namespace nncase::hlir;
 
 DEFINE_TFLITE_LOWER(RESHAPE)
 {

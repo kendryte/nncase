@@ -7,5 +7,5 @@ set(SRCS scheduler.cpp
 
 add_library(scheduler STATIC ${SRCS})
 target_include_directories(scheduler PUBLIC include)
-target_link_libraries(scheduler PUBLIC ir)
+target_link_libraries(scheduler PUBLIC hlir)
 target_link_libraries(scheduler PRIVATE CONAN_PKG::range-v3 CONAN_PKG::ortools)

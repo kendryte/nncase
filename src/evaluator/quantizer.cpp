@@ -13,13 +13,13 @@
  * limitations under the License.
  */
 #include <chrono>
-#include <ir/ops/constant.h>
-#include <ir/ops/fake_quantize.h>
-#include <ir/quantizer.h>
-#include <ir/visitor.h>
+#include <hlir/ops/constant.h>
+#include <hlir/ops/fake_quantize.h>
+#include <hlir/quantizer.h>
+#include <hlir/visitor.h>
 
 using namespace nncase;
-using namespace nncase::ir;
+using namespace nncase::hlir;
 using namespace nncase::scheduler;
 
 #define COMBINE_METHOD 1
@@ -39,7 +39,7 @@ value_range<float> combine(const value_range<float> &lhs, const value_range<floa
 }
 }
 
-void quantizer::record(ir::output_connector &connector, value_range<float> range)
+void quantizer::record(hlir::output_connector &connector, value_range<float> range)
 {
     auto it = quant_ranges_.find(&connector);
     if (it == quant_ranges_.end())
@@ -63,7 +63,7 @@ quant_param_t quantizer::get_quant_param(value_range<float> range, int32_t bits)
     return { static_cast<int32_t>(bias), scale };
 }
 
-value_range<float> quantizer::get(ir::output_connector &connector) const
+value_range<float> quantizer::get(hlir::output_connector &connector) const
 {
     return quant_ranges_.at(&connector);
 }
@@ -102,7 +102,7 @@ fixed_mul quantizer::get_fixed_mul(float value, int32_t max_bits, uint8_t max_sh
     return { mul, static_cast<int8_t>(shift) };
 }
 
-void quantizer::broadcast_output(ir::graph &graph, const std::unordered_set<node_opcode> &ops)
+void quantizer::broadcast_output(hlir::graph &graph, const std::unordered_set<node_opcode> &ops)
 {
     auto visitor = make_relay_ir_visitor([&](node &node) {
         if (node.inputs().size() == 1)
@@ -115,7 +115,7 @@ void quantizer::broadcast_output(ir::graph &graph, const std::unordered_set<node
     visitor.visit(graph);
 }
 
-void quantizer::broadcast_output(ir::node &node, const value_range<float> &range, const std::unordered_set<node_opcode> &ops)
+void quantizer::broadcast_output(hlir::node &node, const value_range<float> &range, const std::unordered_set<node_opcode> &ops)
 {
     if (ops.find(node.runtime_opcode()) != ops.end())
     {

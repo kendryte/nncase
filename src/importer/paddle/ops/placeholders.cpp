@@ -13,11 +13,11 @@
  * limitations under the License.
  */
 #include "../paddle_importer.h"
-#include <ir/placeholders.h>
+#include <hlir/placeholders.h>
 
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::ir;
+using namespace nncase::hlir;
 using namespace paddle::framework::proto;
 
 DEFINE_PADDLE_LOWER(feed)

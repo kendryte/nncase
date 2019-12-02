@@ -13,14 +13,14 @@
  * limitations under the License.
  */
 #include "../caffe_importer.h"
-#include <ir/ops/binary.h>
-#include <ir/ops/constant.h>
-#include <ir/ops/reduce.h>
-#include <ir/ops/unary.h>
+#include <hlir/ops/binary.h>
+#include <hlir/ops/constant.h>
+#include <hlir/ops/reduce.h>
+#include <hlir/ops/unary.h>
 
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::ir;
+using namespace nncase::hlir;
 using namespace caffe;
 
 DEFINE_CAFFE_LOWER(ReLU)

@@ -13,15 +13,15 @@
  * limitations under the License.
  */
 #include <codegen/codegen.h>
-#include <ir/op_utils.h>
-#include <ir/ops/k210/kpu_conv2d.h>
-#include <ir/ops/k210/kpu_data_exchange.h>
+#include <llir/op_utils.h>
+#include <llir/ops/k210/kpu_conv2d.h>
+#include <llir/ops/k210/kpu_data_exchange.h>
 #include <runtime/k210/k210_ops_body.h>
 
 using namespace nncase;
 using namespace nncase::codegen;
-using namespace nncase::ir;
-using namespace nncase::ir::k210;
+using namespace nncase::llir;
+using namespace nncase::llir::k210;
 using namespace nncase::runtime;
 using namespace nncase::runtime::k210;
 

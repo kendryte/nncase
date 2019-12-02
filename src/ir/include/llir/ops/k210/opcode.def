@@ -1,0 +1,5 @@
+DEFINE_OPCODE(k210, fake_kpu_conv2d,        FakeKPUConv2D,          0x1001)
+DEFINE_OPCODE(k210, fake_piecewise_linear,  FakePiecewiseLinear,    0x1002)
+DEFINE_OPCODE(k210, kpu_upload,             KPUUpload,              0x1003)
+DEFINE_OPCODE(k210, kpu_download,           KPUDownload,            0x1004)
+DEFINE_OPCODE(k210, kpu_conv2d,             KPUConv2D,              0x1005)

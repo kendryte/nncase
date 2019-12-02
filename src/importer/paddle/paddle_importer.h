@@ -15,10 +15,10 @@
 #pragma once
 #include "framework.pb.h"
 #include <boost/filesystem.hpp>
-#include <ir/connectors.h>
-#include <ir/graph.h>
-#include <ir/op_utils.h>
-#include <ir/ops/transpose.h>
+#include <hlir/connectors.h>
+#include <hlir/graph.h>
+#include <hlir/op_utils.h>
+#include <hlir/ops/transpose.h>
 #include <unordered_map>
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xarray.hpp>
@@ -31,7 +31,7 @@ namespace importer
     class paddle_importer
     {
     public:
-        paddle_importer(xtl::span<const uint8_t> model, const boost::filesystem::path &params_dir, ir::graph &graph);
+        paddle_importer(xtl::span<const uint8_t> model, const boost::filesystem::path &params_dir, hlir::graph &graph);
 
         void import();
 
@@ -70,7 +70,7 @@ namespace importer
         }
 
         template <size_t N>
-        std::array<size_t, N> to_tensor_shape(const ir::shape_t &shape)
+        std::array<size_t, N> to_tensor_shape(const hlir::shape_t &shape)
         {
             if (shape.size() != N)
                 throw std::runtime_error("Invalid tesnor ranks");
@@ -103,7 +103,7 @@ namespace importer
 
     private:
         static const paddle::framework::proto::OpDesc_Var &find_param(const google::protobuf::RepeatedPtrField<paddle::framework::proto::OpDesc_Var> &container, std::string_view name);
-        static ir::shape_t get_var_shape(const paddle::framework::proto::VarDesc &var);
+        static hlir::shape_t get_var_shape(const paddle::framework::proto::VarDesc &var);
         static const paddle::framework::proto::OpDesc_Attr &find_attr(const google::protobuf::RepeatedPtrField<paddle::framework::proto::OpDesc_Attr> &container, std::string_view name);
 
         static paddle::framework::proto::VarType_Type get_lod_tensor_type(const paddle::framework::proto::VarDesc &var)
@@ -115,10 +115,10 @@ namespace importer
     private:
         paddle::framework::proto::ProgramDesc model_;
         boost::filesystem::path params_dir_;
-        ir::graph &graph_;
+        hlir::graph &graph_;
         const paddle::framework::proto::BlockDesc *subgraph_;
-        std::unordered_map<ir::input_connector *, std::string_view> input_tensors_;
-        std::unordered_map<std::string_view, ir::output_connector *> output_tensors_;
+        std::unordered_map<hlir::input_connector *, std::string_view> input_tensors_;
+        std::unordered_map<std::string_view, hlir::output_connector *> output_tensors_;
     };
 }
 }

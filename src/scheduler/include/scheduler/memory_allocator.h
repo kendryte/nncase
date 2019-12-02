@@ -15,8 +15,8 @@
 #pragma once
 #include "freelist.h"
 #include <datatypes.h>
-#include <ir/ir_types.h>
 #include <list>
+#include <llir/ir_types.h>
 #include <optional>
 
 namespace nncase
@@ -87,7 +87,7 @@ namespace scheduler
         void finish(uint32_t max_solve_secs);
         size_t max_usage() const noexcept { return max_usage_; }
 
-        virtual size_t get_bytes(datatype_t type, const ir::shape_t &shape) const;
+        virtual size_t get_bytes(datatype_t type, const llir::shape_t &shape) const;
 
     private:
         std::optional<size_t> fixed_size_;

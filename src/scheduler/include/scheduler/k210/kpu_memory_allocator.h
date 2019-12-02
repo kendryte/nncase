@@ -26,7 +26,7 @@ namespace scheduler
         public:
             kpu_memory_allocator();
 
-            size_t get_bytes(datatype_t type, const ir::shape_t &shape) const override;
+            size_t get_bytes(datatype_t type, const llir::shape_t &shape) const override;
         };
     }
 }

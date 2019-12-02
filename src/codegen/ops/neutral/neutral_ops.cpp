@@ -13,30 +13,28 @@
  * limitations under the License.
  */
 #include <codegen/codegen.h>
-#include <ir/op_utils.h>
-#include <ir/ops/binary.h>
-#include <ir/ops/concat.h>
-#include <ir/ops/conv2d.h>
-#include <ir/ops/conv2d_transpose.h>
-#include <ir/ops/dequantize.h>
-#include <ir/ops/fake_dequantize.h>
-#include <ir/ops/fake_quantize.h>
-#include <ir/ops/matmul.h>
-#include <ir/ops/pad.h>
-#include <ir/ops/quantize.h>
-#include <ir/ops/reduce.h>
-#include <ir/ops/reduce_window2d.h>
-#include <ir/ops/reshape.h>
-#include <ir/ops/resize_image.h>
-#include <ir/ops/strided_slice.h>
-#include <ir/ops/transpose.h>
-#include <ir/ops/unary.h>
+#include <llir/op_utils.h>
+#include <llir/ops/binary.h>
+#include <llir/ops/concat.h>
+#include <llir/ops/conv2d.h>
+#include <llir/ops/conv2d_transpose.h>
+#include <llir/ops/dequantize.h>
+#include <llir/ops/matmul.h>
+#include <llir/ops/memory_copy.h>
+#include <llir/ops/pad.h>
+#include <llir/ops/quantize.h>
+#include <llir/ops/reduce.h>
+#include <llir/ops/reduce_window2d.h>
+#include <llir/ops/resize_image.h>
+#include <llir/ops/strided_slice.h>
+#include <llir/ops/transpose.h>
+#include <llir/ops/unary.h>
 #include <runtime/neutral/neutral_ops_body.h>
 
 using namespace nncase;
 using namespace nncase::codegen;
 using namespace nncase::runtime;
-using namespace nncase::ir;
+using namespace nncase::llir;
 using namespace nncase::runtime::neutral;
 
 namespace nncase
@@ -300,8 +298,8 @@ namespace codegen
             return body;
         });
 
-        register_emitter(op_reshape, [](node &node, codegen_context &context) {
-            auto &rnode = static_cast<reshape &>(node);
+        register_emitter(op_memory_copy, [](node &node, codegen_context &context) {
+            auto &rnode = static_cast<memory_copy &>(node);
             auto body = std::make_unique<node_body_impl<rop_memory_copy, memory_copy_options>>();
 
             body->input = context.get_allocation(rnode.input());

@@ -21,10 +21,10 @@
 #include <codegen/codegen.h>
 #include <data/dataset.h>
 #include <fstream>
+#include <hlir/quantizer.h>
 #include <importer/importer.h>
 #include <io_utils.h>
-#include <ir/evaluator.h>
-#include <ir/quantizer.h>
+#include <llir/evaluator.h>
 #include <scheduler/scheduler.h>
 #include <string_view>
 
@@ -33,11 +33,10 @@
 using namespace clipp;
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::ir;
+using namespace nncase::hlir;
 using namespace nncase::codegen;
 using namespace nncase::data;
 using namespace nncase::scheduler;
-using namespace nncase::transforms;
 
 namespace
 {
@@ -75,26 +74,19 @@ void dump_graph(const compile_options &options, graph &graph, std::string_view p
     }
 }
 
-void transform_graph(graph &graph, target &target, xtl::span<std::unique_ptr<transform>> transforms)
-{
-    std::vector<transform *> transform_refs;
-    std::transform(std::begin(transforms), std::end(transforms), std::back_inserter(transform_refs), [](auto &&t) { return t.get(); });
-    transform_graph(graph, target, transform_refs);
-}
-
-#define SCHEDULE_IMPL()                                               \
+#define SCHEDULE_IMPL(g)                                              \
     std::vector<std::unique_ptr<memory_allocator>> allocator_holder;  \
     std::unordered_map<memory_type_t, memory_allocator *> allocators; \
     target.fill_allocators(allocators, allocator_holder);             \
     allocation_context alloc_ctx(allocators);                         \
-    std::vector<node *> compute_sequence;                             \
+    std::vector<llir::node *> compute_sequence;                       \
     std::cout << "  Plan buffers..." << std::endl;                    \
-    schedule(graph.outputs(), alloc_ctx, compute_sequence, options.max_solve_secs);
+    schedule(g.outputs(), alloc_ctx, compute_sequence, options.max_solve_secs);
 
-#define EVAL_IMPL()                                                 \
-    SCHEDULE_IMPL();                                                \
-    evaluate_context eval_ctx(allocators, alloc_ctx.allocations()); \
-    evaluator eval(eval_ctx, compute_sequence);
+#define EVAL_IMPL(g)                                                      \
+    SCHEDULE_IMPL(g);                                                     \
+    llir::evaluate_context eval_ctx(allocators, alloc_ctx.allocations()); \
+    llir::evaluator eval(eval_ctx, compute_sequence);
 
 std::unique_ptr<target> create_target(const compile_options &options)
 {
@@ -135,42 +127,41 @@ graph import(const compile_options &options)
 
 void optimize_pass1(const compile_options &options, target &target, graph &graph)
 {
-    std::vector<std::unique_ptr<transforms::transform>> transforms;
-    target.add_default_transforms(transforms);
-    target.add_optimize1_transforms(transforms);
-    transform_graph(graph, target, transforms);
+    hlir::transforms::pass_manager mgr(graph, target);
+    target.optimize_target_independent(mgr);
+    mgr.run();
     dump_graph(options, graph, "optimize_1");
 }
 
 void optimize_pass2(const compile_options &options, target &target, graph &graph)
 {
-    std::vector<std::unique_ptr<transforms::transform>> transforms;
-    target.add_default_transforms(transforms);
-    target.add_optimize2_transforms(transforms);
-    transform_graph(graph, target, transforms);
+    hlir::transforms::pass_manager mgr(graph, target);
+    target.optimize_target_dependent(mgr);
+    mgr.run();
     dump_graph(options, graph, "optimize_2");
 }
 
 void add_quantization_checkpoints(const compile_options &options, target &target, graph &graph)
 {
-    std::vector<std::unique_ptr<transforms::transform>> transforms;
-    target.add_quantization_checkpoint_transforms(transforms);
-    transform_graph(graph, target, transforms);
+    hlir::transforms::pass_manager mgr(graph, target);
+    target.add_quantization_checkpoints(mgr);
+    mgr.run();
     dump_graph(options, graph, "before_quant");
 }
 
 void quantize_graph(const compile_options &options, target &target, graph &graph, quantizer &quantizer)
 {
-    std::vector<std::unique_ptr<transforms::transform>> transforms;
-    target.add_default_transforms(transforms);
-    target.add_quantization_transforms(quantizer, transforms);
-    transform_graph(graph, target, transforms);
+    hlir::transforms::pass_manager mgr(graph, target);
+    target.optimize_quantize(quantizer, mgr);
+    mgr.run();
     dump_graph(options, graph, "after_quant");
 }
 
 void get_quantization_ranges(target &target, graph &graph, quantizer *quantizer, const compile_options &options)
 {
-    EVAL_IMPL();
+    hlir_compile_context hc_ctx;
+    graph.compile(hc_ctx);
+    EVAL_IMPL(hc_ctx.graph);
 
     assert(graph.inputs().size() == 1);
     std::unique_ptr<dataset> ds;
@@ -193,7 +184,7 @@ void get_quantization_ranges(target &target, graph &graph, quantizer *quantizer,
         auto &tensor = it->tensor;
         std::copy(tensor.begin(), tensor.end(), input.begin());
 
-        eval.evaluate(quantizer, options.use_dataset_as_input_stat);
+        eval.evaluate(quantizer, &hc_ctx.l_outputs, options.use_dataset_as_input_stat);
 
 #if EVAL > 0
         auto output = eval.output_at<float>(0);
@@ -209,7 +200,7 @@ void get_quantization_ranges(target &target, graph &graph, quantizer *quantizer,
 }
 
 template <class T>
-void run_quantized_graph_impl(evaluator &eval, dataset &ds)
+void run_quantized_graph_impl(llir::evaluator &eval, dataset &ds)
 {
     ProgressBar progress_bar(ds.total_size(), 50);
     progress_bar.display();
@@ -238,7 +229,9 @@ void run_quantized_graph_impl(evaluator &eval, dataset &ds)
 
 void run_quantized_graph(target &target, graph &graph, const compile_options &options)
 {
-    EVAL_IMPL();
+    hlir_compile_context hc_ctx;
+    graph.compile(hc_ctx);
+    EVAL_IMPL(hc_ctx.graph);
 
     assert(graph.inputs().size() == 1);
     std::unique_ptr<dataset> ds;
@@ -285,7 +278,7 @@ void quantize(const compile_options &options, target &target, graph &graph)
     get_quantization_ranges(target, graph, &quant, options);
 
     // broadcast quant ranges
-    std::unordered_set<ir::node_opcode> opcodes;
+    std::unordered_set<hlir::node_opcode> opcodes;
     target.add_quantization_broadcast(opcodes);
     quant.broadcast_output(graph, opcodes);
 
@@ -300,9 +293,9 @@ void quantize(const compile_options &options, target &target, graph &graph)
 #endif
 }
 
-void gencode(target &target, graph &graph, const compile_options &options)
+void gencode(target &target, llir::graph &graph, const compile_options &options)
 {
-    SCHEDULE_IMPL();
+    SCHEDULE_IMPL(graph);
 
     std::ofstream outfile(options.output_filename, std::ios::binary | std::ios::out);
     if (outfile.bad())
@@ -330,7 +323,7 @@ group compile_options::parser(mode &mode)
 			option("--inference-type") % ("inference type: e.g. float, uint8 default is " + inference_type) & value("inference type", inference_type),
 			option("--input-mean") % ("input mean, default is " + std::to_string(input_mean)) & value("input mean", input_mean),
 			option("--input-std") % ("input std, default is " + std::to_string(input_std)) & value("input std", input_std),
-			option("--dump-ir").set(dump_ir) % "dump nncase ir to .dot files",
+			option("--dump-hlir").set(dump_ir) % "dump nncase hlir to .dot files",
 			option("--input-type").set(input_type) % ("input type: e.g. default, float, uint8, default means equal to inference type") & value("input type", input_type),
 			option("--max-allocator-solve-secs") % ("max optimal layout solve time in secs used by allocators, 0 means don't use solver, default is " + std::to_string(max_solve_secs)) & value("max allocator solve secs", max_solve_secs)
 		));
@@ -363,7 +356,12 @@ void compile(const compile_options &options)
         quantize(options, *target, graph);
     }
 
+	// 5. Lowering
+    std::cout << "5. Lowering..." << std::endl;
+    hlir::hlir_compile_context llir;
+    graph.compile(llir);
+
     // 5. CodeGen
-    std::cout << "5. Generate code..." << std::endl;
-    gencode(*target, graph, options);
+    std::cout << "6. Generate code..." << std::endl;
+    gencode(*target, llir.graph, options);
 }

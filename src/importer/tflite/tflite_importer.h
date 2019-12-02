@@ -14,10 +14,10 @@
  */
 #pragma once
 #include "schema_generated.h"
-#include <ir/connectors.h>
-#include <ir/graph.h>
-#include <ir/op_utils.h>
-#include <ir/ops/transpose.h>
+#include <hlir/connectors.h>
+#include <hlir/graph.h>
+#include <hlir/op_utils.h>
+#include <hlir/ops/transpose.h>
 #include <unordered_map>
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xarray.hpp>
@@ -30,7 +30,7 @@ namespace importer
     class tflite_importer
     {
     public:
-        tflite_importer(xtl::span<const uint8_t> model, ir::graph &graph);
+        tflite_importer(xtl::span<const uint8_t> model, hlir::graph &graph);
 
         void import();
 
@@ -66,7 +66,7 @@ namespace importer
             return *buffer;
         }
 
-        ir::shape_t get_shape(const flatbuffers::Vector<int32_t> *shape)
+        hlir::shape_t get_shape(const flatbuffers::Vector<int32_t> *shape)
         {
             if (shape && shape->size())
                 return { std::begin(*shape), std::end(*shape) };
@@ -90,7 +90,7 @@ namespace importer
                 return { 1 };
         }
 
-        ir::axis_t get_axis(const flatbuffers::Vector<int32_t> &shape)
+        hlir::axis_t get_axis(const flatbuffers::Vector<int32_t> &shape)
         {
             return { std::begin(shape), std::end(shape) };
         }
@@ -140,7 +140,7 @@ namespace importer
         }
 
         template <class T>
-        ir::axis_t load_axis(const tflite::Tensor &tensor)
+        hlir::axis_t load_axis(const tflite::Tensor &tensor)
         {
             auto &buffer = get_buffer<T>(tensor);
             auto begin = buffer.data()->data();
@@ -149,7 +149,7 @@ namespace importer
         }
 
         template <class T>
-        ir::shape_t load_shape(const tflite::Tensor &tensor)
+        hlir::shape_t load_shape(const tflite::Tensor &tensor)
         {
             auto &buffer = get_buffer<T>(tensor);
             auto begin = buffer.data()->data();
@@ -195,24 +195,24 @@ namespace importer
             }
         }
 
-        ir::transpose *nhwc_to_nchw(datatype_t type, const ir::shape_t &input_shape)
+        hlir::transpose *nhwc_to_nchw(datatype_t type, const hlir::shape_t &input_shape)
         {
-            return graph_.emplace<ir::transpose>(type, input_shape, ir::axis_t { 0, 3, 1, 2 });
+            return graph_.emplace<hlir::transpose>(type, input_shape, hlir::axis_t { 0, 3, 1, 2 });
         }
 
-        ir::transpose *nchw_to_nhwc(datatype_t type, const ir::shape_t &input_shape)
+        hlir::transpose *nchw_to_nhwc(datatype_t type, const hlir::shape_t &input_shape)
         {
-            return graph_.emplace<ir::transpose>(type, input_shape, ir::axis_t { 0, 2, 3, 1 });
+            return graph_.emplace<hlir::transpose>(type, input_shape, hlir::axis_t { 0, 2, 3, 1 });
         }
 
-        ir::shape_t nhwc_to_nchw(const ir::shape_t &input_shape)
+        hlir::shape_t nhwc_to_nchw(const hlir::shape_t &input_shape)
         {
-            return ir::get_transposed_shape(input_shape, { 0, 3, 1, 2 });
+            return hlir::get_transposed_shape(input_shape, { 0, 3, 1, 2 });
         }
 
-        ir::shape_t nchw_to_nhwc(const ir::shape_t &input_shape)
+        hlir::shape_t nchw_to_nhwc(const hlir::shape_t &input_shape)
         {
-            return ir::get_transposed_shape(input_shape, { 0, 2, 3, 1 });
+            return hlir::get_transposed_shape(input_shape, { 0, 2, 3, 1 });
         }
 
         value_range<float> to_float_clamp_range(tflite::ActivationFunctionType func)
@@ -235,9 +235,9 @@ namespace importer
     private:
         const tflite::Model *model_;
         const tflite::SubGraph *subgraph_;
-        ir::graph &graph_;
-        std::unordered_map<ir::input_connector *, int32_t> input_tensors_;
-        std::unordered_map<int32_t, ir::output_connector *> output_tensors_;
+        hlir::graph &graph_;
+        std::unordered_map<hlir::input_connector *, int32_t> input_tensors_;
+        std::unordered_map<int32_t, hlir::output_connector *> output_tensors_;
     };
 }
 }

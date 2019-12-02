@@ -6,5 +6,5 @@ set(SRCS codegen.cpp
 
 add_library(codegen STATIC ${SRCS})
 target_include_directories(codegen PUBLIC include)
-target_link_libraries(codegen PUBLIC ir scheduler)
+target_link_libraries(codegen PUBLIC hlir scheduler)
 target_link_libraries(codegen PRIVATE evaluator)

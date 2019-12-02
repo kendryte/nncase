@@ -12,30 +12,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <ir/evaluator.h>
-#include <ir/op_utils.h>
-#include <ir/ops/binary.h>
-#include <ir/ops/concat.h>
-#include <ir/ops/conv2d.h>
-#include <ir/ops/conv2d_transpose.h>
-#include <ir/ops/dequantize.h>
-#include <ir/ops/fake_dequantize.h>
-#include <ir/ops/fake_quantize.h>
-#include <ir/ops/matmul.h>
-#include <ir/ops/pad.h>
-#include <ir/ops/quantize.h>
-#include <ir/ops/reduce.h>
-#include <ir/ops/reduce_window2d.h>
-#include <ir/ops/reshape.h>
-#include <ir/ops/resize_image.h>
-#include <ir/ops/strided_slice.h>
-#include <ir/ops/transpose.h>
-#include <ir/ops/unary.h>
 #include <kernels/neutral/neutral_kernels.h>
+#include <llir/evaluator.h>
+#include <llir/op_utils.h>
+#include <llir/ops/binary.h>
+#include <llir/ops/concat.h>
+#include <llir/ops/conv2d.h>
+#include <llir/ops/conv2d_transpose.h>
+#include <llir/ops/dequantize.h>
+#include <llir/ops/matmul.h>
+#include <llir/ops/memory_copy.h>
+#include <llir/ops/pad.h>
+#include <llir/ops/quantize.h>
+#include <llir/ops/reduce.h>
+#include <llir/ops/reduce_window2d.h>
+#include <llir/ops/resize_image.h>
+#include <llir/ops/strided_slice.h>
+#include <llir/ops/transpose.h>
+#include <llir/ops/unary.h>
 
 using namespace nncase;
 using namespace nncase::scheduler;
-using namespace nncase::ir;
+using namespace nncase::llir;
 using namespace nncase::kernels;
 
 #define ELEM_SIZE_IMPL(type, KERNEL)                            \
@@ -69,14 +67,14 @@ using namespace nncase::kernels;
 
 namespace
 {
-void nop_evaluator(ir::node &, evaluate_context &)
+void nop_evaluator(llir::node &, evaluate_context &)
 {
 }
 }
 
 namespace nncase
 {
-namespace ir
+namespace llir
 {
     void register_neutral_evaluators()
     {
@@ -85,7 +83,7 @@ namespace ir
         register_evaluator(op_ignore_node, nop_evaluator);
         register_evaluator(op_constant, nop_evaluator);
 
-        register_evaluator(op_binary, [](ir::node &node, evaluate_context &context) {
+        register_evaluator(op_binary, [](llir::node &node, evaluate_context &context) {
             auto &rnode = static_cast<binary &>(node);
 
             assert(rnode.input_a().type() == dt_float32);
@@ -124,7 +122,7 @@ namespace ir
             }
         });
 
-        register_evaluator(op_quantized_binary, [](ir::node &node, evaluate_context &context) {
+        register_evaluator(op_quantized_binary, [](llir::node &node, evaluate_context &context) {
             auto &rnode = static_cast<quantized_binary &>(node);
 
             assert(rnode.input_a().type() == dt_uint8);
@@ -164,7 +162,7 @@ namespace ir
             }
         });
 
-        register_evaluator(op_concat, [](ir::node &node, evaluate_context &context) {
+        register_evaluator(op_concat, [](llir::node &node, evaluate_context &context) {
             auto &rnode = static_cast<concat &>(node);
 
             std::vector<uint8_t *> inputs;
@@ -179,7 +177,7 @@ namespace ir
             neutral::concat(xtl::span<uint8_t *>(inputs), output.data(), rnode.concat_dims(), inner_size, outer_size);
         });
 
-        register_evaluator(op_conv2d, [](ir::node &node, evaluate_context &context) {
+        register_evaluator(op_conv2d, [](llir::node &node, evaluate_context &context) {
             auto &rnode = static_cast<conv2d &>(node);
 
             assert(rnode.input().type() == dt_float32);
@@ -191,7 +189,7 @@ namespace ir
                 rnode.dilation_h(), rnode.dilation_w(), rnode.padding_h(), rnode.padding_w(), rnode.fused_activation());
         });
 
-        register_evaluator(op_quantized_conv2d, [](ir::node &node, evaluate_context &context) {
+        register_evaluator(op_quantized_conv2d, [](llir::node &node, evaluate_context &context) {
             auto &rnode = static_cast<quantized_conv2d &>(node);
 
             assert(rnode.input().type() == dt_uint8);
@@ -204,7 +202,7 @@ namespace ir
                 rnode.dilation_h(), rnode.dilation_w(), rnode.padding_h(), rnode.padding_w());
         });
 
-        register_evaluator(op_conv2d_transpose, [](ir::node &node, evaluate_context &context) {
+        register_evaluator(op_conv2d_transpose, [](llir::node &node, evaluate_context &context) {
             auto &rnode = static_cast<conv2d_transpose &>(node);
 
             assert(rnode.input().type() == dt_float32);
@@ -216,7 +214,7 @@ namespace ir
                 rnode.dilation_h(), rnode.dilation_w(), rnode.padding_h(), rnode.padding_w(), rnode.fused_activation());
         });
 
-        register_evaluator(op_dequantize, [](ir::node &node, evaluate_context &context) {
+        register_evaluator(op_dequantize, [](llir::node &node, evaluate_context &context) {
             auto &rnode = static_cast<dequantize &>(node);
 
             auto input = context.memory_at<uint8_t>(rnode.input());
@@ -225,25 +223,7 @@ namespace ir
             neutral::dequantize(input.data(), output.data(), xt::compute_size(rnode.input().shape()), rnode.quant_param());
         });
 
-        register_evaluator(op_fake_dequantize, [](ir::node &node, evaluate_context &context) {
-            auto &rnode = static_cast<fake_dequantize &>(node);
-
-            auto input = context.memory_at<float>(rnode.input());
-            auto output = context.memory_at<float>(rnode.output());
-
-            std::copy(input.begin(), input.end(), output.begin());
-        });
-
-        register_evaluator(op_fake_quantize, [](ir::node &node, evaluate_context &context) {
-            auto &rnode = static_cast<fake_quantize &>(node);
-
-            auto input = context.memory_at<float>(rnode.input());
-            auto output = context.memory_at<float>(rnode.output());
-
-            std::copy(input.begin(), input.end(), output.begin());
-        });
-
-        register_evaluator(op_matmul, [](ir::node &node, evaluate_context &context) {
+        register_evaluator(op_matmul, [](llir::node &node, evaluate_context &context) {
             auto &rnode = static_cast<matmul &>(node);
 
             assert(rnode.input_a().type() == dt_float32);
@@ -258,7 +238,7 @@ namespace ir
             neutral::matmul(input_a.data(), input_b.data(), output.data(), rnode.bias().data(), a_shape[0], a_shape[1], b_shape[1], rnode.fused_activation());
         });
 
-        register_evaluator(op_quantized_matmul, [](ir::node &node, evaluate_context &context) {
+        register_evaluator(op_quantized_matmul, [](llir::node &node, evaluate_context &context) {
             auto &rnode = static_cast<quantized_matmul &>(node);
 
             assert(rnode.input_a().type() == dt_uint8);
@@ -274,7 +254,7 @@ namespace ir
                 rnode.input_a_offset(), rnode.input_b_offset(), rnode.output_mul(), rnode.output_shift(), rnode.output_offset());
         });
 
-        register_evaluator(op_pad, [](ir::node &node, evaluate_context &context) {
+        register_evaluator(op_pad, [](llir::node &node, evaluate_context &context) {
             auto &rnode = static_cast<pad &>(node);
 
             auto input = context.memory_at<uint8_t>(rnode.input());
@@ -287,7 +267,7 @@ namespace ir
 #undef PAD_KERNEL
         });
 
-        register_evaluator(op_quantize, [](ir::node &node, evaluate_context &context) {
+        register_evaluator(op_quantize, [](llir::node &node, evaluate_context &context) {
             auto &rnode = static_cast<quantize &>(node);
 
             auto input = context.memory_at<float>(rnode.input());
@@ -296,7 +276,7 @@ namespace ir
             neutral::quantize(input.data(), output.data(), xt::compute_size(rnode.input().shape()), rnode.quant_param());
         });
 
-        register_evaluator(op_reduce, [](ir::node &node, evaluate_context &context) {
+        register_evaluator(op_reduce, [](llir::node &node, evaluate_context &context) {
             auto &rnode = static_cast<reduce &>(node);
 
             assert(rnode.input().type() == dt_float32);
@@ -332,7 +312,7 @@ namespace ir
             }
         });
 
-        register_evaluator(op_reduce_window2d, [](ir::node &node, evaluate_context &context) {
+        register_evaluator(op_reduce_window2d, [](llir::node &node, evaluate_context &context) {
             auto &rnode = static_cast<reduce_window2d &>(node);
 
             assert(rnode.input().type() == dt_float32);
@@ -365,8 +345,8 @@ namespace ir
             }
         });
 
-        register_evaluator(op_reshape, [](ir::node &node, evaluate_context &context) {
-            auto &rnode = static_cast<reshape &>(node);
+        register_evaluator(op_memory_copy, [](llir::node &node, evaluate_context &context) {
+            auto &rnode = static_cast<memory_copy &>(node);
 
             auto input = context.memory_at<uint8_t>(rnode.input());
             auto output = context.memory_at<uint8_t>(rnode.output());
@@ -374,7 +354,7 @@ namespace ir
             std::copy(input.begin(), input.end(), output.begin());
         });
 
-        register_evaluator(op_resize_image, [](ir::node &node, evaluate_context &context) {
+        register_evaluator(op_resize_image, [](llir::node &node, evaluate_context &context) {
             auto &rnode = static_cast<resize_image &>(node);
 
             if (rnode.mode() == image_resize_bilinear)
@@ -401,7 +381,7 @@ namespace ir
             }
         });
 
-        register_evaluator(op_strided_slice, [](ir::node &node, evaluate_context &context) {
+        register_evaluator(op_strided_slice, [](llir::node &node, evaluate_context &context) {
             auto &rnode = static_cast<strided_slice &>(node);
 
             auto input = context.memory_at<uint8_t>(rnode.input());
@@ -414,7 +394,7 @@ namespace ir
             ELEM_SIZE_IMPL(rnode.input().type(), STRIDED_SLICE_KERNEL);
         });
 
-        register_evaluator(op_transpose, [](ir::node &node, evaluate_context &context) {
+        register_evaluator(op_transpose, [](llir::node &node, evaluate_context &context) {
             auto &rnode = static_cast<transpose &>(node);
 
             auto input = context.memory_at<uint8_t>(rnode.input());
@@ -429,7 +409,7 @@ namespace ir
             ELEM_SIZE_IMPL(rnode.input().type(), TRANSPOSE_KERNEL);
         });
 
-        register_evaluator(op_unary, [](ir::node &node, evaluate_context &context) {
+        register_evaluator(op_unary, [](llir::node &node, evaluate_context &context) {
             auto &rnode = static_cast<unary &>(node);
 
             assert(rnode.input().type() == dt_float32);
