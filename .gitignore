@@ -270,3 +270,4 @@ out/
 out_2/
 tmp/
 tests/private
+*.exe

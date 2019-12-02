@@ -26,7 +26,7 @@ namespace hlir
     {
         struct transform_context
         {
-            graph &graph;
+            hlir::graph &graph;
             nncase::target &target;
             std::vector<node *> matched_nodes;
             std::vector<input_connector *> inputs;
