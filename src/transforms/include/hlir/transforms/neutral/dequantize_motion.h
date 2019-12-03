@@ -32,6 +32,7 @@ DEFINE_DEQ_MOTION(pad);
 DEFINE_DEQ_MOTION(transpose);
 DEFINE_DEQ_MOTION(strided_slice);
 DEFINE_DEQ_MOTION(resize_image);
+DEFINE_DEQ_MOTION(reshape);
 
 #undef DEFINE_DEQ_MOTION
 }

@@ -62,7 +62,7 @@ namespace llir
         for (auto &a : new_axis)
         {
             if (a < 0)
-                a = input_shape.size() + a;
+                a = (int32_t)input_shape.size() + a;
         }
 
         return new_axis;
@@ -258,7 +258,7 @@ namespace llir
             auto stride = strides[i];
             assert(stride);
             new_shape[i] = (begin_mask & (1 << i)) != 0
-                ? stride > 0 ? 0 : in_shape[i] - 1
+                ? stride > 0 ? 0 : (int32_t)in_shape[i] - 1
                 : begin[i];
         }
 
@@ -273,7 +273,7 @@ namespace llir
             auto stride = strides[i];
             auto begin_val = begin[i];
             auto end_val = (end_mask & (1 << i)) != 0
-                ? stride > 0 ? in_shape[i] : -1
+                ? stride > 0 ? (int32_t)in_shape[i] : -1
                 : end[i];
             auto shrink = shrink_axis_mask & (1 << i);
             if (shrink)

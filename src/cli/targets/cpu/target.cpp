@@ -113,6 +113,7 @@ void nncase::cpu_target::optimize_quantize(hlir::quantizer &quantizer, hlir::tra
     pass p;
     if (options_.input_type == "uint8")
         p.emplace<fold_input_quantize_transform>(quantizer);
+    p.emplace<dequantize_reshape_motion_transform>();
     p.emplace<dequantize_transpose_motion_transform>();
     p.emplace<dequantize_pad_motion_transform>();
     p.emplace<dequantize_strided_slice_motion_transform>();

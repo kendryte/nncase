@@ -28,7 +28,7 @@ concat::concat(datatype_t type, xtl::span<shape_t> input_shapes, int32_t axis)
     for (size_t i = 0; i < input_shapes.size(); i++)
     {
         add_input("input_" + std::to_string(i), type, input_shapes[i]);
-        concat_dims_.emplace_back(input_shapes[i][axis]);
+        concat_dims_.emplace_back((int32_t)input_shapes[i][axis]);
     }
 
     add_output("output", type, hlir::get_concated_shape(input_shapes, axis));

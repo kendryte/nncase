@@ -76,17 +76,17 @@ void dump_graph(const compile_options &options, TGraph &graph, std::string_view 
     }
 }
 
-#define SCHEDULE_IMPL(g)                                              \
+#define SCHEDULE_IMPL(g, max_solve_secs)                              \
     std::vector<std::unique_ptr<memory_allocator>> allocator_holder;  \
     std::unordered_map<memory_type_t, memory_allocator *> allocators; \
     target.fill_allocators(allocators, allocator_holder);             \
     allocation_context alloc_ctx(allocators);                         \
     std::vector<llir::node *> compute_sequence;                       \
     std::cout << "  Plan buffers..." << std::endl;                    \
-    schedule(g.outputs(), alloc_ctx, compute_sequence, options.max_solve_secs);
+    schedule(g.outputs(), alloc_ctx, compute_sequence, max_solve_secs);
 
-#define EVAL_IMPL(g)                                                      \
-    SCHEDULE_IMPL(g);                                                     \
+#define EVAL_IMPL(g, max_solve_secs)                                      \
+    SCHEDULE_IMPL(g, max_solve_secs);                                     \
     llir::evaluate_context eval_ctx(allocators, alloc_ctx.allocations()); \
     llir::evaluator eval(eval_ctx, compute_sequence);
 
@@ -163,7 +163,7 @@ void get_quantization_ranges(target &target, graph &graph, quantizer *quantizer,
 {
     hlir_compile_context hc_ctx;
     graph.compile(hc_ctx);
-    EVAL_IMPL(hc_ctx.graph);
+    EVAL_IMPL(hc_ctx.graph, 0);
 
     assert(graph.inputs().size() == 1);
     std::unique_ptr<dataset> ds;
@@ -233,7 +233,7 @@ void run_quantized_graph(target &target, graph &graph, const compile_options &op
 {
     hlir_compile_context hc_ctx;
     graph.compile(hc_ctx);
-    EVAL_IMPL(hc_ctx.graph);
+    EVAL_IMPL(hc_ctx.graph, options.max_solve_secs);
 
     assert(graph.inputs().size() == 1);
     std::unique_ptr<dataset> ds;
@@ -297,7 +297,7 @@ void quantize(const compile_options &options, target &target, graph &graph)
 
 void gencode(target &target, llir::graph &graph, const compile_options &options)
 {
-    SCHEDULE_IMPL(graph);
+    SCHEDULE_IMPL(graph, options.max_solve_secs);
 
     std::ofstream outfile(options.output_filename, std::ios::binary | std::ios::out);
     if (outfile.bad())

@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 #include "tflite_importer.h"
-#include <importer/importer.h>
 #include <hlir/ops/constant.h>
+#include <importer/importer.h>
 
 using namespace nncase;
 using namespace nncase::importer;
@@ -36,6 +36,53 @@ void tflite_importer::import()
         convert_op(*op);
 
     std::unordered_map<int32_t, output_connector *> created_inputs;
+    std::unordered_map<int32_t, input_connector *> created_outputs;
+
+    // create inputs
+    for (auto &&in : *subgraph_->inputs())
+    {
+        auto &tensor = *subgraph_->tensors()->Get(in);
+        auto shape = get_shape(tensor.shape());
+        auto type = to_data_type(tensor.type());
+        // image
+        if (shape.size() == 4)
+        {
+            auto node = graph_.emplace<input_node>(type, nhwc_to_nchw(shape));
+            node->name(tensor.name()->string_view());
+            auto sur_trans = nchw_to_nhwc(node->output().type(), node->output().shape());
+            sur_trans->input().connect(node->output());
+            created_inputs.emplace(in, &sur_trans->output());
+        }
+        else
+        {
+            auto node = graph_.emplace<input_node>(type, shape);
+            node->name(tensor.name()->string_view());
+            created_inputs.emplace(in, &node->output());
+        }
+    }
+
+    // create outputs
+    for (auto &&out : *subgraph_->outputs())
+    {
+        auto &tensor = *subgraph_->tensors()->Get(out);
+        auto shape = get_shape(tensor.shape());
+        auto type = to_data_type(tensor.type());
+        // image
+        if (shape.size() == 4)
+        {
+            auto pre_trans = nhwc_to_nchw(type, shape);
+            auto node = graph_.emplace<output_node>(pre_trans->output().type(), pre_trans->output().shape());
+            node->name(tensor.name()->string_view());
+            node->input().connect(pre_trans->output());
+            created_outputs.emplace(out, &pre_trans->input());
+        }
+        else
+        {
+            auto node = graph_.emplace<output_node>(type, shape);
+            node->name(tensor.name()->string_view());
+            created_outputs.emplace(out, &node->input());
+        }
+    }
 
     // connect tensors
     for (auto &&in : input_tensors_)
@@ -67,29 +114,8 @@ void tflite_importer::import()
     {
         if (!in.first->connection())
         {
-            auto out_it = created_inputs.find(in.second);
-            if (out_it != created_inputs.end())
-            {
-                in.first->connect(*out_it->second);
-            }
-            else
-            {
-                // image
-                if (in.first->shape().size() == 4)
-                {
-                    auto node = graph_.emplace<input_node>(in.first->type(), nhwc_to_nchw(in.first->shape()));
-                    auto sur_trans = nchw_to_nhwc(node->output().type(), node->output().shape());
-                    sur_trans->input().connect(node->output());
-                    in.first->connect(sur_trans->output());
-                    created_inputs.emplace(in.second, &node->output());
-                }
-                else
-                {
-                    auto node = graph_.emplace<input_node>(in.first->type(), in.first->shape());
-                    in.first->connect(node->output());
-                    created_inputs.emplace(in.second, &node->output());
-                }
-            }
+            auto out = created_inputs.at(in.second);
+            in.first->connect(*out);
         }
     }
 
@@ -98,19 +124,8 @@ void tflite_importer::import()
     {
         if (out.second->connections().empty())
         {
-            // image
-            if (out.second->shape().size() == 4)
-            {
-                auto pre_trans = nhwc_to_nchw(out.second->type(), out.second->shape());
-                auto node = graph_.emplace<output_node>(pre_trans->output().type(), pre_trans->output().shape());
-                pre_trans->input().connect(*out.second);
-                node->input().connect(pre_trans->output());
-            }
-            else
-            {
-                auto node = graph_.emplace<output_node>(out.second->type(), out.second->shape());
-                out.second->connect(node->input());
-            }
+            auto in = created_outputs.at(out.first);
+            in->connect(*out.second);
         }
     }
 }

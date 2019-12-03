@@ -81,18 +81,19 @@ fixed_mul quantizer::get_fixed_mul(float value, int32_t max_bits, uint8_t max_sh
         int mul_shift;
         mul = std::frexp(value, &mul_shift);
         shift = std::min((int32_t)max_shift, bits - mul_shift);
-        mul = mul * std::pow(2, shift + mul_shift);
+        mul = mul * std::pow(2.f, shift + mul_shift);
     }
     else if (value == 0)
     {
-        mul = shift = 0;
+        mul = 0;
+        shift = 0;
     }
     else
     {
         int mul_shift;
         mul = std::frexp(value, &mul_shift);
         shift = std::min(max_shift + mul_shift, bits);
-        mul = mul * std::pow(2, shift);
+        mul = mul * std::pow(2.f, shift);
         shift -= mul_shift;
     }
 

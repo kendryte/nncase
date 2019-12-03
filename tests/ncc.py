@@ -69,6 +69,25 @@ def run_tflite(input):
 	interp.set_tensor(input_id, input)
 	interp.invoke()
 	return interp.get_tensor(output_id)
+	
+def run_tflite_multi(input, out_num):
+	interp = tf.lite.Interpreter(tflite_export_file)
+	interp.allocate_tensors()
+	input_id = interp.get_input_details()[0]["index"]
+	interp.set_tensor(input_id, input)
+	interp.invoke()
+	out = []
+	for i in range(0, out_num):
+		output_id = interp.get_output_details()[i]["index"]
+		out.append(interp.get_tensor(output_id))
+	return out
+
+def flatten_out(out):
+	res = []
+	for o1 in out:
+		for o2 in o1.flatten():
+			res.append(o2)
+	return np.asarray(res)
 
 def close_to(name, threshold):
 	expect_arr = np.fromfile(expect_out_dir + '/' + name + '.bin', dtype=np.float32)

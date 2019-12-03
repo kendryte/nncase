@@ -18,6 +18,7 @@
 #include <hlir/ops/dequantize.h>
 #include <hlir/ops/pad.h>
 #include <hlir/ops/reduce.h>
+#include <hlir/ops/reshape.h>
 #include <hlir/ops/resize_image.h>
 #include <hlir/ops/strided_slice.h>
 #include <hlir/ops/transpose.h>
@@ -171,6 +172,42 @@ void dequantize_resize_image_motion_transform::process(transform_context &contex
     deq->input().connect(slice->output());
 
     slice->input().connect(output);
+    for (auto &in : dup(inputs))
+        in->connect(deq->output());
+}
+
+bool dequantize_reshape_motion_transform::on_try_match(node &node, transform_context &context)
+{
+    if (auto deq = node_cast<dequantize>(node))
+    {
+        if (auto r = try_get_direct_child<reshape>(*deq))
+        {
+            context.matched_nodes.emplace_back(deq);
+            context.matched_nodes.emplace_back(r);
+
+            context.inputs.emplace_back(&deq->input());
+            context.outputs.emplace_back(&r->output());
+
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void dequantize_reshape_motion_transform::process(transform_context &context)
+{
+    auto &output = *context.inputs[0]->connection();
+    auto inputs = context.outputs[0]->connections();
+
+    auto &old_deq = static_cast<dequantize &>(*context.matched_nodes[0]);
+    auto &old_r = static_cast<reshape &>(*context.matched_nodes[1]);
+
+    auto r = context.graph.emplace<reshape>(dt_uint8, old_deq.input().shape(), old_r.new_shape());
+    auto deq = context.graph.emplace<dequantize>(r->output().shape(), old_deq.quant_param());
+    deq->input().connect(r->output());
+
+    r->input().connect(output);
     for (auto &in : dup(inputs))
         in->connect(deq->output());
 }

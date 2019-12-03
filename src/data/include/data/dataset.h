@@ -129,7 +129,7 @@ namespace data
                     auto view = xt::squeeze(sample_view, 0);
                     auto file = read_file(filenames_[from++]);
                     process(file, view.data(), view.shape());
-                    if (std::is_same_v<T, float>)
+                    if constexpr (std::is_same_v<T, float>)
                     {
                         for (auto &v : view)
                             v = (v - mean_) / std_;
