@@ -10,6 +10,7 @@ trigger:
 
 jobs:
 - job: Linux
+  timeoutInMinutes: 0
   pool:
     vmImage: 'ubuntu-16.04'
 
@@ -33,7 +34,7 @@ jobs:
       addToPath: true 
       architecture: 'x64'
 
-  - script: pip install six==1.12 conan==1.19.2 tensorflow==2.0.0 matplotlib pillow
+  - script: pip install six==1.12 conan tensorflow==2.0.0 matplotlib pillow
     displayName: 'Install Conan'
 
   - script: |
@@ -71,6 +72,7 @@ jobs:
       testRunTitle: 'Publish test results for Python $(python.version)'
 
 - job: Windows
+  timeoutInMinutes: 0
   pool:
     vmImage: 'windows-2019'
   steps:
@@ -83,7 +85,7 @@ jobs:
       addToPath: true 
       architecture: 'x64'
 
-  - script: pip install six==1.12 conan==1.19.2 tensorflow==2.0.0 matplotlib pillow
+  - script: pip install six==1.12 conan tensorflow==2.0.0 matplotlib pillow
     displayName: 'Install Conan'
 
   - script: |
@@ -125,6 +127,7 @@ jobs:
       testRunTitle: 'Publish test results for Python $(python.version)'
 
 - job: MacOS
+  timeoutInMinutes: 0
   pool:
     vmImage: 'macOS-10.14'
 
@@ -143,7 +146,7 @@ jobs:
       addToPath: true 
       architecture: 'x64'
 
-  - script: pip install six==1.12 conan==1.19.2 tensorflow==2.0.0 matplotlib pillow
+  - script: pip install six==1.12 conan tensorflow==2.0.0 matplotlib pillow
     displayName: 'Install Conan'
 
   - script: |
