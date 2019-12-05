@@ -33,6 +33,7 @@ class target
 public:
     target(const target_options &options)
         : options_(options) {}
+    virtual ~target() = default;
 
     virtual void fill_allocators(std::unordered_map<memory_type_t, scheduler::memory_allocator *> &allocators, std::vector<std::unique_ptr<scheduler::memory_allocator>> &allocator_holders) = 0;
     virtual void registry_codegen_ops() = 0;

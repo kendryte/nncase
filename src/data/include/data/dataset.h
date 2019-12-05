@@ -95,6 +95,7 @@ namespace data
         };
 
         dataset(const boost::filesystem::path &path, std::function<bool(const boost::filesystem::path &)> file_filter, xt::dynamic_shape<size_t> input_shape, float mean, float std);
+        virtual ~dataset() = default;
 
         template <class T>
         iterator<T> begin()

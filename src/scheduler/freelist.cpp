@@ -29,7 +29,7 @@ freelist::freelist(std::optional<size_t> fixed_size)
         heap_end_ = *fixed_size;
     }
 }
-
+#include <iostream>
 void freelist::free(const free_memory_node &node)
 {
     free_nodes_.emplace(node.start, node);
@@ -91,12 +91,15 @@ freelist::free_nodes_t::iterator freelist::reserve(size_t size)
 
 void freelist::merge(freelist::free_nodes_t::iterator offset)
 {
-    auto left = std::prev(offset);
-    if (left != std::end(free_nodes_) && left->second.end() == offset->second.start)
+    if (offset != free_nodes_.begin())
     {
-        left->second.size += offset->second.size;
-        free_nodes_.erase(offset);
-        return merge(left);
+        auto left = std::prev(offset);
+        if (left != std::end(free_nodes_) && left->second.end() == offset->second.start)
+        {
+            left->second.size += offset->second.size;
+            free_nodes_.erase(offset);
+            return merge(left);
+        }
     }
 
     auto right = std::next(offset);
