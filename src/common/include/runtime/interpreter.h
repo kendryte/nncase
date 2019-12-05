@@ -59,6 +59,7 @@ namespace runtime
     protected:
         virtual bool initialize();
         virtual xtl::span<uint8_t> memory_at(const memory_range &range) const noexcept;
+        virtual clock_t::time_point get_now() const noexcept;
 
     private:
         void step();

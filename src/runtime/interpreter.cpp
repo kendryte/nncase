@@ -53,9 +53,10 @@ bool interpreter_base::try_load_model(const uint8_t *buffer)
 uint32_t interpreter_base::model_size(const uint8_t *buffer)
 {
     uint32_t size = (uint32_t)(node_body_start_ - buffer);
-    for(int i=0; i<nodes_size(); i++)
+    for (int i = 0; i < nodes_size(); i++)
     {
-        struct node_header cnt_layer_header = node_headers_[i];;
+        struct node_header cnt_layer_header = node_headers_[i];
+        ;
         size += cnt_layer_header.body_size;
     }
     return size;
@@ -79,6 +80,11 @@ void interpreter_base::run(run_callback_t callback, error_callback_t on_error, n
     step();
 }
 
+interpreter_base::clock_t::time_point interpreter_base::get_now() const noexcept
+{
+    return clock_t::now();
+}
+
 void interpreter_base::step()
 {
     auto result = kcr_done;
@@ -87,11 +93,11 @@ void interpreter_base::step()
     {
         if (!last_time_)
         {
-            last_time_ = clock_t::now();
+            last_time_ = get_now();
         }
         else
         {
-            auto now = clock_t::now();
+            auto now = get_now();
             auto duration = now - *last_time_;
             total_duration_ += duration;
             last_time_ = now;
