@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 #include "../caffe_importer.h"
-#include <hlir/ops/binary.h>
+#include <hlir/ops/clamp.h>
 #include <hlir/ops/constant.h>
 #include <hlir/ops/reduce.h>
 #include <hlir/ops/unary.h>
@@ -29,9 +29,11 @@ DEFINE_CAFFE_LOWER(ReLU)
     auto &param = op.relu_param();
 
     auto zero = graph_.emplace<constant>(0.f);
-    auto max = graph_.emplace<binary>(binary_max, input.shape(), zero->output().shape(), value_range<float>::full());
+    auto high = graph_.emplace<constant>(std::numeric_limits<float>::max());
+    auto cl = graph_.emplace<clamp>(input.shape(), zero->output().shape(), high->output().shape());
 
-    max->input_b().connect(zero->output());
-    input_tensors_.emplace(&max->input_a(), op.bottom(0));
-    output_tensors_.emplace(op.top(0), &max->output());
+    cl->input_low().connect(zero->output());
+    cl->input_high().connect(high->output());
+    input_tensors_.emplace(&cl->input(), op.bottom(0));
+    output_tensors_.emplace(op.top(0), &cl->output());
 }

@@ -13,6 +13,7 @@ set(SRCS connectors.cpp
          ops/reduce_window2d.cpp
          ops/binary.cpp
          ops/concat.cpp
+         ops/clamp.cpp
          ops/constant.cpp
          ops/fake_quantize.cpp
          ops/fake_dequantize.cpp

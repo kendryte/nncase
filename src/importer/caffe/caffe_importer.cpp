@@ -61,6 +61,7 @@ void caffe_importer::import()
         if (out.second->connections().empty())
         {
             auto node = graph_.emplace<output_node>(out.second->type(), out.second->shape());
+            node->name(out.second->owner().name());
             out.second->connect(node->input());
         }
     }

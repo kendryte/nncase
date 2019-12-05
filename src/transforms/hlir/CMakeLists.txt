@@ -9,6 +9,7 @@ set(SRCS transform.cpp
          neutral/fold_pad.cpp
          neutral/fold_quantize.cpp
          neutral/fuse_pad.cpp
+         neutral/fuse_clamp.cpp
          neutral/transpose_motion.cpp
          neutral/dequantize_motion.cpp
          neutral/quantized_conv2d.cpp

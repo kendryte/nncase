@@ -40,6 +40,11 @@ bool is_supported_out_shape(const shape_t &in_shape)
     return in_shape[0] == 1 && in_shape[1] <= 1024;
 }
 
+bool is_bad_shape(const shape_t &in_shape, const shape_t &out_shape)
+{
+    return false;
+}
+
 bool is_supported_filter(int32_t filter_h, int32_t filter_w)
 {
     return (filter_h == filter_w) && (filter_h == 3 || filter_h == 1);
@@ -135,7 +140,8 @@ bool fake_kpu_conv2d_transform::on_try_match(node &node, transform_context &cont
             && conv.dilation_h() == 1 && conv.dilation_w() == 1
             && is_supported_filter(conv.filter_h(), conv.filter_w())
             && is_supported_in_shape(conv.input().shape())
-            && is_supported_out_shape(conv.output().shape()))
+            && is_supported_out_shape(conv.output().shape())
+            && !is_bad_shape(conv.input().shape(), conv.output().shape()))
         {
             GET_PRE_PAD(conv);
             auto new_in_shape = conv.input().shape();

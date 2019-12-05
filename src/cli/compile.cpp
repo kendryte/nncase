@@ -367,4 +367,16 @@ void compile(const compile_options &options)
     // 5. CodeGen
     std::cout << "6. Generate code..." << std::endl;
     gencode(*target, llir.graph, options);
+
+    std::cout << "\nSUMMARY" << std::endl;
+    std::cout << "INPUTS" << std::endl;
+    llir.graph.assign_names();
+    size_t i = 0;
+    for (auto &in : llir.graph.inputs())
+        std::cout << i++ << "\t" << in->name() << "\t" << to_string(in->output().shape()) << std::endl;
+
+    std::cout << "OUTPUTS" << std::endl;
+    i = 0;
+    for (auto &out : llir.graph.outputs())
+        std::cout << i++ << "\t" << out->name() << "\t" << to_string(out->input().shape()) << std::endl;
 }

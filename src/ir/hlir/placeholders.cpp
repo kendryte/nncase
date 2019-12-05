@@ -21,12 +21,14 @@ using namespace nncase::hlir;
 void input_node::compile(hlir_compile_context &context)
 {
     auto l_input = context.graph.emplace<llir::input_node>(output().type(), output().shape(), output().memory_type());
+    l_input->name(name());
     context.add_output(output(), l_input->output());
 }
 
 void output_node::compile(hlir_compile_context &context)
 {
     auto l_output = context.graph.emplace<llir::output_node>(input().type(), input().shape());
+    l_output->name(name());
     context.add_input(input(), l_output->input());
 }
 

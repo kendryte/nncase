@@ -21,6 +21,7 @@
 #include <hlir/transforms/neutral/fold_quantize.h>
 #include <hlir/transforms/neutral/fold_reshape.h>
 #include <hlir/transforms/neutral/fold_transpose.h>
+#include <hlir/transforms/neutral/fuse_clamp.h>
 #include <hlir/transforms/neutral/fuse_pad.h>
 #include <hlir/transforms/neutral/quantized_binary.h>
 #include <hlir/transforms/neutral/quantized_conv2d.h>
@@ -80,6 +81,8 @@ void cpu_target::add_default_transforms(hlir::transforms::pass &pass)
     pass.emplace<fold_reshape_transform>();
     pass.emplace<fold_transpose_transform>();
     pass.emplace<fuse_pad_conv2d_transform>();
+    pass.emplace<fuse_clamp_conv2d_transform>();
+    pass.emplace<fuse_clamp_binary_transform>();
     pass.emplace<strided_slice_to_pad_transform>();
     pass.emplace<transpose_binary_motion_transform>();
     pass.emplace<transpose_constant_binary_motion_transform>();
