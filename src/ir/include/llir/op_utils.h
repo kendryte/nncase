@@ -177,7 +177,7 @@ namespace llir
     }
 
     template <class T>
-    runtime_shape_t to(const xt::dynamic_shape<T> &in_shape)
+    runtime_shape_t to(const xt::dynamic_shape<T> &in_shape, T default_val = 1)
     {
         assert(in_shape.size() <= 4);
 
@@ -185,7 +185,7 @@ namespace llir
         const auto in_ext = 4 - in_shape.size();
 
         for (int i = 0; i < in_ext; i++)
-            r_in_shape[i] = 1;
+            r_in_shape[i] = default_val;
         for (size_t i = in_ext; i < 4; i++)
             r_in_shape[i] = int32_t(in_shape[i - in_ext]);
         return r_in_shape;
