@@ -22,7 +22,7 @@ using namespace nncase;
 using namespace nncase::hlir;
 using namespace nncase::scheduler;
 
-#define KLD_IMPL 0
+#define KLD_METHOD 0
 
 namespace
 {
@@ -200,20 +200,24 @@ void quantizer::histogram::record(xtl::span<const float> data)
 void quantizer::histogram::finish()
 {
     auto total_freq = std::reduce(src_bins_.begin(), src_bins_.end());
-    auto zero_threshold = (0 - range_.min) / src_bin_interval_;
+    auto zero_threshold = (size_t)std::clamp((0 - range_.min) / src_bin_interval_, 0.f, (float)src_bins_.size() - 1);
     assert(zero_threshold >= 0 && zero_threshold < src_bins_.size());
     auto min_kld = std::numeric_limits<float>::max();
     std::optional<std::pair<size_t, size_t>> threshold;
     const auto dest_bins = dest_bins_.size();
 
-    for (size_t lower_threshold = 0; lower_threshold <= 0; lower_threshold++)
+    for (size_t lower_threshold = 0; lower_threshold <= zero_threshold; lower_threshold++)
     {
-        for (size_t upper_threshold = src_bins_.size(); upper_threshold > lower_threshold + dest_bins; upper_threshold--)
+        for (size_t upper_threshold = src_bins_.size(); upper_threshold >= lower_threshold + dest_bins && upper_threshold >= zero_threshold; upper_threshold--)
         {
             auto src_range = upper_threshold - lower_threshold;
             auto src_per_bin = (float)src_range / dest_bins;
 
             std::vector<float> range_dist(src_bins_.begin() + lower_threshold, src_bins_.begin() + upper_threshold);
+#if KLD_METHOD == 1
+            range_dist.front() += std::reduce(src_bins_.begin(), src_bins_.begin() + lower_threshold);
+            range_dist.back() += std::reduce(src_bins_.begin() + upper_threshold, src_bins_.end());
+#endif
 
             // ref dist
             std::vector<float> ref_dist(range_dist);
@@ -221,7 +225,7 @@ void quantizer::histogram::finish()
             ref_dist.back() += std::reduce(src_bins_.begin() + upper_threshold, src_bins_.end());
 
             // quant dist
-            std::vector<float> p_dist(dest_bins);
+            std::vector<float> q_dist(dest_bins);
             for (size_t i = 0; i < dest_bins; i++)
             {
                 auto start = i * src_per_bin;
@@ -235,7 +239,7 @@ void quantizer::histogram::finish()
                 if (right_lower < end)
                     value += (end - right_lower) * range_dist[right_lower];
                 value += std::reduce(range_dist.begin() + left_upper, range_dist.begin() + right_lower);
-                p_dist[i] = value;
+                q_dist[i] = value;
             }
 
             // upsample quant dist
@@ -260,7 +264,9 @@ void quantizer::histogram::finish()
                 }
 
                 count += std::count_if(range_dist.begin() + left_upper, range_dist.begin() + right_lower, [](float v) { return v; });
-                auto upsample_value = p_dist[i] / count;
+                if (!count)
+                    continue;
+                auto upsample_value = q_dist[i] / count;
                 if (left_upper > start)
                 {
                     if (range_dist[left_upper - 1])
@@ -279,7 +285,13 @@ void quantizer::histogram::finish()
                 }
             }
 
+#if KLD_METHOD == 1
+            std::vector<float> ups2_q_dist(src_bins_.size());
+            std::copy(ups_q_dist.begin(), ups_q_dist.end(), ups2_q_dist.begin() + lower_threshold);
+            auto kld = compute_kld(src_bins_, ups2_q_dist);
+#else
             auto kld = compute_kld(ref_dist, ups_q_dist);
+#endif
             if (kld < min_kld)
             {
                 min_kld = kld;
@@ -289,7 +301,10 @@ void quantizer::histogram::finish()
     }
 
     assert(threshold);
-    auto opt_min = threshold->first * src_bin_interval_ + range_.min;
-    auto opt_max = threshold->second * src_bin_interval_ + range_.min;
-    optimal_range_ = { opt_min, opt_max };
+    if (threshold)
+    {
+        auto opt_min = threshold->first * src_bin_interval_ + range_.min;
+        auto opt_max = threshold->second * src_bin_interval_ + range_.min;
+        optimal_range_ = { opt_min, opt_max };
+    }
 }

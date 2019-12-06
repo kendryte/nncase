@@ -283,6 +283,8 @@ void quantize(const compile_options &options, target &target, graph &graph)
         });
     }
 
+    std::cout << std::endl;
+
     if (!options.use_dataset_as_input_stat)
     {
         auto min = (0.f - options.input_mean) / options.input_std;
