@@ -159,7 +159,7 @@ void quantize_graph(const compile_options &options, target &target, graph &graph
     dump_graph(options, graph, "after_quant");
 }
 
-void get_quantization_ranges(target &target, graph &graph, quantizer *quantizer, const compile_options &options)
+void run_calibrations(target &target, graph &graph, quantizer *quantizer, const compile_options &options)
 {
     hlir_compile_context hc_ctx;
     graph.compile(hc_ctx);
@@ -264,10 +264,25 @@ void quantize(const compile_options &options, target &target, graph &graph)
     std::cout << "  4.1. Add quantization checkpoints..." << std::endl;
     add_quantization_checkpoints(options, target, graph);
 
-    // 4.2 Get activation ranges
-    std::cout << "  4.2. Get activation ranges, this may take a while..." << std::endl;
     // quantize
-    quantizer quant;
+    quantizer quant(2048);
+    // 4.2 Get activation ranges
+    std::cout << "  4.2. Get activation ranges..." << std::endl;
+    run_calibrations(target, graph, &quant, options);
+    // 4.3 Get activation distributions
+    std::cout << "  4.3. Get activation distributions..." << std::endl;
+    quant.begin_collect_distribution();
+    run_calibrations(target, graph, &quant, options);
+    std::cout << "  4.4. Find optimal thresholds..." << std::endl;
+    {
+        ProgressBar progress_bar(quant.histograms_count(), 50);
+        progress_bar.display();
+        quant.end_collect_distribution([&](size_t i) {
+            ++progress_bar;
+            progress_bar.display();
+        });
+    }
+
     if (!options.use_dataset_as_input_stat)
     {
         auto min = (0.f - options.input_mean) / options.input_std;
@@ -276,8 +291,6 @@ void quantize(const compile_options &options, target &target, graph &graph)
 
         quant.record(graph.inputs()[0]->output(), input_range);
     }
-
-    get_quantization_ranges(target, graph, &quant, options);
 
     // broadcast quant ranges
     std::unordered_set<hlir::node_opcode> opcodes;

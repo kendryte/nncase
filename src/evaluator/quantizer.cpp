@@ -22,21 +22,32 @@ using namespace nncase;
 using namespace nncase::hlir;
 using namespace nncase::scheduler;
 
-#define COMBINE_METHOD 1
+#define KLD_IMPL 0
 
 namespace
 {
 value_range<float> combine(const value_range<float> &lhs, const value_range<float> &rhs)
 {
-#if COMBINE_METHOD == 0
     return { std::min(lhs.min, rhs.min), std::max(lhs.max, rhs.max) };
-#elif COMBINE_METHOD == 1
-    const float alpha = 0.01f;
-    return { (1 - alpha) * lhs.min + alpha * rhs.min, (1 - alpha) * lhs.max + alpha * rhs.max };
-#else
-#error "Invalid combine method"
-#endif
 }
+
+float compute_kld(xtl::span<float> p, xtl::span<float> q)
+{
+    assert(p.size() == q.size());
+    float d = 0.f;
+    for (size_t i = 0; i < p.size(); i++)
+    {
+        if (p[i])
+            d += q[i] ? p[i] * std::log(p[i] / q[i]) : 1.f;
+    }
+
+    return d;
+}
+}
+
+quantizer::quantizer(size_t bins)
+    : bins_(bins)
+{
 }
 
 void quantizer::record(hlir::output_connector &connector, value_range<float> range)
@@ -48,9 +59,43 @@ void quantizer::record(hlir::output_connector &connector, value_range<float> ran
         it->second = combine(it->second, range);
 }
 
+void quantizer::set(hlir::output_connector &connector, value_range<float> range)
+{
+    quant_ranges_[&connector] = range;
+}
+
 void quantizer::record(output_connector &connector, xtl::span<const float> data)
 {
-    record(connector, get_range(data.begin(), data.end()));
+    switch (stage_)
+    {
+    case quantize_stage::collect_range:
+        record(connector, get_range(data.begin(), data.end()));
+        break;
+    case quantize_stage::collect_distribution:
+        histograms_.at(&connector).record(data);
+        break;
+    default:
+        throw std::runtime_error("Invalid operation in current quantization stage");
+    }
+}
+
+void quantizer::begin_collect_distribution()
+{
+    for (auto &&p : quant_ranges_)
+        histograms_.emplace(p.first, histogram(fixup_range(p.second), bins_, 256));
+
+    stage_ = quantize_stage::collect_distribution;
+}
+
+void quantizer::end_collect_distribution(std::function<void(size_t)> progress)
+{
+    size_t i = 0;
+    for (auto &&h : histograms_)
+    {
+        h.second.finish();
+        quant_ranges_.at(h.first) = h.second.optimal_range();
+        progress(i++);
+    }
 }
 
 quant_param_t quantizer::get_quant_param(value_range<float> range, int32_t bits) const
@@ -130,4 +175,121 @@ void quantizer::broadcast_output(hlir::node &node, const value_range<float> &ran
                 broadcast_output(con->owner(), range, ops);
         }
     }
+}
+
+quantizer::histogram::histogram(value_range<float> range, size_t src_bins, size_t dest_bins)
+    : range_(range), optimal_range_(range_)
+{
+    src_bins_.resize(src_bins);
+    dest_bins_.resize(dest_bins);
+
+    auto r = range_.max - range_.min;
+    src_bin_interval_ = r / src_bins_.size();
+}
+
+void quantizer::histogram::record(xtl::span<const float> data)
+{
+    for (auto value : data)
+    {
+        auto r_index = (value - range_.min) / src_bin_interval_;
+        auto index = (size_t)std::clamp(r_index, 0.f, (float)src_bins_.size() - 1);
+        src_bins_[index]++;
+    }
+}
+
+void quantizer::histogram::finish()
+{
+    auto total_freq = std::reduce(src_bins_.begin(), src_bins_.end());
+    auto zero_threshold = (0 - range_.min) / src_bin_interval_;
+    assert(zero_threshold >= 0 && zero_threshold < src_bins_.size());
+    auto min_kld = std::numeric_limits<float>::max();
+    std::optional<std::pair<size_t, size_t>> threshold;
+    const auto dest_bins = dest_bins_.size();
+
+    for (size_t lower_threshold = 0; lower_threshold <= 0; lower_threshold++)
+    {
+        for (size_t upper_threshold = src_bins_.size(); upper_threshold > lower_threshold + dest_bins; upper_threshold--)
+        {
+            auto src_range = upper_threshold - lower_threshold;
+            auto src_per_bin = (float)src_range / dest_bins;
+
+            std::vector<float> range_dist(src_bins_.begin() + lower_threshold, src_bins_.begin() + upper_threshold);
+
+            // ref dist
+            std::vector<float> ref_dist(range_dist);
+            ref_dist.front() += std::reduce(src_bins_.begin(), src_bins_.begin() + lower_threshold);
+            ref_dist.back() += std::reduce(src_bins_.begin() + upper_threshold, src_bins_.end());
+
+            // quant dist
+            std::vector<float> p_dist(dest_bins);
+            for (size_t i = 0; i < dest_bins; i++)
+            {
+                auto start = i * src_per_bin;
+                auto end = start + src_per_bin;
+                auto value = 0.f;
+
+                auto left_upper = (size_t)std::ceil(start);
+                auto right_lower = (size_t)std::floor(end);
+                if (left_upper > start)
+                    value += (left_upper - start) * range_dist[left_upper - 1];
+                if (right_lower < end)
+                    value += (end - right_lower) * range_dist[right_lower];
+                value += std::reduce(range_dist.begin() + left_upper, range_dist.begin() + right_lower);
+                p_dist[i] = value;
+            }
+
+            // upsample quant dist
+            std::vector<float> ups_q_dist(src_range);
+            for (size_t i = 0; i < dest_bins; i++)
+            {
+                auto start = i * src_per_bin;
+                auto end = start + src_per_bin;
+                auto count = 0.f;
+
+                auto left_upper = (size_t)std::ceil(start);
+                auto right_lower = (size_t)std::floor(end);
+                if (left_upper > start)
+                {
+                    if (range_dist[left_upper - 1])
+                        count += (left_upper - start);
+                }
+                if (right_lower < end)
+                {
+                    if (range_dist[right_lower])
+                        count += (end - right_lower);
+                }
+
+                count += std::count_if(range_dist.begin() + left_upper, range_dist.begin() + right_lower, [](float v) { return v; });
+                auto upsample_value = p_dist[i] / count;
+                if (left_upper > start)
+                {
+                    if (range_dist[left_upper - 1])
+                        ups_q_dist[left_upper - 1] += (left_upper - start) * upsample_value;
+                }
+                if (right_lower < end)
+                {
+                    if (range_dist[right_lower])
+                        ups_q_dist[right_lower] += (end - right_lower) * upsample_value;
+                }
+
+                for (size_t j = left_upper; j < right_lower; j++)
+                {
+                    if (range_dist[j])
+                        ups_q_dist[j] += upsample_value;
+                }
+            }
+
+            auto kld = compute_kld(ref_dist, ups_q_dist);
+            if (kld < min_kld)
+            {
+                min_kld = kld;
+                threshold = { lower_threshold, upper_threshold };
+            }
+        }
+    }
+
+    assert(threshold);
+    auto opt_min = threshold->first * src_bin_interval_ + range_.min;
+    auto opt_max = threshold->second * src_bin_interval_ + range_.min;
+    optimal_range_ = { opt_min, opt_max };
 }

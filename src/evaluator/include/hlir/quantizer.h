@@ -23,9 +23,35 @@ namespace nncase
 {
 namespace hlir
 {
+    enum class quantize_stage
+    {
+        collect_range,
+        collect_distribution,
+        finish
+    };
+
     class quantizer
     {
+        class histogram
+        {
+        public:
+            histogram(value_range<float> range, size_t src_bins, size_t dest_bins);
+
+            void record(xtl::span<const float> data);
+            void finish();
+            value_range<float> optimal_range() const noexcept { return optimal_range_; }
+
+        private:
+            std::vector<float> src_bins_;
+            std::vector<float> dest_bins_;
+            value_range<float> range_;
+            float src_bin_interval_;
+            value_range<float> optimal_range_;
+        };
+
     public:
+        quantizer(size_t bins);
+
         template <class TIt>
         value_range<float> get_range(TIt begin, TIt end)
         {
@@ -66,15 +92,22 @@ namespace hlir
         }
 
         void record(hlir::output_connector &connector, value_range<float> range);
+        void set(hlir::output_connector &connector, value_range<float> range);
         void record(hlir::output_connector &connector, xtl::span<const float> data);
         value_range<float> get(hlir::output_connector &connector) const;
         quant_param_t get_quant_param(value_range<float> range, int32_t bits) const;
         fixed_mul get_fixed_mul(float value, int32_t max_bits, uint8_t max_shift, bool is_signed) const;
         void broadcast_output(hlir::graph &graph, const std::unordered_set<node_opcode> &ops);
         void broadcast_output(hlir::node &node, const value_range<float> &range, const std::unordered_set<node_opcode> &ops);
+        void begin_collect_distribution();
+        void end_collect_distribution(std::function<void(size_t)> progress);
+        size_t histograms_count() const noexcept { return histograms_.size(); }
 
     private:
+        quantize_stage stage_ = quantize_stage::collect_range;
+        const size_t bins_;
         std::unordered_map<hlir::output_connector *, value_range<float>> quant_ranges_;
+        std::unordered_map<hlir::output_connector *, histogram> histograms_;
     };
 }
 }
