@@ -2,6 +2,7 @@
 cmake
 
 [requires]
+zlib/1.2.11@conan/stable
 opencv/4.1.1@conan/stable
 range-v3/0.5.0@ericniebler/stable
 flatbuffers/1.11.0@google/stable
