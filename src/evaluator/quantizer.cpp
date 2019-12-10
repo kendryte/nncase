@@ -26,9 +26,15 @@ using namespace nncase::scheduler;
 
 namespace
 {
-value_range<float> combine(const value_range<float> &lhs, const value_range<float> &rhs)
+value_range<float> union_range(const value_range<float> &lhs, const value_range<float> &rhs)
 {
     return { std::min(lhs.min, rhs.min), std::max(lhs.max, rhs.max) };
+}
+
+value_range<float> ema_range(const value_range<float> &lhs, const value_range<float> &rhs)
+{
+    const float alpha = 0.01f;
+    return { (1 - alpha) * lhs.min + alpha * rhs.min, (1 - alpha) * lhs.max + alpha * rhs.max };
 }
 
 float compute_kld(xtl::span<float> p, xtl::span<float> q)
@@ -43,10 +49,27 @@ float compute_kld(xtl::span<float> p, xtl::span<float> q)
 
     return d;
 }
+
+float compute_l2(xtl::span<float> p, value_range<float> p_range, value_range<float> q_range, size_t q_bins)
+{
+    auto p_interval = (p_range.max - p_range.min) / p.size();
+    auto q_interval = (q_range.max - q_range.min) / (q_bins - 1);
+    float d = 0.f;
+
+    for (size_t i = 0; i < p.size(); i++)
+    {
+        auto p_val = p_range.min + p_interval * (i + 0.0f);
+        auto q_idx = std::clamp((int32_t)std::round((p_val - q_range.min) / q_interval), 0, (int32_t)q_bins - 1);
+        auto q_val = q_range.min + q_interval * (q_idx + 0.0f);
+        d += std::pow(p_val - q_val, 2) * p[i];
+    }
+
+    return d;
+}
 }
 
-quantizer::quantizer(size_t bins)
-    : bins_(bins)
+quantizer::quantizer(calibrate_method cali_method, size_t bins)
+    : cali_method_(cali_method), bins_(bins)
 {
 }
 
@@ -56,7 +79,9 @@ void quantizer::record(hlir::output_connector &connector, value_range<float> ran
     if (it == quant_ranges_.end())
         quant_ranges_.emplace(&connector, range);
     else
-        it->second = combine(it->second, range);
+        it->second = cali_method_ == calibrate_method::ema
+            ? ema_range(it->second, range)
+            : union_range(it->second, range);
 }
 
 void quantizer::set(hlir::output_connector &connector, value_range<float> range)
@@ -199,12 +224,17 @@ void quantizer::histogram::record(xtl::span<const float> data)
 
 void quantizer::histogram::finish()
 {
+    auto zero_threshold = (size_t)std::clamp((0 - range_.min) / src_bin_interval_, 0.f, (float)src_bins_.size() - 1);
+    assert(zero_threshold >= 0 && zero_threshold < src_bins_.size());
+    auto min_loss = std::numeric_limits<float>::max();
+    std::optional<std::pair<size_t, size_t>> threshold;
+    const auto dest_bins = dest_bins_.size();
+#if 0
     auto total_freq = std::reduce(src_bins_.begin(), src_bins_.end());
     auto zero_threshold = (size_t)std::clamp((0 - range_.min) / src_bin_interval_, 0.f, (float)src_bins_.size() - 1);
     assert(zero_threshold >= 0 && zero_threshold < src_bins_.size());
     auto min_kld = std::numeric_limits<float>::max();
     std::optional<std::pair<size_t, size_t>> threshold;
-    const auto dest_bins = dest_bins_.size();
 
     for (size_t lower_threshold = 0; lower_threshold <= zero_threshold; lower_threshold++)
     {
@@ -299,6 +329,23 @@ void quantizer::histogram::finish()
             }
         }
     }
+#else
+    for (size_t lower_threshold = 0; lower_threshold <= zero_threshold; lower_threshold++)
+    {
+        for (size_t upper_threshold = src_bins_.size(); upper_threshold >= lower_threshold + dest_bins && upper_threshold >= zero_threshold; upper_threshold--)
+        {
+            auto dest_min = lower_threshold * src_bin_interval_ + range_.min;
+            auto dest_max = upper_threshold * src_bin_interval_ + range_.min;
+
+            auto loss = compute_l2(src_bins_, range_, { dest_min, dest_max }, dest_bins);
+            if (loss < min_loss)
+            {
+                min_loss = loss;
+                threshold = { lower_threshold, upper_threshold };
+            }
+        }
+    }
+#endif
 
     assert(threshold);
     if (threshold)
@@ -307,4 +354,6 @@ void quantizer::histogram::finish()
         auto opt_max = threshold->second * src_bin_interval_ + range_.min;
         optimal_range_ = { opt_min, opt_max };
     }
+
+    std::cout << "{" << range_.min << ", " << range_.max << "} -> {" << optimal_range_.min << ", " << optimal_range_.max << "}" << std::endl;
 }

@@ -21,12 +21,20 @@ using namespace nncase;
 using namespace nncase::hlir;
 using namespace nncase::hlir::transforms;
 
+#define QUANT_THRESHOLD 100
+
 bool add_quant_checkpoints_transform::on_try_match(node &node, transform_context &context)
 {
     if (opcodes_.find(node.runtime_opcode()) != opcodes_.end())
     {
         if (!try_get_direct_child<fake_dequantize>(node))
         {
+            if (node.runtime_opcode() == op_binary
+                && xt::compute_size(node.output_at(0).shape()) <= QUANT_THRESHOLD)
+            {
+                return false;
+            }
+
             for (auto &in : node.inputs())
                 context.inputs.emplace_back(&in);
             for (auto &out : node.outputs())

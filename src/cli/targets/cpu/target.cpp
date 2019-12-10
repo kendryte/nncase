@@ -107,7 +107,7 @@ void nncase::cpu_target::optimize_target_dependent(hlir::transforms::pass_manage
 void nncase::cpu_target::add_quantization_checkpoints(hlir::transforms::pass_manager &pass_mgr)
 {
     pass p;
-    p.emplace<add_quant_checkpoints_transform>(add_quant_checkpoints_transform { op_conv2d, /*op_matmul, op_binary*/ });
+    p.emplace<add_quant_checkpoints_transform>(add_quant_checkpoints_transform { op_conv2d, op_matmul, op_binary });
     pass_mgr.add_pass(std::move(p));
 }
 

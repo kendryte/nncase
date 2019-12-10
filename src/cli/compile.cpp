@@ -264,26 +264,38 @@ void quantize(const compile_options &options, target &target, graph &graph)
     std::cout << "  4.1. Add quantization checkpoints..." << std::endl;
     add_quantization_checkpoints(options, target, graph);
 
+    hlir::calibrate_method cali_method;
+    if (options.calibrate_method == "ema")
+        cali_method = hlir::calibrate_method::ema;
+    else if (options.calibrate_method == "l2")
+        cali_method = hlir::calibrate_method::l2;
+    else
+        throw std::invalid_argument("Invalid calibrate method: " + options.calibrate_method);
+
     // quantize
-    quantizer quant(2048);
+    quantizer quant(cali_method, 2048);
     // 4.2 Get activation ranges
     std::cout << "  4.2. Get activation ranges..." << std::endl;
     run_calibrations(target, graph, &quant, options);
-    // 4.3 Get activation distributions
-    std::cout << "  4.3. Get activation distributions..." << std::endl;
-    quant.begin_collect_distribution();
-    run_calibrations(target, graph, &quant, options);
-    std::cout << "  4.4. Find optimal thresholds..." << std::endl;
-    {
-        ProgressBar progress_bar(quant.histograms_count(), 50);
-        progress_bar.display();
-        quant.end_collect_distribution([&](size_t i) {
-            ++progress_bar;
-            progress_bar.display();
-        });
-    }
 
-    std::cout << std::endl;
+	if (cali_method != hlir::calibrate_method::ema)
+    {
+        // 4.3 Get activation distributions
+        std::cout << "  4.3. Get activation distributions..." << std::endl;
+        quant.begin_collect_distribution();
+        run_calibrations(target, graph, &quant, options);
+        std::cout << "  4.4. Find optimal thresholds..." << std::endl;
+        {
+            ProgressBar progress_bar(quant.histograms_count(), 50);
+            progress_bar.display();
+            quant.end_collect_distribution([&](size_t i) {
+                ++progress_bar;
+                progress_bar.display();
+            });
+        }
+
+        std::cout << std::endl;
+    }
 
     if (!options.use_dataset_as_input_stat)
     {
@@ -300,12 +312,12 @@ void quantize(const compile_options &options, target &target, graph &graph)
     quant.broadcast_output(graph, opcodes);
 
     // 4.3 quantize graph
-    std::cout << "  4.3. Quantize graph..." << std::endl;
+    std::cout << "  4.5. Quantize graph..." << std::endl;
     quantize_graph(options, target, graph, quant);
 
 #if EVAL > 1
     // 4.4 Run quantized graph
-    std::cout << "  4.4. Run quantized graph..." << std::endl;
+    std::cout << "  4.6. Run quantized graph..." << std::endl;
     run_quantized_graph(target, graph, options);
 #endif
 }
@@ -342,7 +354,8 @@ group compile_options::parser(mode &mode)
 			option("--input-std") % ("input std, default is " + std::to_string(input_std)) & value("input std", input_std),
 			option("--dump-ir").set(dump_ir) % "dump nncase ir to .dot files",
 			option("--input-type").set(input_type) % ("input type: e.g. default, float, uint8, default means equal to inference type") & value("input type", input_type),
-			option("--max-allocator-solve-secs") % ("max optimal layout solve time in secs used by allocators, 0 means don't use solver, default is " + std::to_string(max_solve_secs)) & value("max allocator solve secs", max_solve_secs)
+			option("--max-allocator-solve-secs") % ("max optimal layout solve time in secs used by allocators, 0 means don't use solver, default is " + std::to_string(max_solve_secs)) & value("max allocator solve secs", max_solve_secs),
+			option("--calibrate-method") % ("calibrate method: e.g. ema, l2, default is " + calibrate_method) & value("calibrate method", calibrate_method)
 		));
     // clang-format on
 }

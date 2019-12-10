@@ -30,6 +30,12 @@ namespace hlir
         finish
     };
 
+    enum class calibrate_method
+    {
+		ema,
+		l2
+    };
+
     class quantizer
     {
         class histogram
@@ -50,7 +56,7 @@ namespace hlir
         };
 
     public:
-        quantizer(size_t bins);
+        quantizer(calibrate_method cali_method, size_t bins);
 
         template <class TIt>
         value_range<float> get_range(TIt begin, TIt end)
@@ -104,6 +110,7 @@ namespace hlir
         size_t histograms_count() const noexcept { return histograms_.size(); }
 
     private:
+        calibrate_method cali_method_;
         quantize_stage stage_ = quantize_stage::collect_range;
         const size_t bins_;
         std::unordered_map<hlir::output_connector *, value_range<float>> quant_ranges_;
