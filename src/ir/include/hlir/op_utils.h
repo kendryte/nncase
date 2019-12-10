@@ -216,7 +216,7 @@ namespace hlir
             assert(stride);
             new_shape[i] = (begin_mask & (1 << i)) != 0
                 ? stride > 0 ? 0 : (int32_t)in_shape[i] - 1
-                : begin[i];
+                : (begin[i] >= 0 ? begin[i] : in_shape[i] + begin[i]);
         }
 
         return new_shape;
@@ -231,7 +231,7 @@ namespace hlir
             auto begin_val = begin[i];
             auto end_val = (end_mask & (1 << i)) != 0
                 ? stride > 0 ? (int32_t)in_shape[i] : -1
-                : end[i];
+                : (end[i] >= 0 ? end[i] : in_shape[i] + end[i]);
             auto shrink = shrink_axis_mask & (1 << i);
             if (shrink)
                 end_val = begin_val + 1;

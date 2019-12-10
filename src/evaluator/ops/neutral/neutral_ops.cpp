@@ -389,7 +389,7 @@ namespace llir
 
 #define STRIDED_SLICE_KERNEL(T)                                                                                \
     neutral::strided_slice<T>(reinterpret_cast<const T *>(input.data()), reinterpret_cast<T *>(output.data()), \
-        to(rnode.input().shape()), to(rnode.begin()), to(rnode.end()), to(rnode.strides()));
+        to(rnode.input().shape()), to(rnode.begin(), 0), to(rnode.end()), to(rnode.strides()));
 
             ELEM_SIZE_IMPL(rnode.input().type(), STRIDED_SLICE_KERNEL);
         });

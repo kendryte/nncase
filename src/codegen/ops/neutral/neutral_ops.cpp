@@ -330,7 +330,7 @@ namespace codegen
             body->input = context.get_allocation(rnode.input());
             body->output = context.get_allocation(rnode.output());
             body->in_shape = to(rnode.input().shape());
-            body->begin = to(rnode.begin());
+            body->begin = to(rnode.begin(), 0);
             body->end = to(rnode.end());
             body->strides = to(rnode.strides());
             body->begin_mask = rnode.begin_mask();
