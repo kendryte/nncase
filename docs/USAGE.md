@@ -12,7 +12,8 @@ SYNOPSIS
         format>] [-t <target>] [--dataset <dataset path>] [--dataset-format
         <dataset format>] [--inference-type <inference type>] [--input-mean
         <input mean>] [--input-std <input std>] [--dump-ir] [--input-type <input
-        type>] [--max-allocator-solve-secs <max allocator solve secs>] [-v]
+        type>] [--max-allocator-solve-secs <max allocator solve secs>]
+        [--calibrate-method <calibrate method>] [-v]
 
     ncc infer <input file> <output path> --dataset <dataset path>
         [--dataset-format <dataset format>] [--input-mean <input mean>]
@@ -37,6 +38,9 @@ OPTIONS
         --max-allocator-solve-secs
                             max optimal layout solve time in secs used by
                             allocators, 0 means don't use solver, default is 60
+
+        --calibrate-method  calibrate method: e.g. no_clip, l2, default is
+                            no_clip
 
     infer
         <input file>        input kmodel
@@ -69,6 +73,7 @@ OPTIONS
 | [0,1] (default) | 1 | 0 |
 | [-1,1] | 0.5 | 0.5 |
 | [0,255] | 0.0039216 | 0 |
+- `--calibrate-method` is to set your desired calibration method, which is used to select the optimal activation ranges. The default is `no_clip` in that ncc will use the full range of activations. If you want a better quantization result, you can use `l2` but it will take a longer time to find the optimal ranges.
 - `--input-type` is to set your desired input data type when do inference. Default is equal to inference type. If `--input-type` is `uint8`, for example you should provide RGB888 uint8 tensors when you do inference. If `--input-type` is `float`, you shold provide RGB float tensors instead.
 - `--max-allocator-solve-secs` is to limit the maximum solving time when do the best fit allocation search. If the search time exceeded, ncc will fallback to use the first fit method. Default is 60 secs, set to 0 to disable search.
 - `--dump-ir` is a debug option. When it's on, ncc will produce some `.dot` graph files to the working directory. You can use `Graphviz` or [Graphviz Online](https://dreampuf.github.io/GraphvizOnline) to view these files.
@@ -99,6 +104,7 @@ OPTIONS
 | [0,1] (默认) | 1 | 0 |
 | [-1,1] | 0.5 | 0.5 |
 | [0,255] | 0.0039216 | 0 |
+- `--calibrate-method` 用于设置量化校准方法，它被用来选择最优的激活函数值域。默认值是 `no_clip`，ncc 会使用整个激活函数值域。如果你需要更好的量化结果，你可以使用 `l2`，但它需要花更长的时间寻找最优值域。
 - `--input-type` 用于设置推理时输入的数据类型。默认和 inference type 相同。如果 `--input-type` 是 `uint8`，推理时你需要提供 RGB888 uint8 张量。如果 `--input-type` 是 `float`，你则需要提供 RGB float 张量。
 - `--max-allocator-solve-secs` 用于限制 ncc 做最优分配时的最大搜索时间。如果搜索超过了这个时间，ncc 会退而使用 first fit 算法。默认是 60 秒，如果要禁用搜索请设置为 0。
 - `--dump-ir` 是一个调试选项。当它打开时 ncc 会在工作目录产生一些 `.dot` 文件。你可以使用 `Graphviz` 或 [Graphviz Online](https://dreampuf.github.io/GraphvizOnline) 来查看这些文件。
