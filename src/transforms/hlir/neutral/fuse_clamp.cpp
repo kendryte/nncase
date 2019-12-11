@@ -80,6 +80,7 @@ void fuse_clamp_conv2d_transform::process(transform_context &context)
     auto conv = context.graph.emplace<conv2d>(output.shape(), old_conv.weights(), old_conv.bias(), old_conv.groups(),
         old_conv.padding_h(), old_conv.padding_w(), old_conv.stride_h(), old_conv.stride_w(), old_conv.dilation_h(), old_conv.dilation_w(),
         act);
+    conv->name(old_conv.name());
 
     conv->input().connect(output);
     for (auto &in : dup(inputs))
@@ -131,6 +132,7 @@ void fuse_clamp_binary_transform::process(transform_context &context)
     auto act = combine(old_b.fused_activation(), old_low, old_high);
 
     auto b = context.graph.emplace<binary>(old_b.binary_op(), output_a.shape(), output_b.shape(), act);
+    b->name(old_b.name());
 
     b->input_a().connect(output_a);
     b->input_b().connect(output_b);

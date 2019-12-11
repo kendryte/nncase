@@ -74,11 +74,14 @@ namespace hlir
         void connect(input_connector &connector);
         void disconnect(input_connector &connector);
         void clear_connections();
+        connector_attributes attributes() const noexcept { return attributes_; }
+        void attributes(connector_attributes value) noexcept { attributes_ = value; }
         memory_type_t memory_type() const noexcept { return memory_type_; }
 
     private:
         std::vector<input_connector *> connections_;
         memory_type_t memory_type_;
+        connector_attributes attributes_ = cnctr_attr_none;
     };
 }
 }

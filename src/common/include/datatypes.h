@@ -157,7 +157,7 @@ inline bool operator!=(const padding &lhs, const padding &rhs) noexcept
     return lhs.before != rhs.before || lhs.after != rhs.after;
 }
 
-template<class T>
+template <class T>
 bool operator==(const value_range<T> &lhs, const value_range<T> &rhs) noexcept
 {
     return lhs.min == rhs.min && lhs.max == rhs.max;
@@ -168,4 +168,15 @@ bool operator!=(const value_range<T> &lhs, const value_range<T> &rhs) noexcept
 {
     return lhs.min != rhs.min || lhs.max != rhs.max;
 }
+
+#ifndef DEFINE_ENUM_FLAG_OPERATORS
+#define DEFINE_ENUM_FLAG_OPERATORS(ENUMTYPE)                                                              \
+    inline ENUMTYPE operator|(ENUMTYPE a, ENUMTYPE b) { return ENUMTYPE(((int)a) | ((int)b)); }           \
+    inline ENUMTYPE &operator|=(ENUMTYPE &a, ENUMTYPE b) { return (ENUMTYPE &)(((int &)a) |= ((int)b)); } \
+    inline ENUMTYPE operator&(ENUMTYPE a, ENUMTYPE b) { return ENUMTYPE(((int)a) & ((int)b)); }           \
+    inline ENUMTYPE &operator&=(ENUMTYPE &a, ENUMTYPE b) { return (ENUMTYPE &)(((int &)a) &= ((int)b)); } \
+    inline ENUMTYPE operator~(ENUMTYPE a) { return ENUMTYPE(~((int)a)); }                                 \
+    inline ENUMTYPE operator^(ENUMTYPE a, ENUMTYPE b) { return ENUMTYPE(((int)a) ^ ((int)b)); }           \
+    inline ENUMTYPE &operator^=(ENUMTYPE &a, ENUMTYPE b) { return (ENUMTYPE &)(((int &)a) ^= ((int)b)); }
+#endif
 }

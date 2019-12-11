@@ -76,8 +76,10 @@ void fuse_pad_conv2d_transform::process(transform_context &context)
     }
 
     auto p = context.graph.emplace<pad>(old_p.output().type(), output.shape(), paddings, old_p.pad_value());
+    p->name(old_p.name());
     auto conv = context.graph.emplace<conv2d>(p->output().shape(), old_conv.weights(), old_conv.bias(), old_conv.groups(),
         conv_paddings[0], conv_paddings[1], old_conv.stride_h(), old_conv.stride_w(), old_conv.dilation_h(), old_conv.dilation_w(), old_conv.fused_activation());
+    conv->name(old_conv.name());
     conv->input().connect(p->output());
 
     p->input().connect(output);

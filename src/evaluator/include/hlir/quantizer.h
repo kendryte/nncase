@@ -32,7 +32,7 @@ namespace hlir
 
     enum class calibrate_method
     {
-		ema,
+		no_clip,
 		l2
     };
 

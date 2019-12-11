@@ -29,6 +29,15 @@ namespace hlir
         node_attr_action = 1
     };
 
+    enum connector_attributes
+    {
+        cnctr_attr_none = 0,
+        cnctr_attr_need_quantize = 1
+    };
+
+	DEFINE_ENUM_FLAG_OPERATORS(node_attributes);
+    DEFINE_ENUM_FLAG_OPERATORS(connector_attributes);
+
     inline std::string to_string(const shape_t &shape)
     {
         std::string str;

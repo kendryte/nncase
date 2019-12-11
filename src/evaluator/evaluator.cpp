@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 #include <chrono>
-#include <hlir/ops/fake_quantize.h>
 #include <llir/evaluator.h>
 #include <llir/ops/constant.h>
 
@@ -103,24 +102,15 @@ void evaluator::evaluate(hlir::quantizer *quantizer, std::unordered_map<llir::ou
         {
             auto &l_output = node->output_at(0);
             auto hl_output = outputs->find(&l_output);
-            if (hl_output != outputs->end())
+            if (hl_output != outputs->end()
+                && hl_output->second->attributes() & hlir::cnctr_attr_need_quantize)
             {
                 auto &hl_node = hl_output->second->owner();
                 auto opcode = hl_node.runtime_opcode();
-                if (opcode == hlir::op_fake_dequantize
-                    || opcode == hlir::op_fake_quantize
-                    || (opcode == hlir::op_input_node && add_input_stat))
-                {
-                    if (opcode == hlir::op_fake_quantize)
-                    {
-                        auto &hl_fq = static_cast<hlir::fake_quantize &>(hl_node);
-                        if (hl_fq.output().connections().size() == 1
-                            && hl_fq.output().connections()[0]->owner().runtime_opcode() == hlir::op_fake_dequantize)
-                            continue;
-                    }
+                if (opcode == hlir::op_input_node && !add_input_stat)
+                    continue;
 
-                    quantizer->record(*hl_output->second, context_.memory_at<float>(l_output));
-                }
+                quantizer->record(*hl_output->second, context_.memory_at<float>(l_output));
             }
         }
     }

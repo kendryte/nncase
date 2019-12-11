@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include <algorithm>
+#include <hlir/quantizer.h>
 #include <hlir/transforms/transform.h>
 #include <hlir/visitor.h>
 
@@ -95,4 +96,12 @@ std::vector<hlir::input_connector *> nncase::hlir::transforms::dup(xtl::span<hli
     std::vector<hlir::input_connector *> con;
     std::copy(connections.begin(), connections.end(), std::back_inserter(con));
     return con;
+}
+
+void nncase::hlir::transforms::link(hlir::output_connector &old_c, hlir::output_connector &new_c, hlir::quantizer *quantizer)
+{
+    new_c.attributes(old_c.attributes());
+
+    if (old_c.attributes() & hlir::cnctr_attr_need_quantize && quantizer)
+        quantizer->set(new_c, quantizer->get(old_c));
 }

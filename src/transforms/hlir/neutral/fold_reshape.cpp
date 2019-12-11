@@ -47,6 +47,7 @@ void fold_reshape_transform::process(transform_context &context)
     auto &rp2 = *static_cast<reshape *>(context.matched_nodes[1]);
 
     auto rp = context.graph.emplace<reshape>(output.type(), output.shape(), rp2.output().shape());
+    rp->name(rp2.name());
 
     rp->input().connect(output);
     for (auto &in : dup(inputs))

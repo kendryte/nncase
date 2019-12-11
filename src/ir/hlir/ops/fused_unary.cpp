@@ -13,22 +13,28 @@
  * limitations under the License.
  */
 #include <hlir/op_utils.h>
-#include <hlir/ops/fake_dequantize.h>
+#include <hlir/ops/fused_unary.h>
 #include <llir/ops/memory_copy.h>
 #include <xtensor/xarray.hpp>
 
 using namespace nncase;
 using namespace nncase::hlir;
 
-fake_dequantize::fake_dequantize(shape_t input_shape)
+fused_unary::fused_unary(graph subgraph)
+    : subgraph_(std::move(subgraph))
 {
-    add_input("input", dt_float32, input_shape);
-    add_output("output", dt_float32, input_shape);
+    if (subgraph_.inputs().size() != 1
+        || subgraph_.outputs().size() != 1)
+        throw std::invalid_argument("Invalid subgraph inouts for fused unary");
+
+    if (subgraph_.inputs()[0]->output().shape() != subgraph_.outputs()[0]->input().shape())
+        throw std::invalid_argument("Invalid subgraph shape for fused unary");
+
+    add_input("input", dt_float32, subgraph_.inputs()[0]->output().shape());
+    add_output("output", dt_float32, subgraph_.outputs()[0]->input().shape());
 }
 
-void fake_dequantize::compile(hlir_compile_context &context)
+void fused_unary::compile(hlir_compile_context &context)
 {
-    auto l_c = context.graph.emplace<llir::memory_copy>(input().type(), input().shape(), output().type(), output().shape());
-    context.add_input(input(), l_c->input());
-    context.add_output(output(), l_c->output());
+    throw std::runtime_error("Not implemented");
 }

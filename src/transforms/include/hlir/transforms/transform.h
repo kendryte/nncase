@@ -22,6 +22,8 @@ class target;
 
 namespace hlir
 {
+    class quantizer;
+
     namespace transforms
     {
         struct transform_context
@@ -48,6 +50,7 @@ namespace hlir
         };
 
         std::vector<input_connector *> dup(xtl::span<hlir::input_connector *const> connections);
+        void link(hlir::output_connector &old_c, hlir::output_connector &new_c, hlir::quantizer *quantizer = nullptr);
     }
 }
 }

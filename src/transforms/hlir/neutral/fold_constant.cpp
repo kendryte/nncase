@@ -27,7 +27,7 @@ using namespace nncase::scheduler;
 
 namespace
 {
-std::unordered_set<node_opcode> dontfold_ops { op_fake_dequantize, op_fake_quantize };
+std::unordered_set<node_opcode> dontfold_ops { };
 }
 
 bool fold_constant_transform::on_try_match(node &node, transform_context &context)
@@ -65,6 +65,10 @@ void fold_constant_transform::process(transform_context &context)
     for (auto &out : old_op.outputs())
     {
         auto node = op_outputs.emplace_back(new_graph.emplace<output_node>(out.type(), out.shape()));
+        if (old_op.outputs().size() > 1)
+            node->name(out.owner().name() + "/" + out.name());
+        else
+            node->name(out.owner().name());
         node->input().connect(out);
     }
 
@@ -87,6 +91,7 @@ void fold_constant_transform::process(transform_context &context)
             auto &op_output = *op_outputs[i];
             auto mem = eval.output_at<uint8_t>(i);
             auto out_val = context.graph.emplace<constant>(op_output.input().type(), op_output.input().shape(), mem.begin(), mem.end());
+            out_val->name(op_output.name());
             output_values.emplace_back(out_val);
         }
     }

@@ -14,8 +14,6 @@
  */
 #include <algorithm>
 #include <hlir/ops/dequantize.h>
-#include <hlir/ops/fake_dequantize.h>
-#include <hlir/ops/fake_quantize.h>
 #include <hlir/ops/k210/fake_kpu_conv2d.h>
 #include <hlir/ops/k210/kpu_conv2d.h>
 #include <hlir/ops/k210/kpu_data_exchange.h>
@@ -175,21 +173,16 @@ auto quantize_bn_act(quantizer &quantizer, fake_kpu_conv2d &conv, float sa, cons
 
 bool kpu_conv2d_transform::on_try_match(node &node, transform_context &context)
 {
-    if (node.runtime_opcode() == op_fake_quantize)
+    if (auto conv = node_cast<fake_kpu_conv2d>(node))
     {
-        auto &q = static_cast<fake_quantize &>(node);
-        if (auto conv = try_get_direct_child<fake_kpu_conv2d>(q))
+        if (conv->input().connection()->attributes() & cnctr_attr_need_quantize
+            && conv->output().attributes() & cnctr_attr_need_quantize)
         {
-            if (auto deq = try_get_direct_child<fake_dequantize>(*conv))
-            {
-                context.inputs.emplace_back(&q.input());
-                context.outputs.emplace_back(&deq->output());
+            context.inputs.emplace_back(&conv->input());
+            context.outputs.emplace_back(&conv->output());
 
-                context.matched_nodes.emplace_back(&q);
-                context.matched_nodes.emplace_back(conv);
-                context.matched_nodes.emplace_back(deq);
-                return true;
-            }
+            context.matched_nodes.emplace_back(conv);
+            return true;
         }
     }
 
@@ -200,24 +193,29 @@ void kpu_conv2d_transform::process(transform_context &context)
 {
     auto &output = *context.inputs[0]->connection();
     auto inputs = context.outputs[0]->connections();
-    auto &old_q = static_cast<fake_quantize &>(*context.matched_nodes[0]);
-    auto &old_conv = static_cast<fake_kpu_conv2d &>(*context.matched_nodes[1]);
-    auto &old_deq = static_cast<fake_dequantize &>(*context.matched_nodes[2]);
+    auto &old_conv = static_cast<fake_kpu_conv2d &>(*context.matched_nodes[0]);
 
-    auto iq_p = quantizer_.get_quant_param(quantizer_.get(old_q.output()), 8);
+    auto iq_p = quantizer_.get_quant_param(quantizer_.get(output), 8);
     auto [wq_p, w_scales, q_weights] = quantize_weights(quantizer_, old_conv);
-    auto yq_p = quantizer_.get_quant_param(quantizer_.get(old_deq.output()), 8);
+    auto yq_p = quantizer_.get_quant_param(quantizer_.get(old_conv.output()), 8);
     auto sa = iq_p.scale * wq_p.scale;
     auto [bn, act] = quantize_bn_act(quantizer_, old_conv, sa, w_scales, yq_p, old_conv.fused_activation());
     auto filter = get_kpu_filter_size(old_conv.filter_type());
 
     auto q = context.graph.emplace<quantize>(output.shape(), iq_p);
+    q->name(output.owner().name() + "/quantize");
     auto upload = context.graph.emplace<kpu_upload>(q->output().shape());
+    upload->name(output.owner().name() + "/kpu_upload");
     auto conv = context.graph.emplace<kpu_conv2d>(false, upload->output().shape(), old_conv.is_depthwise(), old_conv.filter_type(), old_conv.pool_type(),
         std::move(q_weights), (uint8_t)iq_p.zero_point, -wq_p.zero_point, 0, -iq_p.zero_point, 0, (int64_t)filter * filter * wq_p.zero_point * iq_p.zero_point,
         std::move(bn), std::move(act));
+    conv->name(old_conv.name());
     auto download = context.graph.emplace<kpu_download>(conv->kpu_output().shape());
+    upload->name(old_conv.name() + "/kpu_download");
     auto deq = context.graph.emplace<dequantize>(download->output().shape(), yq_p);
+    deq->name(old_conv.name() + "/dequantize");
+    link(old_conv.output(), deq->output(), &quantizer_);
+
     upload->input().connect(q->output());
     conv->input().connect(upload->output());
     download->input().connect(conv->kpu_output());

@@ -12,10 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <hlir/ops/fake_dequantize.h>
-#include <hlir/ops/fake_quantize.h>
 #include <hlir/transforms/neutral/add_quant_checkpoints.h>
 #include <hlir/visitor.h>
+#include <xtensor/xstrides.hpp>
 
 using namespace nncase;
 using namespace nncase::hlir;
@@ -27,14 +26,23 @@ bool add_quant_checkpoints_transform::on_try_match(node &node, transform_context
 {
     if (opcodes_.find(node.runtime_opcode()) != opcodes_.end())
     {
-        if (!try_get_direct_child<fake_dequantize>(node))
+        if (node.runtime_opcode() == op_binary
+            && xt::compute_size(node.output_at(0).shape()) <= QUANT_THRESHOLD)
         {
-            if (node.runtime_opcode() == op_binary
-                && xt::compute_size(node.output_at(0).shape()) <= QUANT_THRESHOLD)
-            {
-                return false;
-            }
+            return false;
+        }
 
+        bool not_processed = false;
+        if (!node.inputs().empty()
+            && std::any_of(node.inputs().begin(), node.inputs().end(), [](input_connector &in) { return (in.connection()->attributes() & cnctr_attr_need_quantize) != cnctr_attr_need_quantize; }))
+            not_processed = true;
+        if (!not_processed
+            && !node.outputs().empty()
+            && std::any_of(node.outputs().begin(), node.outputs().end(), [](output_connector &out) { return (out.attributes() & cnctr_attr_need_quantize) != cnctr_attr_need_quantize; }))
+            not_processed = true;
+
+        if (not_processed)
+        {
             for (auto &in : node.inputs())
                 context.inputs.emplace_back(&in);
             for (auto &out : node.outputs())
@@ -55,19 +63,12 @@ void add_quant_checkpoints_transform::process(transform_context &context)
     for (size_t i = 0; i < node.inputs().size(); i++)
     {
         auto &output = *node.input_at(i).connection();
-        auto q = context.graph.emplace<fake_quantize>(output.shape());
-        q->input().connect(output);
-        node.input_at(i).connect(q->output());
+        output.attributes(output.attributes() | cnctr_attr_need_quantize);
     }
 
     for (size_t i = 0; i < node.outputs().size(); i++)
     {
         auto &output = node.output_at(i);
-        auto inputs = dup(output.connections());
-        auto deq = context.graph.emplace<fake_dequantize>(output.shape());
-        deq->input().connect(output);
-
-        for (auto &in : inputs)
-            in->connect(deq->output());
+        output.attributes(output.attributes() | cnctr_attr_need_quantize);
     }
 }

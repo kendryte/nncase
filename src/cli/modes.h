@@ -34,7 +34,7 @@ struct compile_options
     std::string target = "k210";
     std::string inference_type = "uint8";
     std::string input_type = "default";
-    std::string calibrate_method = "ema";
+    std::string calibrate_method = "no_clip";
     float input_mean = 0.f;
     float input_std = 1.f;
     bool dump_ir = false;

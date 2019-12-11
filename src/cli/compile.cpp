@@ -265,8 +265,8 @@ void quantize(const compile_options &options, target &target, graph &graph)
     add_quantization_checkpoints(options, target, graph);
 
     hlir::calibrate_method cali_method;
-    if (options.calibrate_method == "ema")
-        cali_method = hlir::calibrate_method::ema;
+    if (options.calibrate_method == "no_clip")
+        cali_method = hlir::calibrate_method::no_clip;
     else if (options.calibrate_method == "l2")
         cali_method = hlir::calibrate_method::l2;
     else
@@ -278,7 +278,7 @@ void quantize(const compile_options &options, target &target, graph &graph)
     std::cout << "  4.2. Get activation ranges..." << std::endl;
     run_calibrations(target, graph, &quant, options);
 
-	if (cali_method != hlir::calibrate_method::ema)
+	if (cali_method != hlir::calibrate_method::no_clip)
     {
         // 4.3 Get activation distributions
         std::cout << "  4.3. Get activation distributions..." << std::endl;
@@ -355,7 +355,7 @@ group compile_options::parser(mode &mode)
 			option("--dump-ir").set(dump_ir) % "dump nncase ir to .dot files",
 			option("--input-type").set(input_type) % ("input type: e.g. default, float, uint8, default means equal to inference type") & value("input type", input_type),
 			option("--max-allocator-solve-secs") % ("max optimal layout solve time in secs used by allocators, 0 means don't use solver, default is " + std::to_string(max_solve_secs)) & value("max allocator solve secs", max_solve_secs),
-			option("--calibrate-method") % ("calibrate method: e.g. ema, l2, default is " + calibrate_method) & value("calibrate method", calibrate_method)
+			option("--calibrate-method") % ("calibrate method: e.g. no_clip, l2, default is " + calibrate_method) & value("calibrate method", calibrate_method)
 		));
     // clang-format on
 }
@@ -370,6 +370,7 @@ void compile(const compile_options &options)
     // 1. Import
     std::cout << "1. Import graph..." << std::endl;
     auto graph = import(options);
+    graph.assign_names();
     dump_graph(options, graph, "import");
 
     // 2. Optimize Pass 1

@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #pragma once
+#include "../graph.h"
 #include "../node.h"
 #include <xtensor/xtensor.hpp>
 
@@ -20,19 +21,21 @@ namespace nncase
 {
 namespace hlir
 {
-    class fake_quantize : public node
+    class fused_unary : public node
     {
     public:
-        DEFINE_NODE_OPCODE(op_fake_quantize);
+        DEFINE_NODE_OPCODE(op_fused_unary);
 
         input_connector &input() { return input_at(0); }
         output_connector &output() { return output_at(0); }
+        graph &subgraph() noexcept { return subgraph_; }
 
-        fake_quantize(shape_t input_shape);
+        fused_unary(graph subgraph);
 
         void compile(hlir_compile_context &context) override;
 
     private:
+        graph subgraph_;
     };
 }
 }

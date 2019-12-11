@@ -67,6 +67,7 @@ void fold_transpose_transform::process(transform_context &context)
         perm[i] = p1[p2[i]];
 
     auto tp = context.graph.emplace<transpose>(output.type(), output.shape(), perm);
+    tp->name(context.matched_nodes[1]->name());
     tp->input().connect(output);
 
     for (auto &in : dup(inputs))
@@ -142,6 +143,7 @@ void transpose_to_reshape_transform::process(transform_context &context)
     auto inputs = context.outputs[0]->connections();
 
     auto rshape = context.graph.emplace<reshape>(output.type(), output.shape(), context.matched_nodes[0]->output_at(0).shape());
+    rshape->name(context.matched_nodes[0]->name());
 
     rshape->input().connect(output);
     for (auto &in : dup(inputs))

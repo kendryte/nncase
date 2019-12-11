@@ -132,8 +132,6 @@ void nncase::cpu_target::add_quantization_broadcast(std::unordered_set<hlir::nod
 {
     using namespace hlir;
     opcodes.emplace(op_input_node);
-    opcodes.emplace(op_fake_quantize);
-    opcodes.emplace(op_fake_dequantize);
     opcodes.emplace(op_concat);
     opcodes.emplace(op_reshape);
     opcodes.emplace(op_transpose);

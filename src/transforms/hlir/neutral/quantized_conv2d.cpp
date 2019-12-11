@@ -15,8 +15,6 @@
 #include <algorithm>
 #include <hlir/ops/conv2d.h>
 #include <hlir/ops/dequantize.h>
-#include <hlir/ops/fake_dequantize.h>
-#include <hlir/ops/fake_quantize.h>
 #include <hlir/ops/quantize.h>
 #include <hlir/transforms/neutral/quantized_conv2d.h>
 #include <hlir/visitor.h>
@@ -58,21 +56,16 @@ auto quantize_bn_act(quantizer &quantizer, conv2d &conv, float sa, const quant_p
 
 bool quantized_conv2d_transform::on_try_match(node &node, transform_context &context)
 {
-    if (node.runtime_opcode() == op_fake_quantize)
+    if (auto conv = node_cast<conv2d>(node))
     {
-        auto &q = static_cast<fake_quantize &>(node);
-        if (auto conv = try_get_direct_child<conv2d>(q))
+        if (conv->input().connection()->attributes() & cnctr_attr_need_quantize
+            && conv->output().attributes() & cnctr_attr_need_quantize)
         {
-            if (auto deq = try_get_direct_child<fake_dequantize>(*conv))
-            {
-                context.inputs.emplace_back(&q.input());
-                context.outputs.emplace_back(&deq->output());
+            context.inputs.emplace_back(&conv->input());
+            context.outputs.emplace_back(&conv->output());
 
-                context.matched_nodes.emplace_back(&q);
-                context.matched_nodes.emplace_back(conv);
-                context.matched_nodes.emplace_back(deq);
-                return true;
-            }
+            context.matched_nodes.emplace_back(conv);
+            return true;
         }
     }
 
@@ -83,21 +76,24 @@ void quantized_conv2d_transform::process(transform_context &context)
 {
     auto &output = *context.inputs[0]->connection();
     auto inputs = context.outputs[0]->connections();
-    auto &old_q = static_cast<fake_quantize &>(*context.matched_nodes[0]);
-    auto &old_conv = static_cast<conv2d &>(*context.matched_nodes[1]);
-    auto &old_deq = static_cast<fake_dequantize &>(*context.matched_nodes[2]);
+    auto &old_conv = static_cast<conv2d &>(*context.matched_nodes[0]);
 
-    auto iq_p = quantizer_.get_quant_param(quantizer_.get(old_q.output()), 8);
+    auto iq_p = quantizer_.get_quant_param(quantizer_.get(output), 8);
     auto [wq_p, q_weights] = quantize_weights(quantizer_, old_conv);
-    auto yq_p = quantizer_.get_quant_param(quantizer_.get(old_deq.output()), 8);
+    auto yq_p = quantizer_.get_quant_param(quantizer_.get(old_conv.output()), 8);
     auto sa = iq_p.scale * wq_p.scale;
     auto [q_bias, act] = quantize_bn_act(quantizer_, old_conv, sa, yq_p);
 
     auto q = context.graph.emplace<quantize>(output.shape(), iq_p);
+    q->name(output.owner().name() + "/quantize");
     auto conv = context.graph.emplace<quantized_conv2d>(q->output().shape(), std::move(q_weights), std::move(q_bias), old_conv.groups(), old_conv.padding_h(),
         old_conv.padding_w(), old_conv.stride_h(), old_conv.stride_w(), old_conv.dilation_h(), old_conv.dilation_w(), -iq_p.zero_point, -wq_p.zero_point,
         act.rounded_mul(), act.shift, yq_p.zero_point);
+    conv->name(old_conv.name());
     auto deq = context.graph.emplace<dequantize>(conv->output().shape(), yq_p);
+    deq->name(old_conv.name() + "/dequantize");
+    link(old_conv.output(), deq->output(), &quantizer_);
+
     conv->input().connect(q->output());
     deq->input().connect(conv->output());
 

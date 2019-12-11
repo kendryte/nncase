@@ -14,7 +14,6 @@
  */
 #include <chrono>
 #include <hlir/ops/constant.h>
-#include <hlir/ops/fake_quantize.h>
 #include <hlir/quantizer.h>
 #include <hlir/visitor.h>
 
@@ -79,9 +78,7 @@ void quantizer::record(hlir::output_connector &connector, value_range<float> ran
     if (it == quant_ranges_.end())
         quant_ranges_.emplace(&connector, range);
     else
-        it->second = cali_method_ == calibrate_method::ema
-            ? ema_range(it->second, range)
-            : union_range(it->second, range);
+        it->second = union_range(it->second, range);
 }
 
 void quantizer::set(hlir::output_connector &connector, value_range<float> range)

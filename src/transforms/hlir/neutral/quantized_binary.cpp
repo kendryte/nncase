@@ -15,8 +15,6 @@
 #include <algorithm>
 #include <hlir/ops/binary.h>
 #include <hlir/ops/dequantize.h>
-#include <hlir/ops/fake_dequantize.h>
-#include <hlir/ops/fake_quantize.h>
 #include <hlir/ops/quantize.h>
 #include <hlir/transforms/neutral/quantized_binary.h>
 #include <hlir/visitor.h>
@@ -30,23 +28,16 @@ bool quantized_binary_transform::on_try_match(node &node, transform_context &con
 {
     if (auto b = node_cast<binary>(node))
     {
-        if (auto q1 = try_get_direct_parent<fake_quantize>(*b, 0))
+        if (b->input_a().connection()->attributes() & cnctr_attr_need_quantize
+            && b->input_b().connection()->attributes() & cnctr_attr_need_quantize
+            && b->output().attributes() & cnctr_attr_need_quantize)
         {
-            if (auto q2 = try_get_direct_parent<fake_quantize>(*b, 1))
-            {
-                if (auto deq = try_get_direct_child<fake_dequantize>(*b))
-                {
-                    context.inputs.emplace_back(&q1->input());
-                    context.inputs.emplace_back(&q2->input());
-                    context.outputs.emplace_back(&deq->output());
+            context.inputs.emplace_back(&b->input_a());
+            context.inputs.emplace_back(&b->input_b());
+            context.outputs.emplace_back(&b->output());
 
-                    context.matched_nodes.emplace_back(q1);
-                    context.matched_nodes.emplace_back(q2);
-                    context.matched_nodes.emplace_back(b);
-                    context.matched_nodes.emplace_back(deq);
-                    return true;
-                }
-            }
+            context.matched_nodes.emplace_back(b);
+            return true;
         }
     }
 
@@ -58,14 +49,11 @@ void quantized_binary_transform::process(transform_context &context)
     auto &output1 = *context.inputs[0]->connection();
     auto &output2 = *context.inputs[1]->connection();
     auto inputs = context.outputs[0]->connections();
-    auto &old_q1 = static_cast<fake_quantize &>(*context.matched_nodes[0]);
-    auto &old_q2 = static_cast<fake_quantize &>(*context.matched_nodes[1]);
-    auto &old_b = static_cast<binary &>(*context.matched_nodes[2]);
-    auto &old_deq = static_cast<fake_dequantize &>(*context.matched_nodes[3]);
+    auto &old_b = static_cast<binary &>(*context.matched_nodes[0]);
 
-    auto i1q_p = quantizer_.get_quant_param(quantizer_.get(old_q1.output()), 8);
-    auto i2q_p = quantizer_.get_quant_param(quantizer_.get(old_q2.output()), 8);
-    auto yq_p = quantizer_.get_quant_param(quantizer_.get(old_deq.output()), 8);
+    auto i1q_p = quantizer_.get_quant_param(quantizer_.get(output1), 8);
+    auto i2q_p = quantizer_.get_quant_param(quantizer_.get(output2), 8);
+    auto yq_p = quantizer_.get_quant_param(quantizer_.get(old_b.output()), 8);
     float sa;
     fixed_mul fix_a, fix_b;
 
@@ -96,11 +84,17 @@ void quantized_binary_transform::process(transform_context &context)
     auto fix_y = quantizer_.get_fixed_mul(yq_p.scale / sa, 32, 32, true);
 
     auto q1 = context.graph.emplace<quantize>(output1.shape(), i1q_p);
+    q1->name(output1.owner().name() + "/quantize");
     auto q2 = context.graph.emplace<quantize>(output2.shape(), i2q_p);
+    q2->name(output2.owner().name() + "/quantize");
     auto b = context.graph.emplace<quantized_binary>(old_b.binary_op(), q1->output().shape(), q2->output().shape(),
         -i1q_p.zero_point, fix_a.rounded_mul(), fix_a.shift, -i2q_p.zero_point, fix_b.rounded_mul(), fix_b.shift,
         fix_y.rounded_mul(), fix_y.shift, yq_p.zero_point);
+    b->name(old_b.name());
     auto deq = context.graph.emplace<dequantize>(b->output().shape(), yq_p);
+    deq->name(old_b.name() + "/dequantize");
+    link(old_b.output(), deq->output(), &quantizer_);
+
     b->input_a().connect(q1->output());
     b->input_b().connect(q2->output());
     deq->input().connect(b->output());

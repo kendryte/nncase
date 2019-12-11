@@ -107,8 +107,10 @@ void fold_pad_strided_slice_transform::process(transform_context &context)
     }
 
     auto p = context.graph.emplace<pad>(old_p.input().type(), output.shape(), paddings, old_p.pad_value());
+    p->name(old_p.name());
     auto slice = context.graph.emplace<strided_slice>(p->output().type(), p->output().shape(), begin, end, old_slice.strides(),
         old_slice.begin_mask(), old_slice.end_mask(), old_slice.ellipsis_mask(), old_slice.new_axis_mask(), old_slice.shrink_axis_mask());
+    slice->name(old_slice.name());
     slice->input().connect(p->output());
 
     p->input().connect(output);
@@ -151,6 +153,7 @@ void strided_slice_to_pad_transform::process(transform_context &context)
         paddings[i] = { -begin[i], end[i] - (int32_t)output.shape()[i] };
 
     auto p = context.graph.emplace<pad>(output.type(), output.shape(), paddings, 0); // dummy pad value because of cropping
+    p->name(old_slice.name());
 
     p->input().connect(output);
     for (auto &in : dup(inputs))

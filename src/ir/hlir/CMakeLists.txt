@@ -7,6 +7,7 @@ set(SRCS connectors.cpp
          placeholders.cpp
          ops/conv2d.cpp
          ops/conv2d_transpose.cpp
+         ops/fused_unary.cpp
          ops/matmul.cpp
          ops/transpose.cpp
          ops/reduce.cpp
@@ -15,8 +16,6 @@ set(SRCS connectors.cpp
          ops/concat.cpp
          ops/clamp.cpp
          ops/constant.cpp
-         ops/fake_quantize.cpp
-         ops/fake_dequantize.cpp
          ops/quantize.cpp
          ops/dequantize.cpp
          ops/unary.cpp
