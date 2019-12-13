@@ -26,7 +26,7 @@ bool add_quant_checkpoints_transform::on_try_match(node &node, transform_context
 {
     if (opcodes_.find(node.runtime_opcode()) != opcodes_.end())
     {
-        if (node.runtime_opcode() == op_binary
+        if ((node.runtime_opcode() == op_binary || node.runtime_opcode() == op_matmul)
             && xt::compute_size(node.output_at(0).shape()) <= QUANT_THRESHOLD)
         {
             return false;
