@@ -272,13 +272,21 @@ void quantize(const compile_options &options, target &target, graph &graph)
     else
         throw std::invalid_argument("Invalid calibrate method: " + options.calibrate_method);
 
+    if (options.use_dataset_as_input_stat)
+    {
+        for (auto &in : graph.inputs())
+        {
+            in->output().attributes(in->output().attributes() | hlir::cnctr_attr_need_quantize);
+        }
+    }
+
     // quantize
     quantizer quant(cali_method, 2048);
     // 4.2 Get activation ranges
     std::cout << "  4.2. Get activation ranges..." << std::endl;
     run_calibrations(target, graph, &quant, options);
 
-	if (cali_method != hlir::calibrate_method::no_clip)
+    if (cali_method != hlir::calibrate_method::no_clip)
     {
         // 4.3 Get activation distributions
         std::cout << "  4.3. Get activation distributions..." << std::endl;
@@ -350,8 +358,8 @@ group compile_options::parser(mode &mode)
 			option("--dataset") % "calibration dataset, used in post quantization" & value("dataset path", dataset),
 			option("--dataset-format") % ("datset format: e.g. image, raw default is " + dataset_format) & value("dataset format", dataset_format),
 			option("--inference-type") % ("inference type: e.g. float, uint8 default is " + inference_type) & value("inference type", inference_type),
-			option("--input-mean") % ("input mean, default is " + std::to_string(input_mean)) & value("input mean", input_mean),
-			option("--input-std") % ("input std, default is " + std::to_string(input_std)) & value("input std", input_std),
+			option("--input-mean").set(use_dataset_as_input_stat, false) % ("input mean, default is " + std::to_string(input_mean)) & value("input mean", input_mean),
+			option("--input-std").set(use_dataset_as_input_stat, false) % ("input std, default is " + std::to_string(input_std)) & value("input std", input_std),
 			option("--dump-ir").set(dump_ir) % "dump nncase ir to .dot files",
 			option("--input-type").set(input_type) % ("input type: e.g. default, float, uint8, default means equal to inference type") & value("input type", input_type),
 			option("--max-allocator-solve-secs") % ("max optimal layout solve time in secs used by allocators, 0 means don't use solver, default is " + std::to_string(max_solve_secs)) & value("max allocator solve secs", max_solve_secs),
