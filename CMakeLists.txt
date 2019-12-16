@@ -18,7 +18,11 @@ endif()
 
 conan_check()
 conan_add_remote(NAME bincrafts URL https://api.bintray.com/conan/bincrafters/public-conan)
-conan_add_remote(NAME sunnycase INDEX 0 URL https://conan.sunnycase.moe)
+if (APPLE)
+    conan_add_remote(NAME sunnycase URL https://conan.sunnycase.moe)
+else()
+    conan_add_remote(NAME sunnycase INDEX 0 URL https://conan.sunnycase.moe)
+endif()
 conan_cmake_run(CONANFILE conanfile.txt
                 BASIC_SETUP CMAKE_TARGETS
                 SETTINGS compiler.cppstd=17
