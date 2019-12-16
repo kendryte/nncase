@@ -15,7 +15,7 @@ class SliceModule(tf.Module):
 
   @tf.function(input_signature=[tf.TensorSpec([1,2,3], tf.float32)])
   def __call__(self, x):
-    return tf.slice(x, [0,0,0], [1,2,2])
+    return x[:,:,1:-1]
 
 module = SliceModule()
 

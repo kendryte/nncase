@@ -19,6 +19,25 @@ using namespace nncase;
 using namespace nncase::importer;
 using namespace nncase::hlir;
 
+DEFINE_TFLITE_LOWER(SLICE)
+{
+    auto &input = get_tensor(op.inputs(), 0);
+    auto begin = load_axis<int32_t>(get_tensor(op.inputs(), 1));
+    auto size = load_axis<int32_t>(get_tensor(op.inputs(), 2));
+    axis_t end(begin.size());
+    for (size_t i = 0; i < begin.size(); i++)
+        end[i] = begin[i] + size[i];
+    axis_t strides(begin.size());
+    for (size_t i = 0; i < begin.size(); i++)
+        strides[i] = 1;
+
+    auto &options = *op.builtin_options_as_SliceOptions();
+    auto node = graph_.emplace<strided_slice>(dt_float32, get_shape(input.shape()), begin, end, strides, 0, 0, 0, 0, 0);
+
+    input_tensors_.emplace(&node->input(), op.inputs()->Get(0));
+    output_tensors_.emplace(op.outputs()->Get(0), &node->output());
+}
+
 DEFINE_TFLITE_LOWER(STRIDED_SLICE)
 {
     auto &input = get_tensor(op.inputs(), 0);
