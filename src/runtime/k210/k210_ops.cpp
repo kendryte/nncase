@@ -47,33 +47,42 @@ void kpu_conv2d_normal(kpu_layer_argument_t &layer, plic_irq_callback_t callback
 {
     kpu->interrupt_clear.reg = 0b111;
     kpu->interrupt_mask.reg = 0b110;
+    layer.dma_parameter.data.send_data_out = 0;
     layer.interrupt_enabe.data.int_en = 1;
     plic_irq_register(IRQN_AI_INTERRUPT, callback, userdata);
     plic_irq_enable(IRQN_AI_INTERRUPT);
     kpu_send_layer(layer);
-    usleep(1);
 }
 
-void kpu_conv2d_output(kpu_layer_argument_t &layer, dmac_channel_number_t dma_ch, uint8_t *dest, plic_irq_callback_t callback, void *userdata)
-{
-    kpu->interrupt_clear.reg = 0b111;
-    kpu->interrupt_mask.reg = 0b111;
-    layer.dma_parameter.data.send_data_out = 1;
-    sysctl_dma_select((sysctl_dma_channel_t)dma_ch, SYSCTL_DMA_SELECT_AI_RX_REQ);
-    dmac_set_irq(dma_ch, callback, userdata, 1);
-    dmac_set_single_mode(dma_ch, (void *)(&kpu->fifo_data_out), dest, DMAC_ADDR_NOCHANGE, DMAC_ADDR_INCREMENT,
-        DMAC_MSIZE_8, DMAC_TRANS_WIDTH_64, (layer.dma_parameter.data.dma_total_byte + 8) / 8);
-    kpu_send_layer(layer);
-}
+static volatile int g_ai_done = 0;
 
 int kpu_plic_thunk(void *userdata)
 {
     kpu->interrupt_clear.reg = 0b111;
     kpu->interrupt_mask.reg = 0b111;
 
-    auto &ctx = *reinterpret_cast<k210_interpreter_context *>(userdata);
-    (ctx.interpreter->*ctx.step)();
+    g_ai_done = 1;
     return 0;
+}
+
+int kpu_dma_thunk(void *userdata)
+{
+    return 0;
+}
+
+void kpu_conv2d_output(kpu_layer_argument_t &layer, dmac_channel_number_t dma_ch, uint8_t *dest, plic_irq_callback_t callback, void *userdata)
+{
+    kpu->interrupt_clear.reg = 0b111;
+    kpu->interrupt_mask.reg = 0b110;
+    layer.interrupt_enabe.data.int_en = 1;
+    layer.dma_parameter.data.send_data_out = 1;
+    plic_irq_register(IRQN_AI_INTERRUPT, callback, userdata);
+    plic_irq_enable(IRQN_AI_INTERRUPT);
+    sysctl_dma_select((sysctl_dma_channel_t)dma_ch, SYSCTL_DMA_SELECT_AI_RX_REQ);
+    dmac_set_irq(dma_ch, kpu_dma_thunk, userdata, 1);
+    dmac_set_single_mode(dma_ch, (void *)(&kpu->fifo_data_out), dest, DMAC_ADDR_NOCHANGE, DMAC_ADDR_INCREMENT,
+        DMAC_MSIZE_8, DMAC_TRANS_WIDTH_64, (layer.dma_parameter.data.dma_total_byte + 1 + 8) / 8 * 1);
+    kpu_send_layer(layer);
 }
 
 void kpu_upload_dma(dmac_channel_number_t dma_ch, const uint8_t *src, uint8_t *dest, size_t input_size, plic_irq_callback_t callback, void *userdata)
@@ -81,7 +90,7 @@ void kpu_upload_dma(dmac_channel_number_t dma_ch, const uint8_t *src, uint8_t *d
     dmac_set_irq(dma_ch, callback, userdata, 1);
     dmac_set_single_mode(dma_ch, (void *)src, (void *)dest, DMAC_ADDR_INCREMENT, DMAC_ADDR_INCREMENT,
         DMAC_MSIZE_16, DMAC_TRANS_WIDTH_64, input_size / 8);
-    usleep(1);
+    dmac_wait_done(dma_ch);
 }
 
 int kpu_dma_plic_thunk(void *userdata)
@@ -110,7 +119,7 @@ namespace runtime
                 ctx.interpreter = &interpreter;
                 ctx.step = step;
                 kpu_upload_dma(interpreter.dma_ch(), input.data(), output.data(), input.size(), kpu_dma_plic_thunk, &ctx);
-                return kcr_async;
+                return kcr_done;
             }
 #endif
             kernels::k210::kpu_upload(input.data(), output.data(), options.in_shape);
@@ -119,22 +128,26 @@ namespace runtime
 
         kernel_call_result kpu_conv2d(kpu_conv2d_options &options, interpreter_t &interpreter, interpreter_step_t step)
         {
-#if NNCASE_TARGET_K210_SIMULATOR
-            auto input = interpreter.memory_at<uint8_t>({ mem_k210_kpu, dt_uint8, (uint32_t)options.layer.image_addr.data.image_src_addr * 64, 1 });
-            auto kpu_out = interpreter.memory_at<uint8_t>({ mem_k210_kpu, dt_uint8, (uint32_t)options.layer.image_addr.data.image_dst_addr * 64, 1 });
-
             auto in_h = static_cast<int32_t>(options.layer.image_size.data.i_col_high + 1);
             auto in_w = static_cast<int32_t>(options.layer.image_size.data.i_row_wid + 1);
             auto in_ch = static_cast<int32_t>(options.layer.image_channel_num.data.i_ch_num + 1);
-            runtime_shape_t in_shape { options.batches, in_ch, in_h, in_w };
-            auto in_fmap_size = kernels::details::compute_size(in_shape);
 
             auto out_h = static_cast<int32_t>(options.layer.image_size.data.o_col_high + 1);
             auto out_w = static_cast<int32_t>(options.layer.image_size.data.o_row_wid + 1);
             auto out_ch = static_cast<int32_t>(options.layer.image_channel_num.data.o_ch_num + 1);
+
+            auto is_depthwise = options.layer.interrupt_enabe.data.depth_wise_layer != 0;
+
+            auto input = interpreter.memory_at<uint8_t>({ mem_k210_kpu, dt_uint8, (uint32_t)options.layer.image_addr.data.image_src_addr * 64, 1 });
+            auto kpu_out = interpreter.memory_at<uint8_t>({ mem_k210_kpu, dt_uint8, (uint32_t)options.layer.image_addr.data.image_dst_addr * 64, 1 });
+
+            runtime_shape_t in_shape { options.batches, in_ch, in_h, in_w };
+            runtime_shape_t out_shape { options.batches, out_ch, out_h, out_w };
+#if NNCASE_TARGET_K210_SIMULATOR
+            auto in_fmap_size = kernels::details::compute_size(in_shape);
+
             runtime_shape_t conv_out_shape { options.batches, out_ch, in_h, in_w };
             auto conv_out_fmap_size = kernels::details::compute_size(conv_out_shape);
-            runtime_shape_t out_shape { options.batches, out_ch, out_h, out_w };
             auto out_fmap_size = kernels::details::compute_size(out_shape);
 
             auto input_tmp = std::make_unique<uint8_t[]>(in_fmap_size);
@@ -143,7 +156,6 @@ namespace runtime
             auto output_tmp = std::make_unique<uint8_t[]>(out_fmap_size);
 
             kernels::k210::kpu_download(input.data(), input_tmp.get(), in_shape);
-            auto is_depthwise = options.layer.interrupt_enabe.data.depth_wise_layer != 0;
             auto filter_size = get_kpu_filter_size((kpu_filter_type_t)options.layer.kernel_pool_type_cfg.data.kernel_type);
             auto pad_value = (uint8_t)options.layer.kernel_pool_type_cfg.data.pad_value;
             auto arg_x = (int32_t)kernels::details::to_signed<24>(options.layer.conv_value.data.arg_x);
@@ -200,18 +212,19 @@ namespace runtime
             auto &ctx = interpreter.context();
             ctx.interpreter = &interpreter;
             ctx.step = step;
+            g_ai_done = 0;
+
+            kpu_conv2d_normal(options.layer, kpu_plic_thunk, &ctx);
+            while (!g_ai_done)
+                ;
 
             if (options.main_mem_output.size)
             {
                 auto main_output = interpreter.memory_at<uint8_t>(options.main_mem_output);
-                kpu_conv2d_output(options.layer, interpreter.dma_ch(), main_output.data(), kpu_plic_thunk, &ctx);
-            }
-            else
-            {
-                kpu_conv2d_normal(options.layer, kpu_plic_thunk, &ctx);
+                kernels::k210::kpu_download(kpu_out.data(), main_output.data(), out_shape);
             }
 
-            return kcr_async;
+            return kcr_done;
 #endif
         }
     }
