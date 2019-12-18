@@ -42,7 +42,10 @@ namespace hlir
 
         void assign_names();
         void collect();
-        void compile(hlir_compile_context& context);
+        void compile(hlir_compile_context &context);
+        void flatten_subgraph(hlir_compile_context &context,
+            const std::unordered_map<hlir::output_connector *, llir::output_connector *> &inputs,
+            const std::unordered_map<hlir::input_connector *, llir::input_connector *> &outputs);
 
     private:
         std::vector<std::unique_ptr<node>> nodes_;

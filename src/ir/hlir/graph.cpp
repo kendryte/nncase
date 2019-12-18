@@ -82,3 +82,48 @@ void graph::compile(hlir_compile_context &context)
         }
     }
 }
+
+void graph::flatten_subgraph(hlir_compile_context &context,
+    const std::unordered_map<hlir::output_connector *, llir::output_connector *> &inputs,
+    const std::unordered_map<hlir::input_connector *, llir::input_connector *> &outputs)
+{
+    auto visitor = make_relay_ir_visitor([&](node &node) {
+        if (node.runtime_opcode() != op_input_node
+            && node.runtime_opcode() != op_output_node)
+            node.compile(context);
+    });
+    visitor.visit(*this);
+
+    for (auto &&in : context.h_inputs)
+    {
+        auto out = context.h_outputs.find(in.first->connection());
+        if (out != context.h_outputs.end())
+        {
+            in.second->connect(*out->second);
+        }
+        else
+        {
+            auto out = inputs.find(in.first->connection());
+            if (out != inputs.end())
+                in.second->connect(*out->second);
+        }
+    }
+
+    for (auto &&out : context.h_outputs)
+    {
+        for (auto &&conn : out.first->connections())
+        {
+            auto in = context.h_inputs.find(conn);
+            if (in != context.h_inputs.end())
+            {
+                out.second->connect(*in->second);
+            }
+            else
+            {
+                auto in = outputs.find(conn);
+                if (in != outputs.end())
+                    out.second->connect(*in->second);
+            }
+        }
+    }
+}

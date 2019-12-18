@@ -36,5 +36,15 @@ fused_unary::fused_unary(graph subgraph)
 
 void fused_unary::compile(hlir_compile_context &context)
 {
-    throw std::runtime_error("Not implemented");
+    std::unordered_map<hlir::output_connector *, llir::output_connector *> inputs;
+    std::unordered_map<hlir::input_connector *, llir::input_connector *> outputs;
+
+    auto l_i = context.graph.emplace<llir::memory_copy>(input().type(), input().shape(), input().type(), input().shape());
+    context.add_input(input(), l_i->input());
+    inputs.emplace(&subgraph_.inputs()[0]->output(), &l_i->output());
+
+    auto l_o = context.graph.emplace<llir::memory_copy>(output().type(), output().shape(), output().type(), output().shape());
+    context.add_output(output(), l_o->output());
+    outputs.emplace(&subgraph_.outputs()[0]->input(), &l_i->output());
+    subgraph_.flatten_subgraph(context, inputs, outputs);
 }
