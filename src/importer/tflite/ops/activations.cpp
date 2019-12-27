@@ -25,7 +25,6 @@ using namespace nncase::hlir;
 DEFINE_TFLITE_LOWER(RELU)
 {
     auto &input = get_tensor(op.inputs(), 0);
-    auto &options = *op.builtin_options_as_LeakyReluOptions();
     auto in_shape = get_shape(input.shape());
 
     auto zero = graph_.emplace<constant>(0.f);

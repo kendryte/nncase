@@ -46,7 +46,7 @@
 | Select |❌|
 | Shape |❌|
 | Sin |✅|
-| Slice |❌|
+| Slice |✅|
 | Softmax |✅|
 | SpaceToDepth |❌|
 | SpaceToBatchND |❌|
