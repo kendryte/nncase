@@ -23,6 +23,7 @@
 #include <hlir/transforms/neutral/fold_transpose.h>
 #include <hlir/transforms/neutral/fuse_clamp.h>
 #include <hlir/transforms/neutral/fuse_pad.h>
+#include <hlir/transforms/neutral/fuse_unary.h>
 #include <hlir/transforms/neutral/quantized_binary.h>
 #include <hlir/transforms/neutral/quantized_conv2d.h>
 #include <hlir/transforms/neutral/quantized_matmul.h>
@@ -117,9 +118,16 @@ void nncase::cpu_target::add_quantization_checkpoints(hlir::transforms::pass_man
     using namespace nncase::hlir;
     using namespace nncase::hlir::transforms;
 
-    pass p;
-    p.emplace<add_quant_checkpoints_transform>(add_quant_checkpoints_transform { op_conv2d, op_matmul, op_binary });
-    pass_mgr.add_pass(std::move(p));
+    {
+        pass p;
+        p.emplace<fuse_unary_transform>();
+        pass_mgr.add_pass(std::move(p));
+    }
+    {
+        pass p;
+        p.emplace<add_quant_checkpoints_transform>(add_quant_checkpoints_transform { op_conv2d, op_matmul, op_binary, op_fused_unary });
+        pass_mgr.add_pass(std::move(p));
+    }
 }
 
 void nncase::cpu_target::optimize_quantize(hlir::quantizer &quantizer, hlir::transforms::pass_manager &pass_mgr)

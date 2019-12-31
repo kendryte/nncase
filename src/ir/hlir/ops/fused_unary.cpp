@@ -45,6 +45,6 @@ void fused_unary::compile(hlir_compile_context &context)
 
     auto l_o = context.graph.emplace<llir::memory_copy>(output().type(), output().shape(), output().type(), output().shape());
     context.add_output(output(), l_o->output());
-    outputs.emplace(&subgraph_.outputs()[0]->input(), &l_i->output());
+    outputs.emplace(&subgraph_.outputs()[0]->input(), &l_o->input());
     subgraph_.flatten_subgraph(context, inputs, outputs);
 }
