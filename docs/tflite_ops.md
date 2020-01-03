@@ -55,6 +55,7 @@
 | Sqrt |✅|
 | Square |✅|
 | Squeeze |❌|
+| StridedSlice |✅|
 | Sub |✅|
 | Sum |✅|
 | Tile |❌|
