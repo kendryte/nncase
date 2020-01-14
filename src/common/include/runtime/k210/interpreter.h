@@ -40,6 +40,7 @@ namespace runtime
             dmac_channel_number_t dma_ch() const noexcept { return dma_ch_; }
             void dma_ch(dmac_channel_number_t dma_ch) noexcept { dma_ch_ = dma_ch; }
             k210_interpreter_context &context() noexcept { return context_; }
+            clock_t::time_point get_now() const noexcept override;
 #endif
 
         protected:

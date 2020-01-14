@@ -35,7 +35,6 @@ DEFINE_CAFFE_LOWER(Softmax)
     auto exp = graph_.emplace<unary>(unary_exp, sub->output().shape());
     auto sum = graph_.emplace<reduce>(reduce_sum, exp->output().shape(), reduce_axis, 0.f, true);
     auto div = graph_.emplace<binary>(binary_div, exp->output().shape(), sum->output().shape(), value_range<float>::full());
-    div->name(op.name());
 
     sub->input_b().connect(max->output());
     exp->input().connect(sub->output());

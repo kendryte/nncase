@@ -28,20 +28,35 @@ namespace kernels
         void binary(const float *input_a, const float *input_b, float *output, const runtime_shape_t &in_a_shape,
             const runtime_shape_t &in_b_shape, const runtime_shape_t &out_shape, const value_range<float> &fused_activation, TOp &&op)
         {
-            for (int32_t d0 = 0; d0 < out_shape[0]; d0++)
+            // opt. no broadcast
+            if (in_a_shape == in_b_shape)
             {
-                for (int32_t d1 = 0; d1 < out_shape[1]; d1++)
+                auto size = kernels::details::compute_size(in_a_shape);
+                for (size_t i = 0; i < size; i++)
                 {
-                    for (int32_t d2 = 0; d2 < out_shape[2]; d2++)
+                    const auto a = input_a[i];
+                    const auto b = input_b[i];
+                    output[i] = kernels::details::apply_activation(op(a, b), fused_activation);
+                }
+            }
+            // fallback
+            else
+            {
+                for (int32_t d0 = 0; d0 < out_shape[0]; d0++)
+                {
+                    for (int32_t d1 = 0; d1 < out_shape[1]; d1++)
                     {
-                        for (int32_t d3 = 0; d3 < out_shape[3]; d3++)
+                        for (int32_t d2 = 0; d2 < out_shape[2]; d2++)
                         {
-                            runtime_shape_t in_off = { d0, d1, d2, d3 };
-                            const auto in_a_off = kernels::details::get_reduced_offset(in_off, in_a_shape);
-                            const auto in_b_off = kernels::details::get_reduced_offset(in_off, in_b_shape);
-                            const auto a = input_a[offset(in_a_shape, in_a_off)];
-                            const auto b = input_b[offset(in_b_shape, in_b_off)];
-                            output[offset(out_shape, in_off)] = kernels::details::apply_activation(op(a, b), fused_activation);
+                            for (int32_t d3 = 0; d3 < out_shape[3]; d3++)
+                            {
+                                runtime_shape_t in_off = { d0, d1, d2, d3 };
+                                const auto in_a_off = kernels::details::get_reduced_offset(in_off, in_a_shape);
+                                const auto in_b_off = kernels::details::get_reduced_offset(in_off, in_b_shape);
+                                const auto a = input_a[offset(in_a_shape, in_a_off)];
+                                const auto b = input_b[offset(in_b_shape, in_b_off)];
+                                output[offset(out_shape, in_off)] = kernels::details::apply_activation(op(a, b), fused_activation);
+                            }
                         }
                     }
                 }
@@ -53,24 +68,43 @@ namespace kernels
             const runtime_shape_t &in_b_shape, const runtime_shape_t &out_shape, int32_t input_a_offset, int32_t input_a_mul, int32_t input_a_shift,
             int32_t input_b_offset, int32_t input_b_mul, int32_t input_b_shift, int32_t output_mul, int32_t output_shift, int32_t output_offset, TOp &&op)
         {
-            for (int32_t d0 = 0; d0 < out_shape[0]; d0++)
+            // opt. no broadcast
+            if (in_a_shape == in_b_shape)
             {
-                for (int32_t d1 = 0; d1 < out_shape[1]; d1++)
+                auto size = kernels::details::compute_size(in_a_shape);
+                for (size_t i = 0; i < size; i++)
                 {
-                    for (int32_t d2 = 0; d2 < out_shape[2]; d2++)
-                    {
-                        for (int32_t d3 = 0; d3 < out_shape[3]; d3++)
-                        {
-                            runtime_shape_t in_off = { d0, d1, d2, d3 };
-                            const auto in_a_off = kernels::details::get_reduced_offset(in_off, in_a_shape);
-                            const auto in_b_off = kernels::details::get_reduced_offset(in_off, in_b_shape);
-                            auto a = (int32_t)input_a[offset(in_a_shape, in_a_off)];
-                            auto b = (int32_t)input_b[offset(in_b_shape, in_b_off)];
-                            a = runtime::mul_and_carry_shift(a + input_a_offset, input_a_mul, input_a_shift);
-                            b = runtime::mul_and_carry_shift(b + input_b_offset, input_b_mul, input_b_shift);
+                    auto a = (int32_t)input_a[i];
+                    auto b = (int32_t)input_b[i];
+                    a = runtime::mul_and_carry_shift(a + input_a_offset, input_a_mul, input_a_shift);
+                    b = runtime::mul_and_carry_shift(b + input_b_offset, input_b_mul, input_b_shift);
 
-                            auto output_val = runtime::mul_and_carry_shift(op(a, b), output_mul, output_shift);
-                            output[offset(out_shape, in_off)] = (uint8_t)std::clamp(output_val + output_offset, 0, 255);
+                    auto output_val = runtime::mul_and_carry_shift(op(a, b), output_mul, output_shift);
+                    output[i] = (uint8_t)std::clamp(output_val + output_offset, 0, 255);
+                }
+            }
+            // fallback
+            else
+            {
+                for (int32_t d0 = 0; d0 < out_shape[0]; d0++)
+                {
+                    for (int32_t d1 = 0; d1 < out_shape[1]; d1++)
+                    {
+                        for (int32_t d2 = 0; d2 < out_shape[2]; d2++)
+                        {
+                            for (int32_t d3 = 0; d3 < out_shape[3]; d3++)
+                            {
+                                runtime_shape_t in_off = { d0, d1, d2, d3 };
+                                const auto in_a_off = kernels::details::get_reduced_offset(in_off, in_a_shape);
+                                const auto in_b_off = kernels::details::get_reduced_offset(in_off, in_b_shape);
+                                auto a = (int32_t)input_a[offset(in_a_shape, in_a_off)];
+                                auto b = (int32_t)input_b[offset(in_b_shape, in_b_off)];
+                                a = runtime::mul_and_carry_shift(a + input_a_offset, input_a_mul, input_a_shift);
+                                b = runtime::mul_and_carry_shift(b + input_b_offset, input_b_mul, input_b_shift);
+
+                                auto output_val = runtime::mul_and_carry_shift(op(a, b), output_mul, output_shift);
+                                output[offset(out_shape, in_off)] = (uint8_t)std::clamp(output_val + output_offset, 0, 255);
+                            }
                         }
                     }
                 }

@@ -31,9 +31,9 @@ namespace runtime
 
     class interpreter_base
     {
+    public:
         using clock_t = std::chrono::system_clock;
 
-    public:
         bool try_load_model(const uint8_t *buffer);
         uint32_t model_size(const uint8_t *buffer);
 

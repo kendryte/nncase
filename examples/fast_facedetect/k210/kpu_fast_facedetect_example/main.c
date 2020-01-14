@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <string.h>
-#include <unistd.h>
 #include <stdlib.h>
 #include "fpioa.h"
 #include "lcd.h"
@@ -19,6 +18,7 @@
 #define PLL0_OUTPUT_FREQ 800000000UL
 #define PLL1_OUTPUT_FREQ 400000000UL
 
+#define RFB 0
 #define TEST 0
 
 extern const unsigned char gImage_image[] __attribute__((aligned(128)));
@@ -26,7 +26,11 @@ extern const unsigned char gImage_image[] __attribute__((aligned(128)));
 #if TEST
 INCBIN(out, "face.bin");
 #else
-INCBIN(model, "ultra_face.kmodel");
+#if RFB
+INCBIN(model, "RFB-320.kmodel");
+#else
+INCBIN(model, "slim-320.kmodel");
+#endif
 #endif
 kpu_model_context_t task;
 
@@ -160,7 +164,7 @@ int main(void)
     }
 #endif
 
-    ultra_face_init(320, 240, 0.15, 0.05, -1);
+    ultra_face_init(320, 240, 0.3, 0.05, -1);
 
     {
         g_ai_done_flag = 0;
@@ -172,8 +176,13 @@ int main(void)
         float *boxes;
         float *scores;
         size_t output_size;
+#if RFB
         kpu_get_output(&task, 0, &boxes, &output_size);
         kpu_get_output(&task, 1, &scores, &output_size);
+#else
+        kpu_get_output(&task, 1, &boxes, &output_size);
+        kpu_get_output(&task, 0, &scores, &output_size);
+#endif
 #else
         float *boxes = out_data;
         float *scores = out_data + 4420 * 4 * sizeof(float);

@@ -11,7 +11,7 @@ python img2c.py face.jpg
 ```
 3. Compile your caffe model to kmodel.
 ```bash
-~/nncase/ncc compile model/RFB-320.caffemodel k210/kpu_fast_facedetect_example/ultra_face.kmodel -i caffe -o kmodel -t k210 --dataset images
+~/nncase/ncc compile model/slim-320.caffemodel k210/kpu_fast_facedetect_example/slim-320.kmodel -i caffe -o kmodel -t k210 --dataset images
 ```
 4. Compile your program and run.
 Link to your KD233 development board.
@@ -21,6 +21,11 @@ make
 python3 kflash.py -t kpu_fast_facedetect_example.bin
 ```
 ## Result
+Model|Inference Latency(ms)
+------|--------
+[slim-320](https://github.com/kendryte/nncase/tree/master/examples/fast_facedetect/k210/kpu_fast_facedetect_example/slim-320.kmodel)|65.6
+[RFB-320](https://github.com/kendryte/nncase/tree/master/examples/fast_facedetect/k210/kpu_fast_facedetect_example/RFB-320.kmodel)|796.2
+
 ![demo](demo.png)
 
 ## Credits

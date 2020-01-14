@@ -9,5 +9,6 @@
 | Permute |✅|
 | ReLU |✅|
 | Reshape |✅|
+| Slice |✅|
 | Softmax |✅|
 | Split |✅|

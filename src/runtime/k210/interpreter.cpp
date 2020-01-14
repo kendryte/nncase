@@ -13,6 +13,9 @@
  * limitations under the License.
  */
 #include <runtime/k210/interpreter.h>
+#if !NNCASE_TARGET_K210_SIMULATOR
+#include <sysctl.h>
+#endif
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -48,3 +51,11 @@ xtl::span<uint8_t> interpreter::memory_at(const memory_range &range) const noexc
 
     return interpreter_base::memory_at(range);
 }
+
+#if !NNCASE_TARGET_K210_SIMULATOR
+interpreter::clock_t::time_point interpreter::get_now() const noexcept
+{
+    auto micro = std::chrono::microseconds(sysctl_get_time_us());
+    return clock_t::time_point(std::chrono::duration_cast<clock_t::duration>(micro));
+}
+#endif

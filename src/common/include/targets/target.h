@@ -15,6 +15,7 @@
 #pragma once
 #include <hlir/quantizer.h>
 #include <hlir/transforms/pass.h>
+#include <llir/transforms/pass.h>
 #include <memory>
 #include <scheduler/memory_allocator.h>
 #include <unordered_map>
@@ -43,6 +44,7 @@ public:
     virtual void add_quantization_checkpoints(hlir::transforms::pass_manager &pass_mgr) = 0;
     virtual void optimize_quantize(hlir::quantizer &quantizer, hlir::transforms::pass_manager &pass_mgr) = 0;
     virtual void add_quantization_broadcast(std::unordered_set<hlir::node_opcode> &opcodes) = 0;
+    virtual void optimize_llir(llir::transforms::pass_manager &pass_mgr) = 0;
 
 protected:
     target_options options_;

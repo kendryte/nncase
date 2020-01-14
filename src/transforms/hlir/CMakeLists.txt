@@ -22,7 +22,7 @@ set(SRCS transform.cpp
          k210/fold_kpu_upload.cpp
          k210/fake_piecewise_linear.cpp)
 
-add_library(transforms STATIC ${SRCS})
-target_include_directories(transforms PUBLIC ../include)
-target_link_libraries(transforms PUBLIC hlir evaluator)
-target_link_libraries(transforms PRIVATE CONAN_PKG::range-v3)
+add_library(hlir_transforms STATIC ${SRCS})
+target_include_directories(hlir_transforms PUBLIC ../include)
+target_link_libraries(hlir_transforms PUBLIC hlir evaluator)
+target_link_libraries(hlir_transforms PRIVATE CONAN_PKG::range-v3)

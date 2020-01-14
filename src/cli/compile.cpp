@@ -330,6 +330,14 @@ void quantize(const compile_options &options, target &target, graph &graph)
 #endif
 }
 
+void optimize_pass3(const compile_options &options, target &target, llir::graph &graph)
+{
+    llir::transforms::pass_manager mgr(graph, target);
+    target.optimize_llir(mgr);
+    mgr.run();
+    dump_graph(options, graph, "optimize_3");
+}
+
 void gencode(target &target, llir::graph &graph, const compile_options &options)
 {
     SCHEDULE_IMPL(graph, options.max_solve_secs);
@@ -401,8 +409,12 @@ void compile(const compile_options &options)
     graph.compile(llir);
     dump_graph(options, llir.graph, "lowering");
 
-    // 5. CodeGen
-    std::cout << "6. Generate code..." << std::endl;
+    // 2. Optimize Pass 3
+    std::cout << "2. Optimize Pass 3..." << std::endl;
+    optimize_pass3(options, *target, llir.graph);
+
+    // 7. CodeGen
+    std::cout << "7. Generate code..." << std::endl;
     gencode(*target, llir.graph, options);
 
     std::cout << "\nSUMMARY" << std::endl;

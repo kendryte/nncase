@@ -30,6 +30,7 @@ public:
     void add_quantization_checkpoints(hlir::transforms::pass_manager &pass_mgr) override;
     void optimize_quantize(hlir::quantizer &quantizer, hlir::transforms::pass_manager &pass_mgr) override;
     void add_quantization_broadcast(std::unordered_set<hlir::node_opcode> &opcodes) override;
+    void optimize_llir(llir::transforms::pass_manager &pass_mgr) override;
 
 protected:
     void add_default_transforms(hlir::transforms::pass& pass);

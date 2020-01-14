@@ -100,10 +100,13 @@ void interpreter_base::step()
             auto now = get_now();
             auto duration = now - *last_time_;
             total_duration_ += duration;
-            last_time_ = now;
 
             if (node_profile_)
+            {
                 node_profile_(last_op_, duration, userdata_);
+                now = get_now();
+                last_time_ = now;
+            }
         }
 
         if (cnt_node_ == nodes_size())

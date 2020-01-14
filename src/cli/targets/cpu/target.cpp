@@ -27,12 +27,11 @@
 #include <hlir/transforms/neutral/quantized_conv2d.h>
 #include <hlir/transforms/neutral/quantized_matmul.h>
 #include <hlir/transforms/neutral/transpose_motion.h>
+#include <llir/transforms/neutral/fold_memorycopy.h>
 #include <scheduler/main_memory_allocator.h>
 
 using namespace nncase;
-using namespace nncase::hlir;
 using namespace nncase::scheduler;
-using namespace nncase::hlir::transforms;
 
 namespace nncase
 {
@@ -72,6 +71,9 @@ void nncase::cpu_target::registry_evaluator_ops()
 
 void cpu_target::add_default_transforms(hlir::transforms::pass &pass)
 {
+using namespace nncase::hlir;
+using namespace nncase::hlir::transforms;
+
     pass.emplace<fold_constant_transform>();
     pass.emplace<fold_nop_pad_transform>();
     pass.emplace<fold_nop_reshape_transform>();
@@ -95,6 +97,9 @@ void cpu_target::add_default_transforms(hlir::transforms::pass &pass)
 
 void nncase::cpu_target::optimize_target_independent(hlir::transforms::pass_manager &pass_mgr)
 {
+using namespace nncase::hlir;
+using namespace nncase::hlir::transforms;
+
     pass p;
     add_default_transforms(p);
     pass_mgr.add_pass(std::move(p));
@@ -106,6 +111,9 @@ void nncase::cpu_target::optimize_target_dependent(hlir::transforms::pass_manage
 
 void nncase::cpu_target::add_quantization_checkpoints(hlir::transforms::pass_manager &pass_mgr)
 {
+using namespace nncase::hlir;
+using namespace nncase::hlir::transforms;
+
     pass p;
     p.emplace<add_quant_checkpoints_transform>(add_quant_checkpoints_transform { op_conv2d, op_matmul, op_binary });
     pass_mgr.add_pass(std::move(p));
@@ -113,6 +121,9 @@ void nncase::cpu_target::add_quantization_checkpoints(hlir::transforms::pass_man
 
 void nncase::cpu_target::optimize_quantize(hlir::quantizer &quantizer, hlir::transforms::pass_manager &pass_mgr)
 {
+    using namespace nncase::hlir;
+    using namespace nncase::hlir::transforms;
+
     pass p;
     if (options_.input_type == "uint8")
         p.emplace<fold_input_quantize_transform>(quantizer);
@@ -138,4 +149,14 @@ void nncase::cpu_target::add_quantization_broadcast(std::unordered_set<hlir::nod
     opcodes.emplace(op_pad);
     opcodes.emplace(op_strided_slice);
     opcodes.emplace(op_resize_image);
+}
+
+void nncase::cpu_target::optimize_llir(llir::transforms::pass_manager &pass_mgr)
+{
+    using namespace nncase::llir;
+    using namespace nncase::llir::transforms;
+
+    pass p;
+    p.emplace<fold_memorycopy_transform>();
+    pass_mgr.add_pass(std::move(p));
 }
