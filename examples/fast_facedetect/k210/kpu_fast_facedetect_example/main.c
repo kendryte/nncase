@@ -18,7 +18,7 @@
 #define PLL0_OUTPUT_FREQ 800000000UL
 #define PLL1_OUTPUT_FREQ 400000000UL
 
-#define RFB 0
+#define RFB 1
 #define TEST 0
 
 extern const unsigned char gImage_image[] __attribute__((aligned(128)));
@@ -166,6 +166,7 @@ int main(void)
 
     ultra_face_init(320, 240, 0.3, 0.05, -1);
 
+    while (1)
     {
         g_ai_done_flag = 0;
 #if !TEST
@@ -195,7 +196,5 @@ int main(void)
         /* draw boxs */
         ultra_face_detect(scores, boxes, drawboxes);
     }
-
-    while (1);
 }
 

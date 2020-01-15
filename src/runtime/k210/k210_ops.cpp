@@ -112,16 +112,7 @@ namespace runtime
         {
             auto input = interpreter.memory_at<uint8_t>(options.input);
             auto output = interpreter.memory_at<uint8_t>(options.output);
-#if !NNCASE_TARGET_K210_SIMULATOR
-            if (options.in_shape[3] % 64 == 0)
-            {
-                auto &ctx = interpreter.context();
-                ctx.interpreter = &interpreter;
-                ctx.step = step;
-                kpu_upload_dma(interpreter.dma_ch(), input.data(), output.data(), input.size(), kpu_dma_plic_thunk, &ctx);
-                return kcr_done;
-            }
-#endif
+
             kernels::k210::kpu_upload(input.data(), output.data(), options.in_shape);
             return kcr_done;
         }

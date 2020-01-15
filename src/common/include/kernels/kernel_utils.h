@@ -18,6 +18,14 @@
 #include <cstddef>
 #include <datatypes.h>
 
+#ifdef __GNUC__
+#define CXX_RESTRICT __restrict__
+#elif _MSC_VER
+#define CXX_RESTRICT __restrict
+#else
+#define CXX_RESTRICT fvck
+#endif
+
 namespace nncase
 {
 namespace kernels

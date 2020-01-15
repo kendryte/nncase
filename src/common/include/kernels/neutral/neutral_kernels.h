@@ -17,6 +17,9 @@
 #include <cmath>
 #include <runtime/runtime_op_utility.h>
 #include <xtl/xspan.hpp>
+#ifdef __riscv
+#include "../riscv/neutral_kernels.h"
+#endif
 
 namespace nncase
 {
@@ -318,14 +321,18 @@ namespace kernels
         }
 
         template <class TQ>
-        void dequantize(const TQ *input, float *output, size_t count, const quant_param_t &param)
+        void dequantize(const TQ *CXX_RESTRICT input, float *CXX_RESTRICT output, size_t count, const quant_param_t &param)
         {
+#if __riscv
+            riscv_dequantize(input, output, count, param);
+#else
             float div = 1.f / param.scale;
 
             for (size_t i = 0; i < count; i++)
             {
                 output[i] = (input[i] - param.zero_point) * div;
             }
+#endif
         }
 
         inline void matmul(const float *input_a, const float *input_b, float *output, const float *bias, int32_t a_rows, int32_t a_cols, int32_t b_cols, const value_range<float> &fused_activation)
@@ -411,13 +418,17 @@ namespace kernels
         }
 
         template <class TQ>
-        void quantize(const float *input, TQ *output, size_t count, const quant_param_t &param)
+        void quantize(const float *CXX_RESTRICT input, TQ *CXX_RESTRICT output, size_t count, const quant_param_t &param)
         {
+#if __riscv
+            riscv_quantize(input, output, count, param);
+#else
             for (size_t i = 0; i < count; i++)
             {
                 int32_t tmp = (int32_t)roundf(input[i] * param.scale + param.zero_point);
                 output[i] = std::clamp(tmp, (int32_t)std::numeric_limits<TQ>::lowest(), (int32_t)std::numeric_limits<TQ>::max());
             }
+#endif
         }
 
         template <class TReducer>
@@ -445,7 +456,7 @@ namespace kernels
         }
 
         template <class TOp>
-        void unary(const float *input, float *output, size_t count, TOp &&op)
+        void unary(const float *CXX_RESTRICT input, float *CXX_RESTRICT output, size_t count, TOp &&op)
         {
             for (size_t i = 0; i < count; i++)
                 output[i] = op(input[i]);
@@ -598,7 +609,7 @@ namespace kernels
         }
 
         template <class T>
-        void transpose(const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &perm)
+        void transpose(const T *CXX_RESTRICT input, T *CXX_RESTRICT output, const runtime_shape_t &in_shape, const runtime_shape_t &perm)
         {
             runtime_shape_t out_shape;
             for (size_t i = 0; i < 4; i++)
@@ -625,7 +636,7 @@ namespace kernels
         }
 
         template <class T>
-        void strided_slice(const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &begin, const runtime_shape_t &end, const runtime_shape_t &strides)
+        void strided_slice(const T *CXX_RESTRICT input, T *CXX_RESTRICT output, const runtime_shape_t &in_shape, const runtime_shape_t &begin, const runtime_shape_t &end, const runtime_shape_t &strides)
         {
             auto loop_cond = [](int32_t i, int32_t stop, int32_t stride) {
                 return stride > 0 ? i < stop : i > stop;

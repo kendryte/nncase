@@ -99,19 +99,13 @@ namespace runtime
             }
             else
             {
-                value >>= shift - 1;
-                if (value & 0x1)
-                {
-                    if (value < 0)
-                        value = (value >> 1) - 1;
-                    else
-                        value = (value >> 1) + 1;
-                }
-                else
-                {
-                    value >>= 1;
-                }
+                value += 1 << (shift - 1);
+                value >>= shift;
             }
+        }
+        else if (shift < 0)
+        {
+            value = value << (-shift);
         }
 
         return value;

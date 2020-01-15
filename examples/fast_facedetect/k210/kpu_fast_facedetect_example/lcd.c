@@ -186,14 +186,18 @@ void lcd_clear(uint16_t color)
 
 void lcd_draw_rectangle(uint16_t x1, uint16_t y1, uint16_t x2, uint16_t y2, uint16_t width, uint16_t color)
 {
-    uint32_t data_buf[640] = {0};
-    uint32_t *p = data_buf;
+    uint32_t data_buf_s[640] = {0};
+    uint32_t *p = data_buf_s;
     uint32_t data = color;
     uint32_t index = 0;
 
     data = (data << 16) | data;
     for (index = 0; index < 160 * width; index++)
         *p++ = data;
+
+    uint8_t * volatile data_buf = (uint8_t *)data_buf_s;
+    data_buf -= 0x40000000;
+    memcpy(data_buf, data_buf_s, 640);
 
     lcd_set_area(x1, y1, x2, y1 + width - 1);
     tft_write_word(data_buf, ((x2 - x1 + 1) * width + 1) / 2, 0);

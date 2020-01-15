@@ -89,7 +89,7 @@ public:
         num_anchors = priors.size();
     }
 
-    void generateBBox(std::vector<FaceInfo> &bbox_collection, float *scores, float *boxes)
+    void generateBBox(float *scores, float *boxes)
     {
         for(int i = 0; i < num_anchors; i++)
         {
@@ -111,8 +111,9 @@ public:
         }
     }
 
-    void nms(std::vector<FaceInfo> &input, std::vector<FaceInfo> &output, int type)
+    std::vector<FaceInfo> &nms(int type)
     {
+        auto &input = bbox_collection;
         std::sort(input.begin(), input.end(), [](const FaceInfo &a, const FaceInfo &b) { return a.score > b.score; });
 
         int box_num = input.size();
@@ -197,11 +198,19 @@ public:
                 }
                 default:
                 {
-                    printf("wrong type of nms.");
+                    printf("wrong type of nms.\n");
                     exit(-1);
                 }
             }
         }
+
+        return output;
+    }
+
+    void clear()
+    {
+        bbox_collection.clear();
+        output.clear();
     }
 
 private:
@@ -231,6 +240,7 @@ private:
     std::vector<int> w_h_list;
 
     std::vector<std::vector<float>> priors = {};
+    std::vector<FaceInfo> bbox_collection, output;
 };
 
 static std::unique_ptr<ultra_face> g_detector;
@@ -245,10 +255,10 @@ int ultra_face_init(int input_width, int input_height,
 
 int ultra_face_detect(float *scores, float *boxes, callback_draw_box callback)
 {
-    std::vector<FaceInfo> bbox_collection, output;
-    g_detector->generateBBox(bbox_collection, scores, boxes);
-    g_detector->nms(bbox_collection, output, blending_nms);
-    printf("%d, %d\n", (int)bbox_collection.size(), (int)output.size());
+    g_detector->clear();
+    g_detector->generateBBox(scores, boxes);
+    auto &output = g_detector->nms(blending_nms);
+    printf("%d\n", (int)output.size());
     for (auto &face : output)
     {
         //printf("%f, %f, %f, %f, %f\n", face.x1, face.x2, face.y1, face.y2, face.score);
