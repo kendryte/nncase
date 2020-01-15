@@ -42,7 +42,7 @@ def test_simple_conv2d_quant():
 	 '--input-type', 'float'])
 
 	ncc.infer(['--dataset-format', 'raw'])
-	ncc.close_to('test', 0.4)
+	ncc.close_to('test', 0.7)
 	
 def test_simple_conv2d_k210():
 	ncc.clear()

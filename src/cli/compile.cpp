@@ -410,7 +410,7 @@ void compile(const compile_options &options)
     dump_graph(options, llir.graph, "lowering");
 
     // 2. Optimize Pass 3
-    std::cout << "2. Optimize Pass 3..." << std::endl;
+    std::cout << "6. Optimize Pass 3..." << std::endl;
     optimize_pass3(options, *target, llir.graph);
 
     // 7. CodeGen
