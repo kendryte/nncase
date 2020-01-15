@@ -32,12 +32,12 @@ namespace
 {
 bool is_supported_in_shape(const shape_t &in_shape)
 {
-    return in_shape[0] == 1 && in_shape[1] <= 1024 && in_shape[2] >= 4 && in_shape[2] <= 256 && in_shape[3] >= 4 && in_shape[3] <= 512;
+    return in_shape[1] <= 1024 && in_shape[2] >= 4 && in_shape[2] <= 256 && in_shape[3] >= 4 && in_shape[3] <= 512;
 }
 
 bool is_supported_out_shape(const shape_t &in_shape)
 {
-    return in_shape[0] == 1 && in_shape[1] <= 1024;
+    return in_shape[1] <= 1024;
 }
 
 bool is_bad_shape(const shape_t &in_shape, const shape_t &out_shape)

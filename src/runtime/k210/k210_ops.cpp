@@ -155,6 +155,15 @@ namespace runtime
             auto conv_output_tmp = std::make_unique<uint8_t[]>(conv_out_fmap_size);
             auto output_tmp = std::make_unique<uint8_t[]>(out_fmap_size);
 
+            auto batch = in_shape[0];
+            auto in_size_per_batch = kernels::details::compute_size(in_shape) / batch;
+            auto conv_output_tmp_size_per_batch = conv_out_fmap_size / batch;
+            auto out_size_per_batch = kernels::details::compute_size(out_shape) / batch;
+            auto p_input = input_tmp.get();
+            auto p_workspace = workspace.get();
+            auto p_conv_ouput_tmp = conv_output_tmp.get();
+            auto p_output_tmp = output_tmp.get();
+
             kernels::k210::kpu_download(input.data(), input_tmp.get(), in_shape);
             auto filter_size = get_kpu_filter_size((kpu_filter_type_t)options.layer.kernel_pool_type_cfg.data.kernel_type);
             auto pad_value = (uint8_t)options.layer.kernel_pool_type_cfg.data.pad_value;
@@ -191,15 +200,24 @@ namespace runtime
 
 #define KPU_CONV2D_IMPL(is_depthwise_val, filter_size_val)                                                                                        \
     if (is_depthwise == is_depthwise_val && filter_size == filter_size_val)                                                                       \
-    kernels::k210::kpu_conv2d<is_depthwise_val, filter_size_val>(input_tmp.get(), workspace.get(), conv_output_tmp.get(), options.weights.data(), \
+    kernels::k210::kpu_conv2d<is_depthwise_val, filter_size_val>(p_input, p_workspace, p_conv_ouput_tmp, options.weights.data(), \
         in_h, in_w, in_ch, out_ch, pad_value, arg_x, shift_x, arg_w, shift_w, arg_add, batchnorm.get(), activation)
 
-            KPU_CONV2D_IMPL(true, 1);
-            else KPU_CONV2D_IMPL(true, 3);
-            else KPU_CONV2D_IMPL(false, 1);
-            else KPU_CONV2D_IMPL(false, 3);
+            for (size_t n = 0; n < batch; n++)
+            {
+                KPU_CONV2D_IMPL(true, 1);
+                else KPU_CONV2D_IMPL(true, 3);
+                else KPU_CONV2D_IMPL(false, 1);
+                else KPU_CONV2D_IMPL(false, 3);
 
-            kernels::k210::kpu_pool2d(conv_output_tmp.get(), output_tmp.get(), in_h, in_w, out_ch, (kpu_pool_type_t)options.layer.kernel_pool_type_cfg.data.pool_type);
+                kernels::k210::kpu_pool2d(p_conv_ouput_tmp, p_output_tmp, in_h, in_w, out_ch, (kpu_pool_type_t)options.layer.kernel_pool_type_cfg.data.pool_type);
+
+                p_input += in_size_per_batch;
+                p_workspace += conv_output_tmp_size_per_batch;
+                p_conv_ouput_tmp += conv_output_tmp_size_per_batch;
+                p_output_tmp += out_size_per_batch;
+            }
+
             kernels::k210::kpu_upload(output_tmp.get(), kpu_out.data(), out_shape);
             if (options.main_mem_output.size)
             {
@@ -212,11 +230,22 @@ namespace runtime
             auto &ctx = interpreter.context();
             ctx.interpreter = &interpreter;
             ctx.step = step;
-            g_ai_done = 0;
 
-            kpu_conv2d_normal(options.layer, kpu_plic_thunk, &ctx);
-            while (!g_ai_done)
-                ;
+            auto batch = options.batches;
+            auto in_per_batch = get_kpu_rows(in_w, in_h, in_ch);
+            auto out_per_batch = get_kpu_rows(out_w, out_h, out_ch);
+
+            for (size_t n = 0; n < batch; n++)
+            {
+                g_ai_done = 0;
+
+                kpu_conv2d_normal(options.layer, kpu_plic_thunk, &ctx);
+                while (!g_ai_done)
+                    ;
+
+                options.layer.image_addr.data.image_src_addr += in_per_batch;
+                options.layer.image_addr.data.image_dst_addr += out_per_batch;
+            }
 
             if (options.main_mem_output.size)
             {

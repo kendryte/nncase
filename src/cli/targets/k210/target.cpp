@@ -25,6 +25,7 @@
 #include <hlir/transforms/neutral/fold_transpose.h>
 #include <hlir/transforms/neutral/fuse_pad.h>
 #include <hlir/transforms/neutral/transpose_motion.h>
+#include <hlir/transforms/neutral/eliminate_dilated_conv2d.h>
 #include <scheduler/k210/kpu_memory_allocator.h>
 #include <scheduler/main_memory_allocator.h>
 
@@ -81,6 +82,7 @@ void nncase::k210_target::optimize_target_independent(hlir::transforms::pass_man
 void nncase::k210_target::optimize_target_dependent(hlir::transforms::pass_manager &pass_mgr)
 {
     pass p;
+    p.emplace<eliminate_dilated_conv2d_transform>();
     p.emplace<fake_kpu_conv2d_transform>();
     p.emplace<strided_slice_motion_transform>();
     p.emplace<fuse_fake_kpu_conv2d_strided_slice_transform>();
