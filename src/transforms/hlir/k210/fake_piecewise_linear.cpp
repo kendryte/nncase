@@ -326,6 +326,11 @@ bool is_min_seg(const piecewise_linear_segment &seg0, const piecewise_linear_seg
     return seg0.start == std::numeric_limits<float>::lowest() && seg0.mul == 1 && seg0.add == 0
         && seg1.start == 0 && seg1.mul == 0 && seg1.add == 0;
 }
+
+bool is_mul_seg(const piecewise_linear_segment &seg0)
+{
+    return seg0.start == std::numeric_limits<float>::lowest() && seg0.add == 0;
+}
 }
 
 bool revert_piecewise_linear_transform::on_try_match(node &node, transform_context &context)
@@ -333,13 +338,18 @@ bool revert_piecewise_linear_transform::on_try_match(node &node, transform_conte
     if (node.runtime_opcode() == op_k210_fake_piecewise_linear)
     {
         auto &piece = static_cast<fake_piecewise_linear &>(node);
-        if (piece.segments().size() == 2 && (is_max_seg(piece.segments()[0], piece.segments()[1]) || is_min_seg(piece.segments()[0], piece.segments()[1])))
+        if ((piece.segments().size() == 2 && (is_max_seg(piece.segments()[0], piece.segments()[1]) || is_min_seg(piece.segments()[0], piece.segments()[1])))
+            || (piece.segments().size() == 1 && (is_mul_seg(piece.segments()[0]))))
         {
             context.inputs.emplace_back(&piece.input());
             context.outputs.emplace_back(&piece.output());
 
             context.matched_nodes.emplace_back(&piece);
             return true;
+        }
+        else
+        {
+            return false;
         }
     }
 
@@ -353,21 +363,43 @@ void revert_piecewise_linear_transform::process(transform_context &context)
     auto &old_piece = static_cast<fake_piecewise_linear &>(*context.matched_nodes[0]);
 
     output_connector *bin;
-    if (is_max_seg(old_piece.segments()[0], old_piece.segments()[1]))
+    if (old_piece.segments().size() == 2)
     {
-        auto zero = context.graph.emplace<constant>(0.f);
-        auto max = context.graph.emplace<binary>(binary_max, output.shape(), zero->output().shape(), value_range<float>::full());
-        max->input_a().connect(output);
-        max->input_b().connect(zero->output());
-        bin = &max->output();
+        if (is_max_seg(old_piece.segments()[0], old_piece.segments()[1]))
+        {
+            auto zero = context.graph.emplace<constant>(0.f);
+            auto max = context.graph.emplace<binary>(binary_max, output.shape(), zero->output().shape(), value_range<float>::full());
+            max->input_a().connect(output);
+            max->input_b().connect(zero->output());
+            bin = &max->output();
+        }
+        else if (is_min_seg(old_piece.segments()[0], old_piece.segments()[1]))
+        {
+            auto zero = context.graph.emplace<constant>(0.f);
+            auto min = context.graph.emplace<binary>(binary_min, output.shape(), zero->output().shape(), value_range<float>::full());
+            min->input_a().connect(output);
+            min->input_b().connect(zero->output());
+            bin = &min->output();
+        }
+        else
+        {
+            throw std::runtime_error("Unsupported piecewise linear revert");
+        }
     }
-    else if (is_min_seg(old_piece.segments()[0], old_piece.segments()[1]))
+    else if (old_piece.segments().size() == 1)
     {
-        auto zero = context.graph.emplace<constant>(0.f);
-        auto min = context.graph.emplace<binary>(binary_min, output.shape(), zero->output().shape(), value_range<float>::full());
-        min->input_a().connect(output);
-        min->input_b().connect(zero->output());
-        bin = &min->output();
+        if (is_mul_seg(old_piece.segments()[0]))
+        {
+            auto con = context.graph.emplace<constant>(old_piece.segments()[0].mul);
+            auto mul = context.graph.emplace<binary>(binary_mul, output.shape(), con->output().shape(), value_range<float>::full());
+            mul->input_a().connect(output);
+            mul->input_b().connect(con->output());
+            bin = &mul->output();
+        }
+        else
+        {
+            throw std::runtime_error("Unsupported piecewise linear revert");
+        }
     }
     else
     {

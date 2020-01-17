@@ -26,6 +26,7 @@
 #include <hlir/transforms/neutral/quantized_binary.h>
 #include <hlir/transforms/neutral/quantized_conv2d.h>
 #include <hlir/transforms/neutral/quantized_matmul.h>
+#include <hlir/transforms/neutral/simplify_reduce.h>
 #include <hlir/transforms/neutral/transpose_motion.h>
 #include <llir/transforms/neutral/fold_memorycopy.h>
 #include <scheduler/main_memory_allocator.h>
@@ -71,8 +72,8 @@ void nncase::cpu_target::registry_evaluator_ops()
 
 void cpu_target::add_default_transforms(hlir::transforms::pass &pass)
 {
-using namespace nncase::hlir;
-using namespace nncase::hlir::transforms;
+    using namespace nncase::hlir;
+    using namespace nncase::hlir::transforms;
 
     pass.emplace<fold_constant_transform>();
     pass.emplace<fold_nop_pad_transform>();
@@ -93,12 +94,13 @@ using namespace nncase::hlir::transforms;
     pass.emplace<transpose_reduce_motion_transform>();
     pass.emplace<transpose_unary_motion_transform>();
     pass.emplace<transpose_to_reshape_transform>();
+    pass.emplace<simplify_reduce_transform>();
 }
 
 void nncase::cpu_target::optimize_target_independent(hlir::transforms::pass_manager &pass_mgr)
 {
-using namespace nncase::hlir;
-using namespace nncase::hlir::transforms;
+    using namespace nncase::hlir;
+    using namespace nncase::hlir::transforms;
 
     pass p;
     add_default_transforms(p);
@@ -111,8 +113,8 @@ void nncase::cpu_target::optimize_target_dependent(hlir::transforms::pass_manage
 
 void nncase::cpu_target::add_quantization_checkpoints(hlir::transforms::pass_manager &pass_mgr)
 {
-using namespace nncase::hlir;
-using namespace nncase::hlir::transforms;
+    using namespace nncase::hlir;
+    using namespace nncase::hlir::transforms;
 
     pass p;
     p.emplace<add_quant_checkpoints_transform>(add_quant_checkpoints_transform { op_conv2d, op_matmul, op_binary });
