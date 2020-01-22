@@ -264,5 +264,6 @@ int ultra_face_detect(float *scores, float *boxes, callback_draw_box callback)
         //printf("%f, %f, %f, %f, %f\n", face.x1, face.x2, face.y1, face.y2, face.score);
         callback((int)roundf(face.x1), (int)roundf(face.y1), (int)roundf(face.x2), (int)roundf(face.y2), face.score);
     }
+    return (int) output.size();
 }
 }
