@@ -123,6 +123,8 @@ graph import(const compile_options &options)
         return import_paddle(model, boost::filesystem::path(options.input_filename).parent_path());
     else if (options.input_format == "caffe")
         return import_caffe(model);
+    else if (options.input_format == "onnx")
+        return import_onnx(model);
     else
         throw std::invalid_argument("Invalid input format: " + options.input_format);
 }
@@ -360,7 +362,7 @@ group compile_options::parser(mode &mode)
         "compile" % (
 			value("input file", input_filename) % "input file",
 			value("output file", output_filename) % "output file",
-			required("-i", "--input-format") % "input file format: e.g. tflite, caffe" & value("input format", input_format),
+			required("-i", "--input-format") % "input file format: e.g. tflite, caffe, onnx" & value("input format", input_format),
 			option("-o", "--output-format") % ("output file format: e.g. kmodel, default is " + output_format) & value("output format", output_format),
 			option("-t", "--target") % ("target arch: e.g. cpu, k210, default is " + target) & value("target", target),
 			option("--dataset") % "calibration dataset, used in post quantization" & value("dataset path", dataset),
