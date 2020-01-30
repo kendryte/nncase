@@ -1,4 +1,4 @@
-/* Copyright 2019-2020 Canaan Inc.
+/* Copyright 2020 Alexey Chernov <4ernov@gmail.com>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,18 +12,32 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #pragma once
-#include <boost/filesystem.hpp>
-#include <hlir/graph.h>
-#include <memory>
+
+#include <xtensor/xadapt.hpp>
+#include "onnx/onnx.pb.h"
 
 namespace nncase
 {
+
+namespace hlir
+{
+	class graph;
+}
+
 namespace importer
 {
-    hlir::graph import_tflite(xtl::span<const uint8_t> model);
-    hlir::graph import_paddle(xtl::span<const uint8_t> model, const boost::filesystem::path &params_dir);
-    hlir::graph import_caffe(xtl::span<const uint8_t> model);
-    hlir::graph import_onnx(xtl::span<const uint8_t> model);
+    class onnx_importer
+    {
+    public:
+        onnx_importer(xtl::span<const std::uint8_t> model, hlir::graph &graph);
+
+        void import();
+
+    private:
+        hlir::graph &graph_;
+		onnx::ModelProto model_;
+    };
 }
 }

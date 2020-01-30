@@ -86,3 +86,14 @@ onnx_proto_generate_cpp(ONNX_OPS_PROTO_SOURCE ONNX_OPS_PROTO_HEADER ${ONNX_OPS_P
 add_library(onnx_proto ${ONNX_PROTO_SOURCE} ${ONNX_OPS_PROTO_SOURCE})
 target_include_directories(onnx_proto PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(onnx_proto PRIVATE CONAN_PKG::protobuf)
+
+set(ONNX_IMPORTER_SOURCES
+	onnx_importer.cpp
+	)
+
+add_library(onnx_importer ${ONNX_IMPORTER_SOURCES})
+target_include_directories(onnx_importer PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+get_filename_component(PARENT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR} DIRECTORY)
+target_include_directories(onnx_importer PUBLIC ${PARENT_SOURCE_DIR}/include)
+target_link_libraries(onnx_importer PUBLIC hlir)
+target_link_libraries(onnx_importer PRIVATE onnx_proto CONAN_PKG::protobuf)
