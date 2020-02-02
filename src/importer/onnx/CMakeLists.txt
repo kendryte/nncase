@@ -94,6 +94,7 @@ set(ONNX_IMPORTER_SOURCES
 set(ONNX_IMPORTER_OPS_SOURCES
 	ops/activations.cpp
 	ops/binary.cpp
+	ops/unary.cpp
 	)
 
 add_library(onnx_importer ${ONNX_IMPORTER_SOURCES} ${ONNX_IMPORTER_OPS_SOURCES})
