@@ -91,7 +91,11 @@ set(ONNX_IMPORTER_SOURCES
 	onnx_importer.cpp
 	)
 
-add_library(onnx_importer ${ONNX_IMPORTER_SOURCES})
+set(ONNX_IMPORTER_OPS_SOURCES
+	ops/activations.cpp
+	)
+
+add_library(onnx_importer ${ONNX_IMPORTER_SOURCES} ${ONNX_IMPORTER_OPS_SOURCES})
 target_include_directories(onnx_importer PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 get_filename_component(PARENT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR} DIRECTORY)
 target_include_directories(onnx_importer PUBLIC ${PARENT_SOURCE_DIR}/include)

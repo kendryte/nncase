@@ -15,11 +15,15 @@
 
 #include "onnx_importer.h"
 
+#include <algorithm>
+
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl_lite.h>
 #include <google/protobuf/message.h>
 #include <importer/importer.h>
 #include <hlir/graph.h>
+
+using namespace std;
 
 using namespace nncase;
 using namespace nncase::importer;
@@ -31,13 +35,24 @@ namespace
 {
     template <typename Proto>
     bool ParseProtoFromBytes(Proto* proto, const unsigned char* buffer, size_t length)
-	{
+    {
         // Total bytes hard limit / warning limit are set to 1GB and 512MB
         // respectively.
         ::google::protobuf::io::ArrayInputStream input_stream(buffer, static_cast<int>(length));
         ::google::protobuf::io::CodedInputStream coded_stream(&input_stream);
         coded_stream.SetTotalBytesLimit((2048LL << 20) - 1, 512LL << 20);
         return proto->ParseFromCodedStream(&coded_stream);
+    }
+
+    const ValueInfoProto* find_value_info(const google::protobuf::RepeatedPtrField<onnx::ValueInfoProto> &collection, const string &value)
+    {
+        const auto it { find_if(collection.cbegin(), collection.cend(),
+                [&value](const auto e)
+                {
+                    return value == e.name();
+                }) };
+
+        return it != collection.end() ? &(*it) : nullptr;
     }
 }
 
@@ -52,7 +67,186 @@ onnx_importer::onnx_importer(xtl::span<const uint8_t> model, hlir::graph &graph)
 
 void onnx_importer::import()
 {
+    const auto& graph { model_.graph() };
 
+    for (const auto& node : graph.node())
+        convert_op(node);
+
+    // create inputs
+    for (const auto& input_info : graph.input())
+    {
+        const auto& input_name { input_info.name() };
+        auto&& input_shape { get_shape(input_info) };
+        const auto input_dt { get_datatype(input_info) };
+
+        auto node { graph_.emplace<input_node>(input_dt, input_shape) };
+        node->name(input_name);
+
+        output_tensors_.emplace(input_name, &node->output());
+    }
+
+    // create outputs
+    for (const auto& output_info : graph.output())
+    {
+        const auto& output_name { output_info.name() };
+        auto&& output_shape { get_shape(output_info) };
+        const auto output_dt { get_datatype(output_info) };
+
+        auto node { graph_.emplace<output_node>(output_dt, output_shape) };
+        node->name(output_name);
+
+        input_tensors_.emplace(&node->input(), output_name);
+    }
+
+    // connect tensors
+    for (auto &&in : input_tensors_)
+    {
+        auto out_it = output_tensors_.find(in.second);
+        if (out_it != output_tensors_.end())
+        {
+            in.first->connect(*out_it->second);
+        }
+        else
+        {
+            throw runtime_error("Cannot find associated output node for input " + string(in.second));
+        }
+    }
+}
+
+void onnx_importer::convert_op(const NodeProto &node)
+{
+    auto op_type = node.op_type();
+
+#define DEFINE_OPCODE(opcode)                                \
+    if (op_type == #opcode)                                 \
+        return convert_op_##opcode(node);
+    #include "opcode.def"
+#undef DEFINE_OPCODE
+
+    throw runtime_error("Not supported ONNX opcode: " + op_type);
+}
+
+shape_t onnx_importer::get_shape(const string &value) const
+{
+    auto value_info_ptr { find_value_info(model_.graph().input(), value) };
+    if (value_info_ptr)
+        return get_shape(*value_info_ptr);
+
+    value_info_ptr = find_value_info(model_.graph().value_info(), value);
+    if (value_info_ptr)
+        return get_shape(*value_info_ptr);
+
+    value_info_ptr = find_value_info(model_.graph().output(), value);
+    if (value_info_ptr)
+        return get_shape(*value_info_ptr);
+
+    throw runtime_error("Can't parse shape of value " + value);
+}
+
+shape_t onnx_importer::get_shape(const ValueInfoProto &value_info)
+{
+    const auto& type { value_info.type() };
+    assert(type.value_case() == TypeProto::kTensorType);
+
+    const auto& shape { type.tensor_type().shape() };
+
+    shape_t result_shape;
+    for (const auto& dim : shape.dim())
+    {
+        switch (dim.value_case())
+        {
+        case TensorShapeProto_Dimension::kDimValue:
+            result_shape.push_back(dim.dim_value());
+            break;
+
+        case TensorShapeProto_Dimension::kDimParam:
+            result_shape.push_back(-1);
+            break;
+        }
+    }
+
+    return result_shape;
+}
+
+datatype_t onnx_importer::get_datatype(const ValueInfoProto &value_info)
+{
+    const auto& type { value_info.type() };
+    assert(type.value_case() == TypeProto::kTensorType);
+
+    return get_datatype(static_cast<TensorProto_DataType>(type.tensor_type().elem_type()));
+}
+
+datatype_t onnx_importer::get_datatype(const TensorProto_DataType datatype)
+{
+    switch (datatype)
+    {
+    case TensorProto_DataType_FLOAT:
+        return dt_float32;
+
+    case TensorProto_DataType_UINT8:
+        return dt_uint8;
+
+    default:
+        throw runtime_error("ONNX data type " + to_string(datatype) + " is unsupported");
+    }
+}
+
+string onnx_importer::to_string(const TensorProto_DataType datatype)
+{
+    switch (datatype)
+    {
+    default:
+    case TensorProto_DataType_UNDEFINED:
+        return "UNDEFINED";
+
+    case TensorProto_DataType_FLOAT:
+        return "FLOAT";
+
+    case TensorProto_DataType_UINT8:
+        return "UINT8";
+
+    case TensorProto_DataType_INT8:
+        return "INT8";
+
+    case TensorProto_DataType_UINT16:
+        return "UINT16";
+
+    case TensorProto_DataType_INT16:
+        return "INT16";
+
+    case TensorProto_DataType_INT32:
+        return "INT32";
+
+    case TensorProto_DataType_INT64:
+        return "INT64";
+
+    case TensorProto_DataType_STRING:
+        return "STRING";
+
+    case TensorProto_DataType_BOOL:
+        return "BOOL";
+
+    case TensorProto_DataType_FLOAT16:
+        return "FLOAT16";
+
+    case TensorProto_DataType_DOUBLE:
+        return "DOUBLE";
+
+    case TensorProto_DataType_UINT32:
+        return "UINT32";
+
+    case TensorProto_DataType_UINT64:
+        return "UINT64";
+
+    case TensorProto_DataType_COMPLEX64:
+        return "COMPLEX64";
+
+    case TensorProto_DataType_COMPLEX128:
+        return "COMPLEX128";
+
+    case TensorProto_DataType_BFLOAT16:
+        return "BFLOAT16";
+    }
 }
 
 graph nncase::importer::import_onnx(xtl::span<const uint8_t> model)
