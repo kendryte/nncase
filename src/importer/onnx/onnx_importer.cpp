@@ -176,6 +176,21 @@ datatype_t onnx_importer::get_datatype(const ValueInfoProto &value_info)
     return get_datatype(static_cast<TensorProto_DataType>(type.tensor_type().elem_type()));
 }
 
+datatype_t onnx_importer::get_datatype(const AttributeProto_AttributeType type)
+{
+    switch (type)
+    {
+    case AttributeProto_AttributeType_FLOAT:
+        return dt_float32;
+
+    case AttributeProto_AttributeType_INT:
+        return dt_uint8;
+
+    default:
+        throw runtime_error("ONNX data type " + to_string(type) + " is unsupported");
+    }
+}
+
 datatype_t onnx_importer::get_datatype(const TensorProto_DataType datatype)
 {
     switch (datatype)
@@ -247,6 +262,86 @@ string onnx_importer::to_string(const TensorProto_DataType datatype)
     case TensorProto_DataType_BFLOAT16:
         return "BFLOAT16";
     }
+}
+
+string onnx_importer::to_string(const AttributeProto_AttributeType type)
+{
+    switch (type)
+    {
+    default:
+    case AttributeProto_AttributeType_UNDEFINED:
+        return "UNDEFINED";
+
+    case AttributeProto_AttributeType_FLOAT:
+        return "FLOAT";
+
+    case AttributeProto_AttributeType_INT:
+        return "INT";
+
+    case AttributeProto_AttributeType_STRING:
+        return "STRING";
+
+    case AttributeProto_AttributeType_TENSOR:
+        return "TENSOR";
+
+    case AttributeProto_AttributeType_GRAPH:
+        return "GRAPH";
+
+    case AttributeProto_AttributeType_SPARSE_TENSOR:
+        return "SPARSE_TENSOR";
+
+    case AttributeProto_AttributeType_FLOATS:
+        return "FLOATS";
+
+    case AttributeProto_AttributeType_INTS:
+        return "INTS";
+
+    case AttributeProto_AttributeType_STRINGS:
+        return "STRINGS";
+
+    case AttributeProto_AttributeType_TENSORS:
+        return "TENSORS";
+
+    case AttributeProto_AttributeType_GRAPHS:
+        return "GRAPHS";
+
+    case AttributeProto_AttributeType_SPARSE_TENSORS:
+        return "SPARSE_TENSORS";
+    }
+}
+
+onnx_importer::attribute_value_type onnx_importer::get_attribute(const onnx::NodeProto& node, const string &value) const
+{
+    const auto it
+    {
+        find_if(node.attribute().cbegin(), node.attribute().cend(),
+            [&value](const auto &attr)
+            {
+                return attr.name() == value;
+            })
+    };
+
+    if (it == node.attribute().cend())
+        return attribute_value_type { };
+
+    const auto &attr { *it };
+
+    switch(attr.type())
+    {
+    case AttributeProto_AttributeType_FLOAT:
+        return attr.f();
+
+    case AttributeProto_AttributeType_INT:
+        return attr.i();
+
+    case AttributeProto_AttributeType_STRING:
+        return attr.s();
+
+    default:
+        break;
+    }
+
+    return attribute_value_type { };
 }
 
 graph nncase::importer::import_onnx(xtl::span<const uint8_t> model)

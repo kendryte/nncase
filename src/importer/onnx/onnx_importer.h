@@ -17,6 +17,8 @@
 
 #include <unordered_map>
 #include <string_view>
+#include <variant>
+#include <cstdint>
 
 #include <xtensor/xadapt.hpp>
 #include "onnx/onnx.pb.h"
@@ -44,6 +46,13 @@ namespace importer
         void import();
 
     private:
+        typedef std::variant
+        <
+            float,
+            std::int64_t,
+            std::string
+        > attribute_value_type;
+
         void convert_op(const onnx::NodeProto &node);
 #define DEFINE_OPCODE(opcode) void convert_op_##opcode(const onnx::NodeProto &node);
 #include "opcode.def"
@@ -53,7 +62,12 @@ namespace importer
         static nncase::hlir::shape_t get_shape(const onnx::ValueInfoProto &value);
         static nncase::datatype_t get_datatype(const onnx::ValueInfoProto &value);
         static nncase::datatype_t get_datatype(const onnx::TensorProto_DataType datatype);
+        static nncase::datatype_t get_datatype(const onnx::AttributeProto_AttributeType type);
+        template<typename T> static constexpr nncase::datatype_t get_datatype();
+
         static std::string to_string(const onnx::TensorProto_DataType datatype);
+        static std::string to_string(const onnx::AttributeProto_AttributeType type);
+        attribute_value_type get_attribute(const onnx::NodeProto &node, const std::string &name) const;
 
         hlir::graph &graph_;
         onnx::ModelProto model_;
@@ -61,5 +75,15 @@ namespace importer
         std::unordered_map<hlir::input_connector *, std::string_view> input_tensors_;
         std::unordered_map<std::string_view, hlir::output_connector *> output_tensors_;
     };
+
+    template<> constexpr nncase::datatype_t onnx_importer::get_datatype<float>()
+    {
+        return nncase::dt_float32;
+    }
+
+    template<> constexpr nncase::datatype_t onnx_importer::get_datatype<std::int64_t>()
+    {
+        return nncase::dt_uint8;
+    }
 }
 }

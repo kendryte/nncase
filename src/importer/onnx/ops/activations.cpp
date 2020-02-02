@@ -39,12 +39,49 @@ void onnx_importer::convert_op_Relu(const NodeProto &node)
 
     const auto &input { node.input()[0] };
     const auto &output { node.output()[0] };
+
     auto&& in_shape = get_shape(input);
 
     auto zero = graph_.emplace<constant>(0.f);
     auto max = graph_.emplace<binary>(binary_max, move(in_shape), zero->output().shape(), value_range<float>::full());
 
     max->input_b().connect(zero->output());
+
+    input_tensors_.emplace(&max->input_a(), input);
+    output_tensors_.emplace(output, &max->output());
+}
+
+void onnx_importer::convert_op_LeakyRelu(const NodeProto &node)
+{
+    assert(node.input().size() == 1);
+    assert(node.output().size() == 1);
+
+    const auto &input { node.input()[0] };
+    const auto &output { node.output()[0] };
+    auto&& in_shape = get_shape(input);
+
+    auto alpha_attr { get_attribute(node, "alpha") };
+
+    constant *const alpha
+    {
+        visit
+        (
+            [this](auto&& arg) -> constant*
+            {
+                if constexpr (is_integral<decltype(arg)>::value)
+                    return graph_.emplace<constant>(get_datatype<decltype(arg)>(), arg);
+                else
+                    throw runtime_error("Attribute value is not supported");
+            },
+            alpha_attr
+        )
+    };
+
+    auto mul = graph_.emplace<binary>(binary_mul, move(in_shape), alpha->output().shape(), value_range<float>::full());
+    auto max = graph_.emplace<binary>(binary_max, move(in_shape), mul->output().shape(), value_range<float>::full());
+
+    mul->input_b().connect(alpha->output());
+    max->input_b().connect(mul->output());
 
     input_tensors_.emplace(&max->input_a(), input);
     output_tensors_.emplace(output, &max->output());

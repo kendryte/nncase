@@ -10,7 +10,7 @@
 // DEFINE_OPCODE(Exp)
 // DEFINE_OPCODE(Floor)
 // DEFINE_OPCODE(LpNormalization)
-// DEFINE_OPCODE(LeakyRelu)
+DEFINE_OPCODE(LeakyRelu)
 // DEFINE_OPCODE(Log)
 // DEFINE_OPCODE(MatMul)
 // DEFINE_OPCODE(MaxPool)
