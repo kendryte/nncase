@@ -58,6 +58,8 @@ namespace importer
 #include "opcode.def"
 #undef DEFINE_OPCODE
 
+        void convert_binary(const onnx::NodeProto &node, const binary_op_t binary_op);
+
         nncase::hlir::shape_t get_shape(const std::string &value) const;
         static nncase::hlir::shape_t get_shape(const onnx::ValueInfoProto &value);
         static nncase::datatype_t get_datatype(const onnx::ValueInfoProto &value);
