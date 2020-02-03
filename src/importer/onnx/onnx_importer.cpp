@@ -118,7 +118,7 @@ void onnx_importer::convert_op(const NodeProto &node)
     auto op_type = node.op_type();
 
 #define DEFINE_OPCODE(opcode)                                \
-    if (op_type == #opcode)                                 \
+    if (op_type == #opcode)                                  \
         return convert_op_##opcode(node);
     #include "opcode.def"
 #undef DEFINE_OPCODE
