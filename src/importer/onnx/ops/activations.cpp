@@ -60,22 +60,8 @@ void onnx_importer::convert_op_LeakyRelu(const NodeProto &node)
     const auto &output { node.output()[0] };
     auto&& in_shape = get_shape(input);
 
-    auto alpha_attr { get_attribute(node, "alpha") };
-
-    constant *const alpha
-    {
-        visit
-        (
-            [this](auto&& arg) -> constant*
-            {
-                if constexpr (is_integral<decltype(arg)>::value)
-                    return graph_.emplace<constant>(get_datatype<decltype(arg)>(), arg);
-                else
-                    throw runtime_error("Attribute value is not supported");
-            },
-            alpha_attr
-        )
-    };
+    const auto alpha_value { get_attribute<float>(node, "alpha").value() };
+	const auto& alpha { graph_.emplace<constant>(get_datatype<float>(), alpha_value) };
 
     auto mul = graph_.emplace<binary>(binary_mul, move(in_shape), alpha->output().shape(), value_range<float>::full());
     auto max = graph_.emplace<binary>(binary_max, move(in_shape), mul->output().shape(), value_range<float>::full());

@@ -33,6 +33,12 @@ using namespace onnx;
 
 namespace
 {
+    template<typename T> AttributeProto_AttributeType attribute_type;
+
+    template<> AttributeProto_AttributeType attribute_type<float> { AttributeProto_AttributeType_FLOAT };
+    template<> AttributeProto_AttributeType attribute_type<int64_t> { AttributeProto_AttributeType_INT };
+    template<> AttributeProto_AttributeType attribute_type<string> { AttributeProto_AttributeType_STRING };
+
     template <typename Proto>
     bool ParseProtoFromBytes(Proto* proto, const unsigned char* buffer, size_t length)
     {
@@ -53,6 +59,27 @@ namespace
                 }) };
 
         return it != collection.end() ? &(*it) : nullptr;
+    }
+
+    template<typename T> const onnx::AttributeProto* extract_attribute(const onnx::NodeProto& node, const string &value)
+    {
+        const auto it
+        {
+            find_if(node.attribute().cbegin(), node.attribute().cend(),
+                [&value](const auto &attr)
+                {
+                    return attr.name() == value;
+                })
+            };
+
+        if (it == node.attribute().cend())
+            return nullptr;
+
+        const auto &attr { *it };
+
+        assert(attr.type() == attribute_type<T>);
+
+        return &attr;
     }
 }
 
@@ -342,6 +369,39 @@ onnx_importer::attribute_value_type onnx_importer::get_attribute(const onnx::Nod
     }
 
     return attribute_value_type { };
+}
+
+template<> optional<float> onnx_importer::get_attribute<float>(const onnx::NodeProto& node, const string &value) const
+{
+    typedef float target_type;
+    const auto* attr { extract_attribute<target_type>(node, value) };
+
+    if (!attr)
+        return optional<target_type> { };
+
+    return attr->f();
+}
+
+template<> optional<int64_t> onnx_importer::get_attribute<int64_t>(const onnx::NodeProto& node, const string &value) const
+{
+    typedef int64_t target_type;
+    const auto* attr { extract_attribute<target_type>(node, value) };
+
+    if (!attr)
+        return optional<target_type> { };
+
+    return attr->i();
+}
+
+template<> optional<string> onnx_importer::get_attribute<string>(const onnx::NodeProto& node, const string &value) const
+{
+    typedef string target_type;
+    const auto* attr { extract_attribute<target_type>(node, value) };
+
+    if (!attr)
+        return optional<target_type> { };
+
+    return attr->s();
 }
 
 graph nncase::importer::import_onnx(xtl::span<const uint8_t> model)
