@@ -153,21 +153,28 @@ void onnx_importer::convert_op(const NodeProto &node)
     throw runtime_error("Not supported ONNX opcode: " + op_type);
 }
 
+const ValueInfoProto* onnx_importer::find_value_info(const string &value) const
+{
+    auto value_info_ptr { ::find_value_info(model_.graph().input(), value) };
+    if (value_info_ptr)
+        return value_info_ptr;
+
+    value_info_ptr = ::find_value_info(model_.graph().value_info(), value);
+    if (value_info_ptr)
+        return value_info_ptr;
+
+    value_info_ptr = ::find_value_info(model_.graph().output(), value);
+
+    return value_info_ptr;
+}
+
 shape_t onnx_importer::get_shape(const string &value) const
 {
-    auto value_info_ptr { find_value_info(model_.graph().input(), value) };
+    const auto value_info_ptr { find_value_info(value) };
     if (value_info_ptr)
         return get_shape(*value_info_ptr);
 
-    value_info_ptr = find_value_info(model_.graph().value_info(), value);
-    if (value_info_ptr)
-        return get_shape(*value_info_ptr);
-
-    value_info_ptr = find_value_info(model_.graph().output(), value);
-    if (value_info_ptr)
-        return get_shape(*value_info_ptr);
-
-    throw runtime_error("Can't parse shape of value " + value);
+    throw runtime_error("Can't find value info for " + value + " to parse its shape");
 }
 
 shape_t onnx_importer::get_shape(const ValueInfoProto &value_info)
