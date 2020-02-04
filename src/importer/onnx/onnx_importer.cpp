@@ -37,6 +37,7 @@ namespace
 
     template<> AttributeProto_AttributeType attribute_type<float> { AttributeProto_AttributeType_FLOAT };
     template<> AttributeProto_AttributeType attribute_type<int64_t> { AttributeProto_AttributeType_INT };
+    template<> AttributeProto_AttributeType attribute_type<int> { AttributeProto_AttributeType_INT };
     template<> AttributeProto_AttributeType attribute_type<string> { AttributeProto_AttributeType_STRING };
 
     template<typename T> TensorProto_DataType tensor_type;
@@ -394,6 +395,19 @@ template<> optional<float> onnx_importer::get_attribute<float>(const onnx::NodeP
 template<> optional<int64_t> onnx_importer::get_attribute<int64_t>(const onnx::NodeProto& node, const string &value)
 {
     typedef int64_t target_type;
+    const auto* attr { extract(node.attribute(), value) };
+
+    if (!attr)
+        return optional<target_type> { };
+
+    assert(attr->type() == attribute_type<target_type>);
+
+    return attr->i();
+}
+
+template<> optional<int> onnx_importer::get_attribute<int>(const onnx::NodeProto& node, const string &value)
+{
+    typedef int target_type;
     const auto* attr { extract(node.attribute(), value) };
 
     if (!attr)

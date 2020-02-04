@@ -95,6 +95,7 @@ namespace importer
 
     template<> std::optional<float> onnx_importer::get_attribute<float>(const onnx::NodeProto &node, const std::string &name);
     template<> std::optional<std::int64_t> onnx_importer::get_attribute<std::int64_t>(const onnx::NodeProto &node, const std::string &name);
+    template<> std::optional<int> onnx_importer::get_attribute<int>(const onnx::NodeProto &node, const std::string &name);
     template<> std::optional<std::string> onnx_importer::get_attribute<std::string>(const onnx::NodeProto &node, const std::string &name);
 
     template<> hlir::axis_t onnx_importer::to<hlir::axis_t>(const onnx::TensorProto &tensor);
