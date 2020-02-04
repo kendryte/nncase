@@ -371,7 +371,7 @@ onnx_importer::attribute_value_type onnx_importer::get_attribute(const onnx::Nod
     return attribute_value_type { };
 }
 
-template<> optional<float> onnx_importer::get_attribute<float>(const onnx::NodeProto& node, const string &value) const
+template<> optional<float> onnx_importer::get_attribute<float>(const onnx::NodeProto& node, const string &value)
 {
     typedef float target_type;
     const auto* attr { extract(node.attribute(), value) };
@@ -384,7 +384,7 @@ template<> optional<float> onnx_importer::get_attribute<float>(const onnx::NodeP
     return attr->f();
 }
 
-template<> optional<int64_t> onnx_importer::get_attribute<int64_t>(const onnx::NodeProto& node, const string &value) const
+template<> optional<int64_t> onnx_importer::get_attribute<int64_t>(const onnx::NodeProto& node, const string &value)
 {
     typedef int64_t target_type;
     const auto* attr { extract(node.attribute(), value) };
@@ -397,7 +397,7 @@ template<> optional<int64_t> onnx_importer::get_attribute<int64_t>(const onnx::N
     return attr->i();
 }
 
-template<> optional<string> onnx_importer::get_attribute<string>(const onnx::NodeProto& node, const string &value) const
+template<> optional<string> onnx_importer::get_attribute<string>(const onnx::NodeProto& node, const string &value)
 {
     typedef string target_type;
     const auto* attr { extract(node.attribute(), value) };

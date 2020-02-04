@@ -72,7 +72,7 @@ namespace importer
         static std::string to_string(const onnx::TensorProto_DataType datatype);
         static std::string to_string(const onnx::AttributeProto_AttributeType type);
         attribute_value_type get_attribute(const onnx::NodeProto &node, const std::string &name) const;
-        template<typename T> std::optional<T> get_attribute(const onnx::NodeProto &node, const std::string &name) const;
+        template<typename T> static std::optional<T> get_attribute(const onnx::NodeProto &node, const std::string &name);
 
         hlir::graph &graph_;
         onnx::ModelProto model_;
@@ -91,8 +91,8 @@ namespace importer
         return nncase::dt_uint8;
     }
 
-    template<> std::optional<float> onnx_importer::get_attribute<float>(const onnx::NodeProto &node, const std::string &name) const;
-    template<> std::optional<std::int64_t> onnx_importer::get_attribute<std::int64_t>(const onnx::NodeProto &node, const std::string &name) const;
-    template<> std::optional<std::string> onnx_importer::get_attribute<std::string>(const onnx::NodeProto &node, const std::string &name) const;
+    template<> std::optional<float> onnx_importer::get_attribute<float>(const onnx::NodeProto &node, const std::string &name);
+    template<> std::optional<std::int64_t> onnx_importer::get_attribute<std::int64_t>(const onnx::NodeProto &node, const std::string &name);
+    template<> std::optional<std::string> onnx_importer::get_attribute<std::string>(const onnx::NodeProto &node, const std::string &name);
 }
 }
