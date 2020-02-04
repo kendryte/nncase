@@ -96,6 +96,7 @@ set(ONNX_IMPORTER_OPS_SOURCES
 	ops/binary.cpp
 	ops/concat.cpp
 	ops/matmul.cpp
+	ops/reshape.cpp
 	ops/slice.cpp
 	ops/softmax.cpp
 	ops/unary.cpp
