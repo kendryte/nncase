@@ -61,25 +61,18 @@ namespace
         return it != collection.end() ? &(*it) : nullptr;
     }
 
-    template<typename T> const onnx::AttributeProto* extract_attribute(const onnx::NodeProto& node, const string &value)
+    template<class Proto, template<class> class ProtobufCollection> const Proto* extract(const ProtobufCollection<Proto>& collection, const string &value)
     {
         const auto it
         {
-            find_if(node.attribute().cbegin(), node.attribute().cend(),
-                [&value](const auto &attr)
+            find_if(begin(collection), end(collection),
+                [&value](const auto &e)
                 {
-                    return attr.name() == value;
+                    return e.name() == value;
                 })
-            };
+        };
 
-        if (it == node.attribute().cend())
-            return nullptr;
-
-        const auto &attr { *it };
-
-        assert(attr.type() == attribute_type<T>);
-
-        return &attr;
+        return it != end(collection) ? &(*it) : nullptr;
     }
 }
 
@@ -381,10 +374,12 @@ onnx_importer::attribute_value_type onnx_importer::get_attribute(const onnx::Nod
 template<> optional<float> onnx_importer::get_attribute<float>(const onnx::NodeProto& node, const string &value) const
 {
     typedef float target_type;
-    const auto* attr { extract_attribute<target_type>(node, value) };
+    const auto* attr { extract(node.attribute(), value) };
 
     if (!attr)
         return optional<target_type> { };
+
+    assert(attr->type() == attribute_type<target_type>);
 
     return attr->f();
 }
@@ -392,10 +387,12 @@ template<> optional<float> onnx_importer::get_attribute<float>(const onnx::NodeP
 template<> optional<int64_t> onnx_importer::get_attribute<int64_t>(const onnx::NodeProto& node, const string &value) const
 {
     typedef int64_t target_type;
-    const auto* attr { extract_attribute<target_type>(node, value) };
+    const auto* attr { extract(node.attribute(), value) };
 
     if (!attr)
         return optional<target_type> { };
+
+    assert(attr->type() == attribute_type<target_type>);
 
     return attr->i();
 }
@@ -403,10 +400,12 @@ template<> optional<int64_t> onnx_importer::get_attribute<int64_t>(const onnx::N
 template<> optional<string> onnx_importer::get_attribute<string>(const onnx::NodeProto& node, const string &value) const
 {
     typedef string target_type;
-    const auto* attr { extract_attribute<target_type>(node, value) };
+    const auto* attr { extract(node.attribute(), value) };
 
     if (!attr)
         return optional<target_type> { };
+
+    assert(attr->type() == attribute_type<target_type>);
 
     return attr->s();
 }
