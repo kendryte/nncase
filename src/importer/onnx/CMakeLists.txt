@@ -95,6 +95,7 @@ set(ONNX_IMPORTER_OPS_SOURCES
 	ops/activations.cpp
 	ops/binary.cpp
 	ops/concat.cpp
+	ops/slice.cpp
 	ops/unary.cpp
 	)
 
