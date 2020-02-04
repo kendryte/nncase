@@ -73,6 +73,8 @@ namespace importer
         static std::string to_string(const onnx::AttributeProto_AttributeType type);
         attribute_value_type get_attribute(const onnx::NodeProto &node, const std::string &name) const;
         template<typename T> static std::optional<T> get_attribute(const onnx::NodeProto &node, const std::string &name);
+        const onnx::TensorProto& get_initializer(const std::string &name) const;
+        template<typename T> static T to(const onnx::TensorProto &tensor);
 
         hlir::graph &graph_;
         onnx::ModelProto model_;
@@ -94,5 +96,11 @@ namespace importer
     template<> std::optional<float> onnx_importer::get_attribute<float>(const onnx::NodeProto &node, const std::string &name);
     template<> std::optional<std::int64_t> onnx_importer::get_attribute<std::int64_t>(const onnx::NodeProto &node, const std::string &name);
     template<> std::optional<std::string> onnx_importer::get_attribute<std::string>(const onnx::NodeProto &node, const std::string &name);
+
+    template<> hlir::axis_t onnx_importer::to<hlir::axis_t>(const onnx::TensorProto &tensor);
+    template<> xtl::span<float> onnx_importer::to<xtl::span<float>>(const onnx::TensorProto &tensor);
+    template<> xtl::span<std::uint8_t> onnx_importer::to<xtl::span<std::uint8_t>>(const onnx::TensorProto &tensor);
+    template<> xt::xarray<float> onnx_importer::to<xt::xarray<float>>(const onnx::TensorProto &tensor);
+    template<> xt::xarray<std::uint8_t> onnx_importer::to<xt::xarray<std::uint8_t>>(const onnx::TensorProto &tensor);
 }
 }

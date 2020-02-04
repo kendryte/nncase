@@ -39,6 +39,13 @@ namespace
     template<> AttributeProto_AttributeType attribute_type<int64_t> { AttributeProto_AttributeType_INT };
     template<> AttributeProto_AttributeType attribute_type<string> { AttributeProto_AttributeType_STRING };
 
+    template<typename T> TensorProto_DataType tensor_type;
+
+    template<> TensorProto_DataType tensor_type<float> { TensorProto_DataType_FLOAT };
+    template<> TensorProto_DataType tensor_type<uint8_t> { TensorProto_DataType_UINT8 };
+    template<> TensorProto_DataType tensor_type<int32_t> { TensorProto_DataType_INT32 };
+    template<> TensorProto_DataType tensor_type<int64_t> { TensorProto_DataType_INT64 };
+
     template <typename Proto>
     bool ParseProtoFromBytes(Proto* proto, const unsigned char* buffer, size_t length)
     {
@@ -408,6 +415,42 @@ template<> optional<string> onnx_importer::get_attribute<string>(const onnx::Nod
     assert(attr->type() == attribute_type<target_type>);
 
     return attr->s();
+}
+
+const TensorProto& onnx_importer::get_initializer(const string &value) const
+{
+    const auto& graph { model_.graph() };
+    const auto* initializer { extract(graph.initializer(), value) };
+
+    if (!initializer)
+        throw runtime_error("Can't find initializer for " + value);
+
+    return *initializer;
+}
+
+template<> axis_t onnx_importer::to<axis_t>(const onnx::TensorProto &tensor)
+{
+    assert(tensor.data_type() == tensor_type<std::int32_t>);
+
+    switch (tensor.data_type())
+    {
+    case TensorProto_DataType_INT32:
+        assert(tensor.int32_data_size() > 0);
+        return { &(*tensor.int32_data().begin()), &(*tensor.int32_data().end()) };
+
+    case TensorProto_DataType_INT64:
+    {
+        assert(tensor.int64_data_size() > 0);
+        axis_t result;
+        transform(tensor.int64_data().begin(), tensor.int64_data().end(), back_inserter(result),
+            [](const auto a) { return a; });
+
+        return result;
+    }
+    default:
+        throw runtime_error("Tensor can't be converted to axis");
+    }
+
 }
 
 graph nncase::importer::import_onnx(xtl::span<const uint8_t> model)
