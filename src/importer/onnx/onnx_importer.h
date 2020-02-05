@@ -61,6 +61,8 @@ namespace importer
         void convert_unary(const onnx::NodeProto &node, const unary_op_t unary_op);
         void convert_binary(const onnx::NodeProto &node, const binary_op_t binary_op);
 
+        void convert_pool(const onnx::NodeProto &node, const reduce_op_t reduce_op, const float initial_value);
+
         const onnx::ValueInfoProto* find_value_info(const std::string &value) const;
         nncase::hlir::shape_t get_shape(const std::string &value) const;
         static nncase::hlir::shape_t get_shape(const onnx::ValueInfoProto &value);
