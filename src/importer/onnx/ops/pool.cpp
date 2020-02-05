@@ -63,11 +63,9 @@ void onnx_importer::convert_op_MaxPool(const NodeProto& node)
 void onnx_importer::convert_pool(const NodeProto& node, const reduce_op_t reduce_op, const float init_value)
 {
     const auto &input { node.input()[0] };
-    const auto &weight { node.input()[1] };
     const auto &output { node.output()[0] };
 
     auto input_shape { get_shape(input) };
-    const auto& weight_shape { get_shape(weight) };
 
     padding_mode pad_mode { padding_mode::notset };
 
