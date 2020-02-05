@@ -62,6 +62,7 @@ namespace importer
         void convert_binary(const onnx::NodeProto &node, const binary_op_t binary_op);
 
         void convert_pool(const onnx::NodeProto &node, const reduce_op_t reduce_op, const float initial_value);
+        void convert_reduce(const onnx::NodeProto &node, const reduce_op_t reduce_op, const float initial_value);
 
         const onnx::ValueInfoProto* find_value_info(const std::string &value) const;
         nncase::hlir::shape_t get_shape(const std::string &value) const;
@@ -102,6 +103,7 @@ namespace importer
     template<> std::optional<xtl::span<const float>> onnx_importer::get_attribute<xtl::span<const float>>(const onnx::NodeProto &node, const std::string &name);
     template<> std::optional<xtl::span<const std::int64_t>> onnx_importer::get_attribute<xtl::span<const std::int64_t>>(const onnx::NodeProto &node, const std::string &name);
     template<> std::optional<xtl::span<const std::string>> onnx_importer::get_attribute<xtl::span<const std::string>>(const onnx::NodeProto &node, const std::string &name);
+    template<> std::optional<hlir::axis_t> onnx_importer::get_attribute<hlir::axis_t>(const onnx::NodeProto &node, const std::string &name);
 
     template<> float onnx_importer::to<float>(const onnx::TensorProto &tensor);
     template<> std::uint8_t onnx_importer::to<std::uint8_t>(const onnx::TensorProto &tensor);

@@ -39,6 +39,10 @@ namespace
     template<> AttributeProto_AttributeType attribute_type<int64_t> { AttributeProto_AttributeType_INT };
     template<> AttributeProto_AttributeType attribute_type<int> { AttributeProto_AttributeType_INT };
     template<> AttributeProto_AttributeType attribute_type<string> { AttributeProto_AttributeType_STRING };
+    template<> AttributeProto_AttributeType attribute_type<xtl::span<float>> { AttributeProto_AttributeType_FLOATS };
+    template<> AttributeProto_AttributeType attribute_type<xtl::span<int64_t>> { AttributeProto_AttributeType_INTS };
+    template<> AttributeProto_AttributeType attribute_type<axis_t> { AttributeProto_AttributeType_INTS };
+    template<> AttributeProto_AttributeType attribute_type<xtl::span<string>> { AttributeProto_AttributeType_STRINGS };
 
     template<typename T> TensorProto_DataType tensor_type;
 
@@ -468,6 +472,19 @@ template<> optional<xtl::span<const string>> onnx_importer::get_attribute<xtl::s
     assert(attr->type() == attribute_type<target_type>);
 
     return target_type { &(*attr->strings().begin()), &(*attr->strings().end()) };
+}
+
+template<> optional<axis_t> onnx_importer::get_attribute<axis_t>(const onnx::NodeProto& node, const string &value)
+{
+    typedef axis_t target_type;
+    const auto* attr { extract(node.attribute(), value) };
+
+    if (!attr)
+        return optional<target_type> { };
+
+    assert(attr->type() == attribute_type<target_type>);
+
+    return target_type { begin(attr->ints()), end(attr->ints()) };
 }
 
 const TensorProto& onnx_importer::get_initializer(const string &value) const

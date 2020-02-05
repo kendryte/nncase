@@ -100,6 +100,7 @@ set(ONNX_IMPORTER_OPS_SOURCES
 	ops/matmul.cpp
 	ops/pad.cpp
 	ops/pool.cpp
+	ops/reduce.cpp
 	ops/reshape.cpp
 	ops/resize.cpp
 	ops/slice.cpp
