@@ -20,6 +20,7 @@
 #include <hlir/graph.h>
 #include <hlir/op_utils.h>
 #include <hlir/ops/conv2d.h>
+#include <hlir/ops/conv2d_transpose.h>
 
 using namespace std;
 
@@ -50,6 +51,16 @@ namespace
 }
 
 void onnx_importer::convert_op_Conv(const NodeProto& node)
+{
+    convert_conv<conv2d>(node);
+}
+
+void onnx_importer::convert_op_ConvTranspose(const NodeProto& node)
+{
+    convert_conv<conv2d_transpose>(node);
+}
+
+template<class Node> void onnx_importer::convert_conv(const NodeProto &node)
 {
     const auto &input { node.input()[0] };
     const auto &weight { node.input()[1] };
@@ -143,8 +154,27 @@ void onnx_importer::convert_op_Conv(const NodeProto& node)
         bias_value = to<xt::xarray<float>>(get_initializer(bias));
     }
 
-    auto conv { graph_.emplace<conv2d>(move(input_shape), move(weight_value), move(bias_value), group, pads[0], pads[1], strides[0], strides[1], dilations[0], dilations[1], value_range<float>::full()) };
+    auto conv { add_conv_node<Node>(node, graph_, move(input_shape), move(weight_value), move(bias_value), group, pads, strides, dilations) };
 
     input_tensors_.emplace(&conv->input(), input);
     output_tensors_.emplace(output, &conv->output());
+}
+
+template<class Node> Node* onnx_importer::add_conv_node(const NodeProto &node, hlir::graph& graph, shape_t&& input_shape, xt::xarray<float>&& weight_value, xt::xarray<float>&& bias_value, const size_t group, array<padding, 2>& pads, array<size_t, 2>& strides, array<size_t, 2>& dilations)
+{
+    return graph.emplace<Node>(move(input_shape), move(weight_value), move(bias_value), group, pads[0], pads[1], strides[0], strides[1], dilations[0], dilations[1], value_range<float>::full());
+}
+
+template<> conv2d_transpose* onnx_importer::add_conv_node<conv2d_transpose>(const NodeProto &node, hlir::graph& graph, shape_t&& input_shape, xt::xarray<float>&& weight_value, xt::xarray<float>&& bias_value, const size_t group, array<padding, 2>& pads, array<size_t, 2>& strides, array<size_t, 2>& dilations)
+{
+    auto output_shape { input_shape };
+
+    const auto &output_shape_attr { get_attribute<xtl::span<const int64_t>>(node, "output_shape") };
+    if (output_shape_attr)
+    {
+        const auto &output_shape_value { output_shape_attr.value() };
+        output_shape = shape_t { begin(output_shape_value), end(output_shape_value) };
+    }
+
+    return graph.emplace<conv2d_transpose>(move(input_shape), move(output_shape), move(weight_value), move(bias_value), group, pads[0], pads[1], strides[0], strides[1], dilations[0], dilations[1], value_range<float>::full());
 }
