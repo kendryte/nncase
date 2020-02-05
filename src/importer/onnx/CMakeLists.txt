@@ -105,6 +105,7 @@ set(ONNX_IMPORTER_OPS_SOURCES
 	ops/resize.cpp
 	ops/slice.cpp
 	ops/softmax.cpp
+	ops/transpose.cpp
 	ops/unary.cpp
 	)
 
