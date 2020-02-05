@@ -97,12 +97,13 @@ namespace importer
     template<> std::optional<std::int64_t> onnx_importer::get_attribute<std::int64_t>(const onnx::NodeProto &node, const std::string &name);
     template<> std::optional<int> onnx_importer::get_attribute<int>(const onnx::NodeProto &node, const std::string &name);
     template<> std::optional<std::string> onnx_importer::get_attribute<std::string>(const onnx::NodeProto &node, const std::string &name);
+    template<> std::optional<xtl::span<const float>> onnx_importer::get_attribute<xtl::span<const float>>(const onnx::NodeProto &node, const std::string &name);
+    template<> std::optional<xtl::span<const std::int64_t>> onnx_importer::get_attribute<xtl::span<const std::int64_t>>(const onnx::NodeProto &node, const std::string &name);
+    template<> std::optional<xtl::span<const std::string>> onnx_importer::get_attribute<xtl::span<const std::string>>(const onnx::NodeProto &node, const std::string &name);
 
     template<> float onnx_importer::to<float>(const onnx::TensorProto &tensor);
     template<> std::uint8_t onnx_importer::to<std::uint8_t>(const onnx::TensorProto &tensor);
     template<> hlir::axis_t onnx_importer::to<hlir::axis_t>(const onnx::TensorProto &tensor);
-    template<> xtl::span<float> onnx_importer::to<xtl::span<float>>(const onnx::TensorProto &tensor);
-    template<> xtl::span<std::uint8_t> onnx_importer::to<xtl::span<std::uint8_t>>(const onnx::TensorProto &tensor);
     template<> xt::xarray<float> onnx_importer::to<xt::xarray<float>>(const onnx::TensorProto &tensor);
     template<> xt::xarray<std::uint8_t> onnx_importer::to<xt::xarray<std::uint8_t>>(const onnx::TensorProto &tensor);
 }

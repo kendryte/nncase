@@ -431,6 +431,45 @@ template<> optional<string> onnx_importer::get_attribute<string>(const onnx::Nod
     return attr->s();
 }
 
+template<> optional<xtl::span<const float>> onnx_importer::get_attribute<xtl::span<const float>>(const onnx::NodeProto& node, const string &value)
+{
+    typedef xtl::span<const float> target_type;
+    const auto* attr { extract(node.attribute(), value) };
+
+    if (!attr)
+        return optional<target_type> { };
+
+    assert(attr->type() == attribute_type<target_type>);
+
+    return target_type { &(*attr->floats().begin()), &(*attr->floats().end()) };
+}
+
+template<> optional<xtl::span<const int64_t>> onnx_importer::get_attribute<xtl::span<const int64_t>>(const onnx::NodeProto& node, const string &value)
+{
+    typedef xtl::span<const int64_t> target_type;
+    const auto* attr { extract(node.attribute(), value) };
+
+    if (!attr)
+        return optional<target_type> { };
+
+    assert(attr->type() == attribute_type<target_type>);
+
+    return target_type { &(*attr->ints().begin()), &(*attr->ints().end()) };
+}
+
+template<> optional<xtl::span<const string>> onnx_importer::get_attribute<xtl::span<const string>>(const onnx::NodeProto& node, const string &value)
+{
+    typedef xtl::span<const string> target_type;
+    const auto* attr { extract(node.attribute(), value) };
+
+    if (!attr)
+        return optional<target_type> { };
+
+    assert(attr->type() == attribute_type<target_type>);
+
+    return target_type { &(*attr->strings().begin()), &(*attr->strings().end()) };
+}
+
 const TensorProto& onnx_importer::get_initializer(const string &value) const
 {
     const auto& graph { model_.graph() };
@@ -480,7 +519,13 @@ template<> axis_t onnx_importer::to<axis_t>(const onnx::TensorProto &tensor)
     default:
         throw runtime_error("Tensor can't be converted to axis");
     }
+}
 
+template<> xt::xarray<float> onnx_importer::to<xt::xarray<float>>(const onnx::TensorProto &tensor)
+{
+    assert(tensor.data_type() == tensor_type<float>);
+
+    return xt::adapt(tensor.float_data().data(), tensor.float_data().size(), xt::no_ownership(), vector<int> { tensor.float_data().size() });
 }
 
 graph nncase::importer::import_onnx(xtl::span<const uint8_t> model)

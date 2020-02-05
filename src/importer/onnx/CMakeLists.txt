@@ -95,6 +95,7 @@ set(ONNX_IMPORTER_OPS_SOURCES
 	ops/activations.cpp
 	ops/binary.cpp
 	ops/concat.cpp
+	ops/conv.cpp
 	ops/lp_normalization.cpp
 	ops/matmul.cpp
 	ops/pad.cpp
