@@ -442,6 +442,22 @@ const TensorProto& onnx_importer::get_initializer(const string &value) const
     return *initializer;
 }
 
+template<> float onnx_importer::to<float>(const onnx::TensorProto &tensor)
+{
+    assert(tensor.data_type() == tensor_type<float>);
+    assert(tensor.float_data_size() > 0);
+
+    return tensor.float_data()[0];
+}
+
+template<> uint8_t onnx_importer::to<uint8_t>(const onnx::TensorProto &tensor)
+{
+    assert(tensor.data_type() == tensor_type<uint8_t>);
+    assert(tensor.uint64_data_size() > 0);
+
+    return static_cast<uint8_t>(tensor.uint64_data()[0]);
+}
+
 template<> axis_t onnx_importer::to<axis_t>(const onnx::TensorProto &tensor)
 {
     assert(tensor.data_type() == tensor_type<std::int32_t>);
