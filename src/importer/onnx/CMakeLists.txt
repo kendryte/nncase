@@ -107,6 +107,7 @@ set(ONNX_IMPORTER_OPS_SOURCES
 	ops/softmax.cpp
 	ops/transpose.cpp
 	ops/unary.cpp
+	ops/constant.cpp
 	)
 
 add_library(onnx_importer ${ONNX_IMPORTER_SOURCES} ${ONNX_IMPORTER_OPS_SOURCES})
