@@ -14,6 +14,7 @@
  */
 #include <hlir/ops/pad.h>
 #include <hlir/ops/strided_slice.h>
+#include <hlir/ops/reshape.h>
 #include <hlir/transforms/neutral/fold_pad.h>
 #include <hlir/visitor.h>
 
@@ -154,8 +155,10 @@ void strided_slice_to_pad_transform::process(transform_context &context)
 
     auto p = context.graph.emplace<pad>(output.type(), output.shape(), paddings, 0); // dummy pad value because of cropping
     p->name(old_slice.name());
+    auto rshape = context.graph.emplace<reshape>(output.type(), p->output().shape(), old_slice.output().shape());
+    rshape->input().connect(p->output());
 
     p->input().connect(output);
     for (auto &in : dup(inputs))
-        in->connect(p->output());
+        in->connect(rshape->output());
 }
