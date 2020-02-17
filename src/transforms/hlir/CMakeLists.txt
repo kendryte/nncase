@@ -22,7 +22,8 @@ set(SRCS transform.cpp
          k210/kpu_conv2d.cpp
          k210/fuse_kpu_download.cpp
          k210/fold_kpu_upload.cpp
-         k210/fake_piecewise_linear.cpp)
+         k210/fake_piecewise_linear.cpp
+         k210/matmul_to_fake_kpu_conv2d.cpp)
 
 add_library(hlir_transforms STATIC ${SRCS})
 target_include_directories(hlir_transforms PUBLIC ../include)
