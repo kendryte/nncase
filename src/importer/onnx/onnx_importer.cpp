@@ -111,7 +111,10 @@ void onnx_importer::import()
         auto&& input_shape { get_shape(input_info) };
         const auto input_dt { get_datatype(input_info) };
 
-        auto node { graph_.emplace<input_node>(input_dt, input_shape) };
+        if (!input_dt)
+            throw runtime_error("Data type of input \"" + input_name + "\" is not supported");
+
+        auto node { graph_.emplace<input_node>(input_dt.value(), input_shape) };
         node->name(input_name);
 
         output_tensors_.emplace(input_name, &node->output());
@@ -124,7 +127,10 @@ void onnx_importer::import()
         auto&& output_shape { get_shape(output_info) };
         const auto output_dt { get_datatype(output_info) };
 
-        auto node { graph_.emplace<output_node>(output_dt, output_shape) };
+        if (!output_dt)
+            throw runtime_error("Data type of output \"" + output_name + "\" is not supported");
+
+        auto node { graph_.emplace<output_node>(output_dt.value(), output_shape) };
         node->name(output_name);
 
         input_tensors_.emplace(&node->input(), output_name);
@@ -207,7 +213,7 @@ shape_t onnx_importer::get_shape(const ValueInfoProto &value_info)
     return result_shape;
 }
 
-datatype_t onnx_importer::get_datatype(const ValueInfoProto &value_info)
+optional<datatype_t> onnx_importer::get_datatype(const ValueInfoProto &value_info)
 {
     const auto& type { value_info.type() };
     assert(type.value_case() == TypeProto::kTensorType);
@@ -230,7 +236,7 @@ datatype_t onnx_importer::get_datatype(const AttributeProto_AttributeType type)
     }
 }
 
-datatype_t onnx_importer::get_datatype(const TensorProto_DataType datatype)
+optional<datatype_t> onnx_importer::get_datatype(const TensorProto_DataType datatype)
 {
     switch (datatype)
     {
@@ -241,7 +247,7 @@ datatype_t onnx_importer::get_datatype(const TensorProto_DataType datatype)
         return dt_uint8;
 
     default:
-        throw runtime_error("ONNX data type " + to_string(datatype) + " is unsupported");
+        return optional<datatype_t> { };
     }
 }
 

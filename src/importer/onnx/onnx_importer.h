@@ -70,8 +70,8 @@ namespace importer
         const onnx::ValueInfoProto* find_value_info(const std::string &value) const;
         nncase::hlir::shape_t get_shape(const std::string &value) const;
         static nncase::hlir::shape_t get_shape(const onnx::ValueInfoProto &value);
-        static nncase::datatype_t get_datatype(const onnx::ValueInfoProto &value);
-        static nncase::datatype_t get_datatype(const onnx::TensorProto_DataType datatype);
+        static std::optional<nncase::datatype_t> get_datatype(const onnx::ValueInfoProto &value);
+        static std::optional<nncase::datatype_t> get_datatype(const onnx::TensorProto_DataType datatype);
         static nncase::datatype_t get_datatype(const onnx::AttributeProto_AttributeType type);
         template<typename T> static constexpr nncase::datatype_t get_datatype();
 
