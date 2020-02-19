@@ -560,6 +560,16 @@ template<> axis_t onnx_importer::to<axis_t>(const onnx::TensorProto &tensor)
     }
 }
 
+template<> xt::xarray<uint8_t> onnx_importer::to<xt::xarray<uint8_t>>(const onnx::TensorProto &tensor)
+{
+    assert(tensor.data_type() == tensor_type<uint8_t>);
+
+    vector<uint8_t> data { begin(tensor.int32_data()), end(tensor.int32_data()) };
+    const vector<size_t> shape { 1, size_t(tensor.int32_data().size()) };
+
+    return xt::adapt(data, shape);
+}
+
 template<> xt::xarray<float> onnx_importer::to<xt::xarray<float>>(const onnx::TensorProto &tensor)
 {
     assert(tensor.data_type() == tensor_type<float>);
