@@ -221,6 +221,13 @@ optional<datatype_t> onnx_importer::get_datatype(const ValueInfoProto &value_inf
     return get_datatype(static_cast<TensorProto_DataType>(type.tensor_type().elem_type()));
 }
 
+optional<datatype_t> onnx_importer::get_datatype(const TensorProto &value)
+{
+    const auto& type { value.data_type() };
+
+    return get_datatype(static_cast<TensorProto_DataType>(type));
+}
+
 datatype_t onnx_importer::get_datatype(const AttributeProto_AttributeType type)
 {
     switch (type)
