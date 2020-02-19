@@ -213,6 +213,15 @@ shape_t onnx_importer::get_shape(const ValueInfoProto &value_info)
     return result_shape;
 }
 
+shape_t onnx_importer::get_shape(const TensorProto &value)
+{
+    const auto& shape { value.dims() };
+
+    shape_t result_shape { begin(shape), end(shape) };
+
+    return result_shape;
+}
+
 optional<datatype_t> onnx_importer::get_datatype(const ValueInfoProto &value_info)
 {
     const auto& type { value_info.type() };
