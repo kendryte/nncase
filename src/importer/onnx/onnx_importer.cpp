@@ -39,6 +39,7 @@ namespace
     template<> AttributeProto_AttributeType attribute_type<int64_t> { AttributeProto_AttributeType_INT };
     template<> AttributeProto_AttributeType attribute_type<int> { AttributeProto_AttributeType_INT };
     template<> AttributeProto_AttributeType attribute_type<string> { AttributeProto_AttributeType_STRING };
+    template<> AttributeProto_AttributeType attribute_type<const TensorProto*> { AttributeProto_AttributeType_TENSOR };
     template<> AttributeProto_AttributeType attribute_type<xtl::span<float>> { AttributeProto_AttributeType_FLOATS };
     template<> AttributeProto_AttributeType attribute_type<xtl::span<int64_t>> { AttributeProto_AttributeType_INTS };
     template<> AttributeProto_AttributeType attribute_type<axis_t> { AttributeProto_AttributeType_INTS };
@@ -455,6 +456,19 @@ template<> optional<string> onnx_importer::get_attribute<string>(const onnx::Nod
     assert(attr->type() == attribute_type<target_type>);
 
     return attr->s();
+}
+
+template<> optional<const TensorProto*> onnx_importer::get_attribute<const TensorProto*>(const onnx::NodeProto& node, const string &value)
+{
+    typedef const TensorProto* target_type;
+    const auto* attr { extract(node.attribute(), value) };
+
+    if (!attr)
+        return optional<target_type> { };
+
+    assert(attr->type() == attribute_type<target_type>);
+
+    return &attr->t();
 }
 
 template<> optional<xtl::span<const float>> onnx_importer::get_attribute<xtl::span<const float>>(const onnx::NodeProto& node, const string &value)

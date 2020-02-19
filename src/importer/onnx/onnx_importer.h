@@ -105,6 +105,7 @@ namespace importer
     template<> std::optional<std::int64_t> onnx_importer::get_attribute<std::int64_t>(const onnx::NodeProto &node, const std::string &name);
     template<> std::optional<int> onnx_importer::get_attribute<int>(const onnx::NodeProto &node, const std::string &name);
     template<> std::optional<std::string> onnx_importer::get_attribute<std::string>(const onnx::NodeProto &node, const std::string &name);
+    template<> std::optional<const onnx::TensorProto*> onnx_importer::get_attribute<const onnx::TensorProto*>(const onnx::NodeProto &node, const std::string &name);
     template<> std::optional<xtl::span<const float>> onnx_importer::get_attribute<xtl::span<const float>>(const onnx::NodeProto &node, const std::string &name);
     template<> std::optional<xtl::span<const std::int64_t>> onnx_importer::get_attribute<xtl::span<const std::int64_t>>(const onnx::NodeProto &node, const std::string &name);
     template<> std::optional<xtl::span<const std::string>> onnx_importer::get_attribute<xtl::span<const std::string>>(const onnx::NodeProto &node, const std::string &name);
