@@ -37,7 +37,36 @@ void onnx_importer::convert_op_Constant(const NodeProto &node)
     const auto &output { node.output()[0] };
 
 	hlir::constant* op { };
-	if (const auto value { get_attribute<float>(node, "value_float") })
+	if (const auto value { get_attribute<const TensorProto*>(node, "value") })
+	{
+		auto&& v { *value.value() };
+		shape_t shape { get_shape(v) };
+		const auto value_dt { get_datatype(v) };
+
+		if (!value_dt)
+			throw runtime_error("Data type of constant not supported");
+
+
+		switch (value_dt.value())
+		{
+		case dt_uint8:
+		{
+			const auto& data { to<xt::xarray<uint8_t>>(v) };
+			xtl::span<const uint8_t> vec { data };
+			op = graph_.emplace<constant>(value_dt.value(), move(shape), vec);
+			break;
+		}
+
+		case dt_float32:
+		{
+			const auto& data { to<xt::xarray<float>>(v) };
+			xtl::span<const uint8_t> vec { reinterpret_cast<const uint8_t*>(data.data()), data.size() * sizeof(float) };
+			op = graph_.emplace<constant>(value_dt.value(), move(shape), vec);
+			break;
+		}
+		}
+	}
+	else if (const auto value { get_attribute<float>(node, "value_float") })
 	{
 		op = graph_.emplace<constant>(value.value());
 	}
@@ -51,6 +80,13 @@ void onnx_importer::convert_op_Constant(const NodeProto &node)
 		vector<uint8_t>&& vec { begin(v), end(v) };
 		shape_t shape { 1, v.size() };
 		op = graph_.emplace<constant>(dt_uint8, move(shape), vec);
+	}
+	else if (const auto value { get_attribute<xtl::span<const float>>(node, "value_floats") })
+	{
+		auto&& v { value.value() };
+		shape_t shape { 1, v.size() };
+		xtl::span<const uint8_t> vec { reinterpret_cast<const uint8_t*>(v.data()), v.size() * sizeof(float) };
+		op = graph_.emplace<constant>(dt_float32, move(shape), vec);
 	}
 	else
 	{
