@@ -18,6 +18,7 @@
 #include <hlir/ops/reduce_window2d.h>
 #include <hlir/ops/strided_slice.h>
 #include <hlir/transforms/k210/fake_kpu_conv2d.h>
+#include <hlir/transforms/k210/kpu_utils.h>
 #include <hlir/visitor.h>
 #include <runtime/k210/k210_runtime_op_utility.h>
 
@@ -108,17 +109,6 @@ bool is_supported_filter(reduce_op_t op, int32_t filter_h, int32_t filter_w, int
     {
         return false;
     }
-}
-
-xt::svector<piecewise_linear_segment> clamp_to_piecewise(value_range<float> clamp)
-{
-    xt::svector<piecewise_linear_segment> segs;
-    if (clamp.min != std::numeric_limits<float>::lowest())
-        segs.push_back({ std::numeric_limits<float>::lowest(), 0.f, clamp.min });
-    segs.push_back({ clamp.min, 1.f, 0.f });
-    if (clamp.max != std::numeric_limits<float>::max())
-        segs.push_back({ clamp.max, 0.f, clamp.max });
-    return segs;
 }
 }
 

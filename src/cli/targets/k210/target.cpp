@@ -18,14 +18,15 @@
 #include <hlir/transforms/k210/fold_kpu_upload.h>
 #include <hlir/transforms/k210/fuse_kpu_download.h>
 #include <hlir/transforms/k210/kpu_conv2d.h>
+#include <hlir/transforms/k210/matmul_to_fake_kpu_conv2d.h>
 #include <hlir/transforms/k210/strided_slice_motion.h>
 #include <hlir/transforms/neutral/add_quant_checkpoints.h>
+#include <hlir/transforms/neutral/eliminate_dilated_conv2d.h>
 #include <hlir/transforms/neutral/fold_pad.h>
 #include <hlir/transforms/neutral/fold_quantize.h>
 #include <hlir/transforms/neutral/fold_transpose.h>
 #include <hlir/transforms/neutral/fuse_pad.h>
 #include <hlir/transforms/neutral/transpose_motion.h>
-#include <hlir/transforms/neutral/eliminate_dilated_conv2d.h>
 #include <scheduler/k210/kpu_memory_allocator.h>
 #include <scheduler/main_memory_allocator.h>
 
@@ -84,6 +85,7 @@ void nncase::k210_target::optimize_target_dependent(hlir::transforms::pass_manag
     pass p;
     p.emplace<eliminate_dilated_conv2d_transform>();
     p.emplace<fake_kpu_conv2d_transform>();
+    p.emplace<matmul_to_fake_kpu_conv2d_transform>();
     p.emplace<strided_slice_motion_transform>();
     p.emplace<fuse_fake_kpu_conv2d_strided_slice_transform>();
     p.emplace<fuse_fake_kpu_conv2d_reduce_window2d_transform>();

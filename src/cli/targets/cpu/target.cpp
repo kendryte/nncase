@@ -79,6 +79,7 @@ void cpu_target::add_default_transforms(hlir::transforms::pass &pass)
     pass.emplace<fold_nop_pad_transform>();
     pass.emplace<fold_nop_reshape_transform>();
     pass.emplace<fold_nop_transpose_transform>();
+    pass.emplace<fold_pad_pad_transform>();
     pass.emplace<fold_pad_strided_slice_transform>();
     pass.emplace<fold_quantize_transform>();
     pass.emplace<fold_reshape_transform>();

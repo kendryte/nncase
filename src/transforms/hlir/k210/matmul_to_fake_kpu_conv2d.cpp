@@ -16,9 +16,12 @@
 #include <hlir/ops/k210/fake_kpu_conv2d.h>
 #include <hlir/ops/matmul.h>
 #include <hlir/ops/pad.h>
+#include <hlir/ops/reshape.h>
+#include <hlir/transforms/k210/kpu_utils.h>
 #include <hlir/transforms/k210/matmul_to_fake_kpu_conv2d.h>
 #include <hlir/visitor.h>
 #include <runtime/k210/k210_runtime_op_utility.h>
+#include <xtensor/xadapt.hpp>
 
 using namespace nncase;
 using namespace nncase::hlir;
@@ -27,7 +30,7 @@ using namespace nncase::runtime::k210;
 using namespace nncase::hlir::transforms;
 using namespace nncase::hlir::transforms::k210;
 
-#define KPU_MATMUL_THRESHOLD (10 * 1024)
+#define KPU_MATMUL_THRESHOLD (0 * 1024)
 
 bool matmul_to_fake_kpu_conv2d_transform::on_try_match(node &node, transform_context &context)
 {
@@ -35,7 +38,7 @@ bool matmul_to_fake_kpu_conv2d_transform::on_try_match(node &node, transform_con
     {
         if (auto w = try_get_direct_parent<constant>(*mm, 1))
         {
-            if (xt::compute_size(w->output().shape()) <= KPU_MATMUL_THRESHOLD)
+            if (xt::compute_size(w->output().shape()) >= KPU_MATMUL_THRESHOLD)
             {
                 context.inputs.emplace_back(&mm->input_a());
                 context.outputs.emplace_back(&mm->output());
@@ -58,16 +61,27 @@ void matmul_to_fake_kpu_conv2d_transform::process(transform_context &context)
     auto &old_mm = static_cast<matmul &>(*context.matched_nodes[0]);
     auto &old_w = static_cast<constant &>(*context.matched_nodes[1]);
 
+    shape_t pre_shape { output.shape()[0], output.shape()[1], 1, 1 };
+    shape_t sur_shape { output.shape()[0], old_mm.input_b().shape()[1] };
+    shape_t w_shape { old_mm.input_b().shape()[0], old_mm.input_b().shape()[1], 1, 1 };
     xt::svector<padding> pre_paddings { padding::zero(), padding::zero(), { 0, 3 }, { 0, 3 } };
     xt::svector<padding> sur_paddings { padding::zero(), padding::zero(), { 0, -3 }, { 0, -3 } };
+    xt::xtensor<float, 4> mm_w(xt::adapt(reinterpret_cast<const float *>(old_w.data().data()), w_shape));
+    xt::xtensor<float, 1> bias(std::array<size_t, 1> { w_shape[1] }, 0.f);
+    auto w = xt::transpose(mm_w, { 1, 0, 2, 3 });
 
-    auto pre_pad = context.graph.emplace<pad>(dt_float32, output.shape(), pre_paddings, 0.f);
-    auto conv = context.graph.emplace<fake_kpu_conv2d>(output.shape(), old_conv.is_depthwise(), old_conv.filter_type(), old_conv.pool_type(),
-        old_conv.weights(), old_conv.bias(), old_conv.fused_activation());
-    auto slice = context.graph.emplace<strided_slice>(dt_float32, conv->output().shape(), axis_t { 0, 0, 0, 0 }, axis_t { 0, 0, 0, 0 }, old_slice.strides(), 15, 15, 0, 0, 0);
-    slice->input().connect(conv->output());
+    auto pre_reshape = context.graph.emplace<reshape>(dt_float32, output.shape(), pre_shape);
+    auto pre_pad = context.graph.emplace<pad>(dt_float32, pre_reshape->output().shape(), pre_paddings, 0.f);
+    auto conv = context.graph.emplace<fake_kpu_conv2d>(pre_pad->output().shape(), false, kpu_filter_1x1, kpu_pool_bypass,
+        w, bias, clamp_to_piecewise(old_mm.fused_activation()));
+    auto sur_pad = context.graph.emplace<pad>(dt_float32, conv->output().shape(), sur_paddings, 0.f);
+    auto sur_reshape = context.graph.emplace<reshape>(dt_float32, sur_pad->output().shape(), sur_shape);
+    pre_pad->input().connect(pre_reshape->output());
+    conv->input().connect(pre_pad->output());
+    sur_pad->input().connect(conv->output());
+    sur_reshape->input().connect(sur_pad->output());
 
-    conv->input().connect(output);
+    pre_reshape->input().connect(output);
     for (auto &in : dup(inputs))
-        in->connect(slice->output());
+        in->connect(sur_reshape->output());
 }

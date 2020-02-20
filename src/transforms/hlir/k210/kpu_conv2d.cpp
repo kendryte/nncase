@@ -82,8 +82,10 @@ auto quantize_weights(quantizer &quantizer, fake_kpu_conv2d &conv)
     return std::make_tuple(q_p, std::move(scales), std::move(q_weights));
 }
 
-xt::svector<piecewise_linear_segment> clamp_act(const quant_param_t &yq_p, const xt::svector<piecewise_linear_segment> &activation)
+xt::svector<nncase::runtime::k210::piecewise_linear_segment> clamp_act(const quant_param_t &yq_p, const xt::svector<nncase::runtime::k210::piecewise_linear_segment> &activation)
 {
+    using namespace nncase::runtime::k210;
+
     auto y_start = (0 - yq_p.zero_point) / yq_p.scale;
     auto y_end = (255 - yq_p.zero_point) / yq_p.scale;
     auto lines = to_lines(activation);

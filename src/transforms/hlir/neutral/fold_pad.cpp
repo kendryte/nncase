@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 #include <hlir/ops/pad.h>
-#include <hlir/ops/strided_slice.h>
 #include <hlir/ops/reshape.h>
+#include <hlir/ops/strided_slice.h>
 #include <hlir/transforms/neutral/fold_pad.h>
 #include <hlir/visitor.h>
 
@@ -48,6 +48,49 @@ void fold_nop_pad_transform::process(transform_context &context)
 
     for (auto &in : dup(inputs))
         in->connect(output);
+}
+
+bool fold_pad_pad_transform::on_try_match(node &node, transform_context &context)
+{
+    if (auto p1 = node_cast<pad>(node))
+    {
+        if (auto p2 = try_get_direct_child<pad>(*p1))
+        {
+            if (p1->pad_value() == p2->pad_value())
+            {
+                context.inputs.emplace_back(&p1->input());
+                context.outputs.emplace_back(&p2->output());
+
+                context.matched_nodes.emplace_back(p1);
+                context.matched_nodes.emplace_back(p2);
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+void fold_pad_pad_transform::process(transform_context &context)
+{
+    auto &output = *context.inputs[0]->connection();
+    auto inputs = context.outputs[0]->connections();
+
+    auto &old_p1 = static_cast<pad &>(*context.matched_nodes[0]);
+    auto &old_p2 = static_cast<pad &>(*context.matched_nodes[1]);
+
+    xt::svector<padding> paddings { old_p1.paddings()[0] + old_p2.paddings()[0],
+        old_p1.paddings()[1] + old_p2.paddings()[1],
+        old_p1.paddings()[2] + old_p2.paddings()[2],
+        old_p1.paddings()[3] + old_p2.paddings()[3] };
+
+    auto p = context.graph.emplace<pad>(old_p1.input().type(), output.shape(), paddings, old_p1.pad_value());
+    p->name(old_p1.name());
+
+    p->input().connect(output);
+
+    for (auto &in : dup(inputs))
+        in->connect(p->output());
 }
 
 bool fold_pad_strided_slice_transform::on_try_match(node &node, transform_context &context)

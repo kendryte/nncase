@@ -147,6 +147,11 @@ struct memory_range
     uint32_t size;
 };
 
+inline padding operator+(const padding &lhs, const padding &rhs) noexcept
+{
+    return { lhs.before + rhs.before, lhs.after + rhs.after };
+}
+
 inline bool operator==(const padding &lhs, const padding &rhs) noexcept
 {
     return lhs.before == rhs.before && lhs.after == rhs.after;
@@ -167,6 +172,16 @@ template <class T>
 bool operator!=(const value_range<T> &lhs, const value_range<T> &rhs) noexcept
 {
     return lhs.min != rhs.min || lhs.max != rhs.max;
+}
+
+inline bool operator==(const scalar &lhs, const scalar &rhs) noexcept
+{
+    return lhs.type == rhs.type && lhs.storage == rhs.storage;
+}
+
+inline bool operator!=(const scalar &lhs, const scalar &rhs) noexcept
+{
+    return lhs.type != rhs.type || lhs.storage != rhs.storage;
 }
 
 #ifndef DEFINE_ENUM_FLAG_OPERATORS
