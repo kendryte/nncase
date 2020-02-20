@@ -69,13 +69,12 @@ void matmul_to_fake_kpu_conv2d_transform::process(transform_context &context)
     xt::svector<padding> pre_paddings { padding::zero(), padding::zero(), { 0, 3 }, { 0, 3 } };
     xt::svector<padding> sur_paddings { padding::zero(), padding::zero(), { 0, -3 }, { 0, -3 } };
     xt::xtensor<float, 4> mm_w(xt::adapt(reinterpret_cast<const float *>(old_w.data().data()), w_shape));
-    xt::xtensor<float, 1> bias(std::array<size_t, 1> { w_shape[1] }, 0.f);
     auto w = xt::transpose(mm_w, { 1, 0, 2, 3 });
 
     auto pre_reshape = context.graph.emplace<reshape>(dt_float32, output.shape(), pre_shape);
     auto pre_pad = context.graph.emplace<pad>(dt_float32, pre_reshape->output().shape(), pre_paddings, 0.f);
     auto conv = context.graph.emplace<fake_kpu_conv2d>(pre_pad->output().shape(), false, kpu_filter_1x1, kpu_pool_bypass,
-        w, bias, clamp_to_piecewise(old_mm.fused_activation()));
+        w, old_mm.bias(), clamp_to_piecewise(old_mm.fused_activation()));
     auto sur_pad = context.graph.emplace<pad>(dt_float32, conv->output().shape(), sur_paddings, 0.f);
     auto sur_reshape = context.graph.emplace<reshape>(dt_float32, sur_pad->output().shape(), sur_shape);
     pre_pad->input().connect(pre_reshape->output());
