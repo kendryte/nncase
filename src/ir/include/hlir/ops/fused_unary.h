@@ -21,6 +21,97 @@ namespace nncase
 {
 namespace hlir
 {
+    enum fused_unary_opcode
+    {
+        fu_constant,
+        fu_identity,
+        fu_ldx,
+        fu_unary,
+        fu_binary,
+        fu_clamp
+    };
+
+    struct fused_unary_arg
+    {
+        size_t op_id;
+    };
+
+    struct fused_unary_constant
+    {
+        float value;
+    };
+
+    struct fused_unary_identity
+    {
+        fused_unary_arg input;
+    };
+
+    struct fused_unary_ldx
+    {
+    };
+
+    struct fused_unary_unary
+    {
+        unary_op_t unary_op;
+        fused_unary_arg input;
+    };
+
+    struct fused_unary_binary
+    {
+        binary_op_t binary_op;
+        fused_unary_arg input_a;
+        fused_unary_arg input_b;
+    };
+
+    struct fused_unary_clamp
+    {
+        binary_op_t binary_op;
+        fused_unary_arg input;
+        fused_unary_arg low;
+        fused_unary_arg high;
+    };
+
+    struct fused_unary_op
+    {
+        fused_unary_opcode opcode;
+
+        union {
+            fused_unary_constant constant;
+            fused_unary_identity identity;
+            fused_unary_ldx ldx;
+            fused_unary_unary unary;
+            fused_unary_binary binary;
+            fused_unary_clamp clamp;
+        };
+
+        static fused_unary_op make_ldx() noexcept
+        {
+            fused_unary_op op { fu_ldx };
+            return op;
+        }
+
+        static fused_unary_op make_constant(float value) noexcept
+        {
+            fused_unary_op op { fu_constant };
+            op.constant.value = value;
+            return op;
+        }
+
+        static fused_unary_op make_unary(unary_op_t unary_op, fused_unary_arg input) noexcept
+        {
+            fused_unary_op op { fu_unary };
+            op.unary = { unary_op, input };
+            return op;
+        }
+
+        static fused_unary_op make_binary(binary_op_t binary_op, fused_unary_arg input_a, fused_unary_arg input_b) noexcept
+        {
+            fused_unary_op op { fu_binary };
+            op.binary = { binary_op, input_a, input_b };
+            return op;
+        }
+    };
+
     class fused_unary : public node
     {
     public:
@@ -28,14 +119,14 @@ namespace hlir
 
         input_connector &input() { return input_at(0); }
         output_connector &output() { return output_at(0); }
-        graph &subgraph() noexcept { return subgraph_; }
+        std::vector<fused_unary_op> &subgraph() noexcept { return subgraph_; }
 
-        fused_unary(graph subgraph);
+        fused_unary(std::vector<fused_unary_op> subgraph, shape_t in_shape);
 
         void compile(hlir_compile_context &context) override;
 
     private:
-        graph subgraph_;
+        std::vector<fused_unary_op> subgraph_;
     };
 }
 }

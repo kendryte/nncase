@@ -12,22 +12,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <hlir/op_utils.h>
-#include <hlir/ops/fused_unary.h>
-#include <llir/ops/memory_copy.h>
-#include <xtensor/xarray.hpp>
+#pragma once
+#include "../transform.h"
+#include <hlir/quantizer.h>
 
-using namespace nncase;
-using namespace nncase::hlir;
-
-fused_unary::fused_unary(std::vector<fused_unary_op> subgraph, shape_t in_shape)
-    : subgraph_(std::move(subgraph))
+namespace nncase::hlir::transforms::k210
 {
-    add_input("input", dt_float32, in_shape);
-    add_output("output", dt_float32, in_shape);
-}
-
-void fused_unary::compile(hlir_compile_context &context)
+struct point
 {
-    throw std::runtime_error("Not supported");
+    float x;
+    float y;
+};
+
+struct segment
+{
+    float start;
+    float stop;
+    float slop;
+    float intercept;
+
+    constexpr float y(float x) const noexcept
+    {
+        assert(x >= start && x < stop);
+        return (x - start) * slop + intercept;
+    }
+};
+
+class piecewise_regression
+{
+public:
+    piecewise_regression(size_t segments_count);
+
+    std::vector<segment> fit(std::vector<point> &points) const;
+
+private:
+    size_t desired_segments_count_;
+};
 }

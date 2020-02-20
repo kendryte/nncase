@@ -17,6 +17,7 @@ set(SRCS connectors.cpp
          ops/unary.cpp
          ops/pad.cpp
          ops/memory_copy.cpp
+         ops/nnil_method.cpp
          ops/resize_image.cpp
          ops/strided_slice.cpp
          ops/k210/fake_kpu_conv2d.cpp

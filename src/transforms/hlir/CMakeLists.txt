@@ -18,6 +18,7 @@ set(SRCS transform.cpp
          neutral/quantized_binary.cpp
          neutral/eliminate_dilated_conv2d.cpp
          neutral/simplify_reduce.cpp
+         k210/piecewise_regression.cpp
          k210/fake_kpu_conv2d.cpp
          k210/strided_slice_motion.cpp
          k210/kpu_conv2d.cpp

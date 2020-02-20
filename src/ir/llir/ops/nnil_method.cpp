@@ -13,21 +13,14 @@
  * limitations under the License.
  */
 #include <hlir/op_utils.h>
-#include <hlir/ops/fused_unary.h>
-#include <llir/ops/memory_copy.h>
-#include <xtensor/xarray.hpp>
+#include <llir/ops/nnil_method.h>
 
 using namespace nncase;
-using namespace nncase::hlir;
+using namespace nncase::llir;
 
-fused_unary::fused_unary(std::vector<fused_unary_op> subgraph, shape_t in_shape)
-    : subgraph_(std::move(subgraph))
+nnil_unary_method::nnil_unary_method(shape_t input_shape, std::vector<uint8_t> body)
+    : body_(body)
 {
-    add_input("input", dt_float32, in_shape);
-    add_output("output", dt_float32, in_shape);
-}
-
-void fused_unary::compile(hlir_compile_context &context)
-{
-    throw std::runtime_error("Not supported");
+    add_input("input", dt_float32, input_shape);
+    add_output("output", dt_float32, input_shape);
 }

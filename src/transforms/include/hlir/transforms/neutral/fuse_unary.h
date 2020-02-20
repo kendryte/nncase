@@ -17,7 +17,17 @@
 
 namespace nncase::hlir::transforms
 {
-class fuse_unary_transform : public transform
+class fuse_one_unary_transform : public transform
+{
+public:
+    void process(transform_context &context) override;
+
+protected:
+    bool skip_self_contained_check() const noexcept override { return true; }
+    bool on_try_match(hlir::node &node, transform_context &context) override;
+};
+
+class fuse_one_binary_transform : public transform
 {
 public:
     void process(transform_context &context) override;
@@ -28,6 +38,16 @@ protected:
 };
 
 class fuse_two_fused_unary_transform : public transform
+{
+public:
+    void process(transform_context &context) override;
+
+protected:
+    bool skip_self_contained_check() const noexcept override { return true; }
+    bool on_try_match(hlir::node &node, transform_context &context) override;
+};
+
+class fuse_two_fused_unary_with_binary_transform : public transform
 {
 public:
     void process(transform_context &context) override;
