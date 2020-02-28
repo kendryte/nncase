@@ -166,7 +166,64 @@ void fuse_two_fused_unary_transform::process(transform_context &context)
     auto &old_f2 = static_cast<fused_unary &>(*context.matched_nodes[1]);
 
     auto subgraph = merge_subgraph(old_f1.subgraph(), old_f2.subgraph());
-    auto f_u = context.graph.emplace<fused_unary>(std::move(subgraph));
+    auto f_u = context.graph.emplace<fused_unary>(std::move(subgraph), old_f1.input().shape());
+
+    f_u->input().connect(output);
+    for (auto &in : dup(inputs))
+        in->connect(f_u->output());
+}
+
+bool fuse_one_fused_unary_with_binary_transform::on_try_match(node &node, transform_context &context)
+{
+    if (auto b = node_cast<binary>(node))
+    {
+        if (auto f = try_get_direct_parent<fused_unary>(*b, 0))
+        {
+            if (f->input().connection() == b->input_b().connection())
+            {
+                context.matched_nodes.emplace_back(f);
+                context.matched_nodes.emplace_back(b);
+                context.inputs.emplace_back(&f->input());
+                context.inputs.emplace_back(&b->input_b());
+                context.outputs.emplace_back(&b->output());
+                return true;
+            }
+        }
+        else if (auto f = try_get_direct_parent<fused_unary>(*b, 1))
+        {
+            if (f->input().connection() == b->input_a().connection())
+            {
+                context.matched_nodes.emplace_back(f);
+                context.matched_nodes.emplace_back(b);
+                context.inputs.emplace_back(&b->input_a());
+                context.inputs.emplace_back(&f->input());
+                context.outputs.emplace_back(&b->output());
+                return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+void fuse_one_fused_unary_with_binary_transform::process(transform_context &context)
+{
+    auto &output = *context.inputs[0]->connection();
+    auto inputs = context.outputs[0]->connections();
+    auto &old_f = static_cast<fused_unary &>(*context.matched_nodes[0]);
+    auto &old_b = static_cast<binary &>(*context.matched_nodes[1]);
+
+    auto subgraph = old_f.subgraph();
+    auto arg_f_id = subgraph.size() - 1;
+    subgraph.emplace_back(fused_unary_op::make_ldx());
+    auto arg_x_id = subgraph.size() - 1;
+
+    if (old_b.input_b().connection()->owner().runtime_opcode() == op_fused_unary)
+        subgraph.emplace_back(fused_unary_op::make_binary(old_b.binary_op(), { arg_x_id }, { arg_f_id }));
+    else
+        subgraph.emplace_back(fused_unary_op::make_binary(old_b.binary_op(), { arg_f_id }, { arg_x_id }));
+
+    auto f_u = context.graph.emplace<fused_unary>(std::move(subgraph), output.shape());
 
     f_u->input().connect(output);
     for (auto &in : dup(inputs))
@@ -210,7 +267,7 @@ void fuse_two_fused_unary_with_binary_transform::process(transform_context &cont
     auto arg_b_id = subgraph.size() - 1;
     subgraph.emplace_back(fused_unary_op::make_binary(old_b.binary_op(), { arg_a_id }, { arg_b_id }));
 
-    auto f_u = context.graph.emplace<fused_unary>(std::move(subgraph));
+    auto f_u = context.graph.emplace<fused_unary>(std::move(subgraph), output.shape());
 
     f_u->input().connect(output);
     for (auto &in : dup(inputs))
@@ -232,20 +289,20 @@ bool fused_unary_to_lookup1d_transform::on_try_match(node &node, transform_conte
 
 void fused_unary_to_lookup1d_transform::process(transform_context &context)
 {
-    auto &output = *context.inputs[0]->connection();
-    auto inputs = context.outputs[0]->connections();
-    auto &old_u = static_cast<unary &>(*context.matched_nodes[0]);
+    //auto &output = *context.inputs[0]->connection();
+    //auto inputs = context.outputs[0]->connections();
+    //auto &old_u = static_cast<unary &>(*context.matched_nodes[0]);
 
-    graph subgraph;
-    auto in = subgraph.emplace<input_node>(output.type(), output.shape(), output.memory_type());
-    auto u = subgraph.emplace<unary>(old_u.unary_op(), old_u.input().shape());
-    auto out = subgraph.emplace<output_node>(u->output().type(), u->output().shape());
-    u->input().connect(in->output());
-    out->input().connect(u->output());
+    //graph subgraph;
+    //auto in = subgraph.emplace<input_node>(output.type(), output.shape(), output.memory_type());
+    //auto u = subgraph.emplace<unary>(old_u.unary_op(), old_u.input().shape());
+    //auto out = subgraph.emplace<output_node>(u->output().type(), u->output().shape());
+    //u->input().connect(in->output());
+    //out->input().connect(u->output());
 
-    auto f_u = context.graph.emplace<fused_unary>(std::move(subgraph));
+    //auto f_u = context.graph.emplace<fused_unary>(std::move(subgraph));
 
-    f_u->input().connect(output);
-    for (auto &in : dup(inputs))
-        in->connect(f_u->output());
+    //f_u->input().connect(output);
+    //for (auto &in : dup(inputs))
+    //    in->connect(f_u->output());
 }

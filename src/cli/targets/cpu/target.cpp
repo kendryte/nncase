@@ -120,7 +120,12 @@ void nncase::cpu_target::add_quantization_checkpoints(hlir::transforms::pass_man
 
     {
         pass p;
-        p.emplace<fuse_unary_transform>();
+        p.emplace<fuse_one_unary_transform>();
+        p.emplace<fuse_one_binary_transform>();
+        p.emplace<fuse_two_fused_unary_transform>();
+        p.emplace<fuse_one_fused_unary_with_binary_transform>();
+        p.emplace<fuse_two_fused_unary_with_binary_transform>();
+        add_default_transforms(p);
         pass_mgr.add_pass(std::move(p));
     }
     {

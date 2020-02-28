@@ -46,6 +46,7 @@ namespace runtime
         nnil_div = 0x43,
         nnil_min = 0x44,
         nnil_max = 0x45,
+        nnil_clamp = 0x80,
         nnil_ret = 0xA0
     } nnil_opcode_t;
 
@@ -98,6 +99,7 @@ namespace runtime
         void emit_div() { emit_opcode(nnil_div); }
         void emit_min() { emit_opcode(nnil_min); }
         void emit_max() { emit_opcode(nnil_max); }
+        void emit_clamp() { emit_opcode(nnil_clamp); }
 
         void emit_ret() { emit_opcode(nnil_ret); }
 
@@ -120,7 +122,7 @@ namespace runtime
         {
             assert(avail());
             nnil_op_t op;
-            op.opcode = reader_.read<uint8_t>();
+            op.opcode = (nnil_opcode_t)reader_.read<uint8_t>();
 
             switch (op.opcode)
             {
@@ -136,6 +138,48 @@ namespace runtime
 
     private:
         span_reader &reader_;
+    };
+
+    class nnil_evalstack
+    {
+    public:
+        nnil_evalstack() noexcept
+            : top(0)
+        {
+        }
+
+        void push(float value)
+        {
+            if (top < _stack.size())
+                _stack[top++] = value;
+            else
+                NNCASE_THROW(std::runtime_error, "stack overflow");
+        }
+
+        float pop()
+        {
+            if (top > 0)
+                return _stack[--top];
+            else
+                NNCASE_THROW(std::runtime_error, "stack underflow");
+        }
+
+        void dup()
+        {
+            if (top > 0)
+            {
+                _stack[top] = _stack[top - 1];
+                top++;
+            }
+            else
+            {
+                NNCASE_THROW(std::runtime_error, "empty stack");
+            }
+        }
+
+    private:
+        std::array<float, 64> _stack;
+        size_t top;
     };
 }
 }

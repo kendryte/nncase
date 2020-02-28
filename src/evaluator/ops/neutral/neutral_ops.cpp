@@ -22,6 +22,7 @@
 #include <llir/ops/dequantize.h>
 #include <llir/ops/matmul.h>
 #include <llir/ops/memory_copy.h>
+#include <llir/ops/nnil_method.h>
 #include <llir/ops/pad.h>
 #include <llir/ops/quantize.h>
 #include <llir/ops/reduce.h>
@@ -455,6 +456,16 @@ namespace llir
             default:
                 throw std::runtime_error("Not supported unary");
             }
+        });
+
+        register_evaluator(op_nnil_unary_method, [](llir::node &node, evaluate_context &context) {
+            auto &rnode = static_cast<nnil_unary_method &>(node);
+
+            assert(rnode.input().type() == dt_float32);
+            auto input = context.memory_at<float>(rnode.input());
+            auto output = context.memory_at<float>(rnode.output());
+
+            kernels::neutral::nnil_unary_method(input.data(), output.data(), input.size(), rnode.body());
         });
     }
 }

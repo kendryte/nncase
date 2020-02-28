@@ -387,6 +387,15 @@ namespace runtime
                 return kcr_error;
             }
         }
+
+        kernel_call_result nnil_unary_method(nnil_unary_method_options &options, interpreter_t &interpreter, interpreter_step_t step)
+        {
+            auto input = interpreter.memory_at<float>(options.input);
+            auto output = interpreter.memory_at<float>(options.output);
+
+            kernels::neutral::nnil_unary_method(input.data(), output.data(), input.size(), options.body);
+            return kcr_done;
+        }
     }
 }
 }

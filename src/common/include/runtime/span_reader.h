@@ -58,6 +58,12 @@ namespace runtime
             advance(sizeof(T) * N);
         }
 
+        void read_avail(xtl::span<const uint8_t> &span)
+        {
+            span = span_;
+            span_ = {};
+        }
+
         template <class T>
         const T *peek() const noexcept
         {

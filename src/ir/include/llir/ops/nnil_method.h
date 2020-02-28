@@ -22,7 +22,7 @@ namespace llir
     class nnil_unary_method : public node
     {
     public:
-        DEFINE_NODE_OPCODE(op_nnil_method);
+        DEFINE_NODE_OPCODE(op_nnil_unary_method);
 
         input_connector &input() { return input_at(0); }
         output_connector &output() { return output_at(0); }

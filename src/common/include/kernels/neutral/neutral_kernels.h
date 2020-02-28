@@ -15,6 +15,7 @@
 #pragma once
 #include "../kernel_utils.h"
 #include <cmath>
+#include <runtime/nnil.h>
 #include <runtime/runtime_op_utility.h>
 #include <xtl/xspan.hpp>
 #ifdef __riscv
@@ -653,6 +654,135 @@ namespace kernels
                         auto d2_origin = d1_origin + (size_t)d2 * in_shape[3];
                         for (int32_t d3 = begin[3]; loop_cond(d3, end[3], strides[3]); d3 += strides[3])
                             *output++ = d2_origin[d3];
+                    }
+                }
+            }
+        }
+
+        inline void nnil_unary_method(const float *input, float *output, size_t count, xtl::span<const uint8_t> body)
+        {
+            using namespace nncase::runtime;
+
+            for (size_t i = 0; i < count; i++)
+            {
+                nnil_evalstack stack;
+                span_reader sr(body);
+                nnil_reader reader(sr);
+
+                while (reader.avail())
+                {
+                    auto op = reader.next();
+                    switch (op.opcode)
+                    {
+                    case nnil_nop:
+                        break;
+                    case nnil_dup:
+                        stack.dup();
+                        break;
+                    case nnil_pop:
+                        stack.pop();
+                        break;
+                    case nnil_lda_0:
+                        stack.push(input[i]);
+                        break;
+                    case nnil_ldc_r4_0:
+                        stack.push(0.f);
+                        break;
+                    case nnil_ldc_r4_1:
+                        stack.push(1.f);
+                        break;
+                    case nnil_ldc_r4:
+                        stack.push(op.ldc_r4.r4);
+                        break;
+                    case nnil_abs:
+                        stack.push(fabsf(stack.pop()));
+                        break;
+                    case nnil_ceil:
+                        stack.push(ceilf(stack.pop()));
+                        break;
+                    case nnil_cos:
+                        stack.push(cosf(stack.pop()));
+                        break;
+                    case nnil_exp:
+                        stack.push(expf(stack.pop()));
+                        break;
+                    case nnil_floor:
+                        stack.push(floorf(stack.pop()));
+                        break;
+                    case nnil_log:
+                        stack.push(logf(stack.pop()));
+                        break;
+                    case nnil_neg:
+                        stack.push(-stack.pop());
+                        break;
+                    case nnil_rsqrt:
+                        stack.push(1.f / sqrtf(stack.pop()));
+                        break;
+                    case nnil_sin:
+                        stack.push(sinf(stack.pop()));
+                        break;
+                    case nnil_square:
+                    {
+                        auto v = stack.pop();
+                        stack.push(v * v);
+                        break;
+                    }
+                    case nnil_add:
+                    {
+                        auto b = stack.pop();
+                        auto a = stack.pop();
+                        stack.push(a + b);
+                        break;
+                    }
+                    case nnil_sub:
+                    {
+                        auto b = stack.pop();
+                        auto a = stack.pop();
+                        stack.push(a - b);
+                        break;
+                    }
+                    case nnil_mul:
+                    {
+                        auto b = stack.pop();
+                        auto a = stack.pop();
+                        stack.push(a * b);
+                        break;
+                    }
+                    case nnil_div:
+                    {
+                        auto b = stack.pop();
+                        auto a = stack.pop();
+                        stack.push(a / b);
+                        break;
+                    }
+                    case nnil_min:
+                    {
+                        auto b = stack.pop();
+                        auto a = stack.pop();
+                        stack.push(std::min(a, b));
+                        break;
+                    }
+                    case nnil_max:
+                    {
+                        auto b = stack.pop();
+                        auto a = stack.pop();
+                        stack.push(std::max(a, b));
+                        break;
+                    }
+                    case nnil_clamp:
+                    {
+                        auto high = stack.pop();
+                        auto low = stack.pop();
+                        auto v = stack.pop();
+                        stack.push(std::clamp(v, low, high));
+                        break;
+                    }
+                    case nnil_ret:
+                        output[i] = stack.pop();
+                        break;
+                    default:
+                        NNCASE_THROW(std::runtime_error, "Invalid nnil op");
+                        break;
                     }
                 }
             }

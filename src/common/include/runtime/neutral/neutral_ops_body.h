@@ -465,6 +465,27 @@ namespace runtime
             memory_range output;
             unary_op_t unary_op;
         };
+
+        struct nnil_unary_method_options
+        {
+            memory_range input;
+            memory_range output;
+            xtl::span<const uint8_t> body;
+
+            void deserialize(span_reader &reader)
+            {
+                reader.read(input);
+                reader.read(output);
+                reader.read_avail(body);
+            }
+
+            void serialize(binary_writer &writer) const
+            {
+                writer.write(input);
+                writer.write(output);
+                writer.write_array(body);
+            }
+        };
     }
 }
 }

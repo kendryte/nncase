@@ -21,6 +21,7 @@
 #include <llir/ops/dequantize.h>
 #include <llir/ops/matmul.h>
 #include <llir/ops/memory_copy.h>
+#include <llir/ops/nnil_method.h>
 #include <llir/ops/pad.h>
 #include <llir/ops/quantize.h>
 #include <llir/ops/reduce.h>
@@ -364,6 +365,17 @@ namespace codegen
             body->input = context.get_allocation(rnode.input());
             body->output = context.get_allocation(rnode.output());
             body->unary_op = rnode.unary_op();
+
+            return body;
+        });
+
+        register_emitter(op_nnil_unary_method, [](node &node, codegen_context &context) {
+            auto &rnode = static_cast<nnil_unary_method &>(node);
+            auto body = std::make_unique<node_body_impl<rop_nnil_unary_method, nnil_unary_method_options>>();
+
+            body->input = context.get_allocation(rnode.input());
+            body->output = context.get_allocation(rnode.output());
+            body->body = rnode.body();
 
             return body;
         });
