@@ -1,3 +1,5 @@
+include(TestBigEndian)
+
 set(ONNX_SOURCE_DIR ${THIRD_PARTY}/onnx)
 
 function(onnx_gen_proto PROTO_FILE PROTO_IN_FILE)
@@ -87,6 +89,8 @@ add_library(onnx_proto ${ONNX_PROTO_SOURCE} ${ONNX_OPS_PROTO_SOURCE})
 target_include_directories(onnx_proto PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 target_link_libraries(onnx_proto PRIVATE CONAN_PKG::protobuf)
 
+test_big_endian(BIG_ENDIAN)
+
 set(ONNX_IMPORTER_SOURCES
 	onnx_importer.cpp
 	)
@@ -111,6 +115,7 @@ set(ONNX_IMPORTER_OPS_SOURCES
 	)
 
 add_library(onnx_importer ${ONNX_IMPORTER_SOURCES} ${ONNX_IMPORTER_OPS_SOURCES})
+target_compile_definitions(onnx_importer PRIVATE NATIVE_IS_BIG_ENDIAN=${BIG_ENDIAN})
 target_include_directories(onnx_importer PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 get_filename_component(PARENT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR} DIRECTORY)
 target_include_directories(onnx_importer PUBLIC ${PARENT_SOURCE_DIR}/include)

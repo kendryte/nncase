@@ -52,6 +52,8 @@ namespace
     template<> TensorProto_DataType tensor_type<int32_t> { TensorProto_DataType_INT32 };
     template<> TensorProto_DataType tensor_type<int64_t> { TensorProto_DataType_INT64 };
 
+	constexpr bool native_little_endian { !static_cast<bool>(NATIVE_IS_BIG_ENDIAN) };
+
     template <typename Proto>
     bool ParseProtoFromBytes(Proto* proto, const unsigned char* buffer, size_t length)
     {
@@ -87,6 +89,21 @@ namespace
 
         return it != end(collection) ? &(*it) : nullptr;
     }
+
+	template<typename T> T le_to_native(const unsigned char* data);
+
+	template<> float le_to_native(const unsigned char* data)
+	{
+		uint32_t result
+		{
+			uint32_t(data[0] << 0) |
+			uint32_t(data[1] << 8) |
+			uint32_t(data[2] << 16) |
+			uint32_t(data[3] << 24)
+		};
+
+		return *reinterpret_cast<const float*>(&result);
+	}
 }
 
 onnx_importer::onnx_importer(xtl::span<const uint8_t> model, hlir::graph &graph)
@@ -578,17 +595,43 @@ template<> xt::xarray<uint8_t> onnx_importer::to<xt::xarray<uint8_t>>(const onnx
 {
     assert(tensor.data_type() == tensor_type<uint8_t>);
 
-    vector<uint8_t> data { begin(tensor.int32_data()), end(tensor.int32_data()) };
-    const vector<size_t> shape { 1, size_t(tensor.int32_data().size()) };
+	if (!tensor.int32_data().empty())
+	{
+		vector<uint8_t> data { begin(tensor.int32_data()), end(tensor.int32_data()) };
+		return xt::adapt(data, get_shape(tensor));
+	}
+	else
+	{
+		return xt::adapt(tensor.raw_data().data(), tensor.raw_data().size(), xt::no_ownership(), get_shape(tensor));
+	}
 
-    return xt::adapt(data, shape);
 }
 
 template<> xt::xarray<float> onnx_importer::to<xt::xarray<float>>(const onnx::TensorProto &tensor)
 {
     assert(tensor.data_type() == tensor_type<float>);
 
-    return xt::adapt(tensor.float_data().data(), tensor.float_data().size(), xt::no_ownership(), vector<int> { tensor.float_data().size() });
+	if (!tensor.float_data().empty())
+	{
+		return xt::adapt(tensor.float_data().data(), tensor.float_data().size(), xt::no_ownership(), vector<int> { tensor.float_data().size() });
+	}
+	else
+	{
+		if constexpr (native_little_endian)
+		{
+			return xt::adapt(reinterpret_cast<const float*>(tensor.raw_data().data()), tensor.raw_data().size() / sizeof(float), xt::no_ownership(), get_shape(tensor));
+		}
+		else
+		{
+			vector<float> data;
+			for (auto it = begin(tensor.raw_data()); it != end(tensor.raw_data()); it += sizeof(float))
+			{
+				data.push_back(le_to_native<float>(reinterpret_cast<const unsigned char*>(&(*it))));
+			}
+
+			return xt::adapt(data, get_shape(tensor));
+		}
+	}
 }
 
 graph nncase::importer::import_onnx(xtl::span<const uint8_t> model)
