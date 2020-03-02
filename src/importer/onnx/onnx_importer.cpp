@@ -199,6 +199,12 @@ const ValueInfoProto* onnx_importer::find_value_info(const string &value) const
 
 shape_t onnx_importer::get_shape(const string &value) const
 {
+	const auto oit { output_tensors_.find(value) };
+	if (oit != end(output_tensors_))
+	{
+		return oit->second->shape();
+	}
+
     const auto value_info_ptr { find_value_info(value) };
     if (value_info_ptr)
         return get_shape(*value_info_ptr);
