@@ -40,10 +40,10 @@ namespace
     template<> AttributeProto_AttributeType attribute_type<int> { AttributeProto_AttributeType_INT };
     template<> AttributeProto_AttributeType attribute_type<string> { AttributeProto_AttributeType_STRING };
     template<> AttributeProto_AttributeType attribute_type<const TensorProto*> { AttributeProto_AttributeType_TENSOR };
-    template<> AttributeProto_AttributeType attribute_type<xtl::span<float>> { AttributeProto_AttributeType_FLOATS };
-    template<> AttributeProto_AttributeType attribute_type<xtl::span<int64_t>> { AttributeProto_AttributeType_INTS };
+    template<> AttributeProto_AttributeType attribute_type<xtl::span<const float>> { AttributeProto_AttributeType_FLOATS };
+    template<> AttributeProto_AttributeType attribute_type<xtl::span<const int64_t>> { AttributeProto_AttributeType_INTS };
     template<> AttributeProto_AttributeType attribute_type<axis_t> { AttributeProto_AttributeType_INTS };
-    template<> AttributeProto_AttributeType attribute_type<xtl::span<string>> { AttributeProto_AttributeType_STRINGS };
+    template<> AttributeProto_AttributeType attribute_type<xtl::span<const string>> { AttributeProto_AttributeType_STRINGS };
 
     template<typename T> TensorProto_DataType tensor_type;
 
