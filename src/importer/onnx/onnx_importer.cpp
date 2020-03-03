@@ -399,40 +399,6 @@ string onnx_importer::to_string(const AttributeProto_AttributeType type)
     }
 }
 
-onnx_importer::attribute_value_type onnx_importer::get_attribute(const onnx::NodeProto& node, const string &value) const
-{
-    const auto it
-    {
-        find_if(node.attribute().cbegin(), node.attribute().cend(),
-            [&value](const auto &attr)
-            {
-                return attr.name() == value;
-            })
-    };
-
-    if (it == node.attribute().cend())
-        return attribute_value_type { };
-
-    const auto &attr { *it };
-
-    switch(attr.type())
-    {
-    case AttributeProto_AttributeType_FLOAT:
-        return attr.f();
-
-    case AttributeProto_AttributeType_INT:
-        return attr.i();
-
-    case AttributeProto_AttributeType_STRING:
-        return attr.s();
-
-    default:
-        break;
-    }
-
-    return attribute_value_type { };
-}
-
 template<> optional<float> onnx_importer::get_attribute<float>(const onnx::NodeProto& node, const string &value)
 {
     typedef float target_type;
