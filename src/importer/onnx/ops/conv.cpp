@@ -67,7 +67,6 @@ template<class Node> void onnx_importer::convert_conv(const NodeProto &node)
     const auto &output { node.output()[0] };
 
     auto input_shape { get_shape(input) };
-    const auto& weight_shape { get_shape(weight) };
 
     padding_mode pad_mode { padding_mode::notset };
 
@@ -109,6 +108,13 @@ template<class Node> void onnx_importer::convert_conv(const NodeProto &node)
             strides[1] = strides_values[1];
     }
 
+	const auto* weight_initializer { get_initializer(weight) };
+
+	if (!weight_initializer)
+		throw runtime_error("Can't find initializer for weight input");
+
+    const auto& weight_shape { get_shape(*weight_initializer) };
+
     array<padding, 2> pads
     {{
         { 0, 0 },
@@ -145,13 +151,17 @@ template<class Node> void onnx_importer::convert_conv(const NodeProto &node)
         break;
     }
 
-    auto&& weight_value { to<xt::xarray<float>>(get_initializer(weight)) };
+    auto&& weight_value { to<xt::xarray<float>>(*weight_initializer) };
 
     xt::xarray<float>&& bias_value { xt::zeros<float>({ weight_shape[0] }) };
     if (node.input().size() > 2)
     {
         const auto &bias { node.input()[2] };
-        bias_value = to<xt::xarray<float>>(get_initializer(bias));
+		const auto* bias_initializer { get_initializer(bias) };
+		if (!bias_initializer)
+			throw runtime_error("Can't find initializer for bias input");
+
+        bias_value = to<xt::xarray<float>>(*bias_initializer);
     }
 
     auto conv { add_conv_node<Node>(node, graph_, move(input_shape), move(weight_value), move(bias_value), group, pads, strides, dilations) };
