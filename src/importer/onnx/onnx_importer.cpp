@@ -209,6 +209,10 @@ shape_t onnx_importer::get_shape(const string &value) const
     if (value_info_ptr)
         return get_shape(*value_info_ptr);
 
+	const auto initializer_ptr { get_initializer(value) };
+	if (initializer_ptr)
+		return get_shape(*initializer_ptr);
+
     throw runtime_error("Can't find value info for " + value + " to parse its shape");
 }
 
@@ -546,15 +550,12 @@ template<> optional<axis_t> onnx_importer::get_attribute<axis_t>(const onnx::Nod
     return target_type { begin(attr->ints()), end(attr->ints()) };
 }
 
-const TensorProto& onnx_importer::get_initializer(const string &value) const
+const TensorProto* onnx_importer::get_initializer(const string &value) const
 {
     const auto& graph { model_.graph() };
     const auto* initializer { extract(graph.initializer(), value) };
 
-    if (!initializer)
-        throw runtime_error("Can't find initializer for " + value);
-
-    return *initializer;
+    return initializer;
 }
 
 template<> float onnx_importer::to<float>(const onnx::TensorProto &tensor)

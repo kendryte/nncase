@@ -81,7 +81,7 @@ namespace importer
         static std::string to_string(const onnx::AttributeProto_AttributeType type);
         attribute_value_type get_attribute(const onnx::NodeProto &node, const std::string &name) const;
         template<typename T> static std::optional<T> get_attribute(const onnx::NodeProto &node, const std::string &name);
-        const onnx::TensorProto& get_initializer(const std::string &name) const;
+        const onnx::TensorProto* get_initializer(const std::string &name) const;
         template<typename T> static T to(const onnx::TensorProto &tensor);
 
         hlir::graph &graph_;
