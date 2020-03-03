@@ -14,7 +14,6 @@
  */
 #include "target.h"
 #include <hlir/transforms/k210/fake_kpu_conv2d.h>
-#include <hlir/transforms/k210/fake_piecewise_linear.h>
 #include <hlir/transforms/k210/fold_kpu_upload.h>
 #include <hlir/transforms/k210/fuse_kpu_download.h>
 #include <hlir/transforms/k210/kpu_conv2d.h>
@@ -89,9 +88,6 @@ void nncase::k210_target::optimize_target_dependent(hlir::transforms::pass_manag
     p.emplace<strided_slice_motion_transform>();
     p.emplace<fuse_fake_kpu_conv2d_strided_slice_transform>();
     p.emplace<fuse_fake_kpu_conv2d_reduce_window2d_transform>();
-    p.emplace<binary_to_fake_piecewise_linear_transform>();
-    p.emplace<fake_piecewise_linear_binary_transform>();
-    p.emplace<fuse_fake_kpu_conv2d_piecewise_linear_transform>();
     add_default_transforms(p);
     pass_mgr.add_pass(std::move(p));
 }
@@ -99,7 +95,6 @@ void nncase::k210_target::optimize_target_dependent(hlir::transforms::pass_manag
 void nncase::k210_target::add_quantization_checkpoints(hlir::transforms::pass_manager &pass_mgr)
 {
     pass p;
-    p.emplace<revert_piecewise_linear_transform>();
     p.emplace<add_quant_checkpoints_transform>(op_k210_fake_kpu_conv2d);
     pass_mgr.add_pass(std::move(p));
     cpu_target::add_quantization_checkpoints(pass_mgr);

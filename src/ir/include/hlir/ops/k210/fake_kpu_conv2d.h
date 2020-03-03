@@ -38,9 +38,9 @@ namespace hlir
             runtime::k210::kpu_pool_type_t pool_type() const noexcept { return pool_type_; }
             const xt::xtensor<float, 4> &weights() const noexcept { return weights_; }
             const xt::xtensor<float, 1> &bias() const noexcept { return bias_; }
-            const xt::svector<runtime::k210::piecewise_linear_segment> &fused_activation() const noexcept { return fused_activation_; }
+            value_range<float> fused_activation() const noexcept { return fused_activation_; }
 
-            fake_kpu_conv2d(shape_t input_shape, bool is_depthwise, runtime::k210::kpu_filter_type_t filter_type, runtime::k210::kpu_pool_type_t pool_type, xt::xtensor<float, 4> weights, xt::xtensor<float, 1> bias, xt::svector<runtime::k210::piecewise_linear_segment> fused_activation);
+            fake_kpu_conv2d(shape_t input_shape, bool is_depthwise, runtime::k210::kpu_filter_type_t filter_type, runtime::k210::kpu_pool_type_t pool_type, xt::xtensor<float, 4> weights, xt::xtensor<float, 1> bias, value_range<float> fused_activation);
 
             void compile(hlir_compile_context &context) override;
 
@@ -50,7 +50,7 @@ namespace hlir
             bool is_depthwise_;
             runtime::k210::kpu_filter_type_t filter_type_;
             runtime::k210::kpu_pool_type_t pool_type_;
-            xt::svector<runtime::k210::piecewise_linear_segment> fused_activation_;
+            value_range<float> fused_activation_;
         };
     }
 }

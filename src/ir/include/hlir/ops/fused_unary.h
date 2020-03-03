@@ -15,6 +15,7 @@
 #pragma once
 #include "../graph.h"
 #include "../node.h"
+#include <runtime/nnil.h>
 #include <xtensor/xtensor.hpp>
 
 namespace nncase
@@ -115,6 +116,8 @@ namespace hlir
     class fused_unary : public node
     {
     public:
+        static void compile_graph(const std::vector<fused_unary_op> &subgraph, runtime::nnil_builder &builder);
+
         DEFINE_NODE_OPCODE(op_fused_unary);
 
         input_connector &input() { return input_at(0); }

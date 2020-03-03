@@ -65,7 +65,7 @@ std::vector<segment> piecewise_regression::fit(std::vector<point> &points) const
         auto slope = (y1 - y0) / (s1.stop - s0.start);
         s0.slop = slope;
         s0.stop = s1.stop;
-        segments.erase(segments.begin() + min_idx);
+        segments.erase(segments.begin() + min_idx + 1);
     }
 
     return segments;

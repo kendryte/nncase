@@ -14,12 +14,15 @@
  */
 #include <algorithm>
 #include <hlir/ops/dequantize.h>
+#include <hlir/ops/fused_unary.h>
 #include <hlir/ops/k210/fake_kpu_conv2d.h>
 #include <hlir/ops/k210/kpu_conv2d.h>
 #include <hlir/ops/k210/kpu_data_exchange.h>
 #include <hlir/ops/quantize.h>
 #include <hlir/transforms/k210/kpu_conv2d.h>
+#include <hlir/transforms/k210/piecewise_regression.h>
 #include <hlir/visitor.h>
+#include <kernels/neutral/neutral_kernels.h>
 #include <runtime/k210/k210_runtime_op_utility.h>
 #include <xtensor/xview.hpp>
 
@@ -82,71 +85,62 @@ auto quantize_weights(quantizer &quantizer, fake_kpu_conv2d &conv)
     return std::make_tuple(q_p, std::move(scales), std::move(q_weights));
 }
 
-xt::svector<nncase::runtime::k210::piecewise_linear_segment> clamp_act(const quant_param_t &yq_p, const xt::svector<nncase::runtime::k210::piecewise_linear_segment> &activation)
+auto quantize_act(quantizer &quantizer, float act_in_scale, const quant_param_t &zq_p, value_range<float> activation, fused_unary *fu)
 {
-    using namespace nncase::runtime::k210;
+    const auto xq_low = -(1LL << 35);
+    const auto xq_high = (1LL << 35) - 1;
+    const auto xf_min = std::clamp((0 - zq_p.zero_point) / zq_p.scale, activation.min, activation.max);
+    const auto xf_max = std::clamp((255 - zq_p.zero_point) / zq_p.scale, activation.min, activation.max);
+    const auto zq_scale = act_in_scale / zq_p.scale;
 
-    auto y_start = (0 - yq_p.zero_point) / yq_p.scale;
-    auto y_end = (255 - yq_p.zero_point) / yq_p.scale;
-    auto lines = to_lines(activation);
+    const auto samples_count = 1024;
+    const auto sample_step = (xf_max - xf_min) / (samples_count - 1);
+    std::array<float, samples_count> samples_x, samples_y;
+    for (int32_t i = 0; i < samples_count; i++)
+        samples_x[i] = samples_y[i] = xf_min + i * sample_step;
 
-    xt::svector<piecewise_linear_segment> segs;
-    for (auto &&line : lines)
+    // 1. Non-clamp activation
+    if (fu)
     {
-        if (line.k)
-        {
-            auto x_start = (y_start - line.b) / line.k;
-            auto x_end = (y_end - line.b) / line.k;
-            auto [x_min, x_max] = std::minmax(x_start, x_end);
-            auto r_x_min = std::max(x_min, line.start_x);
-            auto r_x_max = std::min(x_max, line.end_x);
-            if (r_x_min < r_x_max)
-                segs.push_back({ r_x_min, line.k, line.b });
-        }
+        std::stringstream ss;
+        runtime::binary_writer bw(ss);
+        runtime::nnil_builder builder(bw);
+
+        fused_unary::compile_graph(fu->subgraph(), builder);
+        auto buf = ss.str();
+        std::vector<uint8_t> body(reinterpret_cast<uint8_t *>(buf.data()), reinterpret_cast<uint8_t *>(buf.data() + buf.size()));
+        kernels::neutral::nnil_unary_method(samples_x.data(), samples_y.data(), samples_count, body);
     }
 
-    std::sort(segs.begin(), segs.end(), [](auto &a, auto &b) { return a.start < b.start; });
-    return segs;
-}
+    // 2. Piecewise regression
+    std::vector<point> sample_points(samples_count);
+    for (size_t i = 0; i < sample_points.size(); i++)
+        sample_points[i] = { samples_x[i], samples_y[i] };
+    piecewise_regression pr(15);
+    auto segs = pr.fit(sample_points);
 
-auto quantize_act(quantizer &quantizer, float post_mul, const quant_param_t &yq_p, const xt::svector<piecewise_linear_segment> &activation)
-{
-    auto segs = clamp_act(yq_p, activation);
-    assert(segs.size() < 16);
+    assert(segs.size() == 15);
     kpu_activation_table_t act;
     act[0] = { 0x800000000, 0, 0, 0 };
 
     size_t i;
-    for (i = 0; i < segs.size(); i++)
+    for (i = 1; i < 16; i++)
     {
-        auto &src = segs[i];
-        auto &dest = act[i + 1];
+        auto &src = segs[i - 1];
+        auto &dest = act[i];
 
-        auto x0 = src.start * yq_p.scale * post_mul;
-        auto mul = quantizer.get_fixed_mul(src.mul / post_mul, 16, 20, true);
-        auto start_value = src.start * src.mul + src.add;
+        auto x0 = src.start * act_in_scale;
+        auto mul = quantizer.get_fixed_mul(src.slop / zq_scale, 16, 20, true);
         dest.start_x = (int64_t)std::round(x0);
         dest.mul = mul.rounded_mul();
         dest.shift = mul.shift;
-        dest.add = std::clamp((int32_t)std::round(start_value * yq_p.scale + yq_p.zero_point), 0, 255);
-    }
-
-    // dummy
-    auto last_seg = segs.back();
-    for (; i < 15; i++)
-    {
-        auto &dest = act[i + 1];
-        dest.start_x = 0x7FFFFFFF0 + i;
-        auto last_value = (dest.start_x / (yq_p.scale * post_mul)) * last_seg.mul + last_seg.add;
-        dest.mul = 0;
-        dest.shift = 0;
-        dest.add = std::clamp((int32_t)std::round(last_value * yq_p.scale + yq_p.zero_point), 0, 255);
+        dest.add = std::clamp((int32_t)std::round(src.intercept * zq_p.scale + zq_p.zero_point), 0, 255);
     }
 
     return act;
 }
 
-auto quantize_bn_act(quantizer &quantizer, fake_kpu_conv2d &conv, float sa, const std::vector<float> w_scales, const quant_param_t &yq_p, const xt::svector<piecewise_linear_segment> &activation)
+auto quantize_bn(quantizer &quantizer, fake_kpu_conv2d &conv, float sa, const std::vector<float> w_scales, const quant_param_t &yq_p)
 {
     std::vector<kpu_batchnorm_segment> bn(conv.output_channels());
     auto &bias = conv.bias();
@@ -156,6 +150,7 @@ auto quantize_bn_act(quantizer &quantizer, fake_kpu_conv2d &conv, float sa, cons
     auto up_scale = bn_mul.shift - bn_shift;
     assert(up_scale >= 0);
     auto post_mul = bn_mul.rounded_mul() / bn_mul.mul * std::pow(2.f, up_scale);
+    auto s_act_in = yq_p.scale * post_mul;
 
     for (size_t i = 0; i < bias.size(); i++)
     {
@@ -165,11 +160,11 @@ auto quantize_bn_act(quantizer &quantizer, fake_kpu_conv2d &conv, float sa, cons
         bn[i] = {
             ch_bn_mul.rounded_mul(),
             ch_bn_mul.shift,
-            (int32_t)std::round(b * yq_p.scale * post_mul)
+            (int32_t)std::round(b * s_act_in)
         };
     }
 
-    return std::make_tuple(std::move(bn), quantize_act(quantizer, post_mul, yq_p, activation));
+    return std::make_tuple(std::move(bn), s_act_in);
 }
 }
 
@@ -181,9 +176,20 @@ bool kpu_conv2d_transform::on_try_match(node &node, transform_context &context)
             && conv->output().attributes() & cnctr_attr_need_quantize)
         {
             context.inputs.emplace_back(&conv->input());
-            context.outputs.emplace_back(&conv->output());
-
             context.matched_nodes.emplace_back(conv);
+
+            if (auto fu = try_get_direct_child<fused_unary>(*conv))
+            {
+                if (fu->input().connection()->attributes() & cnctr_attr_need_quantize
+                    && fu->output().attributes() & cnctr_attr_need_quantize)
+                {
+                    context.outputs.emplace_back(&fu->output());
+                    context.matched_nodes.emplace_back(fu);
+                    return true;
+                }
+            }
+
+            context.outputs.emplace_back(&conv->output());
             return true;
         }
     }
@@ -196,12 +202,15 @@ void kpu_conv2d_transform::process(transform_context &context)
     auto &output = *context.inputs[0]->connection();
     auto inputs = context.outputs[0]->connections();
     auto &old_conv = static_cast<fake_kpu_conv2d &>(*context.matched_nodes[0]);
+    auto old_fu = context.matched_nodes.size() > 1 ? static_cast<fused_unary *>(context.matched_nodes[1]) : nullptr;
 
     auto iq_p = quantizer_.get_quant_param(quantizer_.get(output), 8);
     auto [wq_p, w_scales, q_weights] = quantize_weights(quantizer_, old_conv);
     auto yq_p = quantizer_.get_quant_param(quantizer_.get(old_conv.output()), 8);
+    auto zq_p = quantizer_.get_quant_param(quantizer_.get(old_fu ? old_fu->output() : old_conv.output()), 8);
     auto sa = iq_p.scale * wq_p.scale;
-    auto [bn, act] = quantize_bn_act(quantizer_, old_conv, sa, w_scales, yq_p, old_conv.fused_activation());
+    auto [bn, s_act_in] = quantize_bn(quantizer_, old_conv, sa, w_scales, yq_p);
+    auto act = quantize_act(quantizer_, s_act_in, zq_p, old_conv.fused_activation(), old_fu);
     auto filter = get_kpu_filter_size(old_conv.filter_type());
 
     auto q = context.graph.emplace<quantize>(output.shape(), iq_p);

@@ -33,7 +33,7 @@ struct segment
 
     constexpr float y(float x) const noexcept
     {
-        assert(x >= start && x < stop);
+        assert(x >= start && x <= stop);
         return (x - start) * slop + intercept;
     }
 };

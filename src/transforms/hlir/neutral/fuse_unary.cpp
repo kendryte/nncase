@@ -97,7 +97,7 @@ bool fuse_one_binary_transform::on_try_match(node &node, transform_context &cont
     {
         constant *con;
         if ((con = node_cast<constant>(bin->input_b().connection()->owner()))
-            && con->output().shape().size() == 1)
+            && xt::compute_size(con->output().shape()) == 1)
         {
             context.matched_nodes.emplace_back(bin);
             context.matched_nodes.emplace_back(con);
@@ -106,7 +106,7 @@ bool fuse_one_binary_transform::on_try_match(node &node, transform_context &cont
             return true;
         }
         else if ((con = node_cast<constant>(bin->input_a().connection()->owner()))
-            && con->output().shape().size() == 1)
+            && xt::compute_size(con->output().shape()) == 1)
         {
             context.matched_nodes.emplace_back(bin);
             context.matched_nodes.emplace_back(con);

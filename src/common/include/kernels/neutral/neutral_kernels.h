@@ -668,8 +668,9 @@ namespace kernels
                 nnil_evalstack stack;
                 span_reader sr(body);
                 nnil_reader reader(sr);
+                bool ret = false;
 
-                while (reader.avail())
+                while (reader.avail() && !ret)
                 {
                     auto op = reader.next();
                     switch (op.opcode)
@@ -779,6 +780,7 @@ namespace kernels
                     }
                     case nnil_ret:
                         output[i] = stack.pop();
+                        ret = true;
                         break;
                     default:
                         NNCASE_THROW(std::runtime_error, "Invalid nnil op");

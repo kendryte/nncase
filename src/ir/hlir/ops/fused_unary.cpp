@@ -15,7 +15,6 @@
 #include <hlir/op_utils.h>
 #include <hlir/ops/fused_unary.h>
 #include <llir/ops/nnil_method.h>
-#include <runtime/nnil.h>
 #include <xtensor/xarray.hpp>
 
 using namespace nncase;
@@ -56,8 +55,9 @@ void calc_op_used_count(const std::vector<fused_unary_op> subgraph, size_t root,
         sequence.emplace_back(root);
     }
 }
+}
 
-void compile_graph(const std::vector<fused_unary_op> &subgraph, runtime::nnil_builder &builder)
+void fused_unary::compile_graph(const std::vector<fused_unary_op> &subgraph, runtime::nnil_builder &builder)
 {
     std::vector<size_t> sequence;
     std::vector<size_t> access_counts(subgraph.size());
@@ -159,7 +159,6 @@ void compile_graph(const std::vector<fused_unary_op> &subgraph, runtime::nnil_bu
     }
 
     builder.emit_ret();
-}
 }
 
 fused_unary::fused_unary(std::vector<fused_unary_op> subgraph, shape_t in_shape)

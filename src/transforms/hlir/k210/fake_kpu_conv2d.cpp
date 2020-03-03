@@ -169,7 +169,7 @@ void fake_kpu_conv2d_transform::process(transform_context &context)
 
     auto pre_pad = context.graph.emplace<pad>(dt_float32, output.shape(), pre_paddings, 0.f);
     auto conv = context.graph.emplace<fake_kpu_conv2d>(pre_pad->output().shape(), is_depthwise, filter_type, kpu_pool_bypass,
-        old_conv.weights(), old_conv.bias(), clamp_to_piecewise(old_conv.fused_activation()));
+        old_conv.weights(), old_conv.bias(), old_conv.fused_activation());
 
     xt::svector<padding> sur_paddings {
         padding::zero(),
