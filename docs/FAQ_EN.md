@@ -23,10 +23,13 @@
 
 ### Deploy models
 1. Should I normalize inputs when running the model?
+
   If it is a uint8 input (ofen quantized model), you don't need normalize instead provide uint8 input (e.g. RGB888 image). If it is a float input, youd should do preprocess.
 
 2. Why I got "KPU allocator cannot allocate more memory"?
+
   As said in the chapter "K210 and KPU", Your model's input and output featuremaps are stored at 2MB KPU RAM. Every single layer cannot exceed the limit. You can try to reduce the size of the feature maps.
 
 3. Why I got "Out of memory" when running the model?
+
   When you compile models, nncase will print the main memory usage which is the working memory needed to run the model. Often the model is loaded to 6MB RAM, so the total main memory usage is the working memory + size of your model.
