@@ -48,6 +48,17 @@ namespace
         else
             return padding_mode::notset;
     }
+
+	shape_t generate_output_shape(const shape_t& input, const shape_t& kernel, const array<padding, 2>& pads, const array<size_t, 2>& dilations, const array<size_t, 2>& strides)
+	{
+		return
+		{
+			input[0],
+			kernel[1],
+			input[2] + dilations[0] * (kernel[2] - 1) - pads[0].sum(),
+			input[3] + dilations[1] * (kernel[3] - 1) - pads[1].sum()
+		};
+	}
 }
 
 void onnx_importer::convert_op_Conv(const NodeProto& node)
@@ -177,7 +188,7 @@ template<class Node> Node* onnx_importer::add_conv_node(const NodeProto &node, h
 
 template<> conv2d_transpose* onnx_importer::add_conv_node<conv2d_transpose>(const NodeProto &node, hlir::graph& graph, shape_t&& input_shape, xt::xarray<float>&& weight_value, xt::xarray<float>&& bias_value, const size_t group, const array<padding, 2>& pads, const array<size_t, 2>& strides, const array<size_t, 2>& dilations)
 {
-    auto output_shape { input_shape };
+    auto output_shape { generate_output_shape(input_shape, weight_value.shape(), pads, dilations, strides) };
 
     const auto &output_shape_attr { get_attribute<xtl::span<const int64_t>>(node, "output_shape") };
     if (output_shape_attr)
