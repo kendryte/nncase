@@ -41,7 +41,7 @@ void onnx_importer::convert_op_Transpose(const NodeProto& node)
         throw runtime_error("Can't find value info for " + input + " input");
 
     auto input_shape { get_shape(*input_info_ptr) };
-    auto input_type { get_datatype(*input_info_ptr) };
+    auto input_type { get_datatype(*input_info_ptr).value() };
 
     axis_t perm(input_shape.size());
     std::iota(begin(perm), end(perm), 0);
