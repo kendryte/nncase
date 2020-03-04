@@ -1,4 +1,4 @@
-/* Copyright 2019 Canaan Inc.
+/* Copyright 2019-2020 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -394,6 +394,19 @@ namespace runtime
             auto output = interpreter.memory_at<float>(options.output);
 
             kernels::neutral::nnil_unary_method(input.data(), output.data(), input.size(), options.body);
+            return kcr_done;
+        }
+
+        kernel_call_result table_lookup1d(table_lookup1d_options &options, interpreter_t &interpreter, interpreter_step_t step)
+        {
+            if (options.input.datatype != dt_uint8)
+                return kcr_error;
+
+            auto input = interpreter.memory_at<uint8_t>(options.input);
+            auto table = interpreter.memory_at<uint8_t>(options.table);
+            auto output = interpreter.memory_at<uint8_t>(options.output);
+
+            kernels::neutral::table_lookup1d(input.data(), output.data(), input.size(), table.data());
             return kcr_done;
         }
     }

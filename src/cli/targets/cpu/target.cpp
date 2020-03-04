@@ -1,4 +1,4 @@
-/* Copyright 2019 Canaan Inc.
+/* Copyright 2019-2020 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +24,7 @@
 #include <hlir/transforms/neutral/fuse_clamp.h>
 #include <hlir/transforms/neutral/fuse_pad.h>
 #include <hlir/transforms/neutral/fuse_unary.h>
+#include <hlir/transforms/neutral/fused_unary_to_lookup1d.h>
 #include <hlir/transforms/neutral/quantized_binary.h>
 #include <hlir/transforms/neutral/quantized_conv2d.h>
 #include <hlir/transforms/neutral/quantized_matmul.h>
@@ -151,6 +152,7 @@ void nncase::cpu_target::optimize_quantize(hlir::quantizer &quantizer, hlir::tra
     p.emplace<quantized_conv2d_transform>(quantizer);
     p.emplace<quantized_matmul_transform>(quantizer);
     p.emplace<quantized_binary_transform>(quantizer);
+    p.emplace<fused_unary_to_lookup1d_transform>(quantizer);
     add_default_transforms(p);
     pass_mgr.add_pass(std::move(p));
 }

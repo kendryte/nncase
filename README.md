@@ -31,7 +31,12 @@ Download prebuilt binaries from [Release](https://github.com/kendryte/nncase/rel
 ## Usage
 ## 使用方法
 
-- [Usage 使用方法](./docs/USAGE.md)
+- [Usage(English)](./docs/USAGE_EN.md)
+- [FAQ(English)](./docs/FAQ_EN.md)
+- [使用说明(中文)](./docs/USAGE_ZH.md)
+- [常见问题(中文)](./docs/FAQ_ZH.md)
+
+
 - [Examples 例子](./examples)
 
 ---

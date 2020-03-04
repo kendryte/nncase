@@ -1,4 +1,4 @@
-/* Copyright 2019 Canaan Inc.
+/* Copyright 2019-2020 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -788,6 +788,12 @@ namespace kernels
                     }
                 }
             }
+        }
+
+        inline void table_lookup1d(const uint8_t *CXX_RESTRICT input, uint8_t *CXX_RESTRICT output, size_t size, const uint8_t *CXX_RESTRICT table)
+        {
+            for (size_t i = 0; i < size; i++)
+                output[i] = table[input[i]];
         }
     }
 }

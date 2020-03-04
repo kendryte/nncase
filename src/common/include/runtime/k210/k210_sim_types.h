@@ -1,4 +1,4 @@
-/* Copyright 2019 Canaan Inc.
+/* Copyright 2019-2020 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -258,13 +258,6 @@ namespace runtime
         };
 
         using kpu_activation_table_t = std::array<kpu_activation_segment, 16>;
-
-        struct piecewise_linear_segment
-        {
-            float start;
-            float mul;
-            float add;
-        };
     }
 }
 }

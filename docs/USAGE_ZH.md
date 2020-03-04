@@ -1,7 +1,5 @@
-## Usage
 ## 使用方法
 
-### Comannd line
 ### 命令行
 ```
 DESCRIPTION
@@ -52,37 +50,6 @@ OPTIONS
 
     -v, --version           show version
 ```
-
-### Description
-
-`ncc` is the nncase command line tool. It has two commands: `compile` and `infer`.
-
-`compile` command compile your trained models (`.tflite`, `.caffemodel`) to `.kmodel`.
-- `<input file>` is your input model path.
-- `<output file>` is the output model path.
-- `-i, --input-format` option is used to specify the input model format. nncase supports `tflite` and `caffe` input model currently.
-- `-o, --output-format` option is used to sepecify the output model format. You have only one choice: `kmodel` currently.
-- `-t, --target` option is used to set your desired target device to run the model. `cpu` is the most general target that almost every platform should support. `k210` is the Kendryte K210 SoC platform. If you set this option to `k210`, this model can only run on K210 or be emulated on your PC.
-- `--inference-type` Set to `float` if you want precision, but you need more memory and lost K210 KPU acceleration. Set to `uint8` if you want KPU acceleration and fast speed and you need to provide a quantization calibration dataset to quantize your models later.
-- `--dataset` is to provide your quantization calibration dataset to quantize your models. You should put hundreds or thousands of data in training set to this directory. You only need this option when you set `--inference-type` to `uint8`.
-- `--dataset-format` is to set the format of the calibration dataset. Default is `image`, nncase will use `opencv` to read your images and autoscale to the desired input size of your model. If the input has 3 channels, ncc will convert images to RGB float tensors [0,1] in `NCHW` layout. If the input has only 1 channel, ncc will grayscale your images. Set to `raw` if your dataset is not image dataset for example, audio or matrices. In this scenario you should convert your dataset to raw binaries which contains float tensors. You only need this option when you set `--inference-type` to `uint8`.
-- `--input-std` and `--input-mean` is to set the preprocess method on your calibration dataset. As said above, ncc will firstly convert images to RGB float tensors [0,1] in `NCHW` layout, then ncc will normalize your images using `y = (x - mean) / std` formula. There is an arguments table for reference.
-
-| Input range | --input-std | --input-mean |
-|-------|------------------ |------------- |
-| [0,1] (default) | 1 | 0 |
-| [-1,1] | 0.5 | 0.5 |
-| [0,255] | 0.0039216 | 0 |
-- `--calibrate-method` is to set your desired calibration method, which is used to select the optimal activation ranges. The default is `no_clip` in that ncc will use the full range of activations. If you want a better quantization result, you can use `l2` but it will take a longer time to find the optimal ranges.
-- `--input-type` is to set your desired input data type when do inference. Default is equal to inference type. If `--input-type` is `uint8`, for example you should provide RGB888 uint8 tensors when you do inference. If `--input-type` is `float`, you shold provide RGB float tensors instead.
-- `--max-allocator-solve-secs` is to limit the maximum solving time when do the best fit allocation search. If the search time exceeded, ncc will fallback to use the first fit method. Default is 60 secs, set to 0 to disable search.
-- `--dump-ir` is a debug option. When it's on, ncc will produce some `.dot` graph files to the working directory. You can use `Graphviz` or [Graphviz Online](https://dreampuf.github.io/GraphvizOnline) to view these files.
-
-`infer` command can run your kmodel, and it's often used as debug purpose. ncc will save the model's output tensors to `.bin` files in `NCHW` layout.
-- `<input file>` is your kmodel path.
-- `<output path>` is the output directory ncc will produce to.
-- `--dataset` is the test set directory.
-- `--dataset-format`, `--input-std` and `--input-mean` has the same meaning as in `compile` command.
 
 ### 描述
 

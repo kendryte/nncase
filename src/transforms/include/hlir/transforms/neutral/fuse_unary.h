@@ -1,4 +1,4 @@
-/* Copyright 2019 Canaan Inc.
+/* Copyright 2019-2020 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -58,16 +58,6 @@ protected:
 };
 
 class fuse_two_fused_unary_with_binary_transform : public transform
-{
-public:
-    void process(transform_context &context) override;
-
-protected:
-    bool skip_self_contained_check() const noexcept override { return true; }
-    bool on_try_match(hlir::node &node, transform_context &context) override;
-};
-
-class fused_unary_to_lookup1d_transform : public transform
 {
 public:
     void process(transform_context &context) override;

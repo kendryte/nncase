@@ -11,6 +11,7 @@ set(SRCS transform.cpp
          neutral/fuse_pad.cpp
          neutral/fuse_clamp.cpp
          neutral/fuse_unary.cpp
+         neutral/fused_unary_to_lookup1d.cpp
          neutral/transpose_motion.cpp
          neutral/dequantize_motion.cpp
          neutral/quantized_conv2d.cpp

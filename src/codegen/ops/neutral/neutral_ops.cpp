@@ -1,4 +1,4 @@
-/* Copyright 2019 Canaan Inc.
+/* Copyright 2019-2020 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@
 #include <llir/ops/reduce_window2d.h>
 #include <llir/ops/resize_image.h>
 #include <llir/ops/strided_slice.h>
+#include <llir/ops/table_lookup.h>
 #include <llir/ops/transpose.h>
 #include <llir/ops/unary.h>
 #include <runtime/neutral/neutral_ops_body.h>
@@ -376,6 +377,17 @@ namespace codegen
             body->input = context.get_allocation(rnode.input());
             body->output = context.get_allocation(rnode.output());
             body->body = rnode.body();
+
+            return body;
+        });
+
+        register_emitter(op_table_lookup1d, [](node &node, codegen_context &context) {
+            auto &rnode = static_cast<table_lookup1d &>(node);
+            auto body = std::make_unique<node_body_impl<rop_table_lookup1d, table_lookup1d_options>>();
+
+            body->input = context.get_allocation(rnode.input());
+            body->table = context.get_allocation(rnode.table());
+            body->output = context.get_allocation(rnode.output());
 
             return body;
         });

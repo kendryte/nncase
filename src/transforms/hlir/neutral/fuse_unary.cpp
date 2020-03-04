@@ -1,4 +1,4 @@
-/* Copyright 2019 Canaan Inc.
+/* Copyright 2019-2020 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -272,37 +272,4 @@ void fuse_two_fused_unary_with_binary_transform::process(transform_context &cont
     f_u->input().connect(output);
     for (auto &in : dup(inputs))
         in->connect(f_u->output());
-}
-
-bool fused_unary_to_lookup1d_transform::on_try_match(node &node, transform_context &context)
-{
-    if (auto u = node_cast<unary>(node))
-    {
-        context.matched_nodes.emplace_back(u);
-        context.inputs.emplace_back(&u->input());
-        context.outputs.emplace_back(&u->output());
-        return true;
-    }
-
-    return false;
-}
-
-void fused_unary_to_lookup1d_transform::process(transform_context &context)
-{
-    //auto &output = *context.inputs[0]->connection();
-    //auto inputs = context.outputs[0]->connections();
-    //auto &old_u = static_cast<unary &>(*context.matched_nodes[0]);
-
-    //graph subgraph;
-    //auto in = subgraph.emplace<input_node>(output.type(), output.shape(), output.memory_type());
-    //auto u = subgraph.emplace<unary>(old_u.unary_op(), old_u.input().shape());
-    //auto out = subgraph.emplace<output_node>(u->output().type(), u->output().shape());
-    //u->input().connect(in->output());
-    //out->input().connect(u->output());
-
-    //auto f_u = context.graph.emplace<fused_unary>(std::move(subgraph));
-
-    //f_u->input().connect(output);
-    //for (auto &in : dup(inputs))
-    //    in->connect(f_u->output());
 }

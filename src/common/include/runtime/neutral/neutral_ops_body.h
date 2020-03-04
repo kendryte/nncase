@@ -1,4 +1,4 @@
-/* Copyright 2019 Canaan Inc.
+/* Copyright 2019-2020 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -485,6 +485,13 @@ namespace runtime
                 writer.write(output);
                 writer.write_array(body);
             }
+        };
+
+        struct table_lookup1d_options : public simple_node_body<table_lookup1d_options>
+        {
+            memory_range input;
+            memory_range table;
+            memory_range output;
         };
     }
 }

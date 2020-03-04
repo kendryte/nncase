@@ -1,4 +1,4 @@
-/* Copyright 2019 Canaan Inc.
+/* Copyright 2019-2020 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,7 +29,9 @@ namespace hlir
         input_connector &table() { return input_at(1); }
         output_connector &output() { return output_at(0); }
 
-        table_lookup1d(datatype_t type, shape_t input_shape);
+        table_lookup1d(datatype_t type, shape_t input_shape, size_t table_size);
+
+        void compile(hlir_compile_context &context) override;
     };
 }
 }

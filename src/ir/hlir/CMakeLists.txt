@@ -23,6 +23,7 @@ set(SRCS connectors.cpp
          ops/reshape.cpp
          ops/resize_image.cpp
          ops/strided_slice.cpp
+         ops/table_lookup.cpp
          ops/k210/fake_kpu_conv2d.cpp
          ops/k210/kpu_conv2d.cpp
          ops/k210/kpu_data_exchange.cpp)

@@ -1,4 +1,4 @@
-/* Copyright 2019 Canaan Inc.
+/* Copyright 2019-2020 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -35,26 +35,6 @@ using namespace nncase::hlir::transforms::k210;
 
 namespace
 {
-struct line
-{
-    float start_x;
-    float end_x;
-    float k;
-    float b;
-};
-
-xt::svector<line> to_lines(const xt::svector<piecewise_linear_segment> &segs)
-{
-    xt::svector<line> lines;
-    for (size_t i = 0; i < segs.size(); i++)
-    {
-        auto end = i == segs.size() - 1 ? std::numeric_limits<float>::max() : segs[i + 1].start;
-        lines.push_back({ segs[i].start, end, segs[i].mul, segs[i].add });
-    }
-
-    return lines;
-}
-
 auto quantize_weights(quantizer &quantizer, fake_kpu_conv2d &conv)
 {
     auto weights = conv.weights();

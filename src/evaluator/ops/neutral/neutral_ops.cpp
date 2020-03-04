@@ -1,4 +1,4 @@
-/* Copyright 2019 Canaan Inc.
+/* Copyright 2019-2020 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,6 +29,7 @@
 #include <llir/ops/reduce_window2d.h>
 #include <llir/ops/resize_image.h>
 #include <llir/ops/strided_slice.h>
+#include <llir/ops/table_lookup.h>
 #include <llir/ops/transpose.h>
 #include <llir/ops/unary.h>
 
@@ -466,6 +467,17 @@ namespace llir
             auto output = context.memory_at<float>(rnode.output());
 
             kernels::neutral::nnil_unary_method(input.data(), output.data(), input.size(), rnode.body());
+        });
+
+        register_evaluator(op_table_lookup1d, [](llir::node &node, evaluate_context &context) {
+            auto &rnode = static_cast<table_lookup1d &>(node);
+
+            assert(rnode.input().type() == dt_uint8);
+            auto input = context.memory_at<uint8_t>(rnode.input());
+            auto table = context.memory_at<uint8_t>(rnode.table());
+            auto output = context.memory_at<uint8_t>(rnode.output());
+
+            kernels::neutral::table_lookup1d(input.data(), output.data(), input.size(), table.data());
         });
     }
 }
