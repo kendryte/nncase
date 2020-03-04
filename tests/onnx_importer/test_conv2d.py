@@ -64,4 +64,5 @@ def test_conv_quant(input):
 
 if __name__ == "__main__":
 	test_conv()
+	test_conv_k210()
 	test_conv_quant()
