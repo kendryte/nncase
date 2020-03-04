@@ -65,7 +65,7 @@ namespace importer
         void convert_reduce(const onnx::NodeProto &node, const reduce_op_t reduce_op, const float initial_value);
         template<class Node> void convert_conv(const onnx::NodeProto &node);
 
-        template<class Node> Node* add_conv_node(const onnx::NodeProto &node, hlir::graph& graph, hlir::shape_t&& input_shape, xt::xarray<float>&& weight_value, xt::xarray<float>&& bias_value, const std::size_t group, std::array<padding, 2>& pads, std::array<size_t, 2>& strides, std::array<size_t, 2>& dilations);
+        template<class Node> Node* add_conv_node(const onnx::NodeProto &node, hlir::graph& graph, hlir::shape_t&& input_shape, xt::xarray<float>&& weight_value, xt::xarray<float>&& bias_value, const std::size_t group, const std::array<padding, 2>& pads, const std::array<size_t, 2>& strides, const std::array<size_t, 2>& dilations);
 
         const onnx::ValueInfoProto* find_value_info(const std::string &value) const;
         nncase::hlir::shape_t get_shape(const std::string &value) const;

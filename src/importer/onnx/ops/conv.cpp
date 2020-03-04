@@ -170,12 +170,12 @@ template<class Node> void onnx_importer::convert_conv(const NodeProto &node)
     output_tensors_.emplace(output, &conv->output());
 }
 
-template<class Node> Node* onnx_importer::add_conv_node(const NodeProto &node, hlir::graph& graph, shape_t&& input_shape, xt::xarray<float>&& weight_value, xt::xarray<float>&& bias_value, const size_t group, array<padding, 2>& pads, array<size_t, 2>& strides, array<size_t, 2>& dilations)
+template<class Node> Node* onnx_importer::add_conv_node(const NodeProto &node, hlir::graph& graph, shape_t&& input_shape, xt::xarray<float>&& weight_value, xt::xarray<float>&& bias_value, const size_t group, const array<padding, 2>& pads, const array<size_t, 2>& strides, const array<size_t, 2>& dilations)
 {
     return graph.emplace<Node>(move(input_shape), move(weight_value), move(bias_value), group, pads[0], pads[1], strides[0], strides[1], dilations[0], dilations[1], value_range<float>::full());
 }
 
-template<> conv2d_transpose* onnx_importer::add_conv_node<conv2d_transpose>(const NodeProto &node, hlir::graph& graph, shape_t&& input_shape, xt::xarray<float>&& weight_value, xt::xarray<float>&& bias_value, const size_t group, array<padding, 2>& pads, array<size_t, 2>& strides, array<size_t, 2>& dilations)
+template<> conv2d_transpose* onnx_importer::add_conv_node<conv2d_transpose>(const NodeProto &node, hlir::graph& graph, shape_t&& input_shape, xt::xarray<float>&& weight_value, xt::xarray<float>&& bias_value, const size_t group, const array<padding, 2>& pads, const array<size_t, 2>& strides, const array<size_t, 2>& dilations)
 {
     auto output_shape { input_shape };
 
