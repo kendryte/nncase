@@ -19,6 +19,12 @@
 using namespace std;
 using namespace clipp;
 
+void help(clipp::group &cli, const char *program)
+{
+    auto fmt = doc_formatting {}.first_column(4).doc_column(28).last_column(80);
+    cout << make_man_page(cli, program, fmt).prepend_section("DESCRIPTION", "NNCASE model compiler and inference tool.") << endl;
+}
+
 int main(int argc, char *argv[])
 {
     mode mode;
@@ -26,9 +32,11 @@ int main(int argc, char *argv[])
     inference_options inference_options;
 
     auto cli = ((compile_options.parser(mode) | inference_options.parser(mode)),
-        option("-v", "--version").call([] { cout << "version 0.2" << endl; }).doc("show version"));
+        option("-v", "--version").call([] { cout << "version 0.2" << endl; }).doc("show version"),
+        option("-h", "--help").set(mode, mode::help).doc("show help"));
 
-    if (parse(argc, argv, cli))
+    auto parse_res = parse(argc, argv, cli);
+    if (parse_res)
     {
         try
         {
@@ -41,6 +49,7 @@ int main(int argc, char *argv[])
                 inference(inference_options);
                 break;
             case mode::help:
+                help(cli, "ncc");
                 break;
             }
 
@@ -53,8 +62,27 @@ int main(int argc, char *argv[])
     }
     else
     {
-        auto fmt = doc_formatting {}.first_column(4).doc_column(28).last_column(80);
-        cout << make_man_page(cli, "ncc", fmt).prepend_section("DESCRIPTION", "NNCASE model compiler and inference tool.") << endl;
+        for (const auto &m : parse_res.missing())
+        {
+            if (m.param()->flags().size())
+                cout << "error: missing " << m.param()->flags()[0] << std::endl;
+        }
+
+        //per-argument mapping
+        for (const auto &m : parse_res)
+        {
+            if (m.param()->flags().size() && m.any_error())
+            {
+                cout << "error: " << m.param()->flags()[0];
+
+                if (m.blocked())
+                    cout << " blocked" << std::endl;
+                if (m.conflict())
+                    cout << " conflict" << std::endl;
+            }
+        }
+
+        cout << "Use -h to see help info" << std::endl;
     }
 
     return -1;
