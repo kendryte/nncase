@@ -607,6 +607,133 @@ template<> xt::xarray<float> onnx_importer::to<xt::xarray<float>>(const onnx::Te
 	}
 }
 
+template<> xt::xarray<float> onnx_importer::convert_to<xt::xarray<float>>(const onnx::TensorProto &tensor)
+{
+	if (tensor.data_type() == TensorProto_DataType_FLOAT)
+		return to<xt::xarray<float>>(tensor);
+
+	switch (tensor.data_type())
+	{
+	case TensorProto_DataType_INT32:
+	case TensorProto_DataType_INT16:
+	case TensorProto_DataType_INT8:
+	case TensorProto_DataType_UINT16:
+	case TensorProto_DataType_UINT8:
+	case TensorProto_DataType_BOOL:
+	{
+		if (!tensor.int32_data().empty())
+		{
+			vector<float> data;
+			data.reserve(tensor.int32_data().size());
+
+			copy(begin(tensor.int32_data()), end(tensor.int32_data()), back_inserter(data));
+			return xt::adapt(data, get_shape(tensor));
+		}
+		else
+		{
+			return xt::adapt(tensor.raw_data().data(), tensor.raw_data().size(), xt::no_ownership(), get_shape(tensor));
+		}
+		break;
+	}
+
+	case TensorProto_DataType_INT64:
+	{
+		if (!tensor.int64_data().empty())
+		{
+			vector<float> data;
+			data.reserve(tensor.int64_data().size());
+
+			copy(begin(tensor.int64_data()), end(tensor.int64_data()), back_inserter(data));
+			return xt::adapt(data, get_shape(tensor));
+		}
+
+		break;
+	}
+	default:
+		throw runtime_error("Unsupported conversion from " + to_string(static_cast<TensorProto_DataType>(tensor.data_type())) + " to float tensor");
+	}
+
+	vector<float> data;
+
+	// raw_data handling
+	switch (tensor.data_type())
+	{
+	case TensorProto_DataType_BOOL:
+	{
+		data.reserve(tensor.raw_data().size());
+		transform(begin(tensor.raw_data()), end(tensor.raw_data()), back_inserter(data),
+			[](const auto e) { return static_cast<bool>(e); });
+
+		break;
+	}
+
+	case TensorProto_DataType_INT8:
+	{
+		data.reserve(tensor.raw_data().size());
+		transform(begin(tensor.raw_data()), end(tensor.raw_data()), back_inserter(data),
+			[](const auto e) { return static_cast<int8_t>(e); });
+
+		break;
+	}
+
+	case TensorProto_DataType_UINT8:
+	{
+		data.reserve(tensor.raw_data().size());
+		transform(begin(tensor.raw_data()), end(tensor.raw_data()), back_inserter(data),
+			[](const auto e) { return static_cast<uint8_t>(e); });
+
+		break;
+	}
+
+	case TensorProto_DataType_INT16:
+	{
+		const size_t size { tensor.raw_data().size() / 2 };
+		data.reserve(size);
+		const auto ptr { reinterpret_cast<const int16_t*>(tensor.raw_data().data()) };
+		copy(ptr, ptr + size, back_inserter(data));
+
+		break;
+	}
+
+	case TensorProto_DataType_UINT16:
+	{
+		const size_t size { tensor.raw_data().size() / 2 };
+		data.reserve(size);
+		const auto* ptr { reinterpret_cast<const uint16_t*>(tensor.raw_data().data()) };
+		copy(ptr, ptr + size, back_inserter(data));
+
+		break;
+	}
+
+	case TensorProto_DataType_INT32:
+	{
+		const size_t size { tensor.raw_data().size() / 4 };
+		data.reserve(size);
+		const auto* ptr { reinterpret_cast<const int32_t*>(tensor.raw_data().data()) };
+		transform(ptr, ptr + size, back_inserter(data),
+			[](const auto e) { return static_cast<float>(e); });
+
+		break;
+	}
+
+	case TensorProto_DataType_INT64:
+	{
+		const size_t size { tensor.raw_data().size() / 8 };
+		data.reserve(size);
+		const auto* ptr { reinterpret_cast<const int64_t*>(tensor.raw_data().data()) };
+		transform(ptr, ptr + size, back_inserter(data),
+			[](const auto e) { return static_cast<float>(e); });
+
+		break;
+	}
+
+	default:
+		break;
+	}
+
+	return xt::adapt(data, get_shape(tensor));
+}
+
 graph nncase::importer::import_onnx(xtl::span<const uint8_t> model)
 {
     graph graph;

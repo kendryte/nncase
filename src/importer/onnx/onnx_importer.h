@@ -82,6 +82,7 @@ namespace importer
         template<typename T> static std::optional<T> get_attribute(const onnx::NodeProto &node, const std::string &name);
         const onnx::TensorProto* get_initializer(const std::string &name) const;
         template<typename T> static T to(const onnx::TensorProto &tensor);
+        template<typename T> static T convert_to(const onnx::TensorProto &tensor);
 
         hlir::graph &graph_;
         onnx::ModelProto model_;
@@ -115,5 +116,6 @@ namespace importer
     template<> hlir::axis_t onnx_importer::to<hlir::axis_t>(const onnx::TensorProto &tensor);
     template<> xt::xarray<float> onnx_importer::to<xt::xarray<float>>(const onnx::TensorProto &tensor);
     template<> xt::xarray<std::uint8_t> onnx_importer::to<xt::xarray<std::uint8_t>>(const onnx::TensorProto &tensor);
+    template<> xt::xarray<float> onnx_importer::convert_to<xt::xarray<float>>(const onnx::TensorProto &tensor);
 }
 }
