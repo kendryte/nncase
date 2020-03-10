@@ -24,6 +24,9 @@
 #include "onnx/onnx.pb.h"
 
 #include <hlir/ir_types.h>
+#include <hlir/connectors.h>
+#include <hlir/node.h>
+#include <hlir/ops/constant.h>
 
 namespace nncase
 {
@@ -31,9 +34,6 @@ namespace nncase
 namespace hlir
 {
     class graph;
-
-    class input_connector;
-    class output_connector;
 }
 
 namespace importer
@@ -84,6 +84,8 @@ namespace importer
         template<typename T> static T to(const onnx::TensorProto &tensor);
         template<typename T> static T convert_to(const onnx::TensorProto &tensor);
 
+		template<typename T> std::optional<xtl::span<const T>> get_constant_input_data(const std::string& name) const;
+
         hlir::graph &graph_;
         onnx::ModelProto model_;
 
@@ -100,6 +102,30 @@ namespace importer
     {
         return nncase::dt_uint8;
     }
+
+	template<typename T> std::optional<xtl::span<const T>> onnx_importer::get_constant_input_data(const std::string& name) const
+	{
+		const auto it { output_tensors_.find(name) };
+
+		if (it == end(output_tensors_))
+			return std::optional<xtl::span<const T>> { };
+
+		if (it->second->type() != get_datatype<T>())
+			return std::optional<xtl::span<const T>> { };
+
+		const auto& node { it->second->owner() };
+
+		if (node.runtime_opcode() != hlir::op_constant)
+			return std::optional<xtl::span<const T>> { };
+
+		const xtl::span<const uint8_t> data { static_cast<const hlir::constant&>(node).data() };
+
+		return xtl::span<const T>
+		{
+			reinterpret_cast<const T*>(data.data()),
+			data.size() / sizeof(T)
+		};
+	}
 
     template<> std::optional<float> onnx_importer::get_attribute<float>(const onnx::NodeProto &node, const std::string &name);
     template<> std::optional<std::int64_t> onnx_importer::get_attribute<std::int64_t>(const onnx::NodeProto &node, const std::string &name);
