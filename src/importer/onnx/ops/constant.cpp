@@ -43,13 +43,11 @@ void onnx_importer::convert_op_Constant(const NodeProto &node)
 		shape_t shape { get_shape(v) };
 		const auto value_dt { get_datatype(v) };
 
-		if (!value_dt)
-			throw runtime_error("Data type of constant not supported");
+		TensorProto_DataType tensor_element_type { v.data_type() };
 
-
-		switch (value_dt.value())
+		switch (tensor_element_type)
 		{
-		case dt_uint8:
+		case TensorProto_DataType_UINT8:
 		{
 			const auto& data { to<xt::xarray<uint8_t>>(v) };
 			xtl::span<const uint8_t> vec { data };
@@ -57,13 +55,32 @@ void onnx_importer::convert_op_Constant(const NodeProto &node)
 			break;
 		}
 
-		case dt_float32:
+		case TensorProto_DataType_FLOAT:
 		{
 			const auto& data { to<xt::xarray<float>>(v) };
 			xtl::span<const uint8_t> vec { reinterpret_cast<const uint8_t*>(data.data()), data.size() * sizeof(float) };
 			op = graph_.emplace<constant>(value_dt.value(), move(shape), vec);
 			break;
 		}
+
+		case TensorProto_DataType_UINT16:
+		case TensorProto_DataType_INT16:
+		case TensorProto_DataType_INT32:
+		case TensorProto_DataType_INT64:
+		{
+			if (tensor_element_type == TensorProto_DataType_INT32 || tensor_element_type == TensorProto_DataType_INT64)
+			{
+				cout << "Constants of types int32 and int64 are represented as float32 and may suffer rounding errors if mantissa width is exceeded" << endl;
+			}
+
+			const auto& data { convert_to<xt::xarray<float>>(v) };
+			xtl::span<const uint8_t> vec { reinterpret_cast<const uint8_t*>(data.data()), data.size() * sizeof(float) };
+			op = graph_.emplace<constant>(dt_float32, move(shape), vec);
+			break;
+		}
+
+		default:
+			throw runtime_error("Data type \"" +  to_string(tensor_element_type) + "\" not supported");
 		}
 	}
 	else if (const auto value { get_attribute<float>(node, "value_float") })
