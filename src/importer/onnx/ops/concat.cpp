@@ -47,17 +47,8 @@ void onnx_importer::convert_op_Concat(const NodeProto &node)
 
     for (const string& input_name : node.input())
     {
-        const auto value_info_ptr { find_value_info(input_name) };
-
-        if (value_info_ptr)
-        {
-            inputs_shapes.push_back(get_shape(*value_info_ptr));
-            inputs_types.push_back(get_datatype(*value_info_ptr));
-        }
-        else
-        {
-            throw runtime_error("Can't find value info for " + input_name + " input");
-        }
+		inputs_shapes.push_back(get_shape(input_name));
+		inputs_types.push_back(get_datatype(input_name).value());
     }
 
     const datatype_t op_type { deduce_common_type(inputs_types) };

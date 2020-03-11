@@ -53,7 +53,7 @@ void onnx_importer::convert_reduce(const NodeProto& node, const reduce_op_t redu
     const auto &input { node.input()[0] };
     const auto &output { node.output()[0] };
 
-    auto input_shape { get_shape(input) };
+    const auto &input_shape { get_shape(input) };
 
     axis_t axes(input_shape.size());
 	std::iota(begin(axes), end(axes), 0);
@@ -68,7 +68,7 @@ void onnx_importer::convert_reduce(const NodeProto& node, const reduce_op_t redu
     if (keepdims_attr)
         keepdims = static_cast<bool>(keepdims_attr.value());
 
-    auto op { graph_.emplace<reduce>(reduce_op, move(input_shape), move(axes), init_value, keepdims) };
+    auto op { graph_.emplace<reduce>(reduce_op, input_shape, move(axes), init_value, keepdims) };
 
     input_tensors_.emplace(&op->input(), input);
     output_tensors_.emplace(output, &op->output());

@@ -32,15 +32,10 @@ using namespace onnx;
 
 void onnx_importer::convert_op_Slice(const NodeProto& node)
 {
-    const string& data_input_name { node.input()[0] };
+    const string &data_input_name { node.input()[0] };
 
-    const auto data_input_value_info { find_value_info(data_input_name) };
-
-    if (!data_input_value_info)
-        throw runtime_error("Can't find value info for data input for slice element");
-
-    shape_t&& data_shape { get_shape(*data_input_value_info) };
-    const datatype_t data_type { get_datatype(*data_input_value_info).value() };
+    const datatype_t data_type { get_datatype(data_input_name).value() };
+    const shape_t &data_shape { get_shape(data_input_name) };
 
 	axis_t begins, ends;
 

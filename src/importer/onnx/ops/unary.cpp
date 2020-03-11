@@ -80,13 +80,8 @@ void onnx_importer::convert_op_Sqrt(const onnx::NodeProto &node)
     const auto &input { node.input()[0] };
     const auto &output { node.output()[0] };
 
-	const auto* input_value_info { find_value_info(input) };
-
-	if (!input_value_info)
-		throw runtime_error("Can't query sqrt operator input value info");
-
-    auto &&input_shape { get_shape(*input_value_info) };
-	const auto input_datatype { get_datatype(*input_value_info).value() };
+	const auto input_datatype { get_datatype(input).value() };
+    const auto &input_shape { get_shape(input) };
 
     auto op { graph_.emplace<unary>(unary_rsqrt, input_shape) };
 
@@ -121,7 +116,7 @@ void onnx_importer::convert_unary(const onnx::NodeProto &node, const unary_op_t 
     const auto &input { node.input()[0] };
     const auto &output { node.output()[0] };
 
-    auto &&input_shape { get_shape(input) };
+    const auto &input_shape { get_shape(input) };
 
     auto op { graph_.emplace<unary>(unary_op, input_shape) };
 

@@ -71,6 +71,7 @@ namespace importer
         nncase::hlir::shape_t get_shape(const std::string &value) const;
         static nncase::hlir::shape_t get_shape(const onnx::ValueInfoProto &value);
         static nncase::hlir::shape_t get_shape(const onnx::TensorProto &value);
+		std::optional<nncase::datatype_t> get_datatype(const std::string &value) const;
         static std::optional<nncase::datatype_t> get_datatype(const onnx::ValueInfoProto &value);
         static std::optional<nncase::datatype_t> get_datatype(const onnx::TensorProto &value);
         static std::optional<nncase::datatype_t> get_datatype(const onnx::TensorProto_DataType datatype);

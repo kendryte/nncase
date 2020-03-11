@@ -250,6 +250,26 @@ shape_t onnx_importer::get_shape(const TensorProto &value)
     return result_shape;
 }
 
+optional<datatype_t> onnx_importer::get_datatype(const string &value) const
+{
+	const auto oit { output_tensors_.find(value) };
+	if (oit != end(output_tensors_))
+	{
+		return oit->second->type();
+	}
+
+    const auto value_info_ptr { find_value_info(value) };
+    if (value_info_ptr)
+        return get_datatype(*value_info_ptr);
+
+	const auto initializer_ptr { get_initializer(value) };
+	if (initializer_ptr)
+		return get_datatype(*initializer_ptr);
+
+	return optional<datatype_t> { };
+}
+
+
 optional<datatype_t> onnx_importer::get_datatype(const ValueInfoProto &value_info)
 {
     const auto& type { value_info.type() };
