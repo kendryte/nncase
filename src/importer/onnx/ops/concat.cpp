@@ -38,6 +38,21 @@ namespace
         assert(dt_float32 < dt_uint8);
         return *min_element(begin(datatypes), end(datatypes));
     }
+
+	size_t axis_count(const vector<shape_t>& shapes)
+	{
+		if (shapes.empty())
+		{
+			return 0;
+		}
+
+		return shapes.front().size();
+	}
+
+	size_t real_axis(const int axis, const size_t count) noexcept
+	{
+		return axis >= 0 ? axis : count + axis;
+	}
 }
 
 void onnx_importer::convert_op_Concat(const NodeProto &node)
@@ -52,7 +67,7 @@ void onnx_importer::convert_op_Concat(const NodeProto &node)
     }
 
     const datatype_t op_type { deduce_common_type(inputs_types) };
-    const size_t axis { static_cast<size_t>(get_attribute<int64_t>(node, "axis").value()) };
+    const size_t axis { real_axis(get_attribute<int64_t>(node, "axis").value(), axis_count(inputs_shapes)) };
 
     auto con { graph_.emplace<concat>(op_type, inputs_shapes, axis) };
 
