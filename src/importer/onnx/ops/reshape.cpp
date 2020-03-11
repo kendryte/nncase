@@ -40,9 +40,25 @@ void onnx_importer::convert_op_Reshape(const NodeProto& node)
         throw runtime_error("Can't find value info for " + input + " input");
 
     auto input_shape { get_shape(*input_info_ptr) };
-    auto input_type { get_datatype(*input_info_ptr) };
+    auto input_type { get_datatype(*input_info_ptr).value() };
 
-    axis_t new_shape { to<axis_t>(get_initializer(shape)) };
+    const auto* new_shape_initializer { get_initializer(shape) };
+
+    axis_t new_shape;
+
+    if (new_shape_initializer)
+    {
+        new_shape = to<axis_t>(*new_shape_initializer);
+    }
+    else
+    {
+        // try to extract data from previous constant nodes
+        const auto data { get_constant_input_data<float>(shape) };
+
+        if (data)
+            transform(begin(data.value()), end(data.value()), back_inserter(new_shape),
+                [](const auto e) { return static_cast<int>(e); });
+    }
 
     auto op { graph_.emplace<reshape>(input_type, input_shape, new_shape) };
 
