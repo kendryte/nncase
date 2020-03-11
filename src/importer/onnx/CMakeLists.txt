@@ -99,6 +99,7 @@ set(ONNX_IMPORTER_OPS_SOURCES
 	ops/activations.cpp
 	ops/binary.cpp
 	ops/concat.cpp
+	ops/constant.cpp
 	ops/conv.cpp
 	ops/lp_normalization.cpp
 	ops/matmul.cpp
@@ -109,9 +110,9 @@ set(ONNX_IMPORTER_OPS_SOURCES
 	ops/resize.cpp
 	ops/slice.cpp
 	ops/softmax.cpp
+	ops/squeeze.cpp
 	ops/transpose.cpp
 	ops/unary.cpp
-	ops/constant.cpp
 	)
 
 add_library(onnx_importer ${ONNX_IMPORTER_SOURCES} ${ONNX_IMPORTER_OPS_SOURCES})
