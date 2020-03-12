@@ -45,7 +45,7 @@ def test_floor_quant(input):
 	 '--input-type', 'float'])
 
 	ncc.infer(['--dataset-format', 'raw'])
-	ncc.close_to('test', 0.005)
+	ncc.close_to('test', 0.5)
 
 if __name__ == "__main__":
 	test_floor()
