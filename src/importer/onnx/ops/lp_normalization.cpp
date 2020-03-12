@@ -34,12 +34,11 @@ using namespace onnx;
 void onnx_importer::convert_op_LpNormalization(const NodeProto& node)
 {
     const auto &input { node.input()[0] };
-    const auto &size { node.input()[1] };
     const auto &output { node.output()[0] };
 
     const auto &input_shape { get_shape(input) };
 
-    axis_t reduce_axis { static_cast<int>(get_attribute<int>(node, "axis").value()) };
+    axis_t reduce_axis { static_cast<int>(real_axis(get_attribute<int>(node, "axis").value())) };
     const auto p { get_attribute<int>(node, "p").value() };
 
     assert(p >= 1 && p <= 2);
