@@ -48,11 +48,6 @@ namespace
 
 		return shapes.front().size();
 	}
-
-	size_t real_axis(const int axis, const size_t count) noexcept
-	{
-		return axis >= 0 ? axis : count + axis;
-	}
 }
 
 void onnx_importer::convert_op_Concat(const NodeProto &node)

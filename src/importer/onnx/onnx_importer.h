@@ -85,6 +85,11 @@ namespace importer
         template<typename T> static T to(const onnx::TensorProto &tensor);
         template<typename T> static T convert_to(const onnx::TensorProto &tensor);
 
+		static constexpr std::size_t real_axis(const int axis, const std::size_t count) noexcept
+		{
+			return axis >= 0 ? axis : count + axis;
+		}
+
 		template<typename T> std::optional<xtl::span<const T>> get_constant_input_data(const std::string& name) const;
 
         hlir::graph &graph_;

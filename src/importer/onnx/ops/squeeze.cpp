@@ -60,15 +60,11 @@ void onnx_importer::convert_op_Squeeze(const NodeProto& node)
 	size_t squeezed_count { };
 	for (const auto axis : axes)
 	{
-		const size_t real_axis
-		{
-			static_cast<size_t>(axis >= 0 ? axis : static_cast<int>(input_shape.size()) + axis)
-		};
-
-		if (input_shape.at(real_axis) != 1)
+		const auto fixed_axis { real_axis(axis, input_shape.size()) };
+		if (input_shape.at(fixed_axis) != 1)
 			throw runtime_error("Only single-dimensional axes can be squeezed");
 
-		new_shape.erase(begin(new_shape) + real_axis - squeezed_count);
+		new_shape.erase(begin(new_shape) + fixed_axis - squeezed_count);
 		++squeezed_count;
 	}
 

@@ -60,7 +60,10 @@ void onnx_importer::convert_reduce(const NodeProto& node, const reduce_op_t redu
 
     const auto &axes_attr { get_attribute<axis_t>(node, "axes") };
     if (axes_attr)
+	{
         axes = axes_attr.value();
+		std::transform(begin(axes), end(axes), begin(axes), [&input_shape](const auto e) { return real_axis(e, input_shape.size()); });
+	}
 
     bool keepdims { true };
 

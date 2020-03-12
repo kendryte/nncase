@@ -152,7 +152,7 @@ void onnx_importer::convert_op_Slice(const NodeProto& node)
 	axis_t permuted_begins, permuted_ends;
 	for (size_t i = 0; i < axes.size(); ++i)
 	{
-		const auto it { find(begin(loaded_axes), end(loaded_axes), i) };
+		const auto it { find_if(begin(loaded_axes), end(loaded_axes), [i, &data_shape](const auto e) { return real_axis(e, data_shape.size()) == i; }) };
 
 		if (it == end(loaded_axes))
 		{
