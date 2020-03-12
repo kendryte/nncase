@@ -9,8 +9,9 @@ from ncc import ncc, kmodel_export_file
 onnx_export_file = "./tmp/test.onnx"
 
 
-def save(model, input):
-	torch.onnx.export(model, input, onnx_export_file)
+def save(model, input, opset_version=9):
+	torch.onnx.export(model, input, onnx_export_file,
+					  opset_version=opset_version)
 
 
 def compile(args=[]):
