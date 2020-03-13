@@ -65,12 +65,12 @@ auto quantize_weights(quantizer &quantizer, fake_kpu_conv2d &conv)
     return std::make_tuple(q_p, std::move(scales), std::move(q_weights));
 }
 
-auto quantize_act(quantizer &quantizer, float act_in_scale, const quant_param_t &zq_p, value_range<float> activation, fused_unary *fu)
+auto quantize_act(quantizer &quantizer, float act_in_scale, const quant_param_t &yq_p, const quant_param_t &zq_p, value_range<float> activation, fused_unary *fu)
 {
     const auto xq_low = -(1LL << 35);
     const auto xq_high = (1LL << 35) - 1;
-    const auto xf_min = std::clamp((0 - zq_p.zero_point) / zq_p.scale, activation.min, activation.max);
-    const auto xf_max = std::clamp((255 - zq_p.zero_point) / zq_p.scale, activation.min, activation.max);
+    const auto xf_min = std::clamp((0 - yq_p.zero_point) / yq_p.scale, activation.min, activation.max);
+    const auto xf_max = std::clamp((255 - yq_p.zero_point) / yq_p.scale, activation.min, activation.max);
     const auto zq_scale = act_in_scale / zq_p.scale;
 
     const auto samples_count = 1024;
@@ -190,7 +190,7 @@ void kpu_conv2d_transform::process(transform_context &context)
     auto zq_p = quantizer_.get_quant_param(quantizer_.get(old_fu ? old_fu->output() : old_conv.output()), 8);
     auto sa = iq_p.scale * wq_p.scale;
     auto [bn, s_act_in] = quantize_bn(quantizer_, old_conv, sa, w_scales, yq_p);
-    auto act = quantize_act(quantizer_, s_act_in, zq_p, old_conv.fused_activation(), old_fu);
+    auto act = quantize_act(quantizer_, s_act_in, yq_p, zq_p, old_conv.fused_activation(), old_fu);
     auto filter = get_kpu_filter_size(old_conv.filter_type());
 
     auto q = context.graph.emplace<quantize>(output.shape(), iq_p);
@@ -203,7 +203,7 @@ void kpu_conv2d_transform::process(transform_context &context)
     conv->name(old_conv.name());
     auto download = context.graph.emplace<kpu_download>(conv->kpu_output().shape());
     upload->name(old_conv.name() + "/kpu_download");
-    auto deq = context.graph.emplace<dequantize>(download->output().shape(), yq_p);
+    auto deq = context.graph.emplace<dequantize>(download->output().shape(), zq_p);
     deq->name(old_conv.name() + "/dequantize");
     link(old_conv.output(), deq->output(), &quantizer_);
 
