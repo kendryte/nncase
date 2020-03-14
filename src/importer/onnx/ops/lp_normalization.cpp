@@ -38,7 +38,7 @@ void onnx_importer::convert_op_LpNormalization(const NodeProto& node)
 
     const auto &input_shape { get_shape(input) };
 
-    axis_t reduce_axis { static_cast<int>(real_axis(get_attribute<int>(node, "axis").value())) };
+    axis_t reduce_axis { static_cast<int>(real_axis(get_attribute<int>(node, "axis").value(), input_shape.size())) };
     const auto p { get_attribute<int>(node, "p").value() };
 
     assert(p >= 1 && p <= 2);
