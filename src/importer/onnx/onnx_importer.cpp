@@ -754,9 +754,9 @@ template<> xt::xarray<float> onnx_importer::convert_to<xt::xarray<float>>(const 
 	return xt::adapt(data, get_shape(tensor));
 }
 
-xt::svector<padding> onnx_importer::parse_padding(const axis_t& padding_value)
+std::vector<padding> onnx_importer::parse_padding(const axis_t& padding_value)
 {
-	xt::svector<padding> result;
+	std::vector<padding> result;
 
 	assert(!(padding_value.size() % 2));
 

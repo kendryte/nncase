@@ -90,7 +90,7 @@ namespace importer
 			return axis >= 0 ? axis : count + axis;
 		}
 
-		static xt::svector<padding> parse_padding(const hlir::axis_t& padding_value);
+		static std::vector<padding> parse_padding(const hlir::axis_t& padding_value);
 
 		template<typename T> std::optional<xtl::span<const T>> get_constant_input_data(const std::string& name) const;
 
