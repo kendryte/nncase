@@ -754,6 +754,19 @@ template<> xt::xarray<float> onnx_importer::convert_to<xt::xarray<float>>(const 
 	return xt::adapt(data, get_shape(tensor));
 }
 
+xt::svector<padding> onnx_importer::parse_padding(const axis_t& padding_value)
+{
+	xt::svector<padding> result;
+
+	assert(!(padding_value.size() % 2));
+
+	const size_t middle { padding_value.size() / 2 };
+	for (size_t i = middle - 2; i < middle; ++i)
+		result.push_back(padding { padding_value[i], padding_value[i + middle] });
+
+	return result;
+}
+
 graph nncase::importer::import_onnx(xtl::span<const uint8_t> model)
 {
     graph graph;

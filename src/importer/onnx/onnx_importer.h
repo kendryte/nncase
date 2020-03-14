@@ -90,6 +90,8 @@ namespace importer
 			return axis >= 0 ? axis : count + axis;
 		}
 
+		static xt::svector<padding> parse_padding(const hlir::axis_t& padding_value);
+
 		template<typename T> std::optional<xtl::span<const T>> get_constant_input_data(const std::string& name) const;
 
         hlir::graph &graph_;
@@ -102,6 +104,11 @@ namespace importer
     template<> constexpr nncase::datatype_t onnx_importer::get_datatype<float>()
     {
         return nncase::dt_float32;
+    }
+
+    template<> constexpr nncase::datatype_t onnx_importer::get_datatype<std::uint8_t>()
+    {
+        return nncase::dt_uint8;
     }
 
     template<> constexpr nncase::datatype_t onnx_importer::get_datatype<std::int64_t>()
