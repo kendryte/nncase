@@ -92,33 +92,20 @@ void onnx_importer::convert_pool(const NodeProto& node, const reduce_op_t reduce
             strides[1] = strides_values[1];
     }
 
-    array<padding, 2> pads
-    {{
+	std::vector<padding> pads
+    {
         { 0, 0 },
         { 0, 0 }
-    }};
+    };
 
     switch (pad_mode)
     {
     case padding_mode::notset:
     {
-        const auto &pads_attr { get_attribute<xtl::span<const int64_t>>(node, "pads") };
+        const auto &pads_attr { get_attribute<axis_t>(node, "pads") };
 
         if (pads_attr)
-        {
-            const auto &pads_values { pads_attr.value() };
-            if (pads_values.size() > 1)
-            {
-                pads[0].before = pads_values[0];
-                pads[0].after = pads_values[1];
-            }
-
-            if (pads_values.size() > 3)
-            {
-                pads[1].before = pads_values[2];
-                pads[1].after = pads_values[3];
-            }
-        }
+			pads = parse_padding(pads_attr.value());
 
         break;
     }
