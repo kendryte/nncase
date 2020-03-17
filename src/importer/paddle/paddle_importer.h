@@ -54,7 +54,7 @@ namespace importer
             case VarType_Type_FP32:
                 return dt_float32;
             default:
-                throw std::runtime_error("Invalid tesnor type");
+                throw std::runtime_error("Invalid tensor type");
             }
         }
 
@@ -73,7 +73,7 @@ namespace importer
         std::array<size_t, N> to_tensor_shape(const hlir::shape_t &shape)
         {
             if (shape.size() != N)
-                throw std::runtime_error("Invalid tesnor ranks");
+                throw std::runtime_error("Invalid tensor ranks");
             std::array<size_t, N> arr;
             std::copy_n(shape.begin(), N, arr.begin());
             return arr;
