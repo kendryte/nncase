@@ -120,5 +120,5 @@ target_compile_definitions(onnx_importer PRIVATE NATIVE_IS_BIG_ENDIAN=${BIG_ENDI
 target_include_directories(onnx_importer PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 get_filename_component(PARENT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR} DIRECTORY)
 target_include_directories(onnx_importer PUBLIC ${PARENT_SOURCE_DIR}/include)
-target_link_libraries(onnx_importer PUBLIC hlir)
+target_link_libraries(onnx_importer PUBLIC hlir CONAN_PKG::boost)
 target_link_libraries(onnx_importer PRIVATE onnx_proto CONAN_PKG::protobuf)
