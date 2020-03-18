@@ -196,7 +196,7 @@ void strided_slice_to_pad_transform::process(transform_context &context)
     for (size_t i = 0; i < paddings.size(); i++)
         paddings[i] = { -begin[i], end[i] - (int32_t)output.shape()[i] };
 
-    auto p = context.graph.emplace<pad>(output.type(), output.shape(), paddings, 0); // dummy pad value because of cropping
+    auto p = context.graph.emplace<pad>(output.type(), output.shape(), paddings, (uint8_t)0); // dummy pad value because of cropping
     p->name(old_slice.name());
     auto rshape = context.graph.emplace<reshape>(output.type(), p->output().shape(), old_slice.output().shape());
     rshape->input().connect(p->output());

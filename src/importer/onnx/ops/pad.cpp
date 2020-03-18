@@ -87,7 +87,7 @@ void onnx_importer::convert_op_Pad(const NodeProto& node)
 
     const xt::svector<padding>& new_paddings { parse_padding(padding_value) };
 
-    scalar constant { 0 };
+    scalar constant { (uint8_t)0 };
 
 	if (!use_opset_version_9)
 	{
