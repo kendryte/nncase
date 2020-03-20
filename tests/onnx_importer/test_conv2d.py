@@ -32,7 +32,7 @@ def test_conv(input):
     onnx_importer.utils.compile(['--inference-type', 'float'])
 
     ncc.infer(['--dataset-format', 'raw'])
-    ncc.close_to('test', 0.005)
+    ncc.close_to('test', 0.02)
 
 def test_conv_k210(input):
     ncc.clear()
@@ -46,7 +46,7 @@ def test_conv_k210(input):
      '--input-type', 'float'])
 
     ncc.infer(['--dataset-format', 'raw'])
-    ncc.close_to('test', 0.005)
+    ncc.close_to('test', 0.02)
 
 def test_conv_quant(input):
     ncc.clear()
@@ -60,7 +60,7 @@ def test_conv_quant(input):
      '--input-type', 'float'])
 
     ncc.infer(['--dataset-format', 'raw'])
-    ncc.close_to('test', 0.005)
+    ncc.close_to('test', 0.02)
 
 if __name__ == "__main__":
     test_conv()
