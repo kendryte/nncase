@@ -9,44 +9,44 @@ import onnx_importer.utils
 import torch
 
 class ReshapeModule(torch.nn.Module):
-	def __init__(self):
-		super(ReshapeModule, self).__init__()
+    def __init__(self):
+        super(ReshapeModule, self).__init__()
 
-	def forward(self, x):
-		return torch.reshape(x, (2, 3, -1))
+    def forward(self, x):
+        return torch.reshape(x, (2, 3, -1))
 
 module = ReshapeModule()
 
 @pytest.fixture
 def input():
-	return np.asarray([1,-2,3,4,-9,0], dtype=np.float32).reshape([1,2,-1])
+    return np.asarray([1,-2,3,4,-9,0], dtype=np.float32).reshape([1,2,-1])
 
 def test_reshape(input):
-	ncc.clear()
+    ncc.clear()
 
-	ncc.save_input_array('test', input)
-	onnx_importer.utils.save(module, torch.from_numpy(input))
-	ncc.save_expect_array('test', onnx_importer.utils.run(input))
+    ncc.save_input_array('test', input)
+    onnx_importer.utils.save(module, torch.from_numpy(input))
+    ncc.save_expect_array('test', onnx_importer.utils.run(input))
 
-	onnx_importer.utils.compile(['--inference-type', 'float'])
+    onnx_importer.utils.compile(['--inference-type', 'float'])
 
-	ncc.infer(['--dataset-format', 'raw'])
-	ncc.close_to('test', 0)
+    ncc.infer(['--dataset-format', 'raw'])
+    ncc.close_to('test', 0)
 
 def test_reshape_quant(input):
-	ncc.clear()
+    ncc.clear()
 
-	ncc.save_input_array('test', input)
-	onnx_importer.utils.save(module, torch.from_numpy(input))
-	ncc.save_expect_array('test', onnx_importer.utils.run(input))
+    ncc.save_input_array('test', input)
+    onnx_importer.utils.save(module, torch.from_numpy(input))
+    ncc.save_expect_array('test', onnx_importer.utils.run(input))
 
-	onnx_importer.utils.compile(['--inference-type', 'uint8', '-t', 'cpu',
-	 '--dataset', ncc.input_dir + '/test.bin', '--dataset-format', 'raw',
-	 '--input-type', 'float'])
+    onnx_importer.utils.compile(['--inference-type', 'uint8', '-t', 'cpu',
+     '--dataset', ncc.input_dir + '/test.bin', '--dataset-format', 'raw',
+     '--input-type', 'float'])
 
-	ncc.infer(['--dataset-format', 'raw'])
-	ncc.close_to('test', 0.005)
+    ncc.infer(['--dataset-format', 'raw'])
+    ncc.close_to('test', 0.005)
 
 if __name__ == "__main__":
-	test_reshape()
-	test_reshape_quant()
+    test_reshape()
+    test_reshape_quant()

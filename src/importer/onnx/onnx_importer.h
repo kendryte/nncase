@@ -71,7 +71,7 @@ namespace importer
         nncase::hlir::shape_t get_shape(const std::string &value) const;
         static nncase::hlir::shape_t get_shape(const onnx::ValueInfoProto &value);
         static nncase::hlir::shape_t get_shape(const onnx::TensorProto &value);
-		std::optional<nncase::datatype_t> get_datatype(const std::string &value) const;
+        std::optional<nncase::datatype_t> get_datatype(const std::string &value) const;
         static std::optional<nncase::datatype_t> get_datatype(const onnx::ValueInfoProto &value);
         static std::optional<nncase::datatype_t> get_datatype(const onnx::TensorProto &value);
         static std::optional<nncase::datatype_t> get_datatype(const onnx::TensorProto_DataType datatype);
@@ -85,14 +85,14 @@ namespace importer
         template<typename T> static T to(const onnx::TensorProto &tensor);
         template<typename T> static T convert_to(const onnx::TensorProto &tensor);
 
-		static constexpr std::size_t real_axis(const int axis, const std::size_t count) noexcept
-		{
-			return axis >= 0 ? axis : count + axis;
-		}
+        static constexpr std::size_t real_axis(const int axis, const std::size_t count) noexcept
+        {
+            return axis >= 0 ? axis : count + axis;
+        }
 
-		static std::vector<padding> parse_padding(const hlir::axis_t& padding_value);
+        static std::vector<padding> parse_padding(const hlir::axis_t& padding_value);
 
-		template<typename T> std::optional<xtl::span<const T>> get_constant_input_data(const std::string& name) const;
+        template<typename T> std::optional<xtl::span<const T>> get_constant_input_data(const std::string& name) const;
 
         hlir::graph &graph_;
         onnx::ModelProto model_;
@@ -116,29 +116,29 @@ namespace importer
         return nncase::dt_uint8;
     }
 
-	template<typename T> std::optional<xtl::span<const T>> onnx_importer::get_constant_input_data(const std::string& name) const
-	{
-		const auto it { output_tensors_.find(name) };
+    template<typename T> std::optional<xtl::span<const T>> onnx_importer::get_constant_input_data(const std::string& name) const
+    {
+        const auto it { output_tensors_.find(name) };
 
-		if (it == end(output_tensors_))
-			return std::optional<xtl::span<const T>> { };
+        if (it == end(output_tensors_))
+            return std::optional<xtl::span<const T>> { };
 
-		if (it->second->type() != get_datatype<T>())
-			return std::optional<xtl::span<const T>> { };
+        if (it->second->type() != get_datatype<T>())
+            return std::optional<xtl::span<const T>> { };
 
-		const auto& node { it->second->owner() };
+        const auto& node { it->second->owner() };
 
-		if (node.runtime_opcode() != hlir::op_constant)
-			return std::optional<xtl::span<const T>> { };
+        if (node.runtime_opcode() != hlir::op_constant)
+            return std::optional<xtl::span<const T>> { };
 
-		const xtl::span<const uint8_t> data { static_cast<const hlir::constant&>(node).data() };
+        const xtl::span<const uint8_t> data { static_cast<const hlir::constant&>(node).data() };
 
-		return xtl::span<const T>
-		{
-			reinterpret_cast<const T*>(data.data()),
-			data.size() / sizeof(T)
-		};
-	}
+        return xtl::span<const T>
+        {
+            reinterpret_cast<const T*>(data.data()),
+            data.size() / sizeof(T)
+        };
+    }
 
     template<> std::optional<float> onnx_importer::get_attribute<float>(const onnx::NodeProto &node, const std::string &name);
     template<> std::optional<std::int64_t> onnx_importer::get_attribute<std::int64_t>(const onnx::NodeProto &node, const std::string &name);

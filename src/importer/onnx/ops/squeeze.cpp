@@ -30,18 +30,18 @@ using namespace onnx;
 
 namespace
 {
-	axis_t single_dim_axes(const shape_t& shape)
-	{
-		axis_t result;
+    axis_t single_dim_axes(const shape_t& shape)
+    {
+        axis_t result;
 
-		for (auto i = 0; i < shape.size(); ++i)
-		{
-			if (shape[i] == 1)
-				result.push_back(i);
-		}
+        for (auto i = 0; i < shape.size(); ++i)
+        {
+            if (shape[i] == 1)
+                result.push_back(i);
+        }
 
-		return result;
-	}
+        return result;
+    }
 }
 
 void onnx_importer::convert_op_Squeeze(const NodeProto& node)
@@ -52,21 +52,21 @@ void onnx_importer::convert_op_Squeeze(const NodeProto& node)
     const auto input_type { get_datatype(input).value() };
     const auto &input_shape { get_shape(input) };
 
-	const auto axes_attr { get_attribute<axis_t>(node, "axes") };
+    const auto axes_attr { get_attribute<axis_t>(node, "axes") };
 
-	auto new_shape { input_shape };
-	const axis_t axes { axes_attr ? axes_attr.value() : single_dim_axes(input_shape) };
+    auto new_shape { input_shape };
+    const axis_t axes { axes_attr ? axes_attr.value() : single_dim_axes(input_shape) };
 
-	size_t squeezed_count { };
-	for (const auto axis : axes)
-	{
-		const auto fixed_axis { real_axis(axis, input_shape.size()) };
-		if (input_shape.at(fixed_axis) != 1)
-			throw runtime_error("Only single-dimensional axes can be squeezed");
+    size_t squeezed_count { };
+    for (const auto axis : axes)
+    {
+        const auto fixed_axis { real_axis(axis, input_shape.size()) };
+        if (input_shape.at(fixed_axis) != 1)
+            throw runtime_error("Only single-dimensional axes can be squeezed");
 
-		new_shape.erase(begin(new_shape) + fixed_axis - squeezed_count);
-		++squeezed_count;
-	}
+        new_shape.erase(begin(new_shape) + fixed_axis - squeezed_count);
+        ++squeezed_count;
+    }
 
     auto op { graph_.emplace<reshape>(input_type, input_shape, new_shape) };
 

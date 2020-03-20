@@ -39,15 +39,15 @@ namespace
         return *min_element(begin(datatypes), end(datatypes));
     }
 
-	size_t axis_count(const vector<shape_t>& shapes)
-	{
-		if (shapes.empty())
-		{
-			return 0;
-		}
+    size_t axis_count(const vector<shape_t>& shapes)
+    {
+        if (shapes.empty())
+        {
+            return 0;
+        }
 
-		return shapes.front().size();
-	}
+        return shapes.front().size();
+    }
 }
 
 void onnx_importer::convert_op_Concat(const NodeProto &node)
@@ -57,8 +57,8 @@ void onnx_importer::convert_op_Concat(const NodeProto &node)
 
     for (const string& input_name : node.input())
     {
-		inputs_shapes.push_back(get_shape(input_name));
-		inputs_types.push_back(get_datatype(input_name).value());
+        inputs_shapes.push_back(get_shape(input_name));
+        inputs_types.push_back(get_datatype(input_name).value());
     }
 
     const datatype_t op_type { deduce_common_type(inputs_types) };

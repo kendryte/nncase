@@ -92,7 +92,7 @@ void onnx_importer::convert_pool(const NodeProto& node, const reduce_op_t reduce
             strides[1] = strides_values[1];
     }
 
-	std::vector<padding> pads
+    std::vector<padding> pads
     {
         { 0, 0 },
         { 0, 0 }
@@ -105,7 +105,7 @@ void onnx_importer::convert_pool(const NodeProto& node, const reduce_op_t reduce
         const auto &pads_attr { get_attribute<axis_t>(node, "pads") };
 
         if (pads_attr)
-			pads = parse_padding(pads_attr.value());
+            pads = parse_padding(pads_attr.value());
 
         break;
     }

@@ -49,16 +49,16 @@ namespace
             return padding_mode::notset;
     }
 
-	shape_t generate_output_shape(const shape_t& input, const shape_t& kernel, const array<padding, 2>& pads, const array<size_t, 2>& dilations, const array<size_t, 2>& strides)
-	{
-		return
-		{
-			input[0],
-			kernel[1],
-			input[2] + dilations[0] * (kernel[2] - 1) - pads[0].sum(),
-			input[3] + dilations[1] * (kernel[3] - 1) - pads[1].sum()
-		};
-	}
+    shape_t generate_output_shape(const shape_t& input, const shape_t& kernel, const array<padding, 2>& pads, const array<size_t, 2>& dilations, const array<size_t, 2>& strides)
+    {
+        return
+        {
+            input[0],
+            kernel[1],
+            input[2] + dilations[0] * (kernel[2] - 1) - pads[0].sum(),
+            input[3] + dilations[1] * (kernel[3] - 1) - pads[1].sum()
+        };
+    }
 }
 
 void onnx_importer::convert_op_Conv(const NodeProto& node)
@@ -119,10 +119,10 @@ template<class Node> void onnx_importer::convert_conv(const NodeProto &node)
             strides[1] = strides_values[1];
     }
 
-	const auto* weight_initializer { get_initializer(weight) };
+    const auto* weight_initializer { get_initializer(weight) };
 
-	if (!weight_initializer)
-		throw runtime_error("Can't find initializer for weight input");
+    if (!weight_initializer)
+        throw runtime_error("Can't find initializer for weight input");
 
     const auto& weight_shape { get_shape(*weight_initializer) };
 
@@ -168,9 +168,9 @@ template<class Node> void onnx_importer::convert_conv(const NodeProto &node)
     if (node.input().size() > 2)
     {
         const auto &bias { node.input()[2] };
-		const auto* bias_initializer { get_initializer(bias) };
-		if (!bias_initializer)
-			throw runtime_error("Can't find initializer for bias input");
+        const auto* bias_initializer { get_initializer(bias) };
+        if (!bias_initializer)
+            throw runtime_error("Can't find initializer for bias input");
 
         bias_value = to<xt::xarray<float>>(*bias_initializer);
     }

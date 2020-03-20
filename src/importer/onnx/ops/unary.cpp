@@ -80,28 +80,28 @@ void onnx_importer::convert_op_Sqrt(const onnx::NodeProto &node)
     const auto &input { node.input()[0] };
     const auto &output { node.output()[0] };
 
-	const auto input_datatype { get_datatype(input).value() };
+    const auto input_datatype { get_datatype(input).value() };
     const auto &input_shape { get_shape(input) };
 
     auto op { graph_.emplace<unary>(unary_rsqrt, input_shape) };
 
-	hlir::constant* one { };
-	switch (input_datatype)
-	{
-	default:
-	case dt_float32:
-		one = graph_.emplace<constant>(float(1));
-		break;
+    hlir::constant* one { };
+    switch (input_datatype)
+    {
+    default:
+    case dt_float32:
+        one = graph_.emplace<constant>(float(1));
+        break;
 
-	case dt_uint8:
-		one = graph_.emplace<constant>(uint8_t(1));
-		break;
-	}
+    case dt_uint8:
+        one = graph_.emplace<constant>(uint8_t(1));
+        break;
+    }
 
-	auto dv { graph_.emplace<binary>(binary_div, one->output().shape(), op->output().shape(), value_range<float>::full()) };
+    auto dv { graph_.emplace<binary>(binary_div, one->output().shape(), op->output().shape(), value_range<float>::full()) };
 
-	dv->input_a().connect(one->output());
-	dv->input_b().connect(op->output());
+    dv->input_a().connect(one->output());
+    dv->input_b().connect(op->output());
 
     input_tensors_.emplace(&op->input(), input);
     output_tensors_.emplace(output, &dv->output());
