@@ -19,6 +19,7 @@
 #include <limits>
 #include <optional>
 #include <stdint.h>
+#include <type_traits>
 
 namespace nncase
 {
@@ -129,8 +130,17 @@ struct scalar
 
     scalar() = default;
 
-    template <class T>
-    scalar(T &&value) { as<T>() = value; }
+    scalar(uint8_t value) noexcept
+    {
+        type = dt_uint8;
+        as<uint8_t>() = value;
+    }
+
+    scalar(float value) noexcept
+    {
+        type = dt_float32;
+        as<float>() = value;
+    }
 
     template <class T>
     T &as() noexcept { return *reinterpret_cast<T *>(storage.data()); }

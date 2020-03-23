@@ -24,5 +24,6 @@ namespace importer
     hlir::graph import_tflite(xtl::span<const uint8_t> model);
     hlir::graph import_paddle(xtl::span<const uint8_t> model, const boost::filesystem::path &params_dir);
     hlir::graph import_caffe(xtl::span<const uint8_t> model);
+    hlir::graph import_onnx(xtl::span<const uint8_t> model);
 }
 }
