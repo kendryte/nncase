@@ -23,6 +23,11 @@ make -j
 ```
 5. Test (optional)
 
+Install dependencies (MacOS)
+```bash
+pip install six==1.12 conan==1.19.2 tensorflow==2.0.0 matplotlib pillow pytest onnxruntime torch torchvision
+```
+
 Install dependencies
 ```bash
 pip install six==1.12 conan==1.19.2 tensorflow==2.0.0 matplotlib pillow pytest onnxruntime
