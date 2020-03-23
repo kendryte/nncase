@@ -31,9 +31,8 @@ int main(int argc, char *argv[])
     compile_options compile_options;
     inference_options inference_options;
 
-    auto cli = ((compile_options.parser(mode) | inference_options.parser(mode)),
-        option("-v", "--version").call([] { cout << "version 0.2" << endl; }).doc("show version"),
-        option("-h", "--help").set(mode, mode::help).doc("show help"));
+    auto cli = ((compile_options.parser(mode) | inference_options.parser(mode) | option("-h", "--help").set(mode, mode::help).doc("show help")),
+        option("-v", "--version").call([] { cout << "version 0.2" << endl; }).doc("show version"));
 
     auto parse_res = parse(argc, argv, cli);
     if (parse_res)
