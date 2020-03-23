@@ -25,7 +25,8 @@ make -j
 
 Install dependencies
 ```bash
-pip install six==1.12 conan==1.19.2 tensorflow==2.0.0 matplotlib pillow pytest
+pip install six==1.12 conan==1.19.2 tensorflow==2.0.0 matplotlib pillow pytest onnxruntime
+pip install torch==1.4.0+cpu torchvision==0.5.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
 ```
 Run tests
 ```bash

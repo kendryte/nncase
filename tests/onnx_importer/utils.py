@@ -6,12 +6,17 @@ import onnxruntime as ort
 from ncc import ncc, kmodel_export_file
 
 
+onnx_unopt_export_file = "./tmp/test_unopt.onnx"
 onnx_export_file = "./tmp/test.onnx"
 
 
 def save(model, input, opset_version=11):
     torch.onnx.export(model, input, onnx_export_file,
-                      opset_version=opset_version)
+                      opset_version=opset_version)                 
+    #sess_options = ort.SessionOptions()
+    #sess_options.graph_optimization_level = ort.GraphOptimizationLevel.ORT_DISABLE_ALL
+    #sess_options.optimized_model_filepath = onnx_export_file
+    #ort.InferenceSession(onnx_unopt_export_file, sess_options)
 
 
 def compile(args=[]):
