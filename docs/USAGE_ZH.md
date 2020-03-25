@@ -21,7 +21,7 @@ OPTIONS
     compile
         <input file>        input file
         <output file>       output file
-        -i, --input-format  input file format: e.g. tflite, caffe
+        -i, --input-format  input file format: e.g. tflite, caffe, onnx
         -o, --output-format output file format: e.g. kmodel, default is kmodel
         -t, --target        target arch: e.g. cpu, k210, default is k210
         --dataset           calibration dataset, used in post quantization
@@ -55,10 +55,10 @@ OPTIONS
 
 `ncc` 是 nncase 的命令行工具。它有两个命令： `compile` 和 `infer`。
 
-`compile` 命令将你训练好的模型 (`.tflite`, `.caffemodel`) 编译到 `.kmodel`。
+`compile` 命令将你训练好的模型 (`.tflite`, `.caffemodel`, `.onnx`) 编译到 `.kmodel`。
 - `<input file>` 是你输入模型的路径。
 - `<output file>` 是输出模型的路径。
-- `-i, --input-format` 用来指定输入模型的格式。nncase 现在支持 `tflite` 和 `caffe` 输入格式。
+- `-i, --input-format` 用来指定输入模型的格式。nncase 现在支持 `tflite`、`caffe` 和 `onnx` 输入格式。
 - `-o, --output-format` 用来指定输出模型的格式。你现在只有一个选项：`kmodel`。
 - `-t, --target` 用来指定你想要你的模型在哪种目标设备上运行。`cpu` 几乎所有平台都支持的通用目标。`k210` 是 Kendryte K210 SoC 平台。如果你指定了 `k210`，这个模型就只能在 K210 运行或在你的 PC 上模拟运行。
 - `--inference-type` 如果你需要精度，设置为 `float`，但你需要更多内存并且失去了 K210 KPU 的加速能力。如果你需要 KPU 加速和更快的执行速度，设置为 `uint8`，之后你需要提供量化校准集来量化你的模型。

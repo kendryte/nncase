@@ -27,6 +27,7 @@ Download prebuilt binaries from [Release](https://github.com/kendryte/nncase/rel
 
 - [TFLite ops](./docs/tflite_ops.md)
 - [Caffe ops](./docs/caffe_ops.md)
+- [ONNX ops](./docs/onnx_ops.md)
 
 ## Usage
 ## 使用方法
