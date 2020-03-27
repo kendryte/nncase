@@ -14,6 +14,7 @@
  */
 #include "../tflite_importer.h"
 #include <hlir/ops/binary.h>
+#include <hlir/ops/clamp.h>
 #include <hlir/ops/constant.h>
 #include <hlir/ops/reduce.h>
 #include <hlir/ops/unary.h>
@@ -34,6 +35,22 @@ DEFINE_TFLITE_LOWER(RELU)
 
     input_tensors_.emplace(&max->input_a(), op.inputs()->Get(0));
     output_tensors_.emplace(op.outputs()->Get(0), &max->output());
+}
+
+DEFINE_TFLITE_LOWER(RELU6)
+{
+    auto &input = get_tensor(op.inputs(), 0);
+    auto in_shape = get_shape(input.shape());
+
+    auto zero = graph_.emplace<constant>(0.f);
+    auto six = graph_.emplace<constant>(6.f);
+    auto cl = graph_.emplace<clamp>(in_shape, zero->output().shape(), six->output().shape());
+
+    cl->input_low().connect(zero->output());
+    cl->input_high().connect(six->output());
+
+    input_tensors_.emplace(&cl->input(), op.inputs()->Get(0));
+    output_tensors_.emplace(op.outputs()->Get(0), &cl->output());
 }
 
 DEFINE_TFLITE_LOWER(LEAKY_RELU)

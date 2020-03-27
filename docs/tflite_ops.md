@@ -26,6 +26,7 @@
 | Mul |✅|
 | L2Normalization |✅|
 | L2Pool2D |❌|
+| LeakyRelu |✅|
 | LessEqual |❌|
 | Log |✅|
 | Logistic |✅|
@@ -40,6 +41,8 @@
 | PRelu |❌|
 | ReduceMax |✅|
 | ReduceProd |❌|
+| Relu |✅|
+| Relu6 |✅|
 | Reshape |✅|
 | ResizeBilinear |✅|
 | Rsqrt |✅|
@@ -75,7 +78,6 @@
 | FloorMod |❌|
 | Range |❌|
 | ResizeNearesetNeighbor |✅|
-| LeakyRelu |✅|
 | MirrorPad |❌|
 | Abs |✅|
 | SplitV |❌|

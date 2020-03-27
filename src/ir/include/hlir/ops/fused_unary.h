@@ -111,6 +111,13 @@ namespace hlir
             op.binary = { binary_op, input_a, input_b };
             return op;
         }
+
+        static fused_unary_op make_identity(fused_unary_arg input) noexcept
+        {
+            fused_unary_op op { fu_identity };
+            op.identity = { input };
+            return op;
+        }
     };
 
     class fused_unary : public node
