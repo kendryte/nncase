@@ -26,7 +26,8 @@ namespace hlir
     enum node_attributes
     {
         node_attr_none = 0,
-        node_attr_action = 1
+        node_attr_action = 1,
+        node_attr_need_quantize = 2
     };
 
     enum connector_attributes

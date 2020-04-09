@@ -17,6 +17,7 @@
 #include <hlir/ops/pad.h>
 #include <hlir/ops/reduce_window2d.h>
 #include <hlir/ops/strided_slice.h>
+#include <hlir/quantizer.h>
 #include <hlir/transforms/k210/fake_kpu_conv2d.h>
 #include <hlir/transforms/k210/kpu_utils.h>
 #include <hlir/visitor.h>
@@ -28,6 +29,9 @@ using namespace nncase::hlir::k210;
 using namespace nncase::runtime::k210;
 using namespace nncase::hlir::transforms;
 using namespace nncase::hlir::transforms::k210;
+
+#define QUANT_THRESHOLD 1024
+#define QUANT_WEIGHTS_THRESHOLD 128.f
 
 namespace
 {
@@ -126,6 +130,14 @@ bool fake_kpu_conv2d_transform::on_try_match(node &node, transform_context &cont
     if (node.runtime_opcode() == op_conv2d)
     {
         auto &conv = static_cast<conv2d &>(node);
+
+        {
+            auto weights = conv.weights();
+            auto total_range = quantizer::fixup_range(quantizer::get_range(weights.begin(), weights.end()));
+            if (total_range.max - total_range.min > QUANT_WEIGHTS_THRESHOLD)
+                return false;
+        }
+
         if ((conv.groups() == 1 || conv.groups() == conv.input_channels())
             && conv.dilation_h() == 1 && conv.dilation_w() == 1
             && is_supported_filter(conv.filter_h(), conv.filter_w())

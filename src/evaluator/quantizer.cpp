@@ -120,7 +120,7 @@ void quantizer::end_collect_distribution(std::function<void(size_t)> progress)
     }
 }
 
-quant_param_t quantizer::get_quant_param(value_range<float> range, int32_t bits) const
+quant_param_t quantizer::get_quant_param(value_range<float> range, int32_t bits)
 {
     range = fixup_range(range);
     auto r = range.max - range.min;
@@ -135,7 +135,7 @@ value_range<float> quantizer::get(hlir::output_connector &connector) const
     return quant_ranges_.at(&connector);
 }
 
-fixed_mul quantizer::get_fixed_mul(float value, int32_t max_bits, uint8_t max_shift, bool is_signed) const
+fixed_mul quantizer::get_fixed_mul(float value, int32_t max_bits, uint8_t max_shift, bool is_signed)
 {
     assert(!is_signed || value >= 0);
 

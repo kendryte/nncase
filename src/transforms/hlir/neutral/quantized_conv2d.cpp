@@ -59,7 +59,8 @@ bool quantized_conv2d_transform::on_try_match(node &node, transform_context &con
     if (auto conv = node_cast<conv2d>(node))
     {
         if (conv->input().connection()->attributes() & cnctr_attr_need_quantize
-            && conv->output().attributes() & cnctr_attr_need_quantize)
+            && conv->output().attributes() & cnctr_attr_need_quantize
+            && conv->attributes() & node_attr_need_quantize)
         {
             context.inputs.emplace_back(&conv->input());
             context.outputs.emplace_back(&conv->output());

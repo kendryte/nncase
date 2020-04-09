@@ -47,7 +47,8 @@ bool quantized_matmul_transform::on_try_match(node &node, transform_context &con
     {
         if (mm->input_a().connection()->attributes() & cnctr_attr_need_quantize
             && mm->input_b().connection()->attributes() & cnctr_attr_need_quantize
-            && mm->output().attributes() & cnctr_attr_need_quantize)
+            && mm->output().attributes() & cnctr_attr_need_quantize
+            && mm->attributes() & node_attr_need_quantize)
         {
             context.inputs.emplace_back(&mm->input_a());
             context.inputs.emplace_back(&mm->input_b());

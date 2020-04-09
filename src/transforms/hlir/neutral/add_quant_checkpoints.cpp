@@ -12,6 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <hlir/ops/binary.h>
+#include <hlir/ops/conv2d.h>
+#include <hlir/quantizer.h>
 #include <hlir/transforms/neutral/add_quant_checkpoints.h>
 #include <hlir/visitor.h>
 #include <xtensor/xstrides.hpp>
@@ -20,16 +23,25 @@ using namespace nncase;
 using namespace nncase::hlir;
 using namespace nncase::hlir::transforms;
 
-#define QUANT_THRESHOLD 100
+#define QUANT_THRESHOLD 1024
+#define QUANT_WEIGHTS_THRESHOLD 64.f
 
 bool add_quant_checkpoints_transform::on_try_match(node &node, transform_context &context)
 {
     if (opcodes_.find(node.runtime_opcode()) != opcodes_.end())
     {
-        if ((node.runtime_opcode() == op_binary || node.runtime_opcode() == op_matmul)
+        if ((node.runtime_opcode() == op_binary || node.runtime_opcode() == op_matmul
+                || node.runtime_opcode() == op_conv2d)
             && xt::compute_size(node.output_at(0).shape()) <= QUANT_THRESHOLD)
         {
             return false;
+        }
+        else if (auto conv = node_cast<conv2d>(node))
+        {
+            auto weights = conv->weights();
+            auto total_range = quantizer::fixup_range(quantizer::get_range(weights.begin(), weights.end()));
+            if (total_range.max - total_range.min > QUANT_WEIGHTS_THRESHOLD)
+                return false;
         }
 
         bool not_processed = false;
@@ -59,6 +71,7 @@ bool add_quant_checkpoints_transform::on_try_match(node &node, transform_context
 void add_quant_checkpoints_transform::process(transform_context &context)
 {
     auto &node = *context.matched_nodes[0];
+    node.attributes(node.attributes() | node_attr_need_quantize);
 
     for (size_t i = 0; i < node.inputs().size(); i++)
     {

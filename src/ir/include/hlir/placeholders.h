@@ -62,9 +62,9 @@ namespace hlir
         ignore_node(datatype_t type, TShape &&shape)
         {
             add_input("input", type, std::forward<TShape>(shape));
+            attributes(attributes() | node_attr_action);
         }
 
-        node_attributes attributes() const noexcept override { return node_attr_action; }
         void compile(hlir_compile_context &context) override;
     };
 }

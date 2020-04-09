@@ -68,7 +68,8 @@ namespace hlir
         output_connector &output_at(size_t index) { return output_connectors_.at(index); }
 
         virtual node_opcode runtime_opcode() const noexcept = 0;
-        virtual node_attributes attributes() const noexcept { return node_attr_none; }
+        node_attributes attributes() const noexcept { return attributes_; }
+        void attributes(node_attributes value) noexcept { attributes_ = value; }
         virtual void compile(hlir_compile_context &context);
 
     protected:
@@ -86,6 +87,7 @@ namespace hlir
 
     private:
         std::string name_;
+        node_attributes attributes_ = node_attributes::node_attr_none;
         std::vector<input_connector> input_connectors_;
         std::vector<output_connector> output_connectors_;
     };

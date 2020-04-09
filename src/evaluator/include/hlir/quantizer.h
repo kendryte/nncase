@@ -59,7 +59,7 @@ namespace hlir
         quantizer(calibrate_method cali_method, size_t bins);
 
         template <class TIt>
-        value_range<float> get_range(TIt begin, TIt end)
+        static value_range<float> get_range(TIt begin, TIt end)
         {
             float min = std::numeric_limits<float>::max();
             float max = std::numeric_limits<float>::min();
@@ -77,7 +77,7 @@ namespace hlir
             return { min, max };
         }
 
-        value_range<float> fixup_range(value_range<float> range) const
+        static value_range<float> fixup_range(value_range<float> range)
         {
             if (range.min < -1e3)
                 range.min = -1e3;
@@ -97,12 +97,13 @@ namespace hlir
             return range;
         }
 
+        static quant_param_t get_quant_param(value_range<float> range, int32_t bits);
+        static fixed_mul get_fixed_mul(float value, int32_t max_bits, uint8_t max_shift, bool is_signed);
+
         void record(hlir::output_connector &connector, value_range<float> range);
         void set(hlir::output_connector &connector, value_range<float> range);
         void record(hlir::output_connector &connector, xtl::span<const float> data);
         value_range<float> get(hlir::output_connector &connector) const;
-        quant_param_t get_quant_param(value_range<float> range, int32_t bits) const;
-        fixed_mul get_fixed_mul(float value, int32_t max_bits, uint8_t max_shift, bool is_signed) const;
         void broadcast_output(hlir::graph &graph, const std::unordered_set<node_opcode> &ops);
         void broadcast_output(hlir::node &node, const value_range<float> &range, const std::unordered_set<node_opcode> &ops);
         void begin_collect_distribution();

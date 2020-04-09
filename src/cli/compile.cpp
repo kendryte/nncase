@@ -21,7 +21,9 @@
 #include <codegen/codegen.h>
 #include <data/dataset.h>
 #include <fstream>
+#include <hlir/ops/conv2d.h>
 #include <hlir/quantizer.h>
+#include <hlir/visitor.h>
 #include <importer/importer.h>
 #include <io_utils.h>
 #include <llir/evaluator.h>
@@ -159,6 +161,18 @@ void quantize_graph(const compile_options &options, target &target, graph &graph
     target.optimize_quantize(quantizer, mgr);
     mgr.run();
     dump_graph(options, graph, "after_quant");
+
+    // warning weights divergence
+    for (auto &n : graph.nodes())
+    {
+        if (auto conv = node_cast<hlir::conv2d>(*n))
+        {
+            if ((conv->attributes() & node_attr_need_quantize) == 0)
+            {
+                std::cout << "WARN: " << n->name() << " Fallback to float conv2d due to weights divergence." << std::endl;
+            }
+        }
+    }
 }
 
 void run_calibrations(target &target, graph &graph, quantizer *quantizer, const compile_options &options)
