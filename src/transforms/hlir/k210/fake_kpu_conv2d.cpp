@@ -22,6 +22,7 @@
 #include <hlir/transforms/k210/kpu_utils.h>
 #include <hlir/visitor.h>
 #include <runtime/k210/k210_runtime_op_utility.h>
+#include <targets/target.h>
 
 using namespace nncase;
 using namespace nncase::hlir;
@@ -31,7 +32,6 @@ using namespace nncase::hlir::transforms;
 using namespace nncase::hlir::transforms::k210;
 
 #define QUANT_THRESHOLD 1024
-#define QUANT_WEIGHTS_THRESHOLD 128.f
 
 namespace
 {
@@ -134,7 +134,7 @@ bool fake_kpu_conv2d_transform::on_try_match(node &node, transform_context &cont
         {
             auto weights = conv.weights();
             auto total_range = quantizer::fixup_range(quantizer::get_range(weights.begin(), weights.end()));
-            if (total_range.max - total_range.min > QUANT_WEIGHTS_THRESHOLD)
+            if (total_range.max - total_range.min > context.target.options().weights_quantize_threshold)
                 return false;
         }
 

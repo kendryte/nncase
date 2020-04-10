@@ -37,7 +37,10 @@ struct compile_options
     std::string calibrate_method = "no_clip";
     float input_mean = 0.f;
     float input_std = 1.f;
+    float weights_quantize_threshold = 32.f;
+    bool quantize_binary = true;
     bool dump_ir = false;
+    bool dump_weights_range = false;
     bool use_dataset_as_input_stat = true;
     uint32_t max_solve_secs = 60;
 

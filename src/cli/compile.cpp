@@ -99,6 +99,8 @@ std::unique_ptr<target> create_target(const compile_options &options)
         t_options.input_type = options.inference_type;
     else
         t_options.input_type = options.input_type;
+    t_options.weights_quantize_threshold = options.weights_quantize_threshold;
+    t_options.quantize_binary = options.quantize_binary;
 
     if (options.output_format == "kmodel")
     {
@@ -245,6 +247,20 @@ void run_quantized_graph_impl(llir::evaluator &eval, dataset &ds)
     progress_bar.done();
 }
 
+void dump_weights_range(hlir::graph &graph)
+{
+    std::cout << "Dump weights range ..." << std::endl;
+    for (auto &n : graph.nodes())
+    {
+        if (auto conv = node_cast<hlir::conv2d>(*n))
+        {
+            auto &weights = conv->weights();
+            auto range = quantizer::get_range(weights.begin(), weights.end());
+            std::cout << n->name() << "{" << range.min << ", " << range.max << "}" << std::endl;
+        }
+    }
+}
+
 void run_quantized_graph(target &target, graph &graph, const compile_options &options)
 {
     hlir_compile_context hc_ctx;
@@ -385,9 +401,12 @@ group compile_options::parser(mode &mode)
 			option("--input-mean").set(use_dataset_as_input_stat, false) % ("input mean, default is " + std::to_string(input_mean)) & value("input mean", input_mean),
 			option("--input-std").set(use_dataset_as_input_stat, false) % ("input std, default is " + std::to_string(input_std)) & value("input std", input_std),
 			option("--dump-ir").set(dump_ir) % "dump nncase ir to .dot files",
+            option("--dump-weigths-range").set(dump_weights_range) % "dump weights range",
 			option("--input-type").set(input_type) % ("input type: e.g. default, float, uint8, default means equal to inference type") & value("input type", input_type),
 			option("--max-allocator-solve-secs") % ("max optimal layout solve time in secs used by allocators, 0 means don't use solver, default is " + std::to_string(max_solve_secs)) & value("max allocator solve secs", max_solve_secs),
-			option("--calibrate-method") % ("calibrate method: e.g. no_clip, l2, default is " + calibrate_method) & value("calibrate method", calibrate_method)
+			option("--calibrate-method") % ("calibrate method: e.g. no_clip, l2, default is " + calibrate_method) & value("calibrate method", calibrate_method),
+			option("--weights-quantize-threshold") % ("the threshold to control quantizing op or not according to it's weigths range, default is " + std::to_string(weights_quantize_threshold)) & value("weights quantize threshold", weights_quantize_threshold),
+            option("--no-quantized-binary").set(quantize_binary, false) % "don't quantize binary ops"
 		));
     // clang-format on
 }
@@ -408,6 +427,9 @@ void compile(const compile_options &options)
     // 2. Optimize Pass 1
     std::cout << "2. Optimize Pass 1..." << std::endl;
     optimize_pass1(options, *target, graph);
+
+    if (options.dump_weights_range)
+        dump_weights_range(graph);
 
     if (options.inference_type == "uint8")
     {

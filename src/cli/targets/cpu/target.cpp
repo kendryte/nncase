@@ -131,7 +131,10 @@ void nncase::cpu_target::add_quantization_checkpoints(hlir::transforms::pass_man
     }
     {
         pass p;
-        p.emplace<add_quant_checkpoints_transform>(add_quant_checkpoints_transform { op_conv2d, op_matmul, op_binary, op_fused_unary });
+        if (options().quantize_binary)
+            p.emplace<add_quant_checkpoints_transform>(add_quant_checkpoints_transform { op_conv2d, op_matmul, op_binary, op_fused_unary });
+        else
+            p.emplace<add_quant_checkpoints_transform>(add_quant_checkpoints_transform { op_conv2d, op_matmul, op_fused_unary });
         pass_mgr.add_pass(std::move(p));
     }
 }
@@ -151,7 +154,10 @@ void nncase::cpu_target::optimize_quantize(hlir::quantizer &quantizer, hlir::tra
     p.emplace<dequantize_resize_image_motion_transform>();
     p.emplace<quantized_conv2d_transform>(quantizer);
     p.emplace<quantized_matmul_transform>(quantizer);
-    p.emplace<quantized_binary_transform>(quantizer);
+
+    if (options().quantize_binary)
+        p.emplace<quantized_binary_transform>(quantizer);
+
     p.emplace<fused_unary_to_lookup1d_transform>(quantizer);
     add_default_transforms(p);
     pass_mgr.add_pass(std::move(p));

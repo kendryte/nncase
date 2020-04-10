@@ -13,10 +13,13 @@
  * limitations under the License.
  */
 #include <hlir/ops/binary.h>
+#include <hlir/ops/constant.h>
 #include <hlir/ops/conv2d.h>
+#include <hlir/ops/matmul.h>
 #include <hlir/quantizer.h>
 #include <hlir/transforms/neutral/add_quant_checkpoints.h>
 #include <hlir/visitor.h>
+#include <targets/target.h>
 #include <xtensor/xstrides.hpp>
 
 using namespace nncase;
@@ -24,7 +27,6 @@ using namespace nncase::hlir;
 using namespace nncase::hlir::transforms;
 
 #define QUANT_THRESHOLD 1024
-#define QUANT_WEIGHTS_THRESHOLD 64.f
 
 bool add_quant_checkpoints_transform::on_try_match(node &node, transform_context &context)
 {
@@ -40,8 +42,20 @@ bool add_quant_checkpoints_transform::on_try_match(node &node, transform_context
         {
             auto weights = conv->weights();
             auto total_range = quantizer::fixup_range(quantizer::get_range(weights.begin(), weights.end()));
-            if (total_range.max - total_range.min > QUANT_WEIGHTS_THRESHOLD)
+            if (total_range.max - total_range.min > context.target.options().weights_quantize_threshold)
                 return false;
+        }
+        else if (auto mm = node_cast<matmul>(node))
+        {
+            if (auto w = try_get_direct_parent<constant>(node))
+            {
+                auto w_beg = reinterpret_cast<const float *>(w->data().data());
+                auto w_end = w_beg + w->data().size() / sizeof(float);
+
+                auto total_range = quantizer::fixup_range(quantizer::get_range(w_beg, w_end));
+                if (total_range.max - total_range.min > context.target.options().weights_quantize_threshold)
+                    return false;
+            }
         }
 
         bool not_processed = false;
