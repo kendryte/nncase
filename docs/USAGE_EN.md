@@ -18,6 +18,22 @@ SYNOPSIS
         [--input-std <input std>] [-v]
 
 OPTIONS
+    ncc compile <input file> <output file> -i <input format> [-o <output
+        format>] [-t <target>] [--dataset <dataset path>] [--dataset-format
+        <dataset format>] [--inference-type <inference type>] [--input-mean
+        <input mean>] [--input-std <input std>] [--dump-ir]
+        [--dump-weigths-range] [--input-type <input type>]
+        [--max-allocator-solve-secs <max allocator solve secs>]
+        [--calibrate-method <calibrate method>] [--weights-quantize-threshold
+        <weights quantize threshold>] [--no-quantized-binary] [-v]
+
+    ncc infer <input file> <output path> --dataset <dataset path>
+        [--dataset-format <dataset format>] [--input-mean <input mean>]
+        [--input-std <input std>] [-v]
+
+    ncc -h [-v]
+
+OPTIONS
     compile
         <input file>        input file
         <output file>       output file
@@ -30,6 +46,9 @@ OPTIONS
         --input-mean        input mean, default is 0.000000
         --input-std         input std, default is 1.000000
         --dump-ir           dump nncase ir to .dot files
+        --dump-weigths-range
+                            dump weights range
+
         --input-type        input type: e.g. default, float, uint8, default
                             means equal to inference type
 
@@ -40,6 +59,14 @@ OPTIONS
         --calibrate-method  calibrate method: e.g. no_clip, l2, default is
                             no_clip
 
+        --weights-quantize-threshold
+                            the threshold to control quantizing op or not
+                            according to it's weigths range, default is
+                            32.000000
+
+        --no-quantized-binary
+                            don't quantize binary ops
+
     infer
         <input file>        input kmodel
         <output path>       inference result output directory
@@ -48,6 +75,7 @@ OPTIONS
         --input-mean        input mean, default is 0.000000
         --input-std         input std, default is 1.000000
 
+    -h, --help              show help
     -v, --version           show version
 ```
 
@@ -74,7 +102,10 @@ OPTIONS
 - `--calibrate-method` is to set your desired calibration method, which is used to select the optimal activation ranges. The default is `no_clip` in that ncc will use the full range of activations. If you want a better quantization result, you can use `l2` but it will take a longer time to find the optimal ranges.
 - `--input-type` is to set your desired input data type when do inference. Default is equal to inference type. If `--input-type` is `uint8`, for example you should provide RGB888 uint8 tensors when you do inference. If `--input-type` is `float`, you shold provide RGB float tensors instead.
 - `--max-allocator-solve-secs` is to limit the maximum solving time when do the best fit allocation search. If the search time exceeded, ncc will fallback to use the first fit method. Default is 60 secs, set to 0 to disable search.
+- `--weights-quantize-threshold` controls the threshold whether or not to quantize conv2d and matmul's weights. If the range of weights is larger than the threshold, nncase will not quantize it.
+- `--no-quantized-binary` disable quantized binary ops, nncase will always use float binary ops.
 - `--dump-ir` is a debug option. When it's on, ncc will produce some `.dot` graph files to the working directory. You can use `Graphviz` or [Graphviz Online](https://dreampuf.github.io/GraphvizOnline) to view these files.
+- `--dump-weights` is a debug option. When it's on, ncc will print ranges of conv2d' weights.
 
 `infer` command can run your kmodel, and it's often used as debug purpose. ncc will save the model's output tensors to `.bin` files in `NCHW` layout.
 - `<input file>` is your kmodel path.

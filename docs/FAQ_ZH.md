@@ -21,6 +21,11 @@
     - MatMul, nncase 会把它替换为一个 Pad(到 4x4)+ KPUConv2D(1x1 卷积和) + Crop(到 1x1)。
     - TransposeConv2D, nncase 会把它替换为一个 SpaceToBatch + KPUConv2D + BatchToSpace。
 
+### 编译模型
+1. Fatal: Not supported tflite opcode: DEQUANTIZE
+
+    使用浮点 tflite 模型，nncase 会做量化。
+
 ### 部署模型
 1. 运行模型是我需要归一化输入吗？
 

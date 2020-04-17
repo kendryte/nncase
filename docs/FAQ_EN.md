@@ -21,6 +21,11 @@
     - MatMul, nncase will replace it with a Pad(to 4x4)+ KPUConv2D(1x1 filters) + Crop(to 1x1)  .
     - TransposeConv2D, nncase will replace it with a SpaceToBatch + KPUConv2D + BatchToSpace.
 
+### Compile models
+1. Fatal: Not supported tflite opcode: DEQUANTIZE
+
+    Use float tflite models, nncase will take care of quantization.
+
 ### Deploy models
 1. Should I normalize inputs when running the model?
 
