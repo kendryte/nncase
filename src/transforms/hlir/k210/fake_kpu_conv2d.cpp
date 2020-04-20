@@ -31,8 +31,6 @@ using namespace nncase::runtime::k210;
 using namespace nncase::hlir::transforms;
 using namespace nncase::hlir::transforms::k210;
 
-#define QUANT_THRESHOLD 1024
-
 namespace
 {
 bool is_supported_in_shape(const shape_t &in_shape)

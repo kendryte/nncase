@@ -34,6 +34,12 @@ int main(int argc, char *argv[])
     auto cli = ((compile_options.parser(mode) | inference_options.parser(mode) | option("-h", "--help").set(mode, mode::help).doc("show help")),
         option("-v", "--version").call([] { cout << "version 0.2" << endl; }).doc("show version"));
 
+    if (argc == 1)
+    {
+        help(cli, "ncc");
+        return 0;
+    }
+
     auto parse_res = parse(argc, argv, cli);
     if (parse_res)
     {

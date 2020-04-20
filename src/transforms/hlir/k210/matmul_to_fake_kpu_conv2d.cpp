@@ -32,8 +32,6 @@ using namespace nncase::runtime::k210;
 using namespace nncase::hlir::transforms;
 using namespace nncase::hlir::transforms::k210;
 
-#define KPU_MATMUL_THRESHOLD (10 * 1024)
-
 bool matmul_to_fake_kpu_conv2d_transform::on_try_match(node &node, transform_context &context)
 {
     if (auto mm = node_cast<matmul>(node))
@@ -49,7 +47,7 @@ bool matmul_to_fake_kpu_conv2d_transform::on_try_match(node &node, transform_con
                     return false;
             }
 
-            if (xt::compute_size(w->output().shape()) >= KPU_MATMUL_THRESHOLD
+            if (xt::compute_size(w->output().shape()) >= context.target.options().output_quantize_threshold
                 && w->output().shape()[0] <= 1024
                 && w->output().shape()[1] <= 1024)
             {

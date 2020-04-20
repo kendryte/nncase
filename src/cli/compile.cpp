@@ -100,6 +100,7 @@ std::unique_ptr<target> create_target(const compile_options &options)
     else
         t_options.input_type = options.input_type;
     t_options.weights_quantize_threshold = options.weights_quantize_threshold;
+    t_options.output_quantize_threshold = options.output_quantize_threshold;
     t_options.quantize_binary = options.quantize_binary;
 
     if (options.output_format == "kmodel")
@@ -406,6 +407,7 @@ group compile_options::parser(mode &mode)
 			option("--max-allocator-solve-secs") % ("max optimal layout solve time in secs used by allocators, 0 means don't use solver, default is " + std::to_string(max_solve_secs)) & value("max allocator solve secs", max_solve_secs),
 			option("--calibrate-method") % ("calibrate method: e.g. no_clip, l2, default is " + calibrate_method) & value("calibrate method", calibrate_method),
 			option("--weights-quantize-threshold") % ("the threshold to control quantizing op or not according to it's weigths range, default is " + std::to_string(weights_quantize_threshold)) & value("weights quantize threshold", weights_quantize_threshold),
+			option("--output-quantize-threshold") % ("the threshold to control quantizing op or not according to it's output size, default is " + std::to_string(output_quantize_threshold)) & value("output quantize threshold", output_quantize_threshold),
             option("--no-quantized-binary").set(quantize_binary, false) % "don't quantize binary ops"
 		));
     // clang-format on

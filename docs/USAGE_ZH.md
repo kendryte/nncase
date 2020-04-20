@@ -64,6 +64,10 @@ OPTIONS
                             according to it's weigths range, default is
                             32.000000
 
+        --output-quantize-threshold
+                            the threshold to control quantizing op or not
+                            according to it's output size, default is 1024
+
         --no-quantized-binary
                             don't quantize binary ops
 
@@ -103,6 +107,7 @@ OPTIONS
 - `--input-type` 用于设置推理时输入的数据类型。默认和 inference type 相同。如果 `--input-type` 是 `uint8`，推理时你需要提供 RGB888 uint8 张量。如果 `--input-type` 是 `float`，你则需要提供 RGB float 张量。
 - `--max-allocator-solve-secs` 用于限制 ncc 做最优分配时的最大搜索时间。如果搜索超过了这个时间，ncc 会退而使用 first fit 算法。默认是 60 秒，如果要禁用搜索请设置为 0。
 - `--weights-quantize-threshold` 控制是否量化 conv2d 和 matmul weights 的阈值。如果 weights 的范围大于这个阈值，nncase 将不会量化它。
+- `--output-quantize-threshold` 控制是否量化 conv2d 和 matmul weights 的阈值。如果输出的元素个数小于这个阈值，nncase 将不会量化它。
 - `--no-quantized-binary` 禁用 quantized binary 算子，nncase 将总是使用 float binary 算子。
 - `--dump-ir` 是一个调试选项。当它打开时 ncc 会在工作目录产生一些 `.dot` 文件。你可以使用 `Graphviz` 或 [Graphviz Online](https://dreampuf.github.io/GraphvizOnline) 来查看这些文件。
 - `--dump-weights` 是一个调试选项。当它打开时 ncc 会打印出 conv2d weights 的范围。

@@ -38,6 +38,7 @@ struct compile_options
     float input_mean = 0.f;
     float input_std = 1.f;
     float weights_quantize_threshold = 32.f;
+    uint32_t output_quantize_threshold = 1024;
     bool quantize_binary = true;
     bool dump_ir = false;
     bool dump_weights_range = false;

@@ -64,6 +64,10 @@ OPTIONS
                             according to it's weigths range, default is
                             32.000000
 
+        --output-quantize-threshold
+                            the threshold to control quantizing op or not
+                            according to it's output size, default is 1024
+
         --no-quantized-binary
                             don't quantize binary ops
 
@@ -103,6 +107,7 @@ OPTIONS
 - `--input-type` is to set your desired input data type when do inference. Default is equal to inference type. If `--input-type` is `uint8`, for example you should provide RGB888 uint8 tensors when you do inference. If `--input-type` is `float`, you shold provide RGB float tensors instead.
 - `--max-allocator-solve-secs` is to limit the maximum solving time when do the best fit allocation search. If the search time exceeded, ncc will fallback to use the first fit method. Default is 60 secs, set to 0 to disable search.
 - `--weights-quantize-threshold` controls the threshold whether or not to quantize conv2d and matmul's weights. If the range of weights is larger than the threshold, nncase will not quantize it.
+- `--output-quantize-threshold` controls the threshold whether or not to quantize conv2d and matmul's weights. If the elements count of output is smaller than the threshold, nncase will not quantize it.
 - `--no-quantized-binary` disable quantized binary ops, nncase will always use float binary ops.
 - `--dump-ir` is a debug option. When it's on, ncc will produce some `.dot` graph files to the working directory. You can use `Graphviz` or [Graphviz Online](https://dreampuf.github.io/GraphvizOnline) to view these files.
 - `--dump-weights` is a debug option. When it's on, ncc will print ranges of conv2d' weights.
