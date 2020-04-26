@@ -39,11 +39,11 @@ namespace
     template<> AttributeProto_AttributeType attribute_type<int64_t> { AttributeProto_AttributeType_INT };
     template<> AttributeProto_AttributeType attribute_type<int> { AttributeProto_AttributeType_INT };
     template<> AttributeProto_AttributeType attribute_type<string> { AttributeProto_AttributeType_STRING };
-    template<> AttributeProto_AttributeType attribute_type<const TensorProto*> { AttributeProto_AttributeType_TENSOR };
-    template<> AttributeProto_AttributeType attribute_type<xtl::span<const float>> { AttributeProto_AttributeType_FLOATS };
-    template<> AttributeProto_AttributeType attribute_type<xtl::span<const int64_t>> { AttributeProto_AttributeType_INTS };
+    template<> AttributeProto_AttributeType attribute_type<TensorProto> { AttributeProto_AttributeType_TENSOR };
+    template<> AttributeProto_AttributeType attribute_type<vector<float>> { AttributeProto_AttributeType_FLOATS };
+    template<> AttributeProto_AttributeType attribute_type<vector<int>> { AttributeProto_AttributeType_INTS };
     template<> AttributeProto_AttributeType attribute_type<axis_t> { AttributeProto_AttributeType_INTS };
-    template<> AttributeProto_AttributeType attribute_type<xtl::span<const string>> { AttributeProto_AttributeType_STRINGS };
+    template<> AttributeProto_AttributeType attribute_type<vector<string>> { AttributeProto_AttributeType_STRINGS };
 
     template<typename T> TensorProto_DataType tensor_type;
 
@@ -65,18 +65,7 @@ namespace
         return proto->ParseFromCodedStream(&coded_stream);
     }
 
-    const ValueInfoProto* find_value_info(const google::protobuf::RepeatedPtrField<onnx::ValueInfoProto> &collection, const string &value)
-    {
-        const auto it { find_if(collection.cbegin(), collection.cend(),
-                [&value](const auto e)
-                {
-                    return value == e.name();
-                }) };
-
-        return it != collection.end() ? &(*it) : nullptr;
-    }
-
-    template<class Proto, template<class> class ProtobufCollection> const Proto* extract(const ProtobufCollection<Proto>& collection, const string &value)
+    template<class Proto, template<class> class ProtobufCollection> optional<Proto> extract(const ProtobufCollection<Proto>& collection, const string &value)
     {
         const auto it
         {
@@ -87,7 +76,7 @@ namespace
                 })
         };
 
-        return it != end(collection) ? &(*it) : nullptr;
+        return it != end(collection) ? *it : optional<Proto> { };
     }
 
     template<typename T> T le_to_native(const unsigned char* data);
@@ -182,19 +171,19 @@ void onnx_importer::convert_op(const NodeProto &node)
     throw runtime_error("Not supported ONNX opcode: " + op_type);
 }
 
-const ValueInfoProto* onnx_importer::find_value_info(const string &value) const
+optional<ValueInfoProto> onnx_importer::find_value_info(const string &value) const
 {
-    auto value_info_ptr { ::find_value_info(model_.graph().input(), value) };
-    if (value_info_ptr)
-        return value_info_ptr;
+    auto value_info { extract(model_.graph().input(), value) };
+    if (value_info)
+        return value_info;
 
-    value_info_ptr = ::find_value_info(model_.graph().value_info(), value);
-    if (value_info_ptr)
-        return value_info_ptr;
+    value_info = extract(model_.graph().value_info(), value);
+    if (value_info)
+        return value_info;
 
-    value_info_ptr = ::find_value_info(model_.graph().output(), value);
+    value_info = extract(model_.graph().output(), value);
 
-    return value_info_ptr;
+    return value_info;
 }
 
 shape_t onnx_importer::get_shape(const string &value) const
@@ -205,13 +194,13 @@ shape_t onnx_importer::get_shape(const string &value) const
         return oit->second->shape();
     }
 
-    const auto value_info_ptr { find_value_info(value) };
-    if (value_info_ptr)
-        return get_shape(*value_info_ptr);
+    const auto value_info { find_value_info(value) };
+    if (value_info)
+        return get_shape(value_info.value());
 
-    const auto initializer_ptr { get_initializer(value) };
-    if (initializer_ptr)
-        return get_shape(*initializer_ptr);
+    const auto initializer { get_initializer(value) };
+    if (initializer)
+	    return get_shape(initializer.value());
 
     throw runtime_error("Can't find value info for " + value + " to parse its shape");
 }
@@ -258,13 +247,13 @@ optional<datatype_t> onnx_importer::get_datatype(const string &value) const
         return oit->second->type();
     }
 
-    const auto value_info_ptr { find_value_info(value) };
-    if (value_info_ptr)
-        return get_datatype(*value_info_ptr);
+    const auto value_info { find_value_info(value) };
+    if (value_info)
+        return get_datatype(value_info.value());
 
-    const auto initializer_ptr { get_initializer(value) };
-    if (initializer_ptr)
-        return get_datatype(*initializer_ptr);
+    const auto initializer { get_initializer(value) };
+    if (initializer)
+	    return get_datatype(initializer.value());
 
     return optional<datatype_t> { };
 }
@@ -285,21 +274,6 @@ optional<datatype_t> onnx_importer::get_datatype(const TensorProto &value)
     return get_datatype(static_cast<TensorProto_DataType>(type));
 }
 
-datatype_t onnx_importer::get_datatype(const AttributeProto_AttributeType type)
-{
-    switch (type)
-    {
-    case AttributeProto_AttributeType_FLOAT:
-        return dt_float32;
-
-    case AttributeProto_AttributeType_INT:
-        return dt_uint8;
-
-    default:
-        throw runtime_error("ONNX data type " + to_string(type) + " is unsupported");
-    }
-}
-
 optional<datatype_t> onnx_importer::get_datatype(const TensorProto_DataType datatype)
 {
     switch (datatype)
@@ -315,61 +289,76 @@ optional<datatype_t> onnx_importer::get_datatype(const TensorProto_DataType data
     }
 }
 
+optional<datatype_t> onnx_importer::get_datatype(const AttributeProto_AttributeType type)
+{
+    switch (type)
+    {
+    case AttributeProto_AttributeType_FLOAT:
+        return dt_float32;
+
+    case AttributeProto_AttributeType_INT:
+        return dt_uint8;
+
+    default:
+	    return optional<datatype_t> { };
+    }
+}
+
 string onnx_importer::to_string(const TensorProto_DataType datatype)
 {
     switch (datatype)
     {
     default:
     case TensorProto_DataType_UNDEFINED:
-        return "UNDEFINED";
+        return "UNDEFINED"s;
 
     case TensorProto_DataType_FLOAT:
-        return "FLOAT";
+        return "FLOAT"s;
 
     case TensorProto_DataType_UINT8:
-        return "UINT8";
+        return "UINT8"s;
 
     case TensorProto_DataType_INT8:
-        return "INT8";
+        return "INT8"s;
 
     case TensorProto_DataType_UINT16:
-        return "UINT16";
+        return "UINT16"s;
 
     case TensorProto_DataType_INT16:
-        return "INT16";
+        return "INT16"s;
 
     case TensorProto_DataType_INT32:
-        return "INT32";
+        return "INT32"s;
 
     case TensorProto_DataType_INT64:
-        return "INT64";
+        return "INT64"s;
 
     case TensorProto_DataType_STRING:
-        return "STRING";
+        return "STRING"s;
 
     case TensorProto_DataType_BOOL:
-        return "BOOL";
+        return "BOOL"s;
 
     case TensorProto_DataType_FLOAT16:
-        return "FLOAT16";
+        return "FLOAT16"s;
 
     case TensorProto_DataType_DOUBLE:
-        return "DOUBLE";
+        return "DOUBLE"s;
 
     case TensorProto_DataType_UINT32:
-        return "UINT32";
+        return "UINT32"s;
 
     case TensorProto_DataType_UINT64:
-        return "UINT64";
+        return "UINT64"s;
 
     case TensorProto_DataType_COMPLEX64:
-        return "COMPLEX64";
+        return "COMPLEX64"s;
 
     case TensorProto_DataType_COMPLEX128:
-        return "COMPLEX128";
+        return "COMPLEX128"s;
 
     case TensorProto_DataType_BFLOAT16:
-        return "BFLOAT16";
+        return "BFLOAT16"s;
     }
 }
 
@@ -379,169 +368,199 @@ string onnx_importer::to_string(const AttributeProto_AttributeType type)
     {
     default:
     case AttributeProto_AttributeType_UNDEFINED:
-        return "UNDEFINED";
+        return "UNDEFINED"s;
 
     case AttributeProto_AttributeType_FLOAT:
-        return "FLOAT";
+        return "FLOAT"s;
 
     case AttributeProto_AttributeType_INT:
-        return "INT";
+        return "INT"s;
 
     case AttributeProto_AttributeType_STRING:
-        return "STRING";
+        return "STRING"s;
 
     case AttributeProto_AttributeType_TENSOR:
-        return "TENSOR";
+        return "TENSOR"s;
 
     case AttributeProto_AttributeType_GRAPH:
-        return "GRAPH";
+        return "GRAPH"s;
 
     case AttributeProto_AttributeType_SPARSE_TENSOR:
-        return "SPARSE_TENSOR";
+        return "SPARSE_TENSOR"s;
 
     case AttributeProto_AttributeType_FLOATS:
-        return "FLOATS";
+        return "FLOATS"s;
 
     case AttributeProto_AttributeType_INTS:
-        return "INTS";
+        return "INTS"s;
 
     case AttributeProto_AttributeType_STRINGS:
-        return "STRINGS";
+        return "STRINGS"s;
 
     case AttributeProto_AttributeType_TENSORS:
-        return "TENSORS";
+        return "TENSORS"s;
 
     case AttributeProto_AttributeType_GRAPHS:
-        return "GRAPHS";
+        return "GRAPHS"s;
 
     case AttributeProto_AttributeType_SPARSE_TENSORS:
-        return "SPARSE_TENSORS";
+        return "SPARSE_TENSORS"s;
     }
 }
 
 template<> optional<float> onnx_importer::get_attribute<float>(const onnx::NodeProto& node, const string &value)
 {
     typedef float target_type;
-    const auto* attr { extract(node.attribute(), value) };
+    const auto& attr { extract(node.attribute(), value) };
 
     if (!attr)
         return optional<target_type> { };
 
-    assert(attr->type() == attribute_type<target_type>);
+    assert(attr.value().type() == attribute_type<target_type>);
 
-    return attr->f();
+    return attr.value().f();
 }
 
 template<> optional<int64_t> onnx_importer::get_attribute<int64_t>(const onnx::NodeProto& node, const string &value)
 {
     typedef int64_t target_type;
-    const auto* attr { extract(node.attribute(), value) };
+    const auto& attr { extract(node.attribute(), value) };
 
     if (!attr)
         return optional<target_type> { };
 
-    assert(attr->type() == attribute_type<target_type>);
+    assert(attr.value().type() == attribute_type<target_type>);
 
-    return attr->i();
+    return attr.value().i();
 }
 
 template<> optional<int> onnx_importer::get_attribute<int>(const onnx::NodeProto& node, const string &value)
 {
     typedef int target_type;
-    const auto* attr { extract(node.attribute(), value) };
+    const auto& attr { extract(node.attribute(), value) };
 
     if (!attr)
         return optional<target_type> { };
 
-    assert(attr->type() == attribute_type<target_type>);
+    assert(attr.value().type() == attribute_type<target_type>);
 
-    return attr->i();
+    return attr.value().i();
 }
 
 template<> optional<string> onnx_importer::get_attribute<string>(const onnx::NodeProto& node, const string &value)
 {
     typedef string target_type;
-    const auto* attr { extract(node.attribute(), value) };
+    const auto& attr { extract(node.attribute(), value) };
 
     if (!attr)
         return optional<target_type> { };
 
-    assert(attr->type() == attribute_type<target_type>);
+    assert(attr.value().type() == attribute_type<target_type>);
 
-    return attr->s();
+    return attr.value().s();
 }
 
-template<> optional<const TensorProto*> onnx_importer::get_attribute<const TensorProto*>(const onnx::NodeProto& node, const string &value)
+template<> optional<TensorProto> onnx_importer::get_attribute<TensorProto>(const onnx::NodeProto& node, const string &value)
 {
-    typedef const TensorProto* target_type;
-    const auto* attr { extract(node.attribute(), value) };
+    typedef TensorProto target_type;
+    const auto& attr { extract(node.attribute(), value) };
 
     if (!attr)
         return optional<target_type> { };
 
-    assert(attr->type() == attribute_type<target_type>);
+    assert(attr.value().type() == attribute_type<target_type>);
 
-    return &attr->t();
+    return attr.value().t();
 }
 
-template<> optional<xtl::span<const float>> onnx_importer::get_attribute<xtl::span<const float>>(const onnx::NodeProto& node, const string &value)
+template<> optional<vector<float>> onnx_importer::get_attribute<vector<float>>(const onnx::NodeProto& node, const string &value)
 {
-    typedef xtl::span<const float> target_type;
-    const auto* attr { extract(node.attribute(), value) };
+    typedef vector<float> target_type;
+    const auto& attr { extract(node.attribute(), value) };
 
     if (!attr)
         return optional<target_type> { };
 
-    assert(attr->type() == attribute_type<target_type>);
+    assert(attr.value().type() == attribute_type<target_type>);
 
-    return target_type { &(*attr->floats().begin()), &(*attr->floats().end()) };
+    return target_type { begin(attr.value().floats()), end(attr.value().floats()) };
 }
 
-template<> optional<xtl::span<const int64_t>> onnx_importer::get_attribute<xtl::span<const int64_t>>(const onnx::NodeProto& node, const string &value)
+template<> optional<vector<int>> onnx_importer::get_attribute<vector<int>>(const onnx::NodeProto& node, const string &value)
 {
-    typedef xtl::span<const int64_t> target_type;
-    const auto* attr { extract(node.attribute(), value) };
+    typedef vector<int> target_type;
+    const auto& attr { extract(node.attribute(), value) };
 
     if (!attr)
         return optional<target_type> { };
 
-    assert(attr->type() == attribute_type<target_type>);
+    assert(attr.value().type() == attribute_type<target_type>);
 
-    return target_type { &(*attr->ints().begin()), &(*attr->ints().end()) };
+    return target_type { begin(attr.value().ints()), end(attr.value().ints()) };
 }
 
-template<> optional<xtl::span<const string>> onnx_importer::get_attribute<xtl::span<const string>>(const onnx::NodeProto& node, const string &value)
+template<> optional<vector<string>> onnx_importer::get_attribute<vector<string>>(const onnx::NodeProto& node, const string &value)
 {
-    typedef xtl::span<const string> target_type;
-    const auto* attr { extract(node.attribute(), value) };
+    typedef vector<string> target_type;
+    const auto& attr { extract(node.attribute(), value) };
 
     if (!attr)
         return optional<target_type> { };
 
-    assert(attr->type() == attribute_type<target_type>);
+    assert(attr.value().type() == attribute_type<target_type>);
 
-    return target_type { &(*attr->strings().begin()), &(*attr->strings().end()) };
+    return target_type { begin(attr.value().strings()), end(attr.value().strings()) };
 }
 
 template<> optional<axis_t> onnx_importer::get_attribute<axis_t>(const onnx::NodeProto& node, const string &value)
 {
-    typedef axis_t target_type;
-    const auto* attr { extract(node.attribute(), value) };
+	const auto& extracted { get_attribute<vector<int>>(node, value) };
 
-    if (!attr)
-        return optional<target_type> { };
+	if (!extracted)
+		return optional<axis_t> { };
 
-    assert(attr->type() == attribute_type<target_type>);
+	axis_t result { begin(extracted.value()), end(extracted.value()) };
 
-    return target_type { begin(attr->ints()), end(attr->ints()) };
+	return result;
 }
 
-const TensorProto* onnx_importer::get_initializer(const string &value) const
+optional<TensorProto> onnx_importer::get_initializer(const string &value) const
 {
     const auto& graph { model_.graph() };
-    const auto* initializer { extract(graph.initializer(), value) };
+    const auto& initializer { extract(graph.initializer(), value) };
 
     return initializer;
+}
+
+template<typename T, typename S = T> vector<T> onnx_importer::raw_to_vector(const onnx::TensorProto &tensor)
+{
+    typedef T target_type;
+    typedef S storage_type;
+
+    const storage_type* const ptr { reinterpret_cast<const storage_type*>(tensor.raw_data().data()) };
+    const size_t size { tensor.raw_data().size() / sizeof(storage_type) };
+
+    if constexpr (native_little_endian)
+    {
+        return vector<target_type>{ ptr, ptr + size };
+    }
+    else
+    {
+        vector<target_type> data;
+        data.reserve(size);
+        transform(ptr, ptr + size, back_inserter(data),
+            [](const auto& e)
+            {
+                return le_to_native<storage_type>(reinterpret_cast<const byte*>(&e));
+            });
+
+        return data;
+    }
+}
+
+template<typename T, typename S> xt::xarray<T> onnx_importer::raw_to(const onnx::TensorProto &tensor)
+{
+    return xt::adapt(raw_to_vector<T, S>(tensor), get_shape(tensor));
 }
 
 template<> float onnx_importer::to<float>(const onnx::TensorProto &tensor)
@@ -562,41 +581,57 @@ template<> uint8_t onnx_importer::to<uint8_t>(const onnx::TensorProto &tensor)
 
 template<> axis_t onnx_importer::to<axis_t>(const onnx::TensorProto &tensor)
 {
-    assert(tensor.data_type() == tensor_type<std::int32_t>);
-
-    switch (tensor.data_type())
-    {
-    case TensorProto_DataType_INT32:
-        assert(tensor.int32_data_size() > 0);
-        return { &(*tensor.int32_data().begin()), &(*tensor.int32_data().end()) };
-
-    case TensorProto_DataType_INT64:
-    {
-        assert(tensor.int64_data_size() > 0);
-        axis_t result;
-        transform(tensor.int64_data().begin(), tensor.int64_data().end(), back_inserter(result),
-            [](const auto a) { return a; });
-
-        return result;
-    }
-    default:
-        throw runtime_error("Tensor can't be converted to axis");
-    }
-}
-
-template<> xt::xarray<uint8_t> onnx_importer::to<xt::xarray<uint8_t>>(const onnx::TensorProto &tensor)
-{
-    assert(tensor.data_type() == tensor_type<uint8_t>);
+	assert(tensor.data_type() == tensor_type<std::uint8_t> ||
+		tensor.data_type() == tensor_type<std::int8_t> ||
+		tensor.data_type() == tensor_type<std::int16_t> ||
+		tensor.data_type() == tensor_type<std::uint16_t> ||
+		tensor.data_type() == tensor_type<std::int32_t> ||
+		tensor.data_type() == tensor_type<std::int64_t>);
 
     if (!tensor.int32_data().empty())
     {
-        vector<uint8_t> data { begin(tensor.int32_data()), end(tensor.int32_data()) };
-        return xt::adapt(data, get_shape(tensor));
+        axis_t result { begin(tensor.int32_data()), end(tensor.int32_data()) };
+        return result;
     }
-    else
+
+    if (!tensor.int64_data().empty())
     {
-        return xt::adapt(tensor.raw_data().data(), tensor.raw_data().size(), xt::no_ownership(), get_shape(tensor));
+        axis_t result { begin(tensor.int64_data()), end(tensor.int64_data()) };
+        return result;
     }
+
+    xt::xarray<int> content;
+    switch (tensor.data_type())
+    {
+    case TensorProto_DataType_INT32:
+        content = raw_to<int, int32_t>(tensor);
+        break;
+
+    case TensorProto_DataType_INT16:
+        content = raw_to<int, int16_t>(tensor);
+        break;
+
+    case TensorProto_DataType_INT8:
+        content = raw_to<int, int8_t>(tensor);
+        break;
+
+    case TensorProto_DataType_UINT16:
+        content = raw_to<int, uint16_t>(tensor);
+        break;
+
+    case TensorProto_DataType_UINT8:
+        content = raw_to<int, uint8_t>(tensor);
+        break;
+
+    case TensorProto_DataType_INT64:
+        content = raw_to<int, int64_t>(tensor);
+        break;
+
+    default:
+        throw runtime_error("Tensor can't be converted to axis");
+    }
+
+    return axis_t { begin(content), end(content) };
 
 }
 
@@ -606,24 +641,28 @@ template<> xt::xarray<float> onnx_importer::to<xt::xarray<float>>(const onnx::Te
 
     if (!tensor.float_data().empty())
     {
-        return xt::adapt(tensor.float_data().data(), tensor.float_data().size(), xt::no_ownership(), vector<int> { tensor.float_data().size() });
+	    return xt::adapt(vector<float> { begin(tensor.float_data()), end(tensor.float_data()) }, get_shape(tensor));
     }
     else
     {
-        if constexpr (native_little_endian)
-        {
-            return xt::adapt(reinterpret_cast<const float*>(tensor.raw_data().data()), tensor.raw_data().size() / sizeof(float), xt::no_ownership(), get_shape(tensor));
-        }
-        else
-        {
-            vector<float> data;
-            for (auto it = begin(tensor.raw_data()); it != end(tensor.raw_data()); it += sizeof(float))
-            {
-                data.push_back(le_to_native<float>(reinterpret_cast<const unsigned char*>(&(*it))));
-            }
+	    return raw_to<float, float>(tensor);
+    }
+}
 
-            return xt::adapt(data, get_shape(tensor));
-        }
+template<> xt::xarray<uint8_t> onnx_importer::to<xt::xarray<uint8_t>>(const onnx::TensorProto &tensor)
+{
+    assert(tensor.data_type() == tensor_type<uint8_t>);
+
+    if (!tensor.int32_data().empty())
+    {
+	    return xt::adapt(vector<uint8_t> { begin(tensor.int32_data()), end(tensor.int32_data()) }, get_shape(tensor));
+    }
+    else
+    {
+	    typedef uint8_t target_type;
+        const target_type* const ptr { reinterpret_cast<const target_type*>(tensor.raw_data().data()) };
+        const size_t size { tensor.raw_data().size() / sizeof(target_type) };
+        return xt::adapt(vector<target_type> { ptr, ptr + size }, get_shape(tensor));
     }
 }
 
@@ -632,126 +671,41 @@ template<> xt::xarray<float> onnx_importer::convert_to<xt::xarray<float>>(const 
     if (tensor.data_type() == TensorProto_DataType_FLOAT)
         return to<xt::xarray<float>>(tensor);
 
+    if (!tensor.int32_data().empty())
+    {
+	    return xt::adapt(vector<float> {begin(tensor.int32_data()), end(tensor.int32_data()) }, get_shape(tensor));
+    }
+
+    if (!tensor.int64_data().empty())
+    {
+	    return xt::adapt(vector<float> {begin(tensor.int64_data()), end(tensor.int64_data()) }, get_shape(tensor));
+    }
+
     switch (tensor.data_type())
     {
     case TensorProto_DataType_INT32:
-    case TensorProto_DataType_INT16:
-    case TensorProto_DataType_INT8:
-    case TensorProto_DataType_UINT16:
-    case TensorProto_DataType_UINT8:
-    case TensorProto_DataType_BOOL:
-    {
-        if (!tensor.int32_data().empty())
-        {
-            vector<float> data;
-            data.reserve(tensor.int32_data().size());
-
-            copy(begin(tensor.int32_data()), end(tensor.int32_data()), back_inserter(data));
-            return xt::adapt(data, get_shape(tensor));
-        }
-        else
-        {
-            return xt::adapt(tensor.raw_data().data(), tensor.raw_data().size(), xt::no_ownership(), get_shape(tensor));
-        }
-        break;
-    }
-
-    case TensorProto_DataType_INT64:
-    {
-        if (!tensor.int64_data().empty())
-        {
-            vector<float> data;
-            data.reserve(tensor.int64_data().size());
-
-            copy(begin(tensor.int64_data()), end(tensor.int64_data()), back_inserter(data));
-            return xt::adapt(data, get_shape(tensor));
-        }
-
-        break;
-    }
-    default:
-        throw runtime_error("Unsupported conversion from " + to_string(static_cast<TensorProto_DataType>(tensor.data_type())) + " to float tensor");
-    }
-
-    vector<float> data;
-
-    // raw_data handling
-    switch (tensor.data_type())
-    {
-    case TensorProto_DataType_BOOL:
-    {
-        data.reserve(tensor.raw_data().size());
-        transform(begin(tensor.raw_data()), end(tensor.raw_data()), back_inserter(data),
-            [](const auto e) { return static_cast<bool>(e); });
-
-        break;
-    }
-
-    case TensorProto_DataType_INT8:
-    {
-        data.reserve(tensor.raw_data().size());
-        transform(begin(tensor.raw_data()), end(tensor.raw_data()), back_inserter(data),
-            [](const auto e) { return static_cast<int8_t>(e); });
-
-        break;
-    }
-
-    case TensorProto_DataType_UINT8:
-    {
-        data.reserve(tensor.raw_data().size());
-        transform(begin(tensor.raw_data()), end(tensor.raw_data()), back_inserter(data),
-            [](const auto e) { return static_cast<uint8_t>(e); });
-
-        break;
-    }
+        return raw_to<float, int32_t>(tensor);
 
     case TensorProto_DataType_INT16:
-    {
-        const size_t size { tensor.raw_data().size() / 2 };
-        data.reserve(size);
-        const auto ptr { reinterpret_cast<const int16_t*>(tensor.raw_data().data()) };
-        copy(ptr, ptr + size, back_inserter(data));
+        return raw_to<float, int16_t>(tensor);
 
-        break;
-    }
+    case TensorProto_DataType_INT8:
+        return raw_to<float, int8_t>(tensor);
 
     case TensorProto_DataType_UINT16:
-    {
-        const size_t size { tensor.raw_data().size() / 2 };
-        data.reserve(size);
-        const auto* ptr { reinterpret_cast<const uint16_t*>(tensor.raw_data().data()) };
-        copy(ptr, ptr + size, back_inserter(data));
+        return raw_to<float, uint16_t>(tensor);
 
-        break;
-    }
+    case TensorProto_DataType_UINT8:
+        return raw_to<float, uint8_t>(tensor);
 
-    case TensorProto_DataType_INT32:
-    {
-        const size_t size { tensor.raw_data().size() / 4 };
-        data.reserve(size);
-        const auto* ptr { reinterpret_cast<const int32_t*>(tensor.raw_data().data()) };
-        transform(ptr, ptr + size, back_inserter(data),
-            [](const auto e) { return static_cast<float>(e); });
-
-        break;
-    }
+    case TensorProto_DataType_BOOL:
+        return raw_to<float, bool>(tensor);
 
     case TensorProto_DataType_INT64:
-    {
-        const size_t size { tensor.raw_data().size() / 8 };
-        data.reserve(size);
-        const auto* ptr { reinterpret_cast<const int64_t*>(tensor.raw_data().data()) };
-        transform(ptr, ptr + size, back_inserter(data),
-            [](const auto e) { return static_cast<float>(e); });
-
-        break;
+        return raw_to<float, int64_t>(tensor);
     }
 
-    default:
-        break;
-    }
-
-    return xt::adapt(data, get_shape(tensor));
+    throw runtime_error("Unsupported conversion from " + to_string(static_cast<TensorProto_DataType>(tensor.data_type())) + " to float tensor");
 }
 
 std::vector<padding> onnx_importer::parse_padding(const axis_t& padding_value)

@@ -77,11 +77,11 @@ void onnx_importer::convert_pool(const NodeProto& node, const reduce_op_t reduce
 
     array<size_t, 2> dilations { 1, 1 };
 
-    const auto &kernel_shape { get_attribute<xtl::span<const int64_t>>(node, "kernel_shape").value() };
+    const auto &kernel_shape { get_attribute<vector<int>>(node, "kernel_shape").value() };
 
     array<size_t, 2> strides { 1, 1 };
 
-    const auto &strides_attr { get_attribute<xtl::span<const int64_t>>(node, "strides") };
+    const auto &strides_attr { get_attribute<vector<int>>(node, "strides") };
     if (strides_attr)
     {
         const auto &strides_values { strides_attr.value() };

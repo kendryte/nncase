@@ -56,11 +56,11 @@ void onnx_importer::convert_op_Pad(const NodeProto& node)
     if (!use_opset_version_9)
     {
         const auto &pads { node.input()[1] };
-        const auto* pads_initializer { get_initializer(pads) };
+        const auto &pads_initializer { get_initializer(pads) };
 
         if (pads_initializer)
         {
-            padding_value = to<axis_t>(*pads_initializer);
+            padding_value = to<axis_t>(pads_initializer.value());
         }
         else
         {
@@ -95,14 +95,14 @@ void onnx_importer::convert_op_Pad(const NodeProto& node)
         {
             const auto &constant_value { node.input()[2] };
 
-            const auto* constant_initializer { get_initializer(constant_value) };
+            const auto &constant_initializer { get_initializer(constant_value) };
             switch (input_type)
             {
             case dt_float32:
             {
                 if (constant_initializer)
                 {
-                    constant = to<float>(*constant_initializer);
+                    constant = to<float>(constant_initializer.value());
                 }
                 else
                 {
@@ -111,7 +111,7 @@ void onnx_importer::convert_op_Pad(const NodeProto& node)
 
                     if (data && data.value().size())
                     {
-                        constant = float(data.value()[0]);
+                        constant = data.value()[0];
                     }
                 }
                 break;
@@ -130,7 +130,7 @@ void onnx_importer::convert_op_Pad(const NodeProto& node)
 
                     if (data && data.value().size())
                     {
-                        constant = uint8_t(data.value()[0]);
+                        constant = data.value()[0];
                     }
                 }
                 break;

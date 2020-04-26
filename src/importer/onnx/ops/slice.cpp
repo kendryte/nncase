@@ -46,8 +46,8 @@ void onnx_importer::convert_op_Slice(const NodeProto& node)
         const string& starts_input_name { node.input()[1] };
         const string& ends_input_name { node.input()[2] };
 
-        const auto* begins_initializer { get_initializer(starts_input_name) };
-        const auto* ends_initializer{ get_initializer(ends_input_name) };
+        const auto &begins_initializer { get_initializer(starts_input_name) };
+        const auto &ends_initializer{ get_initializer(ends_input_name) };
 
         if (!begins_initializer)
         {
@@ -62,7 +62,7 @@ void onnx_importer::convert_op_Slice(const NodeProto& node)
         }
         else
         {
-            begins = to<axis_t>(*begins_initializer);
+            begins = to<axis_t>(begins_initializer.value());
         }
 
         if (!ends_initializer)
@@ -78,7 +78,7 @@ void onnx_importer::convert_op_Slice(const NodeProto& node)
         }
         else
         {
-            ends = to<axis_t>(*ends_initializer);
+            ends = to<axis_t>(ends_initializer.value());
         }
     }
     else
@@ -100,8 +100,8 @@ void onnx_importer::convert_op_Slice(const NodeProto& node)
     {
         if (node.input().size() > 3)
         {
-            const string& axes_input_name { node.input()[3] };
-            const auto* axes_initializer{ get_initializer(axes_input_name) };
+            const string &axes_input_name { node.input()[3] };
+            const auto &axes_initializer{ get_initializer(axes_input_name) };
 
             if (!axes_initializer)
             {
@@ -114,7 +114,7 @@ void onnx_importer::convert_op_Slice(const NodeProto& node)
             }
             else
             {
-                loaded_axes = to<axis_t>(*axes_initializer);
+                loaded_axes = to<axis_t>(axes_initializer.value());
             }
         }
     }
@@ -128,9 +128,9 @@ void onnx_importer::convert_op_Slice(const NodeProto& node)
 
     if (node.input().size() > 4)
     {
-        const string& strides_input_name { node.input()[4] };
+        const string &strides_input_name { node.input()[4] };
 
-        const auto* strides_initializer{ get_initializer(strides_input_name) };
+        const auto &strides_initializer{ get_initializer(strides_input_name) };
 
         if (!strides_initializer)
         {
@@ -143,7 +143,7 @@ void onnx_importer::convert_op_Slice(const NodeProto& node)
         }
         else
         {
-            loaded_strides = to<axis_t>(*strides_initializer);
+            loaded_strides = to<axis_t>(strides_initializer.value());
         }
 
         assert(loaded_strides.size() == loaded_axes.size());
