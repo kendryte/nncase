@@ -9,7 +9,7 @@
 
 2. Install conan
 ```bash
-pip install conan
+pip install conan==1.21.1
 ```
 3. Clone source
 ```bash
@@ -46,7 +46,7 @@ pytest tests
 
 2. Install conan
 ```cmd
-pip install conan
+pip install conan==1.21.1
 ```
 3. Clone source
 ```cmd
