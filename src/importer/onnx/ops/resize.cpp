@@ -60,11 +60,11 @@ void onnx_importer::convert_op_Resize(const NodeProto& node)
     if (!use_version_9 && node.input().size() == 4)
     {
         const auto &size { node.input()[3] };
-        const auto* new_size_initializer { get_initializer(size) };
+        const auto &new_size_initializer { get_initializer(size) };
 
         if (new_size_initializer)
         {
-            new_size = to<axis_t>(*new_size_initializer);
+            new_size = to<axis_t>(new_size_initializer.value());
         }
         else
         {

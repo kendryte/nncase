@@ -89,7 +89,7 @@ template<class Node> void onnx_importer::convert_conv(const NodeProto &node)
 
     array<size_t, 2> dilations { 1, 1 };
 
-    const auto &dilations_attr { get_attribute<xtl::span<const int64_t>>(node, "dilations") };
+    const auto &dilations_attr { get_attribute<vector<int>>(node, "dilations") };
     if (dilations_attr)
     {
         const auto &dilations_values { dilations_attr.value() };
@@ -108,7 +108,7 @@ template<class Node> void onnx_importer::convert_conv(const NodeProto &node)
 
     array<size_t, 2> strides { 1, 1 };
 
-    const auto &strides_attr { get_attribute<xtl::span<const int64_t>>(node, "strides") };
+    const auto &strides_attr { get_attribute<vector<int>>(node, "strides") };
     if (strides_attr)
     {
         const auto &strides_values { strides_attr.value() };
@@ -119,12 +119,12 @@ template<class Node> void onnx_importer::convert_conv(const NodeProto &node)
             strides[1] = strides_values[1];
     }
 
-    const auto* weight_initializer { get_initializer(weight) };
+    const auto &weight_initializer { get_initializer(weight) };
 
     if (!weight_initializer)
         throw runtime_error("Can't find initializer for weight input");
 
-    const auto& weight_shape { get_shape(*weight_initializer) };
+    const auto &weight_shape { get_shape(weight_initializer.value()) };
 
     array<padding, 2> pads
     {{
@@ -136,7 +136,7 @@ template<class Node> void onnx_importer::convert_conv(const NodeProto &node)
     {
     case padding_mode::notset:
     {
-        const auto &pads_attr { get_attribute<xtl::span<const int64_t>>(node, "pads") };
+        const auto &pads_attr { get_attribute<vector<int>>(node, "pads") };
 
         if (pads_attr)
         {
@@ -162,17 +162,17 @@ template<class Node> void onnx_importer::convert_conv(const NodeProto &node)
         break;
     }
 
-    auto&& weight_value { to<xt::xarray<float>>(*weight_initializer) };
+    auto &&weight_value { to<xt::xarray<float>>(weight_initializer.value()) };
 
-    xt::xarray<float>&& bias_value { xt::zeros<float>({ weight_shape[0] }) };
+    xt::xarray<float> &&bias_value { xt::zeros<float>({ weight_shape[0] }) };
     if (node.input().size() > 2)
     {
         const auto &bias { node.input()[2] };
-        const auto* bias_initializer { get_initializer(bias) };
+        const auto &bias_initializer { get_initializer(bias) };
         if (!bias_initializer)
             throw runtime_error("Can't find initializer for bias input");
 
-        bias_value = to<xt::xarray<float>>(*bias_initializer);
+        bias_value = to<xt::xarray<float>>(bias_initializer.value());
     }
 
     auto conv { add_conv_node<Node>(node, graph_, move(input_shape), move(weight_value), move(bias_value), group, pads, strides, dilations) };
@@ -190,7 +190,7 @@ template<> conv2d_transpose* onnx_importer::add_conv_node<conv2d_transpose>(cons
 {
     auto output_shape { generate_output_shape(input_shape, weight_value.shape(), pads, dilations, strides) };
 
-    const auto &output_shape_attr { get_attribute<xtl::span<const int64_t>>(node, "output_shape") };
+    const auto &output_shape_attr { get_attribute<vector<int>>(node, "output_shape") };
     if (output_shape_attr)
     {
         const auto &output_shape_value { output_shape_attr.value() };
