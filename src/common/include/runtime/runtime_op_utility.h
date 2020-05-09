@@ -99,7 +99,7 @@ namespace runtime
             }
             else
             {
-                value += 1 << (shift - 1);
+                value += T(1) << (shift - 1);
                 value >>= shift;
             }
         }

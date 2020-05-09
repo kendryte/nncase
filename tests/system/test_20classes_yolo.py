@@ -50,7 +50,7 @@ def test_simple_k210():
 	 '--input-type', 'float', '--max-allocator-solve-secs', '0'])
 
 	ncc.infer(['--dataset-format', 'raw'])
-	ncc.close_to('test', 1.3)
+	ncc.close_to('test', 0.16)
 
 if __name__ == "__main__":
 	#test_simple()

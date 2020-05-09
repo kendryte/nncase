@@ -59,54 +59,6 @@ std::vector<fused_unary_op> merge_subgraph(const std::vector<fused_unary_op> &sr
 
     return result;
 }
-
-std::vector<fused_unary_op> concat_subgraph(const std::vector<fused_unary_op> &src1, const std::vector<fused_unary_op> &src2)
-{
-    std::vector<fused_unary_op> result = src1;
-
-    // Turn ldx to identity
-    auto src1_out_arg = result.size() - 1;
-    auto arg_inc = result.size();
-    auto first_ldx = true;
-    for (auto &op : src2)
-    {
-        auto n_op = op;
-        switch (n_op.opcode)
-        {
-        case fu_ldx:
-            if (!first_ldx)
-            {
-                result.emplace_back(fused_unary_op::make_identity({ src1_out_arg }));
-            }
-            else
-            {
-                first_ldx = false;
-                arg_inc--;
-            }
-            continue;
-        case fu_constant:
-            break;
-        case fu_unary:
-            n_op.unary.input.op_id += arg_inc;
-            break;
-        case fu_binary:
-            n_op.binary.input_a.op_id += arg_inc;
-            n_op.binary.input_b.op_id += arg_inc;
-            break;
-        case fu_clamp:
-            n_op.clamp.input.op_id += arg_inc;
-            n_op.clamp.low.op_id += arg_inc;
-            n_op.clamp.high.op_id += arg_inc;
-            break;
-        default:
-            throw std::runtime_error("Invalid fused unary op");
-        }
-
-        result.emplace_back(n_op);
-    }
-
-    return result;
-}
 }
 
 bool fuse_one_unary_transform::on_try_match(node &node, transform_context &context)

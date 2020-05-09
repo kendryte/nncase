@@ -161,6 +161,7 @@ void fused_unary::compile_graph(const std::vector<fused_unary_op> &subgraph, run
     builder.emit_ret();
 }
 
+
 fused_unary::fused_unary(std::vector<fused_unary_op> subgraph, shape_t in_shape)
     : subgraph_(std::move(subgraph))
 {
@@ -181,4 +182,52 @@ void fused_unary::compile(hlir_compile_context &context)
     auto l_c = context.graph.emplace<llir::nnil_unary_method>(input().shape(), std::move(body));
     context.add_input(input(), l_c->input());
     context.add_output(output(), l_c->output());
+}
+
+std::vector<fused_unary_op> hlir::concat_subgraph(const std::vector<fused_unary_op> &src1, const std::vector<fused_unary_op> &src2)
+{
+    std::vector<fused_unary_op> result = src1;
+
+    // Turn ldx to identity
+    auto src1_out_arg = result.size() - 1;
+    auto arg_inc = result.size();
+    auto first_ldx = true;
+    for (auto &op : src2)
+    {
+        auto n_op = op;
+        switch (n_op.opcode)
+        {
+        case fu_ldx:
+            if (!first_ldx)
+            {
+                result.emplace_back(fused_unary_op::make_identity({ src1_out_arg }));
+            }
+            else
+            {
+                first_ldx = false;
+                arg_inc--;
+            }
+            continue;
+        case fu_constant:
+            break;
+        case fu_unary:
+            n_op.unary.input.op_id += arg_inc;
+            break;
+        case fu_binary:
+            n_op.binary.input_a.op_id += arg_inc;
+            n_op.binary.input_b.op_id += arg_inc;
+            break;
+        case fu_clamp:
+            n_op.clamp.input.op_id += arg_inc;
+            n_op.clamp.low.op_id += arg_inc;
+            n_op.clamp.high.op_id += arg_inc;
+            break;
+        default:
+            throw std::runtime_error("Invalid fused unary op");
+        }
+
+        result.emplace_back(n_op);
+    }
+
+    return result;
 }

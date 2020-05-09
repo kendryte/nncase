@@ -66,7 +66,6 @@ namespace hlir
 
     struct fused_unary_clamp
     {
-        binary_op_t binary_op;
         fused_unary_arg input;
         fused_unary_arg low;
         fused_unary_arg high;
@@ -112,6 +111,13 @@ namespace hlir
             return op;
         }
 
+        static fused_unary_op make_clamp(fused_unary_arg input, fused_unary_arg low, fused_unary_arg high) noexcept
+        {
+            fused_unary_op op { fu_clamp };
+            op.clamp = { input, low, high };
+            return op;
+        }
+
         static fused_unary_op make_identity(fused_unary_arg input) noexcept
         {
             fused_unary_op op { fu_identity };
@@ -119,6 +125,8 @@ namespace hlir
             return op;
         }
     };
+
+    std::vector<fused_unary_op> concat_subgraph(const std::vector<fused_unary_op> &src1, const std::vector<fused_unary_op> &src2);
 
     class fused_unary : public node
     {

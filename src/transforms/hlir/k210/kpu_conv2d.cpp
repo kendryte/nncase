@@ -187,7 +187,7 @@ void kpu_conv2d_transform::process(transform_context &context)
     auto iq_p = quantizer_.get_quant_param(quantizer_.get(output), 8);
     auto [wq_p, w_scales, q_weights] = quantize_weights(quantizer_, old_conv);
     auto yq_p = quantizer_.get_quant_param(quantizer_.get(old_conv.output()), 8);
-    auto zq_p = quantizer_.get_quant_param(quantizer_.get(old_fu ? old_fu->output() : old_conv.output()), 8);
+    auto zq_p = quantizer_.get_quant_param(quantizer_.get(*context.outputs[0]), 8);
     auto sa = iq_p.scale * wq_p.scale;
     auto [bn, s_act_in] = quantize_bn(quantizer_, old_conv, sa, w_scales, yq_p);
     auto act = quantize_act(quantizer_, s_act_in, yq_p, zq_p, old_conv.fused_activation(), old_fu);
@@ -205,7 +205,7 @@ void kpu_conv2d_transform::process(transform_context &context)
     upload->name(old_conv.name() + "/kpu_download");
     auto deq = context.graph.emplace<dequantize>(download->output().shape(), zq_p);
     deq->name(old_conv.name() + "/dequantize");
-    link(old_conv.output(), deq->output(), &quantizer_);
+    link(*context.outputs[0], deq->output(), &quantizer_);
 
     upload->input().connect(q->output());
     conv->input().connect(upload->output());

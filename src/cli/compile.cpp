@@ -102,6 +102,7 @@ std::unique_ptr<target> create_target(const compile_options &options)
     t_options.weights_quantize_threshold = options.weights_quantize_threshold;
     t_options.output_quantize_threshold = options.output_quantize_threshold;
     t_options.quantize_binary = options.quantize_binary;
+    t_options.inference_type = options.inference_type;
 
     if (options.output_format == "kmodel")
     {
@@ -402,7 +403,7 @@ group compile_options::parser(mode &mode)
 			option("--input-mean").set(use_dataset_as_input_stat, false) % ("input mean, default is " + std::to_string(input_mean)) & value("input mean", input_mean),
 			option("--input-std").set(use_dataset_as_input_stat, false) % ("input std, default is " + std::to_string(input_std)) & value("input std", input_std),
 			option("--dump-ir").set(dump_ir) % "dump nncase ir to .dot files",
-            option("--dump-weigths-range").set(dump_weights_range) % "dump weights range",
+            option("--dump-weights-range").set(dump_weights_range) % "dump weights range",
 			option("--input-type").set(input_type) % ("input type: e.g. default, float, uint8, default means equal to inference type") & value("input type", input_type),
 			option("--max-allocator-solve-secs") % ("max optimal layout solve time in secs used by allocators, 0 means don't use solver, default is " + std::to_string(max_solve_secs)) & value("max allocator solve secs", max_solve_secs),
 			option("--calibrate-method") % ("calibrate method: e.g. no_clip, l2, default is " + calibrate_method) & value("calibrate method", calibrate_method),

@@ -98,6 +98,15 @@ void cpu_target::add_default_transforms(hlir::transforms::pass &pass)
     pass.emplace<transpose_unary_motion_transform>();
     pass.emplace<transpose_to_reshape_transform>();
     pass.emplace<simplify_reduce_transform>();
+
+    if (options_.inference_type == "uint8")
+    {
+        pass.emplace<fuse_one_unary_transform>();
+        pass.emplace<fuse_one_binary_transform>();
+        pass.emplace<fuse_two_fused_unary_transform>();
+        pass.emplace<fuse_one_fused_unary_with_binary_transform>();
+        pass.emplace<fuse_two_fused_unary_with_binary_transform>();
+    }
 }
 
 void nncase::cpu_target::optimize_target_independent(hlir::transforms::pass_manager &pass_mgr)
@@ -121,11 +130,6 @@ void nncase::cpu_target::add_quantization_checkpoints(hlir::transforms::pass_man
 
     {
         pass p;
-        p.emplace<fuse_one_unary_transform>();
-        p.emplace<fuse_one_binary_transform>();
-        p.emplace<fuse_two_fused_unary_transform>();
-        p.emplace<fuse_one_fused_unary_with_binary_transform>();
-        p.emplace<fuse_two_fused_unary_with_binary_transform>();
         add_default_transforms(p);
         pass_mgr.add_pass(std::move(p));
     }
@@ -173,6 +177,7 @@ void nncase::cpu_target::add_quantization_broadcast(std::unordered_set<hlir::nod
     opcodes.emplace(op_pad);
     opcodes.emplace(op_strided_slice);
     opcodes.emplace(op_resize_image);
+    opcodes.emplace(op_reduce_window2d);
 }
 
 void nncase::cpu_target::optimize_llir(llir::transforms::pass_manager &pass_mgr)

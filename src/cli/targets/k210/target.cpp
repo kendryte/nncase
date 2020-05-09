@@ -26,6 +26,7 @@
 #include <hlir/transforms/neutral/fold_transpose.h>
 #include <hlir/transforms/neutral/fuse_pad.h>
 #include <hlir/transforms/neutral/transpose_motion.h>
+#include <hlir/transforms/k210/fuse_kpu_conv2d_pool.h>
 #include <scheduler/k210/kpu_memory_allocator.h>
 #include <scheduler/main_memory_allocator.h>
 
@@ -87,7 +88,6 @@ void nncase::k210_target::optimize_target_dependent(hlir::transforms::pass_manag
     p.emplace<matmul_to_fake_kpu_conv2d_transform>();
     p.emplace<strided_slice_motion_transform>();
     p.emplace<fuse_fake_kpu_conv2d_strided_slice_transform>();
-    p.emplace<fuse_fake_kpu_conv2d_reduce_window2d_transform>();
     add_default_transforms(p);
     pass_mgr.add_pass(std::move(p));
 }
@@ -105,6 +105,17 @@ void nncase::k210_target::optimize_quantize(hlir::quantizer &quantizer, hlir::tr
     {
         pass p;
         p.emplace<kpu_conv2d_transform>(quantizer);
+        p.emplace<fold_quantize_transform>();
+        pass_mgr.add_pass(std::move(p));
+    }
+    {
+        pass p;
+        p.emplace<fuse_kpu_conv2d_pool_transform>();
+        p.emplace<fold_quantize_transform>();
+        pass_mgr.add_pass(std::move(p));
+    }
+    {
+        pass p;
         p.emplace<fold_kpu_upload_transform>();
         p.emplace<fold_quantize_transform>();
         pass_mgr.add_pass(std::move(p));

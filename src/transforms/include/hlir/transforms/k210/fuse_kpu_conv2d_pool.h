@@ -17,23 +17,12 @@
 
 namespace nncase::hlir::transforms::k210
 {
-class fake_kpu_conv2d_transform : public transform
+class fuse_kpu_conv2d_pool_transform : public transform
 {
 public:
     void process(transform_context &context) override;
 
 protected:
-    bool skip_self_contained_check() const noexcept override { return true; }
-    bool on_try_match(hlir::node &node, transform_context &context) override;
-};
-
-class fuse_fake_kpu_conv2d_strided_slice_transform : public transform
-{
-public:
-    void process(transform_context &context) override;
-
-protected:
-    bool skip_self_contained_check() const noexcept override { return true; }
     bool on_try_match(hlir::node &node, transform_context &context) override;
 };
 }
