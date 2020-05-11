@@ -22,7 +22,7 @@ OPTIONS
         format>] [-t <target>] [--dataset <dataset path>] [--dataset-format
         <dataset format>] [--inference-type <inference type>] [--input-mean
         <input mean>] [--input-std <input std>] [--dump-ir]
-        [--dump-weigths-range] [--input-type <input type>]
+        [--dump-weights-range] [--input-type <input type>]
         [--max-allocator-solve-secs <max allocator solve secs>]
         [--calibrate-method <calibrate method>] [--weights-quantize-threshold
         <weights quantize threshold>] [--no-quantized-binary] [-v]
@@ -46,7 +46,7 @@ OPTIONS
         --input-mean        input mean, default is 0.000000
         --input-std         input std, default is 1.000000
         --dump-ir           dump nncase ir to .dot files
-        --dump-weigths-range
+        --dump-weights-range
                             dump weights range
 
         --input-type        input type: e.g. default, float, uint8, default
@@ -110,7 +110,7 @@ OPTIONS
 - `--output-quantize-threshold` controls the threshold whether or not to quantize conv2d and matmul's weights. If the elements count of output is smaller than the threshold, nncase will not quantize it.
 - `--no-quantized-binary` disable quantized binary ops, nncase will always use float binary ops.
 - `--dump-ir` is a debug option. When it's on, ncc will produce some `.dot` graph files to the working directory. You can use `Graphviz` or [Graphviz Online](https://dreampuf.github.io/GraphvizOnline) to view these files.
-- `--dump-weights` is a debug option. When it's on, ncc will print ranges of conv2d' weights.
+- `--dump-weights-range` is a debug option. When it's on, ncc will print ranges of conv2d' weights.
 
 `infer` command can run your kmodel, and it's often used as debug purpose. ncc will save the model's output tensors to `.bin` files in `NCHW` layout.
 - `<input file>` is your kmodel path.

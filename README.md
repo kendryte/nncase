@@ -40,6 +40,12 @@ Download prebuilt binaries from [Release](https://github.com/kendryte/nncase/rel
 
 - [Examples 例子](./examples)
 
+## Resources
+## 资源
+
+- [K210_Yolo_framework](https://github.com/zhen8838/K210_Yolo_framework)
+- [Shts! 's Blog (Japanese)](https://www.shtsno24.tokyo/2020/03/)
+
 ---
 
 ## Architecture

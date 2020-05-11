@@ -22,7 +22,7 @@ OPTIONS
         format>] [-t <target>] [--dataset <dataset path>] [--dataset-format
         <dataset format>] [--inference-type <inference type>] [--input-mean
         <input mean>] [--input-std <input std>] [--dump-ir]
-        [--dump-weigths-range] [--input-type <input type>]
+        [--dump-weights-range] [--input-type <input type>]
         [--max-allocator-solve-secs <max allocator solve secs>]
         [--calibrate-method <calibrate method>] [--weights-quantize-threshold
         <weights quantize threshold>] [--no-quantized-binary] [-v]
@@ -46,7 +46,7 @@ OPTIONS
         --input-mean        input mean, default is 0.000000
         --input-std         input std, default is 1.000000
         --dump-ir           dump nncase ir to .dot files
-        --dump-weigths-range
+        --dump-weights-range
                             dump weights range
 
         --input-type        input type: e.g. default, float, uint8, default
@@ -110,7 +110,7 @@ OPTIONS
 - `--output-quantize-threshold` 控制是否量化 conv2d 和 matmul weights 的阈值。如果输出的元素个数小于这个阈值，nncase 将不会量化它。
 - `--no-quantized-binary` 禁用 quantized binary 算子，nncase 将总是使用 float binary 算子。
 - `--dump-ir` 是一个调试选项。当它打开时 ncc 会在工作目录产生一些 `.dot` 文件。你可以使用 `Graphviz` 或 [Graphviz Online](https://dreampuf.github.io/GraphvizOnline) 来查看这些文件。
-- `--dump-weights` 是一个调试选项。当它打开时 ncc 会打印出 conv2d weights 的范围。
+- `--dump-weights-range` 是一个调试选项。当它打开时 ncc 会打印出 conv2d weights 的范围。
 
 `infer` 命令可以运行你的 kmodel，通常它被用来调试。ncc 会将你模型的输出张量按 `NCHW` 布局保存到 `.bin` 文件。
 - `<input file>` kmodel 的路径。

@@ -159,5 +159,5 @@ void nncase::codegen::gencode(codegen_context &context, xtl::span<llir::node *> 
     writer.write_array<node_header>(node_headers);
     writer.position(end_pos);
 
-    std::cout << "Main memory usage: " << context.memory_usage() << " B" << std::endl;
+    std::cout << "Working memory usage: " << context.memory_usage() << " B" << std::endl;
 }

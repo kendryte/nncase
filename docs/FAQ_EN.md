@@ -37,4 +37,4 @@
 
 3. Why I got "Out of memory" when running the model?
 
-    When you compile models, nncase will print the main memory usage which is the working memory needed to run the model. Often the model is loaded to 6MB RAM, so the total main memory usage is the working memory + size of your model.
+    When you compile models, nncase will print the working memory needed to run the model. Often the model is loaded to 6MB RAM, so the total main memory usage is the working memory + size of your model.
