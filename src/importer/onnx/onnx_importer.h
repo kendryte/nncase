@@ -104,6 +104,7 @@ namespace importer
 
         std::unordered_map<hlir::input_connector *, std::string> input_tensors_;
         std::unordered_map<std::string, hlir::output_connector *> output_tensors_;
+        std::unordered_map<std::string, std::string> passthrough_connections_;
     };
 
     template<> constexpr nncase::datatype_t onnx_importer::get_datatype<float>()

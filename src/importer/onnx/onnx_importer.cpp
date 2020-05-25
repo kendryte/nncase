@@ -147,11 +147,13 @@ void onnx_importer::import()
     decltype(input_tensors_) dangling_inputs;
     for (auto &&in : input_tensors_)
     {
-        auto out_it = output_tensors_.find(in.second);
+        auto pt_it = passthrough_connections_.find(in.second);
+        const auto& peer_name { pt_it != passthrough_connections_.end() ? pt_it->second : in.second };
+        auto out_it = output_tensors_.find(peer_name);
         if (out_it != output_tensors_.end())
             in.first->connect(*out_it->second);
         else
-            dangling_inputs.emplace(in.first, in.second);
+            dangling_inputs.emplace(in.first, peer_name);
     }
 
     // try to find and create initializers for not yet connected inputs
