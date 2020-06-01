@@ -81,7 +81,7 @@ namespace importer
         static std::string to_string(const onnx::TensorProto_DataType datatype);
         static std::string to_string(const onnx::AttributeProto_AttributeType type);
         template<typename T> static std::optional<T> get_attribute(const onnx::NodeProto &node, const std::string &name);
-	    std::optional<onnx::TensorProto> get_initializer(const std::string& name) const;
+        std::optional<onnx::TensorProto> get_initializer(const std::string& name) const;
         template<typename T, typename S> static std::vector<T> raw_to_vector(const onnx::TensorProto &tensor);
         template<typename T, typename S> static xt::xarray<T> raw_to(const onnx::TensorProto &tensor);
         template<typename T> static T to(const onnx::TensorProto &tensor);
@@ -120,8 +120,8 @@ namespace importer
         return nncase::dt_uint8;
     }
 
-	template<typename T>
-	std::optional<std::vector<T>> onnx_importer::get_constant_input_data(const std::string& name) const
+    template<typename T>
+    std::optional<std::vector<T>> onnx_importer::get_constant_input_data(const std::string& name) const
     {
         const auto it { output_tensors_.find(name) };
 
@@ -144,13 +144,13 @@ namespace importer
         result.reserve(size);
 
         std::transform(ptr, ptr + size, std::back_inserter(result),
-	        [](const auto& e) { return e; });
+            [](const auto& e) { return e; });
 
         return result;
     }
 
-	template<class Cont>
-	xtl::span<const std::uint8_t> onnx_importer::span_from(const Cont& data)
+    template<class Cont>
+    xtl::span<const std::uint8_t> onnx_importer::span_from(const Cont& data)
     {
         return xtl::span<const std::uint8_t>
         {
