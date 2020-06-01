@@ -95,6 +95,7 @@ namespace importer
         static std::vector<padding> parse_padding(const hlir::axis_t& padding_value);
 
         template<typename T> std::optional<std::vector<T>> get_constant_input_data(const std::string& name) const;
+        template<typename T> hlir::constant* emplace_constant(const std::optional<T>& v);
 
         template<class Cont> static xtl::span<const std::uint8_t> span_from(const Cont& data);
 
@@ -159,6 +160,7 @@ namespace importer
         };
     }
 
+    template<> hlir::constant* onnx_importer::emplace_constant<onnx::TensorProto>(const std::optional<onnx::TensorProto>& v);
     template<> std::optional<float> onnx_importer::get_attribute<float>(const onnx::NodeProto &node, const std::string &name);
     template<> std::optional<std::int64_t> onnx_importer::get_attribute<std::int64_t>(const onnx::NodeProto &node, const std::string &name);
     template<> std::optional<int> onnx_importer::get_attribute<int>(const onnx::NodeProto &node, const std::string &name);
