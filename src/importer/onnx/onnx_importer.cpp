@@ -144,17 +144,25 @@ void onnx_importer::import()
     }
 
     // connect tensors
+    decltype(input_tensors_) dangling_inputs;
     for (auto &&in : input_tensors_)
     {
         auto out_it = output_tensors_.find(in.second);
         if (out_it != output_tensors_.end())
-        {
             in.first->connect(*out_it->second);
-        }
         else
-        {
-            throw runtime_error("Cannot find associated output node for input " + string(in.second));
-        }
+            dangling_inputs.emplace(in.first, in.second);
+    }
+
+    // try to find and create initializers for not yet connected inputs
+    for (auto&& in : dangling_inputs)
+    {
+        auto init_node { emplace_constant(get_initializer(in.second)) };
+
+        if (init_node)
+            in.first->connect(init_node->output());
+        else
+            throw runtime_error("Cannot find associated output node, graph input or initializer for input " + in.second);
     }
 }
 
