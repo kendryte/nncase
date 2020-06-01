@@ -102,8 +102,8 @@ namespace importer
         hlir::graph &graph_;
         onnx::ModelProto model_;
 
-        std::unordered_map<hlir::input_connector *, std::string_view> input_tensors_;
-        std::unordered_map<std::string_view, hlir::output_connector *> output_tensors_;
+        std::unordered_map<hlir::input_connector *, std::string> input_tensors_;
+        std::unordered_map<std::string, hlir::output_connector *> output_tensors_;
     };
 
     template<> constexpr nncase::datatype_t onnx_importer::get_datatype<float>()
