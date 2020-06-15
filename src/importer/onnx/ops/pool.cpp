@@ -62,12 +62,12 @@ void onnx_importer::convert_op_GlobalAveragePool(const NodeProto& node)
 
 void onnx_importer::convert_op_MaxPool(const NodeProto& node)
 {
-    convert_pool<>(node, reduce_max, 0.f);
+    convert_pool<>(node, reduce_max, numeric_limits<float>::lowest());
 }
 
 void onnx_importer::convert_op_GlobalMaxPool(const NodeProto& node)
 {
-    convert_pool<true>(node, reduce_max, 0.f);
+    convert_pool<true>(node, reduce_max, numeric_limits<float>::lowest());
 }
 
 template<bool global> void onnx_importer::convert_pool(const NodeProto& node, const reduce_op_t reduce_op, const float init_value)
