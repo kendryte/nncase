@@ -29,6 +29,51 @@ using namespace nncase::hlir;
 
 using namespace onnx;
 
+template<> constant* onnx_importer::emplace_constant<TensorProto>(const optional<TensorProto>& value)
+{
+    if (!value)
+        return nullptr;
+
+    const auto& v { value.value() };
+    shape_t shape { get_shape(v) };
+    const auto value_dt { get_datatype(v) };
+
+    TensorProto_DataType tensor_element_type { v.data_type() };
+
+    switch (tensor_element_type)
+    {
+    case TensorProto_DataType_UINT8:
+    {
+        const auto& data { to<xt::xarray<uint8_t>>(v) };
+        xtl::span<const uint8_t> vec { data };
+        return graph_.emplace<constant>(value_dt.value(), move(shape), vec);
+    }
+
+    case TensorProto_DataType_FLOAT:
+    {
+        const auto& data { to<xt::xarray<float>>(v) };
+        return graph_.emplace<constant>(value_dt.value(), move(shape), span_from(data));
+    }
+
+    case TensorProto_DataType_UINT16:
+    case TensorProto_DataType_INT16:
+    case TensorProto_DataType_INT32:
+    case TensorProto_DataType_INT64:
+    {
+        if (tensor_element_type == TensorProto_DataType_INT32 || tensor_element_type == TensorProto_DataType_INT64)
+        {
+            cout << "Constants of types int32 and int64 are represented as float32 and may suffer rounding errors if mantissa width is exceeded" << endl;
+        }
+
+        const auto& data { convert_to<xt::xarray<float>>(v) };
+        return graph_.emplace<constant>(dt_float32, move(shape), span_from(data));
+    }
+
+    default:
+        throw runtime_error("Data type \"" +  to_string(tensor_element_type) + "\" not supported");
+    }
+}
+
 void onnx_importer::convert_op_Constant(const NodeProto &node)
 {
     assert(node.input().size() == 0);
@@ -39,47 +84,7 @@ void onnx_importer::convert_op_Constant(const NodeProto &node)
     hlir::constant* op { };
     if (const auto value { get_attribute<TensorProto>(node, "value") })
     {
-        const auto& v { value.value() };
-        shape_t shape { get_shape(v) };
-        const auto value_dt { get_datatype(v) };
-
-        TensorProto_DataType tensor_element_type { v.data_type() };
-
-        switch (tensor_element_type)
-        {
-        case TensorProto_DataType_UINT8:
-        {
-            const auto& data { to<xt::xarray<uint8_t>>(v) };
-            xtl::span<const uint8_t> vec { data };
-            op = graph_.emplace<constant>(value_dt.value(), move(shape), vec);
-            break;
-        }
-
-        case TensorProto_DataType_FLOAT:
-        {
-            const auto& data { to<xt::xarray<float>>(v) };
-            op = graph_.emplace<constant>(value_dt.value(), move(shape), span_from(data));
-            break;
-        }
-
-        case TensorProto_DataType_UINT16:
-        case TensorProto_DataType_INT16:
-        case TensorProto_DataType_INT32:
-        case TensorProto_DataType_INT64:
-        {
-            if (tensor_element_type == TensorProto_DataType_INT32 || tensor_element_type == TensorProto_DataType_INT64)
-            {
-                cout << "Constants of types int32 and int64 are represented as float32 and may suffer rounding errors if mantissa width is exceeded" << endl;
-            }
-
-            const auto& data { convert_to<xt::xarray<float>>(v) };
-            op = graph_.emplace<constant>(dt_float32, move(shape), span_from(data));
-            break;
-        }
-
-        default:
-            throw runtime_error("Data type \"" +  to_string(tensor_element_type) + "\" not supported");
-        }
+        op = emplace_constant(value);
     }
     else if (const auto value { get_attribute<float>(node, "value_float") })
     {

@@ -14,6 +14,7 @@
  */
 #pragma once
 #include <xtl/xspan.hpp>
+#include <cstring>
 
 namespace nncase
 {
@@ -33,6 +34,15 @@ namespace runtime
         T read()
         {
             auto value = *reinterpret_cast<const T *>(span_.data());
+            advance(sizeof(T));
+            return value;
+        }
+
+        template <class T>
+        T read_unaligned()
+        {
+            T value;
+            std::memcpy(&value, span_.data(), sizeof(T));
             advance(sizeof(T));
             return value;
         }

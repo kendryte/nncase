@@ -144,17 +144,27 @@ void onnx_importer::import()
     }
 
     // connect tensors
+    decltype(input_tensors_) dangling_inputs;
     for (auto &&in : input_tensors_)
     {
-        auto out_it = output_tensors_.find(in.second);
+        auto pt_it = passthrough_connections_.find(in.second);
+        const auto& peer_name { pt_it != passthrough_connections_.end() ? pt_it->second : in.second };
+        auto out_it = output_tensors_.find(peer_name);
         if (out_it != output_tensors_.end())
-        {
             in.first->connect(*out_it->second);
-        }
         else
-        {
-            throw runtime_error("Cannot find associated output node for input " + string(in.second));
-        }
+            dangling_inputs.emplace(in.first, peer_name);
+    }
+
+    // try to find and create initializers for not yet connected inputs
+    for (auto&& in : dangling_inputs)
+    {
+        auto init_node { emplace_constant(get_initializer(in.second)) };
+
+        if (init_node)
+            in.first->connect(init_node->output());
+        else
+            throw runtime_error("Cannot find associated output node, graph input or initializer for input " + in.second);
     }
 }
 
@@ -200,7 +210,7 @@ shape_t onnx_importer::get_shape(const string &value) const
 
     const auto initializer { get_initializer(value) };
     if (initializer)
-	    return get_shape(initializer.value());
+        return get_shape(initializer.value());
 
     throw runtime_error("Can't find value info for " + value + " to parse its shape");
 }
@@ -253,7 +263,7 @@ optional<datatype_t> onnx_importer::get_datatype(const string &value) const
 
     const auto initializer { get_initializer(value) };
     if (initializer)
-	    return get_datatype(initializer.value());
+        return get_datatype(initializer.value());
 
     return optional<datatype_t> { };
 }
@@ -300,7 +310,7 @@ optional<datatype_t> onnx_importer::get_datatype(const AttributeProto_AttributeT
         return dt_uint8;
 
     default:
-	    return optional<datatype_t> { };
+        return optional<datatype_t> { };
     }
 }
 
@@ -514,14 +524,14 @@ template<> optional<vector<string>> onnx_importer::get_attribute<vector<string>>
 
 template<> optional<axis_t> onnx_importer::get_attribute<axis_t>(const onnx::NodeProto& node, const string &value)
 {
-	const auto& extracted { get_attribute<vector<int>>(node, value) };
+    const auto& extracted { get_attribute<vector<int>>(node, value) };
 
-	if (!extracted)
-		return optional<axis_t> { };
+    if (!extracted)
+        return optional<axis_t> { };
 
-	axis_t result { begin(extracted.value()), end(extracted.value()) };
+    axis_t result { begin(extracted.value()), end(extracted.value()) };
 
-	return result;
+    return result;
 }
 
 optional<TensorProto> onnx_importer::get_initializer(const string &value) const
@@ -581,12 +591,12 @@ template<> uint8_t onnx_importer::to<uint8_t>(const onnx::TensorProto &tensor)
 
 template<> axis_t onnx_importer::to<axis_t>(const onnx::TensorProto &tensor)
 {
-	assert(tensor.data_type() == tensor_type<std::uint8_t> ||
-		tensor.data_type() == tensor_type<std::int8_t> ||
-		tensor.data_type() == tensor_type<std::int16_t> ||
-		tensor.data_type() == tensor_type<std::uint16_t> ||
-		tensor.data_type() == tensor_type<std::int32_t> ||
-		tensor.data_type() == tensor_type<std::int64_t>);
+    assert(tensor.data_type() == tensor_type<std::uint8_t> ||
+        tensor.data_type() == tensor_type<std::int8_t> ||
+        tensor.data_type() == tensor_type<std::int16_t> ||
+        tensor.data_type() == tensor_type<std::uint16_t> ||
+        tensor.data_type() == tensor_type<std::int32_t> ||
+        tensor.data_type() == tensor_type<std::int64_t>);
 
     if (!tensor.int32_data().empty())
     {
@@ -641,11 +651,11 @@ template<> xt::xarray<float> onnx_importer::to<xt::xarray<float>>(const onnx::Te
 
     if (!tensor.float_data().empty())
     {
-	    return xt::adapt(vector<float> { begin(tensor.float_data()), end(tensor.float_data()) }, get_shape(tensor));
+        return xt::adapt(vector<float> { begin(tensor.float_data()), end(tensor.float_data()) }, get_shape(tensor));
     }
     else
     {
-	    return raw_to<float, float>(tensor);
+        return raw_to<float, float>(tensor);
     }
 }
 
@@ -655,11 +665,11 @@ template<> xt::xarray<uint8_t> onnx_importer::to<xt::xarray<uint8_t>>(const onnx
 
     if (!tensor.int32_data().empty())
     {
-	    return xt::adapt(vector<uint8_t> { begin(tensor.int32_data()), end(tensor.int32_data()) }, get_shape(tensor));
+        return xt::adapt(vector<uint8_t> { begin(tensor.int32_data()), end(tensor.int32_data()) }, get_shape(tensor));
     }
     else
     {
-	    typedef uint8_t target_type;
+        typedef uint8_t target_type;
         const target_type* const ptr { reinterpret_cast<const target_type*>(tensor.raw_data().data()) };
         const size_t size { tensor.raw_data().size() / sizeof(target_type) };
         return xt::adapt(vector<target_type> { ptr, ptr + size }, get_shape(tensor));
@@ -673,12 +683,12 @@ template<> xt::xarray<float> onnx_importer::convert_to<xt::xarray<float>>(const 
 
     if (!tensor.int32_data().empty())
     {
-	    return xt::adapt(vector<float> {begin(tensor.int32_data()), end(tensor.int32_data()) }, get_shape(tensor));
+        return xt::adapt(vector<float> {begin(tensor.int32_data()), end(tensor.int32_data()) }, get_shape(tensor));
     }
 
     if (!tensor.int64_data().empty())
     {
-	    return xt::adapt(vector<float> {begin(tensor.int64_data()), end(tensor.int64_data()) }, get_shape(tensor));
+        return xt::adapt(vector<float> {begin(tensor.int64_data()), end(tensor.int64_data()) }, get_shape(tensor));
     }
 
     switch (tensor.data_type())
