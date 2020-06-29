@@ -127,7 +127,7 @@ namespace runtime
             switch (op.opcode)
             {
             case nnil_ldc_r4:
-                op.ldc_r4 = reader_.read<nnil_ldc_r4_t>();
+                op.ldc_r4 = reader_.read_unaligned<nnil_ldc_r4_t>();
                 break;
             default:
                 break;

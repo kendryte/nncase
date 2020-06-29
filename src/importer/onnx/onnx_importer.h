@@ -61,7 +61,7 @@ namespace importer
         void convert_unary(const onnx::NodeProto &node, const unary_op_t unary_op);
         void convert_binary(const onnx::NodeProto &node, const binary_op_t binary_op);
 
-        void convert_pool(const onnx::NodeProto &node, const reduce_op_t reduce_op, const float initial_value);
+        template <bool global = false> void convert_pool(const onnx::NodeProto &node, const reduce_op_t reduce_op, const float initial_value);
         void convert_reduce(const onnx::NodeProto &node, const reduce_op_t reduce_op, const float initial_value);
         template<class Node> void convert_conv(const onnx::NodeProto &node);
 
@@ -81,7 +81,7 @@ namespace importer
         static std::string to_string(const onnx::TensorProto_DataType datatype);
         static std::string to_string(const onnx::AttributeProto_AttributeType type);
         template<typename T> static std::optional<T> get_attribute(const onnx::NodeProto &node, const std::string &name);
-	    std::optional<onnx::TensorProto> get_initializer(const std::string& name) const;
+        std::optional<onnx::TensorProto> get_initializer(const std::string& name) const;
         template<typename T, typename S> static std::vector<T> raw_to_vector(const onnx::TensorProto &tensor);
         template<typename T, typename S> static xt::xarray<T> raw_to(const onnx::TensorProto &tensor);
         template<typename T> static T to(const onnx::TensorProto &tensor);
@@ -95,14 +95,16 @@ namespace importer
         static std::vector<padding> parse_padding(const hlir::axis_t& padding_value);
 
         template<typename T> std::optional<std::vector<T>> get_constant_input_data(const std::string& name) const;
+        template<typename T> hlir::constant* emplace_constant(const std::optional<T>& v);
 
         template<class Cont> static xtl::span<const std::uint8_t> span_from(const Cont& data);
 
         hlir::graph &graph_;
         onnx::ModelProto model_;
 
-        std::unordered_map<hlir::input_connector *, std::string_view> input_tensors_;
-        std::unordered_map<std::string_view, hlir::output_connector *> output_tensors_;
+        std::unordered_map<hlir::input_connector *, std::string> input_tensors_;
+        std::unordered_map<std::string, hlir::output_connector *> output_tensors_;
+        std::unordered_map<std::string, std::string> passthrough_connections_;
     };
 
     template<> constexpr nncase::datatype_t onnx_importer::get_datatype<float>()
@@ -120,8 +122,8 @@ namespace importer
         return nncase::dt_uint8;
     }
 
-	template<typename T>
-	std::optional<std::vector<T>> onnx_importer::get_constant_input_data(const std::string& name) const
+    template<typename T>
+    std::optional<std::vector<T>> onnx_importer::get_constant_input_data(const std::string& name) const
     {
         const auto it { output_tensors_.find(name) };
 
@@ -144,13 +146,13 @@ namespace importer
         result.reserve(size);
 
         std::transform(ptr, ptr + size, std::back_inserter(result),
-	        [](const auto& e) { return e; });
+            [](const auto& e) { return e; });
 
         return result;
     }
 
-	template<class Cont>
-	xtl::span<const std::uint8_t> onnx_importer::span_from(const Cont& data)
+    template<class Cont>
+    xtl::span<const std::uint8_t> onnx_importer::span_from(const Cont& data)
     {
         return xtl::span<const std::uint8_t>
         {
@@ -159,6 +161,7 @@ namespace importer
         };
     }
 
+    template<> hlir::constant* onnx_importer::emplace_constant<onnx::TensorProto>(const std::optional<onnx::TensorProto>& v);
     template<> std::optional<float> onnx_importer::get_attribute<float>(const onnx::NodeProto &node, const std::string &name);
     template<> std::optional<std::int64_t> onnx_importer::get_attribute<std::int64_t>(const onnx::NodeProto &node, const std::string &name);
     template<> std::optional<int> onnx_importer::get_attribute<int>(const onnx::NodeProto &node, const std::string &name);
