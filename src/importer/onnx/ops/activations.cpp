@@ -61,14 +61,15 @@ void onnx_importer::convert_op_LeakyRelu(const NodeProto &node)
     auto&& in_shape = get_shape(input);
 
     const auto alpha_value { get_attribute<float>(node, "alpha").value() };
-    const auto& alpha { graph_.emplace<constant>(get_datatype<float>(), alpha_value) };
+    const auto& alpha { graph_.emplace<constant>(alpha_value) };
 
-    auto mul = graph_.emplace<binary>(binary_mul, move(in_shape), alpha->output().shape(), value_range<float>::full());
-    auto max = graph_.emplace<binary>(binary_max, move(in_shape), mul->output().shape(), value_range<float>::full());
+    auto mul = graph_.emplace<binary>(binary_mul, in_shape, alpha->output().shape(), value_range<float>::full());
+    auto max = graph_.emplace<binary>(binary_max, in_shape, mul->output().shape(), value_range<float>::full());
 
     mul->input_b().connect(alpha->output());
     max->input_b().connect(mul->output());
 
+    input_tensors_.emplace(&mul->input_a(), input);
     input_tensors_.emplace(&max->input_a(), input);
     output_tensors_.emplace(output, &max->output());
 }
