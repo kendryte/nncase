@@ -23,7 +23,6 @@
 #include <hlir/ops/reduce.h>
 #include <hlir/ops/unary.h>
 
-
 using namespace std;
 
 using namespace nncase;
@@ -40,7 +39,7 @@ void onnx_importer::convert_op_Relu(const NodeProto &node)
     const auto &input { node.input()[0] };
     const auto &output { node.output()[0] };
 
-    auto&& in_shape = get_shape(input);
+    auto &&in_shape = get_shape(input);
 
     auto zero { graph_.emplace<constant>(0.f) };
     auto max { graph_.emplace<binary>(binary_max, move(in_shape), zero->output().shape(), value_range<float>::full()) };
@@ -58,10 +57,37 @@ void onnx_importer::convert_op_LeakyRelu(const NodeProto &node)
 
     const auto &input { node.input()[0] };
     const auto &output { node.output()[0] };
-    auto&& in_shape = get_shape(input);
+    auto &&in_shape = get_shape(input);
 
     const auto alpha_value { get_attribute<float>(node, "alpha").value() };
     const auto& alpha { graph_.emplace<constant>(alpha_value) };
+
+    auto mul = graph_.emplace<binary>(binary_mul, in_shape, alpha->output().shape(), value_range<float>::full());
+    auto max = graph_.emplace<binary>(binary_max, in_shape, mul->output().shape(), value_range<float>::full());
+
+    mul->input_b().connect(alpha->output());
+    max->input_b().connect(mul->output());
+
+    input_tensors_.emplace(&mul->input_a(), input);
+    input_tensors_.emplace(&max->input_a(), input);
+    output_tensors_.emplace(output, &max->output());
+}
+
+void onnx_importer::convert_op_PRelu(const NodeProto &node)
+{
+    assert(node.output().size() == 1);
+
+    const auto &input { node.input()[0] };
+    const auto &output { node.output()[0] };
+    const auto &slope { node.input()[1] };
+
+    auto &&in_shape = get_shape(input);
+    auto &&slope_shape { get_shape(slope) };
+    const auto initializer_value = get_initializer(slope);
+    xt::xarray<float> &&slope_value { xt::zeros<float>(slope_shape) };
+    slope_value = to<xt::xarray<float>>(initializer_value.value());
+    const auto &alpha { graph_.emplace<constant>(get_datatype<float>(), slope_shape, span_from(slope_value)) };
+    xt::xarray<float> &&zero_value { xt::zeros<float>(in_shape) };
 
     auto mul = graph_.emplace<binary>(binary_mul, in_shape, alpha->output().shape(), value_range<float>::full());
     auto max = graph_.emplace<binary>(binary_max, in_shape, mul->output().shape(), value_range<float>::full());
