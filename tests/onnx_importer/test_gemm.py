@@ -13,10 +13,10 @@ output_size = [1, 3, 2, 2]
 class GemmModule(torch.nn.Module):
     def __init__(self):
         super(GemmModule, self).__init__()
-        self.c = torch.tensor([[4, 5], [7, 8]], dtype=torch.float32)
+        self.c = torch.tensor([[4, 5, 6], [7, 8, 9]], dtype=torch.float32)
 
     def forward(self, x):
-        return torch.mm(x.squeeze(dim=0), self.c)
+        return torch.mm(x.reshape([3, 2]), self.c)
 
 module = GemmModule()
 
