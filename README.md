@@ -44,7 +44,7 @@ Download prebuilt binaries from [Release](https://github.com/kendryte/nncase/rel
 ## 资源
 
 - [K210_Yolo_framework](https://github.com/zhen8838/K210_Yolo_framework)
-- [Shts! 's Blog (Japanese)](https://www.shtsno24.tokyo/2020/03/)
+- [Shts! 's Blog (Japanese)](https://www.shtsno24.tokyo/2020/03/nncase-v020.html)
 
 ---
 
