@@ -129,8 +129,8 @@ graph import(const compile_options &options)
         return import_paddle(model, boost::filesystem::path(options.input_filename).parent_path());
     else if (options.input_format == "caffe")
         return import_caffe(model);
-    else if (options.input_format == "onnx")
-        return import_onnx(model);
+    //else if (options.input_format == "onnx")
+    //    return import_onnx(model);
     else
         throw std::invalid_argument("Invalid input format: " + options.input_format);
 }

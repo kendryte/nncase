@@ -2,20 +2,17 @@
 cmake
 
 [requires]
-zlib/1.2.11@conan/stable
-opencv/4.1.1@conan/stable
-range-v3/0.5.0@ericniebler/stable
-flatbuffers/1.11.0@google/stable
-protobuf/3.8.0@sunnycase/testing
-ortools/7.3@sunnycase/testing
+zlib/1.2.11
+opencv/4.5.0
+flatbuffers/1.12.0
+flatc/1.12.0
+protobuf/3.13.0
 boost/1.71.0@conan/stable
 
 [options]
-opencv:protobuf=False
-opencv:freetype=False
-opencv:harfbuzz=False
-opencv:webp=False
-opencv:openexr=False
-opencv:dc1394=False
+opencv:contrib=False
+opencv:with_webp=False
+opencv:with_openexr=False
+opencv:with_eigen=False
 
 [imports]

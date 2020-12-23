@@ -35,7 +35,7 @@ set(SRCS tflite/tflite_importer.cpp
          caffe/ops/softmax.cpp
          caffe/ops/slice.cpp)
 
-add_subdirectory(onnx)
+#add_subdirectory(onnx)
 
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 PROTOBUF_GENERATE_CPP(PROTO_SRCS PROTO_HDRS paddle/framework.proto caffe/caffe.proto)
@@ -45,4 +45,4 @@ add_library(importer STATIC ${SRCS} ${PROTO_SRCS} ${TFLITE_FB_OUTPUTS})
 target_include_directories(importer PUBLIC include)
 target_link_libraries(importer PUBLIC hlir CONAN_PKG::boost)
 target_link_libraries(importer PRIVATE CONAN_PKG::flatbuffers CONAN_PKG::protobuf)
-target_link_libraries(importer PRIVATE onnx_importer)
+#target_link_libraries(importer PRIVATE onnx_importer)

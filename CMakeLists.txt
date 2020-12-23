@@ -20,7 +20,7 @@ conan_cmake_run(CONANFILE conanfile.txt
                 BASIC_SETUP CMAKE_TARGETS
                 SETTINGS compiler.cppstd=17
                 BUILD missing)
-include(ExternalProject)
+
 find_package(Protobuf REQUIRED)
 include(cmake/flatc.cmake)
 

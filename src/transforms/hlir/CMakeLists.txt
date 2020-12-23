@@ -31,4 +31,3 @@ set(SRCS transform.cpp
 add_library(hlir_transforms STATIC ${SRCS})
 target_include_directories(hlir_transforms PUBLIC ../include)
 target_link_libraries(hlir_transforms PUBLIC hlir evaluator)
-target_link_libraries(hlir_transforms PRIVATE CONAN_PKG::range-v3)
