@@ -2,17 +2,22 @@
 cmake
 
 [requires]
-zlib/1.2.11
-opencv/4.5.0
 flatbuffers/1.12.0
 flatc/1.12.0
-protobuf/3.13.0
-boost/1.71.0@conan/stable
+fmt/7.1.3
+gsl-lite/0.37.0
+gtest/1.10.0
+lyra/1.5.0
+magic_enum/0.7.0
+nlohmann_json/3.9.1
+#opencv/4.5.0
+pybind11/2.6.1
+xtensor/0.21.5
 
 [options]
-opencv:contrib=False
-opencv:with_webp=False
-opencv:with_openexr=False
-opencv:with_eigen=False
+#opencv:contrib=False
+#opencv:with_webp=False
+#opencv:with_openexr=False
+#opencv:with_eigen=False
 
 [imports]

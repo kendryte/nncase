@@ -1,0 +1,2 @@
+#define NNCASE_VERSION "1.0.0"
+#define NNCASE_GIT_DESC "${GIT_DESC}"

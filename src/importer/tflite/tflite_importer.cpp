@@ -13,15 +13,14 @@
  * limitations under the License.
  */
 #include "tflite_importer.h"
-#include <hlir/ops/constant.h>
-#include <importer/importer.h>
+#include <nncase/ir/ops/constant.h>
 
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::hlir;
+using namespace nncase::ir;
 using namespace flatbuffers;
 
-tflite_importer::tflite_importer(xtl::span<const uint8_t> model, graph &graph)
+tflite_importer::tflite_importer(std::span<const uint8_t> model, graph &graph)
     : model_(tflite::GetModel(model.data())), subgraph_(model_->subgraphs()->Get(0)), graph_(graph)
 {
     flatbuffers::Verifier verifier(model.data(), model.size());
@@ -29,11 +28,13 @@ tflite_importer::tflite_importer(xtl::span<const uint8_t> model, graph &graph)
         throw std::runtime_error("Invalid tflite model");
 }
 
-void tflite_importer::import()
+void tflite_importer::import(const import_options &options)
 {
     auto &operators = *subgraph_->operators();
     for (auto &&op : operators)
+    {
         convert_op(*op);
+    }
 
     std::unordered_map<int32_t, output_connector *> created_inputs;
     std::unordered_map<int32_t, input_connector *> created_outputs;
@@ -47,9 +48,11 @@ void tflite_importer::import()
         // image
         if (shape.size() == 4)
         {
-            auto node = graph_.emplace<input_node>(type, nhwc_to_nchw(shape));
+            auto trans = nhwc_to_nchw(shape);
+            auto node = graph_.emplace<input_node>(type, trans);
             node->name(tensor.name()->string_view());
             auto sur_trans = nchw_to_nhwc(node->output().type(), node->output().shape());
+            sur_trans->name(tensor.name()->string_view());
             sur_trans->input().connect(node->output());
             created_inputs.emplace(in, &sur_trans->output());
         }
@@ -61,8 +64,42 @@ void tflite_importer::import()
         }
     }
 
+    std::vector<int32_t> outputs;
+    if (options.output_arrays.empty())
+    {
+        for (auto &&out : *subgraph_->outputs())
+        {
+            outputs.emplace_back(out);
+        }
+    }
+    else
+    {
+        for (auto &&name : options.output_arrays)
+        {
+            bool found = false;
+            size_t i = 0;
+            for (auto &&t : *subgraph_->tensors())
+            {
+                auto t_name = t->name();
+                if (t_name && t_name->string_view() == name)
+                {
+                    outputs.emplace_back(i);
+                    found = true;
+                    break;
+                }
+
+                i++;
+            }
+
+            if (!found)
+            {
+                throw std::runtime_error("Cannot find output tensor: " + name);
+            }
+        }
+    }
+
     // create outputs
-    for (auto &&out : *subgraph_->outputs())
+    for (auto &&out : outputs)
     {
         auto &tensor = *subgraph_->tensors()->Get(out);
         auto shape = get_shape(tensor.shape());
@@ -71,6 +108,7 @@ void tflite_importer::import()
         if (shape.size() == 4)
         {
             auto pre_trans = nhwc_to_nchw(type, shape);
+            pre_trans->name(tensor.name()->string_view());
             auto node = graph_.emplace<output_node>(pre_trans->output().type(), pre_trans->output().shape());
             node->name(tensor.name()->string_view());
             node->input().connect(pre_trans->output());
@@ -102,8 +140,9 @@ void tflite_importer::import()
             {
                 auto type = to_data_type(tensor.type());
                 auto shape = get_shape(tensor.shape());
-                auto con = graph_.emplace<constant>(type, shape, std::vector<uint8_t>(data->begin(), data->end()));
-                output_tensors_.emplace(in.second, &con->output());
+                auto con = graph_.emplace<constant>(type, shape, std::as_bytes(std::span(data->data(), data->data() + data->size())));
+                con->name(tensor.name()->string_view());
+                link_output_tensor(in.second, &con->output());
                 in.first->connect(con->output());
             }
         }
@@ -122,12 +161,14 @@ void tflite_importer::import()
     // outputs
     for (auto &&out : output_tensors_)
     {
-        if (out.second->connections().empty())
+        auto in = created_outputs.find(out.first);
+        if (in != created_outputs.end())
         {
-            auto in = created_outputs.at(out.first);
-            in->connect(*out.second);
+            in->second->connect(*out.second);
         }
     }
+
+    graph_.collect();
 }
 
 void tflite_importer::convert_op(const tflite::Operator &op)
@@ -141,12 +182,5 @@ void tflite_importer::convert_op(const tflite::Operator &op)
 #include "opcode.def"
 #undef DEFINE_OPCODE
 
-    throw std::runtime_error(std::string("Not supported tflite opcode: ") + tflite::EnumNameBuiltinOperator(builtin_code));
-}
-
-graph nncase::importer::import_tflite(xtl::span<const uint8_t> model)
-{
-    graph graph;
-    tflite_importer(model, graph).import();
-    return graph;
+    throw std::runtime_error(std::string(__FILE__) + std::string("Not supported tflite opcode: ") + tflite::EnumNameBuiltinOperator(builtin_code));
 }

@@ -1,4 +1,4 @@
-/* Copyright 2019-2020 Canaan Inc.
+/* Copyright 2020 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,28 +13,52 @@
  * limitations under the License.
  */
 #include "../tflite_importer.h"
-#include <hlir/ops/binary.h>
-#include <hlir/ops/clamp.h>
-#include <hlir/ops/constant.h>
-#include <hlir/ops/reduce.h>
-#include <hlir/ops/unary.h>
+#include <nncase/ir/ops/binary.h>
+#include <nncase/ir/ops/clamp.h>
+#include <nncase/ir/ops/constant.h>
+#include <nncase/ir/ops/reduce.h>
+#include <nncase/ir/ops/unary.h>
 
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::hlir;
+using namespace nncase::ir;
 
 DEFINE_TFLITE_LOWER(RELU)
 {
     auto &input = get_tensor(op.inputs(), 0);
+    auto &output = get_tensor(op.outputs(), 0);
     auto in_shape = get_shape(input.shape());
 
     auto zero = graph_.emplace<constant>(0.f);
+    zero->name(get_tensor(op.outputs(), 0).name()->string_view());
     auto max = graph_.emplace<binary>(binary_max, in_shape, zero->output().shape(), value_range<float>::full());
-
+    max->name(get_tensor(op.outputs(), 0).name()->string_view());
     max->input_b().connect(zero->output());
+    if (input.type() != tflite::TensorType_FLOAT32)
+    {
+        quant_param_t input_dequant_paras;
+        input_dequant_paras.scale = to_vector(*input.quantization()->scale());
+        input_dequant_paras.zero_point = to_vector(*input.quantization()->zero_point());
+        quant_param_t output_quant_paras;
+        output_quant_paras.scale = to_vector(*output.quantization()->scale());
+        output_quant_paras.zero_point = to_vector(*output.quantization()->zero_point());
+        auto input_dequant = graph_.emplace<dequantize>(to_data_type(input.type()), get_shape(input.shape()), input_dequant_paras);
+        auto output_quant = graph_.emplace<quantize>(get_shape(output.shape()), to_data_type(output.type()), output_quant_paras);
+        input_dequant->name(std::string(output.name()->string_view()) + "/input_dequant");
+        output_quant->name(std::string(output.name()->string_view()) + "/output_quant");
 
-    input_tensors_.emplace(&max->input_a(), op.inputs()->Get(0));
-    output_tensors_.emplace(op.outputs()->Get(0), &max->output());
+        max->input_a().connect(input_dequant->output());
+        output_quant->input().connect(max->output());
+
+        link_input_tensor(&input_dequant->input(), op.inputs()->Get(0));
+        link_output_tensor(op.outputs()->Get(0), &output_quant->output());
+    }
+    else
+    {
+
+        link_input_tensor(&max->input_a(), op.inputs()->Get(0));
+        link_output_tensor(op.outputs()->Get(0), &max->output());
+    }
 }
 
 DEFINE_TFLITE_LOWER(RELU6)
@@ -46,27 +70,59 @@ DEFINE_TFLITE_LOWER(RELU6)
     auto six = graph_.emplace<constant>(6.f);
     auto cl = graph_.emplace<clamp>(in_shape, zero->output().shape(), six->output().shape());
 
+    zero->name(get_tensor(op.outputs(), 0).name()->string_view());
+    six->name(get_tensor(op.outputs(), 0).name()->string_view());
+    cl->name(get_tensor(op.outputs(), 0).name()->string_view());
+
     cl->input_low().connect(zero->output());
     cl->input_high().connect(six->output());
 
-    input_tensors_.emplace(&cl->input(), op.inputs()->Get(0));
-    output_tensors_.emplace(op.outputs()->Get(0), &cl->output());
+    link_input_tensor(&cl->input(), op.inputs()->Get(0));
+    link_output_tensor(op.outputs()->Get(0), &cl->output());
 }
 
 DEFINE_TFLITE_LOWER(LEAKY_RELU)
 {
     auto &input = get_tensor(op.inputs(), 0);
+    auto &output = get_tensor(op.outputs(), 0);
     auto &options = *op.builtin_options_as_LeakyReluOptions();
     auto in_shape = get_shape(input.shape());
 
     auto alpha = graph_.emplace<constant>(options.alpha());
     auto mul = graph_.emplace<binary>(binary_mul, in_shape, alpha->output().shape(), value_range<float>::full());
     auto max = graph_.emplace<binary>(binary_max, in_shape, mul->output().shape(), value_range<float>::full());
+    alpha->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/alpha");
+    mul->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/mul");
+    max->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/max");
 
-    mul->input_b().connect(alpha->output());
-    max->input_b().connect(mul->output());
+    if (input.type() != tflite::TensorType_FLOAT32)
+    {
+        quant_param_t input_dequant_paras;
+        input_dequant_paras.scale = to_vector(*input.quantization()->scale());
+        input_dequant_paras.zero_point = to_vector(*input.quantization()->zero_point());
+        quant_param_t output_quant_paras;
+        output_quant_paras.scale = to_vector(*output.quantization()->scale());
+        output_quant_paras.zero_point = to_vector(*output.quantization()->zero_point());
+        auto input_dequant = graph_.emplace<dequantize>(to_data_type(input.type()), get_shape(input.shape()), input_dequant_paras);
+        auto output_quant = graph_.emplace<quantize>(get_shape(output.shape()), to_data_type(output.type()), output_quant_paras);
+        input_dequant->name(std::string(output.name()->string_view()) + "/input_dequant");
+        output_quant->name(std::string(output.name()->string_view()) + "/output_quant");
+        mul->input_b().connect(alpha->output());
+        mul->input_a().connect(input_dequant->output());
+        max->input_b().connect(mul->output());
+        max->input_a().connect(input_dequant->output());
+        output_quant->input().connect(max->output());
 
-    input_tensors_.emplace(&mul->input_a(), op.inputs()->Get(0));
-    input_tensors_.emplace(&max->input_a(), op.inputs()->Get(0));
-    output_tensors_.emplace(op.outputs()->Get(0), &max->output());
+        link_input_tensor(&input_dequant->input(), op.inputs()->Get(0));
+        link_output_tensor(op.outputs()->Get(0), &output_quant->output());
+    }
+    else
+    {
+        mul->input_b().connect(alpha->output());
+        max->input_b().connect(mul->output());
+
+        link_input_tensor(&mul->input_a(), op.inputs()->Get(0));
+        link_input_tensor(&max->input_a(), op.inputs()->Get(0));
+        link_output_tensor(op.outputs()->Get(0), &max->output());
+    }
 }

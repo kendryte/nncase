@@ -1,4 +1,4 @@
-/* Copyright 2019-2020 Canaan Inc.
+/* Copyright 2020 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,11 +13,12 @@
  * limitations under the License.
  */
 #include "../tflite_importer.h"
-#include <hlir/ops/binary.h>
+#include <nncase/ir/ops/binary.h>
+#include <nncase/ir/ops/unary.h>
 
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::hlir;
+using namespace nncase::ir;
 
 DEFINE_TFLITE_LOWER(ADD)
 {
@@ -27,6 +28,76 @@ DEFINE_TFLITE_LOWER(ADD)
 DEFINE_TFLITE_LOWER(DIV)
 {
     convert_binary(op, binary_div, op.builtin_options_as_DivOptions()->fused_activation_function());
+}
+
+DEFINE_TFLITE_LOWER(FLOOR_DIV)
+{
+    auto &input_a = get_tensor(op.inputs(), 0);
+    auto &input_b = get_tensor(op.inputs(), 1);
+    auto &output = get_tensor(op.outputs(), 0);
+
+    auto div = graph_.emplace<binary>(binary_div, get_shape(input_a.shape()), get_shape(input_b.shape()), value_range<float>::full());
+    div->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/binary");
+
+    // input_a dequantize
+    if (input_a.type() != tflite::TensorType_FLOAT32)
+    {
+        quant_param_t input_a_paras;
+        input_a_paras.scale = to_vector(*input_a.quantization()->scale());
+        input_a_paras.zero_point = to_vector(*input_a.quantization()->zero_point());
+
+        auto input_a_dequant = graph_.emplace<dequantize>(to_data_type(input_a.type()), get_shape(input_a.shape()), input_a_paras);
+        input_a_dequant->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/input_a_dequant");
+        div->input_a().connect(input_a_dequant->output());
+        link_input_tensor(&input_a_dequant->input(), op.inputs()->Get(0));
+    }
+    else
+    {
+        link_input_tensor(&div->input_a(), op.inputs()->Get(0));
+    }
+
+    // input_b dequantize
+    if (input_b.type() != tflite::TensorType_FLOAT32)
+    {
+        quant_param_t input_b_paras;
+        input_b_paras.scale = to_vector(*input_b.quantization()->scale());
+        input_b_paras.zero_point = to_vector(*input_b.quantization()->zero_point());
+
+        auto input_b_dequant = graph_.emplace<dequantize>(to_data_type(input_b.type()), get_shape(input_b.shape()), input_b_paras);
+        input_b_dequant->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/input_b_dequant");
+        div->input_b().connect(input_b_dequant->output());
+        link_input_tensor(&input_b_dequant->input(), op.inputs()->Get(1));
+    }
+    else
+    {
+        link_input_tensor(&div->input_b(), op.inputs()->Get(1));
+    }
+
+    auto floor = graph_.emplace<unary>(unary_floor, div->output().shape());
+    floor->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/unary");
+    floor->input().connect(div->output());
+
+    // output quantize
+    if (floor->output().type() != to_data_type(output.type()))
+    {
+        quant_param_t output_paras;
+        output_paras.scale = to_vector(*output.quantization()->scale());
+        output_paras.zero_point = to_vector(*output.quantization()->zero_point());
+
+        auto output_quant = graph_.emplace<quantize>(get_shape(output.shape()), to_data_type(output.type()), output_paras);
+        output_quant->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/output_quant");
+        output_quant->input().connect(floor->output());
+        link_output_tensor(op.outputs()->Get(0), &output_quant->output());
+    }
+    else
+    {
+        link_output_tensor(op.outputs()->Get(0), &floor->output());
+    }
+}
+
+DEFINE_TFLITE_LOWER(FLOOR_MOD)
+{
+    convert_binary(op, binary_floor_mod, tflite::ActivationFunctionType_NONE);
 }
 
 DEFINE_TFLITE_LOWER(MAXIMUM)
@@ -44,6 +115,11 @@ DEFINE_TFLITE_LOWER(MUL)
     convert_binary(op, binary_mul, op.builtin_options_as_MulOptions()->fused_activation_function());
 }
 
+DEFINE_TFLITE_LOWER(POW)
+{
+    convert_binary(op, binary_pow, tflite::ActivationFunctionType_NONE);
+}
+
 DEFINE_TFLITE_LOWER(SUB)
 {
     convert_binary(op, binary_sub, op.builtin_options_as_SubOptions()->fused_activation_function());
@@ -53,10 +129,61 @@ void tflite_importer::convert_binary(const tflite::Operator &op, binary_op_t bin
 {
     auto &input_a = get_tensor(op.inputs(), 0);
     auto &input_b = get_tensor(op.inputs(), 1);
+    auto &output = get_tensor(op.outputs(), 0);
 
     auto add = graph_.emplace<binary>(binary_op, get_shape(input_a.shape()), get_shape(input_b.shape()), to_float_clamp_range(activation));
+    add->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/binary");
 
-    input_tensors_.emplace(&add->input_a(), op.inputs()->Get(0));
-    input_tensors_.emplace(&add->input_b(), op.inputs()->Get(1));
-    output_tensors_.emplace(op.outputs()->Get(0), &add->output());
+    dequantize *input_a_dequant, *input_b_dequant;
+    quantize *output_quant;
+    // input_a dequantize
+    if (input_a.type() != tflite::TensorType_FLOAT32)
+    {
+        quant_param_t input_a_paras;
+        input_a_paras.scale = to_vector(*input_a.quantization()->scale());
+        input_a_paras.zero_point = to_vector(*input_a.quantization()->zero_point());
+
+        input_a_dequant = graph_.emplace<dequantize>(to_data_type(input_a.type()), get_shape(input_a.shape()), input_a_paras);
+        input_a_dequant->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/input_a_dequant");
+        add->input_a().connect(input_a_dequant->output());
+        link_input_tensor(&input_a_dequant->input(), op.inputs()->Get(0));
+    }
+    else
+    {
+        link_input_tensor(&add->input_a(), op.inputs()->Get(0));
+    }
+
+    //input_b dequantize
+    if (input_b.type() != tflite::TensorType_FLOAT32)
+    {
+        quant_param_t input_b_paras;
+        input_b_paras.scale = to_vector(*input_b.quantization()->scale());
+        input_b_paras.zero_point = to_vector(*input_b.quantization()->zero_point());
+
+        input_b_dequant = graph_.emplace<dequantize>(to_data_type(input_b.type()), get_shape(input_b.shape()), input_b_paras);
+        input_b_dequant->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/input_b_dequant");
+        add->input_b().connect(input_b_dequant->output());
+        link_input_tensor(&input_b_dequant->input(), op.inputs()->Get(1));
+    }
+    else
+    {
+        link_input_tensor(&add->input_b(), op.inputs()->Get(1));
+    }
+
+    //output quantize
+    if (add->output().type() != to_data_type(output.type()))
+    {
+        quant_param_t output_paras;
+        output_paras.scale = to_vector(*output.quantization()->scale());
+        output_paras.zero_point = to_vector(*output.quantization()->zero_point());
+
+        output_quant = graph_.emplace<quantize>(get_shape(output.shape()), to_data_type(output.type()), output_paras);
+        output_quant->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/output_quant");
+        output_quant->input().connect(add->output());
+        link_output_tensor(op.outputs()->Get(0), &output_quant->output());
+    }
+    else
+    {
+        link_output_tensor(op.outputs()->Get(0), &add->output());
+    }
 }

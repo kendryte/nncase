@@ -1,0 +1,26 @@
+﻿cmake_minimum_required (VERSION 3.13)
+
+target_sources(transforms PRIVATE
+    fold_constant.cpp
+    fold_bitcast.cpp
+    fold_clamp.cpp
+    fold_transpose.cpp
+    fold_slice.cpp
+    fold_pad.cpp
+    fold_quantize.cpp
+    fuse_pad.cpp
+    fuse_clamp.cpp
+    fuse_unary.cpp
+    transpose_motion.cpp
+    dequantize_motion.cpp
+    quantize_motion.cpp
+    eliminate_dilated_conv2d.cpp
+    simplify_reduce.cpp
+    matmul_to_conv2d.cpp
+    fold_dilated_conv2d.cpp
+    global_reduce_window_to_reduce.cpp
+    convert_motion.cpp
+    clamp_to_binary.cpp
+    take_to_slice.cpp
+    fold_conv2d_biasadd.cpp
+    )

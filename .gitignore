@@ -266,6 +266,7 @@ __pycache__/
 /src/nntest
 /src/NnCase.Cli/Properties/launchSettings.json
 
+build/
 out/
 out_2/
 tmp/
