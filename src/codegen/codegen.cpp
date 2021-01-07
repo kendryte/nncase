@@ -41,7 +41,7 @@ std::map<std::string, end_emitter_t, std::less<>> g_end_emitters;
 
 void call_emitter(node &node, generator &context)
 {
-    auto opcode = node.runtime_opcode();
+    auto &opcode = node.runtime_opcode();
     auto it = g_emitters.find(opcode);
     if (it == g_emitters.end())
     {

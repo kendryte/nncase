@@ -1,11 +1,9 @@
 ﻿cmake_minimum_required (VERSION 3.8)
 
 set(SRCS interpreter.cpp
-         kernel_registry.cpp
-         neutral/neutral_ops.cpp
-         cpu/cpu_ops.cpp
-         k210/interpreter.cpp
-         k210/k210_ops.cpp)
+         error.cpp)
 
-add_library(runtime STATIC ${SRCS})
-target_link_libraries(runtime PUBLIC common)
+add_library(simulator OBJECT ${SRCS})
+target_link_libraries(simulator PUBLIC CONAN_PKG::gsl-lite)
+target_compile_definitions(simulator PUBLIC -DNNCASE_DLL)
+set_target_properties(simulator PROPERTIES CXX_STANDARD 11)

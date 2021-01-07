@@ -21,21 +21,10 @@
 #include <cstdint>
 #include <limits>
 #include <numeric>
-#include <optional>
 #include <stdexcept>
 #include <string>
 #include <type_traits>
 #include <vector>
-
-#if defined(_MSC_VER)
-#ifdef NNCASE_DLL
-#define NNCASE_API __declspec(dllexport)
-#else
-#define NNCASE_API __declspec(dllimport)
-#endif
-#else
-#define NNCASE_API
-#endif
 
 namespace nncase
 {
@@ -46,30 +35,6 @@ typedef enum _datatype
 #undef DEFINE_DATATYPE
 } datatype_t;
 
-constexpr std::string_view datatype_names(datatype_t dt)
-{
-    switch (dt)
-    {
-#define DEFINE_DATATYPE(id, t, name, value) \
-    case dt_##id:                           \
-        return #name;
-#include "datatypes.def"
-#undef DEFINE_DATATYPE
-    default:
-        throw std::invalid_argument("invalid datatype");
-    }
-}
-
-template <class T>
-inline constexpr datatype_t to_datatype() noexcept
-{
-    if constexpr (std::is_same_v<T, std::byte>)
-        return dt_uint8;
-#define DEFINE_DATATYPE(id, t, name, value) else if constexpr (std::is_same_v<T, t>) return dt_##id;
-#include "datatypes.def"
-#undef DEFINE_DATATYPE
-}
-
 namespace details
 {
     template <datatype_t Type>
@@ -77,14 +42,38 @@ namespace details
     {
     };
 
-#define DEFINE_DATATYPE(id, t, name, value) \
-    template <>                             \
-    struct datatype_to_cpp_type<dt_##id>    \
-    {                                       \
-        using type = t;                     \
+    template <class T>
+    struct cpp_type_to_datatype
+    {
+    };
+
+#if NNCASE_HAVE_STD_BYTE
+    template <>
+    struct cpp_type_to_datatype<std::byte>
+    {
+        static constexpr datatype_t type = dt_uint8;
+    };
+#endif
+
+#define DEFINE_DATATYPE(id, t, name, value)         \
+    template <>                                     \
+    struct datatype_to_cpp_type<dt_##id>            \
+    {                                               \
+        using type = t;                             \
+    };                                              \
+    template <>                                     \
+    struct cpp_type_to_datatype<t>                  \
+    {                                               \
+        static constexpr datatype_t type = dt_##id; \
     };
 #include "datatypes.def"
 #undef DEFINE_DATATYPE
+}
+
+template <class T>
+constexpr datatype_t to_datatype() noexcept
+{
+    return details::cpp_type_to_datatype<T>::type;
 }
 
 template <datatype_t Type>
@@ -96,10 +85,6 @@ struct padding
     int32_t after;
 
     int32_t sum() const noexcept { return before + after; }
-    std::string to_string()
-    {
-        return "{" + std::to_string(before) + ", " + std::to_string(after) + "}";
-    }
 
     static padding zero() noexcept { return {}; }
 };
@@ -258,18 +243,6 @@ typedef struct _quant_param
         : zero_point(zero_point), scale(scale) { }
     _quant_param() = default;
 
-    std::string to_string() const
-    {
-        std::string ret = "{";
-        for (size_t i = 0; i < zero_point.size(); i++)
-        {
-            std::string item = "{" + std::to_string(zero_point[i]) + "*" + std::to_string(scale[i]) + "}, ";
-            ret += item;
-        }
-        ret += "}";
-        return ret;
-    }
-
     std::vector<int64_t> zero_point;
     std::vector<float> scale;
 } quant_param_t;
@@ -282,15 +255,16 @@ inline bool operator==(const quant_param_t &lhs, const quant_param_t &rhs) noexc
 inline bool almost_equal(const quant_param_t &lhs, const quant_param_t &rhs) noexcept
 {
     if (lhs.zero_point != rhs.zero_point)
-    {
         return false;
+    float errors = 0.f;
+    for (size_t i = 0; i < lhs.scale.size(); i++)
+    {
+        errors += fabs(lhs.scale[i] - rhs.scale[i]);
+        if (errors > std::numeric_limits<float>::epsilon())
+            return false;
     }
-    auto tmp = std::transform_reduce(
-        lhs.scale.begin(), lhs.scale.end(), rhs.scale.begin(), 0.0f,
-        std::plus(),
-        [](auto a, auto b) { return std::abs(a - b); });
 
-    return tmp <= std::numeric_limits<float>::epsilon();
+    return true;
 }
 
 struct fixed_mul
@@ -388,15 +362,4 @@ inline bool operator!=(const scalar &lhs, const scalar &rhs) noexcept
 {
     return lhs.type != rhs.type || lhs.storage != rhs.storage;
 }
-
-#ifndef DEFINE_ENUM_FLAG_OPERATORS
-#define DEFINE_ENUM_FLAG_OPERATORS(ENUMTYPE)                                                              \
-    inline ENUMTYPE operator|(ENUMTYPE a, ENUMTYPE b) { return ENUMTYPE(((int)a) | ((int)b)); }           \
-    inline ENUMTYPE &operator|=(ENUMTYPE &a, ENUMTYPE b) { return (ENUMTYPE &)(((int &)a) |= ((int)b)); } \
-    inline ENUMTYPE operator&(ENUMTYPE a, ENUMTYPE b) { return ENUMTYPE(((int)a) & ((int)b)); }           \
-    inline ENUMTYPE &operator&=(ENUMTYPE &a, ENUMTYPE b) { return (ENUMTYPE &)(((int &)a) &= ((int)b)); } \
-    inline ENUMTYPE operator~(ENUMTYPE a) { return ENUMTYPE(~((int)a)); }                                 \
-    inline ENUMTYPE operator^(ENUMTYPE a, ENUMTYPE b) { return ENUMTYPE(((int)a) ^ ((int)b)); }           \
-    inline ENUMTYPE &operator^=(ENUMTYPE &a, ENUMTYPE b) { return (ENUMTYPE &)(((int &)a) ^= ((int)b)); }
-#endif
 }

@@ -15,4 +15,46 @@
 #pragma once
 #include <gsl/gsl-lite.hpp>
 
-#define NNCASE_CONSTEXPR gsl_constexpr
+#if defined(_MSC_VER)
+#ifdef NNCASE_DLL
+#define NNCASE_API __declspec(dllexport)
+#else
+#define NNCASE_API __declspec(dllimport)
+#endif
+#else
+#define NNCASE_API
+#endif
+
+#if gsl_CPP17_OR_GREATER
+#define NNCASE_INLINE_VAR inline
+#else
+#define NNCASE_INLINE_VAR
+#endif
+
+#define NNCASE_LITTLE_ENDIAN 1
+
+#define NNCASE_HAVE_STD_BYTE gsl_CPP17_OR_GREATER
+#define NNCASE_NODISCARD gsl_NODISCARD
+
+#define BEGIN_NS_NNCASE_RUNTIME \
+    namespace nncase            \
+    {                           \
+    namespace runtime           \
+    {
+#define END_NS_NNCASE_RUNTIME \
+    }                         \
+    }
+
+#define BEGIN_NS_NNCASE_KERNELS \
+    namespace nncase            \
+    {                           \
+    namespace kernels           \
+    {
+
+#define END_NS_NNCASE_KERNELS \
+    }                         \
+    }
+
+#ifndef DEFINE_ENUM_FLAG_OPERATORS
+#define DEFINE_ENUM_FLAG_OPERATORS(ENUMTYPE) gsl_DEFINE_ENUM_BITMASK_OPERATORS(ENUMTYPE)
+#endif

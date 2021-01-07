@@ -14,20 +14,22 @@
  */
 #include <cassert>
 #include <iostream>
-#include <runtime/interpreter.h>
-#include <runtime/kernel_registry.h>
+#include <nncase/runtime/error.h>
+#include <nncase/runtime/interpreter.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
 
-bool interpreter_base::try_load_model(const uint8_t *buffer)
+std::error_condition interpreter::load_model(gsl::span<const uint8_t> buffer)
 {
     auto offset = buffer;
-    model_header_ = reinterpret_cast<const model_header *>(buffer);
+    model_header_ = reinterpret_cast<const model_header *>(buffer.data());
 
     // Validate model
-    if (model_header_->identifier != MODEL_IDENTIFIER || model_header_->version != MODEL_VERSION || (model_header_->target != MODEL_TARGET_CPU && model_header_->target != MODEL_TARGET_K210))
-        return false;
+    if (model_header_->identifier != MODEL_IDENTIFIER)
+        return make_error_condition(nncase_errc::invalid_model_indentifier);
+    if (model_header_->version != MODEL_VERSION)
+        return make_error_condition(nncase_errc::invalid_model_version);
 
     // Allocate buffers
     main_mem_.reset(new (std::nothrow) uint8_t[model_header_->main_mem]);

@@ -15,6 +15,7 @@
 #pragma once
 #include <nncase/importer/importer.h>
 #include <nncase/ir/connectors.h>
+#include <nncase/ir/debug.h>
 #include <nncase/ir/graph.h>
 #include <nncase/ir/op_utils.h>
 #include <nncase/ir/ops/dequantize.h>

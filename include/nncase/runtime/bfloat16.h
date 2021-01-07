@@ -13,13 +13,12 @@
  * limitations under the License.
  */
 #pragma once
-#include <bit>
 #include <cmath>
-#include <compare>
 #include <cstdint>
 #include <float.h>
 #include <functional>
 #include <limits>
+#include <nncase/runtime/compiler_defs.h>
 
 namespace nncase
 {
@@ -27,6 +26,13 @@ struct half
 {
     uint16_t value;
 };
+
+struct from_raw_t
+{
+    explicit from_raw_t() = default;
+};
+
+NNCASE_INLINE_VAR constexpr from_raw_t from_raw {};
 
 struct bfloat16
 {
@@ -38,13 +44,13 @@ private:
 
         uint16_t u16() const noexcept
         {
-            constexpr size_t index = std::endian::native == std::endian::little ? 1 : 0;
+            constexpr size_t index = NNCASE_LITTLE_ENDIAN ? 1 : 0;
             return reinterpret_cast<const uint16_t *>(&u32)[index];
         }
 
         uint16_t &u16() noexcept
         {
-            constexpr size_t index = std::endian::native == std::endian::little ? 1 : 0;
+            constexpr size_t index = NNCASE_LITTLE_ENDIAN ? 1 : 0;
             return reinterpret_cast<uint16_t *>(&u32)[index];
         }
     };
@@ -65,7 +71,7 @@ public:
     explicit bfloat16(const T &val) noexcept
         : bfloat16(static_cast<float>(val)) { }
 
-    constexpr bfloat16(std::in_place_t, uint16_t value) noexcept
+    constexpr bfloat16(from_raw_t, uint16_t value) noexcept
         : value_(value) { }
 
     operator float() const noexcept
@@ -80,7 +86,7 @@ public:
 
     static constexpr bfloat16 from_raw(uint16_t v) noexcept
     {
-        return bfloat16(std::in_place, v);
+        return bfloat16(nncase::from_raw, v);
     }
 
     static bfloat16 truncate_to_bfloat16(const float v) noexcept
@@ -172,34 +178,34 @@ private:
     uint16_t value_;
 };
 
-inline bfloat16 operator+(bfloat16 a, bfloat16 b) noexcept
-{
-    return bfloat16(float(a) + float(b));
-}
+#define DEFINE_BF16_BINARY(T, x)                          \
+    inline T operator##x(bfloat16 a, bfloat16 b) noexcept \
+    {                                                     \
+        return T(float(a) x float(b));                    \
+    }
 
-inline bfloat16 operator-(bfloat16 a, bfloat16 b) noexcept
-{
-    return bfloat16(float(a) - float(b));
-}
-
-inline bfloat16 operator*(bfloat16 a, bfloat16 b) noexcept
-{
-    return bfloat16(float(a) * float(b));
-}
-
-inline bfloat16 operator/(bfloat16 a, bfloat16 b) noexcept
-{
-    return bfloat16(float(a) / float(b));
-}
+DEFINE_BF16_BINARY(bfloat16, +)
+DEFINE_BF16_BINARY(bfloat16, -)
+DEFINE_BF16_BINARY(bfloat16, *)
+DEFINE_BF16_BINARY(bfloat16, /)
+DEFINE_BF16_BINARY(bool, <)
+DEFINE_BF16_BINARY(bool, <=)
+DEFINE_BF16_BINARY(bool, >=)
+DEFINE_BF16_BINARY(bool, >)
 
 inline bfloat16 operator-(bfloat16 a) noexcept
 {
     return bfloat16(-float(a));
 }
 
-inline std::partial_ordering operator<=>(bfloat16 a, bfloat16 b) noexcept
+inline bool operator==(const bfloat16 &lhs, const bfloat16 &rhs) noexcept
 {
-    return float(a) <=> float(b);
+    return lhs.raw() == rhs.raw();
+}
+
+inline bool operator!=(const bfloat16 &lhs, const bfloat16 &rhs) noexcept
+{
+    return lhs.raw() == rhs.raw();
 }
 }
 

@@ -13,42 +13,19 @@
  * limitations under the License.
  */
 #pragma once
-#include "datatypes.h"
+#include <gsl/gsl-lite.hpp>
+#include <memory>
 
 BEGIN_NS_NNCASE_RUNTIME
 
-typedef uint32_t model_target_t;
-
-NNCASE_INLINE_VAR constexpr model_target_t MODEL_TARGET_CPU = 0;
-
-struct model_header
+class allocation_state
 {
-    uint32_t identifier;
-    uint32_t version;
-    uint32_t checksum;
-    uint32_t flags;
-    model_target_t target;
-    uint32_t memories;
-    uint32_t sections;
-    uint32_t inputs;
-    uint32_t outputs;
 };
 
-struct memory_desc
+class NNCASE_API allocator
 {
-    memory_location_t type;
-    uint32_t size;
+public:
+    virtual gsl::span<uint8_t> allocate(allocation_state &state, size_t bytes) = 0;
 };
-
-struct section_desc
-{
-    char name[8];
-    uint32_t offset;
-    uint32_t size_in_file;
-    uint32_t size;
-};
-
-NNCASE_INLINE_VAR constexpr uint32_t MODEL_IDENTIFIER = 'KMDL';
-NNCASE_INLINE_VAR constexpr uint32_t MODEL_VERSION = 5;
 
 END_NS_NNCASE_RUNTIME

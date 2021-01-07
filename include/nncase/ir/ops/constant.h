@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #pragma once
+#include "../debug.h"
 #include "../node.h"
 #include <vector>
 

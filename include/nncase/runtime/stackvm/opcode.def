@@ -1,0 +1,65 @@
+DEFINE_OPCODE(NOP, 0x00, nop) // 无操作
+DEFINE_OPCODE(LDC_I4, 0x01, ldc_i4) // load int32，立即数到栈顶
+DEFINE_OPCODE(LDC_R4, 0x02, ldc_r4) // load float32，立即数到栈顶
+DEFINE_OPCODE(LDIND_I1, 0x03, ldind_i1) // load int8，从地址到栈顶
+DEFINE_OPCODE(LDIND_I4, 0x04, ldind_i4) // load int32，从地址到栈顶
+DEFINE_OPCODE(LDIND_U1, 0x05, ldind_u1) // load uint8，从地址到栈顶
+DEFINE_OPCODE(LDIND_BR2, 0x06, ldind_br2) // load bf16，从地址到栈顶
+DEFINE_OPCODE(LDIND_R4, 0x07, ldind_r4) // load float32，从地址到栈顶
+DEFINE_OPCODE(STIND_I1, 0x08, stind_i1) // store int8，从栈顶到地址
+DEFINE_OPCODE(STIND_I4, 0x09, stind_i4) // store int32，从栈顶到地址
+DEFINE_OPCODE(STIND_BR2, 0x0A, stind_br2) // store bf16，从栈顶到地址
+DEFINE_OPCODE(STIND_R4, 0x0B, stind_r4) // store float32，从栈顶到地址
+DEFINE_OPCODE(LDA_S, 0x0C, lda_s) // 间接寻址地址到栈顶
+DEFINE_OPCODE(DUP, 0x0D, dup) // 复制栈顶
+DEFINE_OPCODE(POP, 0x0E, pop) // 弹出栈顶
+DEFINE_OPCODE(LDARG, 0x0F, ldarg) // load 参数到栈顶
+DEFINE_OPCODE(LDARGA, 0x10, ldarga) // load 参数地址到栈顶
+DEFINE_OPCODE(STR_I4, 0x11, str_i4) // store 栈顶到 GNNE 寄存器
+
+DEFINE_OPCODE(NEG, 0x21, neg_) // 取负数
+DEFINE_OPCODE(NOT, 0x22, not_) // 取二进制反
+DEFINE_OPCODE(ADD, 0x23, add_) // 求和
+DEFINE_OPCODE(SUB, 0x24, sub_) // 求差
+DEFINE_OPCODE(MUL, 0x25, mul_) // 求积
+DEFINE_OPCODE(DIV, 0x26, div_) // 求商
+DEFINE_OPCODE(DIV_U, 0x27, div_u) // 无符号求商
+DEFINE_OPCODE(REM, 0x28, rem_) // 求余
+DEFINE_OPCODE(REM_U, 0x29, rem_u) // 无符号求余
+
+DEFINE_OPCODE(CLT, 0x41, clt) // operator <
+DEFINE_OPCODE(CLT_U, 0x42, clt_u) // 无符号 operator <
+DEFINE_OPCODE(CLE, 0x43, cle) // operator <=
+DEFINE_OPCODE(CLE_U, 0x44, cle_u) // 无符号 operator <=
+DEFINE_OPCODE(CEQ, 0x45, ceq) // operator ==
+DEFINE_OPCODE(CGE, 0x46, cge) // operator >=
+DEFINE_OPCODE(CGE_U, 0x47, cge_u) // 无符号 operator >=
+DEFINE_OPCODE(CGT, 0x48, cgt) // operator >
+DEFINE_OPCODE(CGT_U, 0x49, cgt_u) // 无符号 operator >
+DEFINE_OPCODE(CNE, 0x4A, cne) // operator !=
+
+DEFINE_OPCODE(CONV_I1, 0x61, conv_i1) // 转换到 int8
+DEFINE_OPCODE(CONV_I4, 0x62, conv_i4) // 转换到 int32
+DEFINE_OPCODE(CONV_U1, 0x63, conv_u1) // 转换到 uint8
+DEFINE_OPCODE(CONV_U4, 0x64, conv_u4) // 转换到 uint32
+DEFINE_OPCODE(CONV_BR2, 0x65, conv_br2) // 转换到 bfloat16
+DEFINE_OPCODE(CONV_R4, 0x66, conv_r4) // 转换到 float32
+
+DEFINE_OPCODE(BR, 0x81, br) // 无条件转移
+DEFINE_OPCODE(BR_TRUE, 0x82, br_true) // 转条件为 True，则转移
+DEFINE_OPCODE(BR_FALSE, 0x83, br_false) // 条件为 False，则转移
+DEFINE_OPCODE(RET, 0x84, ret) // 函数返回
+DEFINE_OPCODE(CALL, 0x85, call) // 调用函数
+DEFINE_OPCODE(THROW, 0x86, throw_) // 抛出异常
+DEFINE_OPCODE(TARGET_CALL, 0x87, target_call) // 调用 Target 定义的函数
+
+DEFINE_OPCODE(PAD_T, 0xA1, pad_t) // Tensor Pad
+DEFINE_OPCODE(SORT_ASC_T, 0xA2, sort_asc_t) // Tensor Sort Ascending
+DEFINE_OPCODE(SORT_DESC_T, 0xA3, sort_desc_t) // Tensor Sort Descending
+DEFINE_OPCODE(TRANSPOSE_T, 0xA4, transpose_t) // Tensor Transpose
+DEFINE_OPCODE(SLICE_T, 0xA5, slice_t) // Tensor Slice
+DEFINE_OPCODE(CONVERT_T, 0xA6, convert_t) // Tensor Convert
+DEFINE_OPCODE(BROADCAST_T, 0xA7, broadcast_t) // Tensor Broadcast
+DEFINE_OPCODE(QUANTIZE_T, 0xA8, quantize_t) // Tensor Quantize
+DEFINE_OPCODE(DEQUANTIZE_T, 0xA9, dequantize_t) // Tensor DeQuantize
+DEFINE_OPCODE(CLAMP_T, 0xAA, clamp_t) // Tensor Clamp

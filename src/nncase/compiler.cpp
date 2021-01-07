@@ -101,10 +101,7 @@ public:
 private:
     void set_target(std::string_view type)
     {
-        //if (type == target_type::k210)
-        //    target_ = std::make_unique<targets::k510_target>(target_options_);
-        //else
-        throw std::invalid_argument("Invalid target: " + std::string(type));
+        target_ = plugin_loader::create_target(type);
 
         target_->register_codegen_ops();
         target_->register_evaluator_ops();
