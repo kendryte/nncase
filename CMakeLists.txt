@@ -75,8 +75,14 @@ add_subdirectory(src/cli)
 # Python binding
 add_subdirectory(python/nncase/native)
 
+macro(nncase_add_runtime NAME)
+    set(NNCASE_ENABLED_RUNTIMES ${NNCASE_ENABLED_RUNTIMES} ${NAME} PARENT_SCOPE)
+endmacro()
+
 # Targets
 add_subdirectory(targets/cpu)
+
+include(cmake/runtimes.cmake)
 
 install(DIRECTORY include/nncase
     DESTINATION include

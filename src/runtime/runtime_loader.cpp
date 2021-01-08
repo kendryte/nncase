@@ -28,6 +28,25 @@ using namespace nncase::runtime;
 
 namespace
 {
+template <std::size_t N, std::size_t... Is>
+constexpr std::array<char, N - 1>
+to_array(const char (&a)[N], std::index_sequence<Is...>)
+{
+    return { { a[Is]... } };
+}
+
+template <std::size_t N>
+constexpr std::array<char, N - 1> to_array(const char (&a)[N])
+{
+    return to_array(a, std::make_index_sequence<N - 1>());
+}
+}
+
+// builtin runtime
+#include <builtin_runtimes.inc>
+
+namespace
+{
 #ifdef WIN32
 #define TRY_WIN32_IF_NOT(x)                                                       \
     if (!(x))                                                                     \

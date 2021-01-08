@@ -21,7 +21,7 @@
 
 BEGIN_NS_NNCASE_RUNTIME
 
-typedef runtime_base *(*runtime_activator_t)();
+typedef result<std::unique_ptr<runtime_base>> (*runtime_activator_t)();
 
 #define RUNTIME_ACTIVATOR_NAME create_runtime
 

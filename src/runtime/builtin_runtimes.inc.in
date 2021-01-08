@@ -1,0 +1,11 @@
+BEGIN_NS_NNCASE_RUNTIME
+${NNCASE_BUILTIN_RUNTIMES_DECL}
+END_NS_NNCASE_RUNTIME
+
+namespace
+{
+std::pair<model_target_t, runtime_activator_t> builtin_runtimes[] =
+{
+${NNCASE_BUILTIN_RUNTIMES_REG}
+};
+}
