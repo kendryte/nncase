@@ -31,7 +31,7 @@ public:
 
     std::string message(int code) const override
     {
-        return "Message"; // Íµ¸öÀÁ
+        return "Message";
     }
 
     bool equivalent(std::error_code const &code, int condition) const noexcept override

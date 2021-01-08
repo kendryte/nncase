@@ -14,6 +14,7 @@
  */
 #pragma once
 #include <gsl/gsl-lite.hpp>
+#include <type_traits>
 
 #if defined(_MSC_VER)
 #ifdef NNCASE_DLL
@@ -27,20 +28,25 @@
 
 #if gsl_CPP17_OR_GREATER
 #define NNCASE_INLINE_VAR inline
+template <class Callable, class... Args>
+using invoke_result_t = std::invoke_result_t<Callable, Args...>;
 #else
 #define NNCASE_INLINE_VAR
+template <class Callable, class... Args>
+using invoke_result_t = std::result_of_t<Callable(Args...)>;
 #endif
 
 #define NNCASE_LITTLE_ENDIAN 1
 
 #define NNCASE_HAVE_STD_BYTE gsl_CPP17_OR_GREATER
 #define NNCASE_NODISCARD gsl_NODISCARD
+#define NNCASE_NORETURN gsl_NORETURN
 
 #define BEGIN_NS_NNCASE_RUNTIME \
     namespace nncase            \
     {                           \
-    namespace runtime           \
-    {
+        namespace runtime       \
+        {
 #define END_NS_NNCASE_RUNTIME \
     }                         \
     }
@@ -48,8 +54,8 @@
 #define BEGIN_NS_NNCASE_KERNELS \
     namespace nncase            \
     {                           \
-    namespace kernels           \
-    {
+        namespace kernels       \
+        {
 
 #define END_NS_NNCASE_KERNELS \
     }                         \

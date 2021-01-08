@@ -17,9 +17,7 @@
 
 BEGIN_NS_NNCASE_RUNTIME
 
-typedef uint32_t model_target_t;
-
-NNCASE_INLINE_VAR constexpr model_target_t MODEL_TARGET_CPU = 0;
+typedef std::array<char, 8> model_target_t;
 
 struct model_header
 {

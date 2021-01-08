@@ -15,6 +15,8 @@
 #pragma once
 #include "allocator.h"
 #include "model.h"
+#include "result.h"
+#include "runtime.h"
 #include <gsl/gsl-lite.hpp>
 #include <memory>
 
@@ -23,16 +25,21 @@ BEGIN_NS_NNCASE_RUNTIME
 class NNCASE_API interpreter
 {
 public:
-    interpreter(allocator &allocator, allocation_state &alloc_state);
+    interpreter(host_allocator &host_allocator, allocation_state &alloc_state) noexcept;
 
-    NNCASE_NODISCARD std::error_condition load_model(gsl::span<const uint8_t> buffer) noexcept;
+    NNCASE_NODISCARD result<void> load_model(gsl::span<const gsl::byte> buffer) noexcept;
 
-    size_t inputs_size() const noexcept { return model_header_->inputs; }
-    size_t outputs_size() const noexcept { return model_header_->outputs; }
+    size_t inputs_size() const noexcept { return input_ranges_.size(); }
+    size_t outputs_size() const noexcept { return output_ranges_.size(); }
+    memory_range input_range(size_t index) const { return input_ranges_[index]; }
+    memory_range output_range(size_t index) const { return output_ranges_[index]; }
+    runtime_shape_t input_shape(size_t index) const { return input_shapes_[index]; }
+    runtime_shape_t output_shape(size_t index) const { return output_shapes_[index]; }
+    gsl::span<gsl::byte> input_buffer(size_t index) const { return memory_at(input_range(index)); }
+    gsl::span<gsl::byte> output_buffer(size_t index) const { return memory_at(output_range(index)); }
 
-    const runtime_shape_t &input_shape_at(size_t index) const noexcept { return input_shapes_.at(index); }
-    const memory_range &input_at(size_t index) const noexcept { return inputs_[index]; }
-    const memory_range &output_at(size_t index) const noexcept { return outputs_[index]; }
+    gsl::span<gsl::byte> memory_at(memory_location_t location) const noexcept;
+    gsl::span<gsl::byte> section_memory_at(gsl::zstring_span section_name) const noexcept;
 
     template <class T>
     gsl::span<T> memory_at(const memory_range &range) const noexcept
@@ -41,24 +48,28 @@ public:
         return { reinterpret_cast<T *>(span.data()), span.size() / sizeof(T) };
     }
 
-    std::error_condition run();
+    result<void> run();
 
 protected:
-    NNCASE_NODISCARD virtual std::error_condition initialize();
-    virtual gsl::span<uint8_t> memory_at(const memory_range &range) const noexcept;
+    NNCASE_NODISCARD result<void> initialize_target() noexcept;
+    gsl::span<gsl::byte> memory_at(const memory_range &range) const noexcept;
 
 private:
-    void step();
+    void memory_at(memory_location_t location, gsl::span<gsl::byte> buffer);
 
 private:
-    allocator &allocator_;
+    host_allocator &host_allocator_;
     allocation_state &alloc_state_;
     const model_header *model_header_;
-    std::unique_ptr<uint8_t[]> main_mem_;
-    gsl::span<const memory_range> inputs_;
-    gsl::span<const memory_range> outputs_;
+    gsl::span<const memory_range> input_ranges_;
+    gsl::span<const memory_range> output_ranges_;
     gsl::span<const runtime_shape_t> input_shapes_;
     gsl::span<const runtime_shape_t> output_shapes_;
+    gsl::span<const section_desc> section_descs_;
+    std::vector<gsl::span<gsl::byte>> section_mems_;
+    gsl::span<gsl::byte> text_section_;
+    std::array<gsl::span<gsl::byte>, 4> memory_locations_;
+    std::unique_ptr<runtime_base> runtime_;
 };
 
 END_NS_NNCASE_RUNTIME

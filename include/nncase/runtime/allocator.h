@@ -18,14 +18,17 @@
 
 BEGIN_NS_NNCASE_RUNTIME
 
-class allocation_state
-{
-};
-
-class NNCASE_API allocator
+class NNCASE_API allocation_state
 {
 public:
-    virtual gsl::span<uint8_t> allocate(allocation_state &state, size_t bytes) = 0;
+    virtual ~allocation_state();
+};
+
+class NNCASE_API host_allocator
+{
+public:
+    virtual ~host_allocator();
+    virtual gsl::span<gsl::byte> allocate(allocation_state &state, size_t bytes) = 0;
 };
 
 END_NS_NNCASE_RUNTIME

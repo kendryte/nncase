@@ -13,17 +13,18 @@
  * limitations under the License.
  */
 #pragma once
-#include <nncase/targets/neutral_target.h>
+#include <memory>
+#include <nncase/runtime/error.h>
+#include <nncase/runtime/model.h>
+#include <nncase/runtime/result.h>
+#include <nncase/runtime/runtime.h>
 
-namespace nncase::targets
-{
-NNCASE_INLINE_VAR constexpr runtime::model_target_t MODEL_TARGET_CPU { 'c', 'p', 'u', 0 };
+BEGIN_NS_NNCASE_RUNTIME
 
-class cpu_target : public neutral_target
-{
-public:
-    using neutral_target::neutral_target;
+typedef runtime_base *(*runtime_activator_t)();
 
-    runtime::model_target_t model_target() const noexcept override { return MODEL_TARGET_CPU; }
-};
-}
+#define RUNTIME_ACTIVATOR_NAME create_runtime
+
+NNCASE_API result<std::unique_ptr<runtime_base>> create_runtime(const model_target_t &target_id);
+
+END_NS_NNCASE_RUNTIME

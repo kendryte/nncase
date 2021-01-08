@@ -16,12 +16,12 @@
 #include "compiler_defs.h"
 #include <gsl/gsl-lite.hpp>
 
-namespace nncase::runtime
-{
+BEGIN_NS_NNCASE_RUNTIME
+
 class span_reader
 {
 public:
-    span_reader(gsl::span<const uint8_t> span)
+    span_reader(gsl::span<const gsl::byte> span)
         : span_(span)
     {
     }
@@ -59,7 +59,15 @@ public:
         advance(sizeof(T) * size);
     }
 
-    void read_avail(gsl::span<const uint8_t> &span)
+    template <class T>
+    gsl::span<const T> read_span(size_t size)
+    {
+        gsl::span<const T> span(reinterpret_cast<const T *>(span_.data()), size);
+        advance(sizeof(T) * size);
+        return span;
+    }
+
+    void read_avail(gsl::span<const gsl::byte> &span)
     {
         span = span_;
         span_ = {};
@@ -97,6 +105,7 @@ private:
     }
 
 private:
-    gsl::span<const uint8_t> span_;
+    gsl::span<const gsl::byte> span_;
 };
-}
+
+END_NS_NNCASE_RUNTIME

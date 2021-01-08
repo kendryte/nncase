@@ -667,7 +667,7 @@ void strided_slice(const T *CXX_RESTRICT input, T *CXX_RESTRICT output, const ru
     }
 }
 
-inline void nnil_unary_method(const float *input, float *output, size_t count, xtl::span<const uint8_t> body)
+inline void nnil_unary_method(const float *input, float *output, size_t count, gsl::span<const gsl::byte> body)
 {
     using namespace nncase::runtime;
 
