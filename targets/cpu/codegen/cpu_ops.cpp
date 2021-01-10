@@ -12,20 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#pragma once
-#include <memory>
-#include <nncase/runtime/error.h>
-#include <nncase/runtime/model.h>
-#include <nncase/runtime/result.h>
-#include <nncase/runtime/runtime.h>
+#include <nncase/codegen/codegen.h>
 
-BEGIN_NS_NNCASE_RUNTIME
+using namespace nncase;
+using namespace nncase::ir;
+using namespace nncase::codegen;
+using namespace nncase::schedule;
 
-typedef void (*runtime_activator_t)(result<std::unique_ptr<runtime_base>> &result);
-
-#define RUNTIME_ACTIVATOR_NAME create_runtime
-#define SIMULATOR_ACTIVATOR_NAME create_simulator
-
-extern "C" NNCASE_API void create_runtime(const model_target_t &target_id, result<std::unique_ptr<runtime_base>> &result);
-
-END_NS_NNCASE_RUNTIME
+namespace nncase::codegen
+{
+void register_cpu_emitters()
+{
+}
+}

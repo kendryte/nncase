@@ -71,16 +71,16 @@ result<void> interpreter::load_model(gsl::span<const gsl::byte> buffer) noexcept
             text_section_ = sec_buffer;
         // input
         else if (!strcmp(sec.name, ".input"))
-            memory_at(mem_input, sec_buffer);
+            set_memory(mem_input, sec_buffer);
         // output
         else if (!strcmp(sec.name, ".output"))
-            memory_at(mem_output, sec_buffer);
+            set_memory(mem_output, sec_buffer);
         // rdata
         else if (!strcmp(sec.name, ".rdata"))
-            memory_at(mem_rdata, sec_buffer);
+            set_memory(mem_rdata, sec_buffer);
         // data
         else if (!strcmp(sec.name, ".data"))
-            memory_at(mem_data, sec_buffer);
+            set_memory(mem_data, sec_buffer);
 
 #ifndef NDEBUG
         printf("Load section %s @%p\n", sec.name, sec_buffer.data());
@@ -97,6 +97,11 @@ gsl::span<gsl::byte> interpreter::memory_at(const memory_range &range) const noe
     return base.subspan(range.start, range.size);
 }
 
+gsl::span<gsl::byte> interpreter::memory_at(memory_location_t location) const noexcept
+{
+    return memory_locations_[(size_t)location];
+}
+
 gsl::span<gsl::byte> interpreter::section_memory_at(gsl::zstring_span section_name) const noexcept
 {
     size_t index = 0;
@@ -110,8 +115,22 @@ gsl::span<gsl::byte> interpreter::section_memory_at(gsl::zstring_span section_na
     return {};
 }
 
+void interpreter::set_memory(memory_location_t location, gsl::span<gsl::byte> buffer)
+{
+    memory_locations_[(size_t)location] = buffer;
+}
+
 result<void> interpreter::initialize_target() noexcept
 {
-    try_set(runtime_, create_runtime(model_header_->target));
-    return ok();
+    result<std::unique_ptr<runtime_base>> result(err(std::errc::resource_unavailable_try_again));
+    create_runtime(model_header_->target, result);
+    if (result.is_ok())
+    {
+        runtime_ = std::move(result.unwrap());
+        return ok();
+    }
+    else
+    {
+        return result.unwrap_err();
+    }
 }

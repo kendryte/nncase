@@ -55,7 +55,7 @@ protected:
     gsl::span<gsl::byte> memory_at(const memory_range &range) const noexcept;
 
 private:
-    void memory_at(memory_location_t location, gsl::span<gsl::byte> buffer);
+    void set_memory(memory_location_t location, gsl::span<gsl::byte> buffer);
 
 private:
     host_allocator &host_allocator_;

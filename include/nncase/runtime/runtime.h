@@ -13,8 +13,9 @@
  * limitations under the License.
  */
 #pragma once
+#include "compiler_defs.h"
+#include "result.h"
 #include <memory>
-#include <nncase/runtime/compiler_defs.h>
 
 BEGIN_NS_NNCASE_RUNTIME
 

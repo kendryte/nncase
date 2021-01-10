@@ -13,19 +13,15 @@
  * limitations under the License.
  */
 #pragma once
-#include <memory>
-#include <nncase/runtime/error.h>
-#include <nncase/runtime/model.h>
-#include <nncase/runtime/result.h>
 #include <nncase/runtime/runtime.h>
 
 BEGIN_NS_NNCASE_RUNTIME
 
-typedef void (*runtime_activator_t)(result<std::unique_ptr<runtime_base>> &result);
+class cpu_runtime : public runtime_base
+{
+public:
+};
 
-#define RUNTIME_ACTIVATOR_NAME create_runtime
-#define SIMULATOR_ACTIVATOR_NAME create_simulator
-
-extern "C" NNCASE_API void create_runtime(const model_target_t &target_id, result<std::unique_ptr<runtime_base>> &result);
+result<std::unique_ptr<runtime_base>> create_cpu_runtime();
 
 END_NS_NNCASE_RUNTIME

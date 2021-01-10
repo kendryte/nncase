@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include "cpu_target.h"
+#include "runtime/cpu_runtime.h"
 #include <nncase/plugin_loader.h>
 
 #if defined(_MSC_VER)
@@ -23,6 +24,7 @@
 
 using namespace nncase;
 using namespace nncase::targets;
+using namespace nncase::runtime;
 
 extern "C"
 {
@@ -30,4 +32,15 @@ extern "C"
     {
         return new cpu_target();
     }
+}
+
+namespace nncase::codegen
+{
+void register_cpu_emitters();
+}
+
+void cpu_target::register_codegen_ops()
+{
+    neutral_target::register_codegen_ops();
+    codegen::register_cpu_emitters();
 }

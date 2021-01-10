@@ -29,8 +29,8 @@ struct node_opcode
 
 constexpr inline bool operator==(const node_opcode &lhs, const node_opcode &rhs) noexcept { return lhs.id == rhs.id; }
 
-#define DEFINE_NEUTRAL_OPCODE(id, name, value) NNCASE_API inline constexpr node_opcode op_##id { value, #name };
-#define DEFINE_OPCODE(target, id, name, value) inline constexpr node_opcode op_##target##_##id { value, #name };
+#define DEFINE_NEUTRAL_OPCODE(id, name, value) NNCASE_INLINE_VAR constexpr node_opcode op_##id { value, #name };
+#define DEFINE_OPCODE(target, id, name, value) NNCASE_INLINE_VAR constexpr node_opcode op_##target##_##id { value, #name };
 
 #include "opcode.def"
 

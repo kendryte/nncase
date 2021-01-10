@@ -38,6 +38,21 @@ namespace nncase
             return nncase::err(std::move(v.unwrap_err())); \
     }
 
+#define try_var_err(name, x, e)                         \
+    typename decltype((x))::traits::ok_type name;       \
+    {                                                   \
+        auto v = (x);                                   \
+        if (v.is_ok())                                  \
+        {                                               \
+            name = std::move(v.unwrap());               \
+        }                                               \
+        else                                            \
+        {                                               \
+            e = nncase::err(std::move(v.unwrap_err())); \
+            return;                                     \
+        }                                               \
+    }
+
 #define try_set(name, x)                                   \
     {                                                      \
         auto v = (x);                                      \
@@ -103,7 +118,7 @@ constexpr Err err(ErrCode value)
     return Err(value);
 }
 
-Err err(std::error_condition value)
+inline Err err(std::error_condition value) noexcept
 {
     return Err(std::move(value));
 }

@@ -100,12 +100,12 @@ void nncase::codegen::disable_emitter(ir::node_opcode opcode)
 
 void nncase::codegen::register_decompiler(std::string_view section_name, decompiler_t decompiler)
 {
-    g_decompilers.emplace(std::string(section_name), std::move(decompiler));
+    g_decompilers.emplace(section_name, std::move(decompiler));
 }
 
 void nncase::codegen::register_end_emitter(std::string_view section_name, end_emitter_t emitter)
 {
-    g_end_emitters.emplace(std::string(section_name), std::move(emitter));
+    g_end_emitters.emplace(section_name, std::move(emitter));
 }
 
 generator::generator(nncase::target &target, const schedule::schedule_result &sched, const std::filesystem::path &dump_dir, bool dump_asm)
@@ -125,7 +125,7 @@ codegen_writer &generator::writer(std::string_view section_name)
 {
     auto it = section_writer_.find(section_name);
     if (it == section_writer_.end())
-        it = section_writer_.emplace(std::string(section_name), std::in_place).first;
+        it = section_writer_.emplace(section_name, std::in_place).first;
     return it->second.writer;
 }
 

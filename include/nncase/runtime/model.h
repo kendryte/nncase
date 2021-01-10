@@ -17,7 +17,7 @@
 
 BEGIN_NS_NNCASE_RUNTIME
 
-typedef std::array<char, 8> model_target_t;
+typedef std::array<char, 16> model_target_t;
 
 struct model_header
 {

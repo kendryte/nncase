@@ -25,5 +25,6 @@ public:
     using neutral_target::neutral_target;
 
     runtime::model_target_t model_target() const noexcept override { return MODEL_TARGET_CPU; }
+    void register_codegen_ops() override;
 };
 }

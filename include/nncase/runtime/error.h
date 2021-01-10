@@ -22,7 +22,8 @@ enum class nncase_errc
 {
     invalid_model_indentifier = 1,
     invalid_model_checksum = 2,
-    invalid_model_version = 3
+    invalid_model_version = 3,
+    runtime_not_found = 4
 };
 
 NNCASE_API const std::error_category &nncase_category() noexcept;

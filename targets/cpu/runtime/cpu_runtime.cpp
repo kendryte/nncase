@@ -12,20 +12,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#pragma once
-#include <memory>
-#include <nncase/runtime/error.h>
-#include <nncase/runtime/model.h>
-#include <nncase/runtime/result.h>
-#include <nncase/runtime/runtime.h>
+#include "cpu_runtime.h"
 
-BEGIN_NS_NNCASE_RUNTIME
+using namespace nncase;
+using namespace nncase::runtime;
 
-typedef void (*runtime_activator_t)(result<std::unique_ptr<runtime_base>> &result);
+#if defined(_MSC_VER)
+#define CPU_TARGET_API __declspec(dllexport)
+#else
+#define CPU_TARGET_API
+#endif
 
-#define RUNTIME_ACTIVATOR_NAME create_runtime
-#define SIMULATOR_ACTIVATOR_NAME create_simulator
-
-extern "C" NNCASE_API void create_runtime(const model_target_t &target_id, result<std::unique_ptr<runtime_base>> &result);
-
-END_NS_NNCASE_RUNTIME
+extern "C"
+{
+    CPU_TARGET_API void create_simulator(result<std::unique_ptr<runtime_base>> &result) noexcept
+    {
+        auto p = new (std::nothrow) cpu_runtime();
+        if (p)
+            result = ok(std::unique_ptr<runtime_base>(p));
+        else
+            result = err(std::errc::not_enough_memory);
+    }
+}
