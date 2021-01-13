@@ -74,22 +74,32 @@ public:
     }
 
     template <class T>
-    const T *peek() const noexcept
+    T peek()
     {
-        return reinterpret_cast<const T *>(span_.data());
+        auto value = *reinterpret_cast<const T *>(span_.data());
+        return value;
     }
 
     template <class T>
-    void get_array(const T *&value, size_t size)
+    T peek_unaligned()
     {
-        value = peek<T>();
-        advance(size * sizeof(T));
+        T value;
+        std::memcpy(&value, span_.data(), sizeof(T));
+        return value;
+    }
+
+    template <class T>
+    T peek_unaligned_with_offset(size_t offset)
+    {
+        T value;
+        std::memcpy(&value, span_.data() + offset, sizeof(T));
+        return value;
     }
 
     template <class T>
     void get_ref(const T *&value)
     {
-        value = peek<T>();
+        value = reinterpret_cast<const T *>(span_.data());
         advance(sizeof(T));
     }
 

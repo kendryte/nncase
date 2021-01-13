@@ -12,30 +12,5 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#pragma once
-#include "compiler_defs.h"
-#include <system_error>
+#include <nncase/runtime/stackvm/opcode.h>
 
-BEGIN_NS_NNCASE_RUNTIME
-
-enum class nncase_errc
-{
-    invalid_model_indentifier = 0x01,
-    invalid_model_checksum = 0x02,
-    invalid_model_version = 0x03,
-    runtime_not_found = 0x04,
-    stackvm_illegal_instruction = 0x0100
-};
-
-NNCASE_API const std::error_category &nncase_category() noexcept;
-NNCASE_API std::error_condition make_error_condition(nncase_errc code);
-
-END_NS_NNCASE_RUNTIME
-
-namespace std
-{
-template <>
-struct is_error_condition_enum<nncase::runtime::nncase_errc> : true_type
-{
-};
-}

@@ -17,6 +17,7 @@
 #include <cassert>
 #include <cstddef>
 #include <nncase/runtime/datatypes.h>
+#include <numeric>
 
 #ifdef __GNUC__
 #define CXX_RESTRICT __restrict__
@@ -28,9 +29,14 @@
 
 namespace nncase::kernels
 {
-inline size_t offset(const runtime_shape_t &shape, const runtime_shape_t &index)
+template <class TShape>
+size_t offset(const TShape &shape, const TShape &index)
 {
-    return (((size_t)index[0] * shape[1] + index[1]) * shape[2] + index[2]) * shape[3] + index[3];
+    assert(shape.size() == index.size());
+    size_t result = index[0];
+    for (size_t i = 1; i < index.size(); i++)
+        result = result * shape[i] + index[i];
+    return result;
 }
 
 namespace details
@@ -41,9 +47,10 @@ namespace details
         return (size + padding.before + padding.after - effective_filter_size + stride) / stride;
     }
 
-    inline size_t compute_size(const runtime_shape_t &shape)
+    template <class TShape>
+    size_t compute_size(const TShape &shape)
     {
-        return size_t(shape[0]) * shape[1] * shape[2] * shape[3];
+        return std::accumulate(shape.begin(), shape.end(), size_t(1), std::plus<void>());
     }
 
     template <class T>
@@ -52,9 +59,10 @@ namespace details
         return std::clamp(value, activation.min, activation.max);
     }
 
-    inline runtime_shape_t get_reduced_offset(const runtime_shape_t &in_offset, const runtime_shape_t &reduced_shape)
+    template <class TShape>
+    inline TShape get_reduced_offset(const TShape &in_offset, const TShape &reduced_shape)
     {
-        runtime_shape_t off;
+        TShape off;
         for (size_t i = 0; i < in_offset.size(); i++)
         {
             if (in_offset[i] >= reduced_shape[i])

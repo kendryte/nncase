@@ -51,6 +51,18 @@ using invoke_result_t = std::result_of_t<Callable(Args...)>;
     }                         \
     }
 
+#define BEGIN_NS_NNCASE_RT_STACKVM \
+    namespace nncase               \
+    {                              \
+        namespace runtime          \
+        {                          \
+            namespace stackvm      \
+            {
+#define END_NS_NNCASE_RT_STACKVM \
+    }                            \
+    }                            \
+    }
+
 #define BEGIN_NS_NNCASE_KERNELS \
     namespace nncase            \
     {                           \
@@ -64,3 +76,12 @@ using invoke_result_t = std::result_of_t<Callable(Args...)>;
 #ifndef DEFINE_ENUM_FLAG_OPERATORS
 #define DEFINE_ENUM_FLAG_OPERATORS(ENUMTYPE) gsl_DEFINE_ENUM_BITMASK_OPERATORS(ENUMTYPE)
 #endif
+
+namespace nncase
+{
+struct default_init_t
+{
+};
+
+NNCASE_INLINE_VAR constexpr default_init_t default_init {};
+}

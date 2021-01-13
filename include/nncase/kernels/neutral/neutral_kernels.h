@@ -24,9 +24,9 @@
 
 namespace nncase::kernels::neutral
 {
-template <class TOp>
-void binary(const float *input_a, const float *input_b, float *output, const runtime_shape_t &in_a_shape,
-    const runtime_shape_t &in_b_shape, const runtime_shape_t &out_shape, const value_range<float> &fused_activation, TOp &&op)
+template <class TOp, class TShape>
+void binary(const float *input_a, const float *input_b, float *output, const TShape &in_a_shape,
+    const TShape &in_b_shape, const TShape &out_shape, const value_range<float> &fused_activation, TOp &&op)
 {
     // opt. no broadcast
     if (in_a_shape == in_b_shape)
@@ -50,7 +50,7 @@ void binary(const float *input_a, const float *input_b, float *output, const run
                 {
                     for (int32_t d3 = 0; d3 < out_shape[3]; d3++)
                     {
-                        runtime_shape_t in_off = { d0, d1, d2, d3 };
+                        TShape in_off = { d0, d1, d2, d3 };
                         const auto in_a_off = kernels::details::get_reduced_offset(in_off, in_a_shape);
                         const auto in_b_off = kernels::details::get_reduced_offset(in_off, in_b_shape);
                         const auto a = input_a[offset(in_a_shape, in_a_off)];
@@ -63,9 +63,9 @@ void binary(const float *input_a, const float *input_b, float *output, const run
     }
 }
 
-template <class TOp>
-void quantized_binary(const uint8_t *input_a, const uint8_t *input_b, uint8_t *output, const runtime_shape_t &in_a_shape,
-    const runtime_shape_t &in_b_shape, const runtime_shape_t &out_shape, int32_t input_a_offset, int32_t input_a_mul, int32_t input_a_shift,
+template <class TOp, class TShape>
+void quantized_binary(const uint8_t *input_a, const uint8_t *input_b, uint8_t *output, const TShape &in_a_shape,
+    const TShape &in_b_shape, const TShape &out_shape, int32_t input_a_offset, int32_t input_a_mul, int32_t input_a_shift,
     int32_t input_b_offset, int32_t input_b_mul, int32_t input_b_shift, int32_t output_mul, int32_t output_shift, int32_t output_offset, TOp &&op)
 {
     // opt. no broadcast
@@ -94,7 +94,7 @@ void quantized_binary(const uint8_t *input_a, const uint8_t *input_b, uint8_t *o
                 {
                     for (int32_t d3 = 0; d3 < out_shape[3]; d3++)
                     {
-                        runtime_shape_t in_off = { d0, d1, d2, d3 };
+                        TShape in_off = { d0, d1, d2, d3 };
                         const auto in_a_off = kernels::details::get_reduced_offset(in_off, in_a_shape);
                         const auto in_b_off = kernels::details::get_reduced_offset(in_off, in_b_shape);
                         auto a = (int32_t)input_a[offset(in_a_shape, in_a_off)];
@@ -126,7 +126,8 @@ inline void concat(xtl::span<TRange> inputs, uint8_t *output, xtl::span<const in
     }
 }
 
-inline void conv2d(const float *input, float *output, const float *weights, const float *bias, const runtime_shape_t &in_shape,
+template <class TShape>
+void conv2d(const float *input, float *output, const float *weights, const float *bias, const TShape &in_shape,
     int32_t groups, int32_t out_channels, int32_t filter_h, int32_t filter_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
     const padding &padding_h, const padding &padding_w, const value_range<float> &fused_activation)
 {
@@ -188,8 +189,9 @@ inline void conv2d(const float *input, float *output, const float *weights, cons
     }
 }
 
-inline void quantized_conv2d(const uint8_t *input, uint8_t *output, const uint8_t *weights, const int32_t *bias, int32_t input_offset, int32_t filter_offset,
-    int32_t output_mul, int32_t output_shift, int32_t output_offset, const runtime_shape_t &in_shape, int32_t groups, int32_t out_channels,
+template <class TShape>
+void quantized_conv2d(const uint8_t *input, uint8_t *output, const uint8_t *weights, const int32_t *bias, int32_t input_offset, int32_t filter_offset,
+    int32_t output_mul, int32_t output_shift, int32_t output_offset, const TShape &in_shape, int32_t groups, int32_t out_channels,
     int32_t filter_h, int32_t filter_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
     const padding &padding_h, const padding &padding_w)
 {
@@ -253,8 +255,9 @@ inline void quantized_conv2d(const uint8_t *input, uint8_t *output, const uint8_
     }
 }
 
-inline void conv2d_transpose(const float *input, float *output, const float *weights, [[maybe_unused]] const float *bias, const runtime_shape_t &in_shape,
-    int32_t groups, const runtime_shape_t &out_shape, int32_t filter_h, int32_t filter_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
+template <class TShape>
+void conv2d_transpose(const float *input, float *output, const float *weights, [[maybe_unused]] const float *bias, const TShape &in_shape,
+    int32_t groups, const TShape &out_shape, int32_t filter_h, int32_t filter_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
     const padding &padding_h, const padding &padding_w, const value_range<float> &fused_activation)
 {
     std::fill(output, output + kernels::details::compute_size(out_shape), 0.f);
@@ -379,10 +382,10 @@ inline void quantized_matmul(const uint8_t *input_a, const uint8_t *input_b, uin
     }
 }
 
-template <class T>
-void pad(const T *input, T *output, const runtime_shape_t &in_shape, const runtime_paddings_t &paddings, T pad_value)
+template <class T, class TShape, class TPaddings>
+void pad(const T *input, T *output, const TShape &in_shape, const TPaddings &paddings, T pad_value)
 {
-    runtime_shape_t out_shape = { in_shape[0] + paddings[0].sum(),
+    TShape out_shape = { in_shape[0] + paddings[0].sum(),
         in_shape[1] + paddings[1].sum(),
         in_shape[2] + paddings[2].sum(),
         in_shape[3] + paddings[3].sum() };
@@ -440,8 +443,8 @@ void quantize(const float *CXX_RESTRICT input, TQ *CXX_RESTRICT output, size_t c
 #endif
 }
 
-template <class TReducer>
-void reduce(const float *input, float *output, float init_value, const runtime_shape_t &in_shape, const runtime_shape_t &reduced_shape, TReducer &&reducer)
+template <class TReducer, class TShape>
+void reduce(const float *input, float *output, float init_value, const TShape &in_shape, const TShape &reduced_shape, TReducer &&reducer)
 {
     std::fill(output, output + kernels::details::compute_size(reduced_shape), init_value);
 
@@ -471,8 +474,8 @@ void unary(const float *CXX_RESTRICT input, float *CXX_RESTRICT output, size_t c
         output[i] = op(input[i]);
 }
 
-template <class TBinaryOp, class TOutputOp>
-void reduce_window2d(const float *input, float *output, float init_value, const runtime_shape_t &in_shape, int32_t filter_h, int32_t filter_w,
+template <class TBinaryOp, class TOutputOp, class TShape>
+void reduce_window2d(const float *input, float *output, float init_value, const TShape &in_shape, int32_t filter_h, int32_t filter_w,
     int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w, const padding &padding_h, const padding &padding_w,
     const value_range<float> &fused_activation, TBinaryOp &&binary_op, TOutputOp &&window_op)
 {
@@ -518,8 +521,8 @@ void reduce_window2d(const float *input, float *output, float init_value, const 
     }
 }
 
-template <class T>
-void resize_nearest_neighbor(const T *input, T *output, const runtime_shape_t &in_shape, int32_t out_h, int32_t out_w)
+template <class T, class TShape>
+void resize_nearest_neighbor(const T *input, T *output, const TShape &in_shape, int32_t out_h, int32_t out_w)
 {
     auto height_scale = (float)in_shape[2] / out_h;
     auto width_scale = (float)in_shape[3] / out_w;
@@ -547,8 +550,8 @@ void resize_nearest_neighbor(const T *input, T *output, const runtime_shape_t &i
     }
 }
 
-template <class T>
-inline void resize_bilinear(const T *input, T *output, const runtime_shape_t &in_shape, int32_t out_h, int32_t out_w, bool align_corners)
+template <class T, class TShape>
+inline void resize_bilinear(const T *input, T *output, const TShape &in_shape, int32_t out_h, int32_t out_w, bool align_corners)
 {
     auto height_scale = (float)in_shape[2] / out_h;
     auto width_scale = (float)in_shape[3] / out_w;
@@ -617,14 +620,14 @@ inline void softmax(const float *input, float *output, float beta, int32_t outer
     }
 }
 
-template <class T>
-void transpose(const T *CXX_RESTRICT input, T *CXX_RESTRICT output, const runtime_shape_t &in_shape, const runtime_shape_t &perm)
+template <class T, class TShape>
+void transpose(const T *CXX_RESTRICT input, T *CXX_RESTRICT output, const TShape &in_shape, const TShape &perm)
 {
-    runtime_shape_t out_shape;
+    TShape out_shape;
     for (size_t i = 0; i < 4; i++)
         out_shape[i] = in_shape[perm[i]];
 
-    runtime_shape_t i, o;
+    TShape i, o;
     for (o[3] = 0; o[3] < out_shape[3]; o[3]++)
     {
         i[perm[3]] = o[3];
@@ -644,8 +647,8 @@ void transpose(const T *CXX_RESTRICT input, T *CXX_RESTRICT output, const runtim
     }
 }
 
-template <class T>
-void strided_slice(const T *CXX_RESTRICT input, T *CXX_RESTRICT output, const runtime_shape_t &in_shape, const runtime_shape_t &begin, const runtime_shape_t &end, const runtime_shape_t &strides)
+template <class T, class TShape>
+void strided_slice(const T *CXX_RESTRICT input, T *CXX_RESTRICT output, const TShape &in_shape, const TShape &begin, const TShape &end, const TShape &strides)
 {
     auto loop_cond = [](int32_t i, int32_t stop, int32_t stride) {
         return stride > 0 ? i < stop : i > stop;
