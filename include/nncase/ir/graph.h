@@ -25,7 +25,6 @@ class NNCASE_API graph
 public:
     graph() = default;
     graph(graph &) = delete;
-    graph(graph &&) = default;
 
     std::span<std::unique_ptr<node>> nodes() noexcept { return { nodes_.data(), nodes_.size() }; }
     std::span<input_node *> inputs() noexcept { return { inputs_.data(), inputs_.size() }; }
@@ -47,13 +46,14 @@ public:
     }
 
     void assign_names();
-    void collect();
+    void dce();
     void cse();
-    graph split_subgraph(std::span<node *> nodes);
-    graph split_subgraph(std::vector<node *> nodes);
+    std::unique_ptr<graph> split_subgraph(std::span<node *> nodes);
+    graph &add_subgraph(std::unique_ptr<graph> subgraph);
 
 private:
     std::vector<std::unique_ptr<node>> nodes_;
+    std::vector<std::unique_ptr<graph>> subgraphs_;
     std::vector<input_node *> inputs_;
     std::vector<output_node *> outputs_;
 };

@@ -1,6 +1,7 @@
 ﻿cmake_minimum_required (VERSION 3.13)
 
 target_sources(ir PRIVATE
+    call.cpp
     conv2d.cpp
     conv2d_transpose.cpp
     convert.cpp

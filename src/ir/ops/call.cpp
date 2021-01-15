@@ -12,15 +12,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#pragma once
-#include "op_reader.h"
+#include <nncase/ir/op_utils.h>
+#include <nncase/ir/ops/call.h>
 
-BEGIN_NS_NNCASE_RT_STACKVM
+using namespace nncase;
+using namespace nncase::ir;
 
-class NNCASE_API stackvm_runtime : private op_visitor
+call::call(graph &target)
+    : target_(target)
 {
-public:
-    stackvm_runtime();
-};
+    size_t i = 0;
+    for (auto &in : target_.inputs())
+        add_input(in->name(), in->output().type(), in->output().shape());
 
-END_NS_NNCASE_RT_STACKVM
+    i = 0;
+    for (auto &out : target_.outputs())
+        add_output(out->name(), out->input().type(), out->input().shape());
+}
+
+bool call::properties_equal(node &other) const
+{
+    auto &r = static_cast<call &>(other);
+    return &target() == &r.target();
+}

@@ -15,9 +15,9 @@
 #pragma once
 #include "connectors.h"
 #include "opcode.h"
+#include <list>
 #include <span>
 #include <unordered_map>
-#include <vector>
 
 namespace nncase::ir
 {
@@ -44,11 +44,11 @@ public:
     std::span<input_connector> inputs() noexcept { return { input_connectors_.data(), input_connectors_.size() }; }
     std::span<output_connector> outputs() noexcept { return { output_connectors_.data(), output_connectors_.size() }; }
 
-    const input_connector &input_at(size_t index) const { return input_connectors_.at(index); }
-    const output_connector &output_at(size_t index) const { return output_connectors_.at(index); }
+    const input_connector &input_at(size_t index) const { return *input_connectors_.at(index); }
+    const output_connector &output_at(size_t index) const { return *output_connectors_.at(index); }
 
-    input_connector &input_at(size_t index) { return input_connectors_.at(index); }
-    output_connector &output_at(size_t index) { return output_connectors_.at(index); }
+    input_connector &input_at(size_t index) { return *input_connectors_.at(index); }
+    output_connector &output_at(size_t index) { return *output_connectors_.at(index); }
 
     virtual const node_opcode &runtime_opcode() const noexcept = 0;
     node_attributes attributes() const noexcept { return attributes_; }
@@ -74,7 +74,9 @@ protected:
 private:
     std::string name_;
     node_attributes attributes_ = node_attributes::node_attr_action;
-    std::vector<input_connector> input_connectors_;
-    std::vector<output_connector> output_connectors_;
+    std::vector<input_connector *> input_connectors_;
+    std::vector<output_connector *> output_connectors_;
+    std::vector<std::unique_ptr<input_connector>> input_connectors_storage_;
+    std::vector<std::unique_ptr<output_connector>> output_connectors_storage_;
 };
 }

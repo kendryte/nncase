@@ -20,7 +20,7 @@
 
 namespace nncase::codegen
 {
-class codegen_writer;
+class section_writer;
 
 struct symbol_ref
 {
@@ -36,7 +36,7 @@ struct symbol
     std::streampos streampos;
 };
 
-class codegen_writer : public binary_writer
+class section_writer : public binary_writer
 {
 public:
     using binary_writer::binary_writer;

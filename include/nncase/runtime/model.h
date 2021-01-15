@@ -17,33 +17,28 @@
 
 BEGIN_NS_NNCASE_RUNTIME
 
-typedef std::array<char, 16> model_target_t;
-
 struct model_header
 {
     uint32_t identifier;
     uint32_t version;
     uint32_t checksum;
     uint32_t flags;
-    model_target_t target;
-    uint32_t memories;
+    uint32_t modules;
+    uint32_t entry_module;
+};
+
+struct module_header
+{
+    module_type_t type;
+    uint32_t length;
     uint32_t sections;
-    uint32_t inputs;
-    uint32_t outputs;
 };
 
-struct memory_desc
+struct section_header
 {
-    memory_location_t type;
+    char name[16];
     uint32_t size;
-};
-
-struct section_desc
-{
-    char name[8];
-    uint32_t offset;
     uint32_t size_in_file;
-    uint32_t size;
 };
 
 NNCASE_INLINE_VAR constexpr uint32_t MODEL_IDENTIFIER = 'KMDL';

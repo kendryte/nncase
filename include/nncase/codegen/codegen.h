@@ -21,24 +21,24 @@
 #include <nncase/ir/graph.h>
 #include <nncase/runtime/datatypes.h>
 #include <nncase/schedule/scheduler.h>
-#include <nncase/targets/target.h>
 #include <sstream>
 #include <unordered_set>
 
 namespace nncase::codegen
 {
-class generator;
-using emitter_t = std::function<void(ir::node &node, generator &context)>;
-using decompiler_t = std::function<void(std::span<const uint8_t> input, std::span<const symbol> symbols, std::ostream &output)>;
-using end_emitter_t = std::function<void(generator &context)>;
+class NNCASE_API module_decompiler
+{
+public:
+    virtual void decompile(std::span<const uint8_t> input, std::span<const symbol> symbols, std::ostream &output) = 0;
+};
 
-class generator
+class NNCASE_API module_builder
 {
 private:
     struct section
     {
         std::stringstream stream;
-        codegen_writer writer;
+        section_writer writer;
         std::vector<uint8_t> body;
 
         section(std::in_place_t = std::in_place)
@@ -48,14 +48,23 @@ private:
     };
 
 public:
-    generator(nncase::target &target, const schedule::schedule_result &sched, const std::filesystem::path &dump_dir, bool dump_asm = false);
+    module_builder(const schedule::schedule_result &sched, const std::filesystem::path &dump_dir, bool dump_asm = false);
 
     void gencode(std::ostream &output);
 
-    NNCASE_API const schedule::buffer_allocation &allocation(ir::output_connector &conn) const { return sched_.allocations.at(&conn); }
-    NNCASE_API const schedule::buffer_allocation &allocation(ir::input_connector &conn) const { return allocation(*conn.connection()); }
-    NNCASE_API size_t max_usage(memory_location_t location) const;
-    NNCASE_API codegen_writer &writer(std::string_view section_name);
+    const schedule::buffer_allocation &allocation(ir::output_connector &conn) const { return sched_.allocations.at(&conn); }
+    const schedule::buffer_allocation &allocation(ir::input_connector &conn) const { return allocation(*conn.connection()); }
+    size_t max_usage(memory_location_t location) const;
+    section_writer &writer(std::string_view section_name);
+
+    virtual module_type_t module_type() const noexcept = 0;
+    virtual std::unique_ptr<module_decompiler> create_decompiler(std::string_view section_name) = 0;
+
+protected:
+    void add_section_merge(std::string_view from, std::string_view to);
+
+    virtual void emit(ir::node &node) = 0;
+    virtual void end_emit() { }
 
 private:
     void generate_runtime_ops();
@@ -65,13 +74,12 @@ private:
     void write_binary(std::ostream &output);
 
 private:
-    nncase::target &target_;
     const schedule::schedule_result &sched_;
     std::filesystem::path dump_dir_;
     bool dump_asm_;
     std::map<std::string, section, std::less<>> section_writer_;
     std::vector<nncase::ir::node *> runtime_ops_;
-    std::unordered_set<std::string_view> linked_to_rdata_secs_;
+    std::map<std::string, std::unordered_set<std::string>, std::less<>> section_merges_;
 
     std::vector<memory_range> inputs_;
     std::vector<runtime_shape_t> input_shapes_;
@@ -79,17 +87,4 @@ private:
     std::vector<runtime_shape_t> output_shapes_;
     std::vector<std::byte> constants_;
 };
-
-NNCASE_API void register_emitter(ir::node_opcode opcode, emitter_t emitter);
-NNCASE_API void disable_emitter(ir::node_opcode opcode);
-NNCASE_API void register_decompiler(std::string_view section_name, decompiler_t decompiler);
-NNCASE_API void register_end_emitter(std::string_view section_name, end_emitter_t emitter);
-
-template <class TNode>
-void register_emitter(std::function<void(TNode &node, generator &context)> emitter)
-{
-    register_emitter(TNode::opcode(), [emitter = std::move(emitter)](ir::node &node, generator &context) {
-        emitter(static_cast<TNode &>(node), context);
-    });
-}
 }

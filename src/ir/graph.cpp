@@ -49,7 +49,7 @@ void graph::assign_names()
     }
 }
 
-void graph::collect()
+void graph::dce()
 {
     std::unordered_set<node *> used_nodes;
 
@@ -75,20 +75,16 @@ void graph::collect()
     nodes_.erase(end, std::end(nodes_));
 }
 
-graph graph::split_subgraph(std::vector<node *> nodes)
+std::unique_ptr<graph> graph::split_subgraph(std::span<node *> nodes)
 {
-    return graph::split_subgraph(std::span<node *> { nodes.data(), nodes.size() });
-}
-graph graph::split_subgraph(std::span<node *> nodes)
-{
-    graph subgraph;
+    auto subgraph = std::make_unique<graph>();
 
     for (auto it = nodes.begin(); it != nodes.end(); ++it)
     {
         auto find_it = std::find_if(nodes_.begin(), nodes_.end(), [&](auto &p) { return p.get() == *it; });
         if (find_it != nodes_.end())
         {
-            subgraph.nodes_.emplace_back(std::move(*find_it));
+            subgraph->nodes_.emplace_back(std::move(*find_it));
             nodes_.erase(find_it);
         }
     }
@@ -99,7 +95,7 @@ graph graph::split_subgraph(std::span<node *> nodes)
         {
             if (!in.connection())
             {
-                auto inode = subgraph.emplace<input_node>(in.type(), in.shape());
+                auto inode = subgraph->emplace<input_node>(in.type(), in.shape());
                 inode->name("new_input");
                 in.connect(inode->output());
             }
@@ -109,7 +105,7 @@ graph graph::split_subgraph(std::span<node *> nodes)
         {
             if (out.connections().empty())
             {
-                auto onode = subgraph.emplace<output_node>(out.type(), out.shape());
+                auto onode = subgraph->emplace<output_node>(out.type(), out.shape());
                 onode->name("new_output");
                 out.connect(onode->input());
             }
@@ -117,6 +113,11 @@ graph graph::split_subgraph(std::span<node *> nodes)
     }
 
     return subgraph;
+}
+
+graph &graph::add_subgraph(std::unique_ptr<graph> subgraph)
+{
+    return *subgraphs_.emplace_back(std::move(subgraph));
 }
 
 void graph::cse()
@@ -155,7 +156,7 @@ void graph::cse()
 
         if (!csed_nodes.empty())
         {
-            collect();
+            dce();
             csed_nodes.clear();
         }
         else

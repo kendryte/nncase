@@ -12,17 +12,4 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#pragma once
-#include "compiler_defs.h"
-#include "result.h"
-#include <memory>
-
-BEGIN_NS_NNCASE_RUNTIME
-
-class NNCASE_API runtime_base
-{
-public:
-    virtual ~runtime_base();
-};
-
-END_NS_NNCASE_RUNTIME
+#include <nncase/runtime/stackvm/runtime_module.h>

@@ -1,6 +1,6 @@
 ﻿cmake_minimum_required (VERSION 3.8)
 
-set(SRCS stackvm_runtime.cpp
+set(SRCS runtime_module.cpp
          op_reader.cpp)
 
 add_library(simulator_stackvm OBJECT ${SRCS})

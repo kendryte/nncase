@@ -326,6 +326,21 @@ struct memory_range
     uint32_t size;
 };
 
+typedef std::array<char, 16> module_type_t;
+
+template <std::size_t N, std::size_t... Is>
+constexpr module_type_t
+to_module_type(const char (&a)[N], std::index_sequence<Is...>)
+{
+    return { { a[Is]... } };
+}
+
+template <std::size_t N>
+constexpr module_type_t to_module_type(const char (&a)[N])
+{
+    return to_module_type(a, std::make_index_sequence<N>());
+}
+
 inline padding operator+(const padding &lhs, const padding &rhs) noexcept
 {
     return { lhs.before + rhs.before, lhs.after + rhs.after };
