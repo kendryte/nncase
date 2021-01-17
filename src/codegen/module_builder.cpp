@@ -32,38 +32,14 @@ using namespace nncase::ir;
 using namespace nncase::schedule;
 using namespace nncase::runtime;
 
-namespace
-{
-
-std::string_view memory_to_section(memory_location_t location)
-{
-    switch (location)
-    {
-    case mem_input:
-        return ".input";
-    case mem_output:
-        return ".output";
-    case mem_rdata:
-        return ".rdata";
-    case mem_data:
-        return ".data";
-    default:
-        throw std::invalid_argument("Invalid memory location");
-    }
-}
-}
-
-module_builder::module_builder(const schedule::schedule_result &sched, const std::filesystem::path &dump_dir, bool dump_asm)
-    : sched_(sched), dump_dir_(dump_dir), dump_asm_(dump_asm)
+module_builder::module_builder(const std::filesystem::path &dump_dir, bool dump_asm)
+    : dump_dir_(dump_dir), dump_asm_(dump_asm), cnt_sched_(nullptr)
 {
 }
 
-size_t module_builder::max_usage(memory_location_t location) const
+const schedule::buffer_allocation &module_builder::allocation(ir::output_connector &conn) const
 {
-    auto it = sched_.max_usages.find(location);
-    if (it != sched_.max_usages.end())
-        return it->second;
-    return 0;
+    return cnt_sched_->allocations.at(&conn);
 }
 
 section_writer &module_builder::writer(std::string_view section_name)
@@ -74,39 +50,33 @@ section_writer &module_builder::writer(std::string_view section_name)
     return it->second.writer;
 }
 
-void module_builder::generate_runtime_ops()
+std::vector<nncase::ir::node *> module_builder::generate_runtime_ops(const schedule::schedule_result &sched)
 {
-    for (auto &&node : sched_.compute_sequence)
-    {
-        runtime_ops_.emplace_back(node);
-    }
+    std::vector<nncase::ir::node *> runtime_ops;
+    for (auto &&node : sched.compute_sequence)
+        runtime_ops.emplace_back(node);
 
     if (dump_asm_)
     {
         std::ofstream file(dump_dir_ / "runtime_ops.txt");
-        for (auto node : runtime_ops_)
+        for (auto node : runtime_ops)
             file << "[" << node->runtime_opcode().name << "] "
                  << node->name() << std::endl;
     }
+
+    return runtime_ops;
 }
 
-void module_builder::compile()
+void module_builder::compile_function(std::string_view function_name, const schedule::schedule_result &sched)
 {
-    for (auto &&node : runtime_ops_)
+    auto runtime_ops = generate_runtime_ops(sched);
+    begin_emit();
+    for (auto node : runtime_ops)
         emit(*node);
-
     end_emit();
-    for (auto &section : section_writer_)
-        section.second.body = read_stream(section.second.stream);
-
-    if (dump_asm_)
-    {
-        for (auto &section : section_writer_)
-            decompile("compile", section.first, section.second.body, section.second.writer.symbols());
-    }
 }
 
-void module_builder::add_section_merge(std::string_view from, std::string_view to)
+void module_builder::merge_section(std::string_view from, std::string_view to)
 {
     section_merges_[std::string(from)].emplace(to);
 }
@@ -124,7 +94,21 @@ void module_builder::decompile(std::string_view stage, std::string_view section_
     }
 }
 
+void module_builder::link()
+{
+    for (auto &section : section_writer_)
+        section.second.body = read_stream(section.second.stream);
 
+    if (dump_asm_)
+    {
+        for (auto &section : section_writer_)
+            decompile("compile", section.first, section.second.body, section.second.writer.symbols());
+    }
+}
+
+void module_builder::write_binary(std::ostream &output)
+{
+}
 
 //void module_builder::link()
 //{
@@ -331,8 +315,6 @@ void module_builder::decompile(std::string_view stage, std::string_view section_
 
 void module_builder::gencode(std::ostream &output)
 {
-    generate_runtime_ops();
-    compile();
     link();
     write_binary(output);
 }

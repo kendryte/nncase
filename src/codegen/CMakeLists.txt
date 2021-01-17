@@ -1,6 +1,6 @@
 ﻿cmake_minimum_required (VERSION 3.8)
 
-set(SRCS codegen.cpp
+set(SRCS module_builder.cpp
          ops/neutral/neutral_ops.cpp)
 
 add_library(codegen OBJECT ${SRCS})

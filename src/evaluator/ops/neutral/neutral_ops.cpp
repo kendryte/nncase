@@ -181,8 +181,8 @@ void register_neutral_evaluators()
         auto &rnode = static_cast<concat &>(node);
 
         std::vector<uint8_t *> inputs;
-        for (auto &&in : rnode.inputs())
-            inputs.emplace_back(context.memory_at<uint8_t>(in).span.data());
+        for (auto in : rnode.inputs())
+            inputs.emplace_back(context.memory_at<uint8_t>(*in).span.data());
 
         auto output = context.memory_at<uint8_t>(rnode.output()).span;
 

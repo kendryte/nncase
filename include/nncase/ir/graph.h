@@ -25,6 +25,7 @@ class NNCASE_API graph
 public:
     graph() = default;
     graph(graph &) = delete;
+    graph(graph &&) = delete;
 
     std::span<std::unique_ptr<node>> nodes() noexcept { return { nodes_.data(), nodes_.size() }; }
     std::span<input_node *> inputs() noexcept { return { inputs_.data(), inputs_.size() }; }

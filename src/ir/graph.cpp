@@ -61,10 +61,10 @@ void graph::dce()
     auto end = std::remove_if(std::begin(nodes_), std::end(nodes_), [&](auto &node) {
         if (used_nodes.find(node.get()) == used_nodes.end())
         {
-            for (auto &in : node->inputs())
-                in.clear_connection();
-            for (auto &out : node->outputs())
-                out.clear_connections();
+            for (auto in : node->inputs())
+                in->clear_connection();
+            for (auto out : node->outputs())
+                out->clear_connections();
             if (node->runtime_opcode() == op_input_node)
                 inputs_.erase(std::find(inputs_.begin(), inputs_.end(), static_cast<input_node *>(node.get())));
             return true;
@@ -91,23 +91,23 @@ std::unique_ptr<graph> graph::split_subgraph(std::span<node *> nodes)
 
     for (auto node : nodes)
     {
-        for (auto &in : node->inputs())
+        for (auto in : node->inputs())
         {
-            if (!in.connection())
+            if (!in->connection())
             {
-                auto inode = subgraph->emplace<input_node>(in.type(), in.shape());
+                auto inode = subgraph->emplace<input_node>(in->type(), in->shape());
                 inode->name("new_input");
-                in.connect(inode->output());
+                in->connect(inode->output());
             }
         }
 
-        for (auto &out : node->outputs())
+        for (auto out : node->outputs())
         {
-            if (out.connections().empty())
+            if (out->connections().empty())
             {
-                auto onode = subgraph->emplace<output_node>(out.type(), out.shape());
+                auto onode = subgraph->emplace<output_node>(out->type(), out->shape());
                 onode->name("new_output");
-                out.connect(onode->input());
+                out->connect(onode->input());
             }
         }
     }

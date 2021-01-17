@@ -30,8 +30,8 @@ struct model_header
 struct module_header
 {
     module_type_t type;
-    uint32_t length;
-    uint32_t sections;
+    uint32_t size;
+    uint32_t reserved0;
 };
 
 struct section_header

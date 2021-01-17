@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 #include "cpu_target.h"
-#include "runtime/cpu_runtime.h"
 #include <nncase/plugin_loader.h>
 
 #if defined(_MSC_VER)

@@ -85,9 +85,9 @@ auto make_relay_ir_visitor(TVisitor &&visitor)
 template <class TNode, class = std::enable_if_t<std::is_base_of_v<node, TNode>>>
 TNode *try_get_direct_child(node &node)
 {
-    for (auto &&out : node.outputs())
+    for (auto out : node.outputs())
     {
-        for (auto &&conn : out.connections())
+        for (auto conn : out->connections())
         {
             if (conn->owner().runtime_opcode() == TNode::opcode())
                 return static_cast<TNode *>(&conn->owner());
@@ -100,10 +100,10 @@ TNode *try_get_direct_child(node &node)
 template <class TNode, class = std::enable_if_t<std::is_base_of_v<node, TNode>>>
 TNode *try_get_direct_parent(node &node)
 {
-    for (auto &&in : node.inputs())
+    for (auto in : node.inputs())
     {
-        if (in.connection() && in.connection()->owner().runtime_opcode() == TNode::opcode())
-            return static_cast<TNode *>(&in.connection()->owner());
+        if (in->connection() && in->connection()->owner().runtime_opcode() == TNode::opcode())
+            return static_cast<TNode *>(&in->connection()->owner());
     }
 
     return nullptr;
@@ -134,7 +134,7 @@ inline size_t get_input_index(node &n, output_connector &input)
 {
     for (size_t i = 0; i < n.inputs().size(); i++)
     {
-        if (n.inputs()[i].connection() == &input)
+        if (n.input_at(i).connection() == &input)
             return i;
     }
 

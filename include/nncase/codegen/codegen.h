@@ -48,43 +48,38 @@ private:
     };
 
 public:
-    module_builder(const schedule::schedule_result &sched, const std::filesystem::path &dump_dir, bool dump_asm = false);
+    module_builder(const std::filesystem::path &dump_dir, bool dump_asm = false);
+    module_builder(module_builder &) = delete;
+    module_builder(module_builder &&) = delete;
 
     void gencode(std::ostream &output);
 
-    const schedule::buffer_allocation &allocation(ir::output_connector &conn) const { return sched_.allocations.at(&conn); }
+    const schedule::buffer_allocation &allocation(ir::output_connector &conn) const;
     const schedule::buffer_allocation &allocation(ir::input_connector &conn) const { return allocation(*conn.connection()); }
-    size_t max_usage(memory_location_t location) const;
     section_writer &writer(std::string_view section_name);
 
     virtual module_type_t module_type() const noexcept = 0;
     virtual std::unique_ptr<module_decompiler> create_decompiler(std::string_view section_name) = 0;
+    void compile_function(std::string_view function_name, const schedule::schedule_result &sched);
 
 protected:
-    void add_section_merge(std::string_view from, std::string_view to);
+    void merge_section(std::string_view from, std::string_view to);
 
+    virtual void begin_emit() { }
     virtual void emit(ir::node &node) = 0;
     virtual void end_emit() { }
 
 private:
-    void generate_runtime_ops();
-    void compile();
+    std::vector<nncase::ir::node *> generate_runtime_ops(const schedule::schedule_result &sched);
     void decompile(std::string_view stage, std::string_view section_name, std::span<const uint8_t> input, std::span<const symbol> symbols);
     void link();
     void write_binary(std::ostream &output);
 
 private:
-    const schedule::schedule_result &sched_;
     std::filesystem::path dump_dir_;
     bool dump_asm_;
     std::map<std::string, section, std::less<>> section_writer_;
-    std::vector<nncase::ir::node *> runtime_ops_;
     std::map<std::string, std::unordered_set<std::string>, std::less<>> section_merges_;
-
-    std::vector<memory_range> inputs_;
-    std::vector<runtime_shape_t> input_shapes_;
-    std::vector<memory_range> outputs_;
-    std::vector<runtime_shape_t> output_shapes_;
-    std::vector<std::byte> constants_;
+    const schedule::schedule_result *cnt_sched_;
 };
 }

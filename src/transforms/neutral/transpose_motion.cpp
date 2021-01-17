@@ -171,11 +171,11 @@ bool transpose_concat_motion_transform::on_try_match(node &node, transform_conte
         context.outputs.emplace_back(&con.output());
 
         axis_t perm;
-        for (auto &&conn : con.inputs())
+        for (auto in : con.inputs())
         {
-            if (conn.connection()->owner().runtime_opcode() == op_transpose)
+            if (in->connection()->owner().runtime_opcode() == op_transpose)
             {
-                auto &tp = static_cast<transpose &>(conn.connection()->owner());
+                auto &tp = static_cast<transpose &>(in->connection()->owner());
 
                 if (perm.empty())
                     perm = tp.perm();

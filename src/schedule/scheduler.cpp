@@ -115,14 +115,14 @@ void scheduler::make_logical_buffers()
 {
     lifetime_recorder lr(logical_buffers_);
     auto alloc_visitor = make_relay_ir_visitor([&](node &node) {
-        for (auto &&out : node.outputs())
-            lr.allocate(out);
+        for (auto out : node.outputs())
+            lr.allocate(*out);
 
         lr.grow_age();
 
-        for (auto &&in : node.inputs())
+        for (auto in : node.inputs())
         {
-            auto out = in.connection();
+            auto out = in->connection();
             assert(out);
             lr.release(*out);
         }
@@ -161,11 +161,11 @@ void scheduler::analyze_buffer_alias()
 
             // simple & exlusive concat
             // input & rdata should be copied to output
-            if ((c->axis() == 0 || std::all_of(inputs[0].shape().begin(), inputs[0].shape().begin() + c->axis(), [](size_t dim) { return dim == 1; }))
-                && std::all_of(inputs.begin(), inputs.end(), [this](input_connector &in) {
-                       auto &in_buf = logical_buffers_.at(in.connection());
+            if ((c->axis() == 0 || std::all_of(inputs[0]->shape().begin(), inputs[0]->shape().begin() + c->axis(), [](size_t dim) { return dim == 1; }))
+                && std::all_of(inputs.begin(), inputs.end(), [this](input_connector *in) {
+                       auto &in_buf = logical_buffers_.at(in->connection());
                        return (in_buf.memory_location() != mem_input && in_buf.memory_location() != mem_rdata)
-                           && in.connection()->owner().runtime_opcode() != op_slice;
+                           && in->connection()->owner().runtime_opcode() != op_slice;
                    })
                 && std::count_if(outputs.begin(), outputs.end(), [](input_connector *in) {
                        return in->owner().runtime_opcode() == op_concat;
@@ -193,11 +193,11 @@ void scheduler::fix_concat_indices()
                 auto axis = c->axis();
                 auto &out_buf = logical_buffers_.at(&c->output());
                 shape_t cnt_begin(c->input_at(0).shape().size(), 0);
-                for (auto &in : c->inputs())
+                for (auto in : c->inputs())
                 {
-                    auto &in_buf = logical_buffers_.at(in.connection());
+                    auto &in_buf = logical_buffers_.at(in->connection());
                     in_buf.parent() = { &out_buf, cnt_begin };
-                    cnt_begin[axis] += in.shape()[axis];
+                    cnt_begin[axis] += in->shape()[axis];
                 }
             }
 
@@ -218,7 +218,7 @@ void scheduler::fix_concat_indices()
                 in_buf.parent() = { &out_buf, child_begin };
                 for (auto &in : c->inputs())
                 {
-                    auto &in_buf = logical_buffers_.at(in.connection());
+                    auto &in_buf = logical_buffers_.at(in->connection());
                     auto &desc = *in_buf.parent();
                     desc.parent = &out_buf;
                     desc.begin += child_begin;
@@ -310,9 +310,9 @@ void scheduler::allocate_physical_buffers(schedule_result &result)
 void scheduler::assign_allocations(schedule_result &result)
 {
     auto alloc_visitor = make_relay_ir_visitor([&](node &node) {
-        for (auto &&out : node.outputs())
+        for (auto out : node.outputs())
         {
-            auto &lbuf = logical_buffers_.at(&out);
+            auto &lbuf = logical_buffers_.at(out);
             auto &owner = lbuf.physical()->owner();
             auto &memory = lbuf.physical()->allocation();
 
@@ -333,7 +333,7 @@ void scheduler::assign_allocations(schedule_result &result)
                 auto &begin = lbuf.parent()->begin;
                 alloc.start += ir::get_bytes(lbuf.type()) * xt::element_offset<size_t>(alloc.strides, begin.begin(), begin.end());
             }
-            result.allocations.emplace(&out, alloc);
+            result.allocations.emplace(out, alloc);
         }
     });
     alloc_visitor.visit(outputs_);

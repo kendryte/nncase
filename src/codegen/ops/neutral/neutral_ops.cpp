@@ -22,10 +22,5 @@ namespace nncase::codegen
 {
 void register_neutral_emitters()
 {
-    disable_emitter(op_input_node);
-    disable_emitter(op_output_node);
-    disable_emitter(op_constant);
-    disable_emitter(op_ignore_node);
-    disable_emitter(op_uninitialized);
 }
 }

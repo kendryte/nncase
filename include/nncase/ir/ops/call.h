@@ -23,7 +23,7 @@ class call : public node
 public:
     DEFINE_NODE_OPCODE(op_call);
 
-    graph &target() const noexcept { return *target_; }
+    graph &target() const noexcept { return target_; }
 
     call(graph &target);
 

@@ -168,7 +168,7 @@ void tflite_importer::import(const import_options &options)
         }
     }
 
-    graph_.collect();
+    graph_.dce();
 }
 
 void tflite_importer::convert_op(const tflite::Operator &op)

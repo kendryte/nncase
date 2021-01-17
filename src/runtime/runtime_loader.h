@@ -17,15 +17,12 @@
 #include <nncase/runtime/error.h>
 #include <nncase/runtime/model.h>
 #include <nncase/runtime/result.h>
-#include <nncase/runtime/runtime.h>
+#include <nncase/runtime/runtime_module.h>
 
 BEGIN_NS_NNCASE_RUNTIME
 
-typedef void (*runtime_activator_t)(result<std::unique_ptr<runtime_base>> &result);
+typedef void (*rt_module_activator_t)(result<std::unique_ptr<runtime_module>> &result);
 
-#define RUNTIME_ACTIVATOR_NAME create_runtime
-#define SIMULATOR_ACTIVATOR_NAME create_simulator
-
-extern "C" NNCASE_API void create_runtime(const model_target_t &target_id, result<std::unique_ptr<runtime_base>> &result);
+#define RUNTIME_MODULE_ACTIVATOR_NAME create_runtime_module
 
 END_NS_NNCASE_RUNTIME

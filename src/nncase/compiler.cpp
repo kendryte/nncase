@@ -35,10 +35,10 @@ void do_dump_graph(ir::graph &graph, std::ostream &output)
 
     for (auto &&node : graph.nodes())
     {
-        for (auto &&out : node->outputs())
+        for (auto out : node->outputs())
         {
-            auto shape = std::string(datatype_names(out.type())) + ir::to_string(out.shape());
-            for (auto &&conn : out.connections())
+            auto shape = std::string(datatype_names(out->type())) + ir::to_string(out->shape());
+            for (auto &&conn : out->connections())
             {
                 output << "\"" << node->name() << "\"->\"" << conn->owner().name() << "\" [label=\"" << shape << "\"]\n";
             }
@@ -92,8 +92,8 @@ public:
 
         scheduler sch(*target_, graph_.outputs());
         auto schr = sch.schedule();
-        codegen::generator gen(*target_, schr, compile_options_.dump_dir, compile_options_.dump_asm);
-        gen.gencode(output);
+        //codegen::generator gen(*target_, schr, compile_options_.dump_dir, compile_options_.dump_asm);
+        //gen.gencode(output);
 
         dump_summary(graph_);
     }

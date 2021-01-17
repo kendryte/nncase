@@ -30,7 +30,7 @@ bool node::equals(node &other) const
         {
             for (size_t i = 0; i < inputs().size(); i++)
             {
-                if (inputs()[i].connection() != other.inputs()[i].connection())
+                if (input_at(i).connection() != other.input_at(i).connection())
                     return false;
             }
 

@@ -45,7 +45,6 @@ public:
     virtual ~target() = default;
 
     target_options &options();
-    virtual runtime::model_target_t model_target() const noexcept = 0;
 
     virtual void register_allocators(schedule::allocator_map_t &allocators, std::vector<std::unique_ptr<schedule::buffer_allocator>> &allocator_holders) = 0;
     virtual void register_codegen_ops() = 0;

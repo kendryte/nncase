@@ -39,16 +39,11 @@ public:
     template <class TArg, class... TArgs>
     void name(TArg arg, TArgs... args) { name_.assign(std::forward<TArg>(arg), std::forward<TArgs>(args)...); }
 
-    std::span<const input_connector> inputs() const noexcept { return { input_connectors_.data(), input_connectors_.size() }; }
-    std::span<const output_connector> outputs() const noexcept { return { output_connectors_.data(), output_connectors_.size() }; }
-    std::span<input_connector> inputs() noexcept { return { input_connectors_.data(), input_connectors_.size() }; }
-    std::span<output_connector> outputs() noexcept { return { output_connectors_.data(), output_connectors_.size() }; }
+    std::span<input_connector *const> inputs() const noexcept { return input_connectors_; }
+    std::span<output_connector *const> outputs() const noexcept { return output_connectors_; }
 
-    const input_connector &input_at(size_t index) const { return *input_connectors_.at(index); }
-    const output_connector &output_at(size_t index) const { return *output_connectors_.at(index); }
-
-    input_connector &input_at(size_t index) { return *input_connectors_.at(index); }
-    output_connector &output_at(size_t index) { return *output_connectors_.at(index); }
+    input_connector &input_at(size_t index) const { return *input_connectors_.at(index); }
+    output_connector &output_at(size_t index) const { return *output_connectors_.at(index); }
 
     virtual const node_opcode &runtime_opcode() const noexcept = 0;
     node_attributes attributes() const noexcept { return attributes_; }
@@ -60,13 +55,17 @@ protected:
     template <class TName, class TShape>
     input_connector &add_input(TName &&name, datatype_t type, TShape &&shape)
     {
-        return input_connectors_.emplace_back(*this, std::forward<TName>(name), type, std::forward<TShape>(shape));
+        auto ptr = input_connectors_storage_.emplace_back(std::make_unique<input_connector>(*this, std::forward<TName>(name), type, std::forward<TShape>(shape))).get();
+        input_connectors_.emplace_back(ptr);
+        return *ptr;
     }
 
     template <class TName, class TShape>
     output_connector &add_output(TName &&name, datatype_t type, TShape &&shape)
     {
-        return output_connectors_.emplace_back(*this, std::forward<TName>(name), type, std::forward<TShape>(shape));
+        auto ptr = output_connectors_storage_.emplace_back(std::make_unique<output_connector>(*this, std::forward<TName>(name), type, std::forward<TShape>(shape))).get();
+        output_connectors_.emplace_back(ptr);
+        return *ptr;
     }
 
     virtual bool properties_equal(node &other) const = 0;

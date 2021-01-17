@@ -18,29 +18,13 @@
 
 #include "runtime_loader.h"
 #include <fmt/format.h>
-#include <nncase/runtime/runtime.h>
+#include <nncase/runtime/runtime_module.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
 
 #define STR_(x) #x
 #define STR(x) STR_(x)
-
-namespace
-{
-template <std::size_t N, std::size_t... Is>
-constexpr model_target_t
-to_target_id(const char (&a)[N], std::index_sequence<Is...>)
-{
-    return { { a[Is]... } };
-}
-
-template <std::size_t N>
-constexpr model_target_t to_target_id(const char (&a)[N])
-{
-    return to_target_id(a, std::make_index_sequence<N>());
-}
-}
 
 #ifndef NNCASE_SIMULATOR
 // builtin runtime
@@ -56,34 +40,27 @@ namespace
         return err(std::error_condition(GetLastError(), std::system_category())); \
     }
 
-result<runtime_activator_t> find_runtime_activator(const model_target_t &target_id)
+result<rt_module_activator_t> find_runtime_activator(const module_type_t &type)
 {
 #ifdef NNCASE_SIMULATOR
-    auto module_name = fmt::format("nncase.targets.{}.dll", target_id.data());
+    auto module_name = fmt::format("nncase.simulator.{}.dll", type.data());
 #else
-    auto module_name = fmt::format("nncase.runtime.{}.dll", target_id.data());
+    auto module_name = fmt::format("nncase.runtime.{}.dll", type.data());
 #endif
     auto mod = LoadLibraryA(module_name.c_str());
     TRY_WIN32_IF_NOT(mod);
-#ifdef NNCASE_SIMULATOR
-    auto proc = GetProcAddress(mod, STR(SIMULATOR_ACTIVATOR_NAME));
-#else
-    auto proc = GetProcAddress(mod, STR(RUNTIME_ACTIVATOR_NAME));
-#endif
+    auto proc = GetProcAddress(mod, STR(RUNTIME_MODULE_ACTIVATOR_NAME));
     TRY_WIN32_IF_NOT(proc);
-    return reinterpret_cast<runtime_activator_t>(proc);
+    return reinterpret_cast<rt_module_activator_t>(proc);
 }
 #else
 #define NNCASE_NO_LOADABLE_RUNTIME
 #endif
 }
 
-runtime_base::~runtime_base()
+result<std::unique_ptr<runtime_module>> runtime_module::create(const module_type_t &type)
 {
-}
-
-void runtime::create_runtime(const model_target_t &target_id, result<std::unique_ptr<runtime_base>> &result)
-{
+    result<std::unique_ptr<runtime_module>> rt_module(nncase_errc::runtime_not_found);
 #ifndef NNCASE_SIMULATOR
     for (auto &reg : builtin_runtimes)
     {
@@ -95,9 +72,10 @@ void runtime::create_runtime(const model_target_t &target_id, result<std::unique
 #endif
 
 #ifndef NNCASE_NO_LOADABLE_RUNTIME
-    try_var_err(activator, find_runtime_activator(target_id), result);
-    activator(result);
+    try_var(activator, find_runtime_activator(type));
+    activator(rt_module);
 #else
     result = err(nncase_errc::runtime_not_found);
 #endif
+    return rt_module;
 }

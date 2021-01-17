@@ -59,7 +59,7 @@ public:
         advance(sizeof(T) * size);
     }
 
-    template <class T>
+    template <class T = gsl::byte>
     gsl::span<const T> read_span(size_t size)
     {
         gsl::span<const T> span(reinterpret_cast<const T *>(span_.data()), size);
@@ -71,6 +71,11 @@ public:
     {
         span = span_;
         span_ = {};
+    }
+
+    gsl::span<const gsl::byte> peek_avail()
+    {
+        return span_;
     }
 
     template <class T>
@@ -97,10 +102,17 @@ public:
     }
 
     template <class T>
-    void get_ref(const T *&value)
+    const T *get_ref()
     {
-        value = reinterpret_cast<const T *>(span_.data());
+        auto ptr = reinterpret_cast<const T *>(span_.data());
         advance(sizeof(T));
+        return ptr;
+    }
+
+    template <class T>
+    void get_ref(const T *&ptr)
+    {
+        ptr = get_ref<T>();
     }
 
     void skip(size_t count)

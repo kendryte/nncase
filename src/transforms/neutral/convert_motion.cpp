@@ -125,8 +125,8 @@ bool convert_concat_motion_up_transform::on_try_match(node &node, transform_cont
                 context.matched_nodes.emplace_back(c);
                 context.matched_nodes.emplace_back(cvt);
 
-                for (auto &in : c->inputs())
-                    context.inputs.emplace_back(&in);
+                for (auto in : c->inputs())
+                    context.inputs.emplace_back(in);
                 context.outputs.emplace_back(&cvt->output());
 
                 return true;

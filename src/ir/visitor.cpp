@@ -54,11 +54,11 @@ bool dfs_ir_visitor::visit_strategy(node &node)
     {
         mark_visit(node);
 
-        for (auto &&in : node.inputs())
+        for (auto in : node.inputs())
         {
-            if (in.connection())
+            if (in->connection())
             {
-                if (visit_strategy(in.connection()->owner()))
+                if (visit_strategy(in->connection()->owner()))
                     return true;
             }
         }

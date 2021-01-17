@@ -34,18 +34,18 @@ bool fold_constant_transform::on_try_match(node &node, transform_context &contex
 {
     if ((node.attributes() & node_attr_skip_constant_folding) == 0
         && dontfold_ops.find(node.runtime_opcode()) == dontfold_ops.end()
-        && node.inputs().size() && std::all_of(node.inputs().begin(), node.inputs().end(), [](input_connector &conn) {
-               return conn.connection()->owner().runtime_opcode() == op_constant;
+        && node.inputs().size() && std::all_of(node.inputs().begin(), node.inputs().end(), [](input_connector *in) {
+               return in->connection()->owner().runtime_opcode() == op_constant;
            }))
     {
         for (auto &in : node.inputs())
-            context.inputs.emplace_back(&in);
-        for (auto &out : node.outputs())
-            context.outputs.emplace_back(&out);
+            context.inputs.emplace_back(in);
+        for (auto out : node.outputs())
+            context.outputs.emplace_back(out);
 
         context.matched_nodes.emplace_back(&node);
-        for (auto &in : node.inputs())
-            context.matched_nodes.emplace_back(&in.connection()->owner());
+        for (auto in : node.inputs())
+            context.matched_nodes.emplace_back(&in->connection()->owner());
         return true;
     }
 
@@ -63,14 +63,14 @@ void fold_constant_transform::process(transform_context &context)
     graph new_graph;
     std::vector<output_node *> op_outputs;
     std::vector<constant *> output_values;
-    for (auto &out : old_op.outputs())
+    for (auto out : old_op.outputs())
     {
-        auto node = op_outputs.emplace_back(new_graph.emplace<output_node>(out.type(), out.shape()));
+        auto node = op_outputs.emplace_back(new_graph.emplace<output_node>(out->type(), out->shape()));
         if (old_op.outputs().size() > 1)
-            node->name(out.name() + "_F");
+            node->name(out->name() + "_F");
         else
-            node->name(out.owner().name());
-        node->input().connect(out);
+            node->name(out->owner().name());
+        node->input().connect(*out);
     }
 
     // 2. Eval
@@ -97,7 +97,7 @@ void fold_constant_transform::process(transform_context &context)
     for (size_t i = 0; i < old_op.outputs().size(); i++)
     {
         auto &out = old_op.outputs()[i];
-        for (auto &in : dup(out.connections()))
+        for (auto &in : dup(out->connections()))
             in->connect(output_values[i]->output());
     }
 }

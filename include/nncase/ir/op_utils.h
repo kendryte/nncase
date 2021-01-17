@@ -164,12 +164,12 @@ inline shape_t get_binary_output_shape(const shape_t &input_a_shape, const shape
     return out_shape;
 }
 
-inline std::vector<shape_t> get_input_shapes(std::span<input_connector> inputs)
+inline std::vector<shape_t> get_input_shapes(std::span<input_connector *const> inputs)
 {
     std::vector<shape_t> shapes;
     shapes.reserve(inputs.size());
-    for (auto &in : inputs)
-        shapes.emplace_back(in.shape());
+    for (auto in : inputs)
+        shapes.emplace_back(in->shape());
     return shapes;
 }
 

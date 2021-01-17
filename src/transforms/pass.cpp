@@ -72,7 +72,7 @@ void pass::run(graph &graph, target &target, std::optional<std::filesystem::path
             if (visitor.need_retry)
             {
                 next_pass = true;
-                graph.collect();
+                graph.dce();
                 break;
             }
         }

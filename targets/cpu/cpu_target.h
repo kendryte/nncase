@@ -17,14 +17,11 @@
 
 namespace nncase::targets
 {
-NNCASE_INLINE_VAR constexpr runtime::model_target_t MODEL_TARGET_CPU { 'c', 'p', 'u', 0 };
-
 class cpu_target : public neutral_target
 {
 public:
     using neutral_target::neutral_target;
 
-    runtime::model_target_t model_target() const noexcept override { return MODEL_TARGET_CPU; }
     void register_codegen_ops() override;
 };
 }

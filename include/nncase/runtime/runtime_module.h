@@ -23,10 +23,12 @@ class interpreter;
 class NNCASE_API runtime_module
 {
 public:
+    static result<std::unique_ptr<runtime_module>> create(const module_type_t &type);
+
     virtual ~runtime_module() = default;
 
     virtual std::error_condition initialize(interpreter &interp) noexcept = 0;
-    virtual module_id_t id() const noexcept = 0;
+    virtual module_type_t type() const noexcept = 0;
 
     virtual uint32_t inputs_count() const noexcept = 0;
     virtual runtime_shape_t input_shape(size_t index) const noexcept = 0;
