@@ -16,8 +16,8 @@
 #include "buffers.h"
 #include "freelist.h"
 #include <list>
-#include <nncase/runtime/datatypes.h>
 #include <nncase/ir/ir_types.h>
+#include <nncase/runtime/datatypes.h>
 #include <optional>
 
 namespace nncase::schedule
@@ -31,6 +31,7 @@ public:
         size_t valid_size;
     };
 
+    virtual void base_offset(size_t value) = 0;
     virtual void mark(const physical_buffer &buffer) = 0;
     virtual void finish() = 0;
     size_t max_usage() const noexcept { return max_usage_; }
@@ -48,6 +49,7 @@ protected:
 class NNCASE_API linear_buffer_allocator : public buffer_allocator
 {
 public:
+    void base_offset(size_t value) override;
     void mark(const physical_buffer &buffer) override;
     void finish() override;
 };
@@ -57,6 +59,7 @@ class NNCASE_API first_fit_allocator : public buffer_allocator
 public:
     first_fit_allocator(std::optional<size_t> fixed_size = std::nullopt);
 
+    void base_offset(size_t value) override;
     void mark(const physical_buffer &buffer) override;
     void finish() override;
 

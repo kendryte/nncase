@@ -35,11 +35,12 @@ struct eval_result
     }
 };
 
-class NNCASE_API evaluator
+class NNCASE_API module_evaluate_context
 {
 public:
-    evaluator(const schedule::schedule_result &sched);
-    evaluator(evaluator &) = delete;
+    module_evaluate_context(const schedule::module_schedule_result &sched);
+    module_evaluate_context(module_evaluate_context &) = delete;
+    module_evaluate_context(module_evaluate_context &&) = default;
 
     eval_result<> memory_at(const output_connector &conn);
 
@@ -75,12 +76,58 @@ public:
     void evaluate();
 
 private:
-    const schedule::schedule_result &sched_;
+    const schedule::module_schedule_result &sched_;
     std::unordered_map<memory_location_t, std::unique_ptr<std::byte[]>> memory_pools_;
 
     std::vector<output_connector *> inputs_;
     std::vector<input_connector *> outputs_;
 };
 
-NNCASE_API void register_evaluator(ir::node_opcode opcode, std::function<void(ir::node &, evaluator &)> evaluator);
+class NNCASE_API evaluator
+{
+public:
+    evaluator(const schedule::schedule_result &sched);
+    evaluator(evaluator &) = delete;
+
+    module_evaluate_context &module_context(ir::graph &graph);
+    module_evaluate_context &main_module_context();
+    void evaluate();
+
+    eval_result<> memory_at(const output_connector &conn);
+
+    template <class T>
+    eval_result<T> memory_at(const output_connector &conn)
+    {
+        auto result = memory_at(conn);
+        return {
+            { reinterpret_cast<T *>(result.span.data()), result.span.size_bytes() / sizeof(T) },
+            ir::convert_shape_type(result.shape, dt_uint8, to_datatype<T>()),
+            ir::convert_strides_type(result.strides, dt_uint8, to_datatype<T>())
+        };
+    }
+
+    template <class T>
+    eval_result<T> memory_at(const input_connector &conn)
+    {
+        return memory_at<T>(*conn.connection());
+    }
+
+    template <class T>
+    eval_result<T> input_at(size_t index)
+    {
+        return main_module_context().input_at<T>(index);
+    }
+
+    template <class T>
+    eval_result<T> output_at(size_t index)
+    {
+        return main_module_context().output_at<T>(index);
+    }
+
+private:
+    const schedule::schedule_result &sched_;
+    std::unordered_map<ir::graph *, module_evaluate_context> module_ctxs_;
+};
+
+NNCASE_API void register_evaluator(ir::node_opcode opcode, std::function<void(ir::node &, module_evaluate_context &)> evaluator);
 }

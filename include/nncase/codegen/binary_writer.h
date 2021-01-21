@@ -35,7 +35,7 @@ public:
     }
 
     template <class T>
-    void write_array(std::span<T> value)
+    void write_array(std::span<T const> value)
     {
         stream_.write(reinterpret_cast<const char *>(value.data()), value.size_bytes());
         relative_offset_ += value.size_bytes();

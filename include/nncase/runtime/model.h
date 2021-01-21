@@ -14,6 +14,7 @@
  */
 #pragma once
 #include "datatypes.h"
+#include <cassert>
 
 BEGIN_NS_NNCASE_RUNTIME
 
@@ -23,6 +24,8 @@ struct model_header
     uint32_t version;
     uint32_t checksum;
     uint32_t flags;
+    uint32_t alignment;
+    uint32_t paddings;
     uint32_t modules;
     uint32_t entry_module;
 };
@@ -31,14 +34,44 @@ struct module_header
 {
     module_type_t type;
     uint32_t size;
+    uint32_t mempools;
+    uint32_t inputs;
+    uint32_t outputs;
+    uint32_t sections;
     uint32_t reserved0;
+};
+
+struct mempool_desc
+{
+    memory_location_t location;
+    uint32_t size;
 };
 
 struct section_header
 {
     char name[16];
+    uint32_t flags;
+    uint32_t start;
     uint32_t size;
-    uint32_t size_in_file;
+    uint32_t paddings;
+};
+
+NNCASE_INLINE_VAR constexpr uint32_t SECTION_MERGED_INTO_RDATA = 1;
+
+struct shape_header
+{
+    uint32_t size;
+
+    shape_header() = delete;
+    shape_header(shape_header &) = delete;
+    shape_header &operator=(shape_header &) = delete;
+
+    uint32_t dim(size_t index) const
+    {
+        assert(index < size);
+        auto dims = reinterpret_cast<const uint32_t *>(this) + sizeof(shape_header);
+        return dims[index];
+    }
 };
 
 NNCASE_INLINE_VAR constexpr uint32_t MODEL_IDENTIFIER = 'KMDL';

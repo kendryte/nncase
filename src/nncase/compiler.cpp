@@ -14,7 +14,7 @@
  */
 #include <fstream>
 #include <magic_enum.hpp>
-#include <nncase/codegen/codegen.h>
+#include <nncase/codegen/model_builder.h>
 #include <nncase/compiler.h>
 #include <nncase/importer/importer.h>
 #include <nncase/io_utils.h>
@@ -31,16 +31,22 @@ void do_dump_graph(ir::graph &graph, std::ostream &output)
     output << "node [shape=\"record\"]\n";
 
     for (auto &&node : graph.nodes())
-        output << "\"" << node->name() << "\" [label=\"{" << node->runtime_opcode().name << "}\"]\n";
+    {
+        if (node->runtime_opcode() != ir::op_constant)
+            output << "\"" << node->name() << "\" [label=\"{" << node->runtime_opcode().name << "}\"]\n";
+    }
 
     for (auto &&node : graph.nodes())
     {
-        for (auto out : node->outputs())
+        if (node->runtime_opcode() != ir::op_constant)
         {
-            auto shape = std::string(datatype_names(out->type())) + ir::to_string(out->shape());
-            for (auto &&conn : out->connections())
+            for (auto out : node->outputs())
             {
-                output << "\"" << node->name() << "\"->\"" << conn->owner().name() << "\" [label=\"" << shape << "\"]\n";
+                auto shape = std::string(datatype_names(out->type())) + ir::to_string(out->shape());
+                for (auto &&conn : out->connections())
+                {
+                    output << "\"" << node->name() << "\"->\"" << conn->owner().name() << "\" [label=\"" << shape << "\"]\n";
+                }
             }
         }
     }
@@ -90,8 +96,8 @@ public:
         using namespace nncase::schedule;
         using namespace nncase::codegen;
 
-        scheduler sch(*target_, graph_.outputs());
-        auto schr = sch.schedule();
+        //scheduler sch(*target_, graph_.outputs());
+        //auto schr = sch.schedule();
         //codegen::generator gen(*target_, schr, compile_options_.dump_dir, compile_options_.dump_asm);
         //gen.gencode(output);
 
@@ -131,12 +137,10 @@ private:
     {
         if (compile_options_.dump_ir)
         {
-            auto file_path = compile_options_.dump_dir / ("ir_" + std::string(prefix) + ".gml");
+            auto dump_path = compile_options_.dump_dir / ("ir_" + std::string(prefix));
+            std::filesystem::create_directories(dump_path);
             graph.assign_names();
-
-            std::ofstream dot_file(file_path.replace_extension(".dot"), std::ios_base::out);
-            do_dump_graph(graph, dot_file);
-            dot_file.close();
+            ir::dump_graph(graph, dump_path);
         }
     }
 

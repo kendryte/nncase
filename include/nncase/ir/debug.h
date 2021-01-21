@@ -99,23 +99,6 @@ namespace ir
         return str;
     }
 
-    class dump_to_gml
-    {
-
-    public:
-        dump_to_gml(const ir::graph &src_graph, std::filesystem::path dst_path);
-        ~dump_to_gml();
-
-        size_t get_id_from_node(const node *n);
-        void step(const node &n, size_t force_gid = SIZE_MAX);
-        void save();
-
-    private:
-        const ir::graph &src_graph;
-        std::map<const node *, size_t> node_to_id;
-        void *gml;
-        std::filesystem::path dst_path;
-        size_t next_id;
-    };
+    NNCASE_API void dump_graph(const ir::graph &src_graph, const std::filesystem::path &dst_path);
 }
 }

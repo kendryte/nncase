@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/codegen/codegen.h>
+#include <nncase/codegen/module_builder.h>
 
 using namespace nncase;
 using namespace nncase::ir;

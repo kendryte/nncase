@@ -28,16 +28,17 @@ namespace nncase::ir
 class NNCASE_API node
 {
 public:
-    node(std::string name = "")
-        : name_(name) { }
+    node(std::string name = "");
     node(node &) = delete;
     node &operator=(node &) = delete;
     virtual ~node();
 
     const std::string &name() const noexcept { return name_; }
-
     template <class TArg, class... TArgs>
     void name(TArg arg, TArgs... args) { name_.assign(std::forward<TArg>(arg), std::forward<TArgs>(args)...); }
+
+    const module_type_t &module_type() const noexcept { return module_type_; }
+    void module_type(const module_type_t &type) noexcept { module_type_ = type; }
 
     std::span<input_connector *const> inputs() const noexcept { return input_connectors_; }
     std::span<output_connector *const> outputs() const noexcept { return output_connectors_; }
@@ -72,6 +73,7 @@ protected:
 
 private:
     std::string name_;
+    module_type_t module_type_;
     node_attributes attributes_ = node_attributes::node_attr_action;
     std::vector<input_connector *> input_connectors_;
     std::vector<output_connector *> output_connectors_;

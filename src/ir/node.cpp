@@ -13,9 +13,15 @@
  * limitations under the License.
  */
 #include <nncase/ir/node.h>
+#include <nncase/runtime/stackvm/runtime_module.h>
 
 using namespace nncase;
 using namespace nncase::ir;
+
+node::node(std::string name)
+    : name_(std::move(name)), module_type_(runtime::stackvm::stackvm_module_type)
+{
+}
 
 node::~node()
 {

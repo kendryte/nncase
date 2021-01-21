@@ -11,6 +11,7 @@ lyra/1.5.0
 magic_enum/0.7.0
 nlohmann_json/3.9.1
 #opencv/4.5.0
+protobuf/3.13.0
 pybind11/2.6.1
 xtensor/0.21.5
 mpark-variant/1.4.0

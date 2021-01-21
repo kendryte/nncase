@@ -16,24 +16,41 @@
 #include "node.h"
 #include "placeholders.h"
 #include <memory>
+#include <unordered_map>
 #include <vector>
 
 namespace nncase::ir
 {
+class graph;
+
+struct split_graph_result
+{
+    std::unique_ptr<graph> subgraph;
+    std::unordered_map<input_node *, output_connector *> inputs;
+    std::unordered_map<output_node *, std::vector<input_connector *>> outputs;
+};
+
 class NNCASE_API graph
 {
 public:
-    graph() = default;
+    graph() noexcept;
+    explicit graph(const module_type_t &module_type) noexcept
+        : module_type_(module_type) { }
+
     graph(graph &) = delete;
     graph(graph &&) = delete;
 
-    std::span<std::unique_ptr<node>> nodes() noexcept { return { nodes_.data(), nodes_.size() }; }
-    std::span<input_node *> inputs() noexcept { return { inputs_.data(), inputs_.size() }; }
-    std::span<output_node *> outputs() noexcept { return { outputs_.data(), outputs_.size() }; }
+    const module_type_t &module_type() const noexcept { return module_type_; }
 
-    std::span<std::unique_ptr<node> const> nodes() const noexcept { return { nodes_.data(), nodes_.size() }; }
-    std::span<input_node *const> inputs() const noexcept { return { inputs_.data(), inputs_.size() }; }
-    std::span<output_node *const> outputs() const noexcept { return { outputs_.data(), outputs_.size() }; }
+    std::span<std::unique_ptr<node>> nodes() noexcept { return nodes_; }
+    std::span<input_node *> inputs() noexcept { return inputs_; }
+    std::span<output_node *> outputs() noexcept { return outputs_; }
+    std::span<std::unique_ptr<graph>> subgraphs() noexcept { return subgraphs_; }
+
+    std::span<std::unique_ptr<node> const> nodes() const noexcept { return nodes_; }
+    std::span<input_node *const> inputs() const noexcept { return inputs_; }
+    std::span<output_node *const> outputs() const noexcept { return outputs_; }
+    std::span<std::unique_ptr<graph> const> subgraphs() const noexcept { return subgraphs_; }
 
     template <class T, class... TArgs>
     T *emplace(TArgs &&... args)
@@ -49,10 +66,12 @@ public:
     void assign_names();
     void dce();
     void cse();
-    std::unique_ptr<graph> split_subgraph(std::span<node *> nodes);
+    void merge_module_regions();
+    split_graph_result split_subgraph(std::span<node *> nodes);
     graph &add_subgraph(std::unique_ptr<graph> subgraph);
 
 private:
+    module_type_t module_type_;
     std::vector<std::unique_ptr<node>> nodes_;
     std::vector<std::unique_ptr<graph>> subgraphs_;
     std::vector<input_node *> inputs_;

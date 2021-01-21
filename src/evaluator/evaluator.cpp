@@ -26,7 +26,7 @@ namespace chrono = std::chrono;
 
 namespace
 {
-std::unordered_map<node_opcode, std::function<void(ir::node &, evaluator &)>> g_evaluators;
+std::unordered_map<node_opcode, std::function<void(ir::node &, module_evaluate_context &)>> g_evaluators;
 
 auto &get_evaluator(node_opcode opcode)
 {
@@ -37,12 +37,12 @@ auto &get_evaluator(node_opcode opcode)
 }
 }
 
-void nncase::ir::register_evaluator(ir::node_opcode opcode, std::function<void(ir::node &, evaluator &)> evaluator)
+void nncase::ir::register_evaluator(ir::node_opcode opcode, std::function<void(ir::node &, module_evaluate_context &)> evaluator)
 {
     g_evaluators.emplace(opcode, std::move(evaluator));
 }
 
-evaluator::evaluator(const schedule::schedule_result &sched)
+module_evaluate_context::module_evaluate_context(const module_schedule_result &sched)
     : sched_(sched)
 {
     for (auto &&usage : sched.max_usages)
@@ -69,7 +69,7 @@ evaluator::evaluator(const schedule::schedule_result &sched)
     }
 }
 
-eval_result<> evaluator::memory_at(const output_connector &conn)
+eval_result<> module_evaluate_context::memory_at(const output_connector &conn)
 {
     auto &alloc = sched_.allocations.at(&conn);
     auto &memory_pool = memory_pools_.at(alloc.memory_location);
@@ -80,7 +80,7 @@ eval_result<> evaluator::memory_at(const output_connector &conn)
     };
 }
 
-void evaluator::evaluate()
+void module_evaluate_context::evaluate()
 {
     using clock = chrono::high_resolution_clock;
     chrono::nanoseconds total_duration = {};
@@ -101,4 +101,31 @@ void evaluator::evaluate()
 #if PROFILE
     std::cout << "Total: " << total_duration.count() / 1e6 << "ms" << std::endl;
 #endif
+}
+
+evaluator::evaluator(const schedule::schedule_result &sched)
+    : sched_(sched)
+{
+    for (auto &module_p : sched.modules)
+        module_ctxs_.emplace(module_p.first, module_p.second);
+}
+
+module_evaluate_context &evaluator::module_context(ir::graph &graph)
+{
+    return module_ctxs_.at(&graph);
+}
+
+module_evaluate_context &evaluator::main_module_context()
+{
+    return module_context(*sched_.main_module);
+}
+
+eval_result<> evaluator::memory_at(const output_connector &conn)
+{
+    return main_module_context().memory_at(conn);
+}
+
+void evaluator::evaluate()
+{
+    module_ctxs_.at(sched_.main_module).evaluate();
 }

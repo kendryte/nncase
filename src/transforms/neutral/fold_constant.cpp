@@ -75,7 +75,7 @@ void fold_constant_transform::process(transform_context &context)
 
     // 2. Eval
     {
-        scheduler sch(context.target, new_graph.outputs());
+        scheduler sch(context.target, new_graph, new_graph.outputs());
         auto schr = sch.schedule();
         ir::evaluator eval(schr);
         eval.evaluate();

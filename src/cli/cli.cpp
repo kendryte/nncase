@@ -19,6 +19,9 @@ using namespace nncase::cli;
 
 int main(int argc, char *argv[])
 {
+    std::cout << "NNCase Command Line Tools " NNCASE_VERSION "-" NNCASE_GIT_DESC << std::endl
+              << "Copyright 2019-2020 Canaan Inc." << std::endl;
+
     bool show_version = false;
     auto cli = lyra::cli();
     cli.add_argument(lyra::opt(show_version).name("-v").name("--version").help("show version"));
@@ -35,13 +38,6 @@ int main(int argc, char *argv[])
     {
         std::cerr << result.errorMessage() << std::endl;
         return 1;
-    }
-
-    if (show_version)
-    {
-        std::cout << "NNCase Command Line Tools " NNCASE_VERSION "-" NNCASE_GIT_DESC << std::endl
-                  << "Copyright 2019-2020 Canaan Inc." << std::endl;
-        return 0;
     }
 
     return 0;

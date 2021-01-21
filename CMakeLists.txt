@@ -40,6 +40,7 @@ conan_cmake_run(CONANFILE conanfile.txt
                 BUILD missing)
 
 find_package (Python3 COMPONENTS Interpreter Development)
+find_package (Protobuf REQUIRED)
 include(cmake/flatc.cmake)
 
 set(NNCASE_MAIN_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
@@ -74,6 +75,9 @@ add_subdirectory(src/cli)
 
 # Python binding
 add_subdirectory(python/nncase/native)
+
+# Thrid party
+add_subdirectory(third_party/onnx)
 
 macro(nncase_add_runtime NAME)
     set(NNCASE_ENABLED_RUNTIMES ${NNCASE_ENABLED_RUNTIMES} ${NAME} PARENT_SCOPE)

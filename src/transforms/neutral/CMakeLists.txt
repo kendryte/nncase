@@ -1,6 +1,7 @@
 ﻿cmake_minimum_required (VERSION 3.13)
 
 target_sources(transforms PRIVATE
+    annotate_runtime.cpp
     fold_constant.cpp
     fold_bitcast.cpp
     fold_clamp.cpp

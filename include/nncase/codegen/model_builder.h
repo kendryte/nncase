@@ -12,15 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/codegen/module_builder.h>
-
-using namespace nncase;
-using namespace nncase::ir;
-using namespace nncase::codegen;
+#pragma once
+#include "module_builder.h"
 
 namespace nncase::codegen
 {
-void register_neutral_emitters()
+class NNCASE_API model_builder
 {
-}
+public:
+
+};
 }

@@ -27,6 +27,25 @@ using namespace nncase;
 using namespace nncase::ir;
 using namespace nncase::schedule;
 
+namespace nncase::schedule
+{
+struct schedule_context : module_schedule_result
+{
+    std::span<ir::output_node *> outputs;
+    std::unordered_map<const ir::output_connector *, logical_buffer> logical_buffers;
+    std::vector<physical_buffer> physical_buffers;
+
+    void generate_compute_sequence();
+    void make_logical_buffers();
+    void analyze_buffer_alias();
+    void fix_concat_indices();
+    void fix_lifetime();
+    void make_physical_buffers();
+    void allocate_physical_buffers(target &target);
+    void assign_allocations();
+};
+}
+
 namespace
 {
 memory_location_t decide_memory_location(ir::output_connector &conn) noexcept
@@ -101,19 +120,19 @@ private:
 };
 }
 
-void scheduler::generate_compute_sequence(schedule_result &result)
+void schedule_context::generate_compute_sequence()
 {
     auto alloc_visitor = make_relay_ir_visitor([&](node &node) {
         if (node.attributes() & node_attr_action)
-            result.compute_sequence.emplace_back(&node);
+            compute_sequence.emplace_back(&node);
     });
 
-    alloc_visitor.visit(outputs_);
+    alloc_visitor.visit(outputs);
 }
 
-void scheduler::make_logical_buffers()
+void schedule_context::make_logical_buffers()
 {
-    lifetime_recorder lr(logical_buffers_);
+    lifetime_recorder lr(logical_buffers);
     auto alloc_visitor = make_relay_ir_visitor([&](node &node) {
         for (auto out : node.outputs())
             lr.allocate(*out);
@@ -127,18 +146,18 @@ void scheduler::make_logical_buffers()
             lr.release(*out);
         }
     });
-    alloc_visitor.visit(outputs_);
+    alloc_visitor.visit(outputs);
 }
 
-void scheduler::analyze_buffer_alias()
+void schedule_context::analyze_buffer_alias()
 {
     auto alias_visitor = make_relay_ir_visitor([&](node &node) {
         // 1. bitcast
         if (auto b = node_cast<bitcast>(node))
         {
             auto &input = *b->input().connection();
-            auto &in_buf = logical_buffers_.at(&input);
-            auto &out_buf = logical_buffers_.at(&b->output());
+            auto &in_buf = logical_buffers.at(&input);
+            auto &out_buf = logical_buffers.at(&b->output());
 
             if (out_buf.memory_location() == mem_output && in_buf.memory_location() == mem_data)
                 in_buf.memory_location() = mem_output;
@@ -148,7 +167,7 @@ void scheduler::analyze_buffer_alias()
                 || (in_buf.memory_location() != mem_input && in_buf.memory_location() != mem_rdata))
             {
                 shape_t begin(input.shape().size(), 0);
-                out_buf.parent() = { &logical_buffers_.at(&input), begin };
+                out_buf.parent() = { &logical_buffers.at(&input), begin };
                 b->attributes(b->attributes() & ~node_attr_action);
             }
         }
@@ -163,7 +182,7 @@ void scheduler::analyze_buffer_alias()
             // input & rdata should be copied to output
             if ((c->axis() == 0 || std::all_of(inputs[0]->shape().begin(), inputs[0]->shape().begin() + c->axis(), [](size_t dim) { return dim == 1; }))
                 && std::all_of(inputs.begin(), inputs.end(), [this](input_connector *in) {
-                       auto &in_buf = logical_buffers_.at(in->connection());
+                       auto &in_buf = logical_buffers.at(in->connection());
                        return (in_buf.memory_location() != mem_input && in_buf.memory_location() != mem_rdata)
                            && in->connection()->owner().runtime_opcode() != op_slice;
                    })
@@ -177,10 +196,10 @@ void scheduler::analyze_buffer_alias()
             }
         }
     });
-    alias_visitor.visit(outputs_);
+    alias_visitor.visit(outputs);
 }
 
-void scheduler::fix_concat_indices()
+void schedule_context::fix_concat_indices()
 {
     auto fix_concat_visitor = make_relay_ir_visitor([&](node &node) {
         if (auto c = node_cast<concat>(node))
@@ -191,11 +210,11 @@ void scheduler::fix_concat_indices()
             // 1. Init indices
             {
                 auto axis = c->axis();
-                auto &out_buf = logical_buffers_.at(&c->output());
+                auto &out_buf = logical_buffers.at(&c->output());
                 shape_t cnt_begin(c->input_at(0).shape().size(), 0);
                 for (auto in : c->inputs())
                 {
-                    auto &in_buf = logical_buffers_.at(in->connection());
+                    auto &in_buf = logical_buffers.at(in->connection());
                     in_buf.parent() = { &out_buf, cnt_begin };
                     cnt_begin[axis] += in->shape()[axis];
                 }
@@ -213,12 +232,12 @@ void scheduler::fix_concat_indices()
                 shape_t child_begin(child->output().shape().size(), 0);
                 child_begin[axis] += std::accumulate(parent->concat_dims().begin(), parent->concat_dims().begin() + index, 0);
 
-                auto &in_buf = logical_buffers_.at(&child->output());
-                auto &out_buf = logical_buffers_.at(&parent->output());
+                auto &in_buf = logical_buffers.at(&child->output());
+                auto &out_buf = logical_buffers.at(&parent->output());
                 in_buf.parent() = { &out_buf, child_begin };
                 for (auto &in : c->inputs())
                 {
-                    auto &in_buf = logical_buffers_.at(in->connection());
+                    auto &in_buf = logical_buffers.at(in->connection());
                     auto &desc = *in_buf.parent();
                     desc.parent = &out_buf;
                     desc.begin += child_begin;
@@ -228,13 +247,13 @@ void scheduler::fix_concat_indices()
             }
         }
     });
-    fix_concat_visitor.visit(outputs_);
+    fix_concat_visitor.visit(outputs);
 }
 
-void scheduler::fix_lifetime()
+void schedule_context::fix_lifetime()
 {
     // Assign parent
-    for (auto &bp : logical_buffers_)
+    for (auto &bp : logical_buffers)
     {
         auto &p = bp.second.parent();
         if (p)
@@ -245,7 +264,7 @@ void scheduler::fix_lifetime()
     }
 
     // Extend lifetime
-    for (auto &bp : logical_buffers_)
+    for (auto &bp : logical_buffers)
     {
         auto &lifetime = bp.second.lifetime();
         if (bp.second.parent())
@@ -259,36 +278,47 @@ void scheduler::fix_lifetime()
     }
 }
 
-void scheduler::make_physical_buffers()
+void schedule_context::make_physical_buffers()
 {
     std::unordered_map<logical_buffer *, size_t> physical_ids;
-    for (auto &bp : logical_buffers_)
+    for (auto &bp : logical_buffers)
     {
         if (!bp.second.parent())
         {
             auto id = physical_ids.size();
             physical_ids.emplace(&bp.second, id);
-            physical_buffers_.emplace_back(id, bp.second);
+            physical_buffers.emplace_back(id, bp.second);
         }
     }
 
     // Assign parents
-    for (auto &bp : logical_buffers_)
+    for (auto &bp : logical_buffers)
     {
         auto parent = bp.second.parent() ? bp.second.parent()->parent : &bp.second;
-        bp.second.physical() = &physical_buffers_.at(physical_ids.at(parent));
+        bp.second.physical() = &physical_buffers.at(physical_ids.at(parent));
     }
 }
 
-void scheduler::allocate_physical_buffers(schedule_result &result)
+void schedule_context::allocate_physical_buffers(target &target)
 {
     allocator_map_t allocators;
     std::vector<std::unique_ptr<buffer_allocator>> allocator_holder;
-    target_.register_allocators(allocators, allocator_holder);
+    target.register_allocators(allocators, allocator_holder);
+
+    for (auto &usage_p : max_usages)
+    {
+        // All of rdata live through the module lifetime
+        if (usage_p.first == mem_rdata)
+        {
+            auto it = allocators.find(usage_p.first);
+            if (it != allocators.end())
+                it->second->base_offset(usage_p.second);
+        }
+    }
 
     std::vector<physical_buffer *> orders;
-    orders.reserve(physical_buffers_.size());
-    for (auto &b : physical_buffers_)
+    orders.reserve(physical_buffers.size());
+    for (auto &b : physical_buffers)
         orders.emplace_back(&b);
     std::sort(orders.begin(), orders.end(), [](const physical_buffer *lhs, const physical_buffer *rhs) {
         return lhs->lifetime().birth < rhs->lifetime().birth;
@@ -300,19 +330,19 @@ void scheduler::allocate_physical_buffers(schedule_result &result)
     for (auto &alloc : allocators)
     {
         alloc.second->finish();
-        result.max_usages.emplace(alloc.first, alloc.second->max_usage());
+        max_usages.emplace(alloc.first, alloc.second->max_usage());
     }
 
-    for (auto &b : physical_buffers_)
-        b.allocation() = allocators.at(b.owner().memory_location())->allocations().at(&b);
+    for (auto &b : physical_buffers)
+        b.allocation() = memory_span { allocators.at(b.owner().memory_location())->allocations().at(&b) };
 }
 
-void scheduler::assign_allocations(schedule_result &result)
+void schedule_context::assign_allocations()
 {
     auto alloc_visitor = make_relay_ir_visitor([&](node &node) {
         for (auto out : node.outputs())
         {
-            auto &lbuf = logical_buffers_.at(out);
+            auto &lbuf = logical_buffers.at(out);
             auto &owner = lbuf.physical()->owner();
             auto &memory = lbuf.physical()->allocation();
 
@@ -333,24 +363,39 @@ void scheduler::assign_allocations(schedule_result &result)
                 auto &begin = lbuf.parent()->begin;
                 alloc.start += ir::get_bytes(lbuf.type()) * xt::element_offset<size_t>(alloc.strides, begin.begin(), begin.end());
             }
-            result.allocations.emplace(out, alloc);
+
+            allocations.emplace(out, alloc);
         }
     });
-    alloc_visitor.visit(outputs_);
+    alloc_visitor.visit(outputs);
 }
 
 schedule_result scheduler::schedule()
 {
-    schedule_result result;
+    auto schedule_module = [&](std::span<ir::output_node *> outputs, module_schedule_result &result) {
+        schedule_context context;
+        context.outputs = outputs;
 
-    make_logical_buffers();
-    analyze_buffer_alias();
-    fix_concat_indices();
-    fix_lifetime();
-    generate_compute_sequence(result);
-    make_physical_buffers();
-    allocate_physical_buffers(result);
-    assign_allocations(result);
+        context.make_logical_buffers();
+        context.analyze_buffer_alias();
+        context.fix_concat_indices();
+        context.fix_lifetime();
+        context.generate_compute_sequence();
+        context.make_physical_buffers();
+        context.allocate_physical_buffers(target_);
+        context.assign_allocations();
+        result = module_schedule_result { context };
+    };
+
+    schedule_result result;
+    result.main_module = &main_graph_;
+
+    // 1. main graph
+    schedule_module(outputs_, result.modules[result.main_module]);
+
+    // 2. subgraphs
+    for (auto &subgraph : main_graph_.subgraphs())
+        schedule_module(subgraph->outputs(), result.modules[subgraph.get()]);
 
     return result;
 }

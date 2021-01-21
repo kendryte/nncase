@@ -14,6 +14,8 @@
  */
 #pragma once
 #include <nncase/runtime/datatypes.h>
+#include <span>
+#include <type_traits>
 #include <xtensor/xshape.hpp>
 
 namespace nncase::ir
@@ -39,4 +41,10 @@ enum connector_attributes
 
 DEFINE_ENUM_FLAG_OPERATORS(node_attributes)
 DEFINE_ENUM_FLAG_OPERATORS(connector_attributes)
+
+template <class T, class = std::enable_if_t<std::is_pointer_v<T>>>
+std::vector<std::decay_t<T>> dup(std::span<T> source)
+{
+    return { source.begin(), source.end() };
+}
 }

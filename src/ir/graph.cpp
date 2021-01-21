@@ -13,7 +13,9 @@
  * limitations under the License.
  */
 #include <nncase/ir/graph.h>
+#include <nncase/ir/ops/call.h>
 #include <nncase/ir/visitor.h>
+#include <nncase/runtime/stackvm/runtime_module.h>
 #include <unordered_set>
 
 using namespace nncase;
@@ -22,6 +24,26 @@ using namespace nncase::ir;
 namespace
 {
 std::unordered_set<node_opcode> dontcse_ops { op_input_node, op_output_node, op_uninitialized, op_ignore_node };
+
+void add_region_node(node &root, std::vector<node *> &region_nodes, std::unordered_set<node *> &visited)
+{
+    if (visited.emplace(&root).second)
+    {
+        region_nodes.emplace_back(&root);
+
+        for (auto in : root.inputs())
+        {
+            auto &conn = in->connection()->owner();
+            if (conn.module_type() == root.module_type())
+                add_region_node(conn, region_nodes, visited);
+        }
+    }
+}
+}
+
+graph::graph() noexcept
+    : graph(runtime::stackvm::stackvm_module_type)
+{
 }
 
 void graph::assign_names()
@@ -40,8 +62,7 @@ void graph::assign_names()
             // needs rename
             size_t i;
             for (i = 0; names.find(node->name() + "_" + std::to_string(i)) != names.end(); i++)
-            {
-            }
+                ;
             node->name(node->name() + "_" + std::to_string(i));
         }
 
@@ -75,44 +96,63 @@ void graph::dce()
     nodes_.erase(end, std::end(nodes_));
 }
 
-std::unique_ptr<graph> graph::split_subgraph(std::span<node *> nodes)
+split_graph_result graph::split_subgraph(std::span<node *> nodes)
 {
-    auto subgraph = std::make_unique<graph>();
+    split_graph_result result;
+    result.subgraph = std::make_unique<graph>();
 
+    // 1. Erase nodes
+    std::unordered_set<node *> subgraph_nodes;
     for (auto it = nodes.begin(); it != nodes.end(); ++it)
     {
         auto find_it = std::find_if(nodes_.begin(), nodes_.end(), [&](auto &p) { return p.get() == *it; });
         if (find_it != nodes_.end())
         {
-            subgraph->nodes_.emplace_back(std::move(*find_it));
+            subgraph_nodes.emplace(find_it->get());
+            result.subgraph->nodes_.emplace_back(std::move(*find_it));
             nodes_.erase(find_it);
         }
     }
 
+    // 2. Find in/out connectors
     for (auto node : nodes)
     {
         for (auto in : node->inputs())
         {
-            if (!in->connection())
+            if (!subgraph_nodes.contains(&in->connection()->owner()))
             {
-                auto inode = subgraph->emplace<input_node>(in->type(), in->shape());
+                auto inode = result.subgraph->emplace<input_node>(in->type(), in->shape());
                 inode->name("new_input");
+                inode->module_type(node->module_type());
+                result.inputs.emplace(inode, in->connection());
                 in->connect(inode->output());
             }
         }
 
         for (auto out : node->outputs())
         {
-            if (out->connections().empty())
+            auto conns = out->connections();
+            if (std::any_of(conns.begin(), conns.end(), [&](input_connector *in) { return !subgraph_nodes.contains(&in->owner()); }))
             {
-                auto onode = subgraph->emplace<output_node>(out->type(), out->shape());
+                auto onode = result.subgraph->emplace<output_node>(out->type(), out->shape());
                 onode->name("new_output");
+                onode->module_type(node->module_type());
+
+                for (auto in : dup(conns))
+                {
+                    if (!subgraph_nodes.contains(&in->owner()))
+                    {
+                        result.outputs[onode].emplace_back(in);
+                        in->clear_connection();
+                    }
+                }
+
                 out->connect(onode->input());
             }
         }
     }
 
-    return subgraph;
+    return result;
 }
 
 graph &graph::add_subgraph(std::unique_ptr<graph> subgraph)
@@ -139,6 +179,7 @@ void graph::cse()
                     continue;
 
                 if (!dontcse_ops.contains(inode->runtime_opcode())
+                    && inode->module_type() == jnode->module_type()
                     && inode->equals(*jnode))
                 {
                     for (size_t oi = 0; oi < inode->outputs().size(); oi++)
@@ -158,6 +199,51 @@ void graph::cse()
         {
             dce();
             csed_nodes.clear();
+        }
+        else
+        {
+            break;
+        }
+    }
+}
+
+void graph::merge_module_regions()
+{
+    while (true)
+    {
+        node *first_node = nullptr;
+        auto find_region = make_relay_ir_visitor([&](node &node) {
+            if (node.module_type() != runtime::stackvm::stackvm_module_type)
+            {
+                first_node = &node;
+                return true;
+            }
+
+            return false;
+        });
+        find_region.visit(outputs());
+
+        if (first_node)
+        {
+            std::vector<node *> region_nodes;
+            std::unordered_set<node *> visited;
+            add_region_node(*first_node, region_nodes, visited);
+            auto split = split_subgraph(region_nodes);
+            auto &subg = add_subgraph(std::move(split.subgraph));
+            auto c = emplace<call>(subg);
+
+            for (auto &inp : split.inputs)
+            {
+                auto &outer_in = c->outer_connector(*inp.first);
+                outer_in.connect(*inp.second);
+            }
+
+            for (auto &outp : split.outputs)
+            {
+                auto &outer_out = c->outer_connector(*outp.first);
+                for (auto in : outp.second)
+                    in->connect(outer_out);
+            }
         }
         else
         {

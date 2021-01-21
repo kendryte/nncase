@@ -56,12 +56,6 @@ namespace ir
             std::string name_;
         };
 
-        template <class T, class = std::enable_if_t<std::is_pointer_v<T>>>
-        std::vector<std::decay_t<T>> dup(std::span<T> source)
-        {
-            return { source.begin(), source.end() };
-        }
-
         void link(ir::output_connector &old_c, ir::output_connector &new_c, ir::quantizer *quantizer = nullptr);
     }
 }

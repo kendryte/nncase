@@ -14,6 +14,7 @@
  */
 #include <nncase/ir/op_utils.h>
 #include <nncase/ir/ops/call.h>
+#include <nncase/ir/visitor.h>
 
 using namespace nncase;
 using namespace nncase::ir;
@@ -28,6 +29,41 @@ call::call(graph &target)
     i = 0;
     for (auto &out : target_.outputs())
         add_output(out->name(), out->input().type(), out->input().shape());
+}
+
+input_connector &call::outer_connector(input_node &subgraph_input)
+{
+    auto it = std::find(target_.inputs().begin(), target_.inputs().end(), &subgraph_input);
+    if (it == target_.inputs().end())
+        throw std::invalid_argument("Cannot find input node in subgraph");
+    return input_at(std::distance(target_.inputs().begin(), it));
+}
+
+input_connector &call::outer_connector(input_connector &subgraph_input)
+{
+    auto &owner = subgraph_input.connection()->owner();
+    if (auto in = node_cast<input_node>(owner))
+        return outer_connector(*in);
+    else
+        throw std::invalid_argument("Input connector is not exported");
+}
+
+output_connector &call::outer_connector(output_node &subgraph_output)
+{
+    auto it = std::find(target_.outputs().begin(), target_.outputs().end(), &subgraph_output);
+    if (it == target_.outputs().end())
+        throw std::invalid_argument("Cannot find output node in subgraph");
+    return output_at(std::distance(target_.outputs().begin(), it));
+}
+
+output_connector &call::outer_connector(output_connector &subgraph_input)
+{
+    assert(subgraph_input.connections().size() == 1);
+    auto &owner = subgraph_input.connections()[0]->owner();
+    if (auto out = node_cast<output_node>(owner))
+        return outer_connector(*out);
+    else
+        throw std::invalid_argument("Output connector is not exported");
 }
 
 bool call::properties_equal(node &other) const

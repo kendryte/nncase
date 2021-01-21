@@ -52,36 +52,35 @@ namespace schedule
 
     using allocation_map_t = std::unordered_map<const ir::output_connector *, buffer_allocation>;
 
-    struct schedule_result
+    struct module_schedule_result
     {
         std::vector<ir::node *> compute_sequence;
         std::unordered_map<memory_location_t, size_t> max_usages;
         allocation_map_t allocations;
     };
 
+    struct schedule_result
+    {
+        std::unordered_map<ir::graph *, module_schedule_result> modules;
+        ir::graph *main_module;
+    };
+
+    struct schedule_context;
+
     class scheduler
     {
     public:
-        scheduler(target &target, std::span<ir::output_node *> outputs)
-            : target_(target), outputs_(outputs) { }
+        scheduler(target &target, ir::graph &main_graph, std::span<ir::output_node *> outputs)
+            : target_(target), main_graph_(main_graph), outputs_(outputs) { }
 
         schedule_result schedule();
 
     private:
-        void generate_compute_sequence(schedule_result &result);
-        void make_logical_buffers();
-        void analyze_buffer_alias();
-        void fix_concat_indices();
-        void fix_lifetime();
-        void make_physical_buffers();
-        void allocate_physical_buffers(schedule_result &result);
-        void assign_allocations(schedule_result &result);
-
     private:
         target &target_;
+        ir::graph &main_graph_;
         std::span<ir::output_node *> outputs_;
-        std::unordered_map<const ir::output_connector *, logical_buffer> logical_buffers_;
-        std::vector<physical_buffer> physical_buffers_;
+        schedule_context *cnt_context_;
     };
 }
 }

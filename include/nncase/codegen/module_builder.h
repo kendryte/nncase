@@ -26,7 +26,7 @@
 
 namespace nncase::codegen
 {
-class NNCASE_API module_decompiler
+class NNCASE_API section_decompiler
 {
 public:
     virtual void decompile(std::span<const uint8_t> input, std::span<const symbol> symbols, std::ostream &output) = 0;
@@ -47,39 +47,58 @@ private:
         }
     };
 
+    struct rdata_merge_info
+    {
+        size_t start;
+        size_t size;
+
+        rdata_merge_info(std::in_place_t = std::in_place)
+        {
+        }
+    };
+
 public:
-    module_builder(const std::filesystem::path &dump_dir, bool dump_asm = false);
+    module_builder(uint32_t alignment, std::string_view module_name, const schedule::module_schedule_result &sched, const std::filesystem::path &dump_dir, bool dump_asm = false);
     module_builder(module_builder &) = delete;
     module_builder(module_builder &&) = delete;
 
-    void gencode(std::ostream &output);
+    void build(std::ostream &output);
 
     const schedule::buffer_allocation &allocation(ir::output_connector &conn) const;
     const schedule::buffer_allocation &allocation(ir::input_connector &conn) const { return allocation(*conn.connection()); }
+    size_t max_usage(memory_location_t location) const;
     section_writer &writer(std::string_view section_name);
 
     virtual module_type_t module_type() const noexcept = 0;
-    virtual std::unique_ptr<module_decompiler> create_decompiler(std::string_view section_name) = 0;
-    void compile_function(std::string_view function_name, const schedule::schedule_result &sched);
+    virtual std::unique_ptr<section_decompiler> create_decompiler(std::string_view section_name) = 0;
 
 protected:
-    void merge_section(std::string_view from, std::string_view to);
+    void merge_to_rdata_section(std::string_view from);
 
     virtual void begin_emit() { }
     virtual void emit(ir::node &node) = 0;
     virtual void end_emit() { }
 
 private:
-    std::vector<nncase::ir::node *> generate_runtime_ops(const schedule::schedule_result &sched);
+    std::vector<nncase::ir::node *> generate_runtime_ops();
+    void compile();
     void decompile(std::string_view stage, std::string_view section_name, std::span<const uint8_t> input, std::span<const symbol> symbols);
+
+    void write_constants();
+    void generate_merge_info();
+    void generate_symbol_offsets();
+    void write_symbol_refs();
     void link();
     void write_binary(std::ostream &output);
 
 private:
+    uint32_t alignment_;
+    std::string module_name_;
+    const schedule::module_schedule_result &sched_;
     std::filesystem::path dump_dir_;
     bool dump_asm_;
     std::map<std::string, section, std::less<>> section_writer_;
-    std::map<std::string, std::unordered_set<std::string>, std::less<>> section_merges_;
-    const schedule::schedule_result *cnt_sched_;
+    std::map<std::string, rdata_merge_info, std::less<>> rdata_section_merges_;
+    std::unordered_map<std::string_view, std::pair<size_t, std::string_view>> symbol_offsets_;
 };
 }

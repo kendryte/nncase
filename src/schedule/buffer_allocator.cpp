@@ -45,6 +45,11 @@ buffer_allocator::allocated_buffer buffer_allocator::make_alloc(const physical_b
     return alloc;
 }
 
+void linear_buffer_allocator::base_offset(size_t value)
+{
+    max_usage_ = value;
+}
+
 void linear_buffer_allocator::mark(const physical_buffer &buffer)
 {
     auto alloc = make_alloc(buffer);
@@ -60,6 +65,11 @@ void linear_buffer_allocator::finish()
 first_fit_allocator::first_fit_allocator(std::optional<size_t> fixed_size)
     : list_(fixed_size)
 {
+}
+
+void first_fit_allocator::base_offset(size_t value)
+{
+    throw std::runtime_error("First fit allocator doesn't support base offset");
 }
 
 void first_fit_allocator::mark(const physical_buffer &buffer)
