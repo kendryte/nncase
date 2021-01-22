@@ -182,5 +182,5 @@ void tflite_importer::convert_op(const tflite::Operator &op)
 #include "opcode.def"
 #undef DEFINE_OPCODE
 
-    throw std::runtime_error(std::string(__FILE__) + std::string("Not supported tflite opcode: ") + tflite::EnumNameBuiltinOperator(builtin_code));
+    throw std::runtime_error(std::string("Unsupported tflite opcode: ") + tflite::EnumNameBuiltinOperator(builtin_code));
 }

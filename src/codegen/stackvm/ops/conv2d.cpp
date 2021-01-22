@@ -12,28 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#pragma once
-#include <nncase/codegen/stackvm/module_builder.h>
-#include <nncase/ir/ops/conv2d.h>
-#include <nncase/ir/placeholders.h>
+#include "../module_builder.h"
 
-namespace nncase::codegen
+using namespace nncase;
+using namespace nncase::codegen;
+using namespace nncase::ir;
+
+void stackvm_module_builder::emit(conv2d &node)
 {
-class stackvm_module_builder : public module_builder
-{
-public:
-    stackvm_module_builder(std::string_view module_name, const schedule::module_schedule_result &sched);
 
-    module_type_t module_type() const noexcept override;
-
-protected:
-    section_writer &text_writer();
-
-    void emit(ir::node &node) override;
-
-private:
-#define DEFINE_OP(op_) void emit(ir::op_ &op);
-#include "ops.def"
-#undef DEFINE_OP
-};
 }

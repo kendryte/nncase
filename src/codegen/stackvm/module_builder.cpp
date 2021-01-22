@@ -37,3 +37,17 @@ module_type_t stackvm_module_builder::module_type() const noexcept
 {
     return stackvm_module_type;
 }
+
+section_writer &stackvm_module_builder::text_writer()
+{
+    return writer(".text");
+}
+
+void stackvm_module_builder::emit(ir::node &node)
+{
+#define DEFINE_OP(op)                          \
+    if (node.runtime_opcode() == op::opcode()) \
+        return emit(static_cast<op &>(node));
+#include "ops.def"
+#undef DEFINE_OP
+}
