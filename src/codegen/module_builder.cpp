@@ -32,9 +32,20 @@ using namespace nncase::ir;
 using namespace nncase::schedule;
 using namespace nncase::runtime;
 
-module_builder::module_builder(uint32_t alignment, std::string_view module_name, const schedule::module_schedule_result &sched, const std::filesystem::path &dump_dir, bool dump_asm)
-    : alignment_(alignment), module_name_(module_name), sched_(sched), dump_dir_(dump_dir), dump_asm_(dump_asm)
+namespace
 {
+std::unordered_set<node_opcode> non_runtime_opcodes { op_input_node, op_output_node, op_uninitialized, op_ignore_node, op_constant };
+}
+
+module_builder::module_builder(uint32_t alignment, std::string_view module_name, const schedule::module_schedule_result &sched)
+    : alignment_(alignment), module_name_(module_name), sched_(sched), dump_asm_(false)
+{
+}
+
+void module_builder::config_dump(const std::filesystem::path &dump_dir, bool dump_asm)
+{
+    dump_dir_ = dump_dir;
+    dump_asm_ = dump_asm;
 }
 
 const schedule::buffer_allocation &module_builder::allocation(ir::output_connector &conn) const
@@ -54,7 +65,10 @@ std::vector<nncase::ir::node *> module_builder::generate_runtime_ops()
 {
     std::vector<nncase::ir::node *> runtime_ops;
     for (auto &&node : sched_.compute_sequence)
-        runtime_ops.emplace_back(node);
+    {
+        if (!non_runtime_opcodes.contains(node->runtime_opcode()))
+            runtime_ops.emplace_back(node);
+    }
 
     if (dump_asm_)
     {
@@ -73,6 +87,11 @@ size_t module_builder::max_usage(memory_location_t location) const
     if (it != sched_.max_usages.end())
         return it->second;
     return 0;
+}
+
+void module_builder::emit(ir::node &node)
+{
+    throw std::runtime_error("Emitter for " + node.name() + "[" + std::string(node.runtime_opcode().name) + "] is not found in module " + module_name_ + "[" + module_type().data() + "]");
 }
 
 void module_builder::write_constants()
@@ -118,6 +137,11 @@ void module_builder::compile()
 void module_builder::merge_to_rdata_section(std::string_view from)
 {
     rdata_section_merges_.emplace(from, std::in_place);
+}
+
+std::unique_ptr<section_decompiler> module_builder::create_decompiler([[maybe_unused]] std::string_view section_name)
+{
+    return nullptr;
 }
 
 void module_builder::decompile(std::string_view stage, std::string_view section_name, std::span<const uint8_t> input, std::span<const symbol> symbols)
@@ -226,7 +250,7 @@ void module_builder::link()
     }
 }
 
-void module_builder::write_binary(std::ostream &output)
+void module_builder::write_binary(binary_writer &writer)
 {
     std::vector<memory_range> inputs;
     std::vector<shape_t> input_shapes;
@@ -248,8 +272,6 @@ void module_builder::write_binary(std::ostream &output)
             output_shapes.emplace_back(alloc.shape);
         }
     }
-
-    binary_writer writer(output);
 
     // Skip module header
     auto header_pos = writer.position();
@@ -326,7 +348,7 @@ void module_builder::write_binary(std::ostream &output)
     // header
     module_header header {};
     header.type = module_type();
-    header.size = (uint32_t)end_pos;
+    header.size = (uint32_t)(end_pos - header_pos);
     header.mempools = (uint32_t)sched_.max_usages.size();
     header.inputs = (uint32_t)inputs.size();
     header.outputs = (uint32_t)outputs.size();
@@ -338,9 +360,9 @@ void module_builder::write_binary(std::ostream &output)
     writer.position(end_pos);
 }
 
-void module_builder::build(std::ostream &output)
+void module_builder::build(binary_writer &writer)
 {
     compile();
     link();
-    write_binary(output);
+    write_binary(writer);
 }

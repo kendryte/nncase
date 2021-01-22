@@ -13,24 +13,15 @@
  * limitations under the License.
  */
 #pragma once
-#include "module_builder.h"
+#include <nncase/codegen/stackvm/module_builder.h>
 
 namespace nncase::codegen
 {
-class NNCASE_API model_builder
+class stackvm_module_builder : public module_builder
 {
 public:
-    model_builder(target &target, const schedule::schedule_result &sched);
-    model_builder(model_builder &) = delete;
-    model_builder(model_builder &&) = delete;
+    stackvm_module_builder(std::string_view module_name, const schedule::module_schedule_result &sched);
 
-    void config_dump(const std::filesystem::path &dump_dir, bool dump_asm);
-    void build(std::ostream &output);
-
-private:
-    target &target_;
-    const schedule::schedule_result &sched_;
-    std::filesystem::path dump_dir_;
-    bool dump_asm_;
+    module_type_t module_type() const noexcept override;
 };
 }

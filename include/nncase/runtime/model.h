@@ -22,10 +22,8 @@ struct model_header
 {
     uint32_t identifier;
     uint32_t version;
-    uint32_t checksum;
     uint32_t flags;
     uint32_t alignment;
-    uint32_t paddings;
     uint32_t modules;
     uint32_t entry_module;
 };

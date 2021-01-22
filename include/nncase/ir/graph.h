@@ -40,6 +40,8 @@ public:
     graph(graph &) = delete;
     graph(graph &&) = delete;
 
+    const std::string &name() const noexcept { return name_; }
+    void name(std::string value) { name_ = std::move(value); }
     const module_type_t &module_type() const noexcept { return module_type_; }
 
     std::span<std::unique_ptr<node>> nodes() noexcept { return nodes_; }
@@ -71,6 +73,7 @@ public:
     graph &add_subgraph(std::unique_ptr<graph> subgraph);
 
 private:
+    std::string name_;
     module_type_t module_type_;
     std::vector<std::unique_ptr<node>> nodes_;
     std::vector<std::unique_ptr<graph>> subgraphs_;

@@ -96,10 +96,11 @@ public:
         using namespace nncase::schedule;
         using namespace nncase::codegen;
 
-        //scheduler sch(*target_, graph_.outputs());
-        //auto schr = sch.schedule();
-        //codegen::generator gen(*target_, schr, compile_options_.dump_dir, compile_options_.dump_asm);
-        //gen.gencode(output);
+        scheduler sch(*target_, graph_, graph_.outputs());
+        auto schr = sch.schedule();
+        model_builder builder(*target_, schr);
+        builder.config_dump(compile_options_.dump_dir, compile_options_.dump_asm);
+        builder.build(output);
 
         dump_summary(graph_);
     }

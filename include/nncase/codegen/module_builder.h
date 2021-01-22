@@ -58,11 +58,13 @@ private:
     };
 
 public:
-    module_builder(uint32_t alignment, std::string_view module_name, const schedule::module_schedule_result &sched, const std::filesystem::path &dump_dir, bool dump_asm = false);
+    module_builder(uint32_t alignment, std::string_view module_name, const schedule::module_schedule_result &sched);
     module_builder(module_builder &) = delete;
     module_builder(module_builder &&) = delete;
 
-    void build(std::ostream &output);
+    uint32_t alignment() const noexcept { return alignment_; }
+    void config_dump(const std::filesystem::path &dump_dir, bool dump_asm);
+    void build(binary_writer &writer);
 
     const schedule::buffer_allocation &allocation(ir::output_connector &conn) const;
     const schedule::buffer_allocation &allocation(ir::input_connector &conn) const { return allocation(*conn.connection()); }
@@ -70,13 +72,13 @@ public:
     section_writer &writer(std::string_view section_name);
 
     virtual module_type_t module_type() const noexcept = 0;
-    virtual std::unique_ptr<section_decompiler> create_decompiler(std::string_view section_name) = 0;
+    virtual std::unique_ptr<section_decompiler> create_decompiler(std::string_view section_name);
 
 protected:
     void merge_to_rdata_section(std::string_view from);
 
     virtual void begin_emit() { }
-    virtual void emit(ir::node &node) = 0;
+    virtual void emit(ir::node &node);
     virtual void end_emit() { }
 
 private:
@@ -89,7 +91,7 @@ private:
     void generate_symbol_offsets();
     void write_symbol_refs();
     void link();
-    void write_binary(std::ostream &output);
+    void write_binary(binary_writer &writer);
 
 private:
     uint32_t alignment_;

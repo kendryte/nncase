@@ -43,9 +43,9 @@ namespace
 result<rt_module_activator_t> find_runtime_activator(const module_type_t &type)
 {
 #ifdef NNCASE_SIMULATOR
-    auto module_name = fmt::format("nncase.simulator.{}.dll", type.data());
+    auto module_name = fmt::format("nncase.module.{}.dll", type.data());
 #else
-    auto module_name = fmt::format("nncase.runtime.{}.dll", type.data());
+    auto module_name = fmt::format("nncase.rt_module.{}.dll", type.data());
 #endif
     auto mod = LoadLibraryA(module_name.c_str());
     TRY_WIN32_IF_NOT(mod);

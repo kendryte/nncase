@@ -70,6 +70,7 @@ add_subdirectory(src/transforms)
 add_subdirectory(src/codegen)
 add_subdirectory(src/runtime)
 add_subdirectory(src/targets)
+add_subdirectory(src/plugin)
 add_subdirectory(src/nncase)
 add_subdirectory(src/cli)
 

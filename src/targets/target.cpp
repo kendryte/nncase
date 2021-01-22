@@ -12,6 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <nncase/codegen/model_builder.h>
+#include <nncase/codegen/stackvm/module_builder.h>
+#include <nncase/runtime/stackvm/runtime_module.h>
 #include <nncase/targets/target.h>
 
 using namespace nncase;
@@ -21,4 +24,16 @@ target_options &target::options()
     if (!options_)
         options_ = on_create_options();
     return *options_;
+}
+
+void target::config_attributes(target_attributes &attrs)
+{
+}
+
+std::unique_ptr<codegen::module_builder> target::create_module_builder(const module_type_t &type, std::string_view module_name, const schedule::module_schedule_result &sched)
+{
+    if (type == runtime::stackvm::stackvm_module_type)
+        return codegen::create_stackvm_module_builder(module_name, sched);
+    else
+        throw std::runtime_error("Module builder for module " + std::string(module_name) + "[" + type.data() + "] is not found");
 }

@@ -20,6 +20,16 @@
 #include <unordered_set>
 #include <vector>
 
+namespace nncase::codegen
+{
+class module_builder;
+}
+
+namespace nncase::schedule
+{
+struct module_schedule_result;
+}
+
 namespace nncase::ir::transforms
 {
 class pass;
@@ -39,12 +49,23 @@ struct target_options
     bool quantize_binary;
 };
 
+struct target_attributes
+{
+};
+
 class NNCASE_API target
 {
 public:
     virtual ~target() = default;
 
     target_options &options();
+
+    target_attributes attributes()
+    {
+        target_attributes attrs {};
+        config_attributes(attrs);
+        return attrs;
+    }
 
     virtual void register_allocators(schedule::allocator_map_t &allocators, std::vector<std::unique_ptr<schedule::buffer_allocator>> &allocator_holders) = 0;
     virtual void register_codegen_ops() = 0;
@@ -54,9 +75,11 @@ public:
     //virtual void add_quantization_checkpoints(ir::transforms::pass_manager &pass_mgr) = 0;
     //virtual void optimize_quantize(ir::quantizer &quantizer, ir::transforms::pass_manager &pass_mgr) = 0;
     virtual void register_allocation_passes(ir::transforms::pass_manager &pass_mgr) = 0;
+    virtual std::unique_ptr<codegen::module_builder> create_module_builder(const module_type_t &type, std::string_view module_name, const schedule::module_schedule_result &sched);
 
 protected:
     virtual std::unique_ptr<target_options> on_create_options() = 0;
+    virtual void config_attributes(target_attributes &attrs);
 
 private:
     std::unique_ptr<target_options> options_;
