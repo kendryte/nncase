@@ -19,17 +19,13 @@ using namespace nncase::codegen;
 using namespace nncase::codegen::stackvm;
 using namespace nncase::ir;
 
-void stackvm_module_builder::emit(conv2d &node, stackvm_op_builder &builder)
+void stackvm_module_builder::emit(reduce &node, stackvm_op_builder &builder)
 {
     builder.lea_buffer(allocation(node.input()));
-    builder.lea_buffer(allocation(node.weights()));
-    builder.lea_buffer(allocation(node.bias()));
     builder.lea_buffer(allocation(node.output()));
-    builder.ldpadding(node.padding_h());
-    builder.ldpadding(node.padding_w());
+    builder.ldc_r4_(node.init_value());
 
     builder.stshape(0, node.input().shape());
-    builder.stshape(1, node.weights().shape());
-    builder.tensor_conv2d_(0, 1, (uint16_t)node.groups(), (uint16_t)node.stride_h(), (uint16_t)node.stride_w(),
-        (uint16_t)node.dilation_h(), (uint16_t)node.dilation_w(), node.fused_activation().min, node.fused_activation().max);
+    builder.staxis(1, node.axis());
+    builder.tensor_reduce_(0, node.reduce_op(), 1);
 }

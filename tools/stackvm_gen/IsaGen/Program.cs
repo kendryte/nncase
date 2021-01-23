@@ -25,6 +25,12 @@ namespace IsaGen
 
             var opreader_cpp = await ex.RenderAsync("Templates.op_reader_cpp");
             File.WriteAllText(Path.Combine(args[0], "src/runtime/stackvm", "op_reader.cpp"), opreader_cpp);
+
+            var opwriter_h = await ex.RenderAsync("Templates.op_writer_h");
+            File.WriteAllText(Path.Combine(args[0], "include/nncase/codegen/stackvm", "op_writer.h"), opwriter_h);
+
+            var opwriter_cpp = await ex.RenderAsync("Templates.op_writer_cpp");
+            File.WriteAllText(Path.Combine(args[0], "src/codegen/stackvm", "op_writer.cpp"), opwriter_cpp);
         }
     }
 
@@ -72,6 +78,8 @@ namespace IsaGen
                             ) by c).Select(x => new KeyValuePair<string, IReadOnlyList<InstructionInfo>>(x.Key, x.ToList())).ToList();
 
             Enums = (from e in _enums
+                     let b = e.GetCustomAttribute<BrowsableAttribute>()
+                     where b == null || b.Browsable
                      select new EnumInfo
                      (
                          Name: e.GetCustomAttribute<EnumNameAttribute>().Name,

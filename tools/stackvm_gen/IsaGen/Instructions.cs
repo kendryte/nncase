@@ -35,6 +35,7 @@ namespace IsaGen
     public enum OpCode
     {
         NOP,
+        LDNULL,
         LDC_I4,
         LDC_I4_0,
         LDC_I4_1,
@@ -56,6 +57,7 @@ namespace IsaGen
         STIND_BR2,
         STIND_R4,
         LEA_GP,
+        LEA_BUFFER,
 
         LDELEM_I1,
         LDELEM_I2,
@@ -86,8 +88,8 @@ namespace IsaGen
         DUP,
         POP,
 
-        COMP_SHAPE,
-        COMP_PADDINGS,
+        STSHAPE,
+        STPADDINGS,
 
         NEG,
         ADD,
@@ -164,6 +166,41 @@ namespace IsaGen
         UNARY,
     }
 
+    [BitLength(8)]
+    [EnumName("datatype_t")]
+    [Browsable(false)]
+    public enum DataType
+    {
+    }
+
+    [BitLength(8)]
+    [EnumName("memory_location_t")]
+    [Browsable(false)]
+    public enum MemoryLocation
+    {
+    }
+
+    [BitLength(8)]
+    [EnumName("reduce_op_t")]
+    [Browsable(false)]
+    public enum ReduceOp
+    {
+    }
+
+    [BitLength(8)]
+    [EnumName("binary_op_t")]
+    [Browsable(false)]
+    public enum BinaryOp
+    {
+    }
+
+    [BitLength(8)]
+    [EnumName("unary_op_t")]
+    [Browsable(false)]
+    public enum UnaryOp
+    {
+    }
+
     public abstract class Instruction
     {
         [DisplayName("opcode")]
@@ -189,6 +226,14 @@ namespace IsaGen
         [DisplayName("imm")]
         [Description("Immedidate I4")]
         public int Imm { get; set; }
+    }
+
+    [DisplayName("LDNULL")]
+    [Category("Immediate Instructions")]
+    [Description("Load immedidate nullptr as I to stack")]
+    public class LdNullInstruction : Instruction
+    {
+        public override OpCode OpCode => OpCode.LDNULL;
     }
 
     [DisplayName("LDC_I4_0")]
@@ -350,6 +395,26 @@ namespace IsaGen
         [DisplayName("offset")]
         [Description("Signed immediate offset")]
         public int Offset { get; set; }
+    }
+
+    [DisplayName("LEA_BUFFER")]
+    [Category("Load Store Instructions")]
+    [Description("Load a buffer pointer with offset to stack")]
+    public class LeaBufferInstruction : Instruction
+    {
+        public override OpCode OpCode => OpCode.LEA_BUFFER;
+
+        [DisplayName("location")]
+        [Description("Location")]
+        public MemoryLocation Location { get; set; }
+
+        [DisplayName("subres_id")]
+        [Description("SubresourceId")]
+        public byte SubresourceId { get; set; }
+
+        [DisplayName("offset")]
+        [Description("Unsigned immediate offset")]
+        public uint Offset { get; set; }
     }
 
     [DisplayName("LDELEM_I1")]
@@ -552,6 +617,38 @@ namespace IsaGen
         public uint Index { get; set; }
     }
 
+    [DisplayName("STSHAPE")]
+    [Category("Load Store Instructions")]
+    [Description("Store a shape from stack")]
+    public class StShapeInstruction : Instruction
+    {
+        public override OpCode OpCode => OpCode.STSHAPE;
+
+        [DisplayName("rshape")]
+        [Description("Shape register index")]
+        public byte Rshape { get; set; }
+
+        [DisplayName("rank")]
+        [Description("Shape's rank")]
+        public byte Rank { get; set; }
+    }
+
+    [DisplayName("STPADDINGS")]
+    [Category("Load Store Instructions")]
+    [Description("Store paddings from stack")]
+    public class StPaddingsInstruction : Instruction
+    {
+        public override OpCode OpCode => OpCode.STPADDINGS;
+
+        [DisplayName("rpaddings")]
+        [Description("Paddings register index")]
+        public byte Rpaddings { get; set; }
+
+        [DisplayName("rank")]
+        [Description("Paddings' rank")]
+        public byte Rank { get; set; }
+    }
+
     [DisplayName("DUP")]
     [Category("Stack Instructions")]
     [Description("Duplicate the top item of stack")]
@@ -566,38 +663,6 @@ namespace IsaGen
     public class PopInstruction : Instruction
     {
         public override OpCode OpCode => OpCode.POP;
-    }
-
-    [DisplayName("COMP_SHAPE")]
-    [Category("Stack Instructions")]
-    [Description("Compose a shape from stack")]
-    public class CompShapeInstruction : Instruction
-    {
-        public override OpCode OpCode => OpCode.COMP_SHAPE;
-
-        [DisplayName("rshape")]
-        [Description("Shape register index")]
-        public byte Rshape { get; set; }
-
-        [DisplayName("rank")]
-        [Description("Shape's rank")]
-        public byte Rank { get; set; }
-    }
-
-    [DisplayName("COMP_PADDINGS")]
-    [Category("Stack Instructions")]
-    [Description("Compose paddings from stack")]
-    public class CompPaddingsInstruction : Instruction
-    {
-        public override OpCode OpCode => OpCode.COMP_PADDINGS;
-
-        [DisplayName("rpaddings")]
-        [Description("Paddings register index")]
-        public byte Rpaddings { get; set; }
-
-        [DisplayName("rank")]
-        [Description("Paddings' rank")]
-        public byte Rank { get; set; }
     }
 
     [DisplayName("NEG")]
@@ -801,7 +866,7 @@ namespace IsaGen
     }
 
     [DisplayName("CONV_U1")]
-    [Category("Convertion Instructions")]
+    [Category("Conversion Instructions")]
     [Description("Converts the value on top of the evaluation stack to unsigned int8, and extends it to int32")]
     public class ConvU1Instruction : Instruction
     {
@@ -809,7 +874,7 @@ namespace IsaGen
     }
 
     [DisplayName("CONV_U2")]
-    [Category("Convertion Instructions")]
+    [Category("Conversion Instructions")]
     [Description("Converts the value on top of the evaluation stack to unsigned int16, and extends it to int32")]
     public class ConvU2Instruction : Instruction
     {
@@ -817,7 +882,7 @@ namespace IsaGen
     }
 
     [DisplayName("CONV_U4")]
-    [Category("Convertion Instructions")]
+    [Category("Conversion Instructions")]
     [Description("Converts the value on top of the evaluation stack to unsigned int32, and extends it to int32")]
     public class ConvU4Instruction : Instruction
     {
@@ -825,7 +890,7 @@ namespace IsaGen
     }
 
     [DisplayName("CONV_U")]
-    [Category("Convertion Instructions")]
+    [Category("Conversion Instructions")]
     [Description("Converts the value on top of the evaluation stack to unsigned native int, and extends it to int32")]
     public class ConvUInstruction : Instruction
     {
@@ -833,7 +898,7 @@ namespace IsaGen
     }
 
     [DisplayName("CONV_BR2")]
-    [Category("Convertion Instructions")]
+    [Category("Conversion Instructions")]
     [Description("Converts the value on top of the evaluation stack to bfloat16")]
     public class ConvBR2Instruction : Instruction
     {
@@ -841,7 +906,7 @@ namespace IsaGen
     }
 
     [DisplayName("CONV_R4")]
-    [Category("Convertion Instructions")]
+    [Category("Conversion Instructions")]
     [Description("Converts the value on top of the evaluation stack to float32")]
     public class ConvR4Instruction : Instruction
     {
@@ -886,14 +951,10 @@ namespace IsaGen
 
     [DisplayName("RET")]
     [Category("Control and Status Instructions")]
-    [Description("Transfers control to a target instruction if value is false, null, or zero")]
+    [Description("Return")]
     public class RetInstruction : Instruction
     {
         public override OpCode OpCode => OpCode.RET;
-
-        [DisplayName("target")]
-        [Description("Branches to a target instruction at the specified offset")]
-        public int Target { get; set; }
     }
 
     [DisplayName("CALL")]
@@ -969,6 +1030,114 @@ namespace IsaGen
             [DisplayName("rpaddings")]
             [Description("Paddings register")]
             public byte Rpaddings { get; set; }
+        }
+
+        [DisplayName("TENSOR.CONV2D")]
+        [Category("Tensor Instructions")]
+        [Description("Conv2D")]
+        public class Conv2DInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.CONV2D;
+
+            [DisplayName("rshape_src")]
+            [Description("Source shape register")]
+            public byte RshapeSrc { get; set; }
+
+            [DisplayName("rshape_kernel")]
+            [Description("Kernel shape register")]
+            public byte RshapeKernel { get; set; }
+
+            [DisplayName("groups")]
+            [Description("Groups")]
+            public ushort Groups { get; set; }
+
+            [DisplayName("stride_h")]
+            [Description("StrideH")]
+            public ushort StrideH { get; set; }
+
+            [DisplayName("stride_w")]
+            [Description("StrideW")]
+            public ushort StrideW { get; set; }
+
+            [DisplayName("dilation_h")]
+            [Description("DilationH")]
+            public ushort DilationH { get; set; }
+
+            [DisplayName("dilation_w")]
+            [Description("DilationW")]
+            public ushort DilationW { get; set; }
+
+            [DisplayName("fused_clamp_low")]
+            [Description("FusedClampLow")]
+            public float FusedClampLow { get; set; }
+
+            [DisplayName("fused_clamp_high")]
+            [Description("FusedClampHigh")]
+            public float FusedClampHigh { get; set; }
+        }
+
+        [DisplayName("TENSOR.REDUCE")]
+        [Category("Tensor Instructions")]
+        [Description("Reduce")]
+        public class ReduceInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.REDUCE;
+
+            [DisplayName("rshape_src")]
+            [Description("Source shape register")]
+            public byte RshapeSrc { get; set; }
+
+            [DisplayName("reduce_op")]
+            [Description("Reduce operator")]
+            public ReduceOp ReduceOp { get; set; }
+
+            [DisplayName("rshape_axis")]
+            [Description("Axis shape register")]
+            public byte RshapeAxis { get; set; }
+        }
+
+        [DisplayName("TENSOR.BINARY")]
+        [Category("Tensor Instructions")]
+        [Description("Binary")]
+        public class BinaryInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.BINARY;
+
+            [DisplayName("rshape_src1")]
+            [Description("Source1 shape register")]
+            public byte RshapeSrc1 { get; set; }
+
+            [DisplayName("rshape_src2")]
+            [Description("Source2 shape register")]
+            public byte RshapeSrc2 { get; set; }
+
+            [DisplayName("binary_op")]
+            [Description("Binary operator")]
+            public BinaryOp BinaryOp { get; set; }
+
+            [DisplayName("fused_clamp_low")]
+            [Description("FusedClampLow")]
+            public float FusedClampLow { get; set; }
+
+            [DisplayName("fused_clamp_high")]
+            [Description("FusedClampHigh")]
+            public float FusedClampHigh { get; set; }
+        }
+
+        [DisplayName("TENSOR.UNARY")]
+        [Category("Tensor Instructions")]
+        [Description("Unary")]
+        public class UnaryInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.UNARY;
+
+            [DisplayName("rshape_src")]
+            [Description("Source1 shape register")]
+            public byte RshapeSrc { get; set; }
+
+            [DisplayName("unary_op")]
+            [Description("Unary operator")]
+            public UnaryOp UnaryOp { get; set; }
         }
     }
 }

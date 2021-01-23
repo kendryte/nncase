@@ -1,7 +1,11 @@
 ﻿cmake_minimum_required (VERSION 3.8)
 
 set(SRCS module_builder.cpp
-         ops/conv2d.cpp)
+         op_writer.cpp
+         ops/binary.cpp
+         ops/conv2d.cpp
+         ops/reduce.cpp
+         ops/unary.cpp)
 
 add_library(codegen_stackvm OBJECT ${SRCS})
 target_link_libraries(codegen_stackvm PUBLIC ir schedule)

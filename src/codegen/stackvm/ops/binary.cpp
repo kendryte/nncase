@@ -19,17 +19,13 @@ using namespace nncase::codegen;
 using namespace nncase::codegen::stackvm;
 using namespace nncase::ir;
 
-void stackvm_module_builder::emit(conv2d &node, stackvm_op_builder &builder)
+void stackvm_module_builder::emit(binary &node, stackvm_op_builder &builder)
 {
-    builder.lea_buffer(allocation(node.input()));
-    builder.lea_buffer(allocation(node.weights()));
-    builder.lea_buffer(allocation(node.bias()));
+    builder.lea_buffer(allocation(node.input_a()));
+    builder.lea_buffer(allocation(node.input_b()));
     builder.lea_buffer(allocation(node.output()));
-    builder.ldpadding(node.padding_h());
-    builder.ldpadding(node.padding_w());
 
-    builder.stshape(0, node.input().shape());
-    builder.stshape(1, node.weights().shape());
-    builder.tensor_conv2d_(0, 1, (uint16_t)node.groups(), (uint16_t)node.stride_h(), (uint16_t)node.stride_w(),
-        (uint16_t)node.dilation_h(), (uint16_t)node.dilation_w(), node.fused_activation().min, node.fused_activation().max);
+    builder.stshape(0, node.input_a().shape());
+    builder.stshape(0, node.input_b().shape());
+    builder.tensor_binary_(0, 1, node.binary_op(), node.fused_activation().min, node.fused_activation().max);
 }

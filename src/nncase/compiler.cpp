@@ -60,6 +60,7 @@ public:
     compiler_impl(const compile_options &options)
         : compile_options_(options)
     {
+        graph_.name("main");
         if (!options.dump_dir.empty())
             std::filesystem::create_directories(options.dump_dir);
         set_target(options.target);

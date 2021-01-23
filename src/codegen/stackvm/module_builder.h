@@ -14,11 +14,27 @@
  */
 #pragma once
 #include <nncase/codegen/stackvm/module_builder.h>
+#include <nncase/codegen/stackvm/op_writer.h>
+#include <nncase/ir/ops/binary.h>
 #include <nncase/ir/ops/conv2d.h>
+#include <nncase/ir/ops/reduce.h>
+#include <nncase/ir/ops/unary.h>
 #include <nncase/ir/placeholders.h>
+#include <nncase/schedule/scheduler.h>
 
-namespace nncase::codegen
+namespace nncase::codegen::stackvm
 {
+class stackvm_op_builder : public op_builder
+{
+public:
+    using op_builder::op_builder;
+
+    void stshape(uint8_t rshape, const ir::shape_t &shape);
+    void staxis(uint8_t rshape, const ir::axis_t &axis);
+    void lea_buffer(const schedule::buffer_allocation &alloc);
+    void ldpadding(const padding &pad);
+};
+
 class stackvm_module_builder : public module_builder
 {
 public:
@@ -32,7 +48,7 @@ protected:
     void emit(ir::node &node) override;
 
 private:
-#define DEFINE_OP(op_) void emit(ir::op_ &op);
+#define DEFINE_OP(op_) void emit(ir::op_ &op, stackvm_op_builder &builder);
 #include "ops.def"
 #undef DEFINE_OP
 };

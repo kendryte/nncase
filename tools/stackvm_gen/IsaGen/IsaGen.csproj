@@ -14,10 +14,14 @@
     <None Remove="Templates\opcode_h.razor" />
     <None Remove="Templates\op_reader_cpp.razor" />
     <None Remove="Templates\op_reader_h.razor" />
+    <None Remove="Templates\op_writer_cpp.razor" />
+    <None Remove="Templates\op_writer_h.razor" />
   </ItemGroup>
 
   <ItemGroup>
+    <EmbeddedResource Include="Templates\op_writer_cpp.razor" />
     <EmbeddedResource Include="Templates\op_reader_cpp.razor" />
+    <EmbeddedResource Include="Templates\op_writer_h.razor" />
     <EmbeddedResource Include="Templates\op_reader_h.razor" />
     <EmbeddedResource Include="Templates\opcode_h.razor" />
   </ItemGroup>

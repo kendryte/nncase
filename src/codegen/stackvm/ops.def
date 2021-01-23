@@ -1,1 +1,4 @@
+DEFINE_OP(binary)
 DEFINE_OP(conv2d)
+DEFINE_OP(reduce)
+DEFINE_OP(unary)

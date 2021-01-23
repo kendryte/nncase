@@ -17,7 +17,7 @@
 #include <nncase/ir/ops/constant.h>
 #include <nncase/ir/visitor.h>
 #include <nncase/version.h>
-#include <onnx.proto3.pb.h>
+#include <onnx.pb.h>
 #include <unordered_map>
 
 using namespace nncase;
@@ -56,12 +56,14 @@ void to_pb(onnx::TensorShapeProto *dst, const shape_t &src)
 
 void ir::dump_graph(const graph &src_graph, const std::filesystem::path &dst_path)
 {
-    Arena arena;
-    auto model = Arena::CreateMessage<onnx::ModelProto>(&arena);
-    model->set_producer_name("nncase ir");
-    model->set_producer_version(NNCASE_VERSION);
+    GOOGLE_PROTOBUF_VERIFY_VERSION;
 
-    auto gp = model->mutable_graph();
+    onnx::ModelProto model;
+    model.set_producer_name("nncase ir");
+    model.set_producer_version(NNCASE_VERSION);
+
+    auto gp = model.mutable_graph();
+    gp->set_name(src_graph.name());
 
     // 1. inputs
     for (auto in : src_graph.inputs())
@@ -130,5 +132,5 @@ void ir::dump_graph(const graph &src_graph, const std::filesystem::path &dst_pat
     }
 
     std::ofstream ofile(dst_path / "main.nnir.pb", std::ios::out | std::ios::binary);
-    model->SerializeToOstream(&ofile);
+    model.SerializeToOstream(&ofile);
 }
