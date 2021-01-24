@@ -25,7 +25,7 @@ struct model_header
     uint32_t flags;
     uint32_t alignment;
     uint32_t modules;
-    uint32_t entry_module;
+    uint32_t main_module;
 };
 
 struct module_header
@@ -64,11 +64,20 @@ struct shape_header
     shape_header(shape_header &) = delete;
     shape_header &operator=(shape_header &) = delete;
 
-    uint32_t dim(size_t index) const
+    const uint32_t *begin() const noexcept
+    {
+        return reinterpret_cast<const uint32_t *>(reinterpret_cast<uintptr_t>(this) + sizeof(shape_header));
+    }
+
+    const uint32_t *end() const noexcept
+    {
+        return begin() + size;
+    }
+
+    uint32_t operator[](size_t index) const
     {
         assert(index < size);
-        auto dims = reinterpret_cast<const uint32_t *>(this) + sizeof(shape_header);
-        return dims[index];
+        return begin()[index];
     }
 };
 

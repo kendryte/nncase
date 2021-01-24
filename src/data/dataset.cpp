@@ -12,9 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <boost/filesystem.hpp>
-#include <data/dataset.h>
 #include <fstream>
+#include <nncase/data/dataset.h>
 #include <opencv2/core.hpp>
 #include <opencv2/imgcodecs.hpp>
 #include <opencv2/imgproc.hpp>
@@ -22,18 +21,18 @@
 using namespace nncase;
 using namespace nncase::data;
 
-dataset::dataset(const boost::filesystem::path &path, std::function<bool(const boost::filesystem::path &)> file_filter, xt::dynamic_shape<size_t> input_shape, float mean, float std)
+dataset::dataset(const std::filesystem::path &path, std::function<bool(const std::filesystem::path &)> file_filter, xt::dynamic_shape<size_t> input_shape, float mean, float std)
     : input_shape_(std::move(input_shape)), mean_(mean), std_(std)
 {
-    if (boost::filesystem::is_directory(path))
+    if (std::filesystem::is_directory(path))
     {
-        for (auto &&filename : boost::filesystem::recursive_directory_iterator(path))
+        for (auto &&filename : std::filesystem::recursive_directory_iterator(path))
         {
             if (file_filter(filename))
                 filenames_.emplace_back(filename);
         }
     }
-    else if (boost::filesystem::exists(path))
+    else if (std::filesystem::exists(path))
     {
         if (file_filter(path))
             filenames_.emplace_back(path);
@@ -46,9 +45,9 @@ dataset::dataset(const boost::filesystem::path &path, std::function<bool(const b
         throw std::invalid_argument("Invalid dataset, should contain one file at least");
 }
 
-image_dataset::image_dataset(const boost::filesystem::path &path, xt::dynamic_shape<size_t> input_shape, float mean, float std)
+image_dataset::image_dataset(const std::filesystem::path &path, xt::dynamic_shape<size_t> input_shape, float mean, float std)
     : dataset(
-        path, [](const boost::filesystem::path &filename) { return cv::haveImageReader(filename.string()); }, std::move(input_shape), mean, std)
+        path, [](const std::filesystem::path &filename) { return cv::haveImageReader(filename.string()); }, std::move(input_shape), mean, std)
 {
 }
 
@@ -124,9 +123,9 @@ void image_dataset::process(const std::vector<uint8_t> &src, uint8_t *dest, cons
     }
 }
 
-raw_dataset::raw_dataset(const boost::filesystem::path &path, xt::dynamic_shape<size_t> input_shape, float mean, float std)
+raw_dataset::raw_dataset(const std::filesystem::path &path, xt::dynamic_shape<size_t> input_shape, float mean, float std)
     : dataset(
-        path, [](const boost::filesystem::path &filename) { return true; }, std::move(input_shape), mean, std)
+        path, [](const std::filesystem::path &filename) { return true; }, std::move(input_shape), mean, std)
 {
 }
 

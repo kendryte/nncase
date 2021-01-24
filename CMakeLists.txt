@@ -62,6 +62,7 @@ include_directories(${NNCASE_MAIN_INCLUDE_DIR})
 include_directories(${NNCASE_INCLUDE_DIR})
 
 add_subdirectory(include/nncase)
+add_subdirectory(src/data)
 add_subdirectory(src/ir)
 add_subdirectory(src/importer)
 add_subdirectory(src/schedule)

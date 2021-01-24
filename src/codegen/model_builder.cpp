@@ -57,7 +57,7 @@ void model_builder::build(std::ostream &output)
         header.alignment = std::max(header.alignment, builder->alignment());
 
         if (mod.first == sched_.main_module)
-            header.entry_module = main_module_id;
+            header.main_module = main_module_id;
         main_module_id++;
     }
 

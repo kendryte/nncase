@@ -51,14 +51,14 @@ result<rt_module_activator_t> find_runtime_activator(const module_type_t &type)
     TRY_WIN32_IF_NOT(mod);
     auto proc = GetProcAddress(mod, STR(RUNTIME_MODULE_ACTIVATOR_NAME));
     TRY_WIN32_IF_NOT(proc);
-    return reinterpret_cast<rt_module_activator_t>(proc);
+    return ok(reinterpret_cast<rt_module_activator_t>(proc));
 }
 #else
 #define NNCASE_NO_LOADABLE_RUNTIME
 #endif
 }
 
-result<std::unique_ptr<runtime_module>> runtime_module::create(const module_type_t &type)
+result<std::unique_ptr<runtime_module>> runtime_module::create(const module_header &header)
 {
     result<std::unique_ptr<runtime_module>> rt_module(nncase_errc::runtime_not_found);
 #ifndef NNCASE_SIMULATOR
@@ -72,8 +72,8 @@ result<std::unique_ptr<runtime_module>> runtime_module::create(const module_type
 #endif
 
 #ifndef NNCASE_NO_LOADABLE_RUNTIME
-    try_var(activator, find_runtime_activator(type));
-    activator(rt_module);
+    try_var(activator, find_runtime_activator(header.type));
+    activator(header, rt_module);
 #else
     result = err(nncase_errc::runtime_not_found);
 #endif

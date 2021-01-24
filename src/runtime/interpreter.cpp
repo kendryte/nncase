@@ -23,6 +23,7 @@ using namespace nncase;
 using namespace nncase::runtime;
 
 interpreter::interpreter() noexcept
+    : main_module_(nullptr)
 {
 }
 
@@ -32,21 +33,26 @@ result<void> interpreter::load_model(gsl::span<const gsl::byte> buffer) noexcept
     auto header = reader.get_ref<model_header>();
     // 1. Validate model
     if (header->identifier != MODEL_IDENTIFIER)
-        return make_error_condition(nncase_errc::invalid_model_indentifier);
+        return err(nncase_errc::invalid_model_indentifier);
     if (header->version != MODEL_VERSION)
-        return make_error_condition(nncase_errc::invalid_model_version);
+        return err(nncase_errc::invalid_model_version);
     // TODO: Validate checksum
 
     // 2. Load modules
-    entry_module_ = header->entry_module;
     span_reader content(reader.peek_avail().subspan(sizeof(module_header) * header->modules));
     for (size_t i = 0; i < header->modules; i++)
     {
-        auto header = reader.get_ref<module_header>();
-        auto module_body = content.read_span(header->size);
-        try_var(rt_module, runtime_module::create(header->type));
-        modules_.emplace_back(std::move(rt_module));
+        auto mod_header = reader.get_ref<module_header>();
+        content.skip(mod_header->size);
+        try_var(rt_module, runtime_module::create(*mod_header));
+        auto mod = modules_.emplace_back(std::move(rt_module)).get();
+        if (i == header->main_module)
+            main_module_ = mod;
     }
+
+    // 3. Initialize modules
+    for (auto &mod : modules_)
+        try_(mod->initialize(*this));
 
     return ok();
 }

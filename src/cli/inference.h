@@ -1,4 +1,4 @@
-/* Copyright 2019-2020 Canaan Inc.
+/* Copyright 2020 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,16 +13,25 @@
  * limitations under the License.
  */
 #pragma once
-#include <memory>
-#include <nncase/runtime/error.h>
-#include <nncase/runtime/model.h>
-#include <nncase/runtime/result.h>
-#include <nncase/runtime/runtime_module.h>
+#include <lyra/lyra.hpp>
+#include <string>
 
-BEGIN_NS_NNCASE_RUNTIME
+namespace nncase::cli
+{
+class inference_command
+{
+public:
+    inference_command(lyra::cli &cli);
 
-typedef void (*rt_module_activator_t)(const module_header &header, result<std::unique_ptr<runtime_module>> &result);
+private:
+    void run();
 
-#define RUNTIME_MODULE_ACTIVATOR_NAME create_runtime_module
-
-END_NS_NNCASE_RUNTIME
+private:
+    std::string model_filename_;
+    std::string output_path_;
+    std::string dataset_;
+    std::string dataset_format_ = "image";
+    float input_mean_ = 0.f;
+    float input_std_ = 1.f;
+};
+}

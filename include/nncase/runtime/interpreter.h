@@ -35,8 +35,8 @@ public:
     size_t outputs_size() const noexcept;
     memory_range input_range(size_t index) const;
     memory_range output_range(size_t index) const;
-    runtime_shape_t input_shape(size_t index) const;
-    runtime_shape_t output_shape(size_t index) const;
+    const shape_header &input_shape(size_t index) const;
+    const shape_header &output_shape(size_t index) const;
     gsl::span<gsl::byte> input_buffer(size_t index);
     gsl::span<gsl::byte> output_buffer(size_t index);
 
@@ -47,7 +47,7 @@ private:
 
 private:
     std::vector<std::unique_ptr<runtime_module>> modules_;
-    uint32_t entry_module_;
+    runtime_module *main_module_;
 };
 
 END_NS_NNCASE_RUNTIME

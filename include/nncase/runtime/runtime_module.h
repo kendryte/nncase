@@ -23,22 +23,34 @@ class interpreter;
 class NNCASE_API runtime_module
 {
 public:
-    static result<std::unique_ptr<runtime_module>> create(const module_type_t &type);
+    static result<std::unique_ptr<runtime_module>> create(const module_header &header);
 
+    runtime_module(const module_header &header) noexcept;
+    runtime_module(runtime_module &) = delete;
     virtual ~runtime_module() = default;
 
-    virtual std::error_condition initialize(interpreter &interp) noexcept = 0;
-    virtual module_type_t type() const noexcept = 0;
+    result<void> initialize(interpreter &interp) noexcept;
+    const module_type_t &type() const noexcept;
 
-    virtual uint32_t inputs_count() const noexcept = 0;
-    virtual runtime_shape_t input_shape(size_t index) const noexcept = 0;
-    virtual gsl::span<gsl::byte> input_buffer(size_t index) const noexcept = 0;
+    uint32_t mempools_count() const noexcept;
+    const mempool_desc &mempool_desc(size_t index) const noexcept;
 
-    virtual uint32_t outputs_count() const noexcept = 0;
-    virtual runtime_shape_t output_shape(size_t index) const noexcept = 0;
-    virtual gsl::span<gsl::byte> output_buffer(size_t index) const noexcept = 0;
+    uint32_t inputs_count() const noexcept;
+    const shape_header &input_shape(size_t index) const noexcept;
+    const memory_range &input_desc(size_t index) const noexcept;
+    gsl::span<gsl::byte> input_buffer(size_t index) const noexcept;
 
-    virtual std::error_condition execute() noexcept = 0;
+    uint32_t outputs_count() const noexcept;
+    const shape_header &output_shape(size_t index) const noexcept;
+    gsl::span<gsl::byte> output_buffer(size_t index) const noexcept;
+
+    virtual result<void> execute() noexcept = 0;
+
+protected:
+    virtual result<void> initialize_core(interpreter &interp) noexcept = 0;
+
+private:
+    const module_header &header_;
 };
 
 END_NS_NNCASE_RUNTIME

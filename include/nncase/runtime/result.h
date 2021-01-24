@@ -246,6 +246,14 @@ public:
             std::terminate();
     }
 
+    constexpr decltype(auto) unwrap_or_throw()
+    {
+        if (is_ok())
+            return details::unwrap_impl<T>()(value());
+        else
+            throw std::runtime_error(err().err.message());
+    }
+
     constexpr std::error_condition &unwrap_err() noexcept
     {
         if (is_ok())
