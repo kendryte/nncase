@@ -52,7 +52,7 @@ result<void> interpreter::load_model(gsl::span<const gsl::byte> buffer) noexcept
     {
         auto mod_header = reader.get_ref<module_header>();
         content.skip(mod_header->size);
-        try_var(rt_module, runtime_module::create(*mod_header));
+        try_var(rt_module, runtime_module::create(mod_header->type));
 
         try_(rt_module->initialize(*mod_header, *this));
         if (i == header->main_module)

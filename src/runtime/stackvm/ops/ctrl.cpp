@@ -12,17 +12,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#pragma once
-#include <memory>
-#include <nncase/runtime/error.h>
-#include <nncase/runtime/model.h>
-#include <nncase/runtime/result.h>
-#include <nncase/runtime/runtime_module.h>
+#include "../runtime_module.h"
 
-BEGIN_NS_NNCASE_RUNTIME
+using namespace nncase;
+using namespace nncase::runtime;
+using namespace nncase::runtime::stackvm;
 
-typedef void (*rt_module_activator_t)(result<std::unique_ptr<runtime_module>> &result);
+result<void> stackvm_runtime_module::visit(const nop_op_t &op) noexcept
+{
+    return ok();
+}
 
-#define RUNTIME_MODULE_ACTIVATOR_NAME create_runtime_module
+result<void> stackvm_runtime_module::visit(const br_op_t &op) noexcept
+{
+    return pc_relative(op.target);
+}
 
-END_NS_NNCASE_RUNTIME
+result<void> stackvm_runtime_module::visit(const br_true_op_t &op) noexcept
+{
+    return ok();
+}

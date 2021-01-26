@@ -19,6 +19,6 @@ BEGIN_NS_NNCASE_RT_STACKVM
 
 NNCASE_INLINE_VAR constexpr module_type_t stackvm_module_type = to_module_type("stackvm");
 
-NNCASE_API std::unique_ptr<runtime_module> create_stackvm_runtime_module();
+NNCASE_API result<std::unique_ptr<runtime_module>> create_stackvm_runtime_module();
 
 END_NS_NNCASE_RT_STACKVM

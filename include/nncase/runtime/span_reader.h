@@ -27,6 +27,7 @@ public:
     }
 
     bool empty() const noexcept { return span_.empty(); }
+    size_t avail() const noexcept { return span_.size_bytes(); }
 
     template <class T>
     T read()

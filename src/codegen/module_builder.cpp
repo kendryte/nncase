@@ -311,13 +311,13 @@ void module_builder::write_binary(binary_writer &writer)
         auto merge_it = rdata_section_merges_.find(section.first);
         if (merge_it == rdata_section_merges_.end())
         {
-            header.flags = SECTION_MERGED_INTO_RDATA;
+            header.flags = 0;
             header.start = 0;
             header.size = (uint32_t)section.second.body.size();
         }
         else
         {
-            header.flags = 0;
+            header.flags = SECTION_MERGED_INTO_RDATA;
             header.start = merge_it->second.start;
             header.size = merge_it->second.size;
         }

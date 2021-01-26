@@ -43,7 +43,7 @@ private:
     };
 
 public:
-    static result<std::unique_ptr<runtime_module>> create(const module_header &header);
+    static result<std::unique_ptr<runtime_module>> create(const module_type_t &type);
 
     runtime_module() = default;
     runtime_module(runtime_module &) = delete;
@@ -53,7 +53,8 @@ public:
     const module_type_t &type() const noexcept;
 
     uint32_t mempools_size() const noexcept;
-    const mempool_desc &mempool_desc(size_t index) const noexcept;
+    const mempool_desc &mempool(size_t index) const noexcept;
+    mempool_desc mempool(memory_location_t location) const noexcept;
 
     uint32_t inputs_size() const noexcept;
     const runtime_shape_t &input_shape(size_t index) const noexcept;
@@ -73,13 +74,13 @@ protected:
     virtual result<void> initialize_core(runtime_module_init_context &context) noexcept = 0;
     virtual result<runtime_tensor> allocate_input_tensor(size_t index) noexcept = 0;
     virtual result<runtime_tensor> allocate_output_tensor(size_t index) noexcept = 0;
-    virtual result<void> input_tensor_core(size_t index, runtime_tensor tensor) noexcept = 0;
-    virtual result<void> output_tensor_core(size_t index, runtime_tensor tensor) noexcept = 0;
+    virtual result<void> validate_input_tensor(size_t index, runtime_tensor tensor) noexcept = 0;
+    virtual result<void> validate_output_tensor(size_t index, runtime_tensor tensor) noexcept = 0;
     virtual result<void> run_core() noexcept = 0;
 
 private:
     module_header header_;
-    xt::svector<runtime::mempool_desc, 4> mempools_;
+    xt::svector<mempool_desc, 4> mempools_;
     xt::svector<inout_tensor_info, 1> input_tensors_;
     xt::svector<inout_tensor_info, 3> output_tensors_;
 };

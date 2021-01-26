@@ -92,10 +92,23 @@ uint32_t runtime_module::mempools_size() const noexcept
     return header_.mempools;
 }
 
-const mempool_desc &runtime_module::mempool_desc(size_t index) const noexcept
+const mempool_desc &runtime_module::mempool(size_t index) const noexcept
 {
     assert(index < mempools_.size());
     return mempools_[index];
+}
+
+mempool_desc runtime_module::mempool(memory_location_t location) const noexcept
+{
+    for (auto &desc : mempools_)
+    {
+        if (desc.location == location)
+            return desc;
+    }
+
+    mempool_desc desc {};
+    desc.location = location;
+    return desc;
 }
 
 uint32_t runtime_module::inputs_size() const noexcept
@@ -134,8 +147,8 @@ const runtime_shape_t &runtime_module::output_shape(size_t index) const noexcept
 
 result<void> runtime_module::initialize(const module_header &header, interpreter &interp) noexcept
 {
-    span_reader reader(gsl::make_span(reinterpret_cast<const gsl::byte *>(&header), header.size));
-    header_ = reader.read<module_header>();
+    header_ = header;
+    span_reader reader(gsl::make_span(reinterpret_cast<const gsl::byte *>(&header) + sizeof(module_header), header.size));
     try
     {
         input_tensors_.resize(inputs_size());
@@ -206,7 +219,7 @@ result<void> runtime_module::input_tensor(size_t index, runtime_tensor tensor) n
         return err(nncase_errc::shape_mismatch);
     if (info.bind_tensor != tensor)
     {
-        if (input_tensor_core(index, tensor).is_err())
+        if (validate_input_tensor(index, tensor).is_err())
         {
             auto device_tensor = info.device_tensor;
             if (device_tensor.empty())
@@ -248,7 +261,7 @@ result<void> runtime_module::output_tensor(size_t index, runtime_tensor tensor) 
         return err(nncase_errc::shape_mismatch);
     if (info.bind_tensor != tensor)
     {
-        if (input_tensor_core(index, tensor).is_err())
+        if (validate_input_tensor(index, tensor).is_err())
         {
             auto device_tensor = info.device_tensor;
             if (device_tensor.empty())

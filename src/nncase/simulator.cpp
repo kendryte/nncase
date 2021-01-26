@@ -40,7 +40,7 @@ public:
         if (!std::filesystem::exists(options_.output_path))
             std::filesystem::create_directories(options_.output_path);
 
-        if (interp_.inputs_size() != 0)
+        if (interp_.inputs_size() != 1)
             throw std::invalid_argument("Simulator only support models that have single 1 input");
 
         auto &in_shape = interp_.input_shape(0);
