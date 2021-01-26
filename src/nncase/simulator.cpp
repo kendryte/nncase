@@ -32,7 +32,7 @@ public:
     simulator_impl(std::vector<uint8_t> model, const simulate_options &options)
         : model_(std::move(model)), options_(options)
     {
-        interp_.load_model(gsl::as_bytes(gsl::make_span(model))).unwrap_or_throw();
+        interp_.load_model(gsl::as_bytes(gsl::make_span(model_))).unwrap_or_throw();
     }
 
     void run() override
@@ -53,7 +53,7 @@ public:
         else
             throw std::runtime_error("Invalid dataset format: " + options_.dataset_format);
 
-        auto in_type = interp_.input_range(0).datatype;
+        auto in_type = interp_.input_desc(0).datatype;
         switch (in_type)
         {
         case dt_float32:
@@ -74,7 +74,7 @@ private:
         size_t i = 0;
         for (auto it = dataset.begin<T>(); it != dataset.end<T>(); ++it)
         {
-            auto input_buffer = interp_.input_buffer(0);
+            auto input_buffer = host_runtime_tensor::buffer(interp_.input_tensor(0).unwrap());
             auto &tensor = it->tensor;
             std::memcpy(input_buffer.data(), tensor.data(), input_buffer.size_bytes());
 
@@ -86,7 +86,7 @@ private:
                 std::ofstream of(out_filename, std::ios::binary | std::ios::out);
                 for (size_t i = 0; i < interp_.outputs_size(); i++)
                 {
-                    auto output = interp_.output_buffer(i);
+                    auto output = host_runtime_tensor::buffer(interp_.output_tensor(i).unwrap());
                     of.write(reinterpret_cast<const char *>(output.data()), output.size());
                 }
             }

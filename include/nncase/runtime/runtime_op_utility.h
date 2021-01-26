@@ -13,10 +13,30 @@
  * limitations under the License.
  */
 #pragma once
-#include "compiler_defs.h"
+#include "datatypes.h"
+#include <xtensor/xstrides.hpp>
 
-namespace nncase::runtime
+BEGIN_NS_NNCASE_RUNTIME
+
+inline constexpr size_t get_bytes(datatype_t type)
 {
+    switch (type)
+    {
+#define DEFINE_DATATYPE(id, t, name, value) \
+    case (dt_##id):                         \
+        return sizeof(t);
+#include <nncase/runtime/datatypes.def>
+#undef DEFINE_DATATYPE
+    default:
+        return -1;
+    }
+}
+
+inline size_t get_bytes(datatype_t type, const runtime_shape_t &shape)
+{
+    return xt::compute_size(shape) * get_bytes(type);
+}
+
 template <int32_t Bits, class T>
 uint8_t count_leading_zeros(T value)
 {
@@ -103,4 +123,5 @@ inline int32_t clamp(int32_t value)
     auto max = std::numeric_limits<int32_t>::max() >> (32 - Bits);
     return std::clamp(value, min, max);
 }
-}
+
+END_NS_NNCASE_RUNTIME

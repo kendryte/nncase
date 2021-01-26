@@ -51,7 +51,7 @@ struct section_header
     uint32_t flags;
     uint32_t start;
     uint32_t size;
-    uint32_t paddings;
+    uint32_t reserved0;
 };
 
 NNCASE_INLINE_VAR constexpr uint32_t SECTION_MERGED_INTO_RDATA = 1;

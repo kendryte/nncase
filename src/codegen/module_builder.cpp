@@ -328,13 +328,9 @@ void module_builder::write_binary(binary_writer &writer)
 
         if (merge_it == rdata_section_merges_.end())
         {
-            header.paddings = (uint32_t)writer.align_position(alignment_);
+            header.start = (uint32_t)writer.align_position(alignment_);
             // write content
             writer.write_array(std::span<uint8_t const>(section.second.body));
-        }
-        else
-        {
-            header.paddings = 0;
         }
 
         // write section header
@@ -348,7 +344,7 @@ void module_builder::write_binary(binary_writer &writer)
     // header
     module_header header {};
     header.type = module_type();
-    header.size = (uint32_t)(end_pos - header_pos);
+    header.size = (uint32_t)(end_pos - header_pos - sizeof(module_header));
     header.mempools = (uint32_t)sched_.max_usages.size();
     header.inputs = (uint32_t)inputs.size();
     header.outputs = (uint32_t)outputs.size();

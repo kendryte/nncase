@@ -24,6 +24,8 @@ enum class nncase_errc
     invalid_model_checksum = 0x02,
     invalid_model_version = 0x03,
     runtime_not_found = 0x04,
+    datatype_mismatch = 0x05,
+    shape_mismatch = 0x05,
     stackvm_illegal_instruction = 0x0100
 };
 

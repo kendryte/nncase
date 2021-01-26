@@ -25,6 +25,7 @@
 #include <string>
 #include <type_traits>
 #include <vector>
+#include <xtensor/xshape.hpp>
 
 namespace nncase
 {
@@ -283,8 +284,8 @@ typedef enum _memory_location
     mem_data
 } memory_location_t;
 
-using runtime_shape_t = std::array<int, 4>;
-using runtime_paddings_t = std::array<padding, 4>;
+using runtime_shape_t = xt::svector<size_t, 4>;
+using runtime_paddings_t = xt::svector<padding, 4>;
 
 struct alignas(4) scalar
 {

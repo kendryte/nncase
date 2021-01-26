@@ -41,10 +41,10 @@ size_t offset(const TShape &shape, const TShape &index)
 
 namespace details
 {
-    inline int32_t get_windowed_output_size(int32_t size, int32_t filter, int32_t stride, int32_t dilation, const padding &padding)
+    inline size_t get_windowed_output_size(size_t size, int32_t filter, int32_t stride, int32_t dilation, const padding &padding)
     {
         auto effective_filter_size = (filter - 1) * dilation + 1;
-        return (size + padding.before + padding.after - effective_filter_size + stride) / stride;
+        return (size_t)((int32_t)size + padding.before + padding.after - effective_filter_size + stride) / stride;
     }
 
     template <class TShape>

@@ -15,42 +15,73 @@
 #pragma once
 #include "model.h"
 #include "result.h"
+#include "runtime_tensor.h"
+#include <xtensor/xstorage.hpp>
 
 BEGIN_NS_NNCASE_RUNTIME
 
 class interpreter;
 
+struct NNCASE_API runtime_module_init_context
+{
+    virtual bool is_section_pinned() const noexcept = 0;
+    virtual interpreter &interp() noexcept = 0;
+    virtual const module_header &header() noexcept = 0;
+    virtual gsl::span<const gsl::byte> section(const char *name) noexcept = 0;
+};
+
 class NNCASE_API runtime_module
 {
+private:
+    struct inout_tensor_info
+    {
+        runtime_shape_t shape;
+        memory_range range;
+        runtime_tensor bind_tensor;
+        runtime_tensor staging_tensor;
+        runtime_tensor device_tensor;
+    };
+
 public:
     static result<std::unique_ptr<runtime_module>> create(const module_header &header);
 
-    runtime_module(const module_header &header) noexcept;
+    runtime_module() = default;
     runtime_module(runtime_module &) = delete;
     virtual ~runtime_module() = default;
 
-    result<void> initialize(interpreter &interp) noexcept;
+    result<void> initialize(const module_header &header, interpreter &interp) noexcept;
     const module_type_t &type() const noexcept;
 
-    uint32_t mempools_count() const noexcept;
+    uint32_t mempools_size() const noexcept;
     const mempool_desc &mempool_desc(size_t index) const noexcept;
 
-    uint32_t inputs_count() const noexcept;
-    const shape_header &input_shape(size_t index) const noexcept;
+    uint32_t inputs_size() const noexcept;
+    const runtime_shape_t &input_shape(size_t index) const noexcept;
     const memory_range &input_desc(size_t index) const noexcept;
-    gsl::span<gsl::byte> input_buffer(size_t index) const noexcept;
+    result<runtime_tensor> input_tensor(size_t index) noexcept;
+    result<void> input_tensor(size_t index, runtime_tensor tensor) noexcept;
 
-    uint32_t outputs_count() const noexcept;
-    const shape_header &output_shape(size_t index) const noexcept;
-    gsl::span<gsl::byte> output_buffer(size_t index) const noexcept;
+    uint32_t outputs_size() const noexcept;
+    const runtime_shape_t &output_shape(size_t index) const noexcept;
+    const memory_range &output_desc(size_t index) const noexcept;
+    result<runtime_tensor> output_tensor(size_t index) noexcept;
+    result<void> output_tensor(size_t index, runtime_tensor tensor) noexcept;
 
-    virtual result<void> execute() noexcept = 0;
+    result<void> run() noexcept;
 
 protected:
-    virtual result<void> initialize_core(interpreter &interp) noexcept = 0;
+    virtual result<void> initialize_core(runtime_module_init_context &context) noexcept = 0;
+    virtual result<runtime_tensor> allocate_input_tensor(size_t index) noexcept = 0;
+    virtual result<runtime_tensor> allocate_output_tensor(size_t index) noexcept = 0;
+    virtual result<void> input_tensor_core(size_t index, runtime_tensor tensor) noexcept = 0;
+    virtual result<void> output_tensor_core(size_t index, runtime_tensor tensor) noexcept = 0;
+    virtual result<void> run_core() noexcept = 0;
 
 private:
-    const module_header &header_;
+    module_header header_;
+    xt::svector<runtime::mempool_desc, 4> mempools_;
+    xt::svector<inout_tensor_info, 1> input_tensors_;
+    xt::svector<inout_tensor_info, 3> output_tensors_;
 };
 
 END_NS_NNCASE_RUNTIME

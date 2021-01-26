@@ -12,6 +12,23 @@
       "ctestCommandArgs": ""
     },
     {
+      "name": "x64-RuntimeDebug",
+      "generator": "Ninja",
+      "configurationType": "Debug",
+      "inheritEnvironments": [ "msvc_x64_x64" ],
+      "buildRoot": "${projectDir}\\out\\build-runtime\\${name}",
+      "installRoot": "${projectDir}\\out\\install-runtime\\${name}",
+      "cmakeCommandArgs": "",
+      "buildCommandArgs": "-v",
+      "ctestCommandArgs": "",
+      "variables": [
+        {
+          "name": "BUILDING_RUNTIME",
+          "value": "TRUE"
+        }
+      ]
+    },
+    {
       "name": "x64-Release",
       "generator": "Ninja",
       "configurationType": "RelWithDebInfo",

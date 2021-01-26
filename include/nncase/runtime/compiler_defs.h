@@ -19,8 +19,10 @@
 #if defined(_MSC_VER)
 #ifdef NNCASE_DLL
 #define NNCASE_API __declspec(dllexport)
-#else
+#elif defined(NNCASE_SHARED_LIBS)
 #define NNCASE_API __declspec(dllimport)
+#else
+#define NNCASE_API
 #endif
 #else
 #define NNCASE_API

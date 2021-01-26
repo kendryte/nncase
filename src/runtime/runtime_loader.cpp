@@ -28,7 +28,7 @@ using namespace nncase::runtime;
 
 #ifndef NNCASE_SIMULATOR
 // builtin runtime
-#include <builtin_runtimes.inl>
+//#include <builtin_runtimes.inl>
 #endif
 
 namespace
@@ -61,15 +61,15 @@ result<rt_module_activator_t> find_runtime_activator(const module_type_t &type)
 result<std::unique_ptr<runtime_module>> runtime_module::create(const module_header &header)
 {
     result<std::unique_ptr<runtime_module>> rt_module(nncase_errc::runtime_not_found);
-#ifndef NNCASE_SIMULATOR
-    for (auto &reg : builtin_runtimes)
-    {
-        if (!strcmp(target_id.data(), reg.id.data()))
-        {
-            return reg.activator();
-        }
-    }
-#endif
+//#ifndef NNCASE_SIMULATOR
+//    for (auto &reg : builtin_runtimes)
+//    {
+//        if (!strcmp(target_id.data(), reg.id.data()))
+//        {
+//            return reg.activator();
+//        }
+//    }
+//#endif
 
 #ifndef NNCASE_NO_LOADABLE_RUNTIME
     try_var(activator, find_runtime_activator(header.type));

@@ -36,23 +36,84 @@ result<void> interpreter::load_model(gsl::span<const gsl::byte> buffer) noexcept
         return err(nncase_errc::invalid_model_indentifier);
     if (header->version != MODEL_VERSION)
         return err(nncase_errc::invalid_model_version);
-    // TODO: Validate checksum
 
     // 2. Load modules
+    try
+    {
+        modules_.resize(header->modules);
+    }
+    catch (...)
+    {
+        return err(std::errc::not_enough_memory);
+    }
+
     span_reader content(reader.peek_avail().subspan(sizeof(module_header) * header->modules));
     for (size_t i = 0; i < header->modules; i++)
     {
         auto mod_header = reader.get_ref<module_header>();
         content.skip(mod_header->size);
         try_var(rt_module, runtime_module::create(*mod_header));
-        auto mod = modules_.emplace_back(std::move(rt_module)).get();
+
+        try_(rt_module->initialize(*mod_header, *this));
         if (i == header->main_module)
-            main_module_ = mod;
+            main_module_ = rt_module.get();
+        modules_[i] = std::move(rt_module);
     }
 
-    // 3. Initialize modules
-    for (auto &mod : modules_)
-        try_(mod->initialize(*this));
-
     return ok();
+}
+
+size_t interpreter::inputs_size() const noexcept
+{
+    return main_module_->inputs_size();
+}
+
+size_t interpreter::outputs_size() const noexcept
+{
+    return main_module_->outputs_size();
+}
+
+const memory_range &interpreter::input_desc(size_t index) const noexcept
+{
+    return main_module_->input_desc(index);
+}
+
+const memory_range &interpreter::output_desc(size_t index) const noexcept
+{
+    return main_module_->output_desc(index);
+}
+
+const runtime_shape_t &interpreter::input_shape(size_t index) const noexcept
+{
+    return main_module_->input_shape(index);
+}
+
+const runtime_shape_t &interpreter::output_shape(size_t index) const noexcept
+{
+    return main_module_->output_shape(index);
+}
+
+result<runtime_tensor> interpreter::input_tensor(size_t index) noexcept
+{
+    return main_module_->input_tensor(index);
+}
+
+result<void> interpreter::input_tensor(size_t index, runtime_tensor tensor) noexcept
+{
+    return main_module_->input_tensor(index, tensor);
+}
+
+result<runtime_tensor> interpreter::output_tensor(size_t index) noexcept
+{
+    return main_module_->output_tensor(index);
+}
+
+result<void> interpreter::output_tensor(size_t index, runtime_tensor tensor) noexcept
+{
+    return main_module_->output_tensor(index, tensor);
+}
+
+result<void> interpreter::run() noexcept
+{
+    return main_module_->run();
 }

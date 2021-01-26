@@ -33,17 +33,16 @@ public:
 
     size_t inputs_size() const noexcept;
     size_t outputs_size() const noexcept;
-    memory_range input_range(size_t index) const;
-    memory_range output_range(size_t index) const;
-    const shape_header &input_shape(size_t index) const;
-    const shape_header &output_shape(size_t index) const;
-    gsl::span<gsl::byte> input_buffer(size_t index);
-    gsl::span<gsl::byte> output_buffer(size_t index);
+    const memory_range &input_desc(size_t index) const noexcept;
+    const memory_range &output_desc(size_t index) const noexcept;
+    const runtime_shape_t &input_shape(size_t index) const noexcept;
+    const runtime_shape_t &output_shape(size_t index) const noexcept;
+    result<runtime_tensor> input_tensor(size_t index) noexcept;
+    result<void> input_tensor(size_t index, runtime_tensor tensor) noexcept;
+    result<runtime_tensor> output_tensor(size_t index) noexcept;
+    result<void> output_tensor(size_t index, runtime_tensor tensor) noexcept;
 
-    result<void> run();
-
-private:
-    void set_memory(memory_location_t location, gsl::span<gsl::byte> buffer);
+    result<void> run() noexcept;
 
 private:
     std::vector<std::unique_ptr<runtime_module>> modules_;

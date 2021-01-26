@@ -73,6 +73,13 @@ public:
         span_ = {};
     }
 
+    gsl::span<const gsl::byte> read_avail()
+    {
+        auto span = span_;
+        span_ = {};
+        return span;
+    }
+
     gsl::span<const gsl::byte> peek_avail()
     {
         return span_;
