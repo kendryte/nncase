@@ -25,9 +25,11 @@ enum class nncase_errc
     invalid_model_version = 0x03,
     runtime_not_found = 0x04,
     datatype_mismatch = 0x05,
-    shape_mismatch = 0x05,
+    shape_mismatch = 0x06,
     stackvm_illegal_instruction = 0x0100,
-    stackvm_illegal_target = 0x0100
+    stackvm_illegal_target = 0x0101,
+    stackvm_stack_overflow = 0x0102,
+    stackvm_stack_underflow = 0x0103,
 };
 
 NNCASE_API const std::error_category &nncase_category() noexcept;

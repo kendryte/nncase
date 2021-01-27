@@ -27,5 +27,5 @@ void stackvm_module_builder::emit(reduce &node, stackvm_op_builder &builder)
 
     builder.stshape(0, node.input().shape());
     builder.staxis(1, node.axis());
-    builder.tensor_reduce_(0, node.reduce_op(), 1);
+    builder.tensor_reduce_(node.input().type(), 0, node.reduce_op(), 1);
 }

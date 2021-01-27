@@ -60,15 +60,16 @@ result<void> stackvm_runtime_module::validate_output_tensor(size_t index, runtim
 
 result<void> stackvm_runtime_module::run_core() noexcept
 {
+    call_depth_ = 0;
     return visit(text_);
 }
 
-size_t stackvm_runtime_module::pc() const noexcept
+uintptr_t stackvm_runtime_module::pc() const noexcept
 {
-    return text_.size_bytes() - reader_.avail();
+    return (uintptr_t)(text_.size_bytes() - reader_.avail());
 }
 
-result<void> stackvm_runtime_module::pc(size_t value) noexcept
+result<void> stackvm_runtime_module::pc(uintptr_t value) noexcept
 {
     if (value >= text_.size_bytes())
         return err(nncase_errc::stackvm_illegal_target);
@@ -76,9 +77,22 @@ result<void> stackvm_runtime_module::pc(size_t value) noexcept
     return ok();
 }
 
-result<void> stackvm_runtime_module::pc_relative(int32_t offset) noexcept
+result<void> stackvm_runtime_module::pc_relative(intptr_t offset) noexcept
 {
-    return pc((size_t)((intptr_t)pc() + offset));
+    return pc((uintptr_t)((intptr_t)pc() + offset));
+}
+
+result<padding> stackvm_runtime_module::pop_padding() noexcept
+{
+    try_var(after, stack_.pop());
+    try_var(before, stack_.pop());
+    return ok(padding { before.as_i4(), after.as_i4() });
+}
+
+result<uintptr_t> stackvm_runtime_module::pop_addr() noexcept
+{
+    try_var(addr, stack_.pop());
+    return ok(addr.as_u());
 }
 
 result<std::unique_ptr<runtime_module>> stackvm::create_stackvm_runtime_module()

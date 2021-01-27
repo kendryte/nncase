@@ -103,6 +103,8 @@ public:
 
     evaluate_stack() noexcept;
 
+    bool empty() const noexcept;
+    bool full() const noexcept;
     result<stack_entry> peek() noexcept;
     result<stack_entry> pop() noexcept;
     result<void> push(stack_entry entry) noexcept;

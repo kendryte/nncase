@@ -60,6 +60,9 @@ result<void> interpreter::load_model(gsl::span<const gsl::byte> buffer) noexcept
         modules_[i] = std::move(rt_module);
     }
 
+    for (auto &mod : modules_)
+        try_(mod->initialize_inter_modules(*this));
+
     return ok();
 }
 

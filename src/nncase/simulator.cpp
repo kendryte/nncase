@@ -78,7 +78,8 @@ private:
             auto &tensor = it->tensor;
             std::memcpy(input_buffer.data(), tensor.data(), input_buffer.size_bytes());
 
-            if (interp_.run().is_ok())
+            auto r = interp_.run();
+            if (r.is_ok())
             {
                 std::filesystem::path out_filename(options_.output_path / it->filenames[0].filename());
                 out_filename.replace_extension(".bin");
@@ -89,6 +90,10 @@ private:
                     auto output = host_runtime_tensor::buffer(interp_.output_tensor(i).unwrap());
                     of.write(reinterpret_cast<const char *>(output.data()), output.size());
                 }
+            }
+            else
+            {
+                std::cerr << "Eval " << it->filenames[0].filename() << " failed: " << r.unwrap_err().message() << std::endl;
             }
 
             if (options_.progress)

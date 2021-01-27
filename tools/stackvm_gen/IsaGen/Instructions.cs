@@ -83,7 +83,6 @@ namespace IsaGen
         LDARG_3,
         LDARG_4,
         LDARG_5,
-        LDARGA,
 
         DUP,
         POP,
@@ -118,6 +117,10 @@ namespace IsaGen
         CGT_U,
         CNE,
 
+        CONV_I1,
+        CONV_I2,
+        CONV_I4,
+        CONV_I,
         CONV_U1,
         CONV_U2,
         CONV_U4,
@@ -605,18 +608,6 @@ namespace IsaGen
         public override OpCode OpCode => OpCode.LDARG_5;
     }
 
-    [DisplayName("LDARGA")]
-    [Category("Load Store Instructions")]
-    [Description("Load the address of an argument to stack")]
-    public class LdargaInstruction : Instruction
-    {
-        public override OpCode OpCode => OpCode.LDARGA;
-
-        [DisplayName("index")]
-        [Description("Argument index")]
-        public uint Index { get; set; }
-    }
-
     [DisplayName("STSHAPE")]
     [Category("Load Store Instructions")]
     [Description("Store a shape from stack")]
@@ -865,6 +856,38 @@ namespace IsaGen
         public override OpCode OpCode => OpCode.CNE;
     }
 
+    [DisplayName("CONV_I1")]
+    [Category("Conversion Instructions")]
+    [Description("Converts the value on top of the evaluation stack to int8, and extends it to int32")]
+    public class ConvI1Instruction : Instruction
+    {
+        public override OpCode OpCode => OpCode.CONV_I1;
+    }
+
+    [DisplayName("CONV_I2")]
+    [Category("Conversion Instructions")]
+    [Description("Converts the value on top of the evaluation stack to int16, and extends it to int32")]
+    public class ConvI2Instruction : Instruction
+    {
+        public override OpCode OpCode => OpCode.CONV_I2;
+    }
+
+    [DisplayName("CONV_I4")]
+    [Category("Conversion Instructions")]
+    [Description("Converts the value on top of the evaluation stack to int32, and extends it to int32")]
+    public class ConvI4Instruction : Instruction
+    {
+        public override OpCode OpCode => OpCode.CONV_I4;
+    }
+
+    [DisplayName("CONV_I")]
+    [Category("Conversion Instructions")]
+    [Description("Converts the value on top of the evaluation stack to native int, and extends it to int32")]
+    public class ConvIInstruction : Instruction
+    {
+        public override OpCode OpCode => OpCode.CONV_I;
+    }
+
     [DisplayName("CONV_U1")]
     [Category("Conversion Instructions")]
     [Description("Converts the value on top of the evaluation stack to unsigned int8, and extends it to int32")]
@@ -1019,6 +1042,10 @@ namespace IsaGen
         {
             public override TensorFunction Function => TensorFunction.BATCH_TO_SPACE;
 
+            [DisplayName("datatype")]
+            [Description("Datatype")]
+            public DataType DataType { get; set; }
+
             [DisplayName("rshape_src")]
             [Description("Source shape register")]
             public byte RshapeSrc { get; set; }
@@ -1038,6 +1065,10 @@ namespace IsaGen
         public class Conv2DInstruction : TensorInstruction
         {
             public override TensorFunction Function => TensorFunction.CONV2D;
+
+            [DisplayName("datatype")]
+            [Description("Datatype")]
+            public DataType DataType { get; set; }
 
             [DisplayName("rshape_src")]
             [Description("Source shape register")]
@@ -1083,6 +1114,10 @@ namespace IsaGen
         {
             public override TensorFunction Function => TensorFunction.REDUCE;
 
+            [DisplayName("datatype")]
+            [Description("Datatype")]
+            public DataType DataType { get; set; }
+
             [DisplayName("rshape_src")]
             [Description("Source shape register")]
             public byte RshapeSrc { get; set; }
@@ -1102,6 +1137,10 @@ namespace IsaGen
         public class BinaryInstruction : TensorInstruction
         {
             public override TensorFunction Function => TensorFunction.BINARY;
+
+            [DisplayName("datatype")]
+            [Description("Datatype")]
+            public DataType DataType { get; set; }
 
             [DisplayName("rshape_src1")]
             [Description("Source1 shape register")]
@@ -1130,6 +1169,10 @@ namespace IsaGen
         public class UnaryInstruction : TensorInstruction
         {
             public override TensorFunction Function => TensorFunction.UNARY;
+
+            [DisplayName("datatype")]
+            [Description("Datatype")]
+            public DataType DataType { get; set; }
 
             [DisplayName("rshape_src")]
             [Description("Source1 shape register")]

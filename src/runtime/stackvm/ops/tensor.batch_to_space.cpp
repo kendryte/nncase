@@ -18,17 +18,7 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 
-result<void> stackvm_runtime_module::visit(const nop_op_t &op) noexcept
+result<void> stackvm_runtime_module::visit(const tensor_batch_to_space_op_t &op) noexcept
 {
-    return ok();
-}
-
-result<void> stackvm_runtime_module::visit(const br_op_t &op) noexcept
-{
-    return pc_relative(op.target);
-}
-
-result<void> stackvm_runtime_module::visit(const br_true_op_t &op) noexcept
-{
-    return ok();
+    return err(std::errc::not_supported);
 }

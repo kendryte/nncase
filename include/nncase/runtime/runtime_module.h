@@ -50,6 +50,7 @@ public:
     virtual ~runtime_module() = default;
 
     result<void> initialize(const module_header &header, interpreter &interp) noexcept;
+    virtual result<void> initialize_inter_modules(interpreter &interp) noexcept;
     const module_type_t &type() const noexcept;
 
     uint32_t mempools_size() const noexcept;

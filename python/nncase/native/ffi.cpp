@@ -15,6 +15,7 @@
 #include "pystreambuf.h"
 #include <iostream>
 #include <nncase/compiler.h>
+#include <nncase/runtime/interpreter.h>
 #include <nncase/version.h>
 #include <pybind11/iostream.h>
 #include <pybind11/numpy.h>
@@ -24,6 +25,7 @@
 
 namespace py = pybind11;
 using namespace nncase;
+using namespace nncase::runtime;
 
 namespace pybind11
 {
@@ -45,6 +47,26 @@ namespace detail
             if (PyBytes_AsStringAndSize(src.ptr(), reinterpret_cast<char **>(&buffer), &length))
                 return false;
             value = { buffer, (size_t)length };
+            return true;
+        }
+    };
+
+    template <>
+    struct type_caster<gsl::span<const gsl::byte>>
+    {
+    public:
+        PYBIND11_TYPE_CASTER(gsl::span<const gsl::byte>, _("bytes"));
+
+        bool load(handle src, bool)
+        {
+            if (!py::isinstance<py::bytes>(src))
+                return false;
+
+            uint8_t *buffer;
+            py::ssize_t length;
+            if (PyBytes_AsStringAndSize(src.ptr(), reinterpret_cast<char **>(&buffer), &length))
+                return false;
+            value = { (const gsl::byte *)buffer, (size_t)length };
             return true;
         }
     };
@@ -82,5 +104,10 @@ PYBIND11_MODULE(_knn, m)
             std::stringstream ss;
             c.gencode(ss);
             return py::bytes(ss.str());
+        });
+
+    py::class_<interpreter>(m, "Simulator")
+        .def("load_model", [](interpreter &interp, gsl::span<const gsl::byte> buffer) {
+            interp.load_model(buffer).unwrap_or_throw();
         });
 }

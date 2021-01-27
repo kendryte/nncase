@@ -31,7 +31,31 @@ public:
 
     std::string message(int code) const override
     {
-        return "Message";
+        switch ((nncase_errc)code)
+        {
+        case nncase_errc::invalid_model_indentifier:
+            return "Invalid model indentifier";
+        case nncase_errc::invalid_model_checksum:
+            return "Invalid model checksum";
+        case nncase_errc::invalid_model_version:
+            return "Invalid model version";
+        case nncase_errc::runtime_not_found:
+            return "Runtime not found";
+        case nncase_errc::datatype_mismatch:
+            return "Datatype mismatch";
+        case nncase_errc::shape_mismatch:
+            return "Shape mismatch";
+        case nncase_errc::stackvm_illegal_instruction:
+            return "StackVM illegal instruction";
+        case nncase_errc::stackvm_illegal_target:
+            return "StackVM illegal target";
+        case nncase_errc::stackvm_stack_overflow:
+            return "StackVM stack overflow";
+        case nncase_errc::stackvm_stack_underflow:
+            return "StackVM stack underflow";
+        default:
+            return "Unknown nncase error";
+        }
     }
 
     bool equivalent(std::error_code const &code, int condition) const noexcept override

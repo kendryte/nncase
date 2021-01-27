@@ -22,3 +22,38 @@ evaluate_stack::evaluate_stack() noexcept
     : top_(entries_.data())
 {
 }
+
+bool evaluate_stack::empty() const noexcept
+{
+    return top_ == entries_.data();
+}
+
+bool evaluate_stack::full() const noexcept
+{
+    return top_ == entries_.data() + entries_.size();
+}
+
+result<stack_entry> evaluate_stack::peek() noexcept
+{
+    if (!empty())
+        return ok(*top_);
+    return err(nncase_errc::stackvm_stack_underflow);
+}
+
+result<stack_entry> evaluate_stack::pop() noexcept
+{
+    if (!empty())
+        return ok(*top_--);
+    return err(nncase_errc::stackvm_stack_underflow);
+}
+
+result<void> evaluate_stack::push(stack_entry entry) noexcept
+{
+    if (!full())
+    {
+        *++top_ = entry;
+        return ok();
+    }
+
+    return err(nncase_errc::stackvm_stack_overflow);
+}

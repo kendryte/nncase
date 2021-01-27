@@ -30,6 +30,6 @@ void stackvm_module_builder::emit(conv2d &node, stackvm_op_builder &builder)
 
     builder.stshape(0, node.input().shape());
     builder.stshape(1, node.weights().shape());
-    builder.tensor_conv2d_(0, 1, (uint16_t)node.groups(), (uint16_t)node.stride_h(), (uint16_t)node.stride_w(),
+    builder.tensor_conv2d_(node.input().type(), 0, 1, (uint16_t)node.groups(), (uint16_t)node.stride_h(), (uint16_t)node.stride_w(),
         (uint16_t)node.dilation_h(), (uint16_t)node.dilation_w(), node.fused_activation().min, node.fused_activation().max);
 }

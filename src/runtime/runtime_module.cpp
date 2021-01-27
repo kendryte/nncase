@@ -341,3 +341,8 @@ result<void> runtime_module::run() noexcept
 
     return ok();
 }
+
+result<void> runtime_module::initialize_inter_modules(interpreter &interp) noexcept
+{
+    return ok();
+}

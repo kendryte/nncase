@@ -12,18 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../module_builder.h"
+#pragma once
+#include "runtime_types.h"
 
-using namespace nncase;
-using namespace nncase::codegen;
-using namespace nncase::codegen::stackvm;
-using namespace nncase::ir;
+BEGIN_NS_NNCASE_KERNELS_CPU_REF
 
-void stackvm_module_builder::emit(unary &node, stackvm_op_builder &builder)
-{
-    builder.lea_buffer(allocation(node.input()));
-    builder.lea_buffer(allocation(node.output()));
+NNCASE_API result<void> conv2d(const float *input, const float *weights, const float *bias, float *output,
+    const runtime_shape_t &in_shape, const runtime_shape_t &w_shape, const padding &padding_h, const padding &padding_w,
+    int32_t groups, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w, value_range<float> fused_activation) noexcept;
 
-    builder.stshape(0, node.input().shape());
-    builder.tensor_unary_(node.input().type(), 0, node.unary_op());
-}
+END_NS_NNCASE_KERNELS_CPU_REF

@@ -1,4 +1,4 @@
-/* Copyright 2020 Canaan Inc.
+/* Copyright 2019-2020 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,18 +12,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../module_builder.h"
+#include "../runtime_module.h"
 
 using namespace nncase;
-using namespace nncase::codegen;
-using namespace nncase::codegen::stackvm;
-using namespace nncase::ir;
+using namespace nncase::runtime;
+using namespace nncase::runtime::stackvm;
 
-void stackvm_module_builder::emit(unary &node, stackvm_op_builder &builder)
+result<void> stackvm_runtime_module::visit(const dup_op_t &op) noexcept
 {
-    builder.lea_buffer(allocation(node.input()));
-    builder.lea_buffer(allocation(node.output()));
+    try_var(entry, stack_.peek());
+    return stack_.push(entry);
+}
 
-    builder.stshape(0, node.input().shape());
-    builder.tensor_unary_(node.input().type(), 0, node.unary_op());
+result<void> stackvm_runtime_module::visit(const pop_op_t &op) noexcept
+{
+    try_(stack_.pop());
+    return ok();
 }

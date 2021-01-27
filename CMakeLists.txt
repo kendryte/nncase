@@ -59,6 +59,7 @@ if (BUILDING_RUNTIME)
     include_directories(${NNCASE_INCLUDE_DIR})
     
     add_subdirectory(include/nncase)
+    add_subdirectory(src/kernels)
     add_subdirectory(src/runtime)
         
     install(DIRECTORY ${NNCASE_INCLUDE_DIR}/nncase
@@ -114,6 +115,7 @@ else()
     add_subdirectory(src/evaluator)
     add_subdirectory(src/transforms)
     add_subdirectory(src/codegen)
+    add_subdirectory(src/kernels)
     add_subdirectory(src/runtime)
     add_subdirectory(src/targets)
     add_subdirectory(src/plugin)
