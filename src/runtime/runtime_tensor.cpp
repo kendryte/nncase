@@ -228,6 +228,15 @@ result<runtime_tensor> host_runtime_tensor::create(datatype_t datatype, const ru
     return ok(runtime_tensor(datatype, shape, host_runtime_tensor_type_, std::move(buffer)));
 }
 
+result<runtime_tensor> host_runtime_tensor::create(datatype_t datatype, const runtime_shape_t &shape, gsl::span<gsl::byte> data, std::function<void(gsl::span<gsl::byte>)> data_deleter) noexcept
+{
+    auto size = get_bytes(datatype, shape);
+    if (data.size_bytes() != size)
+        return err(std::errc::invalid_argument);
+    return ok(runtime_tensor(datatype, shape, host_runtime_tensor_type_,
+        std::shared_ptr<uint8_t>((uint8_t *)data.data(), [=](uint8_t *ptr) { data_deleter(data); })));
+}
+
 gsl::span<gsl::byte> host_runtime_tensor::buffer(runtime_tensor &tensor) noexcept
 {
     assert(tensor.is_host());

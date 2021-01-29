@@ -86,6 +86,7 @@ namespace host_runtime_tensor
 NNCASE_API runtime_tensor_type &tensor_type() noexcept;
 NNCASE_API result<runtime_tensor> create(datatype_t datatype, const runtime_shape_t &shape) noexcept;
 NNCASE_API result<runtime_tensor> create(datatype_t datatype, const runtime_shape_t &shape, gsl::span<gsl::byte> data, bool copy) noexcept;
+NNCASE_API result<runtime_tensor> create(datatype_t datatype, const runtime_shape_t &shape, gsl::span<gsl::byte> data, std::function<void(gsl::span<gsl::byte>)> data_deleter) noexcept;
 NNCASE_API gsl::span<gsl::byte> buffer(runtime_tensor &tensor) noexcept;
 }
 
