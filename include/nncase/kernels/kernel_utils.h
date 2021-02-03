@@ -47,6 +47,34 @@ inline size_t get_windowed_output_size(size_t size, int32_t filter, int32_t stri
     return (size_t)((int32_t)size + padding.before + padding.after - effective_filter_size + stride) / stride;
 }
 
+inline runtime_shape_t get_binary_output_shape(const runtime_shape_t &input_a_shape, const runtime_shape_t &input_b_shape)
+{
+    runtime_shape_t out_shape;
+
+    const auto dest_dims = (int32_t)std::max(input_a_shape.size(), input_b_shape.size());
+    const auto in_a_ext = dest_dims - (int32_t)input_a_shape.size();
+    const auto in_b_ext = dest_dims - (int32_t)input_b_shape.size();
+
+    for (int32_t i = 0; i < dest_dims; i++)
+    {
+        const auto in_a_dim = i - (int32_t)in_a_ext;
+        const auto in_b_dim = i - (int32_t)in_b_ext;
+
+        const auto in_a = in_a_dim < 0 ? 1 : input_a_shape[in_a_dim];
+        const auto in_b = in_b_dim < 0 ? 1 : input_b_shape[in_b_dim];
+        if (in_a == in_b)
+            out_shape.push_back(in_a);
+        else if (in_a == 1)
+            out_shape.push_back(in_b);
+        else if (in_b == 1)
+            out_shape.push_back(in_a);
+        else
+            assert(!"inputs are not compatible to broadcast");
+    }
+
+    return out_shape;
+}
+
 template <class TShape>
 size_t compute_size(const TShape &shape)
 {
@@ -62,13 +90,14 @@ inline T apply_activation(T value, value_range<T> activation)
 template <class TShape>
 inline TShape get_reduced_offset(const TShape &in_offset, const TShape &reduced_shape)
 {
-    TShape off;
-    for (size_t i = 0; i < in_offset.size(); i++)
+    TShape off(reduced_shape.size());
+    const auto dims_ext = in_offset.size() - reduced_shape.size();
+    for (size_t i = 0; i < reduced_shape.size(); i++)
     {
-        if (in_offset[i] >= reduced_shape[i])
+        if (in_offset[i + dims_ext] >= reduced_shape[i])
             off[i] = 0;
         else
-            off[i] = in_offset[i];
+            off[i] = in_offset[i + dims_ext];
     }
 
     return off;

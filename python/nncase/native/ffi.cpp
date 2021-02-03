@@ -222,6 +222,7 @@ PYBIND11_MODULE(_nncase, m)
         });
 
     py::class_<interpreter>(m, "Simulator")
+        .def(py::init())
         .def("load_model", [](interpreter &interp, gsl::span<const gsl::byte> buffer) {
             interp.load_model(buffer).unwrap_or_throw();
         })
@@ -231,5 +232,17 @@ PYBIND11_MODULE(_nncase, m)
         .def("get_output_desc", &interpreter::input_desc)
         .def("get_input_tensor", [](interpreter &interp, size_t index) {
             return interp.input_tensor(index).unwrap_or_throw();
+        })
+        .def("set_input_tensor", [](interpreter &interp, size_t index, runtime_tensor tensor) {
+            return interp.input_tensor(index, tensor).unwrap_or_throw();
+        })
+        .def("get_output_tensor", [](interpreter &interp, size_t index) {
+            return interp.output_tensor(index).unwrap_or_throw();
+        })
+        .def("set_output_tensor", [](interpreter &interp, size_t index, runtime_tensor tensor) {
+            return interp.output_tensor(index, tensor).unwrap_or_throw();
+        })
+        .def("run", [](interpreter &interp) {
+            interp.run().unwrap_or_throw();
         });
 }

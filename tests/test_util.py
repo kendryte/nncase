@@ -1,3 +1,17 @@
+# Copyright 2019-2021 Canaan Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""Test utility"""
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
 import pytest
 import os
@@ -7,28 +21,10 @@ import numpy as np
 import shutil
 import struct
 import nncase
+import compare_util
 
-pb_export_dir = "./tmp/test_model"
-tflite_export_file = "./tmp/test.tflite"
-kmodel_export_dir = "./tmp"
-kmodel_out_dir = "./tmp/kmodel_out"
-expect_out_dir = "./tmp/expect_out"
-input_dir = "./tmp/input"
-
-use_cosine_to_double_check = True
 process_num = 16
-
-
-def dot(v1, v2):
-    return sum(x * y for x, y in zip(v1, v2))
-
-
-def length(v):
-    return sqrt(dot(v, v))
-
-
-def cosine_similarity(v1, v2):
-    return dot(v1, v2) / (length(v1) * length(v2))
+output_root = './tmp'
 
 
 def save_numpy_array_as_txt(save_path, value_np, bit_16_represent=False):
@@ -59,18 +55,19 @@ def _cast_bfloat16_then_float32(values: np.array):
     return values
 
 
-def tf_module_to_tflite(module):
-    if not os.path.exists(pb_export_dir):
-        os.makedirs(pb_export_dir)
+def tf_module_to_tflite(case_name, module):
+    pb_export_dir = os.path.join(output_root, case_name)
     tf.saved_model.save(module, pb_export_dir, module.__call__)
     converter = tf.lite.TFLiteConverter.from_saved_model(pb_export_dir)
     tflite_model = converter.convert()
+    tflite_export_file = os.path.join(output_root, case_name, 'test.tflite')
     with open(tflite_export_file, 'wb') as f:
         f.write(tflite_model)
     return tflite_model
 
 
-def gen_input(input_tensor):
+def gen_input(case_name, input_tensor):
+    input_dir = os.path.join(output_root, case_name)
     if input_tensor['dtype'] is np.uint8:
         input_data = np.random.randint(0, 256, input_tensor['shape'])
     elif input_tensor['dtype'] is np.int8:
@@ -83,13 +80,12 @@ def gen_input(input_tensor):
     return input_data
 
 
-def eval_tflite_gth(model):
-    tflite = tf_module_to_tflite(model)
-    interp = tf.lite.Interpreter(tflite)
+def eval_tflite_gth(case_name, tflite):
+    interp = tf.lite.Interpreter(model_content=tflite)
     interp.allocate_tensors()
     input_tensor = interp.get_input_details()[0]
     input_id = input_tensor["index"]
-    input = gen_input(input_tensor)
+    input = gen_input(case_name, input_tensor)
     interp.set_tensor(input_id, input)
     interp.invoke()
 
@@ -100,136 +96,61 @@ def eval_tflite_gth(model):
         result = interp.get_tensor(output_id)
         if len(result.shape) == 4:
             result = np.transpose(result, [0, 3, 1, 2])
-        result.tofile(os.path.join(dir, 'cpu_result{0}.bin'.format(i)))
+        result.tofile(os.path.join(output_root, case_name,
+                                   'cpu_result{0}.bin'.format(i)))
         save_numpy_array_as_txt(os.path.join(
-            dir, 'cpu_result{0}.txt'.format(i)), result)
+            output_root, case_name, 'cpu_result{0}.txt'.format(i)), result)
     return out_len, input
 
 
-def compile_tflite_nncase(model, targets):
+def compile_tflite_nncase(case_name, model, targets):
     import_options = nncase.ImportOptions()
     compile_options = nncase.CompileOptions()
     compile_options.dump_asm = True
     compile_options.dump_asm = True
     for target in targets:
+        kmodel_dir = os.path.join(output_root, case_name, target)
+        if not os.path.exists(kmodel_dir):
+            os.makedirs(kmodel_dir)
         compile_options.target = target
+        compile_options.dump_dir = kmodel_dir
         compiler = nncase.Compiler(compile_options)
         compiler.import_tflite(model, import_options)
         compiler.compile()
         kmodel = compiler.gencode_tobytes()
-        kmodel_dir = os.path.join(kmodel_export_dir, target)
-        if not os.path.exists(kmodel_dir):
-            os.makedirs(kmodel_dir)
         with open(os.path.join(kmodel_dir, 'test.kmodel'), 'wb') as f:
             f.write(kmodel)
 
 
-def eval_kmodel(input, targets):
+def eval_nncase(case_name, input, targets):
     for target in targets:
-        with open(os.path.join(kmodel_export_dir, target, 'test.kmodel', 'rb')) as f:
+        case_dir = os.path.join(output_root, case_name, target)
+        with open(os.path.join(case_dir, 'test.kmodel'), 'rb') as f:
             kmodel = f.read()
-		sim = nncase.Simulator()
-		sim.load_model(kmodel)
+            sim = nncase.Simulator()
+            sim.load_model(kmodel)
+            sim.set_input_tensor(0, nncase.RuntimeTensor.from_numpy(input))
+            sim.run()
+            for i in range(sim.outputs_size):
+                result = sim.get_output_tensor(i).to_numpy()
+                result.tofile(os.path.join(
+                    case_dir, 'nncase_result{0}.bin'.format(i)))
+                save_numpy_array_as_txt(os.path.join(
+                    case_dir, 'nncase_result{0}.txt'.format(i)), result)
 
 
-def clear():
-    if os.path.exists('./tmp'):
-        shutil.rmtree('./tmp')
-    os.makedirs('./tmp')
+def test_tf_module(case_name, module, targets):
+    case_dir = os.path.join('./tmp', case_name)
+    clear(case_dir)
+    tflite = tf_module_to_tflite(case_name, module)
+    compile_tflite_nncase(case_name, tflite, targets)
+    out_len, input = eval_tflite_gth(case_name, tflite)
+    eval_nncase(case_name, input, targets)
+    ret = compare_util.compare_results(case_dir, out_len, targets)
+    assert ret
 
 
-def copy_tflite(path):
-    shutil.copyfile(path, tflite_export_file)
-
-
-def copy_input(path):
-    shutil.copyfile(path, input_dir)
-
-
-def save_tflite(model):
-    if not os.path.exists(pb_export_dir):
-        os.makedirs(pb_export_dir)
-    tf.saved_model.save(model, pb_export_dir, model.__call__)
-
-    converter = tf.lite.TFLiteConverter.from_saved_model(pb_export_dir)
-    tflite_model = converter.convert()
-    f = open(tflite_export_file, 'wb')
-    f.write(tflite_model)
-    f.close()
-
-
-def compile(args=[]):
-    retcode = subprocess.call([ncc, 'compile', tflite_export_file, kmodel_export_file,
-                               '-i', 'tflite', *args])
-    print('retcode', retcode)
-    assert retcode is 0
-
-
-def infer(args=[]):
-    if not os.path.exists(kmodel_out_dir):
-        os.makedirs(kmodel_out_dir)
-    retcode = subprocess.call(
-        [ncc, 'infer', kmodel_export_file, kmodel_out_dir, '--dataset', input_dir, *args])
-    print('retcode', retcode)
-    assert retcode is 0
-
-
-def save_expect_array(name, array):
-    if not os.path.exists(expect_out_dir):
-        os.makedirs(expect_out_dir)
-    np.asarray(array, dtype=np.float32).tofile(
-        expect_out_dir + '/' + name + '.bin')
-
-
-def save_input_array(name, array):
-    if not os.path.exists(input_dir):
-        os.makedirs(input_dir)
-    np.asarray(array, dtype=np.float32).tofile(input_dir + '/' + name + '.bin')
-
-
-def load_input_array(name, shape):
-    return np.fromfile(input_dir + '/' + name + '.bin', dtype=np.float32).reshape(shape)
-
-
-def run_tflite(input):
-    interp = tf.lite.Interpreter(tflite_export_file)
-    interp.allocate_tensors()
-    input_id = interp.get_input_details()[0]["index"]
-    output_id = interp.get_output_details()[0]["index"]
-    interp.set_tensor(input_id, input)
-    interp.invoke()
-    return interp.get_tensor(output_id)
-
-
-def run_tflite_multi(input, out_num):
-    interp = tf.lite.Interpreter(tflite_export_file)
-    interp.allocate_tensors()
-    input_id = interp.get_input_details()[0]["index"]
-    interp.set_tensor(input_id, input)
-    interp.invoke()
-    out = []
-    for i in range(0, out_num):
-        output_id = interp.get_output_details()[i]["index"]
-        out.append(interp.get_tensor(output_id))
-    return out
-
-
-def flatten_out(out):
-    res = []
-    for o1 in out:
-        for o2 in o1.flatten():
-            res.append(o2)
-    return np.asarray(res)
-
-
-def close_to(name, threshold):
-    expect_arr = np.fromfile(expect_out_dir + '/' +
-                             name + '.bin', dtype=np.float32)
-    actual_arr = np.fromfile(kmodel_out_dir + '/' +
-                             name + '.bin', dtype=np.float32)
-    error = np.sum(np.square(expect_arr - actual_arr)) / len(expect_arr)
-    print('e-a', expect_arr - actual_arr)
-    print('exp', expect_arr)
-    print('act', actual_arr)
-    print('error:', error)
-    assert error <= threshold
+def clear(case_dir):
+    if os.path.exists(case_dir):
+        shutil.rmtree(case_dir)
+    os.makedirs(case_dir)

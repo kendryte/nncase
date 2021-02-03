@@ -1,49 +1,43 @@
+# Copyright 2019-2021 Canaan Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""System test: test add"""
+# pylint: disable=invalid-name, unused-argument, import-outside-toplevel
 import pytest
 import os
-import subprocess
 import tensorflow as tf
 import numpy as np
 import sys
-[sys.path.append(i) for i in ['.', '..']]
-import ncc
+import test_util
 
-class AddModule(tf.Module):
 
-  def __init__(self):
-    super(AddModule, self).__init__()
-    self.v = tf.constant([9., -2., -7.])
+@pytest.fixture
+def module():
+    class AddModule(tf.Module):
 
-  @tf.function(input_signature=[tf.TensorSpec([1,2,3], tf.float32)])
-  def __call__(self, x):
-    return x + self.v
+        def __init__(self):
+            super(AddModule, self).__init__()
+            self.v = tf.constant([9., -2., -7.])
 
-module = AddModule()
+        @tf.function(input_signature=[tf.TensorSpec([1, 2, 3], tf.float32)])
+        def __call__(self, x):
+            return x + self.v
+    return AddModule()
 
-def init_values():
-	input = np.asarray([1,-2,3,4,-9,0], dtype=np.float32).reshape([1,2,-1])
-	ncc.save_input_array('test', input)
-	ncc.save_expect_array('test', ncc.run_tflite(input))
 
-def test_add():
-	ncc.clear()
-	ncc.save_tflite(module)
-	init_values()
-	ncc.compile(['--inference-type', 'float'])
+def test_add(module):
+    test_util.test_tf_module('test_add', module, ['cpu'])
 
-	ncc.infer(['--dataset-format', 'raw'])
-	ncc.close_to('test', 0)
-	
-def test_add_quant():
-	ncc.clear()
-	ncc.save_tflite(module)
-	init_values()
-	ncc.compile(['--inference-type', 'uint8', '-t', 'cpu',
-	 '--dataset', ncc.input_dir + '/test.bin', '--dataset-format', 'raw',
-	 '--input-type', 'float'])
-
-	ncc.infer(['--dataset-format', 'raw'])
-	ncc.close_to('test', 0.005)
 
 if __name__ == "__main__":
-	test_add()
-	test_add_quant()
+    pytest.main(['-vv', 'test_add.py'])

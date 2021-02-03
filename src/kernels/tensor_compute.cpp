@@ -12,21 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../runtime_module.h"
+#include <nncase/kernels/cpu/reference/tensor_compute.h>
 #include <nncase/kernels/tensor_compute.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
-using namespace nncase::runtime::stackvm;
+using namespace nncase::kernels;
 
-result<void> stackvm_runtime_module::visit(const tensor_binary_op_t &op) noexcept
+result<void> kernels::binary(binary_op_t op, const float *input_a, const float *input_b, float *output,
+    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_b_shape, value_range<float> fused_activation) noexcept
 {
-    try_var(output, pop_addr());
-    try_var(input_b, pop_addr());
-    try_var(input_a, pop_addr());
-    auto &in_a_shape = shape_regs_[op.rshape_src1];
-    auto &in_b_shape = shape_regs_[op.rshape_src2];
-
-    return kernels::binary(op.binary_op, reinterpret_cast<const float *>(input_a), reinterpret_cast<const float *>(input_b),
-        reinterpret_cast<float *>(output), in_a_shape, in_b_shape, { op.fused_clamp_low, op.fused_clamp_high });
+    return cpu::reference::binary(op, input_a, input_b, output, in_a_shape, in_b_shape, fused_activation);
 }

@@ -1,6 +1,7 @@
 ﻿cmake_minimum_required (VERSION 3.8)
 
-set(SRCS convolution.cpp)
+set(SRCS convolution.cpp
+         tensor_compute.cpp)
 
 if (BUILDING_RUNTIME)
     add_library(kernels OBJECT ${SRCS})
