@@ -159,7 +159,7 @@ result<void> reference::reduce(reduce_op_t op, float init_value, const float *in
     auto out_shape = kernels::detail::get_reduced_shape(in_shape, axis, keep_dims);
     switch (op)
     {
-        REDUCE_IMPL(reduce_mean, std::plus<float>(), [block_size = (float)xt::compute_size(axis)](float v) { return v / block_size; });
+        REDUCE_IMPL(reduce_mean, std::plus<float>(), [block_size = (float)kernels::detail::get_reduce_block_size(in_shape, axis)](float v) { return v / block_size; });
         REDUCE_IMPL_NO_POST(reduce_min, [](float a, float b) { return std::min(a, b); });
         REDUCE_IMPL_NO_POST(reduce_max, [](float a, float b) { return std::max(a, b); });
         REDUCE_IMPL_NO_POST(reduce_sum, std::plus<float>());

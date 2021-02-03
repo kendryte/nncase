@@ -125,6 +125,21 @@ TShape get_reduced_shape(const TShape &in_shape, const TShape &axis, bool keep_d
 }
 
 template <class TShape>
+size_t get_reduce_block_size(const TShape &in_shape, const TShape &axis)
+{
+    size_t size = 1;
+    for (size_t i = 0; i < in_shape.size(); i++)
+    {
+        if (std::find(axis.begin(), axis.end(), i) != axis.end())
+        {
+            size *= in_shape[i];
+        }
+    }
+
+    return size;
+}
+
+template <class TShape>
 TShape get_reduced_offset(const TShape &in_offset, const TShape &axis, bool keep_dims)
 {
     TShape off;

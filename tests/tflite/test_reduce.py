@@ -30,6 +30,9 @@ def _make_module(in_shape, axis, keep_dims=False):
         def __call__(self, x):
             outs = []
             outs.append(tf.reduce_min(x, axis=axis, keepdims=keep_dims))
+            outs.append(tf.reduce_max(x, axis=axis, keepdims=keep_dims))
+            outs.append(tf.reduce_mean(x, axis=axis, keepdims=keep_dims))
+            outs.append(tf.reduce_sum(x, axis=axis, keepdims=keep_dims))
             return outs
     return ReduceModule()
 
