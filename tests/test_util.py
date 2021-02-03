@@ -94,8 +94,8 @@ def eval_tflite_gth(case_name, tflite):
         output_id = interp.get_output_details()[i]["index"]
 
         result = interp.get_tensor(output_id)
-        if len(result.shape) == 4:
-            result = np.transpose(result, [0, 3, 1, 2])
+        #if len(result.shape) == 4:
+        #    result = np.transpose(result, [0, 3, 1, 2])
         result.tofile(os.path.join(output_root, case_name,
                                    'cpu_result{0}.bin'.format(i)))
         save_numpy_array_as_txt(os.path.join(

@@ -288,54 +288,6 @@ inline shape_t get_strided_slice_output_shape(const axis_t &begin, const axis_t 
 
     return new_shape;
 }
-
-inline shape_t convert_shape_type(const shape_t &shape, datatype_t src, datatype_t dest)
-{
-    const auto src_size = get_bytes(src);
-    const auto dest_size = get_bytes(dest);
-
-    shape_t new_shape = shape;
-    if (!new_shape.empty())
-    {
-        auto &v = new_shape.back();
-        v = new_shape.back() * src_size / dest_size;
-    }
-
-    return new_shape;
-}
-
-inline shape_t convert_strides_type(const shape_t &strides, datatype_t src, datatype_t dest)
-{
-    const auto src_size = get_bytes(src);
-    const auto dest_size = get_bytes(dest);
-
-    shape_t new_strides = strides;
-    if (new_strides.size() > 1)
-    {
-        assert(new_strides.back() == 0 || new_strides.back() == 1);
-        for (size_t i = 0; i < new_strides.size() - 1; i++)
-        {
-            auto &v = new_strides[i];
-            if (v == 0)
-                v = 1;
-            v = v * src_size / dest_size;
-            // if (v == 1)
-            //     v = 0;
-        }
-
-        new_strides.back() = 1;
-    }
-    else
-    {
-        for (size_t i = 0; i < new_strides.size(); i++)
-        {
-            if (new_strides[i] == 0)
-                new_strides[i] = 1;
-        }
-    }
-
-    return new_strides;
-}
 }
 
 namespace xt

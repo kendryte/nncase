@@ -39,8 +39,8 @@ enum connector_attributes
     cnctr_attr_need_quantize = 1
 };
 
-DEFINE_ENUM_FLAG_OPERATORS(node_attributes)
-DEFINE_ENUM_FLAG_OPERATORS(connector_attributes)
+DEFINE_ENUM_BITMASK_OPERATORS(node_attributes)
+DEFINE_ENUM_BITMASK_OPERATORS(connector_attributes)
 
 template <class T, class = std::enable_if_t<std::is_pointer_v<T>>>
 std::vector<std::decay_t<T>> dup(std::span<T> source)

@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <nncase/kernels/tensor_compute.h>
 #include <nncase/runtime/error.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/runtime/runtime_tensor.h>
@@ -21,6 +22,13 @@ using namespace nncase::runtime;
 
 namespace
 {
+runtime_shape_t to_strides(const runtime_shape_t &shape)
+{
+    runtime_shape_t strides(shape.size());
+    xt::compute_strides(shape, xt::layout_type::row_major, strides);
+    return strides;
+}
+
 class host_runtime_tensor_type : public runtime_tensor_type
 {
 public:
@@ -38,10 +46,12 @@ public:
     {
         auto buffer_src = host_runtime_tensor::buffer(src);
         auto buffer_dest = host_runtime_tensor::buffer(src);
-        if (buffer_src.size() != buffer_dest.size())
+        if (src.datatype() != dest.datatype())
+            return err(nncase_errc::datatype_mismatch);
+        if (src.shape() != dest.shape())
             return err(nncase_errc::shape_mismatch);
-        std::memcpy(buffer_dest.data(), buffer_src.data(), buffer_src.size_bytes());
-        return ok();
+
+        return kernels::copy(src.datatype(), buffer_src.data(), buffer_dest.data(), src.shape(), src.strides(), dest.strides());
     }
 
     result<void> copy_from_different_type(runtime_tensor &src, runtime_tensor &dest) noexcept override
@@ -118,8 +128,8 @@ runtime_tensor::runtime_tensor() noexcept
 {
 }
 
-runtime_tensor::runtime_tensor(datatype_t datatype, const runtime_shape_t &shape, runtime_tensor_type &tensor_type, std::shared_ptr<void> data) noexcept
-    : datatype_(datatype), shape_(shape), tensor_type_(&tensor_type), data_(std::move(data))
+runtime_tensor::runtime_tensor(datatype_t datatype, runtime_shape_t shape, runtime_shape_t strides, runtime_tensor_type &tensor_type, std::shared_ptr<void> data) noexcept
+    : datatype_(datatype), shape_(std::move(shape)), strides_(std::move(strides)), tensor_type_(&tensor_type), data_(std::move(data))
 {
 }
 
@@ -197,44 +207,59 @@ bool runtime::operator!=(const runtime_tensor &lhs, const runtime_tensor &rhs) n
     return !(lhs == rhs);
 }
 
-result<runtime_tensor> host_runtime_tensor::create(datatype_t datatype, const runtime_shape_t &shape) noexcept
+result<runtime_tensor> host_runtime_tensor::create(datatype_t datatype, runtime_shape_t shape, runtime_shape_t strides) noexcept
 {
-    auto size = get_bytes(datatype, shape);
+    auto size = xt::compute_strides(shape, xt::layout_type::row_major, strides) * get_bytes(datatype);
     std::shared_ptr<uint8_t> buffer(new (std::nothrow) uint8_t[size], std::default_delete<uint8_t[]>());
     if (!buffer)
         return err(std::errc::not_enough_memory);
-    return ok(runtime_tensor(datatype, shape, host_runtime_tensor_type_, std::move(buffer)));
+    return ok(runtime_tensor(datatype, std::move(shape), std::move(strides), host_runtime_tensor_type_, std::move(buffer)));
 }
 
-result<runtime_tensor> host_runtime_tensor::create(datatype_t datatype, const runtime_shape_t &shape, gsl::span<gsl::byte> data, bool copy) noexcept
+result<runtime_tensor> host_runtime_tensor::create(datatype_t datatype, runtime_shape_t shape, runtime_shape_t strides, gsl::span<gsl::byte> data, bool copy) noexcept
 {
-    auto size = get_bytes(datatype, shape);
+    auto size = xt::compute_strides(shape, xt::layout_type::row_major, strides) * get_bytes(datatype);
     if (data.size_bytes() != size)
         return err(std::errc::invalid_argument);
 
-    std::shared_ptr<uint8_t> buffer;
+    std::shared_ptr<gsl::byte> buffer;
     if (copy)
     {
-        buffer.reset(new (std::nothrow) uint8_t[size], std::default_delete<uint8_t[]>());
+        buffer.reset(new (std::nothrow) gsl::byte[size], std::default_delete<gsl::byte[]>());
         if (!buffer)
             return err(std::errc::not_enough_memory);
-        std::memcpy(buffer.get(), data.data(), size);
+        try_(kernels::copy(datatype, data.data(), buffer.get(), shape, strides, strides));
     }
     else
     {
-        buffer.reset((uint8_t *)data.data(), [](uint8_t *ptr) {});
+        buffer.reset(data.data(), [](gsl::byte *ptr) {});
     }
 
-    return ok(runtime_tensor(datatype, shape, host_runtime_tensor_type_, std::move(buffer)));
+    return ok(runtime_tensor(datatype, std::move(shape), std::move(strides), host_runtime_tensor_type_, std::move(buffer)));
 }
 
-result<runtime_tensor> host_runtime_tensor::create(datatype_t datatype, const runtime_shape_t &shape, gsl::span<gsl::byte> data, std::function<void(gsl::span<gsl::byte>)> data_deleter) noexcept
+result<runtime_tensor> host_runtime_tensor::create(datatype_t datatype, runtime_shape_t shape, runtime_shape_t strides, gsl::span<gsl::byte> data, std::function<void(gsl::span<gsl::byte>)> data_deleter) noexcept
 {
-    auto size = get_bytes(datatype, shape);
+    auto size = xt::compute_strides(shape, xt::layout_type::row_major, strides) * get_bytes(datatype);
     if (data.size_bytes() != size)
         return err(std::errc::invalid_argument);
-    return ok(runtime_tensor(datatype, shape, host_runtime_tensor_type_,
-        std::shared_ptr<uint8_t>((uint8_t *)data.data(), [=](uint8_t *ptr) { data_deleter(data); })));
+    return ok(runtime_tensor(datatype, std::move(shape), std::move(strides), host_runtime_tensor_type_,
+        std::shared_ptr<gsl::byte>(data.data(), [=](gsl::byte *ptr) { data_deleter(data); })));
+}
+
+result<runtime_tensor> host_runtime_tensor::create(datatype_t datatype, runtime_shape_t shape) noexcept
+{
+    return create(datatype, shape, to_strides(shape));
+}
+
+result<runtime_tensor> host_runtime_tensor::create(datatype_t datatype, runtime_shape_t shape, gsl::span<gsl::byte> data, bool copy) noexcept
+{
+    return create(datatype, shape, to_strides(shape), data, copy);
+}
+
+result<runtime_tensor> host_runtime_tensor::create(datatype_t datatype, runtime_shape_t shape, gsl::span<gsl::byte> data, std::function<void(gsl::span<gsl::byte>)> data_deleter) noexcept
+{
+    return create(datatype, shape, to_strides(shape), data, std::move(data_deleter));
 }
 
 gsl::span<gsl::byte> host_runtime_tensor::buffer(runtime_tensor &tensor) noexcept

@@ -37,6 +37,51 @@ inline size_t get_bytes(datatype_t type, const runtime_shape_t &shape)
     return xt::compute_size(shape) * get_bytes(type);
 }
 
+template <class TShape>
+TShape convert_shape_type(const TShape &shape, datatype_t src, datatype_t dest)
+{
+    const auto src_size = get_bytes(src);
+    const auto dest_size = get_bytes(dest);
+
+    TShape new_shape = shape;
+    if (!new_shape.empty())
+    {
+        auto &v = new_shape.back();
+        v = new_shape.back() * src_size / dest_size;
+    }
+
+    return new_shape;
+}
+
+template <class TShape>
+TShape convert_strides_type(const TShape &strides, datatype_t src, datatype_t dest)
+{
+    const auto src_size = get_bytes(src);
+    const auto dest_size = get_bytes(dest);
+
+    TShape new_strides = strides;
+    if (new_strides.size() > 1)
+    {
+        for (size_t i = 0; i < new_strides.size(); i++)
+        {
+            auto &v = new_strides[i];
+            if (v == 0)
+                v = 1;
+            v = v * src_size / dest_size;
+        }
+    }
+    else
+    {
+        for (size_t i = 0; i < new_strides.size(); i++)
+        {
+            if (new_strides[i] == 0)
+                new_strides[i] = 1;
+        }
+    }
+
+    return new_strides;
+}
+
 template <int32_t Bits, class T>
 uint8_t count_leading_zeros(T value)
 {

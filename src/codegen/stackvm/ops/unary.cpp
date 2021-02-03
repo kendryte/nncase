@@ -21,9 +21,13 @@ using namespace nncase::ir;
 
 void stackvm_module_builder::emit(unary &node, stackvm_op_builder &builder)
 {
-    builder.lea_buffer(allocation(node.input()));
-    builder.lea_buffer(allocation(node.output()));
+    auto &input = allocation(node.input());
+    auto &output = allocation(node.input());
+    builder.lea_buffer(input);
+    builder.lea_buffer(output);
 
-    builder.stshape(0, node.input().shape());
-    builder.tensor_unary_(node.input().type(), 0, node.unary_op());
+    builder.stshape(0, input.shape);
+    builder.stshape(1, input.strides);
+    builder.stshape(2, output.strides);
+    builder.tensor_unary_(node.input().type(), 0, 1, 2, node.unary_op());
 }

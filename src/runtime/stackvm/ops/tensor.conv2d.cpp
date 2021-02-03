@@ -28,11 +28,15 @@ result<void> stackvm_runtime_module::visit(const tensor_conv2d_op_t &op) noexcep
     try_var(weights, pop_addr());
     try_var(input, pop_addr());
     auto &in_shape = shape_regs_[op.rshape_src];
+    auto &in_strides = shape_regs_[op.rstride_src];
     auto &w_shape = shape_regs_[op.rshape_kernel];
+    auto &w_strides = shape_regs_[op.rstride_kernel];
+    auto &bias_strides = shape_regs_[op.rstride_bias];
+    auto &out_strides = shape_regs_[op.rstride_dest];
 
     if (op.datatype != dt_float32)
         return err(nncase_errc::datatype_mismatch);
     return kernels::conv2d(reinterpret_cast<const float *>(input), reinterpret_cast<const float *>(weights),
-        reinterpret_cast<const float *>(bias), reinterpret_cast<float *>(output), in_shape, w_shape,
+        reinterpret_cast<const float *>(bias), reinterpret_cast<float *>(output), in_shape, in_strides, w_shape, w_strides, bias_strides, out_strides,
         padding_h, padding_w, op.groups, op.stride_h, op.stride_w, op.dilation_h, op.dilation_w, { op.fused_clamp_low, op.fused_clamp_high });
 }

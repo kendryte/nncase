@@ -16,6 +16,7 @@
 #include <cassert>
 #include <nncase/ir/graph.h>
 #include <nncase/ir/op_utils.h>
+#include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/schedule/scheduler.h>
 #include <unordered_map>
 #include <xtensor/xadapt.hpp>
@@ -50,8 +51,8 @@ public:
         auto result = memory_at(conn);
         return {
             { reinterpret_cast<T *>(result.span.data()), result.span.size_bytes() / sizeof(T) },
-            ir::convert_shape_type(result.shape, dt_uint8, to_datatype<T>()),
-            ir::convert_strides_type(result.strides, dt_uint8, to_datatype<T>())
+            runtime::convert_shape_type(result.shape, dt_uint8, to_datatype<T>()),
+            runtime::convert_strides_type(result.strides, dt_uint8, to_datatype<T>())
         };
     }
 
@@ -101,8 +102,8 @@ public:
         auto result = memory_at(conn);
         return {
             { reinterpret_cast<T *>(result.span.data()), result.span.size_bytes() / sizeof(T) },
-            ir::convert_shape_type(result.shape, dt_uint8, to_datatype<T>()),
-            ir::convert_strides_type(result.strides, dt_uint8, to_datatype<T>())
+            runtime::convert_shape_type(result.shape, dt_uint8, to_datatype<T>()),
+            runtime::convert_strides_type(result.strides, dt_uint8, to_datatype<T>())
         };
     }
 

@@ -109,7 +109,7 @@ public:
         return { *this, filenames_.size() };
     }
 
-    size_t batch_size() const noexcept { return input_shape_.size() == 4 ? input_shape_[0] : 1; }
+    size_t batch_size() const noexcept { return 1; }
     size_t total_size() const noexcept { return filenames_.size(); }
 
 protected:
@@ -125,16 +125,12 @@ private:
             size_t start = from;
 
             xt::xarray<T> batch(input_shape_);
-            for (auto &&sample_view : xt::split(batch, batch_size()))
+            auto file = read_file(filenames_[from++]);
+            process(file, batch.data(), batch.shape());
+            if constexpr (std::is_same_v<T, float>)
             {
-                auto view = xt::squeeze(sample_view, 0);
-                auto file = read_file(filenames_[from++]);
-                process(file, view.data(), view.shape());
-                if constexpr (std::is_same_v<T, float>)
-                {
-                    for (auto &v : view)
-                        v = (v - mean_) / std_;
-                }
+                for (auto &v : batch)
+                    v = (v - mean_) / std_;
             }
 
             std::span<const std::filesystem::path> filenames(filenames_.data() + start, filenames_.data() + from);

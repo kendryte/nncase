@@ -17,6 +17,7 @@
 #include <nncase/compiler.h>
 #include <nncase/ir/debug.h>
 #include <nncase/runtime/interpreter.h>
+#include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/version.h>
 #include <pybind11/iostream.h>
 #include <pybind11/numpy.h>
@@ -145,6 +146,43 @@ std::vector<py::ssize_t> to_py_shape(const runtime_shape_t &value)
         shape[i] = (py::ssize_t)value[i];
     return shape;
 }
+#ifdef WIN32
+#include <Windows.h>
+void LaunchDebugger()
+{
+    // Get System directory, typically c:\windows\system32
+    std::wstring systemDir(MAX_PATH + 1, '\0');
+    UINT nChars = GetSystemDirectoryW(&systemDir[0], systemDir.length());
+    if (nChars == 0)
+        return;
+    systemDir.resize(nChars);
+
+    // Get process ID and create the command line
+    DWORD pid = GetCurrentProcessId();
+    std::wostringstream s;
+    s << systemDir << L"\\vsjitdebugger.exe -p " << pid;
+    std::wstring cmdLine = s.str();
+
+    // Start debugger process
+    STARTUPINFOW si;
+    ZeroMemory(&si, sizeof(si));
+    si.cb = sizeof(si);
+
+    PROCESS_INFORMATION pi;
+    ZeroMemory(&pi, sizeof(pi));
+
+    if (!CreateProcessW(NULL, &cmdLine[0], NULL, NULL, FALSE, 0, NULL, NULL, &si, &pi))
+        return;
+
+    // Close debugger process handles to eliminate resource leak
+    CloseHandle(pi.hThread);
+    CloseHandle(pi.hProcess);
+
+    // Wait for the debugger to attach
+    while (!IsDebuggerPresent())
+        Sleep(100);
+}
+#endif
 }
 
 PYBIND11_MODULE(_nncase, m)
@@ -196,10 +234,13 @@ PYBIND11_MODULE(_nncase, m)
 
     py::class_<runtime_tensor>(m, "RuntimeTensor")
         .def("from_numpy", [](py::array arr) {
+            //LaunchDebugger();
             auto src_buffer = arr.request();
+            auto datatype = from_dtype(arr.dtype());
             auto tensor = host_runtime_tensor::create(
-                from_dtype(arr.dtype()),
+                datatype,
                 to_rt_shape(src_buffer.shape),
+                runtime::convert_strides_type(to_rt_shape(src_buffer.strides), dt_uint8, datatype),
                 gsl::make_span(reinterpret_cast<gsl::byte *>(src_buffer.ptr), src_buffer.size * src_buffer.itemsize),
                 [=](gsl::span<gsl::byte>) { arr.dec_ref(); })
                               .unwrap_or_throw();
@@ -212,6 +253,7 @@ PYBIND11_MODULE(_nncase, m)
             return py::array(
                 to_dtype(tensor.datatype()),
                 tensor.shape(),
+                runtime::convert_strides_type(tensor.strides(), tensor.datatype(), dt_uint8),
                 src_buffer.data());
         })
         .def_property_readonly("dtype", [](runtime_tensor &tensor) {

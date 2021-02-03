@@ -18,6 +18,7 @@
 #include <cstddef>
 #include <nncase/runtime/datatypes.h>
 #include <numeric>
+#include <xtensor/xstrides.hpp>
 
 #ifdef __GNUC__
 #define CXX_RESTRICT __restrict__
@@ -30,13 +31,10 @@
 BEGIN_NS_NNCASE_KERNELS
 
 template <class TShape>
-size_t offset(const TShape &shape, const TShape &index)
+size_t offset(const TShape &strides, const TShape &index)
 {
-    assert(shape.size() == index.size());
-    size_t result = index[0];
-    for (size_t i = 1; i < index.size(); i++)
-        result = result * shape[i] + index[i];
-    return result;
+    assert(strides.size() == index.size());
+    return xt::element_offset<size_t>(strides, index.begin(), index.end());
 }
 
 namespace details

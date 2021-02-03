@@ -21,11 +21,16 @@ using namespace nncase::ir;
 
 void stackvm_module_builder::emit(reduce &node, stackvm_op_builder &builder)
 {
-    builder.lea_buffer(allocation(node.input()));
-    builder.lea_buffer(allocation(node.output()));
+    auto &input = allocation(node.input());
+    auto &output = allocation(node.input());
+    builder.lea_buffer(input);
+    builder.lea_buffer(output);
+
     builder.ldc_r4_(node.init_value());
 
-    builder.stshape(0, node.input().shape());
-    builder.staxis(1, node.axis());
-    builder.tensor_reduce_(node.input().type(), 0, node.reduce_op(), 1);
+    builder.stshape(0, input.shape);
+    builder.stshape(1, input.strides);
+    builder.stshape(2, output.strides);
+    builder.staxis(3, node.axis());
+    builder.tensor_reduce_(node.input().type(), 0, 1, 2, node.reduce_op(), 3);
 }

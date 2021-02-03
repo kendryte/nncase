@@ -1050,6 +1050,14 @@ namespace IsaGen
             [Description("Source shape register")]
             public byte RshapeSrc { get; set; }
 
+            [DisplayName("rstride_src")]
+            [Description("Source stride register")]
+            public byte RstrideSrc { get; set; }
+
+            [DisplayName("rstride_dest")]
+            [Description("Dest stride register")]
+            public byte RstrideDest { get; set; }
+
             [DisplayName("rshape_block")]
             [Description("Block shape register")]
             public byte RshapeBlock { get; set; }
@@ -1074,9 +1082,25 @@ namespace IsaGen
             [Description("Source shape register")]
             public byte RshapeSrc { get; set; }
 
+            [DisplayName("rstride_src")]
+            [Description("Source stride register")]
+            public byte RstrideSrc { get; set; }
+
             [DisplayName("rshape_kernel")]
             [Description("Kernel shape register")]
             public byte RshapeKernel { get; set; }
+
+            [DisplayName("rstride_kernel")]
+            [Description("Kernel stride register")]
+            public byte RstrideKernel { get; set; }
+
+            [DisplayName("rstride_bias")]
+            [Description("Bias stride register")]
+            public byte RstrideBias { get; set; }
+
+            [DisplayName("rstride_dest")]
+            [Description("Dest stride register")]
+            public byte RstrideDest { get; set; }
 
             [DisplayName("groups")]
             [Description("Groups")]
@@ -1122,6 +1146,14 @@ namespace IsaGen
             [Description("Source shape register")]
             public byte RshapeSrc { get; set; }
 
+            [DisplayName("rstride_src")]
+            [Description("Source stride register")]
+            public byte RstrideSrc { get; set; }
+
+            [DisplayName("rstride_dest")]
+            [Description("Dest stride register")]
+            public byte RstrideDest { get; set; }
+
             [DisplayName("reduce_op")]
             [Description("Reduce operator")]
             public ReduceOp ReduceOp { get; set; }
@@ -1146,9 +1178,21 @@ namespace IsaGen
             [Description("Source1 shape register")]
             public byte RshapeSrc1 { get; set; }
 
+            [DisplayName("rstride_src1")]
+            [Description("Source1 stride register")]
+            public byte RstrideSrc1 { get; set; }
+
             [DisplayName("rshape_src2")]
             [Description("Source2 shape register")]
             public byte RshapeSrc2 { get; set; }
+
+            [DisplayName("rstride_src2")]
+            [Description("Source2 stride register")]
+            public byte RstrideSrc2 { get; set; }
+
+            [DisplayName("rstride_dest")]
+            [Description("Dest stride register")]
+            public byte RstrideDest { get; set; }
 
             [DisplayName("binary_op")]
             [Description("Binary operator")]
@@ -1177,6 +1221,14 @@ namespace IsaGen
             [DisplayName("rshape_src")]
             [Description("Source1 shape register")]
             public byte RshapeSrc { get; set; }
+
+            [DisplayName("rstride_src")]
+            [Description("Source stride register")]
+            public byte RstrideSrc { get; set; }
+
+            [DisplayName("rstride_dest")]
+            [Description("Dest stride register")]
+            public byte RstrideDest { get; set; }
 
             [DisplayName("unary_op")]
             [Description("Unary operator")]

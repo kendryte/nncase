@@ -16,7 +16,6 @@
 #include "model.h"
 #include "result.h"
 #include "runtime_tensor.h"
-#include <xtensor/xstorage.hpp>
 
 BEGIN_NS_NNCASE_RUNTIME
 
@@ -36,6 +35,7 @@ private:
     struct inout_tensor_info
     {
         runtime_shape_t shape;
+        runtime_shape_t strides;
         memory_range range;
         runtime_tensor bind_tensor;
         runtime_tensor staging_tensor;
@@ -81,9 +81,9 @@ protected:
 
 private:
     module_header header_;
-    xt::svector<mempool_desc, 4> mempools_;
-    xt::svector<inout_tensor_info, 1> input_tensors_;
-    xt::svector<inout_tensor_info, 3> output_tensors_;
+    std::vector<mempool_desc> mempools_;
+    std::vector<inout_tensor_info> input_tensors_;
+    std::vector<inout_tensor_info> output_tensors_;
 };
 
 END_NS_NNCASE_RUNTIME

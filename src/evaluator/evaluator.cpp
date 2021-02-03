@@ -75,8 +75,8 @@ eval_result<> module_evaluate_context::memory_at(const output_connector &conn)
     auto &memory_pool = memory_pools_.at(alloc.memory_location);
     return {
         { memory_pool.get() + alloc.start, alloc.size },
-        convert_shape_type(alloc.shape, alloc.type, dt_uint8),
-        convert_strides_type(alloc.strides, alloc.type, dt_uint8)
+        runtime::convert_shape_type(alloc.shape, alloc.type, dt_uint8),
+        runtime::convert_strides_type(alloc.strides, alloc.type, dt_uint8)
     };
 }
 

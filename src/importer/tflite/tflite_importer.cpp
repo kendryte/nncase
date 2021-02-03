@@ -46,22 +46,22 @@ void tflite_importer::import(const import_options &options)
         auto shape = get_shape(tensor.shape());
         auto type = to_data_type(tensor.type());
         // image
-        if (shape.size() == 4)
-        {
-            auto trans = nhwc_to_nchw(shape);
-            auto node = graph_.emplace<input_node>(type, trans);
-            node->name(tensor.name()->string_view());
-            auto sur_trans = nchw_to_nhwc(node->output().type(), node->output().shape());
-            sur_trans->name(tensor.name()->string_view());
-            sur_trans->input().connect(node->output());
-            created_inputs.emplace(in, &sur_trans->output());
-        }
-        else
-        {
-            auto node = graph_.emplace<input_node>(type, shape);
-            node->name(tensor.name()->string_view());
-            created_inputs.emplace(in, &node->output());
-        }
+        //if (shape.size() == 4)
+        //{
+        //    auto trans = nhwc_to_nchw(shape);
+        //    auto node = graph_.emplace<input_node>(type, trans);
+        //    node->name(tensor.name()->string_view());
+        //    auto sur_trans = nchw_to_nhwc(node->output().type(), node->output().shape());
+        //    sur_trans->name(tensor.name()->string_view());
+        //    sur_trans->input().connect(node->output());
+        //    created_inputs.emplace(in, &sur_trans->output());
+        //}
+        //else
+        //{
+        auto node = graph_.emplace<input_node>(type, shape);
+        node->name(tensor.name()->string_view());
+        created_inputs.emplace(in, &node->output());
+        //}
     }
 
     std::vector<int32_t> outputs;
@@ -105,21 +105,21 @@ void tflite_importer::import(const import_options &options)
         auto shape = get_shape(tensor.shape());
         auto type = to_data_type(tensor.type());
         // image
-        if (shape.size() == 4)
-        {
-            auto pre_trans = nhwc_to_nchw(type, shape);
-            pre_trans->name(tensor.name()->string_view());
-            auto node = graph_.emplace<output_node>(pre_trans->output().type(), pre_trans->output().shape());
-            node->name(tensor.name()->string_view());
-            node->input().connect(pre_trans->output());
-            created_outputs.emplace(out, &pre_trans->input());
-        }
-        else
-        {
-            auto node = graph_.emplace<output_node>(type, shape);
-            node->name(tensor.name()->string_view());
-            created_outputs.emplace(out, &node->input());
-        }
+        //if (shape.size() == 4)
+        //{
+        //    auto pre_trans = nhwc_to_nchw(type, shape);
+        //    pre_trans->name(tensor.name()->string_view());
+        //    auto node = graph_.emplace<output_node>(pre_trans->output().type(), pre_trans->output().shape());
+        //    node->name(tensor.name()->string_view());
+        //    node->input().connect(pre_trans->output());
+        //    created_outputs.emplace(out, &pre_trans->input());
+        //}
+        //else
+        //{
+        auto node = graph_.emplace<output_node>(type, shape);
+        node->name(tensor.name()->string_view());
+        created_outputs.emplace(out, &node->input());
+        //}
     }
 
     // connect tensors

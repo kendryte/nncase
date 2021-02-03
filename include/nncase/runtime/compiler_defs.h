@@ -75,8 +75,8 @@ using invoke_result_t = std::result_of_t<Callable(Args...)>;
     }                         \
     }
 
-#ifndef DEFINE_ENUM_FLAG_OPERATORS
-#define DEFINE_ENUM_FLAG_OPERATORS(ENUMTYPE) gsl_DEFINE_ENUM_BITMASK_OPERATORS(ENUMTYPE)
+#ifndef DEFINE_ENUM_BITMASK_OPERATORS
+#define DEFINE_ENUM_BITMASK_OPERATORS(ENUMTYPE) gsl_DEFINE_ENUM_BITMASK_OPERATORS(ENUMTYPE)
 #endif
 
 namespace nncase

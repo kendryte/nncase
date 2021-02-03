@@ -17,7 +17,11 @@
 
 BEGIN_NS_NNCASE_KERNELS_CPU_REF
 
+NNCASE_API result<void> copy(datatype_t type, const gsl::byte *src, gsl::byte *dest,
+    const runtime_shape_t &shape, const runtime_shape_t &src_strides, const runtime_shape_t &dest_strides) noexcept;
+
 NNCASE_API result<void> binary(binary_op_t op, const float *input_a, const float *input_b, float *output,
-    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_b_shape, value_range<float> fused_activation) noexcept;
+    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
+    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_strides, value_range<float> fused_activation) noexcept;
 
 END_NS_NNCASE_KERNELS_CPU_REF

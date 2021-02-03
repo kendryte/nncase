@@ -19,8 +19,15 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::kernels;
 
-result<void> kernels::binary(binary_op_t op, const float *input_a, const float *input_b, float *output,
-    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_b_shape, value_range<float> fused_activation) noexcept
+result<void> kernels::copy(datatype_t type, const gsl::byte *src, gsl::byte *dest,
+    const runtime_shape_t &shape, const runtime_shape_t &src_strides, const runtime_shape_t &dest_strides) noexcept
 {
-    return cpu::reference::binary(op, input_a, input_b, output, in_a_shape, in_b_shape, fused_activation);
+    return cpu::reference::copy(type, src, dest, shape, src_strides, dest_strides);
+}
+
+result<void> kernels::binary(binary_op_t op, const float *input_a, const float *input_b, float *output,
+    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
+    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_strides, value_range<float> fused_activation) noexcept
+{
+    return cpu::reference::binary(op, input_a, input_b, output, in_a_shape, in_a_strides, in_b_shape, in_b_strides, out_strides, fused_activation);
 }
