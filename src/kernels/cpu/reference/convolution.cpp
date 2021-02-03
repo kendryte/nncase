@@ -34,52 +34,53 @@ result<void> reference::conv2d(const float *input, const float *weights, const f
     const auto g_ic = in_shape[1] / groups;
     const auto g_oc = out_channels / groups;
 
+    runtime_shape_t in_index(4);
+    runtime_shape_t w_index(4);
+    runtime_shape_t bias_index(1);
+    runtime_shape_t out_index(4);
     for (size_t batch = 0; batch < in_shape[0]; batch++)
     {
-        const float *in_batch_p = input + (size_t)batch * in_shape[1] * in_shape[2] * in_shape[3];
-
+        in_index[0] = out_index[0] = batch;
         for (size_t og = 0; og < groups; og++)
         {
-            const float *in_group_p = in_batch_p + (size_t)og * g_ic * in_shape[2] * in_shape[3];
-            const float *w_group_p = weights + (size_t)og * g_oc * g_ic * filter_h * filter_w;
-
             for (size_t oc = 0; oc < g_oc; oc++)
             {
-                const float *w_oc_p = w_group_p + (size_t)oc * g_ic * filter_h * filter_w;
-
+                out_index[1] = w_index[0] = bias_index[0] = og * g_oc + oc;
                 for (size_t oy = 0; oy < out_h; oy++)
                 {
+                    out_index[2] = oy;
                     for (size_t ox = 0; ox < out_w; ox++)
                     {
+                        out_index[3] = ox;
                         const int32_t in_y_origin = (oy * stride_h) - padding_h.before;
                         const int32_t in_x_origin = (ox * stride_w) - padding_w.before;
                         const size_t filter_y_start = (size_t)std::max(0, (-in_y_origin + dilation_h - 1) / dilation_h);
                         const size_t filter_y_end = (size_t)std::min(filter_h, ((int32_t)in_shape[2] - in_y_origin + dilation_h - 1) / dilation_h);
                         const size_t filter_x_start = (size_t)std::max(0, (-in_x_origin + dilation_w - 1) / dilation_w);
                         const size_t filter_x_end = (size_t)std::min(filter_w, ((int32_t)in_shape[3] - in_x_origin + dilation_w - 1) / dilation_w);
-                        float value = bias[og * g_oc + oc];
+                        float value = bias[offset(bias_strides, bias_index)];
 
                         for (int32_t ic = 0; ic < g_ic; ic++)
                         {
-                            const float *in_c_p = in_group_p + (size_t)ic * in_shape[2] * in_shape[3];
-                            const float *w_ic_p = w_oc_p + (size_t)ic * filter_h * filter_w;
-
+                            in_index[1] = og * g_ic + ic;
                             for (int32_t ky = filter_y_start; ky < filter_y_end; ky++)
                             {
+                                w_index[2] = ky;
                                 for (int32_t kx = filter_x_start; kx < filter_x_end; kx++)
                                 {
-                                    const size_t in_y = in_y_origin + dilation_h * ky;
-                                    const size_t in_x = in_x_origin + dilation_w * kx;
+                                    w_index[3] = kx;
+                                    in_index[2] = in_y_origin + dilation_h * ky;
+                                    in_index[3] = in_x_origin + dilation_w * kx;
 
-                                    const float in_v = in_c_p[in_y * in_shape[3] + in_x];
-                                    const float w = w_ic_p[ky * filter_w + kx];
+                                    const float in_v = input[offset(in_strides, in_index)];
+                                    const float w = weights[offset(w_strides, w_index)];
 
                                     value += in_v * w;
                                 }
                             }
                         }
 
-                        *output++ = details::apply_activation(value, fused_activation);
+                        output[offset(out_strides, out_index)] = details::apply_activation(value, fused_activation);
                     }
                 }
             }

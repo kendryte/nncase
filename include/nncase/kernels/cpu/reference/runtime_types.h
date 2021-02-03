@@ -32,3 +32,41 @@
     }                                 \
     }                                 \
     }
+
+BEGIN_NS_NNCASE_KERNELS_CPU_REF
+
+namespace details
+{
+template <class Callable>
+result<void> apply_impl(Callable &&callable, runtime_shape_t index_prefix, runtime_shape_t::const_iterator index_begin, runtime_shape_t::const_iterator index_end) noexcept
+{
+    const auto head = *index_begin++;
+    index_prefix.push_back(0);
+    if (index_begin == index_end)
+    {
+        for (size_t i = 0; i < head; i++)
+        {
+            index_prefix.back() = i;
+            return callable(index_prefix);
+        }
+    }
+    else
+    {
+        for (size_t i = 0; i < head; i++)
+        {
+            index_prefix.back() = i;
+            try_(apply_impl(std::forward<Callable>(callable), index_prefix, index_begin, index_end));
+        }
+    }
+
+    return ok();
+}
+}
+
+template <class Callable>
+result<void> apply(Callable &&callable, const runtime_shape_t &shape) noexcept
+{
+    return details::apply_impl(std::forward<Callable>(callable), runtime_shape_t(), shape.cbegin(), shape.cend());
+}
+
+END_NS_NNCASE_KERNELS_CPU_REF

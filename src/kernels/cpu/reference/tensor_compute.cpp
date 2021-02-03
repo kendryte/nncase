@@ -63,6 +63,9 @@ result<void> binary_impl(TOp &&op, const float *input_a, const float *input_b, f
     const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
     const runtime_shape_t &in_b_strides, const runtime_shape_t &out_strides, value_range<float> fused_activation) noexcept
 {
+    //const auto out_shape = kernels::details::get_binary_output_shape(in_a_shape, in_b_shape);
+    //return apply([&](const runtime_shape_t &index) {
+    //});
     const auto out_shape = kernels::details::get_binary_output_shape(in_a_shape, in_b_shape);
     return binary_impl(std::forward<TOp>(op), input_a, input_b, output, in_a_shape, in_a_strides, in_b_shape, in_b_strides, out_shape,
         out_strides, runtime_shape_t(), out_shape.cbegin(), out_shape.cend(), fused_activation);
