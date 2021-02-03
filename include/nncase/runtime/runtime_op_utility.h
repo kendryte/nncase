@@ -60,23 +60,12 @@ TShape convert_strides_type(const TShape &strides, datatype_t src, datatype_t de
     const auto dest_size = get_bytes(dest);
 
     TShape new_strides = strides;
-    if (new_strides.size() > 1)
+    for (size_t i = 0; i < new_strides.size(); i++)
     {
-        for (size_t i = 0; i < new_strides.size(); i++)
-        {
-            auto &v = new_strides[i];
-            if (v == 0)
-                v = 1;
-            v = v * src_size / dest_size;
-        }
-    }
-    else
-    {
-        for (size_t i = 0; i < new_strides.size(); i++)
-        {
-            if (new_strides[i] == 0)
-                new_strides[i] = 1;
-        }
+        auto &v = new_strides[i];
+        if (v == 0)
+            v = 1;
+        v = v * src_size / dest_size;
     }
 
     return new_strides;

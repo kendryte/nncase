@@ -36,7 +36,7 @@ typedef enum _datatype
 #undef DEFINE_DATATYPE
 } datatype_t;
 
-namespace details
+namespace detail
 {
     template <datatype_t Type>
     struct datatype_to_cpp_type
@@ -74,11 +74,11 @@ namespace details
 template <class T>
 constexpr datatype_t to_datatype() noexcept
 {
-    return details::cpp_type_to_datatype<T>::type;
+    return detail::cpp_type_to_datatype<T>::type;
 }
 
 template <datatype_t Type>
-using to_cpp_type_t = typename details::datatype_to_cpp_type<Type>::type;
+using to_cpp_type_t = typename detail::datatype_to_cpp_type<Type>::type;
 
 struct padding
 {

@@ -24,7 +24,7 @@ void stackvm_module_builder::emit(conv2d &node, stackvm_op_builder &builder)
     auto &input = allocation(node.input());
     auto &weights = allocation(node.weights());
     auto &bias = allocation(node.bias());
-    auto &output = allocation(node.input());
+    auto &output = allocation(node.output());
     builder.lea_buffer(input);
     builder.lea_buffer(weights);
     builder.lea_buffer(bias);

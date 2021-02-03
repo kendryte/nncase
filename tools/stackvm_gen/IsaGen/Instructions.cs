@@ -1161,6 +1161,10 @@ namespace IsaGen
             [DisplayName("rshape_axis")]
             [Description("Axis shape register")]
             public byte RshapeAxis { get; set; }
+
+            [DisplayName("keep_dims")]
+            [Description("Keep dimensions")]
+            public bool KeepDims { get; set; }
         }
 
         [DisplayName("TENSOR.BINARY")]

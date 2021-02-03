@@ -29,8 +29,8 @@ result<void> reference::conv2d(const float *input, const float *weights, const f
     const auto filter_h = (int32_t)w_shape[2];
     const auto filter_w = (int32_t)w_shape[3];
     const auto out_channels = w_shape[0];
-    const auto out_h = details::get_windowed_output_size(in_shape[2], filter_h, stride_h, dilation_h, padding_h);
-    const auto out_w = details::get_windowed_output_size(in_shape[3], filter_w, stride_w, dilation_w, padding_w);
+    const auto out_h = kernels::detail::get_windowed_output_size(in_shape[2], filter_h, stride_h, dilation_h, padding_h);
+    const auto out_w = kernels::detail::get_windowed_output_size(in_shape[3], filter_w, stride_w, dilation_w, padding_w);
     const auto g_ic = in_shape[1] / groups;
     const auto g_oc = out_channels / groups;
 
@@ -80,7 +80,7 @@ result<void> reference::conv2d(const float *input, const float *weights, const f
                             }
                         }
 
-                        output[offset(out_strides, out_index)] = details::apply_activation(value, fused_activation);
+                        output[offset(out_strides, out_index)] = kernels::detail::apply_activation(value, fused_activation);
                     }
                 }
             }

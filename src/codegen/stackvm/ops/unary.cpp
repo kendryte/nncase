@@ -22,7 +22,7 @@ using namespace nncase::ir;
 void stackvm_module_builder::emit(unary &node, stackvm_op_builder &builder)
 {
     auto &input = allocation(node.input());
-    auto &output = allocation(node.input());
+    auto &output = allocation(node.output());
     builder.lea_buffer(input);
     builder.lea_buffer(output);
 

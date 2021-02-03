@@ -106,6 +106,9 @@ inline shape_t get_reduced_shape(const shape_t &input_shape, const axis_t &axis,
             shape.push_back(1);
     }
 
+    if (shape.empty())
+        shape.push_back(1);
+
     return shape;
 }
 

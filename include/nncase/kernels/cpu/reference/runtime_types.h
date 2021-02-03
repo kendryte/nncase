@@ -35,7 +35,7 @@
 
 BEGIN_NS_NNCASE_KERNELS_CPU_REF
 
-namespace details
+namespace detail
 {
 template <class Callable>
 result<void> apply_impl(Callable &&callable, runtime_shape_t index_prefix, runtime_shape_t::const_iterator index_begin, runtime_shape_t::const_iterator index_end) noexcept
@@ -47,7 +47,7 @@ result<void> apply_impl(Callable &&callable, runtime_shape_t index_prefix, runti
         for (size_t i = 0; i < head; i++)
         {
             index_prefix.back() = i;
-            return callable(index_prefix);
+            try_(callable(index_prefix));
         }
     }
     else
@@ -64,9 +64,9 @@ result<void> apply_impl(Callable &&callable, runtime_shape_t index_prefix, runti
 }
 
 template <class Callable>
-result<void> apply(Callable &&callable, const runtime_shape_t &shape) noexcept
+result<void> apply(const runtime_shape_t &shape, Callable &&callable) noexcept
 {
-    return details::apply_impl(std::forward<Callable>(callable), runtime_shape_t(), shape.cbegin(), shape.cend());
+    return detail::apply_impl(std::forward<Callable>(callable), runtime_shape_t(), shape.cbegin(), shape.cend());
 }
 
 END_NS_NNCASE_KERNELS_CPU_REF

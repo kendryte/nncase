@@ -126,7 +126,7 @@ inline Err err(std::error_condition value) noexcept
 template <class T>
 class NNCASE_NODISCARD result;
 
-namespace details
+namespace detail
 {
     template <class T>
     NNCASE_INLINE_VAR bool constexpr is_result_v = false;
@@ -227,7 +227,7 @@ template <class T>
 class NNCASE_NODISCARD result
 {
 public:
-    using traits = details::result_traits<T>;
+    using traits = detail::result_traits<T>;
 
     constexpr result(Ok<T> value)
         : ok_or_err_(std::move(value)) { }
@@ -241,7 +241,7 @@ public:
     constexpr decltype(auto) unwrap() noexcept
     {
         if (is_ok())
-            return details::unwrap_impl<T>()(value());
+            return detail::unwrap_impl<T>()(value());
         else
             std::terminate();
     }
@@ -249,7 +249,7 @@ public:
     constexpr decltype(auto) unwrap_or_throw()
     {
         if (is_ok())
-            return details::unwrap_impl<T>()(value());
+            return detail::unwrap_impl<T>()(value());
         else
             throw std::runtime_error(unwrap_err().message());
     }
@@ -277,7 +277,7 @@ public:
         }
     }
 
-    template <class Func, class Traits = details::map_traits<T, Func>>
+    template <class Func, class Traits = detail::map_traits<T, Func>>
     constexpr typename Traits::result_t map(Func &&func) noexcept
     {
         if (is_ok())
@@ -286,7 +286,7 @@ public:
             return err();
     }
 
-    template <class Func, class Traits = details::map_err_traits<T, Func>>
+    template <class Func, class Traits = detail::map_err_traits<T, Func>>
     constexpr typename Traits::result_t map_err(Func &&func) noexcept
     {
         if (is_ok())
@@ -295,7 +295,7 @@ public:
             return Traits()(std::forward<Func>(func), err());
     }
 
-    template <class Func, class Traits = details::and_then_traits<T, Func>>
+    template <class Func, class Traits = detail::and_then_traits<T, Func>>
     constexpr typename Traits::result_t and_then(Func &&func) noexcept
     {
         if (is_ok())
@@ -312,13 +312,14 @@ private:
     mpark::variant<Ok<T>, Err> ok_or_err_;
 };
 
-namespace details
+namespace detail
 {
     template <class T, class Func>
     struct map_traits
     {
         using U = invoke_result_t<Func, T>;
         static_assert(!is_result_v<U>, "Cannot map a callback returning result, use and_then instead");
+        using result_t = result<U>;
 
         result<U> operator()(Func &&func, Ok<T> &value) noexcept
         {

@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""System test: test binary"""
+"""System test: test unary"""
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
 import pytest
 import os
@@ -21,50 +21,57 @@ import sys
 import test_util
 
 
-def _make_module(in_shape, v_shape):
-    class BinaryModule(tf.Module):
+def _make_module(in_shape):
+    class UnaryModule(tf.Module):
         def __init__(self):
-            super(BinaryModule).__init__()
-            self.v = tf.constant(np.random.rand(*v_shape).astype(np.float32))
+            super(UnaryModule).__init__()
 
         @tf.function(input_signature=[tf.TensorSpec(in_shape, tf.float32)])
         def __call__(self, x):
             outs = []
-            outs.append(x + self.v)
-            outs.append(x - self.v)
-            outs.append(x * self.v)
-            outs.append(x / (x + self.v))
-            outs.append(tf.minimum(x, self.v))
-            outs.append(tf.maximum(x, self.v))
+            outs.append(tf.math.abs(-x))
+            outs.append(tf.math.ceil(x))
+            outs.append(tf.math.cos(x))
+            outs.append(tf.math.exp(x))
+            outs.append(tf.math.floor(x))
+            outs.append(tf.math.log(x))
+            outs.append(tf.math.negative(x))
+            outs.append(tf.math.round(x))
+            outs.append(tf.math.rsqrt(x))
+            outs.append(tf.math.sin(x))
+            outs.append(tf.math.sqrt(x))
+            outs.append(tf.math.square(x))
+            outs.append(tf.math.tanh(x))
+            outs.append(tf.math.sigmoid(x))
             return outs
-    return BinaryModule()
+    return UnaryModule()
 
 
 @pytest.fixture
 def module1():
-    return _make_module([3], [3])
+    return _make_module([3])
 
 
 @pytest.fixture
 def module2():
-    return _make_module([64, 3], [64, 1])
+    return _make_module([64, 3])
 
 
 @pytest.fixture
 def module3():
-    return _make_module([3, 64, 3], [64, 3])
+    return _make_module([3, 64, 3])
 
 
 @pytest.fixture
 def module4():
-    return _make_module([8, 6, 16, 3], [6, 16, 1])
+    return _make_module([8, 6, 16, 3])
 
 
 @pytest.mark.parametrize('module', ['module1', 'module2', 'module3', 'module4'])
-def test_binary(module, request):
+def test_unary(module, request):
     module_inst = request.getfixturevalue(module)
-    test_util.test_tf_module('test_binary.' + module, module_inst, ['cpu'])
+    test_util.test_tf_module('test_unary.' + module, module_inst, ['cpu'])
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_binary.py'])
+    pytest.main(['-vv', 'test_unary.py'])

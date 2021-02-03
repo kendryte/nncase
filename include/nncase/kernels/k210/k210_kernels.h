@@ -24,7 +24,7 @@ namespace kernels
 {
     namespace k210
     {
-        namespace details
+        namespace detail
         {
             template <class T>
             struct pool_partial_type;
@@ -51,7 +51,7 @@ namespace kernels
 
             if (in_shape[3] % 64 == 0)
             {
-                std::copy(src, src + kernels::details::compute_size(in_shape), dest);
+                std::copy(src, src + kernels::detail::compute_size(in_shape), dest);
             }
             else
             {
@@ -81,7 +81,7 @@ namespace kernels
 
             if (in_shape[3] % 64 == 0)
             {
-                std::copy(src, src + kernels::details::compute_size(in_shape), dest);
+                std::copy(src, src + kernels::detail::compute_size(in_shape), dest);
             }
             else
             {
@@ -194,7 +194,7 @@ namespace kernels
         inline void kpu_pool2d(const T *input, T *output, int32_t in_h, int32_t in_w, int32_t in_channels, runtime::k210::kpu_pool_type_t pool_type)
         {
             using namespace runtime::k210;
-            using partial_t = details::pool_partial_type_t<T>;
+            using partial_t = detail::pool_partial_type_t<T>;
 
             const auto filter = get_kpu_filter_size(pool_type);
             const auto stride = get_kpu_filter_stride(pool_type);
@@ -341,7 +341,7 @@ namespace kernels
                                 }
                             }
 
-                            *output++ = kernels::details::apply_activation(value, fused_activation);
+                            *output++ = kernels::detail::apply_activation(value, fused_activation);
                         }
                     }
                 }

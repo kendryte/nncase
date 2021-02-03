@@ -24,4 +24,10 @@ NNCASE_API result<void> binary(binary_op_t op, const float *input_a, const float
     const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
     const runtime_shape_t &in_b_strides, const runtime_shape_t &out_strides, value_range<float> fused_activation) noexcept;
 
+NNCASE_API result<void> unary(unary_op_t op, const float *input, float *output, const runtime_shape_t &shape,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides) noexcept;
+
+NNCASE_API result<void> reduce(reduce_op_t op, float init_value, const float *input, float *output, const runtime_shape_t &in_shape, const runtime_shape_t &axis,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, bool keep_dims) noexcept;
+
 END_NS_NNCASE_KERNELS_CPU_REF

@@ -31,3 +31,15 @@ result<void> kernels::binary(binary_op_t op, const float *input_a, const float *
 {
     return cpu::reference::binary(op, input_a, input_b, output, in_a_shape, in_a_strides, in_b_shape, in_b_strides, out_strides, fused_activation);
 }
+
+result<void> kernels::unary(unary_op_t op, const float *input, float *output, const runtime_shape_t &shape,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides) noexcept
+{
+    return cpu::reference::unary(op, input, output, shape, in_strides, out_strides);
+}
+
+result<void> kernels::reduce(reduce_op_t op, float init_value, const float *input, float *output, const runtime_shape_t &in_shape, const runtime_shape_t &axis,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, bool keep_dims) noexcept
+{
+    return cpu::reference::reduce(op, init_value, input, output, in_shape, axis, in_strides, out_strides, keep_dims);
+}

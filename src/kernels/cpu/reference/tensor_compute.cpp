@@ -25,50 +25,63 @@ using namespace nncase::kernels::cpu::reference;
 
 namespace
 {
-template <class TOp>
-result<void> binary_impl(TOp &&op, const float *input_a, const float *input_b, float *output,
-    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
-    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_shape, const runtime_shape_t &out_strides,
-    runtime_shape_t off_prefix, runtime_shape_t::const_iterator off_begin, runtime_shape_t::const_iterator off_end, value_range<float> fused_activation) noexcept
+template <class T>
+struct identity
 {
-    const auto head = *off_begin++;
-    off_prefix.push_back(0);
-    if (off_begin == off_end)
+    T operator()(const T &src) const noexcept
     {
-        for (size_t i = 0; i < head; i++)
-        {
-            off_prefix.back() = i;
-            const auto in_a_off = kernels::details::get_reduced_offset(off_prefix, in_a_shape);
-            const auto in_b_off = kernels::details::get_reduced_offset(off_prefix, in_b_shape);
-            const auto a = input_a[offset(in_a_strides, in_a_off)];
-            const auto b = input_b[offset(in_b_strides, in_b_off)];
-            output[offset(out_strides, off_prefix)] = kernels::details::apply_activation(op(a, b), fused_activation);
-        }
+        return src;
     }
-    else
-    {
-        for (size_t i = 0; i < head; i++)
-        {
-            off_prefix.back() = i;
-            try_(binary_impl(std::forward<TOp>(op), input_a, input_b, output, in_a_shape, in_a_strides, in_b_shape, in_b_strides, out_shape,
-                out_strides, off_prefix, off_begin, off_end, fused_activation));
-        }
-    }
-
-    return ok();
-}
+};
 
 template <class TOp>
 result<void> binary_impl(TOp &&op, const float *input_a, const float *input_b, float *output,
     const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
     const runtime_shape_t &in_b_strides, const runtime_shape_t &out_strides, value_range<float> fused_activation) noexcept
 {
-    //const auto out_shape = kernels::details::get_binary_output_shape(in_a_shape, in_b_shape);
-    //return apply([&](const runtime_shape_t &index) {
-    //});
-    const auto out_shape = kernels::details::get_binary_output_shape(in_a_shape, in_b_shape);
-    return binary_impl(std::forward<TOp>(op), input_a, input_b, output, in_a_shape, in_a_strides, in_b_shape, in_b_strides, out_shape,
-        out_strides, runtime_shape_t(), out_shape.cbegin(), out_shape.cend(), fused_activation);
+    const auto out_shape = kernels::detail::get_binary_output_shape(in_a_shape, in_b_shape);
+    return apply(out_shape, [&](const runtime_shape_t &index) -> result<void> {
+        const auto in_a_index = kernels::detail::get_reduced_offset(index, in_a_shape);
+        const auto in_b_index = kernels::detail::get_reduced_offset(index, in_b_shape);
+        const auto a = input_a[offset(in_a_strides, in_a_index)];
+        const auto b = input_b[offset(in_b_strides, in_b_index)];
+        output[offset(out_strides, index)] = kernels::detail::apply_activation(op(a, b), fused_activation);
+        return ok();
+    });
+}
+
+template <class TOp>
+result<void> unary_impl(TOp &&op, const float *input, float *output, const runtime_shape_t &shape,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides) noexcept
+{
+    return apply(shape, [&](const runtime_shape_t &index) -> result<void> {
+        const auto v = input[offset(in_strides, index)];
+        output[offset(out_strides, index)] = op(v);
+        return ok();
+    });
+}
+
+template <class TReducer, class TPostProcess>
+result<void> reduce_impl(TReducer &&reducer, TPostProcess &&post_process, float init_value, const float *input, float *output, const runtime_shape_t &in_shape, const runtime_shape_t &axis,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_shape, const runtime_shape_t &out_strides, bool keep_dims) noexcept
+{
+    try_(apply(out_shape, [&](const runtime_shape_t &index) -> result<void> {
+        output[offset(out_strides, index)] = init_value;
+        return ok();
+    }));
+    try_(apply(in_shape, [&](const runtime_shape_t &index) -> result<void> {
+        const auto v = input[offset(in_strides, index)];
+        const auto out_index = kernels::detail::get_reduced_offset(index, axis, keep_dims);
+        auto &dest = output[offset(out_strides, out_index)];
+        dest = reducer(dest, v);
+        return ok();
+    }));
+    try_(apply(out_shape, [&](const runtime_shape_t &index) -> result<void> {
+        auto &dest = output[offset(out_strides, index)];
+        dest = post_process(dest);
+        return ok();
+    }));
+    return ok();
 }
 }
 
@@ -99,7 +112,57 @@ result<void> reference::binary(binary_op_t op, const float *input_a, const float
         BINARY_IMPL(binary_div, std::divides<float>());
         BINARY_IMPL(binary_min, [](float a, float b) { return std::min(a, b); });
         BINARY_IMPL(binary_max, [](float a, float b) { return std::max(a, b); });
-        BINARY_IMPL(binary_pow, [](float a, float b) { return std::pow(a, b); });
+        BINARY_IMPL(binary_pow, powf);
+    default:
+        return err(std::errc::not_supported);
+    }
+}
+
+#define UNARY_IMPL(op, funct) \
+    case op:                  \
+        return unary_impl(funct, input, output, shape, in_strides, out_strides)
+
+result<void> reference::unary(unary_op_t op, const float *input, float *output, const runtime_shape_t &shape,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides) noexcept
+{
+    switch (op)
+    {
+        UNARY_IMPL(unary_abs, fabsf);
+        UNARY_IMPL(unary_ceil, ceilf);
+        UNARY_IMPL(unary_cos, cosf);
+        UNARY_IMPL(unary_exp, expf);
+        UNARY_IMPL(unary_floor, floorf);
+        UNARY_IMPL(unary_log, logf);
+        UNARY_IMPL(unary_neg, std::negate<float>());
+        UNARY_IMPL(unary_round, roundf);
+        UNARY_IMPL(unary_rsqrt, [](float v) { return 1.f / sqrtf(v); });
+        UNARY_IMPL(unary_sin, sinf);
+        UNARY_IMPL(unary_sqrt, sqrtf);
+        UNARY_IMPL(unary_square, [](float v) { return v * v; });
+        UNARY_IMPL(unary_tanh, tanhf);
+    default:
+        return err(std::errc::not_supported);
+    }
+}
+
+#define REDUCE_IMPL(op, reducer, post_process) \
+    case op:                                   \
+        return reduce_impl(reducer, post_process, init_value, input, output, in_shape, axis, in_strides, out_shape, out_strides, keep_dims)
+
+#define REDUCE_IMPL_NO_POST(op, reducer) \
+    case op:                             \
+        return reduce_impl(reducer, identity<float>(), init_value, input, output, in_shape, axis, in_strides, out_shape, out_strides, keep_dims)
+
+result<void> reference::reduce(reduce_op_t op, float init_value, const float *input, float *output, const runtime_shape_t &in_shape, const runtime_shape_t &axis,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, bool keep_dims) noexcept
+{
+    auto out_shape = kernels::detail::get_reduced_shape(in_shape, axis, keep_dims);
+    switch (op)
+    {
+        REDUCE_IMPL(reduce_mean, std::plus<float>(), [block_size = (float)xt::compute_size(axis)](float v) { return v / block_size; });
+        REDUCE_IMPL_NO_POST(reduce_min, [](float a, float b) { return std::min(a, b); });
+        REDUCE_IMPL_NO_POST(reduce_max, [](float a, float b) { return std::max(a, b); });
+        REDUCE_IMPL_NO_POST(reduce_sum, std::plus<float>());
     default:
         return err(std::errc::not_supported);
     }

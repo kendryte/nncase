@@ -166,6 +166,8 @@ namespace IsaGen
         {
             if (t.IsEnum)
                 return t.GetCustomAttribute<BitLengthAttribute>().BitLength;
+            else if (t == typeof(bool))
+                return 8;
             else if (t == typeof(byte))
                 return 8;
             else if (t == typeof(ushort))
@@ -187,6 +189,8 @@ namespace IsaGen
         {
             if (t.IsEnum)
                 return t.GetCustomAttribute<EnumNameAttribute>().Name;
+            else if (t == typeof(bool))
+                return "bool";
             else if (t == typeof(byte))
                 return "uint8_t";
             else if (t == typeof(ushort))

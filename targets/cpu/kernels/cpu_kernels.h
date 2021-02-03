@@ -26,8 +26,8 @@ namespace kernels
             int32_t out_channels, int32_t filter_h, int32_t filter_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
             const padding &padding_h, const padding &padding_w, const value_range<float> &fused_activation)
         {
-            const auto out_h = details::get_windowed_output_size(in_shape[1], filter_h, stride_h, dilation_h, padding_h);
-            const auto out_w = details::get_windowed_output_size(in_shape[2], filter_w, stride_w, dilation_w, padding_w);
+            const auto out_h = detail::get_windowed_output_size(in_shape[1], filter_h, stride_h, dilation_h, padding_h);
+            const auto out_w = detail::get_windowed_output_size(in_shape[2], filter_w, stride_w, dilation_w, padding_w);
 
             for (int batch = 0; batch < in_shape[0]; batch++)
             {
@@ -64,7 +64,7 @@ namespace kernels
                                 }
                             }
 
-                            *output++ = details::apply_activation(value, fused_activation);
+                            *output++ = detail::apply_activation(value, fused_activation);
                         }
                     }
                 }
@@ -75,8 +75,8 @@ namespace kernels
             int32_t filter_h, int32_t filter_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
             const padding &padding_h, const padding &padding_w, const value_range<float> &fused_activation)
         {
-            const auto out_h = details::get_windowed_output_size(in_shape[1], filter_h, stride_h, dilation_h, padding_h);
-            const auto out_w = details::get_windowed_output_size(in_shape[2], filter_w, stride_w, dilation_w, padding_w);
+            const auto out_h = detail::get_windowed_output_size(in_shape[1], filter_h, stride_h, dilation_h, padding_h);
+            const auto out_w = detail::get_windowed_output_size(in_shape[2], filter_w, stride_w, dilation_w, padding_w);
 
             for (int batch = 0; batch < in_shape[0]; batch++)
             {
@@ -112,7 +112,7 @@ namespace kernels
                                 }
                             }
 
-                            *output++ = details::apply_activation(value, fused_activation);
+                            *output++ = detail::apply_activation(value, fused_activation);
                         }
                     }
                 }
@@ -124,8 +124,8 @@ namespace kernels
             int32_t filter_h, int32_t filter_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
             const padding &padding_h, const padding &padding_w, const value_range<float> &fused_activation, TBinaryOp &&binary_op, TOutputOp &&window_op)
         {
-            const auto out_h = details::get_windowed_output_size(in_shape[1], filter_h, stride_h, dilation_h, padding_h);
-            const auto out_w = details::get_windowed_output_size(in_shape[2], filter_w, stride_w, dilation_w, padding_w);
+            const auto out_h = detail::get_windowed_output_size(in_shape[1], filter_h, stride_h, dilation_h, padding_h);
+            const auto out_w = detail::get_windowed_output_size(in_shape[2], filter_w, stride_w, dilation_w, padding_w);
 
             for (int batch = 0; batch < in_shape[0]; batch++)
             {
@@ -161,7 +161,7 @@ namespace kernels
                                 }
                             }
 
-                            *output++ = details::apply_activation(window_op(value, kernel_count), fused_activation);
+                            *output++ = detail::apply_activation(window_op(value, kernel_count), fused_activation);
                         }
                     }
                 }
@@ -172,8 +172,8 @@ namespace kernels
             int32_t out_channels, int32_t filter_h, int32_t filter_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
             const padding &padding_h, const padding &padding_w, int32_t input_offset, int32_t filter_offset, int32_t output_mul, int32_t output_shift, int32_t output_offset)
         {
-            const auto out_h = details::get_windowed_output_size(in_shape[1], filter_h, stride_h, dilation_h, padding_h);
-            const auto out_w = details::get_windowed_output_size(in_shape[2], filter_w, stride_w, dilation_w, padding_w);
+            const auto out_h = detail::get_windowed_output_size(in_shape[1], filter_h, stride_h, dilation_h, padding_h);
+            const auto out_w = detail::get_windowed_output_size(in_shape[2], filter_w, stride_w, dilation_w, padding_w);
 
             for (int batch = 0; batch < in_shape[0]; batch++)
             {
@@ -222,8 +222,8 @@ namespace kernels
             int32_t filter_h, int32_t filter_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
             const padding &padding_h, const padding &padding_w, int32_t input_offset, int32_t filter_offset, int32_t output_mul, int32_t output_shift, int32_t output_offset)
         {
-            const auto out_h = details::get_windowed_output_size(in_shape[1], filter_h, stride_h, dilation_h, padding_h);
-            const auto out_w = details::get_windowed_output_size(in_shape[2], filter_w, stride_w, dilation_w, padding_w);
+            const auto out_h = detail::get_windowed_output_size(in_shape[1], filter_h, stride_h, dilation_h, padding_h);
+            const auto out_w = detail::get_windowed_output_size(in_shape[2], filter_w, stride_w, dilation_w, padding_w);
 
             for (int batch = 0; batch < in_shape[0]; batch++)
             {

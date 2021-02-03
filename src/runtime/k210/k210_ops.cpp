@@ -135,11 +135,11 @@ namespace runtime
             runtime_shape_t in_shape { options.batches, in_ch, in_h, in_w };
             runtime_shape_t out_shape { options.batches, out_ch, out_h, out_w };
 #if NNCASE_TARGET_K210_SIMULATOR
-            auto in_fmap_size = kernels::details::compute_size(in_shape);
+            auto in_fmap_size = kernels::detail::compute_size(in_shape);
 
             runtime_shape_t conv_out_shape { options.batches, out_ch, in_h, in_w };
-            auto conv_out_fmap_size = kernels::details::compute_size(conv_out_shape);
-            auto out_fmap_size = kernels::details::compute_size(out_shape);
+            auto conv_out_fmap_size = kernels::detail::compute_size(conv_out_shape);
+            auto out_fmap_size = kernels::detail::compute_size(out_shape);
 
             auto input_tmp = std::make_unique<uint8_t[]>(in_fmap_size);
             auto workspace = std::make_unique<int64_t[]>(conv_out_fmap_size);
@@ -147,9 +147,9 @@ namespace runtime
             auto output_tmp = std::make_unique<uint8_t[]>(out_fmap_size);
 
             auto batch = in_shape[0];
-            auto in_size_per_batch = kernels::details::compute_size(in_shape) / batch;
+            auto in_size_per_batch = kernels::detail::compute_size(in_shape) / batch;
             auto conv_output_tmp_size_per_batch = conv_out_fmap_size / batch;
-            auto out_size_per_batch = kernels::details::compute_size(out_shape) / batch;
+            auto out_size_per_batch = kernels::detail::compute_size(out_shape) / batch;
             auto p_input = input_tmp.get();
             auto p_workspace = workspace.get();
             auto p_conv_ouput_tmp = conv_output_tmp.get();
@@ -158,20 +158,20 @@ namespace runtime
             kernels::k210::kpu_download(input.data(), input_tmp.get(), in_shape);
             auto filter_size = get_kpu_filter_size((kpu_filter_type_t)options.layer.kernel_pool_type_cfg.data.kernel_type);
             auto pad_value = (uint8_t)options.layer.kernel_pool_type_cfg.data.pad_value;
-            auto arg_x = (int32_t)kernels::details::to_signed<24>(options.layer.conv_value.data.arg_x);
+            auto arg_x = (int32_t)kernels::detail::to_signed<24>(options.layer.conv_value.data.arg_x);
             auto shift_x = (int32_t)options.layer.conv_value.data.shr_x;
-            auto arg_w = (int32_t)kernels::details::to_signed<24>(options.layer.conv_value.data.arg_w);
+            auto arg_w = (int32_t)kernels::detail::to_signed<24>(options.layer.conv_value.data.arg_w);
             auto shift_w = (int32_t)options.layer.conv_value.data.shr_w;
-            auto arg_add = kernels::details::to_signed<40>(options.layer.conv_value2.data.arg_add);
+            auto arg_add = kernels::detail::to_signed<40>(options.layer.conv_value2.data.arg_add);
 
             auto batchnorm = std::make_unique<kpu_batchnorm_segment[]>(out_ch);
             for (size_t i = 0; i < out_ch; i++)
             {
                 auto &src = options.batch_norm[i].batchnorm.data;
                 auto &dest = batchnorm[i];
-                dest.mul = (int32_t)kernels::details::to_signed<24>(src.norm_mul);
+                dest.mul = (int32_t)kernels::detail::to_signed<24>(src.norm_mul);
                 dest.shift = (int32_t)src.norm_shift;
-                dest.add = (int32_t)kernels::details::to_signed<32>(src.norm_add);
+                dest.add = (int32_t)kernels::detail::to_signed<32>(src.norm_add);
             }
 
             kpu_activation_table_t activation;
@@ -179,8 +179,8 @@ namespace runtime
             {
                 auto &src = options.activation->activate_para[i].data;
                 auto &dest = activation[i];
-                dest.start_x = kernels::details::to_signed<36>(src.x_start);
-                dest.mul = (int32_t)kernels::details::to_signed<16>(src.y_mul);
+                dest.start_x = kernels::detail::to_signed<36>(src.x_start);
+                dest.mul = (int32_t)kernels::detail::to_signed<16>(src.y_mul);
                 dest.shift = (int32_t)src.shift_number;
 
                 if (i < 16)

@@ -23,8 +23,6 @@ inline std::vector<uint8_t> read_stream(std::istream &stream)
 {
     stream.seekg(0, std::ios::end);
     size_t length = stream.tellg();
-    if (!length)
-        throw std::runtime_error("Invalid stream");
     stream.seekg(0, std::ios::beg);
     std::vector<uint8_t> data(length);
     stream.read(reinterpret_cast<char *>(data.data()), length);

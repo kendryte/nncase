@@ -31,12 +31,12 @@ void binary(const float *input_a, const float *input_b, float *output, const TSh
     // opt. no broadcast
     if (in_a_shape == in_b_shape)
     {
-        auto size = kernels::details::compute_size(in_a_shape);
+        auto size = kernels::detail::compute_size(in_a_shape);
         for (size_t i = 0; i < size; i++)
         {
             const auto a = input_a[i];
             const auto b = input_b[i];
-            output[i] = kernels::details::apply_activation(op(a, b), fused_activation);
+            output[i] = kernels::detail::apply_activation(op(a, b), fused_activation);
         }
     }
     // fallback
@@ -51,11 +51,11 @@ void binary(const float *input_a, const float *input_b, float *output, const TSh
                     for (size_t d3 = 0; d3 < out_shape[3]; d3++)
                     {
                         TShape in_off = { d0, d1, d2, d3 };
-                        const auto in_a_off = kernels::details::get_reduced_offset(in_off, in_a_shape);
-                        const auto in_b_off = kernels::details::get_reduced_offset(in_off, in_b_shape);
+                        const auto in_a_off = kernels::detail::get_reduced_offset(in_off, in_a_shape);
+                        const auto in_b_off = kernels::detail::get_reduced_offset(in_off, in_b_shape);
                         const auto a = input_a[offset(in_a_shape, in_a_off)];
                         const auto b = input_b[offset(in_b_shape, in_b_off)];
-                        output[offset(out_shape, in_off)] = kernels::details::apply_activation(op(a, b), fused_activation);
+                        output[offset(out_shape, in_off)] = kernels::detail::apply_activation(op(a, b), fused_activation);
                     }
                 }
             }
@@ -71,7 +71,7 @@ void quantized_binary(const uint8_t *input_a, const uint8_t *input_b, uint8_t *o
     // opt. no broadcast
     if (in_a_shape == in_b_shape)
     {
-        auto size = kernels::details::compute_size(in_a_shape);
+        auto size = kernels::detail::compute_size(in_a_shape);
         for (size_t i = 0; i < size; i++)
         {
             auto a = (int32_t)input_a[i];
@@ -95,8 +95,8 @@ void quantized_binary(const uint8_t *input_a, const uint8_t *input_b, uint8_t *o
                     for (int32_t d3 = 0; d3 < out_shape[3]; d3++)
                     {
                         TShape in_off = { d0, d1, d2, d3 };
-                        const auto in_a_off = kernels::details::get_reduced_offset(in_off, in_a_shape);
-                        const auto in_b_off = kernels::details::get_reduced_offset(in_off, in_b_shape);
+                        const auto in_a_off = kernels::detail::get_reduced_offset(in_off, in_a_shape);
+                        const auto in_b_off = kernels::detail::get_reduced_offset(in_off, in_b_shape);
                         auto a = (int32_t)input_a[offset(in_a_shape, in_a_off)];
                         auto b = (int32_t)input_b[offset(in_b_shape, in_b_off)];
                         a = runtime::mul_and_carry_shift(a + input_a_offset, input_a_mul, input_a_shift);
@@ -111,7 +111,7 @@ void quantized_binary(const uint8_t *input_a, const uint8_t *input_b, uint8_t *o
     }
 }
 
-template <class TRange, class TPtrGetter = details::default_ptr_getter<uint8_t, TRange>>
+template <class TRange, class TPtrGetter = detail::default_ptr_getter<uint8_t, TRange>>
 inline void concat(xtl::span<TRange> inputs, uint8_t *output, xtl::span<const int32_t> concat_dims, size_t inner_size, size_t outer_size, TPtrGetter getter = {})
 {
     for (size_t oc = 0; oc < outer_size; oc++)
@@ -131,8 +131,8 @@ void conv2d(const float *input, float *output, const float *weights, const float
     int32_t groups, int32_t out_channels, int32_t filter_h, int32_t filter_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
     const padding &padding_h, const padding &padding_w, const value_range<float> &fused_activation)
 {
-    const auto out_h = details::get_windowed_output_size(in_shape[2], filter_h, stride_h, dilation_h, padding_h);
-    const auto out_w = details::get_windowed_output_size(in_shape[3], filter_w, stride_w, dilation_w, padding_w);
+    const auto out_h = detail::get_windowed_output_size(in_shape[2], filter_h, stride_h, dilation_h, padding_h);
+    const auto out_w = detail::get_windowed_output_size(in_shape[3], filter_w, stride_w, dilation_w, padding_w);
     const auto g_ic = in_shape[1] / groups;
     const auto g_oc = out_channels / groups;
 
@@ -181,7 +181,7 @@ void conv2d(const float *input, float *output, const float *weights, const float
                             }
                         }
 
-                        *output++ = details::apply_activation(value, fused_activation);
+                        *output++ = detail::apply_activation(value, fused_activation);
                     }
                 }
             }
@@ -195,8 +195,8 @@ void quantized_conv2d(const uint8_t *input, uint8_t *output, const uint8_t *weig
     int32_t filter_h, int32_t filter_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
     const padding &padding_h, const padding &padding_w)
 {
-    const auto out_h = details::get_windowed_output_size(in_shape[2], filter_h, stride_h, dilation_h, padding_h);
-    const auto out_w = details::get_windowed_output_size(in_shape[3], filter_w, stride_w, dilation_w, padding_w);
+    const auto out_h = detail::get_windowed_output_size(in_shape[2], filter_h, stride_h, dilation_h, padding_h);
+    const auto out_w = detail::get_windowed_output_size(in_shape[3], filter_w, stride_w, dilation_w, padding_w);
     const auto g_ic = in_shape[1] / groups;
     const auto g_oc = out_channels / groups;
 
@@ -260,7 +260,7 @@ void conv2d_transpose(const float *input, float *output, const float *weights, [
     int32_t groups, const TShape &out_shape, int32_t filter_h, int32_t filter_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
     const padding &padding_h, const padding &padding_w, const value_range<float> &fused_activation)
 {
-    std::fill(output, output + kernels::details::compute_size(out_shape), 0.f);
+    std::fill(output, output + kernels::detail::compute_size(out_shape), 0.f);
     const auto g_ic = in_shape[1] / groups;
     const auto g_oc = out_shape[1] / groups;
 
@@ -315,8 +315,8 @@ void conv2d_transpose(const float *input, float *output, const float *weights, [
 
     if (fused_activation != value_range<float>::full())
     {
-        for (size_t i = 0; i < kernels::details::compute_size(out_shape); i++)
-            output[i] = details::apply_activation(output[i], fused_activation);
+        for (size_t i = 0; i < kernels::detail::compute_size(out_shape); i++)
+            output[i] = detail::apply_activation(output[i], fused_activation);
     }
 }
 
@@ -355,7 +355,7 @@ inline void matmul(const float *input_a, const float *input_b, float *output, co
                 value += a * b;
             }
 
-            output[oy * b_cols + ox] = details::apply_activation(value, fused_activation);
+            output[oy * b_cols + ox] = detail::apply_activation(value, fused_activation);
         }
     }
 }
@@ -446,7 +446,7 @@ void quantize(const float *CXX_RESTRICT input, TQ *CXX_RESTRICT output, size_t c
 template <class TReducer, class TShape>
 void reduce(const float *input, float *output, float init_value, const TShape &in_shape, const TShape &reduced_shape, TReducer &&reducer)
 {
-    std::fill(output, output + kernels::details::compute_size(reduced_shape), init_value);
+    std::fill(output, output + kernels::detail::compute_size(reduced_shape), init_value);
 
     for (size_t d0 = 0; d0 < in_shape[0]; d0++)
     {
@@ -457,7 +457,7 @@ void reduce(const float *input, float *output, float init_value, const TShape &i
                 for (size_t d3 = 0; d3 < in_shape[3]; d3++)
                 {
                     runtime_shape_t in_off = { d0, d1, d2, d3 };
-                    auto out_off = kernels::details::get_reduced_offset(in_off, reduced_shape);
+                    auto out_off = kernels::detail::get_reduced_offset(in_off, reduced_shape);
                     const auto a = input[offset(in_shape, in_off)];
                     auto &b = output[offset(reduced_shape, out_off)];
                     b = reducer(b, a);
@@ -479,8 +479,8 @@ void reduce_window2d(const float *input, float *output, float init_value, const 
     int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w, const padding &padding_h, const padding &padding_w,
     const value_range<float> &fused_activation, TBinaryOp &&binary_op, TOutputOp &&window_op)
 {
-    const auto out_h = kernels::details::get_windowed_output_size(in_shape[2], filter_h, stride_h, dilation_h, padding_h);
-    const auto out_w = kernels::details::get_windowed_output_size(in_shape[3], filter_w, stride_w, dilation_w, padding_w);
+    const auto out_h = kernels::detail::get_windowed_output_size(in_shape[2], filter_h, stride_h, dilation_h, padding_h);
+    const auto out_w = kernels::detail::get_windowed_output_size(in_shape[3], filter_w, stride_w, dilation_w, padding_w);
     runtime_shape_t out_shape { in_shape[0], in_shape[1], out_h, out_w };
 
     for (size_t batch = 0; batch < in_shape[0]; batch++)
@@ -514,7 +514,7 @@ void reduce_window2d(const float *input, float *output, float init_value, const 
                         }
                     }
 
-                    output[offset(out_shape, { batch, oc, oy, ox })] = kernels::details::apply_activation(window_op(value, kernel_count), fused_activation);
+                    output[offset(out_shape, { batch, oc, oy, ox })] = kernels::detail::apply_activation(window_op(value, kernel_count), fused_activation);
                 }
             }
         }

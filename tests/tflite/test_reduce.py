@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""System test: test binary"""
+"""System test: test reduce"""
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
 import pytest
 import os
@@ -21,50 +21,62 @@ import sys
 import test_util
 
 
-def _make_module(in_shape, v_shape):
-    class BinaryModule(tf.Module):
+def _make_module(in_shape, axis, keep_dims=False):
+    class ReduceModule(tf.Module):
         def __init__(self):
-            super(BinaryModule).__init__()
-            self.v = tf.constant(np.random.rand(*v_shape).astype(np.float32))
+            super(ReduceModule).__init__()
 
         @tf.function(input_signature=[tf.TensorSpec(in_shape, tf.float32)])
         def __call__(self, x):
             outs = []
-            outs.append(x + self.v)
-            outs.append(x - self.v)
-            outs.append(x * self.v)
-            outs.append(x / (x + self.v))
-            outs.append(tf.minimum(x, self.v))
-            outs.append(tf.maximum(x, self.v))
+            outs.append(tf.reduce_min(x, axis=axis, keepdims=keep_dims))
             return outs
-    return BinaryModule()
+    return ReduceModule()
 
 
 @pytest.fixture
 def module1():
-    return _make_module([3], [3])
+    return _make_module([3], [0])
 
 
 @pytest.fixture
 def module2():
-    return _make_module([64, 3], [64, 1])
-
+    return _make_module([64, 3], [0])
 
 @pytest.fixture
 def module3():
-    return _make_module([3, 64, 3], [64, 3])
-
+    return _make_module([64, 3], [1])
 
 @pytest.fixture
 def module4():
-    return _make_module([8, 6, 16, 3], [6, 16, 1])
+    return _make_module([64, 3], [0, 1])
 
 
-@pytest.mark.parametrize('module', ['module1', 'module2', 'module3', 'module4'])
-def test_binary(module, request):
+@pytest.fixture
+def module5():
+    return _make_module([3, 64, 3], [1, 2])
+
+
+@pytest.fixture
+def module6():
+    return _make_module([8, 6, 16, 3], [1, 3])
+
+
+@pytest.fixture
+def module7():
+    return _make_module([8, 6, 16, 3], [2, 3, 1])
+
+
+@pytest.fixture
+def module8():
+    return _make_module([8, 6, 16, 3], [0, 2, 1], keep_dims=True)
+
+
+@pytest.mark.parametrize('module', ['module1', 'module2', 'module3', 'module4', 'module5', 'module6', 'module7', 'module8'])
+def test_reduce(module, request):
     module_inst = request.getfixturevalue(module)
-    test_util.test_tf_module('test_binary.' + module, module_inst, ['cpu'])
+    test_util.test_tf_module('test_reduce.' + module, module_inst, ['cpu'])
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_binary.py'])
+    pytest.main(['-vv', 'test_reduce.py'])

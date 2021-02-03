@@ -37,7 +37,7 @@ size_t offset(const TShape &strides, const TShape &index)
     return xt::element_offset<size_t>(strides, index.begin(), index.end());
 }
 
-namespace details
+namespace detail
 {
 inline size_t get_windowed_output_size(size_t size, int32_t filter, int32_t stride, int32_t dilation, const padding &padding)
 {
@@ -86,7 +86,7 @@ inline T apply_activation(T value, value_range<T> activation)
 }
 
 template <class TShape>
-inline TShape get_reduced_offset(const TShape &in_offset, const TShape &reduced_shape)
+TShape get_reduced_offset(const TShape &in_offset, const TShape &reduced_shape)
 {
     TShape off(reduced_shape.size());
     const auto dims_ext = in_offset.size() - reduced_shape.size();
@@ -98,6 +98,52 @@ inline TShape get_reduced_offset(const TShape &in_offset, const TShape &reduced_
             off[i] = in_offset[i + dims_ext];
     }
 
+    return off;
+}
+
+template <class TShape>
+TShape get_reduced_shape(const TShape &in_shape, const TShape &axis, bool keep_dims)
+{
+    TShape shape;
+    shape.reserve(in_shape.size() - keep_dims ? 0 : axis.size());
+    for (size_t i = 0; i < in_shape.size(); i++)
+    {
+        if (std::find(axis.begin(), axis.end(), i) == axis.end())
+        {
+            shape.push_back(in_shape[i]);
+        }
+        else
+        {
+            if (keep_dims)
+                shape.push_back(1);
+        }
+    }
+
+    if (shape.empty())
+        shape.push_back(1);
+    return shape;
+}
+
+template <class TShape>
+TShape get_reduced_offset(const TShape &in_offset, const TShape &axis, bool keep_dims)
+{
+    TShape off;
+    off.reserve(in_offset.size() - keep_dims ? 0 : axis.size());
+    for (size_t i = 0; i < in_offset.size(); i++)
+    {
+        if (std::find(axis.begin(), axis.end(), i) == axis.end())
+        {
+            off.push_back(in_offset[i]);
+        }
+        else
+        {
+            if (keep_dims)
+                off.push_back(0);
+        }
+    }
+
+    if (off.empty())
+        off.push_back(0);
     return off;
 }
 
