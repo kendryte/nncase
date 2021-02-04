@@ -93,6 +93,17 @@ result<void> copy_impl(const T *src, T *dest, const runtime_shape_t &shape, cons
     std::copy(src_view.begin(), src_view.end(), dest_view.begin());
     return ok();
 }
+
+template <class T>
+result<void> transpose_impl(datatype_t type, const T *src, T *dest, const runtime_shape_t &in_shape,
+    const runtime_shape_t &perm, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides) noexcept
+{
+    return apply(in_shape, [&](const runtime_shape_t &index) -> result<void> {
+        runtime_shape_t out_index(index.size());
+        for (size_t i = 0; i < index.size(); i++)
+            out_index[i] = index[perm[i]];
+    });
+}
 }
 
 #define COPY_IMPL(size, type) \
@@ -111,6 +122,12 @@ result<void> reference::copy(datatype_t type, const gsl::byte *src, gsl::byte *d
     default:
         return err(std::errc::not_supported);
     }
+}
+
+result<void> reference::transpose(datatype_t type, const gsl::byte *src, gsl::byte *dest, const runtime_shape_t &in_shape,
+    const runtime_shape_t &perm, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides) noexcept
+{
+    return cpu::reference::transpose(type, src, dest, in_shape, perm, in_strides, out_strides);
 }
 
 #define BINARY_IMPL(op, funct) \

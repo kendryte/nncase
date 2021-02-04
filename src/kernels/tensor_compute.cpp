@@ -25,6 +25,12 @@ result<void> kernels::copy(datatype_t type, const gsl::byte *src, gsl::byte *des
     return cpu::reference::copy(type, src, dest, shape, src_strides, dest_strides);
 }
 
+result<void> kernels::transpose(datatype_t type, const gsl::byte *src, gsl::byte *dest, const runtime_shape_t &in_shape,
+    const runtime_shape_t &perm, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides) noexcept
+{
+    return cpu::reference::transpose(type, src, dest, in_shape, perm, in_strides, out_strides);
+}
+
 result<void> kernels::binary(binary_op_t op, const float *input_a, const float *input_b, float *output,
     const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
     const runtime_shape_t &in_b_strides, const runtime_shape_t &out_strides, value_range<float> fused_activation) noexcept
