@@ -21,7 +21,7 @@ import sys
 import test_util
 
 
-def _make_module(in_shape, axis, keep_dims=False):
+def _make_module(in_shape, axis, keep_dims):
     class ReduceModule(tf.Module):
         def __init__(self):
             super(ReduceModule).__init__()
@@ -36,49 +36,37 @@ def _make_module(in_shape, axis, keep_dims=False):
             return outs
     return ReduceModule()
 
+in_shape_axis = [
+    ([3], [0]),
+    ([64, 3], [0]),
+    ([64, 3], [1]),
+    ([64, 3], [0, 1]),
+    ([3, 64, 3], [0]),
+    ([3, 64, 3], [1]),
+    ([3, 64, 3], [2]),
+    ([3, 64, 3], [0, 1]),
+    ([3, 64, 3], [0, 2]),
+    ([3, 64, 3], [1, 0]),
+    ([3, 64, 3], [1, 2]),
+    ([8, 3, 64, 3], [0]),
+    ([8, 3, 64, 3], [0, 1]),
+    ([8, 3, 64, 3], [0, 2]),
+    ([8, 3, 64, 3], [0, 3]),
+    ([8, 3, 64, 3], [1, 3]),
+    ([8, 3, 64, 3], [1, 2, 3]),
+    ([8, 3, 64, 3], [0, 2, 3])
+]
 
-@pytest.fixture
-def module1():
-    return _make_module([3], [0])
+keep_dims = [
+    True,
+    False
+]
 
-
-@pytest.fixture
-def module2():
-    return _make_module([64, 3], [0])
-
-@pytest.fixture
-def module3():
-    return _make_module([64, 3], [1])
-
-@pytest.fixture
-def module4():
-    return _make_module([64, 3], [0, 1])
-
-
-@pytest.fixture
-def module5():
-    return _make_module([3, 64, 3], [1, 2])
-
-
-@pytest.fixture
-def module6():
-    return _make_module([8, 6, 16, 3], [1, 3])
-
-
-@pytest.fixture
-def module7():
-    return _make_module([8, 6, 16, 3], [2, 3, 1])
-
-
-@pytest.fixture
-def module8():
-    return _make_module([8, 6, 16, 3], [0, 2, 1], keep_dims=True)
-
-
-@pytest.mark.parametrize('module', ['module1', 'module2', 'module3', 'module4', 'module5', 'module6', 'module7', 'module8'])
-def test_reduce(module, request):
-    module_inst = request.getfixturevalue(module)
-    test_util.test_tf_module('test_reduce.' + module, module_inst, ['cpu'])
+@pytest.mark.parametrize('in_shape,axis', in_shape_axis)
+@pytest.mark.parametrize('keep_dims', keep_dims)
+def test_reduce(in_shape, axis, keep_dims, request):
+    module = _make_module(in_shape, axis, keep_dims)
+    test_util.test_tf_module(request.node.name, module, ['cpu'])
 
 
 if __name__ == "__main__":

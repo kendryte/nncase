@@ -40,6 +40,7 @@ using namespace nncase;
 using namespace nncase::schedule;
 using namespace nncase::ir;
 using namespace nncase::kernels;
+using namespace nncase::runtime;
 
 #define ELEM_SIZE_IMPL(type, KERNEL)                            \
     switch (get_bytes(type))                                    \
@@ -106,8 +107,8 @@ void ConvertIfDestTypeMatches(convert &node, module_evaluate_context &context)
 template <typename src_type, typename dst_type>
 void ConvertIfTypesMatch(convert &node, module_evaluate_context &context)
 {
-    auto input = context.memory_at<src_type>(node.input()).span;
-    auto output = context.memory_at<dst_type>(node.output()).span;
+    auto input = host_runtime_tensor::buffer(context.memory_at(node.input())).unwrap_or_throw().as_span<src_type>();
+    auto output = host_runtime_tensor::buffer(context.memory_at(node.output())).unwrap_or_throw().as_span<dst_type>();
 
     auto input_ptr = input.data();
     auto output_ptr = output.data();
@@ -129,9 +130,10 @@ void register_neutral_evaluators()
 
         assert(rnode.input_a().type() == dt_float32);
         assert(rnode.input_b().type() == dt_float32);
-        auto input_a = context.memory_at<float>(rnode.input_a()).span;
-        auto input_b = context.memory_at<float>(rnode.input_b()).span;
-        auto output = context.memory_at<float>(rnode.output()).span;
+        // TODO: use kernels instead
+        auto input_a = host_runtime_tensor::buffer(context.memory_at(rnode.input_a())).unwrap_or_throw().as_span<float>();
+        auto input_b = host_runtime_tensor::buffer(context.memory_at(rnode.input_b())).unwrap_or_throw().as_span<float>();
+        auto output = host_runtime_tensor::buffer(context.memory_at(rnode.output())).unwrap_or_throw().as_span<float>();
 
         auto binary = [&](auto binary_op) {
             neutral::binary(input_a.data(), input_b.data(), output.data(), to(rnode.input_a().shape()), to(rnode.input_b().shape()),
@@ -182,9 +184,9 @@ void register_neutral_evaluators()
 
         std::vector<uint8_t *> inputs;
         for (auto in : rnode.inputs())
-            inputs.emplace_back(context.memory_at<uint8_t>(*in).span.data());
+            inputs.emplace_back(host_runtime_tensor::buffer(context.memory_at(*in)).unwrap_or_throw().as_span<uint8_t>().data());
 
-        auto output = context.memory_at<uint8_t>(rnode.output()).span;
+        auto output = host_runtime_tensor::buffer(context.memory_at(rnode.output())).unwrap_or_throw().as_span<uint8_t>();
 
         auto elem_size = (uint32_t)get_bytes(rnode.output().type());
         uint64_t inner_size, outer_size;
@@ -196,10 +198,10 @@ void register_neutral_evaluators()
         auto &rnode = static_cast<conv2d &>(node);
 
         assert(rnode.input().type() == dt_float32);
-        auto input = context.memory_at<float>(rnode.input()).span;
-        auto weights = context.memory_at<float>(rnode.input()).span;
-        auto bias = context.memory_at<float>(rnode.input()).span;
-        auto output = context.memory_at<float>(rnode.output()).span;
+        auto input = host_runtime_tensor::buffer(context.memory_at(rnode.input())).unwrap_or_throw().as_span<float>();
+        auto weights = host_runtime_tensor::buffer(context.memory_at(rnode.weights())).unwrap_or_throw().as_span<float>();
+        auto bias = host_runtime_tensor::buffer(context.memory_at(rnode.bias())).unwrap_or_throw().as_span<float>();
+        auto output = host_runtime_tensor::buffer(context.memory_at(rnode.output())).unwrap_or_throw().as_span<float>();
 
         neutral::conv2d(input.data(), output.data(), weights.data(), bias.data(), to(rnode.input().shape()),
             rnode.groups(), rnode.output_channels(), rnode.filter_h(), rnode.filter_w(), rnode.stride_h(), rnode.stride_w(),
@@ -210,10 +212,10 @@ void register_neutral_evaluators()
         auto &rnode = static_cast<conv2d_transpose &>(node);
 
         assert(rnode.input().type() == dt_float32);
-        auto input = context.memory_at<float>(rnode.input()).span;
-        auto weights = context.memory_at<float>(rnode.input()).span;
-        auto bias = context.memory_at<float>(rnode.input()).span;
-        auto output = context.memory_at<float>(rnode.output()).span;
+        auto input = host_runtime_tensor::buffer(context.memory_at(rnode.input())).unwrap_or_throw().as_span<float>();
+        auto weights = host_runtime_tensor::buffer(context.memory_at(rnode.weights())).unwrap_or_throw().as_span<float>();
+        auto bias = host_runtime_tensor::buffer(context.memory_at(rnode.bias())).unwrap_or_throw().as_span<float>();
+        auto output = host_runtime_tensor::buffer(context.memory_at(rnode.output())).unwrap_or_throw().as_span<float>();
 
         neutral::conv2d_transpose(input.data(), output.data(), weights.data(), bias.data(), to(rnode.input().shape()),
             rnode.groups(), to(rnode.output().shape()), rnode.filter_h(), rnode.filter_w(), rnode.stride_h(), rnode.stride_w(),
@@ -223,16 +225,16 @@ void register_neutral_evaluators()
     register_evaluator(op_dequantize, [](ir::node &node, module_evaluate_context &context) {
         auto &rnode = static_cast<dequantize &>(node);
 
-        auto output = context.memory_at<float>(rnode.output()).span;
+        auto output = host_runtime_tensor::buffer(context.memory_at(rnode.output())).unwrap_or_throw().as_span<float>();
 
         switch (rnode.input().type())
         {
-#define DEQUANTIZE(type)                                                                                                \
-    case type:                                                                                                          \
-    {                                                                                                                   \
-        auto input = context.memory_at<to_cpp_type_t<type>>(rnode.input()).span;                                        \
-        neutral::dequantize(input.data(), output.data(), xt::compute_size(rnode.input().shape()), rnode.quant_param()); \
-        break;                                                                                                          \
+#define DEQUANTIZE(type)                                                                                                             \
+    case type:                                                                                                                       \
+    {                                                                                                                                \
+        auto input = host_runtime_tensor::buffer(context.memory_at(rnode.input())).unwrap_or_throw().as_span<to_cpp_type_t<type>>(); \
+        neutral::dequantize(input.data(), output.data(), xt::compute_size(rnode.input().shape()), rnode.quant_param());              \
+        break;                                                                                                                       \
     }
             DEQUANTIZE(dt_uint8)
             DEQUANTIZE(dt_int8)
@@ -249,10 +251,10 @@ void register_neutral_evaluators()
 
         assert(rnode.input_a().type() == dt_float32);
         assert(rnode.input_b().type() == dt_float32);
-        auto input_a = context.memory_at<float>(rnode.input_a()).span;
-        auto input_b = context.memory_at<float>(rnode.input_b()).span;
-        auto output = context.memory_at<float>(rnode.output()).span;
-        auto bias = context.memory_at<float>(rnode.bias()).span;
+        auto input_a = host_runtime_tensor::buffer(context.memory_at(rnode.input_a())).unwrap_or_throw().as_span<float>();
+        auto input_b = host_runtime_tensor::buffer(context.memory_at(rnode.input_b())).unwrap_or_throw().as_span<float>();
+        auto bias = host_runtime_tensor::buffer(context.memory_at(rnode.bias())).unwrap_or_throw().as_span<float>();
+        auto output = host_runtime_tensor::buffer(context.memory_at(rnode.output())).unwrap_or_throw().as_span<float>();
 
         auto &a_shape = rnode.input_a().shape();
         auto &b_shape = rnode.input_b().shape();
@@ -263,11 +265,11 @@ void register_neutral_evaluators()
     register_evaluator(op_pad, [](ir::node &node, module_evaluate_context &context) {
         auto &rnode = static_cast<pad &>(node);
 
-        auto input = context.memory_at<uint8_t>(rnode.input()).span;
-        auto output = context.memory_at<uint8_t>(rnode.output()).span;
+        auto input = host_runtime_tensor::buffer(context.memory_at(rnode.input())).unwrap_or_throw();
+        auto output = host_runtime_tensor::buffer(context.memory_at(rnode.output())).unwrap_or_throw();
 
 #define PAD_KERNEL(T) \
-    kernels::neutral::pad(reinterpret_cast<const T *>(input.data()), reinterpret_cast<T *>(output.data()), to(rnode.input().shape()), to(rnode.paddings()), rnode.pad_value().as<T>());
+    kernels::neutral::pad(input.as_span<T>().data(), output.as_span<T>().data(), to(rnode.input().shape()), to(rnode.paddings()), rnode.pad_value().as<T>());
 
         ELEM_SIZE_IMPL(rnode.input().type(), PAD_KERNEL);
 #undef PAD_KERNEL
@@ -276,8 +278,8 @@ void register_neutral_evaluators()
     register_evaluator(op_quantize, [](ir::node &node, module_evaluate_context &context) {
         auto &rnode = static_cast<quantize &>(node);
 
-        auto input = context.memory_at<float>(rnode.input()).span;
-        auto output = context.memory_at<uint8_t>(rnode.output()).span;
+        auto input = host_runtime_tensor::buffer(context.memory_at(rnode.input())).unwrap_or_throw().as_span<float>();
+        auto output = host_runtime_tensor::buffer(context.memory_at(rnode.output())).unwrap_or_throw().as_span<uint8_t>();
 
         neutral::quantize(input.data(), output.data(), xt::compute_size(rnode.input().shape()), rnode.quant_param());
     });
@@ -286,8 +288,8 @@ void register_neutral_evaluators()
         auto &rnode = static_cast<reduce &>(node);
 
         assert(rnode.input().type() == dt_float32);
-        auto input = context.memory_at<float>(rnode.input()).span;
-        auto output = context.memory_at<float>(rnode.output()).span;
+        auto input = host_runtime_tensor::buffer(context.memory_at(rnode.input())).unwrap_or_throw().as_span<float>();
+        auto output = host_runtime_tensor::buffer(context.memory_at(rnode.output())).unwrap_or_throw().as_span<float>();
 
         auto reduced_shape = get_reduced_shape(rnode.input().shape(), rnode.axis(), true);
 
@@ -322,8 +324,8 @@ void register_neutral_evaluators()
         auto &rnode = static_cast<reduce_window2d &>(node);
 
         assert(rnode.input().type() == dt_float32);
-        auto input = context.memory_at<float>(rnode.input()).span;
-        auto output = context.memory_at<float>(rnode.output()).span;
+        auto input = host_runtime_tensor::buffer(context.memory_at(rnode.input())).unwrap_or_throw().as_span<float>();
+        auto output = host_runtime_tensor::buffer(context.memory_at(rnode.output())).unwrap_or_throw().as_span<float>();
 
         auto reduce = [&](auto binary_op, auto output_op) {
             neutral::reduce_window2d(
@@ -354,8 +356,8 @@ void register_neutral_evaluators()
     register_evaluator(op_bitcast, [](ir::node &node, module_evaluate_context &context) {
         auto &rnode = static_cast<bitcast &>(node);
 
-        auto input = context.memory_at<uint8_t>(rnode.input()).span;
-        auto output = context.memory_at<uint8_t>(rnode.output()).span;
+        auto input = host_runtime_tensor::buffer(context.memory_at(rnode.input())).unwrap_or_throw();
+        auto output = host_runtime_tensor::buffer(context.memory_at(rnode.output())).unwrap_or_throw();
 
         std::copy(input.begin(), input.end(), output.begin());
     });
@@ -365,22 +367,22 @@ void register_neutral_evaluators()
 
         if (rnode.mode() == image_resize_bilinear)
         {
-            auto input = context.memory_at<uint8_t>(rnode.input()).span;
-            auto output = context.memory_at<uint8_t>(rnode.output()).span;
+            auto input = host_runtime_tensor::buffer(context.memory_at(rnode.input())).unwrap_or_throw();
+            auto output = host_runtime_tensor::buffer(context.memory_at(rnode.output())).unwrap_or_throw();
 
 #define RESIZE_BL_KERNEL(T) \
-    kernels::neutral::resize_bilinear(reinterpret_cast<const T *>(input.data()), reinterpret_cast<T *>(output.data()), to(rnode.input().shape()), rnode.new_size()[0], rnode.new_size()[1], rnode.align_corners());
+    kernels::neutral::resize_bilinear(input.as_span<T>().data(), output.as_span<T>().data(), to(rnode.input().shape()), rnode.new_size()[0], rnode.new_size()[1], rnode.align_corners());
 
             FP_OR_Q_IMPL(rnode.input().type(), RESIZE_BL_KERNEL);
 #undef RESIZE_BL_KERNEL
         }
         else
         {
-            auto input = context.memory_at<uint8_t>(rnode.input()).span;
-            auto output = context.memory_at<uint8_t>(rnode.output()).span;
+            auto input = host_runtime_tensor::buffer(context.memory_at(rnode.input())).unwrap_or_throw();
+            auto output = host_runtime_tensor::buffer(context.memory_at(rnode.output())).unwrap_or_throw();
 
 #define RESIZE_NN_KERNEL(T) \
-    kernels::neutral::resize_nearest_neighbor(reinterpret_cast<const T *>(input.data()), reinterpret_cast<T *>(output.data()), to(rnode.input().shape()), rnode.new_size()[0], rnode.new_size()[1]);
+    kernels::neutral::resize_nearest_neighbor(input.as_span<T>().data(), output.as_span<T>().data(), to(rnode.input().shape()), rnode.new_size()[0], rnode.new_size()[1]);
 
             FP_OR_Q_IMPL(rnode.input().type(), RESIZE_NN_KERNEL);
 #undef RESIZE_NN_KERNEL
@@ -390,11 +392,11 @@ void register_neutral_evaluators()
     register_evaluator(op_slice, [](ir::node &node, module_evaluate_context &context) {
         auto &rnode = static_cast<slice &>(node);
 
-        auto input = context.memory_at<uint8_t>(rnode.input()).span;
-        auto output = context.memory_at<uint8_t>(rnode.output()).span;
+        auto input = host_runtime_tensor::buffer(context.memory_at(rnode.input())).unwrap_or_throw();
+        auto output = host_runtime_tensor::buffer(context.memory_at(rnode.output())).unwrap_or_throw();
 
-#define STRIDED_SLICE_KERNEL(T)                                                                                \
-    neutral::strided_slice<T>(reinterpret_cast<const T *>(input.data()), reinterpret_cast<T *>(output.data()), \
+#define STRIDED_SLICE_KERNEL(T)                                                      \
+    neutral::strided_slice<T>(input.as_span<T>().data(), output.as_span<T>().data(), \
         to(rnode.input().shape()), to(rnode.begin(), 0), to(rnode.end()), to(rnode.strides()));
 
         ELEM_SIZE_IMPL(rnode.input().type(), STRIDED_SLICE_KERNEL);
@@ -403,14 +405,14 @@ void register_neutral_evaluators()
     register_evaluator(op_transpose, [](ir::node &node, module_evaluate_context &context) {
         auto &rnode = static_cast<transpose &>(node);
 
-        auto input = context.memory_at<uint8_t>(rnode.input()).span;
-        auto output = context.memory_at<uint8_t>(rnode.output()).span;
+        auto input = host_runtime_tensor::buffer(context.memory_at(rnode.input())).unwrap_or_throw();
+        auto output = host_runtime_tensor::buffer(context.memory_at(rnode.output())).unwrap_or_throw();
 
         runtime_shape_t in_shape, perm;
         extend_transpose_shape(rnode.input().shape(), rnode.perm(), in_shape, perm);
 
 #define TRANSPOSE_KERNEL(T) \
-    neutral::transpose<T>(reinterpret_cast<const T *>(input.data()), reinterpret_cast<T *>(output.data()), in_shape, perm);
+    neutral::transpose<T>(input.as_span<T>().data(), output.as_span<T>().data(), in_shape, perm);
 
         ELEM_SIZE_IMPL(rnode.input().type(), TRANSPOSE_KERNEL);
     });
@@ -419,8 +421,8 @@ void register_neutral_evaluators()
         auto &rnode = static_cast<unary &>(node);
 
         assert(rnode.input().type() == dt_float32);
-        auto input = context.memory_at<float>(rnode.input()).span;
-        auto output = context.memory_at<float>(rnode.output()).span;
+        auto input = host_runtime_tensor::buffer(context.memory_at(rnode.input())).unwrap_or_throw().as_span<float>();
+        auto output = host_runtime_tensor::buffer(context.memory_at(rnode.output())).unwrap_or_throw().as_span<float>();
 
         auto unary = [&](auto unary_op) {
             neutral::unary(input.data(), output.data(), input.size(), unary_op);
@@ -490,9 +492,9 @@ void register_neutral_evaluators()
         auto &rnode = static_cast<table_lookup1d &>(node);
 
         assert(rnode.input().type() == dt_uint8);
-        auto input = context.memory_at<uint8_t>(rnode.input()).span;
-        auto table = context.memory_at<uint8_t>(rnode.table()).span;
-        auto output = context.memory_at<uint8_t>(rnode.output()).span;
+        auto input = host_runtime_tensor::buffer(context.memory_at(rnode.input())).unwrap_or_throw().as_span<uint8_t>();
+        auto table = host_runtime_tensor::buffer(context.memory_at(rnode.table())).unwrap_or_throw().as_span<uint8_t>();
+        auto output = host_runtime_tensor::buffer(context.memory_at(rnode.output())).unwrap_or_throw().as_span<uint8_t>();
 
         kernels::neutral::table_lookup1d(input.data(), output.data(), input.size(), table.data());
     });
@@ -501,10 +503,10 @@ void register_neutral_evaluators()
         auto &rnode = static_cast<clamp &>(node);
 
         assert(rnode.input().type() == dt_float32);
-        auto input = context.memory_at<float>(rnode.input()).span;
-        auto input_low = context.memory_at<float>(rnode.input_low()).span;
-        auto input_high = context.memory_at<float>(rnode.input_high()).span;
-        auto output = context.memory_at<float>(rnode.output()).span;
+        auto input = host_runtime_tensor::buffer(context.memory_at(rnode.input())).unwrap_or_throw().as_span<float>();
+        auto input_low = host_runtime_tensor::buffer(context.memory_at(rnode.input_low())).unwrap_or_throw().as_span<float>();
+        auto input_high = host_runtime_tensor::buffer(context.memory_at(rnode.input_high())).unwrap_or_throw().as_span<float>();
+        auto output = host_runtime_tensor::buffer(context.memory_at(rnode.output())).unwrap_or_throw().as_span<float>();
 
         const float *input_ptr = input.data();
         float low = input_low.data()[0];

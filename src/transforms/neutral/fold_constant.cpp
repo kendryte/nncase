@@ -83,7 +83,8 @@ void fold_constant_transform::process(transform_context &context)
         for (size_t i = 0; i < op_outputs.size(); i++)
         {
             auto &op_output = *op_outputs[i];
-            auto mem = eval.output_at<std::byte>(i).view();
+            // TODO: consider of strides
+            auto mem = runtime::host_runtime_tensor::buffer(eval.output_at(i)).unwrap_or_throw().as_span<std::byte>();
             auto out_val = context.graph.emplace<constant>(op_output.input().type(), op_output.input().shape(), mem.begin(), mem.end());
             out_val->name(op_output.name());
             output_values.emplace_back(out_val);

@@ -17,25 +17,13 @@
 #include <nncase/ir/graph.h>
 #include <nncase/ir/op_utils.h>
 #include <nncase/runtime/runtime_op_utility.h>
+#include <nncase/runtime/runtime_tensor.h>
 #include <nncase/schedule/scheduler.h>
 #include <unordered_map>
 #include <xtensor/xadapt.hpp>
 
 namespace nncase::ir
 {
-template <class T = std::byte>
-struct eval_result
-{
-    std::span<T> span;
-    shape_t shape;
-    shape_t strides;
-
-    auto view()
-    {
-        return xt::adapt(span.data(), span.size(), xt::no_ownership(), shape, strides);
-    }
-};
-
 class NNCASE_API module_evaluate_context
 {
 public:
@@ -43,35 +31,21 @@ public:
     module_evaluate_context(module_evaluate_context &) = delete;
     module_evaluate_context(module_evaluate_context &&) = default;
 
-    eval_result<> memory_at(const output_connector &conn);
+    runtime::runtime_tensor memory_at(const output_connector &conn);
 
-    template <class T>
-    eval_result<T> memory_at(const output_connector &conn)
+    runtime::runtime_tensor memory_at(const input_connector &conn)
     {
-        auto result = memory_at(conn);
-        return {
-            { reinterpret_cast<T *>(result.span.data()), result.span.size_bytes() / sizeof(T) },
-            runtime::convert_shape_type(result.shape, dt_uint8, to_datatype<T>()),
-            runtime::convert_strides_type(result.strides, dt_uint8, to_datatype<T>())
-        };
+        return memory_at(*conn.connection());
     }
 
-    template <class T>
-    eval_result<T> memory_at(const input_connector &conn)
+    runtime::runtime_tensor input_at(size_t index)
     {
-        return memory_at<T>(*conn.connection());
+        return memory_at(*inputs_[index]);
     }
 
-    template <class T>
-    eval_result<T> input_at(size_t index)
+    runtime::runtime_tensor output_at(size_t index)
     {
-        return memory_at<T>(*inputs_[index]);
-    }
-
-    template <class T>
-    eval_result<T> output_at(size_t index)
-    {
-        return memory_at<T>(*outputs_[index]);
+        return memory_at(*outputs_[index]);
     }
 
     void evaluate();
@@ -94,35 +68,21 @@ public:
     module_evaluate_context &main_module_context();
     void evaluate();
 
-    eval_result<> memory_at(const output_connector &conn);
+    runtime::runtime_tensor memory_at(const output_connector &conn);
 
-    template <class T>
-    eval_result<T> memory_at(const output_connector &conn)
+    runtime::runtime_tensor memory_at(const input_connector &conn)
     {
-        auto result = memory_at(conn);
-        return {
-            { reinterpret_cast<T *>(result.span.data()), result.span.size_bytes() / sizeof(T) },
-            runtime::convert_shape_type(result.shape, dt_uint8, to_datatype<T>()),
-            runtime::convert_strides_type(result.strides, dt_uint8, to_datatype<T>())
-        };
+        return memory_at(*conn.connection());
     }
 
-    template <class T>
-    eval_result<T> memory_at(const input_connector &conn)
+    runtime::runtime_tensor input_at(size_t index)
     {
-        return memory_at<T>(*conn.connection());
+        return main_module_context().input_at(index);
     }
 
-    template <class T>
-    eval_result<T> input_at(size_t index)
+    runtime::runtime_tensor output_at(size_t index)
     {
-        return main_module_context().input_at<T>(index);
-    }
-
-    template <class T>
-    eval_result<T> output_at(size_t index)
-    {
-        return main_module_context().output_at<T>(index);
+        return main_module_context().output_at(index);
     }
 
 private:

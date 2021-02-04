@@ -83,17 +83,34 @@ result<void> reduce_impl(TReducer &&reducer, TPostProcess &&post_process, float 
     }));
     return ok();
 }
+
+template <class T>
+result<void> copy_impl(const T *src, T *dest, const runtime_shape_t &shape, const runtime_shape_t &src_strides,
+    const runtime_shape_t &dest_strides) noexcept
+{
+    auto src_view = xt::adapt(src, runtime::get_bytes(to_datatype<T>(), src_strides), xt::no_ownership(), shape, src_strides);
+    auto dest_view = xt::adapt(dest, runtime::get_bytes(to_datatype<T>(), dest_strides), xt::no_ownership(), shape, dest_strides);
+    std::copy(src_view.begin(), src_view.end(), dest_view.begin());
+    return ok();
 }
+}
+
+#define COPY_IMPL(size, type) \
+    case size:                \
+        return copy_impl(reinterpret_cast<const type *>(src), reinterpret_cast<type *>(dest), shape, src_strides, dest_strides)
 
 result<void> reference::copy(datatype_t type, const gsl::byte *src, gsl::byte *dest,
     const runtime_shape_t &shape, const runtime_shape_t &src_strides, const runtime_shape_t &dest_strides) noexcept
 {
-    auto src_view = xt::adapt(src, runtime::get_bytes(type, src_strides), xt::no_ownership(),
-        runtime::convert_shape_type(shape, type, dt_uint8), runtime::convert_strides_type(src_strides, type, dt_uint8));
-    auto dest_view = xt::adapt(dest, runtime::get_bytes(type, dest_strides), xt::no_ownership(),
-        runtime::convert_shape_type(shape, type, dt_uint8), runtime::convert_strides_type(dest_strides, type, dt_uint8));
-    std::copy(src_view.begin(), src_view.end(), dest_view.begin());
-    return ok();
+    switch (runtime::get_bytes(type))
+    {
+        COPY_IMPL(1, uint8_t);
+        COPY_IMPL(2, uint16_t);
+        COPY_IMPL(4, uint32_t);
+        COPY_IMPL(8, uint64_t);
+    default:
+        return err(std::errc::not_supported);
+    }
 }
 
 #define BINARY_IMPL(op, funct) \

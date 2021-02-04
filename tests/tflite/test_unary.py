@@ -46,31 +46,17 @@ def _make_module(in_shape):
             return outs
     return UnaryModule()
 
+in_shapes = [
+    [3],
+    [64, 3],
+    [3, 64, 3],
+    [8, 6, 16, 3]
+]
 
-@pytest.fixture
-def module1():
-    return _make_module([3])
-
-
-@pytest.fixture
-def module2():
-    return _make_module([64, 3])
-
-
-@pytest.fixture
-def module3():
-    return _make_module([3, 64, 3])
-
-
-@pytest.fixture
-def module4():
-    return _make_module([8, 6, 16, 3])
-
-
-@pytest.mark.parametrize('module', ['module1', 'module2', 'module3', 'module4'])
-def test_unary(module, request):
-    module_inst = request.getfixturevalue(module)
-    test_util.test_tf_module('test_unary.' + module, module_inst, ['cpu'])
+@pytest.mark.parametrize('in_shape', in_shapes)
+def test_unary(in_shape, request):
+    module = _make_module(in_shape)
+    test_util.test_tf_module(request.node.name, module, ['cpu'])
 
 
 if __name__ == "__main__":

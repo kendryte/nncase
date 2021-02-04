@@ -32,20 +32,20 @@ runtime_shape_t to_strides(const runtime_shape_t &shape)
 class host_runtime_tensor_type : public runtime_tensor_type
 {
 public:
-    bool can_copy_from_different_type(runtime_tensor &dest, runtime_tensor &src) noexcept override
+    bool can_copy_from_different_type(const runtime_tensor &dest, const runtime_tensor &src) noexcept override
     {
         return true;
     }
 
-    bool can_copy_to_different_type(runtime_tensor &dest, runtime_tensor &src) noexcept override
+    bool can_copy_to_different_type(const runtime_tensor &dest, const runtime_tensor &src) noexcept override
     {
         return true;
     }
 
-    result<void> copy_to_same_type(runtime_tensor &src, runtime_tensor &dest) noexcept override
+    result<void> copy_to_same_type(const runtime_tensor &src, const runtime_tensor &dest) noexcept override
     {
-        auto buffer_src = host_runtime_tensor::buffer(src);
-        auto buffer_dest = host_runtime_tensor::buffer(src);
+        auto buffer_src = host_runtime_tensor::buffer(src).unwrap();
+        auto buffer_dest = host_runtime_tensor::buffer(src).unwrap();
         if (src.datatype() != dest.datatype())
             return err(nncase_errc::datatype_mismatch);
         if (src.shape() != dest.shape())
@@ -54,22 +54,22 @@ public:
         return kernels::copy(src.datatype(), buffer_src.data(), buffer_dest.data(), src.shape(), src.strides(), dest.strides());
     }
 
-    result<void> copy_from_different_type(runtime_tensor &src, runtime_tensor &dest) noexcept override
+    result<void> copy_from_different_type(const runtime_tensor &src, const runtime_tensor &dest) noexcept override
     {
         return src.tensor_type().copy_to_host(src, dest);
     }
 
-    result<void> copy_to_different_type(runtime_tensor &src, runtime_tensor &dest) noexcept override
+    result<void> copy_to_different_type(const runtime_tensor &src, const runtime_tensor &dest) noexcept override
     {
         return dest.tensor_type().copy_from_host(src, dest);
     }
 
-    result<void> copy_from_host(runtime_tensor &src, runtime_tensor &dest) noexcept override
+    result<void> copy_from_host(const runtime_tensor &src, const runtime_tensor &dest) noexcept override
     {
         return copy_to_same_type(src, dest);
     }
 
-    result<void> copy_to_host(runtime_tensor &src, runtime_tensor &dest) noexcept override
+    result<void> copy_to_host(const runtime_tensor &src, const runtime_tensor &dest) noexcept override
     {
         return copy_to_same_type(src, dest);
     }
@@ -83,37 +83,37 @@ host_runtime_tensor_type host_runtime_tensor_type_;
 empty_runtime_tensor_type empty_runtime_tensor_type_;
 }
 
-bool runtime_tensor_type::can_copy_from_different_type(runtime_tensor &src, runtime_tensor &dest) noexcept
+bool runtime_tensor_type::can_copy_from_different_type(const runtime_tensor &src, const runtime_tensor &dest) noexcept
 {
     return false;
 }
 
-bool runtime_tensor_type::can_copy_to_different_type(runtime_tensor &src, runtime_tensor &dest) noexcept
+bool runtime_tensor_type::can_copy_to_different_type(const runtime_tensor &src, const runtime_tensor &dest) noexcept
 {
     return false;
 }
 
-result<void> runtime_tensor_type::copy_to_same_type(runtime_tensor &src, runtime_tensor &dest) noexcept
+result<void> runtime_tensor_type::copy_to_same_type(const runtime_tensor &src, const runtime_tensor &dest) noexcept
 {
     return err(std::errc::not_supported);
 }
 
-result<void> runtime_tensor_type::copy_from_different_type(runtime_tensor &src, runtime_tensor &dest) noexcept
+result<void> runtime_tensor_type::copy_from_different_type(const runtime_tensor &src, const runtime_tensor &dest) noexcept
 {
     return err(std::errc::not_supported);
 }
 
-result<void> runtime_tensor_type::copy_to_different_type(runtime_tensor &src, runtime_tensor &dest) noexcept
+result<void> runtime_tensor_type::copy_to_different_type(const runtime_tensor &src, const runtime_tensor &dest) noexcept
 {
     return err(std::errc::not_supported);
 }
 
-result<void> runtime_tensor_type::copy_from_host(runtime_tensor &src, runtime_tensor &dest) noexcept
+result<void> runtime_tensor_type::copy_from_host(const runtime_tensor &src, const runtime_tensor &dest) noexcept
 {
     return err(std::errc::not_supported);
 }
 
-result<void> runtime_tensor_type::copy_to_host(runtime_tensor &src, runtime_tensor &dest) noexcept
+result<void> runtime_tensor_type::copy_to_host(const runtime_tensor &src, const runtime_tensor &dest) noexcept
 {
     return err(std::errc::not_supported);
 }
@@ -133,7 +133,7 @@ runtime_tensor::runtime_tensor(datatype_t datatype, runtime_shape_t shape, runti
 {
 }
 
-bool runtime_tensor::can_copy_to_without_staging(runtime_tensor &dest) noexcept
+bool runtime_tensor::can_copy_to_without_staging(const runtime_tensor &dest) const noexcept
 {
     if (datatype() != dest.datatype()
         || shape() != dest.shape())
@@ -145,7 +145,7 @@ bool runtime_tensor::can_copy_to_without_staging(runtime_tensor &dest) noexcept
         || dest.tensor_type().can_copy_from_different_type(*this, dest);
 }
 
-result<void> runtime_tensor::copy_to(runtime_tensor &dest) noexcept
+result<void> runtime_tensor::copy_to(const runtime_tensor &dest) const noexcept
 {
     if (empty() || dest.empty())
         return err(std::errc::not_supported);
@@ -170,7 +170,7 @@ result<void> runtime_tensor::copy_to(runtime_tensor &dest) noexcept
     return dest.tensor_type().copy_from_host(host, dest);
 }
 
-result<runtime_tensor> runtime_tensor::as_host() noexcept
+result<runtime_tensor> runtime_tensor::as_host() const noexcept
 {
     if (empty())
         return err(std::errc::not_supported);
@@ -262,9 +262,15 @@ result<runtime_tensor> host_runtime_tensor::create(datatype_t datatype, runtime_
     return create(datatype, shape, to_strides(shape), data, std::move(data_deleter));
 }
 
-gsl::span<gsl::byte> host_runtime_tensor::buffer(runtime_tensor &tensor) noexcept
+result<gsl::span<gsl::byte>> host_runtime_tensor::buffer(const runtime_tensor &tensor) noexcept
 {
-    assert(tensor.is_host());
-    auto size = get_bytes(tensor.datatype(), tensor.shape());
-    return { tensor.data_as<gsl::byte>(), size };
+    if (tensor.is_host())
+    {
+        auto size = get_bytes(tensor.datatype(), tensor.shape());
+        return ok(gsl::span<gsl::byte>(tensor.data_as<gsl::byte>(), size));
+    }
+    else
+    {
+        return err(std::errc::invalid_argument);
+    }
 }

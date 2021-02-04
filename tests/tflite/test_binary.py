@@ -39,31 +39,34 @@ def _make_module(in_shape, v_shape):
             return outs
     return BinaryModule()
 
+lhs_shapes = [
+    [3],
+    [64, 3],
+    [3, 64, 3],
+    [8, 3, 64, 3]
+]
 
-@pytest.fixture
-def module1():
-    return _make_module([3], [3])
+rhs_shapes = [
+    [1],
+    [3],
+    [1, 3],
+    [64, 1],
+    [64, 3],
+    [3, 64, 1],
+    [3, 64, 3],
+    [8, 3, 64, 1],
+    [8, 3, 64, 3],
+    [8, 3, 1, 3],
+    [8, 1, 64, 3],
+    [1, 3, 64, 1]
+]
 
 
-@pytest.fixture
-def module2():
-    return _make_module([64, 3], [64, 1])
-
-
-@pytest.fixture
-def module3():
-    return _make_module([3, 64, 3], [64, 3])
-
-
-@pytest.fixture
-def module4():
-    return _make_module([8, 6, 16, 3], [6, 16, 1])
-
-
-@pytest.mark.parametrize('module', ['module1', 'module2', 'module3', 'module4'])
-def test_binary(module, request):
-    module_inst = request.getfixturevalue(module)
-    test_util.test_tf_module('test_binary.' + module, module_inst, ['cpu'])
+@pytest.mark.parametrize('lhs_shape', lhs_shapes)
+@pytest.mark.parametrize('rhs_shape', rhs_shapes)
+def test_binary(lhs_shape, rhs_shape, request):
+    module = _make_module(lhs_shape, rhs_shape)
+    test_util.test_tf_module(request.node.name, module, ['cpu'])
 
 
 if __name__ == "__main__":

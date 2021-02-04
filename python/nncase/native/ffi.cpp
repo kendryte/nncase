@@ -139,6 +139,14 @@ runtime_shape_t to_rt_shape(const std::vector<pybind11::ssize_t> &value)
     return shape;
 }
 
+runtime_shape_t to_rt_strides(size_t elemsize, const std::vector<pybind11::ssize_t> &value)
+{
+    runtime_shape_t strides(value.size());
+    for (size_t i = 0; i < strides.size(); i++)
+        strides[i] = (size_t)value[i] / elemsize;
+    return strides;
+}
+
 std::vector<py::ssize_t> to_py_shape(const runtime_shape_t &value)
 {
     std::vector<py::ssize_t> shape(value.size());
@@ -146,6 +154,15 @@ std::vector<py::ssize_t> to_py_shape(const runtime_shape_t &value)
         shape[i] = (py::ssize_t)value[i];
     return shape;
 }
+
+std::vector<py::ssize_t> to_py_strides(size_t elemsize, const runtime_shape_t &value)
+{
+    std::vector<py::ssize_t> strides(value.size());
+    for (size_t i = 0; i < strides.size(); i++)
+        strides[i] = (py::ssize_t)value[i] * elemsize;
+    return strides;
+}
+
 #ifdef WIN32
 #include <Windows.h>
 void LaunchDebugger()
@@ -240,7 +257,7 @@ PYBIND11_MODULE(_nncase, m)
             auto tensor = host_runtime_tensor::create(
                 datatype,
                 to_rt_shape(src_buffer.shape),
-                runtime::convert_strides_type(to_rt_shape(src_buffer.strides), dt_uint8, datatype),
+                to_rt_strides(src_buffer.itemsize, src_buffer.strides),
                 gsl::make_span(reinterpret_cast<gsl::byte *>(src_buffer.ptr), src_buffer.size * src_buffer.itemsize),
                 [=](gsl::span<gsl::byte>) { arr.dec_ref(); })
                               .unwrap_or_throw();
@@ -249,11 +266,11 @@ PYBIND11_MODULE(_nncase, m)
         })
         .def("to_numpy", [](runtime_tensor &tensor) {
             auto host = tensor.as_host().unwrap_or_throw();
-            auto src_buffer = host_runtime_tensor::buffer(host);
+            auto src_buffer = host_runtime_tensor::buffer(host).unwrap_or_throw();
             return py::array(
                 to_dtype(tensor.datatype()),
                 tensor.shape(),
-                runtime::convert_strides_type(tensor.strides(), tensor.datatype(), dt_uint8),
+                to_py_strides(runtime::get_bytes(tensor.datatype()), tensor.strides()),
                 src_buffer.data());
         })
         .def_property_readonly("dtype", [](runtime_tensor &tensor) {

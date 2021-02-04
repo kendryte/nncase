@@ -74,7 +74,7 @@ private:
         size_t i = 0;
         for (auto it = dataset.begin<T>(); it != dataset.end<T>(); ++it)
         {
-            auto input_buffer = host_runtime_tensor::buffer(interp_.input_tensor(0).unwrap());
+            auto input_buffer = host_runtime_tensor::buffer(interp_.input_tensor(0).unwrap()).unwrap_or_throw();
             auto &tensor = it->tensor;
             std::memcpy(input_buffer.data(), tensor.data(), input_buffer.size_bytes());
 
@@ -87,7 +87,7 @@ private:
                 std::ofstream of(out_filename, std::ios::binary | std::ios::out);
                 for (size_t i = 0; i < interp_.outputs_size(); i++)
                 {
-                    auto output = host_runtime_tensor::buffer(interp_.output_tensor(i).unwrap());
+                    auto output = host_runtime_tensor::buffer(interp_.output_tensor(i).unwrap()).unwrap_or_throw();
                     of.write(reinterpret_cast<const char *>(output.data()), output.size());
                 }
             }

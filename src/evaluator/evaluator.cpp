@@ -20,6 +20,7 @@
 using namespace nncase;
 using namespace nncase::ir;
 using namespace nncase::schedule;
+using namespace nncase::runtime;
 namespace chrono = std::chrono;
 
 #define PROFILE 0
@@ -63,21 +64,18 @@ module_evaluate_context::module_evaluate_context(const module_schedule_result &s
         {
             auto &rnode = static_cast<constant &>(*node);
             auto src = rnode.data();
-            auto dest = memory_at(rnode.output()).view();
+            auto dest = host_runtime_tensor::buffer(memory_at(rnode.output())).unwrap_or_throw().as_span<std::byte>();
             std::copy(std::begin(src), std::end(src), dest.begin());
         }
     }
 }
 
-eval_result<> module_evaluate_context::memory_at(const output_connector &conn)
+runtime_tensor module_evaluate_context::memory_at(const output_connector &conn)
 {
     auto &alloc = sched_.allocations.at(&conn);
     auto &memory_pool = memory_pools_.at(alloc.memory_location);
-    return {
-        { memory_pool.get() + alloc.start, alloc.size },
-        runtime::convert_shape_type(alloc.shape, alloc.type, dt_uint8),
-        runtime::convert_strides_type(alloc.strides, alloc.type, dt_uint8)
-    };
+    gsl::span<gsl::byte> buffer(reinterpret_cast<gsl::byte *>(memory_pool.get() + alloc.start), alloc.size);
+    return host_runtime_tensor::create(alloc.type, alloc.shape, alloc.strides, buffer, false).unwrap_or_throw();
 }
 
 void module_evaluate_context::evaluate()
@@ -120,7 +118,7 @@ module_evaluate_context &evaluator::main_module_context()
     return module_context(*sched_.main_module);
 }
 
-eval_result<> evaluator::memory_at(const output_connector &conn)
+runtime_tensor evaluator::memory_at(const output_connector &conn)
 {
     return main_module_context().memory_at(conn);
 }

@@ -24,14 +24,14 @@ class runtime_tensor;
 class NNCASE_API runtime_tensor_type
 {
 public:
-    virtual bool can_copy_from_different_type(runtime_tensor &src, runtime_tensor &dest) noexcept;
-    virtual bool can_copy_to_different_type(runtime_tensor &src, runtime_tensor &dest) noexcept;
+    virtual bool can_copy_from_different_type(const runtime_tensor &src, const runtime_tensor &dest) noexcept;
+    virtual bool can_copy_to_different_type(const runtime_tensor &src, const runtime_tensor &dest) noexcept;
 
-    virtual result<void> copy_to_same_type(runtime_tensor &src, runtime_tensor &dest) noexcept;
-    virtual result<void> copy_from_different_type(runtime_tensor &src, runtime_tensor &dest) noexcept;
-    virtual result<void> copy_to_different_type(runtime_tensor &src, runtime_tensor &dest) noexcept;
-    virtual result<void> copy_from_host(runtime_tensor &src, runtime_tensor &dest) noexcept;
-    virtual result<void> copy_to_host(runtime_tensor &src, runtime_tensor &dest) noexcept;
+    virtual result<void> copy_to_same_type(const runtime_tensor &src, const runtime_tensor &dest) noexcept;
+    virtual result<void> copy_from_different_type(const runtime_tensor &src, const runtime_tensor &dest) noexcept;
+    virtual result<void> copy_to_different_type(const runtime_tensor &src, const runtime_tensor &dest) noexcept;
+    virtual result<void> copy_from_host(const runtime_tensor &src, const runtime_tensor &dest) noexcept;
+    virtual result<void> copy_to_host(const runtime_tensor &src, const runtime_tensor &dest) noexcept;
 };
 
 inline bool operator==(runtime_tensor_type &lhs, runtime_tensor_type &rhs) noexcept
@@ -61,14 +61,11 @@ public:
     std::shared_ptr<void> &data() noexcept { return data_; }
 
     template <class T = void>
-    const T *data_as() const noexcept { return reinterpret_cast<T *>(data_.get()); }
+    T *data_as() const noexcept { return reinterpret_cast<T *>(data_.get()); }
 
-    template <class T = void>
-    T *data_as() noexcept { return reinterpret_cast<T *>(data_.get()); }
-
-    bool can_copy_to_without_staging(runtime_tensor &dest) noexcept;
-    result<void> copy_to(runtime_tensor &dest) noexcept;
-    result<runtime_tensor> as_host() noexcept;
+    bool can_copy_to_without_staging(const runtime_tensor &dest) const noexcept;
+    result<void> copy_to(const runtime_tensor &dest) const noexcept;
+    result<runtime_tensor> as_host() const noexcept;
 
     void reset() noexcept;
 
@@ -92,7 +89,7 @@ NNCASE_API result<runtime_tensor> create(datatype_t datatype, runtime_shape_t sh
 NNCASE_API result<runtime_tensor> create(datatype_t datatype, runtime_shape_t shape, runtime_shape_t strides) noexcept;
 NNCASE_API result<runtime_tensor> create(datatype_t datatype, runtime_shape_t shape, runtime_shape_t strides, gsl::span<gsl::byte> data, bool copy) noexcept;
 NNCASE_API result<runtime_tensor> create(datatype_t datatype, runtime_shape_t shape, runtime_shape_t strides, gsl::span<gsl::byte> data, std::function<void(gsl::span<gsl::byte>)> data_deleter) noexcept;
-NNCASE_API gsl::span<gsl::byte> buffer(runtime_tensor &tensor) noexcept;
+NNCASE_API result<gsl::span<gsl::byte>> buffer(const runtime_tensor &tensor) noexcept;
 }
 
 END_NS_NNCASE_RUNTIME

@@ -107,7 +107,7 @@ def compile_tflite_nncase(case_name, model, targets):
     import_options = nncase.ImportOptions()
     compile_options = nncase.CompileOptions()
     compile_options.dump_asm = True
-    compile_options.dump_asm = True
+    compile_options.dump_ir = True
     for target in targets:
         kmodel_dir = os.path.join(output_root, case_name, target)
         if not os.path.exists(kmodel_dir):

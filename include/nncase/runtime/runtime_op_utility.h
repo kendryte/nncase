@@ -14,6 +14,7 @@
  */
 #pragma once
 #include "datatypes.h"
+#include "result.h"
 #include <xtensor/xstrides.hpp>
 
 BEGIN_NS_NNCASE_RUNTIME
@@ -54,13 +55,17 @@ TShape convert_shape_type(const TShape &shape, datatype_t src, datatype_t dest)
 }
 
 template <class TShape>
-TShape convert_strides_type(const TShape &strides, datatype_t src, datatype_t dest)
+result<TShape> convert_strides_type(const TShape &strides, datatype_t src, datatype_t dest)
 {
     const auto src_size = get_bytes(src);
     const auto dest_size = get_bytes(dest);
 
+    if (src_size == dest_size)
+        return ok(strides);
+
     TShape new_strides = strides;
-    for (size_t i = 0; i < new_strides.size(); i++)
+    // 1. Except last dim
+    for (size_t i = 0; i < new_strides.size() - 1; i++)
     {
         auto &v = new_strides[i];
         if (v == 0)
@@ -68,7 +73,16 @@ TShape convert_strides_type(const TShape &strides, datatype_t src, datatype_t de
         v = v * src_size / dest_size;
     }
 
-    return new_strides;
+    // 2. Last dim
+    if (!new_strides.empty())
+    {
+        // 2.1. If last dim is not 0 or 1, unsupported
+        auto last_dim = new_strides.back();
+        if (last_dim != 0 || last_dim != 1)
+            return err(std::errc::not_supported);
+    }
+
+    return ok(new_strides);
 }
 
 template <int32_t Bits, class T>
