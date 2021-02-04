@@ -17,6 +17,7 @@ import pytest
 import os
 import subprocess
 import tensorflow as tf
+import torch
 import numpy as np
 import shutil
 import struct
@@ -66,6 +67,15 @@ def tf_module_to_tflite(case_name, module):
     return tflite_model
 
 
+def torch_module_to_onnx(case_name, module, in_shape, opset_version=11):
+    case_dir = os.path.join('./tmp', case_name)
+    clear(case_dir)
+    dummy_input = torch.randn(*in_shape)
+    onnx_export_file = os.path.join(output_root, case_name, 'test.onnx')
+    torch.onnx.export(module, dummy_input, onnx_export_file,
+                      operator_export_type=torch.onnx.OperatorExportTypes.ONNX_ATEN_FALLBACK, opset_version=opset_version)
+
+
 def gen_input(case_name, input_tensor):
     input_dir = os.path.join(output_root, case_name)
     if input_tensor['dtype'] is np.uint8:
@@ -94,7 +104,7 @@ def eval_tflite_gth(case_name, tflite):
         output_id = interp.get_output_details()[i]["index"]
 
         result = interp.get_tensor(output_id)
-        #if len(result.shape) == 4:
+        # if len(result.shape) == 4:
         #    result = np.transpose(result, [0, 3, 1, 2])
         result.tofile(os.path.join(output_root, case_name,
                                    'cpu_result{0}.bin'.format(i)))

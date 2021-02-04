@@ -95,13 +95,15 @@ result<void> copy_impl(const T *src, T *dest, const runtime_shape_t &shape, cons
 }
 
 template <class T>
-result<void> transpose_impl(datatype_t type, const T *src, T *dest, const runtime_shape_t &in_shape,
+result<void> transpose_impl(const T *input, T *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &perm, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides) noexcept
 {
     return apply(in_shape, [&](const runtime_shape_t &index) -> result<void> {
         runtime_shape_t out_index(index.size());
         for (size_t i = 0; i < index.size(); i++)
             out_index[i] = index[perm[i]];
+        output[offset(out_strides, out_index)] = input[offset(in_strides, index)];
+        return ok();
     });
 }
 }
@@ -124,10 +126,22 @@ result<void> reference::copy(datatype_t type, const gsl::byte *src, gsl::byte *d
     }
 }
 
+#define TRANSPOSE_IMPL(size, type) \
+    case size:                     \
+        return transpose_impl(reinterpret_cast<const type *>(src), reinterpret_cast<type *>(dest), in_shape, perm, in_strides, out_strides)
+
 result<void> reference::transpose(datatype_t type, const gsl::byte *src, gsl::byte *dest, const runtime_shape_t &in_shape,
     const runtime_shape_t &perm, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides) noexcept
 {
-    return cpu::reference::transpose(type, src, dest, in_shape, perm, in_strides, out_strides);
+    switch (runtime::get_bytes(type))
+    {
+        TRANSPOSE_IMPL(1, uint8_t);
+        TRANSPOSE_IMPL(2, uint16_t);
+        TRANSPOSE_IMPL(4, uint32_t);
+        TRANSPOSE_IMPL(8, uint64_t);
+    default:
+        return err(std::errc::not_supported);
+    }
 }
 
 #define BINARY_IMPL(op, funct) \

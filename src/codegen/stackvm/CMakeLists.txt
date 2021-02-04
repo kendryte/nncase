@@ -5,6 +5,7 @@ set(SRCS module_builder.cpp
          ops/binary.cpp
          ops/conv2d.cpp
          ops/reduce.cpp
+         ops/transpose.cpp
          ops/unary.cpp)
 
 add_library(codegen_stackvm OBJECT ${SRCS})

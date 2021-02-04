@@ -18,6 +18,7 @@
 #include <nncase/ir/ops/binary.h>
 #include <nncase/ir/ops/conv2d.h>
 #include <nncase/ir/ops/reduce.h>
+#include <nncase/ir/ops/transpose.h>
 #include <nncase/ir/ops/unary.h>
 #include <nncase/ir/placeholders.h>
 #include <nncase/schedule/scheduler.h>

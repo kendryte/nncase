@@ -63,6 +63,7 @@ result<void> reference::conv2d(const float *input, const float *weights, const f
                         for (int32_t ic = 0; ic < g_ic; ic++)
                         {
                             in_index[1] = og * g_ic + ic;
+                            w_index[1] = ic;
                             for (int32_t ky = filter_y_start; ky < filter_y_end; ky++)
                             {
                                 w_index[2] = ky;

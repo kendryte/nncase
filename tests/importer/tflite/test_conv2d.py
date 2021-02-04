@@ -21,65 +21,74 @@ import sys
 import test_util
 
 
-def _make_module(in_shape, k_size, o_channels, strides, padding, dilations):
+def _make_module(n, i_channels, i_size, k_size, o_channels, strides, padding, dilations):
     class Conv2DModule(tf.Module):
         def __init__(self):
             super(Conv2DModule).__init__()
             self.w = tf.constant(np.random.rand(
-                *k_size, in_shape[3], o_channels).astype(np.float32) - 1)
+                *k_size, i_channels, o_channels).astype(np.float32) - 1)
 
-        @tf.function(input_signature=[tf.TensorSpec(in_shape, tf.float32)])
+        @tf.function(input_signature=[tf.TensorSpec([n, *i_size, i_channels], tf.float32)])
         def __call__(self, x):
             out = tf.nn.conv2d(x, self.w, strides, padding,
                                dilations=dilations)
             return out
     return Conv2DModule()
 
+n = [
+    1,
+    3
+]
 
-in_shapes = [
-    #[1, 1, 1, 1],
-    [1, 2, 1, 1],
+i_channels = [
+    1,
+    16
+]
+
+i_sizes = [
+    [1, 1],
+    [33, 65]
 ]
 
 k_sizes = [
-    #[1, 1],
-    [3, 3]
+    [1, 1],
+    [3, 3],
+    [5, 5]
 ]
 
 o_channels = [
-    #1,
-    3,
-    #13,
-    #64,
-    #128
+    1,
+    16
 ]
 
 strides = [
     [1, 1],
-    #[1, 2],
-    #[2, 1],
-    #[2, 2]
+    [1, 3],
+    [5, 5]
 ]
 
 paddings = [
     'SAME',
-    #'VALID'
+    'VALID'
 ]
 
 dilations = [
-    [1, 1]
+    [1, 1],
+    [2, 2]
 ]
 
 
-@pytest.mark.parametrize('in_shape', in_shapes)
+@pytest.mark.parametrize('n', n)
+@pytest.mark.parametrize('i_channels', i_channels)
+@pytest.mark.parametrize('i_size', i_sizes)
 @pytest.mark.parametrize('k_size', k_sizes)
 @pytest.mark.parametrize('o_channels', o_channels)
 @pytest.mark.parametrize('strides', strides)
 @pytest.mark.parametrize('padding', paddings)
 @pytest.mark.parametrize('dilations', dilations)
-def test_conv2d(in_shape, k_size, o_channels, strides, padding, dilations, request):
-    if padding != 'VALID' or (k_size[0] <= in_shape[1] and k_size[1] <= in_shape[2]):
-        module = _make_module(in_shape, k_size, o_channels,
+def test_conv2d(n, i_channels, i_size, k_size, o_channels, strides, padding, dilations, request):
+    if padding != 'VALID' or (k_size[0] <= i_size[0] and k_size[1] <= i_size[1]):
+        module = _make_module(n, i_channels, i_size, k_size, o_channels,
                               strides, padding, dilations)
         test_util.test_tf_module(request.node.name, module, ['cpu'])
 

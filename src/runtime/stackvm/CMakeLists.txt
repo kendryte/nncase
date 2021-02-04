@@ -12,6 +12,7 @@ set(SRCS runtime_module.cpp
          ops/tensor.binary.cpp
          ops/tensor.conv2d.cpp
          ops/tensor.reduce.cpp
+         ops/tensor.transpose.cpp
          ops/tensor.unary.cpp)
 
 if (BUILDING_RUNTIME)

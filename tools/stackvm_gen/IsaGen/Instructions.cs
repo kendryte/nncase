@@ -1067,6 +1067,50 @@ namespace IsaGen
             public byte Rpaddings { get; set; }
         }
 
+        [DisplayName("TENSOR.BINARY")]
+        [Category("Tensor Instructions")]
+        [Description("Binary")]
+        public class BinaryInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.BINARY;
+
+            [DisplayName("datatype")]
+            [Description("Datatype")]
+            public DataType DataType { get; set; }
+
+            [DisplayName("rshape_src1")]
+            [Description("Source1 shape register")]
+            public byte RshapeSrc1 { get; set; }
+
+            [DisplayName("rstride_src1")]
+            [Description("Source1 stride register")]
+            public byte RstrideSrc1 { get; set; }
+
+            [DisplayName("rshape_src2")]
+            [Description("Source2 shape register")]
+            public byte RshapeSrc2 { get; set; }
+
+            [DisplayName("rstride_src2")]
+            [Description("Source2 stride register")]
+            public byte RstrideSrc2 { get; set; }
+
+            [DisplayName("rstride_dest")]
+            [Description("Dest stride register")]
+            public byte RstrideDest { get; set; }
+
+            [DisplayName("binary_op")]
+            [Description("Binary operator")]
+            public BinaryOp BinaryOp { get; set; }
+
+            [DisplayName("fused_clamp_low")]
+            [Description("FusedClampLow")]
+            public float FusedClampLow { get; set; }
+
+            [DisplayName("fused_clamp_high")]
+            [Description("FusedClampHigh")]
+            public float FusedClampHigh { get; set; }
+        }
+
         [DisplayName("TENSOR.CONV2D")]
         [Category("Tensor Instructions")]
         [Description("Conv2D")]
@@ -1167,50 +1211,6 @@ namespace IsaGen
             public bool KeepDims { get; set; }
         }
 
-        [DisplayName("TENSOR.BINARY")]
-        [Category("Tensor Instructions")]
-        [Description("Binary")]
-        public class BinaryInstruction : TensorInstruction
-        {
-            public override TensorFunction Function => TensorFunction.BINARY;
-
-            [DisplayName("datatype")]
-            [Description("Datatype")]
-            public DataType DataType { get; set; }
-
-            [DisplayName("rshape_src1")]
-            [Description("Source1 shape register")]
-            public byte RshapeSrc1 { get; set; }
-
-            [DisplayName("rstride_src1")]
-            [Description("Source1 stride register")]
-            public byte RstrideSrc1 { get; set; }
-
-            [DisplayName("rshape_src2")]
-            [Description("Source2 shape register")]
-            public byte RshapeSrc2 { get; set; }
-
-            [DisplayName("rstride_src2")]
-            [Description("Source2 stride register")]
-            public byte RstrideSrc2 { get; set; }
-
-            [DisplayName("rstride_dest")]
-            [Description("Dest stride register")]
-            public byte RstrideDest { get; set; }
-
-            [DisplayName("binary_op")]
-            [Description("Binary operator")]
-            public BinaryOp BinaryOp { get; set; }
-
-            [DisplayName("fused_clamp_low")]
-            [Description("FusedClampLow")]
-            public float FusedClampLow { get; set; }
-
-            [DisplayName("fused_clamp_high")]
-            [Description("FusedClampHigh")]
-            public float FusedClampHigh { get; set; }
-        }
-
         [DisplayName("TENSOR.UNARY")]
         [Category("Tensor Instructions")]
         [Description("Unary")]
@@ -1237,6 +1237,34 @@ namespace IsaGen
             [DisplayName("unary_op")]
             [Description("Unary operator")]
             public UnaryOp UnaryOp { get; set; }
+        }
+
+        [DisplayName("TENSOR.TRANSPOSE")]
+        [Category("Tensor Instructions")]
+        [Description("Transpose")]
+        public class TransposeInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.TRANSPOSE;
+
+            [DisplayName("datatype")]
+            [Description("Datatype")]
+            public DataType DataType { get; set; }
+
+            [DisplayName("rshape_src")]
+            [Description("Source shape register")]
+            public byte RshapeSrc { get; set; }
+
+            [DisplayName("rstride_src")]
+            [Description("Source stride register")]
+            public byte RstrideSrc { get; set; }
+
+            [DisplayName("rstride_dest")]
+            [Description("Dest stride register")]
+            public byte RstrideDest { get; set; }
+
+            [DisplayName("rshape_perm")]
+            [Description("Perm shape register")]
+            public byte RshapePerm { get; set; }
         }
     }
 }
