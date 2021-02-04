@@ -405,14 +405,16 @@ void register_neutral_evaluators()
     register_evaluator(op_transpose, [](ir::node &node, module_evaluate_context &context) {
         auto &rnode = static_cast<transpose &>(node);
 
-        auto input = host_runtime_tensor::buffer(context.memory_at(rnode.input())).unwrap_or_throw();
-        auto output = host_runtime_tensor::buffer(context.memory_at(rnode.output())).unwrap_or_throw();
+        auto input_tensor = context.memory_at(rnode.input());
+        auto output_tensor = context.memory_at(rnode.output());
+        auto input = host_runtime_tensor::buffer(input_tensor).unwrap_or_throw();
+        auto output = host_runtime_tensor::buffer(output_tensor).unwrap_or_throw();
 
         runtime_shape_t in_shape, perm;
         extend_transpose_shape(rnode.input().shape(), rnode.perm(), in_shape, perm);
 
 #define TRANSPOSE_KERNEL(T) \
-    neutral::transpose<T>(input.as_span<T>().data(), output.as_span<T>().data(), in_shape, perm);
+    neutral::transpose<T>(input.as_span<T>().data(), output.as_span<T>().data(), in_shape, input_tensor.strides(), output_tensor.strides(), perm);
 
         ELEM_SIZE_IMPL(rnode.input().type(), TRANSPOSE_KERNEL);
     });

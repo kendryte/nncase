@@ -621,7 +621,7 @@ inline void softmax(const float *input, float *output, float beta, int32_t outer
 }
 
 template <class T, class TShape>
-void transpose(const T *CXX_RESTRICT input, T *CXX_RESTRICT output, const TShape &in_shape, const TShape &perm)
+void transpose(const T *CXX_RESTRICT input, T *CXX_RESTRICT output, const TShape &in_shape, const TShape &in_strides, const TShape &out_strides, const TShape &perm)
 {
     runtime_shape_t out_shape(in_shape.size());
     for (size_t i = 0; i < in_shape.size(); i++)
@@ -640,7 +640,7 @@ void transpose(const T *CXX_RESTRICT input, T *CXX_RESTRICT output, const TShape
                 for (o[0] = 0; o[0] < out_shape[0]; o[0]++)
                 {
                     i[perm[0]] = o[0];
-                    output[offset(out_shape, o)] = input[offset(in_shape, i)];
+                    output[offset(out_strides, o)] = input[offset(in_strides, i)];
                 }
             }
         }
