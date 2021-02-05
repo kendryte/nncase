@@ -1062,9 +1062,37 @@ namespace IsaGen
             [Description("Block shape register")]
             public byte RshapeBlock { get; set; }
 
-            [DisplayName("rpaddings")]
-            [Description("Paddings register")]
-            public byte Rpaddings { get; set; }
+            [DisplayName("rpad_crops")]
+            [Description("Crops paddings register")]
+            public byte RpadCrops { get; set; }
+        }
+
+        [DisplayName("TENSOR.BROADCAST")]
+        [Category("Tensor Instructions")]
+        [Description("Broadcast")]
+        public class BroadcastInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.BROADCAST;
+
+            [DisplayName("datatype")]
+            [Description("Datatype")]
+            public DataType DataType { get; set; }
+
+            [DisplayName("rshape_src")]
+            [Description("Source shape register")]
+            public byte RshapeSrc { get; set; }
+
+            [DisplayName("rstride_src")]
+            [Description("Source stride register")]
+            public byte RstrideSrc { get; set; }
+
+            [DisplayName("rshape_dest")]
+            [Description("Dest shape register")]
+            public byte RshapeDest { get; set; }
+
+            [DisplayName("rstride_dest")]
+            [Description("Dest stride register")]
+            public byte RstrideDest { get; set; }
         }
 
         [DisplayName("TENSOR.BINARY")]
@@ -1109,6 +1137,38 @@ namespace IsaGen
             [DisplayName("fused_clamp_high")]
             [Description("FusedClampHigh")]
             public float FusedClampHigh { get; set; }
+        }
+
+        [DisplayName("TENSOR.CONCAT")]
+        [Category("Tensor Instructions")]
+        [Description("Concat")]
+        public class ConcatInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.CONCAT;
+
+            [DisplayName("datatype")]
+            [Description("Datatype")]
+            public DataType DataType { get; set; }
+
+            [DisplayName("num_src")]
+            [Description("Source count")]
+            public byte SrcCount { get; set; }
+
+            [DisplayName("axis")]
+            [Description("Axis")]
+            public byte Axis { get; set; }
+
+            [DisplayName("rshape_dims")]
+            [Description("Concat dims shape register")]
+            public byte RshapeDims { get; set; }
+
+            [DisplayName("rshape_dest")]
+            [Description("Dest shape register")]
+            public byte RshapeDest { get; set; }
+
+            [DisplayName("rstride_dest")]
+            [Description("Dest stride register")]
+            public byte RstrideDest { get; set; }
         }
 
         [DisplayName("TENSOR.CONV2D")]

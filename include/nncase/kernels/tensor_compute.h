@@ -19,10 +19,16 @@
 
 BEGIN_NS_NNCASE_KERNELS
 
+NNCASE_API result<void> batch_to_space(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape,
+    const runtime_shape_t &block_shape, const runtime_paddings_t &crops, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides) noexcept;
+
+NNCASE_API result<void> broadcast(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_shape, const runtime_shape_t &out_strides) noexcept;
+
 NNCASE_API result<void> copy(datatype_t type, const gsl::byte *src, gsl::byte *dest,
     const runtime_shape_t &shape, const runtime_shape_t &src_strides, const runtime_shape_t &dest_strides) noexcept;
 
-NNCASE_API result<void> transpose(datatype_t type, const gsl::byte *src, gsl::byte *dest, const runtime_shape_t &in_shape,
+NNCASE_API result<void> transpose(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &perm, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides) noexcept;
 
 NNCASE_API result<void> binary(binary_op_t op, const float *input_a, const float *input_b, float *output,

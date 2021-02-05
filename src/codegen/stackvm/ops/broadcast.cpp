@@ -12,15 +12,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/codegen/module_builder.h>
+#include "../module_builder.h"
 
 using namespace nncase;
-using namespace nncase::ir;
 using namespace nncase::codegen;
+using namespace nncase::codegen::stackvm;
+using namespace nncase::ir;
 
-namespace nncase::codegen
+void stackvm_module_builder::emit(broadcast &node, stackvm_op_builder &builder)
 {
-void register_neutral_emitters()
-{
-}
+    auto &input = allocation(node.input());
+    auto &output = allocation(node.output());
+    builder.lea_buffer(input);
+    builder.lea_buffer(output);
+
+    builder.stshape(0, input.shape);
+    builder.stshape(1, input.strides);
+    builder.stshape(2, output.shape);
+    builder.stshape(3, output.strides);
+    builder.tensor_broadcast_(node.input().type(), 0, 1, 2, 3);
 }

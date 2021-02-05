@@ -57,6 +57,7 @@ void stackvm_module_builder::emit(ir::node &node)
 
 void stackvm_op_builder::stshape(uint8_t rshape, const ir::shape_t &shape)
 {
+    assert(shape.size() <= std::numeric_limits<uint8_t>::max());
     for (auto dim : shape)
         ldc_i4_((int32_t)dim);
     stshape_(rshape, (uint8_t)shape.size());
@@ -64,9 +65,18 @@ void stackvm_op_builder::stshape(uint8_t rshape, const ir::shape_t &shape)
 
 void stackvm_op_builder::staxis(uint8_t rshape, const ir::axis_t &axis)
 {
+    assert(axis.size() <= std::numeric_limits<uint8_t>::max());
     for (auto dim : axis)
         ldc_i4_(dim);
     stshape_(rshape, (uint8_t)axis.size());
+}
+
+void stackvm_op_builder::stpaddings(uint8_t rpaddings, std::span<padding const> paddings)
+{
+    assert(paddings.size() <= std::numeric_limits<uint8_t>::max());
+    for (auto &pad : paddings)
+        ldpadding(pad);
+    stpaddings_(rpaddings, (uint8_t)paddings.size());
 }
 
 void stackvm_op_builder::lea_buffer(const schedule::buffer_allocation &alloc)

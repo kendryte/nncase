@@ -10,6 +10,7 @@ set(SRCS runtime_module.cpp
          ops/conversion.cpp
          ops/tensor.batch_to_space.cpp
          ops/tensor.binary.cpp
+         ops/tensor.broadcast.cpp
          ops/tensor.conv2d.cpp
          ops/tensor.reduce.cpp
          ops/tensor.transpose.cpp

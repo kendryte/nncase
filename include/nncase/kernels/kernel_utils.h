@@ -37,6 +37,30 @@ size_t offset(const TShape &strides, const TShape &index)
     return xt::element_offset<size_t>(strides, index.begin(), index.end());
 }
 
+template <class TShape>
+TShape reshape_linear_index(const TShape &new_shape, size_t index)
+{
+    TShape new_index(new_shape.size());
+    size_t i = new_shape.size() - 1;
+    for (auto it = new_shape.rbegin(); it != new_shape.rend(); ++it)
+    {
+        new_index[i--] = index % *it;
+        index /= *it;
+    }
+
+    return new_index;
+}
+
+template <class TShape>
+size_t linear_index(const TShape &shape, const TShape &index)
+{
+    assert(index.size() == shape.size());
+    size_t new_index = index[0];
+    for (size_t i = 1; i < shape.size(); i++)
+        new_index = new_index * shape[i] + index[i];
+    return new_index;
+}
+
 namespace detail
 {
 inline size_t get_windowed_output_size(size_t size, int32_t filter, int32_t stride, int32_t dilation, const padding &padding)

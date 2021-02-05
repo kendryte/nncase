@@ -32,14 +32,3 @@ extern "C"
         return new cpu_target();
     }
 }
-
-namespace nncase::codegen
-{
-void register_cpu_emitters();
-}
-
-void cpu_target::register_codegen_ops()
-{
-    neutral_target::register_codegen_ops();
-    codegen::register_cpu_emitters();
-}

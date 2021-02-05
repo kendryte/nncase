@@ -33,19 +33,24 @@ def _make_module(batch_coff, in_shape, block_shape, crops):
 
 
 batch_coffs = [
-    1
+    1,
+    2
 ]
 
 in_shapes = [
+    #[3, 4],
     [8, 4, 5]
 ]
 
 block_shapes = [
-    [2, 2]
+    [2, 2],
+    [3, 3]
 ]
 
 crops = [
-    [[0, 0], [0, 0]]
+    [[0, 0], [0, 0]],
+    [[0, 1], [0, 1]],
+    [[1, 1], [1, 1]]
 ]
 
 

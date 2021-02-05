@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include "../runtime_module.h"
+#include <nncase/kernels/tensor_compute.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -20,5 +21,14 @@ using namespace nncase::runtime::stackvm;
 
 result<void> stackvm_runtime_module::visit(const tensor_batch_to_space_op_t &op) noexcept
 {
-    return err(std::errc::not_supported);
+    try_var(output, pop_addr());
+    try_var(input, pop_addr());
+    auto &in_shape = shape_regs_[op.rshape_src];
+    auto &block_shape = shape_regs_[op.rshape_block];
+    auto &crops = paddings_regs_[op.rpad_crops];
+    auto &in_strides = shape_regs_[op.rstride_src];
+    auto &out_strides = shape_regs_[op.rstride_dest];
+
+    return kernels::batch_to_space(op.datatype, reinterpret_cast<const gsl::byte *>(input), reinterpret_cast<gsl::byte *>(output),
+        in_shape, block_shape, crops, in_strides, out_strides);
 }

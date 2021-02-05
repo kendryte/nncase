@@ -56,7 +56,7 @@ in_shapes = [
 @pytest.mark.parametrize('in_shape', in_shapes)
 def test_unary(in_shape, request):
     module = _make_module(in_shape)
-    test_util.test_tf_module(request.node.name, module, ['cpu'])
+    test_util.test_tf_module(request.node.name, module, ['cpu', 'k210'])
 
 
 if __name__ == "__main__":

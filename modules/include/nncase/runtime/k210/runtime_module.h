@@ -1,4 +1,4 @@
-/* Copyright 2019-2020 Canaan Inc.
+/* Copyright 2020 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,16 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/codegen/module_builder.h>
+#pragma once
+#include "compiler_defs.h"
+#include <nncase/runtime/runtime_module.h>
 
-using namespace nncase;
-using namespace nncase::ir;
-using namespace nncase::codegen;
-using namespace nncase::schedule;
+BEGIN_NS_NNCASE_RT_K210
 
-namespace nncase::codegen
-{
-void register_cpu_emitters()
-{
-}
-}
+NNCASE_INLINE_VAR constexpr module_type_t k210_module_type = to_module_type("k210");
+
+NNCASE_MODULES_K210_API result<std::unique_ptr<runtime_module>> create_k210_runtime_module();
+
+END_NS_NNCASE_RT_K210

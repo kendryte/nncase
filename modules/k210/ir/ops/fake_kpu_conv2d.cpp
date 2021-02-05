@@ -12,10 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <hlir/op_utils.h>
-#include <hlir/ops/k210/fake_kpu_conv2d.h>
-#include <llir/ops/k210/fake_kpu_conv2d.h>
-#include <runtime/k210/k210_runtime_op_utility.h>
+#include <nncase/ir/ops/k210/fake_kpu_conv2d.h>
 
 using namespace nncase;
 using namespace nncase::hlir;

@@ -21,7 +21,5 @@ class cpu_target : public neutral_target
 {
 public:
     using neutral_target::neutral_target;
-
-    void register_codegen_ops() override;
 };
 }

@@ -56,13 +56,6 @@ void neutral_target::register_allocators(allocator_map_t &allocators, std::vecto
     allocators.emplace(mem_data, allocator_holders.emplace_back(std::make_unique<first_fit_allocator>()).get());
 }
 
-void neutral_target::register_codegen_ops()
-{
-    using namespace nncase::codegen;
-
-    register_neutral_emitters();
-}
-
 void neutral_target::register_evaluator_ops()
 {
     using namespace nncase::ir;

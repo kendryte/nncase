@@ -136,9 +136,10 @@ protected:
     result<void> visit(const conv_r4_op_t &op) noexcept override;
 
     result<void> visit(const tensor_batch_to_space_op_t &op) noexcept override;
+    result<void> visit(const tensor_binary_op_t &op) noexcept override;
+    result<void> visit(const tensor_broadcast_op_t &op) noexcept override;
     result<void> visit(const tensor_conv2d_op_t &op) noexcept override;
     result<void> visit(const tensor_reduce_op_t &op) noexcept override;
-    result<void> visit(const tensor_binary_op_t &op) noexcept override;
     result<void> visit(const tensor_transpose_op_t &op) noexcept override;
     result<void> visit(const tensor_unary_op_t &op) noexcept override;
 

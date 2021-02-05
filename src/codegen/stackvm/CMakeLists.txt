@@ -2,7 +2,9 @@
 
 set(SRCS module_builder.cpp
          op_writer.cpp
+         ops/batch_to_space.cpp
          ops/binary.cpp
+         ops/broadcast.cpp
          ops/conv2d.cpp
          ops/reduce.cpp
          ops/transpose.cpp

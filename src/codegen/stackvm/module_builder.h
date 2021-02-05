@@ -15,7 +15,9 @@
 #pragma once
 #include <nncase/codegen/stackvm/module_builder.h>
 #include <nncase/codegen/stackvm/op_writer.h>
+#include <nncase/ir/ops/batch_to_space.h>
 #include <nncase/ir/ops/binary.h>
+#include <nncase/ir/ops/broadcast.h>
 #include <nncase/ir/ops/conv2d.h>
 #include <nncase/ir/ops/reduce.h>
 #include <nncase/ir/ops/transpose.h>
@@ -32,6 +34,7 @@ public:
 
     void stshape(uint8_t rshape, const ir::shape_t &shape);
     void staxis(uint8_t rshape, const ir::axis_t &axis);
+    void stpaddings(uint8_t rpaddings, std::span<padding const> paddings);
     void lea_buffer(const schedule::buffer_allocation &alloc);
     void ldpadding(const padding &pad);
 };

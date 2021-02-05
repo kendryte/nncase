@@ -111,7 +111,6 @@ private:
     {
         target_ = plugin_loader::create_target(type);
 
-        target_->register_codegen_ops();
         target_->register_evaluator_ops();
     }
 

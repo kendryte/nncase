@@ -128,15 +128,6 @@ else()
     # Thrid party
     add_subdirectory(third_party/onnx)
     
-    macro(nncase_add_runtime NAME)
-        set(NNCASE_ENABLED_RUNTIMES ${NNCASE_ENABLED_RUNTIMES} ${NAME} PARENT_SCOPE)
-    endmacro()
-    
-    # Targets
-    add_subdirectory(targets/cpu)
-    
-    include(cmake/runtimes.cmake)
-    
     install(DIRECTORY include/nncase
         DESTINATION include
         COMPONENT nncase-headers
@@ -160,3 +151,12 @@ else()
         PATTERN "config.h" EXCLUDE
         )
 endif()
+
+include_directories(modules/include)
+    
+# Targets
+add_subdirectory(targets/cpu)
+add_subdirectory(targets/k210)
+
+# Modules
+add_subdirectory(modules/k210)

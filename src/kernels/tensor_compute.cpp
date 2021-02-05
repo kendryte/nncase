@@ -19,6 +19,18 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::kernels;
 
+result<void> kernels::batch_to_space(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape,
+    const runtime_shape_t &block_shape, const runtime_paddings_t &crops, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides) noexcept
+{
+    return cpu::reference::batch_to_space(type, input, output, in_shape, block_shape, crops, in_strides, out_strides);
+}
+
+result<void> kernels::broadcast(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_shape, const runtime_shape_t &out_strides) noexcept
+{
+    return cpu::reference::broadcast(type, input, output, in_shape, in_strides, out_shape, out_strides);
+}
+
 result<void> kernels::copy(datatype_t type, const gsl::byte *src, gsl::byte *dest,
     const runtime_shape_t &shape, const runtime_shape_t &src_strides, const runtime_shape_t &dest_strides) noexcept
 {
