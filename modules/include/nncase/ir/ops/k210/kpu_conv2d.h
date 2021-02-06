@@ -13,8 +13,9 @@
  * limitations under the License.
  */
 #pragma once
-#include "../../node.h"
-#include <runtime/k210/k210_sim_types.h>
+#include <nncase/ir/node.h>
+#include <nncase/ir/ops/k210/opcode.h>
+#include <nncase/runtime/k210/runtime_types.h>
 #include <xtensor/xtensor.hpp>
 
 namespace nncase

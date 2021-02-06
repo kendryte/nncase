@@ -15,6 +15,7 @@
 #pragma once
 #include <nncase/ir/node.h>
 #include <nncase/ir/ops/k210/opcode.h>
+#include <nncase/runtime/k210/runtime_types.h>
 #include <xtensor/xtensor.hpp>
 
 namespace nncase::ir::k210
