@@ -1,4 +1,4 @@
-/* Copyright 2019-2020 Canaan Inc.
+/* Copyright 2020 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,10 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/ir/ops/k210/kpu_data_exchange.h>
-#include <nncase/runtime/k210/runtime_op_utility.h>
+#pragma once
+#include "runtime_types.h"
 
-using namespace nncase;
-using namespace nncase::ir;
-using namespace nncase::ir::k210;
-using namespace nncase::runtime::k210;
+BEGIN_NS_NNCASE_KERNELS_CPU_REF
+
+NNCASE_API result<void> nnil_unary_method(const float *input, float *output, size_t count, gsl::span<const gsl::byte> body) noexcept;
+
+END_NS_NNCASE_KERNELS_CPU_REF

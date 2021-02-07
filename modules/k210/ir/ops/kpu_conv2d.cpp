@@ -12,14 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <hlir/op_utils.h>
-#include <hlir/ops/k210/kpu_conv2d.h>
-#include <llir/ops/k210/kpu_conv2d.h>
-#include <runtime/k210/k210_runtime_op_utility.h>
+#include <nncase/ir/ops/k210/kpu_conv2d.h>
+#include <nncase/runtime/k210/runtime_op_utility.h>
 
 using namespace nncase;
-using namespace nncase::hlir;
-using namespace nncase::hlir::k210;
+using namespace nncase::ir;
+using namespace nncase::ir::k210;
 using namespace nncase::runtime::k210;
 
 kpu_conv2d::kpu_conv2d(bool has_main_mem_output, shape_t input_shape, bool is_depthwise, runtime::k210::kpu_filter_type_t filter_type, runtime::k210::kpu_pool_type_t pool_type, xt::xtensor<uint8_t, 4> weights,
@@ -32,19 +30,17 @@ kpu_conv2d::kpu_conv2d(bool has_main_mem_output, shape_t input_shape, bool is_de
             input_shape[0],
             (size_t)output_channels(),
             (size_t)get_kpu_pool_output_size((int32_t)input_shape[2], pool_type_),
-            (size_t)get_kpu_pool_output_size((int32_t)input_shape[3], pool_type_) },
-        mem_k210_kpu);
+            (size_t)get_kpu_pool_output_size((int32_t)input_shape[3], pool_type_) });
 
     if (has_main_mem_output)
         add_output("main_mem_output", dt_uint8, kpu_output().shape());
 }
 
-void kpu_conv2d::compile(hlir_compile_context &context)
+bool kpu_conv2d::properties_equal(node &other) const
 {
-    auto l_c = context.graph.emplace<llir::k210::kpu_conv2d>(has_main_mem_output(), input().shape(), is_depthwise(), filter_type(), pool_type(), weights(),
-        pad_value(), arg_x(), shift_x(), arg_w(), shift_w(), arg_add(), batch_norm(), activation());
-    context.add_input(input(), l_c->input());
-    context.add_output(kpu_output(), l_c->kpu_output());
-    if (has_main_mem_output())
-        context.add_output(main_mem_output(), l_c->main_mem_output());
+    auto &r = static_cast<kpu_conv2d &>(other);
+    return is_depthwise() == r.is_depthwise() && filter_type() == r.filter_type() && pool_type() == r.pool_type()
+        && weights() == r.weights() && pad_value() == r.pad_value() && arg_x() == r.arg_x() && shift_x() == r.shift_x()
+        && arg_w() == r.arg_w() && shift_w() == r.shift_w() && arg_add() == r.arg_add() && batch_norm() == r.batch_norm()
+        && activation() == r.activation();
 }

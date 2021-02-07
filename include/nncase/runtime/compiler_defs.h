@@ -28,6 +28,12 @@
 #define NNCASE_API
 #endif
 
+#if defined(_MSC_VER)
+#define NNCASE_UNREACHABLE() __assume(0)
+#else
+#define NNCASE_UNREACHABLE() __builtin_unreachable
+#endif
+
 #if gsl_CPP17_OR_GREATER
 #define NNCASE_INLINE_VAR inline
 template <class Callable, class... Args>

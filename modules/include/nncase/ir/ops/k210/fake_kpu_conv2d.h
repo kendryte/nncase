@@ -39,6 +39,9 @@ public:
 
     fake_kpu_conv2d(shape_t input_shape, bool is_depthwise, runtime::k210::kpu_filter_type_t filter_type, runtime::k210::kpu_pool_type_t pool_type, xt::xtensor<float, 4> weights, xt::xtensor<float, 1> bias, value_range<float> fused_activation);
 
+protected:
+    bool properties_equal(node &other) const override;
+
 private:
     xt::xtensor<float, 4> weights_;
     xt::xtensor<float, 1> bias_;

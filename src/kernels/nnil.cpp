@@ -12,10 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/ir/ops/k210/kpu_data_exchange.h>
-#include <nncase/runtime/k210/runtime_op_utility.h>
+#include <nncase/kernels/cpu/reference/nnil.h>
+#include <nncase/kernels/nnil.h>
 
 using namespace nncase;
-using namespace nncase::ir;
-using namespace nncase::ir::k210;
-using namespace nncase::runtime::k210;
+using namespace nncase::runtime;
+using namespace nncase::kernels;
+
+result<void> kernels::nnil_unary_method(const float *input, float *output, size_t count, gsl::span<const gsl::byte> body) noexcept
+{
+    return cpu::reference::nnil_unary_method(input, output, count, body);
+}

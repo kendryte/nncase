@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #pragma once
+#include <nncase/runtime/compiler_defs.h>
 
 #if defined(_MSC_VER)
 #ifdef NNCASE_MODULES_K210_DLL

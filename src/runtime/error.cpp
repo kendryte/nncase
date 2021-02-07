@@ -53,6 +53,8 @@ public:
             return "StackVM stack overflow";
         case nncase_errc::stackvm_stack_underflow:
             return "StackVM stack underflow";
+        case nncase_errc::nnil_illegal_instruction:
+            return "NNIL illegal instruction";
         default:
             return "Unknown nncase error";
         }

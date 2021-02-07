@@ -30,6 +30,7 @@ enum class nncase_errc
     stackvm_illegal_target = 0x0101,
     stackvm_stack_overflow = 0x0102,
     stackvm_stack_underflow = 0x0103,
+    nnil_illegal_instruction = 0x0200,
 };
 
 NNCASE_API const std::error_category &nncase_category() noexcept;

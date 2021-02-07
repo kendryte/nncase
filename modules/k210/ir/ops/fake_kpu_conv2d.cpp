@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 #include <nncase/ir/ops/k210/fake_kpu_conv2d.h>
-#include <nncase/runtime/k210/k210_runtime_op_utility.h>
+#include <nncase/runtime/k210/runtime_op_utility.h>
 
 using namespace nncase;
 using namespace nncase::ir;
@@ -31,4 +31,11 @@ fake_kpu_conv2d::fake_kpu_conv2d(shape_t input_shape, bool is_depthwise, runtime
             (size_t)output_channels(),
             (size_t)get_kpu_pool_output_size((int32_t)input_shape[2], pool_type_),
             (size_t)get_kpu_pool_output_size((int32_t)input_shape[3], pool_type_) });
+}
+
+bool fake_kpu_conv2d::properties_equal(node &other) const
+{
+    auto &r = static_cast<fake_kpu_conv2d &>(other);
+    return is_depthwise() == r.is_depthwise() && filter_type() == r.filter_type() && pool_type() == r.pool_type()
+        && weights() == r.weights() && bias() == r.bias() && fused_activation() == r.fused_activation();
 }

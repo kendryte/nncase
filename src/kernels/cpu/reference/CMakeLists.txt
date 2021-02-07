@@ -5,6 +5,7 @@ set(SRCS batch_to_space.cpp
          broadcast.cpp
          convolution.cpp
          copy.cpp
+         nnil.cpp
          reduce.cpp
          transpose.cpp
          unary.cpp)

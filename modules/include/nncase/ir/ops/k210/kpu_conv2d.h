@@ -18,56 +18,51 @@
 #include <nncase/runtime/k210/runtime_types.h>
 #include <xtensor/xtensor.hpp>
 
-namespace nncase
+namespace nncase::ir::k210
 {
-namespace hlir
+class kpu_conv2d : public node
 {
-    namespace k210
-    {
-        class kpu_conv2d : public node
-        {
-        public:
-            DEFINE_NODE_OPCODE(op_k210_kpu_conv2d);
+public:
+    DEFINE_NODE_OPCODE(op_k210_kpu_conv2d);
 
-            input_connector &input() { return input_at(0); }
-            output_connector &kpu_output() { return output_at(0); }
-            output_connector &main_mem_output() { return output_at(1); }
+    input_connector &input() { return input_at(0); }
+    output_connector &kpu_output() { return output_at(0); }
+    output_connector &main_mem_output() { return output_at(1); }
 
-            bool has_main_mem_output() const noexcept { return outputs().size() == 2; }
-            bool is_depthwise() const noexcept { return is_depthwise_; }
-            int32_t input_channels() const noexcept { return is_depthwise() ? (int32_t)weights_.shape()[0] : (int32_t)weights_.shape()[1]; }
-            int32_t output_channels() const noexcept { return (int32_t)weights_.shape()[0]; }
-            runtime::k210::kpu_filter_type_t filter_type() const noexcept { return filter_type_; }
-            runtime::k210::kpu_pool_type_t pool_type() const noexcept { return pool_type_; }
-            const xt::xtensor<uint8_t, 4> &weights() const noexcept { return weights_; }
-            uint8_t pad_value() const noexcept { return pad_value_; }
-            int32_t arg_x() const noexcept { return arg_x_; }
-            int32_t shift_x() const noexcept { return shift_x_; }
-            int32_t arg_w() const noexcept { return arg_w_; }
-            int32_t shift_w() const noexcept { return shift_w_; }
-            int64_t arg_add() const noexcept { return arg_add_; }
-            const std::vector<runtime::k210::kpu_batchnorm_segment> &batch_norm() const noexcept { return batch_norm_; }
-            const runtime::k210::kpu_activation_table_t activation() const noexcept { return activation_; }
+    bool has_main_mem_output() const noexcept { return outputs().size() == 2; }
+    bool is_depthwise() const noexcept { return is_depthwise_; }
+    int32_t input_channels() const noexcept { return is_depthwise() ? (int32_t)weights_.shape()[0] : (int32_t)weights_.shape()[1]; }
+    int32_t output_channels() const noexcept { return (int32_t)weights_.shape()[0]; }
+    runtime::k210::kpu_filter_type_t filter_type() const noexcept { return filter_type_; }
+    runtime::k210::kpu_pool_type_t pool_type() const noexcept { return pool_type_; }
+    const xt::xtensor<uint8_t, 4> &weights() const noexcept { return weights_; }
+    uint8_t pad_value() const noexcept { return pad_value_; }
+    int32_t arg_x() const noexcept { return arg_x_; }
+    int32_t shift_x() const noexcept { return shift_x_; }
+    int32_t arg_w() const noexcept { return arg_w_; }
+    int32_t shift_w() const noexcept { return shift_w_; }
+    int64_t arg_add() const noexcept { return arg_add_; }
+    const std::vector<runtime::k210::kpu_batchnorm_segment> &batch_norm() const noexcept { return batch_norm_; }
+    const runtime::k210::kpu_activation_table_t activation() const noexcept { return activation_; }
 
-            kpu_conv2d(bool has_main_mem_output, shape_t input_shape, bool is_depthwise, runtime::k210::kpu_filter_type_t filter_type, runtime::k210::kpu_pool_type_t pool_type, xt::xtensor<uint8_t, 4> weights,
-                uint8_t pad_value, int32_t arg_x, int32_t shift_x, int32_t arg_w, int32_t shift_w, int64_t arg_add, std::vector<runtime::k210::kpu_batchnorm_segment> batch_norm, runtime::k210::kpu_activation_table_t activation);
+    kpu_conv2d(bool has_main_mem_output, shape_t input_shape, bool is_depthwise, runtime::k210::kpu_filter_type_t filter_type, runtime::k210::kpu_pool_type_t pool_type, xt::xtensor<uint8_t, 4> weights,
+        uint8_t pad_value, int32_t arg_x, int32_t shift_x, int32_t arg_w, int32_t shift_w, int64_t arg_add, std::vector<runtime::k210::kpu_batchnorm_segment> batch_norm, runtime::k210::kpu_activation_table_t activation);
 
-            void compile(hlir_compile_context &context) override;
+protected:
+    bool properties_equal(node &other) const override;
 
-        private:
-            xt::xtensor<uint8_t, 4> weights_;
-            bool is_depthwise_;
-            runtime::k210::kpu_filter_type_t filter_type_;
-            runtime::k210::kpu_pool_type_t pool_type_;
-            uint8_t pad_value_;
-            int32_t arg_x_;
-            int32_t shift_x_;
-            int32_t arg_w_;
-            int32_t shift_w_;
-            int64_t arg_add_;
-            std::vector<runtime::k210::kpu_batchnorm_segment> batch_norm_;
-            runtime::k210::kpu_activation_table_t activation_;
-        };
-    }
-}
+private:
+    xt::xtensor<uint8_t, 4> weights_;
+    bool is_depthwise_;
+    runtime::k210::kpu_filter_type_t filter_type_;
+    runtime::k210::kpu_pool_type_t pool_type_;
+    uint8_t pad_value_;
+    int32_t arg_x_;
+    int32_t shift_x_;
+    int32_t arg_w_;
+    int32_t shift_w_;
+    int64_t arg_add_;
+    std::vector<runtime::k210::kpu_batchnorm_segment> batch_norm_;
+    runtime::k210::kpu_activation_table_t activation_;
+};
 }

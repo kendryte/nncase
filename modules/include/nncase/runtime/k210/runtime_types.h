@@ -251,6 +251,16 @@ struct kpu_batchnorm_segment
     int32_t add;
 };
 
+inline bool operator==(const kpu_batchnorm_segment &lhs, const kpu_batchnorm_segment &rhs) noexcept
+{
+    return lhs.mul == rhs.mul && lhs.shift == rhs.shift && lhs.add == rhs.add;
+}
+
+inline bool operator!=(const kpu_batchnorm_segment &lhs, const kpu_batchnorm_segment &rhs) noexcept
+{
+    return !(lhs == rhs);
+}
+
 struct kpu_activation_segment
 {
     int64_t start_x;
@@ -258,6 +268,17 @@ struct kpu_activation_segment
     int32_t shift;
     int32_t add;
 };
+
+inline bool operator==(const kpu_activation_segment &lhs, const kpu_activation_segment &rhs) noexcept
+{
+    return lhs.start_x == rhs.start_x && lhs.mul == rhs.mul
+        && lhs.shift == rhs.shift && lhs.add == rhs.add;
+}
+
+inline bool operator!=(const kpu_activation_segment &lhs, const kpu_activation_segment &rhs) noexcept
+{
+    return !(lhs == rhs);
+}
 
 using kpu_activation_table_t = std::array<kpu_activation_segment, 16>;
 

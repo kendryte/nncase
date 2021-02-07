@@ -12,10 +12,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/ir/ops/k210/kpu_data_exchange.h>
-#include <nncase/runtime/k210/runtime_op_utility.h>
+#pragma once
+#include <nncase/transforms/transform.h>
 
-using namespace nncase;
-using namespace nncase::ir;
-using namespace nncase::ir::k210;
-using namespace nncase::runtime::k210;
+namespace nncase::ir::transforms::k210
+{
+class fuse_kpu_conv2d_pool_transform : public transform
+{
+public:
+    void process(transform_context &context) override;
+
+protected:
+    bool on_try_match(ir::node &node, transform_context &context) override;
+};
+}

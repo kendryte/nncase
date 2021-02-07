@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 #pragma once
-#include "k210_sim_types.h"
+#include "runtime_types.h"
 
-namespace nncase::runtime::k210
-{
+BEGIN_NS_NNCASE_RT_K210
+
 struct kpu_layout
 {
     int32_t groups;
@@ -59,7 +59,7 @@ inline int32_t get_kpu_filter_size(kpu_filter_type_t filter)
     case kpu_filter_3x3:
         return 3;
     default:
-        NNCASE_THROW(std::runtime_error, "Invalid kpu filter");
+        return 0;
     }
 }
 
@@ -72,7 +72,7 @@ inline int32_t get_kpu_padding(kpu_filter_type_t filter)
     case kpu_filter_3x3:
         return 1;
     default:
-        NNCASE_THROW(std::runtime_error, "Invalid kpu filter");
+        NNCASE_UNREACHABLE();
     }
 }
 
@@ -95,7 +95,7 @@ inline std::array<int32_t, 2> get_kpu_padding(kpu_pool_type_t filter, int32_t si
     case kpu_pool_max_2_s1:
         return { 0, 1 };
     default:
-        NNCASE_THROW(std::runtime_error, "Invalid kpu pool type");
+        NNCASE_UNREACHABLE();
     }
 }
 
@@ -136,7 +136,7 @@ inline int32_t get_kpu_filter_size(kpu_pool_type_t filter)
     case kpu_pool_left_top_4_s4:
         return 4;
     default:
-        NNCASE_THROW(std::runtime_error, "Invalid kpu filter");
+        NNCASE_UNREACHABLE();
     }
 }
 
@@ -159,7 +159,7 @@ inline int32_t get_kpu_filter_stride(kpu_pool_type_t filter)
     case kpu_pool_left_top_4_s4:
         return 4;
     default:
-        NNCASE_THROW(std::runtime_error, "Invalid kpu pool type");
+        NNCASE_UNREACHABLE();
     }
 }
 
@@ -179,7 +179,8 @@ inline std::array<int32_t, 2> get_kpu_select_pool_offset(kpu_pool_type_t pool_ty
     case kpu_pool_left_top_4_s4:
         return { 0, 0 };
     default:
-        NNCASE_THROW(std::runtime_error, "Invalid kpu pool type");
+        NNCASE_UNREACHABLE();
     }
 }
-}
+
+END_NS_NNCASE_RT_K210
