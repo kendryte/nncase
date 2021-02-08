@@ -18,7 +18,7 @@
 
 namespace nncase::ir
 {
-class conv2d : public node
+class NNCASE_API conv2d : public node
 {
 public:
     DEFINE_NODE_OPCODE(op_conv2d);

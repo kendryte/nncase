@@ -18,7 +18,7 @@
 
 namespace nncase::ir
 {
-class transpose : public node
+class NNCASE_API transpose : public node
 {
 public:
     DEFINE_NODE_OPCODE(op_transpose);

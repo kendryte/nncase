@@ -18,7 +18,7 @@
 
 namespace nncase::ir
 {
-class broadcast : public node
+class NNCASE_API broadcast : public node
 {
 public:
     DEFINE_NODE_OPCODE(op_broadcast);

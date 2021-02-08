@@ -18,7 +18,7 @@
 
 namespace nncase::ir
 {
-class unary : public node
+class NNCASE_API unary : public node
 {
 public:
     DEFINE_NODE_OPCODE(op_unary);

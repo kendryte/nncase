@@ -18,7 +18,7 @@
 
 namespace nncase::ir
 {
-class reduce_window2d : public node
+class NNCASE_API reduce_window2d : public node
 {
 public:
     DEFINE_NODE_OPCODE(op_reduce_window2d);

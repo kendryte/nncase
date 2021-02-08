@@ -13,13 +13,12 @@
  * limitations under the License.
  */
 #include <chrono>
-#include <hlir/ops/constant.h>
-#include <hlir/quantizer.h>
-#include <hlir/visitor.h>
+#include <nncase/ir/ops/constant.h>
+#include <nncase/ir/quantizer.h>
+#include <nncase/ir/visitor.h>
 
 using namespace nncase;
-using namespace nncase::hlir;
-using namespace nncase::scheduler;
+using namespace nncase::ir;
 
 #define KLD_METHOD 0
 
@@ -60,7 +59,7 @@ float compute_l2(xtl::span<float> p, value_range<float> p_range, value_range<flo
         auto p_val = p_range.min + p_interval * (i + 0.0f);
         auto q_idx = std::clamp((int32_t)std::round((p_val - q_range.min) / q_interval), 0, (int32_t)q_bins - 1);
         auto q_val = q_range.min + q_interval * (q_idx + 0.0f);
-        d += std::pow(p_val - q_val, 2) * p[i];
+        d += std::pow(p_val - q_val, 2.f) * p[i];
     }
 
     return d;
@@ -72,7 +71,7 @@ quantizer::quantizer(calibrate_method cali_method, size_t bins)
 {
 }
 
-void quantizer::record(hlir::output_connector &connector, value_range<float> range)
+void quantizer::record(ir::output_connector &connector, value_range<float> range)
 {
     auto it = quant_ranges_.find(&connector);
     if (it == quant_ranges_.end())
@@ -81,7 +80,7 @@ void quantizer::record(hlir::output_connector &connector, value_range<float> ran
         it->second = union_range(it->second, range);
 }
 
-void quantizer::set(hlir::output_connector &connector, value_range<float> range)
+void quantizer::set(ir::output_connector &connector, value_range<float> range)
 {
     quant_ranges_[&connector] = range;
 }
@@ -130,7 +129,7 @@ quant_param_t quantizer::get_quant_param(value_range<float> range, int32_t bits)
     return { static_cast<int32_t>(bias), scale };
 }
 
-value_range<float> quantizer::get(hlir::output_connector &connector) const
+value_range<float> quantizer::get(ir::output_connector &connector) const
 {
     return quant_ranges_.at(&connector);
 }
@@ -148,7 +147,7 @@ fixed_mul quantizer::get_fixed_mul(float value, int32_t max_bits, uint8_t max_sh
         int mul_shift;
         mul = std::frexp(value, &mul_shift);
         shift = std::min((int32_t)max_shift, bits - mul_shift);
-        mul = mul * std::pow(2.f, shift + mul_shift);
+        mul = mul * std::pow(2.f, (float)(shift + mul_shift));
     }
     else if (value == 0)
     {
@@ -160,17 +159,17 @@ fixed_mul quantizer::get_fixed_mul(float value, int32_t max_bits, uint8_t max_sh
         int mul_shift;
         mul = std::frexp(value, &mul_shift);
         shift = std::min(max_shift + mul_shift, bits);
-        mul = mul * std::pow(2.f, shift);
+        mul = mul * std::pow(2.f, (float)shift);
         shift -= mul_shift;
     }
 
-    assert(std::abs(mul) < std::pow(2, bits));
+    assert(std::abs(mul) < std::pow(2.f, (float)bits));
     assert(shift >= 0 && shift <= max_shift);
-    assert(std::abs(value - mul * std::pow(2, -shift)) <= std::numeric_limits<float>::epsilon());
+    assert(std::abs(value - mul * std::pow(2.f, (float)-shift)) <= std::numeric_limits<float>::epsilon());
     return { mul, static_cast<int8_t>(shift) };
 }
 
-void quantizer::broadcast_output(hlir::graph &graph, const std::unordered_set<node_opcode> &ops)
+void quantizer::broadcast_output(ir::graph &graph, const std::unordered_set<node_opcode> &ops)
 {
     auto visitor = make_relay_ir_visitor([&](node &node) {
         if (node.inputs().size() == 1)
@@ -183,17 +182,17 @@ void quantizer::broadcast_output(hlir::graph &graph, const std::unordered_set<no
     visitor.visit(graph);
 }
 
-void quantizer::broadcast_output(hlir::node &node, const value_range<float> &range, const std::unordered_set<node_opcode> &ops)
+void quantizer::broadcast_output(ir::node &node, const value_range<float> &range, const std::unordered_set<node_opcode> &ops)
 {
     if (ops.find(node.runtime_opcode()) != ops.end())
     {
-        for (auto &out : node.outputs())
+        for (auto out : node.outputs())
         {
-            auto it = quant_ranges_.find(&out);
+            auto it = quant_ranges_.find(out);
             if (it != quant_ranges_.end())
                 it->second = range;
 
-            for (auto &con : out.connections())
+            for (auto con : out->connections())
                 broadcast_output(con->owner(), range, ops);
         }
     }

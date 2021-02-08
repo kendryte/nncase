@@ -82,6 +82,10 @@ public:
         END_IMPORT()
     }
 
+    void use_ptq(const ptq_dataset_options &options) override
+    {
+    }
+
     void compile() override
     {
         std::cout << "2. Optimize target independent..." << std::endl;
@@ -116,22 +120,33 @@ private:
 
     void optimize_target_independent(ir::graph &graph)
     {
-        ir::transforms::pass_manager pmgr(graph, *target_);
-        if (compile_options_.dump_ir)
-            pmgr.dump_dir(compile_options_.dump_dir);
-        target_->register_target_independent_passes(pmgr);
-        pmgr.run();
-        dump_graph(graph, "target_indep");
+        run_passes("target_indep", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr) {
+            target_->register_target_independent_passes(module_type, pmgr);
+        });
     }
 
     void optimize_target_dependent(ir::graph &graph)
     {
-        ir::transforms::pass_manager pmgr(graph, *target_);
-        if (compile_options_.dump_ir)
-            pmgr.dump_dir(compile_options_.dump_dir);
-        target_->register_target_dependent_passes(pmgr);
-        pmgr.run();
-        dump_graph(graph, "target_dep");
+        run_passes("target_dep", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr) {
+            target_->register_target_dependent_passes(module_type, pmgr);
+        });
+    }
+
+    template <class Callable>
+    void run_passes(std::string_view name, ir::graph &root_graph, Callable &&register_passes)
+    {
+        auto graph_runner = [&](ir::graph &graph) {
+            ir::transforms::pass_manager pmgr(graph, *target_);
+            if (compile_options_.dump_ir)
+                pmgr.dump_dir(compile_options_.dump_dir);
+            register_passes(graph.module_type(), pmgr);
+            pmgr.run();
+            dump_graph(graph, name);
+        };
+
+        graph_runner(root_graph);
+        for (auto &subgraph : root_graph.subgraphs())
+            graph_runner(*subgraph);
     }
 
     void dump_graph(ir::graph &graph, std::string_view prefix)

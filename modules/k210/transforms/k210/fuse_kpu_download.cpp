@@ -12,17 +12,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <hlir/ops/k210/kpu_conv2d.h>
-#include <hlir/ops/k210/kpu_data_exchange.h>
-#include <hlir/transforms/k210/fuse_kpu_download.h>
-#include <hlir/visitor.h>
+#include <nncase/ir/ops/k210/kpu_conv2d.h>
+#include <nncase/ir/ops/k210/kpu_data_exchange.h>
+#include <nncase/ir/visitor.h>
+#include <nncase/transforms/k210/fuse_kpu_download.h>
 
 using namespace nncase;
-using namespace nncase::hlir;
-using namespace nncase::hlir::k210;
+using namespace nncase::ir;
+using namespace nncase::ir::k210;
 using namespace nncase::runtime::k210;
-using namespace nncase::hlir::transforms;
-using namespace nncase::hlir::transforms::k210;
+using namespace nncase::ir::transforms;
+using namespace nncase::ir::transforms::k210;
 
 bool fuse_kpu_download_transform::on_try_match(node &node, transform_context &context)
 {

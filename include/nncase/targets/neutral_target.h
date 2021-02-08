@@ -22,11 +22,11 @@ class NNCASE_API neutral_target : public target
 public:
     using target::target;
 
-    void register_allocators(schedule::allocator_map_t &allocators, std::vector<std::unique_ptr<schedule::buffer_allocator>> &allocator_holders) override;
+    void register_allocators(const module_type_t &type, schedule::allocator_map_t &allocators, std::vector<std::unique_ptr<schedule::buffer_allocator>> &allocator_holders) override;
     void register_evaluator_ops() override;
-    void register_target_independent_passes(ir::transforms::pass_manager &pass_mgr) override;
-    void register_target_dependent_passes(ir::transforms::pass_manager &pass_mgr) override;
-    void register_allocation_passes(ir::transforms::pass_manager &pass_mgr) override;
+    void register_target_independent_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr) override;
+    void register_target_dependent_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr) override;
+    void register_allocation_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr) override;
 
 protected:
     void move_transpose_transform(ir::transforms::pass &pass, bool add_constant_folding = true);

@@ -14,6 +14,7 @@
  */
 #include <nncase/codegen/model_builder.h>
 #include <nncase/codegen/stackvm/module_builder.h>
+#include <nncase/ir/quantizer.h>
 #include <nncase/runtime/stackvm/runtime_module.h>
 #include <nncase/targets/target.h>
 
@@ -28,6 +29,19 @@ target_options &target::options()
 
 void target::config_attributes(target_attributes &attrs)
 {
+}
+
+void target::register_quantize_annotation_passes([[maybe_unused]] const module_type_t &type, [[maybe_unused]] ir::transforms::pass_manager &pass_mgr)
+{
+}
+
+void target::register_quantize_passes([[maybe_unused]] const module_type_t &type, [[maybe_unused]] ir::quantizer &quantizer, [[maybe_unused]] ir::transforms::pass_manager &pass_mgr)
+{
+}
+
+std::unique_ptr<ir::quantizer> target::create_quantizer([[maybe_unused]] const module_type_t &type)
+{
+    return std::make_unique<ir::quantizer>(ir::calibrate_method::no_clip, 1024);
 }
 
 std::unique_ptr<codegen::module_builder> target::create_module_builder(const module_type_t &type, std::string_view module_name, const schedule::module_schedule_result &sched)

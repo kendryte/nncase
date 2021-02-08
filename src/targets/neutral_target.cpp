@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include <nncase/ir/opcode.h>
+#include <nncase/runtime/stackvm/runtime_module.h>
 #include <nncase/schedule/buffer_allocator.h>
 #include <nncase/targets/neutral_target.h>
 #include <nncase/transforms/neutral/dequantize_motion.h>
@@ -48,12 +49,19 @@ namespace nncase::ir
 void register_neutral_evaluators();
 }
 
-void neutral_target::register_allocators(allocator_map_t &allocators, std::vector<std::unique_ptr<buffer_allocator>> &allocator_holders)
+void neutral_target::register_allocators(const module_type_t &type, allocator_map_t &allocators, std::vector<std::unique_ptr<buffer_allocator>> &allocator_holders)
 {
-    allocators.emplace(mem_input, allocator_holders.emplace_back(std::make_unique<linear_buffer_allocator>()).get());
-    allocators.emplace(mem_output, allocator_holders.emplace_back(std::make_unique<linear_buffer_allocator>()).get());
-    allocators.emplace(mem_rdata, allocator_holders.emplace_back(std::make_unique<linear_buffer_allocator>()).get());
-    allocators.emplace(mem_data, allocator_holders.emplace_back(std::make_unique<first_fit_allocator>()).get());
+    if (type == runtime::stackvm::stackvm_module_type)
+    {
+        allocators.emplace(mem_input, allocator_holders.emplace_back(std::make_unique<linear_buffer_allocator>()).get());
+        allocators.emplace(mem_output, allocator_holders.emplace_back(std::make_unique<linear_buffer_allocator>()).get());
+        allocators.emplace(mem_rdata, allocator_holders.emplace_back(std::make_unique<linear_buffer_allocator>()).get());
+        allocators.emplace(mem_data, allocator_holders.emplace_back(std::make_unique<first_fit_allocator>()).get());
+    }
+    else
+    {
+        throw std::runtime_error(std::string("Allocators for module ") + "[" + type.data() + "] is not found");
+    }
 }
 
 void neutral_target::register_evaluator_ops()
@@ -143,37 +151,40 @@ void neutral_target::fold_dilated_conv_transform(ir::transforms::pass &pass, [[m
     pass.emplace<fold_dilated_conv2d>();
 }
 
-void neutral_target::register_target_independent_passes(ir::transforms::pass_manager &pass_mgr)
+void neutral_target::register_target_independent_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr)
 {
     using namespace nncase::ir;
     using namespace nncase::ir::transforms;
 
-    //fold_pad_conv
+    if (type == runtime::stackvm::stackvm_module_type)
     {
-        pass p("fold_pad_conv");
-        fold_pad_conv_transform(p, true);
-        pass_mgr.add_pass(std::move(p));
-    }
-    //fold_dilated_conv
-    {
-        pass p("fold_dilated_conv");
-        fold_dilated_conv_transform(p, true);
-        pass_mgr.add_pass(std::move(p));
-    }
+        //fold_pad_conv
+        {
+            pass p("fold_pad_conv");
+            fold_pad_conv_transform(p, true);
+            pass_mgr.add_pass(std::move(p));
+        }
+        //fold_dilated_conv
+        {
+            pass p("fold_dilated_conv");
+            fold_dilated_conv_transform(p, true);
+            pass_mgr.add_pass(std::move(p));
+        }
 
-    //target_independent_pass
-    {
-        pass p("target_independent_pass");
-        add_default_transforms(p, true);
-        pass_mgr.add_pass(std::move(p));
+        //target_independent_pass
+        {
+            pass p("target_independent_pass");
+            add_default_transforms(p, true);
+            pass_mgr.add_pass(std::move(p));
+        }
     }
 }
 
-void neutral_target::register_target_dependent_passes([[maybe_unused]] ir::transforms::pass_manager &pass_mgr)
+void neutral_target::register_target_dependent_passes([[maybe_unused]] const module_type_t &type, [[maybe_unused]] ir::transforms::pass_manager &pass_mgr)
 {
 }
 
-void neutral_target::register_allocation_passes([[maybe_unused]] ir::transforms::pass_manager &pass_mgr)
+void neutral_target::register_allocation_passes([[maybe_unused]] const module_type_t &type, [[maybe_unused]] ir::transforms::pass_manager &pass_mgr)
 {
 }
 

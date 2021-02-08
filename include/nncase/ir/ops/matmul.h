@@ -18,7 +18,7 @@
 
 namespace nncase::ir
 {
-class matmul : public node
+class NNCASE_API matmul : public node
 {
 public:
     DEFINE_NODE_OPCODE(op_matmul);

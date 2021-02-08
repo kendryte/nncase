@@ -18,7 +18,7 @@
 
 namespace nncase::ir
 {
-class clamp : public node
+class NNCASE_API clamp : public node
 {
 public:
     DEFINE_NODE_OPCODE(op_clamp);

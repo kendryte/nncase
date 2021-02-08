@@ -18,7 +18,7 @@
 
 namespace nncase::ir
 {
-class reduce : public node
+class NNCASE_API reduce : public node
 {
 public:
     DEFINE_NODE_OPCODE(op_reduce);

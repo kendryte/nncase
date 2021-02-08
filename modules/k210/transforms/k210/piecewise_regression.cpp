@@ -12,9 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <hlir/transforms/k210/piecewise_regression.h>
+#include <nncase/transforms/k210/piecewise_regression.h>
 
-using namespace nncase::hlir::transforms::k210;
+using namespace nncase::ir::transforms::k210;
 
 piecewise_regression::piecewise_regression(size_t segments_count)
     : desired_segments_count_(segments_count)

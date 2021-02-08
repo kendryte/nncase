@@ -4,6 +4,7 @@ set(SRCS connectors.cpp
          node.cpp
          graph.cpp
          debug.cpp
+         placeholders.cpp
          visitor.cpp)
 
 add_library(ir OBJECT ${SRCS})

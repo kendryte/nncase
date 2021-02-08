@@ -18,7 +18,7 @@
 
 namespace nncase::ir
 {
-class take : public node
+class NNCASE_API take : public node
 {
 public:
     DEFINE_NODE_OPCODE(op_take);

@@ -131,6 +131,10 @@ void ir::dump_graph(const graph &src_graph, const std::filesystem::path &dst_pat
         }
     }
 
-    std::ofstream ofile(dst_path / "main.nnir.pb", std::ios::out | std::ios::binary);
+    auto filename = dst_path / (src_graph.name() + ".nnir.pb");
+    auto dirname = filename.parent_path();
+    if (!std::filesystem::exists(dirname))
+        std::filesystem::create_directories(dirname);
+    std::ofstream ofile(filename, std::ios::out | std::ios::binary);
     model.SerializeToOstream(&ofile);
 }

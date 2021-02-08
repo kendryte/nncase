@@ -240,6 +240,8 @@ typedef enum _image_resize_mode
 
 typedef struct _quant_param
 {
+    _quant_param(int64_t zero_point, float scale)
+        : zero_point(1, zero_point), scale(1, scale) { }
     _quant_param(const std::vector<int64_t> &zero_point, const std::vector<float> &scale)
         : zero_point(zero_point), scale(scale) { }
     _quant_param() = default;
@@ -276,13 +278,11 @@ struct fixed_mul
     int32_t rounded_mul() const noexcept { return (int32_t)roundf(mul); }
 };
 
-typedef enum _memory_location
-{
-    mem_input,
-    mem_output,
-    mem_rdata,
-    mem_data
-} memory_location_t;
+using memory_location_t = uint8_t;
+NNCASE_INLINE_VAR constexpr memory_location_t mem_input = 0;
+NNCASE_INLINE_VAR constexpr memory_location_t mem_output = 1;
+NNCASE_INLINE_VAR constexpr memory_location_t mem_rdata = 2;
+NNCASE_INLINE_VAR constexpr memory_location_t mem_data = 3;
 
 using runtime_shape_t = xt::svector<size_t, 4>;
 using runtime_paddings_t = xt::svector<padding, 4>;

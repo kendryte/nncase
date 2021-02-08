@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 #pragma once
-#include "../transform.h"
+#include <nncase/transforms/transform.h>
 
-namespace nncase::hlir::transforms::k210
+namespace nncase::ir::transforms::k210
 {
 class fuse_kpu_download_transform : public transform
 {
@@ -24,6 +24,6 @@ public:
 
 protected:
     bool skip_self_contained_check() const noexcept override { return true; }
-    bool on_try_match(hlir::node &node, transform_context &context) override;
+    bool on_try_match(ir::node &node, transform_context &context) override;
 };
 }

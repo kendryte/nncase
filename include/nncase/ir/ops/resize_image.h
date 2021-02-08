@@ -18,7 +18,7 @@
 
 namespace nncase::ir
 {
-class resize_image : public node
+class NNCASE_API resize_image : public node
 {
 public:
     DEFINE_NODE_OPCODE(op_resize_image);

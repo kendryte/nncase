@@ -19,7 +19,7 @@
 
 namespace nncase::ir
 {
-class constant : public node
+class NNCASE_API constant : public node
 {
 public:
     DEFINE_NODE_OPCODE(op_constant);

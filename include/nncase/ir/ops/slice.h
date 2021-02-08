@@ -18,7 +18,7 @@
 
 namespace nncase::ir
 {
-class slice : public node
+class NNCASE_API slice : public node
 {
 public:
     DEFINE_NODE_OPCODE(op_slice);

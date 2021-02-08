@@ -18,7 +18,7 @@
 
 namespace nncase::ir
 {
-class call : public node
+class NNCASE_API call : public node
 {
 public:
     DEFINE_NODE_OPCODE(op_call);

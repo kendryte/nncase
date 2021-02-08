@@ -56,7 +56,7 @@ namespace ir
             std::string name_;
         };
 
-        void link(ir::output_connector &old_c, ir::output_connector &new_c, ir::quantizer *quantizer = nullptr);
+        NNCASE_API void link(ir::output_connector &old_c, ir::output_connector &new_c, ir::quantizer *quantizer = nullptr);
     }
 }
 }

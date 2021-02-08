@@ -126,9 +126,9 @@ struct fused_unary_op
     }
 };
 
-std::vector<fused_unary_op> concat_subgraph(const std::vector<fused_unary_op> &src1, const std::vector<fused_unary_op> &src2);
+NNCASE_API std::vector<fused_unary_op> concat_subgraph(const std::vector<fused_unary_op> &src1, const std::vector<fused_unary_op> &src2);
 
-class fused_unary : public node
+class NNCASE_API fused_unary : public node
 {
 public:
     static void compile_graph(const std::vector<fused_unary_op> &subgraph, codegen::nnil_builder &builder);

@@ -18,7 +18,7 @@
 
 namespace nncase::ir
 {
-class binary : public node
+class NNCASE_API binary : public node
 {
 public:
     DEFINE_NODE_OPCODE(op_binary);

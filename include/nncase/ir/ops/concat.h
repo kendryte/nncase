@@ -18,7 +18,7 @@
 
 namespace nncase::ir
 {
-class concat : public node
+class NNCASE_API concat : public node
 {
 public:
     DEFINE_NODE_OPCODE(op_concat);

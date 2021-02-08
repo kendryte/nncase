@@ -31,6 +31,7 @@ namespace nncase::schedule
 {
 struct schedule_context : module_schedule_result
 {
+    module_type_t module_type;
     std::span<ir::output_node *> outputs;
     std::unordered_map<const ir::output_connector *, logical_buffer> logical_buffers;
     std::vector<physical_buffer> physical_buffers;
@@ -303,7 +304,7 @@ void schedule_context::allocate_physical_buffers(target &target)
 {
     allocator_map_t allocators;
     std::vector<std::unique_ptr<buffer_allocator>> allocator_holder;
-    target.register_allocators(allocators, allocator_holder);
+    target.register_allocators(module_type, allocators, allocator_holder);
 
     for (auto &usage_p : max_usages)
     {
@@ -372,8 +373,9 @@ void schedule_context::assign_allocations()
 
 schedule_result scheduler::schedule()
 {
-    auto schedule_module = [&](std::span<ir::output_node *> outputs, module_schedule_result &result) {
+    auto schedule_module = [&](const module_type_t &module_type, std::span<ir::output_node *> outputs, module_schedule_result &result) {
         schedule_context context;
+        context.module_type = module_type;
         context.outputs = outputs;
 
         context.make_logical_buffers();
@@ -391,11 +393,11 @@ schedule_result scheduler::schedule()
     result.main_module = &main_graph_;
 
     // 1. main graph
-    schedule_module(outputs_, result.modules[result.main_module]);
+    schedule_module(result.main_module->module_type(), outputs_, result.modules[result.main_module]);
 
     // 2. subgraphs
     for (auto &subgraph : main_graph_.subgraphs())
-        schedule_module(subgraph->outputs(), result.modules[subgraph.get()]);
+        schedule_module(subgraph->module_type(), subgraph->outputs(), result.modules[subgraph.get()]);
 
     return result;
 }

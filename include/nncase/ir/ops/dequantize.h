@@ -18,7 +18,7 @@
 
 namespace nncase::ir
 {
-class dequantize : public node
+class NNCASE_API dequantize : public node
 {
 public:
     DEFINE_NODE_OPCODE(op_dequantize);

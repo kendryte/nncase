@@ -18,7 +18,7 @@
 
 namespace nncase::ir
 {
-class convert : public node
+class NNCASE_API convert : public node
 {
 public:
     DEFINE_NODE_OPCODE(op_convert);

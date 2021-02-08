@@ -18,7 +18,7 @@
 
 namespace nncase::ir
 {
-class bitcast : public node
+class NNCASE_API bitcast : public node
 {
 public:
     DEFINE_NODE_OPCODE(op_bitcast);

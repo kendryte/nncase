@@ -18,7 +18,7 @@
 
 namespace nncase::ir
 {
-class space_to_batch : public node
+class NNCASE_API space_to_batch : public node
 {
 public:
     DEFINE_NODE_OPCODE(op_space_to_batch);

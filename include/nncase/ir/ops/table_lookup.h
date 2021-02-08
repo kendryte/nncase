@@ -18,7 +18,7 @@
 
 namespace nncase::ir
 {
-class table_lookup1d : public node
+class NNCASE_API table_lookup1d : public node
 {
 public:
     DEFINE_NODE_OPCODE(op_table_lookup1d);

@@ -21,11 +21,11 @@
 #include <nncase/ir/ops/k210/kpu_data_exchange.h>
 #include <nncase/ir/ops/quantize.h>
 #include <nncase/ir/visitor.h>
+#include <nncase/kernels/nnil.h>
 #include <nncase/runtime/k210/runtime_op_utility.h>
 #include <nncase/transforms/k210/kpu_conv2d.h>
 #include <nncase/transforms/k210/piecewise_regression.h>
 #include <xtensor/xview.hpp>
-#include <nncase/kernels/>
 
 using namespace nncase;
 using namespace nncase::codegen;
@@ -75,7 +75,7 @@ auto quantize_act(quantizer &quantizer, float act_in_scale, const quant_param_t 
     const auto xf_max = std::clamp((255 - yq_p.zero_point[0]) / yq_p.scale[0], activation.min, activation.max);
     const auto zq_scale = act_in_scale / zq_p.scale[0];
 
-    const auto samples_count = 1024;
+    const size_t samples_count = 1024;
     const auto sample_step = (xf_max - xf_min) / (samples_count - 1);
     std::array<float, samples_count> samples_x, samples_y;
     for (int32_t i = 0; i < samples_count; i++)
@@ -90,8 +90,8 @@ auto quantize_act(quantizer &quantizer, float act_in_scale, const quant_param_t 
 
         fused_unary::compile_graph(fu->subgraph(), builder);
         auto buf = ss.str();
-        std::vector<uint8_t> body(reinterpret_cast<uint8_t *>(buf.data()), reinterpret_cast<uint8_t *>(buf.data() + buf.size()));
-        kernels::neutral::nnil_unary_method(samples_x.data(), samples_y.data(), samples_count, body);
+        std::vector<gsl::byte> body(reinterpret_cast<gsl::byte *>(buf.data()), reinterpret_cast<gsl::byte *>(buf.data() + buf.size()));
+        kernels::nnil_unary_method(samples_x.data(), samples_y.data(), samples_count, body).unwrap_or_throw();
     }
 
     // 2. Piecewise regression
@@ -138,7 +138,7 @@ auto quantize_bn(quantizer &quantizer, fake_kpu_conv2d &conv, float sa, const st
     {
         auto b = bias[i];
         auto ch_so = so * post_mul / w_scales[i];
-        auto ch_bn_mul = quantizer.get_fixed_mul(ch_so, 22, 15, true);
+        auto ch_bn_mul = quantizer.get_fixed_mul((float)ch_so, 22, 15, true);
         bn[i] = {
             ch_bn_mul.rounded_mul(),
             ch_bn_mul.shift,
@@ -192,20 +192,20 @@ void kpu_conv2d_transform::process(transform_context &context)
     auto zq_p = quantizer_.get_quant_param(quantizer_.get(*context.outputs[0]), 8);
     auto sa = iq_p.scale[0] * wq_p.scale[0];
     auto [bn, s_act_in] = quantize_bn(quantizer_, old_conv, sa, w_scales, yq_p);
-    auto act = quantize_act(quantizer_, s_act_in, yq_p, zq_p, old_conv.fused_activation(), old_fu);
+    auto act = quantize_act(quantizer_, (float)s_act_in, yq_p, zq_p, old_conv.fused_activation(), old_fu);
     auto filter = get_kpu_filter_size(old_conv.filter_type());
 
-    auto q = context.graph.emplace<quantize>(output.shape(), iq_p);
+    auto q = context.graph.emplace<quantize>(output.shape(), dt_uint8, iq_p);
     q->name(output.owner().name() + "/quantize");
     auto upload = context.graph.emplace<kpu_upload>(q->output().shape());
     upload->name(output.owner().name() + "/kpu_upload");
     auto conv = context.graph.emplace<kpu_conv2d>(false, upload->output().shape(), old_conv.is_depthwise(), old_conv.filter_type(), old_conv.pool_type(),
-        std::move(q_weights), (uint8_t)iq_p.zero_point[0], -wq_p.zero_point[0], 0, -iq_p.zero_point[0], 0, (int64_t)filter * filter * wq_p.zero_point[0] * iq_p.zero_point[0],
+        std::move(q_weights), (uint8_t)iq_p.zero_point[0], (int32_t)-wq_p.zero_point[0], 0, (int32_t)-iq_p.zero_point[0], 0, (int64_t)filter * filter * wq_p.zero_point[0] * iq_p.zero_point[0],
         std::move(bn), std::move(act));
     conv->name(old_conv.name());
     auto download = context.graph.emplace<kpu_download>(conv->kpu_output().shape());
     upload->name(old_conv.name() + "/kpu_download");
-    auto deq = context.graph.emplace<dequantize>(download->output().shape(), zq_p);
+    auto deq = context.graph.emplace<dequantize>(download->output().type(), download->output().shape(), zq_p);
     deq->name(old_conv.name() + "/dequantize");
     link(*context.outputs[0], deq->output(), &quantizer_);
 

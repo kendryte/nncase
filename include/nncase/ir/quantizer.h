@@ -15,7 +15,6 @@
 #pragma once
 #include <cassert>
 #include <nncase/ir/graph.h>
-#include <nncase/schedule/scheduler.h>
 #include <unordered_map>
 #include <unordered_set>
 

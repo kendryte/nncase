@@ -18,7 +18,7 @@
 
 namespace nncase::ir
 {
-class pad : public node
+class NNCASE_API pad : public node
 {
 public:
     DEFINE_NODE_OPCODE(op_pad);

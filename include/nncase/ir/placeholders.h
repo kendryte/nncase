@@ -55,6 +55,7 @@ class NNCASE_API ignore_node : public node
 {
 public:
     DEFINE_NODE_OPCODE(op_ignore_node);
+    ~ignore_node() = default;
 
     input_connector &input() { return input_at(0); }
 

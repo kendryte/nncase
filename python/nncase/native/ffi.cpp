@@ -235,12 +235,6 @@ PYBIND11_MODULE(_nncase, m)
             return py::bytes(ss.str());
         });
 
-    py::enum_<memory_location_t>(m, "MemoryLocation")
-        .value("Input", mem_input)
-        .value("Output", mem_output)
-        .value("Data", mem_data)
-        .value("Rdata", mem_rdata);
-
     py::class_<memory_range>(m, "MemoryRange")
         .def_readwrite("location", &memory_range::memory_location)
         .def_property(

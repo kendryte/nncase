@@ -14,4 +14,4 @@
 #
 """NNCase."""
 from . import base
-from _nncase import Compiler, CompileOptions, ImportOptions, MemoryLocation, MemoryRange, RuntimeTensor, Simulator
+from _nncase import Compiler, CompileOptions, ImportOptions, MemoryRange, RuntimeTensor, Simulator

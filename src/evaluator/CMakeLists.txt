@@ -1,6 +1,7 @@
 ﻿cmake_minimum_required (VERSION 3.8)
 
 set(SRCS evaluator.cpp
+         quantizer.cpp
          ops/neutral/neutral_ops.cpp)
 
 add_library(evaluator OBJECT ${SRCS})
