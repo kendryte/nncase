@@ -35,7 +35,7 @@ public:
 
     pass &operator=(pass &) = delete;
 
-    void run(graph &graph, nncase::target &target, std::optional<std::filesystem::path> &dump_dir);
+    void run(graph &graph, nncase::target &target, ir::quantizer *quantizer, std::optional<std::filesystem::path> &dump_dir);
 
     template <class T, class... TArgs>
     transform *emplace(TArgs &&... args)
@@ -54,18 +54,20 @@ class NNCASE_API pass_manager
 {
 public:
     pass_manager(graph &graph, nncase::target &target)
-        : graph_(graph), target_(target) { }
+        : graph_(graph), target_(target), quantizer_(nullptr) { }
     pass_manager(pass_manager &) = delete;
 
     void add_pass(pass &&pass);
     void run();
 
     void dump_dir(const std::filesystem::path &dir);
+    void quantizer(ir::quantizer *q);
 
 private:
     std::vector<pass> passes_;
     graph &graph_;
     nncase::target &target_;
+    ir::quantizer *quantizer_;
     std::optional<std::filesystem::path> dump_dir_;
 };
 }

@@ -373,9 +373,10 @@ void schedule_context::assign_allocations()
 
 schedule_result scheduler::schedule()
 {
-    auto schedule_module = [&](const module_type_t &module_type, std::span<ir::output_node *> outputs, module_schedule_result &result) {
+    auto schedule_module = [&](ir::graph &graph, std::span<ir::output_node *> outputs, module_schedule_result &result) {
         schedule_context context;
-        context.module_type = module_type;
+        context.graph = &graph;
+        context.module_type = graph.module_type();
         context.outputs = outputs;
 
         context.make_logical_buffers();
@@ -393,11 +394,11 @@ schedule_result scheduler::schedule()
     result.main_module = &main_graph_;
 
     // 1. main graph
-    schedule_module(result.main_module->module_type(), outputs_, result.modules[result.main_module]);
+    schedule_module(*result.main_module, outputs_, result.modules[result.main_module]);
 
     // 2. subgraphs
     for (auto &subgraph : main_graph_.subgraphs())
-        schedule_module(subgraph->module_type(), subgraph->outputs(), result.modules[subgraph.get()]);
+        schedule_module(*subgraph, subgraph->outputs(), result.modules[subgraph.get()]);
 
     return result;
 }

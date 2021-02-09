@@ -16,6 +16,7 @@
 #include <cassert>
 #include <nncase/ir/graph.h>
 #include <nncase/ir/op_utils.h>
+#include <nncase/ir/quantizer.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/runtime/runtime_tensor.h>
 #include <nncase/schedule/scheduler.h>
@@ -24,6 +25,8 @@
 
 namespace nncase::ir
 {
+class quantizer;
+
 class NNCASE_API module_evaluate_context
 {
 public:
@@ -48,6 +51,10 @@ public:
         return memory_at(*outputs_[index]);
     }
 
+    ir::quantizer *quantizer() noexcept { return quantizer_.get(); }
+
+    void enable_ptq(target &target);
+    void end_ptq();
     void evaluate();
 
 private:
@@ -56,6 +63,7 @@ private:
 
     std::vector<output_connector *> inputs_;
     std::vector<input_connector *> outputs_;
+    std::unique_ptr<ir::quantizer> quantizer_;
 };
 
 class NNCASE_API evaluator
@@ -63,9 +71,13 @@ class NNCASE_API evaluator
 public:
     evaluator(const schedule::schedule_result &sched);
     evaluator(evaluator &) = delete;
+    evaluator(evaluator &&) = default;
 
     module_evaluate_context &module_context(ir::graph &graph);
     module_evaluate_context &main_module_context();
+
+    void enable_ptq(target &target);
+    void end_ptq();
     void evaluate();
 
     runtime::runtime_tensor memory_at(const output_connector &conn);

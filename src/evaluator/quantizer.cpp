@@ -85,6 +85,11 @@ void quantizer::set(ir::output_connector &connector, value_range<float> range)
     quant_ranges_[&connector] = range;
 }
 
+bool quantizer::has_record(ir::output_connector &connector) const noexcept
+{
+    return quant_ranges_.contains(&connector) || histograms_.contains(&connector);
+}
+
 void quantizer::record(output_connector &connector, xtl::span<const float> data)
 {
     switch (stage_)

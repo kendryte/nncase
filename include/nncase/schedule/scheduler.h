@@ -54,6 +54,7 @@ namespace schedule
 
     struct module_schedule_result
     {
+        ir::graph *graph;
         std::vector<ir::node *> compute_sequence;
         std::unordered_map<memory_location_t, size_t> max_usages;
         allocation_map_t allocations;

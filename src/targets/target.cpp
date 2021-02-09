@@ -35,7 +35,7 @@ void target::register_quantize_annotation_passes([[maybe_unused]] const module_t
 {
 }
 
-void target::register_quantize_passes([[maybe_unused]] const module_type_t &type, [[maybe_unused]] ir::quantizer &quantizer, [[maybe_unused]] ir::transforms::pass_manager &pass_mgr)
+void target::register_quantize_passes([[maybe_unused]] const module_type_t &type, [[maybe_unused]] ir::transforms::pass_manager &pass_mgr)
 {
 }
 

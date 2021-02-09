@@ -16,6 +16,7 @@
 #include <nncase/ir/evaluator.h>
 #include <nncase/ir/op_utils.h>
 #include <nncase/ir/ops/constant.h>
+#include <nncase/targets/target.h>
 
 using namespace nncase;
 using namespace nncase::ir;
@@ -44,7 +45,7 @@ void nncase::ir::register_evaluator(ir::node_opcode opcode, std::function<void(i
 }
 
 module_evaluate_context::module_evaluate_context(const module_schedule_result &sched)
-    : sched_(sched)
+    : sched_(sched), quantizer_(nullptr)
 {
     for (auto &&usage : sched.max_usages)
         memory_pools_.emplace(usage.first, std::make_unique<std::byte[]>(usage.second));
@@ -78,6 +79,18 @@ runtime_tensor module_evaluate_context::memory_at(const output_connector &conn)
     return host_runtime_tensor::create(alloc.type, alloc.shape, alloc.strides, buffer, false).unwrap_or_throw();
 }
 
+void module_evaluate_context::enable_ptq(target &target)
+{
+    quantizer_ = target.create_quantizer(sched_.graph->module_type());
+    quantizer_->begin_collect_distribution();
+}
+
+void module_evaluate_context::end_ptq()
+{
+    // TODO
+    //quantizer_->end_collect_distribution();
+}
+
 void module_evaluate_context::evaluate()
 {
     using clock = chrono::high_resolution_clock;
@@ -91,6 +104,20 @@ void module_evaluate_context::evaluate()
         evaluator(*node, *this);
         auto duration = clock::now() - start;
         total_duration += duration;
+
+        if (quantizer_)
+        {
+            for (auto in : node->inputs())
+            {
+                auto out = in->connection();
+                if (!quantizer_->has_record(*out))
+                {
+                    auto mem = memory_at(*out);
+                    auto buffer = host_runtime_tensor::buffer(mem).unwrap_or_throw().as_span<float>();
+                    quantizer_->record(*out, buffer);
+                }
+            }
+        }
 #if PROFILE
         std::cout << node_opcode_names(node->runtime_opcode()) << ": " << duration.count() / 1e6 << "ms" << std::endl;
 #endif
@@ -121,6 +148,18 @@ module_evaluate_context &evaluator::main_module_context()
 runtime_tensor evaluator::memory_at(const output_connector &conn)
 {
     return main_module_context().memory_at(conn);
+}
+
+void evaluator::enable_ptq(target &target)
+{
+    for (auto &module_p : module_ctxs_)
+        module_p.second.enable_ptq(target);
+}
+
+void evaluator::end_ptq()
+{
+    for (auto &module_p : module_ctxs_)
+        module_p.second.end_ptq();
 }
 
 void evaluator::evaluate()

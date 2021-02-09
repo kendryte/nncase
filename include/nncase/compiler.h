@@ -48,6 +48,13 @@ struct ptq_dataset_options
     float input_std = 1.f;
 };
 
+struct ptq_tensor_options
+{
+    std::vector<gsl::byte> tensor_data;
+    size_t samples_count;
+    std::function<void(size_t cnt, size_t total)> progress;
+};
+
 class NNCASE_API compiler
 {
 public:
@@ -55,7 +62,7 @@ public:
 
     virtual ~compiler();
     virtual void import_tflite(std::span<const uint8_t> model, const import_options &options) = 0;
-    virtual void use_ptq(const ptq_dataset_options &options) = 0;
+    virtual void use_ptq(ptq_dataset_options options) = 0;
     virtual void compile() = 0;
     virtual void gencode(std::ostream &output) = 0;
 };

@@ -99,6 +99,7 @@ public:
 
     void record(ir::output_connector &connector, value_range<float> range);
     void set(ir::output_connector &connector, value_range<float> range);
+    bool has_record(ir::output_connector &connector) const noexcept;
     void record(ir::output_connector &connector, xtl::span<const float> data);
     value_range<float> get(ir::output_connector &connector) const;
     void broadcast_output(ir::graph &graph, const std::unordered_set<node_opcode> &ops);

@@ -29,6 +29,7 @@ class transform_apply_visitor : public dfs_ir_visitor
 public:
     using dfs_ir_visitor::visit;
     ir::graph *graph;
+    ir::quantizer *quantizer;
     nncase::target *target;
     std::optional<std::filesystem::path> *dump_dir;
     bool need_retry = false;
@@ -37,7 +38,7 @@ public:
 protected:
     bool visit(node &node) override
     {
-        transform_context context { *graph, *target, *dump_dir };
+        transform_context context { *graph, *target, quantizer, *dump_dir };
         if (transform->try_match(node, context))
         {
             transform->process(context);
@@ -50,12 +51,13 @@ protected:
 };
 }
 
-void pass::run(graph &graph, target &target, std::optional<std::filesystem::path> &dump_dir)
+void pass::run(graph &graph, target &target, ir::quantizer *quantizer, std::optional<std::filesystem::path> &dump_dir)
 {
     transform_apply_visitor visitor;
     visitor.graph = &graph;
     visitor.target = &target;
     visitor.dump_dir = &dump_dir;
+    visitor.quantizer = quantizer;
     bool next_pass = false;
 
     do
@@ -89,11 +91,16 @@ void pass_manager::dump_dir(const std::filesystem::path &dir)
     dump_dir_ = dir;
 }
 
+void pass_manager::quantizer(ir::quantizer *q)
+{
+    quantizer_ = q;
+}
+
 void pass_manager::run()
 {
     for (auto &&pass : passes_)
     {
-        pass.run(graph_, target_, dump_dir_);
+        pass.run(graph_, target_, quantizer_, dump_dir_);
         graph_.cse();
         if (dump_dir_)
         {

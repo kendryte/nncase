@@ -31,6 +31,7 @@ namespace ir
         {
             ir::graph &graph;
             nncase::target &target;
+            ir::quantizer *quantizer;
             std::optional<std::filesystem::path> dump_dir;
             std::vector<node *> matched_nodes;
             std::vector<input_connector *> inputs;

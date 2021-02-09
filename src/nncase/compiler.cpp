@@ -16,12 +16,16 @@
 #include <magic_enum.hpp>
 #include <nncase/codegen/model_builder.h>
 #include <nncase/compiler.h>
+#include <nncase/data/dataset.h>
 #include <nncase/importer/importer.h>
 #include <nncase/io_utils.h>
 #include <nncase/ir/debug.h>
+#include <nncase/ir/evaluator.h>
 #include <nncase/transforms/pass.h>
 
 using namespace nncase;
+using namespace nncase::data;
+using namespace nncase::runtime;
 
 namespace
 {
@@ -82,8 +86,10 @@ public:
         END_IMPORT()
     }
 
-    void use_ptq(const ptq_dataset_options &options) override
+    void use_ptq(ptq_dataset_options options) override
     {
+        ptq_options_ = std::move(options);
+        use_ptq_ = true;
     }
 
     void compile() override
@@ -93,6 +99,21 @@ public:
 
         std::cout << "3. Optimize target dependent..." << std::endl;
         optimize_target_dependent(graph_);
+
+        if (use_ptq_)
+        {
+            std::cout << "4.1. Add quantize annotation..." << std::endl;
+            add_quantize_annotation(graph_);
+
+            std::cout << "4.2. Run calibration..." << std::endl;
+            auto evaluator = run_calibration(graph_);
+
+            std::cout << "4.3. Find optimal quantization ranges..." << std::endl;
+            evaluator.end_ptq();
+
+            std::cout << "4.3. Quantize graph..." << std::endl;
+            quantize_graph(graph_, evaluator);
+        }
     }
 
     void gencode(std::ostream &output) override
@@ -130,6 +151,82 @@ private:
         run_passes("target_dep", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr) {
             target_->register_target_dependent_passes(module_type, pmgr);
         });
+    }
+
+    void add_quantize_annotation(ir::graph &graph)
+    {
+        run_passes("quantize_annotation", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr) {
+            target_->register_quantize_annotation_passes(module_type, pmgr);
+        });
+    }
+
+    void quantize_graph(ir::graph &graph, ir::evaluator &evaluator)
+    {
+        auto graph_runner = [&](ir::graph &graph) {
+            ir::transforms::pass_manager pmgr(graph, *target_);
+            pmgr.quantizer(evaluator.module_context(graph).quantizer());
+            if (compile_options_.dump_ir)
+                pmgr.dump_dir(compile_options_.dump_dir);
+            target_->register_quantize_passes(graph.module_type(), pmgr);
+            pmgr.run();
+            dump_graph(graph, "quantize");
+        };
+
+        graph_runner(graph);
+        for (auto &subgraph : graph.subgraphs())
+            graph_runner(*subgraph);
+    }
+
+    ir::evaluator run_calibration(ir::graph &graph)
+    {
+        schedule::scheduler sched(*target_, graph, graph.outputs());
+        auto sched_result = sched.schedule();
+        ir::evaluator evaluator(sched_result);
+        evaluator.enable_ptq(*target_);
+
+        if (graph.inputs().size() != 1)
+            throw std::invalid_argument("PTQ only support models that have single 1 input");
+
+        auto &in_shape = graph.inputs()[0]->output().shape();
+        xt::dynamic_shape<size_t> dataset_in_shape(in_shape.begin(), in_shape.end());
+        std::unique_ptr<dataset> ds;
+        if (ptq_options_.dataset_format == "image")
+            ds = std::make_unique<image_dataset>(ptq_options_.dataset, dataset_in_shape, ptq_options_.input_mean, ptq_options_.input_std);
+        else if (ptq_options_.dataset_format == "raw")
+            ds = std::make_unique<raw_dataset>(ptq_options_.dataset, dataset_in_shape, ptq_options_.input_mean, ptq_options_.input_std);
+        else
+            throw std::runtime_error("Invalid calibration dataset format: " + ptq_options_.dataset_format);
+
+        auto in_type = graph.inputs()[0]->output().type();
+        switch (in_type)
+        {
+        case dt_float32:
+            run_calibration_eval<float>(*ds, evaluator);
+            break;
+        case dt_uint8:
+            run_calibration_eval<uint8_t>(*ds, evaluator);
+            break;
+        default:
+            throw std::runtime_error("Unsupported input datatype: " + std::string(datatype_names(in_type)));
+        }
+
+        return evaluator;
+    }
+
+    template <class T>
+    void run_calibration_eval(dataset &dataset, ir::evaluator &evaluator)
+    {
+        size_t i = 0;
+        for (auto it = dataset.begin<T>(); it != dataset.end<T>(); ++it)
+        {
+            auto input_buffer = host_runtime_tensor::buffer(evaluator.input_at(0)).unwrap_or_throw();
+            auto &tensor = it->tensor;
+            std::memcpy(input_buffer.data(), tensor.data(), input_buffer.size_bytes());
+
+            evaluator.evaluate();
+            if (ptq_options_.progress)
+                ptq_options_.progress(i, dataset.total_size());
+        }
     }
 
     template <class Callable>
@@ -179,6 +276,8 @@ private:
     ir::graph graph_;
     compile_options compile_options_;
     target_options target_options_;
+    ptq_dataset_options ptq_options_;
+    bool use_ptq_ = false;
     std::unique_ptr<target> target_;
 };
 }
