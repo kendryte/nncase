@@ -147,6 +147,7 @@ namespace IsaGen
         BATCH_TO_SPACE,
         BINARY,
         BROADCAST,
+        CALL,
         CLAMP,
         CONCAT,
         CONV2D,
@@ -1137,6 +1138,26 @@ namespace IsaGen
             [DisplayName("fused_clamp_high")]
             [Description("FusedClampHigh")]
             public float FusedClampHigh { get; set; }
+        }
+
+        [DisplayName("TENSOR.CALL")]
+        [Category("Tensor Instructions")]
+        [Description("Call")]
+        public class CallInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.CALL;
+
+            [DisplayName("module_id")]
+            [Description("Module Id")]
+            public uint ModuleId { get; set; }
+
+            [DisplayName("num_src")]
+            [Description("Source count")]
+            public byte SrcCount { get; set; }
+
+            [DisplayName("num_dst")]
+            [Description("Dest count")]
+            public byte DstCount { get; set; }
         }
 
         [DisplayName("TENSOR.CONCAT")]

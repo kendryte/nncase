@@ -50,7 +50,7 @@ struct ptq_dataset_options
 
 struct ptq_tensor_options
 {
-    std::vector<gsl::byte> tensor_data;
+    std::vector<uint8_t> tensor_data;
     size_t samples_count;
     std::function<void(size_t cnt, size_t total)> progress;
 };
@@ -63,6 +63,7 @@ public:
     virtual ~compiler();
     virtual void import_tflite(std::span<const uint8_t> model, const import_options &options) = 0;
     virtual void use_ptq(ptq_dataset_options options) = 0;
+    virtual void use_ptq(ptq_tensor_options options) = 0;
     virtual void compile() = 0;
     virtual void gencode(std::ostream &output) = 0;
 };

@@ -1,6 +1,7 @@
 DEFINE_OP(batch_to_space)
 DEFINE_OP(binary)
 DEFINE_OP(broadcast)
+DEFINE_OP(call)
 DEFINE_OP(conv2d)
 DEFINE_OP(reduce)
 DEFINE_OP(transpose)

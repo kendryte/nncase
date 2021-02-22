@@ -5,6 +5,7 @@ set(SRCS module_builder.cpp
          ops/batch_to_space.cpp
          ops/binary.cpp
          ops/broadcast.cpp
+         ops/call.cpp
          ops/conv2d.cpp
          ops/reduce.cpp
          ops/transpose.cpp

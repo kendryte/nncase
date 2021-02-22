@@ -13,11 +13,12 @@
  * limitations under the License.
  */
 #pragma once
+#include <nncase/runtime/k210/compiler_defs.h>
 #include <nncase/transforms/transform.h>
 
 namespace nncase::ir::transforms::k210
 {
-class fuse_kpu_download_transform : public transform
+class NNCASE_MODULES_K210_API fuse_kpu_download_transform : public transform
 {
 public:
     void process(transform_context &context) override;

@@ -37,8 +37,8 @@ namespace
 std::unordered_set<node_opcode> non_runtime_opcodes { op_input_node, op_output_node, op_uninitialized, op_ignore_node, op_constant };
 }
 
-module_builder::module_builder(uint32_t alignment, std::string_view module_name, const schedule::module_schedule_result &sched)
-    : alignment_(alignment), module_name_(module_name), sched_(sched), dump_asm_(false)
+module_builder::module_builder(uint32_t alignment, std::string_view module_name, const module_builder_params &params)
+    : alignment_(alignment), module_name_(module_name), params_(params), dump_asm_(false)
 {
 }
 
@@ -50,7 +50,7 @@ void module_builder::config_dump(const std::filesystem::path &dump_dir, bool dum
 
 const schedule::buffer_allocation &module_builder::allocation(ir::output_connector &conn) const
 {
-    return sched_.allocations.at(&conn);
+    return params_.module_sched.allocations.at(&conn);
 }
 
 section_writer &module_builder::writer(std::string_view section_name)
@@ -64,7 +64,7 @@ section_writer &module_builder::writer(std::string_view section_name)
 std::vector<nncase::ir::node *> module_builder::generate_runtime_ops()
 {
     std::vector<nncase::ir::node *> runtime_ops;
-    for (auto &&node : sched_.compute_sequence)
+    for (auto &&node : params_.module_sched.compute_sequence)
     {
         if (!non_runtime_opcodes.contains(node->runtime_opcode()))
             runtime_ops.emplace_back(node);
@@ -83,8 +83,8 @@ std::vector<nncase::ir::node *> module_builder::generate_runtime_ops()
 
 size_t module_builder::max_usage(memory_location_t location) const
 {
-    auto it = sched_.max_usages.find(location);
-    if (it != sched_.max_usages.end())
+    auto it = params_.module_sched.max_usages.find(location);
+    if (it != params_.module_sched.max_usages.end())
         return it->second;
     return 0;
 }
@@ -96,11 +96,11 @@ void module_builder::emit(ir::node &node)
 
 void module_builder::write_constants()
 {
-    auto it = sched_.max_usages.find(mem_rdata);
-    if (it != sched_.max_usages.end())
+    auto it = params_.module_sched.max_usages.find(mem_rdata);
+    if (it != params_.module_sched.max_usages.end())
     {
         auto constants = std::make_unique<std::byte[]>(it->second);
-        for (auto &&node : sched_.compute_sequence)
+        for (auto &&node : params_.module_sched.compute_sequence)
         {
             if (auto con = node_cast<constant>(*node))
             {
@@ -137,6 +137,15 @@ void module_builder::compile()
 void module_builder::merge_to_rdata_section(std::string_view from)
 {
     rdata_section_merges_.emplace(from, std::in_place);
+}
+
+size_t module_builder::module_id(ir::graph *graph)
+{
+    auto &orders = params_.sched.graph_orders;
+    auto it = std::find(orders.begin(), orders.end(), graph);
+    if (it != orders.end())
+        return (size_t)std::distance(orders.begin(), it);
+    throw std::invalid_argument("Can't find graph " + graph->name() + " in modules");
 }
 
 std::unique_ptr<section_decompiler> module_builder::create_decompiler([[maybe_unused]] std::string_view section_name)
@@ -257,7 +266,7 @@ void module_builder::write_binary(binary_writer &writer)
     std::vector<memory_range> outputs;
     std::vector<shape_t> output_shapes;
 
-    for (auto &&node : sched_.compute_sequence)
+    for (auto &&node : params_.module_sched.compute_sequence)
     {
         if (auto in = node_cast<input_node>(*node))
         {
@@ -284,7 +293,7 @@ void module_builder::write_binary(binary_writer &writer)
     };
 
     // mempools
-    for (auto &mem : sched_.max_usages)
+    for (auto &mem : params_.module_sched.max_usages)
     {
         mempool_desc desc {};
         desc.location = mem.first;
@@ -345,7 +354,7 @@ void module_builder::write_binary(binary_writer &writer)
     module_header header {};
     header.type = module_type();
     header.size = (uint32_t)(end_pos - header_pos - sizeof(module_header));
-    header.mempools = (uint32_t)sched_.max_usages.size();
+    header.mempools = (uint32_t)params_.module_sched.max_usages.size();
     header.inputs = (uint32_t)inputs.size();
     header.outputs = (uint32_t)outputs.size();
     header.sections = (uint32_t)section_writer_.size();

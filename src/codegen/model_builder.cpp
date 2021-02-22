@@ -49,14 +49,16 @@ void model_builder::build(std::ostream &output)
     writer.skip(sizeof(header));
 
     uint32_t main_module_id = 0;
-    for (auto &mod : sched_.modules)
+    for (auto &graph : sched_.graph_orders)
     {
-        auto builder = target_.create_module_builder(mod.first->module_type(), mod.first->name(), mod.second);
+        auto &mod = sched_.modules.at(graph);
+        module_builder_params params { sched_, mod };
+        auto builder = target_.create_module_builder(graph->module_type(), graph->name(), params);
         builder->config_dump(dump_dir_, dump_asm_);
         builder->build(writer);
         header.alignment = std::max(header.alignment, builder->alignment());
 
-        if (mod.first == sched_.main_module)
+        if (graph == sched_.main_module)
             header.main_module = main_module_id;
         main_module_id++;
     }

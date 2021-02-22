@@ -113,19 +113,25 @@ def eval_tflite_gth(case_name, tflite):
     return out_len, input
 
 
-def compile_tflite_nncase(case_name, model, targets):
+def compile_tflite_nncase(case_name, model, targets, input, enable_ptq):
     import_options = nncase.ImportOptions()
     compile_options = nncase.CompileOptions()
     compile_options.dump_asm = True
     compile_options.dump_ir = True
     for target in targets:
-        kmodel_dir = os.path.join(output_root, case_name, target)
+        kmodel_dir = os.path.join(
+            output_root, case_name, target, 'ptq' if enable_ptq else 'no_ptq')
         if not os.path.exists(kmodel_dir):
             os.makedirs(kmodel_dir)
         compile_options.target = target
         compile_options.dump_dir = kmodel_dir
         compiler = nncase.Compiler(compile_options)
         compiler.import_tflite(model, import_options)
+        if enable_ptq:
+            ptq_options = nncase.PTQTensorOptions()
+            ptq_options.set_tensor_data(input.tobytes())
+            ptq_options.samples_count = 1
+            compiler.use_ptq(ptq_options)
         compiler.compile()
         kmodel = compiler.gencode_tobytes()
         with open(os.path.join(kmodel_dir, 'test.kmodel'), 'wb') as f:
@@ -153,8 +159,9 @@ def test_tf_module(case_name, module, targets):
     case_dir = os.path.join('./tmp', case_name)
     clear(case_dir)
     tflite = tf_module_to_tflite(case_name, module)
-    compile_tflite_nncase(case_name, tflite, targets)
     out_len, input = eval_tflite_gth(case_name, tflite)
+    compile_tflite_nncase(case_name, tflite, targets, input, enable_ptq=False)
+    compile_tflite_nncase(case_name, tflite, targets, input, enable_ptq=True)
     eval_nncase(case_name, input, targets)
     ret = compare_util.compare_results(case_dir, out_len, targets)
     assert ret

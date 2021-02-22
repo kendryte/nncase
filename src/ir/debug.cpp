@@ -96,6 +96,9 @@ void ir::dump_graph(const graph &src_graph, const std::filesystem::path &dst_pat
             auto np = gp->add_node();
             np->set_name(n->name());
             np->set_op_type(std::string(n->runtime_opcode().name));
+            auto att_md = np->add_attribute();
+            att_md->set_name("module_type");
+            att_md->add_strings(n->module_type().data());
 
             if (auto c = node_cast<constant>(*n))
             {
@@ -119,14 +122,30 @@ void ir::dump_graph(const graph &src_graph, const std::filesystem::path &dst_pat
                     np->add_input(out->owner().name() + ":" + out->name());
             }
 
-            if (n->outputs().size() == 1)
+            for (auto out : n->outputs())
             {
-                np->add_output(n->name());
-            }
-            else
-            {
-                for (auto out : n->outputs())
-                    np->add_output(n->name() + ":" + out->name());
+                std::string name;
+                for (auto in : out->connections())
+                {
+                    if (in->owner().runtime_opcode() == op_output_node)
+                        name = in->owner().name();
+                }
+
+                if (name.empty())
+                {
+                    if (n->outputs().size() == 1)
+                        name = n->name();
+                    else
+                        name = n->name() + ":" + out->name();
+                }
+
+                np->add_output(name);
+                auto vi = gp->add_value_info();
+                vi->set_name(name);
+                auto type = vi->mutable_type();
+                auto ttype = type->mutable_tensor_type();
+                ttype->set_elem_type(to_pb(out->type()));
+                to_pb(ttype->mutable_shape(), out->shape());
             }
         }
     }

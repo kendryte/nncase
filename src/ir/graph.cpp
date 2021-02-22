@@ -99,7 +99,7 @@ void graph::dce()
 split_graph_result graph::split_subgraph(std::span<node *> nodes)
 {
     split_graph_result result;
-    result.subgraph = std::make_unique<graph>();
+    result.subgraph = std::make_unique<graph>(nodes.front()->module_type());
 
     // 1. Erase nodes
     std::unordered_set<node *> subgraph_nodes;
@@ -209,6 +209,7 @@ void graph::cse()
 
 void graph::merge_module_regions()
 {
+    size_t subid = 0;
     while (true)
     {
         node *first_node = nullptr;
@@ -231,6 +232,8 @@ void graph::merge_module_regions()
             auto split = split_subgraph(region_nodes);
             auto &subg = add_subgraph(std::move(split.subgraph));
             auto c = emplace<call>(subg);
+            c->name(std::string(subg.module_type().data()) + "_" + std::to_string(subid++));
+            subg.name(c->name());
 
             for (auto &inp : split.inputs)
             {

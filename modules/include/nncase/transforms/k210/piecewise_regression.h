@@ -14,6 +14,7 @@
  */
 #pragma once
 #include <nncase/ir/quantizer.h>
+#include <nncase/runtime/k210/compiler_defs.h>
 #include <nncase/transforms/transform.h>
 
 namespace nncase::ir::transforms::k210
@@ -38,7 +39,7 @@ struct segment
     }
 };
 
-class piecewise_regression
+class NNCASE_MODULES_K210_API piecewise_regression
 {
 public:
     piecewise_regression(size_t segments_count);

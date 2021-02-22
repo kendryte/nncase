@@ -303,7 +303,7 @@ void schedule_context::make_physical_buffers()
 void schedule_context::allocate_physical_buffers(target &target)
 {
     allocator_map_t allocators;
-    std::vector<std::unique_ptr<buffer_allocator>> allocator_holder;
+    std::vector<std::shared_ptr<buffer_allocator>> allocator_holder;
     target.register_allocators(module_type, allocators, allocator_holder);
 
     for (auto &usage_p : max_usages)
@@ -392,13 +392,18 @@ schedule_result scheduler::schedule()
 
     schedule_result result;
     result.main_module = &main_graph_;
+    result.graph_orders.reserve(main_graph_.subgraphs().size() + 1);
 
     // 1. main graph
     schedule_module(*result.main_module, outputs_, result.modules[result.main_module]);
+    result.graph_orders.emplace_back(result.main_module);
 
     // 2. subgraphs
     for (auto &subgraph : main_graph_.subgraphs())
+    {
         schedule_module(*subgraph, subgraph->outputs(), result.modules[subgraph.get()]);
+        result.graph_orders.emplace_back(subgraph.get());
+    }
 
     return result;
 }

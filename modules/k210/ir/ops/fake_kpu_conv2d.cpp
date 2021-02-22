@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include <nncase/ir/ops/k210/fake_kpu_conv2d.h>
+#include <nncase/runtime/k210/runtime_module.h>
 #include <nncase/runtime/k210/runtime_op_utility.h>
 
 using namespace nncase;
@@ -24,6 +25,7 @@ fake_kpu_conv2d::fake_kpu_conv2d(shape_t input_shape, bool is_depthwise, runtime
     xt::xtensor<float, 1> bias, value_range<float> fused_activation)
     : weights_(std::move(weights)), bias_(std::move(bias)), is_depthwise_(is_depthwise), filter_type_(filter_type), pool_type_(pool_type), fused_activation_(fused_activation)
 {
+    module_type(k210_module_type);
     add_input("input", dt_float32, input_shape);
     add_output("output", dt_float32,
         shape_t {

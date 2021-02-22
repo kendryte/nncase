@@ -22,6 +22,7 @@
 #include <pybind11/iostream.h>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
+#include <pybind11/stl.h>
 #include <pybind11/stl_bind.h>
 #include <sstream>
 
@@ -222,10 +223,23 @@ PYBIND11_MODULE(_nncase, m)
         .def(py::init())
         .def_readwrite("output_arrays", &import_options::output_arrays);
 
+    py::class_<ptq_tensor_options>(m, "PTQTensorOptions")
+        .def(py::init())
+        .def("set_tensor_data", [](ptq_tensor_options &o, py::bytes bytes) {
+            uint8_t *buffer;
+            py::ssize_t length;
+            if (PyBytes_AsStringAndSize(bytes.ptr(), reinterpret_cast<char **>(&buffer), &length))
+                throw std::invalid_argument("Invalid bytes");
+            o.tensor_data.assign(buffer, buffer + length);
+            LaunchDebugger();
+        })
+        .def_readwrite("samples_count", &ptq_tensor_options::samples_count);
+
     py::class_<compiler>(m, "Compiler")
         .def(py::init(&compiler::create))
         .def("import_tflite", &compiler::import_tflite)
         .def("compile", &compiler::compile)
+        .def("use_ptq", py::overload_cast<ptq_tensor_options>(&compiler::use_ptq))
         .def("gencode", [](compiler &c, std::ostream &stream) {
             c.gencode(stream);
         })
@@ -245,7 +259,6 @@ PYBIND11_MODULE(_nncase, m)
 
     py::class_<runtime_tensor>(m, "RuntimeTensor")
         .def("from_numpy", [](py::array arr) {
-            //LaunchDebugger();
             auto src_buffer = arr.request();
             auto datatype = from_dtype(arr.dtype());
             auto tensor = host_runtime_tensor::create(

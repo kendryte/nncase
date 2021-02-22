@@ -62,6 +62,7 @@ namespace schedule
 
     struct schedule_result
     {
+        std::vector<ir::graph *> graph_orders;
         std::unordered_map<ir::graph *, module_schedule_result> modules;
         ir::graph *main_module;
     };

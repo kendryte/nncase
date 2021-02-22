@@ -38,8 +38,9 @@ public:
     const std::unordered_map<const physical_buffer *, allocated_buffer> &allocations() const noexcept { return allocations_; }
 
 protected:
-    static size_t get_size_in_bytes(const physical_buffer &buffer);
-    static allocated_buffer make_alloc(const physical_buffer &buffer);
+    virtual size_t get_size_in_bytes(const physical_buffer &buffer);
+    virtual allocated_buffer make_alloc(const physical_buffer &buffer);
+    virtual size_t alignment() const noexcept;
 
 protected:
     size_t max_usage_;

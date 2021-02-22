@@ -32,6 +32,12 @@ public:
     virtual void decompile(std::span<const uint8_t> input, std::span<const symbol> symbols, std::ostream &output) = 0;
 };
 
+struct module_builder_params
+{
+    const schedule::schedule_result &sched;
+    const schedule::module_schedule_result &module_sched;
+};
+
 class NNCASE_API module_builder
 {
 private:
@@ -58,7 +64,7 @@ private:
     };
 
 public:
-    module_builder(uint32_t alignment, std::string_view module_name, const schedule::module_schedule_result &sched);
+    module_builder(uint32_t alignment, std::string_view module_name, const module_builder_params &params);
     module_builder(module_builder &) = delete;
     module_builder(module_builder &&) = delete;
 
@@ -76,6 +82,7 @@ public:
 
 protected:
     void merge_to_rdata_section(std::string_view from);
+    size_t module_id(ir::graph *graph);
 
     virtual void begin_emit() { }
     virtual void emit(ir::node &node);
@@ -96,7 +103,7 @@ private:
 private:
     uint32_t alignment_;
     std::string module_name_;
-    const schedule::module_schedule_result &sched_;
+    const module_builder_params &params_;
     std::filesystem::path dump_dir_;
     bool dump_asm_;
     std::map<std::string, section, std::less<>> section_writer_;

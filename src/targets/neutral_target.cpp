@@ -49,14 +49,14 @@ namespace nncase::ir
 void register_neutral_evaluators();
 }
 
-void neutral_target::register_allocators(const module_type_t &type, allocator_map_t &allocators, std::vector<std::unique_ptr<buffer_allocator>> &allocator_holders)
+void neutral_target::register_allocators(const module_type_t &type, allocator_map_t &allocators, std::vector<std::shared_ptr<buffer_allocator>> &allocator_holders)
 {
     if (type == runtime::stackvm::stackvm_module_type)
     {
-        allocators.emplace(mem_input, allocator_holders.emplace_back(std::make_unique<linear_buffer_allocator>()).get());
-        allocators.emplace(mem_output, allocator_holders.emplace_back(std::make_unique<linear_buffer_allocator>()).get());
-        allocators.emplace(mem_rdata, allocator_holders.emplace_back(std::make_unique<linear_buffer_allocator>()).get());
-        allocators.emplace(mem_data, allocator_holders.emplace_back(std::make_unique<first_fit_allocator>()).get());
+        allocators.emplace(mem_input, allocator_holders.emplace_back(std::make_shared<linear_buffer_allocator>()).get());
+        allocators.emplace(mem_output, allocator_holders.emplace_back(std::make_shared<linear_buffer_allocator>()).get());
+        allocators.emplace(mem_rdata, allocator_holders.emplace_back(std::make_shared<linear_buffer_allocator>()).get());
+        allocators.emplace(mem_data, allocator_holders.emplace_back(std::make_shared<first_fit_allocator>()).get());
     }
     else
     {

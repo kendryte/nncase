@@ -20,7 +20,7 @@
 
 namespace nncase::ir::k210
 {
-class fake_kpu_conv2d : public node
+class NNCASE_MODULES_K210_API fake_kpu_conv2d : public node
 {
 public:
     DEFINE_NODE_OPCODE(op_k210_fake_kpu_conv2d);

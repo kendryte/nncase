@@ -13,17 +13,32 @@
  * limitations under the License.
  */
 #pragma once
-#include <nncase/runtime/k210/compiler_defs.h>
-#include <nncase/transforms/transform.h>
+#include "../transform.h"
+#include <unordered_set>
 
-namespace nncase::ir::transforms::k210
+namespace nncase::ir::transforms
 {
-class NNCASE_MODULES_K210_API fuse_kpu_conv2d_pool_transform : public transform
+class add_quant_checkpoints_transform : public transform
 {
 public:
+    template <class TIt>
+    add_quant_checkpoints_transform(TIt begin, TIt end)
+        : opcodes_(begin, end)
+    {
+    }
+
+    add_quant_checkpoints_transform(std::initializer_list<ir::node_opcode> opcodes)
+        : opcodes_(opcodes)
+    {
+    }
+
     void process(transform_context &context) override;
 
 protected:
+    bool skip_self_contained_check() const noexcept override { return true; }
     bool on_try_match(ir::node &node, transform_context &context) override;
+
+private:
+    std::unordered_set<ir::node_opcode> opcodes_;
 };
 }

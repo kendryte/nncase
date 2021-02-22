@@ -18,5 +18,5 @@
 
 namespace nncase::codegen
 {
-NNCASE_MODULES_K210_API std::unique_ptr<module_builder> create_k210_module_builder(std::string_view module_name, const schedule::module_schedule_result &sched);
+NNCASE_MODULES_K210_API std::unique_ptr<module_builder> create_k210_module_builder(std::string_view module_name, const module_builder_params &params);
 }

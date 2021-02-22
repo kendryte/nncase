@@ -13,11 +13,12 @@
  * limitations under the License.
  */
 #pragma once
+#include <nncase/runtime/k210/compiler_defs.h>
 #include <nncase/transforms/transform.h>
 
 namespace nncase::ir::transforms::k210
 {
-class fake_kpu_conv2d_transform : public transform
+class NNCASE_MODULES_K210_API fake_kpu_conv2d_transform : public transform
 {
 public:
     void process(transform_context &context) override;
@@ -27,7 +28,7 @@ protected:
     bool on_try_match(ir::node &node, transform_context &context) override;
 };
 
-class fuse_fake_kpu_conv2d_strided_slice_transform : public transform
+class NNCASE_MODULES_K210_API fuse_fake_kpu_conv2d_strided_slice_transform : public transform
 {
 public:
     void process(transform_context &context) override;

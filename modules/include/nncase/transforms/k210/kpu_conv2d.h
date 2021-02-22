@@ -14,11 +14,12 @@
  */
 #pragma once
 #include <nncase/ir/quantizer.h>
+#include <nncase/runtime/k210/compiler_defs.h>
 #include <nncase/transforms/transform.h>
 
 namespace nncase::ir::transforms::k210
 {
-class kpu_conv2d_transform : public transform
+class NNCASE_MODULES_K210_API kpu_conv2d_transform : public transform
 {
 public:
     kpu_conv2d_transform(ir::quantizer &quantizer)

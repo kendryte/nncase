@@ -13,9 +13,24 @@
  * limitations under the License.
  */
 #include <nncase/ir/ops/k210/kpu_data_exchange.h>
+#include <nncase/runtime/k210/runtime_module.h>
 #include <nncase/runtime/k210/runtime_op_utility.h>
 
 using namespace nncase;
 using namespace nncase::ir;
 using namespace nncase::ir::k210;
 using namespace nncase::runtime::k210;
+
+kpu_upload::kpu_upload(shape_t input_shape)
+{
+    module_type(k210_module_type);
+    add_input("input", dt_uint8, input_shape);
+    add_output("output", dt_uint8, input_shape);
+}
+
+kpu_download::kpu_download(shape_t input_shape)
+{
+    module_type(k210_module_type);
+    add_input("input", dt_uint8, input_shape);
+    add_output("output", dt_uint8, input_shape);
+}

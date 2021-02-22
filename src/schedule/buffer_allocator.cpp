@@ -36,12 +36,17 @@ size_t buffer_allocator::get_size_in_bytes(const physical_buffer &buffer)
     return ir::get_bytes(buffer.owner().type(), buffer.owner().shape());
 }
 
+size_t buffer_allocator::alignment() const noexcept
+{
+    return 8;
+}
+
 buffer_allocator::allocated_buffer buffer_allocator::make_alloc(const physical_buffer &buffer)
 {
     allocated_buffer alloc;
     alloc.buffer = &buffer;
     alloc.valid_size = get_size_in_bytes(buffer);
-    alloc.size = align(alloc.valid_size, 8);
+    alloc.size = align(alloc.valid_size, alignment());
     return alloc;
 }
 

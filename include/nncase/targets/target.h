@@ -27,12 +27,8 @@ class quantizer;
 
 namespace nncase::codegen
 {
+struct module_builder_params;
 class module_builder;
-}
-
-namespace nncase::schedule
-{
-struct module_schedule_result;
 }
 
 namespace nncase::ir::transforms
@@ -72,7 +68,7 @@ public:
         return attrs;
     }
 
-    virtual void register_allocators(const module_type_t &type, schedule::allocator_map_t &allocators, std::vector<std::unique_ptr<schedule::buffer_allocator>> &allocator_holders) = 0;
+    virtual void register_allocators(const module_type_t &type, schedule::allocator_map_t &allocators, std::vector<std::shared_ptr<schedule::buffer_allocator>> &allocator_holders) = 0;
     virtual void register_evaluator_ops() = 0;
     virtual void register_target_independent_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr) = 0;
     virtual void register_target_dependent_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr) = 0;
@@ -80,7 +76,7 @@ public:
     virtual std::unique_ptr<ir::quantizer> create_quantizer(const module_type_t &type);
     virtual void register_quantize_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr);
     virtual void register_allocation_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr) = 0;
-    virtual std::unique_ptr<codegen::module_builder> create_module_builder(const module_type_t &type, std::string_view module_name, const schedule::module_schedule_result &sched);
+    virtual std::unique_ptr<codegen::module_builder> create_module_builder(const module_type_t &type, std::string_view module_name, const codegen::module_builder_params &params);
 
 protected:
     virtual std::unique_ptr<target_options> on_create_options() = 0;

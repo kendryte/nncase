@@ -20,7 +20,7 @@
 
 namespace nncase::ir::k210
 {
-class kpu_upload : public node
+class NNCASE_MODULES_K210_API kpu_upload : public node
 {
 public:
     DEFINE_NODE_OPCODE(op_k210_kpu_upload);
@@ -28,17 +28,13 @@ public:
     input_connector &input() { return input_at(0); }
     output_connector &output() { return output_at(0); }
 
-    kpu_upload(shape_t input_shape)
-    {
-        add_input("input", dt_uint8, input_shape);
-        add_output("output", dt_uint8, input_shape);
-    }
+    kpu_upload(shape_t input_shape);
 
 protected:
     bool properties_equal(node &other) const override { return true; }
 };
 
-class kpu_download : public node
+class NNCASE_MODULES_K210_API kpu_download : public node
 {
 public:
     DEFINE_NODE_OPCODE(op_k210_kpu_download);
@@ -46,11 +42,7 @@ public:
     input_connector &input() { return input_at(0); }
     output_connector &output() { return output_at(0); }
 
-    kpu_download(shape_t input_shape)
-    {
-        add_input("input", dt_uint8, input_shape);
-        add_output("output", dt_uint8, input_shape);
-    }
+    kpu_download(shape_t input_shape);
 
 protected:
     bool properties_equal(node &other) const override { return true; }

@@ -24,13 +24,13 @@ using namespace nncase::schedule;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 
-std::unique_ptr<module_builder> codegen::create_stackvm_module_builder(std::string_view module_name, const schedule::module_schedule_result &sched)
+std::unique_ptr<module_builder> codegen::create_stackvm_module_builder(std::string_view module_name, const module_builder_params &params)
 {
-    return std::make_unique<stackvm_module_builder>(module_name, sched);
+    return std::make_unique<stackvm_module_builder>(module_name, params);
 }
 
-stackvm_module_builder::stackvm_module_builder(std::string_view module_name, const schedule::module_schedule_result &sched)
-    : module_builder(8, module_name, sched)
+stackvm_module_builder::stackvm_module_builder(std::string_view module_name, const module_builder_params &params)
+    : module_builder(8, module_name, params)
 {
 }
 

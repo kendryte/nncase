@@ -19,12 +19,12 @@ BEGIN_NS_NNCASE_RT_K210
 
 struct kpu_layout
 {
-    int32_t groups;
-    int32_t row_len;
-    int32_t row_pitch;
+    size_t groups;
+    size_t row_len;
+    size_t row_pitch;
 };
 
-inline kpu_layout get_kpu_row_layout(int32_t width)
+inline kpu_layout get_kpu_row_layout(size_t width)
 {
     kpu_layout layout;
 
@@ -99,7 +99,7 @@ inline std::array<int32_t, 2> get_kpu_padding(kpu_pool_type_t filter, int32_t si
     }
 }
 
-inline int32_t get_kpu_rows(int32_t width, int32_t height, int32_t channels)
+inline size_t get_kpu_rows(size_t width, size_t height, size_t channels)
 {
     auto layout = get_kpu_row_layout(width);
     auto one_line_channels = std::min(channels, layout.groups);
@@ -108,12 +108,13 @@ inline int32_t get_kpu_rows(int32_t width, int32_t height, int32_t channels)
     return size;
 }
 
-inline int32_t get_kpu_bytes(int32_t width, int32_t height, int32_t channels)
+inline size_t get_kpu_bytes(size_t width, size_t height, size_t channels)
 {
     return get_kpu_rows(width, height, channels) * 64;
 }
 
-inline int32_t get_kpu_bytes(const runtime_shape_t &shape)
+template <class TShape>
+int32_t get_kpu_bytes(const TShape &shape)
 {
     return get_kpu_bytes(shape[3], shape[2], shape[1]) * shape[0];
 }

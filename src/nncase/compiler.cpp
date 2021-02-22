@@ -22,6 +22,7 @@
 #include <nncase/ir/debug.h>
 #include <nncase/ir/evaluator.h>
 #include <nncase/transforms/pass.h>
+#include <variant>
 
 using namespace nncase;
 using namespace nncase::data;
@@ -92,6 +93,12 @@ public:
         use_ptq_ = true;
     }
 
+    void use_ptq(ptq_tensor_options options) override
+    {
+        ptq_options_ = std::move(options);
+        use_ptq_ = true;
+    }
+
     void compile() override
     {
         std::cout << "2. Optimize target independent..." << std::endl;
@@ -114,11 +121,14 @@ public:
             std::cout << "4.3. Quantize graph..." << std::endl;
             quantize_graph(graph_, evaluator);
         }
+
+        std::cout << "5. Merge module regions..." << std::endl;
+        optimize_merge_module_regions(graph_);
     }
 
     void gencode(std::ostream &output) override
     {
-        std::cout << "4. Generate code..." << std::endl;
+        std::cout << "6. Generate code..." << std::endl;
         using namespace nncase::schedule;
         using namespace nncase::codegen;
 
@@ -144,6 +154,14 @@ private:
         run_passes("target_indep", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr) {
             target_->register_target_independent_passes(module_type, pmgr);
         });
+    }
+
+    void optimize_merge_module_regions(ir::graph &graph)
+    {
+        graph.merge_module_regions();
+        dump_graph(graph, "merge_module_regions");
+        for (auto &subgraph : graph.subgraphs())
+            dump_graph(*subgraph, "merge_module_regions");
     }
 
     void optimize_target_dependent(ir::graph &graph)
@@ -187,34 +205,43 @@ private:
         if (graph.inputs().size() != 1)
             throw std::invalid_argument("PTQ only support models that have single 1 input");
 
-        auto &in_shape = graph.inputs()[0]->output().shape();
-        xt::dynamic_shape<size_t> dataset_in_shape(in_shape.begin(), in_shape.end());
-        std::unique_ptr<dataset> ds;
-        if (ptq_options_.dataset_format == "image")
-            ds = std::make_unique<image_dataset>(ptq_options_.dataset, dataset_in_shape, ptq_options_.input_mean, ptq_options_.input_std);
-        else if (ptq_options_.dataset_format == "raw")
-            ds = std::make_unique<raw_dataset>(ptq_options_.dataset, dataset_in_shape, ptq_options_.input_mean, ptq_options_.input_std);
-        else
-            throw std::runtime_error("Invalid calibration dataset format: " + ptq_options_.dataset_format);
-
-        auto in_type = graph.inputs()[0]->output().type();
-        switch (in_type)
+        if (ptq_options_.index() == 0)
         {
-        case dt_float32:
-            run_calibration_eval<float>(*ds, evaluator);
-            break;
-        case dt_uint8:
-            run_calibration_eval<uint8_t>(*ds, evaluator);
-            break;
-        default:
-            throw std::runtime_error("Unsupported input datatype: " + std::string(datatype_names(in_type)));
+            auto &options = std::get<ptq_dataset_options>(ptq_options_);
+            auto &in_shape = graph.inputs()[0]->output().shape();
+            xt::dynamic_shape<size_t> dataset_in_shape(in_shape.begin(), in_shape.end());
+            std::unique_ptr<dataset> ds;
+            if (options.dataset_format == "image")
+                ds = std::make_unique<image_dataset>(options.dataset, dataset_in_shape, options.input_mean, options.input_std);
+            else if (options.dataset_format == "raw")
+                ds = std::make_unique<raw_dataset>(options.dataset, dataset_in_shape, options.input_mean, options.input_std);
+            else
+                throw std::runtime_error("Invalid calibration dataset format: " + options.dataset_format);
+
+            auto in_type = graph.inputs()[0]->output().type();
+            switch (in_type)
+            {
+            case dt_float32:
+                run_calibration_eval<float>(options, *ds, evaluator);
+                break;
+            case dt_uint8:
+                run_calibration_eval<uint8_t>(options, *ds, evaluator);
+                break;
+            default:
+                throw std::runtime_error("Unsupported input datatype: " + std::string(datatype_names(in_type)));
+            }
+        }
+        else
+        {
+            auto &options = std::get<ptq_tensor_options>(ptq_options_);
+            run_calibration_eval(options, evaluator);
         }
 
         return evaluator;
     }
 
     template <class T>
-    void run_calibration_eval(dataset &dataset, ir::evaluator &evaluator)
+    void run_calibration_eval(ptq_dataset_options &options, dataset &dataset, ir::evaluator &evaluator)
     {
         size_t i = 0;
         for (auto it = dataset.begin<T>(); it != dataset.end<T>(); ++it)
@@ -224,8 +251,21 @@ private:
             std::memcpy(input_buffer.data(), tensor.data(), input_buffer.size_bytes());
 
             evaluator.evaluate();
-            if (ptq_options_.progress)
-                ptq_options_.progress(i, dataset.total_size());
+            if (options.progress)
+                options.progress(i++, dataset.total_size());
+        }
+    }
+
+    void run_calibration_eval(ptq_tensor_options &options, ir::evaluator &evaluator)
+    {
+        for (size_t i = 0; i < options.samples_count; i++)
+        {
+            auto input_buffer = host_runtime_tensor::buffer(evaluator.input_at(0)).unwrap_or_throw();
+            std::memcpy(input_buffer.data(), options.tensor_data.data() + i * input_buffer.size_bytes(), input_buffer.size_bytes());
+
+            evaluator.evaluate();
+            if (options.progress)
+                options.progress(i++, options.samples_count);
         }
     }
 
@@ -276,7 +316,7 @@ private:
     ir::graph graph_;
     compile_options compile_options_;
     target_options target_options_;
-    ptq_dataset_options ptq_options_;
+    std::variant<ptq_dataset_options, ptq_tensor_options> ptq_options_;
     bool use_ptq_ = false;
     std::unique_ptr<target> target_;
 };

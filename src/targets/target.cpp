@@ -44,10 +44,10 @@ std::unique_ptr<ir::quantizer> target::create_quantizer([[maybe_unused]] const m
     return std::make_unique<ir::quantizer>(ir::calibrate_method::no_clip, 1024);
 }
 
-std::unique_ptr<codegen::module_builder> target::create_module_builder(const module_type_t &type, std::string_view module_name, const schedule::module_schedule_result &sched)
+std::unique_ptr<codegen::module_builder> target::create_module_builder(const module_type_t &type, std::string_view module_name, const codegen::module_builder_params &params)
 {
     if (type == runtime::stackvm::stackvm_module_type)
-        return codegen::create_stackvm_module_builder(module_name, sched);
+        return codegen::create_stackvm_module_builder(module_name, params);
     else
         throw std::runtime_error("Module builder for module " + std::string(module_name) + "[" + type.data() + "] is not found");
 }

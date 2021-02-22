@@ -18,6 +18,7 @@
 #include <nncase/ir/ops/batch_to_space.h>
 #include <nncase/ir/ops/binary.h>
 #include <nncase/ir/ops/broadcast.h>
+#include <nncase/ir/ops/call.h>
 #include <nncase/ir/ops/conv2d.h>
 #include <nncase/ir/ops/reduce.h>
 #include <nncase/ir/ops/transpose.h>
@@ -42,7 +43,7 @@ public:
 class stackvm_module_builder : public module_builder
 {
 public:
-    stackvm_module_builder(std::string_view module_name, const schedule::module_schedule_result &sched);
+    stackvm_module_builder(std::string_view module_name, const module_builder_params &params);
 
     module_type_t module_type() const noexcept override;
 

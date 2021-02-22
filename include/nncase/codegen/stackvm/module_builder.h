@@ -17,5 +17,5 @@
 
 namespace nncase::codegen
 {
-NNCASE_API std::unique_ptr<module_builder> create_stackvm_module_builder(std::string_view module_name, const schedule::module_schedule_result &sched);
+NNCASE_API std::unique_ptr<module_builder> create_stackvm_module_builder(std::string_view module_name, const module_builder_params &params);
 }

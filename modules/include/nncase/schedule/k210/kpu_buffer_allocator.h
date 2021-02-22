@@ -13,21 +13,18 @@
  * limitations under the License.
  */
 #pragma once
-#include "../memory_allocator.h"
+#include <nncase/runtime/k210/compiler_defs.h>
+#include <nncase/schedule/buffer_allocator.h>
 
-namespace nncase
+namespace nncase::schedule::k210
 {
-namespace scheduler
+class NNCASE_MODULES_K210_API kpu_buffer_allocator : public first_fit_allocator
 {
-    namespace k210
-    {
-        class kpu_memory_allocator : public memory_allocator
-        {
-        public:
-            kpu_memory_allocator();
+public:
+    kpu_buffer_allocator();
 
-            size_t get_bytes(datatype_t type, const llir::shape_t &shape) const override;
-        };
-    }
-}
+protected:
+    size_t get_size_in_bytes(const physical_buffer &buffer) override;
+    size_t alignment() const noexcept override;
+};
 }

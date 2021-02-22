@@ -42,7 +42,7 @@ namespace nncase::codegen::k210
 class k210_module_builder : public module_builder
 {
 public:
-    k210_module_builder(std::string_view module_name, const schedule::module_schedule_result &sched);
+    k210_module_builder(std::string_view module_name, const module_builder_params &params);
 
     module_type_t module_type() const noexcept override;
 

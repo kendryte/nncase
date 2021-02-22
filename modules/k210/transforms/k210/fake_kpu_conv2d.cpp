@@ -94,7 +94,7 @@ void fake_kpu_conv2d_transform::process(transform_context &context)
     auto &old_bias = static_cast<constant &>(*context.matched_nodes[2]);
 
     xt::xtensor<float, 4> weights(xt::adapt(reinterpret_cast<const float *>(old_weights.data().data()), old_weights.output().shape()));
-    xt::xtensor<float, 4> bias(xt::adapt(reinterpret_cast<const float *>(old_bias.data().data()), old_bias.output().shape()));
+    xt::xtensor<float, 1> bias(xt::adapt(reinterpret_cast<const float *>(old_bias.data().data()), old_bias.output().shape()));
     auto is_depthwise = old_conv.input_channels() == old_conv.output_channels() && old_conv.output_channels() == old_conv.groups();
     GET_PRE_PAD(old_conv);
     xt::svector<padding> pre_paddings {
