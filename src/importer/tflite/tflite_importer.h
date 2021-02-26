@@ -285,7 +285,7 @@ private:
         std::vector<ir::input_connector *> new_inputs;
         for (size_t i = 0; i < inputs.size(); i++)
         {
-            auto deq = graph_.emplace<ir::dequantize>(ty, inputs[i]->shape(), input_dequant_params[i]);
+            auto deq = graph_.emplace<ir::dequantize>(ty, inputs[i]->shape(), dt_float32, input_dequant_params[i]);
             deq->name(inputs[i]->owner().name());
             inputs[i]->connect(deq->output());
             new_inputs.push_back(&deq->input());
@@ -295,7 +295,7 @@ private:
         std::vector<ir::output_connector *> new_outputs;
         for (size_t i = 0; i < outputs.size(); i++)
         {
-            auto q = graph_.emplace<ir::quantize>(outputs[i]->shape(), ty, output_quant_params[i]);
+            auto q = graph_.emplace<ir::quantize>(dt_float32, outputs[i]->shape(), ty, output_quant_params[i]);
             q->name(outputs[i]->owner().name());
             outputs[i]->connect(q->input());
             new_outputs.push_back(&q->output());

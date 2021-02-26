@@ -62,9 +62,9 @@ protected:
     }
 
     template <class TName, class TShape>
-    output_connector &add_output(TName &&name, datatype_t type, TShape &&shape)
+    output_connector &add_output(TName &&name, datatype_t type, TShape &&shape, memory_location_t memory_location = mem_data)
     {
-        auto ptr = output_connectors_storage_.emplace_back(std::make_unique<output_connector>(*this, std::forward<TName>(name), type, std::forward<TShape>(shape))).get();
+        auto ptr = output_connectors_storage_.emplace_back(std::make_unique<output_connector>(*this, std::forward<TName>(name), type, std::forward<TShape>(shape), memory_location)).get();
         output_connectors_.emplace_back(ptr);
         return *ptr;
     }

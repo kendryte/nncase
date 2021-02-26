@@ -7,6 +7,8 @@ set(SRCS module_builder.cpp
          ops/broadcast.cpp
          ops/call.cpp
          ops/conv2d.cpp
+         ops/dequantize.cpp
+         ops/quantize.cpp
          ops/reduce.cpp
          ops/transpose.cpp
          ops/unary.cpp)

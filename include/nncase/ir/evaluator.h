@@ -54,8 +54,10 @@ public:
     ir::quantizer *quantizer() noexcept { return quantizer_.get(); }
 
     void enable_ptq(target &target);
-    void end_ptq();
     void evaluate();
+
+    void begin_collect_distribution();
+    void end_collect_distribution(std::function<void(size_t cnt, size_t total)> progress);
 
 private:
     const schedule::module_schedule_result &sched_;
@@ -77,8 +79,10 @@ public:
     module_evaluate_context &main_module_context();
 
     void enable_ptq(target &target);
-    void end_ptq();
     void evaluate();
+
+    void begin_collect_distribution();
+    void end_collect_distribution(std::function<void(size_t cnt, size_t total)> progress);
 
     runtime::runtime_tensor memory_at(const output_connector &conn);
 

@@ -38,7 +38,7 @@ DEFINE_TFLITE_LOWER(CONV_2D)
         in_deq_params.scale = to_vector(*input.quantization()->scale());
         in_deq_params.zero_point = to_vector(*input.quantization()->zero_point());
 
-        in_dequant = graph_.emplace<dequantize>(to_data_type(input.type()), get_shape(input.shape()), in_deq_params);
+        in_dequant = graph_.emplace<dequantize>(to_data_type(input.type()), get_shape(input.shape()), dt_float32, in_deq_params);
         in_dequant->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/in_deq");
         pre_trans = nhwc_to_nchw(in_dequant->output().type(), in_dequant->output().shape());
         pre_trans->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/in_tp");
@@ -59,7 +59,7 @@ DEFINE_TFLITE_LOWER(CONV_2D)
         weights_paras.scale = to_vector(*weights.quantization()->scale());
         weights_paras.zero_point = to_vector(*weights.quantization()->zero_point());
 
-        weights_dequant = graph_.emplace<dequantize>(to_data_type(weights.type()), get_shape(weights.shape()), weights_paras);
+        weights_dequant = graph_.emplace<dequantize>(to_data_type(weights.type()), get_shape(weights.shape()), dt_float32, weights_paras);
         weights_dequant->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/weights_deq");
         weights_trans = nhwc_to_nchw(weights_dequant->output().type(), weights_dequant->output().shape());
         weights_trans->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/weights_tp");
@@ -110,7 +110,7 @@ DEFINE_TFLITE_LOWER(CONV_2D)
         bias_deq_params.scale = to_vector(*bias.quantization()->scale());
         bias_deq_params.zero_point = to_vector(*bias.quantization()->zero_point());
 
-        bias_dequant = graph_.emplace<dequantize>(to_data_type(bias.type()), get_shape(bias.shape()), bias_deq_params);
+        bias_dequant = graph_.emplace<dequantize>(to_data_type(bias.type()), get_shape(bias.shape()), dt_float32, bias_deq_params);
         bias_dequant->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/bias_dequant");
         conv->bias().connect(bias_dequant->output());
         link_input_tensor(&bias_dequant->input(), op.inputs()->Get(2));
@@ -130,7 +130,7 @@ DEFINE_TFLITE_LOWER(CONV_2D)
         quant_param_t out_quant;
         out_quant.scale = to_vector(*output.quantization()->scale());
         out_quant.zero_point = to_vector(*output.quantization()->zero_point());
-        auto data_quantize = graph_.emplace<quantize>(sur_trans->output().shape(), to_data_type(output.type()), out_quant);
+        auto data_quantize = graph_.emplace<quantize>(dt_float32, sur_trans->output().shape(), to_data_type(output.type()), out_quant);
         data_quantize->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/out_quant");
         data_quantize->input().connect(sur_trans->output());
 
@@ -162,7 +162,7 @@ DEFINE_TFLITE_LOWER(DEPTHWISE_CONV_2D)
         data_paras.scale = to_vector(*input.quantization()->scale());
         data_paras.zero_point = to_vector(*input.quantization()->zero_point());
 
-        data_dequant = graph_.emplace<dequantize>(to_data_type(input.type()), get_shape(input.shape()), data_paras);
+        data_dequant = graph_.emplace<dequantize>(to_data_type(input.type()), get_shape(input.shape()), dt_float32, data_paras);
         data_dequant->name(get_tensor(op.outputs(), 0).name()->string_view());
         pre_trans = nhwc_to_nchw(data_dequant->output().type(), data_dequant->output().shape());
         pre_trans->input().connect(data_dequant->output());
@@ -181,7 +181,7 @@ DEFINE_TFLITE_LOWER(DEPTHWISE_CONV_2D)
         weights_paras.scale = to_vector(*weights.quantization()->scale());
         weights_paras.zero_point = to_vector(*weights.quantization()->zero_point());
 
-        weights_dequant = graph_.emplace<dequantize>(to_data_type(weights.type()), get_shape(weights.shape()), weights_paras);
+        weights_dequant = graph_.emplace<dequantize>(to_data_type(weights.type()), get_shape(weights.shape()), dt_float32, weights_paras);
         weights_dequant->name(get_tensor(op.outputs(), 0).name()->string_view());
 
         weights_trans = graph_.emplace<transpose>(weights_dequant->output().type(), weights_dequant->output().shape(), axis_t { 3, 0, 1, 2 });
@@ -251,7 +251,7 @@ DEFINE_TFLITE_LOWER(DEPTHWISE_CONV_2D)
         bias_paras.scale = to_vector(*bias.quantization()->scale());
         bias_paras.zero_point = to_vector(*bias.quantization()->zero_point());
 
-        bias_dequant = graph_.emplace<dequantize>(to_data_type(bias.type()), get_shape(bias.shape()), bias_paras);
+        bias_dequant = graph_.emplace<dequantize>(to_data_type(bias.type()), get_shape(bias.shape()), dt_float32, bias_paras);
         conv->bias().connect(bias_dequant->output());
         link_input_tensor(&bias_dequant->input(), op.inputs()->Get(2));
     }
@@ -270,7 +270,7 @@ DEFINE_TFLITE_LOWER(DEPTHWISE_CONV_2D)
             to_vector(*output.quantization()->zero_point()),
             to_vector(*output.quantization()->scale())
         };
-        data_quant = graph_.emplace<quantize>(sur_trans->output().shape(), to_data_type(output.type()), quant);
+        data_quant = graph_.emplace<quantize>(dt_float32, sur_trans->output().shape(), to_data_type(output.type()), quant);
         data_quant->input().connect(sur_trans->output());
 
         link_output_tensor(op.outputs()->Get(0), &data_quant->output());

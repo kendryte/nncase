@@ -46,7 +46,7 @@ DEFINE_TFLITE_LOWER(FLOOR_DIV)
         input_a_paras.scale = to_vector(*input_a.quantization()->scale());
         input_a_paras.zero_point = to_vector(*input_a.quantization()->zero_point());
 
-        auto input_a_dequant = graph_.emplace<dequantize>(to_data_type(input_a.type()), get_shape(input_a.shape()), input_a_paras);
+        auto input_a_dequant = graph_.emplace<dequantize>(to_data_type(input_a.type()), get_shape(input_a.shape()), dt_float32, input_a_paras);
         input_a_dequant->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/input_a_dequant");
         div->input_a().connect(input_a_dequant->output());
         link_input_tensor(&input_a_dequant->input(), op.inputs()->Get(0));
@@ -63,7 +63,7 @@ DEFINE_TFLITE_LOWER(FLOOR_DIV)
         input_b_paras.scale = to_vector(*input_b.quantization()->scale());
         input_b_paras.zero_point = to_vector(*input_b.quantization()->zero_point());
 
-        auto input_b_dequant = graph_.emplace<dequantize>(to_data_type(input_b.type()), get_shape(input_b.shape()), input_b_paras);
+        auto input_b_dequant = graph_.emplace<dequantize>(to_data_type(input_b.type()), get_shape(input_b.shape()), dt_float32, input_b_paras);
         input_b_dequant->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/input_b_dequant");
         div->input_b().connect(input_b_dequant->output());
         link_input_tensor(&input_b_dequant->input(), op.inputs()->Get(1));
@@ -84,7 +84,7 @@ DEFINE_TFLITE_LOWER(FLOOR_DIV)
         output_paras.scale = to_vector(*output.quantization()->scale());
         output_paras.zero_point = to_vector(*output.quantization()->zero_point());
 
-        auto output_quant = graph_.emplace<quantize>(get_shape(output.shape()), to_data_type(output.type()), output_paras);
+        auto output_quant = graph_.emplace<quantize>(dt_float32, get_shape(output.shape()), to_data_type(output.type()), output_paras);
         output_quant->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/output_quant");
         output_quant->input().connect(floor->output());
         link_output_tensor(op.outputs()->Get(0), &output_quant->output());
@@ -143,7 +143,7 @@ void tflite_importer::convert_binary(const tflite::Operator &op, binary_op_t bin
         input_a_paras.scale = to_vector(*input_a.quantization()->scale());
         input_a_paras.zero_point = to_vector(*input_a.quantization()->zero_point());
 
-        input_a_dequant = graph_.emplace<dequantize>(to_data_type(input_a.type()), get_shape(input_a.shape()), input_a_paras);
+        input_a_dequant = graph_.emplace<dequantize>(to_data_type(input_a.type()), get_shape(input_a.shape()), dt_float32, input_a_paras);
         input_a_dequant->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/input_a_dequant");
         add->input_a().connect(input_a_dequant->output());
         link_input_tensor(&input_a_dequant->input(), op.inputs()->Get(0));
@@ -160,7 +160,7 @@ void tflite_importer::convert_binary(const tflite::Operator &op, binary_op_t bin
         input_b_paras.scale = to_vector(*input_b.quantization()->scale());
         input_b_paras.zero_point = to_vector(*input_b.quantization()->zero_point());
 
-        input_b_dequant = graph_.emplace<dequantize>(to_data_type(input_b.type()), get_shape(input_b.shape()), input_b_paras);
+        input_b_dequant = graph_.emplace<dequantize>(to_data_type(input_b.type()), get_shape(input_b.shape()), dt_float32, input_b_paras);
         input_b_dequant->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/input_b_dequant");
         add->input_b().connect(input_b_dequant->output());
         link_input_tensor(&input_b_dequant->input(), op.inputs()->Get(1));
@@ -177,7 +177,7 @@ void tflite_importer::convert_binary(const tflite::Operator &op, binary_op_t bin
         output_paras.scale = to_vector(*output.quantization()->scale());
         output_paras.zero_point = to_vector(*output.quantization()->zero_point());
 
-        output_quant = graph_.emplace<quantize>(get_shape(output.shape()), to_data_type(output.type()), output_paras);
+        output_quant = graph_.emplace<quantize>(dt_float32, get_shape(output.shape()), to_data_type(output.type()), output_paras);
         output_quant->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/output_quant");
         output_quant->input().connect(add->output());
         link_output_tensor(op.outputs()->Get(0), &output_quant->output());

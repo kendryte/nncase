@@ -53,6 +53,8 @@ public:
     virtual result<void> initialize_inter_modules(interpreter &interp) noexcept;
     const module_type_t &type() const noexcept;
 
+    interpreter &interp() const noexcept { return *interp_; }
+
     uint32_t mempools_size() const noexcept;
     const mempool_desc &mempool(size_t index) const noexcept;
     mempool_desc mempool(memory_location_t location) const noexcept;
@@ -84,6 +86,7 @@ private:
     std::vector<mempool_desc> mempools_;
     std::vector<inout_tensor_info> input_tensors_;
     std::vector<inout_tensor_info> output_tensors_;
+    interpreter *interp_ = nullptr;
 };
 
 END_NS_NNCASE_RUNTIME

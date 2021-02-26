@@ -44,6 +44,8 @@ public:
 
     result<void> run() noexcept;
 
+    result<runtime_module *> find_module_by_id(size_t index) noexcept;
+
 private:
     std::vector<std::unique_ptr<runtime_module>> modules_;
     runtime_module *main_module_;

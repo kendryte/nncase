@@ -46,7 +46,7 @@ namespace schedule
 
         memory_range runtime_type() const
         {
-            return { memory_location, type, (uint32_t)start, (uint32_t)size };
+            return { .memory_location = memory_location, .datatype = type, .start = (uint32_t)start, .size = (uint32_t)size };
         }
     };
 
@@ -75,7 +75,7 @@ namespace schedule
         scheduler(target &target, ir::graph &main_graph, std::span<ir::output_node *> outputs)
             : target_(target), main_graph_(main_graph), outputs_(outputs) { }
 
-        schedule_result schedule();
+        schedule_result schedule(bool skip_buffer_alias = false);
 
     private:
     private:

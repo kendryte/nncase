@@ -113,14 +113,15 @@ void quantizer::begin_collect_distribution()
     stage_ = quantize_stage::collect_distribution;
 }
 
-void quantizer::end_collect_distribution(std::function<void(size_t)> progress)
+void quantizer::end_collect_distribution(std::function<void(size_t cnt, size_t total)> progress)
 {
     size_t i = 0;
     for (auto &&h : histograms_)
     {
         h.second.finish();
         quant_ranges_.at(h.first) = h.second.optimal_range();
-        progress(i++);
+        if (progress)
+            progress(i++, histograms_.size());
     }
 }
 

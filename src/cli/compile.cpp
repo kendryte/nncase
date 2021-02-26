@@ -27,6 +27,8 @@ compile_command::compile_command(lyra::cli &cli)
                          .add_argument(lyra::arg(input_filename_, "input file").required().help("input file"))
                          .add_argument(lyra::arg(output_filename_, "output file").required().help("output file"))
                          .add_argument(lyra::opt(output_arrays_, "output arrays").name("--output-arrays").optional().help("output arrays"))
+                         .add_argument(lyra::opt(dataset_, "dataset path").name("--dataset").optional().help("calibration dataset, used in post quantization"))
+                         .add_argument(lyra::opt(dataset_format_, "dataset format").name("--dataset-format").optional().help("datset format: e.g. image, raw default is " + dataset_format_))
                          .add_argument(lyra::opt(dump_ir_).name("--dump-ir").optional().help("dump ir to .dot"))
                          .add_argument(lyra::opt(dump_asm_).name("--dump-asm").optional().help("dump assembly"))
                          .add_argument(lyra::opt(dump_dir_, "dump directory").name("--dump-dir").optional().help("dump to directory")));
@@ -72,6 +74,14 @@ void compile_command::run()
     else
     {
         throw std::invalid_argument("Invalid input format: " + input_format_);
+    }
+
+    if (!dataset_.empty())
+    {
+        nncase::ptq_dataset_options ptq_options;
+        ptq_options.dataset = dataset_;
+        ptq_options.dataset_format = dataset_format_;
+        compiler->use_ptq(ptq_options);
     }
 
     compiler->compile();

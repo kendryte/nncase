@@ -29,7 +29,7 @@
 
 namespace nncase
 {
-typedef enum _datatype
+typedef enum _datatype : uint8_t
 {
 #define DEFINE_DATATYPE(id, t, name, value) dt_##id = value,
 #include "datatypes.def"
@@ -323,6 +323,7 @@ struct memory_range
 {
     memory_location_t memory_location;
     datatype_t datatype;
+    uint16_t reserved0;
     uint32_t start;
     uint32_t size;
 };

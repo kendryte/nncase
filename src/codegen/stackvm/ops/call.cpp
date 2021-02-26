@@ -28,6 +28,7 @@ void stackvm_module_builder::emit(call &node, stackvm_op_builder &builder)
     {
         auto &input = allocation(*in);
         builder.lea_buffer(input);
+        builder.ldc_i4_((uint8_t)input.type);
         builder.stshape(rshape, input.shape);
         builder.ldc_i4_(rshape++);
         builder.stshape(rshape, input.strides);
@@ -38,6 +39,7 @@ void stackvm_module_builder::emit(call &node, stackvm_op_builder &builder)
     {
         auto &output = allocation(*out);
         builder.lea_buffer(output);
+        builder.ldc_i4_((uint8_t)output.type);
         builder.stshape(rshape, output.shape);
         builder.ldc_i4_(rshape++);
         builder.stshape(rshape, output.strides);

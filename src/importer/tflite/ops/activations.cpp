@@ -42,8 +42,8 @@ DEFINE_TFLITE_LOWER(RELU)
         quant_param_t output_quant_paras;
         output_quant_paras.scale = to_vector(*output.quantization()->scale());
         output_quant_paras.zero_point = to_vector(*output.quantization()->zero_point());
-        auto input_dequant = graph_.emplace<dequantize>(to_data_type(input.type()), get_shape(input.shape()), input_dequant_paras);
-        auto output_quant = graph_.emplace<quantize>(get_shape(output.shape()), to_data_type(output.type()), output_quant_paras);
+        auto input_dequant = graph_.emplace<dequantize>(to_data_type(input.type()), get_shape(input.shape()), dt_float32, input_dequant_paras);
+        auto output_quant = graph_.emplace<quantize>(dt_float32, get_shape(output.shape()), to_data_type(output.type()), output_quant_paras);
         input_dequant->name(std::string(output.name()->string_view()) + "/input_dequant");
         output_quant->name(std::string(output.name()->string_view()) + "/output_quant");
 
@@ -103,8 +103,8 @@ DEFINE_TFLITE_LOWER(LEAKY_RELU)
         quant_param_t output_quant_paras;
         output_quant_paras.scale = to_vector(*output.quantization()->scale());
         output_quant_paras.zero_point = to_vector(*output.quantization()->zero_point());
-        auto input_dequant = graph_.emplace<dequantize>(to_data_type(input.type()), get_shape(input.shape()), input_dequant_paras);
-        auto output_quant = graph_.emplace<quantize>(get_shape(output.shape()), to_data_type(output.type()), output_quant_paras);
+        auto input_dequant = graph_.emplace<dequantize>(to_data_type(input.type()), get_shape(input.shape()), dt_float32, input_dequant_paras);
+        auto output_quant = graph_.emplace<quantize>(dt_float32, get_shape(output.shape()), to_data_type(output.type()), output_quant_paras);
         input_dequant->name(std::string(output.name()->string_view()) + "/input_dequant");
         output_quant->name(std::string(output.name()->string_view()) + "/output_quant");
         mul->input_b().connect(alpha->output());

@@ -147,6 +147,7 @@ const runtime_shape_t &runtime_module::output_shape(size_t index) const noexcept
 
 result<void> runtime_module::initialize(const module_header &header, interpreter &interp) noexcept
 {
+    interp_ = &interp;
     header_ = header;
     span_reader reader(gsl::make_span(reinterpret_cast<const gsl::byte *>(&header) + sizeof(module_header), header.size));
     try

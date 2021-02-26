@@ -33,6 +33,8 @@ private:
     std::string target_name_;
     std::string output_arrays_;
     std::string dump_dir_;
+    std::string dataset_;
+    std::string dataset_format_ = "image";
     bool dump_ir_ = false;
     bool dump_asm_ = false;
 };

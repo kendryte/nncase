@@ -32,11 +32,11 @@ DEFINE_TFLITE_LOWER(TRANSPOSE)
     if (in_type != dt_float32)
     {
         quant_param_t in_deq_params{ to_vector(*input.quantization()->zero_point()), to_vector(*input.quantization()->scale()) };
-        deq = graph_.emplace<dequantize>(in_type, get_shape(input.shape()), in_deq_params);
+        deq = graph_.emplace<dequantize>(in_type, get_shape(input.shape()), dt_float32, in_deq_params);
         in_type = deq->output().type();
 
         quant_param_t out_q_params{ to_vector(*output.quantization()->zero_point()), to_vector(*output.quantization()->scale()) };
-        q = graph_.emplace<quantize>(get_shape(output.shape()), to_data_type(output.type()), out_q_params);
+        q = graph_.emplace<quantize>(dt_float32, get_shape(output.shape()), to_data_type(output.type()), out_q_params);
     }
 
     auto node = graph_.emplace<transpose>(in_type, get_shape(input.shape()), perm);

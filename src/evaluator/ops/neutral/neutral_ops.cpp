@@ -35,6 +35,7 @@
 #include <nncase/ir/ops/unary.h>
 #include <nncase/ir/runtime_type_utils.h>
 #include <nncase/kernels/neutral/neutral_kernels.h>
+#include <nncase/kernels/tensor_compute.h>
 
 using namespace nncase;
 using namespace nncase::schedule;
@@ -130,53 +131,16 @@ void register_neutral_evaluators()
 
         assert(rnode.input_a().type() == dt_float32);
         assert(rnode.input_b().type() == dt_float32);
-        // TODO: use kernels instead
-        auto input_a = host_runtime_tensor::buffer(context.memory_at(rnode.input_a())).unwrap_or_throw().as_span<float>();
-        auto input_b = host_runtime_tensor::buffer(context.memory_at(rnode.input_b())).unwrap_or_throw().as_span<float>();
-        auto output = host_runtime_tensor::buffer(context.memory_at(rnode.output())).unwrap_or_throw().as_span<float>();
 
-        auto binary = [&](auto binary_op) {
-            neutral::binary(input_a.data(), input_b.data(), output.data(), to(rnode.input_a().shape()), to(rnode.input_b().shape()),
-                to(rnode.output().shape()), rnode.fused_activation(), binary_op);
-        };
-
-        switch (rnode.binary_op())
-        {
-        case binary_add:
-            binary([](auto a, auto b) { return a + b; });
-            break;
-        case binary_sub:
-            binary([](auto a, auto b) { return a - b; });
-            break;
-        case binary_mul:
-            binary([](auto a, auto b) { return a * b; });
-            break;
-        case binary_div:
-            binary([](auto a, auto b) { return a / b; });
-            break;
-        case binary_min:
-            binary([](auto a, auto b) { return std::min(a, b); });
-            break;
-        case binary_max:
-            binary([](auto a, auto b) { return std::max(a, b); });
-            break;
-        case binary_pow:
-            binary([](auto a, auto b) { return std::pow(a, b); });
-            break;
-        case binary_floor_div:
-            binary([](auto a, auto b) { return std::floor(std::divides<float>()(a, b)); });
-            break;
-        case binary_floor_mod:
-            binary([](auto a, auto b) {
-                auto trunc_mod = std::fmod(a, b);
-                return trunc_mod != 0 && ((b < 0) != (trunc_mod < 0))
-                    ? trunc_mod + b
-                    : trunc_mod;
-            });
-            break;
-        default:
-            throw std::runtime_error("Not supported binary");
-        }
+        auto input_a = context.memory_at(rnode.input_a());
+        auto input_b = context.memory_at(rnode.input_b());
+        auto output = context.memory_at(rnode.output());
+        auto input_a_mem = host_runtime_tensor::buffer(input_a).unwrap_or_throw().as_span<float>();
+        auto input_b_mem = host_runtime_tensor::buffer(input_b).unwrap_or_throw().as_span<float>();
+        auto output_mem = host_runtime_tensor::buffer(output).unwrap_or_throw().as_span<float>();
+        kernels::binary(rnode.binary_op(), input_a_mem.data(), input_b_mem.data(), output_mem.data(),
+            input_a.shape(), input_a.strides(), input_b.shape(), input_b.strides(), output.strides(), rnode.fused_activation())
+            .unwrap_or_throw();
     });
 
     register_evaluator(op_concat, [](ir::node &node, module_evaluate_context &context) {

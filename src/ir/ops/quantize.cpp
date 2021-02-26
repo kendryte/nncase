@@ -19,11 +19,11 @@
 using namespace nncase;
 using namespace nncase::ir;
 
-quantize::quantize(shape_t input_shape, datatype_t output_dtype, quant_param_t quant_param)
+quantize::quantize(datatype_t input_type, shape_t input_shape, datatype_t output_type, quant_param_t quant_param)
     : quant_param_(quant_param)
 {
-    add_input("input", dt_float32, input_shape);
-    add_output("output", output_dtype, input_shape);
+    add_input("input", input_type, input_shape);
+    add_output("output", output_type, input_shape);
 }
 
 bool quantize::properties_equal(node &other) const

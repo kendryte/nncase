@@ -45,6 +45,8 @@ public:
             return "Datatype mismatch";
         case nncase_errc::shape_mismatch:
             return "Shape mismatch";
+        case nncase_errc::invalid_memory_location:
+            return "Invalid memory location";
         case nncase_errc::stackvm_illegal_instruction:
             return "StackVM illegal instruction";
         case nncase_errc::stackvm_illegal_target:

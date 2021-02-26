@@ -57,7 +57,7 @@ DEFINE_TFLITE_LOWER(SOFTMAX)
         input_dequant_paras.scale = to_vector(*input.quantization()->scale());
         input_dequant_paras.zero_point = to_vector(*input.quantization()->zero_point());
 
-        input_dequant = graph_.emplace<dequantize>(to_data_type(input.type()), get_shape(input.shape()), input_dequant_paras);
+        input_dequant = graph_.emplace<dequantize>(to_data_type(input.type()), get_shape(input.shape()), dt_float32, input_dequant_paras);
         input_dequant->name(get_tensor(op.outputs(), 0).name()->string_view());
         max->input().connect(input_dequant->output());
         sub->input_a().connect(input_dequant->output());
@@ -85,7 +85,7 @@ DEFINE_TFLITE_LOWER(SOFTMAX)
         output_quant_paras.scale = to_vector(*output.quantization()->scale());
         output_quant_paras.zero_point = to_vector(*output.quantization()->zero_point());
 
-        output_quant = graph_.emplace<quantize>(get_shape(output.shape()), to_data_type(output.type()), output_quant_paras);
+        output_quant = graph_.emplace<quantize>(dt_float32, get_shape(output.shape()), to_data_type(output.type()), output_quant_paras);
         output_quant->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/div_output_quant");
         output_quant->input().connect(div->output());
         link_output_tensor(op.outputs()->Get(0), &output_quant->output());

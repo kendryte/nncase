@@ -1256,6 +1256,62 @@ namespace IsaGen
             public float FusedClampHigh { get; set; }
         }
 
+        [DisplayName("TENSOR.DEQUANTIZE")]
+        [Category("Tensor Instructions")]
+        [Description("Dequantize")]
+        public class DequantizeInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.DEQUANTIZE;
+
+            [DisplayName("in_datatype")]
+            [Description("Source Datatype")]
+            public DataType SrcDataType { get; set; }
+
+            [DisplayName("dst_datatype")]
+            [Description("Dest Datatype")]
+            public DataType DestDataType { get; set; }
+
+            [DisplayName("rshape_src")]
+            [Description("Source shape register")]
+            public byte RshapeSrc { get; set; }
+
+            [DisplayName("rstride_src")]
+            [Description("Source stride register")]
+            public byte RstrideSrc { get; set; }
+
+            [DisplayName("rstride_dest")]
+            [Description("Dest stride register")]
+            public byte RstrideDest { get; set; }
+        }
+
+        [DisplayName("TENSOR.QUANTIZE")]
+        [Category("Tensor Instructions")]
+        [Description("Quantize")]
+        public class QuantizeInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.QUANTIZE;
+
+            [DisplayName("in_datatype")]
+            [Description("Source Datatype")]
+            public DataType SrcDataType { get; set; }
+
+            [DisplayName("dst_datatype")]
+            [Description("Dest Datatype")]
+            public DataType DestDataType { get; set; }
+
+            [DisplayName("rshape_src")]
+            [Description("Source shape register")]
+            public byte RshapeSrc { get; set; }
+
+            [DisplayName("rstride_src")]
+            [Description("Source stride register")]
+            public byte RstrideSrc { get; set; }
+
+            [DisplayName("rstride_dest")]
+            [Description("Dest stride register")]
+            public byte RstrideDest { get; set; }
+        }
+
         [DisplayName("TENSOR.REDUCE")]
         [Category("Tensor Instructions")]
         [Description("Reduce")]

@@ -37,6 +37,16 @@ void add_region_node(node &root, std::vector<node *> &region_nodes, std::unorder
             if (conn.module_type() == root.module_type())
                 add_region_node(conn, region_nodes, visited);
         }
+
+        for (auto out : root.outputs())
+        {
+            for (auto in : out->connections())
+            {
+                auto &conn = in->owner();
+                if (conn.module_type() == root.module_type())
+                    add_region_node(conn, region_nodes, visited);
+            }
+        }
     }
 }
 }

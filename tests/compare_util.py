@@ -261,12 +261,12 @@ def compare_with_ground_truth(result_path, ground_truth_path, state, verbose):
     return ok
 
 
-def compare_results(case_dir, out_len, targets):
+def compare_results(case_dir, out_len, targets, enable_ptq):
     for i in range(out_len):
         gt_file = os.path.join(case_dir, 'cpu_result{0}.txt'.format(i))
         for target in targets:
             nncase_file = os.path.join(
-                case_dir, target, 'nncase_result{0}.txt'.format(i))
+                case_dir, target, 'ptq' if enable_ptq else 'no_ptq', 'nncase_result{0}.txt'.format(i))
 
             judge = compare_with_ground_truth(
                 nncase_file, gt_file, state=0, verbose=VerboseType.PRINT_RESULT)

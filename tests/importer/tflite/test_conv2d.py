@@ -37,44 +37,44 @@ def _make_module(n, i_channels, i_size, k_size, o_channels, strides, padding, di
 
 n = [
     1,
-    3
+    #3
 ]
 
 i_channels = [
     1,
-    16
+    #16
 ]
 
 i_sizes = [
-    [1, 1],
+    #[1, 1],
     [33, 65]
 ]
 
 k_sizes = [
     [1, 1],
-    [3, 3],
-    [5, 5]
+    #[3, 3],
+    #[5, 5]
 ]
 
 o_channels = [
     1,
-    16
+    #16
 ]
 
 strides = [
     [1, 1],
-    [1, 3],
-    [5, 5]
+    #[1, 3],
+    #[5, 5]
 ]
 
 paddings = [
     'SAME',
-    'VALID'
+    #'VALID'
 ]
 
 dilations = [
     [1, 1],
-    [2, 2]
+    #[2, 2]
 ]
 
 

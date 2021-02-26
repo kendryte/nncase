@@ -115,9 +115,6 @@ public:
             std::cout << "4.2. Run calibration..." << std::endl;
             auto evaluator = run_calibration(graph_);
 
-            std::cout << "4.3. Find optimal quantization ranges..." << std::endl;
-            evaluator.end_ptq();
-
             std::cout << "4.3. Quantize graph..." << std::endl;
             quantize_graph(graph_, evaluator);
         }
@@ -198,7 +195,7 @@ private:
     ir::evaluator run_calibration(ir::graph &graph)
     {
         schedule::scheduler sched(*target_, graph, graph.outputs());
-        auto sched_result = sched.schedule();
+        auto sched_result = sched.schedule(true);
         ir::evaluator evaluator(sched_result);
         evaluator.enable_ptq(*target_);
 
@@ -243,29 +240,67 @@ private:
     template <class T>
     void run_calibration_eval(ptq_dataset_options &options, dataset &dataset, ir::evaluator &evaluator)
     {
-        size_t i = 0;
-        for (auto it = dataset.begin<T>(); it != dataset.end<T>(); ++it)
+        for (size_t stage = 0; stage < 2; stage++)
         {
-            auto input_buffer = host_runtime_tensor::buffer(evaluator.input_at(0)).unwrap_or_throw();
-            auto &tensor = it->tensor;
-            std::memcpy(input_buffer.data(), tensor.data(), input_buffer.size_bytes());
+            if (stage == 1)
+            {
+                std::cout << "4.2.2 Collecting distribution..." << std::endl;
+                evaluator.begin_collect_distribution();
+            }
+            else
+            {
+                std::cout << "4.2.1 Collecting ranges..." << std::endl;
+            }
 
-            evaluator.evaluate();
-            if (options.progress)
-                options.progress(i++, dataset.total_size());
+            size_t i = 0;
+            for (auto it = dataset.begin<T>(); it != dataset.end<T>(); ++it)
+            {
+                auto input_buffer = host_runtime_tensor::buffer(evaluator.input_at(0)).unwrap_or_throw();
+                auto &tensor = it->tensor;
+                std::memcpy(input_buffer.data(), tensor.data(), input_buffer.size_bytes());
+
+                evaluator.evaluate();
+                if (options.progress)
+                    options.progress(i++, dataset.total_size());
+            }
+
+            if (stage == 1)
+            {
+                std::cout << "4.3. Find optimal quantization ranges..." << std::endl;
+                evaluator.end_collect_distribution(options.progress);
+            }
         }
     }
 
     void run_calibration_eval(ptq_tensor_options &options, ir::evaluator &evaluator)
     {
-        for (size_t i = 0; i < options.samples_count; i++)
+        for (size_t stage = 0; stage < 2; stage++)
         {
-            auto input_buffer = host_runtime_tensor::buffer(evaluator.input_at(0)).unwrap_or_throw();
-            std::memcpy(input_buffer.data(), options.tensor_data.data() + i * input_buffer.size_bytes(), input_buffer.size_bytes());
+            if (stage == 1)
+            {
+                std::cout << "4.2.2 Collecting distribution..." << std::endl;
+                evaluator.begin_collect_distribution();
+            }
+            else
+            {
+                std::cout << "4.2.1 Collecting ranges..." << std::endl;
+            }
 
-            evaluator.evaluate();
-            if (options.progress)
-                options.progress(i++, options.samples_count);
+            for (size_t i = 0; i < options.samples_count; i++)
+            {
+                auto input_buffer = host_runtime_tensor::buffer(evaluator.input_at(0)).unwrap_or_throw();
+                std::memcpy(input_buffer.data(), options.tensor_data.data() + i * input_buffer.size_bytes(), input_buffer.size_bytes());
+
+                evaluator.evaluate();
+                if (options.progress)
+                    options.progress(i++, options.samples_count);
+            }
+
+            if (stage == 1)
+            {
+                std::cout << "4.3. Find optimal quantization ranges..." << std::endl;
+                evaluator.end_collect_distribution(options.progress);
+            }
         }
     }
 

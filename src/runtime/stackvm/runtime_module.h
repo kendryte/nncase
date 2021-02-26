@@ -23,7 +23,7 @@ class stackvm_runtime_module : public runtime_module, private op_visitor
 {
 public:
     static NNCASE_INLINE_VAR constexpr size_t MAX_GENERAL_REGS = 32;
-    static NNCASE_INLINE_VAR constexpr size_t MAX_SHAPE_REGS = 8;
+    static NNCASE_INLINE_VAR constexpr size_t MAX_SHAPE_REGS = 16;
     static NNCASE_INLINE_VAR constexpr size_t MAX_PADDINGS_REGS = 8;
 
 protected:
@@ -138,7 +138,10 @@ protected:
     result<void> visit(const tensor_batch_to_space_op_t &op) noexcept override;
     result<void> visit(const tensor_binary_op_t &op) noexcept override;
     result<void> visit(const tensor_broadcast_op_t &op) noexcept override;
+    result<void> visit(const tensor_call_op_t &op) noexcept override;
     result<void> visit(const tensor_conv2d_op_t &op) noexcept override;
+    result<void> visit(const tensor_dequantize_op_t &op) noexcept override;
+    result<void> visit(const tensor_quantize_op_t &op) noexcept override;
     result<void> visit(const tensor_reduce_op_t &op) noexcept override;
     result<void> visit(const tensor_transpose_op_t &op) noexcept override;
     result<void> visit(const tensor_unary_op_t &op) noexcept override;
@@ -158,7 +161,7 @@ private:
     }
 
 private:
-    std::unique_ptr<uint8_t[]> data_;
+    std::unique_ptr<gsl::byte[]> data_;
     gsl::span<const gsl::byte> rdata_;
     gsl::span<const gsl::byte> text_;
     evaluate_stack stack_;

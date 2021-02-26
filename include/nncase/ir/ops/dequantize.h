@@ -28,7 +28,7 @@ public:
 
     const quant_param_t quant_param() const noexcept { return quant_param_; }
 
-    dequantize(datatype_t input_type, shape_t input_shape, quant_param_t quant_param);
+    dequantize(datatype_t input_type, shape_t input_shape, datatype_t output_type, quant_param_t quant_param);
 
 protected:
     bool properties_equal(node &other) const override;

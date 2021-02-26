@@ -100,13 +100,19 @@ inline runtime_shape_t get_binary_output_shape(const runtime_shape_t &input_a_sh
 template <class TShape>
 size_t compute_size(const TShape &shape)
 {
-    return std::accumulate(shape.begin(), shape.end(), size_t(1), std::plus<void>());
+    return std::accumulate(shape.begin(), shape.end(), size_t(1), std::multiplies<void>());
+}
+
+template <class T>
+inline T clamp(T value, T min, T max)
+{
+    return std::max(std::min(value, max), min);
 }
 
 template <class T>
 inline T apply_activation(T value, value_range<T> activation)
 {
-    return std::clamp(value, activation.min, activation.max);
+    return clamp(value, activation.min, activation.max);
 }
 
 template <class TShape>

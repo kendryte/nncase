@@ -27,7 +27,7 @@ public:
     template <class TShape>
     input_node(datatype_t type, TShape &&shape)
     {
-        add_output("output", type, std::forward<TShape>(shape));
+        add_output("output", type, std::forward<TShape>(shape), mem_input);
     }
 
 protected:
@@ -77,9 +77,9 @@ public:
     output_connector &output() { return output_at(0); }
 
     template <class TShape>
-    uninitialized(datatype_t type, TShape &&shape)
+    uninitialized(datatype_t type, TShape &&shape, memory_location_t memory_location = mem_data)
     {
-        add_output("output", type, std::forward<TShape>(shape));
+        add_output("output", type, std::forward<TShape>(shape), memory_location);
     }
 
 protected:

@@ -231,7 +231,7 @@ PYBIND11_MODULE(_nncase, m)
             if (PyBytes_AsStringAndSize(bytes.ptr(), reinterpret_cast<char **>(&buffer), &length))
                 throw std::invalid_argument("Invalid bytes");
             o.tensor_data.assign(buffer, buffer + length);
-            LaunchDebugger();
+            //LaunchDebugger();
         })
         .def_readwrite("samples_count", &ptq_tensor_options::samples_count);
 

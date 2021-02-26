@@ -291,6 +291,13 @@ inline shape_t get_strided_slice_output_shape(const axis_t &begin, const axis_t 
 
     return new_shape;
 }
+
+template <class U, class T>
+std::span<U> as_span(const std::span<T> &src) noexcept
+{
+    assert(src.size_bytes() % sizeof(U) == 0);
+    return std::span<U>(reinterpret_cast<U *>(src.data()), src.size_bytes() / sizeof(U));
+}
 }
 
 namespace xt

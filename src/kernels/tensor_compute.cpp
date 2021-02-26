@@ -37,6 +37,18 @@ result<void> kernels::copy(datatype_t type, const gsl::byte *src, gsl::byte *des
     return cpu::reference::copy(type, src, dest, shape, src_strides, dest_strides);
 }
 
+result<void> kernels::dequantize(datatype_t in_type, datatype_t out_type, const gsl::byte *input, gsl::byte *output,
+    const runtime_shape_t &in_shape, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, float scale, float bias) noexcept
+{
+    return cpu::reference::dequantize(in_type, out_type, input, output, in_shape, in_strides, out_strides, scale, bias);
+}
+
+result<void> kernels::quantize(datatype_t in_type, datatype_t out_type, const gsl::byte *input, gsl::byte *output,
+    const runtime_shape_t &in_shape, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, float scale, float bias) noexcept
+{
+    return cpu::reference::quantize(in_type, out_type, input, output, in_shape, in_strides, out_strides, scale, bias);
+}
+
 result<void> kernels::transpose(datatype_t type, const gsl::byte *src, gsl::byte *dest, const runtime_shape_t &in_shape,
     const runtime_shape_t &perm, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides) noexcept
 {

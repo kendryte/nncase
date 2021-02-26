@@ -5,5 +5,5 @@ set(SRCS evaluator.cpp
          ops/neutral/neutral_ops.cpp)
 
 add_library(evaluator OBJECT ${SRCS})
-target_link_libraries(evaluator PUBLIC ir schedule simulator CONAN_PKG::mpark-variant)
+target_link_libraries(evaluator PUBLIC ir schedule simulator kernels CONAN_PKG::mpark-variant)
 set_property(TARGET evaluator PROPERTY POSITION_INDEPENDENT_CODE ON)

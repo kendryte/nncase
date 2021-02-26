@@ -138,9 +138,9 @@ def compile_tflite_nncase(case_name, model, targets, input, enable_ptq):
             f.write(kmodel)
 
 
-def eval_nncase(case_name, input, targets):
+def eval_nncase(case_name, input, targets, enable_ptq):
     for target in targets:
-        case_dir = os.path.join(output_root, case_name, target)
+        case_dir = os.path.join(output_root, case_name, target, 'ptq' if enable_ptq else 'no_ptq')
         with open(os.path.join(case_dir, 'test.kmodel'), 'rb') as f:
             kmodel = f.read()
             sim = nncase.Simulator()
@@ -161,9 +161,12 @@ def test_tf_module(case_name, module, targets):
     tflite = tf_module_to_tflite(case_name, module)
     out_len, input = eval_tflite_gth(case_name, tflite)
     compile_tflite_nncase(case_name, tflite, targets, input, enable_ptq=False)
+    eval_nncase(case_name, input, targets, enable_ptq=False)
+    ret = compare_util.compare_results(case_dir, out_len, targets, enable_ptq=False)
+    assert ret
     compile_tflite_nncase(case_name, tflite, targets, input, enable_ptq=True)
-    eval_nncase(case_name, input, targets)
-    ret = compare_util.compare_results(case_dir, out_len, targets)
+    eval_nncase(case_name, input, targets, enable_ptq=True)
+    ret = compare_util.compare_results(case_dir, out_len, targets, enable_ptq=True)
     assert ret
 
 

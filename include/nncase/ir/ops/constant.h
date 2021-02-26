@@ -15,6 +15,7 @@
 #pragma once
 #include "../debug.h"
 #include "../node.h"
+#include "../op_utils.h"
 #include <vector>
 
 namespace nncase::ir
@@ -36,6 +37,12 @@ public:
     {
     }
 
+    template <class TShape>
+    constant(datatype_t type, TShape &&shape, gsl::span<const gsl::byte> data)
+        : constant(type, std::forward<TShape>(shape), reinterpret_cast<const std::byte *>(data.begin()), reinterpret_cast<const std::byte *>(data.end()))
+    {
+    }
+
     template <class TShape, class T>
     constant(datatype_t type, TShape &&shape, std::span<const T> data)
         : constant(type, std::forward<TShape>(shape), std::as_bytes(data))
@@ -43,8 +50,20 @@ public:
     }
 
     template <class TShape, class T>
+    constant(datatype_t type, TShape &&shape, gsl::span<const T> data)
+        : constant(type, std::forward<TShape>(shape), gsl::as_bytes(data))
+    {
+    }
+
+    template <class TShape, class T>
     constant(datatype_t type, TShape &&shape, std::span<T> data)
         : constant(type, std::forward<TShape>(shape), std::as_bytes(data))
+    {
+    }
+
+    template <class TShape, class T>
+    constant(datatype_t type, TShape &&shape, gsl::span<T> data)
+        : constant(type, std::forward<TShape>(shape), gsl::as_bytes(data))
     {
     }
 
@@ -64,6 +83,8 @@ public:
     constant(datatype_t type, TShape &&shape, TDataArgs... data_args)
         : data_(std::forward<TDataArgs>(data_args)...), datatype_(type)
     {
+        if (ir::get_bytes(type, shape) != data_.size())
+            throw std::invalid_argument("Shape and data size don't match");
         add_output("output", type, std::forward<TShape>(shape));
     }
 

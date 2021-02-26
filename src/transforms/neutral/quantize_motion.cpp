@@ -69,7 +69,7 @@ void quantize_pad_motion_transform::process(transform_context &context)
         (int32_t)std::round((old_p.pad_value().as<float>() - q_param.zero_point[0]) * q_param.scale[0]),
         0, 255);
 
-    auto q = context.graph.emplace<quantize>(old_p.input().shape(), old_p.input().type(), q_param);
+    auto q = context.graph.emplace<quantize>(dt_float32, old_p.input().shape(), old_p.input().type(), q_param);
     q->name(old_q.name());
     auto p = context.graph.emplace<pad>(q->output().type(), q->output().shape(), old_p.paddings(), (float_t)pad_value);
     p->name(old_p.name());
@@ -112,7 +112,7 @@ void quantize_transpose_motion_transform::process(transform_context &context)
     auto &old_tp = static_cast<transpose &>(*context.matched_nodes[0]);
     auto &old_q = static_cast<quantize &>(*context.matched_nodes[1]);
 
-    auto q = context.graph.emplace<quantize>(old_tp.input().shape(), old_q.output().type(), old_q.quant_param());
+    auto q = context.graph.emplace<quantize>(old_q.input().type(), old_tp.input().shape(), old_q.output().type(), old_q.quant_param());
     q->name(old_q.name());
     auto tp = context.graph.emplace<transpose>(q->output().type(), q->output().shape(), old_tp.perm());
     tp->name(old_tp.name());
@@ -167,7 +167,7 @@ void quantize_slice_motion_transform::process(transform_context &context)
     auto &old_q = static_cast<quantize &>(*context.matched_nodes[0]);
     auto &old_slice = static_cast<slice &>(*context.matched_nodes[1]);
 
-    auto q = context.graph.emplace<quantize>(old_slice.input().shape(), old_q.output().type(), old_q.quant_param());
+    auto q = context.graph.emplace<quantize>(old_q.input().type(), old_slice.input().shape(), old_q.output().type(), old_q.quant_param());
     q->name(old_q.name());
     auto sl = context.graph.emplace<slice>(q->output().type(), q->output().shape(), old_slice.begin(), old_slice.end(), old_slice.strides(),
         old_slice.begin_mask(), old_slice.end_mask(), old_slice.ellipsis_mask(), old_slice.new_axis_mask(), old_slice.shrink_axis_mask());
@@ -211,7 +211,7 @@ void quantize_resize_image_motion_transform::process(transform_context &context)
     auto &old_q = static_cast<quantize &>(*context.matched_nodes[0]);
     auto &old_resize = static_cast<resize_image &>(*context.matched_nodes[1]);
 
-    auto q = context.graph.emplace<quantize>(old_resize.input().shape(), old_q.output().type(), old_q.quant_param());
+    auto q = context.graph.emplace<quantize>(old_q.input().type(), old_resize.input().shape(), old_q.output().type(), old_q.quant_param());
     q->name(old_q.name());
     auto resize = context.graph.emplace<resize_image>(q->output().type(), old_resize.mode(), q->output().shape(), old_resize.new_size(), old_resize.align_corners());
     resize->name(old_resize.name());
@@ -264,7 +264,7 @@ void quantize_reshape_motion_transform::process(transform_context &context)
     auto &old_q = static_cast<quantize &>(*context.matched_nodes[0]);
     auto &old_r = static_cast<bitcast &>(*context.matched_nodes[1]);
 
-    auto q = context.graph.emplace<quantize>(old_r.input().shape(), old_q.output().type(), old_q.quant_param());
+    auto q = context.graph.emplace<quantize>(old_q.input().type(), old_r.input().shape(), old_q.output().type(), old_q.quant_param());
     q->name(old_q.name());
     auto r = context.graph.emplace<bitcast>(q->output().type(), q->output().shape(), q->output().type(), old_r.new_shape());
     r->name(old_r.name());
@@ -308,7 +308,7 @@ void quantize_bitcast_motion_transform::process(transform_context &context)
     auto &old_q = static_cast<quantize &>(*context.matched_nodes[0]);
     auto &old_bc = static_cast<bitcast &>(*context.matched_nodes[1]);
 
-    auto q = context.graph.emplace<quantize>(old_bc.input().shape(), old_q.output().type(), old_q.quant_param());
+    auto q = context.graph.emplace<quantize>(old_q.input().type(), old_bc.input().shape(), old_q.output().type(), old_q.quant_param());
     q->name(old_q.name());
     auto bc = context.graph.emplace<bitcast>(q->output().type(), q->output().shape(), old_q.output().type(), old_q.output().shape());
     bc->name(old_bc.name());
@@ -350,7 +350,7 @@ void quantize_b2s_motion_transform::process(transform_context &context)
     auto b2s = context.graph.emplace<batch_to_space>(output.type(), output.shape(), old_b2s.block_size_h(), old_b2s.block_size_w(),
         old_b2s.strides(), old_b2s.begin(), old_b2s.end(), old_b2s.crop_h(), old_b2s.crop_w());
     b2s->name(old_b2s.name());
-    auto q = context.graph.emplace<quantize>(b2s->output().shape(), old_q.output().type(), old_q.quant_param());
+    auto q = context.graph.emplace<quantize>(old_q.input().type(), b2s->output().shape(), old_q.output().type(), old_q.quant_param());
     q->name(old_q.name());
 
     b2s->input().connect(output);

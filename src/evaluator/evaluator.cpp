@@ -82,13 +82,6 @@ runtime_tensor module_evaluate_context::memory_at(const output_connector &conn)
 void module_evaluate_context::enable_ptq(target &target)
 {
     quantizer_ = target.create_quantizer(sched_.graph->module_type());
-    quantizer_->begin_collect_distribution();
-}
-
-void module_evaluate_context::end_ptq()
-{
-    // TODO
-    //quantizer_->end_collect_distribution();
 }
 
 void module_evaluate_context::evaluate()
@@ -107,14 +100,16 @@ void module_evaluate_context::evaluate()
 
         if (quantizer_)
         {
-            for (auto in : node->inputs())
+            for (auto out : node->outputs())
             {
-                auto out = in->connection();
-                if (!quantizer_->has_record(*out))
+                if (out->attributes() & cnctr_attr_need_quantize)
                 {
-                    auto mem = memory_at(*out);
-                    auto buffer = host_runtime_tensor::buffer(mem).unwrap_or_throw().as_span<float>();
-                    quantizer_->record(*out, buffer);
+                    if (!quantizer_->has_record(*out))
+                    {
+                        auto mem = memory_at(*out);
+                        auto buffer = host_runtime_tensor::buffer(mem).unwrap_or_throw().as_span<float>();
+                        quantizer_->record(*out, buffer);
+                    }
                 }
             }
         }
@@ -126,6 +121,18 @@ void module_evaluate_context::evaluate()
 #if PROFILE
     std::cout << "Total: " << total_duration.count() / 1e6 << "ms" << std::endl;
 #endif
+}
+
+void module_evaluate_context::begin_collect_distribution()
+{
+    if (quantizer_)
+        quantizer_->begin_collect_distribution();
+}
+
+void module_evaluate_context::end_collect_distribution(std::function<void(size_t cnt, size_t total)> progress)
+{
+    if (quantizer_)
+        quantizer_->end_collect_distribution(progress);
 }
 
 evaluator::evaluator(const schedule::schedule_result &sched)
@@ -156,13 +163,19 @@ void evaluator::enable_ptq(target &target)
         module_p.second.enable_ptq(target);
 }
 
-void evaluator::end_ptq()
-{
-    for (auto &module_p : module_ctxs_)
-        module_p.second.end_ptq();
-}
-
 void evaluator::evaluate()
 {
     module_ctxs_.at(sched_.main_module).evaluate();
+}
+
+void evaluator::begin_collect_distribution()
+{
+    for (auto &module_p : module_ctxs_)
+        module_p.second.begin_collect_distribution();
+}
+
+void evaluator::end_collect_distribution(std::function<void(size_t cnt, size_t total)> progress)
+{
+    for (auto &module_p : module_ctxs_)
+        module_p.second.end_collect_distribution(progress);
 }

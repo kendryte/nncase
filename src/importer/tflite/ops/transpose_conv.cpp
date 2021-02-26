@@ -92,7 +92,7 @@ DEFINE_TFLITE_LOWER(TRANSPOSE_CONV)
         weights_paras.scale = to_vector(*weights.quantization()->scale());
         weights_paras.zero_point = to_vector(*weights.quantization()->zero_point());
 
-        auto weights_dequant = graph_.emplace<dequantize>(to_data_type(weights.type()), get_shape(weights.shape()), weights_paras);
+        auto weights_dequant = graph_.emplace<dequantize>(to_data_type(weights.type()), get_shape(weights.shape()), dt_float32, weights_paras);
         weights_dequant->name(get_tensor(op.outputs(), 0).name()->string_view());
         //        weights_trans = nhwc_to_nchw(weights_dequant->output().type(), weights_dequant->output().shape());
         //        weights_trans->name(get_tensor(op.outputs(), 0).name()->string_view());

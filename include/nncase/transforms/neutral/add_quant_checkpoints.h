@@ -18,7 +18,7 @@
 
 namespace nncase::ir::transforms
 {
-class add_quant_checkpoints_transform : public transform
+class NNCASE_API add_quant_checkpoints_transform : public transform
 {
 public:
     template <class TIt>
@@ -27,8 +27,9 @@ public:
     {
     }
 
-    add_quant_checkpoints_transform(std::initializer_list<ir::node_opcode> opcodes)
-        : opcodes_(opcodes)
+    template <class... TArgs>
+    add_quant_checkpoints_transform(TArgs &&... opcodes)
+        : opcodes_({ std::forward<TArgs>(opcodes)... })
     {
     }
 

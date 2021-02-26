@@ -371,7 +371,7 @@ void schedule_context::assign_allocations()
     alloc_visitor.visit(outputs);
 }
 
-schedule_result scheduler::schedule()
+schedule_result scheduler::schedule(bool skip_buffer_alias)
 {
     auto schedule_module = [&](ir::graph &graph, std::span<ir::output_node *> outputs, module_schedule_result &result) {
         schedule_context context;
@@ -380,7 +380,8 @@ schedule_result scheduler::schedule()
         context.outputs = outputs;
 
         context.make_logical_buffers();
-        context.analyze_buffer_alias();
+        if (!skip_buffer_alias)
+            context.analyze_buffer_alias();
         context.fix_concat_indices();
         context.fix_lifetime();
         context.generate_compute_sequence();

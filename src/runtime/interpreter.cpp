@@ -12,11 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "runtime_loader.h"
 #include <cassert>
 #include <iostream>
 #include <nncase/runtime/error.h>
 #include <nncase/runtime/interpreter.h>
+#include <nncase/runtime/runtime_loader.h>
 #include <nncase/runtime/span_reader.h>
 
 using namespace nncase;
@@ -47,11 +47,10 @@ result<void> interpreter::load_model(gsl::span<const gsl::byte> buffer) noexcept
         return err(std::errc::not_enough_memory);
     }
 
-    span_reader content(reader.peek_avail().subspan(sizeof(module_header) * header->modules));
     for (size_t i = 0; i < header->modules; i++)
     {
         auto mod_header = reader.get_ref<module_header>();
-        content.skip(mod_header->size);
+        reader.skip(mod_header->size);
         try_var(rt_module, runtime_module::create(mod_header->type));
 
         try_(rt_module->initialize(*mod_header, *this));
@@ -119,4 +118,11 @@ result<void> interpreter::output_tensor(size_t index, runtime_tensor tensor) noe
 result<void> interpreter::run() noexcept
 {
     return main_module_->run();
+}
+
+result<runtime_module *> interpreter::find_module_by_id(size_t index) noexcept
+{
+    if (index < modules_.size())
+        return ok(modules_[index].get());
+    return err(std::errc::result_out_of_range);
 }

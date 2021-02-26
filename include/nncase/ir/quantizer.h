@@ -105,7 +105,7 @@ public:
     void broadcast_output(ir::graph &graph, const std::unordered_set<node_opcode> &ops);
     void broadcast_output(ir::node &node, const value_range<float> &range, const std::unordered_set<node_opcode> &ops);
     void begin_collect_distribution();
-    void end_collect_distribution(std::function<void(size_t)> progress);
+    void end_collect_distribution(std::function<void(size_t cnt, size_t total)> progress);
     size_t histograms_count() const noexcept { return histograms_.size(); }
 
 private:

@@ -65,7 +65,11 @@ private:
 class NNCASE_API output_connector : public base_connector
 {
 public:
-    using base_connector::base_connector;
+    template <class TName, class TShape>
+    output_connector(node &owner, TName &&name, datatype_t type, TShape &&shape, memory_location_t memory_location = mem_data)
+        : base_connector(owner, std::forward<TName>(name), type, std::forward<TShape>(shape)), memory_location_(memory_location)
+    {
+    }
 
     std::span<input_connector *const> connections() const noexcept { return connections_; }
     void connect(input_connector &connector);
@@ -73,9 +77,12 @@ public:
     void clear_connections();
     connector_attributes attributes() const noexcept { return attributes_; }
     void attributes(connector_attributes value) noexcept { attributes_ = value; }
+    memory_location_t memory_location() const noexcept { return memory_location_; }
+    void memory_location(memory_location_t value) noexcept { memory_location_ = value; }
 
 private:
     std::vector<input_connector *> connections_;
     connector_attributes attributes_ = cnctr_attr_none;
+    memory_location_t memory_location_;
 };
 }

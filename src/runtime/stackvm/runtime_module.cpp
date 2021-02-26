@@ -24,7 +24,7 @@ result<void> stackvm_runtime_module::initialize_core(runtime_module_init_context
     auto data_pool = mempool(mem_data);
     if (data_pool.size)
     {
-        data_.reset(new (std::nothrow) uint8_t[data_pool.size]);
+        data_.reset(new (std::nothrow) gsl::byte[data_pool.size]);
         if (!data_)
             return err(std::errc::not_enough_memory);
     }

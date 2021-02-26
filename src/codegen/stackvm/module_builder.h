@@ -20,6 +20,8 @@
 #include <nncase/ir/ops/broadcast.h>
 #include <nncase/ir/ops/call.h>
 #include <nncase/ir/ops/conv2d.h>
+#include <nncase/ir/ops/dequantize.h>
+#include <nncase/ir/ops/quantize.h>
 #include <nncase/ir/ops/reduce.h>
 #include <nncase/ir/ops/transpose.h>
 #include <nncase/ir/ops/unary.h>

@@ -16,8 +16,8 @@
 #include <Windows.h>
 #endif
 
-#include "runtime_loader.h"
 #include <fmt/format.h>
+#include <nncase/runtime/runtime_loader.h>
 #include <nncase/runtime/runtime_module.h>
 #include <nncase/runtime/stackvm/runtime_module.h>
 
@@ -44,9 +44,9 @@ namespace
 result<rt_module_activator_t> find_runtime_activator(const module_type_t &type)
 {
 #ifdef NNCASE_SIMULATOR
-    auto module_name = fmt::format("nncase.module.{}.dll", type.data());
+    auto module_name = fmt::format("nncase.modules.{}.dll", type.data());
 #else
-    auto module_name = fmt::format("nncase.rt_module.{}.dll", type.data());
+    auto module_name = fmt::format("nncase.rt_modules.{}.dll", type.data());
 #endif
     auto mod = LoadLibraryA(module_name.c_str());
     TRY_WIN32_IF_NOT(mod);

@@ -61,7 +61,7 @@ void tflite_importer::convert_reduce(const tflite::Operator &op, reduce_op_t red
         input_dequant_paras.scale = to_vector(*input.quantization()->scale());
         input_dequant_paras.zero_point = to_vector(*input.quantization()->zero_point());
 
-        input_dequant = graph_.emplace<dequantize>(to_data_type(input.type()), get_shape(input.shape()), input_dequant_paras);
+        input_dequant = graph_.emplace<dequantize>(to_data_type(input.type()), get_shape(input.shape()), dt_float32, input_dequant_paras);
         input_dequant->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/input_dequant");
         node->input().connect(input_dequant->output());
         input_tensors_.emplace(&input_dequant->input(), op.inputs()->Get(0));
@@ -78,7 +78,7 @@ void tflite_importer::convert_reduce(const tflite::Operator &op, reduce_op_t red
         output_quant_paras.scale = to_vector(*output.quantization()->scale());
         output_quant_paras.zero_point = to_vector(*output.quantization()->zero_point());
 
-        output_quant = graph_.emplace<quantize>(get_shape(output.shape()), to_data_type(output.type()), output_quant_paras);
+        output_quant = graph_.emplace<quantize>(dt_float32, get_shape(output.shape()), to_data_type(output.type()), output_quant_paras);
         output_quant->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/output_quant");
         output_quant->input().connect(node->output());
         output_tensors_.emplace(op.outputs()->Get(0), &output_quant->output());
