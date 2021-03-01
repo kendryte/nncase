@@ -86,7 +86,7 @@ result<gsl::span<gsl::byte>> k210_runtime_module::memory_at(const memory_range &
         {
             try_var(tensor, input_tensor(id));
             try_var(buffer, host_runtime_tensor::buffer(tensor));
-            base = buffer.data();
+            base = buffer.data() - mrange.start;
         }
         else
         {
@@ -110,7 +110,7 @@ result<gsl::span<gsl::byte>> k210_runtime_module::memory_at(const memory_range &
         {
             try_var(tensor, output_tensor(id));
             try_var(buffer, host_runtime_tensor::buffer(tensor));
-            base = buffer.data();
+            base = buffer.data() - mrange.start;
         }
         else
         {

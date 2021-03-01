@@ -275,7 +275,7 @@ struct fixed_mul
     float mul;
     int8_t shift;
 
-    int32_t rounded_mul() const noexcept { return (int32_t)roundf(mul); }
+    int32_t rounded_mul() const noexcept { return (int32_t)lrintf(mul); }
 };
 
 using memory_location_t = uint8_t;

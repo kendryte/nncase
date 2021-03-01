@@ -60,7 +60,7 @@ memory_location_t decide_memory_location(ir::output_connector &conn) noexcept
     auto connections = conn.connections();
     if (std::any_of(connections.begin(), connections.end(), [](input_connector *conn) { return conn->owner().runtime_opcode() == op_output_node; }))
         return mem_output;
-    return mem_data;
+    return conn.memory_location();
 }
 
 shape_t to_strides(const shape_t &shape)

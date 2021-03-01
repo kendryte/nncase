@@ -85,7 +85,7 @@ public:
     {
         if (ir::get_bytes(type, shape) != data_.size())
             throw std::invalid_argument("Shape and data size don't match");
-        add_output("output", type, std::forward<TShape>(shape));
+        add_output("output", type, std::forward<TShape>(shape), mem_rdata);
     }
 
     std::string to_string() const

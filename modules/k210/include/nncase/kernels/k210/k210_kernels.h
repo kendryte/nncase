@@ -185,8 +185,8 @@ void kpu_conv2d(const uint8_t *input, int64_t *workspace, uint8_t *output, const
                 auto &seg = *std::find_if(activation.rbegin(), activation.rend(), [value](const runtime::k210::kpu_activation_segment &seg) {
                     return value > seg.start_x;
                 });
-                value = runtime::carry_shift<int64_t, true>((value - seg.start_x) * seg.mul, seg.shift) + seg.add;
-                *out_it++ = (uint8_t)std::clamp(value, int64_t(0), int64_t(255));
+                auto act_value = runtime::carry_shift<int64_t, true>((value - seg.start_x) * seg.mul, seg.shift) + seg.add;
+                *out_it++ = (uint8_t)std::clamp(act_value, int64_t(0), int64_t(255));
             }
         }
     }

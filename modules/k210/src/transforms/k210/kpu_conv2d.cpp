@@ -68,7 +68,7 @@ auto quantize_weights(quantizer &quantizer, fake_kpu_conv2d &conv, constant &wei
 
     auto out_it = q_weights.begin();
     for (auto w : weights_data)
-        *out_it++ = (uint8_t)std::clamp((int32_t)std::lrint(w * q_p.scale[0] + q_p.zero_point[0]), 0, 255);
+        *out_it++ = (uint8_t)std::clamp((int32_t)std::lrint(w / q_p.scale[0] + q_p.zero_point[0]), 0, 255);
     return std::make_tuple(q_p, std::move(scales), std::move(q_weights));
 }
 
@@ -76,8 +76,8 @@ auto quantize_act(quantizer &quantizer, float act_in_scale, const quant_param_t 
 {
     const auto xq_low = -(1LL << 35);
     const auto xq_high = (1LL << 35) - 1;
-    const auto xf_min = std::clamp((0 - yq_p.zero_point[0]) / yq_p.scale[0], activation.min, activation.max);
-    const auto xf_max = std::clamp((255 - yq_p.zero_point[0]) / yq_p.scale[0], activation.min, activation.max);
+    const auto xf_min = std::clamp((0 - yq_p.zero_point[0]) * yq_p.scale[0], activation.min, activation.max);
+    const auto xf_max = std::clamp((255 - yq_p.zero_point[0]) * yq_p.scale[0], activation.min, activation.max);
     const auto zq_scale = act_in_scale / zq_p.scale[0];
 
     const size_t samples_count = 1024;
@@ -116,12 +116,12 @@ auto quantize_act(quantizer &quantizer, float act_in_scale, const quant_param_t 
         auto &src = segs[i - 1];
         auto &dest = act[i];
 
-        auto x0 = src.start * act_in_scale;
-        auto mul = quantizer.get_fixed_mul(src.slop / zq_scale, 16, 20, true);
-        dest.start_x = (int64_t)std::round(x0);
+        auto x0 = src.start / act_in_scale;
+        auto mul = quantizer.get_fixed_mul(src.slop * zq_scale, 16, 20, true);
+        dest.start_x = (int64_t)std::lrint(x0);
         dest.mul = mul.rounded_mul();
         dest.shift = mul.shift;
-        dest.add = std::clamp((int32_t)std::round(src.intercept * zq_p.scale[0] + zq_p.zero_point[0]), 0, 255);
+        dest.add = std::clamp((int32_t)std::lrint(src.intercept / zq_p.scale[0] + zq_p.zero_point[0]), 0, 255);
     }
 
     return act;
@@ -131,23 +131,23 @@ auto quantize_bn(quantizer &quantizer, fake_kpu_conv2d &conv, constant &bias, fl
 {
     auto bias_data = as_span<const float>(bias.data());
     std::vector<kpu_batchnorm_segment> bn(conv.output_channels());
-    auto so = yq_p.scale[0] / sa;
+    auto so = sa / yq_p.scale[0];
     auto bn_mul = quantizer.get_fixed_mul(so, 22, 255, true);
     auto bn_shift = std::min(bn_mul.shift, (int8_t)15);
     auto up_scale = bn_mul.shift - bn_shift;
     assert(up_scale >= 0);
-    auto post_mul = bn_mul.rounded_mul() / bn_mul.mul * std::pow(2.f, up_scale);
+    auto post_mul = bn_mul.rounded_mul() / bn_mul.mul / std::pow(2.f, up_scale);
     auto s_act_in = yq_p.scale[0] * post_mul;
 
     for (size_t i = 0; i < bias_data.size(); i++)
     {
         auto b = bias_data[i];
-        auto ch_so = so * post_mul / w_scales[i];
+        auto ch_so = so / post_mul / w_scales[i];
         auto ch_bn_mul = quantizer.get_fixed_mul((float)ch_so, 22, 15, true);
         bn[i] = {
             ch_bn_mul.rounded_mul(),
             ch_bn_mul.shift,
-            (int32_t)std::round(b * s_act_in)
+            (int32_t)std::lrint(b / s_act_in)
         };
     }
 
