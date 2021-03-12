@@ -16,6 +16,7 @@ set(SRCS runtime_module.cpp
          ops/tensor.dequantize.cpp
          ops/tensor.quantize.cpp
          ops/tensor.reduce.cpp
+         ops/tensor.slice.cpp
          ops/tensor.transpose.cpp
          ops/tensor.unary.cpp)
 

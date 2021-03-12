@@ -23,6 +23,7 @@
 #include <nncase/ir/ops/dequantize.h>
 #include <nncase/ir/ops/quantize.h>
 #include <nncase/ir/ops/reduce.h>
+#include <nncase/ir/ops/slice.h>
 #include <nncase/ir/ops/transpose.h>
 #include <nncase/ir/ops/unary.h>
 #include <nncase/ir/placeholders.h>

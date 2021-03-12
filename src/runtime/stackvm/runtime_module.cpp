@@ -95,6 +95,14 @@ result<uintptr_t> stackvm_runtime_module::pop_addr() noexcept
     return ok(addr.as_u());
 }
 
+runtime_axis_t stackvm_runtime_module::as_runtime_axis(const runtime_shape_t &shape)
+{
+    runtime_axis_t axis(shape.size());
+    for (size_t i = 0; i < shape.size(); i++)
+        axis[i] = (int32_t)(uint32_t)shape[i];
+    return axis;
+}
+
 result<std::unique_ptr<runtime_module>> stackvm::create_stackvm_runtime_module()
 {
     std::unique_ptr<runtime_module> mod(new (std::nothrow) stackvm_runtime_module());

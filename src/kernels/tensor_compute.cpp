@@ -73,3 +73,9 @@ result<void> kernels::reduce(reduce_op_t op, float init_value, const float *inpu
 {
     return cpu::reference::reduce(op, init_value, input, output, in_shape, axis, in_strides, out_strides, keep_dims);
 }
+
+result<void> kernels::slice(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const runtime_shape_t &begins, const runtime_shape_t &ends, const runtime_axis_t &strides) noexcept
+{
+    return cpu::reference::slice(type, input, output, in_shape, in_strides, out_strides, begins, ends, strides);
+}

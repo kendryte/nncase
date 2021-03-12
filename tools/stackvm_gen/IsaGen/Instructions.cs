@@ -178,6 +178,13 @@ namespace IsaGen
     }
 
     [BitLength(8)]
+    [EnumName("pad_mode_t")]
+    [Browsable(false)]
+    public enum PadMode
+    {
+    }
+
+    [BitLength(8)]
     [EnumName("memory_location_t")]
     [Browsable(false)]
     public enum MemoryLocation
@@ -1284,6 +1291,38 @@ namespace IsaGen
             public byte RstrideDest { get; set; }
         }
 
+        [DisplayName("TENSOR.PAD")]
+        [Category("Tensor Instructions")]
+        [Description("Pad")]
+        public class PadInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.PAD;
+
+            [DisplayName("datatype")]
+            [Description("Datatype")]
+            public DataType DataType { get; set; }
+
+            [DisplayName("rshape_src")]
+            [Description("Source shape register")]
+            public byte RshapeSrc { get; set; }
+
+            [DisplayName("rstride_src")]
+            [Description("Source stride register")]
+            public byte RstrideSrc { get; set; }
+
+            [DisplayName("rstride_dest")]
+            [Description("Dest stride register")]
+            public byte RstrideDest { get; set; }
+
+            [DisplayName("rpaddings")]
+            [Description("Paddings register")]
+            public byte Rpaddings { get; set; }
+
+            [DisplayName("pad_mode")]
+            [Description("Pad mode")]
+            public PadMode PadMode { get; set; }
+        }
+
         [DisplayName("TENSOR.QUANTIZE")]
         [Category("Tensor Instructions")]
         [Description("Quantize")]
@@ -1346,6 +1385,42 @@ namespace IsaGen
             [DisplayName("keep_dims")]
             [Description("Keep dimensions")]
             public bool KeepDims { get; set; }
+        }
+
+        [DisplayName("TENSOR.SLICE")]
+        [Category("Tensor Instructions")]
+        [Description("Slice")]
+        public class SliceInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.SLICE;
+
+            [DisplayName("datatype")]
+            [Description("Datatype")]
+            public DataType DataType { get; set; }
+
+            [DisplayName("rshape_src")]
+            [Description("Source shape register")]
+            public byte RshapeSrc { get; set; }
+
+            [DisplayName("rstride_src")]
+            [Description("Source stride register")]
+            public byte RstrideSrc { get; set; }
+
+            [DisplayName("rstride_dest")]
+            [Description("Dest stride register")]
+            public byte RstrideDest { get; set; }
+
+            [DisplayName("rbegins")]
+            [Description("Begins shape register")]
+            public byte Rbegins { get; set; }
+
+            [DisplayName("rends")]
+            [Description("Ends shape register")]
+            public byte Rends { get; set; }
+
+            [DisplayName("rstrides")]
+            [Description("Strides shape register")]
+            public byte Strides { get; set; }
         }
 
         [DisplayName("TENSOR.UNARY")]

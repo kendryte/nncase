@@ -10,5 +10,6 @@ set(SRCS batch_to_space.cpp
          quantize.cpp
          reduce.cpp
          transpose.cpp
+         slice.cpp
          unary.cpp)
 target_sources(kernels PRIVATE ${SRCS})

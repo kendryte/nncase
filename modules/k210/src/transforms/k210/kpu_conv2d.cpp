@@ -46,12 +46,12 @@ auto quantize_weights(quantizer &quantizer, fake_kpu_conv2d &conv, constant &wei
     std::vector<float> weights_data(old_weights_data.begin(), old_weights_data.end());
     std::vector<uint8_t> q_weights(xt::compute_size(conv.weights().shape()));
     std::vector<float> scales(conv.output_channels());
-    auto total_range = quantizer.fixup_range(quantizer.get_range(weights_data.begin(), weights_data.end()));
+    auto total_range = quantizer.fixup_range(quantizer.get_range(weights_data.begin(), weights_data.end()), true);
     const auto channel_w_size = q_weights.size() / conv.output_channels();
     for (size_t oc = 0; oc < conv.output_channels(); oc++)
     {
         std::span<float> w_ch(weights_data.begin() + oc * channel_w_size, channel_w_size);
-        auto range = quantizer.fixup_range(quantizer.get_range(w_ch.begin(), w_ch.end()));
+        auto range = quantizer.fixup_range(quantizer.get_range(w_ch.begin(), w_ch.end()), true);
 
         auto s1 = range.max ? total_range.max / range.max : 1.f;
         auto s2 = range.min ? total_range.min / range.min : 1.f;
@@ -63,7 +63,7 @@ auto quantize_weights(quantizer &quantizer, fake_kpu_conv2d &conv, constant &wei
         scales[oc] = s;
     }
 
-    total_range = quantizer.get_range(weights_data.begin(), weights_data.end());
+    total_range = quantizer.fixup_range(quantizer.get_range(weights_data.begin(), weights_data.end()), true);
     auto q_p = quantizer.get_quant_param(total_range, 8);
 
     auto out_it = q_weights.begin();

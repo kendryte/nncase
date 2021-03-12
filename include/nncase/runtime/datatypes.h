@@ -238,6 +238,13 @@ typedef enum _image_resize_mode
     image_resize_nearest_neighbor
 } image_resize_mode_t;
 
+typedef enum _pad_mode
+{
+    pad_constant,
+    pad_reflect,
+    pad_symmetric
+} pad_mode_t;
+
 typedef struct _quant_param
 {
     _quant_param(int64_t zero_point, float scale)
@@ -285,6 +292,7 @@ NNCASE_INLINE_VAR constexpr memory_location_t mem_rdata = 2;
 NNCASE_INLINE_VAR constexpr memory_location_t mem_data = 3;
 
 using runtime_shape_t = xt::svector<size_t, 4>;
+using runtime_axis_t = xt::svector<int32_t, 4>;
 using runtime_paddings_t = xt::svector<padding, 4>;
 
 struct alignas(4) scalar

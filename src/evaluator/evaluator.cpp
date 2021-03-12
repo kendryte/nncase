@@ -16,6 +16,7 @@
 #include <nncase/ir/evaluator.h>
 #include <nncase/ir/op_utils.h>
 #include <nncase/ir/ops/constant.h>
+#include <nncase/ir/runtime_type_utils.h>
 #include <nncase/targets/target.h>
 
 using namespace nncase;
@@ -76,7 +77,7 @@ runtime_tensor module_evaluate_context::memory_at(const output_connector &conn)
     auto &alloc = sched_.allocations.at(&conn);
     auto &memory_pool = memory_pools_.at(alloc.memory_location);
     gsl::span<gsl::byte> buffer(reinterpret_cast<gsl::byte *>(memory_pool.get() + alloc.start), alloc.size);
-    return host_runtime_tensor::create(alloc.type, alloc.shape, alloc.strides, buffer, false).unwrap_or_throw();
+    return host_runtime_tensor::create(alloc.type, to(alloc.shape), to(alloc.strides), buffer, false).unwrap_or_throw();
 }
 
 void module_evaluate_context::enable_ptq(target &target)

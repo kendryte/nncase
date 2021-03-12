@@ -59,7 +59,7 @@ public:
     static value_range<float> get_range(TIt begin, TIt end)
     {
         float min = std::numeric_limits<float>::max();
-        float max = std::numeric_limits<float>::min();
+        float max = std::numeric_limits<float>::lowest();
         while (begin != end)
         {
             auto value = *begin++;
@@ -74,23 +74,32 @@ public:
         return { min, max };
     }
 
-    static value_range<float> fixup_range(value_range<float> range)
+    static value_range<float> fixup_range(value_range<float> range, bool symmetric = false)
     {
-        if (range.min < -1e3)
-            range.min = -1e3;
-        if (range.max > 1e3)
-            range.max = 1e3;
-        auto r = range.max - range.min;
-        if (r == 0)
-            r = 0.1f;
-        else if (r < 0.01f)
-            r = 0.01f;
-        range.max = range.min + r;
+        if (symmetric)
+        {
+            auto r = std::max({ std::abs(range.min), std::abs(range.max), 0.01f });
+            return { -r, r };
+        }
+        else
+        {
+            if (range.min < -1e3)
+                range.min = -1e3;
+            if (range.max > 1e3)
+                range.max = 1e3;
+            auto r = range.max - range.min;
+            if (r == 0)
+                r = 0.1f;
+            else if (r < 0.01f)
+                r = 0.01f;
+            range.max = range.min + r;
 
-        if (range.max < 0)
-            range.max = 0;
-        if (range.min > 0)
-            range.min = 0;
+            if (range.max < 0)
+                range.max = 0;
+            if (range.min > 0)
+                range.min = 0;
+        }
+
         return range;
     }
 
