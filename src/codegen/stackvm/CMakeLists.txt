@@ -8,6 +8,7 @@ set(SRCS module_builder.cpp
          ops/call.cpp
          ops/conv2d.cpp
          ops/dequantize.cpp
+         ops/pad.cpp
          ops/quantize.cpp
          ops/reduce.cpp
          ops/slice.cpp

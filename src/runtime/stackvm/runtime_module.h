@@ -141,6 +141,7 @@ protected:
     result<void> visit(const tensor_call_op_t &op) noexcept override;
     result<void> visit(const tensor_conv2d_op_t &op) noexcept override;
     result<void> visit(const tensor_dequantize_op_t &op) noexcept override;
+    result<void> visit(const tensor_pad_op_t &op) noexcept override;
     result<void> visit(const tensor_quantize_op_t &op) noexcept override;
     result<void> visit(const tensor_reduce_op_t &op) noexcept override;
     result<void> visit(const tensor_slice_op_t &op) noexcept override;
@@ -154,6 +155,7 @@ private:
     result<padding> pop_padding() noexcept;
     result<uintptr_t> pop_addr() noexcept;
     runtime_axis_t as_runtime_axis(const runtime_shape_t &shape);
+    result<scalar> pop_scalar(datatype_t type) noexcept;
 
     template <class T>
     result<T> pop_addr() noexcept

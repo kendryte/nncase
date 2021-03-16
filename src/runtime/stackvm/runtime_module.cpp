@@ -103,6 +103,43 @@ runtime_axis_t stackvm_runtime_module::as_runtime_axis(const runtime_shape_t &sh
     return axis;
 }
 
+result<scalar> stackvm_runtime_module::pop_scalar(datatype_t type) noexcept
+{
+    try_var(var, stack_.pop());
+    scalar s;
+    switch (type)
+    {
+    case dt_int8:
+        s = var.as_i1();
+        break;
+    case dt_int16:
+        s = var.as_i2();
+        break;
+    case dt_int32:
+        s = var.as_i4();
+        break;
+    case dt_uint8:
+        s = var.as_u1();
+        break;
+    case dt_uint16:
+        s = var.as_u2();
+        break;
+    case dt_uint32:
+        s = var.as_u4();
+        break;
+    case dt_bfloat16:
+        s = var.as_br2();
+        break;
+    case dt_float32:
+        s = var.as_r4();
+        break;
+    default:
+        return err(std::errc::not_supported);
+    }
+
+    return ok(s);
+}
+
 result<std::unique_ptr<runtime_module>> stackvm::create_stackvm_runtime_module()
 {
     std::unique_ptr<runtime_module> mod(new (std::nothrow) stackvm_runtime_module());

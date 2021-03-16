@@ -302,22 +302,11 @@ struct alignas(4) scalar
 
     scalar() = default;
 
-    scalar(int8_t value) noexcept
+    template <class T>
+    scalar(const T &value) noexcept
+        : type(to_datatype<T>())
     {
-        type = dt_int8;
-        as<int8_t>() = value;
-    }
-
-    scalar(uint8_t value) noexcept
-    {
-        type = dt_uint8;
-        as<uint8_t>() = value;
-    }
-
-    scalar(float value) noexcept
-    {
-        type = dt_float32;
-        as<float>() = value;
+        as<T>() = value;
     }
 
     template <class T>

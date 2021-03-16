@@ -38,6 +38,9 @@ NNCASE_API result<void> binary(binary_op_t op, const float *input_a, const float
 NNCASE_API result<void> dequantize(datatype_t in_type, datatype_t out_type, const gsl::byte *input, gsl::byte *output,
     const runtime_shape_t &in_shape, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, float scale, float bias) noexcept;
 
+NNCASE_API result<void> pad(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const runtime_paddings_t &paddings, pad_mode_t mode, const scalar &pad_value) noexcept;
+
 NNCASE_API result<void> quantize(datatype_t in_type, datatype_t out_type, const gsl::byte *input, gsl::byte *output,
     const runtime_shape_t &in_shape, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, float scale, float bias) noexcept;
 

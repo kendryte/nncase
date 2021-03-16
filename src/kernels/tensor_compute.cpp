@@ -43,6 +43,12 @@ result<void> kernels::dequantize(datatype_t in_type, datatype_t out_type, const 
     return cpu::reference::dequantize(in_type, out_type, input, output, in_shape, in_strides, out_strides, scale, bias);
 }
 
+result<void> kernels::pad(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const runtime_paddings_t &paddings, pad_mode_t mode, const scalar &pad_value) noexcept
+{
+    return cpu::reference::pad(type, input, output, in_shape, in_strides, out_strides, paddings, mode, pad_value);
+}
+
 result<void> kernels::quantize(datatype_t in_type, datatype_t out_type, const gsl::byte *input, gsl::byte *output,
     const runtime_shape_t &in_shape, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, float scale, float bias) noexcept
 {

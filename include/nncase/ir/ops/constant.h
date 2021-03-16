@@ -73,12 +73,6 @@ public:
     {
     }
 
-    template <class TScalar>
-    constant(TScalar scalar)
-        : constant(to_datatype<TScalar>(), shape_t { 1 }, std::span<const TScalar>(&scalar, 1))
-    {
-    }
-
     template <class TShape, class... TDataArgs>
     constant(datatype_t type, TShape &&shape, TDataArgs... data_args)
         : data_(std::forward<TDataArgs>(data_args)...), datatype_(type)
@@ -86,6 +80,12 @@ public:
         if (ir::get_bytes(type, shape) != data_.size())
             throw std::invalid_argument("Shape and data size don't match");
         add_output("output", type, std::forward<TShape>(shape), mem_rdata);
+    }
+
+    template <class TScalar>
+    constant(TScalar scalar)
+        : constant(to_datatype<TScalar>(), shape_t { 1 }, std::span<const TScalar>(&scalar, 1))
+    {
     }
 
     std::string to_string() const

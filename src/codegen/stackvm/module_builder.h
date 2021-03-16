@@ -21,6 +21,7 @@
 #include <nncase/ir/ops/call.h>
 #include <nncase/ir/ops/conv2d.h>
 #include <nncase/ir/ops/dequantize.h>
+#include <nncase/ir/ops/pad.h>
 #include <nncase/ir/ops/quantize.h>
 #include <nncase/ir/ops/reduce.h>
 #include <nncase/ir/ops/slice.h>
@@ -41,6 +42,7 @@ public:
     void stpaddings(uint8_t rpaddings, std::span<padding const> paddings);
     void lea_buffer(const schedule::buffer_allocation &alloc);
     void ldpadding(const padding &pad);
+    void ldscalar(const scalar &value);
 };
 
 class stackvm_module_builder : public module_builder

@@ -89,3 +89,36 @@ void stackvm_op_builder::ldpadding(const padding &pad)
     ldc_i4_((int32_t)pad.before);
     ldc_i4_((int32_t)pad.after);
 }
+
+void stackvm_op_builder::ldscalar(const scalar &value)
+{
+    switch (value.type)
+    {
+    case dt_int8:
+        ldc_i4_(value.as<int8_t>());
+        break;
+    case dt_int16:
+        ldc_i4_(value.as<int16_t>());
+        break;
+    case dt_int32:
+        ldc_i4_(value.as<int32_t>());
+        break;
+    case dt_uint8:
+        ldc_i4_((int32_t)value.as<uint8_t>());
+        break;
+    case dt_uint16:
+        ldc_i4_((int32_t)value.as<uint16_t>());
+        break;
+    case dt_uint32:
+        ldc_i4_((int32_t)value.as<uint32_t>());
+        break;
+    case dt_bfloat16:
+        ldc_r4_((float)value.as<bfloat16>());
+        break;
+    case dt_float32:
+        ldc_r4_((float)value.as<float>());
+        break;
+    default:
+        throw std::invalid_argument("Invalid scalar type");
+    }
+}

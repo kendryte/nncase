@@ -14,6 +14,7 @@ set(SRCS runtime_module.cpp
          ops/tensor.call.cpp
          ops/tensor.conv2d.cpp
          ops/tensor.dequantize.cpp
+         ops/tensor.pad.cpp
          ops/tensor.quantize.cpp
          ops/tensor.reduce.cpp
          ops/tensor.slice.cpp
