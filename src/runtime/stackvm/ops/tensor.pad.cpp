@@ -21,14 +21,13 @@ using namespace nncase::runtime::stackvm;
 
 result<void> stackvm_runtime_module::visit(const tensor_pad_op_t &op) noexcept
 {
-    return ok();
-    //try_var(output, pop_addr());
-    //try_var(input, pop_addr());
-    //try_var(pad_value, pop_scalar(op.datatype));
-    //auto &shape = shape_regs_[op.rshape_src];
-    //auto &in_strides = shape_regs_[op.rstride_src];
-    //auto &out_strides = shape_regs_[op.rstride_dest];
-    //auto &paddings = paddings_regs_[op.rpaddings];
+    try_var(pad_value, pop_scalar(op.datatype));
+    try_var(output, pop_addr());
+    try_var(input, pop_addr());
+    auto &shape = shape_regs_[op.rshape_src];
+    auto &in_strides = shape_regs_[op.rstride_src];
+    auto &out_strides = shape_regs_[op.rstride_dest];
+    auto &paddings = paddings_regs_[op.rpaddings];
 
-    //return kernels::pad(op.datatype, reinterpret_cast<const gsl::byte *>(input), reinterpret_cast<gsl::byte *>(output), shape, in_strides, out_strides, paddings, op.pad_mode, pad_value);
+    return kernels::pad(op.datatype, reinterpret_cast<const gsl::byte *>(input), reinterpret_cast<gsl::byte *>(output), shape, in_strides, out_strides, paddings, op.pad_mode, pad_value);
 }

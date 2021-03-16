@@ -25,46 +25,58 @@ using namespace nncase::kernels::cpu::reference;
 
 namespace
 {
-template <class T>
-result<void> pad_impl(const T *input, T *output, const runtime_shape_t &in_shape,
-    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const runtime_paddings_t &paddings, pad_mode_t mode, T pad_value) noexcept
+runtime_shape_t get_padded_shape(const runtime_shape_t &in_shape, const runtime_paddings_t &paddings)
 {
     runtime_shape_t out_shape(in_shape.size());
     for (size_t i = 0; i < in_shape.size(); i++)
         out_shape[i] = (size_t)((int32_t)in_shape[i] + paddings[i].sum());
+    return out_shape;
+}
 
-    return apply(out_shape, [&](const runtime_shape_t &index) -> result<void> {
-        runtime_shape_t in_index(index.size());
-        bool pad_element = false;
-        for (size_t i = 0; i < index.size(); i++)
+runtime_shape_t get_in_index(const runtime_shape_t &index, const runtime_shape_t &in_shape,
+    const runtime_paddings_t &paddings, pad_mode_t mode, bool &pad_element)
+{
+    runtime_shape_t in_index(index.size());
+    pad_element = false;
+    for (size_t i = 0; i < index.size(); i++)
+    {
+        auto &padding = paddings[i];
+        if ((int32_t)index[i] < padding.before)
         {
-            auto &padding = paddings[i];
-            if ((int32_t)index[i] < padding.before)
+            pad_element = true;
+            if (mode == pad_reflect)
+                in_index[i] = (size_t)padding.before - index[i];
+            else if (mode == pad_symmetric)
+                in_index[i] = (size_t)padding.before - index[i] - 1;
+        }
+        else
+        {
+            auto cnt_idx = (int32_t)index[i] - padding.before;
+            if (cnt_idx > (int32_t)in_shape[i] - 1)
             {
                 pad_element = true;
                 if (mode == pad_reflect)
-                    in_index[i] = (size_t)padding.before - index[i];
+                    in_index[i] = (size_t)cnt_idx - in_shape[i];
                 else if (mode == pad_symmetric)
-                    in_index[i] = (size_t)padding.before - index[i] - 1;
+                    in_index[i] = (size_t)cnt_idx - in_shape[i] + 1;
             }
             else
             {
-                auto cnt_idx = (int32_t)index[i] - padding.before;
-                if (cnt_idx > (int32_t)in_shape[i] - 1)
-                {
-                    pad_element = true;
-                    if (mode == pad_reflect)
-                        in_index[i] = (size_t)cnt_idx - in_shape[i];
-                    else if (mode == pad_symmetric)
-                        in_index[i] = (size_t)cnt_idx - in_shape[i] + 1;
-                }
-                else
-                {
-                    in_index[i] = (size_t)cnt_idx;
-                }
+                in_index[i] = (size_t)cnt_idx;
             }
         }
+    }
 
+    return in_index;
+}
+
+template <class T>
+result<void> pad_impl(const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &out_shape,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const runtime_paddings_t &paddings, pad_mode_t mode, T pad_value) noexcept
+{
+    return apply(out_shape, [&](const runtime_shape_t &index) -> result<void> {
+        bool pad_element = false;
+        auto in_index = get_in_index(index, in_shape, paddings, mode, pad_element);
         T value;
         if (!pad_element || mode != pad_constant)
             value = input[offset(in_strides, in_index)];
@@ -78,11 +90,12 @@ result<void> pad_impl(const T *input, T *output, const runtime_shape_t &in_shape
 
 #define PAD_IMPL(size, type) \
     case size:               \
-        return pad_impl(reinterpret_cast<const type *>(input), reinterpret_cast<type *>(output), in_shape, in_strides, out_strides, paddings, mode, pad_value.as<type>())
+        return pad_impl(reinterpret_cast<const type *>(input), reinterpret_cast<type *>(output), in_shape, out_shape, in_strides, out_strides, paddings, mode, pad_value.as<type>())
 
 result<void> reference::pad(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const runtime_paddings_t &paddings, pad_mode_t mode, const scalar &pad_value) noexcept
 {
+    auto out_shape = get_padded_shape(in_shape, paddings);
     switch (runtime::get_bytes(type))
     {
         PAD_IMPL(1, uint8_t);

@@ -120,6 +120,17 @@ private:
         return xt::adapt(reinterpret_cast<const T *>(buffer.data()->data()), shape);
     }
 
+    scalar load_scalar(const tflite::Tensor &tensor)
+    {
+        auto buffer = model_->buffers()->Get(tensor.buffer());
+        if (!buffer)
+            throw std::runtime_error("Cannot read buffer");
+        scalar s;
+        s.type = to_data_type(tensor.type());
+        std::memcpy(s.storage.data(), buffer->data()->data(), buffer->data()->size());
+        return s;
+    }
+
     template <size_t N>
     xt::xtensor<float, N> dequantize_tensor(const tflite::Tensor &tensor)
     {

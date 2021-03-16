@@ -229,14 +229,14 @@ void register_neutral_evaluators()
     register_evaluator(op_pad, [](ir::node &node, module_evaluate_context &context) {
         auto &rnode = static_cast<pad &>(node);
 
-        auto input = host_runtime_tensor::buffer(context.memory_at(rnode.input())).unwrap_or_throw();
-        auto output = host_runtime_tensor::buffer(context.memory_at(rnode.output())).unwrap_or_throw();
+        auto input = context.memory_at(rnode.input());
+        auto output = context.memory_at(rnode.output());
+        auto input_mem = host_runtime_tensor::buffer(input).unwrap_or_throw();
+        auto output_mem = host_runtime_tensor::buffer(output).unwrap_or_throw();
 
-#define PAD_KERNEL(T) \
-    kernels::neutral::pad(input.as_span<T>().data(), output.as_span<T>().data(), to(rnode.input().shape()), to(rnode.paddings()), rnode.pad_value().as<T>());
-
-        ELEM_SIZE_IMPL(rnode.input().type(), PAD_KERNEL);
-#undef PAD_KERNEL
+        kernels::pad(input.datatype(), input_mem.data(), output_mem.data(), input.shape(), input.strides(),
+            output.strides(), to(rnode.paddings()), pad_constant, rnode.pad_value())
+            .unwrap_or_throw();
     });
 
     register_evaluator(op_quantize, [](ir::node &node, module_evaluate_context &context) {

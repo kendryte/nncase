@@ -25,11 +25,11 @@ void stackvm_module_builder::emit(pad &node, stackvm_op_builder &builder)
     auto &output = allocation(node.output());
     builder.lea_buffer(input);
     builder.lea_buffer(output);
+    builder.ldscalar(node.pad_value());
 
     builder.stshape(0, input.shape);
     builder.stshape(1, input.strides);
     builder.stshape(2, output.strides);
     builder.stpaddings(0, node.paddings());
-    builder.ldscalar(node.pad_value());
     builder.tensor_pad_(node.input().type(), 0, 1, 2, 0, pad_constant);
 }

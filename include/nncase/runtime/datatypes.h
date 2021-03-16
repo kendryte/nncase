@@ -295,18 +295,59 @@ using runtime_shape_t = xt::svector<size_t, 4>;
 using runtime_axis_t = xt::svector<int32_t, 4>;
 using runtime_paddings_t = xt::svector<padding, 4>;
 
-struct alignas(4) scalar
+struct alignas(8) scalar
 {
     datatype_t type;
-    std::array<uint8_t, 4> storage;
+    std::array<uint8_t, 8> storage;
 
     scalar() = default;
 
-    template <class T>
-    scalar(const T &value) noexcept
-        : type(to_datatype<T>())
+    scalar(int8_t value) noexcept
     {
-        as<T>() = value;
+        type = dt_int8;
+        as<int8_t>() = value;
+    }
+
+    scalar(int16_t value) noexcept
+    {
+        type = dt_int16;
+        as<int16_t>() = value;
+    }
+
+    scalar(int32_t value) noexcept
+    {
+        type = dt_int32;
+        as<int32_t>() = value;
+    }
+
+    scalar(uint8_t value) noexcept
+    {
+        type = dt_uint8;
+        as<uint8_t>() = value;
+    }
+
+    scalar(uint16_t value) noexcept
+    {
+        type = dt_uint16;
+        as<uint16_t>() = value;
+    }
+
+    scalar(uint32_t value) noexcept
+    {
+        type = dt_uint32;
+        as<uint32_t>() = value;
+    }
+
+    scalar(bfloat16 value) noexcept
+    {
+        type = dt_bfloat16;
+        as<bfloat16>() = value;
+    }
+
+    scalar(float value) noexcept
+    {
+        type = dt_float32;
+        as<float>() = value;
     }
 
     template <class T>
