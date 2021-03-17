@@ -47,8 +47,11 @@ jobs:
       mkdir out && cd out
       cmake .. -DCMAKE_BUILD_TYPE=Release
       make -j
-      cmake --install . --prefix install
     displayName: 'Build'
+
+  - script: |
+      cmake --install . --prefix install --strip
+    displayName: 'Install'
 
   - script: |
       pip install pytest
@@ -99,8 +102,6 @@ jobs:
   - script: |
       md out && cd out
       cmake .. -G "Visual Studio 16 2019" -A x64 -DCMAKE_BUILD_TYPE=Release
-      cmake --build . --parallel
-      cmake --install . --prefix install --strip
     displayName: 'Build'
 
   - task: MSBuild@1
@@ -109,6 +110,10 @@ jobs:
       msbuildArchitecture: 'x64'
       configuration: 'Release'
       msbuildArguments: '-m'
+
+  - script: |
+      cmake --install . --prefix install --strip
+    displayName: 'Install'
 
   - script: |
       pip install pytest
