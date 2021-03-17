@@ -16,3 +16,4 @@ target_include_directories(nncase_modules_k210 PUBLIC include)
 target_link_libraries(nncase_modules_k210 PRIVATE codegen_k210 ir_k210 evaluator_k210 schedule_k210 transforms_k210 simulator_k210 nncase)
 set_target_properties(nncase_modules_k210 PROPERTIES
                                           OUTPUT_NAME "nncase.modules.k210")
+install(TARGETS nncase_modules_k210 DESTINATION lib)

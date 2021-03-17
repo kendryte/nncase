@@ -8,3 +8,4 @@ pybind11_add_module (nncase_python ${SRCS})
 target_link_libraries(nncase_python PRIVATE nncase CONAN_PKG::pybind11)
 set_target_properties(nncase_python PROPERTIES
                                  OUTPUT_NAME _nncase)
+install(TARGETS nncase_python DESTINATION lib)

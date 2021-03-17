@@ -61,7 +61,7 @@ target_activator_t find_target_activator(std::string_view name)
 
 target_activator_t find_target_activator(std::string_view name)
 {
-    auto module_name = fmt::format("nncase.targets.{}.dll", name);
+    auto module_name = fmt::format("libnncase.targets.{}.so", name);
     auto mod = dlopen(module_name.c_str(), RTLD_LAZY);
     THROW_POSIX_IF_NOT(mod, "Cannot load module: {1}, {0}", module_name);
     auto proc = dlsym(mod, STR(TARGET_ACTIVATOR_NAME));

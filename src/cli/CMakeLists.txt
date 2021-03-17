@@ -6,3 +6,4 @@ set(SRCS cli.cpp
 
 add_executable (ncc ${SRCS})
 target_link_libraries(ncc PRIVATE nncase CONAN_PKG::lyra)
+install(TARGETS ncc DESTINATION bin)

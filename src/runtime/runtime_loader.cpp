@@ -66,9 +66,9 @@ result<rt_module_activator_t> find_runtime_activator(const module_type_t &type)
 result<rt_module_activator_t> find_runtime_activator(const module_type_t &type)
 {
 #ifdef NNCASE_SIMULATOR
-    auto module_name = fmt::format("nncase.modules.{}.dll", type.data());
+    auto module_name = fmt::format("libnncase.modules.{}.so", type.data());
 #else
-    auto module_name = fmt::format("nncase.rt_modules.{}.dll", type.data());
+    auto module_name = fmt::format("libnncase.rt_modules.{}.so", type.data());
 #endif
     auto mod = dlopen(module_name.c_str(), RTLD_LAZY);
     TRY_POSIX_IF_NOT(mod);

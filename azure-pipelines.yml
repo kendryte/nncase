@@ -28,6 +28,10 @@ jobs:
       sudo apt-get install g++-10 -y
     displayName: 'Install GNU C++ compiler'
 
+  - script: |
+      sudo apt-get install libgtk2.0-dev -y
+    displayName: 'Install system requirements'
+
   - task: UsePythonVersion@0
     inputs:
       versionSpec: '3.7' 
@@ -43,7 +47,7 @@ jobs:
       mkdir out && cd out
       cmake .. -DCMAKE_BUILD_TYPE=Release
       make -j
-      strip bin/ncc
+      cmake --install . --prefix install
     displayName: 'Build'
 
   - script: |
@@ -53,7 +57,7 @@ jobs:
 
   - task: ArchiveFiles@2
     inputs:
-      rootFolderOrFile: 'out/bin' 
+      rootFolderOrFile: 'out/install' 
       includeRootFolder: false 
       archiveType: 'tar' # Options: zip, 7z, tar, wim
       tarCompression: 'xz' # Optional. Options: gz, bz2, xz, none
@@ -95,6 +99,8 @@ jobs:
   - script: |
       md out && cd out
       cmake .. -G "Visual Studio 16 2019" -A x64 -DCMAKE_BUILD_TYPE=Release
+      cmake --build . --parallel
+      cmake --install . --prefix install --strip
     displayName: 'Build'
 
   - task: MSBuild@1
@@ -111,7 +117,7 @@ jobs:
 
   - task: ArchiveFiles@2
     inputs:
-      rootFolderOrFile: 'out/bin' 
+      rootFolderOrFile: 'out/install' 
       includeRootFolder: false 
       archiveType: 'zip' # Options: zip, 7z, tar, wim
       archiveFile: '$(Build.ArtifactStagingDirectory)/ncc_win_x86_64.zip' 
@@ -123,55 +129,6 @@ jobs:
     inputs:
       pathToPublish: $(Build.ArtifactStagingDirectory)/ncc_win_x86_64.zip
       artifactName: ncc_win_x86_64
-
-  - task: PublishTestResults@2
-    condition: succeededOrFailed()
-    inputs:
-      testResultsFiles: '**/test-*.xml'
-      testRunTitle: 'Publish test results for Python $(python.version)'
-
-- job: MacOS
-  timeoutInMinutes: 0
-  pool:
-    vmImage: 'macOS-10.14'
-
-  steps:
-  - checkout: self
-    submodules: true
-
-  - script: |
-      xcode-select --install
-      sudo xcode-select --switch /Library/Developer/CommandLineTools/
-    displayName: 'Setup XCode'
-
-  - task: UsePythonVersion@0
-    inputs:
-      versionSpec: '3.7' 
-      addToPath: true 
-      architecture: 'x64'
-      
-  - script: |
-      pip install conan tensorflow==2.4.1 matplotlib pillow onnxruntime
-      pip install torch torchvision
-    displayName: 'Install Conan'
-
-  - script: |
-      mkdir out && cd out
-      cmake .. -DCMAKE_BUILD_TYPE=Release
-      make -j
-      strip bin/ncc
-      hdiutil create -srcfolder bin ncc_osx_x86_64.dmg
-    displayName: 'Build'
-
-  - script: |
-      pip install pytest
-      pytest tests --doctest-modules --junitxml=junit/test-results.xml
-    displayName: 'Test'
-
-  - task: PublishBuildArtifacts@1
-    inputs:
-      pathToPublish: out/ncc_osx_x86_64.dmg
-      artifactName: ncc_osx_x86_64
 
   - task: PublishTestResults@2
     condition: succeededOrFailed()

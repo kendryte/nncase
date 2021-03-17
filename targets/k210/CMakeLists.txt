@@ -6,3 +6,4 @@ add_library(nncase_targets_k210 SHARED ${SRCS})
 target_link_libraries(nncase_targets_k210 PRIVATE nncase nncase_modules_k210)
 set_target_properties(nncase_targets_k210 PROPERTIES
                                           OUTPUT_NAME "nncase.targets.k210")
+install(TARGETS nncase_targets_k210 DESTINATION lib)
