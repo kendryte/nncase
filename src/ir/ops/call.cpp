@@ -22,11 +22,9 @@ using namespace nncase::ir;
 call::call(graph &target)
     : target_(target)
 {
-    size_t i = 0;
     for (auto &in : target_.inputs())
         add_input(in->name(), in->output().type(), in->output().shape());
 
-    i = 0;
     for (auto &out : target_.outputs())
         add_output(out->name(), out->input().type(), out->input().shape());
 }

@@ -46,14 +46,14 @@ result<runtime_tensor> k210_runtime_module::allocate_output_tensor(size_t index)
     return host_runtime_tensor::create(output_desc(index).datatype, output_shape(index));
 }
 
-result<void> k210_runtime_module::validate_input_tensor(size_t index, runtime_tensor tensor) noexcept
+result<void> k210_runtime_module::validate_input_tensor(NNCASE_UNUSED size_t index, runtime_tensor tensor) noexcept
 {
     if (tensor.is_host())
         return ok();
     return err(std::errc::invalid_argument);
 }
 
-result<void> k210_runtime_module::validate_output_tensor(size_t index, runtime_tensor tensor) noexcept
+result<void> k210_runtime_module::validate_output_tensor(NNCASE_UNUSED size_t index, runtime_tensor tensor) noexcept
 {
     if (tensor.is_host())
         return ok();
@@ -67,12 +67,13 @@ result<void> k210_runtime_module::run_core() noexcept
 
 result<gsl::span<gsl::byte>> k210_runtime_module::memory_at(const memory_range &mrange) noexcept
 {
+#define ID_NOT_FOUND ((size_t)-1)
     gsl::byte *base;
     switch (mrange.memory_location)
     {
     case mem_input:
     {
-        size_t id = -1;
+        size_t id = ID_NOT_FOUND;
         for (size_t i = 0; i < inputs_size(); i++)
         {
             if (mrange.start == input_desc(i).start)
@@ -82,7 +83,7 @@ result<gsl::span<gsl::byte>> k210_runtime_module::memory_at(const memory_range &
             }
         }
 
-        if (id != -1)
+        if (id != ID_NOT_FOUND)
         {
             try_var(tensor, input_tensor(id));
             try_var(buffer, host_runtime_tensor::buffer(tensor));
@@ -96,7 +97,7 @@ result<gsl::span<gsl::byte>> k210_runtime_module::memory_at(const memory_range &
     }
     case mem_output:
     {
-        size_t id = -1;
+        size_t id = ID_NOT_FOUND;
         for (size_t i = 0; i < outputs_size(); i++)
         {
             if (mrange.start == output_desc(i).start)
@@ -106,7 +107,7 @@ result<gsl::span<gsl::byte>> k210_runtime_module::memory_at(const memory_range &
             }
         }
 
-        if (id != -1)
+        if (id != ID_NOT_FOUND)
         {
             try_var(tensor, output_tensor(id));
             try_var(buffer, host_runtime_tensor::buffer(tensor));

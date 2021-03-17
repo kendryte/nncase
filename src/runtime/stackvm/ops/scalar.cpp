@@ -18,7 +18,7 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 
-result<void> stackvm_runtime_module::visit(const neg_op_t &op) noexcept
+result<void> stackvm_runtime_module::visit([[maybe_unused]] const neg_op_t &op) noexcept
 {
     try_var(value, stack_.pop());
     if (!value.is_real())
@@ -53,73 +53,73 @@ result<void> stackvm_runtime_module::visit(const neg_op_t &op) noexcept
     try_var(a, stack_.pop()); \
     return stack_.push(a.as_u() op b.as_u());
 
-result<void> stackvm_runtime_module::visit(const add_op_t &op) noexcept
+result<void> stackvm_runtime_module::visit([[maybe_unused]] const add_op_t &op) noexcept
 {
     BINARY_IMPL(+);
 }
 
-result<void> stackvm_runtime_module::visit(const sub_op_t &op) noexcept
+result<void> stackvm_runtime_module::visit([[maybe_unused]] const sub_op_t &op) noexcept
 {
     BINARY_IMPL(-);
 }
 
-result<void> stackvm_runtime_module::visit(const mul_op_t &op) noexcept
+result<void> stackvm_runtime_module::visit([[maybe_unused]] const mul_op_t &op) noexcept
 {
     BINARY_IMPL(*);
 }
 
-result<void> stackvm_runtime_module::visit(const div_op_t &op) noexcept
+result<void> stackvm_runtime_module::visit([[maybe_unused]] const div_op_t &op) noexcept
 {
     BINARY_IMPL(/);
 }
 
-result<void> stackvm_runtime_module::visit(const div_u_op_t &op) noexcept
+result<void> stackvm_runtime_module::visit([[maybe_unused]] const div_u_op_t &op) noexcept
 {
     BINARY_U_IMPL(/);
 }
 
-result<void> stackvm_runtime_module::visit(const rem_op_t &op) noexcept
+result<void> stackvm_runtime_module::visit([[maybe_unused]] const rem_op_t &op) noexcept
 {
     BINARY_IMPL(/);
 }
 
-result<void> stackvm_runtime_module::visit(const rem_u_op_t &op) noexcept
+result<void> stackvm_runtime_module::visit([[maybe_unused]] const rem_u_op_t &op) noexcept
 {
     BINARY_U_IMPL(/);
 }
 
-result<void> stackvm_runtime_module::visit(const and_op_t &op) noexcept
+result<void> stackvm_runtime_module::visit([[maybe_unused]] const and_op_t &op) noexcept
 {
     BINARY_BIT_U_IMPL(&);
 }
 
-result<void> stackvm_runtime_module::visit(const or_op_t &op) noexcept
+result<void> stackvm_runtime_module::visit([[maybe_unused]] const or_op_t &op) noexcept
 {
     BINARY_BIT_U_IMPL(|);
 }
 
-result<void> stackvm_runtime_module::visit(const xor_op_t &op) noexcept
+result<void> stackvm_runtime_module::visit([[maybe_unused]] const xor_op_t &op) noexcept
 {
     BINARY_BIT_U_IMPL(^);
 }
 
-result<void> stackvm_runtime_module::visit(const not_op_t &op) noexcept
+result<void> stackvm_runtime_module::visit([[maybe_unused]] const not_op_t &op) noexcept
 {
     try_var(value, stack_.pop());
     return stack_.push(~value.as_u());
 }
 
-result<void> stackvm_runtime_module::visit(const shl_op_t &op) noexcept
+result<void> stackvm_runtime_module::visit([[maybe_unused]] const shl_op_t &op) noexcept
 {
     BINARY_BIT_U_IMPL(<<);
 }
 
-result<void> stackvm_runtime_module::visit(const shr_op_t &op) noexcept
+result<void> stackvm_runtime_module::visit([[maybe_unused]] const shr_op_t &op) noexcept
 {
     BINARY_BIT_IMPL(>>);
 }
 
-result<void> stackvm_runtime_module::visit(const shr_u_op_t &op) noexcept
+result<void> stackvm_runtime_module::visit([[maybe_unused]] const shr_u_op_t &op) noexcept
 {
     BINARY_BIT_U_IMPL(>>);
 }
@@ -140,52 +140,52 @@ result<void> stackvm_runtime_module::visit(const shr_u_op_t &op) noexcept
     else                                                  \
         return stack_.push(a.as_r() op b.as_r() ? 1 : 0)
 
-result<void> stackvm_runtime_module::visit(const clt_op_t &op) noexcept
+result<void> stackvm_runtime_module::visit([[maybe_unused]] const clt_op_t &op) noexcept
 {
     COMPARE_IMPL(<);
 }
 
-result<void> stackvm_runtime_module::visit(const clt_u_op_t &op) noexcept
+result<void> stackvm_runtime_module::visit([[maybe_unused]] const clt_u_op_t &op) noexcept
 {
     COMPARE_U_IMPL(<);
 }
 
-result<void> stackvm_runtime_module::visit(const cle_op_t &op) noexcept
+result<void> stackvm_runtime_module::visit([[maybe_unused]] const cle_op_t &op) noexcept
 {
     COMPARE_IMPL(<=);
 }
 
-result<void> stackvm_runtime_module::visit(const cle_u_op_t &op) noexcept
+result<void> stackvm_runtime_module::visit([[maybe_unused]] const cle_u_op_t &op) noexcept
 {
     COMPARE_U_IMPL(<=);
 }
 
-result<void> stackvm_runtime_module::visit(const ceq_op_t &op) noexcept
+result<void> stackvm_runtime_module::visit([[maybe_unused]] const ceq_op_t &op) noexcept
 {
     COMPARE_U_IMPL(==);
 }
 
-result<void> stackvm_runtime_module::visit(const cge_op_t &op) noexcept
+result<void> stackvm_runtime_module::visit([[maybe_unused]] const cge_op_t &op) noexcept
 {
     COMPARE_IMPL(>=);
 }
 
-result<void> stackvm_runtime_module::visit(const cge_u_op_t &op) noexcept
+result<void> stackvm_runtime_module::visit([[maybe_unused]] const cge_u_op_t &op) noexcept
 {
     COMPARE_U_IMPL(>=);
 }
 
-result<void> stackvm_runtime_module::visit(const cgt_op_t &op) noexcept
+result<void> stackvm_runtime_module::visit([[maybe_unused]] const cgt_op_t &op) noexcept
 {
     COMPARE_IMPL(>);
 }
 
-result<void> stackvm_runtime_module::visit(const cgt_u_op_t &op) noexcept
+result<void> stackvm_runtime_module::visit([[maybe_unused]] const cgt_u_op_t &op) noexcept
 {
     COMPARE_U_IMPL(>);
 }
 
-result<void> stackvm_runtime_module::visit(const cne_op_t &op) noexcept
+result<void> stackvm_runtime_module::visit([[maybe_unused]] const cne_op_t &op) noexcept
 {
     COMPARE_U_IMPL(!=);
 }

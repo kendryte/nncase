@@ -41,7 +41,7 @@ result<void> reference::conv2d(const float *input, const float *weights, const f
     for (size_t batch = 0; batch < in_shape[0]; batch++)
     {
         in_index[0] = out_index[0] = batch;
-        for (size_t og = 0; og < groups; og++)
+        for (size_t og = 0; og < (size_t)groups; og++)
         {
             for (size_t oc = 0; oc < g_oc; oc++)
             {
@@ -60,14 +60,14 @@ result<void> reference::conv2d(const float *input, const float *weights, const f
                         const size_t filter_x_end = (size_t)std::min(filter_w, ((int32_t)in_shape[3] - in_x_origin + dilation_w - 1) / dilation_w);
                         float value = bias[offset(bias_strides, bias_index)];
 
-                        for (int32_t ic = 0; ic < g_ic; ic++)
+                        for (size_t ic = 0; ic < g_ic; ic++)
                         {
                             in_index[1] = og * g_ic + ic;
                             w_index[1] = ic;
-                            for (int32_t ky = filter_y_start; ky < filter_y_end; ky++)
+                            for (size_t ky = filter_y_start; ky < filter_y_end; ky++)
                             {
                                 w_index[2] = ky;
-                                for (int32_t kx = filter_x_start; kx < filter_x_end; kx++)
+                                for (size_t kx = filter_x_start; kx < filter_x_end; kx++)
                                 {
                                     w_index[3] = kx;
                                     in_index[2] = in_y_origin + dilation_h * ky;

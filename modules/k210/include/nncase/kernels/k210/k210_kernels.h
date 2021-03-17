@@ -296,8 +296,6 @@ inline void kpu_pool2d(const T *input, T *output, int32_t in_h, int32_t in_w, in
 template <bool IsDepthwise, int32_t FilterSize>
 void fake_kpu_conv2d(const float *input, float *output, const float *weights, const float *bias, int32_t in_h, int32_t in_w, int32_t in_channels, int32_t out_channels, value_range<float> fused_activation)
 {
-    const auto channel_size = size_t(in_h) * in_w;
-
     const auto pad = FilterSize == 1 ? 0 : 1;
     const auto groups = IsDepthwise ? out_channels : 1;
     const auto g_ic = IsDepthwise ? 1 : in_channels / groups;

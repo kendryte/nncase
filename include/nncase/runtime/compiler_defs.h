@@ -31,15 +31,17 @@
 #if defined(_MSC_VER)
 #define NNCASE_UNREACHABLE() __assume(0)
 #else
-#define NNCASE_UNREACHABLE() __builtin_unreachable
+#define NNCASE_UNREACHABLE() __builtin_unreachable()
 #endif
 
 #if gsl_CPP17_OR_GREATER
 #define NNCASE_INLINE_VAR inline
+#define NNCASE_UNUSED [[maybe_unused]]
 template <class Callable, class... Args>
 using invoke_result_t = std::invoke_result_t<Callable, Args...>;
 #else
 #define NNCASE_INLINE_VAR
+#define NNCASE_UNUSED
 template <class Callable, class... Args>
 using invoke_result_t = std::result_of_t<Callable(Args...)>;
 #endif

@@ -33,9 +33,9 @@ public:
 
     result<void> visit(gsl::span<const gsl::byte> text) noexcept;
 
-    virtual result<void> visit(const kpu_download_options &op) noexcept { return ok(); }
-    virtual result<void> visit(const kpu_conv2d_options &op) noexcept { return ok(); }
-    virtual result<void> visit(const kpu_upload_options &op) noexcept { return ok(); }
+    virtual result<void> visit(NNCASE_UNUSED const kpu_download_options &op) noexcept { return ok(); }
+    virtual result<void> visit(NNCASE_UNUSED const kpu_conv2d_options &op) noexcept { return ok(); }
+    virtual result<void> visit(NNCASE_UNUSED const kpu_upload_options &op) noexcept { return ok(); }
 
 protected:
     bool interrupted_;

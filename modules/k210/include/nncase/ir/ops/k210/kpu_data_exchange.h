@@ -31,7 +31,7 @@ public:
     kpu_upload(shape_t input_shape);
 
 protected:
-    bool properties_equal(node &other) const override { return true; }
+    bool properties_equal([[maybe_unused]] node &other) const override { return true; }
 };
 
 class NNCASE_MODULES_K210_API kpu_download : public node
@@ -45,6 +45,6 @@ public:
     kpu_download(shape_t input_shape);
 
 protected:
-    bool properties_equal(node &other) const override { return true; }
+    bool properties_equal([[maybe_unused]] node &other) const override { return true; }
 };
 }

@@ -72,7 +72,7 @@ first_fit_allocator::first_fit_allocator(std::optional<size_t> fixed_size)
 {
 }
 
-void first_fit_allocator::base_offset(size_t value)
+void first_fit_allocator::base_offset([[maybe_unused]] size_t value)
 {
     throw std::runtime_error("First fit allocator doesn't support base offset");
 }

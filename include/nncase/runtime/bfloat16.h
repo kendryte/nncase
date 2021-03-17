@@ -178,10 +178,10 @@ private:
     uint16_t value_;
 };
 
-#define DEFINE_BF16_BINARY(T, x)                          \
-    inline T operator##x(bfloat16 a, bfloat16 b) noexcept \
-    {                                                     \
-        return T(float(a) x float(b));                    \
+#define DEFINE_BF16_BINARY(T, x)                         \
+    inline T operator x(bfloat16 a, bfloat16 b) noexcept \
+    {                                                    \
+        return T(float(a) x float(b));                   \
     }
 
 DEFINE_BF16_BINARY(bfloat16, +)

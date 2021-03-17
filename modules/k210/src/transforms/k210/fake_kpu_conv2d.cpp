@@ -39,8 +39,8 @@ using namespace nncase::ir::transforms::k210;
     padding pad_h { conv.padding_h().before - kpu_pad, conv.padding_h().after - kpu_pad }; \
     padding pad_w { conv.padding_w().before - kpu_pad, conv.padding_w().after - kpu_pad }; \
                                                                                            \
-    auto pre_pad_h = get_padding<true>(pad_h);                                             \
-    auto pre_pad_w = get_padding<true>(pad_w);
+    [[maybe_unused]] auto pre_pad_h = get_padding<true>(pad_h);                            \
+    [[maybe_unused]] auto pre_pad_w = get_padding<true>(pad_w);
 
 bool fake_kpu_conv2d_transform::on_try_match(node &node, transform_context &context)
 {

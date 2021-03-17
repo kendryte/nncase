@@ -134,13 +134,13 @@ void conv2d(const float *input, float *output, const float *weights, const float
     const auto out_h = detail::get_windowed_output_size(in_shape[2], filter_h, stride_h, dilation_h, padding_h);
     const auto out_w = detail::get_windowed_output_size(in_shape[3], filter_w, stride_w, dilation_w, padding_w);
     const auto g_ic = in_shape[1] / groups;
-    const auto g_oc = out_channels / groups;
+    const auto g_oc = (size_t)out_channels / groups;
 
     for (size_t batch = 0; batch < in_shape[0]; batch++)
     {
         const float *in_batch_p = input + (size_t)batch * in_shape[1] * in_shape[2] * in_shape[3];
 
-        for (size_t og = 0; og < groups; og++)
+        for (size_t og = 0; og < (size_t)groups; og++)
         {
             const float *in_group_p = in_batch_p + (size_t)og * g_ic * in_shape[2] * in_shape[3];
             const float *w_group_p = weights + (size_t)og * g_oc * g_ic * filter_h * filter_w;
@@ -161,14 +161,14 @@ void conv2d(const float *input, float *output, const float *weights, const float
                         const size_t filter_x_end = (size_t)std::min(filter_w, ((int32_t)in_shape[3] - in_x_origin + dilation_w - 1) / dilation_w);
                         float value = bias[og * g_oc + oc];
 
-                        for (int32_t ic = 0; ic < g_ic; ic++)
+                        for (size_t ic = 0; ic < g_ic; ic++)
                         {
                             const float *in_c_p = in_group_p + (size_t)ic * in_shape[2] * in_shape[3];
                             const float *w_ic_p = w_oc_p + (size_t)ic * filter_h * filter_w;
 
-                            for (int32_t ky = filter_y_start; ky < filter_y_end; ky++)
+                            for (size_t ky = filter_y_start; ky < filter_y_end; ky++)
                             {
-                                for (int32_t kx = filter_x_start; kx < filter_x_end; kx++)
+                                for (size_t kx = filter_x_start; kx < filter_x_end; kx++)
                                 {
                                     const size_t in_y = in_y_origin + dilation_h * ky;
                                     const size_t in_x = in_x_origin + dilation_w * kx;
@@ -268,7 +268,7 @@ void conv2d_transpose(const float *input, float *output, const float *weights, [
     {
         float *out_batch_p = output + (size_t)batch * out_shape[1] * out_shape[2] * out_shape[3];
 
-        for (size_t g = 0; g < groups; g++)
+        for (size_t g = 0; g < (size_t)groups; g++)
         {
             float *out_group_p = out_batch_p + (size_t)g * g_oc * out_shape[2] * out_shape[3];
             const float *w_group_p = weights + (size_t)g * g_oc * g_ic * filter_h * filter_w;
@@ -287,16 +287,16 @@ void conv2d_transpose(const float *input, float *output, const float *weights, [
                         const size_t filter_x_end = (size_t)std::min(filter_w, ((int32_t)out_shape[3] - out_x_origin + dilation_w - 1) / dilation_w);
                         const float in_v = *input++;
 
-                        for (int32_t oc = 0; oc < g_oc; oc++)
+                        for (size_t oc = 0; oc < g_oc; oc++)
                         {
                             assert(bias[g * g_oc + oc] == 0.f);
                             float *out_c_p = out_group_p + (size_t)oc * out_shape[2] * out_shape[3];
                             const float *w_oc_p = w_group_p + (size_t)oc * g_ic * filter_h * filter_w;
                             const float *w_ic_p = w_oc_p + (size_t)ic * filter_h * filter_w;
 
-                            for (int32_t ky = filter_y_start; ky < filter_y_end; ky++)
+                            for (size_t ky = filter_y_start; ky < filter_y_end; ky++)
                             {
-                                for (int32_t kx = filter_x_start; kx < filter_x_end; kx++)
+                                for (size_t kx = filter_x_start; kx < filter_x_end; kx++)
                                 {
                                     const int32_t out_y = out_y_origin + dilation_h * ky;
                                     const int32_t out_x = out_x_origin + dilation_w * kx;
@@ -535,12 +535,12 @@ void resize_nearest_neighbor(const T *input, T *output, const TShape &in_shape, 
         {
             auto in_c = in_batch + oc * in_shape[2] * in_shape[3];
 
-            for (size_t oy = 0; oy < out_h; oy++)
+            for (size_t oy = 0; oy < (size_t)out_h; oy++)
             {
                 auto in_y = std::min((size_t)floorf(oy * height_scale), in_shape[2] - 1);
                 auto in_row = in_c + in_y * in_shape[3];
 
-                for (int ox = 0; ox < out_w; ox++)
+                for (size_t ox = 0; ox < (size_t)out_w; ox++)
                 {
                     auto in_x = std::min((size_t)floorf(ox * width_scale), in_shape[3] - 1);
                     *output++ = in_row[in_x];
@@ -569,13 +569,13 @@ inline void resize_bilinear(const T *input, T *output, const TShape &in_shape, i
         {
             auto in_c = in_batch + (size_t)oc * in_shape[2] * in_shape[3];
 
-            for (size_t oy = 0; oy < out_h; oy++)
+            for (size_t oy = 0; oy < (size_t)out_h; oy++)
             {
                 auto in_y = oy * height_scale;
                 auto in_y0 = (size_t)floorf(in_y);
                 auto in_y1 = std::min(in_y0 + 1, in_shape[2] - 1);
 
-                for (size_t ox = 0; ox < out_w; ox++)
+                for (size_t ox = 0; ox < (size_t)out_w; ox++)
                 {
                     auto in_x = ox * width_scale;
                     auto in_x0 = (size_t)floorf(in_x);

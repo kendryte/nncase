@@ -14,6 +14,8 @@
  */
 #ifdef WIN32
 #include <Windows.h>
+#elif defined(__unix__)
+#include <dlfcn.h>
 #endif
 
 #include <fmt/format.h>
@@ -54,6 +56,26 @@ result<rt_module_activator_t> find_runtime_activator(const module_type_t &type)
     TRY_WIN32_IF_NOT(proc);
     return ok(reinterpret_cast<rt_module_activator_t>(proc));
 }
+#elif defined(__unix__)
+#define TRY_POSIX_IF_NOT(x)                                              \
+    if (!(x))                                                            \
+    {                                                                    \
+        return err(std::error_condition(errno, std::system_category())); \
+    }
+
+result<rt_module_activator_t> find_runtime_activator(const module_type_t &type)
+{
+#ifdef NNCASE_SIMULATOR
+    auto module_name = fmt::format("nncase.modules.{}.dll", type.data());
+#else
+    auto module_name = fmt::format("nncase.rt_modules.{}.dll", type.data());
+#endif
+    auto mod = dlopen(module_name.c_str(), RTLD_LAZY);
+    TRY_POSIX_IF_NOT(mod);
+    auto proc = dlsym(mod, STR(RUNTIME_MODULE_ACTIVATOR_NAME));
+    TRY_POSIX_IF_NOT(proc);
+    return ok(reinterpret_cast<rt_module_activator_t>(proc));
+}
 #else
 #define NNCASE_NO_LOADABLE_RUNTIME
 #endif
@@ -78,8 +100,6 @@ result<std::unique_ptr<runtime_module>> runtime_module::create(const module_type
 #ifndef NNCASE_NO_LOADABLE_RUNTIME
     try_var(activator, find_runtime_activator(type));
     activator(rt_module);
-#else
-    result = err(nncase_errc::runtime_not_found);
 #endif
     return rt_module;
 }

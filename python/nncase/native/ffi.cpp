@@ -266,7 +266,7 @@ PYBIND11_MODULE(_nncase, m)
                 to_rt_shape(src_buffer.shape),
                 to_rt_strides(src_buffer.itemsize, src_buffer.strides),
                 gsl::make_span(reinterpret_cast<gsl::byte *>(src_buffer.ptr), src_buffer.size * src_buffer.itemsize),
-                [=](gsl::span<gsl::byte>) { arr.dec_ref(); })
+                [=](gsl::byte *) { arr.dec_ref(); })
                               .unwrap_or_throw();
             arr.inc_ref();
             return tensor;

@@ -76,7 +76,7 @@ inline int32_t get_kpu_padding(kpu_filter_type_t filter)
     }
 }
 
-inline std::array<int32_t, 2> get_kpu_padding(kpu_pool_type_t filter, int32_t size)
+inline std::array<int32_t, 2> get_kpu_padding(kpu_pool_type_t filter, NNCASE_UNUSED int32_t size)
 {
     switch (filter)
     {

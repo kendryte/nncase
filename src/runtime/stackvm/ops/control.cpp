@@ -18,7 +18,7 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 
-result<void> stackvm_runtime_module::visit(const nop_op_t &op) noexcept
+result<void> stackvm_runtime_module::visit([[maybe_unused]] const nop_op_t &op) noexcept
 {
     return ok();
 }
@@ -44,7 +44,7 @@ result<void> stackvm_runtime_module::visit(const br_false_op_t &op) noexcept
     return ok();
 }
 
-result<void> stackvm_runtime_module::visit(const ret_op_t &op) noexcept
+result<void> stackvm_runtime_module::visit([[maybe_unused]] const ret_op_t &op) noexcept
 {
     if (call_depth_ == 0)
     {
@@ -57,22 +57,22 @@ result<void> stackvm_runtime_module::visit(const ret_op_t &op) noexcept
     return pc(target.as_u());
 }
 
-result<void> stackvm_runtime_module::visit(const call_op_t &op) noexcept
+result<void> stackvm_runtime_module::visit([[maybe_unused]] const call_op_t &op) noexcept
 {
     return err(std::errc::not_supported);
 }
 
-result<void> stackvm_runtime_module::visit(const ecall_op_t &op) noexcept
+result<void> stackvm_runtime_module::visit([[maybe_unused]] const ecall_op_t &op) noexcept
 {
     return err(std::errc::not_supported);
 }
 
-result<void> stackvm_runtime_module::visit(const throw_op_t &op) noexcept
+result<void> stackvm_runtime_module::visit([[maybe_unused]] const throw_op_t &op) noexcept
 {
     return err(std::errc::not_supported);
 }
 
-result<void> stackvm_runtime_module::visit(const break_op_t &op) noexcept
+result<void> stackvm_runtime_module::visit([[maybe_unused]] const break_op_t &op) noexcept
 {
     return err(std::errc::not_supported);
 }

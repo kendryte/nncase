@@ -125,7 +125,7 @@ void image_dataset::process(const std::vector<uint8_t> &src, uint8_t *dest, cons
 
 raw_dataset::raw_dataset(const std::filesystem::path &path, xt::dynamic_shape<size_t> input_shape, float mean, float std)
     : dataset(
-        path, [](const std::filesystem::path &filename) { return true; }, std::move(input_shape), mean, std)
+        path, []([[maybe_unused]] const std::filesystem::path &filename) { return true; }, std::move(input_shape), mean, std)
 {
 }
 

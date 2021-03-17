@@ -40,7 +40,7 @@ public:
         }
     }
 
-    bool equivalent(std::error_code const &code, int condition) const noexcept override
+    bool equivalent(NNCASE_UNUSED std::error_code const &code, NNCASE_UNUSED int condition) const noexcept override
     {
         return false;
     }

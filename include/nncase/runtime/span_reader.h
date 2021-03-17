@@ -14,6 +14,7 @@
  */
 #pragma once
 #include "compiler_defs.h"
+#include <cstring>
 #include <gsl/gsl-lite.hpp>
 
 BEGIN_NS_NNCASE_RUNTIME
@@ -40,10 +41,10 @@ public:
     template <class T>
     T read_unaligned()
     {
-        T value;
-        std::memcpy(&value, span_.data(), sizeof(T));
+        alignas(T) uint8_t storage[sizeof(T)];
+        std::memcpy(storage, span_.data(), sizeof(T));
         advance(sizeof(T));
-        return value;
+        return *reinterpret_cast<const T *>(storage);
     }
 
     template <class T>

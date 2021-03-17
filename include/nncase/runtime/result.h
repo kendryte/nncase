@@ -217,7 +217,7 @@ namespace detail
     template <>
     struct unwrap_impl<void>
     {
-        void operator()(Ok<void> &value) noexcept
+        void operator()(NNCASE_UNUSED Ok<void> &value) noexcept
         {
         }
     };

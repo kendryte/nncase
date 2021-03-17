@@ -108,8 +108,8 @@ void ConvertIfDestTypeMatches(convert &node, module_evaluate_context &context)
 template <typename src_type, typename dst_type>
 void ConvertIfTypesMatch(convert &node, module_evaluate_context &context)
 {
-    auto input = host_runtime_tensor::buffer(context.memory_at(node.input())).unwrap_or_throw().as_span<src_type>();
-    auto output = host_runtime_tensor::buffer(context.memory_at(node.output())).unwrap_or_throw().as_span<dst_type>();
+    auto input = host_runtime_tensor::buffer(context.memory_at(node.input())).unwrap_or_throw().template as_span<src_type>();
+    auto output = host_runtime_tensor::buffer(context.memory_at(node.output())).unwrap_or_throw().template as_span<dst_type>();
 
     auto input_ptr = input.data();
     auto output_ptr = output.data();

@@ -35,10 +35,7 @@ using namespace nncase::ir::transforms::k210;
     auto kpu_pad_h = get_kpu_padding(filter_type, reduce->input().shape()[2]);                             \
     auto kpu_pad_w = get_kpu_padding(filter_type, reduce->input().shape()[3]);                             \
     padding pad_h { reduce->padding_h().before - kpu_pad_h[0], reduce->padding_h().after - kpu_pad_h[1] }; \
-    padding pad_w { reduce->padding_w().before - kpu_pad_w[0], reduce->padding_w().after - kpu_pad_w[1] }; \
-                                                                                                           \
-    auto pre_pad_h = get_padding<true>(pad_h);                                                             \
-    auto pre_pad_w = get_padding<true>(pad_w);
+    padding pad_w { reduce->padding_w().before - kpu_pad_w[0], reduce->padding_w().after - kpu_pad_w[1] };
 
 bool fuse_kpu_conv2d_pool_transform::on_try_match(node &node, transform_context &context)
 {

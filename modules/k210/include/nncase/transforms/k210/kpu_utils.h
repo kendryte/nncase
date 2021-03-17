@@ -28,7 +28,7 @@ inline bool is_supported_out_shape(const shape_t &in_shape)
     return in_shape[1] <= 1024;
 }
 
-inline bool is_bad_shape(const shape_t &in_shape, const shape_t &out_shape)
+inline bool is_bad_shape([[maybe_unused]] const shape_t &in_shape, [[maybe_unused]] const shape_t &out_shape)
 {
     return false;
 }

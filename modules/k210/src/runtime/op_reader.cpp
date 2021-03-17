@@ -14,7 +14,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#pragma once
 #include <nncase/runtime/k210/error.h>
 #include <nncase/runtime/k210/op_reader.h>
 

@@ -227,7 +227,7 @@ void quantizer::histogram::record(xtl::span<const float> data)
 void quantizer::histogram::finish()
 {
     auto zero_threshold = (size_t)std::clamp((0 - range_.min) / src_bin_interval_, 0.f, (float)src_bins_.size() - 1);
-    assert(zero_threshold >= 0 && zero_threshold < src_bins_.size());
+    assert(zero_threshold < src_bins_.size());
     auto min_loss = std::numeric_limits<float>::max();
     std::optional<std::pair<size_t, size_t>> threshold;
     const auto dest_bins = dest_bins_.size();

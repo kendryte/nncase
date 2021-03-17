@@ -15,6 +15,7 @@
 #pragma once
 #include "model.h"
 #include "result.h"
+#include <functional>
 #include <memory>
 
 BEGIN_NS_NNCASE_RUNTIME
@@ -82,13 +83,15 @@ NNCASE_API bool operator!=(const runtime_tensor &lhs, const runtime_tensor &rhs)
 
 namespace host_runtime_tensor
 {
+typedef std::function<void(gsl::byte *)> data_deleter_t;
+
 NNCASE_API runtime_tensor_type &tensor_type() noexcept;
 NNCASE_API result<runtime_tensor> create(datatype_t datatype, runtime_shape_t shape) noexcept;
 NNCASE_API result<runtime_tensor> create(datatype_t datatype, runtime_shape_t shape, gsl::span<gsl::byte> data, bool copy) noexcept;
-NNCASE_API result<runtime_tensor> create(datatype_t datatype, runtime_shape_t shape, gsl::span<gsl::byte> data, std::function<void(gsl::span<gsl::byte>)> data_deleter) noexcept;
+NNCASE_API result<runtime_tensor> create(datatype_t datatype, runtime_shape_t shape, gsl::span<gsl::byte> data, data_deleter_t data_deleter) noexcept;
 NNCASE_API result<runtime_tensor> create(datatype_t datatype, runtime_shape_t shape, runtime_shape_t strides) noexcept;
 NNCASE_API result<runtime_tensor> create(datatype_t datatype, runtime_shape_t shape, runtime_shape_t strides, gsl::span<gsl::byte> data, bool copy) noexcept;
-NNCASE_API result<runtime_tensor> create(datatype_t datatype, runtime_shape_t shape, runtime_shape_t strides, gsl::span<gsl::byte> data, std::function<void(gsl::span<gsl::byte>)> data_deleter) noexcept;
+NNCASE_API result<runtime_tensor> create(datatype_t datatype, runtime_shape_t shape, runtime_shape_t strides, gsl::span<gsl::byte> data, data_deleter_t data_deleter) noexcept;
 NNCASE_API result<gsl::span<gsl::byte>> buffer(const runtime_tensor &tensor) noexcept;
 }
 

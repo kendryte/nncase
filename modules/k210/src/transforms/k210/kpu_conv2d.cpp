@@ -48,7 +48,7 @@ auto quantize_weights(quantizer &quantizer, fake_kpu_conv2d &conv, constant &wei
     std::vector<float> scales(conv.output_channels());
     auto total_range = quantizer.fixup_range(quantizer.get_range(weights_data.begin(), weights_data.end()), true);
     const auto channel_w_size = q_weights.size() / conv.output_channels();
-    for (size_t oc = 0; oc < conv.output_channels(); oc++)
+    for (size_t oc = 0; oc < (size_t)conv.output_channels(); oc++)
     {
         std::span<float> w_ch(weights_data.begin() + oc * channel_w_size, channel_w_size);
         auto range = quantizer.fixup_range(quantizer.get_range(w_ch.begin(), w_ch.end()), true);
@@ -74,8 +74,6 @@ auto quantize_weights(quantizer &quantizer, fake_kpu_conv2d &conv, constant &wei
 
 auto quantize_act(quantizer &quantizer, float act_in_scale, const quant_param_t &yq_p, const quant_param_t &zq_p, value_range<float> activation, fused_unary *fu)
 {
-    const auto xq_low = -(1LL << 35);
-    const auto xq_high = (1LL << 35) - 1;
     const auto xf_min = std::clamp((0 - yq_p.zero_point[0]) * yq_p.scale[0], activation.min, activation.max);
     const auto xf_max = std::clamp((255 - yq_p.zero_point[0]) * yq_p.scale[0], activation.min, activation.max);
     const auto zq_scale = act_in_scale / zq_p.scale[0];
@@ -83,7 +81,7 @@ auto quantize_act(quantizer &quantizer, float act_in_scale, const quant_param_t 
     const size_t samples_count = 1024;
     const auto sample_step = (xf_max - xf_min) / (samples_count - 1);
     std::array<float, samples_count> samples_x, samples_y;
-    for (int32_t i = 0; i < samples_count; i++)
+    for (size_t i = 0; i < samples_count; i++)
         samples_x[i] = samples_y[i] = xf_min + i * sample_step;
 
     // 1. Non-clamp activation

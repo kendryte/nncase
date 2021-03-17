@@ -39,7 +39,6 @@ void k210_module_builder::emit(kpu_conv2d &node)
     }
     else
     {
-        auto kernel_size = xt::compute_size(node.weights().shape());
         auto filter = get_kpu_filter_size(node.filter_type());
         auto one_channel_size = filter * filter * node.input_channels();
         auto size_limit = 30;

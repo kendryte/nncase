@@ -27,7 +27,7 @@ target_options &target::options()
     return *options_;
 }
 
-void target::config_attributes(target_attributes &attrs)
+void target::config_attributes([[maybe_unused]] target_attributes &attrs)
 {
 }
 

@@ -18,7 +18,7 @@
 namespace nncase::ir
 {
 template <class T>
-runtime_shape_t to(const xt::dynamic_shape<T> &in_shape, T default_val = 1)
+runtime_shape_t to(const xt::dynamic_shape<T> &in_shape, [[maybe_unused]] T default_val = 1)
 {
     runtime_shape_t r_in_shape;
     r_in_shape.resize(in_shape.size());

@@ -119,7 +119,7 @@ T carry_shift(T value, int32_t shift)
             auto integral = value >> shift;
             auto fractional = value & bit_mask(shift);
             auto sign = value < 0 ? -1 : 1;
-            auto half = 1 << (shift - 1);
+            auto half = size_t(1) << (shift - 1);
 
             // frac < 0.5
             if (fractional < half)
