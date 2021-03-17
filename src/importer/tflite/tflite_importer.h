@@ -272,6 +272,17 @@ private:
                 + std::string(datatype_names(conn->type())) + "] != ["
                 + std::string(datatype_names(to_data_type(tf_tensor->type()))) + "]");
         }
+
+        if (get_shape(tf_tensor->shape()) != conn->shape())
+        {
+            throw std::runtime_error(
+                "Shape must be same: \n"
+                + conn->owner().name() + "[" + std::string(conn->owner().runtime_opcode().name) + "] != "
+                + std::string(tf_tensor->name()->string_view()) + "[output]"
+                + "\n has shape mismatch: \n["
+                + ir::to_string(conn->shape()) + "] != ["
+                + ir::to_string(get_shape(tf_tensor->shape())) + "]");
+        }
     }
 
     void link_output_tensor(int32_t tf_id, ir::output_connector *conn)
@@ -287,6 +298,17 @@ private:
                 + "\n has type mismatch: \n["
                 + std::string(datatype_names(conn->type())) + "] != ["
                 + std::string(datatype_names(to_data_type(tf_tensor->type()))) + "]");
+        }
+
+        if (get_shape(tf_tensor->shape()) != conn->shape())
+        {
+            throw std::runtime_error(
+                "Shape must be same: \n"
+                + conn->owner().name() + "[" + std::string(conn->owner().runtime_opcode().name) + "] != "
+                + std::string(tf_tensor->name()->string_view()) + "[output]"
+                + "\n has shape mismatch: \n["
+                + ir::to_string(conn->shape()) + "] != ["
+                + ir::to_string(get_shape(tf_tensor->shape())) + "]");
         }
     }
 
