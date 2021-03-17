@@ -12,11 +12,11 @@ jobs:
 - job: Linux
   timeoutInMinutes: 0
   pool:
-    vmImage: 'ubuntu-16.04'
+    vmImage: 'ubuntu-18.04'
 
   variables:
-    CC: gcc-8
-    CXX: g++-8
+    CC: gcc-10
+    CXX: g++-10
 
   steps:
   - checkout: self
@@ -25,7 +25,7 @@ jobs:
   - script: |
       sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
       sudo apt-get update -y
-      sudo apt-get install g++-8 -y
+      sudo apt-get install g++-10 -y
     displayName: 'Install GNU C++ compiler'
 
   - task: UsePythonVersion@0
@@ -35,13 +35,13 @@ jobs:
       architecture: 'x64'
 
   - script: |
-      pip install six==1.12 conan==1.21.1 tensorflow==2.0.0 matplotlib pillow onnxruntime
+      pip install conan tensorflow==2.4.1 matplotlib pillow onnxruntime
       pip install torch==1.4.0+cpu torchvision==0.5.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
     displayName: 'Install Conan'
 
   - script: |
       mkdir out && cd out
-      cmake .. -DNNCASE_TARGET=k210 -DCMAKE_BUILD_TYPE=Release
+      cmake .. -DCMAKE_BUILD_TYPE=Release
       make -j
       strip bin/ncc
     displayName: 'Build'
@@ -88,13 +88,13 @@ jobs:
       architecture: 'x64'
       
   - script: |
-      pip install six==1.12 conan==1.21.1 tensorflow==2.0.0 matplotlib pillow onnxruntime
+      pip install conan tensorflow==2.4.1 matplotlib pillow onnxruntime
       pip install torch==1.4.0+cpu torchvision==0.5.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
     displayName: 'Install Conan'
 
   - script: |
       md out && cd out
-      cmake .. -G "Visual Studio 16 2019" -A x64 -DNNCASE_TARGET=k210 -DCMAKE_BUILD_TYPE=Release
+      cmake .. -G "Visual Studio 16 2019" -A x64 -DCMAKE_BUILD_TYPE=Release
     displayName: 'Build'
 
   - task: MSBuild@1
@@ -151,13 +151,13 @@ jobs:
       architecture: 'x64'
       
   - script: |
-      pip install six==1.12 conan==1.21.1 tensorflow==2.0.0 matplotlib pillow onnxruntime
+      pip install conan tensorflow==2.4.1 matplotlib pillow onnxruntime
       pip install torch torchvision
     displayName: 'Install Conan'
 
   - script: |
       mkdir out && cd out
-      cmake .. -DNNCASE_TARGET=k210 -DCMAKE_BUILD_TYPE=Release
+      cmake .. -DCMAKE_BUILD_TYPE=Release
       make -j
       strip bin/ncc
       hdiutil create -srcfolder bin ncc_osx_x86_64.dmg
