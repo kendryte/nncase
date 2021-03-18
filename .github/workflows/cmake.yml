@@ -1,4 +1,4 @@
-name: CMake
+name: Build
 
 on: [push]
 
@@ -57,14 +57,34 @@ jobs:
       working-directory: ${{github.workspace}}/build
       shell: bash
       # Execute the build.  You can specify a specific target with "--target <NAME>"
-      run: cmake --build . --config $BUILD_TYPE
-      
+      run: cmake --build . --config $BUILD_TYPE --parallel
 
     - name: Install
       working-directory: ${{github.workspace}}/build
       shell: bash
       # Execute the build.  You can specify a specific target with "--target <NAME>"
       run: cmake --install . --prefix install
+      
+    - name: Create Test Environment
+      working-directory: ${{github.workspace}}
+      shell: bash
+      run: |
+        pip install pytest
+    
+    - name: Test
+      working-directory: ${{github.workspace}}
+      shell: bash
+      env:
+        LD_LIBRARY_PATH: ${{github.workspace}}/build/install/lib
+        PYTHONPATH: ${{github.workspace}}/build/install/lib:${{github.workspace}}/python
+      run: |
+        pytest tests --doctest-modules --junitxml=test-results.xml
+        
+    - name: Publish Test Results
+      uses: EnricoMi/publish-unit-test-result-action@v1
+      if: success()
+      with:
+        files: test-results.xml
       
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v2.2.2
