@@ -36,6 +36,7 @@ jobs:
     - name: Configure Conan
       shell: bash
       run: |
+        conan profile new default --detect
         conan profile update settings.compiler.libcxx=libstdc++11 default
 
     - name: Create Build Environment
@@ -57,9 +58,18 @@ jobs:
       shell: bash
       # Execute the build.  You can specify a specific target with "--target <NAME>"
       run: cmake --build . --config $BUILD_TYPE
+      
 
     - name: Install
       working-directory: ${{github.workspace}}/build
       shell: bash
       # Execute the build.  You can specify a specific target with "--target <NAME>"
       run: cmake --install . --prefix install
+      
+    - name: Upload a Build Artifact
+      uses: actions/upload-artifact@v2.2.2
+      with:
+        # Artifact name
+        name: nncase
+        path: ${{github.workspace}}/build/install
+        if-no-files-found: error
