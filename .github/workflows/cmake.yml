@@ -57,7 +57,7 @@ jobs:
       working-directory: ${{github.workspace}}/build
       shell: bash
       # Execute the build.  You can specify a specific target with "--target <NAME>"
-      run: cmake --build . --config $BUILD_TYPE --parallel
+      run: cmake --build . --config $BUILD_TYPE
 
     - name: Install
       working-directory: ${{github.workspace}}/build
