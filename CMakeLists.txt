@@ -32,8 +32,8 @@ project(nncase
 include(cmake/conan.cmake)
 
 conan_check()
+conan_add_remote(NAME sunnycase URL https://conan.sunnycase.moe INDEX 0)
 conan_add_remote(NAME bincrafts URL https://api.bintray.com/conan/bincrafters/public-conan)
-conan_add_remote(NAME sunnycase URL https://conan.sunnycase.moe)
 
 if (BUILDING_RUNTIME)
     option(BUILD_SHARED_LIBS "Build shared libraries (.dll/.so) instead of static ones (.lib/.a)" ON)

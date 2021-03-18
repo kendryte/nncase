@@ -315,7 +315,7 @@ void module_builder::write_binary(binary_writer &writer)
     for (auto &section : section_writer_)
     {
         section_header header {};
-        strncpy(header.name, section.first.c_str(), std::size(header.name));
+        strncpy(header.name, section.first.c_str(), std::size(header.name) - 1);
 
         auto merge_it = rdata_section_merges_.find(section.first);
         if (merge_it == rdata_section_merges_.end())
