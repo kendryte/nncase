@@ -16,12 +16,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-    
-    - name: Install GNU C++ compiler
-      run: |
-        sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
-        sudo apt-get update -y
-        sudo apt-get install g++-10 -y
           
     - name: Setup Python
       uses: actions/setup-python@v2.2.1
@@ -40,8 +34,9 @@ jobs:
       run: cmake -E make_directory ${{github.workspace}}/build
 
     - name: Configure CMake
-      # Use a bash shell so we can use the same syntax for environment variable
-      # access regardless of the host operating system
+      env:
+        CC: gcc-10
+        CXX: g++-10
       shell: bash
       working-directory: ${{github.workspace}}/build
       # Note the current convention is to use the -S and -B options here to specify source 
