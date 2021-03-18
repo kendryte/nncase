@@ -76,7 +76,7 @@ jobs:
       shell: bash
       env:
         LD_LIBRARY_PATH: ${{github.workspace}}/build/install/lib
-        PYTHONPATH: ${{github.workspace}}/build/install/lib:${{github.workspace}}/python
+        PYTHONPATH: ${{github.workspace}}/build/install/lib:${{github.workspace}}/python:${{github.workspace}}/tests
       run: |
         pytest tests --doctest-modules --junitxml=test-results.xml
         
