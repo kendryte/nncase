@@ -150,6 +150,13 @@ else()
         PATTERN "CMakeFiles" EXCLUDE
         PATTERN "config.h" EXCLUDE
         )
+    
+    install(DIRECTORY python/nncase
+        DESTINATION python
+        COMPONENT nncase-python
+        FILES_MATCHING
+        PATTERN "*.py"
+        )
 endif()
 
 include_directories(modules/include)
