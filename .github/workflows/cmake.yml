@@ -1,0 +1,95 @@
+name: Build
+
+on: [push]
+
+env:
+  # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    # The CMake configure and build commands are platform agnostic and should work equally
+    # well on Windows or Mac.  You can convert this to a matrix build if you need
+    # cross-platform coverage.
+    # See: https://docs.github.com/en/free-pro-team@latest/actions/learn-github-actions/managing-complex-workflows#using-a-build-matrix
+    runs-on: ubuntu-18.04
+
+    steps:
+    - uses: actions/checkout@v2
+          
+    - name: Setup Python
+      uses: actions/setup-python@v2.2.1
+      with:
+        python-version: 3.7
+        
+    - name: Install System Requirements
+      shell: bash
+      run: |
+        sudo apt install libgtk2.0-dev -y
+        
+    - name: Install Python Packages
+      shell: bash
+      run: |
+        pip install conan tensorflow==2.4.1 matplotlib pillow onnxruntime
+        pip install torch==1.4.0+cpu torchvision==0.5.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
+        
+    - name: Configure Conan
+      shell: bash
+      run: |
+        conan profile new default --detect
+        conan profile update settings.compiler.libcxx=libstdc++11 default
+
+    - name: Create Build Environment
+      run: cmake -E make_directory ${{github.workspace}}/build
+
+    - name: Configure CMake
+      env:
+        CC: gcc-10
+        CXX: g++-10
+      shell: bash
+      working-directory: ${{github.workspace}}/build
+      # Note the current convention is to use the -S and -B options here to specify source 
+      # and build directories, but this is only available with CMake 3.13 and higher.  
+      # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+
+    - name: Build
+      working-directory: ${{github.workspace}}/build
+      shell: bash
+      # Execute the build.  You can specify a specific target with "--target <NAME>"
+      run: cmake --build . --config $BUILD_TYPE --parallel
+
+    - name: Install
+      working-directory: ${{github.workspace}}/build
+      shell: bash
+      # Execute the build.  You can specify a specific target with "--target <NAME>"
+      run: cmake --install . --prefix install
+      
+    - name: Create Test Environment
+      working-directory: ${{github.workspace}}
+      shell: bash
+      run: |
+        pip install pytest
+    
+    - name: Test
+      working-directory: ${{github.workspace}}
+      shell: bash
+      env:
+        LD_LIBRARY_PATH: ${{github.workspace}}/build/install/lib
+        PYTHONPATH: ${{github.workspace}}/build/install/lib:${{github.workspace}}/python
+      run: |
+        pytest tests --doctest-modules --junitxml=test-results.xml
+        
+    - name: Publish Test Results
+      uses: EnricoMi/publish-unit-test-result-action@v1
+      if: always()
+      with:
+        files: test-results.xml
+      
+    - name: Upload a Build Artifact
+      uses: actions/upload-artifact@v2.2.2
+      with:
+        # Artifact name
+        name: nncase
+        path: ${{github.workspace}}/build/install
+        if-no-files-found: error
