@@ -63,33 +63,34 @@ jobs:
       working-directory: ${{github.workspace}}/build
       shell: bash
       # Execute the build.  You can specify a specific target with "--target <NAME>"
-      run: cmake --install . --prefix install
+      run: cmake --install . --prefix ../install
       
     - name: Create Test Environment
       working-directory: ${{github.workspace}}
       shell: bash
       run: |
         pip install pytest
-    
-    - name: Test
-      working-directory: ${{github.workspace}}
-      shell: bash
-      env:
-        LD_LIBRARY_PATH: ${{github.workspace}}/build/install/lib
-        PYTHONPATH: ${{github.workspace}}/build/install/lib:${{github.workspace}}/python:${{github.workspace}}/tests
-      run: |
-        pytest tests --doctest-modules --junitxml=test-results.xml
-        
-    - name: Publish Test Results
-      uses: EnricoMi/publish-unit-test-result-action@v1
-      if: always()
-      with:
-        files: test-results.xml
+        mkdir test_results
       
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v2.2.2
       with:
         # Artifact name
         name: nncase
-        path: ${{github.workspace}}/build/install
+        path: ${{github.workspace}}/install
         if-no-files-found: error
+    
+    - name: Test
+      working-directory: ${{github.workspace}}
+      shell: bash
+      env:
+        LD_LIBRARY_PATH: ${{github.workspace}}/install/lib
+        PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/tests
+      run: |
+        pytest tests/importer --doctest-modules --junitxml=test_results/importer.xml
+        
+    - name: Publish Test Results
+      uses: EnricoMi/publish-unit-test-result-action@v1
+      if: always()
+      with:
+        files: test_results/*.xml
