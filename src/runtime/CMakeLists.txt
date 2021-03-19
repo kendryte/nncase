@@ -22,7 +22,7 @@ if (BUILDING_RUNTIME)
         set_target_properties(runtime_shared PROPERTIES
                                              OUTPUT_NAME "nncase.runtime")
         set_property(TARGET runtime_shared PROPERTY POSITION_INDEPENDENT_CODE ON)
-        install(TARGETS runtime_shared DESTINATION lib)
+        install(TARGETS runtime_shared)
     endif()
 else()
     add_library(simulator OBJECT ${SRCS})

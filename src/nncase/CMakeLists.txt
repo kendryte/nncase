@@ -9,4 +9,4 @@ target_link_libraries(nncase PUBLIC CONAN_PKG::gsl-lite CONAN_PKG::xtensor CONAN
 target_compile_definitions(nncase PRIVATE -DNNCASE_DLL)
 target_compile_definitions(nncase PUBLIC -DNNCASE_SHARED_LIBS)
 target_link_libraries(nncase PRIVATE CONAN_PKG::magic_enum CONAN_PKG::fmt)
-install(TARGETS nncase DESTINATION lib)
+install(TARGETS nncase)

@@ -156,6 +156,7 @@ def eval_nncase(case_name, input, targets, enable_ptq):
 
 
 def test_tf_module(case_name, module, targets):
+    case_name = case_name.replace('[', '_').replace(']', '_')
     case_dir = os.path.join('./tmp', case_name)
     clear(case_dir)
     tflite = tf_module_to_tflite(case_name, module)
