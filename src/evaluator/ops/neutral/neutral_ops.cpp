@@ -14,6 +14,7 @@
  */
 #include <nncase/ir/evaluator.h>
 #include <nncase/ir/op_utils.h>
+#include <nncase/ir/ops/batch_to_space.h>
 #include <nncase/ir/ops/binary.h>
 #include <nncase/ir/ops/bitcast.h>
 #include <nncase/ir/ops/concat.h>
@@ -125,6 +126,21 @@ void register_neutral_evaluators()
     register_evaluator(op_output_node, nop_evaluator);
     register_evaluator(op_ignore_node, nop_evaluator);
     register_evaluator(op_constant, nop_evaluator);
+
+    register_evaluator(op_batch_to_space, [](ir::node &node, module_evaluate_context &context) {
+        auto &rnode = static_cast<batch_to_space &>(node);
+
+        auto input = context.memory_at(rnode.input());
+        auto output = context.memory_at(rnode.output());
+        auto input_mem = host_runtime_tensor::buffer(input).unwrap_or_throw();
+        auto output_mem = host_runtime_tensor::buffer(output).unwrap_or_throw();
+
+        kernels::batch_to_space(input.datatype(), input_mem.data(), output_mem.data(), input.shape(),
+            runtime_shape_t { (size_t)rnode.block_size_h(), (size_t)rnode.block_size_w() },
+            runtime_paddings_t { padding { rnode.crop_h()[0], rnode.crop_h()[1] }, padding { rnode.crop_w()[0], rnode.crop_w()[1] } },
+            input.strides(), output.strides())
+            .unwrap_or_throw();
+    });
 
     register_evaluator(op_binary, [](ir::node &node, module_evaluate_context &context) {
         auto &rnode = static_cast<binary &>(node);
@@ -252,36 +268,14 @@ void register_neutral_evaluators()
         auto &rnode = static_cast<reduce &>(node);
 
         assert(rnode.input().type() == dt_float32);
-        auto input = host_runtime_tensor::buffer(context.memory_at(rnode.input())).unwrap_or_throw().as_span<float>();
-        auto output = host_runtime_tensor::buffer(context.memory_at(rnode.output())).unwrap_or_throw().as_span<float>();
+        auto input = context.memory_at(rnode.input());
+        auto output = context.memory_at(rnode.output());
+        auto input_mem = host_runtime_tensor::buffer(input).unwrap_or_throw().as_span<float>();
+        auto output_mem = host_runtime_tensor::buffer(output).unwrap_or_throw().as_span<float>();
 
-        auto reduced_shape = get_reduced_shape(rnode.input().shape(), rnode.axis(), true);
-
-        auto reduce = [&](auto reduce_op) {
-            neutral::reduce(input.data(), output.data(), rnode.init_value(), to(rnode.input().shape()), to(reduced_shape), reduce_op);
-        };
-
-        switch (rnode.reduce_op())
-        {
-        case reduce_mean:
-        {
-            reduce([](auto a, auto b) { return a + b; });
-            auto mul = (float)output.size() / input.size();
-            neutral::unary(output.data(), output.data(), output.size(), [mul](auto a) { return a * mul; });
-            break;
-        }
-        case reduce_min:
-            reduce([](auto a, auto b) { return std::min(a, b); });
-            break;
-        case reduce_max:
-            reduce([](auto a, auto b) { return std::max(a, b); });
-            break;
-        case reduce_sum:
-            reduce([](auto a, auto b) { return a + b; });
-            break;
-        default:
-            throw std::runtime_error("Not supported reduce");
-        }
+        kernels::reduce(rnode.reduce_op(), rnode.init_value(), input_mem.data(), output_mem.data(), input.shape(),
+            to(rnode.axis()), input.strides(), output.strides(), rnode.keep_dims())
+            .unwrap_or_throw();
     });
 
     register_evaluator(op_reduce_window2d, [](ir::node &node, module_evaluate_context &context) {
@@ -369,18 +363,14 @@ void register_neutral_evaluators()
     register_evaluator(op_transpose, [](ir::node &node, module_evaluate_context &context) {
         auto &rnode = static_cast<transpose &>(node);
 
-        auto input_tensor = context.memory_at(rnode.input());
-        auto output_tensor = context.memory_at(rnode.output());
-        auto input = host_runtime_tensor::buffer(input_tensor).unwrap_or_throw();
-        auto output = host_runtime_tensor::buffer(output_tensor).unwrap_or_throw();
+        auto input = context.memory_at(rnode.input());
+        auto output = context.memory_at(rnode.output());
+        auto input_mem = host_runtime_tensor::buffer(input).unwrap_or_throw();
+        auto output_mem = host_runtime_tensor::buffer(output).unwrap_or_throw();
 
-        runtime_shape_t in_shape, perm;
-        extend_transpose_shape(rnode.input().shape(), rnode.perm(), in_shape, perm);
-
-#define TRANSPOSE_KERNEL(T) \
-    neutral::transpose<T>(input.as_span<T>().data(), output.as_span<T>().data(), in_shape, input_tensor.strides(), output_tensor.strides(), perm);
-
-        ELEM_SIZE_IMPL(rnode.input().type(), TRANSPOSE_KERNEL);
+        kernels::transpose(input.datatype(), input_mem.data(), output_mem.data(), input.shape(), to(rnode.perm()),
+            input.strides(), output.strides())
+            .unwrap_or_throw();
     });
 
     register_evaluator(op_unary, [](ir::node &node, module_evaluate_context &context) {

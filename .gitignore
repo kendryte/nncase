@@ -274,3 +274,5 @@ tests/private
 *.exe
 .pytest_cache
 /tools/stackvm_gen/IsaGen/Properties/launchSettings.json
+/test_results
+install/
