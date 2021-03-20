@@ -14,7 +14,7 @@
  */
 #ifdef WIN32
 #include <Windows.h>
-#elif defined(__unix__)
+#elif defined(__unix__) || defined(__APPLE__)
 #include <dlfcn.h>
 #else
 #error "Unsupported platform"
@@ -50,7 +50,12 @@ target_activator_t find_target_activator(std::string_view name)
     THROW_WIN32_IF_NOT(proc, "Cannot load proc \"{1}\" in module: {2}, {0}", STR(TARGET_ACTIVATOR_NAME), module_name);
     return reinterpret_cast<target_activator_t>(proc);
 }
-#elif defined(__unix__)
+#elif defined(__unix__) || defined(__APPLE__)
+#ifdef __unix__
+#define DYNLIB_EXT ".so"
+#else
+#define DYNLIB_EXT ".dylib"
+#endif
 #define THROW_POSIX_IF_NOT(x, fmt_str, ...)                                                                    \
     if (!(x))                                                                                                  \
     {                                                                                                          \
@@ -61,7 +66,7 @@ target_activator_t find_target_activator(std::string_view name)
 
 target_activator_t find_target_activator(std::string_view name)
 {
-    auto module_name = fmt::format("libnncase.targets.{}.so", name);
+    auto module_name = fmt::format("libnncase.targets.{}" DYNLIB_EXT, name);
     auto mod = dlopen(module_name.c_str(), RTLD_LAZY);
     THROW_POSIX_IF_NOT(mod, "Cannot load module: {1}, {0}", module_name);
     auto proc = dlsym(mod, STR(TARGET_ACTIVATOR_NAME));

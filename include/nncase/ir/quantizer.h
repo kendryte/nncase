@@ -118,7 +118,7 @@ public:
     size_t histograms_count() const noexcept { return histograms_.size(); }
 
 private:
-    calibrate_method cali_method_;
+    // calibrate_method cali_method_;
     quantize_stage stage_ = quantize_stage::collect_range;
     const size_t bins_;
     std::unordered_map<ir::output_connector *, value_range<float>> quant_ranges_;

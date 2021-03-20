@@ -86,7 +86,7 @@ struct Ok<void>
 struct Err
 {
     template <class ErrCode, class = std::enable_if_t<std::is_error_condition_enum_v<ErrCode>>>
-    constexpr Err(ErrCode value)
+    Err(ErrCode value)
         : err(value) { }
 
     Err(std::error_condition err)
@@ -113,7 +113,7 @@ constexpr Ok<std::decay_t<T>> ok(T &&value)
 }
 
 template <class ErrCode, class = std::enable_if_t<std::is_error_condition_enum_v<ErrCode>>>
-constexpr Err err(ErrCode value)
+Err err(ErrCode value)
 {
     return Err(value);
 }
@@ -168,7 +168,7 @@ namespace detail
         using U = invoke_result_t<Func>;
         static_assert(!is_result_v<U>, "Cannot map a callback returning result, use and_then instead");
 
-        result<U> operator()(Func &&func, Ok<void> &value) noexcept
+        result<U> operator()(Func &&func, NNCASE_UNUSED Ok<void> &value) noexcept
         {
             return map_call_void_impl<U, Func>()(std::forward<Func>(func));
         }
@@ -199,7 +199,7 @@ namespace detail
         using U = typename traits_t::ok_type;
         static_assert(is_result_v<result_t>, "Cannot then a callback not returning result, use map instead");
 
-        result_t operator()(Func &&func, Ok<void> &value) noexcept
+        result_t operator()(Func &&func, NNCASE_UNUSED Ok<void> &value) noexcept
         {
             return func();
         }
@@ -232,7 +232,7 @@ public:
     constexpr result(Ok<T> value)
         : ok_or_err_(std::move(value)) { }
 
-    constexpr result(Err err)
+    result(Err err)
         : ok_or_err_(std::move(err)) { }
 
     constexpr bool is_ok() const noexcept { return ok_or_err_.index() == 0; }
@@ -262,7 +262,7 @@ public:
             return err().err;
     }
 
-    constexpr auto expect(gsl::cstring_span message) noexcept
+    constexpr auto expect(NNCASE_UNUSED gsl::cstring_span message) noexcept
     {
         if (is_ok())
         {

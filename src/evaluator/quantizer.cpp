@@ -66,8 +66,8 @@ float compute_l2(xtl::span<float> p, value_range<float> p_range, value_range<flo
 }
 }
 
-quantizer::quantizer(calibrate_method cali_method, size_t bins)
-    : cali_method_(cali_method), bins_(bins)
+quantizer::quantizer([[maybe_unused]] calibrate_method cali_method, size_t bins)
+    : /*cali_method_(cali_method),*/ bins_(bins)
 {
 }
 

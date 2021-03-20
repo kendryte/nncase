@@ -135,7 +135,7 @@ template <class TShape>
 TShape get_reduced_shape(const TShape &in_shape, const TShape &axis, bool keep_dims)
 {
     TShape shape;
-    shape.reserve(in_shape.size() - keep_dims ? 0 : axis.size());
+    shape.reserve(in_shape.size() - (keep_dims ? 0 : axis.size()));
     for (size_t i = 0; i < in_shape.size(); i++)
     {
         if (std::find(axis.begin(), axis.end(), i) == axis.end())
@@ -173,7 +173,7 @@ template <class TShape>
 TShape get_reduced_offset(const TShape &in_offset, const TShape &axis, bool keep_dims)
 {
     TShape off;
-    off.reserve(in_offset.size() - keep_dims ? 0 : axis.size());
+    off.reserve(in_offset.size() - (keep_dims ? 0 : axis.size()));
     for (size_t i = 0; i < in_offset.size(); i++)
     {
         if (std::find(axis.begin(), axis.end(), i) == axis.end())

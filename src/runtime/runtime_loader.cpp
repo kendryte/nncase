@@ -14,7 +14,7 @@
  */
 #ifdef WIN32
 #include <Windows.h>
-#elif defined(__unix__)
+#elif defined(__unix__) || defined(__APPLE__)
 #include <dlfcn.h>
 #endif
 
@@ -56,7 +56,12 @@ result<rt_module_activator_t> find_runtime_activator(const module_type_t &type)
     TRY_WIN32_IF_NOT(proc);
     return ok(reinterpret_cast<rt_module_activator_t>(proc));
 }
-#elif defined(__unix__)
+#elif defined(__unix__) || defined(__APPLE__)
+#ifdef __unix__
+#define DYNLIB_EXT ".so"
+#else
+#define DYNLIB_EXT ".dylib"
+#endif
 #define TRY_POSIX_IF_NOT(x)                                              \
     if (!(x))                                                            \
     {                                                                    \
@@ -66,9 +71,9 @@ result<rt_module_activator_t> find_runtime_activator(const module_type_t &type)
 result<rt_module_activator_t> find_runtime_activator(const module_type_t &type)
 {
 #ifdef NNCASE_SIMULATOR
-    auto module_name = fmt::format("libnncase.modules.{}.so", type.data());
+    auto module_name = fmt::format("libnncase.modules.{}" DYNLIB_EXT, type.data());
 #else
-    auto module_name = fmt::format("libnncase.rt_modules.{}.so", type.data());
+    auto module_name = fmt::format("libnncase.rt_modules.{}" DYNLIB_EXT, type.data());
 #endif
     auto mod = dlopen(module_name.c_str(), RTLD_LAZY);
     TRY_POSIX_IF_NOT(mod);

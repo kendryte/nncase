@@ -82,7 +82,6 @@ namespace schedule
         target &target_;
         ir::graph &main_graph_;
         std::span<ir::output_node *> outputs_;
-        schedule_context *cnt_context_;
     };
 }
 }

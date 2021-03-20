@@ -29,6 +29,7 @@ namespace nncase::codegen
 class NNCASE_API section_decompiler
 {
 public:
+    virtual ~section_decompiler() = default;
     virtual void decompile(std::span<const uint8_t> input, std::span<const symbol> symbols, std::ostream &output) = 0;
 };
 
@@ -67,6 +68,7 @@ public:
     module_builder(uint32_t alignment, std::string_view module_name, const module_builder_params &params);
     module_builder(module_builder &) = delete;
     module_builder(module_builder &&) = delete;
+    virtual ~module_builder() = default;
 
     uint32_t alignment() const noexcept { return alignment_; }
     void config_dump(const std::filesystem::path &dump_dir, bool dump_asm);

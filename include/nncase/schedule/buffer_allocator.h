@@ -19,6 +19,7 @@
 #include <nncase/ir/ir_types.h>
 #include <nncase/runtime/datatypes.h>
 #include <optional>
+#include <unordered_map>
 
 namespace nncase::schedule
 {
@@ -31,6 +32,7 @@ public:
         size_t valid_size;
     };
 
+    virtual ~buffer_allocator() = default;
     virtual void base_offset(size_t value) = 0;
     virtual void mark(const physical_buffer &buffer) = 0;
     virtual void finish() = 0;

@@ -86,41 +86,41 @@ struct fused_unary_op
 
     static fused_unary_op make_ldx() noexcept
     {
-        fused_unary_op op { fu_ldx };
+        fused_unary_op op { fu_ldx, {} };
         return op;
     }
 
     static fused_unary_op make_constant(float value) noexcept
     {
-        fused_unary_op op { fu_constant };
+        fused_unary_op op { fu_constant, {} };
         op.constant.value = value;
         return op;
     }
 
     static fused_unary_op make_unary(unary_op_t unary_op, fused_unary_arg input) noexcept
     {
-        fused_unary_op op { fu_unary };
+        fused_unary_op op { fu_unary, {} };
         op.unary = { unary_op, input };
         return op;
     }
 
     static fused_unary_op make_binary(binary_op_t binary_op, fused_unary_arg input_a, fused_unary_arg input_b) noexcept
     {
-        fused_unary_op op { fu_binary };
+        fused_unary_op op { fu_binary, {} };
         op.binary = { binary_op, input_a, input_b };
         return op;
     }
 
     static fused_unary_op make_clamp(fused_unary_arg input, fused_unary_arg low, fused_unary_arg high) noexcept
     {
-        fused_unary_op op { fu_clamp };
+        fused_unary_op op { fu_clamp, {} };
         op.clamp = { input, low, high };
         return op;
     }
 
     static fused_unary_op make_identity(fused_unary_arg input) noexcept
     {
-        fused_unary_op op { fu_identity };
+        fused_unary_op op { fu_identity, {} };
         op.identity = { input };
         return op;
     }
