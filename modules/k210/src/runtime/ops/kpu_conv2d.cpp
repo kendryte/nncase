@@ -80,20 +80,20 @@ result<void> k210_runtime_module::visit(const kpu_conv2d_options &op) noexcept
         dest.add = (int32_t)kernels::detail::to_signed<32>(src.norm_add);
     }
 
+    auto &act_table = activation_data.as_span<const kpu_activate_table_t>()[0];
     kpu_activation_table_t activation;
     for (size_t i = 0; i < 16; i++)
     {
-        auto &act_table = activation_data.as_span<const kpu_activate_table_t>()[0];
         auto &src = act_table.activate_para[i].data;
         auto &dest = activation[i];
         dest.start_x = kernels::detail::to_signed<36>(src.x_start);
         dest.mul = (int32_t)kernels::detail::to_signed<16>(src.y_mul);
         dest.shift = (int32_t)src.shift_number;
 
-        if (i < 16)
+        if (i < 8)
             dest.add = act_table.activate_para_bias0.data.result_bias[i];
         else
-            dest.add = act_table.activate_para_bias1.data.result_bias[i - 16];
+            dest.add = act_table.activate_para_bias1.data.result_bias[i - 8];
     }
 
 #define KPU_CONV2D_IMPL(is_depthwise_val, filter_size_val)                                                                                                  \
