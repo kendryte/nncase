@@ -94,7 +94,7 @@ public:
         std::optional<data_batch<T>> value_;
     };
 
-    dataset(const std::filesystem::path &path, std::function<bool(const std::filesystem::path &)> file_filter, xt::dynamic_shape<size_t> input_shape, float mean, float std);
+    dataset(const std::filesystem::path &path, std::function<bool(const std::filesystem::path &)> file_filter, xt::dynamic_shape<size_t> input_shape, std::string input_axis, float mean, float std);
     virtual ~dataset() = default;
 
     template <class T>
@@ -113,8 +113,8 @@ public:
     size_t total_size() const noexcept { return filenames_.size(); }
 
 protected:
-    virtual void process(const std::vector<uint8_t> &src, float *dest, const xt::dynamic_shape<size_t> &shape) = 0;
-    virtual void process(const std::vector<uint8_t> &src, uint8_t *dest, const xt::dynamic_shape<size_t> &shape) = 0;
+    virtual void process(const std::vector<uint8_t> &src, float *dest, const xt::dynamic_shape<size_t> &shape, std::string axis) = 0;
+    virtual void process(const std::vector<uint8_t> &src, uint8_t *dest, const xt::dynamic_shape<size_t> &shape, std::string axis) = 0;
 
 private:
     template <class T>
@@ -126,7 +126,7 @@ private:
 
             xt::xarray<T> batch(input_shape_);
             auto file = read_file(filenames_[from++]);
-            process(file, batch.data(), batch.shape());
+            process(file, batch.data(), batch.shape(), input_axis_);
             if constexpr (std::is_same_v<T, float>)
             {
                 for (auto &v : batch)
@@ -144,6 +144,7 @@ private:
 private:
     std::vector<std::filesystem::path> filenames_;
     xt::dynamic_shape<size_t> input_shape_;
+    std::string input_axis_;
     float mean_;
     float std_;
 };
@@ -151,11 +152,11 @@ private:
 class NNCASE_API image_dataset : public dataset
 {
 public:
-    image_dataset(const std::filesystem::path &path, xt::dynamic_shape<size_t> input_shape, float mean, float std);
+    image_dataset(const std::filesystem::path &path, xt::dynamic_shape<size_t> input_shape, std::string input_axis, float mean, float std);
 
 protected:
-    void process(const std::vector<uint8_t> &src, float *dest, const xt::dynamic_shape<size_t> &shape) override;
-    void process(const std::vector<uint8_t> &src, uint8_t *dest, const xt::dynamic_shape<size_t> &shape) override;
+    void process(const std::vector<uint8_t> &src, float *dest, const xt::dynamic_shape<size_t> &shape, std::string axis) override;
+    void process(const std::vector<uint8_t> &src, uint8_t *dest, const xt::dynamic_shape<size_t> &shape, std::string axis) override;
 };
 
 class NNCASE_API raw_dataset : public dataset
@@ -164,7 +165,7 @@ public:
     raw_dataset(const std::filesystem::path &path, xt::dynamic_shape<size_t> input_shape, float mean, float std);
 
 protected:
-    void process(const std::vector<uint8_t> &src, float *dest, const xt::dynamic_shape<size_t> &shape) override;
-    void process(const std::vector<uint8_t> &src, uint8_t *dest, const xt::dynamic_shape<size_t> &shape) override;
+    void process(const std::vector<uint8_t> &src, float *dest, const xt::dynamic_shape<size_t> &shape, std::string axis) override;
+    void process(const std::vector<uint8_t> &src, uint8_t *dest, const xt::dynamic_shape<size_t> &shape, std::string axis) override;
 };
 }

@@ -35,9 +35,50 @@ value_range<float> ema_range(const value_range<float> &lhs, const value_range<fl
     return { (1 - alpha) * lhs.min + alpha * rhs.min, (1 - alpha) * lhs.max + alpha * rhs.max };
 }
 
+static std::vector<float> smooth_distribution(const std::vector<float> &p, const float eps = 0.0001)
+{
+    std::vector<size_t> is_zeros(p.size());
+    std::vector<size_t> is_nonzeros(p.size());
+    {
+        auto it = p.begin();
+        std::generate(is_zeros.begin(), is_zeros.end(),
+            [&it]() { return static_cast<size_t>(*(it++) == 0.f); });
+    }
+    {
+        auto it = p.begin();
+        std::generate(is_nonzeros.begin(), is_nonzeros.end(),
+            [&it]() { return static_cast<size_t>(*(it++) != 0.f); });
+    }
+    size_t n_zeros = std::accumulate(is_zeros.begin(), is_zeros.end(), 0);
+    size_t n_nonzeros = p.size() - n_zeros;
+    if (!n_nonzeros)
+    {
+        // The discrete probability distribution is malformed. All entries are 0.
+        return std::vector<float>();
+    }
+    float eps1 = eps * static_cast<float>(n_zeros) / static_cast<float>(n_nonzeros);
+    if (eps1 >= 1.0)
+        return std::vector<float>();
+    auto ret = p;
+    for (size_t i = 0; i < p.size(); i++)
+    {
+        ret[i] += eps * is_zeros[i] - eps1 * is_nonzeros[i];
+    }
+    return ret;
+}
+
 float compute_kld(xtl::span<float> p, xtl::span<float> q)
 {
-    assert(p.size() == q.size());
+    if (!(p.size() && q.size()) || p.size() != q.size())
+        return std::numeric_limits<float>::max();
+
+    auto p_sum = std::reduce(p.begin(), p.end());
+    auto q_sum = std::reduce(q.begin(), q.end());
+    for (auto &value : p)
+        value = value / p_sum;
+    for (auto &value : q)
+        value = value / q_sum;
+
     float d = 0.f;
     for (size_t i = 0; i < p.size(); i++)
     {
@@ -85,9 +126,9 @@ void quantizer::set(ir::output_connector &connector, value_range<float> range)
     quant_ranges_[&connector] = range;
 }
 
-bool quantizer::has_record(ir::output_connector &connector) const noexcept
+bool quantizer::has_record(ir::output_connector &connector) const
 {
-    return quant_ranges_.contains(&connector) || histograms_.contains(&connector);
+    return has_record_.contains(&connector) && has_record_.at(&connector);
 }
 
 void quantizer::record(output_connector &connector, xtl::span<const float> data)
@@ -96,9 +137,11 @@ void quantizer::record(output_connector &connector, xtl::span<const float> data)
     {
     case quantize_stage::collect_range:
         record(connector, get_range(data.begin(), data.end()));
+        has_record_.emplace(&connector, true);
         break;
     case quantize_stage::collect_distribution:
         histograms_.at(&connector).record(data);
+        has_record_.emplace(&connector, true);
         break;
     default:
         throw std::runtime_error("Invalid operation in current quantization stage");
@@ -118,6 +161,7 @@ void quantizer::end_collect_distribution(std::function<void(size_t cnt, size_t t
     size_t i = 0;
     for (auto &&h : histograms_)
     {
+        std::cout << h.first->owner().name() << std::endl;
         h.second.finish();
         quant_ranges_.at(h.first) = h.second.optimal_range();
         if (progress)
@@ -228,15 +272,15 @@ void quantizer::histogram::finish()
 {
     auto zero_threshold = (size_t)std::clamp((0 - range_.min) / src_bin_interval_, 0.f, (float)src_bins_.size() - 1);
     assert(zero_threshold < src_bins_.size());
-    auto min_loss = std::numeric_limits<float>::max();
+    [[maybe_unused]] auto min_loss = std::numeric_limits<float>::max();
     std::optional<std::pair<size_t, size_t>> threshold;
     const auto dest_bins = dest_bins_.size();
 #if 0
-    auto total_freq = std::reduce(src_bins_.begin(), src_bins_.end());
-    auto zero_threshold = (size_t)std::clamp((0 - range_.min) / src_bin_interval_, 0.f, (float)src_bins_.size() - 1);
-    assert(zero_threshold >= 0 && zero_threshold < src_bins_.size());
+    // auto total_freq = std::reduce(src_bins_.begin(), src_bins_.end());
+    // auto zero_threshold = (size_t)std::clamp((0 - range_.min) / src_bin_interval_, 0.f, (float)src_bins_.size() - 1);
+    // assert(zero_threshold < src_bins_.size());
     auto min_kld = std::numeric_limits<float>::max();
-    std::optional<std::pair<size_t, size_t>> threshold;
+    // std::optional<std::pair<size_t, size_t>> threshold;
 
     for (size_t lower_threshold = 0; lower_threshold <= zero_threshold; lower_threshold++)
     {
@@ -301,18 +345,18 @@ void quantizer::histogram::finish()
                 auto upsample_value = q_dist[i] / count;
                 if (left_upper > start)
                 {
-                    if (range_dist[left_upper - 1])
+                    if (ref_dist[left_upper - 1])
                         ups_q_dist[left_upper - 1] += (left_upper - start) * upsample_value;
                 }
                 if (right_lower < end)
                 {
-                    if (range_dist[right_lower])
+                    if (ref_dist[right_lower])
                         ups_q_dist[right_lower] += (end - right_lower) * upsample_value;
                 }
 
                 for (size_t j = left_upper; j < right_lower; j++)
                 {
-                    if (range_dist[j])
+                    if (ref_dist[j])
                         ups_q_dist[j] += upsample_value;
                 }
             }
@@ -322,6 +366,8 @@ void quantizer::histogram::finish()
             std::copy(ups_q_dist.begin(), ups_q_dist.end(), ups2_q_dist.begin() + lower_threshold);
             auto kld = compute_kld(src_bins_, ups2_q_dist);
 #else
+            ref_dist = smooth_distribution(ref_dist);
+            ups_q_dist = smooth_distribution(ups_q_dist);
             auto kld = compute_kld(ref_dist, ups_q_dist);
 #endif
             if (kld < min_kld)

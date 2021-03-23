@@ -83,19 +83,33 @@ def gen_input(case_name, input_tensor):
     elif input_tensor['dtype'] is np.int8:
         input_data = np.random.randint(-128, 128, input_tensor['shape'])
     else:
-        input_data = np.random.rand(*input_tensor['shape'])
+        input_data = np.random.rand(*input_tensor['shape']) * 2 - 1
     input_data = input_data.astype(dtype=input_tensor['dtype'])
     input_data.tofile(os.path.join(input_dir, 'input.bin'))
     save_numpy_array_as_txt(os.path.join(input_dir, 'input.txt'), input_data)
     return input_data
 
+def gen_calib_data(case_name, input_tensor, n):
+    input_dir = os.path.join(output_root, case_name)
+    input_tensor['shape'][0] *= n
+    if input_tensor['dtype'] is np.uint8:
+        input_data = np.random.randint(0, 256, input_tensor['shape'])
+    elif input_tensor['dtype'] is np.int8:
+        input_data = np.random.randint(-128, 128, input_tensor['shape'])
+    else:
+        input_data = np.random.rand(*input_tensor['shape']) * 2 - 1
+    input_data = input_data.astype(dtype=input_tensor['dtype'])
+    input_data.tofile(os.path.join(input_dir, 'calib_data.bin'))
+    save_numpy_array_as_txt(os.path.join(input_dir, 'calib_data.txt'), input_data)
+    return input_data
 
-def eval_tflite_gth(case_name, tflite):
+def eval_tflite_gth(case_name, tflite, n):
     interp = tf.lite.Interpreter(model_content=tflite)
     interp.allocate_tensors()
     input_tensor = interp.get_input_details()[0]
     input_id = input_tensor["index"]
     input = gen_input(case_name, input_tensor)
+    calib_data = gen_calib_data(case_name, input_tensor, n)
     interp.set_tensor(input_id, input)
     interp.invoke()
 
@@ -110,10 +124,10 @@ def eval_tflite_gth(case_name, tflite):
                                    'cpu_result{0}.bin'.format(i)))
         save_numpy_array_as_txt(os.path.join(
             output_root, case_name, 'cpu_result{0}.txt'.format(i)), result)
-    return out_len, input
+    return out_len, input, calib_data
 
 
-def compile_tflite_nncase(case_name, model, targets, input, enable_ptq):
+def compile_tflite_nncase(case_name, model, targets, input, n, enable_ptq):
     import_options = nncase.ImportOptions()
     compile_options = nncase.CompileOptions()
     compile_options.dump_asm = True
@@ -130,7 +144,7 @@ def compile_tflite_nncase(case_name, model, targets, input, enable_ptq):
         if enable_ptq:
             ptq_options = nncase.PTQTensorOptions()
             ptq_options.set_tensor_data(input.tobytes())
-            ptq_options.samples_count = 1
+            ptq_options.samples_count = n
             compiler.use_ptq(ptq_options)
         compiler.compile()
         kmodel = compiler.gencode_tobytes()
@@ -159,13 +173,14 @@ def test_tf_module(case_name, module, targets):
     case_name = case_name.replace('[', '_').replace(']', '_')
     case_dir = os.path.join('./tmp', case_name)
     clear(case_dir)
+    n = 10
     tflite = tf_module_to_tflite(case_name, module)
-    out_len, input = eval_tflite_gth(case_name, tflite)
-    compile_tflite_nncase(case_name, tflite, targets, input, enable_ptq=False)
+    out_len, input, calib_data = eval_tflite_gth(case_name, tflite, n)
+    compile_tflite_nncase(case_name, tflite, targets, calib_data, n, enable_ptq=False)
     eval_nncase(case_name, input, targets, enable_ptq=False)
     ret = compare_util.compare_results(case_dir, out_len, targets, enable_ptq=False)
     assert ret
-    compile_tflite_nncase(case_name, tflite, targets, input, enable_ptq=True)
+    compile_tflite_nncase(case_name, tflite, targets, calib_data, n, enable_ptq=True)
     eval_nncase(case_name, input, targets, enable_ptq=True)
     ret = compare_util.compare_results(case_dir, out_len, targets, enable_ptq=True)
     assert ret
