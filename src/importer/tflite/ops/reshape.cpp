@@ -22,10 +22,9 @@ using namespace nncase::ir;
 DEFINE_TFLITE_LOWER(RESHAPE)
 {
     auto &input = get_tensor(op.inputs(), 0);
-    [[maybe_unused]] auto &options = *op.builtin_options_as_ReshapeOptions();
-    auto new_shape = load_axis<int32_t>(get_tensor(op.inputs(), 1));
+    auto &output = get_tensor(op.outputs(), 0);
 
-    auto node = graph_.emplace<bitcast>(to_data_type(input.type()), get_shape(input.shape()), new_shape);
+    auto node = graph_.emplace<bitcast>(to_data_type(input.type()), get_shape(input.shape()), get_shape(output.shape()));
     node->name(get_tensor(op.outputs(), 0).name()->string_view());
 
     link_input_tensor(&node->input(), op.inputs()->Get(0));
