@@ -1,0 +1,86 @@
+# Copyright 2019-2021 Canaan Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+"""System test: test depthwise conv2d"""
+# pylint: disable=invalid-name, unused-argument, import-outside-toplevel
+import pytest
+import os
+import tensorflow as tf
+import numpy as np
+import sys
+import test_util
+
+
+def _make_module(n, i_channels, i_size, k_size, strides, padding):
+    class ReduceWindow2DModule(tf.Module):
+        def __init__(self):
+            super(ReduceWindow2DModule).__init__()
+            self.w = tf.constant(np.random.rand(
+                *k_size, i_channels, 1).astype(np.float32) - 1)
+
+        @tf.function(input_signature=[tf.TensorSpec([n, *i_size, i_channels], tf.float32)])
+        def __call__(self, x):
+            outs = []
+            outs.append(tf.nn.max_pool2d(x, k_size, strides, padding))
+            outs.append(tf.nn.avg_pool2d(x, k_size, strides, padding))
+            return outs
+    return ReduceWindow2DModule()
+
+n = [
+    1,
+    3
+]
+
+i_channels = [
+    1,
+    16
+]
+
+i_sizes = [
+    [1, 1],
+    [33, 65]
+]
+
+k_sizes = [
+    [1, 1],
+    [3, 3],
+    [5, 5]
+]
+
+strides = [
+    [1, 1],
+    [1, 3],
+    [5, 5]
+]
+
+paddings = [
+    'SAME',
+    'VALID'
+]
+
+
+@pytest.mark.parametrize('n', n)
+@pytest.mark.parametrize('i_channels', i_channels)
+@pytest.mark.parametrize('i_size', i_sizes)
+@pytest.mark.parametrize('k_size', k_sizes)
+@pytest.mark.parametrize('strides', strides)
+@pytest.mark.parametrize('padding', paddings)
+def test_reduce_window2d(n, i_channels, i_size, k_size, strides, padding, request):
+    if padding != 'VALID' or (k_size[0] <= i_size[0] and k_size[1] <= i_size[1]):
+        module = _make_module(n, i_channels, i_size, k_size,
+                              strides, padding)
+        test_util.test_tf_module(request.node.name, module, ['cpu', 'k210'])
+
+
+if __name__ == "__main__":
+    pytest.main(['-vv', 'test_reduce_window2d.py'])

@@ -35,7 +35,9 @@
 #include <nncase/ir/ops/transpose.h>
 #include <nncase/ir/ops/unary.h>
 #include <nncase/ir/runtime_type_utils.h>
+#include <nncase/kernels/convolution.h>
 #include <nncase/kernels/neutral/neutral_kernels.h>
+#include <nncase/kernels/reduce_window.h>
 #include <nncase/kernels/tensor_compute.h>
 
 using namespace nncase;
@@ -178,14 +180,20 @@ void register_neutral_evaluators()
         auto &rnode = static_cast<conv2d &>(node);
 
         assert(rnode.input().type() == dt_float32);
-        auto input = host_runtime_tensor::buffer(context.memory_at(rnode.input())).unwrap_or_throw().as_span<float>();
-        auto weights = host_runtime_tensor::buffer(context.memory_at(rnode.weights())).unwrap_or_throw().as_span<float>();
-        auto bias = host_runtime_tensor::buffer(context.memory_at(rnode.bias())).unwrap_or_throw().as_span<float>();
-        auto output = host_runtime_tensor::buffer(context.memory_at(rnode.output())).unwrap_or_throw().as_span<float>();
 
-        neutral::conv2d(input.data(), output.data(), weights.data(), bias.data(), to(rnode.input().shape()),
-            rnode.groups(), rnode.output_channels(), rnode.filter_h(), rnode.filter_w(), rnode.stride_h(), rnode.stride_w(),
-            rnode.dilation_h(), rnode.dilation_w(), rnode.padding_h(), rnode.padding_w(), rnode.fused_activation());
+        auto input = context.memory_at(rnode.input());
+        auto weights = context.memory_at(rnode.weights());
+        auto bias = context.memory_at(rnode.bias());
+        auto output = context.memory_at(rnode.output());
+        auto input_mem = host_runtime_tensor::buffer(input).unwrap_or_throw().as_span<float>();
+        auto weights_mem = host_runtime_tensor::buffer(weights).unwrap_or_throw().as_span<float>();
+        auto bias_mem = host_runtime_tensor::buffer(bias).unwrap_or_throw().as_span<float>();
+        auto output_mem = host_runtime_tensor::buffer(output).unwrap_or_throw().as_span<float>();
+
+        kernels::conv2d(input_mem.data(), weights_mem.data(), bias_mem.data(), output_mem.data(), input.shape(), input.strides(),
+            weights.shape(), weights.strides(), bias.strides(), output.strides(), rnode.padding_h(), rnode.padding_w(),
+            rnode.groups(), rnode.stride_h(), rnode.stride_w(), rnode.dilation_h(), rnode.dilation_w(), rnode.fused_activation())
+            .unwrap_or_throw();
     });
 
     register_evaluator(op_conv2d_transpose, [](ir::node &node, module_evaluate_context &context) {
@@ -282,33 +290,15 @@ void register_neutral_evaluators()
         auto &rnode = static_cast<reduce_window2d &>(node);
 
         assert(rnode.input().type() == dt_float32);
-        auto input = host_runtime_tensor::buffer(context.memory_at(rnode.input())).unwrap_or_throw().as_span<float>();
-        auto output = host_runtime_tensor::buffer(context.memory_at(rnode.output())).unwrap_or_throw().as_span<float>();
+        auto input = context.memory_at(rnode.input());
+        auto output = context.memory_at(rnode.output());
+        auto input_mem = host_runtime_tensor::buffer(input).unwrap_or_throw().as_span<float>();
+        auto output_mem = host_runtime_tensor::buffer(output).unwrap_or_throw().as_span<float>();
 
-        auto reduce = [&](auto binary_op, auto output_op) {
-            neutral::reduce_window2d(
-                input.data(), output.data(), rnode.init_value(), to(rnode.input().shape()), rnode.filter_h(), rnode.filter_w(),
-                rnode.stride_h(), rnode.stride_w(), rnode.dilation_h(), rnode.dilation_w(), rnode.padding_h(), rnode.padding_w(), rnode.fused_activation(),
-                binary_op, output_op);
-        };
-
-        switch (rnode.reduce_op())
-        {
-        case reduce_mean:
-            reduce([](auto a, auto b) { return a + b; }, [](auto v, auto k) { return v / k; });
-            break;
-        case reduce_min:
-            reduce([](auto a, auto b) { return std::min(a, b); }, [](auto v, auto) { return v; });
-            break;
-        case reduce_max:
-            reduce([](auto a, auto b) { return std::max(a, b); }, [](auto v, auto) { return v; });
-            break;
-        case reduce_sum:
-            reduce([](auto a, auto b) { return a + b; }, [](auto v, auto) { return v; });
-            break;
-        default:
-            throw std::runtime_error("Not supported reduce");
-        }
+        kernels::reduce_window2d(rnode.reduce_op(), input_mem.data(), rnode.init_value(), output_mem.data(),
+            input.shape(), input.strides(), output.strides(), rnode.padding_h(), rnode.padding_w(), rnode.filter_h(), rnode.filter_w(),
+            rnode.stride_h(), rnode.stride_w(), rnode.dilation_h(), rnode.dilation_w(), rnode.fused_activation())
+            .unwrap_or_throw();
     });
 
     register_evaluator(op_bitcast, [](ir::node &node, module_evaluate_context &context) {

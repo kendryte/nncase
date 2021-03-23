@@ -1387,6 +1387,66 @@ namespace IsaGen
             public bool KeepDims { get; set; }
         }
 
+        [DisplayName("TENSOR.REDUCE_WINDOW2D")]
+        [Category("Tensor Instructions")]
+        [Description("REDUCE_WINDOW2D")]
+        public class ReduceWindow2DInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.REDUCE_WINDOW2D;
+
+            [DisplayName("datatype")]
+            [Description("Datatype")]
+            public DataType DataType { get; set; }
+
+            [DisplayName("reduce_op")]
+            [Description("Reduce operator")]
+            public ReduceOp ReduceOp { get; set; }
+
+            [DisplayName("rshape_src")]
+            [Description("Source shape register")]
+            public byte RshapeSrc { get; set; }
+
+            [DisplayName("rstride_src")]
+            [Description("Source stride register")]
+            public byte RstrideSrc { get; set; }
+
+            [DisplayName("rstride_dest")]
+            [Description("Dest stride register")]
+            public byte RstrideDest { get; set; }
+
+            [DisplayName("filter_h")]
+            [Description("FilterH")]
+            public ushort FilterH { get; set; }
+
+            [DisplayName("filter_w")]
+            [Description("FilterW")]
+            public ushort FilterW { get; set; }
+
+            [DisplayName("stride_h")]
+            [Description("StrideH")]
+            public ushort StrideH { get; set; }
+
+            [DisplayName("stride_w")]
+            [Description("StrideW")]
+            public ushort StrideW { get; set; }
+
+            [DisplayName("dilation_h")]
+            [Description("DilationH")]
+            public ushort DilationH { get; set; }
+
+            [DisplayName("dilation_w")]
+            [Description("DilationW")]
+            public ushort DilationW { get; set; }
+
+            [DisplayName("fused_clamp_low")]
+            [Description("FusedClampLow")]
+            public float FusedClampLow { get; set; }
+
+            [DisplayName("fused_clamp_high")]
+            [Description("FusedClampHigh")]
+            public float FusedClampHigh { get; set; }
+        }
+
         [DisplayName("TENSOR.SLICE")]
         [Category("Tensor Instructions")]
         [Description("Slice")]

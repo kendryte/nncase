@@ -10,6 +10,7 @@ set(SRCS batch_to_space.cpp
          pad.cpp
          quantize.cpp
          reduce.cpp
+         reduce_window.cpp
          transpose.cpp
          slice.cpp
          unary.cpp)
