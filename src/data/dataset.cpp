@@ -22,8 +22,8 @@
 using namespace nncase;
 using namespace nncase::data;
 
-dataset::dataset(const std::filesystem::path &path, std::function<bool(const std::filesystem::path &)> file_filter, xt::dynamic_shape<size_t> input_shape, std::string input_axis, float mean, float std)
-    : input_shape_(std::move(input_shape)), input_axis_(input_axis), mean_(mean), std_(std)
+dataset::dataset(const std::filesystem::path &path, std::function<bool(const std::filesystem::path &)> file_filter, xt::dynamic_shape<size_t> input_shape, std::string input_layout, float mean, float std)
+    : input_shape_(std::move(input_shape)), input_layout_(input_layout), mean_(mean), std_(std)
 {
     if (std::filesystem::is_directory(path))
     {
@@ -46,13 +46,13 @@ dataset::dataset(const std::filesystem::path &path, std::function<bool(const std
         throw std::invalid_argument("Invalid dataset, should contain one file at least");
 }
 
-image_dataset::image_dataset(const std::filesystem::path &path, xt::dynamic_shape<size_t> input_shape, std::string input_axis, float mean, float std)
+image_dataset::image_dataset(const std::filesystem::path &path, xt::dynamic_shape<size_t> input_shape, std::string input_layout, float mean, float std)
     : dataset(
-        path, [](const std::filesystem::path &filename) { return cv::haveImageReader(filename.string()); }, std::move(input_shape), input_axis, mean, std)
+        path, [](const std::filesystem::path &filename) { return cv::haveImageReader(filename.string()); }, std::move(input_shape), input_layout, mean, std)
 {
 }
 
-void image_dataset::process(const std::vector<uint8_t> &src, float *dest, const xt::dynamic_shape<size_t> &shape, std::string axis)
+void image_dataset::process(const std::vector<uint8_t> &src, float *dest, const xt::dynamic_shape<size_t> &shape, std::string layout)
 {
     auto img = cv::imdecode(src, cv::IMREAD_COLOR);
 
@@ -63,7 +63,7 @@ void image_dataset::process(const std::vector<uint8_t> &src, float *dest, const 
         img.convertTo(f_img, CV_32F);
 
     cv::Mat dest_img;
-    if (axis == "NHWC")
+    if (layout == "NHWC")
     {
         cv::resize(f_img, dest_img, cv::Size((int)shape[2], (int)shape[1]));
 
@@ -88,7 +88,7 @@ void image_dataset::process(const std::vector<uint8_t> &src, float *dest, const 
             throw std::runtime_error("Unsupported image channels: " + std::to_string(shape[0]));
         }
     }
-    else if (axis == "NCHW")
+    else if (layout == "NCHW")
     {
         cv::resize(f_img, dest_img, cv::Size((int)shape[3], (int)shape[2]));
 
@@ -116,11 +116,11 @@ void image_dataset::process(const std::vector<uint8_t> &src, float *dest, const 
     }
     else
     {
-        throw std::runtime_error("Unsupported axis type!");
+        throw std::runtime_error("Unsupported layout type!");
     }
 }
 
-void image_dataset::process(const std::vector<uint8_t> &src, uint8_t *dest, const xt::dynamic_shape<size_t> &shape, std::string axis)
+void image_dataset::process(const std::vector<uint8_t> &src, uint8_t *dest, const xt::dynamic_shape<size_t> &shape, std::string layout)
 {
     auto img = cv::imdecode(src, cv::IMREAD_COLOR);
 
@@ -131,7 +131,7 @@ void image_dataset::process(const std::vector<uint8_t> &src, uint8_t *dest, cons
         img.convertTo(f_img, CV_8U);
 
     cv::Mat dest_img;
-    if (axis == "NHWC")
+    if (layout == "NHWC")
     {
         cv::resize(f_img, dest_img, cv::Size((int)shape[2], (int)shape[1]));
 
@@ -156,7 +156,7 @@ void image_dataset::process(const std::vector<uint8_t> &src, uint8_t *dest, cons
             throw std::runtime_error("Unsupported image channels: " + std::to_string(shape[0]));
         }
     }
-    else if (axis == "NCHW")
+    else if (layout == "NCHW")
     {
         cv::resize(f_img, dest_img, cv::Size((int)shape[3], (int)shape[2]));
 
@@ -184,7 +184,7 @@ void image_dataset::process(const std::vector<uint8_t> &src, uint8_t *dest, cons
     }
     else
     {
-        throw std::runtime_error("Unsupported axis type!");
+        throw std::runtime_error("Unsupported layout type!");
     }
 }
 
@@ -194,7 +194,7 @@ raw_dataset::raw_dataset(const std::filesystem::path &path, xt::dynamic_shape<si
 {
 }
 
-void raw_dataset::process(const std::vector<uint8_t> &src, float *dest, const xt::dynamic_shape<size_t> &shape, [[maybe_unused]] std::string axis)
+void raw_dataset::process(const std::vector<uint8_t> &src, float *dest, const xt::dynamic_shape<size_t> &shape, [[maybe_unused]] std::string layout)
 {
     auto expected_size = xt::compute_size(shape) * sizeof(float);
     auto actual_size = src.size();
@@ -208,7 +208,7 @@ void raw_dataset::process(const std::vector<uint8_t> &src, float *dest, const xt
     std::copy(data, data + actual_size / sizeof(float), dest);
 }
 
-void raw_dataset::process(const std::vector<uint8_t> &src, uint8_t *dest, const xt::dynamic_shape<size_t> &shape, [[maybe_unused]] std::string axis)
+void raw_dataset::process(const std::vector<uint8_t> &src, uint8_t *dest, const xt::dynamic_shape<size_t> &shape, [[maybe_unused]] std::string layout)
 {
     auto expected_size = xt::compute_size(shape);
     auto actual_size = src.size();
