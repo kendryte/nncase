@@ -35,6 +35,7 @@ private:
     std::string dump_dir_;
     std::string dataset_;
     std::string dataset_format_ = "image";
+    std::string calibrate_method_ = "no_clip";
     bool dump_ir_ = false;
     bool dump_asm_ = false;
 };

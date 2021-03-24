@@ -18,7 +18,6 @@ install(TARGETS nncase EXPORT nncaseTargets
 )
 
 install(EXPORT nncaseTargets
-        NAMESPACE nncase::
         DESTINATION lib/cmake/nncase)
 
 configure_file(${CMAKE_CURRENT_LIST_DIR}/../../cmake/nncaseConfig.cmake.in nncaseConfig.cmake @ONLY)

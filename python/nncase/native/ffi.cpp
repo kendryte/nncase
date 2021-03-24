@@ -225,6 +225,7 @@ PYBIND11_MODULE(_nncase, m)
 
     py::class_<ptq_tensor_options>(m, "PTQTensorOptions")
         .def(py::init())
+        .def_readwrite("calibrate_method", &ptq_tensor_options::calibrate_method)
         .def("set_tensor_data", [](ptq_tensor_options &o, py::bytes bytes) {
             uint8_t *buffer;
             py::ssize_t length;
