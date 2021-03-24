@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include <algorithm>
+#include <nncase/ir/quantizer.h>
 #include <nncase/ir/visitor.h>
 #include <nncase/transforms/transform.h>
 
@@ -94,6 +95,6 @@ void nncase::ir::transforms::link(ir::output_connector &old_c, ir::output_connec
 {
     new_c.attributes(old_c.attributes());
 
-    //if (old_c.attributes() & ir::cnctr_attr_need_quantize && quantizer)
-    //    quantizer->set(new_c, quantizer->get(old_c));
+    if (old_c.attributes() & ir::cnctr_attr_need_quantize && quantizer)
+        quantizer->set(new_c, quantizer->get(old_c));
 }

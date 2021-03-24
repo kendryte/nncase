@@ -99,8 +99,6 @@ private:
 class evaluate_stack
 {
 public:
-    static NNCASE_INLINE_VAR constexpr size_t MAX_STACK_DEPTH = 64;
-
     evaluate_stack() noexcept;
 
     bool empty() const noexcept;
@@ -110,8 +108,8 @@ public:
     result<void> push(stack_entry entry) noexcept;
 
 private:
-    std::array<stack_entry, MAX_STACK_DEPTH> entries_;
-    stack_entry *top_;
+    std::vector<stack_entry> entries_;
+    size_t top_;
 };
 
 END_NS_NNCASE_RT_STACKVM

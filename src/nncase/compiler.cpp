@@ -243,7 +243,7 @@ private:
         const size_t max_stages = options.calibrate_method == "no_clip" ? 1 : 2;
         for (size_t stage = 0; stage < max_stages; stage++)
         {
-            if (stage == 1)
+            if (stage == 0)
             {
                 std::cout << "4.2.1 Collecting ranges..." << std::endl;
             }
