@@ -240,7 +240,7 @@ private:
     template <class T>
     void run_calibration_eval(ptq_dataset_options &options, dataset &dataset, ir::evaluator &evaluator)
     {
-        const auto max_stages = options.calibrate_method == "no_clip" ? 1 : 2;
+        const size_t max_stages = options.calibrate_method == "no_clip" ? 1 : 2;
         for (size_t stage = 0; stage < max_stages; stage++)
         {
             if (stage == 1)
@@ -275,7 +275,7 @@ private:
 
     void run_calibration_eval(ptq_tensor_options &options, ir::evaluator &evaluator)
     {
-        const auto max_stages = options.calibrate_method == "no_clip" ? 1 : 2;
+        const size_t max_stages = options.calibrate_method == "no_clip" ? 1 : 2;
         for (size_t stage = 0; stage < max_stages; stage++)
         {
             if (stage == 0)
