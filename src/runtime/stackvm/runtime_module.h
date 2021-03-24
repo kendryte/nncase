@@ -23,8 +23,6 @@ class stackvm_runtime_module : public runtime_module, private op_visitor
 {
 public:
     static NNCASE_INLINE_VAR constexpr size_t MAX_GENERAL_REGS = 32;
-    static NNCASE_INLINE_VAR constexpr size_t MAX_SHAPE_REGS = 16;
-    static NNCASE_INLINE_VAR constexpr size_t MAX_PADDINGS_REGS = 8;
 
 protected:
     result<void> initialize_core(runtime_module_init_context &context) noexcept override;
@@ -172,8 +170,8 @@ private:
     evaluate_stack stack_;
     size_t call_depth_;
     std::array<uintptr_t, MAX_GENERAL_REGS> regs_;
-    std::array<runtime_shape_t, MAX_SHAPE_REGS> shape_regs_;
-    std::array<runtime_paddings_t, MAX_PADDINGS_REGS> paddings_regs_;
+    std::vector<runtime_shape_t> shape_regs_;
+    std::vector<runtime_paddings_t> paddings_regs_;
 };
 
 END_NS_NNCASE_RT_STACKVM

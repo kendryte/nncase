@@ -340,7 +340,7 @@ result<void> stackvm_runtime_module::visit(NNCASE_UNUSED const ldarg_5_op_t &op)
 result<void> stackvm_runtime_module::visit(const stshape_op_t &op) noexcept
 {
     if (op.rshape >= shape_regs_.size())
-        return err(std::errc::result_out_of_range);
+        shape_regs_.resize(op.rshape + 1);
 
     auto &reg = shape_regs_[op.rshape];
     try
@@ -364,7 +364,7 @@ result<void> stackvm_runtime_module::visit(const stshape_op_t &op) noexcept
 result<void> stackvm_runtime_module::visit(const stpaddings_op_t &op) noexcept
 {
     if (op.rpaddings >= paddings_regs_.size())
-        return err(std::errc::result_out_of_range);
+        paddings_regs_.resize(op.rpaddings + 1);
 
     auto &reg = paddings_regs_[op.rpaddings];
     try
