@@ -20,8 +20,6 @@
 using namespace nncase;
 using namespace nncase::ir;
 
-#define KLD_METHOD 0
-
 namespace
 {
 value_range<float> union_range(const value_range<float> &lhs, const value_range<float> &rhs)
@@ -35,9 +33,50 @@ value_range<float> ema_range(const value_range<float> &lhs, const value_range<fl
     return { (1 - alpha) * lhs.min + alpha * rhs.min, (1 - alpha) * lhs.max + alpha * rhs.max };
 }
 
+static std::vector<float> smooth_distribution(const std::vector<float> &p, const float eps = 0.0001)
+{
+    std::vector<size_t> is_zeros(p.size());
+    std::vector<size_t> is_nonzeros(p.size());
+    {
+        auto it = p.begin();
+        std::generate(is_zeros.begin(), is_zeros.end(),
+            [&it]() { return static_cast<size_t>(*(it++) == 0.f); });
+    }
+    {
+        auto it = p.begin();
+        std::generate(is_nonzeros.begin(), is_nonzeros.end(),
+            [&it]() { return static_cast<size_t>(*(it++) != 0.f); });
+    }
+    size_t n_zeros = std::accumulate(is_zeros.begin(), is_zeros.end(), 0);
+    size_t n_nonzeros = p.size() - n_zeros;
+    if (!n_nonzeros)
+    {
+        // The discrete probability distribution is malformed. All entries are 0.
+        return std::vector<float>();
+    }
+    float eps1 = eps * static_cast<float>(n_zeros) / static_cast<float>(n_nonzeros);
+    if (eps1 >= 1.0)
+        return std::vector<float>();
+    auto ret = p;
+    for (size_t i = 0; i < p.size(); i++)
+    {
+        ret[i] += eps * is_zeros[i] - eps1 * is_nonzeros[i];
+    }
+    return ret;
+}
+
 float compute_kld(xtl::span<float> p, xtl::span<float> q)
 {
-    assert(p.size() == q.size());
+    if (!(p.size() && q.size()) || p.size() != q.size())
+        return std::numeric_limits<float>::max();
+
+    auto p_sum = std::reduce(p.begin(), p.end());
+    auto q_sum = std::reduce(q.begin(), q.end());
+    for (auto &value : p)
+        value = value / p_sum;
+    for (auto &value : q)
+        value = value / q_sum;
+
     float d = 0.f;
     for (size_t i = 0; i < p.size(); i++)
     {
@@ -67,7 +106,7 @@ float compute_l2(xtl::span<float> p, value_range<float> p_range, value_range<flo
 }
 
 quantizer::quantizer([[maybe_unused]] calibrate_method cali_method, size_t bins)
-    : /*cali_method_(cali_method),*/ bins_(bins)
+    : cali_method_(cali_method), bins_(bins)
 {
 }
 
@@ -85,9 +124,9 @@ void quantizer::set(ir::output_connector &connector, value_range<float> range)
     quant_ranges_[&connector] = range;
 }
 
-bool quantizer::has_record(ir::output_connector &connector) const noexcept
+bool quantizer::has_record(ir::output_connector &connector) const
 {
-    return quant_ranges_.contains(&connector) || histograms_.contains(&connector);
+    return has_record_.contains(&connector) && has_record_.at(&connector);
 }
 
 void quantizer::record(output_connector &connector, xtl::span<const float> data)
@@ -96,9 +135,11 @@ void quantizer::record(output_connector &connector, xtl::span<const float> data)
     {
     case quantize_stage::collect_range:
         record(connector, get_range(data.begin(), data.end()));
+        has_record_.emplace(&connector, true);
         break;
     case quantize_stage::collect_distribution:
         histograms_.at(&connector).record(data);
+        has_record_.emplace(&connector, true);
         break;
     default:
         throw std::runtime_error("Invalid operation in current quantization stage");
@@ -108,7 +149,7 @@ void quantizer::record(output_connector &connector, xtl::span<const float> data)
 void quantizer::begin_collect_distribution()
 {
     for (auto &&p : quant_ranges_)
-        histograms_.emplace(p.first, histogram(fixup_range(p.second), bins_, 256));
+        histograms_.emplace(p.first, histogram(fixup_range(p.second), bins_, 256, cali_method_));
 
     stage_ = quantize_stage::collect_distribution;
 }
@@ -118,6 +159,7 @@ void quantizer::end_collect_distribution(std::function<void(size_t cnt, size_t t
     size_t i = 0;
     for (auto &&h : histograms_)
     {
+        std::cout << h.first->owner().name() << std::endl;
         h.second.finish();
         quant_ranges_.at(h.first) = h.second.optimal_range();
         if (progress)
@@ -204,8 +246,8 @@ void quantizer::broadcast_output(ir::node &node, const value_range<float> &range
     }
 }
 
-quantizer::histogram::histogram(value_range<float> range, size_t src_bins, size_t dest_bins)
-    : range_(range), optimal_range_(range_)
+quantizer::histogram::histogram(value_range<float> range, size_t src_bins, size_t dest_bins, calibrate_method cali_method)
+    : range_(range), optimal_range_(range_), cali_method_(cali_method)
 {
     src_bins_.resize(src_bins);
     dest_bins_.resize(dest_bins);
@@ -228,126 +270,137 @@ void quantizer::histogram::finish()
 {
     auto zero_threshold = (size_t)std::clamp((0 - range_.min) / src_bin_interval_, 0.f, (float)src_bins_.size() - 1);
     assert(zero_threshold < src_bins_.size());
-    auto min_loss = std::numeric_limits<float>::max();
     std::optional<std::pair<size_t, size_t>> threshold;
     const auto dest_bins = dest_bins_.size();
-#if 0
-    auto total_freq = std::reduce(src_bins_.begin(), src_bins_.end());
-    auto zero_threshold = (size_t)std::clamp((0 - range_.min) / src_bin_interval_, 0.f, (float)src_bins_.size() - 1);
-    assert(zero_threshold >= 0 && zero_threshold < src_bins_.size());
-    auto min_kld = std::numeric_limits<float>::max();
-    std::optional<std::pair<size_t, size_t>> threshold;
 
-    for (size_t lower_threshold = 0; lower_threshold <= zero_threshold; lower_threshold++)
+    if (cali_method_ == calibrate_method::kld_m0 || cali_method_ == calibrate_method::kld_m1)
     {
-        for (size_t upper_threshold = src_bins_.size(); upper_threshold >= lower_threshold + dest_bins && upper_threshold >= zero_threshold; upper_threshold--)
+        auto min_kld = std::numeric_limits<float>::max();
+
+        for (size_t lower_threshold = 0; lower_threshold <= zero_threshold; lower_threshold++)
         {
-            auto src_range = upper_threshold - lower_threshold;
-            auto src_per_bin = (float)src_range / dest_bins;
-
-            std::vector<float> range_dist(src_bins_.begin() + lower_threshold, src_bins_.begin() + upper_threshold);
-#if KLD_METHOD == 1
-            range_dist.front() += std::reduce(src_bins_.begin(), src_bins_.begin() + lower_threshold);
-            range_dist.back() += std::reduce(src_bins_.begin() + upper_threshold, src_bins_.end());
-#endif
-
-            // ref dist
-            std::vector<float> ref_dist(range_dist);
-            ref_dist.front() += std::reduce(src_bins_.begin(), src_bins_.begin() + lower_threshold);
-            ref_dist.back() += std::reduce(src_bins_.begin() + upper_threshold, src_bins_.end());
-
-            // quant dist
-            std::vector<float> q_dist(dest_bins);
-            for (size_t i = 0; i < dest_bins; i++)
+            for (size_t upper_threshold = src_bins_.size(); upper_threshold >= lower_threshold + dest_bins && upper_threshold >= zero_threshold; upper_threshold--)
             {
-                auto start = i * src_per_bin;
-                auto end = start + src_per_bin;
-                auto value = 0.f;
+                auto src_range = upper_threshold - lower_threshold;
+                auto src_per_bin = (float)src_range / dest_bins;
 
-                auto left_upper = (size_t)std::ceil(start);
-                auto right_lower = (size_t)std::floor(end);
-                if (left_upper > start)
-                    value += (left_upper - start) * range_dist[left_upper - 1];
-                if (right_lower < end)
-                    value += (end - right_lower) * range_dist[right_lower];
-                value += std::reduce(range_dist.begin() + left_upper, range_dist.begin() + right_lower);
-                q_dist[i] = value;
-            }
+                std::vector<float> range_dist(src_bins_.begin() + lower_threshold, src_bins_.begin() + upper_threshold);
 
-            // upsample quant dist
-            std::vector<float> ups_q_dist(src_range);
-            for (size_t i = 0; i < dest_bins; i++)
-            {
-                auto start = i * src_per_bin;
-                auto end = start + src_per_bin;
-                auto count = 0.f;
+                // ref dist
+                std::vector<float> ref_dist(range_dist);
+                ref_dist.front() += std::reduce(src_bins_.begin(), src_bins_.begin() + lower_threshold);
+                ref_dist.back() += std::reduce(src_bins_.begin() + upper_threshold, src_bins_.end());
 
-                auto left_upper = (size_t)std::ceil(start);
-                auto right_lower = (size_t)std::floor(end);
-                if (left_upper > start)
+                if (cali_method_ == calibrate_method::kld_m1)
                 {
-                    if (range_dist[left_upper - 1])
-                        count += (left_upper - start);
-                }
-                if (right_lower < end)
-                {
-                    if (range_dist[right_lower])
-                        count += (end - right_lower);
+                    range_dist.front() += std::reduce(src_bins_.begin(), src_bins_.begin() + lower_threshold);
+                    range_dist.back() += std::reduce(src_bins_.begin() + upper_threshold, src_bins_.end());
                 }
 
-                count += std::count_if(range_dist.begin() + left_upper, range_dist.begin() + right_lower, [](float v) { return v; });
-                if (!count)
-                    continue;
-                auto upsample_value = q_dist[i] / count;
-                if (left_upper > start)
+                // quant dist
+                std::vector<float> q_dist(dest_bins);
+                for (size_t i = 0; i < dest_bins; i++)
                 {
-                    if (range_dist[left_upper - 1])
-                        ups_q_dist[left_upper - 1] += (left_upper - start) * upsample_value;
-                }
-                if (right_lower < end)
-                {
-                    if (range_dist[right_lower])
-                        ups_q_dist[right_lower] += (end - right_lower) * upsample_value;
+                    auto start = i * src_per_bin;
+                    auto end = start + src_per_bin;
+                    auto value = 0.f;
+
+                    auto left_upper = (size_t)std::ceil(start);
+                    auto right_lower = (size_t)std::floor(end);
+                    if (left_upper > start)
+                        value += (left_upper - start) * range_dist[left_upper - 1];
+                    if (right_lower < end)
+                        value += (end - right_lower) * range_dist[right_lower];
+                    value += std::reduce(range_dist.begin() + left_upper, range_dist.begin() + right_lower);
+                    q_dist[i] = value;
                 }
 
-                for (size_t j = left_upper; j < right_lower; j++)
+                // upsample quant dist
+                std::vector<float> ups_q_dist(src_range);
+                for (size_t i = 0; i < dest_bins; i++)
                 {
-                    if (range_dist[j])
-                        ups_q_dist[j] += upsample_value;
-                }
-            }
+                    auto start = i * src_per_bin;
+                    auto end = start + src_per_bin;
+                    auto count = 0.f;
 
-#if KLD_METHOD == 1
-            std::vector<float> ups2_q_dist(src_bins_.size());
-            std::copy(ups_q_dist.begin(), ups_q_dist.end(), ups2_q_dist.begin() + lower_threshold);
-            auto kld = compute_kld(src_bins_, ups2_q_dist);
-#else
-            auto kld = compute_kld(ref_dist, ups_q_dist);
-#endif
-            if (kld < min_kld)
-            {
-                min_kld = kld;
-                threshold = { lower_threshold, upper_threshold };
+                    auto left_upper = (size_t)std::ceil(start);
+                    auto right_lower = (size_t)std::floor(end);
+                    if (left_upper > start)
+                    {
+                        if (range_dist[left_upper - 1])
+                            count += (left_upper - start);
+                    }
+                    if (right_lower < end)
+                    {
+                        if (range_dist[right_lower])
+                            count += (end - right_lower);
+                    }
+
+                    count += std::count_if(range_dist.begin() + left_upper, range_dist.begin() + right_lower, [](float v) { return v; });
+                    if (!count)
+                        continue;
+                    auto upsample_value = q_dist[i] / count;
+                    if (left_upper > start)
+                    {
+                        if (ref_dist[left_upper - 1])
+                            ups_q_dist[left_upper - 1] += (left_upper - start) * upsample_value;
+                    }
+                    if (right_lower < end)
+                    {
+                        if (ref_dist[right_lower])
+                            ups_q_dist[right_lower] += (end - right_lower) * upsample_value;
+                    }
+
+                    for (size_t j = left_upper; j < right_lower; j++)
+                    {
+                        if (ref_dist[j])
+                            ups_q_dist[j] += upsample_value;
+                    }
+                }
+
+                float kld = 0.f;
+                if (cali_method_ == calibrate_method::kld_m1)
+                {
+                    std::vector<float> ups2_q_dist(src_bins_.size());
+                    std::copy(ups_q_dist.begin(), ups_q_dist.end(), ups2_q_dist.begin() + lower_threshold);
+                    src_bins_ = smooth_distribution(src_bins_);
+                    ups2_q_dist = smooth_distribution(ups2_q_dist);
+                    kld = compute_kld(src_bins_, ups2_q_dist);
+                }
+                else
+                {
+                    ref_dist = smooth_distribution(ref_dist);
+                    ups_q_dist = smooth_distribution(ups_q_dist);
+                    kld = compute_kld(ref_dist, ups_q_dist);
+                }
+                if (kld < min_kld)
+                {
+                    min_kld = kld;
+                    threshold = { lower_threshold, upper_threshold };
+                }
             }
         }
     }
-#else
-    for (size_t lower_threshold = 0; lower_threshold <= zero_threshold; lower_threshold++)
+    else if (cali_method_ == calibrate_method::no_clip)
     {
-        for (size_t upper_threshold = src_bins_.size(); upper_threshold >= lower_threshold + dest_bins && upper_threshold >= zero_threshold; upper_threshold--)
-        {
-            auto dest_min = lower_threshold * src_bin_interval_ + range_.min;
-            auto dest_max = upper_threshold * src_bin_interval_ + range_.min;
+        auto min_loss = std::numeric_limits<float>::max();
 
-            auto loss = compute_l2(src_bins_, range_, { dest_min, dest_max }, dest_bins);
-            if (loss < min_loss)
+        for (size_t lower_threshold = 0; lower_threshold <= zero_threshold; lower_threshold++)
+        {
+            for (size_t upper_threshold = src_bins_.size(); upper_threshold >= lower_threshold + dest_bins && upper_threshold >= zero_threshold; upper_threshold--)
             {
-                min_loss = loss;
-                threshold = { lower_threshold, upper_threshold };
+                auto dest_min = lower_threshold * src_bin_interval_ + range_.min;
+                auto dest_max = upper_threshold * src_bin_interval_ + range_.min;
+
+                auto loss = compute_l2(src_bins_, range_, { dest_min, dest_max }, dest_bins);
+                if (loss < min_loss)
+                {
+                    min_loss = loss;
+                    threshold = { lower_threshold, upper_threshold };
+                }
             }
         }
     }
-#endif
 
     assert(threshold);
     if (threshold)

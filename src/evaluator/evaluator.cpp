@@ -119,6 +119,9 @@ void module_evaluate_context::evaluate()
 #endif
     }
 
+    if (quantizer_)
+        quantizer_->reset_record();
+
 #if PROFILE
     std::cout << "Total: " << total_duration.count() / 1e6 << "ms" << std::endl;
 #endif

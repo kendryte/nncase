@@ -30,7 +30,9 @@ enum class quantize_stage
 enum class calibrate_method
 {
     no_clip,
-    l2
+    l2,
+    kld_m0,
+    kld_m1
 };
 
 class NNCASE_API quantizer
@@ -38,7 +40,7 @@ class NNCASE_API quantizer
     class histogram
     {
     public:
-        histogram(value_range<float> range, size_t src_bins, size_t dest_bins);
+        histogram(value_range<float> range, size_t src_bins, size_t dest_bins, calibrate_method cali_method);
 
         void record(xtl::span<const float> data);
         void finish();
@@ -50,6 +52,7 @@ class NNCASE_API quantizer
         value_range<float> range_;
         float src_bin_interval_;
         value_range<float> optimal_range_;
+        calibrate_method cali_method_;
     };
 
 public:
@@ -108,7 +111,7 @@ public:
 
     void record(ir::output_connector &connector, value_range<float> range);
     void set(ir::output_connector &connector, value_range<float> range);
-    bool has_record(ir::output_connector &connector) const noexcept;
+    bool has_record(ir::output_connector &connector) const;
     void record(ir::output_connector &connector, xtl::span<const float> data);
     value_range<float> get(ir::output_connector &connector) const;
     void broadcast_output(ir::graph &graph, const std::unordered_set<node_opcode> &ops);
@@ -116,12 +119,14 @@ public:
     void begin_collect_distribution();
     void end_collect_distribution(std::function<void(size_t cnt, size_t total)> progress);
     size_t histograms_count() const noexcept { return histograms_.size(); }
+    void reset_record() { has_record_.clear(); }
 
 private:
-    // calibrate_method cali_method_;
+    calibrate_method cali_method_;
     quantize_stage stage_ = quantize_stage::collect_range;
     const size_t bins_;
     std::unordered_map<ir::output_connector *, value_range<float>> quant_ranges_;
     std::unordered_map<ir::output_connector *, histogram> histograms_;
+    std::unordered_map<ir::output_connector *, bool> has_record_;
 };
 }

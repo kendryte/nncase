@@ -47,7 +47,7 @@ public:
         xt::dynamic_shape<size_t> dataset_in_shape(in_shape.begin(), in_shape.end());
         std::unique_ptr<dataset> ds;
         if (options_.dataset_format == "image")
-            ds = std::make_unique<image_dataset>(options_.dataset, dataset_in_shape, options_.input_mean, options_.input_std);
+            ds = std::make_unique<image_dataset>(options_.dataset, dataset_in_shape, "NHWC", options_.input_mean, options_.input_std);
         else if (options_.dataset_format == "raw")
             ds = std::make_unique<raw_dataset>(options_.dataset, dataset_in_shape, options_.input_mean, options_.input_std);
         else

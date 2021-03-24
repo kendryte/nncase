@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "nncase/ir/quantizer.h"
 #include <algorithm>
 #include <nncase/ir/quantizer.h>
 #include <nncase/ir/visitor.h>

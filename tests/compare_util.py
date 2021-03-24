@@ -85,6 +85,7 @@ class Judge:
         tolerances.sort(key=lambda x: x.seg_min)
         self.tolerances = tolerances
         self.n_outlier = 0
+        self.cosine_similarity = 0
 
     def judge(self, gt, pred, print_prefix=""):
         for tol in self.tolerances:
@@ -100,6 +101,9 @@ class Judge:
             self.n_outlier += 1
 
     def is_good(self):
+        if self.cosine_similarity > 0.999:
+            return True
+
         for tol in self.tolerances:
             if tol.diff_state == DiffState.BAD:
                 return False
@@ -214,6 +218,12 @@ def compare(
 
     #print("Pass!!" if judge.is_good() else "Fail..")
     print(judge)
+    if judge.is_good() == False:
+        with open(ground_truth_path, 'r') as fgt, open(result_path, 'r') as fpred:
+            gt = fgt.readlines()[1:]
+            pred = fpred.readlines()[1:]
+            judge.cosine_similarity = cosine_similarity([float(i) for i in gt], [float(i) for i in pred])
+            print("cosine_similarity is: {}".format(judge.cosine_similarity)) 
     return judge
 
 
