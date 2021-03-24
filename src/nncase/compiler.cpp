@@ -240,16 +240,17 @@ private:
     template <class T>
     void run_calibration_eval(ptq_dataset_options &options, dataset &dataset, ir::evaluator &evaluator)
     {
-        for (size_t stage = 0; stage < 2; stage++)
+        const size_t max_stages = options.calibrate_method == "no_clip" ? 1 : 2;
+        for (size_t stage = 0; stage < max_stages; stage++)
         {
             if (stage == 1)
             {
-                std::cout << "4.2.2 Collecting distribution..." << std::endl;
-                evaluator.begin_collect_distribution();
+                std::cout << "4.2.1 Collecting ranges..." << std::endl;
             }
             else
             {
-                std::cout << "4.2.1 Collecting ranges..." << std::endl;
+                std::cout << "4.2.2 Collecting distribution..." << std::endl;
+                evaluator.begin_collect_distribution();
             }
 
             size_t i = 0;
@@ -274,16 +275,17 @@ private:
 
     void run_calibration_eval(ptq_tensor_options &options, ir::evaluator &evaluator)
     {
-        for (size_t stage = 0; stage < 2; stage++)
+        const size_t max_stages = options.calibrate_method == "no_clip" ? 1 : 2;
+        for (size_t stage = 0; stage < max_stages; stage++)
         {
-            if (stage == 1)
+            if (stage == 0)
             {
-                std::cout << "4.2.2 Collecting distribution..." << std::endl;
-                evaluator.begin_collect_distribution();
+                std::cout << "4.2.1 Collecting ranges..." << std::endl;
             }
             else
             {
-                std::cout << "4.2.1 Collecting ranges..." << std::endl;
+                std::cout << "4.2.2 Collecting distribution..." << std::endl;
+                evaluator.begin_collect_distribution();
             }
 
             for (size_t i = 0; i < options.samples_count; i++)

@@ -2,6 +2,7 @@
 
 set(SRCS convolution.cpp
          nnil.cpp
+         reduce_window.cpp
          tensor_compute.cpp)
 
 if (BUILDING_RUNTIME)

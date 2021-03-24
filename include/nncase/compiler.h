@@ -40,6 +40,7 @@ struct import_options
 
 struct ptq_dataset_options
 {
+    std::string calibrate_method = "no_clip";
     std::filesystem::path dataset;
     std::string dataset_format;
     std::function<void(size_t cnt, size_t total)> progress;
@@ -50,6 +51,7 @@ struct ptq_dataset_options
 
 struct ptq_tensor_options
 {
+    std::string calibrate_method = "no_clip";
     std::vector<uint8_t> tensor_data;
     size_t samples_count;
     std::function<void(size_t cnt, size_t total)> progress;

@@ -29,6 +29,7 @@ compile_command::compile_command(lyra::cli &cli)
                          .add_argument(lyra::opt(output_arrays_, "output arrays").name("--output-arrays").optional().help("output arrays"))
                          .add_argument(lyra::opt(dataset_, "dataset path").name("--dataset").optional().help("calibration dataset, used in post quantization"))
                          .add_argument(lyra::opt(dataset_format_, "dataset format").name("--dataset-format").optional().help("datset format: e.g. image, raw default is " + dataset_format_))
+                         .add_argument(lyra::opt(calibrate_method_, "calibrate method").name("--calibrate-method").optional().help("calibrate method: e.g. no_clip, l2, default is " + calibrate_method_))
                          .add_argument(lyra::opt(dump_ir_).name("--dump-ir").optional().help("dump ir to .dot"))
                          .add_argument(lyra::opt(dump_asm_).name("--dump-asm").optional().help("dump assembly"))
                          .add_argument(lyra::opt(dump_dir_, "dump directory").name("--dump-dir").optional().help("dump to directory")));
@@ -81,6 +82,7 @@ void compile_command::run()
         nncase::ptq_dataset_options ptq_options;
         ptq_options.dataset = dataset_;
         ptq_options.dataset_format = dataset_format_;
+        ptq_options.calibrate_method = calibrate_method_;
         compiler->use_ptq(ptq_options);
     }
 

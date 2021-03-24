@@ -11,6 +11,7 @@ set(SRCS module_builder.cpp
          ops/pad.cpp
          ops/quantize.cpp
          ops/reduce.cpp
+         ops/reduce_window2d.cpp
          ops/slice.cpp
          ops/transpose.cpp
          ops/unary.cpp)

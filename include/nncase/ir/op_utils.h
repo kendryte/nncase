@@ -289,7 +289,7 @@ inline shape_t get_strided_slice_output_shape(const axis_t &begin, const axis_t 
             new_shape.push_back(dim);
     }
 
-    return new_shape;
+    return new_shape.size() ? new_shape : shape_t { 1 };
 }
 
 template <class U, class T>

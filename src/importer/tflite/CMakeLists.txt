@@ -11,6 +11,7 @@ set(SRCS tflite_importer.cpp
          ops/matmul.cpp
          ops/pad.cpp
          ops/reshape.cpp
+         ops/shape.cpp
          ops/softmax.cpp
          ops/slice.cpp
          ops/resize_image.cpp

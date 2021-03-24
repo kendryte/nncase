@@ -29,7 +29,7 @@ DEFINE_TFLITE_LOWER(SLICE)
         end[i] = begin[i] + size[i];
 
     [[maybe_unused]] auto &options = *op.builtin_options_as_SliceOptions();
-    auto node = graph_.emplace<slice>(dt_float32, get_shape(input.shape()), begin, end);
+    auto node = graph_.emplace<slice>(to_data_type(input.type()), get_shape(input.shape()), begin, end);
     node->name(get_tensor(op.outputs(), 0).name()->string_view());
 
     link_input_tensor(&node->input(), op.inputs()->Get(0));
@@ -43,7 +43,7 @@ DEFINE_TFLITE_LOWER(STRIDED_SLICE)
     auto end = load_axis<int32_t>(get_tensor(op.inputs(), 2));
     auto strides = load_axis<int32_t>(get_tensor(op.inputs(), 3));
     auto &options = *op.builtin_options_as_StridedSliceOptions();
-    auto node = graph_.emplace<slice>(dt_float32, get_shape(input.shape()), begin, end, strides, options.begin_mask(),
+    auto node = graph_.emplace<slice>(to_data_type(input.type()), get_shape(input.shape()), begin, end, strides, options.begin_mask(),
         options.end_mask(), options.ellipsis_mask(), options.new_axis_mask(), options.shrink_axis_mask());
     node->name(get_tensor(op.outputs(), 0).name()->string_view());
 

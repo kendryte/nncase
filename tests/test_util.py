@@ -58,7 +58,7 @@ def _cast_bfloat16_then_float32(values: np.array):
 
 def tf_module_to_tflite(case_name, module):
     pb_export_dir = os.path.join(output_root, case_name)
-    tf.saved_model.save(module, pb_export_dir, module.__call__)
+    tf.saved_model.save(module, pb_export_dir)
     converter = tf.lite.TFLiteConverter.from_saved_model(pb_export_dir)
     tflite_model = converter.convert()
     tflite_export_file = os.path.join(output_root, case_name, 'test.tflite')

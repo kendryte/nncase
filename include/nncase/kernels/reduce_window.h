@@ -13,30 +13,14 @@
  * limitations under the License.
  */
 #pragma once
-#include <lyra/lyra.hpp>
-#include <string>
+#include <nncase/runtime/datatypes.h>
+#include <nncase/runtime/error.h>
+#include <nncase/runtime/result.h>
 
-namespace nncase::cli
-{
-class compile_command
-{
-public:
-    compile_command(lyra::cli &cli);
+BEGIN_NS_NNCASE_KERNELS
 
-private:
-    void run();
+NNCASE_API result<void> reduce_window2d(reduce_op_t op, const float *input, float init_value, float *output, const runtime_shape_t &in_shape,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const padding &padding_h, const padding &padding_w,
+    int32_t filter_h, int32_t filter_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w, value_range<float> fused_activation) noexcept;
 
-private:
-    std::string input_filename_;
-    std::string output_filename_;
-    std::string input_format_;
-    std::string target_name_;
-    std::string output_arrays_;
-    std::string dump_dir_;
-    std::string dataset_;
-    std::string dataset_format_ = "image";
-    std::string calibrate_method_ = "no_clip";
-    bool dump_ir_ = false;
-    bool dump_asm_ = false;
-};
-}
+END_NS_NNCASE_KERNELS

@@ -279,9 +279,9 @@ private:
                 "Shape must be same: \n"
                 + conn->owner().name() + "[" + std::string(conn->owner().runtime_opcode().name) + "] != "
                 + std::string(tf_tensor->name()->string_view()) + "[output]"
-                + "\n has shape mismatch: \n["
-                + ir::to_string(conn->shape()) + "] != ["
-                + ir::to_string(get_shape(tf_tensor->shape())) + "]");
+                + "\n has shape mismatch: \n"
+                + ir::to_string(conn->shape()) + " != "
+                + ir::to_string(get_shape(tf_tensor->shape())) + "");
         }
     }
 
@@ -306,9 +306,9 @@ private:
                 "Shape must be same: \n"
                 + conn->owner().name() + "[" + std::string(conn->owner().runtime_opcode().name) + "] != "
                 + std::string(tf_tensor->name()->string_view()) + "[output]"
-                + "\n has shape mismatch: \n["
-                + ir::to_string(conn->shape()) + "] != ["
-                + ir::to_string(get_shape(tf_tensor->shape())) + "]");
+                + "\n has shape mismatch: \n"
+                + ir::to_string(conn->shape()) + " != "
+                + ir::to_string(get_shape(tf_tensor->shape())) + "");
         }
     }
 

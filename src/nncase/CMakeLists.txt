@@ -9,4 +9,16 @@ target_link_libraries(nncase PUBLIC CONAN_PKG::gsl-lite CONAN_PKG::xtensor CONAN
 target_compile_definitions(nncase PRIVATE -DNNCASE_DLL)
 target_compile_definitions(nncase PUBLIC -DNNCASE_SHARED_LIBS)
 target_link_libraries(nncase PRIVATE CONAN_PKG::magic_enum CONAN_PKG::fmt)
-install(TARGETS nncase)
+
+install(TARGETS nncase EXPORT nncaseTargets
+        ARCHIVE DESTINATION lib
+        LIBRARY DESTINATION lib
+        RUNTIME DESTINATION bin
+        INCLUDES DESTINATION include
+)
+
+install(EXPORT nncaseTargets
+        DESTINATION lib/cmake/nncase)
+
+configure_file(${CMAKE_CURRENT_LIST_DIR}/../../cmake/nncaseConfig.cmake.in nncaseConfig.cmake @ONLY)
+install(FILES ${CMAKE_CURRENT_BINARY_DIR}/nncaseConfig.cmake DESTINATION lib/cmake/nncase)
