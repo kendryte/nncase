@@ -48,6 +48,7 @@ struct target_options
     float weights_quantize_threshold;
     uint32_t output_quantize_threshold;
     bool quantize_binary;
+    bool is_fpga;
 };
 
 struct target_attributes

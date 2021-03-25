@@ -68,15 +68,15 @@ auto quantize_weights(quantizer &quantizer, fake_kpu_conv2d &conv, constant &wei
 
     auto out_it = q_weights.begin();
     for (auto w : weights_data)
-        *out_it++ = (uint8_t)std::clamp((int32_t)std::lrint(w / q_p.scale[0] + q_p.zero_point[0]), 0, 255);
+        *out_it++ = (uint8_t)std::clamp((int32_t)std::lrint(w / q_p.scale + q_p.zero_point), 0, 255);
     return std::make_tuple(q_p, std::move(scales), std::move(q_weights));
 }
 
 auto quantize_act(quantizer &quantizer, float act_in_scale, const quant_param_t &yq_p, const quant_param_t &zq_p, value_range<float> activation, fused_unary *fu)
 {
-    const auto xf_min = std::clamp((0 - yq_p.zero_point[0]) * yq_p.scale[0], activation.min, activation.max);
-    const auto xf_max = std::clamp((255 - yq_p.zero_point[0]) * yq_p.scale[0], activation.min, activation.max);
-    const auto zq_scale = act_in_scale / zq_p.scale[0];
+    const auto xf_min = std::clamp((0 - yq_p.zero_point) * yq_p.scale, activation.min, activation.max);
+    const auto xf_max = std::clamp((255 - yq_p.zero_point) * yq_p.scale, activation.min, activation.max);
+    const auto zq_scale = act_in_scale / zq_p.scale;
 
     const size_t samples_count = 1024;
     const auto sample_step = (xf_max - xf_min) / (samples_count - 1);
@@ -119,7 +119,7 @@ auto quantize_act(quantizer &quantizer, float act_in_scale, const quant_param_t 
         dest.start_x = (int64_t)std::lrint(x0);
         dest.mul = mul.rounded_mul();
         dest.shift = mul.shift;
-        dest.add = std::clamp((int32_t)std::lrint(src.intercept / zq_p.scale[0] + zq_p.zero_point[0]), 0, 255);
+        dest.add = std::clamp((int32_t)std::lrint(src.intercept / zq_p.scale + zq_p.zero_point), 0, 255);
     }
 
     return act;
@@ -129,13 +129,13 @@ auto quantize_bn(quantizer &quantizer, fake_kpu_conv2d &conv, constant &bias, fl
 {
     auto bias_data = as_span<const float>(bias.data());
     std::vector<kpu_batchnorm_segment> bn(conv.output_channels());
-    auto so = sa / yq_p.scale[0];
+    auto so = sa / yq_p.scale;
     auto bn_mul = quantizer.get_fixed_mul(so, 22, 255, true);
     auto bn_shift = std::min(bn_mul.shift, (int8_t)15);
     auto up_scale = bn_mul.shift - bn_shift;
     assert(up_scale >= 0);
     auto post_mul = bn_mul.rounded_mul() / bn_mul.mul / std::pow(2.f, up_scale);
-    auto s_act_in = yq_p.scale[0] * post_mul;
+    auto s_act_in = yq_p.scale * post_mul;
 
     for (size_t i = 0; i < bias_data.size(); i++)
     {
@@ -238,7 +238,7 @@ void kpu_conv2d_transform::process(transform_context &context)
     auto [wq_p, w_scales, q_weights] = quantize_weights(quantizer, old_conv, weights);
     auto yq_p = quantizer.get_quant_param(quantizer.get(old_conv.output()), 8);
     auto zq_p = quantizer.get_quant_param(quantizer.get(*context.outputs[0]), 8);
-    auto sa = iq_p.scale[0] * wq_p.scale[0];
+    auto sa = iq_p.scale * wq_p.scale;
     auto [bn, s_act_in] = quantize_bn(quantizer, old_conv, bias, sa, w_scales, yq_p);
     auto act = quantize_act(quantizer, (float)s_act_in, yq_p, zq_p, old_conv.fused_activation(), old_fu);
     auto filter = get_kpu_filter_size(old_conv.filter_type());
@@ -257,14 +257,14 @@ void kpu_conv2d_transform::process(transform_context &context)
     auto c_act = context.graph.emplace<constant>(dt_uint8, shape_t { sizeof(kpu_activate_table_t) }, gsl::make_span(&rt_act, 1));
     c_act->name(old_conv.name() + "/act");
     kpu_conv2d_quant_args q_args {};
-    q_args.arg_x = (int32_t)-wq_p.zero_point[0];
+    q_args.arg_x = (int32_t)-wq_p.zero_point;
     q_args.shift_x = 0;
-    q_args.arg_w = (int32_t)-iq_p.zero_point[0];
+    q_args.arg_w = (int32_t)-iq_p.zero_point;
     q_args.shift_w = 0;
-    q_args.arg_add = (int64_t)filter * filter * wq_p.zero_point[0] * iq_p.zero_point[0];
+    q_args.arg_add = (int64_t)filter * filter * wq_p.zero_point * iq_p.zero_point;
 
     auto conv = context.graph.emplace<kpu_conv2d>(false, upload->output().shape(), old_conv.is_depthwise(), old_conv.weights().shape(),
-        old_conv.filter_type(), old_conv.pool_type(), (uint8_t)iq_p.zero_point[0], q_args);
+        old_conv.filter_type(), old_conv.pool_type(), (uint8_t)iq_p.zero_point, q_args);
     conv->name(old_conv.name());
     conv->weights().connect(c_weights->output());
     conv->batch_norm().connect(c_bn->output());

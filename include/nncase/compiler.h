@@ -29,6 +29,7 @@ struct compile_options
 {
     bool dump_ir;
     bool dump_asm;
+    bool is_fpga;
     std::string target;
     std::filesystem::path dump_dir;
 };

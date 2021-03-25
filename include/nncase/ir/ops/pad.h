@@ -27,15 +27,17 @@ public:
     output_connector &output() { return output_at(0); }
 
     const xt::svector<padding> &paddings() const noexcept { return paddings_; }
+    pad_mode_t pad_mode() const noexcept { return pad_mode_; }
     const scalar &pad_value() const noexcept { return pad_value_; }
 
-    pad(datatype_t type, shape_t input_shape, xt::svector<padding> paddings, scalar pad_value);
+    pad(datatype_t type, shape_t input_shape, xt::svector<padding> paddings, pad_mode_t pad_mode, scalar pad_value);
 
 protected:
     bool properties_equal(node &other) const override;
 
 private:
     xt::svector<padding> paddings_;
+    pad_mode_t pad_mode_;
     scalar pad_value_;
 };
 }

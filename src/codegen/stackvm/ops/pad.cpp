@@ -31,5 +31,5 @@ void stackvm_module_builder::emit(pad &node, stackvm_op_builder &builder)
     builder.stshape(1, input.strides);
     builder.stshape(2, output.strides);
     builder.stpaddings(0, node.paddings());
-    builder.tensor_pad_(node.input().type(), 0, 1, 2, 0, pad_constant);
+    builder.tensor_pad_(node.input().type(), 0, 1, 2, 0, node.pad_mode());
 }

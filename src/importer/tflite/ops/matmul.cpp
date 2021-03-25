@@ -39,10 +39,7 @@ DEFINE_TFLITE_LOWER(FULLY_CONNECTED)
     if (input_a.type() != tflite::TensorType_FLOAT32)
     {
         not_f32 = 1;
-        quant_param_t input_a_dequant_paras;
-        input_a_dequant_paras.scale = to_vector(*input_a.quantization()->scale());
-        input_a_dequant_paras.zero_point = to_vector(*input_a.quantization()->zero_point());
-
+        quant_param_t input_a_dequant_paras = to_quant_param(input_a.quantization());
         input_a_dequant = graph_.emplace<dequantize>(to_data_type(input_a.type()), get_shape(input_a.shape()), dt_float32, 
             input_a_dequant_paras);
         input_a_dequant->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/input_a_dequant");
@@ -51,10 +48,7 @@ DEFINE_TFLITE_LOWER(FULLY_CONNECTED)
     // input_b dequantize
     if (input_b.type() != tflite::TensorType_FLOAT32)
     {
-        quant_param_t input_b_dequant_paras;
-        input_b_dequant_paras.scale = to_vector(*input_b.quantization()->scale());
-        input_b_dequant_paras.zero_point = to_vector(*input_b.quantization()->zero_point());
-
+        quant_param_t input_b_dequant_paras = to_quant_param(input_b.quantization());
         input_b_dequant = graph_.emplace<dequantize>(to_data_type(input_b.type()), get_shape(input_b.shape()), dt_float32, input_b_dequant_paras);
         input_b_dequant->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/input_b_dequant");
         input_b_trans = graph_.emplace<transpose>(input_b_dequant->output().type(), get_shape(input_b.shape()), axis_t { 1, 0 });
@@ -80,10 +74,7 @@ DEFINE_TFLITE_LOWER(FULLY_CONNECTED)
         auto &bias = get_tensor(op.inputs(), 2);
         if (bias.type() != tflite::TensorType_FLOAT32)
         {
-            quant_param_t bias_dequant_paras;
-            bias_dequant_paras.scale = to_vector(*bias.quantization()->scale());
-            bias_dequant_paras.zero_point = to_vector(*bias.quantization()->zero_point());
-
+            quant_param_t bias_dequant_paras = to_quant_param(bias.quantization());
             bias_dequant = graph_.emplace<dequantize>(to_data_type(bias.type()), get_shape(bias.shape()), dt_float32, bias_dequant_paras);
             bias_dequant->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/bias_quant");
             fc->bias().connect(bias_dequant->output());
@@ -114,10 +105,7 @@ DEFINE_TFLITE_LOWER(FULLY_CONNECTED)
 
     if (fc->output().type() != to_data_type(output.type()))
     {
-        quant_param_t output_quant_paras;
-        output_quant_paras.scale = to_vector(*output.quantization()->scale());
-        output_quant_paras.zero_point = to_vector(*output.quantization()->zero_point());
-
+        quant_param_t output_quant_paras = to_quant_param(output.quantization());
         output_quant = graph_.emplace<quantize>(dt_float32, fc->output().shape(), to_data_type(output.type()), output_quant_paras);
         output_quant->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/output_quant");
         output_quant->input().connect(fc->output());

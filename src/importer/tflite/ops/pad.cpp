@@ -36,7 +36,7 @@ DEFINE_TFLITE_LOWER(PAD)
                                                                   : ((input.type() == tflite::TensorType_UINT8) ? static_cast<int8_t>(128)
                                                                                                                 : static_cast<int8_t>(0));
 
-    auto node = graph_.emplace<pad>(to_data_type(input.type()), get_shape(input.shape()), new_paddings, pad_value);
+    auto node = graph_.emplace<pad>(to_data_type(input.type()), get_shape(input.shape()), new_paddings, pad_constant, pad_value);
 
     node->name(get_tensor(op.outputs(), 0).name()->string_view());
 
@@ -55,7 +55,7 @@ DEFINE_TFLITE_LOWER(PADV2)
     for (size_t i = 0; i < paddings.shape()[0]; i++)
         new_paddings.push_back(padding { paddings(i, 0), paddings(i, 1) });
 
-    auto node = graph_.emplace<pad>(to_data_type(input.type()), get_shape(input.shape()), new_paddings, pad_value);
+    auto node = graph_.emplace<pad>(to_data_type(input.type()), get_shape(input.shape()), new_paddings, pad_constant, pad_value);
 
     node->name(get_tensor(op.outputs(), 0).name()->string_view());
 

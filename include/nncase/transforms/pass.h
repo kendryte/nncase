@@ -35,7 +35,7 @@ public:
 
     pass &operator=(pass &) = delete;
 
-    void run(graph &graph, nncase::target &target, ir::quantizer *quantizer, std::optional<std::filesystem::path> &dump_dir);
+    void run(graph &graph, nncase::target &target, ir::quantizer *quantizer, std::optional<std::filesystem::path> dump_dir);
 
     template <class T, class... TArgs>
     transform *emplace(TArgs &&... args)

@@ -56,7 +56,8 @@ bool fold_pad_pad_transform::on_try_match(node &node, transform_context &context
     {
         if (auto p2 = try_get_direct_child<pad>(*p1))
         {
-            if (p1->pad_value() == p2->pad_value())
+            if (p1->pad_mode() == p2->pad_mode()
+                && (p1->pad_mode() != pad_constant || p1->pad_value() == p2->pad_value()))
             {
                 context.inputs.emplace_back(&p1->input());
                 context.outputs.emplace_back(&p2->output());
@@ -79,12 +80,12 @@ void fold_pad_pad_transform::process(transform_context &context)
     auto &old_p1 = static_cast<pad &>(*context.matched_nodes[0]);
     auto &old_p2 = static_cast<pad &>(*context.matched_nodes[1]);
 
-    xt::svector<padding> paddings{ old_p1.paddings()[0] + old_p2.paddings()[0],
+    xt::svector<padding> paddings { old_p1.paddings()[0] + old_p2.paddings()[0],
         old_p1.paddings()[1] + old_p2.paddings()[1],
         old_p1.paddings()[2] + old_p2.paddings()[2],
         old_p1.paddings()[3] + old_p2.paddings()[3] };
 
-    auto p = context.graph.emplace<pad>(old_p1.input().type(), output.shape(), paddings, old_p1.pad_value());
+    auto p = context.graph.emplace<pad>(old_p1.input().type(), output.shape(), paddings, old_p1.pad_mode(), old_p1.pad_value());
     p->name(old_p1.name());
 
     p->input().connect(output);
@@ -150,7 +151,7 @@ void fold_pad_strided_slice_transform::process(transform_context &context)
         }
     }
 
-    auto p = context.graph.emplace<pad>(old_p.input().type(), output.shape(), paddings, old_p.pad_value());
+    auto p = context.graph.emplace<pad>(old_p.input().type(), output.shape(), paddings, old_p.pad_mode(), old_p.pad_value());
     p->name(old_p.name());
     auto sl = context.graph.emplace<slice>(p->output().type(), p->output().shape(), begin, end, old_slice.strides(),
         old_slice.begin_mask(), old_slice.end_mask(), old_slice.ellipsis_mask(), old_slice.new_axis_mask(), old_slice.shrink_axis_mask());
@@ -167,7 +168,7 @@ bool strided_slice_to_pad_transform::on_try_match(node &node, transform_context 
 {
     if (auto sl = node_cast<slice>(node))
     {
-        if (sl->strides() == axis_t{ 1, 1, 1, 1 })
+        if (sl->strides() == axis_t { 1, 1, 1, 1 })
         {
             context.inputs.emplace_back(&sl->input());
             context.outputs.emplace_back(&sl->output());
@@ -194,7 +195,7 @@ void strided_slice_to_pad_transform::process(transform_context &context)
     for (size_t i = 0; i < paddings.size(); i++)
         paddings[i] = { -begin[i], end[i] - (int32_t)output.shape()[i] };
 
-    auto p = context.graph.emplace<pad>(output.type(), output.shape(), paddings, (uint8_t)0); // dummy pad value because of cropping
+    auto p = context.graph.emplace<pad>(output.type(), output.shape(), paddings, pad_constant, (uint8_t)0); // dummy pad value because of cropping
     p->name(old_slice.name());
     auto rshape = context.graph.emplace<bitcast>(output.type(), p->output().shape(), old_slice.output().shape());
     rshape->name(old_slice.name() + "_F");

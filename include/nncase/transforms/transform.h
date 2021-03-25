@@ -29,6 +29,13 @@ namespace ir
     {
         struct transform_context
         {
+            transform_context(ir::graph &graph, nncase::target &target) noexcept
+                : graph(graph), target(target)
+            {
+            }
+
+            virtual ~transform_context() = default;
+
             ir::graph &graph;
             nncase::target &target;
             ir::quantizer *quantizer;
@@ -47,6 +54,7 @@ namespace ir
 
             std::string name() { return name_; }
 
+            virtual std::unique_ptr<transform_context> create_context(ir::graph &graph, nncase::target &target);
             bool try_match(node &node, transform_context &context);
 
             virtual void process(transform_context &context) = 0;

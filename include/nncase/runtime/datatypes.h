@@ -247,14 +247,8 @@ typedef enum _pad_mode
 
 typedef struct _quant_param
 {
-    _quant_param(int64_t zero_point, float scale)
-        : zero_point(1, zero_point), scale(1, scale) { }
-    _quant_param(const std::vector<int64_t> &zero_point, const std::vector<float> &scale)
-        : zero_point(zero_point), scale(scale) { }
-    _quant_param() = default;
-
-    std::vector<int64_t> zero_point;
-    std::vector<float> scale;
+    int32_t zero_point;
+    float scale;
 } quant_param_t;
 
 inline bool operator==(const quant_param_t &lhs, const quant_param_t &rhs) noexcept
@@ -264,17 +258,8 @@ inline bool operator==(const quant_param_t &lhs, const quant_param_t &rhs) noexc
 
 inline bool almost_equal(const quant_param_t &lhs, const quant_param_t &rhs) noexcept
 {
-    if (lhs.zero_point != rhs.zero_point)
-        return false;
-    float errors = 0.f;
-    for (size_t i = 0; i < lhs.scale.size(); i++)
-    {
-        errors += fabs(lhs.scale[i] - rhs.scale[i]);
-        if (errors > std::numeric_limits<float>::epsilon())
-            return false;
-    }
-
-    return true;
+    return lhs.zero_point == rhs.zero_point
+        && fabs(lhs.scale - rhs.scale) <= std::numeric_limits<float>::epsilon();
 }
 
 struct fixed_mul

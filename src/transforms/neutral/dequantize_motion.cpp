@@ -16,13 +16,13 @@
 #include <nncase/ir/ops/bitcast.h>
 #include <nncase/ir/ops/concat.h>
 #include <nncase/ir/ops/constant.h>
-#include <nncase/ir/ops/space_to_batch.h>
 #include <nncase/ir/ops/conv2d.h>
 #include <nncase/ir/ops/dequantize.h>
 #include <nncase/ir/ops/pad.h>
 #include <nncase/ir/ops/reduce.h>
 #include <nncase/ir/ops/resize_image.h>
 #include <nncase/ir/ops/slice.h>
+#include <nncase/ir/ops/space_to_batch.h>
 #include <nncase/ir/ops/transpose.h>
 #include <nncase/ir/visitor.h>
 #include <nncase/transforms/neutral/dequantize_motion.h>
@@ -58,11 +58,11 @@ void dequantize_pad_motion_transform::process(transform_context &context)
     auto &old_p = static_cast<pad &>(*context.matched_nodes[0]);
     auto &old_deq = static_cast<dequantize &>(*context.matched_nodes[1]);
     auto q_param = old_deq.quant_param();
-    auto pad_value = q_param.zero_point[0];
+    auto pad_value = q_param.zero_point;
 
     auto deq = context.graph.emplace<dequantize>(old_p.input().type(), old_p.input().shape(), old_deq.output().type(), q_param);
     deq->name(old_deq.name());
-    auto p = context.graph.emplace<pad>(deq->output().type(), deq->output().shape(), old_p.paddings(), (uint8_t)pad_value);
+    auto p = context.graph.emplace<pad>(deq->output().type(), deq->output().shape(), old_p.paddings(), old_p.pad_mode(), (uint8_t)pad_value);
     p->name(old_p.name());
     p->input().connect(deq->output());
 
@@ -83,7 +83,7 @@ bool dequantize_transpose_motion_transform::on_try_match(node &node, transform_c
              * 同时增加了transpose 可以穿过反量化节点&binary同时出现的这种特例
              * 在输入为NCHW且对输入增加了transpose,输入size*size>2^16时 broadcast会报错
              * **/
-            if(try_get_direct_child<binary>(*tp))
+            if (try_get_direct_child<binary>(*tp))
                 return false;
             context.matched_nodes.emplace_back(deq);
             context.matched_nodes.emplace_back(tp);

@@ -104,6 +104,8 @@ private:
         return { std::begin(shape), std::end(shape) };
     }
 
+    quant_param_t to_quant_param(const tflite::QuantizationParameters *param);
+
     template <class T>
     xt::xarray<T> load_array(const tflite::Tensor &tensor)
     {

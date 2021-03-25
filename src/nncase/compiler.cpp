@@ -142,6 +142,7 @@ private:
     void set_target(std::string_view type)
     {
         target_ = plugin_loader::create_target(type);
+        target_options_.is_fpga = compile_options_.is_fpga;
 
         target_->register_evaluator_ops();
     }

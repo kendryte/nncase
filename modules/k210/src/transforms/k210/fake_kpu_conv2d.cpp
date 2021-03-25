@@ -102,7 +102,7 @@ void fake_kpu_conv2d_transform::process(transform_context &context)
         get_padding<true>(pad_w)
     };
 
-    auto pre_pad = context.graph.emplace<pad>(dt_float32, output.shape(), pre_paddings, 0.f);
+    auto pre_pad = context.graph.emplace<pad>(dt_float32, output.shape(), pre_paddings, pad_constant, 0.f);
     auto conv = context.graph.emplace<fake_kpu_conv2d>(pre_pad->output().shape(), is_depthwise, weights.shape(), filter_type,
         kpu_pool_bypass, old_conv.fused_activation());
     conv->name(old_conv.name());
@@ -114,7 +114,7 @@ void fake_kpu_conv2d_transform::process(transform_context &context)
         get_padding<false>(pad_w)
     };
     axis_t strides { 1, 1, old_conv.stride_h(), old_conv.stride_w() };
-    auto sur_pad = context.graph.emplace<pad>(dt_float32, conv->output().shape(), sur_paddings, 0.f);
+    auto sur_pad = context.graph.emplace<pad>(dt_float32, conv->output().shape(), sur_paddings, pad_constant, 0.f);
     auto slc = context.graph.emplace<slice>(dt_float32, sur_pad->output().shape(), axis_t { 0, 0, 0, 0 }, axis_t { 0, 0, 0, 0 }, strides, 15, 15, 0, 0, 0);
     conv->input().connect(pre_pad->output());
     conv->weights().connect(weights);
@@ -187,7 +187,7 @@ void fuse_fake_kpu_conv2d_strided_slice_transform::process(transform_context &co
     GET_PRE_PAD(old_conv, old_slice);
     auto pool_type = old_slice.begin()[3] % 2 == 0 ? kpu_pool_left_top_2_s2 : kpu_pool_right_top_2_s2;
 
-    auto p = context.graph.emplace<pad>(dt_float32, output.shape(), xt::svector<padding> { padding::zero(), padding::zero(), pad_h, pad_w }, 0.f);
+    auto p = context.graph.emplace<pad>(dt_float32, output.shape(), xt::svector<padding> { padding::zero(), padding::zero(), pad_h, pad_w }, pad_constant, 0.f);
     auto conv = context.graph.emplace<fake_kpu_conv2d>(p->output().shape(), old_conv.is_depthwise(), weights.shape(),
         old_conv.filter_type(), pool_type, old_conv.fused_activation());
     conv->name(old_conv.name());
@@ -197,7 +197,7 @@ void fuse_fake_kpu_conv2d_strided_slice_transform::process(transform_context &co
     crop_h.after = old_slice.output().shape()[2] - conv->output().shape()[2] - crop_h.before;
     crop_w.after = old_slice.output().shape()[3] - conv->output().shape()[3] - crop_w.before;
 
-    auto crop = context.graph.emplace<pad>(dt_float32, conv->output().shape(), xt::svector<padding> { padding::zero(), padding::zero(), crop_h, crop_w }, 0.f);
+    auto crop = context.graph.emplace<pad>(dt_float32, conv->output().shape(), xt::svector<padding> { padding::zero(), padding::zero(), crop_h, crop_w }, pad_constant, 0.f);
     conv->input().connect(p->output());
     conv->weights().connect(weights);
     conv->bias().connect(bias);

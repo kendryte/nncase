@@ -71,11 +71,11 @@ DEFINE_TFLITE_LOWER(TRANSPOSE_CONV)
     {
         std::vector<input_connector *> inputs_conn = { input_conn };
         std::vector<quant_param_t> input_dequant_params = {
-            quant_param_t(to_vector(*input.quantization()->zero_point()), to_vector(*input.quantization()->scale()))
+            quant_param_t { (int32_t)input.quantization()->zero_point()->Get(0), input.quantization()->scale()->Get(0) }
         };
         std::vector<output_connector *> outputs_conn = { output_conn };
         std::vector<quant_param_t> output_quant_params = {
-            quant_param_t(to_vector(*output.quantization()->zero_point()), to_vector(*output.quantization()->scale()))
+            quant_param_t { (int32_t)output.quantization()->zero_point()->Get(0), output.quantization()->scale()->Get(0) }
         };
         with_quantize(to_data_type(input.type()), inputs_conn, input_dequant_params, outputs_conn, output_quant_params);
         input_conn = inputs_conn[0];
@@ -88,10 +88,7 @@ DEFINE_TFLITE_LOWER(TRANSPOSE_CONV)
     //weights dequantize
     if (weights.type() != tflite::TensorType_FLOAT32)
     {
-        quant_param_t weights_paras;
-        weights_paras.scale = to_vector(*weights.quantization()->scale());
-        weights_paras.zero_point = to_vector(*weights.quantization()->zero_point());
-
+        quant_param_t weights_paras = to_quant_param(weights.quantization());
         auto weights_dequant = graph_.emplace<dequantize>(to_data_type(weights.type()), get_shape(weights.shape()), dt_float32, weights_paras);
         weights_dequant->name(get_tensor(op.outputs(), 0).name()->string_view());
         //        weights_trans = nhwc_to_nchw(weights_dequant->output().type(), weights_dequant->output().shape());
@@ -101,8 +98,8 @@ DEFINE_TFLITE_LOWER(TRANSPOSE_CONV)
     }
     else
     {
-//        weights_trans = graph_.emplace<transpose>(to_data_type(weights.type()), get_shape(weights.shape()), axis_t { 0, 3, 1, 2 });
-//        weights_trans->name(get_tensor(op.outputs(), 0).name()->string_view());
+        //        weights_trans = graph_.emplace<transpose>(to_data_type(weights.type()), get_shape(weights.shape()), axis_t { 0, 3, 1, 2 });
+        //        weights_trans->name(get_tensor(op.outputs(), 0).name()->string_view());
         link_input_tensor(&weights_trans->input(), op.inputs()->Get(1));
     }
     //    link_input_tensor(&weights_trans->input(), op.inputs()->Get(1));

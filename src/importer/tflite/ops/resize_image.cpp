@@ -57,11 +57,11 @@ void tflite_importer::convert_resize_image(const tflite::Operator &op, image_res
     {
         std::vector<input_connector *> inputs_conn = { input_conn };
         std::vector<quant_param_t> input_dequant_params = {
-            quant_param_t(to_vector(*input.quantization()->zero_point()), to_vector(*input.quantization()->scale()))
+            to_quant_param(input.quantization())
         };
         std::vector<output_connector *> outputs_conn = { output_conn };
         std::vector<quant_param_t> output_quant_params = {
-            quant_param_t(to_vector(*output.quantization()->zero_point()), to_vector(*output.quantization()->scale()))
+            to_quant_param(output.quantization())
         };
         with_quantize(to_data_type(input.type()), inputs_conn, input_dequant_params, outputs_conn, output_quant_params);
         input_conn = inputs_conn[0];

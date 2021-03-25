@@ -41,10 +41,7 @@ void tflite_importer::convert_pool2d(const tflite::Operator &op, reduce_op_t red
     // input dequantize
     if (input.type() != tflite::TensorType_FLOAT32)
     {
-        quant_param_t in_quant_paras;
-        in_quant_paras.scale = to_vector(*input.quantization()->scale());
-        in_quant_paras.zero_point = to_vector(*input.quantization()->zero_point());
-
+        quant_param_t in_quant_paras = to_quant_param(input.quantization());
         in_quant = graph_.emplace<dequantize>(to_data_type(input.type()), get_shape(input.shape()), dt_float32, in_quant_paras);
         in_quant->name(get_tensor(op.outputs(), 0).name()->string_view());
         pre_trans = nhwc_to_nchw(in_quant->output().type(), in_quant->output().shape());
@@ -82,10 +79,7 @@ void tflite_importer::convert_pool2d(const tflite::Operator &op, reduce_op_t red
 
     if (sur_trans->output().type() != to_data_type(input.type()))
     {
-        quant_param_t out_quant_paras;
-        out_quant_paras.scale = to_vector(*output.quantization()->scale());
-        out_quant_paras.zero_point = to_vector(*output.quantization()->zero_point());
-
+        quant_param_t out_quant_paras = to_quant_param(output.quantization());
         out_quant = graph_.emplace<quantize>(dt_float32, sur_trans->output().shape(), to_data_type(output.type()), out_quant_paras);
         out_quant->name(get_tensor(op.outputs(), 0).name()->string_view());
         out_quant->input().connect(sur_trans->output());

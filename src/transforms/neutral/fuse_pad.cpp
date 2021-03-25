@@ -28,7 +28,9 @@ bool fuse_pad_conv2d_transform::on_try_match(node &node, transform_context &cont
         auto &p = static_cast<pad &>(node);
         if (p.paddings().size() == 4 && p.paddings()[2].before >= 0 && p.paddings()[2].after >= 0
             && p.paddings()[3].before >= 0 && p.paddings()[3].after >= 0
-            && (p.paddings()[2].sum() > 0 || p.paddings()[3].sum() > 0))
+            && (p.paddings()[2].sum() > 0 || p.paddings()[3].sum() > 0)
+            && p.pad_mode() == pad_constant
+            && p.pad_value().as<float>() == 0.f)
         {
             if (auto conv = try_get_direct_child<conv2d>(p))
             {
@@ -79,7 +81,7 @@ void fuse_pad_conv2d_transform::process(transform_context &context)
         }
     }
 
-    auto p = context.graph.emplace<pad>(old_p.output().type(), output.shape(), paddings, old_p.pad_value());
+    auto p = context.graph.emplace<pad>(old_p.output().type(), output.shape(), paddings, old_p.pad_mode(), old_p.pad_value());
     p->name(old_p.name());
     auto conv = context.graph.emplace<conv2d>(p->output().shape(), old_conv.weights().shape(), old_conv.groups(),
         conv_paddings[0], conv_paddings[1], old_conv.stride_h(), old_conv.stride_w(), old_conv.dilation_h(), old_conv.dilation_w(), old_conv.fused_activation());

@@ -19,8 +19,8 @@
 using namespace nncase;
 using namespace nncase::ir;
 
-pad::pad(datatype_t type, shape_t input_shape, xt::svector<padding> paddings, scalar pad_value)
-    : paddings_(std::move(paddings)), pad_value_(std::move(pad_value))
+pad::pad(datatype_t type, shape_t input_shape, xt::svector<padding> paddings, pad_mode_t pad_mode, scalar pad_value)
+    : paddings_(std::move(paddings)), pad_mode_(pad_mode), pad_value_(std::move(pad_value))
 {
     add_input("input", type, input_shape);
     add_output("output", type, get_padded_shape(input_shape, paddings_));
@@ -29,5 +29,5 @@ pad::pad(datatype_t type, shape_t input_shape, xt::svector<padding> paddings, sc
 bool pad::properties_equal(node &other) const
 {
     auto &r = static_cast<pad &>(other);
-    return paddings() == r.paddings() && pad_value() == r.pad_value();
+    return paddings() == r.paddings() && pad_mode() == r.pad_mode() && pad_value() == r.pad_value();
 }

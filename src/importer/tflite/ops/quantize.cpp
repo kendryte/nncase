@@ -35,14 +35,14 @@ DEFINE_TFLITE_LOWER(QUANTIZE)
     if (input.type() != tflite::TensorType_FLOAT32)
     {
         deq = graph_.emplace<dequantize>(tp1->output().type(), tp1->output().shape(), dt_float32, 
-            quant_param_t { to_vector(*input.quantization()->zero_point()), to_vector(*input.quantization()->scale()) });
+             to_quant_param(input.quantization()));
         deq->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/deq");
         mid_output = &deq->output();
         deq->input().connect(tp1->output());
     }
 
     auto q = graph_.emplace<quantize>(dt_float32, mid_output->shape(), to_data_type(output.type()),
-        quant_param_t { to_vector(*output.quantization()->zero_point()), to_vector(*output.quantization()->scale()) });
+        to_quant_param(output.quantization()));
     q->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/q");
     auto tp2 = graph_.emplace<transpose>(q->output().type(), q->output().shape(), axis_t { 0, 2, 3, 1 });
     tp2->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/trans");
@@ -81,7 +81,7 @@ DEFINE_TFLITE_LOWER(DEQUANTIZE)
     if (input.type() != tflite::TensorType_FLOAT32)
     {
         deq = graph_.emplace<dequantize>(tp1->output().type(), tp1->output().shape(), dt_float32, 
-            quant_param_t { to_vector(*input.quantization()->zero_point()), to_vector(*input.quantization()->scale()) });
+             to_quant_param(input.quantization()));
         deq->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/deq");
         mid_output = &deq->output();
         deq->input().connect(tp1->output());
@@ -90,7 +90,7 @@ DEFINE_TFLITE_LOWER(DEQUANTIZE)
     if (output.type() != tflite::TensorType_FLOAT32)
     {
         q = graph_.emplace<quantize>(dt_float32, mid_output->shape(), to_data_type(output.type()),
-            quant_param_t { to_vector(*output.quantization()->zero_point()), to_vector(*output.quantization()->scale()) });
+            to_quant_param(output.quantization()));
         q->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/q");
         mid_output = &q->output();
         q->input().connect(tp1->output());

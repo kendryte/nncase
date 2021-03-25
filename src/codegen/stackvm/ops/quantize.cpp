@@ -31,7 +31,7 @@ void stackvm_module_builder::emit(quantize &node, stackvm_op_builder &builder)
     builder.stshape(2, output.strides);
 
     // TODO: by axis
-    builder.ldc_r4_(1.f / node.quant_param().scale[0]);
-    builder.ldc_r4_((float)node.quant_param().zero_point[0]);
+    builder.ldc_r4_(1.f / node.quant_param().scale);
+    builder.ldc_r4_((float)node.quant_param().zero_point);
     builder.tensor_quantize_(node.input().type(), node.output().type(), 0, 1, 2);
 }

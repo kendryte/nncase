@@ -36,12 +36,8 @@ DEFINE_TFLITE_LOWER(RELU)
     max->input_b().connect(zero->output());
     if (input.type() != tflite::TensorType_FLOAT32)
     {
-        quant_param_t input_dequant_paras;
-        input_dequant_paras.scale = to_vector(*input.quantization()->scale());
-        input_dequant_paras.zero_point = to_vector(*input.quantization()->zero_point());
-        quant_param_t output_quant_paras;
-        output_quant_paras.scale = to_vector(*output.quantization()->scale());
-        output_quant_paras.zero_point = to_vector(*output.quantization()->zero_point());
+        quant_param_t input_dequant_paras = to_quant_param(input.quantization());
+        quant_param_t output_quant_paras = to_quant_param(output.quantization());
         auto input_dequant = graph_.emplace<dequantize>(to_data_type(input.type()), get_shape(input.shape()), dt_float32, input_dequant_paras);
         auto output_quant = graph_.emplace<quantize>(dt_float32, get_shape(output.shape()), to_data_type(output.type()), output_quant_paras);
         input_dequant->name(std::string(output.name()->string_view()) + "/input_dequant");
@@ -97,12 +93,8 @@ DEFINE_TFLITE_LOWER(LEAKY_RELU)
 
     if (input.type() != tflite::TensorType_FLOAT32)
     {
-        quant_param_t input_dequant_paras;
-        input_dequant_paras.scale = to_vector(*input.quantization()->scale());
-        input_dequant_paras.zero_point = to_vector(*input.quantization()->zero_point());
-        quant_param_t output_quant_paras;
-        output_quant_paras.scale = to_vector(*output.quantization()->scale());
-        output_quant_paras.zero_point = to_vector(*output.quantization()->zero_point());
+        quant_param_t input_dequant_paras = to_quant_param(input.quantization());
+        quant_param_t output_quant_paras = to_quant_param(output.quantization());
         auto input_dequant = graph_.emplace<dequantize>(to_data_type(input.type()), get_shape(input.shape()), dt_float32, input_dequant_paras);
         auto output_quant = graph_.emplace<quantize>(dt_float32, get_shape(output.shape()), to_data_type(output.type()), output_quant_paras);
         input_dequant->name(std::string(output.name()->string_view()) + "/input_dequant");

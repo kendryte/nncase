@@ -36,7 +36,7 @@ alphas = [
 @pytest.mark.parametrize('alpha', alphas)
 def test_mobilenetv1(in_shape, alpha, request):
     module = _make_module(in_shape, alpha)
-    test_util.test_tf_module(request.node.name, module, ['cpu', 'k210'])
+    test_util.test_tf_module(request.node.name, module, ['cpu', 'k210', 'k510'])
 
 
 if __name__ == "__main__":

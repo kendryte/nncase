@@ -258,7 +258,7 @@ void transpose_pad_motion_transform::process(transform_context &context)
     for (size_t i = 0; i < paddings.size(); i++)
         paddings[i] = old_p.paddings()[old_tp.perm()[i]];
 
-    auto p = context.graph.emplace<pad>(tp->output().type(), tp->output().shape(), std::move(paddings), old_p.pad_value());
+    auto p = context.graph.emplace<pad>(tp->output().type(), tp->output().shape(), std::move(paddings), old_p.pad_mode(), old_p.pad_value());
     p->name(old_p.name());
     p->input().connect(tp->output());
 

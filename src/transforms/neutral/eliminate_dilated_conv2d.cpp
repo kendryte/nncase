@@ -58,7 +58,7 @@ auto get_pad_crop(conv2d &conv)
 
 auto space_to_batch(conv2d &conv, const xt::svector<padding> &paddings, graph &graph)
 {
-    auto p = graph.emplace<pad>(dt_float32, conv.input().shape(), paddings, 0.f);
+    auto p = graph.emplace<pad>(dt_float32, conv.input().shape(), paddings, pad_constant, 0.f);
     p->name(conv.name());
 
     auto padded_shape = p->output().shape();
@@ -140,7 +140,7 @@ auto batch_to_space(conv2d &conv1, conv2d &conv2, const xt::svector<padding> &cr
     tp->name(conv2.name());
     auto rshape2 = graph.emplace<bitcast>(dt_float32, tp->output().shape(), reshapped_shape2);
     rshape2->name(conv2.name());
-    auto p = graph.emplace<pad>(dt_float32, rshape2->output().shape(), crops, 0.f);
+    auto p = graph.emplace<pad>(dt_float32, rshape2->output().shape(), crops, pad_constant, 0.f);
     p->name(conv2.name());
 
     rshape->input().connect(conv2.output());

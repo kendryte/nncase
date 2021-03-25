@@ -184,3 +184,9 @@ void tflite_importer::convert_op(const tflite::Operator &op)
 
     throw std::runtime_error(std::string("Unsupported tflite opcode: ") + tflite::EnumNameBuiltinOperator(builtin_code));
 }
+
+quant_param_t tflite_importer::to_quant_param(const tflite::QuantizationParameters *param)
+{
+    // TODO: consider of by axis quant
+    return { (int32_t)param->zero_point()->Get(0), param->scale()->Get(0) };
+}

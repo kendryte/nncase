@@ -22,6 +22,11 @@ using namespace nncase;
 using namespace nncase::ir;
 using namespace nncase::ir::transforms;
 
+std::unique_ptr<transform_context> transform::create_context(ir::graph &graph, nncase::target &target)
+{
+    return std::make_unique<transform_context>(graph, target);
+}
+
 bool transform::try_match(node &node, transform_context &context)
 {
     if (on_try_match(node, context))

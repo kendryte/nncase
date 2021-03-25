@@ -62,16 +62,15 @@ void quantize_pad_motion_transform::process(transform_context &context)
     auto &old_q = static_cast<quantize &>(*context.matched_nodes[0]);
     auto &old_p = static_cast<pad &>(*context.matched_nodes[1]);
     auto q_param = old_q.quant_param();
-    assert(q_param.zero_point.size() == 1); // TODO: supprot quant by channel
 
     //dequantize pad_value when pad move down quantize
     auto pad_value = std::clamp(
-        (int32_t)std::round((old_p.pad_value().as<float>() - q_param.zero_point[0]) * q_param.scale[0]),
+        (int32_t)std::round((old_p.pad_value().as<float>() - q_param.zero_point) * q_param.scale),
         0, 255);
 
     auto q = context.graph.emplace<quantize>(dt_float32, old_p.input().shape(), old_p.input().type(), q_param);
     q->name(old_q.name());
-    auto p = context.graph.emplace<pad>(q->output().type(), q->output().shape(), old_p.paddings(), (float_t)pad_value);
+    auto p = context.graph.emplace<pad>(q->output().type(), q->output().shape(), old_p.paddings(), old_p.pad_mode(), (float)pad_value);
     p->name(old_p.name());
 
     p->input().connect(q->output());

@@ -30,6 +30,7 @@ compile_command::compile_command(lyra::cli &cli)
                          .add_argument(lyra::opt(dataset_, "dataset path").name("--dataset").optional().help("calibration dataset, used in post quantization"))
                          .add_argument(lyra::opt(dataset_format_, "dataset format").name("--dataset-format").optional().help("datset format: e.g. image, raw default is " + dataset_format_))
                          .add_argument(lyra::opt(calibrate_method_, "calibrate method").name("--calibrate-method").optional().help("calibrate method: e.g. no_clip, l2, default is " + calibrate_method_))
+                         .add_argument(lyra::opt(is_fpga_).name("--is-fpga").optional().help("use fpga parameters"))
                          .add_argument(lyra::opt(dump_ir_).name("--dump-ir").optional().help("dump ir to .dot"))
                          .add_argument(lyra::opt(dump_asm_).name("--dump-asm").optional().help("dump assembly"))
                          .add_argument(lyra::opt(dump_dir_, "dump directory").name("--dump-dir").optional().help("dump to directory")));
@@ -42,6 +43,7 @@ void compile_command::run()
     c_options.dump_ir = dump_ir_;
     c_options.dump_dir = dump_dir_;
     c_options.target = target_name_;
+    c_options.is_fpga = is_fpga_;
 
     import_options i_options;
     std::vector<std::string> output_arrays;

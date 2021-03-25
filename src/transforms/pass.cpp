@@ -31,17 +31,20 @@ public:
     ir::graph *graph;
     ir::quantizer *quantizer;
     nncase::target *target;
-    std::optional<std::filesystem::path> *dump_dir;
+    std::optional<std::filesystem::path> dump_dir;
     bool need_retry = false;
     transforms::transform *transform;
 
 protected:
     bool visit(node &node) override
     {
-        transform_context context { *graph, *target, quantizer, *dump_dir };
-        if (transform->try_match(node, context))
+        auto context = transform->create_context(*graph, *target);
+        context->quantizer = quantizer;
+        context->dump_dir = dump_dir;
+
+        if (transform->try_match(node, *context))
         {
-            transform->process(context);
+            transform->process(*context);
             need_retry = true;
             return true;
         }
@@ -51,12 +54,12 @@ protected:
 };
 }
 
-void pass::run(graph &graph, target &target, ir::quantizer *quantizer, std::optional<std::filesystem::path> &dump_dir)
+void pass::run(graph &graph, target &target, ir::quantizer *quantizer, std::optional<std::filesystem::path> dump_dir)
 {
     transform_apply_visitor visitor;
     visitor.graph = &graph;
     visitor.target = &target;
-    visitor.dump_dir = &dump_dir;
+    visitor.dump_dir = dump_dir;
     visitor.quantizer = quantizer;
     bool next_pass = false;
 

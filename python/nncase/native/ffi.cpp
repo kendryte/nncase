@@ -217,7 +217,8 @@ PYBIND11_MODULE(_nncase, m)
         .def_readwrite("dump_ir", &compile_options::dump_ir)
         .def_readwrite("dump_asm", &compile_options::dump_asm)
         .def_readwrite("target", &compile_options::target)
-        .def_readwrite("dump_dir", &compile_options::dump_dir);
+        .def_readwrite("dump_dir", &compile_options::dump_dir)
+        .def_readwrite("is_fpga", &compile_options::is_fpga);
 
     py::class_<import_options>(m, "ImportOptions")
         .def(py::init())
@@ -312,4 +313,16 @@ PYBIND11_MODULE(_nncase, m)
         .def("run", [](interpreter &interp) {
             interp.run().unwrap_or_throw();
         });
+
+    m.def("test_target", [](std::string name) {
+        try
+        {
+            auto target = plugin_loader::create_target(name);
+            return true;
+        }
+        catch (...)
+        {
+            return false;
+        }
+    });
 }

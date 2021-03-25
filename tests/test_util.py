@@ -154,7 +154,8 @@ def compile_tflite_nncase(case_name, model, targets, input, n, enable_ptq):
 
 def eval_nncase(case_name, input, targets, enable_ptq):
     for target in targets:
-        case_dir = os.path.join(output_root, case_name, target, 'ptq' if enable_ptq else 'no_ptq')
+        case_dir = os.path.join(output_root, case_name,
+                                target, 'ptq' if enable_ptq else 'no_ptq')
         with open(os.path.join(case_dir, 'test.kmodel'), 'rb') as f:
             kmodel = f.read()
             sim = nncase.Simulator()
@@ -169,7 +170,18 @@ def eval_nncase(case_name, input, targets, enable_ptq):
                     case_dir, 'nncase_result{0}.txt'.format(i)), result)
 
 
+def validate_targets(targets):
+    new_targets = []
+    for t in targets:
+        if nncase.test_target(t):
+            new_targets.append(t)
+        else:
+            print("WARN: target[{0}] not found".format(t))
+    return new_targets
+
+
 def test_tf_module(case_name, module, targets):
+    targets = validate_targets(targets)
     case_name = case_name.replace('[', '_').replace(']', '_')
     case_dir = os.path.join('./tmp', case_name)
     clear(case_dir)
@@ -178,11 +190,13 @@ def test_tf_module(case_name, module, targets):
     out_len, input, calib_data = eval_tflite_gth(case_name, tflite, n)
     compile_tflite_nncase(case_name, tflite, targets, calib_data, n, enable_ptq=False)
     eval_nncase(case_name, input, targets, enable_ptq=False)
-    ret = compare_util.compare_results(case_dir, out_len, targets, enable_ptq=False)
+    ret = compare_util.compare_results(
+        case_dir, out_len, targets, enable_ptq=False)
     assert ret
     compile_tflite_nncase(case_name, tflite, targets, calib_data, n, enable_ptq=True)
     eval_nncase(case_name, input, targets, enable_ptq=True)
-    ret = compare_util.compare_results(case_dir, out_len, targets, enable_ptq=True)
+    ret = compare_util.compare_results(
+        case_dir, out_len, targets, enable_ptq=True)
     assert ret
 
 

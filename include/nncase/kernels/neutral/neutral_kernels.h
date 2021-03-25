@@ -326,15 +326,9 @@ void dequantize(const TQ *CXX_RESTRICT input, float *CXX_RESTRICT output, size_t
 #if __riscv
     riscv_dequantize(input, output, count, param);
 #else
-    size_t channel = static_cast<int>(param.zero_point.size());
-
-    size_t per_channel_count = count / channel;
-    for (size_t i = 0; i < channel; i++)
+    for (size_t i = 0; i < count; i++)
     {
-        for (size_t j = 0; j < per_channel_count; j++)
-        {
-            output[i * per_channel_count + j] = (input[i * per_channel_count + j] - param.zero_point[i]) * param.scale[i];
-        }
+        output[i] = (input[i] - param.zero_point) * param.scale;
     }
 
 #endif
@@ -428,18 +422,11 @@ void quantize(const float *CXX_RESTRICT input, TQ *CXX_RESTRICT output, size_t c
 #if __riscv
     riscv_quantize(input, output, count, param);
 #else
-    size_t channel = static_cast<int>(param.zero_point.size());
-
-    size_t per_channel_count = count / channel;
-    for (size_t i = 0; i < channel; i++)
+    for (size_t i = 0; i < count; i++)
     {
-        for (size_t j = 0; j < per_channel_count; j++)
-        {
-            auto v = (int32_t)std::nearbyintf(input[i * per_channel_count + j] / param.scale[i] + param.zero_point[i]);
-            output[i * per_channel_count + j] = (TQ)std::clamp(v, (int32_t)std::numeric_limits<TQ>::lowest(), (int32_t)std::numeric_limits<TQ>::max());
-        }
+        auto v = (int32_t)std::nearbyintf(input[i] / param.scale + param.zero_point);
+        output[i] = (TQ)std::clamp(v, (int32_t)std::numeric_limits<TQ>::lowest(), (int32_t)std::numeric_limits<TQ>::max());
     }
-
 #endif
 }
 
