@@ -38,6 +38,27 @@ inline size_t get_bytes(datatype_t type, const runtime_shape_t &shape)
     return xt::compute_size(shape) * get_bytes(type);
 }
 
+inline size_t compute_size(const runtime_shape_t &shape, const runtime_shape_t &strides)
+{
+    size_t data_size = 0;
+    for (size_t i = 0; i < shape.size(); i++)
+        data_size += (shape[i] - 1) * strides[i];
+    data_size += strides.back();
+    return data_size;
+}
+
+inline size_t get_bytes(datatype_t type, const runtime_shape_t &shape, const runtime_shape_t &strides)
+{
+    return compute_size(shape, strides) * get_bytes(type);
+}
+
+inline runtime_shape_t get_default_strides(const runtime_shape_t &shape)
+{
+    runtime_shape_t strides(shape.size());
+    xt::compute_strides(shape, xt::layout_type::row_major, strides);
+    return strides;
+}
+
 template <class TShape>
 TShape convert_shape_type(const TShape &shape, datatype_t src, datatype_t dest)
 {

@@ -262,11 +262,11 @@ result<void> runtime_module::output_tensor(size_t index, runtime_tensor tensor) 
         return err(nncase_errc::shape_mismatch);
     if (info.bind_tensor != tensor)
     {
-        if (validate_input_tensor(index, tensor).is_err())
+        if (validate_output_tensor(index, tensor).is_err())
         {
             auto device_tensor = info.device_tensor;
             if (device_tensor.empty())
-                try_var(device_tensor, allocate_input_tensor(index));
+                try_var(device_tensor, allocate_output_tensor(index));
             if (!device_tensor.can_copy_to_without_staging(tensor))
             {
                 try_set(info.staging_tensor, host_runtime_tensor::create(info.range.datatype, info.shape));

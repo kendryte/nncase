@@ -4,6 +4,7 @@ set(SRCS batch_to_space.cpp
          binary.cpp
          broadcast.cpp
          convolution.cpp
+         convert.cpp
          copy.cpp
          dequantize.cpp
          nnil.cpp

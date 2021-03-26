@@ -29,8 +29,8 @@ template <class T>
 result<void> copy_impl(const T *src, T *dest, const runtime_shape_t &shape, const runtime_shape_t &src_strides,
     const runtime_shape_t &dest_strides) noexcept
 {
-    auto src_view = xt::adapt(src, runtime::get_bytes(to_datatype<T>(), src_strides), xt::no_ownership(), shape, src_strides);
-    auto dest_view = xt::adapt(dest, runtime::get_bytes(to_datatype<T>(), dest_strides), xt::no_ownership(), shape, dest_strides);
+    auto src_view = xt::adapt(src, runtime::compute_size(shape, src_strides), xt::no_ownership(), shape, src_strides);
+    auto dest_view = xt::adapt(dest, runtime::compute_size(shape, dest_strides), xt::no_ownership(), shape, dest_strides);
     std::copy(src_view.begin(), src_view.end(), dest_view.begin());
     return ok();
 }

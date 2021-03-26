@@ -22,13 +22,6 @@ using namespace nncase::runtime;
 
 namespace
 {
-runtime_shape_t to_strides(const runtime_shape_t &shape)
-{
-    runtime_shape_t strides(shape.size());
-    xt::compute_strides(shape, xt::layout_type::row_major, strides);
-    return strides;
-}
-
 class host_runtime_tensor_type : public runtime_tensor_type
 {
 public:
@@ -45,7 +38,7 @@ public:
     result<void> copy_to_same_type(const runtime_tensor &src, const runtime_tensor &dest) noexcept override
     {
         auto buffer_src = host_runtime_tensor::buffer(src).unwrap();
-        auto buffer_dest = host_runtime_tensor::buffer(src).unwrap();
+        auto buffer_dest = host_runtime_tensor::buffer(dest).unwrap();
         if (src.datatype() != dest.datatype())
             return err(nncase_errc::datatype_mismatch);
         if (src.shape() != dest.shape())
@@ -249,17 +242,17 @@ result<runtime_tensor> host_runtime_tensor::create(datatype_t datatype, runtime_
 
 result<runtime_tensor> host_runtime_tensor::create(datatype_t datatype, runtime_shape_t shape) noexcept
 {
-    return create(datatype, shape, to_strides(shape));
+    return create(datatype, shape, get_default_strides(shape));
 }
 
 result<runtime_tensor> host_runtime_tensor::create(datatype_t datatype, runtime_shape_t shape, gsl::span<gsl::byte> data, bool copy) noexcept
 {
-    return create(datatype, shape, to_strides(shape), data, copy);
+    return create(datatype, shape, get_default_strides(shape), data, copy);
 }
 
 result<runtime_tensor> host_runtime_tensor::create(datatype_t datatype, runtime_shape_t shape, gsl::span<gsl::byte> data, data_deleter_t data_deleter) noexcept
 {
-    return create(datatype, shape, to_strides(shape), data, std::move(data_deleter));
+    return create(datatype, shape, get_default_strides(shape), data, std::move(data_deleter));
 }
 
 result<gsl::span<gsl::byte>> host_runtime_tensor::buffer(const runtime_tensor &tensor) noexcept

@@ -5,6 +5,7 @@ set(SRCS tflite_importer.cpp
          ops/transpose_conv.cpp
          ops/pool2d.cpp
          ops/binary.cpp
+         ops/cast.cpp
          ops/reduce.cpp
          ops/unary.cpp
          ops/concat.cpp

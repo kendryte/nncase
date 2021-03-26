@@ -13,6 +13,7 @@ set(SRCS runtime_module.cpp
          ops/tensor.broadcast.cpp
          ops/tensor.call.cpp
          ops/tensor.conv2d.cpp
+         ops/tensor.convert.cpp
          ops/tensor.dequantize.cpp
          ops/tensor.pad.cpp
          ops/tensor.quantize.cpp

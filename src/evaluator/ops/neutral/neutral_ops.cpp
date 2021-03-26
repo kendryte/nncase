@@ -87,41 +87,6 @@ void nop_evaluator(ir::node &, module_evaluate_context &)
 
 namespace nncase::ir
 {
-template <datatype_t src_type>
-void ConvertIfDestTypeMatches(convert &node, module_evaluate_context &context)
-{
-    switch (node.new_type())
-    {
-#define CONVERT_IF_TYPES_MATCH(type)                                                      \
-    case (type):                                                                          \
-        ConvertIfTypesMatch<to_cpp_type_t<src_type>, to_cpp_type_t<type>>(node, context); \
-        break;
-        CONVERT_IF_TYPES_MATCH(dt_int8)
-        CONVERT_IF_TYPES_MATCH(dt_uint8)
-        CONVERT_IF_TYPES_MATCH(dt_uint32)
-        CONVERT_IF_TYPES_MATCH(dt_float32)
-        CONVERT_IF_TYPES_MATCH(dt_bfloat16)
-#undef CONVERT_IF_TYPES_MATCH
-    default:
-        throw std::runtime_error("Not supported element type");
-        break;
-    }
-}
-
-template <typename src_type, typename dst_type>
-void ConvertIfTypesMatch(convert &node, module_evaluate_context &context)
-{
-    auto input = host_runtime_tensor::buffer(context.memory_at(node.input())).unwrap_or_throw().template as_span<src_type>();
-    auto output = host_runtime_tensor::buffer(context.memory_at(node.output())).unwrap_or_throw().template as_span<dst_type>();
-
-    auto input_ptr = input.data();
-    auto output_ptr = output.data();
-    for (size_t i = 0; i < input.size(); i++)
-    {
-        output_ptr[i] = static_cast<dst_type>(input_ptr[i]);
-    }
-}
-
 void register_neutral_evaluators()
 {
     register_evaluator(op_input_node, nop_evaluator);
@@ -466,22 +431,15 @@ void register_neutral_evaluators()
 
     register_evaluator(op_convert, [](ir::node &node, module_evaluate_context &context) {
         auto &rnode = static_cast<convert &>(node);
-        switch (rnode.input().type())
-        {
-#define CONVERT_IF_DEST_TYPE_MATCHES(type)              \
-    case (type):                                        \
-        ConvertIfDestTypeMatches<type>(rnode, context); \
-        break;
-            CONVERT_IF_DEST_TYPE_MATCHES(dt_int8)
-            CONVERT_IF_DEST_TYPE_MATCHES(dt_uint8)
-            CONVERT_IF_DEST_TYPE_MATCHES(dt_uint32)
-            CONVERT_IF_DEST_TYPE_MATCHES(dt_float32)
-            CONVERT_IF_DEST_TYPE_MATCHES(dt_bfloat16)
-#undef CONVERT_IF_DEST_TYPE_MATCHES
-        default:
-            throw std::runtime_error("Not supported element type");
-            break;
-        }
+
+        auto input = context.memory_at(rnode.input());
+        auto output = context.memory_at(rnode.output());
+        auto input_mem = host_runtime_tensor::buffer(input).unwrap_or_throw();
+        auto output_mem = host_runtime_tensor::buffer(output).unwrap_or_throw();
+
+        kernels::convert(input.datatype(), output.datatype(), input_mem.data(), output_mem.data(), input.shape(),
+            input.strides(), output.strides())
+            .unwrap_or_throw();
     });
 }
 

@@ -164,3 +164,13 @@ void convert_concat_motion_up_transform::process(transform_context &context)
     for (auto &in : dup(inputs))
         in->connect(c->output());
 }
+
+bool convert_concat_motion_down_transform::on_try_match([[maybe_unused]] node &node, [[maybe_unused]] transform_context &context)
+{
+    throw std::runtime_error("Unimplemented");
+}
+
+void convert_concat_motion_down_transform::process([[maybe_unused]] transform_context &context)
+{
+    throw std::runtime_error("Unimplemented");
+}
