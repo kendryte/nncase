@@ -53,7 +53,7 @@ public:
 
     ir::quantizer *quantizer() noexcept { return quantizer_.get(); }
 
-    void enable_ptq(target &target);
+    void enable_ptq(target &target, ir::calibrate_method calib_method);
     void evaluate();
 
     void begin_collect_distribution();
@@ -78,7 +78,7 @@ public:
     module_evaluate_context &module_context(ir::graph &graph);
     module_evaluate_context &main_module_context();
 
-    void enable_ptq(target &target);
+    void enable_ptq(target &target, ir::calibrate_method calib_method);
     void evaluate();
 
     void begin_collect_distribution();

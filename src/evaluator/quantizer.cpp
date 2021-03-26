@@ -65,6 +65,21 @@ static std::vector<float> smooth_distribution(const std::vector<float> &p, const
     return ret;
 }
 
+static std::vector<float> calc_cdf(std::vector<float> &p)
+{
+    p = smooth_distribution(p);
+    auto p_sum = std::reduce(p.begin(), p.end());
+    for (auto &value : p)
+        value = value / p_sum;
+
+    std::vector<float> cdf(p.size(), 0.f);
+    cdf[0] = p[0];
+    for (size_t i = 1; i < p.size(); i++)
+        cdf[i] = cdf[i - 1] + p[i];
+
+    return cdf;
+}
+
 float compute_kld(xtl::span<float> p, xtl::span<float> q)
 {
     if (!(p.size() && q.size()) || p.size() != q.size())
@@ -401,12 +416,32 @@ void quantizer::histogram::finish()
             }
         }
     }
+    else if (cali_method_ == calibrate_method::cdf)
+    {
+        auto slope_threshold = 0.001f;
+        auto cdf = calc_cdf(src_bins_);
+
+        size_t lower_threshold = 0;
+        for (; lower_threshold <= zero_threshold; lower_threshold++)
+        {
+            if (cdf[lower_threshold] / (lower_threshold + 1) * src_bins_.size() > slope_threshold)
+                break;
+        }
+        size_t upper_threshold = src_bins_.size() - 1;
+        for (; upper_threshold >= lower_threshold + dest_bins && upper_threshold >= zero_threshold; upper_threshold--)
+        {
+            if ((1 - cdf[upper_threshold]) / (src_bins_.size() - upper_threshold) * src_bins_.size() > slope_threshold)
+                break;
+        }
+
+        threshold = { lower_threshold, upper_threshold };
+    }
 
     assert(threshold);
     if (threshold)
     {
-        auto opt_min = threshold->first * src_bin_interval_ + range_.min;
-        auto opt_max = threshold->second * src_bin_interval_ + range_.min;
+        auto opt_min = (threshold->first - 0.5f) * src_bin_interval_ + range_.min;
+        auto opt_max = (threshold->second + 0.5f) * src_bin_interval_ + range_.min;
         optimal_range_ = { opt_min, opt_max };
     }
 
