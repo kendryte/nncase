@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "nncase/ir/quantizer.h"
 #include <fstream>
 #include <magic_enum.hpp>
 #include <nncase/codegen/model_builder.h>
@@ -27,9 +28,25 @@
 using namespace nncase;
 using namespace nncase::data;
 using namespace nncase::runtime;
+using namespace nncase::ir;
 
 namespace
 {
+calibrate_method to_calibrate_method(std::string name)
+{
+    if (name == "no_clip")
+        return calibrate_method::no_clip;
+    if (name == "l2")
+        return calibrate_method::l2;
+    if (name == "kld_m0")
+        return calibrate_method::kld_m0;
+    if (name == "kld_m1")
+        return calibrate_method::kld_m1;
+    if (name == "cdf")
+        return calibrate_method::cdf;
+    return calibrate_method::no_clip;
+}
+
 void do_dump_graph(ir::graph &graph, std::ostream &output)
 {
     output << "digraph \"graph\" {\n";
@@ -198,7 +215,13 @@ private:
         schedule::scheduler sched(*target_, graph, graph.outputs());
         auto sched_result = sched.schedule(true);
         ir::evaluator evaluator(sched_result);
-        evaluator.enable_ptq(*target_);
+        ir::calibrate_method calib_method;
+        if (ptq_options_.index() == 0)
+            calib_method = to_calibrate_method(std::get<ptq_dataset_options>(ptq_options_).calibrate_method);
+        else
+            calib_method = to_calibrate_method(std::get<ptq_tensor_options>(ptq_options_).calibrate_method);
+
+        evaluator.enable_ptq(*target_, calib_method);
 
         if (graph.inputs().size() != 1)
             throw std::invalid_argument("PTQ only support models that have single 1 input");

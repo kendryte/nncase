@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "nncase/ir/quantizer.h"
 #include <chrono>
 #include <nncase/ir/evaluator.h>
 #include <nncase/ir/op_utils.h>
@@ -80,9 +81,9 @@ runtime_tensor module_evaluate_context::memory_at(const output_connector &conn)
     return host_runtime_tensor::create(alloc.type, to(alloc.shape), to(alloc.strides), buffer, false).unwrap_or_throw();
 }
 
-void module_evaluate_context::enable_ptq(target &target)
+void module_evaluate_context::enable_ptq(target &target, ir::calibrate_method calib_method)
 {
-    quantizer_ = target.create_quantizer(sched_.graph->module_type());
+    quantizer_ = target.create_quantizer(sched_.graph->module_type(), calib_method);
 }
 
 void module_evaluate_context::evaluate()
@@ -161,10 +162,10 @@ runtime_tensor evaluator::memory_at(const output_connector &conn)
     return main_module_context().memory_at(conn);
 }
 
-void evaluator::enable_ptq(target &target)
+void evaluator::enable_ptq(target &target, ir::calibrate_method calib_method)
 {
     for (auto &module_p : module_ctxs_)
-        module_p.second.enable_ptq(target);
+        module_p.second.enable_ptq(target, calib_method);
 }
 
 void evaluator::evaluate()

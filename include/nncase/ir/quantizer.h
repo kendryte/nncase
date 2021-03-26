@@ -32,7 +32,8 @@ enum class calibrate_method
     no_clip,
     l2,
     kld_m0,
-    kld_m1
+    kld_m1,
+    cdf
 };
 
 class NNCASE_API quantizer
