@@ -37,13 +37,19 @@
 #if gsl_CPP17_OR_GREATER
 #define NNCASE_INLINE_VAR inline
 #define NNCASE_UNUSED [[maybe_unused]]
+namespace nncase
+{
 template <class Callable, class... Args>
 using invoke_result_t = std::invoke_result_t<Callable, Args...>;
+}
 #else
 #define NNCASE_INLINE_VAR
 #define NNCASE_UNUSED
+namespace nncase
+{
 template <class Callable, class... Args>
 using invoke_result_t = std::result_of_t<Callable(Args...)>;
+}
 #endif
 
 #define NNCASE_LITTLE_ENDIAN 1

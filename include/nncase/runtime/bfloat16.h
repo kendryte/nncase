@@ -82,7 +82,8 @@ public:
         return result.f32;
     }
 
-    uint16_t raw() const noexcept { return value_; }
+    const uint16_t &raw() const noexcept { return value_; }
+    uint16_t &raw() noexcept { return value_; }
 
     static constexpr bfloat16 from_raw(uint16_t v) noexcept
     {
@@ -193,6 +194,18 @@ DEFINE_BF16_BINARY(bool, <=)
 DEFINE_BF16_BINARY(bool, >=)
 DEFINE_BF16_BINARY(bool, >)
 
+#define DEFINE_BF16_BINARY_SELF_MOD(x, op)                        \
+    inline bfloat16 &operator x(bfloat16 &a, bfloat16 b) noexcept \
+    {                                                             \
+        a = a op b;                                               \
+        return a;                                                 \
+    }
+
+DEFINE_BF16_BINARY_SELF_MOD(+=, +)
+DEFINE_BF16_BINARY_SELF_MOD(-=, -)
+DEFINE_BF16_BINARY_SELF_MOD(*=, *)
+DEFINE_BF16_BINARY_SELF_MOD(/=, /)
+
 inline bfloat16 operator-(bfloat16 a) noexcept
 {
     return bfloat16(-float(a));
@@ -205,7 +218,7 @@ inline bool operator==(const bfloat16 &lhs, const bfloat16 &rhs) noexcept
 
 inline bool operator!=(const bfloat16 &lhs, const bfloat16 &rhs) noexcept
 {
-    return lhs.raw() == rhs.raw();
+    return lhs.raw() != rhs.raw();
 }
 }
 
