@@ -65,7 +65,7 @@ public:
     bfloat16() noexcept = default;
 
     explicit bfloat16(float v) noexcept
-        : value_(round_to_bfloat16(v).value_) { }
+        : value_(truncate_to_bfloat16(v).value_) { }
 
     template <class T, class = std::enable_if_t<std::is_integral_v<T> || std::is_floating_point_v<T>>>
     explicit bfloat16(const T &val) noexcept
@@ -334,6 +334,14 @@ inline bfloat16 ceil(const bfloat16 &a)
 }
 inline bfloat16 round(const bfloat16 &a)
 {
+    return bfloat16(std::round(float(a)));
+}
+inline bfloat16 nearbyint(const bfloat16 &a)
+{
     return bfloat16(std::nearbyint(float(a)));
+}
+inline long lrint(const bfloat16 &a)
+{
+    return std::lrint(float(a));
 }
 } // namespace std
