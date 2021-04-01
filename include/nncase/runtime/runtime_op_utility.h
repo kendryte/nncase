@@ -43,7 +43,7 @@ inline size_t compute_size(const runtime_shape_t &shape, const runtime_shape_t &
     size_t data_size = 0;
     for (size_t i = 0; i < shape.size(); i++)
         data_size += (shape[i] - 1) * strides[i];
-    data_size += strides.back();
+    data_size += strides.back() ? strides.back() : 1;
     return data_size;
 }
 

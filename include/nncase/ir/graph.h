@@ -48,6 +48,7 @@ public:
     std::span<input_node *> inputs() noexcept { return inputs_; }
     std::span<output_node *> outputs() noexcept { return outputs_; }
     std::span<std::unique_ptr<graph>> subgraphs() noexcept { return subgraphs_; }
+    std::vector<graph *> reachable_graphs() noexcept;
 
     std::span<std::unique_ptr<node> const> nodes() const noexcept { return nodes_; }
     std::span<input_node *const> inputs() const noexcept { return inputs_; }

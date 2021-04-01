@@ -175,8 +175,6 @@ private:
     {
         graph.merge_module_regions();
         dump_graph(graph, "merge_module_regions");
-        for (auto &subgraph : graph.subgraphs())
-            dump_graph(*subgraph, "merge_module_regions");
     }
 
     void optimize_target_dependent(ir::graph &graph)
@@ -342,9 +340,8 @@ private:
             dump_graph(graph, name);
         };
 
-        graph_runner(root_graph);
-        for (auto &subgraph : root_graph.subgraphs())
-            graph_runner(*subgraph);
+        for (auto graph : root_graph.reachable_graphs())
+            graph_runner(*graph);
     }
 
     void dump_graph(ir::graph &graph, std::string_view prefix)
@@ -355,6 +352,9 @@ private:
             std::filesystem::create_directories(dump_path);
             graph.assign_names();
             ir::dump_graph(graph, dump_path);
+
+            for (auto &subgraph : graph.subgraphs())
+                dump_graph(*subgraph, prefix);
         }
     }
 

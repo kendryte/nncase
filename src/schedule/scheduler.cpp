@@ -391,19 +391,14 @@ schedule_result scheduler::schedule(bool skip_buffer_alias)
         result = module_schedule_result { context };
     };
 
+    auto reachable_graphs = main_graph_.reachable_graphs();
     schedule_result result;
     result.main_module = &main_graph_;
-    result.graph_orders.reserve(main_graph_.subgraphs().size() + 1);
-
-    // 1. main graph
-    schedule_module(*result.main_module, outputs_, result.modules[result.main_module]);
-    result.graph_orders.emplace_back(result.main_module);
-
-    // 2. subgraphs
-    for (auto &subgraph : main_graph_.subgraphs())
+    result.graph_orders.reserve(reachable_graphs.size());
+    for (auto subgraph : reachable_graphs)
     {
-        schedule_module(*subgraph, subgraph->outputs(), result.modules[subgraph.get()]);
-        result.graph_orders.emplace_back(subgraph.get());
+        schedule_module(*subgraph, subgraph->outputs(), result.modules[subgraph]);
+        result.graph_orders.emplace_back(subgraph);
     }
 
     return result;

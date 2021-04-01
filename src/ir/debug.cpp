@@ -41,6 +41,8 @@ std::unordered_map<datatype_t, int32> onnx_types_map {
     { dt_bfloat16, onnx::TensorProto_DataType_BFLOAT16 }
 };
 
+std::unordered_set<char> char_need_escape = { '/', ':' };
+
 int32 to_pb(datatype_t dt)
 {
     assert(onnx_types_map.contains(dt));
@@ -150,7 +152,14 @@ void ir::dump_graph(const graph &src_graph, const std::filesystem::path &dst_pat
         }
     }
 
-    auto filename = dst_path / (src_graph.name() + ".nnir.pb");
+    auto escaped_name = src_graph.name();
+    for (auto &c : escaped_name)
+    {
+        if (char_need_escape.contains(c))
+            c = '_';
+    }
+
+    auto filename = dst_path / (escaped_name + ".nnir.pb");
     auto dirname = filename.parent_path();
     if (!std::filesystem::exists(dirname))
         std::filesystem::create_directories(dirname);

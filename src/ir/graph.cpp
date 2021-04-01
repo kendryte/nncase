@@ -49,6 +49,19 @@ void add_region_node(node &root, std::vector<node *> &region_nodes, std::unorder
         }
     }
 }
+
+void add_reachable_graphs(graph &root, std::vector<graph *> &graphs)
+{
+    graphs.emplace_back(&root);
+    std::unordered_set<graph *> subgraphs;
+    auto visitor = make_relay_ir_visitor([&](node &node) {
+        if (auto c = node_cast<call>(node))
+            subgraphs.emplace(&c->target());
+    });
+    visitor.visit(root);
+    for (auto &g : subgraphs)
+        add_reachable_graphs(*g, graphs);
+}
 }
 
 graph::graph() noexcept
@@ -263,4 +276,11 @@ void graph::merge_module_regions()
             break;
         }
     }
+}
+
+std::vector<graph *> graph::reachable_graphs() noexcept
+{
+    std::vector<graph *> graphs;
+    add_reachable_graphs(*this, graphs);
+    return graphs;
 }
