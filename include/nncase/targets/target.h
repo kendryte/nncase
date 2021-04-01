@@ -77,6 +77,7 @@ public:
     virtual void register_quantize_annotation_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr);
     virtual std::unique_ptr<ir::quantizer> create_quantizer(const module_type_t &type, ir::calibrate_method calib_method);
     virtual void register_quantize_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr);
+    virtual void register_target_dependent_after_quantization_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr);
     virtual void register_allocation_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr) = 0;
     virtual std::unique_ptr<codegen::module_builder> create_module_builder(const module_type_t &type, std::string_view module_name, const codegen::module_builder_params &params);
 

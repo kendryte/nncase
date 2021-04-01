@@ -136,7 +136,10 @@ public:
             quantize_graph(graph_, evaluator);
         }
 
-        std::cout << "5. Merge module regions..." << std::endl;
+        std::cout << "5. Optimize target dependent after quantization..." << std::endl;
+        optimize_target_dependent_after_quant(graph_);
+
+        std::cout << "6. Merge module regions..." << std::endl;
         optimize_merge_module_regions(graph_);
     }
 
@@ -181,6 +184,13 @@ private:
     {
         run_passes("target_dep", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr) {
             target_->register_target_dependent_passes(module_type, pmgr);
+        });
+    }
+
+    void optimize_target_dependent_after_quant(ir::graph &graph)
+    {
+        run_passes("target_dep_after_quant", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr) {
+            target_->register_target_dependent_after_quantization_passes(module_type, pmgr);
         });
     }
 
@@ -289,7 +299,7 @@ private:
 
             if (stage == 1)
             {
-                std::cout << "4.3. Find optimal quantization ranges..." << std::endl;
+                std::cout << "4.2.3. Find optimal quantization ranges..." << std::endl;
                 evaluator.end_collect_distribution(options.progress);
             }
         }
@@ -322,7 +332,7 @@ private:
 
             if (stage == 1)
             {
-                std::cout << "4.3. Find optimal quantization ranges..." << std::endl;
+                std::cout << "4.2.3. Find optimal quantization ranges..." << std::endl;
                 evaluator.end_collect_distribution(options.progress);
             }
         }

@@ -39,6 +39,10 @@ void target::register_quantize_passes([[maybe_unused]] const module_type_t &type
 {
 }
 
+void target::register_target_dependent_after_quantization_passes([[maybe_unused]] const module_type_t &type, [[maybe_unused]] ir::transforms::pass_manager &pass_mgr)
+{
+}
+
 std::unique_ptr<ir::quantizer> target::create_quantizer([[maybe_unused]] const module_type_t &type, ir::calibrate_method calib_method)
 {
     return std::make_unique<ir::quantizer>(calib_method, 1024);
