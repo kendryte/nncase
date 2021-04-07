@@ -66,7 +66,7 @@ keep_dims = [
 @pytest.mark.parametrize('keep_dims', keep_dims)
 def test_reduce(in_shape, axis, keep_dims, request):
     module = _make_module(in_shape, axis, keep_dims)
-    test_util.test_tf_module(request.node.name, module, ['cpu'])
+    test_util.test_tf_module(request.node.name, module, ['cpu', 'k210', 'k510'])
 
 
 if __name__ == "__main__":

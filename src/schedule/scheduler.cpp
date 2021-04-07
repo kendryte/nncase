@@ -184,7 +184,9 @@ void schedule_context::analyze_buffer_alias()
             if ((c->axis() == 0 || std::all_of(inputs[0]->shape().begin(), inputs[0]->shape().begin() + c->axis(), [](size_t dim) { return dim == 1; }))
                 && std::all_of(inputs.begin(), inputs.end(), [this](input_connector *in) {
                        auto &in_buf = logical_buffers.at(in->connection());
-                       return (in_buf.memory_location() != mem_input && in_buf.memory_location() != mem_rdata)
+                       return (in_buf.memory_location() != mem_input
+                                  && in_buf.memory_location() != mem_rdata
+                                  && in_buf.memory_location() != mem_output)
                            && in->connection()->owner().runtime_opcode() != op_slice;
                    })
                 && std::count_if(outputs.begin(), outputs.end(), [](input_connector *in) {

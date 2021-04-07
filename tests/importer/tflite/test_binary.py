@@ -33,7 +33,7 @@ def _make_module(in_shape, v_shape):
             outs.append(x + self.v)
             outs.append(x - self.v)
             outs.append(x * self.v)
-            outs.append(x / (x + self.v))
+            outs.append(self.v / x)
             outs.append(tf.minimum(x, self.v))
             outs.append(tf.maximum(x, self.v))
             return outs
@@ -66,7 +66,7 @@ rhs_shapes = [
 @pytest.mark.parametrize('rhs_shape', rhs_shapes)
 def test_binary(lhs_shape, rhs_shape, request):
     module = _make_module(lhs_shape, rhs_shape)
-    test_util.test_tf_module(request.node.name, module, ['cpu'])
+    test_util.test_tf_module(request.node.name, module, ['cpu', 'k210', 'k510'])
 
 
 if __name__ == "__main__":

@@ -24,8 +24,9 @@ using namespace nncase::ir;
 namespace
 {
 std::unordered_set<node_opcode> dontcse_ops { op_input_node, op_output_node, op_uninitialized, op_ignore_node };
+std::unordered_set<node_opcode> neutral_region_ops { op_bitcast, op_constant };
 
-void add_region_node(node &root, std::vector<node *> &region_nodes, std::unordered_set<node *> &visited)
+void add_region_node(node &root, const module_type_t &module_type, std::vector<node *> &region_nodes, std::unordered_set<node *> &visited)
 {
     if (visited.emplace(&root).second)
     {
@@ -34,8 +35,9 @@ void add_region_node(node &root, std::vector<node *> &region_nodes, std::unorder
         for (auto in : root.inputs())
         {
             auto &conn = in->connection()->owner();
-            if (conn.module_type() == root.module_type())
-                add_region_node(conn, region_nodes, visited);
+            if (conn.module_type() == module_type
+                || neutral_region_ops.contains(conn.runtime_opcode()))
+                add_region_node(conn, module_type, region_nodes, visited);
         }
 
         for (auto out : root.outputs())
@@ -43,8 +45,9 @@ void add_region_node(node &root, std::vector<node *> &region_nodes, std::unorder
             for (auto in : out->connections())
             {
                 auto &conn = in->owner();
-                if (conn.module_type() == root.module_type())
-                    add_region_node(conn, region_nodes, visited);
+                if (conn.module_type() == module_type
+                    || neutral_region_ops.contains(conn.runtime_opcode()))
+                    add_region_node(conn, module_type, region_nodes, visited);
             }
         }
     }
@@ -251,7 +254,7 @@ void graph::merge_module_regions()
         {
             std::vector<node *> region_nodes;
             std::unordered_set<node *> visited;
-            add_region_node(*first_node, region_nodes, visited);
+            add_region_node(*first_node, first_node->module_type(), region_nodes, visited);
             auto split = split_subgraph(region_nodes);
             auto &subg = add_subgraph(std::move(split.subgraph));
             auto c = emplace<call>(subg);

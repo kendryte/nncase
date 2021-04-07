@@ -57,7 +57,7 @@ perms = [
 def test_transpose(in_shape, perm, request):
     if len(perm) == len(in_shape):
         module = _make_module(in_shape, perm)
-        test_util.test_tf_module(request.node.name, module, ['cpu'])
+        test_util.test_tf_module(request.node.name, module, ['cpu', 'k210', 'k510'])
 
 
 if __name__ == "__main__":

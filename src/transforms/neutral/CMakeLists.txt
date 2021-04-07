@@ -25,4 +25,5 @@ target_sources(transforms PRIVATE
     clamp_to_binary.cpp
     take_to_slice.cpp
     fold_conv2d_biasadd.cpp
+    remove_convert.cpp
     )
