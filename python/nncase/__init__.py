@@ -14,5 +14,5 @@
 #
 """NNCase."""
 from . import base
-from _nncase import Compiler, CompileOptions, ImportOptions, PTQTensorOptions, MemoryRange, RuntimeTensor, Simulator
+from _nncase import Compiler, CompileOptions, ImportOptions, PTQTensorOptions, MemoryRange, RuntimeTensor, Simulator, GraphEvaluator
 from _nncase import test_target

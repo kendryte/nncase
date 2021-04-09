@@ -69,7 +69,7 @@ namespace schedule
 
     struct schedule_context;
 
-    class scheduler
+    class NNCASE_API scheduler
     {
     public:
         scheduler(target &target, ir::graph &main_graph, std::span<ir::output_node *> outputs)

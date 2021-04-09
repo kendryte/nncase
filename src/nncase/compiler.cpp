@@ -88,6 +88,8 @@ public:
         set_target(options.target);
     }
 
+    nncase::target &target() noexcept { return *target_; }
+
 #define BEGIN_IMPORT()                              \
     std::cout << "1. Import graph..." << std::endl; \
                                                     \
@@ -141,6 +143,23 @@ public:
 
         std::cout << "6. Merge module regions..." << std::endl;
         optimize_merge_module_regions(graph_);
+    }
+
+    ir::graph &graph(uint32_t stage) override
+    {
+        if (stage > 1)
+        {
+            std::cout << "2. Optimize target independent..." << std::endl;
+            optimize_target_independent(graph_);
+        }
+
+        if (stage > 2)
+        {
+            std::cout << "3. Optimize target dependent..." << std::endl;
+            optimize_target_dependent(graph_);
+        }
+
+        return graph_;
     }
 
     void gencode(std::ostream &output) override
@@ -389,7 +408,7 @@ private:
     target_options target_options_;
     std::variant<ptq_dataset_options, ptq_tensor_options> ptq_options_;
     bool use_ptq_ = false;
-    std::unique_ptr<target> target_;
+    std::unique_ptr<nncase::target> target_;
 };
 }
 

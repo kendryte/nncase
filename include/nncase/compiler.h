@@ -23,8 +23,15 @@
 #include <unordered_map>
 #include <vector>
 
+namespace nncase::ir
+{
+class graph;
+}
+
 namespace nncase
 {
+class target;
+
 struct compile_options
 {
     bool dump_ir;
@@ -67,6 +74,8 @@ public:
     virtual void import_tflite(std::span<const uint8_t> model, const import_options &options) = 0;
     virtual void use_ptq(ptq_dataset_options options) = 0;
     virtual void use_ptq(ptq_tensor_options options) = 0;
+    virtual ir::graph &graph(uint32_t stage) = 0;
+    virtual nncase::target &target() = 0;
     virtual void compile() = 0;
     virtual void gencode(std::ostream &output) = 0;
 };

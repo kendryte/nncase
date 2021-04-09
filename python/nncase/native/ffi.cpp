@@ -16,6 +16,8 @@
 #include <iostream>
 #include <nncase/compiler.h>
 #include <nncase/ir/debug.h>
+#include <nncase/ir/evaluator.h>
+#include <nncase/ir/graph.h>
 #include <nncase/runtime/interpreter.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/version.h>
@@ -201,6 +203,46 @@ void LaunchDebugger()
         Sleep(100);
 }
 #endif
+
+schedule::schedule_result schedule(target &target, ir::graph &graph)
+{
+    schedule::scheduler sched(target, graph, graph.outputs());
+    return sched.schedule(true);
+}
+
+class graph_evaluator
+{
+public:
+    graph_evaluator(target &target, ir::graph &graph)
+        : graph_(graph), schedule_result_(schedule(target, graph)), evaluator_(schedule_result_)
+    {
+    }
+
+    size_t outputs_size() const noexcept
+    {
+        return graph_.outputs().size();
+    }
+
+    runtime::runtime_tensor input_at(size_t index)
+    {
+        return evaluator_.input_at(index);
+    }
+
+    runtime::runtime_tensor output_at(size_t index)
+    {
+        return evaluator_.output_at(index);
+    }
+
+    void run()
+    {
+        evaluator_.evaluate();
+    }
+
+private:
+    ir::graph &graph_;
+    schedule::schedule_result schedule_result_;
+    ir::evaluator evaluator_;
+};
 }
 
 PYBIND11_MODULE(_nncase, m)
@@ -237,6 +279,12 @@ PYBIND11_MODULE(_nncase, m)
         })
         .def_readwrite("samples_count", &ptq_tensor_options::samples_count);
 
+    py::class_<graph_evaluator>(m, "GraphEvaluator")
+        .def_property_readonly("outputs_size", &graph_evaluator::outputs_size)
+        .def("get_input_tensor", &graph_evaluator::input_at)
+        .def("get_output_tensor", &graph_evaluator::output_at)
+        .def("run", &graph_evaluator::run);
+
     py::class_<compiler>(m, "Compiler")
         .def(py::init(&compiler::create))
         .def("import_tflite", &compiler::import_tflite)
@@ -249,6 +297,10 @@ PYBIND11_MODULE(_nncase, m)
             std::stringstream ss;
             c.gencode(ss);
             return py::bytes(ss.str());
+        })
+        .def("create_evaluator", [](compiler &c, uint32_t stage) {
+            auto &graph = c.graph(stage);
+            return std::make_unique<graph_evaluator>(c.target(), graph);
         });
 
     py::class_<memory_range>(m, "MemoryRange")
@@ -260,7 +312,7 @@ PYBIND11_MODULE(_nncase, m)
         .def_readwrite("size", &memory_range::size);
 
     py::class_<runtime_tensor>(m, "RuntimeTensor")
-        .def("from_numpy", [](py::array arr) {
+        .def_static("from_numpy", [](py::array arr) {
             auto src_buffer = arr.request();
             auto datatype = from_dtype(arr.dtype());
             auto tensor = host_runtime_tensor::create(
@@ -272,6 +324,9 @@ PYBIND11_MODULE(_nncase, m)
                               .unwrap_or_throw();
             arr.inc_ref();
             return tensor;
+        })
+        .def("copy_to", [](runtime_tensor &from, runtime_tensor &to) {
+            from.copy_to(to).unwrap_or_throw();
         })
         .def("to_numpy", [](runtime_tensor &tensor) {
             auto host = tensor.as_host().unwrap_or_throw();

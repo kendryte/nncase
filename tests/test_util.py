@@ -89,6 +89,7 @@ def gen_input(case_name, input_tensor):
     save_numpy_array_as_txt(os.path.join(input_dir, 'input.txt'), input_data)
     return input_data
 
+
 def gen_calib_data(case_name, input_tensor, n):
     input_dir = os.path.join(output_root, case_name)
     input_tensor['shape'][0] *= n
@@ -100,8 +101,10 @@ def gen_calib_data(case_name, input_tensor, n):
         input_data = np.random.rand(*input_tensor['shape']) * 2 - 1
     input_data = input_data.astype(dtype=input_tensor['dtype'])
     input_data.tofile(os.path.join(input_dir, 'calib_data.bin'))
-    save_numpy_array_as_txt(os.path.join(input_dir, 'calib_data.txt'), input_data)
+    save_numpy_array_as_txt(os.path.join(
+        input_dir, 'calib_data.txt'), input_data)
     return input_data
+
 
 def eval_tflite_gth(case_name, tflite, n):
     interp = tf.lite.Interpreter(model_content=tflite)
@@ -127,6 +130,32 @@ def eval_tflite_gth(case_name, tflite, n):
     return out_len, input, calib_data
 
 
+def graph_eval_tflite_nncase(case_name, model, targets, input, enable_ptq):
+    import_options = nncase.ImportOptions()
+    compile_options = nncase.CompileOptions()
+    compile_options.dump_asm = True
+    compile_options.dump_ir = True
+    for target in targets:
+        case_dir = os.path.join(output_root, case_name,
+                                target, 'eval', 'ptq' if enable_ptq else 'no_ptq')
+        if not os.path.exists(case_dir):
+            os.makedirs(case_dir)
+        compile_options.target = target
+        compile_options.dump_dir = case_dir
+        compiler = nncase.Compiler(compile_options)
+        compiler.import_tflite(model, import_options)
+        evaluator = compiler.create_evaluator(3)
+        input_tensor = nncase.RuntimeTensor.from_numpy(input)
+        input_tensor.copy_to(evaluator.get_input_tensor(0))
+        evaluator.run()
+        for i in range(evaluator.outputs_size):
+            result = evaluator.get_output_tensor(i).to_numpy()
+            result.tofile(os.path.join(
+                case_dir, 'nncase_result{0}.bin'.format(i)))
+            save_numpy_array_as_txt(os.path.join(
+                case_dir, 'nncase_result{0}.txt'.format(i)), result)
+
+
 def compile_tflite_nncase(case_name, model, targets, input, n, enable_ptq):
     import_options = nncase.ImportOptions()
     compile_options = nncase.CompileOptions()
@@ -134,7 +163,7 @@ def compile_tflite_nncase(case_name, model, targets, input, n, enable_ptq):
     compile_options.dump_ir = True
     for target in targets:
         kmodel_dir = os.path.join(
-            output_root, case_name, target, 'ptq' if enable_ptq else 'no_ptq')
+            output_root, case_name, target, 'infer', 'ptq' if enable_ptq else 'no_ptq')
         if not os.path.exists(kmodel_dir):
             os.makedirs(kmodel_dir)
         compile_options.target = target
@@ -152,10 +181,10 @@ def compile_tflite_nncase(case_name, model, targets, input, n, enable_ptq):
             f.write(kmodel)
 
 
-def eval_nncase(case_name, input, targets, enable_ptq):
+def infer_nncase(case_name, input, targets, enable_ptq):
     for target in targets:
         case_dir = os.path.join(output_root, case_name,
-                                target, 'ptq' if enable_ptq else 'no_ptq')
+                                target, 'infer', 'ptq' if enable_ptq else 'no_ptq')
         with open(os.path.join(case_dir, 'test.kmodel'), 'rb') as f:
             kmodel = f.read()
             sim = nncase.Simulator()
@@ -188,16 +217,21 @@ def test_tf_module(case_name, module, targets):
     n = 10
     tflite = tf_module_to_tflite(case_name, module)
     out_len, input, calib_data = eval_tflite_gth(case_name, tflite, n)
-    compile_tflite_nncase(case_name, tflite, targets, calib_data, n, enable_ptq=False)
-    eval_nncase(case_name, input, targets, enable_ptq=False)
+
+    # evaluation
+    graph_eval_tflite_nncase(case_name, tflite, targets, input, False)
     ret = compare_util.compare_results(
-        case_dir, out_len, targets, enable_ptq=False)
+        case_dir, out_len, targets, enable_ptq=False, is_evaluation=True)
     assert ret
-    compile_tflite_nncase(case_name, tflite, targets, calib_data, n, enable_ptq=True)
-    eval_nncase(case_name, input, targets, enable_ptq=True)
-    ret = compare_util.compare_results(
-        case_dir, out_len, targets, enable_ptq=True)
-    assert ret
+
+    # compile & infer
+    for enable_ptq in [False, True]:
+        compile_tflite_nncase(case_name, tflite, targets,
+                              calib_data, n, enable_ptq=enable_ptq)
+        infer_nncase(case_name, input, targets, enable_ptq=enable_ptq)
+        ret = compare_util.compare_results(
+            case_dir, out_len, targets, enable_ptq=enable_ptq, is_evaluation=False)
+        assert ret
 
 
 def clear(case_dir):

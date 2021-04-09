@@ -222,8 +222,9 @@ def compare(
         with open(ground_truth_path, 'r') as fgt, open(result_path, 'r') as fpred:
             gt = fgt.readlines()[1:]
             pred = fpred.readlines()[1:]
-            judge.cosine_similarity = cosine_similarity([float(i) for i in gt], [float(i) for i in pred])
-            print("cosine_similarity is: {}".format(judge.cosine_similarity)) 
+            judge.cosine_similarity = cosine_similarity(
+                [float(i) for i in gt], [float(i) for i in pred])
+            print("cosine_similarity is: {}".format(judge.cosine_similarity))
     return judge
 
 
@@ -271,12 +272,15 @@ def compare_with_ground_truth(result_path, ground_truth_path, state, verbose):
     return ok
 
 
-def compare_results(case_dir, out_len, targets, enable_ptq):
+def compare_results(case_dir, out_len, targets, enable_ptq, is_evaluation):
     for i in range(out_len):
         gt_file = os.path.join(case_dir, 'cpu_result{0}.txt'.format(i))
         for target in targets:
+            nncase_file = os.path.join(case_dir, target)
             nncase_file = os.path.join(
-                case_dir, target, 'ptq' if enable_ptq else 'no_ptq', 'nncase_result{0}.txt'.format(i))
+                nncase_file, 'eval' if is_evaluation else 'infer')
+            nncase_file = os.path.join(
+                nncase_file, 'ptq' if enable_ptq else 'no_ptq', 'nncase_result{0}.txt'.format(i))
 
             judge = compare_with_ground_truth(
                 nncase_file, gt_file, state=0, verbose=VerboseType.PRINT_RESULT)
