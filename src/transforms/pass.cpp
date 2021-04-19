@@ -24,10 +24,10 @@ using namespace nncase::ir::transforms;
 
 namespace
 {
-class transform_apply_visitor : public dfs_ir_visitor
+class transform_apply_visitor : public dfs_ir_post_order_visitor
 {
 public:
-    using dfs_ir_visitor::visit;
+    using dfs_ir_post_order_visitor::visit;
     ir::graph *graph;
     ir::quantizer *quantizer;
     nncase::target *target;

@@ -238,7 +238,7 @@ void graph::merge_module_regions()
     while (true)
     {
         node *first_node = nullptr;
-        auto find_region = make_relay_ir_visitor([&](node &node) {
+        auto find_region = make_relay_ir_visitor<dfs_ir_pre_order_visitor>([&](node &node) {
             if (node.module_type() != runtime::stackvm::stackvm_module_type)
             {
                 first_node = &node;

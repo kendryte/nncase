@@ -37,7 +37,15 @@ private:
     std::unordered_set<node *> visited_;
 };
 
-class NNCASE_API dfs_ir_visitor : public ir_visitor
+class NNCASE_API dfs_ir_pre_order_visitor : public ir_visitor
+{
+protected:
+    virtual bool visit_strategy(node &node) final override;
+
+private:
+};
+
+class NNCASE_API dfs_ir_post_order_visitor : public ir_visitor
 {
 protected:
     virtual bool visit_strategy(node &node) final override;
@@ -76,7 +84,7 @@ private:
     TVisitor visitor_;
 };
 
-template <class TBaseVisitor = dfs_ir_visitor, class TVisitor>
+template <class TBaseVisitor = dfs_ir_post_order_visitor, class TVisitor>
 auto make_relay_ir_visitor(TVisitor &&visitor)
 {
     return relay_ir_visitor<TBaseVisitor, TVisitor>(std::forward<TVisitor>(visitor));
