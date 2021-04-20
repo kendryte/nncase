@@ -36,7 +36,7 @@ alphas = [
 @pytest.mark.parametrize('alpha', alphas)
 def test_mobilenetv2(in_shape, alpha, request):
     module = _make_module(in_shape, alpha)
-    test_util.test_tf_module(request.node.name, module, ['cpu', 'k210', 'k510'])
+    test_util.test_tf_module(request.node.name, module, ['cpu', 'k510']) # k210 will run out of memory
 
 
 if __name__ == "__main__":
