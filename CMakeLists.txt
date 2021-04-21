@@ -41,6 +41,7 @@ if (BUILDING_RUNTIME)
                     BASIC_SETUP CMAKE_TARGETS
                     SETTINGS compiler.cppstd=14
                     BUILD missing)
+    include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
     
     set(NNCASE_MAIN_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
     set(NNCASE_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include)
@@ -87,8 +88,8 @@ else()
                     BASIC_SETUP CMAKE_TARGETS
                     SETTINGS compiler.cppstd=20
                     BUILD missing)
-    
-    find_package (Python3 COMPONENTS Interpreter Development)
+    include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
+
     find_package (Protobuf REQUIRED)
     include(cmake/flatc.cmake)
     
