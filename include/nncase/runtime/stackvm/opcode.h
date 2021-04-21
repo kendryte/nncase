@@ -146,7 +146,6 @@ enum class tensor_function_t
     TAKE = 0x0015,
     TRANSPOSE = 0x0016,
     UNARY = 0x0017,
-    MIRROR_PAD = 0x0018,
 };
 
 // Instructions

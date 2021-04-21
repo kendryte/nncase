@@ -79,7 +79,7 @@ DEFINE_TFLITE_LOWER(MIRROR_PAD)
             mode = pad_symmetric;
             break;
         default:
-            throw("unsupport pad mode");
+            throw std::runtime_error("Unsupport Pad Mode!");
             break;
     }
     xt::svector<padding> new_paddings;
