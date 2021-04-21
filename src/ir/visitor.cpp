@@ -48,7 +48,29 @@ bool ir_visitor::visit([[maybe_unused]] node &node)
     return false;
 }
 
-bool dfs_ir_visitor::visit_strategy(node &node)
+bool dfs_ir_pre_order_visitor::visit_strategy(node &node)
+{
+    if (!visited(node))
+    {
+        mark_visit(node);
+
+        if (visit(node))
+            return true;
+
+        for (auto in : node.inputs())
+        {
+            if (in->connection())
+            {
+                if (visit_strategy(in->connection()->owner()))
+                    return true;
+            }
+        }
+    }
+
+    return false;
+}
+
+bool dfs_ir_post_order_visitor::visit_strategy(node &node)
 {
     if (!visited(node))
     {

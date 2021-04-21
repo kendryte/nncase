@@ -29,6 +29,7 @@
 #include <nncase/transforms/neutral/fuse_pad.h>
 #include <nncase/transforms/neutral/fuse_unary.h>
 #include <nncase/transforms/neutral/global_reduce_window_to_reduce.h>
+#include <nncase/transforms/neutral/matmul_to_conv2d.h>
 #include <nncase/transforms/neutral/quantize_motion.h>
 #include <nncase/transforms/neutral/simplify_reduce.h>
 #include <nncase/transforms/neutral/take_to_slice.h>
@@ -158,6 +159,12 @@ void neutral_target::register_target_independent_passes(const module_type_t &typ
 
     if (type == runtime::stackvm::stackvm_module_type)
     {
+        //matmul to conv2d
+        {
+            pass p("matmul_to_conv2d");
+            p.emplace<matmul_to_conv2d_transform>();
+            pass_mgr.add_pass(std::move(p));
+        }
         //fold_pad_conv
         {
             pass p("fold_pad_conv");

@@ -70,33 +70,6 @@ bool transform::skip_self_contained_check() const noexcept
     return false;
 }
 
-namespace
-{
-class transform_apply_visitor : public dfs_ir_visitor
-{
-public:
-    using dfs_ir_visitor::visit;
-    ir::graph *graph;
-    nncase::target *target;
-    bool need_retry = false;
-    transforms::transform *transform;
-
-protected:
-    bool visit(node &node) override
-    {
-        transform_context context { *graph, *target };
-        if (transform->try_match(node, context))
-        {
-            transform->process(context);
-            need_retry = true;
-            return true;
-        }
-
-        return false;
-    }
-};
-}
-
 void nncase::ir::transforms::link(ir::output_connector &old_c, ir::output_connector &new_c, [[maybe_unused]] ir::quantizer *quantizer)
 {
     new_c.attributes(old_c.attributes());

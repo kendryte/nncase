@@ -24,7 +24,7 @@ using namespace nncase::ir;
 namespace
 {
 std::unordered_set<node_opcode> dontcse_ops { op_input_node, op_output_node, op_uninitialized, op_constant, op_ignore_node };
-std::unordered_set<node_opcode> neutral_region_ops { op_bitcast, op_constant };
+std::unordered_set<node_opcode> neutral_region_ops { op_constant, op_bitcast, op_concat };
 
 void add_region_node(node &root, const module_type_t &module_type, std::vector<node *> &region_nodes, std::unordered_set<node *> &visited)
 {
@@ -238,7 +238,7 @@ void graph::merge_module_regions()
     while (true)
     {
         node *first_node = nullptr;
-        auto find_region = make_relay_ir_visitor([&](node &node) {
+        auto find_region = make_relay_ir_visitor<dfs_ir_pre_order_visitor>([&](node &node) {
             if (node.module_type() != runtime::stackvm::stackvm_module_type)
             {
                 first_node = &node;
