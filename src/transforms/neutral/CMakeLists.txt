@@ -26,4 +26,5 @@ target_sources(transforms PRIVATE
     take_to_slice.cpp
     fold_conv2d_biasadd.cpp
     remove_convert.cpp
+    fold_quant_motion.cpp
     )
