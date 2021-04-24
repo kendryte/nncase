@@ -36,45 +36,45 @@ def _make_module(n, i_channels, i_size, k_size, o_channels, strides, padding, di
     return Conv2DModule()
 
 n = [
-    1,
+    # 1,
     3
 ]
 
 i_channels = [
-    1,
+    # 1,
     16
 ]
 
 i_sizes = [
-    [1, 1],
+    # [1, 1],
     [33, 65]
 ]
 
 k_sizes = [
-    [1, 1],
+    # [1, 1],
     [3, 3],
-    [5, 5]
+    # [5, 5]
 ]
 
 o_channels = [
-    1,
-    16
+    # 1,
+    24
 ]
 
 strides = [
     [1, 1],
-    [1, 3],
-    [5, 5]
+    # [1, 3],
+    # [5, 5]
 ]
 
 paddings = [
-    'SAME',
+    # 'SAME',
     'VALID'
 ]
 
 dilations = [
     [1, 1],
-    [2, 2]
+    # [2, 2]
 ]
 
 

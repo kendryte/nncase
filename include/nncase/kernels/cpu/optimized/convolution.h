@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 #pragma once
-#include <nncase/runtime/result.h>
-#include <nncase/runtime/error.h>
 #include <nncase/runtime/datatypes.h>
+#include <nncase/runtime/error.h>
+#include <nncase/runtime/result.h>
 
 #define BEGIN_NS_NNCASE_KERNELS_CPU_OPT \
     namespace nncase                    \
@@ -39,5 +39,9 @@ NNCASE_API result<void> conv2d(const float *input, const float *weights, const f
     const runtime_shape_t &in_shape, const runtime_shape_t &in_strides, const runtime_shape_t &w_shape, const runtime_shape_t &w_strides,
     const runtime_shape_t &bias_strides, const runtime_shape_t &out_strides, const padding &padding_h, const padding &padding_w,
     int32_t groups, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w, value_range<float> fused_activation) noexcept;
+
+NNCASE_API result<void> conv3x3s1_sse(const float *input, const float *weights, const float *bias, float *output,
+    const runtime_shape_t &in_shape, const runtime_shape_t &in_strides, const runtime_shape_t &w_shape, const runtime_shape_t &w_strides,
+    const runtime_shape_t &bias_strides, const runtime_shape_t &out_strides, value_range<float> fused_activation) noexcept;
 
 END_NS_NNCASE_KERNELS_CPU_OPT

@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include <nncase/kernels/convolution.h>
+#include <nncase/kernels/cpu/optimized/convolution.h>
 #include <nncase/kernels/cpu/reference/convolution.h>
 
 using namespace nncase;
@@ -24,6 +25,11 @@ result<void> kernels::conv2d(const float *input, const float *weights, const flo
     const runtime_shape_t &bias_strides, const runtime_shape_t &out_strides, const padding &padding_h, const padding &padding_w,
     int32_t groups, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w, value_range<float> fused_activation) noexcept
 {
+    // if (groups == 1 and stride_h == 1 and stride_w == 1 and padding_h.before == 0 and padding_h.after == 0 and padding_w.before == 0 and padding_w.after == 0 and dilation_h == 1 and dilation_w == 1)
+    // {
+    //     std::cout << ">>>>>>>>>>>>>>>>>>>>>conv3x3s1_sse called<<<<<<<<<<<<<<<<<<<<<<" << std::endl;
+    //     return cpu::optimized::conv3x3s1_sse(input, weights, bias, output, in_shape, in_strides, w_shape, w_strides, bias_strides, out_strides, fused_activation);
+    // }
     return cpu::reference::conv2d(input, weights, bias, output, in_shape, in_strides, w_shape, w_strides, bias_strides, out_strides,
         padding_h, padding_w, groups, stride_h, stride_w, dilation_h, dilation_w, fused_activation);
 }
