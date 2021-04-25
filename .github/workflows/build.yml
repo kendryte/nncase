@@ -20,6 +20,12 @@ jobs:
       with:
         python-version: 3.7
         
+    - name: Install System Requirements
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        sudo apt install libgtk2.0-dev -y
+        
     - name: Install Python Packages
       shell: bash
       run: |
