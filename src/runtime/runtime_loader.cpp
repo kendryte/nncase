@@ -62,10 +62,10 @@ result<rt_module_activator_t> find_runtime_activator(const module_type_t &type)
 #else
 #define DYNLIB_EXT ".dylib"
 #endif
-#define TRY_POSIX_IF_NOT(x)                                              \
-    if (!(x))                                                            \
-    {                                                                    \
-        return err(std::error_condition(errno, std::system_category())); \
+#define TRY_POSIX_IF_NOT(x)                                          \
+    if (!(x))                                                        \
+    {                                                                \
+        return err(std::error_condition(1, std::system_category())); \
     }
 
 result<rt_module_activator_t> find_runtime_activator(const module_type_t &type)

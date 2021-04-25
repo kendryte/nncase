@@ -99,6 +99,19 @@ void graph::dce()
 {
     std::unordered_set<node *> used_nodes;
 
+    for (auto it = outputs_.begin(); it != outputs_.end();)
+    {
+        if (!(*it)->input().connection())
+        {
+            nodes_.erase(std::find_if(nodes_.begin(), nodes_.end(), [it](std::unique_ptr<node> &node) { return node.get() == *it; }));
+            it = outputs_.erase(it);
+        }
+        else
+        {
+            ++it;
+        }
+    }
+
     auto visitor = make_relay_ir_visitor([&](node &node) {
         used_nodes.emplace(&node);
     });

@@ -22,6 +22,9 @@
 #include <nncase/io_utils.h>
 #include <nncase/ir/debug.h>
 #include <nncase/ir/evaluator.h>
+#include <nncase/runtime/datatypes.h>
+#include <nncase/transforms/neutral/add_quant_motion.h>
+#include <nncase/transforms/neutral/fold_io_quant_motion.h>
 #include <nncase/transforms/pass.h>
 #include <variant>
 
@@ -45,6 +48,15 @@ calibrate_method to_calibrate_method(std::string name)
     if (name == "cdf")
         return calibrate_method::cdf;
     return calibrate_method::no_clip;
+}
+
+datatype_t to_datatype_method(std::string name)
+{
+    if (name == "uint8")
+        return datatype_t::dt_uint8;
+    // if (name == "int8")
+    //     return datatype_t::dt_int8;
+    return datatype_t::dt_float32;
 }
 
 void do_dump_graph(ir::graph &graph, std::ostream &output)
@@ -224,6 +236,24 @@ private:
     {
         auto graph_runner = [&](ir::graph &graph) {
             ir::transforms::pass_manager pmgr(graph, *target_);
+            ir::transforms::pass p;
+            if (compile_options_.input_type == "uint8")
+                p.emplace<nncase::ir::transforms::add_input_dequantize_transform>();
+            if (compile_options_.output_type == "uint8")
+                p.emplace<nncase::ir::transforms::add_output_quantize_transform>();
+
+            if (!std::get<ptq_dataset_options>(ptq_options_).dataset.empty())
+            {
+                if (compile_options_.input_type == "uint8")
+                    p.emplace<nncase::ir::transforms::add_input_dequantize_transform>();
+                // else
+                //     p.emplace<nncase::ir::transforms::fold_i_quant_transform>();
+                if (compile_options_.output_type == "uint8")
+                    p.emplace<nncase::ir::transforms::add_output_quantize_transform>();
+            }
+
+            pmgr.add_pass(std::move(p));
+
             pmgr.quantizer(evaluator.module_context(graph).quantizer());
             if (compile_options_.dump_ir)
                 pmgr.dump_dir(compile_options_.dump_dir);

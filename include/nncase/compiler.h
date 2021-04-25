@@ -39,6 +39,8 @@ struct compile_options
     bool is_fpga;
     std::string target;
     std::filesystem::path dump_dir;
+    std::string input_type = "float32";
+    std::string output_type = "float32";
 };
 
 struct import_options
