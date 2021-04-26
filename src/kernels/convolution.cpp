@@ -14,6 +14,7 @@
  */
 #include <nncase/kernels/convolution.h>
 #include <nncase/kernels/cpu/reference/convolution.h>
+#include <nncase/kernels/cpu/optimized/convolution.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -24,6 +25,18 @@ result<void> kernels::conv2d(const float *input, const float *weights, const flo
     const runtime_shape_t &bias_strides, const runtime_shape_t &out_strides, const padding &padding_h, const padding &padding_w,
     int32_t groups, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w, value_range<float> fused_activation) noexcept
 {
-    return cpu::reference::conv2d(input, weights, bias, output, in_shape, in_strides, w_shape, w_strides, bias_strides, out_strides,
-        padding_h, padding_w, groups, stride_h, stride_w, dilation_h, dilation_w, fused_activation);
+    const auto filter_h = (int32_t)w_shape[2];
+    const auto filter_w = (int32_t)w_shape[3];
+
+    if (filter_h == 1 && filter_w == 1 && dilation_h == 1 && dilation_w == 1 && groups == 1 && stride_w == 1 && stride_h == 1)
+    {
+        return cpu::optimized::conv2d_1x1(input, weights, bias, output, in_shape, in_strides, w_shape, w_strides, bias_strides, out_strides,
+            padding_h, padding_w, groups, stride_h, stride_w, dilation_h, dilation_w, fused_activation);
+    }
+    else
+    {
+        // general conv
+        return cpu::reference::conv2d(input, weights, bias, output, in_shape, in_strides, w_shape, w_strides, bias_strides, out_strides,
+            padding_h, padding_w, groups, stride_h, stride_w, dilation_h, dilation_w, fused_activation);
+    }
 }
