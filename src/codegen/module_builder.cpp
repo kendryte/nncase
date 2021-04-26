@@ -174,11 +174,15 @@ void module_builder::generate_merge_info()
 
         for (auto &merge_p : rdata_section_merges_)
         {
-            auto &sec_writer = section_writer_.at(merge_p.first);
-            rdata_writer.align_position(alignment_);
-            merge_p.second.start = (uint32_t)rdata_writer.position();
-            rdata_writer.write_array<uint8_t>(read_stream(sec_writer.stream));
-            merge_p.second.size = (uint32_t)rdata_writer.position() - merge_p.second.start;
+            auto it = section_writer_.find(merge_p.first);
+            if (it != section_writer_.end())
+            {
+                auto &sec_writer = it->second;
+                rdata_writer.align_position(alignment_);
+                merge_p.second.start = (uint32_t)rdata_writer.position();
+                rdata_writer.write_array<uint8_t>(read_stream(sec_writer.stream));
+                merge_p.second.size = (uint32_t)rdata_writer.position() - merge_p.second.start;
+            }
         }
     }
 
