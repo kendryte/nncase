@@ -1,6 +1,7 @@
 cmake_minimum_required (VERSION 3.8)
 
 find_package (Python3 COMPONENTS Interpreter Development REQUIRED)
+find_package (pybind11 REQUIRED)
 
 set(SRCS ffi.cpp)
 

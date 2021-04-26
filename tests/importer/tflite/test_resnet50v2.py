@@ -22,17 +22,17 @@ import test_util
 
 
 def _make_module(in_shape):
-    return tf.keras.applications.ResNet50V2(input_shape=in_shape)
+    return tf.keras.applications.ResNet50(input_shape=in_shape)
 
 in_shapes = [
     (224, 224, 3)
 ]
 
 @pytest.mark.parametrize('in_shape', in_shapes)
-def test_resnet50v2(in_shape, request):
+def test_resnet50(in_shape, request):
     module = _make_module(in_shape)
     test_util.test_tf_module(request.node.name, module, ['cpu', 'k210', 'k510'])
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_resnet50v2.py'])
+    pytest.main(['-vv', 'test_resnet50.py'])
