@@ -34,27 +34,19 @@ result<void> optimized::conv3x3s1_sse(const float *input, const float *weights, 
     const runtime_shape_t &in_shape, const runtime_shape_t &in_strides, const runtime_shape_t &w_shape, const runtime_shape_t &w_strides,
     const runtime_shape_t &bias_strides, const runtime_shape_t &out_strides, value_range<float> fused_activation) noexcept
 {
-    const auto out_channels = w_shape[0], in_channels = w_shape[1];
-    const auto in_h = in_shape[2];
-    const auto in_w = in_shape[3];
+    const auto batch = in_shape[0], out_channels = w_shape[0], in_channels = w_shape[1], in_h = in_shape[2], in_w = in_shape[3];
     const auto out_h = kernels::detail::get_windowed_output_size(in_h, 3, 1, 1, padding::zero());
     const auto out_w = kernels::detail::get_windowed_output_size(in_w, 3, 1, 1, padding::zero());
-    runtime_shape_t out_idx(4);
-    runtime_shape_t in_idx(4);
-    runtime_shape_t w_idx(4);
-    for (size_t b = 0; b < in_shape[0]; b++) // batch
+    for (size_t b = 0; b < batch; b++) // batch
     {
-        in_idx[0] = out_idx[0] = b;
         for (size_t oc = 0; oc < out_channels; oc++) // out channel
         {
-            w_idx[0] = out_idx[1] = oc;
-            float *out = &output[offset(out_strides, out_idx)];
-            for (size_t ic = 0; ic < in_shape[1]; ic++) // in channel
+            float *out = output + (b * out_channels * out_h * out_w) + (oc * out_h * out_w);
+            for (size_t ic = 0; ic < in_channels; ic++) // in channel
             {
-                w_idx[1] = in_idx[1] = ic;
                 float *outptr0 = out, *outptr1 = out + out_w;
-                const float *img = &input[offset(in_strides, in_idx)];
-                const float *kernel = &weights[offset(w_strides, w_idx)];
+                const float *img = input + (b * in_channels * in_w * in_w) + (ic * in_h * in_w);
+                const float *kernel = weights + oc * in_channels * 9 + ic * 9;
                 const float *r0 = img;
                 const float *r1 = img + in_w; // input width
                 const float *r2 = img + (in_w * 2);
