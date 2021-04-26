@@ -34,39 +34,42 @@ result<void> optimized::conv3x3s1_sse(const float *input, const float *weights, 
     const runtime_shape_t &in_shape, const runtime_shape_t &in_strides, const runtime_shape_t &w_shape, const runtime_shape_t &w_strides,
     const runtime_shape_t &bias_strides, const runtime_shape_t &out_strides, value_range<float> fused_activation) noexcept
 {
-    const auto out_channels = w_shape[0], in_channels = in_shape[1];
-    const auto out_h = kernels::detail::get_windowed_output_size(in_shape[2], 3, 1, 1, padding::zero());
-    const auto out_w = kernels::detail::get_windowed_output_size(in_shape[3], 3, 1, 1, padding::zero());
+    const auto out_channels = w_shape[0], in_channels = w_shape[1];
+    const auto in_h = in_shape[2];
+    const auto in_w = in_shape[3];
+    const auto out_h = kernels::detail::get_windowed_output_size(in_h, 3, 1, 1, padding::zero());
+    const auto out_w = kernels::detail::get_windowed_output_size(in_w, 3, 1, 1, padding::zero());
     runtime_shape_t out_idx(4);
     runtime_shape_t in_idx(4);
-    runtime_shape_t kernel_idx(4);
+    runtime_shape_t w_idx(4);
     for (size_t b = 0; b < in_shape[0]; b++) // batch
     {
         in_idx[0] = out_idx[0] = b;
-        for (size_t p = 0; p < out_channels; p++) // out channel
+        for (size_t oc = 0; oc < out_channels; oc++) // out channel
         {
-            kernel_idx[0] = out_idx[1] = p;
+            w_idx[0] = out_idx[1] = oc;
             float *out = &output[offset(out_strides, out_idx)];
-            for (size_t q = 0; q < in_shape[1]; q++) // in channel
+            for (size_t ic = 0; ic < in_shape[1]; ic++) // in channel
             {
-                kernel_idx[1] = in_idx[1] = q;
+                w_idx[1] = in_idx[1] = ic;
                 float *outptr0 = out, *outptr1 = out + out_w;
                 const float *img = &input[offset(in_strides, in_idx)];
-                const float *kernel = &weights[offset(w_strides, kernel_idx)];
+                const float *kernel = &weights[offset(w_strides, w_idx)];
                 const float *r0 = img;
-                const float *r1 = img + in_shape[3]; // input width
-                const float *r2 = img + in_shape[3] * 2;
-                const float *r3 = img + in_shape[3] * 3;
+                const float *r1 = img + in_w; // input width
+                const float *r2 = img + (in_w * 2);
+                const float *r3 = img + (in_w * 3);
 
                 const float *k0 = kernel;
                 const float *k1 = kernel + 3;
-                const float *k2 = kernel + (2 * 3);
+                const float *k2 = kernel + 6;
+
                 size_t i = 0;
                 for (; i + 1 < out_h; i += 2)
                 {
                     for (size_t remain = 0; remain < out_w; remain++)
                     {
-                        float sum0 = bias[p], sum1 = bias[p];
+                        float sum0 = bias[oc], sum1 = bias[oc];
                         sum0 += r0[0] * k0[0];
                         sum0 += r0[1] * k0[1];
                         sum0 += r0[2] * k0[2];
@@ -93,9 +96,10 @@ result<void> optimized::conv3x3s1_sse(const float *input, const float *weights, 
                         r0++, r1++, r2++, r3++, outptr0++, outptr1++;
                     }
                     // skip row
-                    r1 += (in_shape[3] + 2);
-                    r2 += (in_shape[3] + 2);
-                    r3 += (in_shape[3] + 2);
+                    r0 += (in_w + 2);
+                    r1 += (in_w + 2);
+                    r2 += (in_w + 2);
+                    r3 += (in_w + 2);
                     outptr0 += out_w;
                     outptr1 += out_w;
                 }
@@ -104,7 +108,7 @@ result<void> optimized::conv3x3s1_sse(const float *input, const float *weights, 
                 {
                     for (size_t remain = 0; remain < out_w; remain++)
                     {
-                        float sum0 = bias[p];
+                        float sum0 = bias[oc];
                         sum0 += r0[0] * k0[0];
                         sum0 += r0[1] * k0[1];
                         sum0 += r0[2] * k0[2];
@@ -122,7 +126,6 @@ result<void> optimized::conv3x3s1_sse(const float *input, const float *weights, 
                     r0 += 2;
                     r1 += 2;
                     r2 += 2;
-                    outptr0 += out_w;
                 }
             }
         }
