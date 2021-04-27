@@ -236,25 +236,36 @@ private:
     {
         auto graph_runner = [&](ir::graph &graph) {
             ir::transforms::pass_manager pmgr(graph, *target_);
-            ir::transforms::pass p;
-            if (compile_options_.input_type == "uint8")
-                p.emplace<nncase::ir::transforms::add_input_dequantize_transform>();
-            if (compile_options_.output_type == "uint8")
-                p.emplace<nncase::ir::transforms::add_output_quantize_transform>();
+            auto quant = evaluator.module_context(graph).quantizer();
 
-            if (!std::get<ptq_dataset_options>(ptq_options_).dataset.empty())
+            if (!compile_options_.use_dataset_as_input_stat)
+            {
+                auto min = (0.f - compile_options_.input_mean) / compile_options_.input_std;
+                auto max = (1.f - compile_options_.input_mean) / compile_options_.input_std;
+                value_range<float> input_range { min, max };
+                // graph.inputs().begin();
+                quant->set(graph.inputs()[0]->output(), input_range);
+                quant->record(graph.inputs()[0]->output(), input_range);
+            }
+
+            // broadcast quant ranges
+            std::unordered_set<node_opcode> opcodes;
+            target_->add_quantization_broadcast(opcodes);
+            quant->broadcast_output(graph, opcodes);
+
+            ir::transforms::pass p;
+
+           if (use_ptq_)
             {
                 if (compile_options_.input_type == "uint8")
                     p.emplace<nncase::ir::transforms::add_input_dequantize_transform>();
-                // else
-                //     p.emplace<nncase::ir::transforms::fold_i_quant_transform>();
                 if (compile_options_.output_type == "uint8")
                     p.emplace<nncase::ir::transforms::add_output_quantize_transform>();
             }
 
             pmgr.add_pass(std::move(p));
 
-            pmgr.quantizer(evaluator.module_context(graph).quantizer());
+            pmgr.quantizer(quant);
             if (compile_options_.dump_ir)
                 pmgr.dump_dir(compile_options_.dump_dir);
             target_->register_quantize_passes(graph.module_type(), pmgr);

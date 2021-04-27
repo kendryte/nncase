@@ -15,6 +15,7 @@
 #pragma once
 #include <filesystem>
 #include <nncase/ir/graph.h>
+#include <nncase/ir/quantizer.h>
 #include <vector>
 
 namespace nncase

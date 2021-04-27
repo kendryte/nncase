@@ -39,6 +39,10 @@ void target::register_quantize_passes([[maybe_unused]] const module_type_t &type
 {
 }
 
+void target::add_quantization_broadcast([[maybe_unused]] std::unordered_set<ir::node_opcode> &opcodes)
+{
+}
+
 void target::register_target_dependent_after_quantization_passes([[maybe_unused]] const module_type_t &type, [[maybe_unused]] ir::transforms::pass_manager &pass_mgr)
 {
 }

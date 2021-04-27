@@ -23,6 +23,7 @@
 
 namespace nncase::ir
 {
+class node_opcode;
 class quantizer;
 }
 
@@ -80,6 +81,7 @@ public:
     virtual void register_target_dependent_after_quantization_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr);
     virtual void register_allocation_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr) = 0;
     virtual std::unique_ptr<codegen::module_builder> create_module_builder(const module_type_t &type, std::string_view module_name, const codegen::module_builder_params &params);
+    virtual void add_quantization_broadcast(std::unordered_set<ir::node_opcode> &opcodes) = 0;
 
 protected:
     virtual std::unique_ptr<target_options> on_create_options() = 0;
