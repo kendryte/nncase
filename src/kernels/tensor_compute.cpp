@@ -31,6 +31,12 @@ result<void> kernels::broadcast(datatype_t type, const gsl::byte *input, gsl::by
     return cpu::reference::broadcast(type, input, output, in_shape, in_strides, out_shape, out_strides);
 }
 
+result<void> kernels::concat(datatype_t type, gsl::span<const gsl::byte *const> inputs, gsl::byte *output, const runtime_shape_t &out_shape,
+    gsl::span<const runtime_shape_t> in_strides, const runtime_shape_t &out_strides, size_t axis, const runtime_shape_t &concat_dims) noexcept
+{
+    return cpu::reference::concat(type, inputs, output, out_shape, in_strides, out_strides, axis, concat_dims);
+}
+
 result<void> kernels::convert(datatype_t in_type, datatype_t out_type, const gsl::byte *input, gsl::byte *output,
     const runtime_shape_t &in_shape, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides) noexcept
 {

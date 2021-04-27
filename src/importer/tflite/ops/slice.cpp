@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include "../tflite_importer.h"
+#include <nncase/ir/ops/bitcast.h>
 #include <nncase/ir/ops/slice.h>
 
 using namespace nncase;
@@ -39,14 +40,18 @@ DEFINE_TFLITE_LOWER(SLICE)
 DEFINE_TFLITE_LOWER(STRIDED_SLICE)
 {
     auto &input = get_tensor(op.inputs(), 0);
+    auto &output = get_tensor(op.outputs(), 0);
     auto begin = load_axis<int32_t>(get_tensor(op.inputs(), 1));
     auto end = load_axis<int32_t>(get_tensor(op.inputs(), 2));
     auto strides = load_axis<int32_t>(get_tensor(op.inputs(), 3));
     auto &options = *op.builtin_options_as_StridedSliceOptions();
     auto node = graph_.emplace<slice>(to_data_type(input.type()), get_shape(input.shape()), begin, end, strides, options.begin_mask(),
-        options.end_mask(), options.ellipsis_mask(), options.new_axis_mask(), options.shrink_axis_mask());
+        options.end_mask(), options.ellipsis_mask(), options.new_axis_mask());
     node->name(get_tensor(op.outputs(), 0).name()->string_view());
+    auto rshape = graph_.emplace<bitcast>(node->output().type(), node->output().shape(), get_shape(output.shape()));
+    rshape->name(node->name() + "/reshape");
+    rshape->input().connect(node->output());
 
     link_input_tensor(&node->input(), op.inputs()->Get(0));
-    link_output_tensor(op.outputs()->Get(0), &node->output());
+    link_output_tensor(op.outputs()->Get(0), &rshape->output());
 }

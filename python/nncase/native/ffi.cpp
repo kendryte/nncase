@@ -275,7 +275,6 @@ PYBIND11_MODULE(_nncase, m)
             if (PyBytes_AsStringAndSize(bytes.ptr(), reinterpret_cast<char **>(&buffer), &length))
                 throw std::invalid_argument("Invalid bytes");
             o.tensor_data.assign(buffer, buffer + length);
-            //LaunchDebugger();
         })
         .def_readwrite("samples_count", &ptq_tensor_options::samples_count);
 
@@ -299,6 +298,7 @@ PYBIND11_MODULE(_nncase, m)
             return py::bytes(ss.str());
         })
         .def("create_evaluator", [](compiler &c, uint32_t stage) {
+            LaunchDebugger();
             auto &graph = c.graph(stage);
             return std::make_unique<graph_evaluator>(c.target(), graph);
         });

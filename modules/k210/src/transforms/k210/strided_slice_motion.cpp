@@ -37,8 +37,7 @@ bool strided_slice_motion_transform::on_try_match(node &node, transform_context 
             && slc.end() == axis_t { (int32_t)slc.input().shape()[0], (int32_t)slc.input().shape()[1], (int32_t)slc.input().shape()[2], (int32_t)slc.input().shape()[3] }
             && slc.begin_mask() == 0
             && slc.end_mask() == 0
-            && slc.new_axis_mask() == 0
-            && slc.shrink_axis_mask() == 0)
+            && slc.new_axis_mask() == 0)
         {
             if (auto conv = try_get_direct_child<fake_kpu_conv2d>(slc))
             {
@@ -77,7 +76,7 @@ void strided_slice_motion_transform::process(transform_context &context)
     conv->name(old_conv.name());
     conv->weights().connect(weights);
     conv->bias().connect(bias);
-    auto slc = context.graph.emplace<slice>(dt_float32, conv->output().shape(), axis_t { 0, 0, 0, 0 }, axis_t { 0, 0, 0, 0 }, old_slice.strides(), 15, 15, 0, 0, 0);
+    auto slc = context.graph.emplace<slice>(dt_float32, conv->output().shape(), axis_t { 0, 0, 0, 0 }, axis_t { 0, 0, 0, 0 }, old_slice.strides(), 15, 15, 0, 0);
     slc->input().connect(conv->output());
 
     conv->input().connect(output);

@@ -44,14 +44,14 @@ result<runtime_tensor> stackvm_runtime_module::allocate_output_tensor(size_t ind
     return host_runtime_tensor::create(output_desc(index).datatype, output_shape(index));
 }
 
-result<void> stackvm_runtime_module::validate_input_tensor([[maybe_unused]] size_t index, runtime_tensor tensor) noexcept
+result<void> stackvm_runtime_module::validate_input_tensor(NNCASE_UNUSED size_t index, runtime_tensor tensor) noexcept
 {
     if (tensor.is_host())
         return ok();
     return err(std::errc::invalid_argument);
 }
 
-result<void> stackvm_runtime_module::validate_output_tensor([[maybe_unused]] size_t index, runtime_tensor tensor) noexcept
+result<void> stackvm_runtime_module::validate_output_tensor(NNCASE_UNUSED size_t index, runtime_tensor tensor) noexcept
 {
     if (tensor.is_host())
         return ok();

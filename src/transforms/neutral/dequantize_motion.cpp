@@ -192,7 +192,7 @@ void dequantize_slice_motion_transform::process(transform_context &context)
     auto &old_slice = static_cast<slice &>(*context.matched_nodes[1]);
 
     auto sl = context.graph.emplace<slice>(dt_uint8, old_deq.input().shape(), old_slice.begin(), old_slice.end(), old_slice.strides(),
-        old_slice.begin_mask(), old_slice.end_mask(), old_slice.ellipsis_mask(), old_slice.new_axis_mask(), old_slice.shrink_axis_mask());
+        old_slice.begin_mask(), old_slice.end_mask(), old_slice.ellipsis_mask(), old_slice.new_axis_mask());
     sl->name(old_slice.name());
     auto deq = context.graph.emplace<dequantize>(sl->output().type(), sl->output().shape(), old_deq.output().type(), old_deq.quant_param());
     deq->name(old_deq.name());

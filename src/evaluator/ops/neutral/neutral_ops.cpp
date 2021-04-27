@@ -129,16 +129,22 @@ void register_neutral_evaluators()
     register_evaluator(op_concat, [](ir::node &node, module_evaluate_context &context) {
         auto &rnode = static_cast<concat &>(node);
 
-        std::vector<uint8_t *> inputs;
+        std::vector<const gsl::byte *> inputs_mem;
+        std::vector<runtime_shape_t> inputs_strides;
         for (auto in : rnode.inputs())
-            inputs.emplace_back(host_runtime_tensor::buffer(context.memory_at(*in)).unwrap_or_throw().as_span<uint8_t>().data());
+        {
+            auto input = context.memory_at(*in);
+            auto input_mem = host_runtime_tensor::buffer(input).unwrap_or_throw();
+            inputs_mem.emplace_back(input_mem.data());
+            inputs_strides.emplace_back(input.strides());
+        }
 
-        auto output = host_runtime_tensor::buffer(context.memory_at(rnode.output())).unwrap_or_throw().as_span<uint8_t>();
-
-        auto elem_size = (uint32_t)get_bytes(rnode.output().type());
-        uint64_t inner_size, outer_size;
-        get_concat_params(rnode.output().shape(), elem_size, (size_t)rnode.axis(), inner_size, outer_size);
-        neutral::concat(xtl::span<uint8_t *>(inputs), output.data(), rnode.concat_dims(), inner_size, outer_size);
+        auto output = context.memory_at(rnode.output());
+        auto output_mem = host_runtime_tensor::buffer(output).unwrap_or_throw();
+        runtime_shape_t concat_dims { rnode.concat_dims().begin(), rnode.concat_dims().end() };
+        kernels::concat(rnode.output().type(), inputs_mem, output_mem.data(), output.shape(), inputs_strides,
+            output.strides(), rnode.axis(), concat_dims)
+            .unwrap_or_throw();
     });
 
     register_evaluator(op_conv2d, [](ir::node &node, module_evaluate_context &context) {
@@ -305,14 +311,14 @@ void register_neutral_evaluators()
     register_evaluator(op_slice, [](ir::node &node, module_evaluate_context &context) {
         auto &rnode = static_cast<slice &>(node);
 
-        auto input = host_runtime_tensor::buffer(context.memory_at(rnode.input())).unwrap_or_throw();
-        auto output = host_runtime_tensor::buffer(context.memory_at(rnode.output())).unwrap_or_throw();
+        auto input = context.memory_at(rnode.input());
+        auto output = context.memory_at(rnode.output());
+        auto input_mem = host_runtime_tensor::buffer(input).unwrap_or_throw();
+        auto output_mem = host_runtime_tensor::buffer(output).unwrap_or_throw();
 
-#define STRIDED_SLICE_KERNEL(T)                                                      \
-    neutral::strided_slice<T>(input.as_span<T>().data(), output.as_span<T>().data(), \
-        to(rnode.input().shape()), to(rnode.begin(), 0), to(rnode.end()), to(rnode.strides()));
-
-        ELEM_SIZE_IMPL(rnode.input().type(), STRIDED_SLICE_KERNEL);
+        kernels::slice(input.datatype(), input_mem.data(), output_mem.data(), input.shape(),
+            input.strides(), output.strides(), to(rnode.begin()), to(rnode.end()), to<int32_t>(rnode.strides()))
+            .unwrap_or_throw();
     });
 
     register_evaluator(op_transpose, [](ir::node &node, module_evaluate_context &context) {

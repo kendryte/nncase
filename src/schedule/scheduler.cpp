@@ -185,6 +185,7 @@ void schedule_context::analyze_buffer_alias()
                 && std::all_of(inputs.begin(), inputs.end(), [this](input_connector *in) {
                        auto &in_buf = logical_buffers.at(in->connection());
                        return (in_buf.memory_location() == mem_data)
+                           && in->connection()->owner().runtime_opcode() != op_bitcast
                            && in->connection()->owner().runtime_opcode() != op_slice;
                    })
                 && std::count_if(outputs.begin(), outputs.end(), [](input_connector *in) {
