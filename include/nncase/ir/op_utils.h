@@ -251,13 +251,12 @@ inline axis_t normalize_strided_slice_begin(const shape_t &in_shape, const axis_
     return new_shape;
 }
 
-inline axis_t normalize_strided_slice_end(const shape_t &in_shape, const axis_t &begin, const axis_t &end, const axis_t &strides, int32_t end_mask)
+inline axis_t normalize_strided_slice_end(const shape_t &in_shape, [[maybe_unused]] const axis_t &begin, const axis_t &end, const axis_t &strides, int32_t end_mask)
 {
     axis_t new_shape(strides.size());
     for (size_t i = 0; i < new_shape.size(); i++)
     {
         auto stride = strides[i];
-        auto begin_val = begin[i];
         auto end_val = (end_mask & (1 << i)) != 0
             ? stride > 0 ? (int32_t)in_shape[i] : -1
             : (end[i] >= 0 ? end[i] : in_shape[i] + end[i]);

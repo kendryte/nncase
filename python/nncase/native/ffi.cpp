@@ -298,7 +298,7 @@ PYBIND11_MODULE(_nncase, m)
             return py::bytes(ss.str());
         })
         .def("create_evaluator", [](compiler &c, uint32_t stage) {
-            LaunchDebugger();
+            //LaunchDebugger();
             auto &graph = c.graph(stage);
             return std::make_unique<graph_evaluator>(c.target(), graph);
         });
