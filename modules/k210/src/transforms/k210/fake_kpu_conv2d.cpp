@@ -115,7 +115,7 @@ void fake_kpu_conv2d_transform::process(transform_context &context)
     };
     axis_t strides { 1, 1, old_conv.stride_h(), old_conv.stride_w() };
     auto sur_pad = context.graph.emplace<pad>(dt_float32, conv->output().shape(), sur_paddings, pad_constant, 0.f);
-    auto slc = context.graph.emplace<slice>(dt_float32, sur_pad->output().shape(), axis_t { 0, 0, 0, 0 }, axis_t { 0, 0, 0, 0 }, strides, 15, 15, 0, 0, 0);
+    auto slc = context.graph.emplace<slice>(dt_float32, sur_pad->output().shape(), axis_t { 0, 0, 0, 0 }, axis_t { 0, 0, 0, 0 }, strides, 15, 15, 0, 0);
     conv->input().connect(pre_pad->output());
     conv->weights().connect(weights);
     conv->bias().connect(bias);

@@ -111,7 +111,7 @@ void take_to_slice_transform::process(transform_context &context)
         }
     }
 
-    auto new_slice = context.graph.emplace<slice>(output.type(), output.shape(), begin, end, strides, 0, 0, 0, 0, 0);
+    auto new_slice = context.graph.emplace<slice>(output.type(), output.shape(), begin, end, strides, 0, 0, 0, 0);
 
     new_slice->input().connect(output);
     old_take.indices().clear_connection();

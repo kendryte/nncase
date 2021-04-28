@@ -25,12 +25,12 @@ namespace
 class host_runtime_tensor_type : public runtime_tensor_type
 {
 public:
-    bool can_copy_from_different_type([[maybe_unused]] const runtime_tensor &dest, [[maybe_unused]] const runtime_tensor &src) noexcept override
+    bool can_copy_from_different_type(NNCASE_UNUSED const runtime_tensor &dest, NNCASE_UNUSED const runtime_tensor &src) noexcept override
     {
         return true;
     }
 
-    bool can_copy_to_different_type([[maybe_unused]] const runtime_tensor &dest, [[maybe_unused]] const runtime_tensor &src) noexcept override
+    bool can_copy_to_different_type(NNCASE_UNUSED const runtime_tensor &dest, NNCASE_UNUSED const runtime_tensor &src) noexcept override
     {
         return true;
     }
@@ -76,37 +76,37 @@ host_runtime_tensor_type host_runtime_tensor_type_;
 empty_runtime_tensor_type empty_runtime_tensor_type_;
 }
 
-bool runtime_tensor_type::can_copy_from_different_type([[maybe_unused]] const runtime_tensor &src, [[maybe_unused]] const runtime_tensor &dest) noexcept
+bool runtime_tensor_type::can_copy_from_different_type(NNCASE_UNUSED const runtime_tensor &src, NNCASE_UNUSED const runtime_tensor &dest) noexcept
 {
     return false;
 }
 
-bool runtime_tensor_type::can_copy_to_different_type([[maybe_unused]] const runtime_tensor &src, [[maybe_unused]] const runtime_tensor &dest) noexcept
+bool runtime_tensor_type::can_copy_to_different_type(NNCASE_UNUSED const runtime_tensor &src, NNCASE_UNUSED const runtime_tensor &dest) noexcept
 {
     return false;
 }
 
-result<void> runtime_tensor_type::copy_to_same_type([[maybe_unused]] const runtime_tensor &src, [[maybe_unused]] const runtime_tensor &dest) noexcept
+result<void> runtime_tensor_type::copy_to_same_type(NNCASE_UNUSED const runtime_tensor &src, NNCASE_UNUSED const runtime_tensor &dest) noexcept
 {
     return err(std::errc::not_supported);
 }
 
-result<void> runtime_tensor_type::copy_from_different_type([[maybe_unused]] const runtime_tensor &src, [[maybe_unused]] const runtime_tensor &dest) noexcept
+result<void> runtime_tensor_type::copy_from_different_type(NNCASE_UNUSED const runtime_tensor &src, NNCASE_UNUSED const runtime_tensor &dest) noexcept
 {
     return err(std::errc::not_supported);
 }
 
-result<void> runtime_tensor_type::copy_to_different_type([[maybe_unused]] const runtime_tensor &src, [[maybe_unused]] const runtime_tensor &dest) noexcept
+result<void> runtime_tensor_type::copy_to_different_type(NNCASE_UNUSED const runtime_tensor &src, NNCASE_UNUSED const runtime_tensor &dest) noexcept
 {
     return err(std::errc::not_supported);
 }
 
-result<void> runtime_tensor_type::copy_from_host([[maybe_unused]] const runtime_tensor &src, [[maybe_unused]] const runtime_tensor &dest) noexcept
+result<void> runtime_tensor_type::copy_from_host(NNCASE_UNUSED const runtime_tensor &src, NNCASE_UNUSED const runtime_tensor &dest) noexcept
 {
     return err(std::errc::not_supported);
 }
 
-result<void> runtime_tensor_type::copy_to_host([[maybe_unused]] const runtime_tensor &src, [[maybe_unused]] const runtime_tensor &dest) noexcept
+result<void> runtime_tensor_type::copy_to_host(NNCASE_UNUSED const runtime_tensor &src, NNCASE_UNUSED const runtime_tensor &dest) noexcept
 {
     return err(std::errc::not_supported);
 }
@@ -225,7 +225,7 @@ result<runtime_tensor> host_runtime_tensor::create(datatype_t datatype, runtime_
     }
     else
     {
-        buffer.reset(data.data(), []([[maybe_unused]] gsl::byte *ptr) {});
+        buffer.reset(data.data(), [](NNCASE_UNUSED gsl::byte *ptr) {});
     }
 
     return ok(runtime_tensor(datatype, std::move(shape), std::move(strides), host_runtime_tensor_type_, std::move(buffer)));

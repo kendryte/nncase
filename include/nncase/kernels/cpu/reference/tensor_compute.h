@@ -23,6 +23,9 @@ NNCASE_API result<void> batch_to_space(datatype_t type, const gsl::byte *input, 
 NNCASE_API result<void> broadcast(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_shape, const runtime_shape_t &out_strides) noexcept;
 
+NNCASE_API result<void> concat(datatype_t type, gsl::span<const gsl::byte *const> inputs, gsl::byte *output, const runtime_shape_t &out_shape,
+    gsl::span<const runtime_shape_t> in_strides, const runtime_shape_t &out_strides, size_t axis, const runtime_shape_t &concat_dims) noexcept;
+
 NNCASE_API result<void> convert(datatype_t in_type, datatype_t out_type, const gsl::byte *input, gsl::byte *output,
     const runtime_shape_t &in_shape, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides) noexcept;
 

@@ -185,12 +185,18 @@ inline int32_t mul_and_carry_shift(int32_t value, int32_t mul, int32_t shift)
     return (int32_t)carry_shift<int64_t, Banker>((int64_t)value * mul, shift);
 }
 
+template <class T>
+inline T clamp(T value, T min, T max)
+{
+    return std::min(max, std::max(value, min));
+}
+
 template <uint8_t Bits>
 inline int32_t clamp(int32_t value)
 {
     auto min = std::numeric_limits<int32_t>::lowest() >> (32 - Bits);
     auto max = std::numeric_limits<int32_t>::max() >> (32 - Bits);
-    return std::clamp(value, min, max);
+    return clamp(value, min, max);
 }
 
 END_NS_NNCASE_RUNTIME

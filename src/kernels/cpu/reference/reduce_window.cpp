@@ -25,7 +25,7 @@ namespace
 {
 struct identity_window
 {
-    float operator()(float src, [[maybe_unused]] int32_t window) const noexcept
+    float operator()(float src, NNCASE_UNUSED int32_t window) const noexcept
     {
         return src;
     }
