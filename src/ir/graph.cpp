@@ -24,7 +24,7 @@ using namespace nncase::ir;
 namespace
 {
 std::unordered_set<node_opcode> dontcse_ops { op_input_node, op_output_node, op_uninitialized, op_constant, op_ignore_node };
-std::unordered_set<node_opcode> neutral_region_ops { op_constant, op_bitcast, op_concat };
+std::unordered_set<node_opcode> neutral_region_ops { op_constant, op_bitcast };
 
 void add_region_node(node &root, const module_type_t &module_type, std::vector<node *> &region_nodes, std::unordered_set<node *> &visited)
 {

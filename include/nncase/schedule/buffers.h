@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 #pragma once
-#include <nncase/runtime/datatypes.h>
 #include <nncase/ir/connectors.h>
 #include <nncase/ir/ir_types.h>
+#include <nncase/runtime/datatypes.h>
 #include <optional>
 #include <vector>
 
@@ -36,6 +36,7 @@ struct sub_buffer_desc
 {
     logical_buffer *parent = nullptr;
     ir::shape_t begin;
+    ir::shape_t shape;
 };
 
 struct buffer_lifetime
@@ -62,6 +63,9 @@ public:
     const std::optional<sub_buffer_desc> &parent() const noexcept { return parent_; }
     std::optional<sub_buffer_desc> &parent() noexcept { return parent_; }
 
+    const ir::shape_t &strides_shape() const noexcept { return strides_shape_; }
+    ir::shape_t &strides_shape() noexcept { return strides_shape_; }
+
     const buffer_lifetime &lifetime() const noexcept { return lifetime_; }
     buffer_lifetime &lifetime() noexcept { return lifetime_; }
 
@@ -76,6 +80,7 @@ private:
     ir::output_connector &owner_;
     memory_location_t memory_location_;
     std::optional<sub_buffer_desc> parent_;
+    ir::shape_t strides_shape_;
     buffer_lifetime lifetime_ {};
     physical_buffer *physical_;
 };

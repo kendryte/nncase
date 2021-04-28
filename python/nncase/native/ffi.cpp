@@ -250,6 +250,7 @@ PYBIND11_MODULE(_nncase, m)
     m.doc() = "NNCase Library";
     m.attr("__version__") = NNCASE_VERSION;
 
+    //LaunchDebugger();
     py::class_<std::filesystem::path>(m, "Path")
         .def(py::init<std::string>());
     py::implicitly_convertible<std::string, std::filesystem::path>();
@@ -298,7 +299,6 @@ PYBIND11_MODULE(_nncase, m)
             return py::bytes(ss.str());
         })
         .def("create_evaluator", [](compiler &c, uint32_t stage) {
-            //LaunchDebugger();
             auto &graph = c.graph(stage);
             return std::make_unique<graph_evaluator>(c.target(), graph);
         });
