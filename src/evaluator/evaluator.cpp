@@ -109,8 +109,16 @@ void module_evaluate_context::evaluate()
                     if (!quantizer_->has_record(*out))
                     {
                         auto mem = memory_at(*out);
-                        auto buffer = host_runtime_tensor::buffer(mem).unwrap_or_throw().as_span<float>();
-                        quantizer_->record(*out, buffer);
+                        if (mem.datatype() == dt_bfloat16)
+                        {
+                            auto buffer = host_runtime_tensor::buffer(mem).unwrap_or_throw().as_span<bfloat16>();
+                            quantizer_->record(*out, buffer);
+                        }
+                        else
+                        {
+                            auto buffer = host_runtime_tensor::buffer(mem).unwrap_or_throw().as_span<float>();
+                            quantizer_->record(*out, buffer);
+                        }
                     }
                 }
             }

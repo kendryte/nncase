@@ -74,7 +74,7 @@ void add_output_quantize_transform::process(transform_context &context)
     auto &output = *context.inputs[0]->connection();
     auto old_out = node_cast<output_node>(*context.matched_nodes[0]);
     auto &quantizer = *context.quantizer;
-    auto params = quantizer.get_quant_param(quantizer.get(output), 8);
+    auto params = quantizer.get_quant_param(quantizer.get(output.owner().output_at(0)), 8);
 
     auto q = context.graph.emplace<quantize>(dt_float32, output.shape(), dt_uint8, params);
     auto new_out_node = context.graph.emplace<output_node>(q->output().type(), q->output().shape());

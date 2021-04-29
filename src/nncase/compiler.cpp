@@ -255,7 +255,7 @@ private:
 
             ir::transforms::pass p;
 
-           if (use_ptq_)
+            if (use_ptq_)
             {
                 if (compile_options_.input_type == "uint8")
                     p.emplace<nncase::ir::transforms::add_input_dequantize_transform>();

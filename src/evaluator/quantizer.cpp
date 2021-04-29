@@ -161,6 +161,23 @@ void quantizer::record(output_connector &connector, xtl::span<const float> data)
     }
 }
 
+void quantizer::record(output_connector &connector, xtl::span<const bfloat16> data)
+{
+    switch (stage_)
+    {
+    case quantize_stage::collect_range:
+        record(connector, get_range(data.begin(), data.end()));
+        has_record_.emplace(&connector, true);
+        break;
+    case quantize_stage::collect_distribution:
+        histograms_.at(&connector).record(data);
+        has_record_.emplace(&connector, true);
+        break;
+    default:
+        throw std::runtime_error("Invalid operation in current quantization stage");
+    }
+}
+
 void quantizer::begin_collect_distribution()
 {
     for (auto &&p : quant_ranges_)
@@ -270,7 +287,15 @@ quantizer::histogram::histogram(value_range<float> range, size_t src_bins, size_
     auto r = range_.max - range_.min;
     src_bin_interval_ = r / src_bins_.size();
 }
-
+void quantizer::histogram::record(xtl::span<const bfloat16> data)
+{
+    for (auto value : data)
+    {
+        auto r_index = (value - range_.min) / src_bin_interval_;
+        auto index = (size_t)std::clamp(r_index, 0.f, (float)src_bins_.size() - 1);
+        src_bins_[index]++;
+    }
+}
 void quantizer::histogram::record(xtl::span<const float> data)
 {
     for (auto value : data)
