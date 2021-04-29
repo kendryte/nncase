@@ -132,6 +132,9 @@ quant_param_t quantizer::get_quant_param(value_range<float> range, int32_t bits)
 
 value_range<float> quantizer::get(hlir::output_connector &connector) const
 {
+    if(quant_ranges_.find(&connector) == quant_ranges_.end()) {
+        return value_range<float>::full();
+    }
     return quant_ranges_.at(&connector);
 }
 

@@ -40,7 +40,7 @@ struct compile_options
     float weights_quantize_threshold = 64.f;
     uint32_t output_quantize_threshold = 1024;
     bool quantize_binary = true;
-    bool dump_ir = false;
+    bool dump_ir = true;
     bool dump_weights_range = false;
     bool use_dataset_as_input_stat = true;
     uint32_t max_solve_secs = 60;

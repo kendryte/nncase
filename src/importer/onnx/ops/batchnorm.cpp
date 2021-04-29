@@ -74,9 +74,19 @@ void onnx_importer::convert_op_BatchNormalization(const NodeProto &node)
             for (auto s : target_shape)
                 cout << ' ' << s;
             cout << ']' << endl;
-            auto reshape_op { graph_.emplace<reshape>(get_datatype(input).value(), input_shape, target_shape) };
+            auto datatype = get_datatype(input).value();
+            auto reshape_op {graph_.emplace<reshape>(datatype, input_shape, target_shape) };
 
-            input_tensors_.emplace(&reshape_op->input(), input);
+            auto values{get_initializer(input)};
+
+            if(values) {
+                // Add the float data as a constant input to the reshape
+                auto span = xtl::span<const uint8_t>((uint8_t *) values->float_data().data(), values->float_data().size() * 4);
+                auto const_op {graph_.emplace<constant>(dt_float32, input_shape, span)};
+                reshape_op->input().connect(const_op->output());
+            } else {
+                input_tensors_.emplace(&reshape_op->input(), input);
+            }
 
             return reshape_op;
         }

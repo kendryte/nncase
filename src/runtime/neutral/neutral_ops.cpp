@@ -101,6 +101,7 @@ namespace runtime
                     options.output_mul, options.output_shift, options.output_offset, op);
             };
 
+            std::cout << "Binary op: " << options.binary_op << std::endl;
             switch (options.binary_op)
             {
             case binary_add:
@@ -407,6 +408,59 @@ namespace runtime
             auto output = interpreter.memory_at<uint8_t>(options.output);
 
             kernels::neutral::table_lookup1d(input.data(), output.data(), input.size(), table.data());
+            return kcr_done;
+        }
+
+        kernel_call_result split(split_options &options, interpreter_t &interpreter, interpreter_step_t step) {
+            auto splits = std::vector<int64_t>();
+            for(auto split : options.splits) {
+                splits.push_back(split);
+            }
+
+            if(options.input.datatype == dt_uint8) {
+                auto input = interpreter.memory_at<uint8_t>(options.input).data();
+                auto outputs = std::vector<uint8_t *>();
+                for(auto out : options.outputs) {
+                    if(out.size == 0) {
+                        outputs.push_back(nullptr);
+                        continue;
+                    }
+
+                    auto span = interpreter.memory_at<uint8_t>(out);
+                    outputs.push_back(span.data());
+                }
+                kernels::neutral::split(input, outputs, options.input_shape, options.axis, splits);
+            } else {
+                auto input = interpreter.memory_at<float>(options.input).data();
+                auto outputs = std::vector<float *>();
+                for(auto out : options.outputs) {
+                    if(out.size == 0) {
+                        outputs.push_back(nullptr);
+                        continue;
+                    }
+
+                    auto span = interpreter.memory_at<float>(out);
+                    outputs.push_back(span.data());
+                }
+                kernels::neutral::split(input, outputs, options.input_shape, options.axis, splits);
+            }
+            return kcr_done;
+        }
+
+        kernel_call_result upsample(upsample_options &options, interpreter_t &interpreter, interpreter_step_t step) {
+            auto scales = std::vector<float>();
+            for(auto scale : options.scales) {
+                scales.push_back(std::floor(scale));
+            }
+            if (options.input.datatype == dt_uint8) {
+                auto input = interpreter.memory_at<uint8_t>(options.input);
+                auto output = interpreter.memory_at<uint8_t>(options.output);
+                kernels::neutral::upsample(input.data(), output.data(), options.input_shape, scales);
+            } else {
+                auto input = interpreter.memory_at<float>(options.input);
+                auto output = interpreter.memory_at<float>(options.output);
+                kernels::neutral::upsample(input.data(), output.data(), options.input_shape, scales);
+            }
             return kcr_done;
         }
     }

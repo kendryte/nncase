@@ -76,6 +76,7 @@ void pass::run(graph &graph, target &target)
 
 void pass_manager::run()
 {
-    for (auto &&pass : passes_)
+    for (auto &&pass : passes_) {
         pass.run(graph_, target_);
+    }
 }

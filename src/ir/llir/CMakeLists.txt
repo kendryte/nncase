@@ -20,9 +20,10 @@ set(SRCS connectors.cpp
          ops/nnil_method.cpp
          ops/resize_image.cpp
          ops/strided_slice.cpp
+         ops/split.cpp
          ops/table_lookup.cpp
          ops/k210/fake_kpu_conv2d.cpp
-         ops/k210/kpu_conv2d.cpp)
+         ops/k210/kpu_conv2d.cpp ops/upsample.cpp)
 
 add_library(llir STATIC ${SRCS})
 target_include_directories(llir PUBLIC ../include)

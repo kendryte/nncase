@@ -32,6 +32,8 @@
 #include <llir/ops/transpose.h>
 #include <llir/ops/unary.h>
 #include <runtime/neutral/neutral_ops_body.h>
+#include <llir/ops/split.h>
+#include <llir/ops/upsample.h>
 
 using namespace nncase;
 using namespace nncase::codegen;
@@ -388,6 +390,56 @@ namespace codegen
             body->input = context.get_allocation(rnode.input());
             body->table = context.get_allocation(rnode.table());
             body->output = context.get_allocation(rnode.output());
+
+            return body;
+        });
+
+        register_emitter(op_split, [](node &node, codegen_context &context) {
+            struct split_options_body : public node_body_impl<rop_split, split_options>
+            {
+                std::vector<memory_range> outputs_holder;
+            };
+
+            auto &rnode = static_cast<split &>(node);
+            auto body = std::make_unique<split_options_body>();
+
+            body->input = context.get_allocation(rnode.input());
+            body->input_shape = to(rnode.input().shape());
+            body->num_splits = rnode.splits().size();
+            body->axis = rnode.axis();
+            body->splits = rnode.splits();
+
+            for(int i = 0; i < body->num_splits; i ++) {
+                output_connector &out = rnode.output_at(i);
+                if(out.connections().empty()) {
+                    body->outputs_holder.emplace_back(memory_range {
+                        .memory_type = mem_main,
+                        .datatype = dt_uint8,
+                        .start = 0x0,
+                        .size = 0,
+                    });
+                } else {
+                    body->outputs_holder.emplace_back(context.get_allocation(out));
+                }
+            }
+
+            body->outputs = body->outputs_holder;
+
+            return body;
+        });
+
+        register_emitter(op_upsample, [](node &node, codegen_context &context) {
+            auto &rnode = static_cast<upsample &>(node);
+            auto body = std::make_unique<node_body_impl<rop_upsample, upsample_options>>();
+
+            body->input = context.get_allocation(rnode.input());
+            body->input_shape = to(rnode.input().shape());
+            body->output = context.get_allocation(rnode.output());
+            runtime_shape_t scales;
+            for(int i = 0; i < 4; i ++) {
+                scales[i] = (int64_t) std::floor(rnode.scales()[i]);
+            }
+            body->scales = scales;
 
             return body;
         });

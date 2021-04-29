@@ -18,6 +18,7 @@
 #include <runtime/nnil.h>
 #include <runtime/runtime_op_utility.h>
 #include <xtl/xspan.hpp>
+#include <vector>
 #ifdef __riscv
 #include "../riscv/neutral_kernels.h"
 #endif
@@ -794,6 +795,142 @@ namespace kernels
         {
             for (size_t i = 0; i < size; i++)
                 output[i] = table[input[i]];
+        }
+
+        inline void split(const uint8_t *CXX_RESTRICT input, const std::vector<uint8_t *> &outputs, runtime_shape_t input_shape,
+                          int64_t axis, const std::vector<int64_t> &splits) {
+
+            auto *base = (uint8_t *) (input);
+            std::vector<uint8_t *> outs = std::vector<uint8_t*>();
+
+            for(auto out : outputs) {
+                outs.push_back(out);
+            }
+
+            // We know our max pointer range is input_shape * sizeof(T)
+            auto max = base + input_shape[0] * input_shape[1] * input_shape[2] * input_shape[3];
+
+            int64_t block_size = 1;
+            for(int dim = 3; dim > axis; dim --) {
+                block_size *= input_shape[dim];
+            }
+
+            while(base < max) {
+                for(int64_t split = 0; split < splits.size(); split ++) {
+                    int64_t split_num = splits[split];
+                    // Copy from base, split_num * block_size to our current output
+                    if(outs[split] != nullptr) {
+                        std::memcpy(outs[split], base, split_num * block_size * sizeof(uint8_t));
+                        outs[split] += split_num * block_size;
+                    }
+                    base += split_num * block_size;
+                }
+            }
+        }
+
+        inline void split(const float *CXX_RESTRICT input, const std::vector<float *> &outputs, runtime_shape_t input_shape,
+                          int64_t axis, const std::vector<int64_t> &splits) {
+
+            auto *base = (float *) (input);
+            std::vector<float *> outs = std::vector<float *>();
+
+            for(auto out : outputs) {
+                outs.push_back(out);
+            }
+
+            // We know our max pointer range is input_shape * sizeof(T)
+            auto max = base + input_shape[0] * input_shape[1] * input_shape[2] * input_shape[3];
+
+            int64_t block_size = 1;
+            for(int dim = 3; dim > axis; dim --) {
+                block_size *= input_shape[dim];
+            }
+
+            while(base < max) {
+                for(int64_t split = 0; split < splits.size(); split ++) {
+                    int64_t split_num = splits[split];
+                    // Copy from base, split_num * block_size to our current output
+                    if(outs[split] != nullptr) {
+                        std::memcpy(outs[split], base, split_num * block_size * sizeof(float));
+                        outs[split] += split_num * block_size;
+                    }
+                    base += split_num * block_size;
+                }
+            }
+        }
+
+
+        inline runtime_shape_t get_default_strides(const runtime_shape_t &in_shape, const std::vector<float> &scales) {
+            runtime_shape_t shape = in_shape;
+
+            for (int i = 0; i < shape.size(); i++) {
+                shape[i] *= (int64_t) std::floor(scales[i]);
+            }
+
+            runtime_shape_t strides;
+            for (int64_t dim = shape.size() - 1; dim >= 0; dim--) {
+                if (dim < shape.size() - 1) {
+                    strides[dim] = strides[dim + 1] * shape[dim + 1];
+                } else {
+                    strides[dim] = 1;
+                }
+            }
+            return strides;
+        }
+
+        inline runtime_shape_t get_default_strides(const runtime_shape_t &shape) {
+            runtime_shape_t strides;
+            for (int64_t dim = shape.size() - 1; dim >= 0; dim--) {
+                if (dim < shape.size() - 1) {
+                    strides[dim] = strides[dim + 1] * shape[dim + 1];
+                } else {
+                    strides[dim] = 1;
+                }
+            }
+            return strides;
+        }
+
+        template <class T>
+        inline void copy_block(T *CXX_RESTRICT output, const T *CXX_RESTRICT input, int64_t block_size, int64_t repeat_count) {
+            for(int i = 0; i < repeat_count; i ++) {
+                if(output != input) {
+                    std::memcpy(output, input, block_size);
+                }
+                output += block_size;
+            }
+        }
+
+        template <class T>
+        inline void
+        upsample(const T *CXX_RESTRICT input, T *CXX_RESTRICT output, runtime_shape_t input_shape, const std::vector<float> &scales) {
+            auto strides = get_default_strides(input_shape);
+            auto output_strides = get_default_strides(input_shape, scales);
+
+            auto a_count = (int64_t) std::floor(scales[0]);
+            auto b_count = (int64_t) std::floor(scales[1]);
+            auto c_count = (int64_t) std::floor(scales[2]);
+            auto d_count = (int64_t) std::floor(scales[3]);
+            // Copy the input to the output, starting at the minor shape up
+            for (int a = 0; a < input_shape[0]; a++) {
+                auto a_addr = input + a * strides[0];
+                auto a_out_addr = output + a * output_strides[0];
+                for (int b = 0; b < input_shape[1]; b++) {
+                    auto b_addr = a_addr + b * strides[1];
+                    auto b_out_addr = a_out_addr + b * output_strides[1] * b_count;
+                    for (int c = 0; c < input_shape[2]; c++) {
+                        auto c_addr = b_addr + c * strides[2];
+                        auto c_out_addr = b_out_addr + c * output_strides[2] * c_count;
+                        for (int d = 0; d < input_shape[3]; d++) {
+                            auto d_addr = c_addr + d * strides[3] * sizeof(T);
+                            auto d_out_addr = c_out_addr + d * output_strides[3] * d_count * sizeof(T);
+                            copy_block(d_out_addr, d_addr, strides[3] * sizeof(T), d_count);
+                        }
+                        copy_block(c_out_addr, c_out_addr, output_strides[2], c_count);
+                    }
+                    copy_block(b_out_addr, b_out_addr, output_strides[1], b_count);
+                }
+                copy_block(a_out_addr, a_out_addr, output_strides[0], a_count);
+            }
         }
     }
 }

@@ -493,6 +493,40 @@ namespace runtime
             memory_range table;
             memory_range output;
         };
+
+        struct split_options {
+            memory_range input;
+            runtime_shape_t input_shape;
+            int64_t num_splits;
+            xtl::span<const memory_range> outputs;
+            xtl::span<const int64_t> splits;
+            int64_t axis;
+
+            void deserialize(span_reader &reader) {
+                reader.read(input);
+                reader.read(input_shape);
+                reader.read(num_splits);
+                reader.read(axis);
+                reader.read_span(outputs, num_splits);
+                reader.read_span(splits, num_splits);
+            }
+
+            void serialize(binary_writer &writer) const {
+                writer.write(input);
+                writer.write(input_shape);
+                writer.write(num_splits);
+                writer.write(axis);
+                writer.write_array(outputs);
+                writer.write_array(splits);
+            }
+        } ;
+
+        typedef struct upsample_options : public simple_node_body<upsample_options> {
+            memory_range input;
+            memory_range output;
+            runtime_shape_t input_shape;
+            runtime_shape_t scales;
+        } upsample_options;
     }
 }
 }

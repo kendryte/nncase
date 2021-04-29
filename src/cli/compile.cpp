@@ -75,6 +75,7 @@ void dump_graph(const compile_options &options, TGraph &graph, std::string_view 
     {
         std::ofstream file("ir_" + std::string(prefix) + ".dot", std::ios::out);
         dump_graph(graph, file);
+        file.close();
     }
 }
 
@@ -163,7 +164,9 @@ void quantize_graph(const compile_options &options, target &target, graph &graph
 {
     hlir::transforms::pass_manager mgr(graph, target);
     target.optimize_quantize(quantizer, mgr);
+    std::cout << "Running quant passes" << std::endl;
     mgr.run();
+    std::cout << "Done quant passes" << std::endl;
     dump_graph(options, graph, "after_quant");
 
     // warning weights divergence
@@ -205,7 +208,6 @@ void run_calibrations(target &target, graph &graph, quantizer *quantizer, const 
         auto input = eval.input_at<float>(0);
         auto &tensor = it->tensor;
         std::copy(tensor.begin(), tensor.end(), input.begin());
-
         eval.evaluate(quantizer, &hc_ctx.l_outputs, options.use_dataset_as_input_stat);
 
 #if EVAL > 0
@@ -402,8 +404,8 @@ group compile_options::parser(mode &mode)
 			option("--inference-type") % ("inference type: e.g. float, uint8 default is " + inference_type) & value("inference type", inference_type),
 			option("--input-mean").set(use_dataset_as_input_stat, false) % ("input mean, default is " + std::to_string(input_mean)) & value("input mean", input_mean),
 			option("--input-std").set(use_dataset_as_input_stat, false) % ("input std, default is " + std::to_string(input_std)) & value("input std", input_std),
-			option("--dump-ir").set(dump_ir) % "dump nncase ir to .dot files",
-            option("--dump-weights-range").set(dump_weights_range) % "dump weights range",
+			option("--dump-ir").set(dump_ir, true) % "dump nncase ir to .dot files",
+            option("--dump-weights-range").set(dump_weights_range, true) % "dump weights range",
 			option("--input-type").set(input_type) % ("input type: e.g. default, float, uint8, default means equal to inference type") & value("input type", input_type),
 			option("--max-allocator-solve-secs") % ("max optimal layout solve time in secs used by allocators, 0 means don't use solver, default is " + std::to_string(max_solve_secs)) & value("max allocator solve secs", max_solve_secs),
 			option("--calibrate-method") % ("calibrate method: e.g. no_clip, l2, default is " + calibrate_method) & value("calibrate method", calibrate_method),

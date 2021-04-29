@@ -26,5 +26,7 @@ DEFINE_NEUTRAL_OPCODE(table_lookup1d,		TableLookup1D,		0x19)
 DEFINE_NEUTRAL_OPCODE(conv2d_transpose,		Conv2DTranspose,	0x1A)
 DEFINE_NEUTRAL_OPCODE(quantized_conv2d_transpose,	QuantizedConv2DTranspose,	0x1B)
 DEFINE_NEUTRAL_OPCODE(nnil_unary_method,    NNILUnaryMethod,    0x1C)
+DEFINE_NEUTRAL_OPCODE(split, Split, 0x1D)
+DEFINE_NEUTRAL_OPCODE(upsample, Upsample, 0x1E)
 
 #include "ops/k210/opcode.def"

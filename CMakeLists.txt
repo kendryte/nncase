@@ -3,6 +3,9 @@ project("nncase")
 
 include(cmake/conan.cmake)
 
+set(NNCASE_TARGET k210)
+set(CMAKE_BUILD_TYPE RelWithDebInfo)
+
 if (NOT NNCASE_TARGET)
     message(FATAL_ERROR "Please define NNCASE_TARGET")
 else()
@@ -30,7 +33,7 @@ set(CMAKE_CXX_STANDARD 17)
 if (MSVC)
     add_definitions(/D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS /DNOMINMAX /utf-8)
 else()
-    add_compile_options(-Wno-multichar)
+    add_compile_options(-Wno-multichar -O0)
 endif()
 
 add_subdirectory(src/cli)

@@ -262,5 +262,27 @@ namespace hlir
 
         return new_shape;
     }
+
+    inline shape_t get_split_shape(const shape_t &input_shape, uint64_t axis, const std::vector<int64_t> &splits, uint64_t split_index) {
+        shape_t new_shape;
+        for(size_t dim = 0; dim < input_shape.size(); dim ++) {
+            if(dim != axis) {
+                new_shape.push_back(input_shape[dim]);
+            } else {
+                new_shape.push_back(splits[split_index]);
+            }
+        }
+        return new_shape;
+    }
+
+    inline shape_t get_scaled_shape(const shape_t &input_shape, const std::vector<float> &scales) {
+        shape_t new_shape;
+        // Multiply each element of the input shape by our scale
+        for(size_t dim = 0; dim < input_shape.size(); dim ++) {
+            // Nearest mode operation
+            new_shape.push_back((int64_t) std::floor(input_shape[dim] * scales[dim]));
+        }
+        return new_shape;
+    }
 }
 }

@@ -20,6 +20,8 @@ BEGINE_DEFINE_TARGET(neutral)
     DEFINE_NEUTRAL_RUNTIME_OP(table_lookup1d,       TableLookup1D,      0x12)
     DEFINE_NEUTRAL_RUNTIME_OP(conv2d_transpose,     QuantizedBinary,    0x13)
     DEFINE_NEUTRAL_RUNTIME_OP(nnil_unary_method,    NNILUnaryMethod,    0x14)
+    DEFINE_NEUTRAL_RUNTIME_OP(split,                Split,              0x15)
+    DEFINE_NEUTRAL_RUNTIME_OP(upsample,             Upsample,           0x16)
 END_DEFINE_TARGET()
 
 // CPU

@@ -68,6 +68,7 @@ struct eval_context
                 auto output = interp.memory_at<const char>(interp.output_at(i));
                 of.write(output.data(), output.size());
             }
+            of.close();
         }
     }
 

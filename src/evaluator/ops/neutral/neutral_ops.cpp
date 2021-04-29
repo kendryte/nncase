@@ -32,6 +32,8 @@
 #include <llir/ops/table_lookup.h>
 #include <llir/ops/transpose.h>
 #include <llir/ops/unary.h>
+#include <llir/ops/split.h>
+#include <llir/ops/upsample.h>
 
 using namespace nncase;
 using namespace nncase::scheduler;
@@ -478,6 +480,45 @@ namespace llir
             auto output = context.memory_at<uint8_t>(rnode.output());
 
             kernels::neutral::table_lookup1d(input.data(), output.data(), input.size(), table.data());
+        });
+
+        register_evaluator(op_split, [](llir::node &node, evaluate_context &context) {
+            auto &rnode = static_cast<split &>(node);
+
+            if(rnode.type() == dt_uint8) {
+                auto input = context.memory_at<uint8_t>(rnode.input()).data();
+                auto outputs = std::vector<uint8_t *>(rnode.outputs().size());
+                for(int64_t i = 0; i < rnode.outputs().size(); i ++) {
+                    outputs.push_back(context.memory_at<uint8_t>(rnode.output_at(i)).data());
+                }
+                kernels::neutral::split(input, outputs, to(rnode.input().shape()), rnode.axis(), rnode.splits());
+            } else if(rnode.type() == dt_float32) {
+                auto input = context.memory_at<float>(rnode.input()).data();
+                auto outputs = std::vector<float *>(rnode.outputs().size());
+                for(int64_t i = 0; i < rnode.outputs().size(); i ++) {
+                    if(rnode.output_at(i).connections().empty()) {
+                        // No need to actually output anything as we have no receiver
+                        outputs.push_back(nullptr);
+                    } else {
+                        outputs.push_back(context.memory_at<float>(rnode.output_at(i)).data());
+                    }
+                }
+                kernels::neutral::split(input, outputs, to(rnode.input().shape()), rnode.axis(), rnode.splits());
+            }
+        });
+
+        register_evaluator(op_upsample, [](llir::node &node, evaluate_context &context) {
+            auto &rnode = static_cast<upsample &>(node);
+
+            if(rnode.type() == dt_uint8) {
+                auto input = context.memory_at<uint8_t>(rnode.input()).data();
+                auto output = context.memory_at<uint8_t>(rnode.output()).data();
+                kernels::neutral::upsample<uint8_t>(input, output, to(rnode.input().shape()), rnode.scales());
+            } else if(rnode.type() == dt_float32) {
+                auto input = context.memory_at<float>(rnode.input()).data();
+                auto output = context.memory_at<float>(rnode.output()).data();
+                kernels::neutral::upsample<float>(input, output, to(rnode.input().shape()), rnode.scales());
+            }
         });
     }
 }

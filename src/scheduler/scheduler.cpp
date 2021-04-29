@@ -126,12 +126,23 @@ void nncase::scheduler::schedule(xtl::span<output_node *> outputs, allocation_co
     alloc_visitor.visit(outputs);
     context.finish(max_solve_secs);
 
+    size_t bytes = 0;
+    for(const auto &alloc : context.allocations()) {
+        bytes += alloc.second.size;
+    }
+    std::cout << "Total allocation: " << bytes << std::endl;
+
     auto check_visitor = make_relay_ir_visitor([&](node &node) {
         // check overlap
         {
             std::vector<memory_allocation> inputs, outputs;
-            for (auto &&out : node.outputs())
-                outputs.emplace_back(context.allocations().at(&out));
+            // We can have some output's that our ignored (e.g. split)
+            // In that case, we don't have any allocations for that node
+            for (auto &&out : node.outputs()) {
+                if(!out.connections().empty()) {
+                    outputs.emplace_back(context.allocations().at(&out));
+                }
+            }
 
             for (auto &&in : node.inputs())
                 inputs.emplace_back(context.allocations().at(in.connection()));
