@@ -62,7 +62,7 @@ public:
         }
     }
 
-    bool equivalent([[maybe_unused]] std::error_code const &code, [[maybe_unused]] int condition) const noexcept override
+    bool equivalent(NNCASE_UNUSED std::error_code const &code, NNCASE_UNUSED int condition) const noexcept override
     {
         return false;
     }

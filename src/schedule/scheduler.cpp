@@ -86,6 +86,7 @@ public:
             logical_buffer buffer(next_buffer_id_++, conn, decide_memory_location(conn));
             buffer.lifetime().birth = cnt_age_;
             buffer.lifetime().used_count = conn.connections().size();
+            buffer.strides_shape() = buffer.shape();
             buffers_.emplace(&conn, buffer);
         }
     }
@@ -123,12 +124,25 @@ private:
 
 void schedule_context::generate_compute_sequence()
 {
+    std::unordered_set<node *> used_inputs;
     auto alloc_visitor = make_relay_ir_visitor([&](node &node) {
-        if (node.attributes() & node_attr_action)
+        if (node.runtime_opcode() == op_input_node)
+            used_inputs.emplace(&node);
+        else if (node.attributes() & node_attr_action)
             compute_sequence.emplace_back(&node);
     });
 
     alloc_visitor.visit(outputs);
+
+    size_t i = 0;
+    for (auto in : graph->inputs())
+    {
+        if (used_inputs.contains(in))
+        {
+            compute_sequence.insert(compute_sequence.begin() + i, in);
+            i++;
+        }
+    }
 }
 
 void schedule_context::make_logical_buffers()
@@ -160,19 +174,31 @@ void schedule_context::analyze_buffer_alias()
             auto &in_buf = logical_buffers.at(&input);
             auto &out_buf = logical_buffers.at(&b->output());
 
-            if (out_buf.memory_location() == mem_output && in_buf.memory_location() == mem_data)
-                in_buf.memory_location() = mem_output;
-
-            // input & rdata should be copied to output
-            if (out_buf.memory_location() != mem_output
-                || (in_buf.memory_location() != mem_input && in_buf.memory_location() != mem_rdata))
+            // input & rdata should remain locations
+            if (in_buf.memory_location() == mem_input || in_buf.memory_location() == mem_rdata)
             {
-                shape_t begin(input.shape().size(), 0);
-                out_buf.parent() = { &logical_buffers.at(&input), begin };
+                // owner is input, parent shape is bitcast's
+                if (out_buf.memory_location() != mem_output)
+                {
+                    shape_t begin(b->output().shape().size(), 0);
+                    out_buf.parent() = { &in_buf, begin, b->output().shape() };
+                    out_buf.strides_shape() = b->output().shape();
+                    b->attributes(b->attributes() & ~node_attr_action);
+                }
+            }
+            else
+            {
+                assert(in_buf.memory_location() == mem_data);
+
+                // owner transfered to output
+                shape_t begin(b->output().shape().size(), 0);
+                in_buf.parent() = { &out_buf, begin, b->output().shape() };
+                in_buf.strides_shape() = input.shape();
                 b->attributes(b->attributes() & ~node_attr_action);
             }
         }
 
+#if 0
         // 2. concat
         else if (auto c = node_cast<concat>(node))
         {
@@ -185,6 +211,7 @@ void schedule_context::analyze_buffer_alias()
                 && std::all_of(inputs.begin(), inputs.end(), [this](input_connector *in) {
                        auto &in_buf = logical_buffers.at(in->connection());
                        return (in_buf.memory_location() == mem_data)
+                           && in->connection()->owner().runtime_opcode() != op_bitcast
                            && in->connection()->owner().runtime_opcode() != op_slice;
                    })
                 && std::count_if(outputs.begin(), outputs.end(), [](input_connector *in) {
@@ -196,6 +223,7 @@ void schedule_context::analyze_buffer_alias()
                 c->attributes(c->attributes() & ~node_attr_action);
             }
         }
+#endif
     });
     alias_visitor.visit(outputs);
 }
@@ -257,10 +285,20 @@ void schedule_context::fix_lifetime()
     for (auto &bp : logical_buffers)
     {
         auto &p = bp.second.parent();
+        //if (p && p->parent->owner().owner().runtime_opcode() == op_bitcast)
+        //{
+        //    auto &parent = p->parent->parent();
+        //    if (parent && parent->parent->owner().owner().runtime_opcode() == op_concat)
+        //    {
+        //        p->begin += parent->begin;
+        //    }
+        //}
         if (p)
         {
-            while (p->parent->parent())
-                p = p->parent->parent();
+            auto parent = p->parent;
+            while (parent->parent())
+                parent = parent->parent()->parent;
+            p->parent = parent;
         }
     }
 
@@ -353,16 +391,14 @@ void schedule_context::assign_allocations()
             alloc.type = lbuf.type();
             alloc.size = ir::get_bytes(lbuf.type(), lbuf.shape());
             alloc.shape = lbuf.shape();
-            if (lbuf.parent() && node.runtime_opcode() != op_bitcast)
-                alloc.parent_shape = owner.shape();
-            else
-                alloc.parent_shape = lbuf.shape();
-            alloc.strides = to_strides(alloc.parent_shape);
+            assert(lbuf.strides_shape().size());
+            alloc.strides_shape = lbuf.strides_shape();
+            alloc.strides = to_strides(alloc.strides_shape);
             alloc.start = memory.start;
             if (lbuf.parent())
             {
                 auto &begin = lbuf.parent()->begin;
-                alloc.start += ir::get_bytes(lbuf.type()) * xt::element_offset<size_t>(alloc.strides, begin.begin(), begin.end());
+                alloc.start += ir::get_bytes(lbuf.type()) * xt::element_offset<size_t>(to_strides(lbuf.parent()->shape), begin.begin(), begin.end());
             }
 
             allocations.emplace(out, alloc);

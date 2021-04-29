@@ -250,6 +250,7 @@ PYBIND11_MODULE(_nncase, m)
     m.doc() = "NNCase Library";
     m.attr("__version__") = NNCASE_VERSION;
 
+    //LaunchDebugger();
     py::class_<std::filesystem::path>(m, "Path")
         .def(py::init<std::string>());
     py::implicitly_convertible<std::string, std::filesystem::path>();
@@ -275,7 +276,6 @@ PYBIND11_MODULE(_nncase, m)
             if (PyBytes_AsStringAndSize(bytes.ptr(), reinterpret_cast<char **>(&buffer), &length))
                 throw std::invalid_argument("Invalid bytes");
             o.tensor_data.assign(buffer, buffer + length);
-            //LaunchDebugger();
         })
         .def_readwrite("samples_count", &ptq_tensor_options::samples_count);
 

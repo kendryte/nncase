@@ -138,7 +138,7 @@ result<void> reference::nnil_unary_method(const float *input, float *output, siz
                 auto high = stack.pop();
                 auto low = stack.pop();
                 auto v = stack.pop();
-                stack.push(std::clamp(v, low, high));
+                stack.push(clamp(v, low, high));
                 break;
             }
             case nnil_ret:

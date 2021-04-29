@@ -26,7 +26,7 @@ public:
     output_connector &output() { return output_at(0); }
 
     int32_t axis() const noexcept { return axis_; }
-    xtl::span<const int32_t> concat_dims() const noexcept { return concat_dims_; }
+    std::span<const size_t> concat_dims() const noexcept { return concat_dims_; }
 
     concat(datatype_t type, std::span<shape_t> input_shapes, int32_t axis);
 
@@ -35,6 +35,6 @@ protected:
 
 private:
     int32_t axis_;
-    std::vector<int32_t> concat_dims_;
+    std::vector<size_t> concat_dims_;
 };
 }

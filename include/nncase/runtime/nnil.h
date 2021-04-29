@@ -18,8 +18,8 @@
 #include <array>
 #include <cassert>
 
-namespace nncase::runtime
-{
+BEGIN_NS_NNCASE_RUNTIME
+
 typedef enum _nnil_opcode
 {
     nnil_nop = 0x00,
@@ -125,4 +125,5 @@ private:
     std::array<float, 64> _stack;
     size_t top;
 };
-}
+
+END_NS_NNCASE_RUNTIME

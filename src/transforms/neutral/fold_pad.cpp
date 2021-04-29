@@ -106,8 +106,7 @@ bool fold_pad_strided_slice_transform::on_try_match(node &node, transform_contex
             {
                 if (std::all_of(sl->begin().begin(), sl->begin().end(), [](const int32_t &value) { return value >= 0; })
                     && std::all_of(sl->end().begin(), sl->end().end(), [](const int32_t &value) { return value >= 0; })
-                    && sl->new_axis_mask() == 0
-                    && sl->shrink_axis_mask() == 0)
+                    && sl->new_axis_mask() == 0)
                 {
                     context.inputs.emplace_back(&p.input());
                     context.outputs.emplace_back(&sl->output());
@@ -154,7 +153,7 @@ void fold_pad_strided_slice_transform::process(transform_context &context)
     auto p = context.graph.emplace<pad>(old_p.input().type(), output.shape(), paddings, old_p.pad_mode(), old_p.pad_value());
     p->name(old_p.name());
     auto sl = context.graph.emplace<slice>(p->output().type(), p->output().shape(), begin, end, old_slice.strides(),
-        old_slice.begin_mask(), old_slice.end_mask(), old_slice.ellipsis_mask(), old_slice.new_axis_mask(), old_slice.shrink_axis_mask());
+        old_slice.begin_mask(), old_slice.end_mask(), old_slice.ellipsis_mask(), old_slice.new_axis_mask());
     sl->name(old_slice.name());
     sl->input().connect(p->output());
 
