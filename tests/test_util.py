@@ -76,7 +76,7 @@ def torch_module_to_onnx(case_name, module, in_shape, opset_version=11):
                       operator_export_type=torch.onnx.OperatorExportTypes.ONNX_ATEN_FALLBACK, opset_version=opset_version)
 
 
-def gen_input(case_name, input_tensor):
+def gen_input(case_name, input_tensor, id):
     input_dir = os.path.join(output_root, case_name)
     if input_tensor['dtype'] is np.uint8:
         input_data = np.random.randint(0, 256, input_tensor['shape'])
@@ -85,12 +85,13 @@ def gen_input(case_name, input_tensor):
     else:
         input_data = np.random.rand(*input_tensor['shape']) * 2 - 1
     input_data = input_data.astype(dtype=input_tensor['dtype'])
-    input_data.tofile(os.path.join(input_dir, 'input.bin'))
-    save_numpy_array_as_txt(os.path.join(input_dir, 'input.txt'), input_data)
+    input_data.tofile(os.path.join(input_dir, 'input{0}.bin'.format(id)))
+    save_numpy_array_as_txt(os.path.join(
+        input_dir, 'input{0}.txt'.format(id)), input_data)
     return input_data
 
 
-def gen_calib_data(case_name, input_tensor, n):
+def gen_calib_data(case_name, input_tensor, id, n):
     input_dir = os.path.join(output_root, case_name)
     input_tensor['shape'][0] *= n
     if input_tensor['dtype'] is np.uint8:
@@ -100,20 +101,26 @@ def gen_calib_data(case_name, input_tensor, n):
     else:
         input_data = np.random.rand(*input_tensor['shape']) * 2 - 1
     input_data = input_data.astype(dtype=input_tensor['dtype'])
-    input_data.tofile(os.path.join(input_dir, 'calib_data.bin'))
+    input_data.tofile(os.path.join(input_dir, 'calib_data{0}.bin'.format(id)))
     save_numpy_array_as_txt(os.path.join(
-        input_dir, 'calib_data.txt'), input_data)
+        input_dir, 'calib_data{0}.txt'.format(id)), input_data)
     return input_data
 
 
 def eval_tflite_gth(case_name, tflite, n):
     interp = tf.lite.Interpreter(model_content=tflite)
     interp.allocate_tensors()
-    input_tensor = interp.get_input_details()[0]
-    input_id = input_tensor["index"]
-    input = gen_input(case_name, input_tensor)
-    calib_data = gen_calib_data(case_name, input_tensor, n)
-    interp.set_tensor(input_id, input)
+    input_len = len(interp.get_input_details())
+    inputs = []
+    calib_datas = []
+    for i in range(input_len):
+        input_tensor = interp.get_input_details()[i]
+        input_id = input_tensor["index"]
+        input = gen_input(case_name, input_tensor, i)
+        calib_data = gen_calib_data(case_name, input_tensor, i, n)
+        interp.set_tensor(input_id, input)
+        inputs.append(input)
+        calib_datas.append(calib_data)
     interp.invoke()
 
     out_len = len(interp.get_output_details())
@@ -127,10 +134,10 @@ def eval_tflite_gth(case_name, tflite, n):
                                    'cpu_result{0}.bin'.format(i)))
         save_numpy_array_as_txt(os.path.join(
             output_root, case_name, 'cpu_result{0}.txt'.format(i)), result)
-    return out_len, input, calib_data
+    return out_len, inputs, calib_datas
 
 
-def graph_eval_tflite_nncase(case_name, model, targets, input, enable_ptq):
+def graph_eval_tflite_nncase(case_name, model, targets, inputs, enable_ptq):
     import_options = nncase.ImportOptions()
     compile_options = nncase.CompileOptions()
     compile_options.dump_asm = True
@@ -145,8 +152,9 @@ def graph_eval_tflite_nncase(case_name, model, targets, input, enable_ptq):
         compiler = nncase.Compiler(compile_options)
         compiler.import_tflite(model, import_options)
         evaluator = compiler.create_evaluator(3)
-        input_tensor = nncase.RuntimeTensor.from_numpy(input)
-        input_tensor.copy_to(evaluator.get_input_tensor(0))
+        for i in range(len(inputs)):
+            input_tensor = nncase.RuntimeTensor.from_numpy(inputs[i])
+            input_tensor.copy_to(evaluator.get_input_tensor(i))
         evaluator.run()
         for i in range(evaluator.outputs_size):
             result = evaluator.get_output_tensor(i).to_numpy()
@@ -156,7 +164,7 @@ def graph_eval_tflite_nncase(case_name, model, targets, input, enable_ptq):
                 case_dir, 'nncase_result{0}.txt'.format(i)), result)
 
 
-def compile_tflite_nncase(case_name, model, targets, input, n, enable_ptq):
+def compile_tflite_nncase(case_name, model, targets, inputs, n, enable_ptq):
     import_options = nncase.ImportOptions()
     compile_options = nncase.CompileOptions()
     compile_options.dump_asm = True
@@ -172,7 +180,7 @@ def compile_tflite_nncase(case_name, model, targets, input, n, enable_ptq):
         compiler.import_tflite(model, import_options)
         if enable_ptq:
             ptq_options = nncase.PTQTensorOptions()
-            ptq_options.set_tensor_data(input.tobytes())
+            ptq_options.set_tensor_data(inputs[0].tobytes())
             ptq_options.samples_count = n
             compiler.use_ptq(ptq_options)
         compiler.compile()
@@ -181,7 +189,7 @@ def compile_tflite_nncase(case_name, model, targets, input, n, enable_ptq):
             f.write(kmodel)
 
 
-def infer_nncase(case_name, input, targets, enable_ptq):
+def infer_nncase(case_name, inputs, targets, enable_ptq):
     for target in targets:
         case_dir = os.path.join(output_root, case_name,
                                 target, 'infer', 'ptq' if enable_ptq else 'no_ptq')
@@ -189,7 +197,9 @@ def infer_nncase(case_name, input, targets, enable_ptq):
             kmodel = f.read()
             sim = nncase.Simulator()
             sim.load_model(kmodel)
-            sim.set_input_tensor(0, nncase.RuntimeTensor.from_numpy(input))
+            for i in range(len(inputs)):
+                sim.set_input_tensor(
+                    i, nncase.RuntimeTensor.from_numpy(inputs[i]))
             sim.run()
             for i in range(sim.outputs_size):
                 result = sim.get_output_tensor(i).to_numpy()
@@ -216,19 +226,21 @@ def test_tf_module(case_name, module, targets):
     clear(case_dir)
     n = 10
     tflite = tf_module_to_tflite(case_name, module)
-    out_len, input, calib_data = eval_tflite_gth(case_name, tflite, n)
+    out_len, inputs, calib_datas = eval_tflite_gth(case_name, tflite, n)
 
     # evaluation
-    graph_eval_tflite_nncase(case_name, tflite, targets, input, False)
+    graph_eval_tflite_nncase(case_name, tflite, targets, inputs, False)
     ret = compare_util.compare_results(
         case_dir, out_len, targets, enable_ptq=False, is_evaluation=True)
     assert ret
 
     # compile & infer
     for enable_ptq in [False, True]:
+        if len(inputs) > 1 and enable_ptq:
+            continue
         compile_tflite_nncase(case_name, tflite, targets,
-                              calib_data, n, enable_ptq=enable_ptq)
-        infer_nncase(case_name, input, targets, enable_ptq=enable_ptq)
+                              calib_datas, n, enable_ptq=enable_ptq)
+        infer_nncase(case_name, inputs, targets, enable_ptq=enable_ptq)
         ret = compare_util.compare_results(
             case_dir, out_len, targets, enable_ptq=enable_ptq, is_evaluation=False)
         assert ret

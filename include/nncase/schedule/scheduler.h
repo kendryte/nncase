@@ -35,7 +35,7 @@ namespace schedule
         size_t size;
         ir::shape_t shape;
         ir::shape_t strides;
-        ir::shape_t parent_shape;
+        ir::shape_t strides_shape;
 
         size_t linear_end() const noexcept { return start + size; }
 
