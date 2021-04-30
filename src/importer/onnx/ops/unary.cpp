@@ -14,22 +14,17 @@
  */
 
 #include "../onnx_importer.h"
-
 #include <cassert>
-
-#include <hlir/graph.h>
-#include <hlir/ops/constant.h>
-#include <hlir/ops/reduce.h>
-#include <hlir/ops/binary.h>
-#include <hlir/ops/unary.h>
-
+#include <nncase/ir/graph.h>
+#include <nncase/ir/ops/binary.h>
+#include <nncase/ir/ops/constant.h>
+#include <nncase/ir/ops/reduce.h>
+#include <nncase/ir/ops/unary.h>
 
 using namespace std;
-
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::hlir;
-
+using namespace nncase::ir;
 using namespace onnx;
 
 void onnx_importer::convert_op_Abs(const onnx::NodeProto &node)
@@ -85,7 +80,7 @@ void onnx_importer::convert_op_Sqrt(const onnx::NodeProto &node)
 
     auto op { graph_.emplace<unary>(unary_rsqrt, input_shape) };
 
-    hlir::constant* one { };
+    hlir::constant *one {};
     switch (input_datatype)
     {
     default:

@@ -14,40 +14,35 @@
  */
 
 #include "../onnx_importer.h"
-
-#include <vector>
 #include <cassert>
-
-#include <hlir/graph.h>
-#include <hlir/ops/concat.h>
-
+#include <nncase/ir/graph.h>
+#include <nncase/ir/ops/concat.h>
+#include <vector>
 
 using namespace std;
-
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::hlir;
-
+using namespace nncase::ir;
 using namespace onnx;
 
 namespace
 {
-    datatype_t deduce_common_type(const vector<datatype_t>& datatypes) noexcept
+datatype_t deduce_common_type(const vector<datatype_t> &datatypes) noexcept
+{
+    assert(!datatypes.empty());
+    assert(dt_float32 < dt_uint8);
+    return *min_element(begin(datatypes), end(datatypes));
+}
+
+size_t axis_count(const vector<shape_t> &shapes)
+{
+    if (shapes.empty())
     {
-        assert(!datatypes.empty());
-        assert(dt_float32 < dt_uint8);
-        return *min_element(begin(datatypes), end(datatypes));
+        return 0;
     }
 
-    size_t axis_count(const vector<shape_t>& shapes)
-    {
-        if (shapes.empty())
-        {
-            return 0;
-        }
-
-        return shapes.front().size();
-    }
+    return shapes.front().size();
+}
 }
 
 void onnx_importer::convert_op_Concat(const NodeProto &node)
@@ -55,7 +50,7 @@ void onnx_importer::convert_op_Concat(const NodeProto &node)
     vector<shape_t> inputs_shapes;
     vector<datatype_t> inputs_types;
 
-    for (const string& input_name : node.input())
+    for (const string &input_name : node.input())
     {
         inputs_shapes.push_back(get_shape(input_name));
         inputs_types.push_back(get_datatype(input_name).value());

@@ -14,37 +14,33 @@
  */
 
 #include "../onnx_importer.h"
-
 #include <cassert>
-
-#include <hlir/graph.h>
-#include <hlir/ops/reshape.h>
+#include <nncase/ir/graph.h>
+#include <nncase/ir/ops/reshape.h>
 
 using namespace std;
-
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::hlir;
-
+using namespace nncase::ir;
 using namespace onnx;
 
 namespace
 {
-    axis_t single_dim_axes(const shape_t& shape)
+axis_t single_dim_axes(const shape_t &shape)
+{
+    axis_t result;
+
+    for (auto i = 0; i < shape.size(); ++i)
     {
-        axis_t result;
-
-        for (auto i = 0; i < shape.size(); ++i)
-        {
-            if (shape[i] == 1)
-                result.push_back(i);
-        }
-
-        return result;
+        if (shape[i] == 1)
+            result.push_back(i);
     }
+
+    return result;
+}
 }
 
-void onnx_importer::convert_op_Squeeze(const NodeProto& node)
+void onnx_importer::convert_op_Squeeze(const NodeProto &node)
 {
     const auto &input { node.input()[0] };
     const auto &output { node.output()[0] };
@@ -57,7 +53,7 @@ void onnx_importer::convert_op_Squeeze(const NodeProto& node)
     auto new_shape { input_shape };
     const axis_t axes { axes_attr ? axes_attr.value() : single_dim_axes(input_shape) };
 
-    size_t squeezed_count { };
+    size_t squeezed_count {};
     for (const auto axis : axes)
     {
         const auto fixed_axis { real_axis(axis, input_shape.size()) };

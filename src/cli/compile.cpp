@@ -74,6 +74,11 @@ void compile_command::run()
         auto file_data = read_file(input_filename_);
         compiler->import_tflite(file_data, i_options);
     }
+    elif (input_format_ == "onnx")
+    {
+        auto file_data = read_file(input_filename_);
+        compiler->import_onnx(file_data, i_options);
+    }
     else
     {
         throw std::invalid_argument("Invalid input format: " + input_format_);

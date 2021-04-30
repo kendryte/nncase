@@ -14,27 +14,23 @@
  */
 
 #include "../onnx_importer.h"
-
 #include <cassert>
-
-#include <hlir/graph.h>
-#include <hlir/ops/constant.h>
-
+#include <nncase/ir/graph.h>
+#include <nncase/ir/ops/constant.h>
 
 using namespace std;
-
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::hlir;
-
+using namespace nncase::ir;
 using namespace onnx;
 
-template<> constant* onnx_importer::emplace_constant<TensorProto>(const optional<TensorProto>& value)
+template <>
+constant *onnx_importer::emplace_constant<TensorProto>(const optional<TensorProto> &value)
 {
     if (!value)
         return nullptr;
 
-    const auto& v { value.value() };
+    const auto &v { value.value() };
     shape_t shape { get_shape(v) };
     const auto value_dt { get_datatype(v) };
 
@@ -44,14 +40,14 @@ template<> constant* onnx_importer::emplace_constant<TensorProto>(const optional
     {
     case TensorProto_DataType_UINT8:
     {
-        const auto& data { to<xt::xarray<uint8_t>>(v) };
+        const auto &data { to<xt::xarray<uint8_t>>(v) };
         xtl::span<const uint8_t> vec { data };
         return graph_.emplace<constant>(value_dt.value(), move(shape), vec);
     }
 
     case TensorProto_DataType_FLOAT:
     {
-        const auto& data { to<xt::xarray<float>>(v) };
+        const auto &data { to<xt::xarray<float>>(v) };
         return graph_.emplace<constant>(value_dt.value(), move(shape), span_from(data));
     }
 
@@ -65,12 +61,12 @@ template<> constant* onnx_importer::emplace_constant<TensorProto>(const optional
             cout << "Constants of types int32 and int64 are represented as float32 and may suffer rounding errors if mantissa width is exceeded" << endl;
         }
 
-        const auto& data { convert_to<xt::xarray<float>>(v) };
+        const auto &data { convert_to<xt::xarray<float>>(v) };
         return graph_.emplace<constant>(dt_float32, move(shape), span_from(data));
     }
 
     default:
-        throw runtime_error("Data type \"" +  to_string(tensor_element_type) + "\" not supported");
+        throw runtime_error("Data type \"" + to_string(tensor_element_type) + "\" not supported");
     }
 }
 
@@ -81,7 +77,7 @@ void onnx_importer::convert_op_Constant(const NodeProto &node)
 
     const auto &output { node.output()[0] };
 
-    hlir::constant* op { };
+    hlir::constant *op {};
     if (const auto value { get_attribute<TensorProto>(node, "value") })
     {
         op = emplace_constant(value);
@@ -96,14 +92,14 @@ void onnx_importer::convert_op_Constant(const NodeProto &node)
     }
     else if (const auto value { get_attribute<vector<int>>(node, "value_ints") })
     {
-        auto&& v { value.value() };
-        vector<uint8_t>&& vec { begin(v), end(v) };
+        auto &&v { value.value() };
+        vector<uint8_t> &&vec { begin(v), end(v) };
         shape_t shape { 1, v.size() };
         op = graph_.emplace<constant>(dt_uint8, move(shape), vec);
     }
     else if (const auto value { get_attribute<vector<float>>(node, "value_floats") })
     {
-        auto&& v { value.value() };
+        auto &&v { value.value() };
         shape_t shape { 1, v.size() };
         op = graph_.emplace<constant>(dt_float32, move(shape), span_from(v));
     }

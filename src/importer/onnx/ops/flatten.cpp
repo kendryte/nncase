@@ -14,38 +14,34 @@
  */
 
 #include "../onnx_importer.h"
-
 #include <algorithm>
-#include <numeric>
 #include <cassert>
-
-#include <hlir/graph.h>
-#include <hlir/ops/reshape.h>
+#include <nncase/ir/graph.h>
+#include <nncase/ir/ops/reshape.h>
+#include <numeric>
 
 using namespace std;
-
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::hlir;
-
+using namespace nncase::ir;
 using namespace onnx;
 
 namespace
 {
-    axis_t compose_new_shape(const shape_t &input_shape, const size_t flatten_axis)
-    {
-        axis_t result;
+axis_t compose_new_shape(const shape_t &input_shape, const size_t flatten_axis)
+{
+    axis_t result;
 
-        copy(begin(input_shape), begin(input_shape) + flatten_axis, back_inserter(result));
+    copy(begin(input_shape), begin(input_shape) + flatten_axis, back_inserter(result));
 
-        const auto flattened_axis { accumulate(begin(input_shape) + flatten_axis, end(input_shape), 1, multiplies<long>()) };
-        result.push_back(flattened_axis);
+    const auto flattened_axis { accumulate(begin(input_shape) + flatten_axis, end(input_shape), 1, multiplies<long>()) };
+    result.push_back(flattened_axis);
 
-        return result;
-    }
+    return result;
+}
 }
 
-void onnx_importer::convert_op_Flatten(const NodeProto& node)
+void onnx_importer::convert_op_Flatten(const NodeProto &node)
 {
     const auto &input { node.input()[0] };
     const auto &output { node.output()[0] };

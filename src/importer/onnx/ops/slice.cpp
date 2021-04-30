@@ -14,20 +14,16 @@
  */
 
 #include "../onnx_importer.h"
-
 #include <vector>
 #include <cassert>
-
-#include <hlir/graph.h>
-#include <hlir/ops/strided_slice.h>
+#include <nncase/ir/graph.h>
+#include <nncase/ir/ops/strided_slice.h>
 
 
 using namespace std;
-
 using namespace nncase;
 using namespace nncase::importer;
 using namespace nncase::hlir;
-
 using namespace onnx;
 
 void onnx_importer::convert_op_Slice(const NodeProto& node)

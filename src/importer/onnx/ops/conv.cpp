@@ -14,64 +14,60 @@
  */
 
 #include "../onnx_importer.h"
-
 #include <cassert>
-
-#include <hlir/graph.h>
-#include <hlir/op_utils.h>
-#include <hlir/ops/conv2d.h>
-#include <hlir/ops/conv2d_transpose.h>
+#include <nncase/ir/graph.h>
+#include <nncase/ir/op_utils.h>
+#include <nncase/ir/ops/conv2d.h>
+#include <nncase/ir/ops/conv2d_transpose.h>
 
 using namespace std;
-
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::hlir;
-
+using namespace nncase::ir;
 using namespace onnx;
 
 namespace
 {
-    enum class padding_mode
-    {
-        notset,
-        same,
-        valid
-    };
+enum class padding_mode
+{
+    notset,
+    same,
+    valid
+};
 
-    padding_mode parse_padding_mode(const string &value) noexcept
-    {
-        if (value == "VALID")
-            return padding_mode::valid;
-        else if (value == "SAME_UPPER" || value == "SAME_LOWER")
-            return padding_mode::same;
-        else
-            return padding_mode::notset;
-    }
-
-    shape_t generate_output_shape(const shape_t& input, const shape_t& kernel, const array<padding, 2>& pads, const array<size_t, 2>& dilations, const array<size_t, 2>& strides)
-    {
-        return
-        {
-            input[0],
-            kernel[1],
-            input[2] + dilations[0] * (kernel[2] - 1) - pads[0].sum(),
-            input[3] + dilations[1] * (kernel[3] - 1) - pads[1].sum()
-        };
-    }
+padding_mode parse_padding_mode(const string &value) noexcept
+{
+    if (value == "VALID")
+        return padding_mode::valid;
+    else if (value == "SAME_UPPER" || value == "SAME_LOWER")
+        return padding_mode::same;
+    else
+        return padding_mode::notset;
 }
 
-void onnx_importer::convert_op_Conv(const NodeProto& node)
+shape_t generate_output_shape(const shape_t &input, const shape_t &kernel, const array<padding, 2> &pads, const array<size_t, 2> &dilations, const array<size_t, 2> &strides)
+{
+    return {
+        input[0],
+        kernel[1],
+        input[2] + dilations[0] * (kernel[2] - 1) - pads[0].sum(),
+        input[3] + dilations[1] * (kernel[3] - 1) - pads[1].sum()
+    };
+}
+}
+
+void onnx_importer::convert_op_Conv(const NodeProto &node)
 {
     convert_conv<conv2d>(node);
 }
 
-void onnx_importer::convert_op_ConvTranspose(const NodeProto& node)
+void onnx_importer::convert_op_ConvTranspose(const NodeProto &node)
 {
     convert_conv<conv2d_transpose>(node);
 }
 
-template<class Node> void onnx_importer::convert_conv(const NodeProto &node)
+template <class Node>
+void onnx_importer::convert_conv(const NodeProto &node)
 {
     const auto &input { node.input()[0] };
     const auto &weight { node.input()[1] };
@@ -126,11 +122,8 @@ template<class Node> void onnx_importer::convert_conv(const NodeProto &node)
 
     const auto &weight_shape { get_shape(weight_initializer.value()) };
 
-    array<padding, 2> pads
-    {{
-        { 0, 0 },
-        { 0, 0 }
-    }};
+    array<padding, 2> pads { { { 0, 0 },
+        { 0, 0 } } };
 
     switch (pad_mode)
     {
@@ -181,12 +174,14 @@ template<class Node> void onnx_importer::convert_conv(const NodeProto &node)
     output_tensors_.emplace(output, &conv->output());
 }
 
-template<class Node> Node* onnx_importer::add_conv_node(const NodeProto &node, hlir::graph& graph, shape_t&& input_shape, xt::xarray<float>&& weight_value, xt::xarray<float>&& bias_value, const size_t group, const array<padding, 2>& pads, const array<size_t, 2>& strides, const array<size_t, 2>& dilations)
+template <class Node>
+Node *onnx_importer::add_conv_node(const NodeProto &node, hlir::graph &graph, shape_t &&input_shape, xt::xarray<float> &&weight_value, xt::xarray<float> &&bias_value, const size_t group, const array<padding, 2> &pads, const array<size_t, 2> &strides, const array<size_t, 2> &dilations)
 {
     return graph.emplace<Node>(move(input_shape), move(weight_value), move(bias_value), group, pads[0], pads[1], strides[0], strides[1], dilations[0], dilations[1], value_range<float>::full());
 }
 
-template<> conv2d_transpose* onnx_importer::add_conv_node<conv2d_transpose>(const NodeProto &node, hlir::graph& graph, shape_t&& input_shape, xt::xarray<float>&& weight_value, xt::xarray<float>&& bias_value, const size_t group, const array<padding, 2>& pads, const array<size_t, 2>& strides, const array<size_t, 2>& dilations)
+template <>
+conv2d_transpose *onnx_importer::add_conv_node<conv2d_transpose>(const NodeProto &node, hlir::graph &graph, shape_t &&input_shape, xt::xarray<float> &&weight_value, xt::xarray<float> &&bias_value, const size_t group, const array<padding, 2> &pads, const array<size_t, 2> &strides, const array<size_t, 2> &dilations)
 {
     auto output_shape { generate_output_shape(input_shape, weight_value.shape(), pads, dilations, strides) };
 

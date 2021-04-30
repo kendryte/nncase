@@ -14,26 +14,22 @@
  */
 
 #include "../onnx_importer.h"
-
 #include <cassert>
-
-#include <hlir/graph.h>
-#include <hlir/ops/pad.h>
+#include <nncase/ir/graph.h>
+#include <nncase/ir/ops/pad.h>
 
 using namespace std;
-
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::hlir;
-
+using namespace nncase::ir;
 using namespace onnx;
 
-void onnx_importer::convert_op_Pad(const NodeProto& node)
+void onnx_importer::convert_op_Pad(const NodeProto &node)
 {
     const auto &input { node.input()[0] };
     const auto &output { node.output()[0] };
 
-    const bool use_opset_version_9  { node.input().size() == 1 };
+    const bool use_opset_version_9 { node.input().size() == 1 };
 
     const auto input_type { get_datatype(input).value() };
     const auto &input_shape { get_shape(input) };
@@ -85,7 +81,7 @@ void onnx_importer::convert_op_Pad(const NodeProto& node)
         throw runtime_error("Only 2D padding is supported");
     }
 
-    const xt::svector<padding>& new_paddings { parse_padding(padding_value) };
+    const xt::svector<padding> &new_paddings { parse_padding(padding_value) };
 
     scalar constant { (uint8_t)0 };
 

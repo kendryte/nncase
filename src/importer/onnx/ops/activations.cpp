@@ -14,21 +14,17 @@
  */
 
 #include "../onnx_importer.h"
-
 #include <cassert>
-
-#include <hlir/graph.h>
-#include <hlir/ops/binary.h>
-#include <hlir/ops/constant.h>
-#include <hlir/ops/reduce.h>
-#include <hlir/ops/unary.h>
+#include <nncase/ir/graph.h>
+#include <nncase/ir/ops/binary.h>
+#include <nncase/ir/ops/constant.h>
+#include <nncase/ir/ops/reduce.h>
+#include <nncase/ir/ops/unary.h>
 
 using namespace std;
-
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::hlir;
-
+using namespace nncase::ir;
 using namespace onnx;
 
 void onnx_importer::convert_op_Relu(const NodeProto &node)
@@ -60,7 +56,7 @@ void onnx_importer::convert_op_LeakyRelu(const NodeProto &node)
     auto &&in_shape = get_shape(input);
 
     const auto alpha_value { get_attribute<float>(node, "alpha").value() };
-    const auto& alpha { graph_.emplace<constant>(alpha_value) };
+    const auto &alpha { graph_.emplace<constant>(alpha_value) };
 
     auto mul = graph_.emplace<binary>(binary_mul, in_shape, alpha->output().shape(), value_range<float>::full());
     auto max = graph_.emplace<binary>(binary_max, in_shape, mul->output().shape(), value_range<float>::full());

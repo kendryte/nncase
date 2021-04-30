@@ -14,33 +14,29 @@
  */
 
 #include "../onnx_importer.h"
-
 #include <cassert>
-
-#include <hlir/graph.h>
-#include <hlir/ops/constant.h>
-#include <hlir/ops/binary.h>
-#include <hlir/ops/reshape.h>
-#include <hlir/ops/unary.h>
+#include <nncase/ir/graph.h>
+#include <nncase/ir/ops/binary.h>
+#include <nncase/ir/ops/constant.h>
+#include <nncase/ir/ops/reshape.h>
+#include <nncase/ir/ops/unary.h>
 
 using namespace std;
-
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::hlir;
-
+using namespace nncase::ir;
 using namespace onnx;
 
 namespace
 {
-    shape_t broadcast_shape(const shape_t& v_shape, const shape_t& input_shape) noexcept
-    {
-        shape_t result { v_shape };
-        for (size_t i = v_shape.size() + 1; i < input_shape.size(); ++i)
-            result.push_back(1);
+shape_t broadcast_shape(const shape_t &v_shape, const shape_t &input_shape) noexcept
+{
+    shape_t result { v_shape };
+    for (size_t i = v_shape.size() + 1; i < input_shape.size(); ++i)
+        result.push_back(1);
 
-        return result;
-    }
+    return result;
+}
 }
 
 void onnx_importer::convert_op_BatchNormalization(const NodeProto &node)
@@ -60,10 +56,8 @@ void onnx_importer::convert_op_BatchNormalization(const NodeProto &node)
 
     const auto &input_T_shape { get_shape(input_T) };
 
-    const auto &broadcast_if_needed
-    {
-        [this, &input_T_shape](const string& input) -> hlir::reshape*
-        {
+    const auto &broadcast_if_needed {
+        [this, &input_T_shape](const string &input) -> hlir::reshape * {
             const auto &input_shape { get_shape(input) };
 
             if (input_T_shape.empty() || input_shape.size() == input_T_shape.size() - 1)
@@ -98,7 +92,7 @@ void onnx_importer::convert_op_BatchNormalization(const NodeProto &node)
     auto scale_op { graph_.emplace<binary>(binary_mul, norm_op->output().shape(), pre_scale_op ? pre_scale_op->output().shape() : get_shape(input_scale), value_range<float>::full()) };
 
     auto pre_B_op { broadcast_if_needed(input_B) };
-    auto bias_op { graph_.emplace<binary>(binary_add, scale_op->output().shape(), pre_B_op ? pre_B_op->output().shape(): get_shape(input_B), value_range<float>::full()) };
+    auto bias_op { graph_.emplace<binary>(binary_add, scale_op->output().shape(), pre_B_op ? pre_B_op->output().shape() : get_shape(input_B), value_range<float>::full()) };
 
     if (pre_mean_op)
         mean_op->input_b().connect(pre_mean_op->output());

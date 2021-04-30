@@ -14,37 +14,33 @@
  */
 
 #include "../onnx_importer.h"
-
 #include <cassert>
-
-#include <hlir/graph.h>
-#include <hlir/ops/resize_image.h>
+#include <nncase/ir/graph.h>
+#include <nncase/ir/ops/resize_image.h>
 
 using namespace std;
-
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::hlir;
-
+using namespace nncase::ir;
 using namespace onnx;
 
 namespace
 {
-    bool parse_align_corners(const string &value) noexcept
-    {
-        return value == "align_corners";
-    }
-
-    image_resize_mode_t parse_image_resize_mode(const string& value) noexcept
-    {
-        if (value == "linear")
-            return image_resize_bilinear;
-        else
-            return image_resize_nearest_neighbor;
-    }
+bool parse_align_corners(const string &value) noexcept
+{
+    return value == "align_corners";
 }
 
-void onnx_importer::convert_op_Resize(const NodeProto& node)
+image_resize_mode_t parse_image_resize_mode(const string &value) noexcept
+{
+    if (value == "linear")
+        return image_resize_bilinear;
+    else
+        return image_resize_nearest_neighbor;
+}
+}
+
+void onnx_importer::convert_op_Resize(const NodeProto &node)
 {
     const bool use_version_9 { node.input().size() == 2 };
 
@@ -89,7 +85,7 @@ void onnx_importer::convert_op_Resize(const NodeProto& node)
 
     const auto mode { parse_image_resize_mode(get_attribute<string>(node, "mode").value()) };
     const auto align_corners { parse_align_corners(get_attribute<string>(node, "coordinate_transformation_mode").value()) };
-    const array<int32_t, 2> new_size_array {{ new_size[2], new_size[3] }};
+    const array<int32_t, 2> new_size_array { { new_size[2], new_size[3] } };
 
     auto op { graph_.emplace<resize_image>(input_type, mode, input_shape, new_size_array, align_corners) };
 

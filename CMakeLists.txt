@@ -42,13 +42,13 @@ if (BUILDING_RUNTIME)
                     SETTINGS compiler.cppstd=14
                     BUILD missing)
     include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
-    
+
     set(NNCASE_MAIN_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
     set(NNCASE_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include)
     set(THIRD_PARTY ${CMAKE_CURRENT_LIST_DIR}/third_party)
     set(CMAKE_CXX_STANDARD 14)
     set_property(GLOBAL PROPERTY POSITION_INDEPENDENT_CODE ON)
-    
+
     if (MSVC)
         add_definitions(/D_CRT_SECURE_NO_WARNINGS /DNOMINMAX)
         add_compile_options(/wd4267 /wd4251 /FC /utf-8 /W3 /WX)
@@ -58,21 +58,21 @@ if (BUILDING_RUNTIME)
             add_compile_options(-Wno-four-char-constants -Wno-sometimes-uninitialized)
         endif()
     endif()
-    
+
     include_directories(${NNCASE_MAIN_INCLUDE_DIR})
     include_directories(${NNCASE_INCLUDE_DIR})
-    
+
     add_subdirectory(include/nncase)
     add_subdirectory(src/kernels)
     add_subdirectory(src/runtime)
-        
+
     install(DIRECTORY ${NNCASE_INCLUDE_DIR}/nncase
         DESTINATION include
         COMPONENT nncase-headers
         FILES_MATCHING
         PATTERN "*version.h"
         )
-    
+
     install(DIRECTORY include/nncase/runtime
         DESTINATION include/nncase
         COMPONENT nncase-headers
@@ -92,14 +92,14 @@ else()
 
     find_package (Protobuf REQUIRED)
     include(cmake/flatc.cmake)
-    
+
     set(NNCASE_MAIN_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
     set(NNCASE_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include)
     set(THIRD_PARTY ${CMAKE_CURRENT_LIST_DIR}/third_party)
     set(CMAKE_CXX_STANDARD 20)
     set_property(GLOBAL PROPERTY POSITION_INDEPENDENT_CODE ON)
     set(CMAKE_INSTALL_RPATH "$ORIGIN/../lib")
-    
+
     if (MSVC)
         add_definitions(/D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS /D_CRT_SECURE_NO_WARNINGS /DNOMINMAX)
         add_compile_options(/wd4267 /wd4251 /FC /utf-8 /W3 /WX)
@@ -111,10 +111,10 @@ else()
             add_compile_options(-Wno-four-char-constants -Wno-sometimes-uninitialized)
         endif()
     endif()
-    
+
     include_directories(${NNCASE_MAIN_INCLUDE_DIR})
     include_directories(${NNCASE_INCLUDE_DIR})
-    
+
     add_subdirectory(include/nncase)
     add_subdirectory(src/data)
     add_subdirectory(src/ir)
@@ -129,13 +129,13 @@ else()
     add_subdirectory(src/plugin)
     add_subdirectory(src/nncase)
     add_subdirectory(src/cli)
-    
+
     # Python binding
     add_subdirectory(python/nncase/native)
-    
+
     # Thrid party
     add_subdirectory(third_party/onnx)
-    
+
     install(DIRECTORY include/nncase
         DESTINATION include
         COMPONENT nncase-headers
@@ -146,7 +146,7 @@ else()
         PATTERN "*.inc"
         PATTERN "LICENSE.TXT"
         )
-        
+
     install(DIRECTORY ${NNCASE_INCLUDE_DIR}/nncase
         DESTINATION include
         COMPONENT nncase-headers
@@ -158,7 +158,7 @@ else()
         PATTERN "CMakeFiles" EXCLUDE
         PATTERN "config.h" EXCLUDE
         )
-    
+
     install(DIRECTORY python/nncase
         DESTINATION python
         COMPONENT nncase-python
@@ -168,7 +168,7 @@ else()
 endif()
 
 include_directories(modules/include)
-    
+
 # Targets
 add_subdirectory(targets/cpu)
 add_subdirectory(targets/k210)

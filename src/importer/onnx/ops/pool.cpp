@@ -14,63 +14,60 @@
  */
 
 #include "../onnx_importer.h"
-
-#include <limits>
 #include <cassert>
-
-#include <hlir/graph.h>
-#include <hlir/op_utils.h>
-#include <hlir/ops/reduce_window2d.h>
+#include <limits>
+#include <nncase/ir/graph.h>
+#include <nncase/ir/op_utils.h>
+#include <nncase/ir/ops/reduce_window2d.h>
 
 using namespace std;
-
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::hlir;
-
+using namespace nncase::ir;
 using namespace onnx;
 
 namespace
 {
-    enum class padding_mode
-    {
-        notset,
-        same,
-        valid
-    };
+enum class padding_mode
+{
+    notset,
+    same,
+    valid
+};
 
-    padding_mode parse_padding_mode(const string &value) noexcept
-    {
-        if (value == "VALID")
-            return padding_mode::valid;
-        else if (value == "SAME_UPPER" || value == "SAME_LOWER")
-            return padding_mode::same;
-        else
-            return padding_mode::notset;
-    }
+padding_mode parse_padding_mode(const string &value) noexcept
+{
+    if (value == "VALID")
+        return padding_mode::valid;
+    else if (value == "SAME_UPPER" || value == "SAME_LOWER")
+        return padding_mode::same;
+    else
+        return padding_mode::notset;
+}
 }
 
-void onnx_importer::convert_op_AveragePool(const NodeProto& node)
+void onnx_importer::convert_op_AveragePool(const NodeProto &node)
 {
     convert_pool<>(node, reduce_mean, 0.f);
 }
 
-void onnx_importer::convert_op_GlobalAveragePool(const NodeProto& node)
+void onnx_importer::convert_op_GlobalAveragePool(const NodeProto &node)
 {
     convert_pool<true>(node, reduce_mean, 0.f);
 }
 
-void onnx_importer::convert_op_MaxPool(const NodeProto& node)
+void onnx_importer::convert_op_MaxPool(const NodeProto &node)
 {
     convert_pool<>(node, reduce_max, numeric_limits<float>::lowest());
 }
 
-void onnx_importer::convert_op_GlobalMaxPool(const NodeProto& node)
+void onnx_importer::convert_op_GlobalMaxPool(const NodeProto &node)
 {
     convert_pool<true>(node, reduce_max, numeric_limits<float>::lowest());
 }
 
-template<bool global> void onnx_importer::convert_pool(const NodeProto& node, const reduce_op_t reduce_op, const float init_value)
+template <bool global>
+void onnx_importer::convert_pool(const NodeProto &node, const reduce_op_t reduce_op, const float init_value)
 {
     const auto &input { node.input()[0] };
     const auto &output { node.output()[0] };
@@ -88,10 +85,9 @@ template<bool global> void onnx_importer::convert_pool(const NodeProto& node, co
     array<size_t, 2> dilations { 1, 1 };
 
     if (input_shape.size() < 4)
-	    throw invalid_argument("Image with 4-dimensional shape is expected on the input of pooling operators.");
+        throw invalid_argument("Image with 4-dimensional shape is expected on the input of pooling operators.");
 
-    const auto &kernel_shape
-    {
+    const auto &kernel_shape {
         global ? vector<int> { static_cast<int>(input_shape[2]), static_cast<int>(input_shape[3]) } : get_attribute<vector<int>>(node, "kernel_shape").value()
     };
 
@@ -108,8 +104,7 @@ template<bool global> void onnx_importer::convert_pool(const NodeProto& node, co
             strides[1] = strides_values[1];
     }
 
-    std::vector<padding> pads
-    {
+    std::vector<padding> pads {
         { 0, 0 },
         { 0, 0 }
     };

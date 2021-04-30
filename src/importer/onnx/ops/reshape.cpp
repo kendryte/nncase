@@ -14,21 +14,17 @@
  */
 
 #include "../onnx_importer.h"
-
 #include <cassert>
-
-#include <hlir/graph.h>
-#include <hlir/ops/reshape.h>
+#include <nncase/ir/graph.h>
+#include <nncase/ir/ops/reshape.h>
 
 using namespace std;
-
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::hlir;
-
+using namespace nncase::ir;
 using namespace onnx;
 
-void onnx_importer::convert_op_Reshape(const NodeProto& node)
+void onnx_importer::convert_op_Reshape(const NodeProto &node)
 {
     const auto &input { node.input()[0] };
     const auto &shape { node.input()[1] };
