@@ -425,6 +425,16 @@ namespace kernels
 #if __riscv
             riscv_quantize(input, output, count, param);
 #else
+            auto min = input[0];
+            auto max = input[0];
+            for(size_t i = 0; i < count; i++) {
+                if(input[i] < min) {
+                    min = input[i];
+                }
+                if(input[i] > max) {
+                    max = input[i];
+                }
+            }
             for (size_t i = 0; i < count; i++)
             {
                 int32_t tmp = (int32_t)roundf(input[i] * param.scale + param.zero_point);
