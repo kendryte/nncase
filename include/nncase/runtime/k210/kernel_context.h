@@ -14,13 +14,13 @@
  */
 #pragma once
 #include <nncase/kernels/kernel_context.h>
-#include "runtime_types.h"
 
-BEGIN_NS_NNCASE_KERNELS_CPU_REF
-
-NNCASE_API result<void> conv2d(const float *input, const float *weights, const float *bias, float *output,
-    const runtime_shape_t &in_shape, const runtime_shape_t &in_strides, const runtime_shape_t &w_shape, const runtime_shape_t &w_strides,
-    const runtime_shape_t &bias_strides, const runtime_shape_t &out_strides, const padding &padding_h, const padding &padding_w,
-    int32_t groups, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w, value_range<float> fused_activation, kernel_context &context) noexcept;
-
-END_NS_NNCASE_KERNELS_CPU_REF
+namespace nncase
+{
+namespace runtime
+{
+    namespace k210 struct NNCASE_API k210_kernel_context : public kernels::kernel_context
+    {
+    };
+}
+}

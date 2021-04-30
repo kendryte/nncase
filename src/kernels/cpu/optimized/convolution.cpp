@@ -14,6 +14,10 @@
  */
 #include <nncase/kernels/cpu/optimized/convolution.h>
 #include <nncase/kernels/kernel_utils.h>
+#include <nncase/runtime/stackvm/kernel_context.h>
+#ifdef NNCASE_OPENMP
+#include <omp.h>
+#endif
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -21,41 +25,50 @@ using namespace nncase::kernels;
 using namespace nncase::kernels::cpu;
 using namespace nncase::kernels::cpu::optimized;
 
-result<void> optimized::conv2d_1x1(const float *input, const float *weights, const float *bias, float *output,
-    const runtime_shape_t &in_shape, const runtime_shape_t &in_strides, const runtime_shape_t &w_shape, const runtime_shape_t &w_strides,
-    const runtime_shape_t &bias_strides, const runtime_shape_t &out_strides, const padding &padding_h, const padding &padding_w,
-    int32_t groups, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w, value_range<float> fused_activation) noexcept
+result<void> optimized::conv2d_1x1(const float *input, const float *weights, NNCASE_UNUSED const float *bias, float *output,
+    const runtime_shape_t &in_shape, const runtime_shape_t &in_strides, const runtime_shape_t &w_shape, 
+    NNCASE_UNUSED const runtime_shape_t &w_strides, NNCASE_UNUSED const runtime_shape_t &bias_strides, const runtime_shape_t &out_strides, 
+    NNCASE_UNUSED const padding &padding_h, NNCASE_UNUSED const padding &padding_w,
+    NNCASE_UNUSED int32_t groups, NNCASE_UNUSED int32_t stride_h, NNCASE_UNUSED int32_t stride_w, 
+    NNCASE_UNUSED int32_t dilation_h, NNCASE_UNUSED int32_t dilation_w, value_range<float> fused_activation, kernel_context &context) noexcept
 {
     const auto output_widths = in_shape[0] * w_shape[0] * in_shape[2] * in_shape[3];
-    for (size_t i = 0; i < output_widths; ++i)
-    {
-        output[i] = 0;
-    }
     const auto widths = in_shape[2] * in_shape[3];
-
+    // if oc's type is size_t, openmp will throw error in visual studio
+    // if no cast, compiler will throw warning because of comparison of integer expressions of different signedness
+    // warning be treated as errors
+    const auto out_channels = static_cast<int>(w_shape[0]);
+    int threads = 1;
+    if (std::is_convertible_v<stackvm::stackvm_kernel_context &, decltype(context)>)
+    {
+        threads = static_cast<stackvm::stackvm_kernel_context &>(context).num_threads_;
+    }
     for (size_t batch = 0; batch < in_shape[0]; batch++)
     {
-#pragma omp parallel for 4
+#ifdef NNCASE_OPENMP
+#pragma omp parallel for num_threads(threads)
+#endif
         // a img scan kernels/oc times
-        for (size_t oc = 0; oc < w_shape[0]; oc++)
+        for (int oc = 0; oc < out_channels; oc++)
         {
-            const float *now_weights = weights + oc * w_strides[0];
+            const auto out_c = oc;
+            const float *now_weights = weights + out_c * w_strides[0];
             const float *now_img_start = input + batch * in_strides[0];
-            // Todo how bias fill
             size_t channel = 0;
             // four channel in once for
 
-            auto *now_output_channel_start = output + (batch * out_strides[0] + oc * out_strides[1]);
+            auto *now_output_channel_start = output + (batch * out_strides[0] + out_c * out_strides[1]);
+
+            std::fill(now_output_channel_start, now_output_channel_start + in_shape[2] * in_shape[3], bias[oc]);
             for (; channel + 4 <= in_shape[1]; channel += 4, now_weights += 4)
             {
                 auto *w_output = now_output_channel_start;
                 // 1x1 w is constant in per channel
-                const float w0 =  now_weights[0];
-                const float w1 =  now_weights[1];
-                const float w2 =  now_weights[2];
-                const float w3 =  now_weights[3];
+                const float w0 = now_weights[0];
+                const float w1 = now_weights[1];
+                const float w2 = now_weights[2];
+                const float w3 = now_weights[3];
 
-                // Todo:incr index and incr pointer
                 // reset address point to beginning of channel
                 const float *i0 = now_img_start + (channel + 0) * in_strides[1];
                 const float *i1 = now_img_start + (channel + 1) * in_strides[1];
@@ -68,7 +81,7 @@ result<void> optimized::conv2d_1x1(const float *input, const float *weights, con
                 const float *v2 = i2;
                 const float *v3 = i3;
 
-                // treat 2 dimensions as linear 
+                // treat 2 dimensions as linear
                 for (size_t index = 0; index < widths; ++index)
                 {
                     float sum0 = *v0 * w0;
@@ -85,11 +98,10 @@ result<void> optimized::conv2d_1x1(const float *input, const float *weights, con
                     ++v1;
                     ++v2;
                     ++v3;
-                    // const float v = input[batch * in_strides[0] + channel * in_strides[1] + index];
                 }
             }
 
-            for (;channel < in_shape[1]; ++channel)
+            for (; channel < in_shape[1]; ++channel)
             {
                 // scan a img in per channel, the output will return start and add next channel value
                 // reset write output pointer point to output channel start

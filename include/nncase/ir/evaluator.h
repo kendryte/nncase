@@ -22,6 +22,7 @@
 #include <nncase/schedule/scheduler.h>
 #include <unordered_map>
 #include <xtensor/xadapt.hpp>
+#include <nncase/kernels/kernel_context.h>
 
 namespace nncase::ir
 {

@@ -39,5 +39,5 @@ result<void> stackvm_runtime_module::visit(const tensor_concat_op_t &op) noexcep
     auto &out_strides = shape_regs_[op.rstride_dest];
     auto &concat_dims = shape_regs_[op.rshape_dims];
     return kernels::concat(op.datatype, inputs, reinterpret_cast<gsl::byte *>(output), out_shape,
-        in_strides, out_strides, op.axis, concat_dims);
+        in_strides, out_strides, op.axis, concat_dims, kernel_context());
 }
