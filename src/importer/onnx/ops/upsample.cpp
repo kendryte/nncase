@@ -37,7 +37,6 @@ void onnx_importer::convert_op_Upsample(const NodeProto& node)
 
     // Scales tensor_input
     const auto &scales_input {node.input(1)};
-    shape_t scales_shape {get_shape(scales_input)};
     const auto &scales_data {get_initializer(scales_input)};
 
     // Assert we have a valid initializer for our scales_data
@@ -55,9 +54,8 @@ void onnx_importer::convert_op_Upsample(const NodeProto& node)
         throw runtime_error("Only nearest mode supported for Upsample.");
     }
 
-    auto graph_node {graph_.emplace<upsample>(data_type, tensor_shape, scales_shape, scales)};
+    auto graph_node {graph_.emplace<upsample>(data_type, tensor_shape, scales)};
     // Add the 2 inputs and 1 output
     input_tensors_.emplace(&graph_node->input_at(0), tensor_input);
-    input_tensors_.emplace(&graph_node->input_at(1), scales_input);
     output_tensors_.emplace(node.output(0), &graph_node->output_at(0));
 }

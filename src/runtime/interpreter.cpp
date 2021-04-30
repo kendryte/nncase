@@ -123,13 +123,6 @@ void interpreter_base::step()
             last_op_ = header.opcode;
 
             result = call_kernel(header.opcode, body, static_cast<interpreter_t &>(*this), &interpreter_base::step);
-            int64_t sum = 0;
-            for(int i = 0; i < 4096; i++) {
-                sum += main_mem_[i];
-            }
-            if(sum == 0) {
-                std::cout << "Got 0 bytes main mem" << std::endl;
-            }
 
             if (result == kcr_error)
             {

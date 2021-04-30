@@ -9,7 +9,7 @@ namespace nncase::llir {
     public:
         DEFINE_NODE_OPCODE(op_upsample)
 
-        upsample(datatype_t dt, shape_t input_shape, shape_t scales_shape, const std::vector<float> &scales);
+        upsample(datatype_t dt, shape_t input_shape, const std::vector<float> &scales);
 
         input_connector &input() { return input_at(0); }
         output_connector &output() { return output_at(0); }

@@ -15,7 +15,6 @@ namespace nncase::hlir {
         void compile(hlir_compile_context &context) override;
 
         input_connector &input() { return input_at(0); }
-
     private:
         int64_t _axis;
         std::vector<int64_t> _splits;
