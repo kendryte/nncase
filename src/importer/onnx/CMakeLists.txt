@@ -97,24 +97,24 @@ set(ONNX_IMPORTER_SOURCES
 
 set(ONNX_IMPORTER_OPS_SOURCES
     ops/activations.cpp
-    ops/binary.cpp
-    ops/batchnorm.cpp
-    ops/concat.cpp
-    ops/constant.cpp
-    ops/conv.cpp
-    ops/flatten.cpp
-    ops/lp_normalization.cpp
-    ops/matmul.cpp
-    ops/pad.cpp
-    ops/pool.cpp
-    ops/reduce.cpp
-    ops/reshape.cpp
-    ops/resize.cpp
-    ops/slice.cpp
-    ops/softmax.cpp
-    ops/squeeze.cpp
-    ops/transpose.cpp
-    ops/unary.cpp
+    # ops/binary.cpp
+    # ops/batchnorm.cpp
+    # ops/concat.cpp
+    # ops/constant.cpp
+    # ops/conv.cpp
+    # ops/flatten.cpp
+    # ops/lp_normalization.cpp
+    # ops/matmul.cpp
+    # ops/pad.cpp
+    # ops/pool.cpp
+    # ops/reduce.cpp
+    # ops/reshape.cpp
+    # ops/resize.cpp
+    # ops/slice.cpp
+    # ops/softmax.cpp
+    # ops/squeeze.cpp
+    # ops/transpose.cpp
+    # ops/unary.cpp
     )
 
 # add_library(onnx_importer ${ONNX_IMPORTER_SOURCES} ${ONNX_IMPORTER_OPS_SOURCES})
@@ -124,7 +124,7 @@ target_compile_definitions(onnx_importer PRIVATE NATIVE_IS_BIG_ENDIAN=${BIG_ENDI
 target_include_directories(onnx_importer PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 get_filename_component(PARENT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR} DIRECTORY)
 target_include_directories(onnx_importer PUBLIC ${PARENT_SOURCE_DIR}/include)
-# target_include_directories(onnx_importer PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/../../../third_party/onnx/)
 
-target_link_libraries(onnx_importer PUBLIC ir CONAN_PKG::boost)
+target_link_libraries(onnx_importer PUBLIC ir)
 target_link_libraries(onnx_importer PRIVATE onnx_proto CONAN_PKG::protobuf)
+set_target_properties(onnx_importer PROPERTIES POSITION_INDEPENDENT_CODE ON)

@@ -112,7 +112,7 @@ onnx_importer::onnx_importer(std::span<const uint8_t> model, ir::graph &graph)
         throw std::runtime_error("Invalid ONNX model");
 }
 
-void onnx_importer::import()
+void onnx_importer::import(const struct import_options &options)
 {
     const auto &graph { model_.graph() };
 
@@ -136,19 +136,26 @@ void onnx_importer::import()
     }
 
     // create outputs
-    for (const auto &output_info : graph.output())
+    if (options.output_arrays.empty())
     {
-        const auto &output_name { output_info.name() };
-        auto &&output_shape { get_shape(output_info) };
-        const auto output_dt { get_datatype(output_info) };
+        for (const auto &output_info : graph.output())
+        {
+            const auto &output_name { output_info.name() };
+            auto &&output_shape { get_shape(output_info) };
+            const auto output_dt { get_datatype(output_info) };
 
-        if (!output_dt)
-            throw runtime_error("Data type of output \"" + output_name + "\" is not supported");
+            if (!output_dt)
+                throw runtime_error("Data type of output \"" + output_name + "\" is not supported");
 
-        auto node { graph_.emplace<output_node>(output_dt.value(), output_shape) };
-        node->name(output_name);
+            auto node { graph_.emplace<output_node>(output_dt.value(), output_shape) };
+            node->name(output_name);
 
-        input_tensors_.emplace(&node->input(), output_name);
+            input_tensors_.emplace(&node->input(), output_name);
+        }
+    }
+    else
+    {
+        // TODO: specify output
     }
 
     // connect tensors

@@ -26,22 +26,15 @@
 #include <variant>
 #include <xtensor/xadapt.hpp>
 
-namespace nncase
-{
 
-namespace ir
-{
-    class graph;
-}
-
-namespace importer
+namespace nncase::importer
 {
     class onnx_importer
     {
     public:
         onnx_importer(std::span<const std::uint8_t> model, ir::graph &graph);
 
-        void import();
+        void import(const struct import_options &options);
 
     private:
         typedef std::variant<
@@ -205,5 +198,4 @@ namespace importer
     xt::xarray<std::uint8_t> onnx_importer::to<xt::xarray<std::uint8_t>>(const onnx::TensorProto &tensor);
     template <>
     xt::xarray<float> onnx_importer::convert_to<xt::xarray<float>>(const onnx::TensorProto &tensor);
-}
 }
