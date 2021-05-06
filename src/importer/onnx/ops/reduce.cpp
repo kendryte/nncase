@@ -45,31 +45,31 @@ void onnx_importer::convert_op_ReduceSum(const NodeProto &node)
     convert_reduce(node, reduce_sum, 0.f);
 }
 
-void onnx_importer::convert_reduce(const NodeProto &node, const reduce_op_t reduce_op, const float init_value)
+void onnx_importer::convert_reduce([[maybe_unused]] const NodeProto &node, [[maybe_unused]] const reduce_op_t reduce_op, [[maybe_unused]] const float init_value)
 {
-    const auto &input { node.input()[0] };
-    const auto &output { node.output()[0] };
+    // const auto &input { node.input()[0] };
+    // const auto &output { node.output()[0] };
 
-    const auto &input_shape { get_shape(input) };
+    // const auto &input_shape { get_shape(input) };
 
-    axis_t axes(input_shape.size());
-    std::iota(begin(axes), end(axes), 0);
+    // axis_t axes(input_shape.size());
+    // std::iota(begin(axes), end(axes), 0);
 
-    const auto &axes_attr { get_attribute<axis_t>(node, "axes") };
-    if (axes_attr)
-    {
-        axes = axes_attr.value();
-        std::transform(begin(axes), end(axes), begin(axes), [&input_shape](const auto e) { return real_axis(e, input_shape.size()); });
-    }
+    // const auto &axes_attr { get_attribute<axis_t>(node, "axes") };
+    // if (axes_attr)
+    // {
+    //     axes = axes_attr.value();
+    //     std::transform(begin(axes), end(axes), begin(axes), [&input_shape](const auto e) { return real_axis(e, input_shape.size()); });
+    // }
 
-    bool keepdims { true };
+    // bool keepdims { true };
 
-    const auto &keepdims_attr { get_attribute<int>(node, "keepdims") };
-    if (keepdims_attr)
-        keepdims = static_cast<bool>(keepdims_attr.value());
+    // const auto &keepdims_attr { get_attribute<int>(node, "keepdims") };
+    // if (keepdims_attr)
+    //     keepdims = static_cast<bool>(keepdims_attr.value());
 
-    auto op { graph_.emplace<reduce>(reduce_op, input_shape, move(axes), init_value, keepdims) };
+    // auto op { graph_.emplace<reduce>(reduce_op, input_shape, move(axes), init_value, keepdims) };
 
-    input_tensors_.emplace(&op->input(), input);
-    output_tensors_.emplace(output, &op->output());
+    // input_tensors_.emplace(&op->input(), input);
+    // output_tensors_.emplace(output, &op->output());
 }

@@ -24,20 +24,20 @@ using namespace nncase::importer;
 using namespace nncase::ir;
 using namespace onnx;
 
-void onnx_importer::convert_op_MatMul(const NodeProto &node)
+void onnx_importer::convert_op_MatMul([[maybe_unused]] const NodeProto &node)
 {
-    const auto &input_a { node.input()[0] };
-    const auto &input_b { node.input()[1] };
-    const auto &output { node.output()[0] };
+    // const auto &input_a { node.input()[0] };
+    // const auto &input_b { node.input()[1] };
+    // const auto &output { node.output()[0] };
 
-    auto &&input_a_shape = get_shape(input_a);
-    auto &&input_b_shape = get_shape(input_b);
+    // auto &&input_a_shape = get_shape(input_a);
+    // auto &&input_b_shape = get_shape(input_b);
 
-    auto &&bias(xt::zeros<float>({ input_b_shape.back() }));
+    // auto &&bias(xt::zeros<float>({ input_b_shape.back() }));
 
-    auto mmul { graph_.emplace<matmul>(move(input_a_shape), move(input_b_shape), move(bias), value_range<float>::full()) };
+    // auto mmul { graph_.emplace<matmul>(move(input_a_shape), move(input_b_shape), move(bias), value_range<float>::full()) };
 
-    input_tensors_.emplace(&mmul->input_a(), input_a);
-    input_tensors_.emplace(&mmul->input_b(), input_b);
-    output_tensors_.emplace(output, &mmul->output());
+    // input_tensors_.emplace(&mmul->input_a(), input_a);
+    // input_tensors_.emplace(&mmul->input_b(), input_b);
+    // output_tensors_.emplace(output, &mmul->output());
 }

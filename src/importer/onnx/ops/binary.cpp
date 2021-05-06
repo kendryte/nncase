@@ -57,19 +57,19 @@ void onnx_importer::convert_op_Max(const onnx::NodeProto &node)
     convert_binary(node, binary_max);
 }
 
-void onnx_importer::convert_binary(const onnx::NodeProto &node, const binary_op_t binary_op)
+void onnx_importer::convert_binary([[maybe_unused]] const onnx::NodeProto &node, [[maybe_unused]] const binary_op_t binary_op)
 {
-    assert(node.input().size() == 2);
-    assert(node.output().size() == 1);
+    // assert(node.input().size() == 2);
+    // assert(node.output().size() == 1);
 
-    const auto &input_a { node.input()[0] }, &input_b { node.input()[1] };
-    const auto &output { node.output()[0] };
+    // const auto &input_a { node.input()[0] }, &input_b { node.input()[1] };
+    // const auto &output { node.output()[0] };
 
-    auto &&input_a_shape { get_shape(input_a) }, &&input_b_shape { get_shape(input_b) };
+    // auto &&input_a_shape { get_shape(input_a) }, &&input_b_shape { get_shape(input_b) };
 
-    auto op { graph_.emplace<binary>(binary_op, input_a_shape, input_b_shape, value_range<float>::full()) };
+    // auto op { graph_.emplace<binary>(binary_op, input_a_shape, input_b_shape, value_range<float>::full()) };
 
-    input_tensors_.emplace(&op->input_a(), input_a);
-    input_tensors_.emplace(&op->input_b(), input_b);
-    output_tensors_.emplace(output, &op->output());
+    // input_tensors_.emplace(&op->input_a(), input_a);
+    // input_tensors_.emplace(&op->input_b(), input_b);
+    // output_tensors_.emplace(output, &op->output());
 }

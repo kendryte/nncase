@@ -97,28 +97,27 @@ set(ONNX_IMPORTER_SOURCES
 
 set(ONNX_IMPORTER_OPS_SOURCES
     ops/activations.cpp
-    # ops/binary.cpp
-    # ops/batchnorm.cpp
-    # ops/concat.cpp
-    # ops/constant.cpp
-    # ops/conv.cpp
-    # ops/flatten.cpp
-    # ops/lp_normalization.cpp
-    # ops/matmul.cpp
-    # ops/pad.cpp
-    # ops/pool.cpp
-    # ops/reduce.cpp
-    # ops/reshape.cpp
-    # ops/resize.cpp
-    # ops/slice.cpp
-    # ops/softmax.cpp
-    # ops/squeeze.cpp
-    # ops/transpose.cpp
-    # ops/unary.cpp
+    ops/binary.cpp
+    ops/batchnorm.cpp
+    ops/concat.cpp
+    ops/constant.cpp
+    ops/conv.cpp
+    ops/flatten.cpp
+    ops/lp_normalization.cpp
+    ops/matmul.cpp
+    ops/pad.cpp
+    ops/pool.cpp
+    ops/reduce.cpp
+    ops/reshape.cpp
+    ops/resize.cpp
+    ops/slice.cpp
+    ops/softmax.cpp
+    ops/squeeze.cpp
+    ops/transpose.cpp
+    ops/unary.cpp
     )
 
-# add_library(onnx_importer ${ONNX_IMPORTER_SOURCES} ${ONNX_IMPORTER_OPS_SOURCES})
-add_library(onnx_importer ${ONNX_IMPORTER_SOURCES})
+add_library(onnx_importer ${ONNX_IMPORTER_SOURCES} ${ONNX_IMPORTER_OPS_SOURCES})
 
 target_compile_definitions(onnx_importer PRIVATE NATIVE_IS_BIG_ENDIAN=${BIG_ENDIAN})
 target_include_directories(onnx_importer PRIVATE ${CMAKE_CURRENT_BINARY_DIR})

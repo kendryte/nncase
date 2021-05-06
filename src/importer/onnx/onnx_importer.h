@@ -95,11 +95,11 @@ namespace nncase::importer
 
         template <typename T>
         std::optional<std::vector<T>> get_constant_input_data(const std::string &name) const;
-        template <typename T>
-        ir::constant *emplace_constant(const std::optional<T> &v);
+        // template <typename T>
+        // ir::constant *emplace_constant(const std::optional<T> &v);
 
-        template <class Cont>
-        static xtl::span<const std::uint8_t> span_from(const Cont &data);
+        // template <class Cont>
+        // static xtl::span<const std::uint8_t> span_from(const Cont &data);
 
         ir::graph &graph_;
         onnx::ModelProto model_;
@@ -156,17 +156,17 @@ namespace nncase::importer
         return result;
     }
 
-    template <class Cont>
-    xtl::span<const std::uint8_t> onnx_importer::span_from(const Cont &data)
-    {
-        return xtl::span<const std::uint8_t> {
-            reinterpret_cast<const std::uint8_t *>(data.data()),
-            data.size() * sizeof(typename Cont::value_type)
-        };
-    }
+    // template <class Cont>
+    // xtl::span<const std::uint8_t> onnx_importer::span_from(const Cont &data)
+    // {
+    //     return xtl::span<const std::uint8_t> {
+    //         reinterpret_cast<const std::uint8_t *>(data.data()),
+    //         data.size() * sizeof(typename Cont::value_type)
+    //     };
+    // }
 
-    template <>
-    ir::constant *onnx_importer::emplace_constant<onnx::TensorProto>(const std::optional<onnx::TensorProto> &v);
+    // template <>
+    // ir::constant *onnx_importer::emplace_constant<onnx::TensorProto>(const std::optional<onnx::TensorProto> &v);
     template <>
     std::optional<float> onnx_importer::get_attribute<float>(const onnx::NodeProto &node, const std::string &name);
     template <>

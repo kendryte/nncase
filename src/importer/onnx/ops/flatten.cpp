@@ -17,7 +17,7 @@
 #include <algorithm>
 #include <cassert>
 #include <nncase/ir/graph.h>
-#include <nncase/ir/ops/reshape.h>
+#include <nncase/ir/ops/bitcast.h>
 #include <numeric>
 
 using namespace std;
@@ -41,22 +41,22 @@ axis_t compose_new_shape(const shape_t &input_shape, const size_t flatten_axis)
 }
 }
 
-void onnx_importer::convert_op_Flatten(const NodeProto &node)
+void onnx_importer::convert_op_Flatten([[maybe_unused]] const NodeProto &node)
 {
-    const auto &input { node.input()[0] };
-    const auto &output { node.output()[0] };
+    // const auto &input { node.input()[0] };
+    // const auto &output { node.output()[0] };
 
-    const auto input_type { get_datatype(input).value() };
-    const auto &input_shape { get_shape(input) };
+    // const auto input_type { get_datatype(input).value() };
+    // const auto &input_shape { get_shape(input) };
 
-    const auto &axis_attr { get_attribute<int>(node, "axis") };
+    // const auto &axis_attr { get_attribute<int>(node, "axis") };
 
-    const size_t flatten_axis { axis_attr ? real_axis(axis_attr.value(), input_shape.size()) : 1 };
+    // const size_t flatten_axis { axis_attr ? real_axis(axis_attr.value(), input_shape.size()) : 1 };
 
-    const axis_t &new_shape { compose_new_shape(input_shape, flatten_axis) };
+    // const axis_t &new_shape { compose_new_shape(input_shape, flatten_axis) };
 
-    auto op { graph_.emplace<reshape>(input_type, input_shape, new_shape) };
+    // auto op { graph_.emplace<reshape>(input_type, input_shape, new_shape) };
 
-    input_tensors_.emplace(&op->input(), input);
-    output_tensors_.emplace(output, &op->output());
+    // input_tensors_.emplace(&op->input(), input);
+    // output_tensors_.emplace(output, &op->output());
 }

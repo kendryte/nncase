@@ -32,36 +32,36 @@ namespace
 template <typename T>
 AttributeProto_AttributeType attribute_type;
 
-template <>
-AttributeProto_AttributeType attribute_type<float> { AttributeProto_AttributeType_FLOAT };
-template <>
-AttributeProto_AttributeType attribute_type<int64_t> { AttributeProto_AttributeType_INT };
-template <>
-AttributeProto_AttributeType attribute_type<int> { AttributeProto_AttributeType_INT };
-template <>
-AttributeProto_AttributeType attribute_type<string> { AttributeProto_AttributeType_STRING };
-template <>
-AttributeProto_AttributeType attribute_type<TensorProto> { AttributeProto_AttributeType_TENSOR };
-template <>
-AttributeProto_AttributeType attribute_type<vector<float>> { AttributeProto_AttributeType_FLOATS };
-template <>
-AttributeProto_AttributeType attribute_type<vector<int>> { AttributeProto_AttributeType_INTS };
+// template <>
+// AttributeProto_AttributeType attribute_type<float> { AttributeProto_AttributeType_FLOAT };
+// template <>
+// AttributeProto_AttributeType attribute_type<int64_t> { AttributeProto_AttributeType_INT };
+// template <>
+// AttributeProto_AttributeType attribute_type<int> { AttributeProto_AttributeType_INT };
+// template <>
+// AttributeProto_AttributeType attribute_type<string> { AttributeProto_AttributeType_STRING };
+// template <>
+// AttributeProto_AttributeType attribute_type<TensorProto> { AttributeProto_AttributeType_TENSOR };
+// template <>
+// AttributeProto_AttributeType attribute_type<vector<float>> { AttributeProto_AttributeType_FLOATS };
+// template <>
+// AttributeProto_AttributeType attribute_type<vector<int>> { AttributeProto_AttributeType_INTS };
 // template <>
 // AttributeProto_AttributeType attribute_type<axis_t> { AttributeProto_AttributeType_INTS };
-template <>
-AttributeProto_AttributeType attribute_type<vector<string>> { AttributeProto_AttributeType_STRINGS };
+// template <>
+// AttributeProto_AttributeType attribute_type<vector<string>> { AttributeProto_AttributeType_STRINGS };
 
-template <typename T>
-TensorProto_DataType tensor_type;
+// template <typename T>
+// TensorProto_DataType tensor_type;
 
-template <>
-TensorProto_DataType tensor_type<float> { TensorProto_DataType_FLOAT };
-template <>
-TensorProto_DataType tensor_type<uint8_t> { TensorProto_DataType_UINT8 };
-template <>
-TensorProto_DataType tensor_type<int32_t> { TensorProto_DataType_INT32 };
-template <>
-TensorProto_DataType tensor_type<int64_t> { TensorProto_DataType_INT64 };
+// template <>
+// TensorProto_DataType tensor_type<float> { TensorProto_DataType_FLOAT };
+// template <>
+// TensorProto_DataType tensor_type<uint8_t> { TensorProto_DataType_UINT8 };
+// template <>
+// TensorProto_DataType tensor_type<int32_t> { TensorProto_DataType_INT32 };
+// template <>
+// TensorProto_DataType tensor_type<int64_t> { TensorProto_DataType_INT64 };
 
 constexpr bool native_little_endian { !static_cast<bool>(NATIVE_IS_BIG_ENDIAN) };
 
@@ -95,11 +95,11 @@ T le_to_native(const unsigned char *data);
 template <>
 float le_to_native(const unsigned char *data)
 {
-    uint32_t result {
-        uint32_t(data[0] << 0) | uint32_t(data[1] << 8) | uint32_t(data[2] << 16) | uint32_t(data[3] << 24)
-    };
-
-    return *reinterpret_cast<const float *>(&result);
+    // uint32_t result {
+    //     uint32_t(data[0] << 0) | uint32_t(data[1] << 8) | uint32_t(data[2] << 16) | uint32_t(data[3] << 24)
+    // };
+    const float *p = reinterpret_cast<const float *>(data);
+    return *p;
 }
 }
 
@@ -172,15 +172,15 @@ void onnx_importer::import(const struct import_options &options)
     }
 
     // try to find and create initializers for not yet connected inputs
-    for (auto &&in : dangling_inputs)
-    {
-        auto init_node { emplace_constant(get_initializer(in.second)) };
+    // for (auto &&in : dangling_inputs)
+    // {
+    //     auto init_node { emplace_constant(get_initializer(in.second)) };
 
-        if (init_node)
-            in.first->connect(init_node->output());
-        else
-            throw runtime_error("Cannot find associated output node, graph input or initializer for input " + in.second);
-    }
+    //     if (init_node)
+    //         in.first->connect(init_node->output());
+    //     else
+    //         throw runtime_error("Cannot find associated output node, graph input or initializer for input " + in.second);
+    // }
 }
 
 void onnx_importer::convert_op(const NodeProto &node)
