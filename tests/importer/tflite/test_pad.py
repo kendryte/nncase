@@ -36,7 +36,7 @@ in_shapes = [
     [3],
     [64, 3],
     [3, 64, 3],
-    [8, 3, 64, 3]
+    [8, 4, 64, 3]
 ]
 
 paddings = [
@@ -49,10 +49,8 @@ paddings = [
 
 modes = [
     'CONSTANT',
-
-    # tflite bug, padding < in_shape ?  :mixed result
-    # [REFLECT] channel dim  if padding.before>1, tflite will pad zero instead of real value
-    # 'REFLECT',
+    # tf assert, padding < in_shape ? correct : mixed result
+    'REFLECT',
     'SYMMETRIC',
     # 'EDGE'
 ]
