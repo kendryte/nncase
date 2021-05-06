@@ -69,7 +69,7 @@ def test_pad(in_shape, paddings, mode, constant, request):
     if len(in_shape) == len(paddings):
         module = _make_module(in_shape, paddings, mode, constant)
         test_util.test_tf_module(
-            request.node.name, module, ['cpu', 'k510'])
+            request.node.name, module, ['cpu', 'k210', 'k510'])
 
 
 if __name__ == "__main__":
