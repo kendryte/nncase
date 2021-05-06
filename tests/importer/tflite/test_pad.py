@@ -70,12 +70,8 @@ constants = [
 def test_pad(in_shape, paddings, mode, constant, request):
     if len(in_shape) == len(paddings):
         module = _make_module(in_shape, paddings, mode, constant)
-        # if mode == 'CONSTANT':
         test_util.test_tf_module(
             request.node.name, module, ['cpu', 'k510'])
-        # else:
-        #     test_util.test_tf_module(
-        #         request.node.name, module, ['k510'])
 
 
 if __name__ == "__main__":
