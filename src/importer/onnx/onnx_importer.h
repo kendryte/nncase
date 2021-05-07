@@ -58,7 +58,7 @@ namespace nncase::importer
         void convert_conv(const onnx::NodeProto &node);
 
         template <class Node>
-        Node *add_conv_node(const onnx::NodeProto &node, ir::graph &graph, ir::shape_t &&input_shape, xt::xarray<float> &&weight_value, xt::xarray<float> &&bias_value, const std::size_t group, const std::array<padding, 2> &pads, const std::array<size_t, 2> &strides, const std::array<size_t, 2> &dilations);
+        Node *add_conv_node([[maybe_unused]] const onnx::NodeProto &node, ir::graph &graph, ir::shape_t input_shape, ir::shape_t weight_shape, const std::size_t group, const std::array<padding, 2> &pads, const std::array<size_t, 2> &strides, const std::array<size_t, 2> &dilations);
 
         std::optional<onnx::ValueInfoProto> find_value_info(const std::string &value) const;
         nncase::ir::shape_t get_shape(const std::string &value) const;
