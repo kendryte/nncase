@@ -114,7 +114,7 @@ onnx_importer::onnx_importer(std::span<const uint8_t> model, ir::graph &graph)
 
 void onnx_importer::import(const struct import_options &options)
 {
-    const auto &graph { model_.graph() };
+    const auto &graph = model_.graph();
 
     for (const auto &node : graph.node())
         convert_op(node);
@@ -122,14 +122,14 @@ void onnx_importer::import(const struct import_options &options)
     // create inputs
     for (const auto &input_info : graph.input())
     {
-        const auto &input_name { input_info.name() };
-        auto &&input_shape { get_shape(input_info) };
-        const auto input_dt { get_datatype(input_info) };
+        const auto &input_name = input_info.name();
+        auto &&input_shape = get_shape(input_info);
+        const auto input_dt = get_datatype(input_info);
 
         if (!input_dt)
-            throw runtime_error("Data type of input \"" + input_name + "\" is not supported");
+            throw std::runtime_error("Data type of input \"" + input_name + "\" is not supported");
 
-        auto node { graph_.emplace<input_node>(input_dt.value(), input_shape) };
+        auto node = graph_.emplace<input_node>(input_dt.value(), input_shape);
         node->name(input_name);
 
         output_tensors_.emplace(input_name, &node->output());
@@ -140,14 +140,13 @@ void onnx_importer::import(const struct import_options &options)
     {
         for (const auto &output_info : graph.output())
         {
-            const auto &output_name { output_info.name() };
-            auto &&output_shape { get_shape(output_info) };
-            const auto output_dt { get_datatype(output_info) };
-
+            const auto &output_name = output_info.name();
+            auto &&output_shape = get_shape(output_info);
+            const auto output_dt = get_datatype(output_info);
             if (!output_dt)
-                throw runtime_error("Data type of output \"" + output_name + "\" is not supported");
+                throw std::runtime_error("Data type of output \"" + output_name + "\" is not supported");
 
-            auto node { graph_.emplace<output_node>(output_dt.value(), output_shape) };
+            auto node = graph_.emplace<output_node>(output_dt.value(), output_shape);
             node->name(output_name);
 
             input_tensors_.emplace(&node->input(), output_name);
@@ -163,7 +162,7 @@ void onnx_importer::import(const struct import_options &options)
     for (auto &&in : input_tensors_)
     {
         auto pt_it = passthrough_connections_.find(in.second);
-        const auto &peer_name { pt_it != passthrough_connections_.end() ? pt_it->second : in.second };
+        const auto &peer_name = pt_it != passthrough_connections_.end() ? pt_it->second : in.second;
         auto out_it = output_tensors_.find(peer_name);
         if (out_it != output_tensors_.end())
             in.first->connect(*out_it->second);
@@ -172,15 +171,15 @@ void onnx_importer::import(const struct import_options &options)
     }
 
     // try to find and create initializers for not yet connected inputs
-    // for (auto &&in : dangling_inputs)
-    // {
-    //     auto init_node { emplace_constant(get_initializer(in.second)) };
+    for (auto &&in : dangling_inputs)
+    {
+        auto init_node = emplace_constant(get_initializer(in.second));
 
-    //     if (init_node)
-    //         in.first->connect(init_node->output());
-    //     else
-    //         throw runtime_error("Cannot find associated output node, graph input or initializer for input " + in.second);
-    // }
+        if (init_node)
+            in.first->connect(init_node->output());
+        else
+            throw std::runtime_error("Cannot find associated output node, graph input or initializer for input " + in.second);
+    }
 }
 
 void onnx_importer::convert_op(const NodeProto &node)
@@ -198,7 +197,7 @@ void onnx_importer::convert_op(const NodeProto &node)
 
 optional<ValueInfoProto> onnx_importer::find_value_info(const string &value) const
 {
-    auto value_info { extract(model_.graph().input(), value) };
+    auto value_info = extract(model_.graph().input(), value);
     if (value_info)
         return value_info;
 
@@ -213,29 +212,29 @@ optional<ValueInfoProto> onnx_importer::find_value_info(const string &value) con
 
 shape_t onnx_importer::get_shape(const string &value) const
 {
-    const auto oit { output_tensors_.find(value) };
-    if (oit != end(output_tensors_))
+    const auto oit = output_tensors_.find(value);
+    if (oit != std::end(output_tensors_))
     {
         return oit->second->shape();
     }
 
-    const auto value_info { find_value_info(value) };
+    const auto value_info = find_value_info(value);
     if (value_info)
         return get_shape(value_info.value());
 
-    const auto initializer { get_initializer(value) };
+    const auto initializer = get_initializer(value);
     if (initializer)
         return get_shape(initializer.value());
 
-    throw runtime_error("Can't find value info for " + value + " to parse its shape");
+    throw std::runtime_error("Can't find value info for " + value + " to parse its shape");
 }
 
 shape_t onnx_importer::get_shape(const ValueInfoProto &value_info)
 {
-    const auto &type { value_info.type() };
+    const auto &type = value_info.type();
     assert(type.value_case() == TypeProto::kTensorType);
 
-    const auto &shape { type.tensor_type().shape() };
+    const auto &shape = type.tensor_type().shape();
 
     shape_t result_shape;
     for (const auto &dim : shape.dim())
@@ -261,26 +260,25 @@ shape_t onnx_importer::get_shape(const ValueInfoProto &value_info)
 
 shape_t onnx_importer::get_shape(const TensorProto &value)
 {
-    const auto &shape { value.dims() };
-
-    shape_t result_shape { begin(shape), end(shape) };
+    const auto &shape = value.dims();
+    shape_t result_shape { std::begin(shape), std::end(shape) };
 
     return result_shape;
 }
 
 optional<datatype_t> onnx_importer::get_datatype(const string &value) const
 {
-    const auto oit { output_tensors_.find(value) };
+    const auto oit = output_tensors_.find(value);
     if (oit != end(output_tensors_))
     {
         return oit->second->type();
     }
 
-    const auto value_info { find_value_info(value) };
+    const auto value_info = find_value_info(value);
     if (value_info)
         return get_datatype(value_info.value());
 
-    const auto initializer { get_initializer(value) };
+    const auto initializer = get_initializer(value);
     if (initializer)
         return get_datatype(initializer.value());
 
@@ -289,7 +287,7 @@ optional<datatype_t> onnx_importer::get_datatype(const string &value) const
 
 optional<datatype_t> onnx_importer::get_datatype(const ValueInfoProto &value_info)
 {
-    const auto &type { value_info.type() };
+    const auto &type = value_info.type();
     assert(type.value_case() == TypeProto::kTensorType);
 
     return get_datatype(static_cast<TensorProto_DataType>(type.tensor_type().elem_type()));
@@ -297,7 +295,7 @@ optional<datatype_t> onnx_importer::get_datatype(const ValueInfoProto &value_inf
 
 optional<datatype_t> onnx_importer::get_datatype(const TensorProto &value)
 {
-    const auto &type { value.data_type() };
+    const auto &type = value.data_type();
 
     return get_datatype(static_cast<TensorProto_DataType>(type));
 }
@@ -440,10 +438,9 @@ template <>
 optional<float> onnx_importer::get_attribute<float>(const onnx::NodeProto &node, const string &value)
 {
     typedef float target_type;
-    const auto &attr { extract(node.attribute(), value) };
-
+    const auto &attr = extract(node.attribute(), value);
     if (!attr)
-        return optional<target_type> {};
+        return std::optional<target_type> {};
 
     assert(attr.value().type() == attribute_type<target_type>);
 
@@ -454,10 +451,9 @@ template <>
 optional<int64_t> onnx_importer::get_attribute<int64_t>(const onnx::NodeProto &node, const string &value)
 {
     typedef int64_t target_type;
-    const auto &attr { extract(node.attribute(), value) };
-
+    const auto &attr = extract(node.attribute(), value);
     if (!attr)
-        return optional<target_type> {};
+        return std::optional<target_type> {};
 
     assert(attr.value().type() == attribute_type<target_type>);
 
@@ -468,10 +464,9 @@ template <>
 optional<int> onnx_importer::get_attribute<int>(const onnx::NodeProto &node, const string &value)
 {
     typedef int target_type;
-    const auto &attr { extract(node.attribute(), value) };
-
+    const auto &attr = extract(node.attribute(), value);
     if (!attr)
-        return optional<target_type> {};
+        return std::optional<target_type> {};
 
     assert(attr.value().type() == attribute_type<target_type>);
 
@@ -482,8 +477,7 @@ template <>
 optional<string> onnx_importer::get_attribute<string>(const onnx::NodeProto &node, const string &value)
 {
     typedef string target_type;
-    const auto &attr { extract(node.attribute(), value) };
-
+    const auto &attr = extract(node.attribute(), value);
     if (!attr)
         return optional<target_type> {};
 
@@ -496,8 +490,7 @@ template <>
 optional<TensorProto> onnx_importer::get_attribute<TensorProto>(const onnx::NodeProto &node, const string &value)
 {
     typedef TensorProto target_type;
-    const auto &attr { extract(node.attribute(), value) };
-
+    const auto &attr = extract(node.attribute(), value);
     if (!attr)
         return optional<target_type> {};
 
@@ -510,61 +503,57 @@ template <>
 optional<vector<float>> onnx_importer::get_attribute<vector<float>>(const onnx::NodeProto &node, const string &value)
 {
     typedef vector<float> target_type;
-    const auto &attr { extract(node.attribute(), value) };
-
+    const auto &attr = extract(node.attribute(), value);
     if (!attr)
         return optional<target_type> {};
 
     assert(attr.value().type() == attribute_type<target_type>);
 
-    return target_type { begin(attr.value().floats()), end(attr.value().floats()) };
+    return target_type { std::begin(attr.value().floats()), std::end(attr.value().floats()) };
 }
 
 template <>
 optional<vector<int>> onnx_importer::get_attribute<vector<int>>(const onnx::NodeProto &node, const string &value)
 {
     typedef vector<int> target_type;
-    const auto &attr { extract(node.attribute(), value) };
-
+    const auto &attr = extract(node.attribute(), value);
     if (!attr)
         return optional<target_type> {};
 
     assert(attr.value().type() == attribute_type<target_type>);
 
-    return target_type { begin(attr.value().ints()), end(attr.value().ints()) };
+    return target_type { std::begin(attr.value().ints()), std::end(attr.value().ints()) };
 }
 
 template <>
 optional<vector<string>> onnx_importer::get_attribute<vector<string>>(const onnx::NodeProto &node, const string &value)
 {
     typedef vector<string> target_type;
-    const auto &attr { extract(node.attribute(), value) };
-
+    const auto &attr = extract(node.attribute(), value);
     if (!attr)
-        return optional<target_type> {};
+        return std::optional<target_type> {};
 
     assert(attr.value().type() == attribute_type<target_type>);
 
-    return target_type { begin(attr.value().strings()), end(attr.value().strings()) };
+    return target_type { std::begin(attr.value().strings()), std::end(attr.value().strings()) };
 }
 
 template <>
 optional<axis_t> onnx_importer::get_attribute<axis_t>(const onnx::NodeProto &node, const string &value)
 {
-    const auto &extracted { get_attribute<vector<int>>(node, value) };
-
+    const auto &extracted = get_attribute<vector<int>>(node, value);
     if (!extracted)
-        return optional<axis_t> {};
+        return std::optional<axis_t> {};
 
-    axis_t result { begin(extracted.value()), end(extracted.value()) };
+    axis_t result { std::begin(extracted.value()), std::end(extracted.value()) };
 
     return result;
 }
 
 optional<TensorProto> onnx_importer::get_initializer(const string &value) const
 {
-    const auto &graph { model_.graph() };
-    const auto &initializer { extract(graph.initializer(), value) };
+    const auto &graph = model_.graph();
+    const auto &initializer = extract(graph.initializer(), value);
 
     return initializer;
 }
@@ -575,18 +564,18 @@ vector<T> onnx_importer::raw_to_vector(const onnx::TensorProto &tensor)
     typedef T target_type;
     typedef S storage_type;
 
-    const storage_type *const ptr { reinterpret_cast<const storage_type *>(tensor.raw_data().data()) };
-    const size_t size { tensor.raw_data().size() / sizeof(storage_type) };
+    const storage_type *const ptr = reinterpret_cast<const storage_type *>(tensor.raw_data().data());
+    const size_t size = tensor.raw_data().size() / sizeof(storage_type);
 
     if constexpr (native_little_endian)
     {
-        return vector<target_type> { ptr, ptr + size };
+        return std::vector<target_type> { ptr, ptr + size };
     }
     else
     {
-        vector<target_type> data;
+        std::vector<target_type> data;
         data.reserve(size);
-        transform(ptr, ptr + size, back_inserter(data),
+        std::transform(ptr, ptr + size, std::back_inserter(data),
             [](const auto &e) {
                 return le_to_native<storage_type>(reinterpret_cast<const byte *>(&e));
             });
@@ -626,13 +615,13 @@ axis_t onnx_importer::to<axis_t>(const onnx::TensorProto &tensor)
 
     if (!tensor.int32_data().empty())
     {
-        axis_t result { begin(tensor.int32_data()), end(tensor.int32_data()) };
+        axis_t result { std::begin(tensor.int32_data()), std::end(tensor.int32_data()) };
         return result;
     }
 
     if (!tensor.int64_data().empty())
     {
-        axis_t result { begin(tensor.int64_data()), end(tensor.int64_data()) };
+        axis_t result { std::begin(tensor.int64_data()), std::end(tensor.int64_data()) };
         return result;
     }
 
@@ -667,7 +656,7 @@ axis_t onnx_importer::to<axis_t>(const onnx::TensorProto &tensor)
         throw runtime_error("Tensor can't be converted to axis");
     }
 
-    return axis_t { begin(content), end(content) };
+    return axis_t { std::begin(content), std::end(content) };
 }
 
 template <>
@@ -677,7 +666,7 @@ xt::xarray<float> onnx_importer::to<xt::xarray<float>>(const onnx::TensorProto &
 
     if (!tensor.float_data().empty())
     {
-        return xt::adapt(vector<float> { begin(tensor.float_data()), end(tensor.float_data()) }, get_shape(tensor));
+        return xt::adapt(vector<float> { std::begin(tensor.float_data()), std::end(tensor.float_data()) }, get_shape(tensor));
     }
     else
     {

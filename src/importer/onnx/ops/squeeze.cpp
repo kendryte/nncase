@@ -18,7 +18,6 @@
 #include <nncase/ir/graph.h>
 #include <nncase/ir/ops/bitcast.h>
 
-using namespace std;
 using namespace nncase;
 using namespace nncase::importer;
 using namespace nncase::ir;
