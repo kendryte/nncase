@@ -593,7 +593,7 @@ xt::xarray<T> onnx_importer::raw_to(const onnx::TensorProto &tensor)
 template <>
 float onnx_importer::to<float>(const onnx::TensorProto &tensor)
 {
-    assert(tensor.data_type() == tensor_type<float>);
+    // assert(tensor.data_type() == tensor_type<float>);
     assert(tensor.float_data_size() > 0);
 
     return tensor.float_data()[0];
@@ -602,7 +602,7 @@ float onnx_importer::to<float>(const onnx::TensorProto &tensor)
 template <>
 uint8_t onnx_importer::to<uint8_t>(const onnx::TensorProto &tensor)
 {
-    assert(tensor.data_type() == tensor_type<uint8_t>);
+    // assert(tensor.data_type() == tensor_type<uint8_t>);
     assert(tensor.uint64_data_size() > 0);
 
     return static_cast<uint8_t>(tensor.uint64_data()[0]);
@@ -611,7 +611,7 @@ uint8_t onnx_importer::to<uint8_t>(const onnx::TensorProto &tensor)
 template <>
 axis_t onnx_importer::to<axis_t>(const onnx::TensorProto &tensor)
 {
-    assert(tensor.data_type() == tensor_type<std::uint8_t> || tensor.data_type() == tensor_type<std::int8_t> || tensor.data_type() == tensor_type<std::int16_t> || tensor.data_type() == tensor_type<std::uint16_t> || tensor.data_type() == tensor_type<std::int32_t> || tensor.data_type() == tensor_type<std::int64_t>);
+    // assert(tensor.data_type() == tensor_type<std::uint8_t> || tensor.data_type() == tensor_type<std::int8_t> || tensor.data_type() == tensor_type<std::int16_t> || tensor.data_type() == tensor_type<std::uint16_t> || tensor.data_type() == tensor_type<std::int32_t> || tensor.data_type() == tensor_type<std::int64_t>);
 
     if (!tensor.int32_data().empty())
     {
@@ -662,7 +662,7 @@ axis_t onnx_importer::to<axis_t>(const onnx::TensorProto &tensor)
 template <>
 xt::xarray<float> onnx_importer::to<xt::xarray<float>>(const onnx::TensorProto &tensor)
 {
-    assert(tensor.data_type() == tensor_type<float>);
+    // assert(tensor.data_type() == tensor_type<float>);
 
     if (!tensor.float_data().empty())
     {
@@ -677,7 +677,7 @@ xt::xarray<float> onnx_importer::to<xt::xarray<float>>(const onnx::TensorProto &
 template <>
 xt::xarray<uint8_t> onnx_importer::to<xt::xarray<uint8_t>>(const onnx::TensorProto &tensor)
 {
-    assert(tensor.data_type() == tensor_type<uint8_t>);
+    // assert(tensor.data_type() == tensor_type<uint8_t>);
 
     if (!tensor.int32_data().empty())
     {
