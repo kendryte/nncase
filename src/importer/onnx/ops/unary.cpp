@@ -21,7 +21,6 @@
 #include <nncase/ir/ops/reduce.h>
 #include <nncase/ir/ops/unary.h>
 
-using namespace std;
 using namespace nncase;
 using namespace nncase::importer;
 using namespace nncase::ir;
