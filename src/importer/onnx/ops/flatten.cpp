@@ -20,7 +20,6 @@
 #include <nncase/ir/ops/bitcast.h>
 #include <numeric>
 
-using namespace std;
 using namespace nncase;
 using namespace nncase::importer;
 using namespace nncase::ir;
@@ -31,32 +30,27 @@ namespace
 axis_t compose_new_shape(const shape_t &input_shape, const size_t flatten_axis)
 {
     axis_t result;
-
-    copy(begin(input_shape), begin(input_shape) + flatten_axis, back_inserter(result));
-
-    const auto flattened_axis { accumulate(begin(input_shape) + flatten_axis, end(input_shape), 1, multiplies<long>()) };
+    std::copy(std::begin(input_shape), std::begin(input_shape) + flatten_axis, std::back_inserter(result));
+    const auto flattened_axis = std::accumulate(std::begin(input_shape) + flatten_axis, std::end(input_shape), 1, std::multiplies<long>());
     result.push_back(flattened_axis);
 
     return result;
 }
 }
 
-void onnx_importer::convert_op_Flatten([[maybe_unused]] const NodeProto &node)
+void onnx_importer::convert_op_Flatten(const NodeProto &node)
 {
-    // const auto &input { node.input()[0] };
-    // const auto &output { node.output()[0] };
+    const auto &input = node.input()[0];
+    const auto &output = node.output()[0];
 
-    // const auto input_type { get_datatype(input).value() };
-    // const auto &input_shape { get_shape(input) };
+    const auto input_type = get_datatype(input).value();
+    const auto &input_shape = get_shape(input);
 
-    // const auto &axis_attr { get_attribute<int>(node, "axis") };
+    const auto &axis_attr = get_attribute<int>(node, "axis");
+    const size_t flatten_axis = axis_attr ? real_axis(axis_attr.value(), input_shape.size()) : 1 ;
+    const axis_t &new_shape = compose_new_shape(input_shape, flatten_axis);
+    auto op = graph_.emplace<bitcast>(input_type, input_shape, new_shape);
 
-    // const size_t flatten_axis { axis_attr ? real_axis(axis_attr.value(), input_shape.size()) : 1 };
-
-    // const axis_t &new_shape { compose_new_shape(input_shape, flatten_axis) };
-
-    // auto op { graph_.emplace<reshape>(input_type, input_shape, new_shape) };
-
-    // input_tensors_.emplace(&op->input(), input);
-    // output_tensors_.emplace(output, &op->output());
+    input_tensors_.emplace(&op->input(), input);
+    output_tensors_.emplace(output, &op->output());
 }

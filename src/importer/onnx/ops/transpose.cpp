@@ -20,30 +20,29 @@
 #include <nncase/ir/graph.h>
 #include <nncase/ir/ops/transpose.h>
 
-using namespace std;
 using namespace nncase;
 using namespace nncase::importer;
 using namespace nncase::ir;
 using namespace onnx;
 
-void onnx_importer::convert_op_Transpose([[maybe_unused]] const NodeProto &node)
+void onnx_importer::convert_op_Transpose(const NodeProto &node)
 {
-    // const auto &input { node.input()[0] };
-    // const auto &output { node.output()[0] };
+    const auto &input = node.input()[0];
+    const auto &output = node.output()[0];
 
-    // const auto input_type { get_datatype(input).value() };
-    // const auto &input_shape { get_shape(input) };
+    const auto input_type = get_datatype(input).value();
+    const auto &input_shape = get_shape(input);
 
-    // axis_t perm(input_shape.size());
-    // std::iota(begin(perm), end(perm), 0);
-    // std::reverse(begin(perm), end(perm));
+    axis_t perm(input_shape.size());
+    std::iota(std::begin(perm), std::end(perm), 0);
+    std::reverse(std::begin(perm), std::end(perm));
 
-    // const auto &perm_attr { get_attribute<axis_t>(node, "perm") };
-    // if (perm_attr)
-    //     perm = perm_attr.value();
+    const auto &perm_attr = get_attribute<axis_t>(node, "perm");
+    if (perm_attr)
+        perm = perm_attr.value();
 
-    // auto op { graph_.emplace<transpose>(input_type, input_shape, move(perm)) };
+    auto op = graph_.emplace<transpose>(input_type, input_shape, std::move(perm));
 
-    // input_tensors_.emplace(&op->input(), input);
-    // output_tensors_.emplace(output, &op->output());
+    input_tensors_.emplace(&op->input(), input);
+    output_tensors_.emplace(output, &op->output());
 }

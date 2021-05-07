@@ -21,52 +21,51 @@
 #include <nncase/ir/ops/reduce.h>
 #include <nncase/ir/ops/unary.h>
 
-using namespace std;
 using namespace nncase;
 using namespace nncase::importer;
 using namespace nncase::ir;
 using namespace onnx;
 
-void onnx_importer::convert_op_Relu([[maybe_unused]] const NodeProto &node)
+void onnx_importer::convert_op_Relu(const NodeProto &node)
 {
-    // assert(node.input().size() == 1);
-    // assert(node.output().size() == 1);
+    assert(node.input().size() == 1);
+    assert(node.output().size() == 1);
 
-    // const auto &input { node.input()[0] };
-    // const auto &output { node.output()[0] };
+    const auto &input = node.input()[0];
+    const auto &output = node.output()[0];
 
-    // auto &&in_shape = get_shape(input);
+    auto &&in_shape = get_shape(input);
 
-    // auto zero { graph_.emplace<constant>(0.f) };
-    // auto max { graph_.emplace<binary>(binary_max, move(in_shape), zero->output().shape(), value_range<float>::full()) };
+    auto zero = graph_.emplace<constant>(0.f);
+    auto max = graph_.emplace<binary>(binary_max, move(in_shape), zero->output().shape(), value_range<float>::full());
 
-    // max->input_b().connect(zero->output());
+    max->input_b().connect(zero->output());
 
-    // input_tensors_.emplace(&max->input_a(), input);
-    // output_tensors_.emplace(output, &max->output());
+    input_tensors_.emplace(&max->input_a(), input);
+    output_tensors_.emplace(output, &max->output());
 }
 
-void onnx_importer::convert_op_LeakyRelu([[maybe_unused]] const NodeProto &node)
+void onnx_importer::convert_op_LeakyRelu(const NodeProto &node)
 {
-    // assert(node.input().size() == 1);
-    // assert(node.output().size() == 1);
+    assert(node.input().size() == 1);
+    assert(node.output().size() == 1);
 
-    // const auto &input { node.input()[0] };
-    // const auto &output { node.output()[0] };
-    // auto &&in_shape = get_shape(input);
+    const auto &input = node.input()[0];
+    const auto &output = node.output()[0];
+    auto &&in_shape = get_shape(input);
 
-    // const auto alpha_value { get_attribute<float>(node, "alpha").value() };
-    // const auto &alpha { graph_.emplace<constant>(alpha_value) };
+    const auto alpha_value = get_attribute<float>(node, "alpha").value();
+    const auto &alpha = graph_.emplace<constant>(alpha_value);
 
-    // auto mul = graph_.emplace<binary>(binary_mul, in_shape, alpha->output().shape(), value_range<float>::full());
-    // auto max = graph_.emplace<binary>(binary_max, in_shape, mul->output().shape(), value_range<float>::full());
+    auto mul = graph_.emplace<binary>(binary_mul, in_shape, alpha->output().shape(), value_range<float>::full());
+    auto max = graph_.emplace<binary>(binary_max, in_shape, mul->output().shape(), value_range<float>::full());
 
-    // mul->input_b().connect(alpha->output());
-    // max->input_b().connect(mul->output());
+    mul->input_b().connect(alpha->output());
+    max->input_b().connect(mul->output());
 
-    // input_tensors_.emplace(&mul->input_a(), input);
-    // input_tensors_.emplace(&max->input_a(), input);
-    // output_tensors_.emplace(output, &max->output());
+    input_tensors_.emplace(&mul->input_a(), input);
+    input_tensors_.emplace(&max->input_a(), input);
+    output_tensors_.emplace(output, &max->output());
 }
 
 void onnx_importer::convert_op_PRelu([[maybe_unused]] const NodeProto &node)
