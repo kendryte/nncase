@@ -163,6 +163,7 @@ void onnx_importer::import(const struct import_options &options)
     {
         auto pt_it = passthrough_connections_.find(in.second);
         const auto &peer_name = pt_it != passthrough_connections_.end() ? pt_it->second : in.second;
+
         auto out_it = output_tensors_.find(peer_name);
         if (out_it != output_tensors_.end())
             in.first->connect(*out_it->second);
@@ -442,7 +443,7 @@ optional<float> onnx_importer::get_attribute<float>(const onnx::NodeProto &node,
     if (!attr)
         return std::optional<target_type> {};
 
-    assert(attr.value().type() == attribute_type<target_type>);
+    // assert(attr.value().type() == attribute_type<target_type>);
 
     return attr.value().f();
 }
@@ -455,7 +456,7 @@ optional<int64_t> onnx_importer::get_attribute<int64_t>(const onnx::NodeProto &n
     if (!attr)
         return std::optional<target_type> {};
 
-    assert(attr.value().type() == attribute_type<target_type>);
+    // assert(attr.value().type() == attribute_type<target_type>);
 
     return attr.value().i();
 }
@@ -468,7 +469,7 @@ optional<int> onnx_importer::get_attribute<int>(const onnx::NodeProto &node, con
     if (!attr)
         return std::optional<target_type> {};
 
-    assert(attr.value().type() == attribute_type<target_type>);
+    // assert(attr.value().type() == attribute_type<target_type>);
 
     return attr.value().i();
 }
@@ -481,7 +482,7 @@ optional<string> onnx_importer::get_attribute<string>(const onnx::NodeProto &nod
     if (!attr)
         return optional<target_type> {};
 
-    assert(attr.value().type() == attribute_type<target_type>);
+    // assert(attr.value().type() == attribute_type<target_type>);
 
     return attr.value().s();
 }
@@ -494,7 +495,7 @@ optional<TensorProto> onnx_importer::get_attribute<TensorProto>(const onnx::Node
     if (!attr)
         return optional<target_type> {};
 
-    assert(attr.value().type() == attribute_type<target_type>);
+    // assert(attr.value().type() == attribute_type<target_type>);
 
     return attr.value().t();
 }
@@ -507,7 +508,7 @@ optional<vector<float>> onnx_importer::get_attribute<vector<float>>(const onnx::
     if (!attr)
         return optional<target_type> {};
 
-    assert(attr.value().type() == attribute_type<target_type>);
+    // assert(attr.value().type() == attribute_type<target_type>);
 
     return target_type { std::begin(attr.value().floats()), std::end(attr.value().floats()) };
 }
@@ -520,7 +521,7 @@ optional<vector<int>> onnx_importer::get_attribute<vector<int>>(const onnx::Node
     if (!attr)
         return optional<target_type> {};
 
-    assert(attr.value().type() == attribute_type<target_type>);
+    // assert(attr.value().type() == attribute_type<target_type>);
 
     return target_type { std::begin(attr.value().ints()), std::end(attr.value().ints()) };
 }
@@ -533,7 +534,7 @@ optional<vector<string>> onnx_importer::get_attribute<vector<string>>(const onnx
     if (!attr)
         return std::optional<target_type> {};
 
-    assert(attr.value().type() == attribute_type<target_type>);
+    // assert(attr.value().type() == attribute_type<target_type>);
 
     return target_type { std::begin(attr.value().strings()), std::end(attr.value().strings()) };
 }

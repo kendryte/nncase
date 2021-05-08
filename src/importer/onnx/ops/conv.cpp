@@ -74,26 +74,9 @@ void onnx_importer::convert_conv(const NodeProto &node)
     const auto &output = node.output()[0];
 
     auto input_shape = get_shape(input);
+    auto weight_shape = get_shape(weight);
 
-    padding_mode pad_mode = padding_mode::notset;
-    const auto &auto_pad_attr = get_attribute<std::string>(node, "auto_pad");
-    if (auto_pad_attr)
-    {
-        pad_mode = parse_padding_mode(auto_pad_attr.value());
-    }
-
-    std::array<size_t, 2> dilations = { 1, 1 };
-
-    const auto &dilations_attr = get_attribute<std::vector<int>>(node, "dilations");
-    if (dilations_attr)
-    {
-        const auto &dilations_values = dilations_attr.value();
-        if (dilations_values.size() > 0)
-            dilations[0] = dilations_values[0];
-        if (dilations_values.size() > 1)
-            dilations[1] = dilations_values[1];
-    }
-
+    // group
     size_t group = 1;
     const auto &group_attr = get_attribute<int>(node, "group");
     if (group_attr)
@@ -101,6 +84,7 @@ void onnx_importer::convert_conv(const NodeProto &node)
         group = group_attr.value();
     }
 
+    // stride
     std::array<size_t, 2> strides = { 1, 1 };
     const auto &strides_attr = get_attribute<std::vector<int>>(node, "strides");
     if (strides_attr)
@@ -112,15 +96,26 @@ void onnx_importer::convert_conv(const NodeProto &node)
             strides[1] = strides_values[1];
     }
 
-    const auto &weight_initializer = get_initializer(weight);
-    if (!weight_initializer)
-        throw std::runtime_error("Can't find initializer for weight input");
+    // dilations
+    std::array<size_t, 2> dilations = { 1, 1 };
+    const auto &dilations_attr = get_attribute<std::vector<int>>(node, "dilations");
+    if (dilations_attr)
+    {
+        const auto &dilations_values = dilations_attr.value();
+        if (dilations_values.size() > 0)
+            dilations[0] = dilations_values[0];
+        if (dilations_values.size() > 1)
+            dilations[1] = dilations_values[1];
+    }
 
-    const auto &weight_shape = get_shape(weight_initializer.value());
-
-    std::array<padding, 2> pads { { { 0, 0 },
-        { 0, 0 } } };
-
+    // pad
+    std::array<padding, 2> pads { { { 0, 0 }, { 0, 0 } } };
+    padding_mode pad_mode = padding_mode::notset;
+    const auto &auto_pad_attr = get_attribute<std::string>(node, "auto_pad");
+    if (auto_pad_attr)
+    {
+        pad_mode = parse_padding_mode(auto_pad_attr.value());
+    }
     switch (pad_mode)
     {
     case padding_mode::notset:
@@ -155,22 +150,15 @@ void onnx_importer::convert_conv(const NodeProto &node)
         break;
     }
 
-    auto &&weight_value = to<xt::xarray<float>>(weight_initializer.value());
+    auto conv = add_conv_node<Node>(node, graph_, input_shape, weight_shape, group, pads, strides, dilations);
 
-    xt::xarray<float> &&bias_value = xt::zeros<float>({ weight_shape[0] });
+    input_tensors_.emplace(&conv->input(), input);
+    input_tensors_.emplace(&conv->weights(), weight);
     if (node.input().size() > 2)
     {
         const auto &bias = node.input()[2];
-        const auto &bias_initializer = get_initializer(bias);
-        if (!bias_initializer)
-            throw std::runtime_error("Can't find initializer for bias input");
-
-        bias_value = to<xt::xarray<float>>(bias_initializer.value());
+        input_tensors_.emplace(&conv->bias(), bias);
     }
-
-    auto conv = add_conv_node<Node>(node, graph_, input_shape, weight_value.shape(), group, pads, strides, dilations);
-
-    input_tensors_.emplace(&conv->input(), input);
     output_tensors_.emplace(output, &conv->output());
 }
 

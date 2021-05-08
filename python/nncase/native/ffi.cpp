@@ -288,6 +288,7 @@ PYBIND11_MODULE(_nncase, m)
     py::class_<compiler>(m, "Compiler")
         .def(py::init(&compiler::create))
         .def("import_tflite", &compiler::import_tflite)
+        .def("import_onnx", &compiler::import_onnx)
         .def("compile", &compiler::compile)
         .def("use_ptq", py::overload_cast<ptq_tensor_options>(&compiler::use_ptq))
         .def("gencode", [](compiler &c, std::ostream &stream) {
