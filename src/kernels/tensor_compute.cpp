@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include <nncase/kernels/cpu/reference/tensor_compute.h>
+#include <nncase/kernels/cpu/optimized/tensor_compute.h>
 #include <nncase/kernels/tensor_compute.h>
 
 using namespace nncase;
@@ -36,7 +37,7 @@ result<void> kernels::concat(datatype_t type, gsl::span<const gsl::byte *const> 
     gsl::span<const runtime_shape_t> in_strides, const runtime_shape_t &out_strides, size_t axis, const runtime_shape_t &concat_dims, 
     kernel_context &context) noexcept
 {
-    return cpu::reference::concat(type, inputs, output, out_shape, in_strides, out_strides, axis, concat_dims, context);
+    return cpu::optimized::concat(type, inputs, output, out_shape, in_strides, out_strides, axis, concat_dims, context);
 }
 
 result<void> kernels::convert(datatype_t in_type, datatype_t out_type, const gsl::byte *input, gsl::byte *output,
