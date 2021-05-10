@@ -45,9 +45,9 @@ runtime_shape_t get_in_index(const runtime_shape_t &index, const runtime_shape_t
         {
             pad_element = true;
             if (mode == pad_reflect)
-                in_index[i] = ((size_t)padding.before - index[i]);
+                in_index[i] = (size_t)padding.before - index[i];
             else if (mode == pad_symmetric)
-                in_index[i] = ((size_t)padding.before - index[i] - 1);
+                in_index[i] = (size_t)padding.before - index[i] - 1;
             else if (mode == pad_edge)
                 in_index[i] = 0;
         }
