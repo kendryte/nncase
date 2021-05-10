@@ -98,9 +98,6 @@ void ir::dump_graph(const graph &src_graph, const std::filesystem::path &dst_pat
             auto np = gp->add_node();
             np->set_name(n->name());
             np->set_op_type(std::string(n->runtime_opcode().name));
-            auto att_md = np->add_attribute();
-            att_md->set_name("module_type");
-            att_md->add_strings(n->module_type().data());
 
             if (auto c = node_cast<constant>(*n))
             {
@@ -113,6 +110,12 @@ void ir::dump_graph(const graph &src_graph, const std::filesystem::path &dst_pat
                 for (auto dim : c->output().shape())
                     tp->add_dims((int64)dim);
                 tp->set_raw_data(c->data().data(), c->data().size());
+            }
+            else
+            {
+                auto att_md = np->add_attribute();
+                att_md->set_name("module_type");
+                att_md->add_strings(n->module_type().data());
             }
 
             for (auto in : n->inputs())
