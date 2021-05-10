@@ -205,7 +205,7 @@ quant_param_t quantizer::get_quant_param(value_range<float> range, int32_t bits)
     auto r = range.max - range.min;
     auto scale = r / ((1LL << bits) - 1);
     auto bias = std::round(-range.min / scale);
-    assert(bias >= 0);
+    // assert(bias >= 0);
     return { static_cast<int32_t>(bias), scale };
 }
 

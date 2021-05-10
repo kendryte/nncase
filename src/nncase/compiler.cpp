@@ -54,8 +54,8 @@ datatype_t to_datatype_method(std::string name)
 {
     if (name == "uint8")
         return datatype_t::dt_uint8;
-    // if (name == "int8")
-    //     return datatype_t::dt_int8;
+    if (name == "int8")
+        return datatype_t::dt_int8;
     return datatype_t::dt_float32;
 }
 
@@ -243,7 +243,6 @@ private:
                 auto min = (0.f - compile_options_.input_mean) / compile_options_.input_std;
                 auto max = (1.f - compile_options_.input_mean) / compile_options_.input_std;
                 value_range<float> input_range { min, max };
-                // graph.inputs().begin();
                 quant->set(graph.inputs()[0]->output(), input_range);
                 quant->record(graph.inputs()[0]->output(), input_range);
             }
@@ -253,14 +252,15 @@ private:
             target_->add_quantization_broadcast(opcodes);
             quant->broadcast_output(graph, opcodes);
 
-            ir::transforms::pass p;
+            ir::transforms::pass p("process i&o node");
 
             if (use_ptq_)
             {
-                if (compile_options_.input_type == "uint8")
-                    p.emplace<nncase::ir::transforms::add_input_dequantize_transform>();
-                if (compile_options_.output_type == "uint8")
-                    p.emplace<nncase::ir::transforms::add_output_quantize_transform>();
+                if (compile_options_.input_type != "float32")
+                    p.emplace<nncase::ir::transforms::add_input_dequantize_transform>(to_datatype_method(compile_options_.input_type));
+
+                if (compile_options_.output_type != "float32")
+                    p.emplace<nncase::ir::transforms::add_output_quantize_transform>(to_datatype_method(compile_options_.output_type));
             }
 
             pmgr.add_pass(std::move(p));
@@ -268,7 +268,10 @@ private:
             pmgr.quantizer(quant);
             if (compile_options_.dump_ir)
                 pmgr.dump_dir(compile_options_.dump_dir);
-            target_->register_quantize_passes(graph.module_type(), pmgr);
+            if (to_datatype_method(compile_options_.input_type) == dt_float32)
+                target_->register_quantize_passes(graph.module_type(), pmgr, dt_uint8);
+            else
+                target_->register_quantize_passes(graph.module_type(), pmgr, to_datatype_method(compile_options_.input_type));
             pmgr.run();
             dump_graph(graph, "quantize");
         };

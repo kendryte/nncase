@@ -44,7 +44,7 @@ void add_input_dequantize_transform::process(transform_context &context)
 
     auto &quantizer = *context.quantizer;
     auto params = quantizer.get_quant_param(quantizer.get(old_in->output()), 8);
-    auto new_in_node = context.graph.emplace<input_node>(dt_uint8, old_in->output().shape());
+    auto new_in_node = context.graph.emplace<input_node>(quant_type_, old_in->output().shape());
     auto deq = context.graph.emplace<dequantize>(new_in_node->output().type(), new_in_node->output().shape(), dt_float32, params);
     deq->input().connect(new_in_node->output());
 
@@ -76,7 +76,7 @@ void add_output_quantize_transform::process(transform_context &context)
     auto &quantizer = *context.quantizer;
     auto params = quantizer.get_quant_param(quantizer.get(output.owner().output_at(0)), 8);
 
-    auto q = context.graph.emplace<quantize>(dt_float32, output.shape(), dt_uint8, params);
+    auto q = context.graph.emplace<quantize>(dt_float32, output.shape(), quant_type_, params);
     auto new_out_node = context.graph.emplace<output_node>(q->output().type(), q->output().shape());
     old_out->input().clear_connection();
 
