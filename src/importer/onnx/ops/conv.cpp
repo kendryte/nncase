@@ -17,6 +17,7 @@
 #include <cassert>
 #include <nncase/ir/graph.h>
 #include <nncase/ir/op_utils.h>
+#include <nncase/ir/ops/constant.h>
 #include <nncase/ir/ops/conv2d.h>
 #include <nncase/ir/ops/conv2d_transpose.h>
 
@@ -45,7 +46,7 @@ padding_mode parse_padding_mode(const std::string &value) noexcept
 }
 
 shape_t generate_output_shape(const shape_t &input, const shape_t &kernel, const std::array<padding, 2> &pads, const std::array<size_t, 2> &dilations,
-                              [[maybe_unused]] const std::array<size_t, 2> &strides)
+    [[maybe_unused]] const std::array<size_t, 2> &strides)
 {
     return {
         input[0],
@@ -159,20 +160,27 @@ void onnx_importer::convert_conv(const NodeProto &node)
         const auto &bias = node.input()[2];
         input_tensors_.emplace(&conv->bias(), bias);
     }
+    else
+    {
+        std::vector<float> bias_value(weight_shape[0], 0.f);
+        shape_t bias_shape = { weight_shape[0] };
+        auto bias_node = graph_.emplace<constant>(dt_float32, bias_shape, bias_value);
+        conv->bias().connect(bias_node->output());
+    }
     output_tensors_.emplace(output, &conv->output());
 }
 
 template <class Node>
 Node *onnx_importer::add_conv_node([[maybe_unused]] const NodeProto &node, ir::graph &graph, shape_t input_shape, ir::shape_t weight_shape,
-                                   const size_t group, const std::array<padding, 2> &pads, const std::array<size_t, 2> &strides, const std::array<size_t, 2> &dilations)
+    const size_t group, const std::array<padding, 2> &pads, const std::array<size_t, 2> &strides, const std::array<size_t, 2> &dilations)
 {
     return graph.emplace<Node>(input_shape, weight_shape, group, pads[0], pads[1], strides[0], strides[1],
-                               dilations[0], dilations[1], value_range<float>::full());
+        dilations[0], dilations[1], value_range<float>::full());
 }
 
 template <>
 conv2d_transpose *onnx_importer::add_conv_node<conv2d_transpose>([[maybe_unused]] const NodeProto &node, ir::graph &graph, shape_t input_shape, ir::shape_t weight_shape, const size_t group,
-                                                                 const std::array<padding, 2> &pads, const std::array<size_t, 2> &strides, const std::array<size_t, 2> &dilations)
+    const std::array<padding, 2> &pads, const std::array<size_t, 2> &strides, const std::array<size_t, 2> &dilations)
 {
     auto output_shape = generate_output_shape(input_shape, weight_shape, pads, dilations, strides);
     const auto &output_shape_attr = get_attribute<std::vector<int>>(node, "output_shape");
@@ -183,5 +191,5 @@ conv2d_transpose *onnx_importer::add_conv_node<conv2d_transpose>([[maybe_unused]
     }
 
     return graph.emplace<conv2d_transpose>(input_shape, weight_shape, output_shape, group, pads[0], pads[1], strides[0], strides[1],
-                                           dilations[0], dilations[1], value_range<float>::full());
+        dilations[0], dilations[1], value_range<float>::full());
 }
