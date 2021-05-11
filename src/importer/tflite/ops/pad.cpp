@@ -62,3 +62,34 @@ DEFINE_TFLITE_LOWER(PADV2)
     link_input_tensor(&node->input(), op.inputs()->Get(0));
     link_output_tensor(op.outputs()->Get(0), &node->output());
 }
+
+DEFINE_TFLITE_LOWER(MIRROR_PAD)
+{
+    auto &input = get_tensor(op.inputs(), 0);
+    auto paddings = load_tensor<int32_t, 2>(get_tensor(op.inputs(), 1));
+    auto &options = *op.builtin_options_as_MirrorPadOptions();
+    auto tmp = options.mode();
+    pad_mode_t mode ;
+    switch(tmp)
+    {
+        case 0:
+            mode = pad_reflect;
+            break;
+        case 1:
+            mode = pad_symmetric;
+            break;
+        default:
+            throw std::runtime_error("Unsupport Pad Mode!");
+            break;
+    }
+    xt::svector<padding> new_paddings;
+    for (size_t i = 0; i < paddings.shape()[0]; i++)
+        new_paddings.push_back(padding { paddings(i, 0), paddings(i, 1) });
+
+    auto node = graph_.emplace<pad>(to_data_type(input.type()), get_shape(input.shape()), new_paddings, mode, 0.f);
+
+    node->name(get_tensor(op.outputs(), 0).name()->string_view());
+
+    link_input_tensor(&node->input(), op.inputs()->Get(0));
+    link_output_tensor(op.outputs()->Get(0), &node->output());
+}
