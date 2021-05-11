@@ -199,4 +199,9 @@ inline int32_t clamp(int32_t value)
     return clamp(value, min, max);
 }
 
+template <class TShape>
+inline bool is_continuous(const TShape& shape, const TShape& strides)
+{
+    return get_default_strides(shape) == strides;
+}
 END_NS_NNCASE_RUNTIME

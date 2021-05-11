@@ -25,7 +25,7 @@ using namespace nncase::kernels::cpu::optimized;
 namespace
 {
 template <class T>
-result<void> concat_impl(gsl::span<const gsl::byte *const> inputs, T *output, const runtime_shape_t &out_shape,
+result<void> concat_continuous_impl(gsl::span<const gsl::byte *const> inputs, T *output, const runtime_shape_t &out_shape,
     gsl::span<const runtime_shape_t> &in_strides, NNCASE_UNUSED const runtime_shape_t &out_strides, size_t axis, const runtime_shape_t &concat_dims, NNCASE_UNUSED kernel_context &context) noexcept
 {
     runtime_shape_t in_shape(out_shape);
@@ -94,21 +94,279 @@ result<void> concat_impl(gsl::span<const gsl::byte *const> inputs, T *output, co
     }
     return ok();
 }
+
+template <class T>
+result<void> concat_impl(gsl::span<const gsl::byte *const> inputs, T *output, const runtime_shape_t &out_shape,
+    gsl::span<const runtime_shape_t> &in_strides, NNCASE_UNUSED const runtime_shape_t &out_strides, size_t axis, const runtime_shape_t &concat_dims, NNCASE_UNUSED kernel_context &context) noexcept
+{
+    runtime_shape_t in_shape(out_shape);
+    size_t elemsize = sizeof(T);
+    auto *out_ptr = output;
+    auto dims = in_strides[0].size();
+    runtime_shape_t out_index(dims);
+    runtime_shape_t in_index(dims);
+    if (dims == 1)
+    {
+        for (size_t n = 0; n < inputs.size(); ++n)
+        {
+            const auto width = concat_dims[n];
+            out_ptr = output + out_index[0] * out_strides[0];
+            memcpy(out_ptr, inputs[n], width * elemsize);
+            out_index[0] += width;
+        }
+    }
+    else if (dims == 2)
+    {
+        if (axis == 0)
+        {
+            const auto width = out_shape[1];
+            for (size_t n = 0; n < inputs.size(); ++n)
+            {
+                for (size_t height = 0; height < concat_dims[n]; ++height)
+                {
+                    in_index[0] = height;
+                    out_ptr = output + offset(out_strides, out_index);
+                    const auto *in_ptr = reinterpret_cast<const T *>(inputs[n]) + offset(in_strides[n], in_index);
+                    memcpy(out_ptr, in_ptr, width * elemsize);
+                    ++out_index[0];
+                }
+            }
+        }
+        else
+        {
+            for (size_t height = 0; height < in_shape[0]; ++height)
+            {
+                in_index[0] = height;
+                out_index[0] = height;
+                out_index[1] = 0;
+                // set per input value in same row
+                // so process once need move col(out_index[1])
+                for (size_t n = 0; n < inputs.size(); ++n)
+                {
+                    const auto width = concat_dims[n];
+                    out_ptr = output + offset(out_strides, out_index);
+                    const auto *in_ptr = reinterpret_cast<const T *>(inputs[n]) + offset(in_strides[n], in_index);
+                    memcpy(out_ptr, in_ptr, width * elemsize);
+                    out_index[1] += width;
+                }
+            }
+        }
+    }
+    else if (dims == 3)
+    {
+        if (axis == 0)
+        {
+            const auto width = out_shape[2];
+            for (size_t n = 0; n < inputs.size(); ++n)
+            {
+                for (size_t channel = 0; channel < concat_dims[n]; ++channel)
+                {
+                    in_index[0] = channel;
+                    for (size_t height = 0; height < in_shape[1]; ++height)
+                    {
+                        in_index[1] = height;
+                        out_index[1] = height;
+                        out_ptr = output + offset(out_strides, out_index);
+                        const auto *in_ptr = reinterpret_cast<const T *>(inputs[n]) + offset(in_strides[n], in_index);
+                        memcpy(out_ptr, in_ptr, width * elemsize);
+                    }
+                    ++out_index[0];
+                }
+            }
+        }
+        else if (axis == 1)
+        {
+            const auto width = in_shape[2];
+
+            for (size_t channel = 0; channel < in_shape[0]; ++channel)
+            {
+                in_index[0] = channel;
+                out_index[0] = channel;
+                out_index[1] = 0;
+                for (size_t n = 0; n < inputs.size(); ++n)
+                {
+                    for (size_t height = 0; height < concat_dims[n]; ++height)
+                    {
+                        in_index[1] = height;
+                        out_ptr = output + offset(out_strides, out_index);
+                        const auto *in_ptr = reinterpret_cast<const T *>(inputs[n]) + offset(in_strides[n], in_index);
+                        memcpy(out_ptr, in_ptr, width * elemsize);
+                        ++out_index[1];
+                    }
+                }
+            }
+        }
+        else
+        {
+            for (size_t channel = 0; channel < in_shape[0]; ++channel)
+            {
+                in_index[0] = channel;
+                out_index[0] = channel;
+                for (size_t height = 0; height < in_shape[1]; ++height)
+                {
+                    in_index[1] = height;
+                    out_index[1] = height;
+                    out_index[2] = 0;
+                    for (size_t n = 0; n < inputs.size(); ++n)
+                    {
+                        const auto width = concat_dims[n];
+                        out_ptr = output + offset(out_strides, out_index);
+                        const auto *in_ptr = reinterpret_cast<const T *>(inputs[n]) + offset(in_strides[n], in_index);
+                        memcpy(out_ptr, in_ptr, width * elemsize);
+                        out_index[2] += width;
+                    }
+                }
+            }
+        }
+    }
+    else if (dims == 4)
+    {
+        if (axis == 0)
+        {
+            const auto width = out_shape[3];
+            for (size_t n = 0; n < inputs.size(); ++n)
+            {
+                for (size_t batch = 0; batch < concat_dims[n]; ++batch)
+                {
+                    in_index[0] = batch;
+                    for (size_t channel = 0; channel < in_shape[1]; ++channel)
+                    {
+                        in_index[1] = channel;
+                        out_index[1] = channel;
+                        for (size_t height = 0; height < in_shape[2]; ++height)
+                        {
+                            in_index[2] = height;
+                            out_index[2] = height;
+                            out_ptr = output + offset(out_strides, out_index);
+                            const auto *in_ptr = reinterpret_cast<const T *>(inputs[n]) + offset(in_strides[n], in_index);
+                            memcpy(out_ptr, in_ptr, width * elemsize);
+                        }
+                    }
+                    ++out_index[0];
+                }
+            }
+        }
+        else if (axis == 1)
+        {
+            const auto width = out_shape[3];
+            for (size_t batch = 0; batch < in_shape[0]; ++batch)
+            {
+                in_index[0] = batch;
+                out_index[0] = batch;
+                out_index[1] = 0;
+                for (size_t n = 0; n < inputs.size(); ++n)
+                {
+                    for (size_t channel = 0; channel < concat_dims[n]; ++channel)
+                    {
+                        in_index[1] = channel;
+                        for (size_t height = 0; height < in_shape[2]; ++height)
+                        {
+                            in_index[2] = height;
+                            out_index[2] = height;                            
+                            out_ptr = output + offset(out_strides, out_index);
+                            const auto *in_ptr = reinterpret_cast<const T *>(inputs[n]) + offset(in_strides[n], in_index);
+                            memcpy(out_ptr, in_ptr, width * elemsize);
+                        }
+                        ++out_index[1];
+                    }
+                }
+            }
+        }
+        else if (axis == 2)
+        {
+            const auto width = out_shape[3];
+            for (size_t batch = 0; batch < in_shape[0]; ++batch)
+            {
+                in_index[0] = batch;
+                out_index[0] = batch;
+                for (size_t channel = 0; channel < in_shape[1]; ++channel)
+                {
+                    in_index[1] = channel;
+                    out_index[1] = channel;
+                    out_index[2] = 0;
+                    for (size_t n = 0; n < inputs.size(); ++n)
+                    {
+                        for (size_t height = 0; height < concat_dims[n]; ++height)
+                        {
+                            in_index[2] = height;
+                            out_ptr = output + offset(out_strides, out_index);
+                            const auto *in_ptr = reinterpret_cast<const T *>(inputs[n]) + offset(in_strides[n], in_index);
+                            memcpy(out_ptr, in_ptr, width * elemsize);
+                            ++out_index[2];
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            for (size_t batch = 0; batch < in_shape[0]; ++batch)
+            {
+                in_index[0] = batch;
+                out_index[0] = batch;
+                for (size_t channel = 0; channel < in_shape[1]; ++channel)
+                {
+                    in_index[1] = channel;
+                    out_index[1] = channel;
+                    for (size_t height = 0; height < in_shape[2]; ++height)
+                    {
+                        in_index[2] = height;
+                        out_index[2] = height;
+                        out_index[3] = 0;
+                        for (size_t n = 0; n < inputs.size(); ++n)
+                        {
+                            const auto width = concat_dims[n];
+                            out_ptr = output + offset(out_strides, out_index);
+                            const auto *in_ptr = reinterpret_cast<const T *>(inputs[n]) + offset(in_strides[n], in_index);
+                            memcpy(out_ptr, in_ptr, width * elemsize);
+                            out_index[3] += width;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return ok();
+}
 }
 
 #define CONCAT_IMPL(size, type) \
     case size:                  \
         return concat_impl(inputs, reinterpret_cast<type *>(output), out_shape, in_strides, out_strides, axis, concat_dims, context)
 
+#define CONCAT_CONTINUOUS_IMPL(size, type) \
+    case size:                  \
+        return concat_continuous_impl(inputs, reinterpret_cast<type *>(output), out_shape, in_strides, out_strides, axis, concat_dims, context)
+
 result<void> optimized::concat(datatype_t type, gsl::span<const gsl::byte *const> inputs, gsl::byte *output, const runtime_shape_t &out_shape,
     gsl::span<const runtime_shape_t> in_strides, const runtime_shape_t &out_strides, size_t axis, const runtime_shape_t &concat_dims, kernel_context &context) noexcept
 {
+    runtime_shape_t in_shape(out_shape);
+    for (size_t i = 0; i < inputs.size(); ++i)
+    {
+        auto tmp = in_shape[i];
+        in_shape[axis] = concat_dims[i];
+        if (!is_continuous(in_shape, in_strides[i]))
+        {
+            switch (runtime::get_bytes(type))
+            {
+                CONCAT_IMPL(1, uint8_t);
+                CONCAT_IMPL(2, uint16_t);
+                CONCAT_IMPL(4, uint32_t);
+                CONCAT_IMPL(8, uint64_t);
+            default:
+                return err(std::errc::not_supported);
+            }
+        }
+        in_shape[i] = tmp;
+    }
+
     switch (runtime::get_bytes(type))
     {
-        CONCAT_IMPL(1, uint8_t);
-        CONCAT_IMPL(2, uint16_t);
-        CONCAT_IMPL(4, uint32_t);
-        CONCAT_IMPL(8, uint64_t);
+        CONCAT_CONTINUOUS_IMPL(1, uint8_t);
+        CONCAT_CONTINUOUS_IMPL(2, uint16_t);
+        CONCAT_CONTINUOUS_IMPL(4, uint32_t);
+        CONCAT_CONTINUOUS_IMPL(8, uint64_t);
     default:
         return err(std::errc::not_supported);
     }
