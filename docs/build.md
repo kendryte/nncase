@@ -51,7 +51,7 @@ pip install six==1.12 conan==1.19.2 tensorflow==2.4.1 matplotlib pillow pytest o
 Install dependencies
 ```bash
 pip install conan tensorflow==2.4.1 matplotlib pillow onnxruntime
-pip install torch==1.4.0+cpu torchvision==0.5.0+cpu
+pip install torch==1.4.0+cpu torchvision==0.5.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
 ```
 
 Export environment
