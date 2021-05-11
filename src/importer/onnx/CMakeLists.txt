@@ -98,6 +98,7 @@ set(ONNX_IMPORTER_SOURCES
 set(ONNX_IMPORTER_OPS_SOURCES
     ops/activations.cpp
     ops/binary.cpp
+    ops/clip.cpp
     ops/batchnorm.cpp
     ops/concat.cpp
     ops/constant.cpp
