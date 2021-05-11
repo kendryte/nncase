@@ -25,12 +25,12 @@ using namespace nncase::kernels;
 using namespace nncase::kernels::cpu;
 using namespace nncase::kernels::cpu::optimized;
 
-result<void> optimized::conv2d_1x1_s1(const float *input, const float *weights, NNCASE_UNUSED const float *bias, float *output,
-    const runtime_shape_t &in_shape, const runtime_shape_t &in_strides, const runtime_shape_t &w_shape, 
-    NNCASE_UNUSED const runtime_shape_t &w_strides, NNCASE_UNUSED const runtime_shape_t &bias_strides, const runtime_shape_t &out_strides, 
+result<void> optimized::conv2d_1x1_s1(const float *input, const float *weights, const float *bias, float *output,
+    const runtime_shape_t &in_shape,NNCASE_UNUSED const runtime_shape_t &in_strides, NNCASE_UNUSED const runtime_shape_t &w_shape,
+    NNCASE_UNUSED const runtime_shape_t &w_strides, NNCASE_UNUSED const runtime_shape_t &bias_strides, NNCASE_UNUSED const runtime_shape_t &out_strides,
     NNCASE_UNUSED const padding &padding_h, NNCASE_UNUSED const padding &padding_w,
-    NNCASE_UNUSED int32_t groups, NNCASE_UNUSED int32_t stride_h, NNCASE_UNUSED int32_t stride_w, 
-    NNCASE_UNUSED int32_t dilation_h, NNCASE_UNUSED int32_t dilation_w, value_range<float> fused_activation, kernel_context &context) noexcept
+    NNCASE_UNUSED int32_t groups, NNCASE_UNUSED int32_t stride_h, NNCASE_UNUSED int32_t stride_w,
+    NNCASE_UNUSED int32_t dilation_h, NNCASE_UNUSED int32_t dilation_w, value_range<float> fused_activation, NNCASE_UNUSED kernel_context &context) noexcept
 {
     const auto output_widths = in_shape[0] * w_shape[0] * in_shape[2] * in_shape[3];
     const auto widths = in_shape[2] * in_shape[3];
@@ -38,7 +38,7 @@ result<void> optimized::conv2d_1x1_s1(const float *input, const float *weights, 
     // if no cast, compiler will throw warning because of comparison of integer expressions of different signedness
     // warning be treated as errors
     const auto out_channels = static_cast<int>(w_shape[0]);
-    int threads = 1;
+    NNCASE_UNUSED int threads = 1;
     if (std::is_convertible_v<stackvm::stackvm_kernel_context &, decltype(context)>)
     {
         threads = static_cast<stackvm::stackvm_kernel_context &>(context).num_threads_;
@@ -125,7 +125,12 @@ result<void> optimized::conv2d_1x1_s1(const float *input, const float *weights, 
     return ok();
 }
 
-result<void> optimized::conv2d_1x1_s2(const float *input, const float *weights, const float *bias, float *output, const runtime_shape_t &in_shape,NNCASE_UNUSED  const runtime_shape_t &in_strides, const runtime_shape_t &w_shape, NNCASE_UNUSED const runtime_shape_t &w_strides, NNCASE_UNUSED const runtime_shape_t &bias_strides, NNCASE_UNUSED const runtime_shape_t &out_strides, NNCASE_UNUSED const padding &padding_h, NNCASE_UNUSED const padding &padding_w, NNCASE_UNUSED int32_t groups, NNCASE_UNUSED int32_t stride_h, NNCASE_UNUSED int32_t stride_w, NNCASE_UNUSED int32_t dilation_h, NNCASE_UNUSED int32_t dilation_w, value_range<float> fused_activation) noexcept
+result<void> optimized::conv2d_1x1_s2(const float *input, const float *weights, const float *bias, float *output,
+    const runtime_shape_t &in_shape,NNCASE_UNUSED const runtime_shape_t &in_strides, NNCASE_UNUSED const runtime_shape_t &w_shape,
+    NNCASE_UNUSED const runtime_shape_t &w_strides, NNCASE_UNUSED const runtime_shape_t &bias_strides, NNCASE_UNUSED const runtime_shape_t &out_strides,
+    NNCASE_UNUSED const padding &padding_h, NNCASE_UNUSED const padding &padding_w,
+    NNCASE_UNUSED int32_t groups, NNCASE_UNUSED int32_t stride_h, NNCASE_UNUSED int32_t stride_w,
+    NNCASE_UNUSED int32_t dilation_h, NNCASE_UNUSED int32_t dilation_w, value_range<float> fused_activation, NNCASE_UNUSED kernel_context &context) noexcept
 {
     const auto batch = in_shape[0], in_channels = in_shape[1], in_h = in_shape[2], in_w = in_shape[3], out_channels = w_shape[0];
     const auto filter_h = (int32_t)w_shape[2];
@@ -209,7 +214,12 @@ result<void> optimized::conv2d_1x1_s2(const float *input, const float *weights, 
     return ok();
 }
 
-result<void> optimized::conv2d_3x3_s1(const float *input, const float *weights, const float *bias, float *output, const runtime_shape_t &in_shape,NNCASE_UNUSED  const runtime_shape_t &in_strides, const runtime_shape_t &w_shape, NNCASE_UNUSED const runtime_shape_t &w_strides, NNCASE_UNUSED const runtime_shape_t &bias_strides, NNCASE_UNUSED const runtime_shape_t &out_strides, NNCASE_UNUSED const padding &padding_h, NNCASE_UNUSED const padding &padding_w, NNCASE_UNUSED int32_t groups, NNCASE_UNUSED int32_t stride_h, NNCASE_UNUSED int32_t stride_w, NNCASE_UNUSED int32_t dilation_h, NNCASE_UNUSED int32_t dilation_w, value_range<float> fused_activation) noexcept
+result<void> optimized::conv2d_3x3_s1(const float *input, const float *weights, const float *bias, float *output,
+    const runtime_shape_t &in_shape,NNCASE_UNUSED const runtime_shape_t &in_strides, NNCASE_UNUSED const runtime_shape_t &w_shape,
+    NNCASE_UNUSED const runtime_shape_t &w_strides, NNCASE_UNUSED const runtime_shape_t &bias_strides, NNCASE_UNUSED const runtime_shape_t &out_strides,
+    NNCASE_UNUSED const padding &padding_h, NNCASE_UNUSED const padding &padding_w,
+    NNCASE_UNUSED int32_t groups, NNCASE_UNUSED int32_t stride_h, NNCASE_UNUSED int32_t stride_w,
+    NNCASE_UNUSED int32_t dilation_h, NNCASE_UNUSED int32_t dilation_w, value_range<float> fused_activation, NNCASE_UNUSED kernel_context &context) noexcept
 {
     const auto batch = in_shape[0], out_channels = w_shape[0], in_channels = w_shape[1], in_h = in_shape[2], in_w = in_shape[3];
     const auto filter_h = (int32_t)w_shape[2];
@@ -309,7 +319,12 @@ result<void> optimized::conv2d_3x3_s1(const float *input, const float *weights, 
     return ok();
 }
 
-result<void> optimized::conv2d_3x3_s2(const float *input, const float *weights, const float *bias, float *output, const runtime_shape_t &in_shape,NNCASE_UNUSED  const runtime_shape_t &in_strides, const runtime_shape_t &w_shape, NNCASE_UNUSED const runtime_shape_t &w_strides, NNCASE_UNUSED const runtime_shape_t &bias_strides, NNCASE_UNUSED const runtime_shape_t &out_strides, NNCASE_UNUSED const padding &padding_h, NNCASE_UNUSED const padding &padding_w, NNCASE_UNUSED int32_t groups, NNCASE_UNUSED int32_t stride_h, NNCASE_UNUSED int32_t stride_w, NNCASE_UNUSED int32_t dilation_h, NNCASE_UNUSED int32_t dilation_w, value_range<float> fused_activation) noexcept
+result<void> optimized::conv2d_3x3_s2(const float *input, const float *weights, const float *bias, float *output,
+    const runtime_shape_t &in_shape,NNCASE_UNUSED const runtime_shape_t &in_strides, NNCASE_UNUSED const runtime_shape_t &w_shape,
+    NNCASE_UNUSED const runtime_shape_t &w_strides, NNCASE_UNUSED const runtime_shape_t &bias_strides, NNCASE_UNUSED const runtime_shape_t &out_strides,
+    NNCASE_UNUSED const padding &padding_h, NNCASE_UNUSED const padding &padding_w,
+    NNCASE_UNUSED int32_t groups, NNCASE_UNUSED int32_t stride_h, NNCASE_UNUSED int32_t stride_w,
+    NNCASE_UNUSED int32_t dilation_h, NNCASE_UNUSED int32_t dilation_w, value_range<float> fused_activation, NNCASE_UNUSED kernel_context &context) noexcept
 {
     const auto batch = in_shape[0], in_channels = in_shape[1], in_h = in_shape[2], in_w = in_shape[3], out_channels = w_shape[0];
     const auto filter_h = (int32_t)w_shape[2];
@@ -381,7 +396,12 @@ result<void> optimized::conv2d_3x3_s2(const float *input, const float *weights, 
     return ok();
 }
 
-result<void> optimized::conv2d_5x5_s1(const float *input, const float *weights, const float *bias, float *output, const runtime_shape_t &in_shape,NNCASE_UNUSED  const runtime_shape_t &in_strides, const runtime_shape_t &w_shape, NNCASE_UNUSED const runtime_shape_t &w_strides, NNCASE_UNUSED const runtime_shape_t &bias_strides, NNCASE_UNUSED const runtime_shape_t &out_strides, NNCASE_UNUSED const padding &padding_h, NNCASE_UNUSED const padding &padding_w, NNCASE_UNUSED int32_t groups, NNCASE_UNUSED int32_t stride_h, NNCASE_UNUSED int32_t stride_w, NNCASE_UNUSED int32_t dilation_h, NNCASE_UNUSED int32_t dilation_w, value_range<float> fused_activation) noexcept
+result<void> optimized::conv2d_5x5_s1(const float *input, const float *weights, const float *bias, float *output,
+    const runtime_shape_t &in_shape,NNCASE_UNUSED const runtime_shape_t &in_strides, NNCASE_UNUSED const runtime_shape_t &w_shape,
+    NNCASE_UNUSED const runtime_shape_t &w_strides, NNCASE_UNUSED const runtime_shape_t &bias_strides, NNCASE_UNUSED const runtime_shape_t &out_strides,
+    NNCASE_UNUSED const padding &padding_h, NNCASE_UNUSED const padding &padding_w,
+    NNCASE_UNUSED int32_t groups, NNCASE_UNUSED int32_t stride_h, NNCASE_UNUSED int32_t stride_w,
+    NNCASE_UNUSED int32_t dilation_h, NNCASE_UNUSED int32_t dilation_w, value_range<float> fused_activation, NNCASE_UNUSED kernel_context &context) noexcept
 {
 
     const auto batch = in_shape[0], in_channels = in_shape[1], in_h = in_shape[2], in_w = in_shape[3], out_channels = w_shape[0];
@@ -579,7 +599,12 @@ result<void> optimized::conv2d_5x5_s1(const float *input, const float *weights, 
     return ok();
 }
 
-result<void> optimized::conv2d_5x5_s2(const float *input, const float *weights, const float *bias, float *output, const runtime_shape_t &in_shape,NNCASE_UNUSED  const runtime_shape_t &in_strides, const runtime_shape_t &w_shape, NNCASE_UNUSED const runtime_shape_t &w_strides, NNCASE_UNUSED const runtime_shape_t &bias_strides, NNCASE_UNUSED const runtime_shape_t &out_strides, NNCASE_UNUSED const padding &padding_h, NNCASE_UNUSED const padding &padding_w, NNCASE_UNUSED int32_t groups, NNCASE_UNUSED int32_t stride_h, NNCASE_UNUSED int32_t stride_w, NNCASE_UNUSED int32_t dilation_h, NNCASE_UNUSED int32_t dilation_w, value_range<float> fused_activation) noexcept
+result<void> optimized::conv2d_5x5_s2(const float *input, const float *weights, const float *bias, float *output,
+    const runtime_shape_t &in_shape,NNCASE_UNUSED const runtime_shape_t &in_strides, NNCASE_UNUSED const runtime_shape_t &w_shape,
+    NNCASE_UNUSED const runtime_shape_t &w_strides, NNCASE_UNUSED const runtime_shape_t &bias_strides, NNCASE_UNUSED const runtime_shape_t &out_strides,
+    NNCASE_UNUSED const padding &padding_h, NNCASE_UNUSED const padding &padding_w,
+    NNCASE_UNUSED int32_t groups, NNCASE_UNUSED int32_t stride_h, NNCASE_UNUSED int32_t stride_w,
+    NNCASE_UNUSED int32_t dilation_h, NNCASE_UNUSED int32_t dilation_w, value_range<float> fused_activation, NNCASE_UNUSED kernel_context &context) noexcept
 {
     const auto batch = in_shape[0], in_channels = in_shape[1], in_h = in_shape[2], in_w = in_shape[3], out_channels = w_shape[0];
     const auto filter_h = (int32_t)w_shape[2];

@@ -20,11 +20,11 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::kernels;
 
-#define OPTIMIZED_CONV_ARGS input, weights, bias, output,           \
-                            in_shape, in_strides, w_shape,          \
-                            w_strides, bias_strides, out_strides,   \
-                            padding_h, padding_w, groups, stride_h, \
-                            stride_w, dilation_h, dilation_w, fused_activation
+#define CONV_ARGS input, weights, bias, output,           \
+                  in_shape, in_strides, w_shape,          \
+                  w_strides, bias_strides, out_strides,   \
+                  padding_h, padding_w, groups, stride_h, \
+                  stride_w, dilation_h, dilation_w, fused_activation, context
 
 result<void> kernels::conv2d(const float *input, const float *weights, const float *bias, float *output,
     const runtime_shape_t &in_shape, const runtime_shape_t &in_strides, const runtime_shape_t &w_shape, const runtime_shape_t &w_strides,
@@ -38,29 +38,35 @@ result<void> kernels::conv2d(const float *input, const float *weights, const flo
     {
         if (stride_h == 1 and stride_w == 1)
         {
-            return cpu::optimized::conv2d_1x1_s1(OPTIMIZED_CONV_ARGS);
+            return cpu::optimized::conv2d_1x1_s1(CONV_ARGS);
         }
         else if (stride_h == 2 and stride_w == 2)
         {
-            return cpu::optimized::conv2d_1x1_s2(OPTIMIZED_CONV_ARGS);
+            return cpu::optimized::conv2d_1x1_s2(CONV_ARGS);
         }
     }
     else if (filter_h == 3 and filter_w == 3 and groups == 1 and padding_h.before == 0 and padding_h.after == 0 and padding_w.before == 0 and padding_w.after == 0 and dilation_h == 1 and dilation_w == 1)
     {
         if (stride_h == 1 and stride_w == 1)
         {
-            return cpu::optimized::conv2d_3x3_s1(OPTIMIZED_CONV_ARGS);
+            return cpu::optimized::conv2d_3x3_s1(CONV_ARGS);
         }
         else if (stride_h == 2 and stride_w == 2)
         {
-            return cpu::optimized::conv2d_3x3_s2(OPTIMIZED_CONV_ARGS);
+            return cpu::optimized::conv2d_3x3_s2(CONV_ARGS);
         }
     }
     else if (filter_h == 5 and filter_w == 5 and groups == 1 and padding_h.before == 0 and padding_h.after == 0 and padding_w.before == 0 and padding_w.after == 0 and dilation_h == 1 and dilation_w == 1)
     {
         if (stride_h == 1 and stride_w == 1)
         {
-            return cpu::optimized::conv2d_5x5_s1(OPTIMIZED_CONV_ARGS);
+            return cpu::optimized::conv2d_5x5_s1(CONV_ARGS);
+        }
+        else if (stride_h == 2 and stride_w == 2)
+        {
+            return cpu::optimized::conv2d_5x5_s2(CONV_ARGS);
         }
     }
+    // general conv
+    return cpu::reference::conv2d(CONV_ARGS);
 }
