@@ -13,12 +13,18 @@
  * limitations under the License.
  */
 #include <nncase/kernels/convolution.h>
-#include <nncase/kernels/cpu/reference/convolution.h>
 #include <nncase/kernels/cpu/optimized/convolution.h>
+#include <nncase/kernels/cpu/reference/convolution.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::kernels;
+
+#define OPTIMIZED_CONV_ARGS input, weights, bias, output,\
+                            in_shape, in_strides, w_shape, \
+                            w_strides, bias_strides, out_strides, \
+                            padding_h, padding_w, groups, stride_h, \
+                            stride_w, dilation_h, dilation_w, fused_activation
 
 result<void> kernels::conv2d(const float *input, const float *weights, const float *bias, float *output,
     const runtime_shape_t &in_shape, const runtime_shape_t &in_strides, const runtime_shape_t &w_shape, const runtime_shape_t &w_strides,
@@ -28,15 +34,40 @@ result<void> kernels::conv2d(const float *input, const float *weights, const flo
     const auto filter_h = (int32_t)w_shape[2];
     const auto filter_w = (int32_t)w_shape[3];
 
-    if (filter_h == 1 && filter_w == 1 && dilation_h == 1 && dilation_w == 1 && groups == 1 && stride_w == 1 && stride_h == 1)
+    if (filter_h == 1 and filter_w == 1 and groups == 1 and padding_h.before == 0 and padding_h.after == 0 and padding_w.before == 0 and padding_w.after == 0 and dilation_h == 1 and dilation_w == 1)
     {
-        return cpu::optimized::conv2d_1x1(input, weights, bias, output, in_shape, in_strides, w_shape, w_strides, bias_strides, out_strides,
-            padding_h, padding_w, groups, stride_h, stride_w, dilation_h, dilation_w, fused_activation);
+        if (stride_h == 1 and stride_w == 1)
+        {
+            return cpu::optimized::conv2d_1x1_s1(OPTIMIZED_CONV_ARGS);
+        }
+        else if (stride_h == 2 and stride_w == 2)
+        {
+            return cpu::optimized::conv2d_1x1_s2(OPTIMIZED_CONV_ARGS);
+        }
     }
-    else
+    else if (filter_h == 3 and filter_w == 3 and groups == 1 and padding_h.before == 0 and padding_h.after == 0 and padding_w.before == 0 and padding_w.after == 0 and dilation_h == 1 and dilation_w == 1)
     {
-        // general conv
-        return cpu::reference::conv2d(input, weights, bias, output, in_shape, in_strides, w_shape, w_strides, bias_strides, out_strides,
-            padding_h, padding_w, groups, stride_h, stride_w, dilation_h, dilation_w, fused_activation);
+        if (stride_h == 1 and stride_w == 1)
+        {
+            return cpu::optimized::conv2d_3x3_s1(OPTIMIZED_CONV_ARGS);
+        }
+        else if (stride_h == 2 and stride_w == 2)
+        {
+            return cpu::optimized::conv2d_3x3_s2(OPTIMIZED_CONV_ARGS);
+        }
     }
+    else if (filter_h == 5 and filter_w == 5 and groups == 1 and padding_h.before == 0 and padding_h.after == 0 and padding_w.before == 0 and padding_w.after == 0 and dilation_h == 1 and dilation_w == 1)
+    {
+        if (stride_h == 1 and stride_w == 1)
+        {
+            return cpu::optimized::conv2d_5x5_s1(OPTIMIZED_CONV_ARGS);
+        }
+        else if (stride_h == 2 and stride_w == 2)
+        {
+            return cpu::optimized::conv2d_5x5_s2(OPTIMIZED_CONV_ARGS);
+        }
+    }
+    // general conv
+    return cpu::reference::conv2d(input, weights, bias, output, in_shape, in_strides, w_shape, w_strides, bias_strides, out_strides,
+        padding_h, padding_w, groups, stride_h, stride_w, dilation_h, dilation_w, fused_activation);
 }
