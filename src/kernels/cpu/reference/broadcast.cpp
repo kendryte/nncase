@@ -27,7 +27,7 @@ namespace
 {
 template <class T>
 result<void> broadcast_impl(const T *input, T *output, const runtime_shape_t &in_shape,
-    const runtime_shape_t &in_strides, const runtime_shape_t &out_shape, const runtime_shape_t &out_strides) noexcept
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_shape, const runtime_shape_t &out_strides, NNCASE_UNUSED kernel_context &context) noexcept
 {
     return apply(out_shape, [&](const runtime_shape_t &index) -> result<void> {
         const auto in_index = kernels::detail::get_reduced_offset(index, in_shape);
@@ -39,10 +39,10 @@ result<void> broadcast_impl(const T *input, T *output, const runtime_shape_t &in
 
 #define BROADCAST_IMPL(size, type) \
     case size:                     \
-        return broadcast_impl(reinterpret_cast<const type *>(input), reinterpret_cast<type *>(output), in_shape, in_strides, out_shape, out_strides)
+        return broadcast_impl(reinterpret_cast<const type *>(input), reinterpret_cast<type *>(output), in_shape, in_strides, out_shape, out_strides, context)
 
 result<void> reference::broadcast(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape,
-    const runtime_shape_t &in_strides, const runtime_shape_t &out_shape, const runtime_shape_t &out_strides) noexcept
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_shape, const runtime_shape_t &out_strides, kernel_context &context) noexcept
 {
     switch (runtime::get_bytes(type))
     {

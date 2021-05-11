@@ -140,6 +140,11 @@ result<scalar> stackvm_runtime_module::pop_scalar(datatype_t type) noexcept
     return ok(s);
 }
 
+kernels::kernel_context &stackvm_runtime_module::kernel_context() noexcept
+{
+    return kernel_context_;
+}
+
 result<std::unique_ptr<runtime_module>> stackvm::create_stackvm_runtime_module()
 {
     std::unique_ptr<runtime_module> mod(new (std::nothrow) stackvm_runtime_module());

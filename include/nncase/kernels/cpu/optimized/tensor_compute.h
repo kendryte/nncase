@@ -14,10 +14,11 @@
  */
 #pragma once
 #include "runtime_types.h"
-#include <nncase/kernels/kernel_context.h>
 
-BEGIN_NS_NNCASE_KERNELS_CPU_REF
+BEGIN_NS_NNCASE_KERNELS_CPU_OPT
 
-NNCASE_API result<void> nnil_unary_method(const float *input, float *output, size_t count, gsl::span<const gsl::byte> body, kernel_context &context) noexcept;
+NNCASE_API result<void> concat(datatype_t type, gsl::span<const gsl::byte *const> inputs, gsl::byte *output, const runtime_shape_t &out_shape,
+    gsl::span<const runtime_shape_t> in_strides, const runtime_shape_t &out_strides, size_t axis, const runtime_shape_t &concat_dims,
+    kernel_context &context = default_kernel_context) noexcept;
 
-END_NS_NNCASE_KERNELS_CPU_REF
+END_NS_NNCASE_KERNELS_CPU_OPT
