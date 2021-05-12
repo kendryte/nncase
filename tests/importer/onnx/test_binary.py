@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""System test: test unary"""
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
 import pytest
 import os
@@ -20,43 +19,21 @@ import numpy as np
 import sys
 import test_util
 
-
 def _make_module():
-    class UnaryModule(torch.nn.Module):
+    class BinaryModule(torch.nn.Module):
         def __init__(self):
-            super(UnaryModule, self).__init__()
+            super(BinaryModule, self).__init__()
 
         def forward(self, x):
-            # outs = []
-            # outs.append(torch.abs(-x))
-            # outs.append(torch.ceil(x))
-            # outs.append(torch.cos(x))
-            # outs.append(torch.exp(x))
-            # outs.append(torch.floor(x)
-            # outs.append(torch.log(x))
-            # outs.append(torch.neg(x))
-            # outs.append(torch.round(x))
-            # outs.append(torch.rsqrt(x))
-            # outs.append(torch.sin(x))
-            # outs.append(torch.sqrt(x))
-            # outs.append(torch.square(x))
-            # outs.append(torch.tanh(x))
-            # outs.append(torch.sigmoid(x))
-            # return outs
+            add = torch.add(x, 6)
+            mul = torch.mul(add, x)
+            sub = torch.sub(mul, x)
+            max = torch.max(sub, x)
+            div = torch.div(max, 2)
+            min = torch.min(div, x)
+            return min
 
-            x = torch.neg(x)
-            x = torch.abs(x)
-            x = torch.exp(x)
-            x = torch.floor(x)
-            x = torch.ceil(x)
-            x = torch.cos(x)
-            x = torch.log(x)
-            x = torch.round(x)
-            x = torch.sin(x)
-            x = torch.sqrt(x)
-            return x
-
-    return UnaryModule()
+    return BinaryModule()
 
 in_shapes = [
     [3],
@@ -66,10 +43,10 @@ in_shapes = [
 ]
 
 @pytest.mark.parametrize('in_shape', in_shapes)
-def test_unary(in_shape, request):
+def test_binary(in_shape, request):
     module = _make_module()
     # test_util.test_onnx_module(request.node.name, module, in_shape, ['cpu', 'k210', 'k510'])
     test_util.test_onnx_module(request.node.name, module, in_shape, ['k510'])
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_unary.py'])
+    pytest.main(['-vv', 'test_binary.py'])

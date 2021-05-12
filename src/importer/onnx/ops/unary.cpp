@@ -66,6 +66,11 @@ void onnx_importer::convert_op_Neg(const onnx::NodeProto &node)
     convert_unary(node, unary_neg);
 }
 
+void onnx_importer::convert_op_Round(const onnx::NodeProto &node)
+{
+    convert_unary(node, unary_round);
+}
+
 void onnx_importer::convert_op_Sqrt(const onnx::NodeProto &node)
 {
     convert_unary(node, unary_sqrt);
