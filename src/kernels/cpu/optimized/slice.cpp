@@ -176,7 +176,7 @@ result<void> optimized::slice(datatype_t type, const gsl::byte *input, gsl::byte
     kernel_context &context) noexcept
 {
     runtime_shape_t out_shape(begins.size());
-    for (size_i = 0; i < begins.size(); ++i)
+    for (size_t i = 0; i < begins.size(); ++i)
     {
         out_shape[i] = ends[i] - begins[i];
     }
