@@ -97,7 +97,7 @@ result<void> concat_continuous_impl(gsl::span<const gsl::byte *const> inputs, T 
 
 template <class T>
 result<void> concat_impl(gsl::span<const gsl::byte *const> inputs, T *output, const runtime_shape_t &out_shape,
-    gsl::span<const runtime_shape_t> &in_strides, NNCASE_UNUSED const runtime_shape_t &out_strides, size_t axis, const runtime_shape_t &concat_dims, NNCASE_UNUSED kernel_context &context) noexcept
+    gsl::span<const runtime_shape_t> &in_strides, const runtime_shape_t &out_strides, size_t axis, const runtime_shape_t &concat_dims, NNCASE_UNUSED kernel_context &context) noexcept
 {
     runtime_shape_t in_shape(out_shape);
     size_t elemsize = sizeof(T);
@@ -348,26 +348,9 @@ result<void> optimized::concat(datatype_t type, gsl::span<const gsl::byte *const
         in_shape[axis] = concat_dims[i];
         if (!is_continuous(in_shape, in_strides[i]))
         {
-            switch (runtime::get_bytes(type))
-            {
-                CONCAT_IMPL(1, uint8_t);
-                CONCAT_IMPL(2, uint16_t);
-                CONCAT_IMPL(4, uint32_t);
-                CONCAT_IMPL(8, uint64_t);
-            default:
-                return err(std::errc::not_supported);
-            }
+            TYPE_IMPL_SELECT(type, CONCAT_IMPL);
         }
         in_shape[i] = tmp;
     }
-
-    switch (runtime::get_bytes(type))
-    {
-        CONCAT_CONTINUOUS_IMPL(1, uint8_t);
-        CONCAT_CONTINUOUS_IMPL(2, uint16_t);
-        CONCAT_CONTINUOUS_IMPL(4, uint32_t);
-        CONCAT_CONTINUOUS_IMPL(8, uint64_t);
-    default:
-        return err(std::errc::not_supported);
-    }
+    TYPE_IMPL_SELECT(type, CONCAT_CONTINUOUS_IMPL);
 }

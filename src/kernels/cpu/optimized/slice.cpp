@@ -167,17 +167,26 @@ result<void> slice_impl(const T *input, T *output, const runtime_shape_t &in_sha
     case size:                 \
         return slice_impl(reinterpret_cast<const type *>(input), reinterpret_cast<type *>(output), in_shape, in_strides, out_strides, begins, ends, strides, context)
 
+#define SLICE_CONTINUOUS_IMPL(size, type) \
+    case size:                 \
+        return slice_continuous_impl(reinterpret_cast<const type *>(input), reinterpret_cast<type *>(output), in_shape, in_strides, out_strides, begins, ends, strides, context)
+
 result<void> optimized::slice(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const runtime_shape_t &begins, const runtime_shape_t &ends, const runtime_axis_t &strides,
     kernel_context &context) noexcept
 {
-    switch (runtime::get_bytes(type))
+    runtime_shape_t out_shape(begins.size());
+    for (size_i = 0; i < begins.size(); ++i)
     {
-        SLICE_IMPL(1, uint8_t);
-        SLICE_IMPL(2, uint16_t);
-        SLICE_IMPL(4, uint32_t);
-        SLICE_IMPL(8, uint64_t);
-    default:
-        return err(std::errc::not_supported);
+        out_shape[i] = ends[i] - begins[i];
+    }
+    
+    if (is_continuous(in_shape, in_strides) && is_continuous(out_shape, out_strides))
+    {
+        TYPE_IMPL_SELECT(type, SLICE_CONTINUOUS_IMPL);
+    }
+    else
+    {
+        TYPE_IMPL_SELECT(type, SLICE_IMPL);
     }
 }

@@ -105,14 +105,4 @@ result<void> kernels::slice(datatype_t type, const gsl::byte *input, gsl::byte *
     kernel_context &context) noexcept
 {
     return cpu::optimized::slice(type, input, output, in_shape, in_strides, out_strides, begins, ends, strides, context);
-
-    //if (get_default_strides(in_shape) == in_strides)
-    //{
-    //    // continuous
-    //    return cpu::optimized::slice(type, input, output, in_shape, in_strides, out_strides, begins, ends, strides, context);
-    //}
-    //else
-    //{
-    //    return cpu::reference::slice(type, input, output, in_shape, in_strides, out_strides, begins, ends, strides, context);
-    //}
 }
