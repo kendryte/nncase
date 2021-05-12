@@ -15,6 +15,7 @@
 #include <nncase/kernels/cpu/reference/tensor_compute.h>
 #include <nncase/kernels/cpu/optimized/tensor_compute.h>
 #include <nncase/kernels/tensor_compute.h>
+#include <nncase/runtime/runtime_op_utility.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -103,5 +104,15 @@ result<void> kernels::slice(datatype_t type, const gsl::byte *input, gsl::byte *
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const runtime_shape_t &begins, const runtime_shape_t &ends, const runtime_axis_t &strides,
     kernel_context &context) noexcept
 {
-    return cpu::reference::slice(type, input, output, in_shape, in_strides, out_strides, begins, ends, strides, context);
+    return cpu::optimized::slice(type, input, output, in_shape, in_strides, out_strides, begins, ends, strides, context);
+
+    //if (get_default_strides(in_shape) == in_strides)
+    //{
+    //    // continuous
+    //    return cpu::optimized::slice(type, input, output, in_shape, in_strides, out_strides, begins, ends, strides, context);
+    //}
+    //else
+    //{
+    //    return cpu::reference::slice(type, input, output, in_shape, in_strides, out_strides, begins, ends, strides, context);
+    //}
 }
