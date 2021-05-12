@@ -119,13 +119,23 @@ void onnx_importer::import(const struct import_options &options)
     for (const auto &node : graph.node())
         convert_op(node);
 
+    std::unordered_set<std::string> init_names;
+    for (const auto &tensor : graph.initializer())
+    {
+        init_names.emplace(tensor.name());
+    }
+
     // create inputs
     for (const auto &input_info : graph.input())
     {
         const auto &input_name = input_info.name();
+        if (init_names.find(input_name) != init_names.end())
+        {
+            continue;
+        }
+
         auto &&input_shape = get_shape(input_info);
         const auto input_dt = get_datatype(input_info);
-
         if (!input_dt)
             throw std::runtime_error("Data type of input \"" + input_name + "\" is not supported");
 
