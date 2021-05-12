@@ -129,12 +129,12 @@ void onnx_importer::convert_conv(const NodeProto &node)
             if (pads_values.size() > 1)
             {
                 pads[0].before = pads_values[0];
-                pads[0].after = pads_values[1];
+                pads[1].before = pads_values[1];
             }
 
             if (pads_values.size() > 3)
             {
-                pads[1].before = pads_values[2];
+                pads[0].after = pads_values[2];
                 pads[1].after = pads_values[3];
             }
         }
