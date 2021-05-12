@@ -704,6 +704,19 @@ xt::xarray<uint8_t> onnx_importer::to<xt::xarray<uint8_t>>(const onnx::TensorPro
 }
 
 template <>
+std::vector<float> onnx_importer::to<std::vector<float>>(const onnx::TensorProto &tensor)
+{
+    if (!tensor.float_data().empty())
+    {
+        return std::vector<float> { std::begin(tensor.float_data()), std::end(tensor.float_data()) };
+    }
+    else
+    {
+        return raw_to_vector<float, float>(tensor);
+    }
+}
+
+template <>
 xt::xarray<float> onnx_importer::convert_to<xt::xarray<float>>(const onnx::TensorProto &tensor)
 {
     if (tensor.data_type() == TensorProto_DataType_FLOAT)

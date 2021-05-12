@@ -198,4 +198,6 @@ namespace nncase::importer
     xt::xarray<std::uint8_t> onnx_importer::to<xt::xarray<std::uint8_t>>(const onnx::TensorProto &tensor);
     template <>
     xt::xarray<float> onnx_importer::convert_to<xt::xarray<float>>(const onnx::TensorProto &tensor);
+    template <>
+    std::vector<float> onnx_importer::to<std::vector<float>>(const onnx::TensorProto &tensor);
 }
