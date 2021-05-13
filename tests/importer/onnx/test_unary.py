@@ -11,7 +11,6 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""System test: test unary"""
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
 import pytest
 import os
@@ -19,7 +18,6 @@ import torch
 import numpy as np
 import sys
 import test_util
-
 
 def _make_module():
     class UnaryModule(torch.nn.Module):

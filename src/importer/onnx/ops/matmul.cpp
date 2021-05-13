@@ -32,9 +32,12 @@ void onnx_importer::convert_op_MatMul(const NodeProto &node)
     auto &&input_a_shape = get_shape(input_a);
     auto &&input_b_shape = get_shape(input_b);
 
-    // auto &&bias = xt::zeros<float>({ input_b_shape.back() });
+    std::vector<float> bias_value(input_b_shape.back(), 0.f);
+    shape_t bias_shape = { input_b_shape.back() };
+    auto bias = graph_.emplace<constant>(dt_float32, bias_shape, bias_value);
 
     auto mmul = graph_.emplace<matmul>(std::move(input_a_shape), std::move(input_b_shape), value_range<float>::full());
+    mmul->bias().connect(bias->output());
 
     input_tensors_.emplace(&mmul->input_a(), input_a);
     input_tensors_.emplace(&mmul->input_b(), input_b);
