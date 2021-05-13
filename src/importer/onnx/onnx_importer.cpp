@@ -266,6 +266,11 @@ shape_t onnx_importer::get_shape(const ValueInfoProto &value_info)
         }
     }
 
+    if (result_shape.empty())
+    {
+        result_shape.push_back(1);
+    }
+
     return result_shape;
 }
 
@@ -273,7 +278,10 @@ shape_t onnx_importer::get_shape(const TensorProto &value)
 {
     const auto &shape = value.dims();
     shape_t result_shape { std::begin(shape), std::end(shape) };
-
+    if (result_shape.empty())
+    {
+        result_shape.push_back(1);
+    }
     return result_shape;
 }
 

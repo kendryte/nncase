@@ -63,7 +63,6 @@ void onnx_importer::convert_reduce(const NodeProto &node, const reduce_op_t redu
     }
 
     bool keepdims = true;
-
     const auto &keepdims_attr = get_attribute<int>(node, "keepdims");
     if (keepdims_attr)
         keepdims = static_cast<bool>(keepdims_attr.value());
