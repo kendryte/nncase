@@ -19,31 +19,46 @@ import numpy as np
 import sys
 import test_util
 
-def _make_module(shape):
+def _make_module(in_shape, padding, value):
 
-    class MatmulModule(torch.nn.Module):
+    class PadModule(torch.nn.Module):
         def __init__(self):
-            super(MatmulModule, self).__init__()
+            super(PadModule, self).__init__()
+            self.pad = torch.nn.ConstantPad2d(padding, value)
+            self.conv2d = torch.nn.Conv2d(in_shape[1], 3, 3)
 
         def forward(self, x):
-            y = torch.randn(*shape)
-            x = torch.matmul(x, y)
+            x = self.pad(x)
+            x = self.conv2d(x)
 
             return x
 
-    return MatmulModule()
+    return PadModule()
 
 in_shapes = [
-    [[1, 2], [2, 1]],
-    [[3, 4], [4, 5]]
+    [1, 3, 60, 72],
+    [1, 3, 224, 224]
+]
+
+paddings = [
+    1,
+    (1, 1, 1, 1),
+    (0, 0, 0, 0),
+    (3, 0, 2, 1)
+]
+
+values = [
+    0
 ]
 
 @pytest.mark.parametrize('in_shape', in_shapes)
-def test_matmul(in_shape, request):
-    module = _make_module(in_shape[1])
+@pytest.mark.parametrize('padding', paddings)
+@pytest.mark.parametrize('value', values)
+def test_pad(in_shape, padding, value, request):
+    module = _make_module(in_shape, padding, value)
 
-    # test_util.test_onnx_module(request.node.name, module, in_shape[0], ['cpu', 'k210', 'k510'])
-    test_util.test_onnx_module(request.node.name, module, in_shape[0], ['k510'])
+    # test_util.test_onnx_module(request.node.name, module, in_shape, ['cpu', 'k210', 'k510'])
+    test_util.test_onnx_module(request.node.name, module, in_shape, ['k510'])
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_matmul.py'])
+    pytest.main(['-vv', 'test_pad.py'])

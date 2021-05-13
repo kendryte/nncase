@@ -769,20 +769,13 @@ xt::xarray<float> onnx_importer::convert_to<xt::xarray<float>>(const onnx::Tenso
 
 std::vector<padding> onnx_importer::parse_padding(const axis_t &padding_value)
 {
-    std::vector<padding> result;
-
     assert(!(padding_value.size() % 2));
+    const size_t dims = padding_value.size() / 2;
+    std::vector<padding> result;
+    result.reserve(dims);
 
-    const size_t middle { padding_value.size() / 2 };
-    for (size_t i = middle - 2; i < middle; ++i)
-        result.push_back(padding { padding_value[i], padding_value[i + middle] });
+    for (size_t i = 0; i < dims; ++i)
+        result.push_back(padding { padding_value[i], padding_value[i + dims] });
 
     return result;
 }
-
-// graph nncase::importer::import_onnx(xtl::span<const uint8_t> model)
-// {
-//     graph graph;
-//     onnx_importer(model, graph).import();
-//     return graph;
-// }
