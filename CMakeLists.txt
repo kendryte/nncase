@@ -135,6 +135,7 @@ else()
     add_subdirectory(src/plugin)
     add_subdirectory(src/nncase)
     add_subdirectory(src/cli)
+    add_subdirectory(tests/kernels)
     
     # Python binding
     add_subdirectory(python/nncase/native)

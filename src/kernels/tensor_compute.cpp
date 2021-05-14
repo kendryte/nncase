@@ -38,7 +38,14 @@ result<void> kernels::concat(datatype_t type, gsl::span<const gsl::byte *const> 
     gsl::span<const runtime_shape_t> in_strides, const runtime_shape_t &out_strides, size_t axis, const runtime_shape_t &concat_dims, 
     kernel_context &context) noexcept
 {
-    return cpu::optimized::concat(type, inputs, output, out_shape, in_strides, out_strides, axis, concat_dims, context);
+    if (in_strides[0].size() <= 4)
+    {
+        return cpu::optimized::concat(type, inputs, output, out_shape, in_strides, out_strides, axis, concat_dims, context);
+    }
+    else
+    {
+        return cpu::reference::concat(type, inputs, output, out_shape, in_strides, out_strides, axis, concat_dims, context);
+    }
 }
 
 result<void> kernels::convert(datatype_t in_type, datatype_t out_type, const gsl::byte *input, gsl::byte *output,
@@ -104,5 +111,12 @@ result<void> kernels::slice(datatype_t type, const gsl::byte *input, gsl::byte *
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const runtime_shape_t &begins, const runtime_shape_t &ends, const runtime_axis_t &strides,
     kernel_context &context) noexcept
 {
-    return cpu::optimized::slice(type, input, output, in_shape, in_strides, out_strides, begins, ends, strides, context);
+    if (in_strides.size() <= 4)
+    {
+        return cpu::optimized::slice(type, input, output, in_shape, in_strides, out_strides, begins, ends, strides, context);
+    }
+    else
+    {
+        return cpu::optimized::slice(type, input, output, in_shape, in_strides, out_strides, begins, ends, strides, context);
+    }
 }

@@ -186,6 +186,7 @@ result<void> slice_strides_impl(const T *input, T *output, const runtime_shape_t
                 output[offset(out_strides, out_index)] = input[offset(in_strides, in_index)];
                 ++out_index[dims];
             }
+            out_index[dims] = 0;
         },
         context);
 }
@@ -207,7 +208,6 @@ result<void> optimized::slice(datatype_t type, const gsl::byte *input, gsl::byte
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const runtime_shape_t &begins, const runtime_shape_t &ends, const runtime_axis_t &strides,
     kernel_context &context) noexcept
 {
-    TYPE_IMPL_SELECT(type, SLICE_LINECOPY_IMPL);
     auto dims = begins.size();
     runtime_shape_t out_shape(dims);
     for (size_t i = 0; i < dims; ++i)
