@@ -227,20 +227,22 @@ result<void> conv2d_3x3_s1(const float *input, const float *weights, const float
                 binding_ptr<Filter_h>(k, weights + offset(w_strides, w_index), w_strides[2]);
 
                 size_t i = 0;
-                // for (; i + (Parallel - 1) < out_h; i += Parallel)
-                // {
-                //     for (size_t remain = 0; remain < out_w; remain++)
-                //     {
-                //         std::fill_n(sum.begin(), Parallel, 0.);
-                //         convNxN(sum[0], r[0], k[0], r[1], k[1], r[2], k[2]);
-                //         convNxN(sum[1], r[1], k[0], r[2], k[1], r[3], k[2]);
-                //         binding_value<Parallel>(outptr, sum);
-                //         increase_n<compute_rsize(Parallel, Stride_h, Filter_h)>(r);
-                //         increase_n<Parallel>(outptr);
-                //     }
-                //     increase_n<compute_rsize(Parallel, Stride_h, Filter_h)>(r, in_strides[2] * Stride_h + tail_size);
-                //     increase_n<Parallel>(outptr, out_strides[2] * (Parallel - 1));
-                // }
+                for (; i + (Parallel - 1) < out_h; i += Parallel)
+                {
+                    for (size_t remain = 0; remain < out_w; remain++)
+                    {
+                        std::fill_n(sum.begin(), Parallel, 0.);
+                        convNxM<Parallel, 0, Stride_h, Filter_h, Filter_w>(sum, r, k);
+                        binding_value<Parallel>(outptr, sum);
+                        increase_n<compute_rsize(Parallel, Stride_h, Filter_h)>(r, Stride_w);
+                        increase_n<Parallel>(outptr, 1);
+                    }
+                    increase_n<compute_rsize(Parallel, Stride_h, Filter_h)>(r,
+                        in_strides[2] * (Stride_h - 1) + in_strides[2] * (Parallel - 1) + tail_size);
+                    // FIXME 这里要判断一下 为0时就不展开了
+                    increase_n<Parallel>(outptr, out_strides[2] * (Parallel - 1));
+                }
+
                 constexpr size_t Local_Parallel = 1;
                 for (; i + (Local_Parallel - 1) < out_h; i += Local_Parallel)
                 {
@@ -253,10 +255,11 @@ result<void> conv2d_3x3_s1(const float *input, const float *weights, const float
                         increase_n<compute_rsize(Local_Parallel, Stride_h, Filter_h)>(r, Stride_w);
                         increase_n<Local_Parallel>(outptr, 1);
                     }
-                    increase_n<compute_rsize(Local_Parallel, Stride_h, Filter_h)>(r, in_strides[2] * (Stride_h - 1) + tail_size);
+                    increase_n<compute_rsize(Local_Parallel, Stride_h, Filter_h)>(r, in_strides[2] * (Stride_h - 1) + (in_strides[2] * (Local_Parallel - 1)) + tail_size);
                     // FIXME 这里要判断一下 为0时就不展开了
                     if constexpr (Local_Parallel - 1 > 0)
                     {
+                        // FIXME 这里可能得考虑一下内存是否连续的问题
                         increase_n<Local_Parallel>(outptr, out_strides[2] * (Local_Parallel - 1));
                     }
                 }
