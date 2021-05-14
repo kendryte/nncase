@@ -45,17 +45,18 @@ result<void> kernels::conv2d(const float *input, const float *weights, const flo
     //         return cpu::optimized::conv2d_1x1_s2(CONV_ARGS);
     //     }
     // }
-    // else if (filter_h == 3 and filter_w == 3 and groups == 1 and padding_h.before == 0 and padding_h.after == 0 and padding_w.before == 0 and padding_w.after == 0 and dilation_h == 1 and dilation_w == 1)
-    // {
-    //     if (stride_h == 1 and stride_w == 1)
-    //     {
-    //         return cpu::optimized::conv2d_3x3_s1(CONV_ARGS);
-    //     }
-    //     else if (stride_h == 2 and stride_w == 2)
-    //     {
-    //         return cpu::optimized::conv2d_3x3_s2(CONV_ARGS);
-    //     }
-    // }
+    // else
+    if (filter_h == 3 and filter_w == 3 and groups == 1 and padding_h.before == 0 and padding_h.after == 0 and padding_w.before == 0 and padding_w.after == 0 and dilation_h == 1 and dilation_w == 1)
+    {
+        if (stride_h == 1 and stride_w == 1)
+        {
+            return cpu::optimized::conv2d_3x3_s1<2, 3, 3, 1, 1>(CONV_ARGS);
+        }
+        else if (stride_h == 2 and stride_w == 2)
+        {
+            return cpu::optimized::conv2d_3x3_s1<2, 3, 3, 2, 2>(CONV_ARGS);
+        }
+    }
     // else if (filter_h == 5 and filter_w == 5 and groups == 1 and padding_h.before == 0 and padding_h.after == 0 and padding_w.before == 0 and padding_w.after == 0 and dilation_h == 1 and dilation_w == 1)
     // {
     //     if (stride_h == 1 and stride_w == 1)
@@ -67,18 +68,17 @@ result<void> kernels::conv2d(const float *input, const float *weights, const flo
     //         return cpu::optimized::conv2d_5x5_s2(CONV_ARGS);
     //     }
     // }
-    if (filter_h == 7 and filter_w == 7 and groups == 1 and padding_h.before == 0 and padding_h.after == 0 and padding_w.before == 0 and padding_w.after == 0 and dilation_h == 1 and dilation_w == 1)
-    {
-        // if (stride_h == 1 and stride_w == 1)
-        // {
-        //     return cpu::optimized::conv2d_7x7_s1(CONV_ARGS);
-        // }
-        // else
-        if (stride_h == 2 and stride_w == 2)
-        {
-            return cpu::optimized::conv2d_7x7_s2<2, 7, 7, 2, 2>(CONV_ARGS);
-        }
-    }
+    // if (filter_h == 7 and filter_w == 7 and groups == 1 and padding_h.before == 0 and padding_h.after == 0 and padding_w.before == 0 and padding_w.after == 0 and dilation_h == 1 and dilation_w == 1)
+    // {
+    //     if (stride_h == 1 and stride_w == 1)
+    //     {
+    //         return cpu::optimized::conv2d_7x7_s1<2, 7, 7, 1, 1>(CONV_ARGS);
+    //     }
+    //     else if (stride_h == 2 and stride_w == 2)
+    //     {
+    //         return cpu::optimized::conv2d_7x7_s2<2, 7, 7, 2, 2>(CONV_ARGS);
+    //     }
+    // }
     // general conv
     return cpu::reference::conv2d(CONV_ARGS);
 }

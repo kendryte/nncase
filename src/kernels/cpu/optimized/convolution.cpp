@@ -12,103 +12,103 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/kernels/cpu/optimized/convolution.h>
-#include <nncase/kernels/kernel_utils.h>
-#include <nncase/runtime/stackvm/kernel_context.h>
-#include <utility>
-#ifdef NNCASE_OPENMP
-#include <omp.h>
-#endif
+// #include <nncase/kernels/cpu/optimized/convolution.h>
+// #include <nncase/kernels/kernel_utils.h>
+// #include <nncase/runtime/stackvm/kernel_context.h>
+// #include <utility>
+// #ifdef NNCASE_OPENMP
+// #include <omp.h>
+// #endif
 
-using namespace nncase;
-using namespace nncase::runtime;
-using namespace nncase::kernels;
-using namespace nncase::kernels::cpu;
-using namespace nncase::kernels::cpu::optimized;
+// using namespace nncase;
+// using namespace nncase::runtime;
+// using namespace nncase::kernels;
+// using namespace nncase::kernels::cpu;
+// using namespace nncase::kernels::cpu::optimized;
 
-size_t offset(const runtime_shape_t &strides, const runtime_shape_t &index)
-{
-    assert(strides.size() == index.size());
-    return xt::element_offset<size_t>(strides, index.begin(), index.end());
-}
+// size_t offset(const runtime_shape_t &strides, const runtime_shape_t &index)
+// {
+//     assert(strides.size() == index.size());
+//     return xt::element_offset<size_t>(strides, index.begin(), index.end());
+// }
 
-template <typename Pointer, size_t... I>
-inline void convNxN_col(float &sum, Pointer &&r, Pointer &&k, std::index_sequence<I...>)
-{
-    ((sum += (r[I] * k[I])), ...);
-}
+// template <typename Pointer, size_t... I>
+// inline void convNxN_col(float &sum, Pointer &&r, Pointer &&k, std::index_sequence<I...>)
+// {
+//     ((sum += (r[I] * k[I])), ...);
+// }
 
-template <size_t N, typename Pointer, typename... Pointers>
-void convNxN(float &sum, Pointer &&r, Pointer &&k, Pointers &&...ps)
-{
-    convNxN_col(sum, std::forward<Pointer>(r), std::forward<Pointer>(k), std::make_index_sequence<N> {});
-    if constexpr (sizeof...(ps) > 0)
-    {
-        convNxN<N>(sum, std::forward<Pointers>(ps)...);
-    }
-}
+// template <size_t N, typename Pointer, typename... Pointers>
+// void convNxN(float &sum, Pointer &&r, Pointer &&k, Pointers &&...ps)
+// {
+//     convNxN_col(sum, std::forward<Pointer>(r), std::forward<Pointer>(k), std::make_index_sequence<N> {});
+//     if constexpr (sizeof...(ps) > 0)
+//     {
+//         convNxN<N>(sum, std::forward<Pointers>(ps)...);
+//     }
+// }
 
-template <typename... Pointers>
-void convNxN(float &sum, Pointers &&...ps)
-{
-    constexpr auto N = (sizeof...(ps)) / 2;
-    convNxN<N>(sum, std::forward<Pointers>(ps)...);
-}
+// template <typename... Pointers>
+// void convNxN(float &sum, Pointers &&...ps)
+// {
+//     constexpr auto N = (sizeof...(ps)) / 2;
+//     convNxN<N>(sum, std::forward<Pointers>(ps)...);
+// }
 
-namespace impl
-{
+// namespace impl
+// {
 
-template <size_t Start = 0, typename T, size_t N, size_t... I>
-auto binding_ptr(std::array<T, N> &a, T base, size_t step, std::index_sequence<I...>)
-{
-    ((a[Start + I] = base + step * I), ...);
-}
+// template <size_t Start = 0, typename T, size_t N, size_t... I>
+// auto binding_ptr(std::array<T, N> &a, T base, size_t step, std::index_sequence<I...>)
+// {
+//     ((a[Start + I] = base + step * I), ...);
+// }
 
-template <size_t Parallel, typename Array, typename T, size_t N, size_t... I>
-void binding_value(std::array<T *, N> &a, std::array<T, N> &b, std::index_sequence<I...>)
-{
-    ((*a[I] += b[I]), ...);
-}
+// template <size_t Parallel, typename Array, typename T, size_t N, size_t... I>
+// void binding_value(std::array<T *, N> &a, std::array<T, N> &b, std::index_sequence<I...>)
+// {
+//     ((*a[I] += b[I]), ...);
+// }
 
-template <size_t Parallel, typename Array, typename T, size_t N, size_t... I>
-void increase_value(Array &a, size_t step, std::index_sequence<I...>)
-{
-    ((a[I] += step), ...);
-}
+// template <size_t Parallel, typename Array, typename T, size_t N, size_t... I>
+// void increase_value(Array &a, size_t step, std::index_sequence<I...>)
+// {
+//     ((a[I] += step), ...);
+// }
 
-} // namespace impl
+// } // namespace impl
 
-template <size_t Kernel, size_t Start = 0, typename T, size_t N>
-void binding_ptr(std::array<T, N> &a, T base, size_t step)
-{
-    impl::binding_ptr<Start>(a, base, step, std::make_index_sequence<Kernel> {});
-}
+// template <size_t Kernel, size_t Start = 0, typename T, size_t N>
+// void binding_ptr(std::array<T, N> &a, T base, size_t step)
+// {
+//     impl::binding_ptr<Start>(a, base, step, std::make_index_sequence<Kernel> {});
+// }
 
-template <size_t Kernel, size_t Stride, typename T, size_t N, size_t... P>
-void binding_ptr(std::array<T, N> &a, T base, size_t step, std::index_sequence<P...>)
-{
-    (impl::binding_ptr<P * std::min(Kernel, Stride)>(a,
-         base + P * step * Stride, step, std::make_index_sequence<Kernel> {}),
-        ...);
-}
+// template <size_t Kernel, size_t Stride, typename T, size_t N, size_t... P>
+// void binding_ptr(std::array<T, N> &a, T base, size_t step, std::index_sequence<P...>)
+// {
+//     (impl::binding_ptr<P * std::min(Kernel, Stride)>(a,
+//          base + P * step * Stride, step, std::make_index_sequence<Kernel> {}),
+//         ...);
+// }
 
-template <size_t Parallel, size_t Stride, size_t Kernel, typename T, size_t N>
-void binding_ptr(std::array<T, N> &a, T base, size_t step)
-{
-    binding_ptr<Kernel, Stride>(a, base, step, std::make_index_sequence<Parallel> {});
-}
+// template <size_t Parallel, size_t Stride, size_t Kernel, typename T, size_t N>
+// void binding_ptr(std::array<T, N> &a, T base, size_t step)
+// {
+//     binding_ptr<Kernel, Stride>(a, base, step, std::make_index_sequence<Parallel> {});
+// }
 
-template <size_t Parallel, typename Array, typename T, size_t N>
-void binding_value(std::array<T *, N> &a, std::array<T, N> &b)
-{
-    impl::binding_value(a, b, std::make_index_sequence<Parallel> {});
-}
+// template <size_t Parallel, typename Array, typename T, size_t N>
+// void binding_value(std::array<T *, N> &a, std::array<T, N> &b)
+// {
+//     impl::binding_value(a, b, std::make_index_sequence<Parallel> {});
+// }
 
-template <size_t Parallel, typename Array, typename T, size_t N>
-void increase_value(Array &a, size_t step = 1)
-{
-    impl::increase_value(a, step, std::make_index_sequence<Parallel> {});
-}
+// template <size_t Parallel, typename Array, typename T, size_t N>
+// void increase_value(Array &a, size_t step = 1)
+// {
+//     impl::increase_value(a, step, std::make_index_sequence<Parallel> {});
+// }
 
 // result<void> optimized::conv2d_1x1_s1(const float *input, const float *weights, const float *bias, float *output,
 //     const runtime_shape_t &in_shape, NNCASE_UNUSED const runtime_shape_t &in_strides, NNCASE_UNUSED const runtime_shape_t &w_shape,
@@ -842,89 +842,89 @@ void increase_value(Array &a, size_t step = 1)
 //     return ok();
 // }
 
-template <size_t Parallel = 8, size_t Filter_h = 7, size_t Filter_w = 7, size_t Stride_h = 2, size_t Stride_w = 2>
-result<void> optimized::conv2d_7x7_s2(const float *input, const float *weights, const float *bias, float *output,
-    const runtime_shape_t &in_shape, NNCASE_UNUSED const runtime_shape_t &in_strides, NNCASE_UNUSED const runtime_shape_t &w_shape,
-    NNCASE_UNUSED const runtime_shape_t &w_strides, NNCASE_UNUSED const runtime_shape_t &bias_strides, NNCASE_UNUSED const runtime_shape_t &out_strides,
-    NNCASE_UNUSED const padding &padding_h, NNCASE_UNUSED const padding &padding_w,
-    NNCASE_UNUSED int32_t groups, NNCASE_UNUSED int32_t stride_h, NNCASE_UNUSED int32_t stride_w,
-    NNCASE_UNUSED int32_t dilation_h, NNCASE_UNUSED int32_t dilation_w, value_range<float> fused_activation, NNCASE_UNUSED kernel_context &context) noexcept
-{
-    const auto batch = in_shape[0], out_channels = w_shape[0], in_channels = w_shape[1], in_h = in_shape[2], in_w = in_shape[3];
-    const auto out_h = kernels::detail::get_windowed_output_size(in_h, Filter_h, stride_h, dilation_h, padding::zero());
-    const auto out_w = kernels::detail::get_windowed_output_size(in_w, Filter_w, stride_w, dilation_w, padding::zero());
-    runtime_shape_t in_index(4, 0), out_index(4, 0), w_index(4, 0);
-    const size_t tail_size = in_strides[2] - (out_w * stride_w);
-    constexpr size_t R_size = Filter_h + std::min(Stride_h, Filter_h) * (Parallel - 1);
-    std::array<float *, Parallel> outptr;
-    std::array<const float *, R_size> r;
-    std::array<const float *, Filter_h> k;
-    std::array<float, Parallel> sum;
-    // FIXME 这里的一些size一开始可以申请8为静态，后面递归起来还是要动态计算，可能需要写个宏
-    for (size_t b = 0; b < batch; b++) // batch
-    {
-        in_index[0] = out_index[0] = b;
-        // #pragma omp Parallel for num_threads(opt.num_threads)
-        for (size_t oc = 0; oc < out_channels; oc++) // out channel
-        {
-            out_index[1] = w_index[0] = oc;
-            float *out = output + offset(out_strides, out_index);
+// template <size_t Parallel = 8, size_t Filter_h = 7, size_t Filter_w = 7, size_t Stride_h = 2, size_t Stride_w = 2>
+// result<void> optimized::conv2d_7x7_s2(const float *input, const float *weights, const float *bias, float *output,
+//     const runtime_shape_t &in_shape, NNCASE_UNUSED const runtime_shape_t &in_strides, NNCASE_UNUSED const runtime_shape_t &w_shape,
+//     NNCASE_UNUSED const runtime_shape_t &w_strides, NNCASE_UNUSED const runtime_shape_t &bias_strides, NNCASE_UNUSED const runtime_shape_t &out_strides,
+//     NNCASE_UNUSED const padding &padding_h, NNCASE_UNUSED const padding &padding_w,
+//     NNCASE_UNUSED int32_t groups, NNCASE_UNUSED int32_t stride_h, NNCASE_UNUSED int32_t stride_w,
+//     NNCASE_UNUSED int32_t dilation_h, NNCASE_UNUSED int32_t dilation_w, value_range<float> fused_activation, NNCASE_UNUSED kernel_context &context) noexcept
+// {
+//     const auto batch = in_shape[0], out_channels = w_shape[0], in_channels = w_shape[1], in_h = in_shape[2], in_w = in_shape[3];
+//     const auto out_h = kernels::detail::get_windowed_output_size(in_h, Filter_h, stride_h, dilation_h, padding::zero());
+//     const auto out_w = kernels::detail::get_windowed_output_size(in_w, Filter_w, stride_w, dilation_w, padding::zero());
+//     runtime_shape_t in_index(4, 0), out_index(4, 0), w_index(4, 0);
+//     const size_t tail_size = in_strides[2] - (out_w * stride_w);
+//     constexpr size_t R_size = Filter_h + std::min(Stride_h, Filter_h) * (Parallel - 1);
+//     std::array<float *, Parallel> outptr;
+//     std::array<const float *, R_size> r;
+//     std::array<const float *, Filter_h> k;
+//     std::array<float, Parallel> sum;
+//     // FIXME 这里的一些size一开始可以申请8为静态，后面递归起来还是要动态计算，可能需要写个宏
+//     for (size_t b = 0; b < batch; b++) // batch
+//     {
+//         in_index[0] = out_index[0] = b;
+//         // #pragma omp Parallel for num_threads(opt.num_threads)
+//         for (size_t oc = 0; oc < out_channels; oc++) // out channel
+//         {
+//             out_index[1] = w_index[0] = oc;
+//             float *out = output + offset(out_strides, out_index);
 
-            std::fill(out, out + out_h * out_w, bias[oc]);
+//             std::fill(out, out + out_h * out_w, bias[oc]);
 
-            for (size_t ic = 0; ic < in_channels; ic++) // in channel
-            {
-                in_index[1] = w_index[1] = ic;
+//             for (size_t ic = 0; ic < in_channels; ic++) // in channel
+//             {
+//                 in_index[1] = w_index[1] = ic;
 
-                binding_ptr<Parallel>(outptr, out, out_strides[2]);
-                binding_ptr(r, R_size, input + offset(in_strides, in_index), in_strides[2], Stride_h, Parallel);
-                binding_ptr(k, Filter_h, weights + offset(w_strides, w_index), w_strides[2]);
+//                 binding_ptr<Parallel>(outptr, out, out_strides[2]);
+//                 binding_ptr(r, R_size, input + offset(in_strides, in_index), in_strides[2], Stride_h, Parallel);
+//                 binding_ptr(k, Filter_h, weights + offset(w_strides, w_index), w_strides[2]);
 
-                size_t i = 0;
-                // for (; i + (Parallel - 1) < out_h; i += Parallel)
-                // {
-                //     for (size_t remain = 0; remain < out_w; remain++)
-                //     {
-                //         std::fill_n(sum, parallel, 0.);
-                //         // FIXME 使用静态推导进行展开
-                //         convNxN(sum[0], r[0], k[0], r[1], k[1], r[2], k[2],
-                //             r[3], k[3], r[4], k[4], r[5], k[5],
-                //             r[6], k[6]);
-                //         convNxN(sum[1], r[1], k[0], r[2], k[1], r[3], k[2],
-                //             r[4], k[3], r[5], k[4], r[6], k[5],
-                //             r[7], k[6]);
-                //         binding_value(outptr, sum, parallel);
-                //         increase_value(r, k_size + 1, stride_h);
-                //         increase_value(outptr, parallel);
-                //     }
-                //     // FIXME 在行不连续的情况下跳跃的步长需要更加细致的计算。
-                //     increase_value(r, k_size + 1, in_strides[2] * stride_h + tail_size);
-                //     increase_value(outptr, parallel, out_strides[2]);
-                // }
-                constexpr size_t Local_Parallel = 1;
-                for (; i + (Local_Parallel - 1) < out_h; i += Local_Parallel)
-                {
-                    for (size_t remain = 0; remain < out_w; remain++)
-                    {
-                        std::fill_n(sum, Local_Parallel, 0.);
-                        convNxN(sum[0], r[0], k[0], r[1], k[1], r[2], k[2],
-                            r[3], k[3], r[4], k[4], r[5], k[5],
-                            r[6], k[6]);
-                        binding_value<Local_Parallel>(outptr, sum);
-                        increase_value<Filter_h + std::min(Stride_h, Filter_h) * (Local_Parallel - 1)>(r);
-                        increase_value<Local_Parallel>(outptr);
-                    }
-                    increase_value<Filter_h + std::min(Stride_h, Filter_h) * (Local_Parallel - 1)>(r, in_strides[2] * Stride_h + tail_size);
-                    // FIXME 这里要判断一下 为0时就不展开了
-                    increase_value<Local_Parallel>(outptr, out_strides[2] * (Local_Parallel - 1));
-                }
-            }
-        }
-    }
-    // FIXME 改进遍历的机制
-    for (size_t _ = 0; _ < batch * out_channels * out_h * out_w; _++)
-    {
-        *(output + _) = kernels::detail::apply_activation(*(output + _), fused_activation);
-    }
-    return ok();
-}
+//                 size_t i = 0;
+//                 // for (; i + (Parallel - 1) < out_h; i += Parallel)
+//                 // {
+//                 //     for (size_t remain = 0; remain < out_w; remain++)
+//                 //     {
+//                 //         std::fill_n(sum, parallel, 0.);
+//                 //         // FIXME 使用静态推导进行展开
+//                 //         convNxN(sum[0], r[0], k[0], r[1], k[1], r[2], k[2],
+//                 //             r[3], k[3], r[4], k[4], r[5], k[5],
+//                 //             r[6], k[6]);
+//                 //         convNxN(sum[1], r[1], k[0], r[2], k[1], r[3], k[2],
+//                 //             r[4], k[3], r[5], k[4], r[6], k[5],
+//                 //             r[7], k[6]);
+//                 //         binding_value(outptr, sum, parallel);
+//                 //         increase_value(r, k_size + 1, stride_h);
+//                 //         increase_value(outptr, parallel);
+//                 //     }
+//                 //     // FIXME 在行不连续的情况下跳跃的步长需要更加细致的计算。
+//                 //     increase_value(r, k_size + 1, in_strides[2] * stride_h + tail_size);
+//                 //     increase_value(outptr, parallel, out_strides[2]);
+//                 // }
+//                 constexpr size_t Local_Parallel = 1;
+//                 for (; i + (Local_Parallel - 1) < out_h; i += Local_Parallel)
+//                 {
+//                     for (size_t remain = 0; remain < out_w; remain++)
+//                     {
+//                         std::fill_n(sum, Local_Parallel, 0.);
+//                         convNxN(sum[0], r[0], k[0], r[1], k[1], r[2], k[2],
+//                             r[3], k[3], r[4], k[4], r[5], k[5],
+//                             r[6], k[6]);
+//                         binding_value<Local_Parallel>(outptr, sum);
+//                         increase_value<Filter_h + std::min(Stride_h, Filter_h) * (Local_Parallel - 1)>(r);
+//                         increase_value<Local_Parallel>(outptr);
+//                     }
+//                     increase_value<Filter_h + std::min(Stride_h, Filter_h) * (Local_Parallel - 1)>(r, in_strides[2] * Stride_h + tail_size);
+//                     // FIXME 这里要判断一下 为0时就不展开了
+//                     increase_value<Local_Parallel>(outptr, out_strides[2] * (Local_Parallel - 1));
+//                 }
+//             }
+//         }
+//     }
+//     // FIXME 改进遍历的机制
+//     for (size_t _ = 0; _ < batch * out_channels * out_h * out_w; _++)
+//     {
+//         *(output + _) = kernels::detail::apply_activation(*(output + _), fused_activation);
+//     }
+//     return ok();
+// }
