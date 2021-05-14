@@ -29,7 +29,6 @@ namespace
 datatype_t deduce_common_type(const std::vector<datatype_t> &datatypes) noexcept
 {
     assert(!datatypes.empty());
-    assert(dt_float32 < dt_uint8);
     return *min_element(begin(datatypes), end(datatypes));
 }
 
