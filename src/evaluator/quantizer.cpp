@@ -202,9 +202,15 @@ void quantizer::end_collect_distribution(std::function<void(size_t cnt, size_t t
 quant_param_t quantizer::get_quant_param(value_range<float> range, int32_t bits)
 {
     range = fixup_range(range);
+    // auto all_range = 1LL << 8 - 1;
+    // fit for int8
+    auto Q_max = bits == 7 ? 127 : 255;
+    auto Q_min = bits == 7 ? -128 : 0;
+    //
     auto r = range.max - range.min;
     auto scale = r / ((1LL << bits) - 1);
-    auto bias = std::round(-range.min / scale);
+    // auto bias = std::round(-range.min / scale);
+    auto bias = std::round((range.max * Q_min - range.min * Q_max) / r);
     // assert(bias >= 0);
     return { static_cast<int32_t>(bias), scale };
 }

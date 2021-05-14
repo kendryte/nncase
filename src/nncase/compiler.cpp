@@ -254,24 +254,25 @@ private:
 
             ir::transforms::pass p("process i&o node");
 
-            if (use_ptq_)
-            {
-                if (compile_options_.input_type != "float32")
-                    p.emplace<nncase::ir::transforms::add_input_dequantize_transform>(to_datatype_method(compile_options_.input_type));
+            // test script not support
+            // if (use_ptq_)
+            // {
+            //     if (compile_options_.input_type != "float32")
+            //         p.emplace<nncase::ir::transforms::add_input_dequantize_transform>(to_datatype_method(compile_options_.input_type));
 
-                if (compile_options_.output_type != "float32")
-                    p.emplace<nncase::ir::transforms::add_output_quantize_transform>(to_datatype_method(compile_options_.output_type));
-            }
-
-            pmgr.add_pass(std::move(p));
+            //     if (compile_options_.output_type != "float32")
+            //         p.emplace<nncase::ir::transforms::add_output_quantize_transform>(to_datatype_method(compile_options_.output_type));
+            //     pmgr.add_pass(std::move(p));
+            // }
 
             pmgr.quantizer(quant);
             if (compile_options_.dump_ir)
                 pmgr.dump_dir(compile_options_.dump_dir);
-            if (to_datatype_method(compile_options_.input_type) == dt_float32)
-                target_->register_quantize_passes(graph.module_type(), pmgr, dt_uint8);
-            else
-                target_->register_quantize_passes(graph.module_type(), pmgr, to_datatype_method(compile_options_.input_type));
+            // if (to_datatype_method(compile_options_.input_type) == dt_float32)
+            //     target_->register_quantize_passes(graph.module_type(), pmgr, dt_int8);
+            // else
+            //     target_->register_quantize_passes(graph.module_type(), pmgr, to_datatype_method(compile_options_.input_type));
+            target_->register_quantize_passes(graph.module_type(), pmgr, to_datatype_method(compile_options_.input_type));
             pmgr.run();
             dump_graph(graph, "quantize");
         };
@@ -318,6 +319,9 @@ private:
                 break;
             case dt_uint8:
                 run_calibration_eval<uint8_t>(options, *ds, evaluator);
+                break;
+            case dt_int8:
+                run_calibration_eval<int8_t>(options, *ds, evaluator);
                 break;
             default:
                 throw std::runtime_error("Unsupported input datatype: " + std::string(datatype_names(in_type)));
