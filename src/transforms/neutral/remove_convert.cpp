@@ -92,19 +92,6 @@ bool remove_concat_convert::on_try_match(node &node, transform_context &context)
             context.matched_nodes.emplace_back(cct);
             return true;
         }
-        // if (auto cvt_b = try_get_direct_child<convert>(*cct))
-        // {
-        //     for (auto &it : cct->inputs())
-        //     {
-        //         if (it->connection()->owner().input_at(0).type() == cvt_b->output().type())
-        //             context.inputs.emplace_back(&it->connection()->owner().input_at(0));
-        //         else
-        //             context.inputs.emplace_back(it);
-        //     }
-        //     context.outputs.emplace_back(&cvt_b->output());
-        //     context.matched_nodes.emplace_back(cct);
-        //     return true;
-        // }
     }
 
     return false;
@@ -112,31 +99,6 @@ bool remove_concat_convert::on_try_match(node &node, transform_context &context)
 
 void remove_concat_convert::process(transform_context &context)
 {
-    // auto inputs = context.outputs[0]->connections();
-
-    // std::vector<shape_t> in_shape;
-    // for (size_t it = 0; it < context.inputs.size(); ++it)
-    // {
-    //     in_shape.emplace_back(context.inputs[it]->shape());
-    // }
-    // datatype_t dt = context.inputs[0]->type();
-    // auto &old_concat = static_cast<concat &>(*context.matched_nodes[0]);
-
-    // auto new_concat = context.graph.emplace<concat>(dt, in_shape, old_concat.axis());
-    // new_concat->name(old_concat.name());
-    // for (size_t i = 0; i < context.inputs.size(); ++i)
-    // {
-    //     auto &output = *context.inputs[i]->connection();
-    //     if (output.owner().runtime_opcode() == op_convert)
-    //         new_concat->input_at(i).connect((*context.inputs[i]->connection()));
-    //     else
-    //     {
-    //         auto new_convert = context.graph.emplace<convert>(output.owner().output_at(0).type(), output.shape(), dt);
-    //         new_convert->name(new_concat->name() + "/front_convert");
-    //         new_convert->input().connect(output);
-    //         new_concat->input_at(i).connect(new_convert->output());
-    //     }
-    // }
     auto inputs = context.outputs[0]->connections();
     auto &old_concat = static_cast<concat &>(*context.matched_nodes[0]);
 
