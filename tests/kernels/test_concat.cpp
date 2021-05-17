@@ -56,19 +56,176 @@ public:
     size_t axis;
 };
 
+//Test name:ConcatTestDims[Dims axis]
 INSTANTIATE_TEST_SUITE_P(
-    ConcatTestDims4,
+    ConcatTestDims43,
     ConcatTest,
     testing::Combine(
         testing::Values(
-            std::vector<runtime_shape_t>{ 
-                runtime_shape_t { 7, 3, 4, 6 },
+            std::vector<runtime_shape_t> {
+                runtime_shape_t { 7, 3, 4, 6 }, // input shape
                 runtime_shape_t { 7, 3, 4, 3 },
                 runtime_shape_t { 7, 3, 4, 5 } }),
-        testing::Values(runtime_shape_t { 0, 0, 0, 0 }),
-        testing::Values(runtime_shape_t { 0, 0, 0, 0 }),
+        testing::Values(
+            runtime_shape_t { 0, 0, 0, 0 },
+            runtime_shape_t { 3, 3, 3, 3 }), // input strides bias
+        testing::Values(
+            runtime_shape_t { 0, 0, 0, 0 },
+            runtime_shape_t { 3, 3, 3, 3 }), // output strides bias
         testing::Values(3)));
 
+INSTANTIATE_TEST_SUITE_P(
+    ConcatTestDims42,
+    ConcatTest,
+    testing::Combine(
+        testing::Values(
+            std::vector<runtime_shape_t> {
+                runtime_shape_t { 7, 3, 3, 6 }, // input shape
+                runtime_shape_t { 7, 3, 4, 6 },
+                runtime_shape_t { 7, 3, 5, 6 } }),
+        testing::Values(
+            runtime_shape_t { 0, 0, 0, 0 },
+            runtime_shape_t { 3, 3, 3, 3 }), // input strides bias
+        testing::Values(
+            runtime_shape_t { 0, 0, 0, 0 },
+            runtime_shape_t { 3, 3, 3, 3 }), // output strides bias
+        testing::Values(2)));
+
+INSTANTIATE_TEST_SUITE_P(
+    ConcatTestDims41,
+    ConcatTest,
+    testing::Combine(
+        testing::Values(
+            std::vector<runtime_shape_t> {
+                runtime_shape_t { 7, 3, 11, 6 }, // input shape
+                runtime_shape_t { 7, 4, 11, 6 },
+                runtime_shape_t { 7, 5, 11, 6 } }),
+        testing::Values(
+            runtime_shape_t { 0, 0, 0, 0 },
+            runtime_shape_t { 3, 3, 3, 3 }), // input strides bias
+        testing::Values(
+            runtime_shape_t { 0, 0, 0, 0 },
+            runtime_shape_t { 3, 3, 3, 3 }), // output strides bias
+        testing::Values(1)));
+
+INSTANTIATE_TEST_SUITE_P(
+    ConcatTestDims40,
+    ConcatTest,
+    testing::Combine(
+        testing::Values(
+            std::vector<runtime_shape_t> {
+                runtime_shape_t { 5, 3, 7, 6 }, // input shape
+                runtime_shape_t { 8, 3, 7, 6 },
+                runtime_shape_t { 3, 3, 7, 6 } }),
+        testing::Values(
+            runtime_shape_t { 0, 0, 0, 0 },
+            runtime_shape_t { 3, 3, 3, 3 }), // input strides bias
+        testing::Values(
+            runtime_shape_t { 0, 0, 0, 0 },
+            runtime_shape_t { 3, 3, 3, 3 }), // output strides bias
+        testing::Values(0)));
+
+INSTANTIATE_TEST_SUITE_P(
+    ConcatTestDims32,
+    ConcatTest,
+    testing::Combine(
+        testing::Values(
+            std::vector<runtime_shape_t> {
+                runtime_shape_t { 7, 3, 3 }, // input shape
+                runtime_shape_t { 7, 3, 4 },
+                runtime_shape_t { 7, 3, 5 } }),
+        testing::Values(
+            runtime_shape_t { 0, 0, 0 },
+            runtime_shape_t { 3, 3, 3 }), // input strides bias
+        testing::Values(
+            runtime_shape_t { 0, 0, 0 },
+            runtime_shape_t { 3, 3, 3 }), // output strides bias
+        testing::Values(2)));
+
+INSTANTIATE_TEST_SUITE_P(
+    ConcatTestDims31,
+    ConcatTest,
+    testing::Combine(
+        testing::Values(
+            std::vector<runtime_shape_t> {
+                runtime_shape_t { 7, 3, 11 }, // input shape
+                runtime_shape_t { 7, 4, 11 },
+                runtime_shape_t { 7, 5, 11 } }),
+        testing::Values(
+            runtime_shape_t { 0, 0, 0 },
+            runtime_shape_t { 3, 3, 3 }), // input strides bias
+        testing::Values(
+            runtime_shape_t { 0, 0, 0 },
+            runtime_shape_t { 3, 3, 3 }), // output strides bias
+        testing::Values(1)));
+
+INSTANTIATE_TEST_SUITE_P(
+    ConcatTestDims30,
+    ConcatTest,
+    testing::Combine(
+        testing::Values(
+            std::vector<runtime_shape_t> {
+                runtime_shape_t { 5, 3, 7 }, // input shape
+                runtime_shape_t { 8, 3, 7 },
+                runtime_shape_t { 3, 3, 7 } }),
+        testing::Values(              
+            runtime_shape_t { 0, 0, 0 },
+            runtime_shape_t { 3, 3, 3 }), // input strides bias
+        testing::Values(
+            runtime_shape_t { 0, 0, 0 },
+            runtime_shape_t { 3, 3, 3 }), // output strides bias
+        testing::Values(0)));
+
+INSTANTIATE_TEST_SUITE_P(
+    ConcatTestDims21,
+    ConcatTest,
+    testing::Combine(
+        testing::Values(
+            std::vector<runtime_shape_t> {
+                runtime_shape_t { 7, 3 }, // input shape
+                runtime_shape_t { 7, 4 },
+                runtime_shape_t { 7, 5 } }),
+        testing::Values(
+            runtime_shape_t { 0, 0 },
+            runtime_shape_t { 3, 3 }), // input strides bias
+        testing::Values(
+            runtime_shape_t { 0, 0 },
+            runtime_shape_t { 3, 3 }), // output strides bias
+        testing::Values(1)));
+
+INSTANTIATE_TEST_SUITE_P(
+    ConcatTestDims20,
+    ConcatTest,
+    testing::Combine(
+        testing::Values(
+            std::vector<runtime_shape_t> {
+                runtime_shape_t { 5, 3 }, // input shape
+                runtime_shape_t { 8, 3 },
+                runtime_shape_t { 3, 3 } }),
+        testing::Values(
+            runtime_shape_t { 0, 0 },
+            runtime_shape_t { 3, 3 }), // input strides bias
+        testing::Values(
+            runtime_shape_t { 0, 0 },
+            runtime_shape_t { 3, 3 }), // output strides bias
+        testing::Values(0)));
+
+INSTANTIATE_TEST_SUITE_P(
+    ConcatTestDims10,
+    ConcatTest,
+    testing::Combine(
+        testing::Values(
+            std::vector<runtime_shape_t> {
+                runtime_shape_t { 5 }, // input shape
+                runtime_shape_t { 8 },
+                runtime_shape_t { 3 } }),
+        testing::Values(
+            runtime_shape_t { 0 },
+            runtime_shape_t { 3 }), // input strides bias
+        testing::Values(
+            runtime_shape_t { 0 },
+            runtime_shape_t { 3 }), // output strides bias
+        testing::Values(0)));
 TEST_P(ConcatTest, normal)
 {
     NNCASE_UNUSED auto res1 = cpu::reference::concat(dt_float32, inputs, output_ref.gsl_ptr(),
@@ -83,4 +240,10 @@ TEST_P(ConcatTest, normal)
         // output_all_data(inputs, output_ref, output_opt);
         ASSERT_TRUE(false);
     }
+}
+
+int main(int argc, char **argv)
+{
+    ::testing::InitGoogleTest(&argc, argv);
+    return RUN_ALL_TESTS();
 }

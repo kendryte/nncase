@@ -34,6 +34,15 @@ result<void> slice_continuous_impl(const T *input, T *output, const runtime_shap
     auto dims = in_shape.size();
     runtime_shape_t in_index(dims);
 
+    auto line_copy = [&]() {
+        auto d = dims - 1;
+        const auto distance = ends[d] - begins[d];
+        const auto copy_size = distance * elemsize;
+        const auto *in_ptr = input + offset(in_strides, in_index);
+        memcpy(out_ptr, in_ptr, copy_size);
+        out_ptr += distance;
+    };
+
     if (dims == 1)
     {
         auto copy_size = (ends[0] - begins[0]) * elemsize;
@@ -43,24 +52,21 @@ result<void> slice_continuous_impl(const T *input, T *output, const runtime_shap
     {
         for (size_t i = begins[0]; i < ends[0]; ++i)
         {
-            const auto distance = ends[1] - begins[1];
-            auto copy_size = distance * elemsize;
-            const auto *in_ptr = input + i * in_strides[0] + begins[1];
-            memcpy(out_ptr, in_ptr, copy_size);
-            out_ptr += distance;
+            in_index[0] = i;
+            in_index[1] = begins[1];
+            line_copy();
         }
     }
     else if (dims == 3)
     {
         for (size_t i = begins[0]; i < ends[0]; ++i)
         {
+            in_index[0] = i;
             for (size_t j = begins[1]; j < ends[1]; ++j)
             {
-                const auto distance = ends[2] - begins[2];
-                auto copy_size = distance * elemsize;
-                const auto *in_ptr = input + i * in_strides[0] + j * in_strides[1] + in_strides[2];
-                memcpy(out_ptr, in_ptr, copy_size);
-                out_ptr += distance;
+                in_index[1] = j;
+                in_index[2] = begins[2];
+                line_copy();
             }
         }
     }
@@ -68,15 +74,15 @@ result<void> slice_continuous_impl(const T *input, T *output, const runtime_shap
     {
         for (size_t i = begins[0]; i < ends[0]; ++i)
         {
+            in_index[0] = i;
             for (size_t j = begins[1]; j < ends[1]; ++j)
             {
+                in_index[1] = j;
                 for (size_t k = begins[2]; k < ends[2]; ++k)
                 {
-                    const auto distance = ends[3] - begins[3];
-                    auto copy_size = distance * elemsize;
-                    const auto *in_ptr = input + i * in_strides[0] + j * in_strides[1] + k * in_strides[2] + in_strides[3];
-                    memcpy(out_ptr, in_ptr, copy_size);
-                    out_ptr += distance;
+                    in_index[2] = k;
+                    in_index[3] = begins[3];
+                    line_copy();
                 }
             }
         }

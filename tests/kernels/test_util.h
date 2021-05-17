@@ -186,13 +186,13 @@ bool exist_directory(const fs::path& path)
 }
 
 template <typename T>
-void output_data(const Tensor<T> &data, std::string name)
+void output_data(const Tensor<T> &data, std::string name, std::string dic_name = "op_test")
 {
-    if (!exist_directory("./op_test"))
+    if (!exist_directory(dic_name))
     {
-        fs::create_directory("op_test");
+        fs::create_directory(dic_name);
     }
-    std::ofstream f("test/" + name + ".txt");
+    std::ofstream f(dic_name + "/" + name + ".txt");
     // output shape
     auto shape_str = std::accumulate(data.shape.begin(), data.shape.end(), std::string(), [](std::string s, T v) {
         return s + std::to_string(v) + ",";
