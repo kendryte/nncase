@@ -23,7 +23,7 @@
 
 namespace nncase::ir
 {
-class node_opcode;
+struct node_opcode;
 class quantizer;
 }
 
