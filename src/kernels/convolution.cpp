@@ -15,7 +15,7 @@
 #include <nncase/kernels/convolution.h>
 #include <nncase/kernels/cpu/optimized/convolution.h>
 #include <nncase/kernels/cpu/reference/convolution.h>
-
+#include <nncase/runtime/runtime_op_utility.h>
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::kernels;
@@ -46,50 +46,130 @@ result<void> kernels::conv2d(const float *input, const float *weights, const flo
                 return cpu::optimized::conv2ddepthwise_NxM<8, 3, 3, 2, 2>(CONV_ARGS);
             }
         }
+        else if (filter_h == 3 and filter_w == 1)
+        {
+            if (stride_h == 1 and stride_w == 1)
+            {
+                return cpu::optimized::conv2ddepthwise_NxM<8, 3, 1, 1, 1>(CONV_ARGS);
+            }
+            else if (stride_h == 2 and stride_w == 2)
+            {
+                return cpu::optimized::conv2ddepthwise_NxM<8, 3, 1, 2, 2>(CONV_ARGS);
+            }
+        }
+        else if (filter_h == 1 and filter_w == 3)
+        {
+            if (stride_h == 1 and stride_w == 1)
+            {
+                return cpu::optimized::conv2ddepthwise_NxM<8, 1, 3, 1, 1>(CONV_ARGS);
+            }
+            else if (stride_h == 2 and stride_w == 2)
+            {
+                return cpu::optimized::conv2ddepthwise_NxM<8, 1, 3, 2, 2>(CONV_ARGS);
+            }
+        }
+        else if (filter_h == 5 and filter_w == 5)
+        {
+            if (stride_h == 1 and stride_w == 1)
+            {
+                return cpu::optimized::conv2ddepthwise_NxM<8, 5, 5, 1, 1>(CONV_ARGS);
+            }
+            else if (stride_h == 2 and stride_w == 2)
+            {
+                return cpu::optimized::conv2ddepthwise_NxM<8, 5, 5, 2, 2>(CONV_ARGS);
+            }
+        }
+        else if (filter_h == 7 and filter_w == 7)
+        {
+            if (stride_h == 1 and stride_w == 1)
+            {
+                return cpu::optimized::conv2ddepthwise_NxM<8, 7, 7, 1, 1>(CONV_ARGS);
+            }
+            else if (stride_h == 2 and stride_w == 2)
+            {
+                return cpu::optimized::conv2ddepthwise_NxM<8, 7, 7, 2, 2>(CONV_ARGS);
+            }
+        }
     }
 
-    if (filter_h == 1 and filter_w == 1 and groups == 1 and padding_h.before == 0 and padding_h.after == 0 and padding_w.before == 0 and padding_w.after == 0 and dilation_h == 1 and dilation_w == 1)
+    if (groups == 1 and padding_h.before == 0 and padding_h.after == 0 and padding_w.before == 0 and padding_w.after == 0 and dilation_h == 1 and dilation_w == 1)
     {
-        if (stride_h == 1 and stride_w == 1)
+        if (filter_h == 1 and filter_w == 1)
         {
-            return cpu::optimized::conv2d_1x1_s1(CONV_ARGS);
+            if (stride_h == 1 and stride_w == 1)
+            {
+                return cpu::optimized::conv2d_1x1_s1(CONV_ARGS);
+            }
+            else if (stride_h == 2 and stride_w == 2)
+            {
+                return cpu::optimized::conv2d_1x1_s2(CONV_ARGS);
+            }
         }
-        else if (stride_h == 2 and stride_w == 2)
+        else if (filter_h == 1 and filter_w == 3)
         {
-            return cpu::optimized::conv2d_1x1_s2(CONV_ARGS);
+            if (stride_h == 1 and stride_w == 1)
+            {
+                return cpu::optimized::conv2d_NxM<8, 1, 3, 1, 1>(CONV_ARGS);
+            }
+            else if (stride_h == 2 and stride_w == 2)
+            {
+                return cpu::optimized::conv2d_NxM<8, 1, 3, 2, 2>(CONV_ARGS);
+            }
         }
-    }
-    if (filter_h == 3 and filter_w == 3 and groups == 1 and padding_h.before == 0 and padding_h.after == 0 and padding_w.before == 0 and padding_w.after == 0 and dilation_h == 1 and dilation_w == 1)
-    {
-        if (stride_h == 1 and stride_w == 1)
+        else if (filter_h == 3 and filter_w == 1)
         {
-            return cpu::optimized::conv2d_NxM<8, 3, 3, 1, 1>(CONV_ARGS);
+            if (stride_h == 1 and stride_w == 1)
+            {
+                return cpu::optimized::conv2d_NxM<8, 3, 1, 1, 1>(CONV_ARGS);
+            }
+            else if (stride_h == 2 and stride_w == 2)
+            {
+                return cpu::optimized::conv2d_NxM<8, 3, 1, 2, 2>(CONV_ARGS);
+            }
         }
-        else if (stride_h == 2 and stride_w == 2)
+        else if (filter_h == 1 and filter_w == 3)
         {
-            return cpu::optimized::conv2d_NxM<8, 3, 3, 2, 2>(CONV_ARGS);
+            if (stride_h == 1 and stride_w == 1)
+            {
+                return cpu::optimized::conv2d_NxM<8, 1, 3, 1, 1>(CONV_ARGS);
+            }
+            else if (stride_h == 2 and stride_w == 2)
+            {
+                return cpu::optimized::conv2d_NxM<8, 1, 3, 2, 2>(CONV_ARGS);
+            }
         }
-    }
-    if (filter_h == 5 and filter_w == 5 and groups == 1 and padding_h.before == 0 and padding_h.after == 0 and padding_w.before == 0 and padding_w.after == 0 and dilation_h == 1 and dilation_w == 1)
-    {
-        if (stride_h == 1 and stride_w == 1)
+        else if (filter_h == 3 and filter_w == 3)
         {
-            return cpu::optimized::conv2d_NxM<8, 5, 5, 1, 1>(CONV_ARGS);
+            if (stride_h == 1 and stride_w == 1)
+            {
+                return cpu::optimized::conv2d_NxM<8, 3, 3, 1, 1>(CONV_ARGS);
+            }
+            else if (stride_h == 2 and stride_w == 2)
+            {
+                return cpu::optimized::conv2d_NxM<8, 3, 3, 2, 2>(CONV_ARGS);
+            }
         }
-        else if (stride_h == 2 and stride_w == 2)
+        else if (filter_h == 5 and filter_w == 5)
         {
-            return cpu::optimized::conv2d_NxM<8, 5, 5, 2, 2>(CONV_ARGS);
+            if (stride_h == 1 and stride_w == 1)
+            {
+                return cpu::optimized::conv2d_NxM<8, 5, 5, 1, 1>(CONV_ARGS);
+            }
+            else if (stride_h == 2 and stride_w == 2)
+            {
+                return cpu::optimized::conv2d_NxM<8, 5, 5, 2, 2>(CONV_ARGS);
+            }
         }
-    }
-    if (filter_h == 7 and filter_w == 7 and groups == 1 and padding_h.before == 0 and padding_h.after == 0 and padding_w.before == 0 and padding_w.after == 0 and dilation_h == 1 and dilation_w == 1)
-    {
-        if (stride_h == 1 and stride_w == 1)
+        else if (filter_h == 7 and filter_w == 7)
         {
-            return cpu::optimized::conv2d_NxM<8, 7, 7, 1, 1>(CONV_ARGS);
-        }
-        else if (stride_h == 2 and stride_w == 2)
-        {
-            return cpu::optimized::conv2d_NxM<8, 7, 7, 2, 2>(CONV_ARGS);
+            if (stride_h == 1 and stride_w == 1)
+            {
+                return cpu::optimized::conv2d_NxM<8, 7, 7, 1, 1>(CONV_ARGS);
+            }
+            else if (stride_h == 2 and stride_w == 2)
+            {
+                return cpu::optimized::conv2d_NxM<8, 7, 7, 2, 2>(CONV_ARGS);
+            }
         }
     }
     // general conv

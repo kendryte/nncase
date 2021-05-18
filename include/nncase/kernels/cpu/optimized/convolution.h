@@ -147,7 +147,7 @@ void conv2dChannel(size_t &i, size_t out_h, size_t out_w, std::array<T, Parallel
             increase_n<LocalParallel>(outptr, out_w_step * (LocalParallel - 1));
         }
     }
-    if constexpr (LocalParallel > 2)
+    if constexpr (LocalParallel > 1)
     {
         conv2dChannel<LocalParallel / 2, Filter_h, Filter_w, Stride_h, Stride_w>(i, out_h, out_w, sum, r, k, outptr, in_w_step, out_w_step, tail_step, bias);
     }

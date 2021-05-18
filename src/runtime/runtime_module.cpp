@@ -187,14 +187,14 @@ result<void> runtime_module::initialize(const module_header &header, interpreter
     return initialize_core(init_context);
 }
 
-#define INOUT_TENSOR_GETTER_IMPL(name)                              \
-    if (index >= name##_tensors_.size())                            \
-        return err(std::errc::result_out_of_range);                 \
-                                                                    \
-    auto &info = name##_tensors_[index];                            \
-    if (info.bind_tensor.empty())                                   \
-        try_set(info.bind_tensor, allocate_##name##_tensor(index)); \
-    return ok(info.bind_tensor)
+#define INOUT_TENSOR_GETTER_IMPL(name)                                \
+    if (index >= name##_tensors_.size())                              \
+        return err(std::errc::result_out_of_range);                   \
+                                                                      \
+    auto &info = name##_tensors_[index];                              \
+    if (info.device_tensor.empty())                                   \
+        try_set(info.device_tensor, allocate_##name##_tensor(index)); \
+    return ok(info.device_tensor)
 
 result<runtime_tensor> runtime_module::input_tensor(size_t index) noexcept
 {
