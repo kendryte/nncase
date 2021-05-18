@@ -43,7 +43,8 @@ void add_input_dequantize_transform::process(transform_context &context)
     auto old_in = node_cast<input_node>(*context.matched_nodes[0]);
 
     auto &quantizer = *context.quantizer;
-    auto params = quantizer.get_quant_param(quantizer.get(old_in->output()), 8);
+    size_t bits = quant_type_ == dt_uint8 ? 8 : 7;
+    auto params = quantizer.get_quant_param(quantizer.get(old_in->output()), bits);
     auto new_in_node = context.graph.emplace<input_node>(quant_type_, old_in->output().shape());
     auto deq = context.graph.emplace<dequantize>(new_in_node->output().type(), new_in_node->output().shape(), dt_float32, params);
     deq->input().connect(new_in_node->output());
@@ -73,8 +74,10 @@ void add_output_quantize_transform::process(transform_context &context)
 {
     auto &output = *context.inputs[0]->connection();
     auto old_out = node_cast<output_node>(*context.matched_nodes[0]);
+
     auto &quantizer = *context.quantizer;
-    auto params = quantizer.get_quant_param(quantizer.get(output.owner().output_at(0)), 8);
+    size_t bits = quant_type_ == dt_uint8 ? 8 : 7;
+    auto params = quantizer.get_quant_param(quantizer.get(output.owner().output_at(0)), bits);
 
     auto q = context.graph.emplace<quantize>(dt_float32, output.shape(), quant_type_, params);
     auto new_out_node = context.graph.emplace<output_node>(q->output().type(), q->output().shape());
