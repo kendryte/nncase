@@ -56,21 +56,20 @@ target_activator_t find_target_activator(std::string_view name)
 #else
 #define DYNLIB_EXT ".dylib"
 #endif
-#define THROW_POSIX_IF_NOT(x, fmt_str, ...)                                                                    \
-    if (!(x))                                                                                                  \
-    {                                                                                                          \
-        auto err_code = errno;                                                                        \
-        auto err_msg = std::system_category().message(err_code);                                               \
-        throw std::system_error(err_code, std::system_category(), fmt::format(fmt_str, err_msg, __VA_ARGS__)); \
+#define THROW_DLERR_IF_NOT(x, fmt_str, ...)                                   \
+    if (!(x))                                                                 \
+    {                                                                         \
+        auto err_msg = dlerror();                                             \
+        throw std::runtime_error(fmt::format(fmt_str, err_msg, __VA_ARGS__)); \
     }
 
 target_activator_t find_target_activator(std::string_view name)
 {
     auto module_name = fmt::format("libnncase.targets.{}" DYNLIB_EXT, name);
     auto mod = dlopen(module_name.c_str(), RTLD_LAZY);
-    THROW_POSIX_IF_NOT(mod, "Cannot load module: {1}, {0}", module_name);
+    THROW_DLERR_IF_NOT(mod, "Cannot load module: {1}, {0}", module_name);
     auto proc = dlsym(mod, STR(TARGET_ACTIVATOR_NAME));
-    THROW_POSIX_IF_NOT(proc, "Cannot load proc \"{1}\" in module: {2}, {0}", STR(TARGET_ACTIVATOR_NAME), module_name);
+    THROW_DLERR_IF_NOT(proc, "Cannot load proc \"{1}\" in module: {2}, {0}", STR(TARGET_ACTIVATOR_NAME), module_name);
     return reinterpret_cast<target_activator_t>(proc);
 }
 #endif

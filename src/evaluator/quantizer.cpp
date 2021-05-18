@@ -40,12 +40,14 @@ static std::vector<float> smooth_distribution(const std::vector<float> &p, const
     {
         auto it = p.begin();
         std::generate(is_zeros.begin(), is_zeros.end(),
-            [&it]() { return static_cast<size_t>(*(it++) == 0.f); });
+            [&it]()
+            { return static_cast<size_t>(*(it++) == 0.f); });
     }
     {
         auto it = p.begin();
         std::generate(is_nonzeros.begin(), is_nonzeros.end(),
-            [&it]() { return static_cast<size_t>(*(it++) != 0.f); });
+            [&it]()
+            { return static_cast<size_t>(*(it++) != 0.f); });
     }
     size_t n_zeros = std::accumulate(is_zeros.begin(), is_zeros.end(), 0);
     size_t n_nonzeros = p.size() - n_zeros;
@@ -161,6 +163,23 @@ void quantizer::record(output_connector &connector, xtl::span<const float> data)
     }
 }
 
+void quantizer::record(output_connector &connector, xtl::span<const bfloat16> data)
+{
+    switch (stage_)
+    {
+    case quantize_stage::collect_range:
+        record(connector, get_range(data.begin(), data.end()));
+        has_record_.emplace(&connector, true);
+        break;
+    case quantize_stage::collect_distribution:
+        histograms_.at(&connector).record(data);
+        has_record_.emplace(&connector, true);
+        break;
+    default:
+        throw std::runtime_error("Invalid operation in current quantization stage");
+    }
+}
+
 void quantizer::begin_collect_distribution()
 {
     for (auto &&p : quant_ranges_)
@@ -185,10 +204,11 @@ void quantizer::end_collect_distribution(std::function<void(size_t cnt, size_t t
 quant_param_t quantizer::get_quant_param(value_range<float> range, int32_t bits)
 {
     range = fixup_range(range);
+    auto Q_max = bits == 7 ? 127 : 255;
+    auto Q_min = bits == 7 ? -128 : 0;
     auto r = range.max - range.min;
     auto scale = r / ((1LL << bits) - 1);
-    auto bias = std::round(-range.min / scale);
-    assert(bias >= 0);
+    auto bias = std::round((range.max * Q_min - range.min * Q_max) / r);
     return { static_cast<int32_t>(bias), scale };
 }
 
@@ -234,14 +254,15 @@ fixed_mul quantizer::get_fixed_mul(float value, int32_t max_bits, uint8_t max_sh
 
 void quantizer::broadcast_output(ir::graph &graph, const std::unordered_set<node_opcode> &ops)
 {
-    auto visitor = make_relay_ir_visitor([&](node &node) {
-        if (node.inputs().size() == 1)
+    auto visitor = make_relay_ir_visitor([&](node &node)
         {
-            auto it = quant_ranges_.find(node.input_at(0).connection());
-            if (it != quant_ranges_.end())
-                broadcast_output(node, it->second, ops);
-        }
-    });
+            if (node.inputs().size() == 1)
+            {
+                auto it = quant_ranges_.find(node.input_at(0).connection());
+                if (it != quant_ranges_.end())
+                    broadcast_output(node, it->second, ops);
+            }
+        });
     visitor.visit(graph);
 }
 
@@ -270,7 +291,15 @@ quantizer::histogram::histogram(value_range<float> range, size_t src_bins, size_
     auto r = range_.max - range_.min;
     src_bin_interval_ = r / src_bins_.size();
 }
-
+void quantizer::histogram::record(xtl::span<const bfloat16> data)
+{
+    for (auto value : data)
+    {
+        auto r_index = (value - range_.min) / src_bin_interval_;
+        auto index = (size_t)std::clamp(r_index, 0.f, (float)src_bins_.size() - 1);
+        src_bins_[index]++;
+    }
+}
 void quantizer::histogram::record(xtl::span<const float> data)
 {
     for (auto value : data)
@@ -351,7 +380,8 @@ void quantizer::histogram::finish()
                             count += (end - right_lower);
                     }
 
-                    count += std::count_if(range_dist.begin() + left_upper, range_dist.begin() + right_lower, [](float v) { return v; });
+                    count += std::count_if(range_dist.begin() + left_upper, range_dist.begin() + right_lower, [](float v)
+                        { return v; });
                     if (!count)
                         continue;
                     auto upsample_value = q_dist[i] / count;

@@ -199,3 +199,7 @@ std::unique_ptr<target_options> neutral_target::on_create_options()
 {
     return std::make_unique<target_options>();
 }
+
+void neutral_target::add_quantization_broadcast([[maybe_unused]] std::unordered_set<ir::node_opcode> &opcodes)
+{
+}

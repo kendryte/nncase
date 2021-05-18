@@ -110,7 +110,7 @@ void k210_target::register_quantize_annotation_passes(const module_type_t &type,
     }
 }
 
-void k210_target::register_quantize_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr)
+void k210_target::register_quantize_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] datatype_t quant_type)
 {
     {
         pass p("lowering_kpu_conv2d");
@@ -131,7 +131,7 @@ void k210_target::register_quantize_passes(const module_type_t &type, ir::transf
         pass_mgr.add_pass(std::move(p));
     }
     {
-        neutral_target::register_quantize_passes(type, pass_mgr);
+        neutral_target::register_quantize_passes(type, pass_mgr, quant_type);
 
         pass p("fold_kpu_data_exchg2");
         //p.emplace<fuse_kpu_download_transform>();

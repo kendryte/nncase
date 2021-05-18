@@ -44,6 +44,7 @@ class NNCASE_API quantizer
         histogram(value_range<float> range, size_t src_bins, size_t dest_bins, calibrate_method cali_method);
 
         void record(xtl::span<const float> data);
+        void record(xtl::span<const bfloat16> data);
         void finish();
         value_range<float> optimal_range() const noexcept { return optimal_range_; }
 
@@ -62,8 +63,9 @@ public:
     template <class TIt>
     static value_range<float> get_range(TIt begin, TIt end)
     {
-        float min = std::numeric_limits<float>::max();
-        float max = std::numeric_limits<float>::lowest();
+        using value_t = std::decay_t<decltype(*begin)>;
+        auto min = std::numeric_limits<value_t>::max();
+        auto max = std::numeric_limits<value_t>::lowest();
         while (begin != end)
         {
             auto value = *begin++;
@@ -114,6 +116,7 @@ public:
     void set(ir::output_connector &connector, value_range<float> range);
     bool has_record(ir::output_connector &connector) const;
     void record(ir::output_connector &connector, xtl::span<const float> data);
+    void record(ir::output_connector &connector, xtl::span<const bfloat16> data);
     value_range<float> get(ir::output_connector &connector) const;
     void broadcast_output(ir::graph &graph, const std::unordered_set<node_opcode> &ops);
     void broadcast_output(ir::node &node, const value_range<float> &range, const std::unordered_set<node_opcode> &ops);

@@ -17,28 +17,25 @@
 
 namespace nncase::ir::transforms
 {
-class NNCASE_API fold_converts : public transform
+class NNCASE_API add_input_dequantize_transform : public transform
 {
 public:
+    add_input_dequantize_transform(datatype_t dt) noexcept
+        : quant_type_(dt) { }
     void process(transform_context &context) override;
 
 protected:
     bool skip_self_contained_check() const noexcept override { return true; }
     bool on_try_match(ir::node &node, transform_context &context) override;
-};
-class NNCASE_API remove_convert : public transform
-{
-public:
-    void process(transform_context &context) override;
 
-protected:
-    bool skip_self_contained_check() const noexcept override { return true; }
-    bool on_try_match(ir::node &node, transform_context &context) override;
+private:
+    datatype_t quant_type_;
 };
-class NNCASE_API remove_concat_convert : public transform
+
+class NNCASE_API add_output_quantize_transform : public transform
 {
 public:
-    remove_concat_convert(datatype_t dt) noexcept
+    add_output_quantize_transform(datatype_t dt) noexcept
         : quant_type_(dt) { }
     void process(transform_context &context) override;
 
