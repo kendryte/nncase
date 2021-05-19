@@ -16,7 +16,12 @@
 #include "runtime_types.h"
 #include <nncase/kernels/kernel_context.h>
 #include <nncase/kernels/kernel_utils.h>
+#include <nncase/runtime/stackvm/kernel_context.h>
 #include <utility>
+#ifdef NNCASE_OPENMP
+#include <omp.h>
+#define GET_NUM_THREADS std::is_convertible_v<nncase::runtime::stackvm::stackvm_kernel_context &, decltype(context)> ? static_cast<nncase::runtime::stackvm::stackvm_kernel_context &>(context).num_threads_ : 1
+#endif
 
 BEGIN_NS_NNCASE_KERNELS_CPU_OPT
 
@@ -186,30 +191,27 @@ result<void> conv2d_NxM(const float *input, const float *weights, const float *b
     const auto batch = in_shape[0], out_channels = w_shape[0], in_channels = w_shape[1], in_h = in_shape[2], in_w = in_shape[3];
     const auto out_h = kernels::detail::get_windowed_output_size(in_h, Filter_h, Stride_h, dilation_h, padding::zero());
     const auto out_w = kernels::detail::get_windowed_output_size(in_w, Filter_w, Stride_w, dilation_w, padding::zero());
-    runtime_shape_t in_index(4, 0), out_index(4, 0), w_index(4, 0);
-    std::array<float *, Parallel> outptr;
-    std::array<const float *, compute_rsize<Parallel, Stride_h, Filter_h>()> r;
-    std::array<const float *, Filter_h> k;
-    std::array<float, Parallel> sum;
     const size_t tail_step = in_strides[2] - (out_w * Stride_w);
     for (size_t b = 0; b < batch; b++) // batch
     {
-        in_index[0] = out_index[0] = b;
-        // TODO add omp parallel
-        // #pragma omp parallel for num_threads(opt.num_threads)
+#ifdef NNCASE_OPENMP
+#pragma omp parallel for num_threads(GET_NUM_THREADS)
+#endif
         for (size_t oc = 0; oc < out_channels; oc++) // out channel
         {
-            out_index[1] = w_index[0] = oc;
-            float *out = output + offset(out_strides, out_index);
+            std::array<float *, Parallel> outptr;
+            std::array<const float *, compute_rsize<Parallel, Stride_h, Filter_h>()> r;
+            std::array<const float *, Filter_h> k;
+            std::array<float, Parallel> sum;
 
-            std::fill(out, out + out_h * out_w, bias[oc]);
+            float *out = output + out_strides[0] * b + out_strides[1] * oc;
+            std::fill_n(out, out_strides[2] ? out_h * out_strides[2] : (out_strides[3] ? out_w * out_strides[3] : 1), bias[oc]); // avoid shape == 1, stride == 0
 
             for (size_t ic = 0; ic < in_channels; ic++) // in channel
             {
-                in_index[1] = w_index[1] = ic;
                 binding_ptr<Parallel>(outptr, out, out_strides[2]);
-                binding_ptr<Parallel, Stride_h, Filter_h>(r, input + offset(in_strides, in_index), in_strides[2]);
-                binding_ptr<Filter_h>(k, weights + offset(w_strides, w_index), w_strides[2]);
+                binding_ptr<Parallel, Stride_h, Filter_h>(r, input + in_strides[0] * b + in_strides[1] * ic, in_strides[2]);
+                binding_ptr<Filter_h>(k, weights + w_strides[0] * oc + w_strides[1] * ic, w_strides[2]);
                 conv2dChannel<Parallel, Filter_h, Filter_w, Stride_h, Stride_w>(out_h, out_w, sum, r, k, outptr, in_strides[2], out_strides[2], tail_step);
             }
         }
@@ -232,30 +234,31 @@ result<void> conv2ddepthwise_NxM(const float *input, const float *weights, const
     const auto batch = in_shape[0], channels = w_shape[0], in_h = in_shape[2], in_w = in_shape[3];
     const auto out_h = kernels::detail::get_windowed_output_size(in_h, Filter_h, Stride_h, dilation_h, padding::zero());
     const auto out_w = kernels::detail::get_windowed_output_size(in_w, Filter_w, Stride_w, dilation_w, padding::zero());
-    runtime_shape_t in_index(4, 0), out_index(4, 0), w_index(4, 0);
-    std::array<float *, Parallel> outptr;
-    std::array<const float *, compute_rsize<Parallel, Stride_h, Filter_h>()> r;
-    std::array<const float *, Filter_h> k;
-    std::array<float, Parallel> sum;
+
     const size_t tail_step = in_strides[2] - (out_w * Stride_w);
     for (size_t b = 0; b < batch; b++) // batch
     {
-        in_index[0] = out_index[0] = b;
-        // TODO add omp parallel
-        // #pragma omp parallel for num_threads(opt.num_threads)
+
+#ifdef NNCASE_OPENMP
+#pragma omp parallel for num_threads(GET_NUM_THREADS)
+#endif
         for (size_t c = 0; c < channels; c++) // channel
         {
-            in_index[1] = out_index[1] = w_index[0] = c;
-            
-            float *out = output + offset(out_strides, out_index);
-            std::fill(out, out + out_h * out_w, bias[c]);
+            std::array<float *, Parallel> outptr;
+            std::array<const float *, compute_rsize<Parallel, Stride_h, Filter_h>()> r;
+            std::array<const float *, Filter_h> k;
+            std::array<float, Parallel> sum;
+
+            float *out = output + out_strides[0] * b + out_strides[1] * c;
+            std::fill_n(out, out_strides[2] ? out_h * out_strides[2] : (out_strides[3] ? out_w * out_strides[3] : 1), bias[c]);
 
             binding_ptr<Parallel>(outptr, out, out_strides[2]);
-            binding_ptr<Parallel, Stride_h, Filter_h>(r, input + offset(in_strides, in_index), in_strides[2]);
-            binding_ptr<Filter_h>(k, weights + offset(w_strides, w_index), w_strides[2]);
+            binding_ptr<Parallel, Stride_h, Filter_h>(r, input + in_strides[0] * b + in_strides[1] * c, in_strides[2]);
+            binding_ptr<Filter_h>(k, weights + w_strides[0] * c, w_strides[2]);
             conv2dChannel<Parallel, Filter_h, Filter_w, Stride_h, Stride_w>(out_h, out_w, sum, r, k, outptr, in_strides[2], out_strides[2], tail_step);
         }
     }
+    // TODO use avx
     for (size_t _ = 0; _ < batch * channels * out_h * out_w; _++)
     {
         *(output + _) = kernels::detail::apply_activation(*(output + _), fused_activation);

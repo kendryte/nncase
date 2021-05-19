@@ -14,11 +14,7 @@
  */
 #include <nncase/kernels/cpu/optimized/convolution.h>
 #include <nncase/kernels/kernel_utils.h>
-#include <nncase/runtime/stackvm/kernel_context.h>
 #include <utility>
-#ifdef NNCASE_OPENMP
-#include <omp.h>
-#endif
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -39,24 +35,19 @@ result<void> optimized::conv2d_1x1_s1(const float *input, const float *weights, 
     // if no cast, compiler will throw warning because of comparison of integer expressions of different signedness
     // warning be treated as errors
     const auto out_channels = static_cast<int>(w_shape[0]);
-    NNCASE_UNUSED int threads = 1;
-    if (std::is_convertible_v<stackvm::stackvm_kernel_context &, decltype(context)>)
-    {
-        threads = static_cast<stackvm::stackvm_kernel_context &>(context).num_threads_;
-    }
+
     for (size_t batch = 0; batch < in_shape[0]; batch++)
     {
+
 #ifdef NNCASE_OPENMP
-#pragma omp parallel for num_threads(threads)
+#pragma omp parallel for num_threads(GET_NUM_THREADS)
 #endif
-        // a img scan kernels/oc times
         for (int oc = 0; oc < out_channels; oc++)
         {
             const auto out_c = oc;
             const float *now_weights = weights + out_c * w_strides[0];
             const float *now_img_start = input + batch * in_strides[0];
             size_t channel = 0;
-            // four channel in once for
 
             auto *now_output_channel_start = output + (batch * out_strides[0] + out_c * out_strides[1]);
 
@@ -64,25 +55,21 @@ result<void> optimized::conv2d_1x1_s1(const float *input, const float *weights, 
             for (; channel + 4 <= in_shape[1]; channel += 4, now_weights += 4)
             {
                 auto *w_output = now_output_channel_start;
-                // 1x1 w is constant in per channel
                 const float w0 = now_weights[0];
                 const float w1 = now_weights[1];
                 const float w2 = now_weights[2];
                 const float w3 = now_weights[3];
 
-                // reset address point to beginning of channel
                 const float *i0 = now_img_start + (channel + 0) * in_strides[1];
                 const float *i1 = now_img_start + (channel + 1) * in_strides[1];
                 const float *i2 = now_img_start + (channel + 2) * in_strides[1];
                 const float *i3 = now_img_start + (channel + 3) * in_strides[1];
 
-                // four pointer point to pixel in four channel
                 const float *v0 = i0;
                 const float *v1 = i1;
                 const float *v2 = i2;
                 const float *v3 = i3;
 
-                // treat 2 dimensions as linear
                 for (size_t index = 0; index < widths; ++index)
                 {
                     float sum0 = *v0 * w0;
@@ -92,9 +79,7 @@ result<void> optimized::conv2d_1x1_s1(const float *input, const float *weights, 
 
                     *w_output += sum0 + sum1 + sum2 + sum3;
 
-                    // move input pointer and output pointer
                     ++w_output;
-                    // same as ++inputs
                     ++v0;
                     ++v1;
                     ++v2;
@@ -104,8 +89,6 @@ result<void> optimized::conv2d_1x1_s1(const float *input, const float *weights, 
 
             for (; channel < in_shape[1]; ++channel)
             {
-                // scan a img in per channel, the output will return start and add next channel value
-                // reset write output pointer point to output channel start
                 auto *w_output = now_output_channel_start;
                 const float *v = now_img_start + channel * in_strides[1];
                 for (size_t index = 0; index < widths; ++index)
@@ -114,7 +97,6 @@ result<void> optimized::conv2d_1x1_s1(const float *input, const float *weights, 
                     ++w_output;
                     ++v;
                 }
-                // same weight in a channel
                 ++now_weights;
             }
         }
@@ -143,27 +125,29 @@ result<void> optimized::conv2d_1x1_s2(const float *input, const float *weights, 
 
     for (size_t b = 0; b < batch; b++)
     {
-        // #pragma omp parallel for num_threads(opt.num_threads)
+#ifdef NNCASE_OPENMP
+#pragma omp parallel for num_threads(GET_NUM_THREADS)
+#endif
         for (size_t oc = 0; oc < out_channels; oc++)
         {
-            float *out = output + (b * out_channels * out_h * out_w) + (oc * out_h * out_w);
+            float *out = output + (b * out_strides[0] + oc * out_strides[1]);
 
             std::fill(out, out + out_h * out_w, bias[oc]);
             size_t ic = 0;
             for (; ic + 3 < in_channels; ic += 4)
             {
                 float *outptr = out;
-                const float *img0 = input + (b * in_channels * in_h * in_w) + (ic * in_h * in_w);
-                const float *img1 = input + (b * in_channels * in_h * in_w) + ((ic + 1) * in_h * in_w);
-                const float *img2 = input + (b * in_channels * in_h * in_w) + ((ic + 2) * in_h * in_w);
-                const float *img3 = input + (b * in_channels * in_h * in_w) + ((ic + 3) * in_h * in_w);
+                const float *img0 = input + (b * in_strides[0]) + (ic * in_strides[1]);
+                const float *img1 = input + (b * in_strides[0]) + ((ic + 1) * in_strides[1]);
+                const float *img2 = input + (b * in_strides[0]) + ((ic + 2) * in_strides[1]);
+                const float *img3 = input + (b * in_strides[0]) + ((ic + 3) * in_strides[1]);
 
                 const float *r0 = img0;
                 const float *r1 = img1;
                 const float *r2 = img2;
                 const float *r3 = img3;
 
-                const float *k0 = weights + oc * in_channels + ic;
+                const float *k0 = weights + oc * w_strides[0] + ic * w_strides[1];
                 const float *k1 = k0 + 1;
                 const float *k2 = k0 + 2;
                 const float *k3 = k0 + 3;
@@ -191,8 +175,8 @@ result<void> optimized::conv2d_1x1_s2(const float *input, const float *weights, 
             for (; ic < in_channels; ic++)
             {
                 float *outptr = out;
-                const float *img0 = input + (b * in_channels * in_h * in_w) + (ic * in_h * in_w);
-                const float *kernel0 = weights + oc * in_channels + ic;
+                const float *img0 = input + (b * in_strides[0]) + (ic * in_strides[1]);
+                const float *kernel0 = weights + oc * w_strides[0] + ic * w_strides[1];
                 const float *r0 = img0;
                 const float *k0 = kernel0;
                 for (size_t i = 0; i < out_h; i++)
