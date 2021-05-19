@@ -128,13 +128,13 @@ void increase_n(Array &a, size_t step = 1)
 
 template <size_t LocalParallel, size_t Filter_h, size_t Filter_w, size_t Stride_h, size_t Stride_w, typename T, size_t R, size_t Parallel>
 void conv2dChannel(size_t &i, size_t out_h, size_t out_w, std::array<T, Parallel> &sum, std::array<const T *, R> &r, std::array<const T *, Filter_h> k,
-    std::array<T *, Parallel> outptr, size_t in_w_step, size_t out_w_step, size_t tail_step, T bias)
+    std::array<T *, Parallel> outptr, size_t in_w_step, size_t out_w_step, size_t tail_step)
 {
     for (; i + (LocalParallel - 1) < out_h; i += LocalParallel)
     {
         for (size_t remain = 0; remain < out_w; remain++)
         {
-            std::fill_n(sum.begin(), LocalParallel, bias);
+            std::fill_n(sum.begin(), LocalParallel, 0);
             convNxM<LocalParallel, 0, Stride_h, Filter_h, Filter_w>(sum, r, k);
             binding_value<LocalParallel>(outptr, sum);
             increase_n<compute_rsize<LocalParallel, Stride_h, Filter_h>()>(r, Stride_w);
@@ -149,16 +149,16 @@ void conv2dChannel(size_t &i, size_t out_h, size_t out_w, std::array<T, Parallel
     }
     if constexpr (LocalParallel > 1)
     {
-        conv2dChannel<LocalParallel / 2, Filter_h, Filter_w, Stride_h, Stride_w>(i, out_h, out_w, sum, r, k, outptr, in_w_step, out_w_step, tail_step, bias);
+        conv2dChannel<LocalParallel / 2, Filter_h, Filter_w, Stride_h, Stride_w>(i, out_h, out_w, sum, r, k, outptr, in_w_step, out_w_step, tail_step);
     }
 }
 
 template <size_t LocalParallel, size_t Filter_h, size_t Filter_w, size_t Stride_h, size_t Stride_w, typename T, size_t R, size_t Parallel>
 void conv2dChannel(size_t out_h, size_t out_w, std::array<T, Parallel> &sum, std::array<const T *, R> &r, std::array<const T *, Filter_h> k,
-    std::array<T *, Parallel> outptr, size_t in_w_step, size_t out_w_step, size_t tail_step, T bias)
+    std::array<T *, Parallel> outptr, size_t in_w_step, size_t out_w_step, size_t tail_step)
 {
     size_t i = 0;
-    conv2dChannel<LocalParallel, Filter_h, Filter_w, Stride_h, Stride_w>(i, out_h, out_w, sum, r, k, outptr, in_w_step, out_w_step, tail_step, bias);
+    conv2dChannel<LocalParallel, Filter_h, Filter_w, Stride_h, Stride_w>(i, out_h, out_w, sum, r, k, outptr, in_w_step, out_w_step, tail_step);
 }
 
 result<void> conv2d_1x1_s1(const float *input, const float *weights, const float *bias, float *output,
@@ -192,7 +192,6 @@ result<void> conv2d_NxM(const float *input, const float *weights, const float *b
     std::array<const float *, Filter_h> k;
     std::array<float, Parallel> sum;
     const size_t tail_step = in_strides[2] - (out_w * Stride_w);
-    constexpr float default_bias = 0;
     for (size_t b = 0; b < batch; b++) // batch
     {
         in_index[0] = out_index[0] = b;
@@ -211,7 +210,7 @@ result<void> conv2d_NxM(const float *input, const float *weights, const float *b
                 binding_ptr<Parallel>(outptr, out, out_strides[2]);
                 binding_ptr<Parallel, Stride_h, Filter_h>(r, input + offset(in_strides, in_index), in_strides[2]);
                 binding_ptr<Filter_h>(k, weights + offset(w_strides, w_index), w_strides[2]);
-                conv2dChannel<Parallel, Filter_h, Filter_w, Stride_h, Stride_w>(out_h, out_w, sum, r, k, outptr, in_strides[2], out_strides[2], tail_step, default_bias);
+                conv2dChannel<Parallel, Filter_h, Filter_w, Stride_h, Stride_w>(out_h, out_w, sum, r, k, outptr, in_strides[2], out_strides[2], tail_step);
             }
         }
     }
@@ -247,11 +246,14 @@ result<void> conv2ddepthwise_NxM(const float *input, const float *weights, const
         for (size_t c = 0; c < channels; c++) // channel
         {
             in_index[1] = out_index[1] = w_index[0] = c;
+            
             float *out = output + offset(out_strides, out_index);
+            std::fill(out, out + out_h * out_w, bias[c]);
+
             binding_ptr<Parallel>(outptr, out, out_strides[2]);
             binding_ptr<Parallel, Stride_h, Filter_h>(r, input + offset(in_strides, in_index), in_strides[2]);
             binding_ptr<Filter_h>(k, weights + offset(w_strides, w_index), w_strides[2]);
-            conv2dChannel<Parallel, Filter_h, Filter_w, Stride_h, Stride_w>(out_h, out_w, sum, r, k, outptr, in_strides[2], out_strides[2], tail_step, bias[c]);
+            conv2dChannel<Parallel, Filter_h, Filter_w, Stride_h, Stride_w>(out_h, out_w, sum, r, k, outptr, in_strides[2], out_strides[2], tail_step);
         }
     }
     for (size_t _ = 0; _ < batch * channels * out_h * out_w; _++)
