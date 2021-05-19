@@ -34,3 +34,14 @@
     }                                 \
     }                                 \
     }
+
+#define TYPE_IMPL_SELECT(type, IMPL)          \
+    switch (runtime::get_bytes(type))         \
+    {                                         \
+        IMPL(1, uint8_t);                     \
+        IMPL(2, uint16_t);                    \
+        IMPL(4, uint32_t);                    \
+        IMPL(8, uint64_t);                    \
+    default:                                  \
+        return err(std::errc::not_supported); \
+    }
