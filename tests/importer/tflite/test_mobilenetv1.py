@@ -22,7 +22,7 @@ import test_util
 
 
 def _make_module(in_shape, alpha):
-    return tf.keras.applications.MobileNet(in_shape, alpha, include_top=False)
+    return tf.keras.applications.MobileNet(in_shape, alpha, include_top=True)
 
 in_shapes = [
     (224, 224, 3)
