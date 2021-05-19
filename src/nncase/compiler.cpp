@@ -88,6 +88,29 @@ void do_dump_graph(ir::graph &graph, std::ostream &output)
     output << "}" << std::endl;
 }
 
+std::string format_size(size_t size)
+{
+    size_t index = 0;
+    double display_size = (double)size;
+    std::vector<std::string> size_surfix { "B", "KB", "MB" };
+    while (index < size_surfix.size() - 1)
+    {
+        if (display_size >= 1024)
+        {
+            display_size /= 1024;
+            index++;
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    std::stringstream ss;
+    ss << std::setfill(' ') << std::setw(7) << std::fixed << std::setprecision(2) << display_size << ' ' << size_surfix[index] << '\t' << "(" << size << " B)";
+    return ss.str();
+}
+
 class compiler_impl : public compiler
 {
 public:
@@ -184,9 +207,9 @@ public:
         auto schr = sch.schedule();
         model_builder builder(*target_, schr);
         builder.config_dump(compile_options_.dump_dir, compile_options_.dump_asm);
-        builder.build(output);
+        auto result = builder.build(output);
 
-        dump_summary(graph_);
+        dump_summary(graph_, builder, result);
     }
 
 private:
@@ -431,7 +454,7 @@ private:
         }
     }
 
-    void dump_summary(ir::graph &graph)
+    void dump_summary(ir::graph &graph, codegen::model_builder &mod_builder, codegen::build_model_result build_result)
     {
         std::cout << "\nSUMMARY" << std::endl;
         std::cout << "INPUTS" << std::endl;
@@ -444,6 +467,23 @@ private:
         i = 0;
         for (auto &out : graph.outputs())
             std::cout << i++ << "\t" << out->name() << "\t" << datatype_names(out->input().type()) << ir::to_string(out->input().shape()) << std::endl;
+        std::cout << "\nMEMORY USAGES" << std::endl;
+        size_t total_usage = 0;
+        total_usage += dump_memory_usage(mod_builder, mem_input, ".input");
+        total_usage += dump_memory_usage(mod_builder, mem_output, ".output");
+        total_usage += dump_memory_usage(mod_builder, mem_data, ".data");
+        std::cout << "MODEL"
+                  << "\t" << format_size(build_result.model_size) << std::endl;
+        total_usage += build_result.model_size;
+        std::cout << "TOTAL"
+                  << "\t" << format_size(total_usage) << std::endl;
+    }
+
+    size_t dump_memory_usage(codegen::model_builder &mod_builder, memory_location_t location, std::string_view name)
+    {
+        auto usage = mod_builder.max_usage(location);
+        std::cout << name << "\t" << format_size(usage) << std::endl;
+        return usage;
     }
 
 private:
