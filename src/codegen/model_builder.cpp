@@ -69,3 +69,16 @@ void model_builder::build(std::ostream &output)
     writer.write(header);
     writer.position(end_pos);
 }
+
+size_t model_builder::max_usage(memory_location_t location) const
+{
+    size_t usage = 0;
+    for (auto &mod : sched_.modules)
+    {
+        auto it = mod.second.max_usages.find(location);
+        if (it != mod.second.max_usages.end())
+            usage += it->second;
+    }
+
+    return usage;
+}

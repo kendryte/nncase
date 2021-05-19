@@ -88,6 +88,29 @@ void do_dump_graph(ir::graph &graph, std::ostream &output)
     output << "}" << std::endl;
 }
 
+std::string format_size(size_t size)
+{
+    size_t index = 0;
+    double display_size = (double)size;
+    std::vector<std::string> size_surfix { "B", "KB", "MB" };
+    while (index < size_surfix.size() - 1)
+    {
+        if (display_size >= 1024)
+        {
+            display_size /= 1024;
+            index++;
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    std::stringstream ss;
+    ss << std::fixed << std::setprecision(2) << display_size << ' ' << size_surfix[index] << '\t' << "(" << size << " B)";
+    return ss.str();
+}
+
 class compiler_impl : public compiler
 {
 public:
@@ -186,7 +209,7 @@ public:
         builder.config_dump(compile_options_.dump_dir, compile_options_.dump_asm);
         builder.build(output);
 
-        dump_summary(graph_);
+        dump_summary(graph_, builder);
     }
 
 private:
@@ -200,8 +223,7 @@ private:
 
     void optimize_target_independent(ir::graph &graph)
     {
-        run_passes("target_indep", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr)
-            { target_->register_target_independent_passes(module_type, pmgr); });
+        run_passes("target_indep", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr) { target_->register_target_independent_passes(module_type, pmgr); });
     }
 
     void optimize_merge_module_regions(ir::graph &graph)
@@ -212,26 +234,22 @@ private:
 
     void optimize_target_dependent(ir::graph &graph)
     {
-        run_passes("target_dep", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr)
-            { target_->register_target_dependent_passes(module_type, pmgr); });
+        run_passes("target_dep", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr) { target_->register_target_dependent_passes(module_type, pmgr); });
     }
 
     void optimize_target_dependent_after_quant(ir::graph &graph)
     {
-        run_passes("target_dep_after_quant", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr)
-            { target_->register_target_dependent_after_quantization_passes(module_type, pmgr); });
+        run_passes("target_dep_after_quant", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr) { target_->register_target_dependent_after_quantization_passes(module_type, pmgr); });
     }
 
     void add_quantize_annotation(ir::graph &graph)
     {
-        run_passes("quantize_annotation", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr)
-            { target_->register_quantize_annotation_passes(module_type, pmgr); });
+        run_passes("quantize_annotation", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr) { target_->register_quantize_annotation_passes(module_type, pmgr); });
     }
 
     void quantize_graph(ir::graph &graph, ir::evaluator &evaluator)
     {
-        auto graph_runner = [&](ir::graph &graph)
-        {
+        auto graph_runner = [&](ir::graph &graph) {
             ir::transforms::pass_manager pmgr(graph, *target_);
             auto quant = evaluator.module_context(graph).quantizer();
 
@@ -403,8 +421,7 @@ private:
     template <class Callable>
     void run_passes(std::string_view name, ir::graph &root_graph, Callable &&register_passes)
     {
-        auto graph_runner = [&](ir::graph &graph)
-        {
+        auto graph_runner = [&](ir::graph &graph) {
             ir::transforms::pass_manager pmgr(graph, *target_);
             if (compile_options_.dump_ir)
                 pmgr.dump_dir(compile_options_.dump_dir);
@@ -431,7 +448,7 @@ private:
         }
     }
 
-    void dump_summary(ir::graph &graph)
+    void dump_summary(ir::graph &graph, codegen::model_builder &mod_builder)
     {
         std::cout << "\nSUMMARY" << std::endl;
         std::cout << "INPUTS" << std::endl;
@@ -444,6 +461,21 @@ private:
         i = 0;
         for (auto &out : graph.outputs())
             std::cout << i++ << "\t" << out->name() << "\t" << datatype_names(out->input().type()) << ir::to_string(out->input().shape()) << std::endl;
+        std::cout << "\nMEMORY USAGES" << std::endl;
+        size_t total_usage = 0;
+        total_usage += dump_memory_usage(mod_builder, mem_input, ".input");
+        total_usage += dump_memory_usage(mod_builder, mem_output, ".output");
+        total_usage += dump_memory_usage(mod_builder, mem_rdata, ".rdata");
+        total_usage += dump_memory_usage(mod_builder, mem_data, ".data");
+        std::cout << "TOTAL"
+                  << "\t" << format_size(total_usage) << std::endl;
+    }
+
+    size_t dump_memory_usage(codegen::model_builder &mod_builder, memory_location_t location, std::string_view name)
+    {
+        auto usage = mod_builder.max_usage(location);
+        std::cout << name << "\t" << format_size(usage) << std::endl;
+        return usage;
     }
 
 private:

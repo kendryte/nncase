@@ -27,6 +27,8 @@ public:
     void config_dump(const std::filesystem::path &dump_dir, bool dump_asm);
     void build(std::ostream &output);
 
+    size_t max_usage(memory_location_t location) const;
+
 private:
     target &target_;
     const schedule::schedule_result &sched_;
