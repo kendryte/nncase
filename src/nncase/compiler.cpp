@@ -207,9 +207,9 @@ public:
         auto schr = sch.schedule();
         model_builder builder(*target_, schr);
         builder.config_dump(compile_options_.dump_dir, compile_options_.dump_asm);
-        builder.build(output);
+        auto result = builder.build(output);
 
-        dump_summary(graph_, builder);
+        dump_summary(graph_, builder, result);
     }
 
 private:
@@ -448,7 +448,7 @@ private:
         }
     }
 
-    void dump_summary(ir::graph &graph, codegen::model_builder &mod_builder)
+    void dump_summary(ir::graph &graph, codegen::model_builder &mod_builder, codegen::build_model_result build_result)
     {
         std::cout << "\nSUMMARY" << std::endl;
         std::cout << "INPUTS" << std::endl;
@@ -465,8 +465,10 @@ private:
         size_t total_usage = 0;
         total_usage += dump_memory_usage(mod_builder, mem_input, ".input");
         total_usage += dump_memory_usage(mod_builder, mem_output, ".output");
-        total_usage += dump_memory_usage(mod_builder, mem_rdata, ".rdata");
         total_usage += dump_memory_usage(mod_builder, mem_data, ".data");
+        std::cout << "MODEL"
+                  << "\t" << format_size(build_result.model_size) << std::endl;
+        total_usage += build_result.model_size;
         std::cout << "TOTAL"
                   << "\t" << format_size(total_usage) << std::endl;
     }

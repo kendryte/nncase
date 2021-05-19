@@ -17,6 +17,11 @@
 
 namespace nncase::codegen
 {
+struct build_model_result
+{
+    size_t model_size;
+};
+
 class NNCASE_API model_builder
 {
 public:
@@ -25,7 +30,7 @@ public:
     model_builder(model_builder &&) = delete;
 
     void config_dump(const std::filesystem::path &dump_dir, bool dump_asm);
-    void build(std::ostream &output);
+    build_model_result build(std::ostream &output);
 
     size_t max_usage(memory_location_t location) const;
 

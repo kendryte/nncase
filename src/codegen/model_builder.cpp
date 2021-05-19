@@ -33,9 +33,10 @@ void model_builder::config_dump(const std::filesystem::path &dump_dir, bool dump
     dump_asm_ = dump_asm;
 }
 
-void model_builder::build(std::ostream &output)
+build_model_result model_builder::build(std::ostream &output)
 {
     binary_writer writer(output);
+    auto begin_pos = writer.position();
 
     model_header header {};
     header.identifier = MODEL_IDENTIFIER;
@@ -68,6 +69,10 @@ void model_builder::build(std::ostream &output)
     writer.position(header_pos);
     writer.write(header);
     writer.position(end_pos);
+
+    build_model_result result;
+    result.model_size = (size_t)(end_pos - begin_pos);
+    return result;
 }
 
 size_t model_builder::max_usage(memory_location_t location) const
