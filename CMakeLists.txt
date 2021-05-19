@@ -165,13 +165,14 @@ else()
         FILES_MATCHING
         PATTERN "*.py"
         )
+    
+    # Targets
+    add_subdirectory(targets/cpu)
+    add_subdirectory(targets/k210)
+
 endif()
 
 include_directories(modules/include)
-    
-# Targets
-add_subdirectory(targets/cpu)
-add_subdirectory(targets/k210)
 
 # Modules
 add_subdirectory(modules/k210)
