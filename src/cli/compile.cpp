@@ -24,6 +24,8 @@ compile_command::compile_command(lyra::cli &cli)
     cli.add_argument(lyra::command("compile", [this](const lyra::group &) { this->run(); })
                          .add_argument(lyra::opt(input_format_, "input format").name("-i").name("--input-format").required().help("input format, e.g. tflite"))
                          .add_argument(lyra::opt(target_name_, "target").name("-t").name("--target").required().help("target architecture, e.g. cpu, k210"))
+                         .add_argument(lyra::opt(input_type_, "input type").name("--input_type").name("-it").optional().help("post trainning quantize input type, e.g float32|uint8"))
+                         .add_argument(lyra::opt(output_type_, "output type").name("--output_type").name("-ot").optional().help("post trainning quantize output type, e.g float32|uint8"))
                          .add_argument(lyra::arg(input_filename_, "input file").required().help("input file"))
                          .add_argument(lyra::arg(output_filename_, "output file").required().help("output file"))
                          .add_argument(lyra::opt(output_arrays_, "output arrays").name("--output-arrays").optional().help("output arrays"))
@@ -44,6 +46,8 @@ void compile_command::run()
     c_options.dump_dir = dump_dir_;
     c_options.target = target_name_;
     c_options.is_fpga = is_fpga_;
+    c_options.input_type = input_type_;
+    c_options.output_type = output_type_;
 
     import_options i_options;
     std::vector<std::string> output_arrays;

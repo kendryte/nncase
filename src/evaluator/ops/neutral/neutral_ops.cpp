@@ -230,7 +230,7 @@ void register_neutral_evaluators()
         auto output_mem = host_runtime_tensor::buffer(output).unwrap_or_throw();
 
         kernels::pad(input.datatype(), input_mem.data(), output_mem.data(), input.shape(), input.strides(),
-            output.strides(), to(rnode.paddings()), pad_constant, rnode.pad_value())
+            output.strides(), to(rnode.paddings()), rnode.pad_mode(), rnode.pad_value())
             .unwrap_or_throw();
     });
 

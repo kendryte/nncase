@@ -35,7 +35,11 @@ void target::register_quantize_annotation_passes([[maybe_unused]] const module_t
 {
 }
 
-void target::register_quantize_passes([[maybe_unused]] const module_type_t &type, [[maybe_unused]] ir::transforms::pass_manager &pass_mgr)
+void target::register_quantize_passes([[maybe_unused]] const module_type_t &type, [[maybe_unused]] ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] datatype_t quant_type)
+{
+}
+
+void target::add_quantization_broadcast([[maybe_unused]] std::unordered_set<ir::node_opcode> &opcodes)
 {
 }
 
