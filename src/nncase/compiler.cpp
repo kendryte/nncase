@@ -107,7 +107,7 @@ std::string format_size(size_t size)
     }
 
     std::stringstream ss;
-    ss << std::fixed << std::setprecision(2) << display_size << ' ' << size_surfix[index] << '\t' << "(" << size << " B)";
+    ss << std::setfill(' ') << std::setw(7) << std::fixed << std::setprecision(2) << display_size << ' ' << size_surfix[index] << '\t' << "(" << size << " B)";
     return ss.str();
 }
 
