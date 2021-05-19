@@ -136,7 +136,7 @@ public:
         optimize_target_independent(graph_);
 
         std::cout << "3. Optimize target dependent..." << std::endl;
-        optimize_target_dependent(graph_);
+        optimize_target_dependent(graph_, to_datatype_method(compile_options_.input_type));
 
         if (use_ptq_)
         {
@@ -168,7 +168,7 @@ public:
         if (stage > 2)
         {
             std::cout << "3. Optimize target dependent..." << std::endl;
-            optimize_target_dependent(graph_);
+            optimize_target_dependent(graph_, to_datatype_method(compile_options_.input_type));
         }
 
         return graph_;
@@ -210,10 +210,10 @@ private:
         dump_graph(graph, "merge_module_regions");
     }
 
-    void optimize_target_dependent(ir::graph &graph)
+    void optimize_target_dependent(ir::graph &graph, datatype_t quant_type)
     {
         run_passes("target_dep", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr)
-            { target_->register_target_dependent_passes(module_type, pmgr); });
+            { target_->register_target_dependent_passes(module_type, pmgr, quant_type); });
     }
 
     void optimize_target_dependent_after_quant(ir::graph &graph)
@@ -251,15 +251,15 @@ private:
 
             ir::transforms::pass p("process i&o node");
 
-            if (use_ptq_)
-            {
-                if (compile_options_.input_type != "float32")
-                    p.emplace<nncase::ir::transforms::add_input_dequantize_transform>(to_datatype_method(compile_options_.input_type));
+            // if (use_ptq_)
+            // {
+            //     if (compile_options_.input_type != "float32")
+            //         p.emplace<nncase::ir::transforms::add_input_dequantize_transform>(to_datatype_method(compile_options_.input_type));
 
-                if (compile_options_.output_type != "float32")
-                    p.emplace<nncase::ir::transforms::add_output_quantize_transform>(to_datatype_method(compile_options_.output_type));
-                pmgr.add_pass(std::move(p));
-            }
+            //     if (compile_options_.output_type != "float32")
+            //         p.emplace<nncase::ir::transforms::add_output_quantize_transform>(to_datatype_method(compile_options_.output_type));
+            //     pmgr.add_pass(std::move(p));
+            // }
 
             pmgr.quantizer(quant);
             if (compile_options_.dump_ir)
