@@ -68,7 +68,7 @@ void onnx_importer::convert_op_LeakyRelu(const NodeProto &node)
     output_tensors_.emplace(output, &max->output());
 }
 
-void onnx_importer::convert_op_PRelu([[maybe_unused]] const NodeProto &node)
+void onnx_importer::convert_op_PRelu(const NodeProto &node)
 {
     assert(node.input().size() == 2);
     assert(node.output().size() == 1);
@@ -108,4 +108,44 @@ void onnx_importer::convert_op_PRelu([[maybe_unused]] const NodeProto &node)
     input_tensors_.emplace(&mul->input_a(), input);
     input_tensors_.emplace(&max->input_a(), input);
     output_tensors_.emplace(output, &max->output());
+}
+
+void onnx_importer::convert_op_Sigmoid(const NodeProto &node)
+{
+    assert(node.input().size() == 1);
+    assert(node.output().size() == 1);
+
+    const auto &input = node.input()[0];
+    const auto &output = node.output()[0];
+    auto in_shape = get_shape(input);
+
+#if 0
+    // y = 1 / (1 + exp(-x))
+    auto one = graph_.emplace<constant>(1.f);
+    auto neg = graph_.emplace<unary>(unary_neg, in_shape);
+    auto exp = graph_.emplace<unary>(unary_exp, in_shape);
+    auto add = graph_.emplace<binary>(binary_add, one->output().shape(), in_shape, value_range<float>::nonnegative());
+    auto div = graph_.emplace<binary>(binary_div, one->output().shape(), in_shape, value_range<float>::nonnegative());
+    exp->input().connect(neg->output());
+    add->input_a().connect(one->output());
+    add->input_b().connect(exp->output());
+    div->input_a().connect(one->output());
+    div->input_b().connect(add->output());
+
+    input_tensors_.emplace(&neg->input(), input);
+    output_tensors_.emplace(output, &div->output());
+#else
+    // y = exp(x) / (exp(x) + 1)
+    auto exp = graph_.emplace<unary>(unary_exp, in_shape);
+    auto one = graph_.emplace<constant>(1.f);
+    auto add = graph_.emplace<binary>(binary_add, exp->output().shape(), one->output().shape(), value_range<float>::nonnegative());
+    auto div = graph_.emplace<binary>(binary_div, exp->output().shape(), add->output().shape(), value_range<float>::nonnegative());
+    add->input_a().connect(exp->output());
+    add->input_b().connect(one->output());
+    div->input_a().connect(exp->output());
+    div->input_b().connect(add->output());
+
+    input_tensors_.emplace(&exp->input(), input);
+    output_tensors_.emplace(output, &div->output());
+#endif
 }
