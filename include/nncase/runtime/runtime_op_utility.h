@@ -132,7 +132,7 @@ T carry_shift(T value, int32_t shift)
 {
     if (shift > 0)
     {
-        if constexpr (Banker)
+        if (Banker)
         {
             T result;
             // Sign |  Int (T - shift - 1 bits) | Frac (shift bits)

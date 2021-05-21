@@ -67,7 +67,7 @@ public:
     explicit bfloat16(float v) noexcept
         : value_(truncate_to_bfloat16(v).value_) { }
 
-    template <class T, class = std::enable_if_t<std::is_integral_v<T> || std::is_floating_point_v<T>>>
+    template <class T, class = std::enable_if_t<std::is_integral<T>::value || std::is_floating_point<T>::value>>
     explicit bfloat16(const T &val) noexcept
         : bfloat16(static_cast<float>(val)) { }
 
