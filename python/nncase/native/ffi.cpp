@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include "pystreambuf.h"
+#include "pytype_utils.h"
 #include <iostream>
 #include <nncase/compiler.h>
 #include <nncase/ir/debug.h>
@@ -32,140 +33,8 @@ namespace py = pybind11;
 using namespace nncase;
 using namespace nncase::runtime;
 
-namespace pybind11
-{
-namespace detail
-{
-    template <>
-    struct type_caster<std::span<const uint8_t>>
-    {
-    public:
-        PYBIND11_TYPE_CASTER(std::span<const uint8_t>, _("bytes"));
-
-        bool load(handle src, bool)
-        {
-            if (!py::isinstance<py::bytes>(src))
-                return false;
-
-            uint8_t *buffer;
-            py::ssize_t length;
-            if (PyBytes_AsStringAndSize(src.ptr(), reinterpret_cast<char **>(&buffer), &length))
-                return false;
-            value = { buffer, (size_t)length };
-            return true;
-        }
-    };
-
-    template <>
-    struct type_caster<gsl::span<const gsl::byte>>
-    {
-    public:
-        PYBIND11_TYPE_CASTER(gsl::span<const gsl::byte>, _("bytes"));
-
-        bool load(handle src, bool)
-        {
-            if (!py::isinstance<py::bytes>(src))
-                return false;
-
-            uint8_t *buffer;
-            py::ssize_t length;
-            if (PyBytes_AsStringAndSize(src.ptr(), reinterpret_cast<char **>(&buffer), &length))
-                return false;
-            value = { (const gsl::byte *)buffer, (size_t)length };
-            return true;
-        }
-    };
-}
-}
-
 namespace
 {
-py::dtype to_dtype(datatype_t type)
-{
-    switch (type)
-    {
-    case dt_uint8:
-        return py::dtype::of<uint8_t>();
-    case dt_uint16:
-        return py::dtype::of<uint16_t>();
-    case dt_uint32:
-        return py::dtype::of<uint32_t>();
-    case dt_uint64:
-        return py::dtype::of<uint64_t>();
-    case dt_int8:
-        return py::dtype::of<int8_t>();
-    case dt_int16:
-        return py::dtype::of<int16_t>();
-    case dt_int32:
-        return py::dtype::of<int32_t>();
-    case dt_int64:
-        return py::dtype::of<int64_t>();
-    case dt_float32:
-        return py::dtype::of<float>();
-    case dt_float64:
-        return py::dtype::of<double>();
-    default:
-        throw std::runtime_error("Unsupported dtype " + (std::string)datatype_names(type));
-    }
-}
-
-datatype_t from_dtype(py::dtype dtype)
-{
-    if (dtype.is(py::dtype::of<uint8_t>()))
-        return dt_uint8;
-    else if (dtype.is(py::dtype::of<uint16_t>()))
-        return dt_uint16;
-    else if (dtype.is(py::dtype::of<uint32_t>()))
-        return dt_uint32;
-    else if (dtype.is(py::dtype::of<uint64_t>()))
-        return dt_uint64;
-    else if (dtype.is(py::dtype::of<int8_t>()))
-        return dt_int8;
-    else if (dtype.is(py::dtype::of<int16_t>()))
-        return dt_int16;
-    else if (dtype.is(py::dtype::of<int32_t>()))
-        return dt_int32;
-    else if (dtype.is(py::dtype::of<int64_t>()))
-        return dt_int64;
-    else if (dtype.is(py::dtype::of<float>()))
-        return dt_float32;
-    else if (dtype.is(py::dtype::of<double>()))
-        return dt_float64;
-    throw std::runtime_error("Unsupported dtype " + (std::string)py::str(dtype));
-}
-
-runtime_shape_t to_rt_shape(const std::vector<pybind11::ssize_t> &value)
-{
-    runtime_shape_t shape(value.size());
-    for (size_t i = 0; i < shape.size(); i++)
-        shape[i] = (size_t)value[i];
-    return shape;
-}
-
-runtime_shape_t to_rt_strides(size_t elemsize, const std::vector<pybind11::ssize_t> &value)
-{
-    runtime_shape_t strides(value.size());
-    for (size_t i = 0; i < strides.size(); i++)
-        strides[i] = (size_t)value[i] / elemsize;
-    return strides;
-}
-
-std::vector<py::ssize_t> to_py_shape(const runtime_shape_t &value)
-{
-    std::vector<py::ssize_t> shape(value.size());
-    for (size_t i = 0; i < shape.size(); i++)
-        shape[i] = (py::ssize_t)value[i];
-    return shape;
-}
-
-std::vector<py::ssize_t> to_py_strides(size_t elemsize, const runtime_shape_t &value)
-{
-    std::vector<py::ssize_t> strides(value.size());
-    for (size_t i = 0; i < strides.size(); i++)
-        strides[i] = (py::ssize_t)value[i] * elemsize;
-    return strides;
-}
-
 #ifdef WIN32
 #include <Windows.h>
 void LaunchDebugger()
@@ -305,46 +174,7 @@ PYBIND11_MODULE(_nncase, m)
             return std::make_unique<graph_evaluator>(c.target(), graph);
         });
 
-    py::class_<memory_range>(m, "MemoryRange")
-        .def_readwrite("location", &memory_range::memory_location)
-        .def_property(
-            "dtype", [](const memory_range &range) { return to_dtype(range.datatype); },
-            [](memory_range &range, py::object dtype) { range.datatype = from_dtype(py::dtype::from_args(dtype)); })
-        .def_readwrite("start", &memory_range::start)
-        .def_readwrite("size", &memory_range::size);
-
-    py::class_<runtime_tensor>(m, "RuntimeTensor")
-        .def_static("from_numpy", [](py::array arr) {
-            auto src_buffer = arr.request();
-            auto datatype = from_dtype(arr.dtype());
-            auto tensor = host_runtime_tensor::create(
-                datatype,
-                to_rt_shape(src_buffer.shape),
-                to_rt_strides(src_buffer.itemsize, src_buffer.strides),
-                gsl::make_span(reinterpret_cast<gsl::byte *>(src_buffer.ptr), src_buffer.size * src_buffer.itemsize),
-                [=](gsl::byte *) { arr.dec_ref(); })
-                              .unwrap_or_throw();
-            arr.inc_ref();
-            return tensor;
-        })
-        .def("copy_to", [](runtime_tensor &from, runtime_tensor &to) {
-            from.copy_to(to).unwrap_or_throw();
-        })
-        .def("to_numpy", [](runtime_tensor &tensor) {
-            auto host = tensor.as_host().unwrap_or_throw();
-            auto src_buffer = host_runtime_tensor::buffer(host).unwrap_or_throw();
-            return py::array(
-                to_dtype(tensor.datatype()),
-                tensor.shape(),
-                to_py_strides(runtime::get_bytes(tensor.datatype()), tensor.strides()),
-                src_buffer.data());
-        })
-        .def_property_readonly("dtype", [](runtime_tensor &tensor) {
-            return to_dtype(tensor.datatype());
-        })
-        .def_property_readonly("shape", [](runtime_tensor &tensor) {
-            return to_py_shape(tensor.shape());
-        });
+#include "runtime_tensor.inl"
 
     py::class_<interpreter>(m, "Simulator")
         .def(py::init())

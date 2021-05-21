@@ -8,22 +8,31 @@ set(SRCS interpreter.cpp
          allocator.cpp)
 
 if (BUILDING_RUNTIME)
-    add_library(runtime STATIC ${SRCS})
+    add_library(runtime OBJECT ${SRCS})
     target_include_directories(runtime PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
     target_link_libraries(runtime PUBLIC CONAN_PKG::gsl-lite CONAN_PKG::mpark-variant CONAN_PKG::xtensor)
     target_link_libraries(runtime PRIVATE kernels CONAN_PKG::fmt)
-    set_target_properties(runtime PROPERTIES
-                                  OUTPUT_NAME "nncase.runtime_static")
+    set_property(TARGET runtime PROPERTY POSITION_INDEPENDENT_CODE ON)
+    install(TARGETS runtime EXPORT nncaseruntimeTargets)
 
-    if (BUILD_SHARED_LIBS)
-        add_library(runtime_shared SHARED ${SRCS})
-        target_link_libraries(runtime_shared PUBLIC CONAN_PKG::gsl-lite CONAN_PKG::mpark-variant CONAN_PKG::xtensor)
-        target_link_libraries(runtime_shared PRIVATE kernels CONAN_PKG::fmt)
-        set_target_properties(runtime_shared PROPERTIES
-                                             OUTPUT_NAME "nncase.runtime")
-        set_property(TARGET runtime_shared PROPERTY POSITION_INDEPENDENT_CODE ON)
-        install(TARGETS runtime_shared)
-    endif()
+    add_library(nncaseruntime STATIC dummy.cpp)
+    target_link_libraries(nncaseruntime PRIVATE kernels runtime runtime_stackvm)
+    target_link_libraries(nncaseruntime PUBLIC CONAN_PKG::gsl-lite CONAN_PKG::xtensor CONAN_PKG::mpark-variant)
+    set_target_properties(nncaseruntime PROPERTIES
+                                        OUTPUT_NAME "nncase.runtime")
+    install(TARGETS nncaseruntime EXPORT nncaseruntimeTargets
+        ARCHIVE DESTINATION lib
+        LIBRARY DESTINATION lib
+        RUNTIME DESTINATION bin
+        INCLUDES DESTINATION include
+    )
+
+    install(EXPORT nncaseruntimeTargets
+            DESTINATION lib/cmake/nncaseruntime)
+    
+    configure_file(${CMAKE_CURRENT_LIST_DIR}/../../cmake/nncaseruntimeConfig.cmake.in nncaseruntimeConfig.cmake @ONLY)
+    install(FILES ${CMAKE_CURRENT_BINARY_DIR}/nncaseruntimeConfig.cmake DESTINATION lib/cmake/nncaseruntime)
+
 else()
     add_library(simulator OBJECT ${SRCS})
     target_include_directories(simulator PRIVATE ${CMAKE_CURRENT_BINARY_DIR})

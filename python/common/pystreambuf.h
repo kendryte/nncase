@@ -1,6 +1,7 @@
 // https://gist.github.com/asford/544323a5da7dddad2c9174490eb5ed06
 #pragma once
 
+#include <nncase/runtime/compiler_defs.h>
 #include <pybind11/pybind11.h>
 
 #include <iostream>
@@ -539,7 +540,7 @@ namespace detail
 
     public:
         static constexpr auto name = _("istream");
-        static handle cast([[maybe_unused]] const std::istream *src, [[maybe_unused]] return_value_policy policy, [[maybe_unused]] handle parent)
+        static handle cast(NNCASE_UNUSED const std::istream *src, NNCASE_UNUSED return_value_policy policy, NNCASE_UNUSED handle parent)
         {
             return none().release();
         }
@@ -572,7 +573,7 @@ namespace detail
 
     public:
         static constexpr auto name = _("ostream");
-        static handle cast([[maybe_unused]] const std::ostream *src, [[maybe_unused]] return_value_policy policy, [[maybe_unused]] handle parent)
+        static handle cast(NNCASE_UNUSED const std::ostream *src, NNCASE_UNUSED return_value_policy policy, NNCASE_UNUSED handle parent)
         {
             return none().release();
         }

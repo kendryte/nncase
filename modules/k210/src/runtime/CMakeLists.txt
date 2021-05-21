@@ -8,8 +8,9 @@ set(SRCS runtime_module.cpp
          ops/kpu_upload.cpp)
 
 if (BUILDING_RUNTIME)
-    add_library(runtime_k210 STATIC ${SRCS})
-    target_link_libraries(runtime_k210 PUBLIC nncase CONAN_PKG::gsl-lite)
+    add_library(runtime_k210 OBJECT ${SRCS})
+    target_link_libraries(runtime_k210 PUBLIC nncaseruntime)
+    set_target_properties(runtime_k210 PROPERTIES POSITION_INDEPENDENT_CODE ON)
 else()
     add_library(simulator_k210 OBJECT ${SRCS})
     target_link_libraries(simulator_k210 PUBLIC nncase)

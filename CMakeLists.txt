@@ -65,6 +65,9 @@ if (BUILDING_RUNTIME)
     add_subdirectory(include/nncase)
     add_subdirectory(src/kernels)
     add_subdirectory(src/runtime)
+    
+    # Python binding
+    add_subdirectory(python/nncaseruntime/native)
         
     install(DIRECTORY ${NNCASE_INCLUDE_DIR}/nncase
         DESTINATION include
