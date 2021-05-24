@@ -19,14 +19,13 @@ jobs:
       if: runner.os == 'Linux'
       shell: bash
       run: |
-        wget https://github.com/kendryte/kendryte-gnu-toolchain/releases/download/v8.2.0-20190409/kendryte-toolchain-win-amd64-8.2.0-20190409.tar.xz -O $GITHUB_WORKSPACE/kendryte-toolchain.tar.xz
+        wget https://github.com/kendryte/kendryte-gnu-toolchain/releases/download/v8.2.0-20190409/kendryte-toolchain-ubuntu-amd64-8.2.0-20190409.tar.xz -O $GITHUB_WORKSPACE/kendryte-toolchain.tar.xz
         
     - name: Install K210 Toolchains
       if: runner.os == 'Linux'
       shell: bash
       run: |
         sudo tar xf $GITHUB_WORKSPACE/kendryte-toolchain.tar.xz -C $GITHUB_WORKSPACE
-        ls -l $GITHUB_WORKSPACE/kendryte-toolchain/bin
           
     - name: Setup Python
       uses: actions/setup-python@v2.2.1
