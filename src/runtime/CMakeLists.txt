@@ -11,7 +11,7 @@ if (BUILDING_RUNTIME)
     add_library(runtime OBJECT ${SRCS})
     target_include_directories(runtime PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
     target_link_libraries(runtime PUBLIC CONAN_PKG::gsl-lite CONAN_PKG::mpark-variant CONAN_PKG::xtensor)
-    target_link_libraries(runtime PRIVATE kernels CONAN_PKG::fmt)
+    target_link_libraries(runtime PRIVATE kernels)
     set_property(TARGET runtime PROPERTY POSITION_INDEPENDENT_CODE ON)
     install(TARGETS runtime EXPORT nncaseruntimeTargets)
 

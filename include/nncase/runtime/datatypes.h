@@ -25,7 +25,7 @@
 #include <string>
 #include <type_traits>
 #include <vector>
-#include <xtensor/xshape.hpp>
+#include <xtensor/xstorage.hpp>
 
 namespace nncase
 {
