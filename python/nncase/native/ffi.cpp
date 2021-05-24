@@ -131,7 +131,9 @@ datatype_t from_dtype(py::dtype dtype)
         return dt_float32;
     else if (dtype.is(py::dtype::of<double>()))
         return dt_float64;
-    throw std::runtime_error("Unsupported dtype " + (std::string)py::str(dtype));
+    //throw std::runtime_error("Unsupported dtype " + (std::string)py::str(dtype));
+    else
+        return dt_float32;
 }
 
 runtime_shape_t to_rt_shape(const std::vector<pybind11::ssize_t> &value)
@@ -272,13 +274,14 @@ PYBIND11_MODULE(_nncase, m)
     py::class_<ptq_tensor_options>(m, "PTQTensorOptions")
         .def(py::init())
         .def_readwrite("calibrate_method", &ptq_tensor_options::calibrate_method)
-        .def("set_tensor_data", [](ptq_tensor_options &o, py::bytes bytes) {
-            uint8_t *buffer;
-            py::ssize_t length;
-            if (PyBytes_AsStringAndSize(bytes.ptr(), reinterpret_cast<char **>(&buffer), &length))
-                throw std::invalid_argument("Invalid bytes");
-            o.tensor_data.assign(buffer, buffer + length);
-        })
+        .def("set_tensor_data", [](ptq_tensor_options &o, py::bytes bytes)
+            {
+                uint8_t *buffer;
+                py::ssize_t length;
+                if (PyBytes_AsStringAndSize(bytes.ptr(), reinterpret_cast<char **>(&buffer), &length))
+                    throw std::invalid_argument("Invalid bytes");
+                o.tensor_data.assign(buffer, buffer + length);
+            })
         .def_readwrite("samples_count", &ptq_tensor_options::samples_count);
 
     py::class_<graph_evaluator>(m, "GraphEvaluator")
@@ -292,94 +295,92 @@ PYBIND11_MODULE(_nncase, m)
         .def("import_tflite", &compiler::import_tflite)
         .def("compile", &compiler::compile)
         .def("use_ptq", py::overload_cast<ptq_tensor_options>(&compiler::use_ptq))
-        .def("gencode", [](compiler &c, std::ostream &stream) {
-            c.gencode(stream);
-        })
-        .def("gencode_tobytes", [](compiler &c) {
-            std::stringstream ss;
-            c.gencode(ss);
-            return py::bytes(ss.str());
-        })
-        .def("create_evaluator", [](compiler &c, uint32_t stage) {
-            auto &graph = c.graph(stage);
-            return std::make_unique<graph_evaluator>(c.target(), graph);
-        });
+        .def("gencode", [](compiler &c, std::ostream &stream)
+            { c.gencode(stream); })
+        .def("gencode_tobytes", [](compiler &c)
+            {
+                std::stringstream ss;
+                c.gencode(ss);
+                return py::bytes(ss.str());
+            })
+        .def("create_evaluator", [](compiler &c, uint32_t stage)
+            {
+                auto &graph = c.graph(stage);
+                return std::make_unique<graph_evaluator>(c.target(), graph);
+            });
 
     py::class_<memory_range>(m, "MemoryRange")
         .def_readwrite("location", &memory_range::memory_location)
         .def_property(
-            "dtype", [](const memory_range &range) { return to_dtype(range.datatype); },
-            [](memory_range &range, py::object dtype) { range.datatype = from_dtype(py::dtype::from_args(dtype)); })
+            "dtype", [](const memory_range &range)
+            { return to_dtype(range.datatype); },
+            [](memory_range &range, py::object dtype)
+            { range.datatype = from_dtype(py::dtype::from_args(dtype)); })
         .def_readwrite("start", &memory_range::start)
         .def_readwrite("size", &memory_range::size);
 
     py::class_<runtime_tensor>(m, "RuntimeTensor")
-        .def_static("from_numpy", [](py::array arr) {
-            auto src_buffer = arr.request();
-            auto datatype = from_dtype(arr.dtype());
-            auto tensor = host_runtime_tensor::create(
-                datatype,
-                to_rt_shape(src_buffer.shape),
-                to_rt_strides(src_buffer.itemsize, src_buffer.strides),
-                gsl::make_span(reinterpret_cast<gsl::byte *>(src_buffer.ptr), src_buffer.size * src_buffer.itemsize),
-                [=](gsl::byte *) { arr.dec_ref(); })
-                              .unwrap_or_throw();
-            arr.inc_ref();
-            return tensor;
-        })
-        .def("copy_to", [](runtime_tensor &from, runtime_tensor &to) {
-            from.copy_to(to).unwrap_or_throw();
-        })
-        .def("to_numpy", [](runtime_tensor &tensor) {
-            auto host = tensor.as_host().unwrap_or_throw();
-            auto src_buffer = host_runtime_tensor::buffer(host).unwrap_or_throw();
-            return py::array(
-                to_dtype(tensor.datatype()),
-                tensor.shape(),
-                to_py_strides(runtime::get_bytes(tensor.datatype()), tensor.strides()),
-                src_buffer.data());
-        })
-        .def_property_readonly("dtype", [](runtime_tensor &tensor) {
-            return to_dtype(tensor.datatype());
-        })
-        .def_property_readonly("shape", [](runtime_tensor &tensor) {
-            return to_py_shape(tensor.shape());
-        });
+        .def_static("from_numpy", [](py::array arr)
+            {
+                auto src_buffer = arr.request();
+                auto datatype = from_dtype(arr.dtype());
+                auto tensor = host_runtime_tensor::create(
+                    datatype,
+                    to_rt_shape(src_buffer.shape),
+                    to_rt_strides(src_buffer.itemsize, src_buffer.strides),
+                    gsl::make_span(reinterpret_cast<gsl::byte *>(src_buffer.ptr), src_buffer.size * src_buffer.itemsize),
+                    [=](gsl::byte *)
+                    { arr.dec_ref(); })
+                                  .unwrap_or_throw();
+                arr.inc_ref();
+                return tensor;
+            })
+        .def("copy_to", [](runtime_tensor &from, runtime_tensor &to)
+            { from.copy_to(to).unwrap_or_throw(); })
+        .def("to_numpy", [](runtime_tensor &tensor)
+            {
+                auto host = tensor.as_host().unwrap_or_throw();
+                auto src_buffer = host_runtime_tensor::buffer(host).unwrap_or_throw();
+                return py::array(
+                    to_dtype(tensor.datatype()),
+                    tensor.shape(),
+                    to_py_strides(runtime::get_bytes(tensor.datatype()), tensor.strides()),
+                    src_buffer.data());
+            })
+        .def_property_readonly("dtype", [](runtime_tensor &tensor)
+            { return to_dtype(tensor.datatype()); })
+        .def_property_readonly("shape", [](runtime_tensor &tensor)
+            { return to_py_shape(tensor.shape()); });
 
     py::class_<interpreter>(m, "Simulator")
         .def(py::init())
-        .def("load_model", [](interpreter &interp, gsl::span<const gsl::byte> buffer) {
-            interp.load_model(buffer).unwrap_or_throw();
-        })
+        .def("load_model", [](interpreter &interp, gsl::span<const gsl::byte> buffer)
+            { interp.load_model(buffer).unwrap_or_throw(); })
         .def_property_readonly("inputs_size", &interpreter::inputs_size)
         .def_property_readonly("outputs_size", &interpreter::outputs_size)
         .def("get_input_desc", &interpreter::input_desc)
         .def("get_output_desc", &interpreter::input_desc)
-        .def("get_input_tensor", [](interpreter &interp, size_t index) {
-            return interp.input_tensor(index).unwrap_or_throw();
-        })
-        .def("set_input_tensor", [](interpreter &interp, size_t index, runtime_tensor tensor) {
-            return interp.input_tensor(index, tensor).unwrap_or_throw();
-        })
-        .def("get_output_tensor", [](interpreter &interp, size_t index) {
-            return interp.output_tensor(index).unwrap_or_throw();
-        })
-        .def("set_output_tensor", [](interpreter &interp, size_t index, runtime_tensor tensor) {
-            return interp.output_tensor(index, tensor).unwrap_or_throw();
-        })
-        .def("run", [](interpreter &interp) {
-            interp.run().unwrap_or_throw();
-        });
+        .def("get_input_tensor", [](interpreter &interp, size_t index)
+            { return interp.input_tensor(index).unwrap_or_throw(); })
+        .def("set_input_tensor", [](interpreter &interp, size_t index, runtime_tensor tensor)
+            { return interp.input_tensor(index, tensor).unwrap_or_throw(); })
+        .def("get_output_tensor", [](interpreter &interp, size_t index)
+            { return interp.output_tensor(index).unwrap_or_throw(); })
+        .def("set_output_tensor", [](interpreter &interp, size_t index, runtime_tensor tensor)
+            { return interp.output_tensor(index, tensor).unwrap_or_throw(); })
+        .def("run", [](interpreter &interp)
+            { interp.run().unwrap_or_throw(); });
 
-    m.def("test_target", [](std::string name) {
-        try
+    m.def("test_target", [](std::string name)
         {
-            auto target = plugin_loader::create_target(name);
-            return true;
-        }
-        catch (...)
-        {
-            return false;
-        }
-    });
+            try
+            {
+                auto target = plugin_loader::create_target(name);
+                return true;
+            }
+            catch (...)
+            {
+                return false;
+            }
+        });
 }

@@ -48,7 +48,9 @@ dataset::dataset(const std::filesystem::path &path, std::function<bool(const std
 
 image_dataset::image_dataset(const std::filesystem::path &path, xt::dynamic_shape<size_t> input_shape, std::string input_layout, float mean, float std)
     : dataset(
-        path, [](const std::filesystem::path &filename) { return cv::haveImageReader(filename.string()); }, std::move(input_shape), input_layout, mean, std)
+        path, [](const std::filesystem::path &filename)
+        { return cv::haveImageReader(filename.string()); },
+        std::move(input_shape), input_layout, mean, std)
 {
 }
 
@@ -69,19 +71,21 @@ void image_dataset::process(const std::vector<uint8_t> &src, float *dest, const 
 
         if (shape[3] == 3)
         {
-            dest_img.forEach<cv::Vec3f>([&](cv::Vec3f v, const int *idx) {
-                auto i = idx[0] * shape[2] + idx[1];
-                dest[i * 3] = v[2];
-                dest[i * 3 + 1] = v[1];
-                dest[i * 3 + 2] = v[0];
-            });
+            dest_img.forEach<cv::Vec3f>([&](cv::Vec3f v, const int *idx)
+                {
+                    auto i = idx[0] * shape[2] + idx[1];
+                    dest[i * 3] = v[2];
+                    dest[i * 3 + 1] = v[1];
+                    dest[i * 3 + 2] = v[0];
+                });
         }
         else if (shape[3] == 1)
         {
-            dest_img.forEach<cv::Vec3f>([&](cv::Vec3f v, const int *idx) {
-                auto i = idx[0] * shape[2] + idx[1];
-                dest[i] = v[0];
-            });
+            dest_img.forEach<cv::Vec3f>([&](cv::Vec3f v, const int *idx)
+                {
+                    auto i = idx[0] * shape[2] + idx[1];
+                    dest[i] = v[0];
+                });
         }
         else
         {
@@ -95,19 +99,21 @@ void image_dataset::process(const std::vector<uint8_t> &src, float *dest, const 
         size_t channel_size = xt::compute_size(xt::dynamic_shape<size_t> { shape[2], shape[3] });
         if (shape[1] == 3)
         {
-            dest_img.forEach<cv::Vec3b>([&](cv::Vec3b v, const int *idx) {
-                auto i = idx[0] * shape[2] + idx[1];
-                dest[i] = v[2];
-                dest[i + channel_size] = v[1];
-                dest[i + channel_size * 2] = v[0];
-            });
+            dest_img.forEach<cv::Vec3b>([&](cv::Vec3b v, const int *idx)
+                {
+                    auto i = idx[0] * shape[2] + idx[1];
+                    dest[i] = v[2];
+                    dest[i + channel_size] = v[1];
+                    dest[i + channel_size * 2] = v[0];
+                });
         }
         else if (shape[1] == 1)
         {
-            dest_img.forEach<cv::Vec3b>([&](cv::Vec3b v, const int *idx) {
-                auto i = idx[0] * shape[2] + idx[1];
-                dest[i] = v[0];
-            });
+            dest_img.forEach<cv::Vec3b>([&](cv::Vec3b v, const int *idx)
+                {
+                    auto i = idx[0] * shape[2] + idx[1];
+                    dest[i] = v[0];
+                });
         }
         else
         {
@@ -137,19 +143,21 @@ void image_dataset::process(const std::vector<uint8_t> &src, uint8_t *dest, cons
 
         if (shape[0] == 3)
         {
-            dest_img.forEach<cv::Vec3b>([&](cv::Vec3b v, const int *idx) {
-                auto i = idx[0] * shape[2] + idx[1];
-                dest[i * 3] = v[2];
-                dest[i * 3 + 1] = v[1];
-                dest[i * 3 + 2] = v[0];
-            });
+            dest_img.forEach<cv::Vec3b>([&](cv::Vec3b v, const int *idx)
+                {
+                    auto i = idx[0] * shape[2] + idx[1];
+                    dest[i * 3] = v[2];
+                    dest[i * 3 + 1] = v[1];
+                    dest[i * 3 + 2] = v[0];
+                });
         }
         else if (shape[0] == 1)
         {
-            dest_img.forEach<cv::Vec3b>([&](cv::Vec3b v, const int *idx) {
-                auto i = idx[0] * shape[2] + idx[1];
-                dest[i] = v[0];
-            });
+            dest_img.forEach<cv::Vec3b>([&](cv::Vec3b v, const int *idx)
+                {
+                    auto i = idx[0] * shape[2] + idx[1];
+                    dest[i] = v[0];
+                });
         }
         else
         {
@@ -163,19 +171,21 @@ void image_dataset::process(const std::vector<uint8_t> &src, uint8_t *dest, cons
         size_t channel_size = xt::compute_size(xt::dynamic_shape<size_t> { shape[2], shape[3] });
         if (shape[1] == 3)
         {
-            dest_img.forEach<cv::Vec3b>([&](cv::Vec3b v, const int *idx) {
-                auto i = idx[0] * shape[2] + idx[1];
-                dest[i] = v[2];
-                dest[i + channel_size] = v[1];
-                dest[i + channel_size * 2] = v[0];
-            });
+            dest_img.forEach<cv::Vec3b>([&](cv::Vec3b v, const int *idx)
+                {
+                    auto i = idx[0] * shape[2] + idx[1];
+                    dest[i] = v[2];
+                    dest[i + channel_size] = v[1];
+                    dest[i + channel_size * 2] = v[0];
+                });
         }
         else if (shape[1] == 1)
         {
-            dest_img.forEach<cv::Vec3b>([&](cv::Vec3b v, const int *idx) {
-                auto i = idx[0] * shape[2] + idx[1];
-                dest[i] = v[0];
-            });
+            dest_img.forEach<cv::Vec3b>([&](cv::Vec3b v, const int *idx)
+                {
+                    auto i = idx[0] * shape[2] + idx[1];
+                    dest[i] = v[0];
+                });
         }
         else
         {
@@ -205,19 +215,21 @@ void image_dataset::process(const std::vector<uint8_t> &src, int8_t *dest, const
 
         if (shape[0] == 3)
         {
-            dest_img.forEach<cv::Vec3b>([&](cv::Vec3b v, const int *idx) {
-                auto i = idx[0] * shape[2] + idx[1];
-                dest[i * 3] = v[2];
-                dest[i * 3 + 1] = v[1];
-                dest[i * 3 + 2] = v[0];
-            });
+            dest_img.forEach<cv::Vec3b>([&](cv::Vec3b v, const int *idx)
+                {
+                    auto i = idx[0] * shape[2] + idx[1];
+                    dest[i * 3] = v[2];
+                    dest[i * 3 + 1] = v[1];
+                    dest[i * 3 + 2] = v[0];
+                });
         }
         else if (shape[0] == 1)
         {
-            dest_img.forEach<cv::Vec3b>([&](cv::Vec3b v, const int *idx) {
-                auto i = idx[0] * shape[2] + idx[1];
-                dest[i] = v[0];
-            });
+            dest_img.forEach<cv::Vec3b>([&](cv::Vec3b v, const int *idx)
+                {
+                    auto i = idx[0] * shape[2] + idx[1];
+                    dest[i] = v[0];
+                });
         }
         else
         {
@@ -231,19 +243,21 @@ void image_dataset::process(const std::vector<uint8_t> &src, int8_t *dest, const
         size_t channel_size = xt::compute_size(xt::dynamic_shape<size_t> { shape[2], shape[3] });
         if (shape[1] == 3)
         {
-            dest_img.forEach<cv::Vec3b>([&](cv::Vec3b v, const int *idx) {
-                auto i = idx[0] * shape[2] + idx[1];
-                dest[i] = v[2];
-                dest[i + channel_size] = v[1];
-                dest[i + channel_size * 2] = v[0];
-            });
+            dest_img.forEach<cv::Vec3b>([&](cv::Vec3b v, const int *idx)
+                {
+                    auto i = idx[0] * shape[2] + idx[1];
+                    dest[i] = v[2];
+                    dest[i + channel_size] = v[1];
+                    dest[i + channel_size * 2] = v[0];
+                });
         }
         else if (shape[1] == 1)
         {
-            dest_img.forEach<cv::Vec3b>([&](cv::Vec3b v, const int *idx) {
-                auto i = idx[0] * shape[2] + idx[1];
-                dest[i] = v[0];
-            });
+            dest_img.forEach<cv::Vec3b>([&](cv::Vec3b v, const int *idx)
+                {
+                    auto i = idx[0] * shape[2] + idx[1];
+                    dest[i] = v[0];
+                });
         }
         else
         {
@@ -258,7 +272,9 @@ void image_dataset::process(const std::vector<uint8_t> &src, int8_t *dest, const
 
 raw_dataset::raw_dataset(const std::filesystem::path &path, xt::dynamic_shape<size_t> input_shape, float mean, float std)
     : dataset(
-        path, []([[maybe_unused]] const std::filesystem::path &filename) { return true; }, std::move(input_shape), "", mean, std)
+        path, []([[maybe_unused]] const std::filesystem::path &filename)
+        { return true; },
+        std::move(input_shape), "", mean, std)
 {
 }
 
@@ -299,5 +315,6 @@ void raw_dataset::process(const std::vector<uint8_t> &src, int8_t *dest, const x
             + std::to_string(expected_size) + "B, but got " + std::to_string(actual_size) + "B");
     }
 
-    std::copy(src.begin(), src.end(), dest);
+    auto data = reinterpret_cast<const int8_t *>(src.data());
+    std::copy(data, data + actual_size / sizeof(int8_t), dest);
 }

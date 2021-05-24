@@ -260,11 +260,11 @@ private:
 
             if (!compile_options_.use_dataset_as_input_stat)
             {
-                auto min = (0.f - compile_options_.input_mean) / compile_options_.input_std;
-                auto max = (1.f - compile_options_.input_mean) / compile_options_.input_std;
-                value_range<float> input_range { min, max };
-                quant->set(graph.inputs()[0]->output(), input_range);
-                quant->record(graph.inputs()[0]->output(), input_range);
+                // auto min = (0.f - compile_options_.input_mean) / compile_options_.input_std;
+                // auto max = (1.f - compile_options_.input_mean) / compile_options_.input_std;
+                // value_range<float> input_range { min, max };
+                // quant->set(graph.inputs()[0]->output(), input_range);
+                // quant->record(graph.inputs()[0]->output(), input_range);
             }
 
             // broadcast quant ranges
@@ -477,6 +477,13 @@ private:
         total_usage += build_result.model_size;
         std::cout << "TOTAL"
                   << "\t" << format_size(total_usage) << std::endl;
+
+        std::ofstream file(compile_options_.dump_dir / "memory_usage.txt", std::ofstream::app);
+        file << "input: " << format_size(mod_builder.max_usage(mem_input)) << std::endl;
+        file << "output: " << format_size(mod_builder.max_usage(mem_output)) << std::endl;
+        file << "data: " << format_size(mod_builder.max_usage(mem_data)) << std::endl;
+        file << "MODEL: " << format_size(build_result.model_size) << std::endl;
+        file << "TOTAL: " << format_size(total_usage) << std::endl;
     }
 
     size_t dump_memory_usage(codegen::model_builder &mod_builder, memory_location_t location, std::string_view name)

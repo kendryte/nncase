@@ -59,8 +59,8 @@ struct ptq_dataset_options
     std::string dataset_format;
     std::function<void(size_t cnt, size_t total)> progress;
 
-    float input_mean = 0.f;
-    float input_std = 1.f;
+    float input_mean = 0.5f;
+    float input_std = 0.5f;
 };
 
 struct ptq_tensor_options

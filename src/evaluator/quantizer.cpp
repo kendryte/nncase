@@ -201,15 +201,113 @@ void quantizer::end_collect_distribution(std::function<void(size_t cnt, size_t t
     }
 }
 
-quant_param_t quantizer::get_quant_param(value_range<float> range, int32_t bits)
+quant_param_t quantizer::get_quant_param(value_range<float> range, int32_t bits, int32_t mode)
 {
-    range = fixup_range(range);
-    auto Q_max = bits == 7 ? 127 : 255;
-    auto Q_min = bits == 7 ? -128 : 0;
-    auto r = range.max - range.min;
-    auto scale = r / (Q_max - Q_min);
-    auto bias = std::round((range.max * Q_min - range.min * Q_max) / r);
-    return { static_cast<int32_t>(bias), scale };
+    auto flag = mode;
+    if (flag == 0)
+    {
+        range = fixup_range(range);
+        auto Q_max = bits == 7 ? 127 : 255;
+        auto Q_min = bits == 7 ? -128 : 0;
+        // auto Q_max = 127;
+        // auto Q_min = -128;
+        auto r_max = range.max;
+        auto r_min = range.min;
+        // size_t circle = 1;
+        float scale = 0, bias = 0, deta = 1;
+        // int count = 10;
+        do
+        {
+            auto r = r_max - r_min;
+            scale = r / (Q_max - Q_min);
+            auto bias_full = (range.max * Q_min - range.min * Q_max) / r;
+            std::cout << "source bias:\t" << bias_full << std::endl;
+            bias = std::round((range.max * Q_min - range.min * Q_max) / r);
+            deta = bias_full - (float)bias;
+            std::cout << "deta:\t" << deta << std::endl;
+            if (deta > 0)
+            {
+                r_max += deta;
+            }
+            else
+            {
+                r_min += deta;
+            }
+            // r = r_max - r_min;
+        } while (abs(deta > 0.02));
+
+        // if (bits == 8)
+        //     bias += 128;
+        std::cout
+            << "range:\n"
+            << "min:\t" << range.min << "\nmax:\t" << range.max << std::endl;
+        std::cout << "params:\n"
+                  << "scale:\t" << scale << "\nbias:\t" << bias << std::endl;
+        return { static_cast<int32_t>(bias), scale };
+    }
+    else if (flag == 1)
+    {
+        // range = fixup_range(range);
+        // auto Q_max = bits == 7 ? 127 : 255;
+        // auto Q_min = bits == 7 ? -128 : 0;
+        // // auto Q_max = 127;
+        // // auto Q_min = -128;
+        // auto r_max = range.max;
+        // auto r_min = range.min;
+        // // size_t circle = 1;
+        // float scale = 0, bias = 0;
+
+        // auto r = r_max - r_min;
+        // scale = r / (Q_max - Q_min);
+        // auto bias_full = (range.max * Q_min - range.min * Q_max) / r;
+        // std::cout << "source bias:\t" << bias_full << std::endl;
+        // bias = std::round((range.max * Q_min - range.min * Q_max) / r);
+        // r_max = std::max(r_max, (Q_max + bias) * scale);
+        // r_min = std::min(r_min, (Q_min + bias) * scale);
+        // ;
+        // r = r_max - r_min;
+        // scale = r / (Q_max - Q_min);
+        // bias = std::round((r_max * Q_min - r_min * Q_max) / r);
+
+        // // if (bits == 8)
+        // //     bias += 128;
+        // std::cout
+        //     << "range:\n"
+        //     << "min:\t" << range.min << "\nmax:\t" << range.max << std::endl;
+        // std::cout << "params:\n"
+        //           << "scale:\t" << scale << "\nbias:\t" << bias << std::endl;
+        // return { static_cast<int32_t>(bias), scale };
+        range = fixup_range(range);
+        auto r_max = range.max;
+        auto r_min = range.min;
+        auto Q_max = bits == 7 ? 127 : 255;
+        auto Q_min = bits == 7 ? -128 : 0;
+        auto r = r_max - r_min;
+        auto scale = r / (Q_max - Q_min);
+        // auto bias_full = (range.max * Q_min - range.min * Q_max) / r;
+        auto bias = std::round((range.max * Q_min - range.min * Q_max) / r);
+        // auto Q_r = Q_max - Q_min;
+        // r_max = std::max(r_max, (bias * Q_r + r_min * Q_max) / Q_min);
+        // r_min = std::min(r_min, (r_max * Q_min - bias * Q_r) / Q_max);
+        r_max = std::max(r_max, (Q_max + bias) * scale);
+        r_min = std::min(r_min, (Q_min + bias) * scale);
+
+        r = r_max - r_min;
+        scale = r / (Q_max - Q_min);
+        bias = std::round((range.max * Q_min - range.min * Q_max) / r);
+        // std::cout << "params:\n"
+        //           << "scale:\t" << scale << "\nbias:\t" << bias << std::endl;
+        return { static_cast<int32_t>(bias), scale };
+    }
+    else //if (flag == 2)
+    {
+        range = fixup_range(range);
+        auto Q_max = bits == 7 ? 127 : 255;
+        auto Q_min = bits == 7 ? -128 : 0;
+        auto scale = (range.max - range.min) / (Q_max - Q_min);
+        auto bias = std::round((range.max * Q_min - range.min * Q_max) / (range.max - range.min));
+        return { static_cast<int32_t>(bias), scale };
+    }
 }
 
 value_range<float> quantizer::get(ir::output_connector &connector) const
@@ -426,7 +524,7 @@ void quantizer::histogram::finish()
             }
         }
     }
-    else if (cali_method_ == calibrate_method::no_clip)
+    else if (cali_method_ == calibrate_method::l2)
     {
         auto min_loss = std::numeric_limits<float>::max();
 
