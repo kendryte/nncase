@@ -37,6 +37,13 @@ conan_add_remote(NAME bincrafts URL https://api.bintray.com/conan/bincrafters/pu
 
 option(NNCASE_OPENMP "openmp support" OFF)
 
+if(NNCASE_OPENMP)
+    find_package(OpenMP REQUIRED)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    add_definitions("-DNNCASE_OPENMP")
+    message("Enable NNCASE_OPENMP")
+endif()
+
 if (BUILDING_RUNTIME)
     option(BUILD_SHARED_LIBS "Build shared libraries (.dll/.so) instead of static ones (.lib/.a)" ON)
     conan_cmake_run(CONANFILE conanfile-runtime.txt
@@ -97,13 +104,6 @@ else()
 
     find_package (Protobuf REQUIRED)
     include(cmake/flatc.cmake)
-
-    if(NNCASE_OPENMP)
-        find_package(OpenMP REQUIRED)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-        add_definitions("-DNNCASE_OPENMP")
-        message("Enable NNCASE_OPENMP")
-    endif()
 
     set(NNCASE_MAIN_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
     set(NNCASE_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include)

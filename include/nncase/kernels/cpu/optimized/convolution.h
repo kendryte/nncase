@@ -20,7 +20,7 @@
 #include <utility>
 #ifdef NNCASE_OPENMP
 #include <omp.h>
-#define GET_NUM_THREADS std::is_convertible_v<nncase::runtime::stackvm::stackvm_kernel_context &, decltype(context)> ? static_cast<nncase::runtime::stackvm::stackvm_kernel_context &>(context).num_threads_ : 1
+#define GET_NUM_THREADS std::is_convertible<nncase::runtime::stackvm::stackvm_kernel_context &, decltype(context)>::value ? static_cast<nncase::runtime::stackvm::stackvm_kernel_context &>(context).num_threads_ : 1
 #endif
 
 BEGIN_NS_NNCASE_KERNELS_CPU_OPT
@@ -31,43 +31,10 @@ constexpr size_t compute_rsize()
     return Filter + std::min(Stride, Filter) * (Parallel - 1);
 }
 
-template <typename T, size_t... W>
-void conv1xM(T &sum, const T *r, const T *k, std::index_sequence<W...>)
-{
-    ((sum += r[W] * k[W]), ...);
-}
-
-template <size_t R, size_t Filter_h, size_t Filter_w, typename T, size_t N,
-    size_t... H>
-void convNxM(T &sum, std::array<const T *, N> &r, std::array<const T *, Filter_h> &k,
-    std::index_sequence<H...>)
-{
-    (conv1xM(sum, r[R + H], k[H], std::make_index_sequence<Filter_w> {}), ...);
-}
-
-template <size_t R, size_t Filter_h, size_t Filter_w, typename T, size_t N>
-void convNxM(T &sum, std::array<const T *, N> &r, std::array<const T *, Filter_h> &k)
-{
-    convNxM<R, Filter_h, Filter_w>(sum, r, k,
-        std::make_index_sequence<Filter_h> {});
-}
-
-template <size_t Parallel, size_t P, size_t Stride_h, size_t Filter_h,
-    size_t Filter_w, typename T, size_t N, size_t X>
-void convNxM(std::array<T, X> &sum, std::array<const T *, N> &r,
-    std::array<const T *, Filter_h> &k)
-{
-    convNxM<P * std::min(Stride_h, Filter_h), Filter_h, Filter_w>(sum[P], r, k);
-    if constexpr (P < Parallel - 1)
-    {
-        convNxM<Parallel, P + 1, Stride_h, Filter_h, Filter_w, T, N, X>(sum, r, k);
-    }
-}
-
 template <typename T, size_t N, size_t... I>
 void binding_ptr(std::array<T, N> &a, T base, size_t step, size_t start, std::index_sequence<I...>)
 {
-    ((a[start + I] = base + step * I), ...);
+    NNCASE_UNUSED int dummy[] = { 0, (a[start + I] = base + step * I, 0)... };
 }
 
 template <size_t Filter, typename T, size_t N>
@@ -79,9 +46,8 @@ void binding_ptr(std::array<T, N> &a, T base, size_t step, size_t start = 0)
 template <size_t Stride, size_t Filter, typename T, size_t N, size_t... P>
 void binding_ptr(std::array<T, N> &a, T base, size_t step, std::index_sequence<P...>)
 {
-    (binding_ptr<Filter>(a, base + P * Stride * step, step,
-         P * std::min(Filter, Stride)),
-        ...);
+    // ();
+    NNCASE_UNUSED int dummy[] = { 0, (binding_ptr<Filter>(a, base + P * Stride * step, step, P * std::min(Filter, Stride)), 0)... };
 }
 
 template <size_t Parallel, size_t Stride, size_t Filter, typename T, size_t N>
@@ -90,72 +56,109 @@ void binding_ptr(std::array<T, N> &a, T base, size_t step)
     binding_ptr<Stride, Filter>(a, base, step, std::make_index_sequence<Parallel>());
 }
 
+namespace impl
+{
+
+template <typename T, size_t... W>
+void conv1xM(T &sum, const T *r, const T *k, std::index_sequence<W...>)
+{
+    NNCASE_UNUSED int dummy[] = { 0, (sum += r[W] * k[W], 0)... };
+}
+
+template <size_t R, size_t Filter_h, size_t Filter_w, typename T, size_t N,
+    size_t... H>
+void convNxM(T &sum, std::array<const T *, N> &r, std::array<const T *, Filter_h> &k,
+    std::index_sequence<H...>)
+{
+    NNCASE_UNUSED int dummy[] = { 0, (conv1xM(sum, r[R + H], k[H], std::make_index_sequence<Filter_w> {}), 0)... };
+}
+
+template <size_t R, size_t Filter_h, size_t Filter_w, typename T, size_t N>
+void convNxM(T &sum, std::array<const T *, N> &r, std::array<const T *, Filter_h> &k)
+{
+    convNxM<R, Filter_h, Filter_w>(sum, r, k, std::make_index_sequence<Filter_h> {});
+}
+
 template <typename T, size_t N, size_t... I>
 void binding_value(std::array<T *, N> &a, std::array<T, N> &b, std::index_sequence<I...>)
 {
-    ((*a[I] += b[I]), ...);
-}
 
-/**
- * @brief binding value for output, *out[i]+=in[i], i ≤ Parallel ≤ N
- * 
- * @tparam Parallel current for loop times
- * @tparam Array 
- * @tparam T 
- * @tparam N
- * @param output
- * @param value
- */
-template <size_t Parallel, typename T, size_t N>
-void binding_value(std::array<T *, N> &output, std::array<T, N> &value)
-{
-    binding_value(output, value, std::make_index_sequence<Parallel> {});
+    NNCASE_UNUSED int dummy[] = { 0, (*a[I] += b[I], 0)... };
 }
 
 template <typename Array, size_t... I>
 void increase_n(Array &a, size_t step, std::index_sequence<I...>)
 {
-    ((a[I] += step), ...);
+    NNCASE_UNUSED int dummy[] = { 0, (a[I] += step, 0)... };
 }
 
-/**
- * @brief array self increase , a[i]+=step, i ≤ N ≤ A.size()
- * 
- * @tparam N 
- * @param a 
- * @param step 
- */
 template <size_t N, typename Array>
-void increase_n(Array &a, size_t step = 1)
+void increase_n(NNCASE_UNUSED Array &a, NNCASE_UNUSED size_t step, std::false_type)
+{
+}
+
+template <size_t N, typename Array>
+void increase_n(Array &a, size_t step, std::true_type)
 {
     increase_n(a, step, std::make_index_sequence<N> {});
 }
 
+} // namespace impl
+
+template <size_t Parallel, typename T, size_t N>
+void binding_value(std::array<T *, N> &output, std::array<T, N> &value)
+{
+    impl::binding_value(output, value, std::make_index_sequence<Parallel> {});
+}
+
+template <size_t N, typename Array>
+void increase_n(Array &a, size_t step = 1)
+{
+    impl::increase_n<N>(a, step, std::integral_constant<bool, std::isgreater(N, 0)> {});
+}
+
+template <size_t Parallel, size_t P, size_t Stride_h, size_t Filter_h,
+    size_t Filter_w, typename T, size_t N, size_t X>
+void convNxM(NNCASE_UNUSED std::array<T, X> &sum, NNCASE_UNUSED std::array<const T *, N> &r,
+    NNCASE_UNUSED std::array<const T *, Filter_h> &k, std::false_type)
+{
+}
+
+template <size_t Parallel, size_t P, size_t Stride_h, size_t Filter_h,
+    size_t Filter_w, typename T, size_t N, size_t X>
+void convNxM(std::array<T, X> &sum, std::array<const T *, N> &r,
+    std::array<const T *, Filter_h> &k, std::true_type)
+{
+    impl::convNxM<P * std::min(Stride_h, Filter_h), Filter_h, Filter_w>(sum[P], r, k);
+    convNxM<Parallel, P + 1, Stride_h, Filter_h, Filter_w, T, N, X>(sum, r, k, std::integral_constant<bool, std::isless(P + 1, Parallel)> {});
+}
+
+template <size_t LocalParallel, size_t Filter_h, size_t Filter_w, size_t Stride_h, size_t Stride_w, typename T, size_t R, size_t Parallel>
+void conv2dChannel(NNCASE_UNUSED size_t &i, NNCASE_UNUSED size_t out_h, NNCASE_UNUSED size_t out_w, NNCASE_UNUSED std::array<T, Parallel> &sum, NNCASE_UNUSED std::array<const T *, R> &r, NNCASE_UNUSED std::array<const T *, Filter_h> k,
+    NNCASE_UNUSED std::array<T *, Parallel> outptr, NNCASE_UNUSED size_t in_w_step, NNCASE_UNUSED size_t out_w_step, NNCASE_UNUSED size_t tail_step, std::false_type)
+{
+}
+
 template <size_t LocalParallel, size_t Filter_h, size_t Filter_w, size_t Stride_h, size_t Stride_w, typename T, size_t R, size_t Parallel>
 void conv2dChannel(size_t &i, size_t out_h, size_t out_w, std::array<T, Parallel> &sum, std::array<const T *, R> &r, std::array<const T *, Filter_h> k,
-    std::array<T *, Parallel> outptr, size_t in_w_step, size_t out_w_step, size_t tail_step)
+    std::array<T *, Parallel> outptr, size_t in_w_step, size_t out_w_step, size_t tail_step, std::true_type)
 {
     for (; i + (LocalParallel - 1) < out_h; i += LocalParallel)
     {
         for (size_t remain = 0; remain < out_w; remain++)
         {
             std::fill_n(sum.begin(), LocalParallel, 0);
-            convNxM<LocalParallel, 0, Stride_h, Filter_h, Filter_w>(sum, r, k);
+            convNxM<LocalParallel, 0, Stride_h, Filter_h, Filter_w>(sum, r, k, std::true_type {});
             binding_value<LocalParallel>(outptr, sum);
             increase_n<compute_rsize<LocalParallel, Stride_h, Filter_h>()>(r, Stride_w);
             increase_n<LocalParallel>(outptr, 1);
         }
         increase_n<compute_rsize<LocalParallel, Stride_h, Filter_h>()>(r,
             (Stride_h * LocalParallel - 1) * in_w_step + tail_step);
-        if constexpr (LocalParallel > 1)
-        {
-            increase_n<LocalParallel>(outptr, out_w_step * (LocalParallel - 1));
-        }
+        increase_n<LocalParallel>(outptr, out_w_step * (LocalParallel - 1));
     }
-    if constexpr (LocalParallel > 1)
-    {
-        conv2dChannel<LocalParallel / 2, Filter_h, Filter_w, Stride_h, Stride_w>(i, out_h, out_w, sum, r, k, outptr, in_w_step, out_w_step, tail_step);
-    }
+    conv2dChannel<LocalParallel / 2, Filter_h, Filter_w, Stride_h, Stride_w>(i, out_h, out_w, sum,
+        r, k, outptr, in_w_step, out_w_step, tail_step, std::integral_constant<bool, std::isgreater(LocalParallel, 1)> {});
 }
 
 template <size_t LocalParallel, size_t Filter_h, size_t Filter_w, size_t Stride_h, size_t Stride_w, typename T, size_t R, size_t Parallel>
@@ -163,7 +166,7 @@ void conv2dChannel(size_t out_h, size_t out_w, std::array<T, Parallel> &sum, std
     std::array<T *, Parallel> outptr, size_t in_w_step, size_t out_w_step, size_t tail_step)
 {
     size_t i = 0;
-    conv2dChannel<LocalParallel, Filter_h, Filter_w, Stride_h, Stride_w>(i, out_h, out_w, sum, r, k, outptr, in_w_step, out_w_step, tail_step);
+    conv2dChannel<LocalParallel, Filter_h, Filter_w, Stride_h, Stride_w>(i, out_h, out_w, sum, r, k, outptr, in_w_step, out_w_step, tail_step, std::true_type {});
 }
 
 result<void> conv2d_1x1_s1(const float *input, const float *weights, const float *bias, float *output,

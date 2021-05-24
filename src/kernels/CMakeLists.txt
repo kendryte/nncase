@@ -8,7 +8,7 @@ set(SRCS convolution.cpp
 if (BUILDING_RUNTIME)
     add_library(kernels OBJECT ${SRCS})
     target_include_directories(kernels PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
-    target_link_libraries(kernels PUBLIC CONAN_PKG::gsl-lite CONAN_PKG::mpark-variant CONAN_PKG::xtensor OpenMP::OpenMP_CXX)
+    target_link_libraries(kernels PUBLIC CONAN_PKG::gsl-lite CONAN_PKG::mpark-variant CONAN_PKG::xtensor)
     target_link_libraries(kernels PRIVATE CONAN_PKG::fmt)
     set_property(TARGET kernels PROPERTY POSITION_INDEPENDENT_CODE ON)
     install(TARGETS kernels EXPORT nncaseruntimeTargets)
