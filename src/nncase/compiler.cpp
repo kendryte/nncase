@@ -22,6 +22,9 @@
 #include <nncase/io_utils.h>
 #include <nncase/ir/debug.h>
 #include <nncase/ir/evaluator.h>
+#include <nncase/runtime/datatypes.h>
+#include <nncase/transforms/neutral/add_quant_motion.h>
+#include <nncase/transforms/neutral/fold_io_quant_motion.h>
 #include <nncase/transforms/pass.h>
 #include <variant>
 
@@ -45,6 +48,15 @@ calibrate_method to_calibrate_method(std::string name)
     if (name == "cdf")
         return calibrate_method::cdf;
     return calibrate_method::no_clip;
+}
+
+datatype_t to_datatype_method(std::string name)
+{
+    if (name == "uint8")
+        return datatype_t::dt_uint8;
+    if (name == "int8")
+        return datatype_t::dt_int8;
+    return datatype_t::dt_float32;
 }
 
 void do_dump_graph(ir::graph &graph, std::ostream &output)
@@ -74,6 +86,29 @@ void do_dump_graph(ir::graph &graph, std::ostream &output)
     }
 
     output << "}" << std::endl;
+}
+
+std::string format_size(size_t size)
+{
+    size_t index = 0;
+    double display_size = (double)size;
+    std::vector<std::string> size_surfix { "B", "KB", "MB" };
+    while (index < size_surfix.size() - 1)
+    {
+        if (display_size >= 1024)
+        {
+            display_size /= 1024;
+            index++;
+        }
+        else
+        {
+            break;
+        }
+    }
+
+    std::stringstream ss;
+    ss << std::setfill(' ') << std::setw(7) << std::fixed << std::setprecision(2) << display_size << ' ' << size_surfix[index] << '\t' << "(" << size << " B)";
+    return ss.str();
 }
 
 class compiler_impl : public compiler
@@ -172,9 +207,9 @@ public:
         auto schr = sch.schedule();
         model_builder builder(*target_, schr);
         builder.config_dump(compile_options_.dump_dir, compile_options_.dump_asm);
-        builder.build(output);
+        auto result = builder.build(output);
 
-        dump_summary(graph_);
+        dump_summary(graph_, builder, result);
     }
 
 private:
@@ -188,9 +223,7 @@ private:
 
     void optimize_target_independent(ir::graph &graph)
     {
-        run_passes("target_indep", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr) {
-            target_->register_target_independent_passes(module_type, pmgr);
-        });
+        run_passes("target_indep", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr) { target_->register_target_independent_passes(module_type, pmgr); });
     }
 
     void optimize_merge_module_regions(ir::graph &graph)
@@ -201,33 +234,58 @@ private:
 
     void optimize_target_dependent(ir::graph &graph)
     {
-        run_passes("target_dep", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr) {
-            target_->register_target_dependent_passes(module_type, pmgr);
-        });
+        run_passes("target_dep", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr) { target_->register_target_dependent_passes(module_type, pmgr); });
     }
 
     void optimize_target_dependent_after_quant(ir::graph &graph)
     {
-        run_passes("target_dep_after_quant", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr) {
-            target_->register_target_dependent_after_quantization_passes(module_type, pmgr);
-        });
+        run_passes("target_dep_after_quant", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr) { target_->register_target_dependent_after_quantization_passes(module_type, pmgr); });
     }
 
     void add_quantize_annotation(ir::graph &graph)
     {
-        run_passes("quantize_annotation", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr) {
-            target_->register_quantize_annotation_passes(module_type, pmgr);
-        });
+        run_passes("quantize_annotation", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr) { target_->register_quantize_annotation_passes(module_type, pmgr); });
     }
 
     void quantize_graph(ir::graph &graph, ir::evaluator &evaluator)
     {
         auto graph_runner = [&](ir::graph &graph) {
             ir::transforms::pass_manager pmgr(graph, *target_);
-            pmgr.quantizer(evaluator.module_context(graph).quantizer());
+            auto quant = evaluator.module_context(graph).quantizer();
+
+            if (!compile_options_.use_dataset_as_input_stat)
+            {
+                auto min = (0.f - compile_options_.input_mean) / compile_options_.input_std;
+                auto max = (1.f - compile_options_.input_mean) / compile_options_.input_std;
+                value_range<float> input_range { min, max };
+                quant->set(graph.inputs()[0]->output(), input_range);
+                quant->record(graph.inputs()[0]->output(), input_range);
+            }
+
+            // broadcast quant ranges
+            std::unordered_set<node_opcode> opcodes;
+            target_->add_quantization_broadcast(opcodes);
+            quant->broadcast_output(graph, opcodes);
+
+            ir::transforms::pass p("process i&o node");
+
+            if (use_ptq_)
+            {
+                if (compile_options_.input_type != "float32")
+                    p.emplace<nncase::ir::transforms::add_input_dequantize_transform>(to_datatype_method(compile_options_.input_type));
+
+                if (compile_options_.output_type != "float32")
+                    p.emplace<nncase::ir::transforms::add_output_quantize_transform>(to_datatype_method(compile_options_.output_type));
+                pmgr.add_pass(std::move(p));
+            }
+
+            pmgr.quantizer(quant);
             if (compile_options_.dump_ir)
                 pmgr.dump_dir(compile_options_.dump_dir);
-            target_->register_quantize_passes(graph.module_type(), pmgr);
+            if (to_datatype_method(compile_options_.input_type) == dt_float32)
+                target_->register_quantize_passes(graph.module_type(), pmgr, dt_uint8);
+            else
+                target_->register_quantize_passes(graph.module_type(), pmgr, to_datatype_method(compile_options_.input_type));
             pmgr.run();
             dump_graph(graph, "quantize");
         };
@@ -274,6 +332,9 @@ private:
                 break;
             case dt_uint8:
                 run_calibration_eval<uint8_t>(options, *ds, evaluator);
+                break;
+            case dt_int8:
+                run_calibration_eval<int8_t>(options, *ds, evaluator);
                 break;
             default:
                 throw std::runtime_error("Unsupported input datatype: " + std::string(datatype_names(in_type)));
@@ -387,7 +448,7 @@ private:
         }
     }
 
-    void dump_summary(ir::graph &graph)
+    void dump_summary(ir::graph &graph, codegen::model_builder &mod_builder, codegen::build_model_result build_result)
     {
         std::cout << "\nSUMMARY" << std::endl;
         std::cout << "INPUTS" << std::endl;
@@ -400,6 +461,23 @@ private:
         i = 0;
         for (auto &out : graph.outputs())
             std::cout << i++ << "\t" << out->name() << "\t" << datatype_names(out->input().type()) << ir::to_string(out->input().shape()) << std::endl;
+        std::cout << "\nMEMORY USAGES" << std::endl;
+        size_t total_usage = 0;
+        total_usage += dump_memory_usage(mod_builder, mem_input, ".input");
+        total_usage += dump_memory_usage(mod_builder, mem_output, ".output");
+        total_usage += dump_memory_usage(mod_builder, mem_data, ".data");
+        std::cout << "MODEL"
+                  << "\t" << format_size(build_result.model_size) << std::endl;
+        total_usage += build_result.model_size;
+        std::cout << "TOTAL"
+                  << "\t" << format_size(total_usage) << std::endl;
+    }
+
+    size_t dump_memory_usage(codegen::model_builder &mod_builder, memory_location_t location, std::string_view name)
+    {
+        auto usage = mod_builder.max_usage(location);
+        std::cout << name << "\t" << format_size(usage) << std::endl;
+        return usage;
     }
 
 private:

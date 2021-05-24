@@ -242,7 +242,8 @@ typedef enum _pad_mode
 {
     pad_constant,
     pad_reflect,
-    pad_symmetric
+    pad_symmetric,
+    pad_edge
 } pad_mode_t;
 
 typedef struct _quant_param

@@ -62,6 +62,9 @@ public:
         case dt_uint8:
             eval<uint8_t>(*ds);
             break;
+        case dt_int8:
+            eval<int8_t>(*ds);
+            break;
         default:
             throw std::runtime_error("Unsupported input datatype: " + std::string(datatype_names(in_type)));
         }

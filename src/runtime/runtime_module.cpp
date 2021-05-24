@@ -193,10 +193,17 @@ result<void> runtime_module::initialize(const module_header &header, interpreter
                                                                     \
     auto &info = name##_tensors_[index];                            \
     if (info.bind_tensor.empty())                                   \
+    {                                                               \
         try_set(info.bind_tensor, allocate_##name##_tensor(index)); \
-    return ok(info.bind_tensor)
+    }                                                               \
+    if (!info.device_tensor.empty())                                \
+    {                                                               \
+        return ok(info.device_tensor);                              \
+    }                                                               \
+    return ok(info.bind_tensor);
 
-result<runtime_tensor> runtime_module::input_tensor(size_t index) noexcept
+result<runtime_tensor>
+runtime_module::input_tensor(size_t index) noexcept
 {
     INOUT_TENSOR_GETTER_IMPL(input);
 }

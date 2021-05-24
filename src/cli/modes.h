@@ -33,7 +33,8 @@ struct compile_options
     std::string output_format = "kmodel";
     std::string target = "k210";
     std::string inference_type = "uint8";
-    std::string input_type = "default";
+    std::string input_type = "float32";
+    std::string output_type = "float32";
     std::string calibrate_method = "no_clip";
     float input_mean = 0.f;
     float input_std = 1.f;

@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <nncase/ir/ops/concat.h>
 #include <nncase/ir/ops/convert.h>
 #include <nncase/ir/visitor.h>
 #include <nncase/transforms/neutral/remove_convert.h>
@@ -76,4 +77,50 @@ void remove_convert::process(transform_context &context)
 
     for (auto &in : dup(inputs))
         in->connect(output);
+}
+
+bool remove_concat_convert::on_try_match(node &node, transform_context &context)
+{
+    if (auto cct = node_cast<concat>(node))
+    {
+        if (cct->output().type() != quant_type_)
+        {
+            for (auto &it : cct->inputs())
+                context.inputs.emplace_back(it);
+
+            context.outputs.emplace_back(&cct->output());
+            context.matched_nodes.emplace_back(cct);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void remove_concat_convert::process(transform_context &context)
+{
+    auto inputs = context.outputs[0]->connections();
+    auto &old_concat = static_cast<concat &>(*context.matched_nodes[0]);
+
+    std::vector<shape_t> in_shape;
+    for (size_t it = 0; it < context.inputs.size(); ++it)
+    {
+        in_shape.emplace_back(context.inputs[it]->shape());
+    }
+    auto new_concat = context.graph.emplace<concat>(quant_type_, in_shape, old_concat.axis());
+    new_concat->name(old_concat.name());
+    for (size_t i = 0; i < context.inputs.size(); ++i)
+    {
+        auto &output = *context.inputs[i]->connection();
+        auto in_cvt = context.graph.emplace<convert>(old_concat.output().type(), output.owner().output_at(0).shape(), quant_type_);
+        in_cvt->name(new_concat->name() + "/in_convert_" + char(i));
+        in_cvt->input().connect(output);
+        new_concat->input_at(i).connect(in_cvt->output());
+    }
+    auto out_cvt = context.graph.emplace<convert>(quant_type_, new_concat->output().shape(), old_concat.output().type());
+    out_cvt->name(new_concat->name() + "/out_convert");
+
+    out_cvt->input().connect(new_concat->output());
+    for (auto &in : dup(inputs))
+        in->connect(out_cvt->output());
 }

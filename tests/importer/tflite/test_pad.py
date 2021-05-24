@@ -31,23 +31,28 @@ def _make_module(in_shape, paddings, mode, const):
             return tf.pad(x, paddings, mode, const)
     return PadModule()
 
+
 in_shapes = [
     [3],
     [64, 3],
     [3, 64, 3],
-    [8, 3, 64, 3]
+    [8, 4, 64, 3]
 ]
 
 paddings = [
     [[1, 0]],
     [[0, 1]],
-    [[3, 2],[1, 1]],
-    [[0, 1],[3, 2],[1, 1]],
-    [[0, 1],[3, 2],[0, 0],[1, 1]],
+    [[3, 2], [1, 1]],
+    [[0, 1], [3, 2], [1, 1]],
+    [[0, 1], [3, 2], [0, 0], [1, 1]],
 ]
 
 modes = [
-    'CONSTANT'
+    'CONSTANT',
+    # tf assert, padding < in_shape ? correct : mixed result
+    'REFLECT',
+    'SYMMETRIC',
+    # 'EDGE'
 ]
 
 constants = [
@@ -63,7 +68,8 @@ constants = [
 def test_pad(in_shape, paddings, mode, constant, request):
     if len(in_shape) == len(paddings):
         module = _make_module(in_shape, paddings, mode, constant)
-        test_util.test_tf_module(request.node.name, module, ['cpu', 'k210', 'k510'])
+        test_util.test_tf_module(
+            request.node.name, module, ['cpu', 'k210', 'k510'])
 
 
 if __name__ == "__main__":

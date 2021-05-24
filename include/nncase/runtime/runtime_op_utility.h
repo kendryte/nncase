@@ -40,10 +40,24 @@ inline size_t get_bytes(datatype_t type, const runtime_shape_t &shape)
 
 inline size_t compute_size(const runtime_shape_t &shape, const runtime_shape_t &strides)
 {
-    size_t data_size = 0;
-    for (size_t i = 0; i < shape.size(); i++)
-        data_size += (shape[i] - 1) * strides[i];
-    data_size += strides.back() ? strides.back() : 1;
+    size_t data_size = 1;
+    std::vector<size_t> index(shape.size());
+    std::iota(index.begin(), index.end(), 0);
+    std::sort(index.begin(), index.end(), [&shape, &strides](size_t &a, size_t &b) {
+        return (shape[a] == 1 ? 0 : strides[a]) > (shape[b] == 1 ? 0 : strides[b]);
+    });
+    for (auto &&i : index)
+    {
+        if (strides[i] == 0)
+        {
+            continue;
+        }
+        else
+        {
+            data_size = shape[i] * strides[i];
+            break;
+        }
+    }
     return data_size;
 }
 
