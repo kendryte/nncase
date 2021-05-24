@@ -26,7 +26,7 @@ jobs:
       shell: bash
       run: |
         sudo tar xf $GITHUB_WORKSPACE/kendryte-toolchain.tar.xz -C $GITHUB_WORKSPACE
-        ll $GITHUB_WORKSPACE/kendryte-toolchain/bin
+        ls -l $GITHUB_WORKSPACE/kendryte-toolchain/bin
           
     - name: Setup Python
       uses: actions/setup-python@v2.2.1
