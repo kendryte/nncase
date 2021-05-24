@@ -24,7 +24,7 @@ using namespace nncase::runtime::stackvm;
 result<void> stackvm_runtime_module::visit(const tensor_concat_op_t &op) noexcept
 {
     try_var(output, pop_addr());
-    xt::svector<const gsl::byte *> inputs(op.num_src);
+    itlib::small_vector<const gsl::byte *, 4> inputs(op.num_src);
     std::vector<runtime_shape_t> in_strides(op.num_src);
     for (size_t i = 0; i < inputs.size(); i++)
     {
