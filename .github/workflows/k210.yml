@@ -14,6 +14,18 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+        
+    - name: Download K210 Toolchains
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        wget https://github.com/kendryte/kendryte-gnu-toolchain/releases/download/v8.2.0-20190409/kendryte-toolchain-win-amd64-8.2.0-20190409.tar.xz -O $GITHUB_WORKSPACE/kendryte-toolchain.tar.xz
+        
+    - name: Install K210 Toolchains
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        tar xf $GITHUB_WORKSPACE/kendryte-toolchain.tar.xz -C $GITHUB_WORKSPACE
           
     - name: Setup Python
       uses: actions/setup-python@v2.2.1
@@ -25,13 +37,6 @@ jobs:
       shell: bash
       run: |
         sudo apt install libgtk2.0-dev -y
-        
-    - name: Install K210 Toolchains
-      if: runner.os == 'Linux'
-      shell: bash
-      run: |
-        wget https://github.com/kendryte/kendryte-gnu-toolchain/releases/download/v8.2.0-20190409/kendryte-toolchain-win-amd64-8.2.0-20190409.tar.xz
-        tar xf kendryte-toolchain-win-amd64-8.2.0-20190409.tar.xz -C $GITHUB_WORKSPACE
         
     - name: Install Python Packages
       shell: bash
