@@ -25,7 +25,8 @@ jobs:
       if: runner.os == 'Linux'
       shell: bash
       run: |
-        tar xf $GITHUB_WORKSPACE/kendryte-toolchain.tar.xz -C $GITHUB_WORKSPACE
+        sudo tar xf $GITHUB_WORKSPACE/kendryte-toolchain.tar.xz -C $GITHUB_WORKSPACE
+        ll $GITHUB_WORKSPACE/kendryte-toolchain/bin
           
     - name: Setup Python
       uses: actions/setup-python@v2.2.1
