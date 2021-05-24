@@ -12,12 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <nncase/runtime/compiler_defs.h>
 #include <pybind11/pybind11.h>
 
 namespace pybind11
 {
 namespace detail
 {
+#if gsl_CPP17_OR_GREATER
     template <>
     struct type_caster<std::span<const uint8_t>>
     {
@@ -37,6 +39,7 @@ namespace detail
             return true;
         }
     };
+#endif
 
     template <>
     struct type_caster<gsl::span<const gsl::byte>>

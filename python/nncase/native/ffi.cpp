@@ -14,6 +14,7 @@
  */
 #include "pystreambuf.h"
 #include "pytype_utils.h"
+#include "type_casters.h"
 #include <iostream>
 #include <nncase/compiler.h>
 #include <nncase/ir/debug.h>
