@@ -88,7 +88,7 @@ result<rt_module_activator_t> find_runtime_activator(const module_type_t &type)
 
 result<std::unique_ptr<runtime_module>> runtime_module::create(const module_type_t &type)
 {
-    if (!strncmp(type.data(), stackvm::stackvm_module_type.data(), std::size(type)))
+    if (!strncmp(type.data(), stackvm::stackvm_module_type.data(), MAX_MODULE_TYPE_LENGTH))
         return stackvm::create_stackvm_runtime_module();
 
     result<std::unique_ptr<runtime_module>> rt_module(nncase_errc::runtime_not_found);

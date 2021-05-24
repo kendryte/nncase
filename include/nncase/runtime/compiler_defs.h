@@ -44,7 +44,11 @@ using invoke_result_t = std::invoke_result_t<Callable, Args...>;
 }
 #else
 #define NNCASE_INLINE_VAR
+#if defined(_MSC_VER)
 #define NNCASE_UNUSED
+#else
+#define NNCASE_UNUSED __attribute__((unused))
+#endif
 namespace nncase
 {
 template <class Callable, class... Args>

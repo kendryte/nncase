@@ -98,7 +98,7 @@ struct value_range
 
     static constexpr value_range<T> full() noexcept
     {
-        if constexpr (std::is_floating_point_v<T> || std::is_same_v<T, bfloat16>)
+        if (std::is_floating_point<T>::value || std::is_same<T, bfloat16>::value)
             return { -std::numeric_limits<T>::infinity(), std::numeric_limits<T>::infinity() };
         else
             return { std::numeric_limits<T>::lowest(), std::numeric_limits<T>::max() };
@@ -352,7 +352,9 @@ struct memory_range
     uint32_t size;
 };
 
-typedef std::array<char, 16> module_type_t;
+NNCASE_INLINE_VAR constexpr size_t MAX_MODULE_TYPE_LENGTH = 16;
+
+typedef std::array<char, MAX_MODULE_TYPE_LENGTH> module_type_t;
 
 template <std::size_t N, std::size_t... Is>
 constexpr module_type_t

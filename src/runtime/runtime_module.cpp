@@ -50,7 +50,7 @@ public:
         while (!reader.empty())
         {
             auto header = reader.get_ref<section_header>();
-            if (!strncmp(header->name, name, std::size(header->name)))
+            if (!strncmp(header->name, name, MAX_SECTION_NAME_LENGTH))
             {
                 gsl::span<const gsl::byte> result;
                 if (header->flags & SECTION_MERGED_INTO_RDATA)
