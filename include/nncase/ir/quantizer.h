@@ -96,9 +96,9 @@ public:
             auto r = range.max - range.min;
             if (r == 0)
                 r = 0.1f;
-            else if (r < 0.01f)
-                r = 0.01f;
-            range.max = range.min + r;
+            // else if (r < 0.01f)
+            //     r = 0.01f;
+            // range.max = range.min + r;
 
             if (range.max < 0)
                 range.max = 0;
@@ -109,7 +109,7 @@ public:
         return range;
     }
 
-    static quant_param_t get_quant_param(value_range<float> range, int32_t bits, int32_t mode = 2);
+    static quant_param_t get_quant_param(value_range<float> range, int32_t bits);
     static fixed_mul get_fixed_mul(float value, int32_t max_bits, uint8_t max_shift, bool is_signed);
 
     void record(ir::output_connector &connector, value_range<float> range);
