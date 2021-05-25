@@ -331,6 +331,10 @@ result<void> optimized::concat(datatype_t type, gsl::span<const gsl::byte *const
     gsl::span<const runtime_shape_t> in_strides, const runtime_shape_t &out_strides, size_t axis, const runtime_shape_t &concat_dims, kernel_context &context) noexcept
 {
     runtime_shape_t in_shape(out_shape);
+    if (!is_continuous(out_shape, out_strides))
+    {
+        TYPE_IMPL_SELECT(type, CONCAT_IMPL);
+    }
     for (size_t i = 0; i < inputs.size(); ++i)
     {
         auto tmp = in_shape[i];

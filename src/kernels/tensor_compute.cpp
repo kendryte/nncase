@@ -57,7 +57,35 @@ result<void> kernels::convert(datatype_t in_type, datatype_t out_type, const gsl
 result<void> kernels::copy(datatype_t type, const gsl::byte *src, gsl::byte *dest,
     const runtime_shape_t &shape, const runtime_shape_t &src_strides, const runtime_shape_t &dest_strides, kernel_context &context) noexcept
 {
-    return cpu::reference::copy(type, src, dest, shape, src_strides, dest_strides, context);
+    const auto default_strides = get_default_strides(shape);
+    if (src_strides == default_strides)
+    {
+        if (dest_strides == default_strides)
+        {
+            return cpu::optimized::copy(type, src, dest, shape, src_strides, dest_strides, 0, 0, context);
+        }
+        else
+        {
+            auto dims_offset = find_last_not_continuous_index(dest_strides, default_strides);
+            if (dims_offset < 4)
+            {
+                return cpu::optimized::copy(type, src, dest, shape, src_strides, dest_strides, dims_offset, 1, context);
+            }
+            else
+            {
+                return cpu::reference::copy(type, src, dest, shape, src_strides, dest_strides, context);
+            }
+        }
+    }
+    else if (dest_strides == default_strides)
+    {
+        auto dims_offset = find_last_not_continuous_index(src_strides, default_strides);
+        return cpu::optimized::copy(type, src, dest, shape, src_strides, dest_strides, dims_offset, 2, context);
+    }
+    else
+    {
+        return cpu::reference::copy(type, src, dest, shape, src_strides, dest_strides, context);
+    }
 }
 
 result<void> kernels::dequantize(datatype_t in_type, datatype_t out_type, const gsl::byte *input, gsl::byte *output,

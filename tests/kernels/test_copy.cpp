@@ -17,13 +17,14 @@
 #include <nncase/kernels/cpu/optimized/tensor_compute.h>
 #include <nncase/kernels/cpu/reference/tensor_compute.h>
 #include <nncase/kernels/kernel_utils.h>
+#include <nncase/kernels/tensor_compute.h>
 #include <nncase/runtime/runtime_op_utility.h>
 
 class CopyTest : public ::testing::TestWithParam<
-                      std::tuple<
-                          runtime_shape_t, // shape
-                          runtime_shape_t, // input strides bias
-                          runtime_shape_t>> // output strides bias
+                     std::tuple<
+                         runtime_shape_t, // shape
+                         runtime_shape_t, // src strides bias
+                         runtime_shape_t>> // dest strides bias
 {
 public:
     void SetUp() override
@@ -38,24 +39,87 @@ public:
 
     void TearDown() override
     {
+        delete input.data;
+        delete output_ref.data;
+        delete output_opt.data;
     }
 
     Tensor<uint32_t> input, output_ref, output_opt;
 };
 
 INSTANTIATE_TEST_SUITE_P(
-    CopyTestDims4,
+    CopyTestD1,
     CopyTest,
     testing::Combine(
         testing::Values(
-            runtime_shape_t {}),
+            runtime_shape_t { 11 }), // shape
         testing::Values(
-            runtime_shape_t {}),
+            runtime_shape_t { 0 }, // src strides bias
+            runtime_shape_t { 1 }),
         testing::Values(
-            runtime_shape_t {})));
+            runtime_shape_t { 0 }))); // dest strides bias
 
-template<typename T>
-void copy(const Tensor<T>& input, Tensor<T>& output, OpType type)
+INSTANTIATE_TEST_SUITE_P(
+    CopyTestD2,
+    CopyTest,
+    testing::Combine(
+        testing::Values(
+            runtime_shape_t { 3, 5 }), // shape
+        testing::Values(
+            runtime_shape_t { 1, 0 }, // src strides bias
+            runtime_shape_t { 0, 1 },
+            runtime_shape_t { 0, 0 }),
+        testing::Values(
+            runtime_shape_t { 0, 0 }))); // dest strides bias
+
+INSTANTIATE_TEST_SUITE_P(
+    CopyTestD3,
+    CopyTest,
+    testing::Combine(
+        testing::Values(
+            runtime_shape_t { 3, 5, 4 }), // shape
+        testing::Values(
+            runtime_shape_t { 0, 0, 0 }, // src strides bias
+            runtime_shape_t { 1, 0, 0 },
+            runtime_shape_t { 0, 1, 0 },
+            runtime_shape_t { 0, 0, 1 }),
+        testing::Values(
+            runtime_shape_t { 0, 0, 0 }))); // dest strides bias
+
+
+INSTANTIATE_TEST_SUITE_P(
+    CopyTestD4,
+    CopyTest,
+    testing::Combine(
+        testing::Values(
+            runtime_shape_t { 3, 5, 4, 7 }), // shape
+        testing::Values(
+            runtime_shape_t { 0, 0, 0, 0 }, // src strides bias
+            runtime_shape_t { 1, 0, 0, 0 },
+            runtime_shape_t { 0, 1, 0, 0 },
+            runtime_shape_t { 0, 0, 1, 0 },
+            runtime_shape_t { 0, 0, 0, 1 }),
+        testing::Values(
+            runtime_shape_t { 0, 0, 0, 0 }, // dest strides bias
+            runtime_shape_t { 1, 0, 0, 0 },
+            runtime_shape_t { 0, 1, 0, 0 },
+            runtime_shape_t { 0, 0, 1, 0 },
+            runtime_shape_t { 0, 0, 0, 1 })));
+
+INSTANTIATE_TEST_SUITE_P(
+    CopyTest0,
+    CopyTest,
+    testing::Combine(
+        testing::Values(
+            runtime_shape_t { 1, 1, 1, 1 }), // shape
+        testing::Values(
+            runtime_shape_t { 0, 0, 0, 0 } // src strides bias
+),
+        testing::Values(
+            runtime_shape_t { 0, 0, 0, 0 } // dest strides bias
+            )));
+template <typename T>
+void copy(const Tensor<T> &input, Tensor<T> &output, OpType type)
 {
     if (type == OpType::Ref)
     {
@@ -69,13 +133,13 @@ void copy(const Tensor<T>& input, Tensor<T>& output, OpType type)
     }
     else if (type == OpType::Opt)
     {
-        //NNCASE_UNUSED auto res = cpu::optimized::copy(
-        //    dt_float32,
-        //    input.gsl_cptr(),
-        //    output.gsl_ptr(),
-        //    input.shape,
-        //    input.strides,
-        //    output.strides);
+        NNCASE_UNUSED auto res = kernels::copy(
+            dt_float32,
+            input.gsl_cptr(),
+            output.gsl_ptr(),
+            input.shape,
+            input.strides,
+            output.strides);
     }
     else
     {
@@ -91,6 +155,6 @@ TEST_P(CopyTest, normal)
     if (!is_ok)
     {
         output_all_data(input, output_ref, output_opt);
-        ASSERT_TRUE(false);
+        ASSERT_EQ(output_ref, output_opt);
     }
 }

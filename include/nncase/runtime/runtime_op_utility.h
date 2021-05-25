@@ -40,25 +40,19 @@ inline size_t get_bytes(datatype_t type, const runtime_shape_t &shape)
 
 inline size_t compute_size(const runtime_shape_t &shape, const runtime_shape_t &strides)
 {
-    size_t data_size = 1;
     std::vector<size_t> index(shape.size());
     std::iota(index.begin(), index.end(), 0);
-    std::sort(index.begin(), index.end(), [&shape, &strides](size_t &a, size_t &b) {
+    std::sort(index.begin(), index.end(), [&](size_t &a, size_t &b) {
         return (shape[a] == 1 ? 0 : strides[a]) > (shape[b] == 1 ? 0 : strides[b]);
     });
-    for (auto &&i : index)
+    for (auto i : index)
     {
-        if (strides[i] == 0)
+        if (strides[i] != 0)
         {
-            continue;
-        }
-        else
-        {
-            data_size = shape[i] * strides[i];
-            break;
+            return shape[i] * strides[i];
         }
     }
-    return data_size;
+    return 1;
 }
 
 inline size_t get_bytes(datatype_t type, const runtime_shape_t &shape, const runtime_shape_t &strides)
@@ -217,5 +211,17 @@ template <class TShape>
 inline bool is_continuous(const TShape& shape, const TShape& strides)
 {
     return get_default_strides(shape) == strides;
+}
+
+inline int find_last_not_continuous_index(const runtime_shape_t &strides, const runtime_shape_t &default_strides)
+{
+    for (int i = strides.size() - 1; i >= 0; --i)
+    {
+        if (strides[i] != default_strides[i])
+        {
+            return i + 1;
+        }
+    }
+    return -1;
 }
 END_NS_NNCASE_RUNTIME

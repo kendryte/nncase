@@ -63,7 +63,6 @@ public:
 
         input = Tensor<uint32_t>(data_shape, in_strides_bias);
         init_tensor_data(input);
-
         this->strides = strides;
         this->begins = begins;
         this->ends = ends;
@@ -80,7 +79,9 @@ public:
 
     void TearDown() override
     {
-
+        delete input.data;
+        delete output_ref.data;
+        delete output_opt.data;
     }
 
     Tensor<uint32_t> input, output_ref, output_opt;
@@ -171,7 +172,6 @@ INSTANTIATE_TEST_SUITE_P(
             runtime_shape_t { 0, 0 },
             runtime_shape_t { 3, 3 }), // output strides offset
         testing::Values(
-            runtime_axis_t { 0, 0 },
             runtime_axis_t { 1, 1 }, // strides
             runtime_axis_t { 1, 3 },
             runtime_axis_t { 3, 1 },
@@ -211,12 +211,6 @@ TEST_P(SliceTest, normal)
     if (!is_ok)
     {
         output_all_data(input, output_ref, output_opt);
-        ASSERT_TRUE(false);
+        ASSERT_EQ(output_ref, output_opt);
     }
-}
-
-int main(int argc, char **argv)
-{
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
 }

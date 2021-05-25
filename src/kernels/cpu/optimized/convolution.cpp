@@ -173,7 +173,7 @@ result<void> optimized::conv2d_1x1_s2(const float *input, const float *weights, 
 
             for (; ic < in_channels; ic++)
             {
-                float *outptr = out;
+                float *outptr = out;                                              
                 const float *img0 = input + (b * in_strides[0]) + (ic * in_strides[1]);
                 const float *kernel0 = weights + oc * w_strides[0] + ic * w_strides[1];
                 const float *r0 = img0;
