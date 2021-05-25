@@ -20,6 +20,7 @@
 #include <fstream>
 #include <string>
 #include <filesystem>
+#include <iostream>
 
 using namespace nncase;
 using namespace nncase::runtime;
