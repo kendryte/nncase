@@ -45,7 +45,7 @@ if(NNCASE_OPENMP)
 endif()
 
 if (BUILDING_RUNTIME)
-    option(BUILD_SHARED_LIBS "Build shared libraries (.dll/.so) instead of static ones (.lib/.a)" ON)
+    option(BUILD_PYTHON_BINDING "Build python binding" ON)
     conan_cmake_run(CONANFILE conanfile-runtime.txt
                     BASIC_SETUP CMAKE_TARGETS
                     SETTINGS compiler.cppstd=14
@@ -76,7 +76,9 @@ if (BUILDING_RUNTIME)
     add_subdirectory(src/runtime)
     
     # Python binding
-    add_subdirectory(python/nncaseruntime/native)
+    if(BUILD_PYTHON_BINDING)
+        add_subdirectory(python/nncaseruntime/native)
+    endif()
         
     install(DIRECTORY ${NNCASE_INCLUDE_DIR}/nncase
         DESTINATION include

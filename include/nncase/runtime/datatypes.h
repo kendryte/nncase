@@ -15,6 +15,7 @@
 #pragma once
 #include "bfloat16.h"
 #include "compiler_defs.h"
+#include "small_vector.hpp"
 #include <array>
 #include <cmath>
 #include <cstddef>
@@ -25,7 +26,6 @@
 #include <string>
 #include <type_traits>
 #include <vector>
-#include <xtensor/xshape.hpp>
 
 namespace nncase
 {
@@ -277,9 +277,9 @@ NNCASE_INLINE_VAR constexpr memory_location_t mem_output = 1;
 NNCASE_INLINE_VAR constexpr memory_location_t mem_rdata = 2;
 NNCASE_INLINE_VAR constexpr memory_location_t mem_data = 3;
 
-using runtime_shape_t = xt::svector<size_t, 4>;
-using runtime_axis_t = xt::svector<int32_t, 4>;
-using runtime_paddings_t = xt::svector<padding, 4>;
+using runtime_shape_t = itlib::small_vector<size_t, 4>;
+using runtime_axis_t = itlib::small_vector<int32_t, 4>;
+using runtime_paddings_t = itlib::small_vector<padding, 4>;
 
 struct alignas(8) scalar
 {

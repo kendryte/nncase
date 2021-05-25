@@ -15,7 +15,6 @@
 #pragma once
 #include "datatypes.h"
 #include "result.h"
-#include <xtensor/xstrides.hpp>
 
 BEGIN_NS_NNCASE_RUNTIME
 
@@ -33,9 +32,14 @@ inline constexpr size_t get_bytes(datatype_t type)
     }
 }
 
+inline size_t compute_size(const runtime_shape_t &shape)
+{
+    return std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<size_t>());
+}
+
 inline size_t get_bytes(datatype_t type, const runtime_shape_t &shape)
 {
-    return xt::compute_size(shape) * get_bytes(type);
+    return compute_size(shape) * get_bytes(type);
 }
 
 inline size_t compute_size(const runtime_shape_t &shape, const runtime_shape_t &strides)
@@ -66,10 +70,44 @@ inline size_t get_bytes(datatype_t type, const runtime_shape_t &shape, const run
     return compute_size(shape, strides) * get_bytes(type);
 }
 
+namespace detail
+{
+template <class shape_type, class strides_type>
+inline void adapt_strides(const shape_type &shape, strides_type &strides,
+    std::nullptr_t, typename strides_type::size_type i) noexcept
+{
+    if (shape[i] == 1)
+    {
+        strides[i] = 0;
+    }
+}
+
+template <class shape_type, class strides_type, class bs_ptr>
+inline std::size_t compute_strides(const shape_type &shape,
+    strides_type &strides, bs_ptr bs)
+{
+    using strides_value_type = typename std::decay_t<strides_type>::value_type;
+    strides_value_type data_size = 1;
+    for (std::size_t i = shape.size(); i != 0; --i)
+    {
+        strides[i - 1] = data_size;
+        data_size = strides[i - 1] * static_cast<strides_value_type>(shape[i - 1]);
+        adapt_strides(shape, strides, bs, i - 1);
+    }
+    return static_cast<std::size_t>(data_size);
+}
+}
+
+template <class shape_type, class strides_type>
+inline std::size_t compute_strides(const shape_type &shape, strides_type &strides)
+{
+    return detail::compute_strides(shape, strides, nullptr);
+}
+
 inline runtime_shape_t get_default_strides(const runtime_shape_t &shape)
 {
     runtime_shape_t strides(shape.size());
-    xt::compute_strides(shape, xt::layout_type::row_major, strides);
+    compute_strides(shape, strides);
     return strides;
 }
 
