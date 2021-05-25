@@ -19,9 +19,26 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::k210;
 
+namespace
+{
+#ifndef NNCASE_SIMULATOR
+result<void> kpu_send_layer(NNCASE_UNUSED kpu_layer_argument_t layer)
+{
+    // TODO: Unimplemented
+    return err(std::errc::not_supported);
+}
+#endif
+}
+
 result<void> k210_runtime_module::visit(const kpu_conv2d_options &op) noexcept
 {
     auto &layer = op.layer;
+
+    try_var(weights, memory_at(op.weights));
+    try_var(batch_norm_data, memory_at(op.batch_norm));
+    try_var(activation_data, memory_at(op.activation));
+
+#ifdef NNCASE_SIMULATOR
     auto in_h = static_cast<uint32_t>(layer.image_size.data.i_col_high + 1);
     auto in_w = static_cast<uint32_t>(layer.image_size.data.i_row_wid + 1);
     auto in_ch = static_cast<uint32_t>(layer.image_channel_num.data.i_ch_num + 1);
@@ -33,12 +50,8 @@ result<void> k210_runtime_module::visit(const kpu_conv2d_options &op) noexcept
     auto is_depthwise = layer.interrupt_enabe.data.depth_wise_layer != 0;
 
     try_var(input, memory_at({ .memory_location = mem_kpu, .datatype = dt_uint8, .start = (uint32_t)layer.image_addr.data.image_src_addr * 64, .size = 1 }));
-    try_var(weights, memory_at(op.weights));
-    try_var(batch_norm_data, memory_at(op.batch_norm));
-    try_var(activation_data, memory_at(op.activation));
     try_var(kpu_out, memory_at({ .memory_location = mem_kpu, .datatype = dt_uint8, .start = (uint32_t)layer.image_addr.data.image_dst_addr * 64, .size = 1 }));
 
-#ifdef NNCASE_SIMULATOR
     kpu_shape_t in_shape { op.batches, in_ch, in_h, in_w };
     kpu_shape_t out_shape { op.batches, out_ch, out_h, out_w };
     auto in_fmap_size = kernels::detail::compute_size(in_shape);
@@ -122,6 +135,8 @@ result<void> k210_runtime_module::visit(const kpu_conv2d_options &op) noexcept
         try_var(main_output, memory_at(op.main_mem_output));
         std::copy(output_tmp.get(), output_tmp.get() + out_fmap_size, reinterpret_cast<uint8_t *>(main_output.data()));
     }
-#endif
     return ok();
+#else
+    return kpu_send_layer(layer);
+#endif
 }
