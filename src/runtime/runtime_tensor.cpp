@@ -205,21 +205,9 @@ bool runtime::operator!=(const runtime_tensor &lhs, const runtime_tensor &rhs) n
     return !(lhs == rhs);
 }
 
-inline size_t compute_real_size(runtime_shape_t &shape, NNCASE_UNUSED xt::layout_type layout, runtime_shape_t &strides)
-{
-    for (size_t i = 0; i < shape.size(); i++)
-    {
-        if (shape[i] == 1)
-        {
-            strides[i] = 0;
-        }
-    }
-    return compute_size(shape, strides);
-}
-
 result<runtime_tensor> host_runtime_tensor::create(datatype_t datatype, runtime_shape_t shape, runtime_shape_t strides) noexcept
 {
-    auto size = compute_real_size(shape, xt::layout_type::row_major, strides) * get_bytes(datatype);
+    auto size = compute_size(shape, strides) * get_bytes(datatype);
     std::shared_ptr<uint8_t> buffer(new (std::nothrow) uint8_t[size], std::default_delete<uint8_t[]>());
     if (!buffer)
         return err(std::errc::not_enough_memory);
@@ -228,7 +216,7 @@ result<runtime_tensor> host_runtime_tensor::create(datatype_t datatype, runtime_
 
 result<runtime_tensor> host_runtime_tensor::create(datatype_t datatype, runtime_shape_t shape, runtime_shape_t strides, gsl::span<gsl::byte> data, bool copy) noexcept
 {
-    auto size = compute_real_size(shape, xt::layout_type::row_major, strides) * get_bytes(datatype);
+    auto size = compute_size(shape, strides) * get_bytes(datatype);
     if (data.size_bytes() != size)
         return err(std::errc::invalid_argument);
 
@@ -250,7 +238,7 @@ result<runtime_tensor> host_runtime_tensor::create(datatype_t datatype, runtime_
 
 result<runtime_tensor> host_runtime_tensor::create(datatype_t datatype, runtime_shape_t shape, runtime_shape_t strides, gsl::span<gsl::byte> data, data_deleter_t data_deleter) noexcept
 {
-    auto size = compute_real_size(shape, xt::layout_type::row_major, strides) * get_bytes(datatype);
+    auto size = compute_size(shape, strides) * get_bytes(datatype);
     if (data.size_bytes() != size)
         return err(std::errc::invalid_argument);
     return ok(runtime_tensor(datatype, std::move(shape), std::move(strides), host_runtime_tensor_type_,

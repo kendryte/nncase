@@ -18,7 +18,6 @@
 #include <cstddef>
 #include <nncase/runtime/datatypes.h>
 #include <numeric>
-#include <xtensor/xstrides.hpp>
 
 #ifdef __GNUC__
 #define CXX_RESTRICT __restrict__
@@ -30,11 +29,19 @@
 
 BEGIN_NS_NNCASE_KERNELS
 
+template <class offset_type, class S, class It>
+inline offset_type element_offset(const S &strides, It first, It last) noexcept
+{
+    using difference_type = typename std::iterator_traits<It>::difference_type;
+    auto size = static_cast<difference_type>((std::min)(static_cast<typename S::size_type>(std::distance(first, last)), strides.size()));
+    return std::inner_product(last - size, last, strides.cend() - size, offset_type(0));
+}
+
 template <class TShape>
 size_t offset(const TShape &strides, const TShape &index)
 {
     assert(strides.size() == index.size());
-    return xt::element_offset<size_t>(strides, index.begin(), index.end());
+    return element_offset<size_t>(strides, index.begin(), index.end());
 }
 
 template <class TShape>
