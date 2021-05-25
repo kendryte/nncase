@@ -37,6 +37,8 @@ conan_add_remote(NAME bincrafts URL https://api.bintray.com/conan/bincrafters/pu
 
 if (BUILDING_RUNTIME)
     option(BUILD_PYTHON_BINDING "Build python binding" ON)
+    option(ENABLE_K210_RUNTIME "Enable k210 runtime" OFF)
+
     conan_cmake_run(CONANFILE conanfile-runtime.txt
                     BASIC_SETUP CMAKE_TARGETS
                     SETTINGS compiler.cppstd=14
@@ -53,7 +55,7 @@ if (BUILDING_RUNTIME)
         add_definitions(/D_CRT_SECURE_NO_WARNINGS /DNOMINMAX)
         add_compile_options(/wd4267 /wd4251 /FC /utf-8 /W3 /WX)
     else()
-        add_compile_options(-Wall -Wextra -pedantic -Werror -Wno-multichar -Wno-missing-field-initializers -Wno-unused-function -Wno-maybe-uninitialized)
+        add_compile_options(-Wall -Wextra -pedantic -Werror -Wno-multichar -Wno-missing-field-initializers -Wno-unused-function -Wno-maybe-uninitialized -Wno-type-limits)
         if (APPLE)
             add_compile_options(-Wno-four-char-constants -Wno-sometimes-uninitialized)
         endif()
@@ -76,6 +78,19 @@ if (BUILDING_RUNTIME)
         COMPONENT nncase-headers
         FILES_MATCHING
         PATTERN "*version.h"
+        PATTERN "CMakeFiles" EXCLUDE
+        )
+    
+    install(DIRECTORY include/nncase/kernels
+        DESTINATION include/nncase
+        COMPONENT nncase-headers
+        FILES_MATCHING
+        PATTERN "*.def"
+        PATTERN "*.h"
+        PATTERN "*.hpp"
+        PATTERN "*.td"
+        PATTERN "*.inc"
+        PATTERN "LICENSE.TXT"
         )
     
     install(DIRECTORY include/nncase/runtime
@@ -84,10 +99,14 @@ if (BUILDING_RUNTIME)
         FILES_MATCHING
         PATTERN "*.def"
         PATTERN "*.h"
+        PATTERN "*.hpp"
         PATTERN "*.td"
         PATTERN "*.inc"
         PATTERN "LICENSE.TXT"
         )
+
+    # Modules
+    add_subdirectory(modules/k210)
 else()
     conan_cmake_run(CONANFILE conanfile.txt
                     BASIC_SETUP CMAKE_TARGETS
@@ -110,7 +129,7 @@ else()
         add_compile_options(/wd4267 /wd4251 /FC /utf-8 /W3 /WX)
         set(PYBIND11_CPP_STANDARD "/std:c++latest")
     else()
-        add_compile_options(-Wall -Wextra -pedantic -Werror -Wno-multichar -Wno-missing-field-initializers -Wno-unused-function -Wno-maybe-uninitialized)
+        add_compile_options(-Wall -Wextra -pedantic -Werror -Wno-multichar -Wno-missing-field-initializers -Wno-unused-function -Wno-maybe-uninitialized -Wno-type-limits)
         set(PYBIND11_CPP_STANDARD "-std=c++20")
         if (APPLE)
             add_compile_options(-Wno-four-char-constants -Wno-sometimes-uninitialized)
@@ -147,6 +166,7 @@ else()
         FILES_MATCHING
         PATTERN "*.def"
         PATTERN "*.h"
+        PATTERN "*.hpp"
         PATTERN "*.td"
         PATTERN "*.inc"
         PATTERN "LICENSE.TXT"
@@ -158,6 +178,7 @@ else()
         FILES_MATCHING
         PATTERN "*.def"
         PATTERN "*.h"
+        PATTERN "*.hpp"
         PATTERN "*.td"
         PATTERN "*.inc"
         PATTERN "CMakeFiles" EXCLUDE
@@ -175,9 +196,7 @@ else()
     add_subdirectory(targets/cpu)
     add_subdirectory(targets/k210)
 
+    # Modules
+    add_subdirectory(modules/k210)
+
 endif()
-
-include_directories(modules/include)
-
-# Modules
-add_subdirectory(modules/k210)
