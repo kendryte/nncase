@@ -337,13 +337,13 @@ result<void> optimized::concat(datatype_t type, gsl::span<const gsl::byte *const
     }
     for (size_t i = 0; i < inputs.size(); ++i)
     {
-        auto tmp = in_shape[i];
+        auto tmp = in_shape[axis];
         in_shape[axis] = concat_dims[i];
         if (!is_continuous(in_shape, in_strides[i]))
         {
             TYPE_IMPL_SELECT(type, CONCAT_IMPL);
         }
-        in_shape[i] = tmp;
+        in_shape[axis] = tmp;
     }
     TYPE_IMPL_SELECT(type, CONCAT_CONTINUOUS_IMPL);
 }
