@@ -25,7 +25,7 @@ using namespace nncase::kernels::cpu::optimized;
 namespace
 {
 template <class T>
-result<void> slice_continuous_impl(const T *input, T *output, const runtime_shape_t &in_shape,
+result<void> slice_contiguous_impl(const T *input, T *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &in_strides, NNCASE_UNUSED const runtime_shape_t &out_strides, const runtime_shape_t &begins, const runtime_shape_t &ends, NNCASE_UNUSED const runtime_axis_t &strides,
     NNCASE_UNUSED kernel_context &context) noexcept
 {
@@ -202,9 +202,9 @@ result<void> slice_strides_impl(const T *input, T *output, const runtime_shape_t
     case size:                 \
         return slice_linecopy_impl(reinterpret_cast<const type *>(input), reinterpret_cast<type *>(output), in_shape, in_strides, out_strides, begins, ends, strides, context)
 
-#define SLICE_CONTINUOUS_IMPL(size, type) \
+#define SLICE_CONTIGUOUS_IMPL(size, type) \
     case size:                 \
-        return slice_continuous_impl(reinterpret_cast<const type *>(input), reinterpret_cast<type *>(output), in_shape, in_strides, out_strides, begins, ends, strides, context)
+        return slice_contiguous_impl(reinterpret_cast<const type *>(input), reinterpret_cast<type *>(output), in_shape, in_strides, out_strides, begins, ends, strides, context)
 
 #define SLICE_STRIDES_IMPL(size, type) \
     case size:                            \
@@ -236,14 +236,14 @@ result<void> optimized::slice(datatype_t type, const gsl::byte *input, gsl::byte
             }
         }
     }
-    if (is_continuous(in_shape, in_strides) && is_continuous(out_shape, out_strides))
+    if (is_contiguous(in_shape, in_strides) && is_contiguous(out_shape, out_strides))
     {
-        // all of strides are 1 and continuous
-        TYPE_IMPL_SELECT(type, SLICE_CONTINUOUS_IMPL);
+        // all of strides are 1 and contiguous
+        TYPE_IMPL_SELECT(type, SLICE_CONTIGUOUS_IMPL);
     }
     else 
     {
-        // summary memory is not continous, but line is continuous
+        // summary memory is not continous, but line is contiguous
         TYPE_IMPL_SELECT(type, SLICE_LINECOPY_IMPL);
     }
 }

@@ -38,11 +38,10 @@ result<void> optimized::conv2d_1x1_s1(const float *input, const float *weights, 
 
     for (size_t batch = 0; batch < in_shape[0]; batch++)
     {
-
 #ifdef NNCASE_OPENMP
 #pragma omp parallel for num_threads(GET_NUM_THREADS)
 #endif
-        for (int oc = 0; oc < out_channels; oc++)
+        for (int oc = 0; oc < static_cast<int>(out_channels); oc++)
         {
             const auto out_c = oc;
             const float *now_weights = weights + out_c * w_strides[0];
@@ -128,7 +127,7 @@ result<void> optimized::conv2d_1x1_s2(const float *input, const float *weights, 
 #ifdef NNCASE_OPENMP
 #pragma omp parallel for num_threads(GET_NUM_THREADS)
 #endif
-        for (size_t oc = 0; oc < out_channels; oc++)
+        for (int oc = 0; oc < static_cast<int>(out_channels); oc++)
         {
             float *out = output + (b * out_strides[0] + oc * out_strides[1]);
 
@@ -174,7 +173,7 @@ result<void> optimized::conv2d_1x1_s2(const float *input, const float *weights, 
 
             for (; ic < in_channels; ic++)
             {
-                float *outptr = out;
+                float *outptr = out;                                              
                 const float *img0 = input + (b * in_strides[0]) + (ic * in_strides[1]);
                 const float *kernel0 = weights + oc * w_strides[0] + ic * w_strides[1];
                 const float *r0 = img0;

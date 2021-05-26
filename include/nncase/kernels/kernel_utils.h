@@ -230,5 +230,16 @@ int64_t to_signed(uint64_t value)
 
     return (int64_t)value;
 }
+
+template <size_t a, size_t b>
+constexpr bool isgreater()
+{
+    return a > b;
+}
+template <size_t a, size_t b>
+constexpr bool isless()
+{
+    return a < b;
+}
 }
 END_NS_NNCASE_KERNELS

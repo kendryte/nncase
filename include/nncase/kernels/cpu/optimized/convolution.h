@@ -114,7 +114,7 @@ void binding_value(std::array<T *, N> &output, std::array<T, N> &value)
 template <size_t N, typename Array>
 void increase_n(Array &a, size_t step = 1)
 {
-    impl::increase_n<N>(a, step, std::integral_constant<bool, std::isgreater(N, 0)> {});
+    impl::increase_n<N>(a, step, std::integral_constant<bool, detail::isgreater<N, 0>()> {});
 }
 
 template <size_t Parallel, size_t P, size_t Stride_h, size_t Filter_h,
@@ -130,7 +130,7 @@ void convNxM(std::array<T, X> &sum, std::array<const T *, N> &r,
     std::array<const T *, Filter_h> &k, std::true_type)
 {
     impl::convNxM<P * std::min(Stride_h, Filter_h), Filter_h, Filter_w>(sum[P], r, k);
-    convNxM<Parallel, P + 1, Stride_h, Filter_h, Filter_w, T, N, X>(sum, r, k, std::integral_constant<bool, std::isless(P + 1, Parallel)> {});
+    convNxM<Parallel, P + 1, Stride_h, Filter_h, Filter_w, T, N, X>(sum, r, k, std::integral_constant<bool, detail::isless<P + 1, Parallel>()> {});
 }
 
 template <size_t LocalParallel, size_t Filter_h, size_t Filter_w, size_t Stride_h, size_t Stride_w, typename T, size_t R, size_t Parallel>
@@ -147,7 +147,7 @@ void conv2dChannel(size_t &i, size_t out_h, size_t out_w, std::array<T, Parallel
     {
         for (size_t remain = 0; remain < out_w; remain++)
         {
-            std::fill_n(sum.begin(), LocalParallel, 0);
+            std::fill_n(sum.begin(), LocalParallel, static_cast<T>(0));
             convNxM<LocalParallel, 0, Stride_h, Filter_h, Filter_w>(sum, r, k, std::true_type {});
             binding_value<LocalParallel>(outptr, sum);
             increase_n<compute_rsize<LocalParallel, Stride_h, Filter_h>()>(r, Stride_w);
@@ -158,7 +158,7 @@ void conv2dChannel(size_t &i, size_t out_h, size_t out_w, std::array<T, Parallel
         increase_n<LocalParallel>(outptr, out_w_step * (LocalParallel - 1));
     }
     conv2dChannel<LocalParallel / 2, Filter_h, Filter_w, Stride_h, Stride_w>(i, out_h, out_w, sum,
-        r, k, outptr, in_w_step, out_w_step, tail_step, std::integral_constant<bool, std::isgreater(LocalParallel, 1)> {});
+        r, k, outptr, in_w_step, out_w_step, tail_step, std::integral_constant<bool, detail::isgreater<LocalParallel, 1>()> {});
 }
 
 template <size_t LocalParallel, size_t Filter_h, size_t Filter_w, size_t Stride_h, size_t Stride_w, typename T, size_t R, size_t Parallel>
@@ -183,7 +183,7 @@ result<void> conv2d_1x1_s2(const float *input, const float *weights, const float
     NNCASE_UNUSED int32_t groups, NNCASE_UNUSED int32_t stride_h, NNCASE_UNUSED int32_t stride_w,
     NNCASE_UNUSED int32_t dilation_h, NNCASE_UNUSED int32_t dilation_w, value_range<float> fused_activation, NNCASE_UNUSED kernel_context &context) noexcept;
 
-NNCASE_API template <size_t Parallel, size_t Filter_h, size_t Filter_w, size_t Stride_h, size_t Stride_w>
+template <size_t Parallel, size_t Filter_h, size_t Filter_w, size_t Stride_h, size_t Stride_w>
 result<void> conv2d_NxM(const float *input, const float *weights, const float *bias, float *output,
     const runtime_shape_t &in_shape, NNCASE_UNUSED const runtime_shape_t &in_strides, NNCASE_UNUSED const runtime_shape_t &w_shape,
     NNCASE_UNUSED const runtime_shape_t &w_strides, NNCASE_UNUSED const runtime_shape_t &bias_strides, NNCASE_UNUSED const runtime_shape_t &out_strides,
@@ -200,7 +200,7 @@ result<void> conv2d_NxM(const float *input, const float *weights, const float *b
 #ifdef NNCASE_OPENMP
 #pragma omp parallel for num_threads(GET_NUM_THREADS)
 #endif
-        for (size_t oc = 0; oc < out_channels; oc++) // out channel
+        for (int oc = 0; oc < static_cast<int>(out_channels); oc++) // out channel
         {
             std::array<float *, Parallel> outptr;
             std::array<const float *, compute_rsize<Parallel, Stride_h, Filter_h>()> r;
@@ -226,7 +226,7 @@ result<void> conv2d_NxM(const float *input, const float *weights, const float *b
     return ok();
 }
 
-NNCASE_API template <size_t Parallel, size_t Filter_h, size_t Filter_w, size_t Stride_h, size_t Stride_w>
+template <size_t Parallel, size_t Filter_h, size_t Filter_w, size_t Stride_h, size_t Stride_w>
 result<void> conv2ddepthwise_NxM(const float *input, const float *weights, const float *bias, float *output,
     const runtime_shape_t &in_shape, NNCASE_UNUSED const runtime_shape_t &in_strides, NNCASE_UNUSED const runtime_shape_t &w_shape,
     NNCASE_UNUSED const runtime_shape_t &w_strides, NNCASE_UNUSED const runtime_shape_t &bias_strides, NNCASE_UNUSED const runtime_shape_t &out_strides,
@@ -245,7 +245,7 @@ result<void> conv2ddepthwise_NxM(const float *input, const float *weights, const
 #ifdef NNCASE_OPENMP
 #pragma omp parallel for num_threads(GET_NUM_THREADS)
 #endif
-        for (size_t c = 0; c < channels; c++) // channel
+        for (int c = 0; c < static_cast<int>(channels); c++) // channel
         {
             std::array<float *, Parallel> outptr;
             std::array<const float *, compute_rsize<Parallel, Stride_h, Filter_h>()> r;

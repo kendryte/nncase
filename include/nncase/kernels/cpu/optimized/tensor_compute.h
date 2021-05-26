@@ -27,6 +27,7 @@ NNCASE_API result<void> slice(datatype_t type, const gsl::byte *input, gsl::byte
     kernel_context &context = default_kernel_context) noexcept;
 
 NNCASE_API result<void> copy(datatype_t type, const gsl::byte *src, gsl::byte *dest,
-    const runtime_shape_t &shape, const runtime_shape_t &src_strides, const runtime_shape_t &dest_strides, kernel_context &context = default_kernel_context) noexcept;
+    const runtime_shape_t &shape, const runtime_shape_t &src_strides, const runtime_shape_t &dest_strides, 
+    int dims_offset, CopyImplSelect impl_select, kernel_context &context = default_kernel_context) noexcept;
 
 END_NS_NNCASE_KERNELS_CPU_OPT

@@ -55,9 +55,16 @@ T *alloc_tensor_data(const runtime_shape_t &shape, const runtime_shape_t &stride
     return v;
 }
 
+template <typename T>
+T *alloc_tensor_data(const Tensor<T>& tensor)
+{
+    auto length = compute_size(tensor.shape, tensor.strides);
+    return new T[length];
+}
+
 size_t get_last_no_zero_stride(const runtime_shape_t &strides, size_t i)
 {
-    for (size_t j = i; j < strides.size() - 1; ++j)
+    for (size_t j = i; j < strides.size(); ++j)
     {
         if (strides[j] != 0)
         {
@@ -68,6 +75,8 @@ size_t get_last_no_zero_stride(const runtime_shape_t &strides, size_t i)
     return 0;
 }
 
+// strides bias first value is no effect
+// line is contiguous
 runtime_shape_t get_strides(const runtime_shape_t &shape, const runtime_shape_t &strides_bias) 
 {
     runtime_shape_t strides(shape.size(), 1);
@@ -108,7 +117,7 @@ runtime_shape_t shape_sub(runtime_shape_t begin, runtime_shape_t end)
 }
 
 // memory release and smart ptr
-template <typename T>
+template <typename T = uint32_t>
 class Tensor
 {
 public:
@@ -116,12 +125,19 @@ public:
     runtime_shape_t shape, strides;
 
     Tensor() = default;
+
     Tensor(runtime_shape_t shape, runtime_shape_t strides_bias)
     {
         this->shape = shape;
         this->strides = get_strides(shape, strides_bias);
         data = alloc_tensor_data<T>(shape, strides);
     }
+
+    Tensor(T* data)
+    {
+        this->data = data;
+    }
+
     bool operator==(const Tensor &rhs) const
     {
         if (shape != rhs.shape)
@@ -187,13 +203,13 @@ bool exist_directory(const fs::path& path)
 }
 
 template <typename T>
-void output_data(const Tensor<T> &data, std::string name, std::string dic_name = "op_test")
+void output_data(const Tensor<T> &data, std::string name, std::string dir_name = "op_test")
 {
-    if (!exist_directory(dic_name))
+    if (!exist_directory(dir_name))
     {
-        fs::create_directory(dic_name);
+        fs::create_directory(dir_name);
     }
-    std::ofstream f(dic_name + "/" + name + ".txt");
+    std::ofstream f(dir_name + "/" + name + ".txt");
     // output shape
     auto shape_str = std::accumulate(data.shape.begin(), data.shape.end(), std::string(), [](std::string s, T v) {
         return s + std::to_string(v) + ",";
@@ -208,12 +224,45 @@ void output_data(const Tensor<T> &data, std::string name, std::string dic_name =
     f.close();
 }
 
+constexpr auto output_root = "op_test";
+
+void make_output_root_dir(std::string root = output_root)
+{
+    if (exist_directory(root))
+    {
+        fs::remove_all(root);
+    }
+    fs::create_directory(root);
+}
+
+std::string get_index_dir_path(size_t index)
+{
+    std::string s = output_root;
+    return s + "/" + std::to_string(index) + "/";
+}
+
 static inline size_t output_index = 0;
 template<typename T>
 void output_all_data(const Tensor<T> &input, const Tensor<T> &output_ref, const Tensor<T> &output_opt)
 {
-    output_data(input, "input" + std::to_string(output_index));
-    output_data(output_ref, "output_ref" + std::to_string(output_index));
-    output_data(output_opt, "output_opt" + std::to_string(output_index));
+    make_output_root_dir();
+    auto dir_name = get_index_dir_path(output_index);
+    output_data(input, "input", dir_name);
+    output_data(output_ref, "output_ref", dir_name);
+    output_data(output_opt, "output_opt", dir_name);
+    ++output_index;
+}
+
+template <typename T>
+void output_all_data(const std::vector<Tensor<T>> &inputs, const Tensor<T> &output_ref, const Tensor<T> &output_opt)
+{
+    make_output_root_dir();
+    auto dir_name = get_index_dir_path(output_index);
+    for (size_t i = 0; i < inputs.size(); ++i)
+    {
+        output_data(inputs[i], "input" + std::to_string(i), dir_name);
+    }
+    output_data(output_ref, "output_ref", dir_name);
+    output_data(output_opt, "output_opt", dir_name);
     ++output_index;
 }

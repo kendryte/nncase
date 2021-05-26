@@ -26,7 +26,6 @@ class ConcatTest : public ::testing::TestWithParam<
                            runtime_shape_t, // out strides bias
                            size_t>> // axis
 {
-    // TODO:in_strides_bias add s?
 public:
     void SetUp() override
     {
@@ -34,29 +33,39 @@ public:
 
         for (size_t i = 0; i < data_shapes.size(); ++i)
         {
-            in_strides.emplace_back(get_strides(data_shapes[i], in_strides_bias));
-        }
-
-        for (size_t i = 0; i < data_shapes.size(); ++i)
-        {
             concat_dims.push_back(data_shapes[i][axis]);
         }
 
         runtime_shape_t out_shape(data_shapes[0]);
-        out_shape[axis] = compute_size(concat_dims);
+        out_shape[axis] = std::accumulate(concat_dims.begin(), concat_dims.end(), 0);
         output_ref = Tensor<uint32_t>(out_shape, out_strides_bias);
         output_opt = Tensor<uint32_t>(out_shape, out_strides_bias);
         this->axis = axis;
+
+        for (size_t i = 0; i < data_shapes.size(); ++i)
+        {
+            inputs.emplace_back(data_shapes[i], in_strides_bias);
+            init_tensor_data(inputs[i]);
+        }
     }
 
-    std::vector<runtime_shape_t> in_strides;
+    void TearDown() override
+    {
+        for (auto&& input : inputs)
+        {
+            delete input.data;
+        }
+        delete output_ref.data;
+        delete output_opt.data;
+    }
+
     runtime_shape_t concat_dims;
-    std::vector<gsl::byte *> inputs;
+    std::vector<Tensor<uint32_t>> inputs;
     Tensor<uint32_t> output_ref, output_opt;
     size_t axis;
 };
 
-//Test name:ConcatTestDims[Dims axis]
+// Test name:ConcatTestDims[Dims axis]
 INSTANTIATE_TEST_SUITE_P(
     ConcatTestDims43,
     ConcatTest,
@@ -168,7 +177,7 @@ INSTANTIATE_TEST_SUITE_P(
                 runtime_shape_t { 5, 3, 7 }, // input shape
                 runtime_shape_t { 8, 3, 7 },
                 runtime_shape_t { 3, 3, 7 } }),
-        testing::Values(              
+        testing::Values(
             runtime_shape_t { 0, 0, 0 },
             runtime_shape_t { 3, 3, 3 }), // input strides bias
         testing::Values(
@@ -226,24 +235,41 @@ INSTANTIATE_TEST_SUITE_P(
             runtime_shape_t { 0 },
             runtime_shape_t { 3 }), // output strides bias
         testing::Values(0)));
-TEST_P(ConcatTest, normal)
+
+template <typename T>
+void concat(const std::vector<Tensor<T>> &inputs, Tensor<T> &output, runtime_shape_t &concat_dims, size_t axis, OpType type)
 {
-    NNCASE_UNUSED auto res1 = cpu::reference::concat(dt_float32, inputs, output_ref.gsl_ptr(),
-        output_ref.shape, in_strides, output_ref.strides, axis, concat_dims);
-    NNCASE_UNUSED auto res2 = cpu::optimized::concat(dt_float32, inputs, output_ref.gsl_ptr(),
-        output_ref.shape, in_strides, output_ref.strides, axis, concat_dims);
-    //concat(inputs, output_ref, axis, OpType::Ref);
-    //concat(inputs, output_opt, axis, OpType::Opt);
-    auto is_ok = output_ref == output_opt;
-    if (!is_ok)
+    std::vector<runtime_shape_t> in_strides(inputs.size());
+    std::vector<const gsl::byte *> inputs_v(inputs.size());
+    for (size_t i = 0; i < inputs.size(); ++i)
     {
-        // output_all_data(inputs, output_ref, output_opt);
-        ASSERT_TRUE(false);
+        in_strides[i] = inputs[i].strides;
+        inputs_v[i] = inputs[i].gsl_cptr();
+    }
+    if (type == OpType::Ref)
+    {
+        NNCASE_UNUSED auto res1 = cpu::reference::concat(dt_float32, inputs_v, output.gsl_ptr(),
+            output.shape, in_strides, output.strides, axis, concat_dims);
+    }
+    else if (type == OpType::Opt)
+    {
+        NNCASE_UNUSED auto res2 = cpu::optimized::concat(dt_float32, inputs_v, output.gsl_ptr(),
+            output.shape, in_strides, output.strides, axis, concat_dims);
+    }
+    else
+    {
+        assert(false);
     }
 }
 
-int main(int argc, char **argv)
+TEST_P(ConcatTest, normal)
 {
-    ::testing::InitGoogleTest(&argc, argv);
-    return RUN_ALL_TESTS();
+    concat(inputs, output_ref, concat_dims, axis, OpType::Ref);
+    concat(inputs, output_opt, concat_dims, axis, OpType::Opt);
+    auto is_ok = output_ref == output_opt;
+    if (!is_ok)
+    {
+        output_all_data(inputs, output_ref, output_opt);
+        ASSERT_EQ(output_ref, output_opt);
+    }
 }
