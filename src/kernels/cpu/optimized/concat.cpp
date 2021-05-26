@@ -25,7 +25,7 @@ using namespace nncase::kernels::cpu::optimized;
 namespace
 {
 template <class T>
-result<void> concat_continuous_impl(gsl::span<const gsl::byte *const> inputs, T *output, const runtime_shape_t &out_shape,
+result<void> concat_contiguous_impl(gsl::span<const gsl::byte *const> inputs, T *output, const runtime_shape_t &out_shape,
     gsl::span<const runtime_shape_t> &in_strides, NNCASE_UNUSED const runtime_shape_t &out_strides, size_t axis, const runtime_shape_t &concat_dims, NNCASE_UNUSED kernel_context &context) noexcept
 {
     runtime_shape_t in_shape(out_shape), in_index(out_shape.size());
@@ -323,15 +323,15 @@ result<void> concat_impl(gsl::span<const gsl::byte *const> inputs, T *output, co
     case size:                  \
         return concat_impl(inputs, reinterpret_cast<type *>(output), out_shape, in_strides, out_strides, axis, concat_dims, context)
 
-#define CONCAT_CONTINUOUS_IMPL(size, type) \
+#define CONCAT_CONTIGUOUS_IMPL(size, type) \
     case size:                  \
-        return concat_continuous_impl(inputs, reinterpret_cast<type *>(output), out_shape, in_strides, out_strides, axis, concat_dims, context)
+        return concat_contiguous_impl(inputs, reinterpret_cast<type *>(output), out_shape, in_strides, out_strides, axis, concat_dims, context)
 
 result<void> optimized::concat(datatype_t type, gsl::span<const gsl::byte *const> inputs, gsl::byte *output, const runtime_shape_t &out_shape,
     gsl::span<const runtime_shape_t> in_strides, const runtime_shape_t &out_strides, size_t axis, const runtime_shape_t &concat_dims, kernel_context &context) noexcept
 {
     runtime_shape_t in_shape(out_shape);
-    if (!is_continuous(out_shape, out_strides))
+    if (!is_contiguous(out_shape, out_strides))
     {
         TYPE_IMPL_SELECT(type, CONCAT_IMPL);
     }
@@ -339,11 +339,11 @@ result<void> optimized::concat(datatype_t type, gsl::span<const gsl::byte *const
     {
         auto tmp = in_shape[axis];
         in_shape[axis] = concat_dims[i];
-        if (!is_continuous(in_shape, in_strides[i]))
+        if (!is_contiguous(in_shape, in_strides[i]))
         {
             TYPE_IMPL_SELECT(type, CONCAT_IMPL);
         }
         in_shape[axis] = tmp;
     }
-    TYPE_IMPL_SELECT(type, CONCAT_CONTINUOUS_IMPL);
+    TYPE_IMPL_SELECT(type, CONCAT_CONTIGUOUS_IMPL);
 }

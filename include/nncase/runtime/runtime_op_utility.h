@@ -246,12 +246,12 @@ inline int32_t clamp(int32_t value)
 }
 
 template <class TShape>
-inline bool is_continuous(const TShape& shape, const TShape& strides)
+inline bool is_contiguous(const TShape& shape, const TShape& strides)
 {
     return get_default_strides(shape) == strides;
 }
 
-inline int find_last_not_continuous_index(const runtime_shape_t &strides, const runtime_shape_t &default_strides)
+inline int find_last_not_contiguous_index(const runtime_shape_t &strides, const runtime_shape_t &default_strides)
 {
     for (int i = strides.size() - 1; i >= 0; --i)
     {

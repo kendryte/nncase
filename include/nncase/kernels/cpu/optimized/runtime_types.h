@@ -45,3 +45,10 @@
     default:                                  \
         return err(std::errc::not_supported); \
     }
+
+enum CopyImplSelect
+{
+    all_contiguous,
+    src_contiguous,
+    dest_contiguous
+};

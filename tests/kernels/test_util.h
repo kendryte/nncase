@@ -76,7 +76,7 @@ size_t get_last_no_zero_stride(const runtime_shape_t &strides, size_t i)
 }
 
 // strides bias first value is no effect
-// line is continuous
+// line is contiguous
 runtime_shape_t get_strides(const runtime_shape_t &shape, const runtime_shape_t &strides_bias) 
 {
     runtime_shape_t strides(shape.size(), 1);

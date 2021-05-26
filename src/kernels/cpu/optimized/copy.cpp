@@ -25,7 +25,7 @@ using namespace nncase::kernels::cpu::optimized;
 namespace
 {
 template <class T>
-result<void> copy_continuous_impl(const T *src, T *dest, const runtime_shape_t &shape, NNCASE_UNUSED const runtime_shape_t &src_strides,
+result<void> copy_contiguous_impl(const T *src, T *dest, const runtime_shape_t &shape, NNCASE_UNUSED const runtime_shape_t &src_strides,
     NNCASE_UNUSED const runtime_shape_t &dest_strides, NNCASE_UNUSED kernel_context &context) noexcept
 {
     memcpy(dest, src, compute_size(shape) * sizeof(T));
@@ -34,7 +34,7 @@ result<void> copy_continuous_impl(const T *src, T *dest, const runtime_shape_t &
 
 template <class T, class Callable>
 result<void> _copy_impl(NNCASE_UNUSED const T *src, NNCASE_UNUSED T *dest, const runtime_shape_t &shape, NNCASE_UNUSED const runtime_shape_t &src_strides,
-    NNCASE_UNUSED const runtime_shape_t &dest_strides, size_t dims_offset, Callable &&line_copy, NNCASE_UNUSED kernel_context &context) noexcept
+    NNCASE_UNUSED const runtime_shape_t &dest_strides, int dims_offset, Callable &&line_copy, NNCASE_UNUSED kernel_context &context) noexcept
 {
     runtime_shape_t src_index(shape.size());
     const auto width = std::accumulate(shape.begin() + dims_offset, shape.end(), 1, std::multiplies<int>());
@@ -74,12 +74,36 @@ result<void> _copy_impl(NNCASE_UNUSED const T *src, NNCASE_UNUSED T *dest, const
             }
         }
     }
+    else if (dims_offset == 4)
+    {
+        for (size_t i = 0; i < shape[0]; ++i)
+        {
+            src_index[0] = i;
+            for (size_t j = 0; j < shape[1]; ++j)
+            {
+                src_index[1] = j;
+                for (size_t k = 0; k < shape[2]; ++k)
+                {
+                    src_index[2] = k;
+                    for (size_t l = 0; l < shape[3]; ++l)
+                    {
+                        src_index[3] = l;
+                        line_copy(src_index, width);
+                    }
+                }
+            }
+        }
+    }
+    else
+    {
+        assert(false);
+    }
     return ok();
 }
 
 template <class T>
-result<void> copy_dest_continuous_impl(const T *src, T *dest, const runtime_shape_t &shape, NNCASE_UNUSED const runtime_shape_t &src_strides,
-    NNCASE_UNUSED const runtime_shape_t &dest_strides, size_t dims_offset, NNCASE_UNUSED kernel_context &context) noexcept
+result<void> copy_dest_contiguous_impl(const T *src, T *dest, const runtime_shape_t &shape, NNCASE_UNUSED const runtime_shape_t &src_strides,
+    NNCASE_UNUSED const runtime_shape_t &dest_strides, int dims_offset, NNCASE_UNUSED kernel_context &context) noexcept
 {
     auto *dest_ptr = dest;
     return _copy_impl(
@@ -95,8 +119,8 @@ result<void> copy_dest_continuous_impl(const T *src, T *dest, const runtime_shap
 }
 
 template <class T>
-result<void> copy_src_continuous_impl(const T *src, T *dest, NNCASE_UNUSED const runtime_shape_t &shape, NNCASE_UNUSED const runtime_shape_t &src_strides,
-    NNCASE_UNUSED const runtime_shape_t &dest_strides, size_t dims_offset, NNCASE_UNUSED kernel_context &context) noexcept
+result<void> copy_src_contiguous_impl(const T *src, T *dest, NNCASE_UNUSED const runtime_shape_t &shape, NNCASE_UNUSED const runtime_shape_t &src_strides,
+    NNCASE_UNUSED const runtime_shape_t &dest_strides, int dims_offset, NNCASE_UNUSED kernel_context &context) noexcept
 {
     auto *src_ptr = src;
     return _copy_impl(
@@ -112,7 +136,7 @@ result<void> copy_src_continuous_impl(const T *src, T *dest, NNCASE_UNUSED const
 }
 }
 
-int find_last_not_continuous_index(const runtime_shape_t &strides, const runtime_shape_t &default_strides)
+int find_last_not_contiguous_index(const runtime_shape_t &strides, const runtime_shape_t &default_strides)
 {
     for (int i = strides.size() - 1; i >= 0; --i)
     {
@@ -124,30 +148,30 @@ int find_last_not_continuous_index(const runtime_shape_t &strides, const runtime
     return -1;
 }
 
-#define COPY_CONTINUOUS_IMPL(size, type) \
+#define COPY_CONTIGUOUS_IMPL(size, type) \
     case size:                           \
-        return copy_continuous_impl(reinterpret_cast<const type *>(src), reinterpret_cast<type *>(dest), shape, src_strides, dest_strides, context)
+        return copy_contiguous_impl(reinterpret_cast<const type *>(src), reinterpret_cast<type *>(dest), shape, src_strides, dest_strides, context)
 
-#define COPY_DEST_CONTINUOUS_IMPL(size, type) \
+#define COPY_DEST_CONTIGUOUS_IMPL(size, type) \
     case size:                                \
-        return copy_dest_continuous_impl(reinterpret_cast<const type *>(src), reinterpret_cast<type *>(dest), shape, src_strides, dest_strides, dims_offset, context)
+        return copy_dest_contiguous_impl(reinterpret_cast<const type *>(src), reinterpret_cast<type *>(dest), shape, src_strides, dest_strides, dims_offset, context)
 
-#define COPY_SRC_CONTINUOUS_IMPL(size, type) \
+#define COPY_SRC_CONTIGUOUS_IMPL(size, type) \
     case size:                               \
-        return copy_src_continuous_impl(reinterpret_cast<const type *>(src), reinterpret_cast<type *>(dest), shape, src_strides, dest_strides, dims_offset, context)
+        return copy_src_contiguous_impl(reinterpret_cast<const type *>(src), reinterpret_cast<type *>(dest), shape, src_strides, dest_strides, dims_offset, context)
 
 result<void> optimized::copy(datatype_t type, const gsl::byte *src, gsl::byte *dest,
     const runtime_shape_t &shape, const runtime_shape_t &src_strides, const runtime_shape_t &dest_strides, 
-    size_t dims_offset, size_t impl_select, kernel_context &context) noexcept
+    int dims_offset, CopyImplSelect impl_select, kernel_context &context) noexcept
 {
     switch (impl_select)
     {
-    case 0:
-        TYPE_IMPL_SELECT(type, COPY_CONTINUOUS_IMPL);
-    case 1:
-        TYPE_IMPL_SELECT(type, COPY_SRC_CONTINUOUS_IMPL);
-    case 2:
-        TYPE_IMPL_SELECT(type, COPY_DEST_CONTINUOUS_IMPL);
+    case CopyImplSelect::all_contiguous:
+        TYPE_IMPL_SELECT(type, COPY_CONTIGUOUS_IMPL);
+    case CopyImplSelect::src_contiguous:
+        TYPE_IMPL_SELECT(type, COPY_SRC_CONTIGUOUS_IMPL);
+    case CopyImplSelect::dest_contiguous:
+        TYPE_IMPL_SELECT(type, COPY_DEST_CONTIGUOUS_IMPL);
     }
     return ok();
 }

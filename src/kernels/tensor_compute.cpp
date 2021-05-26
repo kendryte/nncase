@@ -58,33 +58,35 @@ result<void> kernels::copy(datatype_t type, const gsl::byte *src, gsl::byte *des
     const runtime_shape_t &shape, const runtime_shape_t &src_strides, const runtime_shape_t &dest_strides, kernel_context &context) noexcept
 {
     const auto default_strides = get_default_strides(shape);
-    if (src_strides == default_strides)
+    auto src_dims_offset = find_last_not_contiguous_index(src_strides, default_strides);
+    auto dest_dims_offset = find_last_not_contiguous_index(dest_strides, default_strides);
+
+    auto src_continuous = src_strides == default_strides;
+    auto dest_continuous = dest_strides == default_strides;
+    if (!src_continuous && !dest_continuous)
     {
-        if (dest_strides == default_strides)
-        {
-            return cpu::optimized::copy(type, src, dest, shape, src_strides, dest_strides, 0, 0, context);
-        }
-        else
-        {
-            auto dims_offset = find_last_not_continuous_index(dest_strides, default_strides);
-            if (dims_offset < 4)
-            {
-                return cpu::optimized::copy(type, src, dest, shape, src_strides, dest_strides, dims_offset, 1, context);
-            }
-            else
-            {
-                return cpu::reference::copy(type, src, dest, shape, src_strides, dest_strides, context);
-            }
-        }
-    }
-    else if (dest_strides == default_strides)
-    {
-        auto dims_offset = find_last_not_continuous_index(src_strides, default_strides);
-        return cpu::optimized::copy(type, src, dest, shape, src_strides, dest_strides, dims_offset, 2, context);
+        return cpu::reference::copy(type, src, dest, shape, src_strides, dest_strides, context);
     }
     else
     {
-        return cpu::reference::copy(type, src, dest, shape, src_strides, dest_strides, context);
+        CopyImplSelect select = CopyImplSelect::all_contiguous;
+        int dims_offset = -1;
+        if (src_continuous && dest_continuous)
+        {
+            select = CopyImplSelect::all_contiguous;
+            dims_offset = -1;
+        }
+        else if (src_continuous && dest_dims_offset < 5)
+        {
+            select = CopyImplSelect::src_contiguous;
+            dims_offset = dest_dims_offset;
+        }
+        else if (dest_continuous && src_dims_offset < 5)
+        {
+            select = CopyImplSelect::dest_contiguous;
+            dims_offset = src_dims_offset;
+        }
+        return cpu::optimized::copy(type, src, dest, shape, src_strides, dest_strides, dims_offset, select, context);
     }
 }
 
