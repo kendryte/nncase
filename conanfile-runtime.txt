@@ -5,7 +5,6 @@ cmake_paths
 
 [requires]
 gsl-lite/0.37.0
-nlohmann_json/3.9.1
 mpark-variant/1.4.0
 pybind11/2.6.1
 
