@@ -1,0 +1,84 @@
+name: k210
+
+on: [push, pull_request]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-18.04]
+
+    steps:
+    - uses: actions/checkout@v2
+        
+    - name: Download K210 Toolchains
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        wget https://github.com/kendryte/kendryte-gnu-toolchain/releases/download/v8.2.0-20190409/kendryte-toolchain-ubuntu-amd64-8.2.0-20190409.tar.xz -O $GITHUB_WORKSPACE/kendryte-toolchain.tar.xz
+        
+    - name: Install K210 Toolchains
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        sudo tar xf $GITHUB_WORKSPACE/kendryte-toolchain.tar.xz -C $GITHUB_WORKSPACE
+          
+    - name: Setup Python
+      uses: actions/setup-python@v2.2.1
+      with:
+        python-version: 3.7
+        
+    - name: Install System Requirements
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        sudo apt install libgtk2.0-dev -y
+        
+    - name: Install Python Packages
+      shell: bash
+      run: |
+        pip install conan tensorflow==2.4.1 matplotlib pillow onnxruntime
+        pip install torch==1.4.0+cpu torchvision==0.5.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
+        
+    - name: Configure Conan
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        conan profile new default --detect
+        conan profile update settings.compiler.libcxx=libstdc++11 default
+
+    - name: Create Build Environment
+      run: cmake -E make_directory ${{github.workspace}}/build
+
+    - name: Configure CMake
+      env:
+        RISCV_ROOT_PATH: ${{github.workspace}}/kendryte-toolchain
+      shell: bash
+      working-directory: ${{github.workspace}}/build
+      # Note the current convention is to use the -S and -B options here to specify source 
+      # and build directories, but this is only available with CMake 3.13 and higher.  
+      # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILDING_RUNTIME=TRUE -DBUILD_PYTHON_BINDING=OFF -DCMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/toolchains/k210.toolchain.cmake
+
+    - name: Build
+      working-directory: ${{github.workspace}}/build
+      shell: bash
+      # Execute the build.  You can specify a specific target with "--target <NAME>"
+      run: cmake --build . --config $BUILD_TYPE
+
+    - name: Install
+      working-directory: ${{github.workspace}}/build
+      shell: bash
+      # Execute the build.  You can specify a specific target with "--target <NAME>"
+      run: cmake --install . --prefix ../install
+      
+    - name: Upload a Build Artifact
+      uses: actions/upload-artifact@v2.2.2
+      with:
+        name: nncaseruntime-k210
+        path: ${{github.workspace}}/install
+        if-no-files-found: error

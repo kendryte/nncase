@@ -14,6 +14,7 @@
  */
 #pragma once
 #include "runtime_types.h"
+#include <cstring>
 
 BEGIN_NS_NNCASE_KERNELS_CPU_OPT
 

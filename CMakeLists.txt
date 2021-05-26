@@ -37,8 +37,15 @@ conan_add_remote(NAME bincrafts URL https://api.bintray.com/conan/bincrafters/pu
 
 option(NNCASE_OPENMP "openmp support" OFF)
 
+if(NNCASE_OPENMP)
+    find_package(OpenMP REQUIRED)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+    add_definitions("-DNNCASE_OPENMP")
+    message("Enable NNCASE_OPENMP")
+endif()
+
 if (BUILDING_RUNTIME)
-    option(BUILD_SHARED_LIBS "Build shared libraries (.dll/.so) instead of static ones (.lib/.a)" ON)
+    option(BUILD_PYTHON_BINDING "Build python binding" ON)
     conan_cmake_run(CONANFILE conanfile-runtime.txt
                     BASIC_SETUP CMAKE_TARGETS
                     SETTINGS compiler.cppstd=14
@@ -67,6 +74,11 @@ if (BUILDING_RUNTIME)
     add_subdirectory(include/nncase)
     add_subdirectory(src/kernels)
     add_subdirectory(src/runtime)
+    
+    # Python binding
+    if(BUILD_PYTHON_BINDING)
+        add_subdirectory(python/nncaseruntime/native)
+    endif()
         
     install(DIRECTORY ${NNCASE_INCLUDE_DIR}/nncase
         DESTINATION include
@@ -94,13 +106,6 @@ else()
 
     find_package (Protobuf REQUIRED)
     include(cmake/flatc.cmake)
-
-    if(NNCASE_OPENMP)
-        find_package(OpenMP REQUIRED)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-        add_definitions("-DNNCASE_OPENMP")
-        message("Enable NNCASE_OPENMP")
-    endif()
 
     set(NNCASE_MAIN_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
     set(NNCASE_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include)

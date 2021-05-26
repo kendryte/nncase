@@ -85,7 +85,7 @@ struct Ok<void>
 
 struct Err
 {
-    template <class ErrCode, class = std::enable_if_t<std::is_error_condition_enum_v<ErrCode>>>
+    template <class ErrCode, class = std::enable_if_t<std::is_error_condition_enum<ErrCode>::value>>
     Err(ErrCode value)
         : err(value) { }
 
@@ -112,7 +112,7 @@ constexpr Ok<std::decay_t<T>> ok(T &&value)
     return Ok<std::decay_t<T>>(std::forward<T>(value));
 }
 
-template <class ErrCode, class = std::enable_if_t<std::is_error_condition_enum_v<ErrCode>>>
+template <class ErrCode, class = std::enable_if_t<std::is_error_condition_enum<ErrCode>::value>>
 Err err(ErrCode value)
 {
     return Err(value);
@@ -265,16 +265,9 @@ public:
     constexpr auto expect(NNCASE_UNUSED gsl::cstring_span message) noexcept
     {
         if (is_ok())
-        {
-            if constexpr (std::is_same_v<T, void>)
-                return;
-            else
-                return std::ref(value().value);
-        }
+            return detail::unwrap_impl<T>()(value());
         else
-        {
             std::terminate();
-        }
     }
 
     template <class Func, class Traits = detail::map_traits<T, Func>>
