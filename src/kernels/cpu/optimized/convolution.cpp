@@ -225,12 +225,6 @@ void binding_ptr_unfold(std::array<T, N> &a, T base, size_t step, size_t start, 
     NNCASE_UNUSED int dummy[] = { 0, (a[start + I] = base + step * I, 0)... };
 }
 
-template <size_t Stride, size_t Filter, typename T, size_t N, size_t... P>
-void binding_ptr_unfold(std::array<T, N> &a, T base, size_t step, std::index_sequence<P...>)
-{
-    NNCASE_UNUSED int dummy[] = { 0, (binding_ptr<Filter>(a, base + P * Stride * step, step, P * std::min(Filter, Stride)), 0)... };
-}
-
 template <typename T, size_t... W>
 void conv_1xm(T &sum, const T *r, const T *k, std::index_sequence<W...>)
 {
@@ -295,6 +289,12 @@ template <size_t Filter, typename T, size_t N>
 void binding_ptr(std::array<T, N> &a, T base, size_t step, size_t start = 0)
 {
     binding_ptr_unfold(a, base, step, start, std::make_index_sequence<Filter> {});
+}
+
+template <size_t Stride, size_t Filter, typename T, size_t N, size_t... P>
+void binding_ptr_unfold(std::array<T, N> &a, T base, size_t step, std::index_sequence<P...>)
+{
+    NNCASE_UNUSED int dummy[] = { 0, (binding_ptr<Filter>(a, base + P * Stride * step, step, P * std::min(Filter, Stride)), 0)... };
 }
 
 template <size_t Parallel, size_t Stride, size_t Filter, typename T, size_t N>
