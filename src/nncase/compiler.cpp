@@ -159,7 +159,10 @@ public:
         optimize_target_independent(graph_);
 
         std::cout << "3. Optimize target dependent..." << std::endl;
-        optimize_target_dependent(graph_, to_datatype_method(compile_options_.input_type));
+        if (compile_options_.input_type == "float32")
+            optimize_target_dependent(graph_, datatype_t::dt_int8);
+        else
+            optimize_target_dependent(graph_, to_datatype_method(compile_options_.input_type));
 
         if (use_ptq_)
         {
@@ -191,7 +194,10 @@ public:
         if (stage > 2)
         {
             std::cout << "3. Optimize target dependent..." << std::endl;
-            optimize_target_dependent(graph_, to_datatype_method(compile_options_.input_type));
+            if (compile_options_.input_type == "float32")
+                optimize_target_dependent(graph_, datatype_t::dt_int8);
+            else
+                optimize_target_dependent(graph_, to_datatype_method(compile_options_.input_type));
         }
 
         return graph_;
@@ -288,7 +294,7 @@ private:
             if (compile_options_.dump_ir)
                 pmgr.dump_dir(compile_options_.dump_dir);
             if (to_datatype_method(compile_options_.input_type) == dt_float32)
-                target_->register_quantize_passes(graph.module_type(), pmgr, dt_uint8);
+                target_->register_quantize_passes(graph.module_type(), pmgr, dt_int8);
             else
                 target_->register_quantize_passes(graph.module_type(), pmgr, to_datatype_method(compile_options_.input_type));
             pmgr.run();
