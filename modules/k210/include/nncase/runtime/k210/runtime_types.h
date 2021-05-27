@@ -15,7 +15,6 @@
 #pragma once
 #include "compiler_defs.h"
 #include <nncase/runtime/datatypes.h>
-#include <xtensor/xshape.hpp>
 
 BEGIN_NS_NNCASE_RT_K210
 
@@ -287,7 +286,7 @@ inline bool operator!=(const kpu_activation_segment &lhs, const kpu_activation_s
 
 using kpu_activation_table_t = std::array<kpu_activation_segment, 16>;
 
-using kpu_shape_t = xt::static_shape<uint32_t, 4>;
+using kpu_shape_t = std::array<uint32_t, 4>;
 
 enum class opcode_t : uint8_t
 {

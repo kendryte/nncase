@@ -65,13 +65,6 @@ jobs:
       # Execute the build.  You can specify a specific target with "--target <NAME>"
       run: cmake --install . --prefix ../install
       
-    - name: Create Test Environment
-      working-directory: ${{github.workspace}}
-      shell: bash
-      run: |
-        pip install pytest
-        mkdir test_results
-      
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v2.2.2
       if: runner.os == 'Windows'
@@ -87,6 +80,47 @@ jobs:
         name: nncase_linux_x86_64
         path: ${{github.workspace}}/install
         if-no-files-found: error
+
+  test-compiler:
+    needs: [build]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-18.04]
+
+    steps:
+    - uses: actions/checkout@v2
+          
+    - name: Setup Python
+      uses: actions/setup-python@v2.2.1
+      with:
+        python-version: 3.7
+        
+    - name: Install System Requirements
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        sudo apt install libgtk2.0-dev -y
+        
+    - name: Install Python Packages
+      shell: bash
+      run: |
+        pip install conan tensorflow==2.4.1 matplotlib pillow onnxruntime
+        pip install torch==1.4.0+cpu torchvision==0.5.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
+        pip install pytest
+      
+    - name: Create Test Environment
+      working-directory: ${{github.workspace}}
+      shell: bash
+      run: |
+        pip install pytest
+        mkdir test_results
+      
+    - name: Download a Build Artifact
+      uses: actions/download-artifact@v2.0.9
+      with:
+        name: nncase_linux_x86_64
+        path: ${{github.workspace}}/install
     
     - name: Test
       working-directory: ${{github.workspace}}

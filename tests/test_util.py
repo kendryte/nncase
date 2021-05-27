@@ -514,6 +514,11 @@ def test_onnx_module(case_name, module, in_shape, targets):
         assert ret
 
 def clear(case_dir):
-    if os.path.exists(case_dir):
-        shutil.rmtree(case_dir)
+    in_ci = os.getenv('CI', False)
+    if in_ci:
+        if os.path.exists(output_root):
+            shutil.rmtree(output_root)
+    else:
+        if os.path.exists(case_dir):
+            shutil.rmtree(case_dir)
     os.makedirs(case_dir)

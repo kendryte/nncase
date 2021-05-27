@@ -37,8 +37,14 @@ struct compile_options
     bool dump_ir;
     bool dump_asm;
     bool is_fpga;
+    bool use_dataset_as_input_stat = false;
     std::string target;
     std::filesystem::path dump_dir;
+    std::string input_type = "float32";
+    std::string output_type = "float32";
+
+    float input_mean = 0.f;
+    float input_std = 1.f;
 };
 
 struct import_options

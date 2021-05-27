@@ -186,7 +186,7 @@ void kpu_conv2d(const uint8_t *input, int64_t *workspace, uint8_t *output, const
                     return value > seg.start_x;
                 });
                 auto act_value = runtime::carry_shift<int64_t, true>((value - seg.start_x) * seg.mul, seg.shift) + seg.add;
-                *out_it++ = (uint8_t)std::clamp(act_value, int64_t(0), int64_t(255));
+                *out_it++ = (uint8_t)kernels::detail::clamp(act_value, int64_t(0), int64_t(255));
             }
         }
     }
@@ -257,8 +257,8 @@ inline void kpu_pool2d(const T *input, T *output, int32_t in_h, int32_t in_w, in
                     {
                         for (int32_t kx = 0; kx < filter; kx++)
                         {
-                            const int32_t in_y = std::clamp(in_y_origin + ky, 0, in_h - 1);
-                            const int32_t in_x = std::clamp(in_x_origin + kx, 0, in_w - 1);
+                            const int32_t in_y = kernels::detail::clamp(in_y_origin + ky, 0, in_h - 1);
+                            const int32_t in_x = kernels::detail::clamp(in_x_origin + kx, 0, in_w - 1);
                             const T in_v = in_c_p[in_y * in_w + in_x];
 
                             value += in_v;

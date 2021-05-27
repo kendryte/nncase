@@ -18,6 +18,8 @@
 
 BEGIN_NS_NNCASE_RUNTIME
 
+NNCASE_INLINE_VAR constexpr size_t MAX_SECTION_NAME_LENGTH = 16;
+
 struct model_header
 {
     uint32_t identifier;
@@ -47,7 +49,7 @@ struct mempool_desc
 
 struct section_header
 {
-    char name[16];
+    char name[MAX_SECTION_NAME_LENGTH];
     uint32_t flags;
     uint32_t start;
     uint32_t size;

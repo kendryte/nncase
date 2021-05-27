@@ -16,7 +16,6 @@
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/runtime/nnil.h>
 #include <nncase/runtime/runtime_op_utility.h>
-#include <xtensor/xadapt.hpp>
 
 using namespace nncase;
 using namespace nncase::runtime;

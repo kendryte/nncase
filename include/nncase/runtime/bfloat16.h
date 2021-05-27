@@ -67,7 +67,7 @@ public:
     explicit bfloat16(float v) noexcept
         : value_(truncate_to_bfloat16(v).value_) { }
 
-    template <class T, class = std::enable_if_t<std::is_integral_v<T> || std::is_floating_point_v<T>>>
+    template <class T, class = std::enable_if_t<std::is_integral<T>::value || std::is_floating_point<T>::value>>
     explicit bfloat16(const T &val) noexcept
         : bfloat16(static_cast<float>(val)) { }
 
@@ -179,20 +179,26 @@ private:
     uint16_t value_;
 };
 
-#define DEFINE_BF16_BINARY(T, x)                         \
-    inline T operator x(bfloat16 a, bfloat16 b) noexcept \
-    {                                                    \
-        return T(float(a) x float(b));                   \
+#define DEFINE_BF16_BINARY_BF16RET(x)                            \
+    inline bfloat16 operator x(bfloat16 a, bfloat16 b) noexcept  \
+    {                                                            \
+        return bfloat16::round_to_bfloat16(float(a) x float(b)); \
     }
 
-DEFINE_BF16_BINARY(bfloat16, +)
-DEFINE_BF16_BINARY(bfloat16, -)
-DEFINE_BF16_BINARY(bfloat16, *)
-DEFINE_BF16_BINARY(bfloat16, /)
-DEFINE_BF16_BINARY(bool, <)
-DEFINE_BF16_BINARY(bool, <=)
-DEFINE_BF16_BINARY(bool, >=)
-DEFINE_BF16_BINARY(bool, >)
+#define DEFINE_BF16_BINARY_BOOLRET(x)                       \
+    inline bool operator x(bfloat16 a, bfloat16 b) noexcept \
+    {                                                       \
+        return float(a) x float(b);                         \
+    }
+
+DEFINE_BF16_BINARY_BF16RET(+)
+DEFINE_BF16_BINARY_BF16RET(-)
+DEFINE_BF16_BINARY_BF16RET(*)
+DEFINE_BF16_BINARY_BF16RET(/)
+DEFINE_BF16_BINARY_BOOLRET(<)
+DEFINE_BF16_BINARY_BOOLRET(<=)
+DEFINE_BF16_BINARY_BOOLRET(>=)
+DEFINE_BF16_BINARY_BOOLRET(>)
 
 #define DEFINE_BF16_BINARY_SELF_MOD(x, op)                        \
     inline bfloat16 &operator x(bfloat16 &a, bfloat16 b) noexcept \
@@ -208,7 +214,7 @@ DEFINE_BF16_BINARY_SELF_MOD(/=, /)
 
 inline bfloat16 operator-(bfloat16 a) noexcept
 {
-    return bfloat16(-float(a));
+    return bfloat16::round_to_bfloat16(-float(a));
 }
 
 inline bool operator==(const bfloat16 &lhs, const bfloat16 &rhs) noexcept
@@ -302,46 +308,46 @@ using nncase::bfloat16;
 inline bool isinf(const bfloat16 &a) { return std::isinf(float(a)); }
 inline bool isnan(const bfloat16 &a) { return std::isnan(float(a)); }
 inline bool isfinite(const bfloat16 &a) { return std::isfinite(float(a)); }
-inline bfloat16 abs(const bfloat16 &a) { return bfloat16(std::abs(float(a))); }
-inline bfloat16 exp(const bfloat16 &a) { return bfloat16(std::exp(float(a))); }
-inline bfloat16 log(const bfloat16 &a) { return bfloat16(std::log(float(a))); }
+inline bfloat16 abs(const bfloat16 &a) { return bfloat16::round_to_bfloat16(fabsf(float(a))); }
+inline bfloat16 exp(const bfloat16 &a) { return bfloat16::round_to_bfloat16(expf(float(a))); }
+inline bfloat16 log(const bfloat16 &a) { return bfloat16::round_to_bfloat16(logf(float(a))); }
 inline bfloat16 log10(const bfloat16 &a)
 {
-    return bfloat16(std::log10(float(a)));
+    return bfloat16::round_to_bfloat16(log10f(float(a)));
 }
 inline bfloat16 sqrt(const bfloat16 &a)
 {
-    return bfloat16(std::sqrt(float(a)));
+    return bfloat16::round_to_bfloat16(sqrtf(float(a)));
 }
 inline bfloat16 pow(const bfloat16 &a, const bfloat16 &b)
 {
-    return bfloat16(std::pow(float(a), float(b)));
+    return bfloat16::round_to_bfloat16(powf(float(a), float(b)));
 }
-inline bfloat16 sin(const bfloat16 &a) { return bfloat16(std::sin(float(a))); }
-inline bfloat16 cos(const bfloat16 &a) { return bfloat16(std::cos(float(a))); }
-inline bfloat16 tan(const bfloat16 &a) { return bfloat16(std::tan(float(a))); }
+inline bfloat16 sin(const bfloat16 &a) { return bfloat16::round_to_bfloat16(sinf(float(a))); }
+inline bfloat16 cos(const bfloat16 &a) { return bfloat16::round_to_bfloat16(cosf(float(a))); }
+inline bfloat16 tan(const bfloat16 &a) { return bfloat16::round_to_bfloat16(tanf(float(a))); }
 inline bfloat16 tanh(const bfloat16 &a)
 {
-    return bfloat16(std::tanh(float(a)));
+    return bfloat16::round_to_bfloat16(tanhf(float(a)));
 }
 inline bfloat16 floor(const bfloat16 &a)
 {
-    return bfloat16(std::floor(float(a)));
+    return bfloat16::round_to_bfloat16(floorf(float(a)));
 }
 inline bfloat16 ceil(const bfloat16 &a)
 {
-    return bfloat16(std::ceil(float(a)));
+    return bfloat16::round_to_bfloat16(ceilf(float(a)));
 }
 inline bfloat16 round(const bfloat16 &a)
 {
-    return bfloat16(std::round(float(a)));
+    return bfloat16::round_to_bfloat16(roundf(float(a)));
 }
 inline bfloat16 nearbyint(const bfloat16 &a)
 {
-    return bfloat16(std::nearbyint(float(a)));
+    return bfloat16::round_to_bfloat16(nearbyintf(float(a)));
 }
 inline long lrint(const bfloat16 &a)
 {
-    return std::lrint(float(a));
+    return lrintf(float(a));
 }
 } // namespace std

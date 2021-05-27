@@ -27,6 +27,7 @@ public:
     void register_target_independent_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr) override;
     void register_target_dependent_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr) override;
     void register_allocation_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr) override;
+    void add_quantization_broadcast(std::unordered_set<ir::node_opcode> &opcodes) override;
 
 protected:
     void move_transpose_transform(ir::transforms::pass &pass, bool add_constant_folding = true);

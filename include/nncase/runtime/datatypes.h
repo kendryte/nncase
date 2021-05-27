@@ -15,6 +15,7 @@
 #pragma once
 #include "bfloat16.h"
 #include "compiler_defs.h"
+#include "small_vector.hpp"
 #include <array>
 #include <cmath>
 #include <cstddef>
@@ -25,7 +26,6 @@
 #include <string>
 #include <type_traits>
 #include <vector>
-#include <xtensor/xshape.hpp>
 
 namespace nncase
 {
@@ -98,7 +98,7 @@ struct value_range
 
     static constexpr value_range<T> full() noexcept
     {
-        if constexpr (std::is_floating_point_v<T> || std::is_same_v<T, bfloat16>)
+        if (std::is_floating_point<T>::value || std::is_same<T, bfloat16>::value)
             return { -std::numeric_limits<T>::infinity(), std::numeric_limits<T>::infinity() };
         else
             return { std::numeric_limits<T>::lowest(), std::numeric_limits<T>::max() };
@@ -242,7 +242,8 @@ typedef enum _pad_mode
 {
     pad_constant,
     pad_reflect,
-    pad_symmetric
+    pad_symmetric,
+    pad_edge
 } pad_mode_t;
 
 typedef struct _quant_param
@@ -276,9 +277,9 @@ NNCASE_INLINE_VAR constexpr memory_location_t mem_output = 1;
 NNCASE_INLINE_VAR constexpr memory_location_t mem_rdata = 2;
 NNCASE_INLINE_VAR constexpr memory_location_t mem_data = 3;
 
-using runtime_shape_t = xt::svector<size_t, 4>;
-using runtime_axis_t = xt::svector<int32_t, 4>;
-using runtime_paddings_t = xt::svector<padding, 4>;
+using runtime_shape_t = itlib::small_vector<size_t, 4>;
+using runtime_axis_t = itlib::small_vector<int32_t, 4>;
+using runtime_paddings_t = itlib::small_vector<padding, 4>;
 
 struct alignas(8) scalar
 {
@@ -351,7 +352,9 @@ struct memory_range
     uint32_t size;
 };
 
-typedef std::array<char, 16> module_type_t;
+NNCASE_INLINE_VAR constexpr size_t MAX_MODULE_TYPE_LENGTH = 16;
+
+typedef std::array<char, MAX_MODULE_TYPE_LENGTH> module_type_t;
 
 template <std::size_t N, std::size_t... Is>
 constexpr module_type_t

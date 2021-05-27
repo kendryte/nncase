@@ -15,7 +15,6 @@
 #include <nncase/kernels/cpu/reference/tensor_compute.h>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/runtime/runtime_op_utility.h>
-#include <xtensor/xadapt.hpp>
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -29,10 +28,11 @@ template <class T>
 result<void> copy_impl(const T *src, T *dest, const runtime_shape_t &shape, const runtime_shape_t &src_strides,
     const runtime_shape_t &dest_strides) noexcept
 {
-    auto src_view = xt::adapt(src, runtime::compute_size(shape, src_strides), xt::no_ownership(), shape, src_strides);
-    auto dest_view = xt::adapt(dest, runtime::compute_size(shape, dest_strides), xt::no_ownership(), shape, dest_strides);
-    std::copy(src_view.begin(), src_view.end(), dest_view.begin());
-    return ok();
+    return apply(shape, [&](const runtime_shape_t &index) -> result<void> {
+        auto value = src[offset(src_strides, index)];
+        dest[offset(dest_strides, index)] = value;
+        return ok();
+    });
 }
 }
 

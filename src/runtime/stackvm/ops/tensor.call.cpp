@@ -34,7 +34,7 @@ result<void> stackvm_runtime_module::visit(const tensor_call_op_t &op) noexcept
         try_var(addr, pop_addr());
 
         auto datatype = (datatype_t)e_datatype.as_u1();
-        auto size = xt::compute_strides(shape, xt::layout_type::row_major, strides) * get_bytes(datatype);
+        auto size = runtime::compute_size(shape, strides) * get_bytes(datatype);
         try_var(tensor, host_runtime_tensor::create(datatype, shape, strides, { reinterpret_cast<gsl::byte *>(addr), size }, false));
         return ok(tensor);
     };
