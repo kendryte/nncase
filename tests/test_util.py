@@ -460,7 +460,7 @@ def compile_onnx_nncase(case_name, model_buf, targets, input, n, enable_ptq):
         compiler.import_onnx(model_buf, import_options)
         if enable_ptq:
             ptq_options = nncase.PTQTensorOptions()
-            ptq_options.set_tensor_data(input.tobytes())
+            ptq_options.set_tensor_data(input[0].tobytes())
             ptq_options.samples_count = n
             compiler.use_ptq(ptq_options)
         compiler.compile()
@@ -504,6 +504,7 @@ def test_onnx_module(case_name, module, in_shape, targets):
 
     # compile & infer
     for enable_ptq in [False, True]:
+
         if len(input_datas) > 1 and enable_ptq:
             continue
         compile_onnx_nncase(case_name, onnx_buf, targets,
