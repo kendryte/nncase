@@ -12,11 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
+
 import pytest
-import os
 import torch
-import numpy as np
-import sys
 import test_util
 
 def _make_module(kernel_size, stride, padding):
@@ -72,8 +70,7 @@ def test_pool(in_shape, kernel_size, stride, padding, request):
     if kernel_size[0] / 2 > padding[0] and kernel_size[1] / 2 > padding[1]:
         module = _make_module(kernel_size, stride, padding)
 
-        # test_util.test_onnx_module(request.node.name, module, in_shape, ['cpu', 'k210', 'k510'])
-        test_util.test_onnx_module(request.node.name, module, in_shape, ['k510'])
+        test_util.test_onnx_module(request.node.name, module, in_shape, ['cpu', 'k210', 'k510'])
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_pool.py'])

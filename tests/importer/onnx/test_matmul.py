@@ -12,11 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
+
 import pytest
-import os
 import torch
-import numpy as np
-import sys
 import test_util
 
 def _make_module(shape):
@@ -42,8 +40,7 @@ in_shapes = [
 def test_matmul(in_shape, request):
     module = _make_module(in_shape[1])
 
-    # test_util.test_onnx_module(request.node.name, module, in_shape[0], ['cpu', 'k210', 'k510'])
-    test_util.test_onnx_module(request.node.name, module, in_shape[0], ['k510'])
+    test_util.test_onnx_module(request.node.name, module, in_shape[0], ['cpu', 'k210', 'k510'])
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_matmul.py'])

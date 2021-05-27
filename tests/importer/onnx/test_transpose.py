@@ -12,11 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
+
 import pytest
-import os
 import torch
-import numpy as np
-import sys
 import test_util
 
 def _make_module(dim0, dim1):
@@ -52,8 +50,7 @@ def test_transpose(in_shape, axis, request):
     if len(in_shape) > axis[1]:
         module = _make_module(axis[0], axis[1])
 
-        # test_util.test_onnx_module(request.node.name, module, in_shape, ['cpu', 'k210', 'k510'])
-        test_util.test_onnx_module(request.node.name, module, in_shape, ['k510'])
+        test_util.test_onnx_module(request.node.name, module, in_shape, ['cpu', 'k210', 'k510'])
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_transpose.py'])

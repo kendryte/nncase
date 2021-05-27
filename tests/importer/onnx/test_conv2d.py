@@ -12,11 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
+
 import pytest
-import os
 import torch
-import numpy as np
-import sys
 import test_util
 
 def _make_module(i_channel, k_size, o_channel, stride, padding, padding_mode, dilation):

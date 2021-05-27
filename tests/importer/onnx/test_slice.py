@@ -59,8 +59,7 @@ axes = [
 def test_slice(in_shape, out_channel, kernel_size, axis, request):
     module = _make_module(in_shape, out_channel, kernel_size, 1, 0, 2)
 
-    # test_util.test_onnx_module(request.node.name, module, in_shape, ['cpu', 'k210', 'k510'])
-    test_util.test_onnx_module(request.node.name, module, in_shape, ['k510'])
+    test_util.test_onnx_module(request.node.name, module, in_shape, ['cpu', 'k210', 'k510'])
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_slice.py'])

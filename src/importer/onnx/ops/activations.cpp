@@ -34,10 +34,10 @@ void onnx_importer::convert_op_Relu(const NodeProto &node)
     const auto &input = node.input()[0];
     const auto &output = node.output()[0];
 
-    auto &&in_shape = get_shape(input);
+    auto in_shape = get_shape(input);
 
     auto zero = graph_.emplace<constant>(0.f);
-    auto max = graph_.emplace<binary>(binary_max, move(in_shape), zero->output().shape(), value_range<float>::full());
+    auto max = graph_.emplace<binary>(binary_max, in_shape, zero->output().shape(), value_range<float>::full());
 
     max->input_b().connect(zero->output());
 

@@ -12,11 +12,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
+
 import pytest
-import os
 import torch
-import numpy as np
-import sys
 import test_util
 
 def _make_module(num, init):
@@ -34,8 +32,6 @@ def _make_module(num, init):
 
 in_shapes = [
     [1],
-    [8, 8],
-    [1, 4, 16],
     [1, 3, 224, 224]
 ]
 
@@ -50,8 +46,7 @@ def test_prelu(in_shape, init, request):
     num = 1 if len(in_shape) < 2 else in_shape[1]
     module = _make_module(num, init)
 
-    # test_util.test_onnx_module(request.node.name, module, in_shape, ['cpu', 'k210', 'k510'])
-    test_util.test_onnx_module(request.node.name, module, in_shape, ['k510'])
+    test_util.test_onnx_module(request.node.name, module, in_shape, ['cpu', 'k210', 'k510'])
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_prelu.py'])
