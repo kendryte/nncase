@@ -12,7 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-"""NNCase."""
+"""NNCase runtime."""
 from . import base
-from _nncase import Compiler, CompileOptions, ImportOptions, PTQTensorOptions, MemoryRange, RuntimeTensor, Simulator, GraphEvaluator
-from _nncase import test_target
+from _nncaseruntime import MemoryRange, RuntimeTensor, Interpreter
