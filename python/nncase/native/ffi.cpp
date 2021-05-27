@@ -131,9 +131,7 @@ datatype_t from_dtype(py::dtype dtype)
         return dt_float32;
     else if (dtype.is(py::dtype::of<double>()))
         return dt_float64;
-    //throw std::runtime_error("Unsupported dtype " + (std::string)py::str(dtype));
-    else
-        return dt_float32;
+    throw std::runtime_error("Unsupported dtype " + (std::string)py::str(dtype));
 }
 
 runtime_shape_t to_rt_shape(const std::vector<pybind11::ssize_t> &value)
