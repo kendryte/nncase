@@ -24,6 +24,7 @@
 #include <nncase/ir/ops/k210/runtime_type_utils.h>
 #include <nncase/ir/ops/quantize.h>
 #include <nncase/ir/visitor.h>
+#include <nncase/kernels/kernel_utils.h>
 #include <nncase/kernels/nnil.h>
 #include <nncase/runtime/k210/runtime_op_utility.h>
 #include <nncase/transforms/k210/kpu_conv2d.h>
@@ -68,7 +69,7 @@ auto quantize_weights(quantizer &quantizer, fake_kpu_conv2d &conv, constant &wei
 
     auto out_it = q_weights.begin();
     for (auto w : weights_data)
-        *out_it++ = (uint8_t)std::clamp((int32_t)std::lrint(w / q_p.scale + q_p.zero_point), 0, 255);
+        *out_it++ = kernels::detail::quantize<uint8_t>(w, q_p);
     return std::make_tuple(q_p, std::move(scales), std::move(q_weights));
 }
 

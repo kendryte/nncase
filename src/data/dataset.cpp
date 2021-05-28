@@ -95,7 +95,7 @@ void image_dataset::process(const std::vector<uint8_t> &src, float *dest, const 
         size_t channel_size = xt::compute_size(xt::dynamic_shape<size_t> { shape[2], shape[3] });
         if (shape[1] == 3)
         {
-            dest_img.forEach<cv::Vec3b>([&](cv::Vec3b v, const int *idx) {
+            dest_img.forEach<cv::Vec3f>([&](cv::Vec3f v, const int *idx) {
                 auto i = idx[0] * shape[2] + idx[1];
                 dest[i] = v[2];
                 dest[i + channel_size] = v[1];
@@ -104,7 +104,7 @@ void image_dataset::process(const std::vector<uint8_t> &src, float *dest, const 
         }
         else if (shape[1] == 1)
         {
-            dest_img.forEach<cv::Vec3b>([&](cv::Vec3b v, const int *idx) {
+            dest_img.forEach<cv::Vec3f>([&](cv::Vec3f v, const int *idx) {
                 auto i = idx[0] * shape[2] + idx[1];
                 dest[i] = v[0];
             });

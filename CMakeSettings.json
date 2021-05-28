@@ -25,6 +25,18 @@
         {
           "name": "BUILDING_RUNTIME",
           "value": "TRUE"
+        },
+        {
+          "name": "ENABLE_K210_RUNTIME",
+          "value": "TRUE"
+        },
+        {
+          "name": "K210_SDK_DIR",
+          "value": "D:\\Work\\Repository\\kendryte-standalone-sdk"
+        },
+        {
+          "name": "DEFAULT_BUILTIN_RUNTIMES",
+          "value": "OFF"
         }
       ]
     },

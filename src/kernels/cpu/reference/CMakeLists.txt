@@ -8,6 +8,7 @@ set(SRCS batch_to_space.cpp
          convert.cpp
          copy.cpp
          dequantize.cpp
+         lut1d.cpp
          nnil.cpp
          pad.cpp
          quantize.cpp

@@ -12,19 +12,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <nncase/codegen/nnil_builder.h>
 #include <nncase/ir/evaluator.h>
 #include <nncase/ir/op_utils.h>
 #include <nncase/ir/ops/batch_to_space.h>
 #include <nncase/ir/ops/binary.h>
 #include <nncase/ir/ops/bitcast.h>
+#include <nncase/ir/ops/clamp.h>
 #include <nncase/ir/ops/concat.h>
 #include <nncase/ir/ops/conv2d.h>
 #include <nncase/ir/ops/conv2d_transpose.h>
-#include <nncase/ir/ops/dequantize.h>
-#include <nncase/ir/ops/matmul.h>
-//#include <nncase/ir/ops/nnil_method.h>
-#include <nncase/ir/ops/clamp.h>
 #include <nncase/ir/ops/convert.h>
+#include <nncase/ir/ops/dequantize.h>
+#include <nncase/ir/ops/fused_unary.h>
+#include <nncase/ir/ops/matmul.h>
 #include <nncase/ir/ops/pad.h>
 #include <nncase/ir/ops/quantize.h>
 #include <nncase/ir/ops/reduce.h>
@@ -37,6 +38,7 @@
 #include <nncase/ir/runtime_type_utils.h>
 #include <nncase/kernels/convolution.h>
 #include <nncase/kernels/neutral/neutral_kernels.h>
+#include <nncase/kernels/nnil.h>
 #include <nncase/kernels/reduce_window.h>
 #include <nncase/kernels/tensor_compute.h>
 
@@ -203,6 +205,24 @@ void register_neutral_evaluators()
 
 #undef DEQUANTIZE
         }
+    });
+
+    register_evaluator(op_fused_unary, [](ir::node &node, module_evaluate_context &context) {
+        auto &rnode = static_cast<fused_unary &>(node);
+
+        auto input = host_runtime_tensor::buffer(context.memory_at(rnode.input())).unwrap_or_throw().as_span<float>();
+        auto output = host_runtime_tensor::buffer(context.memory_at(rnode.output())).unwrap_or_throw().as_span<float>();
+
+        using namespace nncase::codegen;
+        std::stringstream ss;
+        binary_writer bw(ss);
+        nnil_builder builder(bw);
+
+        fused_unary::compile_graph(rnode.subgraph(), builder);
+        auto buf = ss.str();
+        std::vector<gsl::byte> body(reinterpret_cast<gsl::byte *>(buf.data()), reinterpret_cast<gsl::byte *>(buf.data() + buf.size()));
+        kernels::nnil_unary_method(input.data(), output.data(), input.size(), body)
+            .unwrap_or_throw();
     });
 
     register_evaluator(op_matmul, [](ir::node &node, module_evaluate_context &context) {
