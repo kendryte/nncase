@@ -13,6 +13,7 @@ target_sources(transforms PRIVATE
     fuse_pad.cpp
     fuse_clamp.cpp
     fuse_unary.cpp
+    fused_unary_to_lookup1d.cpp
     transpose_motion.cpp
     dequantize_motion.cpp
     quantize_motion.cpp

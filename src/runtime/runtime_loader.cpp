@@ -77,6 +77,20 @@ result<rt_module_activator_t> find_runtime_activator(const module_type_t &type)
 }
 #else
 #define NNCASE_NO_LOADABLE_RUNTIME
+
+result<rt_module_activator_t> find_runtime_activator(const module_type_t &type)
+{
+    auto builtin_runtime = builtin_runtimes;
+    while (builtin_runtime->activator)
+    {
+        if (!strcmp(type.data(), builtin_runtime->id.data()))
+        {
+            return ok(builtin_runtime->activator);
+        }
+    }
+
+    return err(nncase_errc::runtime_not_found);
+}
 #endif
 
 result<std::unique_ptr<runtime_module>> runtime_module::create(const module_type_t &type)
@@ -85,19 +99,13 @@ result<std::unique_ptr<runtime_module>> runtime_module::create(const module_type
         return stackvm::create_stackvm_runtime_module();
 
     result<std::unique_ptr<runtime_module>> rt_module(nncase_errc::runtime_not_found);
-    //#ifndef NNCASE_SIMULATOR
-    //    for (auto &reg : builtin_runtimes)
-    //    {
-    //        if (!strcmp(target_id.data(), reg.id.data()))
-    //        {
-    //            return reg.activator();
-    //        }
-    //    }
-    //#endif
-
-#ifndef NNCASE_NO_LOADABLE_RUNTIME
     try_var(activator, find_runtime_activator(type));
     activator(rt_module);
-#endif
     return rt_module;
 }
+
+#ifdef NNCASE_DEFAULT_BUILTIN_RUNTIMES
+runtime_registration nncase::runtime::builtin_runtimes[] = {
+    {}
+};
+#endif

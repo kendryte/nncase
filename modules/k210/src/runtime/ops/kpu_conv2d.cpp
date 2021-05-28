@@ -14,6 +14,9 @@
  */
 #include "../runtime_module.h"
 #include <nncase/kernels/k210/k210_kernels.h>
+#ifndef NNCASE_SIMULATOR
+#include <kpu.h>
+#endif
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -22,23 +25,59 @@ using namespace nncase::runtime::k210;
 namespace
 {
 #ifndef NNCASE_SIMULATOR
-result<void> kpu_send_layer(NNCASE_UNUSED kpu_layer_argument_t layer)
+static volatile int g_ai_done = 0;
+
+int kpu_plic_thunk(NNCASE_UNUSED void *userdata)
 {
-    // TODO: Unimplemented
-    return err(std::errc::not_supported);
+    kpu->interrupt_clear.reg = 0b111;
+    kpu->interrupt_mask.reg = 0b111;
+
+    g_ai_done = 1;
+    return 0;
+}
+
+int kpu_dma_thunk(NNCASE_UNUSED void *userdata)
+{
+    return 0;
+}
+
+void kpu_send_layer(const runtime::k210::kpu_layer_argument_t &layer)
+{
+    kpu->layer_argument_fifo = layer.interrupt_enabe.reg;
+    kpu->layer_argument_fifo = layer.image_addr.reg;
+    kpu->layer_argument_fifo = layer.image_channel_num.reg;
+    kpu->layer_argument_fifo = layer.image_size.reg;
+    kpu->layer_argument_fifo = layer.kernel_pool_type_cfg.reg;
+    kpu->layer_argument_fifo = layer.kernel_load_cfg.reg;
+    kpu->layer_argument_fifo = layer.kernel_offset.reg;
+    kpu->layer_argument_fifo = layer.kernel_calc_type_cfg.reg;
+    kpu->layer_argument_fifo = layer.write_back_cfg.reg;
+    kpu->layer_argument_fifo = layer.conv_value.reg;
+    kpu->layer_argument_fifo = layer.conv_value2.reg;
+    kpu->layer_argument_fifo = layer.dma_parameter.reg;
+}
+
+void kpu_conv2d_normal(runtime::k210::kpu_layer_argument_t &layer, plic_irq_callback_t callback, void *userdata)
+{
+    kpu->interrupt_clear.reg = 0b111;
+    kpu->interrupt_mask.reg = 0b110;
+    layer.dma_parameter.data.send_data_out = 0;
+    layer.interrupt_enabe.data.int_en = 1;
+    plic_irq_register(IRQN_AI_INTERRUPT, callback, userdata);
+    plic_irq_enable(IRQN_AI_INTERRUPT);
+    kpu_send_layer(layer);
 }
 #endif
 }
 
 result<void> k210_runtime_module::visit(const kpu_conv2d_options &op) noexcept
 {
-    auto &layer = op.layer;
+    auto layer = op.layer;
 
     try_var(weights, memory_at(op.weights));
     try_var(batch_norm_data, memory_at(op.batch_norm));
     try_var(activation_data, memory_at(op.activation));
 
-#ifdef NNCASE_SIMULATOR
     auto in_h = static_cast<uint32_t>(layer.image_size.data.i_col_high + 1);
     auto in_w = static_cast<uint32_t>(layer.image_size.data.i_row_wid + 1);
     auto in_ch = static_cast<uint32_t>(layer.image_channel_num.data.i_ch_num + 1);
@@ -46,14 +85,22 @@ result<void> k210_runtime_module::visit(const kpu_conv2d_options &op) noexcept
     auto out_h = static_cast<uint32_t>(layer.image_size.data.o_col_high + 1);
     auto out_w = static_cast<uint32_t>(layer.image_size.data.o_row_wid + 1);
     auto out_ch = static_cast<uint32_t>(layer.image_channel_num.data.o_ch_num + 1);
+    kpu_shape_t out_shape { op.batches, out_ch, out_h, out_w };
+
+    memory_range kpu_out_mem {};
+    kpu_out_mem.memory_location = mem_kpu;
+    kpu_out_mem.datatype = dt_uint8;
+    kpu_out_mem.start = (uint32_t)layer.image_addr.data.image_dst_addr * 64;
+    kpu_out_mem.size = 1;
+    try_var(kpu_out, memory_at(kpu_out_mem));
+
+#ifdef NNCASE_SIMULATOR
 
     auto is_depthwise = layer.interrupt_enabe.data.depth_wise_layer != 0;
 
     try_var(input, memory_at({ .memory_location = mem_kpu, .datatype = dt_uint8, .start = (uint32_t)layer.image_addr.data.image_src_addr * 64, .size = 1 }));
-    try_var(kpu_out, memory_at({ .memory_location = mem_kpu, .datatype = dt_uint8, .start = (uint32_t)layer.image_addr.data.image_dst_addr * 64, .size = 1 }));
 
     kpu_shape_t in_shape { op.batches, in_ch, in_h, in_w };
-    kpu_shape_t out_shape { op.batches, out_ch, out_h, out_w };
     auto in_fmap_size = kernels::detail::compute_size(in_shape);
 
     kpu_shape_t conv_out_shape { op.batches, out_ch, in_h, in_w };
@@ -137,6 +184,32 @@ result<void> k210_runtime_module::visit(const kpu_conv2d_options &op) noexcept
     }
     return ok();
 #else
-    return kpu_send_layer(layer);
+    layer.kernel_pool_type_cfg.data.bwsx_base_addr = (uintptr_t)batch_norm_data.data() - IOMEM;
+    layer.kernel_calc_type_cfg.data.active_addr = (uintptr_t)activation_data.data() - IOMEM;
+    layer.kernel_load_cfg.data.para_start_addr = (uintptr_t)weights.data() - IOMEM;
+
+    auto batch = op.batches;
+    auto in_per_batch = get_kpu_rows(in_w, in_h, in_ch);
+    auto out_per_batch = get_kpu_rows(out_w, out_h, out_ch);
+
+    for (size_t n = 0; n < batch; n++)
+    {
+        g_ai_done = 0;
+
+        kpu_conv2d_normal(layer, kpu_plic_thunk, nullptr);
+        while (!g_ai_done)
+            ;
+
+        layer.image_addr.data.image_src_addr += in_per_batch;
+        layer.image_addr.data.image_dst_addr += out_per_batch;
+    }
+
+    if (op.main_mem_output.size)
+    {
+        try_var(main_output, memory_at(op.main_mem_output));
+        return kernels::k210::kpu_download(kpu_out.as_span<uint8_t>().data(), main_output.as_span<uint8_t>().data(), out_shape);
+    }
+
+    return ok();
 #endif
 }

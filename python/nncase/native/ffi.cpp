@@ -137,6 +137,8 @@ PYBIND11_MODULE(_nncase, m)
 
     py::class_<import_options>(m, "ImportOptions")
         .def(py::init())
+        .def_readwrite("input_layout", &import_options::input_layout)
+        .def_readwrite("output_layout", &import_options::output_layout)
         .def_readwrite("output_arrays", &import_options::output_arrays);
 
     py::class_<ptq_tensor_options>(m, "PTQTensorOptions")

@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include <nncase/ir/ops/conv2d.h>
+#include <nncase/ir/ops/fused_unary.h>
 #include <nncase/ir/ops/k210/fake_kpu_conv2d.h>
 #include <nncase/ir/ops/pad.h>
 #include <nncase/ir/ops/slice.h>
@@ -82,4 +83,42 @@ void strided_slice_motion_transform::process(transform_context &context)
     conv->input().connect(output);
     for (auto &in : dup(inputs))
         in->connect(slc->output());
+}
+
+bool slice_fused_unary_motion_transform::on_try_match(node &node, transform_context &context)
+{
+    if (node.runtime_opcode() == op_k210_fake_kpu_conv2d)
+    {
+        slice *s;
+        fused_unary *fu;
+        if ((s = try_get_direct_child<slice>(node))
+            && (fu = try_get_direct_child<fused_unary>(*s)))
+        {
+            context.inputs.emplace_back(&s->input());
+            context.outputs.emplace_back(&fu->output());
+
+            context.matched_nodes.emplace_back(s);
+            context.matched_nodes.emplace_back(fu);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void slice_fused_unary_motion_transform::process(transform_context &context)
+{
+    auto &output = *context.inputs[0]->connection();
+    auto inputs = context.outputs[0]->connections();
+
+    auto &old_slice = static_cast<slice &>(*context.matched_nodes[0]);
+    auto &old_fu = static_cast<fused_unary &>(*context.matched_nodes[1]);
+
+    auto fu = context.graph.emplace<fused_unary>(old_fu.subgraph(), output.shape());
+    fu->name(old_fu.name());
+    fu->input().connect(output);
+    old_slice.input().connect(fu->output());
+
+    for (auto &in : dup(inputs))
+        in->connect(old_slice.output());
 }

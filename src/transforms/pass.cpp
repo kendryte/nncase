@@ -104,12 +104,12 @@ void pass_manager::run()
     for (auto &&pass : passes_)
     {
         pass.run(graph_, target_, quantizer_, dump_dir_);
+        graph_.cse();
         if (dump_dir_)
         {
             auto dump_path = *dump_dir_ / "passes" / pass.name();
             std::filesystem::create_directories(dump_path);
             ir::dump_graph(graph_, dump_path);
         }
-        graph_.cse();
     }
 }

@@ -125,11 +125,14 @@ public:
 
     nncase::target &target() noexcept { return *target_; }
 
-#define BEGIN_IMPORT()                              \
-    std::cout << "1. Import graph..." << std::endl; \
-                                                    \
-    importer::import_options imp_options;           \
-    imp_options.output_arrays = options.output_arrays;
+#define BEGIN_IMPORT()                                 \
+    std::cout << "1. Import graph..." << std::endl;    \
+                                                       \
+    importer::import_options imp_options;              \
+    imp_options.input_layout = options.input_layout;   \
+    imp_options.output_layout = options.output_layout; \
+    imp_options.output_arrays = options.output_arrays; \
+    input_layout_ = options.input_layout;
 
 #define END_IMPORT() \
     dump_graph(graph_, "import");
@@ -329,7 +332,7 @@ private:
             xt::dynamic_shape<size_t> dataset_in_shape(in_shape.begin(), in_shape.end());
             std::unique_ptr<dataset> ds;
             if (options.dataset_format == "image")
-                ds = std::make_unique<image_dataset>(options.dataset, dataset_in_shape, "NHWC", options.input_mean, options.input_std);
+                ds = std::make_unique<image_dataset>(options.dataset, dataset_in_shape, input_layout_, options.input_mean, options.input_std);
             else if (options.dataset_format == "raw")
                 ds = std::make_unique<raw_dataset>(options.dataset, dataset_in_shape, options.input_mean, options.input_std);
             else
@@ -503,6 +506,7 @@ private:
     ir::graph graph_;
     compile_options compile_options_;
     target_options target_options_;
+    std::string input_layout_;
     std::variant<ptq_dataset_options, ptq_tensor_options> ptq_options_;
     bool use_ptq_ = false;
     std::unique_ptr<nncase::target> target_;
