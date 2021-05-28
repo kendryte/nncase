@@ -36,7 +36,7 @@ result<void> lut1d_impl(const uint8_t *input, const uint8_t *table, uint8_t *out
 }
 
 result<void> reference::lut1d(datatype_t type, const gsl::byte *input, const gsl::byte *table, gsl::byte *output, const runtime_shape_t &shape,
-    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const scalar &min, const scalar &max) noexcept
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, NNCASE_UNUSED const scalar &min, NNCASE_UNUSED const scalar &max) noexcept
 {
     if (type != dt_uint8)
         return err(std::errc::not_supported);
