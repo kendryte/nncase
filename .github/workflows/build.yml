@@ -141,7 +141,7 @@ jobs:
         PYTHONPATH: ${{github.workspace}}/install/lib;${{github.workspace}}/install/python;${{github.workspace}}/tests
       run: |
         pytest tests/importer --doctest-modules --junitxml=test_results/importer.xml
-        
+
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action@v1
       if: always()

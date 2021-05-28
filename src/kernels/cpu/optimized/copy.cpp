@@ -26,73 +26,51 @@ namespace
 {
 template <class T>
 result<void> copy_contiguous_impl(const T *src, T *dest, const runtime_shape_t &shape, NNCASE_UNUSED const runtime_shape_t &src_strides,
-    NNCASE_UNUSED const runtime_shape_t &dest_strides, NNCASE_UNUSED kernel_context &context) noexcept
+    NNCASE_UNUSED const runtime_shape_t &dest_strides) noexcept
 {
     memcpy(dest, src, compute_size(shape) * sizeof(T));
     return ok();
 }
 
-template <class T, class Callable>
-result<void> _copy_impl(NNCASE_UNUSED const T *src, NNCASE_UNUSED T *dest, const runtime_shape_t &shape, NNCASE_UNUSED const runtime_shape_t &src_strides,
-    NNCASE_UNUSED const runtime_shape_t &dest_strides, int dims_offset, Callable &&line_copy, NNCASE_UNUSED kernel_context &context) noexcept
+template <size_t Dims, size_t CurDim = 0, class Callable = DefaultCallable>
+void _dim_copy(NNCASE_UNUSED const runtime_shape_t &shape,
+    Callable &&line_copy, runtime_shape_t &not_contiguous_index,
+    std::false_type) noexcept
 {
-    runtime_shape_t src_index(shape.size());
-    const auto width = std::accumulate(shape.begin() + dims_offset, shape.end(), 1, std::multiplies<int>());
+    line_copy(not_contiguous_index);
+}
+
+template <size_t Dims, size_t CurDim = 0, class Callable = DefaultCallable>
+void _dim_copy(const runtime_shape_t &shape, Callable &&line_copy,
+    runtime_shape_t &not_contiguous_index, std::true_type) noexcept
+{
+    for (size_t i = 0; i < shape[CurDim]; ++i)
+    {
+        not_contiguous_index[CurDim] = i;
+        _dim_copy<Dims, CurDim + 1>(shape, std::forward<Callable>(line_copy), not_contiguous_index,
+            is_not_equal<Dims, CurDim + 1>);
+    }
+}
+
+template <class Callable>
+result<void> _copy_impl(const runtime_shape_t &shape, int dims_offset, Callable &&line_copy) noexcept
+{
+    runtime_shape_t not_contiguous_index(shape.size());
     if (dims_offset == 1)
     {
-        for (size_t i = 0; i < shape[0]; ++i)
-        {
-            src_index[0] = i;
-            line_copy(src_index, width);
-        }
+        _dim_copy<1>(shape, line_copy, not_contiguous_index, std::true_type {});
     }
     else if (dims_offset == 2)
     {
-        for (size_t i = 0; i < shape[0]; ++i)
-        {
-            src_index[0] = i;
-            for (size_t j = 0; j < shape[1]; ++j)
-            {
-                src_index[1] = j;
-                line_copy(src_index, width);
-            }
-        }
+        _dim_copy<2>(shape, line_copy, not_contiguous_index, std::true_type {});
     }
     else if (dims_offset == 3)
     {
-        for (size_t i = 0; i < shape[0]; ++i)
-        {
-            src_index[0] = i;
-            for (size_t j = 0; j < shape[1]; ++j)
-            {
-                src_index[1] = j;
-                for (size_t k = 0; k < shape[2]; ++k)
-                {
-                    src_index[2] = k;
-                    line_copy(src_index, width);
-                }
-            }
-        }
+        _dim_copy<3>(shape, line_copy, not_contiguous_index, std::true_type {});
     }
     else if (dims_offset == 4)
     {
-        for (size_t i = 0; i < shape[0]; ++i)
-        {
-            src_index[0] = i;
-            for (size_t j = 0; j < shape[1]; ++j)
-            {
-                src_index[1] = j;
-                for (size_t k = 0; k < shape[2]; ++k)
-                {
-                    src_index[2] = k;
-                    for (size_t l = 0; l < shape[3]; ++l)
-                    {
-                        src_index[3] = l;
-                        line_copy(src_index, width);
-                    }
-                }
-            }
-        }
+        _dim_copy<4>(shape, line_copy, not_contiguous_index, std::true_type {});
     }
     else
     {
@@ -102,75 +80,65 @@ result<void> _copy_impl(NNCASE_UNUSED const T *src, NNCASE_UNUSED T *dest, const
 }
 
 template <class T>
-result<void> copy_dest_contiguous_impl(const T *src, T *dest, const runtime_shape_t &shape, NNCASE_UNUSED const runtime_shape_t &src_strides,
-    NNCASE_UNUSED const runtime_shape_t &dest_strides, int dims_offset, NNCASE_UNUSED kernel_context &context) noexcept
+result<void> copy_dest_contiguous_impl(const T *src, T *dest, const runtime_shape_t &shape, const runtime_shape_t &src_strides,
+    NNCASE_UNUSED const runtime_shape_t &dest_strides, int dims_offset) noexcept
 {
+    const auto width = std::accumulate(shape.begin() + dims_offset, shape.end(), 1, std::multiplies<size_t>());
     auto *dest_ptr = dest;
     return _copy_impl(
-        src, dest, shape, src_strides, dest_strides, dims_offset,
-        // dest_ptr is pointer reference
-        [&](const runtime_shape_t &src_index, auto width) {
+        shape, dims_offset,
+        // src_ptr is pointer reference
+        [&, width](const runtime_shape_t &src_index)
+        {
             const auto size = width * sizeof(T);
             const auto src_ptr = src + offset(src_strides, src_index);
             memcpy(dest_ptr, src_ptr, size);
             dest_ptr += width;
-        },
-        context);
+        });
 }
 
 template <class T>
-result<void> copy_src_contiguous_impl(const T *src, T *dest, NNCASE_UNUSED const runtime_shape_t &shape, NNCASE_UNUSED const runtime_shape_t &src_strides,
-    NNCASE_UNUSED const runtime_shape_t &dest_strides, int dims_offset, NNCASE_UNUSED kernel_context &context) noexcept
+result<void> copy_src_contiguous_impl(const T *src, T *dest, const runtime_shape_t &shape, NNCASE_UNUSED const runtime_shape_t &src_strides,
+    const runtime_shape_t &dest_strides, int dims_offset) noexcept
 {
+    const auto width = std::accumulate(shape.begin() + dims_offset, shape.end(), 1, std::multiplies<size_t>());
     auto *src_ptr = src;
     return _copy_impl(
-        src, dest, shape, src_strides, dest_strides, dims_offset,
+        shape, dims_offset,
         // dest_ptr is pointer reference
-        [&](const runtime_shape_t &dest_index, auto width) {
+        [&, width](const runtime_shape_t &dest_index)
+        {
             const auto size = width * sizeof(T);
             const auto dest_ptr = dest + offset(dest_strides, dest_index);
             memcpy(dest_ptr, src_ptr, size);
             src_ptr += width;
-        },
-        context);
+        });
 }
-}
-
-int find_last_not_contiguous_index(const runtime_shape_t &strides, const runtime_shape_t &default_strides)
-{
-    for (int i = strides.size() - 1; i >= 0; --i)
-    {
-        if (strides[i] != default_strides[i])
-        {
-            return i + 1;
-        }
-    }
-    return -1;
 }
 
 #define COPY_CONTIGUOUS_IMPL(size, type) \
     case size:                           \
-        return copy_contiguous_impl(reinterpret_cast<const type *>(src), reinterpret_cast<type *>(dest), shape, src_strides, dest_strides, context)
+        return copy_contiguous_impl(reinterpret_cast<const type *>(src), reinterpret_cast<type *>(dest), shape, src_strides, dest_strides)
 
 #define COPY_DEST_CONTIGUOUS_IMPL(size, type) \
     case size:                                \
-        return copy_dest_contiguous_impl(reinterpret_cast<const type *>(src), reinterpret_cast<type *>(dest), shape, src_strides, dest_strides, dims_offset, context)
+        return copy_dest_contiguous_impl(reinterpret_cast<const type *>(src), reinterpret_cast<type *>(dest), shape, src_strides, dest_strides, dims_offset)
 
 #define COPY_SRC_CONTIGUOUS_IMPL(size, type) \
     case size:                               \
-        return copy_src_contiguous_impl(reinterpret_cast<const type *>(src), reinterpret_cast<type *>(dest), shape, src_strides, dest_strides, dims_offset, context)
+        return copy_src_contiguous_impl(reinterpret_cast<const type *>(src), reinterpret_cast<type *>(dest), shape, src_strides, dest_strides, dims_offset)
 
 result<void> optimized::copy(datatype_t type, const gsl::byte *src, gsl::byte *dest,
-    const runtime_shape_t &shape, const runtime_shape_t &src_strides, const runtime_shape_t &dest_strides, 
-    int dims_offset, CopyImplSelect impl_select, kernel_context &context) noexcept
+    const runtime_shape_t &shape, const runtime_shape_t &src_strides, const runtime_shape_t &dest_strides,
+    int dims_offset, copy_impl_select impl_select, NNCASE_UNUSED kernel_context &context) noexcept
 {
     switch (impl_select)
     {
-    case CopyImplSelect::all_contiguous:
+    case copy_impl_select::all_contiguous:
         TYPE_IMPL_SELECT(type, COPY_CONTIGUOUS_IMPL);
-    case CopyImplSelect::src_contiguous:
+    case copy_impl_select::src_contiguous:
         TYPE_IMPL_SELECT(type, COPY_SRC_CONTIGUOUS_IMPL);
-    case CopyImplSelect::dest_contiguous:
+    case copy_impl_select::dest_contiguous:
         TYPE_IMPL_SELECT(type, COPY_DEST_CONTIGUOUS_IMPL);
     }
     return ok();

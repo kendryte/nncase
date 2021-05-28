@@ -46,7 +46,7 @@
         return err(std::errc::not_supported); \
     }
 
-enum CopyImplSelect
+enum copy_impl_select
 {
     all_contiguous,
     src_contiguous,

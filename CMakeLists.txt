@@ -36,13 +36,7 @@ conan_add_remote(NAME sunnycase URL https://conan.sunnycase.moe INDEX 0)
 conan_add_remote(NAME bincrafts URL https://api.bintray.com/conan/bincrafters/public-conan)
 
 option(NNCASE_OPENMP "openmp support" OFF)
-
-if(NNCASE_OPENMP)
-    find_package(OpenMP REQUIRED)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-    add_definitions("-DNNCASE_OPENMP")
-    message("Enable NNCASE_OPENMP")
-endif()
+option(BUILD_TESTS "Build test programs" OFF)
 
 if (BUILDING_RUNTIME)
     option(BUILD_PYTHON_BINDING "Build python binding" ON)
@@ -162,7 +156,10 @@ else()
     add_subdirectory(src/plugin)
     add_subdirectory(src/nncase)
     add_subdirectory(src/cli)
-    add_subdirectory(tests/kernels)
+
+    if(BUILD_TEST)
+        add_subdirectory(tests/kernels)
+    endif()
     
     # Python binding
     add_subdirectory(python/nncase/native)

@@ -16,6 +16,7 @@
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/kernels/cpu/reference/runtime_types.h>
+#include <nncase/runtime/runtime_tensor.h>
 #include <random>
 #include <fstream>
 #include <string>
@@ -32,9 +33,6 @@ enum OpType
     Ref
 };
 
-template <typename T>
-class Tensor;
-
 void print_index(const runtime_shape_t& index)
 {
     for (size_t i = 0; i < index.size(); ++i)
@@ -42,24 +40,6 @@ void print_index(const runtime_shape_t& index)
         std::cout << index[i] << " ";
     }
     std::cout << std::endl;
-}
-
-template <typename T>
-T *alloc_tensor_data(const runtime_shape_t &shape, const runtime_shape_t &strides)
-{
-    auto length = compute_size(shape, strides);
-    //auto length = std::accumulate(strides.begin(), strides.end(), 1, [](auto sum, auto cur) {
-    //    return sum * (cur == 0 ? 1 : cur);
-    //});
-    auto *v = new T[length];
-    return v;
-}
-
-template <typename T>
-T *alloc_tensor_data(const Tensor<T>& tensor)
-{
-    auto length = compute_size(tensor.shape, tensor.strides);
-    return new T[length];
 }
 
 size_t get_last_no_zero_stride(const runtime_shape_t &strides, size_t i)
@@ -90,20 +70,54 @@ runtime_shape_t get_strides(const runtime_shape_t &shape, const runtime_shape_t 
     return strides;
 }
 
-template<typename T>
-void init_tensor_data(Tensor<T>& data)
+uint32_t &get(const runtime_tensor &t, const runtime_shape_t &index)
+{
+    auto data = reinterpret_cast<uint32_t*>(host_runtime_tensor::buffer(t).unwrap().begin());
+    return data[offset(t.strides(), index)];
+}
+
+
+void init_tensor_data(runtime_tensor &tensor)
 {
     std::random_device rd;
     std::mt19937 gen(rd());
-    // std::uniform_real_distribution<float> dis(-11.0, 11.0);
+    // std::uniform_real_distribution<float> dis(-1.0f, 1.0f);
     std::uniform_int_distribution<uint32_t> dis(3, 333);
-    NNCASE_UNUSED auto res = cpu::reference::apply(data.shape,
-        [&](const runtime_shape_t &index) -> result<void> {
-            // print_index(index);
-            data.get(index) = dis(gen);
-            // std::cout << "data:" << data.get(index) << std::endl;
-            return ok();
-        });
+    // auto *ptr = tensor.data_as<uint32_t>();
+    // auto ptr = reinterpret_cast<uint32_t*>(host_runtime_tensor::buffer(tensor).unwrap().begin());
+    NNCASE_UNUSED auto res = cpu::reference::apply(tensor.shape(),
+                                                   [&](const runtime_shape_t &index) -> result<void>
+                                                   {
+                                                       // print_index(index);
+                                                       // ptr[offset(tensor.strides(), index)] = dis(gen);
+                                                       get(tensor, index) = dis(gen);
+                                                       //  std::cout << "tensor:" << get(tensor, index) << std::endl;
+                                                       return ok();
+                                                   });
+}
+
+runtime_tensor create_tensor(const runtime_shape_t &shape, const runtime_shape_t &strides_bias)
+{
+    auto strides = get_strides(shape, strides_bias);
+    // std::make_shared<uint32_t>(compute_size(shape, strides))
+    return host_runtime_tensor::create(dt_float32, shape, strides).unwrap();
+}
+
+runtime_tensor create_input_tensor(const runtime_shape_t &shape, const runtime_shape_t &strides_bias)
+{
+    auto tensor = create_tensor(shape, strides_bias);
+    init_tensor_data(tensor);
+    return tensor;
+}
+
+const gsl::byte * get_tensor_cbegin(const runtime_tensor &t)
+{
+    return host_runtime_tensor::buffer(t).unwrap().cbegin();
+}
+
+gsl::byte * get_tensor_begin(runtime_tensor &t)
+{
+    return host_runtime_tensor::buffer(t).unwrap().begin();
 }
 
 runtime_shape_t shape_sub(runtime_shape_t begin, runtime_shape_t end)
@@ -116,76 +130,34 @@ runtime_shape_t shape_sub(runtime_shape_t begin, runtime_shape_t end)
     return v;
 }
 
-// memory release and smart ptr
-template <typename T = uint32_t>
-class Tensor
+bool is_same_tensor(const runtime_tensor &lhs, const runtime_tensor &rhs)
 {
-public:
-    T *data;
-    runtime_shape_t shape, strides;
-
-    Tensor() = default;
-
-    Tensor(runtime_shape_t shape, runtime_shape_t strides_bias)
+    if (lhs.shape() != rhs.shape())
     {
-        this->shape = shape;
-        this->strides = get_strides(shape, strides_bias);
-        data = alloc_tensor_data<T>(shape, strides);
+        return false;
     }
+    return cpu::reference::apply(lhs.shape(),
+                                 [&](const runtime_shape_t &index) -> result<void>
+                                 {
+                                     // print_index(index);
+                                     // std::cout << get(index) << " " << rhs.get(index) << std::endl;
+                                     if (get(lhs, index) == get(rhs, index))
+                                     {
+                                         return ok();
+                                     }
+                                     else
+                                     {
+                                         return err(std::errc::not_supported);
+                                     }
+                                 })
+        .is_ok();
+}
 
-    Tensor(T* data)
-    {
-        this->data = data;
-    }
-
-    bool operator==(const Tensor &rhs) const
-    {
-        if (shape != rhs.shape)
-        {
-            return false;
-        }
-        auto res = cpu::reference::apply(shape,
-            [&](const runtime_shape_t &index) -> result<void> {
-                // print_index(index);
-                // std::cout << get(index) << " " << rhs.get(index) << std::endl;
-                if (get(index) == rhs.get(index))
-                {
-                    return ok();
-                }
-                else
-                {
-                    // TODO:
-                    return err(std::errc::not_supported);
-                }
-            });
-        return res.is_ok();
-    }
-    T &get(const runtime_shape_t &index) const
-    {
-        return data[offset(strides, index)];
-    }
-
-    gsl::byte* gsl_ptr() 
-    {
-        return reinterpret_cast<gsl::byte *>(data);
-    }
-
-    const gsl::byte* gsl_cptr() const
-    {
-        return reinterpret_cast<const gsl::byte *>(data);
-    }
-
-    ~Tensor()
-    {
-    }
-};
-
-template<typename T>
-void print_data(const Tensor<T>& data)
+void print_data(runtime_tensor& data)
 {
-    NNCASE_UNUSED auto res = cpu::reference::apply(data.shape,
+    NNCASE_UNUSED auto res = cpu::reference::apply(data.shape(),
         [&](const runtime_shape_t& index) -> result<void> {
-        std::cout << data.get(index) << std::endl;
+        std::cout << get(data, index) << std::endl;
             return ok();
         });
 }
@@ -202,8 +174,7 @@ bool exist_directory(const fs::path& path)
     return fs::exists(file_status) && fs::is_directory(file_status);
 }
 
-template <typename T>
-void output_data(const Tensor<T> &data, std::string name, std::string dir_name = "op_test")
+void output_data(const runtime_tensor&data, std::string name, std::string dir_name = "op_test")
 {
     if (!exist_directory(dir_name))
     {
@@ -211,14 +182,14 @@ void output_data(const Tensor<T> &data, std::string name, std::string dir_name =
     }
     std::ofstream f(dir_name + "/" + name + ".txt");
     // output shape
-    auto shape_str = std::accumulate(data.shape.begin(), data.shape.end(), std::string(), [](std::string s, T v) {
+    auto shape_str = std::accumulate(data.shape().begin(), data.shape().end(), std::string(), [](std::string s, auto v) {
         return s + std::to_string(v) + ",";
     });
     shape_str.pop_back();
     f << "shape(" << shape_str << ")" << std::endl;
-    NNCASE_UNUSED auto res = cpu::reference::apply(data.shape,
+    NNCASE_UNUSED auto res = cpu::reference::apply(data.shape(),
         [&](const runtime_shape_t &index) -> result<void> {
-            f << data.get(index) << std::endl;
+            f << get(data, index) << std::endl;
             return ok();
         });
     f.close();
@@ -242,8 +213,8 @@ std::string get_index_dir_path(size_t index)
 }
 
 static inline size_t output_index = 0;
-template<typename T>
-void output_all_data(const Tensor<T> &input, const Tensor<T> &output_ref, const Tensor<T> &output_opt)
+
+void output_all_data(const runtime_tensor &input, const runtime_tensor &output_ref, const runtime_tensor &output_opt)
 {
     make_output_root_dir();
     auto dir_name = get_index_dir_path(output_index);
@@ -253,8 +224,8 @@ void output_all_data(const Tensor<T> &input, const Tensor<T> &output_ref, const 
     ++output_index;
 }
 
-template <typename T>
-void output_all_data(const std::vector<Tensor<T>> &inputs, const Tensor<T> &output_ref, const Tensor<T> &output_opt)
+
+void output_all_data(const std::vector<runtime_tensor> &inputs, const runtime_tensor &output_ref, const runtime_tensor& output_opt)
 {
     make_output_root_dir();
     auto dir_name = get_index_dir_path(output_index);
@@ -266,3 +237,4 @@ void output_all_data(const std::vector<Tensor<T>> &inputs, const Tensor<T> &outp
     output_data(output_opt, "output_opt", dir_name);
     ++output_index;
 }
+

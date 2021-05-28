@@ -13,14 +13,12 @@
  * limitations under the License.
  */
 #pragma once
+#include "../runtime_module.h"
 #include <nncase/kernels/kernel_context.h>
+NNCASE_MODULES_K210_API
 
-namespace nncase
+struct NNCASE_API k210_kernel_context : public kernels::kernel_context
 {
-namespace runtime
-{
-    namespace k210 struct NNCASE_API k210_kernel_context : public kernels::kernel_context
-    {
-    };
-}
-}
+};
+
+END_NS_NNCASE_KERNELS_K210

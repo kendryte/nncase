@@ -251,7 +251,7 @@ inline bool is_contiguous(const TShape& shape, const TShape& strides)
     return get_default_strides(shape) == strides;
 }
 
-inline int find_last_not_contiguous_index(const runtime_shape_t &strides, const runtime_shape_t &default_strides)
+inline int get_last_not_contiguous_index(const runtime_shape_t &strides, const runtime_shape_t &default_strides)
 {
     for (int i = strides.size() - 1; i >= 0; --i)
     {
@@ -262,4 +262,9 @@ inline int find_last_not_contiguous_index(const runtime_shape_t &strides, const 
     }
     return -1;
 }
+
+template<size_t A, size_t B>
+constexpr auto is_not_equal = std::integral_constant<bool, std::not_equal_to<size_t> {}(A, B)> {};
+
+struct DefaultCallable {};
 END_NS_NNCASE_RUNTIME

@@ -38,30 +38,20 @@ public:
 
         runtime_shape_t out_shape(data_shapes[0]);
         out_shape[axis] = std::accumulate(concat_dims.begin(), concat_dims.end(), 0);
-        output_ref = Tensor<uint32_t>(out_shape, out_strides_bias);
-        output_opt = Tensor<uint32_t>(out_shape, out_strides_bias);
+        output_ref = create_tensor(out_shape, out_strides_bias);
+        output_opt = create_tensor(out_shape, out_strides_bias);
         this->axis = axis;
 
+        inputs.resize(data_shapes.size());
         for (size_t i = 0; i < data_shapes.size(); ++i)
         {
-            inputs.emplace_back(data_shapes[i], in_strides_bias);
-            init_tensor_data(inputs[i]);
+            inputs[i] = create_input_tensor(data_shapes[i], in_strides_bias);
         }
-    }
-
-    void TearDown() override
-    {
-        for (auto&& input : inputs)
-        {
-            delete input.data;
-        }
-        delete output_ref.data;
-        delete output_opt.data;
     }
 
     runtime_shape_t concat_dims;
-    std::vector<Tensor<uint32_t>> inputs;
-    Tensor<uint32_t> output_ref, output_opt;
+    std::vector<runtime_tensor> inputs;
+    runtime_tensor output_ref, output_opt;
     size_t axis;
 };
 
@@ -236,25 +226,24 @@ INSTANTIATE_TEST_SUITE_P(
             runtime_shape_t { 3 }), // output strides bias
         testing::Values(0)));
 
-template <typename T>
-void concat(const std::vector<Tensor<T>> &inputs, Tensor<T> &output, runtime_shape_t &concat_dims, size_t axis, OpType type)
+void concat(const std::vector<runtime_tensor> &inputs, runtime_tensor &output, runtime_shape_t &concat_dims, size_t axis, OpType type)
 {
     std::vector<runtime_shape_t> in_strides(inputs.size());
     std::vector<const gsl::byte *> inputs_v(inputs.size());
     for (size_t i = 0; i < inputs.size(); ++i)
     {
-        in_strides[i] = inputs[i].strides;
-        inputs_v[i] = inputs[i].gsl_cptr();
+        in_strides[i] = inputs[i].strides();
+        inputs_v[i] = get_tensor_cbegin(inputs[i]);
     }
     if (type == OpType::Ref)
     {
-        NNCASE_UNUSED auto res1 = cpu::reference::concat(dt_float32, inputs_v, output.gsl_ptr(),
-            output.shape, in_strides, output.strides, axis, concat_dims);
+        NNCASE_UNUSED auto res1 = cpu::reference::concat(dt_float32, inputs_v, get_tensor_begin(output),
+            output.shape(), in_strides, output.strides(), axis, concat_dims);
     }
     else if (type == OpType::Opt)
     {
-        NNCASE_UNUSED auto res2 = cpu::optimized::concat(dt_float32, inputs_v, output.gsl_ptr(),
-            output.shape, in_strides, output.strides, axis, concat_dims);
+        NNCASE_UNUSED auto res2 = cpu::optimized::concat(dt_float32, inputs_v, get_tensor_begin(output),
+            output.shape(), in_strides, output.strides(), axis, concat_dims);
     }
     else
     {
@@ -266,7 +255,7 @@ TEST_P(ConcatTest, normal)
 {
     concat(inputs, output_ref, concat_dims, axis, OpType::Ref);
     concat(inputs, output_opt, concat_dims, axis, OpType::Opt);
-    auto is_ok = output_ref == output_opt;
+    auto is_ok = is_same_tensor(output_ref, output_opt);
     if (!is_ok)
     {
         output_all_data(inputs, output_ref, output_opt);

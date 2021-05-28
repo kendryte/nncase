@@ -16,11 +16,9 @@
 #include <gtest/gtest.h>
 #include <nncase/kernels/cpu/optimized/tensor_compute.h>
 #include <nncase/kernels/cpu/reference/tensor_compute.h>
-#include <nncase/kernels/kernel_utils.h>
-#include <nncase/runtime/runtime_op_utility.h>
+#include <nncase/runtime/runtime_tensor.h>
 
-template <typename T>
-void slice(const Tensor<T> &input, Tensor<T> &output,
+void slice(const runtime_tensor &input, runtime_tensor &output,
     const runtime_shape_t &begins, const runtime_shape_t &ends,
     const runtime_axis_t &strides, OpType type)
 {
@@ -28,28 +26,34 @@ void slice(const Tensor<T> &input, Tensor<T> &output,
     {
         NNCASE_UNUSED auto res = cpu::reference::slice(
             dt_float32,
-            input.gsl_cptr(),
-            output.gsl_ptr(),
-            input.shape, 
-            input.strides, 
-            output.strides,
-            begins, 
-            ends, 
+            // input.data_as<const gsl::byte>(),
+            get_tensor_cbegin(input),
+            get_tensor_begin(output),
+            input.shape(),
+            input.strides(),
+            output.strides(),
+            begins,
+            ends,
             strides);
     }
     else if (type == OpType::Opt)
     {
         NNCASE_UNUSED auto res = cpu::optimized::slice(dt_float32,
-            input.gsl_cptr(),
-            output.gsl_ptr(),
-            input.shape, input.strides, output.strides,
-            begins, ends, strides);
+            get_tensor_cbegin(input),
+            get_tensor_begin(output),
+            input.shape(),
+            input.strides(),
+            output.strides(),
+            begins,
+            ends,
+            strides);
     }
     else
     {
         assert(false);
     }
 }
+
 class SliceTest : public ::testing::TestWithParam<
                       std::tuple<
                           runtime_shape_t, runtime_shape_t, // input shape, input strides bias
@@ -61,30 +65,24 @@ public:
     {
         auto &&[data_shape, in_strides_bias, begins, ends, out_strides_bias, strides] = GetParam();
 
-        input = Tensor<uint32_t>(data_shape, in_strides_bias);
-        init_tensor_data(input);
+        input = create_input_tensor(data_shape, in_strides_bias);
+
         this->strides = strides;
         this->begins = begins;
         this->ends = ends;
-        
+
         auto out_shape = shape_sub(begins, ends);
         for (size_t i = 0; i < out_shape.size(); ++i)
         {
             auto out_div = div(out_shape[i], strides[i]);
             out_shape[i] = (size_t)out_div.quot + (out_div.rem == 0 ? 0 : 1);
         }
-        output_ref = Tensor<uint32_t>(out_shape, out_strides_bias);
-        output_opt = Tensor<uint32_t>(out_shape, out_strides_bias);
+        output_ref = create_tensor(out_shape, out_strides_bias);
+        output_opt = create_tensor(out_shape, out_strides_bias);
     }
 
-    void TearDown() override
-    {
-        delete input.data;
-        delete output_ref.data;
-        delete output_opt.data;
-    }
-
-    Tensor<uint32_t> input, output_ref, output_opt;
+    runtime_tensor input, output_ref, output_opt;
+    // Tensor<uint32_t> input, output_ref, output_opt;
     runtime_shape_t begins, ends;
     runtime_axis_t strides;
 };
@@ -96,14 +94,14 @@ INSTANTIATE_TEST_SUITE_P(
         testing::Values(
             runtime_shape_t { 7, 4, 8, 6 }), // input shape
         testing::Values(
-            runtime_shape_t { 0, 0, 0, 0 },  // input strides offset
+            runtime_shape_t { 0, 0, 0, 0 }, // input strides offset
             runtime_shape_t { 0, 0, 3, 0 },
             runtime_shape_t { 0, 3, 0, 0 },
             runtime_shape_t { 3, 0, 0, 0 },
             runtime_shape_t { 3, 3, 3, 3 }),
         testing::Values(
-             runtime_shape_t { 0, 0, 0, 0 }, // begin
-             runtime_shape_t { 1, 1, 1, 1 }, 
+            runtime_shape_t { 0, 0, 0, 0 }, // begin
+            runtime_shape_t { 1, 1, 1, 1 },
             runtime_shape_t { 2, 2, 2, 2 }),
         testing::Values(
             runtime_shape_t { 3, 3, 3, 3 }, // end
@@ -111,7 +109,7 @@ INSTANTIATE_TEST_SUITE_P(
             runtime_shape_t { 7, 4, 8, 6 }),
         testing::Values(
             runtime_shape_t { 0, 0, 0, 0 }, // output strides offset
-            runtime_shape_t {3, 3, 3, 3}),
+            runtime_shape_t { 3, 3, 3, 3 }),
         testing::Values(
             runtime_axis_t { 1, 1, 1, 1 }, // strides
             runtime_axis_t { 1, 1, 1, 3 },
@@ -128,12 +126,12 @@ INSTANTIATE_TEST_SUITE_P(
             runtime_shape_t { 7, 8, 6 }), // input shape
         testing::Values(
             runtime_shape_t { 0, 0, 0 }, // input strides offset
-            runtime_shape_t { 0, 3, 0 }, 
+            runtime_shape_t { 0, 3, 0 },
             runtime_shape_t { 3, 0, 0 },
             runtime_shape_t { 3, 3, 3 }),
         testing::Values(
             runtime_shape_t { 0, 0, 0 }, // begin
-            runtime_shape_t { 1, 1, 1 }, 
+            runtime_shape_t { 1, 1, 1 },
             runtime_shape_t { 2, 2, 2 }),
         testing::Values(
             runtime_shape_t { 3, 3, 3 }, // end
@@ -185,29 +183,28 @@ INSTANTIATE_TEST_SUITE_P(
             runtime_shape_t { 19 }), // input shape
         testing::Values(
             runtime_shape_t { 0 }, // input strides offset
-            runtime_shape_t { 3 }), 
-            testing::Values(
-                runtime_shape_t { 1 }, // begin
-                runtime_shape_t { 3 }),
-            testing::Values(
-                runtime_shape_t { 5 }, // end
-                runtime_shape_t { 10 },
-                runtime_shape_t { 19 }),
-            testing::Values(
-                runtime_shape_t { 0 },
-                runtime_shape_t { 3 }), // output strides offset
-            testing::Values(
-                runtime_axis_t { 1 }, // strides
-                runtime_axis_t { 2 },
-                runtime_axis_t { 3 },
-                runtime_axis_t { 4 })));
-
+            runtime_shape_t { 3 }),
+        testing::Values(
+            runtime_shape_t { 1 }, // begin
+            runtime_shape_t { 3 }),
+        testing::Values(
+            runtime_shape_t { 5 }, // end
+            runtime_shape_t { 10 },
+            runtime_shape_t { 19 }),
+        testing::Values(
+            runtime_shape_t { 0 },
+            runtime_shape_t { 3 }), // output strides offset
+        testing::Values(
+            runtime_axis_t { 1 }, // strides
+            runtime_axis_t { 2 },
+            runtime_axis_t { 3 },
+            runtime_axis_t { 4 })));
 
 TEST_P(SliceTest, normal)
 {
     slice(input, output_ref, begins, ends, strides, OpType::Ref);
     slice(input, output_opt, begins, ends, strides, OpType::Opt);
-    auto is_ok = output_ref == output_opt;
+    auto is_ok = is_same_tensor(output_ref, output_opt);
     if (!is_ok)
     {
         output_all_data(input, output_ref, output_opt);

@@ -58,8 +58,8 @@ result<void> kernels::copy(datatype_t type, const gsl::byte *src, gsl::byte *des
     const runtime_shape_t &shape, const runtime_shape_t &src_strides, const runtime_shape_t &dest_strides, kernel_context &context) noexcept
 {
     const auto default_strides = get_default_strides(shape);
-    auto src_dims_offset = find_last_not_contiguous_index(src_strides, default_strides);
-    auto dest_dims_offset = find_last_not_contiguous_index(dest_strides, default_strides);
+    auto src_dims_offset = get_last_not_contiguous_index(src_strides, default_strides);
+    auto dest_dims_offset = get_last_not_contiguous_index(dest_strides, default_strides);
 
     auto src_continuous = src_strides == default_strides;
     auto dest_continuous = dest_strides == default_strides;
@@ -69,21 +69,21 @@ result<void> kernels::copy(datatype_t type, const gsl::byte *src, gsl::byte *des
     }
     else
     {
-        CopyImplSelect select = CopyImplSelect::all_contiguous;
+        copy_impl_select select = copy_impl_select::all_contiguous;
         int dims_offset = -1;
         if (src_continuous && dest_continuous)
         {
-            select = CopyImplSelect::all_contiguous;
+            select = copy_impl_select::all_contiguous;
             dims_offset = -1;
         }
         else if (src_continuous && dest_dims_offset < 5)
         {
-            select = CopyImplSelect::src_contiguous;
+            select = copy_impl_select::src_contiguous;
             dims_offset = dest_dims_offset;
         }
         else if (dest_continuous && src_dims_offset < 5)
         {
-            select = CopyImplSelect::dest_contiguous;
+            select = copy_impl_select::dest_contiguous;
             dims_offset = src_dims_offset;
         }
         return cpu::optimized::copy(type, src, dest, shape, src_strides, dest_strides, dims_offset, select, context);
