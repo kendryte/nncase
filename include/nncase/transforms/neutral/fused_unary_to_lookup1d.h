@@ -14,25 +14,16 @@
  */
 #pragma once
 #include "../transform.h"
-#include <hlir/quantizer.h>
 
-namespace nncase::hlir::transforms
+namespace nncase::ir::transforms
 {
-class fused_unary_to_lookup1d_transform : public transform
+class NNCASE_API fused_unary_to_lookup1d_transform : public transform
 {
 public:
-    fused_unary_to_lookup1d_transform(hlir::quantizer &quantizer)
-        : quantizer_(quantizer)
-    {
-    }
-
     void process(transform_context &context) override;
 
 protected:
     bool skip_self_contained_check() const noexcept override { return true; }
-    bool on_try_match(hlir::node &node, transform_context &context) override;
-
-private:
-    hlir::quantizer &quantizer_;
+    bool on_try_match(ir::node &node, transform_context &context) override;
 };
 }

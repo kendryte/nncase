@@ -24,8 +24,10 @@ compile_command::compile_command(lyra::cli &cli)
     cli.add_argument(lyra::command("compile", [this](const lyra::group &) { this->run(); })
                          .add_argument(lyra::opt(input_format_, "input format").name("-i").name("--input-format").required().help("input format, e.g. tflite"))
                          .add_argument(lyra::opt(target_name_, "target").name("-t").name("--target").required().help("target architecture, e.g. cpu, k210"))
-                         .add_argument(lyra::opt(input_type_, "input type").name("--input_type").name("-it").optional().help("post trainning quantize input type, e.g float32|uint8"))
-                         .add_argument(lyra::opt(output_type_, "output type").name("--output_type").name("-ot").optional().help("post trainning quantize output type, e.g float32|uint8"))
+                         .add_argument(lyra::opt(input_type_, "input type").name("--input-type").optional().help("post trainning quantize input type, e.g float32|uint8|default, default is " + input_type_))
+                         .add_argument(lyra::opt(output_type_, "output type").name("--output-type").optional().help("post trainning quantize output type, e.g float32|uint8, default is " + output_type_))
+                         .add_argument(lyra::opt(input_layout_, "input type").name("--input-layout").optional().help("input layout, e.g NCHW|NHWC, default is " + input_layout_))
+                         .add_argument(lyra::opt(output_layout_, "output type").name("--output-layout").optional().help("output layout, e.g nchw|default, default is " + output_layout_))
                          .add_argument(lyra::arg(input_filename_, "input file").required().help("input file"))
                          .add_argument(lyra::arg(output_filename_, "output file").required().help("output file"))
                          .add_argument(lyra::opt(output_arrays_, "output arrays").name("--output-arrays").optional().help("output arrays"))
@@ -40,6 +42,17 @@ compile_command::compile_command(lyra::cli &cli)
 
 void compile_command::run()
 {
+    if (!dataset_.empty())
+    {
+        if (input_type_ == "default")
+            input_type_ = "uint8";
+    }
+    else
+    {
+        if (input_type_ == "default")
+            input_type_ = "float32";
+    }
+
     compile_options c_options;
     c_options.dump_asm = dump_asm_;
     c_options.dump_ir = dump_ir_;
@@ -71,6 +84,8 @@ void compile_command::run()
     }
 
     i_options.output_arrays = output_arrays;
+    i_options.input_layout = input_layout_;
+    i_options.output_layout = output_layout_;
 
     auto compiler = nncase::compiler::create(c_options);
     if (input_format_ == "tflite")

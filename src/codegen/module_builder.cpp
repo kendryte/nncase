@@ -353,6 +353,7 @@ void module_builder::write_binary(binary_writer &writer)
         writer.position(end_pos);
     }
 
+    writer.align_position(8);
     auto end_pos = writer.position();
     // header
     module_header header {};

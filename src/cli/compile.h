@@ -36,8 +36,10 @@ private:
     std::string dataset_;
     std::string dataset_format_ = "image";
     std::string calibrate_method_ = "no_clip";
-    std::string input_type_ = "float32";
+    std::string input_type_ = "default";
     std::string output_type_ = "float32";
+    std::string input_layout_ = "NCHW";
+    std::string output_layout_ = "NCHW";
     bool dump_ir_ = false;
     bool dump_asm_ = false;
     bool is_fpga_ = false;

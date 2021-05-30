@@ -206,9 +206,8 @@ quant_param_t quantizer::get_quant_param(value_range<float> range, int32_t bits)
     range = fixup_range(range);
     auto Q_max = bits == 7 ? 127 : 255;
     auto Q_min = bits == 7 ? -128 : 0;
-    auto r = range.max - range.min;
-    auto scale = r / ((1LL << bits) - 1);
-    auto bias = std::round((range.max * Q_min - range.min * Q_max) / r);
+    auto scale = (range.max - range.min) / (Q_max - Q_min);
+    auto bias = std::round((range.max * Q_min - range.min * Q_max) / (range.max - range.min));
     return { static_cast<int32_t>(bias), scale };
 }
 
@@ -426,7 +425,7 @@ void quantizer::histogram::finish()
             }
         }
     }
-    else if (cali_method_ == calibrate_method::no_clip)
+    else if (cali_method_ == calibrate_method::l2)
     {
         auto min_loss = std::numeric_limits<float>::max();
 

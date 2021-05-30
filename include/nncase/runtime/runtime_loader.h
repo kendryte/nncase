@@ -25,4 +25,12 @@ typedef void (*rt_module_activator_t)(result<std::unique_ptr<runtime_module>> &r
 
 #define RUNTIME_MODULE_ACTIVATOR_NAME create_runtime_module
 
+struct runtime_registration
+{
+    module_type_t id;
+    rt_module_activator_t activator;
+};
+
+extern runtime_registration builtin_runtimes[];
+
 END_NS_NNCASE_RUNTIME

@@ -15,6 +15,7 @@ set(SRCS module_builder.cpp
          ops/reduce.cpp
          ops/reduce_window2d.cpp
          ops/slice.cpp
+         ops/table_lookup1d.cpp
          ops/transpose.cpp
          ops/unary.cpp)
 

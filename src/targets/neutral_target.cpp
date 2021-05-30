@@ -16,6 +16,7 @@
 #include <nncase/runtime/stackvm/runtime_module.h>
 #include <nncase/schedule/buffer_allocator.h>
 #include <nncase/targets/neutral_target.h>
+#include <nncase/transforms/neutral/add_quant_checkpoints.h>
 #include <nncase/transforms/neutral/dequantize_motion.h>
 #include <nncase/transforms/neutral/fold_bitcast.h>
 #include <nncase/transforms/neutral/fold_constant.h>
@@ -28,6 +29,7 @@
 #include <nncase/transforms/neutral/fuse_clamp.h>
 #include <nncase/transforms/neutral/fuse_pad.h>
 #include <nncase/transforms/neutral/fuse_unary.h>
+#include <nncase/transforms/neutral/fused_unary_to_lookup1d.h>
 #include <nncase/transforms/neutral/global_reduce_window_to_reduce.h>
 #include <nncase/transforms/neutral/matmul_to_conv2d.h>
 #include <nncase/transforms/neutral/quantize_motion.h>
@@ -38,6 +40,7 @@
 
 using namespace nncase;
 using namespace nncase::targets;
+using namespace nncase::ir::transforms;
 using namespace nncase::schedule;
 
 namespace nncase::codegen
@@ -187,8 +190,42 @@ void neutral_target::register_target_independent_passes(const module_type_t &typ
     }
 }
 
-void neutral_target::register_target_dependent_passes([[maybe_unused]] const module_type_t &type, [[maybe_unused]] ir::transforms::pass_manager &pass_mgr)
+void neutral_target::register_target_dependent_passes([[maybe_unused]] const module_type_t &type, [[maybe_unused]] ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] datatype_t quant_type)
 {
+}
+
+void neutral_target::register_quantize_annotation_passes([[maybe_unused]] const module_type_t &type, ir::transforms::pass_manager &pass_mgr)
+{
+    {
+        pass p("fuse_unary");
+        p.emplace<fuse_one_unary_transform>();
+        p.emplace<fuse_one_binary_transform>();
+        p.emplace<fuse_two_fused_unary_transform>();
+        p.emplace<fuse_one_fused_unary_with_binary_transform>();
+        p.emplace<fuse_two_fused_unary_with_binary_transform>();
+        pass_mgr.add_pass(std::move(p));
+    }
+
+    {
+        pass p("annotate_neutral_quantize");
+        p.emplace<add_quant_checkpoints_transform>(std::in_place, ir::op_fused_unary);
+        pass_mgr.add_pass(std::move(p));
+    }
+}
+
+void neutral_target::register_quantize_passes([[maybe_unused]] const module_type_t &type, ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] datatype_t quant_type)
+{
+    {
+        pass p("fused_unary_to_lut");
+        p.emplace<fused_unary_to_lookup1d_transform>();
+        pass_mgr.add_pass(std::move(p));
+    }
+    {
+        pass p("fold_quantize");
+        add_default_transforms(p);
+        p.emplace<fold_quantize_transform>();
+        pass_mgr.add_pass(std::move(p));
+    }
 }
 
 void neutral_target::register_allocation_passes([[maybe_unused]] const module_type_t &type, [[maybe_unused]] ir::transforms::pass_manager &pass_mgr)
@@ -202,4 +239,12 @@ std::unique_ptr<target_options> neutral_target::on_create_options()
 
 void neutral_target::add_quantization_broadcast([[maybe_unused]] std::unordered_set<ir::node_opcode> &opcodes)
 {
+    using namespace ir;
+    opcodes.emplace(op_input_node);
+    opcodes.emplace(op_transpose);
+    opcodes.emplace(op_pad);
+    opcodes.emplace(op_resize_image);
+    opcodes.emplace(op_bitcast);
+    opcodes.emplace(op_slice);
+    opcodes.emplace(op_reduce_window2d);
 }
