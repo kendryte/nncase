@@ -15,32 +15,43 @@
 
 import pytest
 import torch
-import test_util
+from test_runner import OnnxTestRunner
 
-def _make_module():
+def _make_module(in_shape, dim):
 
-    class SoftmaxModule(torch.nn.Module):
+    class ConcatModule(torch.nn.Module):
         def __init__(self):
-            super(SoftmaxModule, self).__init__()
+            super(ConcatModule, self).__init__()
 
         def forward(self, x):
+            x = torch.cat((x, x, x), dim)
             return x
 
-    return SoftmaxModule()
+    return ConcatModule()
 
 in_shapes = [
     [1],
-    [1, 1001],
-    [1, 1, 1001],
+    [3, 4],
+    [3, 4, 5],
     [1, 3, 224, 224]
 ]
 
-@pytest.mark.parametrize('in_shape', in_shapes)
-def test_softmax(in_shape, request):
-    module = _make_module()
-    module = torch.nn.Sequential(module, torch.nn.Softmax())
+axes = [
+    0,
+    1,
+    2,
+    3
+]
 
-    test_util.test_onnx_module(request.node.name, module, in_shape, ['cpu', 'k210', 'k510'])
+@pytest.mark.parametrize('in_shape', in_shapes)
+@pytest.mark.parametrize('axis', axes)
+def test_concat(in_shape, axis, request):
+    if len(in_shape) > axis:
+        module = _make_module(in_shape, axis)
+
+        runner = OnnxTestRunner(['cpu', 'k210', 'k510'])
+        model_file = runner.from_torch(request.node.name, module, in_shape)
+        runner.run(model_file)
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_softmax.py'])
+    pytest.main(['-vv', 'test_concat.py'])

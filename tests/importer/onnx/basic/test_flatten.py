@@ -15,43 +15,43 @@
 
 import pytest
 import torch
-import test_util
+from test_runner import OnnxTestRunner
 
-def _make_module(num, esp, momentum):
+def _make_module(in_shape, axis):
 
-    class BatchNormModule(torch.nn.Module):
+    class FlattenModule(torch.nn.Module):
         def __init__(self):
-            super(BatchNormModule, self).__init__()
-            self.batchnorm = torch.nn.BatchNorm2d(num, esp, momentum)
+            super(FlattenModule, self).__init__()
+            self.conv2d = torch.nn.Conv2d(in_shape[1], 3, 3)
 
         def forward(self, x):
-            x = self.batchnorm(x)
+            x = self.conv2d(x)
+            x = torch.flatten(x, start_dim=axis)
+
             return x
 
-    return BatchNormModule()
+    return FlattenModule()
 
 in_shapes = [
-    [1, 2, 16, 16],
-    [1, 8, 224, 224]
+    [1, 3, 224, 224]
 ]
 
-epses = [
-    0.00001,
-    0.00005
-]
-
-momentums = [
-    0.1,
-    0.9
+axes = [
+    1,
+    2,
+    3
 ]
 
 @pytest.mark.parametrize('in_shape', in_shapes)
-@pytest.mark.parametrize('eps', epses)
-@pytest.mark.parametrize('momentum', momentums)
-def test_batchnorm(in_shape, eps, momentum, request):
-    module = _make_module(in_shape[1], eps, momentum)
+@pytest.mark.parametrize('axis', axes)
+def test_flatten(in_shape, axis, request):
+    if len(in_shape) > axis:
+        module = _make_module(in_shape, axis)
 
-    test_util.test_onnx_module(request.node.name, module, in_shape, ['cpu', 'k210', 'k510'])
+        # test_util.test_onnx_module(request.node.name, module, in_shape, ['cpu', 'k210', 'k510'])
+        runner = OnnxTestRunner(['cpu', 'k210', 'k510'])
+        model_file = runner.from_torch(request.node.name, module, in_shape)
+        runner.run(model_file)
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_batchnorm.py'])
+    pytest.main(['-vv', 'test_flatten.py'])

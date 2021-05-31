@@ -13,13 +13,11 @@
 # limitations under the License.
 """System test: test strided slice"""
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
+
 import pytest
-import os
 import tensorflow as tf
 import numpy as np
-import sys
-import test_util
-
+from test_runner import TfliteTestRunner
 
 def _make_module(in_shape, begin, end, strides):
     class StridedSliceModule(tf.Module):
@@ -42,9 +40,11 @@ cases = [
 @pytest.mark.parametrize('in_shape,begin,end,strides', cases)
 def test_strided_slice(in_shape, begin, end, strides, request):
     module = _make_module(in_shape, begin, end, strides)
-    test_util.test_tf_module(request.node.name, module, [
-                             'cpu', 'k210', 'k510'])
 
+    # test_util.test_tf_module(request.node.name, module, ['cpu', 'k210', 'k510'])
+    runner = TfliteTestRunner(['cpu', 'k210', 'k510'])
+    model_file = runner.from_tensorflow(request.node.name, module)
+    runner.run(model_file)
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_strided_slice.py'])

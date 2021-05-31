@@ -15,47 +15,45 @@
 
 import pytest
 import torch
-import test_util
+from test_runner import OnnxTestRunner
 
-def _make_module(in_shape, padding, value):
+def _make_module(num, esp, momentum):
 
-    class PadModule(torch.nn.Module):
+    class BatchNormModule(torch.nn.Module):
         def __init__(self):
-            super(PadModule, self).__init__()
-            self.pad = torch.nn.ConstantPad2d(padding, value)
-            self.conv2d = torch.nn.Conv2d(in_shape[1], 3, 3)
+            super(BatchNormModule, self).__init__()
+            self.batchnorm = torch.nn.BatchNorm2d(num, esp, momentum)
 
         def forward(self, x):
-            x = self.pad(x)
-            x = self.conv2d(x)
-
+            x = self.batchnorm(x)
             return x
 
-    return PadModule()
+    return BatchNormModule()
 
 in_shapes = [
-    [1, 3, 60, 72],
-    [1, 3, 224, 224]
+    # [1, 2, 16, 16],
+    [1, 8, 224, 224]
 ]
 
-paddings = [
-    1,
-    (1, 1, 1, 1),
-    (0, 0, 0, 0),
-    (3, 0, 2, 1)
+epses = [
+    0.00001,
+    # 0.00005
 ]
 
-values = [
-    0
+momentums = [
+    0.1,
+    # 0.9
 ]
 
 @pytest.mark.parametrize('in_shape', in_shapes)
-@pytest.mark.parametrize('padding', paddings)
-@pytest.mark.parametrize('value', values)
-def test_pad(in_shape, padding, value, request):
-    module = _make_module(in_shape, padding, value)
+@pytest.mark.parametrize('eps', epses)
+@pytest.mark.parametrize('momentum', momentums)
+def test_batchnorm(in_shape, eps, momentum, request):
+    module = _make_module(in_shape[1], eps, momentum)
 
-    test_util.test_onnx_module(request.node.name, module, in_shape, ['cpu', 'k210', 'k510'])
+    runner = OnnxTestRunner(['cpu', 'k210', 'k510'])
+    model_file = runner.from_torch(request.node.name, module, in_shape)
+    runner.run(model_file)
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_pad.py'])
+    pytest.main(['-vv', 'test_batchnorm.py'])

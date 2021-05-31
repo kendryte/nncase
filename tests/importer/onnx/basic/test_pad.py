@@ -15,40 +15,49 @@
 
 import pytest
 import torch
-import test_util
+from test_runner import OnnxTestRunner
 
-def _make_module(in_shape, axis):
+def _make_module(in_shape, padding, value):
 
-    class FlattenModule(torch.nn.Module):
+    class PadModule(torch.nn.Module):
         def __init__(self):
-            super(FlattenModule, self).__init__()
+            super(PadModule, self).__init__()
+            self.pad = torch.nn.ConstantPad2d(padding, value)
             self.conv2d = torch.nn.Conv2d(in_shape[1], 3, 3)
 
         def forward(self, x):
+            x = self.pad(x)
             x = self.conv2d(x)
-            x = torch.flatten(x, start_dim=axis)
 
             return x
 
-    return FlattenModule()
+    return PadModule()
 
 in_shapes = [
+    [1, 3, 60, 72],
     [1, 3, 224, 224]
 ]
 
-axes = [
+paddings = [
     1,
-    2,
-    3
+    (1, 1, 1, 1),
+    (0, 0, 0, 0),
+    (3, 0, 2, 1)
+]
+
+values = [
+    0
 ]
 
 @pytest.mark.parametrize('in_shape', in_shapes)
-@pytest.mark.parametrize('axis', axes)
-def test_flatten(in_shape, axis, request):
-    if len(in_shape) > axis:
-        module = _make_module(in_shape, axis)
+@pytest.mark.parametrize('padding', paddings)
+@pytest.mark.parametrize('value', values)
+def test_pad(in_shape, padding, value, request):
+    module = _make_module(in_shape, padding, value)
 
-        test_util.test_onnx_module(request.node.name, module, in_shape, ['cpu', 'k210', 'k510'])
+    runner = OnnxTestRunner(['cpu', 'k210', 'k510'])
+    model_file = runner.from_torch(request.node.name, module, in_shape)
+    runner.run(model_file)
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_flatten.py'])
+    pytest.main(['-vv', 'test_pad.py'])

@@ -15,42 +15,38 @@
 
 import pytest
 import torch
-import test_util
+from test_runner import OnnxTestRunner
 
-def _make_module(dim0, dim1):
-
-    class TransposeModule(torch.nn.Module):
+def _make_module():
+    class BinaryModule(torch.nn.Module):
         def __init__(self):
-            super(TransposeModule, self).__init__()
+            super(BinaryModule, self).__init__()
 
         def forward(self, x):
-            x = torch.transpose(x, dim0=dim0, dim1=dim1)
-            return x
+            add = torch.add(x, 6)
+            mul = torch.mul(add, x)
+            sub = torch.sub(mul, x)
+            max = torch.max(sub, x)
+            div = torch.div(max, 2)
+            min = torch.min(div, x)
+            return min
 
-    return TransposeModule()
+    return BinaryModule()
 
 in_shapes = [
-    [3, 4],
-    [3, 4, 5],
-    [2, 3, 224, 224]
-]
-
-axes = [
-    [0, 1],
-    [0, 2],
-    [0, 3],
-    [1, 2],
-    [1, 3],
-    [2, 3]
+    [3],
+    [64, 3],
+    [3, 64, 3],
+    [8, 6, 16, 3]
 ]
 
 @pytest.mark.parametrize('in_shape', in_shapes)
-@pytest.mark.parametrize('axis', axes)
-def test_transpose(in_shape, axis, request):
-    if len(in_shape) > axis[1]:
-        module = _make_module(axis[0], axis[1])
+def test_binary(in_shape, request):
+    module = _make_module()
 
-        test_util.test_onnx_module(request.node.name, module, in_shape, ['cpu', 'k210', 'k510'])
-
+    runner = OnnxTestRunner(['cpu', 'k210', 'k510'])
+    model_file = runner.from_torch(request.node.name, module, in_shape)
+    runner.run(model_file)
+    
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_transpose.py'])
+    pytest.main(['-vv', 'test_binary.py'])

@@ -13,13 +13,11 @@
 # limitations under the License.
 """System test: test convert"""
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
+
 import pytest
-import os
 import tensorflow as tf
 import numpy as np
-import sys
-import test_util
-
+from test_runner import TfliteTestRunner
 
 def _make_module(in_shape, dst_type):
     class ConvertModule(tf.Module):
@@ -48,8 +46,11 @@ dst_types = [
 @pytest.mark.parametrize('dst_type', dst_types)
 def test_convert(in_shape, dst_type, request):
     module = _make_module(in_shape, dst_type)
-    test_util.test_tf_module(request.node.name, module, ['cpu', 'k210', 'k510'])
 
+    # test_util.test_tf_module(request.node.name, module, ['cpu', 'k210', 'k510'])
+    runner = TfliteTestRunner(['cpu', 'k210', 'k510'])
+    model_file = runner.from_tensorflow(request.node.name, module)
+    runner.run(model_file)
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_convert.py'])

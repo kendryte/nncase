@@ -15,7 +15,7 @@
 
 import pytest
 import torch
-import test_util
+from test_runner import OnnxTestRunner
 
 def _make_module(i_channel, k_size, o_channel, stride, padding, padding_mode, dilation):
 
@@ -90,7 +90,10 @@ def test_conv2d(n, i_channel, i_size, k_size, o_channel, stride, padding, paddin
     in_shape.extend(i_size)
 
     # test_util.test_onnx_module(request.node.name, module, in_shape, ['cpu', 'k210', 'k510'])
-    test_util.test_onnx_module(request.node.name, module, in_shape, ['k510'])
+    # test_util.test_onnx_module(request.node.name, module, in_shape, ['k510'])
+    runner = OnnxTestRunner(['k510'])
+    model_file = runner.from_torch(request.node.name, module, in_shape)
+    runner.run(model_file)
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_conv2d.py'])

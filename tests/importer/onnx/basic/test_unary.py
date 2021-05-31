@@ -15,7 +15,8 @@
 
 import pytest
 import torch
-import test_util
+# import test_util
+from test_runner import OnnxTestRunner
 
 def _make_module():
     class UnaryModule(torch.nn.Module):
@@ -56,15 +57,19 @@ def _make_module():
 
 in_shapes = [
     [3],
-    [64, 3],
-    [3, 64, 3],
-    [8, 6, 16, 3]
+    # [64, 3],
+    # [3, 64, 3],
+    # [8, 6, 16, 3]
 ]
 
 @pytest.mark.parametrize('in_shape', in_shapes)
 def test_unary(in_shape, request):
     module = _make_module()
-    test_util.test_onnx_module(request.node.name, module, in_shape, ['cpu', 'k210', 'k510'])
+    
+    # test_util.test_onnx_module(request.node.name, module, in_shape, ['cpu', 'k210', 'k510'])
+    runner = OnnxTestRunner(['cpu', 'k210', 'k510'])
+    model_file = runner.from_torch(request.node.name, module, in_shape)
+    runner.run(model_file)
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_unary.py'])

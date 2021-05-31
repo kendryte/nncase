@@ -13,13 +13,11 @@
 # limitations under the License.
 """System test: test reduce"""
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
+
 import pytest
-import os
 import tensorflow as tf
 import numpy as np
-import sys
-import test_util
-
+from test_runner import TfliteTestRunner
 
 def _make_module(in_shape, axis, keep_dims):
     class ReduceModule(tf.Module):
@@ -66,8 +64,11 @@ keep_dims = [
 @pytest.mark.parametrize('keep_dims', keep_dims)
 def test_reduce(in_shape, axis, keep_dims, request):
     module = _make_module(in_shape, axis, keep_dims)
-    test_util.test_tf_module(request.node.name, module, ['cpu', 'k210', 'k510'])
 
+    # test_util.test_tf_module(request.node.name, module, ['cpu', 'k210', 'k510'])
+    runner = TfliteTestRunner(['cpu', 'k210', 'k510'])
+    model_file = runner.from_tensorflow(request.node.name, module)
+    runner.run(model_file)
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_reduce.py'])

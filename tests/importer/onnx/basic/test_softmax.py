@@ -15,38 +15,35 @@
 
 import pytest
 import torch
-import test_util
+from test_runner import OnnxTestRunner
 
-def _make_module(num, init):
+def _make_module():
 
-    class PReluModule(torch.nn.Module):
+    class SoftmaxModule(torch.nn.Module):
         def __init__(self):
-            super(PReluModule, self).__init__()
-            self.prelu = torch.nn.PReLU(num_parameters=num, init=init)
+            super(SoftmaxModule, self).__init__()
 
         def forward(self, x):
-            x = self.prelu(x)
             return x
 
-    return PReluModule()
+    return SoftmaxModule()
 
 in_shapes = [
     [1],
+    [1, 1001],
+    [1, 1, 1001],
     [1, 3, 224, 224]
 ]
 
-inits = [
-    0.1,
-    0.25,
-]
-
 @pytest.mark.parametrize('in_shape', in_shapes)
-@pytest.mark.parametrize('init', inits)
-def test_prelu(in_shape, init, request):
-    num = 1 if len(in_shape) < 2 else in_shape[1]
-    module = _make_module(num, init)
+def test_softmax(in_shape, request):
+    module = _make_module()
+    module = torch.nn.Sequential(module, torch.nn.Softmax())
 
-    test_util.test_onnx_module(request.node.name, module, in_shape, ['cpu', 'k210', 'k510'])
+    # test_util.test_onnx_module(request.node.name, module, in_shape, ['cpu', 'k210', 'k510'])
+    runner = OnnxTestRunner(['cpu', 'k210', 'k510'])
+    model_file = runner.from_torch(request.node.name, module, in_shape)
+    runner.run(model_file)
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_prelu.py'])
+    pytest.main(['-vv', 'test_softmax.py'])

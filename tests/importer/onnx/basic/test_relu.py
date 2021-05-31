@@ -15,35 +15,35 @@
 
 import pytest
 import torch
-import test_util
+from test_runner import OnnxTestRunner
 
 def _make_module():
-    class BinaryModule(torch.nn.Module):
+
+    class ReluModule(torch.nn.Module):
         def __init__(self):
-            super(BinaryModule, self).__init__()
+            super(ReluModule, self).__init__()
+            self.relu = torch.nn.ReLU()
 
         def forward(self, x):
-            add = torch.add(x, 6)
-            mul = torch.mul(add, x)
-            sub = torch.sub(mul, x)
-            max = torch.max(sub, x)
-            div = torch.div(max, 2)
-            min = torch.min(div, x)
-            return min
+            x = self.relu(x)
+            return x
 
-    return BinaryModule()
+    return ReluModule()
 
 in_shapes = [
-    [3],
-    [64, 3],
-    [3, 64, 3],
-    [8, 6, 16, 3]
+    [1],
+    [8, 8],
+    [1, 4, 16],
+    [1, 3, 224, 224]
 ]
 
 @pytest.mark.parametrize('in_shape', in_shapes)
-def test_binary(in_shape, request):
+def test_relu(in_shape, request):
     module = _make_module()
-    test_util.test_onnx_module(request.node.name, module, in_shape, ['cpu', 'k210', 'k510'])
+
+    runner = OnnxTestRunner(['cpu', 'k210', 'k510'])
+    model_file = runner.from_torch(request.node.name, module, in_shape)
+    runner.run(model_file)
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_binary.py'])
+    pytest.main(['-vv', 'test_relu.py'])

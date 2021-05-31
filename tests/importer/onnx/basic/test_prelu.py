@@ -15,33 +15,41 @@
 
 import pytest
 import torch
-import test_util
+from test_runner import OnnxTestRunner
 
-def _make_module():
+def _make_module(num, init):
 
-    class ReluModule(torch.nn.Module):
+    class PReluModule(torch.nn.Module):
         def __init__(self):
-            super(ReluModule, self).__init__()
-            self.relu = torch.nn.ReLU()
+            super(PReluModule, self).__init__()
+            self.prelu = torch.nn.PReLU(num_parameters=num, init=init)
 
         def forward(self, x):
-            x = self.relu(x)
+            x = self.prelu(x)
             return x
 
-    return ReluModule()
+    return PReluModule()
 
 in_shapes = [
     [1],
-    [8, 8],
-    [1, 4, 16],
     [1, 3, 224, 224]
 ]
 
-@pytest.mark.parametrize('in_shape', in_shapes)
-def test_relu(in_shape, request):
-    module = _make_module()
+inits = [
+    0.1,
+    0.25,
+]
 
-    test_util.test_onnx_module(request.node.name, module, in_shape, ['cpu', 'k210', 'k510'])
+@pytest.mark.parametrize('in_shape', in_shapes)
+@pytest.mark.parametrize('init', inits)
+def test_prelu(in_shape, init, request):
+    num = 1 if len(in_shape) < 2 else in_shape[1]
+    module = _make_module(num, init)
+
+    # test_util.test_onnx_module(request.node.name, module, in_shape, ['cpu', 'k210', 'k510'])
+    runner = OnnxTestRunner(['cpu', 'k210', 'k510'])
+    model_file = runner.from_torch(request.node.name, module, in_shape)
+    runner.run(model_file)
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_relu.py'])
+    pytest.main(['-vv', 'test_prelu.py'])

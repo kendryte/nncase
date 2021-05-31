@@ -15,32 +15,48 @@
 
 import pytest
 import torch
-import test_util
+from test_runner import OnnxTestRunner
 
-def _make_module(shape):
+def _make_module(min, max):
 
-    class MatmulModule(torch.nn.Module):
+    class ClipModule(torch.nn.Module):
         def __init__(self):
-            super(MatmulModule, self).__init__()
+            super(ClipModule, self).__init__()
 
         def forward(self, x):
-            y = torch.randn(*shape)
-            x = torch.matmul(x, y)
-
+            x = torch.clip(x, min, max)
             return x
 
-    return MatmulModule()
+    return ClipModule()
 
 in_shapes = [
-    [[1, 2], [2, 1]],
-    [[3, 4], [4, 5]]
+    [1],
+    [8, 8],
+    [1, 4, 16],
+    [1, 3, 224, 224]
+]
+
+mins = [
+    0,
+    3,
+    6
+]
+
+maxs = [
+    3,
+    6
 ]
 
 @pytest.mark.parametrize('in_shape', in_shapes)
-def test_matmul(in_shape, request):
-    module = _make_module(in_shape[1])
+@pytest.mark.parametrize('min', mins)
+@pytest.mark.parametrize('max', maxs)
+def test_clip(in_shape, min, max, request):
+    if min <= max:
+        module = _make_module(min, max)
 
-    test_util.test_onnx_module(request.node.name, module, in_shape[0], ['cpu', 'k210', 'k510'])
+        runner = OnnxTestRunner(['k510'])
+        model_file = runner.from_torch(request.node.name, module, in_shape)
+        runner.run(model_file)
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_matmul.py'])
+    pytest.main(['-vv', 'test_clip.py'])

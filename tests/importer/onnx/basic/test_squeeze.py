@@ -15,30 +15,24 @@
 
 import pytest
 import torch
-import test_util
+from test_runner import OnnxTestRunner
 
-def _make_module(in_shape, out_channel, kernel_size):
+def _make_module(in_shape, out_channel, kernel_size, dim):
 
-    class ReshapeModule(torch.nn.Module):
+    class SqueezeModule(torch.nn.Module):
         def __init__(self):
-            super(ReshapeModule, self).__init__()
+            super(SqueezeModule, self).__init__()
             self.conv2d = torch.nn.Conv2d(in_shape[1], out_channel, kernel_size)
-            self.n = in_shape[0]
-            self.c = out_channel
-            self.h = in_shape[2] - kernel_size + 1
-            self.w = in_shape[3] - kernel_size + 1
 
         def forward(self, x):
             x = self.conv2d(x)
-            x = torch.reshape(x, (self.n, self.c * self.h * self.w))
-            x = torch.reshape(x, (self.n, self.c, self.h * self.w))
-            x = torch.reshape(x, (self.n, self.c * self.h, self.w))
-            x = torch.reshape(x, (self.n * self.c, self.h * self.w))
-            x = torch.reshape(x, (self.n * self.c, self.h, self.w))
-            x = torch.reshape(x, (self.n * self.c * self.h, self.w))
+            x = torch.squeeze(x)
+
+            # There is something wrong when converting pytorch into onnx. Use tf.squeeze(x, dim) instead.
+            # x = torch.squeeze(x, dim)
             return x
 
-    return ReshapeModule()
+    return SqueezeModule()
 
 in_shapes = [
     [1, 4, 60, 72],
@@ -48,22 +42,32 @@ in_shapes = [
 out_channels = [
     1,
     3,
-    16
 ]
 
 kernel_sizes = [
     1,
     3,
-    5
+]
+
+axes = [
+    0,
+    1,
+    2,
+    3
 ]
 
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('out_channel', out_channels)
 @pytest.mark.parametrize('kernel_size', kernel_sizes)
-def test_reshape(in_shape, out_channel, kernel_size, request):
-    module = _make_module(in_shape, out_channel, kernel_size)
+@pytest.mark.parametrize('axis', axes)
+def test_squeeze(in_shape, out_channel, kernel_size, axis, request):
+    out_shape = [in_shape[0], out_channel, in_shape[2] - kernel_size + 1, in_shape[3] - kernel_size + 1]
+    dim = axis if out_shape[axis] == 1 else None
+    module = _make_module(in_shape, out_channel, kernel_size, dim)
 
-    test_util.test_onnx_module(request.node.name, module, in_shape, ['cpu', 'k210', 'k510'])
+    runner = OnnxTestRunner(['cpu', 'k210', 'k510'])
+    model_file = runner.from_torch(request.node.name, module, in_shape)
+    runner.run(model_file)
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_reshape.py'])
+    pytest.main(['-vv', 'test_squeeze.py'])

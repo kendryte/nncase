@@ -15,41 +15,42 @@
 
 import pytest
 import torch
-import test_util
+from test_runner import OnnxTestRunner
 
-def _make_module(in_shape, dim):
+def _make_module(negative_slope):
 
-    class ConcatModule(torch.nn.Module):
+    class LeakyReluModule(torch.nn.Module):
         def __init__(self):
-            super(ConcatModule, self).__init__()
+            super(LeakyReluModule, self).__init__()
+            self.leakyrelu = torch.nn.LeakyReLU(negative_slope)
 
         def forward(self, x):
-            x = torch.cat((x, x, x), dim)
+            x = self.leakyrelu(x)
             return x
 
-    return ConcatModule()
+    return LeakyReluModule()
 
 in_shapes = [
     [1],
-    [3, 4],
-    [3, 4, 5],
     [1, 3, 224, 224]
 ]
 
-axes = [
+negative_slopes = [
     0,
-    1,
-    2,
-    3
+    0.01,
+    0.4,
+    0.8
 ]
 
 @pytest.mark.parametrize('in_shape', in_shapes)
-@pytest.mark.parametrize('axis', axes)
-def test_concat(in_shape, axis, request):
-    if len(in_shape) > axis:
-        module = _make_module(in_shape, axis)
+@pytest.mark.parametrize('negative_slope', negative_slopes)
+def test_leakyrelu(in_shape, negative_slope, request):
+    module = _make_module(negative_slope)
 
-        test_util.test_onnx_module(request.node.name, module, in_shape, ['cpu', 'k210', 'k510'])
+    # test_util.test_onnx_module(request.node.name, module, in_shape, ['cpu', 'k210', 'k510'])
+    runner = OnnxTestRunner(['cpu', 'k210', 'k510'])
+    model_file = runner.from_torch(request.node.name, module, in_shape)
+    runner.run(model_file)
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_concat.py'])
+    pytest.main(['-vv', 'test_leakyrelu.py'])

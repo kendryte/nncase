@@ -12,49 +12,36 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
+
 import pytest
-import os
 import torch
-import numpy as np
-import sys
-import test_util
-import torchvision.transforms.functional as F
+from test_runner import OnnxTestRunner
 
-def _make_module(size, mode):
+def _make_module():
 
-    class ResizeModule(torch.nn.Module):
+    class SigmoidModule(torch.nn.Module):
         def __init__(self):
-            super(ResizeModule, self).__init__()
+            super(SigmoidModule, self).__init__()
 
         def forward(self, x):
-            # x = torch.nn.functional.interpolate(x, size=size, scale_factor=scale_factor, mode=mode, align_corners=None, recompute_scale_factor=None)
-            x = F.resize(x, size = size, interpolation = mode)
+            x = torch.sigmoid(x)
             return x
 
-    return ResizeModule()
+    return SigmoidModule()
 
 in_shapes = [
+    [1],
     [1, 3, 224, 224]
 ]
 
-sizes = [
-    (112, 112),
-    (448, 448)
-]
-
-modes = [
-    0, # PIL.Image.NEAREST
-    # 2,   # PIL.Image.BILINEAR
-]
-
 @pytest.mark.parametrize('in_shape', in_shapes)
-@pytest.mark.parametrize('size', sizes)
-@pytest.mark.parametrize('mode', modes)
-def test_concat(in_shape, size, mode, request):
-    module = _make_module(size, mode)
-
+def test_sigmoid(in_shape, request):
+    module = _make_module()
+    
     # test_util.test_onnx_module(request.node.name, module, in_shape, ['cpu', 'k210', 'k510'])
-    test_util.test_onnx_module(request.node.name, module, in_shape, ['k510'])
+    runner = OnnxTestRunner(['cpu', 'k210', 'k510'])
+    model_file = runner.from_torch(request.node.name, module, in_shape)
+    runner.run(model_file)
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_reisze.py'])
+    pytest.main(['-vv', 'test_sigmoid.py'])

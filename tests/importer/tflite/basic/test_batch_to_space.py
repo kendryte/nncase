@@ -18,8 +18,7 @@ import os
 import tensorflow as tf
 import numpy as np
 import sys
-import test_util
-
+from test_runner import TfliteTestRunner
 
 def _make_module(batch_coff, in_shape, block_shape, crops):
     class BatchToSpaceModule(tf.Module):
@@ -60,8 +59,10 @@ crops = [
 @pytest.mark.parametrize('crops', crops)
 def test_batch_to_space(batch_coff, in_shape, block_shape, crops, request):
     module = _make_module(batch_coff, in_shape, block_shape, crops)
-    test_util.test_tf_module(request.node.name, module, ['cpu'])
-
+    
+    runner = TfliteTestRunner(['cpu'])
+    model_file = runner.from_tensorflow(request.node.name, module)
+    runner.run(model_file)
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_batch_to_space.py'])
