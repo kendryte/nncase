@@ -51,7 +51,7 @@ jobs:
       # Note the current convention is to use the -S and -B options here to specify source 
       # and build directories, but this is only available with CMake 3.13 and higher.  
       # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TEST=OFF
 
     - name: Build
       working-directory: ${{github.workspace}}/build
@@ -82,7 +82,7 @@ jobs:
         if-no-files-found: error
 
   test-compiler:
-    needs: [build]
+    needs: [build]a'd
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
@@ -121,7 +121,25 @@ jobs:
       with:
         name: nncase_linux_x86_64
         path: ${{github.workspace}}/install
-    
+
+    - name: CTest
+      working-directory: ${{github.workspace}}/build/tests/kernels
+      if: runner.os == 'Linux'
+      shell: bash
+      env:
+        LD_LIBRARY_PATH: ${{github.workspace}}/install/lib
+      run: |
+        ctest
+
+    - name: CTest
+      working-directory: ${{github.workspace}}/build/tests/kernels
+      if: runner.os == 'Windows'
+      shell: bash
+      env:
+        PATH: ${{github.workspace}}/install/bin
+      run: |
+        ctest
+
     - name: Test
       working-directory: ${{github.workspace}}
       if: runner.os == 'Linux'
@@ -131,7 +149,7 @@ jobs:
         PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/tests
       run: |
         pytest tests/importer --doctest-modules --junitxml=test_results/importer.xml
-    
+
     - name: Test
       working-directory: ${{github.workspace}}
       if: runner.os == 'Windows'
