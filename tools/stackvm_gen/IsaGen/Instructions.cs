@@ -1319,6 +1319,34 @@ namespace IsaGen
             public byte RstrideDest { get; set; }
         }
 
+        [DisplayName("TENSOR.LUT1D")]
+        [Category("Tensor Instructions")]
+        [Description("Pad")]
+        public class LUT1DInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.LUT1D;
+
+            [DisplayName("datatype")]
+            [Description("Datatype")]
+            public DataType DataType { get; set; }
+
+            [DisplayName("rshape_src")]
+            [Description("Source shape register")]
+            public byte RshapeSrc { get; set; }
+
+            [DisplayName("rstride_src")]
+            [Description("Source stride register")]
+            public byte RstrideSrc { get; set; }
+
+            [DisplayName("rstride_dest")]
+            [Description("Dest stride register")]
+            public byte RstrideDest { get; set; }
+
+            [DisplayName("table_len")]
+            [Description("Table length")]
+            public ushort TableLength { get; set; }
+        }
+
         [DisplayName("TENSOR.PAD")]
         [Category("Tensor Instructions")]
         [Description("Pad")]

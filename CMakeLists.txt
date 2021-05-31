@@ -47,6 +47,7 @@ endif()
 if (BUILDING_RUNTIME)
     option(BUILD_PYTHON_BINDING "Build python binding" ON)
     option(ENABLE_K210_RUNTIME "Enable k210 runtime" OFF)
+    option(DEFAULT_BUILTIN_RUNTIMES "Use default builtin runtimes" ON)
 
     conan_cmake_run(CONANFILE conanfile-runtime.txt
                     BASIC_SETUP CMAKE_TARGETS

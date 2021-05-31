@@ -108,6 +108,8 @@ struct value_range
     {
         return { 0, std::numeric_limits<T>::max() };
     }
+
+    constexpr T length() const noexcept { return max - min; }
 };
 
 typedef enum _reduce_op
@@ -250,6 +252,14 @@ typedef struct _quant_param
 {
     int32_t zero_point;
     float scale;
+
+    template <class T>
+    constexpr value_range<float> range() const noexcept
+    {
+        return {
+            (std::numeric_limits<T>::lowest() - zero_point) * scale, (std::numeric_limits<T>::max() - zero_point) * scale
+        };
+    }
 } quant_param_t;
 
 inline bool operator==(const quant_param_t &lhs, const quant_param_t &rhs) noexcept

@@ -168,21 +168,6 @@ fused_unary::fused_unary(std::vector<fused_unary_op> subgraph, shape_t in_shape)
     add_output("output", dt_float32, in_shape);
 }
 
-//void fused_unary::compile(ir_compile_context &context)
-//{
-//    std::stringstream ss;
-//    runtime::binary_writer bw(ss);
-//    runtime::nnil_builder builder(bw);
-//
-//    compile_graph(subgraph_, builder);
-//    auto buf = ss.str();
-//    std::vector<uint8_t> body(reinterpret_cast<uint8_t *>(buf.data()), reinterpret_cast<uint8_t *>(buf.data() + buf.size()));
-//
-//    auto l_c = context.graph.emplace<nncase/ir::nnil_unary_method>(input().shape(), std::move(body));
-//    context.add_input(input(), l_c->input());
-//    context.add_output(output(), l_c->output());
-//}
-
 std::vector<fused_unary_op> ir::concat_subgraph(const std::vector<fused_unary_op> &src1, const std::vector<fused_unary_op> &src2)
 {
     std::vector<fused_unary_op> result = src1;

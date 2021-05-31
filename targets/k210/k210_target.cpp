@@ -85,7 +85,7 @@ void k210_target::register_evaluator_ops()
     ir::k210::register_k210_evaluators();
 }
 
-void k210_target::register_target_dependent_passes([[maybe_unused]] const module_type_t &type, [[maybe_unused]] ir::transforms::pass_manager &pass_mgr)
+void k210_target::register_target_dependent_passes([[maybe_unused]] const module_type_t &type, [[maybe_unused]] ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] datatype_t quant_type)
 {
 }
 
@@ -104,8 +104,14 @@ void k210_target::register_quantize_annotation_passes(const module_type_t &type,
     neutral_target::register_quantize_annotation_passes(type, pass_mgr);
 
     {
+        pass p("fused_unary_motion");
+        p.emplace<slice_fused_unary_motion_transform>();
+        pass_mgr.add_pass(std::move(p));
+    }
+
+    {
         pass p("annotate_kpu_quantize");
-        p.emplace<add_quant_checkpoints_transform>(ir::k210::op_k210_fake_kpu_conv2d);
+        p.emplace<add_quant_checkpoints_transform>(std::in_place, ir::op_fused_unary, ir::k210::op_k210_fake_kpu_conv2d);
         pass_mgr.add_pass(std::move(p));
     }
 }
@@ -137,6 +143,7 @@ void k210_target::register_quantize_passes(const module_type_t &type, ir::transf
         //p.emplace<fuse_kpu_download_transform>();
         //p.emplace<fold_input_kpu_upload_transform>();
         add_default_transforms(p);
+        p.emplace<fold_quantize_transform>();
         pass_mgr.add_pass(std::move(p));
     }
 }

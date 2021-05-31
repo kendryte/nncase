@@ -26,4 +26,13 @@ public:
 protected:
     bool on_try_match(ir::node &node, transform_context &context) override;
 };
+
+class NNCASE_MODULES_K210_API slice_fused_unary_motion_transform : public transform
+{
+public:
+    void process(transform_context &context) override;
+
+protected:
+    bool on_try_match(ir::node &node, transform_context &context) override;
+};
 }

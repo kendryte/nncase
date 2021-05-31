@@ -45,7 +45,7 @@ build_model_result model_builder::build(std::ostream &output)
     header.alignment = 8;
     header.modules = (uint32_t)sched_.modules.size();
 
-    // Skip module header
+    // Skip model header
     auto header_pos = writer.position();
     writer.skip(sizeof(header));
 

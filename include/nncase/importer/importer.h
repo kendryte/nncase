@@ -23,6 +23,8 @@ namespace nncase::importer
 {
 struct import_options
 {
+    std::string input_layout = "NCHW";
+    std::string output_layout = "NCHW";
     std::span<const std::string> output_arrays;
 };
 

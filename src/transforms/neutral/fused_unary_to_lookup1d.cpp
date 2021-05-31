@@ -12,44 +12,45 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <hlir/ops/constant.h>
-#include <hlir/ops/dequantize.h>
-#include <hlir/ops/fused_unary.h>
-#include <hlir/ops/quantize.h>
-#include <hlir/ops/table_lookup.h>
-#include <hlir/transforms/neutral/fused_unary_to_lookup1d.h>
-#include <hlir/visitor.h>
-#include <kernels/neutral/neutral_kernels.h>
+#include <nncase/codegen/binary_writer.h>
+#include <nncase/ir/ops/constant.h>
+#include <nncase/ir/ops/dequantize.h>
+#include <nncase/ir/ops/fused_unary.h>
+#include <nncase/ir/ops/quantize.h>
+#include <nncase/ir/ops/table_lookup.h>
+#include <nncase/ir/visitor.h>
+#include <nncase/kernels/kernel_utils.h>
+#include <nncase/kernels/nnil.h>
+#include <nncase/transforms/neutral/fused_unary_to_lookup1d.h>
 
 using namespace nncase;
-using namespace nncase::hlir;
-using namespace nncase::hlir::transforms;
+using namespace nncase::ir;
+using namespace nncase::ir::transforms;
 
 namespace
 {
 std::vector<uint8_t> generate_lut(fused_unary &fu, const quant_param_t &iq, const quant_param_t &yq)
 {
-    const auto xf_min = (0 - iq.zero_point) / iq.scale;
-    const auto xf_max = (255 - iq.zero_point) / iq.scale;
-
+    const auto range = iq.range<uint8_t>();
     const auto samples_count = 256;
-    const auto sample_step = (xf_max - xf_min) / (samples_count - 1);
+    const auto sample_step = range.length() / (samples_count - 1);
     std::array<float, samples_count> samples_x, samples_y;
     for (int32_t i = 0; i < samples_count; i++)
-        samples_x[i] = xf_min + i * sample_step;
+        samples_x[i] = range.min + i * sample_step;
 
     std::stringstream ss;
-    runtime::binary_writer bw(ss);
-    runtime::nnil_builder builder(bw);
+    binary_writer bw(ss);
+    codegen::nnil_builder builder(bw);
 
     fused_unary::compile_graph(fu.subgraph(), builder);
     auto buf = ss.str();
-    std::vector<uint8_t> body(reinterpret_cast<uint8_t *>(buf.data()), reinterpret_cast<uint8_t *>(buf.data() + buf.size()));
-    kernels::neutral::nnil_unary_method(samples_x.data(), samples_y.data(), samples_count, body);
+    std::vector<gsl::byte> body(reinterpret_cast<gsl::byte *>(buf.data()), reinterpret_cast<gsl::byte *>(buf.data() + buf.size()));
+    kernels::nnil_unary_method(samples_x.data(), samples_y.data(), samples_count, body)
+        .unwrap_or_throw();
 
     std::vector<uint8_t> lut(samples_count);
     for (int32_t i = 0; i < samples_count; i++)
-        lut[i] = std::clamp((int32_t)std::round(samples_y[i] * yq.scale + yq.zero_point), 0, 255);
+        lut[i] = kernels::detail::quantize<uint8_t>(samples_y[i], yq);
     return lut;
 }
 }
@@ -78,18 +79,19 @@ void fused_unary_to_lookup1d_transform::process(transform_context &context)
     auto inputs = context.outputs[0]->connections();
     auto &old_fu = static_cast<fused_unary &>(*context.matched_nodes[0]);
 
-    auto iq_p = quantizer_.get_quant_param(quantizer_.get(output), 8);
-    auto yq_p = quantizer_.get_quant_param(quantizer_.get(old_fu.output()), 8);
+    auto &quantizer = *context.quantizer;
+    auto iq_p = quantizer.get_quant_param(quantizer.get(output), 8);
+    auto yq_p = quantizer.get_quant_param(quantizer.get(old_fu.output()), 8);
 
-    auto q = context.graph.emplace<quantize>(output.shape(), iq_p);
+    auto q = context.graph.emplace<quantize>(output.type(), output.shape(), dt_uint8, iq_p);
     q->name(output.owner().name() + "/quantize");
     auto table = context.graph.emplace<constant>(dt_uint8, shape_t { 256 }, generate_lut(old_fu, iq_p, yq_p));
     table->name(old_fu.name() + "/table");
     auto lut = context.graph.emplace<table_lookup1d>(dt_uint8, q->output().shape(), 256);
     lut->name(old_fu.name());
-    auto deq = context.graph.emplace<dequantize>(old_fu.output().shape(), yq_p);
+    auto deq = context.graph.emplace<dequantize>(dt_uint8, old_fu.output().shape(), output.type(), yq_p);
     deq->name(old_fu.name() + "/dequantize");
-    link(old_fu.output(), deq->output(), &quantizer_);
+    link(old_fu.output(), deq->output(), &quantizer);
     lut->input().connect(q->output());
     lut->table().connect(table->output());
     deq->input().connect(lut->output());

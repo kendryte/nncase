@@ -37,7 +37,7 @@ struct compile_options
     bool dump_ir;
     bool dump_asm;
     bool is_fpga;
-    bool use_dataset_as_input_stat = false;
+    bool use_dataset_as_input_stat = true;
     std::string target;
     std::filesystem::path dump_dir;
     std::string input_type = "float32";
@@ -49,6 +49,8 @@ struct compile_options
 
 struct import_options
 {
+    std::string input_layout = "NCHW";
+    std::string output_layout = "NCHW";
     std::span<const std::string> output_arrays;
 };
 

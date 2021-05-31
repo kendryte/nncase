@@ -70,6 +70,10 @@ bool fold_quantize_transform::on_try_match(node &node, transform_context &contex
                     context.matched_nodes.emplace_back(&q);
                     return true;
                 }
+                else
+                {
+                    return false;
+                }
             }
         }
     }
