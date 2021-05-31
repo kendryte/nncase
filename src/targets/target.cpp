@@ -17,6 +17,7 @@
 #include <nncase/ir/quantizer.h>
 #include <nncase/runtime/stackvm/runtime_module.h>
 #include <nncase/targets/target.h>
+#include <nncase/transforms/pass.h>
 
 using namespace nncase;
 

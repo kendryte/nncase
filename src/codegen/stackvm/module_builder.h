@@ -28,6 +28,7 @@
 #include <nncase/ir/ops/reduce.h>
 #include <nncase/ir/ops/reduce_window2d.h>
 #include <nncase/ir/ops/slice.h>
+#include <nncase/ir/ops/table_lookup.h>
 #include <nncase/ir/ops/transpose.h>
 #include <nncase/ir/ops/unary.h>
 #include <nncase/ir/placeholders.h>

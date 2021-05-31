@@ -26,6 +26,18 @@ jobs:
       shell: bash
       run: |
         sudo tar xf $GITHUB_WORKSPACE/kendryte-toolchain.tar.xz -C $GITHUB_WORKSPACE
+        
+    - name: Download K210 SDK
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        wget https://github.com/kendryte/kendryte-standalone-sdk/archive/refs/heads/develop.tar.gz -O $GITHUB_WORKSPACE/k210-sdk.tar.gz
+        
+    - name: Install K210 SDK
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        sudo tar xf $GITHUB_WORKSPACE/k210-sdk.tar.gz -C $GITHUB_WORKSPACE
           
     - name: Setup Python
       uses: actions/setup-python@v2.2.1
@@ -62,7 +74,7 @@ jobs:
       # Note the current convention is to use the -S and -B options here to specify source 
       # and build directories, but this is only available with CMake 3.13 and higher.  
       # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILDING_RUNTIME=TRUE -DBUILD_PYTHON_BINDING=OFF -DCMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/toolchains/k210.toolchain.cmake
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DK210_SDK_DIR=$GITHUB_WORKSPACE/kendryte-standalone-sdk-develop -DBUILDING_RUNTIME=TRUE -DBUILD_PYTHON_BINDING=OFF -DCMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/toolchains/k210.toolchain.cmake
 
     - name: Build
       working-directory: ${{github.workspace}}/build

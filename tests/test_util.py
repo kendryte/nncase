@@ -139,6 +139,8 @@ def eval_tflite_gth(case_name, tflite, n):
 
 def graph_eval_tflite_nncase(case_name, model, targets, inputs, enable_ptq):
     import_options = nncase.ImportOptions()
+    import_options.input_layout = "NHWC"
+    import_options.output_layout = "NHWC"
     compile_options = nncase.CompileOptions()
     compile_options.dump_asm = True
     compile_options.dump_ir = True
@@ -166,6 +168,8 @@ def graph_eval_tflite_nncase(case_name, model, targets, inputs, enable_ptq):
 
 def compile_tflite_nncase(case_name, model, targets, inputs, n, enable_ptq):
     import_options = nncase.ImportOptions()
+    import_options.input_layout = "NHWC"
+    import_options.output_layout = "NHWC"
     compile_options = nncase.CompileOptions()
     compile_options.dump_asm = True
     compile_options.dump_ir = True
@@ -176,6 +180,8 @@ def compile_tflite_nncase(case_name, model, targets, inputs, n, enable_ptq):
             os.makedirs(kmodel_dir)
         compile_options.target = target
         compile_options.dump_dir = kmodel_dir
+        if enable_ptq:
+            compile_options.input_type = 'int8'
         compiler = nncase.Compiler(compile_options)
         compiler.import_tflite(model, import_options)
         if enable_ptq:

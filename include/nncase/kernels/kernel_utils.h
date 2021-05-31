@@ -231,15 +231,10 @@ int64_t to_signed(uint64_t value)
     return (int64_t)value;
 }
 
-template <size_t a, size_t b>
-constexpr bool isgreater()
+template <class T>
+constexpr T quantize(float value, const quant_param_t &param) noexcept
 {
-    return a > b;
-}
-template <size_t a, size_t b>
-constexpr bool isless()
-{
-    return a < b;
+    return (T)clamp((int32_t)lrintf(value / param.scale + param.zero_point), (int32_t)std::numeric_limits<T>::lowest(), (int32_t)std::numeric_limits<T>::max());
 }
 }
 END_NS_NNCASE_KERNELS

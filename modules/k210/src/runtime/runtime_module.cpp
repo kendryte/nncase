@@ -14,7 +14,11 @@
  */
 #include "runtime_module.h"
 #include <nncase/runtime/k210/error.h>
+#include <nncase/runtime/k210/runtime_types.h>
 #include <nncase/runtime/runtime_loader.h>
+#ifndef NNCASE_SIMULATOR
+#include <kpu.h>
+#endif
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -22,6 +26,15 @@ using namespace nncase::runtime::k210;
 
 result<void> k210_runtime_module::initialize_core(runtime_module_init_context &context) noexcept
 {
+#ifndef NNCASE_SIMULATOR
+    kpu->interrupt_clear.reg = 7;
+    kpu->interrupt_mask.reg = 7;
+    kpu->fifo_threshold.reg = 10 | (1 << 4);
+    kpu->eight_bit_mode.reg = 1;
+
+    plic_set_priority(IRQN_AI_INTERRUPT, 1);
+#endif
+
     assert(context.is_section_pinned());
     auto data_pool = mempool(mem_data);
     if (data_pool.size)
@@ -33,6 +46,10 @@ result<void> k210_runtime_module::initialize_core(runtime_module_init_context &c
 
     rdata_ = context.section(".rdata");
     text_ = context.section(".text");
+
+#ifndef NNCASE_SIMULATOR
+    memcpy((uint8_t *)rdata_.data() - IOMEM, (uint8_t *)rdata_.data(), rdata_.size_bytes());
+#endif
     return ok();
 }
 
@@ -128,6 +145,8 @@ result<gsl::span<gsl::byte>> k210_runtime_module::memory_at(const memory_range &
     case mem_kpu:
 #ifdef NNCASE_SIMULATOR
         base = kpu_ram_.data();
+#else
+        base = reinterpret_cast<gsl::byte *>(AI_IO_BASE_ADDR);
 #endif
         break;
     default:
@@ -152,3 +171,9 @@ extern "C"
         result = create_k210_runtime_module();
     }
 }
+
+#ifndef NNCASE_SIMULATOR
+runtime_registration nncase::runtime::builtin_runtimes[] = {
+    { k210_module_type, RUNTIME_MODULE_ACTIVATOR_NAME }, {}
+};
+#endif

@@ -16,15 +16,11 @@
 #include "runtime_types.h"
 #include <nncase/kernels/kernel_context.h>
 #include <nncase/kernels/kernel_utils.h>
-#include <nncase/runtime/stackvm/kernel_context.h>
 #include <utility>
-#ifdef NNCASE_OPENMP
-#include <omp.h>
-#define GET_NUM_THREADS std::is_convertible<nncase::runtime::stackvm::stackvm_kernel_context &, decltype(context)>::value ? static_cast<nncase::runtime::stackvm::stackvm_kernel_context &>(context).num_threads_ : 1
-#endif
 
 BEGIN_NS_NNCASE_KERNELS_CPU_OPT
 
+<<<<<<< HEAD
 template <size_t Parallel, size_t Stride, size_t Filter>
 constexpr size_t compute_rsize()
 {
@@ -268,5 +264,11 @@ result<void> conv2ddepthwise_NxM(const float *input, const float *weights, const
     }
     return ok();
 }
+=======
+result<void> conv2d(const float *input, const float *weights, const float *bias, float *output,
+    const runtime_shape_t &in_shape, const runtime_shape_t &in_strides, const runtime_shape_t &w_shape, const runtime_shape_t &w_strides,
+    const runtime_shape_t &bias_strides, const runtime_shape_t &out_strides, const padding &padding_h, const padding &padding_w,
+    int32_t groups, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w, value_range<float> fused_activation, kernel_context &context) noexcept;
+>>>>>>> 44b5bd321863cf4dc2349fe91ee4b73502f15f4f
 
 END_NS_NNCASE_KERNELS_CPU_OPT
