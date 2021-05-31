@@ -100,12 +100,12 @@ Fuc = {
 
 class TestRunner(metaclass=ABCMeta):
     def __init__(self, targets) -> None:
-        with open('config.yml') as f:
+        with open('tests/config.yml') as f:
             cfg = yaml.safe_load(f)
             config = Edict(cfg)
 
         self.cfg = self.validte_config(config)
-        self.targets = targets
+        self.targets = self.validate_targets(targets)
         print('cfg = {0}'.format(self.cfg))
         print('targets = {0}'.format(self.targets))
         self.inputs: List[Dict] = []
@@ -118,6 +118,15 @@ class TestRunner(metaclass=ABCMeta):
 
     def validte_config(self, config):
         return config
+
+    def validate_targets(self, targets):
+        new_targets = []
+        for t in targets:
+            if nncase.test_target(t):
+                new_targets.append(t)
+            else:
+                print("WARN: target[{0}] not found".format(t))
+        return new_targets
 
     def run(self, model_path: str):
         print('model_path = {0}'.format(model_path))
@@ -373,10 +382,6 @@ class TfliteTestRunner(TestRunner):
             output_dict['dtype'] = item['dtype']
             output_dict['shape'] = item['shape']
             self.outputs.append(output_dict)
-
-        print('inputs : {0}'.format(self.inputs))
-        print('calibs : {0}'.format(self.calibs))
-        print('outputs : {0}'.format(self.outputs))
 
     def cpu_infer(self, case_dir: str, model_file: bytes):
         interp = tf.lite.Interpreter(model_path=model_file)

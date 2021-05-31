@@ -1,5 +1,5 @@
 setup: # 整个runner期间的超参数配置
-  root: output
+  root: tests_output
   numworkers: 8
 running: # 每个case运行时的处理配置
   preprocess: null
