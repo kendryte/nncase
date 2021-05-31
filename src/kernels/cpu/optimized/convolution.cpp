@@ -70,14 +70,14 @@ result<void> conv2d_1x1_s1(const float *input, const float *weights, const float
     // if oc's type is size_t, openmp will throw error in visual studio
     // if no cast, compiler will throw warning because of comparison of integer expressions of different signedness
     // warning be treated as errors
-    const auto out_channels = static_cast<int>(w_shape[0]);
+    const auto out_channels = w_shape[0];
 
     for (size_t batch = 0; batch < in_shape[0]; batch++)
     {
 #ifdef NNCASE_OPENMP
 #pragma omp parallel for num_threads(GET_NUM_THREADS)
 #endif
-        for (int oc = 0; oc < static_cast<int>(out_channels); oc++)
+        for (size_t oc = 0; oc < out_channels; oc++)
         {
             const auto out_c = oc;
             const float *now_weights = weights + out_c * w_strides[0];
@@ -164,7 +164,7 @@ result<void> conv2d_1x1_s2(const float *input, const float *weights, const float
 #ifdef NNCASE_OPENMP
 #pragma omp parallel for num_threads(GET_NUM_THREADS)
 #endif
-        for (int oc = 0; oc < static_cast<int>(out_channels); oc++)
+        for (size_t oc = 0; oc < out_channels; oc++)
         {
             float *out = output + (b * out_strides[0] + oc * out_strides[1]);
 
@@ -394,7 +394,7 @@ result<void> conv2d_nxm(const float *input, const float *weights, const float *b
 #ifdef NNCASE_OPENMP
 #pragma omp parallel for num_threads(GET_NUM_THREADS)
 #endif
-        for (int oc = 0; oc < static_cast<int>(out_channels); oc++) // out channel
+        for (size_t oc = 0; oc < out_channels; oc++) // out channel
         {
             std::array<float *, Parallel> outptr;
             std::array<const float *, compute_rsize<Parallel, Stride_h, Filter_h>()> r;
@@ -443,7 +443,7 @@ result<void> conv2d_depthwise_nxm(const float *input, const float *weights, cons
 #ifdef NNCASE_OPENMP
 #pragma omp parallel for num_threads(GET_NUM_THREADS)
 #endif
-        for (int c = 0; c < static_cast<int>(channels); c++) // channel
+        for (size_t c = 0; c < channels; c++) // channel
         {
             std::array<float *, Parallel> outptr;
             std::array<const float *, compute_rsize<Parallel, Stride_h, Filter_h>()> r;
