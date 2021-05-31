@@ -36,7 +36,7 @@ conan_add_remote(NAME sunnycase URL https://conan.sunnycase.moe INDEX 0)
 conan_add_remote(NAME bincrafts URL https://api.bintray.com/conan/bincrafters/public-conan)
 
 option(NNCASE_OPENMP "openmp support" OFF)
-option(BUILD_TESTS "Build test programs" OFF)
+option(BUILD_TESTING "Build test programs" OFF)
 
 if (BUILDING_RUNTIME)
     option(BUILD_PYTHON_BINDING "Build python binding" ON)
@@ -157,7 +157,7 @@ else()
     add_subdirectory(src/nncase)
     add_subdirectory(src/cli)
 
-    if(BUILD_TEST)
+    if(BUILD_TESTING)
         add_subdirectory(tests/kernels)
     endif()
     
