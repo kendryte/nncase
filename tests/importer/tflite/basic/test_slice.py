@@ -43,7 +43,6 @@ cases = [
 def test_slice(in_shape, begin, size, request):
     module = _make_module(in_shape, begin, size)
 
-    # test_util.test_tf_module(request.node.name, module, ['cpu', 'k210', 'k510'])
     runner = TfliteTestRunner(['cpu', 'k210', 'k510'])
     model_file = runner.from_tensorflow(request.node.name, module)
     runner.run(model_file)

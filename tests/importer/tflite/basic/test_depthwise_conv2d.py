@@ -83,7 +83,6 @@ def test_depthwise_conv2d(n, i_channels, i_size, k_size, strides, padding, dilat
         module = _make_module(n, i_channels, i_size, k_size,
                               strides, padding, dilations)
 
-        # test_util.test_tf_module(request.node.name, module, ['cpu', 'k210', 'k510'])
         runner = TfliteTestRunner(['cpu', 'k210', 'k510'])
         model_file = runner.from_tensorflow(request.node.name, module)
         runner.run(model_file)

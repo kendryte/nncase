@@ -40,7 +40,6 @@ cases = [
 def test_concat(in_shapes, axis, request):
     module = _make_module(in_shapes, axis)
 
-    # test_util.test_tf_module(request.node.name, module, ['cpu', 'k210', 'k510'])
     runner = TfliteTestRunner(['cpu', 'k210', 'k510'])
     model_file = runner.from_tensorflow(request.node.name, module)
     runner.run(model_file)

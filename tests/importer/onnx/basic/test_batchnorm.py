@@ -31,18 +31,18 @@ def _make_module(num, esp, momentum):
     return BatchNormModule()
 
 in_shapes = [
-    # [1, 2, 16, 16],
+    [1, 2, 16, 16],
     [1, 8, 224, 224]
 ]
 
 epses = [
     0.00001,
-    # 0.00005
+    0.00005
 ]
 
 momentums = [
     0.1,
-    # 0.9
+    0.9
 ]
 
 @pytest.mark.parametrize('in_shape', in_shapes)

@@ -48,7 +48,6 @@ def test_flatten(in_shape, axis, request):
     if len(in_shape) > axis:
         module = _make_module(in_shape, axis)
 
-        # test_util.test_onnx_module(request.node.name, module, in_shape, ['cpu', 'k210', 'k510'])
         runner = OnnxTestRunner(['cpu', 'k210', 'k510'])
         model_file = runner.from_torch(request.node.name, module, in_shape)
         runner.run(model_file)

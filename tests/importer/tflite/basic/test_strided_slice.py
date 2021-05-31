@@ -41,7 +41,6 @@ cases = [
 def test_strided_slice(in_shape, begin, end, strides, request):
     module = _make_module(in_shape, begin, end, strides)
 
-    # test_util.test_tf_module(request.node.name, module, ['cpu', 'k210', 'k510'])
     runner = TfliteTestRunner(['cpu', 'k210', 'k510'])
     model_file = runner.from_tensorflow(request.node.name, module)
     runner.run(model_file)

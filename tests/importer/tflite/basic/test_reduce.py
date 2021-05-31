@@ -65,7 +65,6 @@ keep_dims = [
 def test_reduce(in_shape, axis, keep_dims, request):
     module = _make_module(in_shape, axis, keep_dims)
 
-    # test_util.test_tf_module(request.node.name, module, ['cpu', 'k210', 'k510'])
     runner = TfliteTestRunner(['cpu', 'k210', 'k510'])
     model_file = runner.from_tensorflow(request.node.name, module)
     runner.run(model_file)
