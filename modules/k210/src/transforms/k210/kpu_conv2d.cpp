@@ -79,7 +79,7 @@ auto quantize_act(quantizer &quantizer, float act_in_scale, const quant_param_t 
     const auto xf_max = std::clamp((255 - yq_p.zero_point) * yq_p.scale, activation.min, activation.max);
     const auto zq_scale = act_in_scale / zq_p.scale;
 
-    const size_t samples_count = 1024;
+    const size_t samples_count = 2048;
     const auto sample_step = (xf_max - xf_min) / (samples_count - 1);
     std::array<float, samples_count> samples_x, samples_y;
     for (size_t i = 0; i < samples_count; i++)

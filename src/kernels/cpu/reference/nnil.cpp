@@ -84,12 +84,18 @@ result<void> reference::nnil_unary_method(const float *input, float *output, siz
             case nnil_sin:
                 stack.push(sinf(stack.pop()));
                 break;
+            case nnil_sqrt:
+                stack.push(sqrtf(stack.pop()));
+                break;
             case nnil_square:
             {
                 auto v = stack.pop();
                 stack.push(v * v);
                 break;
             }
+            case nnil_tanh:
+                stack.push(tanhf(stack.pop()));
+                break;
             case nnil_add:
             {
                 auto b = stack.pop();

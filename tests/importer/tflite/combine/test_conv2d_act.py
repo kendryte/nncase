@@ -43,8 +43,7 @@ def _make_module(n, i_channels, i_size, k_size, o_channels, strides, padding, di
 
 
 n = [
-    1,
-    3
+    1
 ]
 
 i_channels = [
