@@ -52,7 +52,7 @@ calibrate_method to_calibrate_method(std::string name)
 
 datatype_t to_datatype_method(std::string name)
 {
-    if (name == "uint8")
+    if (name == "uint8" || name == "default")
         return datatype_t::dt_uint8;
     if (name == "int8")
         return datatype_t::dt_int8;

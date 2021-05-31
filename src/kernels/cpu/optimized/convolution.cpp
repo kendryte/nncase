@@ -27,6 +27,32 @@
                   padding_h, padding_w, groups, stride_h, \
                   stride_w, dilation_h, dilation_w, fused_activation, context
 
+#define CONV2D_NXM_S1_S2(n, m)                           \
+    if (filter_h == n && filter_w == m)                  \
+    {                                                    \
+        if (stride_h == 1 && stride_w == 1)              \
+        {                                                \
+            return conv2d_nxm<8, n, m, 1, 1>(CONV_ARGS); \
+        }                                                \
+        else if (stride_h == 2 && stride_w == 2)         \
+        {                                                \
+            return conv2d_nxm<8, n, m, 2, 2>(CONV_ARGS); \
+        }                                                \
+    }
+
+#define CONV2D_DEPTHWISE_NXM_S1_S2(n, m)                           \
+    if (filter_h == n && filter_w == m)                            \
+    {                                                              \
+        if (stride_h == 1 && stride_w == 1)                        \
+        {                                                          \
+            return conv2d_depthwise_nxm<8, n, m, 1, 1>(CONV_ARGS); \
+        }                                                          \
+        else if (stride_h == 2 && stride_w == 2)                   \
+        {                                                          \
+            return conv2d_depthwise_nxm<8, n, m, 2, 2>(CONV_ARGS); \
+        }                                                          \
+    }
+
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::kernels;
@@ -465,131 +491,24 @@ result<void> optimized::conv2d(const float *input, const float *weights, const f
                 return conv2d_1x1_s2(CONV_ARGS);
             }
         }
-        else if (filter_h == 1 && filter_w == 3)
-        {
-            if (stride_h == 1 && stride_w == 1)
-            {
-                return conv2d_nxm<8, 1, 3, 1, 1>(CONV_ARGS);
-            }
-            else if (stride_h == 2 && stride_w == 2)
-            {
-                return conv2d_nxm<8, 1, 3, 2, 2>(CONV_ARGS);
-            }
-        }
-        else if (filter_h == 3 && filter_w == 1)
-        {
-            if (stride_h == 1 && stride_w == 1)
-            {
-                return conv2d_nxm<8, 3, 1, 1, 1>(CONV_ARGS);
-            }
-            else if (stride_h == 2 && stride_w == 2)
-            {
-                return conv2d_nxm<8, 3, 1, 2, 2>(CONV_ARGS);
-            }
-        }
-        else if (filter_h == 1 && filter_w == 3)
-        {
-            if (stride_h == 1 && stride_w == 1)
-            {
-                return conv2d_nxm<8, 1, 3, 1, 1>(CONV_ARGS);
-            }
-            else if (stride_h == 2 && stride_w == 2)
-            {
-                return conv2d_nxm<8, 1, 3, 2, 2>(CONV_ARGS);
-            }
-        }
-        else if (filter_h == 3 && filter_w == 3)
-        {
-            if (stride_h == 1 && stride_w == 1)
-            {
-                return conv2d_nxm<8, 3, 3, 1, 1>(CONV_ARGS);
-            }
-            else if (stride_h == 2 && stride_w == 2)
-            {
-                return conv2d_nxm<8, 3, 3, 2, 2>(CONV_ARGS);
-            }
-        }
-        else if (filter_h == 5 && filter_w == 5)
-        {
-            if (stride_h == 1 && stride_w == 1)
-            {
-                return conv2d_nxm<8, 5, 5, 1, 1>(CONV_ARGS);
-            }
-            else if (stride_h == 2 && stride_w == 2)
-            {
-                return conv2d_nxm<8, 5, 5, 2, 2>(CONV_ARGS);
-            }
-        }
-        else if (filter_h == 7 && filter_w == 7)
-        {
-            if (stride_h == 1 && stride_w == 1)
-            {
-                return conv2d_nxm<8, 7, 7, 1, 1>(CONV_ARGS);
-            }
-            else if (stride_h == 2 && stride_w == 2)
-            {
-                return conv2d_nxm<8, 7, 7, 2, 2>(CONV_ARGS);
-            }
-        }
+        // clang-format off
+        else CONV2D_NXM_S1_S2(1, 3)
+        else CONV2D_NXM_S1_S2(3, 1) 
+        else CONV2D_NXM_S1_S2(3, 3) 
+        else CONV2D_NXM_S1_S2(5, 5) 
+        else CONV2D_NXM_S1_S2(7, 7)
+        // clang-format on
     }
 
     if ((size_t)groups == in_shape[1] && (size_t)groups == w_shape[0])
     {
-        if (filter_h == 3 && filter_w == 3)
-        {
-            if (stride_h == 1 && stride_w == 1)
-            {
-                return conv2d_depthwise_nxm<8, 3, 3, 1, 1>(CONV_ARGS);
-            }
-            else if (stride_h == 2 && stride_w == 2)
-            {
-                return conv2d_depthwise_nxm<8, 3, 3, 2, 2>(CONV_ARGS);
-            }
-        }
-        else if (filter_h == 3 && filter_w == 1)
-        {
-            if (stride_h == 1 && stride_w == 1)
-            {
-                return conv2d_depthwise_nxm<8, 3, 1, 1, 1>(CONV_ARGS);
-            }
-            else if (stride_h == 2 && stride_w == 2)
-            {
-                return conv2d_depthwise_nxm<8, 3, 1, 2, 2>(CONV_ARGS);
-            }
-        }
-        else if (filter_h == 1 && filter_w == 3)
-        {
-            if (stride_h == 1 && stride_w == 1)
-            {
-                return conv2d_depthwise_nxm<8, 1, 3, 1, 1>(CONV_ARGS);
-            }
-            else if (stride_h == 2 && stride_w == 2)
-            {
-                return conv2d_depthwise_nxm<8, 1, 3, 2, 2>(CONV_ARGS);
-            }
-        }
-        else if (filter_h == 5 && filter_w == 5)
-        {
-            if (stride_h == 1 && stride_w == 1)
-            {
-                return conv2d_depthwise_nxm<8, 5, 5, 1, 1>(CONV_ARGS);
-            }
-            else if (stride_h == 2 && stride_w == 2)
-            {
-                return conv2d_depthwise_nxm<8, 5, 5, 2, 2>(CONV_ARGS);
-            }
-        }
-        else if (filter_h == 7 && filter_w == 7)
-        {
-            if (stride_h == 1 && stride_w == 1)
-            {
-                return conv2d_depthwise_nxm<8, 7, 7, 1, 1>(CONV_ARGS);
-            }
-            else if (stride_h == 2 && stride_w == 2)
-            {
-                return conv2d_depthwise_nxm<8, 7, 7, 2, 2>(CONV_ARGS);
-            }
-        }
+        // clang-format off
+        CONV2D_DEPTHWISE_NXM_S1_S2(1, 3)
+        else CONV2D_DEPTHWISE_NXM_S1_S2(3, 1) 
+        else CONV2D_DEPTHWISE_NXM_S1_S2(3, 3) 
+        else CONV2D_DEPTHWISE_NXM_S1_S2(5, 5) 
+        else CONV2D_DEPTHWISE_NXM_S1_S2(7, 7)
+        // clang-format on
     }
     return err(std::errc::not_supported);
 }

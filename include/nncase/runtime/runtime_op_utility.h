@@ -44,19 +44,17 @@ inline size_t get_bytes(datatype_t type, const runtime_shape_t &shape)
 
 inline size_t compute_size(const runtime_shape_t &shape, const runtime_shape_t &strides)
 {
-    std::vector<size_t> index(shape.size());
-    std::iota(index.begin(), index.end(), 0);
-    std::sort(index.begin(), index.end(), [&](size_t &a, size_t &b) {
-        return (shape[a] == 1 ? 0 : strides[a]) > (shape[b] == 1 ? 0 : strides[b]);
-    });
-    for (auto i : index)
+    size_t max_stride = 0, max_shape = 0;
+    for (size_t i = 0; i < shape.size(); i++)
     {
-        if (strides[i] != 0)
+        if ((shape[i] == 1 ? 0 : strides[i]) > max_stride)
         {
-            return shape[i] * strides[i];
+            max_stride = strides[i];
+            max_shape = shape[i];
         }
     }
-    return 1;
+    size_t size = max_stride * max_shape;
+    return size ? size : 1;
 }
 
 inline size_t get_bytes(datatype_t type, const runtime_shape_t &shape, const runtime_shape_t &strides)
@@ -246,7 +244,7 @@ inline int32_t clamp(int32_t value)
 }
 
 template <class TShape>
-inline bool is_contiguous(const TShape& shape, const TShape& strides)
+inline bool is_contiguous(const TShape &shape, const TShape &strides)
 {
     return get_default_strides(shape) == strides;
 }
