@@ -4,6 +4,7 @@ setup: # 整个runner期间的超参数配置
 running: # 每个case运行时的处理配置
   preprocess: null
   postprocess: null
+  remove_outcome: true
 case: # case的配置，应该是一个多层次的
   importer_opt:
     kwargs: null

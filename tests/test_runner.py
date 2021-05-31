@@ -106,8 +106,6 @@ class TestRunner(metaclass=ABCMeta):
 
         self.cfg = self.validte_config(config)
         self.targets = self.validate_targets(targets)
-        print('cfg = {0}'.format(self.cfg))
-        print('targets = {0}'.format(self.targets))
         self.inputs: List[Dict] = []
         self.calibs: List[Dict] = []
         self.outputs: List[Dict] = []
@@ -136,7 +134,10 @@ class TestRunner(metaclass=ABCMeta):
         # if not os.path.exists(case_dir):
         #     os.makedirs(case_dir)
         case_dir = os.path.dirname(model_path)
-        self.run_case(self.cfg.case, case_dir, model_path)
+        self.run_single(self.cfg.case, case_dir, model_path)
+
+        if self.cfg.running.remove_outcome:
+            shutil.rmtree(case_dir)
 
     def process_model_path_name(self, model_path: str) -> str:
         # 处理模型路径转换为名字
@@ -157,7 +158,7 @@ class TestRunner(metaclass=ABCMeta):
     def import_model(self, compiler, model_content, import_options):
         pass
 
-    def run_case(self, cfg, case_dir: str, model_file: str):
+    def run_single(self, cfg, case_dir: str, model_file: str):
         if not self.inputs:
             self.parse_model_input_output(model_file)
 
@@ -184,7 +185,6 @@ class TestRunner(metaclass=ABCMeta):
         names, args = TestRunner.split_value(cfg.eval)
         names.append('target')
         args.append(self.targets)
-        print('eval: names = {0}, args = {1}'.format(names, args))
         for combine_args in product(*args):
             dict_args = dict(zip(names, combine_args))
             eval_output_paths = self.generate_evaluates(
