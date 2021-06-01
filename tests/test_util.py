@@ -144,6 +144,7 @@ def graph_eval_tflite_nncase(case_name, model, targets, inputs, enable_ptq):
     compile_options = nncase.CompileOptions()
     compile_options.dump_asm = True
     compile_options.dump_ir = True
+    compile_options.input_type = "default"
     for target in targets:
         case_dir = os.path.join(output_root, case_name,
                                 target, 'eval', 'ptq' if enable_ptq else 'no_ptq')
@@ -173,6 +174,7 @@ def compile_tflite_nncase(case_name, model, targets, inputs, n, enable_ptq):
     compile_options = nncase.CompileOptions()
     compile_options.dump_asm = True
     compile_options.dump_ir = True
+    compile_options.input_type = "default"
     for target in targets:
         kmodel_dir = os.path.join(
             output_root, case_name, target, 'infer', 'ptq' if enable_ptq else 'no_ptq')

@@ -52,7 +52,7 @@ calibrate_method to_calibrate_method(std::string name)
 
 datatype_t to_datatype_method(std::string name)
 {
-    if (name == "uint8")
+    if (name == "uint8" || name == "default")
         return datatype_t::dt_uint8;
     if (name == "int8")
         return datatype_t::dt_int8;
@@ -162,7 +162,7 @@ public:
         optimize_target_independent(graph_);
 
         std::cout << "3. Optimize target dependent..." << std::endl;
-        optimize_target_dependent(graph_, to_datatype_method(compile_options_.input_type));
+        optimize_target_dependent(graph_, use_ptq_ == true ? to_datatype_method(compile_options_.input_type) : datatype_t::dt_float32);
 
         if (use_ptq_)
         {
@@ -194,7 +194,7 @@ public:
         if (stage > 2)
         {
             std::cout << "3. Optimize target dependent..." << std::endl;
-            optimize_target_dependent(graph_, to_datatype_method(compile_options_.input_type));
+            optimize_target_dependent(graph_, use_ptq_ == true ? to_datatype_method(compile_options_.input_type) : datatype_t::dt_float32);
         }
 
         return graph_;
