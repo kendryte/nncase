@@ -158,8 +158,7 @@ public:
 
     void compile() override
     {
-        if (!(ptq_options_.index() == 0 && std::get<ptq_dataset_options>(ptq_options_).dataset.empty())
-            || !(ptq_options_.index() == 1 && std::get<ptq_tensor_options>(ptq_options_).tensor_data.empty()))
+        if (use_ptq_)
         {
             if (compile_options_.input_type == "default")
                 compile_options_.input_type = "uint8";
@@ -174,7 +173,7 @@ public:
         optimize_target_independent(graph_);
 
         std::cout << "3. Optimize target dependent..." << std::endl;
-        optimize_target_dependent(graph_, use_ptq_ == true ? to_datatype_method(compile_options_.input_type) : datatype_t::dt_float32);
+        optimize_target_dependent(graph_, to_datatype_method(compile_options_.input_type));
 
         if (use_ptq_)
         {
@@ -206,7 +205,7 @@ public:
         if (stage > 2)
         {
             std::cout << "3. Optimize target dependent..." << std::endl;
-            optimize_target_dependent(graph_, use_ptq_ == true ? to_datatype_method(compile_options_.input_type) : datatype_t::dt_float32);
+            optimize_target_dependent(graph_, to_datatype_method(compile_options_.input_type));
         }
 
         return graph_;
