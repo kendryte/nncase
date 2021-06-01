@@ -40,7 +40,7 @@ struct compile_options
     bool use_dataset_as_input_stat = true;
     std::string target;
     std::filesystem::path dump_dir;
-    std::string input_type = "float32";
+    std::string input_type = "default";
     std::string output_type = "float32";
 
     float input_mean = 0.f;

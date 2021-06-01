@@ -52,7 +52,7 @@ calibrate_method to_calibrate_method(std::string name)
 
 datatype_t to_datatype_method(std::string name)
 {
-    if (name == "uint8" || name == "default")
+    if (name == "uint8")
         return datatype_t::dt_uint8;
     if (name == "int8")
         return datatype_t::dt_int8;
@@ -158,6 +158,18 @@ public:
 
     void compile() override
     {
+        if (!(ptq_options_.index() == 0 && std::get<ptq_dataset_options>(ptq_options_).dataset.empty())
+            || !(ptq_options_.index() == 1 && std::get<ptq_tensor_options>(ptq_options_).tensor_data.empty()))
+        {
+            if (compile_options_.input_type == "default")
+                compile_options_.input_type = "uint8";
+        }
+        else
+        {
+            if (compile_options_.input_type == "default")
+                compile_options_.input_type = "float32";
+        }
+
         std::cout << "2. Optimize target independent..." << std::endl;
         optimize_target_independent(graph_);
 
