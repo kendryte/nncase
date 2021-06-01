@@ -112,15 +112,15 @@ constexpr Ok<std::decay_t<T>> ok(T &&value)
     return Ok<std::decay_t<T>>(std::forward<T>(value));
 }
 
-template <class ErrCode, class = std::enable_if_t<std::is_error_condition_enum<ErrCode>::value>>
-Err err(ErrCode value)
-{
-    return Err(value);
-}
-
 inline Err err(std::error_condition value) noexcept
 {
     return Err(std::move(value));
+}
+
+template <class ErrCode, class = std::enable_if_t<std::is_error_condition_enum<ErrCode>::value>>
+Err err(ErrCode value)
+{
+    return err(std::error_condition(value));
 }
 
 template <class T>

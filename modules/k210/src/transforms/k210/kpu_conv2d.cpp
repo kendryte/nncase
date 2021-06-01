@@ -257,6 +257,7 @@ void kpu_conv2d_transform::process(transform_context &context)
     c_bn->name(bias.name());
     auto c_act = context.graph.emplace<constant>(dt_uint8, shape_t { sizeof(kpu_activate_table_t) }, gsl::make_span(&rt_act, 1));
     c_act->name(old_conv.name() + "/act");
+    c_act->alignment(256);
     kpu_conv2d_quant_args q_args {};
     q_args.arg_x = (int32_t)-wq_p.zero_point;
     q_args.shift_x = 0;

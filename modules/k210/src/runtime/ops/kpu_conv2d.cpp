@@ -14,6 +14,7 @@
  */
 #include "../runtime_module.h"
 #include <nncase/kernels/k210/k210_kernels.h>
+#include <nncase/runtime/dbg.h>
 #ifndef NNCASE_SIMULATOR
 #include <kpu.h>
 #endif
@@ -187,6 +188,7 @@ result<void> k210_runtime_module::visit(const kpu_conv2d_options &op) noexcept
     layer.kernel_pool_type_cfg.data.bwsx_base_addr = (uintptr_t)batch_norm_data.data() - IOMEM;
     layer.kernel_calc_type_cfg.data.active_addr = (uintptr_t)activation_data.data() - IOMEM;
     layer.kernel_load_cfg.data.para_start_addr = (uintptr_t)weights.data() - IOMEM;
+    CHECK_WITH_ERR(layer.kernel_calc_type_cfg.data.active_addr % 256 == 0, std::errc::invalid_argument);
 
     auto batch = op.batches;
     auto in_per_batch = get_kpu_rows(in_w, in_h, in_ch);

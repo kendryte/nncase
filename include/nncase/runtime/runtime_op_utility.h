@@ -20,16 +20,7 @@ BEGIN_NS_NNCASE_RUNTIME
 
 inline constexpr size_t get_bytes(datatype_t type)
 {
-    switch (type)
-    {
-#define DEFINE_DATATYPE(id, t, name, value) \
-    case (dt_##id):                         \
-        return sizeof(t);
-#include <nncase/runtime/datatypes.def>
-#undef DEFINE_DATATYPE
-    default:
-        return -1;
-    }
+    return nncase::detail::datatype_bytes(type);
 }
 
 inline size_t compute_size(const runtime_shape_t &shape)

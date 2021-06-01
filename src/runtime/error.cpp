@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include <nncase/runtime/error.h>
+#include <nncase/runtime/result.h>
 
 using namespace nncase;
 using namespace nncase::runtime;

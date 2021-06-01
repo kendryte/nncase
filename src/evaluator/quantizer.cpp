@@ -146,7 +146,7 @@ bool quantizer::has_record(ir::output_connector &connector) const
     return has_record_.contains(&connector) && has_record_.at(&connector);
 }
 
-void quantizer::record(output_connector &connector, xtl::span<const float> data)
+void quantizer::record(output_connector &connector, std::span<const float> data)
 {
     switch (stage_)
     {
@@ -163,7 +163,7 @@ void quantizer::record(output_connector &connector, xtl::span<const float> data)
     }
 }
 
-void quantizer::record(output_connector &connector, xtl::span<const bfloat16> data)
+void quantizer::record(output_connector &connector, std::span<const bfloat16> data)
 {
     switch (stage_)
     {
@@ -290,7 +290,7 @@ quantizer::histogram::histogram(value_range<float> range, size_t src_bins, size_
     auto r = range_.max - range_.min;
     src_bin_interval_ = r / src_bins_.size();
 }
-void quantizer::histogram::record(xtl::span<const bfloat16> data)
+void quantizer::histogram::record(std::span<const bfloat16> data)
 {
     for (auto value : data)
     {
@@ -299,7 +299,7 @@ void quantizer::histogram::record(xtl::span<const bfloat16> data)
         src_bins_[index]++;
     }
 }
-void quantizer::histogram::record(xtl::span<const float> data)
+void quantizer::histogram::record(std::span<const float> data)
 {
     for (auto value : data)
     {

@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <nncase/runtime/dbg.h>
 #include <nncase/runtime/error.h>
 #include <nncase/runtime/runtime_module.h>
 #include <nncase/runtime/span_reader.h>
@@ -215,16 +216,13 @@ result<runtime_tensor> runtime_module::output_tensor(size_t index) noexcept
 
 result<void> runtime_module::input_tensor(size_t index, runtime_tensor tensor) noexcept
 {
-    if (tensor.empty())
-        return err(std::errc::invalid_argument);
-    if (index >= input_tensors_.size())
-        return err(std::errc::result_out_of_range);
+    CHECK_WITH_ERR(!tensor.empty(), std::errc::invalid_argument);
+    CHECK_WITH_ERR(index < output_tensors_.size(), std::errc::result_out_of_range);
 
     auto &info = input_tensors_[index];
-    if (info.range.datatype != tensor.datatype())
-        return err(nncase_errc::datatype_mismatch);
-    if (info.shape != tensor.shape())
-        return err(nncase_errc::shape_mismatch);
+    CHECK_WITH_ERR(info.range.datatype == tensor.datatype(), nncase_errc::datatype_mismatch);
+    CHECK_WITH_ERR(info.shape == tensor.shape(), nncase_errc::shape_mismatch);
+
     if (info.bind_tensor != tensor)
     {
         if (validate_input_tensor(index, tensor).is_err())
@@ -257,16 +255,13 @@ result<void> runtime_module::input_tensor(size_t index, runtime_tensor tensor) n
 
 result<void> runtime_module::output_tensor(size_t index, runtime_tensor tensor) noexcept
 {
-    if (tensor.empty())
-        return err(std::errc::invalid_argument);
-    if (index >= output_tensors_.size())
-        return err(std::errc::result_out_of_range);
+    CHECK_WITH_ERR(!tensor.empty(), std::errc::invalid_argument);
+    CHECK_WITH_ERR(index < output_tensors_.size(), std::errc::result_out_of_range);
 
     auto &info = output_tensors_[index];
-    if (info.range.datatype != tensor.datatype())
-        return err(nncase_errc::datatype_mismatch);
-    if (info.shape != tensor.shape())
-        return err(nncase_errc::shape_mismatch);
+    CHECK_WITH_ERR(info.range.datatype == tensor.datatype(), nncase_errc::datatype_mismatch);
+    CHECK_WITH_ERR(info.shape == tensor.shape(), nncase_errc::shape_mismatch);
+
     if (info.bind_tensor != tensor)
     {
         if (validate_output_tensor(index, tensor).is_err())

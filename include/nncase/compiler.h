@@ -37,7 +37,7 @@ struct compile_options
     bool dump_ir;
     bool dump_asm;
     bool is_fpga;
-    bool use_dataset_as_input_stat = true;
+    bool use_dataset_as_input_stat = false;
     std::string target;
     std::filesystem::path dump_dir;
     std::string input_type = "default";
