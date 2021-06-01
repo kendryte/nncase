@@ -14,9 +14,10 @@
  */
 #pragma once
 #include "runtime_types.h"
+#include <nncase/kernels/kernel_context.h>
 
 BEGIN_NS_NNCASE_KERNELS_CPU_REF
 
-NNCASE_API result<void> nnil_unary_method(const float *input, float *output, size_t count, gsl::span<const gsl::byte> body) noexcept;
+NNCASE_API result<void> nnil_unary_method(const float *input, float *output, size_t count, gsl::span<const gsl::byte> body, kernel_context &context = default_kernel_context) noexcept;
 
 END_NS_NNCASE_KERNELS_CPU_REF

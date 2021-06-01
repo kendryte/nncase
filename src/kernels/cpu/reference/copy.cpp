@@ -26,7 +26,7 @@ namespace
 {
 template <class T>
 result<void> copy_impl(const T *src, T *dest, const runtime_shape_t &shape, const runtime_shape_t &src_strides,
-    const runtime_shape_t &dest_strides) noexcept
+    const runtime_shape_t &dest_strides, NNCASE_UNUSED kernel_context &context) noexcept
 {
     return apply(shape, [&](const runtime_shape_t &index) -> result<void> {
         auto value = src[offset(src_strides, index)];
@@ -38,10 +38,10 @@ result<void> copy_impl(const T *src, T *dest, const runtime_shape_t &shape, cons
 
 #define COPY_IMPL(size, type) \
     case size:                \
-        return copy_impl(reinterpret_cast<const type *>(src), reinterpret_cast<type *>(dest), shape, src_strides, dest_strides)
+        return copy_impl(reinterpret_cast<const type *>(src), reinterpret_cast<type *>(dest), shape, src_strides, dest_strides, context)
 
 result<void> reference::copy(datatype_t type, const gsl::byte *src, gsl::byte *dest,
-    const runtime_shape_t &shape, const runtime_shape_t &src_strides, const runtime_shape_t &dest_strides) noexcept
+    const runtime_shape_t &shape, const runtime_shape_t &src_strides, const runtime_shape_t &dest_strides, kernel_context &context) noexcept
 {
     switch (runtime::get_bytes(type))
     {

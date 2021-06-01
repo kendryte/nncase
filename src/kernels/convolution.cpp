@@ -13,8 +13,9 @@
  * limitations under the License.
  */
 #include <nncase/kernels/convolution.h>
+#include <nncase/kernels/cpu/optimized/convolution.h>
 #include <nncase/kernels/cpu/reference/convolution.h>
-
+#include <nncase/runtime/runtime_op_utility.h>
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::kernels;
@@ -22,8 +23,24 @@ using namespace nncase::kernels;
 result<void> kernels::conv2d(const float *input, const float *weights, const float *bias, float *output,
     const runtime_shape_t &in_shape, const runtime_shape_t &in_strides, const runtime_shape_t &w_shape, const runtime_shape_t &w_strides,
     const runtime_shape_t &bias_strides, const runtime_shape_t &out_strides, const padding &padding_h, const padding &padding_w,
-    int32_t groups, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w, value_range<float> fused_activation) noexcept
+    int32_t groups, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w, value_range<float> fused_activation, kernel_context &context) noexcept
 {
-    return cpu::reference::conv2d(input, weights, bias, output, in_shape, in_strides, w_shape, w_strides, bias_strides, out_strides,
-        padding_h, padding_w, groups, stride_h, stride_w, dilation_h, dilation_w, fused_activation);
+    if (dilation_h == 1 && dilation_w == 1 and padding_h.before == 0 and padding_h.after == 0 and padding_w.before == 0 and padding_w.after == 0)
+    {
+        if (cpu::optimized::conv2d(input, weights, bias, output,
+                in_shape, in_strides, w_shape,
+                w_strides, bias_strides, out_strides,
+                padding_h, padding_w, groups, stride_h,
+                stride_w, dilation_h, dilation_w, fused_activation, context)
+                .is_ok())
+        {
+            return ok();
+        }
+    }
+    // general conv
+    return cpu::reference::conv2d(input, weights, bias, output,
+        in_shape, in_strides, w_shape,
+        w_strides, bias_strides, out_strides,
+        padding_h, padding_w, groups, stride_h,
+        stride_w, dilation_h, dilation_w, fused_activation, context);
 }

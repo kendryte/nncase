@@ -23,7 +23,7 @@ using namespace nncase::kernels;
 using namespace nncase::kernels::cpu;
 using namespace nncase::kernels::cpu::reference;
 
-result<void> reference::nnil_unary_method(const float *input, float *output, size_t count, gsl::span<const gsl::byte> body) noexcept
+result<void> reference::nnil_unary_method(const float *input, float *output, size_t count, gsl::span<const gsl::byte> body, NNCASE_UNUSED kernel_context &context) noexcept
 {
     for (size_t i = 0; i < count; i++)
     {

@@ -31,5 +31,5 @@ result<void> stackvm_runtime_module::visit(const tensor_binary_op_t &op) noexcep
     auto &out_strides = shape_regs_[op.rstride_dest];
 
     return kernels::binary(op.binary_op, reinterpret_cast<const float *>(input_a), reinterpret_cast<const float *>(input_b),
-        reinterpret_cast<float *>(output), in_a_shape, in_a_strides, in_b_shape, in_b_strides, out_strides, { op.fused_clamp_low, op.fused_clamp_high });
+        reinterpret_cast<float *>(output), in_a_shape, in_a_strides, in_b_shape, in_b_strides, out_strides, { op.fused_clamp_low, op.fused_clamp_high }, kernel_context());
 }

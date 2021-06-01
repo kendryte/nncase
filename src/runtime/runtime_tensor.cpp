@@ -179,6 +179,11 @@ bool runtime_tensor::is_host() const noexcept
     return tensor_type() == host_runtime_tensor::tensor_type();
 }
 
+bool runtime_tensor::is_contiguous() const noexcept
+{
+    return this->strides() == get_default_strides(this->shape());
+}
+
 void runtime_tensor::reset() noexcept
 {
     *this = runtime_tensor();

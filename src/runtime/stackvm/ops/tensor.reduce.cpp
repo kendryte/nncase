@@ -29,5 +29,5 @@ result<void> stackvm_runtime_module::visit(const tensor_reduce_op_t &op) noexcep
     auto &in_strides = shape_regs_[op.rstride_src];
     auto &out_strides = shape_regs_[op.rstride_dest];
 
-    return kernels::reduce(op.reduce_op, init_value.as_r4(), reinterpret_cast<const float *>(input), reinterpret_cast<float *>(output), in_shape, axis, in_strides, out_strides, op.keep_dims);
+    return kernels::reduce(op.reduce_op, init_value.as_r4(), reinterpret_cast<const float *>(input), reinterpret_cast<float *>(output), in_shape, axis, in_strides, out_strides, op.keep_dims, kernel_context());
 }

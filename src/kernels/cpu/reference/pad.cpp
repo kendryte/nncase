@@ -75,7 +75,7 @@ runtime_shape_t get_in_index(const runtime_shape_t &index, const runtime_shape_t
 
 template <class T>
 result<void> pad_impl(const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &out_shape,
-    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const runtime_paddings_t &paddings, pad_mode_t mode, T pad_value) noexcept
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const runtime_paddings_t &paddings, pad_mode_t mode, T pad_value, NNCASE_UNUSED kernel_context &context) noexcept
 {
     return apply(out_shape, [&](const runtime_shape_t &index) -> result<void> {
         bool pad_element = false;
@@ -93,10 +93,10 @@ result<void> pad_impl(const T *input, T *output, const runtime_shape_t &in_shape
 
 #define PAD_IMPL(size, type) \
     case size:               \
-        return pad_impl(reinterpret_cast<const type *>(input), reinterpret_cast<type *>(output), in_shape, out_shape, in_strides, out_strides, paddings, mode, pad_value.as<type>())
+        return pad_impl(reinterpret_cast<const type *>(input), reinterpret_cast<type *>(output), in_shape, out_shape, in_strides, out_strides, paddings, mode, pad_value.as<type>(), context)
 
 result<void> reference::pad(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape,
-    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const runtime_paddings_t &paddings, pad_mode_t mode, const scalar &pad_value) noexcept
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const runtime_paddings_t &paddings, pad_mode_t mode, const scalar &pad_value, kernel_context &context) noexcept
 {
     auto out_shape = get_padded_shape(in_shape, paddings);
     switch (runtime::get_bytes(type))
