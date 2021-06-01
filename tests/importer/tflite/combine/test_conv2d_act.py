@@ -43,8 +43,7 @@ def _make_module(n, i_channels, i_size, k_size, o_channels, strides, padding, di
 
 
 n = [
-    1,
-    3
+    1
 ]
 
 i_channels = [
@@ -96,7 +95,7 @@ def test_conv2d_act(n, i_channels, i_size, k_size, o_channels, strides, padding,
     if padding != 'VALID' or (k_size[0] <= i_size[0] and k_size[1] <= i_size[1]):
         module = _make_module(n, i_channels, i_size, k_size, o_channels,
                               strides, padding, dilations, act)
-        test_util.test_tf_module(request.node.name, module, ['cpu', 'k210'])
+        test_util.test_tf_module(request.node.name, module, ['cpu', 'k210', 'k510'])
 
 
 if __name__ == "__main__":
