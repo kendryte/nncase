@@ -158,6 +158,17 @@ public:
 
     void compile() override
     {
+        if (use_ptq_)
+        {
+            if (compile_options_.input_type == "default")
+                compile_options_.input_type = "uint8";
+        }
+        else
+        {
+            if (compile_options_.input_type == "default")
+                compile_options_.input_type = "float32";
+        }
+
         std::cout << "2. Optimize target independent..." << std::endl;
         optimize_target_independent(graph_);
 
