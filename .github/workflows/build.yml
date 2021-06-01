@@ -58,7 +58,6 @@ jobs:
       shell: bash
       # Execute the build.  You can specify a specific target with "--target <NAME>"
       run: |
-        which ctest
         cmake --build . --config $BUILD_TYPE
 
     - name: Install
@@ -71,15 +70,13 @@ jobs:
       working-directory: ${{github.workspace}}/build/tests/kernels
       if: runner.os == 'Linux'
       shell: bash
-      run: |
-        ctest
+      run: ctest
 
     - name: CTest
       working-directory: ${{github.workspace}}/build/tests/kernels
       if: runner.os == 'Windows'
       shell: bash
-      run: |
-        ctest
+      run: ctest
 
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v2.2.2
