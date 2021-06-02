@@ -235,7 +235,7 @@ result<runtime_tensor> runtime_module::device_output_tensor(size_t index) noexce
 result<void> runtime_module::input_tensor(size_t index, runtime_tensor tensor) noexcept
 {
     CHECK_WITH_ERR(!tensor.empty(), std::errc::invalid_argument);
-    CHECK_WITH_ERR(index < output_tensors_.size(), std::errc::result_out_of_range);
+    CHECK_WITH_ERR(index < input_tensors_.size(), std::errc::result_out_of_range);
 
     auto &info = input_tensors_[index];
     CHECK_WITH_ERR(info.range.datatype == tensor.datatype(), nncase_errc::datatype_mismatch);
