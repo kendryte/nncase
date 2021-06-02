@@ -29,5 +29,5 @@ result<void> stackvm_runtime_module::visit(const tensor_broadcast_op_t &op) noex
     auto &out_strides = shape_regs_[op.rstride_dest];
 
     return kernels::broadcast(op.datatype, reinterpret_cast<const gsl::byte *>(input), reinterpret_cast<gsl::byte *>(output),
-        in_shape, in_strides, out_shape, out_strides, kernel_context());
+        in_shape, in_strides, out_shape, out_strides);
 }

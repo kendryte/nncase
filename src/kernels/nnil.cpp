@@ -14,13 +14,12 @@
  */
 #include <nncase/kernels/cpu/reference/nnil.h>
 #include <nncase/kernels/nnil.h>
-#include <nncase/kernels/kernel_context.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::kernels;
 
-result<void> kernels::nnil_unary_method(const float *input, float *output, size_t count, gsl::span<const gsl::byte> body, kernel_context &context) noexcept
+result<void> kernels::nnil_unary_method(const float *input, float *output, size_t count, gsl::span<const gsl::byte> body) noexcept
 {
-    return cpu::reference::nnil_unary_method(input, output, count, body, context);
+    return cpu::reference::nnil_unary_method(input, output, count, body);
 }

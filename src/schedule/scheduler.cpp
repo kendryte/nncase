@@ -326,9 +326,7 @@ void schedule_context::make_physical_buffers()
         {
             auto id = physical_ids.size();
             physical_ids.emplace(&bp.second, id);
-            auto &pb = physical_buffers.emplace_back(id, bp.second);
-            if (auto c = node_cast<constant>(bp.first->owner()))
-                pb.alignment(c->alignment());
+            physical_buffers.emplace_back(id, bp.second);
         }
     }
 

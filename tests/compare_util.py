@@ -101,7 +101,7 @@ class Judge:
             self.n_outlier += 1
 
     def is_good(self):
-        if self.cosine_similarity > 0.99:
+        if self.cosine_similarity > 0.999:
             return True
 
         for tol in self.tolerances:

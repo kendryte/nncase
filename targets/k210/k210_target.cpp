@@ -22,7 +22,6 @@
 #include <nncase/transforms/k210/fold_kpu_upload.h>
 #include <nncase/transforms/k210/fuse_kpu_conv2d_pool.h>
 #include <nncase/transforms/k210/fuse_kpu_download.h>
-#include <nncase/transforms/k210/fused_unary_motion.h>
 #include <nncase/transforms/k210/kpu_conv2d.h>
 #include <nncase/transforms/k210/strided_slice_motion.h>
 #include <nncase/transforms/neutral/add_quant_checkpoints.h>
@@ -107,7 +106,6 @@ void k210_target::register_quantize_annotation_passes(const module_type_t &type,
     {
         pass p("fused_unary_motion");
         p.emplace<slice_fused_unary_motion_transform>();
-        p.emplace<pad_fused_unary_motion_transform>();
         pass_mgr.add_pass(std::move(p));
     }
 

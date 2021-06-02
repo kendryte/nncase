@@ -37,11 +37,14 @@ struct compile_options
     bool dump_ir;
     bool dump_asm;
     bool is_fpga;
-    bool use_dataset_as_input_stat = false;
+    bool use_dataset_as_input_stat = true;
     std::string target;
     std::filesystem::path dump_dir;
-    std::string input_type = "default";
+    std::string input_type = "float32";
     std::string output_type = "float32";
+
+    float input_mean = 0.f;
+    float input_std = 1.f;
 };
 
 struct import_options
@@ -51,25 +54,23 @@ struct import_options
     std::span<const std::string> output_arrays;
 };
 
-struct ptq_options_base
+struct ptq_dataset_options
 {
     std::string calibrate_method = "no_clip";
+    std::filesystem::path dataset;
+    std::string dataset_format;
     std::function<void(size_t cnt, size_t total)> progress;
 
     float input_mean = 0.f;
     float input_std = 1.f;
 };
 
-struct ptq_dataset_options : ptq_options_base
+struct ptq_tensor_options
 {
-    std::filesystem::path dataset;
-    std::string dataset_format;
-};
-
-struct ptq_tensor_options : ptq_options_base
-{
+    std::string calibrate_method = "no_clip";
     std::vector<uint8_t> tensor_data;
     size_t samples_count;
+    std::function<void(size_t cnt, size_t total)> progress;
 };
 
 class NNCASE_API compiler

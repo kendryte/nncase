@@ -29,5 +29,5 @@ result<void> stackvm_runtime_module::visit(const tensor_pad_op_t &op) noexcept
     auto &out_strides = shape_regs_[op.rstride_dest];
     auto &paddings = paddings_regs_[op.rpaddings];
 
-    return kernels::pad(op.datatype, reinterpret_cast<const gsl::byte *>(input), reinterpret_cast<gsl::byte *>(output), shape, in_strides, out_strides, paddings, op.pad_mode, pad_value, kernel_context());
+    return kernels::pad(op.datatype, reinterpret_cast<const gsl::byte *>(input), reinterpret_cast<gsl::byte *>(output), shape, in_strides, out_strides, paddings, op.pad_mode, pad_value);
 }

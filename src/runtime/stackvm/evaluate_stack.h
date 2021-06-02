@@ -58,7 +58,7 @@ public:
     }
 
     stack_entry(intptr_t v) noexcept
-        : i_(v), is_real_(false)
+        : is_real_(false), i_(v)
     {
     }
 
@@ -68,7 +68,7 @@ public:
     }
 
     stack_entry(float v) noexcept
-        : r_(v), is_real_(true)
+        : is_real_(true), r_(v)
     {
     }
 
@@ -88,12 +88,12 @@ public:
     float as_r() const noexcept { return r_; }
 
 private:
+    bool is_real_;
     union
     {
         intptr_t i_;
         float r_;
     };
-    bool is_real_;
 };
 
 class evaluate_stack

@@ -3,43 +3,23 @@
 
 ### Linux
 1. Install dependencies
-
-- gcc >= 10
-```bash
-sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-sudo apt-get update
-sudo apt install gcc-10 g++-10
-sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 40
-sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 40 
-```
-
-- cmake >=3.16
+- gcc >= 8
+- cmake >=3.8
 - python >= 3.6
-- libgtk2.0 
-
-```bash
-sudo apt install libgtk2.0-dev -y
-```
 
 2. Install conan
-
 ```bash
-pip install conan
+pip install conan==1.21.1
 ```
-
 3. Clone source
-
 ```bash
-git clone https://github.com/kendryte/nncase.git
+git clone https://github.com/kendryte/nncase.git --recursive
 ```
-
 4. Build
 ```bash
-BUILD_TYPE=Debug
-mkdir build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE
-make -j8
-cmake --install . --prefix ../install
+mkdir out && cd out
+cmake .. -DNNCASE_TARGET=k210 -DCMAKE_BUILD_TYPE=Release
+make -j
 ```
 5. Test (optional)
 
@@ -50,20 +30,10 @@ pip install six==1.12 conan==1.19.2 tensorflow==2.4.1 matplotlib pillow pytest o
 
 Install dependencies
 ```bash
-pip install conan tensorflow==2.4.1 matplotlib pillow onnxruntime
-pip install torch==1.4.0+cpu torchvision==0.5.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
+pip install six==1.12 conan==1.19.2 tensorflow==2.0.0 matplotlib pillow pytest onnxruntime
+pip install torch==1.7.1+cpu torchvision==0.5.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
 ```
-
-Export environment
-
-```bash
-echo "export LD_LIBRARY_PATH=\"${PWD}/install/lib:\$LD_LIBRARY_PATH\"" >> ~/.zshrc
-echo "export PYTHONPATH=\"${PWD}/install/lib:${PWD}/install/python:${PWD}/tests:\${PYTHONPATH}\"" >> ~/.zshrc
-source ~/.zshrc
-```
-
 Run tests
-
 ```bash
 pytest tests
 ```

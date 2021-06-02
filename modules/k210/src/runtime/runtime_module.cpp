@@ -102,7 +102,7 @@ result<gsl::span<gsl::byte>> k210_runtime_module::memory_at(const memory_range &
 
         if (id != ID_NOT_FOUND)
         {
-            try_var(tensor, device_input_tensor(id));
+            try_var(tensor, input_tensor(id));
             try_var(buffer, host_runtime_tensor::buffer(tensor));
             base = buffer.data() - mrange.start;
         }
@@ -126,7 +126,7 @@ result<gsl::span<gsl::byte>> k210_runtime_module::memory_at(const memory_range &
 
         if (id != ID_NOT_FOUND)
         {
-            try_var(tensor, device_output_tensor(id));
+            try_var(tensor, output_tensor(id));
             try_var(buffer, host_runtime_tensor::buffer(tensor));
             base = buffer.data() - mrange.start;
         }

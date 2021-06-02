@@ -47,11 +47,7 @@ public:
     void emit_neg() { emit_opcode(runtime::nnil_neg); }
     void emit_rsqrt() { emit_opcode(runtime::nnil_rsqrt); }
     void emit_sin() { emit_opcode(runtime::nnil_sin); }
-    void emit_sqrt() { emit_opcode(runtime::nnil_sqrt); }
     void emit_square() { emit_opcode(runtime::nnil_square); }
-    void emit_tanh() { emit_opcode(runtime::nnil_tanh); }
-    void emit_bitwise_not() { emit_opcode(runtime::nnil_bitwise_not); }
-    void emit_logical_not() { emit_opcode(runtime::nnil_logical_not); }
     void emit_add() { emit_opcode(runtime::nnil_add); }
     void emit_sub() { emit_opcode(runtime::nnil_sub); }
     void emit_mul() { emit_opcode(runtime::nnil_mul); }

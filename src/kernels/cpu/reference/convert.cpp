@@ -26,7 +26,7 @@ namespace
 {
 template <class TInput, class TOutput>
 result<void> convert_impl(const TInput *input, TOutput *output, const runtime_shape_t &in_shape,
-    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, NNCASE_UNUSED kernel_context &context) noexcept
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides) noexcept
 {
     return apply(in_shape, [&](const runtime_shape_t &index) -> result<void> {
         auto value = input[offset(in_strides, index)];
@@ -36,7 +36,7 @@ result<void> convert_impl(const TInput *input, TOutput *output, const runtime_sh
 }
 
 result<void> convert_f32_to_bf16_impl(const float *input, bfloat16 *output, const runtime_shape_t &in_shape,
-    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, NNCASE_UNUSED kernel_context &context) noexcept
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides) noexcept
 {
     return apply(in_shape, [&](const runtime_shape_t &index) -> result<void> {
         auto value = input[offset(in_strides, index)];
@@ -48,7 +48,7 @@ result<void> convert_f32_to_bf16_impl(const float *input, bfloat16 *output, cons
 
 #define CONVERT_IMPL_LV2(input_t, output_t)  \
     if (out_type == to_datatype<output_t>()) \
-    return convert_impl(reinterpret_cast<const input_t *>(input), reinterpret_cast<output_t *>(output), in_shape, in_strides, out_strides, context)
+    return convert_impl(reinterpret_cast<const input_t *>(input), reinterpret_cast<output_t *>(output), in_shape, in_strides, out_strides)
 
 #define CONVERT_IMPL_LV1(input_t)            \
     if (in_type == to_datatype<input_t>())   \
@@ -63,11 +63,11 @@ result<void> convert_f32_to_bf16_impl(const float *input, bfloat16 *output, cons
     }
 
 result<void> reference::convert(datatype_t in_type, datatype_t out_type, const gsl::byte *input, gsl::byte *output,
-    const runtime_shape_t &in_shape, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, kernel_context &context) noexcept
+    const runtime_shape_t &in_shape, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides) noexcept
 {
     if (in_type == dt_float32 && out_type == dt_bfloat16)
         return convert_f32_to_bf16_impl(reinterpret_cast<const float *>(input), reinterpret_cast<bfloat16 *>(output),
-            in_shape, in_strides, out_strides, context);
+            in_shape, in_strides, out_strides);
 
     CONVERT_IMPL_LV1(uint8_t);
     CONVERT_IMPL_LV1(uint16_t);

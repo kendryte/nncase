@@ -30,5 +30,5 @@ result<void> stackvm_runtime_module::visit(const tensor_batch_to_space_op_t &op)
     auto &out_strides = shape_regs_[op.rstride_dest];
 
     return kernels::batch_to_space(op.datatype, reinterpret_cast<const gsl::byte *>(input), reinterpret_cast<gsl::byte *>(output),
-        in_shape, block_shape, crops, in_strides, out_strides, kernel_context());
+        in_shape, block_shape, crops, in_strides, out_strides);
 }

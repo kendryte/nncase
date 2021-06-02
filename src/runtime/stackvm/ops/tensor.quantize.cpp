@@ -31,5 +31,5 @@ result<void> stackvm_runtime_module::visit(const tensor_quantize_op_t &op) noexc
     auto &out_strides = shape_regs_[op.rstride_dest];
 
     return kernels::quantize(op.in_datatype, op.dst_datatype, reinterpret_cast<const gsl::byte *>(input),
-        reinterpret_cast<gsl::byte *>(output), shape, in_strides, out_strides, scale.as_r4(), bias.as_r4(), kernel_context());
+        reinterpret_cast<gsl::byte *>(output), shape, in_strides, out_strides, scale.as_r4(), bias.as_r4());
 }

@@ -276,4 +276,3 @@ tests/private
 /tools/stackvm_gen/IsaGen/Properties/launchSettings.json
 /test_results
 install/
-CMakeSettings.json

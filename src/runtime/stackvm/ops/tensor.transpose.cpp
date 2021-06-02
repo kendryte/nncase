@@ -28,5 +28,5 @@ result<void> stackvm_runtime_module::visit(const tensor_transpose_op_t &op) noex
     auto &out_strides = shape_regs_[op.rstride_dest];
     auto &perm = shape_regs_[op.rshape_perm];
 
-    return kernels::transpose(op.datatype, reinterpret_cast<const gsl::byte *>(input), reinterpret_cast<gsl::byte *>(output), shape, perm, in_strides, out_strides, kernel_context());
+    return kernels::transpose(op.datatype, reinterpret_cast<const gsl::byte *>(input), reinterpret_cast<gsl::byte *>(output), shape, perm, in_strides, out_strides);
 }

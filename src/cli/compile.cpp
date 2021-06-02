@@ -34,8 +34,6 @@ compile_command::compile_command(lyra::cli &cli)
                          .add_argument(lyra::opt(dataset_, "dataset path").name("--dataset").optional().help("calibration dataset, used in post quantization"))
                          .add_argument(lyra::opt(dataset_format_, "dataset format").name("--dataset-format").optional().help("datset format: e.g. image, raw default is " + dataset_format_))
                          .add_argument(lyra::opt(calibrate_method_, "calibrate method").name("--calibrate-method").optional().help("calibrate method: e.g. no_clip, l2, default is " + calibrate_method_))
-                         .add_argument(lyra::opt(input_mean_, "input mean").name("--input-mean").optional().help("input mean, default is " + std::to_string(input_mean_)))
-                         .add_argument(lyra::opt(input_std_, "input std").name("--input-std").optional().help("input std, default is " + std::to_string(input_std_)))
                          .add_argument(lyra::opt(is_fpga_).name("--is-fpga").optional().help("use fpga parameters"))
                          .add_argument(lyra::opt(dump_ir_).name("--dump-ir").optional().help("dump ir to .dot"))
                          .add_argument(lyra::opt(dump_asm_).name("--dump-asm").optional().help("dump assembly"))
@@ -111,8 +109,6 @@ void compile_command::run()
         ptq_options.dataset = dataset_;
         ptq_options.dataset_format = dataset_format_;
         ptq_options.calibrate_method = calibrate_method_;
-        ptq_options.input_mean = input_mean_;
-        ptq_options.input_std = input_std_;
         compiler->use_ptq(ptq_options);
     }
 

@@ -20,7 +20,6 @@
 #include <cmath>
 #include <cstddef>
 #include <cstdint>
-#include <cstring>
 #include <limits>
 #include <numeric>
 #include <stdexcept>
@@ -70,21 +69,6 @@ namespace detail
     };
 #include "datatypes.def"
 #undef DEFINE_DATATYPE
-
-    inline constexpr size_t datatype_bytes(datatype_t type)
-    {
-        switch (type)
-        {
-#define DEFINE_DATATYPE(id, t, name, value) \
-    case (dt_##id):                         \
-        return sizeof(t);
-#include "datatypes.def"
-#undef DEFINE_DATATYPE
-        default:
-            return -1;
-        }
-    }
-
 }
 
 template <class T>
@@ -307,10 +291,10 @@ using runtime_shape_t = itlib::small_vector<size_t, 4>;
 using runtime_axis_t = itlib::small_vector<int32_t, 4>;
 using runtime_paddings_t = itlib::small_vector<padding, 4>;
 
-struct scalar
+struct alignas(8) scalar
 {
     datatype_t type;
-    std::aligned_storage_t<8> storage;
+    std::array<uint8_t, 8> storage;
 
     scalar() = default;
 
@@ -363,10 +347,10 @@ struct scalar
     }
 
     template <class T>
-    T &as() noexcept { return *reinterpret_cast<T *>(&storage); }
+    T &as() noexcept { return *reinterpret_cast<T *>(storage.data()); }
 
     template <class T>
-    const T &as() const noexcept { return *reinterpret_cast<const T *>(&storage); }
+    const T &as() const noexcept { return *reinterpret_cast<const T *>(storage.data()); }
 };
 
 struct memory_range
@@ -424,13 +408,11 @@ bool operator!=(const value_range<T> &lhs, const value_range<T> &rhs) noexcept
 
 inline bool operator==(const scalar &lhs, const scalar &rhs) noexcept
 {
-    auto valid_bytes = detail::datatype_bytes(lhs.type);
-    return lhs.type == rhs.type && !memcmp(&lhs.storage, &rhs.storage, valid_bytes);
+    return lhs.type == rhs.type && lhs.storage == rhs.storage;
 }
 
 inline bool operator!=(const scalar &lhs, const scalar &rhs) noexcept
 {
-    auto valid_bytes = detail::datatype_bytes(lhs.type);
-    return lhs.type != rhs.type || memcmp(&lhs.storage, &rhs.storage, valid_bytes);
+    return lhs.type != rhs.type || lhs.storage != rhs.storage;
 }
 }

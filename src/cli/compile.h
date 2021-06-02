@@ -40,10 +40,6 @@ private:
     std::string output_type_ = "float32";
     std::string input_layout_ = "NCHW";
     std::string output_layout_ = "NCHW";
-
-    float input_mean_ = 0.f;
-    float input_std_ = 1.f;
-
     bool dump_ir_ = false;
     bool dump_asm_ = false;
     bool is_fpga_ = false;

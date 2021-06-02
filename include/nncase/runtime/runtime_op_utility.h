@@ -20,7 +20,16 @@ BEGIN_NS_NNCASE_RUNTIME
 
 inline constexpr size_t get_bytes(datatype_t type)
 {
-    return nncase::detail::datatype_bytes(type);
+    switch (type)
+    {
+#define DEFINE_DATATYPE(id, t, name, value) \
+    case (dt_##id):                         \
+        return sizeof(t);
+#include <nncase/runtime/datatypes.def>
+#undef DEFINE_DATATYPE
+    default:
+        return -1;
+    }
 }
 
 inline size_t compute_size(const runtime_shape_t &shape)
@@ -35,17 +44,11 @@ inline size_t get_bytes(datatype_t type, const runtime_shape_t &shape)
 
 inline size_t compute_size(const runtime_shape_t &shape, const runtime_shape_t &strides)
 {
-    size_t max_stride = 0, max_shape = 0;
+    size_t data_size = 0;
     for (size_t i = 0; i < shape.size(); i++)
-    {
-        if ((shape[i] == 1 ? 0 : strides[i]) > max_stride)
-        {
-            max_stride = strides[i];
-            max_shape = shape[i];
-        }
-    }
-    size_t size = max_stride * max_shape;
-    return size ? size : 1;
+        data_size += (shape[i] - 1) * strides[i];
+    data_size += strides.back() ? strides.back() : 1;
+    return data_size;
 }
 
 inline size_t get_bytes(datatype_t type, const runtime_shape_t &shape, const runtime_shape_t &strides)
@@ -234,26 +237,4 @@ inline int32_t clamp(int32_t value)
     return clamp(value, min, max);
 }
 
-template <class TShape>
-inline bool is_contiguous(const TShape &shape, const TShape &strides)
-{
-    return get_default_strides(shape) == strides;
-}
-
-inline int get_last_not_contiguous_index(const runtime_shape_t &strides, const runtime_shape_t &default_strides)
-{
-    for (int i = strides.size() - 1; i >= 0; --i)
-    {
-        if (strides[i] != default_strides[i])
-        {
-            return i + 1;
-        }
-    }
-    return -1;
-}
-
-template<size_t A, size_t B>
-constexpr auto is_not_equal = std::integral_constant<bool, std::not_equal_to<size_t> {}(A, B)> {};
-
-struct DefaultCallable {};
 END_NS_NNCASE_RUNTIME

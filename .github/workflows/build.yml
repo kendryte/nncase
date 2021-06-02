@@ -51,33 +51,20 @@ jobs:
       # Note the current convention is to use the -S and -B options here to specify source 
       # and build directories, but this is only available with CMake 3.13 and higher.  
       # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=ON
+      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE
 
     - name: Build
       working-directory: ${{github.workspace}}/build
       shell: bash
       # Execute the build.  You can specify a specific target with "--target <NAME>"
-      run: |
-        cmake --build . --config $BUILD_TYPE
+      run: cmake --build . --config $BUILD_TYPE
 
     - name: Install
       working-directory: ${{github.workspace}}/build
       shell: bash
       # Execute the build.  You can specify a specific target with "--target <NAME>"
       run: cmake --install . --prefix ../install
-
-    - name: CTest
-      working-directory: ${{github.workspace}}/build/tests/kernels
-      if: runner.os == 'Linux'
-      shell: bash
-      run: ctest
-
-    - name: CTest
-      working-directory: ${{github.workspace}}/build/tests/kernels
-      if: runner.os == 'Windows'
-      shell: bash
-      run: ctest
-
+      
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v2.2.2
       if: runner.os == 'Windows'
@@ -134,7 +121,7 @@ jobs:
       with:
         name: nncase_linux_x86_64
         path: ${{github.workspace}}/install
-
+    
     - name: Test
       working-directory: ${{github.workspace}}
       if: runner.os == 'Linux'
@@ -144,7 +131,7 @@ jobs:
         PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/tests
       run: |
         pytest tests/importer --doctest-modules --junitxml=test_results/importer.xml
-
+    
     - name: Test
       working-directory: ${{github.workspace}}
       if: runner.os == 'Windows'
@@ -154,7 +141,7 @@ jobs:
         PYTHONPATH: ${{github.workspace}}/install/lib;${{github.workspace}}/install/python;${{github.workspace}}/tests
       run: |
         pytest tests/importer --doctest-modules --junitxml=test_results/importer.xml
-
+        
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action@v1
       if: always()

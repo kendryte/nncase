@@ -35,9 +35,6 @@ conan_check()
 conan_add_remote(NAME sunnycase URL https://conan.sunnycase.moe INDEX 0)
 conan_add_remote(NAME bincrafts URL https://api.bintray.com/conan/bincrafters/public-conan)
 
-option(NNCASE_OPENMP "openmp support" OFF)
-option(BUILD_TESTING "Build test programs" OFF)
-
 if (BUILDING_RUNTIME)
     option(BUILD_PYTHON_BINDING "Build python binding" ON)
     option(ENABLE_K210_RUNTIME "Enable k210 runtime" OFF)
@@ -120,7 +117,7 @@ else()
 
     find_package (Protobuf REQUIRED)
     include(cmake/flatc.cmake)
-
+    
     set(NNCASE_MAIN_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
     set(NNCASE_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include)
     set(THIRD_PARTY ${CMAKE_CURRENT_LIST_DIR}/third_party)
@@ -157,10 +154,6 @@ else()
     add_subdirectory(src/plugin)
     add_subdirectory(src/nncase)
     add_subdirectory(src/cli)
-
-    if(BUILD_TESTING)
-        add_subdirectory(tests/kernels)
-    endif()
     
     # Python binding
     add_subdirectory(python/nncase/native)

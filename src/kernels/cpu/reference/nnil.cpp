@@ -23,7 +23,7 @@ using namespace nncase::kernels;
 using namespace nncase::kernels::cpu;
 using namespace nncase::kernels::cpu::reference;
 
-result<void> reference::nnil_unary_method(const float *input, float *output, size_t count, gsl::span<const gsl::byte> body, NNCASE_UNUSED kernel_context &context) noexcept
+result<void> reference::nnil_unary_method(const float *input, float *output, size_t count, gsl::span<const gsl::byte> body) noexcept
 {
     for (size_t i = 0; i < count; i++)
     {
@@ -84,18 +84,12 @@ result<void> reference::nnil_unary_method(const float *input, float *output, siz
             case nnil_sin:
                 stack.push(sinf(stack.pop()));
                 break;
-            case nnil_sqrt:
-                stack.push(sqrtf(stack.pop()));
-                break;
             case nnil_square:
             {
                 auto v = stack.pop();
                 stack.push(v * v);
                 break;
             }
-            case nnil_tanh:
-                stack.push(tanhf(stack.pop()));
-                break;
             case nnil_add:
             {
                 auto b = stack.pop();

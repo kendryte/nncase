@@ -16,10 +16,9 @@
 #include <nncase/runtime/datatypes.h>
 #include <nncase/runtime/error.h>
 #include <nncase/runtime/result.h>
-#include <nncase/kernels/kernel_context.h>
 
 BEGIN_NS_NNCASE_KERNELS
 
-NNCASE_API result<void> nnil_unary_method(const float *input, float *output, size_t count, gsl::span<const gsl::byte> body, kernel_context &context = default_kernel_context) noexcept;
+NNCASE_API result<void> nnil_unary_method(const float *input, float *output, size_t count, gsl::span<const gsl::byte> body) noexcept;
 
 END_NS_NNCASE_KERNELS

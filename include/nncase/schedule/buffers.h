@@ -103,14 +103,10 @@ public:
     memory_span allocation() const noexcept { return allocation_; }
     memory_span &allocation() noexcept { return allocation_; }
 
-    size_t alignment() const noexcept { return alignment_; }
-    void alignment(size_t value) { alignment_ = value; }
-
 private:
     size_t id_;
     logical_buffer &owner_;
     std::vector<logical_buffer *> logical_buffers_;
     memory_span allocation_;
-    size_t alignment_ = 8;
 };
 }

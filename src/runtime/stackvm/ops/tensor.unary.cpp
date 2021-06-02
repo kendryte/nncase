@@ -27,5 +27,5 @@ result<void> stackvm_runtime_module::visit(const tensor_unary_op_t &op) noexcept
     auto &in_strides = shape_regs_[op.rstride_src];
     auto &out_strides = shape_regs_[op.rstride_dest];
 
-    return kernels::unary(op.unary_op, reinterpret_cast<const float *>(input), reinterpret_cast<float *>(output), shape, in_strides, out_strides, kernel_context());
+    return kernels::unary(op.unary_op, reinterpret_cast<const float *>(input), reinterpret_cast<float *>(output), shape, in_strides, out_strides);
 }

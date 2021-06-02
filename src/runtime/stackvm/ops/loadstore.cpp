@@ -162,7 +162,7 @@ result<void> stackvm_runtime_module::visit(const lea_buffer_op_t &op) noexcept
 
         if (id != ID_NOT_FOUND)
         {
-            try_var(tensor, device_input_tensor(id));
+            try_var(tensor, input_tensor(id));
             try_var(buffer, host_runtime_tensor::buffer(tensor));
             return stack_.push((uintptr_t)buffer.data());
         }
@@ -185,7 +185,7 @@ result<void> stackvm_runtime_module::visit(const lea_buffer_op_t &op) noexcept
 
         if (id != ID_NOT_FOUND)
         {
-            try_var(tensor, device_output_tensor(id));
+            try_var(tensor, output_tensor(id));
             try_var(buffer, host_runtime_tensor::buffer(tensor));
             return stack_.push((uintptr_t)buffer.data());
         }

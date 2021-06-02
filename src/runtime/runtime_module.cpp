@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/runtime/dbg.h>
 #include <nncase/runtime/error.h>
 #include <nncase/runtime/runtime_module.h>
 #include <nncase/runtime/span_reader.h>
@@ -188,15 +187,14 @@ result<void> runtime_module::initialize(const module_header &header, interpreter
     return initialize_core(init_context);
 }
 
-#define INOUT_TENSOR_GETTER_IMPL(name)                                              \
-    CHECK_WITH_ERR(index < name##_tensors_.size(), std::errc::result_out_of_range); \
-                                                                                    \
-    auto &info = name##_tensors_[index];                                            \
-    if (info.bind_tensor.empty())                                                   \
-    {                                                                               \
-        try_set(info.bind_tensor, allocate_##name##_tensor(index));                 \
-    }                                                                               \
-    return ok(info.bind_tensor);
+#define INOUT_TENSOR_GETTER_IMPL(name)                              \
+    if (index >= name##_tensors_.size())                            \
+        return err(std::errc::result_out_of_range);                 \
+                                                                    \
+    auto &info = name##_tensors_[index];                            \
+    if (info.bind_tensor.empty())                                   \
+        try_set(info.bind_tensor, allocate_##name##_tensor(index)); \
+    return ok(info.bind_tensor)
 
 result<runtime_tensor> runtime_module::input_tensor(size_t index) noexcept
 {
@@ -208,39 +206,18 @@ result<runtime_tensor> runtime_module::output_tensor(size_t index) noexcept
     INOUT_TENSOR_GETTER_IMPL(output);
 }
 
-#define DEV_INOUT_TENSOR_GETTER_IMPL(name)                                          \
-    CHECK_WITH_ERR(index < name##_tensors_.size(), std::errc::result_out_of_range); \
-                                                                                    \
-    auto &info = name##_tensors_[index];                                            \
-    if (info.bind_tensor.empty())                                                   \
-    {                                                                               \
-        try_set(info.bind_tensor, allocate_##name##_tensor(index));                 \
-    }                                                                               \
-    if (!info.device_tensor.empty())                                                \
-    {                                                                               \
-        return ok(info.device_tensor);                                              \
-    }                                                                               \
-    return ok(info.bind_tensor);
-
-result<runtime_tensor> runtime_module::device_input_tensor(size_t index) noexcept
-{
-    DEV_INOUT_TENSOR_GETTER_IMPL(input);
-}
-
-result<runtime_tensor> runtime_module::device_output_tensor(size_t index) noexcept
-{
-    DEV_INOUT_TENSOR_GETTER_IMPL(output);
-}
-
 result<void> runtime_module::input_tensor(size_t index, runtime_tensor tensor) noexcept
 {
-    CHECK_WITH_ERR(!tensor.empty(), std::errc::invalid_argument);
-    CHECK_WITH_ERR(index < input_tensors_.size(), std::errc::result_out_of_range);
+    if (tensor.empty())
+        return err(std::errc::invalid_argument);
+    if (index >= input_tensors_.size())
+        return err(std::errc::result_out_of_range);
 
     auto &info = input_tensors_[index];
-    CHECK_WITH_ERR(info.range.datatype == tensor.datatype(), nncase_errc::datatype_mismatch);
-    CHECK_WITH_ERR(info.shape == tensor.shape(), nncase_errc::shape_mismatch);
-
+    if (info.range.datatype != tensor.datatype())
+        return err(nncase_errc::datatype_mismatch);
+    if (info.shape != tensor.shape())
+        return err(nncase_errc::shape_mismatch);
     if (info.bind_tensor != tensor)
     {
         if (validate_input_tensor(index, tensor).is_err())
@@ -273,13 +250,16 @@ result<void> runtime_module::input_tensor(size_t index, runtime_tensor tensor) n
 
 result<void> runtime_module::output_tensor(size_t index, runtime_tensor tensor) noexcept
 {
-    CHECK_WITH_ERR(!tensor.empty(), std::errc::invalid_argument);
-    CHECK_WITH_ERR(index < output_tensors_.size(), std::errc::result_out_of_range);
+    if (tensor.empty())
+        return err(std::errc::invalid_argument);
+    if (index >= output_tensors_.size())
+        return err(std::errc::result_out_of_range);
 
     auto &info = output_tensors_[index];
-    CHECK_WITH_ERR(info.range.datatype == tensor.datatype(), nncase_errc::datatype_mismatch);
-    CHECK_WITH_ERR(info.shape == tensor.shape(), nncase_errc::shape_mismatch);
-
+    if (info.range.datatype != tensor.datatype())
+        return err(nncase_errc::datatype_mismatch);
+    if (info.shape != tensor.shape())
+        return err(nncase_errc::shape_mismatch);
     if (info.bind_tensor != tensor)
     {
         if (validate_output_tensor(index, tensor).is_err())
