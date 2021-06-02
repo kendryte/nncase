@@ -188,23 +188,17 @@ result<void> runtime_module::initialize(const module_header &header, interpreter
     return initialize_core(init_context);
 }
 
-#define INOUT_TENSOR_GETTER_IMPL(name)                              \
-    if (index >= name##_tensors_.size())                            \
-        return err(std::errc::result_out_of_range);                 \
-                                                                    \
-    auto &info = name##_tensors_[index];                            \
-    if (info.bind_tensor.empty())                                   \
-    {                                                               \
-        try_set(info.bind_tensor, allocate_##name##_tensor(index)); \
-    }                                                               \
-    if (!info.device_tensor.empty())                                \
-    {                                                               \
-        return ok(info.device_tensor);                              \
-    }                                                               \
+#define INOUT_TENSOR_GETTER_IMPL(name)                                              \
+    CHECK_WITH_ERR(index < name##_tensors_.size(), std::errc::result_out_of_range); \
+                                                                                    \
+    auto &info = name##_tensors_[index];                                            \
+    if (info.bind_tensor.empty())                                                   \
+    {                                                                               \
+        try_set(info.bind_tensor, allocate_##name##_tensor(index));                 \
+    }                                                                               \
     return ok(info.bind_tensor);
 
-result<runtime_tensor>
-runtime_module::input_tensor(size_t index) noexcept
+result<runtime_tensor> runtime_module::input_tensor(size_t index) noexcept
 {
     INOUT_TENSOR_GETTER_IMPL(input);
 }
@@ -212,6 +206,30 @@ runtime_module::input_tensor(size_t index) noexcept
 result<runtime_tensor> runtime_module::output_tensor(size_t index) noexcept
 {
     INOUT_TENSOR_GETTER_IMPL(output);
+}
+
+#define DEV_INOUT_TENSOR_GETTER_IMPL(name)                                          \
+    CHECK_WITH_ERR(index < name##_tensors_.size(), std::errc::result_out_of_range); \
+                                                                                    \
+    auto &info = name##_tensors_[index];                                            \
+    if (info.bind_tensor.empty())                                                   \
+    {                                                                               \
+        try_set(info.bind_tensor, allocate_##name##_tensor(index));                 \
+    }                                                                               \
+    if (!info.device_tensor.empty())                                                \
+    {                                                                               \
+        return ok(info.device_tensor);                                              \
+    }                                                                               \
+    return ok(info.bind_tensor);
+
+result<runtime_tensor> runtime_module::device_input_tensor(size_t index) noexcept
+{
+    DEV_INOUT_TENSOR_GETTER_IMPL(input);
+}
+
+result<runtime_tensor> runtime_module::device_output_tensor(size_t index) noexcept
+{
+    DEV_INOUT_TENSOR_GETTER_IMPL(output);
 }
 
 result<void> runtime_module::input_tensor(size_t index, runtime_tensor tensor) noexcept

@@ -79,6 +79,8 @@ protected:
     virtual result<runtime_tensor> allocate_output_tensor(size_t index) noexcept = 0;
     virtual result<void> validate_input_tensor(size_t index, runtime_tensor tensor) noexcept = 0;
     virtual result<void> validate_output_tensor(size_t index, runtime_tensor tensor) noexcept = 0;
+    result<runtime_tensor> device_input_tensor(size_t index) noexcept;
+    result<runtime_tensor> device_output_tensor(size_t index) noexcept;
     virtual result<void> run_core() noexcept = 0;
 
 private:
