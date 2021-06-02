@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <magic_enum.hpp>
 #include <nncase/ir/op_utils.h>
 #include <nncase/ir/ops/fused_unary.h>
 #include <xtensor/xarray.hpp>
@@ -112,11 +113,23 @@ void fused_unary::compile_graph(const std::vector<fused_unary_op> &subgraph, cod
             case unary_sin:
                 builder.emit_sin();
                 break;
+            case unary_sqrt:
+                builder.emit_sqrt();
+                break;
             case unary_square:
                 builder.emit_square();
                 break;
+            case unary_tanh:
+                builder.emit_tanh();
+                break;
+            case unary_bitwise_not:
+                builder.emit_bitwise_not();
+                break;
+            case unary_logical_not:
+                builder.emit_logical_not();
+                break;
             default:
-                throw std::invalid_argument("Unsupported unary op");
+                throw std::invalid_argument("Unsupported unary op for nnil: " + (std::string)magic_enum::enum_name(op.unary.unary_op));
             }
             break;
         }

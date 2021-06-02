@@ -26,7 +26,7 @@ namespace
 {
 template <class TOp>
 result<void> unary_impl(TOp &&op, const float *input, float *output, const runtime_shape_t &shape,
-    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides) noexcept
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, NNCASE_UNUSED kernel_context &context) noexcept
 {
     return apply(shape, [&](const runtime_shape_t &index) -> result<void> {
         const auto v = input[offset(in_strides, index)];
@@ -38,10 +38,10 @@ result<void> unary_impl(TOp &&op, const float *input, float *output, const runti
 
 #define UNARY_IMPL(op, funct) \
     case op:                  \
-        return unary_impl(funct, input, output, shape, in_strides, out_strides)
+        return unary_impl(funct, input, output, shape, in_strides, out_strides, context)
 
 result<void> reference::unary(unary_op_t op, const float *input, float *output, const runtime_shape_t &shape,
-    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides) noexcept
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, kernel_context &context) noexcept
 {
     switch (op)
     {

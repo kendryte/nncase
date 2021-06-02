@@ -120,7 +120,7 @@ PYBIND11_MODULE(_nncase, m)
     m.doc() = "NNCase Library";
     m.attr("__version__") = NNCASE_VERSION;
 
-    //LaunchDebugger();
+    // LaunchDebugger();
     py::class_<std::filesystem::path>(m, "Path")
         .def(py::init<std::string>());
     py::implicitly_convertible<std::string, std::filesystem::path>();
@@ -144,15 +144,16 @@ PYBIND11_MODULE(_nncase, m)
     py::class_<ptq_tensor_options>(m, "PTQTensorOptions")
         .def(py::init())
         .def_readwrite("calibrate_method", &ptq_tensor_options::calibrate_method)
-        .def("set_tensor_data", [](ptq_tensor_options &o, py::bytes bytes)
-            {
-                uint8_t *buffer;
-                py::ssize_t length;
-                if (PyBytes_AsStringAndSize(bytes.ptr(), reinterpret_cast<char **>(&buffer), &length))
-                    throw std::invalid_argument("Invalid bytes");
-                o.tensor_data.assign(buffer, buffer + length);
-            })
-        .def_readwrite("samples_count", &ptq_tensor_options::samples_count);
+        .def("set_tensor_data", [](ptq_tensor_options &o, py::bytes bytes) {
+            uint8_t *buffer;
+            py::ssize_t length;
+            if (PyBytes_AsStringAndSize(bytes.ptr(), reinterpret_cast<char **>(&buffer), &length))
+                throw std::invalid_argument("Invalid bytes");
+            o.tensor_data.assign(buffer, buffer + length);
+        })
+        .def_readwrite("samples_count", &ptq_tensor_options::samples_count)
+        .def_readwrite("input_mean", &ptq_tensor_options::input_mean)
+        .def_readwrite("input_std", &ptq_tensor_options::input_std);
 
     py::class_<graph_evaluator>(m, "GraphEvaluator")
         .def_property_readonly("outputs_size", &graph_evaluator::outputs_size)
@@ -166,51 +167,41 @@ PYBIND11_MODULE(_nncase, m)
         .def("import_onnx", &compiler::import_onnx)
         .def("compile", &compiler::compile)
         .def("use_ptq", py::overload_cast<ptq_tensor_options>(&compiler::use_ptq))
-        .def("gencode", [](compiler &c, std::ostream &stream)
-            { c.gencode(stream); })
-        .def("gencode_tobytes", [](compiler &c)
-            {
-                std::stringstream ss;
-                c.gencode(ss);
-                return py::bytes(ss.str());
-            })
-        .def("create_evaluator", [](compiler &c, uint32_t stage)
-            {
-                auto &graph = c.graph(stage);
-                return std::make_unique<graph_evaluator>(c.target(), graph);
-            });
+        .def("gencode", [](compiler &c, std::ostream &stream) { c.gencode(stream); })
+        .def("gencode_tobytes", [](compiler &c) {
+            std::stringstream ss;
+            c.gencode(ss);
+            return py::bytes(ss.str());
+        })
+        .def("create_evaluator", [](compiler &c, uint32_t stage) {
+            auto &graph = c.graph(stage);
+            return std::make_unique<graph_evaluator>(c.target(), graph);
+        });
 
 #include "runtime_tensor.inl"
 
     py::class_<interpreter>(m, "Simulator")
         .def(py::init())
-        .def("load_model", [](interpreter &interp, gsl::span<const gsl::byte> buffer)
-            { interp.load_model(buffer).unwrap_or_throw(); })
+        .def("load_model", [](interpreter &interp, gsl::span<const gsl::byte> buffer) { interp.load_model(buffer).unwrap_or_throw(); })
         .def_property_readonly("inputs_size", &interpreter::inputs_size)
         .def_property_readonly("outputs_size", &interpreter::outputs_size)
         .def("get_input_desc", &interpreter::input_desc)
         .def("get_output_desc", &interpreter::input_desc)
-        .def("get_input_tensor", [](interpreter &interp, size_t index)
-            { return interp.input_tensor(index).unwrap_or_throw(); })
-        .def("set_input_tensor", [](interpreter &interp, size_t index, runtime_tensor tensor)
-            { return interp.input_tensor(index, tensor).unwrap_or_throw(); })
-        .def("get_output_tensor", [](interpreter &interp, size_t index)
-            { return interp.output_tensor(index).unwrap_or_throw(); })
-        .def("set_output_tensor", [](interpreter &interp, size_t index, runtime_tensor tensor)
-            { return interp.output_tensor(index, tensor).unwrap_or_throw(); })
-        .def("run", [](interpreter &interp)
-            { interp.run().unwrap_or_throw(); });
+        .def("get_input_tensor", [](interpreter &interp, size_t index) { return interp.input_tensor(index).unwrap_or_throw(); })
+        .def("set_input_tensor", [](interpreter &interp, size_t index, runtime_tensor tensor) { return interp.input_tensor(index, tensor).unwrap_or_throw(); })
+        .def("get_output_tensor", [](interpreter &interp, size_t index) { return interp.output_tensor(index).unwrap_or_throw(); })
+        .def("set_output_tensor", [](interpreter &interp, size_t index, runtime_tensor tensor) { return interp.output_tensor(index, tensor).unwrap_or_throw(); })
+        .def("run", [](interpreter &interp) { interp.run().unwrap_or_throw(); });
 
-    m.def("test_target", [](std::string name)
+    m.def("test_target", [](std::string name) {
+        try
         {
-            try
-            {
-                auto target = plugin_loader::create_target(name);
-                return true;
-            }
-            catch (...)
-            {
-                return false;
-            }
-        });
+            auto target = plugin_loader::create_target(name);
+            return true;
+        }
+        catch (...)
+        {
+            return false;
+        }
+    });
 }

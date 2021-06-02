@@ -46,14 +46,14 @@ result<runtime_tensor> stackvm_runtime_module::allocate_output_tensor(size_t ind
 
 result<void> stackvm_runtime_module::validate_input_tensor(NNCASE_UNUSED size_t index, runtime_tensor tensor) noexcept
 {
-    if (tensor.is_host())
+    if (tensor.is_host() && tensor.is_contiguous())
         return ok();
     return err(std::errc::invalid_argument);
 }
 
 result<void> stackvm_runtime_module::validate_output_tensor(NNCASE_UNUSED size_t index, runtime_tensor tensor) noexcept
 {
-    if (tensor.is_host())
+    if (tensor.is_host() && tensor.is_contiguous())
         return ok();
     return err(std::errc::invalid_argument);
 }
@@ -138,6 +138,11 @@ result<scalar> stackvm_runtime_module::pop_scalar(datatype_t type) noexcept
     }
 
     return ok(s);
+}
+
+kernels::kernel_context &stackvm_runtime_module::kernel_context() noexcept
+{
+    return kernel_context_;
 }
 
 result<std::unique_ptr<runtime_module>> stackvm::create_stackvm_runtime_module()

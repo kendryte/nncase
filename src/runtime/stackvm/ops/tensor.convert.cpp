@@ -27,5 +27,5 @@ result<void> stackvm_runtime_module::visit(const tensor_convert_op_t &op) noexce
     auto &in_strides = shape_regs_[op.rstride_src];
     auto &out_strides = shape_regs_[op.rstride_dest];
 
-    return kernels::convert(op.in_datatype, op.dst_datatype, reinterpret_cast<const gsl::byte *>(input), reinterpret_cast<gsl::byte *>(output), shape, in_strides, out_strides);
+    return kernels::convert(op.in_datatype, op.dst_datatype, reinterpret_cast<const gsl::byte *>(input), reinterpret_cast<gsl::byte *>(output), shape, in_strides, out_strides, kernel_context());
 }

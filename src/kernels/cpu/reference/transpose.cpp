@@ -26,7 +26,8 @@ namespace
 {
 template <class T>
 result<void> transpose_impl(const T *input, T *output, const runtime_shape_t &in_shape,
-    const runtime_shape_t &perm, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides) noexcept
+    const runtime_shape_t &perm, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides,
+    NNCASE_UNUSED kernel_context &context) noexcept
 {
     return apply(in_shape, [&](const runtime_shape_t &index) -> result<void> {
         runtime_shape_t out_index(index.size());
@@ -40,10 +41,10 @@ result<void> transpose_impl(const T *input, T *output, const runtime_shape_t &in
 
 #define TRANSPOSE_IMPL(size, type) \
     case size:                     \
-        return transpose_impl(reinterpret_cast<const type *>(src), reinterpret_cast<type *>(dest), in_shape, perm, in_strides, out_strides)
+        return transpose_impl(reinterpret_cast<const type *>(src), reinterpret_cast<type *>(dest), in_shape, perm, in_strides, out_strides, context)
 
 result<void> reference::transpose(datatype_t type, const gsl::byte *src, gsl::byte *dest, const runtime_shape_t &in_shape,
-    const runtime_shape_t &perm, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides) noexcept
+    const runtime_shape_t &perm, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, kernel_context &context) noexcept
 {
     switch (runtime::get_bytes(type))
     {

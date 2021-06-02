@@ -129,7 +129,7 @@ private:
             throw std::runtime_error("Cannot read buffer");
         scalar s;
         s.type = to_data_type(tensor.type());
-        std::memcpy(s.storage.data(), buffer->data()->data(), buffer->data()->size());
+        std::memcpy(&s.storage, buffer->data()->data(), buffer->data()->size());
         return s;
     }
 

@@ -40,7 +40,7 @@ std::pair<size_t, size_t> find_input_id_and_index(size_t index, const runtime_sh
 
 template <class T>
 result<void> concat_impl(gsl::span<const gsl::byte *const> inputs, T *output, const runtime_shape_t &out_shape,
-    gsl::span<const runtime_shape_t> &in_strides, const runtime_shape_t &out_strides, size_t axis, const runtime_shape_t &concat_dims) noexcept
+    gsl::span<const runtime_shape_t> &in_strides, const runtime_shape_t &out_strides, size_t axis, const runtime_shape_t &concat_dims, NNCASE_UNUSED kernel_context &context) noexcept
 {
     return apply(out_shape, [&](const runtime_shape_t &out_index) -> result<void> {
         auto in_id_index = find_input_id_and_index(out_index[axis], concat_dims);
@@ -57,10 +57,10 @@ result<void> concat_impl(gsl::span<const gsl::byte *const> inputs, T *output, co
 
 #define CONCAT_IMPL(size, type) \
     case size:                  \
-        return concat_impl(inputs, reinterpret_cast<type *>(output), out_shape, in_strides, out_strides, axis, concat_dims)
+        return concat_impl(inputs, reinterpret_cast<type *>(output), out_shape, in_strides, out_strides, axis, concat_dims, context)
 
 result<void> reference::concat(datatype_t type, gsl::span<const gsl::byte *const> inputs, gsl::byte *output, const runtime_shape_t &out_shape,
-    gsl::span<const runtime_shape_t> in_strides, const runtime_shape_t &out_strides, size_t axis, const runtime_shape_t &concat_dims) noexcept
+    gsl::span<const runtime_shape_t> in_strides, const runtime_shape_t &out_strides, size_t axis, const runtime_shape_t &concat_dims, kernel_context &context) noexcept
 {
     switch (runtime::get_bytes(type))
     {

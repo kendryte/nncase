@@ -14,11 +14,12 @@
  */
 #pragma once
 #include "runtime_types.h"
+#include <nncase/kernels/kernel_context.h>
 
 BEGIN_NS_NNCASE_KERNELS_CPU_REF
 
 NNCASE_API result<void> reduce_window2d(reduce_op_t op, const float *input, float init_value, float *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const padding &padding_h, const padding &padding_w,
-    int32_t filter_h, int32_t filter_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w, value_range<float> fused_activation) noexcept;
+    int32_t filter_h, int32_t filter_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w, value_range<float> fused_activation, kernel_context &context = default_kernel_context) noexcept;
 
 END_NS_NNCASE_KERNELS_CPU_REF

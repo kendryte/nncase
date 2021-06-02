@@ -26,7 +26,7 @@ namespace
 {
 template <class TQint, class TFloat>
 result<void> dequantize_impl(const TQint *input, TFloat *output, const runtime_shape_t &in_shape,
-    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, float scale, float bias) noexcept
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, float scale, float bias, NNCASE_UNUSED kernel_context &context) noexcept
 {
     return apply(in_shape, [&](const runtime_shape_t &index) -> result<void> {
         auto value = (float)input[offset(in_strides, index)];
@@ -39,10 +39,10 @@ result<void> dequantize_impl(const TQint *input, TFloat *output, const runtime_s
 
 #define DEQUANTIZE_IMPL(qint_t, float_t)                                        \
     if (in_type == to_datatype<qint_t>() && out_type == to_datatype<float_t>()) \
-    return dequantize_impl(reinterpret_cast<const qint_t *>(input), reinterpret_cast<float_t *>(output), in_shape, in_strides, out_strides, scale, bias)
+    return dequantize_impl(reinterpret_cast<const qint_t *>(input), reinterpret_cast<float_t *>(output), in_shape, in_strides, out_strides, scale, bias, context)
 
 result<void> reference::dequantize(datatype_t in_type, datatype_t out_type, const gsl::byte *input, gsl::byte *output,
-    const runtime_shape_t &in_shape, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, float scale, float bias) noexcept
+    const runtime_shape_t &in_shape, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, float scale, float bias, kernel_context &context) noexcept
 {
     DEQUANTIZE_IMPL(uint8_t, float);
     return err(std::errc::not_supported);

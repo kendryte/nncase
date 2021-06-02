@@ -46,6 +46,8 @@ void module_builder::config_dump(const std::filesystem::path &dump_dir, bool dum
 {
     dump_dir_ = dump_dir;
     dump_asm_ = dump_asm;
+
+    std::filesystem::create_directories(dump_dir_);
 }
 
 const schedule::buffer_allocation &module_builder::allocation(ir::output_connector &conn) const
