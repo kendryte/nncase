@@ -12,7 +12,7 @@ case: # case的配置，应该是一个多层次的
     kwargs:
       dump_asm: true
       dump_ir: true
-      input_type: 'float32'
+      # input_type: int8
   ptq_args: null
   generate_inputs:
     name: generate_random
