@@ -25,6 +25,7 @@ namespace
 {
 std::unordered_set<node_opcode> dontcse_ops { op_input_node, op_output_node, op_uninitialized, op_constant, op_ignore_node };
 std::unordered_set<node_opcode> neutral_region_ops { op_constant, op_bitcast };
+std::unordered_set<char> char_need_escape = { '/', ':' };
 
 void add_region_node(node &root, const module_type_t &module_type, std::vector<node *> &region_nodes, std::unordered_set<node *> &visited)
 {
@@ -69,6 +70,18 @@ void add_reachable_graphs(graph &root, std::vector<graph *> &graphs)
 graph::graph() noexcept
     : graph(runtime::stackvm::stackvm_module_type)
 {
+}
+
+std::string graph::escaped_name() const noexcept
+{
+    auto escaped_name = name();
+    for (auto &c : escaped_name)
+    {
+        if (char_need_escape.contains(c))
+            c = '_';
+    }
+
+    return escaped_name;
 }
 
 void graph::assign_names()

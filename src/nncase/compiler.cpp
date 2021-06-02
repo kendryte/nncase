@@ -269,8 +269,15 @@ private:
 
             if (!compile_options_.use_dataset_as_input_stat)
             {
-                auto min = (0.f - compile_options_.input_mean) / compile_options_.input_std;
-                auto max = (1.f - compile_options_.input_mean) / compile_options_.input_std;
+                float input_mean, input_std;
+                std::visit([&](auto &options) {
+                    input_mean = options.input_mean;
+                    input_std = options.input_std;
+                },
+                    ptq_options_);
+
+                auto min = (0.f - input_mean) / input_std;
+                auto max = (1.f - input_mean) / input_std;
                 value_range<float> input_range { min, max };
                 quant->set(graph.inputs()[0]->output(), input_range);
                 quant->record(graph.inputs()[0]->output(), input_range);
@@ -311,11 +318,7 @@ private:
         schedule::scheduler sched(*target_, graph, graph.outputs());
         auto sched_result = sched.schedule(true);
         ir::evaluator evaluator(sched_result);
-        ir::calibrate_method calib_method;
-        if (ptq_options_.index() == 0)
-            calib_method = to_calibrate_method(std::get<ptq_dataset_options>(ptq_options_).calibrate_method);
-        else
-            calib_method = to_calibrate_method(std::get<ptq_tensor_options>(ptq_options_).calibrate_method);
+        auto calib_method = std::visit([](auto &options) { return to_calibrate_method(options.calibrate_method); }, ptq_options_);
 
         evaluator.enable_ptq(*target_, calib_method);
 
@@ -483,7 +486,7 @@ private:
         std::cout << "TOTAL"
                   << "\t" << format_size(total_usage) << std::endl;
 
-        std::ofstream file(compile_options_.dump_dir / "memory_usage.txt", std::ofstream::app);
+        std::ofstream file(compile_options_.dump_dir / "memory_usage.txt");
         file << "input: " << format_size(mod_builder.max_usage(mem_input)) << std::endl;
         file << "output: " << format_size(mod_builder.max_usage(mem_output)) << std::endl;
         file << "data: " << format_size(mod_builder.max_usage(mem_data)) << std::endl;
