@@ -17,7 +17,6 @@ case: # case的配置，应该是一个多层次的
     kwargs:
       input_mean: 0.5
       input_std: 0.5
-
   generate_inputs:
     name: generate_random
     numbers: 1

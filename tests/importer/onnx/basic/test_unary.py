@@ -48,7 +48,7 @@ def _make_module():
             x = torch.ceil(x)
             x = torch.cos(x)
             x = torch.log(x)
-            x = torch.round(x)
+            # x = torch.round(x)
             x = torch.sin(x)
             x = torch.sqrt(x)
             return x
@@ -65,7 +65,7 @@ in_shapes = [
 @pytest.mark.parametrize('in_shape', in_shapes)
 def test_unary(in_shape, request):
     module = _make_module()
-    
+
     # test_util.test_onnx_module(request.node.name, module, in_shape, ['cpu', 'k210', 'k510'])
     runner = OnnxTestRunner(['cpu', 'k210', 'k510'])
     model_file = runner.from_torch(request.node.name, module, in_shape)
