@@ -174,10 +174,14 @@ class TestRunner(metaclass=ABCMeta):
         if os.path.splitext(model_file)[-1] == ".tflite":
             import_options.input_layout = "NHWC"
             import_options.output_layout = "NHWC"
+        elif os.path.splitext(model_file)[-1] == ".onnx":
+            import_options.input_layout = "NCHW"
+            import_options.output_layout = "NCHW"
 
         compile_options = nncase.CompileOptions()
         for k, v in cfg.compile_opt.kwargs.items():
-            exec(f'compile_options.{k} = {v}')
+            e = '"'
+            exec(f'compile_options.{k} = { e + v + e if isinstance(v, str) else v }')
 
         model_content = self.read_model_file(model_file)
 
@@ -271,6 +275,9 @@ class TestRunner(metaclass=ABCMeta):
             for i in range(len(self.calibs)):
                 ptq_options.set_tensor_data(self.calibs[i]['data'].tobytes())
             ptq_options.samples_count = cfg.generate_calibs.batch_size
+            ptq_options.input_mean = cfg.ptq_opt.kwargs['input_mean']
+            ptq_options.input_std = cfg.ptq_opt.kwargs['input_std']
+
             compiler.use_ptq(ptq_options)
         compiler.compile()
         kmodel = compiler.gencode_tobytes()
