@@ -180,8 +180,6 @@ def compile_tflite_nncase(case_name, model, targets, inputs, n, enable_ptq):
             os.makedirs(kmodel_dir)
         compile_options.target = target
         compile_options.dump_dir = kmodel_dir
-        if enable_ptq:
-            compile_options.input_type = 'int8'
         compiler = nncase.Compiler(compile_options)
         compiler.import_tflite(model, import_options)
         if enable_ptq:

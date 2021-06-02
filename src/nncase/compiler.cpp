@@ -173,7 +173,7 @@ public:
         optimize_target_independent(graph_);
 
         std::cout << "3. Optimize target dependent..." << std::endl;
-        optimize_target_dependent(graph_, to_datatype_method(compile_options_.input_type));
+        optimize_target_dependent(graph_, use_ptq_);
 
         if (use_ptq_)
         {
@@ -205,7 +205,7 @@ public:
         if (stage > 2)
         {
             std::cout << "3. Optimize target dependent..." << std::endl;
-            optimize_target_dependent(graph_, to_datatype_method(compile_options_.input_type));
+            optimize_target_dependent(graph_, use_ptq_);
         }
 
         return graph_;
@@ -246,9 +246,9 @@ private:
         dump_graph(graph, "merge_module_regions");
     }
 
-    void optimize_target_dependent(ir::graph &graph, datatype_t quant_type)
+    void optimize_target_dependent(ir::graph &graph, bool use_ptq)
     {
-        run_passes("target_dep", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr) { target_->register_target_dependent_passes(module_type, pmgr, quant_type); });
+        run_passes("target_dep", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr) { target_->register_target_dependent_passes(module_type, pmgr, use_ptq); });
     }
 
     void optimize_target_dependent_after_quant(ir::graph &graph)
