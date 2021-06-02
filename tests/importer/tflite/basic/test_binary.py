@@ -31,7 +31,7 @@ def _make_module(in_shape, v_shape):
             outs.append(x + self.v)
             outs.append(x - self.v)
             outs.append(x * self.v)
-            outs.append(self.v / x)
+            outs.append(self.v / (2.0 + x))
             outs.append(tf.minimum(x, self.v))
             outs.append(tf.maximum(x, self.v))
             return outs

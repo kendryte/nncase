@@ -16,6 +16,7 @@
 #include "evaluate_stack.h"
 #include <nncase/runtime/stackvm/op_reader.h>
 #include <nncase/runtime/stackvm/runtime_module.h>
+#include <nncase/runtime/stackvm/kernel_context.h>
 
 BEGIN_NS_NNCASE_RT_STACKVM
 
@@ -158,6 +159,7 @@ private:
     result<uintptr_t> pop_addr() noexcept;
     runtime_axis_t as_runtime_axis(const runtime_shape_t &shape);
     result<scalar> pop_scalar(datatype_t type) noexcept;
+    kernels::kernel_context &kernel_context() noexcept;
 
     template <class T>
     result<T> pop_addr() noexcept
@@ -175,6 +177,7 @@ private:
     std::array<uintptr_t, MAX_GENERAL_REGS> regs_;
     std::vector<runtime_shape_t> shape_regs_;
     std::vector<runtime_paddings_t> paddings_regs_;
+    stackvm_kernel_context kernel_context_;
 };
 
 END_NS_NNCASE_RT_STACKVM

@@ -28,6 +28,9 @@ public:
     output_connector &output() { return output_at(0); }
     const output_connector &output() const { return output_at(0); }
 
+    size_t alignment() const noexcept { return alignment_; }
+    void alignment(size_t value) { alignment_ = value; }
+
     std::span<const std::byte> data() const noexcept { return data_; }
     datatype_t data_type() { return datatype_; }
 
@@ -131,5 +134,6 @@ protected:
 private:
     std::vector<std::byte> data_;
     datatype_t datatype_;
+    size_t alignment_ = 8;
 };
 }

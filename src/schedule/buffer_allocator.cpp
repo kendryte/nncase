@@ -58,9 +58,10 @@ void linear_buffer_allocator::base_offset(size_t value)
 void linear_buffer_allocator::mark(const physical_buffer &buffer)
 {
     auto alloc = make_alloc(buffer);
-    alloc.start = (uint32_t)max_usage_;
+    auto start = align(max_usage_, buffer.alignment());
+    alloc.start = (uint32_t)start;
     allocations_.emplace(&buffer, alloc);
-    max_usage_ += alloc.size;
+    max_usage_ = start + alloc.size;
 }
 
 void linear_buffer_allocator::finish()

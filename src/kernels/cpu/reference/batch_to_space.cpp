@@ -26,7 +26,8 @@ namespace
 {
 template <class T>
 result<void> batch_to_space_impl(const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &block_shape,
-    const runtime_paddings_t &crops, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides) noexcept
+    const runtime_paddings_t &crops, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, 
+    NNCASE_UNUSED kernel_context &context) noexcept
 {
     const auto spatial_dim_start = in_shape.size() - block_shape.size();
     const auto block_size = compute_size(block_shape);
@@ -64,10 +65,11 @@ result<void> batch_to_space_impl(const T *input, T *output, const runtime_shape_
 
 #define BATCH_TO_SPACE_IMPL(size, type) \
     case size:                          \
-        return batch_to_space_impl(reinterpret_cast<const type *>(input), reinterpret_cast<type *>(output), in_shape, block_shape, crops, in_strides, out_strides)
+        return batch_to_space_impl(reinterpret_cast<const type *>(input), reinterpret_cast<type *>(output), in_shape, block_shape, crops, in_strides, out_strides, context)
 
 result<void> reference::batch_to_space(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape,
-    const runtime_shape_t &block_shape, const runtime_paddings_t &crops, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides) noexcept
+    const runtime_shape_t &block_shape, const runtime_paddings_t &crops, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides,
+    NNCASE_UNUSED kernel_context &context) noexcept
 {
     switch (runtime::get_bytes(type))
     {

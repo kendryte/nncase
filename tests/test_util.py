@@ -177,6 +177,7 @@ def compile_tflite_nncase(case_name, model, targets, inputs, n, enable_ptq):
     compile_options = nncase.CompileOptions()
     compile_options.dump_asm = True
     compile_options.dump_ir = True
+    compile_options.input_type = "float32"
     for target in targets:
         kmodel_dir = os.path.join(
             output_root, case_name, target, 'infer', 'ptq' if enable_ptq else 'no_ptq')
@@ -190,6 +191,8 @@ def compile_tflite_nncase(case_name, model, targets, inputs, n, enable_ptq):
             ptq_options = nncase.PTQTensorOptions()
             ptq_options.set_tensor_data(inputs[0].tobytes())
             ptq_options.samples_count = n
+            ptq_options.input_mean = 0.5
+            ptq_options.input_std = 0.5
             compiler.use_ptq(ptq_options)
         compiler.compile()
         kmodel = compiler.gencode_tobytes()
@@ -227,13 +230,21 @@ def validate_targets(targets):
     return new_targets
 
 
-def test_tf_module(case_name, module, targets):
-    targets = validate_targets(targets)
+def _read_file(path):
+    with open(path, 'rb') as f:
+        return f.read()
+
+
+def _init_case_dir(case_name):
     case_name = case_name.replace('[', '_').replace(']', '_')
     case_dir = os.path.join('./tmp', case_name)
     clear(case_dir)
+    return case_name, case_dir
+
+
+def _test_tflite(case_name, case_dir, tflite, targets):
+    targets = validate_targets(targets)
     n = 10
-    tflite = tf_module_to_tflite(case_name, module)
     out_len, inputs, calib_datas = eval_tflite_gth(case_name, tflite, n)
 
     # evaluation
@@ -517,6 +528,19 @@ def test_onnx_module(case_name, module, in_shape, targets):
         ret = compare_util.compare_results(
             case_dir, out_len, targets, enable_ptq=enable_ptq, is_evaluation=False)
         assert ret
+
+def test_tflite(case_name, tflite, targets):
+    case_name, case_dir = _init_case_dir(case_name)
+    tflite_export_file = os.path.join(output_root, case_name, 'test.tflite')
+    shutil.copyfile(tflite, tflite_export_file)
+    _test_tflite(case_name, case_dir, _read_file(tflite_export_file), targets)
+
+
+def test_tf_module(case_name, module, targets):
+    case_name, case_dir = _init_case_dir(case_name)
+    tflite = tf_module_to_tflite(case_name, module)
+    _test_tflite(case_name, case_dir, tflite, targets)
+
 
 def clear(case_dir):
     in_ci = os.getenv('CI', False)

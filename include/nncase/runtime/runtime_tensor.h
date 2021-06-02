@@ -57,6 +57,7 @@ public:
     runtime_tensor_type &tensor_type() const noexcept { return *tensor_type_; }
     bool empty() const noexcept;
     bool is_host() const noexcept;
+    bool is_contiguous() const noexcept;
 
     const std::shared_ptr<void> &data() const noexcept { return data_; }
     std::shared_ptr<void> &data() noexcept { return data_; }

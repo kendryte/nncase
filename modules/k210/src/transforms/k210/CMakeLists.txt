@@ -6,7 +6,8 @@ set(SRCS piecewise_regression.cpp
          kpu_conv2d.cpp
          fuse_kpu_download.cpp
          fold_kpu_upload.cpp
-         fuse_kpu_conv2d_pool.cpp)
+         fuse_kpu_conv2d_pool.cpp
+         fused_unary_motion.cpp)
 
 add_library(transforms_k210 OBJECT ${SRCS})
 target_link_libraries(transforms_k210 PUBLIC nncase)

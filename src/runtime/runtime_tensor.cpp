@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include <nncase/kernels/tensor_compute.h>
+#include <nncase/runtime/dbg.h>
 #include <nncase/runtime/error.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/runtime/runtime_tensor.h>
@@ -39,10 +40,8 @@ public:
     {
         auto buffer_src = host_runtime_tensor::buffer(src).unwrap();
         auto buffer_dest = host_runtime_tensor::buffer(dest).unwrap();
-        if (src.datatype() != dest.datatype())
-            return err(nncase_errc::datatype_mismatch);
-        if (src.shape() != dest.shape())
-            return err(nncase_errc::shape_mismatch);
+        CHECK_WITH_ERR(src.datatype() == dest.datatype(), nncase_errc::datatype_mismatch);
+        CHECK_WITH_ERR(src.shape() == dest.shape(), nncase_errc::shape_mismatch);
 
         return kernels::copy(src.datatype(), buffer_src.data(), buffer_dest.data(), src.shape(), src.strides(), dest.strides());
     }
@@ -140,12 +139,9 @@ bool runtime_tensor::can_copy_to_without_staging(const runtime_tensor &dest) con
 
 result<void> runtime_tensor::copy_to(const runtime_tensor &dest) const noexcept
 {
-    if (empty() || dest.empty())
-        return err(std::errc::not_supported);
-    if (datatype() != dest.datatype())
-        return err(nncase_errc::datatype_mismatch);
-    if (shape() != dest.shape())
-        return err(nncase_errc::shape_mismatch);
+    CHECK_WITH_ERR(!empty() && !dest.empty(), std::errc::not_supported);
+    CHECK_WITH_ERR(datatype() == dest.datatype(), nncase_errc::datatype_mismatch);
+    CHECK_WITH_ERR(shape() == dest.shape(), nncase_errc::shape_mismatch);
 
     if (tensor_type() == dest.tensor_type())
         return tensor_type().copy_to_same_type(*this, dest);
@@ -165,8 +161,7 @@ result<void> runtime_tensor::copy_to(const runtime_tensor &dest) const noexcept
 
 result<runtime_tensor> runtime_tensor::as_host() const noexcept
 {
-    if (empty())
-        return err(std::errc::not_supported);
+    CHECK_WITH_ERR(!empty(), std::errc::not_supported);
     if (is_host())
         return ok(*this);
     try_var(host, host_runtime_tensor::create(datatype(), shape()));
@@ -177,6 +172,11 @@ result<runtime_tensor> runtime_tensor::as_host() const noexcept
 bool runtime_tensor::is_host() const noexcept
 {
     return tensor_type() == host_runtime_tensor::tensor_type();
+}
+
+bool runtime_tensor::is_contiguous() const noexcept
+{
+    return this->strides() == get_default_strides(this->shape());
 }
 
 void runtime_tensor::reset() noexcept
@@ -204,23 +204,20 @@ result<runtime_tensor> host_runtime_tensor::create(datatype_t datatype, runtime_
 {
     auto size = compute_size(shape, strides) * get_bytes(datatype);
     std::shared_ptr<uint8_t> buffer(new (std::nothrow) uint8_t[size], std::default_delete<uint8_t[]>());
-    if (!buffer)
-        return err(std::errc::not_enough_memory);
+    CHECK_WITH_ERR(buffer, std::errc::not_enough_memory);
     return ok(runtime_tensor(datatype, std::move(shape), std::move(strides), host_runtime_tensor_type_, std::move(buffer)));
 }
 
 result<runtime_tensor> host_runtime_tensor::create(datatype_t datatype, runtime_shape_t shape, runtime_shape_t strides, gsl::span<gsl::byte> data, bool copy) noexcept
 {
     auto size = compute_size(shape, strides) * get_bytes(datatype);
-    if (data.size_bytes() != size)
-        return err(std::errc::invalid_argument);
+    CHECK_WITH_ERR(data.size_bytes() == size, std::errc::invalid_argument);
 
     std::shared_ptr<gsl::byte> buffer;
     if (copy)
     {
         buffer.reset(new (std::nothrow) gsl::byte[size], std::default_delete<gsl::byte[]>());
-        if (!buffer)
-            return err(std::errc::not_enough_memory);
+        CHECK_WITH_ERR(buffer, std::errc::not_enough_memory);
         try_(kernels::copy(datatype, data.data(), buffer.get(), shape, strides, strides));
     }
     else
@@ -234,8 +231,7 @@ result<runtime_tensor> host_runtime_tensor::create(datatype_t datatype, runtime_
 result<runtime_tensor> host_runtime_tensor::create(datatype_t datatype, runtime_shape_t shape, runtime_shape_t strides, gsl::span<gsl::byte> data, data_deleter_t data_deleter) noexcept
 {
     auto size = compute_size(shape, strides) * get_bytes(datatype);
-    if (data.size_bytes() != size)
-        return err(std::errc::invalid_argument);
+    CHECK_WITH_ERR(data.size_bytes() == size, std::errc::invalid_argument);
     return ok(runtime_tensor(datatype, std::move(shape), std::move(strides), host_runtime_tensor_type_,
         std::shared_ptr<gsl::byte>(data.data(), data_deleter)));
 }
@@ -257,13 +253,8 @@ result<runtime_tensor> host_runtime_tensor::create(datatype_t datatype, runtime_
 
 result<gsl::span<gsl::byte>> host_runtime_tensor::buffer(const runtime_tensor &tensor) noexcept
 {
-    if (tensor.is_host())
-    {
-        auto size = get_bytes(tensor.datatype(), tensor.shape());
-        return ok(gsl::span<gsl::byte>(tensor.data_as<gsl::byte>(), size));
-    }
-    else
-    {
-        return err(std::errc::invalid_argument);
-    }
+    CHECK_WITH_ERR(tensor.is_host(), std::errc::invalid_argument);
+
+    auto size = get_bytes(tensor.datatype(), tensor.shape());
+    return ok(gsl::span<gsl::byte>(tensor.data_as<gsl::byte>(), size));
 }

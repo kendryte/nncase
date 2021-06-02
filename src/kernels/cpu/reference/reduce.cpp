@@ -35,7 +35,7 @@ struct identity
 
 template <class TReducer, class TPostProcess>
 result<void> reduce_impl(TReducer &&reducer, TPostProcess &&post_process, float init_value, const float *input, float *output, const runtime_shape_t &in_shape, const runtime_shape_t &axis,
-    const runtime_shape_t &in_strides, const runtime_shape_t &out_shape, const runtime_shape_t &out_strides, bool keep_dims) noexcept
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_shape, const runtime_shape_t &out_strides, bool keep_dims, NNCASE_UNUSED kernel_context &context) noexcept
 {
     try_(apply(out_shape, [&](const runtime_shape_t &index) -> result<void> {
         output[offset(out_strides, index)] = init_value;
@@ -59,14 +59,14 @@ result<void> reduce_impl(TReducer &&reducer, TPostProcess &&post_process, float 
 
 #define REDUCE_IMPL(op, reducer, post_process) \
     case op:                                   \
-        return reduce_impl(reducer, post_process, init_value, input, output, in_shape, axis, in_strides, out_shape, out_strides, keep_dims)
+        return reduce_impl(reducer, post_process, init_value, input, output, in_shape, axis, in_strides, out_shape, out_strides, keep_dims, context)
 
 #define REDUCE_IMPL_NO_POST(op, reducer) \
     case op:                             \
-        return reduce_impl(reducer, identity<float>(), init_value, input, output, in_shape, axis, in_strides, out_shape, out_strides, keep_dims)
+        return reduce_impl(reducer, identity<float>(), init_value, input, output, in_shape, axis, in_strides, out_shape, out_strides, keep_dims, context)
 
 result<void> reference::reduce(reduce_op_t op, float init_value, const float *input, float *output, const runtime_shape_t &in_shape, const runtime_shape_t &axis,
-    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, bool keep_dims) noexcept
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, bool keep_dims, kernel_context &context) noexcept
 {
     auto out_shape = kernels::detail::get_reduced_shape(in_shape, axis, keep_dims);
     switch (op)
