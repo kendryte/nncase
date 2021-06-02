@@ -187,6 +187,8 @@ def compile_tflite_nncase(case_name, model, targets, inputs, n, enable_ptq):
             ptq_options = nncase.PTQTensorOptions()
             ptq_options.set_tensor_data(inputs[0].tobytes())
             ptq_options.samples_count = n
+            ptq_options.input_mean = 0.5
+            ptq_options.input_std = 0.5
             compiler.use_ptq(ptq_options)
         compiler.compile()
         kmodel = compiler.gencode_tobytes()

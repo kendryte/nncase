@@ -41,6 +41,7 @@ public:
     graph(graph &&) = delete;
 
     const std::string &name() const noexcept { return name_; }
+    std::string escaped_name() const noexcept;
     void name(std::string value) { name_ = std::move(value); }
     const module_type_t &module_type() const noexcept { return module_type_; }
 

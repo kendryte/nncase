@@ -55,7 +55,7 @@ build_model_result model_builder::build(std::ostream &output)
         auto &mod = sched_.modules.at(graph);
         module_builder_params params { sched_, mod };
         auto builder = target_.create_module_builder(graph->module_type(), graph->name(), params);
-        builder->config_dump(dump_dir_, dump_asm_);
+        builder->config_dump(dump_dir_ / graph->escaped_name(), dump_asm_);
         builder->build(writer);
         header.alignment = std::max(header.alignment, builder->alignment());
 
