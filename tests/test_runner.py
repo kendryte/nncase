@@ -174,10 +174,14 @@ class TestRunner(metaclass=ABCMeta):
         if os.path.splitext(model_file)[-1] == ".tflite":
             import_options.input_layout = "NHWC"
             import_options.output_layout = "NHWC"
+        elif os.path.splitext(model_file)[-1] == ".onnx":
+            import_options.input_layout = "NCHW"
+            import_options.output_layout = "NCHW"
 
         compile_options = nncase.CompileOptions()
         for k, v in cfg.compile_opt.kwargs.items():
-            exec(f'compile_options.{k} = {v}')
+            e = '"'
+            exec(f'compile_options.{k} = { e + v + e if isinstance(v, str) else v }')
 
         model_content = self.read_model_file(model_file)
 
