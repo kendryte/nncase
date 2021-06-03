@@ -13,13 +13,11 @@
 # limitations under the License.
 """System test: test conv2d"""
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
+
 import pytest
-import os
 import tensorflow as tf
 import numpy as np
-import sys
-import test_util
-
+from test_runner import TfliteTestRunner
 
 def _make_module(n, i_channels, i_size, k_size, o_channels, strides, padding, dilations):
     class Conv2DModule(tf.Module):
@@ -90,8 +88,10 @@ def test_conv2d(n, i_channels, i_size, k_size, o_channels, strides, padding, dil
     if padding != 'VALID' or (k_size[0] <= i_size[0] and k_size[1] <= i_size[1]):
         module = _make_module(n, i_channels, i_size, k_size, o_channels,
                               strides, padding, dilations)
-        test_util.test_tf_module(request.node.name, module, ['cpu', 'k210', 'k510'])
 
+        runner = TfliteTestRunner(['cpu', 'k210', 'k510'])
+        model_file = runner.from_tensorflow(request.node.name, module)
+        runner.run(model_file)
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_conv2d.py'])

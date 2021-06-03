@@ -29,9 +29,9 @@ jobs:
     - name: Install Python Packages
       shell: bash
       run: |
-        pip install conan tensorflow==2.4.1 matplotlib pillow onnxruntime
-        pip install torch==1.4.0+cpu torchvision==0.5.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
-        
+        pip install conan tensorflow==2.4.1 matplotlib pillow onnx==1.8.0 onnx-simplifier==0.2.21 onnxoptimizer==0.1.2 onnxruntime==1.6.0
+        pip install torch==1.7.0+cpu torchvision==0.8.1+cpu -f https://download.pytorch.org/whl/torch_stable.html
+
     - name: Configure Conan
       if: runner.os == 'Linux'
       shell: bash
@@ -118,8 +118,8 @@ jobs:
     - name: Install Python Packages
       shell: bash
       run: |
-        pip install conan tensorflow==2.4.1 matplotlib pillow onnxruntime
-        pip install torch==1.4.0+cpu torchvision==0.5.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
+        pip install conan tensorflow==2.4.1 matplotlib pillow onnx==1.8.0 onnx-simplifier==0.2.21 onnxoptimizer==0.1.2 onnxruntime==1.6.0
+        pip install torch==1.7.0+cpu torchvision==0.8.1+cpu -f https://download.pytorch.org/whl/torch_stable.html
         pip install pytest
       
     - name: Create Test Environment

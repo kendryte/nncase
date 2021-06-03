@@ -14,49 +14,45 @@
  */
 
 #include "../onnx_importer.h"
-
 #include <cassert>
-
-#include <hlir/graph.h>
-#include <hlir/ops/pad.h>
-
-using namespace std;
+#include <nncase/ir/graph.h>
+#include <nncase/ir/ops/pad.h>
 
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::hlir;
-
+using namespace nncase::ir;
 using namespace onnx;
 
-void onnx_importer::convert_op_Pad(const NodeProto& node)
+void onnx_importer::convert_op_Pad(const NodeProto &node)
 {
-    const auto &input { node.input()[0] };
-    const auto &output { node.output()[0] };
+    const auto &input = node.input()[0];
+    const auto &output = node.output()[0];
 
-    const bool use_opset_version_9  { node.input().size() == 1 };
+    const bool use_opset_version_9 = node.input().size() == 1;
 
-    const auto input_type { get_datatype(input).value() };
-    const auto &input_shape { get_shape(input) };
+    const auto input_type = get_datatype(input).value();
+    const auto &input_shape = get_shape(input);
 
-    constexpr char constant_mode_caption[] { "constant" };
-    string mode { constant_mode_caption };
+    constexpr char constant_mode_caption[] = "constant";
+    std::string mode = constant_mode_caption;
 
-    const auto mode_attr { get_attribute<string>(node, "mode") };
+    const auto mode_attr = get_attribute<std::string>(node, "mode");
     if (mode_attr)
     {
         mode = mode_attr.value();
         if (mode != constant_mode_caption)
         {
-            cout << "Warning: only 'constant' padding mode is supported by hardware, falling back to it" << endl;
+            std::cout << "Warning: only 'constant' padding mode is supported by hardware, falling back to it" << std::endl;
         }
     }
+    pad_mode_t mod = pad_constant;
 
     axis_t padding_value;
 
     if (!use_opset_version_9)
     {
-        const auto &pads { node.input()[1] };
-        const auto &pads_initializer { get_initializer(pads) };
+        const auto &pads = node.input()[1];
+        const auto &pads_initializer = get_initializer(pads);
 
         if (pads_initializer)
         {
@@ -65,37 +61,37 @@ void onnx_importer::convert_op_Pad(const NodeProto& node)
         else
         {
             // try to extract data from previous constant nodes
-            const auto data { get_constant_input_data<float>(pads) };
+            const auto data = get_constant_input_data<float>(pads);
 
             if (data)
-                transform(begin(data.value()), end(data.value()), back_inserter(padding_value),
+                std::transform(std::begin(data.value()), std::end(data.value()), std::back_inserter(padding_value),
                     [](const auto e) { return static_cast<int>(e); });
         }
     }
     else
     {
-        const auto padding_attr { get_attribute<axis_t>(node, "pads") };
+        const auto padding_attr = get_attribute<axis_t>(node, "pads");
         if (!padding_attr)
-            throw runtime_error("\"pads\" attribute is required in Pad operator in opsets version 10 and lower");
+            throw std::runtime_error("\"pads\" attribute is required in Pad operator in opsets version 10 and lower");
         padding_value = padding_attr.value();
     }
 
     if (padding_value.size() < 4)
     {
-        throw runtime_error("Only 2D padding is supported");
+        throw std::runtime_error("Only 2D padding is supported");
     }
 
-    const xt::svector<padding>& new_paddings { parse_padding(padding_value) };
+    const xt::svector<padding> &new_paddings = parse_padding(padding_value);
 
-    scalar constant { (uint8_t)0 };
+    scalar constant = (uint8_t)0;
 
     if (!use_opset_version_9)
     {
         if (node.input().size() == 3)
         {
-            const auto &constant_value { node.input()[2] };
+            const auto &constant_value = node.input()[2];
 
-            const auto &constant_initializer { get_initializer(constant_value) };
+            const auto &constant_initializer = get_initializer(constant_value);
             switch (input_type)
             {
             case dt_float32:
@@ -126,7 +122,7 @@ void onnx_importer::convert_op_Pad(const NodeProto& node)
                 else
                 {
                     // try to extract data from previous constant nodes
-                    const auto data { get_constant_input_data<uint8_t>(constant_value) };
+                    const auto data = get_constant_input_data<uint8_t>(constant_value);
 
                     if (data && data.value().size())
                     {
@@ -135,19 +131,21 @@ void onnx_importer::convert_op_Pad(const NodeProto& node)
                 }
                 break;
             }
+            default:
+                break;
             }
         }
     }
     else
     {
-        const auto constant_attr { get_attribute<float>(node, "value") };
+        const auto constant_attr = get_attribute<float>(node, "value");
         constant = constant_attr ? constant_attr.value() : 0;
     }
 
     if (constant.as<float>() != 0.0f)
-        cout << "Warning: non-zero padding value specified, which is not supported by the hardware, it will be ignored" << endl;
+        std::cout << "Warning: non-zero padding value specified, which is not supported by the hardware, it will be ignored" << std::endl;
 
-    auto op { graph_.emplace<pad>(input_type, input_shape, new_paddings, move(constant)) };
+    auto op = graph_.emplace<pad>(input_type, input_shape, new_paddings, mod, std::move(constant));
 
     input_tensors_.emplace(&op->input(), input);
     output_tensors_.emplace(output, &op->output());

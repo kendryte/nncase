@@ -14,64 +14,60 @@
  */
 
 #include "../onnx_importer.h"
-
-#include <limits>
 #include <algorithm>
 #include <cassert>
-
-#include <hlir/graph.h>
-#include <hlir/ops/reduce.h>
+#include <limits>
+#include <nncase/ir/graph.h>
+#include <nncase/ir/ops/reduce.h>
 
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::hlir;
-
+using namespace nncase::ir;
 using namespace onnx;
 
-void onnx_importer::convert_op_ReduceMax(const NodeProto& node)
+void onnx_importer::convert_op_ReduceMax(const NodeProto &node)
 {
     convert_reduce(node, reduce_max, std::numeric_limits<float>::lowest());
 }
 
-void onnx_importer::convert_op_ReduceMean(const NodeProto& node)
+void onnx_importer::convert_op_ReduceMean(const NodeProto &node)
 {
     convert_reduce(node, reduce_mean, 0.f);
 }
 
-void onnx_importer::convert_op_ReduceMin(const NodeProto& node)
+void onnx_importer::convert_op_ReduceMin(const NodeProto &node)
 {
     convert_reduce(node, reduce_min, std::numeric_limits<float>::max());
 }
 
-void onnx_importer::convert_op_ReduceSum(const NodeProto& node)
+void onnx_importer::convert_op_ReduceSum(const NodeProto &node)
 {
     convert_reduce(node, reduce_sum, 0.f);
 }
 
-void onnx_importer::convert_reduce(const NodeProto& node, const reduce_op_t reduce_op, const float init_value)
+void onnx_importer::convert_reduce(const NodeProto &node, const reduce_op_t reduce_op, const float init_value)
 {
-    const auto &input { node.input()[0] };
-    const auto &output { node.output()[0] };
+    const auto &input = node.input()[0];
+    const auto &output = node.output()[0];
 
-    const auto &input_shape { get_shape(input) };
-
+    const auto &input_shape = get_shape(input);
     axis_t axes(input_shape.size());
     std::iota(begin(axes), end(axes), 0);
 
-    const auto &axes_attr { get_attribute<axis_t>(node, "axes") };
+    const auto &axes_attr = get_attribute<axis_t>(node, "axes");
     if (axes_attr)
     {
         axes = axes_attr.value();
-        std::transform(begin(axes), end(axes), begin(axes), [&input_shape](const auto e) { return real_axis(e, input_shape.size()); });
+        std::transform(std::begin(axes), std::end(axes), std::begin(axes),
+            [&input_shape](const auto e) { return real_axis(e, input_shape.size()); });
     }
 
-    bool keepdims { true };
-
-    const auto &keepdims_attr { get_attribute<int>(node, "keepdims") };
+    bool keepdims = true;
+    const auto &keepdims_attr = get_attribute<int>(node, "keepdims");
     if (keepdims_attr)
         keepdims = static_cast<bool>(keepdims_attr.value());
 
-    auto op { graph_.emplace<reduce>(reduce_op, input_shape, move(axes), init_value, keepdims) };
+    auto op = graph_.emplace<reduce>(reduce_op, input_shape, std::move(axes), init_value, keepdims);
 
     input_tensors_.emplace(&op->input(), input);
     output_tensors_.emplace(output, &op->output());

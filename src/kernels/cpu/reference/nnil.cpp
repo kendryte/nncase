@@ -78,6 +78,9 @@ result<void> reference::nnil_unary_method(const float *input, float *output, siz
             case nnil_neg:
                 stack.push(-stack.pop());
                 break;
+            case nnil_round:
+                stack.push(roundf(stack.pop()));
+                break;
             case nnil_rsqrt:
                 stack.push(1.f / sqrtf(stack.pop()));
                 break;

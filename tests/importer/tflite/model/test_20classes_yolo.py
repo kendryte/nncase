@@ -13,17 +13,14 @@
 # limitations under the License.
 """System test: test 20 classes yolo"""
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
+
 import pytest
-import os
-import tensorflow as tf
-import numpy as np
-import sys
-import test_util
+from test_runner import TfliteTestRunner
 
 def test_20classes_yolo(request):
-    tflite = os.path.join(os.path.dirname(__file__), '../../../../examples/20classes_yolo/model/20classes_yolo.tflite')
-    test_util.test_tflite(request.node.name, tflite, ['cpu', 'k210', 'k510'])
-
+    runner = TfliteTestRunner(['cpu', 'k210', 'k510'])
+    model_file = 'examples/20classes_yolo/model/20classes_yolo.tflite'
+    runner.run(model_file)
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_20classes_yolo.py'])

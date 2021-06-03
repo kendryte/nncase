@@ -13,13 +13,11 @@
 # limitations under the License.
 """System test: test resnet50"""
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
+
 import pytest
-import os
 import tensorflow as tf
 import numpy as np
-import sys
-import test_util
-
+from test_runner import TfliteTestRunner
 
 def _make_module(in_shape):
     return tf.keras.applications.ResNet50(input_shape=in_shape)
@@ -31,8 +29,10 @@ in_shapes = [
 @pytest.mark.parametrize('in_shape', in_shapes)
 def test_resnet50(in_shape, request):
     module = _make_module(in_shape)
-    test_util.test_tf_module(request.node.name, module, ['cpu', 'k210', 'k510'])
 
+    runner = TfliteTestRunner(['cpu', 'k210', 'k510'])
+    model_file = runner.from_tensorflow(request.node.name, module)
+    runner.run(model_file)
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_resnet50.py'])

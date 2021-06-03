@@ -14,30 +14,25 @@
  */
 
 #include "../onnx_importer.h"
-
 #include <cassert>
-
-#include <hlir/graph.h>
-#include <hlir/ops/reshape.h>
-
-using namespace std;
+#include <nncase/ir/graph.h>
+#include <nncase/ir/ops/bitcast.h>
 
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::hlir;
-
+using namespace nncase::ir;
 using namespace onnx;
 
-void onnx_importer::convert_op_Reshape(const NodeProto& node)
+void onnx_importer::convert_op_Reshape(const NodeProto &node)
 {
-    const auto &input { node.input()[0] };
-    const auto &shape { node.input()[1] };
-    const auto &output { node.output()[0] };
+    const auto &input = node.input()[0];
+    const auto &shape = node.input()[1];
+    const auto &output = node.output()[0];
 
-    const auto input_type { get_datatype(input).value() };
-    const auto &input_shape { get_shape(input) };
+    const auto input_type = get_datatype(input).value();
+    const auto &input_shape = get_shape(input);
 
-    const auto &new_shape_initializer { get_initializer(shape) };
+    const auto &new_shape_initializer = get_initializer(shape);
 
     axis_t new_shape;
 
@@ -48,14 +43,14 @@ void onnx_importer::convert_op_Reshape(const NodeProto& node)
     else
     {
         // try to extract data from previous constant nodes
-        const auto data { get_constant_input_data<float>(shape) };
+        const auto data = get_constant_input_data<float>(shape);
 
         if (data)
-            transform(begin(data.value()), end(data.value()), back_inserter(new_shape),
+            std::transform(std::begin(data.value()), std::end(data.value()), std::back_inserter(new_shape),
                 [](const auto e) { return static_cast<int>(e); });
     }
 
-    auto op { graph_.emplace<reshape>(input_type, input_shape, new_shape) };
+    auto op = graph_.emplace<bitcast>(input_type, input_shape, new_shape);
 
     input_tensors_.emplace(&op->input(), input);
     output_tensors_.emplace(output, &op->output());

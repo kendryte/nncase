@@ -52,6 +52,7 @@ public:
     void emit_tanh() { emit_opcode(runtime::nnil_tanh); }
     void emit_bitwise_not() { emit_opcode(runtime::nnil_bitwise_not); }
     void emit_logical_not() { emit_opcode(runtime::nnil_logical_not); }
+    void emit_round() { emit_opcode(runtime::nnil_round); }
     void emit_add() { emit_opcode(runtime::nnil_add); }
     void emit_sub() { emit_opcode(runtime::nnil_sub); }
     void emit_mul() { emit_opcode(runtime::nnil_mul); }

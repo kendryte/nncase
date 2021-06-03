@@ -13,13 +13,11 @@
 # limitations under the License.
 """System test: test broadcast"""
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
+
 import pytest
-import os
 import tensorflow as tf
 import numpy as np
-import sys
-import test_util
-
+from test_runner import TfliteTestRunner
 
 def _make_module(in_shape, out_shape):
     class BroadcastModule(tf.Module):
@@ -42,8 +40,10 @@ shapes = [
 @pytest.mark.parametrize('in_shape,out_shape', shapes)
 def test_broadcast(in_shape, out_shape, request):
     module = _make_module(in_shape, out_shape)
-    test_util.test_tf_module(request.node.name, module, ['cpu'])
 
+    runner = TfliteTestRunner(['cpu'])
+    model_file = runner.from_tensorflow(request.node.name, module)
+    runner.run(model_file)
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_broadcast.py'])

@@ -14,22 +14,16 @@
  */
 
 #include "../onnx_importer.h"
-
 #include <cassert>
-
-#include <hlir/graph.h>
-#include <hlir/ops/constant.h>
-#include <hlir/ops/reduce.h>
-#include <hlir/ops/binary.h>
-#include <hlir/ops/unary.h>
-
-
-using namespace std;
+#include <nncase/ir/graph.h>
+#include <nncase/ir/ops/binary.h>
+#include <nncase/ir/ops/constant.h>
+#include <nncase/ir/ops/reduce.h>
+#include <nncase/ir/ops/unary.h>
 
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::hlir;
-
+using namespace nncase::ir;
 using namespace onnx;
 
 void onnx_importer::convert_op_Abs(const onnx::NodeProto &node)
@@ -72,53 +66,26 @@ void onnx_importer::convert_op_Neg(const onnx::NodeProto &node)
     convert_unary(node, unary_neg);
 }
 
+void onnx_importer::convert_op_Round(const onnx::NodeProto &node)
+{
+    convert_unary(node, unary_round);
+}
+
 void onnx_importer::convert_op_Sqrt(const onnx::NodeProto &node)
 {
-    assert(node.input().size() == 1);
-    assert(node.output().size() == 1);
-
-    const auto &input { node.input()[0] };
-    const auto &output { node.output()[0] };
-
-    const auto input_datatype { get_datatype(input).value() };
-    const auto &input_shape { get_shape(input) };
-
-    auto op { graph_.emplace<unary>(unary_rsqrt, input_shape) };
-
-    hlir::constant* one { };
-    switch (input_datatype)
-    {
-    default:
-    case dt_float32:
-        one = graph_.emplace<constant>(float(1));
-        break;
-
-    case dt_uint8:
-        one = graph_.emplace<constant>(uint8_t(1));
-        break;
-    }
-
-    auto dv { graph_.emplace<binary>(binary_div, one->output().shape(), op->output().shape(), value_range<float>::full()) };
-
-    dv->input_a().connect(one->output());
-    dv->input_b().connect(op->output());
-
-    input_tensors_.emplace(&op->input(), input);
-    output_tensors_.emplace(output, &dv->output());
+    convert_unary(node, unary_sqrt);
 }
 
 void onnx_importer::convert_unary(const onnx::NodeProto &node, const unary_op_t unary_op)
 {
-
     assert(node.input().size() == 1);
     assert(node.output().size() == 1);
 
-    const auto &input { node.input()[0] };
-    const auto &output { node.output()[0] };
+    const auto &input = node.input()[0];
+    const auto &output = node.output()[0];
 
-    const auto &input_shape { get_shape(input) };
-
-    auto op { graph_.emplace<unary>(unary_op, input_shape) };
+    const auto &input_shape = get_shape(input);
+    auto op = graph_.emplace<unary>(unary_op, input_shape);
 
     input_tensors_.emplace(&op->input(), input);
     output_tensors_.emplace(output, &op->output());
