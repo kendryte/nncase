@@ -70,7 +70,6 @@ def test_pool(in_shape, kernel_size, stride, padding, request):
     if kernel_size[0] / 2 > padding[0] and kernel_size[1] / 2 > padding[1]:
         module = _make_module(kernel_size, stride, padding)
 
-        # test_util.test_onnx_module(request.node.name, module, in_shape, ['cpu', 'k210', 'k510'])
         runner = OnnxTestRunner(['cpu', 'k210', 'k510'])
         model_file = runner.from_torch(request.node.name, module, in_shape)
         runner.run(model_file)

@@ -46,7 +46,6 @@ def test_prelu(in_shape, init, request):
     num = 1 if len(in_shape) < 2 else in_shape[1]
     module = _make_module(num, init)
 
-    # test_util.test_onnx_module(request.node.name, module, in_shape, ['cpu', 'k210', 'k510'])
     runner = OnnxTestRunner(['cpu', 'k210', 'k510'])
     model_file = runner.from_torch(request.node.name, module, in_shape)
     runner.run(model_file)

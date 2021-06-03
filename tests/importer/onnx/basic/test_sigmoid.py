@@ -37,8 +37,7 @@ in_shapes = [
 @pytest.mark.parametrize('in_shape', in_shapes)
 def test_sigmoid(in_shape, request):
     module = _make_module()
-    
-    # test_util.test_onnx_module(request.node.name, module, in_shape, ['cpu', 'k210', 'k510'])
+
     runner = OnnxTestRunner(['cpu', 'k210', 'k510'])
     model_file = runner.from_torch(request.node.name, module, in_shape)
     runner.run(model_file)
