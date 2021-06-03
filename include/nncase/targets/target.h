@@ -74,7 +74,7 @@ public:
     virtual void register_allocators(const module_type_t &type, schedule::allocator_map_t &allocators, std::vector<std::shared_ptr<schedule::buffer_allocator>> &allocator_holders) = 0;
     virtual void register_evaluator_ops() = 0;
     virtual void register_target_independent_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr) = 0;
-    virtual void register_target_dependent_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr, datatype_t quant_type) = 0;
+    virtual void register_target_dependent_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr, bool use_ptq) = 0;
     virtual void register_quantize_annotation_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr);
     virtual std::unique_ptr<ir::quantizer> create_quantizer(const module_type_t &type, ir::calibrate_method calib_method);
     virtual void register_quantize_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr, datatype_t quant_type);

@@ -190,7 +190,7 @@ void neutral_target::register_target_independent_passes(const module_type_t &typ
     }
 }
 
-void neutral_target::register_target_dependent_passes([[maybe_unused]] const module_type_t &type, [[maybe_unused]] ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] datatype_t quant_type)
+void neutral_target::register_target_dependent_passes([[maybe_unused]] const module_type_t &type, [[maybe_unused]] ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] bool use_ptq)
 {
 }
 

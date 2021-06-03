@@ -86,7 +86,7 @@ void k210_target::register_evaluator_ops()
     ir::k210::register_k210_evaluators();
 }
 
-void k210_target::register_target_dependent_passes([[maybe_unused]] const module_type_t &type, [[maybe_unused]] ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] datatype_t quant_type)
+void k210_target::register_target_dependent_passes([[maybe_unused]] const module_type_t &type, [[maybe_unused]] ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] bool use_ptq)
 {
 }
 
