@@ -43,6 +43,7 @@ typedef enum _nnil_opcode
     nnil_tanh = 0x2B,
     nnil_bitwise_not = 0x2C,
     nnil_logical_not = 0x2D,
+    nnil_round = 0x2E,
     nnil_add = 0x40,
     nnil_sub = 0x41,
     nnil_mul = 0x42,
