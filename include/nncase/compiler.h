@@ -42,6 +42,7 @@ struct compile_options
     std::filesystem::path dump_dir;
     std::string input_type = "default";
     std::string output_type = "float32";
+    std::string quant_type = "uint8";
 };
 
 struct import_options
