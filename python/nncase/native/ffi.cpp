@@ -133,7 +133,8 @@ PYBIND11_MODULE(_nncase, m)
         .def_readwrite("dump_dir", &compile_options::dump_dir)
         .def_readwrite("is_fpga", &compile_options::is_fpga)
         .def_readwrite("input_type", &compile_options::input_type)
-        .def_readwrite("output_type", &compile_options::output_type);
+        .def_readwrite("output_type", &compile_options::output_type)
+        .def_readwrite("quant_type", &compile_options::quant_type);
 
     py::class_<import_options>(m, "ImportOptions")
         .def(py::init())

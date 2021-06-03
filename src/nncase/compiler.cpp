@@ -303,7 +303,7 @@ private:
             pmgr.quantizer(quant);
             if (compile_options_.dump_ir)
                 pmgr.dump_dir(compile_options_.dump_dir);
-            target_->register_quantize_passes(graph.module_type(), pmgr, to_datatype_method(compile_options_.input_type));
+            target_->register_quantize_passes(graph.module_type(), pmgr, to_datatype_method(compile_options_.quant_type));
             pmgr.run();
             dump_graph(graph, "quantize");
         };
