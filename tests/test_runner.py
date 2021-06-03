@@ -89,6 +89,11 @@ def _cast_bfloat16_then_float32(values: np.array):
     values = values.reshape(shape)
     return values
 
+def clear(case_dir):
+    if os.path.exists(case_dir):
+        shutil.rmtree(case_dir)
+    os.makedirs(case_dir)
+
 Fuc = {
     'generate_random': generate_random
 }
@@ -122,6 +127,7 @@ class TestRunner(metaclass=ABCMeta):
         return new_targets
 
     def run(self, model_path: str):
+        print('model_path = {0}'.format(model_path))
         # 这里开多线程池去跑
         # case_name = self.process_model_path_name(model_path)
         # case_dir = os.path.join(self.cfg.setup.root, case_name)
@@ -130,22 +136,15 @@ class TestRunner(metaclass=ABCMeta):
         case_dir = os.path.dirname(model_path)
         self.run_single(self.cfg.case, case_dir, model_path)
 
+        if self.cfg.running.remove_outcome:
+            shutil.rmtree(case_dir)
+
     def process_model_path_name(self, model_path: str) -> str:
         # 处理模型路径转换为名字
         if Path(model_path).is_file():
             case_name = Path(model_path)
             return '_'.join(str(case_name.parent).split('/') + [case_name.stem])
         return model_path
-
-    def clear(self, case_dir):
-        in_ci = os.getenv('CI', False)
-        if in_ci:
-            if os.path.exists(self.cfg.setup.root):
-                shutil.rmtree(self.cfg.setup.root)
-        else:
-            if os.path.exists(case_dir):
-                shutil.rmtree(case_dir)
-        os.makedirs(case_dir)
 
     @abstractmethod
     def parse_model_input_output(self, model_path: str):
@@ -355,7 +354,6 @@ class TfliteTestRunner(TestRunner):
     def from_tensorflow(self, case_name, module):
         case_name = case_name.replace('[', '_').replace(']', '_')
         export_dir = os.path.join(self.cfg.setup.root, case_name)
-        self.clear(export_dir)
 
         # export model
         tf.saved_model.save(module, export_dir)
@@ -421,7 +419,7 @@ class OnnxTestRunner(TestRunner):
     def from_torch(self, case_name, module, in_shape, opset_version=11):
         case_name = case_name.replace('[', '_').replace(']', '_')
         export_dir = os.path.join(self.cfg.setup.root, case_name)
-        self.clear(export_dir)
+        clear(export_dir)
 
         # export model
         dummy_input = torch.randn(*in_shape)
@@ -440,7 +438,7 @@ class OnnxTestRunner(TestRunner):
 
         case_name = case_name.replace('[', '_').replace(']', '_')
         export_dir = os.path.join(self.cfg.setup.root, case_name)
-        self.clear(export_dir)
+        clear(export_dir)
         model_file = os.path.join(export_dir, 'test.onnx')
         onnx.save(model_def, model_file)
 

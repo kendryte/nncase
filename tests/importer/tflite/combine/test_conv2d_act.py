@@ -100,7 +100,7 @@ def test_conv2d_act(n, i_channels, i_size, k_size, o_channels, strides, padding,
         module = _make_module(n, i_channels, i_size, k_size, o_channels,
                               strides, padding, dilations, act)
 
-        runner = TfliteTestRunner(['cpu', 'k210', 'k510'])
+        runner = TfliteTestRunner(['cpu', 'k210'])
         model_file = runner.from_tensorflow(request.node.name, module)
         runner.run(model_file)
 
