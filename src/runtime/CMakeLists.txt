@@ -5,6 +5,8 @@ set(SRCS interpreter.cpp
          runtime_loader.cpp
          runtime_module.cpp
          runtime_tensor.cpp
+         runtime_tensor_impl.cpp
+         host_runtime_tensor.cpp
          allocator.cpp)
 
 if (BUILDING_RUNTIME)

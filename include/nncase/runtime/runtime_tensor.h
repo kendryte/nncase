@@ -20,19 +20,17 @@
 
 BEGIN_NS_NNCASE_RUNTIME
 
-class runtime_tensor;
-
-class NNCASE_API runtime_tensor_type
+struct runtime_tensor_type
 {
-public:
-    virtual bool can_copy_from_different_type(const runtime_tensor &src, const runtime_tensor &dest) noexcept;
-    virtual bool can_copy_to_different_type(const runtime_tensor &src, const runtime_tensor &dest) noexcept;
+    const char *data;
 
-    virtual result<void> copy_to_same_type(const runtime_tensor &src, const runtime_tensor &dest) noexcept;
-    virtual result<void> copy_from_different_type(const runtime_tensor &src, const runtime_tensor &dest) noexcept;
-    virtual result<void> copy_to_different_type(const runtime_tensor &src, const runtime_tensor &dest) noexcept;
-    virtual result<void> copy_from_host(const runtime_tensor &src, const runtime_tensor &dest) noexcept;
-    virtual result<void> copy_to_host(const runtime_tensor &src, const runtime_tensor &dest) noexcept;
+    explicit runtime_tensor_type(const char *data) noexcept
+        : data(data)
+    {
+    }
+
+    runtime_tensor_type(runtime_tensor_type &) = delete;
+    runtime_tensor_type &operator=(runtime_tensor_type &) = delete;
 };
 
 inline bool operator==(runtime_tensor_type &lhs, runtime_tensor_type &rhs) noexcept
@@ -45,38 +43,37 @@ inline bool operator!=(runtime_tensor_type &lhs, runtime_tensor_type &rhs) noexc
     return &lhs != &rhs;
 }
 
+namespace detail
+{
+class runtime_tensor_impl;
+class host_runtime_tensor_impl;
+}
+
 class NNCASE_API runtime_tensor
 {
 public:
     runtime_tensor() noexcept;
-    runtime_tensor(datatype_t datatype, runtime_shape_t shape, runtime_shape_t strides, runtime_tensor_type &tensor_type, std::shared_ptr<void> data) noexcept;
+    runtime_tensor(std::shared_ptr<detail::runtime_tensor_impl> impl) noexcept;
 
-    datatype_t datatype() const noexcept { return datatype_; }
-    const runtime_shape_t &shape() const noexcept { return shape_; }
-    const runtime_shape_t &strides() const noexcept { return strides_; }
-    runtime_tensor_type &tensor_type() const noexcept { return *tensor_type_; }
+    datatype_t datatype() const noexcept;
+    const runtime_shape_t &shape() const noexcept;
+    const runtime_shape_t &strides() const noexcept;
+    runtime_tensor_type &tensor_type() const noexcept;
     bool empty() const noexcept;
     bool is_host() const noexcept;
     bool is_contiguous() const noexcept;
 
-    const std::shared_ptr<void> &data() const noexcept { return data_; }
-    std::shared_ptr<void> &data() noexcept { return data_; }
-
-    template <class T = void>
-    T *data_as() const noexcept { return reinterpret_cast<T *>(data_.get()); }
+    detail::runtime_tensor_impl *impl() noexcept { return impl_.get(); }
+    const detail::runtime_tensor_impl *impl() const noexcept { return impl_.get(); }
 
     bool can_copy_to_without_staging(const runtime_tensor &dest) const noexcept;
-    result<void> copy_to(const runtime_tensor &dest) const noexcept;
-    result<runtime_tensor> as_host() const noexcept;
+    result<void> copy_to(runtime_tensor &dest) noexcept;
+    result<runtime_tensor> as_host() noexcept;
 
     void reset() noexcept;
 
 private:
-    datatype_t datatype_;
-    runtime_shape_t shape_;
-    runtime_shape_t strides_;
-    runtime_tensor_type *tensor_type_;
-    std::shared_ptr<void> data_;
+    std::shared_ptr<detail::runtime_tensor_impl> impl_;
 };
 
 NNCASE_API bool operator==(const runtime_tensor &lhs, const runtime_tensor &rhs) noexcept;
@@ -84,16 +81,68 @@ NNCASE_API bool operator!=(const runtime_tensor &lhs, const runtime_tensor &rhs)
 
 namespace host_runtime_tensor
 {
+typedef enum memory_pool_
+{
+    pool_cpu_only,
+    pool_shared
+} memory_pool_t;
+
+typedef enum sync_op_
+{
+    sync_invalidate,
+    sync_write_back
+} sync_op_t;
+
+typedef enum map_access_
+{
+    map_none = 0,
+    map_read = 1,
+    map_write = 2,
+    map_read_write = 3
+} map_access_t;
+
+DEFINE_ENUM_BITMASK_OPERATORS(map_access_t);
+
+class NNCASE_API mapped_buffer
+{
+public:
+    mapped_buffer();
+    mapped_buffer(detail::host_runtime_tensor_impl &impl, map_access_t access, uintptr_t address, size_t size_bytes);
+    mapped_buffer(mapped_buffer &&other);
+    mapped_buffer(mapped_buffer &) = delete;
+    ~mapped_buffer();
+
+    mapped_buffer &operator=(mapped_buffer &&);
+    mapped_buffer &operator=(mapped_buffer &) = delete;
+
+    result<void> unmap() noexcept;
+
+    gsl::span<gsl::byte> buffer() const noexcept
+    {
+        return { reinterpret_cast<gsl::byte *>(address_), size_bytes_ };
+    }
+
+private:
+    detail::host_runtime_tensor_impl &impl_;
+    map_access_t access_;
+    uintptr_t address_;
+    size_t size_bytes_;
+};
+
 typedef std::function<void(gsl::byte *)> data_deleter_t;
 
 NNCASE_API runtime_tensor_type &tensor_type() noexcept;
-NNCASE_API result<runtime_tensor> create(datatype_t datatype, runtime_shape_t shape) noexcept;
-NNCASE_API result<runtime_tensor> create(datatype_t datatype, runtime_shape_t shape, gsl::span<gsl::byte> data, bool copy) noexcept;
-NNCASE_API result<runtime_tensor> create(datatype_t datatype, runtime_shape_t shape, gsl::span<gsl::byte> data, data_deleter_t data_deleter) noexcept;
-NNCASE_API result<runtime_tensor> create(datatype_t datatype, runtime_shape_t shape, runtime_shape_t strides) noexcept;
-NNCASE_API result<runtime_tensor> create(datatype_t datatype, runtime_shape_t shape, runtime_shape_t strides, gsl::span<gsl::byte> data, bool copy) noexcept;
-NNCASE_API result<runtime_tensor> create(datatype_t datatype, runtime_shape_t shape, runtime_shape_t strides, gsl::span<gsl::byte> data, data_deleter_t data_deleter) noexcept;
-NNCASE_API result<gsl::span<gsl::byte>> buffer(const runtime_tensor &tensor) noexcept;
+NNCASE_API result<runtime_tensor> create(datatype_t datatype, runtime_shape_t shape, memory_pool_t pool = pool_cpu_only, uintptr_t physical_address = 0) noexcept;
+NNCASE_API result<runtime_tensor> create(datatype_t datatype, runtime_shape_t shape, gsl::span<gsl::byte> data, bool copy, memory_pool_t pool = pool_cpu_only, uintptr_t physical_address = 0) noexcept;
+NNCASE_API result<runtime_tensor> create(datatype_t datatype, runtime_shape_t shape, gsl::span<gsl::byte> data, data_deleter_t data_deleter, memory_pool_t pool = pool_cpu_only, uintptr_t physical_address = 0) noexcept;
+NNCASE_API result<runtime_tensor> create(datatype_t datatype, runtime_shape_t shape, runtime_shape_t strides, memory_pool_t pool = pool_cpu_only, uintptr_t physical_address = 0) noexcept;
+NNCASE_API result<runtime_tensor> create(datatype_t datatype, runtime_shape_t shape, runtime_shape_t strides, gsl::span<gsl::byte> data, bool copy, memory_pool_t pool = pool_cpu_only, uintptr_t physical_address = 0) noexcept;
+NNCASE_API result<runtime_tensor> create(datatype_t datatype, runtime_shape_t shape, runtime_shape_t strides, gsl::span<gsl::byte> data, data_deleter_t data_deleter, memory_pool_t pool = pool_cpu_only, uintptr_t physical_address = 0) noexcept;
+NNCASE_API result<memory_pool_t> memory_pool(const runtime_tensor &tensor) noexcept;
+NNCASE_API result<mapped_buffer> map(runtime_tensor &tensor, map_access_t access) noexcept;
+NNCASE_API result<void> sync(runtime_tensor &tensor, sync_op_t op, bool force = false) noexcept;
 }
+
+namespace hrt = host_runtime_tensor;
 
 END_NS_NNCASE_RUNTIME
