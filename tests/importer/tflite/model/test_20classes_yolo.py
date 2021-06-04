@@ -18,7 +18,7 @@ import pytest
 from test_runner import TfliteTestRunner
 
 def test_20classes_yolo(request):
-    runner = TfliteTestRunner(['cpu', 'k210', 'k510'])
+    runner = TfliteTestRunner(request.node.name)
     model_file = 'examples/20classes_yolo/model/20classes_yolo.tflite'
     runner.run(model_file)
 

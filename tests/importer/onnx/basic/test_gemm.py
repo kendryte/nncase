@@ -59,8 +59,8 @@ def _make_module():
 def test_gemm(request):
     model_def = _make_module()
 
-    runner = OnnxTestRunner(['cpu', 'k210', 'k510'])
-    model_file = runner.from_onnx_helper(request.node.name, model_def)
+    runner = OnnxTestRunner(request.node.name)
+    model_file = runner.from_onnx_helper(model_def)
     runner.run(model_file)
 
 if __name__ == "__main__":
