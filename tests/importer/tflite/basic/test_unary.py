@@ -34,7 +34,7 @@ def _make_module(in_shape):
             outs.append(tf.math.floor(x))
             outs.append(tf.math.log(x + 2))
             outs.append(tf.math.negative(x))
-            outs.append(tf.math.round(x))
+            # outs.append(tf.math.round(x))
             outs.append(tf.math.rsqrt(x + 2))
             outs.append(tf.math.sin(x))
             outs.append(tf.math.sqrt(x + 2))
