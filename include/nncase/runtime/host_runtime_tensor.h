@@ -40,7 +40,7 @@ struct host_memory_block
     {
         if (auto d = std::move(deleter))
             d(reinterpret_cast<gsl::byte *>(virtual_address));
-        physical_memory_block::free(*this);
+        physical_memory_block::free(*this).expect("cannot free physical memory block");
     }
 
     gsl::span<gsl::byte> virtual_buffer() const noexcept

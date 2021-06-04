@@ -243,7 +243,7 @@ result<runtime_tensor> hrt::create(datatype_t datatype, runtime_shape_t shape, m
 
 result<runtime_tensor> hrt::create(datatype_t datatype, runtime_shape_t shape, gsl::span<gsl::byte> data, bool copy, memory_pool_t pool, uintptr_t physical_address) noexcept
 {
-    return create(datatype, shape, get_default_strides(shape), data, copy);
+    return create(datatype, shape, get_default_strides(shape), data, copy, pool, physical_address);
 }
 
 result<runtime_tensor> hrt::create(datatype_t datatype, runtime_shape_t shape, gsl::span<gsl::byte> data, data_deleter_t data_deleter, memory_pool_t pool, uintptr_t physical_address) noexcept
