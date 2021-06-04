@@ -34,7 +34,7 @@ def _make_module(in_shape):
             outs.append(tf.math.floor(x))
             outs.append(tf.math.log(x + 2))
             outs.append(tf.math.negative(x))
-            #outs.append(tf.math.round(x))
+            outs.append(tf.math.round(x))
             outs.append(tf.math.rsqrt(x + 2))
             outs.append(tf.math.sin(x))
             outs.append(tf.math.sqrt(x + 2))
@@ -55,8 +55,8 @@ in_shapes = [
 def test_unary(in_shape, request):
     module = _make_module(in_shape)
 
-    runner = TfliteTestRunner(['cpu', 'k210', 'k510'])
-    model_file = runner.from_tensorflow(request.node.name, module)
+    runner = TfliteTestRunner(request.node.name)
+    model_file = runner.from_tensorflow(module)
     runner.run(model_file)
 
 if __name__ == "__main__":

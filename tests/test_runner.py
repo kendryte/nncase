@@ -93,14 +93,26 @@ Fuc = {
     'generate_random': generate_random
 }
 
-class TestRunner(metaclass=ABCMeta):
-    def __init__(self, targets) -> None:
+class TestRunner(metaclass = ABCMeta):
+    def __init__(self, case_name, targets = None) -> None:
         with open('tests/config.yml') as f:
             cfg = yaml.safe_load(f)
             config = Edict(cfg)
 
         self.cfg = self.validte_config(config)
-        self.targets = self.validate_targets(targets)
+
+        case_name = case_name.replace('[', '_').replace(']', '_')
+        self.case_dir = os.path.join(self.cfg.setup.root, case_name)
+        self.clear(self.case_dir)
+
+        if targets is None:
+            self.cfg.case.eval[0].values = self.validate_targets(self.cfg.case.eval[0].values)
+            self.cfg.case.infer[0].values = self.validate_targets(self.cfg.case.infer[0].values)
+        else:
+            targets = self.validate_targets(targets)
+            self.cfg.case.eval[0].values = targets
+            self.cfg.case.infer[0].values = targets
+
         self.inputs: List[Dict] = []
         self.calibs: List[Dict] = []
         self.outputs: List[Dict] = []
@@ -131,7 +143,6 @@ class TestRunner(metaclass=ABCMeta):
         self.run_single(self.cfg.case, case_dir, model_path)
 
     def process_model_path_name(self, model_path: str) -> str:
-        # 处理模型路径转换为名字
         if Path(model_path).is_file():
             case_name = Path(model_path)
             return '_'.join(str(case_name.parent).split('/') + [case_name.stem])
@@ -188,8 +199,6 @@ class TestRunner(metaclass=ABCMeta):
 
         # evaluation
         names, args = TestRunner.split_value(cfg.eval)
-        names.append('target')
-        args.append(self.targets)
         for combine_args in product(*args):
             dict_args = dict(zip(names, combine_args))
             eval_output_paths = self.generate_evaluates(
@@ -199,8 +208,6 @@ class TestRunner(metaclass=ABCMeta):
 
         # nncase inference
         names, args = TestRunner.split_value(cfg.infer)
-        names.append('target')
-        args.append(self.targets)
         for combine_args in product(*args):
             dict_args = dict(zip(names, combine_args))
             if dict_args['ptq'] and len(self.inputs) > 1:
@@ -349,27 +356,27 @@ class TestRunner(metaclass=ABCMeta):
         return True
 
 class TfliteTestRunner(TestRunner):
-    def __init__(self, targets):
-         super().__init__(targets)
+    def __init__(self, case_name, targets = None):
+         super().__init__(case_name, targets)
 
-    def from_tensorflow(self, case_name, module):
-        case_name = case_name.replace('[', '_').replace(']', '_')
-        export_dir = os.path.join(self.cfg.setup.root, case_name)
-        self.clear(export_dir)
-
+    def from_tensorflow(self, module):
         # export model
-        tf.saved_model.save(module, export_dir)
-        converter = tf.lite.TFLiteConverter.from_saved_model(export_dir)
+        tf.saved_model.save(module, self.case_dir)
+        converter = tf.lite.TFLiteConverter.from_saved_model(self.case_dir)
 
         # convert model
         tflite_model = converter.convert()
-        model_file = os.path.join(export_dir, 'test.tflite')
+        model_file = os.path.join(self.case_dir, 'test.tflite')
         with open(model_file, 'wb') as f:
             f.write(tflite_model)
 
         return model_file
 
     def run(self, model_file):
+        if self.case_dir != os.path.dirname(model_file):
+            shutil.copy(model_file, self.case_dir)
+            model_file = os.path.join(self.case_dir, os.path.basename(model_file))
+
         super().run(model_file)
 
     def parse_model_input_output(self, model_path: str):
@@ -415,22 +422,18 @@ class TfliteTestRunner(TestRunner):
         compiler.import_tflite(model_content, import_options)
 
 class OnnxTestRunner(TestRunner):
-    def __init__(self, targets):
-         super().__init__(targets)
+    def __init__(self, case_name, targets = None):
+         super().__init__(case_name, targets)
 
-    def from_torch(self, case_name, module, in_shape, opset_version=11):
-        case_name = case_name.replace('[', '_').replace(']', '_')
-        export_dir = os.path.join(self.cfg.setup.root, case_name)
-        self.clear(export_dir)
-
+    def from_torch(self, module, in_shape, opset_version=11):
         # export model
         dummy_input = torch.randn(*in_shape)
-        model_file = os.path.join(export_dir, 'test.onnx')
+        model_file = os.path.join(self.case_dir, 'test.onnx')
         torch.onnx.export(module, dummy_input, model_file,
                         operator_export_type=torch.onnx.OperatorExportTypes.ONNX_ATEN_FALLBACK, opset_version=opset_version)
         return model_file
 
-    def from_onnx_helper(self, case_name, model_def):
+    def from_onnx_helper(self, model_def):
         try:
             onnx.checker.check_model(model_def)
         except onnx.checker.ValidationError as e:
@@ -438,10 +441,7 @@ class OnnxTestRunner(TestRunner):
         else:
             print('The model is valid!')
 
-        case_name = case_name.replace('[', '_').replace(']', '_')
-        export_dir = os.path.join(self.cfg.setup.root, case_name)
-        self.clear(export_dir)
-        model_file = os.path.join(export_dir, 'test.onnx')
+        model_file = os.path.join(self.case_dir, 'test.onnx')
         onnx.save(model_def, model_file)
 
         return model_file

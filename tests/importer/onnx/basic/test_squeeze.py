@@ -65,8 +65,8 @@ def test_squeeze(in_shape, out_channel, kernel_size, axis, request):
     dim = axis if out_shape[axis] == 1 else None
     module = _make_module(in_shape, out_channel, kernel_size, dim)
 
-    runner = OnnxTestRunner(['cpu', 'k210', 'k510'])
-    model_file = runner.from_torch(request.node.name, module, in_shape)
+    runner = OnnxTestRunner(request.node.name)
+    model_file = runner.from_torch(module, in_shape)
     runner.run(model_file)
 
 if __name__ == "__main__":

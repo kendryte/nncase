@@ -63,8 +63,8 @@ kernel_sizes = [
 def test_reshape(in_shape, out_channel, kernel_size, request):
     module = _make_module(in_shape, out_channel, kernel_size)
 
-    runner = OnnxTestRunner(['cpu', 'k210', 'k510'])
-    model_file = runner.from_torch(request.node.name, module, in_shape)
+    runner = OnnxTestRunner(request.node.name)
+    model_file = runner.from_torch(module, in_shape)
     runner.run(model_file)
 
 if __name__ == "__main__":

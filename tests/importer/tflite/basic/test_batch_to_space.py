@@ -59,9 +59,9 @@ crops = [
 @pytest.mark.parametrize('crops', crops)
 def test_batch_to_space(batch_coff, in_shape, block_shape, crops, request):
     module = _make_module(batch_coff, in_shape, block_shape, crops)
-    
-    runner = TfliteTestRunner(['cpu'])
-    model_file = runner.from_tensorflow(request.node.name, module)
+
+    runner = TfliteTestRunner(request.node.name, ['cpu'])
+    model_file = runner.from_tensorflow(module)
     runner.run(model_file)
 
 if __name__ == "__main__":

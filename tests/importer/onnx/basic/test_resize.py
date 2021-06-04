@@ -53,8 +53,8 @@ modes = [
 def test_concat(in_shape, size, mode, request):
     module = _make_module(size, mode)
 
-    runner = OnnxTestRunner(['k510'])
-    model_file = runner.from_torch(request.node.name, module, in_shape)
+    runner = OnnxTestRunner(request.node.name, ['k510'])
+    model_file = runner.from_torch(module, in_shape)
     runner.run(model_file)
 
 if __name__ == "__main__":

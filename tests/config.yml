@@ -25,20 +25,20 @@ case: # case的配置，应该是一个多层次的
     numbers: 1
     batch_size: 10
   eval:
-    # - name: target
-    #   values:
-    #     - cpu
-    #     - k210
-    #     - k510
+    - name: target
+      values:
+        - cpu
+        - k210
+        - k510
     - name: ptq
       values:
         - false
   infer:
-    # - name: target
-    #   values:
-    #     - cpu
-    #     - k210
-    #     - k510
+    - name: target
+      values:
+        - cpu
+        - k210
+        - k510
     - name: ptq
       values:
         - false
