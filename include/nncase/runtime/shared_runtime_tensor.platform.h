@@ -28,9 +28,9 @@ struct NNCASE_API physical_memory_block
 
     physical_memory_block() noexcept;
     ~physical_memory_block();
-    physical_memory_block(physical_memory_block &) = delete;
+    physical_memory_block(const physical_memory_block &) = delete;
     physical_memory_block(physical_memory_block &&other) noexcept;
-    physical_memory_block &operator=(physical_memory_block &) = delete;
+    physical_memory_block &operator=(const physical_memory_block &) = delete;
     physical_memory_block &operator=(physical_memory_block &&other) noexcept;
 
     result<void> free() noexcept;

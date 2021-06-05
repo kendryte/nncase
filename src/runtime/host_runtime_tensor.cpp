@@ -102,7 +102,8 @@ result<void> host_runtime_tensor_impl::unmap(hrt::map_access_t access) noexcept
     if (access & hrt::map_write)
     {
         auto status = memory_block_.cache_status;
-        assert(status == cache_status_t::valid || status == cache_status_t::need_write_back);
+        CHECK_WITH_ERR(status == cache_status_t::valid || status == cache_status_t::need_write_back,
+            std::errc::operation_not_permitted);
         memory_block_.cache_status = cache_status_t::need_write_back;
     }
 

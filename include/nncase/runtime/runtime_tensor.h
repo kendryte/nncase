@@ -109,11 +109,11 @@ public:
     mapped_buffer() noexcept;
     mapped_buffer(detail::host_runtime_tensor_impl &impl, map_access_t access, uintptr_t address, size_t size_bytes) noexcept;
     mapped_buffer(mapped_buffer &&other) noexcept;
-    mapped_buffer(mapped_buffer &) = delete;
+    mapped_buffer(const mapped_buffer &) = delete;
     ~mapped_buffer();
 
     mapped_buffer &operator=(mapped_buffer &&) noexcept;
-    mapped_buffer &operator=(mapped_buffer &) = delete;
+    mapped_buffer &operator=(const mapped_buffer &) = delete;
 
     result<void> unmap() noexcept;
 
