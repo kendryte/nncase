@@ -26,7 +26,7 @@ namespace
 {
 runtime_shape_t empty_shape;
 runtime_tensor_type empty_runtime_tensor_type { "empty" };
-};
+}
 
 runtime_tensor::runtime_tensor() noexcept
 {
