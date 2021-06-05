@@ -101,7 +101,7 @@ typedef enum map_access_
     map_read_write = 3
 } map_access_t;
 
-DEFINE_ENUM_BITMASK_OPERATORS(map_access_t);
+DEFINE_ENUM_BITMASK_OPERATORS(map_access_t)
 
 class NNCASE_API mapped_buffer
 {
