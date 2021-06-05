@@ -36,11 +36,16 @@ struct host_memory_block
     cache_status_t cache_status;
     physical_memory_block physical_block;
 
+    host_memory_block() = default;
+    host_memory_block(host_memory_block &) = delete;
+    host_memory_block(host_memory_block &&) = default;
+    host_memory_block &operator=(host_memory_block &) = delete;
+    host_memory_block &operator=(host_memory_block &&) = default;
+
     ~host_memory_block()
     {
         if (auto d = std::move(deleter))
             d(reinterpret_cast<gsl::byte *>(virtual_address));
-        physical_memory_block::free(*this).expect("cannot free physical memory block");
     }
 
     gsl::span<gsl::byte> virtual_buffer() const noexcept

@@ -77,9 +77,13 @@ private:
         size_t i = 0;
         for (auto it = dataset.begin<T>(); it != dataset.end<T>(); ++it)
         {
-            auto input_buffer = host_runtime_tensor::buffer(interp_.input_tensor(0).unwrap()).unwrap_or_throw();
-            auto &tensor = it->tensor;
-            std::memcpy(input_buffer.data(), tensor.data(), input_buffer.size_bytes());
+            {
+                auto input_tensor = interp_.input_tensor(0).unwrap();
+                auto input_map = std::move(hrt::map(input_tensor, hrt::map_write).unwrap());
+                auto input_buffer = input_map.buffer();
+                auto &tensor = it->tensor;
+                std::memcpy(input_buffer.data(), tensor.data(), input_buffer.size_bytes());
+            }
 
             auto r = interp_.run();
             if (r.is_ok())
@@ -90,8 +94,10 @@ private:
                 std::ofstream of(out_filename, std::ios::binary | std::ios::out);
                 for (size_t i = 0; i < interp_.outputs_size(); i++)
                 {
-                    auto output = host_runtime_tensor::buffer(interp_.output_tensor(i).unwrap()).unwrap_or_throw();
-                    of.write(reinterpret_cast<const char *>(output.data()), output.size());
+                    auto output_tensor = interp_.output_tensor(i).unwrap();
+                    auto output_map = std::move(hrt::map(output_tensor, hrt::map_read).unwrap());
+                    auto output_buffer = output_map.buffer();
+                    of.write(reinterpret_cast<const char *>(output_buffer.data()), output_buffer.size());
                 }
             }
             else

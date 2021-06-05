@@ -9,6 +9,10 @@ set(SRCS interpreter.cpp
          host_runtime_tensor.cpp
          allocator.cpp)
 
+if (NOT NNCASE_SHARED_RUNTIME_TENSOR_PLATFORM_HEADER)
+    list(APPEND SRCS shared_runtime_tensor.platform.cpp)
+endif()
+
 if (BUILDING_RUNTIME)
     add_library(runtime OBJECT ${SRCS})
     target_include_directories(runtime PRIVATE ${CMAKE_CURRENT_BINARY_DIR})

@@ -27,6 +27,28 @@ namespace
 runtime_tensor_type host_runtime_tensor_type_ { "host" };
 }
 
+host_runtime_tensor_impl::host_runtime_tensor_impl(datatype_t datatype, runtime_shape_t shape, runtime_shape_t strides, host_memory_block memory_block)
+    : datatype_(datatype), shape_(std::move(shape)), strides_(std::move(strides)), memory_block_(std::move(memory_block))
+{
+}
+
+datatype_t host_runtime_tensor_impl::datatype() const noexcept
+{
+    return datatype_;
+}
+const runtime_shape_t &host_runtime_tensor_impl::shape() const noexcept
+{
+    return shape_;
+}
+const runtime_shape_t &host_runtime_tensor_impl::strides() const noexcept
+{
+    return strides_;
+}
+runtime_tensor_type &host_runtime_tensor_impl::tensor_type() const noexcept
+{
+    return host_runtime_tensor_type_;
+}
+
 bool host_runtime_tensor_impl::can_copy_from_different_type(NNCASE_UNUSED const runtime_tensor_impl &src) const noexcept
 {
     return true;
@@ -123,6 +145,51 @@ result<void> host_runtime_tensor_impl::sync(hrt::sync_op_t op, bool force) noexc
     }
 
     return ok();
+}
+
+hrt::mapped_buffer::mapped_buffer() noexcept
+    : impl_(nullptr), access_(hrt::map_none), address_(0), size_bytes_(0)
+{
+}
+
+hrt::mapped_buffer::mapped_buffer(host_runtime_tensor_impl &impl, map_access_t access, uintptr_t address, size_t size_bytes) noexcept
+    : impl_(&impl), access_(access), address_(address), size_bytes_(size_bytes)
+{
+}
+
+hrt::mapped_buffer::mapped_buffer(mapped_buffer &&other) noexcept
+    : impl_(other.impl_), access_(other.access_), address_(other.address_), size_bytes_(other.size_bytes_)
+{
+    other.impl_ = nullptr;
+}
+
+hrt::mapped_buffer::~mapped_buffer()
+{
+    unmap().expect("unmap failed");
+}
+
+hrt::mapped_buffer &hrt::mapped_buffer::operator=(mapped_buffer &&other) noexcept
+{
+    unmap().expect("unmap failed");
+    impl_ = other.impl_;
+    access_ = other.access_;
+    address_ = other.address_;
+    size_bytes_ = other.size_bytes_;
+    other.impl_ = nullptr;
+    return *this;
+}
+
+result<void> hrt::mapped_buffer::unmap() noexcept
+{
+    if (impl_)
+        return impl_->unmap(access_);
+    impl_ = nullptr;
+    return ok();
+}
+
+runtime_tensor_type &hrt::tensor_type() noexcept
+{
+    return host_runtime_tensor_type_;
 }
 
 result<runtime_tensor> hrt::create(datatype_t datatype, runtime_shape_t shape, runtime_shape_t strides, memory_pool_t pool, uintptr_t physical_address) noexcept

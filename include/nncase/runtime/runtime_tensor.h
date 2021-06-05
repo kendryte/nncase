@@ -106,13 +106,13 @@ DEFINE_ENUM_BITMASK_OPERATORS(map_access_t);
 class NNCASE_API mapped_buffer
 {
 public:
-    mapped_buffer();
-    mapped_buffer(detail::host_runtime_tensor_impl &impl, map_access_t access, uintptr_t address, size_t size_bytes);
-    mapped_buffer(mapped_buffer &&other);
+    mapped_buffer() noexcept;
+    mapped_buffer(detail::host_runtime_tensor_impl &impl, map_access_t access, uintptr_t address, size_t size_bytes) noexcept;
+    mapped_buffer(mapped_buffer &&other) noexcept;
     mapped_buffer(mapped_buffer &) = delete;
     ~mapped_buffer();
 
-    mapped_buffer &operator=(mapped_buffer &&);
+    mapped_buffer &operator=(mapped_buffer &&) noexcept;
     mapped_buffer &operator=(mapped_buffer &) = delete;
 
     result<void> unmap() noexcept;
@@ -123,7 +123,7 @@ public:
     }
 
 private:
-    detail::host_runtime_tensor_impl &impl_;
+    detail::host_runtime_tensor_impl *impl_;
     map_access_t access_;
     uintptr_t address_;
     size_t size_bytes_;

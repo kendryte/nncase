@@ -24,10 +24,19 @@ struct host_memory_block;
 struct NNCASE_API physical_memory_block
 {
     uintptr_t physical_address;
+    bool owned;
+
+    physical_memory_block() noexcept;
+    ~physical_memory_block();
+    physical_memory_block(physical_memory_block &) = delete;
+    physical_memory_block(physical_memory_block &&other) noexcept;
+    physical_memory_block &operator=(physical_memory_block &) = delete;
+    physical_memory_block &operator=(physical_memory_block &&other) noexcept;
+
+    result<void> free() noexcept;
 
     static result<void> acknowledge(host_memory_block &block) noexcept;
     static result<void> allocate(host_memory_block &block) noexcept;
-    static result<void> free(host_memory_block &block) noexcept;
     static result<void> sync(host_memory_block &block, host_runtime_tensor::sync_op_t op) noexcept;
 };
 }
