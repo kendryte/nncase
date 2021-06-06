@@ -16,7 +16,7 @@ import onnxsim
 import onnxoptimizer
 import onnxruntime as ort
 import struct
-from .compare_util import compare_with_ground_truth, VerboseType
+from compare_util import compare_with_ground_truth, VerboseType
 
 class Edict:
     def __init__(self, d: Dict[str, int]) -> None:
