@@ -39,21 +39,29 @@ runtime_tensor::runtime_tensor(std::shared_ptr<runtime_tensor_impl> impl) noexce
 
 datatype_t runtime_tensor::datatype() const noexcept
 {
+    if (impl_)
+        return impl_->datatype();
     return (datatype_t)0;
 }
 
 const runtime_shape_t &runtime_tensor::shape() const noexcept
 {
+    if (impl_)
+        return impl_->shape();
     return empty_shape;
 }
 
 const runtime_shape_t &runtime_tensor::strides() const noexcept
 {
+    if (impl_)
+        return impl_->strides();
     return empty_shape;
 }
 
 runtime_tensor_type &runtime_tensor::tensor_type() const noexcept
 {
+    if (impl_)
+        return impl_->tensor_type();
     return empty_runtime_tensor_type;
 }
 

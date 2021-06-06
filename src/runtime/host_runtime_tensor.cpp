@@ -27,6 +27,25 @@ namespace
 runtime_tensor_type host_runtime_tensor_type_ { "host" };
 }
 
+host_memory_block::host_memory_block(host_memory_block &&other) noexcept
+    : pool(other.pool), virtual_address(other.virtual_address), size_bytes(other.size_bytes), deleter(std::move(other.deleter)), cache_status(other.cache_status), physical_block(std::move(other.physical_block))
+{
+    other.deleter = {};
+}
+
+host_memory_block &host_memory_block::operator=(host_memory_block &&other) noexcept
+{
+    free();
+    pool = other.pool;
+    virtual_address = other.virtual_address;
+    size_bytes = other.size_bytes;
+    deleter = std::move(other.deleter);
+    cache_status = other.cache_status;
+    physical_block = std::move(other.physical_block);
+    other.deleter = {};
+    return *this;
+}
+
 host_runtime_tensor_impl::host_runtime_tensor_impl(datatype_t datatype, runtime_shape_t shape, runtime_shape_t strides, host_memory_block memory_block)
     : datatype_(datatype), shape_(std::move(shape)), strides_(std::move(strides)), memory_block_(std::move(memory_block))
 {
