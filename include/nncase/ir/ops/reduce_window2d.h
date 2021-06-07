@@ -37,8 +37,10 @@ public:
     int32_t dilation_h() const noexcept { return dilation_h_; }
     int32_t dilation_w() const noexcept { return dilation_w_; }
     value_range<float> fused_activation() const noexcept { return fused_activation_; }
+    bool ceil_mode() const noexcept { return ceil_mode_; }
+    bool count_include_pad() const noexcept { return count_include_pad_; }
 
-    reduce_window2d(reduce_op_t reduce_op, shape_t input_shape, float init_value, int32_t filter_h, int32_t filter_w, padding padding_h, padding padding_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w, value_range<float> fused_activation);
+    reduce_window2d(reduce_op_t reduce_op, shape_t input_shape, float init_value, int32_t filter_h, int32_t filter_w, padding padding_h, padding padding_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w, value_range<float> fused_activation, bool ceil_mode = false, bool count_include_pad = false);
 
 protected:
     bool properties_equal(node &other) const override;
@@ -55,5 +57,8 @@ private:
     int32_t dilation_h_;
     int32_t dilation_w_;
     value_range<float> fused_activation_;
+    bool ceil_mode_;
+    bool count_include_pad_;
+
 };
 }

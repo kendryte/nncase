@@ -18,8 +18,8 @@
 using namespace nncase;
 using namespace nncase::ir;
 
-reduce_window2d::reduce_window2d(reduce_op_t reduce_op, shape_t input_shape, float init_value, int32_t filter_h, int32_t filter_w, padding padding_h, padding padding_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w, value_range<float> fused_activation)
-    : reduce_op_(reduce_op), init_value_(init_value), filter_h_(filter_h), filter_w_(filter_w), padding_h_(padding_h), padding_w_(padding_w), stride_h_(stride_h), stride_w_(stride_w), dilation_h_(dilation_h), dilation_w_(dilation_w), fused_activation_(fused_activation)
+reduce_window2d::reduce_window2d(reduce_op_t reduce_op, shape_t input_shape, float init_value, int32_t filter_h, int32_t filter_w, padding padding_h, padding padding_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w, value_range<float> fused_activation, bool ceil_mode, bool count_include_pad)
+    : reduce_op_(reduce_op), init_value_(init_value), filter_h_(filter_h), filter_w_(filter_w), padding_h_(padding_h), padding_w_(padding_w), stride_h_(stride_h), stride_w_(stride_w), dilation_h_(dilation_h), dilation_w_(dilation_w), fused_activation_(fused_activation), ceil_mode_(ceil_mode), count_include_pad_(count_include_pad)
 {
     add_input("input", dt_float32, input_shape);
     add_output("output", dt_float32,
@@ -36,5 +36,6 @@ bool reduce_window2d::properties_equal(node &other) const
     return reduce_op() == r.reduce_op() && init_value() == r.init_value() && filter_h() == r.filter_h()
         && filter_w() == r.filter_w() && padding_h() == r.padding_h() && padding_w() == padding_w()
         && stride_h() == r.stride_h() && stride_w() == r.stride_w() && dilation_h() == r.dilation_h()
-        && dilation_w() == r.dilation_w() && fused_activation() == r.fused_activation();
+        && dilation_w() == r.dilation_w() && fused_activation() == r.fused_activation()
+        && ceil_mode() == r.ceil_mode() && count_include_pad() == r.count_include_pad();
 }

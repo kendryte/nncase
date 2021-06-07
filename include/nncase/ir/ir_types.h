@@ -36,7 +36,8 @@ enum node_attributes
 enum connector_attributes
 {
     cnctr_attr_none = 0,
-    cnctr_attr_need_quantize = 1
+    cnctr_attr_need_quantize = 1,
+    cnctr_attr_support_layout_strides = 2
 };
 
 DEFINE_ENUM_BITMASK_OPERATORS(node_attributes)
