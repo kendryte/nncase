@@ -38,8 +38,8 @@ alphas = [
 def test_mobilenetv1(in_shape, alpha, request):
     module = _make_module(in_shape, alpha)
 
-    runner = TfliteTestRunner(['cpu', 'k210', 'k510'])
-    model_file = runner.from_tensorflow(request.node.name, module)
+    runner = TfliteTestRunner(request.node.name)
+    model_file = runner.from_tensorflow(module)
     runner.run(model_file)
 
 if __name__ == "__main__":

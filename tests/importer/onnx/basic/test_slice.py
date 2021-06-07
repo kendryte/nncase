@@ -60,8 +60,8 @@ def test_slice(in_shape, out_channel, kernel_size, axis, request):
     module = _make_module(in_shape, out_channel, kernel_size, 1, 0, 2)
 
     # depend on pad to slice patch
-    # runner = OnnxTestRunner(['cpu', 'k210', 'k510'])
-    # model_file = runner.from_torch(request.node.name, module, in_shape)
+    # runner = OnnxTestRunner(request.node.name)
+    # model_file = runner.from_torch(module, in_shape)
     # runner.run(model_file)
 
 if __name__ == "__main__":
