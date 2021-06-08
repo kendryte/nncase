@@ -12,26 +12,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../caffe_importer.h"
-#include <nncase/ir/placeholders.h>
+#include <nncase/ir/op_utils.h>
+#include <nncase/ir/ops/indicator.h>
+#include <xtensor/xarray.hpp>
 
 using namespace nncase;
-using namespace nncase::importer;
 using namespace nncase::ir;
-using namespace caffe;
 
-DEFINE_CAFFE_LOWER(Input)
+indicator::indicator()
 {
-    auto node = graph_.emplace<input_node>(dt_float32, get_shape(op.input_param().shape(0)));
-    node->name(op.name());
-
-    output_tensors_.emplace(op.top(0), &node->output());
+    add_output("output", dt_int32, shape_t {2});
 }
 
-DEFINE_CAFFE_LOWER(ImageData1)
+bool indicator::properties_equal(node &other) const
 {
-    auto node = graph_.emplace<input_node>(dt_float32, shape_t {1,1,32,1600}); // nchw
-    node->name(op.name());
-
-    output_tensors_.emplace(op.top(0), &node->output());
+    auto &r = static_cast<indicator &>(other);
+    return time_step() == r.time_step() && batch_size() == r.batch_size();
 }

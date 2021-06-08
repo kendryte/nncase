@@ -13,18 +13,18 @@
  * limitations under the License.
  */
 #include "../caffe_importer.h"
-#include <hlir/ops/binary.h>
+#include <nncase/ir/ops/binary.h>
 
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::hlir;
+using namespace nncase::ir;
 using namespace caffe;
 
 DEFINE_CAFFE_LOWER(Eltwise)
 {
     auto &input_a = *output_tensors_.at(op.bottom(0));
     auto &input_b = *output_tensors_.at(op.bottom(1));
-    auto &param = op.eltwise_param();
+    [[maybe_unused]]auto &param = op.eltwise_param();
 
     auto add = graph_.emplace<binary>(binary_add, input_a.shape(), input_b.shape(), value_range<float>::full());
 

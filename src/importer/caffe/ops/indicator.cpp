@@ -13,25 +13,19 @@
  * limitations under the License.
  */
 #include "../caffe_importer.h"
-#include <nncase/ir/placeholders.h>
+#include <nncase/ir/ops/indicator.h>
 
 using namespace nncase;
 using namespace nncase::importer;
 using namespace nncase::ir;
 using namespace caffe;
 
-DEFINE_CAFFE_LOWER(Input)
+DEFINE_CAFFE_LOWER(ContinuationIndicator)
 {
-    auto node = graph_.emplace<input_node>(dt_float32, get_shape(op.input_param().shape(0)));
+    auto node = graph_.emplace<indicator>();
     node->name(op.name());
-
-    output_tensors_.emplace(op.top(0), &node->output());
-}
-
-DEFINE_CAFFE_LOWER(ImageData1)
-{
-    auto node = graph_.emplace<input_node>(dt_float32, shape_t {1,1,32,1600}); // nchw
-    node->name(op.name());
-
-    output_tensors_.emplace(op.top(0), &node->output());
+    for (int i = 0; i < op.top_size(); i++)
+    {
+        output_tensors_.emplace(op.top(i), &node->output());
+    }
 }

@@ -13,11 +13,11 @@
  * limitations under the License.
  */
 #include "../caffe_importer.h"
-#include <hlir/ops/strided_slice.h>
+#include <nncase/ir/ops/slice.h>
 
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::hlir;
+using namespace nncase::ir;
 using namespace caffe;
 
 DEFINE_CAFFE_LOWER(Slice)
@@ -42,9 +42,8 @@ DEFINE_CAFFE_LOWER(Slice)
         if (i != op.top_size() - 1)
             axis_beg = end[param.axis()] = axis_beg + param.slice_point(i);
 
-        auto slice = graph_.emplace<strided_slice>(dt_float32, in_shape, begin, end, strides, 0, 0, 0, 0, 0);
-
-        input_tensors_.emplace(&slice->input(), op.bottom(0));
-        output_tensors_.emplace(op.top(i), &slice->output());
+        auto sl = graph_.emplace<slice>(dt_float32, in_shape, begin, end, strides, 0, 0, 0, 0);
+        input_tensors_.emplace(&sl->input(), op.bottom(0));
+        output_tensors_.emplace(op.top(i), &sl->output());
     }
 }

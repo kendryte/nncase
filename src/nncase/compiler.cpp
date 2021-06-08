@@ -151,6 +151,13 @@ public:
         END_IMPORT()
     }
 
+    void import_caffe(std::span<const uint8_t> model, const import_options &options) override
+    {
+        BEGIN_IMPORT()
+        importer::import_caffe(graph_, model, imp_options);
+        END_IMPORT()
+    }
+
     void use_ptq(ptq_dataset_options options) override
     {
         ptq_options_ = std::move(options);

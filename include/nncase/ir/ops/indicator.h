@@ -1,4 +1,4 @@
-/* Copyright 2019-2020 Canaan Inc.
+/* Copyright 2020 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,18 +12,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../caffe_importer.h"
-#include <nncase/ir/placeholders.h>
+#pragma once
+#include "../node.h"
+#include <xtensor/xtensor.hpp>
 
-using namespace nncase;
-using namespace nncase::importer;
-using namespace nncase::ir;
-using namespace caffe;
-
-DEFINE_CAFFE_LOWER(Split)
+namespace nncase::ir
 {
-    auto &input = *output_tensors_.at(op.bottom(0));
+class NNCASE_API indicator : public node
+{
+public:
+    DEFINE_NODE_OPCODE(op_indicator);
 
-    for (int i = 0; i < op.top_size(); i++)
-        output_tensors_.emplace(op.top(i), &input);
+    output_connector &output() { return output_at(0); }
+
+    int32_t time_step() const noexcept { return time_step_; }
+    int32_t batch_size() const noexcept { return batch_size_; }
+
+    indicator();
+
+protected:
+    bool properties_equal(node &other) const override;
+
+private:
+    int32_t time_step_;
+    int32_t batch_size_;
+};
 }

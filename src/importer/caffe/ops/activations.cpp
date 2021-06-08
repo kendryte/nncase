@@ -13,20 +13,20 @@
  * limitations under the License.
  */
 #include "../caffe_importer.h"
-#include <hlir/ops/clamp.h>
-#include <hlir/ops/constant.h>
-#include <hlir/ops/reduce.h>
-#include <hlir/ops/unary.h>
+#include <nncase/ir/ops/clamp.h>
+#include <nncase/ir/ops/constant.h>
+#include <nncase/ir/ops/reduce.h>
+#include <nncase/ir/ops/unary.h>
 
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::hlir;
+using namespace nncase::ir;
 using namespace caffe;
 
 DEFINE_CAFFE_LOWER(ReLU)
 {
     auto &input = *output_tensors_.at(op.bottom(0));
-    auto &param = op.relu_param();
+    [[maybe_unused]]auto &param = op.relu_param();
 
     auto zero = graph_.emplace<constant>(0.f);
     auto high = graph_.emplace<constant>(std::numeric_limits<float>::max());

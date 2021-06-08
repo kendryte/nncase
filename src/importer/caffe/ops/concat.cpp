@@ -13,11 +13,11 @@
  * limitations under the License.
  */
 #include "../caffe_importer.h"
-#include <hlir/ops/concat.h>
+#include <nncase/ir/ops/concat.h>
 
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::hlir;
+using namespace nncase::ir;
 using namespace caffe;
 
 DEFINE_CAFFE_LOWER(Concat)

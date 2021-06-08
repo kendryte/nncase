@@ -102,6 +102,11 @@ void compile_command::run()
         auto file_data = read_file(input_filename_);
         compiler->import_onnx(file_data, i_options);
     }
+    else if (input_format_ == "caffe")
+    {
+        auto file_data = read_file(input_filename_);
+        compiler->import_caffe(file_data, i_options);
+    }
     else
     {
         throw std::invalid_argument("Invalid input format: " + input_format_);

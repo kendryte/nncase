@@ -14,10 +14,10 @@
  */
 #pragma once
 #include "caffe.pb.h"
-#include <hlir/connectors.h>
-#include <hlir/graph.h>
-#include <hlir/op_utils.h>
-#include <hlir/ops/transpose.h>
+#include <nncase/ir/connectors.h>
+#include <nncase/ir/graph.h>
+#include <nncase/ir/op_utils.h>
+#include <nncase/ir/ops/transpose.h>
 #include <unordered_map>
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xarray.hpp>
@@ -30,9 +30,9 @@ namespace importer
     class caffe_importer
     {
     public:
-        caffe_importer(xtl::span<const uint8_t> model, hlir::graph &graph);
+        caffe_importer(std::span<const uint8_t> model, ir::graph &graph);
 
-        void import();
+        void import(const struct import_options &options);
 
     private:
         void convert_op(const caffe::LayerParameter &op);
@@ -44,18 +44,18 @@ namespace importer
         void load_tensor(std::string_view name, uint8_t *begin, uint8_t *end);
 
     private:
-        static hlir::shape_t get_shape(const caffe::BlobShape &shape)
+        static ir::shape_t get_shape(const caffe::BlobShape &shape)
         {
-            hlir::shape_t result;
+            ir::shape_t result;
             result.reserve(shape.dim_size());
             for (int i = 0; i < shape.dim_size(); i++)
                 result.push_back((size_t)shape.dim(i));
             return result;
         }
 
-        static hlir::axis_t get_axis(const caffe::BlobShape &shape)
+        static ir::axis_t get_axis(const caffe::BlobShape &shape)
         {
-            hlir::axis_t result;
+            ir::axis_t result;
             result.reserve(shape.dim_size());
             for (int i = 0; i < shape.dim_size(); i++)
                 result.push_back((int32_t)shape.dim(i));
@@ -84,9 +84,9 @@ namespace importer
 
     private:
         caffe::NetParameter model_;
-        hlir::graph &graph_;
-        std::unordered_map<hlir::input_connector *, std::string_view> input_tensors_;
-        std::unordered_map<std::string_view, hlir::output_connector *> output_tensors_;
+        ir::graph &graph_;
+        std::unordered_map<ir::input_connector *, std::string_view> input_tensors_;
+        std::unordered_map<std::string_view, ir::output_connector *> output_tensors_;
     };
 }
 }
