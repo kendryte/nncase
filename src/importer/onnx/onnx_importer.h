@@ -77,7 +77,7 @@ namespace nncase::importer
         template <typename T>
         static std::optional<T> get_attribute(const onnx::NodeProto &node, const std::string &name);
         std::optional<onnx::TensorProto> get_initializer(const std::string &name) const;
-        template <typename T, typename S>
+        template <typename T, typename S = T>
         static std::vector<T> raw_to_vector(const onnx::TensorProto &tensor);
         template <typename T, typename S>
         static xt::xarray<T> raw_to(const onnx::TensorProto &tensor);
