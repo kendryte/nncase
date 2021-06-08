@@ -65,4 +65,4 @@ def test_unary(in_shape, request):
 
 if __name__ == "__main__":
     pytest.main(
-        ['-vv', '/data/huochenghai/GNNE/merge/nncase/nncase/tests/importer/tflite/basic/test_unary.py'])
+        ['-vv', 'test_unary.py'])
