@@ -447,6 +447,10 @@ class OnnxTestRunner(TestRunner):
         return model_file
 
     def run(self, model_file):
+        if self.case_dir != os.path.dirname(model_file):
+            shutil.copy(model_file, self.case_dir)
+            model_file = os.path.join(self.case_dir, os.path.basename(model_file))
+
         # preprocess model
         old_onnx_model = onnx.load(model_file)
         onnx_model = self.preprocess_model(old_onnx_model)

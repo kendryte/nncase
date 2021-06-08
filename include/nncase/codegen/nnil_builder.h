@@ -59,6 +59,7 @@ public:
     void emit_div() { emit_opcode(runtime::nnil_div); }
     void emit_min() { emit_opcode(runtime::nnil_min); }
     void emit_max() { emit_opcode(runtime::nnil_max); }
+    void emit_pow() { emit_opcode(runtime::nnil_pow); }
     void emit_clamp() { emit_opcode(runtime::nnil_clamp); }
 
     void emit_ret() { emit_opcode(runtime::nnil_ret); }
