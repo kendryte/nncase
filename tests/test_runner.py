@@ -18,6 +18,7 @@ import onnxruntime as ort
 import struct
 from compare_util import compare_with_ground_truth, VerboseType
 
+
 class Edict:
     def __init__(self, d: Dict[str, int]) -> None:
         for name, value in d.items():
@@ -53,6 +54,7 @@ class Edict:
             s += '\n'
         return s.rstrip('\n')
 
+
 def generate_random(shape: List[int], dtype: np.dtype) -> np.ndarray:
     if dtype is np.uint8:
         data = np.random.randint(0, 256, shape)
@@ -62,6 +64,7 @@ def generate_random(shape: List[int], dtype: np.dtype) -> np.ndarray:
         data = np.random.rand(*shape) * 2 - 1
     data = data.astype(dtype=dtype)
     return data
+
 
 def save_array_as_txt(save_path, value_np, bit_16_represent=False):
     if bit_16_represent:
@@ -76,6 +79,7 @@ def save_array_as_txt(save_path, value_np, bit_16_represent=False):
                 f.write("%f\n" % val)
     print("----> %s" % save_path)
 
+
 def _cast_bfloat16_then_float32(values: np.array):
     shape = values.shape
     values = values.reshape([-1])
@@ -89,13 +93,16 @@ def _cast_bfloat16_then_float32(values: np.array):
     values = values.reshape(shape)
     return values
 
+
 Fuc = {
     'generate_random': generate_random
 }
 
-class TestRunner(metaclass = ABCMeta):
-    def __init__(self, case_name, targets = None) -> None:
-        with open('tests/config.yml') as f:
+
+class TestRunner(metaclass=ABCMeta):
+    def __init__(self, case_name, targets=None) -> None:
+        config_root = os.path.dirname(__file__)
+        with open(os.path.join(config_root, 'config.yml'), encoding='utf8') as f:
             cfg = yaml.safe_load(f)
             config = Edict(cfg)
 
@@ -106,8 +113,10 @@ class TestRunner(metaclass = ABCMeta):
         self.clear(self.case_dir)
 
         if targets is None:
-            self.cfg.case.eval[0].values = self.validate_targets(self.cfg.case.eval[0].values)
-            self.cfg.case.infer[0].values = self.validate_targets(self.cfg.case.infer[0].values)
+            self.cfg.case.eval[0].values = self.validate_targets(
+                self.cfg.case.eval[0].values)
+            self.cfg.case.infer[0].values = self.validate_targets(
+                self.cfg.case.infer[0].values)
         else:
             targets = self.validate_targets(targets)
             self.cfg.case.eval[0].values = targets
@@ -175,8 +184,10 @@ class TestRunner(metaclass = ABCMeta):
             self.parse_model_input_output(model_file)
 
         # generate input/calib
-        self.generate_data(cfg.generate_inputs, case_dir, self.inputs, self.input_paths, 'input')
-        self.generate_data(cfg.generate_calibs, case_dir, self.calibs, self.calib_paths, 'calib')
+        self.generate_data(cfg.generate_inputs, case_dir,
+                           self.inputs, self.input_paths, 'input')
+        self.generate_data(cfg.generate_calibs, case_dir,
+                           self.calibs, self.calib_paths, 'calib')
 
         # cpu inference
         self.cpu_infer(case_dir, model_file)
@@ -193,7 +204,8 @@ class TestRunner(metaclass = ABCMeta):
         compile_options = nncase.CompileOptions()
         for k, v in cfg.compile_opt.kwargs.items():
             e = '"'
-            exec(f'compile_options.{k} = { e + v + e if isinstance(v, str) else v }')
+            exec(
+                f'compile_options.{k} = { e + v + e if isinstance(v, str) else v }')
 
         model_content = self.read_model_file(model_file)
 
@@ -204,7 +216,8 @@ class TestRunner(metaclass = ABCMeta):
             eval_output_paths = self.generate_evaluates(
                 cfg, case_dir, import_options,
                 compile_options, model_content, dict_args)
-            assert self.compare_results(self.output_paths, eval_output_paths, dict_args)
+            assert self.compare_results(
+                self.output_paths, eval_output_paths, dict_args)
 
         # nncase inference
         names, args = TestRunner.split_value(cfg.infer)
@@ -216,7 +229,8 @@ class TestRunner(metaclass = ABCMeta):
             infer_output_paths = self.nncase_infer(
                 cfg, case_dir, import_options,
                 compile_options, model_content, dict_args)
-            assert self.compare_results(self.output_paths, infer_output_paths, dict_args)
+            assert self.compare_results(
+                self.output_paths, infer_output_paths, dict_args)
 
     @staticmethod
     def split_value(kwcfg: List[Dict[str, str]]) -> Tuple[List[str], List[str]]:
@@ -241,13 +255,13 @@ class TestRunner(metaclass = ABCMeta):
                 path = os.path.join(path, ('' if v else 'no') + k)
         return path
 
-
     def generate_evaluates(self, cfg, case_dir: str,
                            import_options: nncase.ImportOptions,
                            compile_options: nncase.CompileOptions,
                            model_content: bytes, kwargs: Dict[str, str]
                            ) -> List[Tuple[str, str]]:
-        eval_dir = TestRunner.kwargs_to_path(os.path.join(case_dir, 'eval'), kwargs)
+        eval_dir = TestRunner.kwargs_to_path(
+            os.path.join(case_dir, 'eval'), kwargs)
         compile_options.target = kwargs['target']
         compile_options.dump_dir = eval_dir
         compiler = nncase.Compiler(compile_options)
@@ -255,7 +269,8 @@ class TestRunner(metaclass = ABCMeta):
         evaluator = compiler.create_evaluator(3)
         eval_output_paths = []
         for i in range(len(self.inputs)):
-            input_tensor = nncase.RuntimeTensor.from_numpy(self.inputs[i]['data'])
+            input_tensor = nncase.RuntimeTensor.from_numpy(
+                self.inputs[i]['data'])
             input_tensor.copy_to(evaluator.get_input_tensor(i))
             evaluator.run()
 
@@ -273,7 +288,8 @@ class TestRunner(metaclass = ABCMeta):
                      compile_options: nncase.CompileOptions,
                      model_content: bytes, kwargs: Dict[str, str]
                      ) -> List[Tuple[str, str]]:
-        infer_dir = TestRunner.kwargs_to_path(os.path.join(case_dir, 'infer'), kwargs)
+        infer_dir = TestRunner.kwargs_to_path(
+            os.path.join(case_dir, 'infer'), kwargs)
         compile_options.target = kwargs['target']
         compile_options.dump_dir = infer_dir
         compiler = nncase.Compiler(compile_options)
@@ -295,7 +311,8 @@ class TestRunner(metaclass = ABCMeta):
         sim.load_model(kmodel)
         infer_output_paths: List[np.ndarray] = []
         for i in range(len(self.inputs)):
-            sim.set_input_tensor(i, nncase.RuntimeTensor.from_numpy(self.inputs[i]['data']))
+            sim.set_input_tensor(
+                i, nncase.RuntimeTensor.from_numpy(self.inputs[i]['data']))
 
         sim.run()
 
@@ -355,9 +372,10 @@ class TestRunner(metaclass = ABCMeta):
                 return False
         return True
 
+
 class TfliteTestRunner(TestRunner):
-    def __init__(self, case_name, targets = None):
-         super().__init__(case_name, targets)
+    def __init__(self, case_name, targets=None):
+        super().__init__(case_name, targets)
 
     def from_tensorflow(self, module):
         # export model
@@ -375,7 +393,8 @@ class TfliteTestRunner(TestRunner):
     def run(self, model_file):
         if self.case_dir != os.path.dirname(model_file):
             shutil.copy(model_file, self.case_dir)
-            model_file = os.path.join(self.case_dir, os.path.basename(model_file))
+            model_file = os.path.join(
+                self.case_dir, os.path.basename(model_file))
 
         super().run(model_file)
 
@@ -421,16 +440,17 @@ class TfliteTestRunner(TestRunner):
     def import_model(self, compiler, model_content, import_options):
         compiler.import_tflite(model_content, import_options)
 
+
 class OnnxTestRunner(TestRunner):
-    def __init__(self, case_name, targets = None):
-         super().__init__(case_name, targets)
+    def __init__(self, case_name, targets=None):
+        super().__init__(case_name, targets)
 
     def from_torch(self, module, in_shape, opset_version=11):
         # export model
         dummy_input = torch.randn(*in_shape)
         model_file = os.path.join(self.case_dir, 'test.onnx')
         torch.onnx.export(module, dummy_input, model_file,
-                        operator_export_type=torch.onnx.OperatorExportTypes.ONNX_ATEN_FALLBACK, opset_version=opset_version)
+                          operator_export_type=torch.onnx.OperatorExportTypes.ONNX_ATEN_FALLBACK, opset_version=opset_version)
         return model_file
 
     def from_onnx_helper(self, model_def):
@@ -450,12 +470,17 @@ class OnnxTestRunner(TestRunner):
         # preprocess model
         old_onnx_model = onnx.load(model_file)
         onnx_model = self.preprocess_model(old_onnx_model)
-        onnx_model = onnx_model or self.preprocess_model(old_onnx_model, convert_version=False)
-        onnx_model = onnx_model or self.preprocess_model(old_onnx_model, simplify=False)
-        onnx_model = onnx_model or self.preprocess_model(old_onnx_model, convert_version=False, simplify=False)
-        onnx_model = onnx_model or self.preprocess_model(old_onnx_model, fix_bn=False, convert_version=False, simplify=False)
+        onnx_model = onnx_model or self.preprocess_model(
+            old_onnx_model, convert_version=False)
+        onnx_model = onnx_model or self.preprocess_model(
+            old_onnx_model, simplify=False)
+        onnx_model = onnx_model or self.preprocess_model(
+            old_onnx_model, convert_version=False, simplify=False)
+        onnx_model = onnx_model or self.preprocess_model(
+            old_onnx_model, fix_bn=False, convert_version=False, simplify=False)
 
-        model_file = os.path.join(os.path.dirname(model_file), 'simplified.onnx')
+        model_file = os.path.join(
+            os.path.dirname(model_file), 'simplified.onnx')
         onnx.save_model(onnx_model, model_file)
 
         super().run(model_file)
@@ -481,7 +506,8 @@ class OnnxTestRunner(TestRunner):
         return ONNX_TO_NUMPY_DTYPE[onnx_type]
 
     def preprocess_model(self, onnx_model, fix_bn=True, convert_version=True, simplify=True, import_test=True):
-        args = {'fix_bn':fix_bn, 'convert_version':convert_version, 'simplify':simplify, 'import_test':import_test}
+        args = {'fix_bn': fix_bn, 'convert_version': convert_version,
+                'simplify': simplify, 'import_test': import_test}
         try:
             shape_dict = {}
             for input in self.inputs:
@@ -498,11 +524,12 @@ class OnnxTestRunner(TestRunner):
             if convert_version:
                 curret_version = onnx_model.opset_import[0].version
                 for i in range(curret_version, 8):
-                    onnx_model = version_converter.convert_version(onnx_model, i+1)
+                    onnx_model = version_converter.convert_version(
+                        onnx_model, i+1)
 
             if simplify:
                 onnx_model = onnx.shape_inference.infer_shapes(onnx_model)
-                onnx_model, check = onnxsim.simplify(onnx_model, check_n=0, input_shapes=shape_dict, perform_optimization=False, skip_fuse_bn=True, skip_shape_inference=True, skipped_optimizers= [
+                onnx_model, check = onnxsim.simplify(onnx_model, check_n=0, input_shapes=shape_dict, perform_optimization=False, skip_fuse_bn=True, skip_shape_inference=True, skipped_optimizers=[
                     # 'eliminate_deadend',
                     # 'eliminate_nop_dropout',
                     # 'eliminate_nop_cast',
@@ -531,22 +558,25 @@ class OnnxTestRunner(TestRunner):
         # TODO: onnx_model
         onnx_model = onnx.load(model_file)
         input_all = [node.name for node in onnx_model.graph.input]
-        input_initializer =  [node.name for node in onnx_model.graph.initializer]
+        input_initializer = [
+            node.name for node in onnx_model.graph.initializer]
         input_names = list(set(input_all) - set(input_initializer))
-        input_tensors = [node for node in onnx_model.graph.input if node.name in input_names]
+        input_tensors = [
+            node for node in onnx_model.graph.input if node.name in input_names]
 
         # input
         for _, e in enumerate(input_tensors):
             onnx_type = e.type.tensor_type
             input_dict = {}
             input_dict['name'] = e.name
-            input_dict['dtype'] = self.map_onnx_to_numpy_type(onnx_type.elem_type)
-            input_dict['shape'] = [(i.dim_value if i.dim_value != 0 else d) for i, d in zip(onnx_type.shape.dim, [1, 3, 224, 224])]
+            input_dict['dtype'] = self.map_onnx_to_numpy_type(
+                onnx_type.elem_type)
+            input_dict['shape'] = [(i.dim_value if i.dim_value != 0 else d) for i, d in zip(
+                onnx_type.shape.dim, [1, 3, 224, 224])]
             self.inputs.append(input_dict)
             self.calibs.append(input_dict.copy())
 
         # output
-
 
     def cpu_infer(self, case_dir: str, model_file: bytes):
         # create session
@@ -575,8 +605,10 @@ class OnnxTestRunner(TestRunner):
         outputs = sess.run(None, input_dict)
         i = 0
         for output in outputs:
-            output.tofile(os.path.join(case_dir, 'cpu_result{0}.bin'.format(i)))
-            save_array_as_txt(os.path.join(case_dir, 'cpu_result{0}.txt'.format(i)), output)
+            output.tofile(os.path.join(
+                case_dir, 'cpu_result{0}.bin'.format(i)))
+            save_array_as_txt(os.path.join(
+                case_dir, 'cpu_result{0}.txt'.format(i)), output)
             i += 1
 
     def import_model(self, compiler, model_content, import_options):
