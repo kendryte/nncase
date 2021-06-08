@@ -95,7 +95,8 @@ Fuc = {
 
 class TestRunner(metaclass = ABCMeta):
     def __init__(self, case_name, targets = None) -> None:
-        with open('tests/config.yml') as f:
+        config_root = os.path.dirname(__file__)
+        with open(os.path.join(config_root, 'config.yml'), encoding='utf8') as f:
             cfg = yaml.safe_load(f)
             config = Edict(cfg)
 
