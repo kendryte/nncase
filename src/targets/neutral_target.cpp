@@ -140,7 +140,7 @@ void neutral_target::fold_pad_conv_transform(ir::transforms::pass &pass, [[maybe
     pass.emplace<fold_pad_pad_transform>();
     pass.emplace<fuse_pad_conv2d_transform>();
     pass.emplace<fold_nop_pad_transform>();
-    pass.emplace<split_to_slice_transform>();
+    pass.emplace<pad_to_maxpool_transform>();
 }
 
 void neutral_target::fold_dilated_conv_transform(ir::transforms::pass &pass, [[maybe_unused]] bool add_constant_folding)
@@ -198,7 +198,6 @@ void neutral_target::register_target_independent_passes(const module_type_t &typ
             p.emplace<pad_to_slice_transform>();
             pass_mgr.add_pass(std::move(p));
         }
-
     }
 }
 
