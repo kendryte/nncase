@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <nncase/ir/ops/bitcast.h>
 #include <nncase/ir/ops/reduce.h>
 #include <nncase/ir/ops/reduce_window2d.h>
 #include <nncase/ir/visitor.h>
@@ -91,8 +92,11 @@ void reduce_to_global_reduce_window_transform::process(transform_context &contex
     auto rw = context.graph.emplace<reduce_window2d>(old_rd.reduce_op(), old_rd.input().shape(), old_rd.init_value(), old_rd.input().shape()[2],
         old_rd.input().shape()[3], padding::zero(), padding::zero(), 1, 1, 1, 1, value_range<float>::full());
     rw->name(old_rd.name());
+    auto rshape = context.graph.emplace<bitcast>(rw->output().type(), rw->output().shape(), old_rd.output().shape());
+    rshape->name(old_rd.name() + "/rshape");
 
     rw->input().connect(output);
+    rshape->input().connect(rw->output());
     for (auto &in : dup(inputs))
-        in->connect(rw->output());
+        in->connect(rshape->output());
 }
