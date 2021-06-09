@@ -23,7 +23,7 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::k210;
 
-result<void> nncase::kernels::k210::kpu_upload(const uint8_t *src, uint8_t *dest, const kpu_shape_t &in_shape, uint32_t dma_ch)
+result<void> nncase::kernels::k210::kpu_upload(const uint8_t *src, uint8_t *dest, const kpu_shape_t &in_shape, NNCASE_UNUSED uint32_t dma_ch)
 {
     if (in_shape[3] % 64 == 0)
     {
