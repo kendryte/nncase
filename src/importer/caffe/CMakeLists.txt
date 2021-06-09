@@ -14,7 +14,10 @@ set(SRCS caffe.pb.cc
         ops/split.cpp
         ops/indicator.cpp
         ops/pooling.cpp
-        ops/batch_norm.cpp)
+        ops/batch_norm.cpp
+        ops/scale.cpp
+        #ops/reverse.cpp
+        )
 
 add_library(caffe_importer ${SRCS})
 target_include_directories(caffe_importer PUBLIC ${CMAKE_CURRENT_BINARY_DIR})

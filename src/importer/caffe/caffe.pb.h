@@ -48,7 +48,7 @@ struct TableStruct_caffe_2eproto {
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::AuxiliaryParseTableField aux[]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
-  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[108]
+  static const ::PROTOBUF_NAMESPACE_ID::internal::ParseTable schema[109]
     PROTOBUF_SECTION_VARIABLE(protodesc_cold);
   static const ::PROTOBUF_NAMESPACE_ID::internal::FieldMetadata field_metadata[];
   static const ::PROTOBUF_NAMESPACE_ID::internal::SerializationTable serialization_table[];
@@ -101,6 +101,9 @@ extern CompileNetStateDefaultTypeInternal _CompileNetState_default_instance_;
 class ConcatParameter;
 class ConcatParameterDefaultTypeInternal;
 extern ConcatParameterDefaultTypeInternal _ConcatParameter_default_instance_;
+class ContinuationIndicatorParameter;
+class ContinuationIndicatorParameterDefaultTypeInternal;
+extern ContinuationIndicatorParameterDefaultTypeInternal _ContinuationIndicatorParameter_default_instance_;
 class ContrastiveLossParameter;
 class ContrastiveLossParameterDefaultTypeInternal;
 extern ContrastiveLossParameterDefaultTypeInternal _ContrastiveLossParameter_default_instance_;
@@ -397,6 +400,7 @@ template<> ::caffe::BlobShape* Arena::CreateMaybeMessage<::caffe::BlobShape>(Are
 template<> ::caffe::BoxAnnotatorOHEMParameter* Arena::CreateMaybeMessage<::caffe::BoxAnnotatorOHEMParameter>(Arena*);
 template<> ::caffe::CompileNetState* Arena::CreateMaybeMessage<::caffe::CompileNetState>(Arena*);
 template<> ::caffe::ConcatParameter* Arena::CreateMaybeMessage<::caffe::ConcatParameter>(Arena*);
+template<> ::caffe::ContinuationIndicatorParameter* Arena::CreateMaybeMessage<::caffe::ContinuationIndicatorParameter>(Arena*);
 template<> ::caffe::ContrastiveLossParameter* Arena::CreateMaybeMessage<::caffe::ContrastiveLossParameter>(Arena*);
 template<> ::caffe::ConvolutionParameter* Arena::CreateMaybeMessage<::caffe::ConvolutionParameter>(Arena*);
 template<> ::caffe::CropParameter* Arena::CreateMaybeMessage<::caffe::CropParameter>(Arena*);
@@ -8572,6 +8576,7 @@ class LayerParameter PROTOBUF_FINAL :
     kSplitParamFieldNumber = 208,
     kRegionLossParamFieldNumber = 209,
     kEvalDetectionParamFieldNumber = 301,
+    kContinuationIndicatorParamFieldNumber = 302,
     kPhaseFieldNumber = 10,
   };
   // repeated string bottom = 3;
@@ -10040,6 +10045,24 @@ class LayerParameter PROTOBUF_FINAL :
       ::caffe::EvalDetectionParameter* eval_detection_param);
   ::caffe::EvalDetectionParameter* unsafe_arena_release_eval_detection_param();
 
+  // optional .caffe.ContinuationIndicatorParameter continuation_indicator_param = 302;
+  bool has_continuation_indicator_param() const;
+  private:
+  bool _internal_has_continuation_indicator_param() const;
+  public:
+  void clear_continuation_indicator_param();
+  const ::caffe::ContinuationIndicatorParameter& continuation_indicator_param() const;
+  ::caffe::ContinuationIndicatorParameter* release_continuation_indicator_param();
+  ::caffe::ContinuationIndicatorParameter* mutable_continuation_indicator_param();
+  void set_allocated_continuation_indicator_param(::caffe::ContinuationIndicatorParameter* continuation_indicator_param);
+  private:
+  const ::caffe::ContinuationIndicatorParameter& _internal_continuation_indicator_param() const;
+  ::caffe::ContinuationIndicatorParameter* _internal_mutable_continuation_indicator_param();
+  public:
+  void unsafe_arena_set_allocated_continuation_indicator_param(
+      ::caffe::ContinuationIndicatorParameter* continuation_indicator_param);
+  ::caffe::ContinuationIndicatorParameter* unsafe_arena_release_continuation_indicator_param();
+
   // optional .caffe.Phase phase = 10;
   bool has_phase() const;
   private:
@@ -10142,7 +10165,172 @@ class LayerParameter PROTOBUF_FINAL :
   ::caffe::SplitParameter* split_param_;
   ::caffe::RegionLossParameter* region_loss_param_;
   ::caffe::EvalDetectionParameter* eval_detection_param_;
+  ::caffe::ContinuationIndicatorParameter* continuation_indicator_param_;
   int phase_;
+  friend struct ::TableStruct_caffe_2eproto;
+};
+// -------------------------------------------------------------------
+
+class ContinuationIndicatorParameter PROTOBUF_FINAL :
+    public ::PROTOBUF_NAMESPACE_ID::Message /* @@protoc_insertion_point(class_definition:caffe.ContinuationIndicatorParameter) */ {
+ public:
+  inline ContinuationIndicatorParameter() : ContinuationIndicatorParameter(nullptr) {}
+  virtual ~ContinuationIndicatorParameter();
+
+  ContinuationIndicatorParameter(const ContinuationIndicatorParameter& from);
+  ContinuationIndicatorParameter(ContinuationIndicatorParameter&& from) noexcept
+    : ContinuationIndicatorParameter() {
+    *this = ::std::move(from);
+  }
+
+  inline ContinuationIndicatorParameter& operator=(const ContinuationIndicatorParameter& from) {
+    CopyFrom(from);
+    return *this;
+  }
+  inline ContinuationIndicatorParameter& operator=(ContinuationIndicatorParameter&& from) noexcept {
+    if (GetArena() == from.GetArena()) {
+      if (this != &from) InternalSwap(&from);
+    } else {
+      CopyFrom(from);
+    }
+    return *this;
+  }
+
+  inline const ::PROTOBUF_NAMESPACE_ID::UnknownFieldSet& unknown_fields() const {
+    return _internal_metadata_.unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(::PROTOBUF_NAMESPACE_ID::UnknownFieldSet::default_instance);
+  }
+  inline ::PROTOBUF_NAMESPACE_ID::UnknownFieldSet* mutable_unknown_fields() {
+    return _internal_metadata_.mutable_unknown_fields<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>();
+  }
+
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* descriptor() {
+    return GetDescriptor();
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Descriptor* GetDescriptor() {
+    return GetMetadataStatic().descriptor;
+  }
+  static const ::PROTOBUF_NAMESPACE_ID::Reflection* GetReflection() {
+    return GetMetadataStatic().reflection;
+  }
+  static const ContinuationIndicatorParameter& default_instance();
+
+  static void InitAsDefaultInstance();  // FOR INTERNAL USE ONLY
+  static inline const ContinuationIndicatorParameter* internal_default_instance() {
+    return reinterpret_cast<const ContinuationIndicatorParameter*>(
+               &_ContinuationIndicatorParameter_default_instance_);
+  }
+  static constexpr int kIndexInFileMessages =
+    28;
+
+  friend void swap(ContinuationIndicatorParameter& a, ContinuationIndicatorParameter& b) {
+    a.Swap(&b);
+  }
+  inline void Swap(ContinuationIndicatorParameter* other) {
+    if (other == this) return;
+    if (GetArena() == other->GetArena()) {
+      InternalSwap(other);
+    } else {
+      ::PROTOBUF_NAMESPACE_ID::internal::GenericSwap(this, other);
+    }
+  }
+  void UnsafeArenaSwap(ContinuationIndicatorParameter* other) {
+    if (other == this) return;
+    GOOGLE_DCHECK(GetArena() == other->GetArena());
+    InternalSwap(other);
+  }
+
+  // implements Message ----------------------------------------------
+
+  inline ContinuationIndicatorParameter* New() const final {
+    return CreateMaybeMessage<ContinuationIndicatorParameter>(nullptr);
+  }
+
+  ContinuationIndicatorParameter* New(::PROTOBUF_NAMESPACE_ID::Arena* arena) const final {
+    return CreateMaybeMessage<ContinuationIndicatorParameter>(arena);
+  }
+  void CopyFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+  void MergeFrom(const ::PROTOBUF_NAMESPACE_ID::Message& from) final;
+  void CopyFrom(const ContinuationIndicatorParameter& from);
+  void MergeFrom(const ContinuationIndicatorParameter& from);
+  PROTOBUF_ATTRIBUTE_REINITIALIZES void Clear() final;
+  bool IsInitialized() const final;
+
+  size_t ByteSizeLong() const final;
+  const char* _InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) final;
+  ::PROTOBUF_NAMESPACE_ID::uint8* _InternalSerialize(
+      ::PROTOBUF_NAMESPACE_ID::uint8* target, ::PROTOBUF_NAMESPACE_ID::io::EpsCopyOutputStream* stream) const final;
+  int GetCachedSize() const final { return _cached_size_.Get(); }
+
+  private:
+  inline void SharedCtor();
+  inline void SharedDtor();
+  void SetCachedSize(int size) const final;
+  void InternalSwap(ContinuationIndicatorParameter* other);
+  friend class ::PROTOBUF_NAMESPACE_ID::internal::AnyMetadata;
+  static ::PROTOBUF_NAMESPACE_ID::StringPiece FullMessageName() {
+    return "caffe.ContinuationIndicatorParameter";
+  }
+  protected:
+  explicit ContinuationIndicatorParameter(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  private:
+  static void ArenaDtor(void* object);
+  inline void RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena* arena);
+  public:
+
+  ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadata() const final;
+  private:
+  static ::PROTOBUF_NAMESPACE_ID::Metadata GetMetadataStatic() {
+    ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&::descriptor_table_caffe_2eproto);
+    return ::descriptor_table_caffe_2eproto.file_level_metadata[kIndexInFileMessages];
+  }
+
+  public:
+
+  // nested types ----------------------------------------------------
+
+  // accessors -------------------------------------------------------
+
+  enum : int {
+    kTimeStepFieldNumber = 1,
+    kBatchSizeFieldNumber = 2,
+  };
+  // optional uint32 time_step = 1 [default = 0];
+  bool has_time_step() const;
+  private:
+  bool _internal_has_time_step() const;
+  public:
+  void clear_time_step();
+  ::PROTOBUF_NAMESPACE_ID::uint32 time_step() const;
+  void set_time_step(::PROTOBUF_NAMESPACE_ID::uint32 value);
+  private:
+  ::PROTOBUF_NAMESPACE_ID::uint32 _internal_time_step() const;
+  void _internal_set_time_step(::PROTOBUF_NAMESPACE_ID::uint32 value);
+  public:
+
+  // optional uint32 batch_size = 2 [default = 0];
+  bool has_batch_size() const;
+  private:
+  bool _internal_has_batch_size() const;
+  public:
+  void clear_batch_size();
+  ::PROTOBUF_NAMESPACE_ID::uint32 batch_size() const;
+  void set_batch_size(::PROTOBUF_NAMESPACE_ID::uint32 value);
+  private:
+  ::PROTOBUF_NAMESPACE_ID::uint32 _internal_batch_size() const;
+  void _internal_set_batch_size(::PROTOBUF_NAMESPACE_ID::uint32 value);
+  public:
+
+  // @@protoc_insertion_point(class_scope:caffe.ContinuationIndicatorParameter)
+ private:
+  class _Internal;
+
+  template <typename T> friend class ::PROTOBUF_NAMESPACE_ID::Arena::InternalHelper;
+  typedef void InternalArenaConstructable_;
+  typedef void DestructorSkippable_;
+  ::PROTOBUF_NAMESPACE_ID::internal::HasBits<1> _has_bits_;
+  mutable ::PROTOBUF_NAMESPACE_ID::internal::CachedSize _cached_size_;
+  ::PROTOBUF_NAMESPACE_ID::uint32 time_step_;
+  ::PROTOBUF_NAMESPACE_ID::uint32 batch_size_;
   friend struct ::TableStruct_caffe_2eproto;
 };
 // -------------------------------------------------------------------
@@ -10196,7 +10384,7 @@ class RegionLossParameter PROTOBUF_FINAL :
                &_RegionLossParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    28;
+    29;
 
   friend void swap(RegionLossParameter& a, RegionLossParameter& b) {
     a.Swap(&b);
@@ -10623,7 +10811,7 @@ class EvalDetectionParameter PROTOBUF_FINAL :
                &_EvalDetectionParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    29;
+    30;
 
   friend void swap(EvalDetectionParameter& a, EvalDetectionParameter& b) {
     a.Swap(&b);
@@ -10933,7 +11121,7 @@ class MultinodeLayerParameter PROTOBUF_FINAL :
                &_MultinodeLayerParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    30;
+    31;
 
   friend void swap(MultinodeLayerParameter& a, MultinodeLayerParameter& b) {
     a.Swap(&b);
@@ -11097,7 +11285,7 @@ class MnActivationParameter PROTOBUF_FINAL :
                &_MnActivationParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    31;
+    32;
 
   friend void swap(MnActivationParameter& a, MnActivationParameter& b) {
     a.Swap(&b);
@@ -11306,7 +11494,7 @@ class QuantizationParameter PROTOBUF_FINAL :
                &_QuantizationParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    32;
+    33;
 
   friend void swap(QuantizationParameter& a, QuantizationParameter& b) {
     a.Swap(&b);
@@ -11745,7 +11933,7 @@ class MnParamGradCompressParameter PROTOBUF_FINAL :
                &_MnParamGradCompressParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    33;
+    34;
 
   friend void swap(MnParamGradCompressParameter& a, MnParamGradCompressParameter& b) {
     a.Swap(&b);
@@ -11902,7 +12090,7 @@ class TransformationParameter PROTOBUF_FINAL :
                &_TransformationParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    34;
+    35;
 
   friend void swap(TransformationParameter& a, TransformationParameter& b) {
     a.Swap(&b);
@@ -12372,7 +12560,7 @@ class RandomResizeParameter PROTOBUF_FINAL :
                &_RandomResizeParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    35;
+    36;
 
   friend void swap(RandomResizeParameter& a, RandomResizeParameter& b) {
     a.Swap(&b);
@@ -12556,7 +12744,7 @@ class RandomAspectRatioParameter PROTOBUF_FINAL :
                &_RandomAspectRatioParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    36;
+    37;
 
   friend void swap(RandomAspectRatioParameter& a, RandomAspectRatioParameter& b) {
     a.Swap(&b);
@@ -12770,7 +12958,7 @@ class ResizeParameter PROTOBUF_FINAL :
                &_ResizeParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    37;
+    38;
 
   friend void swap(ResizeParameter& a, ResizeParameter& b) {
     a.Swap(&b);
@@ -13152,7 +13340,7 @@ class SaltPepperParameter PROTOBUF_FINAL :
                &_SaltPepperParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    38;
+    39;
 
   friend void swap(SaltPepperParameter& a, SaltPepperParameter& b) {
     a.Swap(&b);
@@ -13325,7 +13513,7 @@ class NoiseParameter PROTOBUF_FINAL :
                &_NoiseParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    39;
+    40;
 
   friend void swap(NoiseParameter& a, NoiseParameter& b) {
     a.Swap(&b);
@@ -13659,7 +13847,7 @@ class DistortionParameter PROTOBUF_FINAL :
                &_DistortionParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    40;
+    41;
 
   friend void swap(DistortionParameter& a, DistortionParameter& b) {
     a.Swap(&b);
@@ -13958,7 +14146,7 @@ class ExpansionParameter PROTOBUF_FINAL :
                &_ExpansionParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    41;
+    42;
 
   friend void swap(ExpansionParameter& a, ExpansionParameter& b) {
     a.Swap(&b);
@@ -14122,7 +14310,7 @@ class LossParameter PROTOBUF_FINAL :
                &_LossParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    42;
+    43;
 
   friend void swap(LossParameter& a, LossParameter& b) {
     a.Swap(&b);
@@ -14367,7 +14555,7 @@ class AccuracyParameter PROTOBUF_FINAL :
                &_AccuracyParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    43;
+    44;
 
   friend void swap(AccuracyParameter& a, AccuracyParameter& b) {
     a.Swap(&b);
@@ -14546,7 +14734,7 @@ class AnnotatedDataParameter PROTOBUF_FINAL :
                &_AnnotatedDataParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    44;
+    45;
 
   friend void swap(AnnotatedDataParameter& a, AnnotatedDataParameter& b) {
     a.Swap(&b);
@@ -14737,7 +14925,7 @@ class ArgMaxParameter PROTOBUF_FINAL :
                &_ArgMaxParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    45;
+    46;
 
   friend void swap(ArgMaxParameter& a, ArgMaxParameter& b) {
     a.Swap(&b);
@@ -14916,7 +15104,7 @@ class ConcatParameter PROTOBUF_FINAL :
                &_ConcatParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    46;
+    47;
 
   friend void swap(ConcatParameter& a, ConcatParameter& b) {
     a.Swap(&b);
@@ -15144,7 +15332,7 @@ class BatchNormParameter PROTOBUF_FINAL :
                &_BatchNormParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    47;
+    48;
 
   friend void swap(BatchNormParameter& a, BatchNormParameter& b) {
     a.Swap(&b);
@@ -15472,7 +15660,7 @@ class SplitParameter PROTOBUF_FINAL :
                &_SplitParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    48;
+    49;
 
   friend void swap(SplitParameter& a, SplitParameter& b) {
     a.Swap(&b);
@@ -15655,7 +15843,7 @@ class BoxAnnotatorOHEMParameter PROTOBUF_FINAL :
                &_BoxAnnotatorOHEMParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    49;
+    50;
 
   friend void swap(BoxAnnotatorOHEMParameter& a, BoxAnnotatorOHEMParameter& b) {
     a.Swap(&b);
@@ -15819,7 +16007,7 @@ class BiasParameter PROTOBUF_FINAL :
                &_BiasParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    50;
+    51;
 
   friend void swap(BiasParameter& a, BiasParameter& b) {
     a.Swap(&b);
@@ -16003,7 +16191,7 @@ class ContrastiveLossParameter PROTOBUF_FINAL :
                &_ContrastiveLossParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    51;
+    52;
 
   friend void swap(ContrastiveLossParameter& a, ContrastiveLossParameter& b) {
     a.Swap(&b);
@@ -16167,7 +16355,7 @@ class ReorgParameter PROTOBUF_FINAL :
                &_ReorgParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    52;
+    53;
 
   friend void swap(ReorgParameter& a, ReorgParameter& b) {
     a.Swap(&b);
@@ -16331,7 +16519,7 @@ class ConvolutionParameter PROTOBUF_FINAL :
                &_ConvolutionParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    53;
+    54;
 
   friend void swap(ConvolutionParameter& a, ConvolutionParameter& b) {
     a.Swap(&b);
@@ -16941,7 +17129,7 @@ class CropParameter PROTOBUF_FINAL :
                &_CropParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    54;
+    55;
 
   friend void swap(CropParameter& a, CropParameter& b) {
     a.Swap(&b);
@@ -17114,7 +17302,7 @@ class DataParameter PROTOBUF_FINAL :
                &_DataParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    55;
+    56;
 
   friend void swap(DataParameter& a, DataParameter& b) {
     a.Swap(&b);
@@ -17481,7 +17669,7 @@ class DetectionEvaluateParameter PROTOBUF_FINAL :
                &_DetectionEvaluateParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    56;
+    57;
 
   friend void swap(DetectionEvaluateParameter& a, DetectionEvaluateParameter& b) {
     a.Swap(&b);
@@ -17717,7 +17905,7 @@ class NonMaximumSuppressionParameter PROTOBUF_FINAL :
                &_NonMaximumSuppressionParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    57;
+    58;
 
   friend void swap(NonMaximumSuppressionParameter& a, NonMaximumSuppressionParameter& b) {
     a.Swap(&b);
@@ -17896,7 +18084,7 @@ class SaveOutputParameter PROTOBUF_FINAL :
                &_SaveOutputParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    58;
+    59;
 
   friend void swap(SaveOutputParameter& a, SaveOutputParameter& b) {
     a.Swap(&b);
@@ -18175,7 +18363,7 @@ class DetectionOutputParameter PROTOBUF_FINAL :
                &_DetectionOutputParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    59;
+    60;
 
   friend void swap(DetectionOutputParameter& a, DetectionOutputParameter& b) {
     a.Swap(&b);
@@ -18506,7 +18694,7 @@ class DropoutParameter PROTOBUF_FINAL :
                &_DropoutParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    60;
+    61;
 
   friend void swap(DropoutParameter& a, DropoutParameter& b) {
     a.Swap(&b);
@@ -18655,7 +18843,7 @@ class SpatialDropoutParameter PROTOBUF_FINAL :
                &_SpatialDropoutParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    61;
+    62;
 
   friend void swap(SpatialDropoutParameter& a, SpatialDropoutParameter& b) {
     a.Swap(&b);
@@ -18804,7 +18992,7 @@ class DummyDataParameter PROTOBUF_FINAL :
                &_DummyDataParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    62;
+    63;
 
   friend void swap(DummyDataParameter& a, DummyDataParameter& b) {
     a.Swap(&b);
@@ -19073,7 +19261,7 @@ class EltwiseParameter PROTOBUF_FINAL :
                &_EltwiseParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    63;
+    64;
 
   friend void swap(EltwiseParameter& a, EltwiseParameter& b) {
     a.Swap(&b);
@@ -19342,7 +19530,7 @@ class ELUParameter PROTOBUF_FINAL :
                &_ELUParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    64;
+    65;
 
   friend void swap(ELUParameter& a, ELUParameter& b) {
     a.Swap(&b);
@@ -19491,7 +19679,7 @@ class EmbedParameter PROTOBUF_FINAL :
                &_EmbedParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    65;
+    66;
 
   friend void swap(EmbedParameter& a, EmbedParameter& b) {
     a.Swap(&b);
@@ -19710,7 +19898,7 @@ class ExpParameter PROTOBUF_FINAL :
                &_ExpParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    66;
+    67;
 
   friend void swap(ExpParameter& a, ExpParameter& b) {
     a.Swap(&b);
@@ -19889,7 +20077,7 @@ class FlattenParameter PROTOBUF_FINAL :
                &_FlattenParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    67;
+    68;
 
   friend void swap(FlattenParameter& a, FlattenParameter& b) {
     a.Swap(&b);
@@ -20053,7 +20241,7 @@ class HDF5DataParameter PROTOBUF_FINAL :
                &_HDF5DataParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    68;
+    69;
 
   friend void swap(HDF5DataParameter& a, HDF5DataParameter& b) {
     a.Swap(&b);
@@ -20239,7 +20427,7 @@ class HDF5OutputParameter PROTOBUF_FINAL :
                &_HDF5OutputParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    69;
+    70;
 
   friend void swap(HDF5OutputParameter& a, HDF5OutputParameter& b) {
     a.Swap(&b);
@@ -20395,7 +20583,7 @@ class HingeLossParameter PROTOBUF_FINAL :
                &_HingeLossParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    70;
+    71;
 
   friend void swap(HingeLossParameter& a, HingeLossParameter& b) {
     a.Swap(&b);
@@ -20574,7 +20762,7 @@ class ImageDataParameter PROTOBUF_FINAL :
                &_ImageDataParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    71;
+    72;
 
   friend void swap(ImageDataParameter& a, ImageDataParameter& b) {
     a.Swap(&b);
@@ -20939,7 +21127,7 @@ class InfogainLossParameter PROTOBUF_FINAL :
                &_InfogainLossParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    72;
+    73;
 
   friend void swap(InfogainLossParameter& a, InfogainLossParameter& b) {
     a.Swap(&b);
@@ -21110,7 +21298,7 @@ class InnerProductParameter PROTOBUF_FINAL :
                &_InnerProductParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    73;
+    74;
 
   friend void swap(InnerProductParameter& a, InnerProductParameter& b) {
     a.Swap(&b);
@@ -21423,7 +21611,7 @@ class InputParameter PROTOBUF_FINAL :
                &_InputParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    74;
+    75;
 
   friend void swap(InputParameter& a, InputParameter& b) {
     a.Swap(&b);
@@ -21576,7 +21764,7 @@ class LogParameter PROTOBUF_FINAL :
                &_LogParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    75;
+    76;
 
   friend void swap(LogParameter& a, LogParameter& b) {
     a.Swap(&b);
@@ -21755,7 +21943,7 @@ class LRNParameter PROTOBUF_FINAL :
                &_LRNParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    76;
+    77;
 
   friend void swap(LRNParameter& a, LRNParameter& b) {
     a.Swap(&b);
@@ -22045,7 +22233,7 @@ class MemoryDataParameter PROTOBUF_FINAL :
                &_MemoryDataParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    77;
+    78;
 
   friend void swap(MemoryDataParameter& a, MemoryDataParameter& b) {
     a.Swap(&b);
@@ -22239,7 +22427,7 @@ class MultiBoxLossParameter PROTOBUF_FINAL :
                &_MultiBoxLossParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    78;
+    79;
 
   friend void swap(MultiBoxLossParameter& a, MultiBoxLossParameter& b) {
     a.Swap(&b);
@@ -22830,7 +23018,7 @@ class MVNParameter PROTOBUF_FINAL :
                &_MVNParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    79;
+    80;
 
   friend void swap(MVNParameter& a, MVNParameter& b) {
     a.Swap(&b);
@@ -23009,7 +23197,7 @@ class NormalizeParameter PROTOBUF_FINAL :
                &_NormalizeParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    80;
+    81;
 
   friend void swap(NormalizeParameter& a, NormalizeParameter& b) {
     a.Swap(&b);
@@ -23208,7 +23396,7 @@ class ParameterParameter PROTOBUF_FINAL :
                &_ParameterParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    81;
+    82;
 
   friend void swap(ParameterParameter& a, ParameterParameter& b) {
     a.Swap(&b);
@@ -23362,7 +23550,7 @@ class PermuteParameter PROTOBUF_FINAL :
                &_PermuteParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    82;
+    83;
 
   friend void swap(PermuteParameter& a, PermuteParameter& b) {
     a.Swap(&b);
@@ -23519,7 +23707,7 @@ class PoolingParameter PROTOBUF_FINAL :
                &_PoolingParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    83;
+    84;
 
   friend void swap(PoolingParameter& a, PoolingParameter& b) {
     a.Swap(&b);
@@ -24003,7 +24191,7 @@ class PowerParameter PROTOBUF_FINAL :
                &_PowerParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    84;
+    85;
 
   friend void swap(PowerParameter& a, PowerParameter& b) {
     a.Swap(&b);
@@ -24182,7 +24370,7 @@ class PriorBoxParameter PROTOBUF_FINAL :
                &_PriorBoxParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    85;
+    86;
 
   friend void swap(PriorBoxParameter& a, PriorBoxParameter& b) {
     a.Swap(&b);
@@ -24579,7 +24767,7 @@ class PSROIPoolingParameter PROTOBUF_FINAL :
                &_PSROIPoolingParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    86;
+    87;
 
   friend void swap(PSROIPoolingParameter& a, PSROIPoolingParameter& b) {
     a.Swap(&b);
@@ -24761,7 +24949,7 @@ class PythonParameter PROTOBUF_FINAL :
                &_PythonParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    87;
+    88;
 
   friend void swap(PythonParameter& a, PythonParameter& b) {
     a.Swap(&b);
@@ -24976,7 +25164,7 @@ class RecurrentParameter PROTOBUF_FINAL :
                &_RecurrentParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    88;
+    89;
 
   friend void swap(RecurrentParameter& a, RecurrentParameter& b) {
     a.Swap(&b);
@@ -25195,7 +25383,7 @@ class ReductionParameter PROTOBUF_FINAL :
                &_ReductionParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    89;
+    90;
 
   friend void swap(ReductionParameter& a, ReductionParameter& b) {
     a.Swap(&b);
@@ -25408,7 +25596,7 @@ class ReLUParameter PROTOBUF_FINAL :
                &_ReLUParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    90;
+    91;
 
   friend void swap(ReLUParameter& a, ReLUParameter& b) {
     a.Swap(&b);
@@ -25623,7 +25811,7 @@ class ReshapeParameter PROTOBUF_FINAL :
                &_ReshapeParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    91;
+    92;
 
   friend void swap(ReshapeParameter& a, ReshapeParameter& b) {
     a.Swap(&b);
@@ -25822,7 +26010,7 @@ class ROIPoolingParameter PROTOBUF_FINAL :
                &_ROIPoolingParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    92;
+    93;
 
   friend void swap(ROIPoolingParameter& a, ROIPoolingParameter& b) {
     a.Swap(&b);
@@ -26025,7 +26213,7 @@ class ScaleParameter PROTOBUF_FINAL :
                &_ScaleParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    93;
+    94;
 
   friend void swap(ScaleParameter& a, ScaleParameter& b) {
     a.Swap(&b);
@@ -26244,7 +26432,7 @@ class SigmoidParameter PROTOBUF_FINAL :
                &_SigmoidParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    94;
+    95;
 
   friend void swap(SigmoidParameter& a, SigmoidParameter& b) {
     a.Swap(&b);
@@ -26425,7 +26613,7 @@ class SliceParameter PROTOBUF_FINAL :
                &_SliceParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    95;
+    96;
 
   friend void swap(SliceParameter& a, SliceParameter& b) {
     a.Swap(&b);
@@ -26613,7 +26801,7 @@ class SmoothL1LossParameter PROTOBUF_FINAL :
                &_SmoothL1LossParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    96;
+    97;
 
   friend void swap(SmoothL1LossParameter& a, SmoothL1LossParameter& b) {
     a.Swap(&b);
@@ -26762,7 +26950,7 @@ class SoftmaxParameter PROTOBUF_FINAL :
                &_SoftmaxParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    97;
+    98;
 
   friend void swap(SoftmaxParameter& a, SoftmaxParameter& b) {
     a.Swap(&b);
@@ -26958,7 +27146,7 @@ class SwishParameter PROTOBUF_FINAL :
                &_SwishParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    98;
+    99;
 
   friend void swap(SwishParameter& a, SwishParameter& b) {
     a.Swap(&b);
@@ -27107,7 +27295,7 @@ class TanHParameter PROTOBUF_FINAL :
                &_TanHParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    99;
+    100;
 
   friend void swap(TanHParameter& a, TanHParameter& b) {
     a.Swap(&b);
@@ -27288,7 +27476,7 @@ class TileParameter PROTOBUF_FINAL :
                &_TileParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    100;
+    101;
 
   friend void swap(TileParameter& a, TileParameter& b) {
     a.Swap(&b);
@@ -27452,7 +27640,7 @@ class ThresholdParameter PROTOBUF_FINAL :
                &_ThresholdParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    101;
+    102;
 
   friend void swap(ThresholdParameter& a, ThresholdParameter& b) {
     a.Swap(&b);
@@ -27601,7 +27789,7 @@ class VideoDataParameter PROTOBUF_FINAL :
                &_VideoDataParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    102;
+    103;
 
   friend void swap(VideoDataParameter& a, VideoDataParameter& b) {
     a.Swap(&b);
@@ -27832,7 +28020,7 @@ class WindowDataParameter PROTOBUF_FINAL :
                &_WindowDataParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    103;
+    104;
 
   friend void swap(WindowDataParameter& a, WindowDataParameter& b) {
     a.Swap(&b);
@@ -28192,7 +28380,7 @@ class SPPParameter PROTOBUF_FINAL :
                &_SPPParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    104;
+    105;
 
   friend void swap(SPPParameter& a, SPPParameter& b) {
     a.Swap(&b);
@@ -28435,7 +28623,7 @@ class V1LayerParameter PROTOBUF_FINAL :
                &_V1LayerParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    105;
+    106;
 
   friend void swap(V1LayerParameter& a, V1LayerParameter& b) {
     a.Swap(&b);
@@ -29591,7 +29779,7 @@ class V0LayerParameter PROTOBUF_FINAL :
                &_V0LayerParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    106;
+    107;
 
   friend void swap(V0LayerParameter& a, V0LayerParameter& b) {
     a.Swap(&b);
@@ -30403,7 +30591,7 @@ class PReLUParameter PROTOBUF_FINAL :
                &_PReLUParameter_default_instance_);
   }
   static constexpr int kIndexInFileMessages =
-    107;
+    108;
 
   friend void swap(PReLUParameter& a, PReLUParameter& b) {
     a.Swap(&b);
@@ -37847,7 +38035,7 @@ LayerParameter::mutable_top() {
 
 // optional .caffe.Phase phase = 10;
 inline bool LayerParameter::_internal_has_phase() const {
-  bool value = (_has_bits_[2] & 0x00000100u) != 0;
+  bool value = (_has_bits_[2] & 0x00000200u) != 0;
   return value;
 }
 inline bool LayerParameter::has_phase() const {
@@ -37855,7 +38043,7 @@ inline bool LayerParameter::has_phase() const {
 }
 inline void LayerParameter::clear_phase() {
   phase_ = 0;
-  _has_bits_[2] &= ~0x00000100u;
+  _has_bits_[2] &= ~0x00000200u;
 }
 inline ::caffe::Phase LayerParameter::_internal_phase() const {
   return static_cast< ::caffe::Phase >(phase_);
@@ -37866,7 +38054,7 @@ inline ::caffe::Phase LayerParameter::phase() const {
 }
 inline void LayerParameter::_internal_set_phase(::caffe::Phase value) {
   assert(::caffe::Phase_IsValid(value));
-  _has_bits_[2] |= 0x00000100u;
+  _has_bits_[2] |= 0x00000200u;
   phase_ = value;
 }
 inline void LayerParameter::set_phase(::caffe::Phase value) {
@@ -43923,6 +44111,149 @@ inline void LayerParameter::set_allocated_eval_detection_param(::caffe::EvalDete
   }
   eval_detection_param_ = eval_detection_param;
   // @@protoc_insertion_point(field_set_allocated:caffe.LayerParameter.eval_detection_param)
+}
+
+// optional .caffe.ContinuationIndicatorParameter continuation_indicator_param = 302;
+inline bool LayerParameter::_internal_has_continuation_indicator_param() const {
+  bool value = (_has_bits_[2] & 0x00000100u) != 0;
+  PROTOBUF_ASSUME(!value || continuation_indicator_param_ != nullptr);
+  return value;
+}
+inline bool LayerParameter::has_continuation_indicator_param() const {
+  return _internal_has_continuation_indicator_param();
+}
+inline void LayerParameter::clear_continuation_indicator_param() {
+  if (continuation_indicator_param_ != nullptr) continuation_indicator_param_->Clear();
+  _has_bits_[2] &= ~0x00000100u;
+}
+inline const ::caffe::ContinuationIndicatorParameter& LayerParameter::_internal_continuation_indicator_param() const {
+  const ::caffe::ContinuationIndicatorParameter* p = continuation_indicator_param_;
+  return p != nullptr ? *p : *reinterpret_cast<const ::caffe::ContinuationIndicatorParameter*>(
+      &::caffe::_ContinuationIndicatorParameter_default_instance_);
+}
+inline const ::caffe::ContinuationIndicatorParameter& LayerParameter::continuation_indicator_param() const {
+  // @@protoc_insertion_point(field_get:caffe.LayerParameter.continuation_indicator_param)
+  return _internal_continuation_indicator_param();
+}
+inline void LayerParameter::unsafe_arena_set_allocated_continuation_indicator_param(
+    ::caffe::ContinuationIndicatorParameter* continuation_indicator_param) {
+  if (GetArena() == nullptr) {
+    delete reinterpret_cast<::PROTOBUF_NAMESPACE_ID::MessageLite*>(continuation_indicator_param_);
+  }
+  continuation_indicator_param_ = continuation_indicator_param;
+  if (continuation_indicator_param) {
+    _has_bits_[2] |= 0x00000100u;
+  } else {
+    _has_bits_[2] &= ~0x00000100u;
+  }
+  // @@protoc_insertion_point(field_unsafe_arena_set_allocated:caffe.LayerParameter.continuation_indicator_param)
+}
+inline ::caffe::ContinuationIndicatorParameter* LayerParameter::release_continuation_indicator_param() {
+  _has_bits_[2] &= ~0x00000100u;
+  ::caffe::ContinuationIndicatorParameter* temp = continuation_indicator_param_;
+  continuation_indicator_param_ = nullptr;
+  if (GetArena() != nullptr) {
+    temp = ::PROTOBUF_NAMESPACE_ID::internal::DuplicateIfNonNull(temp);
+  }
+  return temp;
+}
+inline ::caffe::ContinuationIndicatorParameter* LayerParameter::unsafe_arena_release_continuation_indicator_param() {
+  // @@protoc_insertion_point(field_release:caffe.LayerParameter.continuation_indicator_param)
+  _has_bits_[2] &= ~0x00000100u;
+  ::caffe::ContinuationIndicatorParameter* temp = continuation_indicator_param_;
+  continuation_indicator_param_ = nullptr;
+  return temp;
+}
+inline ::caffe::ContinuationIndicatorParameter* LayerParameter::_internal_mutable_continuation_indicator_param() {
+  _has_bits_[2] |= 0x00000100u;
+  if (continuation_indicator_param_ == nullptr) {
+    auto* p = CreateMaybeMessage<::caffe::ContinuationIndicatorParameter>(GetArena());
+    continuation_indicator_param_ = p;
+  }
+  return continuation_indicator_param_;
+}
+inline ::caffe::ContinuationIndicatorParameter* LayerParameter::mutable_continuation_indicator_param() {
+  // @@protoc_insertion_point(field_mutable:caffe.LayerParameter.continuation_indicator_param)
+  return _internal_mutable_continuation_indicator_param();
+}
+inline void LayerParameter::set_allocated_continuation_indicator_param(::caffe::ContinuationIndicatorParameter* continuation_indicator_param) {
+  ::PROTOBUF_NAMESPACE_ID::Arena* message_arena = GetArena();
+  if (message_arena == nullptr) {
+    delete continuation_indicator_param_;
+  }
+  if (continuation_indicator_param) {
+    ::PROTOBUF_NAMESPACE_ID::Arena* submessage_arena =
+      ::PROTOBUF_NAMESPACE_ID::Arena::GetArena(continuation_indicator_param);
+    if (message_arena != submessage_arena) {
+      continuation_indicator_param = ::PROTOBUF_NAMESPACE_ID::internal::GetOwnedMessage(
+          message_arena, continuation_indicator_param, submessage_arena);
+    }
+    _has_bits_[2] |= 0x00000100u;
+  } else {
+    _has_bits_[2] &= ~0x00000100u;
+  }
+  continuation_indicator_param_ = continuation_indicator_param;
+  // @@protoc_insertion_point(field_set_allocated:caffe.LayerParameter.continuation_indicator_param)
+}
+
+// -------------------------------------------------------------------
+
+// ContinuationIndicatorParameter
+
+// optional uint32 time_step = 1 [default = 0];
+inline bool ContinuationIndicatorParameter::_internal_has_time_step() const {
+  bool value = (_has_bits_[0] & 0x00000001u) != 0;
+  return value;
+}
+inline bool ContinuationIndicatorParameter::has_time_step() const {
+  return _internal_has_time_step();
+}
+inline void ContinuationIndicatorParameter::clear_time_step() {
+  time_step_ = 0u;
+  _has_bits_[0] &= ~0x00000001u;
+}
+inline ::PROTOBUF_NAMESPACE_ID::uint32 ContinuationIndicatorParameter::_internal_time_step() const {
+  return time_step_;
+}
+inline ::PROTOBUF_NAMESPACE_ID::uint32 ContinuationIndicatorParameter::time_step() const {
+  // @@protoc_insertion_point(field_get:caffe.ContinuationIndicatorParameter.time_step)
+  return _internal_time_step();
+}
+inline void ContinuationIndicatorParameter::_internal_set_time_step(::PROTOBUF_NAMESPACE_ID::uint32 value) {
+  _has_bits_[0] |= 0x00000001u;
+  time_step_ = value;
+}
+inline void ContinuationIndicatorParameter::set_time_step(::PROTOBUF_NAMESPACE_ID::uint32 value) {
+  _internal_set_time_step(value);
+  // @@protoc_insertion_point(field_set:caffe.ContinuationIndicatorParameter.time_step)
+}
+
+// optional uint32 batch_size = 2 [default = 0];
+inline bool ContinuationIndicatorParameter::_internal_has_batch_size() const {
+  bool value = (_has_bits_[0] & 0x00000002u) != 0;
+  return value;
+}
+inline bool ContinuationIndicatorParameter::has_batch_size() const {
+  return _internal_has_batch_size();
+}
+inline void ContinuationIndicatorParameter::clear_batch_size() {
+  batch_size_ = 0u;
+  _has_bits_[0] &= ~0x00000002u;
+}
+inline ::PROTOBUF_NAMESPACE_ID::uint32 ContinuationIndicatorParameter::_internal_batch_size() const {
+  return batch_size_;
+}
+inline ::PROTOBUF_NAMESPACE_ID::uint32 ContinuationIndicatorParameter::batch_size() const {
+  // @@protoc_insertion_point(field_get:caffe.ContinuationIndicatorParameter.batch_size)
+  return _internal_batch_size();
+}
+inline void ContinuationIndicatorParameter::_internal_set_batch_size(::PROTOBUF_NAMESPACE_ID::uint32 value) {
+  _has_bits_[0] |= 0x00000002u;
+  batch_size_ = value;
+}
+inline void ContinuationIndicatorParameter::set_batch_size(::PROTOBUF_NAMESPACE_ID::uint32 value) {
+  _internal_set_batch_size(value);
+  // @@protoc_insertion_point(field_set:caffe.ContinuationIndicatorParameter.batch_size)
 }
 
 // -------------------------------------------------------------------
@@ -64256,6 +64587,8 @@ inline void PReLUParameter::set_channel_shared(bool value) {
 #ifdef __GNUC__
   #pragma GCC diagnostic pop
 #endif  // __GNUC__
+// -------------------------------------------------------------------
+
 // -------------------------------------------------------------------
 
 // -------------------------------------------------------------------

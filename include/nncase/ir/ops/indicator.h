@@ -28,7 +28,7 @@ public:
     int32_t time_step() const noexcept { return time_step_; }
     int32_t batch_size() const noexcept { return batch_size_; }
 
-    indicator();
+    indicator(int32_t time_step, int32_t batch_size);
 
 protected:
     bool properties_equal(node &other) const override;

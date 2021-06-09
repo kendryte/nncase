@@ -22,7 +22,8 @@ using namespace caffe;
 
 DEFINE_CAFFE_LOWER(ContinuationIndicator)
 {
-    auto node = graph_.emplace<indicator>();
+    auto &param = op.continuation_indicator_param();
+    auto node = graph_.emplace<indicator>(param.time_step(), param.batch_size());
     node->name(op.name());
     for (int i = 0; i < op.top_size(); i++)
     {
