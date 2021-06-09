@@ -9,7 +9,7 @@ set(SRCS interpreter.cpp
          host_runtime_tensor.cpp
          allocator.cpp)
 
-if (NOT NNCASE_SHARED_RUNTIME_TENSOR_PLATFORM_HEADER)
+if ((NOT BUILDING_RUNTIME) OR DEFAULT_SHARED_RUNTIME_TENSOR_PLATFORM_IMPL)
     list(APPEND SRCS shared_runtime_tensor.platform.cpp)
 endif()
 

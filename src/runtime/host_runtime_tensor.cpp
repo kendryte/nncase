@@ -338,6 +338,12 @@ result<runtime_tensor> hrt::create(datatype_t datatype, runtime_shape_t shape, g
     return create(datatype, shape, get_default_strides(shape), data, std::move(data_deleter), pool, physical_address);
 }
 
+result<hrt::memory_pool_t> hrt::memory_pool(const runtime_tensor &tensor) noexcept
+{
+    CHECK_WITH_ERR(tensor.is_host(), std::errc::invalid_argument);
+    return ok(static_cast<const host_runtime_tensor_impl *>(tensor.impl())->memory_block().pool);
+}
+
 result<hrt::mapped_buffer> hrt::map(runtime_tensor &tensor, map_access_t access) noexcept
 {
     CHECK_WITH_ERR(tensor.is_host(), std::errc::invalid_argument);
