@@ -862,7 +862,7 @@ public:
     }
 
     template <typename T>
-    auto checked_print(std::initializer_list<expr_t> exprs,
+    T &&checked_print(std::initializer_list<expr_t> exprs,
         std::initializer_list<std::string> types,
         T &&value)
     {
@@ -879,7 +879,7 @@ public:
         }
         else
         {
-            return value;
+            return std::forward<T>(value);
         }
     }
 

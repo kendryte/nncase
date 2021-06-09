@@ -577,7 +577,7 @@ optional<TensorProto> onnx_importer::get_initializer(const string &value) const
     return initializer;
 }
 
-template <typename T, typename S = T>
+template <typename T, typename S>
 vector<T> onnx_importer::raw_to_vector(const onnx::TensorProto &tensor)
 {
     typedef T target_type;
