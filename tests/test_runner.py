@@ -98,9 +98,8 @@ Fuc = {
     'generate_random': generate_random
 }
 
-
-class TestRunner(metaclass=ABCMeta):
-    def __init__(self, case_name, targets=None) -> None:
+class TestRunner(metaclass = ABCMeta):
+    def __init__(self, case_name, targets = None) -> None:
         config_root = os.path.dirname(__file__)
         with open(os.path.join(config_root, 'config.yml'), encoding='utf8') as f:
             cfg = yaml.safe_load(f)

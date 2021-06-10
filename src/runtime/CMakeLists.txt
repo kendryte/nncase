@@ -5,7 +5,13 @@ set(SRCS interpreter.cpp
          runtime_loader.cpp
          runtime_module.cpp
          runtime_tensor.cpp
+         runtime_tensor_impl.cpp
+         host_runtime_tensor.cpp
          allocator.cpp)
+
+if ((NOT BUILDING_RUNTIME) OR DEFAULT_SHARED_RUNTIME_TENSOR_PLATFORM_IMPL)
+    list(APPEND SRCS shared_runtime_tensor.platform.cpp)
+endif()
 
 if (BUILDING_RUNTIME)
     add_library(runtime OBJECT ${SRCS})

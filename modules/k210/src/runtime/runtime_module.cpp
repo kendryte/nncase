@@ -13,6 +13,8 @@
  * limitations under the License.
  */
 #include "runtime_module.h"
+#include <nncase/runtime/host_runtime_tensor.h>
+#include <nncase/runtime/interpreter.h>
 #include <nncase/runtime/k210/error.h>
 #include <nncase/runtime/k210/runtime_types.h>
 #include <nncase/runtime/runtime_loader.h>
@@ -22,6 +24,7 @@
 
 using namespace nncase;
 using namespace nncase::runtime;
+using namespace nncase::runtime::detail;
 using namespace nncase::runtime::k210;
 
 result<void> k210_runtime_module::initialize_core(runtime_module_init_context &context) noexcept
@@ -55,17 +58,18 @@ result<void> k210_runtime_module::initialize_core(runtime_module_init_context &c
 
 result<runtime_tensor> k210_runtime_module::allocate_input_tensor(size_t index) noexcept
 {
-    return host_runtime_tensor::create(input_desc(index).datatype, input_shape(index));
+    return hrt::create(input_desc(index).datatype, input_shape(index), hrt::pool_shared);
 }
 
 result<runtime_tensor> k210_runtime_module::allocate_output_tensor(size_t index) noexcept
 {
-    return host_runtime_tensor::create(output_desc(index).datatype, output_shape(index));
+    return hrt::create(output_desc(index).datatype, output_shape(index), hrt::pool_shared);
 }
 
 result<void> k210_runtime_module::validate_input_tensor(NNCASE_UNUSED size_t index, runtime_tensor tensor) noexcept
 {
-    if (tensor.is_host())
+    if (tensor.is_host()
+        && hrt::memory_pool(tensor).unwrap() == hrt::pool_shared)
         return ok();
     return err(std::errc::invalid_argument);
 }
@@ -79,7 +83,27 @@ result<void> k210_runtime_module::validate_output_tensor(NNCASE_UNUSED size_t in
 
 result<void> k210_runtime_module::run_core() noexcept
 {
-    return visit(text_);
+    for (size_t i = 0; i < inputs_size(); i++)
+    {
+        try_var(input, device_input_tensor(i));
+        try_(hrt::sync(input, hrt::sync_write_back));
+    }
+
+#ifndef NNCASE_SIMULATOR
+    auto dma_ch = interp().options().get<uint32_t>("dma_ch");
+    if (dma_ch.is_ok())
+    {
+        dma_ch_ = dma_ch.unwrap();
+    }
+    else
+    {
+        printf("[WARN] KPU DMA channel not set, default to DMAC_CHANNEL5.\n");
+        dma_ch_ = 5;
+    }
+#endif
+
+    try_(visit(text_));
+    return ok();
 }
 
 result<gsl::span<gsl::byte>> k210_runtime_module::memory_at(const memory_range &mrange) noexcept
@@ -103,8 +127,7 @@ result<gsl::span<gsl::byte>> k210_runtime_module::memory_at(const memory_range &
         if (id != ID_NOT_FOUND)
         {
             try_var(tensor, device_input_tensor(id));
-            try_var(buffer, host_runtime_tensor::buffer(tensor));
-            base = buffer.data() - mrange.start;
+            base = reinterpret_cast<gsl::byte *>(static_cast<host_runtime_tensor_impl *>(tensor.impl())->memory_block().virtual_address - mrange.start);
         }
         else
         {
@@ -127,8 +150,8 @@ result<gsl::span<gsl::byte>> k210_runtime_module::memory_at(const memory_range &
         if (id != ID_NOT_FOUND)
         {
             try_var(tensor, device_output_tensor(id));
-            try_var(buffer, host_runtime_tensor::buffer(tensor));
-            base = buffer.data() - mrange.start;
+            try_var(tensor_map, hrt::map(tensor, hrt::map_read_write));
+            base = tensor_map.buffer().data() - mrange.start;
         }
         else
         {

@@ -177,7 +177,7 @@ result<void> k210_runtime_module::visit(const kpu_conv2d_options &op) noexcept
         p_output_tmp += out_size_per_batch;
     }
 
-    try_(kernels::k210::kpu_upload(output_tmp.get(), reinterpret_cast<uint8_t *>(kpu_out.data()), out_shape));
+    try_(kernels::k210::kpu_upload(output_tmp.get(), reinterpret_cast<uint8_t *>(kpu_out.data()), out_shape, 0));
     if (op.main_mem_output.size)
     {
         try_var(main_output, memory_at(op.main_mem_output));

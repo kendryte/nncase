@@ -123,7 +123,7 @@ public:
         set_target(options.target);
     }
 
-    nncase::target &target() noexcept { return *target_; }
+    nncase::target &target() noexcept override { return *target_; }
 
 #define BEGIN_IMPORT()                                 \
     std::cout << "1. Import graph..." << std::endl;    \
@@ -389,7 +389,7 @@ private:
             size_t i = 0;
             for (auto it = dataset.begin<T>(); it != dataset.end<T>(); ++it)
             {
-                auto input_buffer = host_runtime_tensor::buffer(evaluator.input_at(0)).unwrap_or_throw();
+                auto input_buffer = evaluator.input_at(0).buffer();
                 auto &tensor = it->tensor;
                 std::memcpy(input_buffer.data(), tensor.data(), input_buffer.size_bytes());
 
@@ -423,7 +423,7 @@ private:
 
             for (size_t i = 0; i < options.samples_count; i++)
             {
-                auto input_buffer = host_runtime_tensor::buffer(evaluator.input_at(0)).unwrap_or_throw();
+                auto input_buffer = evaluator.input_at(0).buffer();
                 std::memcpy(input_buffer.data(), options.tensor_data.data() + i * input_buffer.size_bytes(), input_buffer.size_bytes());
 
                 evaluator.evaluate();

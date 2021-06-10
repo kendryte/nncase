@@ -18,7 +18,7 @@
 #include <nncase/kernels/cpu/reference/tensor_compute.h>
 #include <nncase/runtime/runtime_tensor.h>
 
-void slice(const runtime_tensor &input, runtime_tensor &output,
+void slice(runtime_tensor &input, runtime_tensor &output,
     const runtime_shape_t &begins, const runtime_shape_t &ends,
     const runtime_axis_t &strides, OpType type)
 {
