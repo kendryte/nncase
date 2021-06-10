@@ -10,7 +10,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-18.04,windows-2019]
+        os: [ubuntu-18.04,windows-2019,macos-10.15]
 
     steps:
     - uses: actions/checkout@v2
@@ -51,7 +51,7 @@ jobs:
       run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=ON
 
     - name: Configure CMake
-      if: runner.os == 'Windows'
+      if: runner.os != 'Linux'
       shell: bash
       working-directory: ${{github.workspace}}/build
       run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=ON
@@ -71,14 +71,6 @@ jobs:
       shell: bash
       working-directory: ${{github.workspace}}/build/tests/kernels
       run: ctest
-
-    - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v2.2.2
-      if: runner.os == 'Windows'
-      with:
-        name: nncase_win_x86_64
-        path: ${{github.workspace}}/install
-        if-no-files-found: error
       
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v2.2.2
@@ -88,12 +80,28 @@ jobs:
         path: ${{github.workspace}}/install
         if-no-files-found: error
 
+    - name: Upload a Build Artifact
+      uses: actions/upload-artifact@v2.2.2
+      if: runner.os == 'Windows'
+      with:
+        name: nncase_win_x86_64
+        path: ${{github.workspace}}/install
+        if-no-files-found: error
+
+    - name: Upload a Build Artifact
+      uses: actions/upload-artifact@v2.2.2
+      if: runner.os == 'Macos'
+      with:
+        name: nncase_macos_x86_64
+        path: ${{github.workspace}}/install
+        if-no-files-found: error
+
   test-compiler:
     needs: [build]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-18.04,windows-2019]
+        os: [ubuntu-18.04,windows-2019,macos-10.15]
 
     steps:
     - uses: actions/checkout@v2
@@ -130,10 +138,17 @@ jobs:
       with:
         name: nncase_win_x86_64
         path: ${{github.workspace}}/install
+      
+    - name: Download a Build Artifact
+      uses: actions/download-artifact@v2.0.9
+      if: runner.os == 'Macos'
+      with:
+        name: nncase_macos_x86_64
+        path: ${{github.workspace}}/install
 
     - name: Test
       working-directory: ${{github.workspace}}
-      if: runner.os == 'Linux'
+      if: runner.os != 'Windows'
       shell: bash
       env:
         LD_LIBRARY_PATH: ${{github.workspace}}/install/lib
