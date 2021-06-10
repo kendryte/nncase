@@ -27,11 +27,13 @@ jobs:
         python-version: 3.7
 
     - name: Install Conan
+      shell: bash
       run: |
         pip install conan
 
     - name: Configure Conan
       if: runner.os == 'Linux'
+      shell: bash
       run: |
         conan profile new default --detect
         conan profile update settings.compiler.libcxx=libstdc++11 default
@@ -44,26 +46,30 @@ jobs:
         CC: gcc-10
         CXX: g++-10
       if: runner.os == 'Linux'
+      shell: bash
       working-directory: ${{github.workspace}}/build
       run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=ON
 
     - name: Configure CMake
       if: runner.os == 'Windows'
+      shell: bash
       working-directory: ${{github.workspace}}/build
       run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=ON
 
     - name: Build
+      shell: bash
       working-directory: ${{github.workspace}}/build
       run: |
         cmake --build . --config $BUILD_TYPE
 
     - name: Install
+      shell: bash
       working-directory: ${{github.workspace}}/build
       run: cmake --install . --prefix ../install
 
     - name: CTest
-      working-directory: ${{github.workspace}}/build/tests/kernels
       shell: bash
+      working-directory: ${{github.workspace}}/build/tests/kernels
       run: ctest
 
     - name: Upload a Build Artifact
