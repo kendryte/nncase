@@ -10,7 +10,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-2019]
+        os: [ubuntu-18.04]
 
     steps:
     - uses: actions/checkout@v2
@@ -19,25 +19,38 @@ jobs:
       uses: actions/setup-python@v2.2.1
       with:
         python-version: 3.7
+        
+    - name: Configure Conan
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        conan profile new default --detect
+        conan profile update settings.compiler.libcxx=libstdc++11 default
 
     - name: Create Build Environment
       run: cmake -E make_directory ${{github.workspace}}/build
 
     - name: Configure CMake
+      env:
+        CC: gcc-7
+        CXX: g++-7
+      shell: bash
       working-directory: ${{github.workspace}}/build
       run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILDING_RUNTIME=TRUE
 
     - name: Build
       working-directory: ${{github.workspace}}/build
+      shell: bash
       run: cmake --build . --config $BUILD_TYPE
 
     - name: Install
       working-directory: ${{github.workspace}}/build
+      shell: bash
       run: cmake --install . --prefix ../install
       
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v2.2.2
       with:
-        name: nncaseruntime-win-x64-cpu-gcc
+        name: nncaseruntime-linux-x64-cpu-gcc
         path: ${{github.workspace}}/install
         if-no-files-found: error
