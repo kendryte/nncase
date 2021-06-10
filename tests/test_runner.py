@@ -466,6 +466,10 @@ class OnnxTestRunner(TestRunner):
         return model_file
 
     def run(self, model_file):
+        if self.case_dir != os.path.dirname(model_file):
+            shutil.copy(model_file, self.case_dir)
+            model_file = os.path.join(self.case_dir, os.path.basename(model_file))
+
         # preprocess model
         old_onnx_model = onnx.load(model_file)
         onnx_model = self.preprocess_model(old_onnx_model)
@@ -604,10 +608,11 @@ class OnnxTestRunner(TestRunner):
         outputs = sess.run(None, input_dict)
         i = 0
         for output in outputs:
-            output.tofile(os.path.join(
-                case_dir, 'cpu_result{0}.bin'.format(i)))
-            save_array_as_txt(os.path.join(
-                case_dir, 'cpu_result{0}.txt'.format(i)), output)
+            bin_file = os.path.join(case_dir, f'cpu_result_{i}.bin')
+            text_file = os.path.join(case_dir, f'cpu_result_{i}.txt')
+            self.output_paths.append((bin_file, text_file))
+            output.tofile(bin_file)
+            save_array_as_txt(text_file, output)
             i += 1
 
     def import_model(self, compiler, model_content, import_options):
