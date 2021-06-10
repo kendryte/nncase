@@ -20,6 +20,10 @@ jobs:
       with:
         python-version: 3.7
 
+    - name: Install Conan
+      run: |
+        pip install conan
+
     - name: Configure Conan
       if: runner.os == 'Linux'
       run: |

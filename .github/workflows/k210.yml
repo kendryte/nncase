@@ -40,6 +40,10 @@ jobs:
       uses: actions/setup-python@v2.2.1
       with:
         python-version: 3.7
+
+    - name: Install Conan
+      run: |
+        pip install conan
         
     - name: Configure Conan
       shell: bash
