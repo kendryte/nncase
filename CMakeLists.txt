@@ -113,7 +113,7 @@ if (BUILDING_RUNTIME)
     # Modules
     add_subdirectory(modules/k210)
 else()
-    conan_cmake_run(CONANFILE conanfile.txt
+    conan_cmake_run(CONANFILE conanfile.py
                     BASIC_SETUP CMAKE_TARGETS
                     SETTINGS compiler.cppstd=20
                     BUILD missing)

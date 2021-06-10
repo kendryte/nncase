@@ -1,4 +1,4 @@
-name: win-x64-cpu-gcc
+name: win-x64-cpu-msvc
 
 on: [push, pull_request]
 
@@ -26,7 +26,6 @@ jobs:
         pip install conan
 
     - name: Create Build Environment
-      shell: bash
       run: cmake -E make_directory ${{github.workspace}}/build
 
     - name: Configure CMake
