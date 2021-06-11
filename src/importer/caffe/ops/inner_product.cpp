@@ -16,6 +16,7 @@
 #include <functional>
 #include <nncase/ir/ops/matmul.h>
 #include <nncase/ir/ops/constant.h>
+#include <nncase/ir/ops/bitcast.h>
 
 using namespace nncase;
 using namespace nncase::importer;
@@ -32,10 +33,14 @@ DEFINE_CAFFE_LOWER(InnerProduct)
     auto input_b_const = graph_.emplace<constant>(dt_float32, get_shape(op.blobs(0).shape()), input_b_vec);
     input_b_const->name(op.name() + "/input_b_const");
 
-    auto node = graph_.emplace<matmul>(input.shape(), get_shape(op.blobs(0).shape()), value_range<float>::full());
+    int32_t bc_shape = xt::compute_size(input.shape()) / (int32_t)get_shape(op.blobs(0).shape())[0];
+    auto rshape = graph_.emplace<bitcast>(dt_float32, input.shape(), dt_float32,
+        axis_t { bc_shape, (int32_t)get_shape(op.blobs(0).shape())[0] });
+    auto node = graph_.emplace<matmul>(rshape->output().shape(), get_shape(op.blobs(0).shape()), value_range<float>::full());
     node->name(op.name() + "/matmul");
 
-    input_tensors_.emplace(&node->input_a(), op.bottom(0));
+    input_tensors_.emplace(&rshape->input(), op.bottom(0));
+    node->input_a().connect(rshape->output());
     node->input_b().connect(input_b_const->output());
     if (param.has_bias_term())
     {

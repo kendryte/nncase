@@ -22,18 +22,10 @@ using namespace nncase::ir;
 matmul::matmul(shape_t input_a_shape, shape_t input_b_shape, value_range<float> fused_activation)
     : fused_activation_(fused_activation)
 {
-    std::cout<<"test3"<<std::endl;
-    for (size_t i =0;i<input_a_shape.size();i++)
-        std::cout<<input_a_shape[i]<<std::endl;
-    std::cout<<"test4"<<std::endl;
-    for (size_t i =0;i<input_b_shape.size();i++)
-        std::cout<<input_b_shape[i]<<std::endl;
-
-    // workaround currently since we don't know lstm output shape now.
-    // if (input_a_shape.size() != 2 || input_b_shape.size() != 2)
-    //     throw std::invalid_argument("inputs must be 2 rank");
-    // if (input_a_shape[1] != input_b_shape[0])
-    //     throw std::invalid_argument("input a's cols must be equal to input b's rows");
+    if (input_a_shape.size() != 2 || input_b_shape.size() != 2)
+        throw std::invalid_argument("inputs must be 2 rank");
+    if (input_a_shape[1] != input_b_shape[0])
+        throw std::invalid_argument("input a's cols must be equal to input b's rows");
     add_input("input_a", dt_float32, input_a_shape);
     add_input("input_b", dt_float32, input_b_shape);
     add_input("bias", dt_float32, shape_t { input_b_shape[1] });

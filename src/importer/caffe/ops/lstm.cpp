@@ -14,6 +14,7 @@
  */
 #include "../caffe_importer.h"
 #include <nncase/ir/ops/lstm.h>
+#include <nncase/ir/ops/bitcast.h>
 
 using namespace nncase;
 using namespace nncase::importer;
@@ -22,36 +23,53 @@ using namespace caffe;
 
 DEFINE_CAFFE_LOWER(LSTM)
 {
+    // input_b is indicator
     auto &input_a = *output_tensors_.at(op.bottom(0));
     auto &input_b = *output_tensors_.at(op.bottom(1));
-    [[maybe_unused]]auto &param = op.recurrent_param();
-    [[maybe_unused]]auto n_output = param.num_output();
+    auto input_c_shape = shape_t { 1, 1, 1, 1 };
+    bool has_static = false;
 
-    std::cout<<"bsize: "<<op.blobs().size()<<std::endl;
-    // std::cout<<"bs0: "<<op.blobs(0).shape().dim_size()<<std::endl;
-    // std::cout<<"bs1: "<<op.blobs(1).shape().dim_size()<<std::endl;
-    // std::cout<<"bs2: "<<op.blobs(2).shape().dim_size()<<std::endl;
+    auto &param = op.recurrent_param();
+    auto n_output = param.num_output();
 
-    // std::cout<<"bs00: "<<op.blobs(0).shape().dim(0)<<std::endl;
-    // std::cout<<"bs01: "<<op.blobs(0).shape().dim(1)<<std::endl;
-    // std::cout<<"bs10: "<<op.blobs(1).shape().dim(0)<<std::endl;
-    // std::cout<<"bs20: "<<op.blobs(2).shape().dim(0)<<std::endl;
-    // std::cout<<"bs21: "<<op.blobs(2).shape().dim(1)<<std::endl;
-    // [[maybe_unused]]auto t1 = load_tensor<2>(op.blobs(0));
-    // [[maybe_unused]]auto t2 = load_tensor<1>(op.blobs(1));
-    // [[maybe_unused]]auto t3 = load_tensor<2>(op.blobs(2));
+    auto blob0 = load_tensor<2>(op.blobs(0));
+    auto blob1 = load_tensor<1>(op.blobs(1));
 
-    std::cout<<"test1"<<std::endl;
-    for (size_t i = 0;i<input_a.shape().size();i++)
-        std::cout<<input_a.shape()[i]<<std::endl;
-    std::cout<<"test2"<<std::endl;
-    for (size_t i = 0;i<input_b.shape().size();i++)
-        std::cout<<input_b.shape()[i]<<std::endl;
+    if (op.bottom_size() == 3)
+    {
+        auto &input_c = *output_tensors_.at(op.bottom(2));
+        input_c_shape = input_c.shape();
+        has_static = true;
+    }
 
-    auto node = graph_.emplace<lstm>(input_a.shape(), input_b.shape(), n_output);
-    node->name(op.name() + "/lstm");
+    std::vector<float> blob0_vec(blob0.begin(), blob0.end());
+    std::vector<float> blob1_vec(blob1.begin(), blob1.end());
+    std::vector<float> blob2_vec;
+    if (has_static)
+        blob2_vec.assign(load_tensor<2>(op.blobs(2)).begin(), load_tensor<2>(op.blobs(2)).end());
 
-    input_tensors_.emplace(&node->input_a(), op.bottom(0));
-    input_tensors_.emplace(&node->input_b(), op.bottom(1));
-    output_tensors_.emplace(op.top(0), &node->output());
+    if (input_a.shape().size() != 3)
+    {
+        // workaround here since we can't get time_step and batch from caffemodel
+        // auto rshape = graph_.emplace<bitcast>(dt_float32, input_a.shape(), dt_float32, axis_t { input_b.shape()[0], input_b.shape()[1], (int32_t)param.num_output() });
+        auto rshape = graph_.emplace<bitcast>(dt_float32, input_a.shape(), dt_float32, axis_t { 201, 1, (int32_t)param.num_output() });
+        auto node = graph_.emplace<lstm>(rshape->output().shape(), input_b.shape(), input_c_shape, blob0_vec, blob1_vec, blob2_vec, n_output, has_static);
+        node->name(op.name() + "/lstm");
+        input_tensors_.emplace(&rshape->input(), op.bottom(0));
+        node->input_a().connect(rshape->output());
+        input_tensors_.emplace(&node->input_b(), op.bottom(1));
+        if (has_static)
+            input_tensors_.emplace(&node->input_c(), op.bottom(2));
+        output_tensors_.emplace(op.top(0), &node->output());
+    }
+    else
+    {
+        auto node = graph_.emplace<lstm>(input_a.shape(), input_b.shape(), input_c_shape, blob0_vec, blob1_vec, blob2_vec, n_output, has_static);
+        node->name(op.name() + "/lstm");
+        input_tensors_.emplace(&node->input_a(), op.bottom(0));
+        input_tensors_.emplace(&node->input_b(), op.bottom(1));
+        if (has_static)
+            input_tensors_.emplace(&node->input_c(), op.bottom(2));
+        output_tensors_.emplace(op.top(0), &node->output());
+    }
 }

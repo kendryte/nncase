@@ -19,17 +19,19 @@
 using namespace nncase;
 using namespace nncase::ir;
 
-lstm::lstm(shape_t input_a_shape, shape_t input_b_shape, int32_t num_output)
-    : num_output_(num_output)
+lstm::lstm(shape_t input_a_shape, shape_t input_b_shape, shape_t input_c_shape, std::vector<float> blob0, std::vector<float> blob1, std::vector<float> blob2, int32_t num_output, bool has_static)
+    : blob0_(blob0), blob1_(blob1), blob2_(blob2), num_output_(num_output), has_static_(has_static)
 {
     add_input("input_a", dt_float32, input_a_shape);
     add_input("input_b", dt_float32, input_b_shape);
-    // workaround output shape
-    add_output("output", dt_float32, shape_t { 128, 128 });
+    if (has_static)
+        add_input("input_c", dt_float32, input_c_shape);
+
+    add_output("output", dt_float32, shape_t { input_a_shape[0], input_a_shape[1], blob0.size() / (input_a_shape[2] * 4) });
 }
 
 bool lstm::properties_equal(node &other) const
 {
     auto &r = static_cast<lstm &>(other);
-    return num_output() == r.num_output();
+    return num_output() == r.num_output() && has_static() == r.has_static() && blob0() == r.blob0() && blob1() == r.blob1() && blob2() == r.blob2();
 }

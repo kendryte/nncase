@@ -40,7 +40,7 @@ DEFINE_CAFFE_LOWER(ImageData1)
 DEFINE_CAFFE_LOWER(ContinuationIndicator)
 {
     auto &param = op.continuation_indicator_param();
-    auto node = graph_.emplace<indicator>(dt_float32, shape_t { 2 }, param.time_step(), param.batch_size());
+    auto node = graph_.emplace<indicator>(dt_float32, shape_t { param.time_step(), param.batch_size() }, param.time_step(), param.batch_size());
     node->name(op.name());
     for (int i = 0; i < op.top_size(); i++)
     {
