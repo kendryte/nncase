@@ -12,249 +12,110 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/kernels/tensor_compute.h>
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/error.h>
 #include <nncase/runtime/runtime_op_utility.h>
 #include <nncase/runtime/runtime_tensor.h>
+#include <nncase/runtime/runtime_tensor_impl.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
+using namespace nncase::runtime::detail;
 
 namespace
 {
-class host_runtime_tensor_type : public runtime_tensor_type
-{
-public:
-    bool can_copy_from_different_type(NNCASE_UNUSED const runtime_tensor &dest, NNCASE_UNUSED const runtime_tensor &src) noexcept override
-    {
-        return true;
-    }
-
-    bool can_copy_to_different_type(NNCASE_UNUSED const runtime_tensor &dest, NNCASE_UNUSED const runtime_tensor &src) noexcept override
-    {
-        return true;
-    }
-
-    result<void> copy_to_same_type(const runtime_tensor &src, const runtime_tensor &dest) noexcept override
-    {
-        auto buffer_src = host_runtime_tensor::buffer(src).unwrap();
-        auto buffer_dest = host_runtime_tensor::buffer(dest).unwrap();
-        CHECK_WITH_ERR(src.datatype() == dest.datatype(), nncase_errc::datatype_mismatch);
-        CHECK_WITH_ERR(src.shape() == dest.shape(), nncase_errc::shape_mismatch);
-
-        return kernels::copy(src.datatype(), buffer_src.data(), buffer_dest.data(), src.shape(), src.strides(), dest.strides());
-    }
-
-    result<void> copy_from_different_type(const runtime_tensor &src, const runtime_tensor &dest) noexcept override
-    {
-        return src.tensor_type().copy_to_host(src, dest);
-    }
-
-    result<void> copy_to_different_type(const runtime_tensor &src, const runtime_tensor &dest) noexcept override
-    {
-        return dest.tensor_type().copy_from_host(src, dest);
-    }
-
-    result<void> copy_from_host(const runtime_tensor &src, const runtime_tensor &dest) noexcept override
-    {
-        return copy_to_same_type(src, dest);
-    }
-
-    result<void> copy_to_host(const runtime_tensor &src, const runtime_tensor &dest) noexcept override
-    {
-        return copy_to_same_type(src, dest);
-    }
-};
-
-class empty_runtime_tensor_type : public runtime_tensor_type
-{
-};
-
-host_runtime_tensor_type host_runtime_tensor_type_;
-empty_runtime_tensor_type empty_runtime_tensor_type_;
-}
-
-bool runtime_tensor_type::can_copy_from_different_type(NNCASE_UNUSED const runtime_tensor &src, NNCASE_UNUSED const runtime_tensor &dest) noexcept
-{
-    return false;
-}
-
-bool runtime_tensor_type::can_copy_to_different_type(NNCASE_UNUSED const runtime_tensor &src, NNCASE_UNUSED const runtime_tensor &dest) noexcept
-{
-    return false;
-}
-
-result<void> runtime_tensor_type::copy_to_same_type(NNCASE_UNUSED const runtime_tensor &src, NNCASE_UNUSED const runtime_tensor &dest) noexcept
-{
-    return err(std::errc::not_supported);
-}
-
-result<void> runtime_tensor_type::copy_from_different_type(NNCASE_UNUSED const runtime_tensor &src, NNCASE_UNUSED const runtime_tensor &dest) noexcept
-{
-    return err(std::errc::not_supported);
-}
-
-result<void> runtime_tensor_type::copy_to_different_type(NNCASE_UNUSED const runtime_tensor &src, NNCASE_UNUSED const runtime_tensor &dest) noexcept
-{
-    return err(std::errc::not_supported);
-}
-
-result<void> runtime_tensor_type::copy_from_host(NNCASE_UNUSED const runtime_tensor &src, NNCASE_UNUSED const runtime_tensor &dest) noexcept
-{
-    return err(std::errc::not_supported);
-}
-
-result<void> runtime_tensor_type::copy_to_host(NNCASE_UNUSED const runtime_tensor &src, NNCASE_UNUSED const runtime_tensor &dest) noexcept
-{
-    return err(std::errc::not_supported);
-}
-
-runtime_tensor_type &host_runtime_tensor::tensor_type() noexcept
-{
-    return host_runtime_tensor_type_;
+runtime_shape_t empty_shape;
+runtime_tensor_type empty_runtime_tensor_type { "empty" };
 }
 
 runtime_tensor::runtime_tensor() noexcept
-    : datatype_(dt_uint8), tensor_type_(&empty_runtime_tensor_type_)
 {
 }
 
-runtime_tensor::runtime_tensor(datatype_t datatype, runtime_shape_t shape, runtime_shape_t strides, runtime_tensor_type &tensor_type, std::shared_ptr<void> data) noexcept
-    : datatype_(datatype), shape_(std::move(shape)), strides_(std::move(strides)), tensor_type_(&tensor_type), data_(std::move(data))
+runtime_tensor::runtime_tensor(std::shared_ptr<runtime_tensor_impl> impl) noexcept
+    : impl_(std::move(impl))
 {
 }
 
-bool runtime_tensor::can_copy_to_without_staging(const runtime_tensor &dest) const noexcept
+datatype_t runtime_tensor::datatype() const noexcept
 {
-    if (datatype() != dest.datatype()
-        || shape() != dest.shape())
-        return false;
-
-    return tensor_type() == dest.tensor_type()
-        || is_host() || dest.is_host()
-        || tensor_type().can_copy_to_different_type(*this, dest)
-        || dest.tensor_type().can_copy_from_different_type(*this, dest);
+    if (impl_)
+        return impl_->datatype();
+    return (datatype_t)0;
 }
 
-result<void> runtime_tensor::copy_to(const runtime_tensor &dest) const noexcept
+const runtime_shape_t &runtime_tensor::shape() const noexcept
 {
-    CHECK_WITH_ERR(!empty() && !dest.empty(), std::errc::not_supported);
-    CHECK_WITH_ERR(datatype() == dest.datatype(), nncase_errc::datatype_mismatch);
-    CHECK_WITH_ERR(shape() == dest.shape(), nncase_errc::shape_mismatch);
-
-    if (tensor_type() == dest.tensor_type())
-        return tensor_type().copy_to_same_type(*this, dest);
-    if (is_host())
-        return dest.tensor_type().copy_from_host(*this, dest);
-    if (dest.is_host())
-        return tensor_type().copy_to_host(*this, dest);
-    if (tensor_type().can_copy_to_different_type(*this, dest))
-        return tensor_type().copy_to_different_type(*this, dest);
-    if (dest.tensor_type().can_copy_from_different_type(*this, dest))
-        return dest.tensor_type().copy_from_different_type(*this, dest);
-
-    // staging
-    try_var(host, as_host());
-    return dest.tensor_type().copy_from_host(host, dest);
+    if (impl_)
+        return impl_->shape();
+    return empty_shape;
 }
 
-result<runtime_tensor> runtime_tensor::as_host() const noexcept
+const runtime_shape_t &runtime_tensor::strides() const noexcept
+{
+    if (impl_)
+        return impl_->strides();
+    return empty_shape;
+}
+
+runtime_tensor_type &runtime_tensor::tensor_type() const noexcept
+{
+    if (impl_)
+        return impl_->tensor_type();
+    return empty_runtime_tensor_type;
+}
+
+result<runtime_tensor> runtime_tensor::as_host() noexcept
 {
     CHECK_WITH_ERR(!empty(), std::errc::not_supported);
     if (is_host())
         return ok(*this);
-    try_var(host, host_runtime_tensor::create(datatype(), shape()));
-    try_(tensor_type().copy_to_host(*this, host));
-    return ok(host);
+    return impl_->copy_as_host();
 }
 
 bool runtime_tensor::is_host() const noexcept
 {
-    return tensor_type() == host_runtime_tensor::tensor_type();
+    if (empty())
+        return false;
+    return impl_->is_host();
 }
 
 bool runtime_tensor::is_contiguous() const noexcept
 {
-    return this->strides() == get_default_strides(this->shape());
+    if (empty())
+        return false;
+    return impl_->is_contiguous();
 }
 
 void runtime_tensor::reset() noexcept
 {
-    *this = runtime_tensor();
+    impl_.reset();
 }
 
 bool runtime_tensor::empty() const noexcept
 {
-    return tensor_type() == empty_runtime_tensor_type_;
+    return !impl_;
+}
+
+bool runtime_tensor::can_copy_to_without_staging(const runtime_tensor &dest) const noexcept
+{
+    if (empty())
+        return false;
+    return impl_->can_copy_to_without_staging(dest);
+}
+
+result<void> runtime_tensor::copy_to(runtime_tensor &dest) noexcept
+{
+    CHECK_WITH_ERR(!empty(), std::errc::not_supported);
+    return impl_->copy_to(dest);
 }
 
 bool runtime::operator==(const runtime_tensor &lhs, const runtime_tensor &rhs) noexcept
 {
-    return lhs.datatype() == rhs.datatype() && lhs.shape() == rhs.shape()
-        && lhs.tensor_type() == rhs.tensor_type() && lhs.data() == rhs.data();
+    return lhs.impl() == rhs.impl();
 }
 
 bool runtime::operator!=(const runtime_tensor &lhs, const runtime_tensor &rhs) noexcept
 {
     return !(lhs == rhs);
-}
-
-result<runtime_tensor> host_runtime_tensor::create(datatype_t datatype, runtime_shape_t shape, runtime_shape_t strides) noexcept
-{
-    auto size = compute_size(shape, strides) * get_bytes(datatype);
-    std::shared_ptr<uint8_t> buffer(new (std::nothrow) uint8_t[size], std::default_delete<uint8_t[]>());
-    CHECK_WITH_ERR(buffer, std::errc::not_enough_memory);
-    return ok(runtime_tensor(datatype, std::move(shape), std::move(strides), host_runtime_tensor_type_, std::move(buffer)));
-}
-
-result<runtime_tensor> host_runtime_tensor::create(datatype_t datatype, runtime_shape_t shape, runtime_shape_t strides, gsl::span<gsl::byte> data, bool copy) noexcept
-{
-    auto size = compute_size(shape, strides) * get_bytes(datatype);
-    CHECK_WITH_ERR(data.size_bytes() == size, std::errc::invalid_argument);
-
-    std::shared_ptr<gsl::byte> buffer;
-    if (copy)
-    {
-        buffer.reset(new (std::nothrow) gsl::byte[size], std::default_delete<gsl::byte[]>());
-        CHECK_WITH_ERR(buffer, std::errc::not_enough_memory);
-        try_(kernels::copy(datatype, data.data(), buffer.get(), shape, strides, strides));
-    }
-    else
-    {
-        buffer.reset(data.data(), [](NNCASE_UNUSED gsl::byte *ptr) {});
-    }
-
-    return ok(runtime_tensor(datatype, std::move(shape), std::move(strides), host_runtime_tensor_type_, std::move(buffer)));
-}
-
-result<runtime_tensor> host_runtime_tensor::create(datatype_t datatype, runtime_shape_t shape, runtime_shape_t strides, gsl::span<gsl::byte> data, data_deleter_t data_deleter) noexcept
-{
-    auto size = compute_size(shape, strides) * get_bytes(datatype);
-    CHECK_WITH_ERR(data.size_bytes() == size, std::errc::invalid_argument);
-    return ok(runtime_tensor(datatype, std::move(shape), std::move(strides), host_runtime_tensor_type_,
-        std::shared_ptr<gsl::byte>(data.data(), data_deleter)));
-}
-
-result<runtime_tensor> host_runtime_tensor::create(datatype_t datatype, runtime_shape_t shape) noexcept
-{
-    return create(datatype, shape, get_default_strides(shape));
-}
-
-result<runtime_tensor> host_runtime_tensor::create(datatype_t datatype, runtime_shape_t shape, gsl::span<gsl::byte> data, bool copy) noexcept
-{
-    return create(datatype, shape, get_default_strides(shape), data, copy);
-}
-
-result<runtime_tensor> host_runtime_tensor::create(datatype_t datatype, runtime_shape_t shape, gsl::span<gsl::byte> data, data_deleter_t data_deleter) noexcept
-{
-    return create(datatype, shape, get_default_strides(shape), data, std::move(data_deleter));
-}
-
-result<gsl::span<gsl::byte>> host_runtime_tensor::buffer(const runtime_tensor &tensor) noexcept
-{
-    CHECK_WITH_ERR(tensor.is_host(), std::errc::invalid_argument);
-
-    auto size = get_bytes(tensor.datatype(), tensor.shape());
-    return ok(gsl::span<gsl::byte>(tensor.data_as<gsl::byte>(), size));
 }

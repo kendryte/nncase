@@ -17,16 +17,31 @@
 #include <nncase/ir/graph.h>
 #include <nncase/ir/op_utils.h>
 #include <nncase/ir/quantizer.h>
-#include <nncase/runtime/runtime_op_utility.h>
-#include <nncase/runtime/runtime_tensor.h>
+#include <nncase/kernels/kernel_context.h>
+#include <nncase/runtime/compiler_defs.h>
 #include <nncase/schedule/scheduler.h>
 #include <unordered_map>
-#include <xtensor/xadapt.hpp>
-#include <nncase/kernels/kernel_context.h>
 
 namespace nncase::ir
 {
 class quantizer;
+
+class NNCASE_API evaluate_tensor
+{
+public:
+    evaluate_tensor(datatype_t datatype, runtime_shape_t shape, runtime_shape_t strides, gsl::span<gsl::byte> buffer);
+
+    datatype_t datatype() const noexcept { return datatype_; }
+    const runtime_shape_t &shape() const noexcept { return shape_; }
+    const runtime_shape_t &strides() const noexcept { return strides_; }
+    gsl::span<gsl::byte> buffer() const noexcept { return buffer_; }
+
+private:
+    datatype_t datatype_;
+    runtime_shape_t shape_;
+    runtime_shape_t strides_;
+    gsl::span<gsl::byte> buffer_;
+};
 
 class NNCASE_API module_evaluate_context
 {
@@ -35,19 +50,19 @@ public:
     module_evaluate_context(module_evaluate_context &) = delete;
     module_evaluate_context(module_evaluate_context &&) = default;
 
-    runtime::runtime_tensor memory_at(const output_connector &conn);
+    evaluate_tensor memory_at(const output_connector &conn);
 
-    runtime::runtime_tensor memory_at(const input_connector &conn)
+    evaluate_tensor memory_at(const input_connector &conn)
     {
         return memory_at(*conn.connection());
     }
 
-    runtime::runtime_tensor input_at(size_t index)
+    evaluate_tensor input_at(size_t index)
     {
         return memory_at(*inputs_[index]);
     }
 
-    runtime::runtime_tensor output_at(size_t index)
+    evaluate_tensor output_at(size_t index)
     {
         return memory_at(*outputs_[index]);
     }
@@ -85,19 +100,19 @@ public:
     void begin_collect_distribution();
     void end_collect_distribution(std::function<void(size_t cnt, size_t total)> progress);
 
-    runtime::runtime_tensor memory_at(const output_connector &conn);
+    evaluate_tensor memory_at(const output_connector &conn);
 
-    runtime::runtime_tensor memory_at(const input_connector &conn)
+    evaluate_tensor memory_at(const input_connector &conn)
     {
         return memory_at(*conn.connection());
     }
 
-    runtime::runtime_tensor input_at(size_t index)
+    evaluate_tensor input_at(size_t index)
     {
         return main_module_context().input_at(index);
     }
 
-    runtime::runtime_tensor output_at(size_t index)
+    evaluate_tensor output_at(size_t index)
     {
         return main_module_context().output_at(index);
     }

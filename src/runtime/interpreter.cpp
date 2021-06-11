@@ -126,3 +126,8 @@ result<runtime_module *> interpreter::find_module_by_id(size_t index) noexcept
         return ok(modules_[index].get());
     return err(std::errc::result_out_of_range);
 }
+
+options_dict &interpreter::options() noexcept
+{
+    return options_;
+}

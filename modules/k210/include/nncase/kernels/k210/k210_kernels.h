@@ -43,37 +43,7 @@ template <class T>
 using pool_partial_type_t = typename pool_partial_type<T>::type;
 }
 
-inline result<void> kpu_upload(const uint8_t *src, uint8_t *dest, const runtime::k210::kpu_shape_t &in_shape)
-{
-    using namespace runtime::k210;
-
-    if (in_shape[3] % 64 == 0)
-    {
-        std::copy(src, src + kernels::detail::compute_size(in_shape), dest);
-    }
-    else
-    {
-        auto layout = get_kpu_row_layout(in_shape[3]);
-        auto fmap_size = get_kpu_bytes(in_shape[3], in_shape[2], in_shape[1]);
-
-        for (uint32_t batch = 0; batch < in_shape[0]; batch++)
-        {
-            auto batch_origin = dest + (size_t)batch * fmap_size;
-            for (uint32_t oc = 0; oc < in_shape[1]; oc++)
-            {
-                auto channel_origin = batch_origin + (size_t)oc / layout.groups * layout.row_len * in_shape[2] * 64 + (size_t)oc % layout.groups * layout.row_pitch;
-                for (uint32_t y = 0; y < in_shape[2]; y++)
-                {
-                    auto y_origin = channel_origin + (size_t)y * layout.row_len * 64;
-                    std::copy(src, src + in_shape[3], y_origin);
-                    src += in_shape[3];
-                }
-            }
-        }
-    }
-
-    return ok();
-}
+result<void> kpu_upload(const uint8_t *src, uint8_t *dest, const runtime::k210::kpu_shape_t &in_shape, uint32_t dma_ch);
 
 inline result<void> kpu_download(const uint8_t *src, uint8_t *dest, const runtime::k210::kpu_shape_t &in_shape)
 {

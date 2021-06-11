@@ -111,7 +111,7 @@ INSTANTIATE_TEST_SUITE_P(
             runtime_shape_t { 0, 0, 0, 0 } // dest strides bias
             )));
 
-void copy(const runtime_tensor &input, runtime_tensor &output, OpType type)
+void copy(runtime_tensor &input, runtime_tensor &output, OpType type)
 {
     if (type == OpType::Ref)
     {

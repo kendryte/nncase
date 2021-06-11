@@ -12,25 +12,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../runtime_module.h"
-#include <nncase/kernels/k210/k210_kernels.h>
+#pragma once
+#include "runtime_tensor_impl.h"
 
-using namespace nncase;
-using namespace nncase::runtime;
-using namespace nncase::runtime::k210;
+BEGIN_NS_NNCASE_RUNTIME
 
-result<void> k210_runtime_module::visit(const kpu_upload_options &op) noexcept
+namespace detail
 {
-    try_var(input, memory_at(op.input));
-    try_var(output, memory_at(op.output));
-
-    return kernels::k210::kpu_upload(reinterpret_cast<const uint8_t *>(input.data()),
-        reinterpret_cast<uint8_t *>(output.data()),
-        op.in_shape,
-#ifdef NNCASE_SIMULATOR
-        0
-#else
-        dma_ch_
-#endif
-    );
+class host_runtime_tensor_impl;
 }
+
+END_NS_NNCASE_RUNTIME
+
+#ifndef NNCASE_SHARED_RUNTIME_TENSOR_PLATFORM_HEADER
+#include "shared_runtime_tensor.platform.h"
+#else
+#include NNCASE_SHARED_RUNTIME_TENSOR_PLATFORM_HEADER
+#endif

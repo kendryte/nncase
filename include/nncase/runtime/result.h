@@ -72,7 +72,7 @@ struct Ok
         : value(value) { }
 
     template <class... Args>
-    constexpr explicit Ok(mpark::in_place_t, Args &&... args)
+    constexpr explicit Ok(mpark::in_place_t, Args &&...args)
         : value(std::forward<Args>(args)...) { }
 
     T value;
@@ -101,7 +101,7 @@ inline constexpr Ok<void> ok()
 }
 
 template <class T, class... Args>
-constexpr Ok<T> ok(Args &&... args)
+constexpr Ok<T> ok(Args &&...args)
 {
     return Ok<T>(mpark::in_place, std::forward<Args>(args)...);
 }
@@ -212,12 +212,21 @@ namespace detail
         {
             return value.value;
         }
+
+        T &&operator()(Ok<T> &&value) noexcept
+        {
+            return std::move(value.value);
+        }
     };
 
     template <>
     struct unwrap_impl<void>
     {
         void operator()(NNCASE_UNUSED Ok<void> &value) noexcept
+        {
+        }
+
+        void operator()(NNCASE_UNUSED Ok<void> &&value) noexcept
         {
         }
     };
@@ -246,10 +255,18 @@ public:
             std::terminate();
     }
 
-    constexpr decltype(auto) unwrap_or_throw()
+    constexpr decltype(auto) unwrap_or_throw() &
     {
         if (is_ok())
             return detail::unwrap_impl<T>()(value());
+        else
+            throw std::runtime_error(unwrap_err().message());
+    }
+
+    constexpr decltype(auto) unwrap_or_throw() &&
+    {
+        if (is_ok())
+            return detail::unwrap_impl<T>()(std::move(value()));
         else
             throw std::runtime_error(unwrap_err().message());
     }
@@ -298,7 +315,8 @@ public:
     }
 
 private:
-    constexpr Ok<T> &value() noexcept { return mpark::get<Ok<T>>(ok_or_err_); }
+    constexpr Ok<T> &&value() &&noexcept { return mpark::get<Ok<T>>(ok_or_err_); }
+    constexpr Ok<T> &value() &noexcept { return mpark::get<Ok<T>>(ok_or_err_); }
     constexpr Err &err() noexcept { return mpark::get<Err>(ok_or_err_); }
 
 private:

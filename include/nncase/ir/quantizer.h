@@ -69,7 +69,7 @@ public:
         while (begin != end)
         {
             auto value = *begin++;
-            auto fc = std::fpclassify(value);
+            auto fc = std::fpclassify((float)value);
             if (fc == FP_NORMAL || fc == FP_SUBNORMAL || fc == FP_ZERO)
             {
                 min = std::min(min, value);

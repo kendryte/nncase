@@ -13,6 +13,9 @@
  * limitations under the License.
  */
 #include "runtime_module.h"
+#include <nncase/runtime/dbg.h>
+#include <nncase/runtime/host_runtime_tensor.h>
+#include <nncase/runtime/runtime_op_utility.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -143,6 +146,61 @@ result<scalar> stackvm_runtime_module::pop_scalar(datatype_t type) noexcept
 kernels::kernel_context &stackvm_runtime_module::kernel_context() noexcept
 {
     return kernel_context_;
+}
+
+result<runtime_tensor> stackvm_runtime_module::create_tensor(uintptr_t addr, datatype_t datatype, const runtime_shape_t &shape, const runtime_shape_t &strides) noexcept
+{
+    hrt::memory_pool_t pool;
+    uintptr_t physical_address = 0;
+    if (addr >= reinterpret_cast<uintptr_t>(data_.get())
+        && addr < reinterpret_cast<uintptr_t>(data_.get()) + mempool(mem_data).size)
+    {
+        pool = hrt::pool_cpu_only;
+    }
+    else if (addr >= reinterpret_cast<uintptr_t>(rdata_.data())
+        && addr < reinterpret_cast<uintptr_t>(rdata_.data()) + rdata_.size_bytes())
+    {
+        pool = hrt::pool_cpu_only;
+    }
+    else
+    {
+        bool found = false;
+        for (size_t i = 0; i < inputs_size(); i++)
+        {
+            try_var(tensor, device_input_tensor(i));
+            auto &block = static_cast<detail::host_runtime_tensor_impl &>(*tensor.impl()).memory_block();
+            if (addr >= block.virtual_address
+                && addr < block.virtual_address + block.size_bytes)
+            {
+                pool = block.pool;
+                physical_address = block.physical_block.physical_address + (addr - block.virtual_address);
+                found = true;
+                break;
+            }
+        }
+
+        if (!found)
+        {
+            for (size_t i = 0; i < outputs_size(); i++)
+            {
+                try_var(tensor, device_output_tensor(i));
+                auto &block = static_cast<detail::host_runtime_tensor_impl &>(*tensor.impl()).memory_block();
+                if (addr >= block.virtual_address
+                    && addr < block.virtual_address + block.size_bytes)
+                {
+                    pool = block.pool;
+                    physical_address = block.physical_block.physical_address + (addr - block.virtual_address);
+                    found = true;
+                    break;
+                }
+            }
+        }
+
+        CHECK_WITH_ERR(found, std::errc::invalid_argument);
+    }
+
+    auto size = runtime::get_bytes(datatype, shape, strides);
+    return hrt::create(datatype, shape, strides, { reinterpret_cast<gsl::byte *>(addr), size }, false, pool, physical_address);
 }
 
 result<std::unique_ptr<runtime_module>> stackvm::create_stackvm_runtime_module()

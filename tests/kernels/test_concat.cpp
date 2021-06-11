@@ -226,7 +226,7 @@ INSTANTIATE_TEST_SUITE_P(
             runtime_shape_t { 3 }), // output strides bias
         testing::Values(0)));
 
-void concat(const std::vector<runtime_tensor> &inputs, runtime_tensor &output, runtime_shape_t &concat_dims, size_t axis, OpType type)
+void concat(std::vector<runtime_tensor> &inputs, runtime_tensor &output, runtime_shape_t &concat_dims, size_t axis, OpType type)
 {
     std::vector<runtime_shape_t> in_strides(inputs.size());
     std::vector<const gsl::byte *> inputs_v(inputs.size());
