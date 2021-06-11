@@ -214,6 +214,7 @@ void schedule_context::analyze_buffer_alias()
                 out_buf.strides_shape() = s->input().shape();
             }
         }
+#if 0
         // 3. concat
         else if (auto c = node_cast<concat>(node))
         {
@@ -276,6 +277,7 @@ void schedule_context::analyze_buffer_alias()
                     c->attributes(c->attributes() & ~node_attr_action);
             }
         }
+#endif
     });
     alias_visitor.visit(outputs);
 }
