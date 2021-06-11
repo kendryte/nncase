@@ -24,6 +24,7 @@ lstm::lstm(shape_t input_a_shape, shape_t input_b_shape, int32_t num_output)
 {
     add_input("input_a", dt_float32, input_a_shape);
     add_input("input_b", dt_float32, input_b_shape);
+    // workaround output shape
     add_output("output", dt_float32, shape_t { 128, 128 });
 }
 

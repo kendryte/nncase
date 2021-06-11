@@ -27,7 +27,7 @@ DEFINE_CAFFE_LOWER(LSTM)
     [[maybe_unused]]auto &param = op.recurrent_param();
     [[maybe_unused]]auto n_output = param.num_output();
 
-    // std::cout<<"bsize: "<<op.blobs().size()<<std::endl;
+    std::cout<<"bsize: "<<op.blobs().size()<<std::endl;
     // std::cout<<"bs0: "<<op.blobs(0).shape().dim_size()<<std::endl;
     // std::cout<<"bs1: "<<op.blobs(1).shape().dim_size()<<std::endl;
     // std::cout<<"bs2: "<<op.blobs(2).shape().dim_size()<<std::endl;

@@ -127,7 +127,7 @@ inline shape_t normalize_reshape(const shape_t &in_shape, const axis_t &new_shap
                 throw std::runtime_error("Reshap can only have 1 non-determined dimension at most");
             non_det_id = i;
         }
-        if (v == 0)
+        else if(v == 0)
         {
             shape_size *= in_shape[i];
             result[i] = (size_t)in_shape[i];
