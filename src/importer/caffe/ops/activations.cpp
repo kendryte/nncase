@@ -29,8 +29,11 @@ DEFINE_CAFFE_LOWER(ReLU)
     [[maybe_unused]]auto &param = op.relu_param();
 
     auto zero = graph_.emplace<constant>(0.f);
+    zero->name(op.name() + "/zero_const");
     auto high = graph_.emplace<constant>(std::numeric_limits<float>::max());
+    high->name(op.name() + "/high_const");
     auto cl = graph_.emplace<clamp>(input.shape(), zero->output().shape(), high->output().shape());
+    cl->name(op.name() + "/clamp");
 
     cl->input_low().connect(zero->output());
     cl->input_high().connect(high->output());

@@ -28,6 +28,7 @@ DEFINE_CAFFE_LOWER(Concat)
 
     auto &param = op.concat_param();
     auto con = graph_.emplace<concat>(dt_float32, input_shapes, param.axis());
+    con->name(op.name() + "/concat");
 
     for (int i = 0; i < op.bottom_size(); i++)
         input_tensors_.emplace(&con->input_at(i), op.bottom(i));

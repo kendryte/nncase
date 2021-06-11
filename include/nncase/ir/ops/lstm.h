@@ -18,28 +18,23 @@
 
 namespace nncase::ir
 {
-class NNCASE_API indicator : public node
+class NNCASE_API lstm : public node
 {
 public:
-    DEFINE_NODE_OPCODE(op_indicator);
+    DEFINE_NODE_OPCODE(op_lstm);
 
+    input_connector &input_a() { return input_at(0); }
+    input_connector &input_b() { return input_at(1); }
     output_connector &output() { return output_at(0); }
 
-    int32_t time_step() const noexcept { return time_step_; }
-    int32_t batch_size() const noexcept { return batch_size_; }
+    int32_t num_output() const noexcept { return num_output_; }
 
-    template <class TShape>
-    indicator(datatype_t type, TShape &&shape, int32_t time_step, int32_t batch_size)
-        : time_step_(time_step), batch_size_(batch_size)
-    {
-        add_output("output", type, std::forward<TShape>(shape), mem_input);
-    }
+    lstm(shape_t input_shape_a, shape_t input_shape_b, int32_t num_output);
 
 protected:
     bool properties_equal(node &other) const override;
 
 private:
-    int32_t time_step_;
-    int32_t batch_size_;
+    int32_t num_output_;
 };
 }

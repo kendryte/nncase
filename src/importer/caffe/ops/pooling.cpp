@@ -56,6 +56,7 @@ DEFINE_CAFFE_LOWER(Pooling)
 
     auto node = graph_.emplace<reduce_window2d>(reduce_type, input.shape(), init_value, kernel_size_h, kernel_size_w,
                                                 padding { (int32_t)pad_h, (int32_t)pad_h }, padding { (int32_t)pad_w, (int32_t)pad_w }, stride_h, stride_w, 1, 1, value_range<float>::full());
+    node->name(op.name() + "/reduce_window");
 
     input_tensors_.emplace(&node->input(), op.bottom(0));
     output_tensors_.emplace(op.top(0), &node->output());

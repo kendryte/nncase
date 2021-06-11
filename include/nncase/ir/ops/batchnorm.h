@@ -18,28 +18,26 @@
 
 namespace nncase::ir
 {
-class NNCASE_API indicator : public node
+class NNCASE_API batchnorm : public node
 {
 public:
-    DEFINE_NODE_OPCODE(op_indicator);
+    DEFINE_NODE_OPCODE(op_batchnorm);
 
+    input_connector &input() { return input_at(0); }
     output_connector &output() { return output_at(0); }
 
-    int32_t time_step() const noexcept { return time_step_; }
-    int32_t batch_size() const noexcept { return batch_size_; }
+    std::vector<float> mean() const noexcept { return mean_; }
+    std::vector<float> var() const noexcept { return var_; }
+    std::vector<float> eps() const noexcept { return eps_; }
 
-    template <class TShape>
-    indicator(datatype_t type, TShape &&shape, int32_t time_step, int32_t batch_size)
-        : time_step_(time_step), batch_size_(batch_size)
-    {
-        add_output("output", type, std::forward<TShape>(shape), mem_input);
-    }
+    batchnorm(datatype_t input_type, shape_t input_shape, std::vector<float> mean, std::vector<float> var, std::vector<float> eps);
 
 protected:
     bool properties_equal(node &other) const override;
 
 private:
-    int32_t time_step_;
-    int32_t batch_size_;
+    std::vector<float> mean_;
+    std::vector<float> var_;
+    std::vector<float> eps_;
 };
 }

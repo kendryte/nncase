@@ -12,25 +12,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../caffe_importer.h"
-#include <nncase/ir/ops/transpose.h>
+#include <nncase/ir/op_utils.h>
+#include <nncase/ir/ops/batchnorm.h>
+#include <xtensor/xarray.hpp>
 
 using namespace nncase;
-using namespace nncase::importer;
 using namespace nncase::ir;
-using namespace caffe;
 
-DEFINE_CAFFE_LOWER(Permute)
+batchnorm::batchnorm(datatype_t input_type, shape_t input_shape, std::vector<float> mean, std::vector<float> var, std::vector<float> eps)
+    : mean_(mean), var_(var), eps_(eps)
 {
-    auto &input = *output_tensors_.at(op.bottom(0));
-    auto &param = op.permute_param();
-    axis_t perm;
-    for (int i = 0; i < param.order_size(); i++)
-        perm.push_back(param.order(i));
+    add_input("input", input_type, input_shape);
+    add_output("output", input_type, input_shape);
+}
 
-    auto tp = graph_.emplace<transpose>(dt_float32, input.shape(), perm);
-    tp->name(op.name() + "/transpose");
-
-    input_tensors_.emplace(&tp->input(), op.bottom(0));
-    output_tensors_.emplace(op.top(0), &tp->output());
+bool batchnorm::properties_equal(node &other) const
+{
+    auto &r = static_cast<batchnorm &>(other);
+    return mean() == r.mean() && var() == r.var() && eps() == r.eps();
 }

@@ -19,12 +19,6 @@
 using namespace nncase;
 using namespace nncase::ir;
 
-indicator::indicator(int32_t time_step, int32_t batch_size)
-    : time_step_(time_step), batch_size_(batch_size)
-{
-    add_output("output", dt_int32, shape_t {2});
-}
-
 bool indicator::properties_equal(node &other) const
 {
     auto &r = static_cast<indicator &>(other);

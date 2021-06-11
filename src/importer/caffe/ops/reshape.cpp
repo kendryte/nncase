@@ -26,6 +26,7 @@ DEFINE_CAFFE_LOWER(Reshape)
     auto &param = op.reshape_param();
 
     auto rp = graph_.emplace<bitcast>(dt_float32, input.shape(), get_axis(param.shape()));
+    rp->name(op.name() + "/bitcast");
 
     input_tensors_.emplace(&rp->input(), op.bottom(0));
     output_tensors_.emplace(op.top(0), &rp->output());

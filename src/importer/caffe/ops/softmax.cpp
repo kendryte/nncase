@@ -31,10 +31,15 @@ DEFINE_CAFFE_LOWER(Softmax)
     reduce_axis.push_back(param.axis());
 
     auto max = graph_.emplace<reduce>(reduce_max, input.shape(), reduce_axis, std::numeric_limits<float>::lowest(), true);
+    max->name(op.name() + "/max");
     auto sub = graph_.emplace<binary>(binary_sub, input.shape(), max->output().shape(), value_range<float>::full());
+    sub->name(op.name() + "/sub");
     auto exp = graph_.emplace<unary>(unary_exp, sub->output().shape());
+    exp->name(op.name() + "/exp");
     auto sum = graph_.emplace<reduce>(reduce_sum, exp->output().shape(), reduce_axis, 0.f, true);
+    sum->name(op.name() + "/sum");
     auto div = graph_.emplace<binary>(binary_div, exp->output().shape(), sum->output().shape(), value_range<float>::full());
+    div->name(op.name() + "/div");
 
     sub->input_b().connect(max->output());
     exp->input().connect(sub->output());

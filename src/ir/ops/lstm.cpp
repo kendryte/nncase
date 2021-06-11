@@ -12,25 +12,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../caffe_importer.h"
-#include <nncase/ir/ops/transpose.h>
+#include <nncase/ir/op_utils.h>
+#include <nncase/ir/ops/lstm.h>
+#include <xtensor/xarray.hpp>
 
 using namespace nncase;
-using namespace nncase::importer;
 using namespace nncase::ir;
-using namespace caffe;
 
-DEFINE_CAFFE_LOWER(Permute)
+lstm::lstm(shape_t input_a_shape, shape_t input_b_shape, int32_t num_output)
+    : num_output_(num_output)
 {
-    auto &input = *output_tensors_.at(op.bottom(0));
-    auto &param = op.permute_param();
-    axis_t perm;
-    for (int i = 0; i < param.order_size(); i++)
-        perm.push_back(param.order(i));
+    add_input("input_a", dt_float32, input_a_shape);
+    add_input("input_b", dt_float32, input_b_shape);
+    add_output("output", dt_float32, shape_t { 128, 128 });
+}
 
-    auto tp = graph_.emplace<transpose>(dt_float32, input.shape(), perm);
-    tp->name(op.name() + "/transpose");
-
-    input_tensors_.emplace(&tp->input(), op.bottom(0));
-    output_tensors_.emplace(op.top(0), &tp->output());
+bool lstm::properties_equal(node &other) const
+{
+    auto &r = static_cast<lstm &>(other);
+    return num_output() == r.num_output();
 }

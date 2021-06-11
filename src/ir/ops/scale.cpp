@@ -12,25 +12,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../caffe_importer.h"
-#include <nncase/ir/ops/transpose.h>
+#include <nncase/ir/op_utils.h>
+#include <nncase/ir/ops/scale.h>
+#include <xtensor/xarray.hpp>
 
 using namespace nncase;
-using namespace nncase::importer;
 using namespace nncase::ir;
-using namespace caffe;
 
-DEFINE_CAFFE_LOWER(Permute)
+scale::scale(datatype_t input_type, shape_t input_shape, std::vector<float> gamma, std::vector<float> beta)
+    : gamma_(gamma), beta_(beta)
 {
-    auto &input = *output_tensors_.at(op.bottom(0));
-    auto &param = op.permute_param();
-    axis_t perm;
-    for (int i = 0; i < param.order_size(); i++)
-        perm.push_back(param.order(i));
+    add_input("input", input_type, input_shape);
+    add_output("output", input_type, input_shape);
+}
 
-    auto tp = graph_.emplace<transpose>(dt_float32, input.shape(), perm);
-    tp->name(op.name() + "/transpose");
-
-    input_tensors_.emplace(&tp->input(), op.bottom(0));
-    output_tensors_.emplace(op.top(0), &tp->output());
+bool scale::properties_equal(node &other) const
+{
+    auto &r = static_cast<scale &>(other);
+    return gamma() == r.gamma() && beta() == r.beta();
 }

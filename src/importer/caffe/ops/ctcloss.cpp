@@ -13,23 +13,27 @@
  * limitations under the License.
  */
 #include "../caffe_importer.h"
-#include <nncase/ir/ops/binary.h>
 
 using namespace nncase;
 using namespace nncase::importer;
 using namespace nncase::ir;
 using namespace caffe;
 
-DEFINE_CAFFE_LOWER(Eltwise)
+DEFINE_CAFFE_LOWER(CtcLoss)
 {
+    // auto &input_a = *output_tensors_.at(op.bottom(0));
+    // auto &input_b = *output_tensors_.at(op.bottom(1));
+
+    // auto &input = input_a.owner().runtime_opcode() == op_input_node ? input_b : input_a;
+    // auto tp = graph_.emplace<transpose>(dt_float32, input.shape(), axis_t { 0,1,2,3 });
+    // tp->name(op.name() + "/transpose");
+
+    // std::string_view sv = input_a.owner().runtime_opcode() == op_input_node ? op.bottom(1) : op.bottom(0);
+    // input_tensors_.emplace(&tp->input(), sv);
+    // output_tensors_.emplace(op.top(0), &tp->output());
     auto &input_a = *output_tensors_.at(op.bottom(0));
     auto &input_b = *output_tensors_.at(op.bottom(1));
-    [[maybe_unused]]auto &param = op.eltwise_param();
 
-    auto add = graph_.emplace<binary>(binary_add, input_a.shape(), input_b.shape(), value_range<float>::full());
-    add->name(op.name() + "/add");
-
-    input_tensors_.emplace(&add->input_a(), op.bottom(0));
-    input_tensors_.emplace(&add->input_b(), op.bottom(1));
-    output_tensors_.emplace(op.top(0), &add->output());
+    auto &input = input_a.owner().runtime_opcode() == op_input_node ? input_b : input_a;
+    output_tensors_.emplace(op.top(0), &input);
 }
