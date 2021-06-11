@@ -70,7 +70,7 @@ jobs:
     - name: CTest
       shell: bash
       working-directory: ${{github.workspace}}/build/tests/kernels
-      run: ctest
+      run: ctest -C $BUILD_TYPE
       
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v2.2.2
