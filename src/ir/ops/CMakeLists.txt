@@ -25,4 +25,5 @@ target_sources(ir PRIVATE
     broadcast.cpp
     take.cpp
     space_to_batch.cpp
-    batch_to_space.cpp)
+    batch_to_space.cpp
+    split.cpp)

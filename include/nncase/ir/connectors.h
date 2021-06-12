@@ -41,12 +41,15 @@ public:
     const std::string &name() const noexcept { return name_; }
     datatype_t type() const noexcept { return type_; }
     const shape_t &shape() const noexcept { return shape_; }
+    connector_attributes attributes() const noexcept { return attributes_; }
+    void attributes(connector_attributes value) noexcept { attributes_ = value; }
 
 private:
     node &owner_;
     std::string name_;
     datatype_t type_;
     shape_t shape_;
+    connector_attributes attributes_ = cnctr_attr_none;
 };
 
 class NNCASE_API input_connector : public base_connector
@@ -75,14 +78,14 @@ public:
     void connect(input_connector &connector);
     void disconnect(input_connector &connector);
     void clear_connections();
-    connector_attributes attributes() const noexcept { return attributes_; }
-    void attributes(connector_attributes value) noexcept { attributes_ = value; }
+    // connector_attributes attributes() const noexcept { return attributes_; }
+    // void attributes(connector_attributes value) noexcept { attributes_ = value; }
     memory_location_t memory_location() const noexcept { return memory_location_; }
     void memory_location(memory_location_t value) noexcept { memory_location_ = value; }
 
 private:
     std::vector<input_connector *> connections_;
-    connector_attributes attributes_ = cnctr_attr_none;
+    // connector_attributes attributes_ = cnctr_attr_none;
     memory_location_t memory_location_;
 };
 }

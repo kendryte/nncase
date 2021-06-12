@@ -75,6 +75,9 @@ public:
     memory_location_t memory_location() const noexcept { return memory_location_; }
     memory_location_t &memory_location() noexcept { return memory_location_; }
 
+    bool no_action_concat_with_strides() const noexcept { return no_action_concat_with_strides_; }
+    bool &no_action_concat_with_strides() noexcept { return no_action_concat_with_strides_; }
+
 private:
     size_t id_;
     ir::output_connector &owner_;
@@ -83,6 +86,7 @@ private:
     ir::shape_t strides_shape_;
     buffer_lifetime lifetime_ {};
     physical_buffer *physical_;
+    bool no_action_concat_with_strides_ = false;
 };
 
 class NNCASE_API physical_buffer

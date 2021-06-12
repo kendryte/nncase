@@ -34,6 +34,7 @@
 #include <nncase/transforms/neutral/matmul_to_conv2d.h>
 #include <nncase/transforms/neutral/quantize_motion.h>
 #include <nncase/transforms/neutral/simplify_reduce.h>
+#include <nncase/transforms/neutral/split_to_slice.h>
 #include <nncase/transforms/neutral/take_to_slice.h>
 #include <nncase/transforms/neutral/transpose_motion.h>
 #include <nncase/transforms/pass.h>
@@ -118,8 +119,10 @@ void neutral_target::add_default_transforms(ir::transforms::pass &pass, [[maybe_
     pass.emplace<transpose_unary_motion_transform>();
     pass.emplace<simplify_reduce_transform>();
     pass.emplace<global_reduce_window_to_reduce_transform>();
+    pass.emplace<reduce_to_global_reduce_window_transform>();
     pass.emplace<transpose_to_reshape_transform>();
     pass.emplace<take_to_slice_transform>();
+    pass.emplace<split_to_slice_transform>();
     pass.emplace<fold_transpose_transform>();
     pass.emplace<fold_nop_transpose_transform>();
 }
@@ -137,6 +140,7 @@ void neutral_target::fold_pad_conv_transform(ir::transforms::pass &pass, [[maybe
     pass.emplace<fold_pad_pad_transform>();
     pass.emplace<fuse_pad_conv2d_transform>();
     pass.emplace<fold_nop_pad_transform>();
+    pass.emplace<pad_to_maxpool_transform>();
 }
 
 void neutral_target::fold_dilated_conv_transform(ir::transforms::pass &pass, [[maybe_unused]] bool add_constant_folding)
@@ -185,6 +189,13 @@ void neutral_target::register_target_independent_passes(const module_type_t &typ
         {
             pass p("target_independent_pass");
             add_default_transforms(p, true);
+            pass_mgr.add_pass(std::move(p));
+        }
+
+        // pad to slice
+        {
+            pass p("pad_to_slice");
+            p.emplace<pad_to_slice_transform>();
             pass_mgr.add_pass(std::move(p));
         }
     }

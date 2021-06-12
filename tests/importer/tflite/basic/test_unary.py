@@ -19,6 +19,7 @@ import tensorflow as tf
 import numpy as np
 from test_runner import TfliteTestRunner
 
+
 def _make_module(in_shape):
     class UnaryModule(tf.Module):
         def __init__(self):
@@ -44,12 +45,14 @@ def _make_module(in_shape):
             return outs
     return UnaryModule()
 
+
 in_shapes = [
     [3],
     [64, 3],
     [3, 64, 3],
     [8, 6, 16, 3]
 ]
+
 
 @pytest.mark.parametrize('in_shape', in_shapes)
 def test_unary(in_shape, request):
@@ -59,5 +62,7 @@ def test_unary(in_shape, request):
     model_file = runner.from_tensorflow(module)
     runner.run(model_file)
 
+
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_unary.py'])
+    pytest.main(
+        ['-vv', 'test_unary.py'])
