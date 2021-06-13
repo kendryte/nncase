@@ -18,7 +18,7 @@ jobs:
 
     - name: Add msbuild to PATH
       if: runner.os == 'Windows'
-      uses: microsoft/setup-msbuild@v1.0.1
+      uses: microsoft/setup-msbuild@v1.0.2
           
     - name: Setup Python
       uses: actions/setup-python@v2.2.1
