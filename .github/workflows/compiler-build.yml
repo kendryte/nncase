@@ -21,6 +21,10 @@ jobs:
       shell: bash
       run: |
         sudo apt install libgtk2.0-dev -y
+
+    - name: Add msbuild to PATH
+      if: runner.os == 'Windows'
+      uses: microsoft/setup-msbuild@v1.0.1
           
     - name: Setup Python
       uses: actions/setup-python@v2.2.1

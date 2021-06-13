@@ -15,6 +15,10 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - uses: seanmiddleditch/gha-setup-ninja@master
+
+    - name: Add msbuild to PATH
+      if: runner.os == 'Windows'
+      uses: microsoft/setup-msbuild@v1.0.1
           
     - name: Setup Python
       uses: actions/setup-python@v2.2.1
