@@ -89,8 +89,8 @@ void reduce_to_global_reduce_window_transform::process(transform_context &contex
     auto &old_rd = static_cast<reduce &>(*context.matched_nodes[0]);
 
     // TODO: Handle activation
-    auto rw = context.graph.emplace<reduce_window2d>(old_rd.reduce_op(), old_rd.input().shape(), old_rd.init_value(), old_rd.input().shape()[2],
-        old_rd.input().shape()[3], padding::zero(), padding::zero(), 1, 1, 1, 1, value_range<float>::full());
+    auto rw = context.graph.emplace<reduce_window2d>(old_rd.reduce_op(), old_rd.input().shape(), old_rd.init_value(), (int32_t)old_rd.input().shape()[2],
+        (int32_t)old_rd.input().shape()[3], padding::zero(), padding::zero(), 1, 1, 1, 1, value_range<float>::full());
     rw->name(old_rd.name());
     auto rshape = context.graph.emplace<bitcast>(rw->output().type(), rw->output().shape(), old_rd.output().shape());
     rshape->name(old_rd.name() + "/rshape");

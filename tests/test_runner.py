@@ -13,7 +13,6 @@ import torch
 import onnx
 from onnx import version_converter, helper
 import onnxsim
-import onnxoptimizer
 import onnxruntime as ort
 import struct
 from compare_util import compare_with_ground_truth, VerboseType
@@ -500,10 +499,10 @@ class OnnxTestRunner(TestRunner):
             onnx.onnx_pb.TensorProto.UINT16: np.uint16,
             onnx.onnx_pb.TensorProto.INT64: np.int64,
             onnx.onnx_pb.TensorProto.UINT64: np.uint64,
-            onnx.onnx_pb.TensorProto.BOOL: np.bool,
+            onnx.onnx_pb.TensorProto.BOOL: bool,
             onnx.onnx_pb.TensorProto.COMPLEX64: np.complex64,
             onnx.onnx_pb.TensorProto.COMPLEX128: np.complex128,
-            onnx.onnx_pb.TensorProto.STRING: np.object,
+            onnx.onnx_pb.TensorProto.STRING: object,
         }
 
         return ONNX_TO_NUMPY_DTYPE[onnx_type]

@@ -35,14 +35,14 @@ conan_check()
 conan_add_remote(NAME sunnycase URL https://conan.sunnycase.moe INDEX 0)
 conan_add_remote(NAME bincrafts URL https://api.bintray.com/conan/bincrafters/public-conan)
 
-option(NNCASE_OPENMP "openmp support" OFF)
+option(ENABLE_OPENMP "openmp support" OFF)
 option(BUILD_TESTING "Build test programs" OFF)
 
 if (BUILDING_RUNTIME)
     option(BUILD_PYTHON_BINDING "Build python binding" ON)
     option(ENABLE_K210_RUNTIME "Enable k210 runtime" OFF)
     option(DEFAULT_BUILTIN_RUNTIMES "Use default builtin runtimes" ON)
-    option(SHARED_RUNTIME_TENSOR_PLATFORM_IMPL "Use default shared memory platform impl" ON)
+    option(DEFAULT_SHARED_RUNTIME_TENSOR_PLATFORM_IMPL "Use default shared memory platform impl" ON)
 
     conan_cmake_run(CONANFILE conanfile-runtime.txt
                     BASIC_SETUP CMAKE_TARGETS
@@ -60,9 +60,11 @@ if (BUILDING_RUNTIME)
         add_definitions(/D_CRT_SECURE_NO_WARNINGS /DNOMINMAX)
         add_compile_options(/wd4267 /wd4251 /FC /utf-8 /W3 /WX)
     else()
-        add_compile_options(-Wall -Wextra -pedantic -Werror -Wno-multichar -Wno-missing-field-initializers -Wno-unused-function -Wno-maybe-uninitialized -Wno-type-limits)
+        add_compile_options(-Wall -Wextra -pedantic -Werror -Wno-multichar -Wno-missing-field-initializers -Wno-unused-function -Wno-type-limits)
         if (APPLE)
             add_compile_options(-Wno-four-char-constants -Wno-sometimes-uninitialized)
+        else ()
+            add_compile_options(-Wno-maybe-uninitialized)
         endif()
     endif()
     
@@ -113,7 +115,7 @@ if (BUILDING_RUNTIME)
     # Modules
     add_subdirectory(modules/k210)
 else()
-    conan_cmake_run(CONANFILE conanfile.txt
+    conan_cmake_run(CONANFILE conanfile.py
                     BASIC_SETUP CMAKE_TARGETS
                     SETTINGS compiler.cppstd=20
                     BUILD missing)
@@ -130,10 +132,8 @@ else()
     set_property(GLOBAL PROPERTY POSITION_INDEPENDENT_CODE ON)
     if (APPLE)
         set(CMAKE_MACOSX_RPATH TRUE)
-        set(CMAKE_BUILD_RPATH TRUE)
-        set(CMAKE_INSTALL_RPATH "@rpath/../lib")
-        set(CMAKE_INSTALL_NAME_DIR "@rpath/../lib")
-        set(CMAKE_BUILD_WITH_INSTALL_RPATH TURE)
+        set(CMAKE_INSTALL_RPATH "@loader_path/../lib")
+        set(CMAKE_INSTALL_NAME_DIR "@rpath")
     else ()
         set(CMAKE_INSTALL_RPATH "$ORIGIN/../lib")
     endif()

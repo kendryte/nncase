@@ -1,4 +1,4 @@
-cmake_minimum_required (VERSION 3.8)
+cmake_minimum_required (VERSION 3.15)
 
 find_package (Python3 COMPONENTS Interpreter Development REQUIRED)
 find_package (pybind11 REQUIRED)

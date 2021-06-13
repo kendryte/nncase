@@ -1,4 +1,4 @@
-name: Build
+name: compiler-build
 
 on: [push, pull_request]
 
@@ -10,27 +10,31 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-18.04]
+        os: [ubuntu-18.04,windows-2019,macos-10.15]
 
     steps:
     - uses: actions/checkout@v2
-          
-    - name: Setup Python
-      uses: actions/setup-python@v2.2.1
-      with:
-        python-version: 3.7
+    - uses: seanmiddleditch/gha-setup-ninja@master
         
     - name: Install System Requirements
       if: runner.os == 'Linux'
       shell: bash
       run: |
         sudo apt install libgtk2.0-dev -y
-        
-    - name: Install Python Packages
+
+    - name: Add msbuild to PATH
+      if: runner.os == 'Windows'
+      uses: ilammy/msvc-dev-cmd@v1.9.0
+          
+    - name: Setup Python
+      uses: actions/setup-python@v2.2.1
+      with:
+        python-version: 3.7
+
+    - name: Install Conan
       shell: bash
       run: |
-        pip install conan tensorflow==2.4.1 matplotlib pillow onnx==1.8.0 onnx-simplifier==0.2.21 onnxoptimizer==0.1.2 onnxruntime==1.6.0
-        pip install torch==1.7.0+cpu torchvision==0.8.1+cpu -f https://download.pytorch.org/whl/torch_stable.html
+        pip install conan
 
     - name: Configure Conan
       if: runner.os == 'Linux'
@@ -46,45 +50,32 @@ jobs:
       env:
         CC: gcc-10
         CXX: g++-10
+      if: runner.os == 'Linux'
       shell: bash
       working-directory: ${{github.workspace}}/build
-      # Note the current convention is to use the -S and -B options here to specify source 
-      # and build directories, but this is only available with CMake 3.13 and higher.  
-      # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=ON
+      run: cmake -G Ninja $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=ON -DPython3_ROOT_DIR=${pythonLocation}
+
+    - name: Configure CMake
+      if: runner.os != 'Linux'
+      shell: bash
+      working-directory: ${{github.workspace}}/build
+      run: cmake -G Ninja $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=ON -DPython3_ROOT_DIR=${pythonLocation}
 
     - name: Build
-      working-directory: ${{github.workspace}}/build
       shell: bash
-      # Execute the build.  You can specify a specific target with "--target <NAME>"
+      working-directory: ${{github.workspace}}/build
       run: |
         cmake --build . --config $BUILD_TYPE
 
     - name: Install
-      working-directory: ${{github.workspace}}/build
       shell: bash
-      # Execute the build.  You can specify a specific target with "--target <NAME>"
+      working-directory: ${{github.workspace}}/build
       run: cmake --install . --prefix ../install
 
     - name: CTest
-      working-directory: ${{github.workspace}}/build/tests/kernels
-      if: runner.os == 'Linux'
       shell: bash
-      run: ctest
-
-    - name: CTest
       working-directory: ${{github.workspace}}/build/tests/kernels
-      if: runner.os == 'Windows'
-      shell: bash
-      run: ctest
-
-    - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v2.2.2
-      if: runner.os == 'Windows'
-      with:
-        name: nncase_win_x86_64
-        path: ${{github.workspace}}/install
-        if-no-files-found: error
+      run: ctest -C $BUILD_TYPE
       
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v2.2.2
@@ -94,12 +85,28 @@ jobs:
         path: ${{github.workspace}}/install
         if-no-files-found: error
 
+    - name: Upload a Build Artifact
+      uses: actions/upload-artifact@v2.2.2
+      if: runner.os == 'Windows'
+      with:
+        name: nncase_win_x86_64
+        path: ${{github.workspace}}/install
+        if-no-files-found: error
+
+    - name: Upload a Build Artifact
+      uses: actions/upload-artifact@v2.2.2
+      if: runner.os == 'Macos'
+      with:
+        name: nncase_macos_x86_64
+        path: ${{github.workspace}}/install
+        if-no-files-found: error
+
   test-compiler:
     needs: [build]
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-18.04]
+        os: [ubuntu-18.04,windows-2019,macos-10.15]
 
     steps:
     - uses: actions/checkout@v2
@@ -109,17 +116,20 @@ jobs:
       with:
         python-version: 3.7
         
-    - name: Install System Requirements
-      if: runner.os == 'Linux'
+    - name: Install Python Packages
+      if: runner.os != 'Macos'
       shell: bash
       run: |
-        sudo apt install libgtk2.0-dev -y
+        pip install conan tensorflow==2.4.1 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0
+        pip install torch==1.7.0+cpu torchvision==0.8.1+cpu -f https://download.pytorch.org/whl/torch_stable.html
+        pip install pytest
         
     - name: Install Python Packages
+      if: runner.os == 'Macos'
       shell: bash
       run: |
-        pip install conan tensorflow==2.4.1 matplotlib pillow onnx==1.8.0 onnx-simplifier==0.2.21 onnxoptimizer==0.1.2 onnxruntime==1.6.0
-        pip install torch==1.7.0+cpu torchvision==0.8.1+cpu -f https://download.pytorch.org/whl/torch_stable.html
+        pip install conan tensorflow==2.4.1 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0
+        pip install torch==1.7.0 torchvision==0.8.1 -f https://download.pytorch.org/whl/torch_stable.html
         pip install pytest
       
     - name: Create Test Environment
@@ -131,16 +141,30 @@ jobs:
       
     - name: Download a Build Artifact
       uses: actions/download-artifact@v2.0.9
+      if: runner.os == 'Linux'
       with:
         name: nncase_linux_x86_64
+        path: ${{github.workspace}}/install
+      
+    - name: Download a Build Artifact
+      uses: actions/download-artifact@v2.0.9
+      if: runner.os == 'Windows'
+      with:
+        name: nncase_win_x86_64
+        path: ${{github.workspace}}/install
+      
+    - name: Download a Build Artifact
+      uses: actions/download-artifact@v2.0.9
+      if: runner.os == 'Macos'
+      with:
+        name: nncase_macos_x86_64
         path: ${{github.workspace}}/install
 
     - name: Test
       working-directory: ${{github.workspace}}
-      if: runner.os == 'Linux'
+      if: runner.os != 'Windows'
       shell: bash
       env:
-        LD_LIBRARY_PATH: ${{github.workspace}}/install/lib
         PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/tests
       run: |
         pytest tests/importer --doctest-modules --junitxml=test_results/importer.xml
@@ -157,6 +181,6 @@ jobs:
 
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action@v1
-      if: always()
+      if: always() && runner.os == 'Linux'
       with:
         files: test_results/*.xml

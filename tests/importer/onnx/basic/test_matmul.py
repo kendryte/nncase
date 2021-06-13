@@ -17,24 +17,27 @@ import pytest
 import torch
 from test_runner import OnnxTestRunner
 
+
 def _make_module(shape):
 
     class MatmulModule(torch.nn.Module):
         def __init__(self):
             super(MatmulModule, self).__init__()
+            self.y = torch.randn(*shape)
 
         def forward(self, x):
-            y = torch.randn(*shape)
-            x = torch.matmul(x, y)
+            x = torch.matmul(x, self.y)
 
             return x
 
     return MatmulModule()
 
+
 in_shapes = [
     [[1, 2], [2, 1]],
     [[3, 4], [4, 5]]
 ]
+
 
 @pytest.mark.parametrize('in_shape', in_shapes)
 def test_matmul(in_shape, request):
@@ -43,6 +46,7 @@ def test_matmul(in_shape, request):
     runner = OnnxTestRunner(request.node.name)
     model_file = runner.from_torch(module, in_shape[0])
     runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_matmul.py'])
