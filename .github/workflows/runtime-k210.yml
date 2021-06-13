@@ -1,4 +1,4 @@
-name: k210
+name: runtime-k210
 
 on: [push, pull_request]
 
