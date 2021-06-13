@@ -31,7 +31,7 @@ jobs:
     - name: Configure CMake
       shell: bash
       working-directory: ${{github.workspace}}/build
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILDING_RUNTIME=TRUE -DPython3_ROOT_DIR=${pythonLocation}
+      run: cmake -G Ninja $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILDING_RUNTIME=TRUE -DPython3_ROOT_DIR=${pythonLocation}
 
     - name: Build
       shell: bash
