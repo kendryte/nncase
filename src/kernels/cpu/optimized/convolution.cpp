@@ -14,11 +14,9 @@
  */
 #include <nncase/kernels/cpu/optimized/convolution.h>
 #include <nncase/kernels/kernel_utils.h>
-#include <nncase/runtime/stackvm/kernel_context.h>
 #include <utility>
 #ifdef NNCASE_OPENMP
 #include <omp.h>
-#define GET_NUM_THREADS std::is_convertible<nncase::runtime::stackvm::stackvm_kernel_context &, decltype(context)>::value ? static_cast<nncase::runtime::stackvm::stackvm_kernel_context &>(context).num_threads_ : 1
 #endif
 
 #define CONV_ARGS input, weights, bias, output,           \
@@ -75,7 +73,7 @@ result<void> conv2d_1x1_s1(const float *input, const float *weights, const float
     for (size_t batch = 0; batch < in_shape[0]; batch++)
     {
 #ifdef NNCASE_OPENMP
-#pragma omp parallel for num_threads(GET_NUM_THREADS)
+#pragma omp parallel for num_threads(context.num_threads)
 #endif
         for (size_t oc = 0; oc < out_channels; oc++)
         {
@@ -162,7 +160,7 @@ result<void> conv2d_1x1_s2(const float *input, const float *weights, const float
     for (size_t b = 0; b < batch; b++)
     {
 #ifdef NNCASE_OPENMP
-#pragma omp parallel for num_threads(GET_NUM_THREADS)
+#pragma omp parallel for num_threads(context.num_threads)
 #endif
         for (size_t oc = 0; oc < out_channels; oc++)
         {
@@ -392,7 +390,7 @@ result<void> conv2d_nxm(const float *input, const float *weights, const float *b
     for (size_t b = 0; b < batch; b++) // batch
     {
 #ifdef NNCASE_OPENMP
-#pragma omp parallel for num_threads(GET_NUM_THREADS)
+#pragma omp parallel for num_threads(context.num_threads)
 #endif
         for (size_t oc = 0; oc < out_channels; oc++) // out channel
         {
@@ -441,7 +439,7 @@ result<void> conv2d_depthwise_nxm(const float *input, const float *weights, cons
     {
 
 #ifdef NNCASE_OPENMP
-#pragma omp parallel for num_threads(GET_NUM_THREADS)
+#pragma omp parallel for num_threads(context.num_threads)
 #endif
         for (size_t c = 0; c < channels; c++) // channel
         {

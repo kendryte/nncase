@@ -35,7 +35,7 @@ conan_check()
 conan_add_remote(NAME sunnycase URL https://conan.sunnycase.moe INDEX 0)
 conan_add_remote(NAME bincrafts URL https://api.bintray.com/conan/bincrafters/public-conan)
 
-option(ENABLE_OPENMP "openmp support" OFF)
+option(ENABLE_OPENMP "openmp support" ON)
 option(BUILD_TESTING "Build test programs" OFF)
 
 if (BUILDING_RUNTIME)

@@ -1,4 +1,4 @@
-/* Copyright 2020 Canaan Inc.
+/* Copyright 2019-2020 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,14 +12,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#pragma once
 #include <nncase/kernels/kernel_context.h>
+#ifdef NNCASE_OPENMP
+#include <omp.h>
+#endif
 
-BEGIN_NS_NNCASE_RT_STACKVM
+using namespace nncase;
+using namespace nncase::kernels;
 
-struct NNCASE_API stackvm_kernel_context : public kernels::kernel_context
+namespace
 {
-    int num_threads_ = 4;
-};
+    struct default_kernel_context_holder
+    {
+        kernel_context ctx;
 
-END_NS_NNCASE_RT_STACKVM
+        default_kernel_context_holder()
+        {
+#ifdef NNCASE_OPENMP
+            ctx.num_threads = (uint32_t)omp_get_max_threads();
+#else
+            ctx.num_threads = 1;
+#endif
+        }
+    };
+}
+
+kernel_context &kernels::default_kernel_context()
+{
+    static default_kernel_context_holder holder;
+    return holder.ctx;
+}

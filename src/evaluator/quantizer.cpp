@@ -155,7 +155,8 @@ void quantizer::record(output_connector &connector, std::span<const float> data)
         has_record_.emplace(&connector, true);
         break;
     case quantize_stage::collect_distribution:
-        histograms_.at(&connector).record(data);
+        if (connector.owner().runtime_opcode() != op_constant)
+            histograms_.at(&connector).record(data);
         has_record_.emplace(&connector, true);
         break;
     default:
@@ -172,7 +173,8 @@ void quantizer::record(output_connector &connector, std::span<const bfloat16> da
         has_record_.emplace(&connector, true);
         break;
     case quantize_stage::collect_distribution:
-        histograms_.at(&connector).record(data);
+        if (connector.owner().runtime_opcode() != op_constant)
+            histograms_.at(&connector).record(data);
         has_record_.emplace(&connector, true);
         break;
     default:
@@ -183,7 +185,10 @@ void quantizer::record(output_connector &connector, std::span<const bfloat16> da
 void quantizer::begin_collect_distribution()
 {
     for (auto &&p : quant_ranges_)
-        histograms_.emplace(p.first, histogram(fixup_range(p.second), bins_, 256, cali_method_));
+    {
+        if (p.first->owner().runtime_opcode() != op_constant)
+            histograms_.emplace(p.first, histogram(fixup_range(p.second), bins_, 256, cali_method_));
+    }
 
     stage_ = quantize_stage::collect_distribution;
 }

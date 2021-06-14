@@ -1,6 +1,7 @@
 ﻿cmake_minimum_required (VERSION 3.8)
 
 set(SRCS convolution.cpp
+         kernel_context.cpp
          nnil.cpp
          reduce_window.cpp
          tensor_compute.cpp)
