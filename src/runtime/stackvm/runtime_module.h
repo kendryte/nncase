@@ -178,7 +178,6 @@ private:
     std::array<uintptr_t, MAX_GENERAL_REGS> regs_;
     std::vector<runtime_shape_t> shape_regs_;
     std::vector<runtime_paddings_t> paddings_regs_;
-    kernels::kernel_context kernel_context_;
 };
 
 END_NS_NNCASE_RT_STACKVM
