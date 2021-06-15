@@ -22,19 +22,19 @@ using namespace nncase::kernels;
 
 namespace
 {
-    struct default_kernel_context_holder
-    {
-        kernel_context ctx;
+struct default_kernel_context_holder
+{
+    kernel_context ctx;
 
-        default_kernel_context_holder()
-        {
+    default_kernel_context_holder()
+    {
 #ifdef NNCASE_OPENMP
-            ctx.num_threads = (uint32_t)omp_get_max_threads();
+        ctx.num_threads = (uint32_t)omp_get_max_threads();
 #else
-            ctx.num_threads = 1;
+        ctx.num_threads = 1;
 #endif
-        }
-    };
+    }
+};
 }
 
 kernel_context &kernels::default_kernel_context()
