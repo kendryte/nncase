@@ -116,6 +116,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+        
+    - name: Install System Requirements
+      if: runner.os == 'Macos'
+      shell: bash
+      run: |
+        brew install libomp
           
     - name: Setup Python
       uses: actions/setup-python@v2.2.1
