@@ -75,7 +75,7 @@ static std::vector<float> smooth(const std::vector<float> &p, const size_t box_p
     p_expand.insert(p_expand.end(), box_pts - 1, 0);
 
     for (size_t i = box_pts / 2; i < ret.size() + box_pts / 2; i++)
-        ret[i - box_pts / 2] = std::accumulate(p_expand.begin() + i, p_expand.begin() + i + box_pts, 0) * 1.f / box_pts;
+        ret[i - box_pts / 2] = std::reduce(p_expand.begin() + i, p_expand.begin() + i + box_pts) / box_pts;
 
     return ret;
 }
