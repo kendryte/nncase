@@ -49,13 +49,12 @@ physical_memory_block &physical_memory_block::operator=(physical_memory_block &&
     return *this;
 }
 
-result<void> physical_memory_block::free(host_memory_block &block) noexcept
+void physical_memory_block::free([[maybe_unused]] host_memory_block &block) noexcept
 {
     if (owned)
         delete[] reinterpret_cast<gsl::byte *>(physical_address + IOMEM);
     physical_address = 0;
     owned = false;
-    return ok();
 }
 
 result<void> physical_memory_block::acknowledge(host_memory_block &block) noexcept
