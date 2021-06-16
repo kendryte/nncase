@@ -29,14 +29,6 @@ DEFINE_CAFFE_LOWER(Input)
         output_tensors_.emplace(op.top(i), &node->output());
 }
 
-DEFINE_CAFFE_LOWER(ImageData1)
-{
-    auto node = graph_.emplace<input_node>(dt_float32, shape_t { 1, 1, 32, 1600 }); // nchw
-    node->name(op.name());
-    for (int i = 0; i < op.top_size(); i++)
-        output_tensors_.emplace(op.top(i), &node->output());
-}
-
 DEFINE_CAFFE_LOWER(ContinuationIndicator)
 {
     auto &param = op.continuation_indicator_param();
