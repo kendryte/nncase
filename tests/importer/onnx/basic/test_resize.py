@@ -50,7 +50,7 @@ modes = [
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('size', sizes)
 @pytest.mark.parametrize('mode', modes)
-def test_concat(in_shape, size, mode, request):
+def test_resize(in_shape, size, mode, request):
     module = _make_module(size, mode)
 
     runner = OnnxTestRunner(request.node.name, ['k510'])
