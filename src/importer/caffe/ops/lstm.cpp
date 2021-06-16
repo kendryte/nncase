@@ -32,8 +32,10 @@ DEFINE_CAFFE_LOWER(LSTM)
     auto &param = op.recurrent_param();
     auto n_output = param.num_output();
 
-    auto blob0 = load_tensor<2>(op.blobs(0));
-    auto blob1 = load_tensor<1>(op.blobs(1));
+    auto op_data = get_op_data(op, caffemodel);
+
+    auto blob0 = load_tensor<2>(op_data.blobs(0));
+    auto blob1 = load_tensor<1>(op_data.blobs(1));
 
     if (op.bottom_size() == 3)
     {
@@ -46,13 +48,11 @@ DEFINE_CAFFE_LOWER(LSTM)
     std::vector<float> blob1_vec(blob1.begin(), blob1.end());
     std::vector<float> blob2_vec;
     if (has_static)
-        blob2_vec.assign(load_tensor<2>(op.blobs(2)).begin(), load_tensor<2>(op.blobs(2)).end());
+        blob2_vec.assign(load_tensor<2>(op_data.blobs(2)).begin(), load_tensor<2>(op_data.blobs(2)).end());
 
     if (input_a.shape().size() != 3)
     {
-        // workaround here since we can't get time_step and batch from caffemodel
-        // auto rshape = graph_.emplace<bitcast>(dt_float32, input_a.shape(), dt_float32, axis_t { input_b.shape()[0], input_b.shape()[1], (int32_t)param.num_output() });
-        auto rshape = graph_.emplace<bitcast>(dt_float32, input_a.shape(), dt_float32, axis_t { 201, 1, (int32_t)param.num_output() });
+        auto rshape = graph_.emplace<bitcast>(dt_float32, input_a.shape(), dt_float32, axis_t { (int32_t)input_b.shape()[0], (int32_t)input_b.shape()[1], (int32_t)param.num_output() });
         auto node = graph_.emplace<lstm>(rshape->output().shape(), input_b.shape(), input_c_shape, blob0_vec, blob1_vec, blob2_vec, n_output, has_static);
         node->name(op.name() + "/lstm");
         input_tensors_.emplace(&rshape->input(), op.bottom(0));

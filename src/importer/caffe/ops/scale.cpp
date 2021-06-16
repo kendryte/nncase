@@ -80,12 +80,14 @@ DEFINE_CAFFE_LOWER(Scale)
     auto &input = *output_tensors_.at(op.bottom(0));
     auto &param = op.scale_param();
 
-    auto gamma = load_tensor<1>(op.blobs(0));
+    auto op_data = get_op_data(op, caffemodel);
+
+    auto gamma = load_tensor<1>(op_data.blobs(0));
     std::vector<float> gamma_vec_c(gamma.begin(), gamma.end());
     std::vector<float> beta_vec_c(gamma.size(), 0.f);
     if (param.has_bias_term())
     {
-        auto beta = load_tensor<1>(op.blobs(1));
+        auto beta = load_tensor<1>(op_data.blobs(1));
         beta_vec_c.assign(beta.begin(), beta.end());
     }
 

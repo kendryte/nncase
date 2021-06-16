@@ -151,10 +151,10 @@ public:
         END_IMPORT()
     }
 
-    void import_caffe(std::span<const uint8_t> model, const import_options &options) override
+    void import_caffe(std::span<const uint8_t> model, const char *prototxt, const import_options &options) override
     {
         BEGIN_IMPORT()
-        importer::import_caffe(graph_, model, imp_options);
+        importer::import_caffe(graph_, model, prototxt, imp_options);
         END_IMPORT()
     }
 

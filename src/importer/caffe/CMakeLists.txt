@@ -19,7 +19,6 @@ set(SRCS caffe.pb.cc
         ops/reverse.cpp
         ops/lstm.cpp
         ops/inner_product.cpp
-        ops/ctcloss.cpp
         ops/batchnorm.cpp)
 
 add_library(caffe_importer ${SRCS})

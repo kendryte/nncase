@@ -28,15 +28,17 @@ DEFINE_CAFFE_LOWER(InnerProduct)
     auto &input = *output_tensors_.at(op.bottom(0));
     auto &param = op.inner_product_param();
 
-    auto input_b = load_tensor<2>(op.blobs(0));
+    auto op_data = get_op_data(op, caffemodel);
+
+    auto input_b = load_tensor<2>(op_data.blobs(0));
     std::vector<float> input_b_vec(input_b.begin(), input_b.end());
-    auto input_b_const = graph_.emplace<constant>(dt_float32, get_shape(op.blobs(0).shape()), input_b_vec);
+    auto input_b_const = graph_.emplace<constant>(dt_float32, get_shape(op_data.blobs(0).shape()), input_b_vec);
     input_b_const->name(op.name() + "/input_b_const");
 
-    int32_t bc_shape = xt::compute_size(input.shape()) / (int32_t)get_shape(op.blobs(0).shape())[0];
+    int32_t bc_shape = xt::compute_size(input.shape()) / (int32_t)get_shape(op_data.blobs(0).shape())[0];
     auto rshape = graph_.emplace<bitcast>(dt_float32, input.shape(), dt_float32,
-        axis_t { bc_shape, (int32_t)get_shape(op.blobs(0).shape())[0] });
-    auto node = graph_.emplace<matmul>(rshape->output().shape(), get_shape(op.blobs(0).shape()), value_range<float>::full());
+        axis_t { bc_shape, (int32_t)get_shape(op_data.blobs(0).shape())[0] });
+    auto node = graph_.emplace<matmul>(rshape->output().shape(), get_shape(op_data.blobs(0).shape()), value_range<float>::full());
     node->name(op.name() + "/matmul");
 
     input_tensors_.emplace(&rshape->input(), op.bottom(0));
@@ -44,9 +46,9 @@ DEFINE_CAFFE_LOWER(InnerProduct)
     node->input_b().connect(input_b_const->output());
     if (param.has_bias_term())
     {
-        auto bias = load_tensor<1>(op.blobs(1));
+        auto bias = load_tensor<1>(op_data.blobs(1));
         std::vector<float> bias_vec(bias.begin(), bias.end());
-        auto bias_const = graph_.emplace<constant>(dt_float32, get_shape(op.blobs(1).shape()), bias_vec);
+        auto bias_const = graph_.emplace<constant>(dt_float32, get_shape(op_data.blobs(1).shape()), bias_vec);
         bias_const->name(op.name() + "/bias_const");
         node->bias().connect(bias_const->output());
     }

@@ -30,14 +30,14 @@ namespace importer
     class caffe_importer
     {
     public:
-        caffe_importer(std::span<const uint8_t> model, ir::graph &graph);
+        caffe_importer(std::span<const uint8_t> model, const char *prototxt, ir::graph &graph);
 
         void import(const struct import_options &options);
 
     private:
-        void convert_op(const caffe::LayerParameter &op);
+        void convert_op(const caffe::LayerParameter &op, caffe::NetParameter caffemodel);
 
-#define DEFINE_OPCODE(opcode) void convert_op_##opcode(const caffe::LayerParameter &op);
+#define DEFINE_OPCODE(opcode) void convert_op_##opcode(const caffe::LayerParameter &op, [[maybe_unused]]caffe::NetParameter caffemodel);
 #include "opcode.def"
 #undef DEFINE_OPCODE
 
@@ -74,6 +74,16 @@ namespace importer
             return default_val;
         }
 
+        caffe::LayerParameter get_op_data(caffe::LayerParameter op, caffe::NetParameter caffemodel)
+        {
+            for (int32_t i = 0; i < caffemodel.layer_size(); i++)
+            {
+                if (op.name() == caffemodel.layer(i).name())
+                    return caffemodel.layer(i);
+            }
+            throw std::runtime_error("can't find related data from caffemodel");
+        }
+
         template <size_t N>
         xt::xtensor<float, N> load_tensor(const caffe::BlobProto &blob)
         {
@@ -84,6 +94,7 @@ namespace importer
 
     private:
         caffe::NetParameter model_;
+        caffe::NetParameter prototxt_;
         ir::graph &graph_;
         std::unordered_map<ir::input_connector *, std::string_view> input_tensors_;
         std::unordered_map<std::string_view, ir::output_connector *> output_tensors_;
@@ -92,4 +103,4 @@ namespace importer
 }
 
 #define DEFINE_CAFFE_LOWER(opcode) \
-    void nncase::importer::caffe_importer::convert_op_##opcode(const caffe::LayerParameter &op)
+    void nncase::importer::caffe_importer::convert_op_##opcode(const caffe::LayerParameter &op, [[maybe_unused]]caffe::NetParameter caffemodel)

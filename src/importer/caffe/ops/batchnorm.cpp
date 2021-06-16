@@ -83,9 +83,11 @@ DEFINE_CAFFE_LOWER(BatchNorm)
     if (param.has_use_global_stats() && !param.use_global_stats())
         throw std::runtime_error("use_global_stats should be true at inference step");
 
-    auto means = load_tensor<1>(op.blobs(0));
-    auto variants = load_tensor<1>(op.blobs(1));
-    auto eps = load_tensor<1>(op.blobs(2));
+    auto op_data = get_op_data(op, caffemodel);
+
+    auto means = load_tensor<1>(op_data.blobs(0));
+    auto variants = load_tensor<1>(op_data.blobs(1));
+    auto eps = load_tensor<1>(op_data.blobs(2));
     std::vector<float> means_vec_c(means.begin(), means.end());
     std::vector<float> variants_vec_c(variants.begin(), variants.end());
     std::vector<float> eps_vec_c(eps.begin(), eps.end());
