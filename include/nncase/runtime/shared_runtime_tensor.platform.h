@@ -33,7 +33,7 @@ struct NNCASE_API physical_memory_block
     physical_memory_block &operator=(const physical_memory_block &) = delete;
     physical_memory_block &operator=(physical_memory_block &&other) noexcept;
 
-    result<void> free() noexcept;
+    result<void> free([[maybe_unused]] host_memory_block &block) noexcept;
 
     static result<void> acknowledge(host_memory_block &block) noexcept;
     static result<void> allocate(host_memory_block &block) noexcept;

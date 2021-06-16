@@ -30,7 +30,6 @@ physical_memory_block::physical_memory_block() noexcept
 
 physical_memory_block::~physical_memory_block()
 {
-    free().expect("free physical memory block failed");
 }
 
 physical_memory_block::physical_memory_block(physical_memory_block &&other) noexcept
@@ -42,7 +41,6 @@ physical_memory_block::physical_memory_block(physical_memory_block &&other) noex
 
 physical_memory_block &physical_memory_block::operator=(physical_memory_block &&other) noexcept
 {
-    free().expect("free physical memory block failed");
     physical_address = other.physical_address;
     owned = other.owned;
     other.physical_address = 0;
@@ -50,7 +48,7 @@ physical_memory_block &physical_memory_block::operator=(physical_memory_block &&
     return *this;
 }
 
-result<void> physical_memory_block::free() noexcept
+result<void> physical_memory_block::free([[maybe_unused]] host_memory_block &block) noexcept
 {
     if (owned)
         delete[] reinterpret_cast<gsl::byte *>(physical_address);
