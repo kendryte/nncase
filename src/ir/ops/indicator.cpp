@@ -12,15 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/ir/op_utils.h>
-#include <nncase/ir/ops/indicator.h>
-#include <xtensor/xarray.hpp>
+// #include <nncase/ir/op_utils.h>
+// #include <nncase/ir/ops/indicator.h>
+// #include <xtensor/xarray.hpp>
 
-using namespace nncase;
-using namespace nncase::ir;
+// using namespace nncase;
+// using namespace nncase::ir;
 
-bool indicator::properties_equal(node &other) const
-{
-    auto &r = static_cast<indicator &>(other);
-    return time_step() == r.time_step() && batch_size() == r.batch_size();
-}
+// bool indicator::properties_equal(node &other) const
+// {
+//     auto &r = static_cast<indicator &>(other);
+//     return time_step() == r.time_step() && batch_size() == r.batch_size();
+// }
