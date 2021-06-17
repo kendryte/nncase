@@ -19,13 +19,12 @@
 using namespace nncase;
 using namespace nncase::ir;
 
-lstm::lstm(shape_t input_a_shape, shape_t input_b_shape, shape_t input_c_shape, std::vector<float> blob0, std::vector<float> blob1, std::vector<float> blob2, int32_t num_output, bool has_static)
+lstm::lstm(shape_t input_a_shape, shape_t input_b_shape, std::vector<float> blob0, std::vector<float> blob1, std::vector<float> blob2, int32_t num_output, bool has_static)
     : blob0_(blob0), blob1_(blob1), blob2_(blob2), num_output_(num_output), has_static_(has_static)
 {
     add_input("input_a", dt_float32, input_a_shape);
-    add_input("input_b", dt_float32, input_b_shape);
     if (has_static)
-        add_input("input_c", dt_float32, input_c_shape);
+        add_input("input_b", dt_float32, input_b_shape);
 
     add_output("output", dt_float32, shape_t { input_a_shape[0], input_a_shape[1], blob0.size() / (input_a_shape[2] * 4) });
 }

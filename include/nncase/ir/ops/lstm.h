@@ -25,7 +25,6 @@ public:
 
     input_connector &input_a() { return input_at(0); }
     input_connector &input_b() { return input_at(1); }
-    input_connector &input_c() { return input_at(2); }
     output_connector &output() { return output_at(0); }
 
     std::vector<float> blob0() const noexcept { return blob0_; };
@@ -34,7 +33,7 @@ public:
     int32_t num_output() const noexcept { return num_output_; }
     bool has_static() const noexcept { return has_static_; }
 
-    lstm(shape_t input_shape_a, shape_t input_shape_b, shape_t input_shape_c,
+    lstm(shape_t input_shape_a, shape_t input_shape_b,
         std::vector<float> blob0, std::vector<float> blob1, std::vector<float> blob2, int32_t num_output, bool has_static);
 
 protected:

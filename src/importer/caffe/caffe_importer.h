@@ -125,4 +125,4 @@ namespace importer
 }
 
 #define DEFINE_CAFFE_LOWER(opcode) \
-    void nncase::importer::caffe_importer::convert_op_##opcode(const caffe::LayerParameter &op, [[maybe_unused]]caffe::NetParameter caffemodel)
+    void nncase::importer::caffe_importer::convert_op_##opcode([[maybe_unused]]const caffe::LayerParameter &op, [[maybe_unused]]caffe::NetParameter caffemodel)

@@ -26,10 +26,8 @@ DEFINE_CAFFE_LOWER(LSTM)
     // check if there are bn/scale/relu above
     std::string input_name_a = get_real_input_names(op)[0];
 
-    // input_b is indicator
     auto &input_a = *output_tensors_.at(input_name_a);
-    auto &input_b = *output_tensors_.at(op.bottom(1));
-    auto input_c_shape = shape_t { 1, 1, 1, 1 };
+    auto input_b_shape = shape_t { 1, 1, 1, 1 };
     bool has_static = false;
 
     auto &param = op.recurrent_param();
@@ -43,9 +41,9 @@ DEFINE_CAFFE_LOWER(LSTM)
     if (op.bottom_size() == 3)
     {
         // check if there are bn/scale/relu above
-        std::string input_name_c = get_real_input_names(op)[2];
-        auto &input_c = *output_tensors_.at(op.bottom(2));
-        input_c_shape = input_c.shape();
+        std::string input_name_b = get_real_input_names(op)[2];
+        auto &input_b = *output_tensors_.at(op.bottom(2));
+        input_b_shape = input_b.shape();
         has_static = true;
     }
 
@@ -57,31 +55,29 @@ DEFINE_CAFFE_LOWER(LSTM)
 
     if (input_a.shape().size() != 3)
     {
-        auto rshape = graph_.emplace<bitcast>(dt_float32, input_a.shape(), dt_float32, axis_t { (int32_t)input_b.shape()[0], (int32_t)input_b.shape()[1], (int32_t)param.num_output() });
-        auto node = graph_.emplace<lstm>(rshape->output().shape(), input_b.shape(), input_c_shape, blob0_vec, blob1_vec, blob2_vec, n_output, has_static);
+        auto rshape = graph_.emplace<bitcast>(dt_float32, input_a.shape(), dt_float32, axis_t { (int32_t)input_a.shape()[0], (int32_t)input_a.shape()[1] / (int32_t)param.num_output(), (int32_t)param.num_output() });
+        auto node = graph_.emplace<lstm>(rshape->output().shape(), input_b_shape, blob0_vec, blob1_vec, blob2_vec, n_output, has_static);
         node->name(op.name() + "/lstm");
         input_tensors_.emplace(&rshape->input(), input_name_a);
         node->input_a().connect(rshape->output());
-        input_tensors_.emplace(&node->input_b(), op.bottom(1));
         if (has_static)
         {
             // check if there are bn/scale/relu above
-            std::string input_name_c = get_real_input_names(op)[2];
-            input_tensors_.emplace(&node->input_c(), input_name_c);
+            std::string input_name_b = get_real_input_names(op)[2];
+            input_tensors_.emplace(&node->input_b(), input_name_b);
         }
         output_tensors_.emplace(op.top(0), &node->output());
     }
     else
     {
-        auto node = graph_.emplace<lstm>(input_a.shape(), input_b.shape(), input_c_shape, blob0_vec, blob1_vec, blob2_vec, n_output, has_static);
+        auto node = graph_.emplace<lstm>(input_a.shape(), input_b_shape, blob0_vec, blob1_vec, blob2_vec, n_output, has_static);
         node->name(op.name() + "/lstm");
         input_tensors_.emplace(&node->input_a(), input_name_a);
-        input_tensors_.emplace(&node->input_b(), op.bottom(1));
         if (has_static)
         {
             // check if there are bn/scale/relu above
-            std::string input_name_c = get_real_input_names(op)[2];
-            input_tensors_.emplace(&node->input_c(), input_name_c);
+            std::string input_name_b = get_real_input_names(op)[2];
+            input_tensors_.emplace(&node->input_b(), input_name_b);
         }
         output_tensors_.emplace(op.top(0), &node->output());
     }
