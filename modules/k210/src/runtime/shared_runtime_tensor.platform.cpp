@@ -42,6 +42,7 @@ physical_memory_block::physical_memory_block(physical_memory_block &&other) noex
 
 physical_memory_block &physical_memory_block::operator=(physical_memory_block &&other) noexcept
 {
+    assert(owned == false);
     physical_address = other.physical_address;
     owned = other.owned;
     other.physical_address = 0;
