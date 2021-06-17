@@ -52,6 +52,7 @@ struct host_memory_block
         if (auto d = std::move(deleter))
             d(reinterpret_cast<gsl::byte *>(virtual_address));
         deleter = {};
+        physical_block.free(*this);
     }
 
     gsl::span<gsl::byte> virtual_buffer() const noexcept
