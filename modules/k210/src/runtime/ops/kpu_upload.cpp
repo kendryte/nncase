@@ -24,5 +24,13 @@ result<void> k210_runtime_module::visit(const kpu_upload_options &op) noexcept
     try_var(input, memory_at(op.input));
     try_var(output, memory_at(op.output));
 
-    return kernels::k210::kpu_upload(reinterpret_cast<const uint8_t *>(input.data()), reinterpret_cast<uint8_t *>(output.data()), op.in_shape);
+    return kernels::k210::kpu_upload(reinterpret_cast<const uint8_t *>(input.data()),
+        reinterpret_cast<uint8_t *>(output.data()),
+        op.in_shape,
+#ifdef NNCASE_SIMULATOR
+        0
+#else
+        dma_ch_
+#endif
+    );
 }

@@ -35,10 +35,10 @@ void ir::k210::register_k210_evaluators()
         auto weights = context.memory_at(rnode.weights());
         auto bias = context.memory_at(rnode.bias());
         auto output = context.memory_at(rnode.output());
-        auto input_mem = host_runtime_tensor::buffer(input).unwrap_or_throw().as_span<float>();
-        auto output_mem = host_runtime_tensor::buffer(output).unwrap_or_throw().as_span<float>();
-        auto weights_mem = host_runtime_tensor::buffer(weights).unwrap_or_throw().as_span<float>();
-        auto bias_mem = host_runtime_tensor::buffer(bias).unwrap_or_throw().as_span<float>();
+        auto input_mem = input.buffer().as_span<float>();
+        auto output_mem = output.buffer().as_span<float>();
+        auto weights_mem = weights.buffer().as_span<float>();
+        auto bias_mem = bias.buffer().as_span<float>();
 
         auto in_shape = input.shape();
         shape_t conv_out_shape { in_shape[0], (size_t)rnode.output_channels(), in_shape[2], in_shape[3] };

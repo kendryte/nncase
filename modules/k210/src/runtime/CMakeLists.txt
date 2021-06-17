@@ -13,6 +13,7 @@ if (BUILDING_RUNTIME)
             message(FATAL_ERROR "Please set K210_SDK_DIR to kendryte sdk root path")
         endif()
 
+        list(APPEND SRCS shared_runtime_tensor.platform.cpp)
         add_library(runtime_k210 OBJECT ${SRCS})
         target_include_directories(runtime_k210 PRIVATE
                 ${K210_SDK_DIR}/lib/bsp/include

@@ -768,6 +768,13 @@ inline void nnil_unary_method(const float *input, float *output, size_t count, g
                 stack.push(std::max(a, b));
                 break;
             }
+            case nnil_pow:
+            {
+                auto b = stack.pop();
+                auto a = stack.pop();
+                stack.push(std::pow(a, b));
+                break;
+            }
             case nnil_clamp:
             {
                 auto high = stack.pop();

@@ -46,6 +46,11 @@ void nncase::ir::register_evaluator(ir::node_opcode opcode, std::function<void(i
     g_evaluators.emplace(opcode, std::move(evaluator));
 }
 
+evaluate_tensor::evaluate_tensor(datatype_t datatype, runtime_shape_t shape, runtime_shape_t strides, gsl::span<gsl::byte> buffer)
+    : datatype_(datatype), shape_(std::move(shape)), strides_(std::move(strides)), buffer_(buffer)
+{
+}
+
 module_evaluate_context::module_evaluate_context(const module_schedule_result &sched)
     : sched_(sched), quantizer_(nullptr)
 {
@@ -67,18 +72,18 @@ module_evaluate_context::module_evaluate_context(const module_schedule_result &s
         {
             auto &rnode = static_cast<constant &>(*node);
             auto src = rnode.data();
-            auto dest = host_runtime_tensor::buffer(memory_at(rnode.output())).unwrap_or_throw().as_span<std::byte>();
+            auto dest = memory_at(rnode.output()).buffer().as_span<std::byte>();
             std::copy(std::begin(src), std::end(src), dest.begin());
         }
     }
 }
 
-runtime_tensor module_evaluate_context::memory_at(const output_connector &conn)
+evaluate_tensor module_evaluate_context::memory_at(const output_connector &conn)
 {
     auto &alloc = sched_.allocations.at(&conn);
     auto &memory_pool = memory_pools_.at(alloc.memory_location);
     gsl::span<gsl::byte> buffer(reinterpret_cast<gsl::byte *>(memory_pool.get() + alloc.start), alloc.size);
-    return host_runtime_tensor::create(alloc.type, to(alloc.shape), to(alloc.strides), buffer, false).unwrap_or_throw();
+    return evaluate_tensor(alloc.type, to(alloc.shape), to(alloc.strides), buffer);
 }
 
 void module_evaluate_context::enable_ptq(target &target, ir::calibrate_method calib_method)
@@ -111,12 +116,12 @@ void module_evaluate_context::evaluate()
                         auto mem = memory_at(*out);
                         if (mem.datatype() == dt_bfloat16)
                         {
-                            auto buffer = host_runtime_tensor::buffer(mem).unwrap_or_throw().as_span<bfloat16>();
+                            auto buffer = mem.buffer().as_span<bfloat16>();
                             quantizer_->record(*out, buffer);
                         }
                         else
                         {
-                            auto buffer = host_runtime_tensor::buffer(mem).unwrap_or_throw().as_span<float>();
+                            auto buffer = mem.buffer().as_span<float>();
                             quantizer_->record(*out, buffer);
                         }
                     }
@@ -165,7 +170,7 @@ module_evaluate_context &evaluator::main_module_context()
     return module_context(*sched_.main_module);
 }
 
-runtime_tensor evaluator::memory_at(const output_connector &conn)
+evaluate_tensor evaluator::memory_at(const output_connector &conn)
 {
     return main_module_context().memory_at(conn);
 }

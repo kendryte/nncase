@@ -44,6 +44,8 @@ private:
     gsl::span<const gsl::byte> text_;
 #ifdef NNCASE_SIMULATOR
     std::array<gsl::byte, KPU_RAM_SIZE> kpu_ram_;
+#else
+    uint32_t dma_ch_;
 #endif
 };
 

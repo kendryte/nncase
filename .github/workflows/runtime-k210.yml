@@ -1,4 +1,4 @@
-name: k210
+name: runtime-k210
 
 on: [push, pull_request]
 
@@ -14,6 +14,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+    - uses: seanmiddleditch/gha-setup-ninja@master
         
     - name: Download K210 Toolchains
       if: runner.os == 'Linux'
@@ -22,19 +23,16 @@ jobs:
         wget https://github.com/kendryte/kendryte-gnu-toolchain/releases/download/v8.2.0-20190409/kendryte-toolchain-ubuntu-amd64-8.2.0-20190409.tar.xz -O $GITHUB_WORKSPACE/kendryte-toolchain.tar.xz
         
     - name: Install K210 Toolchains
-      if: runner.os == 'Linux'
       shell: bash
       run: |
         sudo tar xf $GITHUB_WORKSPACE/kendryte-toolchain.tar.xz -C $GITHUB_WORKSPACE
         
     - name: Download K210 SDK
-      if: runner.os == 'Linux'
       shell: bash
       run: |
         wget https://github.com/kendryte/kendryte-standalone-sdk/archive/refs/heads/develop.tar.gz -O $GITHUB_WORKSPACE/k210-sdk.tar.gz
         
     - name: Install K210 SDK
-      if: runner.os == 'Linux'
       shell: bash
       run: |
         sudo tar xf $GITHUB_WORKSPACE/k210-sdk.tar.gz -C $GITHUB_WORKSPACE
@@ -43,21 +41,12 @@ jobs:
       uses: actions/setup-python@v2.2.1
       with:
         python-version: 3.7
-        
-    - name: Install System Requirements
-      if: runner.os == 'Linux'
-      shell: bash
+
+    - name: Install Conan
       run: |
-        sudo apt install libgtk2.0-dev -y
-        
-    - name: Install Python Packages
-      shell: bash
-      run: |
-        pip install conan tensorflow==2.4.1 matplotlib pillow onnxruntime
-        pip install torch==1.4.0+cpu torchvision==0.5.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
+        pip install conan
         
     - name: Configure Conan
-      if: runner.os == 'Linux'
       shell: bash
       run: |
         conan profile new default --detect
@@ -71,21 +60,16 @@ jobs:
         RISCV_ROOT_PATH: ${{github.workspace}}/kendryte-toolchain
       shell: bash
       working-directory: ${{github.workspace}}/build
-      # Note the current convention is to use the -S and -B options here to specify source 
-      # and build directories, but this is only available with CMake 3.13 and higher.  
-      # The CMake binaries on the Github Actions machines are (as of this writing) 3.12
-      run: cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DK210_SDK_DIR=$GITHUB_WORKSPACE/kendryte-standalone-sdk-develop -DBUILDING_RUNTIME=TRUE -DBUILD_PYTHON_BINDING=OFF -DCMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/toolchains/k210.toolchain.cmake
+      run: cmake -G Ninja $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DK210_SDK_DIR=$GITHUB_WORKSPACE/kendryte-standalone-sdk-develop -DBUILDING_RUNTIME=TRUE -DBUILD_PYTHON_BINDING=OFF -DCMAKE_TOOLCHAIN_FILE=$GITHUB_WORKSPACE/toolchains/k210.toolchain.cmake -DPython3_ROOT_DIR=${pythonLocation}
 
     - name: Build
       working-directory: ${{github.workspace}}/build
       shell: bash
-      # Execute the build.  You can specify a specific target with "--target <NAME>"
       run: cmake --build . --config $BUILD_TYPE
 
     - name: Install
       working-directory: ${{github.workspace}}/build
       shell: bash
-      # Execute the build.  You can specify a specific target with "--target <NAME>"
       run: cmake --install . --prefix ../install
       
     - name: Upload a Build Artifact

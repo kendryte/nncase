@@ -33,6 +33,7 @@ enum class calibrate_method
     l2,
     kld_m0,
     kld_m1,
+    kld_m2,
     cdf
 };
 
@@ -69,7 +70,7 @@ public:
         while (begin != end)
         {
             auto value = *begin++;
-            auto fc = std::fpclassify(value);
+            auto fc = std::fpclassify((float)value);
             if (fc == FP_NORMAL || fc == FP_SUBNORMAL || fc == FP_ZERO)
             {
                 min = std::min(min, value);

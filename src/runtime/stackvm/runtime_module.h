@@ -14,9 +14,9 @@
  */
 #pragma once
 #include "evaluate_stack.h"
+#include <nncase/runtime/stackvm/kernel_context.h>
 #include <nncase/runtime/stackvm/op_reader.h>
 #include <nncase/runtime/stackvm/runtime_module.h>
-#include <nncase/runtime/stackvm/kernel_context.h>
 
 BEGIN_NS_NNCASE_RT_STACKVM
 
@@ -160,6 +160,7 @@ private:
     runtime_axis_t as_runtime_axis(const runtime_shape_t &shape);
     result<scalar> pop_scalar(datatype_t type) noexcept;
     kernels::kernel_context &kernel_context() noexcept;
+    result<runtime_tensor> create_tensor(uintptr_t addr, datatype_t datatype, const runtime_shape_t &shape, const runtime_shape_t &strides) noexcept;
 
     template <class T>
     result<T> pop_addr() noexcept

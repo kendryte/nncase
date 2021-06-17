@@ -253,48 +253,48 @@ struct numeric_limits<nncase::bfloat16>
     static constexpr float_round_style round_style = round_to_nearest;
     static constexpr int radix = FLT_RADIX;
 
-    [[nodiscard]] static constexpr nncase::bfloat16(min)() noexcept
+    NNCASE_UNUSED static constexpr nncase::bfloat16(min)() noexcept
     {
         return nncase::bfloat16::min();
     }
 
-    [[nodiscard]] static constexpr nncase::bfloat16(max)() noexcept
+    NNCASE_UNUSED static constexpr nncase::bfloat16(max)() noexcept
     {
         return nncase::bfloat16::highest();
     }
 
-    [[nodiscard]] static constexpr nncase::bfloat16 lowest() noexcept
+    NNCASE_UNUSED static constexpr nncase::bfloat16 lowest() noexcept
     {
         return nncase::bfloat16::lowest();
     }
 
-    [[nodiscard]] static constexpr nncase::bfloat16 epsilon() noexcept
+    NNCASE_UNUSED static constexpr nncase::bfloat16 epsilon() noexcept
     {
         return nncase::bfloat16::epsilon();
     }
 
-    [[nodiscard]] static constexpr nncase::bfloat16 round_error() noexcept
+    NNCASE_UNUSED static constexpr nncase::bfloat16 round_error() noexcept
     {
         // 0.5
         return nncase::bfloat16::from_raw(0x3f00);
     }
 
-    [[nodiscard]] static constexpr nncase::bfloat16 denorm_min() noexcept
+    NNCASE_UNUSED static constexpr nncase::bfloat16 denorm_min() noexcept
     {
         return nncase::bfloat16::min();
     }
 
-    [[nodiscard]] static constexpr nncase::bfloat16 infinity() noexcept
+    NNCASE_UNUSED static constexpr nncase::bfloat16 infinity() noexcept
     {
         return nncase::bfloat16::infinity();
     }
 
-    [[nodiscard]] static constexpr nncase::bfloat16 quiet_NaN() noexcept
+    NNCASE_UNUSED static constexpr nncase::bfloat16 quiet_NaN() noexcept
     {
         return nncase::bfloat16::nan();
     }
 
-    [[nodiscard]] static constexpr nncase::bfloat16 signaling_NaN() noexcept
+    NNCASE_UNUSED static constexpr nncase::bfloat16 signaling_NaN() noexcept
     {
         return nncase::bfloat16::nan();
     }
