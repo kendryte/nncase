@@ -29,4 +29,6 @@ DEFINE_NEUTRAL_OPCODE(take,	                Take,               0x114)
 DEFINE_NEUTRAL_OPCODE(space_to_batch,	    SpaceToBatch,       0x115)
 DEFINE_NEUTRAL_OPCODE(batch_to_space,	    BatchToSpace,       0x116)
 DEFINE_NEUTRAL_OPCODE(split,	            Split,              0x117)
+DEFINE_NEUTRAL_OPCODE(gather,	            Gather,             0x118)
+DEFINE_NEUTRAL_OPCODE(onehot,	            OneHot, 		0x119)
 
