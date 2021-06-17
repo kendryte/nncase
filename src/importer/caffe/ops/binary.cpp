@@ -22,14 +22,18 @@ using namespace caffe;
 
 DEFINE_CAFFE_LOWER(Eltwise)
 {
-    auto &input_a = *output_tensors_.at(op.bottom(0));
-    auto &input_b = *output_tensors_.at(op.bottom(1));
+    // check if there are bn/scale/relu above
+    std::string input_name_a = get_real_input_names(op)[0];
+    std::string input_name_b = get_real_input_names(op)[1];
+
+    auto &input_a = *output_tensors_.at(input_name_a);
+    auto &input_b = *output_tensors_.at(input_name_b);
     [[maybe_unused]]auto &param = op.eltwise_param();
 
     auto add = graph_.emplace<binary>(binary_add, input_a.shape(), input_b.shape(), value_range<float>::full());
     add->name(op.name() + "/add");
 
-    input_tensors_.emplace(&add->input_a(), op.bottom(0));
-    input_tensors_.emplace(&add->input_b(), op.bottom(1));
+    input_tensors_.emplace(&add->input_a(), input_name_a);
+    input_tensors_.emplace(&add->input_b(), input_name_b);
     output_tensors_.emplace(op.top(0), &add->output());
 }

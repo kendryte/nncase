@@ -25,7 +25,10 @@ using namespace caffe;
 
 DEFINE_CAFFE_LOWER(Reverse)
 {
-    auto &input = *output_tensors_.at(op.bottom(0));
+    // check if there are bn/scale/relu above
+    std::string input_name = get_real_input_names(op)[0];
+
+    auto &input = *output_tensors_.at(input_name);
     auto &param = op.reverse_param();
 
     auto axis = param.axis();
@@ -58,7 +61,7 @@ DEFINE_CAFFE_LOWER(Reverse)
     auto sl = graph_.emplace<slice>(input.type(), p->output().shape(), begin, end, strides, 0, 0, 0, 0);
     sl->name(op.name() + "/slice");
 
-    input_tensors_.emplace(&p->input(), op.bottom(0));
+    input_tensors_.emplace(&p->input(), input_name);
     sl->input().connect(p->output());
     output_tensors_.emplace(op.top(0), &sl->output());
 }

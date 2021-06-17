@@ -28,7 +28,10 @@ DEFINE_CAFFE_LOWER(Convolution)
 
     typedef uint32_t (ConvolutionParameter::*arr_func_t)(int32_t) const;
 
-    auto &input = *output_tensors_.at(op.bottom(0));
+    // check if there are bn/scale/relu above
+    std::string input_name = get_real_input_names(op)[0];
+
+    auto &input = *output_tensors_.at(input_name);
 
     auto op_data = get_op_data(op, caffemodel);
 
@@ -55,7 +58,7 @@ DEFINE_CAFFE_LOWER(Convolution)
     auto bias_const = graph_.emplace<constant>(dt_float32, get_shape(op_data.blobs(1).shape()), bias_vec);
     bias_const->name(op.name() + "/bias_const");
 
-    input_tensors_.emplace(&node->input(), op.bottom(0));
+    input_tensors_.emplace(&node->input(), input_name);
     node->weights().connect(weights_const->output());
     node->bias().connect(bias_const->output());
     output_tensors_.emplace(op.top(0), &node->output());

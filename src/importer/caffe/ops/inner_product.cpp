@@ -25,7 +25,9 @@ using namespace caffe;
 
 DEFINE_CAFFE_LOWER(InnerProduct)
 {
-    auto &input = *output_tensors_.at(op.bottom(0));
+    // check if there are bn/scale/relu above
+    std::string input_name = get_real_input_names(op)[0];
+    auto &input = *output_tensors_.at(input_name);
     auto &param = op.inner_product_param();
 
     auto op_data = get_op_data(op, caffemodel);
@@ -41,7 +43,7 @@ DEFINE_CAFFE_LOWER(InnerProduct)
     auto node = graph_.emplace<matmul>(rshape->output().shape(), get_shape(op_data.blobs(0).shape()), value_range<float>::full());
     node->name(op.name() + "/matmul");
 
-    input_tensors_.emplace(&rshape->input(), op.bottom(0));
+    input_tensors_.emplace(&rshape->input(), input_name);
     node->input_a().connect(rshape->output());
     node->input_b().connect(input_b_const->output());
     if (param.has_bias_term())

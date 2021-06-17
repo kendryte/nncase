@@ -12,7 +12,6 @@ set(SRCS caffe.pb.cc
         ops/slice.cpp
         ops/softmax.cpp
         ops/split.cpp
-        #ops/indicator.cpp
         ops/pooling.cpp
         ops/batchnorm.cpp
         ops/scale.cpp

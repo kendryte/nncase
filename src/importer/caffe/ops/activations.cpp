@@ -25,7 +25,18 @@ using namespace caffe;
 
 DEFINE_CAFFE_LOWER(ReLU)
 {
-    auto &input = *output_tensors_.at(op.bottom(0));
+    // check if there are bn/scale above
+    std::string input_name = op.bottom(0) + "/add";
+
+    if (output_tensors_.find(input_name) == output_tensors_.end())
+    {
+        input_name = op.bottom(0) + "/mul";
+        if (output_tensors_.find(input_name) == output_tensors_.end())
+            input_name = op.bottom(0);
+    }
+
+    auto &input = *output_tensors_.at(input_name);
+
     [[maybe_unused]]auto &param = op.relu_param();
 
     auto zero = graph_.emplace<constant>(0.f);
@@ -33,10 +44,13 @@ DEFINE_CAFFE_LOWER(ReLU)
     auto high = graph_.emplace<constant>(std::numeric_limits<float>::max());
     high->name(op.name() + "/high_const");
     auto cl = graph_.emplace<clamp>(input.shape(), zero->output().shape(), high->output().shape());
-    cl->name(op.name() + "/clamp");
+    // inplace op, user op need this name
+    cl->name(op.top(0) + "/clamp");
 
     cl->input_low().connect(zero->output());
     cl->input_high().connect(high->output());
-    input_tensors_.emplace(&cl->input(), op.bottom(0));
-    output_tensors_.emplace(op.top(0), &cl->output());
+
+    input_tensors_.emplace(&cl->input(), input_name);
+    // inplace op, user op need this name
+    output_tensors_.emplace(cl->name(), &cl->output());
 }

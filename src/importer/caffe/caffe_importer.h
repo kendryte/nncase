@@ -84,6 +84,28 @@ namespace importer
             throw std::runtime_error("can't find related data from caffemodel");
         }
 
+        // input names are different when there are bn/scale/relu nodes above
+        std::vector<std::string> get_real_input_names(caffe::LayerParameter op)
+        {
+            std::vector<std::string> input_names;
+            for (int32_t i = 0; i < op.bottom_size(); i++)
+            {
+                std::string input_name_i = op.bottom(i) + "/clamp";
+                if (output_tensors_.find(input_name_i) == output_tensors_.end())
+                {
+                    input_name_i = op.bottom(i) + "/add";
+                    if (output_tensors_.find(input_name_i) == output_tensors_.end())
+                    {
+                        input_name_i = op.bottom(i) + "/mul";
+                        if (output_tensors_.find(input_name_i) == output_tensors_.end())
+                            input_name_i = op.bottom(i);
+                    }
+                }
+                input_names.push_back(input_name_i);
+            }
+            return input_names;
+        }
+
         template <size_t N>
         xt::xtensor<float, N> load_tensor(const caffe::BlobProto &blob)
         {
@@ -96,7 +118,7 @@ namespace importer
         caffe::NetParameter model_;
         caffe::NetParameter prototxt_;
         ir::graph &graph_;
-        std::unordered_map<ir::input_connector *, std::string_view> input_tensors_;
+        std::unordered_map<ir::input_connector *, std::string> input_tensors_;
         std::unordered_map<std::string_view, ir::output_connector *> output_tensors_;
     };
 }

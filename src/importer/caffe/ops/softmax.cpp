@@ -24,7 +24,10 @@ using namespace nncase::ir;
 
 DEFINE_CAFFE_LOWER(Softmax)
 {
-    auto &input = *output_tensors_.at(op.bottom(0));
+    // check if there are bn/scale/relu above
+    std::string input_name = get_real_input_names(op)[0];
+
+    auto &input = *output_tensors_.at(input_name);
     auto &param = op.softmax_param();
 
     axis_t reduce_axis;
@@ -47,7 +50,7 @@ DEFINE_CAFFE_LOWER(Softmax)
     div->input_a().connect(exp->output());
     div->input_b().connect(sum->output());
 
-    input_tensors_.emplace(&max->input(), op.bottom(0));
-    input_tensors_.emplace(&sub->input_a(), op.bottom(0));
+    input_tensors_.emplace(&max->input(), input_name);
+    input_tensors_.emplace(&sub->input_a(), input_name);
     output_tensors_.emplace(op.top(0), &div->output());
 }

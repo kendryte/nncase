@@ -26,7 +26,4 @@ target_sources(ir PRIVATE
     take.cpp
     space_to_batch.cpp
     batch_to_space.cpp
-    #indicator.cpp
-    lstm.cpp
-    batchnorm.cpp
-    scale.cpp)
+    lstm.cpp)

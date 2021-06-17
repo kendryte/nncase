@@ -24,7 +24,10 @@ using namespace caffe;
 
 DEFINE_CAFFE_LOWER(Pooling)
 {
-    auto &input = *output_tensors_.at(op.bottom(0));
+    // check if there are bn/scale/relu above
+    std::string input_name = get_real_input_names(op)[0];
+
+    auto &input = *output_tensors_.at(input_name);
     auto &param = op.pooling_param();
 
     auto pooling_method = param.pool();
@@ -58,6 +61,6 @@ DEFINE_CAFFE_LOWER(Pooling)
                                                 padding { (int32_t)pad_h, (int32_t)pad_h }, padding { (int32_t)pad_w, (int32_t)pad_w }, stride_h, stride_w, 1, 1, value_range<float>::full());
     node->name(op.name() + "/reduce_window");
 
-    input_tensors_.emplace(&node->input(), op.bottom(0));
+    input_tensors_.emplace(&node->input(), input_name);
     output_tensors_.emplace(op.top(0), &node->output());
 }
