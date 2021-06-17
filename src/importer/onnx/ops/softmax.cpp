@@ -33,7 +33,9 @@ void onnx_importer::convert_op_Softmax(const NodeProto &node)
 
     auto input_shape = get_shape(input);
 
-    axis_t reduce_axis { static_cast<int>(real_axis(static_cast<int>(get_attribute<int64_t>(node, "axis").value()), input_shape.size())) };
+    auto axis_attr = get_attribute<int64_t>(node, "axis");
+    int axis = !axis_attr ? 1 : static_cast<int>(axis_attr.value());
+    axis_t reduce_axis { static_cast<int>(real_axis(axis, input_shape.size())) };
 
     auto max = graph_.emplace<reduce>(reduce_max, input_shape, reduce_axis, std::numeric_limits<float>::lowest(), true);
     auto sub = graph_.emplace<binary>(binary_sub, input_shape, max->output().shape(), value_range<float>::full());
