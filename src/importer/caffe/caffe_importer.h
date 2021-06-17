@@ -37,7 +37,7 @@ namespace importer
     private:
         void convert_op(const caffe::LayerParameter &op, caffe::NetParameter caffemodel);
 
-#define DEFINE_OPCODE(opcode) void convert_op_##opcode(const caffe::LayerParameter &op, [[maybe_unused]]caffe::NetParameter caffemodel);
+#define DEFINE_OPCODE(opcode) void convert_op_##opcode(const caffe::LayerParameter &op, caffe::NetParameter caffemodel);
 #include "opcode.def"
 #undef DEFINE_OPCODE
 

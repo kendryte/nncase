@@ -97,7 +97,7 @@ void caffe_importer::import([[maybe_unused]]const struct import_options &options
     }
 }
 
-void caffe_importer::convert_op(const LayerParameter &op, [[maybe_unused]]caffe::NetParameter caffemodel)
+void caffe_importer::convert_op(const LayerParameter &op, caffe::NetParameter caffemodel)
 {
     auto type = op.type();
 

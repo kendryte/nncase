@@ -16,7 +16,6 @@
 #include <nncase/ir/ops/binary.h>
 #include <nncase/ir/ops/constant.h>
 #include <nncase/ir/ops/unary.h>
-#include <nncase/ir/ops/batchnorm.h>
 
 using namespace nncase;
 using namespace nncase::importer;
