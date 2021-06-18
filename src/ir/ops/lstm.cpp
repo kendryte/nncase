@@ -19,18 +19,21 @@
 using namespace nncase;
 using namespace nncase::ir;
 
-lstm::lstm(shape_t input_a_shape, shape_t input_b_shape, std::vector<float> blob0, std::vector<float> blob1, std::vector<float> blob2, int32_t num_output, bool has_static)
-    : blob0_(blob0), blob1_(blob1), blob2_(blob2), num_output_(num_output), has_static_(has_static)
+lstm::lstm(shape_t input_shape, shape_t w_xc_shape, shape_t b_xc_shape, shape_t w_hc_shape, int32_t num_output, bool has_static)
+    : num_output_(num_output), has_static_(has_static)
 {
-    add_input("input_a", dt_float32, input_a_shape);
+    add_input("input", dt_float32, input_shape);
+    add_input("w_xc", dt_float32, w_xc_shape);
+    add_input("b_xc", dt_float32, b_xc_shape);
+    add_input("w_hc", dt_float32, w_hc_shape);
     if (has_static)
-        add_input("input_b", dt_float32, input_b_shape);
+        add_input("w_static", dt_float32, shape_t { w_xc_shape[1], w_xc_shape[2] });
 
-    add_output("output", dt_float32, shape_t { input_a_shape[0], input_a_shape[1], (size_t)num_output });
+    add_output("output", dt_float32, shape_t { input_shape[0], input_shape[1], (size_t)num_output });
 }
 
 bool lstm::properties_equal(node &other) const
 {
     auto &r = static_cast<lstm &>(other);
-    return num_output() == r.num_output() && has_static() == r.has_static() && blob0() == r.blob0() && blob1() == r.blob1() && blob2() == r.blob2();
+    return num_output() == r.num_output() && has_static() == r.has_static();
 }
