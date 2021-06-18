@@ -35,8 +35,10 @@ DEFINE_CAFFE_LOWER(LSTM)
 
     auto op_data = get_op_data(op, caffemodel);
 
+    // blob0: xc, blob1: static, blob2: hc
     auto blob0 = load_tensor<2>(op_data.blobs(0));
     auto blob1 = load_tensor<1>(op_data.blobs(1));
+    auto blob2 = load_tensor<2>(op_data.blobs(2));
 
     if (op.bottom_size() == 3)
     {
@@ -49,9 +51,7 @@ DEFINE_CAFFE_LOWER(LSTM)
 
     std::vector<float> blob0_vec(blob0.begin(), blob0.end());
     std::vector<float> blob1_vec(blob1.begin(), blob1.end());
-    std::vector<float> blob2_vec;
-    if (has_static)
-        blob2_vec.assign(load_tensor<2>(op_data.blobs(2)).begin(), load_tensor<2>(op_data.blobs(2)).end());
+    std::vector<float> blob2_vec(blob2.begin(), blob2.end());
 
     if (input_a.shape().size() != 3)
     {
