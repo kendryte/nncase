@@ -27,7 +27,8 @@ set(SRCS tflite_importer.cpp
          ops/activations.cpp
          ops/squared_difference.cpp
          ops/gather.cpp
-         ops/onehot.cpp)
+         ops/onehot.cpp
+         ops/log_softmax.cpp)
 
 add_library(tflite_importer OBJECT ${SRCS})
 target_link_libraries(tflite_importer PUBLIC ir CONAN_PKG::flatbuffers)
