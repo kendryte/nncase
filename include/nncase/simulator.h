@@ -30,6 +30,7 @@ struct simulate_options
     std::string dataset_format;
     std::function<void(size_t cnt, size_t total)> progress;
 
+    std::string input_layout = "NCHW";
     float input_mean = 0.f;
     float input_std = 1.f;
 };
