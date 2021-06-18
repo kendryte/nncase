@@ -67,7 +67,22 @@ namespace schedule
         ir::graph *main_module;
     };
 
-    struct schedule_context;
+    struct schedule_context : module_schedule_result
+    {
+        module_type_t module_type;
+        std::span<ir::output_node *> outputs;
+        std::unordered_map<const ir::output_connector *, logical_buffer> logical_buffers;
+        std::vector<physical_buffer> physical_buffers;
+
+        void generate_compute_sequence();
+        void make_logical_buffers();
+        void analyze_buffer_alias();
+        void fix_concat_indices();
+        void fix_lifetime();
+        void make_physical_buffers();
+        void allocate_physical_buffers(target &target);
+        void assign_allocations();
+    };
 
     class NNCASE_API scheduler
     {

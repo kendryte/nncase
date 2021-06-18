@@ -1,4 +1,4 @@
-/* Copyright 2019-2020 Canaan Inc.
+/* Copyright 2020 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,16 +13,13 @@
  * limitations under the License.
  */
 #pragma once
-#include "memory_allocator.h"
+#include "../pass.h"
 
-namespace nncase
+namespace nncase::ir::transforms
 {
-namespace scheduler
+class NNCASE_API mark_no_action_concat_pass : public graph_pass
 {
-    class main_memory_allocator : public memory_allocator
-    {
-    public:
-        using memory_allocator::memory_allocator;
-    };
-}
+protected:
+    void run_core(graph &graph, nncase::target &target, const run_pass_options &options) override;
+};
 }

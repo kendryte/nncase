@@ -295,7 +295,7 @@ private:
             target_->add_quantization_broadcast(opcodes);
             quant->broadcast_output(graph, opcodes);
 
-            ir::transforms::pass p("process i&o node");
+            ir::transforms::transform_pass p("process i&o node");
 
             if (use_ptq_)
             {

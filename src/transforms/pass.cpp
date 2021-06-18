@@ -54,13 +54,25 @@ protected:
 };
 }
 
-void pass::run(graph &graph, target &target, ir::quantizer *quantizer, std::optional<std::filesystem::path> dump_dir)
+void pass::run(graph &graph, target &target, const run_pass_options &options)
+{
+    run_core(graph, target, options);
+    graph.cse();
+    if (options.dump_dir)
+    {
+        auto dump_path = *options.dump_dir / "passes" / dump_name_;
+        std::filesystem::create_directories(dump_path);
+        ir::dump_graph(graph, dump_path);
+    }
+}
+
+void transform_pass::run_core(graph &graph, target &target, const run_pass_options &options)
 {
     transform_apply_visitor visitor;
     visitor.graph = &graph;
     visitor.target = &target;
-    visitor.dump_dir = dump_dir;
-    visitor.quantizer = quantizer;
+    visitor.dump_dir = options.dump_dir;
+    visitor.quantizer = options.quantizer;
     bool next_pass = false;
 
     do
@@ -84,11 +96,6 @@ void pass::run(graph &graph, target &target, ir::quantizer *quantizer, std::opti
     } while (next_pass);
 }
 
-void pass_manager::add_pass(pass &&pass)
-{
-    passes_.emplace_back(std::move(pass));
-}
-
 void pass_manager::dump_dir(const std::filesystem::path &dir)
 {
     dump_dir_ = dir;
@@ -101,15 +108,11 @@ void pass_manager::quantizer(ir::quantizer *q)
 
 void pass_manager::run()
 {
-    for (auto &&pass : passes_)
-    {
-        pass.run(graph_, target_, quantizer_, dump_dir_);
-        graph_.cse();
-        if (dump_dir_)
-        {
-            auto dump_path = *dump_dir_ / "passes" / pass.name();
-            std::filesystem::create_directories(dump_path);
-            ir::dump_graph(graph_, dump_path);
-        }
-    }
+    run_pass_options options;
+    options.dump_dir = dump_dir_;
+    options.quantizer = quantizer_;
+    options.schedule_context = schedule_context_;
+
+    for (auto &pass : passes_)
+        pass->run(graph_, target_, options);
 }
