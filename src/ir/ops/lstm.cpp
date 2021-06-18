@@ -26,7 +26,7 @@ lstm::lstm(shape_t input_a_shape, shape_t input_b_shape, std::vector<float> blob
     if (has_static)
         add_input("input_b", dt_float32, input_b_shape);
 
-    add_output("output", dt_float32, shape_t { input_a_shape[0], input_a_shape[1], blob0.size() / (input_a_shape[2] * 4) });
+    add_output("output", dt_float32, shape_t { input_a_shape[0], input_a_shape[1], (size_t)num_output });
 }
 
 bool lstm::properties_equal(node &other) const

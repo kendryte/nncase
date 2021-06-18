@@ -35,10 +35,18 @@ DEFINE_CAFFE_LOWER(LSTM)
 
     auto op_data = get_op_data(op, caffemodel);
 
-    // blob0: xc, blob1: static, blob2: hc
-    auto blob0 = load_tensor<2>(op_data.blobs(0));
-    auto blob1 = load_tensor<1>(op_data.blobs(1));
-    auto blob2 = load_tensor<2>(op_data.blobs(2));
+    std::vector<float> blob_static_vec;//(blob_static.begin(), blob_static.end());
+
+    auto blob_xc = load_tensor<2>(op_data.blobs(0));
+    if (op_data.blobs_size() == 3)
+    {
+        auto blob_static = load_tensor<1>(op_data.blobs(1));
+        blob_static_vec.assign(blob_static.begin(), blob_static.end());
+    }
+    auto blob_hc = op_data.blobs_size() == 3 ? load_tensor<2>(op_data.blobs(2)) : load_tensor<2>(op_data.blobs(1));
+
+    std::vector<float> blob_xc_vec(blob_xc.begin(), blob_xc.end());
+    std::vector<float> blob_hc_vec(blob_hc.begin(), blob_hc.end());
 
     if (op.bottom_size() == 3)
     {
@@ -49,14 +57,10 @@ DEFINE_CAFFE_LOWER(LSTM)
         has_static = true;
     }
 
-    std::vector<float> blob0_vec(blob0.begin(), blob0.end());
-    std::vector<float> blob1_vec(blob1.begin(), blob1.end());
-    std::vector<float> blob2_vec(blob2.begin(), blob2.end());
-
     if (input_a.shape().size() != 3)
     {
         auto rshape = graph_.emplace<bitcast>(dt_float32, input_a.shape(), dt_float32, axis_t { (int32_t)input_a.shape()[0], (int32_t)input_a.shape()[1] / (int32_t)param.num_output(), (int32_t)param.num_output() });
-        auto node = graph_.emplace<lstm>(rshape->output().shape(), input_b_shape, blob0_vec, blob1_vec, blob2_vec, n_output, has_static);
+        auto node = graph_.emplace<lstm>(rshape->output().shape(), input_b_shape, blob_xc_vec, blob_static_vec, blob_hc_vec, n_output, has_static);
         node->name(op.name() + "/lstm");
         input_tensors_.emplace(&rshape->input(), input_name_a);
         node->input_a().connect(rshape->output());
@@ -70,7 +74,7 @@ DEFINE_CAFFE_LOWER(LSTM)
     }
     else
     {
-        auto node = graph_.emplace<lstm>(input_a.shape(), input_b_shape, blob0_vec, blob1_vec, blob2_vec, n_output, has_static);
+        auto node = graph_.emplace<lstm>(input_a.shape(), input_b_shape, blob_xc_vec, blob_static_vec, blob_hc_vec, n_output, has_static);
         node->name(op.name() + "/lstm");
         input_tensors_.emplace(&node->input_a(), input_name_a);
         if (has_static)
