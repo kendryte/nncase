@@ -34,7 +34,7 @@ void slice(runtime_tensor &input, runtime_tensor &output,
             output.strides(),
             begins,
             ends,
-            strides);
+            strides, default_kernel_context());
     }
     else if (type == OpType::Opt)
     {
@@ -46,7 +46,7 @@ void slice(runtime_tensor &input, runtime_tensor &output,
             output.strides(),
             begins,
             ends,
-            strides);
+            strides, default_kernel_context());
     }
     else
     {

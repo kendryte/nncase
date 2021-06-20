@@ -13,16 +13,16 @@
  * limitations under the License.
  */
 #pragma once
+#include "kernel_context.h"
 #include <nncase/runtime/datatypes.h>
 #include <nncase/runtime/error.h>
 #include <nncase/runtime/result.h>
-#include <nncase/kernels/kernel_context.h>
 
 BEGIN_NS_NNCASE_KERNELS
 
 NNCASE_API result<void> conv2d(const float *input, const float *weights, const float *bias, float *output,
     const runtime_shape_t &in_shape, const runtime_shape_t &in_strides, const runtime_shape_t &w_shape, const runtime_shape_t &w_strides,
     const runtime_shape_t &bias_strides, const runtime_shape_t &out_strides, const padding &padding_h, const padding &padding_w,
-    int32_t groups, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w, value_range<float> fused_activation, kernel_context &context = default_kernel_context) noexcept;
+    int32_t groups, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w, value_range<float> fused_activation, kernel_context &context = default_kernel_context()) noexcept;
 
 END_NS_NNCASE_KERNELS

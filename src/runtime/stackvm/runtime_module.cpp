@@ -145,7 +145,7 @@ result<scalar> stackvm_runtime_module::pop_scalar(datatype_t type) noexcept
 
 kernels::kernel_context &stackvm_runtime_module::kernel_context() noexcept
 {
-    return kernel_context_;
+    return kernels::default_kernel_context();
 }
 
 result<runtime_tensor> stackvm_runtime_module::create_tensor(uintptr_t addr, datatype_t datatype, const runtime_shape_t &shape, const runtime_shape_t &strides) noexcept
