@@ -19,7 +19,7 @@ jobs:
     - name: Install System Requirements
       shell: bash
       run: |
-        brew install libomp
+        brew install sunnycase/core/libomp@11.1.0
           
     - name: Setup Python
       uses: actions/setup-python@v2.2.1
