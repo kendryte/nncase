@@ -294,8 +294,7 @@ class TestRunner(metaclass = ABCMeta):
         self.import_model(compiler, model_content, import_options)
         if kwargs['ptq']:
             ptq_options = nncase.PTQTensorOptions()
-            for i in range(len(self.calibs)):
-                ptq_options.set_tensor_data(self.calibs[i]['data'].tobytes())
+            ptq_options.set_tensor_data(np.asarray([sample['data'] for sample in self.calibs]).tobytes())
             ptq_options.samples_count = cfg.generate_calibs.batch_size
             ptq_options.input_mean = cfg.ptq_opt.kwargs['input_mean']
             ptq_options.input_std = cfg.ptq_opt.kwargs['input_std']
