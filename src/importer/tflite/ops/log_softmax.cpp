@@ -41,14 +41,14 @@ DEFINE_TFLITE_LOWER(LOG_SOFTMAX)
     auto exp = graph_.emplace<unary>(unary_exp, sub->output().shape());
     auto sum = graph_.emplace<reduce>(reduce_sum, exp->output().shape(), reduce_axis, 0.f, true);
     auto log = graph_.emplace<unary>(unary_log, sum->output().shape());
-    auto div = graph_.emplace<binary>(binary_div, in_shape, log->output().shape(), value_range<float>::full());
+    auto sub2 = graph_.emplace<binary>(binary_sub, sub->output().shape(), log->output().shape(), value_range<float>::full());
 
     max->name(get_tensor(op.outputs(), 0).name()->string_view());
     sub->name(get_tensor(op.outputs(), 0).name()->string_view());
     exp->name(get_tensor(op.outputs(), 0).name()->string_view());
     sum->name(get_tensor(op.outputs(), 0).name()->string_view());
     log->name(get_tensor(op.outputs(), 0).name()->string_view());
-    div->name(get_tensor(op.outputs(), 0).name()->string_view());
+    sub2->name(get_tensor(op.outputs(), 0).name()->string_view());
 
     if (input.type() != tflite::TensorType_FLOAT32)
     {
@@ -57,7 +57,6 @@ DEFINE_TFLITE_LOWER(LOG_SOFTMAX)
         input_dequant->name(get_tensor(op.outputs(), 0).name()->string_view());
         max->input().connect(input_dequant->output());
         sub->input_a().connect(input_dequant->output());
-        div->input_a().connect(input_dequant->output());
         link_input_tensor(&input_dequant->input(), op.inputs()->Get(0));
         //        link_input_tensor(&sub->input_a(), op.inputs()->Get(0));
     }
@@ -65,25 +64,25 @@ DEFINE_TFLITE_LOWER(LOG_SOFTMAX)
     {
         link_input_tensor(&max->input(), op.inputs()->Get(0));
         link_input_tensor(&sub->input_a(), op.inputs()->Get(0));
-        link_input_tensor(&div->input_a(), op.inputs()->Get(0));
     }
 
     sub->input_b().connect(max->output());
     exp->input().connect(sub->output());
     sum->input().connect(exp->output());
     log->input().connect(sum->output());
-    div->input_b().connect(log->output());
+    sub2->input_a().connect(sub->output());
+    sub2->input_b().connect(log->output());
 
-    if (div->output().type() != to_data_type(input.type()))
+    if (sub2->output().type() != to_data_type(input.type()))
     {
         quant_param_t output_quant_paras = to_quant_param(output.quantization());
         output_quant = graph_.emplace<quantize>(dt_float32, get_shape(output.shape()), to_data_type(output.type()), output_quant_paras);
         output_quant->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/div_output_quant");
-        output_quant->input().connect(div->output());
+        output_quant->input().connect(sub2->output());
         link_output_tensor(op.outputs()->Get(0), &output_quant->output());
     }
     else
     {
-        link_output_tensor(op.outputs()->Get(0), &div->output());
+        link_output_tensor(op.outputs()->Get(0), &sub2->output());
     }
 }

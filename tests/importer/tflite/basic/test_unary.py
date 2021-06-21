@@ -42,6 +42,7 @@ def _make_module(in_shape):
             outs.append(tf.math.square(x))
             outs.append(tf.math.tanh(x))
             outs.append(tf.math.sigmoid(x))
+            outs.append(tf.math.log_softmax(x))
             return outs
     return UnaryModule()
 
