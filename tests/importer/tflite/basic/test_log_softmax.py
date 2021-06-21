@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""System test: test unary"""
+"""System test: test log_softmax"""
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
 
 import pytest
@@ -21,29 +21,14 @@ from test_runner import TfliteTestRunner
 
 
 def _make_module(in_shape):
-    class UnaryModule(tf.Module):
+    class LogSoftmaxModule(tf.Module):
         def __init__(self):
-            super(UnaryModule).__init__()
+            super(LogSoftmaxModule).__init__()
 
         @tf.function(input_signature=[tf.TensorSpec(in_shape, tf.float32)])
         def __call__(self, x):
-            outs = []
-            outs.append(tf.math.abs(-x))
-            outs.append(tf.math.ceil(x))
-            outs.append(tf.math.cos(x))
-            outs.append(tf.math.exp(x))
-            # outs.append(tf.math.floor(x)) # large errors in ptq
-            outs.append(tf.math.log(x + 2))
-            outs.append(tf.math.negative(x))
-            # outs.append(tf.math.round(x))
-            outs.append(tf.math.rsqrt(x + 2))
-            outs.append(tf.math.sin(x))
-            outs.append(tf.math.sqrt(x + 2))
-            outs.append(tf.math.square(x))
-            outs.append(tf.math.tanh(x))
-            outs.append(tf.math.sigmoid(x))
-            return outs
-    return UnaryModule()
+            return tf.math.log_softmax(x)
+    return LogSoftmaxModule()
 
 
 in_shapes = [
@@ -55,7 +40,7 @@ in_shapes = [
 
 
 @pytest.mark.parametrize('in_shape', in_shapes)
-def test_unary(in_shape, request):
+def test_log_softmax(in_shape, request):
     module = _make_module(in_shape)
 
     runner = TfliteTestRunner(request.node.name)
@@ -65,4 +50,4 @@ def test_unary(in_shape, request):
 
 if __name__ == "__main__":
     pytest.main(
-        ['-vv', 'test_unary.py'])
+        ['-vv', 'test_log_softmax.py'])
