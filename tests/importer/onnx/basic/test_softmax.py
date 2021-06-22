@@ -22,8 +22,10 @@ def _make_module():
     class SoftmaxModule(torch.nn.Module):
         def __init__(self):
             super(SoftmaxModule, self).__init__()
+            self.softmax = torch.nn.Softmax()
 
         def forward(self, x):
+            x = self.softmax(x)
             return x
 
     return SoftmaxModule()
@@ -38,7 +40,6 @@ in_shapes = [
 @pytest.mark.parametrize('in_shape', in_shapes)
 def test_softmax(in_shape, request):
     module = _make_module()
-    module = torch.nn.Sequential(module, torch.nn.Softmax())
 
     runner = OnnxTestRunner(request.node.name)
     model_file = runner.from_torch(module, in_shape)

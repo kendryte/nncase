@@ -363,9 +363,15 @@ class TestRunner(metaclass = ABCMeta):
             kw_names = ' '.join(name_list[-len(kwargs) - 2:-1])
             i = self.num_pattern.findall(name_list[-1])
             if judge.is_good():
-                print(f"\nPass [ {kw_names} ] Output: {i}!!\n")
+                result = "\nPass [ {0} ] Output: {1}!!\n".format(kw_names, i)
+                print(result)
+                with open(os.path.join(self.case_dir, 'test_result.txt'), 'a+') as f:
+                    f.write(result)
             else:
-                print(f"\nFail [ {kw_names} ] Output: {i}!!\n")
+                result = "\nFail [ {0} ] Output: {1}!!\n".format(kw_names, i)
+                print(result)
+                with open(os.path.join(self.case_dir, 'test_result.txt'), 'a+') as f:
+                    f.write(result)
                 return False
         return True
 
