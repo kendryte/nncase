@@ -538,6 +538,11 @@ void op_builder::tensor_dequantize_(datatype_t in_datatype, datatype_t dst_datat
     op_writer<tensor_dequantize_op_t>()(tensor_dequantize_op_t(in_datatype, dst_datatype, rshape_src, rstride_src, rstride_dest), writer_);
 }
 
+void op_builder::tensor_gather_(datatype_t datatype, uint8_t rshape_src, uint8_t rshape_dest, uint8_t rstride_src, uint8_t rstride_dest, uint8_t rshape_indices, uint8_t axis, uint8_t batch_dims)
+{
+    op_writer<tensor_gather_op_t>()(tensor_gather_op_t(datatype, rshape_src, rshape_dest, rstride_src, rstride_dest, rshape_indices, axis, batch_dims), writer_);
+}
+
 void op_builder::tensor_lut1d_(datatype_t datatype, uint8_t rshape_src, uint8_t rstride_src, uint8_t rstride_dest, uint16_t table_len)
 {
     op_writer<tensor_lut1d_op_t>()(tensor_lut1d_op_t(datatype, rshape_src, rstride_src, rstride_dest, table_len), writer_);

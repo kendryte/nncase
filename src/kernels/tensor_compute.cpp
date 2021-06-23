@@ -188,3 +188,10 @@ result<void> kernels::slice(datatype_t type, const gsl::byte *input, gsl::byte *
         return cpu::reference::slice(type, input, output, in_shape, in_strides, out_strides, begins, ends, strides, context);
     }
 }
+
+result<void> kernels::gather(datatype_t in_type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape, const runtime_shape_t &out_shape,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, int32_t *indices, const runtime_shape_t &indices_shape, int32_t axis, int32_t batch_dims,
+                               kernel_context &context) noexcept
+{
+    return cpu::reference::gather(in_type, input, output, in_shape, out_shape, in_strides, out_strides, indices, indices_shape, axis, batch_dims, context);
+}

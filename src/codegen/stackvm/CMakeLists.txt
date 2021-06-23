@@ -10,6 +10,7 @@ set(SRCS module_builder.cpp
          ops/convert.cpp
          ops/copy.cpp
          ops/dequantize.cpp
+         ops/gather.cpp
          ops/pad.cpp
          ops/quantize.cpp
          ops/reduce.cpp

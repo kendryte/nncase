@@ -132,20 +132,21 @@ enum class tensor_function_t
     CONVERT = 0x0007,
     COPY = 0x0008,
     DEQUANTIZE = 0x0009,
-    LOGISTIC = 0x000A,
-    LUT1D = 0x000B,
-    MATMUL = 0x000C,
-    PAD = 0x000D,
-    QUANTIZE = 0x000E,
-    REDUCE = 0x000F,
-    REDUCE_WINDOW2D = 0x0010,
-    RESIZE_IMAGE = 0x0011,
-    SLICE = 0x0012,
-    SOFTMAX = 0x0013,
-    SPACE_TO_BATCH = 0x0014,
-    TAKE = 0x0015,
-    TRANSPOSE = 0x0016,
-    UNARY = 0x0017,
+    GATHER = 0x000A,
+    LOGISTIC = 0x000B,
+    LUT1D = 0x000C,
+    MATMUL = 0x000D,
+    PAD = 0x000E,
+    QUANTIZE = 0x000F,
+    REDUCE = 0x0010,
+    REDUCE_WINDOW2D = 0x0011,
+    RESIZE_IMAGE = 0x0012,
+    SLICE = 0x0013,
+    SOFTMAX = 0x0014,
+    SPACE_TO_BATCH = 0x0015,
+    TAKE = 0x0016,
+    TRANSPOSE = 0x0017,
+    UNARY = 0x0018,
 };
 
 // Instructions
@@ -1345,6 +1346,26 @@ struct tensor_dequantize_op_t
     tensor_dequantize_op_t(default_init_t) noexcept { }
     explicit tensor_dequantize_op_t(datatype_t in_datatype, datatype_t dst_datatype, uint8_t rshape_src, uint8_t rstride_src, uint8_t rstride_dest) noexcept
         : opcode(opcode_t::TENSOR), funct(tensor_function_t::DEQUANTIZE), in_datatype(in_datatype), dst_datatype(dst_datatype), rshape_src(rshape_src), rstride_src(rstride_src), rstride_dest(rstride_dest)
+    {
+    }
+};
+
+struct tensor_gather_op_t
+{
+    opcode_t opcode;
+    tensor_function_t funct;
+    datatype_t datatype;
+    uint8_t rshape_src;
+    uint8_t rshape_dest;
+    uint8_t rstride_src;
+    uint8_t rstride_dest;
+    uint8_t rshape_indices;
+    uint8_t axis;
+    uint8_t batch_dims;
+
+    tensor_gather_op_t(default_init_t) noexcept { }
+    explicit tensor_gather_op_t(datatype_t datatype, uint8_t rshape_src, uint8_t rshape_dest, uint8_t rstride_src, uint8_t rstride_dest, uint8_t rshape_indices, uint8_t axis, uint8_t batch_dims) noexcept
+        : opcode(opcode_t::TENSOR), funct(tensor_function_t::GATHER), datatype(datatype), rshape_src(rshape_src), rshape_dest(rshape_dest), rstride_src(rstride_src), rstride_dest(rstride_dest), rshape_indices(rshape_indices), axis(axis), batch_dims(batch_dims)
     {
     }
 };

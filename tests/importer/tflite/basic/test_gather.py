@@ -28,21 +28,23 @@ def _make_module(in_shape, indice, axis, batch_dim):
             return tf.gather(x, indice, axis=axis, batch_dims=batch_dim)
     return GatherModule()
 
-in_shapes = []
 
-indices = []
+in_shape_indice_axis = [
+    ([11], [1, 3, 10, 0, 2], 0),
+    ([11], [[2, 4], [1, 3]], 0),
+    ([7, 5], [1, 3], 0),
+    ([7, 5], [[1, 4, 3]], 1),
+    ([2, 3, 5], [1, 0, 1], 0),
+    ([2, 3, 5], [[2, 1], [1, 1], [1, 2]], 1),
+    ([2, 3, 5], [2, 4, 1], 2),
+    ([4, 5, 8, 3], [1, 0, 2], 1),
+    ([4, 8, 5, 3], [[1, 2], [3, 1]], 2),
+    ([4, 6, 5, 7], [[[1], [2]], [[3], [1]]], 3)
+]
 
-axis = []
-
-batch_dims = []
-
-@pytest.mark.parametrize('in_shape', in_shapes)
-@pytest.mark.parametrize('indice', indices)
-@pytest.mark.parametrize('axis', axis)
-@pytest.mark.parametrize('batch_dim', batch_dims)
-
-def test_gather(in_shape, indice, axis, batch_dim, request):
-    module = _make_module(in_shape, indice, axis, batch_dim)
+@pytest.mark.parametrize('in_shape,indice,axis', in_shape_indice_axis)
+def test_gather(in_shape, indice, axis, request):
+    module = _make_module(in_shape, indice, axis, 0)
     runner = TfliteTestRunner(request.node.name)
     model_file = runner.from_tensorflow(module)
     runner.run(model_file)
