@@ -73,14 +73,44 @@ void add_copy_to_output_pass::run_core(graph &graph, [[maybe_unused]] nncase::ta
         if (auto o = node_cast<output_node>(node))
         {
             auto &out = *o->input().connection();
-            auto cp = graph.emplace<copy>(out.type(), out.shape());
-            cp->name(out.owner().name() + "/copy");
-            cp->output().memory_location(mem_output);
-            cp->input().connect(out);
-            o->input().connect(cp->output());
+            if (out.owner().runtime_opcode() != op_copy)
+            {
+                auto cp = graph.emplace<copy>(out.type(), out.shape());
+                cp->name(out.owner().name() + "/copy");
+                cp->output().memory_location(mem_output);
+                cp->input().connect(out);
+                o->input().connect(cp->output());
+            }
         }
     });
     alias_visitor.visit(graph);
+}
+
+bool remove_copy_to_output_transform::on_try_match(node &node, transform_context &context)
+{
+    copy *cp;
+    output_node *out;
+
+    if ((cp = node_cast<copy>(node))
+        && (out = try_get_direct_child<output_node>(*cp)))
+    {
+        context.inputs.emplace_back(&cp->input());
+        context.outputs.emplace_back(&cp->output());
+
+        context.matched_nodes.emplace_back(cp);
+        return true;
+    }
+
+    return false;
+}
+
+void remove_copy_to_output_transform::process(transform_context &context)
+{
+    auto &output = *context.inputs[0]->connection();
+    auto inputs = context.outputs[0]->connections();
+
+    for (auto &in : dup(inputs))
+        in->connect(output);
 }
 
 void alias_bitcast_buffer_pass::run_core(graph &graph, [[maybe_unused]] nncase::target &target, const run_pass_options &options)
@@ -118,37 +148,20 @@ void alias_bitcast_buffer_pass::run_core(graph &graph, [[maybe_unused]] nncase::
     alias_visitor.visit(graph);
 }
 
-void alias_concat_buffer_pass::run_core([[maybe_unused]] graph &graph, [[maybe_unused]] nncase::target &target, [[maybe_unused]] const run_pass_options &options)
-{
-    //auto &context = *options.schedule_context;
-    //auto alias_visitor = make_relay_ir_visitor([&](node &node) {
-    //    if (auto b = node_cast<concat>(node))
-    //    {
-    //        if (!(b->attributes() & node_attr_action))
-    //        {
-    //            auto &input = *b->input().connection();
-    //            auto &in_buf = context.logical_buffers.at(b->input().connection());
-    //            auto &out_buf = context.logical_buffers.at(&b->output());
-
-    //            // input & rdata should remain locations
-    //            if (in_buf.memory_location() == mem_input || in_buf.memory_location() == mem_rdata)
-    //            {
-    //                // owner is input, parent shape is bitcast's
-    //                shape_t begin(b->output().shape().size(), 0);
-    //                out_buf.parent() = { &in_buf, begin, b->output().shape() };
-    //                out_buf.strides_shape() = b->output().shape();
-    //            }
-    //            else
-    //            {
-    //                assert(in_buf.memory_location() == mem_data);
-
-    //                // owner transfered to output
-    //                shape_t begin(b->output().shape().size(), 0);
-    //                in_buf.parent() = { &out_buf, begin, b->output().shape() };
-    //                in_buf.strides_shape() = input.shape();
-    //            }
-    //        }
-    //    }
-    //});
-    //alias_visitor.visit(graph);
-}
+//void alias_concat_buffer_pass::run_core([[maybe_unused]] graph &graph, [[maybe_unused]] nncase::target &target, [[maybe_unused]] const run_pass_options &options)
+//{
+//    auto &context = *options.schedule_context;
+//    auto alias_visitor = make_relay_ir_visitor([&](node &node) {
+//        if (auto c = node_cast<concat>(node))
+//        {
+//            if (!(c->attributes() & node_attr_action))
+//            {
+//                auto inputs = c->inputs();
+//                auto outputs = c->output().connections();
+//                auto is_simple_concat = (c->axis() == 0 || std::all_of(inputs[0]->shape().begin(), inputs[0]->shape().begin() + c->axis(), [](size_t dim) { return dim == 1; }));
+//                auto &out_buf = *context.logical_buffer_map.at(&c->output());
+//            }
+//        }
+//    });
+//    alias_visitor.visit(graph);
+//}

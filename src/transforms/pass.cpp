@@ -106,6 +106,11 @@ void pass_manager::quantizer(ir::quantizer *q)
     quantizer_ = q;
 }
 
+void pass_manager::schedule_context(schedule::schedule_context *c)
+{
+    schedule_context_ = c;
+}
+
 void pass_manager::run()
 {
     run_pass_options options;

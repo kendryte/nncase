@@ -181,6 +181,7 @@ jobs:
         PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/tests
       run: |
         pytest tests/importer --doctest-modules --junitxml=test_results/importer.xml
+        pytest tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
 
     - name: Test
       working-directory: ${{github.workspace}}
@@ -191,6 +192,7 @@ jobs:
         PYTHONPATH: ${{github.workspace}}/install/lib;${{github.workspace}}/install/python;${{github.workspace}}/tests
       run: |
         pytest tests/importer --doctest-modules --junitxml=test_results/importer.xml
+        pytest tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
 
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action@v1

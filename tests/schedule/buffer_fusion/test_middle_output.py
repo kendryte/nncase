@@ -28,7 +28,9 @@ def _make_module():
         def __call__(self, x):
             out1 = tf.math.abs(x)
             out2 = tf.math.sqrt(out1)
-            return (out1, out2)
+            out3 = tf.concat([out1, out2], axis=3)
+            out4 = tf.math.log(out3)
+            return (out1, out2, out3, out4)
     return Module()
 
 

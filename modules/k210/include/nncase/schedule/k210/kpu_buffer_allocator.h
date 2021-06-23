@@ -23,8 +23,9 @@ class NNCASE_MODULES_K210_API kpu_buffer_allocator : public first_fit_allocator
 public:
     kpu_buffer_allocator();
 
+    size_t get_size_in_bytes(const logical_buffer &buffer) override;
+
 protected:
-    size_t get_size_in_bytes(const physical_buffer &buffer) override;
     size_t alignment() const noexcept override;
 };
 }

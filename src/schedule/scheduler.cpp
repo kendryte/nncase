@@ -158,6 +158,7 @@ void schedule_context::make_logical_buffers()
 void schedule_context::analyze_buffer_alias()
 {
     pass_manager pmgr(*graph, *this->target);
+    pmgr.schedule_context(this);
     pmgr.add_pass<alias_bitcast_buffer_pass>();
     pmgr.run();
     // 1. add copy to concat
@@ -450,6 +451,10 @@ void schedule_context::allocate_physical_buffers()
 
 void schedule_context::assign_allocations()
 {
+    allocator_map_t allocators;
+    std::vector<std::shared_ptr<buffer_allocator>> allocator_holder;
+    target->register_allocators(module_type, allocators, allocator_holder);
+
     auto alloc_visitor = make_relay_ir_visitor([&](node &node) {
         for (auto out : node.outputs())
         {
@@ -461,7 +466,7 @@ void schedule_context::assign_allocations()
             buffer_allocation alloc;
             alloc.memory_location = owner.memory_location();
             alloc.type = lbuf.type();
-            alloc.size = ir::get_bytes(lbuf.type(), lbuf.shape());
+            alloc.size = allocators.at(alloc.memory_location)->get_size_in_bytes(lbuf);
             alloc.shape = lbuf.shape();
             assert(lbuf.strides_shape().size());
             alloc.strides_shape = lbuf.strides_shape();
@@ -617,9 +622,6 @@ void scheduler::dump_schedule(const schedule_context &context)
 
     for (auto node : context.compute_sequence)
     {
-        if (node->runtime_opcode() == op_input_node)
-            continue;
-
         // 2.4.1 outputs
         if (node->runtime_opcode() != op_output_node)
         {
