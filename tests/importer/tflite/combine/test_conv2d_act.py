@@ -102,7 +102,7 @@ def test_conv2d_act(n, i_channels, i_size, k_size, o_channels, strides, padding,
 
         runner = TfliteTestRunner(request.node.name)
         model_file = runner.from_tensorflow(module)
-        # runner.run(model_file)
+        runner.run(model_file)
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_conv2d_act.py'])
