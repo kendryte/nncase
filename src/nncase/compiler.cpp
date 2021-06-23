@@ -229,6 +229,13 @@ public:
         using namespace nncase::codegen;
 
         scheduler sch(*target_, graph_, graph_.outputs());
+        if (compile_options_.dump_ir)
+        {
+            auto dump_path = compile_options_.dump_dir;
+            std::filesystem::create_directories(dump_path);
+            sch.config_dump(dump_path);
+        }
+
         auto schr = sch.schedule();
         model_builder builder(*target_, schr);
         builder.config_dump(compile_options_.dump_dir, compile_options_.dump_asm);

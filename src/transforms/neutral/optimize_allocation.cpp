@@ -92,8 +92,8 @@ void alias_bitcast_buffer_pass::run_core(graph &graph, nncase::target &target, c
             if (!(b->attributes() & node_attr_action))
             {
                 auto &input = *b->input().connection();
-                auto &in_buf = context.logical_buffers.at(b->input().connection());
-                auto &out_buf = context.logical_buffers.at(&b->output());
+                auto &in_buf = *context.logical_buffer_map.at(b->input().connection());
+                auto &out_buf = *context.logical_buffer_map.at(&b->output());
 
                 // input & rdata should remain locations
                 if (in_buf.memory_location() == mem_input || in_buf.memory_location() == mem_rdata)
@@ -120,35 +120,35 @@ void alias_bitcast_buffer_pass::run_core(graph &graph, nncase::target &target, c
 
 void alias_concat_buffer_pass::run_core(graph &graph, nncase::target &target, const run_pass_options &options)
 {
-    auto &context = *options.schedule_context;
-    auto alias_visitor = make_relay_ir_visitor([&](node &node) {
-        if (auto b = node_cast<concat>(node))
-        {
-            if (!(b->attributes() & node_attr_action))
-            {
-                auto &input = *b->input().connection();
-                auto &in_buf = context.logical_buffers.at(b->input().connection());
-                auto &out_buf = context.logical_buffers.at(&b->output());
+    //auto &context = *options.schedule_context;
+    //auto alias_visitor = make_relay_ir_visitor([&](node &node) {
+    //    if (auto b = node_cast<concat>(node))
+    //    {
+    //        if (!(b->attributes() & node_attr_action))
+    //        {
+    //            auto &input = *b->input().connection();
+    //            auto &in_buf = context.logical_buffers.at(b->input().connection());
+    //            auto &out_buf = context.logical_buffers.at(&b->output());
 
-                // input & rdata should remain locations
-                if (in_buf.memory_location() == mem_input || in_buf.memory_location() == mem_rdata)
-                {
-                    // owner is input, parent shape is bitcast's
-                    shape_t begin(b->output().shape().size(), 0);
-                    out_buf.parent() = { &in_buf, begin, b->output().shape() };
-                    out_buf.strides_shape() = b->output().shape();
-                }
-                else
-                {
-                    assert(in_buf.memory_location() == mem_data);
+    //            // input & rdata should remain locations
+    //            if (in_buf.memory_location() == mem_input || in_buf.memory_location() == mem_rdata)
+    //            {
+    //                // owner is input, parent shape is bitcast's
+    //                shape_t begin(b->output().shape().size(), 0);
+    //                out_buf.parent() = { &in_buf, begin, b->output().shape() };
+    //                out_buf.strides_shape() = b->output().shape();
+    //            }
+    //            else
+    //            {
+    //                assert(in_buf.memory_location() == mem_data);
 
-                    // owner transfered to output
-                    shape_t begin(b->output().shape().size(), 0);
-                    in_buf.parent() = { &out_buf, begin, b->output().shape() };
-                    in_buf.strides_shape() = input.shape();
-                }
-            }
-        }
-    });
-    alias_visitor.visit(graph);
+    //                // owner transfered to output
+    //                shape_t begin(b->output().shape().size(), 0);
+    //                in_buf.parent() = { &out_buf, begin, b->output().shape() };
+    //                in_buf.strides_shape() = input.shape();
+    //            }
+    //        }
+    //    }
+    //});
+    //alias_visitor.visit(graph);
 }

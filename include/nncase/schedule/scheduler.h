@@ -15,6 +15,7 @@
 #pragma once
 #include "buffer_allocator.h"
 #include "buffers.h"
+#include <filesystem>
 #include <functional>
 #include <nncase/ir/graph.h>
 #include <span>
@@ -73,7 +74,8 @@ namespace schedule
         nncase::target *target;
         module_type_t module_type;
         std::span<ir::output_node *> outputs;
-        std::unordered_map<const ir::output_connector *, logical_buffer> logical_buffers;
+        std::unordered_map<const ir::output_connector *, logical_buffer *> logical_buffer_map;
+        std::list<logical_buffer> logical_buffers;
         std::vector<physical_buffer> physical_buffers;
 
         void generate_compute_sequence();
@@ -93,12 +95,16 @@ namespace schedule
             : target_(target), main_graph_(main_graph), outputs_(outputs) { }
 
         schedule_result schedule(bool skip_buffer_alias = false);
+        void config_dump(std::filesystem::path dump_dir);
 
     private:
+        void dump_schedule(const schedule_context &context);
+
     private:
         target &target_;
         ir::graph &main_graph_;
         std::span<ir::output_node *> outputs_;
+        std::filesystem::path dump_dir_;
     };
 }
 }

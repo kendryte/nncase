@@ -24,15 +24,11 @@ def _make_module():
     class ConcatModule(tf.Module):
         def __init__(self):
             super(ConcatModule).__init__()
-            self.w1 = tf.constant(np.random.rand(
-                3, 3, 3, 16).astype(np.float32) - 0.5)
-            self.w2 = tf.constant(np.random.rand(
-                1, 1, 3, 4).astype(np.float32) - 0.5)
 
         @tf.function(input_signature=[tf.TensorSpec([1, 4, 4, 3], tf.float32)])
         def __call__(self, x):
-            out1 = tf.nn.conv2d(x, self.w1, [1, 1], 'SAME')
-            out2 = tf.nn.conv2d(x, self.w2, [1, 1], 'SAME')
+            out1 = tf.math.abs(x)
+            out2 = tf.math.sqrt(out1)
             return tf.concat([out1, out2], axis=3)
     return ConcatModule()
 
