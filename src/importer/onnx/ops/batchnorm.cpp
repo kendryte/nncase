@@ -43,7 +43,8 @@ void onnx_importer::convert_op_BatchNormalization(const NodeProto &node)
     assert(node.input().size() == 5);
     assert(node.output().size() > 0 && node.output().size() <= 5);
 
-    const auto epsilon = get_attribute<float>(node, "epsilon").value();
+    auto epsilon_attr = get_attribute<float>(node, "epsilon");
+    auto epsilon = !epsilon_attr ? 1e-05f : epsilon_attr.value();
 
     const auto &input_T = node.input()[0];
     const auto &input_scale = node.input()[1];
