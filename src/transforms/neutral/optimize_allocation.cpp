@@ -14,6 +14,7 @@
  */
 #include <nncase/ir/ops/bitcast.h>
 #include <nncase/ir/ops/concat.h>
+#include <nncase/ir/ops/copy.h>
 #include <nncase/ir/visitor.h>
 #include <nncase/schedule/scheduler.h>
 #include <nncase/transforms/neutral/optimize_allocation.h>
@@ -23,19 +24,131 @@ using namespace nncase::ir;
 using namespace nncase::ir::transforms;
 using namespace nncase::schedule;
 
-void mark_no_action_concat_pass::run_core(graph &graph, nncase::target &target, const run_pass_options &options)
+void make_concat_no_action_pass::run_core(graph &graph, nncase::target &target, const run_pass_options &options)
 {
-    auto &context = *options.schedule_context;
     auto alias_visitor = make_relay_ir_visitor([&](node &node) {
         if (auto c = node_cast<concat>(node))
         {
-            auto inputs = c->inputs();
-            auto outputs = c->output().connections();
+            if (c->attributes() & node_attr_action)
+            {
+                auto inputs = c->inputs();
+                for (auto in : inputs)
+                {
+                    auto &out = *in->connection();
+                    auto cp = graph.emplace<copy>(out.type(), out.shape());
+                    cp->name(out.owner().name() + "/copy");
+                    cp->input().connect(out);
+                    in->connect(cp->output());
+                }
 
-            // 1. concat by outer-most axis
-            auto is_simple_concat = (c->axis() == 0 || std::all_of(inputs[0]->shape().begin(), inputs[0]->shape().begin() + c->axis(), [](size_t dim) { return dim == 1; }));
-            auto &out_buf = context.logical_buffers.at(&c->output());
+                c->attributes(c->attributes() & ~node_attr_action);
+            }
         }
     });
-    alias_visitor.visit(context.outputs);
+    alias_visitor.visit(graph);
+}
+
+void make_bitcast_no_action_pass::run_core(graph &graph, nncase::target &target, const run_pass_options &options)
+{
+    auto alias_visitor = make_relay_ir_visitor([&](node &node) {
+        if (auto b = node_cast<bitcast>(node))
+        {
+            if (b->attributes() & node_attr_action)
+            {
+                auto &out = *b->input().connection();
+                auto cp = graph.emplace<copy>(out.type(), out.shape());
+                cp->name(out.owner().name() + "/copy");
+                cp->input().connect(out);
+                b->input().connect(cp->output());
+                b->attributes(b->attributes() & ~node_attr_action);
+            }
+        }
+    });
+    alias_visitor.visit(graph);
+}
+
+void add_copy_to_output_pass::run_core(graph &graph, nncase::target &target, const run_pass_options &options)
+{
+    auto alias_visitor = make_relay_ir_visitor([&](node &node) {
+        if (auto o = node_cast<output_node>(node))
+        {
+            auto &out = *o->input().connection();
+            auto cp = graph.emplace<copy>(out.type(), out.shape());
+            cp->name(out.owner().name() + "/copy");
+            cp->output().memory_location(mem_output);
+            cp->input().connect(out);
+            o->input().connect(cp->output());
+        }
+    });
+    alias_visitor.visit(graph);
+}
+
+void alias_bitcast_buffer_pass::run_core(graph &graph, nncase::target &target, const run_pass_options &options)
+{
+    auto &context = *options.schedule_context;
+    auto alias_visitor = make_relay_ir_visitor([&](node &node) {
+        if (auto b = node_cast<bitcast>(node))
+        {
+            if (!(b->attributes() & node_attr_action))
+            {
+                auto &input = *b->input().connection();
+                auto &in_buf = context.logical_buffers.at(b->input().connection());
+                auto &out_buf = context.logical_buffers.at(&b->output());
+
+                // input & rdata should remain locations
+                if (in_buf.memory_location() == mem_input || in_buf.memory_location() == mem_rdata)
+                {
+                    // owner is input, parent shape is bitcast's
+                    shape_t begin(b->output().shape().size(), 0);
+                    out_buf.parent() = { &in_buf, begin, b->output().shape() };
+                    out_buf.strides_shape() = b->output().shape();
+                }
+                else
+                {
+                    assert(in_buf.memory_location() == mem_data);
+
+                    // owner transfered to output
+                    shape_t begin(b->output().shape().size(), 0);
+                    in_buf.parent() = { &out_buf, begin, b->output().shape() };
+                    in_buf.strides_shape() = input.shape();
+                }
+            }
+        }
+    });
+    alias_visitor.visit(graph);
+}
+
+void alias_concat_buffer_pass::run_core(graph &graph, nncase::target &target, const run_pass_options &options)
+{
+    auto &context = *options.schedule_context;
+    auto alias_visitor = make_relay_ir_visitor([&](node &node) {
+        if (auto b = node_cast<concat>(node))
+        {
+            if (!(b->attributes() & node_attr_action))
+            {
+                auto &input = *b->input().connection();
+                auto &in_buf = context.logical_buffers.at(b->input().connection());
+                auto &out_buf = context.logical_buffers.at(&b->output());
+
+                // input & rdata should remain locations
+                if (in_buf.memory_location() == mem_input || in_buf.memory_location() == mem_rdata)
+                {
+                    // owner is input, parent shape is bitcast's
+                    shape_t begin(b->output().shape().size(), 0);
+                    out_buf.parent() = { &in_buf, begin, b->output().shape() };
+                    out_buf.strides_shape() = b->output().shape();
+                }
+                else
+                {
+                    assert(in_buf.memory_location() == mem_data);
+
+                    // owner transfered to output
+                    shape_t begin(b->output().shape().size(), 0);
+                    in_buf.parent() = { &out_buf, begin, b->output().shape() };
+                    in_buf.strides_shape() = input.shape();
+                }
+            }
+        }
+    });
+    alias_visitor.visit(graph);
 }

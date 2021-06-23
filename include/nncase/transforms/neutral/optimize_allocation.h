@@ -17,8 +17,47 @@
 
 namespace nncase::ir::transforms
 {
-class NNCASE_API mark_no_action_concat_pass : public graph_pass
+class NNCASE_API make_concat_no_action_pass : public graph_pass
 {
+public:
+    using graph_pass::graph_pass;
+
+protected:
+    void run_core(graph &graph, nncase::target &target, const run_pass_options &options) override;
+};
+
+class NNCASE_API make_bitcast_no_action_pass : public graph_pass
+{
+public:
+    using graph_pass::graph_pass;
+
+protected:
+    void run_core(graph &graph, nncase::target &target, const run_pass_options &options) override;
+};
+
+class NNCASE_API add_copy_to_output_pass : public graph_pass
+{
+public:
+    using graph_pass::graph_pass;
+
+protected:
+    void run_core(graph &graph, nncase::target &target, const run_pass_options &options) override;
+};
+
+class NNCASE_API alias_bitcast_buffer_pass : public graph_pass
+{
+public:
+    using graph_pass::graph_pass;
+
+protected:
+    void run_core(graph &graph, nncase::target &target, const run_pass_options &options) override;
+};
+
+class NNCASE_API alias_concat_buffer_pass : public graph_pass
+{
+public:
+    using graph_pass::graph_pass;
+
 protected:
     void run_core(graph &graph, nncase::target &target, const run_pass_options &options) override;
 };

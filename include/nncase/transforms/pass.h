@@ -95,13 +95,7 @@ public:
         : graph_(graph), target_(target), quantizer_(nullptr), schedule_context_(nullptr) { }
     pass_manager(pass_manager &) = delete;
 
-    template <class TPass, class = std::enable_if_t<std::is_base_of_v<pass, TPass>>>
-    void add_pass(TPass &&pass)
-    {
-        passes_.emplace_back(std::make_unique<TPass>(std::move(pass)));
-    }
-
-    template <class TPass, class = std::enable_if_t<!std::is_base_of_v<pass, TPass>>, class... TArgs>
+    template <class TPass = transform_pass, class... TArgs>
     void add_pass(TArgs &&...pass)
     {
         passes_.emplace_back(std::make_unique<TPass>(std::forward<TArgs>(pass)...));

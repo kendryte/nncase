@@ -20,6 +20,8 @@
 #include <nncase/ir/visitor.h>
 #include <nncase/schedule/scheduler.h>
 #include <nncase/targets/target.h>
+#include <nncase/transforms/neutral/optimize_allocation.h>
+#include <nncase/transforms/pass.h>
 #include <unordered_map>
 
 #include <xtensor/xarray.hpp>
@@ -27,10 +29,11 @@
 using namespace nncase;
 using namespace nncase::ir;
 using namespace nncase::schedule;
+using namespace nncase::ir::transforms;
 
 namespace
 {
-memory_location_t decide_memory_location(ir::output_connector &conn) noexcept
+memory_location_t decide_memory_location(ir::output_connector &conn, bool skip_buffer_alias) noexcept
 {
     auto &opcode = conn.owner().runtime_opcode();
     if (opcode == op_input_node)
@@ -38,9 +41,13 @@ memory_location_t decide_memory_location(ir::output_connector &conn) noexcept
     else if (opcode == op_constant)
         return mem_rdata;
 
-    auto connections = conn.connections();
-    if (std::any_of(connections.begin(), connections.end(), [](input_connector *conn) { return conn->owner().runtime_opcode() == op_output_node; }))
-        return mem_output;
+    if (skip_buffer_alias)
+    {
+        auto connections = conn.connections();
+        if (std::any_of(connections.begin(), connections.end(), [](input_connector *conn) { return conn->owner().runtime_opcode() == op_output_node; }))
+            return mem_output;
+    }
+
     return conn.memory_location();
 }
 
@@ -54,8 +61,8 @@ shape_t to_strides(const shape_t &shape)
 class lifetime_recorder
 {
 public:
-    lifetime_recorder(std::unordered_map<const ir::output_connector *, logical_buffer> &buffers)
-        : buffers_(buffers)
+    lifetime_recorder(std::unordered_map<const ir::output_connector *, logical_buffer> &buffers, bool skip_buffer_alias)
+        : buffers_(buffers), skip_buffer_alias_(skip_buffer_alias)
     {
     }
 
@@ -64,7 +71,7 @@ public:
         auto it = buffers_.find(&conn);
         if (it == buffers_.end())
         {
-            logical_buffer buffer(next_buffer_id_++, conn, decide_memory_location(conn));
+            logical_buffer buffer(next_buffer_id_++, conn, decide_memory_location(conn, skip_buffer_alias_));
             buffer.lifetime().birth = cnt_age_;
             buffer.lifetime().used_count = conn.connections().size();
             buffer.strides_shape() = buffer.shape();
@@ -100,6 +107,7 @@ private:
     size_t next_buffer_id_ = 0;
     size_t cnt_age_ = 0;
     std::unordered_map<const ir::output_connector *, logical_buffer> &buffers_;
+    bool skip_buffer_alias_;
 };
 }
 
@@ -128,7 +136,7 @@ void schedule_context::generate_compute_sequence()
 
 void schedule_context::make_logical_buffers()
 {
-    lifetime_recorder lr(logical_buffers);
+    lifetime_recorder lr(logical_buffers, skip_buffer_alias);
     auto alloc_visitor = make_relay_ir_visitor([&](node &node) {
         for (auto out : node.outputs())
             lr.allocate(*out);
@@ -147,134 +155,137 @@ void schedule_context::make_logical_buffers()
 
 void schedule_context::analyze_buffer_alias()
 {
+    pass_manager pmgr(*graph, *this->target);
+    pmgr.add_pass<alias_bitcast_buffer_pass>();
+    pmgr.run();
     // 1. add copy to concat
-    {
-        auto alias_visitor = make_relay_ir_visitor([&](node &node) {
-            if (auto c = node_cast<concat>(node))
-            {
-                auto inputs = c->inputs();
-                auto outputs = c->output().connections();
+    //{
+    //    auto alias_visitor = make_relay_ir_visitor([&](node &node) {
+    //        if (auto c = node_cast<concat>(node))
+    //        {
+    //            auto inputs = c->inputs();
+    //            auto outputs = c->output().connections();
 
-                // 1. concat by outer-most axis
-                auto is_simple_concat = (c->axis() == 0 || std::all_of(inputs[0]->shape().begin(), inputs[0]->shape().begin() + c->axis(), [](size_t dim) { return dim == 1; }));
-                auto &out_buf = logical_buffers.at(&c->output());
-            }
-        });
-        alias_visitor.visit(outputs);
-    }
-//    auto alias_visitor = make_relay_ir_visitor([&](node &node) {
-//        // 1. bitcast
-//        if (auto b = node_cast<bitcast>(node))
-//        {
-//            auto &input = *b->input().connection();
-//            auto &in_buf = logical_buffers.at(&input);
-//            auto &out_buf = logical_buffers.at(&b->output());
-//
-//            // input & rdata should remain locations
-//            if (in_buf.memory_location() == mem_input || in_buf.memory_location() == mem_rdata)
-//            {
-//                // owner is input, parent shape is bitcast's
-//                if (out_buf.memory_location() != mem_output)
-//                {
-//                    shape_t begin(b->output().shape().size(), 0);
-//                    out_buf.parent() = { &in_buf, begin, b->output().shape() };
-//                    out_buf.strides_shape() = b->output().shape();
-//                    b->attributes(b->attributes() & ~node_attr_action);
-//                }
-//            }
-//            else
-//            {
-//                assert(in_buf.memory_location() == mem_data);
-//
-//                // owner transfered to output
-//                shape_t begin(b->output().shape().size(), 0);
-//                in_buf.parent() = { &out_buf, begin, b->output().shape() };
-//                in_buf.strides_shape() = input.shape();
-//                b->attributes(b->attributes() & ~node_attr_action);
-//            }
-//        }
-//        // 2. slice with no_action
-//        else if (auto s = node_cast<slice>(node))
-//        {
-//            if (s->attributes() == node_attr_none)
-//            {
-//                auto &input = *s->input().connection();
-//                auto &in_buf = logical_buffers.at(&input);
-//                auto &out_buf = logical_buffers.at(&s->output());
-//
-//                shape_t begin(s->begin().size(), 0);
-//                for (size_t i = 0; i < s->begin().size(); i++)
-//                    begin[i] = s->begin()[i];
-//                out_buf.parent() = { &in_buf, begin, s->output().shape() };
-//                out_buf.strides_shape() = s->input().shape();
-//            }
-//        }
-//#if 0
-//        // 3. concat
-//        else if (auto c = node_cast<concat>(node))
-//        {
-//            auto inputs = c->inputs();
-//            auto outputs = c->output().connections();
-//            auto child_concats = std::count_if(outputs.begin(), outputs.end(), [](input_connector *in) {
-//                return in->owner().runtime_opcode() == op_concat;
-//            });
-//            auto is_simple_concat = (c->axis() == 0 || std::all_of(inputs[0]->shape().begin(), inputs[0]->shape().begin() + c->axis(), [](size_t dim) { return dim == 1; }));
-//
-//            if (
-//                // input & rdata should be copied to output
-//                std::all_of(inputs.begin(), inputs.end(), [this, is_simple_concat](input_connector *in) {
-//                    auto &in_buf = logical_buffers.at(in->connection());
-//                    return (in_buf.memory_location() != mem_input
-//                               && in_buf.memory_location() != mem_rdata
-//                               && in_buf.memory_location() != mem_output)
-//                        && in->connection()->owner().runtime_opcode() != op_slice
-//                        && (is_simple_concat || in->connection()->owner().runtime_opcode() != op_bitcast);
-//                })
-//                // exclusive concat
-//                && (std::all_of(inputs.begin(), inputs.end(), [](input_connector *in) {
-//                       auto in_outputs = in->connection()->connections();
-//                       auto in_child_concats = std::count_if(in_outputs.begin(), in_outputs.end(), [](input_connector *in) {
-//                           if (auto c = node_cast<concat>(in->owner()))
-//                               return (c->attributes() & node_attr_action) == 0;
-//                           return false;
-//                       });
-//                       return in_child_concats == 0;
-//                   }))
-//                // if any inputs is strided concat, output connections should support strides
-//                && (std::all_of(inputs.begin(), inputs.end(), [this](input_connector *in) {
-//                       if (in->owner().runtime_opcode() == op_concat)
-//                       {
-//                           auto &in_buf = logical_buffers.at(in->connection());
-//                           if (in_buf.no_action_concat_with_strides())
-//                               return false;
-//                       }
-//                       return true;
-//                   })
-//                    || child_concats == 0 || std::all_of(outputs.begin(), outputs.end(), [](input_connector *in) {
-//                           return in->attributes() & cnctr_attr_support_layout_strides;
-//                       })))
-//            {
-//                bool no_action = false;
-//
-//                // no strides support needed
-//                if (is_simple_concat)
-//                {
-//                    no_action = true;
-//                }
-//                else if (std::all_of(inputs.begin(), inputs.end(), [](input_connector *in) { return in->connection()->attributes() & cnctr_attr_support_layout_strides; }))
-//                {
-//                    no_action = true;
-//                    logical_buffers.at(&c->output()).no_action_concat_with_strides() = true;
-//                }
-//
-//                // Fix parent later
-//                if (no_action)
-//                    c->attributes(c->attributes() & ~node_attr_action);
-//            }
-//        }
-//#endif
-//    });
-//    alias_visitor.visit(outputs);
+    //            // 1. concat by outer-most axis
+    //            auto is_simple_concat = (c->axis() == 0 || std::all_of(inputs[0]->shape().begin(), inputs[0]->shape().begin() + c->axis(), [](size_t dim) { return dim == 1; }));
+    //            auto &out_buf = logical_buffers.at(&c->output());
+    //        }
+    //    });
+    //    alias_visitor.visit(outputs);
+    //}
+    //    auto alias_visitor = make_relay_ir_visitor([&](node &node) {
+    //        // 1. bitcast
+    //        if (auto b = node_cast<bitcast>(node))
+    //        {
+    //            auto &input = *b->input().connection();
+    //            auto &in_buf = logical_buffers.at(&input);
+    //            auto &out_buf = logical_buffers.at(&b->output());
+    //
+    //            // input & rdata should remain locations
+    //            if (in_buf.memory_location() == mem_input || in_buf.memory_location() == mem_rdata)
+    //            {
+    //                // owner is input, parent shape is bitcast's
+    //                if (out_buf.memory_location() != mem_output)
+    //                {
+    //                    shape_t begin(b->output().shape().size(), 0);
+    //                    out_buf.parent() = { &in_buf, begin, b->output().shape() };
+    //                    out_buf.strides_shape() = b->output().shape();
+    //                    b->attributes(b->attributes() & ~node_attr_action);
+    //                }
+    //            }
+    //            else
+    //            {
+    //                assert(in_buf.memory_location() == mem_data);
+    //
+    //                // owner transfered to output
+    //                shape_t begin(b->output().shape().size(), 0);
+    //                in_buf.parent() = { &out_buf, begin, b->output().shape() };
+    //                in_buf.strides_shape() = input.shape();
+    //                b->attributes(b->attributes() & ~node_attr_action);
+    //            }
+    //        }
+    //        // 2. slice with no_action
+    //        else if (auto s = node_cast<slice>(node))
+    //        {
+    //            if (s->attributes() == node_attr_none)
+    //            {
+    //                auto &input = *s->input().connection();
+    //                auto &in_buf = logical_buffers.at(&input);
+    //                auto &out_buf = logical_buffers.at(&s->output());
+    //
+    //                shape_t begin(s->begin().size(), 0);
+    //                for (size_t i = 0; i < s->begin().size(); i++)
+    //                    begin[i] = s->begin()[i];
+    //                out_buf.parent() = { &in_buf, begin, s->output().shape() };
+    //                out_buf.strides_shape() = s->input().shape();
+    //            }
+    //        }
+    //#if 0
+    //        // 3. concat
+    //        else if (auto c = node_cast<concat>(node))
+    //        {
+    //            auto inputs = c->inputs();
+    //            auto outputs = c->output().connections();
+    //            auto child_concats = std::count_if(outputs.begin(), outputs.end(), [](input_connector *in) {
+    //                return in->owner().runtime_opcode() == op_concat;
+    //            });
+    //            auto is_simple_concat = (c->axis() == 0 || std::all_of(inputs[0]->shape().begin(), inputs[0]->shape().begin() + c->axis(), [](size_t dim) { return dim == 1; }));
+    //
+    //            if (
+    //                // input & rdata should be copied to output
+    //                std::all_of(inputs.begin(), inputs.end(), [this, is_simple_concat](input_connector *in) {
+    //                    auto &in_buf = logical_buffers.at(in->connection());
+    //                    return (in_buf.memory_location() != mem_input
+    //                               && in_buf.memory_location() != mem_rdata
+    //                               && in_buf.memory_location() != mem_output)
+    //                        && in->connection()->owner().runtime_opcode() != op_slice
+    //                        && (is_simple_concat || in->connection()->owner().runtime_opcode() != op_bitcast);
+    //                })
+    //                // exclusive concat
+    //                && (std::all_of(inputs.begin(), inputs.end(), [](input_connector *in) {
+    //                       auto in_outputs = in->connection()->connections();
+    //                       auto in_child_concats = std::count_if(in_outputs.begin(), in_outputs.end(), [](input_connector *in) {
+    //                           if (auto c = node_cast<concat>(in->owner()))
+    //                               return (c->attributes() & node_attr_action) == 0;
+    //                           return false;
+    //                       });
+    //                       return in_child_concats == 0;
+    //                   }))
+    //                // if any inputs is strided concat, output connections should support strides
+    //                && (std::all_of(inputs.begin(), inputs.end(), [this](input_connector *in) {
+    //                       if (in->owner().runtime_opcode() == op_concat)
+    //                       {
+    //                           auto &in_buf = logical_buffers.at(in->connection());
+    //                           if (in_buf.no_action_concat_with_strides())
+    //                               return false;
+    //                       }
+    //                       return true;
+    //                   })
+    //                    || child_concats == 0 || std::all_of(outputs.begin(), outputs.end(), [](input_connector *in) {
+    //                           return in->attributes() & cnctr_attr_support_layout_strides;
+    //                       })))
+    //            {
+    //                bool no_action = false;
+    //
+    //                // no strides support needed
+    //                if (is_simple_concat)
+    //                {
+    //                    no_action = true;
+    //                }
+    //                else if (std::all_of(inputs.begin(), inputs.end(), [](input_connector *in) { return in->connection()->attributes() & cnctr_attr_support_layout_strides; }))
+    //                {
+    //                    no_action = true;
+    //                    logical_buffers.at(&c->output()).no_action_concat_with_strides() = true;
+    //                }
+    //
+    //                // Fix parent later
+    //                if (no_action)
+    //                    c->attributes(c->attributes() & ~node_attr_action);
+    //            }
+    //        }
+    //#endif
+    //    });
+    //    alias_visitor.visit(outputs);
 }
 
 void schedule_context::fix_concat_indices()
@@ -397,11 +408,11 @@ void schedule_context::make_physical_buffers()
     }
 }
 
-void schedule_context::allocate_physical_buffers(target &target)
+void schedule_context::allocate_physical_buffers()
 {
     allocator_map_t allocators;
     std::vector<std::shared_ptr<buffer_allocator>> allocator_holder;
-    target.register_allocators(module_type, allocators, allocator_holder);
+    target->register_allocators(module_type, allocators, allocator_holder);
 
     for (auto &usage_p : max_usages)
     {
@@ -470,9 +481,11 @@ schedule_result scheduler::schedule(bool skip_buffer_alias)
 {
     auto schedule_module = [&](ir::graph &graph, std::span<ir::output_node *> outputs, module_schedule_result &result) {
         schedule_context context;
+        context.skip_buffer_alias = skip_buffer_alias;
         context.graph = &graph;
         context.module_type = graph.module_type();
         context.outputs = outputs;
+        context.target = &target_;
 
         context.make_logical_buffers();
         if (!skip_buffer_alias)
@@ -481,7 +494,7 @@ schedule_result scheduler::schedule(bool skip_buffer_alias)
         context.fix_lifetime();
         context.generate_compute_sequence();
         context.make_physical_buffers();
-        context.allocate_physical_buffers(target_);
+        context.allocate_physical_buffers();
         context.assign_allocations();
         result = module_schedule_result { context };
     };

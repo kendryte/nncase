@@ -44,6 +44,7 @@ public:
     template <class TShape>
     output_node(datatype_t type, TShape &&shape)
     {
+        attributes(attributes() | node_attr_skip_constant_folding);
         add_input("input", type, std::forward<TShape>(shape));
     }
 

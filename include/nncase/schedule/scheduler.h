@@ -69,6 +69,8 @@ namespace schedule
 
     struct schedule_context : module_schedule_result
     {
+        bool skip_buffer_alias = false;
+        nncase::target *target;
         module_type_t module_type;
         std::span<ir::output_node *> outputs;
         std::unordered_map<const ir::output_connector *, logical_buffer> logical_buffers;
@@ -80,7 +82,7 @@ namespace schedule
         void fix_concat_indices();
         void fix_lifetime();
         void make_physical_buffers();
-        void allocate_physical_buffers(target &target);
+        void allocate_physical_buffers();
         void assign_allocations();
     };
 

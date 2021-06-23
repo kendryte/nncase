@@ -25,6 +25,7 @@
 #include <nncase/runtime/datatypes.h>
 #include <nncase/transforms/neutral/add_quant_motion.h>
 #include <nncase/transforms/neutral/fold_io_quant_motion.h>
+#include <nncase/transforms/neutral/optimize_allocation.h>
 #include <nncase/transforms/pass.h>
 #include <variant>
 
@@ -197,7 +198,10 @@ public:
         std::cout << "5. Optimize target dependent after quantization..." << std::endl;
         optimize_target_dependent_after_quant(graph_);
 
-        std::cout << "6. Merge module regions..." << std::endl;
+        std::cout << "6. Optimize buffer fusion..." << std::endl;
+        optimize_buffer_fusion(graph_);
+
+        std::cout << "7. Merge module regions..." << std::endl;
         optimize_merge_module_regions(graph_);
     }
 
@@ -220,7 +224,7 @@ public:
 
     void gencode(std::ostream &output) override
     {
-        std::cout << "6. Generate code..." << std::endl;
+        std::cout << "8. Generate code..." << std::endl;
         using namespace nncase::schedule;
         using namespace nncase::codegen;
 
@@ -245,6 +249,17 @@ private:
     void optimize_target_independent(ir::graph &graph)
     {
         run_passes("target_indep", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr) { target_->register_target_independent_passes(module_type, pmgr); });
+    }
+
+    void optimize_buffer_fusion(ir::graph &graph)
+    {
+        using namespace ir::transforms;
+
+        run_passes("buffer_fusion", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr) {
+            pmgr.add_pass<make_concat_no_action_pass>();
+            pmgr.add_pass<make_bitcast_no_action_pass>();
+            pmgr.add_pass<add_copy_to_output_pass>();
+        });
     }
 
     void optimize_merge_module_regions(ir::graph &graph)
