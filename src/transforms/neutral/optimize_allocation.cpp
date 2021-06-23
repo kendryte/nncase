@@ -24,7 +24,7 @@ using namespace nncase::ir;
 using namespace nncase::ir::transforms;
 using namespace nncase::schedule;
 
-void make_concat_no_action_pass::run_core(graph &graph, nncase::target &target, const run_pass_options &options)
+void make_concat_no_action_pass::run_core(graph &graph, [[maybe_unused]] nncase::target &target, [[maybe_unused]] const run_pass_options &options)
 {
     auto alias_visitor = make_relay_ir_visitor([&](node &node) {
         if (auto c = node_cast<concat>(node))
@@ -48,7 +48,7 @@ void make_concat_no_action_pass::run_core(graph &graph, nncase::target &target, 
     alias_visitor.visit(graph);
 }
 
-void make_bitcast_no_action_pass::run_core(graph &graph, nncase::target &target, const run_pass_options &options)
+void make_bitcast_no_action_pass::run_core(graph &graph, [[maybe_unused]] nncase::target &target, [[maybe_unused]] const run_pass_options &options)
 {
     auto alias_visitor = make_relay_ir_visitor([&](node &node) {
         if (auto b = node_cast<bitcast>(node))
@@ -67,7 +67,7 @@ void make_bitcast_no_action_pass::run_core(graph &graph, nncase::target &target,
     alias_visitor.visit(graph);
 }
 
-void add_copy_to_output_pass::run_core(graph &graph, nncase::target &target, const run_pass_options &options)
+void add_copy_to_output_pass::run_core(graph &graph, [[maybe_unused]] nncase::target &target, [[maybe_unused]] const run_pass_options &options)
 {
     auto alias_visitor = make_relay_ir_visitor([&](node &node) {
         if (auto o = node_cast<output_node>(node))
@@ -83,7 +83,7 @@ void add_copy_to_output_pass::run_core(graph &graph, nncase::target &target, con
     alias_visitor.visit(graph);
 }
 
-void alias_bitcast_buffer_pass::run_core(graph &graph, nncase::target &target, const run_pass_options &options)
+void alias_bitcast_buffer_pass::run_core(graph &graph, [[maybe_unused]] nncase::target &target, const run_pass_options &options)
 {
     auto &context = *options.schedule_context;
     auto alias_visitor = make_relay_ir_visitor([&](node &node) {
@@ -118,7 +118,7 @@ void alias_bitcast_buffer_pass::run_core(graph &graph, nncase::target &target, c
     alias_visitor.visit(graph);
 }
 
-void alias_concat_buffer_pass::run_core(graph &graph, nncase::target &target, const run_pass_options &options)
+void alias_concat_buffer_pass::run_core([[maybe_unused]] graph &graph, [[maybe_unused]] nncase::target &target, [[maybe_unused]] const run_pass_options &options)
 {
     //auto &context = *options.schedule_context;
     //auto alias_visitor = make_relay_ir_visitor([&](node &node) {

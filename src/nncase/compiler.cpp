@@ -262,7 +262,7 @@ private:
     {
         using namespace ir::transforms;
 
-        run_passes("buffer_fusion", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr) {
+        run_passes("buffer_fusion", graph, [&]([[maybe_unused]] const module_type_t &module_type, ir::transforms::pass_manager &pmgr) {
             pmgr.add_pass<make_concat_no_action_pass>();
             pmgr.add_pass<make_bitcast_no_action_pass>();
             pmgr.add_pass<add_copy_to_output_pass>();

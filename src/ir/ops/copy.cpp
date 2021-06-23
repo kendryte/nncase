@@ -25,7 +25,7 @@ copy::copy(datatype_t type, shape_t input_shape)
     add_output("output", type, input_shape);
 }
 
-bool copy::properties_equal(node &other) const
+bool copy::properties_equal([[maybe_unused]] node &other) const
 {
     return false;
 }
