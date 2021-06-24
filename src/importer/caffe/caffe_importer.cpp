@@ -14,30 +14,60 @@
  */
 #include "caffe_importer.h"
 #include <fstream>
-#include <importer/importer.h>
-#include <hlir/ops/constant.h>
-#include <runtime/binary_reader.h>
+#include <nncase/importer/importer.h>
+#include <nncase/ir/ops/constant.h>
+#include <nncase/ir/graph.h>
+#include <google/protobuf/io/coded_stream.h>
+#include <google/protobuf/io/zero_copy_stream_impl.h>
+#include <google/protobuf/message.h>
+#include <google/protobuf/text_format.h>
 
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::hlir;
-using namespace nncase::runtime;
+using namespace nncase::ir;
+//using namespace nncase::runtime;
 using namespace caffe;
 using namespace std::string_view_literals;
 
-caffe_importer::caffe_importer(xtl::span<const uint8_t> model, hlir::graph &graph)
+static bool read_proto_from_text(const char* filepath, google::protobuf::Message* message)
+{
+    std::ifstream fs(filepath, std::ifstream::in);
+    if (!fs.is_open())
+    {
+        throw std::runtime_error("open prototxt failed.");
+    }
+    google::protobuf::io::IstreamInputStream input(&fs);
+    bool success = google::protobuf::TextFormat::Parse(&input, message);
+
+    std::string p;
+    google::protobuf::TextFormat::PrintToString(*message, &p);
+
+    fs.close();
+
+    return success;
+}
+
+caffe_importer::caffe_importer(std::span<const uint8_t> model, const char *prototxt, ir::graph &graph)
     : graph_(graph)
 {
     GOOGLE_PROTOBUF_VERIFY_VERSION;
 
     if (!model_.ParseFromArray(model.data(), (int)model.size()))
         throw std::runtime_error("Invalid Caffe model");
+
+    caffe::NetParameter proto;
+    bool s0 = read_proto_from_text(prototxt, &proto);
+    if (!s0)
+    {
+        throw std::runtime_error("read prototxt failed");
+    }
+    prototxt_ = proto;
 }
 
-void caffe_importer::import()
+void caffe_importer::import([[maybe_unused]]const struct import_options &options)
 {
-    for (int i = 0; i < model_.layer_size(); i++)
-        convert_op(model_.layer(i));
+    for (int i = 0; i < prototxt_.layer_size(); i++)
+        convert_op(prototxt_.layer(i), model_);
 
     std::unordered_map<std::string_view, output_connector *> created_inputs;
 
@@ -67,22 +97,22 @@ void caffe_importer::import()
     }
 }
 
-void caffe_importer::convert_op(const LayerParameter &op)
+void caffe_importer::convert_op(const LayerParameter &op, caffe::NetParameter caffemodel)
 {
     auto type = op.type();
 
 #define DEFINE_OPCODE(opcode) \
     if (type == #opcode##sv)  \
-        return convert_op_##opcode(op);
+        return convert_op_##opcode(op, caffemodel);
 #include "opcode.def"
 #undef DEFINE_OPCODE
 
     throw std::runtime_error("Not supported Caffe opcode: " + type);
 }
 
-graph nncase::importer::import_caffe(xtl::span<const uint8_t> model)
-{
-    graph graph;
-    caffe_importer(model, graph).import();
-    return graph;
-}
+// graph nncase::importer::import_caffe(xtl::span<const uint8_t> model)
+// {
+//     graph graph;
+//     caffe_importer(model, graph).import();
+//     return graph;
+// }

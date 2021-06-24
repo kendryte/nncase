@@ -13,20 +13,24 @@
  * limitations under the License.
  */
 #include "../caffe_importer.h"
-#include <hlir/ops/reshape.h>
+#include <nncase/ir/ops/bitcast.h>
 
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::hlir;
+using namespace nncase::ir;
 using namespace caffe;
 
 DEFINE_CAFFE_LOWER(Reshape)
 {
-    auto &input = *output_tensors_.at(op.bottom(0));
+    // check if there are bn/scale/relu above
+    std::string input_name = get_real_input_names(op)[0];
+
+    auto &input = *output_tensors_.at(input_name);
     auto &param = op.reshape_param();
 
-    auto rp = graph_.emplace<reshape>(dt_float32, input.shape(), get_axis(param.shape()));
+    auto rp = graph_.emplace<bitcast>(dt_float32, input.shape(), get_axis(param.shape()));
+    rp->name(op.name() + "/bitcast");
 
-    input_tensors_.emplace(&rp->input(), op.bottom(0));
+    input_tensors_.emplace(&rp->input(), input_name);
     output_tensors_.emplace(op.top(0), &rp->output());
 }

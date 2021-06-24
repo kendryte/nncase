@@ -12,21 +12,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../caffe_importer.h"
-#include <nncase/ir/placeholders.h>
+#include <nncase/ir/op_utils.h>
+#include <nncase/ir/ops/scale.h>
+#include <xtensor/xarray.hpp>
 
 using namespace nncase;
-using namespace nncase::importer;
 using namespace nncase::ir;
-using namespace caffe;
 
-DEFINE_CAFFE_LOWER(Split)
+scale::scale(datatype_t input_type, shape_t input_shape, std::vector<float> gamma, std::vector<float> beta)
+    : gamma_(gamma), beta_(beta)
 {
-    // check if there are bn/scale/relu above
-    std::string input_name = get_real_input_names(op)[0];
+    add_input("input", input_type, input_shape);
+    add_output("output", input_type, input_shape);
+}
 
-    auto &input = *output_tensors_.at(input_name);
-
-    for (int i = 0; i < op.top_size(); i++)
-        output_tensors_.emplace(op.top(i), &input);
+bool scale::properties_equal(node &other) const
+{
+    auto &r = static_cast<scale &>(other);
+    return gamma() == r.gamma() && beta() == r.beta();
 }

@@ -13,28 +13,36 @@
  * limitations under the License.
  */
 #include "../caffe_importer.h"
-#include <hlir/ops/binary.h>
-#include <hlir/ops/constant.h>
-#include <hlir/ops/reduce.h>
-#include <hlir/ops/unary.h>
+#include <nncase/ir/ops/binary.h>
+#include <nncase/ir/ops/constant.h>
+#include <nncase/ir/ops/reduce.h>
+#include <nncase/ir/ops/unary.h>
 
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::hlir;
+using namespace nncase::ir;
 
 DEFINE_CAFFE_LOWER(Softmax)
 {
-    auto &input = *output_tensors_.at(op.bottom(0));
+    // check if there are bn/scale/relu above
+    std::string input_name = get_real_input_names(op)[0];
+
+    auto &input = *output_tensors_.at(input_name);
     auto &param = op.softmax_param();
 
     axis_t reduce_axis;
     reduce_axis.push_back(param.axis());
 
     auto max = graph_.emplace<reduce>(reduce_max, input.shape(), reduce_axis, std::numeric_limits<float>::lowest(), true);
+    max->name(op.name() + "/max");
     auto sub = graph_.emplace<binary>(binary_sub, input.shape(), max->output().shape(), value_range<float>::full());
+    sub->name(op.name() + "/sub");
     auto exp = graph_.emplace<unary>(unary_exp, sub->output().shape());
+    exp->name(op.name() + "/exp");
     auto sum = graph_.emplace<reduce>(reduce_sum, exp->output().shape(), reduce_axis, 0.f, true);
+    sum->name(op.name() + "/sum");
     auto div = graph_.emplace<binary>(binary_div, exp->output().shape(), sum->output().shape(), value_range<float>::full());
+    div->name(op.name() + "/div");
 
     sub->input_b().connect(max->output());
     exp->input().connect(sub->output());
@@ -42,7 +50,7 @@ DEFINE_CAFFE_LOWER(Softmax)
     div->input_a().connect(exp->output());
     div->input_b().connect(sum->output());
 
-    input_tensors_.emplace(&max->input(), op.bottom(0));
-    input_tensors_.emplace(&sub->input_a(), op.bottom(0));
+    input_tensors_.emplace(&max->input(), input_name);
+    input_tensors_.emplace(&sub->input_a(), input_name);
     output_tensors_.emplace(op.top(0), &div->output());
 }

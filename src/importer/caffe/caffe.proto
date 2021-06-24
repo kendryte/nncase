@@ -625,6 +625,17 @@ message LayerParameter {
   optional RegionLossParameter region_loss_param = 209;
   // Yolo detection evaluation layer
   optional EvalDetectionParameter eval_detection_param = 301;
+  optional ContinuationIndicatorParameter continuation_indicator_param = 302;
+  optional ReverseParameter reverse_param = 303;
+}
+
+message ContinuationIndicatorParameter {
+  optional uint32 time_step = 1 [default = 0];
+  optional uint32 batch_size = 2 [default = 0];
+}
+
+message ReverseParameter {
+  optional int32 axis = 1;
 }
 
 message RegionLossParameter{

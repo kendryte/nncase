@@ -13,27 +13,44 @@
  * limitations under the License.
  */
 #include "../caffe_importer.h"
-#include <hlir/ops/clamp.h>
-#include <hlir/ops/constant.h>
-#include <hlir/ops/reduce.h>
-#include <hlir/ops/unary.h>
+#include <nncase/ir/ops/clamp.h>
+#include <nncase/ir/ops/constant.h>
+#include <nncase/ir/ops/reduce.h>
+#include <nncase/ir/ops/unary.h>
 
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::hlir;
+using namespace nncase::ir;
 using namespace caffe;
 
 DEFINE_CAFFE_LOWER(ReLU)
 {
-    auto &input = *output_tensors_.at(op.bottom(0));
-    auto &param = op.relu_param();
+    // check if there are bn/scale above
+    std::string input_name = op.bottom(0) + "/add";
+
+    if (output_tensors_.find(input_name) == output_tensors_.end())
+    {
+        input_name = op.bottom(0) + "/mul";
+        if (output_tensors_.find(input_name) == output_tensors_.end())
+            input_name = op.bottom(0);
+    }
+
+    auto &input = *output_tensors_.at(input_name);
+
+    [[maybe_unused]]auto &param = op.relu_param();
 
     auto zero = graph_.emplace<constant>(0.f);
+    zero->name(op.name() + "/zero_const");
     auto high = graph_.emplace<constant>(std::numeric_limits<float>::max());
+    high->name(op.name() + "/high_const");
     auto cl = graph_.emplace<clamp>(input.shape(), zero->output().shape(), high->output().shape());
+    // inplace op, user op need this name
+    cl->name(op.top(0) + "/clamp");
 
     cl->input_low().connect(zero->output());
     cl->input_high().connect(high->output());
-    input_tensors_.emplace(&cl->input(), op.bottom(0));
-    output_tensors_.emplace(op.top(0), &cl->output());
+
+    input_tensors_.emplace(&cl->input(), input_name);
+    // inplace op, user op need this name
+    output_tensors_.emplace(cl->name(), &cl->output());
 }
