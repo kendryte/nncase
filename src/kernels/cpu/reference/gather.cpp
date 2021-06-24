@@ -42,6 +42,7 @@ result<void> gather_impl(const T *input, T *output, const runtime_shape_t &in_sh
         // which index to be used in indices
         runtime_shape_t indices_index(out_index.begin() + axis, out_index.begin() + axis + indices_shape.size());
         auto indices_offset = offset(get_default_strides(indices_shape), indices_index);
+        assert(indices_offset < compute_size(indices_shape));
         // select sub block in dim axis
         in_index[i_index] = indices[indices_offset];
         ++i_index;
@@ -52,6 +53,10 @@ result<void> gather_impl(const T *input, T *output, const runtime_shape_t &in_sh
             in_index[i_index] = out_index[o_index];
             ++i_index;
         }
+        auto o_offset = offset(out_strides, out_index);
+        auto i_offset = offset(in_strides, in_index);
+        assert(o_offset < compute_size(out_shape));
+        assert(i_offset < compute_size(in_shape));
         output[offset(out_strides, out_index)] = input[offset(in_strides, in_index)];
         return ok();
     });

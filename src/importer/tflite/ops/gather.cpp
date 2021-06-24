@@ -38,3 +38,23 @@ DEFINE_TFLITE_LOWER(GATHER)
     link_input_tensor(&ga->indices(), op.inputs()->Get(1));
     link_output_tensor(op.outputs()->Get(0), &ga->output());
 }
+
+DEFINE_TFLITE_LOWER(GATHER_ND)
+{
+    auto &input = get_tensor(op.inputs(), 0);
+    auto &indices = get_tensor(op.inputs(), 1);
+    auto &output = get_tensor(op.outputs(), 0);
+
+    auto in_shape = get_shape(input.shape());
+    auto indices_shape = get_shape(indices.shape());
+    auto out_shape = get_shape(output.shape());
+
+    auto &options = *op.builtin_options_as_GatherNdOptions();
+
+    auto ga = graph_.emplace<gather>(to_data_type(input.type()), in_shape, indices_shape, out_shape, 0);
+    ga->name(get_tensor(op.outputs(), 0).name()->string_view());
+
+    link_input_tensor(&ga->input(), op.inputs()->Get(0));
+    link_input_tensor(&ga->indices(), op.inputs()->Get(1));
+    link_output_tensor(op.outputs()->Get(0), &ga->output());
+}

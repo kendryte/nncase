@@ -25,7 +25,10 @@ def _make_module(in_shape, indice, axis, batch_dim):
 
         @tf.function(input_signature=[tf.TensorSpec(in_shape, tf.float32)])
         def __call__(self, x):
-            return tf.gather(x, indice, axis=axis, batch_dims=batch_dim)
+            outs = []
+            outs.append(tf.gather(x, indice, axis=axis, batch_dims=batch_dim))
+            # outs.append(tf.gather_nd(x, indice, batch_dim))
+            return outs
     return GatherModule()
 
 

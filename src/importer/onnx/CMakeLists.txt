@@ -104,6 +104,7 @@ set(ONNX_IMPORTER_OPS_SOURCES
     ops/constant.cpp
     ops/conv.cpp
     ops/dropout.cpp
+    ops/gather.cpp
     ops/gemm.cpp
     ops/flatten.cpp
     ops/identity.cpp
