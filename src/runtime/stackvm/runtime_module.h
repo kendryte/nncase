@@ -14,7 +14,7 @@
  */
 #pragma once
 #include "evaluate_stack.h"
-#include <nncase/runtime/stackvm/kernel_context.h>
+#include <nncase/kernels/kernel_context.h>
 #include <nncase/runtime/stackvm/op_reader.h>
 #include <nncase/runtime/stackvm/runtime_module.h>
 
@@ -178,7 +178,6 @@ private:
     std::array<uintptr_t, MAX_GENERAL_REGS> regs_;
     std::vector<runtime_shape_t> shape_regs_;
     std::vector<runtime_paddings_t> paddings_regs_;
-    stackvm_kernel_context kernel_context_;
 };
 
 END_NS_NNCASE_RT_STACKVM

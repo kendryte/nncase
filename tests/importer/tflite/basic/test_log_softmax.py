@@ -11,39 +11,43 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+"""System test: test log_softmax"""
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
 
 import pytest
-import torch
-from test_runner import OnnxTestRunner
+import tensorflow as tf
+import numpy as np
+from test_runner import TfliteTestRunner
 
-def _make_module():
 
-    class SoftmaxModule(torch.nn.Module):
+def _make_module(in_shape):
+    class LogSoftmaxModule(tf.Module):
         def __init__(self):
-            super(SoftmaxModule, self).__init__()
-            self.softmax = torch.nn.Softmax()
+            super(LogSoftmaxModule).__init__()
 
-        def forward(self, x):
-            x = self.softmax(x)
-            return x
+        @tf.function(input_signature=[tf.TensorSpec(in_shape, tf.float32)])
+        def __call__(self, x):
+            return tf.math.log_softmax(x)
+    return LogSoftmaxModule()
 
-    return SoftmaxModule()
 
 in_shapes = [
-    [1],
-    [1, 1001],
-    [1, 1, 1001],
-    [1, 3, 224, 224]
+    [3],
+    [64, 3],
+    [3, 64, 3],
+    [8, 6, 16, 3]
 ]
 
-@pytest.mark.parametrize('in_shape', in_shapes)
-def test_softmax(in_shape, request):
-    module = _make_module()
 
-    runner = OnnxTestRunner(request.node.name)
-    model_file = runner.from_torch(module, in_shape)
+@pytest.mark.parametrize('in_shape', in_shapes)
+def test_log_softmax(in_shape, request):
+    module = _make_module(in_shape)
+
+    runner = TfliteTestRunner(request.node.name)
+    model_file = runner.from_tensorflow(module)
     runner.run(model_file)
 
+
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_softmax.py'])
+    pytest.main(
+        ['-vv', 'test_log_softmax.py'])

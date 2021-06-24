@@ -20,14 +20,14 @@ BEGIN_NS_NNCASE_KERNELS_CPU_OPT
 
 NNCASE_API result<void> concat(datatype_t type, gsl::span<const gsl::byte *const> inputs, gsl::byte *output, const runtime_shape_t &out_shape,
     gsl::span<const runtime_shape_t> in_strides, const runtime_shape_t &out_strides, size_t axis, const runtime_shape_t &concat_dims,
-    kernel_context &context = default_kernel_context) noexcept;
+    kernel_context &context) noexcept;
 
 NNCASE_API result<void> slice(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const runtime_shape_t &begins, const runtime_shape_t &ends, const runtime_axis_t &strides,
-    kernel_context &context = default_kernel_context) noexcept;
+    kernel_context &context) noexcept;
 
 NNCASE_API result<void> copy(datatype_t type, const gsl::byte *src, gsl::byte *dest,
     const runtime_shape_t &shape, const runtime_shape_t &src_strides, const runtime_shape_t &dest_strides, 
-    int dims_offset, copy_impl_select impl_select, kernel_context &context = default_kernel_context) noexcept;
+    int dims_offset, copy_impl_select impl_select, kernel_context &context) noexcept;
 
 END_NS_NNCASE_KERNELS_CPU_OPT

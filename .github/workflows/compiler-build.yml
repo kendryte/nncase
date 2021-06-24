@@ -20,7 +20,14 @@ jobs:
       if: runner.os == 'Linux'
       shell: bash
       run: |
+        sudo apt update
         sudo apt install libgtk2.0-dev -y
+        
+    - name: Install System Requirements
+      if: runner.os == 'Macos'
+      shell: bash
+      run: |
+        brew install sunnycase/core/libomp@11.1.0
 
     - name: Add msbuild to PATH
       if: runner.os == 'Windows'
@@ -110,6 +117,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
+        
+    - name: Install System Requirements
+      if: runner.os == 'Macos'
+      shell: bash
+      run: |
+        brew install sunnycase/core/libomp@11.1.0
           
     - name: Setup Python
       uses: actions/setup-python@v2.2.1

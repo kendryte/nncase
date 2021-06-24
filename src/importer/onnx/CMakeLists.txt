@@ -106,6 +106,7 @@ set(ONNX_IMPORTER_OPS_SOURCES
     ops/dropout.cpp
     ops/gemm.cpp
     ops/flatten.cpp
+    ops/identity.cpp
     ops/lp_normalization.cpp
     ops/lrn.cpp
     ops/matmul.cpp

@@ -294,8 +294,7 @@ class TestRunner(metaclass = ABCMeta):
         self.import_model(compiler, model_content, import_options)
         if kwargs['ptq']:
             ptq_options = nncase.PTQTensorOptions()
-            for i in range(len(self.calibs)):
-                ptq_options.set_tensor_data(self.calibs[i]['data'].tobytes())
+            ptq_options.set_tensor_data(np.asarray([sample['data'] for sample in self.calibs]).tobytes())
             ptq_options.samples_count = cfg.generate_calibs.batch_size
             ptq_options.input_mean = cfg.ptq_opt.kwargs['input_mean']
             ptq_options.input_std = cfg.ptq_opt.kwargs['input_std']
@@ -364,9 +363,15 @@ class TestRunner(metaclass = ABCMeta):
             kw_names = ' '.join(name_list[-len(kwargs) - 2:-1])
             i = self.num_pattern.findall(name_list[-1])
             if judge.is_good():
-                print(f"\nPass [ {kw_names} ] Output: {i}!!\n")
+                result = "\nPass [ {0} ] Output: {1}!!\n".format(kw_names, i)
+                print(result)
+                with open(os.path.join(self.case_dir, 'test_result.txt'), 'a+') as f:
+                    f.write(result)
             else:
-                print(f"\nFail [ {kw_names} ] Output: {i}!!\n")
+                result = "\nFail [ {0} ] Output: {1}!!\n".format(kw_names, i)
+                print(result)
+                with open(os.path.join(self.case_dir, 'test_result.txt'), 'a+') as f:
+                    f.write(result)
                 return False
         return True
 
