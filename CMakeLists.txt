@@ -1,5 +1,6 @@
 ﻿cmake_minimum_required(VERSION 3.13)
 
+list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/Modules)
 find_package (Git)
 execute_process(
     COMMAND ${GIT_EXECUTABLE} describe --always --dirty
@@ -35,8 +36,13 @@ conan_check()
 conan_add_remote(NAME sunnycase URL https://conan.sunnycase.moe INDEX 0)
 conan_add_remote(NAME bincrafts URL https://api.bintray.com/conan/bincrafters/public-conan)
 
-option(ENABLE_OPENMP "openmp support" OFF)
+option(ENABLE_OPENMP "openmp support" ON)
 option(BUILD_TESTING "Build test programs" OFF)
+
+if (ENABLE_OPENMP)
+    find_package(OpenMP COMPONENTS CXX REQUIRED)
+    message("Enable OpenMP")
+endif ()
 
 if (BUILDING_RUNTIME)
     option(BUILD_PYTHON_BINDING "Build python binding" ON)

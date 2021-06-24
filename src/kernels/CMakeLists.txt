@@ -1,6 +1,7 @@
 ﻿cmake_minimum_required (VERSION 3.8)
 
 set(SRCS convolution.cpp
+         kernel_context.cpp
          nnil.cpp
          reduce_window.cpp
          tensor_compute.cpp)
@@ -21,15 +22,8 @@ else()
 endif()
 
 if(ENABLE_OPENMP)
-    find_package(OpenMP COMPONENTS CXX REQUIRED)
-    if (MSVC)
-        target_compile_options(kernels PRIVATE /openmp:llvm)
-    else()
-        target_link_libraries(kernels PRIVATE OpenMP::OpenMP_CXX)
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
-    endif()
-    add_definitions("-DNNCASE_OPENMP")
-    message("Enable OPENMP")
+    target_link_libraries(kernels PRIVATE OpenMP::OpenMP_CXX)
+    target_compile_definitions(kernels PRIVATE "-DNNCASE_OPENMP")
 endif()
 
 add_subdirectory(cpu)

@@ -238,12 +238,12 @@ void concat(std::vector<runtime_tensor> &inputs, runtime_tensor &output, runtime
     if (type == OpType::Ref)
     {
         NNCASE_UNUSED auto res1 = cpu::reference::concat(dt_float32, inputs_v, get_tensor_begin(output),
-            output.shape(), in_strides, output.strides(), axis, concat_dims);
+            output.shape(), in_strides, output.strides(), axis, concat_dims, default_kernel_context());
     }
     else if (type == OpType::Opt)
     {
         NNCASE_UNUSED auto res2 = cpu::optimized::concat(dt_float32, inputs_v, get_tensor_begin(output),
-            output.shape(), in_strides, output.strides(), axis, concat_dims);
+            output.shape(), in_strides, output.strides(), axis, concat_dims, default_kernel_context());
     }
     else
     {
