@@ -31,4 +31,5 @@ target_sources(transforms PRIVATE
     fold_io_quant_motion.cpp
     split_to_slice.cpp
     fold_convert.cpp
+    lstm_transform.cpp
     )
