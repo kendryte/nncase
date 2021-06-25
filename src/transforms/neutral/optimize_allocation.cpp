@@ -86,6 +86,12 @@ void add_copy_to_output_pass::run_core(graph &graph, [[maybe_unused]] nncase::ta
     alias_visitor.visit(graph);
 }
 
+//   x@data       x@output
+//     |             |
+//   copy            |
+//     |     =>      |
+//   output        output
+
 bool remove_copy_to_output_transform::on_try_match(node &node, transform_context &context)
 {
     copy *cp;
@@ -94,17 +100,108 @@ bool remove_copy_to_output_transform::on_try_match(node &node, transform_context
     if ((cp = node_cast<copy>(node))
         && (out = try_get_direct_child<output_node>(*cp)))
     {
-        context.inputs.emplace_back(&cp->input());
-        context.outputs.emplace_back(&cp->output());
+        auto input = cp->input().connection();
+        auto x = &input->owner();
+        if (input->memory_location() == mem_data
+            && input->connections().size() == 1)
+        {
+            context.inputs.emplace_back(&cp->input());
 
-        context.matched_nodes.emplace_back(cp);
-        return true;
+            context.matched_nodes.emplace_back(cp);
+            context.matched_nodes.emplace_back(out);
+            return true;
+        }
     }
 
     return false;
 }
 
 void remove_copy_to_output_transform::process(transform_context &context)
+{
+    auto &output = *context.inputs[0]->connection();
+    auto &old_out = static_cast<output_node &>(*context.matched_nodes[1]);
+
+    output.memory_location(mem_output);
+    old_out.input().connect(output);
+}
+
+//     x             x
+//     |             |
+//   copy            |
+//     |     =>      |
+//  bitcast        bitcast
+
+bool remove_copy_to_bitcast_transform::on_try_match(node &node, transform_context &context)
+{
+    copy *cp;
+    bitcast *b;
+
+    if ((cp = node_cast<copy>(node))
+        && (b = try_get_direct_child<bitcast>(*cp)))
+    {
+        auto input = cp->input().connection();
+        auto x = &input->owner();
+        if (x->runtime_opcode() != op_input_node
+            || x->runtime_opcode() != op_constant
+            || input->connections().size() == 1)
+        {
+            context.inputs.emplace_back(&cp->input());
+            context.outputs.emplace_back(&b->output());
+
+            context.matched_nodes.emplace_back(cp);
+            context.matched_nodes.emplace_back(b);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void remove_copy_to_bitcast_transform::process(transform_context &context)
+{
+    auto &output = *context.inputs[0]->connection();
+    auto &old_b = static_cast<bitcast &>(*context.matched_nodes[1]);
+
+    assert(output.memory_location() != mem_output);
+    old_b.output().memory_location(output.memory_location());
+    old_b.input().connect(output);
+}
+
+//     x             x
+//     |             |
+//   copy            |
+//     |     =>      |
+//  concat        concat
+
+bool remove_copy_to_concat_transform::on_try_match(node &node, transform_context &context)
+{
+    copy *cp;
+    concat *c;
+
+    if ((cp = node_cast<copy>(node))
+        && (c = try_get_direct_child<concat>(*cp)))
+    {
+        auto input = cp->input().connection();
+        auto x = &input->owner();
+
+        auto c_inputs = c->inputs();
+        auto is_simple_concat = (c->axis() == 0 || std::all_of(c_inputs[0]->shape().begin(), c_inputs[0]->shape().begin() + c->axis(), [](size_t dim) { return dim == 1; }));
+        if (input->memory_location() == mem_data
+            && input->connections().size() == 1
+            && is_simple_concat)
+        {
+            context.inputs.emplace_back(&cp->input());
+            context.outputs.emplace_back(&cp->output());
+
+            context.matched_nodes.emplace_back(cp);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void remove_copy_to_concat_transform::process(transform_context &context)
 {
     auto &output = *context.inputs[0]->connection();
     auto inputs = context.outputs[0]->connections();

@@ -151,12 +151,17 @@ result<void> stackvm_runtime_module::visit(const lea_buffer_op_t &op) noexcept
     if (op.location == mem_input)
     {
         size_t id = ID_NOT_FOUND;
+        uint32_t last_start = 0;
+        uint32_t offset = 0;
         for (size_t i = 0; i < inputs_size(); i++)
         {
-            if (op.offset == input_desc(i).start)
+            auto start = input_desc(i).start;
+            if (start <= op.offset
+                && start >= last_start)
             {
                 id = i;
-                break;
+                last_start = start;
+                offset = op.offset - start;
             }
         }
 
@@ -164,7 +169,7 @@ result<void> stackvm_runtime_module::visit(const lea_buffer_op_t &op) noexcept
         {
             try_var(tensor, device_input_tensor(id));
             try_var(tensor_map, hrt::map(tensor, hrt::map_read));
-            return stack_.push((uintptr_t)tensor_map.buffer().data());
+            return stack_.push((uintptr_t)tensor_map.buffer().data() + offset);
         }
         else
         {
@@ -174,12 +179,17 @@ result<void> stackvm_runtime_module::visit(const lea_buffer_op_t &op) noexcept
     else if (op.location == mem_output)
     {
         size_t id = ID_NOT_FOUND;
+        uint32_t last_start = 0;
+        uint32_t offset = 0;
         for (size_t i = 0; i < outputs_size(); i++)
         {
-            if (op.offset == output_desc(i).start)
+            auto start = output_desc(i).start;
+            if (start <= op.offset
+                && start >= last_start)
             {
                 id = i;
-                break;
+                last_start = start;
+                offset = op.offset - start;
             }
         }
 
@@ -187,7 +197,7 @@ result<void> stackvm_runtime_module::visit(const lea_buffer_op_t &op) noexcept
         {
             try_var(tensor, device_output_tensor(id));
             try_var(tensor_map, hrt::map(tensor, hrt::map_read_write));
-            return stack_.push((uintptr_t)tensor_map.buffer().data());
+            return stack_.push((uintptr_t)tensor_map.buffer().data() + offset);
         }
         else
         {

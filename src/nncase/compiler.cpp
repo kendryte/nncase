@@ -198,10 +198,7 @@ public:
         std::cout << "5. Optimize target dependent after quantization..." << std::endl;
         optimize_target_dependent_after_quant(graph_);
 
-        std::cout << "6. Optimize buffer fusion 1..." << std::endl;
-        optimize_buffer_fusion1(graph_);
-
-        std::cout << "7. Optimize modules..." << std::endl;
+        std::cout << "6. Optimize modules..." << std::endl;
         optimize_merge_module_regions(graph_);
     }
 
@@ -231,7 +228,7 @@ public:
         scheduler sch(*target_, graph_, graph_.outputs());
         if (compile_options_.dump_ir)
         {
-            auto dump_path = compile_options_.dump_dir;
+            auto dump_path = compile_options_.dump_dir / "codegen";
             std::filesystem::create_directories(dump_path);
             sch.config_dump(dump_path);
         }
@@ -258,29 +255,18 @@ private:
         run_passes("target_indep", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr) { target_->register_target_independent_passes(module_type, pmgr); });
     }
 
-    void optimize_buffer_fusion1(ir::graph &graph)
-    {
-        using namespace ir::transforms;
-
-        run_passes("buffer_fusion_1", graph, [&]([[maybe_unused]] const module_type_t &module_type, ir::transforms::pass_manager &pmgr) {
-            pmgr.add_pass<make_concat_no_action_pass>();
-            pmgr.add_pass<make_bitcast_no_action_pass>();
-            pmgr.add_pass<add_copy_to_output_pass>();
-        });
-    }
-
     void optimize_merge_module_regions(ir::graph &graph)
     {
         std::cout << "7.1. Merge module regions..." << std::endl;
         graph.merge_module_regions();
 
-        std::cout << "7.2. Optimize buffer fusion 2..." << std::endl;
-        optimize_buffer_fusion2(graph);
+        std::cout << "7.2. Optimize buffer fusion..." << std::endl;
+        optimize_buffer_fusion(graph);
 
         dump_graph(graph, "merge_module_regions");
     }
 
-    void optimize_buffer_fusion2(ir::graph &graph)
+    void optimize_buffer_fusion(ir::graph &graph)
     {
         using namespace ir::transforms;
 
@@ -288,6 +274,12 @@ private:
             pmgr.add_pass<make_concat_no_action_pass>();
             pmgr.add_pass<make_bitcast_no_action_pass>();
             pmgr.add_pass<add_copy_to_output_pass>();
+
+            transform_pass pass("optimize_copy");
+            pass.emplace<remove_copy_to_bitcast_transform>();
+            pass.emplace<remove_copy_to_output_transform>();
+            pass.emplace<remove_copy_to_concat_transform>();
+            pmgr.add_pass(std::move(pass));
         });
     }
 
@@ -361,6 +353,13 @@ private:
     ir::evaluator run_calibration(ir::graph &graph)
     {
         schedule::scheduler sched(*target_, graph, graph.outputs());
+        if (compile_options_.dump_ir)
+        {
+            auto dump_path = compile_options_.dump_dir / "calibration";
+            std::filesystem::create_directories(dump_path);
+            sched.config_dump(dump_path);
+        }
+
         auto sched_result = sched.schedule(true);
         ir::evaluator evaluator(sched_result);
         auto calib_method = std::visit([](auto &options) { return to_calibrate_method(options.calibrate_method); }, ptq_options_);
