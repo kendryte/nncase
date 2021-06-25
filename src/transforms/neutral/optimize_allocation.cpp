@@ -101,7 +101,6 @@ bool remove_copy_to_output_transform::on_try_match(node &node, transform_context
         && (out = try_get_direct_child<output_node>(*cp)))
     {
         auto input = cp->input().connection();
-        auto x = &input->owner();
         if (input->memory_location() == mem_data
             && input->connections().size() == 1)
         {
@@ -182,7 +181,6 @@ bool remove_copy_to_concat_transform::on_try_match(node &node, transform_context
         && (c = try_get_direct_child<concat>(*cp)))
     {
         auto input = cp->input().connection();
-        auto x = &input->owner();
 
         auto c_inputs = c->inputs();
         auto is_simple_concat = (c->axis() == 0 || std::all_of(c_inputs[0]->shape().begin(), c_inputs[0]->shape().begin() + c->axis(), [](size_t dim) { return dim == 1; }));
