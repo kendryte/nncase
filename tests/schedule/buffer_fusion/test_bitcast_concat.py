@@ -31,7 +31,7 @@ def _make_module():
         @tf.function(input_signature=[tf.TensorSpec([1, 4, 4, 3], tf.float32)])
         def __call__(self, x):
             out1 = tf.reshape(tf.math.abs(x), [1, -1, 3])
-            out2 = tf.reshape(tf.math.log(x), [1, -1, 3])
+            out2 = tf.reshape(tf.math.exp(x), [1, -1, 3])
             return (tf.concat([out1, self.w1], axis=1), tf.concat([out2, self.w2], axis=2))
     return Module()
 
