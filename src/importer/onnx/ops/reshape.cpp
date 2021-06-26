@@ -44,10 +44,41 @@ void onnx_importer::convert_op_Reshape(const NodeProto &node)
     {
         // try to extract data from previous constant nodes
         const auto data = get_constant_input_data<float>(shape);
-
         if (data)
             std::transform(std::begin(data.value()), std::end(data.value()), std::back_inserter(new_shape),
                 [](const auto e) { return static_cast<int>(e); });
+    }
+
+    auto allowzero_attr = get_attribute<int>(node, "allowzero");
+    int allowzero = !allowzero_attr ?  0 : allowzero_attr.value();
+
+    const size_t size = new_shape.size();
+    size_t negative_idx = size;
+
+    // fixup dim which is zero
+    for (size_t i = 0; i < size; i++)
+    {
+        if ((allowzero == 0) && (new_shape[i] == 0))
+        {
+            new_shape[i] = input_shape[i];
+        }
+        else if(new_shape[i] == -1)
+        {
+            negative_idx = i;
+        }
+    }
+
+    // fixup dim which is -1
+    if (negative_idx < size)
+    {
+        int product = 1;
+        for (size_t i = 0; i < size; i++)
+        {
+            if (i == negative_idx)
+                continue;
+            product *= new_shape[i];
+        }
+        new_shape[negative_idx] = xt::compute_size(input_shape) / product;
     }
 
     auto op = graph_.emplace<bitcast>(input_type, input_shape, new_shape);
