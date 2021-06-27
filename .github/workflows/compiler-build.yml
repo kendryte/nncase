@@ -182,6 +182,7 @@ jobs:
       run: |
         pytest tests/importer --doctest-modules --junitxml=test_results/importer.xml
         pytest tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
+        pytest tests/schedule --doctest-modules --junitxml=test_results/graph_partition.xml
 
     - name: Test
       working-directory: ${{github.workspace}}
@@ -193,6 +194,7 @@ jobs:
       run: |
         pytest tests/importer --doctest-modules --junitxml=test_results/importer.xml
         pytest tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
+        pytest tests/schedule --doctest-modules --junitxml=test_results/graph_partition.xml
 
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action@v1
