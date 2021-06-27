@@ -27,13 +27,11 @@ concat::concat(datatype_t type, std::span<shape_t> input_shapes, int32_t axis)
 
     for (size_t i = 0; i < input_shapes.size(); i++)
     {
-        add_input("input_" + std::to_string(i), type, input_shapes[i])
-            .attributes(cnctr_attr_support_layout_strides);
+        add_input("input_" + std::to_string(i), type, input_shapes[i]);
         concat_dims_.emplace_back(input_shapes[i][axis]);
     }
 
-    add_output("output", type, get_concated_shape(input_shapes, size_t(axis)))
-        .attributes(cnctr_attr_support_layout_strides);
+    add_output("output", type, get_concated_shape(input_shapes, size_t(axis)));
 }
 
 bool concat::properties_equal(node &other) const

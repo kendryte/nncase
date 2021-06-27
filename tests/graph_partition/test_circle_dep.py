@@ -23,20 +23,20 @@ def _make_module():
     class Module(tf.Module):
         def __init__(self):
             super(Module).__init__()
+            self.w = tf.constant(np.random.rand(
+                3, 3, 3, 16).astype(np.float32) - 1)
 
         @tf.function(input_signature=[tf.TensorSpec([1, 4, 4, 3], tf.float32)])
         def __call__(self, x):
-            c1 = x
-            out1 = tf.math.sin(c1)
-            c2 = tf.concat([c1, out1], axis=1)
-            out2 = tf.math.sin(c2)
-            c3 = tf.concat([c2, out2], axis=1)
-            out3 = tf.math.sin(c3)
-            return (out1, out2, out3)
+            out1 = tf.nn.conv2d(x, self.w, [1, 1], 'SAME')
+            out2 = tf.math.cos(x)
+            c1 = tf.concat([out1, out2], axis=3)
+            out4 = tf.math.sin(c1)
+            return out4
     return Module()
 
 
-def test_concat_concat(request):
+def test_circle_dep(request):
     module = _make_module()
 
     runner = TfliteTestRunner(request.node.name)
@@ -45,4 +45,4 @@ def test_concat_concat(request):
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_concat_concat.py'])
+    pytest.main(['-vv', 'test_circle_dep.py'])

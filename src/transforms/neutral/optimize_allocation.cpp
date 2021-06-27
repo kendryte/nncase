@@ -56,10 +56,7 @@ void make_bitcast_no_action_pass::run_core(graph &graph, [[maybe_unused]] nncase
             if (b->attributes() & node_attr_action)
             {
                 auto &out = *b->input().connection();
-                auto cp = graph.emplace<copy>(out.type(), out.shape());
-                cp->name(out.owner().name() + "/copy");
-                cp->input().connect(out);
-                b->input().connect(cp->output());
+                out.attributes(out.attributes() | cnctr_attr_no_buffer_fusion);
                 b->attributes(b->attributes() & ~node_attr_action);
             }
         }
@@ -92,7 +89,7 @@ void add_copy_to_output_pass::run_core(graph &graph, [[maybe_unused]] nncase::ta
 //     |     =>      |
 //   output        output
 
-bool remove_copy_to_output_transform::on_try_match(node &node, transform_context &context)
+bool remove_exclusive_copy_to_output_transform::on_try_match(node &node, transform_context &context)
 {
     copy *cp;
     output_node *out;
@@ -101,8 +98,7 @@ bool remove_copy_to_output_transform::on_try_match(node &node, transform_context
         && (out = try_get_direct_child<output_node>(*cp)))
     {
         auto input = cp->input().connection();
-        if (input->memory_location() == mem_data
-            && input->connections().size() == 1)
+        if (input->memory_location() == mem_data)
         {
             context.inputs.emplace_back(&cp->input());
 
@@ -115,55 +111,14 @@ bool remove_copy_to_output_transform::on_try_match(node &node, transform_context
     return false;
 }
 
-void remove_copy_to_output_transform::process(transform_context &context)
+void remove_exclusive_copy_to_output_transform::process(transform_context &context)
 {
     auto &output = *context.inputs[0]->connection();
     auto &old_out = static_cast<output_node &>(*context.matched_nodes[1]);
 
     output.memory_location(mem_output);
+    output.attributes(output.attributes() | cnctr_attr_no_layout_strides);
     old_out.input().connect(output);
-}
-
-//     x             x
-//     |             |
-//   copy            |
-//     |     =>      |
-//  bitcast        bitcast
-
-bool remove_copy_to_bitcast_transform::on_try_match(node &node, transform_context &context)
-{
-    copy *cp;
-    bitcast *b;
-
-    if ((cp = node_cast<copy>(node))
-        && (b = try_get_direct_child<bitcast>(*cp)))
-    {
-        auto input = cp->input().connection();
-        auto x = &input->owner();
-        if (x->runtime_opcode() != op_input_node
-            || x->runtime_opcode() != op_constant
-            || input->connections().size() == 1)
-        {
-            context.inputs.emplace_back(&cp->input());
-            context.outputs.emplace_back(&b->output());
-
-            context.matched_nodes.emplace_back(cp);
-            context.matched_nodes.emplace_back(b);
-            return true;
-        }
-    }
-
-    return false;
-}
-
-void remove_copy_to_bitcast_transform::process(transform_context &context)
-{
-    auto &output = *context.inputs[0]->connection();
-    auto &old_b = static_cast<bitcast &>(*context.matched_nodes[1]);
-
-    assert(output.memory_location() != mem_output);
-    old_b.output().memory_location(output.memory_location());
-    old_b.input().connect(output);
 }
 
 //     x             x
@@ -172,7 +127,7 @@ void remove_copy_to_bitcast_transform::process(transform_context &context)
 //     |     =>      |
 //  concat        concat
 
-bool remove_copy_to_concat_transform::on_try_match(node &node, transform_context &context)
+bool remove_exclusive_copy_to_concat_transform::on_try_match(node &node, transform_context &context)
 {
     copy *cp;
     concat *c;
@@ -185,7 +140,7 @@ bool remove_copy_to_concat_transform::on_try_match(node &node, transform_context
         auto c_inputs = c->inputs();
         auto is_simple_concat = (c->axis() == 0 || std::all_of(c_inputs[0]->shape().begin(), c_inputs[0]->shape().begin() + c->axis(), [](size_t dim) { return dim == 1; }));
         if (input->memory_location() == mem_data
-            && input->connections().size() == 1
+            && ((input->attributes() & cnctr_attr_no_buffer_fusion) == 0)
             && is_simple_concat)
         {
             context.inputs.emplace_back(&cp->input());
@@ -199,11 +154,12 @@ bool remove_copy_to_concat_transform::on_try_match(node &node, transform_context
     return false;
 }
 
-void remove_copy_to_concat_transform::process(transform_context &context)
+void remove_exclusive_copy_to_concat_transform::process(transform_context &context)
 {
     auto &output = *context.inputs[0]->connection();
     auto inputs = context.outputs[0]->connections();
 
+    output.attributes(output.attributes() | cnctr_attr_no_buffer_fusion);
     for (auto &in : dup(inputs))
         in->connect(output);
 }

@@ -26,17 +26,18 @@ def _make_module():
 
         @tf.function(input_signature=[tf.TensorSpec([1, 4, 4, 3], tf.float32)])
         def __call__(self, x):
-            c1 = x
-            out1 = tf.math.sin(c1)
-            c2 = tf.concat([c1, out1], axis=1)
-            out2 = tf.math.sin(c2)
-            c3 = tf.concat([c2, out2], axis=1)
-            out3 = tf.math.sin(c3)
-            return (out1, out2, out3)
+            out1 = tf.math.sin(x)
+            out2 = tf.math.cos(x)
+            out3 = tf.math.exp(x)
+            c2 = tf.concat([out1, out2], axis=1)
+            c3 = tf.concat([out1, out3], axis=1)
+            out3 = tf.math.sin(c2)
+            out4 = tf.math.sin(c3)
+            return (out3, out4)
     return Module()
 
 
-def test_concat_concat(request):
+def test_1to2_concat(request):
     module = _make_module()
 
     runner = TfliteTestRunner(request.node.name)
@@ -45,4 +46,4 @@ def test_concat_concat(request):
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_concat_concat.py'])
+    pytest.main(['-vv', 'test_1to2_concat.py'])

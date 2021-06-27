@@ -276,9 +276,8 @@ private:
             pmgr.add_pass<add_copy_to_output_pass>();
 
             transform_pass pass("optimize_copy");
-            pass.emplace<remove_copy_to_bitcast_transform>();
-            pass.emplace<remove_copy_to_output_transform>();
-            pass.emplace<remove_copy_to_concat_transform>();
+            pass.emplace<remove_exclusive_copy_to_output_transform>();
+            pass.emplace<remove_exclusive_copy_to_concat_transform>();
             pmgr.add_pass(std::move(pass));
         });
     }
