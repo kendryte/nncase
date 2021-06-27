@@ -35,13 +35,14 @@ void add_region_node(node &root, const module_type_t &module_type, std::vector<n
         if ((root.module_type() == module_type
                 || neutral_region_ops.contains(root.runtime_opcode())
                 || (root.attributes() & node_attr_action) == 0)
-            && std::all_of(inputs.begin(), inputs.end(), [&](input_connector *in)
-                {
-                    auto &conn = in->connection()->owner();
-                    return region_nodes_set.contains(&conn)
-                        || conn.runtime_opcode() == op_input_node
-                        || conn.runtime_opcode() == op_constant;
-                }))
+            && (region_nodes_set.empty()
+                || std::all_of(inputs.begin(), inputs.end(), [&](input_connector *in)
+                    {
+                        auto &conn = in->connection()->owner();
+                        return region_nodes_set.contains(&conn)
+                            || conn.runtime_opcode() == op_input_node
+                            || conn.runtime_opcode() == op_constant;
+                    })))
         {
             root.module_type(module_type);
             region_nodes.emplace_back(&root);
