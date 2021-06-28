@@ -57,6 +57,17 @@ jobs:
         conan profile update settings.compiler.libcxx=libstdc++11 default
 
     - name: Build
+      env:
+        CC: gcc-10
+        CXX: g++-10
+      if: runner.os == 'Linux'
+      shell: bash
+      working-directory: ${{github.workspace}}/python/nncase
+      run: |
+        python setup.py bdist_wheel
+
+    - name: Build
+      if: runner.os != 'Linux'
       shell: bash
       working-directory: ${{github.workspace}}/python/nncase
       run: |
