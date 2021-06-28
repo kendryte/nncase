@@ -122,9 +122,15 @@ namespace nncase::importer
     }
 
     template <>
+    constexpr nncase::datatype_t onnx_importer::get_datatype<std::int32_t>()
+    {
+        return nncase::dt_int32;
+    }
+
+    template <>
     constexpr nncase::datatype_t onnx_importer::get_datatype<std::int64_t>()
     {
-        return nncase::dt_uint8;
+        return nncase::dt_int64;
     }
 
     template <typename T>
