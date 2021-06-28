@@ -292,7 +292,8 @@ enum class opcode_t : uint8_t
 {
     kpu_upload,
     kpu_download,
-    kpu_conv2d
+    kpu_conv2d,
+    copy
 };
 
 struct kpu_upload_options
@@ -326,6 +327,18 @@ struct kpu_conv2d_options
     memory_range main_mem_output;
     uint32_t batches;
     kpu_layer_argument_t layer;
+};
+
+struct copy_options
+{
+    opcode_t opcode = opcode_t::copy;
+    uint8_t reserved0[3];
+
+    memory_range input;
+    memory_range output;
+    kpu_shape_t in_shape;
+    kpu_shape_t in_strides;
+    kpu_shape_t out_strides;
 };
 
 END_NS_NNCASE_RT_K210

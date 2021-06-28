@@ -1,3 +1,4 @@
-DEFINE_OP(kpu_conv2d)
-DEFINE_OP(kpu_download)
-DEFINE_OP(kpu_upload)
+DEFINE_OP(k210::kpu_conv2d)
+DEFINE_OP(k210::kpu_download)
+DEFINE_OP(k210::kpu_upload)
+DEFINE_OP(copy)

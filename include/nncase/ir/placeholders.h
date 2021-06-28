@@ -27,7 +27,8 @@ public:
     template <class TShape>
     input_node(datatype_t type, TShape &&shape)
     {
-        add_output("output", type, std::forward<TShape>(shape), mem_input);
+        add_output("output", type, std::forward<TShape>(shape), mem_input)
+            .attributes(cnctr_attr_no_layout_strides);
     }
 
 protected:
@@ -44,6 +45,7 @@ public:
     template <class TShape>
     output_node(datatype_t type, TShape &&shape)
     {
+        attributes(attributes() | node_attr_skip_constant_folding);
         add_input("input", type, std::forward<TShape>(shape));
     }
 

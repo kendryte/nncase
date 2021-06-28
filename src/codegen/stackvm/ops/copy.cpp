@@ -19,26 +19,15 @@ using namespace nncase::codegen;
 using namespace nncase::codegen::stackvm;
 using namespace nncase::ir;
 
-void stackvm_module_builder::emit(concat &node, stackvm_op_builder &builder)
+void stackvm_module_builder::emit(copy &node, stackvm_op_builder &builder)
 {
-    uint8_t rshape = 0;
-    for (auto in : node.inputs())
-    {
-        auto &input = allocation(*in);
-        builder.lea_buffer(input);
-        builder.stshape(rshape, input.strides);
-        builder.ldc_i4_(rshape++);
-    }
-
+    auto &input = allocation(node.input());
     auto &output = allocation(node.output());
+    builder.lea_buffer(input);
     builder.lea_buffer(output);
 
-    const auto rshape_after_in = rshape;
-    ir::shape_t concat_dims { node.concat_dims().begin(), node.concat_dims().end() };
-
-    builder.stshape(rshape_after_in, output.shape);
-    builder.stshape(rshape_after_in + 1, output.strides);
-    builder.stshape(rshape_after_in + 2, concat_dims);
-    builder.tensor_concat_(node.output().type(), (uint8_t)node.inputs().size(), (uint8_t)node.axis(), rshape_after_in + 2,
-        rshape_after_in, rshape_after_in + 1);
+    builder.stshape(0, input.shape);
+    builder.stshape(1, input.strides);
+    builder.stshape(2, output.strides);
+    builder.tensor_copy_(node.input().type(), 0, 1, 2);
 }

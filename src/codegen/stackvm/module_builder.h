@@ -19,7 +19,7 @@
 #include <nncase/ir/ops/binary.h>
 #include <nncase/ir/ops/broadcast.h>
 #include <nncase/ir/ops/call.h>
-#include <nncase/ir/ops/concat.h>
+#include <nncase/ir/ops/copy.h>
 #include <nncase/ir/ops/conv2d.h>
 #include <nncase/ir/ops/convert.h>
 #include <nncase/ir/ops/dequantize.h>

@@ -34,7 +34,8 @@ fake_kpu_conv2d::fake_kpu_conv2d(shape_t input_shape, bool is_depthwise, shape_t
             input_shape[0],
             (size_t)output_channels(),
             (size_t)get_kpu_pool_output_size((int32_t)input_shape[2], pool_type_),
-            (size_t)get_kpu_pool_output_size((int32_t)input_shape[3], pool_type_) });
+            (size_t)get_kpu_pool_output_size((int32_t)input_shape[3], pool_type_) })
+            .attributes(cnctr_attr_no_layout_strides);
 }
 
 bool fake_kpu_conv2d::properties_equal(node &other) const

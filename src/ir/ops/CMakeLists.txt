@@ -2,6 +2,7 @@
 
 target_sources(ir PRIVATE
     call.cpp
+    copy.cpp
     conv2d.cpp
     conv2d_transpose.cpp
     convert.cpp

@@ -45,6 +45,23 @@ inline std::string to_string(const quant_param_t &value)
     return "(q - " + std::to_string(value.zero_point) + ") * " + std::to_string(value.scale);
 }
 
+inline std::string to_string(memory_location_t location)
+{
+    switch (location)
+    {
+    case mem_input:
+        return "input";
+    case mem_output:
+        return "output";
+    case mem_rdata:
+        return "rdata";
+    case mem_data:
+        return "data";
+    default:
+        return "unknown";
+    }
+}
+
 template <typename Tv, typename T>
 static size_t index_of(const Tv &v, const T &e)
 {

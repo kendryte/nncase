@@ -36,6 +36,7 @@ class module_builder;
 namespace nncase::ir::transforms
 {
 class pass;
+class transform_pass;
 class pass_manager;
 }
 
