@@ -67,7 +67,19 @@ jobs:
         python setup.py bdist_wheel
 
     - name: Build
-      if: runner.os != 'Linux'
+      env:
+        CC: gcc-10
+        CXX: g++-10
+      if: runner.os == 'Windows'
+      shell: bash
+      working-directory: ${{github.workspace}}/python/nncase
+      run: |
+        python setup.py bdist_wheel
+
+    - name: Build
+      env:
+        MACOSX_DEPLOYMENT_TARGET: 10.15
+      if: runner.os == 'Macos'
       shell: bash
       working-directory: ${{github.workspace}}/python/nncase
       run: |
