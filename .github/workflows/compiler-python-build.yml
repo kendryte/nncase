@@ -38,6 +38,11 @@ jobs:
       uses: actions/setup-python@v2.2.1
       with:
         python-version: ${{ matrix.python }}
+        
+    - name: Install Python Requirements
+      shell: bash
+      run: |
+        pip install wheel
 
     - name: Install Conan
       shell: bash
