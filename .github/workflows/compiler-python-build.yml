@@ -1,0 +1,83 @@
+name: compiler-python-build
+
+on: [push, pull_request]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-18.04,windows-2019,macos-10.15]
+        python: [3.7,3.8,3.9]
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: seanmiddleditch/gha-setup-ninja@master
+        
+    - name: Install System Requirements
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        sudo apt update
+        sudo apt install libgtk2.0-dev -y
+        
+    - name: Install System Requirements
+      if: runner.os == 'Macos'
+      shell: bash
+      run: |
+        brew install sunnycase/core/libomp@11.1.0
+
+    - name: Add msbuild to PATH
+      if: runner.os == 'Windows'
+      uses: ilammy/msvc-dev-cmd@v1.9.0
+          
+    - name: Setup Python
+      uses: actions/setup-python@v2.2.1
+      with:
+        python-version: ${{ matrix.python }}
+
+    - name: Install Conan
+      shell: bash
+      run: |
+        pip install conan
+
+    - name: Configure Conan
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        conan profile new default --detect
+        conan profile update settings.compiler.libcxx=libstdc++11 default
+
+    - name: Build
+      shell: bash
+      working-directory: ${{github.workspace}}/python/nncase
+      run: |
+        python setup.py bdist_wheel
+      
+    - name: Upload a Build Artifact
+      uses: actions/upload-artifact@v2.2.2
+      if: runner.os == 'Linux'
+      with:
+        name: nncase_wheels_linux_x86_64
+        path: ${{github.workspace}}/python/nncase/dist
+        if-no-files-found: error
+
+    - name: Upload a Build Artifact
+      uses: actions/upload-artifact@v2.2.2
+      if: runner.os == 'Windows'
+      with:
+        name: nncase_wheels_win_x86_64
+        path: ${{github.workspace}}/python/nncase/dist
+        if-no-files-found: error
+
+    - name: Upload a Build Artifact
+      uses: actions/upload-artifact@v2.2.2
+      if: runner.os == 'Macos'
+      with:
+        name: nncase_wheels_macos_x86_64
+        path: ${{github.workspace}}/python/nncase/dist
+        if-no-files-found: error
+        

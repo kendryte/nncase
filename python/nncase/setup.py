@@ -183,7 +183,7 @@ class BuildCMakeExt(build_ext):
         cmake_args = ['-DPYTHON_EXECUTABLE=' + sys.executable,
                       '-G', 'Ninja']
 
-        cfg = 'Debug' if not self.debug else 'Release'
+        cfg = 'Debug' if self.debug else 'Release'
         build_args = ['--config', cfg]
         cmake_args += ['-DCMAKE_BUILD_TYPE=' + cfg]
         install_args = ['--prefix', bin_dir,
