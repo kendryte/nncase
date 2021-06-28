@@ -14,6 +14,7 @@
  */
 #pragma once
 #include <nncase/codegen/k210/module_builder.h>
+#include <nncase/ir/ops/copy.h>
 #include <nncase/ir/ops/k210/kpu_conv2d.h>
 #include <nncase/ir/ops/k210/kpu_data_exchange.h>
 #include <nncase/ir/placeholders.h>
@@ -34,7 +35,7 @@ protected:
     void emit(ir::node &node) override;
 
 private:
-#define DEFINE_OP(op_) void emit(ir::k210::op_ &op);
+#define DEFINE_OP(op_) void emit(ir::op_ &op);
 #include "ops.def"
 #undef DEFINE_OP
 };

@@ -168,6 +168,32 @@ void tflite_importer::import(const import_options &options)
         }
     }
 
+    // outputs that connect to inputs or constants
+    for (auto &&out : created_outputs)
+    {
+        if (!out.second->connection())
+        {
+            auto &tensor = *subgraph_->tensors()->Get(out.first);
+            auto &buffer = *model_->buffers()->Get(tensor.buffer());
+            auto data = buffer.data();
+
+            if (data)
+            {
+                auto type = to_data_type(tensor.type());
+                auto shape = get_shape(tensor.shape());
+                auto con = graph_.emplace<constant>(type, shape, std::as_bytes(std::span(data->data(), data->data() + data->size())));
+                con->name(tensor.name()->str() + "/const");
+                out.second->connect(con->output());
+            }
+            else
+            {
+                auto in = created_inputs.find(out.first);
+                if (in != created_inputs.end())
+                    out.second->connect(*in->second);
+            }
+        }
+    }
+
     graph_.dce();
 }
 

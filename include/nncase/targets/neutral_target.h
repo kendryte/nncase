@@ -32,10 +32,10 @@ public:
     void add_quantization_broadcast(std::unordered_set<ir::node_opcode> &opcodes) override;
 
 protected:
-    void move_transpose_transform(ir::transforms::pass &pass, bool add_constant_folding = true);
-    void fold_pad_conv_transform(ir::transforms::pass &pass, bool add_constant_folding = true);
-    void fold_dilated_conv_transform(ir::transforms::pass &pass, bool add_constant_folding = true);
-    void add_default_transforms(ir::transforms::pass &pass, bool add_constant_folding = true);
+    void move_transpose_transform(ir::transforms::transform_pass &pass, bool add_constant_folding = true);
+    void fold_pad_conv_transform(ir::transforms::transform_pass &pass, bool add_constant_folding = true);
+    void fold_dilated_conv_transform(ir::transforms::transform_pass &pass, bool add_constant_folding = true);
+    void add_default_transforms(ir::transforms::transform_pass &pass, bool add_constant_folding = true);
 
     std::unique_ptr<target_options> on_create_options() override;
 };

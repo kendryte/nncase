@@ -5,7 +5,8 @@ set(SRCS runtime_module.cpp
          error.cpp
          ops/kpu_conv2d.cpp
          ops/kpu_download.cpp
-         ops/kpu_upload.cpp)
+         ops/kpu_upload.cpp
+         ops/copy.cpp)
 
 if (BUILDING_RUNTIME)
     if (ENABLE_K210_RUNTIME)

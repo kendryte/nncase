@@ -12,26 +12,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/ir/ops/k210/kpu_data_exchange.h>
-#include <nncase/runtime/k210/runtime_module.h>
-#include <nncase/runtime/k210/runtime_op_utility.h>
+#include <nncase/ir/op_utils.h>
+#include <nncase/ir/ops/copy.h>
+#include <xtensor/xarray.hpp>
 
 using namespace nncase;
 using namespace nncase::ir;
-using namespace nncase::ir::k210;
-using namespace nncase::runtime::k210;
 
-kpu_upload::kpu_upload(shape_t input_shape)
+copy::copy(datatype_t type, shape_t input_shape)
 {
-    module_type(k210_module_type);
-    add_input("input", dt_uint8, input_shape);
-    add_output("output", dt_uint8, input_shape, mem_kpu)
-        .attributes(cnctr_attr_no_layout_strides);
+    add_input("input", type, input_shape);
+    add_output("output", type, input_shape);
 }
 
-kpu_download::kpu_download(shape_t input_shape)
+bool copy::properties_equal([[maybe_unused]] node &other) const
 {
-    module_type(k210_module_type);
-    add_input("input", dt_uint8, input_shape);
-    add_output("output", dt_uint8, input_shape);
+    return false;
 }

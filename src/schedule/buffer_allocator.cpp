@@ -31,9 +31,9 @@ constexpr size_t align(size_t size, size_t alignment = 8)
 }
 }
 
-size_t buffer_allocator::get_size_in_bytes(const physical_buffer &buffer)
+size_t buffer_allocator::get_size_in_bytes(const logical_buffer &buffer)
 {
-    return ir::get_bytes(buffer.owner().type(), buffer.owner().shape());
+    return ir::get_bytes(buffer.type(), buffer.shape());
 }
 
 size_t buffer_allocator::alignment() const noexcept
@@ -45,7 +45,7 @@ buffer_allocator::allocated_buffer buffer_allocator::make_alloc(const physical_b
 {
     allocated_buffer alloc;
     alloc.buffer = &buffer;
-    alloc.valid_size = get_size_in_bytes(buffer);
+    alloc.valid_size = get_size_in_bytes(buffer.owner());
     alloc.size = align(alloc.valid_size, alignment());
     return alloc;
 }

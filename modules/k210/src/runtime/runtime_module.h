@@ -34,6 +34,7 @@ protected:
     result<void> visit(const kpu_conv2d_options &op) noexcept override;
     result<void> visit(const kpu_download_options &op) noexcept override;
     result<void> visit(const kpu_upload_options &op) noexcept override;
+    result<void> visit(const copy_options &op) noexcept override;
 
 private:
     result<gsl::span<gsl::byte>> memory_at(const memory_range &mrange) noexcept;

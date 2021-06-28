@@ -21,23 +21,13 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 
-result<void> stackvm_runtime_module::visit(const tensor_concat_op_t &op) noexcept
+result<void> stackvm_runtime_module::visit(const tensor_copy_op_t &op) noexcept
 {
     try_var(output, pop_addr());
-    itlib::small_vector<const gsl::byte *, 4> inputs(op.num_src);
-    std::vector<runtime_shape_t> in_strides(op.num_src);
-    for (size_t i = 0; i < inputs.size(); i++)
-    {
-        try_var(rstrides, stack_.pop());
-        auto &strides = shape_regs_[rstrides.as_u4()];
-        try_var(input, pop_addr());
-        inputs[inputs.size() - i - 1] = reinterpret_cast<const gsl::byte *>(input);
-        in_strides[inputs.size() - i - 1] = strides;
-    }
-
-    auto &out_shape = shape_regs_[op.rshape_dest];
+    try_var(input, pop_addr());
+    auto &shape = shape_regs_[op.rshape];
+    auto &in_strides = shape_regs_[op.rstride_src];
     auto &out_strides = shape_regs_[op.rstride_dest];
-    auto &concat_dims = shape_regs_[op.rshape_dims];
-    return kernels::concat(op.datatype, inputs, reinterpret_cast<gsl::byte *>(output), out_shape,
-        in_strides, out_strides, op.axis, concat_dims, kernel_context());
+
+    return kernels::copy(op.datatype, reinterpret_cast<const gsl::byte *>(input), reinterpret_cast<gsl::byte *>(output), shape, in_strides, out_strides, kernel_context());
 }
