@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/kernels/cpu/reference/tensor_compute.h>
 #include <nncase/kernels/cpu/optimized/tensor_compute.h>
+#include <nncase/kernels/cpu/reference/tensor_compute.h>
 #include <nncase/kernels/tensor_compute.h>
 #include <nncase/runtime/runtime_op_utility.h>
 
@@ -141,6 +141,18 @@ result<void> kernels::reduce(reduce_op_t op, float init_value, const float *inpu
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, bool keep_dims, kernel_context &context) noexcept
 {
     return cpu::reference::reduce(op, init_value, input, output, in_shape, axis, in_strides, out_strides, keep_dims, context);
+}
+
+result<void> kernels::resize_bilinear(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, 
+    int32_t out_h, int32_t out_w, bool align_corners, bool half_pixel_centers, kernel_context &context) noexcept
+{
+    return cpu::reference::resize_bilinear(type, input, output, in_shape, in_strides, out_strides, out_w, out_h, align_corners, half_pixel_centers, context);
+}
+
+result<void> kernels::resize_nearest_neighbor(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, 
+    int32_t out_h, int32_t out_w, bool align_corners, bool half_pixel_centers, kernel_context &context) noexcept
+{
+    return cpu::reference::resize_nearest_neighbor(type, input, output, in_shape, in_strides, out_strides, out_w, out_h, align_corners, half_pixel_centers, context);
 }
 
 result<void> kernels::slice(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape,

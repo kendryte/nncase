@@ -199,6 +199,13 @@ namespace IsaGen
     }
 
     [BitLength(8)]
+    [EnumName("image_resize_mode_t")]
+    [Browsable(false)]
+    public enum ImageResizeMode
+    {
+    }
+
+    [BitLength(8)]
     [EnumName("binary_op_t")]
     [Browsable(false)]
     public enum BinaryOp
@@ -1501,6 +1508,42 @@ namespace IsaGen
             [DisplayName("fused_clamp_high")]
             [Description("FusedClampHigh")]
             public float FusedClampHigh { get; set; }
+        }
+
+        [DisplayName("TENSOR.RESIZE_IMAGE")]
+        [Category("Tensor Instructions")]
+        [Description("RESIZE_IMAGE")]
+        public class ResizeImageInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.RESIZE_IMAGE;
+
+            [DisplayName("datatype")]
+            [Description("Datatype")]
+            public DataType DataType { get; set; }
+
+            [DisplayName("rshape_src")]
+            [Description("Source shape register")]
+            public byte RshapeSrc { get; set; }
+
+            [DisplayName("rstride_src")]
+            [Description("Source stride register")]
+            public byte RstrideSrc { get; set; }
+
+            [DisplayName("rstride_dest")]
+            [Description("Dest stride register")]
+            public byte RstrideDest { get; set; }
+
+            [DisplayName("align_corners")]
+            [Description("Align Corners")]
+            public bool AlignCorners { get; set; }
+
+            [DisplayName("half_pixel_centers")]
+            [Description("Half Pixel Centers")]
+            public bool HalfPixelCenters{ get; set; }
+
+            [DisplayName("image_resize_mode")]
+            [Description("Image Resize Mode")]
+            public ImageResizeMode ImageResizeMode { get; set; }
         }
 
         [DisplayName("TENSOR.SLICE")]
