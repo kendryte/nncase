@@ -29,11 +29,15 @@ DEFINE_CAFFE_LOWER(Eltwise)
     auto &input_a = *output_tensors_.at(input_name_a);
     auto &input_b = *output_tensors_.at(input_name_b);
     [[maybe_unused]]auto &param = op.eltwise_param();
+    if (param.operation() == EltwiseParameter_EltwiseOp_SUM)
+    {
+        auto add = graph_.emplace<binary>(binary_add, input_a.shape(), input_b.shape(), value_range<float>::full());
+        add->name(op.name() + "/add");
 
-    auto add = graph_.emplace<binary>(binary_add, input_a.shape(), input_b.shape(), value_range<float>::full());
-    add->name(op.name() + "/add");
-
-    input_tensors_.emplace(&add->input_a(), input_name_a);
-    input_tensors_.emplace(&add->input_b(), input_name_b);
-    output_tensors_.emplace(op.top(0), &add->output());
+        input_tensors_.emplace(&add->input_a(), input_name_a);
+        input_tensors_.emplace(&add->input_b(), input_name_b);
+        output_tensors_.emplace(op.top(0), &add->output());
+    }
+    else
+        throw std::runtime_error("elementwise op expect for sum is unsupported yet");
 }

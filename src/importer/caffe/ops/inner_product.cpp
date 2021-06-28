@@ -37,11 +37,17 @@ DEFINE_CAFFE_LOWER(InnerProduct)
     auto input_b_const = graph_.emplace<constant>(dt_float32, get_shape(op_data.blobs(0).shape()), input_b_vec);
     input_b_const->name(op.name() + "/input_b_const");
 
-    auto node = graph_.emplace<matmul>(input.shape(), get_shape(op_data.blobs(0).shape()), value_range<float>::full());
+    auto tp_pre = graph_.emplace<transpose>(dt_float32, get_shape(op_data.blobs(0).shape()), axis_t { 1, 0 });
+    auto bc_pre = graph_.emplace<bitcast>(dt_float32, input.shape(), dt_float32, shape_t { input.shape()[0] * input.shape()[1], input.shape()[2] });
+    auto node = graph_.emplace<matmul>(bc_pre->output().shape(), tp_pre->output().shape(), value_range<float>::full());
+    auto bc_post = graph_.emplace<bitcast>(dt_float32, node->output().shape(), dt_float32, shape_t { input.shape()[0], input.shape()[1], node->output().shape()[1] });
     node->name(op.name() + "/matmul");
 
-    input_tensors_.emplace(&node->input_a(), input_name);
-    node->input_b().connect(input_b_const->output());
+    input_tensors_.emplace(&bc_pre->input(), input_name);
+    node->input_a().connect(bc_pre->output());
+    tp_pre->input().connect(input_b_const->output());
+    node->input_b().connect(tp_pre->output());
+    bc_post->input().connect(node->output());
     if (param.has_bias_term())
     {
         auto bias = load_tensor<1>(op_data.blobs(1));
@@ -52,10 +58,10 @@ DEFINE_CAFFE_LOWER(InnerProduct)
     }
     else
     {
-        std::vector<float> bias_vec(input_b.shape()[1], 0);
-        auto bias_const = graph_.emplace<constant>(dt_float32, shape_t { input_b.shape()[1] }, bias_vec);
+        std::vector<float> bias_vec(tp_pre->output().shape()[1], 0);
+        auto bias_const = graph_.emplace<constant>(dt_float32, shape_t { bias_vec.size() }, bias_vec);
         bias_const->name(op.name() + "/bias_const");
         node->bias().connect(bias_const->output());
     }
-    output_tensors_.emplace(op.top(0), &node->output());
+    output_tensors_.emplace(op.top(0), &bc_post->output());
 }

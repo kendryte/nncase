@@ -185,7 +185,7 @@ def compile_tflite_nncase(case_name, model, targets, inputs, n, enable_ptq):
         compiler.import_tflite(model, import_options)
         if enable_ptq:
             ptq_options = nncase.PTQTensorOptions()
-            ptq_options.set_tensor_data(inputs[0].tobytes())
+            ptq_options.set_tensor_data(inputs.tobytes())
             ptq_options.samples_count = n
             ptq_options.input_mean = 0.5
             ptq_options.input_std = 0.5

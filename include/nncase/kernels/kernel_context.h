@@ -19,9 +19,9 @@ BEGIN_NS_NNCASE_KERNELS
 
 struct NNCASE_API kernel_context
 {
-
+    uint32_t num_threads;
 };
 
-NNCASE_UNUSED static kernel_context default_kernel_context;
+NNCASE_API kernel_context &default_kernel_context();
 
 END_NS_NNCASE_KERNELS

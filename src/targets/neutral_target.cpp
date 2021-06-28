@@ -167,12 +167,12 @@ void neutral_target::register_target_independent_passes(const module_type_t &typ
 
     if (type == runtime::stackvm::stackvm_module_type)
     {
+        //lstm_transform
         {
-            pass p("split lstm node");
+            pass p("lstm_transform");
             p.emplace<lstm_transform>();
             pass_mgr.add_pass(std::move(p));
         }
-
         //matmul to conv2d
         {
             pass p("matmul_to_conv2d");

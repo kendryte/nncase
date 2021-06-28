@@ -121,7 +121,7 @@ void copy(runtime_tensor &input, runtime_tensor &output, OpType type)
             get_tensor_begin(output),
             input.shape(),
             input.strides(),
-            output.strides());
+            output.strides(), default_kernel_context());
     }
     else if (type == OpType::Opt)
     {
