@@ -116,17 +116,38 @@ jobs:
     - uses: seanmiddleditch/gha-setup-ninja@master
         
     - name: Install System Requirements
-      if: runner.os == 'Linux'
-      shell: bash
-      run: |
-        sudo apt update
-        sudo apt install libgtk2.0-dev -y
-        
-    - name: Install System Requirements
       if: runner.os == 'Macos'
       shell: bash
       run: |
         brew install sunnycase/core/libomp@11.1.0
+          
+    - name: Setup Python
+      uses: actions/setup-python@v2.2.1
+      with:
+        python-version: ${{ matrix.python }}
+        
+    - name: Install Python Packages
+      if: runner.os != 'Macos'
+      shell: bash
+      run: |
+        pip install conan tensorflow==2.4.1 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0
+        pip install torch==1.7.0+cpu torchvision==0.8.1+cpu -f https://download.pytorch.org/whl/torch_stable.html
+        pip install pytest
+        
+    - name: Install Python Packages
+      if: runner.os == 'Macos'
+      shell: bash
+      run: |
+        pip install conan tensorflow==2.4.1 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0
+        pip install torch==1.7.0 torchvision==0.8.1 -f https://download.pytorch.org/whl/torch_stable.html
+        pip install pytest
+      
+    - name: Create Test Environment
+      working-directory: ${{github.workspace}}
+      shell: bash
+      run: |
+        pip install pytest
+        mkdir test_results
       
     - name: Download a Build Artifact
       uses: actions/download-artifact@v2.0.9
