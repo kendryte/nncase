@@ -234,7 +234,7 @@ class BuildCMakeExt(build_ext):
 
 
 setup(name='nncase',
-      version='1.0.0',
+      version='1.0.0'+os.environ['NNCASE_VERSION_SUFFIX'],
       packages=['nncase'],
       package_dir={'': '..'},
       ext_modules=[CMakeExtension(name="_nncase", sourcedir='../..')],

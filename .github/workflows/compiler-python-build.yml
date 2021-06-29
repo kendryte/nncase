@@ -4,6 +4,7 @@ on: [push, pull_request]
 
 env:
   BUILD_TYPE: Release
+  NNCASE_VERSION_SUFFIX: .dev${{github.run_number}}
 
 jobs:
   build:
@@ -11,7 +12,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-18.04,windows-2019,macos-10.15]
-        python: [3.7,3.8,3.9]
+        python: [3.5,3.6,3.7,3.8,3.9]
 
     steps:
     - uses: actions/checkout@v2
@@ -84,25 +85,57 @@ jobs:
       
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v2.2.2
-      if: runner.os == 'Linux'
       with:
-        name: nncase_wheels_linux_x86_64
-        path: ${{github.workspace}}/python/nncase/dist
-        if-no-files-found: error
-
-    - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v2.2.2
-      if: runner.os == 'Windows'
-      with:
-        name: nncase_wheels_win_x86_64
-        path: ${{github.workspace}}/python/nncase/dist
-        if-no-files-found: error
-
-    - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v2.2.2
-      if: runner.os == 'Macos'
-      with:
-        name: nncase_wheels_macos_x86_64
+        name: nncase-py${{matrix.python}}-${{matrix.os}}
         path: ${{github.workspace}}/python/nncase/dist
         if-no-files-found: error
         
+  test:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-18.04,windows-2019,macos-10.15]
+        python: [3.5,3.6,3.7,3.8,3.9]
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: seanmiddleditch/gha-setup-ninja@master
+        
+    - name: Install System Requirements
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        sudo apt update
+        sudo apt install libgtk2.0-dev -y
+        
+    - name: Install System Requirements
+      if: runner.os == 'Macos'
+      shell: bash
+      run: |
+        brew install sunnycase/core/libomp@11.1.0
+      
+    - name: Download a Build Artifact
+      uses: actions/download-artifact@v2.0.9
+      with:
+        name: nncase-py${{matrix.python}}-${{matrix.os}}
+        path: ${{github.workspace}}/install
+      
+    - name: Install nncase
+      shell: bash
+      working-directory: ${{github.workspace}}/install
+      run: |
+        find . -maxdepth 1 -type f -iname "*.py" | head -1 | xargs pip install
+
+    - name: Test
+      working-directory: ${{github.workspace}}
+      shell: bash
+      env:
+        PYTHONPATH: ${{github.workspace}}/tests
+      run: |
+        pytest tests/other --doctest-modules --junitxml=test_results/other.xml
+
+    - name: Publish Test Results
+      uses: EnricoMi/publish-unit-test-result-action@v1
+      if: always() && runner.os == 'Linux'
+      with:
+        files: test_results/*.xml

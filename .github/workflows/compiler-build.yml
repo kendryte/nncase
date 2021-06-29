@@ -4,6 +4,7 @@ on: [push, pull_request]
 
 env:
   BUILD_TYPE: Release
+  NNCASE_VERSION_SUFFIX: .dev${{github.run_number}}
 
 jobs:
   build:
@@ -86,25 +87,8 @@ jobs:
       
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v2.2.2
-      if: runner.os == 'Linux'
       with:
-        name: nncase_linux_x86_64
-        path: ${{github.workspace}}/install
-        if-no-files-found: error
-
-    - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v2.2.2
-      if: runner.os == 'Windows'
-      with:
-        name: nncase_win_x86_64
-        path: ${{github.workspace}}/install
-        if-no-files-found: error
-
-    - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v2.2.2
-      if: runner.os == 'Macos'
-      with:
-        name: nncase_macos_x86_64
+        name: nncase-${{matrix.os}}-x86_64
         path: ${{github.workspace}}/install
         if-no-files-found: error
 
@@ -154,23 +138,8 @@ jobs:
       
     - name: Download a Build Artifact
       uses: actions/download-artifact@v2.0.9
-      if: runner.os == 'Linux'
       with:
-        name: nncase_linux_x86_64
-        path: ${{github.workspace}}/install
-      
-    - name: Download a Build Artifact
-      uses: actions/download-artifact@v2.0.9
-      if: runner.os == 'Windows'
-      with:
-        name: nncase_win_x86_64
-        path: ${{github.workspace}}/install
-      
-    - name: Download a Build Artifact
-      uses: actions/download-artifact@v2.0.9
-      if: runner.os == 'Macos'
-      with:
-        name: nncase_macos_x86_64
+        name: nncase-${{matrix.os}}-x86_64
         path: ${{github.workspace}}/install
 
     - name: Test
