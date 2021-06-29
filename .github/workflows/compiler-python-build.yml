@@ -41,6 +41,19 @@ jobs:
         python-version: ${{ matrix.python }}
         
     - name: Install Python Requirements
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        pip install wheel auditwheel
+        
+    - name: Install Python Requirements
+      if: runner.os == 'Macos'
+      shell: bash
+      run: |
+        pip install wheel delocate
+        
+    - name: Install Python Requirements
+      if: runner.os == 'Windows'
       shell: bash
       run: |
         pip install wheel

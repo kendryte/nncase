@@ -45,6 +45,8 @@ target_activator_t find_target_activator(std::string_view name)
 {
     auto module_name = fmt::format("nncase.targets.{}.dll", name);
     auto mod = LoadLibraryExA(module_name.c_str(), nullptr, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+    if (!mod)
+        mod = LoadLibraryA(module_name.c_str());
     THROW_WIN32_IF_NOT(mod, "Cannot load module: {1}, {0}", module_name);
     auto proc = GetProcAddress(mod, STR(TARGET_ACTIVATOR_NAME));
     THROW_WIN32_IF_NOT(proc, "Cannot load proc \"{1}\" in module: {2}, {0}", STR(TARGET_ACTIVATOR_NAME), module_name);

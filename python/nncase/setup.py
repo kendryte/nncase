@@ -180,8 +180,9 @@ class BuildCMakeExt(build_ext):
             extdir += os.path.sep
 
         bin_dir = os.path.abspath(os.path.join(self.build_temp, 'install'))
-        cmake_args = ['-DPYTHON_EXECUTABLE=' + sys.executable,
-                      '-G', 'Ninja']
+        cmake_args = ['-G', 'Ninja']
+        if os.getenv('CI', False):
+            cmake_args += ['-DPython3_ROOT_DIR=$pythonLocation']
 
         cfg = 'Debug' if self.debug else 'Release'
         build_args = ['--config', cfg]
