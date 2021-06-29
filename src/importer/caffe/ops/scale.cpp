@@ -32,18 +32,8 @@ DEFINE_CAFFE_LOWER(Scale)
     auto gamma = load_tensor<1>(op_data.blobs(0));
 
     std::vector<float> gamma_vec_c(gamma.begin(), gamma.end());
-    std::vector<float> gamma_vec;
-    for (size_t n = 0; n < input.shape()[0]; n++)
-    {
-        for (size_t c = 0; c < input.shape()[1]; c++)
-        {
-            for (size_t hw = 0; hw < input.shape()[2] * input.shape()[3]; hw++)
-            {
-                gamma_vec.push_back(gamma_vec_c[c]);
-            }
-        }
-    }
-    auto gamma_const = graph_.emplace<constant>(dt_float32, input.shape(), gamma_vec);
+
+    auto gamma_const = graph_.emplace<constant>(dt_float32, shape_t { 1, input.shape()[1], 1, 1 }, gamma_vec_c);
     gamma_const->name(op.name() + "/gamma_const");
     auto mul = graph_.emplace<binary>(binary_mul, input.shape(), gamma_const->output().shape(), value_range<float>::full());
 
@@ -61,18 +51,8 @@ DEFINE_CAFFE_LOWER(Scale)
         mul->name(op.name() + "/mul");
         auto beta = load_tensor<1>(op_data.blobs(1));
         std::vector<float> beta_vec_c(beta.begin(), beta.end());
-        std::vector<float> beta_vec;
-        for (size_t n = 0; n < input.shape()[0]; n++)
-        {
-            for (size_t c = 0; c < input.shape()[1]; c++)
-            {
-                for (size_t hw = 0; hw < input.shape()[2] * input.shape()[3]; hw++)
-                {
-                    beta_vec.push_back(beta_vec_c[c]);
-                }
-            }
-        }
-        auto beta_const = graph_.emplace<constant>(dt_float32, input.shape(), beta_vec);
+
+        auto beta_const = graph_.emplace<constant>(dt_float32, shape_t { 1, input.shape()[1], 1, 1 }, beta_vec_c);
         beta_const->name(op.name() + "/beta_const");
         auto add = graph_.emplace<binary>(binary_add, mul->output().shape(), beta_const->output().shape(), value_range<float>::full());
         // inplace op, user op need this name

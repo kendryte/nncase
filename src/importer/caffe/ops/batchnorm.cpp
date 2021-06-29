@@ -32,32 +32,24 @@ DEFINE_CAFFE_LOWER(BatchNorm)
 
     auto means = load_tensor<1>(op_data.blobs(0));
     auto variants = load_tensor<1>(op_data.blobs(1));
-    auto eps = load_tensor<1>(op_data.blobs(2));
+    auto eps = param.eps();
+    auto scale_factor = load_tensor<1>(op_data.blobs(2));
 
     std::vector<float> means_vec_c(means.begin(), means.end());
     std::vector<float> variants_vec_c(variants.begin(), variants.end());
-    std::vector<float> eps_vec_c(eps.begin(), eps.end());
-    std::vector<float> means_vec;
-    std::vector<float> variants_vec;
-    std::vector<float> eps_vec;
-    for (size_t n = 0; n < input.shape()[0]; n++)
+    std::vector<float> scale_factor_vec(scale_factor.begin(), scale_factor.end());
+    for (size_t idx = 0; idx < means_vec_c.size(); idx++)
     {
-        for (size_t c = 0; c < input.shape()[1]; c++)
-        {
-            for (size_t hw = 0; hw < input.shape()[2] * input.shape()[3]; hw++)
-            {
-                means_vec.push_back(means_vec_c[c]);
-                variants_vec.push_back(variants_vec_c[c]);
-                eps_vec.push_back(eps_vec_c[c]);
-            }
-        }
+        means_vec_c[idx] /= scale_factor_vec[0];
+        variants_vec_c[idx] /= scale_factor_vec[0];
     }
 
-    auto means_const = graph_.emplace<constant>(dt_float32, input.shape(), means_vec);
+    std::vector<float> eps_vec(1, eps);
+    auto means_const = graph_.emplace<constant>(dt_float32, shape_t { 1, input.shape()[1], 1, 1 }, means_vec_c);
     means_const->name(op.name() + "/means_const");
-    auto variants_const = graph_.emplace<constant>(dt_float32, input.shape(), variants_vec);
+    auto variants_const = graph_.emplace<constant>(dt_float32, shape_t { 1, input.shape()[1], 1, 1 }, variants_vec_c);
     variants_const->name(op.name() + "/variants_const");
-    auto eps_const = graph_.emplace<constant>(dt_float32, input.shape(), eps_vec);
+    auto eps_const = graph_.emplace<constant>(dt_float32, shape_t { 1, 1, 1, 1 }, eps_vec);
     eps_const->name(op.name() + "/eps_const");
 
     auto sub = graph_.emplace<binary>(binary_sub, input.shape(), means_const->output().shape(), value_range<float>::full());
