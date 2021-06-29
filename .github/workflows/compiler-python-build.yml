@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-18.04,windows-2019,macos-10.15]
-        python: [3.5,3.6,3.7,3.8,3.9]
+        python: [3.6,3.7,3.8,3.9]
 
     steps:
     - uses: actions/checkout@v2
@@ -109,7 +109,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-18.04,windows-2019,macos-10.15]
-        python: [3.5,3.6,3.7,3.8,3.9]
+        python: [3.6,3.7,3.8,3.9]
 
     steps:
     - uses: actions/checkout@v2
@@ -130,7 +130,7 @@ jobs:
       if: runner.os != 'Macos'
       shell: bash
       run: |
-        pip install conan tensorflow==2.4.1 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0
+        pip install conan tensorflow==2.5.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0
         pip install torch==1.7.0+cpu torchvision==0.8.1+cpu -f https://download.pytorch.org/whl/torch_stable.html
         pip install pytest
         
@@ -138,7 +138,7 @@ jobs:
       if: runner.os == 'Macos'
       shell: bash
       run: |
-        pip install conan tensorflow==2.4.1 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0
+        pip install conan tensorflow==2.5.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0
         pip install torch==1.7.0 torchvision==0.8.1 -f https://download.pytorch.org/whl/torch_stable.html
         pip install pytest
       
