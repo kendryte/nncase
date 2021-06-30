@@ -26,7 +26,7 @@ result<void> stackvm_runtime_module::visit(const tensor_resize_image_op_t &op) n
     try_var(w, stack_.pop());
     try_var(h, stack_.pop());
 
-    auto out_h = w.as_i4();
+    auto out_h = h.as_i4();
     auto out_w = w.as_i4();
     auto &in_shape = shape_regs_[op.rshape_src];
     auto &in_strides = shape_regs_[op.rstride_src];

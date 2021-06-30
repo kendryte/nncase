@@ -38,16 +38,16 @@ sizes = [
     [16, 16],
     [64, 64],
     [11, 11],
-    [37, 37]
+    [37, 41]
 ]
 
 align_corners = [
-    # True,
+    True,
     False
 ]
 
 half_pixel_centers = [
-    # True,
+    True,
     False
 ]
 

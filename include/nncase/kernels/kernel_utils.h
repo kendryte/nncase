@@ -268,7 +268,7 @@ inline size_t get_nearest_neighbor(T input_value,  size_t shape_size, float scal
 {
     const auto offset = half_pixel_centers ? 0.5f : 0.0f;
     const auto after_scale = (static_cast<float>(input_value) + offset) * scale;
-    const auto align_corners_val = align_corners ? std::round(after_scale) : std::floor(after_scale);
+    const auto align_corners_val = align_corners ? std::roundf(after_scale) : std::floor(after_scale);
     int32_t output_value = std::min(static_cast<int32_t>(align_corners_val), static_cast<int32_t>(shape_size - 1));
     if (half_pixel_centers) {
         output_value = std::max(0, output_value);

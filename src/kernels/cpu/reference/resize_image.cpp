@@ -25,7 +25,7 @@ namespace
 {
 template <class T>
 result<void> resize_bilinear_impl(const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides,
-    const runtime_shape_t &out_strides, int32_t out_h, int32_t out_w, bool align_corners, NNCASE_UNUSED bool half_pixel_centers, kernel_context &context) noexcept
+    const runtime_shape_t &out_strides, int32_t out_h, int32_t out_w, bool align_corners, NNCASE_UNUSED bool half_pixel_centers, NNCASE_UNUSED kernel_context &context) noexcept
 {
     auto [height_scale, width_scale] = kernels::detail::get_resize_scales(in_shape, out_h, out_w, align_corners);
     const float rounding_offset = std::numeric_limits<T>::is_integer ? .5f : .0f;
@@ -78,7 +78,7 @@ result<void> resize_bilinear_impl(const T *input, T *output, const runtime_shape
 
 template <class T>
 result<void> resize_nearest_neighbor_impl(const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides,
-                                          const runtime_shape_t &out_strides, int32_t out_h, int32_t out_w, bool align_corners, bool half_pixel_centers, kernel_context &context) noexcept
+                                          const runtime_shape_t &out_strides, int32_t out_h, int32_t out_w, bool align_corners, bool half_pixel_centers, NNCASE_UNUSED kernel_context &context) noexcept
 {
     auto [height_scale, width_scale] = kernels::detail::get_resize_scales(in_shape, out_h, out_w, align_corners);
     runtime_shape_t in_index(4), out_index(4);

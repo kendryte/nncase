@@ -147,11 +147,11 @@ result<void> kernels::reduce(reduce_op_t op, float init_value, const float *inpu
     runtime_shape_t out_shape { in_shape[0], in_shape[1], static_cast<size_t>(out_h), static_cast<size_t>(out_w) };                                              \
     if (is_contiguous(in_shape, in_strides) && is_contiguous(out_shape, out_strides))                                                                            \
     {                                                                                                                                                            \
-        return cpu::optimized::##resize_fun##(type, input, output, in_shape, in_strides, out_strides, out_w, out_h, align_corners, half_pixel_centers, context); \
+        return cpu::optimized::resize_fun(type, input, output, in_shape, in_strides, out_strides, out_h, out_w, align_corners, half_pixel_centers, context); \
     }                                                                                                                                                            \
     else                                                                                                                                                         \
     {                                                                                                                                                            \
-        return cpu::reference::##resize_fun##(type, input, output, in_shape, in_strides, out_strides, out_w, out_h, align_corners, half_pixel_centers, context); \
+        return cpu::reference::resize_fun(type, input, output, in_shape, in_strides, out_strides, out_h, out_w, align_corners, half_pixel_centers, context); \
     }
 
 result<void> kernels::resize_bilinear(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides,
@@ -170,12 +170,21 @@ result<void> kernels::slice(datatype_t type, const gsl::byte *input, gsl::byte *
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const runtime_shape_t &begins, const runtime_shape_t &ends, const runtime_axis_t &strides,
     kernel_context &context) noexcept
 {
-    if (in_strides.size() <= 4)
+    bool neg_strides = false;
+    for(auto && stride : strides)
+    {
+        if(stride < 0)
+        {
+            neg_strides = true;
+            break;
+        }
+    }
+    if (in_strides.size() <= 4 && !neg_strides)
     {
         return cpu::optimized::slice(type, input, output, in_shape, in_strides, out_strides, begins, ends, strides, context);
     }
     else
     {
-        return cpu::optimized::slice(type, input, output, in_shape, in_strides, out_strides, begins, ends, strides, context);
+        return cpu::reference::slice(type, input, output, in_shape, in_strides, out_strides, begins, ends, strides, context);
     }
 }
