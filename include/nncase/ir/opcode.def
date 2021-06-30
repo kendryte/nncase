@@ -34,3 +34,4 @@ DEFINE_NEUTRAL_OPCODE(gather,	            Gather,             0x118)
 DEFINE_NEUTRAL_OPCODE(onehot,	            OneHot, 		    0x119)
 DEFINE_NEUTRAL_OPCODE(lstm,	                LSTM,               0x120)
 
+
