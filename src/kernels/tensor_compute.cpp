@@ -22,7 +22,7 @@ using namespace nncase::runtime;
 using namespace nncase::kernels;
 
 result<void> kernels::batch_to_space(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape,
-    const runtime_shape_t &block_shape, const runtime_paddings_t &crops, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, 
+    const runtime_shape_t &block_shape, const runtime_paddings_t &crops, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides,
     kernel_context &context) noexcept
 {
     return cpu::reference::batch_to_space(type, input, output, in_shape, block_shape, crops, in_strides, out_strides, context);
@@ -35,7 +35,7 @@ result<void> kernels::broadcast(datatype_t type, const gsl::byte *input, gsl::by
 }
 
 result<void> kernels::concat(datatype_t type, gsl::span<const gsl::byte *const> inputs, gsl::byte *output, const runtime_shape_t &out_shape,
-    gsl::span<const runtime_shape_t> in_strides, const runtime_shape_t &out_strides, size_t axis, const runtime_shape_t &concat_dims, 
+    gsl::span<const runtime_shape_t> in_strides, const runtime_shape_t &out_strides, size_t axis, const runtime_shape_t &concat_dims,
     kernel_context &context) noexcept
 {
     if (in_strides[0].size() <= 4)
@@ -104,7 +104,7 @@ result<void> kernels::lut1d(datatype_t type, const gsl::byte *input, const gsl::
 }
 
 result<void> kernels::pad(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape,
-    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const runtime_paddings_t &paddings, pad_mode_t mode, 
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const runtime_paddings_t &paddings, pad_mode_t mode,
     const scalar &pad_value, kernel_context &context) noexcept
 {
     return cpu::reference::pad(type, input, output, in_shape, in_strides, out_strides, paddings, mode, pad_value, context);
@@ -125,7 +125,7 @@ result<void> kernels::transpose(datatype_t type, const gsl::byte *src, gsl::byte
 
 result<void> kernels::binary(binary_op_t op, const float *input_a, const float *input_b, float *output,
     const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
-    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_strides, value_range<float> fused_activation, 
+    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_strides, value_range<float> fused_activation,
     kernel_context &context) noexcept
 {
     return cpu::reference::binary(op, input_a, input_b, output, in_a_shape, in_a_strides, in_b_shape, in_b_strides, out_strides, fused_activation, context);
@@ -143,16 +143,27 @@ result<void> kernels::reduce(reduce_op_t op, float init_value, const float *inpu
     return cpu::reference::reduce(op, init_value, input, output, in_shape, axis, in_strides, out_strides, keep_dims, context);
 }
 
-result<void> kernels::resize_bilinear(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, 
+#define DISPATCH_RESIZE(resize_fun)                                                                                                                              \
+    runtime_shape_t out_shape { in_shape[0], in_shape[1], static_cast<size_t>(out_h), static_cast<size_t>(out_w) };                                              \
+    if (is_contiguous(in_shape, in_strides) && is_contiguous(out_shape, out_strides))                                                                            \
+    {                                                                                                                                                            \
+        return cpu::optimized::##resize_fun##(type, input, output, in_shape, in_strides, out_strides, out_w, out_h, align_corners, half_pixel_centers, context); \
+    }                                                                                                                                                            \
+    else                                                                                                                                                         \
+    {                                                                                                                                                            \
+        return cpu::reference::##resize_fun##(type, input, output, in_shape, in_strides, out_strides, out_w, out_h, align_corners, half_pixel_centers, context); \
+    }
+
+result<void> kernels::resize_bilinear(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides,
     int32_t out_h, int32_t out_w, bool align_corners, bool half_pixel_centers, kernel_context &context) noexcept
 {
-    return cpu::reference::resize_bilinear(type, input, output, in_shape, in_strides, out_strides, out_w, out_h, align_corners, half_pixel_centers, context);
+    DISPATCH_RESIZE(resize_bilinear);
 }
 
-result<void> kernels::resize_nearest_neighbor(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, 
+result<void> kernels::resize_nearest_neighbor(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides,
     int32_t out_h, int32_t out_w, bool align_corners, bool half_pixel_centers, kernel_context &context) noexcept
 {
-    return cpu::reference::resize_nearest_neighbor(type, input, output, in_shape, in_strides, out_strides, out_w, out_h, align_corners, half_pixel_centers, context);
+    DISPATCH_RESIZE(resize_nearest_neighbor);
 }
 
 result<void> kernels::slice(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape,

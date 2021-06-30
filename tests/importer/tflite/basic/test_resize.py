@@ -17,7 +17,7 @@ import pytest
 from test_runner import TfliteTestRunner
 import tensorflow as tf
 
-def _make_module(in_shape, size, mode, align_corners, half_pixel_centers):
+def _make_module(in_shape, size, align_corners, half_pixel_centers, mode):
     class ResizeModule(tf.Module):
         def __init__(self):
             super(ResizeModule).__init__()
@@ -38,8 +38,17 @@ sizes = [
     [16, 16],
     [64, 64],
     [11, 11],
-    [37, 37],
-    [41, 41]
+    [37, 37]
+]
+
+align_corners = [
+    # True,
+    False
+]
+
+half_pixel_centers = [
+    # True,
+    False
 ]
 
 modes = [
@@ -47,25 +56,16 @@ modes = [
     tf.image.ResizeMethod.NEAREST_NEIGHBOR
 ]
 
-align_corners = [
-    True,
-    False
-]
-
-half_pixel_centers = [
-    True,
-    False
-]
-
 @pytest.mark.parametrize('in_shape', in_shape)
 @pytest.mark.parametrize('size', sizes)
-@pytest.mark.parametrize('mode', modes)
 @pytest.mark.parametrize('align_corners', align_corners)
 @pytest.mark.parametrize('half_pixel_centers', half_pixel_centers)
-def test_resize(in_shape, size, mode, align_corners, half_pixel_centers, request):
+@pytest.mark.parametrize('mode', modes)
+
+def test_resize(in_shape, size, align_corners, half_pixel_centers, mode, request):
     if mode == tf.image.ResizeMethod.BILINEAR and align_corners and half_pixel_centers:
         return
-    module = _make_module(in_shape, size, mode, align_corners, half_pixel_centers)
+    module = _make_module(in_shape, size, align_corners, half_pixel_centers, mode)
     runner = TfliteTestRunner(request.node.name, ['cpu', 'k210'])
     model_file = runner.from_tensorflow(module)
     runner.run(model_file)

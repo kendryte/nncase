@@ -236,5 +236,45 @@ constexpr T quantize(float value, const quant_param_t &param) noexcept
 {
     return (T)clamp((int32_t)lrintf(value / param.scale + param.zero_point), (int32_t)std::numeric_limits<T>::lowest(), (int32_t)std::numeric_limits<T>::max());
 }
+
+inline std::pair<float, float> get_resize_scales(const runtime_shape_t &in_shape, int32_t out_h, int32_t out_w, bool align_corners)
+{
+    auto height_scale = (float)in_shape[2] / out_h;
+    auto width_scale = (float)in_shape[3] / out_w;
+    if (align_corners && out_h > 1)
+        height_scale = (float)(in_shape[2] - 1) / (out_h - 1);
+    if (align_corners && out_w > 1)
+        width_scale = (float)(in_shape[3] - 1) / (out_w - 1);
+    return { height_scale, width_scale };
+}
+
+inline void set_resize_bilinear(size_t value, float scale, bool half_pixel_centers, size_t shape_size, float &scaled_value, int32_t &v0, int32_t &v1)
+{
+    if(half_pixel_centers)
+    {
+        scaled_value = (value + 0.5f) * scale - 0.5f;
+    }
+    else
+    {
+        scaled_value = value * scale;
+    }
+    float scaled_value_floor = std::floor(scaled_value);
+    v0 = std::max(static_cast<int32_t>(scaled_value_floor), 0);
+    v1 = std::min(static_cast<int32_t>(std::ceil(scaled_value)), static_cast<int32_t>(shape_size - 1));
+}
+
+template<class T>
+inline size_t get_nearest_neighbor(T input_value,  size_t shape_size, float scale, bool align_corners, bool half_pixel_centers)
+{
+    const auto offset = half_pixel_centers ? 0.5f : 0.0f;
+    const auto after_scale = (static_cast<float>(input_value) + offset) * scale;
+    const auto align_corners_val = align_corners ? std::round(after_scale) : std::floor(after_scale);
+    int32_t output_value = std::min(static_cast<int32_t>(align_corners_val), static_cast<int32_t>(shape_size - 1));
+    if (half_pixel_centers) {
+        output_value = std::max(0, output_value);
+    }
+    return output_value;
+}
+
 }
 END_NS_NNCASE_KERNELS
