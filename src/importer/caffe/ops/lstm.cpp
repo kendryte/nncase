@@ -34,6 +34,9 @@ DEFINE_CAFFE_LOWER(LSTM)
     auto &param = op.recurrent_param();
     auto n_output = param.num_output();
 
+    if (param.expose_hidden())
+        throw std::runtime_error("expose hidden for lstm is not supported yet");
+
     auto op_data = get_op_data(op, caffemodel);
 
     std::vector<float> blob_w_static_vec;

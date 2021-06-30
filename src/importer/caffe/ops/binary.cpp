@@ -28,7 +28,7 @@ DEFINE_CAFFE_LOWER(Eltwise)
 
     auto &input_a = *output_tensors_.at(input_name_a);
     auto &input_b = *output_tensors_.at(input_name_b);
-    [[maybe_unused]]auto &param = op.eltwise_param();
+    auto &param = op.eltwise_param();
     if (param.operation() == EltwiseParameter_EltwiseOp_SUM)
     {
         auto add = graph_.emplace<binary>(binary_add, input_a.shape(), input_b.shape(), value_range<float>::full());
@@ -38,6 +38,24 @@ DEFINE_CAFFE_LOWER(Eltwise)
         input_tensors_.emplace(&add->input_b(), input_name_b);
         output_tensors_.emplace(op.top(0), &add->output());
     }
+    else if (param.operation() == EltwiseParameter_EltwiseOp_PROD)
+    {
+        auto mul = graph_.emplace<binary>(binary_mul, input_a.shape(), input_b.shape(), value_range<float>::full());
+        mul->name(op.name() + "/mul");
+
+        input_tensors_.emplace(&mul->input_a(), input_name_a);
+        input_tensors_.emplace(&mul->input_b(), input_name_b);
+        output_tensors_.emplace(op.top(0), &mul->output());
+    }
+    else if (param.operation() == EltwiseParameter_EltwiseOp_MAX)
+    {
+        auto max = graph_.emplace<binary>(binary_max, input_a.shape(), input_b.shape(), value_range<float>::full());
+        max->name(op.name() + "/max");
+
+        input_tensors_.emplace(&max->input_a(), input_name_a);
+        input_tensors_.emplace(&max->input_b(), input_name_b);
+        output_tensors_.emplace(op.top(0), &max->output());
+    }
     else
-        throw std::runtime_error("elementwise op expect for sum is unsupported yet");
+        throw std::runtime_error("invalid elementwise op");
 }

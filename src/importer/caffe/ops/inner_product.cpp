@@ -29,6 +29,8 @@ DEFINE_CAFFE_LOWER(InnerProduct)
     std::string input_name = get_real_input_names(op)[0];
     auto &input = *output_tensors_.at(input_name);
     auto &param = op.inner_product_param();
+    if (param.transpose())
+        throw std::runtime_error("only false transpose flag is supported for inner_product");
 
     auto op_data = get_op_data(op, caffemodel);
 
@@ -48,7 +50,7 @@ DEFINE_CAFFE_LOWER(InnerProduct)
     tp_pre->input().connect(input_b_const->output());
     node->input_b().connect(tp_pre->output());
     bc_post->input().connect(node->output());
-    if (param.has_bias_term())
+    if (param.bias_term())
     {
         auto bias = load_tensor<1>(op_data.blobs(1));
         std::vector<float> bias_vec(bias.begin(), bias.end());

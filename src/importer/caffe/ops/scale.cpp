@@ -22,6 +22,8 @@ using namespace nncase::ir;
 
 DEFINE_CAFFE_LOWER(Scale)
 {
+    if (op.bottom_size() != 1)
+        throw std::runtime_error("scale with multiple bottoms is not supported yet");
     std::string input_name = op.bottom(0) + "/div";
 
     auto &input = *output_tensors_.at(input_name);
@@ -39,7 +41,7 @@ DEFINE_CAFFE_LOWER(Scale)
 
     mul->input_b().connect(gamma_const->output());
 
-    if (!param.has_bias_term())
+    if (!param.bias_term())
     {
         // inplace op, user op need this name
         mul->name(op.top(0) + "/mul");
