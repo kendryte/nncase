@@ -29,9 +29,9 @@ size_t kpu_buffer_allocator::alignment() const noexcept
     return 64;
 }
 
-size_t kpu_buffer_allocator::get_size_in_bytes(const physical_buffer &buffer)
+size_t kpu_buffer_allocator::get_size_in_bytes(const logical_buffer &buffer)
 {
-    if (buffer.owner().type() != dt_uint8)
+    if (buffer.type() != dt_uint8)
         throw std::invalid_argument("KPU only support uint8 datatype");
-    return runtime::k210::get_kpu_bytes(buffer.owner().shape());
+    return runtime::k210::get_kpu_bytes(buffer.shape());
 }

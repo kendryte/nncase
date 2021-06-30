@@ -4,6 +4,7 @@ DEFINE_NEUTRAL_OPCODE(ignore_node,          Ignore,             0x03)
 DEFINE_NEUTRAL_OPCODE(constant,             Constant,           0x04)
 DEFINE_NEUTRAL_OPCODE(uninitialized,	    Uninitialized,      0x05)
 DEFINE_NEUTRAL_OPCODE(call,                 Call,               0x06)
+DEFINE_NEUTRAL_OPCODE(copy,                 Copy,               0x07)
 
 DEFINE_NEUTRAL_OPCODE(conv2d,               Conv2D,             0x100)
 DEFINE_NEUTRAL_OPCODE(matmul,               MatMul,             0x101)

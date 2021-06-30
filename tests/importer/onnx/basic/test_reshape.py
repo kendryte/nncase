@@ -36,6 +36,7 @@ def _make_module(in_shape, out_channel, kernel_size):
             x = torch.reshape(x, (self.n * self.c, self.h * self.w))
             x = torch.reshape(x, (self.n * self.c, self.h, self.w))
             x = torch.reshape(x, (self.n * self.c * self.h, self.w))
+            x = torch.reshape(x, (-1, self.w))
             return x
 
     return ReshapeModule()

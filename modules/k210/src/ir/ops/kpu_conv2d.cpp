@@ -36,10 +36,12 @@ kpu_conv2d::kpu_conv2d(bool has_main_mem_output, shape_t input_shape, bool is_de
             (size_t)output_channels(),
             (size_t)get_kpu_pool_output_size((int32_t)input_shape[2], pool_type_),
             (size_t)get_kpu_pool_output_size((int32_t)input_shape[3], pool_type_) },
-        mem_kpu);
+        mem_kpu)
+        .attributes(cnctr_attr_no_layout_strides);
 
     if (has_main_mem_output)
-        add_output("main_mem_output", dt_uint8, kpu_output().shape(), mem_data);
+        add_output("main_mem_output", dt_uint8, kpu_output().shape(), mem_data)
+            .attributes(cnctr_attr_no_layout_strides);
 }
 
 bool kpu_conv2d::properties_equal(node &other) const

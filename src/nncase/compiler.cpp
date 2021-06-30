@@ -25,6 +25,7 @@
 #include <nncase/runtime/datatypes.h>
 #include <nncase/transforms/neutral/add_quant_motion.h>
 #include <nncase/transforms/neutral/fold_io_quant_motion.h>
+#include <nncase/transforms/neutral/optimize_allocation.h>
 #include <nncase/transforms/pass.h>
 #include <variant>
 
@@ -204,7 +205,7 @@ public:
         std::cout << "5. Optimize target dependent after quantization..." << std::endl;
         optimize_target_dependent_after_quant(graph_);
 
-        std::cout << "6. Merge module regions..." << std::endl;
+        std::cout << "6. Optimize modules..." << std::endl;
         optimize_merge_module_regions(graph_);
     }
 
@@ -227,11 +228,18 @@ public:
 
     void gencode(std::ostream &output) override
     {
-        std::cout << "6. Generate code..." << std::endl;
+        std::cout << "8. Generate code..." << std::endl;
         using namespace nncase::schedule;
         using namespace nncase::codegen;
 
         scheduler sch(*target_, graph_, graph_.outputs());
+        if (compile_options_.dump_ir)
+        {
+            auto dump_path = compile_options_.dump_dir / "codegen";
+            std::filesystem::create_directories(dump_path);
+            sch.config_dump(dump_path);
+        }
+
         auto schr = sch.schedule();
         model_builder builder(*target_, schr);
         builder.config_dump(compile_options_.dump_dir, compile_options_.dump_asm);
@@ -256,8 +264,29 @@ private:
 
     void optimize_merge_module_regions(ir::graph &graph)
     {
+        std::cout << "7.1. Merge module regions..." << std::endl;
         graph.merge_module_regions();
+
+        std::cout << "7.2. Optimize buffer fusion..." << std::endl;
+        optimize_buffer_fusion(graph);
+
         dump_graph(graph, "merge_module_regions");
+    }
+
+    void optimize_buffer_fusion(ir::graph &graph)
+    {
+        using namespace ir::transforms;
+
+        run_passes("buffer_fusion_1", graph, [&]([[maybe_unused]] const module_type_t &module_type, ir::transforms::pass_manager &pmgr) {
+            pmgr.add_pass<make_concat_no_action_pass>();
+            pmgr.add_pass<make_bitcast_no_action_pass>();
+            pmgr.add_pass<add_copy_to_output_pass>();
+
+            transform_pass pass("optimize_copy");
+            pass.emplace<remove_exclusive_copy_to_output_transform>();
+            pass.emplace<remove_exclusive_copy_to_concat_transform>();
+            pmgr.add_pass(std::move(pass));
+        });
     }
 
     void optimize_target_dependent(ir::graph &graph, bool use_ptq)
@@ -302,7 +331,7 @@ private:
             target_->add_quantization_broadcast(opcodes);
             quant->broadcast_output(graph, opcodes);
 
-            ir::transforms::pass p("process i&o node");
+            ir::transforms::transform_pass p("process i&o node");
 
             if (use_ptq_)
             {
@@ -330,6 +359,13 @@ private:
     ir::evaluator run_calibration(ir::graph &graph)
     {
         schedule::scheduler sched(*target_, graph, graph.outputs());
+        if (compile_options_.dump_ir)
+        {
+            auto dump_path = compile_options_.dump_dir / "calibration";
+            std::filesystem::create_directories(dump_path);
+            sched.config_dump(dump_path);
+        }
+
         auto sched_result = sched.schedule(true);
         ir::evaluator evaluator(sched_result);
         auto calib_method = std::visit([](auto &options) { return to_calibrate_method(options.calibrate_method); }, ptq_options_);

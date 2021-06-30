@@ -13,16 +13,23 @@
  * limitations under the License.
  */
 #pragma once
-#include "memory_allocator.h"
+#include "../node.h"
+#include <xtensor/xtensor.hpp>
 
-namespace nncase
+namespace nncase::ir
 {
-namespace scheduler
+class NNCASE_API copy : public node
 {
-    class main_memory_allocator : public memory_allocator
-    {
-    public:
-        using memory_allocator::memory_allocator;
-    };
-}
+public:
+    DEFINE_NODE_OPCODE(op_copy);
+
+    const input_connector &input() const { return input_at(0); }
+    input_connector &input() { return input_at(0); }
+    output_connector &output() { return output_at(0); }
+
+    copy(datatype_t input_type, shape_t input_shape);
+
+protected:
+    bool properties_equal(node &other) const override;
+};
 }

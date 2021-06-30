@@ -77,7 +77,7 @@ void neutral_target::register_evaluator_ops()
     register_neutral_evaluators();
 }
 
-void neutral_target::add_default_transforms(ir::transforms::pass &pass, [[maybe_unused]] bool add_constant_folding)
+void neutral_target::add_default_transforms(ir::transforms::transform_pass &pass, [[maybe_unused]] bool add_constant_folding)
 {
     using namespace nncase::ir;
     using namespace nncase::ir::transforms;
@@ -128,7 +128,7 @@ void neutral_target::add_default_transforms(ir::transforms::pass &pass, [[maybe_
     pass.emplace<fold_nop_transpose_transform>();
 }
 
-void neutral_target::fold_pad_conv_transform(ir::transforms::pass &pass, [[maybe_unused]] bool add_constant_folding)
+void neutral_target::fold_pad_conv_transform(ir::transforms::transform_pass &pass, [[maybe_unused]] bool add_constant_folding)
 {
     using namespace nncase::ir;
     using namespace nncase::ir::transforms;
@@ -144,7 +144,7 @@ void neutral_target::fold_pad_conv_transform(ir::transforms::pass &pass, [[maybe
     pass.emplace<pad_to_maxpool_transform>();
 }
 
-void neutral_target::fold_dilated_conv_transform(ir::transforms::pass &pass, [[maybe_unused]] bool add_constant_folding)
+void neutral_target::fold_dilated_conv_transform(ir::transforms::transform_pass &pass, [[maybe_unused]] bool add_constant_folding)
 {
     using namespace nncase::ir;
     using namespace nncase::ir::transforms;
@@ -175,34 +175,34 @@ void neutral_target::register_target_independent_passes(const module_type_t &typ
         }
         //matmul to conv2d
         {
-            pass p("matmul_to_conv2d");
+            transform_pass p("matmul_to_conv2d");
             p.emplace<matmul_to_conv2d_transform>();
             pass_mgr.add_pass(std::move(p));
         }
 
         //fold_pad_conv
         {
-            pass p("fold_pad_conv");
+            transform_pass p("fold_pad_conv");
             fold_pad_conv_transform(p, true);
             pass_mgr.add_pass(std::move(p));
         }
         //fold_dilated_conv
         {
-            pass p("fold_dilated_conv");
+            transform_pass p("fold_dilated_conv");
             fold_dilated_conv_transform(p, true);
             pass_mgr.add_pass(std::move(p));
         }
 
         //target_independent_pass
         {
-            pass p("target_independent_pass");
+            transform_pass p("target_independent_pass");
             add_default_transforms(p, true);
             pass_mgr.add_pass(std::move(p));
         }
 
         // pad to slice
         {
-            pass p("pad_to_slice");
+            transform_pass p("pad_to_slice");
             p.emplace<pad_to_slice_transform>();
             pass_mgr.add_pass(std::move(p));
         }
@@ -216,7 +216,7 @@ void neutral_target::register_target_dependent_passes([[maybe_unused]] const mod
 void neutral_target::register_quantize_annotation_passes([[maybe_unused]] const module_type_t &type, ir::transforms::pass_manager &pass_mgr)
 {
     {
-        pass p("fuse_unary");
+        transform_pass p("fuse_unary");
         p.emplace<fuse_one_unary_transform>();
         p.emplace<fuse_one_binary_transform>();
         p.emplace<fuse_two_fused_unary_transform>();
@@ -226,7 +226,7 @@ void neutral_target::register_quantize_annotation_passes([[maybe_unused]] const 
     }
 
     {
-        pass p("annotate_neutral_quantize");
+        transform_pass p("annotate_neutral_quantize");
         p.emplace<add_quant_checkpoints_transform>(std::in_place, ir::op_fused_unary);
         pass_mgr.add_pass(std::move(p));
     }
@@ -235,12 +235,12 @@ void neutral_target::register_quantize_annotation_passes([[maybe_unused]] const 
 void neutral_target::register_quantize_passes([[maybe_unused]] const module_type_t &type, ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] datatype_t quant_type)
 {
     {
-        pass p("fused_unary_to_lut");
+        transform_pass p("fused_unary_to_lut");
         p.emplace<fused_unary_to_lookup1d_transform>();
         pass_mgr.add_pass(std::move(p));
     }
     {
-        pass p("fold_quantize");
+        transform_pass p("fold_quantize");
         add_default_transforms(p);
         p.emplace<fold_quantize_transform>();
         pass_mgr.add_pass(std::move(p));
