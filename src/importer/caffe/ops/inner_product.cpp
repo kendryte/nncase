@@ -17,6 +17,7 @@
 #include <nncase/ir/ops/bitcast.h>
 #include <nncase/ir/ops/constant.h>
 #include <nncase/ir/ops/matmul.h>
+#include <nncase/ir/ops/transpose.h>
 
 using namespace nncase;
 using namespace nncase::importer;
@@ -29,6 +30,7 @@ DEFINE_CAFFE_LOWER(InnerProduct)
     std::string input_name = get_real_input_names(op)[0];
     auto &input = *output_tensors_.at(input_name);
     auto &param = op.inner_product_param();
+    auto bias_term = param.bias_term();
 
     auto op_data = get_op_data(op, caffemodel);
 
@@ -37,7 +39,7 @@ DEFINE_CAFFE_LOWER(InnerProduct)
     auto input_b_const = graph_.emplace<constant>(dt_float32, get_shape(op_data.blobs(0).shape()), input_b_vec);
     input_b_const->name(op.name() + "/input_b_const");
 
-    auto tp_pre = graph_.emplace<transpose>(dt_float32, get_shape(op_data.blobs(0).shape()), axis_t { 1, 0 });
+    auto tp_pre = graph_.emplace<nncase::ir::transpose>(dt_float32, get_shape(op_data.blobs(0).shape()), axis_t { 1, 0 });
     auto bc_pre = graph_.emplace<bitcast>(dt_float32, input.shape(), dt_float32, shape_t { input.shape()[0] * input.shape()[1], input.shape()[2] });
     auto node = graph_.emplace<matmul>(bc_pre->output().shape(), tp_pre->output().shape(), value_range<float>::full());
     auto bc_post = graph_.emplace<bitcast>(dt_float32, node->output().shape(), dt_float32, shape_t { input.shape()[0], input.shape()[1], node->output().shape()[1] });
@@ -48,7 +50,7 @@ DEFINE_CAFFE_LOWER(InnerProduct)
     tp_pre->input().connect(input_b_const->output());
     node->input_b().connect(tp_pre->output());
     bc_post->input().connect(node->output());
-    if (param.has_bias_term())
+    if (bias_term)
     {
         auto bias = load_tensor<1>(op_data.blobs(1));
         std::vector<float> bias_vec(bias.begin(), bias.end());
