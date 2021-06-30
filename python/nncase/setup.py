@@ -76,7 +76,7 @@ class InstallCMakeLibs(install_lib):
         libs = [os.path.join(root, _lib) for root, _, files in
                 os.walk(bin_dir) for _lib in files if
                 os.path.isfile(os.path.join(root, _lib)) and
-                os.path.splitext(_lib)[1] in [".dll", ".so"]
+                os.path.splitext(_lib)[1] in [".dll", ".so", ".dylib"]
                 and not (_lib.startswith("python") or _lib.startswith("_nncase"))]
 
         for lib in libs:
