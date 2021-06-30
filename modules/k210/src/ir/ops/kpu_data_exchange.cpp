@@ -25,7 +25,8 @@ kpu_upload::kpu_upload(shape_t input_shape)
 {
     module_type(k210_module_type);
     add_input("input", dt_uint8, input_shape);
-    add_output("output", dt_uint8, input_shape, mem_kpu);
+    add_output("output", dt_uint8, input_shape, mem_kpu)
+        .attributes(cnctr_attr_no_layout_strides);
 }
 
 kpu_download::kpu_download(shape_t input_shape)

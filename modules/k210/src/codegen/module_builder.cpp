@@ -45,9 +45,9 @@ section_writer &k210_module_builder::text_writer()
 
 void k210_module_builder::emit(ir::node &node)
 {
-#define DEFINE_OP(op)                          \
-    if (node.runtime_opcode() == op::opcode()) \
-        return emit(static_cast<op &>(node));
+#define DEFINE_OP(op)                              \
+    if (node.runtime_opcode() == ir::op::opcode()) \
+        return emit(static_cast<ir::op &>(node));
 #include "ops.def"
 #undef DEFINE_OP
     module_builder::emit(node);

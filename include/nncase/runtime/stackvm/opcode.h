@@ -127,10 +127,10 @@ enum class tensor_function_t
     BROADCAST = 0x0002,
     CALL = 0x0003,
     CLAMP = 0x0004,
-    CONCAT = 0x0005,
-    CONV2D = 0x0006,
-    CONV2D_TRANSPOSE = 0x0007,
-    CONVERT = 0x0008,
+    CONV2D = 0x0005,
+    CONV2D_TRANSPOSE = 0x0006,
+    CONVERT = 0x0007,
+    COPY = 0x0008,
     DEQUANTIZE = 0x0009,
     LOGISTIC = 0x000A,
     LUT1D = 0x000B,
@@ -1273,24 +1273,6 @@ struct tensor_call_op_t
     }
 };
 
-struct tensor_concat_op_t
-{
-    opcode_t opcode;
-    tensor_function_t funct;
-    datatype_t datatype;
-    uint8_t num_src;
-    uint8_t axis;
-    uint8_t rshape_dims;
-    uint8_t rshape_dest;
-    uint8_t rstride_dest;
-
-    tensor_concat_op_t(default_init_t) noexcept { }
-    explicit tensor_concat_op_t(datatype_t datatype, uint8_t num_src, uint8_t axis, uint8_t rshape_dims, uint8_t rshape_dest, uint8_t rstride_dest) noexcept
-        : opcode(opcode_t::TENSOR), funct(tensor_function_t::CONCAT), datatype(datatype), num_src(num_src), axis(axis), rshape_dims(rshape_dims), rshape_dest(rshape_dest), rstride_dest(rstride_dest)
-    {
-    }
-};
-
 struct tensor_conv2d_op_t
 {
     opcode_t opcode;
@@ -1313,6 +1295,22 @@ struct tensor_conv2d_op_t
     tensor_conv2d_op_t(default_init_t) noexcept { }
     explicit tensor_conv2d_op_t(datatype_t datatype, uint8_t rshape_src, uint8_t rstride_src, uint8_t rshape_kernel, uint8_t rstride_kernel, uint8_t rstride_bias, uint8_t rstride_dest, uint16_t groups, uint16_t stride_h, uint16_t stride_w, uint16_t dilation_h, uint16_t dilation_w, float fused_clamp_low, float fused_clamp_high) noexcept
         : opcode(opcode_t::TENSOR), funct(tensor_function_t::CONV2D), datatype(datatype), rshape_src(rshape_src), rstride_src(rstride_src), rshape_kernel(rshape_kernel), rstride_kernel(rstride_kernel), rstride_bias(rstride_bias), rstride_dest(rstride_dest), groups(groups), stride_h(stride_h), stride_w(stride_w), dilation_h(dilation_h), dilation_w(dilation_w), fused_clamp_low(fused_clamp_low), fused_clamp_high(fused_clamp_high)
+    {
+    }
+};
+
+struct tensor_copy_op_t
+{
+    opcode_t opcode;
+    tensor_function_t funct;
+    datatype_t datatype;
+    uint8_t rshape;
+    uint8_t rstride_src;
+    uint8_t rstride_dest;
+
+    tensor_copy_op_t(default_init_t) noexcept { }
+    explicit tensor_copy_op_t(datatype_t datatype, uint8_t rshape, uint8_t rstride_src, uint8_t rstride_dest) noexcept
+        : opcode(opcode_t::TENSOR), funct(tensor_function_t::COPY), datatype(datatype), rshape(rshape), rstride_src(rstride_src), rstride_dest(rstride_dest)
     {
     }
 };

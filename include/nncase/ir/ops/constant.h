@@ -82,7 +82,8 @@ public:
     {
         if (ir::get_bytes(type, shape) != data_.size())
             throw std::invalid_argument("Shape and data size don't match");
-        add_output("output", type, std::forward<TShape>(shape), mem_rdata);
+        add_output("output", type, std::forward<TShape>(shape), mem_rdata)
+            .attributes(cnctr_attr_no_layout_strides);
     }
 
     template <class TScalar>

@@ -39,8 +39,9 @@ public:
     size_t max_usage() const noexcept { return max_usage_; }
     const std::unordered_map<const physical_buffer *, allocated_buffer> &allocations() const noexcept { return allocations_; }
 
+    virtual size_t get_size_in_bytes(const logical_buffer &buffer);
+
 protected:
-    virtual size_t get_size_in_bytes(const physical_buffer &buffer);
     virtual allocated_buffer make_alloc(const physical_buffer &buffer);
     virtual size_t alignment() const noexcept;
 

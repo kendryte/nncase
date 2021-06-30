@@ -951,22 +951,6 @@ struct op_writer<nncase::runtime::stackvm::tensor_call_op_t>
 };
 
 template <>
-struct op_writer<nncase::runtime::stackvm::tensor_concat_op_t>
-{
-    void operator()(const nncase::runtime::stackvm::tensor_concat_op_t &op, binary_writer &writer) const
-    {
-        writer.write(static_cast<uint8_t>(op.opcode));
-        writer.write(static_cast<uint16_t>(op.funct));
-        writer.write(static_cast<uint8_t>(op.datatype));
-        writer.write(op.num_src);
-        writer.write(op.axis);
-        writer.write(op.rshape_dims);
-        writer.write(op.rshape_dest);
-        writer.write(op.rstride_dest);
-    }
-};
-
-template <>
 struct op_writer<nncase::runtime::stackvm::tensor_conv2d_op_t>
 {
     void operator()(const nncase::runtime::stackvm::tensor_conv2d_op_t &op, binary_writer &writer) const
@@ -987,6 +971,20 @@ struct op_writer<nncase::runtime::stackvm::tensor_conv2d_op_t>
         writer.write(op.dilation_w);
         writer.write(op.fused_clamp_low);
         writer.write(op.fused_clamp_high);
+    }
+};
+
+template <>
+struct op_writer<nncase::runtime::stackvm::tensor_copy_op_t>
+{
+    void operator()(const nncase::runtime::stackvm::tensor_copy_op_t &op, binary_writer &writer) const
+    {
+        writer.write(static_cast<uint8_t>(op.opcode));
+        writer.write(static_cast<uint16_t>(op.funct));
+        writer.write(static_cast<uint8_t>(op.datatype));
+        writer.write(op.rshape);
+        writer.write(op.rstride_src);
+        writer.write(op.rstride_dest);
     }
 };
 
@@ -1275,8 +1273,8 @@ public:
     void tensor_broadcast_(datatype_t datatype, uint8_t rshape_src, uint8_t rstride_src, uint8_t rshape_dest, uint8_t rstride_dest);
     void tensor_binary_(datatype_t datatype, uint8_t rshape_src1, uint8_t rstride_src1, uint8_t rshape_src2, uint8_t rstride_src2, uint8_t rstride_dest, binary_op_t binary_op, float fused_clamp_low, float fused_clamp_high);
     void tensor_call_(uint32_t module_id, uint8_t num_src, uint8_t num_dst);
-    void tensor_concat_(datatype_t datatype, uint8_t num_src, uint8_t axis, uint8_t rshape_dims, uint8_t rshape_dest, uint8_t rstride_dest);
     void tensor_conv2d_(datatype_t datatype, uint8_t rshape_src, uint8_t rstride_src, uint8_t rshape_kernel, uint8_t rstride_kernel, uint8_t rstride_bias, uint8_t rstride_dest, uint16_t groups, uint16_t stride_h, uint16_t stride_w, uint16_t dilation_h, uint16_t dilation_w, float fused_clamp_low, float fused_clamp_high);
+    void tensor_copy_(datatype_t datatype, uint8_t rshape, uint8_t rstride_src, uint8_t rstride_dest);
     void tensor_convert_(datatype_t in_datatype, datatype_t dst_datatype, uint8_t rshape_src, uint8_t rstride_src, uint8_t rstride_dest);
     void tensor_dequantize_(datatype_t in_datatype, datatype_t dst_datatype, uint8_t rshape_src, uint8_t rstride_src, uint8_t rstride_dest);
     void tensor_lut1d_(datatype_t datatype, uint8_t rshape_src, uint8_t rstride_src, uint8_t rstride_dest, uint16_t table_len);

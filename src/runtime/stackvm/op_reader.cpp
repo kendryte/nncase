@@ -36,10 +36,10 @@ result<void> op_visitor::next() noexcept
             return visit(op_reader<tensor_binary_op_t>()(reader_));
         case tensor_function_t::CALL:
             return visit(op_reader<tensor_call_op_t>()(reader_));
-        case tensor_function_t::CONCAT:
-            return visit(op_reader<tensor_concat_op_t>()(reader_));
         case tensor_function_t::CONV2D:
             return visit(op_reader<tensor_conv2d_op_t>()(reader_));
+        case tensor_function_t::COPY:
+            return visit(op_reader<tensor_copy_op_t>()(reader_));
         case tensor_function_t::CONVERT:
             return visit(op_reader<tensor_convert_op_t>()(reader_));
         case tensor_function_t::DEQUANTIZE:

@@ -24,30 +24,49 @@ using namespace nncase::ir;
 namespace
 {
 std::unordered_set<node_opcode> dontcse_ops { op_input_node, op_output_node, op_uninitialized, op_constant, op_ignore_node };
-std::unordered_set<node_opcode> neutral_region_ops { op_constant, op_bitcast };
+std::unordered_set<node_opcode> neutral_region_ops { op_bitcast, op_concat };
 std::unordered_set<char> char_need_escape = { '/', ':' };
 
-void add_region_node(node &root, const module_type_t &module_type, std::vector<node *> &region_nodes, std::unordered_set<node *> &visited)
+void add_region_node(node &root, const module_type_t &module_type, std::vector<node *> &region_nodes, std::unordered_set<node *> &region_nodes_set, std::unordered_set<node *> &visited)
 {
     if (visited.emplace(&root).second)
     {
-        region_nodes.emplace_back(&root);
-
-        for (auto in : root.inputs())
+        auto inputs = root.inputs();
+        if ((root.module_type() == module_type
+                || neutral_region_ops.contains(root.runtime_opcode())
+                || (root.attributes() & node_attr_action) == 0)
+            && (region_nodes_set.empty()
+                || std::all_of(inputs.begin(), inputs.end(), [&](input_connector *in)
+                    {
+                        auto &conn = in->connection()->owner();
+                        return region_nodes_set.contains(&conn)
+                            || conn.runtime_opcode() == op_input_node
+                            || conn.runtime_opcode() == op_constant;
+                    })))
         {
-            auto &conn = in->connection()->owner();
-            if (conn.module_type() == module_type
-                || neutral_region_ops.contains(conn.runtime_opcode()))
-                add_region_node(conn, module_type, region_nodes, visited);
-        }
+            root.module_type(module_type);
+            region_nodes.emplace_back(&root);
+            region_nodes_set.emplace(&root);
 
-        for (auto out : root.outputs())
-        {
-            for (auto in : out->connections())
+            for (auto in : inputs)
             {
-                auto &conn = in->owner();
-                if (conn.module_type() == module_type)
-                    add_region_node(conn, module_type, region_nodes, visited);
+                auto &conn = in->connection()->owner();
+                if (conn.runtime_opcode() == op_constant)
+                {
+                    visited.emplace(&conn);
+                    conn.module_type(module_type);
+                    region_nodes.emplace_back(&conn);
+                    region_nodes_set.emplace(&conn);
+                }
+            }
+
+            for (auto out : root.outputs())
+            {
+                for (auto in : out->connections())
+                {
+                    auto &conn = in->owner();
+                    add_region_node(conn, module_type, region_nodes, region_nodes_set, visited);
+                }
             }
         }
     }
@@ -57,10 +76,11 @@ void add_reachable_graphs(graph &root, std::vector<graph *> &graphs)
 {
     graphs.emplace_back(&root);
     std::unordered_set<graph *> subgraphs;
-    auto visitor = make_relay_ir_visitor([&](node &node) {
-        if (auto c = node_cast<call>(node))
-            subgraphs.emplace(&c->target());
-    });
+    auto visitor = make_relay_ir_visitor([&](node &node)
+        {
+            if (auto c = node_cast<call>(node))
+                subgraphs.emplace(&c->target());
+        });
     visitor.visit(root);
     for (auto &g : subgraphs)
         add_reachable_graphs(*g, graphs);
@@ -116,7 +136,8 @@ void graph::dce()
     {
         if (!(*it)->input().connection())
         {
-            nodes_.erase(std::find_if(nodes_.begin(), nodes_.end(), [it](std::unique_ptr<node> &node) { return node.get() == *it; }));
+            nodes_.erase(std::find_if(nodes_.begin(), nodes_.end(), [it](std::unique_ptr<node> &node)
+                { return node.get() == *it; }));
             it = outputs_.erase(it);
         }
         else
@@ -125,25 +146,25 @@ void graph::dce()
         }
     }
 
-    auto visitor = make_relay_ir_visitor([&](node &node) {
-        used_nodes.emplace(&node);
-    });
+    auto visitor = make_relay_ir_visitor([&](node &node)
+        { used_nodes.emplace(&node); });
     visitor.visit(*this);
 
-    auto end = std::remove_if(std::begin(nodes_), std::end(nodes_), [&](auto &node) {
-        if (used_nodes.find(node.get()) == used_nodes.end())
+    auto end = std::remove_if(std::begin(nodes_), std::end(nodes_), [&](auto &node)
         {
-            for (auto in : node->inputs())
-                in->clear_connection();
-            for (auto out : node->outputs())
-                out->clear_connections();
-            if (node->runtime_opcode() == op_input_node)
-                inputs_.erase(std::find(inputs_.begin(), inputs_.end(), static_cast<input_node *>(node.get())));
-            return true;
-        }
+            if (used_nodes.find(node.get()) == used_nodes.end())
+            {
+                for (auto in : node->inputs())
+                    in->clear_connection();
+                for (auto out : node->outputs())
+                    out->clear_connections();
+                if (node->runtime_opcode() == op_input_node)
+                    inputs_.erase(std::find(inputs_.begin(), inputs_.end(), static_cast<input_node *>(node.get())));
+                return true;
+            }
 
-        return false;
-    });
+            return false;
+        });
     nodes_.erase(end, std::end(nodes_));
 }
 
@@ -156,7 +177,8 @@ split_graph_result graph::split_subgraph(std::span<node *> nodes)
     std::unordered_set<node *> subgraph_nodes;
     for (auto it = nodes.begin(); it != nodes.end(); ++it)
     {
-        auto find_it = std::find_if(nodes_.begin(), nodes_.end(), [&](auto &p) { return p.get() == *it; });
+        auto find_it = std::find_if(nodes_.begin(), nodes_.end(), [&](auto &p)
+            { return p.get() == *it; });
         if (find_it != nodes_.end())
         {
             subgraph_nodes.emplace(find_it->get());
@@ -183,7 +205,8 @@ split_graph_result graph::split_subgraph(std::span<node *> nodes)
         for (auto out : node->outputs())
         {
             auto conns = out->connections();
-            if (std::any_of(conns.begin(), conns.end(), [&](input_connector *in) { return !subgraph_nodes.contains(&in->owner()); }))
+            if (std::any_of(conns.begin(), conns.end(), [&](input_connector *in)
+                    { return !subgraph_nodes.contains(&in->owner()); }))
             {
                 auto onode = result.subgraph->emplace<output_node>(out->type(), out->shape());
                 onode->name("new_output");
@@ -264,22 +287,24 @@ void graph::merge_module_regions()
     while (true)
     {
         node *first_node = nullptr;
-        auto find_region = make_relay_ir_visitor<dfs_ir_pre_order_visitor>([&](node &node) {
-            if (node.module_type() != runtime::stackvm::stackvm_module_type)
+        auto find_region = make_relay_ir_visitor([&](node &node)
             {
-                first_node = &node;
-                return true;
-            }
+                if (node.module_type() != runtime::stackvm::stackvm_module_type)
+                {
+                    first_node = &node;
+                    return true;
+                }
 
-            return false;
-        });
+                return false;
+            });
         find_region.visit(outputs());
 
         if (first_node)
         {
             std::vector<node *> region_nodes;
+            std::unordered_set<node *> region_nodes_set;
             std::unordered_set<node *> visited;
-            add_region_node(*first_node, first_node->module_type(), region_nodes, visited);
+            add_region_node(*first_node, first_node->module_type(), region_nodes, region_nodes_set, visited);
             auto split = split_subgraph(region_nodes);
             auto &subg = add_subgraph(std::move(split.subgraph));
             auto c = emplace<call>(subg);

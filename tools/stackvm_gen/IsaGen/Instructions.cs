@@ -149,10 +149,10 @@ namespace IsaGen
         BROADCAST,
         CALL,
         CLAMP,
-        CONCAT,
         CONV2D,
         CONV2D_TRANSPOSE,
         CONVERT,
+        COPY,
         DEQUANTIZE,
         LOGISTIC,
         LUT1D,
@@ -1174,38 +1174,6 @@ namespace IsaGen
             public byte DstCount { get; set; }
         }
 
-        [DisplayName("TENSOR.CONCAT")]
-        [Category("Tensor Instructions")]
-        [Description("Concat")]
-        public class ConcatInstruction : TensorInstruction
-        {
-            public override TensorFunction Function => TensorFunction.CONCAT;
-
-            [DisplayName("datatype")]
-            [Description("Datatype")]
-            public DataType DataType { get; set; }
-
-            [DisplayName("num_src")]
-            [Description("Source count")]
-            public byte SrcCount { get; set; }
-
-            [DisplayName("axis")]
-            [Description("Axis")]
-            public byte Axis { get; set; }
-
-            [DisplayName("rshape_dims")]
-            [Description("Concat dims shape register")]
-            public byte RshapeDims { get; set; }
-
-            [DisplayName("rshape_dest")]
-            [Description("Dest shape register")]
-            public byte RshapeDest { get; set; }
-
-            [DisplayName("rstride_dest")]
-            [Description("Dest stride register")]
-            public byte RstrideDest { get; set; }
-        }
-
         [DisplayName("TENSOR.CONV2D")]
         [Category("Tensor Instructions")]
         [Description("Conv2D")]
@@ -1270,6 +1238,30 @@ namespace IsaGen
             public float FusedClampHigh { get; set; }
         }
 
+        [DisplayName("TENSOR.COPY")]
+        [Category("Tensor Instructions")]
+        [Description("Copy")]
+        public class CopyInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.COPY;
+
+            [DisplayName("datatype")]
+            [Description("Datatype")]
+            public DataType DataType { get; set; }
+
+            [DisplayName("rshape")]
+            [Description("Shape register")]
+            public byte Rshape { get; set; }
+
+            [DisplayName("rstride_src")]
+            [Description("Source stride register")]
+            public byte RstrideSrc { get; set; }
+
+            [DisplayName("rstride_dest")]
+            [Description("Dest stride register")]
+            public byte RstrideDest { get; set; }
+        }
+
         [DisplayName("TENSOR.CONVERT")]
         [Category("Tensor Instructions")]
         [Description("Convert")]
@@ -1328,7 +1320,7 @@ namespace IsaGen
 
         [DisplayName("TENSOR.LUT1D")]
         [Category("Tensor Instructions")]
-        [Description("Pad")]
+        [Description("Lut1D")]
         public class LUT1DInstruction : TensorInstruction
         {
             public override TensorFunction Function => TensorFunction.LUT1D;

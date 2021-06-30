@@ -1149,24 +1149,6 @@ struct op_reader<tensor_call_op_t>
 };
 
 template <>
-struct op_reader<tensor_concat_op_t>
-{
-    tensor_concat_op_t operator()(span_reader &reader) const
-    {
-        tensor_concat_op_t op(default_init);
-        op.opcode = static_cast<opcode_t>(reader.read_unaligned<uint8_t>());
-        op.funct = static_cast<tensor_function_t>(reader.read_unaligned<uint16_t>());
-        op.datatype = static_cast<datatype_t>(reader.read_unaligned<uint8_t>());
-        op.num_src = reader.read_unaligned<uint8_t>();
-        op.axis = reader.read_unaligned<uint8_t>();
-        op.rshape_dims = reader.read_unaligned<uint8_t>();
-        op.rshape_dest = reader.read_unaligned<uint8_t>();
-        op.rstride_dest = reader.read_unaligned<uint8_t>();
-        return op;
-    }
-};
-
-template <>
 struct op_reader<tensor_conv2d_op_t>
 {
     tensor_conv2d_op_t operator()(span_reader &reader) const
@@ -1188,6 +1170,22 @@ struct op_reader<tensor_conv2d_op_t>
         op.dilation_w = reader.read_unaligned<uint16_t>();
         op.fused_clamp_low = reader.read_unaligned<float>();
         op.fused_clamp_high = reader.read_unaligned<float>();
+        return op;
+    }
+};
+
+template <>
+struct op_reader<tensor_copy_op_t>
+{
+    tensor_copy_op_t operator()(span_reader &reader) const
+    {
+        tensor_copy_op_t op(default_init);
+        op.opcode = static_cast<opcode_t>(reader.read_unaligned<uint8_t>());
+        op.funct = static_cast<tensor_function_t>(reader.read_unaligned<uint16_t>());
+        op.datatype = static_cast<datatype_t>(reader.read_unaligned<uint8_t>());
+        op.rshape = reader.read_unaligned<uint8_t>();
+        op.rstride_src = reader.read_unaligned<uint8_t>();
+        op.rstride_dest = reader.read_unaligned<uint8_t>();
         return op;
     }
 };
@@ -1504,8 +1502,8 @@ public:
     virtual result<void> visit(NNCASE_UNUSED const tensor_broadcast_op_t &op) noexcept { return ok(); }
     virtual result<void> visit(NNCASE_UNUSED const tensor_binary_op_t &op) noexcept { return ok(); }
     virtual result<void> visit(NNCASE_UNUSED const tensor_call_op_t &op) noexcept { return ok(); }
-    virtual result<void> visit(NNCASE_UNUSED const tensor_concat_op_t &op) noexcept { return ok(); }
     virtual result<void> visit(NNCASE_UNUSED const tensor_conv2d_op_t &op) noexcept { return ok(); }
+    virtual result<void> visit(NNCASE_UNUSED const tensor_copy_op_t &op) noexcept { return ok(); }
     virtual result<void> visit(NNCASE_UNUSED const tensor_convert_op_t &op) noexcept { return ok(); }
     virtual result<void> visit(NNCASE_UNUSED const tensor_dequantize_op_t &op) noexcept { return ok(); }
     virtual result<void> visit(NNCASE_UNUSED const tensor_lut1d_op_t &op) noexcept { return ok(); }

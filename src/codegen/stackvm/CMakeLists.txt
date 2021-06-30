@@ -6,9 +6,9 @@ set(SRCS module_builder.cpp
          ops/binary.cpp
          ops/broadcast.cpp
          ops/call.cpp
-         ops/concat.cpp
          ops/conv2d.cpp
          ops/convert.cpp
+         ops/copy.cpp
          ops/dequantize.cpp
          ops/pad.cpp
          ops/quantize.cpp
