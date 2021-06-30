@@ -177,7 +177,7 @@ void lstm_transform::process(transform_context &context)
     for (int32_t i = 0; i < (int32_t)(bitcast_wxc_post->output().shape()[0]); i++)
     {
         std::vector<float> cont_data((int)bitcast_wxc_post->output().shape()[1], (i == 0) ? 0.f : 1.f);
-        auto cont_ = context.graph.emplace<constant>(dt_float32, shape_t { 1, bitcast_wxc_post->output().shape()[1] }, cont_data);
+        auto cont_ = context.graph.emplace<constant>(dt_float32, shape_t { 1, 1 }, cont_data);
         cont_->name(old_lstm.name() + "/cont_" + std::to_string(i));
 
         //slice
