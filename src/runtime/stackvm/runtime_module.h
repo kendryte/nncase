@@ -1,4 +1,4 @@
-/* Copyright 2020 Canaan Inc.
+/* Copyright 2019-2021 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -147,6 +147,7 @@ protected:
     result<void> visit(const tensor_quantize_op_t &op) noexcept override;
     result<void> visit(const tensor_reduce_op_t &op) noexcept override;
     result<void> visit(const tensor_reduce_window2d_op_t &op) noexcept override;
+    result<void> visit(const tensor_resize_image_op_t &op) noexcept override;
     result<void> visit(const tensor_slice_op_t &op) noexcept override;
     result<void> visit(const tensor_transpose_op_t &op) noexcept override;
     result<void> visit(const tensor_unary_op_t &op) noexcept override;

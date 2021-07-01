@@ -1,4 +1,4 @@
-/* Copyright 2020 Canaan Inc.
+/* Copyright 2019-2021 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -27,6 +27,7 @@
 #include <nncase/ir/ops/quantize.h>
 #include <nncase/ir/ops/reduce.h>
 #include <nncase/ir/ops/reduce_window2d.h>
+#include <nncase/ir/ops/resize_image.h>
 #include <nncase/ir/ops/slice.h>
 #include <nncase/ir/ops/table_lookup.h>
 #include <nncase/ir/ops/transpose.h>

@@ -1,0 +1,170 @@
+name: compiler-python-build
+
+on: [push, pull_request]
+
+env:
+  BUILD_TYPE: Release
+  NNCASE_VERSION_SUFFIX: .dev${{github.run_number}}
+
+jobs:
+  build:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-18.04,windows-2019,macos-10.15]
+        python: [3.6,3.7,3.8,3.9]
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: seanmiddleditch/gha-setup-ninja@master
+        
+    - name: Install System Requirements
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        sudo apt update
+        sudo apt install libgtk2.0-dev -y
+        
+    - name: Install System Requirements
+      if: runner.os == 'Macos'
+      shell: bash
+      run: |
+        brew install sunnycase/core/libomp@11.1.0
+
+    - name: Add msbuild to PATH
+      if: runner.os == 'Windows'
+      uses: ilammy/msvc-dev-cmd@v1.9.0
+          
+    - name: Setup Python
+      uses: actions/setup-python@v2.2.1
+      with:
+        python-version: ${{ matrix.python }}
+        
+    - name: Install Python Requirements
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        pip install wheel auditwheel
+        
+    - name: Install Python Requirements
+      if: runner.os == 'Macos'
+      shell: bash
+      run: |
+        pip install wheel delocate
+        
+    - name: Install Python Requirements
+      if: runner.os == 'Windows'
+      shell: bash
+      run: |
+        pip install wheel
+
+    - name: Install Conan
+      shell: bash
+      run: |
+        pip install conan
+
+    - name: Configure Conan
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        conan profile new default --detect
+        conan profile update settings.compiler.libcxx=libstdc++11 default
+
+    - name: Build
+      env:
+        CC: gcc-10
+        CXX: g++-10
+      if: runner.os == 'Linux'
+      shell: bash
+      working-directory: ${{github.workspace}}/python/nncase
+      run: |
+        python setup.py bdist_wheel
+
+    - name: Build
+      if: runner.os == 'Windows'
+      shell: bash
+      working-directory: ${{github.workspace}}/python/nncase
+      run: |
+        python setup.py bdist_wheel
+
+    - name: Build
+      env:
+        MACOSX_DEPLOYMENT_TARGET: 10.15
+      if: runner.os == 'Macos'
+      shell: bash
+      working-directory: ${{github.workspace}}/python/nncase
+      run: |
+        python setup.py bdist_wheel
+      
+    - name: Upload a Build Artifact
+      uses: actions/upload-artifact@v2.2.2
+      with:
+        name: nncase-py${{matrix.python}}-${{matrix.os}}
+        path: ${{github.workspace}}/python/nncase/dist
+        if-no-files-found: error
+        
+  test:
+    needs: [build]
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-18.04,windows-2019,macos-10.15]
+        python: [3.6,3.7,3.8,3.9]
+
+    steps:
+    - uses: actions/checkout@v2
+    - uses: seanmiddleditch/gha-setup-ninja@master
+        
+    - name: Install System Requirements
+      if: runner.os == 'Macos'
+      shell: bash
+      run: |
+        brew install sunnycase/core/libomp@11.1.0
+          
+    - name: Setup Python
+      uses: actions/setup-python@v2.2.1
+      with:
+        python-version: ${{ matrix.python }}
+        
+    - name: Install Python Packages
+      if: runner.os != 'Macos'
+      shell: bash
+      run: |
+        pip install conan tensorflow==2.5.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0
+        pip install torch==1.9.0+cpu torchvision==0.10.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
+        pip install pytest
+        
+    - name: Install Python Packages
+      if: runner.os == 'Macos'
+      shell: bash
+      run: |
+        pip install conan tensorflow==2.5.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0
+        pip install torch==1.9.0 torchvision==0.10.0 -f https://download.pytorch.org/whl/torch_stable.html
+        pip install pytest
+      
+    - name: Create Test Environment
+      working-directory: ${{github.workspace}}
+      shell: bash
+      run: |
+        pip install pytest
+        mkdir test_results
+      
+    - name: Download a Build Artifact
+      uses: actions/download-artifact@v2.0.9
+      with:
+        name: nncase-py${{matrix.python}}-${{matrix.os}}
+        path: ${{github.workspace}}/install
+      
+    - name: Install nncase
+      shell: bash
+      working-directory: ${{github.workspace}}/install
+      run: |
+        find . -maxdepth 1 -type f -iname "*.whl" | head -1 | xargs pip install
+
+    - name: Test
+      working-directory: ${{github.workspace}}
+      shell: bash
+      env:
+        PYTHONPATH: ${{github.workspace}}/tests
+      run: |
+        pytest tests/other --doctest-modules --junitxml=test_results/other.xml

@@ -34,17 +34,21 @@ def _make_module(size, mode):
     return ResizeModule()
 
 in_shapes = [
-    [1, 3, 224, 224]
+    # [1, 3, 224, 224]
+    [2, 3, 32, 32]
 ]
 
 sizes = [
-    (112, 112),
-    (448, 448)
+    (16, 16),
+    (64, 64),
+    (11, 11),
+    (37, 37),
+    (37, 41)
 ]
 
 modes = [
     0, # PIL.Image.NEAREST
-    # 2,   # PIL.Image.BILINEAR
+    2,   # PIL.Image.BILINEAR
 ]
 
 @pytest.mark.parametrize('in_shape', in_shapes)
@@ -53,9 +57,9 @@ modes = [
 def test_resize(in_shape, size, mode, request):
     module = _make_module(size, mode)
 
-    runner = OnnxTestRunner(request.node.name, ['k510'])
+    runner = OnnxTestRunner(request.node.name, ['cpu', 'k210'])
     model_file = runner.from_torch(module, in_shape)
     runner.run(model_file)
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_reisze.py'])
+    pytest.main(['-vv', 'test_resize.py'])

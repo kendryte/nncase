@@ -1,40 +1,41 @@
 ﻿cmake_minimum_required(VERSION 3.13)
 
 list(APPEND CMAKE_MODULE_PATH ${CMAKE_CURRENT_LIST_DIR}/cmake/Modules)
-find_package (Git)
-execute_process(
-    COMMAND ${GIT_EXECUTABLE} describe --always --dirty
-    WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-    OUTPUT_VARIABLE GIT_DESC
-    OUTPUT_STRIP_TRAILING_WHITESPACE)
 
-if(NOT DEFINED NNCASE_VERSION_MAJOR)
-    set(NNCASE_VERSION_MAJOR 1)
+if(NOT DEFINED NNCASE_VERSION)
+    set(NNCASE_VERSION "1.0.0")
 endif()
-if(NOT DEFINED NNCASE_VERSION_MINOR)
-    set(NNCASE_VERSION_MINOR 0)
+
+if(DEFINED ENV{NNCASE_VERSION_SUFFIX})
+    set(NNCASE_VERSION_SUFFIX $ENV{NNCASE_VERSION_SUFFIX})
 endif()
-if(NOT DEFINED NNCASE_VERSION_PATCH)
-    set(NNCASE_VERSION_PATCH 0)
-endif()
+
 if(NOT DEFINED NNCASE_VERSION_SUFFIX)
-    set(NNCASE_VERSION_SUFFIX ${GIT_DESC})
+    find_package (Git)
+    execute_process(
+        COMMAND ${GIT_EXECUTABLE} describe --always --dirty
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        OUTPUT_VARIABLE GIT_DESC
+        OUTPUT_STRIP_TRAILING_WHITESPACE)
+    set(NNCASE_VERSION_SUFFIX "-${GIT_DESC}")
 endif()
 
 if (NOT PACKAGE_VERSION)
     set(PACKAGE_VERSION
-        "${NNCASE_VERSION_MAJOR}.${NNCASE_VERSION_MINOR}.${NNCASE_VERSION_PATCH}${NNCASE_VERSION_SUFFIX}")
+        "${NNCASE_VERSION}${NNCASE_VERSION_SUFFIX}")
 endif()
 
 project(nncase
-  VERSION ${NNCASE_VERSION_MAJOR}.${NNCASE_VERSION_MINOR}.${NNCASE_VERSION_PATCH}
+  VERSION ${NNCASE_VERSION}
   LANGUAGES C CXX ASM)
 
 include(cmake/conan.cmake)
 
-conan_check()
-conan_add_remote(NAME sunnycase URL https://conan.sunnycase.moe INDEX 0)
-conan_add_remote(NAME bincrafts URL https://api.bintray.com/conan/bincrafters/public-conan)
+if(NOT CONAN_EXPORTED) 
+    conan_check()
+    conan_add_remote(NAME sunnycase URL https://conan.sunnycase.moe INDEX 0)
+    conan_add_remote(NAME bincrafts URL https://api.bintray.com/conan/bincrafters/public-conan)
+endif()
 
 option(ENABLE_OPENMP "openmp support" ON)
 option(BUILD_TESTING "Build test programs" OFF)
@@ -44,18 +45,50 @@ if (ENABLE_OPENMP)
     message("Enable OpenMP")
 endif ()
 
+if(BUILD_TESTING)
+    list(APPEND CONANOPT "tests=True")
+endif()
+
+
+if (BUILDING_RUNTIME)
+    if(CONAN_EXPORTED) # in conan local cache
+        message(STATUS "Standard Conan Installation")
+        include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+        conan_basic_setup() # NOTE need manmul set cppstd in conanfile.py
+    else() # in user space
+        message(STATUS "Auto Cmake Conan Installation")
+        include(${CMAKE_SOURCE_DIR}/cmake/conan.cmake)
+        conan_cmake_run(CONANFILE conanfile-runtime.txt
+                        BASIC_SETUP
+                        SETTINGS compiler.cppstd=14
+                        BUILD missing)
+    endif()
+else()
+    if(CONAN_EXPORTED) # in conan local cache
+        message(STATUS "Standard Conan Installation")
+        include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+        conan_basic_setup() # NOTE need manmul set cppstd in conanfile.py
+    else() # in user space
+        message(STATUS "Auto Cmake Conan Installation")
+        include(${CMAKE_SOURCE_DIR}/cmake/conan.cmake)
+        conan_cmake_run(CONANFILE conanfile.py
+                        BASIC_SETUP
+                        OPTIONS ${CONANOPT}
+                        SETTINGS compiler.cppstd=20
+                        BUILD missing)
+    endif()
+endif()
+
+include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
+find_package(mpark_variant REQUIRED)
+find_package(gsl-lite REQUIRED)
+
 if (BUILDING_RUNTIME)
     option(BUILD_PYTHON_BINDING "Build python binding" ON)
     option(ENABLE_K210_RUNTIME "Enable k210 runtime" OFF)
     option(DEFAULT_BUILTIN_RUNTIMES "Use default builtin runtimes" ON)
     option(DEFAULT_SHARED_RUNTIME_TENSOR_PLATFORM_IMPL "Use default shared memory platform impl" ON)
 
-    conan_cmake_run(CONANFILE conanfile-runtime.txt
-                    BASIC_SETUP CMAKE_TARGETS
-                    SETTINGS compiler.cppstd=14
-                    BUILD missing)
-    include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
-    
     set(NNCASE_MAIN_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
     set(NNCASE_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include)
     set(THIRD_PARTY ${CMAKE_CURRENT_LIST_DIR}/third_party)
@@ -121,15 +154,20 @@ if (BUILDING_RUNTIME)
     # Modules
     add_subdirectory(modules/k210)
 else()
-    conan_cmake_run(CONANFILE conanfile.py
-                    BASIC_SETUP CMAKE_TARGETS
-                    SETTINGS compiler.cppstd=20
-                    BUILD missing)
-    include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
     set(CMAKE_SKIP_RPATH OFF)
 
-    find_package (Protobuf REQUIRED)
-    include(cmake/flatc.cmake)
+    find_package(Flatbuffers REQUIRED)
+    if(NOT CONAN_EXPORTED)
+        set(FLATBUFFERS_FLATC_EXECUTABLE ${flatbuffers_LIB_DIRS}/../bin/flatc)
+    endif()
+    find_package(fmt REQUIRED)
+    find_package(lyra REQUIRED)
+    find_package(magic_enum REQUIRED)
+    find_package(nlohmann_json REQUIRED)
+    find_package(OpenCV REQUIRED)
+    find_package(Protobuf REQUIRED)
+    find_package(xtensor REQUIRED)
+    find_package(spdlog REQUIRED)
 
     set(NNCASE_MAIN_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
     set(NNCASE_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include)
@@ -138,10 +176,10 @@ else()
     set_property(GLOBAL PROPERTY POSITION_INDEPENDENT_CODE ON)
     if (APPLE)
         set(CMAKE_MACOSX_RPATH TRUE)
-        set(CMAKE_INSTALL_RPATH "@loader_path/../lib")
+        set(CMAKE_INSTALL_RPATH "@loader_path")
         set(CMAKE_INSTALL_NAME_DIR "@rpath")
     else ()
-        set(CMAKE_INSTALL_RPATH "$ORIGIN/../lib")
+        set(CMAKE_INSTALL_RPATH "$ORIGIN")
     endif()
     
     if (MSVC)
@@ -149,12 +187,12 @@ else()
         add_compile_options(/wd4267 /wd4251 /FC /utf-8 /W3 /WX)
         set(PYBIND11_CPP_STANDARD "/std:c++latest")
     else()
-        add_compile_options(-Wall -Wextra -pedantic -Werror -Wno-multichar -Wno-missing-field-initializers -Wno-unused-function -Wno-type-limits)
+        add_compile_options(-Wall -Wextra -pedantic -Werror -Wno-multichar -Wno-missing-field-initializers -Wno-unused-function -Wno-type-limits -Wno-unused-local-typedefs -Wno-sign-compare)
         set(PYBIND11_CPP_STANDARD "-std=c++20")
         if (APPLE)
-            add_compile_options(-Wno-four-char-constants -Wno-sometimes-uninitialized)
+            add_compile_options(-Wno-four-char-constants -Wno-sometimes-uninitialized -Wno-deprecated)
         else ()
-            add_compile_options(-Wno-maybe-uninitialized)
+            add_compile_options(-Wno-maybe-uninitialized -Wno-deprecated-copy)
         endif()
     endif()
     
@@ -177,6 +215,7 @@ else()
     add_subdirectory(src/cli)
 
     if(BUILD_TESTING)
+        find_package(GTest REQUIRED)
         add_subdirectory(tests/kernels)
     endif()
     

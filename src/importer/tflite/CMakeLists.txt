@@ -1,6 +1,5 @@
 ﻿cmake_minimum_required (VERSION 3.8)
 
-find_package (Flatbuffers REQUIRED)
 build_flatbuffers("${THIRD_PARTY}/tflite/schema.fbs" "" TFLITE_FB "" "${CMAKE_CURRENT_BINARY_DIR}" "" "")
 
 set(SRCS tflite_importer.cpp
@@ -31,7 +30,7 @@ set(SRCS tflite_importer.cpp
          ops/log_softmax.cpp)
 
 add_library(tflite_importer OBJECT ${SRCS})
-target_link_libraries(tflite_importer PUBLIC ir CONAN_PKG::flatbuffers)
+target_link_libraries(tflite_importer PUBLIC ir flatbuffers)
 target_include_directories(tflite_importer PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
 add_dependencies(tflite_importer TFLITE_FB)
 set_target_properties(tflite_importer PROPERTIES POSITION_INDEPENDENT_CODE ON)
