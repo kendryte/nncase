@@ -14,2287 +14,2009 @@
 #include <google/protobuf/wire_format.h>
 // @@protoc_insertion_point(includes)
 #include <google/protobuf/port_def.inc>
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_AccuracyParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_AnnotatedDataParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_Annotation_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_AnnotationGroup_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ArgMaxParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_BatchNormParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<2> scc_info_BatchSampler_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_BiasParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_BlobProto_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_BlobShape_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_BoxAnnotatorOHEMParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_CompileNetState_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ConcatParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ContinuationIndicatorParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ContrastiveLossParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_ConvolutionParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_CropParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_DataParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_Datum_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_DetectionEvaluateParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<2> scc_info_DetectionOutputParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_DistortionParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_DropoutParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<2> scc_info_DummyDataParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ELUParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_EltwiseParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_EmbedParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_EmitConstraint_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_EvalDetectionParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ExpParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ExpansionParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_FillerParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_FlattenParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_HDF5DataParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_HDF5OutputParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_HingeLossParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ImageDataParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_InfogainLossParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_InnerProductParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_InputParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_LRNParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_LabelMapItem_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<74> scc_info_LayerParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_LogParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_LossParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_MVNParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_MemoryDataParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_MnActivationParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_MnModelParallelParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_MnParamGradCompressLayerTypeList_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_MnParamGradCompressParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_MultiBoxLossParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_MultinodeLayerParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<2> scc_info_MultinodeParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<6> scc_info_NetParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_NetState_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_NetStateRule_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_NoiseParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_NonMaximumSuppressionParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_NormalizeParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_NormalizedBBox_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_PReLUParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_PSROIPoolingParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ParamSpec_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_ParameterParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_PermuteParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_PoolingParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_PowerParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_PriorBoxParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_PythonParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_QuantizationParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ROIPoolingParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_RandomAspectRatioParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_RandomResizeParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ReLUParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_RecurrentParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ReductionParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_RegionLossParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ReorgParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_ReshapeParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ResizeParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ReverseParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_SPPParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_SaltPepperParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_SampleConstraint_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_Sampler_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_SaveOutputParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_ScaleParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_SigmoidParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_SliceParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_SmoothL1LossParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_SoftmaxParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_SolverBatchSizePair_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<2> scc_info_SolverParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_SpatialDropoutParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_SplitParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_SwishParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_TanHParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ThresholdParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_TileParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<7> scc_info_TransformationParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<3> scc_info_V0LayerParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<33> scc_info_V1LayerParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_VideoDataParameter_caffe_2eproto;
-extern PROTOBUF_INTERNAL_EXPORT_caffe_2eproto ::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_WindowDataParameter_caffe_2eproto;
+
+PROTOBUF_PRAGMA_INIT_SEG
 namespace caffe {
-class BlobShapeDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<BlobShape> _instance;
-} _BlobShape_default_instance_;
-class BlobProtoDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<BlobProto> _instance;
-} _BlobProto_default_instance_;
-class BlobProtoVectorDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<BlobProtoVector> _instance;
-} _BlobProtoVector_default_instance_;
-class DatumDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<Datum> _instance;
-} _Datum_default_instance_;
-class LabelMapItemDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<LabelMapItem> _instance;
-} _LabelMapItem_default_instance_;
-class LabelMapDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<LabelMap> _instance;
-} _LabelMap_default_instance_;
-class SamplerDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<Sampler> _instance;
-} _Sampler_default_instance_;
-class SampleConstraintDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<SampleConstraint> _instance;
-} _SampleConstraint_default_instance_;
-class BatchSamplerDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<BatchSampler> _instance;
-} _BatchSampler_default_instance_;
-class EmitConstraintDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<EmitConstraint> _instance;
-} _EmitConstraint_default_instance_;
-class NormalizedBBoxDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<NormalizedBBox> _instance;
-} _NormalizedBBox_default_instance_;
-class AnnotationDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<Annotation> _instance;
-} _Annotation_default_instance_;
-class AnnotationGroupDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<AnnotationGroup> _instance;
-} _AnnotationGroup_default_instance_;
-class AnnotatedDatumDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<AnnotatedDatum> _instance;
-} _AnnotatedDatum_default_instance_;
-class FillerParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<FillerParameter> _instance;
-} _FillerParameter_default_instance_;
-class NetParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<NetParameter> _instance;
-} _NetParameter_default_instance_;
-class CompileNetStateDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<CompileNetState> _instance;
-} _CompileNetState_default_instance_;
-class MultinodeParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<MultinodeParameter> _instance;
-} _MultinodeParameter_default_instance_;
-class MnModelParallelParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<MnModelParallelParameter> _instance;
-} _MnModelParallelParameter_default_instance_;
-class MnParamGradCompressLayerTypeListDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<MnParamGradCompressLayerTypeList> _instance;
-} _MnParamGradCompressLayerTypeList_default_instance_;
-class MultiPhaseSolverParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<MultiPhaseSolverParameter> _instance;
-} _MultiPhaseSolverParameter_default_instance_;
-class SolverBatchSizePairDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<SolverBatchSizePair> _instance;
-} _SolverBatchSizePair_default_instance_;
-class SolverParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<SolverParameter> _instance;
-} _SolverParameter_default_instance_;
-class SolverStateDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<SolverState> _instance;
-} _SolverState_default_instance_;
-class NetStateDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<NetState> _instance;
-} _NetState_default_instance_;
-class NetStateRuleDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<NetStateRule> _instance;
-} _NetStateRule_default_instance_;
-class ParamSpecDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<ParamSpec> _instance;
-} _ParamSpec_default_instance_;
-class LayerParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<LayerParameter> _instance;
-} _LayerParameter_default_instance_;
-class ContinuationIndicatorParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<ContinuationIndicatorParameter> _instance;
-} _ContinuationIndicatorParameter_default_instance_;
-class ReverseParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<ReverseParameter> _instance;
-} _ReverseParameter_default_instance_;
-class RegionLossParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<RegionLossParameter> _instance;
-} _RegionLossParameter_default_instance_;
-class EvalDetectionParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<EvalDetectionParameter> _instance;
-} _EvalDetectionParameter_default_instance_;
-class MultinodeLayerParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<MultinodeLayerParameter> _instance;
-} _MultinodeLayerParameter_default_instance_;
-class MnActivationParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<MnActivationParameter> _instance;
-} _MnActivationParameter_default_instance_;
-class QuantizationParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<QuantizationParameter> _instance;
-} _QuantizationParameter_default_instance_;
-class MnParamGradCompressParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<MnParamGradCompressParameter> _instance;
-} _MnParamGradCompressParameter_default_instance_;
-class TransformationParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<TransformationParameter> _instance;
-} _TransformationParameter_default_instance_;
-class RandomResizeParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<RandomResizeParameter> _instance;
-} _RandomResizeParameter_default_instance_;
-class RandomAspectRatioParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<RandomAspectRatioParameter> _instance;
-} _RandomAspectRatioParameter_default_instance_;
-class ResizeParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<ResizeParameter> _instance;
-} _ResizeParameter_default_instance_;
-class SaltPepperParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<SaltPepperParameter> _instance;
-} _SaltPepperParameter_default_instance_;
-class NoiseParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<NoiseParameter> _instance;
-} _NoiseParameter_default_instance_;
-class DistortionParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<DistortionParameter> _instance;
-} _DistortionParameter_default_instance_;
-class ExpansionParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<ExpansionParameter> _instance;
-} _ExpansionParameter_default_instance_;
-class LossParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<LossParameter> _instance;
-} _LossParameter_default_instance_;
-class AccuracyParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<AccuracyParameter> _instance;
-} _AccuracyParameter_default_instance_;
-class AnnotatedDataParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<AnnotatedDataParameter> _instance;
-} _AnnotatedDataParameter_default_instance_;
-class ArgMaxParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<ArgMaxParameter> _instance;
-} _ArgMaxParameter_default_instance_;
-class ConcatParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<ConcatParameter> _instance;
-} _ConcatParameter_default_instance_;
-class BatchNormParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<BatchNormParameter> _instance;
-} _BatchNormParameter_default_instance_;
-class SplitParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<SplitParameter> _instance;
-} _SplitParameter_default_instance_;
-class BoxAnnotatorOHEMParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<BoxAnnotatorOHEMParameter> _instance;
-} _BoxAnnotatorOHEMParameter_default_instance_;
-class BiasParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<BiasParameter> _instance;
-} _BiasParameter_default_instance_;
-class ContrastiveLossParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<ContrastiveLossParameter> _instance;
-} _ContrastiveLossParameter_default_instance_;
-class ReorgParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<ReorgParameter> _instance;
-} _ReorgParameter_default_instance_;
-class ConvolutionParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<ConvolutionParameter> _instance;
-} _ConvolutionParameter_default_instance_;
-class CropParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<CropParameter> _instance;
-} _CropParameter_default_instance_;
-class DataParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<DataParameter> _instance;
-} _DataParameter_default_instance_;
-class DetectionEvaluateParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<DetectionEvaluateParameter> _instance;
-} _DetectionEvaluateParameter_default_instance_;
-class NonMaximumSuppressionParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<NonMaximumSuppressionParameter> _instance;
-} _NonMaximumSuppressionParameter_default_instance_;
-class SaveOutputParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<SaveOutputParameter> _instance;
-} _SaveOutputParameter_default_instance_;
-class DetectionOutputParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<DetectionOutputParameter> _instance;
-} _DetectionOutputParameter_default_instance_;
-class DropoutParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<DropoutParameter> _instance;
-} _DropoutParameter_default_instance_;
-class SpatialDropoutParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<SpatialDropoutParameter> _instance;
-} _SpatialDropoutParameter_default_instance_;
-class DummyDataParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<DummyDataParameter> _instance;
-} _DummyDataParameter_default_instance_;
-class EltwiseParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<EltwiseParameter> _instance;
-} _EltwiseParameter_default_instance_;
-class ELUParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<ELUParameter> _instance;
-} _ELUParameter_default_instance_;
-class EmbedParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<EmbedParameter> _instance;
-} _EmbedParameter_default_instance_;
-class ExpParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<ExpParameter> _instance;
-} _ExpParameter_default_instance_;
-class FlattenParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<FlattenParameter> _instance;
-} _FlattenParameter_default_instance_;
-class HDF5DataParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<HDF5DataParameter> _instance;
-} _HDF5DataParameter_default_instance_;
-class HDF5OutputParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<HDF5OutputParameter> _instance;
-} _HDF5OutputParameter_default_instance_;
-class HingeLossParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<HingeLossParameter> _instance;
-} _HingeLossParameter_default_instance_;
-class ImageDataParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<ImageDataParameter> _instance;
-} _ImageDataParameter_default_instance_;
-class InfogainLossParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<InfogainLossParameter> _instance;
-} _InfogainLossParameter_default_instance_;
-class InnerProductParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<InnerProductParameter> _instance;
-} _InnerProductParameter_default_instance_;
-class InputParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<InputParameter> _instance;
-} _InputParameter_default_instance_;
-class LogParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<LogParameter> _instance;
-} _LogParameter_default_instance_;
-class LRNParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<LRNParameter> _instance;
-} _LRNParameter_default_instance_;
-class MemoryDataParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<MemoryDataParameter> _instance;
-} _MemoryDataParameter_default_instance_;
-class MultiBoxLossParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<MultiBoxLossParameter> _instance;
-} _MultiBoxLossParameter_default_instance_;
-class MVNParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<MVNParameter> _instance;
-} _MVNParameter_default_instance_;
-class NormalizeParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<NormalizeParameter> _instance;
-} _NormalizeParameter_default_instance_;
-class ParameterParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<ParameterParameter> _instance;
-} _ParameterParameter_default_instance_;
-class PermuteParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<PermuteParameter> _instance;
-} _PermuteParameter_default_instance_;
-class PoolingParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<PoolingParameter> _instance;
-} _PoolingParameter_default_instance_;
-class PowerParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<PowerParameter> _instance;
-} _PowerParameter_default_instance_;
-class PriorBoxParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<PriorBoxParameter> _instance;
-} _PriorBoxParameter_default_instance_;
-class PSROIPoolingParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<PSROIPoolingParameter> _instance;
-} _PSROIPoolingParameter_default_instance_;
-class PythonParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<PythonParameter> _instance;
-} _PythonParameter_default_instance_;
-class RecurrentParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<RecurrentParameter> _instance;
-} _RecurrentParameter_default_instance_;
-class ReductionParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<ReductionParameter> _instance;
-} _ReductionParameter_default_instance_;
-class ReLUParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<ReLUParameter> _instance;
-} _ReLUParameter_default_instance_;
-class ReshapeParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<ReshapeParameter> _instance;
-} _ReshapeParameter_default_instance_;
-class ROIPoolingParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<ROIPoolingParameter> _instance;
-} _ROIPoolingParameter_default_instance_;
-class ScaleParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<ScaleParameter> _instance;
-} _ScaleParameter_default_instance_;
-class SigmoidParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<SigmoidParameter> _instance;
-} _SigmoidParameter_default_instance_;
-class SliceParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<SliceParameter> _instance;
-} _SliceParameter_default_instance_;
-class SmoothL1LossParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<SmoothL1LossParameter> _instance;
-} _SmoothL1LossParameter_default_instance_;
-class SoftmaxParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<SoftmaxParameter> _instance;
-} _SoftmaxParameter_default_instance_;
-class SwishParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<SwishParameter> _instance;
-} _SwishParameter_default_instance_;
-class TanHParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<TanHParameter> _instance;
-} _TanHParameter_default_instance_;
-class TileParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<TileParameter> _instance;
-} _TileParameter_default_instance_;
-class ThresholdParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<ThresholdParameter> _instance;
-} _ThresholdParameter_default_instance_;
-class VideoDataParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<VideoDataParameter> _instance;
-} _VideoDataParameter_default_instance_;
-class WindowDataParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<WindowDataParameter> _instance;
-} _WindowDataParameter_default_instance_;
-class SPPParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<SPPParameter> _instance;
-} _SPPParameter_default_instance_;
-class V1LayerParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<V1LayerParameter> _instance;
-} _V1LayerParameter_default_instance_;
-class V0LayerParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<V0LayerParameter> _instance;
-} _V0LayerParameter_default_instance_;
-class PReLUParameterDefaultTypeInternal {
- public:
-  ::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<PReLUParameter> _instance;
-} _PReLUParameter_default_instance_;
+constexpr BlobShape::BlobShape(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : dim_()
+  , _dim_cached_byte_size_(){}
+struct BlobShapeDefaultTypeInternal {
+  constexpr BlobShapeDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~BlobShapeDefaultTypeInternal() {}
+  union {
+    BlobShape _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT BlobShapeDefaultTypeInternal _BlobShape_default_instance_;
+constexpr BlobProto::BlobProto(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : data_()
+  , diff_()
+  , double_data_()
+  , double_diff_()
+  , shape_(nullptr)
+  , num_(0)
+  , channels_(0)
+  , height_(0)
+  , width_(0){}
+struct BlobProtoDefaultTypeInternal {
+  constexpr BlobProtoDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~BlobProtoDefaultTypeInternal() {}
+  union {
+    BlobProto _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT BlobProtoDefaultTypeInternal _BlobProto_default_instance_;
+constexpr BlobProtoVector::BlobProtoVector(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : blobs_(){}
+struct BlobProtoVectorDefaultTypeInternal {
+  constexpr BlobProtoVectorDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~BlobProtoVectorDefaultTypeInternal() {}
+  union {
+    BlobProtoVector _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT BlobProtoVectorDefaultTypeInternal _BlobProtoVector_default_instance_;
+constexpr Datum::Datum(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : float_data_()
+  , data_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , channels_(0)
+  , height_(0)
+  , width_(0)
+  , label_(0)
+  , encoded_(false){}
+struct DatumDefaultTypeInternal {
+  constexpr DatumDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~DatumDefaultTypeInternal() {}
+  union {
+    Datum _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT DatumDefaultTypeInternal _Datum_default_instance_;
+constexpr LabelMapItem::LabelMapItem(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : name_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , display_name_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , label_(0){}
+struct LabelMapItemDefaultTypeInternal {
+  constexpr LabelMapItemDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~LabelMapItemDefaultTypeInternal() {}
+  union {
+    LabelMapItem _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT LabelMapItemDefaultTypeInternal _LabelMapItem_default_instance_;
+constexpr LabelMap::LabelMap(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : item_(){}
+struct LabelMapDefaultTypeInternal {
+  constexpr LabelMapDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~LabelMapDefaultTypeInternal() {}
+  union {
+    LabelMap _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT LabelMapDefaultTypeInternal _LabelMap_default_instance_;
+constexpr Sampler::Sampler(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : min_scale_(1)
+  , max_scale_(1)
+  , min_aspect_ratio_(1)
+  , max_aspect_ratio_(1){}
+struct SamplerDefaultTypeInternal {
+  constexpr SamplerDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~SamplerDefaultTypeInternal() {}
+  union {
+    Sampler _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT SamplerDefaultTypeInternal _Sampler_default_instance_;
+constexpr SampleConstraint::SampleConstraint(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : min_jaccard_overlap_(0)
+  , max_jaccard_overlap_(0)
+  , min_sample_coverage_(0)
+  , max_sample_coverage_(0)
+  , min_object_coverage_(0)
+  , max_object_coverage_(0){}
+struct SampleConstraintDefaultTypeInternal {
+  constexpr SampleConstraintDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~SampleConstraintDefaultTypeInternal() {}
+  union {
+    SampleConstraint _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT SampleConstraintDefaultTypeInternal _SampleConstraint_default_instance_;
+constexpr BatchSampler::BatchSampler(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : sampler_(nullptr)
+  , sample_constraint_(nullptr)
+  , max_sample_(0u)
+  , use_original_image_(true)
+  , max_trials_(100u){}
+struct BatchSamplerDefaultTypeInternal {
+  constexpr BatchSamplerDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~BatchSamplerDefaultTypeInternal() {}
+  union {
+    BatchSampler _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT BatchSamplerDefaultTypeInternal _BatchSampler_default_instance_;
+constexpr EmitConstraint::EmitConstraint(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : emit_type_(0)
+
+  , emit_overlap_(0){}
+struct EmitConstraintDefaultTypeInternal {
+  constexpr EmitConstraintDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~EmitConstraintDefaultTypeInternal() {}
+  union {
+    EmitConstraint _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT EmitConstraintDefaultTypeInternal _EmitConstraint_default_instance_;
+constexpr NormalizedBBox::NormalizedBBox(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : xmin_(0)
+  , ymin_(0)
+  , xmax_(0)
+  , ymax_(0)
+  , label_(0)
+  , difficult_(false)
+  , score_(0)
+  , size_(0){}
+struct NormalizedBBoxDefaultTypeInternal {
+  constexpr NormalizedBBoxDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~NormalizedBBoxDefaultTypeInternal() {}
+  union {
+    NormalizedBBox _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT NormalizedBBoxDefaultTypeInternal _NormalizedBBox_default_instance_;
+constexpr Annotation::Annotation(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : bbox_(nullptr)
+  , instance_id_(0){}
+struct AnnotationDefaultTypeInternal {
+  constexpr AnnotationDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~AnnotationDefaultTypeInternal() {}
+  union {
+    Annotation _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT AnnotationDefaultTypeInternal _Annotation_default_instance_;
+constexpr AnnotationGroup::AnnotationGroup(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : annotation_()
+  , group_label_(0){}
+struct AnnotationGroupDefaultTypeInternal {
+  constexpr AnnotationGroupDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~AnnotationGroupDefaultTypeInternal() {}
+  union {
+    AnnotationGroup _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT AnnotationGroupDefaultTypeInternal _AnnotationGroup_default_instance_;
+constexpr AnnotatedDatum::AnnotatedDatum(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : annotation_group_()
+  , datum_(nullptr)
+  , type_(0)
+{}
+struct AnnotatedDatumDefaultTypeInternal {
+  constexpr AnnotatedDatumDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~AnnotatedDatumDefaultTypeInternal() {}
+  union {
+    AnnotatedDatum _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT AnnotatedDatumDefaultTypeInternal _AnnotatedDatum_default_instance_;
+constexpr FillerParameter::FillerParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : type_(nullptr)
+  , value_(0)
+  , min_(0)
+  , mean_(0)
+  , variance_norm_(0)
+
+  , max_(1)
+  , std_(1)
+  , sparse_(-1)
+  , scale_(1){}
+struct FillerParameterDefaultTypeInternal {
+  constexpr FillerParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~FillerParameterDefaultTypeInternal() {}
+  union {
+    FillerParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT FillerParameterDefaultTypeInternal _FillerParameter_default_instance_;
+constexpr NetParameter::NetParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : layers_()
+  , input_()
+  , input_dim_()
+  , input_shape_()
+  , layer_()
+  , name_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , engine_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , state_(nullptr)
+  , compile_net_state_(nullptr)
+  , multinode_(nullptr)
+  , force_backward_(false)
+  , debug_info_(false)
+  , bn_stats_batch_size_(0u){}
+struct NetParameterDefaultTypeInternal {
+  constexpr NetParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~NetParameterDefaultTypeInternal() {}
+  union {
+    NetParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT NetParameterDefaultTypeInternal _NetParameter_default_instance_;
+constexpr CompileNetState::CompileNetState(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : kept_bn_layers_()
+  , negative_conv_names_()
+  , negative_conv_indexes_()
+  , bn_scale_remove_(false)
+  , bn_scale_merge_(false)
+  , is_init_(true){}
+struct CompileNetStateDefaultTypeInternal {
+  constexpr CompileNetStateDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~CompileNetStateDefaultTypeInternal() {}
+  union {
+    CompileNetState _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT CompileNetStateDefaultTypeInternal _CompileNetState_default_instance_;
+constexpr MultinodeParameter::MultinodeParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : model_parallel_()
+  , compress_layer_type_list_(nullptr){}
+struct MultinodeParameterDefaultTypeInternal {
+  constexpr MultinodeParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~MultinodeParameterDefaultTypeInternal() {}
+  union {
+    MultinodeParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT MultinodeParameterDefaultTypeInternal _MultinodeParameter_default_instance_;
+constexpr MnModelParallelParameter::MnModelParallelParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : layer_from_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , layer_to_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , num_nodes_(0u)
+  , model_parts_(0u){}
+struct MnModelParallelParameterDefaultTypeInternal {
+  constexpr MnModelParallelParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~MnModelParallelParameterDefaultTypeInternal() {}
+  union {
+    MnModelParallelParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT MnModelParallelParameterDefaultTypeInternal _MnModelParallelParameter_default_instance_;
+constexpr MnParamGradCompressLayerTypeList::MnParamGradCompressLayerTypeList(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : layer_type_(){}
+struct MnParamGradCompressLayerTypeListDefaultTypeInternal {
+  constexpr MnParamGradCompressLayerTypeListDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~MnParamGradCompressLayerTypeListDefaultTypeInternal() {}
+  union {
+    MnParamGradCompressLayerTypeList _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT MnParamGradCompressLayerTypeListDefaultTypeInternal _MnParamGradCompressLayerTypeList_default_instance_;
+constexpr MultiPhaseSolverParameter::MultiPhaseSolverParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : params_pair_(){}
+struct MultiPhaseSolverParameterDefaultTypeInternal {
+  constexpr MultiPhaseSolverParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~MultiPhaseSolverParameterDefaultTypeInternal() {}
+  union {
+    MultiPhaseSolverParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT MultiPhaseSolverParameterDefaultTypeInternal _MultiPhaseSolverParameter_default_instance_;
+constexpr SolverBatchSizePair::SolverBatchSizePair(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : solver_params_(nullptr)
+  , batch_size_(0u){}
+struct SolverBatchSizePairDefaultTypeInternal {
+  constexpr SolverBatchSizePairDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~SolverBatchSizePairDefaultTypeInternal() {}
+  union {
+    SolverBatchSizePair _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT SolverBatchSizePairDefaultTypeInternal _SolverBatchSizePair_default_instance_;
+constexpr SolverParameter::SolverParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : test_net_()
+  , test_iter_()
+  , test_net_param_()
+  , test_state_()
+  , stepvalue_()
+  , plateau_winsize_()
+  , stagelr_()
+  , stageiter_()
+  , train_net_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , lr_policy_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , snapshot_prefix_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , net_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , regularization_type_(nullptr)
+  , type_(nullptr)
+  , eval_type_(nullptr)
+  , ap_version_(nullptr)
+  , engine_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , train_net_param_(nullptr)
+  , net_param_(nullptr)
+  , train_state_(nullptr)
+  , test_interval_(0)
+  , base_lr_(0)
+  , display_(0)
+  , max_iter_(0)
+  , gamma_(0)
+  , power_(0)
+  , momentum_(0)
+  , weight_decay_(0)
+  , stepsize_(0)
+  , snapshot_(0)
+  , device_id_(0)
+  , show_per_class_result_(false)
+  , test_compute_loss_(false)
+  , snapshot_diff_(false)
+  , debug_info_(false)
+  , solver_type_(0)
+
+  , warmup_iter_(0)
+  , disabled_update_(false)
+  , local_lr_auto_(false)
+  , warmup_start_lr_(0)
+  , test_offset_(0)
+  , random_seed_(int64_t{-1})
+  , solver_mode_(1)
+
+  , test_initialization_(true)
+  , snapshot_after_train_(true)
+  , delta_(1e-08f)
+  , average_loss_(1)
+  , clip_gradients_(-1)
+  , iter_size_(1)
+  , snapshot_format_(1)
+
+  , rms_decay_(0.99f)
+  , momentum2_(0.999f)
+  , local_gw_ratio_(0.001f){}
+struct SolverParameterDefaultTypeInternal {
+  constexpr SolverParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~SolverParameterDefaultTypeInternal() {}
+  union {
+    SolverParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT SolverParameterDefaultTypeInternal _SolverParameter_default_instance_;
+constexpr SolverState::SolverState(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : history_()
+  , learned_net_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , iter_(0)
+  , current_step_(0)
+  , iter_last_event_(0)
+  , minimum_loss_(1e+38f){}
+struct SolverStateDefaultTypeInternal {
+  constexpr SolverStateDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~SolverStateDefaultTypeInternal() {}
+  union {
+    SolverState _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT SolverStateDefaultTypeInternal _SolverState_default_instance_;
+constexpr NetState::NetState(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : stage_()
+  , level_(0)
+  , phase_(1)
+{}
+struct NetStateDefaultTypeInternal {
+  constexpr NetStateDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~NetStateDefaultTypeInternal() {}
+  union {
+    NetState _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT NetStateDefaultTypeInternal _NetState_default_instance_;
+constexpr NetStateRule::NetStateRule(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : stage_()
+  , not_stage_()
+  , phase_(0)
+
+  , min_level_(0)
+  , max_level_(0){}
+struct NetStateRuleDefaultTypeInternal {
+  constexpr NetStateRuleDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~NetStateRuleDefaultTypeInternal() {}
+  union {
+    NetStateRule _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT NetStateRuleDefaultTypeInternal _NetStateRule_default_instance_;
+constexpr ParamSpec::ParamSpec(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : name_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , share_mode_(0)
+
+  , lr_mult_(1)
+  , decay_mult_(1){}
+struct ParamSpecDefaultTypeInternal {
+  constexpr ParamSpecDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~ParamSpecDefaultTypeInternal() {}
+  union {
+    ParamSpec _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT ParamSpecDefaultTypeInternal _ParamSpec_default_instance_;
+constexpr LayerParameter::LayerParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : bottom_()
+  , top_()
+  , loss_weight_()
+  , param_()
+  , blobs_()
+  , include_()
+  , exclude_()
+  , propagate_down_()
+  , name_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , type_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , engine_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , transform_param_(nullptr)
+  , loss_param_(nullptr)
+  , accuracy_param_(nullptr)
+  , argmax_param_(nullptr)
+  , concat_param_(nullptr)
+  , contrastive_loss_param_(nullptr)
+  , convolution_param_(nullptr)
+  , data_param_(nullptr)
+  , dropout_param_(nullptr)
+  , dummy_data_param_(nullptr)
+  , eltwise_param_(nullptr)
+  , exp_param_(nullptr)
+  , hdf5_data_param_(nullptr)
+  , hdf5_output_param_(nullptr)
+  , hinge_loss_param_(nullptr)
+  , image_data_param_(nullptr)
+  , infogain_loss_param_(nullptr)
+  , inner_product_param_(nullptr)
+  , lrn_param_(nullptr)
+  , memory_data_param_(nullptr)
+  , mvn_param_(nullptr)
+  , pooling_param_(nullptr)
+  , power_param_(nullptr)
+  , relu_param_(nullptr)
+  , sigmoid_param_(nullptr)
+  , softmax_param_(nullptr)
+  , slice_param_(nullptr)
+  , tanh_param_(nullptr)
+  , threshold_param_(nullptr)
+  , window_data_param_(nullptr)
+  , python_param_(nullptr)
+  , prelu_param_(nullptr)
+  , spp_param_(nullptr)
+  , reshape_param_(nullptr)
+  , log_param_(nullptr)
+  , flatten_param_(nullptr)
+  , reduction_param_(nullptr)
+  , embed_param_(nullptr)
+  , tile_param_(nullptr)
+  , batch_norm_param_(nullptr)
+  , elu_param_(nullptr)
+  , bias_param_(nullptr)
+  , scale_param_(nullptr)
+  , input_param_(nullptr)
+  , crop_param_(nullptr)
+  , parameter_param_(nullptr)
+  , recurrent_param_(nullptr)
+  , swish_param_(nullptr)
+  , smooth_l1_loss_param_(nullptr)
+  , multinode_(nullptr)
+  , mn_activation_param_(nullptr)
+  , box_annotator_ohem_param_(nullptr)
+  , psroi_pooling_param_(nullptr)
+  , roi_pooling_param_(nullptr)
+  , spatial_dropout_param_(nullptr)
+  , mn_grad_compress_param_(nullptr)
+  , quantization_param_(nullptr)
+  , reorg_param_(nullptr)
+  , annotated_data_param_(nullptr)
+  , multibox_loss_param_(nullptr)
+  , permute_param_(nullptr)
+  , prior_box_param_(nullptr)
+  , detection_output_param_(nullptr)
+  , detection_evaluate_param_(nullptr)
+  , norm_param_(nullptr)
+  , video_data_param_(nullptr)
+  , split_param_(nullptr)
+  , region_loss_param_(nullptr)
+  , eval_detection_param_(nullptr)
+  , continuation_indicator_param_(nullptr)
+  , reverse_param_(nullptr)
+  , phase_(0)
+{}
+struct LayerParameterDefaultTypeInternal {
+  constexpr LayerParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~LayerParameterDefaultTypeInternal() {}
+  union {
+    LayerParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT LayerParameterDefaultTypeInternal _LayerParameter_default_instance_;
+constexpr ContinuationIndicatorParameter::ContinuationIndicatorParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : time_step_(0u)
+  , batch_size_(0u){}
+struct ContinuationIndicatorParameterDefaultTypeInternal {
+  constexpr ContinuationIndicatorParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~ContinuationIndicatorParameterDefaultTypeInternal() {}
+  union {
+    ContinuationIndicatorParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT ContinuationIndicatorParameterDefaultTypeInternal _ContinuationIndicatorParameter_default_instance_;
+constexpr ReverseParameter::ReverseParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : axis_(0){}
+struct ReverseParameterDefaultTypeInternal {
+  constexpr ReverseParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~ReverseParameterDefaultTypeInternal() {}
+  union {
+    ReverseParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT ReverseParameterDefaultTypeInternal _ReverseParameter_default_instance_;
+constexpr RegionLossParameter::RegionLossParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : biases_()
+  , softmax_tree_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , class_map_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , random_(1u)
+  , side_(13u)
+  , num_class_(20u)
+  , bias_match_(1u)
+  , coords_(4u)
+  , num_(5u)
+  , softmax_(1u)
+  , jitter_(0.2f)
+  , rescore_(1u)
+  , object_scale_(1)
+  , class_scale_(1)
+  , noobject_scale_(0.5f)
+  , coord_scale_(5)
+  , absolute_(1u)
+  , thresh_(0.2f){}
+struct RegionLossParameterDefaultTypeInternal {
+  constexpr RegionLossParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~RegionLossParameterDefaultTypeInternal() {}
+  union {
+    RegionLossParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT RegionLossParameterDefaultTypeInternal _RegionLossParameter_default_instance_;
+constexpr EvalDetectionParameter::EvalDetectionParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : biases_()
+  , nms_(-1)
+  , side_(7u)
+  , num_class_(20u)
+  , num_object_(2u)
+  , threshold_(0.5f)
+  , sqrt_(true)
+  , constriant_(true)
+  , score_type_(2)
+{}
+struct EvalDetectionParameterDefaultTypeInternal {
+  constexpr EvalDetectionParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~EvalDetectionParameterDefaultTypeInternal() {}
+  union {
+    EvalDetectionParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT EvalDetectionParameterDefaultTypeInternal _EvalDetectionParameter_default_instance_;
+constexpr MultinodeLayerParameter::MultinodeLayerParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : num_nodes_(0u)
+  , model_parts_(1u){}
+struct MultinodeLayerParameterDefaultTypeInternal {
+  constexpr MultinodeLayerParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~MultinodeLayerParameterDefaultTypeInternal() {}
+  union {
+    MultinodeLayerParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT MultinodeLayerParameterDefaultTypeInternal _MultinodeLayerParameter_default_instance_;
+constexpr MnActivationParameter::MnActivationParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : num_nodes_in_(0u)
+  , num_nodes_out_(0u)
+  , need_reduce_(true)
+  , model_parts_in_(1u)
+  , model_parts_out_(1u){}
+struct MnActivationParameterDefaultTypeInternal {
+  constexpr MnActivationParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~MnActivationParameterDefaultTypeInternal() {}
+  union {
+    MnActivationParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT MnActivationParameterDefaultTypeInternal _MnActivationParameter_default_instance_;
+constexpr QuantizationParameter::QuantizationParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : fl_layer_in_()
+  , fl_layer_out_()
+  , fl_params_()
+  , scale_in_()
+  , scale_out_()
+  , scale_params_()
+  , precision_(0)
+
+  , rounding_scheme_(0)
+
+  , is_negative_input_(false)
+  , force_u8_input_(false)
+  , bw_params_(32u)
+  , bw_layer_in_(32u)
+  , bw_layer_out_(32u){}
+struct QuantizationParameterDefaultTypeInternal {
+  constexpr QuantizationParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~QuantizationParameterDefaultTypeInternal() {}
+  union {
+    QuantizationParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT QuantizationParameterDefaultTypeInternal _QuantizationParameter_default_instance_;
+constexpr MnParamGradCompressParameter::MnParamGradCompressParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : param_grad_compress_enable_(){}
+struct MnParamGradCompressParameterDefaultTypeInternal {
+  constexpr MnParamGradCompressParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~MnParamGradCompressParameterDefaultTypeInternal() {}
+  union {
+    MnParamGradCompressParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT MnParamGradCompressParameterDefaultTypeInternal _MnParamGradCompressParameter_default_instance_;
+constexpr TransformationParameter::TransformationParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : mean_value_()
+  , mean_file_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , resize_param_(nullptr)
+  , noise_param_(nullptr)
+  , emit_constraint_(nullptr)
+  , distort_param_(nullptr)
+  , expand_param_(nullptr)
+  , random_resize_param_(nullptr)
+  , random_aspect_ratio_param_(nullptr)
+  , crop_size_(0u)
+  , mirror_(false)
+  , force_color_(false)
+  , force_gray_(false)
+  , flow_(false)
+  , crop_h_(0u)
+  , crop_w_(0u)
+  , bgr2rgb_(false)
+  , pad_(0u)
+  , scale_(1){}
+struct TransformationParameterDefaultTypeInternal {
+  constexpr TransformationParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~TransformationParameterDefaultTypeInternal() {}
+  union {
+    TransformationParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT TransformationParameterDefaultTypeInternal _TransformationParameter_default_instance_;
+constexpr RandomResizeParameter::RandomResizeParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : resize_param_(nullptr)
+  , min_size_(0u)
+  , max_size_(0u){}
+struct RandomResizeParameterDefaultTypeInternal {
+  constexpr RandomResizeParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~RandomResizeParameterDefaultTypeInternal() {}
+  union {
+    RandomResizeParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT RandomResizeParameterDefaultTypeInternal _RandomResizeParameter_default_instance_;
+constexpr RandomAspectRatioParameter::RandomAspectRatioParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : resize_param_(nullptr)
+  , min_area_ratio_(0.5f)
+  , max_area_ratio_(1)
+  , aspect_ratio_change_(1)
+  , max_attempt_(10u){}
+struct RandomAspectRatioParameterDefaultTypeInternal {
+  constexpr RandomAspectRatioParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~RandomAspectRatioParameterDefaultTypeInternal() {}
+  union {
+    RandomAspectRatioParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT RandomAspectRatioParameterDefaultTypeInternal _RandomAspectRatioParameter_default_instance_;
+constexpr ResizeParameter::ResizeParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : pad_value_()
+  , interp_mode_()
+  , height_(0u)
+  , width_(0u)
+  , height_scale_(0u)
+  , width_scale_(0u)
+  , pad_mode_(1)
+
+  , prob_(1)
+  , resize_mode_(1)
+{}
+struct ResizeParameterDefaultTypeInternal {
+  constexpr ResizeParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~ResizeParameterDefaultTypeInternal() {}
+  union {
+    ResizeParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT ResizeParameterDefaultTypeInternal _ResizeParameter_default_instance_;
+constexpr SaltPepperParameter::SaltPepperParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : value_()
+  , fraction_(0){}
+struct SaltPepperParameterDefaultTypeInternal {
+  constexpr SaltPepperParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~SaltPepperParameterDefaultTypeInternal() {}
+  union {
+    SaltPepperParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT SaltPepperParameterDefaultTypeInternal _SaltPepperParameter_default_instance_;
+constexpr NoiseParameter::NoiseParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : saltpepper_param_(nullptr)
+  , prob_(0)
+  , hist_eq_(false)
+  , inverse_(false)
+  , decolorize_(false)
+  , gauss_blur_(false)
+  , posterize_(false)
+  , erode_(false)
+  , saltpepper_(false)
+  , clahe_(false)
+  , convert_to_hsv_(false)
+  , convert_to_lab_(false)
+  , jpeg_(-1){}
+struct NoiseParameterDefaultTypeInternal {
+  constexpr NoiseParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~NoiseParameterDefaultTypeInternal() {}
+  union {
+    NoiseParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT NoiseParameterDefaultTypeInternal _NoiseParameter_default_instance_;
+constexpr DistortionParameter::DistortionParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : brightness_prob_(0)
+  , brightness_delta_(0)
+  , contrast_prob_(0)
+  , contrast_lower_(0)
+  , contrast_upper_(0)
+  , hue_prob_(0)
+  , hue_delta_(0)
+  , saturation_prob_(0)
+  , saturation_lower_(0)
+  , saturation_upper_(0)
+  , random_order_prob_(0){}
+struct DistortionParameterDefaultTypeInternal {
+  constexpr DistortionParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~DistortionParameterDefaultTypeInternal() {}
+  union {
+    DistortionParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT DistortionParameterDefaultTypeInternal _DistortionParameter_default_instance_;
+constexpr ExpansionParameter::ExpansionParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : prob_(1)
+  , max_expand_ratio_(1){}
+struct ExpansionParameterDefaultTypeInternal {
+  constexpr ExpansionParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~ExpansionParameterDefaultTypeInternal() {}
+  union {
+    ExpansionParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT ExpansionParameterDefaultTypeInternal _ExpansionParameter_default_instance_;
+constexpr LossParameter::LossParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : ignore_label_(0)
+  , normalize_(false)
+  , label_smoothing_(0)
+  , normalization_(1)
+
+  , pre_fixed_normalizer_(1){}
+struct LossParameterDefaultTypeInternal {
+  constexpr LossParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~LossParameterDefaultTypeInternal() {}
+  union {
+    LossParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT LossParameterDefaultTypeInternal _LossParameter_default_instance_;
+constexpr AccuracyParameter::AccuracyParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : ignore_label_(0)
+  , top_k_(1u)
+  , axis_(1){}
+struct AccuracyParameterDefaultTypeInternal {
+  constexpr AccuracyParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~AccuracyParameterDefaultTypeInternal() {}
+  union {
+    AccuracyParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT AccuracyParameterDefaultTypeInternal _AccuracyParameter_default_instance_;
+constexpr AnnotatedDataParameter::AnnotatedDataParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : batch_sampler_()
+  , label_map_file_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , anno_type_(0)
+{}
+struct AnnotatedDataParameterDefaultTypeInternal {
+  constexpr AnnotatedDataParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~AnnotatedDataParameterDefaultTypeInternal() {}
+  union {
+    AnnotatedDataParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT AnnotatedDataParameterDefaultTypeInternal _AnnotatedDataParameter_default_instance_;
+constexpr ArgMaxParameter::ArgMaxParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : out_max_val_(false)
+  , axis_(0)
+  , top_k_(1u){}
+struct ArgMaxParameterDefaultTypeInternal {
+  constexpr ArgMaxParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~ArgMaxParameterDefaultTypeInternal() {}
+  union {
+    ArgMaxParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT ArgMaxParameterDefaultTypeInternal _ArgMaxParameter_default_instance_;
+constexpr ConcatParameter::ConcatParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : engine_(0)
+
+  , per_fla_fuse_(false)
+  , concat_dim_(1u)
+  , axis_(1){}
+struct ConcatParameterDefaultTypeInternal {
+  constexpr ConcatParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~ConcatParameterDefaultTypeInternal() {}
+  union {
+    ConcatParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT ConcatParameterDefaultTypeInternal _ConcatParameter_default_instance_;
+constexpr BatchNormParameter::BatchNormParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : filler_(nullptr)
+  , bias_filler_(nullptr)
+  , engine_(0)
+
+  , use_global_stats_(false)
+  , relu_(false)
+  , stats_batch_size_(0u)
+  , use_weight_bias_(true)
+  , bias_term_(true)
+  , moving_average_fraction_(0.999f)
+  , eps_(1e-05f){}
+struct BatchNormParameterDefaultTypeInternal {
+  constexpr BatchNormParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~BatchNormParameterDefaultTypeInternal() {}
+  union {
+    BatchNormParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT BatchNormParameterDefaultTypeInternal _BatchNormParameter_default_instance_;
+constexpr SplitParameter::SplitParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : engine_(0)
+{}
+struct SplitParameterDefaultTypeInternal {
+  constexpr SplitParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~SplitParameterDefaultTypeInternal() {}
+  union {
+    SplitParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT SplitParameterDefaultTypeInternal _SplitParameter_default_instance_;
+constexpr BoxAnnotatorOHEMParameter::BoxAnnotatorOHEMParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : roi_per_img_(0u)
+  , ignore_label_(-1){}
+struct BoxAnnotatorOHEMParameterDefaultTypeInternal {
+  constexpr BoxAnnotatorOHEMParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~BoxAnnotatorOHEMParameterDefaultTypeInternal() {}
+  union {
+    BoxAnnotatorOHEMParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT BoxAnnotatorOHEMParameterDefaultTypeInternal _BoxAnnotatorOHEMParameter_default_instance_;
+constexpr BiasParameter::BiasParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : filler_(nullptr)
+  , axis_(1)
+  , num_axes_(1){}
+struct BiasParameterDefaultTypeInternal {
+  constexpr BiasParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~BiasParameterDefaultTypeInternal() {}
+  union {
+    BiasParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT BiasParameterDefaultTypeInternal _BiasParameter_default_instance_;
+constexpr ContrastiveLossParameter::ContrastiveLossParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : legacy_version_(false)
+  , margin_(1){}
+struct ContrastiveLossParameterDefaultTypeInternal {
+  constexpr ContrastiveLossParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~ContrastiveLossParameterDefaultTypeInternal() {}
+  union {
+    ContrastiveLossParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT ContrastiveLossParameterDefaultTypeInternal _ContrastiveLossParameter_default_instance_;
+constexpr ReorgParameter::ReorgParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : stride_(0u)
+  , reverse_(false){}
+struct ReorgParameterDefaultTypeInternal {
+  constexpr ReorgParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~ReorgParameterDefaultTypeInternal() {}
+  union {
+    ReorgParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT ReorgParameterDefaultTypeInternal _ReorgParameter_default_instance_;
+constexpr ConvolutionParameter::ConvolutionParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : pad_()
+  , kernel_size_()
+  , stride_()
+  , dilation_()
+  , coeff_()
+  , conv_algorithm_(nullptr)
+  , weight_filler_(nullptr)
+  , bias_filler_(nullptr)
+  , num_output_(0u)
+  , pad_h_(0u)
+  , pad_w_(0u)
+  , kernel_h_(0u)
+  , kernel_w_(0u)
+  , stride_h_(0u)
+  , stride_w_(0u)
+  , engine_(0)
+
+  , force_nd_im2col_(false)
+  , relu_(false)
+  , negative_slope_(0)
+  , fusion_type_(0)
+
+  , axis_(1)
+  , bias_term_(true)
+  , group_(1u){}
+struct ConvolutionParameterDefaultTypeInternal {
+  constexpr ConvolutionParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~ConvolutionParameterDefaultTypeInternal() {}
+  union {
+    ConvolutionParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT ConvolutionParameterDefaultTypeInternal _ConvolutionParameter_default_instance_;
+constexpr CropParameter::CropParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : offset_()
+  , axis_(2){}
+struct CropParameterDefaultTypeInternal {
+  constexpr CropParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~CropParameterDefaultTypeInternal() {}
+  union {
+    CropParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT CropParameterDefaultTypeInternal _CropParameter_default_instance_;
+constexpr DataParameter::DataParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : side_()
+  , source_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , mean_file_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , batch_size_(0u)
+  , crop_size_(0u)
+  , rand_skip_(0u)
+  , backend_(0)
+
+  , mirror_(false)
+  , force_encoded_color_(false)
+  , shuffle_(false)
+  , scale_(1)
+  , prefetch_(4u){}
+struct DataParameterDefaultTypeInternal {
+  constexpr DataParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~DataParameterDefaultTypeInternal() {}
+  union {
+    DataParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT DataParameterDefaultTypeInternal _DataParameter_default_instance_;
+constexpr DetectionEvaluateParameter::DetectionEvaluateParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : name_size_file_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , resize_param_(nullptr)
+  , num_classes_(0u)
+  , background_label_id_(0u)
+  , overlap_threshold_(0.5f)
+  , evaluate_difficult_gt_(true){}
+struct DetectionEvaluateParameterDefaultTypeInternal {
+  constexpr DetectionEvaluateParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~DetectionEvaluateParameterDefaultTypeInternal() {}
+  union {
+    DetectionEvaluateParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT DetectionEvaluateParameterDefaultTypeInternal _DetectionEvaluateParameter_default_instance_;
+constexpr NonMaximumSuppressionParameter::NonMaximumSuppressionParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : top_k_(0)
+  , nms_threshold_(0.3f)
+  , eta_(1){}
+struct NonMaximumSuppressionParameterDefaultTypeInternal {
+  constexpr NonMaximumSuppressionParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~NonMaximumSuppressionParameterDefaultTypeInternal() {}
+  union {
+    NonMaximumSuppressionParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT NonMaximumSuppressionParameterDefaultTypeInternal _NonMaximumSuppressionParameter_default_instance_;
+constexpr SaveOutputParameter::SaveOutputParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : output_directory_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , output_name_prefix_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , output_format_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , label_map_file_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , name_size_file_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , resize_param_(nullptr)
+  , num_test_image_(0u){}
+struct SaveOutputParameterDefaultTypeInternal {
+  constexpr SaveOutputParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~SaveOutputParameterDefaultTypeInternal() {}
+  union {
+    SaveOutputParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT SaveOutputParameterDefaultTypeInternal _SaveOutputParameter_default_instance_;
+constexpr DetectionOutputParameter::DetectionOutputParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : save_file_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , nms_param_(nullptr)
+  , save_output_param_(nullptr)
+  , num_classes_(0u)
+  , background_label_id_(0)
+  , confidence_threshold_(0)
+  , variance_encoded_in_target_(false)
+  , visualize_(false)
+  , visualize_threshold_(0)
+  , keep_top_k_(-1)
+  , share_location_(true)
+  , code_type_(1)
+{}
+struct DetectionOutputParameterDefaultTypeInternal {
+  constexpr DetectionOutputParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~DetectionOutputParameterDefaultTypeInternal() {}
+  union {
+    DetectionOutputParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT DetectionOutputParameterDefaultTypeInternal _DetectionOutputParameter_default_instance_;
+constexpr DropoutParameter::DropoutParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : dropout_ratio_(0.5f){}
+struct DropoutParameterDefaultTypeInternal {
+  constexpr DropoutParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~DropoutParameterDefaultTypeInternal() {}
+  union {
+    DropoutParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT DropoutParameterDefaultTypeInternal _DropoutParameter_default_instance_;
+constexpr SpatialDropoutParameter::SpatialDropoutParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : dropout_ratio_(0.5f){}
+struct SpatialDropoutParameterDefaultTypeInternal {
+  constexpr SpatialDropoutParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~SpatialDropoutParameterDefaultTypeInternal() {}
+  union {
+    SpatialDropoutParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT SpatialDropoutParameterDefaultTypeInternal _SpatialDropoutParameter_default_instance_;
+constexpr DummyDataParameter::DummyDataParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : data_filler_()
+  , num_()
+  , channels_()
+  , height_()
+  , width_()
+  , shape_(){}
+struct DummyDataParameterDefaultTypeInternal {
+  constexpr DummyDataParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~DummyDataParameterDefaultTypeInternal() {}
+  union {
+    DummyDataParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT DummyDataParameterDefaultTypeInternal _DummyDataParameter_default_instance_;
+constexpr EltwiseParameter::EltwiseParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : coeff_()
+  , engine_(0)
+
+  , operation_(1)
+
+  , stable_prod_grad_(true){}
+struct EltwiseParameterDefaultTypeInternal {
+  constexpr EltwiseParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~EltwiseParameterDefaultTypeInternal() {}
+  union {
+    EltwiseParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT EltwiseParameterDefaultTypeInternal _EltwiseParameter_default_instance_;
+constexpr ELUParameter::ELUParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : alpha_(1){}
+struct ELUParameterDefaultTypeInternal {
+  constexpr ELUParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~ELUParameterDefaultTypeInternal() {}
+  union {
+    ELUParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT ELUParameterDefaultTypeInternal _ELUParameter_default_instance_;
+constexpr EmbedParameter::EmbedParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : weight_filler_(nullptr)
+  , bias_filler_(nullptr)
+  , num_output_(0u)
+  , input_dim_(0u)
+  , bias_term_(true){}
+struct EmbedParameterDefaultTypeInternal {
+  constexpr EmbedParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~EmbedParameterDefaultTypeInternal() {}
+  union {
+    EmbedParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT EmbedParameterDefaultTypeInternal _EmbedParameter_default_instance_;
+constexpr ExpParameter::ExpParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : shift_(0)
+  , base_(-1)
+  , scale_(1){}
+struct ExpParameterDefaultTypeInternal {
+  constexpr ExpParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~ExpParameterDefaultTypeInternal() {}
+  union {
+    ExpParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT ExpParameterDefaultTypeInternal _ExpParameter_default_instance_;
+constexpr FlattenParameter::FlattenParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : axis_(1)
+  , end_axis_(-1){}
+struct FlattenParameterDefaultTypeInternal {
+  constexpr FlattenParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~FlattenParameterDefaultTypeInternal() {}
+  union {
+    FlattenParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT FlattenParameterDefaultTypeInternal _FlattenParameter_default_instance_;
+constexpr HDF5DataParameter::HDF5DataParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : source_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , batch_size_(0u)
+  , shuffle_(false){}
+struct HDF5DataParameterDefaultTypeInternal {
+  constexpr HDF5DataParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~HDF5DataParameterDefaultTypeInternal() {}
+  union {
+    HDF5DataParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT HDF5DataParameterDefaultTypeInternal _HDF5DataParameter_default_instance_;
+constexpr HDF5OutputParameter::HDF5OutputParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : file_name_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string){}
+struct HDF5OutputParameterDefaultTypeInternal {
+  constexpr HDF5OutputParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~HDF5OutputParameterDefaultTypeInternal() {}
+  union {
+    HDF5OutputParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT HDF5OutputParameterDefaultTypeInternal _HDF5OutputParameter_default_instance_;
+constexpr HingeLossParameter::HingeLossParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : norm_(1)
+{}
+struct HingeLossParameterDefaultTypeInternal {
+  constexpr HingeLossParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~HingeLossParameterDefaultTypeInternal() {}
+  union {
+    HingeLossParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT HingeLossParameterDefaultTypeInternal _HingeLossParameter_default_instance_;
+constexpr ImageDataParameter::ImageDataParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : source_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , mean_file_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , root_folder_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , crop_size_(0u)
+  , rand_skip_(0u)
+  , shuffle_(false)
+  , mirror_(false)
+  , new_height_(0u)
+  , new_width_(0u)
+  , min_height_(0u)
+  , min_width_(0u)
+  , is_color_(true)
+  , scale_(1)
+  , batch_size_(1u){}
+struct ImageDataParameterDefaultTypeInternal {
+  constexpr ImageDataParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~ImageDataParameterDefaultTypeInternal() {}
+  union {
+    ImageDataParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT ImageDataParameterDefaultTypeInternal _ImageDataParameter_default_instance_;
+constexpr InfogainLossParameter::InfogainLossParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : source_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , axis_(1){}
+struct InfogainLossParameterDefaultTypeInternal {
+  constexpr InfogainLossParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~InfogainLossParameterDefaultTypeInternal() {}
+  union {
+    InfogainLossParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT InfogainLossParameterDefaultTypeInternal _InfogainLossParameter_default_instance_;
+constexpr InnerProductParameter::InnerProductParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : weight_filler_(nullptr)
+  , bias_filler_(nullptr)
+  , num_output_(0u)
+  , engine_(0)
+
+  , transpose_(false)
+  , relu_(false)
+  , negative_slope_(0)
+  , bias_term_(true)
+  , axis_(1){}
+struct InnerProductParameterDefaultTypeInternal {
+  constexpr InnerProductParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~InnerProductParameterDefaultTypeInternal() {}
+  union {
+    InnerProductParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT InnerProductParameterDefaultTypeInternal _InnerProductParameter_default_instance_;
+constexpr InputParameter::InputParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : shape_(){}
+struct InputParameterDefaultTypeInternal {
+  constexpr InputParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~InputParameterDefaultTypeInternal() {}
+  union {
+    InputParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT InputParameterDefaultTypeInternal _InputParameter_default_instance_;
+constexpr LogParameter::LogParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : shift_(0)
+  , base_(-1)
+  , scale_(1){}
+struct LogParameterDefaultTypeInternal {
+  constexpr LogParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~LogParameterDefaultTypeInternal() {}
+  union {
+    LogParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT LogParameterDefaultTypeInternal _LogParameter_default_instance_;
+constexpr LRNParameter::LRNParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : norm_region_(0)
+
+  , engine_(0)
+
+  , local_size_(5u)
+  , alpha_(1)
+  , beta_(0.75f)
+  , k_(1){}
+struct LRNParameterDefaultTypeInternal {
+  constexpr LRNParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~LRNParameterDefaultTypeInternal() {}
+  union {
+    LRNParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT LRNParameterDefaultTypeInternal _LRNParameter_default_instance_;
+constexpr MemoryDataParameter::MemoryDataParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : batch_size_(0u)
+  , channels_(0u)
+  , height_(0u)
+  , width_(0u){}
+struct MemoryDataParameterDefaultTypeInternal {
+  constexpr MemoryDataParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~MemoryDataParameterDefaultTypeInternal() {}
+  union {
+    MemoryDataParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT MemoryDataParameterDefaultTypeInternal _MemoryDataParameter_default_instance_;
+constexpr MultiBoxLossParameter::MultiBoxLossParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : nms_param_(nullptr)
+  , conf_loss_type_(0)
+
+  , num_classes_(0u)
+  , background_label_id_(0u)
+  , do_neg_mining_(false)
+  , encode_variance_in_target_(false)
+  , map_object_to_agnostic_(false)
+  , ignore_cross_boundary_bbox_(false)
+  , bp_inside_(false)
+  , use_prior_for_nms_(false)
+  , loc_loss_type_(1)
+
+  , loc_weight_(1)
+  , match_type_(1)
+
+  , overlap_threshold_(0.5f)
+  , share_location_(true)
+  , use_prior_for_matching_(true)
+  , use_difficult_gt_(true)
+  , neg_pos_ratio_(3)
+  , neg_overlap_(0.5f)
+  , code_type_(1)
+
+  , mining_type_(1)
+
+  , sample_size_(64){}
+struct MultiBoxLossParameterDefaultTypeInternal {
+  constexpr MultiBoxLossParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~MultiBoxLossParameterDefaultTypeInternal() {}
+  union {
+    MultiBoxLossParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT MultiBoxLossParameterDefaultTypeInternal _MultiBoxLossParameter_default_instance_;
+constexpr MVNParameter::MVNParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : across_channels_(false)
+  , normalize_variance_(true)
+  , eps_(1e-09f){}
+struct MVNParameterDefaultTypeInternal {
+  constexpr MVNParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~MVNParameterDefaultTypeInternal() {}
+  union {
+    MVNParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT MVNParameterDefaultTypeInternal _MVNParameter_default_instance_;
+constexpr NormalizeParameter::NormalizeParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : scale_filler_(nullptr)
+  , across_spatial_(true)
+  , channel_shared_(true)
+  , eps_(1e-10f){}
+struct NormalizeParameterDefaultTypeInternal {
+  constexpr NormalizeParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~NormalizeParameterDefaultTypeInternal() {}
+  union {
+    NormalizeParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT NormalizeParameterDefaultTypeInternal _NormalizeParameter_default_instance_;
+constexpr ParameterParameter::ParameterParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : shape_(nullptr){}
+struct ParameterParameterDefaultTypeInternal {
+  constexpr ParameterParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~ParameterParameterDefaultTypeInternal() {}
+  union {
+    ParameterParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT ParameterParameterDefaultTypeInternal _ParameterParameter_default_instance_;
+constexpr PermuteParameter::PermuteParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : order_(){}
+struct PermuteParameterDefaultTypeInternal {
+  constexpr PermuteParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~PermuteParameterDefaultTypeInternal() {}
+  union {
+    PermuteParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PermuteParameterDefaultTypeInternal _PermuteParameter_default_instance_;
+constexpr PoolingParameter::PoolingParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : pad_3d_()
+  , kernel_size_3d_()
+  , stride_3d_()
+  , pool_(0)
+
+  , kernel_size_(0u)
+  , pad_(0u)
+  , kernel_h_(0u)
+  , kernel_w_(0u)
+  , stride_h_(0u)
+  , stride_w_(0u)
+  , pad_h_(0u)
+  , pad_w_(0u)
+  , engine_(0)
+
+  , global_pooling_(false)
+  , axis_(1)
+  , stride_(1u)
+  , avg_include_pad_(true){}
+struct PoolingParameterDefaultTypeInternal {
+  constexpr PoolingParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~PoolingParameterDefaultTypeInternal() {}
+  union {
+    PoolingParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PoolingParameterDefaultTypeInternal _PoolingParameter_default_instance_;
+constexpr PowerParameter::PowerParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : shift_(0)
+  , power_(1)
+  , scale_(1){}
+struct PowerParameterDefaultTypeInternal {
+  constexpr PowerParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~PowerParameterDefaultTypeInternal() {}
+  union {
+    PowerParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PowerParameterDefaultTypeInternal _PowerParameter_default_instance_;
+constexpr PriorBoxParameter::PriorBoxParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : min_size_()
+  , max_size_()
+  , aspect_ratio_()
+  , variance_()
+  , clip_(false)
+  , img_size_(0u)
+  , img_h_(0u)
+  , img_w_(0u)
+  , step_(0)
+  , step_h_(0)
+  , step_w_(0)
+  , flip_(true)
+  , offset_(0.5f){}
+struct PriorBoxParameterDefaultTypeInternal {
+  constexpr PriorBoxParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~PriorBoxParameterDefaultTypeInternal() {}
+  union {
+    PriorBoxParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PriorBoxParameterDefaultTypeInternal _PriorBoxParameter_default_instance_;
+constexpr PSROIPoolingParameter::PSROIPoolingParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : spatial_scale_(0)
+  , output_dim_(0)
+  , group_size_(0){}
+struct PSROIPoolingParameterDefaultTypeInternal {
+  constexpr PSROIPoolingParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~PSROIPoolingParameterDefaultTypeInternal() {}
+  union {
+    PSROIPoolingParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PSROIPoolingParameterDefaultTypeInternal _PSROIPoolingParameter_default_instance_;
+constexpr PythonParameter::PythonParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : module_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , layer_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , param_str_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , share_in_parallel_(false){}
+struct PythonParameterDefaultTypeInternal {
+  constexpr PythonParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~PythonParameterDefaultTypeInternal() {}
+  union {
+    PythonParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PythonParameterDefaultTypeInternal _PythonParameter_default_instance_;
+constexpr RecurrentParameter::RecurrentParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : weight_filler_(nullptr)
+  , bias_filler_(nullptr)
+  , num_output_(0u)
+  , debug_info_(false)
+  , expose_hidden_(false){}
+struct RecurrentParameterDefaultTypeInternal {
+  constexpr RecurrentParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~RecurrentParameterDefaultTypeInternal() {}
+  union {
+    RecurrentParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT RecurrentParameterDefaultTypeInternal _RecurrentParameter_default_instance_;
+constexpr ReductionParameter::ReductionParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : axis_(0)
+  , operation_(1)
+
+  , coeff_(1){}
+struct ReductionParameterDefaultTypeInternal {
+  constexpr ReductionParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~ReductionParameterDefaultTypeInternal() {}
+  union {
+    ReductionParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT ReductionParameterDefaultTypeInternal _ReductionParameter_default_instance_;
+constexpr ReLUParameter::ReLUParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : negative_slope_(0)
+  , engine_(0)
+
+  , fuse_(false){}
+struct ReLUParameterDefaultTypeInternal {
+  constexpr ReLUParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~ReLUParameterDefaultTypeInternal() {}
+  union {
+    ReLUParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT ReLUParameterDefaultTypeInternal _ReLUParameter_default_instance_;
+constexpr ReshapeParameter::ReshapeParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : shape_(nullptr)
+  , axis_(0)
+  , num_axes_(-1)
+  , pixelshuffler_(1){}
+struct ReshapeParameterDefaultTypeInternal {
+  constexpr ReshapeParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~ReshapeParameterDefaultTypeInternal() {}
+  union {
+    ReshapeParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT ReshapeParameterDefaultTypeInternal _ReshapeParameter_default_instance_;
+constexpr ROIPoolingParameter::ROIPoolingParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : pooled_size_()
+  , pooled_h_(0u)
+  , pooled_w_(0u)
+  , spatial_scale_(1){}
+struct ROIPoolingParameterDefaultTypeInternal {
+  constexpr ROIPoolingParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~ROIPoolingParameterDefaultTypeInternal() {}
+  union {
+    ROIPoolingParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT ROIPoolingParameterDefaultTypeInternal _ROIPoolingParameter_default_instance_;
+constexpr ScaleParameter::ScaleParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : filler_(nullptr)
+  , bias_filler_(nullptr)
+  , bias_term_(false)
+  , axis_(1)
+  , num_axes_(1){}
+struct ScaleParameterDefaultTypeInternal {
+  constexpr ScaleParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~ScaleParameterDefaultTypeInternal() {}
+  union {
+    ScaleParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT ScaleParameterDefaultTypeInternal _ScaleParameter_default_instance_;
+constexpr SigmoidParameter::SigmoidParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : engine_(0)
+{}
+struct SigmoidParameterDefaultTypeInternal {
+  constexpr SigmoidParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~SigmoidParameterDefaultTypeInternal() {}
+  union {
+    SigmoidParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT SigmoidParameterDefaultTypeInternal _SigmoidParameter_default_instance_;
+constexpr SliceParameter::SliceParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : slice_point_()
+  , slice_dim_(1u)
+  , axis_(1){}
+struct SliceParameterDefaultTypeInternal {
+  constexpr SliceParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~SliceParameterDefaultTypeInternal() {}
+  union {
+    SliceParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT SliceParameterDefaultTypeInternal _SliceParameter_default_instance_;
+constexpr SmoothL1LossParameter::SmoothL1LossParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : sigma_(1){}
+struct SmoothL1LossParameterDefaultTypeInternal {
+  constexpr SmoothL1LossParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~SmoothL1LossParameterDefaultTypeInternal() {}
+  union {
+    SmoothL1LossParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT SmoothL1LossParameterDefaultTypeInternal _SmoothL1LossParameter_default_instance_;
+constexpr SoftmaxParameter::SoftmaxParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : engine_(0)
+
+  , axis_(1){}
+struct SoftmaxParameterDefaultTypeInternal {
+  constexpr SoftmaxParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~SoftmaxParameterDefaultTypeInternal() {}
+  union {
+    SoftmaxParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT SoftmaxParameterDefaultTypeInternal _SoftmaxParameter_default_instance_;
+constexpr SwishParameter::SwishParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : beta_(1){}
+struct SwishParameterDefaultTypeInternal {
+  constexpr SwishParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~SwishParameterDefaultTypeInternal() {}
+  union {
+    SwishParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT SwishParameterDefaultTypeInternal _SwishParameter_default_instance_;
+constexpr TanHParameter::TanHParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : engine_(0)
+{}
+struct TanHParameterDefaultTypeInternal {
+  constexpr TanHParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~TanHParameterDefaultTypeInternal() {}
+  union {
+    TanHParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT TanHParameterDefaultTypeInternal _TanHParameter_default_instance_;
+constexpr TileParameter::TileParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : tiles_(0)
+  , axis_(1){}
+struct TileParameterDefaultTypeInternal {
+  constexpr TileParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~TileParameterDefaultTypeInternal() {}
+  union {
+    TileParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT TileParameterDefaultTypeInternal _TileParameter_default_instance_;
+constexpr ThresholdParameter::ThresholdParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : threshold_(0){}
+struct ThresholdParameterDefaultTypeInternal {
+  constexpr ThresholdParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~ThresholdParameterDefaultTypeInternal() {}
+  union {
+    ThresholdParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT ThresholdParameterDefaultTypeInternal _ThresholdParameter_default_instance_;
+constexpr VideoDataParameter::VideoDataParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : video_file_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , video_type_(0)
+
+  , device_id_(0)
+  , skip_frames_(0u){}
+struct VideoDataParameterDefaultTypeInternal {
+  constexpr VideoDataParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~VideoDataParameterDefaultTypeInternal() {}
+  union {
+    VideoDataParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT VideoDataParameterDefaultTypeInternal _VideoDataParameter_default_instance_;
+constexpr WindowDataParameter::WindowDataParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : source_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , mean_file_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , crop_mode_(nullptr)
+  , root_folder_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , batch_size_(0u)
+  , crop_size_(0u)
+  , mirror_(false)
+  , cache_images_(false)
+  , context_pad_(0u)
+  , scale_(1)
+  , fg_threshold_(0.5f)
+  , bg_threshold_(0.5f)
+  , fg_fraction_(0.25f){}
+struct WindowDataParameterDefaultTypeInternal {
+  constexpr WindowDataParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~WindowDataParameterDefaultTypeInternal() {}
+  union {
+    WindowDataParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT WindowDataParameterDefaultTypeInternal _WindowDataParameter_default_instance_;
+constexpr SPPParameter::SPPParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : pyramid_height_(0u)
+  , pool_(0)
+
+  , engine_(0)
+{}
+struct SPPParameterDefaultTypeInternal {
+  constexpr SPPParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~SPPParameterDefaultTypeInternal() {}
+  union {
+    SPPParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT SPPParameterDefaultTypeInternal _SPPParameter_default_instance_;
+constexpr V1LayerParameter::V1LayerParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : bottom_()
+  , top_()
+  , blobs_()
+  , blobs_lr_()
+  , weight_decay_()
+  , include_()
+  , exclude_()
+  , loss_weight_()
+  , param_()
+  , blob_share_mode_()
+  , name_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , layer_(nullptr)
+  , concat_param_(nullptr)
+  , convolution_param_(nullptr)
+  , data_param_(nullptr)
+  , dropout_param_(nullptr)
+  , hdf5_data_param_(nullptr)
+  , hdf5_output_param_(nullptr)
+  , image_data_param_(nullptr)
+  , infogain_loss_param_(nullptr)
+  , inner_product_param_(nullptr)
+  , lrn_param_(nullptr)
+  , pooling_param_(nullptr)
+  , window_data_param_(nullptr)
+  , power_param_(nullptr)
+  , memory_data_param_(nullptr)
+  , argmax_param_(nullptr)
+  , eltwise_param_(nullptr)
+  , threshold_param_(nullptr)
+  , dummy_data_param_(nullptr)
+  , accuracy_param_(nullptr)
+  , hinge_loss_param_(nullptr)
+  , relu_param_(nullptr)
+  , slice_param_(nullptr)
+  , mvn_param_(nullptr)
+  , transform_param_(nullptr)
+  , tanh_param_(nullptr)
+  , sigmoid_param_(nullptr)
+  , softmax_param_(nullptr)
+  , contrastive_loss_param_(nullptr)
+  , exp_param_(nullptr)
+  , loss_param_(nullptr)
+  , type_(0)
+{}
+struct V1LayerParameterDefaultTypeInternal {
+  constexpr V1LayerParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~V1LayerParameterDefaultTypeInternal() {}
+  union {
+    V1LayerParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT V1LayerParameterDefaultTypeInternal _V1LayerParameter_default_instance_;
+constexpr V0LayerParameter::V0LayerParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : blobs_()
+  , blobs_lr_()
+  , weight_decay_()
+  , name_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , type_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , source_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , meanfile_(&::PROTOBUF_NAMESPACE_ID::internal::fixed_address_empty_string)
+  , det_crop_mode_(nullptr)
+  , weight_filler_(nullptr)
+  , bias_filler_(nullptr)
+  , hdf5_output_param_(nullptr)
+  , num_output_(0u)
+  , pad_(0u)
+  , kernelsize_(0u)
+  , pool_(0)
+
+  , batchsize_(0u)
+  , cropsize_(0u)
+  , new_width_(0)
+  , mirror_(false)
+  , shuffle_images_(false)
+  , rand_skip_(0u)
+  , det_context_pad_(0u)
+  , new_num_(0)
+  , new_channels_(0)
+  , new_height_(0)
+  , concat_dim_(1u)
+  , biasterm_(true)
+  , group_(1u)
+  , stride_(1u)
+  , dropout_ratio_(0.5f)
+  , local_size_(5u)
+  , alpha_(1)
+  , beta_(0.75f)
+  , scale_(1)
+  , k_(1)
+  , det_fg_threshold_(0.5f)
+  , det_bg_threshold_(0.5f)
+  , det_fg_fraction_(0.25f){}
+struct V0LayerParameterDefaultTypeInternal {
+  constexpr V0LayerParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~V0LayerParameterDefaultTypeInternal() {}
+  union {
+    V0LayerParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT V0LayerParameterDefaultTypeInternal _V0LayerParameter_default_instance_;
+constexpr PReLUParameter::PReLUParameter(
+  ::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized)
+  : filler_(nullptr)
+  , channel_shared_(false){}
+struct PReLUParameterDefaultTypeInternal {
+  constexpr PReLUParameterDefaultTypeInternal()
+    : _instance(::PROTOBUF_NAMESPACE_ID::internal::ConstantInitialized{}) {}
+  ~PReLUParameterDefaultTypeInternal() {}
+  union {
+    PReLUParameter _instance;
+  };
+};
+PROTOBUF_ATTRIBUTE_NO_DESTROY PROTOBUF_CONSTINIT PReLUParameterDefaultTypeInternal _PReLUParameter_default_instance_;
 }  // namespace caffe
-static void InitDefaultsscc_info_AccuracyParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_AccuracyParameter_default_instance_;
-    new (ptr) ::caffe::AccuracyParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::AccuracyParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_AccuracyParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_AccuracyParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_AnnotatedDataParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_AnnotatedDataParameter_default_instance_;
-    new (ptr) ::caffe::AnnotatedDataParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::AnnotatedDataParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_AnnotatedDataParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_AnnotatedDataParameter_caffe_2eproto}, {
-      &scc_info_BatchSampler_caffe_2eproto.base,}};
-
-static void InitDefaultsscc_info_AnnotatedDatum_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_AnnotatedDatum_default_instance_;
-    new (ptr) ::caffe::AnnotatedDatum();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::AnnotatedDatum::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<2> scc_info_AnnotatedDatum_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 2, 0, InitDefaultsscc_info_AnnotatedDatum_caffe_2eproto}, {
-      &scc_info_Datum_caffe_2eproto.base,
-      &scc_info_AnnotationGroup_caffe_2eproto.base,}};
-
-static void InitDefaultsscc_info_Annotation_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_Annotation_default_instance_;
-    new (ptr) ::caffe::Annotation();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::Annotation::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_Annotation_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_Annotation_caffe_2eproto}, {
-      &scc_info_NormalizedBBox_caffe_2eproto.base,}};
-
-static void InitDefaultsscc_info_AnnotationGroup_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_AnnotationGroup_default_instance_;
-    new (ptr) ::caffe::AnnotationGroup();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::AnnotationGroup::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_AnnotationGroup_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_AnnotationGroup_caffe_2eproto}, {
-      &scc_info_Annotation_caffe_2eproto.base,}};
-
-static void InitDefaultsscc_info_ArgMaxParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_ArgMaxParameter_default_instance_;
-    new (ptr) ::caffe::ArgMaxParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::ArgMaxParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ArgMaxParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_ArgMaxParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_BatchNormParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_BatchNormParameter_default_instance_;
-    new (ptr) ::caffe::BatchNormParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::BatchNormParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_BatchNormParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_BatchNormParameter_caffe_2eproto}, {
-      &scc_info_FillerParameter_caffe_2eproto.base,}};
-
-static void InitDefaultsscc_info_BatchSampler_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_BatchSampler_default_instance_;
-    new (ptr) ::caffe::BatchSampler();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::BatchSampler::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<2> scc_info_BatchSampler_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 2, 0, InitDefaultsscc_info_BatchSampler_caffe_2eproto}, {
-      &scc_info_Sampler_caffe_2eproto.base,
-      &scc_info_SampleConstraint_caffe_2eproto.base,}};
-
-static void InitDefaultsscc_info_BiasParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_BiasParameter_default_instance_;
-    new (ptr) ::caffe::BiasParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::BiasParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_BiasParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_BiasParameter_caffe_2eproto}, {
-      &scc_info_FillerParameter_caffe_2eproto.base,}};
-
-static void InitDefaultsscc_info_BlobProto_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_BlobProto_default_instance_;
-    new (ptr) ::caffe::BlobProto();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::BlobProto::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_BlobProto_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_BlobProto_caffe_2eproto}, {
-      &scc_info_BlobShape_caffe_2eproto.base,}};
-
-static void InitDefaultsscc_info_BlobProtoVector_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_BlobProtoVector_default_instance_;
-    new (ptr) ::caffe::BlobProtoVector();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::BlobProtoVector::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_BlobProtoVector_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_BlobProtoVector_caffe_2eproto}, {
-      &scc_info_BlobProto_caffe_2eproto.base,}};
-
-static void InitDefaultsscc_info_BlobShape_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_BlobShape_default_instance_;
-    new (ptr) ::caffe::BlobShape();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::BlobShape::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_BlobShape_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_BlobShape_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_BoxAnnotatorOHEMParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_BoxAnnotatorOHEMParameter_default_instance_;
-    new (ptr) ::caffe::BoxAnnotatorOHEMParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::BoxAnnotatorOHEMParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_BoxAnnotatorOHEMParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_BoxAnnotatorOHEMParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_CompileNetState_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_CompileNetState_default_instance_;
-    new (ptr) ::caffe::CompileNetState();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::CompileNetState::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_CompileNetState_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_CompileNetState_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_ConcatParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_ConcatParameter_default_instance_;
-    new (ptr) ::caffe::ConcatParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::ConcatParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ConcatParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_ConcatParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_ContinuationIndicatorParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_ContinuationIndicatorParameter_default_instance_;
-    new (ptr) ::caffe::ContinuationIndicatorParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::ContinuationIndicatorParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ContinuationIndicatorParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_ContinuationIndicatorParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_ContrastiveLossParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_ContrastiveLossParameter_default_instance_;
-    new (ptr) ::caffe::ContrastiveLossParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::ContrastiveLossParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ContrastiveLossParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_ContrastiveLossParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_ConvolutionParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  ::caffe::ConvolutionParameter::_i_give_permission_to_break_this_code_default_conv_algorithm_.DefaultConstruct();
-  *::caffe::ConvolutionParameter::_i_give_permission_to_break_this_code_default_conv_algorithm_.get_mutable() = std::string("direct", 6);
-  ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyString(
-      ::caffe::ConvolutionParameter::_i_give_permission_to_break_this_code_default_conv_algorithm_.get_mutable());
-  {
-    void* ptr = &::caffe::_ConvolutionParameter_default_instance_;
-    new (ptr) ::caffe::ConvolutionParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::ConvolutionParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_ConvolutionParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_ConvolutionParameter_caffe_2eproto}, {
-      &scc_info_FillerParameter_caffe_2eproto.base,}};
-
-static void InitDefaultsscc_info_CropParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_CropParameter_default_instance_;
-    new (ptr) ::caffe::CropParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::CropParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_CropParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_CropParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_DataParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_DataParameter_default_instance_;
-    new (ptr) ::caffe::DataParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::DataParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_DataParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_DataParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_Datum_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_Datum_default_instance_;
-    new (ptr) ::caffe::Datum();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::Datum::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_Datum_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_Datum_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_DetectionEvaluateParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_DetectionEvaluateParameter_default_instance_;
-    new (ptr) ::caffe::DetectionEvaluateParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::DetectionEvaluateParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_DetectionEvaluateParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_DetectionEvaluateParameter_caffe_2eproto}, {
-      &scc_info_ResizeParameter_caffe_2eproto.base,}};
-
-static void InitDefaultsscc_info_DetectionOutputParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_DetectionOutputParameter_default_instance_;
-    new (ptr) ::caffe::DetectionOutputParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::DetectionOutputParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<2> scc_info_DetectionOutputParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 2, 0, InitDefaultsscc_info_DetectionOutputParameter_caffe_2eproto}, {
-      &scc_info_NonMaximumSuppressionParameter_caffe_2eproto.base,
-      &scc_info_SaveOutputParameter_caffe_2eproto.base,}};
-
-static void InitDefaultsscc_info_DistortionParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_DistortionParameter_default_instance_;
-    new (ptr) ::caffe::DistortionParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::DistortionParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_DistortionParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_DistortionParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_DropoutParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_DropoutParameter_default_instance_;
-    new (ptr) ::caffe::DropoutParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::DropoutParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_DropoutParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_DropoutParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_DummyDataParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_DummyDataParameter_default_instance_;
-    new (ptr) ::caffe::DummyDataParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::DummyDataParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<2> scc_info_DummyDataParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 2, 0, InitDefaultsscc_info_DummyDataParameter_caffe_2eproto}, {
-      &scc_info_FillerParameter_caffe_2eproto.base,
-      &scc_info_BlobShape_caffe_2eproto.base,}};
-
-static void InitDefaultsscc_info_ELUParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_ELUParameter_default_instance_;
-    new (ptr) ::caffe::ELUParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::ELUParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ELUParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_ELUParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_EltwiseParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_EltwiseParameter_default_instance_;
-    new (ptr) ::caffe::EltwiseParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::EltwiseParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_EltwiseParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_EltwiseParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_EmbedParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_EmbedParameter_default_instance_;
-    new (ptr) ::caffe::EmbedParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::EmbedParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_EmbedParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_EmbedParameter_caffe_2eproto}, {
-      &scc_info_FillerParameter_caffe_2eproto.base,}};
-
-static void InitDefaultsscc_info_EmitConstraint_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_EmitConstraint_default_instance_;
-    new (ptr) ::caffe::EmitConstraint();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::EmitConstraint::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_EmitConstraint_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_EmitConstraint_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_EvalDetectionParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_EvalDetectionParameter_default_instance_;
-    new (ptr) ::caffe::EvalDetectionParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::EvalDetectionParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_EvalDetectionParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_EvalDetectionParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_ExpParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_ExpParameter_default_instance_;
-    new (ptr) ::caffe::ExpParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::ExpParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ExpParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_ExpParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_ExpansionParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_ExpansionParameter_default_instance_;
-    new (ptr) ::caffe::ExpansionParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::ExpansionParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ExpansionParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_ExpansionParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_FillerParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  ::caffe::FillerParameter::_i_give_permission_to_break_this_code_default_type_.DefaultConstruct();
-  *::caffe::FillerParameter::_i_give_permission_to_break_this_code_default_type_.get_mutable() = std::string("constant", 8);
-  ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyString(
-      ::caffe::FillerParameter::_i_give_permission_to_break_this_code_default_type_.get_mutable());
-  {
-    void* ptr = &::caffe::_FillerParameter_default_instance_;
-    new (ptr) ::caffe::FillerParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::FillerParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_FillerParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_FillerParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_FlattenParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_FlattenParameter_default_instance_;
-    new (ptr) ::caffe::FlattenParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::FlattenParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_FlattenParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_FlattenParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_HDF5DataParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_HDF5DataParameter_default_instance_;
-    new (ptr) ::caffe::HDF5DataParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::HDF5DataParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_HDF5DataParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_HDF5DataParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_HDF5OutputParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_HDF5OutputParameter_default_instance_;
-    new (ptr) ::caffe::HDF5OutputParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::HDF5OutputParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_HDF5OutputParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_HDF5OutputParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_HingeLossParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_HingeLossParameter_default_instance_;
-    new (ptr) ::caffe::HingeLossParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::HingeLossParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_HingeLossParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_HingeLossParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_ImageDataParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_ImageDataParameter_default_instance_;
-    new (ptr) ::caffe::ImageDataParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::ImageDataParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ImageDataParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_ImageDataParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_InfogainLossParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_InfogainLossParameter_default_instance_;
-    new (ptr) ::caffe::InfogainLossParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::InfogainLossParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_InfogainLossParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_InfogainLossParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_InnerProductParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_InnerProductParameter_default_instance_;
-    new (ptr) ::caffe::InnerProductParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::InnerProductParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_InnerProductParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_InnerProductParameter_caffe_2eproto}, {
-      &scc_info_FillerParameter_caffe_2eproto.base,}};
-
-static void InitDefaultsscc_info_InputParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_InputParameter_default_instance_;
-    new (ptr) ::caffe::InputParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::InputParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_InputParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_InputParameter_caffe_2eproto}, {
-      &scc_info_BlobShape_caffe_2eproto.base,}};
-
-static void InitDefaultsscc_info_LRNParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_LRNParameter_default_instance_;
-    new (ptr) ::caffe::LRNParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::LRNParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_LRNParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_LRNParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_LabelMap_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_LabelMap_default_instance_;
-    new (ptr) ::caffe::LabelMap();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::LabelMap::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_LabelMap_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_LabelMap_caffe_2eproto}, {
-      &scc_info_LabelMapItem_caffe_2eproto.base,}};
-
-static void InitDefaultsscc_info_LabelMapItem_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_LabelMapItem_default_instance_;
-    new (ptr) ::caffe::LabelMapItem();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::LabelMapItem::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_LabelMapItem_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_LabelMapItem_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_LayerParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_LayerParameter_default_instance_;
-    new (ptr) ::caffe::LayerParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::LayerParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<74> scc_info_LayerParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 74, 0, InitDefaultsscc_info_LayerParameter_caffe_2eproto}, {
-      &scc_info_ParamSpec_caffe_2eproto.base,
-      &scc_info_BlobProto_caffe_2eproto.base,
-      &scc_info_NetStateRule_caffe_2eproto.base,
-      &scc_info_TransformationParameter_caffe_2eproto.base,
-      &scc_info_LossParameter_caffe_2eproto.base,
-      &scc_info_AccuracyParameter_caffe_2eproto.base,
-      &scc_info_AnnotatedDataParameter_caffe_2eproto.base,
-      &scc_info_ArgMaxParameter_caffe_2eproto.base,
-      &scc_info_BatchNormParameter_caffe_2eproto.base,
-      &scc_info_BoxAnnotatorOHEMParameter_caffe_2eproto.base,
-      &scc_info_BiasParameter_caffe_2eproto.base,
-      &scc_info_ConcatParameter_caffe_2eproto.base,
-      &scc_info_ContrastiveLossParameter_caffe_2eproto.base,
-      &scc_info_ConvolutionParameter_caffe_2eproto.base,
-      &scc_info_CropParameter_caffe_2eproto.base,
-      &scc_info_DataParameter_caffe_2eproto.base,
-      &scc_info_DetectionEvaluateParameter_caffe_2eproto.base,
-      &scc_info_DetectionOutputParameter_caffe_2eproto.base,
-      &scc_info_DropoutParameter_caffe_2eproto.base,
-      &scc_info_DummyDataParameter_caffe_2eproto.base,
-      &scc_info_EltwiseParameter_caffe_2eproto.base,
-      &scc_info_ELUParameter_caffe_2eproto.base,
-      &scc_info_EmbedParameter_caffe_2eproto.base,
-      &scc_info_ExpParameter_caffe_2eproto.base,
-      &scc_info_FlattenParameter_caffe_2eproto.base,
-      &scc_info_HDF5DataParameter_caffe_2eproto.base,
-      &scc_info_HDF5OutputParameter_caffe_2eproto.base,
-      &scc_info_HingeLossParameter_caffe_2eproto.base,
-      &scc_info_ImageDataParameter_caffe_2eproto.base,
-      &scc_info_InfogainLossParameter_caffe_2eproto.base,
-      &scc_info_InnerProductParameter_caffe_2eproto.base,
-      &scc_info_InputParameter_caffe_2eproto.base,
-      &scc_info_LogParameter_caffe_2eproto.base,
-      &scc_info_LRNParameter_caffe_2eproto.base,
-      &scc_info_MemoryDataParameter_caffe_2eproto.base,
-      &scc_info_MultiBoxLossParameter_caffe_2eproto.base,
-      &scc_info_MVNParameter_caffe_2eproto.base,
-      &scc_info_NormalizeParameter_caffe_2eproto.base,
-      &scc_info_ParameterParameter_caffe_2eproto.base,
-      &scc_info_PermuteParameter_caffe_2eproto.base,
-      &scc_info_PoolingParameter_caffe_2eproto.base,
-      &scc_info_PowerParameter_caffe_2eproto.base,
-      &scc_info_PReLUParameter_caffe_2eproto.base,
-      &scc_info_PSROIPoolingParameter_caffe_2eproto.base,
-      &scc_info_PriorBoxParameter_caffe_2eproto.base,
-      &scc_info_PythonParameter_caffe_2eproto.base,
-      &scc_info_RecurrentParameter_caffe_2eproto.base,
-      &scc_info_ReductionParameter_caffe_2eproto.base,
-      &scc_info_ReLUParameter_caffe_2eproto.base,
-      &scc_info_ReshapeParameter_caffe_2eproto.base,
-      &scc_info_ROIPoolingParameter_caffe_2eproto.base,
-      &scc_info_ScaleParameter_caffe_2eproto.base,
-      &scc_info_SigmoidParameter_caffe_2eproto.base,
-      &scc_info_SmoothL1LossParameter_caffe_2eproto.base,
-      &scc_info_SoftmaxParameter_caffe_2eproto.base,
-      &scc_info_SPPParameter_caffe_2eproto.base,
-      &scc_info_SplitParameter_caffe_2eproto.base,
-      &scc_info_SliceParameter_caffe_2eproto.base,
-      &scc_info_SwishParameter_caffe_2eproto.base,
-      &scc_info_TanHParameter_caffe_2eproto.base,
-      &scc_info_ThresholdParameter_caffe_2eproto.base,
-      &scc_info_TileParameter_caffe_2eproto.base,
-      &scc_info_VideoDataParameter_caffe_2eproto.base,
-      &scc_info_WindowDataParameter_caffe_2eproto.base,
-      &scc_info_SpatialDropoutParameter_caffe_2eproto.base,
-      &scc_info_MultinodeLayerParameter_caffe_2eproto.base,
-      &scc_info_MnActivationParameter_caffe_2eproto.base,
-      &scc_info_MnParamGradCompressParameter_caffe_2eproto.base,
-      &scc_info_QuantizationParameter_caffe_2eproto.base,
-      &scc_info_ReorgParameter_caffe_2eproto.base,
-      &scc_info_RegionLossParameter_caffe_2eproto.base,
-      &scc_info_EvalDetectionParameter_caffe_2eproto.base,
-      &scc_info_ContinuationIndicatorParameter_caffe_2eproto.base,
-      &scc_info_ReverseParameter_caffe_2eproto.base,}};
-
-static void InitDefaultsscc_info_LogParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_LogParameter_default_instance_;
-    new (ptr) ::caffe::LogParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::LogParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_LogParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_LogParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_LossParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_LossParameter_default_instance_;
-    new (ptr) ::caffe::LossParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::LossParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_LossParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_LossParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_MVNParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_MVNParameter_default_instance_;
-    new (ptr) ::caffe::MVNParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::MVNParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_MVNParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_MVNParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_MemoryDataParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_MemoryDataParameter_default_instance_;
-    new (ptr) ::caffe::MemoryDataParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::MemoryDataParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_MemoryDataParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_MemoryDataParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_MnActivationParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_MnActivationParameter_default_instance_;
-    new (ptr) ::caffe::MnActivationParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::MnActivationParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_MnActivationParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_MnActivationParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_MnModelParallelParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_MnModelParallelParameter_default_instance_;
-    new (ptr) ::caffe::MnModelParallelParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::MnModelParallelParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_MnModelParallelParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_MnModelParallelParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_MnParamGradCompressLayerTypeList_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_MnParamGradCompressLayerTypeList_default_instance_;
-    new (ptr) ::caffe::MnParamGradCompressLayerTypeList();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::MnParamGradCompressLayerTypeList::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_MnParamGradCompressLayerTypeList_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_MnParamGradCompressLayerTypeList_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_MnParamGradCompressParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_MnParamGradCompressParameter_default_instance_;
-    new (ptr) ::caffe::MnParamGradCompressParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::MnParamGradCompressParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_MnParamGradCompressParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_MnParamGradCompressParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_MultiBoxLossParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_MultiBoxLossParameter_default_instance_;
-    new (ptr) ::caffe::MultiBoxLossParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::MultiBoxLossParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_MultiBoxLossParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_MultiBoxLossParameter_caffe_2eproto}, {
-      &scc_info_NonMaximumSuppressionParameter_caffe_2eproto.base,}};
-
-static void InitDefaultsscc_info_MultiPhaseSolverParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_MultiPhaseSolverParameter_default_instance_;
-    new (ptr) ::caffe::MultiPhaseSolverParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::MultiPhaseSolverParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_MultiPhaseSolverParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_MultiPhaseSolverParameter_caffe_2eproto}, {
-      &scc_info_SolverBatchSizePair_caffe_2eproto.base,}};
-
-static void InitDefaultsscc_info_MultinodeLayerParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_MultinodeLayerParameter_default_instance_;
-    new (ptr) ::caffe::MultinodeLayerParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::MultinodeLayerParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_MultinodeLayerParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_MultinodeLayerParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_MultinodeParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_MultinodeParameter_default_instance_;
-    new (ptr) ::caffe::MultinodeParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::MultinodeParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<2> scc_info_MultinodeParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 2, 0, InitDefaultsscc_info_MultinodeParameter_caffe_2eproto}, {
-      &scc_info_MnModelParallelParameter_caffe_2eproto.base,
-      &scc_info_MnParamGradCompressLayerTypeList_caffe_2eproto.base,}};
-
-static void InitDefaultsscc_info_NetParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_NetParameter_default_instance_;
-    new (ptr) ::caffe::NetParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::NetParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<6> scc_info_NetParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 6, 0, InitDefaultsscc_info_NetParameter_caffe_2eproto}, {
-      &scc_info_BlobShape_caffe_2eproto.base,
-      &scc_info_NetState_caffe_2eproto.base,
-      &scc_info_CompileNetState_caffe_2eproto.base,
-      &scc_info_LayerParameter_caffe_2eproto.base,
-      &scc_info_V1LayerParameter_caffe_2eproto.base,
-      &scc_info_MultinodeParameter_caffe_2eproto.base,}};
-
-static void InitDefaultsscc_info_NetState_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_NetState_default_instance_;
-    new (ptr) ::caffe::NetState();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::NetState::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_NetState_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_NetState_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_NetStateRule_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_NetStateRule_default_instance_;
-    new (ptr) ::caffe::NetStateRule();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::NetStateRule::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_NetStateRule_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_NetStateRule_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_NoiseParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_NoiseParameter_default_instance_;
-    new (ptr) ::caffe::NoiseParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::NoiseParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_NoiseParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_NoiseParameter_caffe_2eproto}, {
-      &scc_info_SaltPepperParameter_caffe_2eproto.base,}};
-
-static void InitDefaultsscc_info_NonMaximumSuppressionParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_NonMaximumSuppressionParameter_default_instance_;
-    new (ptr) ::caffe::NonMaximumSuppressionParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::NonMaximumSuppressionParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_NonMaximumSuppressionParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_NonMaximumSuppressionParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_NormalizeParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_NormalizeParameter_default_instance_;
-    new (ptr) ::caffe::NormalizeParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::NormalizeParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_NormalizeParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_NormalizeParameter_caffe_2eproto}, {
-      &scc_info_FillerParameter_caffe_2eproto.base,}};
-
-static void InitDefaultsscc_info_NormalizedBBox_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_NormalizedBBox_default_instance_;
-    new (ptr) ::caffe::NormalizedBBox();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::NormalizedBBox::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_NormalizedBBox_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_NormalizedBBox_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_PReLUParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_PReLUParameter_default_instance_;
-    new (ptr) ::caffe::PReLUParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::PReLUParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_PReLUParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_PReLUParameter_caffe_2eproto}, {
-      &scc_info_FillerParameter_caffe_2eproto.base,}};
-
-static void InitDefaultsscc_info_PSROIPoolingParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_PSROIPoolingParameter_default_instance_;
-    new (ptr) ::caffe::PSROIPoolingParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::PSROIPoolingParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_PSROIPoolingParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_PSROIPoolingParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_ParamSpec_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_ParamSpec_default_instance_;
-    new (ptr) ::caffe::ParamSpec();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::ParamSpec::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ParamSpec_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_ParamSpec_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_ParameterParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_ParameterParameter_default_instance_;
-    new (ptr) ::caffe::ParameterParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::ParameterParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_ParameterParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_ParameterParameter_caffe_2eproto}, {
-      &scc_info_BlobShape_caffe_2eproto.base,}};
-
-static void InitDefaultsscc_info_PermuteParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_PermuteParameter_default_instance_;
-    new (ptr) ::caffe::PermuteParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::PermuteParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_PermuteParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_PermuteParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_PoolingParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_PoolingParameter_default_instance_;
-    new (ptr) ::caffe::PoolingParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::PoolingParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_PoolingParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_PoolingParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_PowerParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_PowerParameter_default_instance_;
-    new (ptr) ::caffe::PowerParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::PowerParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_PowerParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_PowerParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_PriorBoxParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_PriorBoxParameter_default_instance_;
-    new (ptr) ::caffe::PriorBoxParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::PriorBoxParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_PriorBoxParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_PriorBoxParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_PythonParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_PythonParameter_default_instance_;
-    new (ptr) ::caffe::PythonParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::PythonParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_PythonParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_PythonParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_QuantizationParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_QuantizationParameter_default_instance_;
-    new (ptr) ::caffe::QuantizationParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::QuantizationParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_QuantizationParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_QuantizationParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_ROIPoolingParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_ROIPoolingParameter_default_instance_;
-    new (ptr) ::caffe::ROIPoolingParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::ROIPoolingParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ROIPoolingParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_ROIPoolingParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_RandomAspectRatioParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_RandomAspectRatioParameter_default_instance_;
-    new (ptr) ::caffe::RandomAspectRatioParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::RandomAspectRatioParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_RandomAspectRatioParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_RandomAspectRatioParameter_caffe_2eproto}, {
-      &scc_info_ResizeParameter_caffe_2eproto.base,}};
-
-static void InitDefaultsscc_info_RandomResizeParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_RandomResizeParameter_default_instance_;
-    new (ptr) ::caffe::RandomResizeParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::RandomResizeParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_RandomResizeParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_RandomResizeParameter_caffe_2eproto}, {
-      &scc_info_ResizeParameter_caffe_2eproto.base,}};
-
-static void InitDefaultsscc_info_ReLUParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_ReLUParameter_default_instance_;
-    new (ptr) ::caffe::ReLUParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::ReLUParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ReLUParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_ReLUParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_RecurrentParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_RecurrentParameter_default_instance_;
-    new (ptr) ::caffe::RecurrentParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::RecurrentParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_RecurrentParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_RecurrentParameter_caffe_2eproto}, {
-      &scc_info_FillerParameter_caffe_2eproto.base,}};
-
-static void InitDefaultsscc_info_ReductionParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_ReductionParameter_default_instance_;
-    new (ptr) ::caffe::ReductionParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::ReductionParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ReductionParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_ReductionParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_RegionLossParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_RegionLossParameter_default_instance_;
-    new (ptr) ::caffe::RegionLossParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::RegionLossParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_RegionLossParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_RegionLossParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_ReorgParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_ReorgParameter_default_instance_;
-    new (ptr) ::caffe::ReorgParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::ReorgParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ReorgParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_ReorgParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_ReshapeParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_ReshapeParameter_default_instance_;
-    new (ptr) ::caffe::ReshapeParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::ReshapeParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_ReshapeParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_ReshapeParameter_caffe_2eproto}, {
-      &scc_info_BlobShape_caffe_2eproto.base,}};
-
-static void InitDefaultsscc_info_ResizeParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_ResizeParameter_default_instance_;
-    new (ptr) ::caffe::ResizeParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::ResizeParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ResizeParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_ResizeParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_ReverseParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_ReverseParameter_default_instance_;
-    new (ptr) ::caffe::ReverseParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::ReverseParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ReverseParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_ReverseParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_SPPParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_SPPParameter_default_instance_;
-    new (ptr) ::caffe::SPPParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::SPPParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_SPPParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_SPPParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_SaltPepperParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_SaltPepperParameter_default_instance_;
-    new (ptr) ::caffe::SaltPepperParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::SaltPepperParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_SaltPepperParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_SaltPepperParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_SampleConstraint_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_SampleConstraint_default_instance_;
-    new (ptr) ::caffe::SampleConstraint();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::SampleConstraint::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_SampleConstraint_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_SampleConstraint_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_Sampler_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_Sampler_default_instance_;
-    new (ptr) ::caffe::Sampler();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::Sampler::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_Sampler_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_Sampler_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_SaveOutputParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_SaveOutputParameter_default_instance_;
-    new (ptr) ::caffe::SaveOutputParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::SaveOutputParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_SaveOutputParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_SaveOutputParameter_caffe_2eproto}, {
-      &scc_info_ResizeParameter_caffe_2eproto.base,}};
-
-static void InitDefaultsscc_info_ScaleParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_ScaleParameter_default_instance_;
-    new (ptr) ::caffe::ScaleParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::ScaleParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_ScaleParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_ScaleParameter_caffe_2eproto}, {
-      &scc_info_FillerParameter_caffe_2eproto.base,}};
-
-static void InitDefaultsscc_info_SigmoidParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_SigmoidParameter_default_instance_;
-    new (ptr) ::caffe::SigmoidParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::SigmoidParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_SigmoidParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_SigmoidParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_SliceParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_SliceParameter_default_instance_;
-    new (ptr) ::caffe::SliceParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::SliceParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_SliceParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_SliceParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_SmoothL1LossParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_SmoothL1LossParameter_default_instance_;
-    new (ptr) ::caffe::SmoothL1LossParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::SmoothL1LossParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_SmoothL1LossParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_SmoothL1LossParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_SoftmaxParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_SoftmaxParameter_default_instance_;
-    new (ptr) ::caffe::SoftmaxParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::SoftmaxParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_SoftmaxParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_SoftmaxParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_SolverBatchSizePair_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_SolverBatchSizePair_default_instance_;
-    new (ptr) ::caffe::SolverBatchSizePair();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::SolverBatchSizePair::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_SolverBatchSizePair_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_SolverBatchSizePair_caffe_2eproto}, {
-      &scc_info_SolverParameter_caffe_2eproto.base,}};
-
-static void InitDefaultsscc_info_SolverParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  ::caffe::SolverParameter::_i_give_permission_to_break_this_code_default_eval_type_.DefaultConstruct();
-  *::caffe::SolverParameter::_i_give_permission_to_break_this_code_default_eval_type_.get_mutable() = std::string("classification", 14);
-  ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyString(
-      ::caffe::SolverParameter::_i_give_permission_to_break_this_code_default_eval_type_.get_mutable());
-  ::caffe::SolverParameter::_i_give_permission_to_break_this_code_default_ap_version_.DefaultConstruct();
-  *::caffe::SolverParameter::_i_give_permission_to_break_this_code_default_ap_version_.get_mutable() = std::string("Integral", 8);
-  ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyString(
-      ::caffe::SolverParameter::_i_give_permission_to_break_this_code_default_ap_version_.get_mutable());
-  ::caffe::SolverParameter::_i_give_permission_to_break_this_code_default_regularization_type_.DefaultConstruct();
-  *::caffe::SolverParameter::_i_give_permission_to_break_this_code_default_regularization_type_.get_mutable() = std::string("L2", 2);
-  ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyString(
-      ::caffe::SolverParameter::_i_give_permission_to_break_this_code_default_regularization_type_.get_mutable());
-  ::caffe::SolverParameter::_i_give_permission_to_break_this_code_default_type_.DefaultConstruct();
-  *::caffe::SolverParameter::_i_give_permission_to_break_this_code_default_type_.get_mutable() = std::string("SGD", 3);
-  ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyString(
-      ::caffe::SolverParameter::_i_give_permission_to_break_this_code_default_type_.get_mutable());
-  {
-    void* ptr = &::caffe::_SolverParameter_default_instance_;
-    new (ptr) ::caffe::SolverParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::SolverParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<2> scc_info_SolverParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 2, 0, InitDefaultsscc_info_SolverParameter_caffe_2eproto}, {
-      &scc_info_NetParameter_caffe_2eproto.base,
-      &scc_info_NetState_caffe_2eproto.base,}};
-
-static void InitDefaultsscc_info_SolverState_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_SolverState_default_instance_;
-    new (ptr) ::caffe::SolverState();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::SolverState::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<1> scc_info_SolverState_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 1, 0, InitDefaultsscc_info_SolverState_caffe_2eproto}, {
-      &scc_info_BlobProto_caffe_2eproto.base,}};
-
-static void InitDefaultsscc_info_SpatialDropoutParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_SpatialDropoutParameter_default_instance_;
-    new (ptr) ::caffe::SpatialDropoutParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::SpatialDropoutParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_SpatialDropoutParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_SpatialDropoutParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_SplitParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_SplitParameter_default_instance_;
-    new (ptr) ::caffe::SplitParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::SplitParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_SplitParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_SplitParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_SwishParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_SwishParameter_default_instance_;
-    new (ptr) ::caffe::SwishParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::SwishParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_SwishParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_SwishParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_TanHParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_TanHParameter_default_instance_;
-    new (ptr) ::caffe::TanHParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::TanHParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_TanHParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_TanHParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_ThresholdParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_ThresholdParameter_default_instance_;
-    new (ptr) ::caffe::ThresholdParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::ThresholdParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_ThresholdParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_ThresholdParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_TileParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_TileParameter_default_instance_;
-    new (ptr) ::caffe::TileParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::TileParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_TileParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_TileParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_TransformationParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_TransformationParameter_default_instance_;
-    new (ptr) ::caffe::TransformationParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::TransformationParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<7> scc_info_TransformationParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 7, 0, InitDefaultsscc_info_TransformationParameter_caffe_2eproto}, {
-      &scc_info_ResizeParameter_caffe_2eproto.base,
-      &scc_info_NoiseParameter_caffe_2eproto.base,
-      &scc_info_DistortionParameter_caffe_2eproto.base,
-      &scc_info_ExpansionParameter_caffe_2eproto.base,
-      &scc_info_EmitConstraint_caffe_2eproto.base,
-      &scc_info_RandomResizeParameter_caffe_2eproto.base,
-      &scc_info_RandomAspectRatioParameter_caffe_2eproto.base,}};
-
-static void InitDefaultsscc_info_V0LayerParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  ::caffe::V0LayerParameter::_i_give_permission_to_break_this_code_default_det_crop_mode_.DefaultConstruct();
-  *::caffe::V0LayerParameter::_i_give_permission_to_break_this_code_default_det_crop_mode_.get_mutable() = std::string("warp", 4);
-  ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyString(
-      ::caffe::V0LayerParameter::_i_give_permission_to_break_this_code_default_det_crop_mode_.get_mutable());
-  {
-    void* ptr = &::caffe::_V0LayerParameter_default_instance_;
-    new (ptr) ::caffe::V0LayerParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::V0LayerParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<3> scc_info_V0LayerParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 3, 0, InitDefaultsscc_info_V0LayerParameter_caffe_2eproto}, {
-      &scc_info_FillerParameter_caffe_2eproto.base,
-      &scc_info_BlobProto_caffe_2eproto.base,
-      &scc_info_HDF5OutputParameter_caffe_2eproto.base,}};
-
-static void InitDefaultsscc_info_V1LayerParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_V1LayerParameter_default_instance_;
-    new (ptr) ::caffe::V1LayerParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::V1LayerParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<33> scc_info_V1LayerParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 33, 0, InitDefaultsscc_info_V1LayerParameter_caffe_2eproto}, {
-      &scc_info_NetStateRule_caffe_2eproto.base,
-      &scc_info_BlobProto_caffe_2eproto.base,
-      &scc_info_AccuracyParameter_caffe_2eproto.base,
-      &scc_info_ArgMaxParameter_caffe_2eproto.base,
-      &scc_info_ConcatParameter_caffe_2eproto.base,
-      &scc_info_ContrastiveLossParameter_caffe_2eproto.base,
-      &scc_info_ConvolutionParameter_caffe_2eproto.base,
-      &scc_info_DataParameter_caffe_2eproto.base,
-      &scc_info_DropoutParameter_caffe_2eproto.base,
-      &scc_info_DummyDataParameter_caffe_2eproto.base,
-      &scc_info_EltwiseParameter_caffe_2eproto.base,
-      &scc_info_ExpParameter_caffe_2eproto.base,
-      &scc_info_HDF5DataParameter_caffe_2eproto.base,
-      &scc_info_HDF5OutputParameter_caffe_2eproto.base,
-      &scc_info_HingeLossParameter_caffe_2eproto.base,
-      &scc_info_ImageDataParameter_caffe_2eproto.base,
-      &scc_info_InfogainLossParameter_caffe_2eproto.base,
-      &scc_info_InnerProductParameter_caffe_2eproto.base,
-      &scc_info_LRNParameter_caffe_2eproto.base,
-      &scc_info_MemoryDataParameter_caffe_2eproto.base,
-      &scc_info_MVNParameter_caffe_2eproto.base,
-      &scc_info_PoolingParameter_caffe_2eproto.base,
-      &scc_info_PowerParameter_caffe_2eproto.base,
-      &scc_info_ReLUParameter_caffe_2eproto.base,
-      &scc_info_SigmoidParameter_caffe_2eproto.base,
-      &scc_info_SoftmaxParameter_caffe_2eproto.base,
-      &scc_info_SliceParameter_caffe_2eproto.base,
-      &scc_info_TanHParameter_caffe_2eproto.base,
-      &scc_info_ThresholdParameter_caffe_2eproto.base,
-      &scc_info_WindowDataParameter_caffe_2eproto.base,
-      &scc_info_TransformationParameter_caffe_2eproto.base,
-      &scc_info_LossParameter_caffe_2eproto.base,
-      &scc_info_V0LayerParameter_caffe_2eproto.base,}};
-
-static void InitDefaultsscc_info_VideoDataParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  {
-    void* ptr = &::caffe::_VideoDataParameter_default_instance_;
-    new (ptr) ::caffe::VideoDataParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::VideoDataParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_VideoDataParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_VideoDataParameter_caffe_2eproto}, {}};
-
-static void InitDefaultsscc_info_WindowDataParameter_caffe_2eproto() {
-  GOOGLE_PROTOBUF_VERIFY_VERSION;
-
-  ::caffe::WindowDataParameter::_i_give_permission_to_break_this_code_default_crop_mode_.DefaultConstruct();
-  *::caffe::WindowDataParameter::_i_give_permission_to_break_this_code_default_crop_mode_.get_mutable() = std::string("warp", 4);
-  ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyString(
-      ::caffe::WindowDataParameter::_i_give_permission_to_break_this_code_default_crop_mode_.get_mutable());
-  {
-    void* ptr = &::caffe::_WindowDataParameter_default_instance_;
-    new (ptr) ::caffe::WindowDataParameter();
-    ::PROTOBUF_NAMESPACE_ID::internal::OnShutdownDestroyMessage(ptr);
-  }
-  ::caffe::WindowDataParameter::InitAsDefaultInstance();
-}
-
-::PROTOBUF_NAMESPACE_ID::internal::SCCInfo<0> scc_info_WindowDataParameter_caffe_2eproto =
-    {{ATOMIC_VAR_INIT(::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase::kUninitialized), 0, 0, InitDefaultsscc_info_WindowDataParameter_caffe_2eproto}, {}};
-
 static ::PROTOBUF_NAMESPACE_ID::Metadata file_level_metadata_caffe_2eproto[110];
 static const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* file_level_enum_descriptors_caffe_2eproto[45];
 static constexpr ::PROTOBUF_NAMESPACE_ID::ServiceDescriptor const** file_level_service_descriptors_caffe_2eproto = nullptr;
@@ -5246,130 +4968,19 @@ const char descriptor_table_protodef_caffe_2eproto[] PROTOBUF_SECTION_VARIABLE(p
   "\n\016channel_shared\030\002 \001(\010:\005false*\034\n\005Phase\022\t"
   "\n\005TRAIN\020\000\022\010\n\004TEST\020\001"
   ;
-static const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable*const descriptor_table_caffe_2eproto_deps[1] = {
-};
-static ::PROTOBUF_NAMESPACE_ID::internal::SCCInfoBase*const descriptor_table_caffe_2eproto_sccs[110] = {
-  &scc_info_AccuracyParameter_caffe_2eproto.base,
-  &scc_info_AnnotatedDataParameter_caffe_2eproto.base,
-  &scc_info_AnnotatedDatum_caffe_2eproto.base,
-  &scc_info_Annotation_caffe_2eproto.base,
-  &scc_info_AnnotationGroup_caffe_2eproto.base,
-  &scc_info_ArgMaxParameter_caffe_2eproto.base,
-  &scc_info_BatchNormParameter_caffe_2eproto.base,
-  &scc_info_BatchSampler_caffe_2eproto.base,
-  &scc_info_BiasParameter_caffe_2eproto.base,
-  &scc_info_BlobProto_caffe_2eproto.base,
-  &scc_info_BlobProtoVector_caffe_2eproto.base,
-  &scc_info_BlobShape_caffe_2eproto.base,
-  &scc_info_BoxAnnotatorOHEMParameter_caffe_2eproto.base,
-  &scc_info_CompileNetState_caffe_2eproto.base,
-  &scc_info_ConcatParameter_caffe_2eproto.base,
-  &scc_info_ContinuationIndicatorParameter_caffe_2eproto.base,
-  &scc_info_ContrastiveLossParameter_caffe_2eproto.base,
-  &scc_info_ConvolutionParameter_caffe_2eproto.base,
-  &scc_info_CropParameter_caffe_2eproto.base,
-  &scc_info_DataParameter_caffe_2eproto.base,
-  &scc_info_Datum_caffe_2eproto.base,
-  &scc_info_DetectionEvaluateParameter_caffe_2eproto.base,
-  &scc_info_DetectionOutputParameter_caffe_2eproto.base,
-  &scc_info_DistortionParameter_caffe_2eproto.base,
-  &scc_info_DropoutParameter_caffe_2eproto.base,
-  &scc_info_DummyDataParameter_caffe_2eproto.base,
-  &scc_info_ELUParameter_caffe_2eproto.base,
-  &scc_info_EltwiseParameter_caffe_2eproto.base,
-  &scc_info_EmbedParameter_caffe_2eproto.base,
-  &scc_info_EmitConstraint_caffe_2eproto.base,
-  &scc_info_EvalDetectionParameter_caffe_2eproto.base,
-  &scc_info_ExpParameter_caffe_2eproto.base,
-  &scc_info_ExpansionParameter_caffe_2eproto.base,
-  &scc_info_FillerParameter_caffe_2eproto.base,
-  &scc_info_FlattenParameter_caffe_2eproto.base,
-  &scc_info_HDF5DataParameter_caffe_2eproto.base,
-  &scc_info_HDF5OutputParameter_caffe_2eproto.base,
-  &scc_info_HingeLossParameter_caffe_2eproto.base,
-  &scc_info_ImageDataParameter_caffe_2eproto.base,
-  &scc_info_InfogainLossParameter_caffe_2eproto.base,
-  &scc_info_InnerProductParameter_caffe_2eproto.base,
-  &scc_info_InputParameter_caffe_2eproto.base,
-  &scc_info_LRNParameter_caffe_2eproto.base,
-  &scc_info_LabelMap_caffe_2eproto.base,
-  &scc_info_LabelMapItem_caffe_2eproto.base,
-  &scc_info_LayerParameter_caffe_2eproto.base,
-  &scc_info_LogParameter_caffe_2eproto.base,
-  &scc_info_LossParameter_caffe_2eproto.base,
-  &scc_info_MVNParameter_caffe_2eproto.base,
-  &scc_info_MemoryDataParameter_caffe_2eproto.base,
-  &scc_info_MnActivationParameter_caffe_2eproto.base,
-  &scc_info_MnModelParallelParameter_caffe_2eproto.base,
-  &scc_info_MnParamGradCompressLayerTypeList_caffe_2eproto.base,
-  &scc_info_MnParamGradCompressParameter_caffe_2eproto.base,
-  &scc_info_MultiBoxLossParameter_caffe_2eproto.base,
-  &scc_info_MultiPhaseSolverParameter_caffe_2eproto.base,
-  &scc_info_MultinodeLayerParameter_caffe_2eproto.base,
-  &scc_info_MultinodeParameter_caffe_2eproto.base,
-  &scc_info_NetParameter_caffe_2eproto.base,
-  &scc_info_NetState_caffe_2eproto.base,
-  &scc_info_NetStateRule_caffe_2eproto.base,
-  &scc_info_NoiseParameter_caffe_2eproto.base,
-  &scc_info_NonMaximumSuppressionParameter_caffe_2eproto.base,
-  &scc_info_NormalizeParameter_caffe_2eproto.base,
-  &scc_info_NormalizedBBox_caffe_2eproto.base,
-  &scc_info_PReLUParameter_caffe_2eproto.base,
-  &scc_info_PSROIPoolingParameter_caffe_2eproto.base,
-  &scc_info_ParamSpec_caffe_2eproto.base,
-  &scc_info_ParameterParameter_caffe_2eproto.base,
-  &scc_info_PermuteParameter_caffe_2eproto.base,
-  &scc_info_PoolingParameter_caffe_2eproto.base,
-  &scc_info_PowerParameter_caffe_2eproto.base,
-  &scc_info_PriorBoxParameter_caffe_2eproto.base,
-  &scc_info_PythonParameter_caffe_2eproto.base,
-  &scc_info_QuantizationParameter_caffe_2eproto.base,
-  &scc_info_ROIPoolingParameter_caffe_2eproto.base,
-  &scc_info_RandomAspectRatioParameter_caffe_2eproto.base,
-  &scc_info_RandomResizeParameter_caffe_2eproto.base,
-  &scc_info_ReLUParameter_caffe_2eproto.base,
-  &scc_info_RecurrentParameter_caffe_2eproto.base,
-  &scc_info_ReductionParameter_caffe_2eproto.base,
-  &scc_info_RegionLossParameter_caffe_2eproto.base,
-  &scc_info_ReorgParameter_caffe_2eproto.base,
-  &scc_info_ReshapeParameter_caffe_2eproto.base,
-  &scc_info_ResizeParameter_caffe_2eproto.base,
-  &scc_info_ReverseParameter_caffe_2eproto.base,
-  &scc_info_SPPParameter_caffe_2eproto.base,
-  &scc_info_SaltPepperParameter_caffe_2eproto.base,
-  &scc_info_SampleConstraint_caffe_2eproto.base,
-  &scc_info_Sampler_caffe_2eproto.base,
-  &scc_info_SaveOutputParameter_caffe_2eproto.base,
-  &scc_info_ScaleParameter_caffe_2eproto.base,
-  &scc_info_SigmoidParameter_caffe_2eproto.base,
-  &scc_info_SliceParameter_caffe_2eproto.base,
-  &scc_info_SmoothL1LossParameter_caffe_2eproto.base,
-  &scc_info_SoftmaxParameter_caffe_2eproto.base,
-  &scc_info_SolverBatchSizePair_caffe_2eproto.base,
-  &scc_info_SolverParameter_caffe_2eproto.base,
-  &scc_info_SolverState_caffe_2eproto.base,
-  &scc_info_SpatialDropoutParameter_caffe_2eproto.base,
-  &scc_info_SplitParameter_caffe_2eproto.base,
-  &scc_info_SwishParameter_caffe_2eproto.base,
-  &scc_info_TanHParameter_caffe_2eproto.base,
-  &scc_info_ThresholdParameter_caffe_2eproto.base,
-  &scc_info_TileParameter_caffe_2eproto.base,
-  &scc_info_TransformationParameter_caffe_2eproto.base,
-  &scc_info_V0LayerParameter_caffe_2eproto.base,
-  &scc_info_V1LayerParameter_caffe_2eproto.base,
-  &scc_info_VideoDataParameter_caffe_2eproto.base,
-  &scc_info_WindowDataParameter_caffe_2eproto.base,
-};
 static ::PROTOBUF_NAMESPACE_ID::internal::once_flag descriptor_table_caffe_2eproto_once;
 const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable descriptor_table_caffe_2eproto = {
-  false, false, descriptor_table_protodef_caffe_2eproto, "caffe.proto", 27939,
-  &descriptor_table_caffe_2eproto_once, descriptor_table_caffe_2eproto_sccs, descriptor_table_caffe_2eproto_deps, 110, 0,
+  false, false, 27939, descriptor_table_protodef_caffe_2eproto, "caffe.proto", 
+  &descriptor_table_caffe_2eproto_once, nullptr, 0, 110,
   schemas, file_default_instances, TableStruct_caffe_2eproto::offsets,
-  file_level_metadata_caffe_2eproto, 110, file_level_enum_descriptors_caffe_2eproto, file_level_service_descriptors_caffe_2eproto,
+  file_level_metadata_caffe_2eproto, file_level_enum_descriptors_caffe_2eproto, file_level_service_descriptors_caffe_2eproto,
 };
+PROTOBUF_ATTRIBUTE_WEAK const ::PROTOBUF_NAMESPACE_ID::internal::DescriptorTable* descriptor_table_caffe_2eproto_getter() {
+  return &descriptor_table_caffe_2eproto;
+}
 
 // Force running AddDescriptors() at dynamic initialization time.
-static bool dynamic_init_dummy_caffe_2eproto = (static_cast<void>(::PROTOBUF_NAMESPACE_ID::internal::AddDescriptors(&descriptor_table_caffe_2eproto)), true);
+PROTOBUF_ATTRIBUTE_INIT_PRIORITY static ::PROTOBUF_NAMESPACE_ID::internal::AddDescriptorsRunner dynamic_init_dummy_caffe_2eproto(&descriptor_table_caffe_2eproto);
 namespace caffe {
 const ::PROTOBUF_NAMESPACE_ID::EnumDescriptor* EmitConstraint_EmitType_descriptor() {
   ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(&descriptor_table_caffe_2eproto);
@@ -6478,8 +6089,6 @@ bool Phase_IsValid(int value) {
 
 // ===================================================================
 
-void BlobShape::InitAsDefaultInstance() {
-}
 class BlobShape::_Internal {
  public:
 };
@@ -6508,7 +6117,7 @@ BlobShape::~BlobShape() {
 }
 
 void BlobShape::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void BlobShape::ArenaDtor(void* object) {
@@ -6520,11 +6129,6 @@ void BlobShape::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void BlobShape::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const BlobShape& BlobShape::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_BlobShape_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void BlobShape::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.BlobShape)
@@ -6538,11 +6142,9 @@ void BlobShape::Clear() {
 
 const char* BlobShape::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // repeated int64 dim = 1 [packed = true];
       case 1:
@@ -6556,7 +6158,8 @@ const char* BlobShape::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -6676,21 +6279,18 @@ bool BlobShape::IsInitialized() const {
 
 void BlobShape::InternalSwap(BlobShape* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   dim_.InternalSwap(&other->dim_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata BlobShape::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[0]);
 }
-
 
 // ===================================================================
 
-void BlobProto::InitAsDefaultInstance() {
-  ::caffe::_BlobProto_default_instance_._instance.get_mutable()->shape_ = const_cast< ::caffe::BlobShape*>(
-      ::caffe::BlobShape::internal_default_instance());
-}
 class BlobProto::_Internal {
  public:
   using HasBits = decltype(std::declval<BlobProto>()._has_bits_);
@@ -6746,10 +6346,10 @@ BlobProto::BlobProto(const BlobProto& from)
 }
 
 void BlobProto::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_BlobProto_caffe_2eproto.base);
-  ::memset(&shape_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&width_) -
-      reinterpret_cast<char*>(&shape_)) + sizeof(width_));
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&shape_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&width_) -
+    reinterpret_cast<char*>(&shape_)) + sizeof(width_));
 }
 
 BlobProto::~BlobProto() {
@@ -6759,7 +6359,7 @@ BlobProto::~BlobProto() {
 }
 
 void BlobProto::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   if (this != internal_default_instance()) delete shape_;
 }
 
@@ -6772,11 +6372,6 @@ void BlobProto::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void BlobProto::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const BlobProto& BlobProto::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_BlobProto_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void BlobProto::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.BlobProto)
@@ -6805,11 +6400,9 @@ void BlobProto::Clear() {
 const char* BlobProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional int32 num = 1 [default = 0];
       case 1:
@@ -6892,7 +6485,8 @@ const char* BlobProto::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -6997,9 +6591,6 @@ size_t BlobProto::ByteSizeLong() const {
         ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::Int32Size(
             static_cast<::PROTOBUF_NAMESPACE_ID::int32>(data_size));
     }
-    int cached_size = ::PROTOBUF_NAMESPACE_ID::internal::ToCachedSize(data_size);
-    _data_cached_byte_size_.store(cached_size,
-                                    std::memory_order_relaxed);
     total_size += data_size;
   }
 
@@ -7012,9 +6603,6 @@ size_t BlobProto::ByteSizeLong() const {
         ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::Int32Size(
             static_cast<::PROTOBUF_NAMESPACE_ID::int32>(data_size));
     }
-    int cached_size = ::PROTOBUF_NAMESPACE_ID::internal::ToCachedSize(data_size);
-    _diff_cached_byte_size_.store(cached_size,
-                                    std::memory_order_relaxed);
     total_size += data_size;
   }
 
@@ -7027,9 +6615,6 @@ size_t BlobProto::ByteSizeLong() const {
         ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::Int32Size(
             static_cast<::PROTOBUF_NAMESPACE_ID::int32>(data_size));
     }
-    int cached_size = ::PROTOBUF_NAMESPACE_ID::internal::ToCachedSize(data_size);
-    _double_data_cached_byte_size_.store(cached_size,
-                                    std::memory_order_relaxed);
     total_size += data_size;
   }
 
@@ -7042,9 +6627,6 @@ size_t BlobProto::ByteSizeLong() const {
         ::PROTOBUF_NAMESPACE_ID::internal::WireFormatLite::Int32Size(
             static_cast<::PROTOBUF_NAMESPACE_ID::int32>(data_size));
     }
-    int cached_size = ::PROTOBUF_NAMESPACE_ID::internal::ToCachedSize(data_size);
-    _double_diff_cached_byte_size_.store(cached_size,
-                                    std::memory_order_relaxed);
     total_size += data_size;
   }
 
@@ -7162,7 +6744,7 @@ bool BlobProto::IsInitialized() const {
 
 void BlobProto::InternalSwap(BlobProto* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   data_.InternalSwap(&other->data_);
   diff_.InternalSwap(&other->diff_);
@@ -7177,14 +6759,13 @@ void BlobProto::InternalSwap(BlobProto* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata BlobProto::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[1]);
 }
-
 
 // ===================================================================
 
-void BlobProtoVector::InitAsDefaultInstance() {
-}
 class BlobProtoVector::_Internal {
  public:
 };
@@ -7204,7 +6785,6 @@ BlobProtoVector::BlobProtoVector(const BlobProtoVector& from)
 }
 
 void BlobProtoVector::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_BlobProtoVector_caffe_2eproto.base);
 }
 
 BlobProtoVector::~BlobProtoVector() {
@@ -7214,7 +6794,7 @@ BlobProtoVector::~BlobProtoVector() {
 }
 
 void BlobProtoVector::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void BlobProtoVector::ArenaDtor(void* object) {
@@ -7226,11 +6806,6 @@ void BlobProtoVector::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void BlobProtoVector::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const BlobProtoVector& BlobProtoVector::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_BlobProtoVector_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void BlobProtoVector::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.BlobProtoVector)
@@ -7244,11 +6819,9 @@ void BlobProtoVector::Clear() {
 
 const char* BlobProtoVector::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // repeated .caffe.BlobProto blobs = 1;
       case 1:
@@ -7264,7 +6837,8 @@ const char* BlobProtoVector::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPAC
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -7375,19 +6949,18 @@ bool BlobProtoVector::IsInitialized() const {
 
 void BlobProtoVector::InternalSwap(BlobProtoVector* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   blobs_.InternalSwap(&other->blobs_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata BlobProtoVector::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[2]);
 }
-
 
 // ===================================================================
 
-void Datum::InitAsDefaultInstance() {
-}
 class Datum::_Internal {
  public:
   using HasBits = decltype(std::declval<Datum>()._has_bits_);
@@ -7425,8 +6998,8 @@ Datum::Datum(const Datum& from)
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   data_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_data()) {
-    data_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_data(),
-      GetArena());
+    data_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_data(), 
+      GetArenaForAllocation());
   }
   ::memcpy(&channels_, &from.channels_,
     static_cast<size_t>(reinterpret_cast<char*>(&encoded_) -
@@ -7435,11 +7008,11 @@ Datum::Datum(const Datum& from)
 }
 
 void Datum::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_Datum_caffe_2eproto.base);
-  data_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  ::memset(&channels_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&encoded_) -
-      reinterpret_cast<char*>(&channels_)) + sizeof(encoded_));
+data_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&channels_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&encoded_) -
+    reinterpret_cast<char*>(&channels_)) + sizeof(encoded_));
 }
 
 Datum::~Datum() {
@@ -7449,7 +7022,7 @@ Datum::~Datum() {
 }
 
 void Datum::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   data_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
@@ -7462,11 +7035,6 @@ void Datum::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void Datum::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const Datum& Datum::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_Datum_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void Datum::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.Datum)
@@ -7491,11 +7059,9 @@ void Datum::Clear() {
 const char* Datum::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional int32 channels = 1;
       case 1:
@@ -7562,7 +7128,8 @@ const char* Datum::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::inte
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -7776,10 +7343,14 @@ bool Datum::IsInitialized() const {
 
 void Datum::InternalSwap(Datum* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   float_data_.InternalSwap(&other->float_data_);
-  data_.Swap(&other->data_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &data_, GetArenaForAllocation(),
+      &other->data_, other->GetArenaForAllocation()
+  );
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(Datum, encoded_)
       + sizeof(Datum::encoded_)
@@ -7789,14 +7360,13 @@ void Datum::InternalSwap(Datum* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata Datum::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[3]);
 }
-
 
 // ===================================================================
 
-void LabelMapItem::InitAsDefaultInstance() {
-}
 class LabelMapItem::_Internal {
  public:
   using HasBits = decltype(std::declval<LabelMapItem>()._has_bits_);
@@ -7823,23 +7393,22 @@ LabelMapItem::LabelMapItem(const LabelMapItem& from)
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   name_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_name()) {
-    name_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_name(),
-      GetArena());
+    name_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_name(), 
+      GetArenaForAllocation());
   }
   display_name_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_display_name()) {
-    display_name_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_display_name(),
-      GetArena());
+    display_name_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_display_name(), 
+      GetArenaForAllocation());
   }
   label_ = from.label_;
   // @@protoc_insertion_point(copy_constructor:caffe.LabelMapItem)
 }
 
 void LabelMapItem::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_LabelMapItem_caffe_2eproto.base);
-  name_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  display_name_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  label_ = 0;
+name_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+display_name_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+label_ = 0;
 }
 
 LabelMapItem::~LabelMapItem() {
@@ -7849,7 +7418,7 @@ LabelMapItem::~LabelMapItem() {
 }
 
 void LabelMapItem::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   name_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   display_name_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
@@ -7863,11 +7432,6 @@ void LabelMapItem::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void LabelMapItem::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const LabelMapItem& LabelMapItem::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_LabelMapItem_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void LabelMapItem::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.LabelMapItem)
@@ -7892,11 +7456,9 @@ void LabelMapItem::Clear() {
 const char* LabelMapItem::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional string name = 1;
       case 1:
@@ -7930,7 +7492,8 @@ const char* LabelMapItem::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_I
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -8090,22 +7653,29 @@ bool LabelMapItem::IsInitialized() const {
 
 void LabelMapItem::InternalSwap(LabelMapItem* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
-  name_.Swap(&other->name_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
-  display_name_.Swap(&other->display_name_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &name_, GetArenaForAllocation(),
+      &other->name_, other->GetArenaForAllocation()
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &display_name_, GetArenaForAllocation(),
+      &other->display_name_, other->GetArenaForAllocation()
+  );
   swap(label_, other->label_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata LabelMapItem::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[4]);
 }
-
 
 // ===================================================================
 
-void LabelMap::InitAsDefaultInstance() {
-}
 class LabelMap::_Internal {
  public:
 };
@@ -8125,7 +7695,6 @@ LabelMap::LabelMap(const LabelMap& from)
 }
 
 void LabelMap::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_LabelMap_caffe_2eproto.base);
 }
 
 LabelMap::~LabelMap() {
@@ -8135,7 +7704,7 @@ LabelMap::~LabelMap() {
 }
 
 void LabelMap::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void LabelMap::ArenaDtor(void* object) {
@@ -8147,11 +7716,6 @@ void LabelMap::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void LabelMap::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const LabelMap& LabelMap::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_LabelMap_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void LabelMap::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.LabelMap)
@@ -8165,11 +7729,9 @@ void LabelMap::Clear() {
 
 const char* LabelMap::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // repeated .caffe.LabelMapItem item = 1;
       case 1:
@@ -8185,7 +7747,8 @@ const char* LabelMap::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::i
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -8296,19 +7859,18 @@ bool LabelMap::IsInitialized() const {
 
 void LabelMap::InternalSwap(LabelMap* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   item_.InternalSwap(&other->item_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata LabelMap::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[5]);
 }
-
 
 // ===================================================================
 
-void Sampler::InitAsDefaultInstance() {
-}
 class Sampler::_Internal {
  public:
   using HasBits = decltype(std::declval<Sampler>()._has_bits_);
@@ -8343,10 +7905,10 @@ Sampler::Sampler(const Sampler& from)
 }
 
 void Sampler::SharedCtor() {
-  min_scale_ = 1;
-  max_scale_ = 1;
-  min_aspect_ratio_ = 1;
-  max_aspect_ratio_ = 1;
+min_scale_ = 1;
+max_scale_ = 1;
+min_aspect_ratio_ = 1;
+max_aspect_ratio_ = 1;
 }
 
 Sampler::~Sampler() {
@@ -8356,7 +7918,7 @@ Sampler::~Sampler() {
 }
 
 void Sampler::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void Sampler::ArenaDtor(void* object) {
@@ -8368,11 +7930,6 @@ void Sampler::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void Sampler::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const Sampler& Sampler::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_Sampler_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void Sampler::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.Sampler)
@@ -8394,11 +7951,9 @@ void Sampler::Clear() {
 const char* Sampler::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional float min_scale = 1 [default = 1];
       case 1:
@@ -8434,7 +7989,8 @@ const char* Sampler::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::in
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -8594,7 +8150,7 @@ bool Sampler::IsInitialized() const {
 
 void Sampler::InternalSwap(Sampler* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   swap(min_scale_, other->min_scale_);
   swap(max_scale_, other->max_scale_);
@@ -8603,14 +8159,13 @@ void Sampler::InternalSwap(Sampler* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata Sampler::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[6]);
 }
-
 
 // ===================================================================
 
-void SampleConstraint::InitAsDefaultInstance() {
-}
 class SampleConstraint::_Internal {
  public:
   using HasBits = decltype(std::declval<SampleConstraint>()._has_bits_);
@@ -8651,9 +8206,10 @@ SampleConstraint::SampleConstraint(const SampleConstraint& from)
 }
 
 void SampleConstraint::SharedCtor() {
-  ::memset(&min_jaccard_overlap_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&max_object_coverage_) -
-      reinterpret_cast<char*>(&min_jaccard_overlap_)) + sizeof(max_object_coverage_));
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&min_jaccard_overlap_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&max_object_coverage_) -
+    reinterpret_cast<char*>(&min_jaccard_overlap_)) + sizeof(max_object_coverage_));
 }
 
 SampleConstraint::~SampleConstraint() {
@@ -8663,7 +8219,7 @@ SampleConstraint::~SampleConstraint() {
 }
 
 void SampleConstraint::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void SampleConstraint::ArenaDtor(void* object) {
@@ -8675,11 +8231,6 @@ void SampleConstraint::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void SampleConstraint::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const SampleConstraint& SampleConstraint::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_SampleConstraint_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void SampleConstraint::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.SampleConstraint)
@@ -8700,11 +8251,9 @@ void SampleConstraint::Clear() {
 const char* SampleConstraint::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional float min_jaccard_overlap = 1;
       case 1:
@@ -8756,7 +8305,8 @@ const char* SampleConstraint::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPA
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -8944,7 +8494,7 @@ bool SampleConstraint::IsInitialized() const {
 
 void SampleConstraint::InternalSwap(SampleConstraint* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(SampleConstraint, max_object_coverage_)
@@ -8955,18 +8505,13 @@ void SampleConstraint::InternalSwap(SampleConstraint* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata SampleConstraint::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[7]);
 }
-
 
 // ===================================================================
 
-void BatchSampler::InitAsDefaultInstance() {
-  ::caffe::_BatchSampler_default_instance_._instance.get_mutable()->sampler_ = const_cast< ::caffe::Sampler*>(
-      ::caffe::Sampler::internal_default_instance());
-  ::caffe::_BatchSampler_default_instance_._instance.get_mutable()->sample_constraint_ = const_cast< ::caffe::SampleConstraint*>(
-      ::caffe::SampleConstraint::internal_default_instance());
-}
 class BatchSampler::_Internal {
  public:
   using HasBits = decltype(std::declval<BatchSampler>()._has_bits_);
@@ -9024,12 +8569,12 @@ BatchSampler::BatchSampler(const BatchSampler& from)
 }
 
 void BatchSampler::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_BatchSampler_caffe_2eproto.base);
-  ::memset(&sampler_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&max_sample_) -
-      reinterpret_cast<char*>(&sampler_)) + sizeof(max_sample_));
-  use_original_image_ = true;
-  max_trials_ = 100u;
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&sampler_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&max_sample_) -
+    reinterpret_cast<char*>(&sampler_)) + sizeof(max_sample_));
+use_original_image_ = true;
+max_trials_ = 100u;
 }
 
 BatchSampler::~BatchSampler() {
@@ -9039,7 +8584,7 @@ BatchSampler::~BatchSampler() {
 }
 
 void BatchSampler::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   if (this != internal_default_instance()) delete sampler_;
   if (this != internal_default_instance()) delete sample_constraint_;
 }
@@ -9053,11 +8598,6 @@ void BatchSampler::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void BatchSampler::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const BatchSampler& BatchSampler::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_BatchSampler_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void BatchSampler::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.BatchSampler)
@@ -9088,11 +8628,9 @@ void BatchSampler::Clear() {
 const char* BatchSampler::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional bool use_original_image = 1 [default = true];
       case 1:
@@ -9134,7 +8672,8 @@ const char* BatchSampler::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_I
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -9320,7 +8859,7 @@ bool BatchSampler::IsInitialized() const {
 
 void BatchSampler::InternalSwap(BatchSampler* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(BatchSampler, max_sample_)
@@ -9333,14 +8872,13 @@ void BatchSampler::InternalSwap(BatchSampler* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata BatchSampler::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[8]);
 }
-
 
 // ===================================================================
 
-void EmitConstraint::InitAsDefaultInstance() {
-}
 class EmitConstraint::_Internal {
  public:
   using HasBits = decltype(std::declval<EmitConstraint>()._has_bits_);
@@ -9369,9 +8907,10 @@ EmitConstraint::EmitConstraint(const EmitConstraint& from)
 }
 
 void EmitConstraint::SharedCtor() {
-  ::memset(&emit_type_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&emit_overlap_) -
-      reinterpret_cast<char*>(&emit_type_)) + sizeof(emit_overlap_));
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&emit_type_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&emit_overlap_) -
+    reinterpret_cast<char*>(&emit_type_)) + sizeof(emit_overlap_));
 }
 
 EmitConstraint::~EmitConstraint() {
@@ -9381,7 +8920,7 @@ EmitConstraint::~EmitConstraint() {
 }
 
 void EmitConstraint::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void EmitConstraint::ArenaDtor(void* object) {
@@ -9393,11 +8932,6 @@ void EmitConstraint::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void EmitConstraint::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const EmitConstraint& EmitConstraint::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_EmitConstraint_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void EmitConstraint::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.EmitConstraint)
@@ -9418,11 +8952,9 @@ void EmitConstraint::Clear() {
 const char* EmitConstraint::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional .caffe.EmitConstraint.EmitType emit_type = 1 [default = CENTER];
       case 1:
@@ -9446,7 +8978,8 @@ const char* EmitConstraint::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -9580,7 +9113,7 @@ bool EmitConstraint::IsInitialized() const {
 
 void EmitConstraint::InternalSwap(EmitConstraint* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(EmitConstraint, emit_overlap_)
@@ -9591,14 +9124,13 @@ void EmitConstraint::InternalSwap(EmitConstraint* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata EmitConstraint::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[9]);
 }
-
 
 // ===================================================================
 
-void NormalizedBBox::InitAsDefaultInstance() {
-}
 class NormalizedBBox::_Internal {
  public:
   using HasBits = decltype(std::declval<NormalizedBBox>()._has_bits_);
@@ -9645,9 +9177,10 @@ NormalizedBBox::NormalizedBBox(const NormalizedBBox& from)
 }
 
 void NormalizedBBox::SharedCtor() {
-  ::memset(&xmin_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&size_) -
-      reinterpret_cast<char*>(&xmin_)) + sizeof(size_));
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&xmin_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&size_) -
+    reinterpret_cast<char*>(&xmin_)) + sizeof(size_));
 }
 
 NormalizedBBox::~NormalizedBBox() {
@@ -9657,7 +9190,7 @@ NormalizedBBox::~NormalizedBBox() {
 }
 
 void NormalizedBBox::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void NormalizedBBox::ArenaDtor(void* object) {
@@ -9669,11 +9202,6 @@ void NormalizedBBox::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void NormalizedBBox::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const NormalizedBBox& NormalizedBBox::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_NormalizedBBox_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void NormalizedBBox::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.NormalizedBBox)
@@ -9694,11 +9222,9 @@ void NormalizedBBox::Clear() {
 const char* NormalizedBBox::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional float xmin = 1;
       case 1:
@@ -9766,7 +9292,8 @@ const char* NormalizedBBox::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -9984,7 +9511,7 @@ bool NormalizedBBox::IsInitialized() const {
 
 void NormalizedBBox::InternalSwap(NormalizedBBox* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(NormalizedBBox, size_)
@@ -9995,16 +9522,13 @@ void NormalizedBBox::InternalSwap(NormalizedBBox* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata NormalizedBBox::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[10]);
 }
-
 
 // ===================================================================
 
-void Annotation::InitAsDefaultInstance() {
-  ::caffe::_Annotation_default_instance_._instance.get_mutable()->bbox_ = const_cast< ::caffe::NormalizedBBox*>(
-      ::caffe::NormalizedBBox::internal_default_instance());
-}
 class Annotation::_Internal {
  public:
   using HasBits = decltype(std::declval<Annotation>()._has_bits_);
@@ -10041,10 +9565,10 @@ Annotation::Annotation(const Annotation& from)
 }
 
 void Annotation::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_Annotation_caffe_2eproto.base);
-  ::memset(&bbox_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&instance_id_) -
-      reinterpret_cast<char*>(&bbox_)) + sizeof(instance_id_));
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&bbox_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&instance_id_) -
+    reinterpret_cast<char*>(&bbox_)) + sizeof(instance_id_));
 }
 
 Annotation::~Annotation() {
@@ -10054,7 +9578,7 @@ Annotation::~Annotation() {
 }
 
 void Annotation::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   if (this != internal_default_instance()) delete bbox_;
 }
 
@@ -10067,11 +9591,6 @@ void Annotation::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void Annotation::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const Annotation& Annotation::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_Annotation_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void Annotation::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.Annotation)
@@ -10092,11 +9611,9 @@ void Annotation::Clear() {
 const char* Annotation::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional int32 instance_id = 1 [default = 0];
       case 1:
@@ -10115,7 +9632,8 @@ const char* Annotation::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID:
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -10253,7 +9771,7 @@ bool Annotation::IsInitialized() const {
 
 void Annotation::InternalSwap(Annotation* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(Annotation, instance_id_)
@@ -10264,14 +9782,13 @@ void Annotation::InternalSwap(Annotation* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata Annotation::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[11]);
 }
-
 
 // ===================================================================
 
-void AnnotationGroup::InitAsDefaultInstance() {
-}
 class AnnotationGroup::_Internal {
  public:
   using HasBits = decltype(std::declval<AnnotationGroup>()._has_bits_);
@@ -10297,8 +9814,7 @@ AnnotationGroup::AnnotationGroup(const AnnotationGroup& from)
 }
 
 void AnnotationGroup::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_AnnotationGroup_caffe_2eproto.base);
-  group_label_ = 0;
+group_label_ = 0;
 }
 
 AnnotationGroup::~AnnotationGroup() {
@@ -10308,7 +9824,7 @@ AnnotationGroup::~AnnotationGroup() {
 }
 
 void AnnotationGroup::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void AnnotationGroup::ArenaDtor(void* object) {
@@ -10320,11 +9836,6 @@ void AnnotationGroup::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void AnnotationGroup::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const AnnotationGroup& AnnotationGroup::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_AnnotationGroup_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void AnnotationGroup::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.AnnotationGroup)
@@ -10341,11 +9852,9 @@ void AnnotationGroup::Clear() {
 const char* AnnotationGroup::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional int32 group_label = 1;
       case 1:
@@ -10369,7 +9878,8 @@ const char* AnnotationGroup::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPAC
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -10499,23 +10009,20 @@ bool AnnotationGroup::IsInitialized() const {
 
 void AnnotationGroup::InternalSwap(AnnotationGroup* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   annotation_.InternalSwap(&other->annotation_);
   swap(group_label_, other->group_label_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata AnnotationGroup::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[12]);
 }
-
 
 // ===================================================================
 
-void AnnotatedDatum::InitAsDefaultInstance() {
-  ::caffe::_AnnotatedDatum_default_instance_._instance.get_mutable()->datum_ = const_cast< ::caffe::Datum*>(
-      ::caffe::Datum::internal_default_instance());
-}
 class AnnotatedDatum::_Internal {
  public:
   using HasBits = decltype(std::declval<AnnotatedDatum>()._has_bits_);
@@ -10554,10 +10061,10 @@ AnnotatedDatum::AnnotatedDatum(const AnnotatedDatum& from)
 }
 
 void AnnotatedDatum::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_AnnotatedDatum_caffe_2eproto.base);
-  ::memset(&datum_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&type_) -
-      reinterpret_cast<char*>(&datum_)) + sizeof(type_));
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&datum_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&type_) -
+    reinterpret_cast<char*>(&datum_)) + sizeof(type_));
 }
 
 AnnotatedDatum::~AnnotatedDatum() {
@@ -10567,7 +10074,7 @@ AnnotatedDatum::~AnnotatedDatum() {
 }
 
 void AnnotatedDatum::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   if (this != internal_default_instance()) delete datum_;
 }
 
@@ -10580,11 +10087,6 @@ void AnnotatedDatum::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void AnnotatedDatum::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const AnnotatedDatum& AnnotatedDatum::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_AnnotatedDatum_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void AnnotatedDatum::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.AnnotatedDatum)
@@ -10606,11 +10108,9 @@ void AnnotatedDatum::Clear() {
 const char* AnnotatedDatum::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional .caffe.Datum datum = 1;
       case 1:
@@ -10645,7 +10145,8 @@ const char* AnnotatedDatum::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -10799,7 +10300,7 @@ bool AnnotatedDatum::IsInitialized() const {
 
 void AnnotatedDatum::InternalSwap(AnnotatedDatum* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   annotation_group_.InternalSwap(&other->annotation_group_);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
@@ -10811,14 +10312,13 @@ void AnnotatedDatum::InternalSwap(AnnotatedDatum* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata AnnotatedDatum::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[13]);
 }
-
 
 // ===================================================================
 
-void FillerParameter::InitAsDefaultInstance() {
-}
 class FillerParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<FillerParameter>()._has_bits_);
@@ -10851,7 +10351,7 @@ class FillerParameter::_Internal {
   }
 };
 
-::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<std::string> FillerParameter::_i_give_permission_to_break_this_code_default_type_;
+const ::PROTOBUF_NAMESPACE_ID::internal::LazyString FillerParameter::_i_give_permission_to_break_this_code_default_type_{{{"constant", 8}}, {nullptr}};
 FillerParameter::FillerParameter(::PROTOBUF_NAMESPACE_ID::Arena* arena)
   : ::PROTOBUF_NAMESPACE_ID::Message(arena) {
   SharedCtor();
@@ -10862,10 +10362,10 @@ FillerParameter::FillerParameter(const FillerParameter& from)
   : ::PROTOBUF_NAMESPACE_ID::Message(),
       _has_bits_(from._has_bits_) {
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
-  type_.UnsafeSetDefault(&::caffe::FillerParameter::_i_give_permission_to_break_this_code_default_type_.get());
+  type_.UnsafeSetDefault(nullptr);
   if (from._internal_has_type()) {
-    type_.Set(&::caffe::FillerParameter::_i_give_permission_to_break_this_code_default_type_.get(), from._internal_type(),
-      GetArena());
+    type_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::NonEmptyDefault{}, from._internal_type(), 
+      GetArenaForAllocation());
   }
   ::memcpy(&value_, &from.value_,
     static_cast<size_t>(reinterpret_cast<char*>(&scale_) -
@@ -10874,15 +10374,15 @@ FillerParameter::FillerParameter(const FillerParameter& from)
 }
 
 void FillerParameter::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_FillerParameter_caffe_2eproto.base);
-  type_.UnsafeSetDefault(&::caffe::FillerParameter::_i_give_permission_to_break_this_code_default_type_.get());
-  ::memset(&value_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&variance_norm_) -
-      reinterpret_cast<char*>(&value_)) + sizeof(variance_norm_));
-  max_ = 1;
-  std_ = 1;
-  sparse_ = -1;
-  scale_ = 1;
+type_.UnsafeSetDefault(nullptr);
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&value_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&variance_norm_) -
+    reinterpret_cast<char*>(&value_)) + sizeof(variance_norm_));
+max_ = 1;
+std_ = 1;
+sparse_ = -1;
+scale_ = 1;
 }
 
 FillerParameter::~FillerParameter() {
@@ -10892,8 +10392,8 @@ FillerParameter::~FillerParameter() {
 }
 
 void FillerParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
-  type_.DestroyNoArena(&::caffe::FillerParameter::_i_give_permission_to_break_this_code_default_type_.get());
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
+  type_.DestroyNoArena(nullptr);
 }
 
 void FillerParameter::ArenaDtor(void* object) {
@@ -10905,11 +10405,6 @@ void FillerParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void FillerParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const FillerParameter& FillerParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_FillerParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void FillerParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.FillerParameter)
@@ -10919,8 +10414,8 @@ void FillerParameter::Clear() {
 
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000001u) {
-    type_.ClearToDefault(&::caffe::FillerParameter::_i_give_permission_to_break_this_code_default_type_.get(), GetArena());
-  }
+    type_.ClearToDefault(::caffe::FillerParameter::_i_give_permission_to_break_this_code_default_type_, GetArenaForAllocation());
+     }
   if (cached_has_bits & 0x000000feu) {
     ::memset(&value_, 0, static_cast<size_t>(
         reinterpret_cast<char*>(&variance_norm_) -
@@ -10937,11 +10432,9 @@ void FillerParameter::Clear() {
 const char* FillerParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional string type = 1 [default = "constant"];
       case 1:
@@ -11024,7 +10517,8 @@ const char* FillerParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPAC
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -11264,9 +10758,13 @@ bool FillerParameter::IsInitialized() const {
 
 void FillerParameter::InternalSwap(FillerParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
-  type_.Swap(&other->type_, &::caffe::FillerParameter::_i_give_permission_to_break_this_code_default_type_.get(), GetArena());
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      nullptr,
+      &type_, GetArenaForAllocation(),
+      &other->type_, other->GetArenaForAllocation()
+  );
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(FillerParameter, variance_norm_)
       + sizeof(FillerParameter::variance_norm_)
@@ -11280,20 +10778,13 @@ void FillerParameter::InternalSwap(FillerParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata FillerParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[14]);
 }
-
 
 // ===================================================================
 
-void NetParameter::InitAsDefaultInstance() {
-  ::caffe::_NetParameter_default_instance_._instance.get_mutable()->state_ = const_cast< ::caffe::NetState*>(
-      ::caffe::NetState::internal_default_instance());
-  ::caffe::_NetParameter_default_instance_._instance.get_mutable()->compile_net_state_ = const_cast< ::caffe::CompileNetState*>(
-      ::caffe::CompileNetState::internal_default_instance());
-  ::caffe::_NetParameter_default_instance_._instance.get_mutable()->multinode_ = const_cast< ::caffe::MultinodeParameter*>(
-      ::caffe::MultinodeParameter::internal_default_instance());
-}
 class NetParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<NetParameter>()._has_bits_);
@@ -11360,13 +10851,13 @@ NetParameter::NetParameter(const NetParameter& from)
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   name_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_name()) {
-    name_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_name(),
-      GetArena());
+    name_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_name(), 
+      GetArenaForAllocation());
   }
   engine_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_engine()) {
-    engine_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_engine(),
-      GetArena());
+    engine_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_engine(), 
+      GetArenaForAllocation());
   }
   if (from._internal_has_state()) {
     state_ = new ::caffe::NetState(*from.state_);
@@ -11390,12 +10881,12 @@ NetParameter::NetParameter(const NetParameter& from)
 }
 
 void NetParameter::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_NetParameter_caffe_2eproto.base);
-  name_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  engine_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  ::memset(&state_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&bn_stats_batch_size_) -
-      reinterpret_cast<char*>(&state_)) + sizeof(bn_stats_batch_size_));
+name_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+engine_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&state_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&bn_stats_batch_size_) -
+    reinterpret_cast<char*>(&state_)) + sizeof(bn_stats_batch_size_));
 }
 
 NetParameter::~NetParameter() {
@@ -11405,7 +10896,7 @@ NetParameter::~NetParameter() {
 }
 
 void NetParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   name_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   engine_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (this != internal_default_instance()) delete state_;
@@ -11422,11 +10913,6 @@ void NetParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void NetParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const NetParameter& NetParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_NetParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void NetParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.NetParameter)
@@ -11472,11 +10958,9 @@ void NetParameter::Clear() {
 const char* NetParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional string name = 1;
       case 1:
@@ -11614,7 +11098,8 @@ const char* NetParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_I
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -11943,15 +11428,23 @@ bool NetParameter::IsInitialized() const {
 
 void NetParameter::InternalSwap(NetParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   layers_.InternalSwap(&other->layers_);
   input_.InternalSwap(&other->input_);
   input_dim_.InternalSwap(&other->input_dim_);
   input_shape_.InternalSwap(&other->input_shape_);
   layer_.InternalSwap(&other->layer_);
-  name_.Swap(&other->name_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
-  engine_.Swap(&other->engine_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &name_, GetArenaForAllocation(),
+      &other->name_, other->GetArenaForAllocation()
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &engine_, GetArenaForAllocation(),
+      &other->engine_, other->GetArenaForAllocation()
+  );
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(NetParameter, bn_stats_batch_size_)
       + sizeof(NetParameter::bn_stats_batch_size_)
@@ -11961,14 +11454,13 @@ void NetParameter::InternalSwap(NetParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata NetParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[15]);
 }
-
 
 // ===================================================================
 
-void CompileNetState::InitAsDefaultInstance() {
-}
 class CompileNetState::_Internal {
  public:
   using HasBits = decltype(std::declval<CompileNetState>()._has_bits_);
@@ -12006,11 +11498,11 @@ CompileNetState::CompileNetState(const CompileNetState& from)
 }
 
 void CompileNetState::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_CompileNetState_caffe_2eproto.base);
-  ::memset(&bn_scale_remove_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&bn_scale_merge_) -
-      reinterpret_cast<char*>(&bn_scale_remove_)) + sizeof(bn_scale_merge_));
-  is_init_ = true;
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&bn_scale_remove_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&bn_scale_merge_) -
+    reinterpret_cast<char*>(&bn_scale_remove_)) + sizeof(bn_scale_merge_));
+is_init_ = true;
 }
 
 CompileNetState::~CompileNetState() {
@@ -12020,7 +11512,7 @@ CompileNetState::~CompileNetState() {
 }
 
 void CompileNetState::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void CompileNetState::ArenaDtor(void* object) {
@@ -12032,11 +11524,6 @@ void CompileNetState::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void CompileNetState::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const CompileNetState& CompileNetState::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_CompileNetState_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void CompileNetState::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.CompileNetState)
@@ -12058,11 +11545,9 @@ void CompileNetState::Clear() {
 const char* CompileNetState::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional bool is_init = 1 [default = true];
       case 1:
@@ -12137,7 +11622,8 @@ const char* CompileNetState::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPAC
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -12337,7 +11823,7 @@ bool CompileNetState::IsInitialized() const {
 
 void CompileNetState::InternalSwap(CompileNetState* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   kept_bn_layers_.InternalSwap(&other->kept_bn_layers_);
   negative_conv_names_.InternalSwap(&other->negative_conv_names_);
@@ -12352,16 +11838,13 @@ void CompileNetState::InternalSwap(CompileNetState* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata CompileNetState::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[16]);
 }
-
 
 // ===================================================================
 
-void MultinodeParameter::InitAsDefaultInstance() {
-  ::caffe::_MultinodeParameter_default_instance_._instance.get_mutable()->compress_layer_type_list_ = const_cast< ::caffe::MnParamGradCompressLayerTypeList*>(
-      ::caffe::MnParamGradCompressLayerTypeList::internal_default_instance());
-}
 class MultinodeParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<MultinodeParameter>()._has_bits_);
@@ -12396,8 +11879,7 @@ MultinodeParameter::MultinodeParameter(const MultinodeParameter& from)
 }
 
 void MultinodeParameter::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_MultinodeParameter_caffe_2eproto.base);
-  compress_layer_type_list_ = nullptr;
+compress_layer_type_list_ = nullptr;
 }
 
 MultinodeParameter::~MultinodeParameter() {
@@ -12407,7 +11889,7 @@ MultinodeParameter::~MultinodeParameter() {
 }
 
 void MultinodeParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   if (this != internal_default_instance()) delete compress_layer_type_list_;
 }
 
@@ -12420,11 +11902,6 @@ void MultinodeParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void MultinodeParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const MultinodeParameter& MultinodeParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_MultinodeParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void MultinodeParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.MultinodeParameter)
@@ -12445,11 +11922,9 @@ void MultinodeParameter::Clear() {
 const char* MultinodeParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // repeated .caffe.MnModelParallelParameter model_parallel = 1;
       case 1:
@@ -12472,7 +11947,8 @@ const char* MultinodeParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMES
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -12605,21 +12081,20 @@ bool MultinodeParameter::IsInitialized() const {
 
 void MultinodeParameter::InternalSwap(MultinodeParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   model_parallel_.InternalSwap(&other->model_parallel_);
   swap(compress_layer_type_list_, other->compress_layer_type_list_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata MultinodeParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[17]);
 }
-
 
 // ===================================================================
 
-void MnModelParallelParameter::InitAsDefaultInstance() {
-}
 class MnModelParallelParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<MnModelParallelParameter>()._has_bits_);
@@ -12652,13 +12127,13 @@ MnModelParallelParameter::MnModelParallelParameter(const MnModelParallelParamete
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   layer_from_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_layer_from()) {
-    layer_from_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_layer_from(),
-      GetArena());
+    layer_from_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_layer_from(), 
+      GetArenaForAllocation());
   }
   layer_to_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_layer_to()) {
-    layer_to_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_layer_to(),
-      GetArena());
+    layer_to_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_layer_to(), 
+      GetArenaForAllocation());
   }
   ::memcpy(&num_nodes_, &from.num_nodes_,
     static_cast<size_t>(reinterpret_cast<char*>(&model_parts_) -
@@ -12667,12 +12142,12 @@ MnModelParallelParameter::MnModelParallelParameter(const MnModelParallelParamete
 }
 
 void MnModelParallelParameter::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_MnModelParallelParameter_caffe_2eproto.base);
-  layer_from_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  layer_to_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  ::memset(&num_nodes_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&model_parts_) -
-      reinterpret_cast<char*>(&num_nodes_)) + sizeof(model_parts_));
+layer_from_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+layer_to_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&num_nodes_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&model_parts_) -
+    reinterpret_cast<char*>(&num_nodes_)) + sizeof(model_parts_));
 }
 
 MnModelParallelParameter::~MnModelParallelParameter() {
@@ -12682,7 +12157,7 @@ MnModelParallelParameter::~MnModelParallelParameter() {
 }
 
 void MnModelParallelParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   layer_from_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   layer_to_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
@@ -12696,11 +12171,6 @@ void MnModelParallelParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*
 void MnModelParallelParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const MnModelParallelParameter& MnModelParallelParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_MnModelParallelParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void MnModelParallelParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.MnModelParallelParameter)
@@ -12729,11 +12199,9 @@ void MnModelParallelParameter::Clear() {
 const char* MnModelParallelParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // required string layer_from = 1;
       case 1:
@@ -12775,7 +12243,8 @@ const char* MnModelParallelParameter::_InternalParse(const char* ptr, ::PROTOBUF
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -12951,10 +12420,18 @@ bool MnModelParallelParameter::IsInitialized() const {
 
 void MnModelParallelParameter::InternalSwap(MnModelParallelParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
-  layer_from_.Swap(&other->layer_from_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
-  layer_to_.Swap(&other->layer_to_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &layer_from_, GetArenaForAllocation(),
+      &other->layer_from_, other->GetArenaForAllocation()
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &layer_to_, GetArenaForAllocation(),
+      &other->layer_to_, other->GetArenaForAllocation()
+  );
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(MnModelParallelParameter, model_parts_)
       + sizeof(MnModelParallelParameter::model_parts_)
@@ -12964,14 +12441,13 @@ void MnModelParallelParameter::InternalSwap(MnModelParallelParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata MnModelParallelParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[18]);
 }
-
 
 // ===================================================================
 
-void MnParamGradCompressLayerTypeList::InitAsDefaultInstance() {
-}
 class MnParamGradCompressLayerTypeList::_Internal {
  public:
 };
@@ -12991,7 +12467,6 @@ MnParamGradCompressLayerTypeList::MnParamGradCompressLayerTypeList(const MnParam
 }
 
 void MnParamGradCompressLayerTypeList::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_MnParamGradCompressLayerTypeList_caffe_2eproto.base);
 }
 
 MnParamGradCompressLayerTypeList::~MnParamGradCompressLayerTypeList() {
@@ -13001,7 +12476,7 @@ MnParamGradCompressLayerTypeList::~MnParamGradCompressLayerTypeList() {
 }
 
 void MnParamGradCompressLayerTypeList::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void MnParamGradCompressLayerTypeList::ArenaDtor(void* object) {
@@ -13013,11 +12488,6 @@ void MnParamGradCompressLayerTypeList::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID
 void MnParamGradCompressLayerTypeList::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const MnParamGradCompressLayerTypeList& MnParamGradCompressLayerTypeList::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_MnParamGradCompressLayerTypeList_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void MnParamGradCompressLayerTypeList::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.MnParamGradCompressLayerTypeList)
@@ -13031,11 +12501,9 @@ void MnParamGradCompressLayerTypeList::Clear() {
 
 const char* MnParamGradCompressLayerTypeList::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // repeated string layer_type = 1;
       case 1:
@@ -13055,7 +12523,8 @@ const char* MnParamGradCompressLayerTypeList::_InternalParse(const char* ptr, ::
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -13169,19 +12638,18 @@ bool MnParamGradCompressLayerTypeList::IsInitialized() const {
 
 void MnParamGradCompressLayerTypeList::InternalSwap(MnParamGradCompressLayerTypeList* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   layer_type_.InternalSwap(&other->layer_type_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata MnParamGradCompressLayerTypeList::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[19]);
 }
-
 
 // ===================================================================
 
-void MultiPhaseSolverParameter::InitAsDefaultInstance() {
-}
 class MultiPhaseSolverParameter::_Internal {
  public:
 };
@@ -13201,7 +12669,6 @@ MultiPhaseSolverParameter::MultiPhaseSolverParameter(const MultiPhaseSolverParam
 }
 
 void MultiPhaseSolverParameter::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_MultiPhaseSolverParameter_caffe_2eproto.base);
 }
 
 MultiPhaseSolverParameter::~MultiPhaseSolverParameter() {
@@ -13211,7 +12678,7 @@ MultiPhaseSolverParameter::~MultiPhaseSolverParameter() {
 }
 
 void MultiPhaseSolverParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void MultiPhaseSolverParameter::ArenaDtor(void* object) {
@@ -13223,11 +12690,6 @@ void MultiPhaseSolverParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena
 void MultiPhaseSolverParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const MultiPhaseSolverParameter& MultiPhaseSolverParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_MultiPhaseSolverParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void MultiPhaseSolverParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.MultiPhaseSolverParameter)
@@ -13241,11 +12703,9 @@ void MultiPhaseSolverParameter::Clear() {
 
 const char* MultiPhaseSolverParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // repeated .caffe.SolverBatchSizePair params_pair = 1;
       case 1:
@@ -13261,7 +12721,8 @@ const char* MultiPhaseSolverParameter::_InternalParse(const char* ptr, ::PROTOBU
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -13373,21 +12834,18 @@ bool MultiPhaseSolverParameter::IsInitialized() const {
 
 void MultiPhaseSolverParameter::InternalSwap(MultiPhaseSolverParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   params_pair_.InternalSwap(&other->params_pair_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata MultiPhaseSolverParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[20]);
 }
-
 
 // ===================================================================
 
-void SolverBatchSizePair::InitAsDefaultInstance() {
-  ::caffe::_SolverBatchSizePair_default_instance_._instance.get_mutable()->solver_params_ = const_cast< ::caffe::SolverParameter*>(
-      ::caffe::SolverParameter::internal_default_instance());
-}
 class SolverBatchSizePair::_Internal {
  public:
   using HasBits = decltype(std::declval<SolverBatchSizePair>()._has_bits_);
@@ -13424,10 +12882,10 @@ SolverBatchSizePair::SolverBatchSizePair(const SolverBatchSizePair& from)
 }
 
 void SolverBatchSizePair::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_SolverBatchSizePair_caffe_2eproto.base);
-  ::memset(&solver_params_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&batch_size_) -
-      reinterpret_cast<char*>(&solver_params_)) + sizeof(batch_size_));
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&solver_params_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&batch_size_) -
+    reinterpret_cast<char*>(&solver_params_)) + sizeof(batch_size_));
 }
 
 SolverBatchSizePair::~SolverBatchSizePair() {
@@ -13437,7 +12895,7 @@ SolverBatchSizePair::~SolverBatchSizePair() {
 }
 
 void SolverBatchSizePair::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   if (this != internal_default_instance()) delete solver_params_;
 }
 
@@ -13450,11 +12908,6 @@ void SolverBatchSizePair::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void SolverBatchSizePair::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const SolverBatchSizePair& SolverBatchSizePair::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_SolverBatchSizePair_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void SolverBatchSizePair::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.SolverBatchSizePair)
@@ -13475,11 +12928,9 @@ void SolverBatchSizePair::Clear() {
 const char* SolverBatchSizePair::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional .caffe.SolverParameter solver_params = 1;
       case 1:
@@ -13498,7 +12949,8 @@ const char* SolverBatchSizePair::_InternalParse(const char* ptr, ::PROTOBUF_NAME
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -13639,7 +13091,7 @@ bool SolverBatchSizePair::IsInitialized() const {
 
 void SolverBatchSizePair::InternalSwap(SolverBatchSizePair* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(SolverBatchSizePair, batch_size_)
@@ -13650,20 +13102,13 @@ void SolverBatchSizePair::InternalSwap(SolverBatchSizePair* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata SolverBatchSizePair::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[21]);
 }
-
 
 // ===================================================================
 
-void SolverParameter::InitAsDefaultInstance() {
-  ::caffe::_SolverParameter_default_instance_._instance.get_mutable()->net_param_ = const_cast< ::caffe::NetParameter*>(
-      ::caffe::NetParameter::internal_default_instance());
-  ::caffe::_SolverParameter_default_instance_._instance.get_mutable()->train_net_param_ = const_cast< ::caffe::NetParameter*>(
-      ::caffe::NetParameter::internal_default_instance());
-  ::caffe::_SolverParameter_default_instance_._instance.get_mutable()->train_state_ = const_cast< ::caffe::NetState*>(
-      ::caffe::NetState::internal_default_instance());
-}
 class SolverParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<SolverParameter>()._has_bits_);
@@ -13819,10 +13264,10 @@ const ::caffe::NetState&
 SolverParameter::_Internal::train_state(const SolverParameter* msg) {
   return *msg->train_state_;
 }
-::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<std::string> SolverParameter::_i_give_permission_to_break_this_code_default_eval_type_;
-::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<std::string> SolverParameter::_i_give_permission_to_break_this_code_default_ap_version_;
-::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<std::string> SolverParameter::_i_give_permission_to_break_this_code_default_regularization_type_;
-::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<std::string> SolverParameter::_i_give_permission_to_break_this_code_default_type_;
+const ::PROTOBUF_NAMESPACE_ID::internal::LazyString SolverParameter::_i_give_permission_to_break_this_code_default_eval_type_{{{"classification", 14}}, {nullptr}};
+const ::PROTOBUF_NAMESPACE_ID::internal::LazyString SolverParameter::_i_give_permission_to_break_this_code_default_ap_version_{{{"Integral", 8}}, {nullptr}};
+const ::PROTOBUF_NAMESPACE_ID::internal::LazyString SolverParameter::_i_give_permission_to_break_this_code_default_regularization_type_{{{"L2", 2}}, {nullptr}};
+const ::PROTOBUF_NAMESPACE_ID::internal::LazyString SolverParameter::_i_give_permission_to_break_this_code_default_type_{{{"SGD", 3}}, {nullptr}};
 SolverParameter::SolverParameter(::PROTOBUF_NAMESPACE_ID::Arena* arena)
   : ::PROTOBUF_NAMESPACE_ID::Message(arena),
   test_net_(arena),
@@ -13851,48 +13296,48 @@ SolverParameter::SolverParameter(const SolverParameter& from)
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   train_net_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_train_net()) {
-    train_net_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_train_net(),
-      GetArena());
+    train_net_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_train_net(), 
+      GetArenaForAllocation());
   }
   lr_policy_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_lr_policy()) {
-    lr_policy_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_lr_policy(),
-      GetArena());
+    lr_policy_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_lr_policy(), 
+      GetArenaForAllocation());
   }
   snapshot_prefix_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_snapshot_prefix()) {
-    snapshot_prefix_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_snapshot_prefix(),
-      GetArena());
+    snapshot_prefix_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_snapshot_prefix(), 
+      GetArenaForAllocation());
   }
   net_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_net()) {
-    net_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_net(),
-      GetArena());
+    net_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_net(), 
+      GetArenaForAllocation());
   }
-  regularization_type_.UnsafeSetDefault(&::caffe::SolverParameter::_i_give_permission_to_break_this_code_default_regularization_type_.get());
+  regularization_type_.UnsafeSetDefault(nullptr);
   if (from._internal_has_regularization_type()) {
-    regularization_type_.Set(&::caffe::SolverParameter::_i_give_permission_to_break_this_code_default_regularization_type_.get(), from._internal_regularization_type(),
-      GetArena());
+    regularization_type_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::NonEmptyDefault{}, from._internal_regularization_type(), 
+      GetArenaForAllocation());
   }
-  type_.UnsafeSetDefault(&::caffe::SolverParameter::_i_give_permission_to_break_this_code_default_type_.get());
+  type_.UnsafeSetDefault(nullptr);
   if (from._internal_has_type()) {
-    type_.Set(&::caffe::SolverParameter::_i_give_permission_to_break_this_code_default_type_.get(), from._internal_type(),
-      GetArena());
+    type_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::NonEmptyDefault{}, from._internal_type(), 
+      GetArenaForAllocation());
   }
-  eval_type_.UnsafeSetDefault(&::caffe::SolverParameter::_i_give_permission_to_break_this_code_default_eval_type_.get());
+  eval_type_.UnsafeSetDefault(nullptr);
   if (from._internal_has_eval_type()) {
-    eval_type_.Set(&::caffe::SolverParameter::_i_give_permission_to_break_this_code_default_eval_type_.get(), from._internal_eval_type(),
-      GetArena());
+    eval_type_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::NonEmptyDefault{}, from._internal_eval_type(), 
+      GetArenaForAllocation());
   }
-  ap_version_.UnsafeSetDefault(&::caffe::SolverParameter::_i_give_permission_to_break_this_code_default_ap_version_.get());
+  ap_version_.UnsafeSetDefault(nullptr);
   if (from._internal_has_ap_version()) {
-    ap_version_.Set(&::caffe::SolverParameter::_i_give_permission_to_break_this_code_default_ap_version_.get(), from._internal_ap_version(),
-      GetArena());
+    ap_version_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::NonEmptyDefault{}, from._internal_ap_version(), 
+      GetArenaForAllocation());
   }
   engine_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_engine()) {
-    engine_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_engine(),
-      GetArena());
+    engine_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_engine(), 
+      GetArenaForAllocation());
   }
   if (from._internal_has_train_net_param()) {
     train_net_param_ = new ::caffe::NetParameter(*from.train_net_param_);
@@ -13916,31 +13361,31 @@ SolverParameter::SolverParameter(const SolverParameter& from)
 }
 
 void SolverParameter::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_SolverParameter_caffe_2eproto.base);
-  train_net_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  lr_policy_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  snapshot_prefix_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  net_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  regularization_type_.UnsafeSetDefault(&::caffe::SolverParameter::_i_give_permission_to_break_this_code_default_regularization_type_.get());
-  type_.UnsafeSetDefault(&::caffe::SolverParameter::_i_give_permission_to_break_this_code_default_type_.get());
-  eval_type_.UnsafeSetDefault(&::caffe::SolverParameter::_i_give_permission_to_break_this_code_default_eval_type_.get());
-  ap_version_.UnsafeSetDefault(&::caffe::SolverParameter::_i_give_permission_to_break_this_code_default_ap_version_.get());
-  engine_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  ::memset(&train_net_param_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&test_offset_) -
-      reinterpret_cast<char*>(&train_net_param_)) + sizeof(test_offset_));
-  random_seed_ = PROTOBUF_LONGLONG(-1);
-  solver_mode_ = 1;
-  test_initialization_ = true;
-  snapshot_after_train_ = true;
-  delta_ = 1e-08f;
-  average_loss_ = 1;
-  clip_gradients_ = -1;
-  iter_size_ = 1;
-  snapshot_format_ = 1;
-  rms_decay_ = 0.99f;
-  momentum2_ = 0.999f;
-  local_gw_ratio_ = 0.001f;
+train_net_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+lr_policy_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+snapshot_prefix_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+net_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+regularization_type_.UnsafeSetDefault(nullptr);
+type_.UnsafeSetDefault(nullptr);
+eval_type_.UnsafeSetDefault(nullptr);
+ap_version_.UnsafeSetDefault(nullptr);
+engine_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&train_net_param_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&test_offset_) -
+    reinterpret_cast<char*>(&train_net_param_)) + sizeof(test_offset_));
+random_seed_ = int64_t{-1};
+solver_mode_ = 1;
+test_initialization_ = true;
+snapshot_after_train_ = true;
+delta_ = 1e-08f;
+average_loss_ = 1;
+clip_gradients_ = -1;
+iter_size_ = 1;
+snapshot_format_ = 1;
+rms_decay_ = 0.99f;
+momentum2_ = 0.999f;
+local_gw_ratio_ = 0.001f;
 }
 
 SolverParameter::~SolverParameter() {
@@ -13950,15 +13395,15 @@ SolverParameter::~SolverParameter() {
 }
 
 void SolverParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   train_net_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   lr_policy_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   snapshot_prefix_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   net_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  regularization_type_.DestroyNoArena(&::caffe::SolverParameter::_i_give_permission_to_break_this_code_default_regularization_type_.get());
-  type_.DestroyNoArena(&::caffe::SolverParameter::_i_give_permission_to_break_this_code_default_type_.get());
-  eval_type_.DestroyNoArena(&::caffe::SolverParameter::_i_give_permission_to_break_this_code_default_eval_type_.get());
-  ap_version_.DestroyNoArena(&::caffe::SolverParameter::_i_give_permission_to_break_this_code_default_ap_version_.get());
+  regularization_type_.DestroyNoArena(nullptr);
+  type_.DestroyNoArena(nullptr);
+  eval_type_.DestroyNoArena(nullptr);
+  ap_version_.DestroyNoArena(nullptr);
   engine_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (this != internal_default_instance()) delete train_net_param_;
   if (this != internal_default_instance()) delete net_param_;
@@ -13974,11 +13419,6 @@ void SolverParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void SolverParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const SolverParameter& SolverParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_SolverParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void SolverParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.SolverParameter)
@@ -14009,17 +13449,17 @@ void SolverParameter::Clear() {
       net_.ClearNonDefaultToEmpty();
     }
     if (cached_has_bits & 0x00000010u) {
-      regularization_type_.ClearToDefault(&::caffe::SolverParameter::_i_give_permission_to_break_this_code_default_regularization_type_.get(), GetArena());
-    }
+      regularization_type_.ClearToDefault(::caffe::SolverParameter::_i_give_permission_to_break_this_code_default_regularization_type_, GetArenaForAllocation());
+       }
     if (cached_has_bits & 0x00000020u) {
-      type_.ClearToDefault(&::caffe::SolverParameter::_i_give_permission_to_break_this_code_default_type_.get(), GetArena());
-    }
+      type_.ClearToDefault(::caffe::SolverParameter::_i_give_permission_to_break_this_code_default_type_, GetArenaForAllocation());
+       }
     if (cached_has_bits & 0x00000040u) {
-      eval_type_.ClearToDefault(&::caffe::SolverParameter::_i_give_permission_to_break_this_code_default_eval_type_.get(), GetArena());
-    }
+      eval_type_.ClearToDefault(::caffe::SolverParameter::_i_give_permission_to_break_this_code_default_eval_type_, GetArenaForAllocation());
+       }
     if (cached_has_bits & 0x00000080u) {
-      ap_version_.ClearToDefault(&::caffe::SolverParameter::_i_give_permission_to_break_this_code_default_ap_version_.get(), GetArena());
-    }
+      ap_version_.ClearToDefault(::caffe::SolverParameter::_i_give_permission_to_break_this_code_default_ap_version_, GetArenaForAllocation());
+       }
   }
   if (cached_has_bits & 0x00000f00u) {
     if (cached_has_bits & 0x00000100u) {
@@ -14056,7 +13496,7 @@ void SolverParameter::Clear() {
   cached_has_bits = _has_bits_[1];
   if (cached_has_bits & 0x000000ffu) {
     test_offset_ = 0;
-    random_seed_ = PROTOBUF_LONGLONG(-1);
+    random_seed_ = int64_t{-1};
     solver_mode_ = 1;
     test_initialization_ = true;
     snapshot_after_train_ = true;
@@ -14077,11 +13517,9 @@ void SolverParameter::Clear() {
 
 const char* SolverParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional string train_net = 1;
       case 1:
@@ -14596,7 +14034,8 @@ const char* SolverParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPAC
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -15596,7 +15035,7 @@ bool SolverParameter::IsInitialized() const {
 
 void SolverParameter::InternalSwap(SolverParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   swap(_has_bits_[1], other->_has_bits_[1]);
   test_net_.InternalSwap(&other->test_net_);
@@ -15607,15 +15046,51 @@ void SolverParameter::InternalSwap(SolverParameter* other) {
   plateau_winsize_.InternalSwap(&other->plateau_winsize_);
   stagelr_.InternalSwap(&other->stagelr_);
   stageiter_.InternalSwap(&other->stageiter_);
-  train_net_.Swap(&other->train_net_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
-  lr_policy_.Swap(&other->lr_policy_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
-  snapshot_prefix_.Swap(&other->snapshot_prefix_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
-  net_.Swap(&other->net_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
-  regularization_type_.Swap(&other->regularization_type_, &::caffe::SolverParameter::_i_give_permission_to_break_this_code_default_regularization_type_.get(), GetArena());
-  type_.Swap(&other->type_, &::caffe::SolverParameter::_i_give_permission_to_break_this_code_default_type_.get(), GetArena());
-  eval_type_.Swap(&other->eval_type_, &::caffe::SolverParameter::_i_give_permission_to_break_this_code_default_eval_type_.get(), GetArena());
-  ap_version_.Swap(&other->ap_version_, &::caffe::SolverParameter::_i_give_permission_to_break_this_code_default_ap_version_.get(), GetArena());
-  engine_.Swap(&other->engine_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &train_net_, GetArenaForAllocation(),
+      &other->train_net_, other->GetArenaForAllocation()
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &lr_policy_, GetArenaForAllocation(),
+      &other->lr_policy_, other->GetArenaForAllocation()
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &snapshot_prefix_, GetArenaForAllocation(),
+      &other->snapshot_prefix_, other->GetArenaForAllocation()
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &net_, GetArenaForAllocation(),
+      &other->net_, other->GetArenaForAllocation()
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      nullptr,
+      &regularization_type_, GetArenaForAllocation(),
+      &other->regularization_type_, other->GetArenaForAllocation()
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      nullptr,
+      &type_, GetArenaForAllocation(),
+      &other->type_, other->GetArenaForAllocation()
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      nullptr,
+      &eval_type_, GetArenaForAllocation(),
+      &other->eval_type_, other->GetArenaForAllocation()
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      nullptr,
+      &ap_version_, GetArenaForAllocation(),
+      &other->ap_version_, other->GetArenaForAllocation()
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &engine_, GetArenaForAllocation(),
+      &other->engine_, other->GetArenaForAllocation()
+  );
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(SolverParameter, test_offset_)
       + sizeof(SolverParameter::test_offset_)
@@ -15637,14 +15112,13 @@ void SolverParameter::InternalSwap(SolverParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata SolverParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[22]);
 }
-
 
 // ===================================================================
 
-void SolverState::InitAsDefaultInstance() {
-}
 class SolverState::_Internal {
  public:
   using HasBits = decltype(std::declval<SolverState>()._has_bits_);
@@ -15679,8 +15153,8 @@ SolverState::SolverState(const SolverState& from)
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   learned_net_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_learned_net()) {
-    learned_net_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_learned_net(),
-      GetArena());
+    learned_net_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_learned_net(), 
+      GetArenaForAllocation());
   }
   ::memcpy(&iter_, &from.iter_,
     static_cast<size_t>(reinterpret_cast<char*>(&minimum_loss_) -
@@ -15689,12 +15163,12 @@ SolverState::SolverState(const SolverState& from)
 }
 
 void SolverState::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_SolverState_caffe_2eproto.base);
-  learned_net_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  ::memset(&iter_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&iter_last_event_) -
-      reinterpret_cast<char*>(&iter_)) + sizeof(iter_last_event_));
-  minimum_loss_ = 1e+38f;
+learned_net_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&iter_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&iter_last_event_) -
+    reinterpret_cast<char*>(&iter_)) + sizeof(iter_last_event_));
+minimum_loss_ = 1e+38f;
 }
 
 SolverState::~SolverState() {
@@ -15704,7 +15178,7 @@ SolverState::~SolverState() {
 }
 
 void SolverState::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   learned_net_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
@@ -15717,11 +15191,6 @@ void SolverState::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void SolverState::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const SolverState& SolverState::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_SolverState_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void SolverState::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.SolverState)
@@ -15747,11 +15216,9 @@ void SolverState::Clear() {
 const char* SolverState::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional int32 iter = 1;
       case 1:
@@ -15810,7 +15277,8 @@ const char* SolverState::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -16012,10 +15480,14 @@ bool SolverState::IsInitialized() const {
 
 void SolverState::InternalSwap(SolverState* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   history_.InternalSwap(&other->history_);
-  learned_net_.Swap(&other->learned_net_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &learned_net_, GetArenaForAllocation(),
+      &other->learned_net_, other->GetArenaForAllocation()
+  );
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(SolverState, iter_last_event_)
       + sizeof(SolverState::iter_last_event_)
@@ -16026,14 +15498,13 @@ void SolverState::InternalSwap(SolverState* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata SolverState::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[23]);
 }
-
 
 // ===================================================================
 
-void NetState::InitAsDefaultInstance() {
-}
 class NetState::_Internal {
  public:
   using HasBits = decltype(std::declval<NetState>()._has_bits_);
@@ -16064,9 +15535,8 @@ NetState::NetState(const NetState& from)
 }
 
 void NetState::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_NetState_caffe_2eproto.base);
-  level_ = 0;
-  phase_ = 1;
+level_ = 0;
+phase_ = 1;
 }
 
 NetState::~NetState() {
@@ -16076,7 +15546,7 @@ NetState::~NetState() {
 }
 
 void NetState::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void NetState::ArenaDtor(void* object) {
@@ -16088,11 +15558,6 @@ void NetState::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void NetState::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const NetState& NetState::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_NetState_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void NetState::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.NetState)
@@ -16113,11 +15578,9 @@ void NetState::Clear() {
 const char* NetState::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional .caffe.Phase phase = 1 [default = TEST];
       case 1:
@@ -16157,7 +15620,8 @@ const char* NetState::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::i
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -16312,7 +15776,7 @@ bool NetState::IsInitialized() const {
 
 void NetState::InternalSwap(NetState* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   stage_.InternalSwap(&other->stage_);
   swap(level_, other->level_);
@@ -16320,14 +15784,13 @@ void NetState::InternalSwap(NetState* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata NetState::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[24]);
 }
-
 
 // ===================================================================
 
-void NetStateRule::InitAsDefaultInstance() {
-}
 class NetStateRule::_Internal {
  public:
   using HasBits = decltype(std::declval<NetStateRule>()._has_bits_);
@@ -16363,10 +15826,10 @@ NetStateRule::NetStateRule(const NetStateRule& from)
 }
 
 void NetStateRule::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_NetStateRule_caffe_2eproto.base);
-  ::memset(&phase_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&max_level_) -
-      reinterpret_cast<char*>(&phase_)) + sizeof(max_level_));
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&phase_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&max_level_) -
+    reinterpret_cast<char*>(&phase_)) + sizeof(max_level_));
 }
 
 NetStateRule::~NetStateRule() {
@@ -16376,7 +15839,7 @@ NetStateRule::~NetStateRule() {
 }
 
 void NetStateRule::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void NetStateRule::ArenaDtor(void* object) {
@@ -16388,11 +15851,6 @@ void NetStateRule::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void NetStateRule::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const NetStateRule& NetStateRule::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_NetStateRule_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void NetStateRule::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.NetStateRule)
@@ -16415,11 +15873,9 @@ void NetStateRule::Clear() {
 const char* NetStateRule::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional .caffe.Phase phase = 1;
       case 1:
@@ -16483,7 +15939,8 @@ const char* NetStateRule::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_I
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -16673,7 +16130,7 @@ bool NetStateRule::IsInitialized() const {
 
 void NetStateRule::InternalSwap(NetStateRule* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   stage_.InternalSwap(&other->stage_);
   not_stage_.InternalSwap(&other->not_stage_);
@@ -16686,14 +16143,13 @@ void NetStateRule::InternalSwap(NetStateRule* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata NetStateRule::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[25]);
 }
-
 
 // ===================================================================
 
-void ParamSpec::InitAsDefaultInstance() {
-}
 class ParamSpec::_Internal {
  public:
   using HasBits = decltype(std::declval<ParamSpec>()._has_bits_);
@@ -16723,8 +16179,8 @@ ParamSpec::ParamSpec(const ParamSpec& from)
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   name_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_name()) {
-    name_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_name(),
-      GetArena());
+    name_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_name(), 
+      GetArenaForAllocation());
   }
   ::memcpy(&share_mode_, &from.share_mode_,
     static_cast<size_t>(reinterpret_cast<char*>(&decay_mult_) -
@@ -16733,11 +16189,10 @@ ParamSpec::ParamSpec(const ParamSpec& from)
 }
 
 void ParamSpec::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_ParamSpec_caffe_2eproto.base);
-  name_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  share_mode_ = 0;
-  lr_mult_ = 1;
-  decay_mult_ = 1;
+name_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+share_mode_ = 0;
+lr_mult_ = 1;
+decay_mult_ = 1;
 }
 
 ParamSpec::~ParamSpec() {
@@ -16747,7 +16202,7 @@ ParamSpec::~ParamSpec() {
 }
 
 void ParamSpec::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   name_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
@@ -16760,11 +16215,6 @@ void ParamSpec::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void ParamSpec::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const ParamSpec& ParamSpec::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_ParamSpec_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void ParamSpec::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.ParamSpec)
@@ -16788,11 +16238,9 @@ void ParamSpec::Clear() {
 const char* ParamSpec::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional string name = 1;
       case 1:
@@ -16835,7 +16283,8 @@ const char* ParamSpec::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -17003,165 +16452,26 @@ bool ParamSpec::IsInitialized() const {
 
 void ParamSpec::InternalSwap(ParamSpec* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
-  name_.Swap(&other->name_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &name_, GetArenaForAllocation(),
+      &other->name_, other->GetArenaForAllocation()
+  );
   swap(share_mode_, other->share_mode_);
   swap(lr_mult_, other->lr_mult_);
   swap(decay_mult_, other->decay_mult_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata ParamSpec::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[26]);
 }
-
 
 // ===================================================================
 
-void LayerParameter::InitAsDefaultInstance() {
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->transform_param_ = const_cast< ::caffe::TransformationParameter*>(
-      ::caffe::TransformationParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->loss_param_ = const_cast< ::caffe::LossParameter*>(
-      ::caffe::LossParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->accuracy_param_ = const_cast< ::caffe::AccuracyParameter*>(
-      ::caffe::AccuracyParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->annotated_data_param_ = const_cast< ::caffe::AnnotatedDataParameter*>(
-      ::caffe::AnnotatedDataParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->argmax_param_ = const_cast< ::caffe::ArgMaxParameter*>(
-      ::caffe::ArgMaxParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->batch_norm_param_ = const_cast< ::caffe::BatchNormParameter*>(
-      ::caffe::BatchNormParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->box_annotator_ohem_param_ = const_cast< ::caffe::BoxAnnotatorOHEMParameter*>(
-      ::caffe::BoxAnnotatorOHEMParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->bias_param_ = const_cast< ::caffe::BiasParameter*>(
-      ::caffe::BiasParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->concat_param_ = const_cast< ::caffe::ConcatParameter*>(
-      ::caffe::ConcatParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->contrastive_loss_param_ = const_cast< ::caffe::ContrastiveLossParameter*>(
-      ::caffe::ContrastiveLossParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->convolution_param_ = const_cast< ::caffe::ConvolutionParameter*>(
-      ::caffe::ConvolutionParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->crop_param_ = const_cast< ::caffe::CropParameter*>(
-      ::caffe::CropParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->data_param_ = const_cast< ::caffe::DataParameter*>(
-      ::caffe::DataParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->detection_evaluate_param_ = const_cast< ::caffe::DetectionEvaluateParameter*>(
-      ::caffe::DetectionEvaluateParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->detection_output_param_ = const_cast< ::caffe::DetectionOutputParameter*>(
-      ::caffe::DetectionOutputParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->dropout_param_ = const_cast< ::caffe::DropoutParameter*>(
-      ::caffe::DropoutParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->dummy_data_param_ = const_cast< ::caffe::DummyDataParameter*>(
-      ::caffe::DummyDataParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->eltwise_param_ = const_cast< ::caffe::EltwiseParameter*>(
-      ::caffe::EltwiseParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->elu_param_ = const_cast< ::caffe::ELUParameter*>(
-      ::caffe::ELUParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->embed_param_ = const_cast< ::caffe::EmbedParameter*>(
-      ::caffe::EmbedParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->exp_param_ = const_cast< ::caffe::ExpParameter*>(
-      ::caffe::ExpParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->flatten_param_ = const_cast< ::caffe::FlattenParameter*>(
-      ::caffe::FlattenParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->hdf5_data_param_ = const_cast< ::caffe::HDF5DataParameter*>(
-      ::caffe::HDF5DataParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->hdf5_output_param_ = const_cast< ::caffe::HDF5OutputParameter*>(
-      ::caffe::HDF5OutputParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->hinge_loss_param_ = const_cast< ::caffe::HingeLossParameter*>(
-      ::caffe::HingeLossParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->image_data_param_ = const_cast< ::caffe::ImageDataParameter*>(
-      ::caffe::ImageDataParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->infogain_loss_param_ = const_cast< ::caffe::InfogainLossParameter*>(
-      ::caffe::InfogainLossParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->inner_product_param_ = const_cast< ::caffe::InnerProductParameter*>(
-      ::caffe::InnerProductParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->input_param_ = const_cast< ::caffe::InputParameter*>(
-      ::caffe::InputParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->log_param_ = const_cast< ::caffe::LogParameter*>(
-      ::caffe::LogParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->lrn_param_ = const_cast< ::caffe::LRNParameter*>(
-      ::caffe::LRNParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->memory_data_param_ = const_cast< ::caffe::MemoryDataParameter*>(
-      ::caffe::MemoryDataParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->multibox_loss_param_ = const_cast< ::caffe::MultiBoxLossParameter*>(
-      ::caffe::MultiBoxLossParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->mvn_param_ = const_cast< ::caffe::MVNParameter*>(
-      ::caffe::MVNParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->norm_param_ = const_cast< ::caffe::NormalizeParameter*>(
-      ::caffe::NormalizeParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->parameter_param_ = const_cast< ::caffe::ParameterParameter*>(
-      ::caffe::ParameterParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->permute_param_ = const_cast< ::caffe::PermuteParameter*>(
-      ::caffe::PermuteParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->pooling_param_ = const_cast< ::caffe::PoolingParameter*>(
-      ::caffe::PoolingParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->power_param_ = const_cast< ::caffe::PowerParameter*>(
-      ::caffe::PowerParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->prelu_param_ = const_cast< ::caffe::PReLUParameter*>(
-      ::caffe::PReLUParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->psroi_pooling_param_ = const_cast< ::caffe::PSROIPoolingParameter*>(
-      ::caffe::PSROIPoolingParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->prior_box_param_ = const_cast< ::caffe::PriorBoxParameter*>(
-      ::caffe::PriorBoxParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->python_param_ = const_cast< ::caffe::PythonParameter*>(
-      ::caffe::PythonParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->recurrent_param_ = const_cast< ::caffe::RecurrentParameter*>(
-      ::caffe::RecurrentParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->reduction_param_ = const_cast< ::caffe::ReductionParameter*>(
-      ::caffe::ReductionParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->relu_param_ = const_cast< ::caffe::ReLUParameter*>(
-      ::caffe::ReLUParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->reshape_param_ = const_cast< ::caffe::ReshapeParameter*>(
-      ::caffe::ReshapeParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->roi_pooling_param_ = const_cast< ::caffe::ROIPoolingParameter*>(
-      ::caffe::ROIPoolingParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->scale_param_ = const_cast< ::caffe::ScaleParameter*>(
-      ::caffe::ScaleParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->sigmoid_param_ = const_cast< ::caffe::SigmoidParameter*>(
-      ::caffe::SigmoidParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->smooth_l1_loss_param_ = const_cast< ::caffe::SmoothL1LossParameter*>(
-      ::caffe::SmoothL1LossParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->softmax_param_ = const_cast< ::caffe::SoftmaxParameter*>(
-      ::caffe::SoftmaxParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->spp_param_ = const_cast< ::caffe::SPPParameter*>(
-      ::caffe::SPPParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->split_param_ = const_cast< ::caffe::SplitParameter*>(
-      ::caffe::SplitParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->slice_param_ = const_cast< ::caffe::SliceParameter*>(
-      ::caffe::SliceParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->swish_param_ = const_cast< ::caffe::SwishParameter*>(
-      ::caffe::SwishParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->tanh_param_ = const_cast< ::caffe::TanHParameter*>(
-      ::caffe::TanHParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->threshold_param_ = const_cast< ::caffe::ThresholdParameter*>(
-      ::caffe::ThresholdParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->tile_param_ = const_cast< ::caffe::TileParameter*>(
-      ::caffe::TileParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->video_data_param_ = const_cast< ::caffe::VideoDataParameter*>(
-      ::caffe::VideoDataParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->window_data_param_ = const_cast< ::caffe::WindowDataParameter*>(
-      ::caffe::WindowDataParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->spatial_dropout_param_ = const_cast< ::caffe::SpatialDropoutParameter*>(
-      ::caffe::SpatialDropoutParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->multinode_ = const_cast< ::caffe::MultinodeLayerParameter*>(
-      ::caffe::MultinodeLayerParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->mn_activation_param_ = const_cast< ::caffe::MnActivationParameter*>(
-      ::caffe::MnActivationParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->mn_grad_compress_param_ = const_cast< ::caffe::MnParamGradCompressParameter*>(
-      ::caffe::MnParamGradCompressParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->quantization_param_ = const_cast< ::caffe::QuantizationParameter*>(
-      ::caffe::QuantizationParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->reorg_param_ = const_cast< ::caffe::ReorgParameter*>(
-      ::caffe::ReorgParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->region_loss_param_ = const_cast< ::caffe::RegionLossParameter*>(
-      ::caffe::RegionLossParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->eval_detection_param_ = const_cast< ::caffe::EvalDetectionParameter*>(
-      ::caffe::EvalDetectionParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->continuation_indicator_param_ = const_cast< ::caffe::ContinuationIndicatorParameter*>(
-      ::caffe::ContinuationIndicatorParameter::internal_default_instance());
-  ::caffe::_LayerParameter_default_instance_._instance.get_mutable()->reverse_param_ = const_cast< ::caffe::ReverseParameter*>(
-      ::caffe::ReverseParameter::internal_default_instance());
-}
 class LayerParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<LayerParameter>()._has_bits_);
@@ -17775,18 +17085,18 @@ LayerParameter::LayerParameter(const LayerParameter& from)
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   name_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_name()) {
-    name_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_name(),
-      GetArena());
+    name_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_name(), 
+      GetArenaForAllocation());
   }
   type_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_type()) {
-    type_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_type(),
-      GetArena());
+    type_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_type(), 
+      GetArenaForAllocation());
   }
   engine_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_engine()) {
-    engine_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_engine(),
-      GetArena());
+    engine_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_engine(), 
+      GetArenaForAllocation());
   }
   if (from._internal_has_transform_param()) {
     transform_param_ = new ::caffe::TransformationParameter(*from.transform_param_);
@@ -18148,13 +17458,13 @@ LayerParameter::LayerParameter(const LayerParameter& from)
 }
 
 void LayerParameter::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_LayerParameter_caffe_2eproto.base);
-  name_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  type_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  engine_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  ::memset(&transform_param_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&phase_) -
-      reinterpret_cast<char*>(&transform_param_)) + sizeof(phase_));
+name_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+type_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+engine_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&transform_param_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&phase_) -
+    reinterpret_cast<char*>(&transform_param_)) + sizeof(phase_));
 }
 
 LayerParameter::~LayerParameter() {
@@ -18164,7 +17474,7 @@ LayerParameter::~LayerParameter() {
 }
 
 void LayerParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   name_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   type_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   engine_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
@@ -18250,11 +17560,6 @@ void LayerParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void LayerParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const LayerParameter& LayerParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_LayerParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void LayerParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.LayerParameter)
@@ -18593,11 +17898,9 @@ void LayerParameter::Clear() {
 
 const char* LayerParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional string name = 1;
       case 1:
@@ -19253,7 +18556,8 @@ const char* LayerParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -20896,7 +20200,7 @@ bool LayerParameter::IsInitialized() const {
 
 void LayerParameter::InternalSwap(LayerParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   swap(_has_bits_[1], other->_has_bits_[1]);
   swap(_has_bits_[2], other->_has_bits_[2]);
@@ -20908,9 +20212,21 @@ void LayerParameter::InternalSwap(LayerParameter* other) {
   include_.InternalSwap(&other->include_);
   exclude_.InternalSwap(&other->exclude_);
   propagate_down_.InternalSwap(&other->propagate_down_);
-  name_.Swap(&other->name_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
-  type_.Swap(&other->type_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
-  engine_.Swap(&other->engine_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &name_, GetArenaForAllocation(),
+      &other->name_, other->GetArenaForAllocation()
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &type_, GetArenaForAllocation(),
+      &other->type_, other->GetArenaForAllocation()
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &engine_, GetArenaForAllocation(),
+      &other->engine_, other->GetArenaForAllocation()
+  );
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(LayerParameter, phase_)
       + sizeof(LayerParameter::phase_)
@@ -20920,14 +20236,13 @@ void LayerParameter::InternalSwap(LayerParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata LayerParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[27]);
 }
-
 
 // ===================================================================
 
-void ContinuationIndicatorParameter::InitAsDefaultInstance() {
-}
 class ContinuationIndicatorParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<ContinuationIndicatorParameter>()._has_bits_);
@@ -20956,9 +20271,10 @@ ContinuationIndicatorParameter::ContinuationIndicatorParameter(const Continuatio
 }
 
 void ContinuationIndicatorParameter::SharedCtor() {
-  ::memset(&time_step_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&batch_size_) -
-      reinterpret_cast<char*>(&time_step_)) + sizeof(batch_size_));
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&time_step_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&batch_size_) -
+    reinterpret_cast<char*>(&time_step_)) + sizeof(batch_size_));
 }
 
 ContinuationIndicatorParameter::~ContinuationIndicatorParameter() {
@@ -20968,7 +20284,7 @@ ContinuationIndicatorParameter::~ContinuationIndicatorParameter() {
 }
 
 void ContinuationIndicatorParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void ContinuationIndicatorParameter::ArenaDtor(void* object) {
@@ -20980,11 +20296,6 @@ void ContinuationIndicatorParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::
 void ContinuationIndicatorParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const ContinuationIndicatorParameter& ContinuationIndicatorParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_ContinuationIndicatorParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void ContinuationIndicatorParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.ContinuationIndicatorParameter)
@@ -21005,11 +20316,9 @@ void ContinuationIndicatorParameter::Clear() {
 const char* ContinuationIndicatorParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional uint32 time_step = 1 [default = 0];
       case 1:
@@ -21029,7 +20338,8 @@ const char* ContinuationIndicatorParameter::_InternalParse(const char* ptr, ::PR
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -21165,7 +20475,7 @@ bool ContinuationIndicatorParameter::IsInitialized() const {
 
 void ContinuationIndicatorParameter::InternalSwap(ContinuationIndicatorParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(ContinuationIndicatorParameter, batch_size_)
@@ -21176,14 +20486,13 @@ void ContinuationIndicatorParameter::InternalSwap(ContinuationIndicatorParameter
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata ContinuationIndicatorParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[28]);
 }
-
 
 // ===================================================================
 
-void ReverseParameter::InitAsDefaultInstance() {
-}
 class ReverseParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<ReverseParameter>()._has_bits_);
@@ -21207,7 +20516,7 @@ ReverseParameter::ReverseParameter(const ReverseParameter& from)
 }
 
 void ReverseParameter::SharedCtor() {
-  axis_ = 0;
+axis_ = 0;
 }
 
 ReverseParameter::~ReverseParameter() {
@@ -21217,7 +20526,7 @@ ReverseParameter::~ReverseParameter() {
 }
 
 void ReverseParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void ReverseParameter::ArenaDtor(void* object) {
@@ -21229,11 +20538,6 @@ void ReverseParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void ReverseParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const ReverseParameter& ReverseParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_ReverseParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void ReverseParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.ReverseParameter)
@@ -21249,11 +20553,9 @@ void ReverseParameter::Clear() {
 const char* ReverseParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional int32 axis = 1;
       case 1:
@@ -21265,7 +20567,8 @@ const char* ReverseParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPA
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -21379,20 +20682,19 @@ bool ReverseParameter::IsInitialized() const {
 
 void ReverseParameter::InternalSwap(ReverseParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   swap(axis_, other->axis_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata ReverseParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[29]);
 }
-
 
 // ===================================================================
 
-void RegionLossParameter::InitAsDefaultInstance() {
-}
 class RegionLossParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<RegionLossParameter>()._has_bits_);
@@ -21463,13 +20765,13 @@ RegionLossParameter::RegionLossParameter(const RegionLossParameter& from)
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   softmax_tree_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_softmax_tree()) {
-    softmax_tree_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_softmax_tree(),
-      GetArena());
+    softmax_tree_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_softmax_tree(), 
+      GetArenaForAllocation());
   }
   class_map_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_class_map()) {
-    class_map_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_class_map(),
-      GetArena());
+    class_map_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_class_map(), 
+      GetArenaForAllocation());
   }
   ::memcpy(&random_, &from.random_,
     static_cast<size_t>(reinterpret_cast<char*>(&thresh_) -
@@ -21478,24 +20780,23 @@ RegionLossParameter::RegionLossParameter(const RegionLossParameter& from)
 }
 
 void RegionLossParameter::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_RegionLossParameter_caffe_2eproto.base);
-  softmax_tree_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  class_map_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  random_ = 1u;
-  side_ = 13u;
-  num_class_ = 20u;
-  bias_match_ = 1u;
-  coords_ = 4u;
-  num_ = 5u;
-  softmax_ = 1u;
-  jitter_ = 0.2f;
-  rescore_ = 1u;
-  object_scale_ = 1;
-  class_scale_ = 1;
-  noobject_scale_ = 0.5f;
-  coord_scale_ = 5;
-  absolute_ = 1u;
-  thresh_ = 0.2f;
+softmax_tree_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+class_map_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+random_ = 1u;
+side_ = 13u;
+num_class_ = 20u;
+bias_match_ = 1u;
+coords_ = 4u;
+num_ = 5u;
+softmax_ = 1u;
+jitter_ = 0.2f;
+rescore_ = 1u;
+object_scale_ = 1;
+class_scale_ = 1;
+noobject_scale_ = 0.5f;
+coord_scale_ = 5;
+absolute_ = 1u;
+thresh_ = 0.2f;
 }
 
 RegionLossParameter::~RegionLossParameter() {
@@ -21505,7 +20806,7 @@ RegionLossParameter::~RegionLossParameter() {
 }
 
 void RegionLossParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   softmax_tree_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   class_map_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
@@ -21519,11 +20820,6 @@ void RegionLossParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void RegionLossParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const RegionLossParameter& RegionLossParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_RegionLossParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void RegionLossParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.RegionLossParameter)
@@ -21565,11 +20861,9 @@ void RegionLossParameter::Clear() {
 const char* RegionLossParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional uint32 side = 1 [default = 13];
       case 1:
@@ -21730,7 +21024,8 @@ const char* RegionLossParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAME
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -22123,11 +21418,19 @@ bool RegionLossParameter::IsInitialized() const {
 
 void RegionLossParameter::InternalSwap(RegionLossParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   biases_.InternalSwap(&other->biases_);
-  softmax_tree_.Swap(&other->softmax_tree_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
-  class_map_.Swap(&other->class_map_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &softmax_tree_, GetArenaForAllocation(),
+      &other->softmax_tree_, other->GetArenaForAllocation()
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &class_map_, GetArenaForAllocation(),
+      &other->class_map_, other->GetArenaForAllocation()
+  );
   swap(random_, other->random_);
   swap(side_, other->side_);
   swap(num_class_, other->num_class_);
@@ -22146,14 +21449,13 @@ void RegionLossParameter::InternalSwap(RegionLossParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata RegionLossParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[30]);
 }
-
 
 // ===================================================================
 
-void EvalDetectionParameter::InitAsDefaultInstance() {
-}
 class EvalDetectionParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<EvalDetectionParameter>()._has_bits_);
@@ -22202,14 +21504,14 @@ EvalDetectionParameter::EvalDetectionParameter(const EvalDetectionParameter& fro
 }
 
 void EvalDetectionParameter::SharedCtor() {
-  nms_ = -1;
-  side_ = 7u;
-  num_class_ = 20u;
-  num_object_ = 2u;
-  threshold_ = 0.5f;
-  sqrt_ = true;
-  constriant_ = true;
-  score_type_ = 2;
+nms_ = -1;
+side_ = 7u;
+num_class_ = 20u;
+num_object_ = 2u;
+threshold_ = 0.5f;
+sqrt_ = true;
+constriant_ = true;
+score_type_ = 2;
 }
 
 EvalDetectionParameter::~EvalDetectionParameter() {
@@ -22219,7 +21521,7 @@ EvalDetectionParameter::~EvalDetectionParameter() {
 }
 
 void EvalDetectionParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void EvalDetectionParameter::ArenaDtor(void* object) {
@@ -22231,11 +21533,6 @@ void EvalDetectionParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) 
 void EvalDetectionParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const EvalDetectionParameter& EvalDetectionParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_EvalDetectionParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void EvalDetectionParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.EvalDetectionParameter)
@@ -22262,11 +21559,9 @@ void EvalDetectionParameter::Clear() {
 const char* EvalDetectionParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional uint32 side = 1 [default = 7];
       case 1:
@@ -22353,7 +21648,8 @@ const char* EvalDetectionParameter::_InternalParse(const char* ptr, ::PROTOBUF_N
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -22593,7 +21889,7 @@ bool EvalDetectionParameter::IsInitialized() const {
 
 void EvalDetectionParameter::InternalSwap(EvalDetectionParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   biases_.InternalSwap(&other->biases_);
   swap(nms_, other->nms_);
@@ -22607,14 +21903,13 @@ void EvalDetectionParameter::InternalSwap(EvalDetectionParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata EvalDetectionParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[31]);
 }
-
 
 // ===================================================================
 
-void MultinodeLayerParameter::InitAsDefaultInstance() {
-}
 class MultinodeLayerParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<MultinodeLayerParameter>()._has_bits_);
@@ -22643,8 +21938,8 @@ MultinodeLayerParameter::MultinodeLayerParameter(const MultinodeLayerParameter& 
 }
 
 void MultinodeLayerParameter::SharedCtor() {
-  num_nodes_ = 0u;
-  model_parts_ = 1u;
+num_nodes_ = 0u;
+model_parts_ = 1u;
 }
 
 MultinodeLayerParameter::~MultinodeLayerParameter() {
@@ -22654,7 +21949,7 @@ MultinodeLayerParameter::~MultinodeLayerParameter() {
 }
 
 void MultinodeLayerParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void MultinodeLayerParameter::ArenaDtor(void* object) {
@@ -22666,11 +21961,6 @@ void MultinodeLayerParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*)
 void MultinodeLayerParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const MultinodeLayerParameter& MultinodeLayerParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_MultinodeLayerParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void MultinodeLayerParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.MultinodeLayerParameter)
@@ -22690,11 +21980,9 @@ void MultinodeLayerParameter::Clear() {
 const char* MultinodeLayerParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional uint32 num_nodes = 1;
       case 1:
@@ -22714,7 +22002,8 @@ const char* MultinodeLayerParameter::_InternalParse(const char* ptr, ::PROTOBUF_
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -22850,21 +22139,20 @@ bool MultinodeLayerParameter::IsInitialized() const {
 
 void MultinodeLayerParameter::InternalSwap(MultinodeLayerParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   swap(num_nodes_, other->num_nodes_);
   swap(model_parts_, other->model_parts_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata MultinodeLayerParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[32]);
 }
-
 
 // ===================================================================
 
-void MnActivationParameter::InitAsDefaultInstance() {
-}
 class MnActivationParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<MnActivationParameter>()._has_bits_);
@@ -22902,12 +22190,13 @@ MnActivationParameter::MnActivationParameter(const MnActivationParameter& from)
 }
 
 void MnActivationParameter::SharedCtor() {
-  ::memset(&num_nodes_in_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&num_nodes_out_) -
-      reinterpret_cast<char*>(&num_nodes_in_)) + sizeof(num_nodes_out_));
-  need_reduce_ = true;
-  model_parts_in_ = 1u;
-  model_parts_out_ = 1u;
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&num_nodes_in_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&num_nodes_out_) -
+    reinterpret_cast<char*>(&num_nodes_in_)) + sizeof(num_nodes_out_));
+need_reduce_ = true;
+model_parts_in_ = 1u;
+model_parts_out_ = 1u;
 }
 
 MnActivationParameter::~MnActivationParameter() {
@@ -22917,7 +22206,7 @@ MnActivationParameter::~MnActivationParameter() {
 }
 
 void MnActivationParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void MnActivationParameter::ArenaDtor(void* object) {
@@ -22929,11 +22218,6 @@ void MnActivationParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void MnActivationParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const MnActivationParameter& MnActivationParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_MnActivationParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void MnActivationParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.MnActivationParameter)
@@ -22957,11 +22241,9 @@ void MnActivationParameter::Clear() {
 const char* MnActivationParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional uint32 num_nodes_in = 1;
       case 1:
@@ -23005,7 +22287,8 @@ const char* MnActivationParameter::_InternalParse(const char* ptr, ::PROTOBUF_NA
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -23187,7 +22470,7 @@ bool MnActivationParameter::IsInitialized() const {
 
 void MnActivationParameter::InternalSwap(MnActivationParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(MnActivationParameter, num_nodes_out_)
@@ -23201,14 +22484,13 @@ void MnActivationParameter::InternalSwap(MnActivationParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata MnActivationParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[33]);
 }
-
 
 // ===================================================================
 
-void QuantizationParameter::InitAsDefaultInstance() {
-}
 class QuantizationParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<QuantizationParameter>()._has_bits_);
@@ -23264,12 +22546,13 @@ QuantizationParameter::QuantizationParameter(const QuantizationParameter& from)
 }
 
 void QuantizationParameter::SharedCtor() {
-  ::memset(&precision_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&force_u8_input_) -
-      reinterpret_cast<char*>(&precision_)) + sizeof(force_u8_input_));
-  bw_params_ = 32u;
-  bw_layer_in_ = 32u;
-  bw_layer_out_ = 32u;
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&precision_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&force_u8_input_) -
+    reinterpret_cast<char*>(&precision_)) + sizeof(force_u8_input_));
+bw_params_ = 32u;
+bw_layer_in_ = 32u;
+bw_layer_out_ = 32u;
 }
 
 QuantizationParameter::~QuantizationParameter() {
@@ -23279,7 +22562,7 @@ QuantizationParameter::~QuantizationParameter() {
 }
 
 void QuantizationParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void QuantizationParameter::ArenaDtor(void* object) {
@@ -23291,11 +22574,6 @@ void QuantizationParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void QuantizationParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const QuantizationParameter& QuantizationParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_QuantizationParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void QuantizationParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.QuantizationParameter)
@@ -23325,11 +22603,9 @@ void QuantizationParameter::Clear() {
 const char* QuantizationParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional .caffe.QuantizationParameter.Precision precision = 1 [default = DYNAMIC_FIXED_POINT];
       case 1:
@@ -23487,7 +22763,8 @@ const char* QuantizationParameter::_InternalParse(const char* ptr, ::PROTOBUF_NA
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -23795,7 +23072,7 @@ bool QuantizationParameter::IsInitialized() const {
 
 void QuantizationParameter::InternalSwap(QuantizationParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   fl_layer_in_.InternalSwap(&other->fl_layer_in_);
   fl_layer_out_.InternalSwap(&other->fl_layer_out_);
@@ -23815,14 +23092,13 @@ void QuantizationParameter::InternalSwap(QuantizationParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata QuantizationParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[34]);
 }
-
 
 // ===================================================================
 
-void MnParamGradCompressParameter::InitAsDefaultInstance() {
-}
 class MnParamGradCompressParameter::_Internal {
  public:
 };
@@ -23851,7 +23127,7 @@ MnParamGradCompressParameter::~MnParamGradCompressParameter() {
 }
 
 void MnParamGradCompressParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void MnParamGradCompressParameter::ArenaDtor(void* object) {
@@ -23863,11 +23139,6 @@ void MnParamGradCompressParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Ar
 void MnParamGradCompressParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const MnParamGradCompressParameter& MnParamGradCompressParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_MnParamGradCompressParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void MnParamGradCompressParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.MnParamGradCompressParameter)
@@ -23881,11 +23152,9 @@ void MnParamGradCompressParameter::Clear() {
 
 const char* MnParamGradCompressParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // repeated bool param_grad_compress_enable = 1;
       case 1:
@@ -23904,7 +23173,8 @@ const char* MnParamGradCompressParameter::_InternalParse(const char* ptr, ::PROT
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -24015,33 +23285,18 @@ bool MnParamGradCompressParameter::IsInitialized() const {
 
 void MnParamGradCompressParameter::InternalSwap(MnParamGradCompressParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   param_grad_compress_enable_.InternalSwap(&other->param_grad_compress_enable_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata MnParamGradCompressParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[35]);
 }
-
 
 // ===================================================================
 
-void TransformationParameter::InitAsDefaultInstance() {
-  ::caffe::_TransformationParameter_default_instance_._instance.get_mutable()->resize_param_ = const_cast< ::caffe::ResizeParameter*>(
-      ::caffe::ResizeParameter::internal_default_instance());
-  ::caffe::_TransformationParameter_default_instance_._instance.get_mutable()->noise_param_ = const_cast< ::caffe::NoiseParameter*>(
-      ::caffe::NoiseParameter::internal_default_instance());
-  ::caffe::_TransformationParameter_default_instance_._instance.get_mutable()->distort_param_ = const_cast< ::caffe::DistortionParameter*>(
-      ::caffe::DistortionParameter::internal_default_instance());
-  ::caffe::_TransformationParameter_default_instance_._instance.get_mutable()->expand_param_ = const_cast< ::caffe::ExpansionParameter*>(
-      ::caffe::ExpansionParameter::internal_default_instance());
-  ::caffe::_TransformationParameter_default_instance_._instance.get_mutable()->emit_constraint_ = const_cast< ::caffe::EmitConstraint*>(
-      ::caffe::EmitConstraint::internal_default_instance());
-  ::caffe::_TransformationParameter_default_instance_._instance.get_mutable()->random_resize_param_ = const_cast< ::caffe::RandomResizeParameter*>(
-      ::caffe::RandomResizeParameter::internal_default_instance());
-  ::caffe::_TransformationParameter_default_instance_._instance.get_mutable()->random_aspect_ratio_param_ = const_cast< ::caffe::RandomAspectRatioParameter*>(
-      ::caffe::RandomAspectRatioParameter::internal_default_instance());
-}
 class TransformationParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<TransformationParameter>()._has_bits_);
@@ -24150,8 +23405,8 @@ TransformationParameter::TransformationParameter(const TransformationParameter& 
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   mean_file_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_mean_file()) {
-    mean_file_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_mean_file(),
-      GetArena());
+    mean_file_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_mean_file(), 
+      GetArenaForAllocation());
   }
   if (from._internal_has_resize_param()) {
     resize_param_ = new ::caffe::ResizeParameter(*from.resize_param_);
@@ -24195,12 +23450,12 @@ TransformationParameter::TransformationParameter(const TransformationParameter& 
 }
 
 void TransformationParameter::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_TransformationParameter_caffe_2eproto.base);
-  mean_file_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  ::memset(&resize_param_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&pad_) -
-      reinterpret_cast<char*>(&resize_param_)) + sizeof(pad_));
-  scale_ = 1;
+mean_file_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&resize_param_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&pad_) -
+    reinterpret_cast<char*>(&resize_param_)) + sizeof(pad_));
+scale_ = 1;
 }
 
 TransformationParameter::~TransformationParameter() {
@@ -24210,7 +23465,7 @@ TransformationParameter::~TransformationParameter() {
 }
 
 void TransformationParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   mean_file_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (this != internal_default_instance()) delete resize_param_;
   if (this != internal_default_instance()) delete noise_param_;
@@ -24230,11 +23485,6 @@ void TransformationParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*)
 void TransformationParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const TransformationParameter& TransformationParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_TransformationParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void TransformationParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.TransformationParameter)
@@ -24293,11 +23543,9 @@ void TransformationParameter::Clear() {
 const char* TransformationParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional float scale = 1 [default = 1];
       case 1:
@@ -24456,7 +23704,8 @@ const char* TransformationParameter::_InternalParse(const char* ptr, ::PROTOBUF_
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -24879,10 +24128,14 @@ bool TransformationParameter::IsInitialized() const {
 
 void TransformationParameter::InternalSwap(TransformationParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   mean_value_.InternalSwap(&other->mean_value_);
-  mean_file_.Swap(&other->mean_file_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &mean_file_, GetArenaForAllocation(),
+      &other->mean_file_, other->GetArenaForAllocation()
+  );
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(TransformationParameter, pad_)
       + sizeof(TransformationParameter::pad_)
@@ -24893,16 +24146,13 @@ void TransformationParameter::InternalSwap(TransformationParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata TransformationParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[36]);
 }
-
 
 // ===================================================================
 
-void RandomResizeParameter::InitAsDefaultInstance() {
-  ::caffe::_RandomResizeParameter_default_instance_._instance.get_mutable()->resize_param_ = const_cast< ::caffe::ResizeParameter*>(
-      ::caffe::ResizeParameter::internal_default_instance());
-}
 class RandomResizeParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<RandomResizeParameter>()._has_bits_);
@@ -24944,10 +24194,10 @@ RandomResizeParameter::RandomResizeParameter(const RandomResizeParameter& from)
 }
 
 void RandomResizeParameter::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_RandomResizeParameter_caffe_2eproto.base);
-  ::memset(&resize_param_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&max_size_) -
-      reinterpret_cast<char*>(&resize_param_)) + sizeof(max_size_));
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&resize_param_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&max_size_) -
+    reinterpret_cast<char*>(&resize_param_)) + sizeof(max_size_));
 }
 
 RandomResizeParameter::~RandomResizeParameter() {
@@ -24957,7 +24207,7 @@ RandomResizeParameter::~RandomResizeParameter() {
 }
 
 void RandomResizeParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   if (this != internal_default_instance()) delete resize_param_;
 }
 
@@ -24970,11 +24220,6 @@ void RandomResizeParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void RandomResizeParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const RandomResizeParameter& RandomResizeParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_RandomResizeParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void RandomResizeParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.RandomResizeParameter)
@@ -24999,11 +24244,9 @@ void RandomResizeParameter::Clear() {
 const char* RandomResizeParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional uint32 min_size = 1 [default = 0];
       case 1:
@@ -25030,7 +24273,8 @@ const char* RandomResizeParameter::_InternalParse(const char* ptr, ::PROTOBUF_NA
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -25184,7 +24428,7 @@ bool RandomResizeParameter::IsInitialized() const {
 
 void RandomResizeParameter::InternalSwap(RandomResizeParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(RandomResizeParameter, max_size_)
@@ -25195,16 +24439,13 @@ void RandomResizeParameter::InternalSwap(RandomResizeParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata RandomResizeParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[37]);
 }
-
 
 // ===================================================================
 
-void RandomAspectRatioParameter::InitAsDefaultInstance() {
-  ::caffe::_RandomAspectRatioParameter_default_instance_._instance.get_mutable()->resize_param_ = const_cast< ::caffe::ResizeParameter*>(
-      ::caffe::ResizeParameter::internal_default_instance());
-}
 class RandomAspectRatioParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<RandomAspectRatioParameter>()._has_bits_);
@@ -25252,12 +24493,11 @@ RandomAspectRatioParameter::RandomAspectRatioParameter(const RandomAspectRatioPa
 }
 
 void RandomAspectRatioParameter::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_RandomAspectRatioParameter_caffe_2eproto.base);
-  resize_param_ = nullptr;
-  min_area_ratio_ = 0.5f;
-  max_area_ratio_ = 1;
-  aspect_ratio_change_ = 1;
-  max_attempt_ = 10u;
+resize_param_ = nullptr;
+min_area_ratio_ = 0.5f;
+max_area_ratio_ = 1;
+aspect_ratio_change_ = 1;
+max_attempt_ = 10u;
 }
 
 RandomAspectRatioParameter::~RandomAspectRatioParameter() {
@@ -25267,7 +24507,7 @@ RandomAspectRatioParameter::~RandomAspectRatioParameter() {
 }
 
 void RandomAspectRatioParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   if (this != internal_default_instance()) delete resize_param_;
 }
 
@@ -25280,11 +24520,6 @@ void RandomAspectRatioParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Aren
 void RandomAspectRatioParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const RandomAspectRatioParameter& RandomAspectRatioParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_RandomAspectRatioParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void RandomAspectRatioParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.RandomAspectRatioParameter)
@@ -25310,11 +24545,9 @@ void RandomAspectRatioParameter::Clear() {
 const char* RandomAspectRatioParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional float min_area_ratio = 1 [default = 0.5];
       case 1:
@@ -25357,7 +24590,8 @@ const char* RandomAspectRatioParameter::_InternalParse(const char* ptr, ::PROTOB
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -25537,7 +24771,7 @@ bool RandomAspectRatioParameter::IsInitialized() const {
 
 void RandomAspectRatioParameter::InternalSwap(RandomAspectRatioParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   swap(resize_param_, other->resize_param_);
   swap(min_area_ratio_, other->min_area_ratio_);
@@ -25547,14 +24781,13 @@ void RandomAspectRatioParameter::InternalSwap(RandomAspectRatioParameter* other)
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata RandomAspectRatioParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[38]);
 }
-
 
 // ===================================================================
 
-void ResizeParameter::InitAsDefaultInstance() {
-}
 class ResizeParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<ResizeParameter>()._has_bits_);
@@ -25602,12 +24835,13 @@ ResizeParameter::ResizeParameter(const ResizeParameter& from)
 }
 
 void ResizeParameter::SharedCtor() {
-  ::memset(&height_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&width_scale_) -
-      reinterpret_cast<char*>(&height_)) + sizeof(width_scale_));
-  pad_mode_ = 1;
-  prob_ = 1;
-  resize_mode_ = 1;
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&height_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&width_scale_) -
+    reinterpret_cast<char*>(&height_)) + sizeof(width_scale_));
+pad_mode_ = 1;
+prob_ = 1;
+resize_mode_ = 1;
 }
 
 ResizeParameter::~ResizeParameter() {
@@ -25617,7 +24851,7 @@ ResizeParameter::~ResizeParameter() {
 }
 
 void ResizeParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void ResizeParameter::ArenaDtor(void* object) {
@@ -25629,11 +24863,6 @@ void ResizeParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void ResizeParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const ResizeParameter& ResizeParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_ResizeParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void ResizeParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.ResizeParameter)
@@ -25659,11 +24888,9 @@ void ResizeParameter::Clear() {
 const char* ResizeParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional float prob = 1 [default = 1];
       case 1:
@@ -25766,7 +24993,8 @@ const char* ResizeParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPAC
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -26014,7 +25242,7 @@ bool ResizeParameter::IsInitialized() const {
 
 void ResizeParameter::InternalSwap(ResizeParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   pad_value_.InternalSwap(&other->pad_value_);
   interp_mode_.InternalSwap(&other->interp_mode_);
@@ -26030,14 +25258,13 @@ void ResizeParameter::InternalSwap(ResizeParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata ResizeParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[39]);
 }
-
 
 // ===================================================================
 
-void SaltPepperParameter::InitAsDefaultInstance() {
-}
 class SaltPepperParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<SaltPepperParameter>()._has_bits_);
@@ -26063,7 +25290,7 @@ SaltPepperParameter::SaltPepperParameter(const SaltPepperParameter& from)
 }
 
 void SaltPepperParameter::SharedCtor() {
-  fraction_ = 0;
+fraction_ = 0;
 }
 
 SaltPepperParameter::~SaltPepperParameter() {
@@ -26073,7 +25300,7 @@ SaltPepperParameter::~SaltPepperParameter() {
 }
 
 void SaltPepperParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void SaltPepperParameter::ArenaDtor(void* object) {
@@ -26085,11 +25312,6 @@ void SaltPepperParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void SaltPepperParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const SaltPepperParameter& SaltPepperParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_SaltPepperParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void SaltPepperParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.SaltPepperParameter)
@@ -26106,11 +25328,9 @@ void SaltPepperParameter::Clear() {
 const char* SaltPepperParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional float fraction = 1 [default = 0];
       case 1:
@@ -26137,7 +25357,8 @@ const char* SaltPepperParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAME
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -26265,23 +25486,20 @@ bool SaltPepperParameter::IsInitialized() const {
 
 void SaltPepperParameter::InternalSwap(SaltPepperParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   value_.InternalSwap(&other->value_);
   swap(fraction_, other->fraction_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata SaltPepperParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[40]);
 }
-
 
 // ===================================================================
 
-void NoiseParameter::InitAsDefaultInstance() {
-  ::caffe::_NoiseParameter_default_instance_._instance.get_mutable()->saltpepper_param_ = const_cast< ::caffe::SaltPepperParameter*>(
-      ::caffe::SaltPepperParameter::internal_default_instance());
-}
 class NoiseParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<NoiseParameter>()._has_bits_);
@@ -26353,11 +25571,11 @@ NoiseParameter::NoiseParameter(const NoiseParameter& from)
 }
 
 void NoiseParameter::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_NoiseParameter_caffe_2eproto.base);
-  ::memset(&saltpepper_param_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&convert_to_lab_) -
-      reinterpret_cast<char*>(&saltpepper_param_)) + sizeof(convert_to_lab_));
-  jpeg_ = -1;
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&saltpepper_param_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&convert_to_lab_) -
+    reinterpret_cast<char*>(&saltpepper_param_)) + sizeof(convert_to_lab_));
+jpeg_ = -1;
 }
 
 NoiseParameter::~NoiseParameter() {
@@ -26367,7 +25585,7 @@ NoiseParameter::~NoiseParameter() {
 }
 
 void NoiseParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   if (this != internal_default_instance()) delete saltpepper_param_;
 }
 
@@ -26380,11 +25598,6 @@ void NoiseParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void NoiseParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const NoiseParameter& NoiseParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_NoiseParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void NoiseParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.NoiseParameter)
@@ -26415,11 +25628,9 @@ void NoiseParameter::Clear() {
 const char* NoiseParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional float prob = 1 [default = 0];
       case 1:
@@ -26526,7 +25737,8 @@ const char* NoiseParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -26821,7 +26033,7 @@ bool NoiseParameter::IsInitialized() const {
 
 void NoiseParameter::InternalSwap(NoiseParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(NoiseParameter, convert_to_lab_)
@@ -26833,14 +26045,13 @@ void NoiseParameter::InternalSwap(NoiseParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata NoiseParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[41]);
 }
-
 
 // ===================================================================
 
-void DistortionParameter::InitAsDefaultInstance() {
-}
 class DistortionParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<DistortionParameter>()._has_bits_);
@@ -26896,9 +26107,10 @@ DistortionParameter::DistortionParameter(const DistortionParameter& from)
 }
 
 void DistortionParameter::SharedCtor() {
-  ::memset(&brightness_prob_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&random_order_prob_) -
-      reinterpret_cast<char*>(&brightness_prob_)) + sizeof(random_order_prob_));
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&brightness_prob_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&random_order_prob_) -
+    reinterpret_cast<char*>(&brightness_prob_)) + sizeof(random_order_prob_));
 }
 
 DistortionParameter::~DistortionParameter() {
@@ -26908,7 +26120,7 @@ DistortionParameter::~DistortionParameter() {
 }
 
 void DistortionParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void DistortionParameter::ArenaDtor(void* object) {
@@ -26920,11 +26132,6 @@ void DistortionParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void DistortionParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const DistortionParameter& DistortionParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_DistortionParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void DistortionParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.DistortionParameter)
@@ -26950,11 +26157,9 @@ void DistortionParameter::Clear() {
 const char* DistortionParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional float brightness_prob = 1 [default = 0];
       case 1:
@@ -27046,7 +26251,8 @@ const char* DistortionParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAME
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -27309,7 +26515,7 @@ bool DistortionParameter::IsInitialized() const {
 
 void DistortionParameter::InternalSwap(DistortionParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(DistortionParameter, random_order_prob_)
@@ -27320,14 +26526,13 @@ void DistortionParameter::InternalSwap(DistortionParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata DistortionParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[42]);
 }
-
 
 // ===================================================================
 
-void ExpansionParameter::InitAsDefaultInstance() {
-}
 class ExpansionParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<ExpansionParameter>()._has_bits_);
@@ -27356,8 +26561,8 @@ ExpansionParameter::ExpansionParameter(const ExpansionParameter& from)
 }
 
 void ExpansionParameter::SharedCtor() {
-  prob_ = 1;
-  max_expand_ratio_ = 1;
+prob_ = 1;
+max_expand_ratio_ = 1;
 }
 
 ExpansionParameter::~ExpansionParameter() {
@@ -27367,7 +26572,7 @@ ExpansionParameter::~ExpansionParameter() {
 }
 
 void ExpansionParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void ExpansionParameter::ArenaDtor(void* object) {
@@ -27379,11 +26584,6 @@ void ExpansionParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void ExpansionParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const ExpansionParameter& ExpansionParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_ExpansionParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void ExpansionParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.ExpansionParameter)
@@ -27403,11 +26603,9 @@ void ExpansionParameter::Clear() {
 const char* ExpansionParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional float prob = 1 [default = 1];
       case 1:
@@ -27427,7 +26625,8 @@ const char* ExpansionParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMES
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -27559,21 +26758,20 @@ bool ExpansionParameter::IsInitialized() const {
 
 void ExpansionParameter::InternalSwap(ExpansionParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   swap(prob_, other->prob_);
   swap(max_expand_ratio_, other->max_expand_ratio_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata ExpansionParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[43]);
 }
-
 
 // ===================================================================
 
-void LossParameter::InitAsDefaultInstance() {
-}
 class LossParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<LossParameter>()._has_bits_);
@@ -27611,11 +26809,12 @@ LossParameter::LossParameter(const LossParameter& from)
 }
 
 void LossParameter::SharedCtor() {
-  ::memset(&ignore_label_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&label_smoothing_) -
-      reinterpret_cast<char*>(&ignore_label_)) + sizeof(label_smoothing_));
-  normalization_ = 1;
-  pre_fixed_normalizer_ = 1;
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&ignore_label_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&label_smoothing_) -
+    reinterpret_cast<char*>(&ignore_label_)) + sizeof(label_smoothing_));
+normalization_ = 1;
+pre_fixed_normalizer_ = 1;
 }
 
 LossParameter::~LossParameter() {
@@ -27625,7 +26824,7 @@ LossParameter::~LossParameter() {
 }
 
 void LossParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void LossParameter::ArenaDtor(void* object) {
@@ -27637,11 +26836,6 @@ void LossParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void LossParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const LossParameter& LossParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_LossParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void LossParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.LossParameter)
@@ -27664,11 +26858,9 @@ void LossParameter::Clear() {
 const char* LossParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional int32 ignore_label = 1;
       case 1:
@@ -27716,7 +26908,8 @@ const char* LossParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -27894,7 +27087,7 @@ bool LossParameter::IsInitialized() const {
 
 void LossParameter::InternalSwap(LossParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(LossParameter, label_smoothing_)
@@ -27907,14 +27100,13 @@ void LossParameter::InternalSwap(LossParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata LossParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[44]);
 }
-
 
 // ===================================================================
 
-void AccuracyParameter::InitAsDefaultInstance() {
-}
 class AccuracyParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<AccuracyParameter>()._has_bits_);
@@ -27946,9 +27138,9 @@ AccuracyParameter::AccuracyParameter(const AccuracyParameter& from)
 }
 
 void AccuracyParameter::SharedCtor() {
-  ignore_label_ = 0;
-  top_k_ = 1u;
-  axis_ = 1;
+ignore_label_ = 0;
+top_k_ = 1u;
+axis_ = 1;
 }
 
 AccuracyParameter::~AccuracyParameter() {
@@ -27958,7 +27150,7 @@ AccuracyParameter::~AccuracyParameter() {
 }
 
 void AccuracyParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void AccuracyParameter::ArenaDtor(void* object) {
@@ -27970,11 +27162,6 @@ void AccuracyParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void AccuracyParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const AccuracyParameter& AccuracyParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_AccuracyParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void AccuracyParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.AccuracyParameter)
@@ -27995,11 +27182,9 @@ void AccuracyParameter::Clear() {
 const char* AccuracyParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional uint32 top_k = 1 [default = 1];
       case 1:
@@ -28027,7 +27212,8 @@ const char* AccuracyParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESP
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -28179,7 +27365,7 @@ bool AccuracyParameter::IsInitialized() const {
 
 void AccuracyParameter::InternalSwap(AccuracyParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   swap(ignore_label_, other->ignore_label_);
   swap(top_k_, other->top_k_);
@@ -28187,14 +27373,13 @@ void AccuracyParameter::InternalSwap(AccuracyParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata AccuracyParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[45]);
 }
-
 
 // ===================================================================
 
-void AnnotatedDataParameter::InitAsDefaultInstance() {
-}
 class AnnotatedDataParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<AnnotatedDataParameter>()._has_bits_);
@@ -28220,17 +27405,16 @@ AnnotatedDataParameter::AnnotatedDataParameter(const AnnotatedDataParameter& fro
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   label_map_file_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_label_map_file()) {
-    label_map_file_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_label_map_file(),
-      GetArena());
+    label_map_file_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_label_map_file(), 
+      GetArenaForAllocation());
   }
   anno_type_ = from.anno_type_;
   // @@protoc_insertion_point(copy_constructor:caffe.AnnotatedDataParameter)
 }
 
 void AnnotatedDataParameter::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_AnnotatedDataParameter_caffe_2eproto.base);
-  label_map_file_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  anno_type_ = 0;
+label_map_file_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+anno_type_ = 0;
 }
 
 AnnotatedDataParameter::~AnnotatedDataParameter() {
@@ -28240,7 +27424,7 @@ AnnotatedDataParameter::~AnnotatedDataParameter() {
 }
 
 void AnnotatedDataParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   label_map_file_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
@@ -28253,11 +27437,6 @@ void AnnotatedDataParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) 
 void AnnotatedDataParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const AnnotatedDataParameter& AnnotatedDataParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_AnnotatedDataParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void AnnotatedDataParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.AnnotatedDataParameter)
@@ -28278,11 +27457,9 @@ void AnnotatedDataParameter::Clear() {
 const char* AnnotatedDataParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // repeated .caffe.BatchSampler batch_sampler = 1;
       case 1:
@@ -28321,7 +27498,8 @@ const char* AnnotatedDataParameter::_InternalParse(const char* ptr, ::PROTOBUF_N
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -28477,22 +27655,25 @@ bool AnnotatedDataParameter::IsInitialized() const {
 
 void AnnotatedDataParameter::InternalSwap(AnnotatedDataParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   batch_sampler_.InternalSwap(&other->batch_sampler_);
-  label_map_file_.Swap(&other->label_map_file_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &label_map_file_, GetArenaForAllocation(),
+      &other->label_map_file_, other->GetArenaForAllocation()
+  );
   swap(anno_type_, other->anno_type_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata AnnotatedDataParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[46]);
 }
-
 
 // ===================================================================
 
-void ArgMaxParameter::InitAsDefaultInstance() {
-}
 class ArgMaxParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<ArgMaxParameter>()._has_bits_);
@@ -28524,10 +27705,11 @@ ArgMaxParameter::ArgMaxParameter(const ArgMaxParameter& from)
 }
 
 void ArgMaxParameter::SharedCtor() {
-  ::memset(&out_max_val_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&axis_) -
-      reinterpret_cast<char*>(&out_max_val_)) + sizeof(axis_));
-  top_k_ = 1u;
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&out_max_val_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&axis_) -
+    reinterpret_cast<char*>(&out_max_val_)) + sizeof(axis_));
+top_k_ = 1u;
 }
 
 ArgMaxParameter::~ArgMaxParameter() {
@@ -28537,7 +27719,7 @@ ArgMaxParameter::~ArgMaxParameter() {
 }
 
 void ArgMaxParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void ArgMaxParameter::ArenaDtor(void* object) {
@@ -28549,11 +27731,6 @@ void ArgMaxParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void ArgMaxParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const ArgMaxParameter& ArgMaxParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_ArgMaxParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void ArgMaxParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.ArgMaxParameter)
@@ -28575,11 +27752,9 @@ void ArgMaxParameter::Clear() {
 const char* ArgMaxParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional bool out_max_val = 1 [default = false];
       case 1:
@@ -28607,7 +27782,8 @@ const char* ArgMaxParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPAC
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -28757,7 +27933,7 @@ bool ArgMaxParameter::IsInitialized() const {
 
 void ArgMaxParameter::InternalSwap(ArgMaxParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(ArgMaxParameter, axis_)
@@ -28769,14 +27945,13 @@ void ArgMaxParameter::InternalSwap(ArgMaxParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata ArgMaxParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[47]);
 }
-
 
 // ===================================================================
 
-void ConcatParameter::InitAsDefaultInstance() {
-}
 class ConcatParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<ConcatParameter>()._has_bits_);
@@ -28811,11 +27986,12 @@ ConcatParameter::ConcatParameter(const ConcatParameter& from)
 }
 
 void ConcatParameter::SharedCtor() {
-  ::memset(&engine_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&per_fla_fuse_) -
-      reinterpret_cast<char*>(&engine_)) + sizeof(per_fla_fuse_));
-  concat_dim_ = 1u;
-  axis_ = 1;
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&engine_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&per_fla_fuse_) -
+    reinterpret_cast<char*>(&engine_)) + sizeof(per_fla_fuse_));
+concat_dim_ = 1u;
+axis_ = 1;
 }
 
 ConcatParameter::~ConcatParameter() {
@@ -28825,7 +28001,7 @@ ConcatParameter::~ConcatParameter() {
 }
 
 void ConcatParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void ConcatParameter::ArenaDtor(void* object) {
@@ -28837,11 +28013,6 @@ void ConcatParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void ConcatParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const ConcatParameter& ConcatParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_ConcatParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void ConcatParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.ConcatParameter)
@@ -28864,11 +28035,9 @@ void ConcatParameter::Clear() {
 const char* ConcatParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional uint32 concat_dim = 1 [default = 1];
       case 1:
@@ -28908,7 +28077,8 @@ const char* ConcatParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPAC
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -29074,7 +28244,7 @@ bool ConcatParameter::IsInitialized() const {
 
 void ConcatParameter::InternalSwap(ConcatParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(ConcatParameter, per_fla_fuse_)
@@ -29087,18 +28257,13 @@ void ConcatParameter::InternalSwap(ConcatParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata ConcatParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[48]);
 }
-
 
 // ===================================================================
 
-void BatchNormParameter::InitAsDefaultInstance() {
-  ::caffe::_BatchNormParameter_default_instance_._instance.get_mutable()->filler_ = const_cast< ::caffe::FillerParameter*>(
-      ::caffe::FillerParameter::internal_default_instance());
-  ::caffe::_BatchNormParameter_default_instance_._instance.get_mutable()->bias_filler_ = const_cast< ::caffe::FillerParameter*>(
-      ::caffe::FillerParameter::internal_default_instance());
-}
 class BatchNormParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<BatchNormParameter>()._has_bits_);
@@ -29171,14 +28336,14 @@ BatchNormParameter::BatchNormParameter(const BatchNormParameter& from)
 }
 
 void BatchNormParameter::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_BatchNormParameter_caffe_2eproto.base);
-  ::memset(&filler_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&stats_batch_size_) -
-      reinterpret_cast<char*>(&filler_)) + sizeof(stats_batch_size_));
-  use_weight_bias_ = true;
-  bias_term_ = true;
-  moving_average_fraction_ = 0.999f;
-  eps_ = 1e-05f;
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&filler_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&stats_batch_size_) -
+    reinterpret_cast<char*>(&filler_)) + sizeof(stats_batch_size_));
+use_weight_bias_ = true;
+bias_term_ = true;
+moving_average_fraction_ = 0.999f;
+eps_ = 1e-05f;
 }
 
 BatchNormParameter::~BatchNormParameter() {
@@ -29188,7 +28353,7 @@ BatchNormParameter::~BatchNormParameter() {
 }
 
 void BatchNormParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   if (this != internal_default_instance()) delete filler_;
   if (this != internal_default_instance()) delete bias_filler_;
 }
@@ -29202,11 +28367,6 @@ void BatchNormParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void BatchNormParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const BatchNormParameter& BatchNormParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_BatchNormParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void BatchNormParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.BatchNormParameter)
@@ -29243,11 +28403,9 @@ void BatchNormParameter::Clear() {
 const char* BatchNormParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional bool use_global_stats = 1;
       case 1:
@@ -29333,7 +28491,8 @@ const char* BatchNormParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMES
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -29594,7 +28753,7 @@ bool BatchNormParameter::IsInitialized() const {
 
 void BatchNormParameter::InternalSwap(BatchNormParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(BatchNormParameter, stats_batch_size_)
@@ -29609,14 +28768,13 @@ void BatchNormParameter::InternalSwap(BatchNormParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata BatchNormParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[49]);
 }
-
 
 // ===================================================================
 
-void SplitParameter::InitAsDefaultInstance() {
-}
 class SplitParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<SplitParameter>()._has_bits_);
@@ -29640,7 +28798,7 @@ SplitParameter::SplitParameter(const SplitParameter& from)
 }
 
 void SplitParameter::SharedCtor() {
-  engine_ = 0;
+engine_ = 0;
 }
 
 SplitParameter::~SplitParameter() {
@@ -29650,7 +28808,7 @@ SplitParameter::~SplitParameter() {
 }
 
 void SplitParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void SplitParameter::ArenaDtor(void* object) {
@@ -29662,11 +28820,6 @@ void SplitParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void SplitParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const SplitParameter& SplitParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_SplitParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void SplitParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.SplitParameter)
@@ -29682,11 +28835,9 @@ void SplitParameter::Clear() {
 const char* SplitParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional .caffe.SplitParameter.Engine engine = 1 [default = DEFAULT];
       case 1:
@@ -29702,7 +28853,8 @@ const char* SplitParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -29816,20 +28968,19 @@ bool SplitParameter::IsInitialized() const {
 
 void SplitParameter::InternalSwap(SplitParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   swap(engine_, other->engine_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata SplitParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[50]);
 }
-
 
 // ===================================================================
 
-void BoxAnnotatorOHEMParameter::InitAsDefaultInstance() {
-}
 class BoxAnnotatorOHEMParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<BoxAnnotatorOHEMParameter>()._has_bits_);
@@ -29861,8 +29012,8 @@ BoxAnnotatorOHEMParameter::BoxAnnotatorOHEMParameter(const BoxAnnotatorOHEMParam
 }
 
 void BoxAnnotatorOHEMParameter::SharedCtor() {
-  roi_per_img_ = 0u;
-  ignore_label_ = -1;
+roi_per_img_ = 0u;
+ignore_label_ = -1;
 }
 
 BoxAnnotatorOHEMParameter::~BoxAnnotatorOHEMParameter() {
@@ -29872,7 +29023,7 @@ BoxAnnotatorOHEMParameter::~BoxAnnotatorOHEMParameter() {
 }
 
 void BoxAnnotatorOHEMParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void BoxAnnotatorOHEMParameter::ArenaDtor(void* object) {
@@ -29884,11 +29035,6 @@ void BoxAnnotatorOHEMParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena
 void BoxAnnotatorOHEMParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const BoxAnnotatorOHEMParameter& BoxAnnotatorOHEMParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_BoxAnnotatorOHEMParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void BoxAnnotatorOHEMParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.BoxAnnotatorOHEMParameter)
@@ -29908,11 +29054,9 @@ void BoxAnnotatorOHEMParameter::Clear() {
 const char* BoxAnnotatorOHEMParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // required uint32 roi_per_img = 1;
       case 1:
@@ -29932,7 +29076,8 @@ const char* BoxAnnotatorOHEMParameter::_InternalParse(const char* ptr, ::PROTOBU
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -30066,23 +29211,20 @@ bool BoxAnnotatorOHEMParameter::IsInitialized() const {
 
 void BoxAnnotatorOHEMParameter::InternalSwap(BoxAnnotatorOHEMParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   swap(roi_per_img_, other->roi_per_img_);
   swap(ignore_label_, other->ignore_label_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata BoxAnnotatorOHEMParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[51]);
 }
-
 
 // ===================================================================
 
-void BiasParameter::InitAsDefaultInstance() {
-  ::caffe::_BiasParameter_default_instance_._instance.get_mutable()->filler_ = const_cast< ::caffe::FillerParameter*>(
-      ::caffe::FillerParameter::internal_default_instance());
-}
 class BiasParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<BiasParameter>()._has_bits_);
@@ -30124,10 +29266,9 @@ BiasParameter::BiasParameter(const BiasParameter& from)
 }
 
 void BiasParameter::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_BiasParameter_caffe_2eproto.base);
-  filler_ = nullptr;
-  axis_ = 1;
-  num_axes_ = 1;
+filler_ = nullptr;
+axis_ = 1;
+num_axes_ = 1;
 }
 
 BiasParameter::~BiasParameter() {
@@ -30137,7 +29278,7 @@ BiasParameter::~BiasParameter() {
 }
 
 void BiasParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   if (this != internal_default_instance()) delete filler_;
 }
 
@@ -30150,11 +29291,6 @@ void BiasParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void BiasParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const BiasParameter& BiasParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_BiasParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void BiasParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.BiasParameter)
@@ -30178,11 +29314,9 @@ void BiasParameter::Clear() {
 const char* BiasParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional int32 axis = 1 [default = 1];
       case 1:
@@ -30209,7 +29343,8 @@ const char* BiasParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -30363,7 +29498,7 @@ bool BiasParameter::IsInitialized() const {
 
 void BiasParameter::InternalSwap(BiasParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   swap(filler_, other->filler_);
   swap(axis_, other->axis_);
@@ -30371,14 +29506,13 @@ void BiasParameter::InternalSwap(BiasParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata BiasParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[52]);
 }
-
 
 // ===================================================================
 
-void ContrastiveLossParameter::InitAsDefaultInstance() {
-}
 class ContrastiveLossParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<ContrastiveLossParameter>()._has_bits_);
@@ -30407,8 +29541,8 @@ ContrastiveLossParameter::ContrastiveLossParameter(const ContrastiveLossParamete
 }
 
 void ContrastiveLossParameter::SharedCtor() {
-  legacy_version_ = false;
-  margin_ = 1;
+legacy_version_ = false;
+margin_ = 1;
 }
 
 ContrastiveLossParameter::~ContrastiveLossParameter() {
@@ -30418,7 +29552,7 @@ ContrastiveLossParameter::~ContrastiveLossParameter() {
 }
 
 void ContrastiveLossParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void ContrastiveLossParameter::ArenaDtor(void* object) {
@@ -30430,11 +29564,6 @@ void ContrastiveLossParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*
 void ContrastiveLossParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const ContrastiveLossParameter& ContrastiveLossParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_ContrastiveLossParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void ContrastiveLossParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.ContrastiveLossParameter)
@@ -30454,11 +29583,9 @@ void ContrastiveLossParameter::Clear() {
 const char* ContrastiveLossParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional float margin = 1 [default = 1];
       case 1:
@@ -30478,7 +29605,8 @@ const char* ContrastiveLossParameter::_InternalParse(const char* ptr, ::PROTOBUF
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -30610,21 +29738,20 @@ bool ContrastiveLossParameter::IsInitialized() const {
 
 void ContrastiveLossParameter::InternalSwap(ContrastiveLossParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   swap(legacy_version_, other->legacy_version_);
   swap(margin_, other->margin_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata ContrastiveLossParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[53]);
 }
-
 
 // ===================================================================
 
-void ReorgParameter::InitAsDefaultInstance() {
-}
 class ReorgParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<ReorgParameter>()._has_bits_);
@@ -30653,9 +29780,10 @@ ReorgParameter::ReorgParameter(const ReorgParameter& from)
 }
 
 void ReorgParameter::SharedCtor() {
-  ::memset(&stride_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&reverse_) -
-      reinterpret_cast<char*>(&stride_)) + sizeof(reverse_));
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&stride_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&reverse_) -
+    reinterpret_cast<char*>(&stride_)) + sizeof(reverse_));
 }
 
 ReorgParameter::~ReorgParameter() {
@@ -30665,7 +29793,7 @@ ReorgParameter::~ReorgParameter() {
 }
 
 void ReorgParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void ReorgParameter::ArenaDtor(void* object) {
@@ -30677,11 +29805,6 @@ void ReorgParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void ReorgParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const ReorgParameter& ReorgParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_ReorgParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void ReorgParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.ReorgParameter)
@@ -30702,11 +29825,9 @@ void ReorgParameter::Clear() {
 const char* ReorgParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional uint32 stride = 1;
       case 1:
@@ -30726,7 +29847,8 @@ const char* ReorgParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -30860,7 +29982,7 @@ bool ReorgParameter::IsInitialized() const {
 
 void ReorgParameter::InternalSwap(ReorgParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(ReorgParameter, reverse_)
@@ -30871,18 +29993,13 @@ void ReorgParameter::InternalSwap(ReorgParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata ReorgParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[54]);
 }
-
 
 // ===================================================================
 
-void ConvolutionParameter::InitAsDefaultInstance() {
-  ::caffe::_ConvolutionParameter_default_instance_._instance.get_mutable()->weight_filler_ = const_cast< ::caffe::FillerParameter*>(
-      ::caffe::FillerParameter::internal_default_instance());
-  ::caffe::_ConvolutionParameter_default_instance_._instance.get_mutable()->bias_filler_ = const_cast< ::caffe::FillerParameter*>(
-      ::caffe::FillerParameter::internal_default_instance());
-}
 class ConvolutionParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<ConvolutionParameter>()._has_bits_);
@@ -30952,7 +30069,7 @@ const ::caffe::FillerParameter&
 ConvolutionParameter::_Internal::bias_filler(const ConvolutionParameter* msg) {
   return *msg->bias_filler_;
 }
-::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<std::string> ConvolutionParameter::_i_give_permission_to_break_this_code_default_conv_algorithm_;
+const ::PROTOBUF_NAMESPACE_ID::internal::LazyString ConvolutionParameter::_i_give_permission_to_break_this_code_default_conv_algorithm_{{{"direct", 6}}, {nullptr}};
 ConvolutionParameter::ConvolutionParameter(::PROTOBUF_NAMESPACE_ID::Arena* arena)
   : ::PROTOBUF_NAMESPACE_ID::Message(arena),
   pad_(arena),
@@ -30973,10 +30090,10 @@ ConvolutionParameter::ConvolutionParameter(const ConvolutionParameter& from)
       dilation_(from.dilation_),
       coeff_(from.coeff_) {
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
-  conv_algorithm_.UnsafeSetDefault(&::caffe::ConvolutionParameter::_i_give_permission_to_break_this_code_default_conv_algorithm_.get());
+  conv_algorithm_.UnsafeSetDefault(nullptr);
   if (from._internal_has_conv_algorithm()) {
-    conv_algorithm_.Set(&::caffe::ConvolutionParameter::_i_give_permission_to_break_this_code_default_conv_algorithm_.get(), from._internal_conv_algorithm(),
-      GetArena());
+    conv_algorithm_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::NonEmptyDefault{}, from._internal_conv_algorithm(), 
+      GetArenaForAllocation());
   }
   if (from._internal_has_weight_filler()) {
     weight_filler_ = new ::caffe::FillerParameter(*from.weight_filler_);
@@ -30995,14 +30112,14 @@ ConvolutionParameter::ConvolutionParameter(const ConvolutionParameter& from)
 }
 
 void ConvolutionParameter::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_ConvolutionParameter_caffe_2eproto.base);
-  conv_algorithm_.UnsafeSetDefault(&::caffe::ConvolutionParameter::_i_give_permission_to_break_this_code_default_conv_algorithm_.get());
-  ::memset(&weight_filler_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&fusion_type_) -
-      reinterpret_cast<char*>(&weight_filler_)) + sizeof(fusion_type_));
-  axis_ = 1;
-  bias_term_ = true;
-  group_ = 1u;
+conv_algorithm_.UnsafeSetDefault(nullptr);
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&weight_filler_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&fusion_type_) -
+    reinterpret_cast<char*>(&weight_filler_)) + sizeof(fusion_type_));
+axis_ = 1;
+bias_term_ = true;
+group_ = 1u;
 }
 
 ConvolutionParameter::~ConvolutionParameter() {
@@ -31012,8 +30129,8 @@ ConvolutionParameter::~ConvolutionParameter() {
 }
 
 void ConvolutionParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
-  conv_algorithm_.DestroyNoArena(&::caffe::ConvolutionParameter::_i_give_permission_to_break_this_code_default_conv_algorithm_.get());
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
+  conv_algorithm_.DestroyNoArena(nullptr);
   if (this != internal_default_instance()) delete weight_filler_;
   if (this != internal_default_instance()) delete bias_filler_;
 }
@@ -31027,11 +30144,6 @@ void ConvolutionParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void ConvolutionParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const ConvolutionParameter& ConvolutionParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_ConvolutionParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void ConvolutionParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.ConvolutionParameter)
@@ -31047,8 +30159,8 @@ void ConvolutionParameter::Clear() {
   cached_has_bits = _has_bits_[0];
   if (cached_has_bits & 0x00000007u) {
     if (cached_has_bits & 0x00000001u) {
-      conv_algorithm_.ClearToDefault(&::caffe::ConvolutionParameter::_i_give_permission_to_break_this_code_default_conv_algorithm_.get(), GetArena());
-    }
+      conv_algorithm_.ClearToDefault(::caffe::ConvolutionParameter::_i_give_permission_to_break_this_code_default_conv_algorithm_, GetArenaForAllocation());
+       }
     if (cached_has_bits & 0x00000002u) {
       GOOGLE_DCHECK(weight_filler_ != nullptr);
       weight_filler_->Clear();
@@ -31080,11 +30192,9 @@ void ConvolutionParameter::Clear() {
 const char* ConvolutionParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional uint32 num_output = 1;
       case 1:
@@ -31316,7 +30426,8 @@ const char* ConvolutionParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAM
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -31798,14 +30909,18 @@ bool ConvolutionParameter::IsInitialized() const {
 
 void ConvolutionParameter::InternalSwap(ConvolutionParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   pad_.InternalSwap(&other->pad_);
   kernel_size_.InternalSwap(&other->kernel_size_);
   stride_.InternalSwap(&other->stride_);
   dilation_.InternalSwap(&other->dilation_);
   coeff_.InternalSwap(&other->coeff_);
-  conv_algorithm_.Swap(&other->conv_algorithm_, &::caffe::ConvolutionParameter::_i_give_permission_to_break_this_code_default_conv_algorithm_.get(), GetArena());
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      nullptr,
+      &conv_algorithm_, GetArenaForAllocation(),
+      &other->conv_algorithm_, other->GetArenaForAllocation()
+  );
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(ConvolutionParameter, fusion_type_)
       + sizeof(ConvolutionParameter::fusion_type_)
@@ -31818,14 +30933,13 @@ void ConvolutionParameter::InternalSwap(ConvolutionParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata ConvolutionParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[55]);
 }
-
 
 // ===================================================================
 
-void CropParameter::InitAsDefaultInstance() {
-}
 class CropParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<CropParameter>()._has_bits_);
@@ -31851,7 +30965,7 @@ CropParameter::CropParameter(const CropParameter& from)
 }
 
 void CropParameter::SharedCtor() {
-  axis_ = 2;
+axis_ = 2;
 }
 
 CropParameter::~CropParameter() {
@@ -31861,7 +30975,7 @@ CropParameter::~CropParameter() {
 }
 
 void CropParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void CropParameter::ArenaDtor(void* object) {
@@ -31873,11 +30987,6 @@ void CropParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void CropParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const CropParameter& CropParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_CropParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void CropParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.CropParameter)
@@ -31894,11 +31003,9 @@ void CropParameter::Clear() {
 const char* CropParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional int32 axis = 1 [default = 2];
       case 1:
@@ -31925,7 +31032,8 @@ const char* CropParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -32055,21 +31163,20 @@ bool CropParameter::IsInitialized() const {
 
 void CropParameter::InternalSwap(CropParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   offset_.InternalSwap(&other->offset_);
   swap(axis_, other->axis_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata CropParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[56]);
 }
-
 
 // ===================================================================
 
-void DataParameter::InitAsDefaultInstance() {
-}
 class DataParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<DataParameter>()._has_bits_);
@@ -32122,13 +31229,13 @@ DataParameter::DataParameter(const DataParameter& from)
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   source_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_source()) {
-    source_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_source(),
-      GetArena());
+    source_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_source(), 
+      GetArenaForAllocation());
   }
   mean_file_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_mean_file()) {
-    mean_file_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_mean_file(),
-      GetArena());
+    mean_file_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_mean_file(), 
+      GetArenaForAllocation());
   }
   ::memcpy(&batch_size_, &from.batch_size_,
     static_cast<size_t>(reinterpret_cast<char*>(&prefetch_) -
@@ -32137,14 +31244,14 @@ DataParameter::DataParameter(const DataParameter& from)
 }
 
 void DataParameter::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_DataParameter_caffe_2eproto.base);
-  source_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  mean_file_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  ::memset(&batch_size_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&shuffle_) -
-      reinterpret_cast<char*>(&batch_size_)) + sizeof(shuffle_));
-  scale_ = 1;
-  prefetch_ = 4u;
+source_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+mean_file_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&batch_size_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&shuffle_) -
+    reinterpret_cast<char*>(&batch_size_)) + sizeof(shuffle_));
+scale_ = 1;
+prefetch_ = 4u;
 }
 
 DataParameter::~DataParameter() {
@@ -32154,7 +31261,7 @@ DataParameter::~DataParameter() {
 }
 
 void DataParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   source_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   mean_file_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
@@ -32168,11 +31275,6 @@ void DataParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void DataParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const DataParameter& DataParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_DataParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void DataParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.DataParameter)
@@ -32207,11 +31309,9 @@ void DataParameter::Clear() {
 const char* DataParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional string source = 1;
       case 1:
@@ -32328,7 +31428,8 @@ const char* DataParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -32629,11 +31730,19 @@ bool DataParameter::IsInitialized() const {
 
 void DataParameter::InternalSwap(DataParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   side_.InternalSwap(&other->side_);
-  source_.Swap(&other->source_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
-  mean_file_.Swap(&other->mean_file_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &source_, GetArenaForAllocation(),
+      &other->source_, other->GetArenaForAllocation()
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &mean_file_, GetArenaForAllocation(),
+      &other->mean_file_, other->GetArenaForAllocation()
+  );
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(DataParameter, shuffle_)
       + sizeof(DataParameter::shuffle_)
@@ -32645,16 +31754,13 @@ void DataParameter::InternalSwap(DataParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata DataParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[57]);
 }
-
 
 // ===================================================================
 
-void DetectionEvaluateParameter::InitAsDefaultInstance() {
-  ::caffe::_DetectionEvaluateParameter_default_instance_._instance.get_mutable()->resize_param_ = const_cast< ::caffe::ResizeParameter*>(
-      ::caffe::ResizeParameter::internal_default_instance());
-}
 class DetectionEvaluateParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<DetectionEvaluateParameter>()._has_bits_);
@@ -32695,8 +31801,8 @@ DetectionEvaluateParameter::DetectionEvaluateParameter(const DetectionEvaluatePa
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   name_size_file_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_name_size_file()) {
-    name_size_file_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_name_size_file(),
-      GetArena());
+    name_size_file_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_name_size_file(), 
+      GetArenaForAllocation());
   }
   if (from._internal_has_resize_param()) {
     resize_param_ = new ::caffe::ResizeParameter(*from.resize_param_);
@@ -32710,13 +31816,13 @@ DetectionEvaluateParameter::DetectionEvaluateParameter(const DetectionEvaluatePa
 }
 
 void DetectionEvaluateParameter::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_DetectionEvaluateParameter_caffe_2eproto.base);
-  name_size_file_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  ::memset(&resize_param_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&background_label_id_) -
-      reinterpret_cast<char*>(&resize_param_)) + sizeof(background_label_id_));
-  overlap_threshold_ = 0.5f;
-  evaluate_difficult_gt_ = true;
+name_size_file_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&resize_param_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&background_label_id_) -
+    reinterpret_cast<char*>(&resize_param_)) + sizeof(background_label_id_));
+overlap_threshold_ = 0.5f;
+evaluate_difficult_gt_ = true;
 }
 
 DetectionEvaluateParameter::~DetectionEvaluateParameter() {
@@ -32726,7 +31832,7 @@ DetectionEvaluateParameter::~DetectionEvaluateParameter() {
 }
 
 void DetectionEvaluateParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   name_size_file_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (this != internal_default_instance()) delete resize_param_;
 }
@@ -32740,11 +31846,6 @@ void DetectionEvaluateParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Aren
 void DetectionEvaluateParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const DetectionEvaluateParameter& DetectionEvaluateParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_DetectionEvaluateParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void DetectionEvaluateParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.DetectionEvaluateParameter)
@@ -32776,11 +31877,9 @@ void DetectionEvaluateParameter::Clear() {
 const char* DetectionEvaluateParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional uint32 num_classes = 1;
       case 1:
@@ -32834,7 +31933,8 @@ const char* DetectionEvaluateParameter::_InternalParse(const char* ptr, ::PROTOB
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -33036,9 +32136,13 @@ bool DetectionEvaluateParameter::IsInitialized() const {
 
 void DetectionEvaluateParameter::InternalSwap(DetectionEvaluateParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
-  name_size_file_.Swap(&other->name_size_file_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &name_size_file_, GetArenaForAllocation(),
+      &other->name_size_file_, other->GetArenaForAllocation()
+  );
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(DetectionEvaluateParameter, background_label_id_)
       + sizeof(DetectionEvaluateParameter::background_label_id_)
@@ -33050,14 +32154,13 @@ void DetectionEvaluateParameter::InternalSwap(DetectionEvaluateParameter* other)
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata DetectionEvaluateParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[58]);
 }
-
 
 // ===================================================================
 
-void NonMaximumSuppressionParameter::InitAsDefaultInstance() {
-}
 class NonMaximumSuppressionParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<NonMaximumSuppressionParameter>()._has_bits_);
@@ -33089,9 +32192,9 @@ NonMaximumSuppressionParameter::NonMaximumSuppressionParameter(const NonMaximumS
 }
 
 void NonMaximumSuppressionParameter::SharedCtor() {
-  top_k_ = 0;
-  nms_threshold_ = 0.3f;
-  eta_ = 1;
+top_k_ = 0;
+nms_threshold_ = 0.3f;
+eta_ = 1;
 }
 
 NonMaximumSuppressionParameter::~NonMaximumSuppressionParameter() {
@@ -33101,7 +32204,7 @@ NonMaximumSuppressionParameter::~NonMaximumSuppressionParameter() {
 }
 
 void NonMaximumSuppressionParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void NonMaximumSuppressionParameter::ArenaDtor(void* object) {
@@ -33113,11 +32216,6 @@ void NonMaximumSuppressionParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::
 void NonMaximumSuppressionParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const NonMaximumSuppressionParameter& NonMaximumSuppressionParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_NonMaximumSuppressionParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void NonMaximumSuppressionParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.NonMaximumSuppressionParameter)
@@ -33138,11 +32236,9 @@ void NonMaximumSuppressionParameter::Clear() {
 const char* NonMaximumSuppressionParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional float nms_threshold = 1 [default = 0.3];
       case 1:
@@ -33170,7 +32266,8 @@ const char* NonMaximumSuppressionParameter::_InternalParse(const char* ptr, ::PR
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -33318,7 +32415,7 @@ bool NonMaximumSuppressionParameter::IsInitialized() const {
 
 void NonMaximumSuppressionParameter::InternalSwap(NonMaximumSuppressionParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   swap(top_k_, other->top_k_);
   swap(nms_threshold_, other->nms_threshold_);
@@ -33326,16 +32423,13 @@ void NonMaximumSuppressionParameter::InternalSwap(NonMaximumSuppressionParameter
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata NonMaximumSuppressionParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[59]);
 }
-
 
 // ===================================================================
 
-void SaveOutputParameter::InitAsDefaultInstance() {
-  ::caffe::_SaveOutputParameter_default_instance_._instance.get_mutable()->resize_param_ = const_cast< ::caffe::ResizeParameter*>(
-      ::caffe::ResizeParameter::internal_default_instance());
-}
 class SaveOutputParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<SaveOutputParameter>()._has_bits_);
@@ -33379,28 +32473,28 @@ SaveOutputParameter::SaveOutputParameter(const SaveOutputParameter& from)
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   output_directory_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_output_directory()) {
-    output_directory_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_output_directory(),
-      GetArena());
+    output_directory_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_output_directory(), 
+      GetArenaForAllocation());
   }
   output_name_prefix_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_output_name_prefix()) {
-    output_name_prefix_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_output_name_prefix(),
-      GetArena());
+    output_name_prefix_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_output_name_prefix(), 
+      GetArenaForAllocation());
   }
   output_format_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_output_format()) {
-    output_format_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_output_format(),
-      GetArena());
+    output_format_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_output_format(), 
+      GetArenaForAllocation());
   }
   label_map_file_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_label_map_file()) {
-    label_map_file_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_label_map_file(),
-      GetArena());
+    label_map_file_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_label_map_file(), 
+      GetArenaForAllocation());
   }
   name_size_file_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_name_size_file()) {
-    name_size_file_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_name_size_file(),
-      GetArena());
+    name_size_file_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_name_size_file(), 
+      GetArenaForAllocation());
   }
   if (from._internal_has_resize_param()) {
     resize_param_ = new ::caffe::ResizeParameter(*from.resize_param_);
@@ -33412,15 +32506,15 @@ SaveOutputParameter::SaveOutputParameter(const SaveOutputParameter& from)
 }
 
 void SaveOutputParameter::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_SaveOutputParameter_caffe_2eproto.base);
-  output_directory_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  output_name_prefix_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  output_format_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  label_map_file_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  name_size_file_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  ::memset(&resize_param_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&num_test_image_) -
-      reinterpret_cast<char*>(&resize_param_)) + sizeof(num_test_image_));
+output_directory_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+output_name_prefix_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+output_format_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+label_map_file_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+name_size_file_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&resize_param_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&num_test_image_) -
+    reinterpret_cast<char*>(&resize_param_)) + sizeof(num_test_image_));
 }
 
 SaveOutputParameter::~SaveOutputParameter() {
@@ -33430,7 +32524,7 @@ SaveOutputParameter::~SaveOutputParameter() {
 }
 
 void SaveOutputParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   output_directory_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   output_name_prefix_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   output_format_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
@@ -33448,11 +32542,6 @@ void SaveOutputParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void SaveOutputParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const SaveOutputParameter& SaveOutputParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_SaveOutputParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void SaveOutputParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.SaveOutputParameter)
@@ -33490,11 +32579,9 @@ void SaveOutputParameter::Clear() {
 const char* SaveOutputParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional string output_directory = 1;
       case 1:
@@ -33568,7 +32655,8 @@ const char* SaveOutputParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAME
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -33806,13 +32894,33 @@ bool SaveOutputParameter::IsInitialized() const {
 
 void SaveOutputParameter::InternalSwap(SaveOutputParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
-  output_directory_.Swap(&other->output_directory_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
-  output_name_prefix_.Swap(&other->output_name_prefix_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
-  output_format_.Swap(&other->output_format_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
-  label_map_file_.Swap(&other->label_map_file_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
-  name_size_file_.Swap(&other->name_size_file_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &output_directory_, GetArenaForAllocation(),
+      &other->output_directory_, other->GetArenaForAllocation()
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &output_name_prefix_, GetArenaForAllocation(),
+      &other->output_name_prefix_, other->GetArenaForAllocation()
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &output_format_, GetArenaForAllocation(),
+      &other->output_format_, other->GetArenaForAllocation()
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &label_map_file_, GetArenaForAllocation(),
+      &other->label_map_file_, other->GetArenaForAllocation()
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &name_size_file_, GetArenaForAllocation(),
+      &other->name_size_file_, other->GetArenaForAllocation()
+  );
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(SaveOutputParameter, num_test_image_)
       + sizeof(SaveOutputParameter::num_test_image_)
@@ -33822,18 +32930,13 @@ void SaveOutputParameter::InternalSwap(SaveOutputParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata SaveOutputParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[60]);
 }
-
 
 // ===================================================================
 
-void DetectionOutputParameter::InitAsDefaultInstance() {
-  ::caffe::_DetectionOutputParameter_default_instance_._instance.get_mutable()->nms_param_ = const_cast< ::caffe::NonMaximumSuppressionParameter*>(
-      ::caffe::NonMaximumSuppressionParameter::internal_default_instance());
-  ::caffe::_DetectionOutputParameter_default_instance_._instance.get_mutable()->save_output_param_ = const_cast< ::caffe::SaveOutputParameter*>(
-      ::caffe::SaveOutputParameter::internal_default_instance());
-}
 class DetectionOutputParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<DetectionOutputParameter>()._has_bits_);
@@ -33897,8 +33000,8 @@ DetectionOutputParameter::DetectionOutputParameter(const DetectionOutputParamete
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   save_file_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_save_file()) {
-    save_file_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_save_file(),
-      GetArena());
+    save_file_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_save_file(), 
+      GetArenaForAllocation());
   }
   if (from._internal_has_nms_param()) {
     nms_param_ = new ::caffe::NonMaximumSuppressionParameter(*from.nms_param_);
@@ -33917,14 +33020,14 @@ DetectionOutputParameter::DetectionOutputParameter(const DetectionOutputParamete
 }
 
 void DetectionOutputParameter::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_DetectionOutputParameter_caffe_2eproto.base);
-  save_file_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  ::memset(&nms_param_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&visualize_threshold_) -
-      reinterpret_cast<char*>(&nms_param_)) + sizeof(visualize_threshold_));
-  keep_top_k_ = -1;
-  share_location_ = true;
-  code_type_ = 1;
+save_file_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&nms_param_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&visualize_threshold_) -
+    reinterpret_cast<char*>(&nms_param_)) + sizeof(visualize_threshold_));
+keep_top_k_ = -1;
+share_location_ = true;
+code_type_ = 1;
 }
 
 DetectionOutputParameter::~DetectionOutputParameter() {
@@ -33934,7 +33037,7 @@ DetectionOutputParameter::~DetectionOutputParameter() {
 }
 
 void DetectionOutputParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   save_file_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (this != internal_default_instance()) delete nms_param_;
   if (this != internal_default_instance()) delete save_output_param_;
@@ -33949,11 +33052,6 @@ void DetectionOutputParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*
 void DetectionOutputParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const DetectionOutputParameter& DetectionOutputParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_DetectionOutputParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void DetectionOutputParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.DetectionOutputParameter)
@@ -33993,11 +33091,9 @@ void DetectionOutputParameter::Clear() {
 const char* DetectionOutputParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional uint32 num_classes = 1;
       case 1:
@@ -34102,7 +33198,8 @@ const char* DetectionOutputParameter::_InternalParse(const char* ptr, ::PROTOBUF
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -34401,9 +33498,13 @@ bool DetectionOutputParameter::IsInitialized() const {
 
 void DetectionOutputParameter::InternalSwap(DetectionOutputParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
-  save_file_.Swap(&other->save_file_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &save_file_, GetArenaForAllocation(),
+      &other->save_file_, other->GetArenaForAllocation()
+  );
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(DetectionOutputParameter, visualize_threshold_)
       + sizeof(DetectionOutputParameter::visualize_threshold_)
@@ -34416,14 +33517,13 @@ void DetectionOutputParameter::InternalSwap(DetectionOutputParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata DetectionOutputParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[61]);
 }
-
 
 // ===================================================================
 
-void DropoutParameter::InitAsDefaultInstance() {
-}
 class DropoutParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<DropoutParameter>()._has_bits_);
@@ -34447,7 +33547,7 @@ DropoutParameter::DropoutParameter(const DropoutParameter& from)
 }
 
 void DropoutParameter::SharedCtor() {
-  dropout_ratio_ = 0.5f;
+dropout_ratio_ = 0.5f;
 }
 
 DropoutParameter::~DropoutParameter() {
@@ -34457,7 +33557,7 @@ DropoutParameter::~DropoutParameter() {
 }
 
 void DropoutParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void DropoutParameter::ArenaDtor(void* object) {
@@ -34469,11 +33569,6 @@ void DropoutParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void DropoutParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const DropoutParameter& DropoutParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_DropoutParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void DropoutParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.DropoutParameter)
@@ -34489,11 +33584,9 @@ void DropoutParameter::Clear() {
 const char* DropoutParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional float dropout_ratio = 1 [default = 0.5];
       case 1:
@@ -34505,7 +33598,8 @@ const char* DropoutParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPA
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -34617,20 +33711,19 @@ bool DropoutParameter::IsInitialized() const {
 
 void DropoutParameter::InternalSwap(DropoutParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   swap(dropout_ratio_, other->dropout_ratio_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata DropoutParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[62]);
 }
-
 
 // ===================================================================
 
-void SpatialDropoutParameter::InitAsDefaultInstance() {
-}
 class SpatialDropoutParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<SpatialDropoutParameter>()._has_bits_);
@@ -34654,7 +33747,7 @@ SpatialDropoutParameter::SpatialDropoutParameter(const SpatialDropoutParameter& 
 }
 
 void SpatialDropoutParameter::SharedCtor() {
-  dropout_ratio_ = 0.5f;
+dropout_ratio_ = 0.5f;
 }
 
 SpatialDropoutParameter::~SpatialDropoutParameter() {
@@ -34664,7 +33757,7 @@ SpatialDropoutParameter::~SpatialDropoutParameter() {
 }
 
 void SpatialDropoutParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void SpatialDropoutParameter::ArenaDtor(void* object) {
@@ -34676,11 +33769,6 @@ void SpatialDropoutParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*)
 void SpatialDropoutParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const SpatialDropoutParameter& SpatialDropoutParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_SpatialDropoutParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void SpatialDropoutParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.SpatialDropoutParameter)
@@ -34696,11 +33784,9 @@ void SpatialDropoutParameter::Clear() {
 const char* SpatialDropoutParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional float dropout_ratio = 1 [default = 0.5];
       case 1:
@@ -34712,7 +33798,8 @@ const char* SpatialDropoutParameter::_InternalParse(const char* ptr, ::PROTOBUF_
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -34824,20 +33911,19 @@ bool SpatialDropoutParameter::IsInitialized() const {
 
 void SpatialDropoutParameter::InternalSwap(SpatialDropoutParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   swap(dropout_ratio_, other->dropout_ratio_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata SpatialDropoutParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[63]);
 }
-
 
 // ===================================================================
 
-void DummyDataParameter::InitAsDefaultInstance() {
-}
 class DummyDataParameter::_Internal {
  public:
 };
@@ -34867,7 +33953,6 @@ DummyDataParameter::DummyDataParameter(const DummyDataParameter& from)
 }
 
 void DummyDataParameter::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_DummyDataParameter_caffe_2eproto.base);
 }
 
 DummyDataParameter::~DummyDataParameter() {
@@ -34877,7 +33962,7 @@ DummyDataParameter::~DummyDataParameter() {
 }
 
 void DummyDataParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void DummyDataParameter::ArenaDtor(void* object) {
@@ -34889,11 +33974,6 @@ void DummyDataParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void DummyDataParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const DummyDataParameter& DummyDataParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_DummyDataParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void DummyDataParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.DummyDataParameter)
@@ -34912,11 +33992,9 @@ void DummyDataParameter::Clear() {
 
 const char* DummyDataParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // repeated .caffe.FillerParameter data_filler = 1;
       case 1:
@@ -35004,7 +34082,8 @@ const char* DummyDataParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMES
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -35195,7 +34274,7 @@ bool DummyDataParameter::IsInitialized() const {
 
 void DummyDataParameter::InternalSwap(DummyDataParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   data_filler_.InternalSwap(&other->data_filler_);
   num_.InternalSwap(&other->num_);
   channels_.InternalSwap(&other->channels_);
@@ -35205,14 +34284,13 @@ void DummyDataParameter::InternalSwap(DummyDataParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata DummyDataParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[64]);
 }
-
 
 // ===================================================================
 
-void EltwiseParameter::InitAsDefaultInstance() {
-}
 class EltwiseParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<EltwiseParameter>()._has_bits_);
@@ -35246,9 +34324,9 @@ EltwiseParameter::EltwiseParameter(const EltwiseParameter& from)
 }
 
 void EltwiseParameter::SharedCtor() {
-  engine_ = 0;
-  operation_ = 1;
-  stable_prod_grad_ = true;
+engine_ = 0;
+operation_ = 1;
+stable_prod_grad_ = true;
 }
 
 EltwiseParameter::~EltwiseParameter() {
@@ -35258,7 +34336,7 @@ EltwiseParameter::~EltwiseParameter() {
 }
 
 void EltwiseParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void EltwiseParameter::ArenaDtor(void* object) {
@@ -35270,11 +34348,6 @@ void EltwiseParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void EltwiseParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const EltwiseParameter& EltwiseParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_EltwiseParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void EltwiseParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.EltwiseParameter)
@@ -35296,11 +34369,9 @@ void EltwiseParameter::Clear() {
 const char* EltwiseParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional .caffe.EltwiseParameter.EltwiseOp operation = 1 [default = SUM];
       case 1:
@@ -35351,7 +34422,8 @@ const char* EltwiseParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPA
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -35517,7 +34589,7 @@ bool EltwiseParameter::IsInitialized() const {
 
 void EltwiseParameter::InternalSwap(EltwiseParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   coeff_.InternalSwap(&other->coeff_);
   swap(engine_, other->engine_);
@@ -35526,14 +34598,13 @@ void EltwiseParameter::InternalSwap(EltwiseParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata EltwiseParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[65]);
 }
-
 
 // ===================================================================
 
-void ELUParameter::InitAsDefaultInstance() {
-}
 class ELUParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<ELUParameter>()._has_bits_);
@@ -35557,7 +34628,7 @@ ELUParameter::ELUParameter(const ELUParameter& from)
 }
 
 void ELUParameter::SharedCtor() {
-  alpha_ = 1;
+alpha_ = 1;
 }
 
 ELUParameter::~ELUParameter() {
@@ -35567,7 +34638,7 @@ ELUParameter::~ELUParameter() {
 }
 
 void ELUParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void ELUParameter::ArenaDtor(void* object) {
@@ -35579,11 +34650,6 @@ void ELUParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void ELUParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const ELUParameter& ELUParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_ELUParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void ELUParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.ELUParameter)
@@ -35599,11 +34665,9 @@ void ELUParameter::Clear() {
 const char* ELUParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional float alpha = 1 [default = 1];
       case 1:
@@ -35615,7 +34679,8 @@ const char* ELUParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_I
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -35727,24 +34792,19 @@ bool ELUParameter::IsInitialized() const {
 
 void ELUParameter::InternalSwap(ELUParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   swap(alpha_, other->alpha_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata ELUParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[66]);
 }
-
 
 // ===================================================================
 
-void EmbedParameter::InitAsDefaultInstance() {
-  ::caffe::_EmbedParameter_default_instance_._instance.get_mutable()->weight_filler_ = const_cast< ::caffe::FillerParameter*>(
-      ::caffe::FillerParameter::internal_default_instance());
-  ::caffe::_EmbedParameter_default_instance_._instance.get_mutable()->bias_filler_ = const_cast< ::caffe::FillerParameter*>(
-      ::caffe::FillerParameter::internal_default_instance());
-}
 class EmbedParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<EmbedParameter>()._has_bits_);
@@ -35802,11 +34862,11 @@ EmbedParameter::EmbedParameter(const EmbedParameter& from)
 }
 
 void EmbedParameter::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_EmbedParameter_caffe_2eproto.base);
-  ::memset(&weight_filler_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&input_dim_) -
-      reinterpret_cast<char*>(&weight_filler_)) + sizeof(input_dim_));
-  bias_term_ = true;
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&weight_filler_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&input_dim_) -
+    reinterpret_cast<char*>(&weight_filler_)) + sizeof(input_dim_));
+bias_term_ = true;
 }
 
 EmbedParameter::~EmbedParameter() {
@@ -35816,7 +34876,7 @@ EmbedParameter::~EmbedParameter() {
 }
 
 void EmbedParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   if (this != internal_default_instance()) delete weight_filler_;
   if (this != internal_default_instance()) delete bias_filler_;
 }
@@ -35830,11 +34890,6 @@ void EmbedParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void EmbedParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const EmbedParameter& EmbedParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_EmbedParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void EmbedParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.EmbedParameter)
@@ -35866,11 +34921,9 @@ void EmbedParameter::Clear() {
 const char* EmbedParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional uint32 num_output = 1;
       case 1:
@@ -35912,7 +34965,8 @@ const char* EmbedParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -36098,7 +35152,7 @@ bool EmbedParameter::IsInitialized() const {
 
 void EmbedParameter::InternalSwap(EmbedParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(EmbedParameter, input_dim_)
@@ -36110,14 +35164,13 @@ void EmbedParameter::InternalSwap(EmbedParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata EmbedParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[67]);
 }
-
 
 // ===================================================================
 
-void ExpParameter::InitAsDefaultInstance() {
-}
 class ExpParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<ExpParameter>()._has_bits_);
@@ -36149,9 +35202,9 @@ ExpParameter::ExpParameter(const ExpParameter& from)
 }
 
 void ExpParameter::SharedCtor() {
-  shift_ = 0;
-  base_ = -1;
-  scale_ = 1;
+shift_ = 0;
+base_ = -1;
+scale_ = 1;
 }
 
 ExpParameter::~ExpParameter() {
@@ -36161,7 +35214,7 @@ ExpParameter::~ExpParameter() {
 }
 
 void ExpParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void ExpParameter::ArenaDtor(void* object) {
@@ -36173,11 +35226,6 @@ void ExpParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void ExpParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const ExpParameter& ExpParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_ExpParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void ExpParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.ExpParameter)
@@ -36198,11 +35246,9 @@ void ExpParameter::Clear() {
 const char* ExpParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional float base = 1 [default = -1];
       case 1:
@@ -36230,7 +35276,8 @@ const char* ExpParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_I
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -36376,7 +35423,7 @@ bool ExpParameter::IsInitialized() const {
 
 void ExpParameter::InternalSwap(ExpParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   swap(shift_, other->shift_);
   swap(base_, other->base_);
@@ -36384,14 +35431,13 @@ void ExpParameter::InternalSwap(ExpParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata ExpParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[68]);
 }
-
 
 // ===================================================================
 
-void FlattenParameter::InitAsDefaultInstance() {
-}
 class FlattenParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<FlattenParameter>()._has_bits_);
@@ -36420,8 +35466,8 @@ FlattenParameter::FlattenParameter(const FlattenParameter& from)
 }
 
 void FlattenParameter::SharedCtor() {
-  axis_ = 1;
-  end_axis_ = -1;
+axis_ = 1;
+end_axis_ = -1;
 }
 
 FlattenParameter::~FlattenParameter() {
@@ -36431,7 +35477,7 @@ FlattenParameter::~FlattenParameter() {
 }
 
 void FlattenParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void FlattenParameter::ArenaDtor(void* object) {
@@ -36443,11 +35489,6 @@ void FlattenParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void FlattenParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const FlattenParameter& FlattenParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_FlattenParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void FlattenParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.FlattenParameter)
@@ -36467,11 +35508,9 @@ void FlattenParameter::Clear() {
 const char* FlattenParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional int32 axis = 1 [default = 1];
       case 1:
@@ -36491,7 +35530,8 @@ const char* FlattenParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPA
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -36627,21 +35667,20 @@ bool FlattenParameter::IsInitialized() const {
 
 void FlattenParameter::InternalSwap(FlattenParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   swap(axis_, other->axis_);
   swap(end_axis_, other->end_axis_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata FlattenParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[69]);
 }
-
 
 // ===================================================================
 
-void HDF5DataParameter::InitAsDefaultInstance() {
-}
 class HDF5DataParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<HDF5DataParameter>()._has_bits_);
@@ -36668,8 +35707,8 @@ HDF5DataParameter::HDF5DataParameter(const HDF5DataParameter& from)
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   source_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_source()) {
-    source_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_source(),
-      GetArena());
+    source_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_source(), 
+      GetArenaForAllocation());
   }
   ::memcpy(&batch_size_, &from.batch_size_,
     static_cast<size_t>(reinterpret_cast<char*>(&shuffle_) -
@@ -36678,11 +35717,11 @@ HDF5DataParameter::HDF5DataParameter(const HDF5DataParameter& from)
 }
 
 void HDF5DataParameter::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_HDF5DataParameter_caffe_2eproto.base);
-  source_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  ::memset(&batch_size_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&shuffle_) -
-      reinterpret_cast<char*>(&batch_size_)) + sizeof(shuffle_));
+source_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&batch_size_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&shuffle_) -
+    reinterpret_cast<char*>(&batch_size_)) + sizeof(shuffle_));
 }
 
 HDF5DataParameter::~HDF5DataParameter() {
@@ -36692,7 +35731,7 @@ HDF5DataParameter::~HDF5DataParameter() {
 }
 
 void HDF5DataParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   source_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
@@ -36705,11 +35744,6 @@ void HDF5DataParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void HDF5DataParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const HDF5DataParameter& HDF5DataParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_HDF5DataParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void HDF5DataParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.HDF5DataParameter)
@@ -36733,11 +35767,9 @@ void HDF5DataParameter::Clear() {
 const char* HDF5DataParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional string source = 1;
       case 1:
@@ -36768,7 +35800,8 @@ const char* HDF5DataParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESP
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -36922,9 +35955,13 @@ bool HDF5DataParameter::IsInitialized() const {
 
 void HDF5DataParameter::InternalSwap(HDF5DataParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
-  source_.Swap(&other->source_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &source_, GetArenaForAllocation(),
+      &other->source_, other->GetArenaForAllocation()
+  );
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(HDF5DataParameter, shuffle_)
       + sizeof(HDF5DataParameter::shuffle_)
@@ -36934,14 +35971,13 @@ void HDF5DataParameter::InternalSwap(HDF5DataParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata HDF5DataParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[70]);
 }
-
 
 // ===================================================================
 
-void HDF5OutputParameter::InitAsDefaultInstance() {
-}
 class HDF5OutputParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<HDF5OutputParameter>()._has_bits_);
@@ -36962,15 +35998,14 @@ HDF5OutputParameter::HDF5OutputParameter(const HDF5OutputParameter& from)
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   file_name_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_file_name()) {
-    file_name_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_file_name(),
-      GetArena());
+    file_name_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_file_name(), 
+      GetArenaForAllocation());
   }
   // @@protoc_insertion_point(copy_constructor:caffe.HDF5OutputParameter)
 }
 
 void HDF5OutputParameter::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_HDF5OutputParameter_caffe_2eproto.base);
-  file_name_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+file_name_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
 HDF5OutputParameter::~HDF5OutputParameter() {
@@ -36980,7 +36015,7 @@ HDF5OutputParameter::~HDF5OutputParameter() {
 }
 
 void HDF5OutputParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   file_name_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
@@ -36993,11 +36028,6 @@ void HDF5OutputParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void HDF5OutputParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const HDF5OutputParameter& HDF5OutputParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_HDF5OutputParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void HDF5OutputParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.HDF5OutputParameter)
@@ -37016,11 +36046,9 @@ void HDF5OutputParameter::Clear() {
 const char* HDF5OutputParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional string file_name = 1;
       case 1:
@@ -37035,7 +36063,8 @@ const char* HDF5OutputParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAME
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -37153,20 +36182,23 @@ bool HDF5OutputParameter::IsInitialized() const {
 
 void HDF5OutputParameter::InternalSwap(HDF5OutputParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
-  file_name_.Swap(&other->file_name_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &file_name_, GetArenaForAllocation(),
+      &other->file_name_, other->GetArenaForAllocation()
+  );
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata HDF5OutputParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[71]);
 }
-
 
 // ===================================================================
 
-void HingeLossParameter::InitAsDefaultInstance() {
-}
 class HingeLossParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<HingeLossParameter>()._has_bits_);
@@ -37190,7 +36222,7 @@ HingeLossParameter::HingeLossParameter(const HingeLossParameter& from)
 }
 
 void HingeLossParameter::SharedCtor() {
-  norm_ = 1;
+norm_ = 1;
 }
 
 HingeLossParameter::~HingeLossParameter() {
@@ -37200,7 +36232,7 @@ HingeLossParameter::~HingeLossParameter() {
 }
 
 void HingeLossParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void HingeLossParameter::ArenaDtor(void* object) {
@@ -37212,11 +36244,6 @@ void HingeLossParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void HingeLossParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const HingeLossParameter& HingeLossParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_HingeLossParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void HingeLossParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.HingeLossParameter)
@@ -37232,11 +36259,9 @@ void HingeLossParameter::Clear() {
 const char* HingeLossParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional .caffe.HingeLossParameter.Norm norm = 1 [default = L1];
       case 1:
@@ -37252,7 +36277,8 @@ const char* HingeLossParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMES
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -37366,20 +36392,19 @@ bool HingeLossParameter::IsInitialized() const {
 
 void HingeLossParameter::InternalSwap(HingeLossParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   swap(norm_, other->norm_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata HingeLossParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[72]);
 }
-
 
 // ===================================================================
 
-void ImageDataParameter::InitAsDefaultInstance() {
-}
 class ImageDataParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<ImageDataParameter>()._has_bits_);
@@ -37439,18 +36464,18 @@ ImageDataParameter::ImageDataParameter(const ImageDataParameter& from)
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   source_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_source()) {
-    source_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_source(),
-      GetArena());
+    source_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_source(), 
+      GetArenaForAllocation());
   }
   mean_file_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_mean_file()) {
-    mean_file_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_mean_file(),
-      GetArena());
+    mean_file_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_mean_file(), 
+      GetArenaForAllocation());
   }
   root_folder_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_root_folder()) {
-    root_folder_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_root_folder(),
-      GetArena());
+    root_folder_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_root_folder(), 
+      GetArenaForAllocation());
   }
   ::memcpy(&crop_size_, &from.crop_size_,
     static_cast<size_t>(reinterpret_cast<char*>(&batch_size_) -
@@ -37459,16 +36484,16 @@ ImageDataParameter::ImageDataParameter(const ImageDataParameter& from)
 }
 
 void ImageDataParameter::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_ImageDataParameter_caffe_2eproto.base);
-  source_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  mean_file_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  root_folder_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  ::memset(&crop_size_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&min_width_) -
-      reinterpret_cast<char*>(&crop_size_)) + sizeof(min_width_));
-  is_color_ = true;
-  scale_ = 1;
-  batch_size_ = 1u;
+source_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+mean_file_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+root_folder_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&crop_size_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&min_width_) -
+    reinterpret_cast<char*>(&crop_size_)) + sizeof(min_width_));
+is_color_ = true;
+scale_ = 1;
+batch_size_ = 1u;
 }
 
 ImageDataParameter::~ImageDataParameter() {
@@ -37478,7 +36503,7 @@ ImageDataParameter::~ImageDataParameter() {
 }
 
 void ImageDataParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   source_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   mean_file_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   root_folder_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
@@ -37493,11 +36518,6 @@ void ImageDataParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void ImageDataParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const ImageDataParameter& ImageDataParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_ImageDataParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void ImageDataParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.ImageDataParameter)
@@ -37537,11 +36557,9 @@ void ImageDataParameter::Clear() {
 const char* ImageDataParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional string source = 1;
       case 1:
@@ -37666,7 +36684,8 @@ const char* ImageDataParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMES
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -38003,11 +37022,23 @@ bool ImageDataParameter::IsInitialized() const {
 
 void ImageDataParameter::InternalSwap(ImageDataParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
-  source_.Swap(&other->source_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
-  mean_file_.Swap(&other->mean_file_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
-  root_folder_.Swap(&other->root_folder_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &source_, GetArenaForAllocation(),
+      &other->source_, other->GetArenaForAllocation()
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &mean_file_, GetArenaForAllocation(),
+      &other->mean_file_, other->GetArenaForAllocation()
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &root_folder_, GetArenaForAllocation(),
+      &other->root_folder_, other->GetArenaForAllocation()
+  );
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(ImageDataParameter, min_width_)
       + sizeof(ImageDataParameter::min_width_)
@@ -38020,14 +37051,13 @@ void ImageDataParameter::InternalSwap(ImageDataParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata ImageDataParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[73]);
 }
-
 
 // ===================================================================
 
-void InfogainLossParameter::InitAsDefaultInstance() {
-}
 class InfogainLossParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<InfogainLossParameter>()._has_bits_);
@@ -38051,17 +37081,16 @@ InfogainLossParameter::InfogainLossParameter(const InfogainLossParameter& from)
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   source_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_source()) {
-    source_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_source(),
-      GetArena());
+    source_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_source(), 
+      GetArenaForAllocation());
   }
   axis_ = from.axis_;
   // @@protoc_insertion_point(copy_constructor:caffe.InfogainLossParameter)
 }
 
 void InfogainLossParameter::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_InfogainLossParameter_caffe_2eproto.base);
-  source_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  axis_ = 1;
+source_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+axis_ = 1;
 }
 
 InfogainLossParameter::~InfogainLossParameter() {
@@ -38071,7 +37100,7 @@ InfogainLossParameter::~InfogainLossParameter() {
 }
 
 void InfogainLossParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   source_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
@@ -38084,11 +37113,6 @@ void InfogainLossParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void InfogainLossParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const InfogainLossParameter& InfogainLossParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_InfogainLossParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void InfogainLossParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.InfogainLossParameter)
@@ -38110,11 +37134,9 @@ void InfogainLossParameter::Clear() {
 const char* InfogainLossParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional string source = 1;
       case 1:
@@ -38137,7 +37159,8 @@ const char* InfogainLossParameter::_InternalParse(const char* ptr, ::PROTOBUF_NA
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -38277,25 +37300,24 @@ bool InfogainLossParameter::IsInitialized() const {
 
 void InfogainLossParameter::InternalSwap(InfogainLossParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
-  source_.Swap(&other->source_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &source_, GetArenaForAllocation(),
+      &other->source_, other->GetArenaForAllocation()
+  );
   swap(axis_, other->axis_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata InfogainLossParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[74]);
 }
-
 
 // ===================================================================
 
-void InnerProductParameter::InitAsDefaultInstance() {
-  ::caffe::_InnerProductParameter_default_instance_._instance.get_mutable()->weight_filler_ = const_cast< ::caffe::FillerParameter*>(
-      ::caffe::FillerParameter::internal_default_instance());
-  ::caffe::_InnerProductParameter_default_instance_._instance.get_mutable()->bias_filler_ = const_cast< ::caffe::FillerParameter*>(
-      ::caffe::FillerParameter::internal_default_instance());
-}
 class InnerProductParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<InnerProductParameter>()._has_bits_);
@@ -38365,12 +37387,12 @@ InnerProductParameter::InnerProductParameter(const InnerProductParameter& from)
 }
 
 void InnerProductParameter::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_InnerProductParameter_caffe_2eproto.base);
-  ::memset(&weight_filler_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&negative_slope_) -
-      reinterpret_cast<char*>(&weight_filler_)) + sizeof(negative_slope_));
-  bias_term_ = true;
-  axis_ = 1;
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&weight_filler_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&negative_slope_) -
+    reinterpret_cast<char*>(&weight_filler_)) + sizeof(negative_slope_));
+bias_term_ = true;
+axis_ = 1;
 }
 
 InnerProductParameter::~InnerProductParameter() {
@@ -38380,7 +37402,7 @@ InnerProductParameter::~InnerProductParameter() {
 }
 
 void InnerProductParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   if (this != internal_default_instance()) delete weight_filler_;
   if (this != internal_default_instance()) delete bias_filler_;
 }
@@ -38394,11 +37416,6 @@ void InnerProductParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void InnerProductParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const InnerProductParameter& InnerProductParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_InnerProductParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void InnerProductParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.InnerProductParameter)
@@ -38431,11 +37448,9 @@ void InnerProductParameter::Clear() {
 const char* InnerProductParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional uint32 num_output = 1;
       case 1:
@@ -38513,7 +37528,8 @@ const char* InnerProductParameter::_InternalParse(const char* ptr, ::PROTOBUF_NA
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -38757,7 +37773,7 @@ bool InnerProductParameter::IsInitialized() const {
 
 void InnerProductParameter::InternalSwap(InnerProductParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(InnerProductParameter, negative_slope_)
@@ -38770,14 +37786,13 @@ void InnerProductParameter::InternalSwap(InnerProductParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata InnerProductParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[75]);
 }
-
 
 // ===================================================================
 
-void InputParameter::InitAsDefaultInstance() {
-}
 class InputParameter::_Internal {
  public:
 };
@@ -38797,7 +37812,6 @@ InputParameter::InputParameter(const InputParameter& from)
 }
 
 void InputParameter::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_InputParameter_caffe_2eproto.base);
 }
 
 InputParameter::~InputParameter() {
@@ -38807,7 +37821,7 @@ InputParameter::~InputParameter() {
 }
 
 void InputParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void InputParameter::ArenaDtor(void* object) {
@@ -38819,11 +37833,6 @@ void InputParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void InputParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const InputParameter& InputParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_InputParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void InputParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.InputParameter)
@@ -38837,11 +37846,9 @@ void InputParameter::Clear() {
 
 const char* InputParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // repeated .caffe.BlobShape shape = 1;
       case 1:
@@ -38857,7 +37864,8 @@ const char* InputParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -38968,19 +37976,18 @@ bool InputParameter::IsInitialized() const {
 
 void InputParameter::InternalSwap(InputParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   shape_.InternalSwap(&other->shape_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata InputParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[76]);
 }
-
 
 // ===================================================================
 
-void LogParameter::InitAsDefaultInstance() {
-}
 class LogParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<LogParameter>()._has_bits_);
@@ -39012,9 +38019,9 @@ LogParameter::LogParameter(const LogParameter& from)
 }
 
 void LogParameter::SharedCtor() {
-  shift_ = 0;
-  base_ = -1;
-  scale_ = 1;
+shift_ = 0;
+base_ = -1;
+scale_ = 1;
 }
 
 LogParameter::~LogParameter() {
@@ -39024,7 +38031,7 @@ LogParameter::~LogParameter() {
 }
 
 void LogParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void LogParameter::ArenaDtor(void* object) {
@@ -39036,11 +38043,6 @@ void LogParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void LogParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const LogParameter& LogParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_LogParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void LogParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.LogParameter)
@@ -39061,11 +38063,9 @@ void LogParameter::Clear() {
 const char* LogParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional float base = 1 [default = -1];
       case 1:
@@ -39093,7 +38093,8 @@ const char* LogParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_I
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -39239,7 +38240,7 @@ bool LogParameter::IsInitialized() const {
 
 void LogParameter::InternalSwap(LogParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   swap(shift_, other->shift_);
   swap(base_, other->base_);
@@ -39247,14 +38248,13 @@ void LogParameter::InternalSwap(LogParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata LogParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[77]);
 }
-
 
 // ===================================================================
 
-void LRNParameter::InitAsDefaultInstance() {
-}
 class LRNParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<LRNParameter>()._has_bits_);
@@ -39295,13 +38295,14 @@ LRNParameter::LRNParameter(const LRNParameter& from)
 }
 
 void LRNParameter::SharedCtor() {
-  ::memset(&norm_region_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&engine_) -
-      reinterpret_cast<char*>(&norm_region_)) + sizeof(engine_));
-  local_size_ = 5u;
-  alpha_ = 1;
-  beta_ = 0.75f;
-  k_ = 1;
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&norm_region_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&engine_) -
+    reinterpret_cast<char*>(&norm_region_)) + sizeof(engine_));
+local_size_ = 5u;
+alpha_ = 1;
+beta_ = 0.75f;
+k_ = 1;
 }
 
 LRNParameter::~LRNParameter() {
@@ -39311,7 +38312,7 @@ LRNParameter::~LRNParameter() {
 }
 
 void LRNParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void LRNParameter::ArenaDtor(void* object) {
@@ -39323,11 +38324,6 @@ void LRNParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void LRNParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const LRNParameter& LRNParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_LRNParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void LRNParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.LRNParameter)
@@ -39352,11 +38348,9 @@ void LRNParameter::Clear() {
 const char* LRNParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional uint32 local_size = 1 [default = 5];
       case 1:
@@ -39416,7 +38410,8 @@ const char* LRNParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_I
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -39610,7 +38605,7 @@ bool LRNParameter::IsInitialized() const {
 
 void LRNParameter::InternalSwap(LRNParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(LRNParameter, engine_)
@@ -39625,14 +38620,13 @@ void LRNParameter::InternalSwap(LRNParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata LRNParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[78]);
 }
-
 
 // ===================================================================
 
-void MemoryDataParameter::InitAsDefaultInstance() {
-}
 class MemoryDataParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<MemoryDataParameter>()._has_bits_);
@@ -39667,9 +38661,10 @@ MemoryDataParameter::MemoryDataParameter(const MemoryDataParameter& from)
 }
 
 void MemoryDataParameter::SharedCtor() {
-  ::memset(&batch_size_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&width_) -
-      reinterpret_cast<char*>(&batch_size_)) + sizeof(width_));
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&batch_size_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&width_) -
+    reinterpret_cast<char*>(&batch_size_)) + sizeof(width_));
 }
 
 MemoryDataParameter::~MemoryDataParameter() {
@@ -39679,7 +38674,7 @@ MemoryDataParameter::~MemoryDataParameter() {
 }
 
 void MemoryDataParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void MemoryDataParameter::ArenaDtor(void* object) {
@@ -39691,11 +38686,6 @@ void MemoryDataParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void MemoryDataParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const MemoryDataParameter& MemoryDataParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_MemoryDataParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void MemoryDataParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.MemoryDataParameter)
@@ -39716,11 +38706,9 @@ void MemoryDataParameter::Clear() {
 const char* MemoryDataParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional uint32 batch_size = 1;
       case 1:
@@ -39756,7 +38744,8 @@ const char* MemoryDataParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAME
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -39924,7 +38913,7 @@ bool MemoryDataParameter::IsInitialized() const {
 
 void MemoryDataParameter::InternalSwap(MemoryDataParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(MemoryDataParameter, width_)
@@ -39935,16 +38924,13 @@ void MemoryDataParameter::InternalSwap(MemoryDataParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata MemoryDataParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[79]);
 }
-
 
 // ===================================================================
 
-void MultiBoxLossParameter::InitAsDefaultInstance() {
-  ::caffe::_MultiBoxLossParameter_default_instance_._instance.get_mutable()->nms_param_ = const_cast< ::caffe::NonMaximumSuppressionParameter*>(
-      ::caffe::NonMaximumSuppressionParameter::internal_default_instance());
-}
 class MultiBoxLossParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<MultiBoxLossParameter>()._has_bits_);
@@ -40043,22 +39029,22 @@ MultiBoxLossParameter::MultiBoxLossParameter(const MultiBoxLossParameter& from)
 }
 
 void MultiBoxLossParameter::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_MultiBoxLossParameter_caffe_2eproto.base);
-  ::memset(&nms_param_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&use_prior_for_nms_) -
-      reinterpret_cast<char*>(&nms_param_)) + sizeof(use_prior_for_nms_));
-  loc_loss_type_ = 1;
-  loc_weight_ = 1;
-  match_type_ = 1;
-  overlap_threshold_ = 0.5f;
-  share_location_ = true;
-  use_prior_for_matching_ = true;
-  use_difficult_gt_ = true;
-  neg_pos_ratio_ = 3;
-  neg_overlap_ = 0.5f;
-  code_type_ = 1;
-  mining_type_ = 1;
-  sample_size_ = 64;
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&nms_param_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&use_prior_for_nms_) -
+    reinterpret_cast<char*>(&nms_param_)) + sizeof(use_prior_for_nms_));
+loc_loss_type_ = 1;
+loc_weight_ = 1;
+match_type_ = 1;
+overlap_threshold_ = 0.5f;
+share_location_ = true;
+use_prior_for_matching_ = true;
+use_difficult_gt_ = true;
+neg_pos_ratio_ = 3;
+neg_overlap_ = 0.5f;
+code_type_ = 1;
+mining_type_ = 1;
+sample_size_ = 64;
 }
 
 MultiBoxLossParameter::~MultiBoxLossParameter() {
@@ -40068,7 +39054,7 @@ MultiBoxLossParameter::~MultiBoxLossParameter() {
 }
 
 void MultiBoxLossParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   if (this != internal_default_instance()) delete nms_param_;
 }
 
@@ -40081,11 +39067,6 @@ void MultiBoxLossParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void MultiBoxLossParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const MultiBoxLossParameter& MultiBoxLossParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_MultiBoxLossParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void MultiBoxLossParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.MultiBoxLossParameter)
@@ -40129,11 +39110,9 @@ void MultiBoxLossParameter::Clear() {
 const char* MultiBoxLossParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional .caffe.MultiBoxLossParameter.LocLossType loc_loss_type = 1 [default = SMOOTH_L1];
       case 1:
@@ -40332,7 +39311,8 @@ const char* MultiBoxLossParameter::_InternalParse(const char* ptr, ::PROTOBUF_NA
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -40774,7 +39754,7 @@ bool MultiBoxLossParameter::IsInitialized() const {
 
 void MultiBoxLossParameter::InternalSwap(MultiBoxLossParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(MultiBoxLossParameter, use_prior_for_nms_)
@@ -40797,14 +39777,13 @@ void MultiBoxLossParameter::InternalSwap(MultiBoxLossParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata MultiBoxLossParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[80]);
 }
-
 
 // ===================================================================
 
-void MVNParameter::InitAsDefaultInstance() {
-}
 class MVNParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<MVNParameter>()._has_bits_);
@@ -40836,9 +39815,9 @@ MVNParameter::MVNParameter(const MVNParameter& from)
 }
 
 void MVNParameter::SharedCtor() {
-  across_channels_ = false;
-  normalize_variance_ = true;
-  eps_ = 1e-09f;
+across_channels_ = false;
+normalize_variance_ = true;
+eps_ = 1e-09f;
 }
 
 MVNParameter::~MVNParameter() {
@@ -40848,7 +39827,7 @@ MVNParameter::~MVNParameter() {
 }
 
 void MVNParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void MVNParameter::ArenaDtor(void* object) {
@@ -40860,11 +39839,6 @@ void MVNParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void MVNParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const MVNParameter& MVNParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_MVNParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void MVNParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.MVNParameter)
@@ -40885,11 +39859,9 @@ void MVNParameter::Clear() {
 const char* MVNParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional bool normalize_variance = 1 [default = true];
       case 1:
@@ -40917,7 +39889,8 @@ const char* MVNParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_I
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -41063,7 +40036,7 @@ bool MVNParameter::IsInitialized() const {
 
 void MVNParameter::InternalSwap(MVNParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   swap(across_channels_, other->across_channels_);
   swap(normalize_variance_, other->normalize_variance_);
@@ -41071,16 +40044,13 @@ void MVNParameter::InternalSwap(MVNParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata MVNParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[81]);
 }
-
 
 // ===================================================================
 
-void NormalizeParameter::InitAsDefaultInstance() {
-  ::caffe::_NormalizeParameter_default_instance_._instance.get_mutable()->scale_filler_ = const_cast< ::caffe::FillerParameter*>(
-      ::caffe::FillerParameter::internal_default_instance());
-}
 class NormalizeParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<NormalizeParameter>()._has_bits_);
@@ -41125,11 +40095,10 @@ NormalizeParameter::NormalizeParameter(const NormalizeParameter& from)
 }
 
 void NormalizeParameter::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_NormalizeParameter_caffe_2eproto.base);
-  scale_filler_ = nullptr;
-  across_spatial_ = true;
-  channel_shared_ = true;
-  eps_ = 1e-10f;
+scale_filler_ = nullptr;
+across_spatial_ = true;
+channel_shared_ = true;
+eps_ = 1e-10f;
 }
 
 NormalizeParameter::~NormalizeParameter() {
@@ -41139,7 +40108,7 @@ NormalizeParameter::~NormalizeParameter() {
 }
 
 void NormalizeParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   if (this != internal_default_instance()) delete scale_filler_;
 }
 
@@ -41152,11 +40121,6 @@ void NormalizeParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void NormalizeParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const NormalizeParameter& NormalizeParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_NormalizeParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void NormalizeParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.NormalizeParameter)
@@ -41181,11 +40145,9 @@ void NormalizeParameter::Clear() {
 const char* NormalizeParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional bool across_spatial = 1 [default = true];
       case 1:
@@ -41220,7 +40182,8 @@ const char* NormalizeParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMES
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -41384,7 +40347,7 @@ bool NormalizeParameter::IsInitialized() const {
 
 void NormalizeParameter::InternalSwap(NormalizeParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   swap(scale_filler_, other->scale_filler_);
   swap(across_spatial_, other->across_spatial_);
@@ -41393,16 +40356,13 @@ void NormalizeParameter::InternalSwap(NormalizeParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata NormalizeParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[82]);
 }
-
 
 // ===================================================================
 
-void ParameterParameter::InitAsDefaultInstance() {
-  ::caffe::_ParameterParameter_default_instance_._instance.get_mutable()->shape_ = const_cast< ::caffe::BlobShape*>(
-      ::caffe::BlobShape::internal_default_instance());
-}
 class ParameterParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<ParameterParameter>()._has_bits_);
@@ -41435,8 +40395,7 @@ ParameterParameter::ParameterParameter(const ParameterParameter& from)
 }
 
 void ParameterParameter::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_ParameterParameter_caffe_2eproto.base);
-  shape_ = nullptr;
+shape_ = nullptr;
 }
 
 ParameterParameter::~ParameterParameter() {
@@ -41446,7 +40405,7 @@ ParameterParameter::~ParameterParameter() {
 }
 
 void ParameterParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   if (this != internal_default_instance()) delete shape_;
 }
 
@@ -41459,11 +40418,6 @@ void ParameterParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void ParameterParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const ParameterParameter& ParameterParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_ParameterParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void ParameterParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.ParameterParameter)
@@ -41483,11 +40437,9 @@ void ParameterParameter::Clear() {
 const char* ParameterParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional .caffe.BlobShape shape = 1;
       case 1:
@@ -41498,7 +40450,8 @@ const char* ParameterParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMES
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -41614,20 +40567,19 @@ bool ParameterParameter::IsInitialized() const {
 
 void ParameterParameter::InternalSwap(ParameterParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   swap(shape_, other->shape_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata ParameterParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[83]);
 }
-
 
 // ===================================================================
 
-void PermuteParameter::InitAsDefaultInstance() {
-}
 class PermuteParameter::_Internal {
  public:
 };
@@ -41656,7 +40608,7 @@ PermuteParameter::~PermuteParameter() {
 }
 
 void PermuteParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void PermuteParameter::ArenaDtor(void* object) {
@@ -41668,11 +40620,6 @@ void PermuteParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void PermuteParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const PermuteParameter& PermuteParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_PermuteParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void PermuteParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.PermuteParameter)
@@ -41686,11 +40633,9 @@ void PermuteParameter::Clear() {
 
 const char* PermuteParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // repeated uint32 order = 1;
       case 1:
@@ -41709,7 +40654,8 @@ const char* PermuteParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPA
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -41820,19 +40766,18 @@ bool PermuteParameter::IsInitialized() const {
 
 void PermuteParameter::InternalSwap(PermuteParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   order_.InternalSwap(&other->order_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata PermuteParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[84]);
 }
-
 
 // ===================================================================
 
-void PoolingParameter::InitAsDefaultInstance() {
-}
 class PoolingParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<PoolingParameter>()._has_bits_);
@@ -41903,12 +40848,13 @@ PoolingParameter::PoolingParameter(const PoolingParameter& from)
 }
 
 void PoolingParameter::SharedCtor() {
-  ::memset(&pool_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&global_pooling_) -
-      reinterpret_cast<char*>(&pool_)) + sizeof(global_pooling_));
-  axis_ = 1;
-  stride_ = 1u;
-  avg_include_pad_ = true;
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&pool_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&global_pooling_) -
+    reinterpret_cast<char*>(&pool_)) + sizeof(global_pooling_));
+axis_ = 1;
+stride_ = 1u;
+avg_include_pad_ = true;
 }
 
 PoolingParameter::~PoolingParameter() {
@@ -41918,7 +40864,7 @@ PoolingParameter::~PoolingParameter() {
 }
 
 void PoolingParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void PoolingParameter::ArenaDtor(void* object) {
@@ -41930,11 +40876,6 @@ void PoolingParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void PoolingParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const PoolingParameter& PoolingParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_PoolingParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void PoolingParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.PoolingParameter)
@@ -41966,11 +40907,9 @@ void PoolingParameter::Clear() {
 const char* PoolingParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional .caffe.PoolingParameter.PoolMethod pool = 1 [default = MAX];
       case 1:
@@ -42139,7 +41078,8 @@ const char* PoolingParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPA
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -42516,7 +41456,7 @@ bool PoolingParameter::IsInitialized() const {
 
 void PoolingParameter::InternalSwap(PoolingParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   pad_3d_.InternalSwap(&other->pad_3d_);
   kernel_size_3d_.InternalSwap(&other->kernel_size_3d_);
@@ -42533,14 +41473,13 @@ void PoolingParameter::InternalSwap(PoolingParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata PoolingParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[85]);
 }
-
 
 // ===================================================================
 
-void PowerParameter::InitAsDefaultInstance() {
-}
 class PowerParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<PowerParameter>()._has_bits_);
@@ -42572,9 +41511,9 @@ PowerParameter::PowerParameter(const PowerParameter& from)
 }
 
 void PowerParameter::SharedCtor() {
-  shift_ = 0;
-  power_ = 1;
-  scale_ = 1;
+shift_ = 0;
+power_ = 1;
+scale_ = 1;
 }
 
 PowerParameter::~PowerParameter() {
@@ -42584,7 +41523,7 @@ PowerParameter::~PowerParameter() {
 }
 
 void PowerParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void PowerParameter::ArenaDtor(void* object) {
@@ -42596,11 +41535,6 @@ void PowerParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void PowerParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const PowerParameter& PowerParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_PowerParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void PowerParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.PowerParameter)
@@ -42621,11 +41555,9 @@ void PowerParameter::Clear() {
 const char* PowerParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional float power = 1 [default = 1];
       case 1:
@@ -42653,7 +41585,8 @@ const char* PowerParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -42799,7 +41732,7 @@ bool PowerParameter::IsInitialized() const {
 
 void PowerParameter::InternalSwap(PowerParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   swap(shift_, other->shift_);
   swap(power_, other->power_);
@@ -42807,14 +41740,13 @@ void PowerParameter::InternalSwap(PowerParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata PowerParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[86]);
 }
-
 
 // ===================================================================
 
-void PriorBoxParameter::InitAsDefaultInstance() {
-}
 class PriorBoxParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<PriorBoxParameter>()._has_bits_);
@@ -42872,11 +41804,12 @@ PriorBoxParameter::PriorBoxParameter(const PriorBoxParameter& from)
 }
 
 void PriorBoxParameter::SharedCtor() {
-  ::memset(&clip_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&step_w_) -
-      reinterpret_cast<char*>(&clip_)) + sizeof(step_w_));
-  flip_ = true;
-  offset_ = 0.5f;
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&clip_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&step_w_) -
+    reinterpret_cast<char*>(&clip_)) + sizeof(step_w_));
+flip_ = true;
+offset_ = 0.5f;
 }
 
 PriorBoxParameter::~PriorBoxParameter() {
@@ -42886,7 +41819,7 @@ PriorBoxParameter::~PriorBoxParameter() {
 }
 
 void PriorBoxParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void PriorBoxParameter::ArenaDtor(void* object) {
@@ -42898,11 +41831,6 @@ void PriorBoxParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void PriorBoxParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const PriorBoxParameter& PriorBoxParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_PriorBoxParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void PriorBoxParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.PriorBoxParameter)
@@ -42929,11 +41857,9 @@ void PriorBoxParameter::Clear() {
 const char* PriorBoxParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // repeated float min_size = 1;
       case 1:
@@ -43069,7 +41995,8 @@ const char* PriorBoxParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESP
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -43369,7 +42296,7 @@ bool PriorBoxParameter::IsInitialized() const {
 
 void PriorBoxParameter::InternalSwap(PriorBoxParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   min_size_.InternalSwap(&other->min_size_);
   max_size_.InternalSwap(&other->max_size_);
@@ -43386,14 +42313,13 @@ void PriorBoxParameter::InternalSwap(PriorBoxParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata PriorBoxParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[87]);
 }
-
 
 // ===================================================================
 
-void PSROIPoolingParameter::InitAsDefaultInstance() {
-}
 class PSROIPoolingParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<PSROIPoolingParameter>()._has_bits_);
@@ -43428,9 +42354,10 @@ PSROIPoolingParameter::PSROIPoolingParameter(const PSROIPoolingParameter& from)
 }
 
 void PSROIPoolingParameter::SharedCtor() {
-  ::memset(&spatial_scale_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&group_size_) -
-      reinterpret_cast<char*>(&spatial_scale_)) + sizeof(group_size_));
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&spatial_scale_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&group_size_) -
+    reinterpret_cast<char*>(&spatial_scale_)) + sizeof(group_size_));
 }
 
 PSROIPoolingParameter::~PSROIPoolingParameter() {
@@ -43440,7 +42367,7 @@ PSROIPoolingParameter::~PSROIPoolingParameter() {
 }
 
 void PSROIPoolingParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void PSROIPoolingParameter::ArenaDtor(void* object) {
@@ -43452,11 +42379,6 @@ void PSROIPoolingParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void PSROIPoolingParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const PSROIPoolingParameter& PSROIPoolingParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_PSROIPoolingParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void PSROIPoolingParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.PSROIPoolingParameter)
@@ -43477,11 +42399,9 @@ void PSROIPoolingParameter::Clear() {
 const char* PSROIPoolingParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // required float spatial_scale = 1;
       case 1:
@@ -43509,7 +42429,8 @@ const char* PSROIPoolingParameter::_InternalParse(const char* ptr, ::PROTOBUF_NA
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -43680,7 +42601,7 @@ bool PSROIPoolingParameter::IsInitialized() const {
 
 void PSROIPoolingParameter::InternalSwap(PSROIPoolingParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(PSROIPoolingParameter, group_size_)
@@ -43691,14 +42612,13 @@ void PSROIPoolingParameter::InternalSwap(PSROIPoolingParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata PSROIPoolingParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[88]);
 }
-
 
 // ===================================================================
 
-void PythonParameter::InitAsDefaultInstance() {
-}
 class PythonParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<PythonParameter>()._has_bits_);
@@ -43728,29 +42648,28 @@ PythonParameter::PythonParameter(const PythonParameter& from)
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   module_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_module()) {
-    module_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_module(),
-      GetArena());
+    module_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_module(), 
+      GetArenaForAllocation());
   }
   layer_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_layer()) {
-    layer_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_layer(),
-      GetArena());
+    layer_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_layer(), 
+      GetArenaForAllocation());
   }
   param_str_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_param_str()) {
-    param_str_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_param_str(),
-      GetArena());
+    param_str_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_param_str(), 
+      GetArenaForAllocation());
   }
   share_in_parallel_ = from.share_in_parallel_;
   // @@protoc_insertion_point(copy_constructor:caffe.PythonParameter)
 }
 
 void PythonParameter::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_PythonParameter_caffe_2eproto.base);
-  module_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  layer_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  param_str_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  share_in_parallel_ = false;
+module_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+layer_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+param_str_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+share_in_parallel_ = false;
 }
 
 PythonParameter::~PythonParameter() {
@@ -43760,7 +42679,7 @@ PythonParameter::~PythonParameter() {
 }
 
 void PythonParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   module_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   layer_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   param_str_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
@@ -43775,11 +42694,6 @@ void PythonParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void PythonParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const PythonParameter& PythonParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_PythonParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void PythonParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.PythonParameter)
@@ -43807,11 +42721,9 @@ void PythonParameter::Clear() {
 const char* PythonParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional string module = 1;
       case 1:
@@ -43856,7 +42768,8 @@ const char* PythonParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPAC
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -44034,27 +42947,34 @@ bool PythonParameter::IsInitialized() const {
 
 void PythonParameter::InternalSwap(PythonParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
-  module_.Swap(&other->module_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
-  layer_.Swap(&other->layer_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
-  param_str_.Swap(&other->param_str_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &module_, GetArenaForAllocation(),
+      &other->module_, other->GetArenaForAllocation()
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &layer_, GetArenaForAllocation(),
+      &other->layer_, other->GetArenaForAllocation()
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &param_str_, GetArenaForAllocation(),
+      &other->param_str_, other->GetArenaForAllocation()
+  );
   swap(share_in_parallel_, other->share_in_parallel_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata PythonParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[89]);
 }
-
 
 // ===================================================================
 
-void RecurrentParameter::InitAsDefaultInstance() {
-  ::caffe::_RecurrentParameter_default_instance_._instance.get_mutable()->weight_filler_ = const_cast< ::caffe::FillerParameter*>(
-      ::caffe::FillerParameter::internal_default_instance());
-  ::caffe::_RecurrentParameter_default_instance_._instance.get_mutable()->bias_filler_ = const_cast< ::caffe::FillerParameter*>(
-      ::caffe::FillerParameter::internal_default_instance());
-}
 class RecurrentParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<RecurrentParameter>()._has_bits_);
@@ -44112,10 +43032,10 @@ RecurrentParameter::RecurrentParameter(const RecurrentParameter& from)
 }
 
 void RecurrentParameter::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_RecurrentParameter_caffe_2eproto.base);
-  ::memset(&weight_filler_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&expose_hidden_) -
-      reinterpret_cast<char*>(&weight_filler_)) + sizeof(expose_hidden_));
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&weight_filler_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&expose_hidden_) -
+    reinterpret_cast<char*>(&weight_filler_)) + sizeof(expose_hidden_));
 }
 
 RecurrentParameter::~RecurrentParameter() {
@@ -44125,7 +43045,7 @@ RecurrentParameter::~RecurrentParameter() {
 }
 
 void RecurrentParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   if (this != internal_default_instance()) delete weight_filler_;
   if (this != internal_default_instance()) delete bias_filler_;
 }
@@ -44139,11 +43059,6 @@ void RecurrentParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void RecurrentParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const RecurrentParameter& RecurrentParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_RecurrentParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void RecurrentParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.RecurrentParameter)
@@ -44174,11 +43089,9 @@ void RecurrentParameter::Clear() {
 const char* RecurrentParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional uint32 num_output = 1 [default = 0];
       case 1:
@@ -44220,7 +43133,8 @@ const char* RecurrentParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMES
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -44404,7 +43318,7 @@ bool RecurrentParameter::IsInitialized() const {
 
 void RecurrentParameter::InternalSwap(RecurrentParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(RecurrentParameter, expose_hidden_)
@@ -44415,14 +43329,13 @@ void RecurrentParameter::InternalSwap(RecurrentParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata RecurrentParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[90]);
 }
-
 
 // ===================================================================
 
-void ReductionParameter::InitAsDefaultInstance() {
-}
 class ReductionParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<ReductionParameter>()._has_bits_);
@@ -44454,9 +43367,9 @@ ReductionParameter::ReductionParameter(const ReductionParameter& from)
 }
 
 void ReductionParameter::SharedCtor() {
-  axis_ = 0;
-  operation_ = 1;
-  coeff_ = 1;
+axis_ = 0;
+operation_ = 1;
+coeff_ = 1;
 }
 
 ReductionParameter::~ReductionParameter() {
@@ -44466,7 +43379,7 @@ ReductionParameter::~ReductionParameter() {
 }
 
 void ReductionParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void ReductionParameter::ArenaDtor(void* object) {
@@ -44478,11 +43391,6 @@ void ReductionParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void ReductionParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const ReductionParameter& ReductionParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_ReductionParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void ReductionParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.ReductionParameter)
@@ -44503,11 +43411,9 @@ void ReductionParameter::Clear() {
 const char* ReductionParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional .caffe.ReductionParameter.ReductionOp operation = 1 [default = SUM];
       case 1:
@@ -44539,7 +43445,8 @@ const char* ReductionParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMES
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -44689,7 +43596,7 @@ bool ReductionParameter::IsInitialized() const {
 
 void ReductionParameter::InternalSwap(ReductionParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   swap(axis_, other->axis_);
   swap(operation_, other->operation_);
@@ -44697,14 +43604,13 @@ void ReductionParameter::InternalSwap(ReductionParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata ReductionParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[91]);
 }
-
 
 // ===================================================================
 
-void ReLUParameter::InitAsDefaultInstance() {
-}
 class ReLUParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<ReLUParameter>()._has_bits_);
@@ -44736,9 +43642,10 @@ ReLUParameter::ReLUParameter(const ReLUParameter& from)
 }
 
 void ReLUParameter::SharedCtor() {
-  ::memset(&negative_slope_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&fuse_) -
-      reinterpret_cast<char*>(&negative_slope_)) + sizeof(fuse_));
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&negative_slope_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&fuse_) -
+    reinterpret_cast<char*>(&negative_slope_)) + sizeof(fuse_));
 }
 
 ReLUParameter::~ReLUParameter() {
@@ -44748,7 +43655,7 @@ ReLUParameter::~ReLUParameter() {
 }
 
 void ReLUParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void ReLUParameter::ArenaDtor(void* object) {
@@ -44760,11 +43667,6 @@ void ReLUParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void ReLUParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const ReLUParameter& ReLUParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_ReLUParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void ReLUParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.ReLUParameter)
@@ -44785,11 +43687,9 @@ void ReLUParameter::Clear() {
 const char* ReLUParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional float negative_slope = 1 [default = 0];
       case 1:
@@ -44821,7 +43721,8 @@ const char* ReLUParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -44969,7 +43870,7 @@ bool ReLUParameter::IsInitialized() const {
 
 void ReLUParameter::InternalSwap(ReLUParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(ReLUParameter, fuse_)
@@ -44980,16 +43881,13 @@ void ReLUParameter::InternalSwap(ReLUParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata ReLUParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[92]);
 }
-
 
 // ===================================================================
 
-void ReshapeParameter::InitAsDefaultInstance() {
-  ::caffe::_ReshapeParameter_default_instance_._instance.get_mutable()->shape_ = const_cast< ::caffe::BlobShape*>(
-      ::caffe::BlobShape::internal_default_instance());
-}
 class ReshapeParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<ReshapeParameter>()._has_bits_);
@@ -45034,12 +43932,12 @@ ReshapeParameter::ReshapeParameter(const ReshapeParameter& from)
 }
 
 void ReshapeParameter::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_ReshapeParameter_caffe_2eproto.base);
-  ::memset(&shape_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&axis_) -
-      reinterpret_cast<char*>(&shape_)) + sizeof(axis_));
-  num_axes_ = -1;
-  pixelshuffler_ = 1;
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&shape_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&axis_) -
+    reinterpret_cast<char*>(&shape_)) + sizeof(axis_));
+num_axes_ = -1;
+pixelshuffler_ = 1;
 }
 
 ReshapeParameter::~ReshapeParameter() {
@@ -45049,7 +43947,7 @@ ReshapeParameter::~ReshapeParameter() {
 }
 
 void ReshapeParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   if (this != internal_default_instance()) delete shape_;
 }
 
@@ -45062,11 +43960,6 @@ void ReshapeParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void ReshapeParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const ReshapeParameter& ReshapeParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_ReshapeParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void ReshapeParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.ReshapeParameter)
@@ -45091,11 +43984,9 @@ void ReshapeParameter::Clear() {
 const char* ReshapeParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional .caffe.BlobShape shape = 1;
       case 1:
@@ -45130,7 +44021,8 @@ const char* ReshapeParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPA
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -45300,7 +44192,7 @@ bool ReshapeParameter::IsInitialized() const {
 
 void ReshapeParameter::InternalSwap(ReshapeParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(ReshapeParameter, axis_)
@@ -45313,14 +44205,13 @@ void ReshapeParameter::InternalSwap(ReshapeParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata ReshapeParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[93]);
 }
-
 
 // ===================================================================
 
-void ROIPoolingParameter::InitAsDefaultInstance() {
-}
 class ROIPoolingParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<ROIPoolingParameter>()._has_bits_);
@@ -45354,10 +44245,11 @@ ROIPoolingParameter::ROIPoolingParameter(const ROIPoolingParameter& from)
 }
 
 void ROIPoolingParameter::SharedCtor() {
-  ::memset(&pooled_h_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&pooled_w_) -
-      reinterpret_cast<char*>(&pooled_h_)) + sizeof(pooled_w_));
-  spatial_scale_ = 1;
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&pooled_h_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&pooled_w_) -
+    reinterpret_cast<char*>(&pooled_h_)) + sizeof(pooled_w_));
+spatial_scale_ = 1;
 }
 
 ROIPoolingParameter::~ROIPoolingParameter() {
@@ -45367,7 +44259,7 @@ ROIPoolingParameter::~ROIPoolingParameter() {
 }
 
 void ROIPoolingParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void ROIPoolingParameter::ArenaDtor(void* object) {
@@ -45379,11 +44271,6 @@ void ROIPoolingParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void ROIPoolingParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const ROIPoolingParameter& ROIPoolingParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_ROIPoolingParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void ROIPoolingParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.ROIPoolingParameter)
@@ -45406,11 +44293,9 @@ void ROIPoolingParameter::Clear() {
 const char* ROIPoolingParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional uint32 pooled_h = 1 [default = 0];
       case 1:
@@ -45453,7 +44338,8 @@ const char* ROIPoolingParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAME
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -45619,7 +44505,7 @@ bool ROIPoolingParameter::IsInitialized() const {
 
 void ROIPoolingParameter::InternalSwap(ROIPoolingParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   pooled_size_.InternalSwap(&other->pooled_size_);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
@@ -45632,18 +44518,13 @@ void ROIPoolingParameter::InternalSwap(ROIPoolingParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata ROIPoolingParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[94]);
 }
-
 
 // ===================================================================
 
-void ScaleParameter::InitAsDefaultInstance() {
-  ::caffe::_ScaleParameter_default_instance_._instance.get_mutable()->filler_ = const_cast< ::caffe::FillerParameter*>(
-      ::caffe::FillerParameter::internal_default_instance());
-  ::caffe::_ScaleParameter_default_instance_._instance.get_mutable()->bias_filler_ = const_cast< ::caffe::FillerParameter*>(
-      ::caffe::FillerParameter::internal_default_instance());
-}
 class ScaleParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<ScaleParameter>()._has_bits_);
@@ -45701,12 +44582,12 @@ ScaleParameter::ScaleParameter(const ScaleParameter& from)
 }
 
 void ScaleParameter::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_ScaleParameter_caffe_2eproto.base);
-  ::memset(&filler_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&bias_term_) -
-      reinterpret_cast<char*>(&filler_)) + sizeof(bias_term_));
-  axis_ = 1;
-  num_axes_ = 1;
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&filler_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&bias_term_) -
+    reinterpret_cast<char*>(&filler_)) + sizeof(bias_term_));
+axis_ = 1;
+num_axes_ = 1;
 }
 
 ScaleParameter::~ScaleParameter() {
@@ -45716,7 +44597,7 @@ ScaleParameter::~ScaleParameter() {
 }
 
 void ScaleParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   if (this != internal_default_instance()) delete filler_;
   if (this != internal_default_instance()) delete bias_filler_;
 }
@@ -45730,11 +44611,6 @@ void ScaleParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void ScaleParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const ScaleParameter& ScaleParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_ScaleParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void ScaleParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.ScaleParameter)
@@ -45765,11 +44641,9 @@ void ScaleParameter::Clear() {
 const char* ScaleParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional int32 axis = 1 [default = 1];
       case 1:
@@ -45811,7 +44685,8 @@ const char* ScaleParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -45997,7 +44872,7 @@ bool ScaleParameter::IsInitialized() const {
 
 void ScaleParameter::InternalSwap(ScaleParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(ScaleParameter, bias_term_)
@@ -46010,14 +44885,13 @@ void ScaleParameter::InternalSwap(ScaleParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata ScaleParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[95]);
 }
-
 
 // ===================================================================
 
-void SigmoidParameter::InitAsDefaultInstance() {
-}
 class SigmoidParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<SigmoidParameter>()._has_bits_);
@@ -46041,7 +44915,7 @@ SigmoidParameter::SigmoidParameter(const SigmoidParameter& from)
 }
 
 void SigmoidParameter::SharedCtor() {
-  engine_ = 0;
+engine_ = 0;
 }
 
 SigmoidParameter::~SigmoidParameter() {
@@ -46051,7 +44925,7 @@ SigmoidParameter::~SigmoidParameter() {
 }
 
 void SigmoidParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void SigmoidParameter::ArenaDtor(void* object) {
@@ -46063,11 +44937,6 @@ void SigmoidParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void SigmoidParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const SigmoidParameter& SigmoidParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_SigmoidParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void SigmoidParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.SigmoidParameter)
@@ -46083,11 +44952,9 @@ void SigmoidParameter::Clear() {
 const char* SigmoidParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional .caffe.SigmoidParameter.Engine engine = 1 [default = DEFAULT];
       case 1:
@@ -46103,7 +44970,8 @@ const char* SigmoidParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPA
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -46217,20 +45085,19 @@ bool SigmoidParameter::IsInitialized() const {
 
 void SigmoidParameter::InternalSwap(SigmoidParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   swap(engine_, other->engine_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata SigmoidParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[96]);
 }
-
 
 // ===================================================================
 
-void SliceParameter::InitAsDefaultInstance() {
-}
 class SliceParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<SliceParameter>()._has_bits_);
@@ -46261,8 +45128,8 @@ SliceParameter::SliceParameter(const SliceParameter& from)
 }
 
 void SliceParameter::SharedCtor() {
-  slice_dim_ = 1u;
-  axis_ = 1;
+slice_dim_ = 1u;
+axis_ = 1;
 }
 
 SliceParameter::~SliceParameter() {
@@ -46272,7 +45139,7 @@ SliceParameter::~SliceParameter() {
 }
 
 void SliceParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void SliceParameter::ArenaDtor(void* object) {
@@ -46284,11 +45151,6 @@ void SliceParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void SliceParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const SliceParameter& SliceParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_SliceParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void SliceParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.SliceParameter)
@@ -46309,11 +45171,9 @@ void SliceParameter::Clear() {
 const char* SliceParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional uint32 slice_dim = 1 [default = 1];
       case 1:
@@ -46348,7 +45208,8 @@ const char* SliceParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -46500,7 +45361,7 @@ bool SliceParameter::IsInitialized() const {
 
 void SliceParameter::InternalSwap(SliceParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   slice_point_.InternalSwap(&other->slice_point_);
   swap(slice_dim_, other->slice_dim_);
@@ -46508,14 +45369,13 @@ void SliceParameter::InternalSwap(SliceParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata SliceParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[97]);
 }
-
 
 // ===================================================================
 
-void SmoothL1LossParameter::InitAsDefaultInstance() {
-}
 class SmoothL1LossParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<SmoothL1LossParameter>()._has_bits_);
@@ -46539,7 +45399,7 @@ SmoothL1LossParameter::SmoothL1LossParameter(const SmoothL1LossParameter& from)
 }
 
 void SmoothL1LossParameter::SharedCtor() {
-  sigma_ = 1;
+sigma_ = 1;
 }
 
 SmoothL1LossParameter::~SmoothL1LossParameter() {
@@ -46549,7 +45409,7 @@ SmoothL1LossParameter::~SmoothL1LossParameter() {
 }
 
 void SmoothL1LossParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void SmoothL1LossParameter::ArenaDtor(void* object) {
@@ -46561,11 +45421,6 @@ void SmoothL1LossParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void SmoothL1LossParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const SmoothL1LossParameter& SmoothL1LossParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_SmoothL1LossParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void SmoothL1LossParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.SmoothL1LossParameter)
@@ -46581,11 +45436,9 @@ void SmoothL1LossParameter::Clear() {
 const char* SmoothL1LossParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional float sigma = 1 [default = 1];
       case 1:
@@ -46597,7 +45450,8 @@ const char* SmoothL1LossParameter::_InternalParse(const char* ptr, ::PROTOBUF_NA
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -46709,20 +45563,19 @@ bool SmoothL1LossParameter::IsInitialized() const {
 
 void SmoothL1LossParameter::InternalSwap(SmoothL1LossParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   swap(sigma_, other->sigma_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata SmoothL1LossParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[98]);
 }
-
 
 // ===================================================================
 
-void SoftmaxParameter::InitAsDefaultInstance() {
-}
 class SoftmaxParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<SoftmaxParameter>()._has_bits_);
@@ -46751,8 +45604,8 @@ SoftmaxParameter::SoftmaxParameter(const SoftmaxParameter& from)
 }
 
 void SoftmaxParameter::SharedCtor() {
-  engine_ = 0;
-  axis_ = 1;
+engine_ = 0;
+axis_ = 1;
 }
 
 SoftmaxParameter::~SoftmaxParameter() {
@@ -46762,7 +45615,7 @@ SoftmaxParameter::~SoftmaxParameter() {
 }
 
 void SoftmaxParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void SoftmaxParameter::ArenaDtor(void* object) {
@@ -46774,11 +45627,6 @@ void SoftmaxParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void SoftmaxParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const SoftmaxParameter& SoftmaxParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_SoftmaxParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void SoftmaxParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.SoftmaxParameter)
@@ -46798,11 +45646,9 @@ void SoftmaxParameter::Clear() {
 const char* SoftmaxParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional .caffe.SoftmaxParameter.Engine engine = 1 [default = DEFAULT];
       case 1:
@@ -46826,7 +45672,8 @@ const char* SoftmaxParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPA
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -46962,21 +45809,20 @@ bool SoftmaxParameter::IsInitialized() const {
 
 void SoftmaxParameter::InternalSwap(SoftmaxParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   swap(engine_, other->engine_);
   swap(axis_, other->axis_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata SoftmaxParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[99]);
 }
-
 
 // ===================================================================
 
-void SwishParameter::InitAsDefaultInstance() {
-}
 class SwishParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<SwishParameter>()._has_bits_);
@@ -47000,7 +45846,7 @@ SwishParameter::SwishParameter(const SwishParameter& from)
 }
 
 void SwishParameter::SharedCtor() {
-  beta_ = 1;
+beta_ = 1;
 }
 
 SwishParameter::~SwishParameter() {
@@ -47010,7 +45856,7 @@ SwishParameter::~SwishParameter() {
 }
 
 void SwishParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void SwishParameter::ArenaDtor(void* object) {
@@ -47022,11 +45868,6 @@ void SwishParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void SwishParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const SwishParameter& SwishParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_SwishParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void SwishParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.SwishParameter)
@@ -47042,11 +45883,9 @@ void SwishParameter::Clear() {
 const char* SwishParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional float beta = 1 [default = 1];
       case 1:
@@ -47058,7 +45897,8 @@ const char* SwishParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -47170,20 +46010,19 @@ bool SwishParameter::IsInitialized() const {
 
 void SwishParameter::InternalSwap(SwishParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   swap(beta_, other->beta_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata SwishParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[100]);
 }
-
 
 // ===================================================================
 
-void TanHParameter::InitAsDefaultInstance() {
-}
 class TanHParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<TanHParameter>()._has_bits_);
@@ -47207,7 +46046,7 @@ TanHParameter::TanHParameter(const TanHParameter& from)
 }
 
 void TanHParameter::SharedCtor() {
-  engine_ = 0;
+engine_ = 0;
 }
 
 TanHParameter::~TanHParameter() {
@@ -47217,7 +46056,7 @@ TanHParameter::~TanHParameter() {
 }
 
 void TanHParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void TanHParameter::ArenaDtor(void* object) {
@@ -47229,11 +46068,6 @@ void TanHParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void TanHParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const TanHParameter& TanHParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_TanHParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void TanHParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.TanHParameter)
@@ -47249,11 +46083,9 @@ void TanHParameter::Clear() {
 const char* TanHParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional .caffe.TanHParameter.Engine engine = 1 [default = DEFAULT];
       case 1:
@@ -47269,7 +46101,8 @@ const char* TanHParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -47383,20 +46216,19 @@ bool TanHParameter::IsInitialized() const {
 
 void TanHParameter::InternalSwap(TanHParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   swap(engine_, other->engine_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata TanHParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[101]);
 }
-
 
 // ===================================================================
 
-void TileParameter::InitAsDefaultInstance() {
-}
 class TileParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<TileParameter>()._has_bits_);
@@ -47425,8 +46257,8 @@ TileParameter::TileParameter(const TileParameter& from)
 }
 
 void TileParameter::SharedCtor() {
-  tiles_ = 0;
-  axis_ = 1;
+tiles_ = 0;
+axis_ = 1;
 }
 
 TileParameter::~TileParameter() {
@@ -47436,7 +46268,7 @@ TileParameter::~TileParameter() {
 }
 
 void TileParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void TileParameter::ArenaDtor(void* object) {
@@ -47448,11 +46280,6 @@ void TileParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void TileParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const TileParameter& TileParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_TileParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void TileParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.TileParameter)
@@ -47472,11 +46299,9 @@ void TileParameter::Clear() {
 const char* TileParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional int32 axis = 1 [default = 1];
       case 1:
@@ -47496,7 +46321,8 @@ const char* TileParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -47632,21 +46458,20 @@ bool TileParameter::IsInitialized() const {
 
 void TileParameter::InternalSwap(TileParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   swap(tiles_, other->tiles_);
   swap(axis_, other->axis_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata TileParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[102]);
 }
-
 
 // ===================================================================
 
-void ThresholdParameter::InitAsDefaultInstance() {
-}
 class ThresholdParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<ThresholdParameter>()._has_bits_);
@@ -47670,7 +46495,7 @@ ThresholdParameter::ThresholdParameter(const ThresholdParameter& from)
 }
 
 void ThresholdParameter::SharedCtor() {
-  threshold_ = 0;
+threshold_ = 0;
 }
 
 ThresholdParameter::~ThresholdParameter() {
@@ -47680,7 +46505,7 @@ ThresholdParameter::~ThresholdParameter() {
 }
 
 void ThresholdParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void ThresholdParameter::ArenaDtor(void* object) {
@@ -47692,11 +46517,6 @@ void ThresholdParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void ThresholdParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const ThresholdParameter& ThresholdParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_ThresholdParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void ThresholdParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.ThresholdParameter)
@@ -47712,11 +46532,9 @@ void ThresholdParameter::Clear() {
 const char* ThresholdParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional float threshold = 1 [default = 0];
       case 1:
@@ -47728,7 +46546,8 @@ const char* ThresholdParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMES
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -47840,20 +46659,19 @@ bool ThresholdParameter::IsInitialized() const {
 
 void ThresholdParameter::InternalSwap(ThresholdParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   swap(threshold_, other->threshold_);
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata ThresholdParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[103]);
 }
-
 
 // ===================================================================
 
-void VideoDataParameter::InitAsDefaultInstance() {
-}
 class VideoDataParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<VideoDataParameter>()._has_bits_);
@@ -47883,8 +46701,8 @@ VideoDataParameter::VideoDataParameter(const VideoDataParameter& from)
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   video_file_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_video_file()) {
-    video_file_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_video_file(),
-      GetArena());
+    video_file_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_video_file(), 
+      GetArenaForAllocation());
   }
   ::memcpy(&video_type_, &from.video_type_,
     static_cast<size_t>(reinterpret_cast<char*>(&skip_frames_) -
@@ -47893,11 +46711,11 @@ VideoDataParameter::VideoDataParameter(const VideoDataParameter& from)
 }
 
 void VideoDataParameter::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_VideoDataParameter_caffe_2eproto.base);
-  video_file_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  ::memset(&video_type_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&skip_frames_) -
-      reinterpret_cast<char*>(&video_type_)) + sizeof(skip_frames_));
+video_file_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&video_type_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&skip_frames_) -
+    reinterpret_cast<char*>(&video_type_)) + sizeof(skip_frames_));
 }
 
 VideoDataParameter::~VideoDataParameter() {
@@ -47907,7 +46725,7 @@ VideoDataParameter::~VideoDataParameter() {
 }
 
 void VideoDataParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   video_file_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
@@ -47920,11 +46738,6 @@ void VideoDataParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void VideoDataParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const VideoDataParameter& VideoDataParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_VideoDataParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void VideoDataParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.VideoDataParameter)
@@ -47948,11 +46761,9 @@ void VideoDataParameter::Clear() {
 const char* VideoDataParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional .caffe.VideoDataParameter.VideoType video_type = 1 [default = WEBCAM];
       case 1:
@@ -47995,7 +46806,8 @@ const char* VideoDataParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMES
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -48167,9 +46979,13 @@ bool VideoDataParameter::IsInitialized() const {
 
 void VideoDataParameter::InternalSwap(VideoDataParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
-  video_file_.Swap(&other->video_file_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &video_file_, GetArenaForAllocation(),
+      &other->video_file_, other->GetArenaForAllocation()
+  );
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(VideoDataParameter, skip_frames_)
       + sizeof(VideoDataParameter::skip_frames_)
@@ -48179,14 +46995,13 @@ void VideoDataParameter::InternalSwap(VideoDataParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata VideoDataParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[104]);
 }
-
 
 // ===================================================================
 
-void WindowDataParameter::InitAsDefaultInstance() {
-}
 class WindowDataParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<WindowDataParameter>()._has_bits_);
@@ -48231,7 +47046,7 @@ class WindowDataParameter::_Internal {
   }
 };
 
-::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<std::string> WindowDataParameter::_i_give_permission_to_break_this_code_default_crop_mode_;
+const ::PROTOBUF_NAMESPACE_ID::internal::LazyString WindowDataParameter::_i_give_permission_to_break_this_code_default_crop_mode_{{{"warp", 4}}, {nullptr}};
 WindowDataParameter::WindowDataParameter(::PROTOBUF_NAMESPACE_ID::Arena* arena)
   : ::PROTOBUF_NAMESPACE_ID::Message(arena) {
   SharedCtor();
@@ -48244,23 +47059,23 @@ WindowDataParameter::WindowDataParameter(const WindowDataParameter& from)
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   source_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_source()) {
-    source_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_source(),
-      GetArena());
+    source_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_source(), 
+      GetArenaForAllocation());
   }
   mean_file_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_mean_file()) {
-    mean_file_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_mean_file(),
-      GetArena());
+    mean_file_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_mean_file(), 
+      GetArenaForAllocation());
   }
-  crop_mode_.UnsafeSetDefault(&::caffe::WindowDataParameter::_i_give_permission_to_break_this_code_default_crop_mode_.get());
+  crop_mode_.UnsafeSetDefault(nullptr);
   if (from._internal_has_crop_mode()) {
-    crop_mode_.Set(&::caffe::WindowDataParameter::_i_give_permission_to_break_this_code_default_crop_mode_.get(), from._internal_crop_mode(),
-      GetArena());
+    crop_mode_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::NonEmptyDefault{}, from._internal_crop_mode(), 
+      GetArenaForAllocation());
   }
   root_folder_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_root_folder()) {
-    root_folder_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_root_folder(),
-      GetArena());
+    root_folder_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_root_folder(), 
+      GetArenaForAllocation());
   }
   ::memcpy(&batch_size_, &from.batch_size_,
     static_cast<size_t>(reinterpret_cast<char*>(&fg_fraction_) -
@@ -48269,18 +47084,18 @@ WindowDataParameter::WindowDataParameter(const WindowDataParameter& from)
 }
 
 void WindowDataParameter::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_WindowDataParameter_caffe_2eproto.base);
-  source_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  mean_file_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  crop_mode_.UnsafeSetDefault(&::caffe::WindowDataParameter::_i_give_permission_to_break_this_code_default_crop_mode_.get());
-  root_folder_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  ::memset(&batch_size_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&context_pad_) -
-      reinterpret_cast<char*>(&batch_size_)) + sizeof(context_pad_));
-  scale_ = 1;
-  fg_threshold_ = 0.5f;
-  bg_threshold_ = 0.5f;
-  fg_fraction_ = 0.25f;
+source_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+mean_file_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+crop_mode_.UnsafeSetDefault(nullptr);
+root_folder_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&batch_size_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&context_pad_) -
+    reinterpret_cast<char*>(&batch_size_)) + sizeof(context_pad_));
+scale_ = 1;
+fg_threshold_ = 0.5f;
+bg_threshold_ = 0.5f;
+fg_fraction_ = 0.25f;
 }
 
 WindowDataParameter::~WindowDataParameter() {
@@ -48290,10 +47105,10 @@ WindowDataParameter::~WindowDataParameter() {
 }
 
 void WindowDataParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   source_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   mean_file_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  crop_mode_.DestroyNoArena(&::caffe::WindowDataParameter::_i_give_permission_to_break_this_code_default_crop_mode_.get());
+  crop_mode_.DestroyNoArena(nullptr);
   root_folder_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
 }
 
@@ -48306,11 +47121,6 @@ void WindowDataParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void WindowDataParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const WindowDataParameter& WindowDataParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_WindowDataParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void WindowDataParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.WindowDataParameter)
@@ -48327,8 +47137,8 @@ void WindowDataParameter::Clear() {
       mean_file_.ClearNonDefaultToEmpty();
     }
     if (cached_has_bits & 0x00000004u) {
-      crop_mode_.ClearToDefault(&::caffe::WindowDataParameter::_i_give_permission_to_break_this_code_default_crop_mode_.get(), GetArena());
-    }
+      crop_mode_.ClearToDefault(::caffe::WindowDataParameter::_i_give_permission_to_break_this_code_default_crop_mode_, GetArenaForAllocation());
+       }
     if (cached_has_bits & 0x00000008u) {
       root_folder_.ClearNonDefaultToEmpty();
     }
@@ -48352,11 +47162,9 @@ void WindowDataParameter::Clear() {
 const char* WindowDataParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional string source = 1;
       case 1:
@@ -48476,7 +47284,8 @@ const char* WindowDataParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAME
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -48797,12 +47606,28 @@ bool WindowDataParameter::IsInitialized() const {
 
 void WindowDataParameter::InternalSwap(WindowDataParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
-  source_.Swap(&other->source_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
-  mean_file_.Swap(&other->mean_file_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
-  crop_mode_.Swap(&other->crop_mode_, &::caffe::WindowDataParameter::_i_give_permission_to_break_this_code_default_crop_mode_.get(), GetArena());
-  root_folder_.Swap(&other->root_folder_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &source_, GetArenaForAllocation(),
+      &other->source_, other->GetArenaForAllocation()
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &mean_file_, GetArenaForAllocation(),
+      &other->mean_file_, other->GetArenaForAllocation()
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      nullptr,
+      &crop_mode_, GetArenaForAllocation(),
+      &other->crop_mode_, other->GetArenaForAllocation()
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &root_folder_, GetArenaForAllocation(),
+      &other->root_folder_, other->GetArenaForAllocation()
+  );
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(WindowDataParameter, context_pad_)
       + sizeof(WindowDataParameter::context_pad_)
@@ -48816,14 +47641,13 @@ void WindowDataParameter::InternalSwap(WindowDataParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata WindowDataParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[105]);
 }
-
 
 // ===================================================================
 
-void SPPParameter::InitAsDefaultInstance() {
-}
 class SPPParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<SPPParameter>()._has_bits_);
@@ -48855,9 +47679,10 @@ SPPParameter::SPPParameter(const SPPParameter& from)
 }
 
 void SPPParameter::SharedCtor() {
-  ::memset(&pyramid_height_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&engine_) -
-      reinterpret_cast<char*>(&pyramid_height_)) + sizeof(engine_));
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&pyramid_height_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&engine_) -
+    reinterpret_cast<char*>(&pyramid_height_)) + sizeof(engine_));
 }
 
 SPPParameter::~SPPParameter() {
@@ -48867,7 +47692,7 @@ SPPParameter::~SPPParameter() {
 }
 
 void SPPParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
 }
 
 void SPPParameter::ArenaDtor(void* object) {
@@ -48879,11 +47704,6 @@ void SPPParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void SPPParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const SPPParameter& SPPParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_SPPParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void SPPParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.SPPParameter)
@@ -48904,11 +47724,9 @@ void SPPParameter::Clear() {
 const char* SPPParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional uint32 pyramid_height = 1;
       case 1:
@@ -48944,7 +47762,8 @@ const char* SPPParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_I
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -49096,7 +47915,7 @@ bool SPPParameter::IsInitialized() const {
 
 void SPPParameter::InternalSwap(SPPParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(SPPParameter, engine_)
@@ -49107,76 +47926,13 @@ void SPPParameter::InternalSwap(SPPParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata SPPParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[106]);
 }
-
 
 // ===================================================================
 
-void V1LayerParameter::InitAsDefaultInstance() {
-  ::caffe::_V1LayerParameter_default_instance_._instance.get_mutable()->accuracy_param_ = const_cast< ::caffe::AccuracyParameter*>(
-      ::caffe::AccuracyParameter::internal_default_instance());
-  ::caffe::_V1LayerParameter_default_instance_._instance.get_mutable()->argmax_param_ = const_cast< ::caffe::ArgMaxParameter*>(
-      ::caffe::ArgMaxParameter::internal_default_instance());
-  ::caffe::_V1LayerParameter_default_instance_._instance.get_mutable()->concat_param_ = const_cast< ::caffe::ConcatParameter*>(
-      ::caffe::ConcatParameter::internal_default_instance());
-  ::caffe::_V1LayerParameter_default_instance_._instance.get_mutable()->contrastive_loss_param_ = const_cast< ::caffe::ContrastiveLossParameter*>(
-      ::caffe::ContrastiveLossParameter::internal_default_instance());
-  ::caffe::_V1LayerParameter_default_instance_._instance.get_mutable()->convolution_param_ = const_cast< ::caffe::ConvolutionParameter*>(
-      ::caffe::ConvolutionParameter::internal_default_instance());
-  ::caffe::_V1LayerParameter_default_instance_._instance.get_mutable()->data_param_ = const_cast< ::caffe::DataParameter*>(
-      ::caffe::DataParameter::internal_default_instance());
-  ::caffe::_V1LayerParameter_default_instance_._instance.get_mutable()->dropout_param_ = const_cast< ::caffe::DropoutParameter*>(
-      ::caffe::DropoutParameter::internal_default_instance());
-  ::caffe::_V1LayerParameter_default_instance_._instance.get_mutable()->dummy_data_param_ = const_cast< ::caffe::DummyDataParameter*>(
-      ::caffe::DummyDataParameter::internal_default_instance());
-  ::caffe::_V1LayerParameter_default_instance_._instance.get_mutable()->eltwise_param_ = const_cast< ::caffe::EltwiseParameter*>(
-      ::caffe::EltwiseParameter::internal_default_instance());
-  ::caffe::_V1LayerParameter_default_instance_._instance.get_mutable()->exp_param_ = const_cast< ::caffe::ExpParameter*>(
-      ::caffe::ExpParameter::internal_default_instance());
-  ::caffe::_V1LayerParameter_default_instance_._instance.get_mutable()->hdf5_data_param_ = const_cast< ::caffe::HDF5DataParameter*>(
-      ::caffe::HDF5DataParameter::internal_default_instance());
-  ::caffe::_V1LayerParameter_default_instance_._instance.get_mutable()->hdf5_output_param_ = const_cast< ::caffe::HDF5OutputParameter*>(
-      ::caffe::HDF5OutputParameter::internal_default_instance());
-  ::caffe::_V1LayerParameter_default_instance_._instance.get_mutable()->hinge_loss_param_ = const_cast< ::caffe::HingeLossParameter*>(
-      ::caffe::HingeLossParameter::internal_default_instance());
-  ::caffe::_V1LayerParameter_default_instance_._instance.get_mutable()->image_data_param_ = const_cast< ::caffe::ImageDataParameter*>(
-      ::caffe::ImageDataParameter::internal_default_instance());
-  ::caffe::_V1LayerParameter_default_instance_._instance.get_mutable()->infogain_loss_param_ = const_cast< ::caffe::InfogainLossParameter*>(
-      ::caffe::InfogainLossParameter::internal_default_instance());
-  ::caffe::_V1LayerParameter_default_instance_._instance.get_mutable()->inner_product_param_ = const_cast< ::caffe::InnerProductParameter*>(
-      ::caffe::InnerProductParameter::internal_default_instance());
-  ::caffe::_V1LayerParameter_default_instance_._instance.get_mutable()->lrn_param_ = const_cast< ::caffe::LRNParameter*>(
-      ::caffe::LRNParameter::internal_default_instance());
-  ::caffe::_V1LayerParameter_default_instance_._instance.get_mutable()->memory_data_param_ = const_cast< ::caffe::MemoryDataParameter*>(
-      ::caffe::MemoryDataParameter::internal_default_instance());
-  ::caffe::_V1LayerParameter_default_instance_._instance.get_mutable()->mvn_param_ = const_cast< ::caffe::MVNParameter*>(
-      ::caffe::MVNParameter::internal_default_instance());
-  ::caffe::_V1LayerParameter_default_instance_._instance.get_mutable()->pooling_param_ = const_cast< ::caffe::PoolingParameter*>(
-      ::caffe::PoolingParameter::internal_default_instance());
-  ::caffe::_V1LayerParameter_default_instance_._instance.get_mutable()->power_param_ = const_cast< ::caffe::PowerParameter*>(
-      ::caffe::PowerParameter::internal_default_instance());
-  ::caffe::_V1LayerParameter_default_instance_._instance.get_mutable()->relu_param_ = const_cast< ::caffe::ReLUParameter*>(
-      ::caffe::ReLUParameter::internal_default_instance());
-  ::caffe::_V1LayerParameter_default_instance_._instance.get_mutable()->sigmoid_param_ = const_cast< ::caffe::SigmoidParameter*>(
-      ::caffe::SigmoidParameter::internal_default_instance());
-  ::caffe::_V1LayerParameter_default_instance_._instance.get_mutable()->softmax_param_ = const_cast< ::caffe::SoftmaxParameter*>(
-      ::caffe::SoftmaxParameter::internal_default_instance());
-  ::caffe::_V1LayerParameter_default_instance_._instance.get_mutable()->slice_param_ = const_cast< ::caffe::SliceParameter*>(
-      ::caffe::SliceParameter::internal_default_instance());
-  ::caffe::_V1LayerParameter_default_instance_._instance.get_mutable()->tanh_param_ = const_cast< ::caffe::TanHParameter*>(
-      ::caffe::TanHParameter::internal_default_instance());
-  ::caffe::_V1LayerParameter_default_instance_._instance.get_mutable()->threshold_param_ = const_cast< ::caffe::ThresholdParameter*>(
-      ::caffe::ThresholdParameter::internal_default_instance());
-  ::caffe::_V1LayerParameter_default_instance_._instance.get_mutable()->window_data_param_ = const_cast< ::caffe::WindowDataParameter*>(
-      ::caffe::WindowDataParameter::internal_default_instance());
-  ::caffe::_V1LayerParameter_default_instance_._instance.get_mutable()->transform_param_ = const_cast< ::caffe::TransformationParameter*>(
-      ::caffe::TransformationParameter::internal_default_instance());
-  ::caffe::_V1LayerParameter_default_instance_._instance.get_mutable()->loss_param_ = const_cast< ::caffe::LossParameter*>(
-      ::caffe::LossParameter::internal_default_instance());
-  ::caffe::_V1LayerParameter_default_instance_._instance.get_mutable()->layer_ = const_cast< ::caffe::V0LayerParameter*>(
-      ::caffe::V0LayerParameter::internal_default_instance());
-}
 class V1LayerParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<V1LayerParameter>()._has_bits_);
@@ -49468,8 +48224,8 @@ V1LayerParameter::V1LayerParameter(const V1LayerParameter& from)
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   name_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_name()) {
-    name_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_name(),
-      GetArena());
+    name_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_name(), 
+      GetArenaForAllocation());
   }
   if (from._internal_has_layer()) {
     layer_ = new ::caffe::V0LayerParameter(*from.layer_);
@@ -49631,11 +48387,11 @@ V1LayerParameter::V1LayerParameter(const V1LayerParameter& from)
 }
 
 void V1LayerParameter::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_V1LayerParameter_caffe_2eproto.base);
-  name_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  ::memset(&layer_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&type_) -
-      reinterpret_cast<char*>(&layer_)) + sizeof(type_));
+name_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&layer_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&type_) -
+    reinterpret_cast<char*>(&layer_)) + sizeof(type_));
 }
 
 V1LayerParameter::~V1LayerParameter() {
@@ -49645,7 +48401,7 @@ V1LayerParameter::~V1LayerParameter() {
 }
 
 void V1LayerParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   name_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (this != internal_default_instance()) delete layer_;
   if (this != internal_default_instance()) delete concat_param_;
@@ -49689,11 +48445,6 @@ void V1LayerParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void V1LayerParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const V1LayerParameter& V1LayerParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_V1LayerParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void V1LayerParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.V1LayerParameter)
@@ -49854,11 +48605,9 @@ void V1LayerParameter::Clear() {
 
 const char* V1LayerParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional .caffe.V0LayerParameter layer = 1;
       case 1:
@@ -50251,7 +49000,8 @@ const char* V1LayerParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPA
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -51133,7 +49883,7 @@ bool V1LayerParameter::IsInitialized() const {
 
 void V1LayerParameter::InternalSwap(V1LayerParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   swap(_has_bits_[1], other->_has_bits_[1]);
   bottom_.InternalSwap(&other->bottom_);
@@ -51146,7 +49896,11 @@ void V1LayerParameter::InternalSwap(V1LayerParameter* other) {
   loss_weight_.InternalSwap(&other->loss_weight_);
   param_.InternalSwap(&other->param_);
   blob_share_mode_.InternalSwap(&other->blob_share_mode_);
-  name_.Swap(&other->name_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &name_, GetArenaForAllocation(),
+      &other->name_, other->GetArenaForAllocation()
+  );
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(V1LayerParameter, type_)
       + sizeof(V1LayerParameter::type_)
@@ -51156,20 +49910,13 @@ void V1LayerParameter::InternalSwap(V1LayerParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata V1LayerParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[107]);
 }
-
 
 // ===================================================================
 
-void V0LayerParameter::InitAsDefaultInstance() {
-  ::caffe::_V0LayerParameter_default_instance_._instance.get_mutable()->weight_filler_ = const_cast< ::caffe::FillerParameter*>(
-      ::caffe::FillerParameter::internal_default_instance());
-  ::caffe::_V0LayerParameter_default_instance_._instance.get_mutable()->bias_filler_ = const_cast< ::caffe::FillerParameter*>(
-      ::caffe::FillerParameter::internal_default_instance());
-  ::caffe::_V0LayerParameter_default_instance_._instance.get_mutable()->hdf5_output_param_ = const_cast< ::caffe::HDF5OutputParameter*>(
-      ::caffe::HDF5OutputParameter::internal_default_instance());
-}
 class V0LayerParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<V0LayerParameter>()._has_bits_);
@@ -51295,7 +50042,7 @@ const ::caffe::HDF5OutputParameter&
 V0LayerParameter::_Internal::hdf5_output_param(const V0LayerParameter* msg) {
   return *msg->hdf5_output_param_;
 }
-::PROTOBUF_NAMESPACE_ID::internal::ExplicitlyConstructed<std::string> V0LayerParameter::_i_give_permission_to_break_this_code_default_det_crop_mode_;
+const ::PROTOBUF_NAMESPACE_ID::internal::LazyString V0LayerParameter::_i_give_permission_to_break_this_code_default_det_crop_mode_{{{"warp", 4}}, {nullptr}};
 V0LayerParameter::V0LayerParameter(::PROTOBUF_NAMESPACE_ID::Arena* arena)
   : ::PROTOBUF_NAMESPACE_ID::Message(arena),
   blobs_(arena),
@@ -51314,28 +50061,28 @@ V0LayerParameter::V0LayerParameter(const V0LayerParameter& from)
   _internal_metadata_.MergeFrom<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(from._internal_metadata_);
   name_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_name()) {
-    name_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_name(),
-      GetArena());
+    name_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_name(), 
+      GetArenaForAllocation());
   }
   type_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_type()) {
-    type_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_type(),
-      GetArena());
+    type_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_type(), 
+      GetArenaForAllocation());
   }
   source_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_source()) {
-    source_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_source(),
-      GetArena());
+    source_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_source(), 
+      GetArenaForAllocation());
   }
   meanfile_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   if (from._internal_has_meanfile()) {
-    meanfile_.Set(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), from._internal_meanfile(),
-      GetArena());
+    meanfile_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::EmptyDefault{}, from._internal_meanfile(), 
+      GetArenaForAllocation());
   }
-  det_crop_mode_.UnsafeSetDefault(&::caffe::V0LayerParameter::_i_give_permission_to_break_this_code_default_det_crop_mode_.get());
+  det_crop_mode_.UnsafeSetDefault(nullptr);
   if (from._internal_has_det_crop_mode()) {
-    det_crop_mode_.Set(&::caffe::V0LayerParameter::_i_give_permission_to_break_this_code_default_det_crop_mode_.get(), from._internal_det_crop_mode(),
-      GetArena());
+    det_crop_mode_.Set(::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::NonEmptyDefault{}, from._internal_det_crop_mode(), 
+      GetArenaForAllocation());
   }
   if (from._internal_has_weight_filler()) {
     weight_filler_ = new ::caffe::FillerParameter(*from.weight_filler_);
@@ -51359,28 +50106,28 @@ V0LayerParameter::V0LayerParameter(const V0LayerParameter& from)
 }
 
 void V0LayerParameter::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_V0LayerParameter_caffe_2eproto.base);
-  name_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  type_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  source_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  meanfile_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  det_crop_mode_.UnsafeSetDefault(&::caffe::V0LayerParameter::_i_give_permission_to_break_this_code_default_det_crop_mode_.get());
-  ::memset(&weight_filler_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&new_height_) -
-      reinterpret_cast<char*>(&weight_filler_)) + sizeof(new_height_));
-  concat_dim_ = 1u;
-  biasterm_ = true;
-  group_ = 1u;
-  stride_ = 1u;
-  dropout_ratio_ = 0.5f;
-  local_size_ = 5u;
-  alpha_ = 1;
-  beta_ = 0.75f;
-  scale_ = 1;
-  k_ = 1;
-  det_fg_threshold_ = 0.5f;
-  det_bg_threshold_ = 0.5f;
-  det_fg_fraction_ = 0.25f;
+name_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+type_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+source_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+meanfile_.UnsafeSetDefault(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
+det_crop_mode_.UnsafeSetDefault(nullptr);
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&weight_filler_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&new_height_) -
+    reinterpret_cast<char*>(&weight_filler_)) + sizeof(new_height_));
+concat_dim_ = 1u;
+biasterm_ = true;
+group_ = 1u;
+stride_ = 1u;
+dropout_ratio_ = 0.5f;
+local_size_ = 5u;
+alpha_ = 1;
+beta_ = 0.75f;
+scale_ = 1;
+k_ = 1;
+det_fg_threshold_ = 0.5f;
+det_bg_threshold_ = 0.5f;
+det_fg_fraction_ = 0.25f;
 }
 
 V0LayerParameter::~V0LayerParameter() {
@@ -51390,12 +50137,12 @@ V0LayerParameter::~V0LayerParameter() {
 }
 
 void V0LayerParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   name_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   type_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   source_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
   meanfile_.DestroyNoArena(&::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited());
-  det_crop_mode_.DestroyNoArena(&::caffe::V0LayerParameter::_i_give_permission_to_break_this_code_default_det_crop_mode_.get());
+  det_crop_mode_.DestroyNoArena(nullptr);
   if (this != internal_default_instance()) delete weight_filler_;
   if (this != internal_default_instance()) delete bias_filler_;
   if (this != internal_default_instance()) delete hdf5_output_param_;
@@ -51410,11 +50157,6 @@ void V0LayerParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void V0LayerParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const V0LayerParameter& V0LayerParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_V0LayerParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void V0LayerParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.V0LayerParameter)
@@ -51440,8 +50182,8 @@ void V0LayerParameter::Clear() {
       meanfile_.ClearNonDefaultToEmpty();
     }
     if (cached_has_bits & 0x00000010u) {
-      det_crop_mode_.ClearToDefault(&::caffe::V0LayerParameter::_i_give_permission_to_break_this_code_default_det_crop_mode_.get(), GetArena());
-    }
+      det_crop_mode_.ClearToDefault(::caffe::V0LayerParameter::_i_give_permission_to_break_this_code_default_det_crop_mode_, GetArenaForAllocation());
+       }
     if (cached_has_bits & 0x00000020u) {
       GOOGLE_DCHECK(weight_filler_ != nullptr);
       weight_filler_->Clear();
@@ -51489,11 +50231,9 @@ void V0LayerParameter::Clear() {
 
 const char* V0LayerParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional string name = 1;
       case 1:
@@ -51835,7 +50575,8 @@ const char* V0LayerParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPA
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -52573,17 +51314,37 @@ bool V0LayerParameter::IsInitialized() const {
 
 void V0LayerParameter::InternalSwap(V0LayerParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   swap(_has_bits_[1], other->_has_bits_[1]);
   blobs_.InternalSwap(&other->blobs_);
   blobs_lr_.InternalSwap(&other->blobs_lr_);
   weight_decay_.InternalSwap(&other->weight_decay_);
-  name_.Swap(&other->name_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
-  type_.Swap(&other->type_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
-  source_.Swap(&other->source_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
-  meanfile_.Swap(&other->meanfile_, &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(), GetArena());
-  det_crop_mode_.Swap(&other->det_crop_mode_, &::caffe::V0LayerParameter::_i_give_permission_to_break_this_code_default_det_crop_mode_.get(), GetArena());
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &name_, GetArenaForAllocation(),
+      &other->name_, other->GetArenaForAllocation()
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &type_, GetArenaForAllocation(),
+      &other->type_, other->GetArenaForAllocation()
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &source_, GetArenaForAllocation(),
+      &other->source_, other->GetArenaForAllocation()
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      &::PROTOBUF_NAMESPACE_ID::internal::GetEmptyStringAlreadyInited(),
+      &meanfile_, GetArenaForAllocation(),
+      &other->meanfile_, other->GetArenaForAllocation()
+  );
+  ::PROTOBUF_NAMESPACE_ID::internal::ArenaStringPtr::InternalSwap(
+      nullptr,
+      &det_crop_mode_, GetArenaForAllocation(),
+      &other->det_crop_mode_, other->GetArenaForAllocation()
+  );
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(V0LayerParameter, new_height_)
       + sizeof(V0LayerParameter::new_height_)
@@ -52606,16 +51367,13 @@ void V0LayerParameter::InternalSwap(V0LayerParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata V0LayerParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[108]);
 }
-
 
 // ===================================================================
 
-void PReLUParameter::InitAsDefaultInstance() {
-  ::caffe::_PReLUParameter_default_instance_._instance.get_mutable()->filler_ = const_cast< ::caffe::FillerParameter*>(
-      ::caffe::FillerParameter::internal_default_instance());
-}
 class PReLUParameter::_Internal {
  public:
   using HasBits = decltype(std::declval<PReLUParameter>()._has_bits_);
@@ -52652,10 +51410,10 @@ PReLUParameter::PReLUParameter(const PReLUParameter& from)
 }
 
 void PReLUParameter::SharedCtor() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&scc_info_PReLUParameter_caffe_2eproto.base);
-  ::memset(&filler_, 0, static_cast<size_t>(
-      reinterpret_cast<char*>(&channel_shared_) -
-      reinterpret_cast<char*>(&filler_)) + sizeof(channel_shared_));
+::memset(reinterpret_cast<char*>(this) + static_cast<size_t>(
+    reinterpret_cast<char*>(&filler_) - reinterpret_cast<char*>(this)),
+    0, static_cast<size_t>(reinterpret_cast<char*>(&channel_shared_) -
+    reinterpret_cast<char*>(&filler_)) + sizeof(channel_shared_));
 }
 
 PReLUParameter::~PReLUParameter() {
@@ -52665,7 +51423,7 @@ PReLUParameter::~PReLUParameter() {
 }
 
 void PReLUParameter::SharedDtor() {
-  GOOGLE_DCHECK(GetArena() == nullptr);
+  GOOGLE_DCHECK(GetArenaForAllocation() == nullptr);
   if (this != internal_default_instance()) delete filler_;
 }
 
@@ -52678,11 +51436,6 @@ void PReLUParameter::RegisterArenaDtor(::PROTOBUF_NAMESPACE_ID::Arena*) {
 void PReLUParameter::SetCachedSize(int size) const {
   _cached_size_.Set(size);
 }
-const PReLUParameter& PReLUParameter::default_instance() {
-  ::PROTOBUF_NAMESPACE_ID::internal::InitSCC(&::scc_info_PReLUParameter_caffe_2eproto.base);
-  return *internal_default_instance();
-}
-
 
 void PReLUParameter::Clear() {
 // @@protoc_insertion_point(message_clear_start:caffe.PReLUParameter)
@@ -52703,11 +51456,9 @@ void PReLUParameter::Clear() {
 const char* PReLUParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE_ID::internal::ParseContext* ctx) {
 #define CHK_(x) if (PROTOBUF_PREDICT_FALSE(!(x))) goto failure
   _Internal::HasBits has_bits{};
-  ::PROTOBUF_NAMESPACE_ID::Arena* arena = GetArena(); (void)arena;
   while (!ctx->Done(&ptr)) {
     ::PROTOBUF_NAMESPACE_ID::uint32 tag;
     ptr = ::PROTOBUF_NAMESPACE_ID::internal::ReadTag(ptr, &tag);
-    CHK_(ptr);
     switch (tag >> 3) {
       // optional .caffe.FillerParameter filler = 1;
       case 1:
@@ -52726,7 +51477,8 @@ const char* PReLUParameter::_InternalParse(const char* ptr, ::PROTOBUF_NAMESPACE
         continue;
       default: {
       handle_unusual:
-        if ((tag & 7) == 4 || tag == 0) {
+        if ((tag == 0) || ((tag & 7) == 4)) {
+          CHK_(ptr);
           ctx->SetLastTag(tag);
           goto success;
         }
@@ -52862,7 +51614,7 @@ bool PReLUParameter::IsInitialized() const {
 
 void PReLUParameter::InternalSwap(PReLUParameter* other) {
   using std::swap;
-  _internal_metadata_.Swap<::PROTOBUF_NAMESPACE_ID::UnknownFieldSet>(&other->_internal_metadata_);
+  _internal_metadata_.InternalSwap(&other->_internal_metadata_);
   swap(_has_bits_[0], other->_has_bits_[0]);
   ::PROTOBUF_NAMESPACE_ID::internal::memswap<
       PROTOBUF_FIELD_OFFSET(PReLUParameter, channel_shared_)
@@ -52873,9 +51625,10 @@ void PReLUParameter::InternalSwap(PReLUParameter* other) {
 }
 
 ::PROTOBUF_NAMESPACE_ID::Metadata PReLUParameter::GetMetadata() const {
-  return GetMetadataStatic();
+  return ::PROTOBUF_NAMESPACE_ID::internal::AssignDescriptors(
+      &descriptor_table_caffe_2eproto_getter, &descriptor_table_caffe_2eproto_once,
+      file_level_metadata_caffe_2eproto[109]);
 }
-
 
 // @@protoc_insertion_point(namespace_scope)
 }  // namespace caffe
