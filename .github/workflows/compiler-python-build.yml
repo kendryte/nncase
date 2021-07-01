@@ -168,9 +168,3 @@ jobs:
         PYTHONPATH: ${{github.workspace}}/tests
       run: |
         pytest tests/other --doctest-modules --junitxml=test_results/other.xml
-
-    - name: Publish Test Results
-      uses: EnricoMi/publish-unit-test-result-action@v1
-      if: always() && runner.os == 'Linux'
-      with:
-        files: test_results/*.xml
