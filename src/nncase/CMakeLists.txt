@@ -11,6 +11,7 @@ target_compile_definitions(nncase PUBLIC -DNNCASE_SHARED_LIBS)
 target_link_libraries(nncase PRIVATE CONAN_PKG::magic_enum CONAN_PKG::fmt)
 
 install(TARGETS nncase EXPORT nncaseTargets
+        COMPONENT nncase-runtime
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib
         RUNTIME DESTINATION bin

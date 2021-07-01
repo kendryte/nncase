@@ -536,21 +536,7 @@ class OnnxTestRunner(TestRunner):
 
             if simplify:
                 onnx_model = onnx.shape_inference.infer_shapes(onnx_model)
-                onnx_model, check = onnxsim.simplify(onnx_model, check_n=0, input_shapes=shape_dict, perform_optimization=False, skip_fuse_bn=True, skip_shape_inference=True, skipped_optimizers=[
-                    # 'eliminate_deadend',
-                    # 'eliminate_nop_dropout',
-                    # 'eliminate_nop_cast',
-                    # 'eliminate_nop_monotone_argmax', 'eliminate_nop_pad',
-                    # 'extract_constant_to_initializer', 'eliminate_unused_initializer',
-                    # 'eliminate_nop_transpose',
-                    # 'eliminate_nop_flatten', 'eliminate_identity',
-                    'fuse_add_bias_into_conv',
-                    # 'fuse_consecutive_concats',
-                    # 'fuse_consecutive_log_softmax',
-                    # 'fuse_consecutive_reduce_unsqueeze', 'fuse_consecutive_squeezes',
-                    # 'fuse_consecutive_transposes', 'fuse_matmul_add_bias_into_gemm',
-                    # 'fuse_pad_into_conv', 'fuse_transpose_into_gemm', 'eliminate_duplicate_initializer'
-                ])
+                onnx_model, check = onnxsim.simplify(onnx_model)
                 assert check, "Simplified ONNX model could not be validated"
 
             print('[info]: preprocess ONNX model success: ', args)

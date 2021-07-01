@@ -21,6 +21,7 @@ set(SRCS runtime_module.cpp
          ops/tensor.quantize.cpp
          ops/tensor.reduce.cpp
          ops/tensor.reduce_window2d.cpp
+         ops/tensor.resize_image.cpp
          ops/tensor.slice.cpp
          ops/tensor.transpose.cpp
          ops/tensor.unary.cpp)
