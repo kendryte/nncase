@@ -1,0 +1,15 @@
+cmake_minimum_required (VERSION 3.15)
+
+find_package (Python3 COMPONENTS Interpreter Development REQUIRED)
+find_package (pybind11 REQUIRED)
+
+set(SRCS ffi.cpp)
+
+pybind11_add_module (nncase_python ${SRCS})
+target_link_libraries(nncase_python PRIVATE nncase CONAN_PKG::pybind11)
+target_include_directories(nncase_python PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/../../common)
+set_target_properties(nncase_python PROPERTIES
+                                 OUTPUT_NAME _nncase)
+install(TARGETS nncase_python
+        COMPONENT nncase-runtime
+        DESTINATION lib)

@@ -14,22 +14,13 @@
  */
 
 #include "../onnx_importer.h"
-
 #include <cassert>
-
-#include <hlir/graph.h>
-#include <hlir/ops/binary.h>
-#include <hlir/ops/constant.h>
-#include <hlir/ops/reduce.h>
-#include <hlir/ops/unary.h>
-
-
-using namespace std;
+#include <nncase/ir/graph.h>
+#include <nncase/ir/ops/binary.h>
 
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::hlir;
-
+using namespace nncase::ir;
 using namespace onnx;
 
 void onnx_importer::convert_op_Add(const onnx::NodeProto &node)
@@ -67,12 +58,13 @@ void onnx_importer::convert_binary(const onnx::NodeProto &node, const binary_op_
     assert(node.input().size() == 2);
     assert(node.output().size() == 1);
 
-    const auto &input_a { node.input()[0] }, &input_b { node.input()[1] };
-    const auto &output { node.output()[0] };
+    const auto &input_a = node.input()[0];
+    const auto &input_b = node.input()[1];
+    const auto &output = node.output()[0];
 
-    auto &&input_a_shape { get_shape(input_a) }, &&input_b_shape { get_shape(input_b) };
-
-    auto op { graph_.emplace<binary>(binary_op, input_a_shape, input_b_shape, value_range<float>::full()) };
+    auto input_a_shape = get_shape(input_a);
+    auto input_b_shape = get_shape(input_b);
+    auto op = graph_.emplace<binary>(binary_op, input_a_shape, input_b_shape, value_range<float>::full());
 
     input_tensors_.emplace(&op->input_a(), input_a);
     input_tensors_.emplace(&op->input_b(), input_b);

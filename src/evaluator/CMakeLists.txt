@@ -2,9 +2,8 @@
 
 set(SRCS evaluator.cpp
          quantizer.cpp
-         ops/neutral/neutral_ops.cpp
-         ops/k210/k210_ops.cpp)
+         ops/neutral/neutral_ops.cpp)
 
-add_library(evaluator STATIC ${SRCS})
-target_include_directories(evaluator PUBLIC include)
-target_link_libraries(evaluator PUBLIC hlir scheduler)
+add_library(evaluator OBJECT ${SRCS})
+target_link_libraries(evaluator PUBLIC ir schedule simulator kernels CONAN_PKG::mpark-variant)
+set_property(TARGET evaluator PROPERTY POSITION_INDEPENDENT_CODE ON)

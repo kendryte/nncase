@@ -1,4 +1,4 @@
-/* Copyright 2019-2020 Canaan Inc.
+/* Copyright 2019-2021 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,110 +12,188 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "nncase/ir/quantizer.h"
 #include <chrono>
-#include <llir/evaluator.h>
-#include <llir/ops/constant.h>
+#include <nncase/ir/evaluator.h>
+#include <nncase/ir/op_utils.h>
+#include <nncase/ir/ops/constant.h>
+#include <nncase/ir/runtime_type_utils.h>
+#include <nncase/targets/target.h>
 
 using namespace nncase;
-using namespace nncase::llir;
-using namespace nncase::scheduler;
+using namespace nncase::ir;
+using namespace nncase::schedule;
+using namespace nncase::runtime;
 namespace chrono = std::chrono;
 
 #define PROFILE 0
 
 namespace
 {
-std::unordered_map<node_opcode, std::function<void(llir::node &, evaluate_context &)>> g_evaluators;
+std::unordered_map<node_opcode, std::function<void(ir::node &, module_evaluate_context &)>> g_evaluators;
 
 auto &get_evaluator(node_opcode opcode)
 {
     auto it = g_evaluators.find(opcode);
     if (it == std::end(g_evaluators))
-        throw std::runtime_error("Evaluator for " + std::string(node_opcode_names(opcode)) + " is not found");
+        throw std::runtime_error("Evaluator for " + std::string(opcode.name) + " is not found");
     return it->second;
 }
 }
 
-void nncase::llir::register_evaluator(llir::node_opcode opcode, std::function<void(llir::node &, evaluate_context &)> evaluator)
+void nncase::ir::register_evaluator(ir::node_opcode opcode, std::function<void(ir::node &, module_evaluate_context &)> evaluator)
 {
     g_evaluators.emplace(opcode, std::move(evaluator));
 }
 
-evaluate_context::evaluate_context(const std::unordered_map<memory_type_t, memory_allocator *> &allocators, const std::unordered_map<llir::output_connector *, memory_allocation> &allocations)
-    : allocators_(allocators), allocations_(allocations)
+evaluate_tensor::evaluate_tensor(datatype_t datatype, runtime_shape_t shape, runtime_shape_t strides, gsl::span<gsl::byte> buffer)
+    : datatype_(datatype), shape_(std::move(shape)), strides_(std::move(strides)), buffer_(buffer)
 {
-    for (auto &&allocator : allocators_)
-    {
-        memory_pools_.emplace(allocator.first, std::make_unique<uint8_t[]>(allocator.second->max_usage()));
-    }
 }
 
-xtl::span<uint8_t> evaluate_context::memory_at(const scheduler::memory_allocation &allocation)
+module_evaluate_context::module_evaluate_context(const module_schedule_result &sched)
+    : sched_(sched), quantizer_(nullptr)
 {
-    auto &memory_pool = memory_pools_.at(allocation.type);
+    for (auto &&usage : sched.max_usages)
+        memory_pools_.emplace(usage.first, std::make_unique<std::byte[]>(usage.second));
 
-    return { memory_pool.get() + allocation.start, allocation.size };
-}
-
-evaluator::evaluator(evaluate_context &context, xtl::span<llir::node *> compute_sequence)
-    : context_(context), compute_sequence_(compute_sequence)
-{
-    for (auto &&node : compute_sequence_)
+    for (auto &&node : sched.compute_sequence)
     {
-        switch (node->runtime_opcode())
+        auto &opcode = node->runtime_opcode();
+        if (opcode == op_input_node)
         {
-        case op_input_node:
             inputs_.emplace_back(&node->output_at(0));
-            break;
-        case op_output_node:
+        }
+        else if (opcode == op_output_node)
+        {
             outputs_.emplace_back(&node->input_at(0));
-            break;
-        case op_constant:
+        }
+        else if (opcode == op_constant)
         {
             auto &rnode = static_cast<constant &>(*node);
             auto src = rnode.data();
-            std::copy(std::begin(src), std::end(src), context.memory_at<uint8_t>(rnode.output()).begin());
-            break;
-        }
+            auto dest = memory_at(rnode.output()).buffer().as_span<std::byte>();
+            std::copy(std::begin(src), std::end(src), dest.begin());
         }
     }
 }
 
-void evaluator::evaluate(hlir::quantizer *quantizer, std::unordered_map<llir::output_connector *, hlir::output_connector *> *outputs, bool add_input_stat)
+evaluate_tensor module_evaluate_context::memory_at(const output_connector &conn)
+{
+    auto &alloc = sched_.allocations.at(&conn);
+    auto &memory_pool = memory_pools_.at(alloc.memory_location);
+    gsl::span<gsl::byte> buffer(reinterpret_cast<gsl::byte *>(memory_pool.get() + alloc.start), alloc.size);
+    return evaluate_tensor(alloc.type, to(alloc.shape), to(alloc.strides), buffer);
+}
+
+void module_evaluate_context::enable_ptq(target &target, ir::calibrate_method calib_method)
+{
+    quantizer_ = target.create_quantizer(sched_.graph->module_type(), calib_method);
+}
+
+void module_evaluate_context::evaluate()
 {
     using clock = chrono::high_resolution_clock;
     chrono::nanoseconds total_duration = {};
 
-    for (auto &&node : compute_sequence_)
+    for (auto &&node : sched_.compute_sequence)
     {
         auto &evaluator = get_evaluator(node->runtime_opcode());
 
         auto start = clock::now();
-        evaluator(*node, context_);
+        evaluator(*node, *this);
         auto duration = clock::now() - start;
         total_duration += duration;
+
+        if (quantizer_)
+        {
+            for (auto out : node->outputs())
+            {
+                if (out->attributes() & cnctr_attr_need_quantize)
+                {
+                    if (!quantizer_->has_record(*out))
+                    {
+                        auto mem = memory_at(*out);
+                        if (mem.datatype() == dt_bfloat16)
+                        {
+                            auto buffer = mem.buffer().as_span<bfloat16>();
+                            quantizer_->record(*out, buffer);
+                        }
+                        else
+                        {
+                            auto buffer = mem.buffer().as_span<float>();
+                            quantizer_->record(*out, buffer);
+                        }
+                    }
+                }
+            }
+        }
 #if PROFILE
         std::cout << node_opcode_names(node->runtime_opcode()) << ": " << duration.count() / 1e6 << "ms" << std::endl;
 #endif
-
-        if (quantizer && node->outputs().size() > 0)
-        {
-            auto &l_output = node->output_at(0);
-            auto hl_output = outputs->find(&l_output);
-            if (hl_output != outputs->end()
-                && hl_output->second->attributes() & hlir::cnctr_attr_need_quantize)
-            {
-                auto &hl_node = hl_output->second->owner();
-                auto opcode = hl_node.runtime_opcode();
-                if (opcode == hlir::op_input_node && !add_input_stat)
-                    continue;
-
-                quantizer->record(*hl_output->second, context_.memory_at<float>(l_output));
-            }
-        }
     }
+
+    if (quantizer_)
+        quantizer_->reset_record();
 
 #if PROFILE
     std::cout << "Total: " << total_duration.count() / 1e6 << "ms" << std::endl;
 #endif
+}
+
+void module_evaluate_context::begin_collect_distribution()
+{
+    if (quantizer_)
+        quantizer_->begin_collect_distribution();
+}
+
+void module_evaluate_context::end_collect_distribution(std::function<void(size_t cnt, size_t total)> progress)
+{
+    if (quantizer_)
+        quantizer_->end_collect_distribution(progress);
+}
+
+evaluator::evaluator(const schedule::schedule_result &sched)
+    : sched_(sched)
+{
+    for (auto &module_p : sched.modules)
+        module_ctxs_.emplace(module_p.first, module_p.second);
+}
+
+module_evaluate_context &evaluator::module_context(ir::graph &graph)
+{
+    return module_ctxs_.at(&graph);
+}
+
+module_evaluate_context &evaluator::main_module_context()
+{
+    return module_context(*sched_.main_module);
+}
+
+evaluate_tensor evaluator::memory_at(const output_connector &conn)
+{
+    return main_module_context().memory_at(conn);
+}
+
+void evaluator::enable_ptq(target &target, ir::calibrate_method calib_method)
+{
+    for (auto &module_p : module_ctxs_)
+        module_p.second.enable_ptq(target, calib_method);
+}
+
+void evaluator::evaluate()
+{
+    module_ctxs_.at(sched_.main_module).evaluate();
+}
+
+void evaluator::begin_collect_distribution()
+{
+    for (auto &module_p : module_ctxs_)
+        module_p.second.begin_collect_distribution();
+}
+
+void evaluator::end_collect_distribution(std::function<void(size_t cnt, size_t total)> progress)
+{
+    for (auto &module_p : module_ctxs_)
+        module_p.second.end_collect_distribution(progress);
 }

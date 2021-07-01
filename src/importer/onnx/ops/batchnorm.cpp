@@ -14,33 +14,28 @@
  */
 
 #include "../onnx_importer.h"
-
 #include <cassert>
-
-#include <hlir/graph.h>
-#include <hlir/ops/constant.h>
-#include <hlir/ops/binary.h>
-#include <hlir/ops/reshape.h>
-#include <hlir/ops/unary.h>
-
-using namespace std;
+#include <nncase/ir/graph.h>
+#include <nncase/ir/ops/binary.h>
+#include <nncase/ir/ops/constant.h>
+#include <nncase/ir/ops/bitcast.h>
+#include <nncase/ir/ops/unary.h>
 
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::hlir;
-
+using namespace nncase::ir;
 using namespace onnx;
 
 namespace
 {
-    shape_t broadcast_shape(const shape_t& v_shape, const shape_t& input_shape) noexcept
-    {
-        shape_t result { v_shape };
-        for (size_t i = v_shape.size() + 1; i < input_shape.size(); ++i)
-            result.push_back(1);
+shape_t broadcast_shape(const shape_t &v_shape, const shape_t &input_shape) noexcept
+{
+    shape_t result { v_shape };
+    for (size_t i = v_shape.size() + 1; i < input_shape.size(); ++i)
+        result.push_back(1);
 
-        return result;
-    }
+    return result;
+}
 }
 
 void onnx_importer::convert_op_BatchNormalization(const NodeProto &node)
@@ -48,33 +43,32 @@ void onnx_importer::convert_op_BatchNormalization(const NodeProto &node)
     assert(node.input().size() == 5);
     assert(node.output().size() > 0 && node.output().size() <= 5);
 
-    const auto epsilon { get_attribute<float>(node, "epsilon").value() };
+    auto epsilon_attr = get_attribute<float>(node, "epsilon");
+    auto epsilon = !epsilon_attr ? 1e-05f : epsilon_attr.value();
 
-    const auto &input_T { node.input()[0] };
-    const auto &input_scale { node.input()[1] };
-    const auto &input_B { node.input()[2] };
-    const auto &input_mean { node.input()[3] };
-    const auto &input_var { node.input()[4] };
+    const auto &input_T = node.input()[0];
+    const auto &input_scale = node.input()[1];
+    const auto &input_B = node.input()[2];
+    const auto &input_mean = node.input()[3];
+    const auto &input_var = node.input()[4];
 
-    const auto &output_T { node.output()[0] };
+    const auto &output_T = node.output()[0];
 
-    const auto &input_T_shape { get_shape(input_T) };
+    const auto &input_T_shape = get_shape(input_T);
 
-    const auto &broadcast_if_needed
-    {
-        [this, &input_T_shape](const string& input) -> hlir::reshape*
-        {
+    const auto &broadcast_if_needed {
+        [this, &input_T_shape](const std::string &input) -> ir::bitcast * {
             const auto &input_shape { get_shape(input) };
 
             if (input_T_shape.empty() || input_shape.size() == input_T_shape.size() - 1)
                 return nullptr;
 
             const auto &target_shape { broadcast_shape(input_shape, input_T_shape) };
-            cout << "input " << input << " target shape: [";
+            std::cout << "input " << input << " target shape: [";
             for (auto s : target_shape)
-                cout << ' ' << s;
-            cout << ']' << endl;
-            auto reshape_op { graph_.emplace<reshape>(get_datatype(input).value(), input_shape, target_shape) };
+                std::cout << ' ' << s;
+            std::cout << ']' << std::endl;
+            auto reshape_op = graph_.emplace<bitcast>(get_datatype(input).value(), input_shape, target_shape);
 
             input_tensors_.emplace(&reshape_op->input(), input);
 
@@ -82,23 +76,23 @@ void onnx_importer::convert_op_BatchNormalization(const NodeProto &node)
         }
     };
 
-    auto pre_mean_op { broadcast_if_needed(input_mean) };
-    auto mean_op { graph_.emplace<binary>(binary_sub, input_T_shape, pre_mean_op ? pre_mean_op->output().shape() : get_shape(input_mean), value_range<float>::full()) };
+    auto pre_mean_op = broadcast_if_needed(input_mean);
+    auto mean_op = graph_.emplace<binary>(binary_sub, input_T_shape, pre_mean_op ? pre_mean_op->output().shape() : get_shape(input_mean), value_range<float>::full());
 
-    auto eps { graph_.emplace<constant>(epsilon) };
+    auto eps = graph_.emplace<constant>(epsilon);
 
-    auto pre_var_op { broadcast_if_needed(input_var) };
-    auto eps_op { graph_.emplace<binary>(binary_add, pre_var_op ? pre_var_op->output().shape() : get_shape(input_var), eps->output().shape(), value_range<float>::full()) };
+    auto pre_var_op = broadcast_if_needed(input_var);
+    auto eps_op = graph_.emplace<binary>(binary_add, pre_var_op ? pre_var_op->output().shape() : get_shape(input_var), eps->output().shape(), value_range<float>::full());
 
-    auto var_denom_op { graph_.emplace<unary>(unary_rsqrt, eps_op->output().shape()) };
+    auto var_denom_op = graph_.emplace<unary>(unary_rsqrt, eps_op->output().shape());
 
-    auto norm_op { graph_.emplace<binary>(binary_mul, mean_op->output().shape(), var_denom_op->output().shape(), value_range<float>::full()) };
+    auto norm_op = graph_.emplace<binary>(binary_mul, mean_op->output().shape(), var_denom_op->output().shape(), value_range<float>::full());
 
-    auto pre_scale_op { broadcast_if_needed(input_scale) };
-    auto scale_op { graph_.emplace<binary>(binary_mul, norm_op->output().shape(), pre_scale_op ? pre_scale_op->output().shape() : get_shape(input_scale), value_range<float>::full()) };
+    auto pre_scale_op = broadcast_if_needed(input_scale);
+    auto scale_op = graph_.emplace<binary>(binary_mul, norm_op->output().shape(), pre_scale_op ? pre_scale_op->output().shape() : get_shape(input_scale), value_range<float>::full());
 
-    auto pre_B_op { broadcast_if_needed(input_B) };
-    auto bias_op { graph_.emplace<binary>(binary_add, scale_op->output().shape(), pre_B_op ? pre_B_op->output().shape(): get_shape(input_B), value_range<float>::full()) };
+    auto pre_B_op = broadcast_if_needed(input_B);
+    auto bias_op = graph_.emplace<binary>(binary_add, scale_op->output().shape(), pre_B_op ? pre_B_op->output().shape() : get_shape(input_B), value_range<float>::full());
 
     if (pre_mean_op)
         mean_op->input_b().connect(pre_mean_op->output());
@@ -138,6 +132,5 @@ void onnx_importer::convert_op_BatchNormalization(const NodeProto &node)
         passthrough_connections_.emplace(node.output()[4], input_var);
 
     input_tensors_.emplace(&mean_op->input_a(), input_T);
-
     output_tensors_.emplace(output_T, &bias_op->output());
 }

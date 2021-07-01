@@ -1,4 +1,4 @@
-/* Copyright 2019-2020 Canaan Inc.
+/* Copyright 2019-2021 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,18 @@
  * limitations under the License.
  */
 #include "../tflite_importer.h"
-#include <hlir/ops/binary.h>
-#include <hlir/ops/constant.h>
-#include <hlir/ops/reduce.h>
-#include <hlir/ops/unary.h>
+#include <nncase/ir/ops/binary.h>
+#include <nncase/ir/ops/constant.h>
+#include <nncase/ir/ops/reduce.h>
+#include <nncase/ir/ops/unary.h>
 
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::hlir;
+using namespace nncase::ir;
 
 DEFINE_TFLITE_LOWER(LOGISTIC)
 {
     auto &input = get_tensor(op.inputs(), 0);
-    auto &options = *op.builtin_options_as_SoftmaxOptions();
 
     auto in_shape = get_shape(input.shape());
 
@@ -35,12 +34,18 @@ DEFINE_TFLITE_LOWER(LOGISTIC)
     auto plus = graph_.emplace<binary>(binary_add, one->output().shape(), exp->output().shape(), value_range<float>::full());
     auto div = graph_.emplace<binary>(binary_div, one->output().shape(), plus->output().shape(), value_range<float>::full());
 
+    neg->name(get_tensor(op.outputs(), 0).name()->string_view());
+    exp->name(get_tensor(op.outputs(), 0).name()->string_view());
+    one->name(get_tensor(op.outputs(), 0).name()->string_view());
+    plus->name(get_tensor(op.outputs(), 0).name()->string_view());
+    div->name(get_tensor(op.outputs(), 0).name()->string_view());
+
     exp->input().connect(neg->output());
     plus->input_a().connect(one->output());
     plus->input_b().connect(exp->output());
     div->input_a().connect(one->output());
     div->input_b().connect(plus->output());
 
-    input_tensors_.emplace(&neg->input(), op.inputs()->Get(0));
-    output_tensors_.emplace(op.outputs()->Get(0), &div->output());
+    link_input_tensor(&neg->input(), op.inputs()->Get(0));
+    link_output_tensor(op.outputs()->Get(0), &div->output());
 }

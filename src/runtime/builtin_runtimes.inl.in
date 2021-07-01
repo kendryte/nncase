@@ -1,0 +1,17 @@
+BEGIN_NS_NNCASE_RUNTIME
+${NNCASE_BUILTIN_RUNTIMES_DECL}
+END_NS_NNCASE_RUNTIME
+
+namespace
+{
+struct runtime_registration
+{
+    model_target_t id;
+    runtime_activator_t activator;
+};
+
+runtime_registration builtin_runtimes[] =
+{
+${NNCASE_BUILTIN_RUNTIMES_REG}
+};
+}

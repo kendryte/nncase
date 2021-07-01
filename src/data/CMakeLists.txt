@@ -2,8 +2,8 @@
 
 set(SRCS dataset.cpp)
 
-add_library(data STATIC ${SRCS})
-target_include_directories(data PUBLIC include)
-target_include_directories(data PUBLIC ${THIRD_PARTY}/xtl/include ${THIRD_PARTY}/xtensor/include)
-target_link_libraries(data PUBLIC common CONAN_PKG::boost)
+add_library(data OBJECT ${SRCS})
+target_link_libraries(data PUBLIC CONAN_PKG::xtensor CONAN_PKG::gsl-lite)
+target_compile_definitions(data PUBLIC -DNNCASE_DLL)
 target_link_libraries(data PRIVATE CONAN_PKG::opencv)
+set_property(TARGET data PROPERTY POSITION_INDEPENDENT_CODE ON)

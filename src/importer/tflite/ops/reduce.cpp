@@ -1,4 +1,4 @@
-/* Copyright 2019-2020 Canaan Inc.
+/* Copyright 2019-2021 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,11 +13,13 @@
  * limitations under the License.
  */
 #include "../tflite_importer.h"
-#include <hlir/ops/reduce.h>
+#include <nncase/ir/ops/reduce.h>
+#include <nncase/ir/ops/transpose.h>
+#include <schema_generated.h>
 
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::hlir;
+using namespace nncase::ir;
 
 DEFINE_TFLITE_LOWER(REDUCE_MAX)
 {
@@ -43,10 +45,40 @@ void tflite_importer::convert_reduce(const tflite::Operator &op, reduce_op_t red
 {
     auto &input = get_tensor(op.inputs(), 0);
     auto axis = load_axis<int32_t>(get_tensor(op.inputs(), 1));
+    auto &output = get_tensor(op.outputs(), 0);
     auto &options = *op.builtin_options_as_ReducerOptions();
 
-    auto node = graph_.emplace<reduce>(reduce_op, get_shape(input.shape()), std::move(axis), init_value, options.keep_dims());
+    [[maybe_unused]] dequantize *input_dequant;
+    [[maybe_unused]] quantize *output_quant;
 
-    input_tensors_.emplace(&node->input(), op.inputs()->Get(0));
-    output_tensors_.emplace(op.outputs()->Get(0), &node->output());
+    auto node = graph_.emplace<nncase::ir::reduce>(reduce_op, get_shape(input.shape()), std::move(axis), init_value, options.keep_dims());
+    node->name(get_tensor(op.outputs(), 0).name()->string_view());
+
+    //input dequant
+    if (input.type() != tflite::TensorType_FLOAT32)
+    {
+        quant_param_t input_dequant_paras = to_quant_param(input.quantization());
+        input_dequant = graph_.emplace<dequantize>(to_data_type(input.type()), get_shape(input.shape()), dt_float32, input_dequant_paras);
+        input_dequant->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/input_dequant");
+        node->input().connect(input_dequant->output());
+        input_tensors_.emplace(&input_dequant->input(), op.inputs()->Get(0));
+    }
+    else
+    {
+        input_tensors_.emplace(&node->input(), op.inputs()->Get(0));
+    }
+
+    //output dequant
+    if (node->output().type() != to_data_type(input.type()))
+    {
+        quant_param_t output_quant_paras = to_quant_param(output.quantization());
+        output_quant = graph_.emplace<quantize>(dt_float32, get_shape(output.shape()), to_data_type(output.type()), output_quant_paras);
+        output_quant->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/output_quant");
+        output_quant->input().connect(node->output());
+        output_tensors_.emplace(op.outputs()->Get(0), &output_quant->output());
+    }
+    else
+    {
+        output_tensors_.emplace(op.outputs()->Get(0), &node->output());
+    }
 }

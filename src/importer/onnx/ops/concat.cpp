@@ -14,59 +14,52 @@
  */
 
 #include "../onnx_importer.h"
-
-#include <vector>
 #include <cassert>
-
-#include <hlir/graph.h>
-#include <hlir/ops/concat.h>
-
-
-using namespace std;
+#include <nncase/ir/graph.h>
+#include <nncase/ir/ops/concat.h>
+#include <vector>
 
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::hlir;
-
+using namespace nncase::ir;
 using namespace onnx;
 
 namespace
 {
-    datatype_t deduce_common_type(const vector<datatype_t>& datatypes) noexcept
+datatype_t deduce_common_type(const std::vector<datatype_t> &datatypes) noexcept
+{
+    assert(!datatypes.empty());
+    return *min_element(begin(datatypes), end(datatypes));
+}
+
+size_t axis_count(const std::vector<shape_t> &shapes)
+{
+    if (shapes.empty())
     {
-        assert(!datatypes.empty());
-        assert(dt_float32 < dt_uint8);
-        return *min_element(begin(datatypes), end(datatypes));
+        return 0;
     }
 
-    size_t axis_count(const vector<shape_t>& shapes)
-    {
-        if (shapes.empty())
-        {
-            return 0;
-        }
-
-        return shapes.front().size();
-    }
+    return shapes.front().size();
+}
 }
 
 void onnx_importer::convert_op_Concat(const NodeProto &node)
 {
-    vector<shape_t> inputs_shapes;
-    vector<datatype_t> inputs_types;
+    std::vector<shape_t> inputs_shapes;
+    std::vector<datatype_t> inputs_types;
 
-    for (const string& input_name : node.input())
+    for (auto &input_name : node.input())
     {
         inputs_shapes.push_back(get_shape(input_name));
         inputs_types.push_back(get_datatype(input_name).value());
     }
 
-    const datatype_t op_type { deduce_common_type(inputs_types) };
-    const size_t axis { real_axis(get_attribute<int64_t>(node, "axis").value(), axis_count(inputs_shapes)) };
+    const datatype_t op_type = deduce_common_type(inputs_types);
+    const size_t axis = real_axis(get_attribute<int64_t>(node, "axis").value(), axis_count(inputs_shapes));
 
-    auto con { graph_.emplace<concat>(op_type, inputs_shapes, axis) };
+    auto con = graph_.emplace<concat>(op_type, inputs_shapes, axis);
 
-    for (size_t i = 0; i < node.input().size(); i++)
+    for (int i = 0; i < node.input().size(); i++)
         input_tensors_.emplace(&con->input_at(i), node.input()[i]);
 
     output_tensors_.emplace(node.output()[0], &con->output());

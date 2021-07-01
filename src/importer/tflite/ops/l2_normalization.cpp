@@ -1,4 +1,4 @@
-/* Copyright 2019-2020 Canaan Inc.
+/* Copyright 2019-2021 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,19 +13,19 @@
  * limitations under the License.
  */
 #include "../tflite_importer.h"
-#include <hlir/ops/binary.h>
-#include <hlir/ops/constant.h>
-#include <hlir/ops/reduce.h>
-#include <hlir/ops/unary.h>
+#include <nncase/ir/ops/binary.h>
+#include <nncase/ir/ops/constant.h>
+#include <nncase/ir/ops/reduce.h>
+#include <nncase/ir/ops/unary.h>
 
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::hlir;
+using namespace nncase::ir;
 
 DEFINE_TFLITE_LOWER(L2_NORMALIZATION)
 {
     auto &input = get_tensor(op.inputs(), 0);
-    auto &options = *op.builtin_options_as_SoftmaxOptions();
+    [[maybe_unused]] auto &options = *op.builtin_options_as_L2NormOptions();
 
     auto in_shape = get_shape(input.shape());
     axis_t reduce_axis;
@@ -36,7 +36,7 @@ DEFINE_TFLITE_LOWER(L2_NORMALIZATION)
     else
     {
         for (size_t i = 1; i < in_shape.size(); i++)
-            reduce_axis.push_back(i);
+            reduce_axis.push_back(int32_t(i));
     }
 
     auto square = graph_.emplace<unary>(unary_square, in_shape);
@@ -46,13 +46,20 @@ DEFINE_TFLITE_LOWER(L2_NORMALIZATION)
     auto rsqrt = graph_.emplace<unary>(unary_rsqrt, max->output().shape());
     auto mul = graph_.emplace<binary>(binary_mul, in_shape, rsqrt->output().shape(), value_range<float>::full());
 
+    square->name(get_tensor(op.outputs(), 0).name()->string_view());
+    sum->name(get_tensor(op.outputs(), 0).name()->string_view());
+    epsilon->name(get_tensor(op.outputs(), 0).name()->string_view());
+    max->name(get_tensor(op.outputs(), 0).name()->string_view());
+    rsqrt->name(get_tensor(op.outputs(), 0).name()->string_view());
+    mul->name(get_tensor(op.outputs(), 0).name()->string_view());
+
     sum->input().connect(square->output());
     max->input_a().connect(sum->output());
     max->input_b().connect(epsilon->output());
     rsqrt->input().connect(max->output());
     mul->input_b().connect(rsqrt->output());
 
-    input_tensors_.emplace(&square->input(), op.inputs()->Get(0));
-    input_tensors_.emplace(&mul->input_a(), op.inputs()->Get(0));
-    output_tensors_.emplace(op.outputs()->Get(0), &mul->output());
+    link_input_tensor(&square->input(), op.inputs()->Get(0));
+    link_input_tensor(&mul->input_a(), op.inputs()->Get(0));
+    link_output_tensor(op.outputs()->Get(0), &mul->output());
 }

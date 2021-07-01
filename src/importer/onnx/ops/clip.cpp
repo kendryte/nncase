@@ -14,65 +14,61 @@
  */
 
 #include "../onnx_importer.h"
-
-#include <limits>
 #include <cassert>
-
-#include <hlir/graph.h>
-#include <hlir/ops/clamp.h>
-#include <hlir/ops/constant.h>
-
-
-using namespace std;
+#include <limits>
+#include <nncase/ir/graph.h>
+#include <nncase/ir/ops/clamp.h>
+#include <nncase/ir/ops/constant.h>
 
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::hlir;
-
+using namespace nncase::ir;
 using namespace onnx;
 
-void onnx_importer::convert_op_Clip(const NodeProto& node)
+void onnx_importer::convert_op_Clip(const NodeProto &node)
 {
-    const auto &input { node.input()[0] };
-    const auto &output { node.output()[0] };
+    const auto &input = node.input()[0];
+    const auto &output = node.output()[0];
 
-	hlir::constant *min_op { };
-	string input_min;
-	if (node.input().size() < 2)
-	{
-		const auto min_attr { get_attribute<float>(node, "min") };
-		min_op = graph_.emplace<constant>(min_attr ? min_attr.value() : numeric_limits<float>::lowest());
-	}
-	else
-	{
-		input_min = node.input()[1];
-	}
+    constant *min_op = nullptr;
+    std::string input_min;
+    if (node.input().size() < 2)
+    {
+        const auto min_attr = get_attribute<float>(node, "min");
+        min_op = graph_.emplace<constant>(min_attr ? min_attr.value() : std::numeric_limits<float>::lowest());
+    }
+    else
+    {
+        input_min = node.input()[1];
+    }
 
-	hlir::constant *max_op { };
-	string input_max;
-	if (node.input().size() < 3)
-	{
-		const auto max_attr { get_attribute<float>(node, "max") };
-		max_op = graph_.emplace<constant>(max_attr ? max_attr.value() : numeric_limits<float>::max());
-	}
-	else
-	{
-		input_max = node.input()[2];
-	}
+    constant *max_op = nullptr;
+    std::string input_max;
+    if (node.input().size() < 3)
+    {
+        const auto max_attr = get_attribute<float>(node, "max");
+        max_op = graph_.emplace<constant>(max_attr ? max_attr.value() : std::numeric_limits<float>::max());
+    }
+    else
+    {
+        input_max = node.input()[2];
+    }
 
-    auto op { graph_.emplace<hlir::clamp>(get_shape(input), min_op ? min_op->output().shape() : get_shape(input_min), max_op ? max_op->output().shape() : get_shape(input_max)) };
+    auto op = graph_.emplace<clamp>(get_shape(input),
+        min_op ? min_op->output().shape() : get_shape(input_min),
+        max_op ? max_op->output().shape() : get_shape(input_max));
 
-	input_tensors_.emplace(&op->input(), input);
+    input_tensors_.emplace(&op->input(), input);
 
     if (min_op)
-	    op->input_low().connect(min_op->output());
-	else
-		input_tensors_.emplace(&op->input_low(), input_min);
+        op->input_low().connect(min_op->output());
+    else
+        input_tensors_.emplace(&op->input_low(), input_min);
 
-	if (max_op)
-		op->input_high().connect(max_op->output());
-	else
-		input_tensors_.emplace(&op->input_high(), input_max);
-	
+    if (max_op)
+        op->input_high().connect(max_op->output());
+    else
+        input_tensors_.emplace(&op->input_high(), input_max);
+
     output_tensors_.emplace(output, &op->output());
 }

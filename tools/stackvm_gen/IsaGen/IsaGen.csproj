@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <TargetFramework>net50</TargetFramework>
+    <PreserveCompilationReferences>true</PreserveCompilationReferences>
+    <!-- This group contains project properties for RazorLight on .NET Core -->
+    <PreserveCompilationContext>true</PreserveCompilationContext>
+    <MvcRazorCompileOnPublish>false</MvcRazorCompileOnPublish>
+    <MvcRazorExcludeRefAssembliesFromPublish>false</MvcRazorExcludeRefAssembliesFromPublish>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="Templates\opcode_h.razor" />
+    <None Remove="Templates\op_reader_cpp.razor" />
+    <None Remove="Templates\op_reader_h.razor" />
+    <None Remove="Templates\op_writer_cpp.razor" />
+    <None Remove="Templates\op_writer_h.razor" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Templates\op_writer_cpp.razor" />
+    <EmbeddedResource Include="Templates\op_reader_cpp.razor" />
+    <EmbeddedResource Include="Templates\op_writer_h.razor" />
+    <EmbeddedResource Include="Templates\op_reader_h.razor" />
+    <EmbeddedResource Include="Templates\opcode_h.razor" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="BitFields" Version="0.1.0" />
+    <PackageReference Include="RazorLight" Version="2.0.0-rc.2" />
+  </ItemGroup>
+</Project>

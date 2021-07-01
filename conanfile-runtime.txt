@@ -1,0 +1,14 @@
+[generators]
+cmake
+cmake_find_package
+cmake_paths
+
+[requires]
+gsl-lite/0.37.0
+mpark-variant/1.4.0
+pybind11/2.6.1
+
+[options]
+xtensor:xsimd=False
+
+[imports]

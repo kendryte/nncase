@@ -1,4 +1,4 @@
-/* Copyright 2019-2020 Canaan Inc.
+/* Copyright 2019-2021 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,11 +13,12 @@
  * limitations under the License.
  */
 #include "../tflite_importer.h"
-#include <hlir/ops/strided_slice.h>
+#include <nncase/ir/ops/bitcast.h>
+#include <nncase/ir/ops/slice.h>
 
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::hlir;
+using namespace nncase::ir;
 
 DEFINE_TFLITE_LOWER(SLICE)
 {
@@ -27,27 +28,30 @@ DEFINE_TFLITE_LOWER(SLICE)
     axis_t end(begin.size());
     for (size_t i = 0; i < begin.size(); i++)
         end[i] = begin[i] + size[i];
-    axis_t strides(begin.size());
-    for (size_t i = 0; i < begin.size(); i++)
-        strides[i] = 1;
 
-    auto &options = *op.builtin_options_as_SliceOptions();
-    auto node = graph_.emplace<strided_slice>(dt_float32, get_shape(input.shape()), begin, end, strides, 0, 0, 0, 0, 0);
+    [[maybe_unused]] auto &options = *op.builtin_options_as_SliceOptions();
+    auto node = graph_.emplace<slice>(to_data_type(input.type()), get_shape(input.shape()), begin, end);
+    node->name(get_tensor(op.outputs(), 0).name()->string_view());
 
-    input_tensors_.emplace(&node->input(), op.inputs()->Get(0));
-    output_tensors_.emplace(op.outputs()->Get(0), &node->output());
+    link_input_tensor(&node->input(), op.inputs()->Get(0));
+    link_output_tensor(op.outputs()->Get(0), &node->output());
 }
 
 DEFINE_TFLITE_LOWER(STRIDED_SLICE)
 {
     auto &input = get_tensor(op.inputs(), 0);
+    auto &output = get_tensor(op.outputs(), 0);
     auto begin = load_axis<int32_t>(get_tensor(op.inputs(), 1));
     auto end = load_axis<int32_t>(get_tensor(op.inputs(), 2));
     auto strides = load_axis<int32_t>(get_tensor(op.inputs(), 3));
     auto &options = *op.builtin_options_as_StridedSliceOptions();
-    auto node = graph_.emplace<strided_slice>(dt_float32, get_shape(input.shape()), begin, end, strides, options.begin_mask(),
-        options.end_mask(), options.ellipsis_mask(), options.new_axis_mask(), options.shrink_axis_mask());
+    auto node = graph_.emplace<slice>(to_data_type(input.type()), get_shape(input.shape()), begin, end, strides, options.begin_mask(),
+        options.end_mask(), options.ellipsis_mask(), options.new_axis_mask());
+    node->name(get_tensor(op.outputs(), 0).name()->string_view());
+    auto rshape = graph_.emplace<bitcast>(node->output().type(), node->output().shape(), get_shape(output.shape()));
+    rshape->name(node->name() + "/reshape");
+    rshape->input().connect(node->output());
 
-    input_tensors_.emplace(&node->input(), op.inputs()->Get(0));
-    output_tensors_.emplace(op.outputs()->Get(0), &node->output());
+    link_input_tensor(&node->input(), op.inputs()->Get(0));
+    link_output_tensor(op.outputs()->Get(0), &rshape->output());
 }

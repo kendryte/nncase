@@ -1,4 +1,4 @@
-/* Copyright 2019-2020 Canaan Inc.
+/* Copyright 2019-2021 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,20 +13,38 @@
  * limitations under the License.
  */
 #include "../tflite_importer.h"
-#include <hlir/ops/reshape.h>
+#include <nncase/ir/ops/bitcast.h>
 
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::hlir;
+using namespace nncase::ir;
 
 DEFINE_TFLITE_LOWER(RESHAPE)
 {
     auto &input = get_tensor(op.inputs(), 0);
-    auto &options = *op.builtin_options_as_ReshapeOptions();
-    auto new_shape = load_axis<int32_t>(get_tensor(op.inputs(), 1));
+    auto &output = get_tensor(op.outputs(), 0);
 
-    auto node = graph_.emplace<reshape>(to_data_type(input.type()), get_shape(input.shape()), new_shape);
+    auto node = graph_.emplace<bitcast>(to_data_type(input.type()), get_shape(input.shape()), get_shape(output.shape()));
+    node->name(get_tensor(op.outputs(), 0).name()->string_view());
 
-    input_tensors_.emplace(&node->input(), op.inputs()->Get(0));
-    output_tensors_.emplace(op.outputs()->Get(0), &node->output());
+    link_input_tensor(&node->input(), op.inputs()->Get(0));
+    link_output_tensor(op.outputs()->Get(0), &node->output());
+}
+
+DEFINE_TFLITE_LOWER(SQUEEZE)
+{
+    auto &input = get_tensor(op.inputs(), 0);
+    auto &options = *op.builtin_options_as_SqueezeOptions();
+    shape_t new_shape;
+    for (size_t i = 0; i < input.shape()->size(); i++)
+    {
+        if (std::find(options.squeeze_dims()->begin(), options.squeeze_dims()->end(), (int32_t)i) == options.squeeze_dims()->end())
+            new_shape.push_back(input.shape()->Get(i));
+    }
+
+    auto node = graph_.emplace<bitcast>(to_data_type(input.type()), get_shape(input.shape()), new_shape);
+    node->name(get_tensor(op.outputs(), 0).name()->string_view());
+
+    link_input_tensor(&node->input(), op.inputs()->Get(0));
+    link_output_tensor(op.outputs()->Get(0), &node->output());
 }

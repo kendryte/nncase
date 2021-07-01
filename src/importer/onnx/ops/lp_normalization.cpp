@@ -14,32 +14,27 @@
  */
 
 #include "../onnx_importer.h"
-
 #include <cassert>
-
-#include <hlir/graph.h>
-#include <hlir/ops/binary.h>
-#include <hlir/ops/constant.h>
-#include <hlir/ops/reduce.h>
-#include <hlir/ops/unary.h>
-
-// using namespace std;
+#include <nncase/ir/graph.h>
+#include <nncase/ir/ops/binary.h>
+#include <nncase/ir/ops/constant.h>
+#include <nncase/ir/ops/reduce.h>
+#include <nncase/ir/ops/unary.h>
 
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::hlir;
-
+using namespace nncase::ir;
 using namespace onnx;
 
-void onnx_importer::convert_op_LpNormalization(const NodeProto& node)
+void onnx_importer::convert_op_LpNormalization(const NodeProto &node)
 {
-    const auto &input { node.input()[0] };
-    const auto &output { node.output()[0] };
+    const auto &input = node.input()[0];
+    const auto &output = node.output()[0];
 
-    const auto &input_shape { get_shape(input) };
+    const auto &input_shape = get_shape(input);
 
     axis_t reduce_axis { static_cast<int>(real_axis(get_attribute<int>(node, "axis").value(), input_shape.size())) };
-    const auto p { get_attribute<int>(node, "p").value() };
+    const auto p = get_attribute<int>(node, "p").value();
 
     assert(p >= 1 && p <= 2);
 
@@ -49,11 +44,15 @@ void onnx_importer::convert_op_LpNormalization(const NodeProto& node)
     {
         auto abs = graph_.emplace<unary>(unary_abs, input_shape);
         auto sum = graph_.emplace<reduce>(reduce_sum, abs->output().shape(), reduce_axis, 0.f, true);
+        auto div = graph_.emplace<binary>(binary_div, input_shape, sum->output().shape(), value_range<float>::full());
 
         sum->input().connect(abs->output());
+        div->input_b().connect(sum->output());
 
         input_tensors_.emplace(&abs->input(), input);
-        output_tensors_.emplace(output, &sum->output());
+        input_tensors_.emplace(&div->input_a(), input);
+        output_tensors_.emplace(output, &div->output());
+        break;
     }
     case 2:
     {
@@ -61,18 +60,23 @@ void onnx_importer::convert_op_LpNormalization(const NodeProto& node)
         auto sum = graph_.emplace<reduce>(reduce_sum, square->output().shape(), reduce_axis, 0.f, true);
         auto epsilon = graph_.emplace<constant>(1e-10f);
         auto max = graph_.emplace<binary>(binary_max, sum->output().shape(), epsilon->output().shape(), value_range<float>::full());
-        auto rsqrt = graph_.emplace<unary>(unary_rsqrt, max->output().shape());
-        auto mul = graph_.emplace<binary>(binary_mul, input_shape, rsqrt->output().shape(), value_range<float>::full());
+        auto sqrt = graph_.emplace<unary>(unary_sqrt, max->output().shape());
+        auto div = graph_.emplace<binary>(binary_div, input_shape, sqrt->output().shape(), value_range<float>::full());
 
         sum->input().connect(square->output());
         max->input_a().connect(sum->output());
         max->input_b().connect(epsilon->output());
-        rsqrt->input().connect(max->output());
-        mul->input_b().connect(rsqrt->output());
+        sqrt->input().connect(max->output());
+        div->input_b().connect(sqrt->output());
 
         input_tensors_.emplace(&square->input(), input);
-        input_tensors_.emplace(&mul->input_a(), input);
-        output_tensors_.emplace(output, &mul->output());
+        input_tensors_.emplace(&div->input_a(), input);
+        output_tensors_.emplace(output, &div->output());
+        break;
+    }
+    default:
+    {
+        break;
     }
     }
 }
