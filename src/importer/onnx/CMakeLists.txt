@@ -118,6 +118,7 @@ set(ONNX_IMPORTER_OPS_SOURCES
     ops/slice.cpp
     ops/softmax.cpp
     ops/squeeze.cpp
+    ops/sum.cpp
     ops/transpose.cpp
     ops/unary.cpp
     ops/upsample.cpp
