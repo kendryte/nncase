@@ -34,15 +34,19 @@ void tflite_importer::convert_resize_image(const tflite::Operator &op, image_res
     auto &input = get_tensor(op.inputs(), 0);
     auto &output = get_tensor(op.outputs(), 0);
     auto new_size_tensor = load_tensor<int32_t, 1>(get_tensor(op.inputs(), 1));
-    std::array<int32_t, 2> new_size{ new_size_tensor[0], new_size_tensor[1] };
+    std::array<int32_t, 2> new_size { new_size_tensor[0], new_size_tensor[1] };
 
     auto align_corners = op.builtin_options_type() == tflite::BuiltinOptions_ResizeBilinearOptions
         ? op.builtin_options_as_ResizeBilinearOptions()->align_corners()
         : op.builtin_options_as_ResizeNearestNeighborOptions()->align_corners();
 
+    auto half_pixel_centers = op.builtin_options_type() == tflite::BuiltinOptions_ResizeBilinearOptions
+        ? op.builtin_options_as_ResizeBilinearOptions()->half_pixel_centers()
+        : op.builtin_options_as_ResizeNearestNeighborOptions()->half_pixel_centers();
+
     auto pre_trans = nhwc_to_nchw(dt_float32, get_shape(input.shape()));
     pre_trans->name(get_tensor(op.outputs(), 0).name()->string_view());
-    auto node = graph_.emplace<resize_image>(pre_trans->output().type(), mode, pre_trans->output().shape(), new_size, align_corners);
+    auto node = graph_.emplace<resize_image>(pre_trans->output().type(), mode, pre_trans->output().shape(), new_size, align_corners, half_pixel_centers);
     node->name(get_tensor(op.outputs(), 0).name()->string_view());
     auto sur_trans = nchw_to_nhwc(dt_float32, node->output().shape());
     sur_trans->name(get_tensor(op.outputs(), 0).name()->string_view());

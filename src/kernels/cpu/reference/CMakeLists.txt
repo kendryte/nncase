@@ -14,6 +14,7 @@ set(SRCS batch_to_space.cpp
          quantize.cpp
          reduce.cpp
          reduce_window.cpp
+         resize_image.cpp
          transpose.cpp
          slice.cpp
          unary.cpp)
