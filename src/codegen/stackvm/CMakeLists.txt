@@ -22,6 +22,6 @@ set(SRCS module_builder.cpp
 
 add_library(codegen_stackvm OBJECT ${SRCS})
 target_link_libraries(codegen_stackvm PUBLIC ir schedule)
-target_link_libraries(codegen_stackvm PRIVATE evaluator CONAN_PKG::mpark-variant)
+target_link_libraries(codegen_stackvm PRIVATE evaluator mpark_variant::mpark_variant)
 target_compile_definitions(codegen_stackvm PUBLIC -DNNCASE_DLL)
 set_target_properties(codegen_stackvm PROPERTIES POSITION_INDEPENDENT_CODE ON)
