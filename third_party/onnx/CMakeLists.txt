@@ -1,7 +1,7 @@
 add_library(onnx_proto STATIC onnx.proto)
 protobuf_generate(TARGET onnx_proto)
 target_include_directories(onnx_proto PUBLIC ${CMAKE_CURRENT_BINARY_DIR})
-target_link_libraries(onnx_proto PUBLIC CONAN_PKG::protobuf)
+target_link_libraries(onnx_proto PUBLIC protobuf::libprotoc protobuf::libprotobuf)
 set_property(TARGET onnx_proto PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 if (WIN32)

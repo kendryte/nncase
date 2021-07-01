@@ -9,6 +9,7 @@ if (BUILDING_RUNTIME)
         endif()
 
         add_library(kernels_k210 OBJECT ${SRCS})
+        message("-------------------fuck ${K210_SDK_DIR}/lib/bsp/include ${K210_SDK_DIR}/lib/drivers/include ${K210_SDK_DIR}/lib/utils/include")
         target_include_directories(kernels_k210 PRIVATE
                 ${K210_SDK_DIR}/lib/bsp/include
                 ${K210_SDK_DIR}/lib/drivers/include

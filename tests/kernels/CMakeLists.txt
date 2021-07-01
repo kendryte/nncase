@@ -3,7 +3,7 @@ enable_testing()
 macro(add_test_exec name)
     add_executable(${name} ${name}.cpp)
     target_link_libraries(${name} PRIVATE
-  CONAN_PKG::gtest nncase)
+    GTest::gtest_main nncase)
     add_test(NAME ${name} COMMAND ${name})
 endmacro()
 

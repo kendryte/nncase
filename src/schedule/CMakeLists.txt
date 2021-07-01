@@ -6,5 +6,5 @@ set(SRCS scheduler.cpp
 
 add_library(schedule OBJECT ${SRCS})
 target_link_libraries(schedule PUBLIC ir)
-target_link_libraries(schedule PRIVATE CONAN_PKG::fmt)
+target_link_libraries(schedule PRIVATE fmt::fmt)
 set_target_properties(schedule PROPERTIES POSITION_INDEPENDENT_CODE ON)

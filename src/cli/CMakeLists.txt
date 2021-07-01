@@ -5,5 +5,5 @@ set(SRCS cli.cpp
          inference.cpp)
 
 add_executable (ncc ${SRCS})
-target_link_libraries(ncc PRIVATE nncase CONAN_PKG::lyra)
+target_link_libraries(ncc PRIVATE nncase bfg::lyra)
 install(TARGETS ncc)
