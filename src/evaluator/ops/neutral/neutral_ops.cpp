@@ -1,4 +1,4 @@
-/* Copyright 2020 Canaan Inc.
+/* Copyright 2019-2021 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -59,22 +59,6 @@ using namespace nncase::runtime;
         break;                                                  \
     case 4:                                                     \
         KERNEL(uint32_t);                                       \
-        break;                                                  \
-    default:                                                    \
-        throw std::runtime_error("Not supported element type"); \
-    }
-
-#define FP_OR_Q_IMPL(type, KERNEL)                              \
-    switch (type)                                               \
-    {                                                           \
-    case dt_float32:                                            \
-        KERNEL(float);                                          \
-        break;                                                  \
-    case dt_int8:                                               \
-        KERNEL(uint8_t);                                        \
-        break;                                                  \
-    case dt_uint8:                                              \
-        KERNEL(uint8_t);                                        \
         break;                                                  \
     default:                                                    \
         throw std::runtime_error("Not supported element type"); \
@@ -298,27 +282,24 @@ void register_neutral_evaluators()
     register_evaluator(op_resize_image, [](ir::node &node, module_evaluate_context &context) {
         auto &rnode = static_cast<resize_image &>(node);
 
+        auto input = context.memory_at(rnode.input());
+        auto output = context.memory_at(rnode.output());
+        auto input_data = input.buffer().data();
+        auto output_data = output.buffer().data();
+        auto new_size = rnode.new_size();
         if (rnode.mode() == image_resize_bilinear)
         {
-            auto input = context.memory_at(rnode.input()).buffer();
-            auto output = context.memory_at(rnode.output()).buffer();
-
-#define RESIZE_BL_KERNEL(T) \
-    kernels::neutral::resize_bilinear(input.as_span<T>().data(), output.as_span<T>().data(), to(rnode.input().shape()), rnode.new_size()[0], rnode.new_size()[1], rnode.align_corners());
-
-            FP_OR_Q_IMPL(rnode.input().type(), RESIZE_BL_KERNEL);
-#undef RESIZE_BL_KERNEL
+            kernels::resize_bilinear(input.datatype(), input_data, output_data,
+                input.shape(), input.strides(), output.strides(), new_size[0], new_size[1],
+                rnode.align_corners(), rnode.half_pixel_centers())
+                .unwrap_or_throw();
         }
         else
         {
-            auto input = context.memory_at(rnode.input()).buffer();
-            auto output = context.memory_at(rnode.output()).buffer();
-
-#define RESIZE_NN_KERNEL(T) \
-    kernels::neutral::resize_nearest_neighbor(input.as_span<T>().data(), output.as_span<T>().data(), to(rnode.input().shape()), rnode.new_size()[0], rnode.new_size()[1]);
-
-            FP_OR_Q_IMPL(rnode.input().type(), RESIZE_NN_KERNEL);
-#undef RESIZE_NN_KERNEL
+            kernels::resize_nearest_neighbor(input.datatype(), input_data, output_data,
+                input.shape(), input.strides(), output.strides(), new_size[0], new_size[1],
+                rnode.align_corners(), rnode.half_pixel_centers())
+                .unwrap_or_throw();
         }
     });
 
@@ -387,15 +368,17 @@ void register_neutral_evaluators()
 #if 0
                 return round(a);
 #else
-                // bankers rounding method for tensorflow/tflite
-                auto floor_val = std::floor(a);
-                auto diff = a - floor_val;
-                if ((diff < 0.5f) ||
-                    ((diff == 0.5f) && (static_cast<int>(floor_val) % 2 == 0))) {
-                    return floor_val;
-                } else {
-                    return floor_val = floor_val + 1.0f;
-                }
+                        // bankers rounding method for tensorflow/tflite
+                        auto floor_val = std::floor(a);
+                        auto diff = a - floor_val;
+                        if ((diff < 0.5f) || ((diff == 0.5f) && (static_cast<int>(floor_val) % 2 == 0)))
+                        {
+                            return floor_val;
+                        }
+                        else
+                        {
+                            return floor_val = floor_val + 1.0f;
+                        }
 #endif
             });
             break;

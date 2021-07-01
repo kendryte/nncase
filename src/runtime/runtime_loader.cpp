@@ -1,4 +1,4 @@
-/* Copyright 2020 Canaan Inc.
+/* Copyright 2019-2021 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -44,7 +44,9 @@ namespace
 result<rt_module_activator_t> find_runtime_activator(const module_type_t &type)
 {
     auto module_name = fmt::format("nncase.modules.{}.dll", type.data());
-    auto mod = LoadLibraryA(module_name.c_str());
+    auto mod = LoadLibraryExA(module_name.c_str(), nullptr, LOAD_LIBRARY_SEARCH_DEFAULT_DIRS);
+    if (!mod)
+        mod = LoadLibraryA(module_name.c_str());
     TRY_WIN32_IF_NOT(mod);
     auto proc = GetProcAddress(mod, STR(RUNTIME_MODULE_ACTIVATOR_NAME));
     TRY_WIN32_IF_NOT(proc);

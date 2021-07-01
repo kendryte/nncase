@@ -262,6 +262,10 @@ __pycache__/
 # vscode
 .vscode/
 
+# pip
+/python/*/dist
+*egg-info
+
 *.diagsession
 /src/nntest
 /src/NnCase.Cli/Properties/launchSettings.json

@@ -4,6 +4,7 @@ on: [push, pull_request]
 
 env:
   BUILD_TYPE: Release
+  NNCASE_VERSION_SUFFIX: .dev${{github.run_number}}
 
 jobs:
   build:
@@ -86,25 +87,8 @@ jobs:
       
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v2.2.2
-      if: runner.os == 'Linux'
       with:
-        name: nncase_linux_x86_64
-        path: ${{github.workspace}}/install
-        if-no-files-found: error
-
-    - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v2.2.2
-      if: runner.os == 'Windows'
-      with:
-        name: nncase_win_x86_64
-        path: ${{github.workspace}}/install
-        if-no-files-found: error
-
-    - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v2.2.2
-      if: runner.os == 'Macos'
-      with:
-        name: nncase_macos_x86_64
+        name: nncase-${{matrix.os}}-x86_64
         path: ${{github.workspace}}/install
         if-no-files-found: error
 
@@ -133,16 +117,16 @@ jobs:
       if: runner.os != 'Macos'
       shell: bash
       run: |
-        pip install conan tensorflow==2.4.1 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0
-        pip install torch==1.7.0+cpu torchvision==0.8.1+cpu -f https://download.pytorch.org/whl/torch_stable.html
+        pip install conan tensorflow==2.5.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0
+        pip install torch==1.9.0+cpu torchvision==0.10.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
         pip install pytest
         
     - name: Install Python Packages
       if: runner.os == 'Macos'
       shell: bash
       run: |
-        pip install conan tensorflow==2.4.1 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0
-        pip install torch==1.7.0 torchvision==0.8.1 -f https://download.pytorch.org/whl/torch_stable.html
+        pip install conan tensorflow==2.5.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0
+        pip install torch==1.9.0 torchvision==0.10.0 -f https://download.pytorch.org/whl/torch_stable.html
         pip install pytest
       
     - name: Create Test Environment
@@ -154,23 +138,8 @@ jobs:
       
     - name: Download a Build Artifact
       uses: actions/download-artifact@v2.0.9
-      if: runner.os == 'Linux'
       with:
-        name: nncase_linux_x86_64
-        path: ${{github.workspace}}/install
-      
-    - name: Download a Build Artifact
-      uses: actions/download-artifact@v2.0.9
-      if: runner.os == 'Windows'
-      with:
-        name: nncase_win_x86_64
-        path: ${{github.workspace}}/install
-      
-    - name: Download a Build Artifact
-      uses: actions/download-artifact@v2.0.9
-      if: runner.os == 'Macos'
-      with:
-        name: nncase_macos_x86_64
+        name: nncase-${{matrix.os}}-x86_64
         path: ${{github.workspace}}/install
 
     - name: Test
