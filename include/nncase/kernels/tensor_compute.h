@@ -1,4 +1,4 @@
-/* Copyright 2020 Canaan Inc.
+/* Copyright 2019-2021 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #pragma once
+#include <nncase/kernels/kernel_context.h>
 #include <nncase/runtime/datatypes.h>
 #include <nncase/runtime/error.h>
 #include <nncase/runtime/result.h>
@@ -64,6 +65,14 @@ NNCASE_API result<void> unary(unary_op_t op, const float *input, float *output, 
 
 NNCASE_API result<void> reduce(reduce_op_t op, float init_value, const float *input, float *output, const runtime_shape_t &in_shape, const runtime_shape_t &axis,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, bool keep_dims, kernel_context &context = default_kernel_context()) noexcept;
+
+NNCASE_API result<void> resize_bilinear(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, int32_t out_h, int32_t out_w, bool align_corners, bool half_pixel_centers,
+    kernel_context &context = default_kernel_context()) noexcept;
+
+NNCASE_API result<void> resize_nearest_neighbor(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, int32_t out_h, int32_t out_w, bool align_corners, bool half_pixel_centers,
+    kernel_context &context = default_kernel_context()) noexcept;
 
 NNCASE_API result<void> slice(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const runtime_shape_t &begins, const runtime_shape_t &ends, const runtime_axis_t &strides,

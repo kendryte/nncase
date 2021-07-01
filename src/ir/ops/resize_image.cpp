@@ -1,4 +1,4 @@
-/* Copyright 2019-2020 Canaan Inc.
+/* Copyright 2019-2021 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,8 +19,9 @@
 using namespace nncase;
 using namespace nncase::ir;
 
-resize_image::resize_image(datatype_t type, image_resize_mode_t mode, shape_t input_shape, std::array<int32_t, 2> new_size, bool align_corners)
-    : new_size_(new_size), mode_(mode), align_corners_(align_corners)
+resize_image::resize_image(datatype_t type, image_resize_mode_t mode, shape_t input_shape, std::array<int32_t, 2> new_size,
+    bool align_corners, bool half_pixel_centers)
+    : new_size_(new_size), mode_(mode), align_corners_(align_corners), half_pixel_centers_(half_pixel_centers)
 {
     add_input("input", type, input_shape);
     add_output("output", type, get_resize_image_shape(input_shape, new_size));
@@ -29,5 +30,6 @@ resize_image::resize_image(datatype_t type, image_resize_mode_t mode, shape_t in
 bool resize_image::properties_equal(node &other) const
 {
     auto &r = static_cast<resize_image &>(other);
-    return mode() == r.mode() && new_size() == r.new_size() && align_corners() == r.align_corners();
+    return mode() == r.mode() && new_size() == r.new_size() && align_corners() == r.align_corners()
+        && half_pixel_centers() == r.half_pixel_centers();
 }

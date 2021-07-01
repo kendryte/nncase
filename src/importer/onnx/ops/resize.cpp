@@ -25,11 +25,6 @@ using namespace onnx;
 
 namespace
 {
-bool parse_align_corners(const std::string &value) noexcept
-{
-    return value == "align_corners";
-}
-
 image_resize_mode_t parse_image_resize_mode(const std::string &value) noexcept
 {
     if (value == "linear")
@@ -98,11 +93,13 @@ void onnx_importer::convert_op_Resize(const NodeProto &node)
     const auto mode = parse_image_resize_mode(!mode_attr ? "nearest" : mode_attr.value());
 
     auto ct_attr = get_attribute<std::string>(node, "coordinate_transformation_mode");
-    const auto align_corners = parse_align_corners(!ct_attr ? "half_pixel" : ct_attr.value());
+    auto ct_attr_value = !ct_attr ? "asymmetric" : ct_attr.value();
+    const auto pytorch_half_pixel = ct_attr_value == "pytorch_half_pixel";
+    const auto align_corners = ct_attr_value == "align_corners";
 
     const std::array<int32_t, 2> new_size_array = { new_size[2], new_size[3] };
 
-    auto op = graph_.emplace<resize_image>(input_type, mode, input_shape, new_size_array, align_corners);
+    auto op = graph_.emplace<resize_image>(input_type, mode, input_shape, new_size_array, align_corners, pytorch_half_pixel);
 
     input_tensors_.emplace(&op->input(), input);
     output_tensors_.emplace(output, &op->output());

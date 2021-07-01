@@ -11,6 +11,7 @@ target_compile_definitions(nncase PUBLIC -DNNCASE_SHARED_LIBS)
 target_link_libraries(nncase PRIVATE magic_enum::magic_enum fmt::fmt)
 
 install(TARGETS nncase EXPORT nncaseTargets
+        COMPONENT nncase-runtime
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib
         RUNTIME DESTINATION bin
