@@ -26,7 +26,7 @@ namespace
 {
 struct region
 {
-    bool is_all_neutral = true;
+    bool is_all_noaction = true;
     module_type_t module_type;
     std::vector<node *> nodes;
     std::unordered_set<node *> nodes_set;
@@ -55,8 +55,8 @@ struct region
                     ++it;
             }
 
-            if (is_all_neutral && n.attributes() & node_attr_action)
-                is_all_neutral = false;
+            if (is_all_noaction && n.attributes() & node_attr_action)
+                is_all_noaction = false;
             return true;
         }
 
@@ -93,6 +93,12 @@ struct region
         for (auto c : to_add_constants)
             add_node(*c);
     }
+
+    void merge(region &other)
+    {
+        for (auto node : other.nodes)
+            add_node(*node);
+    }
 };
 
 class graph_merger
@@ -115,47 +121,48 @@ public:
 private:
     void create_regions()
     {
-        auto creator = make_relay_ir_visitor([this](node &node) {
-            // 1. Skip in/out/const
-            if (node.runtime_opcode() == op_input_node
-                || node.runtime_opcode() == op_output_node
-                || node.runtime_opcode() == op_constant)
-                return;
-
-            // 2. Find last region
-            region *last_region = nullptr;
-            for (auto in : node.inputs())
+        auto creator = make_relay_ir_visitor([this](node &node)
             {
-                auto &conn = in->connection()->owner();
-                auto it = node_to_region_.find(&conn);
-                if (it != node_to_region_.end())
+                // 1. Skip in/out/const
+                if (node.runtime_opcode() == op_input_node
+                    || node.runtime_opcode() == op_output_node
+                    || node.runtime_opcode() == op_constant)
+                    return;
+
+                // 2. Find last region
+                region *last_region = nullptr;
+                for (auto in : node.inputs())
                 {
-                    // 2.1. Last region not set, set it
-                    if (!last_region)
+                    auto &conn = in->connection()->owner();
+                    auto it = node_to_region_.find(&conn);
+                    if (it != node_to_region_.end())
                     {
-                        last_region = it->second;
-                    }
-                    // 2.2. Last region set but different, create new region
-                    else if (last_region != it->second)
-                    {
-                        last_region = nullptr;
-                        break;
+                        // 2.1. Last region not set, set it
+                        if (!last_region)
+                        {
+                            last_region = it->second;
+                        }
+                        // 2.2. Last region set but different, create new region
+                        else if (last_region != it->second)
+                        {
+                            last_region = nullptr;
+                            break;
+                        }
                     }
                 }
-            }
 
-            // 3. Last region not set or different module type, create new region
-            if (!last_region || last_region->module_type != node.module_type())
-            {
-                auto &region = regions_.emplace_back(node.module_type());
-                add_node_to_region(region, node);
-            }
-            // 4. Add to last region
-            else
-            {
-                add_node_to_region(*last_region, node);
-            }
-        });
+                // 3. Last region not set or different module type, create new region
+                if (!last_region || last_region->module_type != node.module_type())
+                {
+                    auto &region = regions_.emplace_back(node.module_type());
+                    add_node_to_region(region, node);
+                }
+                // 4. Add to last region
+                else
+                {
+                    add_node_to_region(*last_region, node);
+                }
+            });
         creator.visit(g_);
     }
 
@@ -167,16 +174,50 @@ private:
 
     void merge_regions()
     {
-    }
-
-    bool merge_same_inputs_regions()
-    {
         bool changed;
         do
         {
             changed = false;
-            //for (auto ita = regions_.begin())
+            changed |= merge_child_region();
         } while (changed);
+    }
+
+    bool merge_child_region()
+    {
+        bool ever_changed = false;
+        bool changed;
+        do
+        {
+            changed = false;
+            for (auto ita = regions_.begin(); ita != regions_.end(); ++ita)
+            {
+                std::vector<region *> to_be_merge;
+                for (auto itb = regions_.begin(); itb != regions_.end(); ++itb)
+                {
+                    // don't merge stackvm region
+                    if (ita == itb
+                        || (ita->module_type == runtime::stackvm::stackvm_module_type
+                            && itb->module_type == runtime::stackvm::stackvm_module_type))
+                        continue;
+
+                    // itb's inputs all connect to ita's output
+                    if (ita->module_type == itb->module_type
+                        || itb->is_all_noaction
+                        || std::all_of(itb->region_inputs.begin(), itb->region_inputs.end(), [&](input_connector *in)
+                            { return ita->outputs.contains(in->connection()); }))
+                        to_be_merge.emplace_back(&*itb);
+                }
+
+                if (!to_be_merge.empty())
+                {
+                    for (auto region : to_be_merge)
+                        ita->merge(*region);
+                    changed = ever_changed = true;
+                    break;
+                }
+            }
+        } while (changed);
+        return ever_changed;
     }
 
     void add_node_to_region(region &region, node &node)

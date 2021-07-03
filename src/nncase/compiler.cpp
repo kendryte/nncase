@@ -258,6 +258,12 @@ private:
     void optimize_merge_module_regions(ir::graph &graph)
     {
         std::cout << "7.1. Merge module regions..." << std::endl;
+        using namespace ir::transforms;
+
+        run_passes("mark_noaction", graph, [&]([[maybe_unused]] const module_type_t &module_type, ir::transforms::pass_manager &pmgr) {
+            pmgr.add_pass<make_concat_no_action_pass>();
+            pmgr.add_pass<make_bitcast_no_action_pass>();
+        });
         graph.merge_module_regions();
 
         std::cout << "7.2. Optimize buffer fusion..." << std::endl;
@@ -270,9 +276,8 @@ private:
     {
         using namespace ir::transforms;
 
-        run_passes("buffer_fusion_1", graph, [&]([[maybe_unused]] const module_type_t &module_type, ir::transforms::pass_manager &pmgr) {
-            pmgr.add_pass<make_concat_no_action_pass>();
-            pmgr.add_pass<make_bitcast_no_action_pass>();
+        run_passes("buffer_fusion", graph, [&]([[maybe_unused]] const module_type_t &module_type, ir::transforms::pass_manager &pmgr) {
+            pmgr.add_pass<add_copy_to_concat_pass>();
             pmgr.add_pass<add_copy_to_output_pass>();
 
             transform_pass pass("optimize_copy");
