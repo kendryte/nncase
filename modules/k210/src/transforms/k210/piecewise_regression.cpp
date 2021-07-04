@@ -13,8 +13,109 @@
  * limitations under the License.
  */
 #include <nncase/transforms/k210/piecewise_regression.h>
+#include <xtensor/xarray.hpp>
+#include <xtensor/xsort.hpp>
+#include <xtensor/xtensor.hpp>
+//#include <xtensor/
 
 using namespace nncase::ir::transforms::k210;
+
+class dc_regression
+{
+public:
+    dc_regression()
+        : y_hat_(0), z_(0), a_(0), b_(0), lanbda_(1.f)
+    {
+    }
+
+private:
+    void auto_tune(xt::xtensor<float, 2> X, float y, uint32_t max_hyper_iter = 10)
+    {
+        uint32_t n_folds = 5;
+        xt::xtensor<float, 1> lanbdas { 1e-3f, 1e-2f, 1e-1f, 1.f, 1e1f, 1e2f, 1e3f };
+
+        for (size_t iter = 0; iter < max_hyper_iter; iter++)
+        {
+            uint32_t i = 0;
+            xt::xtensor<float, 1> loss = xt::zeros<float>(lanbdas.shape());
+            for (auto lanbda : lanbdas)
+            {
+                lanbda_ = lanbda;
+                loss[i] = cross_validate(X, y, n_folds);
+                i++;
+            }
+
+            auto arg_min = xt::argmin(loss)[0];
+            auto lanbda = lanbdas[arg_min];
+            if (arg_min == 0)
+                lanbdas = lanbda * xt::xtensor<float, 1> { 1e-5f, 1e-4f, 1e-3f, 1e-2f, 1e-1f, 1.f, 1e1f };
+            else if (arg_min == lanbdas.size() - 1)
+                lanbdas = lanbda * xt::xtensor<float, 1> { 1e-1f, 1.f, 1e1f, 1e2f, 1e3f, 1e4f, 1e5f };
+            else
+            {
+                if (lanbdas.size() == 7)
+                    lanbdas = lanbda * xt::xtensor<float, 1> { 0.0625f, 0.125f, 0.25f, 0.5f, 1.f, 2.f, 4.f, 8.f, 16.f };
+                else
+                {
+                    lanbda_ = lanbda;
+                    fit(X, y, lanbda);
+                    break;
+                }
+            }
+        }
+    }
+
+    void fit(xt::xtensor<float, 2> X, float y, float lanbda = 0.f, float T = 0.f)
+    {
+        if (lanbda == 0.f)
+        {
+            auto_tune(X, y);
+            return;
+        }
+        else
+        {
+            lanbda_=lanbda;
+        }
+
+        auto[n, dim]=X.shape();
+        float rho = 0.01f;
+        if (T == 0.f)
+            T = 2.f * n;
+        
+        // initial values
+        // primal
+        xt::xtensor<float, 1> y_hat = xt::zeros<float>(n);
+        xt::xtensor<float, 1> z = xt::zeros<float>(n);
+        xt::xtensor<float, 2> a = xt::zeros<float>({n,dim});
+        xt::xtensor<float, 2> b = xt::zeros<float>({n,dim});
+        xt::xtensor<float, 2> p = xt::zeros<float>({n,dim});
+        xt::xtensor<float, 2> q = xt::zeros<float>({n,dim});
+
+        xt::xtensor<float, 2> L = xt::zeros<float>({size_t(1),dim});
+
+        // slack
+        xt::xtensor<float, 2> s = xt::zeros<float>({n,n});
+        xt::xtensor<float, 2> t = xt::zeros<float>({n,n});
+        xt::xtensor<float, 2> u = xt::zeros<float>({n,dim});
+
+        // dual
+        xt::xtensor<float, 2> alpha = xt::zeros<float>({n,n});
+        xt::xtensor<float, 2> beta = xt::zeros<float>({n,n});
+        xt::xtensor<float, 2> gamma = xt::zeros<float>({n,dim});
+        xt::xtensor<float, 2> eta = xt::zeros<float>({n,dim});
+        xt::xtensor<float, 2> zeta = xt::zeros<float>({n,dim});
+        
+        // preprocess1
+        //auto XjXj = xt::dot
+    }
+
+private:
+    float y_hat_;
+    float z_;
+    float a_;
+    float b_;
+    float lanbda_;
+};
 
 piecewise_regression::piecewise_regression(size_t segments_count)
     : desired_segments_count_(segments_count)
@@ -26,9 +127,8 @@ std::vector<segment> piecewise_regression::fit(std::vector<point> &points) const
     if (points.size() <= desired_segments_count_)
         throw std::invalid_argument("Insufficient points");
 
-    std::sort(points.begin(), points.end(), [](const point &a, const point &b) {
-        return a.x < b.x;
-    });
+    std::sort(points.begin(), points.end(), [](const point &a, const point &b)
+        { return a.x < b.x; });
 
     // 1. initialize segments
     std::vector<segment> segments(points.size() - 1);
