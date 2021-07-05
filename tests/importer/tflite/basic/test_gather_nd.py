@@ -11,44 +11,40 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""System test: test gather"""
+"""System test: test gather nd"""
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
 
 import pytest
 import tensorflow as tf
 from test_runner import TfliteTestRunner
 
-def _make_module(in_shape, indice, axis, batch_dim):
+def _make_module(in_shape, indice, batch_dims):
     class GatherModule(tf.Module):
         def __init__(self):
             super(GatherModule).__init__()
 
         @tf.function(input_signature=[tf.TensorSpec(in_shape, tf.float32)])
         def __call__(self, x):
-            return tf.gather(x, indice, axis=axis, batch_dims=batch_dim)
+            return tf.gather_nd(x, indice, batch_dims)
     return GatherModule()
 
 
-in_shape_indice_axis_batch_dims = [
-    ([2, 3, 5, 7], [[1, 1], [1, 2]], 2, 1),
-    # ([11], [1, 3, 10, 0, 2], 0),
-    # ([11], [[2, 4], [1, 3]], 0),
-    # ([7, 5], [1, 3], 0),
-    # ([7, 5], [[1, 4, 3]], 1),
-    # ([2, 3, 5], [1, 0, 1], 0),
-    # ([2, 3, 5], [[2, 1], [1, 1], [1, 2]], 1),
-    # ([2, 3, 5], [2, 4, 1], 2),
-    # ([4, 5, 8, 3], [1, 0, 2], 1),
-    # ([4, 8, 5, 3], [[1, 2], [3, 1]], 2),
-    # ([4, 6, 5, 7], [[[1], [2]], [[3], [1]]], 3)
+in_shape_indice_axis = [
+    # ([2, 3, 1], [[0], [1]], 1),
+    # ([2, 3, 1], [[[0],[0],[0]], [[0],[0],[0]]], 0)
+
+    ([5, 5, 7, 7], [[1, 2, 3], [1, 2, 3]], 0),
+    ([5, 5, 7, 7], [[1, 2, 3, 1], [1, 2, 3, 1]], 0),
+    ([3, 5], [[[0, 2], [0, 4]]], 0),
+    ([5, 7, 5], [1, 4, 3], 0)
 ]
 
-@pytest.mark.parametrize('in_shape,indice,axis,batch_dims', in_shape_indice_axis_batch_dims)
-def test_gather(in_shape, indice, axis, batch_dims, request):
-    module = _make_module(in_shape, indice, axis, batch_dims)
+@pytest.mark.parametrize('in_shape,indice,axis', in_shape_indice_axis)
+def test_gather_nd(in_shape, indice, axis, request):
+    module = _make_module(in_shape, indice, axis)
     runner = TfliteTestRunner(request.node.name)
     model_file = runner.from_tensorflow(module)
     runner.run(model_file)
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_gather.py'])
+    pytest.main(['-vv', 'test_gather_nd.py'])

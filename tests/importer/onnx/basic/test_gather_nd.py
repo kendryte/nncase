@@ -21,23 +21,24 @@ from onnx import AttributeProto, TensorProto, GraphProto
 from test_runner import OnnxTestRunner
 import numpy as np
 
-def result_shape(p_shape, i_shape, axis=0):
-    return p_shape[:axis] + i_shape + p_shape[axis + 1:]
+def result_shape(p_shape, i_shape, batch_dims=0):
+    return i_shape[batch_dims:-1] + p_shape[i_shape[-1]:]
 
-def _make_module(in_shape, indices, axis):
+def _make_module(in_shape, indices, batch_dims):
     input = helper.make_tensor_value_info('input', TensorProto.FLOAT, in_shape)
     i_shape = list(np.array(indices).shape)
-    indices = helper.make_tensor('indices', TensorProto.INT32, np.array(indices).shape, np.array(indices).flatten().tolist())
-    output = helper.make_tensor_value_info('output', TensorProto.FLOAT, result_shape(in_shape, i_shape, axis))
+    indices = helper.make_tensor('indices', TensorProto.INT64, np.array(indices).shape, np.array(indices).flatten().tolist())
+    output = helper.make_tensor_value_info('output', TensorProto.FLOAT, result_shape(in_shape, i_shape, batch_dims))
     initializers = []
     initializers.append(indices)
 
     node = onnx.helper.make_node(
-        'Gather',
+        'GatherND',
         inputs=['input', 'indices'],
         outputs=['output'],
-        axis=axis
+        batch_dims=0
     )
+
     graph_def = helper.make_graph(
         [node],
         'test-model',
@@ -49,13 +50,14 @@ def _make_module(in_shape, indices, axis):
     return helper.make_model(graph_def, producer_name='kendryte')
 
 in_shapes_indices_dim = [
-    ([3, 5], [[0, 1], [1, 2]], 1),
-    ([5, 4, 3, 2], [[0, 1, 3], [1, 3, 2]], 0),
-    ([5, 4, 3, 2], [[0, 1, 3], [1, 3, 2]], 1)
+    ([2, 2, 2], [[0,1],[1,0]], 0)
+    # ([3, 5], [[0, 1], [1, 2]], 1),
+    # ([5, 4, 3, 2], [[0, 1, 3], [1, 3, 2]], 0),
+    # ([5, 4, 3, 2], [[0, 1, 3], [1, 3, 2]], 1)
 ]
 
 @pytest.mark.parametrize('in_shape,indices,dim', in_shapes_indices_dim)
-def test_gather(in_shape, indices, dim, request):
+def test_gather_nd(in_shape, indices, dim, request):
     model_def = _make_module(in_shape, indices, dim)
     runner = OnnxTestRunner(request.node.name)
     model_file = runner.from_onnx_helper(model_def)
@@ -63,4 +65,4 @@ def test_gather(in_shape, indices, dim, request):
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_gather.py'])
+    pytest.main(['-vv', 'test_gather_nd.py'])

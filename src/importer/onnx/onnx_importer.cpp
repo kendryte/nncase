@@ -332,6 +332,9 @@ optional<datatype_t> onnx_importer::get_datatype(const TensorProto_DataType data
     case TensorProto_DataType_INT32:
         return dt_int32;
 
+    case TensorProto_DataType_INT64:
+        return dt_int64;
+
     default:
         return optional<datatype_t> {};
     }
