@@ -3,7 +3,7 @@
 </div>
 
 [![License](https://img.shields.io/badge/license-Apache%202-blue)](https://raw.githubusercontent.com/kendryte/nncase/master/LICENSE) 
-[![Build](https://github.com/kendryte/nncase/actions/workflows/build.yml/badge.svg)](https://github.com/kendryte/nncase/actions/workflows/build.yml)
+[![compiler-build](https://github.com/kendryte/nncase/actions/workflows/compiler-build.yml/badge.svg)](https://github.com/kendryte/nncase/actions/workflows/compiler-build.yml)
 
 `nncase` is a neural network compiler for AI accelerators.
 
