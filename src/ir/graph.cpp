@@ -24,63 +24,16 @@ using namespace nncase::ir;
 namespace
 {
 std::unordered_set<node_opcode> dontcse_ops { op_input_node, op_output_node, op_uninitialized, op_constant, op_ignore_node };
-std::unordered_set<node_opcode> neutral_region_ops { op_bitcast, op_concat };
 std::unordered_set<char> char_need_escape = { '/', ':' };
-
-void add_region_node(node &root, const module_type_t &module_type, std::vector<node *> &region_nodes, std::unordered_set<node *> &region_nodes_set, std::unordered_set<node *> &visited)
-{
-    if (visited.emplace(&root).second)
-    {
-        auto inputs = root.inputs();
-        if ((root.module_type() == module_type
-                || neutral_region_ops.contains(root.runtime_opcode())
-                || (root.attributes() & node_attr_action) == 0)
-            && (region_nodes_set.empty()
-                || std::all_of(inputs.begin(), inputs.end(), [&](input_connector *in)
-                    {
-                        auto &conn = in->connection()->owner();
-                        return region_nodes_set.contains(&conn)
-                            || conn.runtime_opcode() == op_input_node
-                            || conn.runtime_opcode() == op_constant;
-                    })))
-        {
-            root.module_type(module_type);
-            region_nodes.emplace_back(&root);
-            region_nodes_set.emplace(&root);
-
-            for (auto in : inputs)
-            {
-                auto &conn = in->connection()->owner();
-                if (conn.runtime_opcode() == op_constant)
-                {
-                    visited.emplace(&conn);
-                    conn.module_type(module_type);
-                    region_nodes.emplace_back(&conn);
-                    region_nodes_set.emplace(&conn);
-                }
-            }
-
-            for (auto out : root.outputs())
-            {
-                for (auto in : out->connections())
-                {
-                    auto &conn = in->owner();
-                    add_region_node(conn, module_type, region_nodes, region_nodes_set, visited);
-                }
-            }
-        }
-    }
-}
 
 void add_reachable_graphs(graph &root, std::vector<graph *> &graphs)
 {
     graphs.emplace_back(&root);
     std::unordered_set<graph *> subgraphs;
-    auto visitor = make_relay_ir_visitor([&](node &node)
-        {
-            if (auto c = node_cast<call>(node))
-                subgraphs.emplace(&c->target());
-        });
+    auto visitor = make_relay_ir_visitor([&](node &node) {
+        if (auto c = node_cast<call>(node))
+            subgraphs.emplace(&c->target());
+    });
     visitor.visit(root);
     for (auto &g : subgraphs)
         add_reachable_graphs(*g, graphs);
@@ -136,8 +89,7 @@ void graph::dce()
     {
         if (!(*it)->input().connection())
         {
-            nodes_.erase(std::find_if(nodes_.begin(), nodes_.end(), [it](std::unique_ptr<node> &node)
-                { return node.get() == *it; }));
+            nodes_.erase(std::find_if(nodes_.begin(), nodes_.end(), [it](std::unique_ptr<node> &node) { return node.get() == *it; }));
             it = outputs_.erase(it);
         }
         else
@@ -146,29 +98,27 @@ void graph::dce()
         }
     }
 
-    auto visitor = make_relay_ir_visitor([&](node &node)
-        { used_nodes.emplace(&node); });
+    auto visitor = make_relay_ir_visitor([&](node &node) { used_nodes.emplace(&node); });
     visitor.visit(*this);
 
-    auto end = std::remove_if(std::begin(nodes_), std::end(nodes_), [&](auto &node)
+    auto end = std::remove_if(std::begin(nodes_), std::end(nodes_), [&](auto &node) {
+        if (used_nodes.find(node.get()) == used_nodes.end())
         {
-            if (used_nodes.find(node.get()) == used_nodes.end())
-            {
-                for (auto in : node->inputs())
-                    in->clear_connection();
-                for (auto out : node->outputs())
-                    out->clear_connections();
-                if (node->runtime_opcode() == op_input_node)
-                    inputs_.erase(std::find(inputs_.begin(), inputs_.end(), static_cast<input_node *>(node.get())));
-                return true;
-            }
+            for (auto in : node->inputs())
+                in->clear_connection();
+            for (auto out : node->outputs())
+                out->clear_connections();
+            if (node->runtime_opcode() == op_input_node)
+                inputs_.erase(std::find(inputs_.begin(), inputs_.end(), static_cast<input_node *>(node.get())));
+            return true;
+        }
 
-            return false;
-        });
+        return false;
+    });
     nodes_.erase(end, std::end(nodes_));
 }
 
-split_graph_result graph::split_subgraph(std::span<node *> nodes)
+split_graph_result graph::split_subgraph(std::span<node *const> nodes)
 {
     split_graph_result result;
     result.subgraph = std::make_unique<graph>(nodes.front()->module_type());
@@ -177,8 +127,7 @@ split_graph_result graph::split_subgraph(std::span<node *> nodes)
     std::unordered_set<node *> subgraph_nodes;
     for (auto it = nodes.begin(); it != nodes.end(); ++it)
     {
-        auto find_it = std::find_if(nodes_.begin(), nodes_.end(), [&](auto &p)
-            { return p.get() == *it; });
+        auto find_it = std::find_if(nodes_.begin(), nodes_.end(), [&](auto &p) { return p.get() == *it; });
         if (find_it != nodes_.end())
         {
             subgraph_nodes.emplace(find_it->get());
@@ -195,7 +144,7 @@ split_graph_result graph::split_subgraph(std::span<node *> nodes)
             if (!subgraph_nodes.contains(&in->connection()->owner()))
             {
                 auto inode = result.subgraph->emplace<input_node>(in->type(), in->shape());
-                inode->name("new_input");
+                inode->name(in->connection()->owner().name());
                 inode->module_type(node->module_type());
                 result.inputs.emplace(inode, in->connection());
                 in->connect(inode->output());
@@ -205,11 +154,10 @@ split_graph_result graph::split_subgraph(std::span<node *> nodes)
         for (auto out : node->outputs())
         {
             auto conns = out->connections();
-            if (std::any_of(conns.begin(), conns.end(), [&](input_connector *in)
-                    { return !subgraph_nodes.contains(&in->owner()); }))
+            if (std::any_of(conns.begin(), conns.end(), [&](input_connector *in) { return !subgraph_nodes.contains(&in->owner()); }))
             {
                 auto onode = result.subgraph->emplace<output_node>(out->type(), out->shape());
-                onode->name("new_output");
+                onode->name(out->owner().name());
                 onode->module_type(node->module_type());
 
                 for (auto in : dup(conns))
@@ -273,56 +221,6 @@ void graph::cse()
         {
             dce();
             csed_nodes.clear();
-        }
-        else
-        {
-            break;
-        }
-    }
-}
-
-void graph::merge_module_regions()
-{
-    size_t subid = 0;
-    while (true)
-    {
-        node *first_node = nullptr;
-        auto find_region = make_relay_ir_visitor([&](node &node)
-            {
-                if (node.module_type() != runtime::stackvm::stackvm_module_type)
-                {
-                    first_node = &node;
-                    return true;
-                }
-
-                return false;
-            });
-        find_region.visit(outputs());
-
-        if (first_node)
-        {
-            std::vector<node *> region_nodes;
-            std::unordered_set<node *> region_nodes_set;
-            std::unordered_set<node *> visited;
-            add_region_node(*first_node, first_node->module_type(), region_nodes, region_nodes_set, visited);
-            auto split = split_subgraph(region_nodes);
-            auto &subg = add_subgraph(std::move(split.subgraph));
-            auto c = emplace<call>(subg);
-            c->name(std::string(subg.module_type().data()) + "_" + std::to_string(subid++));
-            subg.name(c->name());
-
-            for (auto &inp : split.inputs)
-            {
-                auto &outer_in = c->outer_connector(*inp.first);
-                outer_in.connect(*inp.second);
-            }
-
-            for (auto &outp : split.outputs)
-            {
-                auto &outer_out = c->outer_connector(*outp.first);
-                for (auto in : outp.second)
-                    in->connect(outer_out);
-            }
         }
         else
         {

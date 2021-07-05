@@ -3,6 +3,7 @@
 set(SRCS connectors.cpp
          node.cpp
          graph.cpp
+         graph.partition.cpp
          debug.cpp
          placeholders.cpp
          visitor.cpp)
