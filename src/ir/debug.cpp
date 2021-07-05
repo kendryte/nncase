@@ -114,6 +114,10 @@ void ir::dump_graph(const graph &src_graph, const std::filesystem::path &dst_pat
                 auto att_md = np->add_attribute();
                 att_md->set_name("module_type");
                 att_md->add_strings(n->module_type().data());
+
+                auto att_act = np->add_attribute();
+                att_act->set_name("action");
+                att_act->add_strings((n->attributes() & node_attr_action) ? "true" : "false");
             }
 
             for (auto in : n->inputs())
