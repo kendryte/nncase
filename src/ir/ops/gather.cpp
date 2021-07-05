@@ -19,12 +19,12 @@
 using namespace nncase;
 using namespace nncase::ir;
 
-gather::gather(datatype_t type, shape_t input_shape, shape_t indices_shape, shape_t output_shape, int32_t axis, int32_t batch_dims)
+gather::gather(datatype_t in_type, datatype_t indices_type, shape_t input_shape, shape_t indices_shape, shape_t output_shape, int32_t axis, int32_t batch_dims)
     : axis_(axis), batch_dims_(batch_dims)
 {
-    add_input("input", type, input_shape);
-    add_input("indices", dt_int32, indices_shape);
-    add_output("output", type, output_shape);
+    add_input("input", in_type, input_shape);
+    add_input("indices", indices_type, indices_shape);
+    add_output("output", in_type, output_shape);
 }
 
 bool gather::properties_equal(node &other) const

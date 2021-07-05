@@ -455,8 +455,8 @@ void register_neutral_evaluators()
         auto input_mem = input.buffer();
         auto output_mem = output.buffer();
 
-        kernels::gather(input.datatype(), input_mem.data(), output_mem.data(), input.shape(), output.shape(),
-            input.strides(), output.strides(), reinterpret_cast<int32_t *>(indices.buffer().data()), indices.shape(), rnode.axis(), rnode.batch_dims())
+        kernels::gather(input.datatype(), indices.datatype(), input_mem.data(), output_mem.data(), input.shape(), output.shape(),
+            input.strides(), output.strides(), indices.buffer().data(), indices.shape(), rnode.axis(), rnode.batch_dims())
             .unwrap_or_throw();
     });
 }

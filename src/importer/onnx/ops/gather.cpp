@@ -30,6 +30,7 @@ void onnx_importer::convert_op_Gather(const NodeProto &node)
     const auto &output = node.output()[0];
 
     const datatype_t input_type = get_datatype(input).value();
+    const datatype_t indices_type = get_datatype(indices).value();
     const auto input_shape = get_shape(input);
     const auto indices_shape = get_shape(indices);
     const auto out_shape = get_shape(output);
@@ -41,7 +42,7 @@ void onnx_importer::convert_op_Gather(const NodeProto &node)
         axis = static_cast<int32_t>(axis_attr.value());
     }
 
-    auto ga = graph_.emplace<gather>(input_type, input_shape, indices_shape, out_shape, axis);
+    auto ga = graph_.emplace<gather>(input_type, indices_type, input_shape, indices_shape, out_shape, axis);
     input_tensors_.emplace(&ga->input(), input);
     input_tensors_.emplace(&ga->indices(), indices);
     output_tensors_.emplace(output, &ga->output());
@@ -54,6 +55,7 @@ void onnx_importer::convert_op_GatherND(const NodeProto &node)
     const auto &output = node.output()[0];
 
     const datatype_t input_type = get_datatype(input).value();
+    const datatype_t indices_type = get_datatype(indices).value();
     const auto input_shape = get_shape(input);
     const auto indices_shape = get_shape(indices);
     const auto out_shape = get_shape(output);
@@ -65,7 +67,7 @@ void onnx_importer::convert_op_GatherND(const NodeProto &node)
         batch_dims = static_cast<int32_t>(batch_dims_attr.value());
     }
 
-    auto ga = graph_.emplace<gather>(input_type, input_shape, indices_shape, out_shape, 0, batch_dims);
+    auto ga = graph_.emplace<gather>(input_type, indices_type, input_shape, indices_shape, out_shape, 0, batch_dims);
     input_tensors_.emplace(&ga->input(), input);
     input_tensors_.emplace(&ga->indices(), indices);
     output_tensors_.emplace(output, &ga->output());

@@ -33,6 +33,6 @@ result<void> stackvm_runtime_module::visit(const tensor_gather_op_t &op) noexcep
     auto &out_strides = shape_regs_[op.rstride_dest];
     auto &indices_shape = shape_regs_[op.rshape_indices];
 
-    return kernels::gather(op.datatype, reinterpret_cast<const gsl::byte *>(input), reinterpret_cast<gsl::byte *>(output), in_shape, out_shape,
-        in_strides, out_strides, reinterpret_cast<int32_t *>(indices), indices_shape, op.axis, op.batch_dims);
+    return kernels::gather(op.datatype, dt_int64, reinterpret_cast<const gsl::byte *>(input), reinterpret_cast<gsl::byte *>(output), in_shape, out_shape,
+        in_strides, out_strides, reinterpret_cast<const gsl::byte *>(indices), indices_shape, op.axis, op.batch_dims);
 }

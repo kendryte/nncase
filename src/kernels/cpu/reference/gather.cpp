@@ -24,26 +24,37 @@ using namespace nncase::kernels::cpu::reference;
 
 namespace
 {
-template <class T>
+template <class T, class IndicesT>
 result<void> gather_impl(const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &out_shape,
-    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, int32_t *indices, const runtime_shape_t &indices_shape, int32_t axis, int32_t batch_dims,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, IndicesT *indices, const runtime_shape_t &indices_shape, int32_t axis, int32_t batch_dims,
     kernel_context &context) noexcept
 {
     return apply(out_shape, [&](const runtime_shape_t &out_index) -> result<void> {
-            batch_dims = 0;
         size_t last_indices_index = indices_shape.size() - 1;
         size_t i_index = 0, o_index = 0;
+        if (i_index != 0)
+        {
+            assert(false);
+        }
         runtime_shape_t in_index(in_shape.size());
         runtime_shape_t indices_index(indices_shape.size());
+        for (; i_index < batch_dims; i_index++, o_index++)
+        {
+            // 0-batch_dims
+            indices_index[i_index] = out_index[o_index];
+            in_index[i_index] = out_index[o_index];
+        }
         for (; o_index < last_indices_index; ++o_index)
         {
+            // batch_dims - last_indices
             indices_index[o_index] = out_index[o_index];
         }
 
         auto indices_begin = indices + offset(get_default_strides(indices_shape), indices_index);
-        for (; i_index < indices_shape[last_indices_index]; ++i_index)
+        for (size_t i = 0; i < indices_shape[last_indices_index]; ++i_index, ++i)
         {
-            in_index[i_index] = indices_begin[i_index];
+            // batch_dims-indices_last
+            in_index[i_index] = indices_begin[i];
         }
 
         // out last value is used in block
@@ -136,11 +147,13 @@ result<void> gather_impl(const T *input, T *output, const runtime_shape_t &in_sh
 
 #define GATHER_IMPL(size, type) \
     case size:                  \
-        return gather_impl(reinterpret_cast<const type *>(input), reinterpret_cast<type *>(output), in_shape, out_shape, in_strides, out_strides, indices, indices_shape, axis, batch_dims, context);
+        if(indices_type == dt_int32) \
+            return gather_impl(reinterpret_cast<const type *>(input), reinterpret_cast<type *>(output), in_shape, out_shape, in_strides, out_strides, reinterpret_cast<const int32_t *>(indices), indices_shape, axis, batch_dims, context); \
+        else \
+            return gather_impl(reinterpret_cast<const type *>(input), reinterpret_cast<type *>(output), in_shape, out_shape, in_strides, out_strides, reinterpret_cast<const int64_t *>(indices), indices_shape, axis, batch_dims, context);
 
-result<void> reference::gather(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape, const runtime_shape_t &out_shape,
-    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, int32_t *indices, const runtime_shape_t &indices_shape, int32_t axis, int32_t batch_dims,
-    kernel_context &context) noexcept
+result<void> reference::gather(datatype_t type, datatype_t indices_type, const gsl::byte *input, gsl::byte *output,
+    const runtime_shape_t &in_shape, const runtime_shape_t &out_shape, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const gsl::byte *indices, const runtime_shape_t &indices_shape, int32_t axis, int32_t batch_dims, kernel_context &context) noexcept
 {
     switch (runtime::get_bytes(type))
     {
