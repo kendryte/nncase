@@ -63,13 +63,5 @@ result<void> gather_impl(const T *input, T *output, const runtime_shape_t &in_sh
 
 result<void> reference::gather(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape, const runtime_shape_t &out_shape, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const int32_t *indices, const runtime_shape_t &indices_shape, int32_t axis, kernel_context &context) noexcept
 {
-    switch (runtime::get_bytes(type))
-    {
-        GATHER_IMPL(1, uint8_t);
-        GATHER_IMPL(2, uint16_t);
-        GATHER_IMPL(4, uint32_t);
-        GATHER_IMPL(8, uint64_t);
-    default:
-        return err(std::errc::not_supported);
-    }
+    TYPE_IMPL_SELECT(type, GATHER_IMPL);
 }

@@ -8,7 +8,7 @@ import os
 import shutil
 from abc import ABCMeta, abstractmethod
 import nncase
-import tensorflow as tf
+# import tensorflow as tf
 import torch
 import onnx
 from onnx import version_converter, helper
