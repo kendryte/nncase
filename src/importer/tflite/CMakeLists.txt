@@ -26,6 +26,7 @@ set(SRCS tflite_importer.cpp
          ops/activations.cpp
          ops/squared_difference.cpp
          ops/gather.cpp
+         ops/gather_nd.cpp
          ops/onehot.cpp
          ops/log_softmax.cpp)
 

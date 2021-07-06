@@ -23,6 +23,7 @@
 #include <nncase/ir/ops/conv2d.h>
 #include <nncase/ir/ops/convert.h>
 #include <nncase/ir/ops/gather.h>
+#include <nncase/ir/ops/gather_nd.h>
 #include <nncase/ir/ops/dequantize.h>
 #include <nncase/ir/ops/pad.h>
 #include <nncase/ir/ops/quantize.h>

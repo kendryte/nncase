@@ -155,6 +155,7 @@ namespace IsaGen
         COPY,
         DEQUANTIZE,
         GATHER,
+        GATHER_ND,
         LOGISTIC,
         LUT1D,
         MATMUL,
@@ -1353,6 +1354,38 @@ namespace IsaGen
             [DisplayName("axis")]
             [Description("Axis")]
             public byte Axis { get; set; }
+        }
+
+        [DisplayName("TENSOR.GATHER_ND")]
+        [Category("Tensor Instructions")]
+        [Description("GatherND")]
+        public class GatherNDInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.GATHER_ND;
+
+            [DisplayName("datatype")]
+            [Description("Datatype")]
+            public DataType DataType { get; set; }
+
+            [DisplayName("rshape_src")]
+            [Description("Source shape register")]
+            public byte RshapeSrc { get; set; }
+
+            [DisplayName("rshape_dest")]
+            [Description("Dest shape register")]
+            public byte RshapeDest { get; set; }
+
+            [DisplayName("rstride_src")]
+            [Description("Source stride register")]
+            public byte RstrideSrc { get; set; }
+
+            [DisplayName("rstride_dest")]
+            [Description("Dest stride register")]
+            public byte RstrideDest { get; set; }
+
+            [DisplayName("rshape_indices")]
+            [Description("Indices shape register")]
+            public byte RshapeIndices { get; set; }
 
             [DisplayName("batch_dims")]
             [Description("Batch Dims")]

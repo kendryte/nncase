@@ -16,6 +16,7 @@
 
 import pytest
 import tensorflow as tf
+import numpy as np
 from test_runner import TfliteTestRunner
 
 def _make_module(in_shape, indice, batch_dims):
@@ -25,13 +26,13 @@ def _make_module(in_shape, indice, batch_dims):
 
         @tf.function(input_signature=[tf.TensorSpec(in_shape, tf.float32)])
         def __call__(self, x):
-            return tf.gather_nd(x, indice, batch_dims)
+            return tf.gather_nd(x, np.array(indice, dtype=np.int64), batch_dims=0)
     return GatherModule()
 
 
 in_shape_indice_axis = [
-    ([2, 3, 1], [[0], [1]], 1),
-    ([2, 3, 1], [[[0],[0],[0]], [[0],[0],[0]]], 0),
+    ([2, 3, 1], [[0], [1]], 0),
+    ([2, 3, 1], [[[0], [0], [0]], [[0], [0], [0]]], 0),
     ([5, 4, 3, 2], [[1, 0, 2], [1, 2, 2]], 0),
     ([5, 5, 7, 7], [[1, 2, 3], [1, 2, 3]], 0),
     ([5, 5, 7, 7], [[1, 2, 3, 1], [1, 2, 3, 1]], 0),

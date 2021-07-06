@@ -19,7 +19,7 @@ using namespace nncase::codegen;
 using namespace nncase::codegen::stackvm;
 using namespace nncase::ir;
 
-void stackvm_module_builder::emit(gather &node, stackvm_op_builder &builder)
+void stackvm_module_builder::emit(gather_nd &node, stackvm_op_builder &builder)
 {
     auto &input = allocation(node.input());
     auto &output = allocation(node.output());
@@ -34,5 +34,5 @@ void stackvm_module_builder::emit(gather &node, stackvm_op_builder &builder)
     builder.stshape(3, output.strides);
     builder.stshape(4, indices.shape);
 
-    builder.tensor_gather_(node.input().type(), 0, 1, 2, 3, 4, (uint8_t)node.axis());
+    builder.tensor_gather_nd_(node.input().type(), 0, 1, 2, 3, 4, (uint8_t)node.batch_dims());
 }

@@ -15,16 +15,15 @@
 
 #include "../onnx_importer.h"
 #include <cassert>
-#include <nncase/ir/graph.h>
-#include <nncase/ir/ops/gather.h>
 #include <nncase/ir/ops/convert.h>
+#include <nncase/ir/ops/gather_nd.h>
 
 using namespace nncase;
 using namespace nncase::importer;
 using namespace nncase::ir;
 using namespace onnx;
 
-void onnx_importer::convert_op_Gather(const NodeProto &node)
+void onnx_importer::convert_op_GatherND(const NodeProto &node)
 {
     const auto &input = node.input()[0];
     const auto &indices = node.input()[1];
@@ -35,31 +34,20 @@ void onnx_importer::convert_op_Gather(const NodeProto &node)
     const auto indices_shape = get_shape(indices);
     const auto out_shape = get_shape(output);
 
-    int32_t axis = 0;
-    const auto axis_attr = get_attribute<int32_t>(node, "axis");
-    if (axis_attr)
+    int32_t batch_dims = 0;
+    const auto batch_dims_attr = get_attribute<int>(node, "batch_dims");
+    if (batch_dims_attr)
     {
-        axis = static_cast<int32_t>(axis_attr.value());
+        batch_dims = static_cast<int32_t>(batch_dims_attr.value());
     }
-    if (axis < 0)
+    if (batch_dims < 0)
     {
-        axis = static_cast<int32_t>(input_shape.size()) + axis;
+       batch_dims = static_cast<int32_t>(input_shape.size()) + batch_dims;
     }
-    
-    if (input_type != dt_int32)
-    {
-        auto ga = graph_.emplace<gather>(input_type, input_shape, indices_shape, out_shape, axis);
-        auto ct = graph_.emplace<convert>(get_datatype(indices).value(), indices_shape, dt_int32);
-        ga->indices().connect(ct->output());
-        input_tensors_.emplace(&ga->input(), input);
-        input_tensors_.emplace(&ct->input(), indices);
-        output_tensors_.emplace(output, &ga->output());
-    }
-    else
-    {
-        auto ga = graph_.emplace<gather>(input_type, input_shape, indices_shape, out_shape, axis);
-        input_tensors_.emplace(&ga->input(), input);
-        input_tensors_.emplace(&ga->indices(), indices);
-        output_tensors_.emplace(output, &ga->output());
-    }
+    auto ct = graph_.emplace<convert>(get_datatype(indices).value(), indices_shape, dt_int32);
+    auto ga = graph_.emplace<gather_nd>(input_type, input_shape, indices_shape, out_shape, batch_dims);
+    ga->indices().connect(ct->output());
+    input_tensors_.emplace(&ga->input(), input);
+    input_tensors_.emplace(&ct->input(), indices);
+    output_tensors_.emplace(output, &ga->output());
 }

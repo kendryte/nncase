@@ -36,6 +36,7 @@
 #include <nncase/ir/ops/transpose.h>
 #include <nncase/ir/ops/unary.h>
 #include <nncase/ir/ops/gather.h>
+#include <nncase/ir/ops/gather_nd.h>
 #include <nncase/ir/runtime_type_utils.h>
 #include <nncase/kernels/convolution.h>
 #include <nncase/kernels/neutral/neutral_kernels.h>
@@ -455,8 +456,22 @@ void register_neutral_evaluators()
         auto input_mem = input.buffer();
         auto output_mem = output.buffer();
 
-        kernels::gather(input.datatype(), indices.datatype(), input_mem.data(), output_mem.data(), input.shape(), output.shape(),
-            input.strides(), output.strides(), indices.buffer().data(), indices.shape(), rnode.axis(), rnode.batch_dims())
+        kernels::gather(input.datatype(), input_mem.data(), output_mem.data(), input.shape(), output.shape(),
+            input.strides(), output.strides(), reinterpret_cast<const int32_t *>(indices.buffer().data()), indices.shape(), rnode.axis())
+            .unwrap_or_throw();
+    });
+
+    register_evaluator(op_gather_nd, [](ir::node &node, module_evaluate_context &context) {
+        auto &rnode = static_cast<gather_nd &>(node);
+
+        auto input = context.memory_at(rnode.input());
+        auto output = context.memory_at(rnode.output());
+        auto indices = context.memory_at(rnode.indices());
+        auto input_mem = input.buffer();
+        auto output_mem = output.buffer();
+
+        kernels::gather_nd(input.datatype(), input_mem.data(), output_mem.data(), input.shape(), output.shape(),
+                        input.strides(), output.strides(), reinterpret_cast<const int32_t *>(indices.buffer().data()), indices.shape(), rnode.batch_dims())
             .unwrap_or_throw();
     });
 }

@@ -16,21 +16,23 @@
 
 import pytest
 import tensorflow as tf
+import numpy as np
 from test_runner import TfliteTestRunner
 
-def _make_module(in_shape, indice, axis, batch_dim):
+def _make_module(in_shape, indice, axis):
     class GatherModule(tf.Module):
         def __init__(self):
             super(GatherModule).__init__()
 
         @tf.function(input_signature=[tf.TensorSpec(in_shape, tf.float32)])
         def __call__(self, x):
-            return tf.gather(x, indice, axis=axis, batch_dims=batch_dim)
+            return tf.gather(x, np.array(indice, dtype=np.int64), axis=axis, batch_dims=0)
     return GatherModule()
 
 
-in_shape_indice_axis_batch_dims = [
-    ([2, 3, 5, 7], [[1, 1], [1, 2]], 2, 1),
+in_shape_indice_axis = [
+    ([2, 3, 5, 7], [[1, 1], [1, 2]], -1),
+    # ([2, 3, 5, 7], [[1, 1], [1, 2]], 2),
     # ([11], [1, 3, 10, 0, 2], 0),
     # ([11], [[2, 4], [1, 3]], 0),
     # ([7, 5], [1, 3], 0),
@@ -43,9 +45,9 @@ in_shape_indice_axis_batch_dims = [
     # ([4, 6, 5, 7], [[[1], [2]], [[3], [1]]], 3)
 ]
 
-@pytest.mark.parametrize('in_shape,indice,axis,batch_dims', in_shape_indice_axis_batch_dims)
-def test_gather(in_shape, indice, axis, batch_dims, request):
-    module = _make_module(in_shape, indice, axis, batch_dims)
+@pytest.mark.parametrize('in_shape,indice,axis', in_shape_indice_axis)
+def test_gather(in_shape, indice, axis, request):
+    module = _make_module(in_shape, indice, axis)
     runner = TfliteTestRunner(request.node.name)
     model_file = runner.from_tensorflow(module)
     runner.run(model_file)

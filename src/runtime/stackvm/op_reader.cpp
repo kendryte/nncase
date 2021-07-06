@@ -47,6 +47,8 @@ result<void> op_visitor::next() noexcept
             return visit(op_reader<tensor_dequantize_op_t>()(reader_));
         case tensor_function_t::GATHER:
             return visit(op_reader<tensor_gather_op_t>()(reader_));
+        case tensor_function_t::GATHER_ND:
+            return visit(op_reader<tensor_gather_nd_op_t>()(reader_));
         case tensor_function_t::LUT1D:
             return visit(op_reader<tensor_lut1d_op_t>()(reader_));
         case tensor_function_t::PAD:

@@ -22,6 +22,8 @@ from test_runner import OnnxTestRunner
 import numpy as np
 
 def result_shape(p_shape, i_shape, batch_dims=0):
+    if batch_dims < 0:
+        batch_dims = len(p_shape) + batch_dims
     return i_shape[:-1] + p_shape[i_shape[-1] + batch_dims:]
 
 def _make_module(in_shape, indices, batch_dims):

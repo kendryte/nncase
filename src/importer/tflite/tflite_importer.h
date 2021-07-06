@@ -218,6 +218,8 @@ private:
             return dt_uint8;
         case tflite::TensorType_INT32:
             return dt_int32;
+        case tflite::TensorType_INT64:
+            return dt_int64;
         default:
             throw std::runtime_error("Invalid tensor type");
         }

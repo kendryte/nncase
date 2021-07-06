@@ -21,7 +21,7 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 
-result<void> stackvm_runtime_module::visit(const tensor_gather_op_t &op) noexcept
+result<void> stackvm_runtime_module::visit(const tensor_gather_nd_op_t &op) noexcept
 {
     try_var(indices, pop_addr());
     try_var(output, pop_addr());
@@ -33,6 +33,6 @@ result<void> stackvm_runtime_module::visit(const tensor_gather_op_t &op) noexcep
     auto &out_strides = shape_regs_[op.rstride_dest];
     auto &indices_shape = shape_regs_[op.rshape_indices];
 
-    return kernels::gather(op.datatype, reinterpret_cast<const gsl::byte *>(input), reinterpret_cast<gsl::byte *>(output), in_shape, out_shape,
-        in_strides, out_strides, reinterpret_cast<const int32_t *>(indices), indices_shape, op.axis);
+    return kernels::gather_nd(op.datatype, reinterpret_cast<const gsl::byte *>(input), reinterpret_cast<gsl::byte *>(output), in_shape, out_shape,
+        in_strides, out_strides, reinterpret_cast<const int32_t *>(indices), indices_shape, op.batch_dims);
 }

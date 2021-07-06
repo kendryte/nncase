@@ -13,22 +13,22 @@
  * limitations under the License.
  */
 #include <nncase/ir/op_utils.h>
-#include <nncase/ir/ops/gather.h>
+#include <nncase/ir/ops/gather_nd.h>
 #include <xtensor/xarray.hpp>
 
 using namespace nncase;
 using namespace nncase::ir;
 
-gather::gather(datatype_t in_type,  shape_t input_shape, shape_t indices_shape, shape_t output_shape, int32_t axis)
-    : axis_(axis)
+gather_nd::gather_nd(datatype_t type, shape_t input_shape, shape_t indices_shape, shape_t output_shape, int32_t batch_dims)
+    : batch_dims_(batch_dims)
 {
-    add_input("input", in_type, input_shape);
+    add_input("input", type, input_shape);
     add_input("indices", dt_int32, indices_shape);
-    add_output("output", in_type, output_shape);
+    add_output("output", type, output_shape);
 }
 
-bool gather::properties_equal(node &other) const
+bool gather_nd::properties_equal(node &other) const
 {
-    auto &r = static_cast<gather &>(other);
-    return axis() == r.axis();
+    auto &r = static_cast<gather_nd &>(other);
+    return batch_dims() == r.batch_dims();
 }

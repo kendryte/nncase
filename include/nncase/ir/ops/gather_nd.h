@@ -1,4 +1,4 @@
-/* Copyright 2019-2021 Canaan Inc.
+/* Copyright 2021 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,23 +18,23 @@
 
 namespace nncase::ir
 {
-class NNCASE_API gather : public node
+class NNCASE_API gather_nd : public node
 {
 public:
-    DEFINE_NODE_OPCODE(op_gather);
+    DEFINE_NODE_OPCODE(op_gather_nd);
 
     input_connector &input() { return input_at(0); }
     input_connector &indices() { return input_at(1); }
     output_connector &output() { return output_at(0); }
 
-    int32_t axis() const noexcept { return axis_; }
+    int32_t batch_dims() const noexcept { return batch_dims_; }
 
-    gather(datatype_t in_type, shape_t input_shape, shape_t indices_shape, shape_t output_shape, int32_t axis);
+    gather_nd(datatype_t type, shape_t input_shape, shape_t indices_shape, shape_t output_shape, int32_t batch_dims);
 
 protected:
     bool properties_equal(node &other) const override;
 
 private:
-    int32_t axis_;
+    int32_t batch_dims_;
 };
 }

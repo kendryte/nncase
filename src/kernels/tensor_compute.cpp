@@ -189,8 +189,14 @@ result<void> kernels::slice(datatype_t type, const gsl::byte *input, gsl::byte *
     }
 }
 
-result<void> kernels::gather(datatype_t in_type, datatype_t indices_type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape, const runtime_shape_t &out_shape,
-    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const gsl::byte *indices, const runtime_shape_t &indices_shape, int32_t axis, int32_t batch_dims, kernel_context &context) noexcept
+result<void> kernels::gather(datatype_t in_type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape, const runtime_shape_t &out_shape,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const int32_t *indices, const runtime_shape_t &indices_shape, int32_t axis, kernel_context &context) noexcept
 {
-    return cpu::reference::gather(in_type, indices_type, input, output, in_shape, out_shape, in_strides, out_strides, indices, indices_shape, axis, batch_dims, context);
+    return cpu::reference::gather(in_type, input, output, in_shape, out_shape, in_strides, out_strides, indices, indices_shape, axis, context);
+}
+
+result<void> kernels::gather_nd(datatype_t in_type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape, const runtime_shape_t &out_shape,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const int32_t *indices, const runtime_shape_t &indices_shape, int32_t batch_dims, kernel_context &context) noexcept
+{
+    return cpu::reference::gather_nd(in_type, input, output, in_shape, out_shape, in_strides, out_strides, indices, indices_shape, batch_dims, context);
 }

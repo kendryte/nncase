@@ -22,12 +22,14 @@ from test_runner import OnnxTestRunner
 import numpy as np
 
 def result_shape(p_shape, i_shape, axis=0):
+    if axis < 0:
+        axis = len(p_shape) + axis
     return p_shape[:axis] + i_shape + p_shape[axis + 1:]
 
 def _make_module(in_shape, indices, axis):
     input = helper.make_tensor_value_info('input', TensorProto.FLOAT, in_shape)
     i_shape = list(np.array(indices).shape)
-    indices = helper.make_tensor('indices', TensorProto.INT32, np.array(indices).shape, np.array(indices).flatten().tolist())
+    indices = helper.make_tensor('indices', TensorProto.INT64, np.array(indices).shape, np.array(indices).flatten().tolist())
     output = helper.make_tensor_value_info('output', TensorProto.FLOAT, result_shape(in_shape, i_shape, axis))
     initializers = []
     initializers.append(indices)
@@ -49,6 +51,7 @@ def _make_module(in_shape, indices, axis):
     return helper.make_model(graph_def, producer_name='kendryte')
 
 in_shapes_indices_dim = [
+    ([3, 5], [[0, 1], [1, 2]], -1),
     ([3, 5], [[0, 1], [1, 2]], 1),
     ([5, 4, 3, 2], [[0, 1, 3], [1, 3, 2]], 0),
     ([5, 4, 3, 2], [[0, 1, 3], [1, 3, 2]], 1)
