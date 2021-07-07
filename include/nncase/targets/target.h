@@ -80,6 +80,7 @@ public:
     virtual std::unique_ptr<ir::quantizer> create_quantizer(const module_type_t &type, ir::calibrate_method calib_method);
     virtual void register_quantize_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr, datatype_t quant_type);
     virtual void register_target_dependent_after_quantization_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr);
+    virtual void register_target_dependent_after_buffer_fusion_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr);
     virtual void register_allocation_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr) = 0;
     virtual std::unique_ptr<codegen::module_builder> create_module_builder(const module_type_t &type, std::string_view module_name, const codegen::module_builder_params &params);
     virtual void add_quantization_broadcast(std::unordered_set<ir::node_opcode> &opcodes) = 0;
