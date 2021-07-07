@@ -1,1 +1,3 @@
 include(${CMAKE_CURRENT_LIST_DIR}/nncaseruntimeTargets.cmake)
+find_package(mpark_variant REQUIRED)
+find_package(gsl-lite REQUIRED)
