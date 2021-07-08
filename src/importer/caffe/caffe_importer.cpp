@@ -29,25 +29,7 @@ using namespace nncase::ir;
 using namespace caffe;
 using namespace std::string_view_literals;
 
-static bool read_proto_from_text(const char* filepath, google::protobuf::Message* message)
-{
-    std::ifstream fs(filepath, std::ifstream::in);
-    if (!fs.is_open())
-    {
-        throw std::runtime_error("open prototxt failed.");
-    }
-    google::protobuf::io::IstreamInputStream input(&fs);
-    bool success = google::protobuf::TextFormat::Parse(&input, message);
-
-    std::string p;
-    google::protobuf::TextFormat::PrintToString(*message, &p);
-
-    fs.close();
-
-    return success;
-}
-
-caffe_importer::caffe_importer(std::span<const uint8_t> model, const char *prototxt, ir::graph &graph)
+caffe_importer::caffe_importer(std::span<const uint8_t> model, [[maybe_unused]]std::span<const uint8_t> prototxt, ir::graph &graph)
     : graph_(graph)
 {
     GOOGLE_PROTOBUF_VERIFY_VERSION;
@@ -56,7 +38,8 @@ caffe_importer::caffe_importer(std::span<const uint8_t> model, const char *proto
         throw std::runtime_error("Invalid Caffe model");
 
     caffe::NetParameter proto;
-    bool s0 = read_proto_from_text(prototxt, &proto);
+    std::string str(prototxt.data(), prototxt.data() + prototxt.size_bytes());
+    bool s0 = google::protobuf::TextFormat::ParseFromString(str, &proto);
     if (!s0)
     {
         throw std::runtime_error("read prototxt failed");

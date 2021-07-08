@@ -30,7 +30,7 @@ namespace importer
     class caffe_importer
     {
     public:
-        caffe_importer(std::span<const uint8_t> model, const char *prototxt, ir::graph &graph);
+        caffe_importer(std::span<const uint8_t> model, std::span<const uint8_t> prototxt, ir::graph &graph);
 
         void import(const struct import_options &options);
 

@@ -106,8 +106,8 @@ void compile_command::run()
     else if (input_format_ == "caffe")
     {
         auto file_data = read_file(input_filename_);
-        // auto input_prototxt = read_file(input_prototxt_);
-        compiler->import_caffe(file_data, input_prototxt_.c_str(), i_options);
+        auto input_prototxt = read_file(input_prototxt_);
+        compiler->import_caffe(file_data, input_prototxt, i_options);
     }
     else
     {
