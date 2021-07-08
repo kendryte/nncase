@@ -17,7 +17,6 @@
 #include <nncase/runtime/datatypes.h>
 #include <nncase/runtime/error.h>
 #include <nncase/runtime/result.h>
-#include <span>
 
 BEGIN_NS_NNCASE_KERNELS
 
