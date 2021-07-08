@@ -35,11 +35,11 @@ NNCASE_API result<void> copy(datatype_t type, const gsl::byte *src, gsl::byte *d
     int dims_offset, copy_impl_select impl_select, kernel_context &context) noexcept;
 
 NNCASE_API result<void> gather(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape, const runtime_shape_t &out_shape,
-    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const int32_t *indices, const runtime_shape_t &indices_shape, int32_t axis,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const int32_t *indices, const runtime_shape_t &indices_shape, size_t axis,
     kernel_context &context = default_kernel_context()) noexcept;
 
 NNCASE_API result<void> gather_nd(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape, const runtime_shape_t &out_shape,
-    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const int32_t *indices, const runtime_shape_t &indices_shape, int32_t batch_dims,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const int32_t *indices, const runtime_shape_t &indices_shape, size_t batch_dims,
     kernel_context &context = default_kernel_context()) noexcept;
 
 NNCASE_API result<void> slice(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape,

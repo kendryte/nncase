@@ -26,7 +26,7 @@ namespace
 {
 template <class T>
 result<void> gather_nd_impl(const T *input, T *output, const runtime_shape_t &in_shape, NNCASE_UNUSED const runtime_shape_t &out_shape,
-    const runtime_shape_t &in_strides, NNCASE_UNUSED const runtime_shape_t &out_strides, const int32_t *indices, const runtime_shape_t &indices_shape, int32_t batch_dims,
+    const runtime_shape_t &in_strides, NNCASE_UNUSED const runtime_shape_t &out_strides, const int32_t *indices, const runtime_shape_t &indices_shape, size_t batch_dims,
     kernel_context &context) noexcept
 {
     auto last_indices_index = indices_shape.size() - 1;
@@ -72,7 +72,7 @@ result<void> gather_nd_impl(const T *input, T *output, const runtime_shape_t &in
         return gather_nd_impl(reinterpret_cast<const type *>(input), reinterpret_cast<type *>(output), in_shape, out_shape, in_strides, out_strides, indices, indices_shape, batch_dims, context);
 
 result<void> optimized::gather_nd(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape, const runtime_shape_t &out_shape,
-    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const int32_t *indices, const runtime_shape_t &indices_shape, int32_t batch_dims, kernel_context &context) noexcept
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const int32_t *indices, const runtime_shape_t &indices_shape, size_t batch_dims, kernel_context &context) noexcept
 {
     TYPE_IMPL_SELECT(type, GATHER_ND_IMPL);
 }

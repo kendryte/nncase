@@ -26,7 +26,7 @@ namespace
 {
 template <class T>
 result<void> gather_impl(const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &out_shape,
-    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const int32_t *indices, const runtime_shape_t &indices_shape, int32_t axis,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const int32_t *indices, const runtime_shape_t &indices_shape, size_t axis,
     NNCASE_UNUSED kernel_context &context) noexcept
 {
     return apply(out_shape, [&](const runtime_shape_t &out_index) -> result<void> {
@@ -34,7 +34,7 @@ result<void> gather_impl(const T *input, T *output, const runtime_shape_t &in_sh
         // [out_index.begin(), out_index.begin() + axis]
         runtime_shape_t in_index(in_shape.size());
         size_t i_index = 0;
-        for (; i_index < axis; ++i_index)
+        for (; i_index < static_cast<size_t>(axis); ++i_index)
         {
             in_index[i_index] = out_index[i_index];
         }
@@ -61,7 +61,8 @@ result<void> gather_impl(const T *input, T *output, const runtime_shape_t &in_sh
     case size:                  \
         return gather_impl(reinterpret_cast<const type *>(input), reinterpret_cast<type *>(output), in_shape, out_shape, in_strides, out_strides, indices, indices_shape, axis, context);
 
-result<void> reference::gather(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape, const runtime_shape_t &out_shape, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const int32_t *indices, const runtime_shape_t &indices_shape, int32_t axis, kernel_context &context) noexcept
+result<void> reference::gather(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape, const runtime_shape_t &out_shape,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const int32_t *indices, const runtime_shape_t &indices_shape, size_t axis, kernel_context &context) noexcept
 {
     TYPE_IMPL_SELECT(type, GATHER_IMPL);
 }
