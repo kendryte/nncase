@@ -34,9 +34,10 @@ DEFINE_TFLITE_LOWER(GATHER_ND)
 
     const auto in_type = to_data_type(input.type());
     const auto indices_type = to_data_type(indices.type());
+    auto ga = graph_.emplace<gather_nd>(in_type, in_shape, indices_shape, out_shape, 0);
+    ga->name(get_tensor(op.outputs(), 0).name()->string_view());
     if(indices_type != dt_int32)
     {
-        auto ga = graph_.emplace<gather_nd>(in_type, in_shape, indices_shape, out_shape, 0);
         auto ct = graph_.emplace<convert>(indices_type, indices_shape, dt_int32);
         ga->indices().connect(ct->output());
         link_input_tensor(&ga->input(), op.inputs()->Get(0));
@@ -45,9 +46,6 @@ DEFINE_TFLITE_LOWER(GATHER_ND)
     }
     else
     {
-        auto ga = graph_.emplace<gather_nd>(in_type, in_shape, indices_shape, out_shape, 0);
-        ga->name(get_tensor(op.outputs(), 0).name()->string_view());
-
         link_input_tensor(&ga->input(), op.inputs()->Get(0));
         link_input_tensor(&ga->indices(), op.inputs()->Get(1));
         link_output_tensor(op.outputs()->Get(0), &ga->output());

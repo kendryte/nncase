@@ -19,35 +19,34 @@ import tensorflow as tf
 import numpy as np
 from test_runner import TfliteTestRunner
 
-def _make_module(in_shape, indice, axis):
+def _make_module(in_shape, indice, axis, batch_dims):
     class GatherModule(tf.Module):
         def __init__(self):
             super(GatherModule).__init__()
 
         @tf.function(input_signature=[tf.TensorSpec(in_shape, tf.float32)])
         def __call__(self, x):
-            return tf.gather(x, np.array(indice, dtype=np.int64), axis=axis, batch_dims=0)
+            return tf.gather(x, indice, axis=axis, batch_dims=batch_dims)
     return GatherModule()
 
 
-in_shape_indice_axis = [
-    ([2, 3, 5, 7], [[1, 1], [1, 2]], -1),
-    ([2, 3, 5, 7], [[1, 1], [1, 2]], 2),
-    ([11], [1, 3, 10, 0, 2], 0),
-    ([11], [[2, 4], [1, 3]], 0),
-    ([7, 5], [1, 3], 0),
-    ([7, 5], [[1, 4, 3]], 1),
-    ([2, 3, 5], [1, 0, 1], 0),
-    ([2, 3, 5], [[2, 1], [1, 1], [1, 2]], 1),
-    ([2, 3, 5], [2, 4, 1], 2),
-    ([4, 5, 8, 3], [1, 0, 2], 1),
-    ([4, 8, 5, 3], [[1, 2], [3, 1]], 2),
-    ([4, 6, 5, 7], [[[1], [2]], [[3], [1]]], 3)
+in_shape_indice_axis_batch_dims = [
+    ([11], [1, 3, 10, 0, 2], 0, 0),
+    ([11], [[2, 4], [1, 3]], 0, 0),
+    ([7, 5], [1, 3], 0, 0),
+    ([7, 5], [[1, 4, 3]], 1, 0),
+    ([2, 3, 5], [1, 0, 1], 0, 0),
+    ([2, 3, 5], [[2, 1], [1, 1], [1, 2]], 1, 0),
+    ([2, 3, 5], [2, 4, 1], 2, 0),
+    ([4, 5, 8, 3], [1, 0, 2], 1, 0),
+    ([2, 3, 4, 7], [[1, 1], [1, 2]], 2, 0),
+    ([4, 6, 5, 7], [[[1], [2]], [[3], [1]]], 3, 0),
+    ([2, 3, 4, 7], [[1, 1], [1, 2]], -1, 0),
 ]
 
-@pytest.mark.parametrize('in_shape,indice,axis', in_shape_indice_axis)
-def test_gather(in_shape, indice, axis, request):
-    module = _make_module(in_shape, indice, axis)
+@pytest.mark.parametrize('in_shape,indice,axis,batch_dims', in_shape_indice_axis_batch_dims)
+def test_gather(in_shape, indice, axis, batch_dims, request):
+    module = _make_module(in_shape, indice, axis, batch_dims)
     runner = TfliteTestRunner(request.node.name)
     model_file = runner.from_tensorflow(module)
     runner.run(model_file)

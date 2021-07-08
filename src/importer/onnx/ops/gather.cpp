@@ -45,10 +45,10 @@ void onnx_importer::convert_op_Gather(const NodeProto &node)
     {
         axis = static_cast<int32_t>(input_shape.size()) + axis;
     }
-    
+
+    auto ga = graph_.emplace<gather>(input_type, input_shape, indices_shape, out_shape, axis);
     if (input_type != dt_int32)
     {
-        auto ga = graph_.emplace<gather>(input_type, input_shape, indices_shape, out_shape, axis);
         auto ct = graph_.emplace<convert>(get_datatype(indices).value(), indices_shape, dt_int32);
         ga->indices().connect(ct->output());
         input_tensors_.emplace(&ga->input(), input);
@@ -57,7 +57,6 @@ void onnx_importer::convert_op_Gather(const NodeProto &node)
     }
     else
     {
-        auto ga = graph_.emplace<gather>(input_type, input_shape, indices_shape, out_shape, axis);
         input_tensors_.emplace(&ga->input(), input);
         input_tensors_.emplace(&ga->indices(), indices);
         output_tensors_.emplace(output, &ga->output());

@@ -26,7 +26,7 @@ namespace
 {
 template <class T>
 result<void> gather_impl(const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &out_shape,
-                         const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const int32_t *indices, const runtime_shape_t &indices_shape, int32_t axis,
+                         NNCASE_UNUSED const runtime_shape_t &in_strides, NNCASE_UNUSED const runtime_shape_t &out_strides, const int32_t *indices, const runtime_shape_t &indices_shape, int32_t axis,
                          kernel_context &context) noexcept
 {
     auto outer_count = std::accumulate(in_shape.begin(), in_shape.begin() + axis, 1, std::multiplies<size_t>{});

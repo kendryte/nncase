@@ -32,6 +32,10 @@ DEFINE_TFLITE_LOWER(GATHER)
 
     auto &options = *op.builtin_options_as_GatherOptions();
 
+    if(options.batch_dims() != 0)
+    {
+        throw std::runtime_error("Unsupported batch_dims, only supports batch_dims=0");
+    }
     const auto in_type = to_data_type(input.type());
     const auto indices_type = to_data_type(indices.type());
     auto axis = options.axis();
@@ -39,22 +43,21 @@ DEFINE_TFLITE_LOWER(GATHER)
     {
         axis = axis + static_cast<int32_t>(in_shape.size());
     }
+    gather *ga;
     if(indices_type != dt_int32)
     {
-        auto ga = graph_.emplace<gather>(in_type, in_shape, indices_shape, out_shape, axis);
+        ga = graph_.emplace<gather>(in_type, in_shape, indices_shape, out_shape, axis);
         auto ct = graph_.emplace<convert>(indices_type, indices_shape, dt_int32);
         ga->indices().connect(ct->output());
-        link_input_tensor(&ga->input(), op.inputs()->Get(0));
         link_input_tensor(&ct->input(), op.inputs()->Get(1));
-        link_output_tensor(op.outputs()->Get(0), &ga->output());
     }
     else
     {
-        auto ga = graph_.emplace<gather>(in_type, in_shape, indices_shape, out_shape, axis);
-        ga->name(get_tensor(op.outputs(), 0).name()->string_view());
+        ga = graph_.emplace<gather>(in_type, in_shape, indices_shape, out_shape, axis);
 
-        link_input_tensor(&ga->input(), op.inputs()->Get(0));
         link_input_tensor(&ga->indices(), op.inputs()->Get(1));
-        link_output_tensor(op.outputs()->Get(0), &ga->output());
     }
+    link_input_tensor(&ga->input(), op.inputs()->Get(0));
+    ga->name(get_tensor(op.outputs(), 0).name()->string_view());
+    link_output_tensor(op.outputs()->Get(0), &ga->output());
 }

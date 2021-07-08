@@ -26,7 +26,7 @@ namespace
 {
 template <class T>
 result<void> gather_nd_impl(const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &out_shape,
-                            const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const int32_t *indices, const runtime_shape_t &indices_shape, int32_t batch_dims,
+                            const runtime_shape_t &in_strides, NNCASE_UNUSED const runtime_shape_t &out_strides, const int32_t *indices, const runtime_shape_t &indices_shape, int32_t batch_dims,
                             kernel_context &context) noexcept
 {
     auto last_indices_index = indices_shape.size() - 1;
@@ -36,30 +36,33 @@ result<void> gather_nd_impl(const T *input, T *output, const runtime_shape_t &in
     auto block_size = std::accumulate(in_shape.begin() + indices_shape[last_indices_index] + batch_dims, in_shape.end(), 1, std::multiplies<size_t>{});
 
 
-    auto *out_ptr = output;
-    auto *in_ptr = input;
-    auto *indices_ptr = indices;
     auto batch_size = std::accumulate(in_shape.begin(), in_shape.begin() + batch_dims, 1, std::multiplies<size_t>{});
 
+    auto input_batch_block_size = std::accumulate(in_shape.begin() + batch_dims, in_shape.end(), 1, std::multiplies<size_t>{});
+    auto output_batch_block_size = std::accumulate(out_shape.begin() + batch_dims, out_shape.end(), 1, std::multiplies<size_t>{});
+    auto indices_batch_block_size = std::accumulate(indices_shape.begin() + batch_dims, indices_shape.end(), 1, std::multiplies<size_t>{});
     for(size_t i = 0; i < batch_size; ++i)
     {
+#ifdef NNCASE_OPENMP
+#pragma omp parallel for num_threads(context.num_threads)
+#endif
         for(size_t j = 0; j < indices_block_count; ++j)
         {
-            auto *batch_begin_input = in_ptr;
+            const auto *indices_ptr = indices + j * indices_list_size;
+            auto *out_ptr = output + j * block_size;
+            auto *batch_begin_input = input;
             // set batch_dims value used for select input
 
             // get offset
             for(size_t k = 0; k < indices_list_size; ++k)
             {
-                batch_begin_input += indices[k] * in_strides[k + batch_dims];
+                batch_begin_input += indices_ptr[k] * in_strides[k + batch_dims];
             }
             memcpy(out_ptr, batch_begin_input, block_size * sizeof(T));
-            out_ptr += block_size;
-            indices += indices_list_size;
         }
-        in_ptr += std::accumulate(in_shape.begin() + batch_dims, in_shape.end(), 1, std::multiplies<size_t>{});
-        // output += i * std::accumulate(out_shape.begin() + batch_dims, out_shape.end(), 1, std::multiplies<size_t>{});
-        // indices += i * std::accumulate(indices_shape.begin() + batch_dims, indices_shape.end(), 1, std::multiplies<size_t>{});
+        input += input_batch_block_size;
+        output += output_batch_block_size;
+        indices += indices_batch_block_size;
     }
     return ok();
 }

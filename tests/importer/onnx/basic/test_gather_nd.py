@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""System test: test gather"""
+"""System test: test gather nd"""
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
 
 import pytest
@@ -52,11 +52,20 @@ def _make_module(in_shape, indices, batch_dims):
     return helper.make_model(graph_def, producer_name='kendryte')
 
 in_shapes_indices_dim = [
-    ([2, 2, 2], [[0, 1], [1, 0]], 0),
-    ([2, 2, 2], [[1], [0]], 1),
+    ([11], [[0], [7], [5]], 0),
+    ([3, 5], [[[0, 2], [0, 4]]], 0),
+    ([3, 5], [[1], [4], [3]], 1),
+    ([2, 3, 1], [[0], [1]], 0),
+    ([2, 3, 1], [[[0], [0], [0]], [[0], [0], [0]]], 0),
+    ([5, 7, 5], [1, 4, 3], 0),
+    ([2, 3, 5], [[0, 1], [1, 0]], 0),
+    ([2, 3, 5], [[[4], [3], [0]], [[2], [1], [0]]], 2),
+    ([5, 4, 3, 2], [[1, 0, 2], [1, 2, 2]], 0),
+    ([5, 5, 7, 7], [[1, 2, 3], [1, 2, 3]], 0),
+    ([5, 5, 7, 7], [[1, 2, 3, 1], [1, 2, 3, 1]], 0),
     ([5, 4, 3, 2], [[1, 0, 2], [1, 2, 2]], 0),
     ([2, 4, 3, 5], [[1, 0, 2], [1, 2, 2]], 1),
-    ([2, 3, 3, 5], [[[2, 1], [0, 1], [1, 0]], [[0, 1], [2, 2], [1, 1]]], 2)
+    ([2, 3, 3, 5], [[[2, 1], [0, 1], [1, 0]], [[0, 1], [2, 2], [1, 1]]], 2),
 ]
 
 @pytest.mark.parametrize('in_shape,indices,dim', in_shapes_indices_dim)
