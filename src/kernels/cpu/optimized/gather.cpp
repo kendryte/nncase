@@ -27,7 +27,7 @@ namespace
 template <class T>
 result<void> gather_impl(const T *input, T *output, const runtime_shape_t &in_shape, NNCASE_UNUSED const runtime_shape_t &out_shape,
     NNCASE_UNUSED const runtime_shape_t &in_strides, NNCASE_UNUSED const runtime_shape_t &out_strides, const int32_t *indices, const runtime_shape_t &indices_shape, size_t axis,
-    kernel_context &context) noexcept
+    NNCASE_UNUSED kernel_context &context) noexcept
 {
     auto outer_count = std::accumulate(in_shape.begin(), in_shape.begin() + axis, 1, std::multiplies<size_t> {});
     auto indices_count = compute_size(indices_shape);
@@ -57,7 +57,8 @@ result<void> gather_impl(const T *input, T *output, const runtime_shape_t &in_sh
     case size:                  \
         return gather_impl(reinterpret_cast<const type *>(input), reinterpret_cast<type *>(output), in_shape, out_shape, in_strides, out_strides, indices, indices_shape, axis, context);
 
-result<void> optimized::gather(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape, const runtime_shape_t &out_shape, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const int32_t *indices, const runtime_shape_t &indices_shape, size_t axis, kernel_context &context) noexcept
+result<void> optimized::gather(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape, const runtime_shape_t &out_shape,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const int32_t *indices, const runtime_shape_t &indices_shape, size_t axis, kernel_context &context) noexcept
 {
     TYPE_IMPL_SELECT(type, GATHER_IMPL);
 }
