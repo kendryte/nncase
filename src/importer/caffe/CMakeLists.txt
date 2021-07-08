@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.8)
 
-execute_process(COMMAND ${protobuf_LIB_DIRS}/../bin/protoc --cpp_out ${CMAKE_CURRENT_SOURCE_DIR} caffe.proto --proto_path ${CMAKE_CURRENT_SOURCE_DIR})
+protobuf_generate_cpp(PROTO_SRCS PROTO_HDRS caffe.proto)
 
 set(SRCS caffe.pb.cc 
         caffe_importer.cpp

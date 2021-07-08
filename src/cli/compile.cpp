@@ -107,7 +107,7 @@ void compile_command::run()
     {
         auto file_data = read_file(input_filename_);
         auto input_prototxt = read_file(input_prototxt_);
-        compiler->import_caffe(file_data, input_prototxt, i_options);
+        compiler->import_caffe(file_data, input_prototxt);
     }
     else
     {

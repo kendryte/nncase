@@ -163,7 +163,7 @@ void lstm_transform::process(transform_context &context)
     auto h_ = &h_0->output();
 
     std::vector<shape_t> lstm_h_s;
-    for (int i = 0; i < (int)output.shape()[0]; i++)
+    for (size_t i = 0; i < (size_t)output.shape()[0]; i++)
     {
         lstm_h_s.push_back(h_0->output().shape());
     }
@@ -174,7 +174,7 @@ void lstm_transform::process(transform_context &context)
     std::vector<float> zero(tp_whc->output().shape()[1], 0.f);
     auto zero_constant = context.graph.emplace<constant>(dt_float32, shape_t { tp_whc->output().shape()[1] }, zero);
 
-    for (int32_t i = 0; i < (int32_t)(bitcast_wxc_post->output().shape()[0]); i++)
+    for (size_t i = 0; i < (size_t)(bitcast_wxc_post->output().shape()[0]); i++)
     {
         std::vector<float> cont_data((int)bitcast_wxc_post->output().shape()[1], (i == 0) ? 0.f : 1.f);
         auto cont_ = context.graph.emplace<constant>(dt_float32, shape_t { 1, 1 }, cont_data);
@@ -201,7 +201,7 @@ void lstm_transform::process(transform_context &context)
 
         //slice w_xc_x
         auto w_xc_x = context.graph.emplace<slice>(bitcast_wxc_post->output().type(), bitcast_wxc_post->output().shape(),
-            axis_t { i, 0, 0 }, axis_t { i + 1, (int32_t)bitcast_wxc_post->output().shape()[1], (int32_t)bitcast_wxc_post->output().shape()[2] });
+            axis_t { (int32_t)i, 0, 0 }, axis_t { (int32_t)i + 1, (int32_t)bitcast_wxc_post->output().shape()[1], (int32_t)bitcast_wxc_post->output().shape()[2] });
         w_xc_x->name(old_lstm.name() + "/w_xc_x_" + std::to_string(i));
         w_xc_x->input().connect(bitcast_wxc_post->output());
 

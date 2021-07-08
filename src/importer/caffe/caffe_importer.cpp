@@ -29,7 +29,7 @@ using namespace nncase::ir;
 using namespace caffe;
 using namespace std::string_view_literals;
 
-caffe_importer::caffe_importer(std::span<const uint8_t> model, [[maybe_unused]]std::span<const uint8_t> prototxt, ir::graph &graph)
+caffe_importer::caffe_importer(std::span<const uint8_t> model, std::span<const uint8_t> prototxt, ir::graph &graph)
     : graph_(graph)
 {
     GOOGLE_PROTOBUF_VERIFY_VERSION;
@@ -38,16 +38,17 @@ caffe_importer::caffe_importer(std::span<const uint8_t> model, [[maybe_unused]]s
         throw std::runtime_error("Invalid Caffe model");
 
     caffe::NetParameter proto;
-    std::string str(prototxt.data(), prototxt.data() + prototxt.size_bytes());
-    bool s0 = google::protobuf::TextFormat::ParseFromString(str, &proto);
-    if (!s0)
+    google::protobuf::io::ArrayInputStream input_stream(prototxt.data(), static_cast<int>(prototxt.size_bytes()));
+    bool success = google::protobuf::TextFormat::Parse(&input_stream, &proto);
+
+    if (!success)
     {
         throw std::runtime_error("read prototxt failed");
     }
     prototxt_ = proto;
 }
 
-void caffe_importer::import([[maybe_unused]]const struct import_options &options)
+void caffe_importer::import()
 {
     for (int i = 0; i < prototxt_.layer_size(); i++)
         convert_op(prototxt_.layer(i), model_);
@@ -92,10 +93,3 @@ void caffe_importer::convert_op(const LayerParameter &op, caffe::NetParameter ca
 
     throw std::runtime_error("Not supported Caffe opcode: " + type);
 }
-
-// graph nncase::importer::import_caffe(xtl::span<const uint8_t> model)
-// {
-//     graph graph;
-//     caffe_importer(model, graph).import();
-//     return graph;
-// }
