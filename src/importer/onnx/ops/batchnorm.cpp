@@ -26,18 +26,6 @@ using namespace nncase::importer;
 using namespace nncase::ir;
 using namespace onnx;
 
-namespace
-{
-shape_t broadcast_shape(const shape_t &v_shape, const shape_t &input_shape) noexcept
-{
-    shape_t result { v_shape };
-    for (size_t i = v_shape.size() + 1; i < input_shape.size(); ++i)
-        result.push_back(1);
-
-    return result;
-}
-}
-
 void onnx_importer::convert_op_BatchNormalization(const NodeProto &node)
 {
     assert(node.input().size() == 5);

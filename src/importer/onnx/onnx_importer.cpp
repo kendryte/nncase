@@ -779,3 +779,12 @@ std::vector<padding> onnx_importer::parse_padding(const axis_t &padding_value)
 
     return result;
 }
+
+shape_t onnx_importer::broadcast_shape(const shape_t &v_shape, const shape_t &input_shape) noexcept
+{
+    shape_t result { v_shape };
+    for (size_t i = v_shape.size() + 1; i < input_shape.size(); ++i)
+        result.push_back(1);
+
+    return result;
+}
