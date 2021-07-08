@@ -30,8 +30,6 @@ DEFINE_TFLITE_LOWER(GATHER_ND)
     auto indices_shape = get_shape(indices.shape());
     auto out_shape = get_shape(output.shape());
 
-    auto &options = *op.builtin_options_as_GatherNdOptions();
-
     const auto in_type = to_data_type(input.type());
     const auto indices_type = to_data_type(indices.type());
     auto ga = graph_.emplace<gather_nd>(in_type, in_shape, indices_shape, out_shape, 0);

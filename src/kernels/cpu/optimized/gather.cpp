@@ -25,22 +25,22 @@ using namespace nncase::kernels::cpu::optimized;
 namespace
 {
 template <class T>
-result<void> gather_impl(const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &out_shape,
-                         NNCASE_UNUSED const runtime_shape_t &in_strides, NNCASE_UNUSED const runtime_shape_t &out_strides, const int32_t *indices, const runtime_shape_t &indices_shape, int32_t axis,
-                         kernel_context &context) noexcept
+result<void> gather_impl(const T *input, T *output, const runtime_shape_t &in_shape, NNCASE_UNUSED const runtime_shape_t &out_shape,
+    NNCASE_UNUSED const runtime_shape_t &in_strides, NNCASE_UNUSED const runtime_shape_t &out_strides, const int32_t *indices, const runtime_shape_t &indices_shape, int32_t axis,
+    kernel_context &context) noexcept
 {
-    auto outer_count = std::accumulate(in_shape.begin(), in_shape.begin() + axis, 1, std::multiplies<size_t>{});
+    auto outer_count = std::accumulate(in_shape.begin(), in_shape.begin() + axis, 1, std::multiplies<size_t> {});
     auto indices_count = compute_size(indices_shape);
-    auto block_size = std::accumulate(in_shape.begin() + axis + 1, in_shape.end(), 1, std::multiplies<size_t>{});
+    auto block_size = std::accumulate(in_shape.begin() + axis + 1, in_shape.end(), 1, std::multiplies<size_t> {});
 
     auto *in_ptr = input;
     auto *out_ptr = output;
-    for(size_t o = 0; o < outer_count; ++o)
+    for (size_t o = 0; o < outer_count; ++o)
     {
 #ifdef NNCASE_OPENMP
 #pragma omp parallel for num_threads(context.num_threads)
 #endif
-        for(size_t i = 0; i < indices_count; ++i)
+        for (size_t i = 0; i < indices_count; ++i)
         {
             auto *o_ptr = out_ptr + i * block_size;
             auto indices_ptr = indices[i];

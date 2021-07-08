@@ -27,7 +27,7 @@ namespace
 template <class T>
 result<void> gather_nd_impl(const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &out_shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const int32_t *indices, const runtime_shape_t &indices_shape, int32_t batch_dims,
-    kernel_context &context) noexcept
+    NNCASE_UNUSED kernel_context &context) noexcept
 {
     return apply(out_shape, [&](const runtime_shape_t &out_index) -> result<void> {
         size_t last_indices_index = indices_shape.size() - 1;
