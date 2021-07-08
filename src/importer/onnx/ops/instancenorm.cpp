@@ -1,4 +1,4 @@
-/* Copyright 2020 Alexey Chernov <4ernov@gmail.com>
+/* Copyright 2019-2021 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,10 +17,10 @@
 #include <cassert>
 #include <nncase/ir/graph.h>
 #include <nncase/ir/ops/binary.h>
-#include <nncase/ir/ops/constant.h>
 #include <nncase/ir/ops/bitcast.h>
-#include <nncase/ir/ops/unary.h>
+#include <nncase/ir/ops/constant.h>
 #include <nncase/ir/ops/reduce.h>
+#include <nncase/ir/ops/unary.h>
 
 using namespace nncase;
 using namespace nncase::importer;
@@ -107,3 +107,4 @@ void onnx_importer::convert_op_InstanceNormalization(const NodeProto &node)
     input_tensors_.emplace(&sub->input_a(), input);
     output_tensors_.emplace(output, &add_bias->output());
 }
+

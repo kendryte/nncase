@@ -25,48 +25,36 @@ def _make_module(in_shape, epsilon):
     input = helper.make_tensor_value_info('input', TensorProto.FLOAT, in_shape)
     output = helper.make_tensor_value_info('output', TensorProto.FLOAT, in_shape)
 
-
     initializers = []
-    scale = helper.make_tensor("scale", TensorProto.FLOAT,
-                            dims=in_shape[1:2],
-                            vals=np.random.randn(in_shape[1],).astype(np.float32).flatten().tolist())
+    scale = helper.make_tensor("scale",
+                               TensorProto.FLOAT,
+                               dims=in_shape[1:2],
+                               vals=np.random.randn(in_shape[1],).astype(np.float32).flatten().tolist())
     initializers.append(scale)
 
-
-    bias = helper.make_tensor("bias", TensorProto.FLOAT,
-                            dims=in_shape[1:2],
-                            vals=np.random.randn(in_shape[1],).astype(np.float32).flatten().tolist())
+    bias = helper.make_tensor("bias",
+                              TensorProto.FLOAT,
+                              dims=in_shape[1:2],
+                              vals=np.random.randn(in_shape[1],).astype(np.float32).flatten().tolist())
     initializers.append(bias)
 
-
     if epsilon is None:
-        node = onnx.helper.make_node(
-            'InstanceNormalization',
-            inputs=['input', 'scale', 'bias'],
-            outputs=['output']
-        )
+        node = onnx.helper.make_node('InstanceNormalization',
+                                     inputs=['input', 'scale', 'bias'],
+                                     outputs=['output'])
     else:
-        node = onnx.helper.make_node(
-            'InstanceNormalization',
-            inputs=['input', 'scale', 'bias'],
-            outputs=['output'],
-            epsilon=epsilon
-        )
+        node = onnx.helper.make_node('InstanceNormalization',
+                                     inputs=['input', 'scale', 'bias'],
+                                     outputs=['output'],
+                                     epsilon=epsilon)
 
-    graph_def = helper.make_graph(
-        [node],
-        'test-model',
-        [input],
-        [output],
-        initializer=initializers
-    )
-
+    graph_def = helper.make_graph([node], 'test-model', [input], [output], initializer=initializers)
     model_def = helper.make_model(graph_def, producer_name='kendryte')
 
     return model_def
 
 in_shapes = [
-    [1, 3, 224, 224]
+    [1, 3, 56, 56]
 ]
 
 epsilons = [
