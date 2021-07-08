@@ -269,6 +269,9 @@ private:
         std::cout << "7.2. Optimize buffer fusion..." << std::endl;
         optimize_buffer_fusion(graph);
 
+        std::cout << "7.3. Optimize target dependent after buffer fusion..." << std::endl;
+        optimize_target_dependent_after_buffer_fusion(graph);
+
         dump_graph(graph, "merge_module_regions");
     }
 
@@ -284,6 +287,16 @@ private:
             pass.emplace<remove_exclusive_copy_to_output_transform>();
             pass.emplace<remove_exclusive_copy_to_concat_transform>();
             pmgr.add_pass(std::move(pass));
+        });
+    }
+
+    void optimize_target_dependent_after_buffer_fusion(ir::graph &graph)
+    {
+        using namespace ir::transforms;
+
+        run_passes("target_dependent_after_buffer_fusion", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr) {
+            target_->register_target_dependent_after_buffer_fusion_passes(module_type, pmgr);
+            pmgr.add_pass<make_bitcast_no_action_pass>();
         });
     }
 
