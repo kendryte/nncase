@@ -31,15 +31,15 @@ result<void> gather_nd_impl(const T *input, T *output, const runtime_shape_t &in
 {
     auto last_indices_index = indices_shape.size() - 1;
     auto indices_list_size = indices_shape[last_indices_index];
-    auto indices_block_count = std::accumulate(indices_shape.begin() + batch_dims, indices_shape.end() - 1, 1, std::multiplies<size_t> {});
+    size_t indices_block_count = std::accumulate(indices_shape.begin() + batch_dims, indices_shape.end() - 1, 1, std::multiplies<size_t> {});
 
-    auto block_size = std::accumulate(in_shape.begin() + indices_shape[last_indices_index] + batch_dims, in_shape.end(), 1, std::multiplies<size_t> {});
+    size_t block_size = std::accumulate(in_shape.begin() + indices_shape[last_indices_index] + batch_dims, in_shape.end(), 1, std::multiplies<size_t> {});
 
-    auto batch_size = std::accumulate(in_shape.begin(), in_shape.begin() + batch_dims, 1, std::multiplies<size_t> {});
+    size_t batch_size = std::accumulate(in_shape.begin(), in_shape.begin() + batch_dims, 1, std::multiplies<size_t> {});
 
-    auto input_batch_block_size = std::accumulate(in_shape.begin() + batch_dims, in_shape.end(), 1, std::multiplies<size_t> {});
-    auto output_batch_block_size = std::accumulate(out_shape.begin() + batch_dims, out_shape.end(), 1, std::multiplies<size_t> {});
-    auto indices_batch_block_size = std::accumulate(indices_shape.begin() + batch_dims, indices_shape.end(), 1, std::multiplies<size_t> {});
+    size_t input_batch_block_size = std::accumulate(in_shape.begin() + batch_dims, in_shape.end(), 1, std::multiplies<size_t> {});
+    size_t output_batch_block_size = std::accumulate(out_shape.begin() + batch_dims, out_shape.end(), 1, std::multiplies<size_t> {});
+    size_t indices_batch_block_size = std::accumulate(indices_shape.begin() + batch_dims, indices_shape.end(), 1, std::multiplies<size_t> {});
     for (size_t i = 0; i < batch_size; ++i)
     {
 #ifdef NNCASE_OPENMP
