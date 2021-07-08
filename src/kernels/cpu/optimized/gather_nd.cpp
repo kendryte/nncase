@@ -27,7 +27,7 @@ namespace
 template <class T>
 result<void> gather_nd_impl(const T *input, T *output, const runtime_shape_t &in_shape, NNCASE_UNUSED const runtime_shape_t &out_shape,
     const runtime_shape_t &in_strides, NNCASE_UNUSED const runtime_shape_t &out_strides, const int32_t *indices, const runtime_shape_t &indices_shape, size_t batch_dims,
-    kernel_context &context) noexcept
+    NNCASE_UNUSED kernel_context &context) noexcept
 {
     auto last_indices_index = indices_shape.size() - 1;
     auto indices_list_size = indices_shape[last_indices_index];
