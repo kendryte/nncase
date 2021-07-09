@@ -1432,10 +1432,6 @@ namespace IsaGen
             [Description("Datatype")]
             public DataType DataType { get; set; }
 
-            [DisplayName("rshape_src")]
-            [Description("Source shape register")]
-            public byte RshapeSrc { get; set; }
-
             [DisplayName("rstride_src")]
             [Description("Source stride register")]
             public byte RstrideSrc { get; set; }
@@ -1443,10 +1439,6 @@ namespace IsaGen
             [DisplayName("rstride_dest")]
             [Description("Dest stride register")]
             public byte RstrideDest { get; set; }
-
-            [DisplayName("rpaddings")]
-            [Description("Paddings register")]
-            public byte Rpaddings { get; set; }
 
             [DisplayName("axis")]
             [Description("Axis")]

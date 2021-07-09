@@ -25,15 +25,18 @@ def onnx_make_tensor(name, type, val):
     return helper.make_tensor(name, type, np.array(val).shape, np.array(val).flatten().tolist())
 
 def get_onehot_shape(indices, axis, depth):
-    indices_shape = np.array(indices).shape
-    return indices_shape[:axis] + depth + indices_shape[axis:]
+    indices_shape = list(np.array(indices).shape)
+    return indices[:axis] + [depth] + indices[axis:]
+    return indices_shape[:axis] + [depth] + indices_shape[axis:]
 
 def _make_module(indices, depth, values, axis):
-    indices = onnx_make_tensor('indices', TensorProto.INT64, indices)
+    out_shape = get_onehot_shape(indices, axis, depth)
+    # indices = onnx_make_tensor('indices', TensorProto.INT64, indices)
+    indices = helper.make_tensor_value_info('indices', TensorProto.INT64, indices)
     depth = onnx_make_tensor('depth', TensorProto.INT64, depth)
     values = onnx_make_tensor('values', TensorProto.INT64, values)
-    output = helper.make_tensor_value_info('output', TensorProto.INT64, get_onehot_shape(indices, axis, depth))
-    initializers = [indices, depth, values]
+    output = helper.make_tensor_value_info('output', TensorProto.INT64, out_shape)
+    initializers = [depth, values]
 
     node = onnx.helper.make_node(
         'OneHot',
@@ -44,7 +47,7 @@ def _make_module(indices, depth, values, axis):
     graph_def = helper.make_graph(
         [node],
         'test-model',
-        [],
+        [indices],
         [output],
         initializer=initializers
     )
@@ -52,12 +55,12 @@ def _make_module(indices, depth, values, axis):
     return helper.make_model(graph_def, producer_name='kendryte')
 
 indices_depth_values_axis = [
-    ([[0, 2, 1], [1, -1, 0]], 3, [0, 9], 0)
+    ([2, 3], 3, [0, 9], 0)
 ]
 
 @pytest.mark.parametrize('indices,depth,values,axis', indices_depth_values_axis)
-def test_onehot(indices, depth, value, axis, request):
-    model_def = _make_module(indices, depth, value, axis)
+def test_onehot(indices, depth, values, axis, request):
+    model_def = _make_module(indices, depth, values, axis)
     runner = OnnxTestRunner(request.node.name)
     model_file = runner.from_onnx_helper(model_def)
     runner.run(model_file)
