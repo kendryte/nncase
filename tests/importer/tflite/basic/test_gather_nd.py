@@ -17,7 +17,7 @@
 import pytest
 import tensorflow as tf
 import numpy as np
-from test_runner import TfliteTestRunner
+from tflite_test_runner import TfliteTestRunner
 
 def _make_module(in_shape, indice, batch_dims):
     class GatherModule(tf.Module):

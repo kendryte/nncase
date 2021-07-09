@@ -19,7 +19,7 @@ import os
 import tensorflow as tf
 import numpy as np
 import sys
-from test_runner import TfliteTestRunner
+from tflite_test_runner import TfliteTestRunner
 
 def _make_module(n, i_channels, i_size, k_size, o_channels, strides, padding, dilations, act):
     class Conv2DActModule(tf.Module):

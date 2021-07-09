@@ -17,7 +17,7 @@ import pytest
 import onnx
 from onnx import helper
 from onnx import AttributeProto, TensorProto, GraphProto
-from test_runner import OnnxTestRunner
+from onnx_test_runner import OnnxTestRunner
 
 def _make_module(in_shape):
     x = helper.make_tensor_value_info('x', TensorProto.FLOAT, in_shape)
