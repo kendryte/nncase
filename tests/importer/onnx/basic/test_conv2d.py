@@ -15,7 +15,7 @@
 
 import pytest
 import torch
-from test_runner import OnnxTestRunner
+from onnx_test_runner import OnnxTestRunner
 
 def _make_module(i_channel, k_size, o_channel, stride, padding, padding_mode, dilation):
 

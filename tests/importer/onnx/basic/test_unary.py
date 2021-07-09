@@ -16,7 +16,7 @@
 import pytest
 import torch
 # import test_util
-from test_runner import OnnxTestRunner
+from onnx_test_runner import OnnxTestRunner
 
 def _make_module():
     class UnaryModule(torch.nn.Module):
