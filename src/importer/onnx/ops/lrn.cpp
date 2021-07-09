@@ -30,19 +30,26 @@ using namespace onnx;
 
 void onnx_importer::convert_op_LRN(const NodeProto &node)
 {
+    const auto &op_name { generate_name(node) };
+
     const std::string &input = node.input()[0];
     const datatype_t input_type = get_datatype(input).value();
     const shape_t &input_shape = get_shape(input);
 
     auto size_value = get_attribute<int>(node, "size").value();
     auto alpha = graph_.emplace<constant>(get_attribute<float>(node, "alpha").value() / size_value);
+    alpha->name(op_name + ".alpha(LRN)");
     auto beta = graph_.emplace<constant>(get_attribute<float>(node, "beta").value());
+    beta->name(op_name + ".beta(LRN)");
     auto bias = graph_.emplace<constant>(get_attribute<float>(node, "bias").value());
+    bias->name(op_name + ".bias(LRN)");
 
     auto square = graph_.emplace<unary>(unary_square, input_shape);
+    square->name(op_name + ".square(LRN)");
 
     std::vector<ir::shape_t> concat_shape(input_shape[1], ir::shape_t { input_shape[0], 1, input_shape[2], input_shape[3] });
     auto con = graph_.emplace<concat>(input_type, concat_shape, 1);
+    con->name(op_name + ".concat(LRN)");
 
     for (size_t i = 0; i < input_shape[1]; i++)
     {
@@ -53,17 +60,23 @@ void onnx_importer::convert_op_LRN(const NodeProto &node)
             axis_t { 0, begin, 0, 0 },
             axis_t { static_cast<int32_t>(input_shape[0]), static_cast<int32_t>(end + 1), static_cast<int32_t>(input_shape[2]), static_cast<int32_t>(input_shape[3]) },
             axis_t { 1, 1, 1, 1 }, 0, 0, 0, 0);
+        sl->name(op_name + ".slice_" + std::to_string(i) + "(LRN)");
         sl->input().connect(square->output());
 
         auto r_sum = graph_.emplace<reduce>(reduce_sum, sl->output().shape(), axis_t { 1 }, 0.f, true);
+        sl->name(op_name + ".reduce_sum_" + std::to_string(i) + "(LRN)");
         r_sum->input().connect(sl->output());
         con->input_at(i).connect(r_sum->output());
     }
 
     auto mul = graph_.emplace<binary>(binary_mul, alpha->output().shape(), con->output().shape(), value_range<float>::full());
+    mul->name(op_name + ".mul(LRN)");
     auto add = graph_.emplace<binary>(binary_add, mul->output().shape(), bias->output().shape(), value_range<float>::full());
+    add->name(op_name + ".add(LRN)");
     auto pow = graph_.emplace<binary>(binary_pow, add->output().shape(), beta->output().shape(), value_range<float>::full());
+    pow->name(op_name + ".pow(LRN)");
     auto div = graph_.emplace<binary>(binary_div, input_shape, pow->output().shape(), value_range<float>::full());
+    div->name(op_name + ".div(LRN)");
 
     mul->input_a().connect(alpha->output());
     mul->input_b().connect(con->output());

@@ -47,6 +47,8 @@ void onnx_importer::convert_op_ReduceSum(const NodeProto &node)
 
 void onnx_importer::convert_reduce(const NodeProto &node, const reduce_op_t reduce_op, const float init_value)
 {
+    const auto &op_name { generate_name(node) };
+
     const auto &input = node.input()[0];
     const auto &output = node.output()[0];
 
@@ -68,6 +70,7 @@ void onnx_importer::convert_reduce(const NodeProto &node, const reduce_op_t redu
         keepdims = static_cast<bool>(keepdims_attr.value());
 
     auto op = graph_.emplace<reduce>(reduce_op, input_shape, std::move(axes), init_value, keepdims);
+    op->name(op_name + '(' + reduce_op_to_string(reduce_op) + ')');
 
     input_tensors_.emplace(&op->input(), input);
     output_tensors_.emplace(output, &op->output());

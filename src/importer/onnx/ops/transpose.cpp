@@ -27,6 +27,8 @@ using namespace onnx;
 
 void onnx_importer::convert_op_Transpose(const NodeProto &node)
 {
+    const auto &op_name { generate_name(node) };
+
     const auto &input = node.input()[0];
     const auto &output = node.output()[0];
 
@@ -42,6 +44,7 @@ void onnx_importer::convert_op_Transpose(const NodeProto &node)
         perm = perm_attr.value();
 
     auto op = graph_.emplace<transpose>(input_type, input_shape, std::move(perm));
+    op->name(op_name + "(Transpose)");
 
     input_tensors_.emplace(&op->input(), input);
     output_tensors_.emplace(output, &op->output());

@@ -32,6 +32,8 @@ void onnx_importer::convert_op_InstanceNormalization(const NodeProto &node)
 {
     assert(node.input().size() == 3);
 
+    const auto &op_name { generate_name(node) };
+
     const auto &input = node.input()[0];
     const auto &scale = node.input()[1];
     const auto &bias = node.input()[2];
@@ -45,6 +47,7 @@ void onnx_importer::convert_op_InstanceNormalization(const NodeProto &node)
     auto scale_shape = get_shape(scale);
     auto scale_new_shape = broadcast_shape(scale_shape, input_shape);
     auto scale_constant = graph_.emplace<constant>(get_datatype<float>(), scale_new_shape, scale_value);
+    scale_constant->name(op_name + ".scale(InstanceNormalization)");
 
     std::vector<float> bias_value;
     auto bias_initializer = get_initializer(bias);
@@ -52,6 +55,7 @@ void onnx_importer::convert_op_InstanceNormalization(const NodeProto &node)
     auto bias_shape = get_shape(bias);
     auto bias_new_shape = broadcast_shape(bias_shape, input_shape);
     auto bias_constant = graph_.emplace<constant>(get_datatype<float>(), bias_new_shape, bias_value);
+    bias_constant->name(op_name + ".bias(InstanceNormalization)");
 
     // mean
     axis_t axes;
@@ -62,27 +66,37 @@ void onnx_importer::convert_op_InstanceNormalization(const NodeProto &node)
     float init_value = 0.f;
     bool keepdims = true;
     auto mean = graph_.emplace<reduce>(reduce_mean, input_shape, axes, init_value, keepdims);
+    mean->name(op_name + ".reduce_mean(InstanceNormalization)");
 
     // x - mean
     auto sub = graph_.emplace<binary>(binary_sub, input_shape, mean->output().shape(), value_range<float>::full());
+    sub->name(op_name + ".sub(InstanceNormalization)");
 
     // scale * (x - mean)
     auto mul = graph_.emplace<binary>(binary_mul, scale_new_shape, sub->output().shape(), value_range<float>::full());
+    mul->name(op_name + ".mul(InstanceNormalization)");
 
     // variance
     auto square = graph_.emplace<unary>(unary_square, sub->output().shape());
+    square->name(op_name + ".square(InstanceNormalization)");
     auto variance = graph_.emplace<reduce>(reduce_mean, square->output().shape(), axes, init_value, keepdims);
+    variance->name(op_name + ".reduce(InstanceNormalization)");
 
     // sqrt(variance + epsilon)
     auto epsilon_attr = get_attribute<float>(node, "epsilon");
     auto epsilon = epsilon_attr ? epsilon_attr.value() : 1e-05f;
     auto eps_constant = graph_.emplace<constant>(epsilon);
+    eps_constant->name(op_name + ".eps(InstanceNormalization)");
     auto add_eps = graph_.emplace<binary>(binary_add, variance->output().shape(), eps_constant->output().shape(), value_range<float>::full());
+    add_eps->name(op_name + ".add(InstanceNormalization)");
     auto sqrt = graph_.emplace<unary>(unary_sqrt, add_eps->output().shape());
+    sqrt->name(op_name + ".sqrt(InstanceNormalization)");
 
     // scale * (x - mean) / sqrt(variance + epsilon) + B
     auto div = graph_.emplace<binary>(binary_div, mul->output().shape(), sqrt->output().shape(), value_range<float>::full());
+    div->name(op_name + ".scale(InstanceNormalization)");
     auto add_bias = graph_.emplace<binary>(binary_add, div->output().shape(), bias_new_shape, value_range<float>::full());
+    add_bias->name(op_name + ".bias(InstanceNormalization)");
 
     sub->input_b().connect(mean->output());
 

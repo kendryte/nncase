@@ -36,6 +36,8 @@ image_resize_mode_t parse_image_resize_mode(const std::string &value) noexcept
 
 void onnx_importer::convert_op_Upsample(const NodeProto &node)
 {
+    const auto &op_name { generate_name(node) };
+
     const auto &input = node.input()[0];
     const auto &output = node.output()[0];
 
@@ -84,6 +86,7 @@ void onnx_importer::convert_op_Upsample(const NodeProto &node)
     new_size[0] = *it;
 
     auto op = graph_.emplace<resize_image>(input_type, mode, input_shape, new_size, align_corners);
+    op->name(op_name + "(Upsample)");
 
     input_tensors_.emplace(&op->input(), input);
     output_tensors_.emplace(output, &op->output());

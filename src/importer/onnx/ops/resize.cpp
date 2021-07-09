@@ -36,6 +36,8 @@ image_resize_mode_t parse_image_resize_mode(const std::string &value) noexcept
 
 void onnx_importer::convert_op_Resize(const NodeProto &node)
 {
+    const auto &op_name { generate_name(node) };
+
     const auto &input = node.input()[0];
     const bool use_version_10 = (node.input().size() == 2) && (get_datatype(node.input()[1]).value() == dt_float32);
     const auto &scale = use_version_10 ? node.input()[1] : node.input()[2];
@@ -100,6 +102,7 @@ void onnx_importer::convert_op_Resize(const NodeProto &node)
     const std::array<int32_t, 2> new_size_array = { new_size[2], new_size[3] };
 
     auto op = graph_.emplace<resize_image>(input_type, mode, input_shape, new_size_array, align_corners, pytorch_half_pixel);
+    op->name(op_name + "(Resize)");
 
     input_tensors_.emplace(&op->input(), input);
     output_tensors_.emplace(output, &op->output());

@@ -25,6 +25,8 @@ using namespace onnx;
 
 void onnx_importer::convert_op_Dropout(const NodeProto &node)
 {
+    const auto &op_name { generate_name(node) };
+
     const auto &input = node.input()[0];
     const auto &output = node.output()[0];
 
@@ -33,6 +35,7 @@ void onnx_importer::convert_op_Dropout(const NodeProto &node)
 
     // Depending on whether it is in test mode or not, the output Y will either be a random dropout, or a simple copy of the input
     auto bc = graph_.emplace<bitcast>(input_type, input_shape, input_shape);
+    bc->name(op_name + "(Dropout)");
     input_tensors_.emplace(&bc->input(), input);
     output_tensors_.emplace(output, &bc->output());
 }
