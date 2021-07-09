@@ -159,6 +159,7 @@ namespace IsaGen
         LOGISTIC,
         LUT1D,
         MATMUL,
+        ONEHOT,
         PAD,
         QUANTIZE,
         REDUCE,
@@ -1418,6 +1419,38 @@ namespace IsaGen
             [DisplayName("table_len")]
             [Description("Table length")]
             public ushort TableLength { get; set; }
+        }
+
+        [DisplayName("TENSOR.ONEHOT")]
+        [Category("Tensor Instructions")]
+        [Description("OneHot")]
+        public class OneHotInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.ONEHOT;
+
+            [DisplayName("datatype")]
+            [Description("Datatype")]
+            public DataType DataType { get; set; }
+
+            [DisplayName("rshape_src")]
+            [Description("Source shape register")]
+            public byte RshapeSrc { get; set; }
+
+            [DisplayName("rstride_src")]
+            [Description("Source stride register")]
+            public byte RstrideSrc { get; set; }
+
+            [DisplayName("rstride_dest")]
+            [Description("Dest stride register")]
+            public byte RstrideDest { get; set; }
+
+            [DisplayName("rpaddings")]
+            [Description("Paddings register")]
+            public byte Rpaddings { get; set; }
+
+            [DisplayName("axis")]
+            [Description("Axis")]
+            public byte Axis { get; set; }
         }
 
         [DisplayName("TENSOR.PAD")]
