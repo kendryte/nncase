@@ -91,8 +91,9 @@ Fuc = {
     'generate_random': generate_random
 }
 
-class TestRunner(metaclass = ABCMeta):
-    def __init__(self, case_name, targets = None) -> None:
+
+class TestRunner(metaclass=ABCMeta):
+    def __init__(self, case_name, targets=None) -> None:
         config_root = os.path.dirname(__file__)
         with open(os.path.join(config_root, 'config.yml'), encoding='utf8') as f:
             cfg = yaml.safe_load(f)
@@ -174,17 +175,17 @@ class TestRunner(metaclass = ABCMeta):
     def run_single(self, cfg, case_dir: str, model_file: str):
         if not self.inputs:
             self.parse_model_input_output(model_file)
-
-        # generate input/calib
         self.generate_data(cfg.generate_inputs, case_dir,
                            self.inputs, self.input_paths, 'input')
         self.generate_data(cfg.generate_calibs, case_dir,
                            self.calibs, self.calib_paths, 'calib')
-
-        # cpu inference
         self.cpu_infer(case_dir, model_file)
+        import_options, compile_options = self.get_compiler_options(cfg, model_file)
+        model_content = self.read_model_file(model_file)
+        self.run_evaluator(cfg, case_dir, import_options, compile_options, model_content)
+        self.run_inference(cfg, case_dir, import_options, compile_options, model_content)
 
-        # nncase coinfiguration
+    def get_compiler_options(self, cfg, model_file):
         import_options = nncase.ImportOptions(**cfg.importer_opt.kwargs)
         if os.path.splitext(model_file)[-1] == ".tflite":
             import_options.input_layout = "NHWC"
@@ -197,11 +198,10 @@ class TestRunner(metaclass = ABCMeta):
         for k, v in cfg.compile_opt.kwargs.items():
             e = '"'
             exec(
-                f'compile_options.{k} = { e + v + e if isinstance(v, str) else v }')
+                f'compile_options.{k} = {e + v + e if isinstance(v, str) else v}')
+        return import_options, compile_options
 
-        model_content = self.read_model_file(model_file)
-
-        # evaluation
+    def run_evaluator(self, cfg, case_dir, import_options, compile_options, model_content):
         names, args = TestRunner.split_value(cfg.eval)
         for combine_args in product(*args):
             dict_args = dict(zip(names, combine_args))
@@ -211,7 +211,7 @@ class TestRunner(metaclass = ABCMeta):
             assert self.compare_results(
                 self.output_paths, eval_output_paths, dict_args)
 
-        # nncase inference
+    def run_inference(self, cfg, case_dir, import_options, compile_options, model_content):
         names, args = TestRunner.split_value(cfg.infer)
         for combine_args in product(*args):
             dict_args = dict(zip(names, combine_args))
@@ -368,9 +368,3 @@ class TestRunner(metaclass = ABCMeta):
                     f.write(result)
                 return False
         return True
-
-
-
-
-
-
