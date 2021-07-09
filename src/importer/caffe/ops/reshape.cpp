@@ -28,7 +28,34 @@ DEFINE_CAFFE_LOWER(Reshape)
     auto &input = *output_tensors_.at(input_name);
     auto &param = op.reshape_param();
 
-    auto rp = graph_.emplace<bitcast>(dt_float32, input.shape(), get_axis(param.shape()));
+    // normalize new shape
+    shape_t normalized_new_shape(get_axis(param.shape()).size());
+    size_t shape_size = 1;
+    std::optional<size_t> non_det_id;
+    for (size_t i = 0; i < get_axis(param.shape()).size(); i++)
+    {
+        auto v = get_axis(param.shape())[i];
+        if (v == -1)
+        {
+            if (non_det_id)
+                throw std::runtime_error("Reshape can only have 1 non-determined dimension at most");
+            non_det_id = i;
+        }
+        else if(v == 0)
+        {
+            shape_size *= input.shape()[i];
+            normalized_new_shape[i] = (size_t)input.shape()[i];
+        }
+        else
+        {
+            shape_size *= v;
+            normalized_new_shape[i] = (size_t)get_axis(param.shape())[i];
+        }
+    }
+    if (non_det_id)
+        normalized_new_shape[*non_det_id] = xt::compute_size(input.shape()) / shape_size;
+
+    auto rp = graph_.emplace<bitcast>(dt_float32, input.shape(), normalized_new_shape);
     rp->name(op.name() + "/bitcast");
 
     input_tensors_.emplace(&rp->input(), input_name);
