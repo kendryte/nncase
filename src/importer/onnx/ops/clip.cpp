@@ -30,12 +30,15 @@ void onnx_importer::convert_op_Clip(const NodeProto &node)
     const auto &input = node.input()[0];
     const auto &output = node.output()[0];
 
+    const auto &op_name { generate_name(node) };
+
     constant *min_op = nullptr;
     std::string input_min;
     if (node.input().size() < 2)
     {
         const auto min_attr = get_attribute<float>(node, "min");
         min_op = graph_.emplace<constant>(min_attr ? min_attr.value() : std::numeric_limits<float>::lowest());
+        min_op->name(op_name + ".min(Clip)");
     }
     else
     {
@@ -48,6 +51,7 @@ void onnx_importer::convert_op_Clip(const NodeProto &node)
     {
         const auto max_attr = get_attribute<float>(node, "max");
         max_op = graph_.emplace<constant>(max_attr ? max_attr.value() : std::numeric_limits<float>::max());
+        max_op->name(op_name + ".max(Clip)");
     }
     else
     {
@@ -57,6 +61,8 @@ void onnx_importer::convert_op_Clip(const NodeProto &node)
     auto op = graph_.emplace<clamp>(get_shape(input),
         min_op ? min_op->output().shape() : get_shape(input_min),
         max_op ? max_op->output().shape() : get_shape(input_max));
+
+    op->name(op_name + ".clamp(Clip)");
 
     input_tensors_.emplace(&op->input(), input);
 

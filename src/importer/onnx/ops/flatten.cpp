@@ -40,6 +40,8 @@ axis_t compose_new_shape(const shape_t &input_shape, const size_t flatten_axis)
 
 void onnx_importer::convert_op_Flatten(const NodeProto &node)
 {
+    const auto &op_name { generate_name(node) };
+
     const auto &input = node.input()[0];
     const auto &output = node.output()[0];
 
@@ -50,6 +52,7 @@ void onnx_importer::convert_op_Flatten(const NodeProto &node)
     const size_t flatten_axis = axis_attr ? real_axis(axis_attr.value(), input_shape.size()) : 1 ;
     const axis_t &new_shape = compose_new_shape(input_shape, flatten_axis);
     auto op = graph_.emplace<bitcast>(input_type, input_shape, new_shape);
+    op->name(op_name + "(Flatten)");
 
     input_tensors_.emplace(&op->input(), input);
     output_tensors_.emplace(output, &op->output());

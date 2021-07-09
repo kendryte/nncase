@@ -86,6 +86,7 @@ void onnx_importer::convert_op_Constant(const NodeProto &node)
     else if (const auto value = get_attribute<float>(node, "value_float"))
     {
         op = graph_.emplace<constant>(value.value());
+        op->name(generate_name(node) + "(Constant)");
     }
     else if (const auto value = get_attribute<std::vector<float>>(node, "value_floats"))
     {
@@ -93,6 +94,7 @@ void onnx_importer::convert_op_Constant(const NodeProto &node)
         std::vector<float> vec { v.begin(), v.end() };
         shape_t shape { 1, v.size() };
         op = graph_.emplace<constant>(dt_float32, shape, vec);
+        op->name(generate_name(node) + "(Constant)");
     }
     else if (const auto value = get_attribute<int>(node, "value_int"))
     {
@@ -104,6 +106,7 @@ void onnx_importer::convert_op_Constant(const NodeProto &node)
         std::vector<uint8_t> vec { v.begin(), v.end() };
         shape_t shape { 1, v.size() };
         op = graph_.emplace<constant>(dt_uint8, shape, vec);
+        op->name(generate_name(node) + "(Constant)");
     }
     else
     {

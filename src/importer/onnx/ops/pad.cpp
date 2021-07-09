@@ -25,6 +25,8 @@ using namespace onnx;
 
 void onnx_importer::convert_op_Pad(const NodeProto &node)
 {
+    const auto &op_name { generate_name(node) };
+
     const auto &input = node.input()[0];
     const auto &output = node.output()[0];
 
@@ -146,6 +148,7 @@ void onnx_importer::convert_op_Pad(const NodeProto &node)
         std::cout << "Warning: non-zero padding value specified, which is not supported by the hardware, it will be ignored" << std::endl;
 
     auto op = graph_.emplace<pad>(input_type, input_shape, new_paddings, mod, std::move(constant));
+    op->name(op_name + "(Pad)");
 
     input_tensors_.emplace(&op->input(), input);
     output_tensors_.emplace(output, &op->output());
