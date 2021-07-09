@@ -101,6 +101,8 @@ namespace nncase::importer
         template <class Cont>
         static xtl::span<const std::uint8_t> span_from(const Cont &data);
 
+        nncase::ir::shape_t broadcast_shape(const nncase::ir::shape_t &v_shape, const nncase::ir::shape_t &input_shape) noexcept;
+
         ir::graph &graph_;
         onnx::ModelProto model_;
 

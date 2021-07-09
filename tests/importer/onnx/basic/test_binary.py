@@ -15,38 +15,61 @@
 
 import pytest
 import torch
+import numpy as np
 from test_runner import OnnxTestRunner
 
-def _make_module():
+
+def _make_module(v_shape):
     class BinaryModule(torch.nn.Module):
         def __init__(self):
             super(BinaryModule, self).__init__()
+            self.v = torch.from_numpy(np.random.rand(*v_shape).astype(np.float32))
 
         def forward(self, x):
-            add = torch.add(x, 6)
-            mul = torch.mul(add, x)
-            sub = torch.sub(mul, x)
-            max = torch.max(sub, x)
-            div = torch.div(max, 2)
-            min = torch.min(div, x)
-            return min
+            outs = []
+            outs.append(torch.add(x, self.v))
+            outs.append(torch.mul(x, self.v))
+            outs.append(torch.sub(x, self.v))
+            outs.append(torch.max(x, self.v))
+            outs.append(torch.div(x, self.v))
+            outs.append(torch.min(x, self.v))
+            return outs
 
     return BinaryModule()
 
-in_shapes = [
+
+lhs_shapes = [
     [3],
     [64, 3],
     [3, 64, 3],
-    [8, 6, 16, 3]
+    [8, 3, 64, 3]
 ]
 
-@pytest.mark.parametrize('in_shape', in_shapes)
-def test_binary(in_shape, request):
-    module = _make_module()
+rhs_shapes = [
+    [1],
+    [3],
+    [1, 3],
+    [64, 1],
+    [64, 3],
+    [3, 64, 1],
+    [3, 64, 3],
+    [8, 3, 64, 1],
+    [8, 3, 64, 3],
+    [8, 3, 1, 3],
+    [8, 1, 64, 3],
+    [1, 3, 64, 1]
+]
+
+
+@pytest.mark.parametrize('lhs_shape', lhs_shapes)
+@pytest.mark.parametrize('rhs_shape', rhs_shapes)
+def test_binary(lhs_shape, rhs_shape, request):
+    module = _make_module(rhs_shape)
 
     runner = OnnxTestRunner(request.node.name)
-    model_file = runner.from_torch(module, in_shape)
+    model_file = runner.from_torch(module, lhs_shape)
     runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_binary.py'])
