@@ -13,14 +13,14 @@
  * limitations under the License.
  */
 #include "../tflite_importer.h"
-#include <nncase/ir/ops/gather.h>
+#include <nncase/ir/ops/gather_nd.h>
 #include <nncase/ir/ops/convert.h>
 
 using namespace nncase;
 using namespace nncase::importer;
 using namespace nncase::ir;
 
-DEFINE_TFLITE_LOWER(GATHER)
+DEFINE_TFLITE_LOWER(GATHER_ND)
 {
     auto &input = get_tensor(op.inputs(), 0);
     auto &indices = get_tensor(op.inputs(), 1);
@@ -30,34 +30,22 @@ DEFINE_TFLITE_LOWER(GATHER)
     auto indices_shape = get_shape(indices.shape());
     auto out_shape = get_shape(output.shape());
 
-    auto &options = *op.builtin_options_as_GatherOptions();
-
-    if(options.batch_dims() != 0)
-    {
-        throw std::runtime_error("Unsupported batch_dims, only supports batch_dims=0");
-    }
     const auto in_type = to_data_type(input.type());
     const auto indices_type = to_data_type(indices.type());
-    auto axis = options.axis();
-    if (axis < 0)
-    {
-        axis = axis + static_cast<int32_t>(in_shape.size());
-    }
-    gather *ga;
+    auto ga = graph_.emplace<gather_nd>(in_type, in_shape, indices_shape, out_shape, 0);
+    ga->name(get_tensor(op.outputs(), 0).name()->string_view());
     if(indices_type != dt_int32)
     {
-        ga = graph_.emplace<gather>(in_type, in_shape, indices_shape, out_shape, axis);
         auto ct = graph_.emplace<convert>(indices_type, indices_shape, dt_int32);
         ga->indices().connect(ct->output());
+        link_input_tensor(&ga->input(), op.inputs()->Get(0));
         link_input_tensor(&ct->input(), op.inputs()->Get(1));
+        link_output_tensor(op.outputs()->Get(0), &ga->output());
     }
     else
     {
-        ga = graph_.emplace<gather>(in_type, in_shape, indices_shape, out_shape, axis);
-
+        link_input_tensor(&ga->input(), op.inputs()->Get(0));
         link_input_tensor(&ga->indices(), op.inputs()->Get(1));
+        link_output_tensor(op.outputs()->Get(0), &ga->output());
     }
-    link_input_tensor(&ga->input(), op.inputs()->Get(0));
-    ga->name(get_tensor(op.outputs(), 0).name()->string_view());
-    link_output_tensor(op.outputs()->Get(0), &ga->output());
 }

@@ -16,6 +16,8 @@ set(SRCS runtime_module.cpp
          ops/tensor.convert.cpp
          ops/tensor.copy.cpp
          ops/tensor.dequantize.cpp
+         ops/tensor.gather.cpp
+         ops/tensor.gather_nd.cpp
          ops/tensor.lut1d.cpp
          ops/tensor.pad.cpp
          ops/tensor.quantize.cpp
