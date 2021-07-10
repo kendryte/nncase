@@ -99,10 +99,6 @@ result<std::unique_ptr<runtime_module>> runtime_module::create(const module_type
 {
     if (!strncmp(type.data(), stackvm::stackvm_module_type.data(), MAX_MODULE_TYPE_LENGTH))
         return stackvm::create_stackvm_runtime_module();
-#if NNCASE_VULKAN
-    if (!strncmp(type.data(), vulkan::vulkan_module_type.data(), MAX_MODULE_TYPE_LENGTH))
-        return vulkan::create_vulkan_runtime_module();
-#endif
 
     result<std::unique_ptr<runtime_module>> rt_module(nncase_errc::runtime_not_found);
     try_var(activator, find_runtime_activator(type));
