@@ -13,12 +13,14 @@
  * limitations under the License.
  */
 #pragma once
-#include "../runtime_module.h"
+#include <nncase/runtime/compiler_defs.h>
 
-BEGIN_NS_NNCASE_RT_MODULE(stackvm)
-
-NNCASE_INLINE_VAR constexpr module_type_t stackvm_module_type = to_module_type("stackvm");
-
-NNCASE_API result<std::unique_ptr<runtime_module>> create_stackvm_runtime_module();
-
-END_NS_NNCASE_RT_MODULE
+#if defined(_MSC_VER)
+#ifdef NNCASE_MODULES_VULKAN_DLL
+#define NNCASE_MODULES_VULKAN_API __declspec(dllexport)
+#else
+#define NNCASE_MODULES_VULKAN_API __declspec(dllimport)
+#endif
+#else
+#define NNCASE_MODULES_VULKAN_API
+#endif

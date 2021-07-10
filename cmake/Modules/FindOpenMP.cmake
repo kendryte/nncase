@@ -92,7 +92,7 @@ should use the ``OpenMP_<lang>_INCLUDE_DIRS`` _output_ variable if it needs
 to know what include directories are needed.
 #]=======================================================================]
 
-cmake_minimum_required(VERSION 3.20)
+cmake_minimum_required(VERSION 3.17)
 cmake_policy(PUSH)
 cmake_policy(SET CMP0012 NEW) # if() recognizes numbers and booleans
 cmake_policy(SET CMP0054 NEW) # if() quoted variables not dereferenced
