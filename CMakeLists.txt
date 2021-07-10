@@ -29,6 +29,12 @@ project(nncase
   VERSION ${NNCASE_VERSION}
   LANGUAGES C CXX ASM)
 
+option(ENABLE_OPENMP "OpenMP support" ON)
+option(ENABLE_VULKAN "Vulkan support" ON)
+option(BUILD_PYTHON_BINDING "Build python binding" ON)
+option(BUILD_TESTING "Build test programs" OFF)
+
+include(cmake/configure-conan.cmake)
 include(cmake/conan.cmake)
 
 if(NOT CONAN_EXPORTED) 
@@ -36,55 +42,24 @@ if(NOT CONAN_EXPORTED)
     conan_add_remote(NAME sunnycase URL https://conan.sunnycase.moe INDEX 0)
 endif()
 
-option(ENABLE_OPENMP "openmp support" ON)
-option(ENABLE_HALIDE "halide kernels support" ON)
-option(BUILD_TESTING "Build test programs" OFF)
-
-if (ENABLE_OPENMP)
-    find_package(OpenMP COMPONENTS CXX REQUIRED)
-    message("Enable OpenMP")
-endif ()
-
-if(BUILD_TESTING)
-    list(APPEND CONANOPT "tests=True")
-endif()
-
-
-if (BUILDING_RUNTIME)
-    if(CONAN_EXPORTED) # in conan local cache
-        message(STATUS "Standard Conan Installation")
-        include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-        conan_basic_setup() # NOTE need manmul set cppstd in conanfile.py
-    else() # in user space
-        message(STATUS "Auto Cmake Conan Installation")
-        include(${CMAKE_SOURCE_DIR}/cmake/conan.cmake)
-        conan_cmake_run(CONANFILE conanfile-runtime.txt
-                        BASIC_SETUP
-                        SETTINGS compiler.cppstd=14
-                        BUILD missing)
-    endif()
-else()
-    if(CONAN_EXPORTED) # in conan local cache
-        message(STATUS "Standard Conan Installation")
-        include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
-        conan_basic_setup() # NOTE need manmul set cppstd in conanfile.py
-    else() # in user space
-        message(STATUS "Auto Cmake Conan Installation")
-        include(${CMAKE_SOURCE_DIR}/cmake/conan.cmake)
-        conan_cmake_run(CONANFILE conanfile.py
-                        BASIC_SETUP
-                        OPTIONS ${CONANOPT}
-                        SETTINGS compiler.cppstd=20
-                        BUILD missing)
-    endif()
+if(CONAN_EXPORTED) # in conan local cache
+    message(STATUS "Standard Conan Installation")
+    include(${CMAKE_BINARY_DIR}/conanbuildinfo.cmake)
+    conan_basic_setup() # NOTE need manmul set cppstd in conanfile.py
+else() # in user space
+    message(STATUS "Auto Cmake Conan Installation")
+    include(${CMAKE_SOURCE_DIR}/cmake/conan.cmake)
+    conan_cmake_run(CONANFILE conanfile.py
+                    BASIC_SETUP
+                    OPTIONS ${CONAN_OPTS}
+                    SETTINGS ${CONAN_SETTINGS}
+                    BUILD missing)
 endif()
 
 include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
-find_package(mpark_variant REQUIRED)
-find_package(gsl-lite REQUIRED)
+include(cmake/dependencies.cmake)
 
 if (BUILDING_RUNTIME)
-    option(BUILD_PYTHON_BINDING "Build python binding" ON)
     option(ENABLE_K210_RUNTIME "Enable k210 runtime" OFF)
     option(DEFAULT_BUILTIN_RUNTIMES "Use default builtin runtimes" ON)
     option(DEFAULT_SHARED_RUNTIME_TENSOR_PLATFORM_IMPL "Use default shared memory platform impl" ON)
@@ -92,7 +67,6 @@ if (BUILDING_RUNTIME)
     set(NNCASE_MAIN_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
     set(NNCASE_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include)
     set(THIRD_PARTY ${CMAKE_CURRENT_LIST_DIR}/third_party)
-    set(CMAKE_CXX_STANDARD 14)
     set_property(GLOBAL PROPERTY POSITION_INDEPENDENT_CODE ON)
     
     if (MSVC)
@@ -156,26 +130,9 @@ if (BUILDING_RUNTIME)
 else()
     set(CMAKE_SKIP_RPATH OFF)
 
-    find_package(Flatbuffers REQUIRED)
-    if(NOT CONAN_EXPORTED)
-        set(FLATBUFFERS_FLATC_EXECUTABLE ${flatbuffers_LIB_DIRS}/../bin/flatc)
-    endif()
-    find_package(fmt REQUIRED)
-    find_package(lyra REQUIRED)
-    find_package(magic_enum REQUIRED)
-    find_package(nlohmann_json REQUIRED)
-    find_package(OpenCV REQUIRED)
-    find_package(Protobuf REQUIRED)
-    find_package(xtensor REQUIRED)
-    find_package(spdlog REQUIRED)
-    if(ENABLE_HALIDE)
-        find_package(hkg REQUIRED)
-    endif(ENABLE_HALIDE)
-
     set(NNCASE_MAIN_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
     set(NNCASE_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include)
     set(THIRD_PARTY ${CMAKE_CURRENT_LIST_DIR}/third_party)
-    set(CMAKE_CXX_STANDARD 20)
     set_property(GLOBAL PROPERTY POSITION_INDEPENDENT_CODE ON)
     if (APPLE)
         set(CMAKE_MACOSX_RPATH TRUE)
@@ -188,10 +145,8 @@ else()
     if (MSVC)
         add_definitions(/D_SILENCE_ALL_CXX17_DEPRECATION_WARNINGS /D_CRT_SECURE_NO_WARNINGS /DNOMINMAX)
         add_compile_options(/wd4267 /wd4251 /FC /utf-8 /W3 /WX)
-        set(PYBIND11_CPP_STANDARD "/std:c++latest")
     else()
         add_compile_options(-Wall -Wextra -pedantic -Werror -Wno-multichar -Wno-missing-field-initializers -Wno-unused-function -Wno-type-limits -Wno-unused-local-typedefs -Wno-sign-compare)
-        set(PYBIND11_CPP_STANDARD "-std=c++20")
         if (APPLE)
             add_compile_options(-Wno-four-char-constants -Wno-sometimes-uninitialized -Wno-deprecated)
         else ()
@@ -203,6 +158,7 @@ else()
     include_directories(${NNCASE_INCLUDE_DIR})
     
     add_subdirectory(include/nncase)
+    add_subdirectory(src/nncase)
     add_subdirectory(src/data)
     add_subdirectory(src/ir)
     add_subdirectory(src/importer)
@@ -214,16 +170,16 @@ else()
     add_subdirectory(src/runtime)
     add_subdirectory(src/targets)
     add_subdirectory(src/plugin)
-    add_subdirectory(src/nncase)
     add_subdirectory(src/cli)
 
     if(BUILD_TESTING)
-        find_package(GTest REQUIRED)
         add_subdirectory(tests/kernels)
     endif()
     
     # Python binding
-    add_subdirectory(python/nncase/native)
+    if(BUILD_PYTHON_BINDING)
+        add_subdirectory(python/nncase/native)
+    endif()
     
     # Thrid party
     add_subdirectory(third_party/onnx)
@@ -268,3 +224,7 @@ else()
     add_subdirectory(modules/k210)
 
 endif()
+
+if (ENABLE_VULKAN)
+    add_subdirectory(modules/vulkan)
+endif ()

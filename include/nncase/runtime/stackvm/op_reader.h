@@ -20,7 +20,7 @@
 #include "../span_reader.h"
 #include "opcode.h"
 
-BEGIN_NS_NNCASE_RT_STACKVM
+BEGIN_NS_NNCASE_RT_MODULE(stackvm)
 
 template <class TOp>
 struct op_reader;
@@ -1583,4 +1583,4 @@ private:
     result<void> next() noexcept;
 };
 
-END_NS_NNCASE_RT_STACKVM
+END_NS_NNCASE_RT_MODULE

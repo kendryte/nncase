@@ -17,7 +17,7 @@
 #pragma once
 #include "../datatypes.h"
 
-BEGIN_NS_NNCASE_RT_STACKVM
+BEGIN_NS_NNCASE_RT_MODULE(stackvm)
 
 // Enums
 
@@ -1576,4 +1576,4 @@ struct tensor_transpose_op_t
     }
 };
 
-END_NS_NNCASE_RT_STACKVM
+END_NS_NNCASE_RT_MODULE

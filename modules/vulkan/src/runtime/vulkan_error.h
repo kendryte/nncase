@@ -13,12 +13,32 @@
  * limitations under the License.
  */
 #pragma once
-#include "../runtime_module.h"
+#include <nncase/runtime/vulkan/runtime_module.h>
+#include <system_error>
+#include <vulkan/vulkan.hpp>
 
-BEGIN_NS_NNCASE_RT_MODULE(stackvm)
+namespace vk
+{
+NNCASE_API const std::error_category &vulkan_category() noexcept;
+NNCASE_API std::error_condition make_error_condition(vk::Result code);
+}
 
-NNCASE_INLINE_VAR constexpr module_type_t stackvm_module_type = to_module_type("stackvm");
+namespace std
+{
+template <>
+struct is_error_condition_enum<vk::Result> : true_type
+{
+};
+}
 
-NNCASE_API result<std::unique_ptr<runtime_module>> create_stackvm_runtime_module();
-
-END_NS_NNCASE_RT_MODULE
+namespace vk
+{
+template <class T>
+nncase::result<T> to_result(vk::ResultValue<T> &&value) noexcept
+{
+    if (value.result == vk::Result::eSuccess)
+        return nncase::ok(std::move(value.value));
+    else
+        return nncase::err(value.result);
+}
+}

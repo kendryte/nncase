@@ -15,7 +15,7 @@
 #pragma once
 #include <nncase/runtime/stackvm/op_reader.h>
 
-BEGIN_NS_NNCASE_RT_STACKVM
+BEGIN_NS_NNCASE_RT_MODULE(stackvm)
 
 class stack_entry
 {
@@ -112,4 +112,4 @@ private:
     size_t top_;
 };
 
-END_NS_NNCASE_RT_STACKVM
+END_NS_NNCASE_RT_MODULE
