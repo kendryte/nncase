@@ -13,13 +13,14 @@
  * limitations under the License.
  */
 #pragma once
-#include "compiler_defs.h"
-#include <nncase/runtime/runtime_module.h>
+#include <nncase/runtime/compiler_defs.h>
 
-BEGIN_NS_NNCASE_RT_MODULE(vulkan)
-
-NNCASE_INLINE_VAR constexpr module_type_t vulkan_module_type = to_module_type("vulkan");
-
-NNCASE_MODULES_VULKAN_API result<std::unique_ptr<runtime_module>> create_vulkan_runtime_module();
-
-END_NS_NNCASE_RT_MODULE
+#if defined(_MSC_VER)
+#ifdef NNCASE_MODULES_VULKAN_DLL
+#define NNCASE_MODULES_VULKAN_API __declspec(dllexport)
+#else
+#define NNCASE_MODULES_VULKAN_API __declspec(dllimport)
+#endif
+#else
+#define NNCASE_MODULES_VULKAN_API
+#endif
