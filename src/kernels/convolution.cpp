@@ -25,7 +25,7 @@ result<void> kernels::conv2d(const float *input, const float *weights, const flo
     const runtime_shape_t &bias_strides, const runtime_shape_t &out_strides, const padding &padding_h, const padding &padding_w,
     int32_t groups, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w, value_range<float> fused_activation, kernel_context &context) noexcept
 {
-    if (dilation_h == 1 && dilation_w == 1 && padding_h.before == 0 && padding_h.after == 0 && padding_w.before == 0 && padding_w.after == 0)
+    if (dilation_h == 1 && dilation_w == 1)
     {
         if (cpu::optimized::conv2d(input, weights, bias, output,
                 in_shape, in_strides, w_shape,
