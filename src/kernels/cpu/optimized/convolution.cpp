@@ -14,7 +14,13 @@
  */
 #include <nncase/kernels/cpu/optimized/convolution.h>
 #include <nncase/kernels/kernel_utils.h>
+#include <nncase/runtime/runtime_op_utility.h>
 #include <utility>
+#ifdef NNCASE_HALIDE
+#include <hkg/export/HalideBuffer.h>
+#include <hkg/export/halide_conv2d.h>
+#include <hkg/export/halide_conv2d_depthwise.h>
+#endif
 #ifdef NNCASE_OPENMP
 #include <omp.h>
 #endif
@@ -468,15 +474,83 @@ result<void> conv2d_depthwise_nxm(const float *input, const float *weights, cons
     return ok();
 }
 
+#ifdef NNCASE_HALIDE
+#define HALIDE_CONV2D_NXM_S1_S2(KH, KW)                                                                                               \
+    if (filter_h == (KH) && filter_w == (KW))                                                                                         \
+    {                                                                                                                                 \
+        const auto out_h = detail::get_windowed_output_size(in_shape[2], filter_h, stride_h, dilation_h, padding_h);                  \
+        const auto out_w = detail::get_windowed_output_size(in_shape[3], filter_w, stride_w, dilation_w, padding_w);                  \
+        Halide::Runtime::Buffer<float> _input_buffer(const_cast<float *>(input), in_shape[3], in_shape[2], in_shape[1], in_shape[0]); \
+        Halide::Runtime::Buffer<float> _weights_buffer(const_cast<float *>(weights), w_shape[3], w_shape[2], w_shape[1], w_shape[0]); \
+        Halide::Runtime::Buffer<float> _bias_buffer(const_cast<float *>(bias), w_shape[0]);                                           \
+        float v_range[2] = { fused_activation.min, fused_activation.max };                                                            \
+        Halide::Runtime::Buffer<float> _value_range_buffer(v_range, 2);                                                               \
+        Halide::Runtime::Buffer<float> _Clamped_buffer(output, out_w, out_h, w_shape[0], in_shape[0]);                                \
+        if (stride_h == stride_w && (stride_h == 1 || stride_h == 2))                                                                 \
+        {                                                                                                                             \
+            halide_conv2d_##KH##x##KW(_input_buffer, _weights_buffer, _bias_buffer, _value_range_buffer,                              \
+                padding_h.before, padding_h.after, padding_w.before, padding_w.after,                                                 \
+                stride_h, stride_w, _Clamped_buffer);                                                                                 \
+            return ok();                                                                                                              \
+        }                                                                                                                             \
+    }
+
+#define HALIDE_CONV2D_DEPTHWISE_NXM_S1_S2(KH, KW)                                                                                     \
+    if (filter_h == (KH) && filter_w == (KW))                                                                                         \
+    {                                                                                                                                 \
+        const auto out_h = detail::get_windowed_output_size(in_shape[2], filter_h, stride_h, dilation_h, padding_h);                  \
+        const auto out_w = detail::get_windowed_output_size(in_shape[3], filter_w, stride_w, dilation_w, padding_w);                  \
+        Halide::Runtime::Buffer<float> _input_buffer(const_cast<float *>(input), in_shape[3], in_shape[2], in_shape[1], in_shape[0]); \
+        Halide::Runtime::Buffer<float> _weights_buffer(const_cast<float *>(weights), w_shape[3], w_shape[2], w_shape[1], w_shape[0]); \
+        Halide::Runtime::Buffer<float> _bias_buffer(const_cast<float *>(bias), w_shape[0]);                                           \
+        float v_range[2] = { fused_activation.min, fused_activation.max };                                                            \
+        Halide::Runtime::Buffer<float> _value_range_buffer(v_range, 2);                                                               \
+        Halide::Runtime::Buffer<float> _Clamped_buffer(output, out_w, out_h, w_shape[0], in_shape[0]);                                \
+        if (stride_h == stride_w && (stride_h == 1 || stride_h == 2))                                                                 \
+        {                                                                                                                             \
+            halide_conv2d_depthwise_##KH##x##KW(_input_buffer, _weights_buffer, _bias_buffer, _value_range_buffer,                    \
+                padding_h.before, padding_h.after, padding_w.before, padding_w.after,                                                 \
+                stride_h, stride_w, _Clamped_buffer);                                                                                 \
+            return ok();                                                                                                              \
+        }                                                                                                                             \
+    }
+
+#endif
+
 result<void> optimized::conv2d(const float *input, const float *weights, const float *bias, float *output,
-    const runtime_shape_t &in_shape, const runtime_shape_t &in_strides, const runtime_shape_t &w_shape, const runtime_shape_t &w_strides,
-    const runtime_shape_t &bias_strides, const runtime_shape_t &out_strides, const padding &padding_h, const padding &padding_w,
-    int32_t groups, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w, value_range<float> fused_activation, kernels::kernel_context &context) noexcept
+    const runtime_shape_t &in_shape, const runtime_shape_t &in_strides,
+    const runtime_shape_t &w_shape, NNCASE_UNUSED const runtime_shape_t &w_strides,
+    NNCASE_UNUSED const runtime_shape_t &bias_strides, NNCASE_UNUSED const runtime_shape_t &out_strides,
+    const padding &padding_h, const padding &padding_w, int32_t groups,
+    int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
+    value_range<float> fused_activation, NNCASE_UNUSED kernels::kernel_context &context) noexcept
 {
     const auto filter_h = w_shape[2];
     const auto filter_w = w_shape[3];
 
-    if (groups == 1)
+#ifdef NNCASE_HALIDE
+    if (groups == 1 && runtime::is_contiguous(in_shape, in_strides))
+    {
+        // clang-format off
+        HALIDE_CONV2D_NXM_S1_S2(1, 1)
+        else HALIDE_CONV2D_NXM_S1_S2(3, 3)
+        else HALIDE_CONV2D_NXM_S1_S2(5, 5)
+        else HALIDE_CONV2D_NXM_S1_S2(7, 7)
+        // clang-format on
+    }
+
+    if ((size_t)groups == in_shape[1] && (size_t)groups == w_shape[0] && runtime::is_contiguous(in_shape, in_strides))
+    {
+        // clang-format off
+        HALIDE_CONV2D_DEPTHWISE_NXM_S1_S2(1, 1)
+        else HALIDE_CONV2D_DEPTHWISE_NXM_S1_S2(3, 3)
+        else HALIDE_CONV2D_DEPTHWISE_NXM_S1_S2(5, 5)
+        else HALIDE_CONV2D_DEPTHWISE_NXM_S1_S2(7, 7)
+        // clang-format on
+    }
+
+#else
+    if (groups == 1 && padding_h.before == 0 && padding_h.after == 0 && padding_w.before == 0 && padding_w.after == 0)
     {
         if (filter_h == 1 && filter_w == 1)
         {
@@ -498,7 +572,7 @@ result<void> optimized::conv2d(const float *input, const float *weights, const f
         // clang-format on
     }
 
-    if ((size_t)groups == in_shape[1] && (size_t)groups == w_shape[0])
+    if ((size_t)groups == in_shape[1] && (size_t)groups == w_shape[0] && padding_h.before == 0 && padding_h.after == 0 && padding_w.before == 0 && padding_w.after == 0)
     {
         // clang-format off
         CONV2D_DEPTHWISE_NXM_S1_S2(1, 3)
@@ -508,5 +582,6 @@ result<void> optimized::conv2d(const float *input, const float *weights, const f
         else CONV2D_DEPTHWISE_NXM_S1_S2(7, 7)
         // clang-format on
     }
+#endif
     return err(std::errc::not_supported);
 }
