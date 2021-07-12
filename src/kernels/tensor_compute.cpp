@@ -103,6 +103,13 @@ result<void> kernels::lut1d(datatype_t type, const gsl::byte *input, const gsl::
     return cpu::reference::lut1d(type, input, table, output, shape, in_strides, out_strides, min, max);
 }
 
+result<void> kernels::onehot(datatype_t type, const int32_t *indices, gsl::byte *output, const runtime_shape_t &indices_shape, const runtime_shape_t &out_shape,
+    const runtime_shape_t &out_strides, gsl::byte *depth, gsl::byte *off_value, gsl::byte *on_value, size_t axis,
+    kernel_context &context)noexcept
+{
+    return cpu::reference::onehot(type, indices, output, indices_shape, out_shape, out_strides, depth, off_value, on_value, axis, context);
+}
+
 result<void> kernels::pad(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const runtime_paddings_t &paddings, pad_mode_t mode,
     const scalar &pad_value, kernel_context &context) noexcept
