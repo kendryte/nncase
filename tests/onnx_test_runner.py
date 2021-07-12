@@ -56,26 +56,6 @@ class OnnxTestRunner(TestRunner):
 
         super().run(model_file)
 
-    def map_onnx_to_numpy_type(self, onnx_type):
-        ONNX_TO_NUMPY_DTYPE = {
-            onnx.onnx_pb.TensorProto.FLOAT: np.float32,
-            onnx.onnx_pb.TensorProto.FLOAT16: np.float16,
-            onnx.onnx_pb.TensorProto.DOUBLE: np.float64,
-            onnx.onnx_pb.TensorProto.INT32: np.int32,
-            onnx.onnx_pb.TensorProto.INT16: np.int16,
-            onnx.onnx_pb.TensorProto.INT8: np.int8,
-            onnx.onnx_pb.TensorProto.UINT8: np.uint8,
-            onnx.onnx_pb.TensorProto.UINT16: np.uint16,
-            onnx.onnx_pb.TensorProto.INT64: np.int64,
-            onnx.onnx_pb.TensorProto.UINT64: np.uint64,
-            onnx.onnx_pb.TensorProto.BOOL: bool,
-            onnx.onnx_pb.TensorProto.COMPLEX64: np.complex64,
-            onnx.onnx_pb.TensorProto.COMPLEX128: np.complex128,
-            onnx.onnx_pb.TensorProto.STRING: object,
-        }
-
-        return ONNX_TO_NUMPY_DTYPE[onnx_type]
-
     def preprocess_model(self, onnx_model, fix_bn=True, convert_version=True, simplify=True, import_test=True):
         args = {'fix_bn': fix_bn, 'convert_version': convert_version,
                 'simplify': simplify, 'import_test': import_test}
@@ -126,8 +106,7 @@ class OnnxTestRunner(TestRunner):
             onnx_type = e.type.tensor_type
             input_dict = {}
             input_dict['name'] = e.name
-            input_dict['dtype'] = self.map_onnx_to_numpy_type(
-                onnx_type.elem_type)
+            input_dict['dtype'] = onnx.mapping.TENSOR_TYPE_TO_NP_TYPE[onnx_type.elem_type]
             input_dict['shape'] = [(i.dim_value if i.dim_value != 0 else d) for i, d in zip(
                 onnx_type.shape.dim, [1, 3, 224, 224])]
             self.inputs.append(input_dict)
