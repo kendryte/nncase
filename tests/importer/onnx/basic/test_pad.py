@@ -69,13 +69,14 @@ def _make_module(in_shape, padding, constant_value, mode, op_version):
                 value=constant_value
             )
     else:
-        #  opset 11/13
+        # opset 11/13
         initializers = []
-        pads_value = np.array(padding, dtype = np.int64)
+        dims_list = []
+        dims_list.append(len(padding))
         pads = helper.make_tensor(
             "pads",
             TensorProto.INT64,
-            dims=pads_value.shape,
+            dims=dims_list,
             vals=padding)
 
         initializers.append(pads)
@@ -154,7 +155,7 @@ op_versions = [
 @pytest.mark.parametrize('constant_value', constant_values)
 @pytest.mark.parametrize('mode', modes)
 @pytest.mark.parametrize('op_version', op_versions)
-def test_pad2(in_shape, padding, constant_value, mode, op_version, request):
+def test_pad(in_shape, padding, constant_value, mode, op_version, request):
     model_def = _make_module(in_shape, padding, constant_value, mode, op_version)
 
     runner = OnnxTestRunner(request.node.name)
@@ -162,4 +163,4 @@ def test_pad2(in_shape, padding, constant_value, mode, op_version, request):
     runner.run(model_file)
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_pad2.py'])
+    pytest.main(['-vv', 'test_pad.py'])
