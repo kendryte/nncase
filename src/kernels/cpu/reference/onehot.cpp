@@ -21,7 +21,7 @@ using namespace nncase::runtime;
 using namespace nncase::kernels;
 using namespace nncase::kernels::cpu;
 using namespace nncase::kernels::cpu::reference;
-#include <iostream>
+
 namespace
 {
 template <class T>
@@ -41,8 +41,6 @@ result<void> onehot_impl(const int32_t *indices, T *output, const runtime_shape_
                 indices_index[i] = out_index[i];
             }
             auto index = indices[offset(get_default_strides(indices_shape), indices_index)];
-            std::cout << "indices value:" << index << std::endl;
-            std::cout << "out_index:" << index << std::endl;
             T out_v = index == out_index[axis] ? on_value : off_value;
             output[offset(out_strides, out_index)] = out_v;
             return ok();

@@ -107,7 +107,8 @@ result<void> kernels::onehot(datatype_t type, const int32_t *indices, gsl::byte 
     const runtime_shape_t &out_strides, gsl::byte *depth, gsl::byte *off_value, gsl::byte *on_value, size_t axis,
     kernel_context &context)noexcept
 {
-    return cpu::reference::onehot(type, indices, output, indices_shape, out_shape, out_strides, depth, off_value, on_value, axis, context);
+    // TODO:process
+    return cpu::optimized::onehot(type, indices, output, indices_shape, out_shape, out_strides, depth, off_value, on_value, axis, context);
 }
 
 result<void> kernels::pad(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape,

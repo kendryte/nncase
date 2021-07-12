@@ -42,6 +42,10 @@ NNCASE_API result<void> gather_nd(datatype_t type, const gsl::byte *input, gsl::
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const int32_t *indices, const runtime_shape_t &indices_shape, size_t batch_dims,
     kernel_context &context = default_kernel_context()) noexcept;
 
+NNCASE_API result<void> onehot(datatype_t type, const int32_t *indices, gsl::byte *output, const runtime_shape_t &indices_shape, const runtime_shape_t &out_shape,
+    const runtime_shape_t &out_strides, gsl::byte *depth, gsl::byte *off_value, gsl::byte *on_value, size_t axis,
+    kernel_context &context = default_kernel_context()) noexcept;
+
 NNCASE_API result<void> slice(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const runtime_shape_t &begins, const runtime_shape_t &ends, const runtime_axis_t &strides,
     kernel_context &context = default_kernel_context()) noexcept;
