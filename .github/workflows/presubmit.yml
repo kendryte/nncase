@@ -27,7 +27,7 @@ jobs:
     steps:
       - uses: peter-evans/autopep8@v1.2.1
         with:
-            args: tests python --recursive --in-place 
+          args: tests python --recursive --in-place 
     - name: Fail if autopep8 made changes
       if: steps.autopep8.outputs.exit-code == 2
       run: exit 1
