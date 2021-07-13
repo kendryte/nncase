@@ -41,8 +41,8 @@ i_channels = [
 ]
 
 i_sizes = [
-    [224, 224],
-    [112, 65]
+    [12, 24],
+    [38, 65]
 ]
 
 k_sizes = [
@@ -52,7 +52,7 @@ k_sizes = [
 
 o_channels = [
     1,
-    16
+    8
 ]
 
 strides = [

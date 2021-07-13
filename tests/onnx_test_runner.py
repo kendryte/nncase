@@ -8,9 +8,10 @@ import os
 import numpy as np
 from test_runner import *
 
+
 class OnnxTestRunner(TestRunner):
-    def __init__(self, case_name, targets=None):
-        super().__init__(case_name, targets)
+    def __init__(self, case_name, targets=None, overwirte_configs: dict = None):
+        super().__init__(case_name, targets, overwirte_configs)
 
     def from_torch(self, module, in_shape, opset_version=11):
         # export model
@@ -76,7 +77,7 @@ class OnnxTestRunner(TestRunner):
                 curret_version = onnx_model.opset_import[0].version
                 for i in range(curret_version, 8):
                     onnx_model = version_converter.convert_version(
-                        onnx_model, i+1)
+                        onnx_model, i + 1)
 
             if simplify:
                 onnx_model = onnx.shape_inference.infer_shapes(onnx_model)
@@ -145,7 +146,7 @@ class OnnxTestRunner(TestRunner):
             text_file = os.path.join(case_dir, f'cpu_result_{i}.txt')
             self.output_paths.append((bin_file, text_file))
             output.tofile(bin_file)
-            save_array_as_txt(text_file, output)
+            self.totxtfile(text_file, output)
             i += 1
 
     def import_model(self, compiler, model_content, import_options):
