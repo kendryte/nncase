@@ -31,27 +31,27 @@ result<void> onehot_impl(const int32_t *indices, T *output, const runtime_shape_
 {
     auto output_size = compute_size(out_shape);
     // TODO:only int?
-    memset(output, off_value, output_size);
+    std::fill_n(output, output_size, off_value);
+    // memset(output, off_value, output_size);
     auto indices_size = compute_size(indices_shape);
 
     size_t out_size = std::accumulate(indices_shape.begin(), indices_shape.begin() + axis, 1, std::multiplies<size_t> {});
-    size_t inner_size = std::accumulate(indices_shape.begin() + axis, indices_shape.end() + axis, 1, std::multiplies<size_t> {});
+    size_t inner_size = std::accumulate(indices_shape.begin() + axis, indices_shape.end(), 1, std::multiplies<size_t> {});
     auto indices_dims = indices_shape.size();
     auto onehot_dims = indices_dims - axis;
 
-    if (onehot_dims == 1)
+    if (onehot_dims == 0)
     {
         // a depth is a line, set a value per line
         // next line
         for (size_t i = 0; i < indices_size; ++i)
         {
             output[indices[i]] = on_value;
+            output += depth;
             // TODO:remove
-            assert(inner_size == 1);
-            output += inner_size * depth;
         }
     }
-    else if (onehot_dims == 2)
+    else if (onehot_dims == 1)
     {
         const auto x_size = indices_shape[indices_shape.size() - 1];
         // next indices_inner_size
@@ -67,7 +67,7 @@ result<void> onehot_impl(const int32_t *indices, T *output, const runtime_shape_
             indices += inner_size;
         }
     }
-    else if (onehot_dims == 3)
+    else if (onehot_dims == 2)
     {
         const auto y_size = indices_shape[indices_shape.size() - 2];
         const auto x_size = indices_shape[indices_shape.size() - 1];
@@ -84,7 +84,7 @@ result<void> onehot_impl(const int32_t *indices, T *output, const runtime_shape_
             indices += inner_size;
         }
     }
-    else if (onehot_dims == 4)
+    else if (onehot_dims == 3)
     {
         const auto c_size = indices_shape[indices_shape.size() - 3];
         const auto y_size = indices_shape[indices_shape.size() - 2];
