@@ -794,3 +794,11 @@ shape_t onnx_importer::broadcast_shape(const shape_t &v_shape, const shape_t &in
 
     return result;
 }
+
+std::string onnx_importer::generate_name(const onnx::NodeProto &node) const
+{
+    if (node.has_name())
+        return node.name();
+    else
+        return 'n' + std::to_string(graph_.nodes().size());
+}

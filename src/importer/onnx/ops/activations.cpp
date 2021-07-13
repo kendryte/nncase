@@ -31,13 +31,17 @@ void onnx_importer::convert_op_Relu(const NodeProto &node)
     assert(node.input().size() == 1);
     assert(node.output().size() == 1);
 
+    const auto &op_name { generate_name(node) };
+
     const auto &input = node.input()[0];
     const auto &output = node.output()[0];
 
     auto in_shape = get_shape(input);
 
     auto zero = graph_.emplace<constant>(0.f);
+    zero->name(op_name + ".zero(Relu)");
     auto max = graph_.emplace<binary>(binary_max, in_shape, zero->output().shape(), value_range<float>::full());
+    max->name(generate_name(node) + ".max(Relu)");
 
     max->input_b().connect(zero->output());
 
@@ -50,6 +54,8 @@ void onnx_importer::convert_op_LeakyRelu(const NodeProto &node)
     assert(node.input().size() == 1);
     assert(node.output().size() == 1);
 
+    const auto &op_name { generate_name(node) };
+
     const auto &input = node.input()[0];
     const auto &output = node.output()[0];
     auto &&in_shape = get_shape(input);
@@ -57,8 +63,12 @@ void onnx_importer::convert_op_LeakyRelu(const NodeProto &node)
     const auto alpha_value = get_attribute<float>(node, "alpha").value();
     const auto &alpha = graph_.emplace<constant>(alpha_value);
 
+    alpha->name(op_name + ".alpha(LeakyRelu)");
+
     auto mul = graph_.emplace<binary>(binary_mul, in_shape, alpha->output().shape(), value_range<float>::full());
+    mul->name(op_name + ".mul(LeakyRelu)");
     auto max = graph_.emplace<binary>(binary_max, in_shape, mul->output().shape(), value_range<float>::full());
+    max->name(op_name + ".max(LeakyRelu)");
 
     mul->input_b().connect(alpha->output());
     max->input_b().connect(mul->output());
@@ -72,6 +82,8 @@ void onnx_importer::convert_op_PRelu(const NodeProto &node)
 {
     assert(node.input().size() == 2);
     assert(node.output().size() == 1);
+
+    const auto &op_name { generate_name(node) };
 
     const auto &input = node.input()[0];
     const auto &slope = node.input()[1];
@@ -87,6 +99,7 @@ void onnx_importer::convert_op_PRelu(const NodeProto &node)
         // slope is initializer
         auto slope_value = to<std::vector<float>>(init.value());
         alpha = graph_.emplace<constant>(get_datatype<float>(), slope_shape, slope_value);
+        alpha->name(op_name + ".alpha(PRelu)");
     }
     else
     {
@@ -100,7 +113,9 @@ void onnx_importer::convert_op_PRelu(const NodeProto &node)
     assert(alpha != nullptr);
 
     auto mul = graph_.emplace<binary>(binary_mul, in_shape, alpha->output().shape(), value_range<float>::full());
+    mul->name(op_name + ".mul(PRelu)");
     auto max = graph_.emplace<binary>(binary_max, in_shape, mul->output().shape(), value_range<float>::full());
+    max->name(op_name + ".max(PRelu)");
 
     mul->input_b().connect(alpha->output());
     max->input_b().connect(mul->output());
@@ -118,6 +133,8 @@ void onnx_importer::convert_op_Sigmoid(const NodeProto &node)
     const auto &input = node.input()[0];
     const auto &output = node.output()[0];
     auto in_shape = get_shape(input);
+
+    const auto &op_name { generate_name(node) };
 
 #if 0
     // y = 1 / (1 + exp(-x))
@@ -137,9 +154,13 @@ void onnx_importer::convert_op_Sigmoid(const NodeProto &node)
 #else
     // y = exp(x) / (exp(x) + 1)
     auto exp = graph_.emplace<unary>(unary_exp, in_shape);
+    exp->name(op_name + ".exp(Sigmoid)");
     auto one = graph_.emplace<constant>(1.f);
+    one->name(op_name + ".one(Sigmoid)");
     auto add = graph_.emplace<binary>(binary_add, exp->output().shape(), one->output().shape(), value_range<float>::nonnegative());
+    add->name(op_name + ".add(Sigmoid)");
     auto div = graph_.emplace<binary>(binary_div, exp->output().shape(), add->output().shape(), value_range<float>::nonnegative());
+    div->name(op_name + ".div(Sigmoid)");
     add->input_a().connect(exp->output());
     add->input_b().connect(one->output());
     div->input_a().connect(exp->output());

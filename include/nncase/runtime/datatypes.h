@@ -136,6 +136,22 @@ typedef enum _reduce_op
     reduce_sum
 } reduce_op_t;
 
+inline std::string reduce_op_to_string(reduce_op_t op)
+{
+    switch (op)
+    {
+    case reduce_mean:
+        return "reduce_mean";
+    case reduce_min:
+        return "reduce_min";
+    case reduce_max:
+        return "reduce_max";
+    case reduce_sum:
+        return "reduce_sum";
+    }
+    return "unknown";
+}
+
 typedef enum _binary_op
 {
     binary_add,

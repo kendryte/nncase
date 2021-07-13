@@ -17,8 +17,9 @@ import pytest
 import onnx
 from onnx import helper
 from onnx import AttributeProto, TensorProto, GraphProto
-from test_runner import OnnxTestRunner
+from onnx_test_runner import OnnxTestRunner
 import numpy as np
+
 
 def _make_module(in_shape, padding, constant_value, mode, op_version):
 

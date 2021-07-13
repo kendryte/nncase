@@ -14,7 +14,7 @@
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
 
 import pytest
-from test_runner import TfliteTestRunner
+from tflite_test_runner import TfliteTestRunner
 import tensorflow as tf
 
 def _make_module(in_shape, size, align_corners, half_pixel_centers, mode):

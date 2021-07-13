@@ -81,11 +81,14 @@ void onnx_importer::convert_unary(const onnx::NodeProto &node, const unary_op_t 
     assert(node.input().size() == 1);
     assert(node.output().size() == 1);
 
+    const auto &op_name { generate_name(node) };
+
     const auto &input = node.input()[0];
     const auto &output = node.output()[0];
 
     const auto &input_shape = get_shape(input);
     auto op = graph_.emplace<unary>(unary_op, input_shape);
+    op->name(op_name + '(' + unary_op_to_string(unary_op) + ')');
 
     input_tensors_.emplace(&op->input(), input);
     output_tensors_.emplace(output, &op->output());

@@ -16,7 +16,7 @@
 import pytest
 import torch
 import numpy as np
-from test_runner import OnnxTestRunner
+from onnx_test_runner import OnnxTestRunner
 
 
 def _make_module(v_shape):

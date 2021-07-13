@@ -18,7 +18,7 @@ import pytest
 import onnx
 from onnx import helper
 from onnx import AttributeProto, TensorProto, GraphProto
-from test_runner import OnnxTestRunner
+from onnx_test_runner import OnnxTestRunner
 import numpy as np
 
 def result_shape(p_shape, i_shape, batch_dims=0):
@@ -59,6 +59,7 @@ in_shapes_indices_dim = [
     ([2, 3, 1], [[[0], [0], [0]], [[0], [0], [0]]], 0),
     ([5, 7, 5], [1, 4, 3], 0),
     ([2, 3, 5], [[0, 1], [1, 0]], 0),
+    ([2, 3, 5], [[[0, 4]], [[2, 0]]], 1),
     ([2, 3, 5], [[[4], [3], [0]], [[2], [1], [0]]], 2),
     ([5, 4, 3, 2], [[1, 0, 2], [1, 2, 2]], 0),
     ([5, 5, 7, 7], [[1, 2, 3], [1, 2, 3]], 0),
@@ -66,6 +67,8 @@ in_shapes_indices_dim = [
     ([5, 4, 3, 2], [[1, 0, 2], [1, 2, 2]], 0),
     ([2, 4, 3, 5], [[1, 0, 2], [1, 2, 2]], 1),
     ([2, 3, 3, 5], [[[2, 1], [0, 1], [1, 0]], [[0, 1], [2, 2], [1, 1]]], 2),
+    ([2, 3, 3, 5], [[[[4], [1], [3]], [[2], [0], [1]], [[4], [2], [3]]],
+                    [[[3], [1], [4]], [[1], [0], [2]], [[3], [2], [4]]]], 3)
 ]
 
 @pytest.mark.parametrize('in_shape,indices,dim', in_shapes_indices_dim)

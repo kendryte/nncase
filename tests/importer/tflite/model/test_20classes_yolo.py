@@ -15,7 +15,7 @@
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
 
 import pytest
-from test_runner import TfliteTestRunner
+from tflite_test_runner import TfliteTestRunner
 
 def test_20classes_yolo(request):
     runner = TfliteTestRunner(request.node.name)

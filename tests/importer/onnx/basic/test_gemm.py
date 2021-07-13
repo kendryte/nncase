@@ -18,7 +18,7 @@ import onnx
 from onnx import helper
 from onnx import AttributeProto, TensorProto, GraphProto
 import numpy as np
-from test_runner import OnnxTestRunner
+from onnx_test_runner import OnnxTestRunner
 
 def _make_module():
     input_A = helper.make_tensor_value_info('A', TensorProto.FLOAT, [112, 224])
