@@ -19,6 +19,7 @@ import tensorflow as tf
 import numpy as np
 from tflite_test_runner import TfliteTestRunner
 
+
 def _make_module(n, i_channels, i_size, k_size, o_channels, strides, padding, dilations):
     class Conv2DModule(tf.Module):
         def __init__(self):
@@ -32,6 +33,7 @@ def _make_module(n, i_channels, i_size, k_size, o_channels, strides, padding, di
                                dilations=dilations)
             return out
     return Conv2DModule()
+
 
 n = [
     1,
@@ -92,6 +94,7 @@ def test_conv2d(n, i_channels, i_size, k_size, o_channels, strides, padding, dil
         runner = TfliteTestRunner(request.node.name)
         model_file = runner.from_tensorflow(module)
         runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_conv2d.py'])

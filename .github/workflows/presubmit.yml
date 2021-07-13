@@ -1,0 +1,33 @@
+name: Nncase Presubmit Checks
+on:
+  # We don't want 'edited' (that's basically just the description, title, etc)
+  # We don't want 'review_requested' (that's redundant to the ones below for our purposes)
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - '**.h'
+      - '**.c'
+      - '**.cpp'
+
+jobs:
+  check_clang_format:
+    name: Check clang-format
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: DoozyX/clang-format-lint-action@v0.11
+        with:
+          source: '.'
+          exclude: './third_party'
+          extensions: 'h,c,cc,cxx,cpp,hpp,cppm'
+          clangFormatVersion: 11
+  check_autopep8_format:
+    name: Check autopep8-format
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: peter-evans/autopep8@v1.2.1
+        with:
+            args: tests python --recursive --in-place 
+    - name: Fail if autopep8 made changes
+      if: steps.autopep8.outputs.exit-code == 2
+      run: exit 1

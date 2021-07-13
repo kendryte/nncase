@@ -20,12 +20,13 @@ import numpy as np
 import sys
 from tflite_test_runner import TfliteTestRunner
 
+
 def _make_module(batch_coff, in_shape, block_shape, crops):
     class BatchToSpaceModule(tf.Module):
         def __init__(self):
             super(BatchToSpaceModule).__init__()
 
-        @tf.function(input_signature=[tf.TensorSpec([batch_coff*np.prod(block_shape), *in_shape], tf.float32)])
+        @tf.function(input_signature=[tf.TensorSpec([batch_coff * np.prod(block_shape), *in_shape], tf.float32)])
         def __call__(self, x):
             return tf.batch_to_space(x, block_shape, crops)
     return BatchToSpaceModule()
@@ -63,6 +64,7 @@ def test_batch_to_space(batch_coff, in_shape, block_shape, crops, request):
     runner = TfliteTestRunner(request.node.name, ['cpu'])
     model_file = runner.from_tensorflow(module)
     runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_batch_to_space.py'])

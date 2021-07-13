@@ -47,6 +47,14 @@ class Edict:
             s += '\n'
         return s.rstrip('\n')
 
+    def update(self, d):
+        for name, value in d.items():
+            if name in self.keys():
+                if isinstance(value, dict):
+                    getattr(self, name).update(value)
+                else:
+                    self.__dict__[name] = value
+
 
 def generate_random(shape: List[int], dtype: np.dtype) -> np.ndarray:
     if dtype is np.uint8:
@@ -84,9 +92,9 @@ class TestRunner(metaclass=ABCMeta):
         config_root = os.path.dirname(__file__)
         with open(os.path.join(config_root, 'config.yml'), encoding='utf8') as f:
             cfg: dict = yaml.safe_load(f)
-            if overwirte_configs:
-                cfg.update(overwirte_configs)
             config = Edict(cfg)
+            if overwirte_configs:
+                config.update(overwirte_configs)
 
         self.cfg = self.validte_config(config)
 
@@ -120,8 +128,10 @@ class TestRunner(metaclass=ABCMeta):
                 else:
                     print("WARN: target[{0}] not found".format(t))
             return new_targets
-        self.cfg.case.eval[0].values = _validate_targets(targets if targets else self.cfg.case.eval[0].values)
-        self.cfg.case.infer[0].values = _validate_targets(targets if targets else self.cfg.case.infer[0].values)
+        self.cfg.case.eval[0].values = _validate_targets(
+            targets if targets else self.cfg.case.eval[0].values)
+        self.cfg.case.infer[0].values = _validate_targets(
+            targets if targets else self.cfg.case.infer[0].values)
 
     def run(self, model_path: str):
         # TODO add mulit process pool
@@ -338,23 +348,21 @@ class TestRunner(metaclass=ABCMeta):
                         test_outputs: List[Tuple[str]],
                         kwargs: Dict[str, str]):
         for ref_file, test_file in zip(ref_ouputs, test_outputs):
-            judge = compare(test_file, ref_file,
-                            self.cfg.judge.simarity_name,
-                            self.cfg.judge.threshold,
-                            self.cfg.judge.log_hist)
+
+            judge, simarity_info = compare(test_file, ref_file,
+                                           self.cfg.judge.simarity_name,
+                                           self.cfg.judge.threshold,
+                                           self.cfg.judge.log_hist)
             name_list = test_file[1].split('/')
             kw_names = ' '.join(name_list[-len(kwargs) - 2:-1])
             i = self.num_pattern.findall(name_list[-1])
-            if judge:
-                result = "\nPass [ {0} ] Output: {1}!!\n".format(kw_names, i)
-                print(result)
-                with open(os.path.join(self.case_dir, 'test_result.txt'), 'a+') as f:
-                    f.write(result)
-            else:
-                result = "\nFail [ {0} ] Output: {1}!!\n".format(kw_names, i)
-                print(result)
-                with open(os.path.join(self.case_dir, 'test_result.txt'), 'a+') as f:
-                    f.write(result)
+            result_info = "\n{0} [ {1} ] Output: {2}!!\n".format(
+                'Pass' if judge else 'Fail', kw_names, i)
+            result = simarity_info + result_info
+            print(result)
+            with open(os.path.join(self.case_dir, 'test_result.txt'), 'a+') as f:
+                f.write(result)
+            if not judge:
                 return False
         return True
 
@@ -363,5 +371,5 @@ class TestRunner(metaclass=ABCMeta):
             if bit_16_represent:
                 np.save(save_path, _cast_bfloat16_then_float32(value_np))
             else:
-                np.savetxt(save_path, value_np.flatten(), header=str(value_np.shape))
+                np.savetxt(save_path, value_np.flatten(), fmt='%f', header=str(value_np.shape))
             print("----> %s" % save_path)

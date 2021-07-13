@@ -35,6 +35,7 @@ def _make_module(n, i_channels, i_size, k_size, strides, padding):
             return outs
     return ReduceWindow2DModule()
 
+
 n = [
     1,
     3
@@ -82,6 +83,7 @@ def test_reduce_window2d(n, i_channels, i_size, k_size, strides, padding, reques
         runner = TfliteTestRunner(request.node.name)
         model_file = runner.from_tensorflow(module)
         runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_reduce_window2d.py'])

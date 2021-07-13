@@ -182,7 +182,7 @@ class BuildCMakeExt(build_ext):
         bin_dir = os.path.abspath(os.path.join(self.build_temp, 'install'))
         cmake_args = ['-G', 'Ninja']
         if os.getenv('CI', False):
-            cmake_args += ['-DPython3_ROOT_DIR='+os.environ['pythonLocation']]
+            cmake_args += ['-DPython3_ROOT_DIR=' + os.environ['pythonLocation']]
 
         cfg = 'Debug' if self.debug else 'Release'
         build_args = ['--config', cfg]
@@ -200,13 +200,13 @@ class BuildCMakeExt(build_ext):
         # Change your cmake arguments below as necessary
         # Below is just an example set of arguments for building Blender as a Python module
 
-        self.spawn(['cmake', '-S' + ext.sourcedir, '-B'+self.build_temp] +
+        self.spawn(['cmake', '-S' + ext.sourcedir, '-B' + self.build_temp] +
                    cmake_args)
 
         self.announce("Building binaries", level=3)
 
-        self.spawn(["cmake", "--build", self.build_temp]+build_args)
-        self.spawn(["cmake", "--install", self.build_temp]+install_args)
+        self.spawn(["cmake", "--build", self.build_temp] + build_args)
+        self.spawn(["cmake", "--install", self.build_temp] + install_args)
 
         # Build finished, now copy the files into the copy directory
         # The copy directory is the parent directory of the extension (.pyd)
@@ -235,7 +235,7 @@ class BuildCMakeExt(build_ext):
 
 
 setup(name='nncase',
-      version='1.0.0'+os.getenv('NNCASE_VERSION_SUFFIX',''),
+      version='1.0.0' + os.getenv('NNCASE_VERSION_SUFFIX', ''),
       packages=['nncase'],
       package_dir={'': '..'},
       ext_modules=[CMakeExtension(name="_nncase", sourcedir='../..')],

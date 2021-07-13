@@ -17,6 +17,7 @@ import pytest
 import torch
 from onnx_test_runner import OnnxTestRunner
 
+
 def _make_module(in_shape, axis):
 
     class FlattenModule(torch.nn.Module):
@@ -32,6 +33,7 @@ def _make_module(in_shape, axis):
 
     return FlattenModule()
 
+
 in_shapes = [
     [1, 3, 224, 224]
 ]
@@ -42,6 +44,7 @@ axes = [
     3
 ]
 
+
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('axis', axes)
 def test_flatten(in_shape, axis, request):
@@ -51,6 +54,7 @@ def test_flatten(in_shape, axis, request):
         runner = OnnxTestRunner(request.node.name)
         model_file = runner.from_torch(module, in_shape)
         runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_flatten.py'])

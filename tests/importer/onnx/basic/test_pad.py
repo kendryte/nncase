@@ -17,6 +17,7 @@ import pytest
 import torch
 from onnx_test_runner import OnnxTestRunner
 
+
 def _make_module(in_shape, padding, value):
 
     class PadModule(torch.nn.Module):
@@ -32,6 +33,7 @@ def _make_module(in_shape, padding, value):
             return x
 
     return PadModule()
+
 
 in_shapes = [
     [1, 3, 60, 72],
@@ -49,6 +51,7 @@ values = [
     0
 ]
 
+
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('padding', paddings)
 @pytest.mark.parametrize('value', values)
@@ -58,6 +61,7 @@ def test_pad(in_shape, padding, value, request):
     runner = OnnxTestRunner(request.node.name)
     model_file = runner.from_torch(module, in_shape)
     runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_pad.py'])

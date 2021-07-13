@@ -17,6 +17,7 @@ import pytest
 from tflite_test_runner import TfliteTestRunner
 import tensorflow as tf
 
+
 def _make_module(in_shape, size, align_corners, half_pixel_centers, mode):
     class ResizeModule(tf.Module):
         def __init__(self):
@@ -29,6 +30,7 @@ def _make_module(in_shape, size, align_corners, half_pixel_centers, mode):
             else:
                 return tf.compat.v1.image.resize_nearest_neighbor(x, size, align_corners=align_corners, half_pixel_centers=half_pixel_centers)
     return ResizeModule()
+
 
 in_shape = [
     [2, 32, 32, 3]
@@ -56,12 +58,12 @@ modes = [
     tf.image.ResizeMethod.NEAREST_NEIGHBOR
 ]
 
+
 @pytest.mark.parametrize('in_shape', in_shape)
 @pytest.mark.parametrize('size', sizes)
 @pytest.mark.parametrize('align_corners', align_corners)
 @pytest.mark.parametrize('half_pixel_centers', half_pixel_centers)
 @pytest.mark.parametrize('mode', modes)
-
 def test_resize(in_shape, size, align_corners, half_pixel_centers, mode, request):
     if mode == tf.image.ResizeMethod.BILINEAR and align_corners and half_pixel_centers:
         return
@@ -69,6 +71,7 @@ def test_resize(in_shape, size, align_corners, half_pixel_centers, mode, request
     runner = TfliteTestRunner(request.node.name, ['cpu', 'k210'])
     model_file = runner.from_tensorflow(module)
     runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_resize.py'])

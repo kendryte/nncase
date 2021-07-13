@@ -20,6 +20,7 @@ from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
 import numpy as np
 
+
 def _make_module(in_shape, epsilon):
 
     input = helper.make_tensor_value_info('input', TensorProto.FLOAT, in_shape)
@@ -53,6 +54,7 @@ def _make_module(in_shape, epsilon):
 
     return model_def
 
+
 in_shapes = [
     [1, 3, 56, 56]
 ]
@@ -62,6 +64,7 @@ epsilons = [
     1e-2
 ]
 
+
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('epsilon', epsilons)
 def test_instancenorm(in_shape, epsilon, request):
@@ -70,6 +73,7 @@ def test_instancenorm(in_shape, epsilon, request):
     runner = OnnxTestRunner(request.node.name)
     model_file = runner.from_onnx_helper(model_def)
     runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_instancenorm.py'])

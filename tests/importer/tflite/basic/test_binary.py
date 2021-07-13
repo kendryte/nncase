@@ -19,6 +19,7 @@ import tensorflow as tf
 import numpy as np
 from tflite_test_runner import TfliteTestRunner
 
+
 def _make_module(in_shape, v_shape):
     class BinaryModule(tf.Module):
         def __init__(self):
@@ -36,6 +37,7 @@ def _make_module(in_shape, v_shape):
             outs.append(tf.maximum(x, self.v))
             return outs
     return BinaryModule()
+
 
 lhs_shapes = [
     [3],
@@ -68,6 +70,7 @@ def test_binary(lhs_shape, rhs_shape, request):
     runner = TfliteTestRunner(request.node.name)
     model_file = runner.from_tensorflow(module)
     runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_binary.py'])

@@ -46,7 +46,7 @@ def compare(result_path: Tuple[str, str],
             p = Path(result_path_bin)
             np.savetxt(p.parent / (p.stem + '_hist.csv'),
                        np.stack((x[:-1], y)).T, fmt='%f', delimiter=',')
+        simarity_info = f"\n{simarity_name} similarity = {simarity:.4f}, threshold = {threshold:.4f}\n"
     if simarity < threshold:
-        print(f"{simarity_name} similarity is: {simarity} < {threshold}")
-        return False
-    return True
+        return False, simarity_info
+    return True, simarity_info

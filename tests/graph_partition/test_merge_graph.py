@@ -30,7 +30,7 @@ def _make_module():
 
         @tf.function(input_signature=[tf.TensorSpec([1, 4, 8, 3], tf.float32)])
         def __call__(self, x):
-            out = tf.reshape(x, [1,4,4,6])
+            out = tf.reshape(x, [1, 4, 4, 6])
             out1 = tf.nn.conv2d(out, self.w1, [1, 1], 'SAME')
             out2 = tf.nn.conv2d(out, self.w2, [1, 1], 'SAME')
             c1 = tf.concat([out1, out2], axis=3)
