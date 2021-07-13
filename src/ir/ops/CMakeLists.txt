@@ -30,6 +30,6 @@ target_sources(ir PRIVATE
     split.cpp
     gather.cpp
     onehot.cpp
-    lstm.cpp)
+    lstm.cpp
     gather_nd.cpp
     onehot.cpp)
