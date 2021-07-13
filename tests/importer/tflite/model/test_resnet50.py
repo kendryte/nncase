@@ -32,7 +32,7 @@ in_shapes = [
 @pytest.mark.parametrize('in_shape', in_shapes)
 def test_resnet50(in_shape, request):
     module = _make_module(in_shape)
-    overwrite_cfg = {'judge': {'threshold': 0.95}}
+    overwrite_cfg = {'judge': {'threshold': 0.94}}
     runner = TfliteTestRunner(request.node.name, overwirte_configs=overwrite_cfg)
     model_file = runner.from_tensorflow(module)
     runner.run(model_file)
