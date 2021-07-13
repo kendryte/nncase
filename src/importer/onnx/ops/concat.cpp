@@ -45,6 +45,8 @@ size_t axis_count(const std::vector<shape_t> &shapes)
 
 void onnx_importer::convert_op_Concat(const NodeProto &node)
 {
+    const auto &op_name { generate_name(node) };
+
     std::vector<shape_t> inputs_shapes;
     std::vector<datatype_t> inputs_types;
 
@@ -58,6 +60,7 @@ void onnx_importer::convert_op_Concat(const NodeProto &node)
     const size_t axis = real_axis(get_attribute<int64_t>(node, "axis").value(), axis_count(inputs_shapes));
 
     auto con = graph_.emplace<concat>(op_type, inputs_shapes, axis);
+    con->name(op_name + "(Concat)");
 
     for (int i = 0; i < node.input().size(); i++)
         input_tensors_.emplace(&con->input_at(i), node.input()[i]);

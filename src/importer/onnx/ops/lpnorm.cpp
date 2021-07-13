@@ -28,6 +28,8 @@ using namespace onnx;
 
 void onnx_importer::convert_op_LpNormalization(const NodeProto &node)
 {
+    const auto &op_name { generate_name(node) };
+
     const auto &input = node.input()[0];
     const auto &output = node.output()[0];
 
@@ -43,8 +45,11 @@ void onnx_importer::convert_op_LpNormalization(const NodeProto &node)
     case 1:
     {
         auto abs = graph_.emplace<unary>(unary_abs, input_shape);
+        abs->name(op_name + ".abs(L1Normalization)");
         auto sum = graph_.emplace<reduce>(reduce_sum, abs->output().shape(), reduce_axis, 0.f, true);
+        sum->name(op_name + ".reduce_sum(L1Normalization)");
         auto div = graph_.emplace<binary>(binary_div, input_shape, sum->output().shape(), value_range<float>::full());
+        div->name(op_name + ".div(L1Normalization)");
 
         sum->input().connect(abs->output());
         div->input_b().connect(sum->output());
@@ -57,11 +62,17 @@ void onnx_importer::convert_op_LpNormalization(const NodeProto &node)
     case 2:
     {
         auto square = graph_.emplace<unary>(unary_square, input_shape);
+        square->name(op_name + ".square(L2Normalization)");
         auto sum = graph_.emplace<reduce>(reduce_sum, square->output().shape(), reduce_axis, 0.f, true);
+        sum->name(op_name + ".reduce_sum(L2Normalization)");
         auto epsilon = graph_.emplace<constant>(1e-10f);
+        epsilon->name(op_name + ".eps(L2Normalization)");
         auto max = graph_.emplace<binary>(binary_max, sum->output().shape(), epsilon->output().shape(), value_range<float>::full());
+        max->name(op_name + ".stab(L2Normalization)");
         auto sqrt = graph_.emplace<unary>(unary_sqrt, max->output().shape());
+        sqrt->name(op_name + ".sqrt(L2Normalization)");
         auto div = graph_.emplace<binary>(binary_div, input_shape, sqrt->output().shape(), value_range<float>::full());
+        div->name(op_name + ".div(L2Normalization)");
 
         sum->input().connect(square->output());
         max->input_a().connect(sum->output());

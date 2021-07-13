@@ -68,6 +68,8 @@ void onnx_importer::convert_op_GlobalMaxPool(const NodeProto &node)
 template <bool global>
 void onnx_importer::convert_pool(const NodeProto &node, const reduce_op_t reduce_op, const float init_value)
 {
+    const auto &op_name { generate_name(node) };
+
     const auto &input = node.input()[0];
     const auto &output = node.output()[0];
 
@@ -129,6 +131,8 @@ void onnx_importer::convert_pool(const NodeProto &node, const reduce_op_t reduce
 
     auto op = graph_.emplace<reduce_window2d>(reduce_op, move(input_shape), init_value, kernel_shape[0], kernel_shape[1],
                                               pads[0], pads[1], strides[0], strides[1], dilations[0], dilations[1], value_range<float>::full());
+
+    op->name(op_name + '.' + reduce_op_to_string(reduce_op)+ "(Pool)");
 
     input_tensors_.emplace(&op->input(), input);
     output_tensors_.emplace(output, &op->output());

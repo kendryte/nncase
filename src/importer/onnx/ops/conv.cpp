@@ -70,6 +70,8 @@ void onnx_importer::convert_op_ConvTranspose(const NodeProto &node)
 template <class Node>
 void onnx_importer::convert_conv(const NodeProto &node)
 {
+    const auto &op_name { generate_name(node) };
+
     const auto &input = node.input()[0];
     const auto &weight = node.input()[1];
     const auto &output = node.output()[0];
@@ -152,6 +154,7 @@ void onnx_importer::convert_conv(const NodeProto &node)
     }
 
     auto conv = add_conv_node<Node>(node, graph_, input_shape, weight_shape, group, pads, strides, dilations);
+    conv->name(op_name + "(Conv2d)");
 
     input_tensors_.emplace(&conv->input(), input);
     input_tensors_.emplace(&conv->weights(), weight);

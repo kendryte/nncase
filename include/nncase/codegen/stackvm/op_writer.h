@@ -1019,6 +1019,40 @@ struct op_writer<nncase::runtime::stackvm::tensor_dequantize_op_t>
 };
 
 template <>
+struct op_writer<nncase::runtime::stackvm::tensor_gather_op_t>
+{
+    void operator()(const nncase::runtime::stackvm::tensor_gather_op_t &op, binary_writer &writer) const
+    {
+        writer.write(static_cast<uint8_t>(op.opcode));
+        writer.write(static_cast<uint16_t>(op.funct));
+        writer.write(static_cast<uint8_t>(op.datatype));
+        writer.write(op.rshape_src);
+        writer.write(op.rshape_dest);
+        writer.write(op.rstride_src);
+        writer.write(op.rstride_dest);
+        writer.write(op.rshape_indices);
+        writer.write(op.axis);
+    }
+};
+
+template <>
+struct op_writer<nncase::runtime::stackvm::tensor_gather_nd_op_t>
+{
+    void operator()(const nncase::runtime::stackvm::tensor_gather_nd_op_t &op, binary_writer &writer) const
+    {
+        writer.write(static_cast<uint8_t>(op.opcode));
+        writer.write(static_cast<uint16_t>(op.funct));
+        writer.write(static_cast<uint8_t>(op.datatype));
+        writer.write(op.rshape_src);
+        writer.write(op.rshape_dest);
+        writer.write(op.rstride_src);
+        writer.write(op.rstride_dest);
+        writer.write(op.rshape_indices);
+        writer.write(op.batch_dims);
+    }
+};
+
+template <>
 struct op_writer<nncase::runtime::stackvm::tensor_lut1d_op_t>
 {
     void operator()(const nncase::runtime::stackvm::tensor_lut1d_op_t &op, binary_writer &writer) const
@@ -1277,6 +1311,8 @@ public:
     void tensor_copy_(datatype_t datatype, uint8_t rshape, uint8_t rstride_src, uint8_t rstride_dest);
     void tensor_convert_(datatype_t in_datatype, datatype_t dst_datatype, uint8_t rshape_src, uint8_t rstride_src, uint8_t rstride_dest);
     void tensor_dequantize_(datatype_t in_datatype, datatype_t dst_datatype, uint8_t rshape_src, uint8_t rstride_src, uint8_t rstride_dest);
+    void tensor_gather_(datatype_t datatype, uint8_t rshape_src, uint8_t rshape_dest, uint8_t rstride_src, uint8_t rstride_dest, uint8_t rshape_indices, uint8_t axis);
+    void tensor_gather_nd_(datatype_t datatype, uint8_t rshape_src, uint8_t rshape_dest, uint8_t rstride_src, uint8_t rstride_dest, uint8_t rshape_indices, uint8_t batch_dims);
     void tensor_lut1d_(datatype_t datatype, uint8_t rshape_src, uint8_t rstride_src, uint8_t rstride_dest, uint16_t table_len);
     void tensor_pad_(datatype_t datatype, uint8_t rshape_src, uint8_t rstride_src, uint8_t rstride_dest, uint8_t rpaddings, pad_mode_t pad_mode);
     void tensor_quantize_(datatype_t in_datatype, datatype_t dst_datatype, uint8_t rshape_src, uint8_t rstride_src, uint8_t rstride_dest);

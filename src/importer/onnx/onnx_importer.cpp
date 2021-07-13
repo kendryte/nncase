@@ -329,6 +329,12 @@ optional<datatype_t> onnx_importer::get_datatype(const TensorProto_DataType data
     case TensorProto_DataType_UINT8:
         return dt_uint8;
 
+    case TensorProto_DataType_INT32:
+        return dt_int32;
+
+    case TensorProto_DataType_INT64:
+        return dt_int64;
+
     default:
         return optional<datatype_t> {};
     }
@@ -787,4 +793,12 @@ shape_t onnx_importer::broadcast_shape(const shape_t &v_shape, const shape_t &in
         result.push_back(1);
 
     return result;
+}
+
+std::string onnx_importer::generate_name(const onnx::NodeProto &node) const
+{
+    if (node.has_name())
+        return node.name();
+    else
+        return 'n' + std::to_string(graph_.nodes().size());
 }

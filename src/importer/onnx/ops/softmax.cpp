@@ -28,6 +28,8 @@ using namespace onnx;
 
 void onnx_importer::convert_op_Softmax(const NodeProto &node)
 {
+    const auto &op_name { generate_name(node) };
+
     const auto &input = node.input()[0];
     const auto &output = node.output()[0];
 
@@ -38,10 +40,15 @@ void onnx_importer::convert_op_Softmax(const NodeProto &node)
     axis_t reduce_axis { static_cast<int>(real_axis(axis, input_shape.size())) };
 
     auto max = graph_.emplace<reduce>(reduce_max, input_shape, reduce_axis, std::numeric_limits<float>::lowest(), true);
+    max->name(op_name + ".max(Softmax)");
     auto sub = graph_.emplace<binary>(binary_sub, input_shape, max->output().shape(), value_range<float>::full());
+    sub->name(op_name + ".sub(Softmax)");
     auto exp = graph_.emplace<unary>(unary_exp, sub->output().shape());
+    exp->name(op_name + ".exp(Softmax)");
     auto sum = graph_.emplace<reduce>(reduce_sum, exp->output().shape(), reduce_axis, 0.f, true);
+    sum->name(op_name + ".sum(Softmax)");
     auto div = graph_.emplace<binary>(binary_div, exp->output().shape(), sum->output().shape(), value_range<float>::full());
+    div->name(op_name + ".div(Softmax)");
 
     sub->input_b().connect(max->output());
     exp->input().connect(sub->output());

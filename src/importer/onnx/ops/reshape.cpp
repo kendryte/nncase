@@ -25,6 +25,8 @@ using namespace onnx;
 
 void onnx_importer::convert_op_Reshape(const NodeProto &node)
 {
+    const auto &op_name { generate_name(node) };
+
     const auto &input = node.input()[0];
     const auto &shape = node.input()[1];
     const auto &output = node.output()[0];
@@ -82,6 +84,7 @@ void onnx_importer::convert_op_Reshape(const NodeProto &node)
     }
 
     auto op = graph_.emplace<bitcast>(input_type, input_shape, new_shape);
+    op->name(op_name + "(Reshape)");
 
     input_tensors_.emplace(&op->input(), input);
     output_tensors_.emplace(output, &op->output());

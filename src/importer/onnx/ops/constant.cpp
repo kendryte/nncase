@@ -51,12 +51,20 @@ constant *onnx_importer::emplace_constant<TensorProto>(const std::optional<Tenso
         return graph_.emplace<constant>(value_dt.value(), shape, vec);
     }
 
-    case TensorProto_DataType_UINT16:
-    case TensorProto_DataType_INT16:
     case TensorProto_DataType_INT32:
+    {
+        std::vector<int32_t> vec { v.int32_data().begin(), v.int32_data().end() };
+        return graph_.emplace<constant>(value_dt.value(), shape, vec);
+    }
     case TensorProto_DataType_INT64:
     {
-        if (tensor_element_type == TensorProto_DataType_INT32 || tensor_element_type == TensorProto_DataType_INT64)
+        std::vector<int64_t> vec { v.int64_data().begin(), v.int64_data().end() };
+        return graph_.emplace<constant>(value_dt.value(), shape, vec);
+    }
+    case TensorProto_DataType_UINT16:
+    case TensorProto_DataType_INT16:
+    {
+        if (tensor_element_type == TensorProto_DataType_INT64)
         {
             std::cout << "Constants of types int32 and int64 are represented as float32 and may suffer rounding errors if mantissa width is exceeded" << std::endl;
         }
@@ -86,6 +94,7 @@ void onnx_importer::convert_op_Constant(const NodeProto &node)
     else if (const auto value = get_attribute<float>(node, "value_float"))
     {
         op = graph_.emplace<constant>(value.value());
+        op->name(generate_name(node) + "(Constant)");
     }
     else if (const auto value = get_attribute<std::vector<float>>(node, "value_floats"))
     {
@@ -93,6 +102,7 @@ void onnx_importer::convert_op_Constant(const NodeProto &node)
         std::vector<float> vec { v.begin(), v.end() };
         shape_t shape { 1, v.size() };
         op = graph_.emplace<constant>(dt_float32, shape, vec);
+        op->name(generate_name(node) + "(Constant)");
     }
     else if (const auto value = get_attribute<int>(node, "value_int"))
     {
@@ -104,6 +114,7 @@ void onnx_importer::convert_op_Constant(const NodeProto &node)
         std::vector<uint8_t> vec { v.begin(), v.end() };
         shape_t shape { 1, v.size() };
         op = graph_.emplace<constant>(dt_uint8, shape, vec);
+        op->name(generate_name(node) + "(Constant)");
     }
     else
     {

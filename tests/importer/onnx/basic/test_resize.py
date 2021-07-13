@@ -18,7 +18,7 @@ import torch
 import numpy as np
 import sys
 import torchvision.transforms.functional as F
-from test_runner import OnnxTestRunner
+from onnx_test_runner import OnnxTestRunner
 
 def _make_module(size, mode):
 

@@ -28,15 +28,13 @@ public:
     output_connector &output() { return output_at(0); }
 
     int32_t axis() const noexcept { return axis_; }
-    int32_t batch_dims() const noexcept { return batch_dims_; }
 
-    gather(datatype_t type, shape_t input_shape, shape_t indices_shape, shape_t output_shape, int32_t axis, int32_t batch_dims = 0);
+    gather(datatype_t in_type, shape_t input_shape, shape_t indices_shape, shape_t output_shape, int32_t axis);
 
 protected:
     bool properties_equal(node &other) const override;
 
 private:
     int32_t axis_;
-    int32_t batch_dims_;
 };
 }

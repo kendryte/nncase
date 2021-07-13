@@ -31,3 +31,5 @@ target_sources(ir PRIVATE
     gather.cpp
     onehot.cpp
     lstm.cpp)
+    gather_nd.cpp
+    onehot.cpp)

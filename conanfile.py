@@ -8,13 +8,15 @@ class nncaseConan(ConanFile):
         "shared": [True, False],
         "fPIC": [True, False],
         "runtime": [True, False],
-        "tests": [True, False]
+        "tests": [True, False],
+        "halide": [True, False]
     }
     default_options = {
         "shared": False,
         "fPIC": True,
         "runtime": False,
-        "tests": False
+        "tests": False,
+        "halide": False
     }
 
     def requirements(self):
@@ -30,6 +32,7 @@ class nncaseConan(ConanFile):
         self.requires('xtensor/0.21.5')
         self.requires('mpark-variant/1.4.0')
         self.requires('spdlog/1.8.2')
+        self.requires('hkg/0.0.1')
         if self.options.tests:
             self.requires('gtest/1.10.0')
 

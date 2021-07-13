@@ -58,6 +58,8 @@ void onnx_importer::convert_binary(const onnx::NodeProto &node, const binary_op_
     assert(node.input().size() == 2);
     assert(node.output().size() == 1);
 
+    const auto &op_name { generate_name(node) };
+
     const auto &input_a = node.input()[0];
     const auto &input_b = node.input()[1];
     const auto &output = node.output()[0];
@@ -65,6 +67,7 @@ void onnx_importer::convert_binary(const onnx::NodeProto &node, const binary_op_
     auto input_a_shape = get_shape(input_a);
     auto input_b_shape = get_shape(input_b);
     auto op = graph_.emplace<binary>(binary_op, input_a_shape, input_b_shape, value_range<float>::full());
+    op->name(op_name + '(' + binary_op_to_string(binary_op) + ')');
 
     input_tensors_.emplace(&op->input_a(), input_a);
     input_tensors_.emplace(&op->input_b(), input_b);
