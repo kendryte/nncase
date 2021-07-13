@@ -24,15 +24,27 @@ using namespace nncase::kernels::cpu::optimized;
 
 namespace
 {
+// if constexpr can be used in C++17
+// but k210 runtime only support C++14
+template<class T>
+void memset_(T *output, size_t output_size, T off_value)
+{
+    std::fill_n(output, output_size, off_value);
+}
+
+template<>
+void memset_(int32_t *output, size_t output_size, int32_t off_value)
+{
+    memset(output, off_value, output_size);
+}
+
 template <class T>
 result<void> onehot_impl(const int32_t *indices, T *output, const runtime_shape_t &indices_shape, const runtime_shape_t &out_shape,
     NNCASE_UNUSED const runtime_shape_t &out_strides, NNCASE_UNUSED size_t depth, T off_value, T on_value,
     size_t axis, NNCASE_UNUSED kernel_context &context)
 {
     auto output_size = compute_size(out_shape);
-    // TODO:only int?
-    std::fill_n(output, output_size, off_value);
-    // memset(output, off_value, output_size);
+    memset_(output, output_size, off_value);
     auto indices_size = compute_size(indices_shape);
 
     size_t out_size = std::accumulate(indices_shape.begin(), indices_shape.begin() + axis, 1, std::multiplies<size_t> {});
@@ -48,7 +60,6 @@ result<void> onehot_impl(const int32_t *indices, T *output, const runtime_shape_
         {
             output[indices[i]] = on_value;
             output += depth;
-            // TODO:remove
         }
     }
     else if (onehot_dims == 1)

@@ -19,6 +19,7 @@
 #include <google/protobuf/io/zero_copy_stream_impl_lite.h>
 #include <google/protobuf/message.h>
 #include <nncase/importer/importer.h>
+#include <nncase/importer/util.h>
 #include <nncase/ir/graph.h>
 
 using namespace std;
@@ -81,7 +82,8 @@ optional<Proto> extract(const ProtobufCollection<Proto> &collection, const strin
 {
     const auto it {
         find_if(begin(collection), end(collection),
-            [&value](const auto &e) {
+            [&value](const auto &e)
+            {
                 return e.name() == value;
             })
     };
@@ -601,7 +603,8 @@ vector<T> onnx_importer::raw_to_vector(const onnx::TensorProto &tensor)
         std::vector<target_type> data;
         data.reserve(size);
         std::transform(ptr, ptr + size, std::back_inserter(data),
-            [](const auto &e) {
+            [](const auto &e)
+            {
                 return le_to_native<storage_type>(reinterpret_cast<const byte *>(&e));
             });
 
@@ -801,4 +804,18 @@ std::string onnx_importer::generate_name(const onnx::NodeProto &node) const
         return node.name();
     else
         return 'n' + std::to_string(graph_.nodes().size());
+}
+
+void onnx_importer::link_input_tensor(ir::input_connector *conn, const std::string &onnx_v)
+{
+    auto type = get_datatype(onnx_v).value();
+    auto shape = get_shape(onnx_v);
+    link_input_tensor_by_id(input_tensors_, conn, onnx_v, type, shape, onnx_v);
+}
+
+void onnx_importer::link_output_tensor(const std::string &onnx_v, ir::output_connector *conn)
+{
+    auto type = get_datatype(onnx_v).value();
+    auto shape = get_shape(onnx_v);
+    link_output_tensor_by_id(output_tensors_, onnx_v, conn, type, shape, onnx_v);
 }

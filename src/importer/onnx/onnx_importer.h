@@ -90,6 +90,11 @@ private:
         return axis >= 0 ? axis : count + axis;
     }
 
+        void link_input_tensor(ir::input_connector *conn, const std::string& onnx_v);
+
+        void link_output_tensor(const std::string& onnx_v, ir::output_connector *conn);
+
+        static std::vector<padding> parse_padding(const ir::axis_t &padding_value);
     static std::vector<padding> parse_padding(const ir::axis_t &padding_value);
 
     template <typename T>
