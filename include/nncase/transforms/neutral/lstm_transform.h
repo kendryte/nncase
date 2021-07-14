@@ -1,4 +1,4 @@
-/* Copyright 2019-2021 Canaan Inc.
+/* Copyright 2020 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,21 +12,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../caffe_importer.h"
-#include <nncase/ir/placeholders.h>
+#pragma once
+#include "../transform.h"
 
-using namespace nncase;
-using namespace nncase::importer;
-using namespace nncase::ir;
-using namespace caffe;
-
-DEFINE_CAFFE_LOWER(Split)
+namespace nncase::ir::transforms
 {
-    // check if there are bn/scale/relu above
-    std::string input_name = get_real_input_names(op)[0];
+class NNCASE_API lstm_transform : public transform
+{
+public:
+    void process(transform_context &context) override;
 
-    auto &input = *output_tensors_.at(input_name);
+protected:
+    bool skip_self_contained_check() const noexcept override { return true; }
+    bool on_try_match(ir::node &node, transform_context &context) override;
+};
 
-    for (int i = 0; i < op.top_size(); i++)
-        output_tensors_.emplace(op.top(i), &input);
 }

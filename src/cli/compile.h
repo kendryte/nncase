@@ -29,6 +29,7 @@ private:
 private:
     std::string input_filename_;
     std::string output_filename_;
+    std::string input_prototxt_;
     std::string input_format_;
     std::string target_name_;
     std::string output_arrays_;

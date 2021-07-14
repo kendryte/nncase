@@ -124,7 +124,7 @@ inline shape_t normalize_reshape(const shape_t &in_shape, const axis_t &new_shap
         if (v == -1)
         {
             if (non_det_id)
-                throw std::runtime_error("Reshap can only have 1 non-determined dimension at most");
+                throw std::runtime_error("Reshape can only have 1 non-determined dimension at most");
             non_det_id = i;
         }
         else

@@ -13,22 +13,49 @@
  * limitations under the License.
  */
 #include "../caffe_importer.h"
-#include <hlir/ops/binary.h>
+#include <nncase/ir/ops/binary.h>
 
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::hlir;
+using namespace nncase::ir;
 using namespace caffe;
 
 DEFINE_CAFFE_LOWER(Eltwise)
 {
-    auto &input_a = *output_tensors_.at(op.bottom(0));
-    auto &input_b = *output_tensors_.at(op.bottom(1));
+    // check if there are bn/scale/relu above
+    std::string input_name_a = get_real_input_names(op)[0];
+    std::string input_name_b = get_real_input_names(op)[1];
+
+    auto &input_a = *output_tensors_.at(input_name_a);
+    auto &input_b = *output_tensors_.at(input_name_b);
     auto &param = op.eltwise_param();
+    if (param.operation() == EltwiseParameter_EltwiseOp_SUM)
+    {
+        auto add = graph_.emplace<binary>(binary_add, input_a.shape(), input_b.shape(), value_range<float>::full());
+        add->name(op.name() + "/add");
 
-    auto add = graph_.emplace<binary>(binary_add, input_a.shape(), input_b.shape(), value_range<float>::full());
+        input_tensors_.emplace(&add->input_a(), input_name_a);
+        input_tensors_.emplace(&add->input_b(), input_name_b);
+        output_tensors_.emplace(op.top(0), &add->output());
+    }
+    else if (param.operation() == EltwiseParameter_EltwiseOp_PROD)
+    {
+        auto mul = graph_.emplace<binary>(binary_mul, input_a.shape(), input_b.shape(), value_range<float>::full());
+        mul->name(op.name() + "/mul");
 
-    input_tensors_.emplace(&add->input_a(), op.bottom(0));
-    input_tensors_.emplace(&add->input_b(), op.bottom(1));
-    output_tensors_.emplace(op.top(0), &add->output());
+        input_tensors_.emplace(&mul->input_a(), input_name_a);
+        input_tensors_.emplace(&mul->input_b(), input_name_b);
+        output_tensors_.emplace(op.top(0), &mul->output());
+    }
+    else if (param.operation() == EltwiseParameter_EltwiseOp_MAX)
+    {
+        auto max = graph_.emplace<binary>(binary_max, input_a.shape(), input_b.shape(), value_range<float>::full());
+        max->name(op.name() + "/max");
+
+        input_tensors_.emplace(&max->input_a(), input_name_a);
+        input_tensors_.emplace(&max->input_b(), input_name_b);
+        output_tensors_.emplace(op.top(0), &max->output());
+    }
+    else
+        throw std::runtime_error("invalid elementwise op");
 }
