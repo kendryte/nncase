@@ -15,6 +15,7 @@
 #include "target.h"
 #include <hlir/transforms/k210/fake_kpu_conv2d.h>
 #include <hlir/transforms/k210/fold_kpu_upload.h>
+#include <hlir/transforms/k210/fuse_kpu_conv2d_pool.h>
 #include <hlir/transforms/k210/fuse_kpu_download.h>
 #include <hlir/transforms/k210/kpu_conv2d.h>
 #include <hlir/transforms/k210/matmul_to_fake_kpu_conv2d.h>
@@ -26,7 +27,6 @@
 #include <hlir/transforms/neutral/fold_transpose.h>
 #include <hlir/transforms/neutral/fuse_pad.h>
 #include <hlir/transforms/neutral/transpose_motion.h>
-#include <hlir/transforms/k210/fuse_kpu_conv2d_pool.h>
 #include <scheduler/k210/kpu_memory_allocator.h>
 #include <scheduler/main_memory_allocator.h>
 

@@ -27,7 +27,7 @@ namespace
 template <size_t Dims, size_t CurDim = 0, class Callable = DefaultCallable>
 void _slice_contiguous_dim_copy(const runtime_shape_t &begins, NNCASE_UNUSED const runtime_shape_t &ends,
     Callable &&line_copy, runtime_shape_t &in_index,
-   std::false_type) noexcept
+    std::false_type) noexcept
 {
     in_index[Dims] = begins[Dims];
     line_copy();
@@ -36,7 +36,7 @@ void _slice_contiguous_dim_copy(const runtime_shape_t &begins, NNCASE_UNUSED con
 template <size_t Dims, size_t CurDim = 0, class Callable = DefaultCallable>
 void _slice_contiguous_dim_copy(const runtime_shape_t &begins, NNCASE_UNUSED const runtime_shape_t &ends,
     Callable &&line_copy, runtime_shape_t &in_index,
-   std::true_type) noexcept
+    std::true_type) noexcept
 {
     for (size_t i = begins[CurDim]; i < ends[CurDim]; ++i)
     {
@@ -57,8 +57,7 @@ result<void> slice_contiguous_impl(const T *input, T *output, const runtime_shap
     auto dims = in_shape.size() - 1;
     runtime_shape_t in_index(in_shape.size());
 
-    auto line_copy = [&]()
-    {
+    auto line_copy = [&]() {
         const auto distance = ends[dims] - begins[dims];
         const auto copy_size = distance * elemsize;
         const auto *in_ptr = input + offset(in_strides, in_index);
@@ -69,7 +68,7 @@ result<void> slice_contiguous_impl(const T *input, T *output, const runtime_shap
     if (dims == 0)
     {
         _slice_contiguous_dim_copy<0>(begins, ends,
-                                      line_copy, in_index, std::false_type {});
+            line_copy, in_index, std::false_type {});
     }
     else if (dims == 1)
     {
@@ -96,7 +95,7 @@ result<void> slice_contiguous_impl(const T *input, T *output, const runtime_shap
 template <size_t Dims, size_t CurDim = 0, class Callable = DefaultCallable>
 void _slice_dim_copy(NNCASE_UNUSED const runtime_shape_t &begins, NNCASE_UNUSED const runtime_shape_t &ends,
     NNCASE_UNUSED const runtime_axis_t &strides, Callable &&line_copy, runtime_shape_t &in_index, runtime_shape_t &out_index,
-   std::false_type) noexcept
+    std::false_type) noexcept
 {
     line_copy(in_index, out_index);
 }
@@ -104,7 +103,7 @@ void _slice_dim_copy(NNCASE_UNUSED const runtime_shape_t &begins, NNCASE_UNUSED 
 template <size_t Dims, size_t CurDim = 0, class Callable = DefaultCallable>
 void _slice_dim_copy(const runtime_shape_t &begins, const runtime_shape_t &ends,
     const runtime_axis_t &strides, Callable &&line_copy, runtime_shape_t &in_index, runtime_shape_t &out_index,
-   std::true_type) noexcept
+    std::true_type) noexcept
 {
     out_index[CurDim] = 0;
     for (size_t i = begins[CurDim]; i < ends[CurDim]; i += strides[CurDim])
@@ -159,8 +158,7 @@ result<void> slice_linecopy_impl(const T *input, T *output, const runtime_shape_
     auto dims = in_shape.size() - 1;
     return _slice_impl(
         in_shape, begins, ends, strides,
-        [&, dims](runtime_shape_t &in_index, runtime_shape_t &out_index)
-        {
+        [&, dims](runtime_shape_t &in_index, runtime_shape_t &out_index) {
             in_index[dims] = begins[dims];
             const auto distance = ends[dims] - begins[dims];
             auto copy_size = distance * sizeof(T);
@@ -177,8 +175,7 @@ result<void> slice_strides_impl(const T *input, T *output, const runtime_shape_t
     auto dims = in_shape.size() - 1;
     return _slice_impl(
         in_shape, begins, ends, strides,
-        [&, dims](runtime_shape_t &in_index, runtime_shape_t &out_index)
-        {
+        [&, dims](runtime_shape_t &in_index, runtime_shape_t &out_index) {
             for (size_t i = begins[dims]; i < ends[dims]; i += strides[dims])
             {
                 in_index[dims] = i;

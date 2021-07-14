@@ -34,8 +34,8 @@ DEFINE_TFLITE_LOWER(QUANTIZE)
     auto mid_output = &tp1->output();
     if (input.type() != tflite::TensorType_FLOAT32)
     {
-        deq = graph_.emplace<dequantize>(tp1->output().type(), tp1->output().shape(), dt_float32, 
-             to_quant_param(input.quantization()));
+        deq = graph_.emplace<dequantize>(tp1->output().type(), tp1->output().shape(), dt_float32,
+            to_quant_param(input.quantization()));
         deq->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/deq");
         mid_output = &deq->output();
         deq->input().connect(tp1->output());
@@ -80,8 +80,8 @@ DEFINE_TFLITE_LOWER(DEQUANTIZE)
     //    auto mid_input = &tp1->output();
     if (input.type() != tflite::TensorType_FLOAT32)
     {
-        deq = graph_.emplace<dequantize>(tp1->output().type(), tp1->output().shape(), dt_float32, 
-             to_quant_param(input.quantization()));
+        deq = graph_.emplace<dequantize>(tp1->output().type(), tp1->output().shape(), dt_float32,
+            to_quant_param(input.quantization()));
         deq->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/deq");
         mid_output = &deq->output();
         deq->input().connect(tp1->output());

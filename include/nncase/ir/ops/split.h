@@ -17,26 +17,26 @@
 
 namespace nncase::ir
 {
-    class NNCASE_API split : public node
-    {
-    public:
-        DEFINE_NODE_OPCODE(op_split);
+class NNCASE_API split : public node
+{
+public:
+    DEFINE_NODE_OPCODE(op_split);
 
-        input_connector &input() { return input_at(0); }
-        output_connector &output() { return output_at(0); }
+    input_connector &input() { return input_at(0); }
+    output_connector &output() { return output_at(0); }
 
-        std::vector<size_t> indices_or_sections() const noexcept { return indices_or_sections_; }
-        int32_t axis() const noexcept { return axis_; }
-        bool is_indices() const noexcept { return is_indices_; }
+    std::vector<size_t> indices_or_sections() const noexcept { return indices_or_sections_; }
+    int32_t axis() const noexcept { return axis_; }
+    bool is_indices() const noexcept { return is_indices_; }
 
-        split(datatype_t type, shape_t inputs_shape, std::vector<shape_t> outputs_shape, std::vector<size_t> indices_or_sections, int32_t axis, bool is_indices);
+    split(datatype_t type, shape_t inputs_shape, std::vector<shape_t> outputs_shape, std::vector<size_t> indices_or_sections, int32_t axis, bool is_indices);
 
-    protected:
-        bool properties_equal(node &other) const override;
+protected:
+    bool properties_equal(node &other) const override;
 
-    private:
-        std::vector<size_t> indices_or_sections_;
-        int32_t axis_;
-        bool is_indices_;
-    };
+private:
+    std::vector<size_t> indices_or_sections_;
+    int32_t axis_;
+    bool is_indices_;
+};
 }

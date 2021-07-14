@@ -47,7 +47,7 @@ result<void> binary_impl(TOp &&op, const float *input_a, const float *input_b, f
 
 result<void> reference::binary(binary_op_t op, const float *input_a, const float *input_b, float *output,
     const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
-    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_strides, value_range<float> fused_activation, 
+    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_strides, value_range<float> fused_activation,
     NNCASE_UNUSED kernel_context &context) noexcept
 {
     switch (op)

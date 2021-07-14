@@ -59,8 +59,7 @@ void onnx_importer::convert_op_Unsqueeze(const NodeProto &node)
     shape_t new_shape(size, 1);
     for (size_t i = 0, j = 0; i < size; i++)
     {
-        new_shape[i] = std::find(axes.begin(), axes.end(), i) == axes.end() ?
-                       input_shape[j++] : 1;
+        new_shape[i] = std::find(axes.begin(), axes.end(), i) == axes.end() ? input_shape[j++] : 1;
     }
 
     auto op = graph_.emplace<bitcast>(input_type, input_shape, new_shape);

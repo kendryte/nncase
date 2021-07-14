@@ -69,18 +69,18 @@ DEFINE_TFLITE_LOWER(MIRROR_PAD)
     auto paddings = load_tensor<int32_t, 2>(get_tensor(op.inputs(), 1));
     auto &options = *op.builtin_options_as_MirrorPadOptions();
     auto tmp = options.mode();
-    pad_mode_t mode ;
-    switch(tmp)
+    pad_mode_t mode;
+    switch (tmp)
     {
-        case 0:
-            mode = pad_reflect;
-            break;
-        case 1:
-            mode = pad_symmetric;
-            break;
-        default:
-            throw std::runtime_error("Unsupport Pad Mode!");
-            break;
+    case 0:
+        mode = pad_reflect;
+        break;
+    case 1:
+        mode = pad_symmetric;
+        break;
+    default:
+        throw std::runtime_error("Unsupport Pad Mode!");
+        break;
     }
     xt::svector<padding> new_paddings;
     for (size_t i = 0; i < paddings.shape()[0]; i++)

@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 #include <nncase/kernels/cpu/reference/reduce_window.h>
-#include <nncase/kernels/reduce_window.h>
 #include <nncase/kernels/kernel_context.h>
+#include <nncase/kernels/reduce_window.h>
 
 using namespace nncase;
 using namespace nncase::runtime;

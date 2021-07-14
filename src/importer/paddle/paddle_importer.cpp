@@ -14,8 +14,8 @@
  */
 #include "paddle_importer.h"
 #include <fstream>
-#include <importer/importer.h>
 #include <hlir/ops/constant.h>
+#include <importer/importer.h>
 #include <runtime/binary_reader.h>
 
 using namespace nncase;

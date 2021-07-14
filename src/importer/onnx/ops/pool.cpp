@@ -87,8 +87,7 @@ void onnx_importer::convert_pool(const NodeProto &node, const reduce_op_t reduce
     if (input_shape.size() < 4)
         throw std::invalid_argument("Image with 4-dimensional shape is expected on the input of pooling operators.");
 
-    const auto &kernel_shape = global ? std::vector<int> { static_cast<int>(input_shape[2]), static_cast<int>(input_shape[3]) } :
-                                        get_attribute<std::vector<int>>(node, "kernel_shape").value();
+    const auto &kernel_shape = global ? std::vector<int> { static_cast<int>(input_shape[2]), static_cast<int>(input_shape[3]) } : get_attribute<std::vector<int>>(node, "kernel_shape").value();
 
     std::array<size_t, 2> strides = { 1, 1 };
 
@@ -130,9 +129,9 @@ void onnx_importer::convert_pool(const NodeProto &node, const reduce_op_t reduce
     }
 
     auto op = graph_.emplace<reduce_window2d>(reduce_op, move(input_shape), init_value, kernel_shape[0], kernel_shape[1],
-                                              pads[0], pads[1], strides[0], strides[1], dilations[0], dilations[1], value_range<float>::full());
+        pads[0], pads[1], strides[0], strides[1], dilations[0], dilations[1], value_range<float>::full());
 
-    op->name(op_name + '.' + reduce_op_to_string(reduce_op)+ "(Pool)");
+    op->name(op_name + '.' + reduce_op_to_string(reduce_op) + "(Pool)");
 
     input_tensors_.emplace(&op->input(), input);
     output_tensors_.emplace(output, &op->output());

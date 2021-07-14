@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 #include <nncase/kernels/cpu/reference/reduce_window.h>
-#include <nncase/kernels/kernel_utils.h>
 #include <nncase/kernels/kernel_context.h>
+#include <nncase/kernels/kernel_utils.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -93,7 +93,7 @@ result<void> reduce_window2d_impl(const float *input, float init_value, float *o
 
 result<void> reference::reduce_window2d(reduce_op_t op, const float *input, float init_value, float *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const padding &padding_h, const padding &padding_w,
-    int32_t filter_h, int32_t filter_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w, value_range<float> fused_activation, 
+    int32_t filter_h, int32_t filter_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w, value_range<float> fused_activation,
     kernel_context &context) noexcept
 {
     switch (op)

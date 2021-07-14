@@ -81,7 +81,7 @@ result<void> resize_bilinear_impl(const T *input, T *output, const runtime_shape
 
 template <class T>
 result<void> resize_nearest_neighbor_impl(const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides,
-                                          const runtime_shape_t &out_strides, int32_t out_h, int32_t out_w, bool align_corners, bool half_pixel_centers, NNCASE_UNUSED kernel_context &context) noexcept
+    const runtime_shape_t &out_strides, int32_t out_h, int32_t out_w, bool align_corners, bool half_pixel_centers, NNCASE_UNUSED kernel_context &context) noexcept
 {
     auto scales = kernels::detail::get_resize_scales(in_shape, out_h, out_w, align_corners);
     auto height_scale = scales.first;
