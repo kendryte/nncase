@@ -41,6 +41,8 @@ axis_t single_dim_axes(const shape_t &shape)
 
 void onnx_importer::convert_op_Squeeze(const NodeProto &node)
 {
+    const auto &op_name { generate_name(node) };
+
     const auto &input = node.input()[0];
     const auto &output = node.output()[0];
 
@@ -80,6 +82,7 @@ void onnx_importer::convert_op_Squeeze(const NodeProto &node)
     }
 #endif
     auto op = graph_.emplace<bitcast>(input_type, input_shape, new_shape);
+    op->name(op_name + "(Squeeze)");
 
     input_tensors_.emplace(&op->input(), input);
     output_tensors_.emplace(output, &op->output());

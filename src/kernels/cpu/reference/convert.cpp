@@ -56,9 +56,11 @@ result<void> convert_f32_to_bf16_impl(const float *input, bfloat16 *output, cons
         CONVERT_IMPL_LV2(input_t, uint8_t);  \
         CONVERT_IMPL_LV2(input_t, uint16_t); \
         CONVERT_IMPL_LV2(input_t, uint32_t); \
+        CONVERT_IMPL_LV2(input_t, uint64_t); \
         CONVERT_IMPL_LV2(input_t, int8_t);   \
         CONVERT_IMPL_LV2(input_t, int16_t);  \
         CONVERT_IMPL_LV2(input_t, int32_t);  \
+        CONVERT_IMPL_LV2(input_t, int64_t);  \
         CONVERT_IMPL_LV2(input_t, float);    \
     }
 
@@ -72,9 +74,11 @@ result<void> reference::convert(datatype_t in_type, datatype_t out_type, const g
     CONVERT_IMPL_LV1(uint8_t);
     CONVERT_IMPL_LV1(uint16_t);
     CONVERT_IMPL_LV1(uint32_t);
+    CONVERT_IMPL_LV1(uint64_t);
     CONVERT_IMPL_LV1(int8_t);
     CONVERT_IMPL_LV1(int16_t);
     CONVERT_IMPL_LV1(int32_t);
+    CONVERT_IMPL_LV1(int64_t);
     CONVERT_IMPL_LV1(bfloat16);
     CONVERT_IMPL_LV1(float);
     return err(std::errc::not_supported);

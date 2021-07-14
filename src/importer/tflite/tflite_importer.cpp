@@ -200,8 +200,8 @@ void tflite_importer::import(const import_options &options)
 void tflite_importer::convert_op(const tflite::Operator &op)
 {
     auto opcode = model_->operator_codes()->Get(op.opcode_index());
-    auto builtin_code = opcode->builtin_code();
-
+    // Compatible with older version model
+    auto builtin_code = static_cast<tflite::BuiltinOperator>(std::max(static_cast<int32_t>(opcode->deprecated_builtin_code()), static_cast<int32_t>(opcode->builtin_code())));
 #define DEFINE_OPCODE(opcode)                             \
     if (builtin_code == tflite::BuiltinOperator_##opcode) \
         return convert_op_##opcode(op);

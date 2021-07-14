@@ -25,6 +25,8 @@ using namespace onnx;
 
 void onnx_importer::convert_op_Identity(const NodeProto &node)
 {
+    const auto &op_name { generate_name(node) };
+
     const auto &input = node.input()[0];
     const auto &output = node.output()[0];
 
@@ -32,6 +34,7 @@ void onnx_importer::convert_op_Identity(const NodeProto &node)
     const auto &input_shape = get_shape(input);
 
     auto bc = graph_.emplace<bitcast>(input_type, input_shape, input_shape);
+    bc->name(op_name + ".broadcast(Identity)");
     input_tensors_.emplace(&bc->input(), input);
     output_tensors_.emplace(output, &bc->output());
 }

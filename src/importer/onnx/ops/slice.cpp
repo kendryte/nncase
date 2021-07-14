@@ -26,6 +26,8 @@ using namespace onnx;
 
 void onnx_importer::convert_op_Slice(const NodeProto& node)
 {
+    const auto &op_name { generate_name(node) };
+
     const std::string &data_input_name = node.input()[0];
     const datatype_t data_type = get_datatype(data_input_name).value();
     const shape_t &data_shape = get_shape(data_input_name);
@@ -161,6 +163,7 @@ void onnx_importer::convert_op_Slice(const NodeProto& node)
     ends = permuted_ends;
 
     auto sl = graph_.emplace<slice>(data_type, data_shape, begins, ends, strides, 0, 0, 0, 0);
+    sl->name(op_name + "(Slice)");
 
     input_tensors_.emplace(&sl->input(), data_input_name);
     output_tensors_.emplace(node.output()[0], &sl->output());

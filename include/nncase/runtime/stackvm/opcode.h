@@ -132,20 +132,22 @@ enum class tensor_function_t
     CONVERT = 0x0007,
     COPY = 0x0008,
     DEQUANTIZE = 0x0009,
-    LOGISTIC = 0x000A,
-    LUT1D = 0x000B,
-    MATMUL = 0x000C,
-    PAD = 0x000D,
-    QUANTIZE = 0x000E,
-    REDUCE = 0x000F,
-    REDUCE_WINDOW2D = 0x0010,
-    RESIZE_IMAGE = 0x0011,
-    SLICE = 0x0012,
-    SOFTMAX = 0x0013,
-    SPACE_TO_BATCH = 0x0014,
-    TAKE = 0x0015,
-    TRANSPOSE = 0x0016,
-    UNARY = 0x0017,
+    GATHER = 0x000A,
+    GATHER_ND = 0x000B,
+    LOGISTIC = 0x000C,
+    LUT1D = 0x000D,
+    MATMUL = 0x000E,
+    PAD = 0x000F,
+    QUANTIZE = 0x0010,
+    REDUCE = 0x0011,
+    REDUCE_WINDOW2D = 0x0012,
+    RESIZE_IMAGE = 0x0013,
+    SLICE = 0x0014,
+    SOFTMAX = 0x0015,
+    SPACE_TO_BATCH = 0x0016,
+    TAKE = 0x0017,
+    TRANSPOSE = 0x0018,
+    UNARY = 0x0019,
 };
 
 // Instructions
@@ -1345,6 +1347,44 @@ struct tensor_dequantize_op_t
     tensor_dequantize_op_t(default_init_t) noexcept { }
     explicit tensor_dequantize_op_t(datatype_t in_datatype, datatype_t dst_datatype, uint8_t rshape_src, uint8_t rstride_src, uint8_t rstride_dest) noexcept
         : opcode(opcode_t::TENSOR), funct(tensor_function_t::DEQUANTIZE), in_datatype(in_datatype), dst_datatype(dst_datatype), rshape_src(rshape_src), rstride_src(rstride_src), rstride_dest(rstride_dest)
+    {
+    }
+};
+
+struct tensor_gather_op_t
+{
+    opcode_t opcode;
+    tensor_function_t funct;
+    datatype_t datatype;
+    uint8_t rshape_src;
+    uint8_t rshape_dest;
+    uint8_t rstride_src;
+    uint8_t rstride_dest;
+    uint8_t rshape_indices;
+    uint8_t axis;
+
+    tensor_gather_op_t(default_init_t) noexcept { }
+    explicit tensor_gather_op_t(datatype_t datatype, uint8_t rshape_src, uint8_t rshape_dest, uint8_t rstride_src, uint8_t rstride_dest, uint8_t rshape_indices, uint8_t axis) noexcept
+        : opcode(opcode_t::TENSOR), funct(tensor_function_t::GATHER), datatype(datatype), rshape_src(rshape_src), rshape_dest(rshape_dest), rstride_src(rstride_src), rstride_dest(rstride_dest), rshape_indices(rshape_indices), axis(axis)
+    {
+    }
+};
+
+struct tensor_gather_nd_op_t
+{
+    opcode_t opcode;
+    tensor_function_t funct;
+    datatype_t datatype;
+    uint8_t rshape_src;
+    uint8_t rshape_dest;
+    uint8_t rstride_src;
+    uint8_t rstride_dest;
+    uint8_t rshape_indices;
+    uint8_t batch_dims;
+
+    tensor_gather_nd_op_t(default_init_t) noexcept { }
+    explicit tensor_gather_nd_op_t(datatype_t datatype, uint8_t rshape_src, uint8_t rshape_dest, uint8_t rstride_src, uint8_t rstride_dest, uint8_t rshape_indices, uint8_t batch_dims) noexcept
+        : opcode(opcode_t::TENSOR), funct(tensor_function_t::GATHER_ND), datatype(datatype), rshape_src(rshape_src), rshape_dest(rshape_dest), rstride_src(rstride_src), rstride_dest(rstride_dest), rshape_indices(rshape_indices), batch_dims(batch_dims)
     {
     }
 };

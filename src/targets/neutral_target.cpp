@@ -34,6 +34,7 @@
 #include <nncase/transforms/neutral/matmul_to_conv2d.h>
 #include <nncase/transforms/neutral/quantize_motion.h>
 #include <nncase/transforms/neutral/simplify_reduce.h>
+#include <nncase/transforms/neutral/space_to_batch_transform.h>
 #include <nncase/transforms/neutral/split_to_slice.h>
 #include <nncase/transforms/neutral/take_to_slice.h>
 #include <nncase/transforms/neutral/transpose_motion.h>
@@ -137,6 +138,7 @@ void neutral_target::fold_pad_conv_transform(ir::transforms::transform_pass &pas
     pass.emplace<transpose_pad_motion_transform>();
     pass.emplace<fold_transpose_transform>();
     pass.emplace<fold_nop_transpose_transform>();
+    pass.emplace<space_to_batch_to_pad>();
     pass.emplace<fold_pad_pad_transform>();
     pass.emplace<fuse_pad_conv2d_transform>();
     pass.emplace<fold_nop_pad_transform>();

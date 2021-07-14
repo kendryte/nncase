@@ -188,3 +188,29 @@ result<void> kernels::slice(datatype_t type, const gsl::byte *input, gsl::byte *
         return cpu::reference::slice(type, input, output, in_shape, in_strides, out_strides, begins, ends, strides, context);
     }
 }
+
+result<void> kernels::gather(datatype_t in_type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape, const runtime_shape_t &out_shape,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const int32_t *indices, const runtime_shape_t &indices_shape, int32_t axis, kernel_context &context) noexcept
+{
+    if (is_contiguous(in_shape, in_strides) && is_contiguous(out_shape, out_strides))
+    {
+        return cpu::optimized::gather(in_type, input, output, in_shape, out_shape, in_strides, out_strides, indices, indices_shape, axis, context);
+    }
+    else
+    {
+        return cpu::reference::gather(in_type, input, output, in_shape, out_shape, in_strides, out_strides, indices, indices_shape, axis, context);
+    }
+}
+
+result<void> kernels::gather_nd(datatype_t in_type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape, const runtime_shape_t &out_shape,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const int32_t *indices, const runtime_shape_t &indices_shape, int32_t batch_dims, kernel_context &context) noexcept
+{
+    if (is_contiguous(in_shape, in_strides) && is_contiguous(out_shape, out_strides))
+    {
+        return cpu::optimized::gather_nd(in_type, input, output, in_shape, out_shape, in_strides, out_strides, indices, indices_shape, batch_dims, context);
+    }
+    else
+    {
+        return cpu::reference::gather_nd(in_type, input, output, in_shape, out_shape, in_strides, out_strides, indices, indices_shape, batch_dims, context);
+    }
+}

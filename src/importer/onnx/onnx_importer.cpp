@@ -329,6 +329,12 @@ optional<datatype_t> onnx_importer::get_datatype(const TensorProto_DataType data
     case TensorProto_DataType_UINT8:
         return dt_uint8;
 
+    case TensorProto_DataType_INT32:
+        return dt_int32;
+
+    case TensorProto_DataType_INT64:
+        return dt_int64;
+
     default:
         return optional<datatype_t> {};
     }
@@ -778,4 +784,21 @@ std::vector<padding> onnx_importer::parse_padding(const axis_t &padding_value)
         result.push_back(padding { padding_value[i], padding_value[i + dims] });
 
     return result;
+}
+
+shape_t onnx_importer::broadcast_shape(const shape_t &v_shape, const shape_t &input_shape) noexcept
+{
+    shape_t result { v_shape };
+    for (size_t i = v_shape.size() + 1; i < input_shape.size(); ++i)
+        result.push_back(1);
+
+    return result;
+}
+
+std::string onnx_importer::generate_name(const onnx::NodeProto &node) const
+{
+    if (node.has_name())
+        return node.name();
+    else
+        return 'n' + std::to_string(graph_.nodes().size());
 }
