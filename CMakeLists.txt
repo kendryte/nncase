@@ -219,6 +219,7 @@ else()
     # Targets
     add_subdirectory(targets/cpu)
     add_subdirectory(targets/k210)
+    add_subdirectory(targets/vulkan)
 
     # Modules
     add_subdirectory(modules/k210)
