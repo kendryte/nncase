@@ -19,20 +19,24 @@ import tensorflow as tf
 import numpy as np
 from tflite_test_runner import TfliteTestRunner
 
+
 def _make_module(in_shape):
-    return tf.keras.applications.ResNet50V2(input_shape=in_shape)
+    return tf.keras.applications.ResNet50(input_shape=in_shape, include_top=False)
+
 
 in_shapes = [
     (224, 224, 3)
 ]
 
-@pytest.mark.parametrize('in_shape', in_shapes)
-def test_resnet50v2(in_shape, request):
-    module = _make_module(in_shape)
 
-    runner = TfliteTestRunner(request.node.name)
+@pytest.mark.parametrize('in_shape', in_shapes)
+def test_resnet50(in_shape, request):
+    module = _make_module(in_shape)
+    overwrite_cfg = {'judge': {'threshold': 0.92}}
+    runner = TfliteTestRunner(request.node.name, overwirte_configs=overwrite_cfg)
     model_file = runner.from_tensorflow(module)
     runner.run(model_file)
 
+
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_resnet50v2.py'])
+    pytest.main(['-vv', 'test_resnet50.py'])

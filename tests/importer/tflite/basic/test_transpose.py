@@ -19,6 +19,7 @@ import tensorflow as tf
 import numpy as np
 from tflite_test_runner import TfliteTestRunner
 
+
 def _make_module(in_shape, perm):
     class TransposeModule(tf.Module):
         def __init__(self):
@@ -28,6 +29,7 @@ def _make_module(in_shape, perm):
         def __call__(self, x):
             return tf.transpose(x, perm=perm)
     return TransposeModule()
+
 
 in_shapes = [
     [3, 2],
@@ -59,6 +61,7 @@ def test_transpose(in_shape, perm, request):
         runner = TfliteTestRunner(request.node.name)
         model_file = runner.from_tensorflow(module)
         runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_transpose.py'])

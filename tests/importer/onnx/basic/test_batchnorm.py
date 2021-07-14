@@ -17,6 +17,7 @@ import pytest
 import torch
 from onnx_test_runner import OnnxTestRunner
 
+
 def _make_module(num, esp, momentum):
 
     class BatchNormModule(torch.nn.Module):
@@ -29,6 +30,7 @@ def _make_module(num, esp, momentum):
             return x
 
     return BatchNormModule()
+
 
 in_shapes = [
     [1, 2, 16, 16],
@@ -45,6 +47,7 @@ momentums = [
     0.9
 ]
 
+
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('eps', epses)
 @pytest.mark.parametrize('momentum', momentums)
@@ -54,6 +57,7 @@ def test_batchnorm(in_shape, eps, momentum, request):
     runner = OnnxTestRunner(request.node.name)
     model_file = runner.from_torch(module, in_shape)
     runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_batchnorm.py'])

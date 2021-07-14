@@ -17,6 +17,7 @@ import pytest
 import torch
 from onnx_test_runner import OnnxTestRunner
 
+
 def _make_module(dim0, dim1):
 
     class TransposeModule(torch.nn.Module):
@@ -28,6 +29,7 @@ def _make_module(dim0, dim1):
             return x
 
     return TransposeModule()
+
 
 in_shapes = [
     [3, 4],
@@ -44,6 +46,7 @@ axes = [
     [2, 3]
 ]
 
+
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('axis', axes)
 def test_transpose(in_shape, axis, request):
@@ -53,6 +56,7 @@ def test_transpose(in_shape, axis, request):
         runner = OnnxTestRunner(request.node.name)
         model_file = runner.from_torch(module, in_shape)
         runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_transpose.py'])

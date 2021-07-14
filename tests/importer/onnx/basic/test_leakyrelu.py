@@ -17,6 +17,7 @@ import pytest
 import torch
 from onnx_test_runner import OnnxTestRunner
 
+
 def _make_module(negative_slope):
 
     class LeakyReluModule(torch.nn.Module):
@@ -30,6 +31,7 @@ def _make_module(negative_slope):
 
     return LeakyReluModule()
 
+
 in_shapes = [
     [1],
     [1, 3, 224, 224]
@@ -42,6 +44,7 @@ negative_slopes = [
     0.8
 ]
 
+
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('negative_slope', negative_slopes)
 def test_leakyrelu(in_shape, negative_slope, request):
@@ -50,6 +53,7 @@ def test_leakyrelu(in_shape, negative_slope, request):
     runner = OnnxTestRunner(request.node.name)
     model_file = runner.from_torch(module, in_shape)
     runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_leakyrelu.py'])

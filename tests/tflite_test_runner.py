@@ -3,9 +3,10 @@ from test_runner import *
 import os
 import shutil
 
+
 class TfliteTestRunner(TestRunner):
-    def __init__(self, case_name, targets=None):
-        super().__init__(case_name, targets)
+    def __init__(self, case_name, targets=None, overwirte_configs: dict = None):
+        super().__init__(case_name, targets, overwirte_configs)
 
     def from_tensorflow(self, module):
         # export model
@@ -63,9 +64,8 @@ class TfliteTestRunner(TestRunner):
                 os.path.join(case_dir, f'cpu_result_{i}.bin'),
                 os.path.join(case_dir, f'cpu_result_{i}.txt')))
             data.tofile(self.output_paths[-1][0])
-            save_array_as_txt(self.output_paths[-1][1], data)
+            self.totxtfile(self.output_paths[-1][1], data)
             i += 1
-            # output['data'] = data
 
     def import_model(self, compiler, model_content, import_options):
         compiler.import_tflite(model_content, import_options)

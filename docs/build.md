@@ -13,7 +13,7 @@ sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 40
 sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 40 
 ```
 
-- cmake >=3.16
+- cmake >=3.17
 - python >= 3.6
 - libgtk2.0 
 
@@ -21,10 +21,10 @@ sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 40
 sudo apt install libgtk2.0-dev -y
 ```
 
-2. Install conan
+2. Install conan and cmake
 
 ```bash
-pip install conan
+pip install conan cmake
 ```
 
 3. Clone source
@@ -45,13 +45,16 @@ cmake --install . --prefix ../install
 
 Install dependencies (MacOS)
 ```bash
-pip install six==1.12 conan==1.19.2 tensorflow==2.4.1 matplotlib pillow pytest onnxruntime torch torchvision
+pip install tensorflow==2.5.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0
+pip install torch==1.9.0 torchvision==0.10.0 -f https://download.pytorch.org/whl/torch_stable.html
+pip install pytest
 ```
 
 Install dependencies
 ```bash
-pip install conan tensorflow==2.4.1 matplotlib pillow onnxruntime
-pip install torch==1.4.0+cpu torchvision==0.5.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
+pip install tensorflow==2.5.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0
+pip install torch==1.9.0+cpu torchvision==0.10.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
+pip install pytest
 ```
 
 Export environment
@@ -71,12 +74,12 @@ pytest tests
 ### Windows
 1. Install dependencies
 - Visual Studio 2019
-- cmake >=3.8
+- cmake >=3.17
 - python >= 3.6
 
-2. Install conan
+2. Install conan cmake
 ```cmd
-pip install conan==1.21.1
+pip install conan cmake
 ```
 3. Clone source
 ```cmd
@@ -95,7 +98,9 @@ msbuild nncase.sln
 
 Install dependencies
 ```cmd
-pip install six==1.12 conan==1.19.2 tensorflow==2.0.0 matplotlib pillow pytest
+pip install conan tensorflow==2.5.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0
+pip install torch==1.9.0+cpu torchvision==0.10.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
+pip install pytest
 ```
 Run tests
 ```cmd

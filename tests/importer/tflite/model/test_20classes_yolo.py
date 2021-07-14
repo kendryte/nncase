@@ -17,10 +17,12 @@
 import pytest
 from tflite_test_runner import TfliteTestRunner
 
+
 def test_20classes_yolo(request):
     runner = TfliteTestRunner(request.node.name)
     model_file = 'examples/20classes_yolo/model/20classes_yolo.tflite'
     runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_20classes_yolo.py'])

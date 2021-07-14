@@ -9,7 +9,7 @@ import shutil
 from abc import ABCMeta, abstractmethod
 import nncase
 import struct
-from compare_util import compare_with_ground_truth, VerboseType
+from compare_util import compare
 
 
 class Edict:
@@ -47,6 +47,14 @@ class Edict:
             s += '\n'
         return s.rstrip('\n')
 
+    def update(self, d):
+        for name, value in d.items():
+            if name in self.keys():
+                if isinstance(value, dict):
+                    getattr(self, name).update(value)
+                else:
+                    self.__dict__[name] = value
+
 
 def generate_random(shape: List[int], dtype: np.dtype) -> np.ndarray:
     if dtype is np.uint8:
@@ -59,25 +67,12 @@ def generate_random(shape: List[int], dtype: np.dtype) -> np.ndarray:
     return data
 
 
-def save_array_as_txt(save_path, value_np, bit_16_represent=False):
-    if bit_16_represent:
-        np.save(save_path, _cast_bfloat16_then_float32(value_np))
-    else:
-        with open(save_path, 'w') as f:
-            shape_info = "shape: (" + ",".join(str(dim)
-                                               for dim in value_np.shape) + ")\n"
-            f.write(shape_info)
-
-            for val in value_np.reshape([-1]):
-                f.write("%f\n" % val)
-    print("----> %s" % save_path)
-
-
 def _cast_bfloat16_then_float32(values: np.array):
     shape = values.shape
     values = values.reshape([-1])
     for i, value in enumerate(values):
         value = float(value)
+        value = 1
         packed = struct.pack('!f', value)
         integers = [c for c in packed][:2] + [0, 0]
         value = struct.unpack('!f', bytes(integers))[0]
@@ -93,11 +88,13 @@ Fuc = {
 
 
 class TestRunner(metaclass=ABCMeta):
-    def __init__(self, case_name, targets=None) -> None:
+    def __init__(self, case_name, targets=None, overwirte_configs: dict = None) -> None:
         config_root = os.path.dirname(__file__)
         with open(os.path.join(config_root, 'config.yml'), encoding='utf8') as f:
-            cfg = yaml.safe_load(f)
+            cfg: dict = yaml.safe_load(f)
             config = Edict(cfg)
+            if overwirte_configs:
+                config.update(overwirte_configs)
 
         self.cfg = self.validte_config(config)
 
@@ -105,15 +102,7 @@ class TestRunner(metaclass=ABCMeta):
         self.case_dir = os.path.join(self.cfg.setup.root, case_name)
         self.clear(self.case_dir)
 
-        if targets is None:
-            self.cfg.case.eval[0].values = self.validate_targets(
-                self.cfg.case.eval[0].values)
-            self.cfg.case.infer[0].values = self.validate_targets(
-                self.cfg.case.infer[0].values)
-        else:
-            targets = self.validate_targets(targets)
-            self.cfg.case.eval[0].values = targets
-            self.cfg.case.infer[0].values = targets
+        self.validate_targets(targets)
 
         self.inputs: List[Dict] = []
         self.calibs: List[Dict] = []
@@ -124,19 +113,28 @@ class TestRunner(metaclass=ABCMeta):
         self.num_pattern = re.compile("(\d+)")
 
     def validte_config(self, config):
+        in_ci = os.getenv('CI', False)
+        if in_ci:
+            config.judge.log_hist = False
+            config.setup.log_txt = False
         return config
 
-    def validate_targets(self, targets):
-        new_targets = []
-        for t in targets:
-            if nncase.test_target(t):
-                new_targets.append(t)
-            else:
-                print("WARN: target[{0}] not found".format(t))
-        return new_targets
+    def validate_targets(self, targets: List[str]):
+        def _validate_targets(old_targets: List[str]):
+            new_targets = []
+            for t in old_targets:
+                if nncase.test_target(t):
+                    new_targets.append(t)
+                else:
+                    print("WARN: target[{0}] not found".format(t))
+            return new_targets
+        self.cfg.case.eval[0].values = _validate_targets(
+            targets if targets else self.cfg.case.eval[0].values)
+        self.cfg.case.infer[0].values = _validate_targets(
+            targets if targets else self.cfg.case.infer[0].values)
 
     def run(self, model_path: str):
-        # 这里开多线程池去跑
+        # TODO add mulit process pool
         # case_name = self.process_model_path_name(model_path)
         # case_dir = os.path.join(self.cfg.setup.root, case_name)
         # if not os.path.exists(case_dir):
@@ -272,7 +270,7 @@ class TestRunner(metaclass=ABCMeta):
                 os.path.join(eval_dir, f'nncase_result_{i}.bin'),
                 os.path.join(eval_dir, f'nncase_result_{i}.txt')))
             result.tofile(eval_output_paths[-1][0])
-            save_array_as_txt(eval_output_paths[-1][1], result)
+            self.totxtfile(eval_output_paths[-1][1], result)
         return eval_output_paths
 
     def nncase_infer(self, cfg, case_dir: str,
@@ -288,7 +286,8 @@ class TestRunner(metaclass=ABCMeta):
         self.import_model(compiler, model_content, import_options)
         if kwargs['ptq']:
             ptq_options = nncase.PTQTensorOptions()
-            ptq_options.set_tensor_data(np.asarray([sample['data'] for sample in self.calibs]).tobytes())
+            ptq_options.set_tensor_data(np.asarray(
+                [sample['data'] for sample in self.calibs]).tobytes())
             ptq_options.samples_count = cfg.generate_calibs.batch_size
             ptq_options.input_mean = cfg.ptq_opt.kwargs['input_mean']
             ptq_options.input_std = cfg.ptq_opt.kwargs['input_std']
@@ -313,7 +312,7 @@ class TestRunner(metaclass=ABCMeta):
                 os.path.join(infer_dir, f'nncase_result_{i}.bin'),
                 os.path.join(infer_dir, f'nncase_result_{i}.txt')))
             result.tofile(infer_output_paths[-1][0])
-            save_array_as_txt(infer_output_paths[-1][1], result)
+            self.totxtfile(infer_output_paths[-1][1], result)
         return infer_output_paths
 
     def on_test_start(self) -> None:
@@ -331,7 +330,7 @@ class TestRunner(metaclass=ABCMeta):
                     (os.path.join(case_dir, f'{name}_{n}_{i}.bin'),
                      os.path.join(case_dir, f'{name}_{n}_{i}.txt')))
                 data.tofile(path_list[-1][0])
-                save_array_as_txt(path_list[-1][1], data)
+                self.totxtfile(path_list[-1][1], data)
                 i += 1
                 input['data'] = data
 
@@ -349,22 +348,28 @@ class TestRunner(metaclass=ABCMeta):
                         test_outputs: List[Tuple[str]],
                         kwargs: Dict[str, str]):
         for ref_file, test_file in zip(ref_ouputs, test_outputs):
-            judge = compare_with_ground_truth(test_file[1],
-                                              ref_file[1],
-                                              state=0,
-                                              verbose=VerboseType.PRINT_RESULT)
+
+            judge, simarity_info = compare(test_file, ref_file,
+                                           self.cfg.judge.simarity_name,
+                                           self.cfg.judge.threshold,
+                                           self.cfg.judge.log_hist)
             name_list = test_file[1].split('/')
             kw_names = ' '.join(name_list[-len(kwargs) - 2:-1])
             i = self.num_pattern.findall(name_list[-1])
-            if judge.is_good():
-                result = "\nPass [ {0} ] Output: {1}!!\n".format(kw_names, i)
-                print(result)
-                with open(os.path.join(self.case_dir, 'test_result.txt'), 'a+') as f:
-                    f.write(result)
-            else:
-                result = "\nFail [ {0} ] Output: {1}!!\n".format(kw_names, i)
-                print(result)
-                with open(os.path.join(self.case_dir, 'test_result.txt'), 'a+') as f:
-                    f.write(result)
+            result_info = "\n{0} [ {1} ] Output: {2}!!\n".format(
+                'Pass' if judge else 'Fail', kw_names, i)
+            result = simarity_info + result_info
+            print(result)
+            with open(os.path.join(self.case_dir, 'test_result.txt'), 'a+') as f:
+                f.write(result)
+            if not judge:
                 return False
         return True
+
+    def totxtfile(self, save_path, value_np: np.array, bit_16_represent=False):
+        if self.cfg.setup.log_txt:
+            if bit_16_represent:
+                np.save(save_path, _cast_bfloat16_then_float32(value_np))
+            else:
+                np.savetxt(save_path, value_np.flatten(), fmt='%f', header=str(value_np.shape))
+            print("----> %s" % save_path)

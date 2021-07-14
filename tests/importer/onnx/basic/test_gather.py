@@ -21,16 +21,20 @@ from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
 import numpy as np
 
+
 def result_shape(p_shape, i_shape, axis=0):
     if axis < 0:
         axis = len(p_shape) + axis
     return p_shape[:axis] + i_shape + p_shape[axis + 1:]
 
+
 def _make_module(in_shape, indices, axis):
     input = helper.make_tensor_value_info('input', TensorProto.FLOAT, in_shape)
     i_shape = list(np.array(indices).shape)
-    indices = helper.make_tensor('indices', TensorProto.INT64, np.array(indices).shape, np.array(indices).flatten().tolist())
-    output = helper.make_tensor_value_info('output', TensorProto.FLOAT, result_shape(in_shape, i_shape, axis))
+    indices = helper.make_tensor('indices', TensorProto.INT64, np.array(
+        indices).shape, np.array(indices).flatten().tolist())
+    output = helper.make_tensor_value_info(
+        'output', TensorProto.FLOAT, result_shape(in_shape, i_shape, axis))
     initializers = []
     initializers.append(indices)
 
@@ -50,6 +54,7 @@ def _make_module(in_shape, indices, axis):
 
     return helper.make_model(graph_def, producer_name='kendryte')
 
+
 in_shapes_indices_dim = [
     ([11], [1, 3, 10, 0, 2], 0),
     ([11], [[2, 4], [1, 3]], 0),
@@ -63,6 +68,7 @@ in_shapes_indices_dim = [
     ([4, 6, 5, 7], [[[1], [2]], [[3], [1]]], 3),
     ([2, 3, 5, 7], [[1, 1], [1, 2]], -1)
 ]
+
 
 @pytest.mark.parametrize('in_shape,indices,dim', in_shapes_indices_dim)
 def test_gather(in_shape, indices, dim, request):

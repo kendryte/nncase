@@ -19,6 +19,7 @@ import tensorflow as tf
 import numpy as np
 from tflite_test_runner import TfliteTestRunner
 
+
 def _make_module(n, i_channels, i_size, k_size, strides, padding, dilations):
     class DepthwiseConv2DModule(tf.Module):
         def __init__(self):
@@ -29,9 +30,10 @@ def _make_module(n, i_channels, i_size, k_size, strides, padding, dilations):
         @tf.function(input_signature=[tf.TensorSpec([n, *i_size, i_channels], tf.float32)])
         def __call__(self, x):
             out = tf.nn.depthwise_conv2d(x, self.w, [1, *strides, 1], padding,
-                               dilations=dilations)
+                                         dilations=dilations)
             return out
     return DepthwiseConv2DModule()
+
 
 n = [
     1,
@@ -67,7 +69,7 @@ paddings = [
 
 dilations = [
     [1, 1],
-    #[2, 2]  there is a bug in tf.nn.depthwise_conv2d that produces incorrect output shape
+    # [2, 2]  there is a bug in tf.nn.depthwise_conv2d that produces incorrect output shape
 ]
 
 
@@ -86,6 +88,7 @@ def test_depthwise_conv2d(n, i_channels, i_size, k_size, strides, padding, dilat
         runner = TfliteTestRunner(request.node.name)
         model_file = runner.from_tensorflow(module)
         runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_depthwise_conv2d.py'])

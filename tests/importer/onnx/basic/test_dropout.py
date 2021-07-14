@@ -19,6 +19,7 @@ from onnx import helper
 from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
 
+
 def _make_module(in_shape, ratio):
     x = helper.make_tensor_value_info('x', TensorProto.FLOAT, in_shape)
     y = helper.make_tensor_value_info('y', TensorProto.FLOAT, in_shape)
@@ -50,6 +51,7 @@ def _make_module(in_shape, ratio):
 
     return model_def
 
+
 in_shapes = [
     [1, 3, 60, 72],
     [1, 3, 224, 224]
@@ -61,6 +63,7 @@ ratios = [
     0.5
 ]
 
+
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('ratio', ratios)
 def test_dropout(in_shape, ratio, request):
@@ -69,6 +72,7 @@ def test_dropout(in_shape, ratio, request):
     runner = OnnxTestRunner(request.node.name)
     model_file = runner.from_onnx_helper(model_def)
     runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_lrn.py'])
