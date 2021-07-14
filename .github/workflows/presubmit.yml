@@ -1,4 +1,4 @@
-name: Nncase Presubmit Checks
+name: presubmit checks
 on:
   # We don't want 'edited' (that's basically just the description, title, etc)
   # We don't want 'review_requested' (that's redundant to the ones below for our purposes)
