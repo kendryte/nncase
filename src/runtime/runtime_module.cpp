@@ -50,26 +50,26 @@ public:
         span_reader reader(sections_);
         while (!reader.empty())
         {
-            auto header = reader.get_ref<section_header>();
-            if (!strncmp(header->name, name, MAX_SECTION_NAME_LENGTH))
+            auto header = reader.read_unaligned<section_header>();
+            if (!strncmp(header.name, name, MAX_SECTION_NAME_LENGTH))
             {
                 gsl::span<const gsl::byte> result;
-                if (header->flags & SECTION_MERGED_INTO_RDATA)
+                if (header.flags & SECTION_MERGED_INTO_RDATA)
                 {
                     auto rdata_span = section(".rdata");
-                    result = rdata_span.subspan(header->start, header->size);
+                    result = rdata_span.subspan(header.start, header.size);
                 }
                 else
                 {
-                    result = reader.read_avail().subspan(header->start, header->size);
+                    result = reader.read_avail().subspan(header.start, header.size);
                 }
 
                 return result;
             }
             else
             {
-                if (!(header->flags & SECTION_MERGED_INTO_RDATA))
-                    reader.skip((size_t)header->start + header->size);
+                if (!(header.flags & SECTION_MERGED_INTO_RDATA))
+                    reader.skip((size_t)header.start + header.size);
             }
         }
 
