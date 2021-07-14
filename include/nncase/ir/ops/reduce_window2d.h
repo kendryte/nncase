@@ -59,6 +59,5 @@ private:
     value_range<float> fused_activation_;
     bool ceil_mode_;
     bool count_include_pad_;
-
 };
 }

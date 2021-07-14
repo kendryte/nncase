@@ -130,61 +130,69 @@
 //
 #pragma once
 
-#include <type_traits>
 #include <cstddef>
 #include <memory>
+#include <type_traits>
 
-#define ITLIB_SMALL_VECTOR_ERROR_HANDLING_NONE  0
+#define ITLIB_SMALL_VECTOR_ERROR_HANDLING_NONE 0
 #define ITLIB_SMALL_VECTOR_ERROR_HANDLING_THROW 1
 #define ITLIB_SMALL_VECTOR_ERROR_HANDLING_ASSERT 2
 #define ITLIB_SMALL_VECTOR_ERROR_HANDLING_ASSERT_AND_THROW 3
 
 #if !defined(ITLIB_SMALL_VECTOR_ERROR_HANDLING)
-#   define ITLIB_SMALL_VECTOR_ERROR_HANDLING ITLIB_SMALL_VECTOR_ERROR_HANDLING_THROW
+#define ITLIB_SMALL_VECTOR_ERROR_HANDLING ITLIB_SMALL_VECTOR_ERROR_HANDLING_THROW
 #endif
 
-
 #if ITLIB_SMALL_VECTOR_ERROR_HANDLING == ITLIB_SMALL_VECTOR_ERROR_HANDLING_NONE
-#   define I_ITLIB_SMALL_VECTOR_OUT_OF_RANGE_IF(cond)
+#define I_ITLIB_SMALL_VECTOR_OUT_OF_RANGE_IF(cond)
 #elif ITLIB_SMALL_VECTOR_ERROR_HANDLING == ITLIB_SMALL_VECTOR_ERROR_HANDLING_THROW
-#   include <stdexcept>
-#   define I_ITLIB_SMALL_VECTOR_OUT_OF_RANGE_IF(cond) if (cond) throw std::out_of_range("itlib::small_vector out of range")
+#include <stdexcept>
+#define I_ITLIB_SMALL_VECTOR_OUT_OF_RANGE_IF(cond) \
+    if (cond)                                      \
+    throw std::out_of_range("itlib::small_vector out of range")
 #elif ITLIB_SMALL_VECTOR_ERROR_HANDLING == ITLIB_SMALL_VECTOR_ERROR_HANDLING_ASSERT
-#   include <cassert>
-#   define I_ITLIB_SMALL_VECTOR_OUT_OF_RANGE_IF(cond, rescue_return) assert(!(cond) && "itlib::small_vector out of range")
+#include <cassert>
+#define I_ITLIB_SMALL_VECTOR_OUT_OF_RANGE_IF(cond, rescue_return) assert(!(cond) && "itlib::small_vector out of range")
 #elif ITLIB_SMALL_VECTOR_ERROR_HANDLING == ITLIB_SMALL_VECTOR_ERROR_HANDLING_ASSERT_AND_THROW
-#   include <stdexcept>
-#   include <cassert>
-#   define I_ITLIB_SMALL_VECTOR_OUT_OF_RANGE_IF(cond, rescue_return) \
-    do { if (cond) { assert(false && "itlib::small_vector out of range"); throw std::out_of_range("itlib::small_vector out of range"); } } while(false)
+#include <cassert>
+#include <stdexcept>
+#define I_ITLIB_SMALL_VECTOR_OUT_OF_RANGE_IF(cond, rescue_return)        \
+    do                                                                   \
+    {                                                                    \
+        if (cond)                                                        \
+        {                                                                \
+            assert(false && "itlib::small_vector out of range");         \
+            throw std::out_of_range("itlib::small_vector out of range"); \
+        }                                                                \
+    } while (false)
 #else
 #error "Unknown ITLIB_SMALL_VECTOR_ERRROR_HANDLING"
 #endif
 
-
 #if defined(ITLIB_SMALL_VECTOR_NO_DEBUG_BOUNDS_CHECK)
-#   define I_ITLIB_SMALL_VECTOR_BOUNDS_CHECK(i)
+#define I_ITLIB_SMALL_VECTOR_BOUNDS_CHECK(i)
 #else
-#   include <cassert>
-#   define I_ITLIB_SMALL_VECTOR_BOUNDS_CHECK(i) assert((i) < this->size())
+#include <cassert>
+#define I_ITLIB_SMALL_VECTOR_BOUNDS_CHECK(i) assert((i) < this->size())
 #endif
 
 namespace itlib
 {
 
-template<typename T, size_t StaticCapacity = 16, size_t RevertToStaticSize = 0, class Alloc = std::allocator<T>>
-struct small_vector: Alloc
+template <typename T, size_t StaticCapacity = 16, size_t RevertToStaticSize = 0, class Alloc = std::allocator<T>>
+struct small_vector : Alloc
 {
     static_assert(RevertToStaticSize <= StaticCapacity + 1, "itlib::small_vector: the revert-to-static size shouldn't exceed the static capacity by more than one");
 
     using atraits = std::allocator_traits<Alloc>;
+
 public:
     using allocator_type = Alloc;
     using value_type = typename atraits::value_type;
     using size_type = typename atraits::size_type;
     using difference_type = typename atraits::difference_type;
-    using reference = T&;
-    using const_reference = const T&;
+    using reference = T &;
+    using const_reference = const T &;
     using pointer = typename atraits::pointer;
     using const_pointer = typename atraits::const_pointer;
     using iterator = pointer;
@@ -197,9 +205,10 @@ public:
 
     small_vector()
         : small_vector(Alloc())
-    {}
+    {
+    }
 
-    small_vector(const Alloc& alloc)
+    small_vector(const Alloc &alloc)
         : Alloc(alloc)
         , m_capacity(StaticCapacity)
         , m_dynamic_capacity(0)
@@ -208,36 +217,37 @@ public:
         m_begin = m_end = static_begin_ptr();
     }
 
-    explicit small_vector(size_t count, const Alloc& alloc = Alloc())
+    explicit small_vector(size_t count, const Alloc &alloc = Alloc())
         : small_vector(alloc)
     {
         resize(count);
     }
 
-    explicit small_vector(size_t count, const T& value, const Alloc& alloc = Alloc())
+    explicit small_vector(size_t count, const T &value, const Alloc &alloc = Alloc())
         : small_vector(alloc)
     {
         assign_impl(count, value);
     }
 
     template <class InputIterator, typename = decltype(*std::declval<InputIterator>())>
-    small_vector(InputIterator first, InputIterator last, const Alloc& alloc = Alloc())
+    small_vector(InputIterator first, InputIterator last, const Alloc &alloc = Alloc())
         : small_vector(alloc)
     {
         assign_impl(first, last);
     }
 
-    small_vector(std::initializer_list<T> l, const Alloc& alloc = Alloc())
+    small_vector(std::initializer_list<T> l, const Alloc &alloc = Alloc())
         : small_vector(alloc)
     {
         assign_impl(l);
     }
 
-    small_vector(const small_vector& v)
+    small_vector(const small_vector &v)
         : small_vector(v, atraits::select_on_container_copy_construction(v.get_allocator()))
-    {}
+    {
+    }
 
-    small_vector(const small_vector& v, const Alloc& alloc)
+    small_vector(const small_vector &v, const Alloc &alloc)
         : Alloc(alloc)
         , m_dynamic_capacity(0)
         , m_dynamic_data(nullptr)
@@ -261,7 +271,7 @@ public:
         }
     }
 
-    small_vector(small_vector&& v)
+    small_vector(small_vector &&v)
         : Alloc(std::move(v.get_alloc()))
         , m_capacity(v.m_capacity)
         , m_dynamic_capacity(v.m_dynamic_capacity)
@@ -300,7 +310,7 @@ public:
         }
     }
 
-    small_vector& operator=(const small_vector& v)
+    small_vector &operator=(const small_vector &v)
     {
         if (this == &v)
         {
@@ -323,7 +333,7 @@ public:
         return *this;
     }
 
-    small_vector& operator=(small_vector&& v)
+    small_vector &operator=(small_vector &&v)
     {
         clear();
 
@@ -357,7 +367,7 @@ public:
         return *this;
     }
 
-    void assign(size_type count, const T& value)
+    void assign(size_type count, const T &value)
     {
         clear();
         assign_impl(count, value);
@@ -512,7 +522,8 @@ public:
 
     void reserve(size_type new_cap)
     {
-        if (new_cap <= m_capacity) return;
+        if (new_cap <= m_capacity)
+            return;
 
         auto new_buf = choose_data(new_cap);
 
@@ -520,7 +531,7 @@ public:
         assert(new_buf != static_begin_ptr()); // we should never reserve into static memory
 
         const auto s = size();
-        if(s < RevertToStaticSize)
+        if (s < RevertToStaticSize)
         {
             // we've allocated enough memory for the dynamic buffer but don't move there until we have to
             return;
@@ -558,8 +569,10 @@ public:
     {
         const auto s = size();
 
-        if (s == m_capacity) return;
-        if (m_begin == static_begin_ptr()) return;
+        if (s == m_capacity)
+            return;
+        if (m_begin == static_begin_ptr())
+            return;
 
         auto old_end = m_end;
 
@@ -591,8 +604,10 @@ public:
     void revert_to_static()
     {
         const auto s = size();
-        if (m_begin == static_begin_ptr()) return; //we're already there
-        if (s > StaticCapacity) return; // nothing we can do
+        if (m_begin == static_begin_ptr())
+            return; //we're already there
+        if (s > StaticCapacity)
+            return; // nothing we can do
 
         // revert to static capacity
         auto old_end = m_end;
@@ -625,21 +640,21 @@ public:
         }
     }
 
-    iterator insert(const_iterator position, const value_type& val)
+    iterator insert(const_iterator position, const value_type &val)
     {
         auto pos = grow_at(position, 1);
         atraits::construct(get_alloc(), pos, val);
         return pos;
     }
 
-    iterator insert(const_iterator position, value_type&& val)
+    iterator insert(const_iterator position, value_type &&val)
     {
         auto pos = grow_at(position, 1);
         atraits::construct(get_alloc(), pos, std::move(val));
         return pos;
     }
 
-    iterator insert(const_iterator position, size_type count, const value_type& val)
+    iterator insert(const_iterator position, size_type count, const value_type &val)
     {
         auto pos = grow_at(position, count);
         for (size_type i = 0; i < count; ++i)
@@ -666,7 +681,7 @@ public:
     {
         auto pos = grow_at(position, ilist.size());
         size_type i = 0;
-        for (auto& elem : ilist)
+        for (auto &elem : ilist)
         {
             atraits::construct(get_alloc(), pos + i, elem);
             ++i;
@@ -674,8 +689,8 @@ public:
         return pos;
     }
 
-    template<typename... Args>
-    iterator emplace(const_iterator position, Args&&... args)
+    template <typename... Args>
+    iterator emplace(const_iterator position, Args &&... args)
     {
         auto pos = grow_at(position, 1);
         atraits::construct(get_alloc(), pos, std::forward<Args>(args)...);
@@ -699,14 +714,14 @@ public:
         atraits::construct(get_alloc(), pos, val);
     }
 
-    void push_back(T&& val)
+    void push_back(T &&val)
     {
         auto pos = grow_at(m_end, 1);
         atraits::construct(get_alloc(), pos, std::move(val));
     }
 
-    template<typename... Args>
-    reference emplace_back(Args&&... args)
+    template <typename... Args>
+    reference emplace_back(Args &&... args)
     {
         auto pos = grow_at(m_end, 1);
         atraits::construct(get_alloc(), pos, std::forward<Args>(args)...);
@@ -718,7 +733,7 @@ public:
         shrink_at(m_end - 1, 1);
     }
 
-    void resize(size_type n, const value_type& v)
+    void resize(size_type n, const value_type &v)
     {
         auto new_buf = choose_data(n);
 
@@ -847,7 +862,7 @@ public:
     }
 
 private:
-    T* static_begin_ptr()
+    T *static_begin_ptr()
     {
         return reinterpret_cast<pointer>(m_static_data + 0);
     }
@@ -855,9 +870,9 @@ private:
     // increase the size by splicing the elements in such a way that
     // a hole of uninitialized elements is left at position, with size num
     // returns the (potentially new) address of the hole
-    T* grow_at(const T* cp, size_t num)
+    T *grow_at(const T *cp, size_t num)
     {
-        auto position = const_cast<T*>(cp);
+        auto position = const_cast<T *>(cp);
 
         I_ITLIB_SMALL_VECTOR_OUT_OF_RANGE_IF(position < m_begin || position > m_end);
 
@@ -919,9 +934,9 @@ private:
         }
     }
 
-    T* shrink_at(const T* cp, size_t num)
+    T *shrink_at(const T *cp, size_t num)
     {
-        auto position = const_cast<T*>(cp);
+        auto position = const_cast<T *>(cp);
 
         I_ITLIB_SMALL_VECTOR_OUT_OF_RANGE_IF(position < m_begin || position > m_end || position + num > m_end);
 
@@ -985,7 +1000,7 @@ private:
         return ++position;
     }
 
-    void assign_impl(size_type count, const T& value)
+    void assign_impl(size_type count, const T &value)
     {
         assert(m_begin);
         assert(m_begin == m_end);
@@ -1022,7 +1037,7 @@ private:
         assert(m_begin == m_end);
 
         m_begin = m_end = choose_data(ilist.size());
-        for (auto& elem : ilist)
+        for (auto &elem : ilist)
         {
             atraits::construct(get_alloc(), m_end, elem);
             ++m_end;
@@ -1043,7 +1058,7 @@ private:
         }
     }
 
-    T* choose_data(size_t desired_capacity)
+    T *choose_data(size_t desired_capacity)
     {
         if (m_begin == m_dynamic_data)
         {
@@ -1105,8 +1120,8 @@ private:
         }
     }
 
-    allocator_type& get_alloc() { return static_cast<allocator_type&>(*this); }
-    const allocator_type& get_alloc() const { return static_cast<const allocator_type&>(*this); }
+    allocator_type &get_alloc() { return static_cast<allocator_type &>(*this); }
+    const allocator_type &get_alloc() const { return static_cast<const allocator_type &>(*this); }
 
     pointer m_begin;
     pointer m_end;
@@ -1118,9 +1133,9 @@ private:
     pointer m_dynamic_data;
 };
 
-template<typename T, size_t StaticCapacity, size_t RevertToStaticSize, class Alloc>
-bool operator==(const small_vector<T, StaticCapacity, RevertToStaticSize, Alloc>& a,
-    const small_vector<T, StaticCapacity, RevertToStaticSize, Alloc>& b)
+template <typename T, size_t StaticCapacity, size_t RevertToStaticSize, class Alloc>
+bool operator==(const small_vector<T, StaticCapacity, RevertToStaticSize, Alloc> &a,
+    const small_vector<T, StaticCapacity, RevertToStaticSize, Alloc> &b)
 {
     if (a.size() != b.size())
     {
@@ -1136,9 +1151,9 @@ bool operator==(const small_vector<T, StaticCapacity, RevertToStaticSize, Alloc>
     return true;
 }
 
-template<typename T, size_t StaticCapacity, size_t RevertToStaticSize, class Alloc>
-bool operator!=(const small_vector<T, StaticCapacity, RevertToStaticSize, Alloc>& a,
-    const small_vector<T, StaticCapacity, RevertToStaticSize, Alloc>& b)
+template <typename T, size_t StaticCapacity, size_t RevertToStaticSize, class Alloc>
+bool operator!=(const small_vector<T, StaticCapacity, RevertToStaticSize, Alloc> &a,
+    const small_vector<T, StaticCapacity, RevertToStaticSize, Alloc> &b)
 {
     if (a.size() != b.size())
     {

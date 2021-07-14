@@ -88,8 +88,7 @@ result<void> copy_dest_contiguous_impl(const T *src, T *dest, const runtime_shap
     return _copy_impl(
         shape, dims_offset,
         // src_ptr is pointer reference
-        [&, width](const runtime_shape_t &src_index)
-        {
+        [&, width](const runtime_shape_t &src_index) {
             const auto size = width * sizeof(T);
             const auto src_ptr = src + offset(src_strides, src_index);
             memcpy(dest_ptr, src_ptr, size);
@@ -106,8 +105,7 @@ result<void> copy_src_contiguous_impl(const T *src, T *dest, const runtime_shape
     return _copy_impl(
         shape, dims_offset,
         // dest_ptr is pointer reference
-        [&, width](const runtime_shape_t &dest_index)
-        {
+        [&, width](const runtime_shape_t &dest_index) {
             const auto size = width * sizeof(T);
             const auto dest_ptr = dest + offset(dest_strides, dest_index);
             memcpy(dest_ptr, src_ptr, size);

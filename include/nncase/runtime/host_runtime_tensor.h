@@ -38,9 +38,9 @@ struct host_memory_block
 
     host_memory_block() = default;
     host_memory_block(const host_memory_block &) = delete;
-    host_memory_block(host_memory_block && other) noexcept;
+    host_memory_block(host_memory_block &&other) noexcept;
     host_memory_block &operator=(const host_memory_block &) = delete;
-    host_memory_block &operator=(host_memory_block && other) noexcept;
+    host_memory_block &operator=(host_memory_block &&other) noexcept;
 
     ~host_memory_block()
     {

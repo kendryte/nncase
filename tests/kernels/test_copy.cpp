@@ -78,7 +78,6 @@ INSTANTIATE_TEST_SUITE_P(
         testing::Values(
             runtime_shape_t { 0, 0, 0 }))); // dest strides bias
 
-
 INSTANTIATE_TEST_SUITE_P(
     CopyTestD4,
     CopyTest,
@@ -106,7 +105,7 @@ INSTANTIATE_TEST_SUITE_P(
             runtime_shape_t { 1, 1, 1, 1 }), // shape
         testing::Values(
             runtime_shape_t { 0, 0, 0, 0 } // src strides bias
-),
+            ),
         testing::Values(
             runtime_shape_t { 0, 0, 0, 0 } // dest strides bias
             )));

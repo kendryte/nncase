@@ -14,17 +14,17 @@
  */
 
 #include "../onnx_importer.h"
-#include <vector>
 #include <cassert>
 #include <nncase/ir/graph.h>
 #include <nncase/ir/ops/slice.h>
+#include <vector>
 
 using namespace nncase;
 using namespace nncase::importer;
 using namespace nncase::ir;
 using namespace onnx;
 
-void onnx_importer::convert_op_Slice(const NodeProto& node)
+void onnx_importer::convert_op_Slice(const NodeProto &node)
 {
     const auto &op_name { generate_name(node) };
 
@@ -37,8 +37,8 @@ void onnx_importer::convert_op_Slice(const NodeProto& node)
     const bool use_opset_version_9 = node.input().size() == 1;
     if (!use_opset_version_9)
     {
-        const std::string& starts_input_name = node.input()[1];
-        const std::string& ends_input_name = node.input()[2];
+        const std::string &starts_input_name = node.input()[1];
+        const std::string &ends_input_name = node.input()[2];
 
         const auto &begins_initializer = get_initializer(starts_input_name);
         const auto &ends_initializer = get_initializer(ends_input_name);
@@ -142,7 +142,7 @@ void onnx_importer::convert_op_Slice(const NodeProto& node)
     for (size_t i = 0; i < axes.size(); ++i)
     {
         const auto it = std::find_if(std::begin(loaded_axes), std::end(loaded_axes),
-                                     [i, &data_shape](const auto e) { return real_axis(e, data_shape.size()) == i; });
+            [i, &data_shape](const auto e) { return real_axis(e, data_shape.size()) == i; });
         if (it == std::end(loaded_axes))
         {
             permuted_begins.push_back(0);
