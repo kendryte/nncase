@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 #include "../tflite_importer.h"
-#include <nncase/ir/ops/gather_nd.h>
 #include <nncase/ir/ops/convert.h>
+#include <nncase/ir/ops/gather_nd.h>
 
 using namespace nncase;
 using namespace nncase::importer;
@@ -34,7 +34,7 @@ DEFINE_TFLITE_LOWER(GATHER_ND)
     const auto indices_type = to_data_type(indices.type());
     auto ga = graph_.emplace<gather_nd>(in_type, in_shape, indices_shape, out_shape, 0);
     ga->name(get_tensor(op.outputs(), 0).name()->string_view());
-    if(indices_type != dt_int32)
+    if (indices_type != dt_int32)
     {
         auto ct = graph_.emplace<convert>(indices_type, indices_shape, dt_int32);
         ga->indices().connect(ct->output());

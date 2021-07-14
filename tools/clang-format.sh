@@ -2,7 +2,7 @@
 
 # set -e
 
-ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+ROOT_DIR="$( pwd )"
 
 # We are currently standardized on using LLVM/Clang11 for this script.
 # Note that this is totally independent of the version of LLVM that you

@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 #include "../tflite_importer.h"
+#include <nncase/ir/ops/bitcast.h>
+#include <nncase/ir/ops/convert.h>
 #include <nncase/ir/ops/gather.h>
 #include <nncase/ir/ops/gather_nd.h>
-#include <nncase/ir/ops/convert.h>
-#include <nncase/ir/ops/bitcast.h>
 
 using namespace nncase;
 using namespace nncase::importer;

@@ -68,7 +68,7 @@ void fold_conv2d_biasadd_transform::process(transform_context &context)
     }
 
     // create new bias
-    auto new_bias = context.graph.emplace<constant>(dt_float32, shape_t{ channels }, std::span(bias));
+    auto new_bias = context.graph.emplace<constant>(dt_float32, shape_t { channels }, std::span(bias));
     new_bias->name(old_bias->name());
 
     // update act

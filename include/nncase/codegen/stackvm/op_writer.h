@@ -1201,7 +1201,7 @@ struct op_writer<nncase::runtime::stackvm::tensor_transpose_op_t>
         writer.write(op.rshape_perm);
     }
 };
-    
+
 class NNCASE_API op_builder
 {
 public:

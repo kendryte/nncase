@@ -52,7 +52,7 @@ void onnx_importer::convert_op_Reshape(const NodeProto &node)
     }
 
     auto allowzero_attr = get_attribute<int>(node, "allowzero");
-    int allowzero = !allowzero_attr ?  0 : allowzero_attr.value();
+    int allowzero = !allowzero_attr ? 0 : allowzero_attr.value();
 
     const size_t size = new_shape.size();
     size_t negative_idx = size;
@@ -64,7 +64,7 @@ void onnx_importer::convert_op_Reshape(const NodeProto &node)
         {
             new_shape[i] = input_shape[i];
         }
-        else if(new_shape[i] == -1)
+        else if (new_shape[i] == -1)
         {
             negative_idx = i;
         }

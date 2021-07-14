@@ -26,7 +26,7 @@ namespace
 {
 template <class T>
 result<void> batch_to_space_impl(const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &block_shape,
-    const runtime_paddings_t &crops, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, 
+    const runtime_paddings_t &crops, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides,
     NNCASE_UNUSED kernel_context &context) noexcept
 {
     const auto spatial_dim_start = in_shape.size() - block_shape.size();
