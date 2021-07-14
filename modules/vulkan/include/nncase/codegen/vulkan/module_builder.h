@@ -13,32 +13,10 @@
  * limitations under the License.
  */
 #pragma once
+#include <nncase/codegen/module_builder.h>
 #include <nncase/runtime/vulkan/runtime_module.h>
-#include <system_error>
-#include <vulkan/vulkan.hpp>
 
-namespace vk
+namespace nncase::codegen
 {
-NNCASE_MODULES_VULKAN_API const std::error_category &vulkan_category() noexcept;
-NNCASE_MODULES_VULKAN_API std::error_condition make_error_condition(vk::Result code);
-}
-
-namespace std
-{
-template <>
-struct is_error_condition_enum<vk::Result> : true_type
-{
-};
-}
-
-namespace vk
-{
-template <class T>
-nncase::result<T> to_result(vk::ResultValue<T> &&value) noexcept
-{
-    if (value.result == vk::Result::eSuccess)
-        return nncase::ok(std::move(value.value));
-    else
-        return nncase::err(value.result);
-}
+NNCASE_MODULES_VULKAN_API std::unique_ptr<module_builder> create_vulkan_module_builder(std::string_view module_name, const module_builder_params &params);
 }
