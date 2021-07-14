@@ -142,7 +142,7 @@ result<void> onehot_impl(const int32_t *indices, T *output, const runtime_shape_
 #define ONEHOT_IMPL(size, type)                                                                              \
     case size:                                                                                               \
         return onehot_impl(indices, reinterpret_cast<type *>(output), indices_shape, out_shape, out_strides, \
-            *reinterpret_cast<type *>(depth), *reinterpret_cast<type *>(off_value), *reinterpret_cast<type *>(on_value), axis, context);
+            *reinterpret_cast<size_t *>(depth), *reinterpret_cast<type *>(off_value), *reinterpret_cast<type *>(on_value), axis, context);
 
 result<void> optimized::onehot(datatype_t type, const int32_t *indices, gsl::byte *output, const runtime_shape_t &indices_shape, const runtime_shape_t &out_shape,
     const runtime_shape_t &out_strides, gsl::byte *depth, gsl::byte *off_value, gsl::byte *on_value, size_t axis,
