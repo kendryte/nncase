@@ -13,8 +13,8 @@
  * limitations under the License.
  */
 #include <nncase/kernels/cpu/reference/nnil.h>
-#include <nncase/kernels/nnil.h>
 #include <nncase/kernels/kernel_context.h>
+#include <nncase/kernels/nnil.h>
 
 using namespace nncase;
 using namespace nncase::runtime;

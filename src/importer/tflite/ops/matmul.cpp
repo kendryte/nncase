@@ -40,7 +40,7 @@ DEFINE_TFLITE_LOWER(FULLY_CONNECTED)
     {
         not_f32 = 1;
         quant_param_t input_a_dequant_paras = to_quant_param(input_a.quantization());
-        input_a_dequant = graph_.emplace<dequantize>(to_data_type(input_a.type()), get_shape(input_a.shape()), dt_float32, 
+        input_a_dequant = graph_.emplace<dequantize>(to_data_type(input_a.type()), get_shape(input_a.shape()), dt_float32,
             input_a_dequant_paras);
         input_a_dequant->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/input_a_dequant");
     }

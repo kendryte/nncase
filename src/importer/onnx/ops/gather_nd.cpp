@@ -42,7 +42,7 @@ void onnx_importer::convert_op_GatherND(const NodeProto &node)
     }
     if (batch_dims < 0)
     {
-       batch_dims = static_cast<int32_t>(input_shape.size()) + batch_dims;
+        batch_dims = static_cast<int32_t>(input_shape.size()) + batch_dims;
     }
     auto ct = graph_.emplace<convert>(get_datatype(indices).value(), indices_shape, dt_int32);
     auto ga = graph_.emplace<gather_nd>(input_type, input_shape, indices_shape, out_shape, batch_dims);

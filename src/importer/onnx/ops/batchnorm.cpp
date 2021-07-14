@@ -17,8 +17,8 @@
 #include <cassert>
 #include <nncase/ir/graph.h>
 #include <nncase/ir/ops/binary.h>
-#include <nncase/ir/ops/constant.h>
 #include <nncase/ir/ops/bitcast.h>
+#include <nncase/ir/ops/constant.h>
 #include <nncase/ir/ops/unary.h>
 
 using namespace nncase;

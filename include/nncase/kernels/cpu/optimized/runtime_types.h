@@ -35,7 +35,6 @@
     }                                 \
     }
 
-
 enum copy_impl_select
 {
     all_contiguous,

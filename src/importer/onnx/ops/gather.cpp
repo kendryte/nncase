@@ -16,8 +16,8 @@
 #include "../onnx_importer.h"
 #include <cassert>
 #include <nncase/ir/graph.h>
-#include <nncase/ir/ops/gather.h>
 #include <nncase/ir/ops/convert.h>
+#include <nncase/ir/ops/gather.h>
 
 using namespace nncase;
 using namespace nncase::importer;

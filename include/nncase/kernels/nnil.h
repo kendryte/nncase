@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 #pragma once
+#include <nncase/kernels/kernel_context.h>
 #include <nncase/runtime/datatypes.h>
 #include <nncase/runtime/error.h>
 #include <nncase/runtime/result.h>
-#include <nncase/kernels/kernel_context.h>
 
 BEGIN_NS_NNCASE_KERNELS
 

@@ -66,7 +66,7 @@ void onnx_importer::convert_op_Resize(const NodeProto &node)
     if (!scales.empty())
     {
         std::transform(std::begin(input_shape), std::end(input_shape), std::begin(scales), std::back_inserter(new_size),
-                        [](const auto dim, const auto scale) { return static_cast<int>(std::floor(dim * scale)); });
+            [](const auto dim, const auto scale) { return static_cast<int>(std::floor(dim * scale)); });
     }
 
     // use size

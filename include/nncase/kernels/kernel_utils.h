@@ -15,8 +15,8 @@
 #pragma once
 #include <algorithm>
 #include <cassert>
-#include <cstddef>
 #include <cmath>
+#include <cstddef>
 #include <nncase/runtime/datatypes.h>
 #include <numeric>
 
@@ -262,7 +262,7 @@ inline std::pair<float, float> get_resize_scales(const runtime_shape_t &in_shape
 
 inline void set_resize_bilinear(size_t value, float scale, bool half_pixel_centers, size_t shape_size, float &scaled_value, int32_t &v0, int32_t &v1)
 {
-    if(half_pixel_centers)
+    if (half_pixel_centers)
     {
         scaled_value = (value + 0.5f) * scale - 0.5f;
     }
@@ -275,14 +275,15 @@ inline void set_resize_bilinear(size_t value, float scale, bool half_pixel_cente
     v1 = std::min(static_cast<int32_t>(std::ceil(scaled_value)), static_cast<int32_t>(shape_size - 1));
 }
 
-template<class T>
-inline size_t get_nearest_neighbor(T input_value,  size_t shape_size, float scale, bool align_corners, bool half_pixel_centers)
+template <class T>
+inline size_t get_nearest_neighbor(T input_value, size_t shape_size, float scale, bool align_corners, bool half_pixel_centers)
 {
     const auto offset = half_pixel_centers ? 0.5f : 0.0f;
     const auto after_scale = (static_cast<float>(input_value) + offset) * scale;
     const auto align_corners_val = align_corners ? roundf(after_scale) : std::floor(after_scale);
     int32_t output_value = std::min(static_cast<int32_t>(align_corners_val), static_cast<int32_t>(shape_size - 1));
-    if (half_pixel_centers) {
+    if (half_pixel_centers)
+    {
         output_value = std::max(0, output_value);
     }
     return output_value;

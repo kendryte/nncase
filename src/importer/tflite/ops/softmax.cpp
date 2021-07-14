@@ -60,7 +60,6 @@ DEFINE_TFLITE_LOWER(SOFTMAX)
         sub->input_a().connect(input_dequant->output());
         link_input_tensor(&input_dequant->input(), op.inputs()->Get(0));
         //        link_input_tensor(&sub->input_a(), op.inputs()->Get(0));
-
     }
     else
     {
