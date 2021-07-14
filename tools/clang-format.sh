@@ -2,7 +2,7 @@
 
 # set -e
 
-# ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 # We are currently standardized on using LLVM/Clang11 for this script.
 # Note that this is totally independent of the version of LLVM that you
@@ -10,8 +10,6 @@
 # you can usually install what you need easily via:
 #
 # sudo apt-get install clang-format-10
-# CLANG_FORMAT_LLVM_INSTALL_DIR="/usr/lib/llvm-10"
-ROOT_DIR="/home/workspace/nncase"
 CLANG_FORMAT_LLVM_INSTALL_DIR="/usr/lib/llvm-10"
 
 [ -z "$CLANG_FORMAT_LLVM_INSTALL_DIR" ] && echo "CLANG_FORMAT_LLVM_INSTALL_DIR must point to an LLVM installation dir for this script." && exit

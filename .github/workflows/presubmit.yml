@@ -8,6 +8,7 @@ on:
       - '**.h'
       - '**.c'
       - '**.cpp'
+      - '**.py'
 
 jobs:
   check_clang_format:
