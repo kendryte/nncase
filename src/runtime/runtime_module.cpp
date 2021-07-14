@@ -146,11 +146,11 @@ const runtime_shape_t &runtime_module::output_shape(size_t index) const noexcept
     return output_tensors_[index].shape;
 }
 
-result<void> runtime_module::initialize(const module_header &header, interpreter &interp) noexcept
+result<void> runtime_module::initialize(const module_header &header, interpreter &interp, gsl::span<const gsl::byte> payload) noexcept
 {
     interp_ = &interp;
     header_ = header;
-    span_reader reader(gsl::make_span(reinterpret_cast<const gsl::byte *>(&header) + sizeof(module_header), header.size));
+    span_reader reader(payload);
     try
     {
         input_tensors_.resize(inputs_size());
@@ -164,23 +164,23 @@ result<void> runtime_module::initialize(const module_header &header, interpreter
 
     // mempools
     for (auto &desc : mempools_)
-        reader.read(desc);
+        desc = reader.read_unaligned<mempool_desc>();
 
     auto read_shape = [&](runtime_shape_t &shape) {
-        shape.resize(reader.read<uint32_t>());
+        shape.resize(reader.read_unaligned<uint32_t>());
         for (auto &dim : shape)
-            dim = reader.read<uint32_t>();
+            dim = reader.read_unaligned<uint32_t>();
     };
 
     // inputs
     for (auto &in : input_tensors_)
-        reader.read(in.range);
+        in.range = reader.read_unaligned<memory_range>();
     for (auto &in : input_tensors_)
         read_shape(in.shape);
 
     // outputs
     for (auto &out : output_tensors_)
-        reader.read(out.range);
+        out.range = reader.read_unaligned<memory_range>();
     for (auto &out : output_tensors_)
         read_shape(out.shape);
 

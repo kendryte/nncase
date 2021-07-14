@@ -49,7 +49,7 @@ public:
     runtime_module(runtime_module &) = delete;
     virtual ~runtime_module() = default;
 
-    result<void> initialize(const module_header &header, interpreter &interp) noexcept;
+    result<void> initialize(const module_header &header, interpreter &interp, gsl::span<const gsl::byte> payload) noexcept;
     virtual result<void> initialize_inter_modules(interpreter &interp) noexcept;
     const module_type_t &type() const noexcept;
 
