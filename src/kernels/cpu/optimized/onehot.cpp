@@ -15,6 +15,8 @@
 #include <nncase/kernels/cpu/optimized/tensor_compute.h>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/runtime/runtime_op_utility.h>
+#include <string>
+#include <sstream>
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -131,9 +133,7 @@ result<void> onehot_impl(const int32_t *indices, T *output, const runtime_shape_
     }
     else
     {
-        throw std::runtime_error("Unsupported params in optimized one_hot, should call reference one_hot\n"
-                                 "axis is:"
-            + std::to_string(axis));
+        return err(std::errc::result_out_of_range);
     }
     return ok();
 }
