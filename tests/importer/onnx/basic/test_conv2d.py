@@ -17,18 +17,21 @@ import pytest
 import torch
 from onnx_test_runner import OnnxTestRunner
 
+
 def _make_module(i_channel, k_size, o_channel, stride, padding, padding_mode, dilation):
 
     class Conv2dModule(torch.nn.Module):
         def __init__(self):
             super(Conv2dModule, self).__init__()
-            self.conv = torch.nn.Conv2d(i_channel, o_channel, k_size, stride=stride, padding=padding, padding_mode=padding_mode, dilation=dilation)
+            self.conv = torch.nn.Conv2d(i_channel, o_channel, k_size, stride=stride,
+                                        padding=padding, padding_mode=padding_mode, dilation=dilation)
 
         def forward(self, x):
             x = self.conv(x)
             return x
 
     return Conv2dModule()
+
 
 n = [
     1,
@@ -41,8 +44,8 @@ i_channels = [
 ]
 
 i_sizes = [
-    [224, 224],
-    [112, 65]
+    [12, 24],
+    [38, 65]
 ]
 
 k_sizes = [
@@ -52,7 +55,7 @@ k_sizes = [
 
 o_channels = [
     1,
-    16
+    8
 ]
 
 strides = [
@@ -74,6 +77,7 @@ dilations = [
     [2, 2]
 ]
 
+
 @pytest.mark.parametrize('n', n)
 @pytest.mark.parametrize('i_channel', i_channels)
 @pytest.mark.parametrize('i_size', i_sizes)
@@ -92,6 +96,7 @@ def test_conv2d(n, i_channel, i_size, k_size, o_channel, stride, padding, paddin
     runner = OnnxTestRunner(request.node.name, ['k510'])
     model_file = runner.from_torch(module, in_shape)
     runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_conv2d.py'])

@@ -17,6 +17,7 @@ import pytest
 import torch
 from onnx_test_runner import OnnxTestRunner
 
+
 def _make_module(dim, keepdim):
 
     class ReduceModule(torch.nn.Module):
@@ -35,6 +36,7 @@ def _make_module(dim, keepdim):
             return outs
 
     return ReduceModule()
+
 
 in_shapes = [
     [1],
@@ -55,16 +57,18 @@ keepdims = [
     True
 ]
 
+
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('dim', dims)
 @pytest.mark.parametrize('keepdim', keepdims)
 def test_reduce(in_shape, dim, keepdim, request):
-    if len(in_shape) > dim :
+    if len(in_shape) > dim:
         module = _make_module(dim, keepdim)
 
         runner = OnnxTestRunner(request.node.name)
         model_file = runner.from_torch(module, in_shape)
         runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_reduce.py'])

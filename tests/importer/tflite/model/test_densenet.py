@@ -19,12 +19,15 @@ import tensorflow as tf
 import numpy as np
 from tflite_test_runner import TfliteTestRunner
 
+
 def _make_module(in_shape):
     return tf.keras.applications.DenseNet121(input_shape=in_shape)
+
 
 in_shapes = [
     (224, 224, 3)
 ]
+
 
 @pytest.mark.parametrize('in_shape', in_shapes)
 def test_densenet(in_shape, request):
@@ -33,6 +36,7 @@ def test_densenet(in_shape, request):
     runner = TfliteTestRunner(request.node.name)
     model_file = runner.from_tensorflow(module)
     runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_densenet.py'])

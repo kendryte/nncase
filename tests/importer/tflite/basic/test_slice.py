@@ -19,6 +19,7 @@ import tensorflow as tf
 import numpy as np
 from tflite_test_runner import TfliteTestRunner
 
+
 def _make_module(in_shape, begin, size):
     class SliceModule(tf.Module):
         def __init__(self):
@@ -47,6 +48,7 @@ def test_slice(in_shape, begin, size, request):
     runner = TfliteTestRunner(request.node.name)
     model_file = runner.from_tensorflow(module)
     runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_slice.py'])

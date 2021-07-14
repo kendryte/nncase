@@ -20,7 +20,6 @@ from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
 import numpy as np
 
-
 def _make_module(in_shape, padding, constant_value, mode, op_version):
 
     input = helper.make_tensor_value_info('input', TensorProto.FLOAT, in_shape)
@@ -40,8 +39,7 @@ def _make_module(in_shape, padding, constant_value, mode, op_version):
                 inputs=['input'],
                 outputs=['output'],
                 mode=mode,
-                paddings=padding,
-            )
+                paddings=padding)
         else:
             node = onnx.helper.make_node(
                 'Pad',
@@ -49,8 +47,7 @@ def _make_module(in_shape, padding, constant_value, mode, op_version):
                 outputs=['output'],
                 mode=mode,
                 paddings=padding,
-                value=constant_value
-            )
+                value=constant_value)
     elif op_version == 2:
         if constant_value is None:
             node = onnx.helper.make_node(
@@ -58,8 +55,7 @@ def _make_module(in_shape, padding, constant_value, mode, op_version):
                 inputs=['input'],
                 outputs=['output'],
                 mode=mode,
-                pads=padding,
-            )
+                pads=padding)
         else:
             node = onnx.helper.make_node(
                 'Pad',
@@ -67,8 +63,7 @@ def _make_module(in_shape, padding, constant_value, mode, op_version):
                 outputs=['output'],
                 mode=mode,
                 pads=padding,
-                value=constant_value
-            )
+                value=constant_value)
     else:
         # opset 11/13
         initializers = []
@@ -99,16 +94,14 @@ def _make_module(in_shape, padding, constant_value, mode, op_version):
             'Pad',
             inputs=inputs,
             outputs=['output'],
-            mode=mode
-        )
+            mode=mode)
 
     graph_def = helper.make_graph(
         [node],
         'test-model',
         [input],
         [output],
-        initializer=initializers
-    )
+        initializer=initializers)
 
     op = onnx.OperatorSetIdProto()
     op.version = op_version
@@ -117,16 +110,15 @@ def _make_module(in_shape, padding, constant_value, mode, op_version):
     return model_def
 
 in_shapes = [
-    # [1, 3, 56, 56],
-    [1, 3, 4, 4]
+    [1, 3, 56, 56],
 ]
 
 paddings = [
     [0, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 1, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 1, 0],
-    # [0, 0, 0, 1, 0, 0, 0, 0],
-    # [0, 0, 0, 0, 0, 0, 0, 1],
+    [0, 0, 0, 1, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 1],
     [0, 0, 1, 0, 0, 0, 1, 0],
     [0, 0, 0, 1, 0, 0, 0, 1],
     [0, 0, 1, 1, 0, 0, 1, 1],

@@ -20,11 +20,12 @@ from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
 import numpy as np
 
+
 def _make_module(in_shape_list):
 
     input_names = []
     input_nodes = []
-    out=np.ones(1)
+    out = np.ones(1)
     for i, in_shape in enumerate(in_shape_list):
         input_name = 'x{0}'.format(i)
         input_names.append(input_name)
@@ -50,6 +51,7 @@ def _make_module(in_shape_list):
 
     return model_def
 
+
 in_shapes = [
     [[224]],
     [[224], [1]],
@@ -57,9 +59,10 @@ in_shapes = [
     [[224, 224], [224, 224]],
     [[224, 224], [224]],
     [[224], [224, 224]],
-    [[224], [224, 224],[3, 224, 224],],
-    [[224], [224, 224],[1, 3, 224, 224]],
+    [[224], [224, 224], [3, 224, 224], ],
+    [[224], [224, 224], [1, 3, 224, 224]],
 ]
+
 
 @pytest.mark.parametrize('in_shape', in_shapes)
 def test_sum(in_shape, request):
@@ -68,6 +71,7 @@ def test_sum(in_shape, request):
     runner = OnnxTestRunner(request.node.name)
     model_file = runner.from_onnx_helper(model_def)
     runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_sum.py'])

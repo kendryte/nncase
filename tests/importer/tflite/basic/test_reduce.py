@@ -19,6 +19,7 @@ import tensorflow as tf
 import numpy as np
 from tflite_test_runner import TfliteTestRunner
 
+
 def _make_module(in_shape, axis, keep_dims):
     class ReduceModule(tf.Module):
         def __init__(self):
@@ -33,6 +34,7 @@ def _make_module(in_shape, axis, keep_dims):
             outs.append(tf.reduce_sum(x, axis=axis, keepdims=keep_dims))
             return outs
     return ReduceModule()
+
 
 in_shape_axis = [
     ([3], [0]),
@@ -60,6 +62,7 @@ keep_dims = [
     False
 ]
 
+
 @pytest.mark.parametrize('in_shape,axis', in_shape_axis)
 @pytest.mark.parametrize('keep_dims', keep_dims)
 def test_reduce(in_shape, axis, keep_dims, request):
@@ -68,6 +71,7 @@ def test_reduce(in_shape, axis, keep_dims, request):
     runner = TfliteTestRunner(request.node.name)
     model_file = runner.from_tensorflow(module)
     runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_reduce.py'])

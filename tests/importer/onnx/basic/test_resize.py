@@ -20,6 +20,7 @@ import sys
 import torchvision.transforms.functional as F
 from onnx_test_runner import OnnxTestRunner
 
+
 def _make_module(size, mode):
 
     class ResizeModule(torch.nn.Module):
@@ -28,10 +29,11 @@ def _make_module(size, mode):
 
         def forward(self, x):
             # x = torch.nn.functional.interpolate(x, size=size, scale_factor=scale_factor, mode=mode, align_corners=None, recompute_scale_factor=None)
-            x = F.resize(x, size = size, interpolation = mode)
+            x = F.resize(x, size=size, interpolation=mode)
             return x
 
     return ResizeModule()
+
 
 in_shapes = [
     # [1, 3, 224, 224]
@@ -47,9 +49,10 @@ sizes = [
 ]
 
 modes = [
-    0, # PIL.Image.NEAREST
+    0,  # PIL.Image.NEAREST
     2,   # PIL.Image.BILINEAR
 ]
+
 
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('size', sizes)
@@ -60,6 +63,7 @@ def test_resize(in_shape, size, mode, request):
     runner = OnnxTestRunner(request.node.name, ['cpu', 'k210'])
     model_file = runner.from_torch(module, in_shape)
     runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_resize.py'])

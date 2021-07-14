@@ -19,6 +19,7 @@ import tensorflow as tf
 import numpy as np
 from tflite_test_runner import TfliteTestRunner
 
+
 def _make_module(in_shape, indice, batch_dims):
     class GatherModule(tf.Module):
         def __init__(self):
@@ -50,12 +51,14 @@ in_shape_indices_batch_dims = [
                     [[[3], [1], [4]], [[1], [0], [2]], [[3], [2], [4]]]], 3)
 ]
 
+
 @pytest.mark.parametrize('in_shape,indices,batch_dims', in_shape_indices_batch_dims)
 def test_gather_nd(in_shape, indices, batch_dims, request):
     module = _make_module(in_shape, indices, batch_dims)
     runner = TfliteTestRunner(request.node.name)
     model_file = runner.from_tensorflow(module)
     runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_gather_nd.py'])

@@ -23,7 +23,8 @@ from tflite_test_runner import TfliteTestRunner
 
 
 def _make_module(in_shape, alpha):
-    return tf.keras.applications.MobileNet(in_shape, alpha, include_top=True)
+    return tf.keras.applications.MobileNet(in_shape, alpha, include_top=False)
+
 
 in_shapes = [
     (224, 224, 3)
@@ -33,14 +34,16 @@ alphas = [
     1.0
 ]
 
+
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('alpha', alphas)
 def test_mobilenetv1(in_shape, alpha, request):
     module = _make_module(in_shape, alpha)
-
-    runner = TfliteTestRunner(request.node.name)
+    overwrite_cfg = {'judge': {'threshold': 0.95}}
+    runner = TfliteTestRunner(request.node.name, overwirte_configs=overwrite_cfg)
     model_file = runner.from_tensorflow(module)
     runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_mobilenetv1.py'])

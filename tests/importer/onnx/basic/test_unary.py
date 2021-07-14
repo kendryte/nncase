@@ -18,6 +18,7 @@ import torch
 # import test_util
 from onnx_test_runner import OnnxTestRunner
 
+
 def _make_module():
     class UnaryModule(torch.nn.Module):
         def __init__(self):
@@ -55,12 +56,14 @@ def _make_module():
 
     return UnaryModule()
 
+
 in_shapes = [
     [3],
     [64, 3],
     [3, 64, 3],
     [8, 6, 16, 3]
 ]
+
 
 @pytest.mark.parametrize('in_shape', in_shapes)
 def test_unary(in_shape, request):
@@ -69,6 +72,7 @@ def test_unary(in_shape, request):
     runner = OnnxTestRunner(request.node.name)
     model_file = runner.from_torch(module, in_shape)
     runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_unary.py'])

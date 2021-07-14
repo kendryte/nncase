@@ -17,6 +17,7 @@ import pytest
 import torch
 from onnx_test_runner import OnnxTestRunner
 
+
 def _make_module(in_shape, out_channel, kernel_size, dim):
 
     class SqueezeModule(torch.nn.Module):
@@ -33,6 +34,7 @@ def _make_module(in_shape, out_channel, kernel_size, dim):
             return x
 
     return SqueezeModule()
+
 
 in_shapes = [
     [1, 4, 60, 72],
@@ -56,18 +58,21 @@ axes = [
     3
 ]
 
+
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('out_channel', out_channels)
 @pytest.mark.parametrize('kernel_size', kernel_sizes)
 @pytest.mark.parametrize('axis', axes)
 def test_squeeze(in_shape, out_channel, kernel_size, axis, request):
-    out_shape = [in_shape[0], out_channel, in_shape[2] - kernel_size + 1, in_shape[3] - kernel_size + 1]
+    out_shape = [in_shape[0], out_channel, in_shape[2] -
+                 kernel_size + 1, in_shape[3] - kernel_size + 1]
     dim = axis if out_shape[axis] == 1 else None
     module = _make_module(in_shape, out_channel, kernel_size, dim)
 
     runner = OnnxTestRunner(request.node.name)
     model_file = runner.from_torch(module, in_shape)
     runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_squeeze.py'])

@@ -21,6 +21,7 @@ import numpy as np
 import sys
 from tflite_test_runner import TfliteTestRunner
 
+
 def _make_module(n, i_channels, i_size, k_size, o_channels, strides, padding, dilations, act):
     class Conv2DActModule(tf.Module):
         def __init__(self):
@@ -102,6 +103,7 @@ def test_conv2d_act(n, i_channels, i_size, k_size, o_channels, strides, padding,
         runner = TfliteTestRunner(request.node.name)
         model_file = runner.from_tensorflow(module)
         runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_conv2d_act.py'])
