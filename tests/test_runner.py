@@ -181,7 +181,7 @@ class TestRunner(metaclass=ABCMeta):
         import_options, compile_options = self.get_compiler_options(cfg, model_file)
         model_content = self.read_model_file(model_file)
         self.run_evaluator(cfg, case_dir, import_options, compile_options, model_content)
-        # self.run_inference(cfg, case_dir, import_options, compile_options, model_content)
+        self.run_inference(cfg, case_dir, import_options, compile_options, model_content)
 
     def get_compiler_options(self, cfg, model_file):
         import_options = nncase.ImportOptions(**cfg.importer_opt.kwargs)
@@ -213,7 +213,7 @@ class TestRunner(metaclass=ABCMeta):
         names, args = TestRunner.split_value(cfg.infer)
         for combine_args in product(*args):
             dict_args = dict(zip(names, combine_args))
-            if dict_args['ptq'] and len(self.inputs) > 1:
+            if dict_args['ptq'] and len(self.inputs) != 1:
                 continue
 
             infer_output_paths = self.nncase_infer(

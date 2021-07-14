@@ -34,20 +34,6 @@ Node* add_node(ir::graph &graph, input_connector &next_input, Args&&... args)
     return node;
 }
 
-//convert* add_convert(ir::graph &graph, datatype_t in_type, const shape_t& in_shape, datatype_t out_type, input_connector &next_input)
-//{
-//    auto ct = graph.emplace<convert>(in_type, in_shape, out_type);
-//    next_input.connect(ct->output());
-//    return ct;
-//}
-//
-//slice* add_slice(ir::graph &graph, datatype_t in_type, const shape_t &in_shape, const axis_t &begin, const axis_t &end, input_connector &next_input)
-//{
-//    auto sl = graph.emplace<slice>(in_type, in_shape, begin, end);
-//    next_input.connect(sl->output());
-//    return sl;
-//}
-
 void onnx_importer::convert_op_OneHot(const NodeProto &node)
 {
     const auto &indices = node.input()[0];
@@ -66,31 +52,26 @@ void onnx_importer::convert_op_OneHot(const NodeProto &node)
     auto oh = graph_.emplace<onehot>(type, indices_shape, out_shape, axis);
     const auto &op_name { generate_name(node) };
     oh->name(op_name + "(OneHot)");
+
     const auto indices_type = get_datatype(indices).value();
     if (indices_type != dt_int32)
     {
-        auto ct = add_node<convert>(graph_, oh->indices(), indices_type, indices_shape, dt_int32, );
+        auto ct = add_node<convert>(graph_, oh->indices(), indices_type, indices_shape, dt_int32);
         link_input_tensor(&ct->input(), indices);
-        // input_tensors_.emplace(&ct->input(), indices);
     }
     else
     {
         link_input_tensor(&oh->indices(), indices);
-        // input_tensors_.emplace(&oh->indices(), indices);
     }
     const auto depth_type = get_datatype(depth).value();
     if(depth_type != dt_int32)
     {
-        // auto ct = graph_.emplace<convert>(depth_type, get_shape(depth), dt_int32);
-        // oh->depth().connect(ct->output());
         auto ct = add_node<convert>(graph_, oh->depth(), depth_type, get_shape(depth), dt_int32);
         link_input_tensor(&ct->input(), depth);
-        // input_tensors_.emplace(&ct->input(), depth);
     }
     else
     {
         link_input_tensor(&oh->depth(), depth);
-        // input_tensors_.emplace(&oh->depth(), depth);
     }
 
     axis_t values_begin = {0};
@@ -103,15 +84,5 @@ void onnx_importer::convert_op_OneHot(const NodeProto &node)
     link_input_tensor(&sl_off->input(), values);
     auto sl_on = add_node<slice>(graph_, oh->on_value(), value_type, value_shape, off_values_end, values_end);
     link_input_tensor(&sl_on->input(), values);
-    // auto s_off_value = graph_.emplace<slice>(value_type, value_shape, values_begin, off_value_end);
-    // oh->off_value().connect(s_off_value->output());
-    // link_input_tensor(&s_off_value->input(), values);
-    // link input
-    // s_off_value->input().connect()
-    // auto s_on_value = graph_.emplace<slice>(value_type, value_shape, off_value_end, values_end);
-    // oh->on_value().connect(s_on_value->output());
-    // link_input_tensor(&s_on_value->input(), values);
-
     link_output_tensor(output, &oh->output());
-    // output_tensors_.emplace(output, &oh->output());
 }

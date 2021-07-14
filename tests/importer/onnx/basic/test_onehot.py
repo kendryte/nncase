@@ -26,17 +26,18 @@ def onnx_make_tensor(name, type, val):
 
 def get_onehot_shape(indices, axis, depth):
     indices_shape = list(np.array(indices).shape)
-    return indices[:axis] + [depth] + indices[axis:]
+    # return indices[:axis] + [depth] + indices[axis:]
     return indices_shape[:axis] + [depth] + indices_shape[axis:]
 
-def _make_module(indices, depth, values, axis):
+def _make_module(indices, depth, axis):
     out_shape = get_onehot_shape(indices, axis, depth)
-    # indices = onnx_make_tensor('indices', TensorProto.INT64, indices)
-    indices = helper.make_tensor_value_info('indices', TensorProto.INT64, indices)
-    depth = onnx_make_tensor('depth', TensorProto.INT64, depth)
-    values = onnx_make_tensor('values', TensorProto.INT64, values)
-    output = helper.make_tensor_value_info('output', TensorProto.INT64, out_shape)
-    initializers = [depth, values]
+    indices = onnx_make_tensor('indices', TensorProto.INT64, indices)
+    # indices = helper.make_tensor_value_info('indices', TensorProto.INT64, indices)
+    depth = onnx_make_tensor('depth', TensorProto.FLOAT, depth)
+    # values = onnx_make_tensor('values', TensorProto.INT64, values)
+    values = helper.make_tensor_value_info('values', TensorProto.FLOAT, [2])
+    output = helper.make_tensor_value_info('output', TensorProto.FLOAT, out_shape)
+    initializers = [indices, depth]
 
     node = onnx.helper.make_node(
         'OneHot',
@@ -47,20 +48,28 @@ def _make_module(indices, depth, values, axis):
     graph_def = helper.make_graph(
         [node],
         'test-model',
-        [indices],
+        [values],
         [output],
         initializer=initializers
     )
 
     return helper.make_model(graph_def, producer_name='kendryte')
 
-indices_depth_values_axis = [
-    ([2, 3], 3, [0, 9], 0)
+indices_depth_axis = [
+    ([3, 2, 4, 0], 5, 0),
+    ([3, 2, 4, 0], 5, 1),
+    ([[0, 2, 1, 1], [1, 1, 0, 0]], 3, 0),
+    ([[0, 2, 1, 1], [1, 1, 0, 0]], 3, 1),
+    ([[0, 2, 1, 1], [1, 1, 0, 0]], 3, 2),
+    ([[[0, 3], [2, 4], [1, 0]], [[3, 0], [4, 2], [0, 1]]], 5, 0),
+    ([[[0, 3], [2, 4], [1, 0]], [[3, 0], [4, 2], [0, 1]]], 5, 1),
+    ([[[0, 3], [2, 4], [1, 0]], [[3, 0], [4, 2], [0, 1]]], 5, 2),
+    ([[[0, 3], [2, 4], [1, 0]], [[3, 0], [4, 2], [0, 1]]], 5, 3),
 ]
 
-@pytest.mark.parametrize('indices,depth,values,axis', indices_depth_values_axis)
-def test_onehot(indices, depth, values, axis, request):
-    model_def = _make_module(indices, depth, values, axis)
+@pytest.mark.parametrize('indices,depth,axis', indices_depth_axis)
+def test_onehot(indices, depth, axis, request):
+    model_def = _make_module(indices, depth, axis)
     runner = OnnxTestRunner(request.node.name)
     model_file = runner.from_onnx_helper(model_def)
     runner.run(model_file)

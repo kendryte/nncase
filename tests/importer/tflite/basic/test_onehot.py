@@ -19,25 +19,31 @@ import tensorflow as tf
 import numpy as np
 from tflite_test_runner import TfliteTestRunner
 
-def _make_module(indices, depth, off_value, on_value, axis):
+def _make_module(indices, depth, axis):
     class OneHotModule(tf.Module):
         def __init__(self):
             super(OneHotModule).__init__()
 
-        @tf.function(input_signature=[tf.TensorSpec(np.array(indices).shape, tf.int32)])
+        @tf.function(input_signature=[tf.TensorSpec([2], tf.float32)])
         def __call__(self, x):
-            return tf.one_hot(x, depth, off_value=off_value, on_value=on_value, axis=axis)
+            return tf.one_hot(indices, depth, off_value=x[0], on_value=x[1], axis=axis)
     return OneHotModule()
 
-indices_depth_off_value_on_value_axis = [
-    ([[0, 2, 1, 1], [1, -1, 0, 0]], 3, 0, 9, 0),
-    ([[0, 2, 1, 1], [1, -1, 0, 0]], 3, 0, 9, 1),
-    ([[0, 2, 1, 1], [1, -1, 0, 0]], 3, 0, 9, 2),
+indices_depth_axis = [
+    ([3, 2, 4, 0], 50, 0),
+    ([3, 2, 4, 0], 50, 1),
+    ([[0, 2, 1, 1], [1, 1, 0, 0]], 30, 0),
+    ([[0, 2, 1, 1], [1, 1, 0, 0]], 30, 1),
+    ([[0, 2, 1, 1], [1, 1, 0, 0]], 30, 2),
+    ([[[0, 3], [2, 4], [1, 0]], [[3, 0], [4, 2], [0, 1]]], 50, 0),
+    ([[[0, 3], [2, 4], [1, 0]], [[3, 0], [4, 2], [0, 1]]], 50, 1),
+    ([[[0, 3], [2, 4], [1, 0]], [[3, 0], [4, 2], [0, 1]]], 50, 2),
+    ([[[0, 3], [2, 4], [1, 0]], [[3, 0], [4, 2], [0, 1]]], 50, 3),
 ]
 
-@pytest.mark.parametrize('indices,depth, off_value,on_value,axis', indices_depth_off_value_on_value_axis)
-def test_onehot(indices, depth, off_value, on_value, axis, request):
-    module = _make_module(indices, depth, off_value, on_value, axis)
+@pytest.mark.parametrize('indices,depth,axis', indices_depth_axis)
+def test_onehot(indices, depth, axis, request):
+    module = _make_module(indices, depth, axis)
 
     runner = TfliteTestRunner(request.node.name)
     model_file = runner.from_tensorflow(module)

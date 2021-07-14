@@ -29,22 +29,21 @@ result<void> onehot_impl(const int32_t *indices, T *output, const runtime_shape_
     const runtime_shape_t &out_strides, NNCASE_UNUSED size_t depth, T off_value, T on_value,
     size_t axis, NNCASE_UNUSED kernel_context &context)
 {
-    return apply(out_shape, [&](const runtime_shape_t &out_index) -> result<void>
+    return apply(out_shape, [&](const runtime_shape_t &out_index) -> result<void> {
+        runtime_shape_t indices_index(indices_shape.size());
+        for (size_t i = 0; i < axis; ++i)
         {
-            runtime_shape_t indices_index(indices_shape.size());
-            for (size_t i = 0; i < axis; ++i)
-            {
-                indices_index[i] = out_index[i];
-            }
-            for (size_t i = axis + 1; i < indices_shape.size(); ++i)
-            {
-                indices_index[i] = out_index[i];
-            }
-            auto index = indices[offset(get_default_strides(indices_shape), indices_index)];
-            T out_v = index == out_index[axis] ? on_value : off_value;
-            output[offset(out_strides, out_index)] = out_v;
-            return ok();
-        });
+            indices_index[i] = out_index[i];
+        }
+        for (size_t i = axis; i < indices_shape.size(); ++i)
+        {
+            indices_index[i] = out_index[i + 1];
+        }
+        auto index = indices[offset(get_default_strides(indices_shape), indices_index)];
+        T out_v = index == out_index[axis] ? on_value : off_value;
+        output[offset(out_strides, out_index)] = out_v;
+        return ok();
+    });
 }
 }
 

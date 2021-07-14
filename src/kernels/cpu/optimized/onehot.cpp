@@ -58,7 +58,11 @@ result<void> onehot_impl(const int32_t *indices, T *output, const runtime_shape_
         // next line
         for (size_t i = 0; i < indices_size; ++i)
         {
-            output[indices[i]] = on_value;
+            if (*indices >= 0)
+            {
+                output[*indices] = on_value;
+            }
+            ++indices;
             output += depth;
         }
     }
@@ -68,14 +72,15 @@ result<void> onehot_impl(const int32_t *indices, T *output, const runtime_shape_
         // next indices_inner_size
         for (size_t i = 0; i < out_size; ++i)
         {
-            // size should be depth, but only inner_size count need set value
             for (size_t x = 0; x < x_size; ++x)
             {
-                output[indices[x] * inner_size + x] = on_value;
+                if (*indices >= 0)
+                {
+                    output[(*indices) * inner_size + x] = on_value;
+                }
+                ++indices;
             }
-            // assert(inner_size == indices_shape[indices_shape.size() - 1]);
             output += inner_size * depth;
-            indices += inner_size;
         }
     }
     else if (onehot_dims == 2)
@@ -88,11 +93,14 @@ result<void> onehot_impl(const int32_t *indices, T *output, const runtime_shape_
             {
                 for (size_t x = 0; x < x_size; ++x)
                 {
-                    output[indices[y * x_size + x] * inner_size + y * x_size + x] = on_value;
+                    if (*indices >= 0)
+                    {
+                        output[(*indices) * inner_size + y * x_size + x] = on_value;
+                    }
+                    ++indices;
                 }
             }
             output += inner_size * depth;
-            indices += inner_size;
         }
     }
     else if (onehot_dims == 3)
@@ -100,6 +108,8 @@ result<void> onehot_impl(const int32_t *indices, T *output, const runtime_shape_
         const auto c_size = indices_shape[indices_shape.size() - 3];
         const auto y_size = indices_shape[indices_shape.size() - 2];
         const auto x_size = indices_shape[indices_shape.size() - 1];
+        const auto y_block_size = out_strides[out_strides.size() - 2];
+        const auto c_block_size = out_strides[out_strides.size() - 3];
         for (size_t i = 0; i < out_size; ++i)
         {
             for (size_t c = 0; c < c_size; ++c)
@@ -108,12 +118,15 @@ result<void> onehot_impl(const int32_t *indices, T *output, const runtime_shape_
                 {
                     for (size_t x = 0; x < x_size; ++x)
                     {
-                        output[indices[c * x_size * y_size + y * x_size + x] * inner_size + c * y_size * x_size + y * x_size + x] = on_value;
+                        if (*indices >= 0)
+                        {
+                            output[(*indices) * inner_size + c * c_block_size + y * y_block_size + x] = on_value;
+                        }
+                        ++indices;
                     }
                 }
             }
             output += inner_size * depth;
-            indices += inner_size;
         }
     }
     else
