@@ -32,8 +32,8 @@ in_shapes = [
 @pytest.mark.parametrize('in_shape', in_shapes)
 def test_densenet(in_shape, request):
     module = _make_module(in_shape)
-
-    runner = TfliteTestRunner(request.node.name)
+    overwrite_cfg = {'judge': {'threshold': 0.96}}
+    runner = TfliteTestRunner(request.node.name, overwirte_configs=overwrite_cfg)
     model_file = runner.from_tensorflow(module)
     runner.run(model_file)
 
