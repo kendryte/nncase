@@ -490,7 +490,8 @@ void register_neutral_evaluators()
         auto on_value_mem = on_value.buffer().data();
         auto off_value_mem = off_value.buffer().data();
         kernels::onehot(output.datatype(), indices_mem, output_mem, indices.shape(), output.shape(),
-            output.strides(), depth_mem, off_value_mem, on_value_mem, rnode.axis()).unwrap_or_throw();
+            output.strides(), depth_mem, off_value_mem, on_value_mem, rnode.axis(), rnode.mode())
+            .unwrap_or_throw();
     });
 }
 

@@ -27,7 +27,7 @@ namespace
 template <class T>
 result<void> onehot_impl(const int32_t *indices, T *output, const runtime_shape_t &indices_shape, const runtime_shape_t &out_shape,
     const runtime_shape_t &out_strides, NNCASE_UNUSED size_t depth, T off_value, T on_value,
-    size_t axis, NNCASE_UNUSED kernel_context &context)
+    size_t axis, onehot_mode_t mode, NNCASE_UNUSED kernel_context &context)
 {
     return apply(out_shape, [&](const runtime_shape_t &out_index) -> result<void> {
         runtime_shape_t indices_index(indices_shape.size());
@@ -39,8 +39,17 @@ result<void> onehot_impl(const int32_t *indices, T *output, const runtime_shape_
         {
             indices_index[i] = out_index[i + 1];
         }
-        auto index = indices[offset(get_default_strides(indices_shape), indices_index)];
-        T out_v = static_cast<size_t>(index) == out_index[axis] ? on_value : off_value;
+        auto indices_v = indices[offset(get_default_strides(indices_shape), indices_index)];
+        T out_v;
+        if(indices_v < 0 && mode == onehot_process_neg)
+        {
+            out_v = indices_v + out_shape[axis] == static_cast<int32_t>(out_index[axis]) ? on_value : off_value;
+        }
+        else
+        {
+            out_v = indices_v == static_cast<size_t>(out_index[axis]) ? on_value : off_value;
+        }
+
         output[offset(out_strides, out_index)] = out_v;
         return ok();
     });
@@ -50,11 +59,10 @@ result<void> onehot_impl(const int32_t *indices, T *output, const runtime_shape_
 #define ONEHOT_IMPL(size, type)                                                                              \
     case size:                                                                                               \
         return onehot_impl(indices, reinterpret_cast<type *>(output), indices_shape, out_shape, out_strides, \
-            *reinterpret_cast<type *>(depth), *reinterpret_cast<type *>(off_value), *reinterpret_cast<type *>(on_value), axis, context);
+            *reinterpret_cast<type *>(depth), *reinterpret_cast<type *>(off_value), *reinterpret_cast<type *>(on_value), axis, mode, context);
 
 result<void> reference::onehot(datatype_t type, const int32_t *indices, gsl::byte *output, const runtime_shape_t &indices_shape, const runtime_shape_t &out_shape,
-    const runtime_shape_t &out_strides, gsl::byte *depth, gsl::byte *off_value, gsl::byte *on_value, size_t axis,
-    kernel_context &context) noexcept
+    const runtime_shape_t &out_strides, gsl::byte *depth, gsl::byte *off_value, gsl::byte *on_value, size_t axis, onehot_mode_t mode, kernel_context &context) noexcept
 {
     TYPE_IMPL_SELECT(type, ONEHOT_IMPL);
 }

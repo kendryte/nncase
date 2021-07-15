@@ -36,5 +36,5 @@ result<void> stackvm_runtime_module::visit(const tensor_onehot_op_t &op) noexcep
 
     return kernels::onehot(op.datatype, reinterpret_cast<const int32_t *>(indices), reinterpret_cast<gsl::byte *>(output),
         indices_shape, out_shape, out_strides, reinterpret_cast<gsl::byte *>(depth), reinterpret_cast<gsl::byte *>(off_value),
-        reinterpret_cast<gsl::byte *>(on_value), op.axis);
+        reinterpret_cast<gsl::byte *>(on_value), op.axis, op.onehot_mode);
 }

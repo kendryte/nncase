@@ -104,16 +104,15 @@ result<void> kernels::lut1d(datatype_t type, const gsl::byte *input, const gsl::
 }
 
 result<void> kernels::onehot(datatype_t type, const int32_t *indices, gsl::byte *output, const runtime_shape_t &indices_shape, const runtime_shape_t &out_shape,
-    const runtime_shape_t &out_strides, gsl::byte *depth, gsl::byte *off_value, gsl::byte *on_value, size_t axis,
-    kernel_context &context)noexcept
+    const runtime_shape_t &out_strides, gsl::byte *depth, gsl::byte *off_value, gsl::byte *on_value, size_t axis, onehot_mode_t mode, kernel_context &context) noexcept
 {
     if (is_contiguous(out_shape, out_strides) && (indices_shape.size() - axis) < 4)
     {
-        return cpu::optimized::onehot(type, indices, output, indices_shape, out_shape, out_strides, depth, off_value, on_value, axis, context);
+        return cpu::optimized::onehot(type, indices, output, indices_shape, out_shape, out_strides, depth, off_value, on_value, axis, mode, context);
     }
     else
     {
-        return cpu::reference::onehot(type, indices, output, indices_shape, out_shape, out_strides, depth, off_value, on_value, axis, context);
+        return cpu::reference::onehot(type, indices, output, indices_shape, out_shape, out_strides, depth, off_value, on_value, axis, mode, context);
     }
 }
 

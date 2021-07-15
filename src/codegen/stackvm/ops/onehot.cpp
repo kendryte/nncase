@@ -35,5 +35,5 @@ void stackvm_module_builder::emit(onehot &node, stackvm_op_builder &builder)
     builder.stshape(0, indices.shape);
     builder.stshape(1, output.shape);
     builder.stshape(2, output.strides);
-    builder.tensor_onehot_(node.depth().type(), 0, 1, 2, node.axis());
+    builder.tensor_onehot_(node.depth().type(), 0, 1, 2, node.axis(), node.mode());
 }

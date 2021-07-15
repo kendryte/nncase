@@ -181,6 +181,13 @@ namespace IsaGen
     }
 
     [BitLength(8)]
+    [EnumName("onehot_mode_t")]
+    [Browsable(false)]
+    public enum OneHotMode
+    {
+    }
+
+    [BitLength(8)]
     [EnumName("pad_mode_t")]
     [Browsable(false)]
     public enum PadMode
@@ -1447,6 +1454,10 @@ namespace IsaGen
             [DisplayName("axis")]
             [Description("Axis")]
             public byte Axis { get; set; }
+
+            [DisplayName("onehot_mode")]
+            [Description("OneHot Mode")]
+            public OneHotMode OneHotMode{ get; set; }
         }
 
         [DisplayName("TENSOR.PAD")]

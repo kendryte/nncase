@@ -14,6 +14,7 @@
  */
 #pragma once
 #include <nncase/ir/ir_types.h>
+#include <nncase/ir/ops/convert.h>
 
 namespace nncase::importer
 {
@@ -74,9 +75,17 @@ void link_output_tensor_by_id(std::unordered_map<Id, ir::output_connector *> &ou
     }
 }
 
-template<class T>
+template <class T = int32_t>
 T get_positive(int32_t v, size_t length)
 {
     return static_cast<T>(v < 0 ? v + length : v);
+}
+
+template<class Node, class... Args>
+Node* add_node(ir::graph &graph, ir::input_connector &next_input, Args&&... args)
+{
+    auto node = graph.emplace<Node>(std::forward<Args>(args)...);
+    next_input.connect(node->output());
+    return node;
 }
 }

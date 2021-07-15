@@ -26,14 +26,6 @@ using namespace nncase::importer;
 using namespace nncase::ir;
 using namespace onnx;
 
-template<class Node, class... Args>
-Node* add_node(ir::graph &graph, input_connector &next_input, Args&&... args)
-{
-    auto node = graph.emplace<Node>(std::forward<Args>(args)...);
-    next_input.connect(node->output());
-    return node;
-}
-
 void onnx_importer::convert_op_OneHot(const NodeProto &node)
 {
     const auto &indices = node.input()[0];
@@ -45,34 +37,14 @@ void onnx_importer::convert_op_OneHot(const NodeProto &node)
     auto indices_shape = get_shape(indices);
     auto out_shape = get_shape(output);
 
-    int32_t axis = 0;
-    const auto axis_attr = get_attribute<int32_t>(node, "axis");
-    axis = get_positive<int32_t>(axis_attr.value(), out_shape.size());
+    auto axis = get_positive_axis(node, out_shape.size());
 
-    auto oh = graph_.emplace<onehot>(type, indices_shape, out_shape, axis);
+    auto oh = graph_.emplace<onehot>(type, indices_shape, out_shape, axis, onehot_mode_t::onehot_process_neg);
     const auto &op_name { generate_name(node) };
     oh->name(op_name + "(OneHot)");
 
-    const auto indices_type = get_datatype(indices).value();
-    if (indices_type != dt_int32)
-    {
-        auto ct = add_node<convert>(graph_, oh->indices(), indices_type, indices_shape, dt_int32);
-        link_input_tensor(&ct->input(), indices);
-    }
-    else
-    {
-        link_input_tensor(&oh->indices(), indices);
-    }
-    const auto depth_type = get_datatype(depth).value();
-    if(depth_type != dt_int32)
-    {
-        auto ct = add_node<convert>(graph_, oh->depth(), depth_type, get_shape(depth), dt_int32);
-        link_input_tensor(&ct->input(), depth);
-    }
-    else
-    {
-        link_input_tensor(&oh->depth(), depth);
-    }
+    convert_to_type(oh->indices(), indices, dt_int32);
+    convert_to_type(oh->depth(), depth, dt_int32);
 
     axis_t values_begin = {0};
     axis_t off_values_end = {1};

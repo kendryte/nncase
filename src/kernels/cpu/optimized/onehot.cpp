@@ -43,7 +43,7 @@ void memset_(int32_t *output, size_t output_size, int32_t off_value)
 template <class T>
 result<void> onehot_impl(const int32_t *indices, T *output, const runtime_shape_t &indices_shape, const runtime_shape_t &out_shape,
     NNCASE_UNUSED const runtime_shape_t &out_strides, NNCASE_UNUSED size_t depth, T off_value, T on_value,
-    size_t axis, NNCASE_UNUSED kernel_context &context)
+    size_t axis, onehot_mode_t mode, NNCASE_UNUSED kernel_context &context)
 {
     auto output_size = compute_size(out_shape);
     memset_(output, output_size, off_value);
@@ -54,17 +54,30 @@ result<void> onehot_impl(const int32_t *indices, T *output, const runtime_shape_
     auto indices_dims = indices_shape.size();
     auto onehot_dims = indices_dims - axis;
 
+    auto neg_max_len = static_cast<int32_t>(out_shape[axis]);
+
+    auto set_output = [&](auto indices_v, auto offset) {
+        if(indices_v < 0)
+        {
+            if(mode == onehot_process_neg)
+            {
+                indices_v += neg_max_len;
+            }
+            else
+            {
+                return;
+            }
+        }
+        output[indices_v * inner_size + offset] = on_value;
+    };
+
     if (onehot_dims == 0)
     {
         // a depth is a line, set a value per line
         // next line
-        for (size_t i = 0; i < indices_size; ++i)
+        for (size_t i = 0; i < indices_size; ++i, ++indices)
         {
-            if (*indices >= 0)
-            {
-                output[*indices] = on_value;
-            }
-            ++indices;
+            set_output(*indices, 0);
             output += depth;
         }
     }
@@ -74,13 +87,9 @@ result<void> onehot_impl(const int32_t *indices, T *output, const runtime_shape_
         // next indices_inner_size
         for (size_t i = 0; i < out_size; ++i)
         {
-            for (size_t x = 0; x < x_size; ++x)
+            for (size_t x = 0; x < x_size; ++x, ++indices)
             {
-                if (*indices >= 0)
-                {
-                    output[(*indices) * inner_size + x] = on_value;
-                }
-                ++indices;
+                set_output(*indices, x);
             }
             output += inner_size * depth;
         }
@@ -93,13 +102,9 @@ result<void> onehot_impl(const int32_t *indices, T *output, const runtime_shape_
         {
             for (size_t y = 0; y < y_size; ++y)
             {
-                for (size_t x = 0; x < x_size; ++x)
+                for (size_t x = 0; x < x_size; ++x, ++indices)
                 {
-                    if (*indices >= 0)
-                    {
-                        output[(*indices) * inner_size + y * x_size + x] = on_value;
-                    }
-                    ++indices;
+                    set_output(*indices, y * x_size + x);
                 }
             }
             output += inner_size * depth;
@@ -118,13 +123,9 @@ result<void> onehot_impl(const int32_t *indices, T *output, const runtime_shape_
             {
                 for (size_t y = 0; y < y_size; ++y)
                 {
-                    for (size_t x = 0; x < x_size; ++x)
+                    for (size_t x = 0; x < x_size; ++x, ++indices)
                     {
-                        if (*indices >= 0)
-                        {
-                            output[(*indices) * inner_size + c * c_block_size + y * y_block_size + x] = on_value;
-                        }
-                        ++indices;
+                        set_output(*indices, c * c_block_size + y * y_block_size + x);
                     }
                 }
             }
@@ -142,11 +143,10 @@ result<void> onehot_impl(const int32_t *indices, T *output, const runtime_shape_
 #define ONEHOT_IMPL(size, type)                                                                              \
     case size:                                                                                               \
         return onehot_impl(indices, reinterpret_cast<type *>(output), indices_shape, out_shape, out_strides, \
-            *reinterpret_cast<size_t *>(depth), *reinterpret_cast<type *>(off_value), *reinterpret_cast<type *>(on_value), axis, context);
+            *reinterpret_cast<size_t *>(depth), *reinterpret_cast<type *>(off_value), *reinterpret_cast<type *>(on_value), axis, mode, context);
 
 result<void> optimized::onehot(datatype_t type, const int32_t *indices, gsl::byte *output, const runtime_shape_t &indices_shape, const runtime_shape_t &out_shape,
-    const runtime_shape_t &out_strides, gsl::byte *depth, gsl::byte *off_value, gsl::byte *on_value, size_t axis,
-    kernel_context &context) noexcept
+    const runtime_shape_t &out_strides, gsl::byte *depth, gsl::byte *off_value, gsl::byte *on_value, size_t axis, onehot_mode_t mode, kernel_context &context) noexcept
 {
     TYPE_IMPL_SELECT(type, ONEHOT_IMPL);
 }
