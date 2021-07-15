@@ -19,17 +19,19 @@ case: # case的配置，应该是一个多层次的
       input_std: 0.5
   generate_inputs:
     name: generate_random
+    kwargs: null
     numbers: 1
     batch_size: 1
   generate_calibs:
     name: generate_random
+    kwargs: null
     numbers: 1
     batch_size: 10
   eval:
     - name: target
       values:
-        - cpu
-        - k210
+        # - cpu
+        # - k210
         - k510
     - name: ptq
       values:
@@ -37,8 +39,8 @@ case: # case的配置，应该是一个多层次的
   infer:
     - name: target
       values:
-        - cpu
-        - k210
+        # - cpu
+        # - k210
         - k510
     - name: ptq
       values:

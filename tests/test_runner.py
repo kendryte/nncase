@@ -60,7 +60,7 @@ class Edict:
                     old_value = getattr(self, name)
                     if old_value is None:
                         setattr(self, name, Edict(new_value))
-                    elif isinstance(old_value, Edict):
+                    elif isinstance(old_value, (Edict, dict)):
                         old_value.update(new_value)
                 elif isinstance(new_value, (list, tuple)) and name == 'specifics':
                     if getattr(self, name) == None:
@@ -78,7 +78,8 @@ class Edict:
                 setattr(self, name, new_value)
 
 
-def generate_random(shape: List[int], dtype: np.dtype) -> np.ndarray:
+def generate_random(shape: List[int], dtype: np.dtype,
+                    abs: bool = False) -> np.ndarray:
     if dtype is np.uint8:
         data = np.random.randint(0, 256, shape)
     elif dtype is np.int8:
@@ -86,6 +87,8 @@ def generate_random(shape: List[int], dtype: np.dtype) -> np.ndarray:
     else:
         data = np.random.rand(*shape) * 2 - 1
     data = data.astype(dtype=dtype)
+    if abs:
+        return np.abs(data)
     return data
 
 
@@ -104,7 +107,7 @@ def _cast_bfloat16_then_float32(values: np.array):
     return values
 
 
-Fuc = {
+DataFactory = {
     'generate_random': generate_random
 }
 
@@ -115,11 +118,7 @@ class TestRunner(metaclass=ABCMeta):
         with open(os.path.join(config_root, 'config.yml'), encoding='utf8') as f:
             cfg: dict = yaml.safe_load(f)
             config = Edict(cfg)
-            if overwirte_configs:
-                if isinstance(overwirte_configs, str):
-                    overwirte_configs: dict = yaml.safe_load(overwirte_configs)
-                config.update(overwirte_configs)
-
+        config = self.update_config(config, overwirte_configs)
         self.cfg = self.validte_config(config)
 
         case_name = case_name.replace('[', '_').replace(']', '_')
@@ -139,8 +138,15 @@ class TestRunner(metaclass=ABCMeta):
     def validte_config(self, config):
         in_ci = os.getenv('CI', False)
         if in_ci:
-            config.judge.log_hist = False
+            config.judge.common.log_hist = False
             config.setup.log_txt = False
+        return config
+
+    def update_config(self, config: Edict, overwirte_configs: Dict) -> Edict:
+        if overwirte_configs:
+            if isinstance(overwirte_configs, str):
+                overwirte_configs: dict = yaml.safe_load(overwirte_configs)
+        config.update(overwirte_configs)
         return config
 
     def validate_targets(self, targets: List[str]):
@@ -350,7 +356,7 @@ class TestRunner(metaclass=ABCMeta):
             for input in inputs:
                 shape = input['shape']
                 shape[0] *= cfg.batch_size
-                data = Fuc[cfg.name](shape, input['dtype'])
+                data = DataFactory[cfg.name](shape, input['dtype'], **cfg.kwargs)
 
                 path_list.append(
                     (os.path.join(case_dir, f'{name}_{n}_{i}.bin'),
