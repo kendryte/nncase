@@ -15,6 +15,7 @@
 #pragma once
 #include <nncase/ir/ir_types.h>
 #include <nncase/ir/ops/convert.h>
+#include <nncase/ir/debug.h>
 
 namespace nncase::importer
 {
