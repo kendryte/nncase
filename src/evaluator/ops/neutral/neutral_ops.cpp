@@ -28,6 +28,7 @@
 #include <nncase/ir/ops/gather.h>
 #include <nncase/ir/ops/gather_nd.h>
 #include <nncase/ir/ops/matmul.h>
+#include <nncase/ir/ops/onehot.h>
 #include <nncase/ir/ops/pad.h>
 #include <nncase/ir/ops/quantize.h>
 #include <nncase/ir/ops/reduce.h>
@@ -472,6 +473,24 @@ void register_neutral_evaluators()
 
         kernels::gather_nd(input.datatype(), input_mem.data(), output_mem.data(), input.shape(), output.shape(),
             input.strides(), output.strides(), reinterpret_cast<const int32_t *>(indices.buffer().data()), indices.shape(), rnode.batch_dims())
+            .unwrap_or_throw();
+    });
+
+    register_evaluator(op_onehot, [](ir::node &node, module_evaluate_context &context) {
+        auto &rnode = static_cast<onehot &>(node);
+
+        auto indices = context.memory_at(rnode.indices());
+        auto depth = context.memory_at(rnode.depth());
+        auto on_value = context.memory_at(rnode.on_value());
+        auto off_value = context.memory_at(rnode.off_value());
+        auto output = context.memory_at(rnode.output());
+        auto indices_mem = reinterpret_cast<const int32_t *>(indices.buffer().data());
+        auto output_mem = output.buffer().data();
+        auto depth_mem = depth.buffer().data();
+        auto on_value_mem = on_value.buffer().data();
+        auto off_value_mem = off_value.buffer().data();
+        kernels::onehot(output.datatype(), indices_mem, output_mem, indices.shape(), output.shape(),
+            output.strides(), depth_mem, off_value_mem, on_value_mem, rnode.axis(), rnode.mode())
             .unwrap_or_throw();
     });
 }

@@ -213,7 +213,7 @@ class TestRunner(metaclass=ABCMeta):
         names, args = TestRunner.split_value(cfg.infer)
         for combine_args in product(*args):
             dict_args = dict(zip(names, combine_args))
-            if dict_args['ptq'] and len(self.inputs) > 1:
+            if dict_args['ptq'] and len(self.inputs) != 1:
                 continue
 
             infer_output_paths = self.nncase_infer(

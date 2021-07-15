@@ -12,6 +12,7 @@ set(SRCS batch_to_space.cpp
          gather_nd.cpp
          lut1d.cpp
          nnil.cpp
+         onehot.cpp
          pad.cpp
          quantize.cpp
          reduce.cpp
