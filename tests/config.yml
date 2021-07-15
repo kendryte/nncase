@@ -45,6 +45,17 @@ case: # case的配置，应该是一个多层次的
         - false
         - true
 judge:
-  simarity_name:  cosine
-  threshold: 0.98
-  log_hist: true
+  common: &judge_common
+    simarity_name:  cosine
+    threshold: 0.98
+    log_hist: true
+    matchs: null
+  specifics: null # the specifics mean you can use specific overwirte it like this 
+    # - matchs: 
+    #   target: k510
+    #   ptq: false
+    # threshold: 0.99
+    # - matchs: 
+    #     target: k210
+    #     ptq: true
+    #   threshold: 0.98
