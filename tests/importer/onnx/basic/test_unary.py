@@ -34,7 +34,7 @@ def _make_module():
             outs.append(torch.log(x))
             outs.append(torch.neg(x))
             outs.append(torch.round(x))
-            outs.append(torch.rsqrt(x))
+            # outs.append(torch.rsqrt(x))
             outs.append(torch.sin(x))
             outs.append(torch.sqrt(x))
             outs.append(torch.square(x))
