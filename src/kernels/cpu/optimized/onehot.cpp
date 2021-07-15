@@ -15,8 +15,8 @@
 #include <nncase/kernels/cpu/optimized/tensor_compute.h>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/runtime/runtime_op_utility.h>
-#include <string>
 #include <sstream>
+#include <string>
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -28,13 +28,13 @@ namespace
 {
 // if constexpr can be used in C++17
 // but k210 runtime only support C++14
-template<class T>
+template <class T>
 void memset_(T *output, size_t output_size, T off_value)
 {
     std::fill_n(output, output_size, off_value);
 }
 
-template<>
+template <>
 void memset_(int32_t *output, size_t output_size, int32_t off_value)
 {
     memset(output, off_value, output_size);
@@ -57,9 +57,9 @@ result<void> onehot_impl(const int32_t *indices, T *output, const runtime_shape_
     auto neg_max_len = static_cast<int32_t>(out_shape[axis]);
 
     auto set_output = [&](auto indices_v, auto offset) {
-        if(indices_v < 0)
+        if (indices_v < 0)
         {
-            if(mode == onehot_process_neg)
+            if (mode == onehot_process_neg)
             {
                 indices_v += neg_max_len;
             }

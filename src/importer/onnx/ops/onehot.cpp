@@ -15,11 +15,11 @@
 
 #include "../onnx_importer.h"
 #include <cassert>
+#include <nncase/importer/util.h>
 #include <nncase/ir/graph.h>
 #include <nncase/ir/ops/convert.h>
 #include <nncase/ir/ops/onehot.h>
 #include <nncase/ir/ops/slice.h>
-#include <nncase/importer/util.h>
 
 using namespace nncase;
 using namespace nncase::importer;
@@ -46,9 +46,9 @@ void onnx_importer::convert_op_OneHot(const NodeProto &node)
     convert_to_type(oh->indices(), indices, dt_int32);
     convert_to_type(oh->depth(), depth, dt_int32);
 
-    axis_t values_begin = {0};
-    axis_t off_values_end = {1};
-    axis_t values_end = {2};
+    axis_t values_begin = { 0 };
+    axis_t off_values_end = { 1 };
+    axis_t values_end = { 2 };
 
     auto value_type = get_datatype(values).value();
     auto value_shape = get_shape(values);

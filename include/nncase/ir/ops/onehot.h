@@ -30,7 +30,7 @@ public:
     output_connector &output() { return output_at(0); }
 
     int32_t axis() const noexcept { return axis_; }
-    onehot_mode_t mode() const noexcept {  return mode_; }
+    onehot_mode_t mode() const noexcept { return mode_; }
 
     onehot(datatype_t type, shape_t indices_shape, shape_t output_shape, int32_t axis, onehot_mode_t mode = onehot_mode_t::onehot_normal);
 

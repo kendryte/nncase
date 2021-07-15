@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 #pragma once
+#include <nncase/ir/debug.h>
 #include <nncase/ir/ir_types.h>
 #include <nncase/ir/ops/convert.h>
-#include <nncase/ir/debug.h>
 
 namespace nncase::importer
 {
@@ -82,8 +82,8 @@ T get_positive(int32_t v, size_t length)
     return static_cast<T>(v < 0 ? v + length : v);
 }
 
-template<class Node, class... Args>
-Node* add_node(ir::graph &graph, ir::input_connector &next_input, Args&&... args)
+template <class Node, class... Args>
+Node *add_node(ir::graph &graph, ir::input_connector &next_input, Args &&... args)
 {
     auto node = graph.emplace<Node>(std::forward<Args>(args)...);
     next_input.connect(node->output());

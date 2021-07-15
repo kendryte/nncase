@@ -25,7 +25,6 @@
 #include <nncase/ir/ops/dequantize.h>
 #include <nncase/ir/ops/gather.h>
 #include <nncase/ir/ops/gather_nd.h>
-#include <nncase/ir/ops/dequantize.h>
 #include <nncase/ir/ops/onehot.h>
 #include <nncase/ir/ops/pad.h>
 #include <nncase/ir/ops/quantize.h>
