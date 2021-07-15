@@ -41,13 +41,14 @@ result<void> onehot_impl(const int32_t *indices, T *output, const runtime_shape_
         }
         auto indices_v = indices[offset(get_default_strides(indices_shape), indices_index)];
         T out_v;
+        auto cur_axis_index = static_cast<int32_t>(out_index[axis]);
         if (indices_v < 0 && mode == onehot_process_neg)
         {
-            out_v = indices_v + out_shape[axis] == static_cast<int32_t>(out_index[axis]) ? on_value : off_value;
+            out_v = (indices_v + static_cast<int32_t>(out_shape[axis])) == cur_axis_index ? on_value : off_value;
         }
         else
         {
-            out_v = indices_v == static_cast<size_t>(out_index[axis]) ? on_value : off_value;
+            out_v = indices_v == cur_axis_index ? on_value : off_value;
         }
 
         output[offset(out_strides, out_index)] = out_v;
