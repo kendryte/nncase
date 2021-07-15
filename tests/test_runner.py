@@ -146,7 +146,7 @@ class TestRunner(metaclass=ABCMeta):
         if overwirte_configs:
             if isinstance(overwirte_configs, str):
                 overwirte_configs: dict = yaml.safe_load(overwirte_configs)
-        config.update(overwirte_configs)
+            config.update(overwirte_configs)
         return config
 
     def validate_targets(self, targets: List[str]):
