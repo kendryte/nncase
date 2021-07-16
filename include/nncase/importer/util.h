@@ -83,7 +83,7 @@ T get_positive(int32_t v, size_t length)
 }
 
 // place new node before exist node
-// Node input -> NextNode input
+// Node output -> NextNode input
 template <class Node, class... Args>
 Node *add_prev_node(ir::graph &graph, ir::input_connector &next_input, Args &&... args)
 {
