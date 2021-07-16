@@ -820,11 +820,11 @@ void onnx_importer::link_output_tensor(const std::string &onnx_v, ir::output_con
 
 void onnx_importer::add_convert(ir::input_connector &next_input, const std::string &onnx_input, datatype_t to_type)
 {
-    auto ct = nncase::importer::add_node<convert>(graph_, next_input, get_datatype(onnx_input).value(), get_shape(onnx_input), to_type);
+    auto ct = nncase::importer::add_prev_node<convert>(graph_, next_input, get_datatype(onnx_input).value(), get_shape(onnx_input), to_type);
     link_input_tensor(&ct->input(), onnx_input);
 }
 
-void onnx_importer::convert_to_type(ir::input_connector &next_input, const std::string &onnx_input, datatype_t to_type)
+void onnx_importer::input_convert_to_type(ir::input_connector &next_input, const std::string &onnx_input, datatype_t to_type)
 {
     auto input_type = get_datatype(onnx_input).value();
     if (input_type != to_type)
