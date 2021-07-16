@@ -14,52 +14,148 @@
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
 
 import pytest
-import torch
+import onnx
+from onnx import helper
+from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
+import numpy as np
 
 
-def _make_module(in_shape, padding, value):
+def _make_module(in_shape, padding, constant_value, mode, op_version):
 
-    class PadModule(torch.nn.Module):
-        def __init__(self):
-            super(PadModule, self).__init__()
-            self.pad = torch.nn.ConstantPad2d(padding, value)
-            self.conv2d = torch.nn.Conv2d(in_shape[1], 3, 3)
+    input = helper.make_tensor_value_info('input', TensorProto.FLOAT, in_shape)
 
-        def forward(self, x):
-            x = self.pad(x)
-            x = self.conv2d(x)
+    initializers = None
 
-            return x
+    out_shape = in_shape.copy()
+    out_shape[2] += padding[2] + padding[6]
+    out_shape[3] += padding[3] + padding[7]
 
-    return PadModule()
+    output = helper.make_tensor_value_info('output', TensorProto.FLOAT, out_shape)
+
+    if op_version == 1:
+        if constant_value is None:
+            node = onnx.helper.make_node(
+                'Pad',
+                inputs=['input'],
+                outputs=['output'],
+                mode=mode,
+                paddings=padding)
+        else:
+            node = onnx.helper.make_node(
+                'Pad',
+                inputs=['input'],
+                outputs=['output'],
+                mode=mode,
+                paddings=padding,
+                value=constant_value)
+    elif op_version == 2:
+        if constant_value is None:
+            node = onnx.helper.make_node(
+                'Pad',
+                inputs=['input'],
+                outputs=['output'],
+                mode=mode,
+                pads=padding)
+        else:
+            node = onnx.helper.make_node(
+                'Pad',
+                inputs=['input'],
+                outputs=['output'],
+                mode=mode,
+                pads=padding,
+                value=constant_value)
+    else:
+        # opset 11/13
+        initializers = []
+        dims_list = []
+        dims_list.append(len(padding))
+        pads = helper.make_tensor(
+            "pads",
+            TensorProto.INT64,
+            dims=dims_list,
+            vals=padding)
+
+        initializers.append(pads)
+
+        inputs = ['input', 'pads']
+        if constant_value is not None:
+            cv_list = []
+            cv_list.append(constant_value)
+            cv = helper.make_tensor(
+                "constant_value",
+                TensorProto.FLOAT,
+                dims=[1],
+                vals=cv_list)
+
+            initializers.append(cv)
+            inputs.append('constant_value')
+
+        node = onnx.helper.make_node(
+            'Pad',
+            inputs=inputs,
+            outputs=['output'],
+            mode=mode)
+
+    graph_def = helper.make_graph(
+        [node],
+        'test-model',
+        [input],
+        [output],
+        initializer=initializers)
+
+    op = onnx.OperatorSetIdProto()
+    op.version = op_version
+    model_def = helper.make_model(graph_def, producer_name='kendryte', opset_imports=[op])
+
+    return model_def
 
 
 in_shapes = [
-    [1, 3, 60, 72],
-    [1, 3, 224, 224]
+    [1, 3, 56, 56],
 ]
 
 paddings = [
-    1,
-    (1, 1, 1, 1),
-    (0, 0, 0, 0),
-    (3, 0, 2, 1)
+    [0, 0, 0, 0, 0, 0, 0, 0],
+    [0, 0, 1, 0, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 1, 0],
+    [0, 0, 0, 1, 0, 0, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 1],
+    [0, 0, 1, 0, 0, 0, 1, 0],
+    [0, 0, 0, 1, 0, 0, 0, 1],
+    [0, 0, 1, 1, 0, 0, 1, 1],
 ]
 
-values = [
-    0
+constant_values = [
+    None,
+    0.0,
+    1.2
+]
+
+modes = [
+    'constant',
+    'reflect',
+    'edge'
+]
+
+op_versions = [
+    # opset 1 is not supported by onnx runntime
+    2,
+    11,
+    13
 ]
 
 
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('padding', paddings)
-@pytest.mark.parametrize('value', values)
-def test_pad(in_shape, padding, value, request):
-    module = _make_module(in_shape, padding, value)
+@pytest.mark.parametrize('constant_value', constant_values)
+@pytest.mark.parametrize('mode', modes)
+@pytest.mark.parametrize('op_version', op_versions)
+def test_pad(in_shape, padding, constant_value, mode, op_version, request):
+    model_def = _make_module(in_shape, padding, constant_value, mode, op_version)
 
     runner = OnnxTestRunner(request.node.name)
-    model_file = runner.from_torch(module, in_shape)
+    model_file = runner.from_onnx_helper(model_def)
     runner.run(model_file)
 
 
