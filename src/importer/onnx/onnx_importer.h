@@ -16,6 +16,7 @@
 #pragma once
 
 #include <cstdint>
+#include <nncase/importer/util.h>
 #include <nncase/ir/connectors.h>
 #include <nncase/ir/ir_types.h>
 #include <nncase/ir/node.h>
@@ -89,6 +90,21 @@ private:
     {
         return axis >= 0 ? axis : count + axis;
     }
+
+    template <class T = int32_t>
+    T get_positive_axis(const onnx::NodeProto &node, size_t max_size)
+    {
+        const auto axis_attr = get_attribute<T>(node, "axis");
+        return get_positive<T>(axis_attr.value(), max_size);
+    }
+
+    void add_convert(ir::input_connector &next_input, const std::string &onnx_input, datatype_t to_type);
+
+    void convert_to_type(ir::input_connector &next_input, const std::string &onnx_input, datatype_t to_type);
+
+    void link_input_tensor(ir::input_connector *conn, const std::string &onnx_v);
+
+    void link_output_tensor(const std::string &onnx_v, ir::output_connector *conn);
 
     static std::vector<padding> parse_padding(const ir::axis_t &padding_value);
 

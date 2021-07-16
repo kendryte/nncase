@@ -39,8 +39,16 @@ alphas = [
 @pytest.mark.parametrize('alpha', alphas)
 def test_mobilenetv2(in_shape, alpha, request):
     module = _make_module(in_shape, alpha)
-
-    runner = TfliteTestRunner(request.node.name, ['cpu', 'k510'])
+    overwrite_cfg = """
+judge:
+  specifics:
+    - matchs: 
+        target: k510
+        ptq: true
+      simarity_name: segment
+      threshold: true
+"""
+    runner = TfliteTestRunner(request.node.name, ['cpu', 'k510'], overwrite_cfg)
     model_file = runner.from_tensorflow(module)
     runner.run(model_file)
 

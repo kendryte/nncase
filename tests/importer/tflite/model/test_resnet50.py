@@ -21,7 +21,7 @@ from tflite_test_runner import TfliteTestRunner
 
 
 def _make_module(in_shape):
-    return tf.keras.applications.ResNet50(input_shape=in_shape, include_top=False)
+    return tf.keras.applications.ResNet50(input_shape=in_shape)
 
 
 in_shapes = [
@@ -32,7 +32,20 @@ in_shapes = [
 @pytest.mark.parametrize('in_shape', in_shapes)
 def test_resnet50(in_shape, request):
     module = _make_module(in_shape)
-    overwrite_cfg = {'judge': {'threshold': 0.92}}
+    overwrite_cfg = """
+judge:
+  specifics:
+    - matchs: 
+        target: k210
+        ptq: true
+      simarity_name: segment
+      threshold: true
+    - matchs: 
+        target: k510
+        ptq: true
+      simarity_name: segment
+      threshold: true
+"""
     runner = TfliteTestRunner(request.node.name, overwirte_configs=overwrite_cfg)
     model_file = runner.from_tensorflow(module)
     runner.run(model_file)

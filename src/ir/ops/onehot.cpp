@@ -19,8 +19,8 @@
 using namespace nncase;
 using namespace nncase::ir;
 
-onehot::onehot(datatype_t type, shape_t indices_shape, shape_t output_shape, int32_t axis)
-    : axis_(axis)
+onehot::onehot(datatype_t type, shape_t indices_shape, shape_t output_shape, int32_t axis, onehot_mode_t mode)
+    : axis_(axis), mode_(mode)
 {
     add_input("indices", dt_int32, indices_shape);
     add_input("depth", dt_int32, shape_t { 1 });
