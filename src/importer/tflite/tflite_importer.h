@@ -79,7 +79,7 @@ private:
 
     template <class TCast, class T, size_t... I>
     auto get_vector_elements(const flatbuffers::Vector<T> &vector, std::index_sequence<I...>)
-    -> std::array<TCast, sizeof...(I)>
+        -> std::array<TCast, sizeof...(I)>
     {
         return { (TCast)vector.Get(I)... };
     }
@@ -321,7 +321,7 @@ private:
     void input_convert_to_type(ir::input_connector &next_input, const tflite::Tensor &tensor, int32_t tf_id, datatype_t to_type);
 
     void with_quantize(datatype_t ty, std::vector<ir::input_connector *> &inputs, std::vector<quant_param_t> &input_dequant_params,
-                       std::vector<ir::output_connector *> &outputs, std::vector<quant_param_t> &output_quant_params)
+        std::vector<ir::output_connector *> &outputs, std::vector<quant_param_t> &output_quant_params)
     {
         std::vector<ir::input_connector *> new_inputs;
         for (size_t i = 0; i < inputs.size(); i++)
