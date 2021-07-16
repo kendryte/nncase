@@ -25,23 +25,23 @@ def _make_module():
             super(UnaryModule, self).__init__()
 
         def forward(self, x):
-            # outs = []
-            # outs.append(torch.abs(-x))
-            # outs.append(torch.ceil(x))
-            # outs.append(torch.cos(x))
-            # outs.append(torch.exp(x))
-            # outs.append(torch.floor(x)
-            # outs.append(torch.log(x))
-            # outs.append(torch.neg(x))
-            # outs.append(torch.round(x))
+            outs = []
+            outs.append(torch.abs(-x))
+            outs.append(torch.ceil(x))
+            outs.append(torch.cos(x))
+            outs.append(torch.exp(x))
+            outs.append(torch.floor(x))
+            outs.append(torch.log(x))
+            outs.append(torch.neg(x))
+            outs.append(torch.round(x))
             # outs.append(torch.rsqrt(x))
-            # outs.append(torch.sin(x))
-            # outs.append(torch.sqrt(x))
-            # outs.append(torch.square(x))
+            outs.append(torch.sin(x))
+            outs.append(torch.sqrt(x))
+            outs.append(torch.square(x))
             # outs.append(torch.tanh(x))
-            # outs.append(torch.sigmoid(x))
-            # return outs
-
+            outs.append(torch.sigmoid(x))
+            return outs
+            # PR:290 NOTE the code as follow will pass neg x into log
             x = torch.neg(x)
             x = torch.abs(x)
             x = torch.exp(x)
@@ -68,8 +68,16 @@ in_shapes = [
 @pytest.mark.parametrize('in_shape', in_shapes)
 def test_unary(in_shape, request):
     module = _make_module()
-
-    runner = OnnxTestRunner(request.node.name)
+    overwirte_cfg = """
+case:
+  generate_inputs:
+    kwargs: 
+      abs: true
+  generate_calibs:
+    kwargs: 
+      abs: true
+"""
+    runner = OnnxTestRunner(request.node.name, overwirte_configs=overwirte_cfg)
     model_file = runner.from_torch(module, in_shape)
     runner.run(model_file)
 

@@ -1,4 +1,4 @@
-from typing import Dict, List, Tuple
+from typing import Dict, List, Tuple, Union, Any
 from itertools import product
 import re
 import yaml
@@ -10,10 +10,12 @@ from abc import ABCMeta, abstractmethod
 import nncase
 import struct
 from compare_util import compare
+import copy
 
 
 class Edict:
     def __init__(self, d: Dict[str, int]) -> None:
+        assert(isinstance(d, dict)), "the Edict only accepct Dict for init"
         for name, value in d.items():
             if isinstance(value, (list, tuple)):
                 setattr(self, name,
@@ -47,16 +49,37 @@ class Edict:
             s += '\n'
         return s.rstrip('\n')
 
-    def update(self, d):
-        for name, value in d.items():
+    @property
+    def dict(self):
+        return self.__dict__
+
+    def update(self, d: Dict):
+        for name, new_value in d.items():
             if name in self.keys():
-                if isinstance(value, dict):
-                    getattr(self, name).update(value)
+                if isinstance(new_value, dict):
+                    old_value = getattr(self, name)
+                    if old_value is None:
+                        setattr(self, name, Edict(new_value))
+                    elif isinstance(old_value, (Edict, dict)):
+                        old_value.update(new_value)
+                elif isinstance(new_value, (list, tuple)) and name == 'specifics':
+                    if getattr(self, name) == None:
+                        setattr(self, name, [])
+                    assert(hasattr(self, 'common')
+                           ), "The specifics new_value need common dict to overload !"
+                    common = getattr(self, 'common')
+                    for specific in new_value:
+                        import_common = copy.deepcopy(common)
+                        import_common.update(specific)
+                        getattr(self, name).append(import_common)
                 else:
-                    self.__dict__[name] = value
+                    setattr(self, name, new_value)
+            else:
+                setattr(self, name, new_value)
 
 
-def generate_random(shape: List[int], dtype: np.dtype) -> np.ndarray:
+def generate_random(shape: List[int], dtype: np.dtype,
+                    abs: bool = False) -> np.ndarray:
     if dtype is np.uint8:
         data = np.random.randint(0, 256, shape)
     elif dtype is np.int8:
@@ -64,6 +87,8 @@ def generate_random(shape: List[int], dtype: np.dtype) -> np.ndarray:
     else:
         data = np.random.rand(*shape) * 2 - 1
     data = data.astype(dtype=dtype)
+    if abs:
+        return np.abs(data)
     return data
 
 
@@ -82,20 +107,18 @@ def _cast_bfloat16_then_float32(values: np.array):
     return values
 
 
-Fuc = {
+DataFactory = {
     'generate_random': generate_random
 }
 
 
 class TestRunner(metaclass=ABCMeta):
-    def __init__(self, case_name, targets=None, overwirte_configs: dict = None) -> None:
+    def __init__(self, case_name, targets=None, overwirte_configs: Union[Dict, str] = None) -> None:
         config_root = os.path.dirname(__file__)
         with open(os.path.join(config_root, 'config.yml'), encoding='utf8') as f:
             cfg: dict = yaml.safe_load(f)
             config = Edict(cfg)
-            if overwirte_configs:
-                config.update(overwirte_configs)
-
+        config = self.update_config(config, overwirte_configs)
         self.cfg = self.validte_config(config)
 
         case_name = case_name.replace('[', '_').replace(']', '_')
@@ -115,8 +138,15 @@ class TestRunner(metaclass=ABCMeta):
     def validte_config(self, config):
         in_ci = os.getenv('CI', False)
         if in_ci:
-            config.judge.log_hist = False
+            config.judge.common.log_hist = False
             config.setup.log_txt = False
+        return config
+
+    def update_config(self, config: Edict, overwirte_configs: Dict) -> Edict:
+        if overwirte_configs:
+            if isinstance(overwirte_configs, str):
+                overwirte_configs: dict = yaml.safe_load(overwirte_configs)
+            config.update(overwirte_configs)
         return config
 
     def validate_targets(self, targets: List[str]):
@@ -206,8 +236,9 @@ class TestRunner(metaclass=ABCMeta):
             eval_output_paths = self.generate_evaluates(
                 cfg, case_dir, import_options,
                 compile_options, model_content, dict_args)
-            assert self.compare_results(
+            judge, result = self.compare_results(
                 self.output_paths, eval_output_paths, dict_args)
+            assert(judge), result
 
     def run_inference(self, cfg, case_dir, import_options, compile_options, model_content):
         names, args = TestRunner.split_value(cfg.infer)
@@ -219,8 +250,9 @@ class TestRunner(metaclass=ABCMeta):
             infer_output_paths = self.nncase_infer(
                 cfg, case_dir, import_options,
                 compile_options, model_content, dict_args)
-            assert self.compare_results(
+            judge, result = self.compare_results(
                 self.output_paths, infer_output_paths, dict_args)
+            assert(judge), result
 
     @staticmethod
     def split_value(kwcfg: List[Dict[str, str]]) -> Tuple[List[str], List[str]]:
@@ -324,7 +356,7 @@ class TestRunner(metaclass=ABCMeta):
             for input in inputs:
                 shape = input['shape']
                 shape[0] *= cfg.batch_size
-                data = Fuc[cfg.name](shape, input['dtype'])
+                data = DataFactory[cfg.name](shape, input['dtype'], **cfg.kwargs)
 
                 path_list.append(
                     (os.path.join(case_dir, f'{name}_{n}_{i}.bin'),
@@ -346,25 +378,33 @@ class TestRunner(metaclass=ABCMeta):
     def compare_results(self,
                         ref_ouputs: List[Tuple[str]],
                         test_outputs: List[Tuple[str]],
-                        kwargs: Dict[str, str]):
+                        kwargs: Dict[str, str]) -> Tuple[bool, str]:
+
+        judeg_cfg = self.cfg.judge.common
+        if self.cfg.judge.specifics:
+            for specific in self.cfg.judge.specifics:
+                if specific.matchs.dict == kwargs:
+                    judeg_cfg: Edict = specific
+                    break
+
         for ref_file, test_file in zip(ref_ouputs, test_outputs):
 
             judge, simarity_info = compare(test_file, ref_file,
-                                           self.cfg.judge.simarity_name,
-                                           self.cfg.judge.threshold,
-                                           self.cfg.judge.log_hist)
+                                           judeg_cfg.simarity_name,
+                                           judeg_cfg.threshold,
+                                           judeg_cfg.log_hist)
             name_list = test_file[1].split('/')
             kw_names = ' '.join(name_list[-len(kwargs) - 2:-1])
             i = self.num_pattern.findall(name_list[-1])
             result_info = "\n{0} [ {1} ] Output: {2}!!\n".format(
                 'Pass' if judge else 'Fail', kw_names, i)
             result = simarity_info + result_info
-            print(result)
+            # print(result) temp disable
             with open(os.path.join(self.case_dir, 'test_result.txt'), 'a+') as f:
                 f.write(result)
             if not judge:
-                return False
-        return True
+                return False, result
+        return True, result
 
     def totxtfile(self, save_path, value_np: np.array, bit_16_represent=False):
         if self.cfg.setup.log_txt:
