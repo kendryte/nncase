@@ -43,8 +43,8 @@ void onnx_importer::convert_op_OneHot(const NodeProto &node)
     const auto &op_name { generate_name(node) };
     oh->name(op_name + "(OneHot)");
 
-    convert_to_type(oh->indices(), indices, dt_int32);
-    convert_to_type(oh->depth(), depth, dt_int32);
+    input_convert_to_type(oh->indices(), indices, dt_int32);
+    input_convert_to_type(oh->depth(), depth, dt_int32);
 
     axis_t values_begin = { 0 };
     axis_t off_values_end = { 1 };
@@ -52,9 +52,9 @@ void onnx_importer::convert_op_OneHot(const NodeProto &node)
 
     auto value_type = get_datatype(values).value();
     auto value_shape = get_shape(values);
-    auto sl_off = add_node<slice>(graph_, oh->off_value(), value_type, value_shape, values_begin, off_values_end);
+    auto sl_off = add_prev_node<slice>(graph_, oh->off_value(), value_type, value_shape, values_begin, off_values_end);
     link_input_tensor(&sl_off->input(), values);
-    auto sl_on = add_node<slice>(graph_, oh->on_value(), value_type, value_shape, off_values_end, values_end);
+    auto sl_on = add_prev_node<slice>(graph_, oh->on_value(), value_type, value_shape, off_values_end, values_end);
     link_input_tensor(&sl_on->input(), values);
     link_output_tensor(output, &oh->output());
 }

@@ -14,8 +14,7 @@
  */
 
 #include "../onnx_importer.h"
-#include <cassert>
-#include <nncase/ir/graph.h>
+#include <nncase/importer/util.h>
 #include <nncase/ir/ops/convert.h>
 #include <nncase/ir/ops/gather.h>
 
@@ -35,30 +34,10 @@ void onnx_importer::convert_op_Gather(const NodeProto &node)
     const auto indices_shape = get_shape(indices);
     const auto out_shape = get_shape(output);
 
-    int32_t axis = 0;
-    const auto axis_attr = get_attribute<int32_t>(node, "axis");
-    if (axis_attr)
-    {
-        axis = static_cast<int32_t>(axis_attr.value());
-    }
-    if (axis < 0)
-    {
-        axis = static_cast<int32_t>(input_shape.size()) + axis;
-    }
+    auto axis = get_positive_axis(node, input_shape.size());
 
     auto ga = graph_.emplace<gather>(input_type, input_shape, indices_shape, out_shape, axis);
-    if (input_type != dt_int32)
-    {
-        auto ct = graph_.emplace<convert>(get_datatype(indices).value(), indices_shape, dt_int32);
-        ga->indices().connect(ct->output());
-        input_tensors_.emplace(&ga->input(), input);
-        input_tensors_.emplace(&ct->input(), indices);
-        output_tensors_.emplace(output, &ga->output());
-    }
-    else
-    {
-        input_tensors_.emplace(&ga->input(), input);
-        input_tensors_.emplace(&ga->indices(), indices);
-        output_tensors_.emplace(output, &ga->output());
-    }
+    input_convert_to_type(ga->indices(), indices, dt_int32);
+    link_input_tensor(&ga->input(), input);
+    link_output_tensor(output, &ga->output());
 }

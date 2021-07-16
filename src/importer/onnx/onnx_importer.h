@@ -92,15 +92,21 @@ private:
     }
 
     template <class T = int32_t>
+    T get_positive_attr(const onnx::NodeProto &node, size_t max_size, const std::string &attr_name)
+    {
+        const auto axis_attr = get_attribute<T>(node, attr_name);
+        return get_positive<T>(axis_attr.value(), max_size);
+    }
+
+    template <class T = int32_t>
     T get_positive_axis(const onnx::NodeProto &node, size_t max_size)
     {
-        const auto axis_attr = get_attribute<T>(node, "axis");
-        return get_positive<T>(axis_attr.value(), max_size);
+        return get_positive_attr(node, max_size, "axis");
     }
 
     void add_convert(ir::input_connector &next_input, const std::string &onnx_input, datatype_t to_type);
 
-    void convert_to_type(ir::input_connector &next_input, const std::string &onnx_input, datatype_t to_type);
+    void input_convert_to_type(ir::input_connector &next_input, const std::string &onnx_input, datatype_t to_type);
 
     void link_input_tensor(ir::input_connector *conn, const std::string &onnx_v);
 
@@ -175,7 +181,7 @@ std::optional<std::vector<T>> onnx_importer::get_constant_input_data(const std::
     result.reserve(size);
 
     std::transform(ptr, ptr + size, std::back_inserter(result),
-        [](const auto &e) { return e; });
+                   [](const auto &e) { return e; });
 
     return result;
 }

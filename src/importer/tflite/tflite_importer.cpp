@@ -13,7 +13,9 @@
  * limitations under the License.
  */
 #include "tflite_importer.h"
+#include <nncase/importer/util.h>
 #include <nncase/ir/ops/constant.h>
+#include <nncase/ir/ops/convert.h>
 
 using namespace nncase;
 using namespace nncase::importer;
@@ -215,4 +217,23 @@ quant_param_t tflite_importer::to_quant_param(const tflite::QuantizationParamete
 {
     // TODO: consider of by axis quant
     return { (int32_t)param->zero_point()->Get(0), param->scale()->Get(0) };
+}
+
+void tflite_importer::add_convert(ir::input_connector &next_input, const tflite::Tensor &tensor, int32_t tf_id, datatype_t to_type)
+{
+    auto ct = nncase::importer::add_prev_node<ir::convert>(graph_, next_input, to_data_type(tensor.type()), get_shape(tensor.shape()), to_type);
+    link_input_tensor(&ct->input(), tf_id);
+}
+
+void tflite_importer::input_convert_to_type(ir::input_connector &next_input, const tflite::Tensor &tensor, int32_t tf_id, datatype_t to_type)
+{
+    auto input_type = to_data_type(tensor.type());
+    if (input_type != to_type)
+    {
+        add_convert(next_input, tensor, tf_id, to_type);
+    }
+    else
+    {
+        link_input_tensor(&next_input, tf_id);
+    }
 }
