@@ -30,31 +30,31 @@ interpreter::interpreter() noexcept
 result<void> interpreter::load_model(gsl::span<const gsl::byte> buffer) noexcept
 {
     span_reader reader(buffer);
-    auto header = reader.get_ref<model_header>();
+    auto header = reader.read_unaligned<model_header>();
     // 1. Validate model
-    if (header->identifier != MODEL_IDENTIFIER)
+    if (header.identifier != MODEL_IDENTIFIER)
         return err(nncase_errc::invalid_model_indentifier);
-    if (header->version != MODEL_VERSION)
+    if (header.version != MODEL_VERSION)
         return err(nncase_errc::invalid_model_version);
 
     // 2. Load modules
     try
     {
-        modules_.resize(header->modules);
+        modules_.resize(header.modules);
     }
     catch (...)
     {
         return err(std::errc::not_enough_memory);
     }
 
-    for (size_t i = 0; i < header->modules; i++)
+    for (size_t i = 0; i < header.modules; i++)
     {
-        auto mod_header = reader.get_ref<module_header>();
-        reader.skip(mod_header->size);
-        try_var(rt_module, runtime_module::create(mod_header->type));
+        auto mod_header = reader.read_unaligned<module_header>();
+        auto payload = reader.read_span(mod_header.size);
+        try_var(rt_module, runtime_module::create(mod_header.type));
 
-        try_(rt_module->initialize(*mod_header, *this));
-        if (i == header->main_module)
+        try_(rt_module->initialize(mod_header, *this, payload));
+        if (i == header.main_module)
             main_module_ = rt_module.get();
         modules_[i] = std::move(rt_module);
     }
