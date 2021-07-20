@@ -719,6 +719,32 @@ xt::xarray<uint8_t> onnx_importer::to<xt::xarray<uint8_t>>(const onnx::TensorPro
 }
 
 template <>
+xt::xarray<int32_t> onnx_importer::to<xt::xarray<int32_t>>(const onnx::TensorProto &tensor)
+{
+    if (!tensor.int32_data().empty())
+    {
+        return xt::adapt(std::vector<int32_t> { std::begin(tensor.int32_data()), std::end(tensor.int32_data()) }, get_shape(tensor));
+    }
+    else
+    {
+        return raw_to<int32_t, int32_t>(tensor);
+    }
+}
+
+template <>
+xt::xarray<int64_t> onnx_importer::to<xt::xarray<int64_t>>(const onnx::TensorProto &tensor)
+{
+    if (!tensor.int64_data().empty())
+    {
+        return xt::adapt(std::vector<int64_t> { std::begin(tensor.int64_data()), std::end(tensor.int64_data()) }, get_shape(tensor));
+    }
+    else
+    {
+        return raw_to<int64_t, int64_t>(tensor);
+    }
+}
+
+template <>
 std::vector<float> onnx_importer::to<std::vector<float>>(const onnx::TensorProto &tensor)
 {
     if (!tensor.float_data().empty())
