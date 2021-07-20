@@ -61,6 +61,9 @@ else()
     target_link_libraries(nncase_modules_vulkan PRIVATE codegen_vulkan simulator_vulkan nncase)
     set_target_properties(nncase_modules_vulkan PROPERTIES
                                               OUTPUT_NAME "nncase.modules.vulkan")
+    if(MSVC)
+        target_link_libraries(nncase_modules_vulkan PRIVATE vulkan_templates_rc)
+    endif()
     install(TARGETS nncase_modules_vulkan
             COMPONENT nncase-runtime)
 endif()

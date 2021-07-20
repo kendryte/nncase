@@ -64,6 +64,9 @@ class nncaseConan(ConanFile):
             self.requires('protobuf/3.17.1')
             self.requires('xtensor/0.21.5')
             self.requires('spdlog/1.8.2')
+            self.requires('libzippp/4.0')
+            if self.options.tests:
+                self.requires('gtest/1.10.0')
 
     def build_requirements(self):
         pass
@@ -81,6 +84,9 @@ class nncaseConan(ConanFile):
             self.options["opencv"].dnn = False
             self.options["flatbuffers"].options_from_context = False
             self.options["xtensor"].xsimd = False
+            self.options["libzip"].with_bzip2 = False
+            self.options["libzip"].with_zstd = False
+            self.options["libzip"].crypto = False
             if self.settings.os == 'Linux':
                 self.options["opencv"].with_gtk = False
 
