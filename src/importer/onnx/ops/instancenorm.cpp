@@ -121,4 +121,3 @@ void onnx_importer::convert_op_InstanceNormalization(const NodeProto &node)
     input_tensors_.emplace(&sub->input_a(), input);
     output_tensors_.emplace(output, &add_bias->output());
 }
-

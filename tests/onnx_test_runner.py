@@ -8,9 +8,10 @@ import os
 import numpy as np
 from test_runner import *
 
+
 class OnnxTestRunner(TestRunner):
-    def __init__(self, case_name, targets=None):
-        super().__init__(case_name, targets)
+    def __init__(self, case_name, targets=None, overwirte_configs: dict = None):
+        super().__init__(case_name, targets, overwirte_configs)
 
     def from_torch(self, module, in_shape, opset_version=11):
         # export model
@@ -38,6 +39,9 @@ class OnnxTestRunner(TestRunner):
             shutil.copy(model_file, self.case_dir)
             model_file = os.path.join(self.case_dir, os.path.basename(model_file))
 
+        if not self.inputs:
+            self.parse_model_input_output(model_file)
+
         # preprocess model
         old_onnx_model = onnx.load(model_file)
         onnx_model = self.preprocess_model(old_onnx_model)
@@ -60,10 +64,6 @@ class OnnxTestRunner(TestRunner):
         args = {'fix_bn': fix_bn, 'convert_version': convert_version,
                 'simplify': simplify, 'import_test': import_test}
         try:
-            shape_dict = {}
-            for input in self.inputs:
-                input_dict[input['name']] = input['shape']
-
             if fix_bn:
                 # fix https://github.com/onnx/models/issues/242
                 for node in onnx_model.graph.node:
@@ -76,11 +76,15 @@ class OnnxTestRunner(TestRunner):
                 curret_version = onnx_model.opset_import[0].version
                 for i in range(curret_version, 8):
                     onnx_model = version_converter.convert_version(
-                        onnx_model, i+1)
+                        onnx_model, i + 1)
 
             if simplify:
                 onnx_model = onnx.shape_inference.infer_shapes(onnx_model)
-                onnx_model, check = onnxsim.simplify(onnx_model)
+                input_shapes = {}
+                for input in self.inputs:
+                    input_shapes[input['name']] = input['shape']
+
+                onnx_model, check = onnxsim.simplify(onnx_model, input_shapes=input_shapes)
                 assert check, "Simplified ONNX model could not be validated"
 
             print('[info]: preprocess ONNX model success: ', args)
@@ -92,14 +96,11 @@ class OnnxTestRunner(TestRunner):
             return None
 
     def parse_model_input_output(self, model_file: str):
-        # TODO: onnx_model
         onnx_model = onnx.load(model_file)
         input_all = [node.name for node in onnx_model.graph.input]
-        input_initializer = [
-            node.name for node in onnx_model.graph.initializer]
+        input_initializer = [node.name for node in onnx_model.graph.initializer]
         input_names = list(set(input_all) - set(input_initializer))
-        input_tensors = [
-            node for node in onnx_model.graph.input if node.name in input_names]
+        input_tensors = [node for node in onnx_model.graph.input if node.name in input_names]
 
         # input
         for _, e in enumerate(input_tensors):
@@ -145,7 +146,7 @@ class OnnxTestRunner(TestRunner):
             text_file = os.path.join(case_dir, f'cpu_result_{i}.txt')
             self.output_paths.append((bin_file, text_file))
             output.tofile(bin_file)
-            save_array_as_txt(text_file, output)
+            self.totxtfile(text_file, output)
             i += 1
 
     def import_model(self, compiler, model_content, import_options):

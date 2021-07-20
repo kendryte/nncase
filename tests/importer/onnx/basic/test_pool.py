@@ -17,6 +17,7 @@ import pytest
 import torch
 from onnx_test_runner import OnnxTestRunner
 
+
 def _make_module(kernel_size, stride, padding):
 
     class PoolModule(torch.nn.Module):
@@ -33,11 +34,12 @@ def _make_module(kernel_size, stride, padding):
             outs.append(self.avgpool2d(x))
             outs.append(self.global_avgpool(x))
             outs.append(self.maxpool2d(x))
-            outs.append(self.global_maxpool(x)) # maxpool2d in fact
+            outs.append(self.global_maxpool(x))  # maxpool2d in fact
 
             return outs
 
     return PoolModule()
+
 
 in_shapes = [
     [1, 3, 60, 72],
@@ -62,6 +64,7 @@ paddings = [
     (2, 3)
 ]
 
+
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('kernel_size', kernel_sizes)
 @pytest.mark.parametrize('stride', strides)
@@ -73,6 +76,7 @@ def test_pool(in_shape, kernel_size, stride, padding, request):
         runner = OnnxTestRunner(request.node.name)
         model_file = runner.from_torch(module, in_shape)
         runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_pool.py'])

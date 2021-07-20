@@ -13,10 +13,10 @@
  * limitations under the License.
  */
 #include "../tflite_importer.h"
+#include <nncase/importer/util.h>
+#include <nncase/ir/ops/bitcast.h>
 #include <nncase/ir/ops/gather.h>
 #include <nncase/ir/ops/gather_nd.h>
-#include <nncase/ir/ops/convert.h>
-#include <nncase/ir/ops/bitcast.h>
 
 using namespace nncase;
 using namespace nncase::importer;
@@ -100,51 +100,23 @@ DEFINE_TFLITE_LOWER(GATHER)
     auto &options = *op.builtin_options_as_GatherOptions();
     auto batch_dims = options.batch_dims();
     const auto in_type = to_data_type(input.type());
-    const auto indices_type = to_data_type(indices.type());
-    auto axis = options.axis();
-    if (axis < 0)
-    {
-        axis = axis + static_cast<int32_t>(in_shape.size());
-    }
+    auto axis = get_positive(options.axis(), in_shape.size());
 
-    input_connector *g_input, *g_indices;
-    output_connector *g_output;
     if (batch_dims == 0)
     {
         auto ga = graph_.emplace<gather>(in_type, in_shape, indices_shape, out_shape, axis);
         ga->name(get_tensor(op.outputs(), 0).name()->string_view());
         link_input_tensor(&ga->input(), op.inputs()->Get(0));
-        if (indices_type != dt_int32)
-        {
-            auto ct = graph_.emplace<convert>(indices_type, indices_shape, dt_int32);
-            ga->indices().connect(ct->output());
-            link_input_tensor(&ct->input(), op.inputs()->Get(1));
-        }
-        else
-        {
-            link_input_tensor(&ga->indices(), op.inputs()->Get(1));
-        }
+        input_convert_to_type(ga->indices(), indices, op.inputs()->Get(1), dt_int32);
         link_output_tensor(op.outputs()->Get(0), &ga->output());
         return;
     }
 
+    input_connector *g_input;
+    output_connector *g_output;
     auto after_bitcast_indices_shape = get_after_bitcast_shape(indices_shape);
-    auto bc = graph_.emplace<bitcast>(dt_int32, indices_shape, after_bitcast_indices_shape);
 
     gather_nd *ga;
-    if (indices_type != dt_int32)
-    {
-        auto ct = graph_.emplace<convert>(indices_type, indices_shape, dt_int32);
-        g_indices = &ct->input();
-        // indices -> convert -> bitcast
-        bc->input().connect(ct->output());
-    }
-    else
-    {
-        // indices -> bitcast
-        g_indices = &bc->input();
-    }
-
     if (axis != batch_dims)
     {
         // before transpose
@@ -153,14 +125,12 @@ DEFINE_TFLITE_LOWER(GATHER)
         // gather nd
         auto after_tr_shape = tr->output().shape();
         auto cast_out_shape = get_gather_nd_shape(after_tr_shape, after_bitcast_indices_shape, batch_dims);
-        ga = graph_.emplace<gather_nd>(in_type, after_tr_shape, after_bitcast_indices_shape, cast_out_shape, batch_dims);
+        ga = add_next_node<gather_nd>(graph_, tr->output(), in_type, after_tr_shape, after_bitcast_indices_shape, cast_out_shape, batch_dims);
         // after transpose
-        auto un_tr = graph_.emplace<transpose>(in_type, cast_out_shape, get_un_tr_perm(data_rank, axis, batch_dims, indices_shape));
+        auto un_tr = add_next_node<transpose>(graph_, ga->output(), in_type, cast_out_shape, get_un_tr_perm(data_rank, axis, batch_dims, indices_shape));
         // connect node
         // input -> transpose -> gather_nd -> transpose -> output
         g_input = &tr->input();
-        ga->input().connect(tr->output());
-        un_tr->input().connect(ga->output());
         g_output = &un_tr->output();
     }
     else
@@ -170,10 +140,10 @@ DEFINE_TFLITE_LOWER(GATHER)
         g_input = &ga->input();
         g_output = &ga->output();
     }
-
-    ga->indices().connect(bc->output());
+    // bitcast -> convert -> ga
+    auto bc = add_prev_node<bitcast>(graph_, ga->indices(), dt_int32, indices_shape, after_bitcast_indices_shape);
+    input_convert_to_type(bc->input(), indices, op.inputs()->Get(1), dt_int32);
     link_input_tensor(g_input, op.inputs()->Get(0));
-    link_input_tensor(g_indices, op.inputs()->Get(1));
     link_output_tensor(op.outputs()->Get(0), g_output);
     ga->name(get_tensor(op.outputs(), 0).name()->string_view());
 }

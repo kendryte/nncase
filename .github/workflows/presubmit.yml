@@ -1,0 +1,36 @@
+name: presubmit checks
+on:
+  # We don't want 'edited' (that's basically just the description, title, etc)
+  # We don't want 'review_requested' (that's redundant to the ones below for our purposes)
+  pull_request:
+    types: [opened, synchronize, reopened]
+    paths:
+      - '**.h'
+      - '**.c'
+      - '**.cpp'
+      - '**.py'
+
+jobs:
+  check_clang_format:
+    name: Check clang-format
+    runs-on: ubuntu-18.04
+    steps:
+      - uses: actions/checkout@v2
+      - uses: DoozyX/clang-format-lint-action@v0.11
+        with:
+          source: 'tests src include modules python targets'
+          extensions: 'h,c,cc,cxx,cpp,hpp,cppm'
+          clangFormatVersion: 10
+  check_autopep8_format:
+    name: Check autopep8-format
+    runs-on: ubuntu-18.04
+    steps:
+      - name: autopep8
+        id: autopep8
+        uses: peter-evans/autopep8@v1
+        with:
+          args: --recursive --in-place tests python
+
+      - name: Fail if autopep8 made changes
+        if: steps.autopep8.outputs.exit-code == 2
+        run: exit 1

@@ -316,6 +316,10 @@ private:
         }
     }
 
+    void add_convert(ir::input_connector &next_input, const tflite::Tensor &tensor, int32_t tf_id, datatype_t to_type);
+
+    void input_convert_to_type(ir::input_connector &next_input, const tflite::Tensor &tensor, int32_t tf_id, datatype_t to_type);
+
     void with_quantize(datatype_t ty, std::vector<ir::input_connector *> &inputs, std::vector<quant_param_t> &input_dequant_params,
         std::vector<ir::output_connector *> &outputs, std::vector<quant_param_t> &output_quant_params)
     {

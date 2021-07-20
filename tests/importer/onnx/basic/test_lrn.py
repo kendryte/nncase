@@ -19,6 +19,7 @@ from onnx import helper
 from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
 
+
 def _make_module(in_shape, alpha, beta, bias, size):
     input = helper.make_tensor_value_info('input', TensorProto.FLOAT, in_shape)
     output = helper.make_tensor_value_info('output', TensorProto.FLOAT, in_shape)
@@ -43,6 +44,7 @@ def _make_module(in_shape, alpha, beta, bias, size):
     model_def = helper.make_model(graph_def, producer_name='kendryte')
 
     return model_def
+
 
 in_shapes = [
     [1, 3, 60, 72],
@@ -69,6 +71,7 @@ sizes = [
     5
 ]
 
+
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('alpha', alphas)
 @pytest.mark.parametrize('beta', betas)
@@ -80,6 +83,7 @@ def test_lrn(in_shape, alpha, beta, bias, size, request):
     runner = OnnxTestRunner(request.node.name)
     model_file = runner.from_onnx_helper(model_def)
     runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_lrn.py'])

@@ -19,7 +19,7 @@
 using namespace nncase;
 using namespace nncase::ir;
 
-gather::gather(datatype_t in_type,  shape_t input_shape, shape_t indices_shape, shape_t output_shape, int32_t axis)
+gather::gather(datatype_t in_type, shape_t input_shape, shape_t indices_shape, shape_t output_shape, int32_t axis)
     : axis_(axis)
 {
     add_input("input", in_type, input_shape);

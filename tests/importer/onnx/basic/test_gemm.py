@@ -20,14 +20,15 @@ from onnx import AttributeProto, TensorProto, GraphProto
 import numpy as np
 from onnx_test_runner import OnnxTestRunner
 
+
 def _make_module():
     input_A = helper.make_tensor_value_info('A', TensorProto.FLOAT, [112, 224])
     input_B = helper.make_tensor("B", TensorProto.FLOAT,
-                                dims=(56, 224),
-                                vals=np.random.randn(56, 224).astype(np.float32).flatten().tolist())
+                                 dims=(56, 224),
+                                 vals=np.random.randn(56, 224).astype(np.float32).flatten().tolist())
     input_C = helper.make_tensor("C", TensorProto.FLOAT,
-                                dims=(56,),
-                                vals=np.random.randn(56,).astype(np.float32).flatten().tolist())
+                                 dims=(56,),
+                                 vals=np.random.randn(56,).astype(np.float32).flatten().tolist())
     initializers = []
     initializers.append(input_B)
     initializers.append(input_C)
@@ -56,12 +57,14 @@ def _make_module():
 
     return model_def
 
+
 def test_gemm(request):
     model_def = _make_module()
 
     runner = OnnxTestRunner(request.node.name)
     model_file = runner.from_onnx_helper(model_def)
     runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_gemm.py'])

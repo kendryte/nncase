@@ -20,6 +20,7 @@ from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
 import numpy as np
 
+
 def _make_module(in_shape, axes, op_version):
 
     x = helper.make_tensor_value_info('x', TensorProto.FLOAT, in_shape)
@@ -49,7 +50,8 @@ def _make_module(in_shape, axes, op_version):
         # unsqueeze-13
         axes_len = []
         axes_len.append(len(axes))
-        axes = onnx.helper.make_tensor('axes', onnx.TensorProto.INT64, axes_len, np.array(axes).astype(np.int64))
+        axes = onnx.helper.make_tensor('axes', onnx.TensorProto.INT64,
+                                       axes_len, np.array(axes).astype(np.int64))
         initializers.append(axes)
         unsqueeze = onnx.helper.make_node(
             'Unsqueeze',
@@ -70,6 +72,7 @@ def _make_module(in_shape, axes, op_version):
     model_def = helper.make_model(graph_def, producer_name='kendryte', opset_imports=[op])
 
     return model_def
+
 
 in_shapes = [
     [224],
@@ -98,6 +101,7 @@ op_versions = [
     13
 ]
 
+
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('axes', axes_list)
 @pytest.mark.parametrize('op_version', op_versions)
@@ -108,6 +112,7 @@ def test_unsqueeze(in_shape, axes, op_version, request):
         runner = OnnxTestRunner(request.node.name)
         model_file = runner.from_onnx_helper(model_def)
         runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_unsqueeze.py'])

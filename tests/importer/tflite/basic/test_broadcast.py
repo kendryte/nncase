@@ -19,6 +19,7 @@ import tensorflow as tf
 import numpy as np
 from tflite_test_runner import TfliteTestRunner
 
+
 def _make_module(in_shape, out_shape):
     class BroadcastModule(tf.Module):
         def __init__(self):
@@ -44,6 +45,7 @@ def test_broadcast(in_shape, out_shape, request):
     runner = TfliteTestRunner(request.node.name, ['cpu'])
     model_file = runner.from_tensorflow(module)
     runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_broadcast.py'])

@@ -17,6 +17,7 @@ import pytest
 import torch
 from onnx_test_runner import OnnxTestRunner
 
+
 def _make_module():
 
     class ReluModule(torch.nn.Module):
@@ -30,12 +31,14 @@ def _make_module():
 
     return ReluModule()
 
+
 in_shapes = [
     [1],
     [8, 8],
     [1, 4, 16],
     [1, 3, 224, 224]
 ]
+
 
 @pytest.mark.parametrize('in_shape', in_shapes)
 def test_relu(in_shape, request):
@@ -44,6 +47,7 @@ def test_relu(in_shape, request):
     runner = OnnxTestRunner(request.node.name)
     model_file = runner.from_torch(module, in_shape)
     runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_relu.py'])

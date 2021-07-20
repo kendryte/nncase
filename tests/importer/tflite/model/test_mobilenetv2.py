@@ -21,8 +21,10 @@ import numpy as np
 import sys
 from tflite_test_runner import TfliteTestRunner
 
+
 def _make_module(in_shape, alpha):
     return tf.keras.applications.MobileNetV2(in_shape, alpha)
+
 
 in_shapes = [
     (224, 224, 3)
@@ -32,14 +34,24 @@ alphas = [
     1.0
 ]
 
+
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('alpha', alphas)
 def test_mobilenetv2(in_shape, alpha, request):
     module = _make_module(in_shape, alpha)
-
-    runner = TfliteTestRunner(request.node.name, ['cpu', 'k510'])
+    overwrite_cfg = """
+judge:
+  specifics:
+    - matchs: 
+        target: k510
+        ptq: true
+      simarity_name: segment
+      threshold: true
+"""
+    runner = TfliteTestRunner(request.node.name, ['cpu', 'k510'], overwrite_cfg)
     model_file = runner.from_tensorflow(module)
     runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_mobilenetv2.py'])

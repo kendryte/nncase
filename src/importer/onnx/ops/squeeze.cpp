@@ -67,7 +67,7 @@ void onnx_importer::convert_op_Squeeze(const NodeProto &node)
     }
 #else
     // make sure all axes are positive
-    for (auto & axis : axes)
+    for (auto &axis : axes)
     {
         axis = real_axis(axis, input_shape.size());
     }

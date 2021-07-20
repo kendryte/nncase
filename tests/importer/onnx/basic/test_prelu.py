@@ -17,6 +17,7 @@ import pytest
 import torch
 from onnx_test_runner import OnnxTestRunner
 
+
 def _make_module(num, init):
 
     class PReluModule(torch.nn.Module):
@@ -30,6 +31,7 @@ def _make_module(num, init):
 
     return PReluModule()
 
+
 in_shapes = [
     [1],
     [1, 3, 224, 224]
@@ -40,6 +42,7 @@ inits = [
     0.25,
 ]
 
+
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('init', inits)
 def test_prelu(in_shape, init, request):
@@ -49,6 +52,7 @@ def test_prelu(in_shape, init, request):
     runner = OnnxTestRunner(request.node.name)
     model_file = runner.from_torch(module, in_shape)
     runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_prelu.py'])

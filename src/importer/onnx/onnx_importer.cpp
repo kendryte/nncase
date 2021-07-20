@@ -19,6 +19,7 @@
 #include <google/protobuf/io/zero_copy_stream_impl_lite.h>
 #include <google/protobuf/message.h>
 #include <nncase/importer/importer.h>
+#include <nncase/importer/util.h>
 #include <nncase/ir/graph.h>
 
 using namespace std;
@@ -801,4 +802,37 @@ std::string onnx_importer::generate_name(const onnx::NodeProto &node) const
         return node.name();
     else
         return 'n' + std::to_string(graph_.nodes().size());
+}
+
+void onnx_importer::link_input_tensor(ir::input_connector *conn, const std::string &onnx_v)
+{
+    auto type = get_datatype(onnx_v).value();
+    auto shape = get_shape(onnx_v);
+    link_input_tensor_by_id(input_tensors_, conn, onnx_v, type, shape, onnx_v);
+}
+
+void onnx_importer::link_output_tensor(const std::string &onnx_v, ir::output_connector *conn)
+{
+    auto type = get_datatype(onnx_v).value();
+    auto shape = get_shape(onnx_v);
+    link_output_tensor_by_id(output_tensors_, onnx_v, conn, type, shape, onnx_v);
+}
+
+void onnx_importer::add_convert(ir::input_connector &next_input, const std::string &onnx_input, datatype_t to_type)
+{
+    auto ct = nncase::importer::add_prev_node<convert>(graph_, next_input, get_datatype(onnx_input).value(), get_shape(onnx_input), to_type);
+    link_input_tensor(&ct->input(), onnx_input);
+}
+
+void onnx_importer::input_convert_to_type(ir::input_connector &next_input, const std::string &onnx_input, datatype_t to_type)
+{
+    auto input_type = get_datatype(onnx_input).value();
+    if (input_type != to_type)
+    {
+        add_convert(next_input, onnx_input, to_type);
+    }
+    else
+    {
+        link_input_tensor(&next_input, onnx_input);
+    }
 }

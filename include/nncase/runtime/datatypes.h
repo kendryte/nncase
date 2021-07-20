@@ -272,6 +272,12 @@ typedef enum _image_resize_mode
     image_resize_nearest_neighbor
 } image_resize_mode_t;
 
+typedef enum _onehot_mode
+{
+    onehot_normal,
+    onehot_process_neg
+} onehot_mode_t;
+
 typedef enum _pad_mode
 {
     pad_constant,

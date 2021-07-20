@@ -18,42 +18,32 @@ import torch
 # import test_util
 from onnx_test_runner import OnnxTestRunner
 
+
 def _make_module():
     class UnaryModule(torch.nn.Module):
         def __init__(self):
             super(UnaryModule, self).__init__()
 
         def forward(self, x):
-            # outs = []
-            # outs.append(torch.abs(-x))
-            # outs.append(torch.ceil(x))
-            # outs.append(torch.cos(x))
-            # outs.append(torch.exp(x))
-            # outs.append(torch.floor(x)
-            # outs.append(torch.log(x))
-            # outs.append(torch.neg(x))
-            # outs.append(torch.round(x))
+            outs = []
+            outs.append(torch.abs(-x))
+            outs.append(torch.ceil(x))
+            outs.append(torch.cos(x))
+            outs.append(torch.exp(x))
+            outs.append(torch.floor(x))
+            outs.append(torch.log(x + 2))
+            outs.append(torch.neg(x))
+            outs.append(torch.round(x))
             # outs.append(torch.rsqrt(x))
-            # outs.append(torch.sin(x))
-            # outs.append(torch.sqrt(x))
-            # outs.append(torch.square(x))
+            outs.append(torch.sin(x))
+            outs.append(torch.sqrt(x + 2))
+            outs.append(torch.square(x))
             # outs.append(torch.tanh(x))
-            # outs.append(torch.sigmoid(x))
-            # return outs
-
-            x = torch.neg(x)
-            x = torch.abs(x)
-            x = torch.exp(x)
-            x = torch.floor(x)
-            x = torch.ceil(x)
-            x = torch.cos(x)
-            x = torch.log(x)
-            x = torch.round(x)
-            x = torch.sin(x)
-            x = torch.sqrt(x)
-            return x
+            outs.append(torch.sigmoid(x))
+            return outs
 
     return UnaryModule()
+
 
 in_shapes = [
     [3],
@@ -62,6 +52,7 @@ in_shapes = [
     [8, 6, 16, 3]
 ]
 
+
 @pytest.mark.parametrize('in_shape', in_shapes)
 def test_unary(in_shape, request):
     module = _make_module()
@@ -69,6 +60,7 @@ def test_unary(in_shape, request):
     runner = OnnxTestRunner(request.node.name)
     model_file = runner.from_torch(module, in_shape)
     runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_unary.py'])
