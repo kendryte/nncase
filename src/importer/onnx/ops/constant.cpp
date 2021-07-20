@@ -53,22 +53,19 @@ constant *onnx_importer::emplace_constant<TensorProto>(const std::optional<Tenso
 
     case TensorProto_DataType_INT32:
     {
-        std::vector<int32_t> vec { v.int32_data().begin(), v.int32_data().end() };
+        const auto &data = to<xt::xarray<int32_t>>(v);
+        std::vector<int32_t> vec { data.begin(), data.end() };
         return graph_.emplace<constant>(value_dt.value(), shape, vec);
     }
     case TensorProto_DataType_INT64:
     {
-        std::vector<int64_t> vec { v.int64_data().begin(), v.int64_data().end() };
+        const auto &data = to<xt::xarray<int64_t>>(v);
+        std::vector<int64_t> vec { data.begin(), data.end() };
         return graph_.emplace<constant>(value_dt.value(), shape, vec);
     }
     case TensorProto_DataType_UINT16:
     case TensorProto_DataType_INT16:
     {
-        if (tensor_element_type == TensorProto_DataType_INT64)
-        {
-            std::cout << "Constants of types int32 and int64 are represented as float32 and may suffer rounding errors if mantissa width is exceeded" << std::endl;
-        }
-
         const auto &data = convert_to<xt::xarray<float>>(v);
         std::vector<float> vec { data.begin(), data.end() };
         return graph_.emplace<constant>(dt_float32, shape, vec);
