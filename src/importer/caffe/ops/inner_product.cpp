@@ -30,8 +30,6 @@ DEFINE_CAFFE_LOWER(InnerProduct)
     std::string input_name = get_real_input_names(op)[0];
     auto &input = *output_tensors_.at(input_name);
     auto &param = op.inner_product_param();
-    if (param.transpose())
-        throw std::runtime_error("only false transpose flag is supported for inner_product");
 
     auto op_data = get_op_data(op, caffemodel);
 
@@ -40,10 +38,29 @@ DEFINE_CAFFE_LOWER(InnerProduct)
     auto input_b_const = graph_.emplace<constant>(dt_float32, get_shape(op_data.blobs(0).shape()), input_b_vec);
     input_b_const->name(op.name() + "/input_b_const");
 
-    auto tp_pre = graph_.emplace<nncase::ir::transpose>(dt_float32, get_shape(op_data.blobs(0).shape()), axis_t { 1, 0 });
-    auto bc_pre = graph_.emplace<bitcast>(dt_float32, input.shape(), dt_float32, shape_t { input.shape()[0] * input.shape()[1], input.shape()[2] });
+    axis_t weights_axis = param.transpose() ? axis_t { 0, 1 } : axis_t { 1, 0 };
+    auto tp_pre = graph_.emplace<nncase::ir::transpose>(dt_float32, get_shape(op_data.blobs(0).shape()), weights_axis);
+
+    auto normalized_axis = param.axis() >= 0 ? param.axis() : (input.shape().size() + param.axis());
+    size_t flattend_shape_a = 1;
+    size_t flattend_shape_b = 1;
+    for (size_t i = 0; i < normalized_axis; i++)
+    {
+        flattend_shape_a *= input.shape()[i];
+    }
+    for (size_t i = normalized_axis; i < input.shape().size(); i++)
+    {
+        flattend_shape_b *= input.shape()[i];
+    }
+    auto bc_pre = graph_.emplace<bitcast>(dt_float32, input.shape(), dt_float32, shape_t { flattend_shape_a, flattend_shape_b });
     auto node = graph_.emplace<matmul>(bc_pre->output().shape(), tp_pre->output().shape(), value_range<float>::full());
-    auto bc_post = graph_.emplace<bitcast>(dt_float32, node->output().shape(), dt_float32, shape_t { input.shape()[0], input.shape()[1], node->output().shape()[1] });
+    shape_t bc_post_shape;
+    for (size_t i = 0; i < normalized_axis; i++)
+    {
+        bc_post_shape.push_back(input.shape()[i]);
+    }
+    bc_post_shape.push_back(param.num_output());
+    auto bc_post = graph_.emplace<bitcast>(dt_float32, node->output().shape(), dt_float32, bc_post_shape);
     node->name(op.name() + "/matmul");
 
     input_tensors_.emplace(&bc_pre->input(), input_name);

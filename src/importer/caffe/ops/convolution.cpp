@@ -14,8 +14,8 @@
  */
 #include "../caffe_importer.h"
 #include <functional>
-#include <nncase/ir/ops/conv2d.h>
 #include <nncase/ir/ops/constant.h>
+#include <nncase/ir/ops/conv2d.h>
 
 using namespace nncase;
 using namespace nncase::importer;
@@ -48,7 +48,7 @@ DEFINE_CAFFE_LOWER(Convolution)
     auto bias = load_tensor<1>(op_data.blobs(1));
 
     auto node = graph_.emplace<conv2d>(input.shape(), get_shape(op_data.blobs(0).shape()), groups, padding { pad_h, pad_h }, padding { pad_w, pad_w },
-    (int32_t)stride_h, (int32_t)stride_w, (int32_t)dilation_h, (int32_t)dilation_w, value_range<float>::full());
+        (int32_t)stride_h, (int32_t)stride_w, (int32_t)dilation_h, (int32_t)dilation_w, value_range<float>::full());
     node->name(op.name() + "/conv");
 
     std::vector<float> weights_vec(weights.begin(), weights.end());

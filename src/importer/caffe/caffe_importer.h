@@ -98,7 +98,11 @@ namespace importer
                     {
                         input_name_i = op.bottom(i) + "/mul";
                         if (output_tensors_.find(input_name_i) == output_tensors_.end())
-                            input_name_i = op.bottom(i);
+                        {
+                            input_name_i = op.bottom(i) + "/div";
+                            if (output_tensors_.find(input_name_i) == output_tensors_.end())
+                                input_name_i = op.bottom(i);
+                        }
                     }
                 }
                 input_names.push_back(input_name_i);
@@ -125,4 +129,4 @@ namespace importer
 }
 
 #define DEFINE_CAFFE_LOWER(opcode) \
-    void nncase::importer::caffe_importer::convert_op_##opcode([[maybe_unused]]const caffe::LayerParameter &op, [[maybe_unused]]caffe::NetParameter caffemodel)
+    void nncase::importer::caffe_importer::convert_op_##opcode([[maybe_unused]] const caffe::LayerParameter &op, [[maybe_unused]] caffe::NetParameter caffemodel)

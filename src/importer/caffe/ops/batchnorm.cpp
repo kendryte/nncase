@@ -23,7 +23,11 @@ using namespace nncase::ir;
 
 DEFINE_CAFFE_LOWER(BatchNorm)
 {
-    auto &input = *output_tensors_.at(op.bottom(0));
+    // check if there are bn/scale/relu above
+    std::string input_name = get_real_input_names(op)[0];
+
+    auto &input = *output_tensors_.at(input_name);
+
     auto &param = op.batch_norm_param();
     if (param.has_use_global_stats() && !param.use_global_stats())
         throw std::runtime_error("use_global_stats should be true at inference step");
@@ -59,8 +63,13 @@ DEFINE_CAFFE_LOWER(BatchNorm)
     auto sqrt = graph_.emplace<unary>(unary_sqrt, add->output().shape());
     sqrt->name(op.name() + "/sqrt");
     auto div = graph_.emplace<binary>(binary_div, sub->output().shape(), sqrt->output().shape(), value_range<float>::full());
-    // inplace op, user op need this name
-    div->name(op.top(0) + "/div");
+    if (op.bottom(0) == op.top(0))
+    {
+        // inplace op, user op need this name
+        div->name(op.top(0) + "/div");
+    }
+    else
+        div->name(op.name() + "/div");
 
     sub->input_b().connect(means_const->output());
     add->input_a().connect(variants_const->output());
@@ -70,6 +79,11 @@ DEFINE_CAFFE_LOWER(BatchNorm)
     div->input_b().connect(sqrt->output());
 
     input_tensors_.emplace(&sub->input_a(), op.bottom(0));
-    // inplace op, user op need this name
-    output_tensors_.emplace(div->name(), &div->output());
+    if (op.bottom(0) == op.top(0))
+    {
+        // inplace op, user op need this name
+        output_tensors_.emplace(div->name(), &div->output());
+    }
+    else
+        output_tensors_.emplace(op.top(0), &div->output());
 }

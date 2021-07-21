@@ -27,13 +27,20 @@ inline shape_t get_transposed_shape(const shape_t &input_shape, const axis_t &pe
     return new_shape;
 }
 
-inline size_t get_windowed_output_size(int32_t size, int32_t filter, int32_t stride, int32_t dilation, bool same)
+inline size_t get_windowed_output_size(int32_t size, int32_t filter, int32_t stride, int32_t dilation, bool same, bool ceil_mode = false)
 {
     auto effective_filter_size = (filter - 1) * dilation + 1;
     if (same)
         return (size_t(size) + stride - 1) / stride;
     else
-        return (size_t(size) - effective_filter_size + stride) / stride;
+    {
+        if (!ceil_mode)
+            return (size_t(size) - effective_filter_size + stride) / stride;
+        else
+        {
+            return static_cast<int>(ceil(static_cast<float>(size_t(size) - effective_filter_size + stride) / stride));
+        }
+    }
 }
 
 inline padding get_windowed_padding(int32_t input_size, int32_t output_size, int32_t filter, int32_t stride, int32_t dilation)

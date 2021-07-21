@@ -14,13 +14,13 @@
  */
 #include "caffe_importer.h"
 #include <fstream>
-#include <nncase/importer/importer.h>
-#include <nncase/ir/ops/constant.h>
-#include <nncase/ir/graph.h>
 #include <google/protobuf/io/coded_stream.h>
 #include <google/protobuf/io/zero_copy_stream_impl.h>
 #include <google/protobuf/message.h>
 #include <google/protobuf/text_format.h>
+#include <nncase/importer/importer.h>
+#include <nncase/ir/graph.h>
+#include <nncase/ir/ops/constant.h>
 
 using namespace nncase;
 using namespace nncase::importer;

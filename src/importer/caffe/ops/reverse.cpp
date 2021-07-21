@@ -14,9 +14,9 @@
  */
 #include "../caffe_importer.h"
 #include <functional>
+#include <nncase/ir/ops/constant.h>
 #include <nncase/ir/ops/pad.h>
 #include <nncase/ir/ops/slice.h>
-#include <nncase/ir/ops/constant.h>
 
 using namespace nncase;
 using namespace nncase::importer;

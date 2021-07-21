@@ -28,6 +28,9 @@ DEFINE_CAFFE_LOWER(Reshape)
     auto &input = *output_tensors_.at(input_name);
     auto &param = op.reshape_param();
 
+    if (param.axis() != 0 || param.num_axes() != -1)
+        throw std::runtime_error("Parameter values are unsupported yet");
+
     // normalize new shape
     shape_t normalized_new_shape(get_axis(param.shape()).size());
     size_t shape_size = 1;
@@ -41,7 +44,7 @@ DEFINE_CAFFE_LOWER(Reshape)
                 throw std::runtime_error("Reshape can only have 1 non-determined dimension at most");
             non_det_id = i;
         }
-        else if(v == 0)
+        else if (v == 0)
         {
             shape_size *= input.shape()[i];
             normalized_new_shape[i] = (size_t)input.shape()[i];

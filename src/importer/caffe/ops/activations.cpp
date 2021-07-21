@@ -25,32 +25,48 @@ using namespace caffe;
 
 DEFINE_CAFFE_LOWER(ReLU)
 {
-    // check if there are bn/scale above
-    std::string input_name = op.bottom(0) + "/add";
+    // check if there are bn/scale/relu above
+    std::string input_name = get_real_input_names(op)[0];
 
     if (output_tensors_.find(input_name) == output_tensors_.end())
     {
         input_name = op.bottom(0) + "/mul";
         if (output_tensors_.find(input_name) == output_tensors_.end())
-            input_name = op.bottom(0);
+        {
+            input_name = op.bottom(0) + "/div";
+            if (output_tensors_.find(input_name) == output_tensors_.end())
+                input_name = op.bottom(0);
+        }
     }
 
     auto &input = *output_tensors_.at(input_name);
 
-    [[maybe_unused]]auto &param = op.relu_param();
+    auto &param = op.relu_param();
+    if (param.negative_slope() != 0)
+        throw std::runtime_error("negative slope is not supported");
 
     auto zero = graph_.emplace<constant>(0.f);
     zero->name(op.name() + "/zero_const");
     auto high = graph_.emplace<constant>(std::numeric_limits<float>::max());
     high->name(op.name() + "/high_const");
     auto cl = graph_.emplace<clamp>(input.shape(), zero->output().shape(), high->output().shape());
-    // inplace op, user op need this name
-    cl->name(op.top(0) + "/clamp");
+    if (op.bottom(0) == op.top(0))
+    {
+        // inplace op, user op need this name
+        cl->name(op.top(0) + "/clamp");
+    }
+    else
+        cl->name(op.name() + "/clamp");
 
     cl->input_low().connect(zero->output());
     cl->input_high().connect(high->output());
 
     input_tensors_.emplace(&cl->input(), input_name);
-    // inplace op, user op need this name
-    output_tensors_.emplace(cl->name(), &cl->output());
+    if (op.bottom(0) == op.top(0))
+    {
+        // inplace op, user op need this name
+        output_tensors_.emplace(cl->name(), &cl->output());
+    }
+    else
+        output_tensors_.emplace(op.top(0), &cl->output());
 }

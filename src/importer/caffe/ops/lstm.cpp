@@ -13,9 +13,9 @@
  * limitations under the License.
  */
 #include "../caffe_importer.h"
-#include <nncase/ir/ops/lstm.h>
 #include <nncase/ir/ops/bitcast.h>
 #include <nncase/ir/ops/constant.h>
+#include <nncase/ir/ops/lstm.h>
 
 using namespace nncase;
 using namespace nncase::importer;

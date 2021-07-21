@@ -19,6 +19,7 @@ import tensorflow as tf
 import numpy as np
 from tflite_test_runner import TfliteTestRunner
 
+
 def _make_module(indices, depth, axis):
     class OneHotModule(tf.Module):
         def __init__(self):
@@ -28,6 +29,7 @@ def _make_module(indices, depth, axis):
         def __call__(self, x):
             return tf.one_hot(indices, depth, off_value=x[0], on_value=x[1], axis=axis)
     return OneHotModule()
+
 
 indices_depth_axis = [
     ([3, 2, 4, 0], 5, 0),
@@ -45,6 +47,7 @@ indices_depth_axis = [
     ([[[0, -3], [2, -4], [-1, 0]], [[-3, 0], [4, -2], [0, -1]]], 5, 3),
 ]
 
+
 @pytest.mark.parametrize('indices,depth,axis', indices_depth_axis)
 def test_onehot(indices, depth, axis, request):
     module = _make_module(indices, depth, axis)
@@ -52,6 +55,7 @@ def test_onehot(indices, depth, axis, request):
     runner = TfliteTestRunner(request.node.name)
     model_file = runner.from_tensorflow(module)
     runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_onehot.py'])

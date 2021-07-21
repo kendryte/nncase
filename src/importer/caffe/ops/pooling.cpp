@@ -13,9 +13,8 @@
  * limitations under the License.
  */
 #include "../caffe_importer.h"
-#include <functional>
+#include <nncase/ir/ops/pad.h>
 #include <nncase/ir/ops/reduce_window2d.h>
-#include <nncase/ir/ops/constant.h>
 
 using namespace nncase;
 using namespace nncase::importer;
@@ -29,16 +28,16 @@ DEFINE_CAFFE_LOWER(Pooling)
 
     auto &input = *output_tensors_.at(input_name);
     auto &param = op.pooling_param();
+    auto ceil_mode = param.round_mode() ? false : true;
 
     auto pooling_method = param.pool();
-    auto stride_h = param.has_stride() ? param.stride() : (param.has_stride_h() ? param.stride_h() : 1);
-    auto stride_w = param.has_stride() ? param.stride() : (param.has_stride_w() ? param.stride_w() : 1);
-    auto pad_h = param.has_pad() ? param.pad() : (param.has_pad_h() ? param.pad_h() : 0);
-    auto pad_w = param.has_pad() ? param.pad() : (param.has_pad_w() ? param.pad_w() : 0);
-    if ((!param.has_kernel_size() && !param.has_kernel_h()) || (!param.has_kernel_size() && !param.has_kernel_w()))
-        throw std::runtime_error("import pooling error.");
-    auto kernel_size_h = param.has_kernel_size() ? param.kernel_size() : param.kernel_h();
-    auto kernel_size_w = param.has_kernel_size() ? param.kernel_size() : param.kernel_w();
+    auto stride_h = param.global_pooling() ? 1 : (param.has_stride() ? param.stride() : (param.has_stride_h() ? param.stride_h() : 1));
+    auto stride_w = param.global_pooling() ? 1 : (param.has_stride() ? param.stride() : (param.has_stride_w() ? param.stride_w() : 1));
+    auto pad_h = param.global_pooling() ? 0 : (param.has_pad() ? param.pad() : (param.has_pad_h() ? param.pad_h() : 0));
+    auto pad_w = param.global_pooling() ? 0 : (param.has_pad() ? param.pad() : (param.has_pad_w() ? param.pad_w() : 0));
+
+    auto kernel_size_h = param.global_pooling() ? input.shape()[2] : (param.has_kernel_size() ? param.kernel_size() : param.kernel_h());
+    auto kernel_size_w = param.global_pooling() ? input.shape()[3] : (param.has_kernel_size() ? param.kernel_size() : param.kernel_w());
 
     float init_value = 0.f;
     reduce_op_t reduce_type;
@@ -46,21 +45,51 @@ DEFINE_CAFFE_LOWER(Pooling)
     if (pooling_method == 0)
     {
         reduce_type = reduce_max;
-        init_value = std::numeric_limits<float>::lowest();
     }
     else if (pooling_method == 1)
     {
         reduce_type = reduce_mean;
     }
     else if (pooling_method == 2)
-        throw std::runtime_error("STOCHASTIC pooling is not supported yet.");
+        throw std::runtime_error("STOCHASTIC pooling is not supported.");
     else
         throw std::runtime_error("wrong pooling type.");
 
-    auto node = graph_.emplace<reduce_window2d>(reduce_type, input.shape(), init_value, kernel_size_h, kernel_size_w,
-                                                padding { (int32_t)pad_h, (int32_t)pad_h }, padding { (int32_t)pad_w, (int32_t)pad_w }, stride_h, stride_w, 1, 1, value_range<float>::full());
-    node->name(op.name() + "/reduce_window");
+    xt::svector<padding> paddings_rw;
+    paddings_rw.push_back(padding { 0, 0 });
+    paddings_rw.push_back(padding { 0, 0 });
+    paddings_rw.push_back(padding { (int32_t)pad_h, (int32_t)pad_h });
+    paddings_rw.push_back(padding { (int32_t)pad_w, (int32_t)pad_w });
 
-    input_tensors_.emplace(&node->input(), input_name);
-    output_tensors_.emplace(op.top(0), &node->output());
+    xt::svector<padding> paddings_ceil_align;
+    auto ceil_align_h = 0;
+    auto ceil_align_w = 0;
+    if (ceil_mode)
+    {
+        if ((input.shape()[2] + 2 * pad_h - kernel_size_h + stride_h) % stride_h != 0)
+            ceil_align_h = stride_h - (input.shape()[2] + 2 * pad_h - kernel_size_h + stride_h) % stride_h;
+        if ((input.shape()[3] + 2 * pad_w - kernel_size_w + stride_w) % stride_w != 0)
+            ceil_align_w = stride_w - (input.shape()[3] + 2 * pad_w - kernel_size_w + stride_w) % stride_w;
+    }
+    paddings_ceil_align.push_back(padding { 0, 0 });
+    paddings_ceil_align.push_back(padding { 0, 0 });
+    paddings_ceil_align.push_back(padding { 0, (int32_t)ceil_align_h });
+    paddings_ceil_align.push_back(padding { 0, (int32_t)ceil_align_w });
+
+    std::vector<int32_t> padding_h_w_after;
+    padding_h_w_after.push_back((int32_t)ceil_align_h + (int32_t)pad_h);
+    padding_h_w_after.push_back((int32_t)ceil_align_w + (int32_t)pad_w);
+
+    auto p_rw = graph_.emplace<pad>(input.type(), input.shape(), paddings_rw, pad_constant, 0.f);
+    p_rw->name(op.name() + "/pad");
+    auto p_align = graph_.emplace<pad>(input.type(), p_rw->output().shape(), paddings_ceil_align, pad_constant, 0.f);
+    p_align->name(op.name() + "/pad");
+    auto rw = graph_.emplace<reduce_window2d>(reduce_type, p_align->output().shape(), init_value, kernel_size_h, kernel_size_w,
+        padding { 0, 0 }, padding { 0, 0 }, stride_h, stride_w, 1, 1, value_range<float>::full(), ceil_mode, false, padding_h_w_after, true);
+    rw->name(op.name() + "/reduce_window");
+
+    input_tensors_.emplace(&p_rw->input(), input_name);
+    p_align->input().connect(p_rw->output());
+    rw->input().connect(p_align->output());
+    output_tensors_.emplace(op.top(0), &rw->output());
 }

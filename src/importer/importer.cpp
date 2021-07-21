@@ -12,8 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "onnx/onnx_importer.h"
 #include "caffe/caffe_importer.h"
+#include "onnx/onnx_importer.h"
 #include "tflite/tflite_importer.h"
 #include <nncase/importer/importer.h>
 
