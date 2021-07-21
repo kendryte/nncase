@@ -1,0 +1,4 @@
+[submodule "caffe"]
+	path = caffe
+	url = ../caffe.git
+	branch = nncase
