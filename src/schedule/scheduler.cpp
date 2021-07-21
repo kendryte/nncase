@@ -495,9 +495,9 @@ schedule_result scheduler::schedule(bool skip_buffer_alias)
         context.target = &target_;
 
         context.make_logical_buffers();
+        context.fix_concat_indices();
         if (!skip_buffer_alias)
             context.analyze_buffer_alias();
-        context.fix_concat_indices();
         context.fix_lifetime();
         context.generate_compute_sequence();
         context.make_physical_buffers();
