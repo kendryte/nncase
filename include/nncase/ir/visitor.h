@@ -53,7 +53,7 @@ protected:
 private:
 };
 
-class NNCASE_API bfs_ir_visitor : public ir_visitor
+class NNCASE_API bfs_ir_pre_order_visitor : public ir_visitor
 {
 protected:
     virtual bool visit_strategy(node &node) final override;

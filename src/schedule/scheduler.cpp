@@ -297,7 +297,7 @@ void schedule_context::analyze_buffer_alias()
 
 void schedule_context::update_offset()
 {
-    auto visitor = make_relay_ir_visitor<bfs_ir_visitor>([&](node &node) {
+    auto visitor = make_relay_ir_visitor<bfs_ir_pre_order_visitor>([&](node &node) {
         if (auto b = node_cast<bitcast>(node))
         {
             if (!(b->attributes() & node_attr_action))
@@ -330,7 +330,6 @@ void schedule_context::update_offset()
         // TODO: slice
         // else if (auto s = node_cast<slice>(node))
         // {
-
         // }
     });
     visitor.visit(outputs);

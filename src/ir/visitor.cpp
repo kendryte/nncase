@@ -93,7 +93,7 @@ bool dfs_ir_post_order_visitor::visit_strategy(node &node)
     return false;
 }
 
-bool bfs_ir_visitor::visit_strategy(node &node)
+bool bfs_ir_pre_order_visitor::visit_strategy(node &node)
 {
     std::queue<nncase::ir::node *> nodes;
     nodes.push(&node);

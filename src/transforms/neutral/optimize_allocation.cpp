@@ -230,7 +230,6 @@ void alias_concat_buffer_pass::run_core([[maybe_unused]] graph &graph, [[maybe_u
                 for (auto in : c->inputs())
                 {
                     auto &in_buf = context.logical_buffer_map.at(in->connection());
-
                     in_buf->parent() = { out_buf, offset, c->output().shape() };
                     if (!is_simple_concat)
                         in_buf->strides_shape() = c->output().shape();
