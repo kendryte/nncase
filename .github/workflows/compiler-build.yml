@@ -16,14 +16,30 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - uses: seanmiddleditch/gha-setup-ninja@master
-        
+
+    - name: Download a Python Package Artifact
+      uses: dawidd6/action-download-artifact@v2
+      with:
+        github_token: ${{secrets.GITHUB_TOKEN}}
+        workflow: cmake.yml
+        branch: nncase
+        name: warpctc-caffe-1.0.0
+        path: ${{github.workspace}}/python/caffe
+        repo: ${{github.workspace}}/../caffe
+
+    - name: Install Caffe
+      working-directory: ${{github.workspace}}/python/caffe
+      shell: bash
+      run: |
+        pip install warpctc-caffe-1.0.0
+
     - name: Install System Requirements
       if: runner.os == 'Linux'
       shell: bash
       run: |
         sudo apt update
         sudo apt install libgtk2.0-dev -y
-        
+
     - name: Install System Requirements
       if: runner.os == 'Macos'
       shell: bash
@@ -107,12 +123,12 @@ jobs:
       shell: bash
       run: |
         brew install sunnycase/core/libomp@11.1.0
-          
+
     - name: Setup Python
       uses: actions/setup-python@v2.2.1
       with:
         python-version: 3.7
-        
+
     - name: Install Python Packages
       if: runner.os != 'Macos'
       shell: bash
@@ -120,7 +136,7 @@ jobs:
         pip install conan tensorflow==2.5.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0
         pip install torch==1.9.0+cpu torchvision==0.10.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
         pip install pytest
-        
+
     - name: Install Python Packages
       if: runner.os == 'Macos'
       shell: bash
@@ -128,14 +144,14 @@ jobs:
         pip install conan tensorflow==2.5.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0
         pip install torch==1.9.0 torchvision==0.10.0 -f https://download.pytorch.org/whl/torch_stable.html
         pip install pytest
-      
+
     - name: Create Test Environment
       working-directory: ${{github.workspace}}
       shell: bash
       run: |
         pip install pytest
         mkdir test_results
-      
+
     - name: Download a Build Artifact
       uses: actions/download-artifact@v2.0.9
       with:
@@ -146,9 +162,11 @@ jobs:
       uses: dawidd6/action-download-artifact@v2
       with:
         github_token: ${{secrets.GITHUB_TOKEN}}
-        workflow: compiler-build.yml
+        workflow: cmake.yml
+        branch: nncase
         name: warpctc-caffe-1.0.0
         path: ${{github.workspace}}/python/caffe
+        repo: ${{github.workspace}}/../caffe
 
     - name: Install Caffe
       working-directory: ${{github.workspace}}/python/caffe
