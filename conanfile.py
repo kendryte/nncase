@@ -65,6 +65,8 @@ class nncaseConan(ConanFile):
             self.requires('xtensor/0.21.5')
             self.requires('spdlog/1.8.2')
             self.requires('libzippp/4.0')
+            self.requires('inja/3.2.0')
+            self.requires('shaderc/2021.1')
             if self.options.tests:
                 self.requires('gtest/1.10.0')
 

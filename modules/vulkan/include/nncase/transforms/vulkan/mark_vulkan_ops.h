@@ -12,22 +12,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../module_builder.h"
-#include "../templates/template.h"
+#pragma once
+#include <nncase/runtime/vulkan/compiler_defs.h>
+#include <nncase/transforms/transform.h>
 
-using namespace nncase;
-using namespace nncase::codegen;
-using namespace nncase::codegen::vulkan;
-using namespace nncase::ir;
-using namespace nncase::runtime;
-using namespace nncase::runtime::vulkan;
-using namespace nlohmann;
-
-void vulkan_module_builder::emit([[maybe_unused]] unary &node)
+namespace nncase::ir::transforms::vulkan
 {
-    json ctx;
-    ctx["unary_op"] = unary_op_to_string(node.unary_op());
-    auto shader = render_and_compile("unary.hlsl", ctx);
+class NNCASE_MODULES_VULKAN_API mark_vulkan_ops_transform : public transform
+{
+public:
+    void process(transform_context &context) override;
 
-    throw std::runtime_error("not implemented");
+protected:
+    bool skip_self_contained_check() const noexcept override { return true; }
+    bool on_try_match(ir::node &node, transform_context &context) override;
+};
 }

@@ -12,22 +12,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../module_builder.h"
-#include "../templates/template.h"
 
-using namespace nncase;
-using namespace nncase::codegen;
-using namespace nncase::codegen::vulkan;
-using namespace nncase::ir;
-using namespace nncase::runtime;
-using namespace nncase::runtime::vulkan;
-using namespace nlohmann;
-
-void vulkan_module_builder::emit([[maybe_unused]] unary &node)
+// Binding 0 : Position storage buffer
+struct Particle
 {
-    json ctx;
-    ctx["unary_op"] = unary_op_to_string(node.unary_op());
-    auto shader = render_and_compile("unary.hlsl", ctx);
+	float i;
+};
 
-    throw std::runtime_error("not implemented");
+RWStructuredBuffer<Particle> particles : register(u0);
+[[vk::constant_id(0)]]
+
+void main()
+{
+	particles[0].i = 1;
 }

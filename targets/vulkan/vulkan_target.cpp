@@ -15,6 +15,9 @@
 #include "vulkan_target.h"
 #include <nncase/codegen/vulkan/module_builder.h>
 #include <nncase/plugin_loader.h>
+#include <nncase/schedule/buffer_allocator.h>
+#include <nncase/transforms/pass.h>
+#include <nncase/transforms/vulkan/mark_vulkan_ops.h>
 
 #if defined(_MSC_VER)
 #define VULKAN_TARGET_API __declspec(dllexport)
@@ -25,12 +28,39 @@
 using namespace nncase;
 using namespace nncase::targets;
 using namespace nncase::runtime;
+using namespace nncase::ir::transforms;
+using namespace nncase::ir::transforms::vulkan;
+using namespace nncase::schedule;
 
 extern "C"
 {
     VULKAN_TARGET_API target *create_target()
     {
         return new vulkan_target();
+    }
+}
+
+void vulkan_target::register_allocators(const module_type_t &type, allocator_map_t &allocators, std::vector<std::shared_ptr<buffer_allocator>> &allocator_holders)
+{
+    if (type == runtime::vulkan::vulkan_module_type)
+    {
+        allocators.emplace(mem_input, allocator_holders.emplace_back(std::make_shared<linear_buffer_allocator>()).get());
+        allocators.emplace(mem_output, allocator_holders.emplace_back(std::make_shared<linear_buffer_allocator>()).get());
+        allocators.emplace(mem_rdata, allocator_holders.emplace_back(std::make_shared<linear_buffer_allocator>()).get());
+        allocators.emplace(mem_data, allocator_holders.emplace_back(std::make_shared<linear_buffer_allocator>()).get());
+    }
+    else
+    {
+        neutral_target::register_allocators(type, allocators, allocator_holders);
+    }
+}
+
+void vulkan_target::register_target_dependent_passes([[maybe_unused]] const module_type_t &type, ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] bool use_ptq)
+{
+    {
+        transform_pass p("mark_vulkan_ops");
+        p.emplace<mark_vulkan_ops_transform>();
+        pass_mgr.add_pass(std::move(p));
     }
 }
 

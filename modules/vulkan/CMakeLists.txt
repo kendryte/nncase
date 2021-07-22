@@ -5,7 +5,7 @@ include_directories(include)
 add_subdirectory(src/runtime)
 
 if (BUILDING_RUNTIME)
-    set(SRCS src/dummy.cpp)
+    set(SRCS src/dllmain.cpp)
     
     add_library(nncase_rt_modules_vulkan STATIC ${SRCS})
     target_include_directories(nncase_rt_modules_vulkan PRIVATE include)
@@ -50,15 +50,15 @@ else()
     add_subdirectory(src/codegen)
     #add_subdirectory(src/ir)
     #add_subdirectory(src/schedule)
-    #add_subdirectory(src/transforms/vulkan)
+    add_subdirectory(src/transforms/vulkan)
     #add_subdirectory(src/evaluator)
     
-    set(SRCS src/dummy.cpp)
+    set(SRCS src/dllmain.cpp)
     
     add_library(nncase_modules_vulkan SHARED ${SRCS})
     target_include_directories(nncase_modules_vulkan PUBLIC include)
     #target_link_libraries(nncase_modules_vulkan PRIVATE codegen_vulkan ir_vulkan evaluator_vulkan schedule_vulkan transforms_vulkan simulator_vulkan kernels_vulkan nncase)
-    target_link_libraries(nncase_modules_vulkan PRIVATE codegen_vulkan simulator_vulkan nncase)
+    target_link_libraries(nncase_modules_vulkan PRIVATE codegen_vulkan transforms_vulkan simulator_vulkan nncase)
     set_target_properties(nncase_modules_vulkan PROPERTIES
                                               OUTPUT_NAME "nncase.modules.vulkan")
     if(MSVC)

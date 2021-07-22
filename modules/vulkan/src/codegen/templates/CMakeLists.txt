@@ -1,6 +1,6 @@
-﻿cmake_minimum_required (VERSION 3.13)
+﻿cmake_minimum_required (VERSION 3.16)
 
-function(compress_template NAME FILES)
+function(compress_template NAME FILES OUT_VAR)
     if(NOT LIBZIP_ZIPTOOL_EXECUTABLE)
         set(LIBZIP_ZIPTOOL_EXECUTABLE ziptool)
     endif()
@@ -23,22 +23,30 @@ function(compress_template NAME FILES)
         DEPENDS ${FILES}
         VERBATIM)
     add_custom_target(${NAME}
-        SOURCES ${OUT_FILE})
+        DEPENDS ${OUT_FILE})
+    set(${OUT_VAR} ${OUT_FILE} PARENT_SCOPE)
 endfunction()
 
-set(TEMPLATE_SRCS 1.comp)
-compress_template(vulkan_templates_xz "${TEMPLATE_SRCS}")
+set(TEMPLATE_SRCS unary.hlsl)
+compress_template(vulkan_templates_xz "${TEMPLATE_SRCS}" TEMPLATE_OUT)
 
 if(MSVC)
-    add_library(vulkan_templates_rc INTERFACE)
-    target_sources(vulkan_templates_rc PUBLIC Resource.rc)
-    target_include_directories(vulkan_templates_rc INTERFACE ${CMAKE_CURRENT_BINARY_DIR})
-    add_dependencies(vulkan_templates_rc vulkan_templates_xz)
+    add_library(vulkan_templates_rc OBJECT Resource.rc)
+    target_include_directories(vulkan_templates_rc PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+    set_source_files_properties(
+        Resource.rc
+        PROPERTIES
+        OBJECT_DEPENDS ${TEMPLATE_OUT}
+    )
 endif()
 
 set(SRCS template.cpp)
-add_library(vulkan_templates OBJECT ${SRCS})
-target_link_libraries(vulkan_templates PRIVATE libzippp::libzippp)
+add_library(vulkan_templates STATIC ${SRCS})
+target_link_libraries(vulkan_templates PRIVATE libzippp::libzippp pantor::inja nlohmann_json::nlohmann_json fmt::fmt shaderc::shaderc)
 set_target_properties(vulkan_templates PROPERTIES POSITION_INDEPENDENT_CODE ON)
 add_dependencies(vulkan_templates vulkan_templates_xz)
 target_include_directories(vulkan_templates PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+
+if(MSVC)
+    target_compile_options(vulkan_templates PRIVATE /wd4244) #inja
+endif()

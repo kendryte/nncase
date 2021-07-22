@@ -12,22 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../module_builder.h"
-#include "../templates/template.h"
+#if _MSC_VER
+#include <Windows.h>
 
-using namespace nncase;
-using namespace nncase::codegen;
-using namespace nncase::codegen::vulkan;
-using namespace nncase::ir;
-using namespace nncase::runtime;
-using namespace nncase::runtime::vulkan;
-using namespace nlohmann;
+HMODULE g_vulkan_module_handle;
 
-void vulkan_module_builder::emit([[maybe_unused]] unary &node)
+BOOL APIENTRY DllMain(HMODULE hModule,
+    DWORD ul_reason_for_call,
+    LPVOID lpReserved)
 {
-    json ctx;
-    ctx["unary_op"] = unary_op_to_string(node.unary_op());
-    auto shader = render_and_compile("unary.hlsl", ctx);
-
-    throw std::runtime_error("not implemented");
+    g_vulkan_module_handle = hModule;
+    return TRUE;
 }
+#endif

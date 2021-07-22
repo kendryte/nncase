@@ -24,6 +24,8 @@ if (NOT BUILDING_RUNTIME)
     find_package(xtensor REQUIRED)
     find_package(spdlog REQUIRED)
     find_package(libzippp REQUIRED)
+    find_package(inja REQUIRED)
+    find_package(shaderc REQUIRED)
 endif ()
 
 if (BUILD_TESTING)

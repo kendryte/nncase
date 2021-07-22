@@ -13,11 +13,9 @@
  * limitations under the License.
  */
 #pragma once
+#include <nlohmann/json.hpp>
 
 namespace nncase::codegen::vulkan
 {
-class template_render
-{
-public:
-};
+std::string render_and_compile(const std::string &template_name, const nlohmann::json &context);
 }
