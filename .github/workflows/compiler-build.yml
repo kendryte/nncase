@@ -17,22 +17,6 @@ jobs:
     - uses: actions/checkout@v2
     - uses: seanmiddleditch/gha-setup-ninja@master
 
-    - name: Download a Python Package Artifact
-      uses: dawidd6/action-download-artifact@v2
-      with:
-        github_token: ${{secrets.GITHUB_TOKEN}}
-        workflow: cmake.yml
-        branch: nncase
-        name: warpctc-caffe-1.0.0
-        path: ${{github.workspace}}/python/caffe
-        repo: aaltonenzhang/caffe
-
-    - name: Install Caffe
-      working-directory: ${{github.workspace}}/python/caffe
-      shell: bash
-      run: |
-        pip install warpctc-caffe-1.0.0
-
     - name: Install System Requirements
       if: runner.os == 'Linux'
       shell: bash
@@ -166,12 +150,13 @@ jobs:
         branch: nncase
         name: warpctc-caffe-1.0.0
         path: ${{github.workspace}}/python/caffe
-        repo: kendryte/caffe
+        repo: aaltonenzhang/caffe
 
     - name: Install Caffe
       working-directory: ${{github.workspace}}/python/caffe
       shell: bash
       run: |
+        cd ${{github.workspace}}/python/caffe
         pip install warpctc-caffe-1.0.0
 
     - name: Test
