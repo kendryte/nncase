@@ -42,7 +42,7 @@ jobs:
     - name: Install Conan
       shell: bash
       run: |
-        pip install conan
+        pip install conan numpy
 
     - name: Configure Conan
       if: runner.os == 'Linux'
@@ -142,14 +142,38 @@ jobs:
         name: nncase-${{matrix.os}}-x86_64
         path: ${{github.workspace}}/install
 
+    - name: Download a Python Package Artifact
+      uses: actions/download-artifact@v2.0.9
+      with:
+        name: warpctc-caffe-1.0.0
+        path: ${{github.workspace}}/python/caffe
+
+    - name: Install Caffe
+      working-directory: ${{github.workspace}}/python/caffe
+      shell: bash
+      run: |
+        pip install warpctc-caffe-1.0.0
+
     - name: Test
       working-directory: ${{github.workspace}}
-      if: runner.os != 'Windows'
+      if: runner.os == 'Linux'
       shell: bash
       env:
         PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/tests
       run: |
         pytest tests/importer --doctest-modules --junitxml=test_results/importer.xml
+        pytest tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
+        pytest tests/schedule --doctest-modules --junitxml=test_results/graph_partition.xml
+
+    - name: Test
+      working-directory: ${{github.workspace}}
+      if: runner.os == 'Macos'
+      shell: bash
+      env:
+        PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/tests
+      run: |
+        pytest tests/importer/tflite --doctest-modules --junitxml=test_results/importer_tflite.xml
+        pytest tests/importer/onnx --doctest-modules --junitxml=test_results/importer_onnx.xml
         pytest tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
         pytest tests/schedule --doctest-modules --junitxml=test_results/graph_partition.xml
 
@@ -161,7 +185,8 @@ jobs:
         PATH: ${{github.workspace}}/install/bin
         PYTHONPATH: ${{github.workspace}}/install/lib;${{github.workspace}}/install/python;${{github.workspace}}/tests
       run: |
-        pytest tests/importer --doctest-modules --junitxml=test_results/importer.xml
+        pytest tests/importer/tflite --doctest-modules --junitxml=test_results/importer_tflite.xml
+        pytest tests/importer/onnx --doctest-modules --junitxml=test_results/importer_onnx.xml
         pytest tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
         pytest tests/schedule --doctest-modules --junitxml=test_results/graph_partition.xml
 
