@@ -80,10 +80,10 @@ DEFINE_CAFFE_LOWER(Pooling)
     padding_h_w_after.push_back((int32_t)ceil_align_h + (int32_t)pad_h);
     padding_h_w_after.push_back((int32_t)ceil_align_w + (int32_t)pad_w);
 
-    auto p_rw = graph_.emplace<pad>(input.type(), input.shape(), paddings_rw, pad_constant, 0.f);
+    pad_mode_t p_m = reduce_type == reduce_max ? pad_edge : pad_constant;
+    auto p_rw = graph_.emplace<pad>(input.type(), input.shape(), paddings_rw, p_m, 0.f);
     p_rw->name(op.name() + "/pad");
-    pad_mode_t p_m = reduce_type == reduce_max ? pad_constant : pad_edge;
-    auto p_align = graph_.emplace<pad>(input.type(), p_rw->output().shape(), paddings_ceil_align, p_m, 0.f);
+    auto p_align = graph_.emplace<pad>(input.type(), p_rw->output().shape(), paddings_ceil_align, pad_edge, 0.f);
     p_align->name(op.name() + "/pad");
     auto rw = graph_.emplace<reduce_window2d>(reduce_type, p_align->output().shape(), init_value, kernel_size_h, kernel_size_w,
         padding { 0, 0 }, padding { 0, 0 }, stride_h, stride_w, 1, 1, value_range<float>::full(), ceil_mode, false, padding_h_w_after, true);
