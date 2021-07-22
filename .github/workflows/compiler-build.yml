@@ -143,8 +143,10 @@ jobs:
         path: ${{github.workspace}}/install
 
     - name: Download a Python Package Artifact
-      uses: actions/download-artifact@v2.0.9
+      uses: dawidd6/action-download-artifact@v2
       with:
+        github_token: ${{secrets.GITHUB_TOKEN}}
+        workflow: compiler-build.yml
         name: warpctc-caffe-1.0.0
         path: ${{github.workspace}}/python/caffe
 
