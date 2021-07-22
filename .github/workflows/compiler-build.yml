@@ -25,7 +25,7 @@ jobs:
         branch: nncase
         name: warpctc-caffe-1.0.0
         path: ${{github.workspace}}/python/caffe
-        repo: kendryte/caffe
+        repo: aaltonenzhang/caffe
 
     - name: Install Caffe
       working-directory: ${{github.workspace}}/python/caffe
