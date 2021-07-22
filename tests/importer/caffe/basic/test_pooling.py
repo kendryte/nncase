@@ -54,6 +54,7 @@ i_sizes = [
 ]
 
 k_sizes = [
+    3,
     5
 ]
 
