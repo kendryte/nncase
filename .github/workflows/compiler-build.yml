@@ -157,7 +157,7 @@ jobs:
       shell: bash
       run: |
         cd ${{github.workspace}}/python/caffe
-        pip install warpctc-caffe-1.0.0
+        pip install warpctc-caffe-1.0.0.tar.gz
 
     - name: Test
       working-directory: ${{github.workspace}}
