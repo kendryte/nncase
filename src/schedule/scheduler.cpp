@@ -52,13 +52,6 @@ memory_location_t decide_memory_location(ir::output_connector &conn, bool skip_b
     return conn.memory_location();
 }
 
-shape_t to_strides(const shape_t &shape)
-{
-    shape_t strides(shape.size());
-    xt::compute_strides(shape, xt::layout_type::row_major, strides);
-    return strides;
-}
-
 class lifetime_recorder
 {
 public:
@@ -157,10 +150,21 @@ void schedule_context::make_logical_buffers()
 
 void schedule_context::analyze_buffer_alias()
 {
-    pass_manager pmgr(*graph, *this->target);
-    pmgr.schedule_context(this);
-    pmgr.add_pass<alias_bitcast_buffer_pass>();
-    pmgr.run();
+    // bitcast
+    {
+        pass_manager pmgr(*graph, *this->target);
+        pmgr.schedule_context(this);
+        pmgr.add_pass<alias_bitcast_buffer_pass>();
+        pmgr.run();
+    }
+
+    // concat
+    {
+        pass_manager pmgr(*graph, *this->target);
+        pmgr.schedule_context(this);
+        pmgr.add_pass<alias_concat_buffer_pass>();
+        pmgr.run();
+    }
     // 1. add copy to concat
     //{
     //    auto alias_visitor = make_relay_ir_visitor([&](node &node) {
@@ -291,66 +295,7 @@ void schedule_context::analyze_buffer_alias()
     //    alias_visitor.visit(outputs);
 }
 
-void schedule_context::fix_concat_indices()
-{
-    auto fix_concat_visitor = make_relay_ir_visitor([&](node &node) {
-        if (auto c = node_cast<concat>(node))
-        {
-            if (c->attributes() & node_attr_action)
-                return;
-            bool is_simple_concat;
-
-            // 1. Init indices
-            {
-                auto axis = c->axis();
-                auto &out_buf = *logical_buffer_map.at(&c->output());
-                is_simple_concat = false; //!out_buf.no_action_concat_with_strides();
-                shape_t cnt_begin(c->input_at(0).shape().size(), 0);
-                for (auto in : c->inputs())
-                {
-                    auto &in_buf = logical_buffer_map.at(in->connection());
-                    in_buf->parent() = { &out_buf, cnt_begin, c->output().shape() };
-                    if (!is_simple_concat)
-                        in_buf->strides_shape() = c->output().shape();
-                    cnt_begin[axis] += in->shape()[axis];
-                }
-            }
-
-            // 2. Iterate parent
-            auto child = c;
-            while (true)
-            {
-                auto parent = try_get_direct_child<concat>(*child);
-                if (!parent || parent->attributes() & node_attr_action)
-                    break;
-                auto index = get_input_index(*parent, child->output());
-                auto axis = parent->axis();
-                shape_t child_begin(child->output().shape().size(), 0);
-                child_begin[axis] += std::accumulate(parent->concat_dims().begin(), parent->concat_dims().begin() + index, 0);
-
-                auto &in_buf = *logical_buffer_map.at(&child->output());
-                auto &out_buf = *logical_buffer_map.at(&parent->output());
-                in_buf.parent() = { &out_buf, child_begin, parent->output().shape() };
-                if (!is_simple_concat)
-                    in_buf.strides_shape() = parent->output().shape();
-                for (auto &in : c->inputs())
-                {
-                    auto in_buf = logical_buffer_map.at(in->connection());
-                    auto &desc = *in_buf->parent();
-                    desc.parent = &out_buf;
-                    desc.begin += child_begin;
-                    if (!is_simple_concat)
-                        in_buf->strides_shape() = parent->output().shape();
-                }
-
-                child = parent;
-            }
-        }
-    });
-    fix_concat_visitor.visit(outputs);
-}
-
-void schedule_context::update_begin()
+void schedule_context::update_offset()
 {
     auto visitor = make_relay_ir_visitor<bfs_ir_visitor>([&](node &node) {
         if (auto b = node_cast<bitcast>(node))
@@ -362,12 +307,31 @@ void schedule_context::update_begin()
 
                 if (in_buf->memory_location() == mem_data && in_buf->parent() && out_buf->parent())
                 {
-                    in_buf->parent()->begin += out_buf->parent()->begin;
+                    in_buf->parent()->offset += out_buf->parent()->offset;
                 }
             }
         }
+        else if (auto c = node_cast<concat>(node))
+        {
+            if (c->attributes() & node_attr_action)
+                return;
 
-        // TODO: concat/slice
+            auto &out_buf = logical_buffer_map.at(&c->output());
+
+            for (auto &in : c->inputs())
+            {
+                auto in_buf = logical_buffer_map.at(in->connection());
+                if (in_buf->parent() && out_buf->parent())
+                {
+                    in_buf->parent()->offset += out_buf->parent()->offset;
+                }
+            }
+        }
+        // TODO: slice
+        // else if (auto s = node_cast<slice>(node))
+        // {
+
+        // }
     });
     visitor.visit(outputs);
 }
@@ -496,8 +460,7 @@ void schedule_context::assign_allocations()
             alloc.start = memory.start;
             if (lbuf.parent())
             {
-                auto &begin = lbuf.parent()->begin;
-                alloc.start += ir::get_bytes(lbuf.type()) * xt::element_offset<size_t>(to_strides(lbuf.parent()->shape), begin.begin(), begin.end());
+                alloc.start += lbuf.parent()->offset;;
             }
 
             allocations.emplace(out, alloc);
@@ -519,8 +482,7 @@ schedule_result scheduler::schedule(bool skip_buffer_alias)
         context.make_logical_buffers();
         if (!skip_buffer_alias)
             context.analyze_buffer_alias();
-        context.fix_concat_indices();
-        context.update_begin();
+        context.update_offset();
         context.fix_lifetime();
         context.generate_compute_sequence();
         context.make_physical_buffers();
