@@ -460,7 +460,7 @@ void schedule_context::assign_allocations()
             alloc.start = memory.start;
             if (lbuf.parent())
             {
-                alloc.start += lbuf.parent()->offset;;
+                alloc.start += lbuf.parent()->offset;
             }
 
             allocations.emplace(out, alloc);
