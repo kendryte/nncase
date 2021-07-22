@@ -53,6 +53,14 @@ protected:
 private:
 };
 
+class NNCASE_API bfs_ir_visitor : public ir_visitor
+{
+protected:
+    virtual bool visit_strategy(node &node) final override;
+
+private:
+};
+
 template <class TBaseVisitor, class TVisitor>
 class relay_ir_visitor : public TBaseVisitor
 {

@@ -350,6 +350,28 @@ void schedule_context::fix_concat_indices()
     fix_concat_visitor.visit(outputs);
 }
 
+void schedule_context::update_begin()
+{
+    auto visitor = make_relay_ir_visitor<bfs_ir_visitor>([&](node &node) {
+        if (auto b = node_cast<bitcast>(node))
+        {
+            if (!(b->attributes() & node_attr_action))
+            {
+                auto &in_buf = logical_buffer_map.at(b->input().connection());
+                auto &out_buf = logical_buffer_map.at(&b->output());
+
+                if (in_buf->memory_location() == mem_data && in_buf->parent() && out_buf->parent())
+                {
+                    in_buf->parent()->begin += out_buf->parent()->begin;
+                }
+            }
+        }
+
+        // TODO: concat/slice
+    });
+    visitor.visit(outputs);
+}
+
 void schedule_context::fix_lifetime()
 {
     // Assign parent
@@ -495,9 +517,10 @@ schedule_result scheduler::schedule(bool skip_buffer_alias)
         context.target = &target_;
 
         context.make_logical_buffers();
-        context.fix_concat_indices();
         if (!skip_buffer_alias)
             context.analyze_buffer_alias();
+        context.fix_concat_indices();
+        context.update_begin();
         context.fix_lifetime();
         context.generate_compute_sequence();
         context.make_physical_buffers();

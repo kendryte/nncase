@@ -82,6 +82,7 @@ namespace schedule
         void make_logical_buffers();
         void analyze_buffer_alias();
         void fix_concat_indices();
+        void update_begin();
         void fix_lifetime();
         void make_physical_buffers();
         void allocate_physical_buffers();

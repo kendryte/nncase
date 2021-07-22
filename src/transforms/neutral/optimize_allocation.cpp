@@ -200,7 +200,7 @@ void alias_bitcast_buffer_pass::run_core(graph &graph, [[maybe_unused]] nncase::
 
                     // owner transfered to output
                     shape_t begin(b->output().shape().size(), 0);
-                    in_buf.parent() = { &out_buf, out_buf.parent() ? out_buf.parent()->begin : begin, b->output().shape() };
+                    in_buf.parent() = { &out_buf, begin, b->output().shape() };
                     in_buf.strides_shape() = input.shape();
                 }
             }
