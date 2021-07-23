@@ -36,6 +36,7 @@ public:
     const std::string &name() const noexcept { return name_; }
     template <class TArg, class... TArgs>
     void name(TArg arg, TArgs... args) { name_.assign(std::forward<TArg>(arg), std::forward<TArgs>(args)...); }
+    std::string escaped_name() const noexcept;
 
     const module_type_t &module_type() const noexcept { return module_type_; }
     void module_type(const module_type_t &type) noexcept { module_type_ = type; }

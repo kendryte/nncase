@@ -57,6 +57,18 @@ std::string graph::escaped_name() const noexcept
     return escaped_name;
 }
 
+std::string node::escaped_name() const noexcept
+{
+    auto escaped_name = name();
+    for (auto &c : escaped_name)
+    {
+        if (char_need_escape.contains(c))
+            c = '_';
+    }
+
+    return escaped_name;
+}
+
 void graph::assign_names()
 {
     std::unordered_set<std::string_view> names;

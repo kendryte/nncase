@@ -13,7 +13,6 @@
  * limitations under the License.
  */
 #include "../module_builder.h"
-#include "../templates/template.h"
 
 using namespace nncase;
 using namespace nncase::codegen;
@@ -23,11 +22,9 @@ using namespace nncase::runtime;
 using namespace nncase::runtime::vulkan;
 using namespace nlohmann;
 
-void vulkan_module_builder::emit([[maybe_unused]] unary &node)
+void vulkan_module_builder::emit(unary &node)
 {
     json ctx;
     ctx["unary_op"] = unary_op_to_string(node.unary_op());
-    auto shader = render_and_compile("unary.hlsl", ctx);
-
-    throw std::runtime_error("not implemented");
+    auto shader = compile_shader(node, "unary.hlsl", ctx);
 }

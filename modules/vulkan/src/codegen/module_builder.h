@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #pragma once
+#include <nlohmann/json.hpp>
 #include <nncase/codegen/vulkan/module_builder.h>
 #include <nncase/ir/ops/unary.h>
 #include <nncase/ir/placeholders.h>
@@ -31,6 +32,9 @@ protected:
     section_writer &text_writer();
 
     void emit(ir::node &node) override;
+
+private:
+    std::vector<uint32_t> compile_shader(ir::node &node, const std::string &template_name, const nlohmann::json &context);
 
 private:
 #define DEFINE_OP(op_) void emit(ir::op_ &op);

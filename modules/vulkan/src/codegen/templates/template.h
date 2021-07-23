@@ -13,9 +13,19 @@
  * limitations under the License.
  */
 #pragma once
+#include <filesystem>
 #include <nlohmann/json.hpp>
+#include <vector>
 
 namespace nncase::codegen::vulkan
 {
-std::string render_and_compile(const std::string &template_name, const nlohmann::json &context);
+struct compile_options
+{
+    const nlohmann::json &context;
+    std::string function_name;
+    bool dump_asm;
+    std::filesystem::path dump_dir;
+};
+
+std::vector<uint32_t> render_and_compile(const std::string &template_name, const compile_options &options);
 }

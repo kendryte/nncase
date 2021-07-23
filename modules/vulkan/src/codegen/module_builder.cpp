@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include "module_builder.h"
+#include "templates/template.h"
 
 using namespace nncase;
 using namespace nncase::codegen;
@@ -40,6 +41,15 @@ module_type_t vulkan_module_builder::module_type() const noexcept
 section_writer &vulkan_module_builder::text_writer()
 {
     return writer(".text");
+}
+
+std::vector<uint32_t> vulkan_module_builder::compile_shader(ir::node &node, const std::string &template_name, const nlohmann::json &context)
+{
+    compile_options options { context };
+    options.dump_asm = dump_asm_;
+    options.dump_dir = dump_dir_;
+    options.function_name = node.escaped_name();
+    return render_and_compile("unary.hlsl", options);
 }
 
 void vulkan_module_builder::emit(ir::node &node)

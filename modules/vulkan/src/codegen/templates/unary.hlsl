@@ -13,16 +13,16 @@
  * limitations under the License.
  */
 
-// Binding 0 : Position storage buffer
-struct Particle
-{
-	float i;
-};
+[[vk::constant_id(0)]] const uint length = 0;
+[[vk::binding(0)]] Buffer<float> input;
+[[vk::binding(1)]] RWBuffer<float> output;
 
-RWStructuredBuffer<Particle> particles : register(u0);
-[[vk::constant_id(0)]]
-
-void main()
+void main(uint3 id : SV_DispatchThreadID)
 {
-	particles[0].i = 1;
+	if (id.x >= length)
+		return;
+	
+	float v = input[id.x];
+	v = sin(v);
+	output[id.x] = v;
 }
