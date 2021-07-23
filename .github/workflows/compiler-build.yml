@@ -157,14 +157,14 @@ jobs:
       shell: bash
       run: |
         cd ${{github.workspace}}/python/caffe
-        pip install --target ${{github.workspace}}/install/python/caffe warpctc-caffe-1.0.0.tar.gz
+        pip install --target ${{github.workspace}}/install/python/warpctc-caffe warpctc-caffe-1.0.0.tar.gz
 
     - name: Test
       working-directory: ${{github.workspace}}
       if: runner.os == 'Linux'
       shell: bash
       env:
-        PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/tests
+        PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/install/python/warpctc-caffe:${{github.workspace}}/tests
       run: |
         pytest tests/importer/caffe --doctest-modules --junitxml=test_results/importer_caffe.xml
         pytest tests/importer/tflite --doctest-modules --junitxml=test_results/importer_tflite.xml
