@@ -142,6 +142,16 @@ jobs:
         name: nncase-${{matrix.os}}-x86_64
         path: ${{github.workspace}}/install
 
+    - name: Download a Build Artifact
+      uses: dawidd6/action-download-artifact@v2
+      with:
+        github_token: ${{secrets.GITHUB_TOKEN}}
+        workflow: cmake.yml
+        branch: nncase
+        name: libcaffe
+        path: ${{github.workspace}}/python/caffe
+        repo: aaltonenzhang/caffe
+
     - name: Download a Python Package Artifact
       uses: dawidd6/action-download-artifact@v2
       with:
@@ -157,6 +167,7 @@ jobs:
       shell: bash
       run: |
         cd ${{github.workspace}}/python/caffe
+        unzip -o libcaffe.zip
         pip install --target ${{github.workspace}}/install/python/warpctc-caffe warpctc-caffe-1.0.0.tar.gz
 
     - name: Test
@@ -165,6 +176,7 @@ jobs:
       shell: bash
       env:
         PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/install/python/warpctc-caffe:${{github.workspace}}/tests
+        LD_LIBRARY_PATH: ${{github.workspace}}/python/caffe
       run: |
         pytest tests/importer/caffe --doctest-modules --junitxml=test_results/importer_caffe.xml
         pytest tests/importer/tflite --doctest-modules --junitxml=test_results/importer_tflite.xml
