@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <nncase/ir/op_utils.h>
 #include <nncase/ir/ops/bitcast.h>
 #include <nncase/ir/ops/concat.h>
 #include <nncase/ir/ops/copy.h>
@@ -186,12 +187,12 @@ void alias_bitcast_buffer_pass::run_core(graph &graph, [[maybe_unused]] nncase::
                 auto &in_buf = *context.logical_buffer_map.at(b->input().connection());
                 auto &out_buf = *context.logical_buffer_map.at(&b->output());
 
+                size_t offset = 0;
                 // input & rdata should remain locations
                 if (in_buf.memory_location() == mem_input || in_buf.memory_location() == mem_rdata)
                 {
                     // owner is input, parent shape is bitcast's
-                    shape_t begin(b->output().shape().size(), 0);
-                    out_buf.parent() = { &in_buf, begin, b->output().shape() };
+                    out_buf.parent() = { &in_buf, offset, b->output().shape() };
                     out_buf.strides_shape() = b->output().shape();
                 }
                 else
@@ -199,8 +200,7 @@ void alias_bitcast_buffer_pass::run_core(graph &graph, [[maybe_unused]] nncase::
                     assert(in_buf.memory_location() == mem_data);
 
                     // owner transfered to output
-                    shape_t begin(b->output().shape().size(), 0);
-                    in_buf.parent() = { &out_buf, begin, b->output().shape() };
+                    in_buf.parent() = { &out_buf, offset, b->output().shape() };
                     in_buf.strides_shape() = input.shape();
                 }
             }
@@ -209,20 +209,64 @@ void alias_bitcast_buffer_pass::run_core(graph &graph, [[maybe_unused]] nncase::
     alias_visitor.visit(graph);
 }
 
-//void alias_concat_buffer_pass::run_core([[maybe_unused]] graph &graph, [[maybe_unused]] nncase::target &target, [[maybe_unused]] const run_pass_options &options)
-//{
-//    auto &context = *options.schedule_context;
-//    auto alias_visitor = make_relay_ir_visitor([&](node &node) {
-//        if (auto c = node_cast<concat>(node))
-//        {
-//            if (!(c->attributes() & node_attr_action))
-//            {
-//                auto inputs = c->inputs();
-//                auto outputs = c->output().connections();
-//                auto is_simple_concat = (c->axis() == 0 || std::all_of(inputs[0]->shape().begin(), inputs[0]->shape().begin() + c->axis(), [](size_t dim) { return dim == 1; }));
-//                auto &out_buf = *context.logical_buffer_map.at(&c->output());
-//            }
-//        }
-//    });
-//    alias_visitor.visit(graph);
-//}
+void alias_concat_buffer_pass::run_core([[maybe_unused]] graph &graph, [[maybe_unused]] nncase::target &target, [[maybe_unused]] const run_pass_options &options)
+{
+    auto &context = *options.schedule_context;
+
+    auto alias_visitor = make_relay_ir_visitor([&](node &node) {
+        if (auto c = node_cast<concat>(node))
+        {
+            if (c->attributes() & node_attr_action)
+                return;
+            bool is_simple_concat;
+
+            // 1. Init indices
+            {
+                auto axis = c->axis();
+                auto &out_buf = context.logical_buffer_map.at(&c->output());
+                is_simple_concat = false; //!out_buf.no_action_concat_with_strides();
+                shape_t cnt_begin(c->input_at(0).shape().size(), 0);
+                size_t offset = 0;
+                for (auto in : c->inputs())
+                {
+                    auto &in_buf = context.logical_buffer_map.at(in->connection());
+                    in_buf->parent() = { out_buf, offset, c->output().shape() };
+                    if (!is_simple_concat)
+                        in_buf->strides_shape() = c->output().shape();
+                    cnt_begin[axis] += in->shape()[axis];
+                    offset = ir::get_bytes(in_buf->type()) * xt::element_offset<size_t>(to_strides(in_buf->parent()->shape), cnt_begin.begin(), cnt_begin.end());
+                }
+            }
+
+            // 2. Iterate parent
+            auto child = c;
+            while (true)
+            {
+                auto parent = try_get_direct_child<concat>(*child);
+                if (!parent || parent->attributes() & node_attr_action)
+                    break;
+                auto index = get_input_index(*parent, child->output());
+                auto axis = parent->axis();
+                shape_t child_begin(child->output().shape().size(), 0);
+                child_begin[axis] += std::accumulate(parent->concat_dims().begin(), parent->concat_dims().begin() + index, 0);
+                auto &in_buf = context.logical_buffer_map.at(&child->output());
+                auto &out_buf = context.logical_buffer_map.at(&parent->output());
+                size_t offset = ir::get_bytes(in_buf->type()) * xt::element_offset<size_t>(to_strides(parent->output().shape()), child_begin.begin(), child_begin.end());
+                in_buf->parent() = { out_buf, offset, parent->output().shape() };
+                if (!is_simple_concat)
+                    in_buf->strides_shape() = parent->output().shape();
+                for (auto &in : c->inputs())
+                {
+                    auto in_buf = context.logical_buffer_map.at(in->connection());
+                    auto &desc = *in_buf->parent();
+                    desc.parent = out_buf;
+                    if (!is_simple_concat)
+                        in_buf->strides_shape() = parent->output().shape();
+                }
+
+                child = parent;
+            }
+        }
+    });
+    alias_visitor.visit(graph);
+}

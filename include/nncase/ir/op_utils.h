@@ -75,6 +75,13 @@ inline size_t get_bytes(datatype_t type, const shape_t &shape)
     return xt::compute_size(shape) * get_bytes(type);
 }
 
+inline nncase::ir::shape_t to_strides(const nncase::ir::shape_t &shape)
+{
+    nncase::ir::shape_t strides(shape.size());
+    xt::compute_strides(shape, xt::layout_type::row_major, strides);
+    return strides;
+}
+
 inline int32_t normalize_axis(const shape_t &input_shape, int32_t axis)
 {
     return axis < 0 ? (int32_t)input_shape.size() + axis : axis;

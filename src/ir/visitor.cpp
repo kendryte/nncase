@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include <nncase/ir/visitor.h>
+#include <queue>
 
 using namespace nncase;
 using namespace nncase::ir;
@@ -87,6 +88,32 @@ bool dfs_ir_post_order_visitor::visit_strategy(node &node)
 
         if (visit(node))
             return true;
+    }
+
+    return false;
+}
+
+bool bfs_ir_pre_order_visitor::visit_strategy(node &node)
+{
+    std::queue<nncase::ir::node *> nodes;
+    nodes.push(&node);
+
+    while (!nodes.empty())
+    {
+        auto p = nodes.front();
+        nodes.pop();
+        mark_visit(*p);
+        visit(*p);
+
+        for (auto in : p->inputs())
+        {
+            if (in->connection())
+            {
+                auto &in_node = in->connection()->owner();
+                if (!visited(in_node))
+                    nodes.push(&in_node);
+            }
+        }
     }
 
     return false;

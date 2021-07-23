@@ -35,7 +35,7 @@ struct memory_span
 struct sub_buffer_desc
 {
     logical_buffer *parent = nullptr;
-    ir::shape_t begin;
+    size_t offset;
     ir::shape_t shape;
 };
 
