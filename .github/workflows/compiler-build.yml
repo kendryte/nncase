@@ -157,6 +157,7 @@ jobs:
         path: ${{github.workspace}}/install
 
     - name: Download a Build Artifact
+      if: runner.os == 'Linux'
       uses: dawidd6/action-download-artifact@v2
       with:
         github_token: ${{secrets.GITHUB_TOKEN}}
@@ -167,6 +168,7 @@ jobs:
         repo: aaltonenzhang/caffe
 
     - name: Download a Python Package Artifact
+      if: runner.os == 'Linux'
       uses: dawidd6/action-download-artifact@v2
       with:
         github_token: ${{secrets.GITHUB_TOKEN}}
@@ -178,6 +180,7 @@ jobs:
 
     - name: Install Caffe
       working-directory: ${{github.workspace}}/python/caffe
+      if: runner.os == 'Linux'
       shell: bash
       run: |
         cd ${{github.workspace}}/python/caffe
