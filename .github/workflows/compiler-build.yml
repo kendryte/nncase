@@ -11,7 +11,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-18.04]
+        os: [ubuntu-18.04,windows-2019,macos-10.15]
 
     steps:
     - uses: actions/checkout@v2
@@ -23,14 +23,6 @@ jobs:
       run: |
         sudo apt update
         sudo apt install libgtk2.0-dev -y
-        sudo apt-get install libegl1-mesa-dev -y
-        sudo apt-get install libprotobuf-dev libleveldb-dev libsnappy-dev libopencv-dev libhdf5-serial-dev protobuf-compiler -y
-        sudo apt-get install --no-install-recommends libboost-all-dev -y
-        sudo apt-get install libopenblas-dev liblapack-dev libatlas-base-dev -y
-        sudo apt-get install libgflags-dev libgoogle-glog-dev liblmdb-dev -y
-        sudo unlink /usr/lib/x86_64-linux-gnu/libboost_python.so
-        sudo ln -s /usr/lib/x86_64-linux-gnu/libboost_python-py36.so /usr/lib/x86_64-linux-gnu/libboost_python.so
-        ls /usr/lib/x86_64-linux-gnu/libboost_*
 
     - name: Install System Requirements
       if: runner.os == 'Macos'
@@ -109,12 +101,26 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-        
+
     - name: Install System Requirements
       if: runner.os == 'Macos'
       shell: bash
       run: |
         brew install sunnycase/core/libomp@11.1.0
+
+    - name: Install System Requirements
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        sudo apt update
+        sudo apt install libgtk2.0-dev -y
+        sudo apt-get install libegl1-mesa-dev -y
+        sudo apt-get install libprotobuf-dev libleveldb-dev libsnappy-dev libopencv-dev libhdf5-serial-dev protobuf-compiler -y
+        sudo apt-get install --no-install-recommends libboost-all-dev -y
+        sudo apt-get install libopenblas-dev liblapack-dev libatlas-base-dev -y
+        sudo apt-get install libgflags-dev libgoogle-glog-dev liblmdb-dev -y
+        sudo unlink /usr/lib/x86_64-linux-gnu/libboost_python.so
+        sudo ln -s /usr/lib/x86_64-linux-gnu/libboost_python-py36.so /usr/lib/x86_64-linux-gnu/libboost_python.so
 
     - name: Setup Python
       uses: actions/setup-python@v2.2.1
