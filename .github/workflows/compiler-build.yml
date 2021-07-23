@@ -11,7 +11,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-18.04,windows-2019,macos-10.15]
+        os: [ubuntu-18.04]
 
     steps:
     - uses: actions/checkout@v2
@@ -30,6 +30,7 @@ jobs:
         sudo apt-get install libgflags-dev libgoogle-glog-dev liblmdb-dev -y
         sudo unlink /usr/lib/x86_64-linux-gnu/libboost_python.so
         sudo ln -s /usr/lib/x86_64-linux-gnu/libboost_python-py36.so /usr/lib/x86_64-linux-gnu/libboost_python.so
+        ls /usr/lib/x86_64-linux-gnu/libboost_*
 
     - name: Install System Requirements
       if: runner.os == 'Macos'
@@ -182,7 +183,7 @@ jobs:
       shell: bash
       env:
         PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/install/python/warpctc-caffe:${{github.workspace}}/tests
-        LD_LIBRARY_PATH: ${{github.workspace}}/python/caffe
+        LD_LIBRARY_PATH: ${{github.workspace}}/python/caffe:/usr/lib/x86_64-linux-gnu
       run: |
         pytest tests/importer/caffe --doctest-modules --junitxml=test_results/importer_caffe.xml
         pytest tests/importer/tflite --doctest-modules --junitxml=test_results/importer_tflite.xml
