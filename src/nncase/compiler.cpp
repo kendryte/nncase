@@ -257,8 +257,7 @@ private:
 
     void optimize_target_independent(ir::graph &graph)
     {
-        run_passes("target_indep", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr)
-            { target_->register_target_independent_passes(module_type, pmgr); });
+        run_passes("target_indep", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr) { target_->register_target_independent_passes(module_type, pmgr); });
     }
 
     void optimize_merge_module_regions(ir::graph &graph)
@@ -266,11 +265,10 @@ private:
         std::cout << "7.1. Merge module regions..." << std::endl;
         using namespace ir::transforms;
 
-        run_passes("mark_noaction", graph, [&]([[maybe_unused]] const module_type_t &module_type, ir::transforms::pass_manager &pmgr)
-            {
-                pmgr.add_pass<make_concat_no_action_pass>();
-                pmgr.add_pass<make_bitcast_no_action_pass>();
-            });
+        run_passes("mark_noaction", graph, [&]([[maybe_unused]] const module_type_t &module_type, ir::transforms::pass_manager &pmgr) {
+            pmgr.add_pass<make_concat_no_action_pass>();
+            pmgr.add_pass<make_bitcast_no_action_pass>();
+        });
         graph.merge_module_regions();
 
         std::cout << "7.2. Optimize buffer fusion..." << std::endl;
@@ -286,62 +284,55 @@ private:
     {
         using namespace ir::transforms;
 
-        run_passes("buffer_fusion", graph, [&]([[maybe_unused]] const module_type_t &module_type, ir::transforms::pass_manager &pmgr)
-            {
-                pmgr.add_pass<add_copy_to_concat_pass>();
-                pmgr.add_pass<add_copy_to_output_pass>();
+        run_passes("buffer_fusion", graph, [&]([[maybe_unused]] const module_type_t &module_type, ir::transforms::pass_manager &pmgr) {
+            pmgr.add_pass<add_copy_to_concat_pass>();
+            pmgr.add_pass<add_copy_to_output_pass>();
 
-                transform_pass pass("optimize_copy");
-                pass.emplace<remove_exclusive_copy_to_output_transform>();
-                pass.emplace<remove_exclusive_copy_to_concat_transform>();
-                pmgr.add_pass(std::move(pass));
-            });
+            transform_pass pass("optimize_copy");
+            pass.emplace<remove_exclusive_copy_to_output_transform>();
+            pass.emplace<remove_exclusive_copy_to_concat_transform>();
+            pmgr.add_pass(std::move(pass));
+        });
     }
 
     void optimize_target_dependent_after_buffer_fusion(ir::graph &graph)
     {
         using namespace ir::transforms;
 
-        run_passes("target_dependent_after_buffer_fusion", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr)
-            {
-                target_->register_target_dependent_after_buffer_fusion_passes(module_type, pmgr);
-                pmgr.add_pass<make_bitcast_no_action_pass>();
-            });
+        run_passes("target_dependent_after_buffer_fusion", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr) {
+            target_->register_target_dependent_after_buffer_fusion_passes(module_type, pmgr);
+            pmgr.add_pass<make_bitcast_no_action_pass>();
+        });
     }
 
     void optimize_target_dependent(ir::graph &graph, bool use_ptq)
     {
-        run_passes("target_dep", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr)
-            { target_->register_target_dependent_passes(module_type, pmgr, use_ptq); });
+        run_passes("target_dep", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr) { target_->register_target_dependent_passes(module_type, pmgr, use_ptq); });
     }
 
     void optimize_target_dependent_after_quant(ir::graph &graph)
     {
-        run_passes("target_dep_after_quant", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr)
-            { target_->register_target_dependent_after_quantization_passes(module_type, pmgr); });
+        run_passes("target_dep_after_quant", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr) { target_->register_target_dependent_after_quantization_passes(module_type, pmgr); });
     }
 
     void add_quantize_annotation(ir::graph &graph)
     {
-        run_passes("quantize_annotation", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr)
-            { target_->register_quantize_annotation_passes(module_type, pmgr); });
+        run_passes("quantize_annotation", graph, [&](const module_type_t &module_type, ir::transforms::pass_manager &pmgr) { target_->register_quantize_annotation_passes(module_type, pmgr); });
     }
 
     void quantize_graph(ir::graph &graph, ir::evaluator &evaluator)
     {
-        auto graph_runner = [&](ir::graph &graph)
-        {
+        auto graph_runner = [&](ir::graph &graph) {
             ir::transforms::pass_manager pmgr(graph, *target_);
             auto quant = evaluator.module_context(graph).quantizer();
 
             if (!compile_options_.use_dataset_as_input_stat)
             {
                 float input_mean, input_std;
-                std::visit([&](auto &options)
-                    {
-                        input_mean = options.input_mean;
-                        input_std = options.input_std;
-                    },
+                std::visit([&](auto &options) {
+                    input_mean = options.input_mean;
+                    input_std = options.input_std;
+                },
                     ptq_options_);
 
                 auto min = (0.f - input_mean) / input_std;
@@ -393,8 +384,7 @@ private:
 
         auto sched_result = sched.schedule(true);
         ir::evaluator evaluator(sched_result);
-        auto calib_method = std::visit([](auto &options)
-            { return to_calibrate_method(options.calibrate_method); },
+        auto calib_method = std::visit([](auto &options) { return to_calibrate_method(options.calibrate_method); },
             ptq_options_);
 
         evaluator.enable_ptq(*target_, calib_method);
@@ -512,8 +502,7 @@ private:
     template <class Callable>
     void run_passes(std::string_view name, ir::graph &root_graph, Callable &&register_passes)
     {
-        auto graph_runner = [&](ir::graph &graph)
-        {
+        auto graph_runner = [&](ir::graph &graph) {
             ir::transforms::pass_manager pmgr(graph, *target_);
             if (compile_options_.dump_ir)
                 pmgr.dump_dir(compile_options_.dump_dir);

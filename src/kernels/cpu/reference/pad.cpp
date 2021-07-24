@@ -77,18 +77,17 @@ template <class T>
 result<void> pad_impl(const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &out_shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const runtime_paddings_t &paddings, pad_mode_t mode, T pad_value, NNCASE_UNUSED kernel_context &context) noexcept
 {
-    return apply(out_shape, [&](const runtime_shape_t &index) -> result<void>
-        {
-            bool pad_element = false;
-            auto in_index = get_in_index(index, in_shape, paddings, mode, pad_element);
-            T value;
-            if (!pad_element || mode != pad_constant)
-                value = input[offset(in_strides, in_index)];
-            else
-                value = pad_value;
-            output[offset(out_strides, index)] = value;
-            return ok();
-        });
+    return apply(out_shape, [&](const runtime_shape_t &index) -> result<void> {
+        bool pad_element = false;
+        auto in_index = get_in_index(index, in_shape, paddings, mode, pad_element);
+        T value;
+        if (!pad_element || mode != pad_constant)
+            value = input[offset(in_strides, in_index)];
+        else
+            value = pad_value;
+        output[offset(out_strides, index)] = value;
+        return ok();
+    });
 }
 }
 

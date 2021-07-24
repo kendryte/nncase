@@ -56,8 +56,7 @@ result<void> onehot_impl(const int32_t *indices, T *output, const runtime_shape_
 
     auto neg_max_len = static_cast<int32_t>(out_shape[axis]);
 
-    auto set_output = [&](auto indices_v, auto offset)
-    {
+    auto set_output = [&](auto indices_v, auto offset) {
         if (indices_v < 0)
         {
             if (mode == onehot_process_neg)

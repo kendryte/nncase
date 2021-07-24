@@ -637,8 +637,7 @@ void transpose(const T *CXX_RESTRICT input, T *CXX_RESTRICT output, const TShape
 template <class T, class TShape>
 void strided_slice(const T *CXX_RESTRICT input, T *CXX_RESTRICT output, const TShape &in_shape, const TShape &begin, const TShape &end, const TShape &strides)
 {
-    auto loop_cond = [](int32_t i, int32_t stop, int32_t stride)
-    {
+    auto loop_cond = [](int32_t i, int32_t stop, int32_t stride) {
         return stride > 0 ? i < stop : i > stop;
     };
 

@@ -26,8 +26,7 @@ std::vector<segment> piecewise_regression::fit(std::vector<point> &points) const
     if (points.size() <= desired_segments_count_)
         throw std::invalid_argument("Insufficient points");
 
-    std::sort(points.begin(), points.end(), [](const point &a, const point &b)
-        { return a.x < b.x; });
+    std::sort(points.begin(), points.end(), [](const point &a, const point &b) { return a.x < b.x; });
 
     // 1. initialize segments
     std::vector<segment> segments;

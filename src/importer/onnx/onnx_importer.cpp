@@ -82,8 +82,7 @@ optional<Proto> extract(const ProtobufCollection<Proto> &collection, const strin
 {
     const auto it {
         find_if(begin(collection), end(collection),
-            [&value](const auto &e)
-            {
+            [&value](const auto &e) {
                 return e.name() == value;
             })
     };
@@ -604,8 +603,7 @@ vector<T> onnx_importer::raw_to_vector(const onnx::TensorProto &tensor)
         std::vector<target_type> data;
         data.reserve(size);
         std::transform(ptr, ptr + size, std::back_inserter(data),
-            [](const auto &e)
-            {
+            [](const auto &e) {
                 return le_to_native<storage_type>(reinterpret_cast<const byte *>(&e));
             });
 

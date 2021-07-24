@@ -64,8 +64,7 @@ void output_connector::connect(input_connector &connector)
 
 void output_connector::disconnect(input_connector &connector)
 {
-    auto end = std::remove_if(connections_.begin(), connections_.end(), [&](auto conn)
-        { return conn == &connector; });
+    auto end = std::remove_if(connections_.begin(), connections_.end(), [&](auto conn) { return conn == &connector; });
     connections_.erase(end, connections_.end());
     connector.clear_connection();
 }

@@ -29,32 +29,31 @@ result<void> onehot_impl(const int32_t *indices, T *output, const runtime_shape_
     const runtime_shape_t &out_strides, NNCASE_UNUSED size_t depth, T off_value, T on_value,
     size_t axis, onehot_mode_t mode, NNCASE_UNUSED kernel_context &context)
 {
-    return apply(out_shape, [&](const runtime_shape_t &out_index) -> result<void>
+    return apply(out_shape, [&](const runtime_shape_t &out_index) -> result<void> {
+        runtime_shape_t indices_index(indices_shape.size());
+        for (size_t i = 0; i < axis; ++i)
         {
-            runtime_shape_t indices_index(indices_shape.size());
-            for (size_t i = 0; i < axis; ++i)
-            {
-                indices_index[i] = out_index[i];
-            }
-            for (size_t i = axis; i < indices_shape.size(); ++i)
-            {
-                indices_index[i] = out_index[i + 1];
-            }
-            auto indices_v = indices[offset(get_default_strides(indices_shape), indices_index)];
-            T out_v;
-            auto cur_axis_index = static_cast<int32_t>(out_index[axis]);
-            if (indices_v < 0 && mode == onehot_process_neg)
-            {
-                out_v = (indices_v + static_cast<int32_t>(out_shape[axis])) == cur_axis_index ? on_value : off_value;
-            }
-            else
-            {
-                out_v = indices_v == cur_axis_index ? on_value : off_value;
-            }
+            indices_index[i] = out_index[i];
+        }
+        for (size_t i = axis; i < indices_shape.size(); ++i)
+        {
+            indices_index[i] = out_index[i + 1];
+        }
+        auto indices_v = indices[offset(get_default_strides(indices_shape), indices_index)];
+        T out_v;
+        auto cur_axis_index = static_cast<int32_t>(out_index[axis]);
+        if (indices_v < 0 && mode == onehot_process_neg)
+        {
+            out_v = (indices_v + static_cast<int32_t>(out_shape[axis])) == cur_axis_index ? on_value : off_value;
+        }
+        else
+        {
+            out_v = indices_v == cur_axis_index ? on_value : off_value;
+        }
 
-            output[offset(out_strides, out_index)] = out_v;
-            return ok();
-        });
+        output[offset(out_strides, out_index)] = out_v;
+        return ok();
+    });
 }
 }
 

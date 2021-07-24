@@ -28,12 +28,11 @@ template <class T>
 result<void> copy_impl(const T *src, T *dest, const runtime_shape_t &shape, const runtime_shape_t &src_strides,
     const runtime_shape_t &dest_strides, NNCASE_UNUSED kernel_context &context) noexcept
 {
-    return apply(shape, [&](const runtime_shape_t &index) -> result<void>
-        {
-            auto value = src[offset(src_strides, index)];
-            dest[offset(dest_strides, index)] = value;
-            return ok();
-        });
+    return apply(shape, [&](const runtime_shape_t &index) -> result<void> {
+        auto value = src[offset(src_strides, index)];
+        dest[offset(dest_strides, index)] = value;
+        return ok();
+    });
 }
 }
 

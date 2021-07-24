@@ -53,23 +53,20 @@ void onnx_importer::convert_op_Upsample(const NodeProto &node)
         scales = initializer ? to<std::vector<float>>(initializer.value()) : get_constant_input_data<float>(node.input()[1]).value();
 
         std::transform(input_shape.begin(), input_shape.end(), scales.begin(), std::back_inserter(new_shape),
-            [](const auto axis, const auto scale)
-            { return static_cast<int>(std::floor(axis * scale)); });
+            [](const auto axis, const auto scale) { return static_cast<int>(std::floor(axis * scale)); });
     }
     else if (auto scales = get_attribute<std::vector<float>>(node, "scales"))
     {
         // version 7
         std::transform(input_shape.begin(), input_shape.end(), scales.value().begin(), std::back_inserter(new_shape),
-            [](const auto axis, const auto scale)
-            { return static_cast<int>(std::floor(axis * scale)); });
+            [](const auto axis, const auto scale) { return static_cast<int>(std::floor(axis * scale)); });
     }
     else if (auto height_scale = get_attribute<std::vector<float>>(node, "height_scale"))
     {
         // version 1
         auto width_scale = get_attribute<std::vector<float>>(node, "width_scale");
         std::transform(input_shape.begin(), input_shape.end(), std::back_inserter(new_shape),
-            [](size_t axis)
-            { return static_cast<int32_t>(axis); });
+            [](size_t axis) { return static_cast<int32_t>(axis); });
         auto it = new_shape.rbegin();
         *it = static_cast<int>(std::floor(*it * width_scale.value()[0]));
         it++;

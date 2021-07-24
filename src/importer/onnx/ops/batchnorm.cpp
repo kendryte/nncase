@@ -47,8 +47,7 @@ void onnx_importer::convert_op_BatchNormalization(const NodeProto &node)
     const auto &input_T_shape = get_shape(input_T);
 
     const auto &broadcast_if_needed {
-        [this, &input_T_shape](const std::string &input) -> ir::bitcast *
-        {
+        [this, &input_T_shape](const std::string &input) -> ir::bitcast * {
             const auto &input_shape { get_shape(input) };
 
             if (input_T_shape.empty() || input_shape.size() == input_T_shape.size() - 1)

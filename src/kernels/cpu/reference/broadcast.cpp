@@ -28,12 +28,11 @@ template <class T>
 result<void> broadcast_impl(const T *input, T *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_shape, const runtime_shape_t &out_strides, NNCASE_UNUSED kernel_context &context) noexcept
 {
-    return apply(out_shape, [&](const runtime_shape_t &index) -> result<void>
-        {
-            const auto in_index = kernels::detail::get_reduced_offset(index, in_shape);
-            output[offset(out_strides, index)] = input[offset(in_strides, in_index)];
-            return ok();
-        });
+    return apply(out_shape, [&](const runtime_shape_t &index) -> result<void> {
+        const auto in_index = kernels::detail::get_reduced_offset(index, in_shape);
+        output[offset(out_strides, index)] = input[offset(in_strides, in_index)];
+        return ok();
+    });
 }
 }
 

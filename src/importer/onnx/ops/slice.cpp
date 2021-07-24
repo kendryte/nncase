@@ -51,8 +51,7 @@ void onnx_importer::convert_op_Slice(const NodeProto &node)
                 throw std::runtime_error("Can't pull input data for slice starts: only constant initialization is supported");
 
             std::transform(std::begin(data.value()), std::end(data.value()), std::back_inserter(begins),
-                [](const auto e)
-                { return static_cast<int>(e); });
+                [](const auto e) { return static_cast<int>(e); });
         }
         else
         {
@@ -68,8 +67,7 @@ void onnx_importer::convert_op_Slice(const NodeProto &node)
                 throw std::runtime_error("Can't pull input data for slice ends: only constant initialization is supported");
 
             std::transform(std::begin(data.value()), std::end(data.value()), std::back_inserter(ends),
-                [](const auto e)
-                { return static_cast<int>(e); });
+                [](const auto e) { return static_cast<int>(e); });
         }
         else
         {
@@ -104,8 +102,7 @@ void onnx_importer::convert_op_Slice(const NodeProto &node)
 
                 if (data)
                     std::transform(std::begin(data.value()), std::end(data.value()), std::back_inserter(loaded_axes),
-                        [](const auto e)
-                        { return static_cast<int>(e); });
+                        [](const auto e) { return static_cast<int>(e); });
             }
             else
             {
@@ -131,8 +128,7 @@ void onnx_importer::convert_op_Slice(const NodeProto &node)
 
             if (data)
                 std::transform(std::begin(data.value()), std::end(data.value()), std::back_inserter(loaded_strides),
-                    [](const auto e)
-                    { return static_cast<int>(e); });
+                    [](const auto e) { return static_cast<int>(e); });
         }
         else
         {
@@ -146,8 +142,7 @@ void onnx_importer::convert_op_Slice(const NodeProto &node)
     for (size_t i = 0; i < axes.size(); ++i)
     {
         const auto it = std::find_if(std::begin(loaded_axes), std::end(loaded_axes),
-            [i, &data_shape](const auto e)
-            { return real_axis(e, data_shape.size()) == i; });
+            [i, &data_shape](const auto e) { return real_axis(e, data_shape.size()) == i; });
         if (it == std::end(loaded_axes))
         {
             permuted_begins.push_back(0);

@@ -34,8 +34,7 @@ result<void> resize_bilinear_impl(const T *input, T *output, const runtime_shape
     const float rounding_offset = std::numeric_limits<T>::is_integer ? .5f : .0f;
     runtime_shape_t in_index(4), out_index(4);
 
-    auto get_input = [&](int32_t in_y, int32_t in_x)
-    {
+    auto get_input = [&](int32_t in_y, int32_t in_x) {
         in_index[2] = in_y;
         in_index[3] = in_x;
         return input[offset(in_strides, in_index)];

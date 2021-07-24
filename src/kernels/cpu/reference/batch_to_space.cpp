@@ -33,34 +33,33 @@ result<void> batch_to_space_impl(const T *input, T *output, const runtime_shape_
     const auto block_size = compute_size(block_shape);
     runtime_shape_t batch_reshaped_shape = block_shape;
     batch_reshaped_shape.push_back(in_shape[0] / block_size);
-    return apply(in_shape, [&](const runtime_shape_t &index) -> result<void>
+    return apply(in_shape, [&](const runtime_shape_t &index) -> result<void> {
+        // 1. batch reshaped to block_shape[0], ..., block_shape[M-1], batch / prod(block_shape)
+        const auto batch_reshaped_index = kernels::reshape_linear_index(batch_reshaped_shape, index[0]);
+        // 2. permute to [batch / prod(block_shape), input_shape[1], block_shape[0], ..., input_shape[M], block_shape[M-1], input_shape[M+1]]
+        // 3. reshaped to [batch / prod(block_shape), input_shape[1] * block_shape[0], ..., input_shape[M] * block_shape[M-1], input_shape[M+1]]
+        runtime_shape_t spatial_index(block_shape.size());
+        for (size_t i = 0; i < spatial_index.size(); i++)
+            spatial_index[i] = kernels::linear_index(
+                runtime_shape_t { in_shape[spatial_dim_start + i], block_shape[i] },
+                runtime_shape_t { index[spatial_dim_start + i], batch_reshaped_index[i] });
+
+        runtime_shape_t out_index = index;
+        out_index[0] = batch_reshaped_index.back();
+        for (size_t i = 0; i < spatial_index.size(); i++)
         {
-            // 1. batch reshaped to block_shape[0], ..., block_shape[M-1], batch / prod(block_shape)
-            const auto batch_reshaped_index = kernels::reshape_linear_index(batch_reshaped_shape, index[0]);
-            // 2. permute to [batch / prod(block_shape), input_shape[1], block_shape[0], ..., input_shape[M], block_shape[M-1], input_shape[M+1]]
-            // 3. reshaped to [batch / prod(block_shape), input_shape[1] * block_shape[0], ..., input_shape[M] * block_shape[M-1], input_shape[M+1]]
-            runtime_shape_t spatial_index(block_shape.size());
-            for (size_t i = 0; i < spatial_index.size(); i++)
-                spatial_index[i] = kernels::linear_index(
-                    runtime_shape_t { in_shape[spatial_dim_start + i], block_shape[i] },
-                    runtime_shape_t { index[spatial_dim_start + i], batch_reshaped_index[i] });
+            const auto dim = spatial_index[i];
+            const auto spatial_size = in_shape[spatial_dim_start + i] * block_shape[i];
+            const auto crop_start = (size_t)crops[i].before;
+            const auto crop_end = spatial_size - (size_t)crops[i].after;
+            if (dim < crop_start || dim >= crop_end)
+                return ok();
+            out_index[spatial_dim_start + i] = dim - crop_start;
+        }
 
-            runtime_shape_t out_index = index;
-            out_index[0] = batch_reshaped_index.back();
-            for (size_t i = 0; i < spatial_index.size(); i++)
-            {
-                const auto dim = spatial_index[i];
-                const auto spatial_size = in_shape[spatial_dim_start + i] * block_shape[i];
-                const auto crop_start = (size_t)crops[i].before;
-                const auto crop_end = spatial_size - (size_t)crops[i].after;
-                if (dim < crop_start || dim >= crop_end)
-                    return ok();
-                out_index[spatial_dim_start + i] = dim - crop_start;
-            }
-
-            output[offset(out_strides, out_index)] = input[offset(in_strides, index)];
-            return ok();
-        });
+        output[offset(out_strides, out_index)] = input[offset(in_strides, index)];
+        return ok();
+    });
 }
 }
 

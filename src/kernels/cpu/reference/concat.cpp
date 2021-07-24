@@ -42,17 +42,16 @@ template <class T>
 result<void> concat_impl(gsl::span<const gsl::byte *const> inputs, T *output, const runtime_shape_t &out_shape,
     gsl::span<const runtime_shape_t> &in_strides, const runtime_shape_t &out_strides, size_t axis, const runtime_shape_t &concat_dims, NNCASE_UNUSED kernel_context &context) noexcept
 {
-    return apply(out_shape, [&](const runtime_shape_t &out_index) -> result<void>
-        {
-            auto in_id_index = find_input_id_and_index(out_index[axis], concat_dims);
-            auto input = reinterpret_cast<const T *>(inputs[in_id_index.first]);
-            auto &sel_in_strides = in_strides[in_id_index.first];
-            runtime_shape_t in_index(out_index);
-            in_index[axis] = in_id_index.second;
+    return apply(out_shape, [&](const runtime_shape_t &out_index) -> result<void> {
+        auto in_id_index = find_input_id_and_index(out_index[axis], concat_dims);
+        auto input = reinterpret_cast<const T *>(inputs[in_id_index.first]);
+        auto &sel_in_strides = in_strides[in_id_index.first];
+        runtime_shape_t in_index(out_index);
+        in_index[axis] = in_id_index.second;
 
-            output[offset(out_strides, out_index)] = input[offset(sel_in_strides, in_index)];
-            return ok();
-        });
+        output[offset(out_strides, out_index)] = input[offset(sel_in_strides, in_index)];
+        return ok();
+    });
 }
 }
 

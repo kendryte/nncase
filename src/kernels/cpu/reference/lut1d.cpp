@@ -27,12 +27,11 @@ namespace
 result<void> lut1d_impl(const uint8_t *input, const uint8_t *table, uint8_t *output, const runtime_shape_t &shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides) noexcept
 {
-    return apply(shape, [&](const runtime_shape_t &index) -> result<void>
-        {
-            const auto v = input[offset(in_strides, index)];
-            output[offset(out_strides, index)] = table[v];
-            return ok();
-        });
+    return apply(shape, [&](const runtime_shape_t &index) -> result<void> {
+        const auto v = input[offset(in_strides, index)];
+        output[offset(out_strides, index)] = table[v];
+        return ok();
+    });
 }
 }
 

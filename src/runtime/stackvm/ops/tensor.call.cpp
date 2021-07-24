@@ -25,8 +25,7 @@ result<void> stackvm_runtime_module::visit(const tensor_call_op_t &op) noexcept
 {
     try_var(mod, interp().find_module_by_id(op.module_id));
 
-    auto create_tensor = [&]() -> result<runtime_tensor>
-    {
+    auto create_tensor = [&]() -> result<runtime_tensor> {
         try_var(rstrides, stack_.pop());
         auto &strides = shape_regs_[rstrides.as_u4()];
         try_var(rshape, stack_.pop());

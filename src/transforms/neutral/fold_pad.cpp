@@ -30,8 +30,7 @@ bool fold_nop_pad_transform::on_try_match(node &node, transform_context &context
     {
         auto &p = static_cast<pad &>(node);
 
-        if (std::all_of(p.paddings().begin(), p.paddings().end(), [](const padding &value)
-                { return value == padding::zero(); }))
+        if (std::all_of(p.paddings().begin(), p.paddings().end(), [](const padding &value) { return value == padding::zero(); }))
         {
             context.inputs.emplace_back(&p.input());
             context.outputs.emplace_back(&p.output());
@@ -103,15 +102,12 @@ bool fold_pad_strided_slice_transform::on_try_match(node &node, transform_contex
     {
         auto &p = static_cast<pad &>(node);
 
-        if (std::any_of(p.paddings().begin(), p.paddings().end(), [](const padding &value)
-                { return value.before < 0 || value.after < 0; }))
+        if (std::any_of(p.paddings().begin(), p.paddings().end(), [](const padding &value) { return value.before < 0 || value.after < 0; }))
         {
             if (auto sl = try_get_direct_child<slice>(p))
             {
-                if (std::all_of(sl->begin().begin(), sl->begin().end(), [](const int32_t &value)
-                        { return value >= 0; })
-                    && std::all_of(sl->end().begin(), sl->end().end(), [](const int32_t &value)
-                        { return value >= 0; })
+                if (std::all_of(sl->begin().begin(), sl->begin().end(), [](const int32_t &value) { return value >= 0; })
+                    && std::all_of(sl->end().begin(), sl->end().end(), [](const int32_t &value) { return value >= 0; })
                     && sl->new_axis_mask() == 0)
                 {
                     context.inputs.emplace_back(&p.input());

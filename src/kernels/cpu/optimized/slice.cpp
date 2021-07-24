@@ -57,8 +57,7 @@ result<void> slice_contiguous_impl(const T *input, T *output, const runtime_shap
     auto dims = in_shape.size() - 1;
     runtime_shape_t in_index(in_shape.size());
 
-    auto line_copy = [&]()
-    {
+    auto line_copy = [&]() {
         const auto distance = ends[dims] - begins[dims];
         const auto copy_size = distance * elemsize;
         const auto *in_ptr = input + offset(in_strides, in_index);
@@ -159,8 +158,7 @@ result<void> slice_linecopy_impl(const T *input, T *output, const runtime_shape_
     auto dims = in_shape.size() - 1;
     return _slice_impl(
         in_shape, begins, ends, strides,
-        [&, dims](runtime_shape_t &in_index, runtime_shape_t &out_index)
-        {
+        [&, dims](runtime_shape_t &in_index, runtime_shape_t &out_index) {
             in_index[dims] = begins[dims];
             const auto distance = ends[dims] - begins[dims];
             auto copy_size = distance * sizeof(T);
@@ -177,8 +175,7 @@ result<void> slice_strides_impl(const T *input, T *output, const runtime_shape_t
     auto dims = in_shape.size() - 1;
     return _slice_impl(
         in_shape, begins, ends, strides,
-        [&, dims](runtime_shape_t &in_index, runtime_shape_t &out_index)
-        {
+        [&, dims](runtime_shape_t &in_index, runtime_shape_t &out_index) {
             for (size_t i = begins[dims]; i < ends[dims]; i += strides[dims])
             {
                 in_index[dims] = i;
