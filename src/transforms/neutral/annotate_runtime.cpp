@@ -41,7 +41,8 @@ bool annotate_runtime_of_tag_node_transform::on_try_match(node &node, transform_
         || opcode == op_bitcast)
     {
         auto conns = node.output_at(0).connections();
-        if (std::any_of(conns.begin(), conns.end(), [&](input_connector *in) { return in->owner().module_type() != node.module_type(); }))
+        if (std::any_of(conns.begin(), conns.end(), [&](input_connector *in)
+                { return in->owner().module_type() != node.module_type(); }))
         {
             context.matched_nodes.emplace_back(&node);
             return true;

@@ -90,7 +90,8 @@ void onnx_importer::convert_op_Pad(const NodeProto &node)
             const auto data = get_constant_input_data<float>(pads);
             if (data)
                 std::transform(std::begin(data.value()), std::end(data.value()), std::back_inserter(paddings),
-                    [](const auto e) { return static_cast<int>(e); });
+                    [](const auto e)
+                    { return static_cast<int>(e); });
         }
     }
 

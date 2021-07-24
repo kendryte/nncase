@@ -32,7 +32,7 @@ void input_connector::connect(output_connector &connector)
 
     if (!xt::same_shape(shape(), connector.shape()))
     {
-        throw std::runtime_error("Shapes must be same, but got " + to_string(shape()) + " and " + to_string(connector.shape()));
+        throw std::runtime_error("Shapes must be same, but " + name() + " shape: " + to_string(shape()) + " != " + connector.name() + " shape: " + to_string(connector.shape()));
     }
 
     if (connection_ != &connector)
@@ -64,7 +64,8 @@ void output_connector::connect(input_connector &connector)
 
 void output_connector::disconnect(input_connector &connector)
 {
-    auto end = std::remove_if(connections_.begin(), connections_.end(), [&](auto conn) { return conn == &connector; });
+    auto end = std::remove_if(connections_.begin(), connections_.end(), [&](auto conn)
+        { return conn == &connector; });
     connections_.erase(end, connections_.end());
     connector.clear_connection();
 }

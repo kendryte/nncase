@@ -172,7 +172,7 @@ struct type_tag
 {
 };
 
-template <int &... ExplicitArgumentBarrier, typename T>
+template <int &...ExplicitArgumentBarrier, typename T>
 std::string get_type_name(type_tag<T>)
 {
     namespace pf = pretty_function;
@@ -772,7 +772,9 @@ inline bool pretty_print(std::ostream &stream,
     const std::variant<Ts...> &value)
 {
     stream << "{";
-    std::visit([&stream](auto &&arg) { pretty_print(stream, arg); }, value);
+    std::visit([&stream](auto &&arg)
+        { pretty_print(stream, arg); },
+        value);
     stream << "}";
 
     return true;
@@ -849,7 +851,7 @@ public:
     template <typename... T>
     auto print(std::initializer_list<expr_t> exprs,
         std::initializer_list<std::string> types,
-        T &&... values) -> last_t<T...>
+        T &&...values) -> last_t<T...>
     {
         if (exprs.size() != sizeof...(values))
         {
@@ -912,7 +914,7 @@ private:
     auto print_impl(const expr_t *exprs,
         const std::string *types,
         T &&value,
-        U &&... rest) -> last_t<T, U...>
+        U &&...rest) -> last_t<T, U...>
     {
         print_impl(exprs, types, std::forward<T>(value));
         return print_impl(exprs + 1, types + 1, std::forward<U>(rest)...);
@@ -954,7 +956,7 @@ T &&identity(T &&t)
 }
 
 template <typename T, typename... U>
-auto identity(T &&, U &&... u) -> last_t<U...>
+auto identity(T &&, U &&...u) -> last_t<U...>
 {
     return identity(std::forward<U>(u)...);
 }

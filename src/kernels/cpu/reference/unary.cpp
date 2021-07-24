@@ -28,11 +28,12 @@ template <class TOp>
 result<void> unary_impl(TOp &&op, const float *input, float *output, const runtime_shape_t &shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, NNCASE_UNUSED kernel_context &context) noexcept
 {
-    return apply(shape, [&](const runtime_shape_t &index) -> result<void> {
-        const auto v = input[offset(in_strides, index)];
-        output[offset(out_strides, index)] = op(v);
-        return ok();
-    });
+    return apply(shape, [&](const runtime_shape_t &index) -> result<void>
+        {
+            const auto v = input[offset(in_strides, index)];
+            output[offset(out_strides, index)] = op(v);
+            return ok();
+        });
 }
 }
 
@@ -53,10 +54,12 @@ result<void> reference::unary(unary_op_t op, const float *input, float *output, 
         UNARY_IMPL(unary_log, logf);
         UNARY_IMPL(unary_neg, std::negate<float>());
         UNARY_IMPL(unary_round, roundf);
-        UNARY_IMPL(unary_rsqrt, [](float v) { return 1.f / sqrtf(v); });
+        UNARY_IMPL(unary_rsqrt, [](float v)
+            { return 1.f / sqrtf(v); });
         UNARY_IMPL(unary_sin, sinf);
         UNARY_IMPL(unary_sqrt, sqrtf);
-        UNARY_IMPL(unary_square, [](float v) { return v * v; });
+        UNARY_IMPL(unary_square, [](float v)
+            { return v * v; });
         UNARY_IMPL(unary_tanh, tanhf);
     default:
         return err(std::errc::not_supported);

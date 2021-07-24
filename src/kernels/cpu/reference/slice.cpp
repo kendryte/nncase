@@ -29,31 +29,32 @@ result<void> slice_impl(const T *input, T *output, const runtime_shape_t &in_sha
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const runtime_shape_t &begins, const runtime_shape_t &ends, const runtime_axis_t &strides,
     NNCASE_UNUSED kernel_context &context) noexcept
 {
-    return apply(in_shape, [&](const runtime_shape_t &index) -> result<void> {
-        runtime_shape_t out_index(index.size());
-        for (size_t i = 0; i < index.size(); i++)
+    return apply(in_shape, [&](const runtime_shape_t &index) -> result<void>
         {
-            const auto stride = strides[i];
-            if (stride > 0)
+            runtime_shape_t out_index(index.size());
+            for (size_t i = 0; i < index.size(); i++)
             {
-                if (index[i] < begins[i] || index[i] >= ends[i])
+                const auto stride = strides[i];
+                if (stride > 0)
+                {
+                    if (index[i] < begins[i] || index[i] >= ends[i])
+                        return ok();
+                }
+                else
+                {
+                    if (index[i] <= ends[i] || index[i] > begins[i])
+                        return ok();
+                }
+
+                auto out_div = div((int32_t)(index[i] - begins[i]), strides[i]);
+                if (out_div.rem)
                     return ok();
-            }
-            else
-            {
-                if (index[i] <= ends[i] || index[i] > begins[i])
-                    return ok();
+                out_index[i] = (size_t)out_div.quot;
             }
 
-            auto out_div = div((int32_t)(index[i] - begins[i]), strides[i]);
-            if (out_div.rem)
-                return ok();
-            out_index[i] = (size_t)out_div.quot;
-        }
-
-        output[offset(out_strides, out_index)] = input[offset(in_strides, index)];
-        return ok();
-    });
+            output[offset(out_strides, out_index)] = input[offset(in_strides, index)];
+            return ok();
+        });
 }
 }
 

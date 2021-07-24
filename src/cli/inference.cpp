@@ -22,7 +22,8 @@ using namespace nncase::cli;
 
 inference_command::inference_command(lyra::cli &cli)
 {
-    cli.add_argument(lyra::command("infer", [this](const lyra::group &) { this->run(); })
+    cli.add_argument(lyra::command("infer", [this](const lyra::group &)
+        { this->run(); })
                          .add_argument(lyra::arg(model_filename_, "model filename").required().help("kmodel filename"))
                          .add_argument(lyra::arg(output_path_, "output path").required().help("output path"))
                          .add_argument(lyra::opt(dataset_, "dataset path").name("--dataset").required().help("dataset path"))

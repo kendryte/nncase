@@ -30,14 +30,15 @@ result<void> binary_impl(TOp &&op, const float *input_a, const float *input_b, f
     const runtime_shape_t &in_b_strides, const runtime_shape_t &out_strides, value_range<float> fused_activation, NNCASE_UNUSED kernel_context &context) noexcept
 {
     const auto out_shape = kernels::detail::get_binary_output_shape(in_a_shape, in_b_shape);
-    return apply(out_shape, [&](const runtime_shape_t &index) -> result<void> {
-        const auto in_a_index = kernels::detail::get_reduced_offset(index, in_a_shape);
-        const auto in_b_index = kernels::detail::get_reduced_offset(index, in_b_shape);
-        const auto a = input_a[offset(in_a_strides, in_a_index)];
-        const auto b = input_b[offset(in_b_strides, in_b_index)];
-        output[offset(out_strides, index)] = kernels::detail::apply_activation(op(a, b), fused_activation);
-        return ok();
-    });
+    return apply(out_shape, [&](const runtime_shape_t &index) -> result<void>
+        {
+            const auto in_a_index = kernels::detail::get_reduced_offset(index, in_a_shape);
+            const auto in_b_index = kernels::detail::get_reduced_offset(index, in_b_shape);
+            const auto a = input_a[offset(in_a_strides, in_a_index)];
+            const auto b = input_b[offset(in_b_strides, in_b_index)];
+            output[offset(out_strides, index)] = kernels::detail::apply_activation(op(a, b), fused_activation);
+            return ok();
+        });
 }
 }
 
@@ -56,8 +57,10 @@ result<void> reference::binary(binary_op_t op, const float *input_a, const float
         BINARY_IMPL(binary_sub, std::minus<float>());
         BINARY_IMPL(binary_mul, std::multiplies<float>());
         BINARY_IMPL(binary_div, std::divides<float>());
-        BINARY_IMPL(binary_min, [](float a, float b) { return std::min(a, b); });
-        BINARY_IMPL(binary_max, [](float a, float b) { return std::max(a, b); });
+        BINARY_IMPL(binary_min, [](float a, float b)
+            { return std::min(a, b); });
+        BINARY_IMPL(binary_max, [](float a, float b)
+            { return std::max(a, b); });
         BINARY_IMPL(binary_pow, powf);
     default:
         return err(std::errc::not_supported);

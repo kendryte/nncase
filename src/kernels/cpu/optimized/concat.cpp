@@ -49,7 +49,8 @@ result<void> concat_contiguous_impl(gsl::span<const gsl::byte *const> inputs, T 
     runtime_shape_t in_shape(out_shape), in_index(out_shape.size());
     auto subsize = std::accumulate(in_shape.begin() + (axis + 1), in_shape.end(), 1, std::multiplies<size_t>());
     auto *out_ptr = output;
-    auto line_copy = [&]() {
+    auto line_copy = [&]()
+    {
         for (size_t n = 0; n < inputs.size(); ++n)
         {
             const auto dims_width = concat_dims[n] * subsize;
@@ -125,13 +126,15 @@ result<void> concat_impl(gsl::span<const gsl::byte *const> inputs, T *output, co
     auto dims = in_strides[0].size();
     runtime_shape_t out_index(dims);
     runtime_shape_t in_index(dims);
-    auto line_copy = [&](size_t width, size_t n) {
+    auto line_copy = [&](size_t width, size_t n)
+    {
         out_ptr = output + offset(out_strides, out_index);
         const auto *in_ptr = reinterpret_cast<const T *>(inputs[n]) + offset(in_strides[n], in_index);
         memcpy(out_ptr, in_ptr, width * sizeof(T));
     };
 
-    auto concat_last_dim = [&](size_t dim) {
+    auto concat_last_dim = [&](size_t dim)
+    {
         out_index[dim] = 0;
         for (size_t n = 0; n < inputs.size(); ++n)
         {
@@ -151,7 +154,8 @@ result<void> concat_impl(gsl::span<const gsl::byte *const> inputs, T *output, co
         if (axis == 0)
         {
             const auto width = out_shape[1];
-            concat_inputs<0>(inputs, in_index, out_index, concat_dims, [&](size_t n) { line_copy(width, n); });
+            concat_inputs<0>(inputs, in_index, out_index, concat_dims, [&](size_t n)
+                { line_copy(width, n); });
         }
         else
         {
@@ -163,17 +167,21 @@ result<void> concat_impl(gsl::span<const gsl::byte *const> inputs, T *output, co
         if (axis == 0)
         {
             const auto width = out_shape[2];
-            concat_inputs<0>(inputs, in_index, out_index, concat_dims, [&](size_t n) {
-                dim_n_for<2, 1>(
-                    in_shape, in_index, out_index, [&](NNCASE_UNUSED size_t dims) { line_copy(width, n); },
-                    std::true_type {});
-            });
+            concat_inputs<0>(inputs, in_index, out_index, concat_dims, [&](size_t n)
+                {
+                    dim_n_for<2, 1>(
+                        in_shape, in_index, out_index, [&](NNCASE_UNUSED size_t dims)
+                        { line_copy(width, n); },
+                        std::true_type {});
+                });
         }
         else if (axis == 1)
         {
             const auto width = in_shape[2];
             dim_n_for<1>(
-                in_shape, in_index, out_index, [&](NNCASE_UNUSED size_t dims) { concat_inputs<1>(inputs, in_index, out_index, concat_dims, [&](size_t n) { line_copy(width, n); }); },
+                in_shape, in_index, out_index, [&](NNCASE_UNUSED size_t dims)
+                { concat_inputs<1>(inputs, in_index, out_index, concat_dims, [&](size_t n)
+                      { line_copy(width, n); }); },
                 std::true_type {});
         }
         else
@@ -186,22 +194,27 @@ result<void> concat_impl(gsl::span<const gsl::byte *const> inputs, T *output, co
         if (axis == 0)
         {
             const auto width = out_shape[3];
-            concat_inputs<0>(inputs, in_index, out_index, concat_dims, [&](size_t n) {
-                dim_n_for<3, 1>(
-                    in_shape, in_index, out_index, [&](NNCASE_UNUSED size_t dims) { line_copy(width, n); },
-                    std::true_type {});
-            });
+            concat_inputs<0>(inputs, in_index, out_index, concat_dims, [&](size_t n)
+                {
+                    dim_n_for<3, 1>(
+                        in_shape, in_index, out_index, [&](NNCASE_UNUSED size_t dims)
+                        { line_copy(width, n); },
+                        std::true_type {});
+                });
         }
         else if (axis == 1)
         {
             const auto width = out_shape[3];
             dim_n_for<1>(
-                in_shape, in_index, out_index, [&](NNCASE_UNUSED size_t dims) {
-                    concat_inputs<1>(inputs, in_index, out_index, concat_dims, [&](size_t n) {
-                        dim_n_for<3, 2>(
-                            in_shape, in_index, out_index, [&](NNCASE_UNUSED size_t dims) { line_copy(width, n); },
-                            std::true_type {});
-                    });
+                in_shape, in_index, out_index, [&](NNCASE_UNUSED size_t dims)
+                {
+                    concat_inputs<1>(inputs, in_index, out_index, concat_dims, [&](size_t n)
+                        {
+                            dim_n_for<3, 2>(
+                                in_shape, in_index, out_index, [&](NNCASE_UNUSED size_t dims)
+                                { line_copy(width, n); },
+                                std::true_type {});
+                        });
                 },
                 std::true_type {});
         }
@@ -209,7 +222,9 @@ result<void> concat_impl(gsl::span<const gsl::byte *const> inputs, T *output, co
         {
             const auto width = out_shape[3];
             dim_n_for<2>(
-                in_shape, in_index, out_index, [&](NNCASE_UNUSED size_t dims) { concat_inputs<2>(inputs, in_index, out_index, concat_dims, [&](size_t n) { line_copy(width, n); }); },
+                in_shape, in_index, out_index, [&](NNCASE_UNUSED size_t dims)
+                { concat_inputs<2>(inputs, in_index, out_index, concat_dims, [&](size_t n)
+                      { line_copy(width, n); }); },
                 std::true_type {});
         }
         else

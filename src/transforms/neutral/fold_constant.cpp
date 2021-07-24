@@ -34,9 +34,8 @@ bool fold_constant_transform::on_try_match(node &node, transform_context &contex
 {
     if ((node.attributes() & node_attr_skip_constant_folding) == 0
         && dontfold_ops.find(node.runtime_opcode()) == dontfold_ops.end()
-        && node.inputs().size() && std::all_of(node.inputs().begin(), node.inputs().end(), [](input_connector *in) {
-               return in->connection()->owner().runtime_opcode() == op_constant;
-           }))
+        && node.inputs().size() && std::all_of(node.inputs().begin(), node.inputs().end(), [](input_connector *in)
+            { return in->connection()->owner().runtime_opcode() == op_constant; }))
     {
         for (auto &in : node.inputs())
             context.inputs.emplace_back(in);

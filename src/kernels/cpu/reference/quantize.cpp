@@ -28,14 +28,15 @@ template <class TFloat, class TQint>
 result<void> quantize_impl(const TFloat *input, TQint *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, float scale, float bias, NNCASE_UNUSED kernel_context &context) noexcept
 {
-    return apply(in_shape, [&](const runtime_shape_t &index) -> result<void> {
-        auto value = (float)input[offset(in_strides, index)];
-        value = value * scale + bias;
-        auto qvalue = (int32_t)lrintf(value);
-        qvalue = kernels::detail::clamp(qvalue, (int32_t)std::numeric_limits<TQint>::lowest(), (int32_t)std::numeric_limits<TQint>::max());
-        output[offset(out_strides, index)] = (TQint)qvalue;
-        return ok();
-    });
+    return apply(in_shape, [&](const runtime_shape_t &index) -> result<void>
+        {
+            auto value = (float)input[offset(in_strides, index)];
+            value = value * scale + bias;
+            auto qvalue = (int32_t)lrintf(value);
+            qvalue = kernels::detail::clamp(qvalue, (int32_t)std::numeric_limits<TQint>::lowest(), (int32_t)std::numeric_limits<TQint>::max());
+            output[offset(out_strides, index)] = (TQint)qvalue;
+            return ok();
+        });
 }
 }
 

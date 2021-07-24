@@ -37,22 +37,25 @@ template <class TReducer, class TPostProcess>
 result<void> reduce_impl(TReducer &&reducer, TPostProcess &&post_process, float init_value, const float *input, float *output, const runtime_shape_t &in_shape, const runtime_shape_t &axis,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_shape, const runtime_shape_t &out_strides, bool keep_dims, NNCASE_UNUSED kernel_context &context) noexcept
 {
-    try_(apply(out_shape, [&](const runtime_shape_t &index) -> result<void> {
-        output[offset(out_strides, index)] = init_value;
-        return ok();
-    }));
-    try_(apply(in_shape, [&](const runtime_shape_t &index) -> result<void> {
-        const auto v = input[offset(in_strides, index)];
-        const auto out_index = kernels::detail::get_reduced_offset(index, axis, keep_dims);
-        auto &dest = output[offset(out_strides, out_index)];
-        dest = reducer(dest, v);
-        return ok();
-    }));
-    try_(apply(out_shape, [&](const runtime_shape_t &index) -> result<void> {
-        auto &dest = output[offset(out_strides, index)];
-        dest = post_process(dest);
-        return ok();
-    }));
+    try_(apply(out_shape, [&](const runtime_shape_t &index) -> result<void>
+        {
+            output[offset(out_strides, index)] = init_value;
+            return ok();
+        }));
+    try_(apply(in_shape, [&](const runtime_shape_t &index) -> result<void>
+        {
+            const auto v = input[offset(in_strides, index)];
+            const auto out_index = kernels::detail::get_reduced_offset(index, axis, keep_dims);
+            auto &dest = output[offset(out_strides, out_index)];
+            dest = reducer(dest, v);
+            return ok();
+        }));
+    try_(apply(out_shape, [&](const runtime_shape_t &index) -> result<void>
+        {
+            auto &dest = output[offset(out_strides, index)];
+            dest = post_process(dest);
+            return ok();
+        }));
     return ok();
 }
 }
@@ -71,9 +74,12 @@ result<void> reference::reduce(reduce_op_t op, float init_value, const float *in
     auto out_shape = kernels::detail::get_reduced_shape(in_shape, axis, keep_dims);
     switch (op)
     {
-        REDUCE_IMPL(reduce_mean, std::plus<float>(), [block_size = (float)kernels::detail::get_reduce_block_size(in_shape, axis)](float v) { return v / block_size; });
-        REDUCE_IMPL_NO_POST(reduce_min, [](float a, float b) { return std::min(a, b); });
-        REDUCE_IMPL_NO_POST(reduce_max, [](float a, float b) { return std::max(a, b); });
+        REDUCE_IMPL(reduce_mean, std::plus<float>(), [block_size = (float)kernels::detail::get_reduce_block_size(in_shape, axis)](float v)
+            { return v / block_size; });
+        REDUCE_IMPL_NO_POST(reduce_min, [](float a, float b)
+            { return std::min(a, b); });
+        REDUCE_IMPL_NO_POST(reduce_max, [](float a, float b)
+            { return std::max(a, b); });
         REDUCE_IMPL_NO_POST(reduce_sum, std::plus<float>());
     default:
         return err(std::errc::not_supported);

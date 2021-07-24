@@ -46,8 +46,10 @@ void module_builder::config_dump(const std::filesystem::path &dump_dir, bool dum
 {
     dump_dir_ = dump_dir;
     dump_asm_ = dump_asm;
-
-    std::filesystem::create_directories(dump_dir_);
+    if (dump_asm_)
+    {
+        std::filesystem::create_directories(dump_dir_);
+    }
 }
 
 const schedule::buffer_allocation &module_builder::allocation(ir::output_connector &conn) const
@@ -292,7 +294,8 @@ void module_builder::write_binary(binary_writer &writer)
     auto header_pos = writer.position();
     writer.skip(sizeof(module_header));
 
-    auto write_shape = [&](const shape_t &shape) {
+    auto write_shape = [&](const shape_t &shape)
+    {
         writer.write((uint32_t)shape.size());
         for (auto dim : shape)
             writer.write((uint32_t)dim);

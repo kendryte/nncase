@@ -48,7 +48,8 @@ void onnx_importer::convert_op_Reshape(const NodeProto &node)
         const auto data = get_constant_input_data<float>(shape);
         if (data)
             std::transform(std::begin(data.value()), std::end(data.value()), std::back_inserter(new_shape),
-                [](const auto e) { return static_cast<int>(e); });
+                [](const auto e)
+                { return static_cast<int>(e); });
     }
 
     auto allowzero_attr = get_attribute<int>(node, "allowzero");

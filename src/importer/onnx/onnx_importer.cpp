@@ -82,7 +82,8 @@ optional<Proto> extract(const ProtobufCollection<Proto> &collection, const strin
 {
     const auto it {
         find_if(begin(collection), end(collection),
-            [&value](const auto &e) {
+            [&value](const auto &e)
+            {
                 return e.name() == value;
             })
     };
@@ -225,10 +226,6 @@ optional<ValueInfoProto> onnx_importer::find_value_info(const string &value) con
 shape_t onnx_importer::get_shape(const string &value) const
 {
     const auto oit = output_tensors_.find(value);
-    if (oit != std::end(output_tensors_))
-    {
-        return oit->second->shape();
-    }
 
     const auto value_info = find_value_info(value);
     if (value_info)
@@ -238,6 +235,11 @@ shape_t onnx_importer::get_shape(const string &value) const
     if (initializer)
         return get_shape(initializer.value());
 
+    if (oit != std::end(output_tensors_))
+    {
+        auto result_shape = oit->second->shape();
+        return result_shape;
+    }
     throw std::runtime_error("Can't find value info for " + value + " to parse its shape");
 }
 
@@ -602,7 +604,8 @@ vector<T> onnx_importer::raw_to_vector(const onnx::TensorProto &tensor)
         std::vector<target_type> data;
         data.reserve(size);
         std::transform(ptr, ptr + size, std::back_inserter(data),
-            [](const auto &e) {
+            [](const auto &e)
+            {
                 return le_to_native<storage_type>(reinterpret_cast<const byte *>(&e));
             });
 

@@ -58,7 +58,8 @@ void paddle_importer::convert_op(const OpDesc &op)
 const VarDesc &paddle_importer::find_var(std::string_view name) const
 {
     auto &vars = subgraph_->vars();
-    auto it = std::find_if(vars.begin(), vars.end(), [&](const VarDesc &var) { return var.name() == name; });
+    auto it = std::find_if(vars.begin(), vars.end(), [&](const VarDesc &var)
+        { return var.name() == name; });
     if (it == vars.end())
         throw std::runtime_error("Variable named \"" + std::string(name) + "\" is not found");
     return *it;
@@ -100,7 +101,8 @@ void paddle_importer::load_tensor(std::string_view name, uint8_t *dest, uint8_t 
 
 const OpDesc_Var &paddle_importer::find_param(const google::protobuf::RepeatedPtrField<OpDesc_Var> &container, std::string_view name)
 {
-    auto it = std::find_if(container.begin(), container.end(), [&](const OpDesc_Var &var) { return var.parameter() == name; });
+    auto it = std::find_if(container.begin(), container.end(), [&](const OpDesc_Var &var)
+        { return var.parameter() == name; });
     if (it == container.end())
         throw std::runtime_error("Parameter named \"" + std::string(name) + "\" is not found");
     return *it;
@@ -108,7 +110,8 @@ const OpDesc_Var &paddle_importer::find_param(const google::protobuf::RepeatedPt
 
 const OpDesc_Attr &paddle_importer::find_attr(const google::protobuf::RepeatedPtrField<OpDesc_Attr> &container, std::string_view name)
 {
-    auto it = std::find_if(container.begin(), container.end(), [&](const OpDesc_Attr &var) { return var.name() == name; });
+    auto it = std::find_if(container.begin(), container.end(), [&](const OpDesc_Attr &var)
+        { return var.name() == name; });
     if (it == container.end())
         throw std::runtime_error("Attribute named \"" + std::string(name) + "\" is not found");
     return *it;

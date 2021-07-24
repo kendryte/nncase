@@ -29,13 +29,14 @@ result<void> transpose_impl(const T *input, T *output, const runtime_shape_t &in
     const runtime_shape_t &perm, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides,
     NNCASE_UNUSED kernel_context &context) noexcept
 {
-    return apply(in_shape, [&](const runtime_shape_t &index) -> result<void> {
-        runtime_shape_t out_index(index.size());
-        for (size_t i = 0; i < index.size(); i++)
-            out_index[i] = index[perm[i]];
-        output[offset(out_strides, out_index)] = input[offset(in_strides, index)];
-        return ok();
-    });
+    return apply(in_shape, [&](const runtime_shape_t &index) -> result<void>
+        {
+            runtime_shape_t out_index(index.size());
+            for (size_t i = 0; i < index.size(); i++)
+                out_index[i] = index[perm[i]];
+            output[offset(out_strides, out_index)] = input[offset(in_strides, index)];
+            return ok();
+        });
 }
 }
 

@@ -41,12 +41,14 @@ static std::vector<float> smooth_distribution(const std::vector<float> &p, const
     {
         auto it = p.begin();
         std::generate(is_zeros.begin(), is_zeros.end(),
-            [&it]() { return static_cast<size_t>(*(it++) == 0.f); });
+            [&it]()
+            { return static_cast<size_t>(*(it++) == 0.f); });
     }
     {
         auto it = p.begin();
         std::generate(is_nonzeros.begin(), is_nonzeros.end(),
-            [&it]() { return static_cast<size_t>(*(it++) != 0.f); });
+            [&it]()
+            { return static_cast<size_t>(*(it++) != 0.f); });
     }
     size_t n_zeros = std::accumulate(is_zeros.begin(), is_zeros.end(), 0);
     size_t n_nonzeros = p.size() - n_zeros;
@@ -236,7 +238,7 @@ value_range<float> quantizer::get(ir::output_connector &connector) const
 
 fixed_mul quantizer::get_fixed_mul(float value, int32_t max_bits, uint8_t max_shift, bool is_signed)
 {
-    assert(!is_signed || value >= 0);
+    // assert(!is_signed || value >= 0);
 
     auto bits = is_signed ? max_bits - 1 : max_bits;
     int32_t shift = 0;
@@ -271,14 +273,15 @@ fixed_mul quantizer::get_fixed_mul(float value, int32_t max_bits, uint8_t max_sh
 
 void quantizer::broadcast_output(ir::graph &graph, const std::unordered_set<node_opcode> &ops)
 {
-    auto visitor = make_relay_ir_visitor([&](node &node) {
-        if (node.inputs().size() == 1)
+    auto visitor = make_relay_ir_visitor([&](node &node)
         {
-            auto it = quant_ranges_.find(node.input_at(0).connection());
-            if (it != quant_ranges_.end())
-                broadcast_output(node, it->second, ops);
-        }
-    });
+            if (node.inputs().size() == 1)
+            {
+                auto it = quant_ranges_.find(node.input_at(0).connection());
+                if (it != quant_ranges_.end())
+                    broadcast_output(node, it->second, ops);
+            }
+        });
     visitor.visit(graph);
 }
 
@@ -396,7 +399,8 @@ void quantizer::histogram::finish()
                             count += (end - right_lower);
                     }
 
-                    count += std::count_if(range_dist.begin() + left_upper, range_dist.begin() + right_lower, [](float v) { return v; });
+                    count += std::count_if(range_dist.begin() + left_upper, range_dist.begin() + right_lower, [](float v)
+                        { return v; });
                     if (!count)
                         continue;
                     auto upsample_value = q_dist[i] / count;
@@ -446,7 +450,8 @@ void quantizer::histogram::finish()
         src_bins_ = smooth(src_bins_);
         auto min_kld = std::numeric_limits<float>::max();
 
-        auto kld = [&](size_t lower_threshold, size_t upper_threshold) {
+        auto kld = [&](size_t lower_threshold, size_t upper_threshold)
+        {
             auto src_range = upper_threshold - lower_threshold;
             auto src_per_bin = src_range / dest_bins;
 
@@ -477,7 +482,8 @@ void quantizer::histogram::finish()
                 auto end = start + src_per_bin;
                 auto count = 0.f;
 
-                count += std::count_if(ref_dist.begin() + start, ref_dist.begin() + end, [](float v) { return v; });
+                count += std::count_if(ref_dist.begin() + start, ref_dist.begin() + end, [](float v)
+                    { return v; });
                 if (!count)
                     continue;
                 auto upsample_value = q_dist[i] / count;
@@ -493,7 +499,8 @@ void quantizer::histogram::finish()
             std::vector<float> ups2_q_dist(src_bins_.size());
             // left outliers
             auto count = 0.f;
-            count += std::count_if(src_bins_.begin(), src_bins_.begin() + lower_threshold + src_per_bin, [](float v) { return v; });
+            count += std::count_if(src_bins_.begin(), src_bins_.begin() + lower_threshold + src_per_bin, [](float v)
+                { return v; });
             auto value = std::reduce(src_bins_.begin(), src_bins_.begin() + lower_threshold + src_per_bin) / count;
             for (size_t i = 0; i < lower_threshold + src_per_bin; i++)
             {
@@ -504,7 +511,8 @@ void quantizer::histogram::finish()
             std::copy(ups_q_dist.begin() + src_per_bin, ups_q_dist.end() - src_per_bin, ups2_q_dist.begin() + lower_threshold + src_per_bin);
             // right outliers
             count = 0.f;
-            count += std::count_if(src_bins_.begin() + upper_threshold - src_per_bin, src_bins_.end(), [](float v) { return v; });
+            count += std::count_if(src_bins_.begin() + upper_threshold - src_per_bin, src_bins_.end(), [](float v)
+                { return v; });
             value = std::reduce(src_bins_.begin() + upper_threshold - src_per_bin, src_bins_.end()) / count;
             for (size_t i = upper_threshold - src_per_bin; i < src_bins_.size(); i++)
             {

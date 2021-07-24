@@ -166,7 +166,8 @@ result<void> runtime_module::initialize(const module_header &header, interpreter
     for (auto &desc : mempools_)
         reader.read(desc);
 
-    auto read_shape = [&](runtime_shape_t &shape) {
+    auto read_shape = [&](runtime_shape_t &shape)
+    {
         shape.resize(reader.read<uint32_t>());
         for (auto &dim : shape)
             dim = reader.read<uint32_t>();

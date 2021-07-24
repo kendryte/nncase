@@ -28,21 +28,23 @@ template <class TInput, class TOutput>
 result<void> convert_impl(const TInput *input, TOutput *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, NNCASE_UNUSED kernel_context &context) noexcept
 {
-    return apply(in_shape, [&](const runtime_shape_t &index) -> result<void> {
-        auto value = input[offset(in_strides, index)];
-        output[offset(out_strides, index)] = static_cast<TOutput>(value);
-        return ok();
-    });
+    return apply(in_shape, [&](const runtime_shape_t &index) -> result<void>
+        {
+            auto value = input[offset(in_strides, index)];
+            output[offset(out_strides, index)] = static_cast<TOutput>(value);
+            return ok();
+        });
 }
 
 result<void> convert_f32_to_bf16_impl(const float *input, bfloat16 *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, NNCASE_UNUSED kernel_context &context) noexcept
 {
-    return apply(in_shape, [&](const runtime_shape_t &index) -> result<void> {
-        auto value = input[offset(in_strides, index)];
-        output[offset(out_strides, index)] = bfloat16::round_to_bfloat16(value);
-        return ok();
-    });
+    return apply(in_shape, [&](const runtime_shape_t &index) -> result<void>
+        {
+            auto value = input[offset(in_strides, index)];
+            output[offset(out_strides, index)] = bfloat16::round_to_bfloat16(value);
+            return ok();
+        });
 }
 }
 

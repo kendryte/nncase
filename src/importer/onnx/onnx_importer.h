@@ -181,7 +181,8 @@ std::optional<std::vector<T>> onnx_importer::get_constant_input_data(const std::
     result.reserve(size);
 
     std::transform(ptr, ptr + size, std::back_inserter(result),
-        [](const auto &e) { return e; });
+        [](const auto &e)
+        { return e; });
 
     return result;
 }

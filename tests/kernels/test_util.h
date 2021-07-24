@@ -86,7 +86,8 @@ void init_tensor_data(runtime_tensor &tensor)
     // auto *ptr = tensor.data_as<uint32_t>();
     // auto ptr = reinterpret_cast<uint32_t*>(host_runtime_tensor::buffer(tensor).unwrap().begin());
     NNCASE_UNUSED auto res = cpu::reference::apply(tensor.shape(),
-        [&](const runtime_shape_t &index) -> result<void> {
+        [&](const runtime_shape_t &index) -> result<void>
+        {
             // print_index(index);
             // ptr[offset(tensor.strides(), index)] = dis(gen);
             get(tensor, index) = dis(gen);
@@ -138,7 +139,8 @@ bool is_same_tensor(runtime_tensor &lhs, runtime_tensor &rhs)
         return false;
     }
     return cpu::reference::apply(lhs.shape(),
-        [&](const runtime_shape_t &index) -> result<void> {
+        [&](const runtime_shape_t &index) -> result<void>
+        {
             // print_index(index);
             // std::cout << get(index) << " " << rhs.get(index) << std::endl;
             if (get(lhs, index) == get(rhs, index))
@@ -156,7 +158,8 @@ bool is_same_tensor(runtime_tensor &lhs, runtime_tensor &rhs)
 void print_data(runtime_tensor &data)
 {
     NNCASE_UNUSED auto res = cpu::reference::apply(data.shape(),
-        [&](const runtime_shape_t &index) -> result<void> {
+        [&](const runtime_shape_t &index) -> result<void>
+        {
             std::cout << get(data, index) << std::endl;
             return ok();
         });
@@ -182,11 +185,13 @@ void output_data(runtime_tensor &data, std::string name, std::string dir_name = 
     }
     std::ofstream f(dir_name + "/" + name + ".txt");
     // output shape
-    auto shape_str = std::accumulate(data.shape().begin(), data.shape().end(), std::string(), [](std::string s, auto v) { return s + std::to_string(v) + ","; });
+    auto shape_str = std::accumulate(data.shape().begin(), data.shape().end(), std::string(), [](std::string s, auto v)
+        { return s + std::to_string(v) + ","; });
     shape_str.pop_back();
     f << "shape(" << shape_str << ")" << std::endl;
     NNCASE_UNUSED auto res = cpu::reference::apply(data.shape(),
-        [&](const runtime_shape_t &index) -> result<void> {
+        [&](const runtime_shape_t &index) -> result<void>
+        {
             f << get(data, index) << std::endl;
             return ok();
         });

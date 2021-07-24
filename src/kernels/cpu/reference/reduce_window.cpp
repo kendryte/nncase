@@ -98,9 +98,12 @@ result<void> reference::reduce_window2d(reduce_op_t op, const float *input, floa
 {
     switch (op)
     {
-        REDUCE_WINDOW2D_IMPL(reduce_mean, std::plus<float>(), [](float v, int32_t block_size) { return v / (float)block_size; });
-        REDUCE_WINDOW2D_IMPL_NO_POST(reduce_min, [](float a, float b) { return std::min(a, b); });
-        REDUCE_WINDOW2D_IMPL_NO_POST(reduce_max, [](float a, float b) { return std::max(a, b); });
+        REDUCE_WINDOW2D_IMPL(reduce_mean, std::plus<float>(), [](float v, int32_t block_size)
+            { return v / (float)block_size; });
+        REDUCE_WINDOW2D_IMPL_NO_POST(reduce_min, [](float a, float b)
+            { return std::min(a, b); });
+        REDUCE_WINDOW2D_IMPL_NO_POST(reduce_max, [](float a, float b)
+            { return std::max(a, b); });
         REDUCE_WINDOW2D_IMPL_NO_POST(reduce_sum, std::plus<float>());
     default:
         return err(std::errc::not_supported);

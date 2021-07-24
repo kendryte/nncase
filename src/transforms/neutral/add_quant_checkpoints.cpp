@@ -31,11 +31,13 @@ bool add_quant_checkpoints_transform::on_try_match(node &node, transform_context
     {
         bool not_processed = false;
         if (!node.inputs().empty()
-            && std::any_of(node.inputs().begin(), node.inputs().end(), [](input_connector *in) { return (in->connection()->attributes() & cnctr_attr_need_quantize) != cnctr_attr_need_quantize; }))
+            && std::any_of(node.inputs().begin(), node.inputs().end(), [](input_connector *in)
+                { return (in->connection()->attributes() & cnctr_attr_need_quantize) != cnctr_attr_need_quantize; }))
             not_processed = true;
         if (!not_processed
             && !node.outputs().empty()
-            && std::any_of(node.outputs().begin(), node.outputs().end(), [](output_connector *out) { return (out->attributes() & cnctr_attr_need_quantize) != cnctr_attr_need_quantize; }))
+            && std::any_of(node.outputs().begin(), node.outputs().end(), [](output_connector *out)
+                { return (out->attributes() & cnctr_attr_need_quantize) != cnctr_attr_need_quantize; }))
             not_processed = true;
 
         if (not_processed)
