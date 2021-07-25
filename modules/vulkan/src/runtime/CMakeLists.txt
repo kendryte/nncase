@@ -1,7 +1,13 @@
 ﻿cmake_minimum_required (VERSION 3.13)
 
 set(SRCS runtime_module.cpp
-         vulkan_error.cpp)
+         vulkan_error.cpp
+         op_reader.cpp
+         ops/ldbuf.cpp
+         ops/dupbuf.cpp
+         ops/popbuf.cpp
+         ops/ldpipeline.cpp
+         ops/dispatch.cpp)
 
 if (BUILDING_RUNTIME)
     add_library(runtime_vulkan OBJECT ${SRCS})

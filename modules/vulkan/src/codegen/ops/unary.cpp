@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include "../module_builder.h"
+#include <nncase/runtime/vulkan/runtime_types.h>
 
 using namespace nncase;
 using namespace nncase::codegen;
@@ -24,7 +25,27 @@ using namespace nlohmann;
 
 void vulkan_module_builder::emit(unary &node)
 {
+    auto len = xt::compute_size(node.output().shape());
+    ;
     json ctx;
+    ctx["length"] = len;
     ctx["unary_op"] = unary_op_to_string(node.unary_op());
-    auto shader = compile_shader(node, "unary.hlsl", ctx);
+    auto shader = compile_shader(node, "unary.comp", ctx);
+
+    ldbuf(allocation(node.input()).runtime_type());
+    ldbuf(allocation(node.output()).runtime_type());
+
+    ldpipeline_op_t ldp_op;
+    ldp_op.buffers = 2;
+    ldp_op.shader_type = shader_type_t::compute;
+    ldpipeline(node, 0, ldp_op, shader);
+
+    dispatch_op_t dop;
+    dop.x = (uint32_t)len;
+    dop.y = 1;
+    dop.z = 1;
+    text_writer().write(dop);
+
+    descriptor_sets_ += 1;
+    descriptors_ += 2;
 }

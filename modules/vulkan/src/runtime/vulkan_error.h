@@ -33,6 +33,14 @@ struct is_error_condition_enum<vk::Result> : true_type
 
 namespace vk
 {
+inline nncase::result<void> to_result(vk::Result &&value) noexcept
+{
+    if (value == vk::Result::eSuccess)
+        return nncase::ok();
+    else
+        return nncase::err(value);
+}
+
 template <class T>
 nncase::result<T> to_result(vk::ResultValue<T> &&value) noexcept
 {

@@ -4,30 +4,22 @@ function(compress_template NAME FILES OUT_VAR)
     if(NOT LIBZIP_ZIPTOOL_EXECUTABLE)
         set(LIBZIP_ZIPTOOL_EXECUTABLE ziptool)
     endif()
-    set(ADD_FILES )
-    set(INDEX 0)
-    foreach(FILE ${FILES})
-        get_filename_component(FULL_PATH "${FILE}"
-                               REALPATH BASE_DIR "${CMAKE_CURRENT_SOURCE_DIR}")
-        get_filename_component(FILE_NAME "${FILE}" NAME)
-        file (SIZE ${FULL_PATH} FILE_SIZE)
-        list(APPEND ADD_FILES add_file "${FILE_NAME}" "${FULL_PATH}" 0 ${FILE_SIZE})
-        list(APPEND ADD_FILES set_file_compression ${INDEX} deflate 0)
-        MATH(EXPR INDEX "${INDEX}+1")
-    endforeach()
     set(OUT_FILE ${CMAKE_CURRENT_BINARY_DIR}/${NAME}.xz)
+    set(SCRIPT_FILE ${CMAKE_SOURCE_DIR}/tools/compress_files.py)
     add_custom_command(
         OUTPUT ${OUT_FILE}
-        COMMAND ${LIBZIP_ZIPTOOL_EXECUTABLE}
-        ARGS -nt ${OUT_FILE} ${ADD_FILES}
+        COMMAND ${Python3_EXECUTABLE}
+        ARGS ${SCRIPT_FILE} -t ${LIBZIP_ZIPTOOL_EXECUTABLE} -o ${OUT_FILE} ${FILES}
         DEPENDS ${FILES}
+        WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
         VERBATIM)
     add_custom_target(${NAME}
         DEPENDS ${OUT_FILE})
     set(${OUT_VAR} ${OUT_FILE} PARENT_SCOPE)
 endfunction()
 
-set(TEMPLATE_SRCS unary.hlsl)
+set(TEMPLATE_SRCS unary.hlsl
+                  unary.comp)
 compress_template(vulkan_templates_xz "${TEMPLATE_SRCS}" TEMPLATE_OUT)
 
 if(MSVC)
@@ -49,4 +41,10 @@ target_include_directories(vulkan_templates PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
 if(MSVC)
     target_compile_options(vulkan_templates PRIVATE /wd4244) #inja
+else()
+    set_source_files_properties(
+        template.cpp
+        PROPERTIES
+        OBJECT_DEPENDS ${TEMPLATE_OUT}
+    )
 endif()

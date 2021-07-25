@@ -18,6 +18,9 @@
 
 BEGIN_NS_NNCASE_RT_MODULE(vulkan)
 
+NNCASE_INLINE_VAR constexpr char SHADER_SECTION_NAME[] = ".shader";
+NNCASE_INLINE_VAR constexpr char DESCRIPTORS_SECTION_NAME[] = ".descriptors";
+
 NNCASE_INLINE_VAR constexpr module_type_t vulkan_module_type = to_module_type("vulkan");
 
 NNCASE_MODULES_VULKAN_API result<std::unique_ptr<runtime_module>> create_vulkan_runtime_module();

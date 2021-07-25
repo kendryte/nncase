@@ -11,7 +11,7 @@ if (BUILDING_RUNTIME)
     target_include_directories(nncase_rt_modules_vulkan PRIVATE include)
     target_link_libraries(nncase_rt_modules_vulkan PRIVATE runtime_vulkan kernels_vulkan)
     set_target_properties(nncase_rt_modules_vulkan PROPERTIES
-                                              OUTPUT_NAME "nncase.rt_modules.vulkan")
+                                                   OUTPUT_NAME "nncase.rt_modules.vulkan")
     
     install(DIRECTORY include/nncase/kernels
         DESTINATION include/nncase
@@ -48,19 +48,15 @@ if (BUILDING_RUNTIME)
     install(FILES ${CMAKE_CURRENT_BINARY_DIR}/nncase_rt_modules_vulkanConfig.cmake DESTINATION lib/cmake/nncaseruntime)
 else()
     add_subdirectory(src/codegen)
-    #add_subdirectory(src/ir)
-    #add_subdirectory(src/schedule)
     add_subdirectory(src/transforms/vulkan)
-    #add_subdirectory(src/evaluator)
     
     set(SRCS src/dllmain.cpp)
     
     add_library(nncase_modules_vulkan SHARED ${SRCS})
     target_include_directories(nncase_modules_vulkan PUBLIC include)
-    #target_link_libraries(nncase_modules_vulkan PRIVATE codegen_vulkan ir_vulkan evaluator_vulkan schedule_vulkan transforms_vulkan simulator_vulkan kernels_vulkan nncase)
     target_link_libraries(nncase_modules_vulkan PRIVATE codegen_vulkan transforms_vulkan simulator_vulkan nncase)
     set_target_properties(nncase_modules_vulkan PROPERTIES
-                                              OUTPUT_NAME "nncase.modules.vulkan")
+                                                OUTPUT_NAME "nncase.modules.vulkan")
     if(MSVC)
         target_link_libraries(nncase_modules_vulkan PRIVATE vulkan_templates_rc)
     endif()

@@ -12,17 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#pragma once
-#include <nncase/runtime/compiler_defs.h>
+#include "../runtime_module.h"
 
-#if defined(_MSC_VER)
-#ifdef NNCASE_MODULES_VULKAN_DLL
-#define NNCASE_MODULES_VULKAN_API __declspec(dllexport)
-#elif NNCASE_SHARED_LIBS
-#define NNCASE_MODULES_VULKAN_API __declspec(dllimport)
-#else
-#define NNCASE_MODULES_VULKAN_API
-#endif
-#else
-#define NNCASE_MODULES_VULKAN_API
-#endif
+using namespace nncase;
+using namespace nncase::runtime;
+using namespace nncase::runtime::vulkan;
+
+result<void> vulkan_runtime_module::visit(const dispatch_op_t &op) noexcept
+{
+    cmd_buffer_.dispatch(op.x, op.y, op.z);
+    return ok();
+}

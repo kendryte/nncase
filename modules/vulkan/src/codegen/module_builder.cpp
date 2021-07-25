@@ -43,13 +43,40 @@ section_writer &vulkan_module_builder::text_writer()
     return writer(".text");
 }
 
+section_writer &vulkan_module_builder::shader_writer()
+{
+    return writer(SHADER_SECTION_NAME);
+}
+
 std::vector<uint32_t> vulkan_module_builder::compile_shader(ir::node &node, const std::string &template_name, const nlohmann::json &context)
 {
     compile_options options { context };
     options.dump_asm = dump_asm_;
     options.dump_dir = dump_dir_;
     options.function_name = node.escaped_name();
-    return render_and_compile("unary.hlsl", options);
+    return render_and_compile(template_name, options);
+}
+
+void vulkan_module_builder::ldbuf(const memory_range &range)
+{
+    ldbuf_op_t op;
+    op.memory = range;
+    text_writer().write(op);
+}
+
+void vulkan_module_builder::ldpipeline(ir::node &node, size_t shader_index, ldpipeline_op_t &op, const std::vector<uint32_t> &shader)
+{
+    op.shader_start = 0;
+    op.shader_size = static_cast<uint32_t>(shader.size() * sizeof(uint32_t));
+
+    auto symbol = node.name() + ".shader" + std::to_string(shader_index);
+    auto &sw = shader_writer();
+    sw.add_symbol(symbol);
+    sw.write_array<uint32_t>(shader);
+
+    auto &tw = text_writer();
+    tw.add_symbol_ref(offsetof(ldpipeline_op_t, shader_start) * 8, sizeof(op.shader_start) * 8, symbol);
+    tw.write(op);
 }
 
 void vulkan_module_builder::emit(ir::node &node)
@@ -60,4 +87,11 @@ void vulkan_module_builder::emit(ir::node &node)
 #include "ops.def"
 #undef DEFINE_OP
     module_builder::emit(node);
+}
+
+void vulkan_module_builder::end_emit()
+{
+    auto &sw = writer(DESCRIPTORS_SECTION_NAME);
+    sw.write(descriptor_sets_);
+    sw.write(descriptors_);
 }

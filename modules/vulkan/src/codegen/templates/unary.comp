@@ -13,15 +13,17 @@
  * limitations under the License.
  */
 
-[[vk::binding(0)]] Buffer<float> input;
-[[vk::binding(1)]] RWBuffer<float> output;
+#version 450
 
-void main(uint3 id : SV_DispatchThreadID)
+layout( binding = 0 ) buffer Input { float input_buffer[]; };
+layout( binding = 1 ) buffer Output { float output_buffer[]; };
+
+void main()
 {
-	if (id.x >= {{ length }})
+	if (gl_GlobalInvocationID.x >= {{ length }})
 		return;
 
-	float v = input[id.x];
+	float v = input_buffer[gl_GlobalInvocationID.x];
 ## if unary_op == "unary_abs"
 	v = abs(v);
 ## else if unary_op == "unary_ceil"
@@ -51,5 +53,5 @@ void main(uint3 id : SV_DispatchThreadID)
 ## else
 	unsupported unary: {{ unary_op }}
 ## endif
-	output[id.x] = v;
+	output_buffer[gl_GlobalInvocationID.x] = v;
 }

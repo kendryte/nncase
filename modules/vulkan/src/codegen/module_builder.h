@@ -17,6 +17,7 @@
 #include <nncase/codegen/vulkan/module_builder.h>
 #include <nncase/ir/ops/unary.h>
 #include <nncase/ir/placeholders.h>
+#include <nncase/runtime/vulkan/runtime_types.h>
 #include <nncase/schedule/scheduler.h>
 
 namespace nncase::codegen::vulkan
@@ -30,15 +31,22 @@ public:
 
 protected:
     section_writer &text_writer();
+    section_writer &shader_writer();
 
     void emit(ir::node &node) override;
+    void end_emit() override;
 
 private:
     std::vector<uint32_t> compile_shader(ir::node &node, const std::string &template_name, const nlohmann::json &context);
+    void ldbuf(const memory_range &range);
+    void ldpipeline(ir::node &node, size_t shader_index, runtime::vulkan::ldpipeline_op_t &op, const std::vector<uint32_t> &shader);
 
 private:
 #define DEFINE_OP(op_) void emit(ir::op_ &op);
 #include "ops.def"
 #undef DEFINE_OP
+private:
+    uint32_t descriptor_sets_ = 0;
+    uint32_t descriptors_ = 0;
 };
 }

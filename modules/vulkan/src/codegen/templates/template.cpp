@@ -107,7 +107,6 @@ class compiler
 public:
     compiler()
     {
-        shader_options_.SetSourceLanguage(shaderc_source_language_hlsl);
         shader_options_.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_1);
         shader_options_.SetTargetSpirv(shaderc_spirv_version_1_3);
     }
@@ -120,15 +119,14 @@ public:
 
     std::vector<uint32_t> render_and_compile(const std::string &template_name, const compile_options &options)
     {
+        auto is_hlsl = template_name.ends_with(".hlsl");
+        shader_options_.SetSourceLanguage(is_hlsl ? shaderc_source_language_hlsl : shaderc_source_language_glsl);
         auto source = render(template_name, options.context);
-        auto shader_spv = shader_compiler_.CompileGlslToSpv(source, shaderc_compute_shader, template_name.c_str(), shader_options_);
-        if (shader_spv.GetCompilationStatus() != shaderc_compilation_status_success)
-            throw std::runtime_error(shader_spv.GetErrorMessage());
 
         if (options.dump_asm)
         {
             {
-                std::ofstream hlsl_file(options.dump_dir / (options.function_name + ".hlsl"), std::ios::out | std::ios::binary);
+                std::ofstream hlsl_file(options.dump_dir / (options.function_name + (is_hlsl ? ".hlsl" : ".comp")), std::ios::out | std::ios::binary);
                 hlsl_file << source;
             }
 
@@ -142,6 +140,9 @@ public:
             }
         }
 
+        auto shader_spv = shader_compiler_.CompileGlslToSpv(source, shaderc_compute_shader, template_name.c_str(), shader_options_);
+        if (shader_spv.GetCompilationStatus() != shaderc_compilation_status_success)
+            throw std::runtime_error(shader_spv.GetErrorMessage());
         return { shader_spv.begin(), shader_spv.end() };
     }
 
