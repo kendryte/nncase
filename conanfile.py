@@ -34,7 +34,7 @@ class nncaseConan(ConanFile):
         "fPIC": True,
         "runtime": False,
         "tests": False,
-        "halide": False,
+        "halide": True,
         "python": True,
         "vulkan": True,
         "openmp": True
@@ -77,6 +77,9 @@ class nncaseConan(ConanFile):
         min_cppstd = "14" if self.options.runtime else "20"
         tools.check_min_cppstd(self, min_cppstd)
 
+        if self.settings.arch not in ("x86_64",):
+            self.options.halide = False
+
         if not self.options.runtime:
             self.options["opencv"].contrib = False
             self.options["opencv"].with_webp = False
@@ -97,12 +100,13 @@ class nncaseConan(ConanFile):
         cmake.definitions['BUILDING_RUNTIME'] = self.options.runtime
         cmake.definitions['ENABLE_OPENMP'] = self.options.openmp
         cmake.definitions['ENABLE_VULKAN'] = self.options.vulkan
+        cmake.definitions['ENABLE_HALIDE'] = self.options.halide
         cmake.definitions['BUILD_PYTHON_BINDING'] = self.options.python
         if self.options.runtime:
             cmake.definitions["CMAKE_CXX_STANDARD"] = 14
+        cmake.configure()
         return cmake
 
     def build(self):
-        cmake = CMake(self)
-        cmake.configure()
+        cmake = self.cmake_configure()
         cmake.build()

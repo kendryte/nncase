@@ -8,7 +8,7 @@ function(compress_template NAME FILES OUT_VAR)
     set(SCRIPT_FILE ${CMAKE_SOURCE_DIR}/tools/compress_files.py)
     add_custom_command(
         OUTPUT ${OUT_FILE}
-        COMMAND ${Python3_EXECUTABLE}
+        COMMAND python3
         ARGS ${SCRIPT_FILE} -t ${LIBZIP_ZIPTOOL_EXECUTABLE} -o ${OUT_FILE} ${FILES}
         DEPENDS ${FILES}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}

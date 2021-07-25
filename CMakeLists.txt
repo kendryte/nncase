@@ -31,6 +31,7 @@ project(nncase
 
 option(ENABLE_OPENMP "OpenMP support" ON)
 option(ENABLE_VULKAN "Vulkan support" ON)
+option(ENABLE_HALIDE "halide kernels support" ON)
 option(BUILD_PYTHON_BINDING "Build python binding" ON)
 option(BUILD_TESTING "Build test programs" OFF)
 

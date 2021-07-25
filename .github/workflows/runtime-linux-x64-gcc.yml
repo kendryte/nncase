@@ -1,4 +1,4 @@
-name: runtime-win-x64-cpu-msvc
+name: runtime-linux-x64-gcc
 
 on: [push, pull_request]
 
@@ -10,15 +10,11 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [windows-2019]
+        os: [ubuntu-18.04]
 
     steps:
     - uses: actions/checkout@v2
     - uses: seanmiddleditch/gha-setup-ninja@master
-
-    - name: Add msbuild to PATH
-      if: runner.os == 'Windows'
-      uses: ilammy/msvc-dev-cmd@v1.9.0
           
     - name: Setup Python
       uses: actions/setup-python@v2.2.1
@@ -26,14 +22,22 @@ jobs:
         python-version: 3.7
 
     - name: Install Conan
-      shell: bash
       run: |
         pip install conan
+        
+    - name: Configure Conan
+      shell: bash
+      run: |
+        conan profile new default --detect
+        conan profile update settings.compiler.libcxx=libstdc++11 default
 
     - name: Create Build Environment
       run: cmake -E make_directory ${{github.workspace}}/build
 
     - name: Configure CMake
+      env:
+        CC: gcc-7
+        CXX: g++-7
       shell: bash
       working-directory: ${{github.workspace}}/build
       run: cmake -G Ninja $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILDING_RUNTIME=TRUE -DPython3_ROOT_DIR=${pythonLocation}
@@ -51,6 +55,6 @@ jobs:
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v2.2.2
       with:
-        name: nncaseruntime-win-x64-cpu-gcc
+        name: nncaseruntime-linux-x64-gcc
         path: ${{github.workspace}}/install
         if-no-files-found: error
