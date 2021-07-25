@@ -625,7 +625,8 @@ template <>
 float onnx_importer::to<float>(const onnx::TensorProto &tensor)
 {
     // assert(tensor.data_type() == tensor_type<float>);
-    assert(tensor.float_data_size() > 0);
+    if (!(tensor.float_data_size() > 0))
+        throw std::invalid_argument("the value has not found");
 
     return tensor.float_data()[0];
 }
