@@ -152,7 +152,7 @@ void onnx_importer::convert_op_Slice(const NodeProto &node)
         {
             const size_t index = static_cast<size_t>(it - begin(loaded_axes));
             permuted_begins.push_back(begins.at(index));
-            permuted_ends.push_back(ends.at(index));
+            permuted_ends.push_back(std::min((int32_t)data_shape.at(*it), ends.at(index)));
 
             if (!loaded_strides.empty())
                 strides[i] = loaded_strides.at(index);

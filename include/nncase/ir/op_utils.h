@@ -188,28 +188,28 @@ inline shape_t get_concated_shape(std::span<shape_t> input_shapes, size_t axis)
     if (input_shapes.empty())
         throw std::invalid_argument("there must be at least one input");
 
-    auto shape = input_shapes[0];
+    auto concated_shape = input_shapes[0];
 
     for (size_t i = 1; i < input_shapes.size(); i++)
     {
-        auto &in = input_shapes[i];
-        if (in.size() != shape.size())
+        auto &cur_shape = input_shapes[i];
+        if (concated_shape.size() != cur_shape.size())
             throw std::invalid_argument("inputs must have same ranks");
 
-        for (size_t j = 0; j < shape.size(); j++)
+        for (size_t j = 0; j < concated_shape.size(); j++)
         {
             if (j == axis)
             {
-                shape[j] += in[j];
+                concated_shape[j] += cur_shape[j];
             }
-            else if (in[j] != shape[j])
+            else if (cur_shape[j] != concated_shape[j])
             {
                 throw std::invalid_argument("inputs are not compatible to concat");
             }
         }
     }
 
-    return shape;
+    return concated_shape;
 }
 
 inline void get_concat_params(const shape_t &out_shape, size_t elem_size, size_t axis, uint64_t &inner_size, uint64_t &outer_size)

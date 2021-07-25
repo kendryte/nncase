@@ -65,7 +65,7 @@ public:
     transform_pass &operator=(transform_pass &) = delete;
 
     template <class T, class... TArgs>
-    transform *emplace(TArgs &&... args)
+    transform *emplace(TArgs &&...args)
     {
         return static_cast<T *>(transforms_.emplace_back(new T(std::forward<TArgs>(args)...)).get());
     }
@@ -96,7 +96,7 @@ public:
     pass_manager(pass_manager &) = delete;
 
     template <class TPass = transform_pass, class... TArgs>
-    void add_pass(TArgs &&... pass)
+    void add_pass(TArgs &&...pass)
     {
         passes_.emplace_back(std::make_unique<TPass>(std::forward<TArgs>(pass)...));
     }

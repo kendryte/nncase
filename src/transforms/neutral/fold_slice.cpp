@@ -21,18 +21,19 @@ using namespace nncase;
 using namespace nncase::ir;
 using namespace nncase::ir::transforms;
 
-// static bool is_strided_slice(nncase::ir::slice& node){
-//     return true;
-// }
-
 bool fold_slice_slice_transform::on_try_match(node &node, transform_context &context)
 {
     if (auto rp1 = node_cast<slice>(node))
     {
-        // if(is_strided_slice(*rp1)){            return false;        }
         if (auto rp2 = try_get_direct_child<slice>(*rp1))
         {
-            // if(is_strided_slice(*rp2)){return false;}
+            for (size_t i = 0; i < rp1->strides().size(); i++)
+            {
+                if (!(rp1->strides()[i] == 1 || rp2->strides()[i] == 1 || rp1->strides()[i] == rp2->strides()[i]))
+                {
+                    return false;
+                }
+            }
             context.inputs.emplace_back(&rp1->input());
             context.outputs.emplace_back(&rp2->output());
 
@@ -55,18 +56,22 @@ void fold_slice_slice_transform::process(transform_context &context)
 
     axis_t new_begin(rp1->begin());
     axis_t new_end(rp1->begin());
+    axis_t new_strides(rp1->strides());
     for (auto i = 0; i < int64_t(rp1->begin().size()); ++i)
     {
-        // new_begin.emplace_back(rp1->begin()[i] + rp2->begin()[i]);
-        // new_end.emplace_back(rp1->end()[i] + rp2->end()[i]);
         new_begin[i] = rp1->begin()[i] + rp2->begin()[i];
-        new_end[i] = rp1->begin()[i] + rp2->end()[i];
+        new_end[i] = rp1->begin()[i] + std::max(rp1->end()[i], rp2->end()[i]);
     }
-    // auto begin = rp1->begin() + rp2->begin();
-    // auto end = rp1->end()+ rp2->end();
+    if (new_strides != rp2->strides())
+    {
+        for (size_t i = 0; i < new_strides.size(); i++)
+        {
+            new_strides[i] = std::max(new_strides[i], rp2->strides()[i]);
+        }
+    }
 
     auto new_rp = context.graph.emplace<slice>(
-        output.type(), output.shape(), new_begin, new_end);
+        output.type(), output.shape(), new_begin, new_end, new_strides, 0, 0, 0, 0);
     new_rp->name(rp2->name() + "_F");
 
     new_rp->input().connect(output);

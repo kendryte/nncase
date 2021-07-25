@@ -384,7 +384,8 @@ private:
 
         auto sched_result = sched.schedule(true);
         ir::evaluator evaluator(sched_result);
-        auto calib_method = std::visit([](auto &options) { return to_calibrate_method(options.calibrate_method); }, ptq_options_);
+        auto calib_method = std::visit([](auto &options) { return to_calibrate_method(options.calibrate_method); },
+            ptq_options_);
 
         evaluator.enable_ptq(*target_, calib_method);
 

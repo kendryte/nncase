@@ -26,17 +26,21 @@ std::vector<segment> piecewise_regression::fit(std::vector<point> &points) const
     if (points.size() <= desired_segments_count_)
         throw std::invalid_argument("Insufficient points");
 
-    std::sort(points.begin(), points.end(), [](const point &a, const point &b) {
-        return a.x < b.x;
-    });
+    std::sort(points.begin(), points.end(), [](const point &a, const point &b) { return a.x < b.x; });
 
     // 1. initialize segments
-    std::vector<segment> segments(points.size() - 1);
+    std::vector<segment> segments;
+    segments.reserve(points.size() - 1);
     for (size_t i = 0; i < points.size() - 1; i++)
     {
         const auto &p0 = points[i];
         const auto &p1 = points[i + 1];
-        segments[i] = { p0.x, p1.x, (p1.y - p0.y) / (p1.x - p0.x), p0.y };
+        // remove if
+        if (std::isnan(p0.y) || std::isnan(p1.y))
+        {
+            continue;
+        }
+        segments.push_back({ p0.x, p1.x, (p1.y - p0.y) / (p1.x - p0.x), p0.y });
     }
 
     // 2. combine sibling segments

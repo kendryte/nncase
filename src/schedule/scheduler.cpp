@@ -417,9 +417,7 @@ void schedule_context::allocate_physical_buffers()
     orders.reserve(physical_buffers.size());
     for (auto &b : physical_buffers)
         orders.emplace_back(&b);
-    std::sort(orders.begin(), orders.end(), [](const physical_buffer *lhs, const physical_buffer *rhs) {
-        return lhs->lifetime().birth < rhs->lifetime().birth;
-    });
+    std::sort(orders.begin(), orders.end(), [](const physical_buffer *lhs, const physical_buffer *rhs) { return lhs->lifetime().birth < rhs->lifetime().birth; });
 
     for (auto &b : orders)
         allocators.at(b->owner().memory_location())->mark(*b);

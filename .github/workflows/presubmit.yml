@@ -20,7 +20,7 @@ jobs:
         with:
           source: 'tests src include modules python targets'
           extensions: 'h,c,cc,cxx,cpp,hpp,cppm'
-          clangFormatVersion: 10
+          clangFormatVersion: 11
   check_autopep8_format:
     name: Check autopep8-format
     runs-on: ubuntu-18.04
