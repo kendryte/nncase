@@ -6,6 +6,7 @@
  * Facilities for including binary files into the current translation unit and
  * making use from them externally in other translation units.
  */
+// clang-format off
 #ifndef INCBIN_HDR
 #define INCBIN_HDR
 #include <limits.h>

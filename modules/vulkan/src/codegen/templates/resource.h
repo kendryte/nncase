@@ -2,6 +2,7 @@
 // Microsoft Visual C++ generated include file.
 // Used by Resource.rc
 //
+// clang-format off
 #define IDR_VULKAN_TEMPLATES            101
 
 // Next default values for new objects

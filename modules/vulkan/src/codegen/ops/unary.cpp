@@ -26,7 +26,6 @@ using namespace nlohmann;
 void vulkan_module_builder::emit(unary &node)
 {
     auto len = xt::compute_size(node.output().shape());
-    ;
     json ctx;
     ctx["length"] = len;
     ctx["unary_op"] = unary_op_to_string(node.unary_op());
