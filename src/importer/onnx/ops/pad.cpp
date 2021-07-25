@@ -121,7 +121,14 @@ void onnx_importer::convert_op_Pad(const NodeProto &node)
             {
                 if (constant_initializer)
                 {
-                    constant = to<float>(constant_initializer.value());
+                    if (constant_initializer.value().float_data_size() == 0)
+                    {
+                        constant = 0.f;
+                    }
+                    else
+                    {
+                        constant = to<float>(constant_initializer.value());
+                    }
                 }
                 else
                 {
