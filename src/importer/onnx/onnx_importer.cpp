@@ -594,21 +594,25 @@ vector<T> onnx_importer::raw_to_vector(const onnx::TensorProto &tensor)
     const storage_type *const ptr = reinterpret_cast<const storage_type *>(tensor.raw_data().data());
     const size_t size = tensor.raw_data().size() / sizeof(storage_type);
 
-    if constexpr (native_little_endian)
-    {
-        return std::vector<target_type> { ptr, ptr + size };
-    }
-    else
-    {
-        std::vector<target_type> data;
-        data.reserve(size);
-        std::transform(ptr, ptr + size, std::back_inserter(data),
-            [](const auto &e) {
-                return le_to_native<storage_type>(reinterpret_cast<const byte *>(&e));
-            });
+    std::vector<target_type> data;
+    data.reserve(size);
+    std::transform(ptr, ptr + size, std::back_inserter(data),
+        [](const storage_type &e) {
+            storage_type new_e = e;
+            if constexpr (!native_little_endian)
+            {
+                new_e = le_to_native<storage_type>(reinterpret_cast<const byte *>(&e));
+            }
+            // avoid numeric overflow
+            target_type re = static_cast<target_type>(e);
+            if (new_e > (storage_type)std::numeric_limits<target_type>::max())
+            {
+                re = std::numeric_limits<target_type>::max();
+            }
+            return re;
+        });
 
-        return data;
-    }
+    return data;
 }
 
 template <typename T, typename S>

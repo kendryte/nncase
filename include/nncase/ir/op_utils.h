@@ -266,7 +266,7 @@ inline axis_t normalize_strided_slice_end(const shape_t &in_shape, [[maybe_unuse
         auto stride = strides[i];
         auto end_val = (end_mask & (1 << i)) != 0
             ? stride > 0 ? (int32_t)in_shape[i] : -1
-            : (end[i] >= 0 ? end[i] : in_shape[i] + end[i] + 1);
+            : (end[i] >= 0 ? end[i] : in_shape[i] + end[i]);
         new_shape[i] = (int32_t)end_val;
     }
 

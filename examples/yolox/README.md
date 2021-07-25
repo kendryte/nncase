@@ -1,5 +1,14 @@
-# yolox多尺度推理效果体验
+# 可改进项
 
+1. nncase部分
+   -  [ ] 将`YoloV5Focus`适配到`kpu`进行处理
+   -  [ ] 支持`by channel`量化
+
+2. 模型部分
+   -  [ ] 减少输出类别
+   -  [ ] 将`k=5,5;9,9;13,13`的三个`pooling`层替换为`kpu`支持的层
+
+# yolox多尺度推理效果体验
 
 我们可以测试`yolox`的网络具备相当强大的多尺度预测能力,在缩小模型输入的情况下依旧可以正常识别(此脚本位于`yolox`项目中):
 ```bash
@@ -10,7 +19,7 @@ python tools/demo.py image -f exps/default/nano.py -c build/yolox_nano.pth --pat
 
 ## 导出onnx模型
 
-虽然`k210`的`kpu`内存有限且摄像头采集图像大小有限,不过`yolox`的多尺度能力能最大限度的避免以上问题,我们导出输入为`224,224`的`onnx`模型也可以得到不错的精度.(此脚本位于`yolox`项目中)
+虽然`k210`的`kpu`内存有限且摄像头采集图像大小有限,不过`yolox`的多尺度能力能最大限度的避免以上问题,我们导出输入为`224,224`的`onnx`模型也可以得到不错的精度(此脚本位于`yolox`项目中):
 
 ```bash
 python tools/export_onnx.py --output-name yolox_nano_224.onnx -f exps/default/nano.py  -c build/yolox_nano.pth --tsize 224
@@ -37,6 +46,15 @@ ncc compile model/yolox_nano_224.onnx k210/yolox_detect_example/yolox_nano_224_f
 ncc infer k210/yolox_detect_example/yolox_nano_224_float.kmodel tmp/yolox_nano_float --dataset images --dataset-format image --input-mean 0.48 --input-std 0.225
 ```
 
+可能的输出:
+```sh
+input:  588.00 KB	(602112 B)
+output:  341.66 KB	(349864 B)
+data:    3.64 MB	(3813376 B)
+MODEL:    3.53 MB	(3700720 B)
+TOTAL:    8.07 MB	(8466072 B)
+```
+
 ### 2. 解析浮点输出并检查
 
 ```sh
@@ -60,6 +78,15 @@ python tools/decoder.py tmp/yolox_nano_float/dog.bin
 ncc compile model/yolox_nano_224.onnx k210/yolox_detect_example/yolox_nano_224.kmodel -i onnx -t k210 --dataset ../20classes_yolo/images --input-mean 0.48 --input-std 0.225
 
 ncc infer k210/yolox_detect_example/yolox_nano_224.kmodel tmp/yolox_nano --dataset images --dataset-format image --input-mean 0.48 --input-std 0.225
+```
+
+可能的输出:
+```sh
+input:  980.00 KB	(1003520 B)
+output:    1.40 MB	(1472224 B)
+data:    1.14 MB	(1191680 B)
+MODEL: 1007.63 KB	(1031816 B)
+TOTAL:    4.48 MB	(4699240 B)
 ```
 
 ### 4. 解析定点输出并检查:
@@ -101,7 +128,8 @@ cmake .. -DPROJ=yolox_detect_example -DTOOLCHAIN=/usr/local/opt/kendryte-toolcha
 make -j
 kflash yolox_detect_example.bin -B kd233 -p /dev/cu.usbserial-1130 -b 2000000 -t
 ```
-注意不同的电脑上usb端口号并不一致.
+
+⚠️不同的电脑上usb端口号并不一致.
 
 可能的结果:
 ![demo](demo.jpg)
