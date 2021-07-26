@@ -165,7 +165,7 @@ jobs:
         branch: nncase
         name: libcaffe
         path: ${{github.workspace}}/python/caffe
-        repo: aaltonenzhang/caffe
+        repo: kendryte/caffe
 
     - name: Download a Python Package Artifact
       if: runner.os == 'Linux'
@@ -176,7 +176,7 @@ jobs:
         branch: nncase
         name: warpctc-caffe-1.0.0
         path: ${{github.workspace}}/python/caffe
-        repo: aaltonenzhang/caffe
+        repo: kendryte/caffe
 
     - name: Install Caffe
       working-directory: ${{github.workspace}}/python/caffe
