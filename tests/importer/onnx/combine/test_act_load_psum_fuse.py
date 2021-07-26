@@ -137,8 +137,7 @@ def _make_module(in_shape):
         outputs=['output']
     )
 
-    graph_def = helper.make_graph([add1, batchnorm1, conv2d, add2, batchnorm2],
-                                  'test-model', [input_1, input_2], [output], initializer=initializers)
+    graph_def = helper.make_graph([add1, batchnorm1, conv2d, add2, batchnorm2], 'test-model', [input_1, input_2], [output], initializer=initializers)
     model_def = helper.make_model(graph_def, producer_name='kendryte')
 
     return model_def
@@ -151,15 +150,13 @@ in_shapes = [
     [1, 256, 56, 56]
 ]
 
-
 @pytest.mark.parametrize('in_shape', in_shapes)
-def test_conv_add_batchnorm(in_shape, request):
+def test_act_load_psum_fuse(in_shape, request):
     model_def = _make_module(in_shape)
 
     runner = OnnxTestRunner(request.node.name, ['k510'])
     model_file = runner.from_onnx_helper(model_def)
     runner.run(model_file)
 
-
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_conv_add_batchnorm.py'])
+    pytest.main(['-vv', 'test_act_load_psum_fuse.py'])
