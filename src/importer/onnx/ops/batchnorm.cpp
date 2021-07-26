@@ -26,6 +26,7 @@ using namespace nncase::importer;
 using namespace nncase::ir;
 using namespace onnx;
 
+// Y = (X - input_mean) / sqrt(input_var + epsilon) * scale + B
 void onnx_importer::convert_op_BatchNormalization(const NodeProto &node)
 {
     assert(node.input().size() == 5);

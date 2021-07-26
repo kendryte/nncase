@@ -14,48 +14,89 @@
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
 
 import pytest
-import torch
+import onnx
+from onnx import helper
+from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
+import numpy as np
 
 
-def _make_module(num, esp, momentum):
+def _make_module(in_shape, epsilon):
 
-    class BatchNormModule(torch.nn.Module):
-        def __init__(self):
-            super(BatchNormModule, self).__init__()
-            self.batchnorm = torch.nn.BatchNorm2d(num, esp, momentum)
+    input = helper.make_tensor_value_info('input', TensorProto.FLOAT, in_shape)
+    output = helper.make_tensor_value_info('output', TensorProto.FLOAT, in_shape)
 
-        def forward(self, x):
-            x = self.batchnorm(x)
-            return x
+    initializers = []
+    scale = helper.make_tensor(
+        'scale',
+        TensorProto.FLOAT,
+        dims=in_shape[1:2],
+        vals=np.random.randn(in_shape[1],).astype(np.float32).flatten().tolist()
+    )
+    initializers.append(scale)
 
-    return BatchNormModule()
+    bias = helper.make_tensor(
+        'bias',
+        TensorProto.FLOAT,
+        dims=in_shape[1:2],
+        vals=np.random.randn(in_shape[1],).astype(np.float32).flatten().tolist()
+    )
+    initializers.append(bias)
+
+    mean = helper.make_tensor(
+        'mean',
+        TensorProto.FLOAT,
+        dims=in_shape[1:2],
+        vals=np.random.randn(in_shape[1],).astype(np.float32).flatten().tolist()
+    )
+    initializers.append(mean)
+
+    var = helper.make_tensor(
+        'var',
+        TensorProto.FLOAT,
+        dims=in_shape[1:2],
+        vals=np.random.rand(in_shape[1],).astype(np.float32).flatten().tolist()
+    )
+    initializers.append(var)
+
+    if epsilon is None:
+        node = onnx.helper.make_node(
+            'BatchNormalization',
+            inputs=['input', 'scale', 'bias', 'mean', 'var'],
+            outputs=['output']
+        )
+    else:
+        node = onnx.helper.make_node(
+            'BatchNormalization',
+            inputs=['input', 'scale', 'bias', 'mean', 'var'],
+            outputs=['output'],
+            epsilon=epsilon
+        )
+
+    graph_def = helper.make_graph([node], 'test-model', [input], [output], initializer=initializers)
+    model_def = helper.make_model(graph_def, producer_name='kendryte')
+
+    return model_def
 
 
 in_shapes = [
-    [1, 2, 16, 16],
-    [1, 8, 224, 224]
+    [1, 16, 56, 56],
+    [1, 256, 56, 56]
 ]
 
-epses = [
-    0.00001,
-    0.00005
-]
-
-momentums = [
-    0.1,
-    0.9
+epsilons = [
+    None,
+    1e-2
 ]
 
 
 @pytest.mark.parametrize('in_shape', in_shapes)
-@pytest.mark.parametrize('eps', epses)
-@pytest.mark.parametrize('momentum', momentums)
-def test_batchnorm(in_shape, eps, momentum, request):
-    module = _make_module(in_shape[1], eps, momentum)
+@pytest.mark.parametrize('epsilon', epsilons)
+def test_batchnorm(in_shape, epsilon, request):
+    model_def = _make_module(in_shape, epsilon)
 
     runner = OnnxTestRunner(request.node.name)
-    model_file = runner.from_torch(module, in_shape)
+    model_file = runner.from_onnx_helper(model_def)
     runner.run(model_file)
 
 
