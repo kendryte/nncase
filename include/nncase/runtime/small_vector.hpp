@@ -690,7 +690,7 @@ public:
     }
 
     template <typename... Args>
-    iterator emplace(const_iterator position, Args &&... args)
+    iterator emplace(const_iterator position, Args &&...args)
     {
         auto pos = grow_at(position, 1);
         atraits::construct(get_alloc(), pos, std::forward<Args>(args)...);
@@ -721,7 +721,7 @@ public:
     }
 
     template <typename... Args>
-    reference emplace_back(Args &&... args)
+    reference emplace_back(Args &&...args)
     {
         auto pos = grow_at(m_end, 1);
         atraits::construct(get_alloc(), pos, std::forward<Args>(args)...);

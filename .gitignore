@@ -281,6 +281,7 @@ tests/private
 /test_results
 install/
 CMakeSettings.json
+CMakePresets.json
 tests_output
 
 .DS_Store

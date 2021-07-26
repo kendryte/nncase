@@ -1,93 +1,68 @@
 ## Supported TensorFlow Lite ops
+
 ## 支持的 TensorFlow Lite 算子
 
 | Operator | Is Supported |
 |-------|------------------ |
-| Add |✅|
-| ArgMax |❌|
-| ArgMin |❌|
-| AveragePool2D |✅|
-| BatchToSpaceND |❌|
-| Cast |❌|
-| Concatenation |✅|
-| Conv2D |✅|
-| DepthwiseConv2D |✅|
-| Div |✅|
-| Equal |❌|
-| Exp |✅|
-| ExpandDims |❌|
-| Floor |✅|
-| FullyConnected |✅|
-| Gather |❌|
-| Greater |❌|
-| GreaterEqual |❌|
-| MaxPool2D |✅|
-| Mean |✅|
-| Mul |✅|
-| L2Normalization |✅|
-| L2Pool2D |❌|
-| LeakyRelu |✅|
-| LessEqual |❌|
-| Log |✅|
-| Logistic |✅|
-| LogSoftmax |❌|
-| Maximum |✅|
-| Minimum |✅|
-| Neg |✅|
-| NotEqual |❌|
-| Pack |❌|
-| Pad |✅|
-| Pow |❌|
-| PRelu |❌|
-| ReduceMax |✅|
-| ReduceProd |❌|
-| Relu |✅|
-| Relu6 |✅|
-| Reshape |✅|
-| ResizeBilinear |✅|
-| Rsqrt |✅|
-| Select |❌|
-| Shape |❌|
-| Sin |✅|
-| Slice |✅|
-| Softmax |✅|
-| SpaceToDepth |❌|
-| SpaceToBatchND |❌|
-| SparseToDense |❌|
-| Split |❌|
-| Sqrt |✅|
-| Square |✅|
-| Squeeze |❌|
-| StridedSlice |✅|
-| Sub |✅|
-| Sum |✅|
-| Tile |❌|
-| TopK |❌|
-| Transpose |✅|
-| TransposeConv |✅|
-| LogicalOr |❌|
-| OneHot |❌|
-| LogicalAnd |❌|
-| LogicalNot |❌|
-| UnPack |❌|
-| ReduceMin |✅|
-| FloorDiv |❌|
-| ReduceAny |❌|
-| ZerosLike |❌|
-| Fill |❌|
-| FloorMod |❌|
-| Range |❌|
-| ResizeNearesetNeighbor |✅|
-| MirrorPad |❌|
-| Abs |✅|
-| SplitV |❌|
-| Unique |❌|
-| Ceil |✅|
-| Reverse |❌|
-| AddN |❌|
-| GatherND |❌|
-| Cos |✅|
-| Where |❌|
-| Rank |❌|
-| Elu |❌|
-| ReverseSequence |❌|
+| Abs | ✅ |
+| Add | ✅ |
+| Average_pool_2d | ✅ |
+| Cast | ✅ |
+| Ceil | ✅ |
+| Concatenation | ✅ |
+| Conv_2d | ✅ |
+| Cos | ✅ |
+| Depthwise_conv_2d | ✅ |
+| Div | ✅ |
+| Exp | ✅ |
+| Floor | ✅ |
+| Floor_div | ✅ |
+| Floor_mod | ✅ |
+| Fully_connected | ✅ |
+| L2_normalization | ✅ |
+| Leaky_relu | ✅ |
+| Log | ✅ |
+| Logistic | ✅ |
+| Max_pool_2d | ✅ |
+| Maximum | ✅ |
+| Mean | ✅ |
+| Minimum | ✅ |
+| Mul | ✅ |
+| Neg | ✅ |
+| Pad | ✅ |
+| Padv2 | ✅ |
+| Mirror_pad | ✅ |
+| Pack | ✅ |
+| Pow | ✅ |
+| Reduce_max | ✅ |
+| Reduce_min | ✅ |
+| Relu | ✅ |
+| Relu6 | ✅ |
+| Reshape | ✅ |
+| Resize_bilinear | ✅ |
+| Resize_nearest_neighbor | ✅ |
+| Round | ✅ |
+| Rsqrt | ✅ |
+| Shape | ✅ |
+| Sin | ✅ |
+| Slice | ✅ |
+| Softmax | ✅ |
+| Space_to_batch_nd | ✅ |
+| Squeeze | ✅ |
+| Batch_to_space_nd | ✅ |
+| Strided_slice | ✅ |
+| Sqrt | ✅ |
+| Square | ✅ |
+| Sub | ✅ |
+| Sum | ✅ |
+| Tanh | ✅ |
+| Transpose | ✅ |
+| Transpose_conv | ✅ |
+| Quantize | ✅ |
+| Fake_quant | ✅ |
+| Dequantize | ✅ |
+| Gather | ✅ |
+| Gather_nd | ✅ |
+| One_hot | ✅ |
+| Squared_difference | ✅ |
+| Log_softmax | ✅ |

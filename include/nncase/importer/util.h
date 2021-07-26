@@ -85,7 +85,7 @@ T get_positive(int32_t v, size_t length)
 // place new node before exist node
 // Node output -> NextNode input
 template <class Node, class... Args>
-Node *add_prev_node(ir::graph &graph, ir::input_connector &next_input, Args &&... args)
+Node *add_prev_node(ir::graph &graph, ir::input_connector &next_input, Args &&...args)
 {
     auto node = graph.emplace<Node>(std::forward<Args>(args)...);
     next_input.connect(node->output());
@@ -93,7 +93,7 @@ Node *add_prev_node(ir::graph &graph, ir::input_connector &next_input, Args &&..
 }
 
 template <class Node, class... Args>
-Node *add_next_node(ir::graph &graph, ir::output_connector &prev_output, Args &&... args)
+Node *add_next_node(ir::graph &graph, ir::output_connector &prev_output, Args &&...args)
 {
     auto node = graph.emplace<Node>(std::forward<Args>(args)...);
     node->input().connect(prev_output);

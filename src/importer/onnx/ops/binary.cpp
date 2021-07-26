@@ -53,6 +53,11 @@ void onnx_importer::convert_op_Max(const onnx::NodeProto &node)
     convert_binary(node, binary_max);
 }
 
+void onnx_importer::convert_op_Pow(const onnx::NodeProto &node)
+{
+    convert_binary(node, binary_pow);
+}
+
 void onnx_importer::convert_binary(const onnx::NodeProto &node, const binary_op_t binary_op)
 {
     assert(node.input().size() == 2);
