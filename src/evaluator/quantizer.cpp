@@ -236,7 +236,7 @@ value_range<float> quantizer::get(ir::output_connector &connector) const
 
 fixed_mul quantizer::get_fixed_mul(float value, int32_t max_bits, uint8_t max_shift, bool is_signed)
 {
-    assert(!is_signed || value >= 0);
+    // assert(!is_signed || value >= 0);
 
     auto bits = is_signed ? max_bits - 1 : max_bits;
     int32_t shift = 0;

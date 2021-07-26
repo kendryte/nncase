@@ -225,10 +225,6 @@ optional<ValueInfoProto> onnx_importer::find_value_info(const string &value) con
 shape_t onnx_importer::get_shape(const string &value) const
 {
     const auto oit = output_tensors_.find(value);
-    if (oit != std::end(output_tensors_))
-    {
-        return oit->second->shape();
-    }
 
     const auto value_info = find_value_info(value);
     if (value_info)
@@ -238,6 +234,11 @@ shape_t onnx_importer::get_shape(const string &value) const
     if (initializer)
         return get_shape(initializer.value());
 
+    if (oit != std::end(output_tensors_))
+    {
+        auto result_shape = oit->second->shape();
+        return result_shape;
+    }
     throw std::runtime_error("Can't find value info for " + value + " to parse its shape");
 }
 
@@ -593,21 +594,25 @@ vector<T> onnx_importer::raw_to_vector(const onnx::TensorProto &tensor)
     const storage_type *const ptr = reinterpret_cast<const storage_type *>(tensor.raw_data().data());
     const size_t size = tensor.raw_data().size() / sizeof(storage_type);
 
-    if constexpr (native_little_endian)
-    {
-        return std::vector<target_type> { ptr, ptr + size };
-    }
-    else
-    {
-        std::vector<target_type> data;
-        data.reserve(size);
-        std::transform(ptr, ptr + size, std::back_inserter(data),
-            [](const auto &e) {
-                return le_to_native<storage_type>(reinterpret_cast<const byte *>(&e));
-            });
+    std::vector<target_type> data;
+    data.reserve(size);
+    std::transform(ptr, ptr + size, std::back_inserter(data),
+        [](const storage_type &e) {
+            storage_type new_e = e;
+            if constexpr (!native_little_endian)
+            {
+                new_e = le_to_native<storage_type>(reinterpret_cast<const byte *>(&e));
+            }
+            // avoid numeric overflow
+            target_type re = static_cast<target_type>(e);
+            if (new_e > (storage_type)std::numeric_limits<target_type>::max())
+            {
+                re = std::numeric_limits<target_type>::max();
+            }
+            return re;
+        });
 
-        return data;
-    }
+    return data;
 }
 
 template <typename T, typename S>
@@ -620,7 +625,8 @@ template <>
 float onnx_importer::to<float>(const onnx::TensorProto &tensor)
 {
     // assert(tensor.data_type() == tensor_type<float>);
-    assert(tensor.float_data_size() > 0);
+    if (!(tensor.float_data_size() > 0))
+        throw std::invalid_argument("the value has not found");
 
     return tensor.float_data()[0];
 }

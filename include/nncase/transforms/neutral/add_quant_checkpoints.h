@@ -28,7 +28,7 @@ public:
     }
 
     template <class... TArgs>
-    add_quant_checkpoints_transform(std::in_place_t, TArgs &&... opcodes)
+    add_quant_checkpoints_transform(std::in_place_t, TArgs &&...opcodes)
         : opcodes_({ std::forward<TArgs>(opcodes)... })
     {
     }
