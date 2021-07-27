@@ -93,4 +93,4 @@ def test_conv2d_prelu(n, i_channels, i_size, k_size, o_channels, strides, paddin
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_conv2d_act.py'])
+    pytest.main(['-vv', 'test_conv2d_prelu.py'])
