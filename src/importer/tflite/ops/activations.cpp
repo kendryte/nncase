@@ -57,6 +57,50 @@ DEFINE_TFLITE_LOWER(RELU)
     }
 }
 
+DEFINE_TFLITE_LOWER(PRELU)
+{
+    auto &input = get_tensor(op.inputs(), 0);
+    auto &slope = get_tensor(op.inputs(), 1);
+    auto &output = get_tensor(op.outputs(), 0);
+
+    auto in_shape = get_shape(input.shape());
+    auto slope_shape = get_shape(slope.shape());
+
+    auto zero = graph_.emplace<constant>(0.f);
+    zero->name(output.name()->string_view());
+    auto half_one = graph_.emplace<constant>(0.5f);
+    half_one->name(output.name()->string_view());
+
+    auto pos = graph_.emplace<binary>(binary_max, in_shape, zero->output().shape(), value_range<float>::full());
+    pos->name(std::string(output.name()->string_view()) + "/pos");
+    link_input_tensor(&pos->input_a(), op.inputs()->Get(0));
+    pos->input_b().connect(zero->output());
+
+    auto mul = graph_.emplace<binary>(binary_mul, slope_shape, half_one->output().shape(), value_range<float>::full());
+    auto abs = graph_.emplace<unary>(unary_abs, in_shape);
+    auto sub = graph_.emplace<binary>(binary_sub, in_shape, abs->output().shape(), value_range<float>::full());
+    auto neg = graph_.emplace<binary>(binary_mul, sub->output().shape(), mul->output().shape(), value_range<float>::full());
+    mul->name(std::string(output.name()->string_view()) + "/mul");
+    abs->name(std::string(output.name()->string_view()) + "/abs");
+    sub->name(std::string(output.name()->string_view()) + "/sub");
+    neg->name(std::string(output.name()->string_view()) + "/neg");
+
+    link_input_tensor(&mul->input_a(), op.inputs()->Get(1));
+    mul->input_b().connect(half_one->output());
+    link_input_tensor(&abs->input(), op.inputs()->Get(0));
+    link_input_tensor(&sub->input_a(), op.inputs()->Get(0));
+    sub->input_b().connect(abs->output());
+    neg->input_a().connect(sub->output());
+    neg->input_b().connect(mul->output());
+
+    auto add = graph_.emplace<binary>(binary_add, pos->output().shape(), neg->output().shape(), value_range<float>::full());
+    add->name(std::string(output.name()->string_view()) + "/add");
+    add->input_a().connect(pos->output());
+    add->input_b().connect(neg->output());
+
+    link_output_tensor(op.outputs()->Get(0), &add->output());
+}
+
 DEFINE_TFLITE_LOWER(RELU6)
 {
     auto &input = get_tensor(op.inputs(), 0);
