@@ -205,7 +205,10 @@ jobs:
         PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/install/python/warpctc-caffe:${{github.workspace}}/tests
         LD_LIBRARY_PATH: ${{github.workspace}}/python/caffe:/usr/lib/x86_64-linux-gnu
       run: |
-        cp ${{github.workspace}}/python/caffe/_caffe.so ${{github.workspace}}/install/python/caffe
+        ls ${{github.workspace}}/install/python
+        ls ${{github.workspace}}/install/python/warpctc-caffe
+        cp ${{github.workspace}}/python/caffe/_caffe.so ${{github.workspace}}/install/python/warpctc-caffe
+        ls ${{github.workspace}}/install/python/warpctc-caffe
         pytest tests/importer/caffe --doctest-modules --junitxml=test_results/importer_caffe.xml
         pytest tests/importer/tflite --doctest-modules --junitxml=test_results/importer_tflite.xml
         pytest tests/importer/onnx --doctest-modules --junitxml=test_results/importer_onnx.xml
