@@ -22,11 +22,9 @@ jobs:
       if: runner.os == 'Macos'
       shell: bash
       run: |
-        brew install -vd boost boost-python3
+        brew install -vd boost brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/6a77cdaac520f5d2f0a38f30606e91b7023ee5f0/Formula/boost-python3.rb
         ls /usr/local/opt/boost-python3/lib/
         echo 111
-        ls /usr/local/opt/boost-python/lib/
-        echo 222
 
     - name: Install System Requirements
       if: runner.os == 'Linux'
