@@ -15,6 +15,7 @@
 #pragma once
 #include "bfloat16.h"
 #include "compiler_defs.h"
+#include "half.h"
 #include "small_vector.hpp"
 #include <array>
 #include <cmath>
@@ -376,6 +377,12 @@ struct scalar
     {
         type = dt_bfloat16;
         as<bfloat16>() = value;
+    }
+
+    scalar(half value) noexcept
+    {
+        type = dt_float16;
+        as<half>() = value;
     }
 
     scalar(float value) noexcept
