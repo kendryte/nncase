@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         # os: [ubuntu-18.04,windows-2019,macos-10.15]
-        os: [ubuntu-18.04,macos-10.15]
+        os: [macos-10.15]
 
     steps:
     - uses: actions/checkout@v2
@@ -99,7 +99,7 @@ jobs:
     strategy:
       matrix:
         # os: [ubuntu-18.04,windows-2019,macos-10.15]
-        os: [ubuntu-18.04,macos-10.15]
+        os: [macos-10.15]
 
     steps:
     - uses: actions/checkout@v2
@@ -269,7 +269,8 @@ jobs:
       if: runner.os == 'Macos'
       shell: bash
       env:
-        PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/tests
+        PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/install/python/warpctc-caffe:${{github.workspace}}/tests
+        DYLD_LIBRARY_PATH: ${{github.workspace}}/python/caffe
       run: |
         cp ${{github.workspace}}/python/caffe/_caffe.dylib ${{github.workspace}}/install/python/warpctc-caffe/caffe
         pytest tests/importer/caffe --doctest-modules --junitxml=test_results/importer_caffe.xml
