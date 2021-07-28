@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         # os: [ubuntu-18.04,windows-2019,macos-10.15]
-        os: [macos-10.15]
+        os: [ubuntu-18.04,macos-10.15]
 
     steps:
     - uses: actions/checkout@v2
@@ -113,7 +113,7 @@ jobs:
     strategy:
       matrix:
         # os: [ubuntu-18.04,windows-2019,macos-10.15]
-        os: [macos-10.15]
+        os: [ubuntu-18.04,macos-10.15]
 
     steps:
     - uses: actions/checkout@v2
@@ -123,6 +123,18 @@ jobs:
       shell: bash
       run: |
         brew install sunnycase/core/libomp@11.1.0
+
+    - name: Setup Python
+      if: runner.os != 'Macos'
+      uses: actions/setup-python@v2.2.1
+      with:
+        python-version: 3.7
+
+    - name: Setup Python
+      if: runner.os == 'Macos'
+      uses: actions/setup-python@v2.2.1
+      with:
+        python-version: 3.9
 
     - name: Install System Requirements
       if: runner.os == 'Linux'
@@ -147,18 +159,6 @@ jobs:
         brew install -vd protobuf
         brew install -vd boost boost-python3
 
-    - name: Setup Python
-      if: runner.os != 'Macos'
-      uses: actions/setup-python@v2.2.1
-      with:
-        python-version: 3.7
-
-    - name: Setup Python
-      if: runner.os == 'Macos'
-      uses: actions/setup-python@v2.2.1
-      with:
-        python-version: 3.9
-
     - name: Install Python Packages
       if: runner.os != 'Macos'
       shell: bash
@@ -171,7 +171,7 @@ jobs:
       if: runner.os == 'Macos'
       shell: bash
       run: |
-        pip install conan tensorflow==2.5.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0 numpy==1.18.0 scikit-image==0.17.2
+        pip install conan tensorflow==2.5.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0 numpy==1.18.0 scikit-image
         pip install torch==1.9.0 torchvision==0.10.0 -f https://download.pytorch.org/whl/torch_stable.html
         pip install pytest
 
