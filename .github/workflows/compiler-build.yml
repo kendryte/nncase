@@ -45,7 +45,7 @@ jobs:
       if: runner.os == 'Macos'
       uses: actions/setup-python@v2.2.1
       with:
-        python-version: 3.7
+        python-version: 3.9
 
     - name: Install Conan
       if: runner.os != 'Macos'
@@ -145,7 +145,7 @@ jobs:
         brew install -vd snappy leveldb gflags glog szip lmdb
         brew install hdf5 openblas
         brew install -vd protobuf
-        brew install -vd boost
+        brew install -vd boost boost-python3
 
     - name: Setup Python
       if: runner.os != 'Macos'
@@ -157,7 +157,7 @@ jobs:
       if: runner.os == 'Macos'
       uses: actions/setup-python@v2.2.1
       with:
-        python-version: 3.7
+        python-version: 3.9
 
     - name: Install Python Packages
       if: runner.os != 'Macos'
@@ -268,7 +268,7 @@ jobs:
       shell: bash
       run: |
         cd ${{github.workspace}}/python/caffe
-        pip install --target ${{github.workspace}}/install/python/warpctc-caffe warpctc_caffe-1.0.0-cp37-cp37m-macosx_10_9_x86_64.whl
+        pip install --target ${{github.workspace}}/install/python/warpctc-caffe warpctc_caffe-1.0.0-cp39-cp39m-macosx_10_9_x86_64.whl
 
     - name: Test
       working-directory: ${{github.workspace}}
