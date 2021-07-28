@@ -45,7 +45,7 @@ jobs:
       if: runner.os == 'Macos'
       uses: actions/setup-python@v2.2.1
       with:
-        python-version: 3.9
+        python-version: 3.7
 
     - name: Install Conan
       if: runner.os != 'Macos'
