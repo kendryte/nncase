@@ -19,14 +19,6 @@ jobs:
     - uses: seanmiddleditch/gha-setup-ninja@master
 
     - name: Install System Requirements
-      if: runner.os == 'Macos'
-      shell: bash
-      run: |
-        brew install -vd boost brew install https://raw.githubusercontent.com/Homebrew/homebrew-core/6a77cdaac520f5d2f0a38f30606e91b7023ee5f0/Formula/boost-python3.rb
-        ls /usr/local/opt/boost-python3/lib/
-        echo 111
-
-    - name: Install System Requirements
       if: runner.os == 'Linux'
       shell: bash
       run: |
@@ -44,9 +36,16 @@ jobs:
       uses: ilammy/msvc-dev-cmd@v1.9.0
           
     - name: Setup Python
+      if: runner.os != 'Macos'
       uses: actions/setup-python@v2.2.1
       with:
         python-version: 3.7
+
+    - name: Setup Python
+      if: runner.os == 'Macos'
+      uses: actions/setup-python@v2.2.1
+      with:
+        python-version: 3.9
 
     - name: Install Conan
       shell: bash
@@ -142,9 +141,16 @@ jobs:
         brew install -vd boost boost-python3
 
     - name: Setup Python
+      if: runner.os != 'Macos'
       uses: actions/setup-python@v2.2.1
       with:
         python-version: 3.7
+
+    - name: Setup Python
+      if: runner.os == 'Macos'
+      uses: actions/setup-python@v2.2.1
+      with:
+        python-version: 3.9
 
     - name: Install Python Packages
       if: runner.os != 'Macos'
