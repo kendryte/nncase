@@ -272,7 +272,15 @@ jobs:
         PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/install/python/warpctc-caffe:${{github.workspace}}/tests
         DYLD_LIBRARY_PATH: ${{github.workspace}}/python/caffe
       run: |
+        ls ${{github.workspace}}/install/python
+        echo 1
+        ls ${{github.workspace}}/install/python/warpctc-caffe
+        echo 2
+        ls ${{github.workspace}}/install/python/warpctc-caffe/caffe
+        echo 3
         cp ${{github.workspace}}/python/caffe/_caffe.dylib ${{github.workspace}}/install/python/warpctc-caffe/caffe
+        ls ${{github.workspace}}/install/python/warpctc-caffe/caffe
+        echo 4
         pytest tests/importer/caffe --doctest-modules --junitxml=test_results/importer_caffe.xml
         pytest tests/importer/tflite --doctest-modules --junitxml=test_results/importer_tflite.xml
         pytest tests/importer/onnx --doctest-modules --junitxml=test_results/importer_onnx.xml
