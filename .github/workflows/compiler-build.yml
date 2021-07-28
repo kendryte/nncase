@@ -270,8 +270,9 @@ jobs:
       shell: bash
       env:
         PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/install/python/warpctc-caffe:${{github.workspace}}/tests
-        DYLD_LIBRARY_PATH: ${{github.workspace}}/python/caffe
+        DYLD_LIBRARY_PATH: ${{github.workspace}}/python/caffe:/usr/local/lib
       run: |
+        cp ${{github.workspace}}/python/caffe/libcaffe.1.0.0.dylib /usr/local/lib
         cp ${{github.workspace}}/python/caffe/_caffe.dylib ${{github.workspace}}/install/python/warpctc-caffe/caffe/_caffe.so
         pytest tests/importer/caffe --doctest-modules --junitxml=test_results/importer_caffe.xml
         pytest tests/importer/tflite --doctest-modules --junitxml=test_results/importer_tflite.xml
