@@ -97,7 +97,8 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-18.04,windows-2019,macos-10.15]
+        # os: [ubuntu-18.04,windows-2019,macos-10.15]
+        os: [ubuntu-18.04,macos-10.15]
 
     steps:
     - uses: actions/checkout@v2
@@ -121,6 +122,15 @@ jobs:
         sudo apt-get install libgflags-dev libgoogle-glog-dev liblmdb-dev -y
         sudo unlink /usr/lib/x86_64-linux-gnu/libboost_python.so
         sudo ln -s /usr/lib/x86_64-linux-gnu/libboost_python-py36.so /usr/lib/x86_64-linux-gnu/libboost_python.so
+
+    - name: Install System Requirements
+      if: runner.os == 'Macos'
+      shell: bash
+      run: |
+        brew install -vd snappy leveldb gflags glog szip lmdb
+        brew install hdf5 opencv openblas
+        brew install -vd protobuf
+        brew install -vd boost boost-python3
 
     - name: Setup Python
       uses: actions/setup-python@v2.2.1
@@ -163,7 +173,18 @@ jobs:
         github_token: ${{secrets.GITHUB_TOKEN}}
         workflow: cmake.yml
         branch: nncase
-        name: libcaffe
+        name: libcaffe-linux
+        path: ${{github.workspace}}/python/caffe
+        repo: kendryte/caffe
+
+    - name: Download a Build Artifact
+      if: runner.os == 'Macos'
+      uses: dawidd6/action-download-artifact@v2
+      with:
+        github_token: ${{secrets.GITHUB_TOKEN}}
+        workflow: cmake.yml
+        branch: nncase
+        name: libcaffe-macos
         path: ${{github.workspace}}/python/caffe
         repo: kendryte/caffe
 
@@ -174,7 +195,18 @@ jobs:
         github_token: ${{secrets.GITHUB_TOKEN}}
         workflow: cmake.yml
         branch: nncase
-        name: caffe
+        name: caffe-linux
+        path: ${{github.workspace}}/python/caffe
+        repo: kendryte/caffe
+
+    - name: Download a Build Artifact
+      if: runner.os == 'Macos'
+      uses: dawidd6/action-download-artifact@v2
+      with:
+        github_token: ${{secrets.GITHUB_TOKEN}}
+        workflow: cmake.yml
+        branch: nncase
+        name: caffe-macos
         path: ${{github.workspace}}/python/caffe
         repo: kendryte/caffe
 
@@ -185,7 +217,18 @@ jobs:
         github_token: ${{secrets.GITHUB_TOKEN}}
         workflow: cmake.yml
         branch: nncase
-        name: warpctc-caffe
+        name: warpctc-caffe-linux
+        path: ${{github.workspace}}/python/caffe
+        repo: kendryte/caffe
+
+    - name: Download a Python Package Artifact
+      if: runner.os == 'Macos'
+      uses: dawidd6/action-download-artifact@v2
+      with:
+        github_token: ${{secrets.GITHUB_TOKEN}}
+        workflow: cmake.yml
+        branch: nncase
+        name: warpctc-caffe-macos
         path: ${{github.workspace}}/python/caffe
         repo: kendryte/caffe
 
@@ -196,6 +239,14 @@ jobs:
       run: |
         cd ${{github.workspace}}/python/caffe
         pip install --target ${{github.workspace}}/install/python/warpctc-caffe warpctc_caffe-1.0.0-cp37-cp37m-linux_x86_64.whl
+
+    - name: Install Caffe
+      working-directory: ${{github.workspace}}/python/caffe
+      if: runner.os == 'Macos'
+      shell: bash
+      run: |
+        cd ${{github.workspace}}/python/caffe
+        pip install --target ${{github.workspace}}/install/python/warpctc-caffe warpctc_caffe-1.0.0-cp37-cp37m-macosx_10_15_x86_64.whl
 
     - name: Test
       working-directory: ${{github.workspace}}
@@ -219,6 +270,8 @@ jobs:
       env:
         PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/tests
       run: |
+        cp ${{github.workspace}}/python/caffe/_caffe.dylib ${{github.workspace}}/install/python/warpctc-caffe/caffe
+        pytest tests/importer/caffe --doctest-modules --junitxml=test_results/importer_caffe.xml
         pytest tests/importer/tflite --doctest-modules --junitxml=test_results/importer_tflite.xml
         pytest tests/importer/onnx --doctest-modules --junitxml=test_results/importer_onnx.xml
         pytest tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
