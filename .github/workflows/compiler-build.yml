@@ -48,9 +48,16 @@ jobs:
         python-version: 3.9
 
     - name: Install Conan
+      if: runner.os != 'Macos'
       shell: bash
       run: |
         pip install conan numpy==1.19.2
+
+    - name: Install Conan
+      if: runner.os == 'Macos'
+      shell: bash
+      run: |
+        pip install conan numpy==1.18.0
 
     - name: Configure Conan
       if: runner.os == 'Linux'
@@ -138,7 +145,7 @@ jobs:
         brew install -vd snappy leveldb gflags glog szip lmdb
         brew install hdf5 openblas
         brew install -vd protobuf
-        brew install -vd boost boost-python3
+        brew install -vd boost
 
     - name: Setup Python
       if: runner.os != 'Macos'
@@ -150,7 +157,7 @@ jobs:
       if: runner.os == 'Macos'
       uses: actions/setup-python@v2.2.1
       with:
-        python-version: 3.9
+        python-version: 3.7
 
     - name: Install Python Packages
       if: runner.os != 'Macos'
@@ -164,7 +171,7 @@ jobs:
       if: runner.os == 'Macos'
       shell: bash
       run: |
-        pip install conan tensorflow==2.5.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0
+        pip install conan tensorflow==2.5.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0 numpy==1.18.0 scikit-image==0.17.2
         pip install torch==1.9.0 torchvision==0.10.0 -f https://download.pytorch.org/whl/torch_stable.html
         pip install pytest
 
@@ -312,4 +319,3 @@ jobs:
       if: always() && runner.os == 'Linux'
       with:
         files: test_results/*.xml
-
