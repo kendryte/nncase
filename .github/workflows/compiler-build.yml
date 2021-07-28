@@ -57,7 +57,7 @@ jobs:
       if: runner.os == 'Macos'
       shell: bash
       run: |
-        pip install conan numpy==1.18.0
+        pip install conan numpy==1.17.5
 
     - name: Configure Conan
       if: runner.os == 'Linux'
@@ -171,7 +171,7 @@ jobs:
       if: runner.os == 'Macos'
       shell: bash
       run: |
-        pip install conan numpy==1.18.0 scikit-image
+        pip install conan numpy==1.17.5 scikit-image
         pip install pytest
 
     - name: Create Test Environment
