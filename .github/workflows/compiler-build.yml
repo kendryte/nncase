@@ -171,7 +171,7 @@ jobs:
       if: runner.os == 'Macos'
       shell: bash
       run: |
-        pip install conan tensorflow==2.3.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0 numpy==1.18.0 scikit-image
+        pip install conan tensorflow==2.5.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0 numpy==1.19.2 scikit-image
         pip install torch==1.9.0 torchvision==0.10.0 -f https://download.pytorch.org/whl/torch_stable.html
         pip install pytest
 
