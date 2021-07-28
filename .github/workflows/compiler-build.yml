@@ -19,6 +19,16 @@ jobs:
     - uses: seanmiddleditch/gha-setup-ninja@master
 
     - name: Install System Requirements
+      if: runner.os == 'Macos'
+      shell: bash
+      run: |
+        brew install -vd boost boost-python3
+        ls /usr/local/opt/boost-python3/lib/
+        echo 111
+        ls /usr/local/opt/boost-python/lib/
+        echo 222
+
+    - name: Install System Requirements
       if: runner.os == 'Linux'
       shell: bash
       run: |
