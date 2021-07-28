@@ -171,8 +171,7 @@ jobs:
       if: runner.os == 'Macos'
       shell: bash
       run: |
-        pip install conan tensorflow==2.5.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0 numpy==1.19.2 scikit-image
-        pip install torch==1.9.0 torchvision==0.10.0 -f https://download.pytorch.org/whl/torch_stable.html
+        pip install conan numpy==1.18.0 scikit-image
         pip install pytest
 
     - name: Create Test Environment
@@ -296,6 +295,24 @@ jobs:
         cp ${{github.workspace}}/python/caffe/libcaffe.1.0.0.dylib /usr/local/lib
         cp ${{github.workspace}}/python/caffe/_caffe.dylib ${{github.workspace}}/install/python/warpctc-caffe/caffe/_caffe.so
         pytest tests/importer/caffe --doctest-modules --junitxml=test_results/importer_caffe.xml
+        pytest tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
+        pytest tests/schedule --doctest-modules --junitxml=test_results/graph_partition.xml
+
+    - name: Install Python Packages
+      if: runner.os == 'Macos'
+      shell: bash
+      run: |
+        pip install conan tensorflow==2.5.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.9.2 numpy==1.19.2
+        pip install torch==1.9.0 torchvision==0.10.0 -f https://download.pytorch.org/whl/torch_stable.html
+        pip install pytest
+
+    - name: Test
+      working-directory: ${{github.workspace}}
+      if: runner.os == 'Macos'
+      shell: bash
+      env:
+        PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/tests
+      run: |
         pytest tests/importer/tflite --doctest-modules --junitxml=test_results/importer_tflite.xml
         pytest tests/importer/onnx --doctest-modules --junitxml=test_results/importer_onnx.xml
         pytest tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
