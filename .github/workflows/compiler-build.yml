@@ -268,7 +268,7 @@ jobs:
       shell: bash
       run: |
         cd ${{github.workspace}}/python/caffe
-        pip install --target ${{github.workspace}}/install/python/warpctc-caffe warpctc_caffe-1.0.0-cp39-cp39m-macosx_10_9_x86_64.whl
+        pip install --target ${{github.workspace}}/install/python/warpctc-caffe warpctc_caffe-1.0.0-cp39-cp39-macosx_10_9_x86_64.whl
 
     - name: Test
       working-directory: ${{github.workspace}}
