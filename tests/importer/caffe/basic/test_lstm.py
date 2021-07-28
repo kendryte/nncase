@@ -22,11 +22,11 @@ from caffe import layers as L
 from caffe_test_runner import CaffeTestRunner
 
 
-def _make_module(model_path, in1_shape, in2_shape, num_output):
+def _make_module(model_path, in1_shape, time_step, batch_size, num_output):
     ns = caffe.NetSpec()
     ns.data1 = L.Input(name="data1", input_param={"shape": {"dim": in1_shape}})
-    ns.data2 = L.Input(name="data2", input_param={"shape": {"dim": in2_shape}})
-    ns.lstm = L.LSTM(name="lstm", *[ns.data1, ns.data2], recurrent_param={"num_output": num_output})
+    ns.data2 = L.ContinuationIndicator(name="data2", continuation_indicator_param={"time_step": time_step, "batch_size": batch_size})
+    ns.lstm = L.LSTM(ns.data1, ns.data2, name="lstm", recurrent_param={"num_output": num_output})
 
     with open(os.path.join(model_path, 'test.prototxt'), 'w') as f:
         f.write(str(ns.to_proto()))
@@ -41,11 +41,15 @@ def _make_module(model_path, in1_shape, in2_shape, num_output):
 
 
 in1_shapes = [
-    [1, 1, 28],
+    [2, 1, 28],
 ]
 
-in2_shapes = [
-    [1, 1],
+time_steps = [
+    2
+]
+
+batch_sizes = [
+    1
 ]
 
 num_outputs = [
@@ -54,13 +58,14 @@ num_outputs = [
 
 
 @pytest.mark.parametrize('in1_shape', in1_shapes)
-@pytest.mark.parametrize('in2_shape', in2_shapes)
+@pytest.mark.parametrize('time_step', time_steps)
+@pytest.mark.parametrize('batch_size', batch_sizes)
 @pytest.mark.parametrize('num_output', num_outputs)
-def test_lstm(in1_shape, in2_shape, num_output, request):
-    runner = CaffeTestRunner(request.node.name)
+def test_lstm(in1_shape, time_step, batch_size, num_output, request):
+    runner = CaffeTestRunner(request.node.name, ['k510'])
     model_path = os.path.join(os.getcwd(), 'tests_output',
                               request.node.name.replace('[', '_').replace(']', '_'))
-    _make_module(model_path, in1_shape, in2_shape, num_output)
+    _make_module(model_path, in1_shape, time_step, batch_size, num_output)
     model_file = [os.path.join(model_path, 'test.prototxt'),
                   os.path.join(model_path, 'test.caffemodel')]
     runner.run(model_file)
