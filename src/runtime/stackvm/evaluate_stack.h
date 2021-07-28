@@ -67,6 +67,11 @@ public:
     {
     }
 
+    stack_entry(half v) noexcept
+        : stack_entry((float)v)
+    {
+    }
+
     stack_entry(float v) noexcept
         : r_(v), is_real_(true)
     {

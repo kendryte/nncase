@@ -22,11 +22,6 @@
 
 namespace nncase
 {
-struct half
-{
-    uint16_t value;
-};
-
 struct from_raw_t
 {
     explicit from_raw_t() = default;
@@ -165,7 +160,17 @@ public:
 
     static constexpr bfloat16 nan() noexcept
     {
-        return from_raw(NAN_VALUE);
+        return from_raw(0x7fc0);
+    }
+
+    static constexpr bfloat16 quiet_NaN() noexcept
+    {
+        return from_raw(0x7fc0);
+    }
+
+    static constexpr bfloat16 signaling_NaN() noexcept
+    {
+        return from_raw(0x7f81);
     }
 
     static constexpr bfloat16 infinity() noexcept
@@ -291,12 +296,12 @@ struct numeric_limits<nncase::bfloat16>
 
     NNCASE_UNUSED static constexpr nncase::bfloat16 quiet_NaN() noexcept
     {
-        return nncase::bfloat16::nan();
+        return nncase::bfloat16::quiet_NaN();
     }
 
     NNCASE_UNUSED static constexpr nncase::bfloat16 signaling_NaN() noexcept
     {
-        return nncase::bfloat16::nan();
+        return nncase::bfloat16::signaling_NaN();
     }
 
     static constexpr int digits = 8;
