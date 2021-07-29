@@ -21,7 +21,8 @@ using namespace nncase::ir;
 using namespace caffe;
 
 DEFINE_CAFFE_LOWER(Concat)
-{
+{   
+    std::cout<<"ci debug concat test1"<<std::endl;
     // check if there are bn/scale/relu above
     std::vector<std::string> input_names;
     for (int32_t i = 0; i < op.bottom_size(); i++)

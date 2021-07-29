@@ -23,6 +23,7 @@ using namespace nncase::ir;
 
 DEFINE_CAFFE_LOWER(BatchNorm)
 {
+    std::cout<<"ci debug test1"<<std::endl;
     // check if there are bn/scale/relu above
     std::string input_name = get_real_input_names(op)[0];
 
@@ -33,12 +34,12 @@ DEFINE_CAFFE_LOWER(BatchNorm)
         throw std::runtime_error("use_global_stats should be true at inference step");
 
     auto op_data = get_op_data(op, caffemodel);
-
+    std::cout<<"ci debug test2"<<std::endl;
     auto means = load_tensor<1>(op_data.blobs(0));
     auto variants = load_tensor<1>(op_data.blobs(1));
     auto eps = param.eps();
     auto scale_factor = load_tensor<1>(op_data.blobs(2));
-
+    std::cout<<"ci debug test3"<<std::endl;
     std::vector<float> means_vec_c(means.begin(), means.end());
     std::vector<float> variants_vec_c(variants.begin(), variants.end());
     std::vector<float> scale_factor_vec(scale_factor.begin(), scale_factor.end());
@@ -70,14 +71,14 @@ DEFINE_CAFFE_LOWER(BatchNorm)
     }
     else
         div->name(op.name() + "/div");
-
+    std::cout<<"ci debug test4"<<std::endl;
     sub->input_b().connect(means_const->output());
     add->input_a().connect(variants_const->output());
     add->input_b().connect(eps_const->output());
     sqrt->input().connect(add->output());
     div->input_a().connect(sub->output());
     div->input_b().connect(sqrt->output());
-
+    std::cout<<"ci debug test5"<<std::endl;
     input_tensors_.emplace(&sub->input_a(), op.bottom(0));
     if (op.bottom(0) == op.top(0))
     {
