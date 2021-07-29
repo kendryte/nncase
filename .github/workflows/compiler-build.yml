@@ -134,13 +134,16 @@ jobs:
       shell: bash
       run: |
         sudo apt update
-        sudo apt-get install libpython3.5 -f -y
         sudo apt install libgtk2.0-dev -y
         sudo apt-get install libegl1-mesa-dev -y
         sudo apt-get install libprotobuf-dev libleveldb-dev libsnappy-dev libhdf5-serial-dev protobuf-compiler -y
         sudo apt-get install --no-install-recommends libboost-all-dev -y
         sudo apt-get install libopenblas-dev liblapack-dev libatlas-base-dev -y
         sudo apt-get install libgflags-dev libgoogle-glog-dev liblmdb-dev -y
+        wget -c https://www.python.org/ftp/python/3.5.3/Python-3.5.3.tgz
+        tar xzvf Python-3.5.3.tgz
+        cd ./Python-3.5.3 && ./configure --enable-optimizations --enable-shared --prefix=/usr/local
+        make && sudo make install
         sudo unlink /usr/lib/x86_64-linux-gnu/libboost_python.so
         sudo ln -s /usr/lib/x86_64-linux-gnu/libboost_python-py36.so /usr/lib/x86_64-linux-gnu/libboost_python.so
 
@@ -182,7 +185,7 @@ jobs:
         name: nncase-${{matrix.os}}-x86_64
         path: ${{github.workspace}}/install
 
-    - name: Download a Python Package Artifact
+    - name: Download a Build Artifact
       if: runner.os == 'Linux'
       uses: dawidd6/action-download-artifact@v2
       with:
@@ -193,7 +196,7 @@ jobs:
         path: ${{github.workspace}}
         repo: kendryte/caffe
 
-    - name: Download a Python Package Artifact
+    - name: Download a Build Artifact
       if: runner.os == 'Macos'
       uses: dawidd6/action-download-artifact@v2
       with:
@@ -218,7 +221,7 @@ jobs:
       shell: bash
       run: |
         cd ${{github.workspace}}
-        pip install --target ${{github.workspace}}/install/python/warpctc-caffe warpctc_caffe-1.0.0-cp39-cp39-macosx_10_9_x86_64.whl
+        pip install --target ${{github.workspace}}/install/python/warpctc-caffe warpctc_caffe-1.0.0-cp39-cp39-macosx_10_15_x86_64.whl
 
     - name: Test
       working-directory: ${{github.workspace}}
@@ -226,7 +229,7 @@ jobs:
       shell: bash
       env:
         PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/install/python/warpctc-caffe:${{github.workspace}}/install/python/warpctc-caffe/caffe:${{github.workspace}}/tests
-        LD_LIBRARY_PATH: ${{github.workspace}}/install/python/warpctc-caffe:/usr/lib/x86_64-linux-gnu
+        LD_LIBRARY_PATH: ${{github.workspace}}/install/python/warpctc-caffe:/usr/lib/x86_64-linux-gnu:/usr/local
       run: |
         pytest tests/importer/caffe --doctest-modules --junitxml=test_results/importer_caffe.xml
         pytest tests/importer/tflite --doctest-modules --junitxml=test_results/importer_tflite.xml
