@@ -47,6 +47,7 @@ result<void> vulkan_runtime_module::visit(const ldpipeline_op_t &op) noexcept
 
     vk::ComputePipelineCreateInfo comp_ppl_cinfo({}, { {}, vk::ShaderStageFlagBits::eCompute, shader, "main" }, ppl_layout);
     try_var(pipeline, vk::to_result(device_.createComputePipeline({}, comp_ppl_cinfo)));
+    pipelines_owner_.emplace_back(pipeline);
 
     vk::DescriptorSetAllocateInfo desc_alloc_info(buffer_desc_pool_, desc_layout);
     try_var(desc_sets, vk::to_result(device_.allocateDescriptorSets(desc_alloc_info)));

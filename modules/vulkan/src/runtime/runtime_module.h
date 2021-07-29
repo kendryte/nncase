@@ -31,6 +31,8 @@ class vulkan_runtime_module : public runtime_module, private op_visitor
     };
 
 public:
+    virtual ~vulkan_runtime_module();
+
 protected:
     result<void> initialize_core(runtime_module_init_context &context) noexcept override;
     result<runtime_tensor> allocate_input_tensor(size_t index) noexcept override;
@@ -62,6 +64,8 @@ private:
     result<void> preprocess_inputs() noexcept;
     result<void> postprocess_outputs() noexcept;
 
+    void free_vulkan_resources() noexcept;
+
 private:
     uint32_t descriptors_;
     uint32_t descriptor_sets_;
@@ -77,7 +81,10 @@ private:
     vk::DeviceMemory output_mem_;
     vk::DeviceMemory data_mem_;
     std::vector<vk::Buffer> buffers_;
+    std::vector<vk::Buffer> buffers_owner_;
+    std::vector<vk::Pipeline> pipelines_owner_;
     vk::DescriptorPool buffer_desc_pool_;
+    vk::CommandPool cmd_pool_;
     vk::CommandBuffer cmd_buffer_;
 };
 

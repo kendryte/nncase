@@ -23,6 +23,11 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::vulkan;
 
+vulkan_runtime_module::~vulkan_runtime_module()
+{
+    free_vulkan_resources();
+}
+
 result<void> vulkan_runtime_module::initialize_core(runtime_module_init_context &context) noexcept
 {
     assert(context.is_section_pinned());
@@ -104,8 +109,8 @@ result<void> vulkan_runtime_module::initialize_vulkan_device() noexcept
     try_set(buffer_desc_pool_, vk::to_result(device_.createDescriptorPool(descp_cinfo)));
 
     vk::CommandPoolCreateInfo cmdp_cinfo({}, compute_queue_index_);
-    try_var(cmdp, vk::to_result(device_.createCommandPool(cmdp_cinfo)));
-    vk::CommandBufferAllocateInfo cmdb_cinfo(cmdp, vk::CommandBufferLevel::ePrimary, 1);
+    try_set(cmd_pool_, vk::to_result(device_.createCommandPool(cmdp_cinfo)));
+    vk::CommandBufferAllocateInfo cmdb_cinfo(cmd_pool_, vk::CommandBufferLevel::ePrimary, 1);
     try_var(cmdbs, vk::to_result(device_.allocateCommandBuffers(cmdb_cinfo)));
     cmd_buffer_ = cmdbs[0];
     return ok();
@@ -286,6 +291,22 @@ result<vk::Buffer> vulkan_runtime_module::pop_buffer() noexcept
     auto buffer = std::move(buffers_.back());
     buffers_.pop_back();
     return ok(std::move(buffer));
+}
+
+void vulkan_runtime_module::free_vulkan_resources() noexcept
+{
+    device_.freeCommandBuffers(cmd_pool_, cmd_buffer_);
+    device_.destroyCommandPool(cmd_pool_);
+    device_.destroyDescriptorPool(buffer_desc_pool_);
+    for (auto p : pipelines_owner_)
+        device_.destroyPipeline(p);
+    for (auto b : buffers_owner_)
+        device_.destroyBuffer(b);
+    device_.freeMemory(input_mem_);
+    device_.freeMemory(output_mem_);
+    device_.freeMemory(data_mem_);
+    device_.destroy({});
+    instance_.destroy({});
 }
 
 result<std::unique_ptr<runtime_module>> vulkan::create_vulkan_runtime_module()

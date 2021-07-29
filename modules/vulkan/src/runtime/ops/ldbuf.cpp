@@ -42,6 +42,7 @@ result<void> vulkan_runtime_module::visit(const ldbuf_op_t &op) noexcept
         vk::BufferUsageFlagBits::eStorageBuffer, vk::SharingMode::eExclusive, 1, &compute_queue_index_);
     try_var(buffer, vk::to_result(device_.createBuffer(info)));
     try_(vk::to_result(device_.bindBufferMemory(buffer, *dev_mem, (vk::DeviceSize)op.memory.start)));
-    buffers_.emplace_back(std::move(buffer));
+    buffers_owner_.emplace_back(buffer);
+    buffers_.emplace_back(buffer);
     return ok();
 }

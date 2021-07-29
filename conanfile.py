@@ -52,7 +52,7 @@ class nncaseConan(ConanFile):
 
         if self.options.vulkan:
             self.requires('vulkan-headers/1.2.182')
-            self.requires('vulkan-loader/1.2.172')
+            self.requires('vulkan-loader/1.2.182')
 
         if not self.options.runtime:
             self.requires('flatbuffers/2.0.0')
