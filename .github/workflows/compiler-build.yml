@@ -140,10 +140,6 @@ jobs:
         sudo apt-get install --no-install-recommends libboost-all-dev -y
         sudo apt-get install libopenblas-dev liblapack-dev libatlas-base-dev -y
         sudo apt-get install libgflags-dev libgoogle-glog-dev liblmdb-dev -y
-        wget -c https://www.python.org/ftp/python/3.5.3/Python-3.5.3.tgz
-        tar xzvf Python-3.5.3.tgz
-        cd ./Python-3.5.3 && ./configure --enable-optimizations --enable-shared --prefix=/usr/local
-        make && sudo make install
         sudo unlink /usr/lib/x86_64-linux-gnu/libboost_python.so
         sudo ln -s /usr/lib/x86_64-linux-gnu/libboost_python-py36.so /usr/lib/x86_64-linux-gnu/libboost_python.so
 
@@ -229,7 +225,7 @@ jobs:
       shell: bash
       env:
         PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/install/python/warpctc-caffe:${{github.workspace}}/install/python/warpctc-caffe/caffe:${{github.workspace}}/tests
-        LD_LIBRARY_PATH: ${{github.workspace}}/install/python/warpctc-caffe:/usr/lib/x86_64-linux-gnu:/usr/local
+        LD_LIBRARY_PATH: ${{github.workspace}}/install/python/warpctc-caffe:/usr/lib/x86_64-linux-gnu
       run: |
         pytest tests/importer/caffe --doctest-modules --junitxml=test_results/importer_caffe.xml
         pytest tests/importer/tflite --doctest-modules --junitxml=test_results/importer_tflite.xml
