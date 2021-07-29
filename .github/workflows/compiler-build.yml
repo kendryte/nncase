@@ -212,7 +212,7 @@ jobs:
         pip install --target ${{github.workspace}}/install/python/warpctc-caffe warpctc_caffe-1.0.0-cp37-cp37m-linux_x86_64.whl
 
     - name: Install Caffe
-      working-directory: ${{github.workspace}}/python/caffe
+      working-directory: ${{github.workspace}}
       if: runner.os == 'Macos'
       shell: bash
       run: |
@@ -224,9 +224,11 @@ jobs:
       if: runner.os == 'Linux'
       shell: bash
       env:
-        PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/install/python/warpctc-caffe:${{github.workspace}}/tests
+        PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/install/python/warpctc-caffe:${{github.workspace}}/install/python/warpctc-caffe/caffe:${{github.workspace}}/tests
         LD_LIBRARY_PATH: ${{github.workspace}}/install/python/warpctc-caffe:/usr/lib/x86_64-linux-gnu
       run: |
+        echo "path test1"
+        ls ${{github.workspace}}/install/python/warpctc-caffe/caffe
         pytest tests/importer/caffe --doctest-modules --junitxml=test_results/importer_caffe.xml
         pytest tests/importer/tflite --doctest-modules --junitxml=test_results/importer_tflite.xml
         pytest tests/importer/onnx --doctest-modules --junitxml=test_results/importer_onnx.xml
