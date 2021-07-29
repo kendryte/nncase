@@ -134,13 +134,13 @@ jobs:
       shell: bash
       run: |
         sudo apt update
+        sudo apt-get install libpython3.5 -f -y
         sudo apt install libgtk2.0-dev -y
         sudo apt-get install libegl1-mesa-dev -y
         sudo apt-get install libprotobuf-dev libleveldb-dev libsnappy-dev libhdf5-serial-dev protobuf-compiler -y
         sudo apt-get install --no-install-recommends libboost-all-dev -y
         sudo apt-get install libopenblas-dev liblapack-dev libatlas-base-dev -y
         sudo apt-get install libgflags-dev libgoogle-glog-dev liblmdb-dev -y
-        sudo apt-get install libpython3.5 -y
         sudo unlink /usr/lib/x86_64-linux-gnu/libboost_python.so
         sudo ln -s /usr/lib/x86_64-linux-gnu/libboost_python-py36.so /usr/lib/x86_64-linux-gnu/libboost_python.so
 
