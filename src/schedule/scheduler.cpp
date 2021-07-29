@@ -165,6 +165,15 @@ void schedule_context::analyze_buffer_alias()
         pmgr.add_pass<alias_concat_buffer_pass>();
         pmgr.run();
     }
+
+    // slice
+    {
+        pass_manager pmgr(*graph, *this->target);
+        pmgr.schedule_context(this);
+        pmgr.add_pass<alias_slice_buffer_pass>();
+        pmgr.run();
+    }
+
     // 1. add copy to concat
     //{
     //    auto alias_visitor = make_relay_ir_visitor([&](node &node) {

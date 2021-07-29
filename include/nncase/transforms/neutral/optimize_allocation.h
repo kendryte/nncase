@@ -88,4 +88,13 @@ public:
 protected:
     void run_core(graph &graph, nncase::target &target, const run_pass_options &options) override;
 };
+
+class NNCASE_API alias_slice_buffer_pass : public graph_pass
+{
+public:
+    using graph_pass::graph_pass;
+
+protected:
+    void run_core(graph &graph, nncase::target &target, const run_pass_options &options) override;
+};
 }

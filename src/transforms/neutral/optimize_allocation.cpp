@@ -16,6 +16,7 @@
 #include <nncase/ir/ops/bitcast.h>
 #include <nncase/ir/ops/concat.h>
 #include <nncase/ir/ops/copy.h>
+#include <nncase/ir/ops/slice.h>
 #include <nncase/ir/visitor.h>
 #include <nncase/schedule/scheduler.h>
 #include <nncase/transforms/neutral/optimize_allocation.h>
@@ -265,6 +266,28 @@ void alias_concat_buffer_pass::run_core([[maybe_unused]] graph &graph, [[maybe_u
                 }
 
                 child = parent;
+            }
+        }
+    });
+    alias_visitor.visit(graph);
+}
+
+void alias_slice_buffer_pass::run_core(graph &graph, [[maybe_unused]] nncase::target &target, const run_pass_options &options)
+{
+    auto &context = *options.schedule_context;
+    auto alias_visitor = make_relay_ir_visitor([&](node &node) {
+        if (auto s = node_cast<slice>(node))
+        {
+            if (s->attributes() == node_attr_none)
+            {
+                auto &in_buf = context.logical_buffer_map.at(s->input().connection());
+                auto &out_buf = context.logical_buffer_map.at(&s->output());
+                in_buf->parent() = { out_buf, 0, s->output().shape() };
+
+                size_t offset = ir::get_bytes(in_buf->type()) * xt::element_offset<size_t>(to_strides(in_buf->parent()->shape), s->begin().begin(), s->begin().end());
+
+                out_buf->parent() = { in_buf, offset, s->output().shape() };
+                out_buf->strides_shape() = s->input().shape();
             }
         }
     });
