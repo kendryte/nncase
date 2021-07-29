@@ -28,17 +28,6 @@ DEFINE_CAFFE_LOWER(ReLU)
     // check if there are bn/scale/relu above
     std::string input_name = get_real_input_names(op)[0];
 
-    if (output_tensors_.find(input_name) == output_tensors_.end())
-    {
-        input_name = op.bottom(0) + "/mul";
-        if (output_tensors_.find(input_name) == output_tensors_.end())
-        {
-            input_name = op.bottom(0) + "/div";
-            if (output_tensors_.find(input_name) == output_tensors_.end())
-                input_name = op.bottom(0);
-        }
-    }
-
     auto &input = *output_tensors_.at(input_name);
 
     auto &param = op.relu_param();

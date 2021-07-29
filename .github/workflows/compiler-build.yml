@@ -294,8 +294,28 @@ jobs:
       run: |
         cp ${{github.workspace}}/python/caffe/libcaffe.1.0.0.dylib /usr/local/lib
         cp ${{github.workspace}}/python/caffe/_caffe.dylib ${{github.workspace}}/install/python/warpctc-caffe/caffe/_caffe.so
-        rm tests/importer/caffe/basic/test_batchnorm.py
-        pytest tests/importer/caffe --doctest-modules --junitxml=test_results/importer_caffe.xml
+
+        caffe_cases=()
+        caffe_cases_excluded="./tests/importer/caffe/basic/test_activations.py"
+
+        while IFS=  read -r -d $'\0'; do
+            caffe_cases+=("$REPLY")
+        done < <(find ./tests/importer/caffe -name "*.py" -not -name "*init*" -print0 | sort -z)
+        while IFS=  read -r -d $'\0'; do
+            caffe_cases+=("$REPLY")
+        done < <(find ./tests/importer/caffe/basic -name "*.py" -not -name "*init*" -print0 | sort -z)
+        for i in ${caffe_cases[@]};
+        do
+          if [[ ! $caffe_cases_excluded =~ (^|[[:space:]])$i($|[[:space:]]) ]];
+          then
+            result=$( pytest $i );
+            if [ $? -eq 1 ];
+            then
+              exit 1;
+            fi;
+          fi
+        done
+
         pytest tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
         pytest tests/schedule --doctest-modules --junitxml=test_results/graph_partition.xml
 
