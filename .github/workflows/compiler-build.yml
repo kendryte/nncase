@@ -133,7 +133,7 @@ jobs:
       if: runner.os == 'Linux'
       shell: bash
       run: |
-        sudo apt update
+        sudo apt update 
         sudo apt install libgtk2.0-dev -y
         sudo apt-get install libegl1-mesa-dev -y
         sudo apt-get install libprotobuf-dev libleveldb-dev libsnappy-dev libhdf5-serial-dev protobuf-compiler -y
