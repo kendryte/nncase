@@ -20,7 +20,7 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::vulkan;
 
-result<void> vulkan_runtime_module::visit(const ldbuf_op_t &op) noexcept
+result<void> vulkan_runtime_module::visit(const ldbufbarrier_op_t &op) noexcept
 {
     vk::Buffer *dev_buf;
     switch (op.memory.memory_location)
@@ -38,6 +38,8 @@ result<void> vulkan_runtime_module::visit(const ldbuf_op_t &op) noexcept
         return err(nncase_errc::invalid_memory_location);
     }
 
-    buffer_refs_.emplace_back(buffer_ref { *dev_buf, op.memory.start, op.memory.size });
+    buffer_barriers_.emplace_back(vk::BufferMemoryBarrier((vk::AccessFlagBits)op.src_access_mask,
+        (vk::AccessFlagBits)op.dest_access_mask, compute_queue_index_, compute_queue_index_, *dev_buf,
+        (vk::DeviceSize)op.memory.start, (vk::DeviceSize)op.memory.size));
     return ok();
 }

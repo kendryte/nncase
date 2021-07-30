@@ -21,10 +21,12 @@ BEGIN_NS_NNCASE_RT_MODULE(vulkan)
 enum class opcode_t : uint8_t
 {
     ldbuf,
-    dupbuf,
-    popbuf,
+    ldbufcopy,
+    copybuf,
     ldpipeline,
-    dispatch
+    dispatch,
+    ldbufbarrier,
+    barrier
 };
 
 enum class shader_type_t : uint8_t
@@ -40,18 +42,6 @@ struct ldbuf_op_t
     memory_range memory;
 };
 
-struct dupbuf_op_t
-{
-    opcode_t opcode = opcode_t::dupbuf;
-    uint8_t reserved0[3];
-};
-
-struct popbuf_op_t
-{
-    opcode_t opcode = opcode_t::popbuf;
-    uint8_t reserved0[3];
-};
-
 struct ldpipeline_op_t
 {
     opcode_t opcode = opcode_t::ldpipeline;
@@ -63,6 +53,24 @@ struct ldpipeline_op_t
     uint32_t shader_size;
 };
 
+struct ldbufcopy_op_t
+{
+    opcode_t opcode = opcode_t::ldbufcopy;
+    uint8_t reserved0[3];
+
+    uint32_t src;
+    uint32_t dest;
+    uint32_t size;
+};
+
+struct copybuf_op_t
+{
+    opcode_t opcode = opcode_t::copybuf;
+    uint8_t reserved0[3];
+
+    uint32_t regions;
+};
+
 struct dispatch_op_t
 {
     opcode_t opcode = opcode_t::dispatch;
@@ -70,6 +78,28 @@ struct dispatch_op_t
     uint32_t x;
     uint32_t y;
     uint32_t z;
+};
+
+struct ldbufbarrier_op_t
+{
+    opcode_t opcode = opcode_t::ldbufbarrier;
+    uint8_t reserved0[3];
+
+    memory_range memory;
+    uint32_t src_access_mask;
+    uint32_t dest_access_mask;
+};
+
+struct barrier_op_t
+{
+    opcode_t opcode = opcode_t::barrier;
+    uint8_t reserved0[3];
+
+    uint32_t src_stage;
+    uint32_t dest_stage;
+    uint32_t dependency_flags;
+    uint32_t memory_barriers;
+    uint32_t buffer_barriers;
 };
 
 END_NS_NNCASE_RT_MODULE

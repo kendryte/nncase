@@ -54,13 +54,14 @@ result<void> vulkan_runtime_module::visit(const ldpipeline_op_t &op) noexcept
 
     std::vector<vk::DescriptorBufferInfo> buffer_infos((size_t)op.buffers);
     std::vector<vk::WriteDescriptorSet> write_descs(buffer_infos.size());
+    std::vector<vk::BufferMemoryBarrier> bm_barriers(buffer_infos.size());
     for (int32_t i = (int32_t)op.buffers - 1; i >= 0; i--)
     {
         auto &info = buffer_infos[i];
-        try_var(buffer, pop_buffer());
-        info.setBuffer(std::move(buffer));
-        info.setOffset(0);
-        info.setRange(VK_WHOLE_SIZE);
+        try_var(buffer_ref, pop_buffer_ref());
+        info.setBuffer(buffer_ref.buffer);
+        info.setOffset(buffer_ref.start);
+        info.setRange(buffer_ref.size);
 
         auto &write_desc = write_descs[i];
         write_desc.setBufferInfo(info);

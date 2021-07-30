@@ -18,9 +18,6 @@
 #include <nncase/runtime/stackvm/runtime_module.h>
 #include <nncase/targets/target.h>
 #include <nncase/transforms/pass.h>
-#if NNCASE_VULKAN
-#include <nncase/runtime/vulkan/runtime_module.h>
-#endif
 
 using namespace nncase;
 

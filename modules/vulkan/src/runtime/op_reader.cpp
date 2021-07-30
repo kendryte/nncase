@@ -25,14 +25,18 @@ result<void> op_visitor::next() noexcept
     {
     case opcode_t::ldbuf:
         return visit(reader_.read_unaligned<ldbuf_op_t>());
-    case opcode_t::dupbuf:
-        return visit(reader_.read_unaligned<dupbuf_op_t>());
-    case opcode_t::popbuf:
-        return visit(reader_.read_unaligned<popbuf_op_t>());
+    case opcode_t::ldbufbarrier:
+        return visit(reader_.read_unaligned<ldbufbarrier_op_t>());
+    case opcode_t::ldbufcopy:
+        return visit(reader_.read_unaligned<ldbufcopy_op_t>());
+    case opcode_t::copybuf:
+        return visit(reader_.read_unaligned<copybuf_op_t>());
     case opcode_t::ldpipeline:
         return visit(reader_.read_unaligned<ldpipeline_op_t>());
     case opcode_t::dispatch:
         return visit(reader_.read_unaligned<dispatch_op_t>());
+    case opcode_t::barrier:
+        return visit(reader_.read_unaligned<barrier_op_t>());
     default:
         break;
     }

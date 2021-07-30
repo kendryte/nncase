@@ -120,24 +120,49 @@ result<void> vulkan_runtime_module::initialize_vulkan_memory() noexcept
 {
     auto input_mem = mempool(mem_input);
     if (input_mem.size)
-        try_set(input_mem_, allocate_vulkan_memory({ vk::MemoryPropertyFlagBits::eHostVisible, vk::MemoryPropertyFlagBits::eHostCached, {} }, input_mem.size));
+    {
+        try_set(input_buffer_, allocate_vulkan_buffer(input_mem.size));
+        try_set(input_mem_, allocate_vulkan_memory({ vk::MemoryPropertyFlagBits::eHostVisible, vk::MemoryPropertyFlagBits::eHostCached, {} }, input_buffer_));
+        try_(bind_vulkan_buffer(input_buffer_, input_mem_));
+    }
 
     auto output_mem = mempool(mem_output);
     if (output_mem.size)
-        try_set(output_mem_, allocate_vulkan_memory({ vk::MemoryPropertyFlagBits::eHostVisible, vk::MemoryPropertyFlagBits::eHostCached, {} }, output_mem.size));
+    {
+        try_set(output_buffer_, allocate_vulkan_buffer(output_mem.size));
+        try_set(output_mem_, allocate_vulkan_memory({ vk::MemoryPropertyFlagBits::eHostVisible, vk::MemoryPropertyFlagBits::eHostCached, {} }, output_buffer_));
+        try_(bind_vulkan_buffer(output_buffer_, output_mem_));
+    }
 
     auto data_mem = mempool(mem_data);
     if (data_mem.size)
-        try_set(data_mem_, allocate_vulkan_memory({ {}, vk::MemoryPropertyFlagBits::eDeviceLocal, {} }, data_mem.size));
+    {
+        try_set(data_buffer_, allocate_vulkan_buffer(data_mem.size));
+        try_set(data_mem_, allocate_vulkan_memory({ {}, vk::MemoryPropertyFlagBits::eDeviceLocal, {} }, data_buffer_));
+        try_(bind_vulkan_buffer(data_buffer_, data_mem_));
+    }
     return ok();
 }
 
-result<vk::DeviceMemory> vulkan_runtime_module::allocate_vulkan_memory(const select_options<vk::MemoryPropertyFlagBits> &options, size_t required_size) noexcept
+result<vk::DeviceMemory> vulkan_runtime_module::allocate_vulkan_memory(const select_options<vk::MemoryPropertyFlagBits> &options, vk::Buffer buffer) noexcept
 {
+    auto req = device_.getBufferMemoryRequirements(buffer);
     auto properties = physical_device_.getMemoryProperties();
-    try_var(type_index, select_memory_type(properties, options, required_size));
-    vk::MemoryAllocateInfo allocate(static_cast<vk::DeviceSize>(required_size), static_cast<uint32_t>(type_index));
+    try_var(type_index, select_memory_type(properties, options, req.size));
+    vk::MemoryAllocateInfo allocate(req.size, static_cast<uint32_t>(type_index));
     return vk::to_result(device_.allocateMemory(allocate));
+}
+
+result<vk::Buffer> vulkan_runtime_module::allocate_vulkan_buffer(size_t required_size) noexcept
+{
+    vk::BufferCreateInfo info({}, (vk::DeviceSize)required_size,
+        vk::BufferUsageFlagBits::eStorageBuffer, vk::SharingMode::eExclusive, 1, &compute_queue_index_);
+    return vk::to_result(device_.createBuffer(info));
+}
+
+result<void> vulkan_runtime_module::bind_vulkan_buffer(vk::Buffer buffer, vk::DeviceMemory memory) noexcept
+{
+    return vk::to_result(device_.bindBufferMemory(buffer, memory, 0));
 }
 
 result<vk::PhysicalDevice> vulkan_runtime_module::select_physical_device() noexcept
@@ -284,13 +309,13 @@ result<void> vulkan_runtime_module::postprocess_outputs() noexcept
     return ok();
 }
 
-result<vk::Buffer> vulkan_runtime_module::pop_buffer() noexcept
+result<vulkan_runtime_module::buffer_ref> vulkan_runtime_module::pop_buffer_ref() noexcept
 {
-    if (buffers_.empty())
+    if (buffer_refs_.empty())
         return err(std::errc::result_out_of_range);
-    auto buffer = std::move(buffers_.back());
-    buffers_.pop_back();
-    return ok(std::move(buffer));
+    auto buffer_ref = std::move(buffer_refs_.back());
+    buffer_refs_.pop_back();
+    return ok(std::move(buffer_ref));
 }
 
 void vulkan_runtime_module::free_vulkan_resources() noexcept
@@ -300,8 +325,9 @@ void vulkan_runtime_module::free_vulkan_resources() noexcept
     device_.destroyDescriptorPool(buffer_desc_pool_);
     for (auto p : pipelines_owner_)
         device_.destroyPipeline(p);
-    for (auto b : buffers_owner_)
-        device_.destroyBuffer(b);
+    device_.destroyBuffer(input_buffer_);
+    device_.destroyBuffer(output_buffer_);
+    device_.destroyBuffer(data_buffer_);
     device_.freeMemory(input_mem_);
     device_.freeMemory(output_mem_);
     device_.freeMemory(data_mem_);

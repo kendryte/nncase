@@ -4,10 +4,12 @@ set(SRCS runtime_module.cpp
          vulkan_error.cpp
          op_reader.cpp
          ops/ldbuf.cpp
-         ops/dupbuf.cpp
-         ops/popbuf.cpp
+         ops/ldbufbarrier.cpp
+         ops/ldbufcopy.cpp
+         ops/copybuf.cpp
          ops/ldpipeline.cpp
-         ops/dispatch.cpp)
+         ops/dispatch.cpp
+         ops/barrier.cpp)
 
 if (BUILDING_RUNTIME)
     add_library(runtime_vulkan OBJECT ${SRCS})

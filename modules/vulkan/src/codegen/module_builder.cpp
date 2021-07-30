@@ -14,6 +14,7 @@
  */
 #include "module_builder.h"
 #include "templates/template.h"
+#include <vulkan/vulkan.hpp>
 
 using namespace nncase;
 using namespace nncase::codegen;
@@ -66,6 +67,31 @@ void vulkan_module_builder::ldbuf(const memory_range &range)
 
 void vulkan_module_builder::ldpipeline(ir::node &node, size_t shader_index, ldpipeline_op_t &op, const std::vector<uint32_t> &shader)
 {
+    auto &tw = text_writer();
+    for (auto in : node.inputs())
+    {
+        ldbufbarrier_op_t op {};
+        op.src_access_mask = (uint32_t)vk::AccessFlagBits::eShaderRead;
+        op.dest_access_mask = 0;
+        op.memory = allocation(*in).runtime_type();
+        tw.write(op);
+    }
+
+    for (auto out : node.outputs())
+    {
+        ldbufbarrier_op_t op {};
+        op.src_access_mask = 0;
+        op.dest_access_mask = (uint32_t)vk::AccessFlagBits::eShaderWrite;
+        op.memory = allocation(*out).runtime_type();
+        tw.write(op);
+    }
+
+    barrier_op_t bop {};
+    bop.src_stage = (uint32_t)vk::PipelineStageFlagBits::eComputeShader;
+    bop.dest_stage = (uint32_t)vk::PipelineStageFlagBits::eComputeShader;
+    bop.buffer_barriers = (uint32_t)(node.inputs().size() + node.outputs().size());
+    tw.write(bop);
+
     op.shader_start = 0;
     op.shader_size = static_cast<uint32_t>(shader.size() * sizeof(uint32_t));
 
@@ -74,7 +100,6 @@ void vulkan_module_builder::ldpipeline(ir::node &node, size_t shader_index, ldpi
     sw.add_symbol(symbol);
     sw.write_array<uint32_t>(shader);
 
-    auto &tw = text_writer();
     tw.add_symbol_ref(offsetof(ldpipeline_op_t, shader_start) * 8, sizeof(op.shader_start) * 8, symbol);
     tw.write(op);
 }

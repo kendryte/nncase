@@ -16,6 +16,7 @@
 #include <nlohmann/json.hpp>
 #include <nncase/codegen/vulkan/module_builder.h>
 #include <nncase/ir/ops/unary.h>
+#include <nncase/ir/ops/copy.h>
 #include <nncase/ir/placeholders.h>
 #include <nncase/runtime/vulkan/runtime_types.h>
 #include <nncase/schedule/scheduler.h>

@@ -32,10 +32,12 @@ public:
     result<void> visit(gsl::span<const gsl::byte> text) noexcept;
 
     virtual result<void> visit(NNCASE_UNUSED const ldbuf_op_t &op) noexcept { return ok(); }
-    virtual result<void> visit(NNCASE_UNUSED const dupbuf_op_t &op) noexcept { return ok(); }
-    virtual result<void> visit(NNCASE_UNUSED const popbuf_op_t &op) noexcept { return ok(); }
+    virtual result<void> visit(NNCASE_UNUSED const ldbufbarrier_op_t &op) noexcept { return ok(); }
+    virtual result<void> visit(NNCASE_UNUSED const ldbufcopy_op_t &op) noexcept { return ok(); }
+    virtual result<void> visit(NNCASE_UNUSED const copybuf_op_t &op) noexcept { return ok(); }
     virtual result<void> visit(NNCASE_UNUSED const ldpipeline_op_t &op) noexcept { return ok(); }
     virtual result<void> visit(NNCASE_UNUSED const dispatch_op_t &op) noexcept { return ok(); }
+    virtual result<void> visit(NNCASE_UNUSED const barrier_op_t &op) noexcept { return ok(); }
 
 protected:
     bool interrupted_;

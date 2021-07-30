@@ -6,9 +6,14 @@ function(compress_template NAME FILES OUT_VAR)
     endif()
     set(OUT_FILE ${CMAKE_CURRENT_BINARY_DIR}/${NAME}.xz)
     set(SCRIPT_FILE ${CMAKE_SOURCE_DIR}/tools/compress_files.py)
+    if(WIN32)
+        set(PYTHON_EXECUTABLE "python")
+    else()
+        set(PYTHON_EXECUTABLE "python3")
+    endif()
     add_custom_command(
         OUTPUT ${OUT_FILE}
-        COMMAND python3
+        COMMAND ${PYTHON_EXECUTABLE}
         ARGS ${SCRIPT_FILE} -t ${LIBZIP_ZIPTOOL_EXECUTABLE} -o ${OUT_FILE} ${FILES}
         DEPENDS ${FILES}
         WORKING_DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}
