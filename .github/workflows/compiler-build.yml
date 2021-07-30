@@ -141,6 +141,7 @@ jobs:
         sudo apt-get install libopenblas-dev liblapack-dev libatlas-base-dev -y
         sudo apt-get install libgflags-dev libgoogle-glog-dev liblmdb-dev -y
         sudo apt-get install libboost1.62-dev libboost1.62-tools-dev libboost-mpi-python1.62.0 libboost1.62-all-dev -y
+        ls /usr/lib/x86_64-linux-gnu/libgflags*
 
     - name: Install System Requirements
       if: runner.os == 'Macos'
