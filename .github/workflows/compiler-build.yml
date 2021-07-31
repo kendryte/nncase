@@ -246,18 +246,15 @@ jobs:
       shell: bash
       env:
         PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/install/python/warpctc-caffe/caffe:${{github.workspace}}/tests
-        DYLD_LIBRARY_PATH: ${{github.workspace}}/install/python/warpctc-caffe:/usr/local/lib
+        DYLD_LIBRARY_PATH: ${{github.workspace}}/install/python/warpctc-caffe:/usr/local/lib:/usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/lib
       run: |
-        echo "test00"
-        ls /usr/lib
         echo "test01"
-        ls /usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/lib
+        otool -L ${{github.workspace}}/install/python/warpctc-caffe/caffe/caffe/_caffe.so
+        install_name_tool -add_rpath "/usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/lib" ${{github.workspace}}/install/python/warpctc-caffe/_caffe.dylib
+        install_name_tool -add_rpath "/usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/lib" ${{github.workspace}}/install/python/warpctc-caffe/libcaffe.1.0.0.dylib
+        install_name_tool -add_rpath "/usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/lib" ${{github.workspace}}/install/python/warpctc-caffe/caffe/caffe/_caffe.so
         echo "test02"
-        otool -L /usr/local/opt/boost-python3/lib/libboost_python39-mt.dylib
-        echo "test03"
-        install_name_tool -change "libpython3.9.dylib" "/usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/lib/libpython3.9.dylib" ${{github.workspace}}/install/python/warpctc-caffe/_caffe.dylib
-        install_name_tool -change "libpython3.9.dylib" "/usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/lib/libpython3.9.dylib" ${{github.workspace}}/install/python/warpctc-caffe/libcaffe.1.0.0.dylib
-        install_name_tool -change "libpython3.9.dylib" "/usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/lib/libpython3.9.dylib" ${{github.workspace}}/install/python/warpctc-caffe/caffe/caffe/_caffe.so
+        otool -L ${{github.workspace}}/install/python/warpctc-caffe/caffe/caffe/_caffe.so
         cp ${{github.workspace}}/install/python/warpctc-caffe/libcaffe.1.0.0.dylib /usr/local/lib
         pytest tests/importer/caffe --doctest-modules --junitxml=test_results/importer_caffe.xml
         pytest tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
