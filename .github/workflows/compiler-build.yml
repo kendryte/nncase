@@ -250,10 +250,13 @@ jobs:
       run: |
         echo "test01"
         otool -L ${{github.workspace}}/install/python/warpctc-caffe/caffe/caffe/_caffe.so
-        install_name_tool -add_rpath "/usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/lib" ${{github.workspace}}/install/python/warpctc-caffe/_caffe.dylib
-        install_name_tool -add_rpath "/usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/lib" ${{github.workspace}}/install/python/warpctc-caffe/libcaffe.1.0.0.dylib
-        install_name_tool -add_rpath "/usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/lib" ${{github.workspace}}/install/python/warpctc-caffe/caffe/caffe/_caffe.so
         echo "test02"
+        install_name_tool -add_rpath "/usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/Python/lib" ${{github.workspace}}/install/python/warpctc-caffe/_caffe.dylib
+        install_name_tool -add_rpath "/usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/Python/lib" ${{github.workspace}}/install/python/warpctc-caffe/libcaffe.1.0.0.dylib
+        install_name_tool -add_rpath "/usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/Python/lib" ${{github.workspace}}/install/python/warpctc-caffe/caffe/caffe/_caffe.so
+        echo "test03"
+        ls /usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/Python/lib
+        echo "test04"
         otool -L ${{github.workspace}}/install/python/warpctc-caffe/caffe/caffe/_caffe.so
         cp ${{github.workspace}}/install/python/warpctc-caffe/libcaffe.1.0.0.dylib /usr/local/lib
         pytest tests/importer/caffe --doctest-modules --junitxml=test_results/importer_caffe.xml
