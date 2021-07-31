@@ -249,18 +249,13 @@ jobs:
         DYLD_LIBRARY_PATH: ${{github.workspace}}/install/python/warpctc-caffe:/usr/local/lib
       run: |
         echo "test00"
-        ls /usr/lib
+        otool -L ${{github.workspace}}/install/python/warpctc-caffe/libcaffe.1.0.0.dylib
         echo "test01"
-        ls /usr/local/opt/hdf5/lib
-        echo "test02"
-        ls /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/
-        echo "test03"
-        ls /System/Library/Frameworks/Accelerate.framework/Versions/A/
-        echo "test04"
-        /usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/Python
+        otool -L ${{github.workspace}}/install/python/warpctc-caffe/_caffe.dylib
         echo "test2"
         otool -L ${{github.workspace}}/install/python/warpctc-caffe/caffe/caffe/_caffe.so
-        install_name_tool -change "/usr/local/Frameworks/Python.framework/Versions/3.9/lib/libpython3.9.dylib" "libpython3.9.dylib" ${{github.workspace}}/install/python/warpctc-caffe/caffe/caffe/_caffe.so
+        install_name_tool -change "@rpath/_caffe.dylib" "${{github.workspace}}/install/python/warpctc-caffe/_caffe.dylib" ${{github.workspace}}/install/python/warpctc-caffe/caffe/caffe/_caffe.so
+        install_name_tool -change "@rpath/libcaffe.1.0.0.dylib" "${{github.workspace}}/install/python/warpctc-caffe/libcaffe.1.0.0.dylib" ${{github.workspace}}/install/python/warpctc-caffe/caffe/caffe/_caffe.so
         echo "test3"
         otool -L ${{github.workspace}}/install/python/warpctc-caffe/caffe/caffe/_caffe.so
         cp ${{github.workspace}}/install/python/warpctc-caffe/libcaffe.1.0.0.dylib /usr/local/lib
