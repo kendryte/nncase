@@ -241,6 +241,13 @@ jobs:
         PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/install/python/warpctc-caffe/caffe:${{github.workspace}}/tests
         DYLD_LIBRARY_PATH: ${{github.workspace}}/install/python/warpctc-caffe:/usr/local/lib
       run: |
+        echo "test1"
+        ls /usr/local/lib
+        echo "test2"
+        otool -L ${{github.workspace}}/install/python/warpctc-caffe/caffe/caffe/_caffe.so
+        install_name_tool -change "/usr/local/Frameworks/Python.framework/Versions/3.9/lib/libpython3.9.dylib" "libpython3.9.dylib" ${{github.workspace}}/install/python/warpctc-caffe/caffe/caffe/_caffe.so
+        echo "test3"
+        otool -L ${{github.workspace}}/install/python/warpctc-caffe/caffe/caffe/_caffe.so
         cp ${{github.workspace}}/install/python/warpctc-caffe/libcaffe.1.0.0.dylib /usr/local/lib
         pytest tests/importer/caffe --doctest-modules --junitxml=test_results/importer_caffe.xml
         pytest tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
