@@ -249,15 +249,13 @@ jobs:
         DYLD_LIBRARY_PATH: ${{github.workspace}}/install/python/warpctc-caffe:/usr/local/lib
       run: |
         echo "test00"
-        otool -L ${{github.workspace}}/install/python/warpctc-caffe/libcaffe.1.0.0.dylib
+        ls /usr/lib
         echo "test01"
-        otool -L ${{github.workspace}}/install/python/warpctc-caffe/_caffe.dylib
-        echo "test2"
-        otool -L ${{github.workspace}}/install/python/warpctc-caffe/caffe/caffe/_caffe.so
-        install_name_tool -change "@rpath/_caffe.dylib" "${{github.workspace}}/install/python/warpctc-caffe/_caffe.dylib" ${{github.workspace}}/install/python/warpctc-caffe/caffe/caffe/_caffe.so
-        install_name_tool -change "@rpath/libcaffe.1.0.0.dylib" "${{github.workspace}}/install/python/warpctc-caffe/libcaffe.1.0.0.dylib" ${{github.workspace}}/install/python/warpctc-caffe/caffe/caffe/_caffe.so
-        echo "test3"
-        otool -L ${{github.workspace}}/install/python/warpctc-caffe/caffe/caffe/_caffe.so
+        ls /usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/
+        echo "test02"
+        otool -L /usr/local/opt/boost-python3/lib/libboost_python39-mt.dylib
+        echo "test03"
+        ls /Library/Frameworks/Python.framework/Versions/3.9/lib
         cp ${{github.workspace}}/install/python/warpctc-caffe/libcaffe.1.0.0.dylib /usr/local/lib
         pytest tests/importer/caffe --doctest-modules --junitxml=test_results/importer_caffe.xml
         pytest tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
