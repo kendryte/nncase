@@ -228,8 +228,10 @@ jobs:
         PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/install/python/warpctc-caffe/caffe:${{github.workspace}}/tests
         LD_LIBRARY_PATH: ${{github.workspace}}/install/python/warpctc-caffe:/usr/lib/x86_64-linux-gnu:/usr/local/lib
       run: |
-        patchelf --replace-needed libpython3.5m.so.1.0 libpython3.7m.so.1.0 ${{github.workspace}}/install/python/warpctc-caffe/caffe/caffe/_caffe.so
-        patchelf --replace-needed libboost_python-py35.so.1.62.0 libboost_python-py37.so.1.62.0 ${{github.workspace}}/install/python/warpctc-caffe/caffe/caffe/_caffe.so
+        ls /usr/lib/x86_64-linux-gnu/libpython*
+        ls /usr/lib/x86_64-linux-gnu/libboost_python*
+        patchelf --replace-needed libpython3.5m.so.1.0 libpython3.6m.so.1.0 ${{github.workspace}}/install/python/warpctc-caffe/caffe/caffe/_caffe.so
+        patchelf --replace-needed libboost_python-py35.so.1.62.0 libboost_python-py36.so.1.62.0 ${{github.workspace}}/install/python/warpctc-caffe/caffe/caffe/_caffe.so
         pytest tests/importer/caffe --doctest-modules --junitxml=test_results/importer_caffe.xml
         pytest tests/importer/tflite --doctest-modules --junitxml=test_results/importer_tflite.xml
         pytest tests/importer/onnx --doctest-modules --junitxml=test_results/importer_onnx.xml
