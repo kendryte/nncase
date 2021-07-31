@@ -12,7 +12,7 @@ jobs:
     strategy:
       matrix:
         # os: [ubuntu-18.04,windows-2019,macos-10.15]
-        os: [macos-10.15]
+        os: [ubuntu-18.04,macos-10.15]
 
     steps:
     - uses: actions/checkout@v2
@@ -106,7 +106,7 @@ jobs:
     strategy:
       matrix:
         # os: [ubuntu-18.04,windows-2019,macos-10.15]
-        os: [macos-10.15]
+        os: [ubuntu-18.04,macos-10.15]
 
     steps:
     - uses: actions/checkout@v2
@@ -140,6 +140,7 @@ jobs:
         sudo apt-get install --no-install-recommends libboost-all-dev -y
         sudo apt-get install libopenblas-dev liblapack-dev libatlas-base-dev -y
         sudo apt-get install libgflags-dev libgoogle-glog-dev liblmdb-dev -y
+        sudo apt-get install patchelf -y
         sudo apt-get install libboost1.62-dev libboost1.62-tools-dev libboost-mpi-python1.62.0 libboost1.62-all-dev -y
         sudo ln -s /usr/lib/x86_64-linux-gnu/libgflags.so.2.2.1 /usr/lib/x86_64-linux-gnu/libgflags.so.2
 
@@ -227,6 +228,8 @@ jobs:
         PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/install/python/warpctc-caffe/caffe:${{github.workspace}}/tests
         LD_LIBRARY_PATH: ${{github.workspace}}/install/python/warpctc-caffe:/usr/lib/x86_64-linux-gnu:/usr/local/lib
       run: |
+        patchelf --replace-needed libpython3.5m.so.1.0 libpython3.7m.so.1.0 ${{github.workspace}}/install/python/warpctc-caffe/caffe/caffe/_caffe.so
+        patchelf --replace-needed libboost_python-py35.so.1.62.0 libboost_python-py37.so.1.62.0 ${{github.workspace}}/install/python/warpctc-caffe/caffe/caffe/_caffe.so
         pytest tests/importer/caffe --doctest-modules --junitxml=test_results/importer_caffe.xml
         pytest tests/importer/tflite --doctest-modules --junitxml=test_results/importer_tflite.xml
         pytest tests/importer/onnx --doctest-modules --junitxml=test_results/importer_onnx.xml
@@ -241,8 +244,16 @@ jobs:
         PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/install/python/warpctc-caffe/caffe:${{github.workspace}}/tests
         DYLD_LIBRARY_PATH: ${{github.workspace}}/install/python/warpctc-caffe:/usr/local/lib
       run: |
-        echo "test1"
-        ls /usr/local/lib
+        echo "test00"
+        ls /usr/lib
+        echo "test01"
+        ls /usr/local/opt/hdf5/lib
+        echo "test02"
+        ls /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/
+        echo "test03"
+        ls /System/Library/Frameworks/Accelerate.framework/Versions/A/
+        echo "test04"
+        /usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/Python
         echo "test2"
         otool -L ${{github.workspace}}/install/python/warpctc-caffe/caffe/caffe/_caffe.so
         install_name_tool -change "/usr/local/Frameworks/Python.framework/Versions/3.9/lib/libpython3.9.dylib" "libpython3.9.dylib" ${{github.workspace}}/install/python/warpctc-caffe/caffe/caffe/_caffe.so
