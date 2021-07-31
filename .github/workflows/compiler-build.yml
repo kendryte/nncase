@@ -224,7 +224,7 @@ jobs:
       if: runner.os == 'Linux'
       shell: bash
       env:
-        PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/install/python/warpctc-caffe:${{github.workspace}}/install/python/warpctc-caffe/caffe:${{github.workspace}}/tests
+        PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/install/python/warpctc-caffe/caffe:${{github.workspace}}/tests
         LD_LIBRARY_PATH: ${{github.workspace}}/install/python/warpctc-caffe:/usr/lib/x86_64-linux-gnu:/usr/local/lib
       run: |
         pytest tests/importer/caffe --doctest-modules --junitxml=test_results/importer_caffe.xml
@@ -238,11 +238,9 @@ jobs:
       if: runner.os == 'Macos'
       shell: bash
       env:
-        PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/install/python/warpctc-caffe:${{github.workspace}}/install/python/warpctc-caffe/caffe:${{github.workspace}}/tests
+        PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/install/python/warpctc-caffe/caffe:${{github.workspace}}/tests
         DYLD_LIBRARY_PATH: ${{github.workspace}}/install/python/warpctc-caffe:/usr/local/lib
       run: |
-        which python
-        python --version
         cp ${{github.workspace}}/install/python/warpctc-caffe/libcaffe.1.0.0.dylib /usr/local/lib
         pytest tests/importer/caffe --doctest-modules --junitxml=test_results/importer_caffe.xml
         pytest tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
