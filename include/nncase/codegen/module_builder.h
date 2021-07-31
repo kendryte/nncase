@@ -90,6 +90,10 @@ protected:
     virtual void emit(ir::node &node);
     virtual void end_emit() { }
 
+protected:
+    std::filesystem::path dump_dir_;
+    bool dump_asm_;
+
 private:
     std::vector<nncase::ir::node *> generate_runtime_ops();
     void compile();
@@ -106,8 +110,6 @@ private:
     uint32_t alignment_;
     std::string module_name_;
     const module_builder_params &params_;
-    std::filesystem::path dump_dir_;
-    bool dump_asm_;
     std::map<std::string, section, std::less<>> section_writer_;
     std::map<std::string, rdata_merge_info, std::less<>> rdata_section_merges_;
     std::unordered_map<std::string_view, std::pair<size_t, std::string_view>> symbol_offsets_;

@@ -53,7 +53,7 @@ template <class TShape>
 size_t offset(const TShape &strides, const TShape &index)
 {
     assert(strides.size() == index.size());
-    return element_offset<size_t>(strides, index.begin(), index.end());
+    return kernels::element_offset<size_t>(strides, index.begin(), index.end());
 }
 
 template <class TShape>
