@@ -251,11 +251,13 @@ jobs:
         echo "test00"
         ls /usr/lib
         echo "test01"
-        ls /usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/
+        ls /usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/lib
         echo "test02"
         otool -L /usr/local/opt/boost-python3/lib/libboost_python39-mt.dylib
         echo "test03"
-        ls /Library/Frameworks/Python.framework/Versions/3.9/lib
+        install_name_tool -change "libpython3.9.dylib" "/usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/lib/libpython3.9.dylib" ${{github.workspace}}/install/python/warpctc-caffe/_caffe.dylib
+        install_name_tool -change "libpython3.9.dylib" "/usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/lib/libpython3.9.dylib" ${{github.workspace}}/install/python/warpctc-caffe/libcaffe.1.0.0.dylib
+        install_name_tool -change "libpython3.9.dylib" "/usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/lib/libpython3.9.dylib" ${{github.workspace}}/install/python/warpctc-caffe/caffe/caffe/_caffe.so
         cp ${{github.workspace}}/install/python/warpctc-caffe/libcaffe.1.0.0.dylib /usr/local/lib
         pytest tests/importer/caffe --doctest-modules --junitxml=test_results/importer_caffe.xml
         pytest tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
