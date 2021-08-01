@@ -60,7 +60,7 @@ void fold_slice_slice_transform::process(transform_context &context)
     for (auto i = 0; i < int64_t(rp1->begin().size()); ++i)
     {
         new_begin[i] = rp1->begin()[i] + rp2->begin()[i];
-        new_end[i] = rp1->begin()[i] + std::max(rp1->end()[i], rp2->end()[i]);
+        new_end[i] = std::min(rp1->begin()[i] + std::max(rp1->end()[i], rp2->end()[i]), (int32_t)output.shape()[i]);
     }
     if (new_strides != rp2->strides())
     {
