@@ -285,3 +285,4 @@ CMakePresets.json
 tests_output
 
 .DS_Store
+RC*

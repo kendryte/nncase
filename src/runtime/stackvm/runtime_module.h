@@ -18,7 +18,7 @@
 #include <nncase/runtime/stackvm/op_reader.h>
 #include <nncase/runtime/stackvm/runtime_module.h>
 
-BEGIN_NS_NNCASE_RT_STACKVM
+BEGIN_NS_NNCASE_RT_MODULE(stackvm)
 
 class stackvm_runtime_module : public runtime_module, private op_visitor
 {
@@ -184,4 +184,4 @@ private:
     std::vector<runtime_paddings_t> paddings_regs_;
 };
 
-END_NS_NNCASE_RT_STACKVM
+END_NS_NNCASE_RT_MODULE

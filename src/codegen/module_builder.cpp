@@ -38,7 +38,7 @@ std::unordered_set<node_opcode> non_runtime_opcodes { op_input_node, op_output_n
 }
 
 module_builder::module_builder(uint32_t alignment, std::string_view module_name, const module_builder_params &params)
-    : alignment_(alignment), module_name_(module_name), params_(params), dump_asm_(false)
+    : dump_asm_(false), alignment_(alignment), module_name_(module_name), params_(params)
 {
 }
 

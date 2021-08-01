@@ -57,6 +57,42 @@ DEFINE_TFLITE_LOWER(RELU)
     }
 }
 
+DEFINE_TFLITE_LOWER(PRELU)
+{
+    auto &input = get_tensor(op.inputs(), 0);
+    auto &slope = get_tensor(op.inputs(), 1);
+    auto &output = get_tensor(op.outputs(), 0);
+
+    auto in_shape = get_shape(input.shape());
+    auto slope_shape = get_shape(slope.shape());
+
+    auto zero = graph_.emplace<constant>(0.f);
+    zero->name(output.name()->string_view());
+
+    auto pos = graph_.emplace<binary>(binary_max, in_shape, zero->output().shape(), value_range<float>::full());
+    auto neg = graph_.emplace<binary>(binary_min, in_shape, zero->output().shape(), value_range<float>::full());
+    auto mul = graph_.emplace<binary>(binary_mul, neg->output().shape(), slope_shape, value_range<float>::full());
+    auto add = graph_.emplace<binary>(binary_add, pos->output().shape(), mul->output().shape(), value_range<float>::full());
+
+    pos->name(std::string(output.name()->string_view()) + "/pos");
+    neg->name(std::string(output.name()->string_view()) + "/neg");
+    mul->name(std::string(output.name()->string_view()) + "/mul");
+    add->name(std::string(output.name()->string_view()) + "/add");
+
+    link_input_tensor(&pos->input_a(), op.inputs()->Get(0));
+    pos->input_b().connect(zero->output());
+
+    link_input_tensor(&neg->input_a(), op.inputs()->Get(0));
+    neg->input_b().connect(zero->output());
+
+    mul->input_a().connect(neg->output());
+    link_input_tensor(&mul->input_b(), op.inputs()->Get(1));
+    add->input_a().connect(pos->output());
+    add->input_b().connect(mul->output());
+
+    link_output_tensor(op.outputs()->Get(0), &add->output());
+}
+
 DEFINE_TFLITE_LOWER(RELU6)
 {
     auto &input = get_tensor(op.inputs(), 0);
