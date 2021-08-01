@@ -152,6 +152,13 @@ jobs:
         brew install hdf5 openblas
         brew install -vd protobuf
         brew install -vd boost boost-python3
+        wget -c https://github.com/protocolbuffers/protobuf/archive/refs/tags/v3.17.3.zip
+        unzip v3.17.3.zip
+        cd protobuf-3.17.3/python
+        python setup.py build
+        python setup.py test
+        python setup.py install
+        cd ../../
 
     - name: Install Python Packages
       if: runner.os != 'Macos'
@@ -248,8 +255,6 @@ jobs:
         PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/install/python/warpctc-caffe/caffe:${{github.workspace}}/tests
         DYLD_LIBRARY_PATH: ${{github.workspace}}/install/python/warpctc-caffe:/usr/local/lib:/usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/lib
       run: |
-        echo "test01"
-        otool -L ${{github.workspace}}/install/python/warpctc-caffe/caffe/caffe/_caffe.so
         cp ${{github.workspace}}/install/python/warpctc-caffe/libcaffe.1.0.0.dylib /usr/local/lib
         pytest tests/importer/caffe --doctest-modules --junitxml=test_results/importer_caffe.xml
         pytest tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
