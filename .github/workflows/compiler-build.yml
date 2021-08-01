@@ -260,7 +260,7 @@ jobs:
         PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/install/python/warpctc-caffe/caffe:${{github.workspace}}/tests
         DYLD_LIBRARY_PATH: ${{github.workspace}}/protobuf-3.17.3/src/.libs:${{github.workspace}}/install/python/warpctc-caffe:/usr/local/lib:/usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/lib
       run: |
-        ech0 "test0"
+        echo "test0"
         ls ${{github.workspace}}
         echo "test1"
         otool -L ${{github.workspace}}/install/python/warpctc-caffe/caffe/caffe/_caffe.so
