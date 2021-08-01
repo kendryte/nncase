@@ -289,7 +289,7 @@ struct numeric_limits<nncase::half>
 
     NNCASE_UNUSED static constexpr nncase::half round_error() noexcept
     {
-        return nncase::half(0.5);
+        return nncase::half((double)0.5);
     }
 
     NNCASE_UNUSED static constexpr nncase::half denorm_min() noexcept

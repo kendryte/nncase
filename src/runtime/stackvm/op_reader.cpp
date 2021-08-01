@@ -15,9 +15,6 @@
  * limitations under the License.
  */
 #include <nncase/runtime/stackvm/op_reader.h>
-#if NNCASE_DEBUG
-#include <sysctl.h>
-#endif
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -28,9 +25,6 @@ result<void> op_visitor::next() noexcept
     auto opcode = static_cast<opcode_t>(reader_.peek_unaligned<uint8_t>());
     if (opcode == opcode_t::TENSOR)
     {
-#if NNCASE_DEBUG
-        auto micro = sysctl_get_time_us();
-#endif
         auto tensor_funct = static_cast<tensor_function_t>(reader_.peek_unaligned_with_offset<uint16_t>(1));
         switch (tensor_funct)
         {
@@ -77,10 +71,6 @@ result<void> op_visitor::next() noexcept
         default:
             break;
         }
-#if NNCASE_DEBUG
-        auto duration = sysctl_get_time_us() - micro;
-        printf("run tensor op 0x%x takes %f ms.\n", (uint32_t)tensor_funct, duration / 1e3f);
-#endif
     }
     else
     {
