@@ -47,7 +47,7 @@ static uint32_t lcd_gram[FRAME_WIDTH * FRAME_HEIGHT] __attribute__((aligned(32))
 
 kpu_model_context_t task;
 
-INCBIN(model, "yolox_nano_224_quant.kmodel");
+INCBIN(model, "yolox_nano_224.kmodel");
 
 INCBIN(input, "input.bin");
 
