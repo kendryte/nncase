@@ -150,15 +150,20 @@ jobs:
       run: |
         brew install -vd snappy leveldb gflags glog szip lmdb
         brew install hdf5 openblas
-        brew install -vd protobuf
-        brew install -vd boost boost-python3
+        brew install autoconf automake libtool
         wget -c https://github.com/protocolbuffers/protobuf/archive/refs/tags/v3.17.3.zip
         unzip v3.17.3.zip
-        cd protobuf-3.17.3/python
+        cd protobuf-3.17.3
+        ./autogen.sh
+        ./configure
+        make
+        make install
+        cd python
         python setup.py build
         python setup.py test
         python setup.py install
         cd ../../
+        brew install -vd boost boost-python3
 
     - name: Install Python Packages
       if: runner.os != 'Macos'
