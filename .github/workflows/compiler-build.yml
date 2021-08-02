@@ -272,13 +272,13 @@ jobs:
         echo "test3"
         otool -L ${{github.workspace}}/install/python/warpctc-caffe/caffe/caffe/_caffe.so
         echo "test4"
-        $ brew info boost
+        brew info boost
         echo "test5"
-        $ otool -L /usr/local/opt/boost/lib/libboost_system-mt.dylib
+        otool -L /usr/local/opt/boost/lib/libboost_system-mt.dylib
         echo "test6"
-        $ brew info boost-python
+        brew info boost-python
         echo "test7"
-        $ otool -L /usr/local/opt/boost-python3/lib/libboost_python39-mt.dylib
+        otool -L /usr/local/opt/boost-python3/lib/libboost_python39-mt.dylib
         cp ${{github.workspace}}/install/python/warpctc-caffe/libcaffe.1.0.0.dylib /usr/local/lib
         pytest tests/importer/caffe --doctest-modules --junitxml=test_results/importer_caffe.xml
         pytest tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
