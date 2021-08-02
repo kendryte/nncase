@@ -149,16 +149,13 @@ modes = [
     'edge'
 ]
 
-op_versions = [
+op_versions_and_value_formats = [
     # opset 1 is not supported by onnx runntime
-    2,
-    11,
-    13
-]
-
-value_formats = [
-    'initializer',
-    'node'
+    [2, 'attribute'],
+    [11, 'initializer'],
+    [11, 'node'],
+    [13, 'initializer'],
+    [13, 'node']
 ]
 
 
@@ -166,9 +163,9 @@ value_formats = [
 @pytest.mark.parametrize('padding', paddings)
 @pytest.mark.parametrize('constant_value', constant_values)
 @pytest.mark.parametrize('mode', modes)
-@pytest.mark.parametrize('op_version', op_versions)
-@pytest.mark.parametrize('value_format', value_formats)
-def test_pad(in_shape, padding, constant_value, mode, op_version, value_format, request):
+@pytest.mark.parametrize('op_version_and_value_format', op_versions_and_value_formats)
+def test_pad(in_shape, padding, constant_value, mode, op_version_and_value_format, request):
+    op_version, value_format = op_version_and_value_format
     model_def = _make_module(in_shape, padding, constant_value, mode, op_version, value_format)
 
     runner = OnnxTestRunner(request.node.name)
