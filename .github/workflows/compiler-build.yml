@@ -276,7 +276,7 @@ jobs:
         echo "test5"
         otool -L /usr/local/opt/boost/lib/libboost_system-mt.dylib
         echo "test6"
-        brew info boost-python
+        brew info boost-python3
         echo "test7"
         otool -L /usr/local/opt/boost-python3/lib/libboost_python39-mt.dylib
         echo "test build python path"
@@ -285,8 +285,8 @@ jobs:
         ls /usr/local/Frameworks/Python.framework/Versions/3.9/lib
         echo "test otool python path"
         ls /usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/
-        echo "test otool python ver"
-        /usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/Python --version
+        echo "test otool python path2"
+        ls /usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/Python
         cp ${{github.workspace}}/install/python/warpctc-caffe/libcaffe.1.0.0.dylib /usr/local/lib
         pytest tests/importer/caffe --doctest-modules --junitxml=test_results/importer_caffe.xml
         pytest tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
