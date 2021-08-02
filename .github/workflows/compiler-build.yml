@@ -284,9 +284,11 @@ jobs:
         echo "test build python lib path"
         ls /usr/local/Frameworks/Python.framework/Versions/3.9/lib
         echo "test otool python path"
-        ls /usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/
+        ls /usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/bin
         echo "test otool python path2"
-        ls /usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/Python
+        ls /usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/lib
+        echo "test otool python path3"
+        ls /usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/include
         cp ${{github.workspace}}/install/python/warpctc-caffe/libcaffe.1.0.0.dylib /usr/local/lib
         pytest tests/importer/caffe --doctest-modules --junitxml=test_results/importer_caffe.xml
         pytest tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
