@@ -273,9 +273,9 @@ jobs:
         install_name_tool -change "/usr/local/opt/protobuf/lib/libprotobuf.28.dylib" "${{github.workspace}}/protobuf-3.17.3/src/.libs/libprotobuf.28.dylib" ${{github.workspace}}/install/python/warpctc-caffe/_caffe.dylib
         install_name_tool -change "/usr/local/opt/protobuf/lib/libprotobuf.28.dylib" "${{github.workspace}}/protobuf-3.17.3/src/.libs/libprotobuf.28.dylib" ${{github.workspace}}/install/python/warpctc-caffe/libcaffe.1.0.0.dylib
         install_name_tool -change "/usr/local/opt/protobuf/lib/libprotobuf.28.dylib" "${{github.workspace}}/protobuf-3.17.3/src/.libs/libprotobuf.28.dylib" ${{github.workspace}}/install/python/warpctc-caffe/caffe/caffe/_caffe.so
-        install_name_tool -change "/usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/Python" "/Users/runner/hostedtoolcache/Python/3.9.6/x64" ${{github.workspace}}/install/python/warpctc-caffe/_caffe.dylib
-        install_name_tool -change "/usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/Python" "/Users/runner/hostedtoolcache/Python/3.9.6/x64" ${{github.workspace}}/install/python/warpctc-caffe/libcaffe.1.0.0.dylib
-        install_name_tool -change "/usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/Python" "/Users/runner/hostedtoolcache/Python/3.9.6/x64" ${{github.workspace}}/install/python/warpctc-caffe/caffe/caffe/_caffe.so
+        install_name_tool -change "/usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/Python" "/Users/runner/hostedtoolcache/Python/3.9.6/x64/lib/libpython3.9.dylib" ${{github.workspace}}/install/python/warpctc-caffe/_caffe.dylib
+        install_name_tool -change "/usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/Python" "/Users/runner/hostedtoolcache/Python/3.9.6/x64/lib/libpython3.9.dylib" ${{github.workspace}}/install/python/warpctc-caffe/libcaffe.1.0.0.dylib
+        install_name_tool -change "/usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/Python" "/Users/runner/hostedtoolcache/Python/3.9.6/x64/lib/libpython3.9.dylib" ${{github.workspace}}/install/python/warpctc-caffe/caffe/caffe/_caffe.so
         echo "test3"
         otool -L ${{github.workspace}}/install/python/warpctc-caffe/caffe/caffe/_caffe.so
         echo "test4"
