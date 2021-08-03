@@ -25,7 +25,7 @@
 #pragma once
 #include "../datatypes.h"
 
-BEGIN_NS_NNCASE_RT_STACKVM
+BEGIN_NS_NNCASE_RT_MODULE(stackvm)
 
 // Enums
 @foreach (var e in Model.Enums)
@@ -60,4 +60,4 @@ foreach (var field in inst.Fields)
 @:};
 }
 
-END_NS_NNCASE_RT_STACKVM
+END_NS_NNCASE_RT_MODULE

@@ -21,11 +21,12 @@ from onnx_test_runner import OnnxTestRunner
 import numpy as np
 
 
-def _make_module(in_shape, padding, constant_value, mode, op_version):
+def _make_module(in_shape, padding, constant_value, mode, op_version, value_format):
 
     input = helper.make_tensor_value_info('input', TensorProto.FLOAT, in_shape)
 
     initializers = None
+    nodes = []
 
     out_shape = in_shape.copy()
     out_shape[2] += padding[2] + padding[6]
@@ -76,7 +77,15 @@ def _make_module(in_shape, padding, constant_value, mode, op_version):
             dims=dims_list,
             vals=padding)
 
-        initializers.append(pads)
+        if value_format == 'initializer':
+            initializers.append(pads)
+        else:
+            pads_node = helper.make_node(
+                'Constant',
+                inputs=[],
+                outputs=['pads'],
+                value=pads)
+            nodes.append(pads_node)
 
         inputs = ['input', 'pads']
         if constant_value is not None:
@@ -97,8 +106,10 @@ def _make_module(in_shape, padding, constant_value, mode, op_version):
             outputs=['output'],
             mode=mode)
 
+    nodes.append(node)
+
     graph_def = helper.make_graph(
-        [node],
+        nodes,
         'test-model',
         [input],
         [output],
@@ -138,11 +149,13 @@ modes = [
     'edge'
 ]
 
-op_versions = [
+op_versions_and_value_formats = [
     # opset 1 is not supported by onnx runntime
-    2,
-    11,
-    13
+    [2, 'attribute'],
+    [11, 'initializer'],
+    [11, 'node'],
+    [13, 'initializer'],
+    [13, 'node']
 ]
 
 
@@ -150,9 +163,10 @@ op_versions = [
 @pytest.mark.parametrize('padding', paddings)
 @pytest.mark.parametrize('constant_value', constant_values)
 @pytest.mark.parametrize('mode', modes)
-@pytest.mark.parametrize('op_version', op_versions)
-def test_pad(in_shape, padding, constant_value, mode, op_version, request):
-    model_def = _make_module(in_shape, padding, constant_value, mode, op_version)
+@pytest.mark.parametrize('op_version_and_value_format', op_versions_and_value_formats)
+def test_pad(in_shape, padding, constant_value, mode, op_version_and_value_format, request):
+    op_version, value_format = op_version_and_value_format
+    model_def = _make_module(in_shape, padding, constant_value, mode, op_version, value_format)
 
     runner = OnnxTestRunner(request.node.name)
     model_file = runner.from_onnx_helper(model_def)

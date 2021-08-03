@@ -1,4 +1,4 @@
-name: runtime-macos-x64-cpu-appleclang
+name: runtime-win-x64-msvc
 
 on: [push, pull_request]
 
@@ -10,16 +10,15 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [macos-10.15]
+        os: [windows-2019]
 
     steps:
     - uses: actions/checkout@v2
     - uses: seanmiddleditch/gha-setup-ninja@master
-        
-    - name: Install System Requirements
-      shell: bash
-      run: |
-        brew install sunnycase/core/libomp@11.1.0
+
+    - name: Add msbuild to PATH
+      if: runner.os == 'Windows'
+      uses: ilammy/msvc-dev-cmd@v1.9.0
           
     - name: Setup Python
       uses: actions/setup-python@v2.2.1
@@ -52,6 +51,6 @@ jobs:
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v2.2.2
       with:
-        name: nncaseruntime-macos-x64-cpu-appleclang
+        name: nncaseruntime-win-x64-gcc
         path: ${{github.workspace}}/install
         if-no-files-found: error

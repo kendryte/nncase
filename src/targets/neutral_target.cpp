@@ -121,7 +121,6 @@ void neutral_target::add_default_transforms(ir::transforms::transform_pass &pass
     pass.emplace<transpose_unary_motion_transform>();
     pass.emplace<simplify_reduce_transform>();
     pass.emplace<global_reduce_window_to_reduce_transform>();
-    pass.emplace<reduce_to_global_reduce_window_transform>();
     pass.emplace<transpose_to_reshape_transform>();
     pass.emplace<take_to_slice_transform>();
     pass.emplace<split_to_slice_transform>();
