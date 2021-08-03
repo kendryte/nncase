@@ -103,7 +103,7 @@ bool strided_slice_conv2d_pool::on_try_match(node &node, transform_context &cont
             && slc.end_mask() == 0
             && slc.new_axis_mask() == 0)
         {
-            if (auto input = try_get_direct_parent<input_node>(slc))
+            if (try_get_direct_parent<input_node>(slc))
             {
                 context.inputs.emplace_back(&slc.input());
                 context.outputs.emplace_back(&slc.output());

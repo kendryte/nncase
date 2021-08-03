@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 #include <nncase/kernels/convolution.h>
-#include <nncase/kernels/cpu/optimized/convolution.h>
+#include <nncase/kernels/cpu/optimized/tensor_compute.h>
 #include <nncase/kernels/cpu/reference/convolution.h>
 #include <nncase/runtime/runtime_op_utility.h>
 using namespace nncase;
