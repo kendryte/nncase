@@ -167,7 +167,19 @@ jobs:
       run: |
         brew install -vd snappy leveldb gflags glog szip lmdb
         brew install hdf5 openblas
-        brew install protobuf
+        brew install autoconf automake libtool
+        wget -c https://github.com/protocolbuffers/protobuf/archive/refs/tags/v3.5.1.zip
+        unzip v3.5.1.zip
+        cd protobuf-3.5.1
+        ./autogen.sh
+        ./configure
+        make
+        make install
+        cd python
+        python setup.py build
+        python setup.py test
+        python setup.py install
+        cd ../../
         brew install -vd boost boost-python3
 
     - name: Install Python Packages
@@ -265,7 +277,6 @@ jobs:
         PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/install/python/warpctc-caffe/caffe:${{github.workspace}}/tests
         DYLD_LIBRARY_PATH: ${{github.workspace}}/protobuf-3.5.1/src/.libs:${{github.workspace}}/install/python/warpctc-caffe:/usr/local/lib:/Users/runner/hostedtoolcache/Python/3.9.6/x64/lib
       run: |
-        echo "test0"
         install_name_tool -change "/usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/Python" "/Users/runner/hostedtoolcache/Python/3.9.6/x64/lib/libpython3.9.dylib" ${{github.workspace}}/install/python/warpctc-caffe/_caffe.dylib
         install_name_tool -change "/usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/Python" "/Users/runner/hostedtoolcache/Python/3.9.6/x64/lib/libpython3.9.dylib" ${{github.workspace}}/install/python/warpctc-caffe/libcaffe.1.0.0.dylib
         install_name_tool -change "/usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/Python" "/Users/runner/hostedtoolcache/Python/3.9.6/x64/lib/libpython3.9.dylib" ${{github.workspace}}/install/python/warpctc-caffe/caffe/caffe/_caffe.so
