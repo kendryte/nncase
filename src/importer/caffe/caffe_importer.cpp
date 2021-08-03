@@ -32,18 +32,14 @@ using namespace std::string_view_literals;
 caffe_importer::caffe_importer(std::span<const uint8_t> model, std::span<const uint8_t> prototxt, ir::graph &graph)
     : graph_(graph)
 {
-    std::cout<<"test protobuf1"<<std::endl;
     GOOGLE_PROTOBUF_VERIFY_VERSION;
-    std::cout<<"test protobuf2"<<std::endl;
 
     if (!model_.ParseFromArray(model.data(), (int)model.size()))
         throw std::runtime_error("Invalid Caffe model");
 
     caffe::NetParameter proto;
     google::protobuf::io::ArrayInputStream input_stream(prototxt.data(), static_cast<int>(prototxt.size_bytes()));
-    std::cout<<"test protobuf3"<<std::endl;
     bool success = google::protobuf::TextFormat::Parse(&input_stream, &proto);
-    std::cout<<"test protobuf4"<<std::endl;
     if (!success)
     {
         throw std::runtime_error("read prototxt failed");
