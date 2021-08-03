@@ -299,7 +299,7 @@ jobs:
         echo "python ver"
         which python
         cp ${{github.workspace}}/install/python/warpctc-caffe/libcaffe.1.0.0.dylib /usr/local/lib
-        pytest tests/importer/caffe --doctest-modules --junitxml=test_results/importer_caffe.xml
+        pytest tests/importer/caffe -s --doctest-modules --junitxml=test_results/importer_caffe.xml
         pytest tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
         pytest tests/schedule --doctest-modules --junitxml=test_results/graph_partition.xml
 
