@@ -31,7 +31,7 @@ in_shapes = [
 ]
 
 alphas = [
-    1.0
+    0.25
 ]
 
 
@@ -48,7 +48,7 @@ judge:
       simarity_name: segment
       threshold: true
 """
-    runner = TfliteTestRunner(request.node.name, ['cpu', 'k510'], overwrite_cfg)
+    runner = TfliteTestRunner(request.node.name, overwrite_cfg)
     model_file = runner.from_tensorflow(module)
     runner.run(model_file)
 
