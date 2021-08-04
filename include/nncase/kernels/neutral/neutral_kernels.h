@@ -289,7 +289,7 @@ void conv2d_transpose(const float *input, float *output, const float *weights, [
 
                         for (size_t oc = 0; oc < g_oc; oc++)
                         {
-                            assert(bias[g * g_oc + oc] == 0.f);
+                            // assert(bias[g * g_oc + oc] == 0.f);
                             float *out_c_p = out_group_p + (size_t)oc * out_shape[2] * out_shape[3];
                             const float *w_oc_p = w_group_p + (size_t)oc * g_ic * filter_h * filter_w;
                             const float *w_ic_p = w_oc_p + (size_t)ic * filter_h * filter_w;
