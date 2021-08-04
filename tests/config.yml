@@ -7,12 +7,16 @@ running: # 每个case运行时的处理配置
   postprocess: null
 case: # case的配置，应该是一个多层次的
   importer_opt:
-    kwargs: null
+    kwargs: 
+      # input_layout: 'NHWC'
+      # output_layout: 'NHWC'
   compile_opt:
     kwargs:
       dump_asm: true
       dump_ir: true
-      input_type: 'float32'
+      input_type: 'int8'
+      quant_type: 'int8'
+      
   ptq_opt:
     kwargs:
       input_mean: 0.5
@@ -30,24 +34,24 @@ case: # case的配置，应该是一个多层次的
   eval:
     - name: target
       values:
-        - cpu
-        - vulkan
-        - k210
-        - k510
+        # - cpu
+        # - vulkan
+        # - k210
+        # - k510
     - name: ptq
       values:
         - false
   infer:
     - name: target
       values:
-        - cpu
+        # - cpu
         - vulkan
         - k210
         - k510
     - name: ptq
       values:
         - false
-        - true
+        # - true
 judge:
   common: &judge_common
     simarity_name:  cosine

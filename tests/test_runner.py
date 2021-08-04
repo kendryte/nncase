@@ -112,6 +112,17 @@ DataFactory = {
 }
 
 
+def transform_input(values: np.array, type: str):
+    if type == 'float32':
+        return values
+    elif type == 'uint8':
+        return ((values + 1) * 127.5).astype(np.uint8)
+    elif type == 'int8':
+        return (values * 127).astype(np.int8)
+    else:
+        raise TypeError(" Not support type for quant input")
+
+
 class TestRunner(metaclass=ABCMeta):
     def __init__(self, case_name, targets=None, overwirte_configs: Union[Dict, str] = None) -> None:
         config_root = os.path.dirname(__file__)
@@ -252,7 +263,7 @@ class TestRunner(metaclass=ABCMeta):
                 compile_options, model_content, dict_args)
             judge, result = self.compare_results(
                 self.output_paths, infer_output_paths, dict_args)
-            assert(judge), result
+            assert(judge), 'Fault result' + result
 
     @staticmethod
     def split_value(kwcfg: List[Dict[str, str]]) -> Tuple[List[str], List[str]]:
@@ -314,12 +325,14 @@ class TestRunner(metaclass=ABCMeta):
             os.path.join(case_dir, 'infer'), kwargs)
         compile_options.target = kwargs['target']
         compile_options.dump_dir = infer_dir
+        compile_options.input_type = cfg.compile_opt.kwargs['input_type']
+        compile_options.quant_type = cfg.compile_opt.kwargs['quant_type']
         compiler = nncase.Compiler(compile_options)
         self.import_model(compiler, model_content, import_options)
         if kwargs['ptq']:
             ptq_options = nncase.PTQTensorOptions()
             ptq_options.set_tensor_data(np.asarray(
-                [sample['data'] for sample in self.calibs]).tobytes())
+                [transform_input(sample['data'], compile_options.input_type) for sample in self.calibs]).tobytes())
             ptq_options.samples_count = cfg.generate_calibs.batch_size
             ptq_options.input_mean = cfg.ptq_opt.kwargs['input_mean']
             ptq_options.input_std = cfg.ptq_opt.kwargs['input_std']
@@ -334,8 +347,7 @@ class TestRunner(metaclass=ABCMeta):
         infer_output_paths: List[np.ndarray] = []
         for i in range(len(self.inputs)):
             sim.set_input_tensor(
-                i, nncase.RuntimeTensor.from_numpy(self.inputs[i]['data']))
-
+                i, nncase.RuntimeTensor.from_numpy(transform_input(self.inputs[i]['data'], compile_options.input_type)))
         sim.run()
 
         for i in range(sim.outputs_size):
