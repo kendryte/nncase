@@ -12,18 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "template.h"
-#include <fmt/format.h>
-#include <inja/inja.hpp>
-#include <libzippp/libzippp.h>
-#include <shaderc/shaderc.hpp>
-#include <span>
 #include <system_error>
-#include <unordered_map>
 
-using namespace libzippp;
 using namespace nncase;
-using namespace nncase::codegen::vulkan;
 
 #if _MSC_VER
 #include "resource.h"
@@ -60,7 +51,7 @@ struct xz_res
 #else
 #define INCBIN_STYLE INCBIN_STYLE_SNAKE
 #include <nncase/runtime/incbin.h>
-INCBIN(templates_xz, "vulkan_templates_xz.xz");
+INCBIN(mnist, "cpu/mnist.kmodel");
 
 namespace
 {

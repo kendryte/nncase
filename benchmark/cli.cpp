@@ -12,16 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/ir/op_utils.h>
-#include <nncase/ir/ops/table_lookup.h>
+#include <iostream>
+#include <nncase/runtime/interpreter.h>
+#include <nncase/version.h>
 
-using namespace nncase;
-using namespace nncase::ir;
+using namespace nncase::runtime;
 
-table_lookup1d::table_lookup1d(datatype_t type, shape_t input_shape, size_t table_size)
+int main()
 {
-    add_input("input", type, input_shape);
-    add_input("table", type, shape_t { table_size })
-        .attributes(cnctr_attr_no_dummy_for_benchmark);
-    add_output("output", type, input_shape);
+    std::cout << "nncase Benchmark Tools " NNCASE_VERSION NNCASE_VERSION_SUFFIX << std::endl
+              << "Copyright 2019-2021 Canaan Inc." << std::endl;
+
+    return 0;
 }

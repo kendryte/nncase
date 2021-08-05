@@ -40,12 +40,13 @@ memory_location_t decide_memory_location(ir::output_connector &conn, bool skip_b
     if (opcode == op_input_node)
         return mem_input;
     else if (opcode == op_constant)
-        return mem_rdata;
+        return conn.memory_location();
 
     if (skip_buffer_alias)
     {
         auto connections = conn.connections();
-        if (std::any_of(connections.begin(), connections.end(), [](input_connector *conn) { return conn->owner().runtime_opcode() == op_output_node; }))
+        if (std::any_of(connections.begin(), connections.end(), [](input_connector *conn)
+                { return conn->owner().runtime_opcode() == op_output_node; }))
             return mem_output;
     }
 
@@ -109,12 +110,13 @@ private:
 void schedule_context::generate_compute_sequence()
 {
     std::unordered_set<node *> used_inputs;
-    auto alloc_visitor = make_relay_ir_visitor([&](node &node) {
-        if (node.runtime_opcode() == op_input_node)
-            used_inputs.emplace(&node);
-        else if (node.attributes() & node_attr_action)
-            compute_sequence.emplace_back(&node);
-    });
+    auto alloc_visitor = make_relay_ir_visitor([&](node &node)
+        {
+            if (node.runtime_opcode() == op_input_node)
+                used_inputs.emplace(&node);
+            else if (node.attributes() & node_attr_action)
+                compute_sequence.emplace_back(&node);
+        });
 
     alloc_visitor.visit(outputs);
 
@@ -132,19 +134,20 @@ void schedule_context::generate_compute_sequence()
 void schedule_context::make_logical_buffers()
 {
     lifetime_recorder lr(logical_buffers, logical_buffer_map, skip_buffer_alias);
-    auto alloc_visitor = make_relay_ir_visitor([&](node &node) {
-        for (auto out : node.outputs())
-            lr.allocate(*out);
-
-        lr.grow_age();
-
-        for (auto in : node.inputs())
+    auto alloc_visitor = make_relay_ir_visitor([&](node &node)
         {
-            auto out = in->connection();
-            assert(out);
-            lr.release(*out);
-        }
-    });
+            for (auto out : node.outputs())
+                lr.allocate(*out);
+
+            lr.grow_age();
+
+            for (auto in : node.inputs())
+            {
+                auto out = in->connection();
+                assert(out);
+                lr.release(*out);
+            }
+        });
     alloc_visitor.visit(outputs);
 }
 
@@ -297,41 +300,42 @@ void schedule_context::analyze_buffer_alias()
 
 void schedule_context::update_offset()
 {
-    auto visitor = make_relay_ir_visitor<bfs_ir_pre_order_visitor>([&](node &node) {
-        if (auto b = node_cast<bitcast>(node))
+    auto visitor = make_relay_ir_visitor<bfs_ir_pre_order_visitor>([&](node &node)
         {
-            if (!(b->attributes() & node_attr_action))
+            if (auto b = node_cast<bitcast>(node))
             {
-                auto &in_buf = logical_buffer_map.at(b->input().connection());
-                auto &out_buf = logical_buffer_map.at(&b->output());
-
-                if (in_buf->memory_location() == mem_data && in_buf->parent() && out_buf->parent())
+                if (!(b->attributes() & node_attr_action))
                 {
-                    in_buf->parent()->offset += out_buf->parent()->offset;
+                    auto &in_buf = logical_buffer_map.at(b->input().connection());
+                    auto &out_buf = logical_buffer_map.at(&b->output());
+
+                    if (in_buf->memory_location() == mem_data && in_buf->parent() && out_buf->parent())
+                    {
+                        in_buf->parent()->offset += out_buf->parent()->offset;
+                    }
                 }
             }
-        }
-        else if (auto c = node_cast<concat>(node))
-        {
-            if (c->attributes() & node_attr_action)
-                return;
-
-            auto &out_buf = logical_buffer_map.at(&c->output());
-
-            for (auto &in : c->inputs())
+            else if (auto c = node_cast<concat>(node))
             {
-                auto in_buf = logical_buffer_map.at(in->connection());
-                if (in_buf->parent() && out_buf->parent())
+                if (c->attributes() & node_attr_action)
+                    return;
+
+                auto &out_buf = logical_buffer_map.at(&c->output());
+
+                for (auto &in : c->inputs())
                 {
-                    in_buf->parent()->offset += out_buf->parent()->offset;
+                    auto in_buf = logical_buffer_map.at(in->connection());
+                    if (in_buf->parent() && out_buf->parent())
+                    {
+                        in_buf->parent()->offset += out_buf->parent()->offset;
+                    }
                 }
             }
-        }
-        // TODO: slice
-        // else if (auto s = node_cast<slice>(node))
-        // {
-        // }
-    });
+            // TODO: slice
+            // else if (auto s = node_cast<slice>(node))
+            // {
+            // }
+        });
     visitor.visit(outputs);
 }
 
@@ -417,7 +421,8 @@ void schedule_context::allocate_physical_buffers()
     orders.reserve(physical_buffers.size());
     for (auto &b : physical_buffers)
         orders.emplace_back(&b);
-    std::sort(orders.begin(), orders.end(), [](const physical_buffer *lhs, const physical_buffer *rhs) { return lhs->lifetime().birth < rhs->lifetime().birth; });
+    std::sort(orders.begin(), orders.end(), [](const physical_buffer *lhs, const physical_buffer *rhs)
+        { return lhs->lifetime().birth < rhs->lifetime().birth; });
 
     for (auto &b : orders)
         allocators.at(b->owner().memory_location())->mark(*b);
@@ -438,37 +443,39 @@ void schedule_context::assign_allocations()
     std::vector<std::shared_ptr<buffer_allocator>> allocator_holder;
     target->register_allocators(module_type, allocators, allocator_holder);
 
-    auto alloc_visitor = make_relay_ir_visitor([&](node &node) {
-        for (auto out : node.outputs())
+    auto alloc_visitor = make_relay_ir_visitor([&](node &node)
         {
-            auto &lbuf = *logical_buffer_map.at(out);
-            auto &owner = lbuf.physical()->owner();
-            auto &memory = lbuf.physical()->allocation();
-
-            // TODO: take account of subbuffer
-            buffer_allocation alloc;
-            alloc.memory_location = owner.memory_location();
-            alloc.type = lbuf.type();
-            alloc.size = allocators.at(alloc.memory_location)->get_size_in_bytes(lbuf);
-            alloc.shape = lbuf.shape();
-            assert(lbuf.strides_shape().size());
-            alloc.strides_shape = lbuf.strides_shape();
-            alloc.strides = to_strides(alloc.strides_shape);
-            alloc.start = memory.start;
-            if (lbuf.parent())
+            for (auto out : node.outputs())
             {
-                alloc.start += lbuf.parent()->offset;
-            }
+                auto &lbuf = *logical_buffer_map.at(out);
+                auto &owner = lbuf.physical()->owner();
+                auto &memory = lbuf.physical()->allocation();
 
-            allocations.emplace(out, alloc);
-        }
-    });
+                // TODO: take account of subbuffer
+                buffer_allocation alloc;
+                alloc.memory_location = owner.memory_location();
+                alloc.type = lbuf.type();
+                alloc.size = allocators.at(alloc.memory_location)->get_size_in_bytes(lbuf);
+                alloc.shape = lbuf.shape();
+                assert(lbuf.strides_shape().size());
+                alloc.strides_shape = lbuf.strides_shape();
+                alloc.strides = to_strides(alloc.strides_shape);
+                alloc.start = memory.start;
+                if (lbuf.parent())
+                {
+                    alloc.start += lbuf.parent()->offset;
+                }
+
+                allocations.emplace(out, alloc);
+            }
+        });
     alloc_visitor.visit(outputs);
 }
 
 schedule_result scheduler::schedule(bool skip_buffer_alias)
 {
-    auto schedule_module = [&](ir::graph &graph, std::span<ir::output_node *> outputs, module_schedule_result &result) {
+    auto schedule_module = [&](ir::graph &graph, std::span<ir::output_node *> outputs, module_schedule_result &result)
+    {
         schedule_context context;
         context.skip_buffer_alias = skip_buffer_alias;
         context.graph = &graph;
@@ -513,7 +520,8 @@ void scheduler::dump_schedule(const schedule_context &context)
 {
     std::ofstream writer(dump_dir_ / (context.graph->escaped_name() + ".sched"));
 
-    auto fmt_shape = [&](const logical_buffer &buf) {
+    auto fmt_shape = [&](const logical_buffer &buf)
+    {
         auto alloc = context.allocations.at(&buf.owner());
         return fmt::format("<{} {} {} bytes of {}>",
             datatype_names(buf.type()),

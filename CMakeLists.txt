@@ -88,6 +88,7 @@ if (BUILDING_RUNTIME)
     add_subdirectory(include/nncase)
     add_subdirectory(src/kernels)
     add_subdirectory(src/runtime)
+    add_subdirectory(benchmark)
     
     # Python binding
     if(BUILD_PYTHON_BINDING)

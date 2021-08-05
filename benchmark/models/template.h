@@ -12,16 +12,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/ir/op_utils.h>
-#include <nncase/ir/ops/table_lookup.h>
+#pragma once
+#include <filesystem>
+#include <nlohmann/json.hpp>
+#include <vector>
 
-using namespace nncase;
-using namespace nncase::ir;
-
-table_lookup1d::table_lookup1d(datatype_t type, shape_t input_shape, size_t table_size)
+namespace nncase::codegen::vulkan
 {
-    add_input("input", type, input_shape);
-    add_input("table", type, shape_t { table_size })
-        .attributes(cnctr_attr_no_dummy_for_benchmark);
-    add_output("output", type, input_shape);
+struct compile_options
+{
+    const nlohmann::json &context;
+    std::string function_name;
+    bool dump_asm;
+    std::filesystem::path dump_dir;
+};
+
+std::vector<uint32_t> render_and_compile(const std::string &template_name, const compile_options &options);
 }

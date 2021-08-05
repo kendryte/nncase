@@ -24,7 +24,8 @@ take::take(datatype_t type, shape_t input_shape, shape_t indices_shape, shape_t 
     , mode_(mode)
 {
     add_input("input", type, input_shape);
-    add_input("indices", dt_int32, indices_shape);
+    add_input("indices", dt_int32, indices_shape)
+        .attributes(cnctr_attr_no_dummy_for_benchmark);
     add_output("output", type, output_shape);
 }
 

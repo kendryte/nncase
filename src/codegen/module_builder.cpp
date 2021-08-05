@@ -108,9 +108,12 @@ void module_builder::write_constants()
         {
             if (auto con = node_cast<constant>(*node))
             {
-                auto &alloc = allocation(con->output());
-                auto data = con->data();
-                std::memcpy(constants.get() + alloc.start, data.data(), data.size_bytes());
+                if (con->output().memory_location() == mem_rdata)
+                {
+                    auto &alloc = allocation(con->output());
+                    auto data = con->data();
+                    std::memcpy(constants.get() + alloc.start, data.data(), data.size_bytes());
+                }
             }
         }
 
@@ -294,7 +297,8 @@ void module_builder::write_binary(binary_writer &writer)
     auto header_pos = writer.position();
     writer.skip(sizeof(module_header));
 
-    auto write_shape = [&](const shape_t &shape) {
+    auto write_shape = [&](const shape_t &shape)
+    {
         writer.write((uint32_t)shape.size());
         for (auto dim : shape)
             writer.write((uint32_t)dim);
