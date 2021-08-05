@@ -46,7 +46,7 @@ result<void> convert_f32_to_bf16_impl(const float *input, bfloat16 *output, cons
 }
 
 result<void> convert_f32_to_fp16_impl(const float *input, half *output, const runtime_shape_t &in_shape,
-                                      const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, NNCASE_UNUSED kernel_context &context) noexcept
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, NNCASE_UNUSED kernel_context &context) noexcept
 {
     return apply(in_shape, [&](const runtime_shape_t &index) -> result<void> {
         auto value = input[offset(in_strides, index)];
@@ -82,7 +82,7 @@ result<void> reference::convert(datatype_t in_type, datatype_t out_type, const g
             in_shape, in_strides, out_strides, context);
     if (in_type == dt_float32 && out_type == dt_float16)
         return convert_f32_to_fp16_impl(reinterpret_cast<const float *>(input), reinterpret_cast<half *>(output),
-                                        in_shape, in_strides, out_strides, context);
+            in_shape, in_strides, out_strides, context);
     CONVERT_IMPL_LV1(uint8_t);
     CONVERT_IMPL_LV1(uint16_t);
     CONVERT_IMPL_LV1(uint32_t);
