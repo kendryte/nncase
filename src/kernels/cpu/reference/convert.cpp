@@ -44,6 +44,16 @@ result<void> convert_f32_to_bf16_impl(const float *input, bfloat16 *output, cons
         return ok();
     });
 }
+
+result<void> convert_f32_to_fp16_impl(const float *input, half *output, const runtime_shape_t &in_shape,
+                                      const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, NNCASE_UNUSED kernel_context &context) noexcept
+{
+    return apply(in_shape, [&](const runtime_shape_t &index) -> result<void> {
+        auto value = input[offset(in_strides, index)];
+        output[offset(out_strides, index)] = half::round_to_half(value);
+        return ok();
+    });
+}
 }
 
 #define CONVERT_IMPL_LV2(input_t, output_t)  \
@@ -70,7 +80,9 @@ result<void> reference::convert(datatype_t in_type, datatype_t out_type, const g
     if (in_type == dt_float32 && out_type == dt_bfloat16)
         return convert_f32_to_bf16_impl(reinterpret_cast<const float *>(input), reinterpret_cast<bfloat16 *>(output),
             in_shape, in_strides, out_strides, context);
-
+    if (in_type == dt_float32 && out_type == dt_float16)
+        return convert_f32_to_fp16_impl(reinterpret_cast<const float *>(input), reinterpret_cast<half *>(output),
+                                        in_shape, in_strides, out_strides, context);
     CONVERT_IMPL_LV1(uint8_t);
     CONVERT_IMPL_LV1(uint16_t);
     CONVERT_IMPL_LV1(uint32_t);
@@ -80,6 +92,7 @@ result<void> reference::convert(datatype_t in_type, datatype_t out_type, const g
     CONVERT_IMPL_LV1(int32_t);
     CONVERT_IMPL_LV1(int64_t);
     CONVERT_IMPL_LV1(bfloat16);
+    CONVERT_IMPL_LV1(half);
     CONVERT_IMPL_LV1(float);
     return err(std::errc::not_supported);
 }
