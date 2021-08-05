@@ -26,6 +26,7 @@
 #include <nncase/transforms/k210/kpu_conv2d.h>
 #include <nncase/transforms/k210/strided_slice_motion.h>
 #include <nncase/transforms/neutral/add_quant_checkpoints.h>
+#include <nncase/transforms/neutral/add_to_conv2d.h>
 #include <nncase/transforms/neutral/eliminate_dilated_conv2d.h>
 #include <nncase/transforms/neutral/fold_pad.h>
 #include <nncase/transforms/neutral/fold_quantize.h>
@@ -94,6 +95,7 @@ void k210_target::register_quantize_annotation_passes(const module_type_t &type,
 {
     {
         transform_pass p("annotate_kpu");
+        p.emplace<add_to_conv2d_transform>();
         p.emplace<eliminate_dilated_conv2d_transform>();
         p.emplace<fake_kpu_conv2d_transform>();
         p.emplace<strided_slice_motion_transform>();
