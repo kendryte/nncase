@@ -27,26 +27,6 @@ using namespace nncase::importer;
 using namespace nncase::ir;
 using namespace onnx;
 
-namespace
-{
-enum class padding_mode
-{
-    notset,
-    same,
-    valid
-};
-
-padding_mode parse_padding_mode(const std::string &value) noexcept
-{
-    if (value == "VALID")
-        return padding_mode::valid;
-    else if (value == "SAME_UPPER" || value == "SAME_LOWER")
-        return padding_mode::same;
-    else
-        return padding_mode::notset;
-}
-}
-
 void onnx_importer::convert_op_Conv(const NodeProto &node)
 {
     const auto &input = node.input()[0];
@@ -57,12 +37,8 @@ void onnx_importer::convert_op_Conv(const NodeProto &node)
     auto weight_shape = get_shape(weight);
 
     // group
-    size_t group = 1;
     const auto &group_attr = get_attribute<int>(node, "group");
-    if (group_attr)
-    {
-        group = group_attr.value();
-    }
+    size_t group = group_attr ? group_attr.value() : 1;
 
     // stride
     std::array<size_t, 2> strides = { 1, 1 };
@@ -90,18 +66,11 @@ void onnx_importer::convert_op_Conv(const NodeProto &node)
 
     // pad
     std::array<padding, 2> pads { { { 0, 0 }, { 0, 0 } } };
-    padding_mode pad_mode = padding_mode::notset;
     const auto &auto_pad_attr = get_attribute<std::string>(node, "auto_pad");
-    if (auto_pad_attr)
-    {
-        pad_mode = parse_padding_mode(auto_pad_attr.value());
-    }
-    switch (pad_mode)
-    {
-    case padding_mode::notset:
+    std::string pad_mode = auto_pad_attr ? auto_pad_attr.value() : "NOTSET";
+    if (pad_mode == "NOTSET")
     {
         const auto &pads_attr = get_attribute<std::vector<int>>(node, "pads");
-
         if (pads_attr)
         {
             const auto &pads_values = pads_attr.value();
@@ -117,17 +86,21 @@ void onnx_importer::convert_op_Conv(const NodeProto &node)
                 pads[1].after = pads_values[3];
             }
         }
-
-        break;
     }
-    case padding_mode::same:
+    else if (pad_mode == "SAME_UPPER")
     {
         pads[0] = get_windowed_padding(input_shape[2], weight_shape[2], strides[0], dilations[0], true);
         pads[1] = get_windowed_padding(input_shape[3], weight_shape[3], strides[1], dilations[1], true);
-        break;
     }
-    default:
-        break;
+    else if (pad_mode == "SAME_LOWER")
+    {
+        pads[0] = get_windowed_padding(input_shape[2], weight_shape[2], strides[0], dilations[0], true);
+        if (pads[0].before < pads[0].after)
+            std::swap(pads[0].before, pads[0].after);
+
+        pads[1] = get_windowed_padding(input_shape[3], weight_shape[3], strides[1], dilations[1], true);
+        if (pads[1].before < pads[1].after)
+            std::swap(pads[1].before, pads[1].after);
     }
 
     auto conv = graph_.emplace<conv2d>(input_shape, weight_shape, group, pads[0], pads[1], strides[0], strides[1],
@@ -136,7 +109,6 @@ void onnx_importer::convert_op_Conv(const NodeProto &node)
 
     input_tensors_.emplace(&conv->input(), input);
     input_tensors_.emplace(&conv->weights(), weight);
-    std::cout << " node.input().size() = " << node.input().size() << std::endl;
     if (node.input().size() > 2)
     {
         const auto &bias = node.input()[2];
@@ -162,15 +134,12 @@ void onnx_importer::convert_op_ConvTranspose(const NodeProto &node)
     auto output_shape = get_shape(output);
 
     auto tp = graph_.emplace<transpose>(dt_float32, get_shape(weight), axis_t { 1, 0, 2, 3 });
+    tp->name(generate_name(node) + "(Transpose)");
     auto tp_shape = tp->output().shape();
 
     // group
-    size_t group = 1;
     const auto &group_attr = get_attribute<int>(node, "group");
-    if (group_attr)
-    {
-        group = group_attr.value();
-    }
+    size_t group = group_attr ? group_attr.value() : 1;
 
     // stride
     std::array<size_t, 2> strides = { 1, 1 };
@@ -198,18 +167,11 @@ void onnx_importer::convert_op_ConvTranspose(const NodeProto &node)
 
     // pad
     std::array<padding, 2> pads { { { 0, 0 }, { 0, 0 } } };
-    padding_mode pad_mode = padding_mode::notset;
     const auto &auto_pad_attr = get_attribute<std::string>(node, "auto_pad");
-    if (auto_pad_attr)
-    {
-        pad_mode = parse_padding_mode(auto_pad_attr.value());
-    }
-    switch (pad_mode)
-    {
-    case padding_mode::notset:
+    std::string pad_mode = auto_pad_attr ? auto_pad_attr.value() : "NOTSET";
+    if (pad_mode == "NOTSET")
     {
         const auto &pads_attr = get_attribute<std::vector<int>>(node, "pads");
-
         if (pads_attr)
         {
             const auto &pads_values = pads_attr.value();
@@ -225,17 +187,21 @@ void onnx_importer::convert_op_ConvTranspose(const NodeProto &node)
                 pads[1].after = pads_values[3];
             }
         }
-
-        break;
     }
-    case padding_mode::same:
+    else if (pad_mode == "SAME_UPPER")
     {
         pads[0] = get_windowed_padding(input_shape[2], tp_shape[2], strides[0], dilations[0], true);
         pads[1] = get_windowed_padding(input_shape[3], tp_shape[3], strides[1], dilations[1], true);
-        break;
     }
-    default:
-        break;
+    else if (pad_mode == "SAME_LOWER")
+    {
+        pads[0] = get_windowed_padding(input_shape[2], tp_shape[2], strides[0], dilations[0], true);
+        if (pads[0].before < pads[0].after)
+            std::swap(pads[0].before, pads[0].after);
+
+        pads[1] = get_windowed_padding(input_shape[3], tp_shape[3], strides[1], dilations[1], true);
+        if (pads[1].before < pads[1].after)
+            std::swap(pads[1].before, pads[1].after);
     }
 
     auto conv_transpose = graph_.emplace<conv2d_transpose>(input_shape, tp_shape, output_shape, group, pads[0], pads[1], strides[0], strides[1],
