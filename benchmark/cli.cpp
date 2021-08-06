@@ -66,7 +66,8 @@ result<void> bench_model(const std::string &name)
 }
 
 const char *models[] = {
-    "mnist"
+    "mnist",
+    "mobilenet_v2"
 };
 
 int main()

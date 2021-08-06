@@ -13,6 +13,7 @@
 # limitations under the License.
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
 
+from onnx.onnx_ml_pb2 import ModelProto
 import pytest
 import os
 import torch
@@ -22,6 +23,7 @@ import sys
 import nncase
 import requests
 import onnxsim
+import onnx
 
 TEMP_DIR = "tmp"
 MODEL_DIR = "models"
@@ -29,29 +31,24 @@ MODEL_DIR = "models"
 MODELS = {
     "mnist": {
         "url": "https://media.githubusercontent.com/media/onnx/models/master/vision/classification/mnist/model/mnist-8.onnx",
-        "in_shape": [1, 1, 28, 28]
+        "in_shapes": {"Input3": [1, 1, 28, 28]}
     },
     "mobilenet_v2": {
         "url": "https://github.com/onnx/models/raw/master/vision/classification/mobilenet/model/mobilenetv2-7.onnx",
-        "in_shape": [1, 1, 224, 224]
+        "in_shapes": {"input": [1, 3, 224, 224]}
     }
 }
 
 
-def _download(url, name, in_shape):
+def _download(url, name, in_shapes):
     filename = os.path.join(MODEL_DIR, "source", name + ".onnx")
     if not os.path.exists(filename):
         req = requests.get(url)
-        with open(filename, 'wb') as file:
-            for chunk in req.iter_content(100000):
-                file.write(chunk)
-        try:
-            onnx_model, check = onnxsim.simplify(filename, input_shapes=in_shape)
-            assert check, "Simplified ONNX model could not be validated"
-            with open(filename, 'wb') as file:
-                file.write(onnx_model)
-        except:
-            print("WARN: optimize onnx failed")
+        onnx_model, check = onnxsim.simplify(
+            onnx.load(req.content), check_n=3, input_shapes=in_shapes)
+        assert check, "Simplified ONNX model could not be validated"
+        onnx.save(onnx_model, filename)
+
     with open(filename, "rb") as file:
         return file.read()
 
@@ -59,12 +56,14 @@ def _download(url, name, in_shape):
 def _make_module(name, target):
     model = MODELS[name]
     url = model["url"]
-    onnx_model = _download(url, name, model["in_shape"])
+    onnx_model = _download(url, name, model["in_shapes"])
 
     # import
     compile_options = nncase.CompileOptions()
     compile_options.target = target
-    compile_options.dump_dir = TEMP_DIR
+    compile_options.dump_dir = os.path.join(TEMP_DIR, name)
+    compile_options.dump_ir = True
+    compile_options.dump_asm = True
     compile_options.benchmark_only = True
     compiler = nncase.Compiler(compile_options)
 

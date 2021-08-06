@@ -53,6 +53,7 @@ struct xz_res
 #define INCBIN_STYLE INCBIN_STYLE_SNAKE
 #include <nncase/runtime/incbin.h>
 INCBIN(mnist, "cpu/mnist.kmodel");
+INCBIN(mobilenet_v2, "cpu/mobilenet_v2.kmodel");
 
 #define GET_MODEL_IMPL(model) \
     if (name == #model)       \
@@ -61,6 +62,7 @@ INCBIN(mnist, "cpu/mnist.kmodel");
 gsl::span<const gsl::byte> nncase::get_model(const std::string &name)
 {
     GET_MODEL_IMPL(mnist);
+    GET_MODEL_IMPL(mobilenet_v2);
     return {};
 }
 
