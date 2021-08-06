@@ -13,6 +13,7 @@ set(ONNX_IMPORTER_OPS_SOURCES
     ops/concat.cpp
     ops/constant.cpp
     ops/conv.cpp
+    ops/cast.cpp
     ops/dropout.cpp
     ops/gather.cpp
     ops/gather_nd.cpp
