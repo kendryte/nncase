@@ -33,4 +33,5 @@ target_sources(transforms PRIVATE
     fold_convert.cpp
     optimize_allocation.cpp
     space_to_batch_transform.cpp
+    process_input.cpp
     )
