@@ -98,7 +98,7 @@ void onnx_importer::convert_op_ReduceL2(const NodeProto &node)
 
     // keepdims
     auto keepdims_attr = get_attribute<int>(node, "keepdims");
-    bool keepdims = keepdims_attr ? keepdims_attr.value() == 1: true;
+    bool keepdims = keepdims_attr ? keepdims_attr.value() == 1 : true;
 
     auto square = graph_.emplace<unary>(unary_square, input_shape);
     square->name(op_name + ".square(ReduceL2)");
