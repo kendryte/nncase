@@ -13,12 +13,24 @@
  * limitations under the License.
  */
 #pragma once
-#include "../runtime_module.h"
-#include <nncase/kernels/kernel_context.h>
-NNCASE_MODULES_K210_API
+#include <nncase/schedule/schedule_types.h>
 
-struct NNCASE_API k210_kernel_context : public kernels::kernel_context
+namespace nncase::schedule
 {
-};
+class lifetime_recorder
+{
+public:
+    lifetime_recorder(std::list<logical_buffer> &buffers, std::unordered_map<const ir::output_connector *, logical_buffer *> &buffer_map, bool skip_buffer_alias);
 
-END_NS_NNCASE_KERNELS_K210
+    void allocate(ir::output_connector &conn);
+    void release(ir::output_connector &conn);
+    void grow_age();
+
+private:
+    size_t next_buffer_id_ = 0;
+    size_t cnt_age_ = 0;
+    std::list<logical_buffer> &buffers_;
+    std::unordered_map<const ir::output_connector *, logical_buffer *> &buffer_map_;
+    bool skip_buffer_alias_;
+};
+}

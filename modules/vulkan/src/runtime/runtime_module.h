@@ -41,7 +41,7 @@ public:
     virtual ~vulkan_runtime_module();
 
 protected:
-    result<void> initialize_core(runtime_module_init_context &context) noexcept override;
+    result<void> initialize_before_functions(runtime_module_init_context &context) noexcept override;
     result<runtime_tensor> allocate_input_tensor(size_t index) noexcept override;
     result<runtime_tensor> allocate_output_tensor(size_t index) noexcept override;
     result<void> validate_input_tensor(size_t index, runtime_tensor tensor) noexcept override;

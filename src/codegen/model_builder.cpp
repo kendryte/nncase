@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include <nncase/codegen/model_builder.h>
+#include <nncase/ir/op_utils.h>
 #include <nncase/runtime/model.h>
 #include <nncase/targets/target.h>
 
@@ -41,6 +42,7 @@ build_model_result model_builder::build(std::ostream &output)
     model_header header {};
     header.identifier = MODEL_IDENTIFIER;
     header.version = MODEL_VERSION;
+    header.header_size = sizeof(header);
     header.flags = 0;
     header.alignment = 8;
     header.modules = (uint32_t)sched_.modules.size();
@@ -49,19 +51,27 @@ build_model_result model_builder::build(std::ostream &output)
     auto header_pos = writer.position();
     writer.skip(sizeof(header));
 
-    uint32_t main_module_id = 0;
-    for (auto &graph : sched_.graph_orders)
+    for (auto &mod_sched : sched_.modules)
     {
-        auto &mod = sched_.modules.at(graph);
-        module_builder_params params { sched_, mod };
-        auto builder = target_.create_module_builder(graph->module_type(), graph->name(), params);
-        builder->config_dump(dump_dir_ / graph->escaped_name(), dump_asm_);
+        module_builder_params params { sched_, mod_sched };
+        auto builder = target_.create_module_builder(mod_sched.type, mod_sched.type.data(), params);
+        builder->config_dump(dump_dir_ / mod_sched.type.data(), dump_asm_);
         builder->build(writer);
         header.alignment = std::max(header.alignment, builder->alignment());
+    }
 
-        if (graph == sched_.main_module)
-            header.main_module = main_module_id;
-        main_module_id++;
+    // Entry point
+    for (size_t i = 0; i < sched_.modules.size(); i++)
+    {
+        auto &mod_sched = sched_.modules[i];
+        for (size_t j = 0; j < mod_sched.functions.size(); j++)
+        {
+            if (sched_.entry_function == &mod_sched.functions[i])
+            {
+                header.entry_module = (uint32_t)i;
+                header.entry_function = (uint32_t)j;
+            }
+        }
     }
 
     auto end_pos = writer.position();
@@ -78,11 +88,33 @@ build_model_result model_builder::build(std::ostream &output)
 size_t model_builder::max_usage(memory_location_t location) const
 {
     size_t usage = 0;
-    for (auto &mod : sched_.modules)
+
+    if (location == mem_input
+        || location == mem_output)
     {
-        auto it = mod.second.max_usages.find(location);
-        if (it != mod.second.max_usages.end())
-            usage += it->second;
+        // Only take into account main function's inouts
+        auto graph = sched_.entry_function->graph;
+        for (auto in : graph->inputs())
+            usage += ir::get_bytes(in->output().type(), in->output().shape());
+        for (auto out : graph->outputs())
+            usage += ir::get_bytes(out->input().type(), out->input().shape());
+    }
+    else if (location != mem_shared_data)
+    {
+        for (auto &mod : sched_.modules)
+        {
+            auto it = mod.max_usages.find(location);
+            if (it != mod.max_usages.end())
+                usage += it->second;
+        }
+    }
+    else
+    {
+        for (auto &mod : sched_.modules)
+        {
+            for (auto &shared : mod.shared_max_usages)
+                usage += shared.second;
+        }
     }
 
     return usage;

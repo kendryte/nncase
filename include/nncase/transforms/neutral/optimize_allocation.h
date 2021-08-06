@@ -88,4 +88,16 @@ public:
 protected:
     void run_core(graph &graph, nncase::target &target, const run_pass_options &options) override;
 };
+
+class NNCASE_API decide_memory_location_pass : public graph_pass
+{
+public:
+    decide_memory_location_pass(bool skip_buffer_alias, std::string dump_name = "");
+
+protected:
+    void run_core(graph &graph, nncase::target &target, const run_pass_options &options) override;
+
+private:
+    bool skip_buffer_alias_;
+};
 }

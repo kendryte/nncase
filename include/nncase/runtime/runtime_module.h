@@ -15,6 +15,7 @@
 #pragma once
 #include "model.h"
 #include "result.h"
+#include "runtime_function.h"
 #include "runtime_tensor.h"
 
 BEGIN_NS_NNCASE_RUNTIME
@@ -31,17 +32,6 @@ struct NNCASE_API runtime_module_init_context
 
 class NNCASE_API runtime_module
 {
-private:
-    struct inout_tensor_info
-    {
-        runtime_shape_t shape;
-        runtime_shape_t strides;
-        memory_range range;
-        runtime_tensor bind_tensor;
-        runtime_tensor staging_tensor;
-        runtime_tensor device_tensor;
-    };
-
 public:
     static result<std::unique_ptr<runtime_module>> create(const module_type_t &type);
 
@@ -49,8 +39,7 @@ public:
     runtime_module(runtime_module &) = delete;
     virtual ~runtime_module() = default;
 
-    result<void> initialize(const module_header &header, interpreter &interp) noexcept;
-    virtual result<void> initialize_inter_modules(interpreter &interp) noexcept;
+    result<void> initialize(gsl::span<const gsl::byte> payload, interpreter &interp) noexcept;
     const module_type_t &type() const noexcept;
 
     interpreter &interp() const noexcept { return *interp_; }
@@ -59,35 +48,18 @@ public:
     const mempool_desc &mempool(size_t index) const noexcept;
     mempool_desc mempool(memory_location_t location) const noexcept;
 
-    uint32_t inputs_size() const noexcept;
-    const runtime_shape_t &input_shape(size_t index) const noexcept;
-    const memory_range &input_desc(size_t index) const noexcept;
-    result<runtime_tensor> input_tensor(size_t index) noexcept;
-    result<void> input_tensor(size_t index, runtime_tensor tensor) noexcept;
-
-    uint32_t outputs_size() const noexcept;
-    const runtime_shape_t &output_shape(size_t index) const noexcept;
-    const memory_range &output_desc(size_t index) const noexcept;
-    result<runtime_tensor> output_tensor(size_t index) noexcept;
-    result<void> output_tensor(size_t index, runtime_tensor tensor) noexcept;
-
-    result<void> run() noexcept;
+    result<runtime_function *> find_function_by_id(size_t index) noexcept;
 
 protected:
-    virtual result<void> initialize_core(runtime_module_init_context &context) noexcept = 0;
-    virtual result<runtime_tensor> allocate_input_tensor(size_t index) noexcept = 0;
-    virtual result<runtime_tensor> allocate_output_tensor(size_t index) noexcept = 0;
-    virtual result<void> validate_input_tensor(size_t index, runtime_tensor tensor) noexcept = 0;
-    virtual result<void> validate_output_tensor(size_t index, runtime_tensor tensor) noexcept = 0;
-    result<runtime_tensor> device_input_tensor(size_t index) noexcept;
-    result<runtime_tensor> device_output_tensor(size_t index) noexcept;
-    virtual result<void> run_core() noexcept = 0;
+    virtual result<void> initialize_before_functions(runtime_module_init_context &context) noexcept;
+    virtual result<void> initialize_after_functions(runtime_module_init_context &context) noexcept;
+    virtual result<std::unique_ptr<runtime_function>> create_function() noexcept = 0;
 
 private:
     module_header header_;
     std::vector<mempool_desc> mempools_;
-    std::vector<inout_tensor_info> input_tensors_;
-    std::vector<inout_tensor_info> output_tensors_;
+    std::vector<mempool_desc> shared_mempools_;
+    std::vector<std::unique_ptr<runtime_function>> functions_;
     interpreter *interp_ = nullptr;
 };
 

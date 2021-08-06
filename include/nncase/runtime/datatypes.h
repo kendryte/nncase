@@ -320,11 +320,12 @@ struct fixed_mul
     int32_t rounded_mul() const noexcept { return (int32_t)lrintf(mul); }
 };
 
-using memory_location_t = uint8_t;
+using memory_location_t = uint32_t;
 NNCASE_INLINE_VAR constexpr memory_location_t mem_input = 0;
 NNCASE_INLINE_VAR constexpr memory_location_t mem_output = 1;
 NNCASE_INLINE_VAR constexpr memory_location_t mem_rdata = 2;
 NNCASE_INLINE_VAR constexpr memory_location_t mem_data = 3;
+NNCASE_INLINE_VAR constexpr memory_location_t mem_shared_data = 4;
 
 using runtime_shape_t = itlib::small_vector<size_t, 4>;
 using runtime_axis_t = itlib::small_vector<int32_t, 4>;

@@ -28,7 +28,7 @@ vulkan_runtime_module::~vulkan_runtime_module()
     free_vulkan_resources();
 }
 
-result<void> vulkan_runtime_module::initialize_core(runtime_module_init_context &context) noexcept
+result<void> vulkan_runtime_module::initialize_before_functions(runtime_module_init_context &context) noexcept
 {
     assert(context.is_section_pinned());
     auto descs = context.section(DESCRIPTORS_SECTION_NAME).as_span<const uint32_t>();

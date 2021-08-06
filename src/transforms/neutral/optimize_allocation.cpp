@@ -272,3 +272,41 @@ void alias_concat_buffer_pass::run_core([[maybe_unused]] graph &graph, [[maybe_u
     });
     alias_visitor.visit(graph);
 }
+
+decide_memory_location_pass::decide_memory_location_pass(bool skip_buffer_alias, std::string dump_name)
+    : graph_pass(std::move(dump_name)), skip_buffer_alias_(skip_buffer_alias)
+{
+}
+
+void decide_memory_location_pass::run_core(graph &graph, nncase::target &target, const run_pass_options &options)
+{
+    auto decide_memory_location = [&](output_connector &conn) {
+        auto opcode = conn.owner().runtime_opcode();
+        if (opcode == op_input_node)
+            return mem_input;
+        else if (opcode == op_constant)
+            return mem_rdata;
+
+        auto inputs = conn.connections();
+        if (skip_buffer_alias_)
+        {
+            if (std::any_of(inputs.begin(), inputs.end(), [](input_connector *conn) { return conn->owner().runtime_opcode() == op_output_node; }))
+                return mem_output;
+        }
+
+        if (opcode == op_call && conn.memory_location() == mem_data)
+            return mem_shared_data;
+        if (conn.memory_location() == mem_data
+            && std::any_of(inputs.begin(), inputs.end(), [](input_connector *conn) { return conn->owner().runtime_opcode() == op_call; }))
+            return mem_shared_data;
+
+        return conn.memory_location();
+    };
+
+    auto visitor = make_relay_ir_visitor([&](node &node) {
+        for (auto out : node.outputs())
+        {
+        }
+    });
+    visitor.visit(graph);
+}

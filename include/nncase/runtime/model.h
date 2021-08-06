@@ -24,20 +24,34 @@ struct model_header
 {
     uint32_t identifier;
     uint32_t version;
+    uint32_t header_size;
     uint32_t flags;
     uint32_t alignment;
     uint32_t modules;
-    uint32_t main_module;
+    uint32_t entry_module;
+    uint32_t entry_function;
+};
+
+struct function_header
+{
+    uint32_t header_size;
+    uint32_t size;
+    uint32_t inputs;
+    uint32_t outputs;
+    uint32_t entrypoint;
+    uint32_t reserved0;
 };
 
 struct module_header
 {
     module_type_t type;
+    uint32_t version;
+    uint32_t header_size;
     uint32_t size;
     uint32_t mempools;
-    uint32_t inputs;
-    uint32_t outputs;
+    uint32_t shared_mempools;
     uint32_t sections;
+    uint32_t functions;
     uint32_t reserved0;
 };
 
@@ -47,12 +61,18 @@ struct mempool_desc
     uint32_t size;
 };
 
+struct shared_mempool_desc
+{
+    uint32_t module;
+    uint32_t size;
+};
+
 struct section_header
 {
     char name[MAX_SECTION_NAME_LENGTH];
     uint32_t flags;
-    uint32_t start;
-    uint32_t size;
+    uint32_t body_start;
+    uint32_t body_size;
     uint32_t reserved0;
 };
 

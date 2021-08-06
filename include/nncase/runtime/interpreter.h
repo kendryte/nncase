@@ -74,7 +74,7 @@ public:
 
 private:
     std::vector<std::unique_ptr<runtime_module>> modules_;
-    runtime_module *main_module_;
+    runtime_function *entry_function_;
     options_dict options_;
 };
 

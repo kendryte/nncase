@@ -65,10 +65,10 @@ section_writer &module_builder::writer(std::string_view section_name)
     return it->second.writer;
 }
 
-std::vector<nncase::ir::node *> module_builder::generate_runtime_ops()
+std::vector<nncase::ir::node *> module_builder::generate_current_runtime_ops()
 {
     std::vector<nncase::ir::node *> runtime_ops;
-    for (auto &&node : params_.module_sched.compute_sequence)
+    for (auto &&node : current_function_->compute_sequence)
     {
         if (!non_runtime_opcodes.contains(node->runtime_opcode()))
             runtime_ops.emplace_back(node);
@@ -76,7 +76,8 @@ std::vector<nncase::ir::node *> module_builder::generate_runtime_ops()
 
     if (dump_asm_)
     {
-        std::ofstream file(dump_dir_ / "runtime_ops.txt");
+        std::ofstream file(dump_dir_ / current_function_->graph->escaped_name() / "runtime_ops.txt");
+        std::filesystem::create_directories(dump_dir_);
         for (auto node : runtime_ops)
             file << "[" << node->runtime_opcode().name << "] "
                  << node->name() << std::endl;
@@ -104,15 +105,18 @@ void module_builder::write_constants()
     if (it != params_.module_sched.max_usages.end())
     {
         auto constants = std::make_unique<std::byte[]>(it->second);
-        for (auto &&node : params_.module_sched.compute_sequence)
+        for (auto &func_sched : params_.module_sched.functions)
         {
-            if (auto con = node_cast<constant>(*node))
+            for (auto &&node : func_sched.compute_sequence)
             {
-                if (con->output().memory_location() == mem_rdata)
+                if (auto con = node_cast<constant>(*node))
                 {
-                    auto &alloc = allocation(con->output());
-                    auto data = con->data();
-                    std::memcpy(constants.get() + alloc.start, data.data(), data.size_bytes());
+                    if (con->output().memory_location() == mem_rdata)
+                    {
+                        auto& alloc = allocation(con->output());
+                        auto data = con->data();
+                        std::memcpy(constants.get() + alloc.start, data.data(), data.size_bytes());
+                    }
                 }
             }
         }
@@ -125,11 +129,19 @@ void module_builder::compile()
 {
     write_constants();
 
-    auto runtime_ops = generate_runtime_ops();
-    begin_emit();
-    for (auto node : runtime_ops)
-        emit(*node);
-    end_emit();
+    for (auto &func_sched : params_.module_sched.functions)
+    {
+        current_function_ = &func_sched;
+
+        auto runtime_ops = generate_current_runtime_ops();
+        begin_emit_function();
+        for (auto node : runtime_ops)
+            emit(*node);
+        end_emit_function();
+
+        if (!entry_points_.contains(current_function_))
+            throw std::runtime_error("Entry point for " + func_sched.graph->name() + " is not set");
+    }
 
     if (dump_asm_)
     {
@@ -146,13 +158,24 @@ void module_builder::merge_to_rdata_section(std::string_view from)
     rdata_section_merges_.emplace(from, std::in_place);
 }
 
-size_t module_builder::module_id(ir::graph *graph)
+std::pair<size_t, size_t> module_builder::function_id(ir::graph *graph)
 {
-    auto &orders = params_.sched.graph_orders;
-    auto it = std::find(orders.begin(), orders.end(), graph);
-    if (it != orders.end())
-        return (size_t)std::distance(orders.begin(), it);
+    for (size_t i = 0; i < params_.sched.modules.size(); i++)
+    {
+        auto &mod_sched = params_.sched.modules[i];
+        auto &func_sched = mod_sched.functions_map.at(graph);
+        auto &orders = mod_sched.functions;
+        auto it = std::find(orders.begin(), orders.end(), func_sched);
+        if (it != orders.end())
+            return std::make_pair(i, (size_t)std::distance(orders.begin(), it));
+    }
+
     throw std::invalid_argument("Can't find graph " + graph->name() + " in modules");
+}
+
+void module_builder::set_current_entry_point(uint32_t value)
+{
+    entry_points_[current_function_] = value;
 }
 
 std::unique_ptr<section_decompiler> module_builder::create_decompiler([[maybe_unused]] std::string_view section_name)
@@ -272,12 +295,95 @@ void module_builder::link()
 
 void module_builder::write_binary(binary_writer &writer)
 {
+    // Skip module header
+    auto header_pos = writer.position();
+    writer.skip(sizeof(module_header));
+
+    // mempools
+    for (auto &mem : params_.module_sched.max_usages)
+    {
+        mempool_desc desc {};
+        desc.location = mem.first;
+        desc.size = mem.second;
+        writer.write(desc);
+    }
+
+    // functions
+    for (auto &func_sched : params_.module_sched.functions)
+        write_function_binary(writer, func_sched);
+
+    // sections
+    for (auto &section : section_writer_)
+    {
+        section_header header {};
+        strncpy(header.name, section.first.c_str(), std::size(header.name) - 1);
+
+        auto merge_it = rdata_section_merges_.find(section.first);
+        if (merge_it == rdata_section_merges_.end())
+        {
+            header.flags = 0;
+            header.body_start = 0;
+            header.body_size = (uint32_t)section.second.body.size();
+        }
+        else
+        {
+            header.flags = SECTION_MERGED_INTO_RDATA;
+            header.body_start = merge_it->second.start;
+            header.body_size = merge_it->second.size;
+        }
+
+        // Skip section header
+        auto header_pos = writer.position();
+        writer.skip(sizeof(header));
+
+        if (merge_it == rdata_section_merges_.end())
+        {
+            header.body_start = (uint32_t)writer.align_position(alignment_);
+            // write content
+            writer.write_array(std::span<uint8_t const>(section.second.body));
+        }
+
+        // write section header
+        auto end_pos = writer.position();
+        writer.position(header_pos);
+        writer.write(header);
+        writer.position(end_pos);
+    }
+
+    writer.align_position(8);
+    auto end_pos = writer.position();
+
+    // header
+    module_header header {};
+    header.type = module_type();
+    header.version = module_version();
+    header.header_size = sizeof(header);
+    header.size = (uint32_t)(end_pos - header_pos);
+    header.mempools = (uint32_t)params_.module_sched.max_usages.size();
+    header.shared_mempools = (uint32_t)params_.module_sched.shared_max_usages.size();
+    header.functions = (uint32_t)params_.module_sched.functions.size();
+    header.sections = (uint32_t)section_writer_.size();
+    header.reserved0 = 0;
+    writer.position(header_pos);
+    writer.write(header);
+
+    writer.position(end_pos);
+}
+
+void module_builder::write_function_binary(binary_writer &writer, const schedule::function_schedule_result &function_sched)
+{
+    auto write_shape = [&](const shape_t &shape) {
+        writer.write((uint32_t)shape.size());
+        for (auto dim : shape)
+            writer.write((uint32_t)dim);
+    };
+
     std::vector<memory_range> inputs;
     std::vector<shape_t> input_shapes;
     std::vector<memory_range> outputs;
     std::vector<shape_t> output_shapes;
 
-    for (auto &&node : params_.module_sched.compute_sequence)
+    for (auto &&node : function_sched.compute_sequence)
     {
         if (auto in = node_cast<input_node>(*node))
         {
@@ -293,24 +399,9 @@ void module_builder::write_binary(binary_writer &writer)
         }
     }
 
-    // Skip module header
+    // Skip function header
     auto header_pos = writer.position();
-    writer.skip(sizeof(module_header));
-
-    auto write_shape = [&](const shape_t &shape) {
-        writer.write((uint32_t)shape.size());
-        for (auto dim : shape)
-            writer.write((uint32_t)dim);
-    };
-
-    // mempools
-    for (auto &mem : params_.module_sched.max_usages)
-    {
-        mempool_desc desc {};
-        desc.location = mem.first;
-        desc.size = mem.second;
-        writer.write(desc);
-    }
+    writer.skip(sizeof(function_header));
 
     // inputs
     writer.write_array<memory_range>(inputs);
@@ -322,55 +413,16 @@ void module_builder::write_binary(binary_writer &writer)
     for (auto &shape : output_shapes)
         write_shape(shape);
 
-    // sections
-    for (auto &section : section_writer_)
-    {
-        section_header header {};
-        strncpy(header.name, section.first.c_str(), std::size(header.name) - 1);
-
-        auto merge_it = rdata_section_merges_.find(section.first);
-        if (merge_it == rdata_section_merges_.end())
-        {
-            header.flags = 0;
-            header.start = 0;
-            header.size = (uint32_t)section.second.body.size();
-        }
-        else
-        {
-            header.flags = SECTION_MERGED_INTO_RDATA;
-            header.start = merge_it->second.start;
-            header.size = merge_it->second.size;
-        }
-
-        // Skip section header
-        auto header_pos = writer.position();
-        writer.skip(sizeof(header));
-
-        if (merge_it == rdata_section_merges_.end())
-        {
-            header.start = (uint32_t)writer.align_position(alignment_);
-            // write content
-            writer.write_array(std::span<uint8_t const>(section.second.body));
-        }
-
-        // write section header
-        auto end_pos = writer.position();
-        writer.position(header_pos);
-        writer.write(header);
-        writer.position(end_pos);
-    }
-
     writer.align_position(8);
     auto end_pos = writer.position();
+
     // header
-    module_header header {};
-    header.type = module_type();
-    header.size = (uint32_t)(end_pos - header_pos - sizeof(module_header));
-    header.mempools = (uint32_t)params_.module_sched.max_usages.size();
+    function_header header {};
+    header.header_size = sizeof(header);
+    header.size = (uint32_t)(end_pos - header_pos);
     header.inputs = (uint32_t)inputs.size();
     header.outputs = (uint32_t)outputs.size();
-    header.sections = (uint32_t)section_writer_.size();
-    header.reserved0 = 0;
+    header.entrypoint = entry_points_.at(&function_sched);
     writer.position(header_pos);
     writer.write(header);
 
@@ -382,4 +434,12 @@ void module_builder::build(binary_writer &writer)
     compile();
     link();
     write_binary(writer);
+}
+
+void module_builder::begin_emit_function()
+{
+}
+
+void module_builder::end_emit_function()
+{
 }

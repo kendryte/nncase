@@ -194,7 +194,7 @@ namespace IsaGen
     {
     }
 
-    [BitLength(8)]
+    [BitLength(32)]
     [EnumName("memory_location_t")]
     [Browsable(false)]
     public enum MemoryLocation
