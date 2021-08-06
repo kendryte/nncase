@@ -19,7 +19,6 @@ import onnx
 from onnx import helper
 from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
-import numpy as np
 
 
 def _make_module(in_shape, in_type, out_type):
@@ -39,28 +38,16 @@ def _make_module(in_shape, in_type, out_type):
     )
     return helper.make_model(graph_def, producer_name='kendryte')
 
-in_shapes = [
-    [3],
-    [64, 3],
-    [3, 64, 3],
-    [8, 3, 64, 3]
-]
 
-in_types = [
-    TensorProto.FLOAT,
-    TensorProto.FLOAT16,
-]
-
-out_types = [
-    TensorProto.UINT8,
-    TensorProto.INT32,
-    TensorProto.FLOAT
+in_shapes_in_types_out_types = [
+    ([8, 3, 12, 3], TensorProto.FLOAT16, TensorProto.FLOAT),
+    ([8, 3, 12, 3], TensorProto.FLOAT, TensorProto.FLOAT16),
+    ([8, 3, 12, 3], TensorProto.FLOAT, TensorProto.UINT8),
+    ([8, 3, 12, 3], TensorProto.FLOAT, TensorProto.INT32),
 ]
 
 
-@pytest.mark.parametrize('in_shape', in_shapes)
-@pytest.mark.parametrize('in_type', in_types)
-@pytest.mark.parametrize('out_type', out_types)
+@pytest.mark.parametrize('in_shape,in_type,out_type', in_shapes_in_types_out_types)
 def test_convert(in_shape, in_type, out_type, request):
     model_def = _make_module(in_shape, in_type, out_type)
     runner = OnnxTestRunner(request.node.name)
