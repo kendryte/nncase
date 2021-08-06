@@ -8,6 +8,16 @@ foreach(SRC ${MODELS_SRCS})
     set(MODELS_DEPEND "${MODELS_DEPEND}${CMAKE_CURRENT_SOURCE_DIR}/${SRC};")
 endforeach()
 
+if(MSVC)
+    add_library(bench_models_rc OBJECT Resource.rc)
+    target_include_directories(bench_models_rc PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+    set_source_files_properties(
+        Resource.rc
+        PROPERTIES
+        OBJECT_DEPENDS "${MODELS_DEPEND}"
+    )
+endif()
+
 set(SRCS models.cpp)
 add_library(bench_models STATIC ${SRCS})
 target_link_libraries(bench_models PUBLIC gsl::gsl-lite)

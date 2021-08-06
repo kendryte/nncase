@@ -21,33 +21,31 @@ using namespace nncase;
 #include "resource.h"
 #include <Windows.h>
 
-#define THROW_WIN32_IF_NOT(x, fmt_str, ...)                                                                    \
-    if (!(x))                                                                                                  \
-    {                                                                                                          \
-        auto err_code = GetLastError();                                                                        \
-        auto err_msg = std::system_category().message(err_code);                                               \
-        throw std::system_error(err_code, std::system_category(), fmt::format(fmt_str, err_msg, __VA_ARGS__)); \
-    }
-
-extern HMODULE g_vulkan_module_handle;
-
 namespace
 {
-struct xz_res
+gsl::span<const gsl::byte> get_model_impl(const std::string &name, size_t id)
 {
-    std::span<const uint8_t> data;
+    auto hres = FindResourceW(NULL, MAKEINTRESOURCEW(id), L"Binary");
+    if (!hres)
+        return {};
+    auto size = SizeofResource(NULL, hres);
+    auto hmem = LoadResource(NULL, hres);
+    if (!hmem)
+        return {};
+    auto res_data = LockResource(hmem);
+    return { reinterpret_cast<const gsl::byte *>(res_data), (size_t)size };
+}
+}
 
-    xz_res()
-    {
-        auto hres = FindResourceW(g_vulkan_module_handle, MAKEINTRESOURCEW(IDR_VULKAN_TEMPLATES), L"Binary");
-        THROW_WIN32_IF_NOT(hres, "Cannot find resource: {}", "Vulkan Templates");
-        auto size = SizeofResource(g_vulkan_module_handle, hres);
-        auto hmem = LoadResource(g_vulkan_module_handle, hres);
-        THROW_WIN32_IF_NOT(hmem, "Cannot load resource: {}", "Vulkan Templates");
-        auto res_data = LockResource(hmem);
-        data = { reinterpret_cast<const uint8_t *>(res_data), (size_t)size };
-    }
-};
+#define GET_MODEL_IMPL(model) \
+    if (name == #model)       \
+    return get_model_impl(name, IDR_cpu_##model)
+
+gsl::span<const gsl::byte> nncase::get_model(const std::string &name)
+{
+    GET_MODEL_IMPL(mnist);
+    GET_MODEL_IMPL(mobilenet_v2);
+    return {};
 }
 #else
 #define INCBIN_STYLE INCBIN_STYLE_SNAKE
