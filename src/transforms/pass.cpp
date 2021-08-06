@@ -58,9 +58,11 @@ void pass::run(graph &graph, target &target, const run_pass_options &options)
 {
     run_core(graph, target, options);
     graph.cse();
+    static int pass_index = 0;
     if (options.dump_dir)
     {
-        auto dump_path = *options.dump_dir / "passes" / dump_name_;
+        auto pass_name = std::to_string(pass_index++) + "_" + dump_name_;
+        auto dump_path = *options.dump_dir / "passes" / pass_name;
         std::filesystem::create_directories(dump_path);
         ir::dump_graph(graph, dump_path);
     }
