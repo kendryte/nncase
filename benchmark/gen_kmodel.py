@@ -26,6 +26,17 @@ import onnxsim
 TEMP_DIR = "tmp"
 MODEL_DIR = "models"
 
+MODELS = {
+    "mnist": {
+        "url": "https://media.githubusercontent.com/media/onnx/models/master/vision/classification/mnist/model/mnist-8.onnx",
+        "in_shape": [1, 1, 28, 28]
+    },
+    "mobilenet_v2": {
+        "url": "https://github.com/onnx/models/raw/master/vision/classification/mobilenet/model/mobilenetv2-7.onnx",
+        "in_shape": [1, 1, 224, 224]
+    }
+}
+
 
 def _download(url, name, in_shape):
     filename = os.path.join(MODEL_DIR, "source", name + ".onnx")
@@ -45,11 +56,10 @@ def _download(url, name, in_shape):
         return file.read()
 
 
-def _make_module():
-    name = "minist"
-    url = "https://media.githubusercontent.com/media/onnx/models/master/vision/classification/mnist/model/mnist-8.onnx"
-    onnx_model = _download(url, name, [1, 1, 28, 28])
-    target = "cpu"
+def _make_module(name, target):
+    model = MODELS[name]
+    url = model["url"]
+    onnx_model = _download(url, name, model["in_shape"])
 
     # import
     compile_options = nncase.CompileOptions()
@@ -70,5 +80,16 @@ def _make_module():
         f.write(kmodel)
 
 
+def _make_cpu_models():
+    target = "cpu"
+    model_names = [
+        "mnist",
+        "mobilenet_v2"
+    ]
+
+    for model_name in model_names:
+        _make_module(model_name, target)
+
+
 if __name__ == "__main__":
-    _make_module()
+    _make_cpu_models()

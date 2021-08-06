@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include "models.h"
 #include <system_error>
 
 using namespace nncase;
@@ -53,110 +54,14 @@ struct xz_res
 #include <nncase/runtime/incbin.h>
 INCBIN(mnist, "cpu/mnist.kmodel");
 
-namespace
-{
-struct xz_res
-{
-    std::span<const uint8_t> data;
+#define GET_MODEL_IMPL(model) \
+    if (name == #model)       \
+        return { reinterpret_cast<const gsl::byte *>(g##model##_data), g##model##_size }
 
-    xz_res()
-    {
-        data = { reinterpret_cast<const uint8_t *>(gtemplates_xz_data), (size_t)gtemplates_xz_size };
-    }
-};
+gsl::span<const gsl::byte> nncase::get_model(const std::string &name)
+{
+    GET_MODEL_IMPL(mnist);
+    return {};
 }
+
 #endif
-
-namespace
-{
-class xz_reader
-{
-public:
-    xz_reader()
-        : archive_(ZipArchive::fromBuffer(xz_res_.data.data(),
-            (libzippp_uint32)xz_res_.data.size(), ZipArchive::ReadOnly, true))
-    {
-        if (!archive_)
-            throw std::runtime_error("Load vulkan templates archive failed");
-    }
-
-    std::string read(const std::string &name)
-    {
-        auto entry = archive_->getEntry(name, true, true);
-        if (entry.isNull())
-            throw std::runtime_error("Vulkan template not found: " + name);
-        return entry.readAsText();
-    }
-
-private:
-    xz_res xz_res_;
-    std::unique_ptr<ZipArchive> archive_;
-};
-
-class compiler
-{
-public:
-    compiler()
-    {
-        shader_options_.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_1);
-        shader_options_.SetTargetSpirv(shaderc_spirv_version_1_3);
-    }
-
-    std::string render(const std::string &template_name, const nlohmann::json &context)
-    {
-        auto templ = load_template(template_name);
-        return env_.render(templ, context);
-    }
-
-    std::vector<uint32_t> render_and_compile(const std::string &template_name, const compile_options &options)
-    {
-        auto is_hlsl = template_name.ends_with(".hlsl");
-        shader_options_.SetSourceLanguage(is_hlsl ? shaderc_source_language_hlsl : shaderc_source_language_glsl);
-        auto source = render(template_name, options.context);
-
-        if (options.dump_asm)
-        {
-            {
-                std::ofstream hlsl_file(options.dump_dir / (options.function_name + (is_hlsl ? ".hlsl" : ".comp")), std::ios::out | std::ios::binary);
-                hlsl_file << source;
-            }
-
-            {
-                auto shader_asm = shader_compiler_.CompileGlslToSpvAssembly(source, shaderc_compute_shader, template_name.c_str(), shader_options_);
-                if (shader_asm.GetCompilationStatus() != shaderc_compilation_status_success)
-                    throw std::runtime_error(shader_asm.GetErrorMessage());
-
-                std::ofstream asm_file(options.dump_dir / (options.function_name + ".spv"), std::ios::out | std::ios::binary);
-                asm_file << std::string(shader_asm.begin(), shader_asm.end());
-            }
-        }
-
-        auto shader_spv = shader_compiler_.CompileGlslToSpv(source, shaderc_compute_shader, template_name.c_str(), shader_options_);
-        if (shader_spv.GetCompilationStatus() != shaderc_compilation_status_success)
-            throw std::runtime_error(shader_spv.GetErrorMessage());
-        return { shader_spv.begin(), shader_spv.end() };
-    }
-
-private:
-    inja::Template &load_template(const std::string &template_name)
-    {
-        auto it = template_cache_.find(template_name);
-        if (it == template_cache_.end())
-            it = template_cache_.emplace(template_name, env_.parse(reader_.read(template_name))).first;
-        return it->second;
-    }
-
-private:
-    xz_reader reader_;
-    inja::Environment env_;
-    std::unordered_map<std::string, inja::Template> template_cache_;
-    shaderc::Compiler shader_compiler_;
-    shaderc::CompileOptions shader_options_;
-};
-}
-
-std::vector<uint32_t> codegen::vulkan::render_and_compile(const std::string &template_name, const compile_options &options)
-{
-    static compiler cp;
-    return cp.render_and_compile(template_name, options);
-}

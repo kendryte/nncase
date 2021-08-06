@@ -13,19 +13,9 @@
  * limitations under the License.
  */
 #pragma once
-#include <filesystem>
-#include <nlohmann/json.hpp>
-#include <vector>
+#include <gsl/gsl-lite.hpp>
 
-namespace nncase::codegen::vulkan
+namespace nncase
 {
-struct compile_options
-{
-    const nlohmann::json &context;
-    std::string function_name;
-    bool dump_asm;
-    std::filesystem::path dump_dir;
-};
-
-std::vector<uint32_t> render_and_compile(const std::string &template_name, const compile_options &options);
+gsl::span<const gsl::byte> get_model(const std::string &name);
 }
