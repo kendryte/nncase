@@ -126,9 +126,6 @@ if (BUILDING_RUNTIME)
         PATTERN "*.inc"
         PATTERN "LICENSE.TXT"
         )
-
-    # Modules
-    add_subdirectory(modules/k210)
 else()
     set(CMAKE_SKIP_RPATH OFF)
 
@@ -222,12 +219,8 @@ else()
     add_subdirectory(targets/cpu)
     add_subdirectory(targets/k210)
     add_subdirectory(targets/vulkan)
-
-    # Modules
-    add_subdirectory(modules/k210)
-
 endif()
 
-if (ENABLE_VULKAN)
-    add_subdirectory(modules/vulkan)
-endif ()
+# Modules
+add_subdirectory(modules/k210)
+add_subdirectory(modules/vulkan)
