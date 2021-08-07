@@ -51,7 +51,7 @@ jobs:
     - name: Benchmark
       shell: bash
       working-directory: ${{github.workspace}}
-      run: ${{github.workspace}}/install/bin/benchnncase > benchnncase.log
+      run: ${{github.workspace}}/install/bin/benchnncase.exe > benchnncase.log
       
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v2.2.2

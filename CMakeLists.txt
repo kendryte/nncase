@@ -30,7 +30,6 @@ project(nncase
   LANGUAGES C CXX ASM)
 
 option(ENABLE_OPENMP "OpenMP support" ON)
-option(ENABLE_VULKAN "Vulkan support" ON)
 option(ENABLE_HALIDE "halide kernels support" ON)
 option(BUILD_PYTHON_BINDING "Build python binding" ON)
 option(BUILD_TESTING "Build test programs" OFF)
@@ -61,6 +60,7 @@ include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
 include(cmake/dependencies.cmake)
 
 if (BUILDING_RUNTIME)
+    option(ENABLE_VULKAN_RUNTIME "Enable Vulkan runtime" ON)
     option(ENABLE_K210_RUNTIME "Enable k210 runtime" OFF)
     option(DEFAULT_BUILTIN_RUNTIMES "Use default builtin runtimes" ON)
     option(DEFAULT_SHARED_RUNTIME_TENSOR_PLATFORM_IMPL "Use default shared memory platform impl" ON)

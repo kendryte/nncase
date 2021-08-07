@@ -54,7 +54,7 @@ result<void> bench_model(const std::string &name)
         try_(interp.run());
         auto end_time = chrono::steady_clock::now();
         auto duration_ns = chrono::duration_cast<chrono::nanoseconds>(end_time - start_time);
-        auto duration_ms = duration_ns.count() / 1e6;
+        double duration_ms = duration_ns.count() / 1e6;
 
         total_time += duration_ms;
         min_time = std::min(min_time, duration_ms);
