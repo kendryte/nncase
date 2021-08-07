@@ -1,5 +1,7 @@
 ﻿cmake_minimum_required (VERSION 3.13)
 
+add_subdirectory(kendryte)
+
 set(SRCS runtime_module.cpp
          op_reader.cpp
          error.cpp
