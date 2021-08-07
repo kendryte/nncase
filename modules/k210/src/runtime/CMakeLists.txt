@@ -1,5 +1,7 @@
 ﻿cmake_minimum_required (VERSION 3.13)
 
+add_subdirectory(kendryte)
+
 set(SRCS runtime_module.cpp
          op_reader.cpp
          error.cpp
@@ -16,14 +18,12 @@ if (BUILDING_RUNTIME)
 
         list(APPEND SRCS shared_runtime_tensor.platform.cpp)
         add_library(runtime_k210 OBJECT ${SRCS})
-        target_include_directories(runtime_k210 PRIVATE
-                ${K210_SDK_DIR}/lib/bsp/include
-                ${K210_SDK_DIR}/lib/drivers/include
-                ${K210_SDK_DIR}/lib/utils/include)
         if (NOT MSVC)
             target_compile_options(runtime_k210 PRIVATE -Wno-pedantic)
         endif()
         target_link_libraries(runtime_k210 PUBLIC nncaseruntime)
+        target_link_libraries(runtime_k210 PRIVATE kernels_k210)
+        target_link_kendryte(runtime_k210)
         set_target_properties(runtime_k210 PROPERTIES POSITION_INDEPENDENT_CODE ON)
         install(TARGETS runtime_k210 EXPORT nncaseruntimeTargets)
     endif()

@@ -12,16 +12,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/ir/op_utils.h>
-#include <nncase/ir/ops/table_lookup.h>
+#pragma once
+#include <gsl/gsl-lite.hpp>
 
-using namespace nncase;
-using namespace nncase::ir;
-
-table_lookup1d::table_lookup1d(datatype_t type, shape_t input_shape, size_t table_size)
+namespace nncase
 {
-    add_input("input", type, input_shape);
-    add_input("table", type, shape_t { table_size })
-        .attributes(cnctr_attr_no_dummy_for_benchmark);
-    add_output("output", type, input_shape);
+gsl::span<const gsl::byte> get_model(const std::string &name);
 }

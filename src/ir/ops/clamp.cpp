@@ -22,7 +22,9 @@ using namespace nncase::ir;
 clamp::clamp(shape_t input_shape, shape_t input_low_shape, shape_t input_high_shape)
 {
     add_input("input", dt_float32, input_shape);
-    add_input("input_low", dt_float32, input_low_shape);
-    add_input("input_high", dt_float32, input_high_shape);
+    add_input("input_low", dt_float32, input_low_shape)
+        .attributes(cnctr_attr_no_dummy_for_benchmark);
+    add_input("input_high", dt_float32, input_high_shape)
+        .attributes(cnctr_attr_no_dummy_for_benchmark);
     add_output("output", dt_float32, input_shape);
 }

@@ -30,10 +30,16 @@ project(nncase
   LANGUAGES C CXX ASM)
 
 option(ENABLE_OPENMP "OpenMP support" ON)
-option(ENABLE_VULKAN "Vulkan support" ON)
 option(ENABLE_HALIDE "halide kernels support" ON)
 option(BUILD_PYTHON_BINDING "Build python binding" ON)
 option(BUILD_TESTING "Build test programs" OFF)
+
+if (BUILDING_RUNTIME)
+    option(ENABLE_VULKAN_RUNTIME "Enable Vulkan runtime" ON)
+    option(ENABLE_K210_RUNTIME "Enable k210 runtime" OFF)
+    option(DEFAULT_BUILTIN_RUNTIMES "Use default builtin runtimes" ON)
+    option(DEFAULT_SHARED_RUNTIME_TENSOR_PLATFORM_IMPL "Use default shared memory platform impl" ON)
+endif()
 
 include(cmake/configure-conan.cmake)
 include(cmake/conan.cmake)
@@ -61,10 +67,6 @@ include(${CMAKE_BINARY_DIR}/conan_paths.cmake)
 include(cmake/dependencies.cmake)
 
 if (BUILDING_RUNTIME)
-    option(ENABLE_K210_RUNTIME "Enable k210 runtime" OFF)
-    option(DEFAULT_BUILTIN_RUNTIMES "Use default builtin runtimes" ON)
-    option(DEFAULT_SHARED_RUNTIME_TENSOR_PLATFORM_IMPL "Use default shared memory platform impl" ON)
-
     set(NNCASE_MAIN_INCLUDE_DIR ${CMAKE_CURRENT_LIST_DIR}/include)
     set(NNCASE_INCLUDE_DIR ${CMAKE_CURRENT_BINARY_DIR}/include)
     set(THIRD_PARTY ${CMAKE_CURRENT_LIST_DIR}/third_party)
@@ -88,6 +90,7 @@ if (BUILDING_RUNTIME)
     add_subdirectory(include/nncase)
     add_subdirectory(src/kernels)
     add_subdirectory(src/runtime)
+    add_subdirectory(benchmark)
     
     # Python binding
     if(BUILD_PYTHON_BINDING)
@@ -125,9 +128,6 @@ if (BUILDING_RUNTIME)
         PATTERN "*.inc"
         PATTERN "LICENSE.TXT"
         )
-
-    # Modules
-    add_subdirectory(modules/k210)
 else()
     set(CMAKE_SKIP_RPATH OFF)
 
@@ -221,12 +221,8 @@ else()
     add_subdirectory(targets/cpu)
     add_subdirectory(targets/k210)
     add_subdirectory(targets/vulkan)
-
-    # Modules
-    add_subdirectory(modules/k210)
-
 endif()
 
-if (ENABLE_VULKAN)
-    add_subdirectory(modules/vulkan)
-endif ()
+# Modules
+add_subdirectory(modules/k210)
+add_subdirectory(modules/vulkan)

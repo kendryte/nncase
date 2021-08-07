@@ -20,7 +20,7 @@ using namespace nncase::cli;
 
 int main(int argc, char *argv[])
 {
-    std::cout << "NNCase Command Line Tools " NNCASE_VERSION NNCASE_VERSION_SUFFIX << std::endl
+    std::cout << "nncase Command Line Tools " NNCASE_VERSION NNCASE_VERSION_SUFFIX << std::endl
               << "Copyright 2019-2021 Canaan Inc." << std::endl;
 
     bool show_version = false;

@@ -108,9 +108,12 @@ void module_builder::write_constants()
         {
             if (auto con = node_cast<constant>(*node))
             {
-                auto &alloc = allocation(con->output());
-                auto data = con->data();
-                std::memcpy(constants.get() + alloc.start, data.data(), data.size_bytes());
+                if (con->output().memory_location() == mem_rdata)
+                {
+                    auto &alloc = allocation(con->output());
+                    auto data = con->data();
+                    std::memcpy(constants.get() + alloc.start, data.data(), data.size_bytes());
+                }
             }
         }
 
