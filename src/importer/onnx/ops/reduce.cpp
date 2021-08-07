@@ -19,6 +19,7 @@
 #include <limits>
 #include <nncase/ir/graph.h>
 #include <nncase/ir/ops/reduce.h>
+#include <nncase/ir/ops/unary.h>
 
 using namespace nncase;
 using namespace nncase::importer;
@@ -74,4 +75,43 @@ void onnx_importer::convert_reduce(const NodeProto &node, const reduce_op_t redu
 
     input_tensors_.emplace(&op->input(), input);
     output_tensors_.emplace(output, &op->output());
+}
+
+void onnx_importer::convert_op_ReduceL2(const NodeProto &node)
+{
+    const auto &op_name { generate_name(node) };
+
+    const auto &input = node.input()[0];
+    const auto &output = node.output()[0];
+    const auto &input_shape = get_shape(input);
+
+    // axes
+    axis_t axes(input_shape.size());
+    std::iota(begin(axes), end(axes), 0);
+    const auto &axes_attr = get_attribute<axis_t>(node, "axes");
+    if (axes_attr)
+    {
+        axes = axes_attr.value();
+        std::transform(std::begin(axes), std::end(axes), std::begin(axes),
+            [&input_shape](const auto e) { return real_axis(e, input_shape.size()); });
+    }
+
+    // keepdims
+    auto keepdims_attr = get_attribute<int>(node, "keepdims");
+    bool keepdims = keepdims_attr ? keepdims_attr.value() == 1 : true;
+
+    auto square = graph_.emplace<unary>(unary_square, input_shape);
+    square->name(op_name + ".square(ReduceL2)");
+
+    auto sum = graph_.emplace<reduce>(reduce_sum, square->output().shape(), axes, 0.f, keepdims);
+    sum->name(op_name + ".reduce_sum(ReduceL2)");
+
+    auto sqrt = graph_.emplace<unary>(unary_sqrt, sum->output().shape());
+    sqrt->name(op_name + ".sqrt(ReduceL2)");
+
+    sum->input().connect(square->output());
+    sqrt->input().connect(sum->output());
+
+    input_tensors_.emplace(&square->input(), input);
+    output_tensors_.emplace(output, &sqrt->output());
 }
