@@ -6,12 +6,6 @@ if (BUILDING_RUNTIME)
             message(FATAL_ERROR "Please set K210_SDK_DIR to kendryte sdk root path")
         endif()
         file(GLOB_RECURSE LIB_SRC
-                "${K210_SDK_DIR}/lib/bsp/*.h"
-                "${K210_SDK_DIR}/lib/drivers/*.h"
-                "${K210_SDK_DIR}/lib/utils/*.h"
-                "${K210_SDK_DIR}/lib/bsp/*.hpp"
-                "${K210_SDK_DIR}/lib/drivers/*.hpp"
-                "${K210_SDK_DIR}/lib/utils/*.hpp"
                 "${K210_SDK_DIR}/lib/bsp/*.c"
                 "${K210_SDK_DIR}/lib/drivers/*.c"
                 "${K210_SDK_DIR}/lib/utils/*.c"
@@ -40,10 +34,10 @@ if (BUILDING_RUNTIME)
 
         add_library(kendryte STATIC ${LIB_SRC})
         target_include_directories(kendryte PUBLIC
-            ${K210_SDK_DIR}/lib/drivers/include
-            ${K210_SDK_DIR}/lib/bsp/include
-            ${K210_SDK_DIR}/lib/utils/include
-            ${K210_SDK_DIR}/lib/nncase/include)
+           "$<BUILD_INTERFACE:${K210_SDK_DIR}/lib/drivers/include>"
+           "$<BUILD_INTERFACE:${K210_SDK_DIR}/lib/bsp/include>"
+           "$<BUILD_INTERFACE:${K210_SDK_DIR}/lib/utils/include>"
+           "$<BUILD_INTERFACE:${K210_SDK_DIR}/lib/nncase/include>")
         target_compile_options(kendryte PRIVATE -Wno-multichar -Wno-pointer-arith -Wno-unused-parameter -Wno-pedantic
                                                 -Wno-sign-compare -Wno-implicit-fallthrough -Wno-strict-aliasing)
         install(TARGETS kendryte EXPORT nncaseruntimeTargets)

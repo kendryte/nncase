@@ -49,9 +49,9 @@ jobs:
       run: cmake --install . --prefix ../install
 
     - name: Benchmark
-      shell: bash
+      shell: pwsh
       working-directory: ${{github.workspace}}
-      run: ${{github.workspace}}/install/bin/benchnncase.exe > benchnncase.log
+      run: .\install\bin\benchnncase.exe > benchnncase.log
       
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v2.2.2
