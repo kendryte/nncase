@@ -297,8 +297,7 @@ void module_builder::write_binary(binary_writer &writer)
     auto header_pos = writer.position();
     writer.skip(sizeof(module_header));
 
-    auto write_shape = [&](const shape_t &shape)
-    {
+    auto write_shape = [&](const shape_t &shape) {
         writer.write((uint32_t)shape.size());
         for (auto dim : shape)
             writer.write((uint32_t)dim);

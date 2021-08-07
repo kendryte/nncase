@@ -22,15 +22,13 @@ using namespace nncase::ir::transforms;
 
 void optimize_benchmark_pass::run_core(graph &graph, [[maybe_unused]] nncase::target &target, [[maybe_unused]] const run_pass_options &options)
 {
-    auto alias_visitor = make_relay_ir_visitor([&](node &node)
+    auto alias_visitor = make_relay_ir_visitor([&](node &node) {
+        if (auto c = node_cast<constant>(node))
         {
-            if (auto c = node_cast<constant>(node))
-            {
-                auto inputs = c->output().connections();
-                if (std::all_of(inputs.begin(), inputs.end(), [](input_connector *conn)
-                        { return !(conn->attributes() & cnctr_attr_no_dummy_for_benchmark); }))
-                    c->output().memory_location(mem_data);
-            }
-        });
+            auto inputs = c->output().connections();
+            if (std::all_of(inputs.begin(), inputs.end(), [](input_connector *conn) { return !(conn->attributes() & cnctr_attr_no_dummy_for_benchmark); }))
+                c->output().memory_location(mem_data);
+        }
+    });
     alias_visitor.visit(graph);
 }

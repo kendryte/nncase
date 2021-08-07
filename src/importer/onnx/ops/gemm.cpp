@@ -47,8 +47,7 @@ void onnx_importer::convert_op_Gemm(const NodeProto &node)
     const auto &output = node.output()[0];
 
     const auto &add_transpose {
-        [this](const auto &input)
-        {
+        [this](const auto &input) {
             const auto input_type = get_datatype(input).value();
             const auto &input_shape = get_shape(input);
 
