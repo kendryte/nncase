@@ -61,9 +61,9 @@ result<void> dequantize(const TQint *CXX_RESTRICT input, float *CXX_RESTRICT out
 }
 } // namespace impl
 
-#define DEQUANTIZE_IMPL(qint_t, float_t)                                                                                                      \
-    if (in_type == to_datatype<qint_t>() && out_type == to_datatype<float_t>())                                                               \
-    {                                                                                                                                         \
+#define DEQUANTIZE_IMPL(qint_t, float_t)                                                                                                            \
+    if (in_type == to_datatype<qint_t>() && out_type == to_datatype<float_t>())                                                                     \
+    {                                                                                                                                               \
         return impl::dequantize(reinterpret_cast<const qint_t *>(input), reinterpret_cast<float_t *>(output), compute_size(in_shape), scale, bias); \
     }
 

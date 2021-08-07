@@ -24,6 +24,7 @@ using namespace nncase::kernels::cpu::optimized;
 
 namespace impl
 {
+#if __riscv
 template <class TQ>
 void riscv_quantize(const float *CXX_RESTRICT input, TQ *CXX_RESTRICT output, size_t count, float scale, float bias)
 {
@@ -52,6 +53,7 @@ void riscv_quantize(const float *CXX_RESTRICT input, TQ *CXX_RESTRICT output, si
         output[count - 1] = kernels::detail::clamp(in, (int32_t)std::numeric_limits<TQ>::lowest(), (int32_t)std::numeric_limits<TQ>::max());
     }
 }
+#endif
 
 template <class TQ>
 result<void> quantize(const float *CXX_RESTRICT input, TQ *CXX_RESTRICT output, size_t count, float scale, float bias)
