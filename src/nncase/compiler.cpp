@@ -26,6 +26,7 @@
 #include <nncase/transforms/neutral/add_quant_motion.h>
 #include <nncase/transforms/neutral/fold_io_quant_motion.h>
 #include <nncase/transforms/neutral/optimize_allocation.h>
+#include <nncase/transforms/neutral/optimize_benchmark.h>
 #include <nncase/transforms/pass.h>
 #include <variant>
 
@@ -212,6 +213,9 @@ public:
 
         std::cout << "6. Optimize modules..." << std::endl;
         optimize_merge_module_regions(graph_);
+
+        if (compile_options_.benchmark_only)
+            optimize_benchmark(graph_);
     }
 
     ir::graph &graph(uint32_t stage) override
@@ -285,6 +289,13 @@ private:
         optimize_target_dependent_after_buffer_fusion(graph);
 
         dump_graph(graph, "merge_module_regions");
+    }
+
+    void optimize_benchmark(ir::graph &graph)
+    {
+        using namespace ir::transforms;
+        run_passes("mark_noaction", graph, [&]([[maybe_unused]] const module_type_t &module_type, ir::transforms::pass_manager &pmgr) { pmgr.add_pass<optimize_benchmark_pass>(); });
+        dump_graph(graph, "optimize_benchmark");
     }
 
     void optimize_buffer_fusion(ir::graph &graph)

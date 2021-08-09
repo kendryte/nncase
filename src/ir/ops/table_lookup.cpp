@@ -21,6 +21,7 @@ using namespace nncase::ir;
 table_lookup1d::table_lookup1d(datatype_t type, shape_t input_shape, size_t table_size)
 {
     add_input("input", type, input_shape);
-    add_input("table", type, shape_t { table_size });
+    add_input("table", type, shape_t { table_size })
+        .attributes(cnctr_attr_no_dummy_for_benchmark);
     add_output("output", type, input_shape);
 }

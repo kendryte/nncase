@@ -10,15 +10,15 @@ ROOT_DIR="$( pwd )"
 # you can usually install what you need easily via:
 #
 # sudo apt-get install clang-format-10
-CLANG_FORMAT_LLVM_INSTALL_DIR="/usr/lib/llvm-10"
+CLANG_FORMAT_LLVM_INSTALL_DIR="/usr/lib/llvm-11"
 
 [ -z "$CLANG_FORMAT_LLVM_INSTALL_DIR" ] && echo "CLANG_FORMAT_LLVM_INSTALL_DIR must point to an LLVM installation dir for this script." && exit
 echo CLANG_FORMAT_LLVM_INSTALL_DIR = ${CLANG_FORMAT_LLVM_INSTALL_DIR}
 
 VERSION=$(${CLANG_FORMAT_LLVM_INSTALL_DIR}/bin/clang-format --version)
-if [[ ${VERSION} =~ .*version\ 10.* ]]
+if [[ ${VERSION} =~ .*version\ 11.* ]]
 then
-    echo "clang-format version 10 found."
+    echo "clang-format version 11 found."
 else
     echo "CLANG_FORMAT_LLVM_INSTALL_DIR must point to an LLVM 10 install!"
     exit 1

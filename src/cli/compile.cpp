@@ -41,7 +41,8 @@ compile_command::compile_command(lyra::cli &cli)
                          .add_argument(lyra::opt(is_fpga_).name("--is-fpga").optional().help("use fpga parameters"))
                          .add_argument(lyra::opt(dump_ir_).name("--dump-ir").optional().help("dump ir to .dot"))
                          .add_argument(lyra::opt(dump_asm_).name("--dump-asm").optional().help("dump assembly"))
-                         .add_argument(lyra::opt(dump_dir_, "dump directory").name("--dump-dir").optional().help("dump to directory")));
+                         .add_argument(lyra::opt(dump_dir_, "dump directory").name("--dump-dir").optional().help("dump to directory"))
+                         .add_argument(lyra::opt(benchmark_only_, "benchmark only").name("--benchmark-only").optional().help("compile kmodel only for benchmark use")));
 }
 
 void compile_command::run()
@@ -66,6 +67,7 @@ void compile_command::run()
     c_options.input_type = input_type_;
     c_options.output_type = output_type_;
     c_options.quant_type = quant_type_;
+    c_options.benchmark_only = benchmark_only_;
 
     import_options i_options;
     std::vector<std::string> output_arrays;

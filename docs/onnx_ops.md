@@ -41,6 +41,7 @@
 | Pad | ✅ |
 | Pow | ✅ |
 | Prelu | ✅ |
+| ReduceL2 | ✅ |
 | Reducemax | ✅ |
 | Reducemean | ✅ |
 | Reducemin | ✅ |

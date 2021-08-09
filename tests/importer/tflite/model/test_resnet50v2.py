@@ -46,7 +46,7 @@ judge:
       simarity_name: segment
       threshold: true
 """
-    runner = TfliteTestRunner(request.node.name, overwirte_configs=overwrite_cfg)
+    runner = TfliteTestRunner(request.node.name, ['cpu', 'k510'], overwirte_configs=overwrite_cfg)
     model_file = runner.from_tensorflow(module)
     runner.run(model_file)
 

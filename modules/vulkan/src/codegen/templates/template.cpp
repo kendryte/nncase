@@ -59,7 +59,7 @@ struct xz_res
 }
 #else
 #define INCBIN_STYLE INCBIN_STYLE_SNAKE
-#include "incbin.h"
+#include <nncase/runtime/incbin.h>
 INCBIN(templates_xz, "vulkan_templates_xz.xz");
 
 namespace

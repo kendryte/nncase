@@ -40,7 +40,7 @@ memory_location_t decide_memory_location(ir::output_connector &conn, bool skip_b
     if (opcode == op_input_node)
         return mem_input;
     else if (opcode == op_constant)
-        return mem_rdata;
+        return conn.memory_location();
 
     if (skip_buffer_alias)
     {
