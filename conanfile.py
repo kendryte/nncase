@@ -88,8 +88,6 @@ class nncaseConan(ConanFile):
             self.options["opencv"].with_quirc = False
             self.options["opencv"].dnn = False
             self.options["flatbuffers"].options_from_context = False
-            if self.settings.os == 'Macos':
-                self.options["flatbuffers"].shared = True
             self.options["xtensor"].xsimd = False
             self.options["libzip"].with_bzip2 = False
             self.options["libzip"].with_zstd = False
