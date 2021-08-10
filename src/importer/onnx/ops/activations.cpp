@@ -17,6 +17,7 @@
 #include <cassert>
 #include <nncase/ir/graph.h>
 #include <nncase/ir/ops/binary.h>
+#include <nncase/ir/ops/clamp.h>
 #include <nncase/ir/ops/constant.h>
 #include <nncase/ir/ops/reduce.h>
 #include <nncase/ir/ops/unary.h>
@@ -169,4 +170,50 @@ void onnx_importer::convert_op_Sigmoid(const NodeProto &node)
     input_tensors_.emplace(&exp->input(), input);
     output_tensors_.emplace(output, &div->output());
 #endif
+}
+
+void onnx_importer::convert_op_HardSigmoid(const NodeProto &node)
+{
+    assert(node.input().size() == 1);
+    assert(node.output().size() == 1);
+
+    const auto &op_name { generate_name(node) };
+
+    const auto &input = node.input()[0];
+    const auto &output = node.output()[0];
+    auto &&in_shape = get_shape(input);
+
+    const auto alpha_value = get_attribute<float>(node, "alpha").value();
+    const auto &alpha = graph_.emplace<constant>(alpha_value);
+    alpha->name(op_name + ".alpha(HardSigmoid)");
+
+    const auto beta_value_info = get_attribute<float>(node, "beta");
+    const auto beta_value = beta_value_info ? beta_value_info.value() : 0.5f;
+    const auto &beta = graph_.emplace<constant>(beta_value);
+    beta->name(op_name + ".beta(HardSigmoid)");
+
+    // ref : np.maximum(np.minimum(x * slope + offset, 1.), 0.).astype(x.dtype)
+
+    auto mul = graph_.emplace<binary>(binary_mul, in_shape, alpha->output().shape(), value_range<float>::full());
+    mul->name(op_name + ".mul(HardSigmoid)");
+
+    auto add = graph_.emplace<binary>(binary_add, in_shape, beta->output().shape(), value_range<float>::full());
+    add->name(op_name + ".add(HardSigmoid)");
+
+    auto zero = graph_.emplace<constant>(0.f);
+    auto one = graph_.emplace<constant>(1.f);
+    auto cl = graph_.emplace<clamp>(in_shape, zero->output().shape(), one->output().shape());
+    zero->name(op_name + ".zero(HardSigmoid)");
+    one->name(op_name + ".one(HardSigmoid)");
+    cl->name(op_name + ".cl(HardSigmoid)");
+
+    mul->input_b().connect(alpha->output());
+    add->input_a().connect(mul->output());
+    add->input_b().connect(beta->output());
+    cl->input().connect(add->output());
+    cl->input_low().connect(zero->output());
+    cl->input_high().connect(one->output());
+
+    input_tensors_.emplace(&mul->input_a(), input);
+    output_tensors_.emplace(output, &cl->output());
 }

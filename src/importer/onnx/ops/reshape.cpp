@@ -45,10 +45,20 @@ void onnx_importer::convert_op_Reshape(const NodeProto &node)
     else
     {
         // try to extract data from previous constant nodes
-        const auto data = get_constant_input_data<float>(shape);
-        if (data)
-            std::transform(std::begin(data.value()), std::end(data.value()), std::back_inserter(new_shape),
+        if (auto float_data = get_constant_input_data<float>(shape); float_data)
+        {
+            std::transform(std::begin(float_data.value()), std::end(float_data.value()), std::back_inserter(new_shape),
                 [](const auto e) { return static_cast<int>(e); });
+        }
+        else if (auto int64_data = get_constant_input_data<int64_t>(shape); int64_data)
+        {
+            std::transform(std::begin(int64_data.value()), std::end(int64_data.value()), std::back_inserter(new_shape),
+                [](const auto e) { return static_cast<int>(e); });
+        }
+        else
+        {
+            std::runtime_error("the " + op_name + " can't fint the new_shape!");
+        }
     }
 
     auto allowzero_attr = get_attribute<int>(node, "allowzero");
