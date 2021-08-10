@@ -344,26 +344,26 @@ private:
             ir::transforms::pass_manager pmgr(graph, *target_);
             auto quant = evaluator.module_context(graph).quantizer();
 
-            if (!compile_options_.use_dataset_as_input_stat && compile_options_.input_type == "float32")
-            {
-                float input_mean, input_std;
-                std::visit([&](auto &options) {
-                    input_mean = options.input_mean;
-                    input_std = options.input_std;
-                },
-                    ptq_options_);
+            // if (!compile_options_.use_dataset_as_input_stat)
+            // {
+            //     float input_mean, input_std;
+            //     std::visit([&](auto &options) {
+            //         input_mean = options.input_mean;
+            //         input_std = options.input_std;
+            //     },
+            //         ptq_options_);
 
-                auto min = (0.f - input_mean) / input_std;
-                auto max = (1.f - input_mean) / input_std;
-                value_range<float> input_range { min, max };
-                quant->set(graph.inputs()[0]->output(), input_range);
-                quant->record(graph.inputs()[0]->output(), input_range);
-            }
+            //     auto min = (0.f - input_mean) / input_std;
+            //     auto max = (1.f - input_mean) / input_std;
+            //     value_range<float> input_range { min, max };
+            //     quant->set(graph.inputs()[0]->output(), input_range);
+            //     quant->record(graph.inputs()[0]->output(), input_range);
+            // }
 
-            // broadcast quant ranges
-            std::unordered_set<node_opcode> opcodes;
-            target_->add_quantization_broadcast(opcodes);
-            quant->broadcast_output(graph, opcodes);
+            // // broadcast quant ranges
+            // std::unordered_set<node_opcode> opcodes;
+            // target_->add_quantization_broadcast(opcodes);
+            // quant->broadcast_output(graph, opcodes);
 
             ir::transforms::transform_pass p("process i&o node");
 

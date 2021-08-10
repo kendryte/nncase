@@ -116,9 +116,11 @@ def transform_input(values: np.array, type: str):
     if type == 'float32':
         return values
     elif type == 'uint8':
-        return ((values + 1) * 127.5).astype(np.uint8)
+        values = ((values + 1) * 127.5).astype(np.uint8)
+        return values
     elif type == 'int8':
-        return (values * 127).astype(np.int8)
+        values = (values * 127).astype(np.int8)
+        return values
     else:
         raise TypeError(" Not support type for quant input")
 
@@ -225,13 +227,13 @@ class TestRunner(metaclass=ABCMeta):
         self.run_inference(cfg, case_dir, import_options, compile_options, model_content)
 
     def get_compiler_options(self, cfg, model_file):
-        import_options = nncase.ImportOptions(**cfg.importer_opt.kwargs)
+        import_options = nncase.ImportOptions()
         if os.path.splitext(model_file)[-1] == ".tflite":
-            import_options.input_layout = "NHWC"
-            import_options.output_layout = "NHWC"
+            import_options.input_layout = cfg.importer_opt.kwargs['input_layout']
+            import_options.output_layout = cfg.importer_opt.kwargs['output_layout']
         elif os.path.splitext(model_file)[-1] == ".onnx":
-            import_options.input_layout = "NCHW"
-            import_options.output_layout = "NCHW"
+            import_options.input_layout = cfg.importer_opt.kwargs['input_layout']
+            import_options.output_layout = cfg.importer_opt.kwargs['output_layout']
 
         compile_options = nncase.CompileOptions()
         for k, v in cfg.compile_opt.kwargs.items():

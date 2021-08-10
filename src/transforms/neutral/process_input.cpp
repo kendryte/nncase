@@ -24,6 +24,7 @@ using namespace nncase::ir::transforms;
 
 quant_param_t get_quant_param(datatype_t type)
 {
+    // TODO: 增加normalize之后需要根据std 和 mean 来计算新的量化参数
     if (type == datatype_t::dt_uint8)
     {
         return { static_cast<int32_t>(128), 1 / 128.f };
@@ -55,10 +56,7 @@ void process_input::process(transform_context &context)
     auto inputs = context.outputs[0]->connections();
     auto old_in = node_cast<input_node>(*context.matched_nodes[0]);
 
-    // auto &quantizer = *context.quantizer;
-    // size_t bits = input_type_ == dt_uint8 ? 8 : 7;
-    // auto old_range = quantizer.get(old_in->output());
-    auto params = get_quant_param(input_type_);
+    quant_param_t params = get_quant_param(input_type_);
     auto new_in_node = context.graph.emplace<input_node>(input_type_, old_in->output().shape());
     auto deq = context.graph.emplace<dequantize>(new_in_node->output().type(), new_in_node->output().shape(), dt_float32, params);
     deq->input().connect(new_in_node->output());
