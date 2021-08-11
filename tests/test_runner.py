@@ -380,11 +380,11 @@ class TestRunner(metaclass=ABCMeta):
                         test_outputs: List[Tuple[str]],
                         kwargs: Dict[str, str]) -> Tuple[bool, str]:
 
-        judeg_cfg = self.cfg.judge.common
+        judeg_cfg = copy.deepcopy(self.cfg.judge.common)
         if self.cfg.judge.specifics:
             for specific in self.cfg.judge.specifics:
-                if specific.matchs.dict == kwargs:
-                    judeg_cfg: Edict = specific
+                if kwargs['target'] in specific.matchs.dict['target'] and kwargs['ptq'] == specific.matchs.dict['ptq']:
+                    judeg_cfg.update(specific)
                     break
 
         for ref_file, test_file in zip(ref_ouputs, test_outputs):
