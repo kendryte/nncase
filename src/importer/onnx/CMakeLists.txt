@@ -30,6 +30,7 @@ set(ONNX_IMPORTER_OPS_SOURCES
     ops/reduce.cpp
     ops/reshape.cpp
     ops/resize.cpp
+    ops/shape.cpp
     ops/slice.cpp
     ops/softmax.cpp
     ops/squeeze.cpp
