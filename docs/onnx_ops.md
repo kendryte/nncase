@@ -50,6 +50,7 @@
 | Reshape | ✅ |
 | Resize | ✅ |
 | Round | ✅ |
+| Shape | ✅ |
 | Sin | ✅ |
 | Sigmoid | ✅ |
 | Slice | ✅ |
