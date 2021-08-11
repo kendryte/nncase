@@ -73,7 +73,7 @@ void LaunchDebugger()
 
 PYBIND11_MODULE(_nncaseruntime, m)
 {
-    m.doc() = "NNCase runtime Library";
+    m.doc() = "nncase runtime Library";
     m.attr("__version__") = NNCASE_VERSION;
 
     //LaunchDebugger();

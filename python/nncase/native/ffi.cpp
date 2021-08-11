@@ -122,7 +122,7 @@ private:
 
 PYBIND11_MODULE(_nncase, m)
 {
-    m.doc() = "NNCase Library";
+    m.doc() = "nncase Library";
     m.attr("__version__") = NNCASE_VERSION;
 
     // LaunchDebugger();
@@ -139,7 +139,8 @@ PYBIND11_MODULE(_nncase, m)
         .def_readwrite("is_fpga", &compile_options::is_fpga)
         .def_readwrite("input_type", &compile_options::input_type)
         .def_readwrite("output_type", &compile_options::output_type)
-        .def_readwrite("quant_type", &compile_options::quant_type);
+        .def_readwrite("quant_type", &compile_options::quant_type)
+        .def_readwrite("benchmark_only", &compile_options::benchmark_only);
 
     py::class_<import_options>(m, "ImportOptions")
         .def(py::init())

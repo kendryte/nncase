@@ -48,5 +48,6 @@ private:
     bool dump_ir_ = false;
     bool dump_asm_ = false;
     bool is_fpga_ = false;
+    bool benchmark_only_ = false;
 };
 }
