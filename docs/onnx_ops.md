@@ -56,6 +56,7 @@
 | Slice | ✅ |
 | Softmax | ✅ |
 | Spacetodepth | ✅ |
+| Split | ✅ |
 | Sqrt | ✅ |
 | Squeeze | ✅ |
 | Sub | ✅ |
