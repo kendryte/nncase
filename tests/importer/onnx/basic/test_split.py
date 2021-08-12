@@ -144,7 +144,7 @@ def test_split(in_shape, axis, split, output_size, op_versions_and_value_format,
     if (split is None and in_shape[dim] % output_size == 0) or (split is not None and len(split) == output_size):
         model_def = _make_module(in_shape, axis, split, output_size, op_version, value_format)
 
-        runner = OnnxTestRunner(request.node.name, ['k510'])
+        runner = OnnxTestRunner(request.node.name)
         model_file = runner.from_onnx_helper(model_def)
         runner.run(model_file)
 
