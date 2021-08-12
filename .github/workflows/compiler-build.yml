@@ -4,7 +4,6 @@ on: [push, pull_request]
 
 env:
   BUILD_TYPE: Release
-  NNCASE_VERSION_SUFFIX: .dev${{github.run_number}}
 
 jobs:
   build:

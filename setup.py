@@ -181,7 +181,10 @@ class BuildCMakeExt(build_ext):
 
         bin_dir = os.path.abspath(os.path.join(self.build_temp, 'install'))
         cmake_args = ['-G', 'Ninja']
-        if os.getenv('CI', False):
+        if os.getenv('AUDITWHEEL_PLAT') != None:
+            cmake_args += ['-DCMAKE_C_COMPILER=gcc-10']
+            cmake_args += ['-DCMAKE_CXX_COMPILER=g++-10']
+        elif os.getenv('CI', False):
             cmake_args += ['-DPython3_ROOT_DIR=' + os.environ['pythonLocation']]
 
         cfg = 'Debug' if self.debug else 'Release'
@@ -234,20 +237,25 @@ class BuildCMakeExt(build_ext):
         # different place. See comments above for additional information
 
 
+try:
+    import subprocess
+    version_suffix = subprocess.check_output(["git", "describe", "--wlways", "--dirty"]).strip()
+except:
+    version_suffix = ''
+
 setup(name='nncase',
-      version='1.0.0' + os.getenv('NNCASE_VERSION_SUFFIX', ''),
+      version='1.0.0' + version_suffix,
       packages=['nncase'],
-      package_dir={'': '..'},
-      ext_modules=[CMakeExtension(name="_nncase", sourcedir='../..')],
+      package_dir={'': 'python'},
+      ext_modules=[CMakeExtension(name="_nncase", sourcedir='.')],
       description="A neural network compiler for AI accelerators",
       url='https://github.com/kendryte/nncase',
-      long_description=open("../../README.md", 'r', encoding='utf8').read(),
+      long_description=open("README.md", 'r', encoding='utf8').read(),
       long_description_content_type="text/markdown",
       keywords="kendryte, nn, compiler, k210, k510",
       classifiers=[
           "Programming Language :: C++",
           "Programming Language :: Python :: 3",
-          "Programming Language :: Python :: 3.5",
           "Programming Language :: Python :: 3.6",
           "Programming Language :: Python :: 3.7",
           "Programming Language :: Python :: 3.8",

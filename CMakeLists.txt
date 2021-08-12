@@ -152,6 +152,7 @@ else()
             add_compile_options(-Wno-four-char-constants -Wno-sometimes-uninitialized -Wno-deprecated)
         else ()
             add_compile_options(-Wno-maybe-uninitialized -Wno-deprecated-copy)
+            add_link_options(-static-libstdc++ -static-libgcc)
         endif()
     endif()
     

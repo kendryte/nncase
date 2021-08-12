@@ -1,0 +1,19 @@
+[project]
+requires-python = ">=3.6"
+
+[build-system]
+requires = ["setuptools>=42", "wheel", "conan", "ninja"]
+
+[tool.cibuildwheel]
+build = "cp36-*"
+manylinux-x86_64-image = "sunnycase/manylinux_2_24_x86_64:version1.0"
+
+[tool.cibuildwheel.linux]
+archs = ["x86_64"]
+before-all = [
+  "apt-get install -y --no-install-recommends libxcb-icccm4-dev libxcb-image0-dev libxcb-keysyms1-dev libxcb-render-util0-dev libxcb-util0-dev libxcb-xinerama0-dev libxcb-xkb-dev xorg-dev xkb-data",
+  "pip install conan",
+  "conan profile new default --detect",
+  "conan profile update settings.compiler.libcxx=libstdc++11 default"
+]
+repair-wheel-command = ''
