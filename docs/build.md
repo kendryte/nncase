@@ -19,6 +19,7 @@ sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 40
 
 ```bash
 sudo apt install libgtk2.0-dev -y
+sudo -A apt-get install -y --no-install-recommends libx11-xcb-dev libxcb-dri3-dev libxcb-icccm4-dev libxcb-image0-dev libxcb-keysyms1-dev libxcb-randr0-dev libxcb-render-util0-dev libxcb-shape0-dev libxcb-sync-dev libxcb-util-dev libxcb-xfixes0-dev libxcb-xinerama0-dev libxcb-xkb-dev xkb-data xorg-dev
 ```
 
 2. Install conan and cmake
