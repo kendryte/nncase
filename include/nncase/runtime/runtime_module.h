@@ -36,8 +36,9 @@ public:
     static result<std::unique_ptr<runtime_module>> create(const module_type_t &type);
 
     runtime_module() = default;
-    runtime_module(runtime_module &) = delete;
+    runtime_module(const runtime_module &) = delete;
     virtual ~runtime_module() = default;
+    runtime_module &operator=(const runtime_module &) = delete;
 
     result<void> initialize(gsl::span<const gsl::byte> payload, interpreter &interp) noexcept;
     const module_type_t &type() const noexcept;

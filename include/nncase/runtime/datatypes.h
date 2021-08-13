@@ -320,12 +320,13 @@ struct fixed_mul
     int32_t rounded_mul() const noexcept { return (int32_t)lrintf(mul); }
 };
 
-using memory_location_t = uint32_t;
+using memory_location_t = uint8_t;
 NNCASE_INLINE_VAR constexpr memory_location_t mem_input = 0;
 NNCASE_INLINE_VAR constexpr memory_location_t mem_output = 1;
 NNCASE_INLINE_VAR constexpr memory_location_t mem_rdata = 2;
 NNCASE_INLINE_VAR constexpr memory_location_t mem_data = 3;
 NNCASE_INLINE_VAR constexpr memory_location_t mem_shared_data = 4;
+NNCASE_INLINE_VAR constexpr memory_location_t mem_private_base = 64;
 
 using runtime_shape_t = itlib::small_vector<size_t, 4>;
 using runtime_axis_t = itlib::small_vector<int32_t, 4>;
@@ -403,7 +404,7 @@ struct memory_range
 {
     memory_location_t memory_location;
     datatype_t datatype;
-    uint16_t reserved0;
+    uint16_t shared_module;
     uint32_t start;
     uint32_t size;
 };
@@ -463,4 +464,16 @@ inline bool operator!=(const scalar &lhs, const scalar &rhs) noexcept
     auto valid_bytes = detail::datatype_bytes(lhs.type);
     return lhs.type != rhs.type || memcmp(&lhs.storage, &rhs.storage, valid_bytes);
 }
+}
+
+namespace std
+{
+template <>
+struct std::hash<nncase::module_type_t>
+{
+    auto operator()(const nncase::module_type_t &key) const noexcept
+    {
+        return std::hash<const char *>()(key.data());
+    }
+};
 }

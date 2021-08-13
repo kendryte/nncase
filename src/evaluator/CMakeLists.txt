@@ -2,6 +2,7 @@
 
 set(SRCS evaluator.cpp
          quantizer.cpp
+         evaluate_context.cpp
          ops/neutral/neutral_ops.cpp)
 
 add_library(evaluator OBJECT ${SRCS})

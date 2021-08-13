@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 #pragma once
-#include <nncase/schedule/schedule_types.h>
+#include "schedule_types.h"
 
 namespace nncase::schedule
 {
@@ -21,6 +21,9 @@ class lifetime_recorder
 {
 public:
     lifetime_recorder(std::list<logical_buffer> &buffers, std::unordered_map<const ir::output_connector *, logical_buffer *> &buffer_map, bool skip_buffer_alias);
+
+    size_t current_age() const noexcept { return cnt_age_; }
+    void current_age(size_t age);
 
     void allocate(ir::output_connector &conn);
     void release(ir::output_connector &conn);

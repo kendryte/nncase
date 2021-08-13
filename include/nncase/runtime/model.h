@@ -36,6 +36,8 @@ struct function_header
 {
     uint32_t header_size;
     uint32_t size;
+    uint32_t input_pool_size;
+    uint32_t output_pool_size;
     uint32_t inputs;
     uint32_t outputs;
     uint32_t entrypoint;
@@ -58,6 +60,7 @@ struct module_header
 struct mempool_desc
 {
     memory_location_t location;
+    uint8_t reserved0[3];
     uint32_t size;
 };
 

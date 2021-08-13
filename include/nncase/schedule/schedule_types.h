@@ -25,6 +25,7 @@ struct buffer_allocation
 {
     memory_location_t memory_location;
     datatype_t type;
+    size_t shared_module;
     size_t start;
     size_t size;
     ir::shape_t shape;
@@ -40,7 +41,7 @@ struct buffer_allocation
 
     memory_range runtime_type() const
     {
-        return { .memory_location = memory_location, .datatype = type, .start = (uint32_t)start, .size = (uint32_t)size };
+        return { .memory_location = memory_location, .datatype = type, .shared_module = (uint16_t)shared_module, .start = (uint32_t)start, .size = (uint32_t)size };
     }
 };
 
@@ -52,6 +53,8 @@ struct function_schedule_result
     ir::graph *graph;
     module_schedule_result *module;
     std::vector<ir::node *> compute_sequence;
+    size_t input_pool_size;
+    size_t output_pool_size;
 };
 
 struct module_schedule_result
@@ -64,7 +67,7 @@ struct module_schedule_result
     std::unordered_map<module_type_t, size_t> shared_max_usages;
 };
 
-struct schedule_result
+struct model_schedule_result
 {
     std::vector<module_schedule_result> modules;
     function_schedule_result *entry_function;

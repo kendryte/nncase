@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #pragma once
+#include "schedule_context.h"
 #include "schedule_types.h"
 #include <filesystem>
 #include <span>
@@ -26,14 +27,10 @@ namespace schedule
     class NNCASE_API scheduler
     {
     public:
-        scheduler(target &target, ir::graph &main_graph, std::span<ir::output_node *> outputs)
-            : target_(target), main_graph_(main_graph), outputs_(outputs) { }
+        scheduler(target &target, ir::graph &main_graph, std::span<ir::output_node *> outputs);
 
-        schedule_result schedule(bool skip_buffer_alias = false);
+        model_schedule_result schedule(bool skip_buffer_alias = false);
         void config_dump(std::filesystem::path dump_dir);
-
-    private:
-        void dump_schedule(const schedule_context &context);
 
     private:
         target &target_;

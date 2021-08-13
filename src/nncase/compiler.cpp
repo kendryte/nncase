@@ -335,7 +335,7 @@ private:
     {
         auto graph_runner = [&](ir::graph &graph) {
             ir::transforms::pass_manager pmgr(graph, *target_);
-            auto quant = evaluator.module_context(graph).quantizer();
+            auto quant = evaluator.quantizer(graph.module_type());
 
             if (!compile_options_.use_dataset_as_input_stat)
             {

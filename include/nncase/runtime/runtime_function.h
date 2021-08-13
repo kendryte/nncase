@@ -27,6 +27,7 @@ struct NNCASE_API runtime_function_init_context
 {
     virtual runtime_module_init_context &module_init_context() noexcept = 0;
     virtual const function_header &header() noexcept = 0;
+    virtual gsl::span<const gsl::byte> body() noexcept = 0;
 };
 
 class NNCASE_API runtime_function
@@ -44,11 +45,12 @@ private:
 
 public:
     runtime_function(runtime_module &rt_module);
-    runtime_function(runtime_function &) = delete;
+    runtime_function(const runtime_function &) = delete;
     virtual ~runtime_function() = default;
+    runtime_function &operator=(const runtime_function &) = delete;
 
     result<void> initialize(gsl::span<const gsl::byte> payload, runtime_module_init_context &module_init_context) noexcept;
-    virtual runtime_module &module() const noexcept;
+    runtime_module &module() const noexcept;
 
     uint32_t inputs_size() const noexcept;
     const runtime_shape_t &input_shape(size_t index) const noexcept;

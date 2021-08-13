@@ -35,8 +35,14 @@ public:
 
 struct module_builder_params
 {
-    const schedule::schedule_result &sched;
+    const schedule::model_schedule_result &model_sched;
     const schedule::module_schedule_result &module_sched;
+};
+
+struct function_call_id
+{
+    size_t module_id;
+    size_t function_id;
 };
 
 class NNCASE_API module_builder
@@ -85,8 +91,8 @@ public:
 
 protected:
     void merge_to_rdata_section(std::string_view from);
-    std::pair<size_t, size_t> function_id(ir::graph *graph);
-    void set_current_entry_point(uint32_t value);
+    function_call_id function_id(ir::graph *graph);
+    void set_current_entry_point(std::streampos pos);
 
     virtual void begin_emit_function();
     virtual void end_emit_function();
@@ -118,6 +124,6 @@ private:
     std::unordered_map<std::string_view, std::pair<size_t, std::string_view>> symbol_offsets_;
 
     const schedule::function_schedule_result *current_function_;
-    std::unordered_map<const schedule::function_schedule_result *, uint32_t> entry_points_;
+    std::unordered_map<const schedule::function_schedule_result *, std::streampos> entry_points_;
 };
 }

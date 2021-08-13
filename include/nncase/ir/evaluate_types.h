@@ -13,31 +13,24 @@
  * limitations under the License.
  */
 #pragma once
-#include "module_builder.h"
+#include <nncase/runtime/datatypes.h>
 
-namespace nncase::codegen
+namespace nncase::ir
 {
-struct build_model_result
-{
-    size_t model_size;
-};
-
-class NNCASE_API model_builder
+class NNCASE_API evaluate_tensor
 {
 public:
-    model_builder(target &target, const schedule::model_schedule_result &sched);
-    model_builder(model_builder &) = delete;
-    model_builder(model_builder &&) = delete;
+    evaluate_tensor(datatype_t datatype, runtime_shape_t shape, runtime_shape_t strides, gsl::span<gsl::byte> buffer);
 
-    void config_dump(const std::filesystem::path &dump_dir, bool dump_asm);
-    build_model_result build(std::ostream &output);
-
-    size_t max_usage(memory_location_t location) const;
+    datatype_t datatype() const noexcept { return datatype_; }
+    const runtime_shape_t &shape() const noexcept { return shape_; }
+    const runtime_shape_t &strides() const noexcept { return strides_; }
+    gsl::span<gsl::byte> buffer() const noexcept { return buffer_; }
 
 private:
-    target &target_;
-    const schedule::model_schedule_result &sched_;
-    std::filesystem::path dump_dir_;
-    bool dump_asm_;
+    datatype_t datatype_;
+    runtime_shape_t shape_;
+    runtime_shape_t strides_;
+    gsl::span<gsl::byte> buffer_;
 };
 }

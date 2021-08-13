@@ -12,18 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "liveness_analysis.h"
+#include <nncase/schedule/liveness_analysis.h>
 
 using namespace nncase;
 using namespace nncase::ir;
 using namespace nncase::schedule;
-
-namespace
-{
-memory_location_t decide_memory_location(ir::output_connector &conn, bool skip_buffer_alias) noexcept
-{
-}
-}
 
 lifetime_recorder::lifetime_recorder(std::list<logical_buffer> &buffers, std::unordered_map<const ir::output_connector *, logical_buffer *> &buffer_map, bool skip_buffer_alias)
     : buffers_(buffers), buffer_map_(buffer_map), skip_buffer_alias_(skip_buffer_alias)
@@ -58,11 +51,20 @@ void lifetime_recorder::release(ir::output_connector &conn)
 
 void lifetime_recorder::grow_age()
 {
-    cnt_age_++;
+    current_age(cnt_age_ + 1);
+}
+
+void lifetime_recorder::current_age(size_t age)
+{
+    if (age < cnt_age_)
+        throw std::invalid_argument("Cannot set back age");
+
+    auto increase = age - cnt_age_;
+    cnt_age_ = age;
     for (auto &b : buffers_)
     {
         auto &lifetime = b.lifetime();
         if (lifetime.is_alive())
-            lifetime.age++;
+            lifetime.age += increase;
     }
 }

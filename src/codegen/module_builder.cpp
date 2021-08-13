@@ -158,24 +158,23 @@ void module_builder::merge_to_rdata_section(std::string_view from)
     rdata_section_merges_.emplace(from, std::in_place);
 }
 
-std::pair<size_t, size_t> module_builder::function_id(ir::graph *graph)
+function_call_id module_builder::function_id(ir::graph *graph)
 {
-    for (size_t i = 0; i < params_.sched.modules.size(); i++)
+    for (size_t i = 0; i < params_.model_sched.modules.size(); i++)
     {
-        auto &mod_sched = params_.sched.modules[i];
+        auto &mod_sched = params_.model_sched.modules[i];
         auto &func_sched = mod_sched.functions_map.at(graph);
         auto &orders = mod_sched.functions;
-        auto it = std::find(orders.begin(), orders.end(), func_sched);
-        if (it != orders.end())
-            return std::make_pair(i, (size_t)std::distance(orders.begin(), it));
+        if (func_sched >= orders.data() && func_sched < orders.data() + orders.size())
+            return { i, (size_t)(func_sched - orders.data()) };
     }
 
     throw std::invalid_argument("Can't find graph " + graph->name() + " in modules");
 }
 
-void module_builder::set_current_entry_point(uint32_t value)
+void module_builder::set_current_entry_point(std::streampos pos)
 {
-    entry_points_[current_function_] = value;
+    entry_points_[current_function_] = pos;
 }
 
 std::unique_ptr<section_decompiler> module_builder::create_decompiler([[maybe_unused]] std::string_view section_name)
@@ -420,9 +419,11 @@ void module_builder::write_function_binary(binary_writer &writer, const schedule
     function_header header {};
     header.header_size = sizeof(header);
     header.size = (uint32_t)(end_pos - header_pos);
+    header.input_pool_size = (uint32_t)function_sched.input_pool_size;
+    header.output_pool_size = (uint32_t)function_sched.output_pool_size;
     header.inputs = (uint32_t)inputs.size();
     header.outputs = (uint32_t)outputs.size();
-    header.entrypoint = entry_points_.at(&function_sched);
+    header.entrypoint = (uint32_t)entry_points_.at(&function_sched);
     writer.position(header_pos);
     writer.write(header);
 

@@ -22,6 +22,7 @@
 #include <nncase/ir/graph.h>
 #include <nncase/runtime/interpreter.h>
 #include <nncase/runtime/runtime_op_utility.h>
+#include <nncase/schedule/scheduler.h>
 #include <nncase/version.h>
 #include <pybind11/iostream.h>
 #include <pybind11/numpy.h>
@@ -74,7 +75,7 @@ void LaunchDebugger()
 }
 #endif
 
-schedule::schedule_result schedule(target &target, ir::graph &graph)
+schedule::model_schedule_result schedule(target &target, ir::graph &graph)
 {
     schedule::scheduler sched(target, graph, graph.outputs());
     return sched.schedule(true);
@@ -115,7 +116,7 @@ public:
 
 private:
     ir::graph &graph_;
-    schedule::schedule_result schedule_result_;
+    schedule::model_schedule_result schedule_result_;
     ir::evaluator evaluator_;
 };
 }

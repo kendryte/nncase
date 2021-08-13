@@ -39,6 +39,11 @@ module_type_t stackvm_module_builder::module_type() const noexcept
     return stackvm_module_type;
 }
 
+uint32_t stackvm_module_builder::module_version() const noexcept
+{
+    return stackvm_module_version;
+}
+
 section_writer &stackvm_module_builder::text_writer()
 {
     return writer(".text");

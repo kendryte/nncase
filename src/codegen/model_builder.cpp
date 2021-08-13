@@ -23,7 +23,7 @@ using namespace nncase::ir;
 using namespace nncase::schedule;
 using namespace nncase::runtime;
 
-model_builder::model_builder(target &target, const schedule::schedule_result &sched)
+model_builder::model_builder(target &target, const schedule::model_schedule_result &sched)
     : target_(target), sched_(sched), dump_asm_(false)
 {
 }
@@ -89,15 +89,21 @@ size_t model_builder::max_usage(memory_location_t location) const
 {
     size_t usage = 0;
 
-    if (location == mem_input
-        || location == mem_output)
+    if (location == mem_input)
     {
-        // Only take into account main function's inouts
+        // Only take into account of main function's inputs
         auto graph = sched_.entry_function->graph;
+        auto &entry_in_allocs = sched_.entry_function->module->allocations;
         for (auto in : graph->inputs())
-            usage += ir::get_bytes(in->output().type(), in->output().shape());
+            usage += entry_in_allocs.at(&in->output()).size;
+    }
+    else if (location == mem_output)
+    {
+        // Only take into account of main function's outputs
+        auto graph = sched_.entry_function->graph;
+        auto &entry_out_allocs = sched_.entry_function->module->allocations;
         for (auto out : graph->outputs())
-            usage += ir::get_bytes(out->input().type(), out->input().shape());
+            usage += entry_out_allocs.at(out->input().connection()).size;
     }
     else if (location != mem_shared_data)
     {

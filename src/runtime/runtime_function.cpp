@@ -26,8 +26,8 @@ namespace
 class runtime_function_init_context_impl : public runtime_function_init_context
 {
 public:
-    runtime_function_init_context_impl(const function_header &header, runtime_module_init_context &module_init_context, gsl::span<const gsl::byte> sections) noexcept
-        : header_(header), module_init_context_(module_init_context), sections_(sections)
+    runtime_function_init_context_impl(const function_header &header, runtime_module_init_context &module_init_context, gsl::span<const gsl::byte> body) noexcept
+        : header_(header), module_init_context_(module_init_context), body_(body)
     {
     }
 
@@ -41,10 +41,15 @@ public:
         return header_;
     }
 
+    gsl::span<const gsl::byte> body() noexcept override
+    {
+        return body_;
+    }
+
 private:
     const function_header &header_;
     runtime_module_init_context &module_init_context_;
-    gsl::span<const gsl::byte> sections_;
+    gsl::span<const gsl::byte> body_;
 };
 }
 

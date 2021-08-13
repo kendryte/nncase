@@ -4,7 +4,9 @@ set(SRCS scheduler.cpp
          freelist.cpp
          buffer_allocator.cpp
          liveness_analysis.cpp
-         schedule_context.cpp)
+         function_schedule_context.cpp
+         module_schedule_context.cpp
+         model_schedule_context.cpp)
 
 add_library(schedule OBJECT ${SRCS})
 target_link_libraries(schedule PUBLIC ir)
