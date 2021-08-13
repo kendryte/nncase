@@ -18,6 +18,7 @@
 | Div | ✅ |
 | Dropout | ✅ |
 | Exp | ✅ |
+| Expand | ✅ |
 | Flatten | ✅ |
 | Floor | ✅ |
 | Gather | ✅ |
