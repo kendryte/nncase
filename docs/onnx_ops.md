@@ -25,6 +25,7 @@
 | Gemm | ✅ |
 | Globalaveragepool | ✅ |
 | Globalmaxpool | ✅ |
+| HardSigmoid | ✅ |
 | Identity | ✅ |
 | Instancenormalization | ✅ |
 | Lpnormalization | ✅ |
