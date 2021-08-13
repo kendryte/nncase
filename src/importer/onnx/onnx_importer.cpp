@@ -552,7 +552,19 @@ optional<vector<int>> onnx_importer::get_attribute<vector<int>>(const onnx::Node
 
     // assert(attr.value().type() == attribute_type<target_type>);
 
-    return target_type { std::begin(attr.value().ints()), std::end(attr.value().ints()) };
+    target_type vec;
+    std::transform(attr.value().ints().begin(), attr.value().ints().end(), std::back_inserter(vec),
+        [](int64_t val) {
+            int min = std::numeric_limits<int>::min();
+            int max = std::numeric_limits<int>::max();
+            if (val < min)
+                return min;
+            else if (val > max)
+                return max;
+            else
+                return static_cast<int>(val);
+        });
+    return vec;
 }
 
 template <>
