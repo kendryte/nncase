@@ -28,6 +28,7 @@ public:
     k210_module_builder(std::string_view module_name, const module_builder_params &params);
 
     module_type_t module_type() const noexcept override;
+    uint32_t module_version() const noexcept override;
 
 protected:
     section_writer &text_writer();

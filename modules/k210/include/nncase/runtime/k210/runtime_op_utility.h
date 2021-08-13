@@ -15,7 +15,7 @@
 #pragma once
 #include "runtime_types.h"
 
-BEGIN_NS_NNCASE_RT_K210
+BEGIN_NS_NNCASE_RT_MODULE(k210)
 
 struct kpu_layout
 {
@@ -184,4 +184,4 @@ inline std::array<int32_t, 2> get_kpu_select_pool_offset(kpu_pool_type_t pool_ty
     }
 }
 
-END_NS_NNCASE_RT_K210
+END_NS_NNCASE_RT_MODULE

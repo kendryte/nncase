@@ -16,7 +16,7 @@
 #include "compiler_defs.h"
 #include <nncase/runtime/datatypes.h>
 
-BEGIN_NS_NNCASE_RT_K210
+BEGIN_NS_NNCASE_RT_MODULE(k210)
 
 NNCASE_INLINE_VAR constexpr memory_location_t mem_kpu = mem_private_base + 0;
 NNCASE_INLINE_VAR constexpr size_t KPU_RAM_SIZE = 2 * 1024 * 1024; // 2MB
@@ -341,4 +341,4 @@ struct copy_options
     kpu_shape_t out_strides;
 };
 
-END_NS_NNCASE_RT_K210
+END_NS_NNCASE_RT_MODULE

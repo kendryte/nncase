@@ -53,6 +53,11 @@ private:
 };
 }
 
+runtime_function::runtime_function(runtime_module &rt_module)
+    : rt_module_(rt_module)
+{
+}
+
 runtime_module &runtime_function::module() const noexcept
 {
     return rt_module_;

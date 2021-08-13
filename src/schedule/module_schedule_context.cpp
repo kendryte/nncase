@@ -28,6 +28,11 @@ module_schedule_context::module_schedule_context(module_schedule_result &result,
     model_sched.target().register_allocators(type_, allocators_, allocator_holder_);
 }
 
+buffer_allocator &module_schedule_context::shared_allocator(const module_type_t &type)
+{
+    return *shared_allocators_.at(type);
+}
+
 void module_schedule_context::visit_function(ir::graph &graph, caller_context &caller_ctx)
 {
     auto &fctx = functions_.emplace_back(graph, *this);

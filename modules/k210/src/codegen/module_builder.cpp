@@ -38,6 +38,11 @@ module_type_t k210_module_builder::module_type() const noexcept
     return k210_module_type;
 }
 
+uint32_t k210_module_builder::module_version() const noexcept
+{
+    return k210_module_version;
+}
+
 section_writer &k210_module_builder::text_writer()
 {
     return writer(".text");
