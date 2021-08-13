@@ -41,6 +41,7 @@
 | Pad | ✅ |
 | Pow | ✅ |
 | Prelu | ✅ |
+| ReduceL2 | ✅ |
 | Reducemax | ✅ |
 | Reducemean | ✅ |
 | Reducemin | ✅ |
@@ -49,11 +50,13 @@
 | Reshape | ✅ |
 | Resize | ✅ |
 | Round | ✅ |
+| Shape | ✅ |
 | Sin | ✅ |
 | Sigmoid | ✅ |
 | Slice | ✅ |
 | Softmax | ✅ |
 | Spacetodepth | ✅ |
+| Split | ✅ |
 | Sqrt | ✅ |
 | Squeeze | ✅ |
 | Sub | ✅ |

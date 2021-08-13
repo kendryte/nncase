@@ -13,6 +13,7 @@ set(ONNX_IMPORTER_OPS_SOURCES
     ops/concat.cpp
     ops/constant.cpp
     ops/conv.cpp
+    ops/cast.cpp
     ops/dropout.cpp
     ops/gather.cpp
     ops/gather_nd.cpp
@@ -29,8 +30,10 @@ set(ONNX_IMPORTER_OPS_SOURCES
     ops/reduce.cpp
     ops/reshape.cpp
     ops/resize.cpp
+    ops/shape.cpp
     ops/slice.cpp
     ops/softmax.cpp
+    ops/split.cpp
     ops/squeeze.cpp
     ops/sum.cpp
     ops/transpose.cpp

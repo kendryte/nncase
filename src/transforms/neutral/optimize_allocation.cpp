@@ -66,6 +66,7 @@ void add_copy_to_concat_pass::run_core(graph &graph, [[maybe_unused]] nncase::ta
                 {
                     auto cp = graph.emplace<copy>(out.type(), out.shape());
                     cp->name(out.owner().name() + "/copy");
+                    cp->module_type(graph.module_type());
                     cp->input().connect(out);
                     in->connect(cp->output());
                 }
@@ -84,6 +85,7 @@ void add_copy_to_output_pass::run_core(graph &graph, [[maybe_unused]] nncase::ta
             if (out.owner().runtime_opcode() != op_copy)
             {
                 auto cp = graph.emplace<copy>(out.type(), out.shape());
+                cp->module_type(graph.module_type());
                 cp->name(out.owner().name() + "/copy");
                 cp->output().memory_location(mem_output);
                 cp->input().connect(out);

@@ -65,6 +65,10 @@ class nncaseConan(ConanFile):
             self.requires('shaderc/2021.1')
             if self.options.tests:
                 self.requires('gtest/1.10.0')
+                
+        if (not self.options.runtime) or self.options.vulkan_runtime:
+            self.requires('vulkan-headers/1.2.182')
+            self.requires('vulkan-loader/1.2.182')
 
         if (not self.options.runtime) or self.options.vulkan_runtime:
             self.requires('vulkan-headers/1.2.182')

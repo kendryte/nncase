@@ -328,6 +328,9 @@ optional<datatype_t> onnx_importer::get_datatype(const TensorProto_DataType data
     case TensorProto_DataType_FLOAT:
         return dt_float32;
 
+    case TensorProto_DataType_FLOAT16:
+        return dt_float16;
+
     case TensorProto_DataType_UINT8:
         return dt_uint8;
 
