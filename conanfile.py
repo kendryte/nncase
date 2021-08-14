@@ -65,7 +65,7 @@ class nncaseConan(ConanFile):
             self.requires('shaderc/2021.1')
             if self.options.tests:
                 self.requires('gtest/1.10.0')
-                
+
         if (not self.options.runtime) or self.options.vulkan_runtime:
             self.requires('vulkan-headers/1.2.182')
             self.requires('vulkan-loader/1.2.182')
@@ -98,7 +98,11 @@ class nncaseConan(ConanFile):
                 self.options["shaderc"].link_libcpp = False
 
         if (not self.options.runtime) or self.options.vulkan_runtime:
-            self.options["vulkan_loader"].shared = False
+            if self.settings.os == 'Linux':
+                self.options["vulkan-loader"].with_wsi_xcb = False
+                self.options["vulkan-loader"].with_wsi_xlib = False
+                self.options["vulkan-loader"].with_wsi_wayland = False
+                self.options["vulkan-loader"].with_wsi_directfb = False
 
     def cmake_configure(self):
         cmake = CMake(self)
@@ -115,4 +119,3 @@ class nncaseConan(ConanFile):
     def build(self):
         cmake = self.cmake_configure()
         cmake.build()
-        

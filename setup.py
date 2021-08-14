@@ -7,6 +7,9 @@ from setuptools.command.install_scripts import install_scripts
 import shutil
 import os
 import sys
+import io
+import re
+import time
 
 # See ref: https://stackoverflow.com/a/51575996
 
@@ -237,14 +240,20 @@ class BuildCMakeExt(build_ext):
         # different place. See comments above for additional information
 
 
-try:
-    import subprocess
-    version_suffix = '-' + subprocess.check_output(["git", "describe", "--wlways", "--dirty"]).strip()
-except:
-    version_suffix = ''
+def find_version():
+    with io.open("CMakeLists.txt", encoding="utf8") as f:
+        version_file = f.read()
+
+    version_prefix = re.findall(r"NNCASE_VERSION \"(.+)\"", version_file)
+
+    if version_prefix:
+        version_suffix = time.strftime("%Y%m%d", time.localtime())
+        return version_prefix[0] + "." + version_suffix
+    raise RuntimeError("Unable to find version string.")
+
 
 setup(name='nncase',
-      version='1.0.0' + version_suffix,
+      version=find_version(),
       packages=['nncase'],
       package_dir={'': 'python'},
       ext_modules=[CMakeExtension(name="_nncase", sourcedir='.')],

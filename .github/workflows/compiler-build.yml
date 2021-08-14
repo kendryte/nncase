@@ -17,13 +17,6 @@ jobs:
     - uses: seanmiddleditch/gha-setup-ninja@master
         
     - name: Install System Requirements
-      if: runner.os == 'Linux'
-      shell: bash
-      run: |
-        sudo apt update
-        sudo apt install libgtk2.0-dev -y
-        
-    - name: Install System Requirements
       if: runner.os == 'Macos'
       shell: bash
       run: |
