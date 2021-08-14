@@ -17,3 +17,6 @@ before-all = [
   "conan profile update settings.compiler.libcxx=libstdc++11 default"
 ]
 repair-wheel-command = ''
+
+[tool.cibuildwheel.macos.environment]
+MACOSX_DEPLOYMENT_TARGET = "10.15"

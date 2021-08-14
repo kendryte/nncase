@@ -239,7 +239,7 @@ class BuildCMakeExt(build_ext):
 
 try:
     import subprocess
-    version_suffix = subprocess.check_output(["git", "describe", "--wlways", "--dirty"]).strip()
+    version_suffix = '-' + subprocess.check_output(["git", "describe", "--wlways", "--dirty"]).strip()
 except:
     version_suffix = ''
 
