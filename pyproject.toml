@@ -25,8 +25,8 @@ before-all = [
   "conan profile new default --detect",
   "conan profile update settings.compiler.libcxx=libstdc++11 default"
 ]
-before-build = "pip install https://github.com/sunnycase/auditwheel/releases/download/4.0.0-nncase/auditwheel-0.0.0-py3-none-any.whl"
-repair-wheel-command = "auditwheel repair -w {dest_dir} {wheel} --strip --exclude libvulkan.so.1,libgomp.so.1"
+before-build = "pip install https://github.com/sunnycase/auditwheel/releases/download/4.0.0-nncase-2/auditwheel-0.0.0-py3-none-any.whl"
+repair-wheel-command = "LD_LIBRARY_PATH=/usr/lib64 auditwheel repair -w {dest_dir} {wheel} --exclude libvulkan.so.1,libgomp.so.1"
 
 [tool.cibuildwheel.macos]
 archs = ["x86_64"]

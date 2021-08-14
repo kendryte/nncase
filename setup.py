@@ -1,5 +1,6 @@
 from distutils.command.install_data import install_data
 import imp
+from posixpath import dirname
 from setuptools import find_packages, setup, Extension
 from setuptools.command.build_ext import build_ext
 from setuptools.command.install_lib import install_lib
@@ -187,8 +188,7 @@ class BuildCMakeExt(build_ext):
         if os.getenv('AUDITWHEEL_PLAT') != None:
             cmake_args += ['-DCMAKE_C_COMPILER=gcc-10']
             cmake_args += ['-DCMAKE_CXX_COMPILER=g++-10']
-        elif os.getenv('CI', False):
-            cmake_args += ['-DPython3_ROOT_DIR=' + os.environ['pythonLocation']]
+        cmake_args += ['-DPython3_ROOT_DIR=' + os.path.dirname(sys.executable)]
 
         cfg = 'Debug' if self.debug else 'Release'
         build_args = ['--config', cfg]
@@ -252,10 +252,17 @@ def find_version():
     raise RuntimeError("Unable to find version string.")
 
 
+requirements = ["numpy"]
+
 setup(name='nncase',
       version=find_version(),
+      author="sunnycase",
+      author_email="sunnycase@live.cn",
+      maintainer="sunnycase",
       packages=['nncase'],
       package_dir={'': 'python'},
+      python_requires=">=3.6",
+      install_requires=requirements,
       ext_modules=[CMakeExtension(name="_nncase", sourcedir='.')],
       description="A neural network compiler for AI accelerators",
       url='https://github.com/kendryte/nncase',
