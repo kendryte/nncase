@@ -21,7 +21,7 @@ before-all = [
 ]
 repair-wheel-command = [
   'mv {wheel} {dest_dir}/',
-  'for f in {dest_dir}/*-linux*.whl; do mv "$f" "$(echo "$f" | sed s/linux/manylinux_2_24/)"'
+  'for f in {dest_dir}/*-linux*.whl; do mv "$f" "$(echo "$f" | sed s/linux/manylinux_2_24/)"; done'
 ]
 
 [tool.cibuildwheel.macos]
