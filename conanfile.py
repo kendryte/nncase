@@ -70,10 +70,6 @@ class nncaseConan(ConanFile):
             self.requires('vulkan-headers/1.2.182')
             self.requires('vulkan-loader/1.2.182')
 
-        if (not self.options.runtime) or self.options.vulkan_runtime:
-            self.requires('vulkan-headers/1.2.182')
-            self.requires('vulkan-loader/1.2.182')
-
     def build_requirements(self):
         pass
 
@@ -98,6 +94,8 @@ class nncaseConan(ConanFile):
             self.options["libzip"].crypto = False
             if self.settings.os == 'Linux':
                 self.options["opencv"].with_gtk = False
+                self.options["spirv-tools"].link_libcpp = False
+                self.options["shaderc"].link_libcpp = False
 
         if (not self.options.runtime) or self.options.vulkan_runtime:
             self.options["vulkan_loader"].shared = False

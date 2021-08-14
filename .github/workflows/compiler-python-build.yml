@@ -40,6 +40,7 @@ jobs:
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v2.2.2
       with:
+        name: nncase-python-${{matrix.os}}
         path: ${{github.workspace}}/wheelhouse
         if-no-files-found: error
         

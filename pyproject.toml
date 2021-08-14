@@ -8,6 +8,9 @@ requires = ["setuptools>=42", "wheel", "conan", "ninja"]
 build = "cp36-*"
 manylinux-x86_64-image = "sunnycase/manylinux_2_24_x86_64:version1.0"
 
+[tool.cibuildwheel.windows]
+archs = ["AMD64"]
+
 [tool.cibuildwheel.linux]
 archs = ["x86_64"]
 before-all = [
@@ -16,7 +19,16 @@ before-all = [
   "conan profile new default --detect",
   "conan profile update settings.compiler.libcxx=libstdc++11 default"
 ]
-repair-wheel-command = ''
+repair-wheel-command = [
+  'mv {wheel} {dest_dir}/',
+  'for f in {dest_dir}/*-linux*.whl; do mv "$f" "$(echo "$f" | sed s/linux/manylinux_2_24/)"'
+]
+
+[tool.cibuildwheel.macos]
+archs = ["x86_64"]
+repair-wheel-command = [
+  'mv {wheel} {dest_dir}/'
+]
 
 [tool.cibuildwheel.macos.environment]
 MACOSX_DEPLOYMENT_TARGET = "10.15"
