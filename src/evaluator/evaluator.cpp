@@ -104,6 +104,9 @@ void module_evaluate_context::evaluate()
         evaluator(*node, *this);
         auto duration = clock::now() - start;
         total_duration += duration;
+#if PROFILE
+        std::cout << node->name() << "/" << node->runtime_opcode().name << ": " << std::endl;
+#endif
 
         if (quantizer_)
         {
@@ -125,11 +128,16 @@ void module_evaluate_context::evaluate()
                             quantizer_->record(*out, buffer);
                         }
                     }
+#if PROFILE
+                    std::cout << "\t" << out->name() << " range: { " << quantizer_->get(*out).min << " ~ " << quantizer_->get(*out).max << " } , ";
+#endif
                 }
             }
+            // quantizer_->range()
         }
+
 #if PROFILE
-        std::cout << node_opcode_names(node->runtime_opcode()) << ": " << duration.count() / 1e6 << "ms" << std::endl;
+        std::cout << "\t duration: " << duration.count() / 1e6 << "ms" << std::endl;
 #endif
     }
 

@@ -28,6 +28,7 @@ target_sources(transforms PRIVATE
     take_to_slice.cpp
     fold_conv2d_biasadd.cpp
     remove_convert.cpp
+    remove_binary.cpp
     add_quant_motion.cpp
     fold_io_quant_motion.cpp
     split_to_slice.cpp
