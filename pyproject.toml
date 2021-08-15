@@ -5,7 +5,7 @@ requires-python = ">=3.6"
 requires = ["setuptools>=42", "wheel", "conan", "ninja"]
 
 [tool.cibuildwheel]
-build = "cp36-*"
+build = "cp3*"
 manylinux-x86_64-image = "sunnycase/manylinux_2_24_x86_64:version1.0"
 test-requires = "pytest"
 test-command = [
