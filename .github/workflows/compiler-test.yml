@@ -27,8 +27,7 @@ jobs:
       if: runner.os == 'Linux'
       shell: bash
       run: |
-        conan remote remove bincrafts
-        conan remote add conancenter https://center.conan.io
+        conan remote remove conan-center
         conan profile update settings.compiler.libcxx=libstdc++11 default
 
     - name: Create Build Environment
@@ -68,7 +67,7 @@ jobs:
     - name: Upload a Build Artifact
       uses: actions/upload-artifact@v2.2.2
       with:
-        name: nncase-${{matrix.os}}-x86_64
+        name: nncase-ubuntu-x86_64
         path: ${{github.workspace}}/install
         if-no-files-found: error
 
@@ -83,18 +82,10 @@ jobs:
       if: runner.os != 'Windows'
       shell: bash
       run: |
-        wget https://github.com/sunnycase/swiftshader/releases/download/v1.0/swiftshader-${{matrix.os}}-x86_64.zip -O swiftshader.zip
+        wget https://github.com/sunnycase/swiftshader/releases/download/v1.0/swiftshader-ubuntu-18.04-x86_64.zip -O swiftshader.zip
         unzip swiftshader.zip
         sudo cmake -E make_directory /usr/local/share/vulkan/icd.d
         sudo cp lib/* /usr/local/share/vulkan/icd.d
-        
-    - name: Install SwiftShader
-      if: runner.os == 'Windows'
-      shell: pwsh
-      run: |
-        Invoke-WebRequest -Uri https://github.com/sunnycase/swiftshader/releases/download/v1.0/swiftshader-${{matrix.os}}-x86_64.zip -OutFile swiftshader.zip
-        Expand-Archive swiftshader.zip
-        Copy-Item swiftshader\lib\vk_swiftshader_icd.json swiftshader\bin\
           
     - name: Setup Python
       uses: actions/setup-python@v2.2.1
@@ -108,14 +99,6 @@ jobs:
         pip install conan tensorflow==2.5.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0
         pip install torch==1.9.0+cpu torchvision==0.10.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
         pip install pytest
-        
-    - name: Install Python Packages
-      if: runner.os == 'Macos'
-      shell: bash
-      run: |
-        pip install conan tensorflow==2.5.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0
-        pip install torch==1.9.0 torchvision==0.10.0 -f https://download.pytorch.org/whl/torch_stable.html
-        pip install pytest
       
     - name: Create Test Environment
       working-directory: ${{github.workspace}}
@@ -127,7 +110,7 @@ jobs:
     - name: Download a Build Artifact
       uses: actions/download-artifact@v2.0.9
       with:
-        name: nncase-${{matrix.os}}-x86_64
+        name: nncase-ubuntu-x86_64
         path: ${{github.workspace}}/install
 
     - name: Test
@@ -136,19 +119,6 @@ jobs:
       shell: bash
       env:
         PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/tests
-      run: |
-        pytest tests/importer --doctest-modules --junitxml=test_results/importer.xml
-        pytest tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
-        pytest tests/schedule --doctest-modules --junitxml=test_results/graph_partition.xml
-
-    - name: Test
-      working-directory: ${{github.workspace}}
-      if: runner.os == 'Windows'
-      shell: bash
-      env:
-        PATH: ${{github.workspace}}/install/bin
-        PYTHONPATH: ${{github.workspace}}/install/lib;${{github.workspace}}/install/python;${{github.workspace}}/tests
-        VK_ICD_FILENAMES: ${{github.workspace}}/swiftshader/bin/vk_swiftshader_icd.json
       run: |
         pytest tests/importer --doctest-modules --junitxml=test_results/importer.xml
         pytest tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
