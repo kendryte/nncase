@@ -20,6 +20,7 @@ jobs:
     - name: Install Conan
       shell: bash
       run: |
+        sudo apt install ninja-build
         pip install conan
 
     - name: Configure Conan
