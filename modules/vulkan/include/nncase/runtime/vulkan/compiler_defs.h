@@ -24,5 +24,5 @@
 #define NNCASE_MODULES_VULKAN_API
 #endif
 #else
-#define NNCASE_MODULES_VULKAN_API
+#define NNCASE_MODULES_VULKAN_API __attribute__((visibility("default")))
 #endif

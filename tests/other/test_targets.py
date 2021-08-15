@@ -14,8 +14,6 @@
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
 
 import pytest
-import tensorflow as tf
-import numpy as np
 import nncase
 
 

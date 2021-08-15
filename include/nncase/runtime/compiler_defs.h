@@ -25,7 +25,7 @@
 #define NNCASE_API
 #endif
 #else
-#define NNCASE_API
+#define NNCASE_API __attribute__((visibility("default")))
 #endif
 
 #if defined(_MSC_VER)

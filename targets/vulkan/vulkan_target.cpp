@@ -22,7 +22,7 @@
 #if defined(_MSC_VER)
 #define VULKAN_TARGET_API __declspec(dllexport)
 #else
-#define VULKAN_TARGET_API
+#define VULKAN_TARGET_API __attribute__((visibility("default")))
 #endif
 
 using namespace nncase;

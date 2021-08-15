@@ -18,7 +18,7 @@
 #if defined(_MSC_VER)
 #define CPU_TARGET_API __declspec(dllexport)
 #else
-#define CPU_TARGET_API
+#define CPU_TARGET_API __attribute__((visibility("default")))
 #endif
 
 using namespace nncase;

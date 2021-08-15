@@ -12,10 +12,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-"""NNCase."""
-from _nncase import test_target
-from _nncase import Compiler, CompileOptions, ImportOptions, PTQTensorOptions, MemoryRange, RuntimeTensor, Simulator, GraphEvaluator
-from . import base
+"""nncase."""
 import ctypes
 import sys
 import os
@@ -45,3 +42,7 @@ def _add_dllpath():
 
 
 _add_dllpath()
+
+from . import base
+from _nncase import test_target
+from _nncase import Compiler, CompileOptions, ImportOptions, PTQTensorOptions, MemoryRange, RuntimeTensor, Simulator, GraphEvaluator
