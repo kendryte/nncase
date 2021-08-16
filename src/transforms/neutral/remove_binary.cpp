@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include <nncase/ir/ops/binary.h>
+#include <nncase/ir/ops/broadcast.h>
 #include <nncase/ir/ops/constant.h>
 #include <nncase/ir/ops/convert.h>
 #include <nncase/ir/visitor.h>
@@ -78,9 +79,26 @@ bool remove_nonsense_binary::constant_equal_to(constant *node, float value) noex
 
 void remove_nonsense_binary::process(transform_context &context)
 {
-    NNCASE_UNUSED auto old_b = static_cast<constant *>(context.matched_nodes[0]);
+    NNCASE_UNUSED auto old_c = static_cast<constant *>(context.matched_nodes[0]);
     auto &output_v = *context.inputs[0]->connection();
     auto inputs = context.outputs[0]->connections();
+    // NOTE the tflite broadcast impl by mul 1, so we need keep output shape.
+    auto input_shapes = get_input_shapes(inputs);
+
+    size_t i = 0;
     for (auto &in : dup(inputs))
-        in->connect(output_v);
+    {
+        if (output_v.shape() != input_shapes[i])
+        {
+            auto out_cast = context.graph.emplace<broadcast>(output_v.type(), output_v.shape(), input_shapes[i]);
+            out_cast->name(output_v.name() + "/out_broadcast");
+            out_cast->input().connect(output_v);
+            in->connect(out_cast->output());
+        }
+        else
+        {
+            in->connect(output_v);
+        }
+        i += 1;
+    }
 }
