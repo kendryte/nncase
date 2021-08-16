@@ -1,5 +1,6 @@
 from distutils.command.install_data import install_data
 import imp
+from posixpath import dirname
 from setuptools import find_packages, setup, Extension
 from setuptools.command.build_ext import build_ext
 from setuptools.command.install_lib import install_lib
@@ -7,6 +8,9 @@ from setuptools.command.install_scripts import install_scripts
 import shutil
 import os
 import sys
+import io
+import re
+import time
 
 # See ref: https://stackoverflow.com/a/51575996
 
@@ -181,8 +185,10 @@ class BuildCMakeExt(build_ext):
 
         bin_dir = os.path.abspath(os.path.join(self.build_temp, 'install'))
         cmake_args = ['-G', 'Ninja']
-        if os.getenv('CI', False):
-            cmake_args += ['-DPython3_ROOT_DIR=' + os.environ['pythonLocation']]
+        if os.getenv('AUDITWHEEL_PLAT') != None:
+            cmake_args += ['-DCMAKE_C_COMPILER=gcc-10']
+            cmake_args += ['-DCMAKE_CXX_COMPILER=g++-10']
+        cmake_args += ['-DPython3_ROOT_DIR=' + os.path.dirname(sys.executable)]
 
         cfg = 'Debug' if self.debug else 'Release'
         build_args = ['--config', cfg]
@@ -234,20 +240,38 @@ class BuildCMakeExt(build_ext):
         # different place. See comments above for additional information
 
 
+def find_version():
+    with io.open("CMakeLists.txt", encoding="utf8") as f:
+        version_file = f.read()
+
+    version_prefix = re.findall(r"NNCASE_VERSION \"(.+)\"", version_file)
+
+    if version_prefix:
+        version_suffix = time.strftime("%Y%m%d", time.localtime())
+        return version_prefix[0] + "." + version_suffix
+    raise RuntimeError("Unable to find version string.")
+
+
+requirements = ["numpy"]
+
 setup(name='nncase',
-      version='1.0.0' + os.getenv('NNCASE_VERSION_SUFFIX', ''),
+      version=find_version(),
+      author="sunnycase",
+      author_email="sunnycase@live.cn",
+      maintainer="sunnycase",
       packages=['nncase'],
-      package_dir={'': '..'},
-      ext_modules=[CMakeExtension(name="_nncase", sourcedir='../..')],
+      package_dir={'': 'python'},
+      python_requires=">=3.6",
+      install_requires=requirements,
+      ext_modules=[CMakeExtension(name="_nncase", sourcedir='.')],
       description="A neural network compiler for AI accelerators",
       url='https://github.com/kendryte/nncase',
-      long_description=open("../../README.md", 'r', encoding='utf8').read(),
+      long_description=open("README.md", 'r', encoding='utf8').read(),
       long_description_content_type="text/markdown",
       keywords="kendryte, nn, compiler, k210, k510",
       classifiers=[
           "Programming Language :: C++",
           "Programming Language :: Python :: 3",
-          "Programming Language :: Python :: 3.5",
           "Programming Language :: Python :: 3.6",
           "Programming Language :: Python :: 3.7",
           "Programming Language :: Python :: 3.8",

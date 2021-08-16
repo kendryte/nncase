@@ -19,29 +19,17 @@ from onnx_test_runner import OnnxTestRunner
 
 
 def _make_module():
-
-    class HardSigmoidModule(torch.nn.Module):
-        def __init__(self):
-            super(HardSigmoidModule, self).__init__()
-            self.hardsigmoid = torch.nn.Hardsigmoid()
-
-        def forward(self, x):
-            x = self.hardsigmoid(x)
-            return x
-
-    return HardSigmoidModule()
+    return torch.nn.Hardsigmoid()
 
 
 in_shapes = [
     [1],
-    [1, 15],
-    [1, 3, 12],
-    [1, 3, 12, 224]
+    [1, 3, 224, 224]
 ]
 
 
 @pytest.mark.parametrize('in_shape', in_shapes)
-def test_hardsigmoid(in_shape,  request):
+def test_hardsigmoid(in_shape, request):
     module = _make_module()
 
     runner = OnnxTestRunner(request.node.name)

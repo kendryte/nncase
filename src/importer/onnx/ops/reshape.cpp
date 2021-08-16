@@ -28,36 +28,13 @@ void onnx_importer::convert_op_Reshape(const NodeProto &node)
     const auto &op_name { generate_name(node) };
 
     const auto &input = node.input()[0];
-    const auto &shape = node.input()[1];
     const auto &output = node.output()[0];
 
     const auto input_type = get_datatype(input).value();
     const auto &input_shape = get_shape(input);
 
-    axis_t new_shape;
-    const auto &new_shape_initializer = get_initializer(shape);
-    if (new_shape_initializer)
-    {
-        new_shape = to<axis_t>(new_shape_initializer.value());
-    }
-    else
-    {
-        // try to extract data from previous constant nodes
-        if (auto float_data = get_constant_input_data<float>(shape); float_data)
-        {
-            std::transform(std::begin(float_data.value()), std::end(float_data.value()), std::back_inserter(new_shape),
-                [](const auto e) { return static_cast<int>(e); });
-        }
-        else if (auto int64_data = get_constant_input_data<int64_t>(shape); int64_data)
-        {
-            std::transform(std::begin(int64_data.value()), std::end(int64_data.value()), std::back_inserter(new_shape),
-                [](const auto e) { return static_cast<int>(e); });
-        }
-        else
-        {
-            std::runtime_error("the " + op_name + " can't fint the new_shape!");
-        }
-    }
+    auto vec = get_constant_value<int, int64_t>(node.input()[1]);
+    axis_t new_shape { vec.begin(), vec.end() };
 
     auto allowzero_attr = get_attribute<int>(node, "allowzero");
     int allowzero = !allowzero_attr ? 0 : allowzero_attr.value();

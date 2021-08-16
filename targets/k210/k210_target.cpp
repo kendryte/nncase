@@ -38,7 +38,7 @@
 #if defined(_MSC_VER)
 #define K210_TARGET_API __declspec(dllexport)
 #else
-#define K210_TARGET_API
+#define K210_TARGET_API __attribute__((visibility("default")))
 #endif
 
 using namespace nncase;
