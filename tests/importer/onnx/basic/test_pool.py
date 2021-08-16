@@ -43,13 +43,10 @@ def _make_module(kernel_size, stride, padding):
 
 in_shapes = [
     [1, 3, 60, 72],
-    [1, 3, 224, 224]
 ]
 
 kernel_sizes = [
     (3, 3),
-    (5, 5),
-    (7, 7),
 ]
 
 strides = [

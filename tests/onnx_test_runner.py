@@ -36,8 +36,9 @@ class OnnxTestRunner(TestRunner):
 
     def run(self, model_file):
         if self.case_dir != os.path.dirname(model_file):
-            shutil.copy(model_file, self.case_dir)
-            model_file = os.path.join(self.case_dir, os.path.basename(model_file))
+            new_file = os.path.join(self.case_dir, 'test.onnx')
+            shutil.copy(model_file, new_file)
+            model_file = new_file
 
         if not self.inputs:
             self.parse_model_input_output(model_file)

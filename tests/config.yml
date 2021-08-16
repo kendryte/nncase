@@ -13,6 +13,7 @@ case: # case的配置，应该是一个多层次的
       dump_asm: true
       dump_ir: true
       input_type: 'float32'
+      quant_type: 'uint8'
   ptq_opt:
     kwargs:
       input_mean: 0.5

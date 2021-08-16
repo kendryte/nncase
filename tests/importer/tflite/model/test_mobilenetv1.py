@@ -59,4 +59,4 @@ alphas = [
 
 
 # if __name__ == "__main__":
-    # pytest.main(['-vv', 'test_mobilenetv1.py'])
+# pytest.main(['-vv', 'test_mobilenetv1.py'])
