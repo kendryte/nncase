@@ -190,7 +190,7 @@ std::optional<std::vector<T>> onnx_importer::get_constant_input_data(const std::
     return result;
 }
 
-template <typename T, typename S = T>
+template <typename T, typename S>
 std::vector<T> onnx_importer::get_constant_value(const std::string &name)
 {
     std::vector<S> vec_storage;
