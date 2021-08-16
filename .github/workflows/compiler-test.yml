@@ -20,7 +20,6 @@ jobs:
     - name: Install Conan
       shell: bash
       run: |
-        sudo apt install ninja-build
         pip install conan
 
     - name: Configure Conan
@@ -77,15 +76,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-        
-    - name: Install SwiftShader
-      if: runner.os != 'Windows'
-      shell: bash
-      run: |
-        wget https://github.com/sunnycase/swiftshader/releases/download/v1.0/swiftshader-ubuntu-18.04-x86_64.zip -O swiftshader.zip
-        unzip swiftshader.zip
-        sudo cmake -E make_directory /usr/local/share/vulkan/icd.d
-        sudo cp lib/* /usr/local/share/vulkan/icd.d
           
     - name: Setup Python
       uses: actions/setup-python@v2.2.1
