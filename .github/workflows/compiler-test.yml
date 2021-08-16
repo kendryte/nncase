@@ -26,7 +26,6 @@ jobs:
       if: runner.os == 'Linux'
       shell: bash
       run: |
-        conan remote remove conan-center
         conan profile update settings.compiler.libcxx=libstdc++11 default
 
     - name: Create Build Environment
