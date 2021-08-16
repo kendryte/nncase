@@ -28,7 +28,7 @@ def _make_module():
                                  vals=np.random.randn(56, 224).astype(np.float32).flatten().tolist())
     input_C = helper.make_tensor("C", TensorProto.FLOAT,
                                  dims=(1, 56),
-                                 vals=np.random.randn(1,56).astype(np.float32).flatten().tolist())
+                                 vals=np.random.randn(1, 56).astype(np.float32).flatten().tolist())
     initializers = []
     initializers.append(input_B)
     initializers.append(input_C)
