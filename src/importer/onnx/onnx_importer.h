@@ -117,7 +117,8 @@ private:
     template <typename T>
     std::optional<std::vector<T>> get_constant_input_data(const std::string &name) const;
 
-    template <typename T, typename S = T>
+    template <typename T, typename S = T,
+        typename std::enable_if<(std::is_integral<T>::value && std::is_integral<S>::value) || (std::is_floating_point<T>::value && std::is_floating_point<S>::value)>::type * = nullptr>
     std::vector<T> get_constant_value(const std::string &name);
 
     template <typename T>
@@ -190,7 +191,8 @@ std::optional<std::vector<T>> onnx_importer::get_constant_input_data(const std::
     return result;
 }
 
-template <typename T, typename S>
+template <typename T, typename S,
+    typename std::enable_if<(std::is_integral<T>::value && std::is_integral<S>::value) || (std::is_floating_point<T>::value && std::is_floating_point<S>::value)>::type * = nullptr>
 std::vector<T> onnx_importer::get_constant_value(const std::string &name)
 {
     std::vector<S> vec_storage;

@@ -49,23 +49,14 @@ void onnx_importer::convert_op_Split(const NodeProto &node)
     // opset 1/2/11
     auto split_attr = get_attribute<std::vector<int>>(node, "split");
     if (split_attr)
+    {
         splits = split_attr.value();
+    }
 
     // opset 1/13
     if (node.input().size() == 2)
     {
-        const auto split_name = node.input()[1];
-        const auto &split_initializer = get_initializer(split_name);
-        if (split_initializer)
-        {
-            auto axes = to<axis_t>(split_initializer.value());
-            splits.assign(axes.begin(), axes.end());
-        }
-        else
-        {
-            const auto data = get_constant_input_data<int64_t>(split_name);
-            splits.assign(data.value().begin(), data.value().end());
-        }
+        splits = get_constant_value<int, int64_t>(node.input()[1]);
     }
 
     if (splits.empty())

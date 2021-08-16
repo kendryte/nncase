@@ -49,20 +49,7 @@ void onnx_importer::convert_op_Resize(const NodeProto &node)
     axis_t new_size;
 
     // use scale
-    std::vector<float> scales;
-    const auto &initializer = get_initializer(scale);
-    if (initializer)
-    {
-        scales = to<std::vector<float>>(initializer.value());
-    }
-    else
-    {
-        // try to extract data from previous constant nodes
-        const auto data = get_constant_input_data<float>(scale);
-        if (data)
-            scales = data.value();
-    }
-
+    auto scales = get_constant_value<float>(scale);
     if (!scales.empty())
     {
         std::transform(std::begin(input_shape), std::end(input_shape), std::begin(scales), std::back_inserter(new_size),
@@ -73,20 +60,8 @@ void onnx_importer::convert_op_Resize(const NodeProto &node)
     if (new_size.empty())
     {
         assert(node.input().size() == 4);
-        const auto &size = node.input()[3];
-        const auto &initializer = get_initializer(size);
-        if (initializer)
-        {
-            new_size = to<axis_t>(initializer.value());
-        }
-        else
-        {
-            // try to extract data from previous constant nodes
-            const auto data = get_constant_input_data<float>(size);
-            if (data)
-                std::transform(std::begin(data.value()), std::end(data.value()), std::back_inserter(new_size),
-                    [](const auto e) { return static_cast<int>(e); });
-        }
+        auto vec = get_constant_value<int, int64_t>(node.input()[3]);
+        new_size.assign(vec.begin(), vec.end());
     }
 
     assert(!new_size.empty());
