@@ -100,6 +100,13 @@ jobs:
       run: |
         brew install sunnycase/core/libomp@11.1.0
         
+    - name: Install Vulkan SDK
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        Invoke-WebRequest -Uri https://sdk.lunarg.com/sdk/download/1.2.182.0/windows/VulkanSDK-1.2.182.0-Installer.exe -O VulkanSDK-Installer.exe
+        .\VulkanSDK-Installer.exe /S
+        
     - name: Install SwiftShader
       if: runner.os != 'Windows'
       shell: bash
@@ -158,6 +165,7 @@ jobs:
       env:
         PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/tests
       run: |
+        pytest tests/other --doctest-modules --junitxml=test_results/other.xml
         pytest tests/importer --doctest-modules --junitxml=test_results/importer.xml
         pytest tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
         pytest tests/schedule --doctest-modules --junitxml=test_results/graph_partition.xml
@@ -171,6 +179,7 @@ jobs:
         PYTHONPATH: ${{github.workspace}}/install/lib;${{github.workspace}}/install/python;${{github.workspace}}/tests
         VK_ICD_FILENAMES: ${{github.workspace}}/swiftshader/bin/vk_swiftshader_icd.json
       run: |
+        pytest tests/other --doctest-modules --junitxml=test_results/other.xml
         pytest tests/importer --doctest-modules --junitxml=test_results/importer.xml
         pytest tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
         pytest tests/schedule --doctest-modules --junitxml=test_results/graph_partition.xml
