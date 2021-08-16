@@ -1,0 +1,35 @@
+[project]
+requires-python = ">=3.6"
+
+[build-system]
+requires = ["setuptools>=42", "wheel", "conan", "ninja"]
+
+[tool.cibuildwheel]
+build = "cp3*"
+manylinux-x86_64-image = "sunnycase/manylinux_2_24_x86_64:version1.0"
+test-requires = "pytest"
+test-command = [
+  "pytest {project}/tests/other"
+]
+
+[tool.cibuildwheel.environment]
+PYTHONPATH = "{project}/tests:$PYTHONPATH"
+
+[tool.cibuildwheel.windows]
+archs = ["AMD64"]
+
+[tool.cibuildwheel.linux]
+archs = ["x86_64"]
+before-all = [
+  "pip install conan",
+  "conan profile new default --detect",
+  "conan profile update settings.compiler.libcxx=libstdc++11 default"
+]
+before-build = "pip install https://github.com/sunnycase/auditwheel/releases/download/4.0.0-nncase-2/auditwheel-0.0.0-py3-none-any.whl"
+repair-wheel-command = "LD_LIBRARY_PATH=/usr/lib64 auditwheel repair -w {dest_dir} {wheel} --exclude libvulkan.so.1,libgomp.so.1"
+
+[tool.cibuildwheel.macos]
+archs = ["x86_64"]
+
+[tool.cibuildwheel.macos.environment]
+MACOSX_DEPLOYMENT_TARGET = "10.15"

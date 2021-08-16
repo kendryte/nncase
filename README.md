@@ -55,4 +55,23 @@ Download prebuilt binaries from [Release](https://github.com/kendryte/nncase/rel
 ## 架构
 
 <div align="center">
-<img src="docs/arch.p
+<img src="docs/arch.png" alt="nncase arch" />
+</div>
+
+## Features
+
+- Supports multiple inputs and outputs and multi-branch structure
+- Static memory allocation, no heap memory acquired
+- Operators fusion and optimizations
+- Support float and quantized uint8 inference
+- Support post quantization from float model with calibration dataset
+- Flat model with zero copy loading
+
+## 功能
+
+- 支持多输入输出网络，支持多分支结构
+- 静态内存分配，不需要堆内存
+- 算子合并和优化
+- 支持 float 和量化 uint8 推理
+- 支持训练后量化，使用浮点模型和量化校准集
+- 平坦模型，支持零拷贝加载

@@ -12,6 +12,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-"""NNCase runtime."""
+"""nncase runtime."""
 from . import base
 from _nncaseruntime import MemoryRange, RuntimeTensor, Interpreter

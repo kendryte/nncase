@@ -18,6 +18,7 @@
 | Div | ✅ |
 | Dropout | ✅ |
 | Exp | ✅ |
+| Expand | ✅ |
 | Flatten | ✅ |
 | Floor | ✅ |
 | Gather | ✅ |
@@ -25,6 +26,7 @@
 | Gemm | ✅ |
 | Globalaveragepool | ✅ |
 | Globalmaxpool | ✅ |
+| HardSigmoid | ✅ |
 | Identity | ✅ |
 | Instancenormalization | ✅ |
 | Lpnormalization | ✅ |

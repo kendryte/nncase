@@ -14,13 +14,28 @@
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
 
 import pytest
-import nncase
+import torch
+from onnx_test_runner import OnnxTestRunner
 
 
-def test_targets(request):
-    assert nncase.test_target("cpu")
-    assert nncase.test_target("k210")
+def _make_module():
+    return torch.nn.Hardsigmoid()
+
+
+in_shapes = [
+    [1],
+    [1, 3, 224, 224]
+]
+
+
+@pytest.mark.parametrize('in_shape', in_shapes)
+def test_hardsigmoid(in_shape, request):
+    module = _make_module()
+
+    runner = OnnxTestRunner(request.node.name)
+    model_file = runner.from_torch(module, in_shape)
+    runner.run(model_file)
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_targets.py'])
+    pytest.main(['-vv', 'test_hardsigmoid.py'])
