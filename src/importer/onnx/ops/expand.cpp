@@ -29,31 +29,16 @@ void onnx_importer::convert_op_Expand(const NodeProto &node)
 {
     assert(node.input().size() == 2);
     const auto &input = node.input()[0];
-    const auto &shape_name = node.input()[1];
     const auto &output = node.output()[0];
 
     const auto input_type = get_datatype(input).value();
     const auto &input_shape = get_shape(input);
 
-    shape_t shape;
-    const auto &shape_initializer = get_initializer(shape_name);
-    if (shape_initializer)
-    {
-        auto shape_value = to<axis_t>(shape_initializer.value());
-        std::transform(std::begin(shape_value), std::end(shape_value), std::back_inserter(shape),
-            [](const auto axis) { return static_cast<size_t>(axis); });
-    }
-    else
-    {
-        const auto data = get_constant_input_data<int64_t>(shape_name);
-        if (data)
-            std::transform(std::begin(data.value()), std::end(data.value()), std::back_inserter(shape),
-                [](const auto axis) { return static_cast<size_t>(axis); });
-    }
-
+    auto shape_vec = get_constant_value<int64_t>(node.input()[1]);
+    shape_t shape { shape_vec.begin(), shape_vec.end() };
     auto ones = xt::ones<float>(shape);
-    std::vector<float> vec { ones.begin(), ones.end() };
-    auto con = graph_.emplace<constant>(input_type, shape, vec);
+    std::vector<float> ones_vec { ones.begin(), ones.end() };
+    auto con = graph_.emplace<constant>(input_type, shape, ones_vec);
     auto op = graph_.emplace<binary>(binary_mul, input_shape, shape, value_range<float>::full());
     op->name(generate_name(node) + "(Expand)");
 
