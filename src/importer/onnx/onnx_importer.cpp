@@ -766,6 +766,19 @@ xt::xarray<int64_t> onnx_importer::to<xt::xarray<int64_t>>(const onnx::TensorPro
 }
 
 template <>
+std::vector<int64_t> onnx_importer::to<std::vector<int64_t>>(const onnx::TensorProto &tensor)
+{
+    if (!tensor.int64_data().empty())
+    {
+        return std::vector<int64_t> { tensor.int64_data().begin(), tensor.int64_data().end() };
+    }
+    else
+    {
+        return raw_to_vector<int64_t, int64_t>(tensor);
+    }
+}
+
+template <>
 std::vector<float> onnx_importer::to<std::vector<float>>(const onnx::TensorProto &tensor)
 {
     if (!tensor.float_data().empty())

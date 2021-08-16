@@ -116,6 +116,10 @@ private:
 
     template <typename T>
     std::optional<std::vector<T>> get_constant_input_data(const std::string &name) const;
+
+    template <typename T, typename S = T>
+    std::vector<T> get_constant_value(const std::string &name);
+
     template <typename T>
     ir::constant *emplace_constant(const std::optional<T> &v);
 
@@ -186,6 +190,43 @@ std::optional<std::vector<T>> onnx_importer::get_constant_input_data(const std::
     return result;
 }
 
+template <typename T, typename S = T>
+std::vector<T> onnx_importer::get_constant_value(const std::string &name)
+{
+    std::vector<S> vec_storage;
+    const auto &initializer = get_initializer(name);
+    if (initializer)
+    {
+        vec_storage = to<std::vector<S>>(initializer.value());
+    }
+    else
+    {
+        const auto data = get_constant_input_data<S>(name);
+        if (!data)
+            throw std::runtime_error("Can't pull input data for <" + name + "> : only constant initialization is supported");
+
+        vec_storage = data.value();
+    }
+
+    if constexpr (std::is_same_v<T, S>)
+        return vec_storage;
+
+    std::vector<T> vec_target;
+    std::transform(vec_storage.begin(), vec_storage.end(), std::back_inserter(vec_target),
+        [](const auto val) {
+            T min = std::numeric_limits<T>::min();
+            T max = std::numeric_limits<T>::max();
+            if (val < min)
+                return min;
+            else if (val > max)
+                return max;
+            else
+                return static_cast<T>(val);
+        });
+
+    return vec_target;
+}
+
 template <class Cont>
 xtl::span<const std::uint8_t> onnx_importer::span_from(const Cont &data)
 {
@@ -231,7 +272,9 @@ xt::xarray<std::int32_t> onnx_importer::to<xt::xarray<std::int32_t>>(const onnx:
 template <>
 xt::xarray<std::int64_t> onnx_importer::to<xt::xarray<std::int64_t>>(const onnx::TensorProto &tensor);
 template <>
-xt::xarray<float> onnx_importer::convert_to<xt::xarray<float>>(const onnx::TensorProto &tensor);
+std::vector<std::int64_t> onnx_importer::to<std::vector<std::int64_t>>(const onnx::TensorProto &tensor);
 template <>
 std::vector<float> onnx_importer::to<std::vector<float>>(const onnx::TensorProto &tensor);
+template <>
+xt::xarray<float> onnx_importer::convert_to<xt::xarray<float>>(const onnx::TensorProto &tensor);
 }
