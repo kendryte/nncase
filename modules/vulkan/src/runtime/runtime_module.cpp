@@ -37,7 +37,7 @@ result<void> vulkan_runtime_module::initialize_before_functions(runtime_module_i
     descriptors_ = descs[1];
     shader_ = context.section(".shader");
 
-    try_(initialize_vulkan());
+    checked_try(initialize_vulkan());
 
     // TODO: Load rdata
     //rdata_ = context.section(".rdata");
@@ -46,9 +46,9 @@ result<void> vulkan_runtime_module::initialize_before_functions(runtime_module_i
 
 result<void> vulkan_runtime_module::initialize_vulkan() noexcept
 {
-    try_(initialize_vulkan_instance());
-    try_(initialize_vulkan_device());
-    try_(initialize_vulkan_memory());
+    checked_try(initialize_vulkan_instance());
+    checked_try(initialize_vulkan_device());
+    checked_try(initialize_vulkan_memory());
     return ok();
 }
 
@@ -56,25 +56,25 @@ result<void> vulkan_runtime_module::initialize_vulkan_instance() noexcept
 {
     vk::ApplicationInfo app_info("nncase.runtime", 1, "nncase", 1, VK_API_VERSION_1_1);
     vk::InstanceCreateInfo create_info({}, &app_info);
-    try_set(instance_, vk::to_result(vk::createInstance(create_info)));
+    checked_try_set(instance_, vk::to_result(vk::createInstance(create_info)));
     return ok();
 }
 
 result<void> vulkan_runtime_module::initialize_vulkan_device() noexcept
 {
-    try_set(physical_device_, select_physical_device());
+    checked_try_set(physical_device_, select_physical_device());
     auto queue_families = physical_device_.getQueueFamilyProperties();
-    try_set(compute_queue_index_, select_queue_family(queue_families, { vk::QueueFlagBits::eCompute, vk::QueueFlagBits::eGraphics, vk::QueueFlagBits::eTransfer }));
+    checked_try_set(compute_queue_index_, select_queue_family(queue_families, { vk::QueueFlagBits::eCompute, vk::QueueFlagBits::eGraphics, vk::QueueFlagBits::eTransfer }));
 
     float priorities[] = { 0.0f };
     vk::DeviceQueueCreateInfo queue_create_info({}, compute_queue_index_, 1, priorities);
     vk::DeviceCreateInfo device_create_info({}, queue_create_info);
-    try_set(device_, vk::to_result(physical_device_.createDevice(device_create_info)));
+    checked_try_set(device_, vk::to_result(physical_device_.createDevice(device_create_info)));
     compute_queue_ = device_.getQueue(compute_queue_index_, 0);
 
     vk::DescriptorPoolSize descp_size(vk::DescriptorType::eStorageBuffer, descriptors_);
     vk::DescriptorPoolCreateInfo descp_cinfo({}, descriptor_sets_, descp_size);
-    try_set(buffer_desc_pool_, vk::to_result(device_.createDescriptorPool(descp_cinfo)));
+    checked_try_set(buffer_desc_pool_, vk::to_result(device_.createDescriptorPool(descp_cinfo)));
 
     vk::CommandPoolCreateInfo cmdp_cinfo({}, compute_queue_index_);
     try_set(cmd_pool_, vk::to_result(device_.createCommandPool(cmdp_cinfo)));
@@ -86,9 +86,9 @@ result<void> vulkan_runtime_module::initialize_vulkan_memory() noexcept
     auto data_mem = mempool(mem_data);
     if (data_mem.size)
     {
-        try_set(data_buffer_, allocate_vulkan_buffer(data_mem.size));
-        try_set(data_mem_, allocate_vulkan_memory({ {}, vk::MemoryPropertyFlagBits::eDeviceLocal, {} }, data_buffer_));
-        try_(bind_vulkan_buffer(data_buffer_, data_mem_));
+        checked_try_set(data_buffer_, allocate_vulkan_buffer(data_mem.size));
+        checked_try_set(data_mem_, allocate_vulkan_memory({ {}, vk::MemoryPropertyFlagBits::eDeviceLocal, {} }, data_buffer_));
+        checked_try(bind_vulkan_buffer(data_buffer_, data_mem_));
     }
     return ok();
 }
@@ -97,7 +97,7 @@ result<vk::DeviceMemory> vulkan_runtime_module::allocate_vulkan_memory(const sel
 {
     auto req = device_.getBufferMemoryRequirements(buffer);
     auto properties = physical_device_.getMemoryProperties();
-    try_var(type_index, select_memory_type(properties, options, req.size));
+    checked_try_var(type_index, select_memory_type(properties, options, req.size));
     vk::MemoryAllocateInfo allocate(req.size, static_cast<uint32_t>(type_index));
     return vk::to_result(device_.allocateMemory(allocate));
 }
@@ -131,7 +131,7 @@ result<vk::PhysicalDevice> vulkan_runtime_module::select_physical_device() noexc
 {
     vk::PhysicalDevice *intergrated = nullptr;
 
-    try_var(devices, vk::to_result(instance_.enumeratePhysicalDevices()));
+    checked_try_var(devices, vk::to_result(instance_.enumeratePhysicalDevices()));
     for (auto &device : devices)
     {
         auto properties = device.getProperties();
