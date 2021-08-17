@@ -296,16 +296,16 @@ void transpose_reduce_motion_transform::process(transform_context &context)
     auto &old_tp = static_cast<transpose &>(*context.matched_nodes[0]);
     auto &old_r = static_cast<reduce &>(*context.matched_nodes[1]);
 
-    axis_t axis(old_r.axis().size());
-    for (size_t i = 0; i < axis.size(); i++)
-        axis[i] = old_tp.perm()[old_r.axis()[i]];
+    axis_t axes(old_r.axis().size());
+    for (size_t i = 0; i < axes.size(); i++)
+        axes[i] = old_tp.perm()[old_r.axis()[i]];
 
     axis_t perm = old_tp.perm();
     if (!old_r.keep_dims())
     {
-        auto sorted_axis = axis;
-        std::sort(sorted_axis.begin(), sorted_axis.end(), std::greater<int>());
-        for (auto axis : sorted_axis)
+        auto sorted_axes = axes;
+        std::sort(sorted_axes.begin(), sorted_axes.end(), std::greater<int>());
+        for (auto axis : sorted_axes)
         {
             auto it = std::find(perm.begin(), perm.end(), axis);
             perm.erase(it);
@@ -315,7 +315,7 @@ void transpose_reduce_motion_transform::process(transform_context &context)
         }
     }
 
-    auto r = context.graph.emplace<reduce>(old_r.reduce_op(), output.shape(), axis, old_r.init_value(), old_r.keep_dims());
+    auto r = context.graph.emplace<reduce>(old_r.reduce_op(), output.shape(), axes, old_r.init_value(), old_r.keep_dims());
     r->name(old_r.name());
     auto tp = context.graph.emplace<transpose>(r->output().type(), r->output().shape(), perm);
     tp->name(old_tp.name());
