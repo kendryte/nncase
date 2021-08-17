@@ -10,8 +10,13 @@ case: # case的配置，应该是一个多层次的
     kwargs: 
       input_layout: 'NHWC'
       output_layout: 'NHWC'
-      # input_mean: 0
-      # input_std: 127
+      image_format: 'BGR'
+      input_shape: [333,444,3]
+      norm: {
+        mean: [0, 0, 0],
+        scale: [1, 1, 1]
+        }
+      input_range: [0, 1]
   compile_opt:
     kwargs:
       dump_asm: true
@@ -36,9 +41,9 @@ case: # case的配置，应该是一个多层次的
   eval:
     - name: target
       values:
-        - cpu
-        - vulkan
-        - k210
+        # - cpu
+        # - vulkan
+        # - k210
         - k510
     - name: ptq
       values:
@@ -46,9 +51,9 @@ case: # case的配置，应该是一个多层次的
   infer:
     - name: target
       values:
-        - cpu
-        - vulkan
-        - k210
+        # - cpu
+        # - vulkan
+        # - k210
         - k510
     - name: ptq
       values:
