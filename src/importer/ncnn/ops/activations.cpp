@@ -1,6 +1,6 @@
 // Tencent is pleased to support the open source community by making ncnn available.
 //
-// Copyright (C) 2017 THL A29 Limited, a Tencent company. All rights reserved.
+// Copyright (C) 2021 THL A29 Limited, a Tencent company. All rights reserved.
 //
 // Licensed under the BSD 3-Clause License (the "License"); you may not use this file except
 // in compliance with the License. You may obtain a copy of the License at
@@ -26,7 +26,7 @@ using namespace nncase::ir;
 
 ir::node* nncase::importer::ncnn_importer::convert_op_ReLU(const ncnn::Layer &layer, const ncnn::ParamDict &pd, const ncnn::ModelBin& /*mb*/)
 {
-    float slope = pd.get(0, 0.f);
+    const float slope = pd.get(0, 0.f);
 
     const auto &op_name = layer.name;
 
@@ -35,9 +35,9 @@ ir::node* nncase::importer::ncnn_importer::convert_op_ReLU(const ncnn::Layer &la
     if (slope == 0.f)
     {
         auto zero = graph_.emplace<constant>(0.f);
-        zero->name(op_name + ".zero(Relu)");
+        zero->name(op_name + ".zero(ReLU)");
         auto max = graph_.emplace<binary>(binary_max, in_shape, zero->output().shape(), value_range<float>::full());
-        max->name(op_name + ".max(Relu)");
+        max->name(op_name + ".max(ReLU)");
 
         max->input_b().connect(zero->output());
 
@@ -47,12 +47,12 @@ ir::node* nncase::importer::ncnn_importer::convert_op_ReLU(const ncnn::Layer &la
     {
         const auto &alpha = graph_.emplace<constant>(slope);
 
-        alpha->name(op_name + ".alpha(LeakyRelu)");
+        alpha->name(op_name + ".alpha(LeakyReLU)");
 
         auto mul = graph_.emplace<binary>(binary_mul, in_shape, alpha->output().shape(), value_range<float>::full());
-        mul->name(op_name + ".mul(LeakyRelu)");
+        mul->name(op_name + ".mul(LeakyReLU)");
         auto max = graph_.emplace<binary>(binary_max, in_shape, mul->output().shape(), value_range<float>::full());
-        max->name(op_name + ".max(LeakyRelu)");
+        max->name(op_name + ".max(LeakyReLU)");
 
         mul->input_b().connect(alpha->output());
         max->input_b().connect(mul->output());

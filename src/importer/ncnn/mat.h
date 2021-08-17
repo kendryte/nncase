@@ -57,6 +57,8 @@ public:
     ~Mat();
     // assign
     Mat& operator=(const Mat& m);
+    // set all
+    void fill(float v);
     // deep copy
     Mat clone(Allocator* allocator = 0) const;
     // deep copy from other mat, inplace
@@ -245,6 +247,18 @@ inline Mat::Mat(int _w, int _h, int _c, void* _data, size_t _elemsize, int _elem
 inline Mat::~Mat()
 {
     release();
+}
+
+inline void Mat::fill(float _v)
+{
+    int size = (int)total();
+    float* ptr = (float*)data;
+
+    int remain = size;
+    for (; remain > 0; remain--)
+    {
+        *ptr++ = _v;
+    }
 }
 
 inline Mat& Mat::operator=(const Mat& m)
