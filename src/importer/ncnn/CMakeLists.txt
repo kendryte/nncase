@@ -13,11 +13,13 @@ set(NCNN_IMPORTER_SOURCES
 
 set(NCNN_IMPORTER_OPS_SOURCES
     ops/activations.cpp
+    ops/concat.cpp
     ops/convolution.cpp
     ops/innerproduct.cpp
     ops/input.cpp
     ops/pooling.cpp
     ops/softmax.cpp
+    ops/split.cpp
     )
 
 add_library(ncnn_importer ${NCNN_IMPORTER_SOURCES} ${NCNN_IMPORTER_OPS_SOURCES})
