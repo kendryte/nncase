@@ -1,3 +1,4 @@
 DEFINE_OPCODE(Convolution)
 DEFINE_OPCODE(ConvolutionDepthWise)
 DEFINE_OPCODE(ReLU)
+DEFINE_OPCODE(InnerProduct)

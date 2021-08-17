@@ -23,8 +23,9 @@
 using namespace nncase;
 using namespace nncase::importer;
 using namespace nncase::ir;
+using namespace ncnn;
 
-ir::node* nncase::importer::ncnn_importer::convert_op_ReLU(const ncnn::Layer &layer, const ncnn::ParamDict &pd, const ncnn::ModelBin& /*mb*/)
+void nncase::importer::ncnn_importer::convert_op_ReLU(const Layer &layer, const ParamDict &pd, const ModelBin& /*mb*/)
 {
     const float slope = pd.get(0, 0.f);
 
@@ -41,7 +42,8 @@ ir::node* nncase::importer::ncnn_importer::convert_op_ReLU(const ncnn::Layer &la
 
         max->input_b().connect(zero->output());
 
-        return max;
+        input_tensors_.emplace(&max->input_a(), layer.bottoms[0]);
+        output_tensors_.emplace(layer.tops[0], &max->output());
     }
     else
     {
@@ -57,6 +59,8 @@ ir::node* nncase::importer::ncnn_importer::convert_op_ReLU(const ncnn::Layer &la
         mul->input_b().connect(alpha->output());
         max->input_b().connect(mul->output());
 
-        return max;
+        input_tensors_.emplace(&mul->input_a(), layer.bottoms[0]);
+        input_tensors_.emplace(&max->input_a(), layer.bottoms[0]);
+        output_tensors_.emplace(layer.tops[0], &max->output());
     }
 }

@@ -169,13 +169,7 @@ void ncnn_importer::import(const import_options &/*options*/)
             layer.top_shapes[j] = shapes[layer.tops[j]];
         }
 
-        ir::node* node = convert_op(layer, pd, mb);
-
-        for (size_t i = 0; i < layer.bottoms.size(); i++)
-            input_tensors_.emplace(&node->input_at(i), layer.bottoms[i]);
-
-        for (size_t i = 0; i < layer.tops.size(); i++)
-            output_tensors_.emplace(layer.tops[i], &node->output_at(i));
+        convert_op(layer, pd, mb);
     }
 
 #undef SCAN_VALUE
@@ -206,7 +200,7 @@ void ncnn_importer::import(const import_options &/*options*/)
     }
 }
 
-ir::node* ncnn_importer::convert_op(const ncnn::Layer &layer, const ncnn::ParamDict &pd, const ncnn::ModelBin& mb)
+void ncnn_importer::convert_op(const ncnn::Layer &layer, const ncnn::ParamDict &pd, const ncnn::ModelBin& mb)
 {
 #define DEFINE_OPCODE(opcode) \
     if (layer.type == #opcode##sv)  \

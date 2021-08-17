@@ -18,7 +18,7 @@
 #include <nncase/ir/op_utils.h>
 #include <nncase/ir/ops/binary.h>
 #include <nncase/ir/ops/constant.h>
-#include <nncase/ir/ops/conv2d.h>
+#include <nncase/ir/ops/matmul.h>
 #include <nncase/ir/ops/pad.h>
 #include <nncase/ir/ops/unary.h>
 
@@ -27,71 +27,22 @@ using namespace nncase::importer;
 using namespace nncase::ir;
 using namespace ncnn;
 
-void nncase::importer::ncnn_importer::convert_op_Convolution(const Layer &layer, const ParamDict &pd, const ModelBin& mb)
-{
-    return convert_op_ConvolutionDepthWise(layer, pd, mb);
-}
-
-void nncase::importer::ncnn_importer::convert_op_ConvolutionDepthWise(const Layer &layer, const ParamDict &pd, const ModelBin& mb)
+void nncase::importer::ncnn_importer::convert_op_InnerProduct(const Layer &layer, const ParamDict &pd, const ModelBin& mb)
 {
     const int num_output = pd.get(0, 0);
-    const int kernel_w = pd.get(1, 0);
-    const int kernel_h = pd.get(11, kernel_w);
-    const int dilation_w = pd.get(2, 1);
-    const int dilation_h = pd.get(12, dilation_w);
-    const int stride_w = pd.get(3, 1);
-    const int stride_h = pd.get(13, stride_w);
-    const int pad_left = pd.get(4, 0);
-    const int pad_right = pd.get(15, pad_left);
-    const int pad_top = pd.get(14, pad_left);
-    const int pad_bottom = pd.get(16, pad_top);
-    const int pad_value = pd.get(18, 0.f);
-    const int bias_term = pd.get(5, 0);
-    const int weight_data_size = pd.get(6, 0);
-    const int group = pd.get(7, 1);
+    const int bias_term = pd.get(1, 0);
+    const int weight_data_size = pd.get(2, 0);
     const int activation_type = pd.get(9, 0);
     const Mat activation_params = pd.get(10, Mat());
 
-    const int num_input = weight_data_size / num_output / kernel_w / kernel_h;
-    const int kernel_extent_w = dilation_w * (kernel_w - 1) + 1;
-    const int kernel_extent_h = dilation_h * (kernel_h - 1) + 1;
+    const int num_input = weight_data_size / num_output;
 
     const auto &op_name = layer.name;
 
     auto in_shape = layer.bottom_shapes[0];
 
-    const shape_t weight_shape = { (size_t)num_output, (size_t)num_input, (size_t)kernel_h, (size_t)kernel_w };
+    const shape_t weight_shape = { (size_t)num_output, (size_t)num_input };
     const shape_t bias_shape = { (size_t)num_output };
-
-    padding padding_h;
-    padding padding_w;
-    {
-        if (pad_left == -233) // SAME_UPPER
-        {
-            const int w = in_shape[2];
-            const int h = in_shape[1];
-            const int wpad = kernel_extent_w + (w - 1) / stride_w * stride_w - w;
-            const int hpad = kernel_extent_h + (h - 1) / stride_h * stride_h - h;
-
-            padding_h = {hpad / 2, hpad - hpad / 2};
-            padding_w = {wpad / 2, wpad - wpad / 2};
-        }
-        else if (pad_left == -234) // SAME_LOWER
-        {
-            const int w = in_shape[2];
-            const int h = in_shape[1];
-            const int wpad = kernel_extent_w + (w - 1) / stride_w * stride_w - w;
-            const int hpad = kernel_extent_h + (h - 1) / stride_h * stride_h - h;
-
-            padding_h = {hpad - hpad / 2, hpad / 2};
-            padding_w = {wpad - wpad / 2, wpad / 2};
-        }
-        else
-        {
-            padding_h = {pad_top, pad_bottom};
-            padding_w = {pad_left, pad_right};
-        }
-    }
 
     value_range<float> fused_activation = value_range<float>::full();
     {
@@ -105,29 +56,10 @@ void nncase::importer::ncnn_importer::convert_op_ConvolutionDepthWise(const Laye
         }
     }
 
-    ir::conv2d* conv_op = 0;
+    ir::matmul* fc_op = 0;
     {
-        if (pad_value != 0.f)
-        {
-            xt::svector<padding> paddings = {{0, 0}, padding_h, padding_w};
-
-            ir::pad* pad_op = graph_.emplace<pad>(dt_float32, in_shape, paddings, pad_constant, pad_value);
-            pad_op->name(op_name + ".pad(Convolution)");
-
-            conv_op = graph_.emplace<conv2d>(pad_op->output().shape(), weight_shape, group, padding{0, 0}, padding{0, 0}, stride_h, stride_w, dilation_h, dilation_w, fused_activation);
-            conv_op->name(op_name + ".conv2d(Convolution)");
-
-            conv_op->input().connect(pad_op->output());
-
-            input_tensors_.emplace(&pad_op->input(), layer.bottoms[0]);
-        }
-        else
-        {
-            conv_op = graph_.emplace<conv2d>(in_shape, weight_shape, group, padding_h, padding_w, stride_h, stride_w, dilation_h, dilation_w, fused_activation);
-            conv_op->name(op_name + ".conv2d(Convolution)");
-
-            input_tensors_.emplace(&conv_op->input(), layer.bottoms[0]);
-        }
+        fc_op = graph_.emplace<matmul>(in_shape, weight_shape, fused_activation);
+        fc_op->name(op_name + ".matmul(InnerProduct)");
 
         Mat weight_data = mb.load(weight_data_size, 0);
         Mat bias_data;
@@ -142,15 +74,17 @@ void nncase::importer::ncnn_importer::convert_op_ConvolutionDepthWise(const Laye
         }
 
         auto weight_node = graph_.emplace<constant>(dt_float32, weight_shape, std::span<const float>{ (float*)weight_data.data, (size_t)weight_data.w });
-        conv_op->weights().connect(weight_node->output());
+        fc_op->input_b().connect(weight_node->output());
 
         auto bias_node = graph_.emplace<constant>(dt_float32, bias_shape, std::span<const float>{ (float*)bias_data.data, (size_t)bias_data.w });
-        conv_op->bias().connect(bias_node->output());
+        fc_op->bias().connect(bias_node->output());
+
+        input_tensors_.emplace(&fc_op->input_a(), layer.bottoms[0]);
     }
 
     if (activation_type == 0 || activation_type == 1 || activation_type == 3)
     {
-        output_tensors_.emplace(layer.tops[0], &conv_op->output());
+        output_tensors_.emplace(layer.tops[0], &fc_op->output());
     }
     if (activation_type == 2)
     {
@@ -158,14 +92,14 @@ void nncase::importer::ncnn_importer::convert_op_ConvolutionDepthWise(const Laye
         const auto &alpha = graph_.emplace<constant>(activation_params[0]);
         alpha->name(op_name + ".alpha(LeakyReLU)");
 
-        auto mul = graph_.emplace<binary>(binary_mul, conv_op->output().shape(), alpha->output().shape(), value_range<float>::full());
+        auto mul = graph_.emplace<binary>(binary_mul, fc_op->output().shape(), alpha->output().shape(), value_range<float>::full());
         mul->name(op_name + ".mul(LeakyReLU)");
-        auto max = graph_.emplace<binary>(binary_max, conv_op->output().shape(), mul->output().shape(), value_range<float>::full());
+        auto max = graph_.emplace<binary>(binary_max, fc_op->output().shape(), mul->output().shape(), value_range<float>::full());
         max->name(op_name + ".max(LeakyReLU)");
 
-        mul->input_a().connect(conv_op->output());
+        mul->input_a().connect(fc_op->output());
         mul->input_b().connect(alpha->output());
-        max->input_a().connect(conv_op->output());
+        max->input_a().connect(fc_op->output());
         max->input_b().connect(mul->output());
 
         output_tensors_.emplace(layer.tops[0], &max->output());
@@ -174,7 +108,7 @@ void nncase::importer::ncnn_importer::convert_op_ConvolutionDepthWise(const Laye
     {
         // y = 1 / (1 + exp(-x))
         // y = exp(x) / (exp(x) + 1)
-        auto exp = graph_.emplace<unary>(unary_exp, conv_op->output().shape());
+        auto exp = graph_.emplace<unary>(unary_exp, fc_op->output().shape());
         exp->name(op_name + ".exp(Sigmoid)");
         auto one = graph_.emplace<constant>(1.f);
         one->name(op_name + ".one(Sigmoid)");
@@ -183,7 +117,7 @@ void nncase::importer::ncnn_importer::convert_op_ConvolutionDepthWise(const Laye
         auto div = graph_.emplace<binary>(binary_div, exp->output().shape(), add->output().shape(), value_range<float>::nonnegative());
         div->name(op_name + ".div(Sigmoid)");
 
-        exp->input().connect(conv_op->output());
+        exp->input().connect(fc_op->output());
         add->input_a().connect(exp->output());
         add->input_b().connect(one->output());
         div->input_a().connect(exp->output());
@@ -194,7 +128,7 @@ void nncase::importer::ncnn_importer::convert_op_ConvolutionDepthWise(const Laye
     if (activation_type == 5)
     {
         // y = x * tanh(log(exp(x) + 1))
-        auto exp = graph_.emplace<unary>(unary_exp, conv_op->output().shape());
+        auto exp = graph_.emplace<unary>(unary_exp, fc_op->output().shape());
         exp->name(op_name + ".exp(Mish)");
         auto one = graph_.emplace<constant>(1.f);
         one->name(op_name + ".one(Mish)");
@@ -204,15 +138,15 @@ void nncase::importer::ncnn_importer::convert_op_ConvolutionDepthWise(const Laye
         log->name(op_name + ".log(Mish)");
         auto tanh = graph_.emplace<unary>(unary_tanh, log->output().shape());
         tanh->name(op_name + ".tanh(Mish)");
-        auto mul = graph_.emplace<binary>(binary_mul, conv_op->output().shape(), tanh->output().shape(), value_range<float>::nonnegative());
+        auto mul = graph_.emplace<binary>(binary_mul, fc_op->output().shape(), tanh->output().shape(), value_range<float>::nonnegative());
         mul->name(op_name + ".mul(Mish)");
 
-        exp->input().connect(conv_op->output());
+        exp->input().connect(fc_op->output());
         add->input_a().connect(exp->output());
         add->input_b().connect(one->output());
         log->input().connect(add->output());
         tanh->input().connect(log->output());
-        mul->input_a().connect(conv_op->output());
+        mul->input_a().connect(fc_op->output());
         mul->input_b().connect(tanh->output());
 
         output_tensors_.emplace(layer.tops[0], &mul->output());

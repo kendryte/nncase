@@ -12,6 +12,7 @@ set(NCNN_IMPORTER_SOURCES
 set(NCNN_IMPORTER_OPS_SOURCES
     ops/activations.cpp
     ops/convolution.cpp
+    ops/innerproduct.cpp
     )
 
 add_library(ncnn_importer ${NCNN_IMPORTER_SOURCES} ${NCNN_IMPORTER_OPS_SOURCES})

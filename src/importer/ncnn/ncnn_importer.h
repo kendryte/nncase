@@ -43,9 +43,9 @@ namespace importer
         void import(const import_options &options);
 
     private:
-        ir::node* convert_op(const ncnn::Layer &layer, const ncnn::ParamDict &pd, const ncnn::ModelBin& mb);
+        void convert_op(const ncnn::Layer &layer, const ncnn::ParamDict &pd, const ncnn::ModelBin& mb);
 
-#define DEFINE_OPCODE(opcode) ir::node* convert_op_##opcode(const ncnn::Layer &layer, const ncnn::ParamDict &pd, const ncnn::ModelBin& mb);
+#define DEFINE_OPCODE(opcode) void convert_op_##opcode(const ncnn::Layer &layer, const ncnn::ParamDict &pd, const ncnn::ModelBin& mb);
 #include "opcode.def"
 #undef DEFINE_OPCODE
 
@@ -60,4 +60,4 @@ namespace importer
 }
 
 #define DEFINE_NCNN_LOWER(opcode) \
-    ir::node* nncase::importer::ncnn_importer::convert_op_##opcode(const ncnn::Layer &layer, const ncnn::ParamDict &pd, const ncnn::ModelBin& mb)
+    void nncase::importer::ncnn_importer::convert_op_##opcode(const ncnn::Layer &layer, const ncnn::ParamDict &pd, const ncnn::ModelBin& mb)
