@@ -13,6 +13,8 @@ set(NCNN_IMPORTER_OPS_SOURCES
     ops/activations.cpp
     ops/convolution.cpp
     ops/innerproduct.cpp
+    ops/pooling.cpp
+    ops/softmax.cpp
     )
 
 add_library(ncnn_importer ${NCNN_IMPORTER_SOURCES} ${NCNN_IMPORTER_OPS_SOURCES})
