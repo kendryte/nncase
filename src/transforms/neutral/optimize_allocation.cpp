@@ -281,11 +281,11 @@ decide_memory_location_pass::decide_memory_location_pass(bool skip_buffer_alias,
 void decide_memory_location_pass::run_core(graph &graph, nncase::target &target, const run_pass_options &options)
 {
     auto decide_memory_location = [&](output_connector &conn) {
-        auto opcode = conn.owner().runtime_opcode();
+        auto &opcode = conn.owner().runtime_opcode();
         if (opcode == op_input_node)
             return mem_input;
         else if (opcode == op_constant)
-            return mem_rdata;
+            return conn.memory_location();
 
         auto inputs = conn.connections();
         if (skip_buffer_alias_)

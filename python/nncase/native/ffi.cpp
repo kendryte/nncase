@@ -126,7 +126,7 @@ PYBIND11_MODULE(_nncase, m)
     m.doc() = "nncase Library";
     m.attr("__version__") = NNCASE_VERSION;
 
-    LaunchDebugger();
+    // LaunchDebugger();
     py::class_<std::filesystem::path>(m, "Path")
         .def(py::init<std::string>());
     py::implicitly_convertible<std::string, std::filesystem::path>();
