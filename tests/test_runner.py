@@ -11,6 +11,7 @@ import nncase
 import struct
 from compare_util import compare
 import copy
+from PIL import Image
 
 
 class Edict:
@@ -85,7 +86,7 @@ def generate_random(shape: List[int], dtype: np.dtype,
     elif dtype is np.int8:
         data = np.random.randint(-128, 128, shape)
     else:
-        data = np.random.rand(*shape) * 2 - 1
+        data = np.random.rand(*shape)
     data = data.astype(dtype=dtype)
     if abs:
         return np.abs(data)
@@ -146,7 +147,107 @@ class TestRunner(metaclass=ABCMeta):
         self.input_paths: List[Tuple[str, str]] = []
         self.calib_paths: List[Tuple[str, str]] = []
         self.output_paths: List[Tuple[str, str]] = []
+        self.pre_process: List[Dict] = []
+        '''
+            pre_process:
+                Normalize:
+                    scale: 1,1,1
+                    mean : 1,1,1
+                LetterBox:
+                    ori_h:  xxx
+                    ori_w:  xxx
+                BGR2RGB:
+                    input_format: BGR
+        '''
         self.num_pattern = re.compile("(\d+)")
+
+    def get_process_config(self, config):
+        # norm
+        process1 = {}
+        data1 = {}
+        data1 = {
+            'mean': config.importer_opt.kwargs['norm']['mean'],
+            'scale': config.importer_opt.kwargs['norm']['scale']
+        }
+        process1['norm'] = data1
+
+        # bgr2rgb
+        process2 = {}
+        process2['image_format'] = config.importer_opt.kwargs['image_format']
+
+        process3 = {}
+        process3['input_range'] = config.importer_opt.kwargs['input_range']
+        process3['input_shape'] = config.importer_opt.kwargs['input_shape']
+        process3['model_shape'] = self.inputs[0]['model_shape']
+        process3['input_type'] = config.compile_opt.kwargs['input_type']
+
+        self.pre_process.append(process1)
+        self.pre_process.append(process2)
+        self.pre_process.append(process3)
+
+    def data_pre_process(self, data):
+        for item in self.pre_process:
+            # BGR2RGB
+            if 'image_format' in item.keys():
+                if(item['image_format'] == 'BGR'):
+                    data = np.flip(data, (-1))  # data[:,:,:,::-1]
+
+            # TODO: LetterBox
+            if 'input_range' in item.keys() and 'input_shape' in item.keys() and 'model_shape' in item.keys():
+                in_h, in_w = item['input_shape'][1], item['input_shape'][2]
+                model_h, model_w = item['model_shape'][1], item['model_shape'][2]
+                # ratio = max(in_h / model_h, in_w / model_w)
+                ratio = min(model_h / in_h, model_w / in_w)
+                new_shape = data.shape[0], int(model_h / ratio), int(model_w / ratio), 3
+                # get pad value
+                pad_value = []
+                if(item['input_type'] == "uint8"):
+                    pad_value.append(114)
+                elif item['input_type'] == "int8":
+                    pad_value.append(114 - 128)
+                else:
+                    pad_value.append(item['input_range'][0] + (item['input_range']
+                                     [1] - item['input_range'][0]) * (114 / 255.0))
+                new_data = np.zeros(new_shape)
+                if(item['input_type'] == "uint8"):
+                    new_data = new_data.astype(np.uint8)
+                elif item['input_type'] == "int8":
+                    new_data = new_data.astype(np.int8)
+                else:
+                    new_data = new_data.astype(np.float32)
+
+                new_data += pad_value
+                # get fill range
+                # fill_h, fill_w = int(abs(new_data.shape[1] - data.shape[1])), \
+                #     int(abs(new_data.shape[2] - data.shape[2]))
+
+                # data = cv2.copyMakeBorder(data, int(fill_h / 2), fill_h - int(fill_h / 2),
+                #                           int(fill_w / 2), fill_w - int(fill_w / 2),
+                #                           cv2.BORDER_CONSTANT, value=(1, 1, 1))
+                fill_h, fill_w = int(abs(new_data.shape[1] - data.shape[1]) / 2), \
+                    int(abs(new_data.shape[2] - data.shape[2]) / 2)
+                new_data[:, fill_h:fill_h + data.shape[1], fill_w:fill_w + data.shape[2], :] = data
+
+                # PIL fromarray need uint8 input
+                new_data = new_data * 255
+                new_data = new_data.squeeze(0)
+                tmp = Image.fromarray(np.uint8(new_data), mode="RGB")
+
+                # PIL resize need (w,h)
+                data = tmp.resize((item['model_shape'][2], item['model_shape'][1]), Image.BILINEAR)
+                data = np.array(data, dtype=np.float32)
+                data = np.expand_dims(data, 0)
+                # data = np.resize(new_data, [1, item['model_shape'][1],
+                #                  item['model_shape'][2], item['model_shape'][3]])
+            # Normalize
+            # TODO: add discribe for normalize
+            if 'norm' in item.keys():
+                for i in range(data.shape[-1]):
+                    data[:, :, :, i] = \
+                        (data[:, :, :, i] - float(item['norm']['mean'][i])) * \
+                        float(item['norm']['scale'][i])
+
+        return data
 
     def validte_config(self, config):
         in_ci = os.getenv('CI', False)
@@ -214,12 +315,20 @@ class TestRunner(metaclass=ABCMeta):
         pass
 
     def run_single(self, cfg, case_dir: str, model_file: str):
+        # TODO: 增加前处理的东西，然后对应在nncase中增加对应的前处理
         if not self.inputs:
             self.parse_model_input_output(model_file)
-        self.generate_data(cfg.generate_inputs, case_dir,
-                           self.inputs, self.input_paths, 'input')
-        self.generate_data(cfg.generate_calibs, case_dir,
-                           self.calibs, self.calib_paths, 'calib')
+        self.get_process_config(cfg)
+        if cfg.importer_opt.kwargs['input_shape'] != None:
+            self.generate_data(cfg.generate_inputs, case_dir,
+                               self.inputs, self.input_paths, 'input', cfg.importer_opt.kwargs['input_shape'])
+            self.generate_data(cfg.generate_calibs, case_dir,
+                               self.calibs, self.calib_paths, 'calib', cfg.importer_opt.kwargs['input_shape'])
+        else:
+            self.generate_data(cfg.generate_inputs, case_dir,
+                               self.inputs, self.input_paths, 'input')
+            self.generate_data(cfg.generate_calibs, case_dir,
+                               self.calibs, self.calib_paths, 'calib')
         self.cpu_infer(case_dir, model_file)
         import_options, compile_options = self.get_compiler_options(cfg, model_file)
         model_content = self.read_model_file(model_file)
@@ -251,7 +360,7 @@ class TestRunner(metaclass=ABCMeta):
                 compile_options, model_content, dict_args)
             judge, result = self.compare_results(
                 self.output_paths, eval_output_paths, dict_args)
-            assert(judge), result
+            assert(judge), 'Fault result in eval' + result
 
     def run_inference(self, cfg, case_dir, import_options, compile_options, model_content):
         names, args = TestRunner.split_value(cfg.infer)
@@ -265,7 +374,7 @@ class TestRunner(metaclass=ABCMeta):
                 compile_options, model_content, dict_args)
             judge, result = self.compare_results(
                 self.output_paths, infer_output_paths, dict_args)
-            assert(judge), 'Fault result' + result
+            assert(judge), 'Fault result in infer' + result
 
     @staticmethod
     def split_value(kwcfg: List[Dict[str, str]]) -> Tuple[List[str], List[str]]:
@@ -305,7 +414,7 @@ class TestRunner(metaclass=ABCMeta):
         eval_output_paths = []
         for i in range(len(self.inputs)):
             input_tensor = nncase.RuntimeTensor.from_numpy(
-                self.inputs[i]['data'])
+                self.data_pre_process(self.inputs[i]['data']))
             input_tensor.copy_to(evaluator.get_input_tensor(i))
             evaluator.run()
 
@@ -329,12 +438,16 @@ class TestRunner(metaclass=ABCMeta):
         compile_options.dump_dir = infer_dir
         compile_options.input_type = cfg.compile_opt.kwargs['input_type']
         compile_options.quant_type = cfg.compile_opt.kwargs['quant_type']
+        compile_options.image_format = cfg.importer_opt.kwargs['image_format']
+        compile_options.input_shape = cfg.importer_opt.kwargs['input_shape']
+        compile_options.mean = cfg.importer_opt.kwargs['norm']['mean']
+        compile_options.scale = cfg.importer_opt.kwargs['norm']['scale']
         compiler = nncase.Compiler(compile_options)
         self.import_model(compiler, model_content, import_options)
         if kwargs['ptq']:
             ptq_options = nncase.PTQTensorOptions()
             ptq_options.set_tensor_data(np.asarray(
-                [transform_input(sample['data'], compile_options.input_type) for sample in self.calibs]).tobytes())
+                [self.data_pre_process(sample['data'], compile_options.input_type) for sample in self.calibs]).tobytes())
             ptq_options.samples_count = cfg.generate_calibs.batch_size
             ptq_options.input_mean = cfg.ptq_opt.kwargs['input_mean']
             ptq_options.input_std = cfg.ptq_opt.kwargs['input_std']
@@ -349,7 +462,7 @@ class TestRunner(metaclass=ABCMeta):
         infer_output_paths: List[np.ndarray] = []
         for i in range(len(self.inputs)):
             sim.set_input_tensor(
-                i, nncase.RuntimeTensor.from_numpy(transform_input(self.inputs[i]['data'], compile_options.input_type)))
+                i, nncase.RuntimeTensor.from_numpy(self.inputs[i]['data']))
         sim.run()
 
         for i in range(sim.outputs_size):
@@ -364,11 +477,16 @@ class TestRunner(metaclass=ABCMeta):
     def on_test_start(self) -> None:
         pass
 
-    def generate_data(self, cfg, case_dir: str, inputs: List[Dict], path_list: List[str], name: str):
+    def generate_data(self, cfg, case_dir: str, inputs: List[Dict], path_list: List[str], name: str, input_shape: List = []):
         for n in range(cfg.numbers):
             i = 0
             for input in inputs:
-                shape = input['shape']
+                shape = []
+                if input_shape != [] and len(input_shape) == 3:
+                    input_shape.insert(0, 1)
+                    shape = input_shape
+                else:
+                    shape = input['model_shape']
                 shape[0] *= cfg.batch_size
                 data = DataFactory[cfg.name](shape, input['dtype'], **cfg.kwargs)
 
