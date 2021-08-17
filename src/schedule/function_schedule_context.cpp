@@ -115,7 +115,7 @@ void function_schedule_context::make_logical_buffers(caller_context &caller_ctx)
     pmgr.add_pass<decide_memory_location_pass>(skip_buffer_alias);
     pmgr.run();
 
-    lifetime_recorder lr(logical_buffers_, logical_buffer_map_, skip_buffer_alias);
+    lifetime_recorder lr(logical_buffers_, logical_buffer_map_);
 
     // 1. Adjust base age to caller's age
     lr.current_age(caller_ctx.lifetime.current_age());

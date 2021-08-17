@@ -18,8 +18,8 @@ using namespace nncase;
 using namespace nncase::ir;
 using namespace nncase::schedule;
 
-lifetime_recorder::lifetime_recorder(std::list<logical_buffer> &buffers, std::unordered_map<const ir::output_connector *, logical_buffer *> &buffer_map, bool skip_buffer_alias)
-    : buffers_(buffers), buffer_map_(buffer_map), skip_buffer_alias_(skip_buffer_alias)
+lifetime_recorder::lifetime_recorder(std::list<logical_buffer> &buffers, std::unordered_map<const ir::output_connector *, logical_buffer *> &buffer_map)
+    : buffers_(buffers), buffer_map_(buffer_map)
 {
 }
 

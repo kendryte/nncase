@@ -20,7 +20,7 @@ namespace nncase::schedule
 class lifetime_recorder
 {
 public:
-    lifetime_recorder(std::list<logical_buffer> &buffers, std::unordered_map<const ir::output_connector *, logical_buffer *> &buffer_map, bool skip_buffer_alias);
+    lifetime_recorder(std::list<logical_buffer> &buffers, std::unordered_map<const ir::output_connector *, logical_buffer *> &buffer_map);
 
     size_t current_age() const noexcept { return cnt_age_; }
     void current_age(size_t age);
@@ -34,6 +34,5 @@ private:
     size_t cnt_age_ = 0;
     std::list<logical_buffer> &buffers_;
     std::unordered_map<const ir::output_connector *, logical_buffer *> &buffer_map_;
-    bool skip_buffer_alias_;
 };
 }

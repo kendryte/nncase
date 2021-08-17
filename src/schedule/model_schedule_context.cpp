@@ -49,7 +49,7 @@ void model_schedule_context::schedule(ir::graph &entry_function)
     // 2. Visit entry function
     std::list<logical_buffer> dummy_buffers;
     std::unordered_map<const ir::output_connector *, logical_buffer *> dummy_buffer_map;
-    lifetime_recorder dummy_lifetime(dummy_buffers, dummy_buffer_map, skip_buffer_alias_);
+    lifetime_recorder dummy_lifetime(dummy_buffers, dummy_buffer_map);
     caller_context dummy_ctx { dummy_lifetime };
     visit_function(entry_function, dummy_ctx);
 

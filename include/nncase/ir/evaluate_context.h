@@ -76,6 +76,7 @@ public:
     std::byte *memory_pool(memory_location_t location) const;
     ir::quantizer *quantizer() noexcept { return quantizer_.get(); }
     function_evaluate_context &function(ir::graph &function);
+    model_evaluate_context &model() const noexcept { return model_eval_; }
 
     void enable_ptq(target &target, ir::calibrate_method calib_method);
     void begin_collect_distribution();
