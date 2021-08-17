@@ -67,7 +67,7 @@ void nncase::importer::ncnn_importer::convert_op_Pooling(const Layer &layer, con
 
     if (global_pooling)
     {
-        axis_t axis = {1, 2};
+        axis_t axis = {2, 3};
         bool keep_dims = false;
         ir::reduce* reduce_op = graph_.emplace<reduce>(reduce_type, in_shape, axis, init_value, keep_dims);
         reduce_op->name(op_name + ".reduce(Pooling)");

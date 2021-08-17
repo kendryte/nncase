@@ -1,6 +1,8 @@
 include(TestBigEndian)
 test_big_endian(BIG_ENDIAN)
 
+set(CMAKE_BUILD_TYPE debug)
+
 set(NCNN_IMPORTER_SOURCES
     ncnn_importer.cpp
     datareader.cpp
@@ -13,6 +15,7 @@ set(NCNN_IMPORTER_OPS_SOURCES
     ops/activations.cpp
     ops/convolution.cpp
     ops/innerproduct.cpp
+    ops/input.cpp
     ops/pooling.cpp
     ops/softmax.cpp
     )

@@ -37,7 +37,7 @@ class FileWrapper
 public:
     FileWrapper(const std::string& path)
     {
-        FILE* fp = fopen(path.c_str(), "rb");
+        fp = fopen(path.c_str(), "rb");
         if (!fp)
             throw std::runtime_error("Cannot open file: " + path);
     }
@@ -111,7 +111,7 @@ void ncnn_importer::import(const import_options &/*options*/)
             layer.bottoms[j] = std::string(blob_name);
         }
 
-        layer.tops.resize(bottom_count);
+        layer.tops.resize(top_count);
         for (int j = 0; j < top_count; j++)
         {
             char blob_name[256];
@@ -139,15 +139,15 @@ void ncnn_importer::import(const import_options &/*options*/)
                 int dims = psh[0];
                 if (dims == 1)
                 {
-                    shape = shape_t{ (size_t)psh[1] };
+                    shape = shape_t{ 1, (size_t)psh[1] };
                 }
                 if (dims == 2)
                 {
-                    shape = shape_t{ (size_t)psh[1], (size_t)psh[2] };
+                    shape = shape_t{ 1, (size_t)psh[2], (size_t)psh[1] };
                 }
                 if (dims == 3)
                 {
-                    shape = shape_t{ (size_t)psh[1], (size_t)psh[2], (size_t)psh[3] };
+                    shape = shape_t{ 1, (size_t)psh[3], (size_t)psh[2], (size_t)psh[1] };
                 }
 
                 shapes[layer.tops[j]] = shape;

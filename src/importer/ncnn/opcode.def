@@ -1,6 +1,7 @@
 DEFINE_OPCODE(Convolution)
 DEFINE_OPCODE(ConvolutionDepthWise)
 DEFINE_OPCODE(InnerProduct)
+DEFINE_OPCODE(Input)
 DEFINE_OPCODE(Pooling)
 DEFINE_OPCODE(ReLU)
 DEFINE_OPCODE(Softmax)
