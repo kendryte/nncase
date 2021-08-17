@@ -35,7 +35,10 @@ bool transpose_binary_motion_transform::on_try_match(node &node, transform_conte
         if ((tp1 = node_cast<transpose>(bin->input_a().connection()->owner()))
             && (tp2 = node_cast<transpose>(bin->input_b().connection()->owner())))
         {
-            if (tp1->perm() == tp2->perm())
+            auto output_a_size = bin->input_a().connection()->connections().size();
+            auto output_b_size = bin->input_b().connection()->connections().size();
+            auto size = tp1 == tp2 ? output_a_size : output_a_size + output_b_size;
+            if ((size == 2) && (tp1->perm() == tp2->perm()))
             {
                 context.inputs.emplace_back(&tp1->input());
                 context.inputs.emplace_back(&tp2->input());
@@ -297,20 +300,18 @@ void transpose_reduce_motion_transform::process(transform_context &context)
     for (size_t i = 0; i < axis.size(); i++)
         axis[i] = old_tp.perm()[old_r.axis()[i]];
 
-    axis_t perm;
-    if (old_r.keep_dims())
+    axis_t perm = old_tp.perm();
+    if (!old_r.keep_dims())
     {
-        perm = old_tp.perm();
-    }
-    else
-    {
-        for (auto a : old_tp.perm())
+        auto sorted_axis = axis;
+        std::sort(sorted_axis.begin(), sorted_axis.end(), std::greater<int>());
+        for (auto axis : sorted_axis)
         {
-            if (std::find(old_r.axis().begin(), old_r.axis().end(), a) == old_r.axis().end())
-            {
-                auto idx = std::distance(old_r.axis().begin(), std::lower_bound(old_r.axis().begin(), old_r.axis().end(), a));
-                perm.push_back((int32_t)(a - idx));
-            }
+            auto it = std::find(perm.begin(), perm.end(), axis);
+            perm.erase(it);
+            std::for_each(perm.begin(), perm.end(), [=](auto &val) {
+                val = val > axis ? val - 1 : val;
+            });
         }
     }
 
