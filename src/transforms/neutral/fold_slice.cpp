@@ -21,24 +21,38 @@ using namespace nncase;
 using namespace nncase::ir;
 using namespace nncase::ir::transforms;
 
+static inline bool no_slice(slice *rp, size_t i)
+{
+    return (rp->begin()[i] == 0) && (rp->end()[i] == rp->input().shape()[i]) && (rp->strides()[i] == 1);
+}
+
+static inline bool can_merge(slice *rp1, slice *rp2)
+{
+    bool ret = true;
+    for (size_t i = 0; i < rp1->strides().size(); i++)
+    {
+        ret &= (no_slice(rp1, i) || no_slice(rp2, i));
+        if (not ret)
+            break;
+    }
+    return ret;
+}
+
 bool fold_slice_slice_transform::on_try_match(node &node, transform_context &context)
 {
     if (auto rp1 = node_cast<slice>(node))
     {
         if (auto rp2 = try_get_direct_child<slice>(*rp1))
         {
-            for (size_t i = 0; i < rp1->strides().size(); i++)
+            if (can_merge(rp1, rp2))
             {
-                if (!(rp1->strides()[i] == 1 || rp2->strides()[i] == 1 || rp1->strides()[i] == rp2->strides()[i]))
-                {
-                    return false;
-                }
-            }
-            context.inputs.emplace_back(&rp1->input());
-            context.outputs.emplace_back(&rp2->output());
+                context.inputs.emplace_back(&rp1->input());
+                context.outputs.emplace_back(&rp2->output());
 
-            context.matched_nodes.emplace_back(rp1);
-            context.matched_nodes.emplace_back(rp2);
+                context.matched_nodes.emplace_back(rp1);
+                context.matched_nodes.emplace_back(rp2);
+            }
+
             return true;
         }
     }
@@ -59,15 +73,9 @@ void fold_slice_slice_transform::process(transform_context &context)
     axis_t new_strides(rp1->strides());
     for (auto i = 0; i < int64_t(rp1->begin().size()); ++i)
     {
-        new_begin[i] = rp1->begin()[i] + rp2->begin()[i];
-        new_end[i] = std::min(rp1->begin()[i] + std::max(rp1->end()[i], rp2->end()[i]), (int32_t)output.shape()[i]);
-    }
-    if (new_strides != rp2->strides())
-    {
-        for (size_t i = 0; i < new_strides.size(); i++)
-        {
-            new_strides[i] = std::max(new_strides[i], rp2->strides()[i]);
-        }
+        new_begin[i] = no_slice(rp1, i) ? rp2->begin()[i] : rp1->begin()[i];
+        new_end[i] = no_slice(rp1, i) ? rp2->end()[i] : rp1->end()[i];
+        new_strides[i] = no_slice(rp1, i) ? rp2->strides()[i] : rp1->strides()[i];
     }
 
     auto new_rp = context.graph.emplace<slice>(
