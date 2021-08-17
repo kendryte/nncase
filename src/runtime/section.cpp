@@ -57,7 +57,7 @@ gsl::span<const gsl::byte> runtime::read_sections(span_reader &sr, size_t sectio
     for (size_t i = 0; i < sections; i++)
     {
         auto header = nest_sr.get_ref<section_header>();
-        size += sizeof(header);
+        size += sizeof(section_header);
 
         if (!(header->flags & SECTION_MERGED_INTO_RDATA))
         {

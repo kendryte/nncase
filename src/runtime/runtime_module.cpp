@@ -64,7 +64,7 @@ gsl::span<const gsl::byte> read_functions(span_reader &sr, size_t functions) noe
 
     for (size_t i = 0; i < functions; i++)
     {
-        auto func_size = sr.peek_with_offset<decltype(function_header::size)>(offsetof(function_header, size));
+        auto func_size = nest_sr.peek_with_offset<decltype(function_header::size)>(offsetof(function_header, size));
         nest_sr.skip(func_size);
         size += func_size;
     }
@@ -108,6 +108,17 @@ result<void> runtime_module::initialize(gsl::span<const gsl::byte> payload, inte
     span_reader reader(payload);
     reader.read(header_);
 
+    try
+    {
+        mempools_.resize(header_.mempools);
+        shared_mempools_.resize(header_.shared_mempools);
+        functions_.resize(header_.functions);
+    }
+    catch (...)
+    {
+        return err(std::errc::not_enough_memory);
+    }
+
     // mempools
     for (auto &desc : mempools_)
         reader.read(desc);
@@ -119,16 +130,6 @@ result<void> runtime_module::initialize(gsl::span<const gsl::byte> payload, inte
     span_reader func_reader(read_functions(reader, header_.functions));
     runtime_module_init_context_impl init_context(header_, interp, read_sections(reader, header_.sections));
     try_(initialize_before_functions(init_context));
-
-    // functions
-    try
-    {
-        functions_.resize(header_.functions);
-    }
-    catch (...)
-    {
-        return err(std::errc::not_enough_memory);
-    }
 
     for (size_t i = 0; i < header_.functions; i++)
     {

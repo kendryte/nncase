@@ -129,19 +129,23 @@ void module_builder::compile()
 {
     write_constants();
 
+    begin_emit_module();
+
     for (auto &func_sched : params_.module_sched.functions)
     {
         current_function_ = &func_sched;
 
         auto runtime_ops = generate_current_runtime_ops();
-        begin_emit_function();
+        begin_emit_function(func_sched);
         for (auto node : runtime_ops)
             emit(*node);
-        end_emit_function();
+        end_emit_function(func_sched);
 
         if (!entry_points_.contains(current_function_))
             throw std::runtime_error("Entry point for " + func_sched.graph->name() + " is not set");
     }
+
+    end_emit_module();
 
     if (dump_asm_)
     {
@@ -163,10 +167,14 @@ function_call_id module_builder::function_id(ir::graph *graph)
     for (size_t i = 0; i < params_.model_sched.modules.size(); i++)
     {
         auto &mod_sched = params_.model_sched.modules[i];
-        auto &func_sched = mod_sched.functions_map.at(graph);
-        auto &orders = mod_sched.functions;
-        if (func_sched >= orders.data() && func_sched < orders.data() + orders.size())
-            return { i, (size_t)(func_sched - orders.data()) };
+        auto func_it = mod_sched.functions_map.find(graph);
+        if (func_it != mod_sched.functions_map.end())
+        {
+            auto func_sched = func_it->second;
+            auto &orders = mod_sched.functions;
+            if (func_sched >= orders.data() && func_sched < orders.data() + orders.size())
+                return { i, (size_t)(func_sched - orders.data()) };
+        }
     }
 
     throw std::invalid_argument("Can't find graph " + graph->name() + " in modules");
@@ -175,6 +183,11 @@ function_call_id module_builder::function_id(ir::graph *graph)
 void module_builder::set_current_entry_point(std::streampos pos)
 {
     entry_points_[current_function_] = pos;
+}
+
+void module_builder::set_current_function_text_end(std::streampos pos)
+{
+    function_text_end_[current_function_] = pos;
 }
 
 std::unique_ptr<section_decompiler> module_builder::create_decompiler([[maybe_unused]] std::string_view section_name)
@@ -423,7 +436,9 @@ void module_builder::write_function_binary(binary_writer &writer, const schedule
     header.output_pool_size = (uint32_t)function_sched.output_pool_size;
     header.inputs = (uint32_t)inputs.size();
     header.outputs = (uint32_t)outputs.size();
-    header.entrypoint = (uint32_t)entry_points_.at(&function_sched);
+    auto entrypoint = entry_points_.at(&function_sched);
+    header.entrypoint = (uint32_t)entrypoint;
+    header.text_size = (uint32_t)(function_text_end_.at(&function_sched) - entrypoint);
     writer.position(header_pos);
     writer.write(header);
 
@@ -437,10 +452,18 @@ void module_builder::build(binary_writer &writer)
     write_binary(writer);
 }
 
-void module_builder::begin_emit_function()
+void module_builder::begin_emit_function([[maybe_unused]] const schedule::function_schedule_result &function)
 {
 }
 
-void module_builder::end_emit_function()
+void module_builder::end_emit_function([[maybe_unused]] const schedule::function_schedule_result &function)
+{
+}
+
+void module_builder::begin_emit_module()
+{
+}
+
+void module_builder::end_emit_module()
 {
 }

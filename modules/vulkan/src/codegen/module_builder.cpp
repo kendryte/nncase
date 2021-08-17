@@ -39,6 +39,11 @@ module_type_t vulkan_module_builder::module_type() const noexcept
     return vulkan_module_type;
 }
 
+uint32_t vulkan_module_builder::module_version() const noexcept
+{
+    return vulkan_module_version;
+}
+
 section_writer &vulkan_module_builder::text_writer()
 {
     return writer(".text");
@@ -104,17 +109,27 @@ void vulkan_module_builder::ldpipeline(ir::node &node, size_t shader_index, ldpi
     tw.write(op);
 }
 
+void vulkan_module_builder::begin_emit_function([[maybe_unused]] const schedule::function_schedule_result &function)
+{
+    set_current_entry_point(text_writer().position());
+}
+
+void vulkan_module_builder::end_emit_function([[maybe_unused]] const schedule::function_schedule_result &function)
+{
+    set_current_function_text_end(text_writer().position());
+}
+
 void vulkan_module_builder::emit(ir::node &node)
 {
 #define DEFINE_OP(op)                              \
     if (node.runtime_opcode() == ir::op::opcode()) \
-        return emit(static_cast<ir::op &>(node));
+        return emit(static_cast<op &>(node));
 #include "ops.def"
 #undef DEFINE_OP
     module_builder::emit(node);
 }
 
-void vulkan_module_builder::end_emit()
+void vulkan_module_builder::end_emit_module()
 {
     auto &sw = writer(DESCRIPTORS_SECTION_NAME);
     sw.write(descriptor_sets_);

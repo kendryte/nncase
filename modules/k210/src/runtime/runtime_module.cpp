@@ -78,11 +78,6 @@ gsl::span<const gsl::byte> k210_runtime_module::rdata() const noexcept
     return rdata_;
 }
 
-gsl::span<const gsl::byte> k210_runtime_module::text() const noexcept
-{
-    return text_;
-}
-
 result<std::unique_ptr<runtime_function>> k210_runtime_module::create_function() noexcept
 {
     std::unique_ptr<runtime_function> mod(new (std::nothrow) k210_runtime_function(*this));

@@ -48,6 +48,16 @@ section_writer &k210_module_builder::text_writer()
     return writer(".text");
 }
 
+void k210_module_builder::begin_emit_function([[maybe_unused]] const schedule::function_schedule_result &function)
+{
+    set_current_entry_point(text_writer().position());
+}
+
+void k210_module_builder::end_emit_function([[maybe_unused]] const schedule::function_schedule_result &function)
+{
+    set_current_function_text_end(text_writer().position());
+}
+
 void k210_module_builder::emit(ir::node &node)
 {
 #define DEFINE_OP(op)                              \

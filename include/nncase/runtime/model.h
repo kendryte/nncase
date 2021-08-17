@@ -41,7 +41,7 @@ struct function_header
     uint32_t inputs;
     uint32_t outputs;
     uint32_t entrypoint;
-    uint32_t reserved0;
+    uint32_t text_size;
 };
 
 struct module_header

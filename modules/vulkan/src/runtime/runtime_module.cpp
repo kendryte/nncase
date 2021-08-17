@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #include "runtime_module.h"
+#include "runtime_function.h"
 #include "vulkan_error.h"
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/host_runtime_tensor.h>
@@ -34,36 +35,13 @@ result<void> vulkan_runtime_module::initialize_before_functions(runtime_module_i
     auto descs = context.section(DESCRIPTORS_SECTION_NAME).as_span<const uint32_t>();
     descriptor_sets_ = descs[0];
     descriptors_ = descs[1];
-    rdata_ = context.section(".rdata");
-    text_ = context.section(".text");
     shader_ = context.section(".shader");
 
     try_(initialize_vulkan());
+
+    // TODO: Load rdata
+    //rdata_ = context.section(".rdata");
     return ok();
-}
-
-result<runtime_tensor> vulkan_runtime_module::allocate_input_tensor(size_t index) noexcept
-{
-    return host_runtime_tensor::create(input_desc(index).datatype, input_shape(index));
-}
-
-result<runtime_tensor> vulkan_runtime_module::allocate_output_tensor(size_t index) noexcept
-{
-    return host_runtime_tensor::create(output_desc(index).datatype, output_shape(index));
-}
-
-result<void> vulkan_runtime_module::validate_input_tensor(NNCASE_UNUSED size_t index, runtime_tensor tensor) noexcept
-{
-    if (tensor.is_host() && tensor.is_contiguous())
-        return ok();
-    return err(std::errc::invalid_argument);
-}
-
-result<void> vulkan_runtime_module::validate_output_tensor(NNCASE_UNUSED size_t index, runtime_tensor tensor) noexcept
-{
-    if (tensor.is_host() && tensor.is_contiguous())
-        return ok();
-    return err(std::errc::invalid_argument);
 }
 
 result<void> vulkan_runtime_module::initialize_vulkan() noexcept
@@ -71,16 +49,6 @@ result<void> vulkan_runtime_module::initialize_vulkan() noexcept
     try_(initialize_vulkan_instance());
     try_(initialize_vulkan_device());
     try_(initialize_vulkan_memory());
-    try_(initialize_vulkan_commands());
-    return ok();
-}
-
-result<void> vulkan_runtime_module::initialize_vulkan_commands() noexcept
-{
-    vk::CommandBufferBeginInfo cmdb_info;
-    try_(vk::to_result(cmd_buffer_.begin(cmdb_info)));
-    try_(visit(text_));
-    try_(vk::to_result(cmd_buffer_.end()));
     return ok();
 }
 
@@ -110,30 +78,11 @@ result<void> vulkan_runtime_module::initialize_vulkan_device() noexcept
 
     vk::CommandPoolCreateInfo cmdp_cinfo({}, compute_queue_index_);
     try_set(cmd_pool_, vk::to_result(device_.createCommandPool(cmdp_cinfo)));
-    vk::CommandBufferAllocateInfo cmdb_cinfo(cmd_pool_, vk::CommandBufferLevel::ePrimary, 1);
-    try_var(cmdbs, vk::to_result(device_.allocateCommandBuffers(cmdb_cinfo)));
-    cmd_buffer_ = cmdbs[0];
     return ok();
 }
 
 result<void> vulkan_runtime_module::initialize_vulkan_memory() noexcept
 {
-    auto input_mem = mempool(mem_input);
-    if (input_mem.size)
-    {
-        try_set(input_buffer_, allocate_vulkan_buffer(input_mem.size));
-        try_set(input_mem_, allocate_vulkan_memory({ vk::MemoryPropertyFlagBits::eHostVisible, vk::MemoryPropertyFlagBits::eHostCached, {} }, input_buffer_));
-        try_(bind_vulkan_buffer(input_buffer_, input_mem_));
-    }
-
-    auto output_mem = mempool(mem_output);
-    if (output_mem.size)
-    {
-        try_set(output_buffer_, allocate_vulkan_buffer(output_mem.size));
-        try_set(output_mem_, allocate_vulkan_memory({ vk::MemoryPropertyFlagBits::eHostVisible, vk::MemoryPropertyFlagBits::eHostCached, {} }, output_buffer_));
-        try_(bind_vulkan_buffer(output_buffer_, output_mem_));
-    }
-
     auto data_mem = mempool(mem_data);
     if (data_mem.size)
     {
@@ -163,6 +112,19 @@ result<vk::Buffer> vulkan_runtime_module::allocate_vulkan_buffer(size_t required
 result<void> vulkan_runtime_module::bind_vulkan_buffer(vk::Buffer buffer, vk::DeviceMemory memory) noexcept
 {
     return vk::to_result(device_.bindBufferMemory(buffer, memory, 0));
+}
+
+result<void> vulkan_runtime_module::add_pipeline(vk::Pipeline pipeline) noexcept
+{
+    try
+    {
+        pipelines_owner_.emplace_back(pipeline);
+        return ok();
+    }
+    catch (const std::bad_alloc &)
+    {
+        return err(std::errc::not_enough_memory);
+    }
 }
 
 result<vk::PhysicalDevice> vulkan_runtime_module::select_physical_device() noexcept
@@ -261,78 +223,27 @@ result<size_t> vulkan_runtime_module::select_memory_type(const vk::PhysicalDevic
     return err(std::errc::not_enough_memory);
 }
 
-result<void> vulkan_runtime_module::run_core() noexcept
-{
-    try_(preprocess_inputs());
-
-    vk::SubmitInfo si({}, {}, cmd_buffer_, {});
-    try_(vk::to_result(compute_queue_.submit(si)));
-    try_(vk::to_result(compute_queue_.waitIdle()));
-
-    try_(postprocess_outputs());
-    return ok();
-}
-
-result<void> vulkan_runtime_module::preprocess_inputs() noexcept
-{
-    try_var(dest, vk::to_result(device_.mapMemory(input_mem_, 0, VK_WHOLE_SIZE, {})));
-
-    for (size_t i = 0; i < inputs_size(); i++)
-    {
-        try_var(src_tensor, device_input_tensor(i));
-        try_var(src_map, hrt::map(src_tensor, hrt::map_read));
-        auto &desc = input_desc(i);
-        memcpy((uint8_t *)dest + desc.start, src_map.buffer().data(), desc.size);
-    }
-
-    vk::MappedMemoryRange range(input_mem_, 0, VK_WHOLE_SIZE);
-    try_(vk::to_result(device_.flushMappedMemoryRanges(range)));
-    device_.unmapMemory(input_mem_);
-    return ok();
-}
-
-result<void> vulkan_runtime_module::postprocess_outputs() noexcept
-{
-    try_var(src, vk::to_result(device_.mapMemory(output_mem_, 0, VK_WHOLE_SIZE, {})));
-    vk::MappedMemoryRange range(output_mem_, 0, VK_WHOLE_SIZE);
-    try_(vk::to_result(device_.invalidateMappedMemoryRanges(range)));
-
-    for (size_t i = 0; i < outputs_size(); i++)
-    {
-        try_var(dest_tensor, device_output_tensor(i));
-        try_var(dest_map, hrt::map(dest_tensor, hrt::map_write));
-        auto &desc = output_desc(i);
-        memcpy(dest_map.buffer().data(), (const uint8_t *)src + desc.start, desc.size);
-    }
-
-    device_.unmapMemory(output_mem_);
-    return ok();
-}
-
-result<vulkan_runtime_module::buffer_ref> vulkan_runtime_module::pop_buffer_ref() noexcept
-{
-    if (buffer_refs_.empty())
-        return err(std::errc::result_out_of_range);
-    auto buffer_ref = std::move(buffer_refs_.back());
-    buffer_refs_.pop_back();
-    return ok(std::move(buffer_ref));
-}
-
 void vulkan_runtime_module::free_vulkan_resources() noexcept
 {
-    device_.freeCommandBuffers(cmd_pool_, cmd_buffer_);
+    for (auto &func : functions())
+        func.reset();
+
     device_.destroyCommandPool(cmd_pool_);
     device_.destroyDescriptorPool(buffer_desc_pool_);
     for (auto p : pipelines_owner_)
         device_.destroyPipeline(p);
-    device_.destroyBuffer(input_buffer_);
-    device_.destroyBuffer(output_buffer_);
     device_.destroyBuffer(data_buffer_);
-    device_.freeMemory(input_mem_);
-    device_.freeMemory(output_mem_);
     device_.freeMemory(data_mem_);
     device_.destroy({});
     instance_.destroy({});
+}
+
+result<std::unique_ptr<runtime_function>> vulkan_runtime_module::create_function() noexcept
+{
+    std::unique_ptr<runtime_function> mod(new (std::nothrow) vulkan_runtime_function(*this));
+    if (mod)
+        return ok(std::move(mod));
+    return err(std::errc::not_enough_memory);
 }
 
 result<std::unique_ptr<runtime_module>> vulkan::create_vulkan_runtime_module()

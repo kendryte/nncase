@@ -103,7 +103,10 @@ public:
     function_evaluate_context &entrypoint();
     module_evaluate_context &module(const module_type_t &module_type);
 
-    evaluate_tensor memory_at(const output_connector &conn);
+    evaluate_tensor memory_at(const output_connector &conn)
+    {
+        return entrypoint().memory_at(conn);
+    }
 
     evaluate_tensor memory_at(const input_connector &conn)
     {

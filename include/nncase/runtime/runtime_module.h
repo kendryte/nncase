@@ -56,6 +56,8 @@ protected:
     virtual result<void> initialize_after_functions(runtime_module_init_context &context) noexcept;
     virtual result<std::unique_ptr<runtime_function>> create_function() noexcept = 0;
 
+    gsl::span<std::unique_ptr<runtime_function>> functions() noexcept { return functions_; }
+
 private:
     module_header header_;
     std::vector<mempool_desc> mempools_;

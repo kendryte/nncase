@@ -37,6 +37,11 @@ class function_schedule_context : public function_schedule_result
 {
 public:
     function_schedule_context(ir::graph &graph, module_schedule_context &mod_sched);
+    function_schedule_context(const function_schedule_context &) = delete;
+    function_schedule_context(function_schedule_context &&) = default;
+
+    function_schedule_context &operator=(const function_schedule_context &) = delete;
+    function_schedule_context &operator=(function_schedule_context &&) = default;
 
     const module_type_t &module_type() const noexcept { return graph->module_type(); }
     std::span<ir::output_node *> outputs() const noexcept { return outputs_; }
@@ -74,6 +79,11 @@ class module_schedule_context
 {
 public:
     module_schedule_context(module_schedule_result &result, model_schedule_context &model_sched, module_type_t type);
+    module_schedule_context(const module_schedule_context &) = delete;
+    module_schedule_context(module_schedule_context &&) = default;
+
+    module_schedule_context &operator=(const module_schedule_context &) = delete;
+    module_schedule_context &operator=(module_schedule_context &&) = default;
 
     module_schedule_result &module_result() const noexcept { return result_; }
     model_schedule_context &model_sched() const noexcept { return model_sched_; }
@@ -98,6 +108,11 @@ class model_schedule_context
 {
 public:
     model_schedule_context(model_schedule_result &result, nncase::target &target, bool skip_buffer_alias);
+    model_schedule_context(const model_schedule_context &) = delete;
+    model_schedule_context(model_schedule_context &&) = default;
+
+    model_schedule_context &operator=(const model_schedule_context &) = delete;
+    model_schedule_context &operator=(model_schedule_context &&) = default;
 
     nncase::target &target() const noexcept { return target_; }
     bool skip_buffer_alias() const noexcept { return skip_buffer_alias_; }

@@ -84,10 +84,13 @@ evaluate_tensor function_evaluate_context::memory_at(const output_connector &con
     {
     case mem_input:
         base = input_pool_.get();
+        break;
     case mem_output:
         base = output_pool_.get();
+        break;
     default:
         base = module().memory_pool(alloc.memory_location);
+        break;
     }
 
     gsl::span<gsl::byte> buffer(reinterpret_cast<gsl::byte *>(base + alloc.start), alloc.size);
@@ -145,6 +148,13 @@ module_evaluate_context::module_evaluate_context(const module_schedule_result &s
 {
     for (auto &&usage : sched.max_usages)
         memory_pools_.emplace(usage.first, std::make_unique<std::byte[]>(usage.second));
+
+    for (auto &func : sched.functions)
+    {
+        functions_.emplace(std::piecewise_construct,
+            std::forward_as_tuple(func.graph),
+            std::forward_as_tuple(func, *this));
+    }
 }
 
 std::byte *module_evaluate_context::memory_pool(memory_location_t location) const

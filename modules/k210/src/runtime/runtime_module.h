@@ -23,7 +23,6 @@ class k210_runtime_module : public runtime_module
 public:
     gsl::span<gsl::byte> data() const noexcept;
     gsl::span<const gsl::byte> rdata() const noexcept;
-    gsl::span<const gsl::byte> text() const noexcept;
     gsl::span<gsl::byte> kpu_ram() noexcept;
 
 protected:

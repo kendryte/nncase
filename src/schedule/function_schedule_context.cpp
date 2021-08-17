@@ -33,6 +33,7 @@ function_schedule_context::function_schedule_context(ir::graph &graph, module_sc
     : mod_sched_(mod_sched)
 {
     this->graph = &graph;
+    this->outputs_ = graph.outputs();
     this->module = &mod_sched.module_result();
 
     create_allocators();
@@ -49,19 +50,6 @@ void function_schedule_context::create_allocators()
         if (allocator.first != mem_input
             && allocator.first != mem_output)
             allocators_[allocator.first] = allocator.second;
-    }
-
-    // Remove unused allocators
-    for (auto &allocatorp : allocators_)
-    {
-        if (allocatorp.first == mem_input
-            || allocatorp.first == mem_output)
-        {
-            allocator_holder_.erase(std::find_if(allocator_holder_.begin(), allocator_holder_.end(),
-                [&](std::shared_ptr<buffer_allocator> &allocator) {
-                    return allocatorp.second == allocator.get();
-                }));
-        }
     }
 }
 

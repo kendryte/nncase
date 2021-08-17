@@ -93,10 +93,13 @@ protected:
     void merge_to_rdata_section(std::string_view from);
     function_call_id function_id(ir::graph *graph);
     void set_current_entry_point(std::streampos pos);
+    void set_current_function_text_end(std::streampos pos);
 
-    virtual void begin_emit_function();
-    virtual void end_emit_function();
+    virtual void begin_emit_module();
+    virtual void begin_emit_function(const schedule::function_schedule_result &function);
+    virtual void end_emit_function(const schedule::function_schedule_result &function);
     virtual void emit(ir::node &node);
+    virtual void end_emit_module();
 
 protected:
     std::filesystem::path dump_dir_;
@@ -125,5 +128,6 @@ private:
 
     const schedule::function_schedule_result *current_function_;
     std::unordered_map<const schedule::function_schedule_result *, std::streampos> entry_points_;
+    std::unordered_map<const schedule::function_schedule_result *, std::streampos> function_text_end_;
 };
 }

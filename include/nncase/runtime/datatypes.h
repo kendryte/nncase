@@ -473,7 +473,11 @@ struct std::hash<nncase::module_type_t>
 {
     auto operator()(const nncase::module_type_t &key) const noexcept
     {
-        return std::hash<const char *>()(key.data());
+        size_t result = 0;
+        const size_t prime = 31;
+        for (auto c : key)
+            result = c + (result * prime);
+        return result;
     }
 };
 }

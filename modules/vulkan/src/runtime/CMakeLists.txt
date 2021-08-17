@@ -1,6 +1,7 @@
 ﻿cmake_minimum_required (VERSION 3.13)
 
 set(SRCS runtime_module.cpp
+         runtime_function.cpp
          vulkan_error.cpp
          op_reader.cpp
          ops/ldbuf.cpp

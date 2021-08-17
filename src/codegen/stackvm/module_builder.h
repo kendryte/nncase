@@ -64,6 +64,8 @@ public:
 protected:
     section_writer &text_writer();
 
+    void begin_emit_function(const schedule::function_schedule_result &function) override;
+    void end_emit_function(const schedule::function_schedule_result &function) override;
     void emit(ir::node &node) override;
 
 private:
