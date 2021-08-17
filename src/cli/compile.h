@@ -41,9 +41,14 @@ private:
     std::string quant_type_ = "uint8";
     std::string input_layout_ = "NCHW";
     std::string output_layout_ = "NCHW";
+    std::string image_format_ = "RGB";
 
     float input_mean_ = 0.f;
     float input_std_ = 1.f;
+    std::vector<float> mean_;
+    std::vector<float> scale_;
+    std::vector<float> input_range_;
+    std::vector<float> input_shape_;
 
     bool dump_ir_ = false;
     bool dump_asm_ = false;

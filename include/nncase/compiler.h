@@ -43,6 +43,11 @@ struct compile_options
     std::string input_type = "default";
     std::string output_type = "float32";
     std::string quant_type = "uint8";
+    std::vector<float> mean { 0.f, 0.f, 0.f };
+    std::vector<float> scale { 1.f, 1.f, 1.f };
+    std::vector<float> input_range { 0.f, 1.f };
+    std::vector<float> input_shape { 3.f, 224.f, 224.f };
+    std::string image_format = "RGB";
 };
 
 struct import_options

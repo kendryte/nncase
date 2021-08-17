@@ -27,6 +27,7 @@
 #include <nncase/transforms/neutral/dequantize_motion.h>
 #include <nncase/transforms/neutral/fold_io_quant_motion.h>
 #include <nncase/transforms/neutral/optimize_allocation.h>
+#include <nncase/transforms/neutral/pre_process_setting.h>
 #include <nncase/transforms/neutral/process_input.h>
 #include <nncase/transforms/pass.h>
 #include <variant>
@@ -148,7 +149,7 @@ public:
     void import_tflite(std::span<const uint8_t> model, const import_options &options) override
     {
         BEGIN_IMPORT()
-        importer::import_tflite(graph_, model, imp_options);
+        importer::import_tflite(graph_, model, imp_options, real_layout_);
         END_IMPORT()
     }
 
@@ -183,6 +184,8 @@ public:
             if (compile_options_.input_type == "default")
                 compile_options_.input_type = "float32";
         }
+        std::cout << "1.1 Pre-process..." << std::endl;
+        pre_process(graph_, compile_options_);
 
         std::cout << "2. Optimize target independent..." << std::endl;
         optimize_target_independent(graph_);
@@ -271,6 +274,21 @@ private:
         target_options_.is_fpga = compile_options_.is_fpga;
 
         target_->register_evaluator_ops();
+    }
+
+    void pre_process(ir::graph &graph, compile_options &cmp_options)
+    {
+        using namespace ir::transforms;
+        run_passes("pre_process", graph, [&]([[maybe_unused]] const module_type_t &module_type, ir::transforms::pass_manager &pmgr) {
+            transform_pass pass("Pre_process");
+            pass.emplace<pre_process_transform>(
+                cmp_options.mean, cmp_options.scale,
+                cmp_options.input_range, cmp_options.input_shape,
+                cmp_options.image_format, input_layout_,
+                cmp_options.input_type, cmp_options.quant_type,
+                real_layout_);
+            pmgr.add_pass(std::move(pass));
+        });
     }
 
     void optimize_target_independent(ir::graph &graph)
@@ -612,6 +630,7 @@ private:
     std::variant<ptq_dataset_options, ptq_tensor_options> ptq_options_;
     bool use_ptq_ = false;
     std::unique_ptr<nncase::target> target_;
+    std::string real_layout_ = "";
 };
 }
 
