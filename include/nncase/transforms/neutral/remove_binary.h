@@ -32,14 +32,14 @@ public:
         std::span<const T> data_ref = std::span(reinterpret_cast<const T *>(data.data()), data.size_bytes() / sizeof(T));
 
         std::vector<bool> eq_seq;
-
-        std::transform(data_ref.begin(), data_ref.end(),
-            std::back_inserter(eq_seq),
-            [&value_ref](const T x) {
-                return x == value_ref;
-            });
-
-        return std::accumulate(eq_seq.begin(), eq_seq.end(), false, std::logical_or<bool> {});
+        bool ret = true;
+        for (auto &&x : data_ref)
+        {
+            ret &= (x == value_ref);
+            if (not ret)
+                break;
+        }
+        return ret;
     }
 
     bool constant_equal_to(constant *node, float value) noexcept;
