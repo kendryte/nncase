@@ -28,7 +28,7 @@ public:
     void enable_ptq(target &target, ir::calibrate_method calib_method);
     void evaluate();
 
-    quantizer *quantizer(const module_type_t &module_type);
+    ir::quantizer *quantizer(const module_type_t &module_type);
     void begin_collect_distribution();
     void end_sample();
     void end_collect_distribution(const std::function<void(size_t cnt, size_t total)> &progress);

@@ -20,7 +20,7 @@ if [[ ${VERSION} =~ .*version\ 11.* ]]
 then
     echo "clang-format version 11 found."
 else
-    echo "CLANG_FORMAT_LLVM_INSTALL_DIR must point to an LLVM 10 install!"
+    echo "CLANG_FORMAT_LLVM_INSTALL_DIR must point to an LLVM 11 install!"
     exit 1
 fi
 

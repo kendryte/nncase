@@ -278,7 +278,7 @@ decide_memory_location_pass::decide_memory_location_pass(bool skip_buffer_alias,
 {
 }
 
-void decide_memory_location_pass::run_core(graph &graph, nncase::target &target, const run_pass_options &options)
+void decide_memory_location_pass::run_core(graph &graph, [[maybe_unused]] nncase::target &target, [[maybe_unused]] const run_pass_options &options)
 {
     auto decide_memory_location = [&](output_connector &conn) {
         auto &opcode = conn.owner().runtime_opcode();

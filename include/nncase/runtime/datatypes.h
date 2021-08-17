@@ -466,8 +466,6 @@ inline bool operator!=(const scalar &lhs, const scalar &rhs) noexcept
 }
 }
 
-namespace std
-{
 template <>
 struct std::hash<nncase::module_type_t>
 {
@@ -480,4 +478,3 @@ struct std::hash<nncase::module_type_t>
         return result;
     }
 };
-}
