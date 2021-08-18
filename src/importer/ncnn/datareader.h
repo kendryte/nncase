@@ -17,7 +17,8 @@
 
 #include <stdio.h>
 
-namespace ncnn {
+namespace ncnn
+{
 
 // data read wrapper
 class DataReader
@@ -28,47 +29,47 @@ public:
 
     // parse plain param text
     // return 1 if scan success
-    virtual int scan(const char* format, void* p) const;
+    virtual int scan(const char *format, void *p) const;
 
     // read binary param and model data
     // return bytes read
-    virtual size_t read(void* buf, size_t size) const;
+    virtual size_t read(void *buf, size_t size) const;
 };
 
 class DataReaderFromStdioPrivate;
 class DataReaderFromStdio : public DataReader
 {
 public:
-    explicit DataReaderFromStdio(FILE* fp);
+    explicit DataReaderFromStdio(FILE *fp);
     virtual ~DataReaderFromStdio();
 
-    virtual int scan(const char* format, void* p) const;
-    virtual size_t read(void* buf, size_t size) const;
+    virtual int scan(const char *format, void *p) const;
+    virtual size_t read(void *buf, size_t size) const;
 
 private:
-    DataReaderFromStdio(const DataReaderFromStdio&);
-    DataReaderFromStdio& operator=(const DataReaderFromStdio&);
+    DataReaderFromStdio(const DataReaderFromStdio &);
+    DataReaderFromStdio &operator=(const DataReaderFromStdio &);
 
 private:
-    DataReaderFromStdioPrivate* const d;
+    DataReaderFromStdioPrivate *const d;
 };
 
 class DataReaderFromMemoryPrivate;
 class DataReaderFromMemory : public DataReader
 {
 public:
-    explicit DataReaderFromMemory(const unsigned char*& mem);
+    explicit DataReaderFromMemory(const unsigned char *&mem);
     virtual ~DataReaderFromMemory();
 
-    virtual int scan(const char* format, void* p) const;
-    virtual size_t read(void* buf, size_t size) const;
+    virtual int scan(const char *format, void *p) const;
+    virtual size_t read(void *buf, size_t size) const;
 
 private:
-    DataReaderFromMemory(const DataReaderFromMemory&);
-    DataReaderFromMemory& operator=(const DataReaderFromMemory&);
+    DataReaderFromMemory(const DataReaderFromMemory &);
+    DataReaderFromMemory &operator=(const DataReaderFromMemory &);
 
 private:
-    DataReaderFromMemoryPrivate* const d;
+    DataReaderFromMemoryPrivate *const d;
 };
 
 } // namespace ncnn

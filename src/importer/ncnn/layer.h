@@ -17,7 +17,8 @@
 
 #include <nncase/ir/ir_types.h>
 
-namespace ncnn {
+namespace ncnn
+{
 
 class Layer
 {

@@ -23,7 +23,7 @@ using namespace nncase::importer;
 using namespace nncase::ir;
 using namespace ncnn;
 
-void nncase::importer::ncnn_importer::convert_op_Concat(const Layer &layer, const ParamDict &pd, const ModelBin& /*mb*/)
+void nncase::importer::ncnn_importer::convert_op_Concat(const Layer &layer, const ParamDict &pd, const ModelBin & /*mb*/)
 {
     const int axis = pd.get(0, 0);
 

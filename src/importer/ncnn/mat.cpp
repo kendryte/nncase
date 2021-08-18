@@ -16,9 +16,10 @@
 
 #include <math.h>
 
-namespace ncnn {
+namespace ncnn
+{
 
-Mat Mat::clone(Allocator* _allocator) const
+Mat Mat::clone(Allocator *_allocator) const
 {
     if (empty())
         return Mat();
@@ -39,12 +40,12 @@ Mat Mat::clone(Allocator* _allocator) const
     return m;
 }
 
-void Mat::clone_from(const ncnn::Mat& mat, Allocator* allocator)
+void Mat::clone_from(const ncnn::Mat &mat, Allocator *allocator)
 {
     *this = mat.clone(allocator);
 }
 
-Mat Mat::reshape(int _w, Allocator* _allocator) const
+Mat Mat::reshape(int _w, Allocator *_allocator) const
 {
     if (w * h * c != _w)
         return Mat();
@@ -57,8 +58,8 @@ Mat Mat::reshape(int _w, Allocator* _allocator) const
         // flatten
         for (int i = 0; i < c; i++)
         {
-            const void* ptr = (unsigned char*)data + i * cstep * elemsize;
-            void* mptr = (unsigned char*)m.data + (size_t)i * w * h * elemsize;
+            const void *ptr = (unsigned char *)data + i * cstep * elemsize;
+            void *mptr = (unsigned char *)m.data + (size_t)i * w * h * elemsize;
             memcpy(mptr, ptr, (size_t)w * h * elemsize);
         }
 
@@ -77,7 +78,7 @@ Mat Mat::reshape(int _w, Allocator* _allocator) const
     return m;
 }
 
-Mat Mat::reshape(int _w, int _h, Allocator* _allocator) const
+Mat Mat::reshape(int _w, int _h, Allocator *_allocator) const
 {
     if (w * h * c != _w * _h)
         return Mat();
@@ -90,8 +91,8 @@ Mat Mat::reshape(int _w, int _h, Allocator* _allocator) const
         // flatten
         for (int i = 0; i < c; i++)
         {
-            const void* ptr = (unsigned char*)data + i * cstep * elemsize;
-            void* mptr = (unsigned char*)m.data + (size_t)i * w * h * elemsize;
+            const void *ptr = (unsigned char *)data + i * cstep * elemsize;
+            void *mptr = (unsigned char *)m.data + (size_t)i * w * h * elemsize;
             memcpy(mptr, ptr, (size_t)w * h * elemsize);
         }
 
@@ -110,7 +111,7 @@ Mat Mat::reshape(int _w, int _h, Allocator* _allocator) const
     return m;
 }
 
-Mat Mat::reshape(int _w, int _h, int _c, Allocator* _allocator) const
+Mat Mat::reshape(int _w, int _h, int _c, Allocator *_allocator) const
 {
     if (w * h * c != _w * _h * _c)
         return Mat();
@@ -125,8 +126,8 @@ Mat Mat::reshape(int _w, int _h, int _c, Allocator* _allocator) const
             // align channel
             for (int i = 0; i < _c; i++)
             {
-                const void* ptr = (unsigned char*)data + (size_t)i * _w * _h * elemsize;
-                void* mptr = (unsigned char*)m.data + i * m.cstep * m.elemsize;
+                const void *ptr = (unsigned char *)data + (size_t)i * _w * _h * elemsize;
+                void *mptr = (unsigned char *)m.data + i * m.cstep * m.elemsize;
                 memcpy(mptr, ptr, (size_t)_w * _h * elemsize);
             }
 
@@ -152,7 +153,7 @@ Mat Mat::reshape(int _w, int _h, int _c, Allocator* _allocator) const
     return m;
 }
 
-void Mat::create(int _w, size_t _elemsize, Allocator* _allocator)
+void Mat::create(int _w, size_t _elemsize, Allocator *_allocator)
 {
     if (dims == 1 && w == _w && elemsize == _elemsize && elempack == 1 && allocator == _allocator)
         return;
@@ -177,12 +178,12 @@ void Mat::create(int _w, size_t _elemsize, Allocator* _allocator)
             data = allocator->fastMalloc(totalsize + (int)sizeof(*refcount));
         else
             data = fastMalloc(totalsize + (int)sizeof(*refcount));
-        refcount = (int*)(((unsigned char*)data) + totalsize);
+        refcount = (int *)(((unsigned char *)data) + totalsize);
         *refcount = 1;
     }
 }
 
-void Mat::create(int _w, int _h, size_t _elemsize, Allocator* _allocator)
+void Mat::create(int _w, int _h, size_t _elemsize, Allocator *_allocator)
 {
     if (dims == 2 && w == _w && h == _h && elemsize == _elemsize && elempack == 1 && allocator == _allocator)
         return;
@@ -207,12 +208,12 @@ void Mat::create(int _w, int _h, size_t _elemsize, Allocator* _allocator)
             data = allocator->fastMalloc(totalsize + (int)sizeof(*refcount));
         else
             data = fastMalloc(totalsize + (int)sizeof(*refcount));
-        refcount = (int*)(((unsigned char*)data) + totalsize);
+        refcount = (int *)(((unsigned char *)data) + totalsize);
         *refcount = 1;
     }
 }
 
-void Mat::create(int _w, int _h, int _c, size_t _elemsize, Allocator* _allocator)
+void Mat::create(int _w, int _h, int _c, size_t _elemsize, Allocator *_allocator)
 {
     if (dims == 3 && w == _w && h == _h && c == _c && elemsize == _elemsize && elempack == 1 && allocator == _allocator)
         return;
@@ -237,12 +238,12 @@ void Mat::create(int _w, int _h, int _c, size_t _elemsize, Allocator* _allocator
             data = allocator->fastMalloc(totalsize + (int)sizeof(*refcount));
         else
             data = fastMalloc(totalsize + (int)sizeof(*refcount));
-        refcount = (int*)(((unsigned char*)data) + totalsize);
+        refcount = (int *)(((unsigned char *)data) + totalsize);
         *refcount = 1;
     }
 }
 
-void Mat::create(int _w, size_t _elemsize, int _elempack, Allocator* _allocator)
+void Mat::create(int _w, size_t _elemsize, int _elempack, Allocator *_allocator)
 {
     if (dims == 1 && w == _w && elemsize == _elemsize && elempack == _elempack && allocator == _allocator)
         return;
@@ -267,12 +268,12 @@ void Mat::create(int _w, size_t _elemsize, int _elempack, Allocator* _allocator)
             data = allocator->fastMalloc(totalsize + (int)sizeof(*refcount));
         else
             data = fastMalloc(totalsize + (int)sizeof(*refcount));
-        refcount = (int*)(((unsigned char*)data) + totalsize);
+        refcount = (int *)(((unsigned char *)data) + totalsize);
         *refcount = 1;
     }
 }
 
-void Mat::create(int _w, int _h, size_t _elemsize, int _elempack, Allocator* _allocator)
+void Mat::create(int _w, int _h, size_t _elemsize, int _elempack, Allocator *_allocator)
 {
     if (dims == 2 && w == _w && h == _h && elemsize == _elemsize && elempack == _elempack && allocator == _allocator)
         return;
@@ -297,12 +298,12 @@ void Mat::create(int _w, int _h, size_t _elemsize, int _elempack, Allocator* _al
             data = allocator->fastMalloc(totalsize + (int)sizeof(*refcount));
         else
             data = fastMalloc(totalsize + (int)sizeof(*refcount));
-        refcount = (int*)(((unsigned char*)data) + totalsize);
+        refcount = (int *)(((unsigned char *)data) + totalsize);
         *refcount = 1;
     }
 }
 
-void Mat::create(int _w, int _h, int _c, size_t _elemsize, int _elempack, Allocator* _allocator)
+void Mat::create(int _w, int _h, int _c, size_t _elemsize, int _elempack, Allocator *_allocator)
 {
     if (dims == 3 && w == _w && h == _h && c == _c && elemsize == _elemsize && elempack == _elempack && allocator == _allocator)
         return;
@@ -327,12 +328,12 @@ void Mat::create(int _w, int _h, int _c, size_t _elemsize, int _elempack, Alloca
             data = allocator->fastMalloc(totalsize + (int)sizeof(*refcount));
         else
             data = fastMalloc(totalsize + (int)sizeof(*refcount));
-        refcount = (int*)(((unsigned char*)data) + totalsize);
+        refcount = (int *)(((unsigned char *)data) + totalsize);
         *refcount = 1;
     }
 }
 
-void Mat::create_like(const Mat& m, Allocator* _allocator)
+void Mat::create_like(const Mat &m, Allocator *_allocator)
 {
     int _dims = m.dims;
     if (_dims == 1)
@@ -448,13 +449,13 @@ float float16_to_float32(unsigned short value)
     return tmp.f;
 }
 
-Mat Mat::from_float16(const unsigned short* data, int size)
+Mat Mat::from_float16(const unsigned short *data, int size)
 {
     Mat m(size);
     if (m.empty())
         return m;
 
-    float* ptr = m; //.data;
+    float *ptr = m; //.data;
 
     int remain = size;
     for (; remain > 0; remain--)

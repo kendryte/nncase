@@ -26,7 +26,7 @@ using namespace nncase::importer;
 using namespace nncase::ir;
 using namespace ncnn;
 
-void nncase::importer::ncnn_importer::convert_op_Pooling(const Layer &layer, const ParamDict &pd, const ModelBin& /*mb*/)
+void nncase::importer::ncnn_importer::convert_op_Pooling(const Layer &layer, const ParamDict &pd, const ModelBin & /*mb*/)
 {
     const int pooling_type = pd.get(0, 0);
     const int kernel_w = pd.get(1, 0);
@@ -67,9 +67,9 @@ void nncase::importer::ncnn_importer::convert_op_Pooling(const Layer &layer, con
 
     if (global_pooling)
     {
-        axis_t axis = {2, 3};
+        axis_t axis = { 2, 3 };
         bool keep_dims = false;
-        ir::reduce* reduce_op = graph_.emplace<reduce>(reduce_type, in_shape, axis, init_value, keep_dims);
+        ir::reduce *reduce_op = graph_.emplace<reduce>(reduce_type, in_shape, axis, init_value, keep_dims);
         reduce_op->name(op_name + ".reduce(Pooling)");
 
         input_tensors_.emplace(&reduce_op->input(), layer.bottoms[0]);
@@ -82,7 +82,7 @@ void nncase::importer::ncnn_importer::convert_op_Pooling(const Layer &layer, con
         const int kernel_extent_h = h - out_h + 1;
         const int kernel_extent_w = w - out_w + 1;
 
-        ir::reduce_window2d* reduce_window2d_op = graph_.emplace<reduce_window2d>(reduce_type, in_shape, init_value, kernel_extent_h, kernel_extent_w, padding{0, 0}, padding{0, 0}, 1, 1, 1, 1, fused_activation, ceil_mode, avgpool_count_include_pad);
+        ir::reduce_window2d *reduce_window2d_op = graph_.emplace<reduce_window2d>(reduce_type, in_shape, init_value, kernel_extent_h, kernel_extent_w, padding { 0, 0 }, padding { 0, 0 }, 1, 1, 1, 1, fused_activation, ceil_mode, avgpool_count_include_pad);
         reduce_window2d_op->name(op_name + ".reduce_window2d(Pooling)");
 
         input_tensors_.emplace(&reduce_window2d_op->input(), layer.bottoms[0]);
@@ -107,13 +107,13 @@ void nncase::importer::ncnn_importer::convert_op_Pooling(const Layer &layer, con
             if (htail != 0)
                 htailpad = stride_h - htail;
 
-            padding_h = {pad_top, pad_bottom + htailpad};
-            padding_w = {pad_left, pad_right + wtailpad};
+            padding_h = { pad_top, pad_bottom + htailpad };
+            padding_w = { pad_left, pad_right + wtailpad };
         }
         if (pad_mode == 1) // valid padding
         {
-            padding_h = {pad_top, pad_bottom};
-            padding_w = {pad_left, pad_right};
+            padding_h = { pad_top, pad_bottom };
+            padding_w = { pad_left, pad_right };
         }
         if (pad_mode == 2) // tensorflow padding=SAME or onnx padding=SAME_UPPER
         {
@@ -122,8 +122,8 @@ void nncase::importer::ncnn_importer::convert_op_Pooling(const Layer &layer, con
             const int wpad = kernel_w + (w - 1) / stride_w * stride_w - w;
             const int hpad = kernel_h + (h - 1) / stride_h * stride_h - h;
 
-            padding_h = {hpad / 2, hpad - hpad / 2};
-            padding_w = {wpad / 2, wpad - wpad / 2};
+            padding_h = { hpad / 2, hpad - hpad / 2 };
+            padding_w = { wpad / 2, wpad - wpad / 2 };
         }
         if (pad_mode == 3) // onnx padding=SAME_LOWER
         {
@@ -132,12 +132,12 @@ void nncase::importer::ncnn_importer::convert_op_Pooling(const Layer &layer, con
             const int wpad = kernel_w + (w - 1) / stride_w * stride_w - w;
             const int hpad = kernel_h + (h - 1) / stride_h * stride_h - h;
 
-            padding_h = {hpad - hpad / 2, hpad / 2};
-            padding_w = {wpad - wpad / 2, wpad / 2};
+            padding_h = { hpad - hpad / 2, hpad / 2 };
+            padding_w = { wpad - wpad / 2, wpad / 2 };
         }
     }
 
-    ir::reduce_window2d* reduce_window2d_op = graph_.emplace<reduce_window2d>(reduce_type, in_shape, init_value, kernel_h, kernel_w, padding_h, padding_w, stride_h, stride_w, 1, 1, fused_activation, ceil_mode, avgpool_count_include_pad);
+    ir::reduce_window2d *reduce_window2d_op = graph_.emplace<reduce_window2d>(reduce_type, in_shape, init_value, kernel_h, kernel_w, padding_h, padding_w, stride_h, stride_w, 1, 1, fused_activation, ceil_mode, avgpool_count_include_pad);
     reduce_window2d_op->name(op_name + ".reduce_window2d(Pooling)");
 
     input_tensors_.emplace(&reduce_window2d_op->input(), layer.bottoms[0]);

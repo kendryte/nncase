@@ -17,7 +17,8 @@
 
 #include "mat.h"
 
-namespace ncnn {
+namespace ncnn
+{
 
 class DataReader;
 class ModelBin
@@ -42,17 +43,17 @@ class ModelBinFromDataReaderPrivate;
 class ModelBinFromDataReader : public ModelBin
 {
 public:
-    explicit ModelBinFromDataReader(const DataReader& dr);
+    explicit ModelBinFromDataReader(const DataReader &dr);
     virtual ~ModelBinFromDataReader();
 
     virtual Mat load(int w, int type) const;
 
 private:
-    ModelBinFromDataReader(const ModelBinFromDataReader&);
-    ModelBinFromDataReader& operator=(const ModelBinFromDataReader&);
+    ModelBinFromDataReader(const ModelBinFromDataReader &);
+    ModelBinFromDataReader &operator=(const ModelBinFromDataReader &);
 
 private:
-    ModelBinFromDataReaderPrivate* const d;
+    ModelBinFromDataReaderPrivate *const d;
 };
 
 } // namespace ncnn

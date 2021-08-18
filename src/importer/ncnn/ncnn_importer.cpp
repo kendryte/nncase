@@ -13,12 +13,12 @@
  * limitations under the License.
  */
 #include "ncnn_importer.h"
+#include "datareader.h"
+#include "modelbin.h"
 #include <algorithm>
 #include <nncase/importer/importer.h>
 #include <nncase/importer/util.h>
 #include <nncase/ir/graph.h>
-#include "datareader.h"
-#include "modelbin.h"
 
 using namespace std;
 using namespace nncase;
@@ -35,7 +35,7 @@ ncnn_importer::ncnn_importer(const std::filesystem::path &_paramfilename, const 
 class FileWrapper
 {
 public:
-    FileWrapper(const std::string& path)
+    FileWrapper(const std::string &path)
     {
         fp = fopen(path.c_str(), "rb");
         if (!fp)
@@ -47,10 +47,10 @@ public:
         fclose(fp);
     }
 
-    FILE* fp;
+    FILE *fp;
 };
 
-void ncnn_importer::import(const import_options &/*options*/)
+void ncnn_importer::import(const import_options & /*options*/)
 {
     // load param
     FileWrapper paramfile(paramfilename.string());
@@ -61,9 +61,9 @@ void ncnn_importer::import(const import_options &/*options*/)
 
     ncnn::ModelBinFromDataReader mb(bindr);
 
-#define SCAN_VALUE(fmt, v)                \
-    if (dr.scan(fmt, &v) != 1)            \
-    {                                     \
+#define SCAN_VALUE(fmt, v)                               \
+    if (dr.scan(fmt, &v) != 1)                           \
+    {                                                    \
         throw std::runtime_error("parse " #v " failed"); \
     }
 
@@ -131,7 +131,7 @@ void ncnn_importer::import(const import_options &/*options*/)
         ncnn::Mat shape_hints = pd.get(30, ncnn::Mat());
         if (!shape_hints.empty())
         {
-            const int* psh = shape_hints;
+            const int *psh = shape_hints;
             for (int j = 0; j < top_count; j++)
             {
                 ir::shape_t shape;
@@ -139,15 +139,15 @@ void ncnn_importer::import(const import_options &/*options*/)
                 int dims = psh[0];
                 if (dims == 1)
                 {
-                    shape = shape_t{ 1, (size_t)psh[1] };
+                    shape = shape_t { 1, (size_t)psh[1] };
                 }
                 if (dims == 2)
                 {
-                    shape = shape_t{ 1, (size_t)psh[2], (size_t)psh[1] };
+                    shape = shape_t { 1, (size_t)psh[2], (size_t)psh[1] };
                 }
                 if (dims == 3)
                 {
-                    shape = shape_t{ 1, (size_t)psh[3], (size_t)psh[2], (size_t)psh[1] };
+                    shape = shape_t { 1, (size_t)psh[3], (size_t)psh[2], (size_t)psh[1] };
                 }
 
                 shapes[layer.tops[j]] = shape;
@@ -200,10 +200,10 @@ void ncnn_importer::import(const import_options &/*options*/)
     }
 }
 
-void ncnn_importer::convert_op(const ncnn::Layer &layer, const ncnn::ParamDict &pd, const ncnn::ModelBin& mb)
+void ncnn_importer::convert_op(const ncnn::Layer &layer, const ncnn::ParamDict &pd, const ncnn::ModelBin &mb)
 {
-#define DEFINE_OPCODE(opcode) \
-    if (layer.type == #opcode##sv)  \
+#define DEFINE_OPCODE(opcode)      \
+    if (layer.type == #opcode##sv) \
         return convert_op_##opcode(layer, pd, mb);
 #include "opcode.def"
 #undef DEFINE_OPCODE

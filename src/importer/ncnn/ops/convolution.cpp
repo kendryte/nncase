@@ -27,12 +27,12 @@ using namespace nncase::importer;
 using namespace nncase::ir;
 using namespace ncnn;
 
-void nncase::importer::ncnn_importer::convert_op_Convolution(const Layer &layer, const ParamDict &pd, const ModelBin& mb)
+void nncase::importer::ncnn_importer::convert_op_Convolution(const Layer &layer, const ParamDict &pd, const ModelBin &mb)
 {
     return convert_op_ConvolutionDepthWise(layer, pd, mb);
 }
 
-void nncase::importer::ncnn_importer::convert_op_ConvolutionDepthWise(const Layer &layer, const ParamDict &pd, const ModelBin& mb)
+void nncase::importer::ncnn_importer::convert_op_ConvolutionDepthWise(const Layer &layer, const ParamDict &pd, const ModelBin &mb)
 {
     const int num_output = pd.get(0, 0);
     const int kernel_w = pd.get(1, 0);
@@ -73,8 +73,8 @@ void nncase::importer::ncnn_importer::convert_op_ConvolutionDepthWise(const Laye
             const int wpad = kernel_extent_w + (w - 1) / stride_w * stride_w - w;
             const int hpad = kernel_extent_h + (h - 1) / stride_h * stride_h - h;
 
-            padding_h = {hpad / 2, hpad - hpad / 2};
-            padding_w = {wpad / 2, wpad - wpad / 2};
+            padding_h = { hpad / 2, hpad - hpad / 2 };
+            padding_w = { wpad / 2, wpad - wpad / 2 };
         }
         else if (pad_left == -234) // SAME_LOWER
         {
@@ -83,13 +83,13 @@ void nncase::importer::ncnn_importer::convert_op_ConvolutionDepthWise(const Laye
             const int wpad = kernel_extent_w + (w - 1) / stride_w * stride_w - w;
             const int hpad = kernel_extent_h + (h - 1) / stride_h * stride_h - h;
 
-            padding_h = {hpad - hpad / 2, hpad / 2};
-            padding_w = {wpad - wpad / 2, wpad / 2};
+            padding_h = { hpad - hpad / 2, hpad / 2 };
+            padding_w = { wpad - wpad / 2, wpad / 2 };
         }
         else
         {
-            padding_h = {pad_top, pad_bottom};
-            padding_w = {pad_left, pad_right};
+            padding_h = { pad_top, pad_bottom };
+            padding_w = { pad_left, pad_right };
         }
     }
 
@@ -97,24 +97,24 @@ void nncase::importer::ncnn_importer::convert_op_ConvolutionDepthWise(const Laye
     {
         if (activation_type == 1)
         {
-            fused_activation = {0.f, INFINITY};
+            fused_activation = { 0.f, INFINITY };
         }
         if (activation_type == 3)
         {
-            fused_activation = {activation_params[0], activation_params[1]};
+            fused_activation = { activation_params[0], activation_params[1] };
         }
     }
 
-    ir::conv2d* conv_op = 0;
+    ir::conv2d *conv_op = 0;
     {
         if (pad_value != 0.f)
         {
-            xt::svector<padding> paddings = {{0, 0}, padding_h, padding_w};
+            xt::svector<padding> paddings = { { 0, 0 }, padding_h, padding_w };
 
-            ir::pad* pad_op = graph_.emplace<pad>(dt_float32, in_shape, paddings, pad_constant, pad_value);
+            ir::pad *pad_op = graph_.emplace<pad>(dt_float32, in_shape, paddings, pad_constant, pad_value);
             pad_op->name(op_name + ".pad(Convolution)");
 
-            conv_op = graph_.emplace<conv2d>(pad_op->output().shape(), weight_shape, group, padding{0, 0}, padding{0, 0}, stride_h, stride_w, dilation_h, dilation_w, fused_activation);
+            conv_op = graph_.emplace<conv2d>(pad_op->output().shape(), weight_shape, group, padding { 0, 0 }, padding { 0, 0 }, stride_h, stride_w, dilation_h, dilation_w, fused_activation);
             conv_op->name(op_name + ".conv2d(Convolution)");
 
             conv_op->input().connect(pad_op->output());
@@ -141,10 +141,10 @@ void nncase::importer::ncnn_importer::convert_op_ConvolutionDepthWise(const Laye
             bias_data.fill(0.f);
         }
 
-        auto weight_node = graph_.emplace<constant>(dt_float32, weight_shape, std::span<const float>{ (float*)weight_data.data, (size_t)weight_data.w });
+        auto weight_node = graph_.emplace<constant>(dt_float32, weight_shape, std::span<const float> { (float *)weight_data.data, (size_t)weight_data.w });
         conv_op->weights().connect(weight_node->output());
 
-        auto bias_node = graph_.emplace<constant>(dt_float32, bias_shape, std::span<const float>{ (float*)bias_data.data, (size_t)bias_data.w });
+        auto bias_node = graph_.emplace<constant>(dt_float32, bias_shape, std::span<const float> { (float *)bias_data.data, (size_t)bias_data.w });
         conv_op->bias().connect(bias_node->output());
     }
 

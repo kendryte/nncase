@@ -14,6 +14,9 @@
  */
 #pragma once
 
+#include "layer.h"
+#include "modelbin.h"
+#include "paramdict.h"
 #include <cstdint>
 #include <nncase/importer/importer.h>
 #include <nncase/importer/util.h>
@@ -27,9 +30,6 @@
 #include <unordered_map>
 #include <variant>
 #include <xtensor/xadapt.hpp>
-#include "layer.h"
-#include "modelbin.h"
-#include "paramdict.h"
 
 namespace nncase
 {
@@ -43,9 +43,9 @@ namespace importer
         void import(const import_options &options);
 
     private:
-        void convert_op(const ncnn::Layer &layer, const ncnn::ParamDict &pd, const ncnn::ModelBin& mb);
+        void convert_op(const ncnn::Layer &layer, const ncnn::ParamDict &pd, const ncnn::ModelBin &mb);
 
-#define DEFINE_OPCODE(opcode) void convert_op_##opcode(const ncnn::Layer &layer, const ncnn::ParamDict &pd, const ncnn::ModelBin& mb);
+#define DEFINE_OPCODE(opcode) void convert_op_##opcode(const ncnn::Layer &layer, const ncnn::ParamDict &pd, const ncnn::ModelBin &mb);
 #include "opcode.def"
 #undef DEFINE_OPCODE
 
@@ -60,4 +60,4 @@ namespace importer
 }
 
 #define DEFINE_NCNN_LOWER(opcode) \
-    void nncase::importer::ncnn_importer::convert_op_##opcode(const ncnn::Layer &layer, const ncnn::ParamDict &pd, const ncnn::ModelBin& mb)
+    void nncase::importer::ncnn_importer::convert_op_##opcode(const ncnn::Layer &layer, const ncnn::ParamDict &pd, const ncnn::ModelBin &mb)

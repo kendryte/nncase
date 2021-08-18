@@ -25,7 +25,7 @@ using namespace nncase::importer;
 using namespace nncase::ir;
 using namespace ncnn;
 
-void nncase::importer::ncnn_importer::convert_op_ReLU(const Layer &layer, const ParamDict &pd, const ModelBin& /*mb*/)
+void nncase::importer::ncnn_importer::convert_op_ReLU(const Layer &layer, const ParamDict &pd, const ModelBin & /*mb*/)
 {
     const float slope = pd.get(0, 0.f);
 

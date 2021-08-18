@@ -16,14 +16,19 @@
 
 #include "datareader.h"
 
-#include <string.h>
 #include <stdio.h>
+#include <string.h>
 #include <vector>
 
-#define NCNN_LOGE(...) do { \
-    fprintf(stderr, ##__VA_ARGS__); fprintf(stderr, "\n"); } while(0)
+#define NCNN_LOGE(...)                  \
+    do                                  \
+    {                                   \
+        fprintf(stderr, ##__VA_ARGS__); \
+        fprintf(stderr, "\n");          \
+    } while (0)
 
-namespace ncnn {
+namespace ncnn
+{
 
 ModelBin::ModelBin()
 {
@@ -54,14 +59,14 @@ Mat ModelBin::load(int w, int h, int c, int type) const
 class ModelBinFromDataReaderPrivate
 {
 public:
-    ModelBinFromDataReaderPrivate(const DataReader& _dr)
+    ModelBinFromDataReaderPrivate(const DataReader &_dr)
         : dr(_dr)
     {
     }
-    const DataReader& dr;
+    const DataReader &dr;
 };
 
-ModelBinFromDataReader::ModelBinFromDataReader(const DataReader& _dr)
+ModelBinFromDataReader::ModelBinFromDataReader(const DataReader &_dr)
     : ModelBin(), d(new ModelBinFromDataReaderPrivate(_dr))
 {
 }
@@ -71,12 +76,12 @@ ModelBinFromDataReader::~ModelBinFromDataReader()
     delete d;
 }
 
-ModelBinFromDataReader::ModelBinFromDataReader(const ModelBinFromDataReader&)
+ModelBinFromDataReader::ModelBinFromDataReader(const ModelBinFromDataReader &)
     : d(0)
 {
 }
 
-ModelBinFromDataReader& ModelBinFromDataReader::operator=(const ModelBinFromDataReader&)
+ModelBinFromDataReader &ModelBinFromDataReader::operator=(const ModelBinFromDataReader &)
 {
     return *this;
 }
@@ -173,7 +178,7 @@ Mat ModelBinFromDataReader::load(int w, int type) const
                 return Mat();
             }
 
-            float* ptr = m;
+            float *ptr = m;
             for (int i = 0; i < w; i++)
             {
                 ptr[i] = quantization_value[index_array[i]];

@@ -20,10 +20,15 @@
 #include <ctype.h>
 #include <stdio.h>
 
-#define NCNN_LOGE(...) do { \
-    fprintf(stderr, ##__VA_ARGS__); fprintf(stderr, "\n"); } while(0)
+#define NCNN_LOGE(...)                  \
+    do                                  \
+    {                                   \
+        fprintf(stderr, ##__VA_ARGS__); \
+        fprintf(stderr, "\n");          \
+    } while (0)
 
-namespace ncnn {
+namespace ncnn
+{
 
 class ParamDictPrivate
 {
@@ -58,7 +63,7 @@ ParamDict::~ParamDict()
     delete d;
 }
 
-ParamDict::ParamDict(const ParamDict& rhs)
+ParamDict::ParamDict(const ParamDict &rhs)
     : d(new ParamDictPrivate)
 {
     for (int i = 0; i < NCNN_MAX_PARAM_COUNT; i++)
@@ -76,7 +81,7 @@ ParamDict::ParamDict(const ParamDict& rhs)
     }
 }
 
-ParamDict& ParamDict::operator=(const ParamDict& rhs)
+ParamDict &ParamDict::operator=(const ParamDict &rhs)
 {
     if (this == &rhs)
         return *this;
@@ -114,7 +119,7 @@ float ParamDict::get(int id, float def) const
     return d->params[id].type ? d->params[id].f : def;
 }
 
-Mat ParamDict::get(int id, const Mat& def) const
+Mat ParamDict::get(int id, const Mat &def) const
 {
     return d->params[id].type ? d->params[id].v : def;
 }
@@ -131,7 +136,7 @@ void ParamDict::set(int id, float f)
     d->params[id].f = f;
 }
 
-void ParamDict::set(int id, const Mat& v)
+void ParamDict::set(int id, const Mat &v)
 {
     d->params[id].type = 4;
     d->params[id].v = v;
@@ -165,7 +170,7 @@ static float vstr_to_float(const char vstr[16])
 {
     double v = 0.0;
 
-    const char* p = vstr;
+    const char *p = vstr;
 
     // sign
     bool sign = *p != '-';
@@ -241,7 +246,7 @@ static float vstr_to_float(const char vstr[16])
     return sign ? (float)v : (float)-v;
 }
 
-int ParamDict::load_param(const DataReader& dr)
+int ParamDict::load_param(const DataReader &dr)
 {
     clear();
 
@@ -289,12 +294,12 @@ int ParamDict::load_param(const DataReader& dr)
 
                 if (is_float)
                 {
-                    float* ptr = d->params[id].v;
+                    float *ptr = d->params[id].v;
                     ptr[j] = vstr_to_float(vstr);
                 }
                 else
                 {
-                    int* ptr = d->params[id].v;
+                    int *ptr = d->params[id].v;
                     nscan = sscanf(vstr, "%d", &ptr[j]);
                     if (nscan != 1)
                     {
@@ -339,7 +344,7 @@ int ParamDict::load_param(const DataReader& dr)
     return 0;
 }
 
-int ParamDict::load_param_bin(const DataReader& dr)
+int ParamDict::load_param_bin(const DataReader &dr)
 {
     clear();
 
@@ -391,7 +396,7 @@ int ParamDict::load_param_bin(const DataReader& dr)
 
             d->params[id].v.create(len);
 
-            float* ptr = d->params[id].v;
+            float *ptr = d->params[id].v;
             nread = dr.read(ptr, sizeof(float) * len);
             if (nread != sizeof(float) * len)
             {

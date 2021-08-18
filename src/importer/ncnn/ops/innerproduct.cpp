@@ -28,7 +28,7 @@ using namespace nncase::importer;
 using namespace nncase::ir;
 using namespace ncnn;
 
-void nncase::importer::ncnn_importer::convert_op_InnerProduct(const Layer &layer, const ParamDict &pd, const ModelBin& mb)
+void nncase::importer::ncnn_importer::convert_op_InnerProduct(const Layer &layer, const ParamDict &pd, const ModelBin &mb)
 {
     const int num_output = pd.get(0, 0);
     const int bias_term = pd.get(1, 0);
@@ -47,7 +47,7 @@ void nncase::importer::ncnn_importer::convert_op_InnerProduct(const Layer &layer
     const shape_t weight_shape_transposed = { (size_t)num_input, (size_t)num_output };
     const shape_t bias_shape = { (size_t)num_output };
 
-    ir::bitcast* pre_reshape = graph_.emplace<bitcast>(dt_float32, in_shape, in_shape_2rank);
+    ir::bitcast *pre_reshape = graph_.emplace<bitcast>(dt_float32, in_shape, in_shape_2rank);
     pre_reshape->name(op_name + ".reshape_to_2d(InnerProduct)");
 
     input_tensors_.emplace(&pre_reshape->input(), layer.bottoms[0]);
@@ -56,15 +56,15 @@ void nncase::importer::ncnn_importer::convert_op_InnerProduct(const Layer &layer
     {
         if (activation_type == 1)
         {
-            fused_activation = {0.f, INFINITY};
+            fused_activation = { 0.f, INFINITY };
         }
         if (activation_type == 3)
         {
-            fused_activation = {activation_params[0], activation_params[1]};
+            fused_activation = { activation_params[0], activation_params[1] };
         }
     }
 
-    ir::matmul* fc_op = 0;
+    ir::matmul *fc_op = 0;
     {
         fc_op = graph_.emplace<matmul>(in_shape_2rank, weight_shape_transposed, fused_activation);
         fc_op->name(op_name + ".matmul(InnerProduct)");
@@ -86,8 +86,8 @@ void nncase::importer::ncnn_importer::convert_op_InnerProduct(const Layer &layer
         // transpose weight
         ncnn::Mat weight_data_transposed(weight_data.w);
         {
-            float* p0 = weight_data;
-            float* p = weight_data_transposed;
+            float *p0 = weight_data;
+            float *p = weight_data_transposed;
             for (int i = 0; i < num_input; i++)
             {
                 for (int j = 0; j < num_output; j++)
@@ -97,14 +97,14 @@ void nncase::importer::ncnn_importer::convert_op_InnerProduct(const Layer &layer
             }
         }
 
-        auto weight_node = graph_.emplace<constant>(dt_float32, weight_shape_transposed, std::span<const float>{ (float*)weight_data_transposed.data, (size_t)weight_data_transposed.w });
+        auto weight_node = graph_.emplace<constant>(dt_float32, weight_shape_transposed, std::span<const float> { (float *)weight_data_transposed.data, (size_t)weight_data_transposed.w });
         fc_op->input_b().connect(weight_node->output());
 
-        auto bias_node = graph_.emplace<constant>(dt_float32, bias_shape, std::span<const float>{ (float*)bias_data.data, (size_t)bias_data.w });
+        auto bias_node = graph_.emplace<constant>(dt_float32, bias_shape, std::span<const float> { (float *)bias_data.data, (size_t)bias_data.w });
         fc_op->bias().connect(bias_node->output());
     }
 
-    ir::bitcast* post_reshape = graph_.emplace<bitcast>(dt_float32, fc_op->output().shape(), out_shape);
+    ir::bitcast *post_reshape = graph_.emplace<bitcast>(dt_float32, fc_op->output().shape(), out_shape);
     post_reshape->name(op_name + ".reshape_to_1d(InnerProduct)");
 
     post_reshape->input().connect(fc_op->output());

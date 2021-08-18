@@ -20,7 +20,8 @@
 // at most 32 parameters
 #define NCNN_MAX_PARAM_COUNT 32
 
-namespace ncnn {
+namespace ncnn
+{
 
 class DataReader;
 class Net;
@@ -34,10 +35,10 @@ public:
     virtual ~ParamDict();
 
     // copy
-    ParamDict(const ParamDict&);
+    ParamDict(const ParamDict &);
 
     // assign
-    ParamDict& operator=(const ParamDict&);
+    ParamDict &operator=(const ParamDict &);
 
     // get type
     int type(int id) const;
@@ -47,22 +48,22 @@ public:
     // get float
     float get(int id, float def) const;
     // get array
-    Mat get(int id, const Mat& def) const;
+    Mat get(int id, const Mat &def) const;
 
     // set int
     void set(int id, int i);
     // set float
     void set(int id, float f);
     // set array
-    void set(int id, const Mat& v);
+    void set(int id, const Mat &v);
 
     void clear();
 
-    int load_param(const DataReader& dr);
-    int load_param_bin(const DataReader& dr);
+    int load_param(const DataReader &dr);
+    int load_param_bin(const DataReader &dr);
 
 private:
-    ParamDictPrivate* const d;
+    ParamDictPrivate *const d;
 };
 
 } // namespace ncnn

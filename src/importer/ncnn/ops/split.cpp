@@ -23,7 +23,7 @@ using namespace nncase::importer;
 using namespace nncase::ir;
 using namespace ncnn;
 
-void nncase::importer::ncnn_importer::convert_op_Split(const Layer &layer, const ParamDict &/*pd*/, const ModelBin& /*mb*/)
+void nncase::importer::ncnn_importer::convert_op_Split(const Layer &layer, const ParamDict & /*pd*/, const ModelBin & /*mb*/)
 {
     auto &input = *output_tensors_.at(layer.bottoms[0]);
 

@@ -26,7 +26,7 @@ using namespace nncase::importer;
 using namespace nncase::ir;
 using namespace ncnn;
 
-void nncase::importer::ncnn_importer::convert_op_Softmax(const Layer &layer, const ParamDict &pd, const ModelBin& /*mb*/)
+void nncase::importer::ncnn_importer::convert_op_Softmax(const Layer &layer, const ParamDict &pd, const ModelBin & /*mb*/)
 {
     const int axis = pd.get(0, 0);
 
@@ -34,7 +34,7 @@ void nncase::importer::ncnn_importer::convert_op_Softmax(const Layer &layer, con
 
     auto in_shape = layer.bottom_shapes[0];
 
-    axis_t reduce_axis = {axis + 1};
+    axis_t reduce_axis = { axis + 1 };
 
     auto max = graph_.emplace<reduce>(reduce_max, in_shape, reduce_axis, std::numeric_limits<float>::lowest(), true);
     max->name(op_name + ".max(Softmax)");
