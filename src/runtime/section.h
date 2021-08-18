@@ -13,12 +13,13 @@
  * limitations under the License.
  */
 #pragma once
-#include "../runtime_module.h"
-#include <nncase/kernels/kernel_context.h>
-NNCASE_MODULES_K210_API
+#include <nncase/runtime/model.h>
+#include <nncase/runtime/result.h>
+#include <nncase/runtime/span_reader.h>
 
-struct NNCASE_API k210_kernel_context : public kernels::kernel_context
-{
-};
+BEGIN_NS_NNCASE_RUNTIME
 
-END_NS_NNCASE_KERNELS_K210
+gsl::span<const gsl::byte> find_section(const char *name, gsl::span<const gsl::byte> sections) noexcept;
+gsl::span<const gsl::byte> read_sections(span_reader &sr, size_t sections) noexcept;
+
+END_NS_NNCASE_RUNTIME

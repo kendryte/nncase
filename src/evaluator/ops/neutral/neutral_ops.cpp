@@ -70,7 +70,7 @@ using namespace nncase::runtime;
 
 namespace
 {
-void nop_evaluator(ir::node &, module_evaluate_context &)
+void nop_evaluator(ir::node &, function_evaluate_context &)
 {
 }
 }
@@ -84,7 +84,7 @@ void register_neutral_evaluators()
     register_evaluator(op_ignore_node, nop_evaluator);
     register_evaluator(op_constant, nop_evaluator);
 
-    register_evaluator(op_batch_to_space, [](ir::node &node, module_evaluate_context &context) {
+    register_evaluator(op_batch_to_space, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<batch_to_space &>(node);
 
         auto input = context.memory_at(rnode.input());
@@ -97,7 +97,7 @@ void register_neutral_evaluators()
             .unwrap_or_throw();
     });
 
-    register_evaluator(op_binary, [](ir::node &node, module_evaluate_context &context) {
+    register_evaluator(op_binary, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<binary &>(node);
 
         assert(rnode.input_a().type() == dt_float32);
@@ -112,7 +112,7 @@ void register_neutral_evaluators()
             .unwrap_or_throw();
     });
 
-    register_evaluator(op_broadcast, [](ir::node &node, module_evaluate_context &context) {
+    register_evaluator(op_broadcast, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<broadcast &>(node);
 
         auto input = context.memory_at(rnode.input());
@@ -122,7 +122,7 @@ void register_neutral_evaluators()
             .unwrap_or_throw();
     });
 
-    register_evaluator(op_concat, [](ir::node &node, module_evaluate_context &context) {
+    register_evaluator(op_concat, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<concat &>(node);
 
         std::vector<const gsl::byte *> inputs_mem;
@@ -141,7 +141,7 @@ void register_neutral_evaluators()
             .unwrap_or_throw();
     });
 
-    register_evaluator(op_conv2d, [](ir::node &node, module_evaluate_context &context) {
+    register_evaluator(op_conv2d, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<conv2d &>(node);
 
         assert(rnode.input().type() == dt_float32);
@@ -161,7 +161,7 @@ void register_neutral_evaluators()
             .unwrap_or_throw();
     });
 
-    register_evaluator(op_conv2d_transpose, [](ir::node &node, module_evaluate_context &context) {
+    register_evaluator(op_conv2d_transpose, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<conv2d_transpose &>(node);
 
         assert(rnode.input().type() == dt_float32);
@@ -175,7 +175,7 @@ void register_neutral_evaluators()
             rnode.dilation_h(), rnode.dilation_w(), rnode.padding_h(), rnode.padding_w(), rnode.fused_activation());
     });
 
-    register_evaluator(op_dequantize, [](ir::node &node, module_evaluate_context &context) {
+    register_evaluator(op_dequantize, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<dequantize &>(node);
 
         auto output = context.memory_at(rnode.output()).buffer().as_span<float>();
@@ -199,7 +199,7 @@ void register_neutral_evaluators()
         }
     });
 
-    register_evaluator(op_fused_unary, [](ir::node &node, module_evaluate_context &context) {
+    register_evaluator(op_fused_unary, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<fused_unary &>(node);
 
         auto input = context.memory_at(rnode.input()).buffer().as_span<float>();
@@ -217,7 +217,7 @@ void register_neutral_evaluators()
             .unwrap_or_throw();
     });
 
-    register_evaluator(op_matmul, [](ir::node &node, module_evaluate_context &context) {
+    register_evaluator(op_matmul, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<matmul &>(node);
 
         assert(rnode.input_a().type() == dt_float32);
@@ -233,7 +233,7 @@ void register_neutral_evaluators()
         neutral::matmul(input_a.data(), input_b.data(), output.data(), bias.data(), (int32_t)a_shape[0], (int32_t)a_shape[1], (int32_t)b_shape[1], rnode.fused_activation());
     });
 
-    register_evaluator(op_pad, [](ir::node &node, module_evaluate_context &context) {
+    register_evaluator(op_pad, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<pad &>(node);
 
         auto input = context.memory_at(rnode.input());
@@ -246,7 +246,7 @@ void register_neutral_evaluators()
             .unwrap_or_throw();
     });
 
-    register_evaluator(op_quantize, [](ir::node &node, module_evaluate_context &context) {
+    register_evaluator(op_quantize, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<quantize &>(node);
 
         auto input = context.memory_at(rnode.input()).buffer().as_span<float>();
@@ -255,7 +255,7 @@ void register_neutral_evaluators()
         neutral::quantize(input.data(), output.data(), xt::compute_size(rnode.input().shape()), rnode.quant_param());
     });
 
-    register_evaluator(op_reduce, [](ir::node &node, module_evaluate_context &context) {
+    register_evaluator(op_reduce, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<reduce &>(node);
 
         assert(rnode.input().type() == dt_float32);
@@ -269,7 +269,7 @@ void register_neutral_evaluators()
             .unwrap_or_throw();
     });
 
-    register_evaluator(op_reduce_window2d, [](ir::node &node, module_evaluate_context &context) {
+    register_evaluator(op_reduce_window2d, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<reduce_window2d &>(node);
 
         assert(rnode.input().type() == dt_float32);
@@ -284,7 +284,7 @@ void register_neutral_evaluators()
             .unwrap_or_throw();
     });
 
-    register_evaluator(op_bitcast, [](ir::node &node, module_evaluate_context &context) {
+    register_evaluator(op_bitcast, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<bitcast &>(node);
 
         auto input = context.memory_at(rnode.input()).buffer();
@@ -293,7 +293,7 @@ void register_neutral_evaluators()
         std::copy(input.begin(), input.end(), output.begin());
     });
 
-    register_evaluator(op_resize_image, [](ir::node &node, module_evaluate_context &context) {
+    register_evaluator(op_resize_image, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<resize_image &>(node);
 
         auto input = context.memory_at(rnode.input());
@@ -317,7 +317,7 @@ void register_neutral_evaluators()
         }
     });
 
-    register_evaluator(op_slice, [](ir::node &node, module_evaluate_context &context) {
+    register_evaluator(op_slice, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<slice &>(node);
 
         auto input = context.memory_at(rnode.input());
@@ -330,7 +330,7 @@ void register_neutral_evaluators()
             .unwrap_or_throw();
     });
 
-    register_evaluator(op_transpose, [](ir::node &node, module_evaluate_context &context) {
+    register_evaluator(op_transpose, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<transpose &>(node);
 
         auto input = context.memory_at(rnode.input());
@@ -343,7 +343,7 @@ void register_neutral_evaluators()
             .unwrap_or_throw();
     });
 
-    register_evaluator(op_unary, [](ir::node &node, module_evaluate_context &context) {
+    register_evaluator(op_unary, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<unary &>(node);
 
         assert(rnode.input().type() == dt_float32);
@@ -416,7 +416,7 @@ void register_neutral_evaluators()
         }
     });
 
-    register_evaluator(op_table_lookup1d, [](ir::node &node, module_evaluate_context &context) {
+    register_evaluator(op_table_lookup1d, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<table_lookup1d &>(node);
 
         assert(rnode.input().type() == dt_uint8);
@@ -427,7 +427,7 @@ void register_neutral_evaluators()
         kernels::neutral::table_lookup1d(input.data(), output.data(), input.size(), table.data());
     });
 
-    register_evaluator(op_clamp, [](ir::node &node, module_evaluate_context &context) {
+    register_evaluator(op_clamp, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<clamp &>(node);
 
         assert(rnode.input().type() == dt_float32);
@@ -446,7 +446,7 @@ void register_neutral_evaluators()
         }
     });
 
-    register_evaluator(op_convert, [](ir::node &node, module_evaluate_context &context) {
+    register_evaluator(op_convert, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<convert &>(node);
 
         auto input = context.memory_at(rnode.input());
@@ -459,7 +459,7 @@ void register_neutral_evaluators()
             .unwrap_or_throw();
     });
 
-    register_evaluator(op_gather, [](ir::node &node, module_evaluate_context &context) {
+    register_evaluator(op_gather, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<gather &>(node);
 
         auto input = context.memory_at(rnode.input());
@@ -473,7 +473,7 @@ void register_neutral_evaluators()
             .unwrap_or_throw();
     });
 
-    register_evaluator(op_gather_nd, [](ir::node &node, module_evaluate_context &context) {
+    register_evaluator(op_gather_nd, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<gather_nd &>(node);
 
         auto input = context.memory_at(rnode.input());
@@ -487,7 +487,7 @@ void register_neutral_evaluators()
             .unwrap_or_throw();
     });
 
-    register_evaluator(op_onehot, [](ir::node &node, module_evaluate_context &context) {
+    register_evaluator(op_onehot, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<onehot &>(node);
 
         auto indices = context.memory_at(rnode.indices());

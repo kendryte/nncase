@@ -23,17 +23,20 @@ inline constexpr size_t get_bytes(datatype_t type)
     return nncase::detail::datatype_bytes(type);
 }
 
-inline size_t compute_size(const runtime_shape_t &shape)
+template <class TShape>
+inline size_t compute_size(const TShape &shape)
 {
     return std::accumulate(shape.begin(), shape.end(), 1, std::multiplies<size_t>());
 }
 
-inline size_t get_bytes(datatype_t type, const runtime_shape_t &shape)
+template <class TShape>
+inline size_t get_bytes(datatype_t type, const TShape &shape)
 {
     return compute_size(shape) * get_bytes(type);
 }
 
-inline size_t compute_size(const runtime_shape_t &shape, const runtime_shape_t &strides)
+template <class TShape>
+inline size_t compute_size(const TShape &shape, const TShape &strides)
 {
     size_t max_stride = 0, max_shape = 0;
     for (size_t i = 0; i < shape.size(); i++)
@@ -48,7 +51,8 @@ inline size_t compute_size(const runtime_shape_t &shape, const runtime_shape_t &
     return size ? size : 1;
 }
 
-inline size_t get_bytes(datatype_t type, const runtime_shape_t &shape, const runtime_shape_t &strides)
+template <class TShape>
+inline size_t get_bytes(datatype_t type, const TShape &shape, const TShape &strides)
 {
     return compute_size(shape, strides) * get_bytes(type);
 }

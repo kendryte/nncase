@@ -124,7 +124,7 @@ public:
     void begin_collect_distribution();
     void end_collect_distribution(std::function<void(size_t cnt, size_t total)> progress);
     size_t histograms_count() const noexcept { return histograms_.size(); }
-    void reset_record() { has_record_.clear(); }
+    void end_sample() { has_record_.clear(); }
 
 private:
     calibrate_method cali_method_;

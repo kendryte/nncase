@@ -21,7 +21,7 @@ using namespace nncase::ir;
 
 void stackvm_module_builder::emit(call &node, stackvm_op_builder &builder)
 {
-    auto target_id = module_id(&node.target());
+    auto target_id = function_id(&node.target());
 
     uint8_t rshape = 0;
     for (auto in : node.inputs())
@@ -46,5 +46,5 @@ void stackvm_module_builder::emit(call &node, stackvm_op_builder &builder)
         builder.ldc_i4_(rshape++);
     }
 
-    builder.tensor_call_(target_id, (uint8_t)node.inputs().size(), (uint8_t)node.outputs().size());
+    builder.tensor_call_(target_id.function_id, target_id.module_id, (uint8_t)node.inputs().size(), (uint8_t)node.outputs().size());
 }

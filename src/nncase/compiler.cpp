@@ -356,7 +356,7 @@ private:
     {
         auto graph_runner = [&](ir::graph &graph) {
             ir::transforms::pass_manager pmgr(graph, *target_);
-            auto quant = evaluator.module_context(graph).quantizer();
+            auto quant = evaluator.quantizer(graph.module_type());
 
             if (!compile_options_.use_dataset_as_input_stat)
             {
@@ -486,6 +486,7 @@ private:
                 std::memcpy(input_buffer.data(), tensor.data(), input_buffer.size_bytes());
 
                 evaluator.evaluate();
+                evaluator.end_sample();
                 if (options.progress)
                     options.progress(i++, dataset.total_size());
             }
@@ -519,6 +520,7 @@ private:
                 std::memcpy(input_buffer.data(), options.tensor_data.data() + i * input_buffer.size_bytes(), input_buffer.size_bytes());
 
                 evaluator.evaluate();
+                evaluator.end_sample();
                 if (options.progress)
                     options.progress(i++, options.samples_count);
             }

@@ -75,6 +75,9 @@ public:
     memory_location_t memory_location() const noexcept { return memory_location_; }
     memory_location_t &memory_location() noexcept { return memory_location_; }
 
+    module_type_t shared_module() const noexcept { return shared_module_; }
+    void shared_module(const module_type_t &type) noexcept { shared_module_ = type; }
+
     bool no_action_concat_with_strides() const noexcept { return no_action_concat_with_strides_; }
     bool &no_action_concat_with_strides() noexcept { return no_action_concat_with_strides_; }
 
@@ -82,6 +85,7 @@ private:
     size_t id_;
     ir::output_connector &owner_;
     memory_location_t memory_location_;
+    module_type_t shared_module_;
     std::optional<sub_buffer_desc> parent_;
     ir::shape_t strides_shape_;
     buffer_lifetime lifetime_ {};
