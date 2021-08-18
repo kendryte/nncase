@@ -115,7 +115,7 @@ struct value_range
 
     static constexpr value_range<T> full() noexcept
     {
-        if (std::is_floating_point<T>::value || std::is_same<T, bfloat16>::value)
+        if (std::is_floating_point<T>::value || std::is_same<T, bfloat16>::value || std::is_same<T, half>::value)
             return { -std::numeric_limits<T>::infinity(), std::numeric_limits<T>::infinity() };
         else
             return { std::numeric_limits<T>::lowest(), std::numeric_limits<T>::max() };
