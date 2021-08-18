@@ -132,6 +132,10 @@ result<void> vulkan_runtime_function::invoke_core() noexcept
     try_(vk::to_result(module().compute_queue().submit(si)));
     try_(vk::to_result(module().compute_queue().waitIdle()));
 
+    assert(buffer_refs_.empty());
+    assert(buffer_copies_.empty());
+    assert(buffer_barriers_.empty());
+
     try_(postprocess_outputs());
     return ok();
 }
