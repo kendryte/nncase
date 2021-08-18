@@ -222,11 +222,11 @@ void quantizer::end_collect_distribution(std::function<void(size_t cnt, size_t t
 quant_param_t quantizer::get_quant_param(value_range<float> range, int32_t bits)
 {
     range = fixup_range(range);
-    auto Q_max = bits == 7 ? 127 : 255;
-    auto Q_min = bits == 7 ? -128 : 0;
+    auto Q_max = pow(2, bits) - 1;
+    auto Q_min = bits % 2 == 0 ? 0 : -pow(2, bits);
     auto scale = (range.max - range.min) / (Q_max - Q_min);
     auto bias = std::round((range.max * Q_min - range.min * Q_max) / (range.max - range.min));
-    return { static_cast<int32_t>(bias), scale };
+    return { static_cast<int32_t>(bias), (float)scale };
 }
 
 value_range<float> quantizer::get(ir::output_connector &connector) const
