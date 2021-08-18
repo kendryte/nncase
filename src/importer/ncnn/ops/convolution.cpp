@@ -45,7 +45,7 @@ void nncase::importer::ncnn_importer::convert_op_ConvolutionDepthWise(const Laye
     const int pad_right = pd.get(15, pad_left);
     const int pad_top = pd.get(14, pad_left);
     const int pad_bottom = pd.get(16, pad_top);
-    const int pad_value = pd.get(18, 0.f);
+    const float pad_value = pd.get(18, 0.f);
     const int bias_term = pd.get(5, 0);
     const int weight_data_size = pd.get(6, 0);
     const int group = pd.get(7, 1);
