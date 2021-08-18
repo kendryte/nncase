@@ -53,7 +53,7 @@ memory_location_t decide_memory_location(ir::output_connector &conn, bool skip_b
     //    return mem_shared_data;
 
     return conn.memory_location();
-};
+}
 }
 
 function_schedule_context::function_schedule_context(ir::graph &graph, module_schedule_context &mod_sched)
