@@ -18,6 +18,7 @@
 #include <nncase/ir/ops/batch_to_space.h>
 #include <nncase/ir/ops/binary.h>
 #include <nncase/ir/ops/bitcast.h>
+#include <nncase/ir/ops/broadcast.h>
 #include <nncase/ir/ops/clamp.h>
 #include <nncase/ir/ops/concat.h>
 #include <nncase/ir/ops/conv2d.h>
@@ -108,6 +109,16 @@ void register_neutral_evaluators()
         kernels::binary(rnode.binary_op(), input_a.buffer().as_span<float>().data(), input_b.buffer().as_span<float>().data(),
             output.buffer().as_span<float>().data(), input_a.shape(), input_a.strides(), input_b.shape(), input_b.strides(), output.strides(),
             rnode.fused_activation())
+            .unwrap_or_throw();
+    });
+
+    register_evaluator(op_broadcast, [](ir::node &node, function_evaluate_context &context) {
+        auto &rnode = static_cast<broadcast &>(node);
+
+        auto input = context.memory_at(rnode.input());
+        auto output = context.memory_at(rnode.output());
+        kernels::broadcast(input.datatype(), input.buffer().data(), output.buffer().data(),
+            input.shape(), input.strides(), output.shape(), output.strides())
             .unwrap_or_throw();
     });
 
