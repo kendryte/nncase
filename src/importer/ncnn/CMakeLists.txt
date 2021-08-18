@@ -1,8 +1,6 @@
 include(TestBigEndian)
 test_big_endian(BIG_ENDIAN)
 
-set(CMAKE_BUILD_TYPE debug)
-
 set(NCNN_IMPORTER_SOURCES
     ncnn_importer.cpp
     datareader.cpp
