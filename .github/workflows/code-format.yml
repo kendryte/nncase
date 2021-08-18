@@ -1,0 +1,21 @@
+name: code-format
+
+on: [push, pull_request, pull_request_target]
+
+jobs:
+  code-format:
+    runs-on: ubuntu-20.04
+    steps:
+    - uses: actions/checkout@v2
+
+    - name: apt
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y clang-format-11
+        sudo update-alternatives --install /usr/bin/clang-format clang-format /usr/bin/clang-format-11 110
+    - name: code-format
+      run: |
+        sh tools/clang-format.sh
+    - uses: stefanzweifel/git-auto-commit-action@v4
+      with:
+        commit_message: apply code-format changes
