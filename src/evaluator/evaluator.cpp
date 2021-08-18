@@ -43,12 +43,17 @@ quantizer *evaluator::quantizer(const module_type_t &module_type)
 
 void evaluator::begin_collect_distribution()
 {
-    return model_eval_.end_sample();
+    model_eval_.end_sample();
+}
+
+void evaluator::end_sample()
+{
+    model_eval_.end_sample();
 }
 
 void evaluator::end_collect_distribution(const std::function<void(size_t cnt, size_t total)> &progress)
 {
-    return model_eval_.end_collect_distribution(progress);
+    model_eval_.end_collect_distribution(progress);
 }
 
 evaluate_tensor evaluator::memory_at(const output_connector &conn)

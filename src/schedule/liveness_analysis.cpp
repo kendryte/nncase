@@ -23,12 +23,12 @@ lifetime_recorder::lifetime_recorder(std::list<logical_buffer> &buffers, std::un
 {
 }
 
-void lifetime_recorder::allocate(ir::output_connector &conn)
+void lifetime_recorder::allocate(ir::output_connector &conn, memory_location_t location)
 {
     auto it = buffer_map_.find(&conn);
     if (it == buffer_map_.end())
     {
-        logical_buffer buffer(next_buffer_id_++, conn, conn.memory_location());
+        logical_buffer buffer(next_buffer_id_++, conn, location);
         buffer.lifetime().birth = cnt_age_;
         buffer.lifetime().used_count = conn.connections().size();
         buffer.strides_shape() = buffer.shape();

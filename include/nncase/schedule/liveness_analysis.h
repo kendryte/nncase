@@ -25,7 +25,7 @@ public:
     size_t current_age() const noexcept { return cnt_age_; }
     void current_age(size_t age);
 
-    void allocate(ir::output_connector &conn);
+    void allocate(ir::output_connector &conn, memory_location_t location);
     void release(ir::output_connector &conn);
     void grow_age();
 

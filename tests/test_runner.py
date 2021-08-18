@@ -393,7 +393,7 @@ class TestRunner(metaclass=ABCMeta):
                                            judeg_cfg.simarity_name,
                                            judeg_cfg.threshold,
                                            judeg_cfg.log_hist)
-            name_list = test_file[1].split('/')
+            name_list = test_file[1].split(os.path.sep)
             kw_names = ' '.join(name_list[-len(kwargs) - 2:-1])
             i = self.num_pattern.findall(name_list[-1])
             result_info = "\n{0} [ {1} ] Output: {2}!!\n".format(

@@ -29,6 +29,33 @@ using namespace nncase::ir;
 using namespace nncase::schedule;
 using namespace nncase::ir::transforms;
 
+namespace
+{
+memory_location_t decide_memory_location(ir::output_connector &conn, bool skip_buffer_alias) noexcept
+{
+    auto &opcode = conn.owner().runtime_opcode();
+    if (opcode == op_input_node)
+        return mem_input;
+    else if (opcode == op_constant)
+        return conn.memory_location();
+
+    auto inputs = conn.connections();
+    if (skip_buffer_alias)
+    {
+        if (std::any_of(inputs.begin(), inputs.end(), [](input_connector *conn) { return conn->owner().runtime_opcode() == op_output_node; }))
+            return mem_output;
+    }
+
+    //if (opcode == op_call && conn.memory_location() == mem_data)
+    //    return mem_shared_data;
+    //if (conn.memory_location() == mem_data
+    //    && std::any_of(inputs.begin(), inputs.end(), [](input_connector *conn) { return conn->owner().runtime_opcode() == op_call; }))
+    //    return mem_shared_data;
+
+    return conn.memory_location();
+};
+}
+
 function_schedule_context::function_schedule_context(ir::graph &graph, module_schedule_context &mod_sched)
     : mod_sched_(mod_sched)
 {
@@ -111,10 +138,6 @@ void function_schedule_context::generate_compute_sequence()
 void function_schedule_context::make_logical_buffers(caller_context &caller_ctx)
 {
     auto skip_buffer_alias = mod_sched_.model_sched().skip_buffer_alias();
-    pass_manager pmgr(*graph, mod_sched_.model_sched().target());
-    pmgr.add_pass<decide_memory_location_pass>(skip_buffer_alias);
-    pmgr.run();
-
     lifetime_recorder lr(logical_buffers_, logical_buffer_map_);
 
     // 1. Adjust base age to caller's age
@@ -123,7 +146,7 @@ void function_schedule_context::make_logical_buffers(caller_context &caller_ctx)
     // 2. Estimate buffer lifetime
     auto alloc_visitor = make_relay_ir_visitor([&](node &node) {
         for (auto out : node.outputs())
-            lr.allocate(*out);
+            lr.allocate(*out, decide_memory_location(*out, skip_buffer_alias));
 
         lr.grow_age();
 
@@ -149,6 +172,7 @@ void function_schedule_context::make_logical_buffers(caller_context &caller_ctx)
 void function_schedule_context::analyze_buffer_alias()
 {
     pass_manager pmgr(*graph, mod_sched_.model_sched().target());
+    pmgr.schedule_context(this);
     pmgr.add_pass<alias_bitcast_buffer_pass>();
     pmgr.add_pass<alias_concat_buffer_pass>();
     pmgr.run();
