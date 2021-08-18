@@ -94,6 +94,11 @@ result<void> kernels::dequantize(datatype_t in_type, datatype_t out_type, const 
     const runtime_shape_t &in_shape, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, float scale, float bias,
     kernel_context &context) noexcept
 {
+
+    if (is_contiguous(in_shape, in_strides) && is_contiguous(in_shape, out_strides))
+    {
+        return cpu::optimized::dequantize(in_type, out_type, input, output, in_shape, in_strides, out_strides, scale, bias, context);
+    }
     return cpu::reference::dequantize(in_type, out_type, input, output, in_shape, in_strides, out_strides, scale, bias, context);
 }
 
@@ -127,6 +132,10 @@ result<void> kernels::quantize(datatype_t in_type, datatype_t out_type, const gs
     const runtime_shape_t &in_shape, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, float scale, float bias,
     kernel_context &context) noexcept
 {
+    if (is_contiguous(in_shape, in_strides) && is_contiguous(in_shape, out_strides))
+    {
+        return cpu::optimized::quantize(in_type, out_type, input, output, in_shape, in_strides, out_strides, scale, bias, context);
+    }
     return cpu::reference::quantize(in_type, out_type, input, output, in_shape, in_strides, out_strides, scale, bias, context);
 }
 

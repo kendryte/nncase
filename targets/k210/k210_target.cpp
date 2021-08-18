@@ -89,6 +89,9 @@ void k210_target::register_evaluator_ops()
 
 void k210_target::register_target_dependent_passes([[maybe_unused]] const module_type_t &type, [[maybe_unused]] ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] bool use_ptq)
 {
+    transform_pass p("strided_slice_lowering");
+    p.emplace<strided_slice_conv2d_pool>();
+    pass_mgr.add_pass(std::move(p));
 }
 
 void k210_target::register_quantize_annotation_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr)
