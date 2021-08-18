@@ -30,7 +30,7 @@ result<void> k210_runtime_function::visit(const kpu_upload_options &op) noexcept
 #ifdef NNCASE_SIMULATOR
         0
 #else
-        dma_ch_
+        module().dma_ch()
 #endif
     );
 }

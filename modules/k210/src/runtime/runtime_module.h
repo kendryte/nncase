@@ -25,6 +25,13 @@ public:
     gsl::span<const gsl::byte> rdata() const noexcept;
     gsl::span<gsl::byte> kpu_ram() noexcept;
 
+#if !NNCASE_SIMULATOR
+    uint32_t dma_ch() const noexcept
+    {
+        return dma_ch_;
+    }
+#endif
+
 protected:
     result<void> initialize_before_functions(runtime_module_init_context &context) noexcept override;
     result<std::unique_ptr<runtime_function>> create_function() noexcept override;

@@ -149,12 +149,12 @@ result<runtime_function *> runtime_module::find_function_by_id(size_t index) noe
     return ok(functions_[index].get());
 }
 
-result<void> runtime_module::initialize_before_functions([[maybe_unused]] runtime_module_init_context &context) noexcept
+result<void> runtime_module::initialize_before_functions(NNCASE_UNUSED runtime_module_init_context &context) noexcept
 {
     return ok();
 }
 
-result<void> runtime_module::initialize_after_functions([[maybe_unused]] runtime_module_init_context &context) noexcept
+result<void> runtime_module::initialize_after_functions(NNCASE_UNUSED runtime_module_init_context &context) noexcept
 {
     return ok();
 }
