@@ -16,7 +16,7 @@ jobs:
     - name: code-format
       run: |
         export CLANG_FORMAT_LLVM_INSTALL_DIR=/usr
-        sh tools/clang-format.sh
+        bash tools/clang-format.sh
     - uses: stefanzweifel/git-auto-commit-action@v4
       with:
         commit_message: apply code-format changes
