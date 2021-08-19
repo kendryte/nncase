@@ -175,6 +175,7 @@ void function_schedule_context::analyze_buffer_alias()
     pmgr.schedule_context(this);
     pmgr.add_pass<alias_bitcast_buffer_pass>();
     pmgr.add_pass<alias_concat_buffer_pass>();
+    pmgr.add_pass<alias_slice_buffer_pass>();
     pmgr.run();
 }
 
@@ -210,10 +211,16 @@ void function_schedule_context::update_offset()
                 }
             }
         }
-        // TODO: slice
-        // else if (auto s = node_cast<slice>(node))
-        // {
-        // }
+        else if (auto s = node_cast<slice>(node))
+        {
+            if (!(s->attributes() & node_attr_action))
+            {
+                auto &in_buf = logical_buffer_map.at(s->input().connection());
+                auto &out_buf = logical_buffer_map.at(&s->output());
+
+                in_buf->parent()->offset += out_buf->parent()->offset;
+            }
+        }
     });
     visitor.visit(outputs_);
 }

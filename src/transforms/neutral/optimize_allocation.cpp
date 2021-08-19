@@ -16,6 +16,7 @@
 #include <nncase/ir/ops/bitcast.h>
 #include <nncase/ir/ops/concat.h>
 #include <nncase/ir/ops/copy.h>
+#include <nncase/ir/ops/slice.h>
 #include <nncase/ir/visitor.h>
 #include <nncase/schedule/scheduler.h>
 #include <nncase/transforms/neutral/optimize_allocation.h>
@@ -47,6 +48,22 @@ void make_bitcast_no_action_pass::run_core(graph &graph, [[maybe_unused]] nncase
                 auto &out = *b->input().connection();
                 out.attributes(out.attributes() | cnctr_attr_no_buffer_fusion);
                 b->attributes(b->attributes() & ~node_attr_action);
+            }
+        }
+    });
+    alias_visitor.visit(graph);
+}
+
+void make_slice_no_action_pass::run_core(graph &graph, [[maybe_unused]] nncase::target &target, [[maybe_unused]] const run_pass_options &options)
+{
+    auto alias_visitor = make_relay_ir_visitor([&](node &node) {
+        if (auto s = node_cast<slice>(node))
+        {
+            if ((s->attributes() & node_attr_action) && s->strides() == axis_t { 1, 1, 1, 1 })
+            {
+                auto &out = *s->input().connection();
+                out.attributes(out.attributes() | cnctr_attr_no_buffer_fusion);
+                s->attributes(s->attributes() & ~node_attr_action);
             }
         }
     });
@@ -267,6 +284,27 @@ void alias_concat_buffer_pass::run_core([[maybe_unused]] graph &graph, [[maybe_u
                 }
 
                 child = parent;
+            }
+        }
+    });
+    alias_visitor.visit(graph);
+}
+
+void alias_slice_buffer_pass::run_core(graph &graph, [[maybe_unused]] nncase::target &target, const run_pass_options &options)
+{
+    auto &context = *options.schedule_context;
+    auto alias_visitor = make_relay_ir_visitor([&](node &node) {
+        if (auto s = node_cast<slice>(node))
+        {
+            if (!(s->attributes() & node_attr_action))
+            {
+                auto &in_buf = context.logical_buffer_map.at(s->input().connection());
+                auto &out_buf = context.logical_buffer_map.at(&s->output());
+
+                size_t offset = ir::get_bytes(in_buf->type()) * xt::element_offset<size_t>(to_strides(s->input().shape()), s->begin().begin(), s->begin().end());
+
+                out_buf->parent() = { in_buf, offset, s->output().shape() };
+                out_buf->strides_shape() = s->input().shape();
             }
         }
     });

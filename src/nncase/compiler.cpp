@@ -293,6 +293,7 @@ private:
         run_passes("mark_noaction", graph, [&]([[maybe_unused]] const module_type_t &module_type, ir::transforms::pass_manager &pmgr) {
             pmgr.add_pass<make_concat_no_action_pass>();
             pmgr.add_pass<make_bitcast_no_action_pass>();
+            pmgr.add_pass<make_slice_no_action_pass>();
         });
         graph.merge_module_regions();
 
