@@ -60,7 +60,7 @@ k_sizes = [
 
 strides = [
     1,
-    3
+    #3
 ]
 
 paddings = [
