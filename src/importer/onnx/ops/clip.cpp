@@ -29,33 +29,34 @@ void onnx_importer::convert_op_Clip(const NodeProto &node)
 {
     const auto &input = node.input()[0];
     const auto &output = node.output()[0];
+    const auto &op_name = generate_name(node);
 
-    const auto &op_name { generate_name(node) };
+    std::string input_min;
+    if (node.input().size() >= 2)
+    {
+        input_min = node.input()[1];
+    }
 
     constant *min_op = nullptr;
-    std::string input_min;
-    if (node.input().size() < 2)
+    if (input_min.empty())
     {
         const auto min_attr = get_attribute<float>(node, "min");
         min_op = graph_.emplace<constant>(min_attr ? min_attr.value() : std::numeric_limits<float>::lowest());
         min_op->name(op_name + ".min(Clip)");
     }
-    else
+
+    std::string input_max;
+    if (node.input().size() >= 3)
     {
-        input_min = node.input()[1];
+        input_max = node.input()[2];
     }
 
     constant *max_op = nullptr;
-    std::string input_max;
-    if (node.input().size() < 3)
+    if (input_max.empty())
     {
         const auto max_attr = get_attribute<float>(node, "max");
         max_op = graph_.emplace<constant>(max_attr ? max_attr.value() : std::numeric_limits<float>::max());
         max_op->name(op_name + ".max(Clip)");
-    }
-    else
-    {
-        input_max = node.input()[2];
     }
 
     auto op = graph_.emplace<clamp>(get_shape(input),

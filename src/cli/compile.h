@@ -40,6 +40,7 @@ private:
     std::string input_type_ = "default";
     std::string output_type_ = "float32";
     std::string quant_type_ = "uint8";
+    std::string w_quant_type_ = "uint8";
     std::string input_layout_ = "NCHW";
     std::string output_layout_ = "NCHW";
 

@@ -3,6 +3,7 @@
 add_subdirectory(kendryte)
 
 set(SRCS runtime_module.cpp
+         runtime_function.cpp
          op_reader.cpp
          error.cpp
          ops/kpu_conv2d.cpp

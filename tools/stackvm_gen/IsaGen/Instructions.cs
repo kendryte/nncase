@@ -1171,9 +1171,13 @@ namespace IsaGen
         {
             public override TensorFunction Function => TensorFunction.CALL;
 
+            [DisplayName("function_id")]
+            [Description("Function Id")]
+            public uint FunctionId { get; set; }
+
             [DisplayName("module_id")]
             [Description("Module Id")]
-            public uint ModuleId { get; set; }
+            public ushort ModuleId { get; set; }
 
             [DisplayName("num_src")]
             [Description("Source count")]
@@ -1457,7 +1461,7 @@ namespace IsaGen
 
             [DisplayName("onehot_mode")]
             [Description("OneHot Mode")]
-            public OneHotMode OneHotMode{ get; set; }
+            public OneHotMode OneHotMode { get; set; }
         }
 
         [DisplayName("TENSOR.PAD")]
@@ -1645,7 +1649,7 @@ namespace IsaGen
 
             [DisplayName("half_pixel_centers")]
             [Description("Half Pixel Centers")]
-            public bool HalfPixelCenters{ get; set; }
+            public bool HalfPixelCenters { get; set; }
 
             [DisplayName("image_resize_mode")]
             [Description("Image Resize Mode")]

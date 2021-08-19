@@ -552,7 +552,19 @@ optional<vector<int>> onnx_importer::get_attribute<vector<int>>(const onnx::Node
 
     // assert(attr.value().type() == attribute_type<target_type>);
 
-    return target_type { std::begin(attr.value().ints()), std::end(attr.value().ints()) };
+    target_type vec;
+    std::transform(attr.value().ints().begin(), attr.value().ints().end(), std::back_inserter(vec),
+        [](int64_t val) {
+            int min = std::numeric_limits<int>::min();
+            int max = std::numeric_limits<int>::max();
+            if (val < min)
+                return min;
+            else if (val > max)
+                return max;
+            else
+                return static_cast<int>(val);
+        });
+    return vec;
 }
 
 template <>
@@ -750,6 +762,19 @@ xt::xarray<int64_t> onnx_importer::to<xt::xarray<int64_t>>(const onnx::TensorPro
     else
     {
         return raw_to<int64_t, int64_t>(tensor);
+    }
+}
+
+template <>
+std::vector<int64_t> onnx_importer::to<std::vector<int64_t>>(const onnx::TensorProto &tensor)
+{
+    if (!tensor.int64_data().empty())
+    {
+        return std::vector<int64_t> { tensor.int64_data().begin(), tensor.int64_data().end() };
+    }
+    else
+    {
+        return raw_to_vector<int64_t, int64_t>(tensor);
     }
 }
 

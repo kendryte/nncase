@@ -66,6 +66,7 @@ void add_copy_to_concat_pass::run_core(graph &graph, [[maybe_unused]] nncase::ta
                 {
                     auto cp = graph.emplace<copy>(out.type(), out.shape());
                     cp->name(out.owner().name() + "/copy");
+                    cp->module_type(graph.module_type());
                     cp->input().connect(out);
                     in->connect(cp->output());
                 }
@@ -84,6 +85,7 @@ void add_copy_to_output_pass::run_core(graph &graph, [[maybe_unused]] nncase::ta
             if (out.owner().runtime_opcode() != op_copy)
             {
                 auto cp = graph.emplace<copy>(out.type(), out.shape());
+                cp->module_type(graph.module_type());
                 cp->name(out.owner().name() + "/copy");
                 cp->output().memory_location(mem_output);
                 cp->input().connect(out);
@@ -184,8 +186,8 @@ void alias_bitcast_buffer_pass::run_core(graph &graph, [[maybe_unused]] nncase::
             if (!(b->attributes() & node_attr_action))
             {
                 auto &input = *b->input().connection();
-                auto &in_buf = *context.logical_buffer_map.at(b->input().connection());
-                auto &out_buf = *context.logical_buffer_map.at(&b->output());
+                auto &in_buf = *context.logical_buffer_map().at(b->input().connection());
+                auto &out_buf = *context.logical_buffer_map().at(&b->output());
 
                 size_t offset = 0;
                 // input & rdata should remain locations
@@ -223,13 +225,13 @@ void alias_concat_buffer_pass::run_core([[maybe_unused]] graph &graph, [[maybe_u
             // 1. Init indices
             {
                 auto axis = c->axis();
-                auto &out_buf = context.logical_buffer_map.at(&c->output());
+                auto &out_buf = context.logical_buffer_map().at(&c->output());
                 is_simple_concat = false; //!out_buf.no_action_concat_with_strides();
                 shape_t cnt_begin(c->input_at(0).shape().size(), 0);
                 size_t offset = 0;
                 for (auto in : c->inputs())
                 {
-                    auto &in_buf = context.logical_buffer_map.at(in->connection());
+                    auto &in_buf = context.logical_buffer_map().at(in->connection());
                     in_buf->parent() = { out_buf, offset, c->output().shape() };
                     if (!is_simple_concat)
                         in_buf->strides_shape() = c->output().shape();
@@ -249,15 +251,15 @@ void alias_concat_buffer_pass::run_core([[maybe_unused]] graph &graph, [[maybe_u
                 auto axis = parent->axis();
                 shape_t child_begin(child->output().shape().size(), 0);
                 child_begin[axis] += std::accumulate(parent->concat_dims().begin(), parent->concat_dims().begin() + index, 0);
-                auto &in_buf = context.logical_buffer_map.at(&child->output());
-                auto &out_buf = context.logical_buffer_map.at(&parent->output());
+                auto &in_buf = context.logical_buffer_map().at(&child->output());
+                auto &out_buf = context.logical_buffer_map().at(&parent->output());
                 size_t offset = ir::get_bytes(in_buf->type()) * xt::element_offset<size_t>(to_strides(parent->output().shape()), child_begin.begin(), child_begin.end());
                 in_buf->parent() = { out_buf, offset, parent->output().shape() };
                 if (!is_simple_concat)
                     in_buf->strides_shape() = parent->output().shape();
                 for (auto &in : c->inputs())
                 {
-                    auto in_buf = context.logical_buffer_map.at(in->connection());
+                    auto in_buf = context.logical_buffer_map().at(in->connection());
                     auto &desc = *in_buf->parent();
                     desc.parent = out_buf;
                     if (!is_simple_concat)

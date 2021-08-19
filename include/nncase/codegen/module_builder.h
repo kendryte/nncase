@@ -35,8 +35,14 @@ public:
 
 struct module_builder_params
 {
-    const schedule::schedule_result &sched;
+    const schedule::model_schedule_result &model_sched;
     const schedule::module_schedule_result &module_sched;
+};
+
+struct function_call_id
+{
+    size_t module_id;
+    size_t function_id;
 };
 
 class NNCASE_API module_builder
@@ -80,22 +86,27 @@ public:
     section_writer &writer(std::string_view section_name);
 
     virtual module_type_t module_type() const noexcept = 0;
+    virtual uint32_t module_version() const noexcept = 0;
     virtual std::unique_ptr<section_decompiler> create_decompiler(std::string_view section_name);
 
 protected:
     void merge_to_rdata_section(std::string_view from);
-    size_t module_id(ir::graph *graph);
+    function_call_id function_id(ir::graph *graph);
+    void set_current_entry_point(std::streampos pos);
+    void set_current_function_text_end(std::streampos pos);
 
-    virtual void begin_emit() { }
+    virtual void begin_emit_module();
+    virtual void begin_emit_function(const schedule::function_schedule_result &function);
+    virtual void end_emit_function(const schedule::function_schedule_result &function);
     virtual void emit(ir::node &node);
-    virtual void end_emit() { }
+    virtual void end_emit_module();
 
 protected:
     std::filesystem::path dump_dir_;
     bool dump_asm_;
 
 private:
-    std::vector<nncase::ir::node *> generate_runtime_ops();
+    std::vector<nncase::ir::node *> generate_current_runtime_ops();
     void compile();
     void decompile(std::string_view stage, std::string_view section_name, std::span<const uint8_t> input, std::span<const symbol> symbols);
 
@@ -105,6 +116,7 @@ private:
     void write_symbol_refs();
     void link();
     void write_binary(binary_writer &writer);
+    void write_function_binary(binary_writer &writer, const schedule::function_schedule_result &function_sched);
 
 private:
     uint32_t alignment_;
@@ -113,5 +125,9 @@ private:
     std::map<std::string, section, std::less<>> section_writer_;
     std::map<std::string, rdata_merge_info, std::less<>> rdata_section_merges_;
     std::unordered_map<std::string_view, std::pair<size_t, std::string_view>> symbol_offsets_;
+
+    const schedule::function_schedule_result *current_function_;
+    std::unordered_map<const schedule::function_schedule_result *, std::streampos> entry_points_;
+    std::unordered_map<const schedule::function_schedule_result *, std::streampos> function_text_end_;
 };
 }

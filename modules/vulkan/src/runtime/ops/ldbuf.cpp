@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../runtime_module.h"
+#include "../runtime_function.h"
 #include "../vulkan_error.h"
 #include <nncase/runtime/error.h>
 
@@ -20,24 +20,24 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::vulkan;
 
-result<void> vulkan_runtime_module::visit(const ldbuf_op_t &op) noexcept
+result<void> vulkan_runtime_function::visit(const ldbuf_op_t &op) noexcept
 {
-    vk::Buffer *dev_buf;
+    vk::Buffer dev_buf;
     switch (op.memory.memory_location)
     {
     case mem_input:
-        dev_buf = &input_buffer_;
+        dev_buf = input_buffer_;
         break;
     case mem_output:
-        dev_buf = &output_buffer_;
+        dev_buf = output_buffer_;
         break;
     case mem_data:
-        dev_buf = &data_buffer_;
+        dev_buf = module().data();
         break;
     default:
         return err(nncase_errc::invalid_memory_location);
     }
 
-    buffer_refs_.emplace_back(buffer_ref { *dev_buf, op.memory.start, op.memory.size });
+    buffer_refs_.emplace_back(buffer_ref { dev_buf, op.memory.start, op.memory.size });
     return ok();
 }

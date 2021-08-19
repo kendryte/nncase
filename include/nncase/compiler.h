@@ -44,6 +44,7 @@ struct compile_options
     std::string input_type = "default";
     std::string output_type = "float32";
     std::string quant_type = "uint8";
+    std::string w_quant_type = "uint8";
 };
 
 struct import_options

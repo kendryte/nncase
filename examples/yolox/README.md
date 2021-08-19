@@ -21,8 +21,10 @@ python tools/demo.py image -f exps/default/nano.py -c build/yolox_nano.pth --pat
 
 虽然`k210`的`kpu`内存有限且摄像头采集图像大小有限,不过`yolox`的多尺度能力能最大限度的避免以上问题,我们导出输入为`224,224`的`onnx`模型也可以得到不错的精度(此脚本位于`yolox`项目中):
 
+📝 如果运行出错请注释`yolox/exp/base_exp.py`的`71-73`行.
+
 ```bash
-python tools/export_onnx.py --output-name yolox_nano_224.onnx -f exps/default/nano.py  -c build/yolox_nano.pth --tsize 224
+python tools/export_onnx.py --output-name yolox_nano_224.onnx -f exps/default/nano.py  -c build/yolox_nano.pth  test_size "(224,224)"
 ```
 
 ## 转换onnx到kmodel

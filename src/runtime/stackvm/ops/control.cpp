@@ -12,23 +12,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../runtime_module.h"
+#include "../runtime_function.h"
 
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 
-result<void> stackvm_runtime_module::visit(NNCASE_UNUSED const nop_op_t &op) noexcept
+result<void> stackvm_runtime_function::visit(NNCASE_UNUSED const nop_op_t &op) noexcept
 {
     return ok();
 }
 
-result<void> stackvm_runtime_module::visit(const br_op_t &op) noexcept
+result<void> stackvm_runtime_function::visit(const br_op_t &op) noexcept
 {
     return pc_relative(op.target);
 }
 
-result<void> stackvm_runtime_module::visit(const br_true_op_t &op) noexcept
+result<void> stackvm_runtime_function::visit(const br_true_op_t &op) noexcept
 {
     try_var(value, stack_.pop());
     if (value.as_i())
@@ -36,7 +36,7 @@ result<void> stackvm_runtime_module::visit(const br_true_op_t &op) noexcept
     return ok();
 }
 
-result<void> stackvm_runtime_module::visit(const br_false_op_t &op) noexcept
+result<void> stackvm_runtime_function::visit(const br_false_op_t &op) noexcept
 {
     try_var(value, stack_.pop());
     if (!value.as_i())
@@ -44,7 +44,7 @@ result<void> stackvm_runtime_module::visit(const br_false_op_t &op) noexcept
     return ok();
 }
 
-result<void> stackvm_runtime_module::visit(NNCASE_UNUSED const ret_op_t &op) noexcept
+result<void> stackvm_runtime_function::visit(NNCASE_UNUSED const ret_op_t &op) noexcept
 {
     if (call_depth_ == 0)
     {
@@ -57,22 +57,22 @@ result<void> stackvm_runtime_module::visit(NNCASE_UNUSED const ret_op_t &op) noe
     return pc(target.as_u());
 }
 
-result<void> stackvm_runtime_module::visit(NNCASE_UNUSED const call_op_t &op) noexcept
+result<void> stackvm_runtime_function::visit(NNCASE_UNUSED const call_op_t &op) noexcept
 {
     return err(std::errc::not_supported);
 }
 
-result<void> stackvm_runtime_module::visit(NNCASE_UNUSED const ecall_op_t &op) noexcept
+result<void> stackvm_runtime_function::visit(NNCASE_UNUSED const ecall_op_t &op) noexcept
 {
     return err(std::errc::not_supported);
 }
 
-result<void> stackvm_runtime_module::visit(NNCASE_UNUSED const throw_op_t &op) noexcept
+result<void> stackvm_runtime_function::visit(NNCASE_UNUSED const throw_op_t &op) noexcept
 {
     return err(std::errc::not_supported);
 }
 
-result<void> stackvm_runtime_module::visit(NNCASE_UNUSED const break_op_t &op) noexcept
+result<void> stackvm_runtime_function::visit(NNCASE_UNUSED const break_op_t &op) noexcept
 {
     return err(std::errc::not_supported);
 }

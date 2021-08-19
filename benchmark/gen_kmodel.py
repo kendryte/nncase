@@ -24,6 +24,7 @@ import nncase
 import requests
 import onnxsim
 import onnx
+from io import BytesIO
 
 TEMP_DIR = "tmp"
 MODEL_DIR = "models"
@@ -45,7 +46,7 @@ def _download(url, name, in_shapes):
     if not os.path.exists(filename):
         req = requests.get(url)
         onnx_model, check = onnxsim.simplify(
-            onnx.load(req.content), check_n=3, input_shapes=in_shapes)
+            onnx.load_model(BytesIO(req.content)), check_n=3, input_shapes=in_shapes)
         assert check, "Simplified ONNX model could not be validated"
         onnx.save(onnx_model, filename)
 

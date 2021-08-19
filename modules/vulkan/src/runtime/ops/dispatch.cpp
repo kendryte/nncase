@@ -12,13 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../runtime_module.h"
+#include "../runtime_function.h"
 
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::vulkan;
 
-result<void> vulkan_runtime_module::visit(const dispatch_op_t &op) noexcept
+result<void> vulkan_runtime_function::visit(const dispatch_op_t &op) noexcept
 {
     cmd_buffer_.dispatch(op.x, op.y, op.z);
     return ok();

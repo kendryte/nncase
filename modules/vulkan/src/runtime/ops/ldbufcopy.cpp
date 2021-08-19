@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../runtime_module.h"
+#include "../runtime_function.h"
 #include "../vulkan_error.h"
 #include <nncase/runtime/error.h>
 
@@ -20,7 +20,7 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::vulkan;
 
-result<void> vulkan_runtime_module::visit(const ldbufcopy_op_t &op) noexcept
+result<void> vulkan_runtime_function::visit(const ldbufcopy_op_t &op) noexcept
 {
     buffer_copies_.emplace_back(vk::BufferCopy((vk::DeviceSize)op.src, (vk::DeviceSize)op.dest, (vk::DeviceSize)op.size));
     return ok();

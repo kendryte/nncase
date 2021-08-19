@@ -26,145 +26,103 @@ using namespace onnx;
 
 void onnx_importer::convert_op_Slice(const NodeProto &node)
 {
-    const auto &op_name { generate_name(node) };
+    const std::string &input = node.input()[0];
+    const datatype_t input_type = get_datatype(input).value();
+    const shape_t &input_shape = get_shape(input);
+    auto ndim = input_shape.size();
 
-    const std::string &data_input_name = node.input()[0];
-    const datatype_t data_type = get_datatype(data_input_name).value();
-    const shape_t &data_shape = get_shape(data_input_name);
-
-    axis_t begins, ends;
-
-    const bool use_opset_version_9 = node.input().size() == 1;
-    if (!use_opset_version_9)
+    // starts/stops
+    axis_t starts, stops;
+    bool use_opset_1 = node.input().size() == 1;
+    if (use_opset_1)
     {
-        const std::string &starts_input_name = node.input()[1];
-        const std::string &ends_input_name = node.input()[2];
-
-        const auto &begins_initializer = get_initializer(starts_input_name);
-        const auto &ends_initializer = get_initializer(ends_input_name);
-
-        if (!begins_initializer)
-        {
-            // try to extract data from previous constant nodes
-            const auto data = get_constant_input_data<float>(starts_input_name);
-            if (!data)
-                throw std::runtime_error("Can't pull input data for slice starts: only constant initialization is supported");
-
-            std::transform(std::begin(data.value()), std::end(data.value()), std::back_inserter(begins),
-                [](const auto e) { return static_cast<int>(e); });
-        }
-        else
-        {
-            begins = to<axis_t>(begins_initializer.value());
-        }
-
-        if (!ends_initializer)
-        {
-            // try to extract data from previous constant nodes
-            const auto data = get_constant_input_data<float>(ends_input_name);
-
-            if (!data)
-                throw std::runtime_error("Can't pull input data for slice ends: only constant initialization is supported");
-
-            std::transform(std::begin(data.value()), std::end(data.value()), std::back_inserter(ends),
-                [](const auto e) { return static_cast<int>(e); });
-        }
-        else
-        {
-            ends = to<axis_t>(ends_initializer.value());
-        }
+        // opset 1
+        starts = get_attribute<axis_t>(node, "starts").value();
+        stops = get_attribute<axis_t>(node, "ends").value();
     }
     else
     {
-        begins = get_attribute<axis_t>(node, "starts").value();
-        ends = get_attribute<axis_t>(node, "ends").value();
+        // opset 10/11/13
+        auto vec = get_constant_value<int, int64_t>(node.input()[1]);
+        starts.assign(vec.begin(), vec.end());
+
+        vec = get_constant_value<int, int64_t>(node.input()[2]);
+        stops.assign(vec.begin(), vec.end());
     }
+    assert(starts.size() == stops.size());
+    assert(starts.size() <= ndim);
+    assert(stops.size() <= ndim);
 
-    assert(begins.size() == ends.size());
-    assert(begins.size() <= data_shape.size());
-
-    axis_t axes(data_shape.size()), strides(data_shape.size());
-    std::iota(std::begin(axes), std::end(axes), 0);
-    std::fill(std::begin(strides), std::end(strides), 1);
-
-    axis_t loaded_axes, loaded_strides;
-
-    if (!use_opset_version_9)
-    {
-        if (node.input().size() > 3)
-        {
-            const std::string &axes_input_name = node.input()[3];
-            const auto &axes_initializer = get_initializer(axes_input_name);
-            if (!axes_initializer)
-            {
-                // try to extract data from previous constant nodes
-                const auto data = get_constant_input_data<float>(axes_input_name);
-
-                if (data)
-                    std::transform(std::begin(data.value()), std::end(data.value()), std::back_inserter(loaded_axes),
-                        [](const auto e) { return static_cast<int>(e); });
-            }
-            else
-            {
-                loaded_axes = to<axis_t>(axes_initializer.value());
-            }
-        }
-    }
-    else
+    // optional axes
+    axis_t axes;
+    if (use_opset_1)
     {
         const auto axes_attr = get_attribute<axis_t>(node, "axes");
         if (axes_attr)
-            loaded_axes = axes_attr.value();
+            axes = axes_attr.value();
     }
-
-    if (node.input().size() > 4)
+    else if (node.input().size() >= 4)
     {
-        const std::string &strides_input_name = node.input()[4];
-        const auto &strides_initializer = get_initializer(strides_input_name);
-        if (!strides_initializer)
-        {
-            // try to extract data from previous constant nodes
-            const auto data = get_constant_input_data<float>(strides_input_name);
-
-            if (data)
-                std::transform(std::begin(data.value()), std::end(data.value()), std::back_inserter(loaded_strides),
-                    [](const auto e) { return static_cast<int>(e); });
-        }
-        else
-        {
-            loaded_strides = to<axis_t>(strides_initializer.value());
-        }
-
-        assert(loaded_strides.size() == loaded_axes.size());
+        auto vec = get_constant_value<int, int64_t>(node.input()[3]);
+        axes.assign(vec.begin(), vec.end());
     }
 
-    axis_t permuted_begins, permuted_ends;
-    for (size_t i = 0; i < axes.size(); ++i)
+    if (axes.empty())
     {
-        const auto it = std::find_if(std::begin(loaded_axes), std::end(loaded_axes),
-            [i, &data_shape](const auto e) { return real_axis(e, data_shape.size()) == i; });
-        if (it == std::end(loaded_axes))
-        {
-            permuted_begins.push_back(0);
-            permuted_ends.push_back(data_shape[i]);
-        }
-        else
-        {
-            const size_t index = static_cast<size_t>(it - begin(loaded_axes));
-            permuted_begins.push_back(begins.at(index));
-            permuted_ends.push_back(std::min((int32_t)data_shape.at(*it), ends.at(index)));
+        axes.assign(ndim, 0);
+        std::iota(axes.begin(), axes.end(), 0);
+    }
 
-            if (!loaded_strides.empty())
-                strides[i] = loaded_strides.at(index);
+    // optional steps
+    axis_t steps;
+    if (node.input().size() >= 5)
+    {
+        auto vec = get_constant_value<int, int64_t>(node.input()[4]);
+        steps.assign(vec.begin(), vec.end());
+        assert(steps.size() == axes.size());
+    }
+
+    // fill begins/ends/strides
+    axis_t begins(ndim, 0);
+    axis_t ends(input_shape.begin(), input_shape.end());
+    axis_t strides(ndim, 1);
+    for (auto i = 0; i < ndim; ++i)
+    {
+        const auto it = std::find_if(axes.begin(), axes.end(),
+            [i, ndim](const auto axis) { return real_axis(axis, ndim) == i; });
+        if (it != axes.end())
+        {
+            auto idx = std::distance(axes.begin(), it);
+            auto max = static_cast<int>(input_shape[i]);
+            auto min = (-1) * max - 1;
+
+            // check starts
+            begins[i] = starts[idx] < min ? min : starts[idx] > max ? max
+                                                                    : starts[idx];
+
+            // check stops
+            ends[i] = stops[idx] < min ? min : stops[idx] > max ? max
+                                                                : stops[idx];
+
+            // check steps
+            if (!steps.empty())
+            {
+                assert(steps[idx] != 0);
+                strides[i] = steps[idx];
+            }
+
+            // fixup begins
+            if ((strides[i] > 0 && ends[i] > begins[i]) || (strides[i] < 0 && ends[i] < begins[i]))
+            {
+                begins[i] = begins[i] == min ? min + 1 : begins[i];
+                begins[i] = begins[i] == max ? max - 1 : begins[i];
+            }
         }
     }
 
-    begins = permuted_begins;
-    ends = permuted_ends;
+    auto sl = graph_.emplace<slice>(input_type, input_shape, begins, ends, strides, 0, 0, 0, 0);
+    sl->name(generate_name(node) + "(Slice)");
 
-    auto sl = graph_.emplace<slice>(data_type, data_shape, begins, ends, strides, 0, 0, 0, 0);
-    sl->name(op_name + "(Slice)");
-
-    input_tensors_.emplace(&sl->input(), data_input_name);
+    input_tensors_.emplace(&sl->input(), input);
     output_tensors_.emplace(node.output()[0], &sl->output());
 }

@@ -4,7 +4,6 @@ on: [push, pull_request]
 
 env:
   BUILD_TYPE: Release
-  NNCASE_VERSION_SUFFIX: .dev${{github.run_number}}
 
 jobs:
   build:
@@ -17,13 +16,6 @@ jobs:
     steps:
     - uses: actions/checkout@v2
     - uses: seanmiddleditch/gha-setup-ninja@master
-
-    - name: Install System Requirements
-      if: runner.os == 'Linux'
-      shell: bash
-      run: |
-        sudo apt update
-        sudo apt install libgtk2.0-dev -y
 
     - name: Install System Requirements
       if: runner.os == 'Macos'

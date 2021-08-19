@@ -96,7 +96,9 @@ bool dfs_ir_post_order_visitor::visit_strategy(node &node)
 bool bfs_ir_pre_order_visitor::visit_strategy(node &node)
 {
     std::queue<nncase::ir::node *> nodes;
+    std::unordered_set<nncase::ir::node *> nodes_set;
     nodes.push(&node);
+    nodes_set.emplace(&node);
 
     while (!nodes.empty())
     {
@@ -110,7 +112,7 @@ bool bfs_ir_pre_order_visitor::visit_strategy(node &node)
             if (in->connection())
             {
                 auto &in_node = in->connection()->owner();
-                if (!visited(in_node))
+                if (nodes_set.emplace(&in_node).second)
                     nodes.push(&in_node);
             }
         }

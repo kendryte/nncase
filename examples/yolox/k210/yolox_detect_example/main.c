@@ -196,7 +196,6 @@ int main(void)
     yolox_init(224, 0.1f, 0.1f, 80);
     printf("yolox init\r\n");
 
-    while(1)
     {
         g_ai_done_flag = 0;
         /* tic */
@@ -224,5 +223,8 @@ int main(void)
 
         /* toc */
         printf("model: %.03f ms , postprocess: %.03f ms \r\n", (kpu_end_time - kpu_start_time) / 1000.0, (forward_end_time - kpu_end_time) / 1000.0);
+    }
+    while(1)
+    {
     }
 }

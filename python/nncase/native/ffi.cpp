@@ -22,6 +22,7 @@
 #include <nncase/ir/graph.h>
 #include <nncase/runtime/interpreter.h>
 #include <nncase/runtime/runtime_op_utility.h>
+#include <nncase/schedule/scheduler.h>
 #include <nncase/version.h>
 #include <pybind11/iostream.h>
 #include <pybind11/numpy.h>
@@ -74,7 +75,7 @@ void LaunchDebugger()
 }
 #endif
 
-schedule::schedule_result schedule(target &target, ir::graph &graph)
+schedule::model_schedule_result schedule(target &target, ir::graph &graph)
 {
     schedule::scheduler sched(target, graph, graph.outputs());
     return sched.schedule(true);
@@ -115,7 +116,7 @@ public:
 
 private:
     ir::graph &graph_;
-    schedule::schedule_result schedule_result_;
+    schedule::model_schedule_result schedule_result_;
     ir::evaluator evaluator_;
 };
 }
@@ -140,6 +141,7 @@ PYBIND11_MODULE(_nncase, m)
         .def_readwrite("input_type", &compile_options::input_type)
         .def_readwrite("output_type", &compile_options::output_type)
         .def_readwrite("quant_type", &compile_options::quant_type)
+        .def_readwrite("w_quant_type", &compile_options::w_quant_type)
         .def_readwrite("benchmark_only", &compile_options::benchmark_only);
 
     py::class_<import_options>(m, "ImportOptions")

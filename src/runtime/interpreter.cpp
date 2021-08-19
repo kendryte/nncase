@@ -14,6 +14,7 @@
  */
 #include <cassert>
 #include <iostream>
+#include <nncase/runtime/dbg.h>
 #include <nncase/runtime/error.h>
 #include <nncase/runtime/interpreter.h>
 #include <nncase/runtime/runtime_loader.h>
@@ -23,7 +24,7 @@ using namespace nncase;
 using namespace nncase::runtime;
 
 interpreter::interpreter() noexcept
-    : main_module_(nullptr)
+    : entry_function_(nullptr)
 {
 }
 
@@ -49,82 +50,79 @@ result<void> interpreter::load_model(gsl::span<const gsl::byte> buffer) noexcept
 
     for (size_t i = 0; i < header->modules; i++)
     {
-        auto mod_header = reader.get_ref<module_header>();
-        reader.skip(mod_header->size);
-        try_var(rt_module, runtime_module::create(mod_header->type));
+        auto mod_type = reader.peek_with_offset<decltype(module_header::type)>(offsetof(module_header, type));
+        auto mod_size = reader.peek_with_offset<decltype(module_header::size)>(offsetof(module_header, size));
+        auto payload = reader.read_span(mod_size);
+        try_var(rt_module, runtime_module::create(mod_type));
 
-        try_(rt_module->initialize(*mod_header, *this));
-        if (i == header->main_module)
-            main_module_ = rt_module.get();
+        try_(rt_module->initialize(payload, *this));
+        if (i == header->entry_module)
+            try_set(entry_function_, rt_module->find_function_by_id(header->entry_function));
         modules_[i] = std::move(rt_module);
     }
-
-    for (auto &mod : modules_)
-        try_(mod->initialize_inter_modules(*this));
 
     return ok();
 }
 
 size_t interpreter::inputs_size() const noexcept
 {
-    return main_module_->inputs_size();
+    return entry_function_->inputs_size();
 }
 
 size_t interpreter::outputs_size() const noexcept
 {
-    return main_module_->outputs_size();
+    return entry_function_->outputs_size();
 }
 
 const memory_range &interpreter::input_desc(size_t index) const noexcept
 {
-    return main_module_->input_desc(index);
+    return entry_function_->input_desc(index);
 }
 
 const memory_range &interpreter::output_desc(size_t index) const noexcept
 {
-    return main_module_->output_desc(index);
+    return entry_function_->output_desc(index);
 }
 
 const runtime_shape_t &interpreter::input_shape(size_t index) const noexcept
 {
-    return main_module_->input_shape(index);
+    return entry_function_->input_shape(index);
 }
 
 const runtime_shape_t &interpreter::output_shape(size_t index) const noexcept
 {
-    return main_module_->output_shape(index);
+    return entry_function_->output_shape(index);
 }
 
 result<runtime_tensor> interpreter::input_tensor(size_t index) noexcept
 {
-    return main_module_->input_tensor(index);
+    return entry_function_->input_tensor(index);
 }
 
 result<void> interpreter::input_tensor(size_t index, runtime_tensor tensor) noexcept
 {
-    return main_module_->input_tensor(index, tensor);
+    return entry_function_->input_tensor(index, tensor);
 }
 
 result<runtime_tensor> interpreter::output_tensor(size_t index) noexcept
 {
-    return main_module_->output_tensor(index);
+    return entry_function_->output_tensor(index);
 }
 
 result<void> interpreter::output_tensor(size_t index, runtime_tensor tensor) noexcept
 {
-    return main_module_->output_tensor(index, tensor);
+    return entry_function_->output_tensor(index, tensor);
 }
 
 result<void> interpreter::run() noexcept
 {
-    return main_module_->run();
+    return entry_function_->invoke();
 }
 
 result<runtime_module *> interpreter::find_module_by_id(size_t index) noexcept
 {
-    if (index < modules_.size())
-        return ok(modules_[index].get());
-    return err(std::errc::result_out_of_range);
+    CHECK_WITH_ERR(index < modules_.size(), std::errc::result_out_of_range);
+    return ok(modules_[index].get());
 }
 
 options_dict &interpreter::options() noexcept
