@@ -20,11 +20,11 @@
 #include <ctype.h>
 #include <stdio.h>
 
-#define NCNN_LOGE(...)                  \
-    do                                  \
-    {                                   \
-        fprintf(stderr, ##__VA_ARGS__); \
-        fprintf(stderr, "\n");          \
+#define NCNN_LOGE(...)                \
+    do                                \
+    {                                 \
+        fprintf(stderr, __VA_ARGS__); \
+        fprintf(stderr, "\n");        \
     } while (0)
 
 namespace ncnn
