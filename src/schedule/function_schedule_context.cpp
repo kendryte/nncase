@@ -215,8 +215,8 @@ void function_schedule_context::update_offset()
         {
             if (!(s->attributes() & node_attr_action))
             {
-                auto &in_buf = logical_buffer_map.at(s->input().connection());
-                auto &out_buf = logical_buffer_map.at(&s->output());
+                auto &in_buf = logical_buffer_map_.at(s->input().connection());
+                auto &out_buf = logical_buffer_map_.at(&s->output());
 
                 in_buf->parent()->offset += out_buf->parent()->offset;
             }
