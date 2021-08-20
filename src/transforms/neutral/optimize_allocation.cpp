@@ -298,8 +298,8 @@ void alias_slice_buffer_pass::run_core(graph &graph, [[maybe_unused]] nncase::ta
         {
             if (!(s->attributes() & node_attr_action))
             {
-                auto &in_buf = context.logical_buffer_map.at(s->input().connection());
-                auto &out_buf = context.logical_buffer_map.at(&s->output());
+                auto &in_buf = context.logical_buffer_map().at(s->input().connection());
+                auto &out_buf = context.logical_buffer_map().at(&s->output());
 
                 size_t offset = ir::get_bytes(in_buf->type()) * xt::element_offset<size_t>(to_strides(s->input().shape()), s->begin().begin(), s->begin().end());
 
