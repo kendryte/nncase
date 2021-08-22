@@ -64,7 +64,8 @@ void pre_process_transform::process(transform_context &context)
         old_shape = { size_t(old_in->output().shape()[0]), size_t(old_in->output().shape()[3]), size_t(old_in->output().shape()[1]), size_t(old_in->output().shape()[2]) };
     }
     else
-    { //TODO : fit onnx
+    {
+        // fit onnx
         new_shape = { size_t(old_in->output().shape()[0]), size_t(input_shape_[1]), size_t(input_shape_[2]), size_t(input_shape_[3]) };
         old_shape = { size_t(old_in->output().shape()[0]), size_t(old_in->output().shape()[1]), size_t(old_in->output().shape()[2]), size_t(old_in->output().shape()[3]) };
     }
@@ -87,9 +88,6 @@ void pre_process_transform::process(transform_context &context)
         {
             bits = 7;
         }
-        // default normalize
-        // value_range<float> range = { 0, 1 };
-        // user set
         value_range<float> range = { input_range_[0], input_range_[1] };
 
         auto Q_max = bits == 7 ? 127 : 255;
@@ -139,7 +137,6 @@ void pre_process_transform::process(transform_context &context)
      * input_range:{min, max} caculate pad value //uint8 pad 114, float pad min+(max-min)*(114/255)
      **/
     std::cout << "letterbox:" << std::endl;
-    // model input shape :old_in->output().shape();
     if (old_in->output().shape() != new_shape)
     {
         [[maybe_unused]] int min = input_range_[0], max = input_range_[1];
@@ -149,7 +146,6 @@ void pre_process_transform::process(transform_context &context)
         auto H = mid_ptr->shape()[2];
         auto W = mid_ptr->shape()[3];
 
-        // float ratio = std::min(float(H) / model_h, float(W) / model_w);
         float ratio = std::min(model_h / float(H), model_w / float(W));
         std::vector<padding> pad_size { 4, padding { 0, 0 } };
         auto resize_H = std::round(H * ratio);
@@ -162,21 +158,7 @@ void pre_process_transform::process(transform_context &context)
         pad_size[2] = { int(std::round(pad_H / 2 - 0.1)), pad_H - int(std::round(pad_H / 2 - 0.1)) };
         pad_size[3] = { int(std::round(pad_W / 2 - 0.1)), pad_W - int(std::round(pad_W / 2 - 0.1)) };
 
-        scalar pad_value;
-        // if (input_type_ == "uint8")
-        // {
-        //     pad_value = 114;
-        // }
-        // else if (input_type_ == "int8")
-        // {
-        //     pad_value = 114 - 128;
-        // }
-        // else
-        // {
-        // pad_value = float(input_range_[0] + (input_range_[1] - input_range_[0]) * (114.0 / 255));
-        pad_value = float(0);
-        // }
-        // auto input_resize = context.graph.emplace<bitcast>(get_datatype(input_type_), letter_box_pad->output().shape(), old_in->output().shape());
+        scalar pad_value = float(0);
         auto input_resize = context.graph.emplace<resize_image>(mid_ptr->type(), image_resize_bilinear, mid_ptr->shape(), resize_shape, false, true);
         auto letter_box_pad = context.graph.emplace<pad>(input_resize->output().type(), input_resize->output().shape(), pad_size, pad_constant, pad_value);
         input_resize->name("letterbox_resize");
@@ -190,16 +172,9 @@ void pre_process_transform::process(transform_context &context)
     if (scales_[0] != 0)
     {
         constant *mean, *scale;
-        // if (input_layout_ == "NCHW")
-        // {
+
         mean = context.graph.emplace<constant>(dt_float32, shape_t { 1, 3, 1, 1 }, means_);
         scale = context.graph.emplace<constant>(dt_float32, shape_t { 1, 3, 1, 1 }, scales_);
-        // }
-        // else
-        // {
-        //     mean = context.graph.emplace<constant>(dt_float32, shape_t { 1, 1, 1, 3 }, means_);
-        //     scale = context.graph.emplace<constant>(dt_float32, shape_t { 1, 1, 1, 3 }, scales_);
-        // }
         mean->name("normalize_mean");
         scale->name("normalize_scale");
 

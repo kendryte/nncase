@@ -10,13 +10,14 @@ case: # case的配置，应该是一个多层次的
     kwargs: 
       input_layout: 'NHWC'
       output_layout: 'NHWC'
+  preprocess_opt:
       image_format: 'BGR'
       input_shape: [14,32,3]
       norm: {
         mean: [0.485, 0.456, 0.406],
         scale: [0.229, 0.224, 0.225]
         }
-      input_range: [0, 1]
+      input_range: [0, 10]
   compile_opt:
     kwargs:
       dump_asm: true

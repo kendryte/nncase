@@ -165,26 +165,26 @@ class TestRunner(metaclass=ABCMeta):
     def get_process_config(self, config):
         # dequant
         process_deq = {}
-        process_deq['range'] = config.importer_opt.kwargs['input_range']
+        process_deq['range'] = config.preprocess_opt.kwargs['input_range']
         process_deq['input_type'] = config.compile_opt.kwargs['input_type']
 
         # norm
         process_norm = {}
-        data1 = {}
-        data1 = {
-            'mean': config.importer_opt.kwargs['norm']['mean'],
-            'scale': config.importer_opt.kwargs['norm']['scale']
+        data = {}
+        data = {
+            'mean': config.preprocess_opt.kwargs['norm']['mean'],
+            'scale': config.preprocess_opt.kwargs['norm']['scale']
         }
-        process_norm['norm'] = data1
+        process_norm['norm'] = data
 
         # bgr2rgb
         process_layout = {}
-        process_layout['image_format'] = config.importer_opt.kwargs['image_format']
+        process_layout['image_format'] = config.preprocess_opt.kwargs['image_format']
 
         # letter box
         process_letterbox = {}
-        process_letterbox['input_range'] = config.importer_opt.kwargs['input_range']
-        process_letterbox['input_shape'] = config.importer_opt.kwargs['input_shape']
+        process_letterbox['input_range'] = config.preprocess_opt.kwargs['input_range']
+        process_letterbox['input_shape'] = config.preprocess_opt.kwargs['input_shape']
         process_letterbox['model_shape'] = self.inputs[0]['model_shape']
         process_letterbox['input_type'] = config.compile_opt.kwargs['input_type']
 
@@ -231,11 +231,6 @@ class TestRunner(metaclass=ABCMeta):
                     dh /= 2
                     dw /= 2
 
-                    # if(item['input_type'] == "uint8"):
-                    #     resize_data = np.array(resize_data, dtype=np.uint8)
-                    # elif item['input_type'] == "int8":
-                    #     resize_data = np.array(resize_data, dtype=np.int8)
-                    # else:
                     resize_data = np.array(resize_data, dtype=np.float32)
 
                     data = tf.image.pad_to_bounding_box(resize_data, round(
@@ -244,15 +239,12 @@ class TestRunner(metaclass=ABCMeta):
                     data = np.array(data, dtype=np.float32)
                     data = np.expand_dims(data, 0)
 
-            # Normalize
-            # TODO: add discribe for normalize
+            # Normalize(Standardization)
             if 'norm' in item.keys():
                 for i in range(data.shape[-1]):
                     # data = data.astype(np.float32)
                     data[:, :, :, i] = (data[:, :, :, i] - float(item['norm']['mean'][i])) / \
                         float(item['norm']['scale'][i])
-        self.totxtfile(
-            "/home/curio/github/nncase/tests_output/test_20classes_yolo/input_preprocess.txt", data)
         return data
 
     def validte_config(self, config):
@@ -327,9 +319,9 @@ class TestRunner(metaclass=ABCMeta):
         self.get_process_config(cfg)
         if cfg.importer_opt.kwargs['input_shape'] != None:
             self.generate_data(cfg.generate_inputs, case_dir,
-                               self.inputs, self.input_paths, 'input', cfg.importer_opt.kwargs['input_shape'])
+                               self.inputs, self.input_paths, 'input', cfg.preprocess_opt.kwargs['input_shape'])
             self.generate_data(cfg.generate_calibs, case_dir,
-                               self.calibs, self.calib_paths, 'calib', cfg.importer_opt.kwargs['input_shape'])
+                               self.calibs, self.calib_paths, 'calib', cfg.preprocess_opt.kwargs['input_shape'])
         else:
             self.generate_data(cfg.generate_inputs, case_dir,
                                self.inputs, self.input_paths, 'input')
@@ -444,11 +436,11 @@ class TestRunner(metaclass=ABCMeta):
         compile_options.dump_dir = infer_dir
         compile_options.input_type = cfg.compile_opt.kwargs['input_type']
         compile_options.quant_type = cfg.compile_opt.kwargs['quant_type']
-        compile_options.image_format = cfg.importer_opt.kwargs['image_format']
-        compile_options.input_shape = cfg.importer_opt.kwargs['input_shape']
-        compile_options.input_range = cfg.importer_opt.kwargs['input_range']
-        compile_options.mean = cfg.importer_opt.kwargs['norm']['mean']
-        compile_options.scale = cfg.importer_opt.kwargs['norm']['scale']
+        compile_options.image_format = cfg.preprocess_opt.kwargs['image_format']
+        compile_options.input_shape = cfg.preprocess_opt.kwargs['input_shape']
+        compile_options.input_range = cfg.preprocess_opt.kwargs['input_range']
+        compile_options.mean = cfg.preprocess_opt.kwargs['norm']['mean']
+        compile_options.scale = cfg.preprocess_opt.kwargs['norm']['scale']
         compiler = nncase.Compiler(compile_options)
         self.import_model(compiler, model_content, import_options)
         if kwargs['ptq']:
