@@ -153,7 +153,7 @@ class NcnnTestRunner(TestRunner):
                 input_dict['name'] = n
                 self.outputs.append(input_dict)
 
-    def cpu_infer(self, case_dir: str, model_file: list[str]):
+    def cpu_infer(self, case_dir: str, model_file: List[str]):
         with ncnn.Net() as net:
             ret = net.load_param(model_file[0])
             assert ret == 0
