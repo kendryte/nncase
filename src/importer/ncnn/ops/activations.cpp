@@ -31,7 +31,7 @@ void nncase::importer::ncnn_importer::convert_op_ReLU(const Layer &layer, const 
 
     const auto &op_name = layer.name;
 
-    auto in_shape = layer.bottom_shapes[0];
+    auto in_shape = output_tensors_.at(layer.bottoms[0])->shape();
 
     if (slope == 0.f)
     {

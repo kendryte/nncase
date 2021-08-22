@@ -38,7 +38,7 @@ namespace importer
     class ncnn_importer
     {
     public:
-        ncnn_importer(const std::filesystem::path &paramfilename, const std::filesystem::path &binfilename, ir::graph &graph);
+        ncnn_importer(std::span<const uint8_t> paramfile, std::span<const uint8_t> binfile, ir::graph &graph);
 
         void import(const import_options &options);
 
@@ -51,8 +51,8 @@ namespace importer
 
     private:
         ir::graph &graph_;
-        std::filesystem::path paramfilename;
-        std::filesystem::path binfilename;
+        std::span<const uint8_t> paramfile;
+        std::span<const uint8_t> binfile;
         std::unordered_map<ir::input_connector *, std::string> input_tensors_;
         std::unordered_map<std::string, ir::output_connector *> output_tensors_;
     };

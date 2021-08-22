@@ -13,21 +13,32 @@
 // specific language governing permissions and limitations under the License.
 
 #include "../ncnn_importer.h"
+#include "nncase/importer/util.h"
 #include <cassert>
 #include <nncase/ir/graph.h>
 #include <nncase/ir/op_utils.h>
 #include <nncase/ir/placeholders.h>
+#include <stdexcept>
 
 using namespace nncase;
 using namespace nncase::importer;
 using namespace nncase::ir;
 using namespace ncnn;
 
-void nncase::importer::ncnn_importer::convert_op_Input(const Layer &layer, const ParamDict & /*pd*/, const ModelBin & /*mb*/)
+void nncase::importer::ncnn_importer::convert_op_Input(const Layer &layer, const ParamDict &pd, const ModelBin & /*mb*/)
 {
     const auto &op_name = layer.name;
-
-    auto in_shape = layer.top_shapes[0];
+    auto w = (size_t)pd.get(0, 0);
+    auto h = (size_t)pd.get(1, 0);
+    auto c = (size_t)pd.get(2, 0);
+    shape_t in_shape { c, h, w };
+    if (!w || !h || !c)
+    {
+        // take from shape hints
+        in_shape = layer.bottom_shapes[0];
+        if (in_shape.empty())
+            throw std::runtime_error("Shape of " + layer.name + " must be set in ncnn param file");
+    }
 
     auto node = graph_.emplace<input_node>(dt_float32, in_shape);
     node->name(op_name + "(Input)");

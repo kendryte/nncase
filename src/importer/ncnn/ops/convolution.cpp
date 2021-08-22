@@ -13,10 +13,12 @@
 // specific language governing permissions and limitations under the License.
 
 #include "../ncnn_importer.h"
+#include "nncase/runtime/datatypes.h"
 #include <cassert>
 #include <nncase/ir/graph.h>
 #include <nncase/ir/op_utils.h>
 #include <nncase/ir/ops/binary.h>
+#include <nncase/ir/ops/bitcast.h>
 #include <nncase/ir/ops/constant.h>
 #include <nncase/ir/ops/conv2d.h>
 #include <nncase/ir/ops/pad.h>
@@ -58,7 +60,12 @@ void nncase::importer::ncnn_importer::convert_op_ConvolutionDepthWise(const Laye
 
     const auto &op_name = layer.name;
 
-    auto in_shape = layer.bottom_shapes[0];
+    auto in_shape = output_tensors_.at(layer.bottoms[0])->shape();
+    shape_t rshape_in_shape { 1, in_shape[0], in_shape[1], in_shape[2] };
+
+    auto in_rshape = graph_.emplace<bitcast>(dt_float32, in_shape, rshape_in_shape);
+    in_rshape->name(op_name + ".reshape(Input)");
+    input_tensors_.emplace(&in_rshape->input(), layer.bottoms[0]);
 
     const shape_t weight_shape = { (size_t)num_output, (size_t)num_input, (size_t)kernel_h, (size_t)kernel_w };
     const shape_t bias_shape = { (size_t)num_output };
@@ -109,24 +116,23 @@ void nncase::importer::ncnn_importer::convert_op_ConvolutionDepthWise(const Laye
     {
         if (pad_value != 0.f)
         {
-            xt::svector<padding> paddings = { { 0, 0 }, padding_h, padding_w };
+            xt::svector<padding> paddings = { { 0, 0 }, { 0, 0 }, padding_h, padding_w };
 
-            ir::pad *pad_op = graph_.emplace<pad>(dt_float32, in_shape, paddings, pad_constant, pad_value);
+            ir::pad *pad_op = graph_.emplace<pad>(dt_float32, rshape_in_shape, paddings, pad_constant, pad_value);
             pad_op->name(op_name + ".pad(Convolution)");
 
             conv_op = graph_.emplace<conv2d>(pad_op->output().shape(), weight_shape, group, padding { 0, 0 }, padding { 0, 0 }, stride_h, stride_w, dilation_h, dilation_w, fused_activation);
             conv_op->name(op_name + ".conv2d(Convolution)");
 
+            pad_op->input().connect(in_rshape->output());
             conv_op->input().connect(pad_op->output());
-
-            input_tensors_.emplace(&pad_op->input(), layer.bottoms[0]);
         }
         else
         {
-            conv_op = graph_.emplace<conv2d>(in_shape, weight_shape, group, padding_h, padding_w, stride_h, stride_w, dilation_h, dilation_w, fused_activation);
+            conv_op = graph_.emplace<conv2d>(rshape_in_shape, weight_shape, group, padding_h, padding_w, stride_h, stride_w, dilation_h, dilation_w, fused_activation);
             conv_op->name(op_name + ".conv2d(Convolution)");
 
-            input_tensors_.emplace(&conv_op->input(), layer.bottoms[0]);
+            conv_op->input().connect(in_rshape->output());
         }
 
         Mat weight_data = mb.load(weight_data_size, 0);
@@ -148,9 +154,10 @@ void nncase::importer::ncnn_importer::convert_op_ConvolutionDepthWise(const Laye
         conv_op->bias().connect(bias_node->output());
     }
 
+    output_connector *out_conn = nullptr;
     if (activation_type == 0 || activation_type == 1 || activation_type == 3)
     {
-        output_tensors_.emplace(layer.tops[0], &conv_op->output());
+        out_conn = &conv_op->output();
     }
     if (activation_type == 2)
     {
@@ -168,7 +175,7 @@ void nncase::importer::ncnn_importer::convert_op_ConvolutionDepthWise(const Laye
         max->input_a().connect(conv_op->output());
         max->input_b().connect(mul->output());
 
-        output_tensors_.emplace(layer.tops[0], &max->output());
+        out_conn = &max->output();
     }
     if (activation_type == 4)
     {
@@ -189,7 +196,7 @@ void nncase::importer::ncnn_importer::convert_op_ConvolutionDepthWise(const Laye
         div->input_a().connect(exp->output());
         div->input_b().connect(add->output());
 
-        output_tensors_.emplace(layer.tops[0], &div->output());
+        out_conn = &div->output();
     }
     if (activation_type == 5)
     {
@@ -215,6 +222,15 @@ void nncase::importer::ncnn_importer::convert_op_ConvolutionDepthWise(const Laye
         mul->input_a().connect(conv_op->output());
         mul->input_b().connect(tanh->output());
 
-        output_tensors_.emplace(layer.tops[0], &mul->output());
+        out_conn = &mul->output();
     }
+
+    auto out_shape = out_conn->shape();
+    assert(out_shape[0] == 1);
+    shape_t rshape_out_shape { out_shape[1], out_shape[2], out_shape[3] };
+    auto out_rshape = graph_.emplace<bitcast>(dt_float32, out_shape, rshape_out_shape);
+    out_rshape->name(op_name + ".reshape(Output)");
+
+    out_rshape->input().connect(*out_conn);
+    output_tensors_.emplace(layer.tops[0], &out_rshape->output());
 }

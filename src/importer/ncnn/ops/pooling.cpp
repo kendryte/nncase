@@ -46,7 +46,7 @@ void nncase::importer::ncnn_importer::convert_op_Pooling(const Layer &layer, con
 
     const auto &op_name = layer.name;
 
-    auto in_shape = layer.bottom_shapes[0];
+    auto in_shape = output_tensors_.at(layer.bottoms[0])->shape();
 
     reduce_op_t reduce_type;
     float init_value;

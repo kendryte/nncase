@@ -40,7 +40,7 @@ void nncase::importer::ncnn_importer::convert_op_InnerProduct(const Layer &layer
 
     const auto &op_name = layer.name;
 
-    auto in_shape = layer.bottom_shapes[0];
+    auto in_shape = output_tensors_.at(layer.bottoms[0])->shape();
     auto out_shape = layer.top_shapes[0];
 
     const shape_t in_shape_2rank = { 1, (size_t)num_input };

@@ -16,6 +16,8 @@
 #include "datareader.h"
 #include "modelbin.h"
 #include <algorithm>
+#include <cstdint>
+#include <memory>
 #include <nncase/importer/importer.h>
 #include <nncase/importer/util.h>
 #include <nncase/ir/graph.h>
@@ -25,11 +27,11 @@ using namespace nncase;
 using namespace nncase::importer;
 using namespace nncase::ir;
 
-ncnn_importer::ncnn_importer(const std::filesystem::path &_paramfilename, const std::filesystem::path &_binfilename, ir::graph &graph)
+ncnn_importer::ncnn_importer(std::span<const uint8_t> _paramfile, std::span<const uint8_t> _binfile, ir::graph &graph)
     : graph_(graph)
 {
-    paramfilename = _paramfilename;
-    binfilename = _binfilename;
+    paramfile = _paramfile;
+    binfile = _binfile;
 }
 
 class FileWrapper
@@ -53,11 +55,10 @@ public:
 void ncnn_importer::import(const import_options & /*options*/)
 {
     // load param
-    FileWrapper paramfile(paramfilename.string());
-    FileWrapper binfile(binfilename.string());
-
-    ncnn::DataReaderFromStdio dr(paramfile.fp);
-    ncnn::DataReaderFromStdio bindr(binfile.fp);
+    auto param_mem = (const unsigned char *)paramfile.data();
+    auto bin_mem = (const unsigned char *)binfile.data();
+    ncnn::DataReaderFromMemory dr(param_mem);
+    ncnn::DataReaderFromMemory bindr(bin_mem);
 
     ncnn::ModelBinFromDataReader mb(bindr);
 
