@@ -11,6 +11,9 @@ case: # case的配置，应该是一个多层次的
       input_layout: 'NHWC'
       output_layout: 'NHWC'
   preprocess_opt:
+    name: 'preprocess_opt'
+    flag: true
+    kwargs:
       image_format: 'BGR'
       input_shape: [14,32,3]
       norm: {

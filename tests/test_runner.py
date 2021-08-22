@@ -317,7 +317,7 @@ class TestRunner(metaclass=ABCMeta):
         if not self.inputs:
             self.parse_model_input_output(model_file)
         self.get_process_config(cfg)
-        if cfg.importer_opt.kwargs['input_shape'] != None:
+        if cfg.preprocess_opt.kwargs['input_shape'] != None:
             self.generate_data(cfg.generate_inputs, case_dir,
                                self.inputs, self.input_paths, 'input', cfg.preprocess_opt.kwargs['input_shape'])
             self.generate_data(cfg.generate_calibs, case_dir,
