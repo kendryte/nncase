@@ -85,7 +85,7 @@ void neutral_target::add_default_transforms(ir::transforms::transform_pass &pass
     if (add_constant_folding)
         pass.emplace<fold_constant_transform>();
     pass.emplace<dequantize_transbin_motion_transform>();
-    pass.emplace<dequantize_transpose_motion_transform>();
+    // pass.emplace<dequantize_transpose_motion_transform>();
     pass.emplace<dequantize_bitcast_motion_transform>();
     pass.emplace<dequantize_reshape_motion_transform>();
     pass.emplace<dequantize_slice_motion_transform>();
@@ -153,7 +153,7 @@ void neutral_target::fold_dilated_conv_transform(ir::transforms::transform_pass 
         pass.emplace<fold_constant_transform>();
     pass.emplace<transpose_binary_motion_transform>();
     pass.emplace<quantize_transpose_motion_transform>();
-    pass.emplace<dequantize_transpose_motion_transform>();
+    // pass.emplace<dequantize_transpose_motion_transform>();
     pass.emplace<fold_transpose_transform>();
     pass.emplace<fold_nop_transpose_transform>();
     pass.emplace<dequantize_s2b_motion_transform>();

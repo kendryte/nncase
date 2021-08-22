@@ -385,11 +385,11 @@ private:
 
             ir::transforms::transform_pass p("process i&o node");
 
-            if (compile_options_.input_type != "float32")
-            {
-                value_range<float> input_range { 0, 0 };
-                p.emplace<nncase::ir::transforms::process_input>(to_datatype_method(compile_options_.input_type), input_range);
-            }
+            // if (compile_options_.input_type != "float32")
+            // {
+            // value_range<float> input_range { 0, 0 };
+            // p.emplace<nncase::ir::transforms::process_input>(to_datatype_method(compile_options_.input_type), input_range);
+            // }
             if (compile_options_.output_type != "float32")
                 p.emplace<nncase::ir::transforms::add_output_quantize_transform>(to_datatype_method(compile_options_.output_type));
             pmgr.add_pass(std::move(p));

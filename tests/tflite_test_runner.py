@@ -49,11 +49,12 @@ class TfliteTestRunner(TestRunner):
             output_dict['model_shape'] = item['shape']
             self.outputs.append(output_dict)
 
-    def cpu_infer(self, case_dir: str, model_file: bytes):
+    def cpu_infer(self, case_dir: str, model_file: bytes, type: str):
         interp = tf.lite.Interpreter(model_path=model_file)
         interp.allocate_tensors()
         for input in self.inputs:
             interp.set_tensor(input["index"], self.data_pre_process(input['data']))
+            # self.transform_input(input['data'], type)))
 
         interp.invoke()
 

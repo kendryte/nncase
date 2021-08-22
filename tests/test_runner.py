@@ -12,6 +12,8 @@ import struct
 from compare_util import compare
 import copy
 from PIL import Image
+import cv2
+import tensorflow as tf
 
 
 class Edict:
@@ -113,19 +115,6 @@ DataFactory = {
 }
 
 
-def transform_input(values: np.array, type: str):
-    if type == 'float32':
-        return values
-    elif type == 'uint8':
-        values = ((values + 1) * 127.5).astype(np.uint8)
-        return values
-    elif type == 'int8':
-        values = (values * 127).astype(np.int8)
-        return values
-    else:
-        raise TypeError(" Not support type for quant input")
-
-
 class TestRunner(metaclass=ABCMeta):
     def __init__(self, case_name, targets=None, overwirte_configs: Union[Dict, str] = None) -> None:
         config_root = os.path.dirname(__file__)
@@ -161,92 +150,109 @@ class TestRunner(metaclass=ABCMeta):
         '''
         self.num_pattern = re.compile("(\d+)")
 
+    def transform_input(self, values: np.array, type: str):
+        if type == 'float32':
+            return values
+        elif type == 'uint8':
+            values = ((values) * 255).astype(np.uint8)
+            return values
+        elif type == 'int8':
+            values = ((values - 0.5) * 255).astype(np.int8)
+            return values
+        else:
+            raise TypeError(" Not support type for quant input")
+
     def get_process_config(self, config):
+        # dequant
+        process_deq = {}
+        process_deq['range'] = config.importer_opt.kwargs['input_range']
+        process_deq['input_type'] = config.compile_opt.kwargs['input_type']
+
         # norm
-        process1 = {}
+        process_norm = {}
         data1 = {}
         data1 = {
             'mean': config.importer_opt.kwargs['norm']['mean'],
             'scale': config.importer_opt.kwargs['norm']['scale']
         }
-        process1['norm'] = data1
+        process_norm['norm'] = data1
 
         # bgr2rgb
-        process2 = {}
-        process2['image_format'] = config.importer_opt.kwargs['image_format']
+        process_layout = {}
+        process_layout['image_format'] = config.importer_opt.kwargs['image_format']
 
-        process3 = {}
-        process3['input_range'] = config.importer_opt.kwargs['input_range']
-        process3['input_shape'] = config.importer_opt.kwargs['input_shape']
-        process3['model_shape'] = self.inputs[0]['model_shape']
-        process3['input_type'] = config.compile_opt.kwargs['input_type']
+        # letter box
+        process_letterbox = {}
+        process_letterbox['input_range'] = config.importer_opt.kwargs['input_range']
+        process_letterbox['input_shape'] = config.importer_opt.kwargs['input_shape']
+        process_letterbox['model_shape'] = self.inputs[0]['model_shape']
+        process_letterbox['input_type'] = config.compile_opt.kwargs['input_type']
 
-        self.pre_process.append(process1)
-        self.pre_process.append(process2)
-        self.pre_process.append(process3)
+        self.pre_process.append(process_deq)
+        self.pre_process.append(process_layout)
+        self.pre_process.append(process_letterbox)
+        self.pre_process.append(process_norm)
 
     def data_pre_process(self, data):
         for item in self.pre_process:
+            # dequantize
+            if 'range' in item.keys() and 'input_type' in item.keys():
+                Q_max, Q_min = 0, 0
+                if item['input_type'] == 'uint8':
+                    Q_max, Q_min = 255, 0
+                elif item['input_type'] == 'int8':
+                    Q_max, Q_min = 127, -128
+                else:
+                    continue
+                scale = (item['range'][1] - item['range'][0]) / (Q_max - Q_min)
+                bias = round((item['range'][1] * Q_min - item['range'][0] *
+                             Q_max) / (item['range'][1] - item['range'][0]))
+                data *= scale
+                data -= bias
+
             # BGR2RGB
             if 'image_format' in item.keys():
                 if(item['image_format'] == 'BGR'):
-                    data = np.flip(data, (-1))  # data[:,:,:,::-1]
+                    data = data[:, :, :, ::-1]
+                    data = np.array(data)
 
-            # TODO: LetterBox
+            # LetterBox
             if 'input_range' in item.keys() and 'input_shape' in item.keys() and 'model_shape' in item.keys():
-                in_h, in_w = item['input_shape'][1], item['input_shape'][2]
-                model_h, model_w = item['model_shape'][1], item['model_shape'][2]
-                # ratio = max(in_h / model_h, in_w / model_w)
-                ratio = min(model_h / in_h, model_w / in_w)
-                new_shape = data.shape[0], int(model_h / ratio), int(model_w / ratio), 3
-                # get pad value
-                pad_value = []
-                if(item['input_type'] == "uint8"):
-                    pad_value.append(114)
-                elif item['input_type'] == "int8":
-                    pad_value.append(114 - 128)
-                else:
-                    pad_value.append(item['input_range'][0] + (item['input_range']
-                                     [1] - item['input_range'][0]) * (114 / 255.0))
-                new_data = np.zeros(new_shape)
-                if(item['input_type'] == "uint8"):
-                    new_data = new_data.astype(np.uint8)
-                elif item['input_type'] == "int8":
-                    new_data = new_data.astype(np.int8)
-                else:
-                    new_data = new_data.astype(np.float32)
+                if item['model_shape'][1] != item['input_shape'][1] or item['model_shape'][2] != item['input_shape'][2]:
+                    in_h, in_w = item['input_shape'][1], item['input_shape'][2]
+                    model_h, model_w = item['model_shape'][1], item['model_shape'][2]
+                    ratio = min(model_h / in_h, model_w / in_w)
+                    resize_shape = data.shape[0], round(in_h * ratio), round(in_w * ratio), 3
 
-                new_data += pad_value
-                # get fill range
-                # fill_h, fill_w = int(abs(new_data.shape[1] - data.shape[1])), \
-                #     int(abs(new_data.shape[2] - data.shape[2]))
+                    resize_data = tf.image.resize(
+                        data[0], [resize_shape[1], resize_shape[2]], method=tf.image.ResizeMethod.BILINEAR)
+                    dh = item['model_shape'][1] - resize_shape[1]
+                    dw = item['model_shape'][2] - resize_shape[2]
+                    dh /= 2
+                    dw /= 2
 
-                # data = cv2.copyMakeBorder(data, int(fill_h / 2), fill_h - int(fill_h / 2),
-                #                           int(fill_w / 2), fill_w - int(fill_w / 2),
-                #                           cv2.BORDER_CONSTANT, value=(1, 1, 1))
-                fill_h, fill_w = int(abs(new_data.shape[1] - data.shape[1]) / 2), \
-                    int(abs(new_data.shape[2] - data.shape[2]) / 2)
-                new_data[:, fill_h:fill_h + data.shape[1], fill_w:fill_w + data.shape[2], :] = data
+                    # if(item['input_type'] == "uint8"):
+                    #     resize_data = np.array(resize_data, dtype=np.uint8)
+                    # elif item['input_type'] == "int8":
+                    #     resize_data = np.array(resize_data, dtype=np.int8)
+                    # else:
+                    resize_data = np.array(resize_data, dtype=np.float32)
 
-                # PIL fromarray need uint8 input
-                new_data = new_data * 255
-                new_data = new_data.squeeze(0)
-                tmp = Image.fromarray(np.uint8(new_data), mode="RGB")
+                    data = tf.image.pad_to_bounding_box(resize_data, round(
+                        dh - 0.1), round(dw - 0.1), model_h, model_w)
 
-                # PIL resize need (w,h)
-                data = tmp.resize((item['model_shape'][2], item['model_shape'][1]), Image.BILINEAR)
-                data = np.array(data, dtype=np.float32)
-                data = np.expand_dims(data, 0)
-                # data = np.resize(new_data, [1, item['model_shape'][1],
-                #                  item['model_shape'][2], item['model_shape'][3]])
+                    data = np.array(data, dtype=np.float32)
+                    data = np.expand_dims(data, 0)
+
             # Normalize
             # TODO: add discribe for normalize
             if 'norm' in item.keys():
                 for i in range(data.shape[-1]):
-                    data[:, :, :, i] = \
-                        (data[:, :, :, i] - float(item['norm']['mean'][i])) * \
+                    # data = data.astype(np.float32)
+                    data[:, :, :, i] = (data[:, :, :, i] - float(item['norm']['mean'][i])) / \
                         float(item['norm']['scale'][i])
-
+        self.totxtfile(
+            "/home/curio/github/nncase/tests_output/test_20classes_yolo/input_preprocess.txt", data)
         return data
 
     def validte_config(self, config):
@@ -302,15 +308,15 @@ class TestRunner(metaclass=ABCMeta):
                 shutil.rmtree(case_dir)
         os.makedirs(case_dir)
 
-    @abstractmethod
+    @ abstractmethod
     def parse_model_input_output(self, model_path: str):
         pass
 
-    @abstractmethod
-    def cpu_infer(self, case_dir: str, model_content: bytes):
+    @ abstractmethod
+    def cpu_infer(self, case_dir: str, model_content: bytes, type: str):
         pass
 
-    @abstractmethod
+    @ abstractmethod
     def import_model(self, compiler, model_content, import_options):
         pass
 
@@ -329,7 +335,7 @@ class TestRunner(metaclass=ABCMeta):
                                self.inputs, self.input_paths, 'input')
             self.generate_data(cfg.generate_calibs, case_dir,
                                self.calibs, self.calib_paths, 'calib')
-        self.cpu_infer(case_dir, model_file)
+        self.cpu_infer(case_dir, model_file, cfg.compile_opt.kwargs['input_type'])
         import_options, compile_options = self.get_compiler_options(cfg, model_file)
         model_content = self.read_model_file(model_file)
         self.run_evaluator(cfg, case_dir, import_options, compile_options, model_content)
@@ -376,7 +382,7 @@ class TestRunner(metaclass=ABCMeta):
                 self.output_paths, infer_output_paths, dict_args)
             assert(judge), 'Fault result in infer' + result
 
-    @staticmethod
+    @ staticmethod
     def split_value(kwcfg: List[Dict[str, str]]) -> Tuple[List[str], List[str]]:
         arg_names = []
         arg_values = []
@@ -390,7 +396,7 @@ class TestRunner(metaclass=ABCMeta):
             model_content = f.read()
         return model_content
 
-    @staticmethod
+    @ staticmethod
     def kwargs_to_path(path: str, kwargs: Dict[str, str]):
         for k, v in kwargs.items():
             if isinstance(v, str):
@@ -440,6 +446,7 @@ class TestRunner(metaclass=ABCMeta):
         compile_options.quant_type = cfg.compile_opt.kwargs['quant_type']
         compile_options.image_format = cfg.importer_opt.kwargs['image_format']
         compile_options.input_shape = cfg.importer_opt.kwargs['input_shape']
+        compile_options.input_range = cfg.importer_opt.kwargs['input_range']
         compile_options.mean = cfg.importer_opt.kwargs['norm']['mean']
         compile_options.scale = cfg.importer_opt.kwargs['norm']['scale']
         compiler = nncase.Compiler(compile_options)
@@ -447,7 +454,7 @@ class TestRunner(metaclass=ABCMeta):
         if kwargs['ptq']:
             ptq_options = nncase.PTQTensorOptions()
             ptq_options.set_tensor_data(np.asarray(
-                [self.data_pre_process(sample['data'], compile_options.input_type) for sample in self.calibs]).tobytes())
+                [self.data_pre_process(sample['data']) for sample in self.calibs]).tobytes())
             ptq_options.samples_count = cfg.generate_calibs.batch_size
             ptq_options.input_mean = cfg.ptq_opt.kwargs['input_mean']
             ptq_options.input_std = cfg.ptq_opt.kwargs['input_std']
@@ -462,7 +469,7 @@ class TestRunner(metaclass=ABCMeta):
         infer_output_paths: List[np.ndarray] = []
         for i in range(len(self.inputs)):
             sim.set_input_tensor(
-                i, nncase.RuntimeTensor.from_numpy(self.inputs[i]['data']))
+                i, nncase.RuntimeTensor.from_numpy(self.transform_input(self.inputs[i]['data'], cfg.compile_opt.kwargs['input_type'])))
         sim.run()
 
         for i in range(sim.outputs_size):
