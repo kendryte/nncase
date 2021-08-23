@@ -15,50 +15,28 @@
 
 import pytest
 import tensorflow as tf
+from tensorflow import keras
 from tflite_test_runner import TfliteTestRunner
 
 
-def _make_module(in_shape, axes):
-    class ExpandDimsModule(tf.Module):
-        def __init__(self):
-            super(ExpandDimsModule).__init__()
-
-        @tf.function(input_signature=[tf.TensorSpec(in_shape, tf.float32)])
-        def __call__(self, x):
-            unary = tf.math.abs(x)
-            y = tf.expand_dims(unary, axes)
-            return y
-
-    return ExpandDimsModule()
+def _make_model(in_shape):
+    model = keras.Sequential()
+    model.add(keras.layers.Conv1D(4, 3, activation='relu', input_shape=in_shape[1:]))
+    return model
 
 
 in_shapes = [
-    [28],
-    [28, 28],
     [3, 28, 28]
-]
-
-axes_list = [
-    [0],
-    [1],
-    [2],
-    [3],
-    [-1],
-    [-2],
-    [-3],
-    [-4]
 ]
 
 
 @pytest.mark.parametrize('in_shape', in_shapes)
-@pytest.mark.parametrize('axes', axes_list)
-def test_expand_dims(in_shape, axes, request):
-    if len(in_shape) + len(axes) == 4:
-        model_def = _make_module(in_shape, axes)
+def test_expand_dims(in_shape, request):
+    model = _make_model(in_shape)
 
-        runner = TfliteTestRunner(request.node.name)
-        model_file = runner.from_tensorflow(model_def)
-        runner.run(model_file)
+    runner = TfliteTestRunner(request.node.name)
+    model_file = runner.from_keras(model)
+    runner.run(model_file)
 
 
 if __name__ == "__main__":
