@@ -101,6 +101,16 @@ jobs:
         brew install sunnycase/core/libomp@11.1.0
         
     - name: Install Vulkan SDK
+      if: runner.os == 'Linux'
+      shell: bash
+      env:
+        VULKANSDK_VER: 1.2.182.0
+      run: |
+        wget https://sdk.lunarg.com/sdk/download/1.2.182.0/linux/vulkansdk-linux-x86_64-${VULKANSDK_VER}.tar.gz -O vulkansdk.tar.gz
+        tar xf vulkansdk.tar.gz
+        sudo cp -P ${VULKANSDK_VER}/x86_64/lib/libvulkan.so* /usr/local/lib/
+        
+    - name: Install Vulkan SDK
       if: runner.os == 'Windows'
       shell: pwsh
       run: |
