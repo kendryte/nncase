@@ -20,7 +20,7 @@ case: # case的配置，应该是一个多层次的
         mean: [0.485, 0.456, 0.406],
         scale: [0.229, 0.224, 0.225]
         }
-      input_range: [0, 10]
+      input_range: [0, 1]
   compile_opt:
     kwargs:
       dump_asm: true
