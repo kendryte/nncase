@@ -18,6 +18,7 @@ import tensorflow as tf
 import numpy as np
 from tflite_test_runner import TfliteTestRunner
 
+
 def _make_module(in_shape, output_channel, axis, keepdim):
     class Module(tf.Module):
         def __init__(self):
