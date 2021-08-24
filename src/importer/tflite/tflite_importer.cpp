@@ -57,14 +57,15 @@ void tflite_importer::import(const import_options &options, std::string &real_la
             sur_trans->name(tensor.name()->string_view());
             sur_trans->input().connect(node->output());
             created_inputs.emplace(in, &sur_trans->output());
+            real_layout = "NCHW";
         }
         else
         {
             auto node = graph_.emplace<input_node>(type, shape);
             node->name(tensor.name()->string_view());
             created_inputs.emplace(in, &node->output());
+            real_layout = "NHWC";
         }
-        real_layout = "NHWC";
     }
 
     std::vector<int32_t> outputs;

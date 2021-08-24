@@ -151,8 +151,10 @@ class TestRunner(metaclass=ABCMeta):
         self.num_pattern = re.compile("(\d+)")
 
     def transform_input(self, values: np.array, type: str):
+        if self.cfg.case.importer_opt.kwargs['input_layout'] != "NHWC":
+            values = np.transpose(values, [0, 3, 1, 2])
         if type == 'float32':
-            return values
+            return values.astype(np.float32)
         elif type == 'uint8':
             values = ((values) * 255).astype(np.uint8)
             return values
@@ -194,57 +196,67 @@ class TestRunner(metaclass=ABCMeta):
         self.pre_process.append(process_norm)
 
     def data_pre_process(self, data):
-        for item in self.pre_process:
-            # dequantize
-            if 'range' in item.keys() and 'input_type' in item.keys():
-                Q_max, Q_min = 0, 0
-                if item['input_type'] == 'uint8':
-                    Q_max, Q_min = 255, 0
-                elif item['input_type'] == 'int8':
-                    Q_max, Q_min = 127, -128
-                else:
-                    continue
-                scale = (item['range'][1] - item['range'][0]) / (Q_max - Q_min)
-                bias = round((item['range'][1] * Q_min - item['range'][0] *
-                             Q_max) / (item['range'][1] - item['range'][0]))
-                data *= scale
-                data -= bias
+        # transpose_flag = -1  # NHWC
+        # if self.cfg.case.importer_opt.kwargs['input_layout'] != "NHWC":
+        #     data = np.transpose(data, [0, 3, 1, 2])
+        if self.cfg.case.preprocess_opt.flag == True:
+            for item in self.pre_process:
+                # dequantize
+                if 'range' in item.keys() and 'input_type' in item.keys():
+                    Q_max, Q_min = 0, 0
+                    if item['input_type'] == 'uint8':
+                        Q_max, Q_min = 255, 0
+                    elif item['input_type'] == 'int8':
+                        Q_max, Q_min = 127, -128
+                    else:
+                        continue
+                    scale = (item['range'][1] - item['range'][0]) / (Q_max - Q_min)
+                    bias = round((item['range'][1] * Q_min - item['range'][0] *
+                                  Q_max) / (item['range'][1] - item['range'][0]))
+                    data *= scale
+                    data -= bias
 
-            # BGR2RGB
-            if 'image_format' in item.keys():
-                if(item['image_format'] == 'BGR'):
-                    data = data[:, :, :, ::-1]
-                    data = np.array(data)
+                # BGR2RGB
+                if 'image_format' in item.keys():
+                    if(item['image_format'] == 'BGR'):
+                        data = data[:, :, :, ::-1]
+                        data = np.array(data)
 
-            # LetterBox
-            if 'input_range' in item.keys() and 'input_shape' in item.keys() and 'model_shape' in item.keys():
-                if item['model_shape'][1] != item['input_shape'][1] or item['model_shape'][2] != item['input_shape'][2]:
-                    in_h, in_w = item['input_shape'][1], item['input_shape'][2]
-                    model_h, model_w = item['model_shape'][1], item['model_shape'][2]
-                    ratio = min(model_h / in_h, model_w / in_w)
-                    resize_shape = data.shape[0], round(in_h * ratio), round(in_w * ratio), 3
+                # LetterBox
+                if 'input_range' in item.keys() and 'input_shape' in item.keys() and 'model_shape' in item.keys():
+                    if item['model_shape'][1] != item['input_shape'][1] or item['model_shape'][2] != item['input_shape'][2]:
+                        in_h, in_w = item['input_shape'][1], item['input_shape'][2]
+                        model_h, model_w = item['model_shape'][1], item['model_shape'][2]
+                        ratio = min(model_h / in_h, model_w / in_w)
+                        resize_shape = data.shape[0], round(in_h * ratio), round(in_w * ratio), 3
 
-                    resize_data = tf.image.resize(
-                        data[0], [resize_shape[1], resize_shape[2]], method=tf.image.ResizeMethod.BILINEAR)
-                    dh = item['model_shape'][1] - resize_shape[1]
-                    dw = item['model_shape'][2] - resize_shape[2]
-                    dh /= 2
-                    dw /= 2
+                        resize_data = tf.image.resize(
+                            data[0], [resize_shape[1], resize_shape[2]], method=tf.image.ResizeMethod.BILINEAR)
+                        dh = item['model_shape'][1] - resize_shape[1]
+                        dw = item['model_shape'][2] - resize_shape[2]
+                        dh /= 2
+                        dw /= 2
 
-                    resize_data = np.array(resize_data, dtype=np.float32)
+                        resize_data = np.array(resize_data, dtype=np.float32)
 
-                    data = tf.image.pad_to_bounding_box(resize_data, round(
-                        dh - 0.1), round(dw - 0.1), model_h, model_w)
+                        data = tf.image.pad_to_bounding_box(resize_data, round(
+                            dh - 0.1), round(dw - 0.1), model_h, model_w)
 
-                    data = np.array(data, dtype=np.float32)
-                    data = np.expand_dims(data, 0)
+                        data = np.array(data, dtype=np.float32)
+                        data = np.expand_dims(data, 0)
 
-            # Normalize(Standardization)
-            if 'norm' in item.keys():
-                for i in range(data.shape[-1]):
-                    # data = data.astype(np.float32)
-                    data[:, :, :, i] = (data[:, :, :, i] - float(item['norm']['mean'][i])) / \
-                        float(item['norm']['scale'][i])
+                # Normalize(Standardization)
+                if 'norm' in item.keys():
+                    for i in range(data.shape[-1]):
+                        # data = data.astype(np.float32)
+                        # if transpose_flag == -1:
+                        data[:, :, :, i] = (data[:, :, :, i] - float(item['norm']['mean'][i])) / \
+                            float(item['norm']['scale'][i])
+                        # else:
+                        #     data[:, i, :, :] = (data[:, i, :, :] - float(item['norm']['mean'][i])) / \
+                        #         float(item['norm']['scale'][i])
+        # if self.cfg.case.importer_opt.kwargs['input_layout'] != "NHWC":
+        #     data = np.transpose(data, [0, 3, 1, 2])
         return data
 
     def validte_config(self, config):
@@ -412,7 +424,8 @@ class TestRunner(metaclass=ABCMeta):
         eval_output_paths = []
         for i in range(len(self.inputs)):
             input_tensor = nncase.RuntimeTensor.from_numpy(
-                self.data_pre_process(self.inputs[i]['data']))
+                self.transform_input(self.data_pre_process(self.inputs[i]['data']), "float32"))
+            # self.data_pre_process(self.inputs[i]['data']))
             input_tensor.copy_to(evaluator.get_input_tensor(i))
             evaluator.run()
 

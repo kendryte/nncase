@@ -66,7 +66,7 @@ void pre_process_transform::process(transform_context &context)
     else
     {
         // fit onnx
-        new_shape = { size_t(old_in->output().shape()[0]), size_t(input_shape_[1]), size_t(input_shape_[2]), size_t(input_shape_[3]) };
+        new_shape = { size_t(old_in->output().shape()[0]), size_t(input_shape_[3]), size_t(input_shape_[1]), size_t(input_shape_[2]) };
         old_shape = { size_t(old_in->output().shape()[0]), size_t(old_in->output().shape()[1]), size_t(old_in->output().shape()[2]), size_t(old_in->output().shape()[3]) };
     }
     auto new_input = context.graph.emplace<input_node>(get_datatype(input_type_), new_shape);

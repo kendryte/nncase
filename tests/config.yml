@@ -8,17 +8,17 @@ running: # 每个case运行时的处理配置
 case: # case的配置，应该是一个多层次的
   importer_opt:
     kwargs: 
-      input_layout: 'NHWC'
-      output_layout: 'NHWC'
+      input_layout: 'NCHW'
+      output_layout: 'NHWC' #depend on model type tflite(NHWC)| onnx(NCHW)
   preprocess_opt:
     name: 'preprocess_opt'
     flag: true
     kwargs:
       image_format: 'BGR'
-      input_shape: [14,32,3]
+      input_shape: [256,320,3]
       norm: {
-        mean: [0.485, 0.456, 0.406],
-        scale: [0.229, 0.224, 0.225]
+        mean: [0., 0., 0.],
+        scale: [255, 255, 255]
         }
       input_range: [0, 1]
   compile_opt:
