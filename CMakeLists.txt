@@ -57,7 +57,7 @@ else() # in user space
     message(STATUS "Auto Cmake Conan Installation")
     include(${CMAKE_SOURCE_DIR}/cmake/conan.cmake)
     conan_cmake_run(CONANFILE conanfile.py
-                    BASIC_SETUP
+                    BASIC_SETUP TARGETS
                     OPTIONS ${CONAN_OPTS}
                     SETTINGS ${CONAN_SETTINGS}
                     BUILD missing)
@@ -161,27 +161,27 @@ else()
     include_directories(${NNCASE_INCLUDE_DIR})
     
     add_subdirectory(include/nncase)
-    add_subdirectory(src/nncase)
-    add_subdirectory(src/data)
+    #add_subdirectory(src/nncase)
+    #add_subdirectory(src/data)
     add_subdirectory(src/ir)
-    add_subdirectory(src/importer)
-    add_subdirectory(src/schedule)
-    add_subdirectory(src/evaluator)
-    add_subdirectory(src/transforms)
-    add_subdirectory(src/codegen)
-    add_subdirectory(src/kernels)
-    add_subdirectory(src/runtime)
-    add_subdirectory(src/targets)
-    add_subdirectory(src/plugin)
-    add_subdirectory(src/cli)
+    #add_subdirectory(src/importer)
+    #add_subdirectory(src/schedule)
+    #add_subdirectory(src/evaluator)
+    #add_subdirectory(src/transforms)
+    #add_subdirectory(src/codegen)
+    #add_subdirectory(src/kernels)
+    #add_subdirectory(src/runtime)
+    #add_subdirectory(src/targets)
+    #add_subdirectory(src/plugin)
+    #add_subdirectory(src/cli)
 
     if(BUILD_TESTING)
-        add_subdirectory(tests/kernels)
+    #    add_subdirectory(tests/kernels)
     endif()
     
     # Python binding
     if(BUILD_PYTHON_BINDING)
-        add_subdirectory(python/nncase/native)
+    #    add_subdirectory(python/nncase/native)
     endif()
     
     # Thrid party
@@ -220,11 +220,11 @@ else()
         )
     
     # Targets
-    add_subdirectory(targets/cpu)
-    add_subdirectory(targets/k210)
-    add_subdirectory(targets/vulkan)
+    #add_subdirectory(targets/cpu)
+    #add_subdirectory(targets/k210)
+    #add_subdirectory(targets/vulkan)
 endif()
 
 # Modules
-add_subdirectory(modules/k210)
-add_subdirectory(modules/vulkan)
+#add_subdirectory(modules/k210)
+#add_subdirectory(modules/vulkan)

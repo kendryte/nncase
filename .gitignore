@@ -287,3 +287,4 @@ tests_output
 .DS_Store
 RC*
 wheelhouse/
+.cache
