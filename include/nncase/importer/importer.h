@@ -29,5 +29,5 @@ struct import_options
 };
 
 void import_tflite(ir::graph &graph, std::span<const uint8_t> model, const import_options &options, std::string &real_layout);
-void import_onnx(ir::graph &graph, std::span<const uint8_t> model, const import_options &options);
+void import_onnx(ir::graph &graph, std::span<const uint8_t> model, const import_options &options, std::string &real_layout);
 }

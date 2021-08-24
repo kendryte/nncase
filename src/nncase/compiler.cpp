@@ -156,7 +156,7 @@ public:
     void import_onnx(std::span<const uint8_t> model, const import_options &options) override
     {
         BEGIN_IMPORT()
-        importer::import_onnx(graph_, model, imp_options);
+        importer::import_onnx(graph_, model, imp_options, real_layout_);
         END_IMPORT()
     }
 
@@ -287,6 +287,7 @@ private:
                 cmp_options.image_format, input_layout_,
                 cmp_options.input_type, cmp_options.quant_type,
                 real_layout_);
+            pass.emplace<dequantize_slice_motion_transform>();
             pmgr.add_pass(std::move(pass));
         });
     }

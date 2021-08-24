@@ -136,6 +136,7 @@ class TestRunner(metaclass=ABCMeta):
         self.input_paths: List[Tuple[str, str]] = []
         self.calib_paths: List[Tuple[str, str]] = []
         self.output_paths: List[Tuple[str, str]] = []
+        self.model_type: str = ""
         self.pre_process: List[Dict] = []
         '''
             pre_process:
@@ -151,7 +152,9 @@ class TestRunner(metaclass=ABCMeta):
         self.num_pattern = re.compile("(\d+)")
 
     def transform_input(self, values: np.array, type: str):
-        if self.cfg.case.importer_opt.kwargs['input_layout'] != "NHWC":
+        if self.cfg.case.importer_opt.kwargs['input_layout'] != "NHWC" and self.model_type == "tflite":
+            values = np.transpose(values, [0, 3, 1, 2])
+        elif self.cfg.case.importer_opt.kwargs['input_layout'] == "NHWC" and self.model_type == "onnx":
             values = np.transpose(values, [0, 3, 1, 2])
         if type == 'float32':
             return values.astype(np.float32)
@@ -187,7 +190,7 @@ class TestRunner(metaclass=ABCMeta):
         process_letterbox = {}
         process_letterbox['input_range'] = config.preprocess_opt.kwargs['input_range']
         process_letterbox['input_shape'] = config.preprocess_opt.kwargs['input_shape']
-        process_letterbox['model_shape'] = self.inputs[0]['model_shape']
+        process_letterbox['shape'] = self.inputs[0]['shape']
         process_letterbox['input_type'] = config.compile_opt.kwargs['input_type']
 
         self.pre_process.append(process_deq)
@@ -196,9 +199,11 @@ class TestRunner(metaclass=ABCMeta):
         self.pre_process.append(process_norm)
 
     def data_pre_process(self, data):
-        # transpose_flag = -1  # NHWC
-        # if self.cfg.case.importer_opt.kwargs['input_layout'] != "NHWC":
-        #     data = np.transpose(data, [0, 3, 1, 2])
+
+        transpose_flag = -1  # NHWC
+        if self.cfg.case.importer_opt.kwargs['input_layout'] != "NHWC":
+            data = np.transpose(data, [0, 2, 3, 1])
+            transpose_flag = 1
         if self.cfg.case.preprocess_opt.flag == True:
             for item in self.pre_process:
                 # dequantize
@@ -223,17 +228,23 @@ class TestRunner(metaclass=ABCMeta):
                         data = np.array(data)
 
                 # LetterBox
-                if 'input_range' in item.keys() and 'input_shape' in item.keys() and 'model_shape' in item.keys():
-                    if item['model_shape'][1] != item['input_shape'][1] or item['model_shape'][2] != item['input_shape'][2]:
-                        in_h, in_w = item['input_shape'][1], item['input_shape'][2]
-                        model_h, model_w = item['model_shape'][1], item['model_shape'][2]
+                if 'input_range' in item.keys() and 'input_shape' in item.keys() and 'shape' in item.keys():
+                    model_shape: List = []
+                    if self.model_type == "onnx":
+                        model_shape = [item['shape'][0], item['shape']
+                                       [2], item['shape'][3], item['shape'][1]]
+                    else:
+                        model_shape = item['shape']
+                    if model_shape[1] != data.shape[1] or model_shape[2] != data.shape[2]:
+                        in_h, in_w = data.shape[1], data.shape[2]
+                        model_h, model_w = model_shape[1], model_shape[2]
                         ratio = min(model_h / in_h, model_w / in_w)
                         resize_shape = data.shape[0], round(in_h * ratio), round(in_w * ratio), 3
 
                         resize_data = tf.image.resize(
                             data[0], [resize_shape[1], resize_shape[2]], method=tf.image.ResizeMethod.BILINEAR)
-                        dh = item['model_shape'][1] - resize_shape[1]
-                        dw = item['model_shape'][2] - resize_shape[2]
+                        dh = model_shape[1] - resize_shape[1]
+                        dw = model_shape[2] - resize_shape[2]
                         dh /= 2
                         dw /= 2
 
@@ -255,8 +266,8 @@ class TestRunner(metaclass=ABCMeta):
                         # else:
                         #     data[:, i, :, :] = (data[:, i, :, :] - float(item['norm']['mean'][i])) / \
                         #         float(item['norm']['scale'][i])
-        # if self.cfg.case.importer_opt.kwargs['input_layout'] != "NHWC":
-        #     data = np.transpose(data, [0, 3, 1, 2])
+        if self.cfg.case.importer_opt.kwargs['input_layout'] != "NHWC" and transpose_flag == 1:
+            data = np.transpose(data, [0, 3, 1, 2])
         return data
 
     def validte_config(self, config):
@@ -325,7 +336,6 @@ class TestRunner(metaclass=ABCMeta):
         pass
 
     def run_single(self, cfg, case_dir: str, model_file: str):
-        # TODO: 增加前处理的东西，然后对应在nncase中增加对应的前处理
         if not self.inputs:
             self.parse_model_input_output(model_file)
         self.get_process_config(cfg)
@@ -459,7 +469,7 @@ class TestRunner(metaclass=ABCMeta):
         if kwargs['ptq']:
             ptq_options = nncase.PTQTensorOptions()
             ptq_options.set_tensor_data(np.asarray(
-                [self.data_pre_process(sample['data']) for sample in self.calibs]).tobytes())
+                [self.transform_input(sample['data'], cfg.compile_opt.kwargs['input_type']) for sample in self.calibs]).tobytes())
             ptq_options.samples_count = cfg.generate_calibs.batch_size
             ptq_options.input_mean = cfg.ptq_opt.kwargs['input_mean']
             ptq_options.input_std = cfg.ptq_opt.kwargs['input_std']
@@ -498,7 +508,7 @@ class TestRunner(metaclass=ABCMeta):
                     input_shape.insert(0, 1)
                     shape = input_shape
                 else:
-                    shape = input['model_shape']
+                    shape = input['shape']
                 shape[0] *= cfg.batch_size
                 data = DataFactory[cfg.name](shape, input['dtype'], **cfg.kwargs)
 

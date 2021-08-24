@@ -25,7 +25,7 @@ void nncase::importer::import_tflite(ir::graph &graph, std::span<const uint8_t> 
     tflite_importer(model, graph).import(options, real_layout);
 }
 
-void nncase::importer::import_onnx(ir::graph &graph, std::span<const uint8_t> model, const import_options &options)
+void nncase::importer::import_onnx(ir::graph &graph, std::span<const uint8_t> model, const import_options &options, std::string &real_layout)
 {
-    onnx_importer(model, graph).import(options);
+    onnx_importer(model, graph).import(options, real_layout);
 }

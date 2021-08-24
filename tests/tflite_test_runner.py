@@ -7,6 +7,7 @@ import shutil
 class TfliteTestRunner(TestRunner):
     def __init__(self, case_name, targets=None, overwirte_configs: dict = None):
         super().__init__(case_name, targets, overwirte_configs)
+        self.model_type = "tflite"
 
     def from_tensorflow(self, module):
         # export model
@@ -37,7 +38,7 @@ class TfliteTestRunner(TestRunner):
             input_dict['index'] = item['index']
             input_dict['name'] = item['name']
             input_dict['dtype'] = item['dtype']
-            input_dict['model_shape'] = item['shape']
+            input_dict['shape'] = item['shape']
             self.inputs.append(input_dict)
             self.calibs.append(input_dict.copy())
 
@@ -46,7 +47,7 @@ class TfliteTestRunner(TestRunner):
             output_dict['index'] = item['index']
             output_dict['name'] = item['name']
             output_dict['dtype'] = item['dtype']
-            output_dict['model_shape'] = item['shape']
+            output_dict['shape'] = item['shape']
             self.outputs.append(output_dict)
 
     def cpu_infer(self, case_dir: str, model_file: bytes, type: str):
@@ -54,7 +55,6 @@ class TfliteTestRunner(TestRunner):
         interp.allocate_tensors()
         for input in self.inputs:
             interp.set_tensor(input["index"], self.data_pre_process(input['data']))
-            # self.transform_input(input['data'], type)))
 
         interp.invoke()
 
