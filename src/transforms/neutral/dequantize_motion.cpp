@@ -168,16 +168,33 @@ bool dequantize_slice_motion_transform::on_try_match(node &node, transform_conte
 {
     if (auto deq = node_cast<dequantize>(node))
     {
-        if (auto sl = try_get_direct_child<slice>(*deq))
+        // [[maybe_unused]] auto all_slice = deq->outputs().size();
+        for (auto &out : deq->output().connections())
         {
             context.matched_nodes.emplace_back(deq);
-            context.matched_nodes.emplace_back(sl);
-
             context.inputs.emplace_back(&deq->input());
-            context.outputs.emplace_back(&sl->output());
-
+            if (out->owner().runtime_opcode() == op_slice)
+            {
+                [[maybe_unused]] auto slice_node = node_cast<slice>(out->owner());
+                context.matched_nodes.emplace_back(slice_node);
+                context.outputs.emplace_back(&slice_node->output());
+            }
+            else
+            {
+                return false;
+            }
             return true;
         }
+        // if (auto sl = try_get_direct_child<slice>(*deq))
+        // {
+        //     context.matched_nodes.emplace_back(deq);
+        //     context.matched_nodes.emplace_back(sl);
+
+        //     context.inputs.emplace_back(&deq->input());
+        //     context.outputs.emplace_back(&sl->output());
+
+        //     return true;
+        // }
     }
 
     return false;
@@ -186,21 +203,22 @@ bool dequantize_slice_motion_transform::on_try_match(node &node, transform_conte
 void dequantize_slice_motion_transform::process(transform_context &context)
 {
     auto &output = *context.inputs[0]->connection();
-    auto inputs = context.outputs[0]->connections();
-
     auto &old_deq = static_cast<dequantize &>(*context.matched_nodes[0]);
-    auto &old_slice = static_cast<slice &>(*context.matched_nodes[1]);
 
-    auto sl = context.graph.emplace<slice>(dt_uint8, old_deq.input().shape(), old_slice.begin(), old_slice.end(), old_slice.strides(),
-        old_slice.begin_mask(), old_slice.end_mask(), old_slice.ellipsis_mask(), old_slice.new_axis_mask());
-    sl->name(old_slice.name());
-    auto deq = context.graph.emplace<dequantize>(sl->output().type(), sl->output().shape(), old_deq.output().type(), old_deq.quant_param());
-    deq->name(old_deq.name());
-    deq->input().connect(sl->output());
-
-    sl->input().connect(output);
-    for (auto &in : dup(inputs))
-        in->connect(deq->output());
+    for (int i = 1; i < context.matched_nodes.size(); i++)
+    {
+        auto inputs = context.outputs[i - 1]->connections();
+        auto &old_slice = static_cast<slice &>(*context.matched_nodes[i]);
+        auto sl = context.graph.emplace<slice>(old_deq.input().type(), old_deq.input().shape(), old_slice.begin(), old_slice.end(), old_slice.strides(),
+            old_slice.begin_mask(), old_slice.end_mask(), old_slice.ellipsis_mask(), old_slice.new_axis_mask());
+        sl->name(old_slice.name());
+        auto deq = context.graph.emplace<dequantize>(sl->output().type(), sl->output().shape(), old_deq.output().type(), old_deq.quant_param());
+        deq->name(old_deq.name());
+        deq->input().connect(sl->output());
+        sl->input().connect(output);
+        for (auto &in : dup(inputs))
+            in->connect(deq->output());
+    }
 }
 
 bool dequantize_resize_image_motion_transform::on_try_match(node &node, transform_context &context)
