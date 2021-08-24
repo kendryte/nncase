@@ -20,7 +20,7 @@ import nncase
 def test_targets(request):
     assert nncase.test_target("cpu")
     assert nncase.test_target("k210")
-    assert nncase.test_target("vulkan")
+    #assert nncase.test_target("vulkan")
 
 
 if __name__ == "__main__":

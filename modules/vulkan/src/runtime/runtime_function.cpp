@@ -131,6 +131,7 @@ result<void> vulkan_runtime_function::invoke_core() noexcept
     vk::SubmitInfo si({}, {}, cmd_buffer_, {});
     try_(vk::to_result(module().compute_queue().submit(si)));
     try_(vk::to_result(module().compute_queue().waitIdle()));
+    try_(vk::to_result(module().device().waitIdle()));
 
     assert(buffer_refs_.empty());
     assert(buffer_copies_.empty());
