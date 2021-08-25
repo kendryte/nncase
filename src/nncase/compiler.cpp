@@ -363,10 +363,10 @@ private:
             //     quant->record(graph.inputs()[0]->output(), input_range);
             // }
 
-            // // broadcast quant ranges
-            // std::unordered_set<node_opcode> opcodes;
-            // target_->add_quantization_broadcast(opcodes);
-            // quant->broadcast_output(graph, opcodes);
+            // broadcast quant ranges
+            std::unordered_set<node_opcode> opcodes;
+            target_->add_quantization_broadcast(opcodes);
+            quant->broadcast_output(graph, opcodes);
 
             ir::transforms::transform_pass p("process i&o node");
 
@@ -375,6 +375,8 @@ private:
             // value_range<float> input_range { 0, 0 };
             // p.emplace<nncase::ir::transforms::process_input>(to_datatype_method(compile_options_.input_type), input_range);
             // }
+
+            // TODO: 输出类型的替换还有没有必要？
             if (compile_options_.output_type != "float32")
                 p.emplace<nncase::ir::transforms::add_output_quantize_transform>(to_datatype_method(compile_options_.output_type));
             pmgr.add_pass(std::move(p));

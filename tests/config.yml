@@ -14,19 +14,19 @@ case: # case的配置，应该是一个多层次的
     name: 'preprocess_opt'
     flag: false
     kwargs:
-      image_format: 'BGR'
-      input_shape: [256,320,3] # HWC
+      image_format: 'BGR' # BGR or RGB
+      input_shape: [224,224,3] # HWC
       norm: {
         mean: [0., 0., 0.],
         scale: [255, 255, 255]
         }
-      input_range: [0, 1]
+      input_range: [0, 1] # float range
   compile_opt:
     kwargs:
       dump_asm: true
       dump_ir: true
-      input_type: 'uint8'
-      quant_type: 'int8'
+      input_type: 'uint8' # uint8 or float32
+      quant_type: 'int8' # uint8, int8 or float32
       
   ptq_opt:
     kwargs:
