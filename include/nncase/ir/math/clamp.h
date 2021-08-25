@@ -12,12 +12,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/ir/call.h>
+#pragma once
+#include "../op.h"
+#include "nncase/runtime/datatypes.h"
+#include "opcode.h"
 
-using namespace nncase;
-using namespace nncase::ir;
-
-call_node::call_node(std::variant<function, op> target, std::vector<expr> arguments)
-    : target_(std::move(target)), arguments_(std::move(arguments))
+namespace nncase::ir::math
 {
+/** @brief Clamp operator node */
+class NNCASE_API clamp_node : public op_node
+{
+public:
+    DEFINE_NODE_OPCODE(op_math_clamp);
+
+    clamp_node();
+};
+
+using clamp = expr_t<clamp_node>;
 }

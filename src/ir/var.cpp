@@ -17,13 +17,7 @@
 using namespace nncase;
 using namespace nncase::ir;
 
-var_node::var_node(std::string name, type_t type) noexcept
-    : name_(std::move(name)), type_(std::move(type))
+var_node::var_node(std::string name) noexcept
+    : name_(std::move(name))
 {
-    var x("", type_t(typecode_t::bfloat16));
-}
-
-const type_t &var_node::type()
-{
-    return type_;
 }

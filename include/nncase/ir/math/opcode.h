@@ -12,12 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/ir/call.h>
+#pragma once
+#include "../opcode.h"
 
-using namespace nncase;
-using namespace nncase::ir;
-
-call_node::call_node(std::variant<function, op> target, std::vector<expr> arguments)
-    : target_(std::move(target)), arguments_(std::move(arguments))
+namespace nncase::ir::math
 {
+#define DEFINE_OPCODE(dialect, id, name, value) NNCASE_INLINE_VAR constexpr opcode_t op_##dialect##_##id { value, #name };
+
+#include "opcode.def"
+
+#undef DEFINE_OPCODE
 }

@@ -42,7 +42,8 @@ public:
     {
     }
 
-    const type_t &type() override;
+    /** @brief Get the type of the constant expression */
+    const type_t &type() const noexcept;
 
     /** @brief Get the data of the constant expression */
     std::span<const std::byte> data() const noexcept { return data_; }

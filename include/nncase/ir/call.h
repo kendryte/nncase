@@ -14,6 +14,8 @@
  */
 #pragma once
 #include "function.h"
+#include "op.h"
+#include <variant>
 
 namespace nncase::ir
 {
@@ -23,9 +25,7 @@ class NNCASE_API call_node : public expr_node
 public:
     DEFINE_NODE_NODEKIND(node_call);
 
-    call_node(function target, std::vector<expr> arguments);
-
-    const type_t &type() override;
+    call_node(std::variant<function, op> target, std::vector<expr> arguments);
 
     /** @brief Get the arguments of the call expression */
     std::span<const expr> arguments() const noexcept { return arguments_; }
@@ -33,12 +33,12 @@ public:
     std::span<expr> arguments() noexcept { return arguments_; }
 
     /** @brief Get the target of the call expression */
-    const function &target() const noexcept { return target_; }
+    const std::variant<function, op> &target() const noexcept { return target_; }
     /** @brief Set the target of the function expression */
-    void target(function value) noexcept { target_ = std::move(value); }
+    void target(std::variant<function, op> value) noexcept { target_ = std::move(value); }
 
 private:
-    function target_;
+    std::variant<function, op> target_;
     std::vector<expr> arguments_;
 };
 

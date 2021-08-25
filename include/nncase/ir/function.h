@@ -24,12 +24,7 @@ class NNCASE_API function_node : public expr_node
 public:
     DEFINE_NODE_NODEKIND(node_function);
 
-    function_node(type_t return_type, std::vector<var> parameters, expr body);
-
-    const type_t &type() override;
-
-    /** @brief Get the return type of the function expression */
-    const type_t &return_type() const noexcept { return return_type_; }
+    function_node(std::vector<var> parameters, expr body);
 
     /** @brief Get the parameters of the function expression */
     std::span<const var> parameters() const noexcept { return parameters_; }
@@ -40,7 +35,6 @@ public:
     void body(expr value) noexcept { body_ = std::move(value); }
 
 private:
-    type_t return_type_;
     std::vector<var> parameters_;
     expr body_;
 };

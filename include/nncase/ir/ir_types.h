@@ -20,6 +20,8 @@
 
 namespace nncase::ir
 {
+class op_node;
+
 using shape_t = xt::dynamic_shape<std::size_t>;
 using axis_t = xt::dynamic_shape<int32_t>;
 
@@ -44,6 +46,29 @@ enum connector_attributes
 
 DEFINE_ENUM_BITMASK_OPERATORS(node_attributes)
 DEFINE_ENUM_BITMASK_OPERATORS(connector_attributes)
+
+class NNCASE_API connector_info
+{
+public:
+    connector_info(op_node &owner, std::string name)
+        : owner_(owner), name_(std::move(name))
+    {
+    }
+
+    connector_info(const connector_info &) = delete;
+    connector_info(connector_info &&) = default;
+    connector_info &operator=(const connector_info &) = delete;
+
+    op_node &owner() const noexcept { return owner_; }
+    const std::string &name() const noexcept { return name_; }
+    connector_attributes attributes() const noexcept { return attributes_; }
+    void attributes(connector_attributes value) noexcept { attributes_ = value; }
+
+private:
+    op_node &owner_;
+    std::string name_;
+    connector_attributes attributes_ = cnctr_attr_none;
+};
 
 template <class T, class = std::enable_if_t<std::is_pointer_v<T>>>
 std::vector<std::decay_t<T>> dup(std::span<T> source)

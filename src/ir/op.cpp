@@ -17,12 +17,7 @@
 using namespace nncase;
 using namespace nncase::ir;
 
-function_node::function_node(type_t return_type, std::vector<var> parameters, expr body)
-    : return_type_(std::move(return_type)), parameters_(std::move(parameters)), body_(std::move(body))
+connector_info &op_node::add_parameter(std::string name)
 {
-}
-
-const type_t &function_node::type()
-{
-    return function_type;
+    return parameters_.emplace_back(std::move(name));
 }

@@ -13,26 +13,28 @@
  * limitations under the License.
  */
 #pragma once
-#include "expr.h"
+#include "../op.h"
+#include "nncase/runtime/datatypes.h"
+#include "opcode.h"
 
-namespace nncase::ir
+namespace nncase::ir::math
 {
-/** @brief Variable node **/
-class NNCASE_API var_node : public expr_node
+/** @brief Unary operator node */
+class NNCASE_API unary_node : public op_node
 {
 public:
-    DEFINE_NODE_NODEKIND(node_var);
+    DEFINE_NODE_OPCODE(op_math_unary);
 
-    var_node(std::string name) noexcept;
+    unary_node(unary_op_t unary_op);
 
-    /** @brief Get the name of the variable expression **/
-    const std::string &name() const noexcept { return name_; }
-    /** @brief Get the mutable name of the variable expression **/
-    std::string &name() noexcept { return name_; }
+    /** @brief Get the unary opcode of the unary expression */
+    unary_op_t unary_op() const noexcept { return unary_op_; }
+    /** @brief Set the unary opcode of the unary expression */
+    void unary_op(unary_op_t value) noexcept { unary_op_ = value; }
 
 private:
-    std::string name_;
+    unary_op_t unary_op_;
 };
 
-using var = expr_t<var_node>;
+using unary = expr_t<unary_node>;
 }

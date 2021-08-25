@@ -12,12 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/ir/call.h>
+#include "nncase/runtime/datatypes.h"
+#include <nncase/ir/math/binary.h>
 
 using namespace nncase;
 using namespace nncase::ir;
+using namespace nncase::ir::math;
 
-call_node::call_node(std::variant<function, op> target, std::vector<expr> arguments)
-    : target_(std::move(target)), arguments_(std::move(arguments))
+binary_node::binary_node(binary_op_t binary_op)
+    : binary_op_(binary_op)
 {
+    add_parameter("input_a");
+    add_parameter("input_b");
 }

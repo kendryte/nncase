@@ -23,7 +23,7 @@ namespace nncase::ir
     static constexpr node_kind kind() noexcept { return value; } \
     const node_kind &runtime_kind() const noexcept override { return value; }
 
-/** @brief Expression node **/
+/** @brief Expression node */
 class NNCASE_API expr_node
 {
 public:
@@ -32,10 +32,7 @@ public:
     expr_node &operator=(const expr_node &) = delete;
     virtual ~expr_node();
 
-    /** @brief Get the static type of the expression **/
-    virtual const type_t &type() = 0;
-
-    /** @brief Get the opcode of the expression **/
+    /** @brief Get the kind of the expression */
     virtual const node_kind &runtime_kind() const noexcept = 0;
 };
 

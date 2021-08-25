@@ -22,7 +22,7 @@ constant_node::constant_node(type_t type, std::vector<std::byte> data)
 {
 }
 
-const type_t &constant_node::type()
+const type_t &constant_node::type() const noexcept
 {
     return type_;
 }
