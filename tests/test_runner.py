@@ -152,13 +152,14 @@ class TestRunner(metaclass=ABCMeta):
         self.num_pattern = re.compile("(\d+)")
 
     def transform_input(self, values: np.array, type: str):
-        if self.pre_process[0]['enable'] == False:
-            return values
 
         if self.cfg.case.importer_opt.kwargs['input_layout'] != "NHWC" and self.model_type == "tflite":
             values = np.transpose(values, [0, 3, 1, 2])
         elif self.cfg.case.importer_opt.kwargs['input_layout'] == "NHWC" and self.model_type == "onnx":
             values = np.transpose(values, [0, 3, 1, 2])
+
+        if self.pre_process[0]['enable'] == False:
+            return values
 
         if type == 'float32':
             return values.astype(np.float32)
