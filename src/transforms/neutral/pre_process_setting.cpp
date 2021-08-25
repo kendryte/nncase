@@ -55,6 +55,11 @@ bool pre_process_transform::on_try_match(node &node, transform_context &context)
 
 void pre_process_transform::process(transform_context &context)
 {
+    if (enable_preprocess_ == false)
+    {
+        scales_[0] = 0.f;
+        return;
+    }
     auto old_inputs = context.outputs[0]->connections();
     auto old_in = node_cast<input_node>(*context.matched_nodes[0]);
     shape_t new_shape, old_shape;

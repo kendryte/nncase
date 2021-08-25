@@ -152,10 +152,14 @@ class TestRunner(metaclass=ABCMeta):
         self.num_pattern = re.compile("(\d+)")
 
     def transform_input(self, values: np.array, type: str):
+        if self.pre_process[0]['enable'] == False:
+            return values
+
         if self.cfg.case.importer_opt.kwargs['input_layout'] != "NHWC" and self.model_type == "tflite":
             values = np.transpose(values, [0, 3, 1, 2])
         elif self.cfg.case.importer_opt.kwargs['input_layout'] == "NHWC" and self.model_type == "onnx":
             values = np.transpose(values, [0, 3, 1, 2])
+
         if type == 'float32':
             return values.astype(np.float32)
         elif type == 'uint8':
@@ -168,6 +172,9 @@ class TestRunner(metaclass=ABCMeta):
             raise TypeError(" Not support type for quant input")
 
     def get_process_config(self, config):
+        # preprocess flag
+        process_flag = {}
+        process_flag['enable'] = config.preprocess_opt.flag
         # dequant
         process_deq = {}
         process_deq['range'] = config.preprocess_opt.kwargs['input_range']
@@ -183,8 +190,8 @@ class TestRunner(metaclass=ABCMeta):
         process_norm['norm'] = data
 
         # bgr2rgb
-        process_layout = {}
-        process_layout['image_format'] = config.preprocess_opt.kwargs['image_format']
+        process_format = {}
+        process_format['image_format'] = config.preprocess_opt.kwargs['image_format']
 
         # letter box
         process_letterbox = {}
@@ -193,13 +200,22 @@ class TestRunner(metaclass=ABCMeta):
         process_letterbox['shape'] = self.inputs[0]['shape']
         process_letterbox['input_type'] = config.compile_opt.kwargs['input_type']
 
+        self.pre_process.append(process_flag)
         self.pre_process.append(process_deq)
-        self.pre_process.append(process_layout)
+        self.pre_process.append(process_format)
         self.pre_process.append(process_letterbox)
         self.pre_process.append(process_norm)
 
     def data_pre_process(self, data):
-
+        if self.pre_process[0]['enable'] == False:
+            # assert(self.pre_process[1]['input_type'] ==
+            #        'float32'), "Make sure your input type is: 'float32'"
+            # assert(self.pre_process[2]['image_format'] ==
+            #        'RGB'), "Make sure your image format should be 'RGB'"
+            # assert((self.pre_process[3]['input_shape'][1] == data.shape[1] and self.pre_process[3]
+            #        ['input_shape'][2] == data.shape[2]) or (self.pre_process[3]['input_shape'][2] == data.shape[3] and self.pre_process[3]
+            #        ['input_shape'][2] == data.shape[2])), "Make sure your input shape same as model input shape"
+            return data
         transpose_flag = -1  # NHWC
         if self.cfg.case.importer_opt.kwargs['input_layout'] != "NHWC":
             data = np.transpose(data, [0, 2, 3, 1])
@@ -459,6 +475,7 @@ class TestRunner(metaclass=ABCMeta):
         compile_options.dump_dir = infer_dir
         compile_options.input_type = cfg.compile_opt.kwargs['input_type']
         compile_options.quant_type = cfg.compile_opt.kwargs['quant_type']
+        compile_options.enable_preprocess = cfg.preprocess_opt.flag
         compile_options.image_format = cfg.preprocess_opt.kwargs['image_format']
         compile_options.input_shape = cfg.preprocess_opt.kwargs['input_shape']
         compile_options.input_range = cfg.preprocess_opt.kwargs['input_range']

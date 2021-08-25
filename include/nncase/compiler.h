@@ -48,6 +48,7 @@ struct compile_options
     std::vector<float> input_range { 0.f, 1.f };
     std::vector<float> input_shape { 3.f, 224.f, 224.f };
     std::string image_format = "RGB";
+    bool enable_preprocess = false;
 };
 
 struct import_options

@@ -36,6 +36,7 @@ compile_command::compile_command(lyra::cli &cli)
                          .add_argument(lyra::opt(dataset_format_, "dataset format").name("--dataset-format").optional().help("datset format: e.g. image, raw default is " + dataset_format_))
                          .add_argument(lyra::opt(calibrate_method_, "calibrate method").name("--calibrate-method").optional().help("calibrate method: e.g. no_clip, l2, default is " + calibrate_method_))
                          .add_argument(lyra::opt(input_mean_, "input mean").name("--input-mean").optional().help("input mean, default is " + std::to_string(input_mean_)))
+                         .add_argument(lyra::opt(enable_preprocess_, "enable_preprocess").name("--enable_preproocess").optional().help("enable preprocess, default is " + std::to_string(enable_preprocess_)))
                          .add_argument(lyra::opt(input_std_, "input std").name("--input-std").optional().help("input std, default is " + std::to_string(input_std_)))
                          .add_argument(lyra::opt(mean_, "normalize mean").name("--mean").optional().help("normalize mean, default is " + std::to_string(input_mean_)))
                          .add_argument(lyra::opt(scale_, "normalize scale").name("--scale").optional().help("normalize scale, default is " + std::to_string(input_std_)))
@@ -75,6 +76,7 @@ void compile_command::run()
     c_options.scale = scale_;
     c_options.input_range = input_range_;
     c_options.input_shape = input_shape_;
+    c_options.enable_preprocess = enable_preprocess_;
 
     import_options i_options;
     std::vector<std::string> output_arrays;

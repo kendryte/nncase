@@ -204,22 +204,6 @@ public:
             std::cout << "4.3. Quantize graph..." << std::endl;
             quantize_graph(graph_, evaluator);
         }
-        // else if (compile_options_.input_type != "float32")
-        // {
-        //     std::cout << "4. Processing input type..." << std::endl;
-        //     float input_mean, input_std;
-        //     std::visit([&](auto &options) {
-        //         input_mean = options.input_mean;
-        //         input_std = options.input_std;
-        //     },
-        //         ptq_options_);
-        //     auto min = (0.f - input_mean) / input_std;
-        //     auto max = (1.f - input_mean) / input_std;
-        //     std::cout << "mean|std:\t" << input_mean << "|" << input_std << std::endl;
-        //     value_range<float> input_range { min, max };
-        //     std::cout << "type" << compile_options_.input_type << std::endl;
-        //     process_input(graph_, to_datatype_method(compile_options_.input_type), input_range);
-        // }
 
         std::cout << "5. Optimize target dependent after quantization..." << std::endl;
         optimize_target_dependent_after_quant(graph_);
@@ -286,7 +270,7 @@ private:
                 cmp_options.input_range, cmp_options.input_shape,
                 cmp_options.image_format, input_layout_,
                 cmp_options.input_type, cmp_options.quant_type,
-                real_layout_);
+                real_layout_, cmp_options.enable_preprocess);
             pass.emplace<dequantize_slice_motion_transform>();
             pmgr.add_pass(std::move(pass));
         });
