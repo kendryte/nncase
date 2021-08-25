@@ -8,7 +8,11 @@
 #         placeholders.cpp
 #         visitor.cpp)
 
-set(SRCS node.cpp)
+set(SRCS var.cpp
+		 constant.cpp
+		 function.cpp
+		 call.cpp
+		 op.cpp)
 
 add_library(ir OBJECT ${SRCS})
 target_link_libraries(ir PUBLIC gsl::gsl-lite xtensor::xtensor magic_enum::magic_enum)

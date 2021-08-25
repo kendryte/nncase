@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 #pragma once
-#include <nncase/runtime/datatypes.h>
+#include "typecode.h"
 #include <span>
 #include <type_traits>
 #include <xtensor/xshape.hpp>

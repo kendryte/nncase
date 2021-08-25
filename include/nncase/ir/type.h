@@ -18,42 +18,42 @@
 
 namespace nncase::ir
 {
-/** @brief Expression type  **/
-class NNCASE_API type
+/** @brief Expression type */
+class NNCASE_API type_t
 {
 public:
-    /** @brief Initialize a scalar type **/
-    type(datatype_t elem_type) noexcept
+    /** @brief Initialize a scalar type */
+    type_t(typecode_t elem_type) noexcept
         : elem_type_(elem_type)
     {
     }
 
-    /** @brief Initialize a scalar/tensor type **/
-    type(datatype_t elem_type, shape_t shape) noexcept
+    /** @brief Initialize a scalar/tensor type */
+    type_t(typecode_t elem_type, shape_t shape) noexcept
         : elem_type_(elem_type), shape_(std::move(shape))
     {
     }
 
-    /** @brief Is this a scalar type **/
+    /** @brief Is this a scalar type */
     bool is_scalar() const noexcept { return shape_.empty(); }
 
-    /** @brief Is this a tensor type **/
+    /** @brief Is this a tensor type */
     bool is_tensor() const noexcept { return !shape_.empty(); }
 
-    /** @brief Get element datatype **/
-    datatype_t elem_type() const noexcept { return elem_type_; }
-    /** @brief Set element datatype **/
-    void elem_type(datatype_t value) noexcept { elem_type_ = value; }
+    /** @brief Get element datatype */
+    typecode_t elem_type() const noexcept { return elem_type_; }
+    /** @brief Set element datatype */
+    void elem_type(typecode_t value) noexcept { elem_type_ = value; }
 
-    /** @brief Get shape **/
+    /** @brief Get shape */
     const shape_t &shape() const noexcept { return shape_; }
-    /** @brief Get mutable shape **/
+    /** @brief Get mutable shape */
     shape_t &shape() noexcept { return shape_; }
-    /** @brief Set shape **/
+    /** @brief Set shape */
     void shape(shape_t value) noexcept { shape_ = std::move(value); }
 
 private:
-    datatype_t elem_type_;
+    typecode_t elem_type_;
     shape_t shape_;
 };
 }

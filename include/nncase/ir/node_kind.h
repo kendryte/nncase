@@ -21,27 +21,29 @@
 
 namespace nncase::ir
 {
-struct opcode_t
+struct node_kind
 {
     uint32_t id;
     std::string_view name;
 };
 
-constexpr inline bool operator==(const opcode_t &lhs, const opcode_t &rhs) noexcept { return lhs.id == rhs.id; }
+constexpr inline bool operator==(const node_kind &lhs, const node_kind &rhs) noexcept { return lhs.id == rhs.id; }
 
-#define DEFINE_OPCODE(dialect, id, name, value) NNCASE_INLINE_VAR constexpr opcode_t op_##dialect##_##id { value, #name };
+#define DEFINE_NEUTRAL_NODEKIND(id, name, value) NNCASE_INLINE_VAR constexpr node_kind node_##id { value, #name };
+#define DEFINE_NODEKIND(target, id, name, value) NNCASE_INLINE_VAR constexpr node_kind node_##target##_##id { value, #name };
 
-//#include "opcode.def"
+#include "node_kind.def"
 
-#undef DEFINE_OPCODE
+#undef DEFINE_NEUTRAL_NODEKIND
+#undef DEFINE_NODEKIND
 }
 
 namespace std
 {
 template <>
-struct hash<nncase::ir::opcode_t>
+struct hash<nncase::ir::node_kind>
 {
-    [[nodiscard]] size_t operator()(const nncase::ir::opcode_t &opcode) const noexcept
+    [[nodiscard]] size_t operator()(const nncase::ir::node_kind &opcode) const noexcept
     {
         return std::hash<uint32_t>()(opcode.id);
     }
