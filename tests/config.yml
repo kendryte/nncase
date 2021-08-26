@@ -14,7 +14,7 @@ case: # case的配置，应该是一个多层次的
     name: 'preprocess_opt'
     kwargs:
       image_format: 'BGR' # BGR or RGB
-      input_shape: [224,224,3] # HWC
+      input_shape: [222,222,3] # HWC
       norm: {
         mean: [0.485, 0.456, 0.406],
         scale: [0.229, 0.224, 0.225]

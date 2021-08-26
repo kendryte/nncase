@@ -196,7 +196,7 @@ void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::targ
                 mid_ptr = &transpose_post->output();
             }
 
-            for (auto &in : old_inputs)
+            for (auto &in : dup(old_inputs))
                 in->connect(*mid_ptr);
             graph.dce();
         }
