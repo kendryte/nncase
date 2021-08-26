@@ -158,13 +158,13 @@ class NcnnTestRunner(TestRunner):
                 input_dict = {}
                 input_dict['name'] = outputs[0]
                 input_dict['dtype'] = np.float32
-                input_dict['shape'] = [params[2], params[1], params[0]]
+                input_dict['shape'] = [1, params[2], params[1], params[0]]
                 self.inputs.append(input_dict)
 
                 input_dict = {}
                 input_dict['name'] = tokens[1]
                 input_dict['dtype'] = np.float32
-                input_dict['shape'] = [params[2], params[1], params[0]]
+                input_dict['shape'] = [1, params[2], params[1], params[0]]
                 self.calibs.append(input_dict)
 
         used_inputs = set(inputs)
@@ -185,7 +185,7 @@ class NcnnTestRunner(TestRunner):
 
             with net.create_extractor() as ex:
                 for input in self.inputs:
-                    in_mat = ncnn.Mat(input['data'])
+                    in_mat = ncnn.Mat(np.squeeze(input['data'], 0))
                     ex.input(input['name'], in_mat)
 
                 i = 0
