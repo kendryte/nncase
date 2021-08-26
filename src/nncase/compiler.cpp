@@ -264,15 +264,14 @@ private:
     {
         using namespace ir::transforms;
         run_passes("pre_process", graph, [&]([[maybe_unused]] const module_type_t &module_type, ir::transforms::pass_manager &pmgr) {
-            transform_pass pass("Pre_process");
-            pass.emplace<pre_process_transform>(
+            pmgr.add_pass<pre_process_transform>(
                 cmp_options.mean, cmp_options.scale,
                 cmp_options.input_range, cmp_options.input_shape,
                 cmp_options.image_format, input_layout_,
                 cmp_options.input_type, cmp_options.quant_type,
-                real_layout_, cmp_options.enable_preprocess);
-            pass.emplace<dequantize_slice_motion_transform>();
-            pmgr.add_pass(std::move(pass));
+                real_layout_);
+            // pmgr.add_pass<dequantize_slice_motion_transform>();
+            // pmgr.add_pass(std::move(pass));
         });
     }
 
@@ -376,7 +375,6 @@ private:
             // p.emplace<nncase::ir::transforms::process_input>(to_datatype_method(compile_options_.input_type), input_range);
             // }
 
-            // TODO: 输出类型的替换还有没有必要？
             if (compile_options_.output_type != "float32")
                 p.emplace<nncase::ir::transforms::add_output_quantize_transform>(to_datatype_method(compile_options_.output_type));
             pmgr.add_pass(std::move(p));

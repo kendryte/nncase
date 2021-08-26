@@ -13,20 +13,19 @@
  * limitations under the License.
  */
 #pragma once
-#include "../transform.h"
+#include "../pass.h"
 
 namespace nncase::ir::transforms
 {
-class NNCASE_API pre_process_transform : public transform
+class NNCASE_API pre_process_transform : public graph_pass
 {
 public:
-    pre_process_transform(std::vector<float> mean, std::vector<float> scale, std::vector<float> input_range, std::vector<float> input_shape, std::string image_format, std::string input_layout, std::string input_type, std::string quant_type, std::string real_layout, bool enable_preprocess) noexcept
-        : means_(std::move(mean)), scales_(std::move(scale)), input_range_(input_range), input_shape_(input_shape), image_format_(image_format), input_layout_(input_layout), input_type_(input_type), quant_type_(quant_type), real_layout_(real_layout), enable_preprocess_(enable_preprocess) {};
-    void process(transform_context &context) override;
+    pre_process_transform(std::vector<float> mean, std::vector<float> scale, std::vector<float> input_range, std::vector<float> input_shape, std::string image_format, std::string input_layout, std::string input_type, std::string quant_type, std::string real_layout) noexcept
+        : means_(std::move(mean)), scales_(std::move(scale)), input_range_(input_range), input_shape_(input_shape), image_format_(image_format), input_layout_(input_layout), input_type_(input_type), quant_type_(quant_type), real_layout_(real_layout) {};
+    using graph_pass::graph_pass;
 
 protected:
-    bool skip_self_contained_check() const noexcept override { return true; }
-    bool on_try_match(ir::node &node, transform_context &context) override;
+    void run_core(graph &graph, nncase::target &target, const run_pass_options &options) override;
 
 private:
     std::vector<float> means_;
@@ -38,6 +37,5 @@ private:
     std::string input_type_;
     std::string quant_type_;
     std::string real_layout_;
-    bool enable_preprocess_;
 };
 }
