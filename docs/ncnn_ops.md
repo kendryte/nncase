@@ -5,11 +5,15 @@
 | Operator | Is Supported |
 |-------|------------------ |
 | Input | ✅ |
+| Clip | ✅ |
 | Concat | ✅ |
 | Convolution | ✅ |
 | ConvolutionDepthWise | ✅ |
+| HardSigmoid | ✅ |
+| HardSwish | ✅ |
 | Innerproduct | ✅ |
 | Pooling | ✅ |
 | ReLU | ✅ |
+| Sigmoid | ✅ |
 | Softmax | ✅ |
 | Split | ✅ |
