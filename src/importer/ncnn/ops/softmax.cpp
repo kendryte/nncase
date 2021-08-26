@@ -34,7 +34,7 @@ void nncase::importer::ncnn_importer::convert_op_Softmax(const Layer &layer, con
 
     auto in_shape = output_tensors_.at(layer.bottoms[0])->shape();
 
-    axis_t reduce_axis = { axis + 1 };
+    axis_t reduce_axis = { axis };
 
     auto max = graph_.emplace<reduce>(reduce_max, in_shape, reduce_axis, std::numeric_limits<float>::lowest(), true);
     max->name(op_name + ".max(Softmax)");

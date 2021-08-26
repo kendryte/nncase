@@ -64,6 +64,29 @@ class Net:
             self._add_bin(1, bias)
         return name
 
+    def Pooling(self, name: str, input: str, pooling_type: int, kernel_w: int, kernel_h: int,
+                    stride_w: int, stride_h: int,
+                    pad_left: int, pad_right: int, pad_top: int, pad_bottom: int,
+                    global_pooling: bool, weights: np.ndarray, bias: np.ndarray = None) -> str:
+        self._add_layer("Pooling", name, inputs=[input], outputs=[name], params={
+            '0': pooling_type,
+            '1': kernel_w,
+            '11': kernel_h,
+            '2': stride_w,
+            '12': stride_h,
+            '3': pad_left,
+            '13': pad_right,
+            '4': pad_top,
+            '15': pad_bottom,
+            '4': 1 if global_pooling else 0,
+            '5': 0 if bias is None else 1,
+            '6': weights.size
+        })
+        self._add_bin(0, weights)
+        if bias is not None:
+            self._add_bin(1, bias)
+        return name
+
     def _add_layer(self, type: str, name: str, inputs: Sequence[str] = [], outputs: Sequence[str] = [], params: dict = []):
         self.layers.append(Layer(type, name, inputs, outputs, params))
         self.blobs += len(outputs)

@@ -33,7 +33,7 @@ void nncase::importer::ncnn_importer::convert_op_Concat(const Layer &layer, cons
     for (size_t i = 0; i < layer.bottoms.size(); i++)
         input_shapes.push_back(output_tensors_.at(layer.bottoms[i])->shape());
 
-    auto con = graph_.emplace<concat>(dt_float32, input_shapes, axis + 1);
+    auto con = graph_.emplace<concat>(dt_float32, input_shapes, axis);
     con->name(op_name + "(Concat)");
 
     for (size_t i = 0; i < layer.bottoms.size(); i++)

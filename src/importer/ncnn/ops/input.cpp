@@ -14,9 +14,11 @@
 
 #include "../ncnn_importer.h"
 #include "nncase/importer/util.h"
+#include "nncase/ir/ir_types.h"
 #include <cassert>
 #include <nncase/ir/graph.h>
 #include <nncase/ir/op_utils.h>
+#include <nncase/ir/ops/bitcast.h>
 #include <nncase/ir/placeholders.h>
 #include <stdexcept>
 
@@ -40,8 +42,15 @@ void nncase::importer::ncnn_importer::convert_op_Input(const Layer &layer, const
             throw std::runtime_error("Shape of " + layer.name + " must be set in ncnn param file");
     }
 
-    auto node = graph_.emplace<input_node>(dt_float32, in_shape);
-    node->name(op_name + "(Input)");
+    shape_t new_in_shape { 1 };
+    for (auto v : in_shape)
+        new_in_shape.push_back(v);
 
-    output_tensors_.emplace(layer.tops[0], &node->output());
+    auto node = graph_.emplace<input_node>(dt_float32, new_in_shape);
+    node->name(op_name + "(Input)");
+    auto rshape = graph_.emplace<bitcast>(node->output().type(), node->output().shape(), in_shape);
+    rshape->name(op_name + "(Reshape)");
+
+    rshape->input().connect(node->output());
+    output_tensors_.emplace(layer.tops[0], &rshape->output());
 }
