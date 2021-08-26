@@ -46,7 +46,7 @@ void make_bitcast_no_action_pass::run_core(graph &graph, [[maybe_unused]] nncase
             if (b->attributes() & node_attr_action)
             {
                 auto &out = *b->input().connection();
-                out.attributes(out.attributes() | cnctr_attr_no_buffer_fusion);
+                out.attributes(out.attributes() | cnctr_attr_no_layout_strides);
                 b->attributes(b->attributes() & ~node_attr_action);
             }
         }
@@ -59,12 +59,11 @@ void make_slice_no_action_pass::run_core(graph &graph, [[maybe_unused]] nncase::
     auto alias_visitor = make_relay_ir_visitor([&](node &node) {
         if (auto s = node_cast<slice>(node))
         {
-            axis_t ones(s->strides());
-            for (auto i = 0; i < ones.size(); i++)
-                ones[i] = 1;
-            if ((s->attributes() & node_attr_action) && s->strides() == ones && !try_get_direct_child<output_node>(*s))
+            auto &strides = s->strides();
+            if ((s->attributes() & node_attr_action)
+                && std::all_of(strides.begin(), strides.end(), [](int32_t stride) { return stride == 1; }))
             {
-                auto &out = *s->input().connection();
+                auto &out = s->output();
                 out.attributes(out.attributes() | cnctr_attr_no_buffer_fusion);
                 s->attributes(s->attributes() & ~node_attr_action);
             }
@@ -90,6 +89,27 @@ void add_copy_to_concat_pass::run_core(graph &graph, [[maybe_unused]] nncase::ta
                     cp->input().connect(out);
                     in->connect(cp->output());
                 }
+            }
+        }
+    });
+    alias_visitor.visit(graph);
+}
+
+void add_copy_to_slice_pass::run_core(graph &graph, [[maybe_unused]] nncase::target &target, [[maybe_unused]] const run_pass_options &options)
+{
+    auto alias_visitor = make_relay_ir_visitor([&](node &node) {
+        if (auto s = node_cast<slice>(node))
+        {
+            auto &out = *s->output().connections().front();
+            if (out.owner().runtime_opcode() != op_copy)
+            {
+                auto cp = graph.emplace<copy>(out.type(), out.shape());
+                cp->name(s->name() + "/copy");
+                cp->module_type(graph.module_type());
+                cp->input().connect(s->output());
+
+                for (auto in : dup(s->output().connections()))
+                    in->connect(cp->output());
             }
         }
     });
@@ -197,6 +217,46 @@ void remove_exclusive_copy_to_concat_transform::process(transform_context &conte
         in->connect(output);
 }
 
+//     x             x
+//     |             |
+//   slice           |
+//     |     =>      |
+//   copy          slice
+
+bool remove_simple_copy_from_slice_transform::on_try_match(node &node, transform_context &context)
+{
+    slice *s;
+    copy *cp;
+
+    if ((s = node_cast<slice>(node))
+        && ((s->attributes() & node_attr_action) == 0)
+        && (cp = try_get_direct_child<copy>(*s)))
+    {
+        auto input = s->input().connection();
+        if (is_simple_slice(s->begin(), s->end(), s->strides(), s->input().shape()))
+        {
+            context.inputs.emplace_back(&s->input());
+            context.outputs.emplace_back(&cp->output());
+
+            context.matched_nodes.emplace_back(s);
+            context.matched_nodes.emplace_back(cp);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void remove_simple_copy_from_slice_transform::process(transform_context &context)
+{
+    auto &output = *context.inputs[0]->connection();
+    auto inputs = context.outputs[0]->connections();
+
+    output.attributes(output.attributes() | cnctr_attr_no_layout_strides);
+    for (auto &in : dup(inputs))
+        in->connect(output);
+}
+
 void alias_bitcast_buffer_pass::run_core(graph &graph, [[maybe_unused]] nncase::target &target, const run_pass_options &options)
 {
     auto &context = *options.schedule_context;
@@ -240,21 +300,18 @@ void alias_concat_buffer_pass::run_core([[maybe_unused]] graph &graph, [[maybe_u
         {
             if (c->attributes() & node_attr_action)
                 return;
-            bool is_simple_concat;
 
             // 1. Init indices
             {
                 auto axis = c->axis();
                 auto &out_buf = context.logical_buffer_map().at(&c->output());
-                is_simple_concat = false; //!out_buf.no_action_concat_with_strides();
                 shape_t cnt_begin(c->input_at(0).shape().size(), 0);
                 size_t offset = 0;
                 for (auto in : c->inputs())
                 {
                     auto &in_buf = context.logical_buffer_map().at(in->connection());
                     in_buf->parent() = { out_buf, offset, c->output().shape() };
-                    if (!is_simple_concat)
-                        in_buf->strides_shape() = c->output().shape();
+                    in_buf->strides_shape() = c->output().shape();
                     cnt_begin[axis] += in->shape()[axis];
                     offset = ir::get_bytes(in_buf->type()) * xt::element_offset<size_t>(to_strides(in_buf->parent()->shape), cnt_begin.begin(), cnt_begin.end());
                 }
@@ -275,15 +332,14 @@ void alias_concat_buffer_pass::run_core([[maybe_unused]] graph &graph, [[maybe_u
                 auto &out_buf = context.logical_buffer_map().at(&parent->output());
                 size_t offset = ir::get_bytes(in_buf->type()) * xt::element_offset<size_t>(to_strides(parent->output().shape()), child_begin.begin(), child_begin.end());
                 in_buf->parent() = { out_buf, offset, parent->output().shape() };
-                if (!is_simple_concat)
-                    in_buf->strides_shape() = parent->output().shape();
+                in_buf->strides_shape() = parent->output().shape();
+
                 for (auto &in : c->inputs())
                 {
                     auto in_buf = context.logical_buffer_map().at(in->connection());
                     auto &desc = *in_buf->parent();
                     desc.parent = out_buf;
-                    if (!is_simple_concat)
-                        in_buf->strides_shape() = parent->output().shape();
+                    in_buf->strides_shape() = parent->output().shape();
                 }
 
                 child = parent;
