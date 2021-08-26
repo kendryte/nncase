@@ -21,3 +21,4 @@ target_compile_definitions(ir PUBLIC -DNNCASE_DLL)
 set_property(TARGET ir PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 #add_subdirectory(ops)
+add_subdirectory(math)

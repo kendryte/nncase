@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #pragma once
+#include <any>
 #include <nncase/runtime/datatypes.h>
 
 namespace nncase::ir

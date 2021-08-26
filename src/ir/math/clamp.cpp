@@ -12,12 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/ir/op.h>
+#include "nncase/runtime/datatypes.h"
+#include <nncase/ir/math/clamp.h>
 
 using namespace nncase;
 using namespace nncase::ir;
+using namespace nncase::ir::math;
 
-connector_info &op_node::add_parameter(std::string name)
+clamp_node::clamp_node()
 {
-    return parameters_.emplace_back(*this, std::move(name));
+    add_parameter("input");
+    add_parameter("min");
+    add_parameter("max");
 }

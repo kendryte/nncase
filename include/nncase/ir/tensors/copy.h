@@ -12,12 +12,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/ir/op.h>
+#pragma once
+#include "../op.h"
+#include "nncase/runtime/datatypes.h"
+#include "opcode.h"
 
-using namespace nncase;
-using namespace nncase::ir;
-
-connector_info &op_node::add_parameter(std::string name)
+namespace nncase::ir::tensors
 {
-    return parameters_.emplace_back(*this, std::move(name));
+/** @brief Copy operator node */
+class NNCASE_API copy_node : public op_node
+{
+public:
+    DEFINE_NODE_OPCODE(op_math_clamp);
+
+    copy_node();
+};
+
+using copy = expr_t<clamp_node>;
 }

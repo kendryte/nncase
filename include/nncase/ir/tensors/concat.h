@@ -12,12 +12,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/ir/op.h>
+#pragma once
+#include "../op.h"
+#include "nncase/runtime/datatypes.h"
+#include "opcode.h"
 
-using namespace nncase;
-using namespace nncase::ir;
-
-connector_info &op_node::add_parameter(std::string name)
+namespace nncase::ir::tensors
 {
-    return parameters_.emplace_back(*this, std::move(name));
+/** @brief Concat operator node */
+class NNCASE_API concat_node : public op_node
+{
+public:
+    DEFINE_NODE_OPCODE(op_tensors_concat);
+
+    concat_node(int32_t axis);
+
+    /** @brief Get the axis of the concat expression */
+    int32_t axis() const noexcept { return axis_; }
+    /** @brief Set the axis of the concat expression */
+    void axis(int32_t value) noexcept { axis_ = value; }
+
+private:
+    int32_t axis_;
+};
+
+using concat = expr_t<concat_node>;
 }
