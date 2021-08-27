@@ -291,6 +291,7 @@ private:
         using namespace ir::transforms;
 
         run_passes("mark_noaction", graph, [&]([[maybe_unused]] const module_type_t &module_type, ir::transforms::pass_manager &pmgr) {
+            pmgr.add_pass<make_slice_no_action_pass>();
             pmgr.add_pass<make_concat_no_action_pass>();
             pmgr.add_pass<make_bitcast_no_action_pass>();
         });
@@ -318,10 +319,12 @@ private:
 
         run_passes("buffer_fusion", graph, [&]([[maybe_unused]] const module_type_t &module_type, ir::transforms::pass_manager &pmgr) {
             pmgr.add_pass<add_copy_to_concat_pass>();
+            pmgr.add_pass<add_copy_to_slice_pass>();
             pmgr.add_pass<add_copy_to_output_pass>();
 
             transform_pass pass("optimize_copy");
             pass.emplace<remove_exclusive_copy_to_output_transform>();
+            pass.emplace<remove_simple_copy_from_slice_transform>();
             pass.emplace<remove_exclusive_copy_to_concat_transform>();
             pmgr.add_pass(std::move(pass));
         });

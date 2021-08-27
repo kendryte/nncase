@@ -293,6 +293,37 @@ inline shape_t get_strided_slice_output_shape(const axis_t &begin, const axis_t 
     return new_shape.size() ? new_shape : shape_t { 1 };
 }
 
+inline bool is_simple_slice(const axis_t &begin, const axis_t &end, const axis_t &strides, const shape_t &input_shape)
+{
+    if (!std::all_of(strides.begin(), strides.end(), [](int32_t stride) { return stride == 1; }))
+        return false;
+
+    bool is_simple_slice = true;
+    bool allow_not_equal = true;
+    for (size_t i = 0; i < begin.size(); i++)
+    {
+        if (begin[i] != 0
+            || end[i] != input_shape[i])
+        {
+            if (allow_not_equal)
+            {
+                allow_not_equal = false;
+            }
+            else
+            {
+                is_simple_slice = false;
+                break;
+            }
+        }
+        else if (input_shape[i] != 1)
+        {
+            allow_not_equal = false;
+        }
+    }
+
+    return is_simple_slice;
+}
+
 template <class U, class T>
 std::span<U> as_span(const std::span<T> &src) noexcept
 {
