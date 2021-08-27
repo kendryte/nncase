@@ -315,6 +315,10 @@ inline bool is_simple_slice(const axis_t &begin, const axis_t &end, const axis_t
                 break;
             }
         }
+        else if (input_shape[i] != 1)
+        {
+            allow_not_equal = false;
+        }
     }
 
     return is_simple_slice;

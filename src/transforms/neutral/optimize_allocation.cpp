@@ -47,6 +47,7 @@ void make_bitcast_no_action_pass::run_core(graph &graph, [[maybe_unused]] nncase
             {
                 auto &out = *b->input().connection();
                 out.attributes(out.attributes() | cnctr_attr_no_layout_strides);
+                b->output().attributes(out.attributes());
                 b->attributes(b->attributes() & ~node_attr_action);
             }
         }
@@ -64,7 +65,7 @@ void make_slice_no_action_pass::run_core(graph &graph, [[maybe_unused]] nncase::
                 && std::all_of(strides.begin(), strides.end(), [](int32_t stride) { return stride == 1; }))
             {
                 auto &out = s->output();
-                out.attributes(out.attributes() | cnctr_attr_no_buffer_fusion);
+                out.attributes(out.attributes() | cnctr_attr_buffer_slice | cnctr_attr_no_layout_strides | cnctr_attr_no_buffer_fusion);
                 s->attributes(s->attributes() & ~node_attr_action);
             }
         }
@@ -98,10 +99,12 @@ void add_copy_to_concat_pass::run_core(graph &graph, [[maybe_unused]] nncase::ta
 void add_copy_to_slice_pass::run_core(graph &graph, [[maybe_unused]] nncase::target &target, [[maybe_unused]] const run_pass_options &options)
 {
     auto alias_visitor = make_relay_ir_visitor([&](node &node) {
-        if (auto s = node_cast<slice>(node))
+        slice *s;
+        if ((s = node_cast<slice>(node))
+            && (s->attributes() & node_attr_action) == 0)
         {
             auto outputs = dup(s->output().connections());
-            if (outputs.front()->owner().runtime_opcode() != op_copy)
+            if (std::any_of(outputs.begin(), outputs.end(), [](input_connector *in) { return in->owner().runtime_opcode() != op_copy; }))
             {
                 auto cp = graph.emplace<copy>(s->output().type(), s->output().shape());
                 cp->name(s->name() + "/copy");
@@ -151,7 +154,8 @@ bool remove_exclusive_copy_to_output_transform::on_try_match(node &node, transfo
         && (out = try_get_direct_child<output_node>(*cp)))
     {
         auto input = cp->input().connection();
-        if (input->memory_location() == mem_data)
+        if (input->memory_location() == mem_data
+            && (input->attributes() & cnctr_attr_buffer_slice) == 0)
         {
             context.inputs.emplace_back(&cp->input());
 
@@ -230,14 +234,14 @@ bool remove_simple_copy_from_slice_transform::on_try_match(node &node, transform
 
     if ((s = node_cast<slice>(node))
         && ((s->attributes() & node_attr_action) == 0)
-        && (cp = try_get_direct_child<copy>(*s)))
+        && (cp = try_get_direct_child<copy>(*s))
+        && !try_get_direct_child<output_node>(*cp))
     {
         if (is_simple_slice(s->begin(), s->end(), s->strides(), s->input().shape()))
         {
-            context.inputs.emplace_back(&s->input());
+            context.inputs.emplace_back(&cp->input());
             context.outputs.emplace_back(&cp->output());
 
-            context.matched_nodes.emplace_back(s);
             context.matched_nodes.emplace_back(cp);
             return true;
         }
@@ -300,48 +304,17 @@ void alias_concat_buffer_pass::run_core([[maybe_unused]] graph &graph, [[maybe_u
             if (c->attributes() & node_attr_action)
                 return;
 
-            // 1. Init indices
+            auto axis = c->axis();
+            auto &out_buf = context.logical_buffer_map().at(&c->output());
+            shape_t cnt_begin(c->input_at(0).shape().size(), 0);
+            size_t offset = 0;
+            for (auto in : c->inputs())
             {
-                auto axis = c->axis();
-                auto &out_buf = context.logical_buffer_map().at(&c->output());
-                shape_t cnt_begin(c->input_at(0).shape().size(), 0);
-                size_t offset = 0;
-                for (auto in : c->inputs())
-                {
-                    auto &in_buf = context.logical_buffer_map().at(in->connection());
-                    in_buf->parent() = { out_buf, offset, c->output().shape() };
-                    in_buf->strides_shape() = c->output().shape();
-                    cnt_begin[axis] += in->shape()[axis];
-                    offset = ir::get_bytes(in_buf->type()) * xt::element_offset<size_t>(to_strides(in_buf->parent()->shape), cnt_begin.begin(), cnt_begin.end());
-                }
-            }
-
-            // 2. Iterate parent
-            auto child = c;
-            while (true)
-            {
-                auto parent = try_get_direct_child<concat>(*child);
-                if (!parent || parent->attributes() & node_attr_action)
-                    break;
-                auto index = get_input_index(*parent, child->output());
-                auto axis = parent->axis();
-                shape_t child_begin(child->output().shape().size(), 0);
-                child_begin[axis] += std::accumulate(parent->concat_dims().begin(), parent->concat_dims().begin() + index, 0);
-                auto &in_buf = context.logical_buffer_map().at(&child->output());
-                auto &out_buf = context.logical_buffer_map().at(&parent->output());
-                size_t offset = ir::get_bytes(in_buf->type()) * xt::element_offset<size_t>(to_strides(parent->output().shape()), child_begin.begin(), child_begin.end());
-                in_buf->parent() = { out_buf, offset, parent->output().shape() };
-                in_buf->strides_shape() = parent->output().shape();
-
-                for (auto &in : c->inputs())
-                {
-                    auto in_buf = context.logical_buffer_map().at(in->connection());
-                    auto &desc = *in_buf->parent();
-                    desc.parent = out_buf;
-                    in_buf->strides_shape() = parent->output().shape();
-                }
-
-                child = parent;
+                auto &in_buf = context.logical_buffer_map().at(in->connection());
+                in_buf->parent() = { out_buf, offset, c->output().shape() };
+                in_buf->strides_shape() = c->output().shape();
+                cnt_begin[axis] += in->shape()[axis];
+                offset = ir::get_bytes(in_buf->type()) * xt::element_offset<size_t>(to_strides(in_buf->parent()->shape), cnt_begin.begin(), cnt_begin.end());
             }
         }
     });
