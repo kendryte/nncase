@@ -16,7 +16,7 @@
 #include "compiler_defs.h"
 #include <nncase/runtime/error.h>
 
-BEGIN_NS_NNCASE_RT_K210
+BEGIN_NS_NNCASE_RT_MODULE(k210)
 
 enum class nncase_k210_errc
 {
@@ -26,7 +26,7 @@ enum class nncase_k210_errc
 NNCASE_MODULES_K210_API const std::error_category &nncase_k210_category() noexcept;
 NNCASE_MODULES_K210_API std::error_condition make_error_condition(nncase_k210_errc code);
 
-END_NS_NNCASE_RT_K210
+END_NS_NNCASE_RT_MODULE
 
 namespace std
 {

@@ -38,11 +38,13 @@ struct compile_options
     bool dump_asm;
     bool is_fpga;
     bool use_dataset_as_input_stat = false;
+    bool benchmark_only = false;
     std::string target;
     std::filesystem::path dump_dir;
     std::string input_type = "default";
     std::string output_type = "float32";
     std::string quant_type = "uint8";
+    std::string w_quant_type = "uint8";
 };
 
 struct import_options

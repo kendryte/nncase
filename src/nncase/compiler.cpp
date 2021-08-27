@@ -26,6 +26,7 @@
 #include <nncase/transforms/neutral/add_quant_motion.h>
 #include <nncase/transforms/neutral/fold_io_quant_motion.h>
 #include <nncase/transforms/neutral/optimize_allocation.h>
+#include <nncase/transforms/neutral/optimize_benchmark.h>
 #include <nncase/transforms/pass.h>
 #include <variant>
 
@@ -53,11 +54,32 @@ calibrate_method to_calibrate_method(std::string name)
 
 datatype_t to_datatype_method(std::string name)
 {
-    if (name == "uint8")
-        return datatype_t::dt_uint8;
     if (name == "int8")
         return datatype_t::dt_int8;
-    return datatype_t::dt_float32;
+    else if (name == "int16")
+        return datatype_t::dt_int16;
+    else if (name == "int32")
+        return datatype_t::dt_int32;
+    else if (name == "int64")
+        return datatype_t::dt_int64;
+    else if (name == "uint8")
+        return datatype_t::dt_uint8;
+    else if (name == "uint16")
+        return datatype_t::dt_uint16;
+    else if (name == "uint32")
+        return datatype_t::dt_uint32;
+    else if (name == "uint64")
+        return datatype_t::dt_uint64;
+    else if (name == "float16")
+        return datatype_t::dt_float16;
+    else if (name == "float32")
+        return datatype_t::dt_float32;
+    else if (name == "float64")
+        return datatype_t::dt_float64;
+    else if (name == "bfloat16")
+        return datatype_t::dt_bfloat16;
+    else
+        throw std::runtime_error("Unsupported data type");
 }
 
 void do_dump_graph(ir::graph &graph, std::ostream &output)
@@ -205,6 +227,9 @@ public:
 
         std::cout << "6. Optimize modules..." << std::endl;
         optimize_merge_module_regions(graph_);
+
+        if (compile_options_.benchmark_only)
+            optimize_benchmark(graph_);
     }
 
     ir::graph &graph(uint32_t stage) override
@@ -280,6 +305,13 @@ private:
         dump_graph(graph, "merge_module_regions");
     }
 
+    void optimize_benchmark(ir::graph &graph)
+    {
+        using namespace ir::transforms;
+        run_passes("mark_noaction", graph, [&]([[maybe_unused]] const module_type_t &module_type, ir::transforms::pass_manager &pmgr) { pmgr.add_pass<optimize_benchmark_pass>(); });
+        dump_graph(graph, "optimize_benchmark");
+    }
+
     void optimize_buffer_fusion(ir::graph &graph)
     {
         using namespace ir::transforms;
@@ -324,7 +356,7 @@ private:
     {
         auto graph_runner = [&](ir::graph &graph) {
             ir::transforms::pass_manager pmgr(graph, *target_);
-            auto quant = evaluator.module_context(graph).quantizer();
+            auto quant = evaluator.quantizer(graph.module_type());
 
             if (!compile_options_.use_dataset_as_input_stat)
             {
@@ -362,7 +394,7 @@ private:
             pmgr.quantizer(quant);
             if (compile_options_.dump_ir)
                 pmgr.dump_dir(compile_options_.dump_dir);
-            target_->register_quantize_passes(graph.module_type(), pmgr, to_datatype_method(compile_options_.quant_type));
+            target_->register_quantize_passes(graph.module_type(), pmgr, to_datatype_method(compile_options_.quant_type), to_datatype_method(compile_options_.w_quant_type));
             pmgr.run();
             dump_graph(graph, "quantize");
         };
@@ -454,6 +486,7 @@ private:
                 std::memcpy(input_buffer.data(), tensor.data(), input_buffer.size_bytes());
 
                 evaluator.evaluate();
+                evaluator.end_sample();
                 if (options.progress)
                     options.progress(i++, dataset.total_size());
             }
@@ -487,6 +520,7 @@ private:
                 std::memcpy(input_buffer.data(), options.tensor_data.data() + i * input_buffer.size_bytes(), input_buffer.size_bytes());
 
                 evaluator.evaluate();
+                evaluator.end_sample();
                 if (options.progress)
                     options.progress(i++, options.samples_count);
             }

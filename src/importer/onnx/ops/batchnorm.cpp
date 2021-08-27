@@ -60,6 +60,7 @@ void onnx_importer::convert_op_BatchNormalization(const NodeProto &node)
                 std::cout << ' ' << s;
             std::cout << ']' << std::endl;
             auto reshape_op = graph_.emplace<bitcast>(get_datatype(input).value(), input_shape, target_shape);
+            reshape_op->name("." + input + "(BatchNormalization)");
 
             input_tensors_.emplace(&reshape_op->input(), input);
 
@@ -68,7 +69,6 @@ void onnx_importer::convert_op_BatchNormalization(const NodeProto &node)
     };
 
     auto pre_mean_op = broadcast_if_needed(input_mean);
-    pre_mean_op->name(op_name + ".broadcast_mean(BatchNormalization)");
     auto mean_op = graph_.emplace<binary>(binary_sub, input_T_shape, pre_mean_op ? pre_mean_op->output().shape() : get_shape(input_mean), value_range<float>::full());
     mean_op->name(op_name + ".mean(BatchNormalization)");
 
@@ -76,7 +76,6 @@ void onnx_importer::convert_op_BatchNormalization(const NodeProto &node)
     eps->name(op_name + ".eps(BatchNormalization)");
 
     auto pre_var_op = broadcast_if_needed(input_var);
-    pre_var_op->name(op_name + ".broadcast_var(BatchNormalization)");
     auto eps_op = graph_.emplace<binary>(binary_add, pre_var_op ? pre_var_op->output().shape() : get_shape(input_var), eps->output().shape(), value_range<float>::full());
     eps_op->name(op_name + ".var_stab(BatchNormalization)");
 
@@ -87,12 +86,10 @@ void onnx_importer::convert_op_BatchNormalization(const NodeProto &node)
     norm_op->name(op_name + ".norm(BatchNormalization)");
 
     auto pre_scale_op = broadcast_if_needed(input_scale);
-    pre_scale_op->name(op_name + ".broadcast_scale(BatchNormalization)");
     auto scale_op = graph_.emplace<binary>(binary_mul, norm_op->output().shape(), pre_scale_op ? pre_scale_op->output().shape() : get_shape(input_scale), value_range<float>::full());
     scale_op->name(op_name + ".scale(BatchNormalization)");
 
     auto pre_B_op = broadcast_if_needed(input_B);
-    pre_B_op->name(op_name + ".broadcast_bias(BatchNormalization)");
     auto bias_op = graph_.emplace<binary>(binary_add, scale_op->output().shape(), pre_B_op ? pre_B_op->output().shape() : get_shape(input_B), value_range<float>::full());
     bias_op->name(op_name + ".bias(BatchNormalization)");
 

@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../runtime_module.h"
+#include "../runtime_function.h"
 #include <nncase/kernels/k210/k210_kernels.h>
 #include <nncase/kernels/tensor_compute.h>
 
@@ -20,7 +20,7 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::k210;
 
-result<void> k210_runtime_module::visit(const copy_options &op) noexcept
+result<void> k210_runtime_function::visit(const copy_options &op) noexcept
 {
     try_var(input, memory_at(op.input));
     try_var(output, memory_at(op.output));

@@ -22,6 +22,7 @@
 #include <nncase/ir/graph.h>
 #include <nncase/runtime/interpreter.h>
 #include <nncase/runtime/runtime_op_utility.h>
+#include <nncase/schedule/scheduler.h>
 #include <nncase/version.h>
 #include <pybind11/iostream.h>
 #include <pybind11/numpy.h>
@@ -74,7 +75,7 @@ void LaunchDebugger()
 }
 #endif
 
-schedule::schedule_result schedule(target &target, ir::graph &graph)
+schedule::model_schedule_result schedule(target &target, ir::graph &graph)
 {
     schedule::scheduler sched(target, graph, graph.outputs());
     return sched.schedule(true);
@@ -115,14 +116,14 @@ public:
 
 private:
     ir::graph &graph_;
-    schedule::schedule_result schedule_result_;
+    schedule::model_schedule_result schedule_result_;
     ir::evaluator evaluator_;
 };
 }
 
 PYBIND11_MODULE(_nncase, m)
 {
-    m.doc() = "NNCase Library";
+    m.doc() = "nncase Library";
     m.attr("__version__") = NNCASE_VERSION;
 
     // LaunchDebugger();
@@ -139,7 +140,9 @@ PYBIND11_MODULE(_nncase, m)
         .def_readwrite("is_fpga", &compile_options::is_fpga)
         .def_readwrite("input_type", &compile_options::input_type)
         .def_readwrite("output_type", &compile_options::output_type)
-        .def_readwrite("quant_type", &compile_options::quant_type);
+        .def_readwrite("quant_type", &compile_options::quant_type)
+        .def_readwrite("w_quant_type", &compile_options::w_quant_type)
+        .def_readwrite("benchmark_only", &compile_options::benchmark_only);
 
     py::class_<import_options>(m, "ImportOptions")
         .def(py::init())
@@ -192,7 +195,7 @@ PYBIND11_MODULE(_nncase, m)
         .def_property_readonly("inputs_size", &interpreter::inputs_size)
         .def_property_readonly("outputs_size", &interpreter::outputs_size)
         .def("get_input_desc", &interpreter::input_desc)
-        .def("get_output_desc", &interpreter::input_desc)
+        .def("get_output_desc", &interpreter::output_desc)
         .def("get_input_tensor", [](interpreter &interp, size_t index) { return interp.input_tensor(index).unwrap_or_throw(); })
         .def("set_input_tensor", [](interpreter &interp, size_t index, runtime_tensor tensor) { return interp.input_tensor(index, tensor).unwrap_or_throw(); })
         .def("get_output_tensor", [](interpreter &interp, size_t index) { return interp.output_tensor(index).unwrap_or_throw(); })

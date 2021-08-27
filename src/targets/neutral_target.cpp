@@ -33,6 +33,7 @@
 #include <nncase/transforms/neutral/global_reduce_window_to_reduce.h>
 #include <nncase/transforms/neutral/matmul_to_conv2d.h>
 #include <nncase/transforms/neutral/quantize_motion.h>
+#include <nncase/transforms/neutral/remove_binary.h>
 #include <nncase/transforms/neutral/simplify_reduce.h>
 #include <nncase/transforms/neutral/space_to_batch_transform.h>
 #include <nncase/transforms/neutral/split_to_slice.h>
@@ -104,6 +105,8 @@ void neutral_target::add_default_transforms(ir::transforms::transform_pass &pass
     pass.emplace<fold_pad_strided_slice_transform>();
 
     pass.emplace<fold_bitcast_transform>();
+
+    pass.emplace<remove_nonsense_binary>();
 
     pass.emplace<fuse_clamp_conv2d_transform>();
     pass.emplace<fuse_clamp_binary_transform>();
@@ -225,7 +228,7 @@ void neutral_target::register_quantize_annotation_passes([[maybe_unused]] const 
     }
 }
 
-void neutral_target::register_quantize_passes([[maybe_unused]] const module_type_t &type, ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] datatype_t quant_type)
+void neutral_target::register_quantize_passes([[maybe_unused]] const module_type_t &type, ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] datatype_t quant_type, [[maybe_unused]] datatype_t w_quant_type)
 {
     {
         transform_pass p("fused_unary_to_lut");

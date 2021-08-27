@@ -17,6 +17,7 @@
 #include <cassert>
 #include <nncase/ir/graph.h>
 #include <nncase/ir/ops/binary.h>
+#include <nncase/ir/ops/clamp.h>
 #include <nncase/ir/ops/constant.h>
 #include <nncase/ir/ops/reduce.h>
 #include <nncase/ir/ops/unary.h>
@@ -169,4 +170,51 @@ void onnx_importer::convert_op_Sigmoid(const NodeProto &node)
     input_tensors_.emplace(&exp->input(), input);
     output_tensors_.emplace(output, &div->output());
 #endif
+}
+
+void onnx_importer::convert_op_HardSigmoid(const NodeProto &node)
+{
+    assert(node.input().size() == 1);
+    assert(node.output().size() == 1);
+
+    const auto &input = node.input()[0];
+    const auto &output = node.output()[0];
+    auto in_shape = get_shape(input);
+
+    const auto &op_name { generate_name(node) };
+
+    // y = max(0, min(1, alpha * x + beta))
+    const auto alpha_value = get_attribute<float>(node, "alpha").value_or(0.2);
+    const auto &alpha = graph_.emplace<constant>(alpha_value);
+    alpha->name(op_name + ".alpha(HardSigmoid)");
+
+    auto mul = graph_.emplace<binary>(binary_mul, in_shape, alpha->output().shape(), value_range<float>::full());
+    mul->name(op_name + ".mul(HardSigmoid)");
+
+    const auto beta_value = get_attribute<float>(node, "beta").value_or(0.5);
+    const auto &beta = graph_.emplace<constant>(beta_value);
+    beta->name(op_name + ".beta(HardSigmoid)");
+
+    auto sum = graph_.emplace<binary>(binary_add, mul->output().shape(), beta->output().shape(), value_range<float>::full());
+    sum->name(op_name + ".sum(HardSigmoid)");
+
+    auto one = graph_.emplace<constant>(1.f);
+    one->name(op_name + ".one(HardSigmoid)");
+    auto min = graph_.emplace<binary>(binary_min, sum->output().shape(), one->output().shape(), value_range<float>::full());
+
+    auto zero = graph_.emplace<constant>(0.f);
+    zero->name(op_name + ".zero(HardSigmoid)");
+    auto max = graph_.emplace<binary>(binary_max, min->output().shape(), zero->output().shape(), value_range<float>::full());
+    max->name(generate_name(node) + ".max(HardSigmoid)");
+
+    mul->input_b().connect(alpha->output());
+    sum->input_a().connect(mul->output());
+    sum->input_b().connect(beta->output());
+    min->input_a().connect(sum->output());
+    min->input_b().connect(one->output());
+    max->input_a().connect(min->output());
+    max->input_b().connect(zero->output());
+
+    input_tensors_.emplace(&mul->input_a(), input);
+    output_tensors_.emplace(output, &max->output());
 }

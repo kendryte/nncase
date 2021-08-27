@@ -48,10 +48,7 @@ void onnx_importer::convert_op_Upsample(const NodeProto &node)
     if (node.input().size() == 2)
     {
         // version 9
-        std::vector<float> scales;
-        auto initializer = get_initializer(node.input()[1]);
-        scales = initializer ? to<std::vector<float>>(initializer.value()) : get_constant_input_data<float>(node.input()[1]).value();
-
+        auto scales = get_constant_value<float>(node.input()[1]);
         std::transform(input_shape.begin(), input_shape.end(), scales.begin(), std::back_inserter(new_shape),
             [](const auto axis, const auto scale) { return static_cast<int>(std::floor(axis * scale)); });
     }

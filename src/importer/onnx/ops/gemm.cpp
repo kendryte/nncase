@@ -100,6 +100,11 @@ void onnx_importer::convert_op_Gemm(const NodeProto &node)
         input_tensors_.emplace(&A_B_op->input_b(), input_B);
     }
 
+    std::vector<float> bias_value(xt::compute_size(A_B_op->bias().shape()), 0.f);
+    auto bias = graph_.emplace<constant>(dt_float32, A_B_op->bias().shape(), bias_value);
+    bias->name(op_name + ".bias(Gemm)");
+    A_B_op->bias().connect(bias->output());
+
     if (node.input().size() > 2)
     {
         const auto beta_attr = get_attribute<float>(node, "beta");
@@ -109,19 +114,18 @@ void onnx_importer::convert_op_Gemm(const NodeProto &node)
         const auto &input_C = node.input()[2];
         auto beta_C_op = graph_.emplace<binary>(binary_mul, beta->output().shape(), get_shape(input_C), value_range<float>::full());
         beta_C_op->name(op_name + ".mul_C(Gemm)");
+        auto add_betaC_op = graph_.emplace<binary>(binary_add, A_B_op->output().shape(), beta_C_op->output().shape(), value_range<float>::full());
+        add_betaC_op->name(op_name + ".add_betaC(Gemm)");
 
         beta_C_op->input_a().connect(beta->output());
-        A_B_op->bias().connect(beta_C_op->output());
+        add_betaC_op->input_a().connect(A_B_op->output());
+        add_betaC_op->input_b().connect(beta_C_op->output());
 
         input_tensors_.emplace(&beta_C_op->input_b(), input_C);
+        output_tensors_.emplace(output, &add_betaC_op->output());
     }
     else
     {
-        std::vector<float> bias_value(As_shape.back(), 0.f);
-        shape_t bias_shape = { As_shape.back() };
-        auto bias = graph_.emplace<constant>(dt_float32, bias_shape, bias_value);
-        bias->name(op_name + ".bias(Gemm)");
-        A_B_op->bias().connect(bias->output());
+        output_tensors_.emplace(output, &A_B_op->output());
     }
-    output_tensors_.emplace(output, &A_B_op->output());
 }

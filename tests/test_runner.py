@@ -380,11 +380,11 @@ class TestRunner(metaclass=ABCMeta):
                         test_outputs: List[Tuple[str]],
                         kwargs: Dict[str, str]) -> Tuple[bool, str]:
 
-        judeg_cfg = self.cfg.judge.common
+        judeg_cfg = copy.deepcopy(self.cfg.judge.common)
         if self.cfg.judge.specifics:
             for specific in self.cfg.judge.specifics:
-                if specific.matchs.dict == kwargs:
-                    judeg_cfg: Edict = specific
+                if kwargs['target'] in specific.matchs.dict['target'] and kwargs['ptq'] == specific.matchs.dict['ptq']:
+                    judeg_cfg.update(specific)
                     break
 
         for ref_file, test_file in zip(ref_ouputs, test_outputs):
@@ -393,7 +393,7 @@ class TestRunner(metaclass=ABCMeta):
                                            judeg_cfg.simarity_name,
                                            judeg_cfg.threshold,
                                            judeg_cfg.log_hist)
-            name_list = test_file[1].split('/')
+            name_list = test_file[1].split(os.path.sep)
             kw_names = ' '.join(name_list[-len(kwargs) - 2:-1])
             i = self.num_pattern.findall(name_list[-1])
             result_info = "\n{0} [ {1} ] Output: {2}!!\n".format(

@@ -48,3 +48,15 @@ DEFINE_TFLITE_LOWER(SQUEEZE)
     link_input_tensor(&node->input(), op.inputs()->Get(0));
     link_output_tensor(op.outputs()->Get(0), &node->output());
 }
+
+DEFINE_TFLITE_LOWER(EXPAND_DIMS)
+{
+    auto &input = get_tensor(op.inputs(), 0);
+    auto &output = get_tensor(op.outputs(), 0);
+
+    auto node = graph_.emplace<bitcast>(to_data_type(input.type()), get_shape(input.shape()), get_shape(output.shape()));
+    node->name(get_tensor(op.outputs(), 0).name()->string_view());
+
+    link_input_tensor(&node->input(), op.inputs()->Get(0));
+    link_output_tensor(op.outputs()->Get(0), &node->output());
+}

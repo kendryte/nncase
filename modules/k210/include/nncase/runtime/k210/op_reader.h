@@ -17,7 +17,7 @@
 #include <nncase/runtime/result.h>
 #include <nncase/runtime/span_reader.h>
 
-BEGIN_NS_NNCASE_RT_K210
+BEGIN_NS_NNCASE_RT_MODULE(k210)
 
 class NNCASE_MODULES_K210_API op_visitor
 {
@@ -44,4 +44,4 @@ private:
     result<void> next() noexcept;
 };
 
-END_NS_NNCASE_RT_K210
+END_NS_NNCASE_RT_MODULE

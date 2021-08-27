@@ -3,9 +3,11 @@
 set(SRCS interpreter.cpp
          error.cpp
          runtime_loader.cpp
+         runtime_function.cpp
          runtime_module.cpp
          runtime_tensor.cpp
          runtime_tensor_impl.cpp
+         section.cpp
          host_runtime_tensor.cpp
          allocator.cpp)
 

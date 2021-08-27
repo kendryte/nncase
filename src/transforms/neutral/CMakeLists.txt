@@ -2,7 +2,7 @@
 
 target_sources(transforms PRIVATE
     add_quant_checkpoints.cpp
-    annotate_runtime.cpp
+    add_to_conv2d.cpp
     fold_constant.cpp
     fold_bitcast.cpp
     fold_clamp.cpp
@@ -27,10 +27,12 @@ target_sources(transforms PRIVATE
     take_to_slice.cpp
     fold_conv2d_biasadd.cpp
     remove_convert.cpp
+    remove_binary.cpp
     add_quant_motion.cpp
     fold_io_quant_motion.cpp
     split_to_slice.cpp
     fold_convert.cpp
     optimize_allocation.cpp
+    optimize_benchmark.cpp
     space_to_batch_transform.cpp
     )

@@ -26,7 +26,7 @@ class nncaseConan(ConanFile):
         "tests": [True, False],
         "halide": [True, False],
         "python": [True, False],
-        "vulkan": [True, False],
+        "vulkan_runtime": [True, False],
         "openmp": [True, False]
     }
     default_options = {
@@ -36,7 +36,7 @@ class nncaseConan(ConanFile):
         "tests": False,
         "halide": True,
         "python": True,
-        "vulkan": True,
+        "vulkan_runtime": True,
         "openmp": True
     }
 
@@ -49,10 +49,6 @@ class nncaseConan(ConanFile):
 
         if self.options.python:
             self.requires('pybind11/2.6.1')
-
-        if self.options.vulkan:
-            self.requires('vulkan-headers/1.2.182')
-            self.requires('vulkan-loader/1.2.182')
 
         if not self.options.runtime:
             self.requires('flatbuffers/2.0.0')
@@ -69,6 +65,10 @@ class nncaseConan(ConanFile):
             self.requires('shaderc/2021.1')
             if self.options.tests:
                 self.requires('gtest/1.10.0')
+
+        if (not self.options.runtime) or self.options.vulkan_runtime:
+            self.requires('vulkan-headers/1.2.182')
+            self.requires('vulkan-loader/1.2.182')
 
     def build_requirements(self):
         pass
@@ -94,6 +94,15 @@ class nncaseConan(ConanFile):
             self.options["libzip"].crypto = False
             if self.settings.os == 'Linux':
                 self.options["opencv"].with_gtk = False
+                self.options["spirv-tools"].link_libcpp = False
+                self.options["shaderc"].link_libcpp = False
+
+        if (not self.options.runtime) or self.options.vulkan_runtime:
+            if self.settings.os == 'Linux':
+                self.options["vulkan-loader"].with_wsi_xcb = False
+                self.options["vulkan-loader"].with_wsi_xlib = False
+                self.options["vulkan-loader"].with_wsi_wayland = False
+                self.options["vulkan-loader"].with_wsi_directfb = False
 
     def cmake_configure(self):
         cmake = CMake(self)

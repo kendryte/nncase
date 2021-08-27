@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../runtime_module.h"
+#include "../runtime_function.h"
 #include "../vulkan_error.h"
 #include <nncase/runtime/error.h>
 
@@ -20,26 +20,26 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::vulkan;
 
-result<void> vulkan_runtime_module::visit(const ldbufbarrier_op_t &op) noexcept
+result<void> vulkan_runtime_function::visit(const ldbufbarrier_op_t &op) noexcept
 {
-    vk::Buffer *dev_buf;
+    vk::Buffer dev_buf;
     switch (op.memory.memory_location)
     {
     case mem_input:
-        dev_buf = &input_buffer_;
+        dev_buf = input_buffer_;
         break;
     case mem_output:
-        dev_buf = &output_buffer_;
+        dev_buf = output_buffer_;
         break;
     case mem_data:
-        dev_buf = &data_buffer_;
+        dev_buf = module().data();
         break;
     default:
         return err(nncase_errc::invalid_memory_location);
     }
 
     buffer_barriers_.emplace_back(vk::BufferMemoryBarrier((vk::AccessFlagBits)op.src_access_mask,
-        (vk::AccessFlagBits)op.dest_access_mask, compute_queue_index_, compute_queue_index_, *dev_buf,
-        (vk::DeviceSize)op.memory.start, (vk::DeviceSize)op.memory.size));
+        (vk::AccessFlagBits)op.dest_access_mask, module().compute_queue_index(), module().compute_queue_index(),
+        dev_buf, (vk::DeviceSize)op.memory.start, (vk::DeviceSize)op.memory.size));
     return ok();
 }

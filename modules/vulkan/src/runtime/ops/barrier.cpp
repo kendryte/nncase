@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../runtime_module.h"
+#include "../runtime_function.h"
 #include "../vulkan_error.h"
 #include <nncase/runtime/dbg.h>
 #include <nncase/runtime/error.h>
@@ -21,7 +21,7 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::vulkan;
 
-result<void> vulkan_runtime_module::visit(const barrier_op_t &op) noexcept
+result<void> vulkan_runtime_function::visit(const barrier_op_t &op) noexcept
 {
     CHECK_WITH_ERR(op.memory_barriers == 0, std::errc::not_supported);
 

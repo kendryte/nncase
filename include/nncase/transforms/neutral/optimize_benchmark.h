@@ -13,12 +13,16 @@
  * limitations under the License.
  */
 #pragma once
-#include "../runtime_module.h"
-#include <nncase/kernels/kernel_context.h>
-NNCASE_MODULES_K210_API
+#include "../pass.h"
 
-struct NNCASE_API k210_kernel_context : public kernels::kernel_context
+namespace nncase::ir::transforms
 {
-};
+class NNCASE_API optimize_benchmark_pass : public graph_pass
+{
+public:
+    using graph_pass::graph_pass;
 
-END_NS_NNCASE_KERNELS_K210
+protected:
+    void run_core(graph &graph, nncase::target &target, const run_pass_options &options) override;
+};
+}

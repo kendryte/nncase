@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 
-#include "../runtime_module.h"
+#include "../runtime_function.h"
 #include <nncase/kernels/tensor_compute.h>
 #include <nncase/runtime/interpreter.h>
 #include <nncase/runtime/runtime_op_utility.h>
@@ -22,7 +22,7 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 
-result<void> stackvm_runtime_module::visit(const tensor_onehot_op_t &op) noexcept
+result<void> stackvm_runtime_function::visit(const tensor_onehot_op_t &op) noexcept
 {
     try_var(output, pop_addr());
     try_var(off_value, pop_addr());
@@ -30,11 +30,11 @@ result<void> stackvm_runtime_module::visit(const tensor_onehot_op_t &op) noexcep
     try_var(depth, pop_addr());
     try_var(indices, pop_addr());
 
-    auto &indices_shape = shape_regs_[op.rshape_indices];
-    auto &out_shape = shape_regs_[op.rshape_dest];
-    auto &out_strides = shape_regs_[op.rstride_dest];
+    try_var(indices_shape, module().shape_reg(op.rshape_indices));
+    try_var(out_shape, module().shape_reg(op.rshape_dest));
+    try_var(out_strides, module().shape_reg(op.rstride_dest));
 
     return kernels::onehot(op.datatype, reinterpret_cast<const int32_t *>(indices), reinterpret_cast<gsl::byte *>(output),
         indices_shape, out_shape, out_strides, reinterpret_cast<gsl::byte *>(depth), reinterpret_cast<gsl::byte *>(off_value),
-        reinterpret_cast<gsl::byte *>(on_value), op.axis, op.onehot_mode);
+        reinterpret_cast<gsl::byte *>(on_value), op.axis, op.onehot_mode, module().kernel_context());
 }

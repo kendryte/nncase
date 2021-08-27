@@ -22,20 +22,8 @@
 #define NNCASE_MODULES_K210_API __declspec(dllimport)
 #endif
 #else
-#define NNCASE_MODULES_K210_API
+#define NNCASE_MODULES_K210_API __attribute__((visibility("default")))
 #endif
-
-#define BEGIN_NS_NNCASE_RT_K210 \
-    namespace nncase            \
-    {                           \
-    namespace runtime           \
-    {                           \
-        namespace k210          \
-        {
-#define END_NS_NNCASE_RT_K210 \
-    }                         \
-    }                         \
-    }
 
 #define BEGIN_NS_NNCASE_KERNELS_K210 \
     namespace nncase                 \

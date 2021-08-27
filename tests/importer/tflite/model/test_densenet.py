@@ -29,27 +29,27 @@ in_shapes = [
 ]
 
 
-@pytest.mark.parametrize('in_shape', in_shapes)
-def test_densenet(in_shape, request):
-    module = _make_module(in_shape)
-    overwrite_cfg = """
-judge:
-  specifics:
-    - matchs: 
-        target: k210
-        ptq: true
-      simarity_name: segment
-      threshold: true
-    - matchs: 
-        target: k510
-        ptq: true
-      simarity_name: segment
-      threshold: true
-"""
-    runner = TfliteTestRunner(request.node.name, overwirte_configs=overwrite_cfg)
-    model_file = runner.from_tensorflow(module)
-    runner.run(model_file)
+# @pytest.mark.parametrize('in_shape', in_shapes)
+# def test_densenet(in_shape, request):
+#     module = _make_module(in_shape)
+#     overwrite_cfg = """
+# judge:
+#   specifics:
+#     - matchs:
+#         target: k210
+#         ptq: true
+#       simarity_name: segment
+#       threshold: true
+#     - matchs:
+#         target: k510
+#         ptq: true
+#       simarity_name: segment
+#       threshold: true
+# """
+#     runner = TfliteTestRunner(request.node.name, overwirte_configs=overwrite_cfg)
+#     model_file = runner.from_tensorflow(module)
+#     runner.run(model_file)
 
 
-if __name__ == "__main__":
-    pytest.main(['-vv', 'test_densenet.py'])
+# if __name__ == "__main__":
+#     pytest.main(['-vv', 'test_densenet.py'])

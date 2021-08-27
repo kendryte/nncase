@@ -28,7 +28,7 @@ namespace nncase::ir::transforms
 struct run_pass_options
 {
     ir::quantizer *quantizer;
-    schedule::schedule_context *schedule_context;
+    schedule::function_schedule_context *schedule_context;
     std::optional<std::filesystem::path> dump_dir;
 };
 
@@ -105,14 +105,14 @@ public:
 
     void dump_dir(const std::filesystem::path &dir);
     void quantizer(ir::quantizer *q);
-    void schedule_context(schedule::schedule_context *c);
+    void schedule_context(schedule::function_schedule_context *c);
 
 private:
     std::vector<std::unique_ptr<pass>> passes_;
     graph &graph_;
     nncase::target &target_;
     ir::quantizer *quantizer_;
-    schedule::schedule_context *schedule_context_;
+    schedule::function_schedule_context *schedule_context_;
     std::optional<std::filesystem::path> dump_dir_;
 };
 }

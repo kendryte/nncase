@@ -21,13 +21,16 @@ from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
 import numpy as np
 
+
 def onnx_make_tensor(name, type, val):
     return helper.make_tensor(name, type, np.array(val).shape, np.array(val).flatten().tolist())
+
 
 def get_onehot_shape(indices, axis, depth):
     indices_shape = list(np.array(indices).shape)
     # return indices[:axis] + [depth] + indices[axis:]
     return indices_shape[:axis] + [depth] + indices_shape[axis:]
+
 
 def _make_module(indices, depth, axis):
     out_shape = get_onehot_shape(indices, axis, depth)
@@ -55,6 +58,7 @@ def _make_module(indices, depth, axis):
 
     return helper.make_model(graph_def, producer_name='kendryte')
 
+
 indices_depth_axis = [
     ([3, 2, 4, 0], 5, 0),
     ([3, 2, 4, 0], 5, 1),
@@ -71,12 +75,14 @@ indices_depth_axis = [
     ([[[0, -3], [2, -4], [-1, 0]], [[-3, 0], [4, -2], [0, -1]]], 5, 3),
 ]
 
+
 @pytest.mark.parametrize('indices,depth,axis', indices_depth_axis)
 def test_onehot(indices, depth, axis, request):
     model_def = _make_module(indices, depth, axis)
     runner = OnnxTestRunner(request.node.name)
     model_file = runner.from_onnx_helper(model_def)
     runner.run(model_file)
+
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_onehot.py'])

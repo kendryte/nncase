@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../runtime_module.h"
+#include "../runtime_function.h"
 #include "../vulkan_error.h"
 #include <nncase/runtime/error.h>
 
@@ -20,7 +20,7 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::vulkan;
 
-result<void> vulkan_runtime_module::visit(const copybuf_op_t &op) noexcept
+result<void> vulkan_runtime_function::visit(const copybuf_op_t &op) noexcept
 {
     try_var(output, pop_buffer_ref());
     try_var(input, pop_buffer_ref());

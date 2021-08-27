@@ -29,13 +29,16 @@ public:
     vulkan_module_builder(std::string_view module_name, const module_builder_params &params);
 
     module_type_t module_type() const noexcept override;
+    uint32_t module_version() const noexcept override;
 
 protected:
     section_writer &text_writer();
     section_writer &shader_writer();
 
+    void begin_emit_function(const schedule::function_schedule_result &function) override;
+    void end_emit_function(const schedule::function_schedule_result &function) override;
     void emit(ir::node &node) override;
-    void end_emit() override;
+    void end_emit_module() override;
 
 private:
     std::vector<uint32_t> compile_shader(ir::node &node, const std::string &template_name, const nlohmann::json &context);

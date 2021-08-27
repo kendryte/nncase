@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../runtime_module.h"
+#include "../runtime_function.h"
 #include <nncase/kernels/tensor_compute.h>
 #include <nncase/runtime/interpreter.h>
 #include <nncase/runtime/runtime_op_utility.h>
@@ -21,15 +21,16 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 
-result<void> stackvm_runtime_module::visit(const tensor_call_op_t &op) noexcept
+result<void> stackvm_runtime_function::visit(const tensor_call_op_t &op) noexcept
 {
-    try_var(mod, interp().find_module_by_id(op.module_id));
+    try_var(mod, module().interp().find_module_by_id(op.module_id));
+    try_var(func, mod->find_function_by_id(op.function_id));
 
     auto create_tensor = [&]() -> result<runtime_tensor> {
         try_var(rstrides, stack_.pop());
-        auto &strides = shape_regs_[rstrides.as_u4()];
+        try_var(strides, module().shape_reg(rstrides.as_u4()));
         try_var(rshape, stack_.pop());
-        auto &shape = shape_regs_[rshape.as_u4()];
+        try_var(shape, module().shape_reg(rshape.as_u4()));
         try_var(e_datatype, stack_.pop());
         try_var(addr, pop_addr());
 
@@ -40,14 +41,14 @@ result<void> stackvm_runtime_module::visit(const tensor_call_op_t &op) noexcept
     for (uint8_t i = 0; i < op.num_dst; i++)
     {
         try_var(tensor, create_tensor());
-        try_(mod->output_tensor(op.num_dst - i - 1, tensor));
+        try_(func->output_tensor((size_t)op.num_dst - i - 1, tensor));
     }
 
     for (uint8_t i = 0; i < op.num_src; i++)
     {
         try_var(tensor, create_tensor());
-        try_(mod->input_tensor(op.num_src - i - 1, tensor));
+        try_(func->input_tensor((size_t)op.num_src - i - 1, tensor));
     }
 
-    return mod->run();
+    return func->invoke();
 }

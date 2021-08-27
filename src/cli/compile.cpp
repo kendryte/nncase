@@ -27,6 +27,7 @@ compile_command::compile_command(lyra::cli &cli)
                          .add_argument(lyra::opt(input_type_, "input type").name("--input-type").optional().help("post trainning quantize input type, e.g float32|uint8|default, default is " + input_type_))
                          .add_argument(lyra::opt(output_type_, "output type").name("--output-type").optional().help("post trainning quantize output type, e.g float32|uint8, default is " + output_type_))
                          .add_argument(lyra::opt(quant_type_, "quant type").name("--quant-type").optional().help("post trainning quantize type, e.g uint8|int8, default is " + quant_type_))
+                         .add_argument(lyra::opt(w_quant_type_, "pu output quant type").name("--pu-output-quant-type").optional().help("post trainning weights quantize type, e.g uint8|int8, default is " + w_quant_type_))
                          .add_argument(lyra::opt(input_layout_, "input layout").name("--input-layout").optional().help("input layout, e.g NCHW|NHWC, default is " + input_layout_))
                          .add_argument(lyra::opt(output_layout_, "output layout").name("--output-layout").optional().help("output layout, e.g nchw|default, default is " + output_layout_))
                          .add_argument(lyra::arg(input_filename_, "input file").required().help("input file"))
@@ -40,7 +41,8 @@ compile_command::compile_command(lyra::cli &cli)
                          .add_argument(lyra::opt(is_fpga_).name("--is-fpga").optional().help("use fpga parameters"))
                          .add_argument(lyra::opt(dump_ir_).name("--dump-ir").optional().help("dump ir to .dot"))
                          .add_argument(lyra::opt(dump_asm_).name("--dump-asm").optional().help("dump assembly"))
-                         .add_argument(lyra::opt(dump_dir_, "dump directory").name("--dump-dir").optional().help("dump to directory")));
+                         .add_argument(lyra::opt(dump_dir_, "dump directory").name("--dump-dir").optional().help("dump to directory"))
+                         .add_argument(lyra::opt(benchmark_only_, "benchmark only").name("--benchmark-only").optional().help("compile kmodel only for benchmark use")));
 }
 
 void compile_command::run()
@@ -65,6 +67,8 @@ void compile_command::run()
     c_options.input_type = input_type_;
     c_options.output_type = output_type_;
     c_options.quant_type = quant_type_;
+    c_options.w_quant_type = w_quant_type_;
+    c_options.benchmark_only = benchmark_only_;
 
     import_options i_options;
     std::vector<std::string> output_arrays;

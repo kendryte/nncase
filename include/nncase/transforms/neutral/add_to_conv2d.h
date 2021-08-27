@@ -17,27 +17,12 @@
 
 namespace nncase::ir::transforms
 {
-class NNCASE_API annotate_runtime_transform : public transform
-{
-public:
-    annotate_runtime_transform(module_type_t module_type);
-
-    void process(transform_context &context) override final;
-
-protected:
-    bool skip_self_contained_check() const noexcept override { return true; }
-
-private:
-    module_type_t module_type_;
-};
-
-class NNCASE_API annotate_runtime_of_tag_node_transform : public transform
+class NNCASE_API add_to_conv2d_transform : public transform
 {
 public:
     void process(transform_context &context) override;
 
 protected:
-    bool skip_self_contained_check() const noexcept override { return true; }
-    bool on_try_match(node &node, transform_context &context) override;
+    bool on_try_match(ir::node &node, transform_context &context) override;
 };
 }
