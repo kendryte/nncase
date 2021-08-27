@@ -13,94 +13,197 @@
 # limitations under the License.
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
 
+import math
 import pytest
-import torch
+import onnx
+from onnx import helper
+from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
+import numpy as np
 
 
-def _make_module(i_channel, k_size, o_channel, stride, padding, padding_mode, dilation):
+def _make_module(in_shape, kernel_output_channel, bias_shape, auto_pad_mode, dilation, group, kernel_shape, output_padding, pad, stride):
+    inputs = []
+    initializers = []
 
-    class ConvTranspose2dModule(torch.nn.Module):
-        def __init__(self):
-            super(ConvTranspose2dModule, self).__init__()
-            # self.conv = torch.nn.Conv2d(i_channel, o_channel, k_size, stride=stride,
-            #                             padding=padding, padding_mode=padding_mode, dilation=dilation)
+    # input
+    input = helper.make_tensor_value_info('input', TensorProto.FLOAT, in_shape)
+    inputs.append('input')
 
-            # self.convtranspose2d = torch.nn.ConvTranspose2d(i_channel , o_channel, kernel_size = k_size, stride = stride, padding= padding, output_padding= 1, dilation=dilation)
-            self.convtranspose2d = torch.nn.ConvTranspose2d(i_channel , o_channel, kernel_size = k_size,  stride = stride, padding= padding, dilation=dilation)
-            # self.convtranspose2d = torch.nn.ConvTranspose2d(i_channel , o_channel, kernel_size = k_size,  stride = stride, padding= padding, output_padding= 1)
+    # weight
+    w_shape = []
+    w_shape.append(in_shape[1])
+    w_shape.append(kernel_output_channel)
+    w_shape.extend(kernel_shape)
+    weight = helper.make_tensor(
+        'weight',
+        TensorProto.FLOAT,
+        dims=w_shape,
+        vals=np.random.rand(*w_shape).astype(np.float32).flatten().tolist()
+        # vals=np.ones(w_shape).astype(np.float32).flatten().tolist()
+    )
+    inputs.append('weight')
+    initializers.append(weight)
 
-        def forward(self, x):
-            x = self.convtranspose2d(x)
-            return x
+    # bias
+    if bias_shape is not None:
+        bias = helper.make_tensor(
+            'bias',
+            TensorProto.FLOAT,
+            dims=bias_shape,
+            vals=np.random.rand(*bias_shape).astype(np.float32).flatten().tolist()
+        )
+        inputs.append('bias')
+        initializers.append(bias)
 
-    return ConvTranspose2dModule()
+    # dilation
+    d = [1, 1] if dilation is None else dilation
+    print('d = {0}'.format(d))
+
+    # output_padding
+    out_padding = [0, 0] if output_padding is None else output_padding
+
+    # stride
+    s = [1, 1] if stride is None else stride
+    print('s = {0}'.format(s))
+
+    # output
+    out_shape = []
+    out_shape.append(in_shape[0])
+    out_shape.append(w_shape[1])
+
+    # pad
+    padding = [0, 0, 0, 0]
+    if auto_pad_mode in [None, 'NOTSET'] and pad is not None:
+        padding = pad
+        out_shape.append(s[0] * (in_shape[2] - 1) + out_padding[0] + (w_shape[2] - 1) * d[0] + 1 - padding[0] - padding[2])
+        out_shape.append(s[1] * (in_shape[3] - 1) + out_padding[1] + (w_shape[3] - 1) * d[1] + 1 - padding[1] - padding[3])
+    elif auto_pad_mode in ['SAME_UPPER', 'SAME_LOWER']:
+        out_shape.append(in_shape[2] * s[0])
+        out_shape.append(in_shape[3] * s[1])
+    else:
+        out_shape.append(s[0] * (in_shape[2] - 1) + out_padding[0] + (w_shape[2] - 1) * d[0] + 1 - padding[0] - padding[2])
+        out_shape.append(s[1] * (in_shape[3] - 1) + out_padding[1] + (w_shape[3] - 1) * d[1] + 1 - padding[1] - padding[3])
+
+    print('auto_pad_mode = {0}, pad = {1}, padding = {2}'.format(auto_pad_mode, pad, padding))
+    print('output shape = {0}'.format(out_shape))
+
+    output = helper.make_tensor_value_info('output', TensorProto.FLOAT, out_shape)
+
+    attributes_dict = {}
+
+    if auto_pad_mode is not None:
+        attributes_dict['auto_pad'] = auto_pad_mode
+
+    if dilation is not None:
+        attributes_dict['dilations'] = dilation
+
+    if group is not None:
+        attributes_dict['group'] = group
+
+    if kernel_shape is not None:
+        attributes_dict['kernel_shape'] = kernel_shape
+
+    if output_padding is not None:
+        attributes_dict['output_padding'] = output_padding
+
+    if pad is not None:
+        attributes_dict['pads'] = padding
+
+    if stride is not None:
+        attributes_dict['strides'] = stride
+
+    node = onnx.helper.make_node(
+        'ConvTranspose',
+        inputs=inputs,
+        outputs=['output'],
+        **attributes_dict
+    )
+
+    nodes = []
+    nodes.append(node)
+
+    graph_def = helper.make_graph(
+        nodes,
+        'test-model',
+        [input],
+        [output],
+        initializer=initializers)
+
+    model_def = helper.make_model(graph_def, producer_name='kendryte')
+
+    return model_def
 
 
-n = [
-    1,
-    # 3
+in_shapes = [
+    [1, 1, 3, 3]
 ]
 
-i_channels = [
-    3,
-    # 16
+kernel_output_channels = [
+    2
 ]
 
-i_sizes = [
-    [24, 24],
-    # [38, 65]
+bias_shapes = [
+    None,
 ]
+bias_shapes.extend(list([[x] for x in kernel_output_channels]))
 
-k_sizes = [
-    # [1, 1],
-    [5, 5],
-]
+print('bias_shapes = {0}'.format(bias_shapes))
 
-o_channels = [
-    # 1,
-    8
-]
-
-strides = [
-    (1, 1),
-    # (2, 2)
-]
-
-paddings = [
-    1,
-    # (2, 3)
-]
-
-padding_modes = [
-    'zeros'
+auto_pad_modes = [
+    None,
+    'NOTSET',
+    'SAME_UPPER',
+    'SAME_LOWER',
+    'VALID'
 ]
 
 dilations = [
-    [1, 1],
-    # [2, 2]
+    None,
+]
+
+groups = [
+    None,
+]
+
+kernel_shapes = [
+    [3, 3],
+]
+
+output_paddings = [
+    None,
+    # [1, 1]
 ]
 
 
-@pytest.mark.parametrize('n', n)
-@pytest.mark.parametrize('i_channel', i_channels)
-@pytest.mark.parametrize('i_size', i_sizes)
-@pytest.mark.parametrize('k_size', k_sizes)
-@pytest.mark.parametrize('o_channel', o_channels)
-@pytest.mark.parametrize('stride', strides)
-@pytest.mark.parametrize('padding', paddings)
-@pytest.mark.parametrize('padding_mode', padding_modes)
+pads = [
+    None,
+    [1, 1, 1, 1],
+]
+
+strides = [
+    None,
+    # [2, 2],
+]
+
+@pytest.mark.parametrize('in_shape', in_shapes)
+@pytest.mark.parametrize('kernel_output_channel', kernel_output_channels)
+@pytest.mark.parametrize('bias_shape', bias_shapes)
+@pytest.mark.parametrize('auto_pad_mode', auto_pad_modes)
 @pytest.mark.parametrize('dilation', dilations)
-def test_conv_transpose(n, i_channel, i_size, k_size, o_channel, stride, padding, padding_mode, dilation, request):
+@pytest.mark.parametrize('group', groups)
+@pytest.mark.parametrize('kernel_shape', kernel_shapes)
+@pytest.mark.parametrize('output_padding', output_paddings)
+@pytest.mark.parametrize('pad', pads)
+@pytest.mark.parametrize('stride', strides)
+def test_conv_transpose(in_shape, kernel_output_channel, bias_shape, auto_pad_mode, dilation, group, kernel_shape, output_padding, pad, stride, request):
+    if (bias_shape is None or (bias_shape is not None and bias_shape[0] == kernel_output_channel)) and ((auto_pad_mode in [None, 'NOTSET'] and pad is not None) or (auto_pad_mode in ['SAME_UPPER', 'SAME_LOWER', 'VALID'] and pad is None)) and (dilation is None or (auto_pad_modes in [None, 'NOTSET'])):
+        model_def = _make_module(in_shape, kernel_output_channel, bias_shape,
+                                 auto_pad_mode, dilation, group, kernel_shape, output_padding, pad, stride)
 
-    module = _make_module(i_channel, k_size, o_channel, stride, padding, padding_mode, dilation)
-    in_shape = [n, i_channel]
-    in_shape.extend(i_size)
-
-    # runner = OnnxTestRunner(request.node.name)
-    runner = OnnxTestRunner(request.node.name, ['k510'])
-    model_file = runner.from_torch(module, in_shape)
-    runner.run(model_file)
+        runner = OnnxTestRunner(request.node.name, ['k510'])
+        model_file = runner.from_onnx_helper(model_def)
+        runner.run(model_file)
 
 
 if __name__ == "__main__":

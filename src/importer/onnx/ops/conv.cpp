@@ -20,6 +20,7 @@
 #include <nncase/ir/ops/constant.h>
 #include <nncase/ir/ops/conv2d.h>
 #include <nncase/ir/ops/conv2d_transpose.h>
+#include <nncase/ir/ops/pad.h>
 #include <nncase/ir/ops/transpose.h>
 
 using namespace nncase;
@@ -65,45 +66,45 @@ void onnx_importer::convert_op_Conv(const NodeProto &node)
     }
 
     // pad
-    std::array<padding, 2> pads { { { 0, 0 }, { 0, 0 } } };
+    std::array<padding, 2> paddings { { { 0, 0 }, { 0, 0 } } };
     const auto &auto_pad_attr = get_attribute<std::string>(node, "auto_pad");
     std::string pad_mode = auto_pad_attr ? auto_pad_attr.value() : "NOTSET";
     if (pad_mode == "NOTSET")
     {
-        const auto &pads_attr = get_attribute<std::vector<int>>(node, "pads");
-        if (pads_attr)
+        const auto &paddings_attr = get_attribute<std::vector<int>>(node, "pads");
+        if (paddings_attr)
         {
-            const auto &pads_values = pads_attr.value();
-            if (pads_values.size() > 1)
+            const auto &paddings_values = paddings_attr.value();
+            if (paddings_values.size() > 1)
             {
-                pads[0].before = pads_values[0];
-                pads[1].before = pads_values[1];
+                paddings[0].before = paddings_values[0];
+                paddings[1].before = paddings_values[1];
             }
 
-            if (pads_values.size() > 3)
+            if (paddings_values.size() > 3)
             {
-                pads[0].after = pads_values[2];
-                pads[1].after = pads_values[3];
+                paddings[0].after = paddings_values[2];
+                paddings[1].after = paddings_values[3];
             }
         }
     }
     else if (pad_mode == "SAME_UPPER")
     {
-        pads[0] = get_windowed_padding(input_shape[2], weight_shape[2], strides[0], dilations[0], true);
-        pads[1] = get_windowed_padding(input_shape[3], weight_shape[3], strides[1], dilations[1], true);
+        paddings[0] = get_windowed_padding(input_shape[2], weight_shape[2], strides[0], dilations[0], true);
+        paddings[1] = get_windowed_padding(input_shape[3], weight_shape[3], strides[1], dilations[1], true);
     }
     else if (pad_mode == "SAME_LOWER")
     {
-        pads[0] = get_windowed_padding(input_shape[2], weight_shape[2], strides[0], dilations[0], true);
-        if (pads[0].before < pads[0].after)
-            std::swap(pads[0].before, pads[0].after);
+        paddings[0] = get_windowed_padding(input_shape[2], weight_shape[2], strides[0], dilations[0], true);
+        if (paddings[0].before < paddings[0].after)
+            std::swap(paddings[0].before, paddings[0].after);
 
-        pads[1] = get_windowed_padding(input_shape[3], weight_shape[3], strides[1], dilations[1], true);
-        if (pads[1].before < pads[1].after)
-            std::swap(pads[1].before, pads[1].after);
+        paddings[1] = get_windowed_padding(input_shape[3], weight_shape[3], strides[1], dilations[1], true);
+        if (paddings[1].before < paddings[1].after)
+            std::swap(paddings[1].before, paddings[1].after);
     }
 
-    auto conv = graph_.emplace<conv2d>(input_shape, weight_shape, group, pads[0], pads[1], strides[0], strides[1],
+    auto conv = graph_.emplace<conv2d>(input_shape, weight_shape, group, paddings[0], paddings[1], strides[0], strides[1],
         dilations[0], dilations[1], value_range<float>::full());
     conv->name(generate_name(node) + "(Conv)");
 
@@ -111,35 +112,49 @@ void onnx_importer::convert_op_Conv(const NodeProto &node)
     input_tensors_.emplace(&conv->weights(), weight);
     if (node.input().size() > 2)
     {
-        const auto &bias = node.input()[2];
-        input_tensors_.emplace(&conv->bias(), bias);
+        input_tensors_.emplace(&conv->bias(), node.input()[2]);
     }
     else
     {
-        std::vector<float> bias_value(weight_shape[0], 0.f);
-        shape_t bias_shape = { weight_shape[0] };
-        auto bias_node = graph_.emplace<constant>(dt_float32, bias_shape, bias_value);
-        conv->bias().connect(bias_node->output());
+        shape_t shape = { weight_shape[0] };
+        std::vector<float> zeros(weight_shape[0], 0.f);
+        auto bias = graph_.emplace<constant>(dt_float32, shape, zeros);
+        conv->bias().connect(bias->output());
     }
     output_tensors_.emplace(output, &conv->output());
 }
 
 void onnx_importer::convert_op_ConvTranspose(const NodeProto &node)
 {
+    const auto &op_name = generate_name(node);
     const auto &input = node.input()[0];
     const auto &weight = node.input()[1];
     const auto &output = node.output()[0];
 
+    auto input_type = get_datatype(input).value();
     auto input_shape = get_shape(input);
+    auto weight_shape = get_shape(weight);
     auto output_shape = get_shape(output);
 
-    auto tp = graph_.emplace<transpose>(dt_float32, get_shape(weight), axis_t { 1, 0, 2, 3 });
-    tp->name(generate_name(node) + "(Transpose)");
+    auto tp = graph_.emplace<transpose>(dt_float32, weight_shape, axis_t { 1, 0, 2, 3 });
+    tp->name(op_name + "(Transpose)");
     auto tp_shape = tp->output().shape();
 
     // group
     const auto &group_attr = get_attribute<int>(node, "group");
     size_t group = group_attr ? group_attr.value() : 1;
+
+    // output_padding
+    xt::svector<padding> output_paddings(4, { 0, 0 });
+    const auto &output_padding_attr = get_attribute<std::vector<int>>(node, "output_padding");
+    if (output_padding_attr)
+    {
+        const auto &output_padding_values = output_padding_attr.value();
+        if (output_padding_values.size() > 0)
+            output_paddings[2].after = output_padding_values[0];
+        if (output_padding_values.size() > 1)
+            output_paddings[3].after = output_padding_values[1];
+    }
 
     // stride
     std::array<size_t, 2> strides = { 1, 1 };
@@ -166,62 +181,96 @@ void onnx_importer::convert_op_ConvTranspose(const NodeProto &node)
     }
 
     // pad
-    std::array<padding, 2> pads { { { 0, 0 }, { 0, 0 } } };
+    std::array<padding, 2> paddings { { { 0, 0 }, { 0, 0 } } };
     const auto &auto_pad_attr = get_attribute<std::string>(node, "auto_pad");
     std::string pad_mode = auto_pad_attr ? auto_pad_attr.value() : "NOTSET";
-    if (pad_mode == "NOTSET")
+
+    // output_shape
+    const auto &output_shape_attr = get_attribute<std::vector<int>>(node, "output_shape");
+    if (output_shape_attr)
     {
-        const auto &pads_attr = get_attribute<std::vector<int>>(node, "pads");
-        if (pads_attr)
+        std::array<int, 2> total_paddings { { 0, 0 } };
+        total_paddings[0] = strides[0] * (input_shape[2] - 1) + output_paddings[2].after + ((tp_shape[2] - 1) * dilations[0] + 1) - output_shape[2];
+        total_paddings[1] = strides[1] * (input_shape[3] - 1) + output_paddings[3].after + ((tp_shape[3] - 1) * dilations[1] + 1) - output_shape[3];
+
+        if (pad_mode == "SAME_UPPER")
         {
-            const auto &pads_values = pads_attr.value();
-            if (pads_values.size() > 1)
-            {
-                pads[0].before = pads_values[0];
-                pads[1].before = pads_values[1];
-            }
-
-            if (pads_values.size() > 3)
-            {
-                pads[0].after = pads_values[2];
-                pads[1].after = pads_values[3];
-            }
+            paddings[0].before = total_paddings[0] / 2;
+            paddings[0].after = total_paddings[0] -  paddings[0].before;
+            paddings[1].before = total_paddings[1] / 2;
+            paddings[0].after = total_paddings[1] -  paddings[1].before;
         }
-    }
-    else if (pad_mode == "SAME_UPPER")
-    {
-        pads[0] = get_windowed_padding(input_shape[2], tp_shape[2], strides[0], dilations[0], true);
-        pads[1] = get_windowed_padding(input_shape[3], tp_shape[3], strides[1], dilations[1], true);
-    }
-    else if (pad_mode == "SAME_LOWER")
-    {
-        pads[0] = get_windowed_padding(input_shape[2], tp_shape[2], strides[0], dilations[0], true);
-        if (pads[0].before < pads[0].after)
-            std::swap(pads[0].before, pads[0].after);
-
-        pads[1] = get_windowed_padding(input_shape[3], tp_shape[3], strides[1], dilations[1], true);
-        if (pads[1].before < pads[1].after)
-            std::swap(pads[1].before, pads[1].after);
-    }
-
-    auto conv_transpose = graph_.emplace<conv2d_transpose>(input_shape, tp_shape, output_shape, group, pads[0], pads[1], strides[0], strides[1],
-        dilations[0], dilations[1], value_range<float>::full());
-    conv_transpose->name(generate_name(node) + "(ConvTranspose)");
-
-    input_tensors_.emplace(&conv_transpose->input(), input);
-    input_tensors_.emplace(&tp->input(), weight);
-    conv_transpose->weights().connect(tp->output());
-    if (node.input().size() > 2)
-    {
-        const auto &bias = node.input()[2];
-        input_tensors_.emplace(&conv_transpose->bias(), bias);
+        else
+        {
+            paddings[0].after = total_paddings[0] / 2;
+            paddings[0].before = total_paddings[0] -  paddings[0].after;
+            paddings[1].after = total_paddings[1] / 2;
+            paddings[0].before = total_paddings[1] -  paddings[1].after;
+        }
     }
     else
     {
-        std::vector<float> bias_value(tp_shape[0], 0.f);
-        shape_t bias_shape = { tp_shape[0] };
-        auto bias_node = graph_.emplace<constant>(dt_float32, bias_shape, bias_value);
-        conv_transpose->bias().connect(bias_node->output());
+        if (pad_mode == "NOTSET")
+        {
+            const auto &paddings_attr = get_attribute<std::vector<int>>(node, "pads");
+            if (paddings_attr)
+            {
+                const auto &paddings_values = paddings_attr.value();
+                if (paddings_values.size() > 1)
+                {
+                    paddings[0].before = dilations[0] * (weight_shape[2] - 1) - paddings_values[0];
+                    paddings[1].before = dilations[1] * (weight_shape[3] - 1) - paddings_values[1];
+                }
+
+                if (paddings_values.size() > 3)
+                {
+                    paddings[0].after = dilations[0] * (weight_shape[2] - 1) - paddings_values[2];
+                    paddings[1].after = dilations[1] * (weight_shape[3] - 1) - paddings_values[3];
+                }
+            }
+        }
+        else if (pad_mode == "SAME_UPPER")
+        {
+            paddings[0] = get_windowed_padding(input_shape[2], tp_shape[2], strides[0], dilations[0], true);
+            paddings[1] = get_windowed_padding(input_shape[3], tp_shape[3], strides[1], dilations[1], true);
+        }
+        else if (pad_mode == "SAME_LOWER")
+        {
+            paddings[0] = get_windowed_padding(input_shape[2], tp_shape[2], strides[0], dilations[0], true);
+            if (paddings[0].before < paddings[0].after)
+                std::swap(paddings[0].before, paddings[0].after);
+
+            paddings[1] = get_windowed_padding(input_shape[3], tp_shape[3], strides[1], dilations[1], true);
+            if (paddings[1].before < paddings[1].after)
+                std::swap(paddings[1].before, paddings[1].after);
+        }
+    }
+
+    // Pad
+    pad_mode_t mode = pad_constant;
+    scalar zero = 0.f;
+    auto pad_node = graph_.emplace<pad>(input_type, input_shape, output_paddings, mode, std::move(zero));
+    pad_node->name(op_name + "(Pad)");
+
+    // ConvTranspose
+    auto conv_transpose = graph_.emplace<conv2d_transpose>(pad_node->output().shape(), tp_shape, output_shape, group, paddings[0], paddings[1], strides[0], strides[1],
+        dilations[0], dilations[1], value_range<float>::full());
+    conv_transpose->name(op_name + "(ConvTranspose)");
+    conv_transpose->input().connect(pad_node->output());
+    conv_transpose->weights().connect(tp->output());
+
+    input_tensors_.emplace(&pad_node->input(), input);
+    input_tensors_.emplace(&tp->input(), weight);
+    if (node.input().size() > 2)
+    {
+        input_tensors_.emplace(&conv_transpose->bias(), node.input()[2]);
+    }
+    else
+    {
+        shape_t shape = { tp_shape[0] };
+        std::vector<float> zeros(tp_shape[0], 0.f);
+        auto bias = graph_.emplace<constant>(dt_float32, shape, zeros);
+        conv_transpose->bias().connect(bias->output());
     }
     output_tensors_.emplace(output, &conv_transpose->output());
 }
