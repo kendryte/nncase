@@ -1,0 +1,120 @@
+name: compiler-test
+
+on: [push, pull_request]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    runs-on: [self-hosted]
+
+    steps:
+    - uses: actions/checkout@v2
+          
+    - name: Setup Python
+      uses: actions/setup-python@v2.2.1
+      with:
+        python-version: 3.7
+
+    - name: Install Conan
+      shell: bash
+      run: |
+        pip install conan
+
+    - name: Configure Conan
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        conan profile update settings.compiler.libcxx=libstdc++11 default
+
+    - name: Create Build Environment
+      run: cmake -E make_directory ${{github.workspace}}/build
+
+    - name: Configure CMake
+      env:
+        CC: gcc-10
+        CXX: g++-10
+      if: runner.os == 'Linux'
+      shell: bash
+      working-directory: ${{github.workspace}}/build
+      run: cmake -G Ninja $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=ON -DPython3_ROOT_DIR=${pythonLocation}
+
+    - name: Configure CMake
+      if: runner.os != 'Linux'
+      shell: bash
+      working-directory: ${{github.workspace}}/build
+      run: cmake -G Ninja $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=ON -DPython3_ROOT_DIR=${pythonLocation}
+
+    - name: Build
+      shell: bash
+      working-directory: ${{github.workspace}}/build
+      run: |
+        cmake --build . --config $BUILD_TYPE
+
+    - name: Install
+      shell: bash
+      working-directory: ${{github.workspace}}/build
+      run: cmake --install . --prefix ../install
+
+    - name: CTest
+      shell: bash
+      working-directory: ${{github.workspace}}/build/tests/kernels
+      run: ctest -C $BUILD_TYPE
+      
+    - name: Upload a Build Artifact
+      uses: actions/upload-artifact@v2.2.2
+      with:
+        name: nncase-ubuntu-x86_64
+        path: ${{github.workspace}}/install
+        if-no-files-found: error
+
+  test-compiler:
+    needs: [build]
+    runs-on: [self-hosted]
+
+    steps:
+    - uses: actions/checkout@v2
+          
+    - name: Setup Python
+      uses: actions/setup-python@v2.2.1
+      with:
+        python-version: 3.7
+        
+    - name: Install Python Packages
+      if: runner.os != 'Macos'
+      shell: bash
+      run: |
+        pip install conan tensorflow==2.5.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0
+        pip install torch==1.9.0+cpu torchvision==0.10.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
+        pip install pytest
+      
+    - name: Create Test Environment
+      working-directory: ${{github.workspace}}
+      shell: bash
+      run: |
+        pip install pytest
+        mkdir test_results
+      
+    - name: Download a Build Artifact
+      uses: actions/download-artifact@v2.0.9
+      with:
+        name: nncase-ubuntu-x86_64
+        path: ${{github.workspace}}/install
+
+    - name: Test
+      working-directory: ${{github.workspace}}
+      if: runner.os != 'Windows'
+      shell: bash
+      env:
+        PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/tests
+      run: |
+        pytest tests/importer --doctest-modules --junitxml=test_results/importer.xml
+        pytest tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
+        pytest tests/schedule --doctest-modules --junitxml=test_results/graph_partition.xml
+
+    - name: Publish Test Results
+      uses: EnricoMi/publish-unit-test-result-action@v1
+      if: always() && runner.os == 'Linux'
+      with:
+        files: test_results/*.xml

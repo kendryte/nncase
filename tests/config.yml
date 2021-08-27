@@ -32,7 +32,7 @@ case: # case的配置，应该是一个多层次的
     - name: target
       values:
         - cpu
-        - vulkan
+        #- vulkan
         - k210
         - k510
     - name: ptq
@@ -42,7 +42,7 @@ case: # case的配置，应该是一个多层次的
     - name: target
       values:
         - cpu
-        - vulkan
+        #- vulkan
         - k210
         - k510
     - name: ptq
@@ -57,7 +57,8 @@ judge:
     matchs: null
   specifics:
     - matchs:
-        target: [cpu, vulkan, k210, k510]
+        #target: [cpu, vulkan, k210, k510]
+        target: [cpu, k210, k510]
         ptq: true
       threshold: 0.98
     - matchs:

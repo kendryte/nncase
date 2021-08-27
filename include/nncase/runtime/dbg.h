@@ -863,6 +863,15 @@ public:
     }
 
     template <typename T>
+    void print_err(T &&message)
+    {
+        std::cerr
+            << m_location << ansi(ANSI_WARN)
+            << message
+            << ansi(ANSI_RESET) << std::endl;
+    }
+
+    template <typename T>
     T &&checked_print(std::initializer_list<expr_t> exprs,
         std::initializer_list<std::string> types,
         T &&value)
@@ -1026,6 +1035,48 @@ auto identity(T &&, U &&...u) -> last_t<U...>
 #define CHECK_WITH_ERR(x, e) \
     if (!CHECK(x))           \
     return nncase::err(e)
+
+#define checked_try(x)                                     \
+    {                                                      \
+        auto v = (x);                                      \
+        if (!v.is_ok())                                    \
+        {                                                  \
+            dbg::DebugOutput(__FILE__, __LINE__, __func__) \
+                .print_err(v.unwrap_err().message());      \
+            return nncase::err(std::move(v.unwrap_err())); \
+        }                                                  \
+    }
+
+#define checked_try_var(name, x)                           \
+    typename decltype((x))::traits::ok_type name;          \
+    {                                                      \
+        auto v = (x);                                      \
+        if (v.is_ok())                                     \
+        {                                                  \
+            name = std::move(v.unwrap());                  \
+        }                                                  \
+        else                                               \
+        {                                                  \
+            dbg::DebugOutput(__FILE__, __LINE__, __func__) \
+                .print_err(v.unwrap_err().message());      \
+            return nncase::err(std::move(v.unwrap_err())); \
+        }                                                  \
+    }
+
+#define checked_try_set(name, x)                           \
+    {                                                      \
+        auto v = (x);                                      \
+        if (v.is_ok())                                     \
+        {                                                  \
+            name = std::move(v.unwrap());                  \
+        }                                                  \
+        else                                               \
+        {                                                  \
+            dbg::DebugOutput(__FILE__, __LINE__, __func__) \
+                .print_err(v.unwrap_err().message());      \
+            return nncase::err(std::move(v.unwrap_err())); \
+        }                                                  \
+    }
 
 #define dbg(...)                                        \
     dbg::DebugOutput(__FILE__, __LINE__, __func__)      \
