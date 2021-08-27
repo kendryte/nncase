@@ -31,7 +31,7 @@ using namespace nncase::ir::transforms;
 
 namespace
 {
-memory_location_t decide_memory_location(ir::output_connector &conn, bool skip_buffer_alias) noexcept
+memory_location_t decide_memory_location(ir::output_connector &conn, [[maybe_unused]] bool skip_buffer_alias) noexcept
 {
     auto &opcode = conn.owner().runtime_opcode();
     if (opcode == op_input_node)
