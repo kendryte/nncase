@@ -100,15 +100,15 @@ void add_copy_to_slice_pass::run_core(graph &graph, [[maybe_unused]] nncase::tar
     auto alias_visitor = make_relay_ir_visitor([&](node &node) {
         if (auto s = node_cast<slice>(node))
         {
-            auto &out = *s->output().connections().front();
-            if (out.owner().runtime_opcode() != op_copy)
+            auto outputs = dup(s->output().connections());
+            if (outputs.front()->owner().runtime_opcode() != op_copy)
             {
-                auto cp = graph.emplace<copy>(out.type(), out.shape());
+                auto cp = graph.emplace<copy>(s->output().type(), s->output().shape());
                 cp->name(s->name() + "/copy");
                 cp->module_type(graph.module_type());
                 cp->input().connect(s->output());
 
-                for (auto in : dup(s->output().connections()))
+                for (auto in : outputs)
                     in->connect(cp->output());
             }
         }
@@ -232,7 +232,6 @@ bool remove_simple_copy_from_slice_transform::on_try_match(node &node, transform
         && ((s->attributes() & node_attr_action) == 0)
         && (cp = try_get_direct_child<copy>(*s)))
     {
-        auto input = s->input().connection();
         if (is_simple_slice(s->begin(), s->end(), s->strides(), s->input().shape()))
         {
             context.inputs.emplace_back(&s->input());

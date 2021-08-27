@@ -213,13 +213,14 @@ void function_schedule_context::update_offset()
         }
         else if (auto s = node_cast<slice>(node))
         {
-            if (!(s->attributes() & node_attr_action))
-            {
-                auto &in_buf = logical_buffer_map_.at(s->input().connection());
-                auto &out_buf = logical_buffer_map_.at(&s->output());
+            if (s->attributes() & node_attr_action)
+                return;
 
+            auto &in_buf = logical_buffer_map_.at(s->input().connection());
+            auto &out_buf = logical_buffer_map_.at(&s->output());
+
+            if (in_buf->parent())
                 in_buf->parent()->offset += out_buf->parent()->offset;
-            }
         }
     });
     visitor.visit(outputs_);
