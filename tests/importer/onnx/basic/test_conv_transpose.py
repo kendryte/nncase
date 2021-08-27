@@ -76,14 +76,18 @@ def _make_module(in_shape, kernel_output_channel, bias_shape, auto_pad_mode, dil
     padding = [0, 0, 0, 0]
     if auto_pad_mode in [None, 'NOTSET'] and pad is not None:
         padding = pad
-        out_shape.append(s[0] * (in_shape[2] - 1) + out_padding[0] + (w_shape[2] - 1) * d[0] + 1 - padding[0] - padding[2])
-        out_shape.append(s[1] * (in_shape[3] - 1) + out_padding[1] + (w_shape[3] - 1) * d[1] + 1 - padding[1] - padding[3])
+        out_shape.append(s[0] * (in_shape[2] - 1) + out_padding[0] +
+                         (w_shape[2] - 1) * d[0] + 1 - padding[0] - padding[2])
+        out_shape.append(s[1] * (in_shape[3] - 1) + out_padding[1] +
+                         (w_shape[3] - 1) * d[1] + 1 - padding[1] - padding[3])
     elif auto_pad_mode in ['SAME_UPPER', 'SAME_LOWER']:
         out_shape.append(in_shape[2] * s[0])
         out_shape.append(in_shape[3] * s[1])
     else:
-        out_shape.append(s[0] * (in_shape[2] - 1) + out_padding[0] + (w_shape[2] - 1) * d[0] + 1 - padding[0] - padding[2])
-        out_shape.append(s[1] * (in_shape[3] - 1) + out_padding[1] + (w_shape[3] - 1) * d[1] + 1 - padding[1] - padding[3])
+        out_shape.append(s[0] * (in_shape[2] - 1) + out_padding[0] +
+                         (w_shape[2] - 1) * d[0] + 1 - padding[0] - padding[2])
+        out_shape.append(s[1] * (in_shape[3] - 1) + out_padding[1] +
+                         (w_shape[3] - 1) * d[1] + 1 - padding[1] - padding[3])
 
     print('auto_pad_mode = {0}, pad = {1}, padding = {2}'.format(auto_pad_mode, pad, padding))
     print('output shape = {0}'.format(out_shape))
@@ -185,6 +189,7 @@ strides = [
     None,
     # [2, 2],
 ]
+
 
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('kernel_output_channel', kernel_output_channels)
