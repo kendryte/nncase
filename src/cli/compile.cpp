@@ -109,6 +109,9 @@ void compile_command::run()
     }
     else if (input_format_ == "caffe")
     {
+        if (input_prototxt_.empty())
+            throw std::invalid_argument("Please use --input-prototxt to specify the path to the caffe prototxt");
+
         auto file_data = read_file(input_filename_);
         auto input_prototxt = read_file(input_prototxt_);
         compiler->import_caffe(file_data, input_prototxt);

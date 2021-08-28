@@ -109,9 +109,10 @@ jobs:
       env:
         PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/tests
       run: |
-        pytest tests/importer --doctest-modules --junitxml=test_results/importer.xml
+        pytest tests/importer/tflite --doctest-modules --junitxml=test_results/importer_tflite.xml
+        pytest tests/importer/onnx --doctest-modules --junitxml=test_results/importer_onnx.xml
         pytest tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
-        pytest tests/schedule --doctest-modules --junitxml=test_results/graph_partition.xml
+        pytest tests/graph_partition --doctest-modules --junitxml=test_results/graph_partition.xml
 
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action@v1

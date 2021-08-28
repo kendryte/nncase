@@ -142,99 +142,17 @@ jobs:
         Copy-Item swiftshader\lib\vk_swiftshader_icd.json swiftshader\bin\
 
     - name: Setup Python
-      if: runner.os != 'Macos'
       uses: actions/setup-python@v2.2.1
       with:
         python-version: 3.7
 
-    - name: Setup Python
-      if: runner.os == 'Macos'
-      uses: actions/setup-python@v2.2.1
-      with:
-        python-version: 3.9
-
-    - name: Install System Requirements
-      if: runner.os == 'Linux'
-      shell: bash
-      run: |
-        sudo apt update
-        sudo apt install libgtk2.0-dev -y
-        sudo apt-get install libegl1-mesa-dev -y
-        sudo apt-get install libprotobuf-dev libleveldb-dev libsnappy-dev libhdf5-serial-dev protobuf-compiler -y
-        sudo apt-get install --no-install-recommends libboost-all-dev -y
-        sudo apt-get install libopenblas-dev liblapack-dev libatlas-base-dev -y
-        sudo apt-get install libgflags-dev libgoogle-glog-dev liblmdb-dev -y
-        sudo apt-get install patchelf -y
-        sudo apt-get install libboost1.62-dev libboost1.62-tools-dev libboost-mpi-python1.62.0 libboost1.62-all-dev -y
-        sudo ln -s /usr/lib/x86_64-linux-gnu/libgflags.so.2.2.1 /usr/lib/x86_64-linux-gnu/libgflags.so.2
-
-    - name: Install System Requirements
-      if: runner.os == 'Macos'
-      shell: bash
-      run: |
-        brew install -vd snappy leveldb gflags glog szip lmdb
-        brew install hdf5 openblas
-        brew install autoconf automake libtool
-        wget -c https://github.com/protocolbuffers/protobuf/archive/refs/tags/v3.5.1.zip
-        unzip v3.5.1.zip
-        cd protobuf-3.5.1
-        ./autogen.sh
-        ./configure
-        make
-        make install
-        cd python
-        python setup.py build
-        python setup.py test
-        python setup.py install
-        cd ../../
-        brew install -vd boost boost-python3
-
     - name: Install Python Packages
       if: runner.os != 'Macos'
       shell: bash
       run: |
-        pip install conan tensorflow==2.5.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0 numpy==1.19.2 scikit-image==0.17.2
+        pip install conan tensorflow==2.5.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0
         pip install torch==1.9.0+cpu torchvision==0.10.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
         pip install pytest
-
-    # caffe test need old version numpy, but tflite test must use numpy~=1.19.2, and tensorflow==2.5.0 is conflict with old version numpy
-    - name: Install Python Packages
-      if: runner.os == 'Macos'
-      shell: bash
-      run: |
-        pip install conan numpy==1.17.5 scikit-image
-        pip install pytest
-
-    - name: Create Test Environment
-      working-directory: ${{github.workspace}}
-      shell: bash
-      run: |
-        pip install pytest
-        mkdir test_results
-
-    - name: Download a Build Artifact
-      uses: actions/download-artifact@v2.0.9
-      with:
-        name: nncase-${{matrix.os}}-x86_64
-        path: ${{github.workspace}}/install
-
-    - name: Download Kendryte Caffe Artifact
-      if: runner.os == 'Linux'
-      uses: dawidd6/action-download-artifact@v2
-      with:
-        github_token: ${{secrets.GITHUB_TOKEN}}
-        workflow:  python-build
-        branch: nncase
-        name: caffe-python
-        path: ${{github.workspace}}
-        repo: kendryte/caffe
-
-    - name: Install Kendryte Caffe
-      working-directory: ${{github.workspace}}
-      if: runner.os == 'Linux'
-      shell: bash
-      run: |
-        pip install kendryte_caffe-1.0.0.20210827-cp37-cp37m-manylinux_2_24_x86_64
 
     - name: Install Python Packages
       if: runner.os == 'Macos'
@@ -242,6 +160,26 @@ jobs:
       run: |
         pip install conan tensorflow==2.5.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0
         pip install torch==1.9.0 torchvision==0.10.0 -f https://download.pytorch.org/whl/torch_stable.html
+        pip install pytest
+
+    - name: Create Test Environment
+      working-directory: ${{github.workspace}}
+      shell: bash
+      run: |
+        mkdir test_results
+
+    - name: Download nncase Artifact
+      uses: actions/download-artifact@v2.0.9
+      with:
+        name: nncase-${{matrix.os}}-x86_64
+        path: ${{github.workspace}}/install
+
+    - name: Install Kendryte Caffe
+      working-directory: ${{github.workspace}}
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        pip install https://github.com/kendryte/caffe/releases/download/v1.0.0.20210828/kendryte_caffe-1.0.0.20210828-cp37-cp37m-manylinux_2_24_x86_64.whl
 
     - name: Test
       working-directory: ${{github.workspace}}
