@@ -14,14 +14,14 @@
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
 
 import pytest
-import nncase
+from tflite_test_runner import TfliteTestRunner
 
 
-def test_targets(request):
-    assert nncase.test_target("cpu")
-    assert nncase.test_target("k210")
-    #assert nncase.test_target("vulkan")
+def test_facedetect_landmark(request):
+    runner = TfliteTestRunner(request.node.name)
+    model_file = 'examples/facedetect_landmark/model/ulffd_landmark.tflite'
+    runner.run(model_file)
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_targets.py'])
+    pytest.main(['-vv', 'test_facedetect_landmark.py'])

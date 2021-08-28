@@ -63,6 +63,9 @@ public:
     const std::optional<sub_buffer_desc> &parent() const noexcept { return parent_; }
     std::optional<sub_buffer_desc> &parent() noexcept { return parent_; }
 
+    const std::optional<size_t> &absolute_offset() const noexcept { return absolute_offset_; }
+    std::optional<size_t> &absolute_offset() noexcept { return absolute_offset_; }
+
     const ir::shape_t &strides_shape() const noexcept { return strides_shape_; }
     ir::shape_t &strides_shape() noexcept { return strides_shape_; }
 
@@ -87,6 +90,7 @@ private:
     memory_location_t memory_location_;
     module_type_t shared_module_;
     std::optional<sub_buffer_desc> parent_;
+    std::optional<size_t> absolute_offset_;
     ir::shape_t strides_shape_;
     buffer_lifetime lifetime_ {};
     physical_buffer *physical_;

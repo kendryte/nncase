@@ -149,17 +149,27 @@ split_graph_result graph::split_subgraph(std::span<node *const> nodes)
     }
 
     // 2. Find in/out connectors
+    std::unordered_set<output_connector *> outputs;
+    std::unordered_map<output_connector *, input_node *> inputs;
     for (auto node : nodes)
     {
         for (auto in : node->inputs())
         {
             if (!subgraph_nodes.contains(&in->connection()->owner()))
             {
-                auto inode = result.subgraph->emplace<input_node>(in->type(), in->shape());
-                inode->name(in->connection()->owner().name());
-                inode->module_type(node->module_type());
-                result.inputs.emplace(inode, in->connection());
-                in->connect(inode->output());
+                if (outputs.emplace(in->connection()).second)
+                {
+                    auto inode = result.subgraph->emplace<input_node>(in->type(), in->shape());
+                    inode->name(in->connection()->owner().name());
+                    inode->module_type(node->module_type());
+                    result.inputs.emplace(inode, in->connection());
+                    inputs.emplace(in->connection(), inode);
+                    in->connect(inode->output());
+                }
+                else
+                {
+                    in->connect(inputs.at(in->connection())->output());
+                }
             }
         }
 

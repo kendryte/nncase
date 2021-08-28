@@ -14,14 +14,30 @@
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
 
 import pytest
-import nncase
+import tensorflow as tf
+from tensorflow import keras
+from tflite_test_runner import TfliteTestRunner
 
 
-def test_targets(request):
-    assert nncase.test_target("cpu")
-    assert nncase.test_target("k210")
-    #assert nncase.test_target("vulkan")
+def _make_model(in_shape):
+    model = keras.Sequential()
+    model.add(keras.layers.Conv1D(4, 3, activation='relu', input_shape=in_shape[1:]))
+    return model
+
+
+in_shapes = [
+    [3, 28, 28]
+]
+
+
+@pytest.mark.parametrize('in_shape', in_shapes)
+def test_expand_dims(in_shape, request):
+    model = _make_model(in_shape)
+
+    runner = TfliteTestRunner(request.node.name)
+    model_file = runner.from_keras(model)
+    runner.run(model_file)
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_targets.py'])
+    pytest.main(['-vv', 'test_expand_dims.py'])

@@ -106,7 +106,24 @@ jobs:
       shell: bash
       run: |
         brew install sunnycase/core/libomp@11.1.0
-
+        
+    - name: Install Vulkan SDK
+      if: runner.os == 'Linux'
+      shell: bash
+      env:
+        VULKANSDK_VER: 1.2.182.0
+      run: |
+        wget https://sdk.lunarg.com/sdk/download/1.2.182.0/linux/vulkansdk-linux-x86_64-${VULKANSDK_VER}.tar.gz -O vulkansdk.tar.gz
+        tar xf vulkansdk.tar.gz
+        sudo cp -P ${VULKANSDK_VER}/x86_64/lib/libvulkan.so* /usr/local/lib/
+        
+    - name: Install Vulkan SDK
+      if: runner.os == 'Windows'
+      shell: pwsh
+      run: |
+        Invoke-WebRequest -Uri https://sdk.lunarg.com/sdk/download/1.2.182.0/windows/VulkanSDK-1.2.182.0-Installer.exe -O VulkanSDK-Installer.exe
+        .\VulkanSDK-Installer.exe /S
+        
     - name: Install SwiftShader
       if: runner.os != 'Windows'
       shell: bash
@@ -201,77 +218,23 @@ jobs:
         name: nncase-${{matrix.os}}-x86_64
         path: ${{github.workspace}}/install
 
-    - name: Download a Build Artifact
+    - name: Download Kendryte Caffe Artifact
       if: runner.os == 'Linux'
       uses: dawidd6/action-download-artifact@v2
       with:
         github_token: ${{secrets.GITHUB_TOKEN}}
-        workflow: cmake.yml
+        workflow:  python-build
         branch: nncase
-        name: warpctc-caffe-linux
+        name: caffe-python
         path: ${{github.workspace}}
         repo: kendryte/caffe
 
-    - name: Download a Build Artifact
-      if: runner.os == 'Macos'
-      uses: dawidd6/action-download-artifact@v2
-      with:
-        github_token: ${{secrets.GITHUB_TOKEN}}
-        workflow: cmake.yml
-        branch: nncase
-        name: warpctc-caffe-macos
-        path: ${{github.workspace}}
-        repo: kendryte/caffe
-
-    - name: Install Caffe
+    - name: Install Kendryte Caffe
       working-directory: ${{github.workspace}}
       if: runner.os == 'Linux'
       shell: bash
       run: |
-        cd ${{github.workspace}}
-        pip install --target ${{github.workspace}}/install/python/warpctc-caffe warpctc_caffe-1.0.0-cp37-cp37m-linux_x86_64.whl
-
-    - name: Install Caffe
-      working-directory: ${{github.workspace}}
-      if: runner.os == 'Macos'
-      shell: bash
-      run: |
-        cd ${{github.workspace}}
-        pip install --target ${{github.workspace}}/install/python/warpctc-caffe warpctc_caffe-1.0.0-cp39-cp39-macosx_10_15_x86_64.whl
-
-    - name: Test
-      working-directory: ${{github.workspace}}
-      if: runner.os == 'Linux'
-      shell: bash
-      env:
-        PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/install/python/warpctc-caffe/caffe:${{github.workspace}}/tests
-        LD_LIBRARY_PATH: ${{github.workspace}}/install/python/warpctc-caffe:/usr/lib/x86_64-linux-gnu:/usr/local/lib
-      run: |
-        patchelf --replace-needed libpython3.5m.so.1.0 libpython3.6m.so.1.0 ${{github.workspace}}/install/python/warpctc-caffe/caffe/caffe/_caffe.so
-        patchelf --replace-needed libboost_python-py35.so.1.62.0 libboost_python-py36.so.1.62.0 ${{github.workspace}}/install/python/warpctc-caffe/caffe/caffe/_caffe.so
-        patchelf --replace-needed libpython3.5m.so.1.0 libpython3.6m.so.1.0 ${{github.workspace}}/install/python/warpctc-caffe/_caffe.so
-        patchelf --replace-needed libboost_python-py35.so.1.62.0 libboost_python-py36.so.1.62.0 ${{github.workspace}}/install/python/warpctc-caffe/_caffe.so
-        patchelf --replace-needed libpython3.5m.so.1.0 libpython3.6m.so.1.0 ${{github.workspace}}/install/python/warpctc-caffe/libcaffe.so.1.0.0
-        patchelf --replace-needed libboost_python-py35.so.1.62.0 libboost_python-py36.so.1.62.0 ${{github.workspace}}/install/python/warpctc-caffe/libcaffe.so.1.0.0
-        pytest tests/importer/caffe --doctest-modules --junitxml=test_results/importer_caffe.xml
-        pytest tests/importer/tflite --doctest-modules --junitxml=test_results/importer_tflite.xml
-        pytest tests/importer/onnx --doctest-modules --junitxml=test_results/importer_onnx.xml
-        pytest tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
-        pytest tests/schedule --doctest-modules --junitxml=test_results/graph_partition.xml
-
-    - name: Test
-      working-directory: ${{github.workspace}}
-      if: runner.os == 'Macos'
-      shell: bash
-      env:
-        PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/install/python/warpctc-caffe/caffe:${{github.workspace}}/tests
-        DYLD_LIBRARY_PATH: ${{github.workspace}}/protobuf-3.5.1/src/.libs:${{github.workspace}}/install/python/warpctc-caffe:/usr/local/lib:/Users/runner/hostedtoolcache/Python/3.9.6/x64/lib
-      run: |
-        install_name_tool -change "/usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/Python" "/Users/runner/hostedtoolcache/Python/3.9.6/x64/lib/libpython3.9.dylib" ${{github.workspace}}/install/python/warpctc-caffe/_caffe.dylib
-        install_name_tool -change "/usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/Python" "/Users/runner/hostedtoolcache/Python/3.9.6/x64/lib/libpython3.9.dylib" ${{github.workspace}}/install/python/warpctc-caffe/libcaffe.1.0.0.dylib
-        install_name_tool -change "/usr/local/opt/python@3.9/Frameworks/Python.framework/Versions/3.9/Python" "/Users/runner/hostedtoolcache/Python/3.9.6/x64/lib/libpython3.9.dylib" ${{github.workspace}}/install/python/warpctc-caffe/caffe/caffe/_caffe.so
-        cp ${{github.workspace}}/install/python/warpctc-caffe/libcaffe.1.0.0.dylib /usr/local/lib
-        pytest tests/importer/caffe --doctest-modules --junitxml=test_results/importer_caffe.xml
+        pip install kendryte_caffe-1.0.0.20210827-cp37-cp37m-manylinux_2_24_x86_64
 
     - name: Install Python Packages
       if: runner.os == 'Macos'
@@ -279,7 +242,19 @@ jobs:
       run: |
         pip install conan tensorflow==2.5.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0
         pip install torch==1.9.0 torchvision==0.10.0 -f https://download.pytorch.org/whl/torch_stable.html
-        pip install pytest
+
+    - name: Test
+      working-directory: ${{github.workspace}}
+      if: runner.os == 'Linux'
+      shell: bash
+      env:
+        PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/tests
+      run: |
+        pytest tests/importer/caffe --doctest-modules --junitxml=test_results/importer_caffe.xml
+        pytest tests/importer/tflite --doctest-modules --junitxml=test_results/importer_tflite.xml
+        pytest tests/importer/onnx --doctest-modules --junitxml=test_results/importer_onnx.xml
+        pytest tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
+        pytest tests/graph_partition --doctest-modules --junitxml=test_results/graph_partition.xml
 
     - name: Test
       working-directory: ${{github.workspace}}
@@ -290,8 +265,9 @@ jobs:
       run: |
         pytest tests/importer/tflite --doctest-modules --junitxml=test_results/importer_tflite.xml
         pytest tests/importer/onnx --doctest-modules --junitxml=test_results/importer_onnx.xml
+        pytest tests/other --doctest-modules --junitxml=test_results/other.xml
         pytest tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
-        pytest tests/schedule --doctest-modules --junitxml=test_results/graph_partition.xml
+        pytest tests/graph_partition --doctest-modules --junitxml=test_results/graph_partition.xml
 
     - name: Test
       working-directory: ${{github.workspace}}
@@ -304,8 +280,9 @@ jobs:
       run: |
         pytest tests/importer/tflite --doctest-modules --junitxml=test_results/importer_tflite.xml
         pytest tests/importer/onnx --doctest-modules --junitxml=test_results/importer_onnx.xml
+        pytest tests/other --doctest-modules --junitxml=test_results/other.xml
         pytest tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
-        pytest tests/schedule --doctest-modules --junitxml=test_results/graph_partition.xml
+        pytest tests/graph_partition --doctest-modules --junitxml=test_results/graph_partition.xml
 
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action@v1

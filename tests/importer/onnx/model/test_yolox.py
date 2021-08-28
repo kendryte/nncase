@@ -14,14 +14,14 @@
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
 
 import pytest
-import nncase
+from onnx_test_runner import OnnxTestRunner
 
 
-def test_targets(request):
-    assert nncase.test_target("cpu")
-    assert nncase.test_target("k210")
-    #assert nncase.test_target("vulkan")
+def test_yolox(request):
+    runner = OnnxTestRunner(request.node.name, ['k510'])
+    model_file = 'examples/yolox/model/yolox_nano_224.onnx'
+    runner.run(model_file)
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_targets.py'])
+    pytest.main(['-vv', 'test_yolox.py'])
