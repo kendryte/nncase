@@ -147,11 +147,21 @@ jobs:
         python-version: 3.7
 
     - name: Install Python Packages
-      if: runner.os != 'Macos'
+      if: runner.os == 'Linux'
       shell: bash
       run: |
         pip install conan tensorflow==2.5.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0
         pip install torch==1.9.0+cpu torchvision==0.10.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
+        pip install https://github.com/kendryte/caffe/releases/download/v1.0.0.20210828/kendryte_caffe-1.0.0.20210828-cp37-cp37m-manylinux_2_24_x86_64.whl
+        pip install pytest
+
+    - name: Install Python Packages
+      if: runner.os == 'Windows'
+      shell: bash
+      run: |
+        pip install conan tensorflow==2.5.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0
+        pip install torch==1.9.0+cpu torchvision==0.10.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
+        pip install https://github.com/kendryte/caffe/releases/download/v1.0.0.20210828/kendryte_caffe-1.0.0.20210828-cp37-cp37m-win_amd64.whl
         pip install pytest
 
     - name: Install Python Packages
@@ -160,6 +170,7 @@ jobs:
       run: |
         pip install conan tensorflow==2.5.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0
         pip install torch==1.9.0 torchvision==0.10.0 -f https://download.pytorch.org/whl/torch_stable.html
+        pip install https://github.com/kendryte/caffe/releases/download/v1.0.0.20210828/kendryte_caffe-1.0.0.20210828-cp37-cp37m-macosx_10_9_x86_64.whl
         pip install pytest
 
     - name: Create Test Environment
@@ -174,36 +185,15 @@ jobs:
         name: nncase-${{matrix.os}}-x86_64
         path: ${{github.workspace}}/install
 
-    - name: Install Kendryte Caffe
-      working-directory: ${{github.workspace}}
-      if: runner.os == 'Linux'
-      shell: bash
-      run: |
-        pip install https://github.com/kendryte/caffe/releases/download/v1.0.0.20210828/kendryte_caffe-1.0.0.20210828-cp37-cp37m-manylinux_2_24_x86_64.whl
-
     - name: Test
       working-directory: ${{github.workspace}}
-      if: runner.os == 'Linux'
+      if: runner.os != 'Windows'
       shell: bash
       env:
         PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/tests
       run: |
-        pytest tests/importer/caffe --doctest-modules --junitxml=test_results/importer_caffe.xml
-        pytest tests/importer/tflite --doctest-modules --junitxml=test_results/importer_tflite.xml
-        pytest tests/importer/onnx --doctest-modules --junitxml=test_results/importer_onnx.xml
-        pytest tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
-        pytest tests/graph_partition --doctest-modules --junitxml=test_results/graph_partition.xml
-
-    - name: Test
-      working-directory: ${{github.workspace}}
-      if: runner.os == 'Macos'
-      shell: bash
-      env:
-        PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/tests
-      run: |
-        pytest tests/importer/tflite --doctest-modules --junitxml=test_results/importer_tflite.xml
-        pytest tests/importer/onnx --doctest-modules --junitxml=test_results/importer_onnx.xml
         pytest tests/other --doctest-modules --junitxml=test_results/other.xml
+        pytest tests/importer --doctest-modules --junitxml=test_results/importer.xml
         pytest tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
         pytest tests/graph_partition --doctest-modules --junitxml=test_results/graph_partition.xml
 
@@ -216,9 +206,8 @@ jobs:
         PYTHONPATH: ${{github.workspace}}/install/lib;${{github.workspace}}/install/python;${{github.workspace}}/tests
         VK_ICD_FILENAMES: ${{github.workspace}}/swiftshader/bin/vk_swiftshader_icd.json
       run: |
-        pytest tests/importer/tflite --doctest-modules --junitxml=test_results/importer_tflite.xml
-        pytest tests/importer/onnx --doctest-modules --junitxml=test_results/importer_onnx.xml
         pytest tests/other --doctest-modules --junitxml=test_results/other.xml
+        pytest tests/importer --doctest-modules --junitxml=test_results/importer.xml
         pytest tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
         pytest tests/graph_partition --doctest-modules --junitxml=test_results/graph_partition.xml
 
