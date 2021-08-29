@@ -27,16 +27,9 @@ jobs:
       uses: ilammy/msvc-dev-cmd@v1.9.0
           
     - name: Setup Python
-      if: runner.os != 'Macos'
       uses: actions/setup-python@v2.2.1
       with:
         python-version: 3.7
-
-    - name: Setup Python
-      if: runner.os == 'Macos'
-      uses: actions/setup-python@v2.2.1
-      with:
-        python-version: 3.9
 
     - name: Install Conan
       shell: bash
