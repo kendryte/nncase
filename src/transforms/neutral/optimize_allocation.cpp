@@ -125,7 +125,8 @@ void add_copy_to_output_pass::run_core(graph &graph, [[maybe_unused]] nncase::ta
         if (auto o = node_cast<output_node>(node))
         {
             auto &out = *o->input().connection();
-            if (out.owner().runtime_opcode() != op_copy)
+            if (out.owner().runtime_opcode() != op_copy
+                || out.owner().output_at(0).connections().size() != 1)
             {
                 auto cp = graph.emplace<copy>(out.type(), out.shape());
                 cp->module_type(graph.module_type());
@@ -147,6 +148,7 @@ void add_copy_to_output_pass::run_core(graph &graph, [[maybe_unused]] nncase::ta
 
 bool remove_exclusive_copy_to_output_transform::on_try_match(node &node, transform_context &context)
 {
+    return false;
     copy *cp;
     output_node *out;
 

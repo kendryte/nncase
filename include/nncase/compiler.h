@@ -83,6 +83,7 @@ public:
     virtual ~compiler();
     virtual void import_tflite(std::span<const uint8_t> model, const import_options &options) = 0;
     virtual void import_onnx(std::span<const uint8_t> model, const import_options &options) = 0;
+    virtual void import_caffe(std::span<const uint8_t> model, std::span<const uint8_t> prototxt) = 0;
     virtual void use_ptq(ptq_dataset_options options) = 0;
     virtual void use_ptq(ptq_tensor_options options) = 0;
     virtual ir::graph &graph(uint32_t stage) = 0;

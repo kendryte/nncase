@@ -229,8 +229,8 @@ void graph::cse()
                     for (size_t oi = 0; oi < inode->outputs().size(); oi++)
                     {
                         auto &output = inode->output_at(oi);
-                        auto inputs = jnode->output_at(oi).connections();
-                        for (auto &in : std::vector<input_connector *>(inputs.begin(), inputs.end()))
+                        auto inputs = dup(jnode->output_at(oi).connections());
+                        for (auto in : inputs)
                             in->connect(output);
                     }
 
