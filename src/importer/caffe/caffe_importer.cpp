@@ -52,8 +52,6 @@ void caffe_importer::import()
     for (int i = 0; i < prototxt_.layer_size(); i++)
         convert_op(prototxt_.layer(i), model_);
 
-    std::unordered_map<std::string_view, output_connector *> created_inputs;
-
     // connect tensors
     for (auto &&in : input_tensors_)
     {
@@ -69,13 +67,30 @@ void caffe_importer::import()
     }
 
     // outputs
-    for (auto &&out : output_tensors_)
+    std::unordered_set<std::string> used_inputs;
+    std::unordered_set<std::string> seen_outputs;
+    for (int i = 0; i < prototxt_.layer_size(); i++)
     {
-        if (out.second->connections().empty())
+        auto &layer = prototxt_.layer(i);
+        for (auto &b : layer.bottom())
+            used_inputs.emplace(b);
+    }
+
+    for (int i = 0; i < prototxt_.layer_size(); i++)
+    {
+        auto &layer = prototxt_.layer(i);
+        for (auto &t : layer.top())
         {
-            auto node = graph_.emplace<output_node>(out.second->type(), out.second->shape());
-            node->name(out.first);
-            out.second->connect(node->input());
+            if (!used_inputs.contains(t)
+                && !seen_outputs.contains(t))
+            {
+                seen_outputs.emplace(t);
+
+                auto out = output_tensors_.at(t);
+                auto node = graph_.emplace<output_node>(out->type(), out->shape());
+                node->name(t);
+                out->connect(node->input());
+            }
         }
     }
 }
