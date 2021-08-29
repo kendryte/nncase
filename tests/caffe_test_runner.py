@@ -23,19 +23,26 @@ class CaffeTestRunner(TestRunner):
                 input_dict['shape'] = list(caffe_model.blobs[name].data.shape)
                 self.inputs.append(input_dict)
                 self.calibs.append(input_dict.copy())
+                
+        used_inputs = set([name for _, l in caffe_model.bottom_names.items() for name in l])
+        seen_outputs = set()
+        for n in [name for _, l in caffe_model.top_names.items() for name in l]:
+            if not n in used_inputs and not n in seen_outputs:
+                seen_outputs.add(n)
+                input_dict = {}
+                input_dict['name'] = n
+                self.outputs.append(input_dict)
 
     def cpu_infer(self, case_dir: str, model_file_list):
         caffe_model = caffe.Net(model_file_list[0], model_file_list[1], caffe.TEST)
 
-        data = [(k, v.data.shape) for k, v in caffe_model.blobs.items()]
-        for i, name in enumerate(caffe_model._layer_names):
-            if (caffe_model.layers[i].type == "Input"):
-                caffe_model.blobs[name].data[...] = self.inputs[i]['data']
+        for input in self.inputs:
+            caffe_model.blobs[input['name']].data[...] = input['data']
 
         outputs = caffe_model.forward()
 
-        for i in range(0, len(outputs)):
-            result = outputs[data[-1 - i][0]]
+        for i, output in enumerate(self.outputs):
+            result = outputs[output['name']]
 
             self.output_paths.append((
                 os.path.join(case_dir, f'cpu_result_{i}.bin'),
