@@ -300,7 +300,7 @@ private:
                 cmp_options.input_range, cmp_options.input_shape,
                 cmp_options.image_format, input_layout_,
                 cmp_options.input_type, cmp_options.quant_type,
-                real_layout_);
+                real_layout_, cmp_options.preprocess);
         });
     }
 

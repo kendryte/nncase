@@ -147,7 +147,8 @@ PYBIND11_MODULE(_nncase, m)
         .def_readwrite("input_range", &compile_options::input_range)
         .def_readwrite("input_shape", &compile_options::input_shape)
         .def_readwrite("w_quant_type", &compile_options::w_quant_type)
-        .def_readwrite("benchmark_only", &compile_options::benchmark_only);
+        .def_readwrite("benchmark_only", &compile_options::benchmark_only)
+        .def_readwrite("preprocess", &compile_options::preprocess);
 
     py::class_<import_options>(m, "ImportOptions")
         .def(py::init())

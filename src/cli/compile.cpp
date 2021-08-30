@@ -41,14 +41,15 @@ compile_command::compile_command(lyra::cli &cli)
                          .add_argument(lyra::opt(input_std_, "input std").name("--input-std").optional().help("input std, default is " + std::to_string(input_std_)))
                          .add_argument(lyra::opt(mean_, "normalize mean").name("--mean").optional().help("normalize mean, default is " + std::to_string(input_mean_)))
                          .add_argument(lyra::opt(scale_, "normalize scale").name("--scale").optional().help("normalize scale, default is " + std::to_string(input_std_)))
-                         .add_argument(lyra::opt(image_format_, "image format").name("--image-format").optional().help("input image format, default is " + image_format_))
+                         .add_argument(lyra::opt(image_format_, "image format").name("--image-format").optional().help("input image format, only support RGB!"))
                          .add_argument(lyra::opt(input_range_, "input range").name("--input-range").optional())
                          .add_argument(lyra::opt(input_shape_, "input shape").name("--input-shape").optional())
                          .add_argument(lyra::opt(is_fpga_).name("--is-fpga").optional().help("use fpga parameters"))
                          .add_argument(lyra::opt(dump_ir_).name("--dump-ir").optional().help("dump ir to .dot"))
                          .add_argument(lyra::opt(dump_asm_).name("--dump-asm").optional().help("dump assembly"))
                          .add_argument(lyra::opt(dump_dir_, "dump directory").name("--dump-dir").optional().help("dump to directory"))
-                         .add_argument(lyra::opt(benchmark_only_, "benchmark only").name("--benchmark-only").optional().help("compile kmodel only for benchmark use")));
+                         .add_argument(lyra::opt(benchmark_only_, "benchmark only").name("--benchmark-only").optional().help("compile kmodel only for benchmark use"))
+                         .add_argument(lyra::opt(preprocess_, "benchmark only").name("--preprocess_").optional().help("enable preprocess , default is false")));
 }
 
 void compile_command::run()
@@ -80,6 +81,7 @@ void compile_command::run()
     c_options.input_shape = input_shape_;
     c_options.w_quant_type = w_quant_type_;
     c_options.benchmark_only = benchmark_only_;
+    c_options.preprocess = preprocess_;
 
     import_options i_options;
     std::vector<std::string> output_arrays;

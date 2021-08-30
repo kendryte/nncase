@@ -11,10 +11,10 @@ case: # case的配置，应该是一个多层次的
       input_layout: 'NHWC'
       output_layout: 'NHWC'
   preprocess_opt:
-    name: 'preprocess_opt'
+    flag: false
     kwargs:
-      image_format: 'BGR' # BGR or RGB
-      input_shape: [9,9,3] # HWC
+      image_format: 'RGB' # only support RGB
+      input_shape: [224,224,3] # HWC
       norm: {
         mean: [0., 0., 0.],
         scale: [1, 1, 1]

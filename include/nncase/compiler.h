@@ -39,6 +39,7 @@ struct compile_options
     bool is_fpga;
     bool use_dataset_as_input_stat = false;
     bool benchmark_only = false;
+    bool preprocess = false;
     std::string target;
     std::filesystem::path dump_dir;
     std::string input_type = "default";

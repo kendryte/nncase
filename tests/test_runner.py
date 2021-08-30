@@ -142,28 +142,30 @@ class TestRunner(metaclass=ABCMeta):
         self.num_pattern = re.compile("(\d+)")
 
     def transform_input(self, values: np.array, type: str, stage: str):
-
-        if stage == "CPU":
-            # onnx
-            if self.model_type == "onnx":
-                values = np.transpose(values, [0, 3, 1, 2])
+        if(len(values.shape) == 4 and self.cfg.case.preprocess_opt.flag):
+            if stage == "CPU":
+                # onnx
+                if self.model_type == "onnx":
+                    values = np.transpose(values, [0, 3, 1, 2])
+                else:
+                    if self.cfg.case.importer_opt.kwargs['input_layout'] == "NCHW":
+                        values = np.transpose(values, [0, 3, 1, 2])
             else:
                 if self.cfg.case.importer_opt.kwargs['input_layout'] == "NCHW":
                     values = np.transpose(values, [0, 3, 1, 2])
-        else:
-            if self.cfg.case.importer_opt.kwargs['input_layout'] == "NCHW":
-                values = np.transpose(values, [0, 3, 1, 2])
 
-        if type == 'float32':
-            return values.astype(np.float32)
-        elif type == 'uint8':
-            values = ((values) * 255).astype(np.uint8)
-            return values
-        elif type == 'int8':
-            values = (values * 255 - 128).astype(np.int8)
-            return values
+            if type == 'float32':
+                return values.astype(np.float32)
+            elif type == 'uint8':
+                values = ((values) * 255).astype(np.uint8)
+                return values
+            elif type == 'int8':
+                values = (values * 255 - 128).astype(np.int8)
+                return values
+            else:
+                raise TypeError(" Not support type for quant input")
         else:
-            raise TypeError(" Not support type for quant input")
+            return values
 
     def get_process_config(self, config):
         # dequant
@@ -197,7 +199,7 @@ class TestRunner(metaclass=ABCMeta):
         self.pre_process.append(process_norm)
 
     def data_pre_process(self, data, falg=1):
-        if falg:
+        if falg and self.cfg.case.preprocess_opt.flag and len(data.shape) == 4:
             if self.cfg.case.compile_opt.kwargs['input_type'] == "uint8":
                 data *= 255.
             # elif self.cfg.case.compile_opt.kwargs['input_type'] == "int8":
@@ -340,7 +342,7 @@ class TestRunner(metaclass=ABCMeta):
         if not self.inputs:
             self.parse_model_input_output(model_file)
         self.get_process_config(cfg)
-        if cfg.preprocess_opt.kwargs['input_shape'] != None:
+        if cfg.preprocess_opt.flag and cfg.preprocess_opt.kwargs['input_shape'] != None:
             self.generate_data(cfg.generate_inputs, case_dir,
                                self.inputs, self.input_paths, 'input', cfg.preprocess_opt.kwargs['input_shape'])
             self.generate_data(cfg.generate_calibs, case_dir,
@@ -475,6 +477,7 @@ class TestRunner(metaclass=ABCMeta):
         compile_options.image_format = cfg.preprocess_opt.kwargs['image_format']
         compile_options.input_shape = cfg.preprocess_opt.kwargs['input_shape']
         compile_options.input_range = cfg.preprocess_opt.kwargs['input_range']
+        compile_options.preprocess = cfg.preprocess_opt.flag
         compile_options.mean = cfg.preprocess_opt.kwargs['norm']['mean']
         compile_options.scale = cfg.preprocess_opt.kwargs['norm']['scale']
         compiler = nncase.Compiler(compile_options)
@@ -517,7 +520,7 @@ class TestRunner(metaclass=ABCMeta):
             i = 0
             for input in inputs:
                 shape = []
-                if input_shape != [] and len(input_shape) == 3:
+                if input_shape != [] and len(input_shape) == 3 and self.cfg.case.preprocess_opt.flag:
                     shape = [1, input_shape[0], input_shape[1], input_shape[2]]
                 else:
                     shape = input['shape']

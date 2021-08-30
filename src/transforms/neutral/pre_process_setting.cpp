@@ -42,7 +42,7 @@ datatype_t get_datatype(std::string name)
 void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::target &target, [[maybe_unused]] const run_pass_options &options)
 {
     auto alias_visitor = make_relay_ir_visitor([&](node &node) {
-        if (node_cast<input_node>(node))
+        if (node_cast<input_node>(node) && preprocess_)
         {
             auto in_node = node_cast<input_node>(node);
             auto old_inputs = in_node->output().connections();
