@@ -8,6 +8,7 @@
 | Add | ✅ |
 | Averagepool | ✅ |
 | Batchnormalization | ✅ |
+| Cast | ✅ |
 | Ceil | ✅ |
 | Clip | ✅ |
 | Concat | ✅ |
@@ -26,7 +27,7 @@
 | Gemm | ✅ |
 | Globalaveragepool | ✅ |
 | Globalmaxpool | ✅ |
-| HardSigmoid | ✅ |
+| Hardsigmoid | ✅ |
 | Identity | ✅ |
 | Instancenormalization | ✅ |
 | Lpnormalization | ✅ |
@@ -43,7 +44,7 @@
 | Pad | ✅ |
 | Pow | ✅ |
 | Prelu | ✅ |
-| ReduceL2 | ✅ |
+| Reducel2 | ✅ |
 | Reducemax | ✅ |
 | Reducemean | ✅ |
 | Reducemin | ✅ |
