@@ -1,6 +1,7 @@
 ﻿cmake_minimum_required (VERSION 3.13)
 
 set(SRCS runtime_module.cpp
+         runtime_function.cpp
          op_reader.cpp
          evaluate_stack.cpp
          ops/control.cpp

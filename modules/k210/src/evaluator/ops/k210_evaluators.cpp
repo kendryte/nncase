@@ -27,7 +27,7 @@ using namespace nncase::runtime;
 
 void ir::k210::register_k210_evaluators()
 {
-    register_evaluator(op_k210_fake_kpu_conv2d, [](ir::node &node, module_evaluate_context &context) {
+    register_evaluator(op_k210_fake_kpu_conv2d, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<fake_kpu_conv2d &>(node);
 
         assert(rnode.input().type() == dt_float32);
@@ -42,13 +42,13 @@ void ir::k210::register_k210_evaluators()
 
         auto in_shape = input.shape();
         shape_t conv_out_shape { in_shape[0], (size_t)rnode.output_channels(), in_shape[2], in_shape[3] };
-        auto conv_out_fmap_size = xt::compute_size(conv_out_shape);
+        auto conv_out_fmap_size = runtime::compute_size(conv_out_shape);
 
         auto conv_output_tmp = std::make_unique<float[]>(conv_out_fmap_size);
         auto batch = in_shape[0];
-        auto in_size_per_batch = xt::compute_size(in_shape) / batch;
+        auto in_size_per_batch = runtime::compute_size(in_shape) / batch;
         auto conv_output_tmp_size_per_batch = conv_out_fmap_size / batch;
-        auto out_size_per_batch = xt::compute_size(rnode.output().shape()) / batch;
+        auto out_size_per_batch = runtime::compute_size(rnode.output().shape()) / batch;
         auto p_input = input_mem.data();
         auto p_conv_ouput_tmp = conv_output_tmp.get();
         auto p_output = output_mem.data();

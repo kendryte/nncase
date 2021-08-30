@@ -31,6 +31,7 @@
 #include <nncase/transforms/neutral/fuse_unary.h>
 #include <nncase/transforms/neutral/fused_unary_to_lookup1d.h>
 #include <nncase/transforms/neutral/global_reduce_window_to_reduce.h>
+#include <nncase/transforms/neutral/lstm_transform.h>
 #include <nncase/transforms/neutral/matmul_to_conv2d.h>
 #include <nncase/transforms/neutral/quantize_motion.h>
 #include <nncase/transforms/neutral/remove_binary.h>
@@ -170,12 +171,19 @@ void neutral_target::register_target_independent_passes(const module_type_t &typ
 
     if (type == runtime::stackvm::stackvm_module_type)
     {
+        //lstm_transform
+        {
+            transform_pass p("lstm_transform");
+            p.emplace<lstm_transform>();
+            pass_mgr.add_pass(std::move(p));
+        }
         //matmul to conv2d
         {
             transform_pass p("matmul_to_conv2d");
             p.emplace<matmul_to_conv2d_transform>();
             pass_mgr.add_pass(std::move(p));
         }
+
         //fold_pad_conv
         {
             transform_pass p("fold_pad_conv");

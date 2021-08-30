@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../runtime_module.h"
+#include "../runtime_function.h"
 #include <nncase/kernels/tensor_compute.h>
 #include <nncase/runtime/interpreter.h>
 #include <nncase/runtime/runtime_op_utility.h>
@@ -21,13 +21,13 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 
-result<void> stackvm_runtime_module::visit(const tensor_copy_op_t &op) noexcept
+result<void> stackvm_runtime_function::visit(const tensor_copy_op_t &op) noexcept
 {
     try_var(output, pop_addr());
     try_var(input, pop_addr());
-    auto &shape = shape_regs_[op.rshape];
-    auto &in_strides = shape_regs_[op.rstride_src];
-    auto &out_strides = shape_regs_[op.rstride_dest];
+    try_var(shape, module().shape_reg(op.rshape));
+    try_var(in_strides, module().shape_reg(op.rstride_src));
+    try_var(out_strides, module().shape_reg(op.rstride_dest));
 
-    return kernels::copy(op.datatype, reinterpret_cast<const gsl::byte *>(input), reinterpret_cast<gsl::byte *>(output), shape, in_strides, out_strides, kernel_context());
+    return kernels::copy(op.datatype, reinterpret_cast<const gsl::byte *>(input), reinterpret_cast<gsl::byte *>(output), shape, in_strides, out_strides, module().kernel_context());
 }

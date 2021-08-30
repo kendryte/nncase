@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../runtime_module.h"
+#include "../runtime_function.h"
 #include "../vulkan_error.h"
 #include <vulkan/vulkan.h>
 
@@ -20,11 +20,11 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::vulkan;
 
-result<void> vulkan_runtime_module::visit(const ldpipeline_op_t &op) noexcept
+result<void> vulkan_runtime_function::visit(const ldpipeline_op_t &op) noexcept
 {
-    auto code = shader_.subspan(op.shader_start, op.shader_size).as_span<const uint32_t>();
+    auto code = module().shader().subspan(op.shader_start, op.shader_size).as_span<const uint32_t>();
     vk::ShaderModuleCreateInfo shader_cinfo({}, op.shader_size, code.data());
-    try_var(shader, vk::to_result(device_.createShaderModule(shader_cinfo)));
+    try_var(shader, vk::to_result(module().device().createShaderModule(shader_cinfo)));
 
     std::vector<vk::DescriptorSetLayoutBinding> layout_bindings((size_t)op.buffers);
     for (int32_t i = (int32_t)op.buffers - 1; i >= 0; i--)
@@ -37,20 +37,20 @@ result<void> vulkan_runtime_module::visit(const ldpipeline_op_t &op) noexcept
     }
 
     vk::DescriptorSetLayoutCreateInfo desc_layout_cinfo({}, layout_bindings);
-    try_var(desc_layout, vk::to_result(device_.createDescriptorSetLayout(desc_layout_cinfo)));
+    try_var(desc_layout, vk::to_result(module().device().createDescriptorSetLayout(desc_layout_cinfo)));
 
     vk::PipelineLayoutCreateInfo ppl_layout_cinfo({}, desc_layout);
-    try_var(ppl_layout, vk::to_result(device_.createPipelineLayout(ppl_layout_cinfo)));
+    try_var(ppl_layout, vk::to_result(module().device().createPipelineLayout(ppl_layout_cinfo)));
 
     if (op.shader_type != shader_type_t::compute)
         return err(std::errc::not_supported);
 
     vk::ComputePipelineCreateInfo comp_ppl_cinfo({}, { {}, vk::ShaderStageFlagBits::eCompute, shader, "main" }, ppl_layout);
-    try_var(pipeline, vk::to_result(device_.createComputePipeline({}, comp_ppl_cinfo)));
-    pipelines_owner_.emplace_back(pipeline);
+    try_var(pipeline, vk::to_result(module().device().createComputePipeline({}, comp_ppl_cinfo)));
+    module().device().destroyShaderModule(shader);
 
-    vk::DescriptorSetAllocateInfo desc_alloc_info(buffer_desc_pool_, desc_layout);
-    try_var(desc_sets, vk::to_result(device_.allocateDescriptorSets(desc_alloc_info)));
+    vk::DescriptorSetAllocateInfo desc_alloc_info(module().buffer_desc_pool(), desc_layout);
+    try_var(desc_sets, vk::to_result(module().device().allocateDescriptorSets(desc_alloc_info)));
 
     std::vector<vk::DescriptorBufferInfo> buffer_infos((size_t)op.buffers);
     std::vector<vk::WriteDescriptorSet> write_descs(buffer_infos.size());
@@ -72,8 +72,9 @@ result<void> vulkan_runtime_module::visit(const ldpipeline_op_t &op) noexcept
         write_desc.setDstSet(desc_sets[0]);
     }
 
-    device_.updateDescriptorSets(write_descs, {});
+    module().device().updateDescriptorSets(write_descs, {});
 
+    try_(module().add_pipeline(pipeline, ppl_layout, desc_layout));
     cmd_buffer_.bindPipeline(vk::PipelineBindPoint::eCompute, pipeline);
     cmd_buffer_.bindDescriptorSets(vk::PipelineBindPoint::eCompute, ppl_layout, 0, desc_sets, {});
     return ok();

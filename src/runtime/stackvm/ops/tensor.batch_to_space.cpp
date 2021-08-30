@@ -12,23 +12,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../runtime_module.h"
+#include "../runtime_function.h"
 #include <nncase/kernels/tensor_compute.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 
-result<void> stackvm_runtime_module::visit(const tensor_batch_to_space_op_t &op) noexcept
+result<void> stackvm_runtime_function::visit(const tensor_batch_to_space_op_t &op) noexcept
 {
     try_var(output, pop_addr());
     try_var(input, pop_addr());
-    auto &in_shape = shape_regs_[op.rshape_src];
-    auto &block_shape = shape_regs_[op.rshape_block];
-    auto &crops = paddings_regs_[op.rpad_crops];
-    auto &in_strides = shape_regs_[op.rstride_src];
-    auto &out_strides = shape_regs_[op.rstride_dest];
+    try_var(in_shape, module().shape_reg(op.rshape_src));
+    try_var(block_shape, module().shape_reg(op.rshape_block));
+    try_var(crops, module().paddings_reg(op.rpad_crops));
+    try_var(in_strides, module().shape_reg(op.rstride_src));
+    try_var(out_strides, module().shape_reg(op.rstride_dest));
 
     return kernels::batch_to_space(op.datatype, reinterpret_cast<const gsl::byte *>(input), reinterpret_cast<gsl::byte *>(output),
-        in_shape, block_shape, crops, in_strides, out_strides, kernel_context());
+        in_shape, block_shape, crops, in_strides, out_strides, module().kernel_context());
 }

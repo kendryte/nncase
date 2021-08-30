@@ -73,4 +73,5 @@ private:
 };
 
 using allocator_map_t = std::unordered_map<memory_location_t, buffer_allocator *>;
+using shared_allocator_map_t = std::unordered_map<module_type_t, buffer_allocator *>;
 }

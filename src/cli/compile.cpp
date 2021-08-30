@@ -32,6 +32,7 @@ compile_command::compile_command(lyra::cli &cli)
                          .add_argument(lyra::opt(output_layout_, "output layout").name("--output-layout").optional().help("output layout, e.g nchw|default, default is " + output_layout_))
                          .add_argument(lyra::arg(input_filename_, "input file").required().help("input file"))
                          .add_argument(lyra::arg(output_filename_, "output file").required().help("output file"))
+                         .add_argument(lyra::opt(input_prototxt_, "input prototxt").name("--input-prototxt").optional().help("input prototxt"))
                          .add_argument(lyra::opt(output_arrays_, "output arrays").name("--output-arrays").optional().help("output arrays"))
                          .add_argument(lyra::opt(dataset_, "dataset path").name("--dataset").optional().help("calibration dataset, used in post quantization"))
                          .add_argument(lyra::opt(dataset_format_, "dataset format").name("--dataset-format").optional().help("datset format: e.g. image, raw default is " + dataset_format_))
@@ -105,6 +106,15 @@ void compile_command::run()
     {
         auto file_data = read_file(input_filename_);
         compiler->import_onnx(file_data, i_options);
+    }
+    else if (input_format_ == "caffe")
+    {
+        if (input_prototxt_.empty())
+            throw std::invalid_argument("Please use --input-prototxt to specify the path to the caffe prototxt");
+
+        auto file_data = read_file(input_filename_);
+        auto input_prototxt = read_file(input_prototxt_);
+        compiler->import_caffe(file_data, input_prototxt);
     }
     else
     {

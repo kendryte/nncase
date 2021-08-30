@@ -1,5 +1,4 @@
 ## Build from source
-## 从源码编译
 
 ### Linux
 1. Install dependencies
@@ -10,7 +9,7 @@ sudo add-apt-repository ppa:ubuntu-toolchain-r/test
 sudo apt-get update
 sudo apt install gcc-10 g++-10
 sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 40
-sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 40 
+sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 40
 ```
 
 - cmake >=3.18
@@ -100,4 +99,51 @@ pip install pytest
 Run tests
 ```cmd
 pytest tests
+```
+
+### Docker
+
+1. Pull nncase docker image
+```bash
+docker pull registry.cn-hangzhou.aliyuncs.com/kendryte/nncase:latest
+```
+
+You can modify /etc/docker/daemon.json to speed up docker image.
+```bash
+sudo mkdir -p /etc/docker
+sudo tee /etc/docker/daemon.json <<-'EOF'
+{
+  "registry-mirrors": ["https://182kvqe1.mirror.aliyuncs.com"]
+}
+EOF
+sudo systemctl daemon-reload
+sudo systemctl restart docker
+```
+
+2. Clone nncase
+```bash
+git clone https://github.com/kendryte/nncase.git
+cd nncase
+```
+
+3. Run docker
+```bash
+docker run -it --rm -v `pwd`:/mnt -w /mnt registry.cn-hangzhou.aliyuncs.com/kendryte/nncase:latest /bin/bash -c "/bin/bash"
+```
+
+4. Build
+```bash
+rm -rf build && mkdir -p build
+pushd build
+cmake .. -DCMAKE_BUILD_TYPE=Debug
+make -j32
+make install
+popd
+```
+
+5. Test (optional)
+```bash
+export PYTHONPATH=`pwd`/python:`pwd`/build/lib:`pwd`/tests:$PYTHONPATH
+export LD_LIBRARY_PATH=`pwd`/build/lib:$LD_LIBRARY_PATH
+pytest tests/importer/onnx/basic/test_relu.py
 ```

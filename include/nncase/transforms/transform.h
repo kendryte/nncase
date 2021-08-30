@@ -24,7 +24,7 @@ class target;
 
 namespace schedule
 {
-    struct schedule_context;
+    class function_schedule_context;
 }
 
 namespace ir
@@ -45,7 +45,7 @@ namespace ir
             ir::graph &graph;
             nncase::target &target;
             ir::quantizer *quantizer;
-            schedule::schedule_context *schedule_context;
+            schedule::function_schedule_context *schedule_context;
             std::optional<std::filesystem::path> dump_dir;
             std::vector<node *> matched_nodes;
             std::vector<input_connector *> inputs;

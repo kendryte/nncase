@@ -266,6 +266,9 @@ __pycache__/
 /python/*/dist
 *egg-info
 
+# clangd
+.cache/
+
 *.diagsession
 /src/nntest
 /src/NnCase.Cli/Properties/launchSettings.json

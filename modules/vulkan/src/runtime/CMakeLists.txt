@@ -1,7 +1,9 @@
 ﻿cmake_minimum_required (VERSION 3.13)
 
 set(SRCS runtime_module.cpp
+         runtime_function.cpp
          vulkan_error.cpp
+         vulkan_context.cpp
          op_reader.cpp
          ops/ldbuf.cpp
          ops/ldbufbarrier.cpp
@@ -22,9 +24,6 @@ if (BUILDING_RUNTIME)
     endif()
 else()
     add_library(simulator_vulkan OBJECT ${SRCS})
-    if (NOT MSVC)
-        target_compile_options(simulator_vulkan PRIVATE  -Wno-defaulted-function-deleted)
-    endif()
     target_compile_definitions(simulator_vulkan PRIVATE -DVULKAN_HPP_NO_EXCEPTIONS)
     target_link_libraries(simulator_vulkan PUBLIC nncase)
     target_link_libraries(simulator_vulkan PRIVATE Vulkan::Vulkan)

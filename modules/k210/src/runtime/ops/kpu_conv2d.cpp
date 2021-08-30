@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../runtime_module.h"
+#include "../runtime_function.h"
 #include <nncase/kernels/k210/k210_kernels.h>
 #include <nncase/runtime/dbg.h>
 #ifndef NNCASE_SIMULATOR
@@ -71,7 +71,7 @@ void kpu_conv2d_normal(runtime::k210::kpu_layer_argument_t &layer, plic_irq_call
 #endif
 }
 
-result<void> k210_runtime_module::visit(const kpu_conv2d_options &op) noexcept
+result<void> k210_runtime_function::visit(const kpu_conv2d_options &op) noexcept
 {
     auto layer = op.layer;
 

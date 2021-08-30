@@ -179,6 +179,13 @@ public:
         END_IMPORT()
     }
 
+    void import_caffe(std::span<const uint8_t> model, std::span<const uint8_t> prototxt) override
+    {
+        std::cout << "1. Import graph..." << std::endl;
+        importer::import_caffe(graph_, model, prototxt);
+        END_IMPORT()
+    }
+
     void use_ptq(ptq_dataset_options options) override
     {
         ptq_options_ = std::move(options);
@@ -291,6 +298,7 @@ private:
         using namespace ir::transforms;
 
         run_passes("mark_noaction", graph, [&]([[maybe_unused]] const module_type_t &module_type, ir::transforms::pass_manager &pmgr) {
+            pmgr.add_pass<make_slice_no_action_pass>();
             pmgr.add_pass<make_concat_no_action_pass>();
             pmgr.add_pass<make_bitcast_no_action_pass>();
         });
@@ -318,10 +326,12 @@ private:
 
         run_passes("buffer_fusion", graph, [&]([[maybe_unused]] const module_type_t &module_type, ir::transforms::pass_manager &pmgr) {
             pmgr.add_pass<add_copy_to_concat_pass>();
+            pmgr.add_pass<add_copy_to_slice_pass>();
             pmgr.add_pass<add_copy_to_output_pass>();
 
             transform_pass pass("optimize_copy");
             pass.emplace<remove_exclusive_copy_to_output_transform>();
+            pass.emplace<remove_simple_copy_from_slice_transform>();
             pass.emplace<remove_exclusive_copy_to_concat_transform>();
             pmgr.add_pass(std::move(pass));
         });
@@ -356,7 +366,7 @@ private:
     {
         auto graph_runner = [&](ir::graph &graph) {
             ir::transforms::pass_manager pmgr(graph, *target_);
-            auto quant = evaluator.module_context(graph).quantizer();
+            auto quant = evaluator.quantizer(graph.module_type());
 
             if (!compile_options_.use_dataset_as_input_stat)
             {
@@ -486,6 +496,7 @@ private:
                 std::memcpy(input_buffer.data(), tensor.data(), input_buffer.size_bytes());
 
                 evaluator.evaluate();
+                evaluator.end_sample();
                 if (options.progress)
                     options.progress(i++, dataset.total_size());
             }
@@ -519,6 +530,7 @@ private:
                 std::memcpy(input_buffer.data(), options.tensor_data.data() + i * input_buffer.size_bytes(), input_buffer.size_bytes());
 
                 evaluator.evaluate();
+                evaluator.end_sample();
                 if (options.progress)
                     options.progress(i++, options.samples_count);
             }

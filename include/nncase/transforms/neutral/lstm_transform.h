@@ -1,4 +1,4 @@
-/* Copyright 2019-2021 Canaan Inc.
+/* Copyright 2020 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,12 +13,18 @@
  * limitations under the License.
  */
 #pragma once
-#include "../runtime_module.h"
-#include <nncase/kernels/kernel_context.h>
-NNCASE_MODULES_K210_API
+#include "../transform.h"
 
-struct NNCASE_API k210_kernel_context : public kernels::kernel_context
+namespace nncase::ir::transforms
 {
+class NNCASE_API lstm_transform : public transform
+{
+public:
+    void process(transform_context &context) override;
+
+protected:
+    bool skip_self_contained_check() const noexcept override { return true; }
+    bool on_try_match(ir::node &node, transform_context &context) override;
 };
 
-END_NS_NNCASE_KERNELS_K210
+}

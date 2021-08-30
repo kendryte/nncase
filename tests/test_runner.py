@@ -163,13 +163,16 @@ class TestRunner(metaclass=ABCMeta):
         self.cfg.case.infer[0].values = _validate_targets(
             targets if targets else self.cfg.case.infer[0].values)
 
-    def run(self, model_path: str):
+    def run(self, model_path: Union[List[str], str]):
         # TODO add mulit process pool
         # case_name = self.process_model_path_name(model_path)
         # case_dir = os.path.join(self.cfg.setup.root, case_name)
         # if not os.path.exists(case_dir):
         #     os.makedirs(case_dir)
-        case_dir = os.path.dirname(model_path)
+        if isinstance(model_path, str):
+            case_dir = os.path.dirname(model_path)
+        elif isinstance(model_path, list):
+            case_dir = os.path.dirname(model_path[0])
         self.run_single(self.cfg.case, case_dir, model_path)
 
     def process_model_path_name(self, model_path: str) -> str:
@@ -189,18 +192,18 @@ class TestRunner(metaclass=ABCMeta):
         os.makedirs(case_dir)
 
     @abstractmethod
-    def parse_model_input_output(self, model_path: str):
+    def parse_model_input_output(self, model_path: Union[List[str], str]):
         pass
 
     @abstractmethod
-    def cpu_infer(self, case_dir: str, model_content: bytes):
+    def cpu_infer(self, case_dir: str, model_content: Union[List[str], str]):
         pass
 
     @abstractmethod
     def import_model(self, compiler, model_content, import_options):
         pass
 
-    def run_single(self, cfg, case_dir: str, model_file: str):
+    def run_single(self, cfg, case_dir: str, model_file: Union[List[str], str]):
         if not self.inputs:
             self.parse_model_input_output(model_file)
         self.generate_data(cfg.generate_inputs, case_dir,
@@ -215,12 +218,17 @@ class TestRunner(metaclass=ABCMeta):
 
     def get_compiler_options(self, cfg, model_file):
         import_options = nncase.ImportOptions(**cfg.importer_opt.kwargs)
-        if os.path.splitext(model_file)[-1] == ".tflite":
-            import_options.input_layout = "NHWC"
-            import_options.output_layout = "NHWC"
-        elif os.path.splitext(model_file)[-1] == ".onnx":
-            import_options.input_layout = "NCHW"
-            import_options.output_layout = "NCHW"
+        if isinstance(model_file, str):
+            if os.path.splitext(model_file)[-1] == ".tflite":
+                import_options.input_layout = "NHWC"
+                import_options.output_layout = "NHWC"
+            elif os.path.splitext(model_file)[-1] == ".onnx":
+                import_options.input_layout = "NCHW"
+                import_options.output_layout = "NCHW"
+        elif isinstance(model_file, list):
+            if os.path.splitext(model_file[1])[-1] == ".caffemodel":
+                import_options.input_layout = "NHWC"
+                import_options.output_layout = "NHWC"
 
         compile_options = nncase.CompileOptions()
         for k, v in cfg.compile_opt.kwargs.items():
@@ -263,10 +271,17 @@ class TestRunner(metaclass=ABCMeta):
             arg_values.append(d.values)
         return (arg_names, arg_values)
 
-    def read_model_file(self, model_file: str) -> bytes:
-        with open(model_file, 'rb') as f:
-            model_content = f.read()
-        return model_content
+    def read_model_file(self, model_file: Union[List[str], str]):
+        if isinstance(model_file, str):
+            with open(model_file, 'rb') as f:
+                return f.read()
+        elif isinstance(model_file, list):
+            model_content = []
+            with open(model_file[0], 'rb') as f:
+                model_content.append(f.read())
+            with open(model_file[1], 'rb') as f:
+                model_content.append(f.read())
+            return model_content
 
     @staticmethod
     def kwargs_to_path(path: str, kwargs: Dict[str, str]):
@@ -280,7 +295,7 @@ class TestRunner(metaclass=ABCMeta):
     def generate_evaluates(self, cfg, case_dir: str,
                            import_options: nncase.ImportOptions,
                            compile_options: nncase.CompileOptions,
-                           model_content: bytes, kwargs: Dict[str, str]
+                           model_content: Union[List[bytes], bytes], kwargs: Dict[str, str]
                            ) -> List[Tuple[str, str]]:
         eval_dir = TestRunner.kwargs_to_path(
             os.path.join(case_dir, 'eval'), kwargs)
@@ -308,7 +323,7 @@ class TestRunner(metaclass=ABCMeta):
     def nncase_infer(self, cfg, case_dir: str,
                      import_options: nncase.ImportOptions,
                      compile_options: nncase.CompileOptions,
-                     model_content: bytes, kwargs: Dict[str, str]
+                     model_content: Union[List[bytes], bytes], kwargs: Dict[str, str]
                      ) -> List[Tuple[str, str]]:
         infer_dir = TestRunner.kwargs_to_path(
             os.path.join(case_dir, 'infer'), kwargs)
@@ -393,7 +408,7 @@ class TestRunner(metaclass=ABCMeta):
                                            judeg_cfg.simarity_name,
                                            judeg_cfg.threshold,
                                            judeg_cfg.log_hist)
-            name_list = test_file[1].split('/')
+            name_list = test_file[1].split(os.path.sep)
             kw_names = ' '.join(name_list[-len(kwargs) - 2:-1])
             i = self.num_pattern.findall(name_list[-1])
             result_info = "\n{0} [ {1} ] Output: {2}!!\n".format(
