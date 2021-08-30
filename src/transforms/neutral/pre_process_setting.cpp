@@ -47,16 +47,14 @@ void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::targ
             auto in_node = node_cast<input_node>(node);
             auto old_inputs = in_node->output().connections();
             shape_t new_shape, old_shape;
-            if (real_layout_ == "NHWC")
+            if (input_layout_ == "NHWC")
             {
-                new_shape = { size_t(in_node->output().shape()[0]), size_t(input_shape_[1]), size_t(input_shape_[2]), size_t(input_shape_[3]) };
-                old_shape = { size_t(in_node->output().shape()[0]), size_t(in_node->output().shape()[3]), size_t(in_node->output().shape()[1]), size_t(in_node->output().shape()[2]) };
+                new_shape = { size_t(in_node->output().shape()[0]), size_t(input_shape_[0]), size_t(input_shape_[1]), size_t(input_shape_[2]) };
             }
             else
             {
-                // fit onnx
-                new_shape = { size_t(in_node->output().shape()[0]), size_t(input_shape_[3]), size_t(input_shape_[1]), size_t(input_shape_[2]) };
-                old_shape = { size_t(in_node->output().shape()[0]), size_t(in_node->output().shape()[1]), size_t(in_node->output().shape()[2]), size_t(in_node->output().shape()[3]) };
+                //     // fit onnx
+                new_shape = { size_t(in_node->output().shape()[0]), size_t(input_shape_[2]), size_t(input_shape_[0]), size_t(input_shape_[1]) };
             }
             auto new_input = graph.emplace<input_node>(get_datatype(input_type_), new_shape);
             new_input->name("new_input");
@@ -90,7 +88,7 @@ void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::targ
                 mid_ptr = &deq_input->output();
             }
 
-            if (real_layout_ == "NHWC")
+            if (input_layout_ == "NHWC")
             {
                 auto transpose_pre = graph.emplace<transpose>(mid_ptr->type(), mid_ptr->shape(), axis_t { 0, 3, 1, 2 });
                 transpose_pre->name("NHWC_2_NCWH");
@@ -99,10 +97,10 @@ void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::targ
             }
 
             // BGR2RGB : input_layout ,image_format_
-            std::cout << "BGR:" << std::endl;
-            if (image_format_ == "BGR")
+            if (image_format_ == "BGR" && mid_ptr->shape()[1] == 3)
             {
 
+                std::cout << "BGR:" << std::endl;
                 std::vector<shape_t> concat_shapes { 3, shape_t { (mid_ptr->shape()[0]), 1, (mid_ptr->shape()[2]), (mid_ptr->shape()[3]) } };
                 auto concat_slice = graph.emplace<concat>(mid_ptr->type(), concat_shapes, 1);
                 concat_slice->name("BGR2RGB_concat_NCHW");
@@ -125,12 +123,23 @@ void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::targ
                  * input_type:  pad value different 
                  * input_range:{min, max} caculate pad value //uint8 pad 114, float pad min+(max-min)*(114/255)
                  **/
-            std::cout << "letterbox:" << std::endl;
             if (in_node->output().shape() != new_shape)
             {
+                std::cout << "letterbox:" << std::endl;
                 [[maybe_unused]] int min = input_range_[0], max = input_range_[1];
-                size_t model_h = old_shape[2];
-                size_t model_w = old_shape[3];
+
+                size_t model_h;
+                size_t model_w;
+                if (real_layout_ == "NHWC")
+                {
+                    model_h = in_node->output().shape()[1];
+                    model_w = in_node->output().shape()[2];
+                }
+                else
+                {
+                    model_h = in_node->output().shape()[2];
+                    model_w = in_node->output().shape()[3];
+                }
 
                 auto H = mid_ptr->shape()[2];
                 auto W = mid_ptr->shape()[3];
@@ -161,9 +170,18 @@ void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::targ
             if (scales_[0] != 0)
             {
                 constant *mean, *scale;
-
-                mean = graph.emplace<constant>(dt_float32, shape_t { 1, 3, 1, 1 }, means_);
-                scale = graph.emplace<constant>(dt_float32, shape_t { 1, 3, 1, 1 }, scales_);
+                if (mid_ptr->shape()[1] != 3)
+                {
+                    auto single_mean = means_[0];
+                    mean = graph.emplace<constant>(single_mean);
+                    auto single_scale = scales_[0];
+                    scale = graph.emplace<constant>(single_scale);
+                }
+                else
+                {
+                    mean = graph.emplace<constant>(dt_float32, shape_t { 1, 3, 1, 1 }, means_);
+                    scale = graph.emplace<constant>(dt_float32, shape_t { 1, 3, 1, 1 }, scales_);
+                }
                 mean->name("normalize_mean");
                 scale->name("normalize_scale");
 

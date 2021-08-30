@@ -46,7 +46,7 @@ struct compile_options
     std::vector<float> mean { 0.f, 0.f, 0.f };
     std::vector<float> scale { 1.f, 1.f, 1.f };
     std::vector<float> input_range { 0.f, 1.f };
-    std::vector<float> input_shape { 3.f, 224.f, 224.f };
+    std::vector<int32_t> input_shape {};
     std::string image_format = "RGB";
 };
 

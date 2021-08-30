@@ -139,7 +139,7 @@ class OnnxTestRunner(TestRunner):
         input_dict = {}
         for input in self.inputs:
             input_dict[input['name']] = self.transform_input(
-                self.data_pre_process(input['data']), "float32")
+                self.data_pre_process(input['data']), "float32", "CPU")
 
         outputs = sess.run(None, input_dict)
         i = 0

@@ -48,7 +48,7 @@ private:
     std::vector<float> mean_;
     std::vector<float> scale_;
     std::vector<float> input_range_;
-    std::vector<float> input_shape_;
+    std::vector<int32_t> input_shape_;
 
     bool dump_ir_ = false;
     bool dump_asm_ = false;
