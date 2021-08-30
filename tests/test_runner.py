@@ -142,12 +142,9 @@ class TestRunner(metaclass=ABCMeta):
     def transform_input(self, values: np.array, type: str, stage: str):
         if(len(values.shape) == 4 and self.cfg.case.preprocess_opt.flag):
             if stage == "CPU":
-                # onnx
-                if self.model_type == "onnx":
+                # onnx \ caffe
+                if self.model_type == "onnx" or self.model_type == "caffe":
                     values = np.transpose(values, [0, 3, 1, 2])
-                else:
-                    if self.cfg.case.importer_opt.kwargs['input_layout'] == "NCHW":
-                        values = np.transpose(values, [0, 3, 1, 2])
             else:
                 if self.cfg.case.importer_opt.kwargs['input_layout'] == "NCHW":
                     values = np.transpose(values, [0, 3, 1, 2])
@@ -229,7 +226,7 @@ class TestRunner(metaclass=ABCMeta):
                 # LetterBox
                 if 'input_range' in item.keys() and 'input_shape' in item.keys() and 'shape' in item.keys():
                     model_shape: List = []
-                    if self.model_type == "onnx":
+                    if self.model_type == "onnx" or self.model_type == "caffe":
                         model_shape = [1, item['shape'][2], item['shape'][3], item['shape'][1]]
                     else:
                         model_shape = item['shape']
@@ -364,8 +361,8 @@ class TestRunner(metaclass=ABCMeta):
                 import_options.output_layout = cfg.importer_opt.kwargs['output_layout']
         elif isinstance(model_file, list):
             if os.path.splitext(model_file[1])[-1] == ".caffemodel":
-                import_options.input_layout = "NHWC"
-                import_options.output_layout = "NHWC"
+                import_options.input_layout = cfg.importer_opt.kwargs['input_layout']
+                import_options.output_layout = cfg.importer_opt.kwargs['output_layout']
 
         compile_options = nncase.CompileOptions()
         for k, v in cfg.compile_opt.kwargs.items():

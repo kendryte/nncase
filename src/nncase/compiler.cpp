@@ -184,7 +184,7 @@ public:
     void import_caffe(std::span<const uint8_t> model, std::span<const uint8_t> prototxt) override
     {
         std::cout << "1. Import graph..." << std::endl;
-        importer::import_caffe(graph_, model, prototxt);
+        importer::import_caffe(graph_, model, prototxt, real_layout_);
         END_IMPORT()
     }
 

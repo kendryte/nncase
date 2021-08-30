@@ -31,7 +31,7 @@ void nncase::importer::import_onnx(ir::graph &graph, std::span<const uint8_t> mo
     onnx_importer(model, graph).import(options, real_layout);
 }
 
-void nncase::importer::import_caffe(ir::graph &graph, std::span<const uint8_t> model, std::span<const uint8_t> prototxt)
+void nncase::importer::import_caffe(ir::graph &graph, std::span<const uint8_t> model, std::span<const uint8_t> prototxt, std::string &real_layout)
 {
-    caffe_importer(model, prototxt, graph).import();
+    caffe_importer(model, prototxt, graph).import(real_layout);
 }
