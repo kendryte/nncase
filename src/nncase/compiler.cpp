@@ -28,7 +28,6 @@
 #include <nncase/transforms/neutral/fold_io_quant_motion.h>
 #include <nncase/transforms/neutral/optimize_allocation.h>
 #include <nncase/transforms/neutral/pre_process_setting.h>
-#include <nncase/transforms/neutral/process_input.h>
 #include <nncase/transforms/pass.h>
 #include <variant>
 
@@ -270,8 +269,6 @@ private:
                 cmp_options.image_format, input_layout_,
                 cmp_options.input_type, cmp_options.quant_type,
                 real_layout_);
-            // pmgr.add_pass<dequantize_slice_motion_transform>();
-            // pmgr.add_pass(std::move(pass));
         });
     }
 
@@ -346,34 +343,12 @@ private:
             ir::transforms::pass_manager pmgr(graph, *target_);
             auto quant = evaluator.module_context(graph).quantizer();
 
-            // if (!compile_options_.use_dataset_as_input_stat)
-            // {
-            //     float input_mean, input_std;
-            //     std::visit([&](auto &options) {
-            //         input_mean = options.input_mean;
-            //         input_std = options.input_std;
-            //     },
-            //         ptq_options_);
-
-            //     auto min = (0.f - input_mean) / input_std;
-            //     auto max = (1.f - input_mean) / input_std;
-            //     value_range<float> input_range { min, max };
-            //     quant->set(graph.inputs()[0]->output(), input_range);
-            //     quant->record(graph.inputs()[0]->output(), input_range);
-            // }
-
             // broadcast quant ranges
             std::unordered_set<node_opcode> opcodes;
             target_->add_quantization_broadcast(opcodes);
             quant->broadcast_output(graph, opcodes);
 
             ir::transforms::transform_pass p("process i&o node");
-
-            // if (compile_options_.input_type != "float32")
-            // {
-            // value_range<float> input_range { 0, 0 };
-            // p.emplace<nncase::ir::transforms::process_input>(to_datatype_method(compile_options_.input_type), input_range);
-            // }
 
             if (compile_options_.output_type != "float32")
                 p.emplace<nncase::ir::transforms::add_output_quantize_transform>(to_datatype_method(compile_options_.output_type));
@@ -392,24 +367,24 @@ private:
             graph_runner(*subgraph);
     }
 
-    void process_input(ir::graph &graph, datatype_t input_type, value_range<float> input_range)
-    {
-        auto graph_runner = [&](ir::graph &graph) {
-            ir::transforms::pass_manager pmgr(graph, *target_);
+    // void process_input(ir::graph &graph, datatype_t input_type, value_range<float> input_range)
+    // {
+    //     auto graph_runner = [&](ir::graph &graph) {
+    //         ir::transforms::pass_manager pmgr(graph, *target_);
 
-            ir::transforms::transform_pass p("process i&o node");
-            p.emplace<nncase::ir::transforms::process_input>(input_type, input_range);
-            p.emplace<nncase::ir::transforms::dequantize_bitcast_motion_transform>();
-            pmgr.add_pass(std::move(p));
+    //         ir::transforms::transform_pass p("process i&o node");
+    //         p.emplace<nncase::ir::transforms::process_input>(input_type, input_range);
+    //         p.emplace<nncase::ir::transforms::dequantize_bitcast_motion_transform>();
+    //         pmgr.add_pass(std::move(p));
 
-            pmgr.run();
-            dump_graph(graph, "process_input_node");
-        };
+    //         pmgr.run();
+    //         dump_graph(graph, "process_input_node");
+    //     };
 
-        graph_runner(graph);
-        for (auto &subgraph : graph.subgraphs())
-            graph_runner(*subgraph);
-    }
+    //     graph_runner(graph);
+    //     for (auto &subgraph : graph.subgraphs())
+    //         graph_runner(*subgraph);
+    // }
 
     ir::evaluator run_calibration(ir::graph &graph)
     {
