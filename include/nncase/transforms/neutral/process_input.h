@@ -21,7 +21,7 @@ class NNCASE_API process_input : public transform
 {
 public:
     process_input(datatype_t dt, value_range<float> range) noexcept
-        : input_type_(dt), range_(range) {}
+        : input_type_(dt), range_(range) { }
     void process(transform_context &context) override;
 
 protected:
