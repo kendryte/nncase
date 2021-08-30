@@ -264,10 +264,7 @@ class TestRunner(metaclass=ABCMeta):
                             k = 0
                         data[:, :, :, i] = (data[:, :, :, i] - float(item['norm']['mean'][k])) / \
                             float(item['norm']['scale'][k])
-        # if self.model_type == "onnx":
-        #     data = np.transpose(data, [0, 3, 1, 2])
-        self.totxtfile(
-            "/home/curio/github/nncase/tests_output/test_20classes_yolo/input_new.txt", data)
+
         return data
 
     def validte_config(self, config):

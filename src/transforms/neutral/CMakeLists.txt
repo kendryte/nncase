@@ -36,6 +36,5 @@ target_sources(transforms PRIVATE
     lstm_transform.cpp
     optimize_benchmark.cpp
     space_to_batch_transform.cpp
-    process_input.cpp
     pre_process_setting.cpp
     )
