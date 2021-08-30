@@ -24,9 +24,11 @@
 #include <nncase/ir/evaluator.h>
 #include <nncase/runtime/datatypes.h>
 #include <nncase/transforms/neutral/add_quant_motion.h>
+#include <nncase/transforms/neutral/dequantize_motion.h>
 #include <nncase/transforms/neutral/fold_io_quant_motion.h>
 #include <nncase/transforms/neutral/optimize_allocation.h>
 #include <nncase/transforms/neutral/optimize_benchmark.h>
+#include <nncase/transforms/neutral/pre_process_setting.h>
 #include <nncase/transforms/pass.h>
 #include <variant>
 
@@ -168,21 +170,21 @@ public:
     void import_tflite(std::span<const uint8_t> model, const import_options &options) override
     {
         BEGIN_IMPORT()
-        importer::import_tflite(graph_, model, imp_options);
+        importer::import_tflite(graph_, model, imp_options, real_layout_);
         END_IMPORT()
     }
 
     void import_onnx(std::span<const uint8_t> model, const import_options &options) override
     {
         BEGIN_IMPORT()
-        importer::import_onnx(graph_, model, imp_options);
+        importer::import_onnx(graph_, model, imp_options, real_layout_);
         END_IMPORT()
     }
 
     void import_caffe(std::span<const uint8_t> model, std::span<const uint8_t> prototxt) override
     {
         std::cout << "1. Import graph..." << std::endl;
-        importer::import_caffe(graph_, model, prototxt);
+        importer::import_caffe(graph_, model, prototxt, real_layout_);
         END_IMPORT()
     }
 
@@ -210,6 +212,8 @@ public:
             if (compile_options_.input_type == "default")
                 compile_options_.input_type = "float32";
         }
+        std::cout << "1.1 Pre-process..." << std::endl;
+        pre_process(graph_, compile_options_);
 
         std::cout << "2. Optimize target independent..." << std::endl;
         optimize_target_independent(graph_);
@@ -285,6 +289,19 @@ private:
         target_options_.is_fpga = compile_options_.is_fpga;
 
         target_->register_evaluator_ops();
+    }
+
+    void pre_process(ir::graph &graph, compile_options &cmp_options)
+    {
+        using namespace ir::transforms;
+        run_passes("pre_process", graph, [&]([[maybe_unused]] const module_type_t &module_type, ir::transforms::pass_manager &pmgr) {
+            pmgr.add_pass<pre_process_transform>(
+                cmp_options.mean, cmp_options.scale,
+                cmp_options.input_range, cmp_options.input_shape,
+                cmp_options.image_format, input_layout_,
+                cmp_options.input_type, cmp_options.quant_type,
+                real_layout_, cmp_options.preprocess);
+        });
     }
 
     void optimize_target_independent(ir::graph &graph)
@@ -368,22 +385,6 @@ private:
             ir::transforms::pass_manager pmgr(graph, *target_);
             auto quant = evaluator.quantizer(graph.module_type());
 
-            if (!compile_options_.use_dataset_as_input_stat)
-            {
-                float input_mean, input_std;
-                std::visit([&](auto &options) {
-                    input_mean = options.input_mean;
-                    input_std = options.input_std;
-                },
-                    ptq_options_);
-
-                auto min = (0.f - input_mean) / input_std;
-                auto max = (1.f - input_mean) / input_std;
-                value_range<float> input_range { min, max };
-                quant->set(graph.inputs()[0]->output(), input_range);
-                quant->record(graph.inputs()[0]->output(), input_range);
-            }
-
             // broadcast quant ranges
             std::unordered_set<node_opcode> opcodes;
             target_->add_quantization_broadcast(opcodes);
@@ -391,15 +392,9 @@ private:
 
             ir::transforms::transform_pass p("process i&o node");
 
-            if (use_ptq_)
-            {
-                if (compile_options_.input_type != "float32")
-                    p.emplace<nncase::ir::transforms::add_input_dequantize_transform>(to_datatype_method(compile_options_.input_type));
-
-                if (compile_options_.output_type != "float32")
-                    p.emplace<nncase::ir::transforms::add_output_quantize_transform>(to_datatype_method(compile_options_.output_type));
-                pmgr.add_pass(std::move(p));
-            }
+            if (compile_options_.output_type != "float32")
+                p.emplace<nncase::ir::transforms::add_output_quantize_transform>(to_datatype_method(compile_options_.output_type));
+            pmgr.add_pass(std::move(p));
 
             pmgr.quantizer(quant);
             if (compile_options_.dump_ir)
@@ -413,6 +408,25 @@ private:
         for (auto &subgraph : graph.subgraphs())
             graph_runner(*subgraph);
     }
+
+    // void process_input(ir::graph &graph, datatype_t input_type, value_range<float> input_range)
+    // {
+    //     auto graph_runner = [&](ir::graph &graph) {
+    //         ir::transforms::pass_manager pmgr(graph, *target_);
+
+    //         ir::transforms::transform_pass p("process i&o node");
+    //         p.emplace<nncase::ir::transforms::process_input>(input_type, input_range);
+    //         p.emplace<nncase::ir::transforms::dequantize_bitcast_motion_transform>();
+    //         pmgr.add_pass(std::move(p));
+
+    //         pmgr.run();
+    //         dump_graph(graph, "process_input_node");
+    //     };
+
+    //     graph_runner(graph);
+    //     for (auto &subgraph : graph.subgraphs())
+    //         graph_runner(*subgraph);
+    // }
 
     ir::evaluator run_calibration(ir::graph &graph)
     {
@@ -620,6 +634,7 @@ private:
     std::variant<ptq_dataset_options, ptq_tensor_options> ptq_options_;
     bool use_ptq_ = false;
     std::unique_ptr<nncase::target> target_;
+    std::string real_layout_ = "";
 };
 }
 

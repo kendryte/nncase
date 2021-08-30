@@ -21,17 +21,17 @@ using namespace nncase;
 using namespace nncase::importer;
 using namespace nncase::ir;
 
-void nncase::importer::import_tflite(ir::graph &graph, std::span<const uint8_t> model, const import_options &options)
+void nncase::importer::import_tflite(ir::graph &graph, std::span<const uint8_t> model, const import_options &options, std::string &real_layout)
 {
-    tflite_importer(model, graph).import(options);
+    tflite_importer(model, graph).import(options, real_layout);
 }
 
-void nncase::importer::import_onnx(ir::graph &graph, std::span<const uint8_t> model, const import_options &options)
+void nncase::importer::import_onnx(ir::graph &graph, std::span<const uint8_t> model, const import_options &options, std::string &real_layout)
 {
-    onnx_importer(model, graph).import(options);
+    onnx_importer(model, graph).import(options, real_layout);
 }
 
-void nncase::importer::import_caffe(ir::graph &graph, std::span<const uint8_t> model, std::span<const uint8_t> prototxt)
+void nncase::importer::import_caffe(ir::graph &graph, std::span<const uint8_t> model, std::span<const uint8_t> prototxt, std::string &real_layout)
 {
-    caffe_importer(model, prototxt, graph).import();
+    caffe_importer(model, prototxt, graph).import(real_layout);
 }

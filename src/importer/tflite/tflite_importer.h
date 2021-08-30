@@ -35,7 +35,7 @@ class tflite_importer
 public:
     tflite_importer(std::span<const uint8_t> model, ir::graph &graph);
 
-    void import(const import_options &options);
+    void import(const import_options &options, std::string &real_layout);
 
 private:
     void convert_op(const tflite::Operator &op);

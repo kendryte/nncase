@@ -30,7 +30,7 @@ tflite_importer::tflite_importer(std::span<const uint8_t> model, graph &graph)
         throw std::runtime_error("Invalid tflite model");
 }
 
-void tflite_importer::import(const import_options &options)
+void tflite_importer::import(const import_options &options, std::string &real_layout)
 {
     auto &operators = *subgraph_->operators();
     for (auto &&op : operators)
@@ -57,12 +57,14 @@ void tflite_importer::import(const import_options &options)
             sur_trans->name(tensor.name()->string_view());
             sur_trans->input().connect(node->output());
             created_inputs.emplace(in, &sur_trans->output());
+            real_layout = "NCHW";
         }
         else
         {
             auto node = graph_.emplace<input_node>(type, shape);
             node->name(tensor.name()->string_view());
             created_inputs.emplace(in, &node->output());
+            real_layout = "NHWC";
         }
     }
 
