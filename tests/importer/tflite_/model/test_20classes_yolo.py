@@ -20,8 +20,7 @@ from tflite_test_runner import TfliteTestRunner
 
 def test_20classes_yolo(request):
     runner = TfliteTestRunner(request.node.name)
-    model_file = '/home/curio/project/k510-gnne-compiler-tests/golden-model/mobilenet_v1_1.0.224/tflite/model_f32.tflite'
-    # generate model
+    model_file = 'examples/20classes_yolo/model/20classes_yolo.tflite'
     runner.run(model_file)
 
 
