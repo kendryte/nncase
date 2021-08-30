@@ -220,8 +220,8 @@ class TestRunner(metaclass=ABCMeta):
                     Q_max, Q_min = 0, 0
                     if item['input_type'] == 'uint8':
                         Q_max, Q_min = 255, 0
-                    elif item['input_type'] == 'int8':
-                        Q_max, Q_min = 127, -128
+                    # elif item['input_type'] == 'int8':
+                    #     Q_max, Q_min = 127, -128
                     else:
                         continue
                     scale = (item['range'][1] - item['range'][0]) / (Q_max - Q_min)

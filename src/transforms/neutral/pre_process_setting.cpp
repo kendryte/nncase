@@ -65,19 +65,19 @@ void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::targ
             //dequantize
             if (mid_ptr->type() != dt_float32)
             {
-                size_t bits = 0;
-                if (quant_type_ == "uint8")
-                {
-                    bits = 8;
-                }
-                else
-                {
-                    bits = 7;
-                }
+                // size_t bits = 0;
+                // if (quant_type_ == "uint8")
+                // {
+                //     bits = 8;
+                // }
+                // else
+                // {
+                //     bits = 7;
+                // }
                 value_range<float> range = { input_range_[0], input_range_[1] };
 
-                auto Q_max = bits == 7 ? 127 : 255;
-                auto Q_min = bits == 7 ? -128 : 0;
+                auto Q_max = 255;
+                auto Q_min = 0;
                 auto scale = (range.max - range.min) / (Q_max - Q_min);
                 auto bias = std::round((range.max * Q_min - range.min * Q_max) / (range.max - range.min));
                 quant_param_t deq_params { static_cast<int32_t>(bias), scale };
