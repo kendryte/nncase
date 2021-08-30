@@ -31,8 +31,10 @@
 #include <nncase/transforms/neutral/fuse_unary.h>
 #include <nncase/transforms/neutral/fused_unary_to_lookup1d.h>
 #include <nncase/transforms/neutral/global_reduce_window_to_reduce.h>
+#include <nncase/transforms/neutral/lstm_transform.h>
 #include <nncase/transforms/neutral/matmul_to_conv2d.h>
 #include <nncase/transforms/neutral/quantize_motion.h>
+#include <nncase/transforms/neutral/remove_binary.h>
 #include <nncase/transforms/neutral/simplify_reduce.h>
 #include <nncase/transforms/neutral/space_to_batch_transform.h>
 #include <nncase/transforms/neutral/split_to_slice.h>
@@ -105,6 +107,8 @@ void neutral_target::add_default_transforms(ir::transforms::transform_pass &pass
 
     pass.emplace<fold_bitcast_transform>();
 
+    pass.emplace<remove_nonsense_binary>();
+
     pass.emplace<fuse_clamp_conv2d_transform>();
     pass.emplace<fuse_clamp_binary_transform>();
     pass.emplace<strided_slice_to_pad_transform>();
@@ -120,7 +124,6 @@ void neutral_target::add_default_transforms(ir::transforms::transform_pass &pass
     pass.emplace<transpose_unary_motion_transform>();
     pass.emplace<simplify_reduce_transform>();
     pass.emplace<global_reduce_window_to_reduce_transform>();
-    pass.emplace<reduce_to_global_reduce_window_transform>();
     pass.emplace<transpose_to_reshape_transform>();
     pass.emplace<take_to_slice_transform>();
     pass.emplace<split_to_slice_transform>();
@@ -168,12 +171,19 @@ void neutral_target::register_target_independent_passes(const module_type_t &typ
 
     if (type == runtime::stackvm::stackvm_module_type)
     {
+        //lstm_transform
+        {
+            transform_pass p("lstm_transform");
+            p.emplace<lstm_transform>();
+            pass_mgr.add_pass(std::move(p));
+        }
         //matmul to conv2d
         {
             transform_pass p("matmul_to_conv2d");
             p.emplace<matmul_to_conv2d_transform>();
             pass_mgr.add_pass(std::move(p));
         }
+
         //fold_pad_conv
         {
             transform_pass p("fold_pad_conv");
@@ -226,7 +236,7 @@ void neutral_target::register_quantize_annotation_passes([[maybe_unused]] const 
     }
 }
 
-void neutral_target::register_quantize_passes([[maybe_unused]] const module_type_t &type, ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] datatype_t quant_type)
+void neutral_target::register_quantize_passes([[maybe_unused]] const module_type_t &type, ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] datatype_t quant_type, [[maybe_unused]] datatype_t w_quant_type)
 {
     {
         transform_pass p("fused_unary_to_lut");

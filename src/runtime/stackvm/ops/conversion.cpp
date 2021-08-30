@@ -12,7 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "../runtime_module.h"
+#include "../runtime_function.h"
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -25,52 +25,52 @@ using namespace nncase::runtime::stackvm;
     else                                        \
         return stack_.push((type)value.as_r())
 
-result<void> stackvm_runtime_module::visit(NNCASE_UNUSED const conv_i1_op_t &op) noexcept
+result<void> stackvm_runtime_function::visit(NNCASE_UNUSED const conv_i1_op_t &op) noexcept
 {
     CONV_IMPL(int8_t);
 }
 
-result<void> stackvm_runtime_module::visit(NNCASE_UNUSED const conv_i2_op_t &op) noexcept
+result<void> stackvm_runtime_function::visit(NNCASE_UNUSED const conv_i2_op_t &op) noexcept
 {
     CONV_IMPL(int16_t);
 }
 
-result<void> stackvm_runtime_module::visit(NNCASE_UNUSED const conv_i4_op_t &op) noexcept
+result<void> stackvm_runtime_function::visit(NNCASE_UNUSED const conv_i4_op_t &op) noexcept
 {
     CONV_IMPL(int32_t);
 }
 
-result<void> stackvm_runtime_module::visit(NNCASE_UNUSED const conv_i_op_t &op) noexcept
+result<void> stackvm_runtime_function::visit(NNCASE_UNUSED const conv_i_op_t &op) noexcept
 {
     CONV_IMPL(intptr_t);
 }
 
-result<void> stackvm_runtime_module::visit(NNCASE_UNUSED const conv_u1_op_t &op) noexcept
+result<void> stackvm_runtime_function::visit(NNCASE_UNUSED const conv_u1_op_t &op) noexcept
 {
     CONV_IMPL(uint8_t);
 }
 
-result<void> stackvm_runtime_module::visit(NNCASE_UNUSED const conv_u2_op_t &op) noexcept
+result<void> stackvm_runtime_function::visit(NNCASE_UNUSED const conv_u2_op_t &op) noexcept
 {
     CONV_IMPL(uint16_t);
 }
 
-result<void> stackvm_runtime_module::visit(NNCASE_UNUSED const conv_u4_op_t &op) noexcept
+result<void> stackvm_runtime_function::visit(NNCASE_UNUSED const conv_u4_op_t &op) noexcept
 {
     CONV_IMPL(uint32_t);
 }
 
-result<void> stackvm_runtime_module::visit(NNCASE_UNUSED const conv_u_op_t &op) noexcept
+result<void> stackvm_runtime_function::visit(NNCASE_UNUSED const conv_u_op_t &op) noexcept
 {
     CONV_IMPL(uintptr_t);
 }
 
-result<void> stackvm_runtime_module::visit(NNCASE_UNUSED const conv_br2_op_t &op) noexcept
+result<void> stackvm_runtime_function::visit(NNCASE_UNUSED const conv_br2_op_t &op) noexcept
 {
     CONV_IMPL(bfloat16);
 }
 
-result<void> stackvm_runtime_module::visit(NNCASE_UNUSED const conv_r4_op_t &op) noexcept
+result<void> stackvm_runtime_function::visit(NNCASE_UNUSED const conv_r4_op_t &op) noexcept
 {
     CONV_IMPL(float);
 }

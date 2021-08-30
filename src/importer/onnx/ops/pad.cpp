@@ -78,20 +78,7 @@ void onnx_importer::convert_op_Pad(const NodeProto &node)
     else
     {
         // op version 11/13
-        const auto &pads = node.input()[1];
-        const auto &pads_initializer = get_initializer(pads);
-        if (pads_initializer)
-        {
-            paddings = to<axis_t>(pads_initializer.value());
-        }
-        else
-        {
-            // try to extract data from previous constant nodes
-            const auto data = get_constant_input_data<int64_t>(pads);
-            if (data)
-                std::transform(std::begin(data.value()), std::end(data.value()), std::back_inserter(paddings),
-                    [](const auto e) { return static_cast<int>(e); });
-        }
+        paddings = get_constant_value<int, int64_t>(node.input()[1]);
     }
 
     assert(paddings.size() == 2 * input_shape.size());

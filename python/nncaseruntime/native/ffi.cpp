@@ -73,7 +73,7 @@ void LaunchDebugger()
 
 PYBIND11_MODULE(_nncaseruntime, m)
 {
-    m.doc() = "NNCase runtime Library";
+    m.doc() = "nncase runtime Library";
     m.attr("__version__") = NNCASE_VERSION;
 
     //LaunchDebugger();
@@ -86,7 +86,7 @@ PYBIND11_MODULE(_nncaseruntime, m)
         .def_property_readonly("inputs_size", &interpreter::inputs_size)
         .def_property_readonly("outputs_size", &interpreter::outputs_size)
         .def("get_input_desc", &interpreter::input_desc)
-        .def("get_output_desc", &interpreter::input_desc)
+        .def("get_output_desc", &interpreter::output_desc)
         .def("get_input_tensor", [](interpreter &interp, size_t index) { return interp.input_tensor(index).unwrap_or_throw(); })
         .def("set_input_tensor", [](interpreter &interp, size_t index, runtime_tensor tensor) { return interp.input_tensor(index, tensor).unwrap_or_throw(); })
         .def("get_output_tensor", [](interpreter &interp, size_t index) { return interp.output_tensor(index).unwrap_or_throw(); })

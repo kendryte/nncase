@@ -28,28 +28,13 @@ void onnx_importer::convert_op_Reshape(const NodeProto &node)
     const auto &op_name { generate_name(node) };
 
     const auto &input = node.input()[0];
-    const auto &shape = node.input()[1];
     const auto &output = node.output()[0];
 
     const auto input_type = get_datatype(input).value();
     const auto &input_shape = get_shape(input);
 
-    const auto &new_shape_initializer = get_initializer(shape);
-
-    axis_t new_shape;
-
-    if (new_shape_initializer)
-    {
-        new_shape = to<axis_t>(new_shape_initializer.value());
-    }
-    else
-    {
-        // try to extract data from previous constant nodes
-        const auto data = get_constant_input_data<float>(shape);
-        if (data)
-            std::transform(std::begin(data.value()), std::end(data.value()), std::back_inserter(new_shape),
-                [](const auto e) { return static_cast<int>(e); });
-    }
+    auto vec = get_constant_value<int, int64_t>(node.input()[1]);
+    axis_t new_shape { vec.begin(), vec.end() };
 
     auto allowzero_attr = get_attribute<int>(node, "allowzero");
     int allowzero = !allowzero_attr ? 0 : allowzero_attr.value();

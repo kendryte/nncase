@@ -8,25 +8,24 @@ running: # 每个case运行时的处理配置
 case: # case的配置，应该是一个多层次的
   importer_opt:
     kwargs: 
-      input_layout: 'NCHW'
+      input_layout: 'NHWC'
       output_layout: 'NHWC'
   preprocess_opt:
     name: 'preprocess_opt'
     kwargs:
       image_format: 'BGR' # BGR or RGB
-      input_shape: [64,64,3] # HWC
+      input_shape: [9,9,3] # HWC
       norm: {
-        mean: [0.485, 0.456, 0.406],
-        scale: [0.229, 0.224, 0.225]
+        mean: [0., 0., 0.],
+        scale: [1, 1, 1]
         }
       input_range: [0, 1] # float range
   compile_opt:
     kwargs:
       dump_asm: true
       dump_ir: true
-      input_type: 'uint8' # uint8 or float32
-      quant_type: 'uint8' # uint8, int8 or float32
-      
+      input_type: 'float32'
+      quant_type: 'uint8'
   ptq_opt:
     kwargs:
       input_mean: 0.5
@@ -45,7 +44,7 @@ case: # case的配置，应该是一个多层次的
     - name: target
       values:
         - cpu
-        - vulkan
+        #- vulkan
         - k210
         - k510
     - name: ptq
@@ -55,7 +54,7 @@ case: # case的配置，应该是一个多层次的
     - name: target
       values:
         - cpu
-        - vulkan
+        #- vulkan
         - k210
         - k510
     - name: ptq
@@ -65,15 +64,16 @@ case: # case的配置，应该是一个多层次的
 judge:
   common: &judge_common
     simarity_name:  cosine
-    threshold: 0.98
+    threshold: 0.999
     log_hist: true
     matchs: null
-  specifics: null # the specifics mean you can use specific overwirte it like this 
-    # - matchs: 
-    #   target: k510
-    #   ptq: false
-    # threshold: 0.99
-    # - matchs: 
-    #     target: k210
-    #     ptq: true
-    #   threshold: 0.98
+  specifics:
+    - matchs:
+        #target: [cpu, vulkan, k210, k510]
+        target: [cpu, k210, k510]
+        ptq: true
+      threshold: 0.98
+    - matchs:
+        target: [k510]
+        ptq: false
+      threshold: 0.99

@@ -22,6 +22,15 @@ class TfliteTestRunner(TestRunner):
 
         return model_file
 
+    def from_keras(self, keras_model):
+        converter = tf.lite.TFLiteConverter.from_keras_model(keras_model)
+        tflite_model = converter.convert()
+        model_file = os.path.join(self.case_dir, 'test.tflite')
+        with open(model_file, 'wb') as f:
+            f.write(tflite_model)
+
+        return model_file
+
     def run(self, model_file):
         if self.case_dir != os.path.dirname(model_file):
             shutil.copy(model_file, self.case_dir)

@@ -1,5 +1,5 @@
 import numpy as np
-
+np.set_printoptions(suppress=True)
 import torch
 import torchvision
 import argparse
@@ -89,4 +89,5 @@ if __name__ == "__main__":
     prediction = load_prediction(args.bin, num_classes)
     prediction = decode_outputs(prediction, prediction.dtype, hw, strides)
     output = postprocess(prediction, num_classes, conf_thre, nms_thre)
-    print(output)
+    for out in output:
+        print(out.numpy())

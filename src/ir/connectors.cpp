@@ -26,14 +26,18 @@ void input_connector::connect(output_connector &connector)
             "Type must be same: \n"
             + connector.owner().name() + "[" + std::string(connector.owner().runtime_opcode().name) + "]->"
             + owner().name() + "[" + std::string(owner().runtime_opcode().name)
-            + "]\n has type mismatch: \n["
+            + "] has type mismatch: ["
             + std::string(datatype_names(connector.type())) + "]->["
             + std::string(datatype_names(type())) + "]");
 
     if (!xt::same_shape(shape(), connector.shape()))
-    {
-        throw std::runtime_error("Shapes must be same, but " + name() + " shape: " + to_string(shape()) + " != " + connector.name() + " shape: " + to_string(connector.shape()));
-    }
+        throw std::runtime_error(
+            "Shapes must be same: \n"
+            + connector.owner().name() + "[" + std::string(connector.owner().runtime_opcode().name) + "]->"
+            + owner().name() + "[" + std::string(owner().runtime_opcode().name)
+            + "] has shape mismatch: "
+            + to_string(connector.shape()) + "->"
+            + to_string(shape()));
 
     if (connection_ != &connector)
     {

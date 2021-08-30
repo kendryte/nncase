@@ -14,10 +14,10 @@
  */
 #pragma once
 #include "caffe.pb.h"
-#include <hlir/connectors.h>
-#include <hlir/graph.h>
-#include <hlir/op_utils.h>
-#include <hlir/ops/transpose.h>
+#include <nncase/ir/connectors.h>
+#include <nncase/ir/graph.h>
+#include <nncase/ir/op_utils.h>
+#include <nncase/ir/ops/transpose.h>
 #include <unordered_map>
 #include <xtensor/xadapt.hpp>
 #include <xtensor/xarray.hpp>
@@ -30,32 +30,32 @@ namespace importer
     class caffe_importer
     {
     public:
-        caffe_importer(xtl::span<const uint8_t> model, hlir::graph &graph);
+        caffe_importer(std::span<const uint8_t> model, std::span<const uint8_t> prototxt, ir::graph &graph);
 
         void import();
 
     private:
-        void convert_op(const caffe::LayerParameter &op);
+        void convert_op(const caffe::LayerParameter &op, caffe::NetParameter caffemodel);
 
-#define DEFINE_OPCODE(opcode) void convert_op_##opcode(const caffe::LayerParameter &op);
+#define DEFINE_OPCODE(opcode) void convert_op_##opcode(const caffe::LayerParameter &op, caffe::NetParameter caffemodel);
 #include "opcode.def"
 #undef DEFINE_OPCODE
 
         void load_tensor(std::string_view name, uint8_t *begin, uint8_t *end);
 
     private:
-        static hlir::shape_t get_shape(const caffe::BlobShape &shape)
+        static ir::shape_t get_shape(const caffe::BlobShape &shape)
         {
-            hlir::shape_t result;
+            ir::shape_t result;
             result.reserve(shape.dim_size());
             for (int i = 0; i < shape.dim_size(); i++)
                 result.push_back((size_t)shape.dim(i));
             return result;
         }
 
-        static hlir::axis_t get_axis(const caffe::BlobShape &shape)
+        static ir::axis_t get_axis(const caffe::BlobShape &shape)
         {
-            hlir::axis_t result;
+            ir::axis_t result;
             result.reserve(shape.dim_size());
             for (int i = 0; i < shape.dim_size(); i++)
                 result.push_back((int32_t)shape.dim(i));
@@ -74,6 +74,42 @@ namespace importer
             return default_val;
         }
 
+        caffe::LayerParameter get_op_data(caffe::LayerParameter op, caffe::NetParameter caffemodel)
+        {
+            for (int32_t i = 0; i < caffemodel.layer_size(); i++)
+            {
+                if (op.name() == caffemodel.layer(i).name())
+                    return caffemodel.layer(i);
+            }
+            throw std::runtime_error("can't find related data from caffemodel");
+        }
+
+        // input names are different when there are bn/scale/relu nodes above
+        std::vector<std::string> get_real_input_names(caffe::LayerParameter op)
+        {
+            std::vector<std::string> input_names;
+            for (int32_t i = 0; i < op.bottom_size(); i++)
+            {
+                std::string input_name_i = op.bottom(i) + "/clamp";
+                if (output_tensors_.find(input_name_i) == output_tensors_.end())
+                {
+                    input_name_i = op.bottom(i) + "/add";
+                    if (output_tensors_.find(input_name_i) == output_tensors_.end())
+                    {
+                        input_name_i = op.bottom(i) + "/mul";
+                        if (output_tensors_.find(input_name_i) == output_tensors_.end())
+                        {
+                            input_name_i = op.bottom(i) + "/div";
+                            if (output_tensors_.find(input_name_i) == output_tensors_.end())
+                                input_name_i = op.bottom(i);
+                        }
+                    }
+                }
+                input_names.push_back(input_name_i);
+            }
+            return input_names;
+        }
+
         template <size_t N>
         xt::xtensor<float, N> load_tensor(const caffe::BlobProto &blob)
         {
@@ -84,12 +120,13 @@ namespace importer
 
     private:
         caffe::NetParameter model_;
-        hlir::graph &graph_;
-        std::unordered_map<hlir::input_connector *, std::string_view> input_tensors_;
-        std::unordered_map<std::string_view, hlir::output_connector *> output_tensors_;
+        caffe::NetParameter prototxt_;
+        ir::graph &graph_;
+        std::unordered_map<ir::input_connector *, std::string> input_tensors_;
+        std::unordered_map<std::string_view, ir::output_connector *> output_tensors_;
     };
 }
 }
 
 #define DEFINE_CAFFE_LOWER(opcode) \
-    void nncase::importer::caffe_importer::convert_op_##opcode(const caffe::LayerParameter &op)
+    void nncase::importer::caffe_importer::convert_op_##opcode([[maybe_unused]] const caffe::LayerParameter &op, [[maybe_unused]] caffe::NetParameter caffemodel)

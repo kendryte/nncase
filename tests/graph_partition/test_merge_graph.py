@@ -28,13 +28,18 @@ def _make_module():
             self.w2 = tf.constant(np.random.rand(
                 1, 1, 6, 3).astype(np.float32) - 0.5)
 
-        @tf.function(input_signature=[tf.TensorSpec([1, 4, 8, 3], tf.float32)])
+        @tf.function(input_signature=[tf.TensorSpec([1, 20, 20, 6], tf.float32)])
         def __call__(self, x):
-            out = tf.reshape(x, [1, 4, 4, 6])
-            out1 = tf.nn.conv2d(out, self.w1, [1, 1], 'SAME')
-            out2 = tf.nn.conv2d(out, self.w2, [1, 1], 'SAME')
-            c1 = tf.concat([out1, out2], axis=3)
-            return c1
+            s1 = tf.slice(x, [0, 0, 0, 0], [1, 18, 18, 3])
+            s2 = tf.slice(x, [0, 2, 2, 3], [1, 18, 18, 3])
+            p1 = tf.nn.max_pool2d(s1, [3, 3], [1, 1], 'SAME')
+            p2 = tf.nn.max_pool2d(s2, [1, 1], [1, 1], 'SAME')
+            c1 = tf.concat([p1, p2], axis=3)
+            r = tf.reshape(c1, [1, 9, 36, 6])
+            out1 = tf.nn.conv2d(r, self.w1, [1, 1], 'SAME')
+            out2 = tf.nn.conv2d(r, self.w2, [1, 1], 'SAME')
+            c2 = tf.concat([out1, out2], axis=3)
+            return c2
     return Module()
 
 

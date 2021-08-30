@@ -29,6 +29,7 @@ private:
 private:
     std::string input_filename_;
     std::string output_filename_;
+    std::string input_prototxt_;
     std::string input_format_;
     std::string target_name_;
     std::string output_arrays_;
@@ -39,6 +40,7 @@ private:
     std::string input_type_ = "default";
     std::string output_type_ = "float32";
     std::string quant_type_ = "uint8";
+    std::string w_quant_type_ = "uint8";
     std::string input_layout_ = "NCHW";
     std::string output_layout_ = "NCHW";
     std::string image_format_ = "RGB";
@@ -53,5 +55,6 @@ private:
     bool dump_ir_ = false;
     bool dump_asm_ = false;
     bool is_fpga_ = false;
+    bool benchmark_only_ = false;
 };
 }

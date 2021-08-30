@@ -38,6 +38,7 @@ struct compile_options
     bool dump_asm;
     bool is_fpga;
     bool use_dataset_as_input_stat = false;
+    bool benchmark_only = false;
     std::string target;
     std::filesystem::path dump_dir;
     std::string input_type = "default";
@@ -48,6 +49,7 @@ struct compile_options
     std::vector<float> input_range { 0.f, 1.f };
     std::vector<int32_t> input_shape {};
     std::string image_format = "RGB";
+    std::string w_quant_type = "uint8";
 };
 
 struct import_options
@@ -86,6 +88,7 @@ public:
     virtual ~compiler();
     virtual void import_tflite(std::span<const uint8_t> model, const import_options &options) = 0;
     virtual void import_onnx(std::span<const uint8_t> model, const import_options &options) = 0;
+    virtual void import_caffe(std::span<const uint8_t> model, std::span<const uint8_t> prototxt) = 0;
     virtual void use_ptq(ptq_dataset_options options) = 0;
     virtual void use_ptq(ptq_tensor_options options) = 0;
     virtual ir::graph &graph(uint32_t stage) = 0;

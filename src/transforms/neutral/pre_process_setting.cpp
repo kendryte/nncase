@@ -98,7 +98,6 @@ void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::targ
             // BGR2RGB : input_layout ,image_format_
             if (image_format_ == "BGR" && mid_ptr->shape()[1] == 3)
             {
-
                 std::cout << "BGR:" << std::endl;
                 std::vector<shape_t> concat_shapes { 3, shape_t { (mid_ptr->shape()[0]), 1, (mid_ptr->shape()[2]), (mid_ptr->shape()[3]) } };
                 auto concat_slice = graph.emplace<concat>(mid_ptr->type(), concat_shapes, 1);

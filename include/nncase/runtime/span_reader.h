@@ -88,18 +88,16 @@ public:
     }
 
     template <class T>
-    T peek()
+    T peek_with_offset(size_t offset)
     {
-        auto value = *reinterpret_cast<const T *>(span_.data());
+        auto value = *reinterpret_cast<const T *>(span_.data() + offset);
         return value;
     }
 
     template <class T>
-    T peek_unaligned()
+    T peek()
     {
-        T value;
-        std::memcpy(&value, span_.data(), sizeof(T));
-        return value;
+        return peek_with_offset<T>(0);
     }
 
     template <class T>
@@ -108,6 +106,12 @@ public:
         T value;
         std::memcpy(&value, span_.data() + offset, sizeof(T));
         return value;
+    }
+
+    template <class T>
+    T peek_unaligned()
+    {
+        return peek_unaligned_with_offset<T>(0);
     }
 
     template <class T>

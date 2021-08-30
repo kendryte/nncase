@@ -25,7 +25,7 @@ struct build_model_result
 class NNCASE_API model_builder
 {
 public:
-    model_builder(target &target, const schedule::schedule_result &sched);
+    model_builder(target &target, const schedule::model_schedule_result &sched);
     model_builder(model_builder &) = delete;
     model_builder(model_builder &&) = delete;
 
@@ -36,7 +36,7 @@ public:
 
 private:
     target &target_;
-    const schedule::schedule_result &sched_;
+    const schedule::model_schedule_result &sched_;
     std::filesystem::path dump_dir_;
     bool dump_asm_;
 };

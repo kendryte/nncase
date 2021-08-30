@@ -62,7 +62,7 @@ public:
         : value_(round_to_half(v).value_) { }
 
     template <class T, class = std::enable_if_t<std::is_integral<T>::value || std::is_floating_point<T>::value>>
-    explicit constexpr half(const T &val) noexcept
+    explicit half(const T &val) noexcept
         : half(static_cast<float>(val)) { }
 
     constexpr half(fp16_from_raw_t, uint16_t value) noexcept
@@ -287,9 +287,9 @@ struct numeric_limits<nncase::half>
         return nncase::half::epsilon();
     }
 
-    NNCASE_UNUSED static constexpr nncase::half round_error() noexcept
+    NNCASE_UNUSED static nncase::half round_error() noexcept
     {
-        return nncase::half(0.5);
+        return nncase::half((double)0.5);
     }
 
     NNCASE_UNUSED static constexpr nncase::half denorm_min() noexcept

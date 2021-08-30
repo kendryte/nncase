@@ -16,10 +16,11 @@
 #include "compiler_defs.h"
 #include <nncase/runtime/runtime_module.h>
 
-BEGIN_NS_NNCASE_RT_K210
+BEGIN_NS_NNCASE_RT_MODULE(k210)
 
 NNCASE_INLINE_VAR constexpr module_type_t k210_module_type = to_module_type("k210");
+NNCASE_INLINE_VAR constexpr uint32_t k210_module_version = 1;
 
 NNCASE_MODULES_K210_API result<std::unique_ptr<runtime_module>> create_k210_runtime_module();
 
-END_NS_NNCASE_RT_K210
+END_NS_NNCASE_RT_MODULE

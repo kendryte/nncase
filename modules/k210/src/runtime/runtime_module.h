@@ -13,31 +13,28 @@
  * limitations under the License.
  */
 #pragma once
-#include <nncase/runtime/k210/op_reader.h>
 #include <nncase/runtime/k210/runtime_module.h>
 #include <nncase/runtime/k210/runtime_types.h>
 
-BEGIN_NS_NNCASE_RT_K210
+BEGIN_NS_NNCASE_RT_MODULE(k210)
 
-class k210_runtime_module : public runtime_module, private op_visitor
+class k210_runtime_module : public runtime_module
 {
 public:
+    gsl::span<gsl::byte> data() const noexcept;
+    gsl::span<const gsl::byte> rdata() const noexcept;
+    gsl::span<gsl::byte> kpu_ram() noexcept;
+
+#if !NNCASE_SIMULATOR
+    uint32_t dma_ch() const noexcept
+    {
+        return dma_ch_;
+    }
+#endif
+
 protected:
-    result<void> initialize_core(runtime_module_init_context &context) noexcept override;
-    result<runtime_tensor> allocate_input_tensor(size_t index) noexcept override;
-    result<runtime_tensor> allocate_output_tensor(size_t index) noexcept override;
-    result<void> validate_input_tensor(size_t index, runtime_tensor tensor) noexcept override;
-    result<void> validate_output_tensor(size_t index, runtime_tensor tensor) noexcept override;
-    result<void> run_core() noexcept override;
-
-    using op_visitor::visit;
-    result<void> visit(const kpu_conv2d_options &op) noexcept override;
-    result<void> visit(const kpu_download_options &op) noexcept override;
-    result<void> visit(const kpu_upload_options &op) noexcept override;
-    result<void> visit(const copy_options &op) noexcept override;
-
-private:
-    result<gsl::span<gsl::byte>> memory_at(const memory_range &mrange) noexcept;
+    result<void> initialize_before_functions(runtime_module_init_context &context) noexcept override;
+    result<std::unique_ptr<runtime_function>> create_function() noexcept override;
 
 private:
     std::unique_ptr<gsl::byte[]> data_;
@@ -50,4 +47,4 @@ private:
 #endif
 };
 
-END_NS_NNCASE_RT_K210
+END_NS_NNCASE_RT_MODULE

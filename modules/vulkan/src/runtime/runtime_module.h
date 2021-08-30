@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #pragma once
+#include "vulkan_context.h"
 #include <nncase/kernels/kernel_context.h>
 #include <nncase/runtime/vulkan/op_reader.h>
 #include <nncase/runtime/vulkan/runtime_module.h>
@@ -20,87 +21,53 @@
 
 BEGIN_NS_NNCASE_RT_MODULE(vulkan)
 
-class vulkan_runtime_module : public runtime_module, private op_visitor
+class vulkan_runtime_module : public runtime_module
 {
-    template <class T>
-    struct select_options
-    {
-        T requried;
-        T preferred;
-        T not_preferred;
-    };
-
-    struct buffer_ref
-    {
-        vk::Buffer buffer;
-        size_t start;
-        size_t size;
-    };
 
 public:
     virtual ~vulkan_runtime_module();
 
-protected:
-    result<void> initialize_core(runtime_module_init_context &context) noexcept override;
-    result<runtime_tensor> allocate_input_tensor(size_t index) noexcept override;
-    result<runtime_tensor> allocate_output_tensor(size_t index) noexcept override;
-    result<void> validate_input_tensor(size_t index, runtime_tensor tensor) noexcept override;
-    result<void> validate_output_tensor(size_t index, runtime_tensor tensor) noexcept override;
-    result<void> run_core() noexcept override;
+    vk::Buffer data() const noexcept { return data_buffer_; }
+    vk::Buffer rdata() const noexcept { return {}; }
+    gsl::span<const gsl::byte> shader() const noexcept { return shader_; }
 
-    using op_visitor::visit;
-    result<void> visit(const ldbuf_op_t &op) noexcept override;
-    result<void> visit(const ldbufbarrier_op_t &op) noexcept override;
-    result<void> visit(const ldbufcopy_op_t &op) noexcept override;
-    result<void> visit(const copybuf_op_t &op) noexcept override;
-    result<void> visit(const ldpipeline_op_t &op) noexcept override;
-    result<void> visit(const dispatch_op_t &op) noexcept override;
-    result<void> visit(const barrier_op_t &op) noexcept override;
+    vk::Device device() const noexcept { return ctx_->device(); }
+    vk::CommandPool command_pool() const noexcept { return cmd_pool_; }
+    uint32_t compute_queue_index() const noexcept { return ctx_->compute_queue_index(); }
+    vk::Queue compute_queue() const noexcept { return ctx_->compute_queue(); }
+    vk::DescriptorPool buffer_desc_pool() const noexcept { return buffer_desc_pool_; }
 
-private:
-    result<void> initialize_vulkan() noexcept;
-    result<void> initialize_vulkan_instance() noexcept;
-    result<void> initialize_vulkan_device() noexcept;
-    result<void> initialize_vulkan_memory() noexcept;
-    result<void> initialize_vulkan_commands() noexcept;
-
-    result<vk::PhysicalDevice> select_physical_device() noexcept;
-    result<uint32_t> select_queue_family(const std::vector<vk::QueueFamilyProperties> &families, const select_options<vk::QueueFlagBits> options) noexcept;
-    result<size_t> select_memory_type(const vk::PhysicalDeviceMemoryProperties &properties, const select_options<vk::MemoryPropertyFlagBits> &options, size_t required_size) noexcept;
     result<vk::DeviceMemory> allocate_vulkan_memory(const select_options<vk::MemoryPropertyFlagBits> &options, vk::Buffer buffer) noexcept;
     result<vk::Buffer> allocate_vulkan_buffer(size_t required_size) noexcept;
     result<void> bind_vulkan_buffer(vk::Buffer buffer, vk::DeviceMemory memory) noexcept;
+    result<void> add_pipeline(vk::Pipeline pipeline, vk::PipelineLayout pipeline_layout, vk::DescriptorSetLayout set_layout) noexcept;
 
-    result<buffer_ref> pop_buffer_ref() noexcept;
-    result<void> preprocess_inputs() noexcept;
-    result<void> postprocess_outputs() noexcept;
+protected:
+    result<void> initialize_before_functions(runtime_module_init_context &context) noexcept override;
+    result<std::unique_ptr<runtime_function>> create_function() noexcept override;
+
+private:
+    result<void> initialize_vulkan() noexcept;
+    result<void> initialize_vulkan_device() noexcept;
+    result<void> initialize_vulkan_memory() noexcept;
+
+    result<size_t> select_memory_type(const vk::PhysicalDeviceMemoryProperties &properties, const select_options<vk::MemoryPropertyFlagBits> &options, size_t required_size) noexcept;
 
     void free_vulkan_resources() noexcept;
 
 private:
     uint32_t descriptors_;
     uint32_t descriptor_sets_;
-    gsl::span<const gsl::byte> rdata_;
     gsl::span<const gsl::byte> text_;
     gsl::span<const gsl::byte> shader_;
-    vk::Instance instance_;
-    vk::PhysicalDevice physical_device_;
-    vk::Device device_;
-    uint32_t compute_queue_index_;
-    vk::Queue compute_queue_;
-    vk::Buffer input_buffer_;
-    vk::Buffer output_buffer_;
+    vulkan_context *ctx_;
     vk::Buffer data_buffer_;
-    vk::DeviceMemory input_mem_;
-    vk::DeviceMemory output_mem_;
     vk::DeviceMemory data_mem_;
-    std::vector<buffer_ref> buffer_refs_;
     std::vector<vk::Pipeline> pipelines_owner_;
+    std::vector<vk::PipelineLayout> pipeline_layouts_owner_;
+    std::vector<vk::DescriptorSetLayout> descriptor_set_layouts_owner_;
     vk::DescriptorPool buffer_desc_pool_;
     vk::CommandPool cmd_pool_;
-    vk::CommandBuffer cmd_buffer_;
-    std::vector<vk::BufferMemoryBarrier> buffer_barriers_;
-    std::vector<vk::BufferCopy> buffer_copies_;
 };
 
 END_NS_NNCASE_RT_MODULE

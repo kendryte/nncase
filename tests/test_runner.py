@@ -138,17 +138,7 @@ class TestRunner(metaclass=ABCMeta):
         self.output_paths: List[Tuple[str, str]] = []
         self.model_type: str = ""
         self.pre_process: List[Dict] = []
-        '''
-            pre_process:
-                Normalize:
-                    scale: 1,1,1
-                    mean : 1,1,1
-                LetterBox:
-                    ori_h:  xxx
-                    ori_w:  xxx
-                BGR2RGB:
-                    input_format: BGR
-        '''
+
         self.num_pattern = re.compile("(\d+)")
 
     def transform_input(self, values: np.array, type: str, stage: str):
@@ -210,9 +200,9 @@ class TestRunner(metaclass=ABCMeta):
         if falg:
             if self.cfg.case.compile_opt.kwargs['input_type'] == "uint8":
                 data *= 255.
-            elif self.cfg.case.compile_opt.kwargs['input_type'] == "int8":
-                data *= 255.
-                data -= 128.
+            # elif self.cfg.case.compile_opt.kwargs['input_type'] == "int8":
+            #     data *= 255.
+            #     data -= 128.
 
             for item in self.pre_process:
                 # dequantize
@@ -274,6 +264,8 @@ class TestRunner(metaclass=ABCMeta):
                             float(item['norm']['scale'][k])
         # if self.model_type == "onnx":
         #     data = np.transpose(data, [0, 3, 1, 2])
+        self.totxtfile(
+            "/home/curio/github/nncase/tests_output/test_20classes_yolo/input_new.txt", data)
         return data
 
     def validte_config(self, config):
@@ -304,13 +296,16 @@ class TestRunner(metaclass=ABCMeta):
         self.cfg.case.infer[0].values = _validate_targets(
             targets if targets else self.cfg.case.infer[0].values)
 
-    def run(self, model_path: str):
+    def run(self, model_path: Union[List[str], str]):
         # TODO add mulit process pool
         # case_name = self.process_model_path_name(model_path)
         # case_dir = os.path.join(self.cfg.setup.root, case_name)
         # if not os.path.exists(case_dir):
         #     os.makedirs(case_dir)
-        case_dir = os.path.dirname(model_path)
+        if isinstance(model_path, str):
+            case_dir = os.path.dirname(model_path)
+        elif isinstance(model_path, list):
+            case_dir = os.path.dirname(model_path[0])
         self.run_single(self.cfg.case, case_dir, model_path)
 
     def process_model_path_name(self, model_path: str) -> str:
@@ -329,19 +324,19 @@ class TestRunner(metaclass=ABCMeta):
                 shutil.rmtree(case_dir)
         os.makedirs(case_dir)
 
-    @ abstractmethod
-    def parse_model_input_output(self, model_path: str):
+    @abstractmethod
+    def parse_model_input_output(self, model_path: Union[List[str], str]):
         pass
 
-    @ abstractmethod
-    def cpu_infer(self, case_dir: str, model_content: bytes, type: str):
+    @abstractmethod
+    def cpu_infer(self, case_dir: str, model_content: Union[List[str], str]):
         pass
 
     @ abstractmethod
     def import_model(self, compiler, model_content, import_options):
         pass
 
-    def run_single(self, cfg, case_dir: str, model_file: str):
+    def run_single(self, cfg, case_dir: str, model_file: Union[List[str], str]):
         if not self.inputs:
             self.parse_model_input_output(model_file)
         self.get_process_config(cfg)
@@ -363,12 +358,17 @@ class TestRunner(metaclass=ABCMeta):
 
     def get_compiler_options(self, cfg, model_file):
         import_options = nncase.ImportOptions()
-        if os.path.splitext(model_file)[-1] == ".tflite":
-            import_options.input_layout = cfg.importer_opt.kwargs['input_layout']
-            import_options.output_layout = cfg.importer_opt.kwargs['output_layout']
-        elif os.path.splitext(model_file)[-1] == ".onnx":
-            import_options.input_layout = cfg.importer_opt.kwargs['input_layout']
-            import_options.output_layout = cfg.importer_opt.kwargs['output_layout']
+        if isinstance(model_file, str):
+            if os.path.splitext(model_file)[-1] == ".tflite":
+                import_options.input_layout = cfg.importer_opt.kwargs['input_layout']
+                import_options.output_layout = cfg.importer_opt.kwargs['output_layout']
+            elif os.path.splitext(model_file)[-1] == ".onnx":
+                import_options.input_layout = cfg.importer_opt.kwargs['input_layout']
+                import_options.output_layout = cfg.importer_opt.kwargs['output_layout']
+        elif isinstance(model_file, list):
+            if os.path.splitext(model_file[1])[-1] == ".caffemodel":
+                import_options.input_layout = "NHWC"
+                import_options.output_layout = "NHWC"
 
         compile_options = nncase.CompileOptions()
         for k, v in cfg.compile_opt.kwargs.items():
@@ -411,10 +411,17 @@ class TestRunner(metaclass=ABCMeta):
             arg_values.append(d.values)
         return (arg_names, arg_values)
 
-    def read_model_file(self, model_file: str) -> bytes:
-        with open(model_file, 'rb') as f:
-            model_content = f.read()
-        return model_content
+    def read_model_file(self, model_file: Union[List[str], str]):
+        if isinstance(model_file, str):
+            with open(model_file, 'rb') as f:
+                return f.read()
+        elif isinstance(model_file, list):
+            model_content = []
+            with open(model_file[0], 'rb') as f:
+                model_content.append(f.read())
+            with open(model_file[1], 'rb') as f:
+                model_content.append(f.read())
+            return model_content
 
     @ staticmethod
     def kwargs_to_path(path: str, kwargs: Dict[str, str]):
@@ -428,7 +435,7 @@ class TestRunner(metaclass=ABCMeta):
     def generate_evaluates(self, cfg, case_dir: str,
                            import_options: nncase.ImportOptions,
                            compile_options: nncase.CompileOptions,
-                           model_content: bytes, kwargs: Dict[str, str]
+                           model_content: Union[List[bytes], bytes], kwargs: Dict[str, str]
                            ) -> List[Tuple[str, str]]:
         eval_dir = TestRunner.kwargs_to_path(
             os.path.join(case_dir, 'eval'), kwargs)
@@ -457,7 +464,7 @@ class TestRunner(metaclass=ABCMeta):
     def nncase_infer(self, cfg, case_dir: str,
                      import_options: nncase.ImportOptions,
                      compile_options: nncase.CompileOptions,
-                     model_content: bytes, kwargs: Dict[str, str]
+                     model_content: Union[List[bytes], bytes], kwargs: Dict[str, str]
                      ) -> List[Tuple[str, str]]:
         infer_dir = TestRunner.kwargs_to_path(
             os.path.join(case_dir, 'infer'), kwargs)
@@ -539,11 +546,11 @@ class TestRunner(metaclass=ABCMeta):
                         test_outputs: List[Tuple[str]],
                         kwargs: Dict[str, str]) -> Tuple[bool, str]:
 
-        judeg_cfg = self.cfg.judge.common
+        judeg_cfg = copy.deepcopy(self.cfg.judge.common)
         if self.cfg.judge.specifics:
             for specific in self.cfg.judge.specifics:
-                if specific.matchs.dict == kwargs:
-                    judeg_cfg: Edict = specific
+                if kwargs['target'] in specific.matchs.dict['target'] and kwargs['ptq'] == specific.matchs.dict['ptq']:
+                    judeg_cfg.update(specific)
                     break
 
         for ref_file, test_file in zip(ref_ouputs, test_outputs):
@@ -552,7 +559,7 @@ class TestRunner(metaclass=ABCMeta):
                                            judeg_cfg.simarity_name,
                                            judeg_cfg.threshold,
                                            judeg_cfg.log_hist)
-            name_list = test_file[1].split('/')
+            name_list = test_file[1].split(os.path.sep)
             kw_names = ' '.join(name_list[-len(kwargs) - 2:-1])
             i = self.num_pattern.findall(name_list[-1])
             result_info = "\n{0} [ {1} ] Output: {2}!!\n".format(

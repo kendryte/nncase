@@ -38,7 +38,9 @@ enum connector_attributes
     cnctr_attr_none = 0,
     cnctr_attr_need_quantize = 1,
     cnctr_attr_no_layout_strides = 2,
-    cnctr_attr_no_buffer_fusion = 4
+    cnctr_attr_no_buffer_fusion = 4,
+    cnctr_attr_buffer_slice = 8,
+    cnctr_attr_no_dummy_for_benchmark = 16
 };
 
 DEFINE_ENUM_BITMASK_OPERATORS(node_attributes)
