@@ -53,7 +53,6 @@ void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::targ
             }
             else
             {
-                //     // fit onnx
                 new_shape = { size_t(in_node->output().shape()[0]), size_t(input_shape_[2]), size_t(input_shape_[0]), size_t(input_shape_[1]) };
             }
             auto new_input = graph.emplace<input_node>(get_datatype(input_type_), new_shape);
@@ -119,10 +118,10 @@ void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::targ
 
             // letterbox :
             /**
-                 * input_layout:  HW have different axis 
-                 * input_type:  pad value different 
-                 * input_range:{min, max} caculate pad value //uint8 pad 114, float pad min+(max-min)*(114/255)
-                 **/
+             * input_layout:  HW have different axis 
+             * input_type:  pad value different 
+             * input_range:{min, max} caculate pad value //uint8 pad 114, float pad min+(max-min)*(114/255)
+             **/
             if (in_node->output().shape() != new_shape)
             {
                 std::cout << "letterbox:" << std::endl;
@@ -202,8 +201,6 @@ void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::targ
                 out_convert->name("normalize_out_convert");
                 out_convert->input().connect(normalize_mul->output());
                 mid_ptr = &out_convert->output();
-                // add stop condition
-                scales_[0] = 0.f;
             }
 
             if (real_layout_ == "NHWC")
