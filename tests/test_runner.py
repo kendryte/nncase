@@ -11,8 +11,6 @@ import nncase
 import struct
 from compare_util import compare
 import copy
-from PIL import Image
-import cv2
 import tensorflow as tf
 
 
