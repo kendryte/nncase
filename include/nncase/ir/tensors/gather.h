@@ -17,16 +17,16 @@
 #include "nncase/runtime/datatypes.h"
 #include "opcode.h"
 
-namespace nncase::ir::math
+namespace nncase::ir::tensors
 {
-/** @brief Clamp operator node */
-class NNCASE_API clamp_node : public op_node
+/** @brief Gather operator node */
+class NNCASE_API gather_node : public op_node
 {
 public:
-    DEFINE_NODE_OPCODE(op_math_clamp);
+    DEFINE_NODE_OPCODE(op_tensors_gather);
 
-    clamp_node();
+    gather_node();
 };
 
-using clamp = expr_t<clamp_node>;
+using gather = expr_t<gather_node>;
 }

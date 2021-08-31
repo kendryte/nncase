@@ -17,16 +17,16 @@
 #include "nncase/runtime/datatypes.h"
 #include "opcode.h"
 
-namespace nncase::ir::math
+namespace nncase::ir::tensors
 {
-/** @brief Clamp operator node */
-class NNCASE_API clamp_node : public op_node
+/** @brief Reshape operator node */
+class NNCASE_API reshape_node : public op_node
 {
 public:
-    DEFINE_NODE_OPCODE(op_math_clamp);
+    DEFINE_NODE_OPCODE(op_tensors_reshape);
 
-    clamp_node();
+    reshape_node();
 };
 
-using clamp = expr_t<clamp_node>;
+using reshape = expr_t<reshape_node>;
 }

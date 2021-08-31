@@ -12,21 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#pragma once
-#include "../op.h"
 #include "nncase/runtime/datatypes.h"
-#include "opcode.h"
+#include <nncase/ir/tensors/broadcast.h>
 
-namespace nncase::ir::tensors
+using namespace nncase;
+using namespace nncase::ir;
+using namespace nncase::ir::tensors;
+
+broadcast_node::broadcast_node()
 {
-/** @brief Slice operator node */
-class NNCASE_API slice_node : public op_node
-{
-public:
-    DEFINE_NODE_OPCODE(op_tensors_slice);
-
-    slice_node();
-};
-
-using slice = expr_t<slice_node>;
+    add_parameter("input");
+    add_parameter("shape");
 }

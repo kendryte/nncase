@@ -15,7 +15,7 @@
 #pragma once
 #include "../opcode.h"
 
-namespace nncase::ir::math
+namespace nncase::ir::tensors
 {
 #define DEFINE_OPCODE(dialect, id, name, value) NNCASE_INLINE_VAR constexpr opcode_t op_##dialect##_##id { value, #name };
 

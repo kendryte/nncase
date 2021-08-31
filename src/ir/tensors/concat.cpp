@@ -12,21 +12,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#pragma once
-#include "../op.h"
 #include "nncase/runtime/datatypes.h"
-#include "opcode.h"
+#include <nncase/ir/tensors/concat.h>
 
-namespace nncase::ir::tensors
+using namespace nncase;
+using namespace nncase::ir;
+using namespace nncase::ir::tensors;
+
+concat_node::concat_node(size_t tensors, int32_t axis)
+    : axis_(axis)
 {
-/** @brief Slice operator node */
-class NNCASE_API slice_node : public op_node
-{
-public:
-    DEFINE_NODE_OPCODE(op_tensors_slice);
-
-    slice_node();
-};
-
-using slice = expr_t<slice_node>;
+    for (size_t i = 0; i < tensors; i++)
+        add_parameter("input" + std::to_string(i));
 }

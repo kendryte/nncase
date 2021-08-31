@@ -22,3 +22,4 @@ set_property(TARGET ir PROPERTY POSITION_INDEPENDENT_CODE ON)
 
 #add_subdirectory(ops)
 add_subdirectory(math)
+add_subdirectory(tensors)
