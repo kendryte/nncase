@@ -8,7 +8,7 @@ running: # 每个case运行时的处理配置
 case: # case的配置，应该是一个多层次的
   importer_opt:
     kwargs: 
-      input_layout: 'NCHW'
+      input_layout: 'NHWC'
       output_layout: 'NHWC'
   preprocess_opt:
     flag: false
