@@ -95,7 +95,7 @@ jobs:
       if: runner.os != 'Windows'
       shell: bash
       env:
-        PYTHONPATH: /tmp/nncase/lib:${{github.workspace}}/install/python:${{github.workspace}}/tests
+        PYTHONPATH: /tmp/nncase/lib:/tmp/nncase/python:${{github.workspace}}/tests
       run: |
         pytest tests/other --doctest-modules --junitxml=test_results/other.xml
         pytest tests/importer --doctest-modules --junitxml=test_results/importer.xml
