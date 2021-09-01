@@ -148,7 +148,6 @@ void add_copy_to_output_pass::run_core(graph &graph, [[maybe_unused]] nncase::ta
 
 bool remove_exclusive_copy_to_output_transform::on_try_match(node &node, transform_context &context)
 {
-    return false;
     copy *cp;
     output_node *out;
 
