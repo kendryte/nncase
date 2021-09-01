@@ -148,7 +148,6 @@ void add_copy_to_output_pass::run_core(graph &graph, [[maybe_unused]] nncase::ta
 
 bool remove_exclusive_copy_to_output_transform::on_try_match(node &node, transform_context &context)
 {
-    return false;
     copy *cp;
     output_node *out;
 
@@ -199,7 +198,7 @@ bool remove_exclusive_copy_to_concat_transform::on_try_match(node &node, transfo
         auto c_inputs = c->inputs();
         auto is_simple_concat = (c->axis() == 0 || std::all_of(c_inputs[0]->shape().begin(), c_inputs[0]->shape().begin() + c->axis(), [](size_t dim) { return dim == 1; }));
         if (input->memory_location() == mem_data
-            && ((input->attributes() & cnctr_attr_no_buffer_fusion) == 0)
+            && ((input->attributes() & (cnctr_attr_no_buffer_fusion | cnctr_attr_buffer_slice)) == 0)
             && is_simple_concat)
         {
             context.inputs.emplace_back(&cp->input());
@@ -237,7 +236,8 @@ bool remove_simple_copy_from_slice_transform::on_try_match(node &node, transform
     if ((s = node_cast<slice>(node))
         && ((s->attributes() & node_attr_action) == 0)
         && (cp = try_get_direct_child<copy>(*s))
-        && !try_get_direct_child<output_node>(*cp))
+        && !try_get_direct_child<output_node>(*cp)
+        && !try_get_direct_child<concat>(*cp))
     {
         if (is_simple_slice(s->begin(), s->end(), s->strides(), s->input().shape()))
         {
