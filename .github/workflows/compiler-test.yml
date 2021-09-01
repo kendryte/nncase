@@ -55,19 +55,12 @@ jobs:
     - name: Install
       shell: bash
       working-directory: ${{github.workspace}}/build
-      run: cmake --install . --prefix ../install
+      run: cmake --install . --prefix /tmp/nncase
 
     - name: CTest
       shell: bash
       working-directory: ${{github.workspace}}/build/tests/kernels
       run: ctest -C $BUILD_TYPE
-      
-    - name: Upload a Build Artifact
-      uses: actions/upload-artifact@v2.2.2
-      with:
-        name: nncase-ubuntu-x86_64
-        path: ${{github.workspace}}/install
-        if-no-files-found: error
 
   test-compiler:
     needs: [build]
@@ -96,19 +89,13 @@ jobs:
       run: |
         pip install pytest
         mkdir test_results
-      
-    - name: Download a Build Artifact
-      uses: actions/download-artifact@v2.0.9
-      with:
-        name: nncase-ubuntu-x86_64
-        path: ${{github.workspace}}/install
 
     - name: Test
       working-directory: ${{github.workspace}}
       if: runner.os != 'Windows'
       shell: bash
       env:
-        PYTHONPATH: ${{github.workspace}}/install/lib:${{github.workspace}}/install/python:${{github.workspace}}/tests
+        PYTHONPATH: /tmp/nncase/lib:${{github.workspace}}/install/python:${{github.workspace}}/tests
       run: |
         pytest tests/other --doctest-modules --junitxml=test_results/other.xml
         pytest tests/importer --doctest-modules --junitxml=test_results/importer.xml
