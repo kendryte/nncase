@@ -45,7 +45,7 @@ void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::targ
     {
         if (in_node->output().shape().size() == 4)
         {
-            auto old_inputs = in_node->output().connections();
+            auto old_inputs = dup(in_node->output().connections());
             shape_t new_shape, old_shape;
             if (input_layout_ == "NHWC")
             {
@@ -201,7 +201,7 @@ void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::targ
                 mid_ptr = &transpose_post->output();
             }
 
-            for (auto &in : dup(old_inputs))
+            for (auto &in : old_inputs)
                 in->connect(*mid_ptr);
         }
         graph.dce();
