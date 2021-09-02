@@ -124,7 +124,7 @@ private:
 PYBIND11_MODULE(_nncase, m)
 {
     m.doc() = "nncase Library";
-    m.attr("__version__") = NNCASE_VERSION;
+    m.attr("__version__") = NNCASE_VERSION NNCASE_VERSION_SUFFIX;
 
     // LaunchDebugger();
     py::class_<std::filesystem::path>(m, "Path")
