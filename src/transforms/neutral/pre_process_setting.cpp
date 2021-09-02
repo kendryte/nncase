@@ -43,7 +43,7 @@ void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::targ
 {
     for (auto in_node : dup(graph.inputs()))
     {
-        if (in_node->output().shape().size() == 4)
+        if (in_node->output().shape().size() == 4 && scales_[0] != 0)
         {
             auto old_inputs = in_node->output().connections();
             shape_t new_shape, old_shape;
@@ -191,6 +191,7 @@ void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::targ
                 out_convert->name("normalize_out_convert");
                 out_convert->input().connect(normalize_mul->output());
                 mid_ptr = &out_convert->output();
+                scales_[0] = 0;
             }
 
             if (real_layout_ == "NHWC")
