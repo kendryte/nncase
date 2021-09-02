@@ -141,8 +141,14 @@ PYBIND11_MODULE(_nncase, m)
         .def_readwrite("input_type", &compile_options::input_type)
         .def_readwrite("output_type", &compile_options::output_type)
         .def_readwrite("quant_type", &compile_options::quant_type)
+        .def_readwrite("image_format", &compile_options::image_format)
+        .def_readwrite("mean", &compile_options::mean)
+        .def_readwrite("scale", &compile_options::scale)
+        .def_readwrite("input_range", &compile_options::input_range)
+        .def_readwrite("input_shape", &compile_options::input_shape)
         .def_readwrite("w_quant_type", &compile_options::w_quant_type)
-        .def_readwrite("benchmark_only", &compile_options::benchmark_only);
+        .def_readwrite("benchmark_only", &compile_options::benchmark_only)
+        .def_readwrite("preprocess", &compile_options::preprocess);
 
     py::class_<import_options>(m, "ImportOptions")
         .def(py::init())

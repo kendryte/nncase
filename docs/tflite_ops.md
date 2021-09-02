@@ -15,6 +15,7 @@
 | Depthwise_conv_2d | ✅ |
 | Div | ✅ |
 | Exp | ✅ |
+| Expand_dims | ✅ |
 | Floor | ✅ |
 | Floor_div | ✅ |
 | Floor_mod | ✅ |
@@ -37,6 +38,7 @@
 | Reduce_max | ✅ |
 | Reduce_min | ✅ |
 | Relu | ✅ |
+| Prelu | ✅ |
 | Relu6 | ✅ |
 | Reshape | ✅ |
 | Resize_bilinear | ✅ |

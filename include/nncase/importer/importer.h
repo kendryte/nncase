@@ -28,7 +28,7 @@ struct import_options
     std::span<const std::string> output_arrays;
 };
 
-void import_tflite(ir::graph &graph, std::span<const uint8_t> model, const import_options &options);
-void import_onnx(ir::graph &graph, std::span<const uint8_t> model, const import_options &options);
-void import_caffe(ir::graph &graph, std::span<const uint8_t> model, std::span<const uint8_t> prototxt);
+void import_tflite(ir::graph &graph, std::span<const uint8_t> model, const import_options &options, std::string &real_layout);
+void import_onnx(ir::graph &graph, std::span<const uint8_t> model, const import_options &options, std::string &real_layout);
+void import_caffe(ir::graph &graph, std::span<const uint8_t> model, std::span<const uint8_t> prototxt, std::string &real_layout);
 }

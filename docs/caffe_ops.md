@@ -14,3 +14,10 @@
 | Slice | ✅ |
 | Softmax | ✅ |
 | Split | ✅ |
+| Continuationindicator | ✅ |
+| Pooling | ✅ |
+| Batchnorm | ✅ |
+| Scale | ✅ |
+| Reverse | ✅ |
+| Lstm | ✅ |
+| Innerproduct | ✅ |

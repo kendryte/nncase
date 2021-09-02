@@ -9,6 +9,7 @@ import numpy as np
 class CaffeTestRunner(TestRunner):
     def __init__(self, case_name, targets=None):
         super().__init__(case_name, targets)
+        self.model_type = "caffe"
 
     def run(self, model_file_list):
         super().run(model_file_list)
@@ -23,7 +24,7 @@ class CaffeTestRunner(TestRunner):
                 input_dict['shape'] = list(caffe_model.blobs[name].data.shape)
                 self.inputs.append(input_dict)
                 self.calibs.append(input_dict.copy())
-                
+
         used_inputs = set([name for _, l in caffe_model.bottom_names.items() for name in l])
         seen_outputs = set()
         for n in [name for _, l in caffe_model.top_names.items() for name in l]:
@@ -33,11 +34,12 @@ class CaffeTestRunner(TestRunner):
                 input_dict['name'] = n
                 self.outputs.append(input_dict)
 
-    def cpu_infer(self, case_dir: str, model_file_list):
+    def cpu_infer(self, case_dir: str, model_file_list, type: str):
         caffe_model = caffe.Net(model_file_list[0], model_file_list[1], caffe.TEST)
 
         for input in self.inputs:
-            caffe_model.blobs[input['name']].data[...] = input['data']
+            caffe_model.blobs[input['name']].data[...] = self.data_pre_process(
+                input['data'])
 
         outputs = caffe_model.forward()
 

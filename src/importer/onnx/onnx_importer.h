@@ -34,7 +34,7 @@ class onnx_importer
 public:
     onnx_importer(std::span<const std::uint8_t> model, ir::graph &graph);
 
-    void import(const struct import_options &options);
+    void import(const struct import_options &options, std::string &real_layout);
 
 private:
     typedef std::variant<

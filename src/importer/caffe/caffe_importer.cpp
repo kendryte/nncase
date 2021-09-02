@@ -47,8 +47,11 @@ caffe_importer::caffe_importer(std::span<const uint8_t> model, std::span<const u
     prototxt_ = proto;
 }
 
-void caffe_importer::import()
+void caffe_importer::import(std::string &real_layout)
 {
+    // TODO: support change input node layout
+    real_layout = "NCHW";
+
     for (int i = 0; i < prototxt_.layer_size(); i++)
         convert_op(prototxt_.layer(i), model_);
 

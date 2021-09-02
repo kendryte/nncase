@@ -7,12 +7,24 @@ running: # 每个case运行时的处理配置
   postprocess: null
 case: # case的配置，应该是一个多层次的
   importer_opt:
-    kwargs: null
+    kwargs: 
+      input_layout: 'NHWC'
+      output_layout: 'NHWC'
+  preprocess_opt:
+    flag: false
+    kwargs:
+      image_format: 'RGB' 
+      input_shape: [128,128,3] # HWC
+      norm: {
+        mean: [128., 128., 128.],
+        scale: [128, 128, 128]
+        }
+      input_range: [0, 255] 
   compile_opt:
     kwargs:
       dump_asm: true
       dump_ir: true
-      input_type: 'float32'
+      input_type: 'uint8'
       quant_type: 'uint8'
   ptq_opt:
     kwargs:
