@@ -41,10 +41,10 @@ datatype_t get_datatype(std::string name)
 
 void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::target &target, [[maybe_unused]] const run_pass_options &options)
 {
-    auto alias_visitor = make_relay_ir_visitor([&](node &node) {
-        if (node_cast<input_node>(node) && preprocess_)
+    for (auto in_node : dup(graph.inputs()))
+    {
+        if (in_node->output().shape().size() == 4)
         {
-            auto in_node = node_cast<input_node>(node);
             auto old_inputs = in_node->output().connections();
             shape_t new_shape, old_shape;
             if (input_layout_ == "NHWC")
@@ -62,18 +62,10 @@ void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::targ
 
             mid_ptr = &new_input->output();
 
-            //dequantize
+            //dequantize: input_range_
             if (mid_ptr->type() != dt_float32)
             {
-                // size_t bits = 0;
-                // if (quant_type_ == "uint8")
-                // {
-                //     bits = 8;
-                // }
-                // else
-                // {
-                //     bits = 7;
-                // }
+                std::cout << " |Dequantize:" << std::endl;
                 value_range<float> range = { input_range_[0], input_range_[1] };
 
                 auto Q_max = 255;
@@ -98,7 +90,7 @@ void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::targ
             // BGR2RGB : input_layout ,image_format_
             if (image_format_ == "BGR" && mid_ptr->shape()[1] == 3)
             {
-                std::cout << "BGR:" << std::endl;
+                std::cout << " |BGR:" << std::endl;
                 std::vector<shape_t> concat_shapes { 3, shape_t { (mid_ptr->shape()[0]), 1, (mid_ptr->shape()[2]), (mid_ptr->shape()[3]) } };
                 auto concat_slice = graph.emplace<concat>(mid_ptr->type(), concat_shapes, 1);
                 concat_slice->name("BGR2RGB_concat_NCHW");
@@ -119,13 +111,11 @@ void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::targ
             /**
              * input_layout:  HW have different axis 
              * input_type:  pad value different 
-             * input_range:{min, max} caculate pad value //uint8 pad 114, float pad min+(max-min)*(114/255)
+             *  //input_range:{min, max} caculate pad value //uint8 pad 114, float pad min+(max-min)*(114/255)
              **/
             if (!new_shape.empty() && in_node->output().shape() != new_shape)
             {
-                std::cout << "letterbox:" << std::endl;
-                [[maybe_unused]] int min = input_range_[0], max = input_range_[1];
-
+                std::cout << " |Letterbox:" << std::endl;
                 size_t model_h;
                 size_t model_w;
                 if (real_layout_ == "NHWC")
@@ -167,6 +157,7 @@ void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::targ
             //normalize : mean scale input_layout
             if (scales_[0] != 0)
             {
+                std::cout << " |Normalize:" << std::endl;
                 constant *mean, *scale;
                 if (mid_ptr->shape()[1] != 3)
                 {
@@ -212,8 +203,7 @@ void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::targ
 
             for (auto &in : dup(old_inputs))
                 in->connect(*mid_ptr);
-            graph.dce();
         }
-    });
-    alias_visitor.visit(graph);
+        graph.dce();
+    }
 }

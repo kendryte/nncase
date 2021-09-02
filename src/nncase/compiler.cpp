@@ -212,8 +212,11 @@ public:
             if (compile_options_.input_type == "default")
                 compile_options_.input_type = "float32";
         }
-        std::cout << "1.1 Pre-process..." << std::endl;
-        pre_process(graph_, compile_options_);
+        if (compile_options_.preprocess)
+        {
+            std::cout << "1.1 Pre-process..." << std::endl;
+            pre_process(graph_, compile_options_);
+        }
 
         std::cout << "2. Optimize target independent..." << std::endl;
         optimize_target_independent(graph_);
@@ -300,7 +303,7 @@ private:
                 cmp_options.input_range, cmp_options.input_shape,
                 cmp_options.image_format, input_layout_,
                 cmp_options.input_type, cmp_options.quant_type,
-                real_layout_, cmp_options.preprocess);
+                real_layout_);
         });
     }
 
