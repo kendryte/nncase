@@ -140,10 +140,11 @@ class TestRunner(metaclass=ABCMeta):
         self.num_pattern = re.compile("(\d+)")
 
     def transform_input(self, values: np.array, type: str, stage: str):
+        values = copy.deepcopy(values)
         if(len(values.shape) == 4 and self.cfg.case.preprocess_opt.flag):
             if stage == "CPU":
                 # onnx \ caffe
-                if self.model_type == "onnx" or self.model_type == "caffe":
+                if self.model_type == "onnx" or self.model_type == "caffe" or (self.model_type == "tflite" and self.cfg.case.importer_opt.kwargs['input_layout'] == "NCHW"):
                     values = np.transpose(values, [0, 3, 1, 2])
             else:
                 if self.cfg.case.importer_opt.kwargs['input_layout'] == "NCHW":
@@ -193,14 +194,14 @@ class TestRunner(metaclass=ABCMeta):
         self.pre_process.append(process_letterbox)
         self.pre_process.append(process_norm)
 
-    def data_pre_process(self, data, falg=1):
-        if falg and self.cfg.case.preprocess_opt.flag and len(data.shape) == 4:
+    def data_pre_process(self, data):
+        data = copy.deepcopy(data)
+        if self.cfg.case.preprocess_opt.flag and len(data.shape) == 4:
             if self.cfg.case.compile_opt.kwargs['input_type'] == "uint8":
                 data *= 255.
             # elif self.cfg.case.compile_opt.kwargs['input_type'] == "int8":
             #     data *= 255.
             #     data -= 128.
-
             for item in self.pre_process:
                 # dequantize
                 if 'range' in item.keys() and 'input_type' in item.keys():
