@@ -34,7 +34,7 @@ def _make_module(in_shape, axes, keepdims):
     a = np.arange(len(in_shape)) if axes is None else axes
     kd = 1 if keepdims is None else keepdims
     data = np.ones(in_shape)
-    out_shape = np.sqrt(np.sum(np.square(data), axis=tuple(a), keepdims=kd)).shape
+    out_shape = np.sum(np.abs(data), axis=tuple(a), keepdims=kd).shape
     output = helper.make_tensor_value_info('output', TensorProto.FLOAT, out_shape)
 
     attributes_dict = {}
@@ -46,7 +46,7 @@ def _make_module(in_shape, axes, keepdims):
         attributes_dict['keepdims'] = keepdims
 
     node = onnx.helper.make_node(
-        'ReduceL2',
+        'ReduceL1',
         inputs=inputs,
         outputs=['output'],
         **attributes_dict
@@ -96,7 +96,7 @@ keep_dims = [
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('axes', axes_list)
 @pytest.mark.parametrize('keep_dim', keep_dims)
-def test_reducel2(in_shape, axes, keep_dim, request):
+def test_reducel1(in_shape, axes, keep_dim, request):
     if axes is None or len(axes) <= len(in_shapes):
         model_def = _make_module(in_shape, axes, keep_dim)
 
@@ -106,4 +106,4 @@ def test_reducel2(in_shape, axes, keep_dim, request):
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_reducel2.py'])
+    pytest.main(['-vv', 'test_reducel1.py'])
