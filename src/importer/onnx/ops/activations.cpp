@@ -201,6 +201,7 @@ void onnx_importer::convert_op_HardSigmoid(const NodeProto &node)
     auto one = graph_.emplace<constant>(1.f);
     one->name(op_name + ".one(HardSigmoid)");
     auto min = graph_.emplace<binary>(binary_min, sum->output().shape(), one->output().shape(), value_range<float>::full());
+    min->name(op_name + ".min(HardSigmoid)");
 
     auto zero = graph_.emplace<constant>(0.f);
     zero->name(op_name + ".zero(HardSigmoid)");
@@ -217,4 +218,55 @@ void onnx_importer::convert_op_HardSigmoid(const NodeProto &node)
 
     input_tensors_.emplace(&mul->input_a(), input);
     output_tensors_.emplace(output, &max->output());
+}
+
+void onnx_importer::convert_op_HardSwish(const NodeProto &node)
+{
+    assert(node.input().size() == 1);
+    assert(node.output().size() == 1);
+
+    const auto &input = node.input()[0];
+    const auto &output = node.output()[0];
+    auto in_shape = get_shape(input);
+
+    const auto &op_name { generate_name(node) };
+
+    // y = x * max(0, min(1, alpha * x + beta)) = x * HardSigmoid<alpha, beta>(x), where alpha = 1/6 and beta = 0.5
+    const auto &alpha = graph_.emplace<constant>(1.0f / 6);
+    alpha->name(op_name + ".alpha(HardSwish)");
+
+    auto mul_1 = graph_.emplace<binary>(binary_mul, in_shape, alpha->output().shape(), value_range<float>::full());
+    mul_1->name(op_name + ".mul_1(HardSwish)");
+
+    const auto &beta = graph_.emplace<constant>(0.5f);
+    beta->name(op_name + ".beta(HardSwish)");
+
+    auto add = graph_.emplace<binary>(binary_add, mul_1->output().shape(), beta->output().shape(), value_range<float>::full());
+    add->name(op_name + ".add(HardSwish)");
+
+    auto one = graph_.emplace<constant>(1.f);
+    one->name(op_name + ".one(HardSwish)");
+    auto min = graph_.emplace<binary>(binary_min, add->output().shape(), one->output().shape(), value_range<float>::full());
+    min->name(op_name + ".min(HardSwish)");
+
+    auto zero = graph_.emplace<constant>(0.f);
+    zero->name(op_name + ".zero(HardSwish)");
+    auto max = graph_.emplace<binary>(binary_max, min->output().shape(), zero->output().shape(), value_range<float>::full());
+    max->name(generate_name(node) + ".max(HardSwish)");
+
+    auto mul_2 = graph_.emplace<binary>(binary_mul, in_shape, max->output().shape(), value_range<float>::full());
+    mul_2->name(op_name + ".mul_2(HardSwish)");
+
+    mul_1->input_b().connect(alpha->output());
+    add->input_a().connect(mul_1->output());
+    add->input_b().connect(beta->output());
+    min->input_a().connect(add->output());
+    min->input_b().connect(one->output());
+    max->input_a().connect(min->output());
+    max->input_b().connect(zero->output());
+    mul_2->input_b().connect(max->output());
+
+    input_tensors_.emplace(&mul_1->input_a(), input);
+    input_tensors_.emplace(&mul_2->input_a(), input);
+    output_tensors_.emplace(output, &mul_2->output());
 }

@@ -28,6 +28,7 @@
 | GlobalAveragePool | ✅ |
 | GlobalMaxPool | ✅ |
 | HardSigmoid | ✅ |
+| HardSwish | ✅ |
 | Identity | ✅ |
 | InstanceNormalization | ✅ |
 | LpNormalization | ✅ |
