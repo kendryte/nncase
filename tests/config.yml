@@ -50,6 +50,7 @@ case: # case的配置，应该是一个多层次的
     - name: ptq
       values:
         - false
+        - true
   infer:
     - name: target
       values:

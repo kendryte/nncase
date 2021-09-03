@@ -224,6 +224,23 @@ inline int32_t mul_and_carry_shift(int32_t value, int32_t mul, int32_t shift)
     return (int32_t)carry_shift<int64_t, Banker>((int64_t)value * mul, shift);
 }
 
+template <size_t Bits, bool Signed = true, class T = int64_t>
+inline bool within_range(T value) noexcept
+{
+    if (Signed)
+    {
+        auto min = -(1LL << (Bits - 1));
+        auto max = (1LL << (Bits - 1)) - 1;
+        return value >= min && value <= max;
+    }
+    else
+    {
+        auto min = 0ULL;
+        auto max = (1ULL << Bits) - 1;
+        return value >= min && value <= max;
+    }
+}
+
 template <class T>
 inline T clamp(T value, T min, T max)
 {

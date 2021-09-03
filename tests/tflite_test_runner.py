@@ -32,6 +32,8 @@ class TfliteTestRunner(TestRunner):
         return model_file
 
     def run(self, model_file):
+        if model_file.startswith('examples'):
+            model_file = os.path.join(os.path.dirname(__file__), '..', model_file)
         if self.case_dir != os.path.dirname(model_file):
             shutil.copy(model_file, self.case_dir)
             model_file = os.path.join(
