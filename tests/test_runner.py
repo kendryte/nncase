@@ -64,8 +64,7 @@ class Edict:
                     elif isinstance(old_value, (Edict, dict)):
                         old_value.update(new_value)
                 elif isinstance(new_value, (list, tuple)) and name == 'specifics':
-                    if getattr(self, name) == None:
-                        setattr(self, name, [])
+                    setattr(self, name, [])
                     assert(hasattr(self, 'common')
                            ), "The specifics new_value need common dict to overload !"
                     common = getattr(self, 'common')
@@ -114,12 +113,12 @@ DataFactory = {
 
 
 class TestRunner(metaclass=ABCMeta):
-    def __init__(self, case_name, targets=None, overwirte_configs: Union[Dict, str] = None) -> None:
+    def __init__(self, case_name, targets=None, overwrite_configs: Union[Dict, str] = None) -> None:
         config_root = os.path.dirname(__file__)
         with open(os.path.join(config_root, 'config.yml'), encoding='utf8') as f:
             cfg: dict = yaml.safe_load(f)
             config = Edict(cfg)
-        config = self.update_config(config, overwirte_configs)
+        config = self.update_config(config, overwrite_configs)
         self.cfg = self.validte_config(config)
 
         case_name = case_name.replace('[', '_').replace(']', '_')

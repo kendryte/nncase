@@ -18,7 +18,7 @@ from onnx_test_runner import OnnxTestRunner
 
 
 def test_yolox(request):
-    runner = OnnxTestRunner(request.node.name, ['k510'])
+    runner = OnnxTestRunner(request.node.name)
     model_file = 'examples/yolox/model/yolox_nano_224.onnx'
     runner.run(model_file)
 

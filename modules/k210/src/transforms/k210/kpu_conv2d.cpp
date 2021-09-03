@@ -126,23 +126,26 @@ auto quantize_bn(quantizer &quantizer, fake_kpu_conv2d &conv, constant &bias, fl
     const auto filter = get_kpu_filter_size(conv.filter_type());
     const auto x_bits = 9 + 9 - 1 + (uint32_t)std::ceil(std::log2((conv.is_depthwise() ? 1 : conv.input_channels()) + filter * filter));
     const auto max_sw = *std::max_element(w_scales.begin(), w_scales.end());
+    const auto minmax_b = std::minmax_element(bias_data.begin(), bias_data.end());
+    const auto max_b = std::max(std::abs(*minmax_b.first), std::abs(*minmax_b.second));
+    const auto max_scaled_b = (1LL << 31) - 1.0;
     const auto max_sa = sx * max_sw;
     size_t max_so_bits = 21; // BN_MUL_BITS restriction
     max_so_bits = std::min(max_so_bits, KPU_BN_OUT_BITS - x_bits); // KPU_BN_OUT_BITS restriction
     const auto max_so = (1LL << max_so_bits) - 1.0;
-    const auto min_s_act_in = max_sa / max_so;
+    auto min_s_act_in = max_sa / max_so;
+    min_s_act_in = std::max(min_s_act_in, max_b / max_scaled_b);
 
     // Search closest s_act_in
-    double s_act_in = min_s_act_in;
-    //double s_act_in = yq_p.scale;
-    //while (true)
-    //{
-    //    auto new_s_act_in = s_act_in / 2.0;
-    //    if (new_s_act_in < min_s_act_in)
-    //        break;
-    //    else
-    //        s_act_in = new_s_act_in;
-    //}
+    double s_act_in = yq_p.scale;
+    while (true)
+    {
+        auto new_s_act_in = s_act_in / 2.0;
+        if (new_s_act_in < min_s_act_in)
+            break;
+        else
+            s_act_in = new_s_act_in;
+    }
 
     for (size_t i = 0; i < bias_data.size(); i++)
     {
