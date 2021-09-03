@@ -20,7 +20,7 @@ from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
 
 
-def _make_module(in_shape, alpha, beta):
+def _make_module(in_shape):
     inputs = []
     outputs = []
     initializers = []
@@ -34,14 +34,8 @@ def _make_module(in_shape, alpha, beta):
     output = helper.make_tensor_value_info('output', TensorProto.FLOAT, in_shape)
     outputs.append('output')
 
-    if alpha is not None:
-        attributes_dict['alpha'] = alpha
-
-    if beta is not None:
-        attributes_dict['beta'] = beta
-
     node = onnx.helper.make_node(
-        'HardSigmoid',
+        'HardSwish',
         inputs=inputs,
         outputs=outputs,
         **attributes_dict
@@ -66,22 +60,10 @@ in_shapes = [
     [1, 3, 16, 16]
 ]
 
-alphas = [
-    None,
-    0.5
-]
-
-betas = [
-    None,
-    0.6
-]
-
 
 @pytest.mark.parametrize('in_shape', in_shapes)
-@pytest.mark.parametrize('alpha', alphas)
-@pytest.mark.parametrize('beta', betas)
-def test_hardsigmoid(in_shape, alpha, beta, request):
-    model_def = _make_module(in_shape, alpha, beta)
+def test_hardswish(in_shape, request):
+    model_def = _make_module(in_shape)
 
     runner = OnnxTestRunner(request.node.name)
     model_file = runner.from_onnx_helper(model_def)
@@ -89,4 +71,4 @@ def test_hardsigmoid(in_shape, alpha, beta, request):
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_hardsigmoid.py'])
+    pytest.main(['-vv', 'test_hardswish.py'])
