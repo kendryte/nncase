@@ -5,8 +5,8 @@ import shutil
 
 
 class TfliteTestRunner(TestRunner):
-    def __init__(self, case_name, targets=None, overwirte_configs: dict = None):
-        super().__init__(case_name, targets, overwirte_configs)
+    def __init__(self, case_name, targets=None, overwrite_configs: dict = None):
+        super().__init__(case_name, targets, overwrite_configs)
         self.model_type = "tflite"
 
     def from_tensorflow(self, module):
