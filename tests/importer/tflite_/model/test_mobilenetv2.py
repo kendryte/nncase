@@ -41,8 +41,8 @@ def test_mobilenetv2(in_shape, alpha, request):
     module = _make_module(in_shape, alpha)
     runner = TfliteTestRunner(request.node.name)
     model_file = runner.from_tensorflow(module)
-    # runner.run(model_file)
+    runner.run(model_file)
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_mobilenetv2.py'])
+    pytest.main(['-s', '-vv', 'test_mobilenetv2.py'])
