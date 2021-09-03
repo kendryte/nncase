@@ -61,7 +61,7 @@ void onnx_importer::convert_op_LeakyRelu(const NodeProto &node)
     const auto &output = node.output()[0];
     auto &&in_shape = get_shape(input);
 
-    const auto alpha_value = get_attribute<float>(node, "alpha").value();
+    const auto alpha_value = get_attribute<float>(node, "alpha").value_or(0.01f);
     const auto &alpha = graph_.emplace<constant>(alpha_value);
 
     alpha->name(op_name + ".alpha(LeakyRelu)");
