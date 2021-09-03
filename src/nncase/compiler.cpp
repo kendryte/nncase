@@ -258,7 +258,7 @@ public:
         {
             std::cout << "3. Optimize target dependent..." << std::endl;
             optimize_target_dependent(graph_, use_ptq_);
-            
+
             if (use_ptq_)
             {
                 std::cout << "4.1. Add quantize annotation..." << std::endl;
