@@ -28,7 +28,7 @@ def test_yolox(request):
          - matchs:
              target: [k210]
              ptq: true
-           threshold: 0.88
+           threshold: 0.8
          - matchs:
              target: [k510]
              ptq: true
