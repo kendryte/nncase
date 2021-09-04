@@ -375,6 +375,8 @@ class TestRunner(metaclass=ABCMeta):
         names, args = TestRunner.split_value(cfg.eval)
         for combine_args in product(*args):
             dict_args = dict(zip(names, combine_args))
+            if dict_args['ptq'] and len(self.inputs) != 1:
+                continue
             eval_output_paths = self.generate_evaluates(
                 cfg, case_dir, import_options,
                 compile_options, model_content, dict_args)
