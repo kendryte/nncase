@@ -25,7 +25,21 @@ class NNCASE_API gather_nd_node : public op_node
 public:
     DEFINE_NODE_OPCODE(op_tensors_gather_nd);
 
-    gather_nd_node();
+    gather_nd_node(int32_t axis, int32_t batch_dims);
+
+    /** @brief Get the axis of the gather_nd expression */
+    int32_t axis() const noexcept { return axis_; }
+    /** @brief Set the axis of the gather_nd expression */
+    void axis(int32_t value) noexcept { axis_ = value; }
+
+    /** @brief Get the batch dims of the gather_nd expression */
+    int32_t batch_dims() const noexcept { return batch_dims_; }
+    /** @brief Set the batch dims of the gather_nd expression */
+    void batch_dims(int32_t value) noexcept { batch_dims_ = value; }
+
+private:
+    int32_t axis_;
+    int32_t batch_dims_;
 };
 
 using gather_nd = expr_t<gather_nd_node>;

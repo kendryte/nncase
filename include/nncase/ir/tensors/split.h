@@ -25,7 +25,15 @@ class NNCASE_API split_node : public op_node
 public:
     DEFINE_NODE_OPCODE(op_tensors_split);
 
-    split_node();
+    split_node(int32_t axis);
+
+    /** @brief Get the axis of the concat expression */
+    int32_t axis() const noexcept { return axis_; }
+    /** @brief Set the axis of the concat expression */
+    void axis(int32_t value) noexcept { axis_ = value; }
+
+private:
+    int32_t axis_;
 };
 
 using split = expr_t<split_node>;

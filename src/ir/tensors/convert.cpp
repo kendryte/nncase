@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "nncase/runtime/datatypes.h"
 #include <nncase/ir/tensors/convert.h>
 
 using namespace nncase;

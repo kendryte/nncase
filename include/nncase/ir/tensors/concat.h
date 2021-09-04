@@ -25,7 +25,7 @@ class NNCASE_API concat_node : public op_node
 public:
     DEFINE_NODE_OPCODE(op_tensors_concat);
 
-    concat_node(size_t tensors, int32_t axis);
+    concat_node(int32_t axis);
 
     /** @brief Get the axis of the concat expression */
     int32_t axis() const noexcept { return axis_; }

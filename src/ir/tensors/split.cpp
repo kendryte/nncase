@@ -12,28 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#pragma once
-#include "../node.h"
-#include <xtensor/xtensor.hpp>
+#include <nncase/ir/tensors/split.h>
 
-namespace nncase::ir
+using namespace nncase;
+using namespace nncase::ir;
+using namespace nncase::ir::tensors;
+
+split_node::split_node(int32_t axis)
+    : axis_(axis)
 {
-class NNCASE_API transpose : public node
-{
-public:
-    DEFINE_NODE_OPCODE(op_transpose);
-
-    input_connector &input() { return input_at(0); }
-    output_connector &output() { return output_at(0); }
-
-    const axis_t &perm() const noexcept { return perm_; }
-
-    transpose(datatype_t type, shape_t input_shape, axis_t perm);
-
-protected:
-    bool properties_equal(node &other) const override;
-
-private:
-    axis_t perm_;
-};
+    add_parameter("input");
+    add_parameter("sections");
 }

@@ -12,28 +12,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#pragma once
-#include "../node.h"
-#include <xtensor/xtensor.hpp>
+#include <nncase/ir/tensors/slice.h>
 
-namespace nncase::ir
+using namespace nncase;
+using namespace nncase::ir;
+using namespace nncase::ir::tensors;
+
+slice_node::slice_node()
 {
-class NNCASE_API convert : public node
-{
-public:
-    DEFINE_NODE_OPCODE(op_convert);
-
-    input_connector &input() { return input_at(0); }
-    output_connector &output() { return output_at(0); }
-
-    datatype_t new_type() const noexcept { return new_type_; }
-
-    convert(datatype_t input_type, shape_t input_shape, datatype_t new_type);
-
-protected:
-    bool properties_equal(node &other) const override;
-
-private:
-    datatype_t new_type_;
-};
+    add_parameter("input");
+    add_parameter("begins");
+    add_parameter("ends");
+    add_parameter("axes");
+    add_parameter("strides");
 }

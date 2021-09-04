@@ -23,10 +23,10 @@ namespace nncase::ir::tensors
 class NNCASE_API copy_node : public op_node
 {
 public:
-    DEFINE_NODE_OPCODE(op_math_clamp);
+    DEFINE_NODE_OPCODE(op_tensors_copy);
 
     copy_node();
 };
 
-using copy = expr_t<clamp_node>;
+using copy = expr_t<copy_node>;
 }

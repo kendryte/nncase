@@ -12,29 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#pragma once
-#include "../node.h"
-#include <xtensor/xtensor.hpp>
+#include <nncase/ir/tensors/gather.h>
 
-namespace nncase::ir
+using namespace nncase;
+using namespace nncase::ir;
+using namespace nncase::ir::tensors;
+
+gather_node::gather_node(int32_t axis)
+    : axis_(axis)
 {
-class NNCASE_API concat : public node
-{
-public:
-    DEFINE_NODE_OPCODE(op_concat);
-
-    output_connector &output() { return output_at(0); }
-
-    int32_t axis() const noexcept { return axis_; }
-    std::span<const size_t> concat_dims() const noexcept { return concat_dims_; }
-
-    concat(datatype_t type, std::span<shape_t> input_shapes, int32_t axis);
-
-protected:
-    bool properties_equal(node &other) const override;
-
-private:
-    int32_t axis_;
-    std::vector<size_t> concat_dims_;
-};
+    add_parameter("input");
+    add_parameter("index");
 }

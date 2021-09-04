@@ -1,4 +1,4 @@
-/* Copyright 2019-2020 Canaan Inc.
+/* Copyright 2019-2021 Canaan Inc.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -12,24 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#pragma once
-#include "../node.h"
-#include <xtensor/xtensor.hpp>
+#include <nncase/ir/tensors/copy.h>
 
-namespace nncase::ir
+using namespace nncase;
+using namespace nncase::ir;
+using namespace nncase::ir::tensors;
+
+copy_node::copy_node()
 {
-class NNCASE_API copy : public node
-{
-public:
-    DEFINE_NODE_OPCODE(op_copy);
-
-    const input_connector &input() const { return input_at(0); }
-    input_connector &input() { return input_at(0); }
-    output_connector &output() { return output_at(0); }
-
-    copy(datatype_t input_type, shape_t input_shape);
-
-protected:
-    bool properties_equal(node &other) const override;
-};
+    add_parameter("input");
 }

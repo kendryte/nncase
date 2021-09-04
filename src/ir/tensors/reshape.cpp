@@ -12,28 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#pragma once
-#include "../node.h"
-#include <xtensor/xtensor.hpp>
+#include <nncase/ir/tensors/reshape.h>
 
-namespace nncase::ir
+using namespace nncase;
+using namespace nncase::ir;
+using namespace nncase::ir::tensors;
+
+reshape_node::reshape_node()
 {
-class NNCASE_API dequantize : public node
-{
-public:
-    DEFINE_NODE_OPCODE(op_dequantize);
-
-    input_connector &input() { return input_at(0); }
-    output_connector &output() { return output_at(0); }
-
-    const quant_param_t quant_param() const noexcept { return quant_param_; }
-
-    dequantize(datatype_t input_type, shape_t input_shape, datatype_t output_type, quant_param_t quant_param);
-
-protected:
-    bool properties_equal(node &other) const override;
-
-private:
-    quant_param_t quant_param_;
-};
+    add_parameter("input");
+    add_parameter("new_shape");
 }

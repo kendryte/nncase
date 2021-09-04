@@ -25,7 +25,15 @@ class NNCASE_API gather_node : public op_node
 public:
     DEFINE_NODE_OPCODE(op_tensors_gather);
 
-    gather_node();
+    gather_node(int32_t axis);
+
+    /** @brief Get the axis of the gather expression */
+    int32_t axis() const noexcept { return axis_; }
+    /** @brief Set the axis of the gather expression */
+    void axis(int32_t value) noexcept { axis_ = value; }
+
+private:
+    int32_t axis_;
 };
 
 using gather = expr_t<gather_node>;

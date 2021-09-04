@@ -12,28 +12,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#pragma once
-#include "../node.h"
-#include <xtensor/xtensor.hpp>
+#include <nncase/ir/tensors/gather_nd.h>
 
-namespace nncase::ir
+using namespace nncase;
+using namespace nncase::ir;
+using namespace nncase::ir::tensors;
+
+gather_nd_node::gather_nd_node(int32_t axis, int32_t batch_dims)
+    : axis_(axis), batch_dims_(batch_dims)
 {
-class NNCASE_API unary : public node
-{
-public:
-    DEFINE_NODE_OPCODE(op_unary);
-
-    input_connector &input() { return input_at(0); }
-    output_connector &output() { return output_at(0); }
-
-    unary_op_t unary_op() const noexcept { return unary_op_; }
-
-    unary(unary_op_t unary_op, shape_t input_shape);
-
-protected:
-    bool properties_equal(node &other) const override;
-
-private:
-    unary_op_t unary_op_;
-};
+    add_parameter("input");
+    add_parameter("index");
 }
