@@ -239,7 +239,7 @@ value_range<float> quantizer::get(ir::output_connector &connector) const
 
 fixed_mul quantizer::get_fixed_mul(float value, int32_t max_bits, uint8_t max_shift, bool is_signed)
 {
-    // assert(!is_signed || value >= 0);
+    assert(is_signed || value >= 0);
 
     auto bits = is_signed ? max_bits - 1 : max_bits;
     int32_t shift = 0;
@@ -250,30 +250,20 @@ fixed_mul quantizer::get_fixed_mul(float value, int32_t max_bits, uint8_t max_sh
         mul = 0;
         shift = 0;
     }
+    else if (std::abs(value) > 1)
+    {
+        int mul_shift;
+        mul = std::frexp(value, &mul_shift);
+        shift = std::min((int32_t)max_shift, bits - mul_shift);
+        mul = mul * std::pow(2.f, (float)(shift + mul_shift));
+    }
     else
     {
-        const auto abs_value = std::abs(value);
-        const auto max_value = (1LL << bits) - 1.f;
-
-        int32_t cnt_shift = 0;
-        float cnt_mul = abs_value;
-        float min_error = std::numeric_limits<float>::max();
-        while (cnt_mul <= max_value && cnt_shift <= max_shift)
-        {
-            auto error = std::abs(std::nearbyint(cnt_mul) - cnt_mul);
-            if (error < min_error)
-            {
-                min_error = error;
-                mul = cnt_mul;
-                shift = cnt_shift;
-            }
-
-            cnt_mul *= 2.f;
-            cnt_shift++;
-        }
-
-        if (value < 0)
-            mul = -mul;
+        int mul_shift;
+        mul = std::frexp(value, &mul_shift);
+        shift = std::min(max_shift + mul_shift, bits);
+        mul = mul * std::pow(2.f, (float)shift);
+        shift -= mul_shift;
     }
 
     assert(std::abs(mul) < std::pow(2.f, (float)bits));

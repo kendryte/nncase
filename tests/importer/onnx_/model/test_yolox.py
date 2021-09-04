@@ -18,7 +18,27 @@ from onnx_test_runner import OnnxTestRunner
 
 
 def test_yolox(request):
-    runner = OnnxTestRunner(request.node.name)
+    overwrite_cfg = """
+     judge:
+       specifics:
+         - matchs:
+             target: [cpu]
+             ptq: true
+           threshold: 0.8
+         - matchs:
+             target: [k210]
+             ptq: true
+           threshold: 0.88
+         - matchs:
+             target: [k510]
+             ptq: true
+           threshold: 0.93
+         - matchs:
+             target: [k510]
+             ptq: false
+           threshold: 0.99
+     """
+    runner = OnnxTestRunner(request.node.name, overwrite_configs=overwrite_cfg)
     model_file = 'examples/yolox/model/yolox_nano_224.onnx'
     runner.run(model_file)
 
