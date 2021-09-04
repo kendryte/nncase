@@ -49,7 +49,7 @@ def test_mobilenetv2(in_shape, alpha, request):
          - matchs:
              target: [k210]
              ptq: true
-           threshold: 0.94
+           threshold: 0.93
          - matchs:
              target: [k510]
              ptq: false

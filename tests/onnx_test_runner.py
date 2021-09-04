@@ -10,8 +10,8 @@ from test_runner import *
 
 
 class OnnxTestRunner(TestRunner):
-    def __init__(self, case_name, targets=None, overwirte_configs: dict = None):
-        super().__init__(case_name, targets, overwirte_configs)
+    def __init__(self, case_name, targets=None, overwrite_configs: dict = None):
+        super().__init__(case_name, targets, overwrite_configs)
         self.model_type = "onnx"
 
     def from_torch(self, module, in_shape, opset_version=11):
