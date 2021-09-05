@@ -39,9 +39,9 @@ def read_images(imgs_dir: str, test_size: list):
     return len(imgs), imgs.tobytes()
 
 
-def main(onnx: str, kmodel: str, target: str, imgs_dir: str, test_size: list, legacy: bool):
+def main(onnx: str, kmodel: str, target: str, imgs_dir: str, test_size: list, legacy: bool, no_preprocess: bool):
     cpl_opt = nncase.CompileOptions()
-    cpl_opt.preprocess = True
+    cpl_opt.preprocess = not no_preprocess
     cpl_opt.input_shape = test_size + [3]  # NOTE need modify it
     cpl_opt.image_format = 'RGB'  # RGB == not swap RB
     # (x - mean) / scale
@@ -86,13 +86,11 @@ if __name__ == '__main__':
     parser.add_argument('--test_size', default=[224, 224],
                         nargs='+', help='test size')
     parser.add_argument("--imgs_dir", default=None, help="images dir")
-    parser.add_argument(
-        "--legacy",
-        dest="legacy",
-        default=False,
-        action="store_true",
-        help="To be compatible with older versions",
-    )
+    parser.add_argument("--legacy", default=False,
+                        action="store_true", help="To be compatible with older versions")
+    parser.add_argument("--no_preprocess", default=False,
+                        action="store_true", help="disable nncase preprocess for debug")
 
     args = parser.parse_args()
-    main(args.onnx, args.kmodel, args.target, args.imgs_dir, args.test_size, args.legacy)
+    main(args.onnx, args.kmodel, args.target, args.imgs_dir,
+         args.test_size, args.legacy, args.no_preprocess)

@@ -1,6 +1,7 @@
 import argparse
 import os
 import sys
+print(os.getpid())
 from pathlib import Path
 from typing import NamedTuple
 
@@ -50,7 +51,7 @@ def visual(output: torch.Tensor, ratio: float, raw_img: np.ndarray, cls_conf=0.3
     return vis_res
 
 
-def main(kmodel: str, test_size: list, img_path: str):
+def main(kmodel: str, test_size: list, img_path: str, legacy: bool, no_preprocess: bool):
     sim = nncase.Simulator()
 
     with open(kmodel, 'rb') as f:
@@ -60,6 +61,12 @@ def main(kmodel: str, test_size: list, img_path: str):
     ratio = min(test_size[0] / raw_img.shape[0], test_size[1] / raw_img.shape[1])
 
     img, _ = preproc(raw_img, test_size, transpose=True)
+    if no_preprocess:
+        if legacy:
+            img = img / 255.
+            img = img - np.array([0.485, 0.456, 0.406]).reshape((3, 1, 1))
+            img = img / np.array([0.229, 0.224, 0.225]).reshape((3, 1, 1))
+        img = img.astype(np.float32)
 
     img = np.expand_dims(img, 0)
     sim.set_input_tensor(0, nncase.RuntimeTensor.from_numpy(img))
@@ -77,5 +84,10 @@ if __name__ == '__main__':
     parser.add_argument("img_path", default=None)
     parser.add_argument('--test_size', default=[224, 224],
                         nargs='+', help='test size')
+    parser.add_argument("--legacy", default=False,
+                        action="store_true", help="To be compatible with older versions (only for no_preprocess)")
+    parser.add_argument("--no_preprocess", default=False,
+                        action="store_true", help="disable nncase preprocess for debug")
+
     args = parser.parse_args()
-    main(args.kmodel, args.test_size, args.img_path)
+    main(args.kmodel, args.test_size, args.img_path, args.legacy, args.no_preprocess)

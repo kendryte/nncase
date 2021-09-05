@@ -35,16 +35,10 @@ python tools/export_onnx.py --output-name yolox_nano_224.onnx -f exps/default/na
 使用[nncase](https://github.com/kendryte/nncase/tree/master)神经网络编译器对`onnx`模型进行编译优化、后训练量化得到适用于边缘计算的`kmodel`格式模型:
 
 我们可以在[nncase release](https://github.com/kendryte/nncase/releases)页面下载合适自己平台的`wheel`包,使用`pip`安装之后执行我提供的脚本进行模型编译与推理:
-```sh
-cd examples/yolox
-python tools/compile.py model/yolox_nano_224_new.onnx yolox_nano_224_new.kmodel
-python tools/simulate.py yolox_nano_224_new.kmodel ../20classes_yolo/images/dog.bmp
-```
 
-或者也可以使用老版本的yolox模型
 ```sh
-python tools/compile.py model/yolox_nano_224_legacy.onnx yolox_nano_224_legacy.kmodel --legacy
-python tools/simulate.py yolox_nano_224_legacy.kmodel ../20classes_yolo/images/dog.bmp
+python tools/compile.py model/yolox_nano_224.onnx yolox_nano_224.kmodel --legacy
+python tools/simulate.py yolox_nano_224.kmodel ../20classes_yolo/images/dog.bmp
 ```
 
 ![](Figure_1.png)
@@ -53,13 +47,13 @@ python tools/simulate.py yolox_nano_224_legacy.kmodel ../20classes_yolo/images/d
 
 ```sh
 cd examples/yolox
-python tools/compile.py model/yolox_nano_224_new.onnx yolox_nano_224_quant.kmodel --imgs_dir ../20classes_yolo/images/
+python tools/compile.py model/yolox_nano_224.onnx yolox_nano_224_quant.kmodel --imgs_dir ../20classes_yolo/images/
 python tools/simulate.py yolox_nano_224_quant.kmodel ../20classes_yolo/images/dog.bmp
 ```
 
 或者也可以使用老版本的yolox模型
 ```sh
-python tools/compile.py model/yolox_nano_224_legacy.onnx yolox_nano_224_quant.kmodel --legacy --imgs_dir ../20classes_yolo/images/
+python tools/compile.py model/yolox_nano_224.onnx yolox_nano_224_quant.kmodel --legacy --imgs_dir ../20classes_yolo/images/
 python tools/simulate.py yolox_nano_224_quant.kmodel ../20classes_yolo/images/dog.bmp
 ```
 
