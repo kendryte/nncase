@@ -49,7 +49,7 @@ compile_command::compile_command(lyra::cli &cli)
                          .add_argument(lyra::opt(dump_asm_).name("--dump-asm").optional().help("dump assembly"))
                          .add_argument(lyra::opt(dump_dir_, "dump directory").name("--dump-dir").optional().help("dump to directory"))
                          .add_argument(lyra::opt(benchmark_only_, "benchmark only").name("--benchmark-only").optional().help("compile kmodel only for benchmark use"))
-                         .add_argument(lyra::opt(preprocess_, "benchmark only").name("--preprocess_").optional().help("enable preprocess , default is false")));
+                         .add_argument(lyra::opt(preprocess_, "preprocess").name("--preprocess_").optional().help("enable preprocess , default is false")));
 }
 
 void compile_command::run()
