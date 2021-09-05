@@ -141,7 +141,7 @@ class TestRunner(metaclass=ABCMeta):
 
     def transform_input(self, values: np.array, type: str, stage: str):
         values = copy.deepcopy(values)
-        if(len(values.shape) == 4 and self.cfg.case.preprocess_opt.flag):
+        if(len(values.shape) == 4 and self.pre_process[0]['flag']):
             if stage == "CPU":
                 # onnx \ caffe
                 if self.model_type == "onnx" or self.model_type == "caffe" or (self.model_type == "tflite" and self.cfg.case.importer_opt.kwargs['input_layout'] == "NCHW"):
@@ -164,31 +164,36 @@ class TestRunner(metaclass=ABCMeta):
             return values
 
     def get_process_config(self, config):
+        # preprocess flag
+        preprocess_flag = {}
+        preprocess_flag['flag'] = config['flag']
+
         # dequant
         process_deq = {}
-        process_deq['range'] = config.preprocess_opt.kwargs['input_range']
-        process_deq['input_type'] = config.compile_opt.kwargs['input_type']
+        process_deq['range'] = config['input_range']
+        process_deq['input_type'] = config['input_type']
 
         # norm
         process_norm = {}
         data = {}
         data = {
-            'mean': config.preprocess_opt.kwargs['norm']['mean'],
-            'scale': config.preprocess_opt.kwargs['norm']['scale']
+            'mean': config['mean'],
+            'scale': config['scale']
         }
         process_norm['norm'] = data
 
         # bgr2rgb
         process_format = {}
-        process_format['image_format'] = config.preprocess_opt.kwargs['image_format']
+        process_format['image_format'] = config['image_format']
 
         # letter box
         process_letterbox = {}
-        process_letterbox['input_range'] = config.preprocess_opt.kwargs['input_range']
-        process_letterbox['input_shape'] = config.preprocess_opt.kwargs['input_shape']
+        process_letterbox['input_range'] = config['input_range']
+        process_letterbox['input_shape'] = config['input_shape']
         process_letterbox['shape'] = self.inputs[0]['shape']
-        process_letterbox['input_type'] = config.compile_opt.kwargs['input_type']
+        process_letterbox['input_type'] = config['input_type']
 
+        self.pre_process.append(preprocess_flag)
         self.pre_process.append(process_deq)
         self.pre_process.append(process_format)
         self.pre_process.append(process_letterbox)
@@ -196,7 +201,7 @@ class TestRunner(metaclass=ABCMeta):
 
     def data_pre_process(self, data):
         data = copy.deepcopy(data)
-        if self.cfg.case.preprocess_opt.flag and len(data.shape) == 4:
+        if self.pre_process[0]['flag'] and len(data.shape) == 4:
             if self.cfg.case.compile_opt.kwargs['input_type'] == "uint8":
                 data *= 255.
             # elif self.cfg.case.compile_opt.kwargs['input_type'] == "int8":
@@ -334,42 +339,50 @@ class TestRunner(metaclass=ABCMeta):
     def run_single(self, cfg, case_dir: str, model_file: Union[List[str], str]):
         if not self.inputs:
             self.parse_model_input_output(model_file)
-        self.get_process_config(cfg)
-        if cfg.preprocess_opt.flag and cfg.preprocess_opt.kwargs['input_shape'] != None:
-            self.generate_data(cfg.generate_inputs, case_dir,
-                               self.inputs, self.input_paths, 'input', cfg.preprocess_opt.kwargs['input_shape'])
-            self.generate_data(cfg.generate_calibs, case_dir,
-                               self.calibs, self.calib_paths, 'calib', cfg.preprocess_opt.kwargs['input_shape'])
-        else:
-            self.generate_data(cfg.generate_inputs, case_dir,
-                               self.inputs, self.input_paths, 'input')
-            self.generate_data(cfg.generate_calibs, case_dir,
-                               self.calibs, self.calib_paths, 'calib')
-        self.cpu_infer(case_dir, model_file, cfg.compile_opt.kwargs['input_type'])
-        import_options, compile_options = self.get_compiler_options(cfg, model_file)
-        model_content = self.read_model_file(model_file)
-        self.run_evaluator(cfg, case_dir, import_options, compile_options, model_content)
-        self.run_inference(cfg, case_dir, import_options, compile_options, model_content)
+        names_im, args_im = TestRunner.split_value(cfg.importer_opt)
+        names_pre, args_pre = TestRunner.split_value(cfg.preprocess_opt)
+        names = names_im + names_pre
+        args = args_im + args_pre
+        for combine_args in product(*args):
+            dict_args = dict(zip(names, combine_args))
+            self.get_process_config(dict_args)
+            if dict_args['flag'] and dict_args['input_shape'] != None:
+                self.generate_data(cfg.generate_inputs, case_dir,
+                                   self.inputs, self.input_paths, 'input', dict_args['input_shape'])
+                self.generate_data(cfg.generate_calibs, case_dir,
+                                   self.calibs, self.calib_paths, 'calib', dict_args['input_shape'])
+            else:
+                self.generate_data(cfg.generate_inputs, case_dir,
+                                   self.inputs, self.input_paths, 'input')
+                self.generate_data(cfg.generate_calibs, case_dir,
+                                   self.calibs, self.calib_paths, 'calib')
+            self.cpu_infer(case_dir, model_file, dict_args['input_type'])
+            import_options, compile_options = self.get_compiler_options(dict_args, model_file)
+            # print(import_options)
+            model_content = self.read_model_file(model_file)
+            self.run_evaluator(cfg, case_dir, import_options, compile_options, model_content)
+            self.run_inference(cfg, case_dir, import_options,
+                               compile_options, model_content, dict_args)
 
     def get_compiler_options(self, cfg, model_file):
         import_options = nncase.ImportOptions()
         if isinstance(model_file, str):
             if os.path.splitext(model_file)[-1] == ".tflite":
-                import_options.input_layout = cfg.importer_opt.kwargs['input_layout']
-                import_options.output_layout = cfg.importer_opt.kwargs['output_layout']
+                import_options.input_layout = cfg['input_layout']
+                import_options.output_layout = cfg['output_layout']
             elif os.path.splitext(model_file)[-1] == ".onnx":
-                import_options.input_layout = cfg.importer_opt.kwargs['input_layout']
-                import_options.output_layout = cfg.importer_opt.kwargs['output_layout']
+                import_options.input_layout = cfg['input_layout']
+                import_options.output_layout = cfg['output_layout']
         elif isinstance(model_file, list):
             if os.path.splitext(model_file[1])[-1] == ".caffemodel":
-                import_options.input_layout = cfg.importer_opt.kwargs['input_layout']
-                import_options.output_layout = cfg.importer_opt.kwargs['output_layout']
+                import_options.input_layout = cfg['input_layout']
+                import_options.output_layout = cfg['output_layout']
 
         compile_options = nncase.CompileOptions()
-        for k, v in cfg.compile_opt.kwargs.items():
+        for k, v in cfg.items():
             e = '"'
-            exec(
-                f'compile_options.{k} = {e + v + e if isinstance(v, str) else v}')
+            if k not in ['input_layout', 'output_layout', 'flag']:
+                exec(f"compile_options.{k} = {e + v + e if isinstance(v, str) else v}")
         return import_options, compile_options
 
     def run_evaluator(self, cfg, case_dir, import_options, compile_options, model_content):
@@ -383,7 +396,7 @@ class TestRunner(metaclass=ABCMeta):
                 self.output_paths, eval_output_paths, dict_args)
             assert(judge), 'Fault result in eval' + result
 
-    def run_inference(self, cfg, case_dir, import_options, compile_options, model_content):
+    def run_inference(self, cfg, case_dir, import_options, compile_options, model_content, preprocess_opt):
         names, args = TestRunner.split_value(cfg.infer)
         for combine_args in product(*args):
             dict_args = dict(zip(names, combine_args))
@@ -392,7 +405,7 @@ class TestRunner(metaclass=ABCMeta):
 
             infer_output_paths = self.nncase_infer(
                 cfg, case_dir, import_options,
-                compile_options, model_content, dict_args)
+                compile_options, model_content, dict_args, preprocess_opt)
             judge, result = self.compare_results(
                 self.output_paths, infer_output_paths, dict_args)
             assert(judge), 'Fault result in infer' + result
@@ -459,26 +472,28 @@ class TestRunner(metaclass=ABCMeta):
     def nncase_infer(self, cfg, case_dir: str,
                      import_options: nncase.ImportOptions,
                      compile_options: nncase.CompileOptions,
-                     model_content: Union[List[bytes], bytes], kwargs: Dict[str, str]
+                     model_content: Union[List[bytes], bytes],
+                     kwargs: Dict[str, str],
+                     preprocess: Dict[str, str]
                      ) -> List[Tuple[str, str]]:
         infer_dir = TestRunner.kwargs_to_path(
             os.path.join(case_dir, 'infer'), kwargs)
         compile_options.target = kwargs['target']
         compile_options.dump_dir = infer_dir
-        compile_options.input_type = cfg.compile_opt.kwargs['input_type']
-        compile_options.quant_type = cfg.compile_opt.kwargs['quant_type']
-        compile_options.image_format = cfg.preprocess_opt.kwargs['image_format']
-        compile_options.input_shape = cfg.preprocess_opt.kwargs['input_shape']
-        compile_options.input_range = cfg.preprocess_opt.kwargs['input_range']
-        compile_options.preprocess = cfg.preprocess_opt.flag
-        compile_options.mean = cfg.preprocess_opt.kwargs['norm']['mean']
-        compile_options.scale = cfg.preprocess_opt.kwargs['norm']['scale']
+        compile_options.input_type = preprocess['input_type']
+        compile_options.quant_type = cfg.compile_opt.quant_type
+        compile_options.image_format = preprocess['image_format']
+        compile_options.input_shape = preprocess['input_shape']
+        compile_options.input_range = preprocess['input_range']
+        compile_options.preprocess = preprocess['flag']
+        compile_options.mean = preprocess['mean']
+        compile_options.scale = preprocess['scale']
         compiler = nncase.Compiler(compile_options)
         self.import_model(compiler, model_content, import_options)
         if kwargs['ptq']:
             ptq_options = nncase.PTQTensorOptions()
             ptq_options.set_tensor_data(np.asarray(
-                [self.transform_input(sample['data'], cfg.compile_opt.kwargs['input_type'], "infer") for sample in self.calibs]).tobytes())
+                [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.calibs]).tobytes())
             ptq_options.samples_count = cfg.generate_calibs.batch_size
             ptq_options.input_mean = cfg.ptq_opt.kwargs['input_mean']
             ptq_options.input_std = cfg.ptq_opt.kwargs['input_std']
@@ -493,7 +508,7 @@ class TestRunner(metaclass=ABCMeta):
         infer_output_paths: List[np.ndarray] = []
         for i in range(len(self.inputs)):
             sim.set_input_tensor(
-                i, nncase.RuntimeTensor.from_numpy(self.transform_input(self.inputs[i]['data'], cfg.compile_opt.kwargs['input_type'], "infer")))
+                i, nncase.RuntimeTensor.from_numpy(self.transform_input(self.inputs[i]['data'], preprocess['input_type'], "infer")))
         sim.run()
 
         for i in range(sim.outputs_size):
