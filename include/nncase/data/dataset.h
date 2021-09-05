@@ -94,7 +94,7 @@ public:
         std::optional<data_batch<T>> value_;
     };
 
-    dataset(const std::filesystem::path &path, std::function<bool(const std::filesystem::path &)> file_filter, xt::dynamic_shape<size_t> input_shape, std::string input_layout, float mean, float std);
+    dataset(const std::filesystem::path &path, std::function<bool(const std::filesystem::path &)> file_filter, xt::dynamic_shape<size_t> input_shape, std::string input_layout);
     virtual ~dataset() = default;
 
     template <class T>
@@ -116,7 +116,6 @@ protected:
     virtual void process(const std::vector<uint8_t> &src, float *dest, const xt::dynamic_shape<size_t> &shape, std::string layout) = 0;
     virtual void process(const std::vector<uint8_t> &src, uint8_t *dest, const xt::dynamic_shape<size_t> &shape, std::string layout) = 0;
     virtual void process(const std::vector<uint8_t> &src, int8_t *dest, const xt::dynamic_shape<size_t> &shape, std::string layout) = 0;
-    virtual bool do_normalize() const noexcept { return true; }
 
 private:
     template <class T>
@@ -129,14 +128,8 @@ private:
             xt::xarray<T> batch(input_shape_);
             auto file = read_file(filenames_[from++]);
             process(file, batch.data(), batch.shape(), input_layout_);
-            if constexpr (std::is_same_v<T, float>)
-            {
-                for (auto &v : batch)
-                    v = (v - mean_) / std_;
-            }
 
             std::span<const std::filesystem::path> filenames(filenames_.data() + start, filenames_.data() + from);
-
             return data_batch<T> { std::move(batch), filenames };
         }
 
@@ -171,6 +164,5 @@ protected:
     void process(const std::vector<uint8_t> &src, float *dest, const xt::dynamic_shape<size_t> &shape, std::string layout) override;
     void process(const std::vector<uint8_t> &src, uint8_t *dest, const xt::dynamic_shape<size_t> &shape, std::string layout) override;
     void process(const std::vector<uint8_t> &src, int8_t *dest, const xt::dynamic_shape<size_t> &shape, std::string layout) override;
-    bool do_normalize() const noexcept override { return false; }
 };
 }

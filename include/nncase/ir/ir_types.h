@@ -13,20 +13,18 @@
  * limitations under the License.
  */
 #pragma once
+#include "shape.h"
 #include "typecode.h"
 #include <span>
 #include <type_traits>
 #include <xtensor/xshape.hpp>
 
-namespace nncase::ir
-{
+namespace nncase::ir {
 class op_node;
 
-using shape_t = xt::dynamic_shape<std::size_t>;
 using axis_t = xt::dynamic_shape<int32_t>;
 
-enum node_attributes
-{
+enum node_attributes {
     node_attr_none = 0,
     node_attr_action = 1,
     node_attr_need_quantize = 2,
@@ -35,8 +33,7 @@ enum node_attributes
     node_attr_skip_constant_folding = 16
 };
 
-enum connector_attributes
-{
+enum connector_attributes {
     cnctr_attr_none = 0,
     cnctr_attr_need_quantize = 1,
     cnctr_attr_no_layout_strides = 2,
@@ -47,13 +44,10 @@ enum connector_attributes
 DEFINE_ENUM_BITMASK_OPERATORS(node_attributes)
 DEFINE_ENUM_BITMASK_OPERATORS(connector_attributes)
 
-class NNCASE_API connector_info
-{
-public:
+class NNCASE_API connector_info {
+  public:
     connector_info(op_node &owner, std::string name)
-        : owner_(owner), name_(std::move(name))
-    {
-    }
+        : owner_(owner), name_(std::move(name)) {}
 
     connector_info(const connector_info &) = delete;
     connector_info(connector_info &&) = default;
@@ -62,17 +56,18 @@ public:
     op_node &owner() const noexcept { return owner_; }
     const std::string &name() const noexcept { return name_; }
     connector_attributes attributes() const noexcept { return attributes_; }
-    void attributes(connector_attributes value) noexcept { attributes_ = value; }
+    void attributes(connector_attributes value) noexcept {
+        attributes_ = value;
+    }
 
-private:
+  private:
     op_node &owner_;
     std::string name_;
     connector_attributes attributes_ = cnctr_attr_none;
 };
 
 template <class T, class = std::enable_if_t<std::is_pointer_v<T>>>
-std::vector<std::decay_t<T>> dup(std::span<T> source)
-{
-    return { source.begin(), source.end() };
+std::vector<std::decay_t<T>> dup(std::span<T> source) {
+    return {source.begin(), source.end()};
 }
-}
+} // namespace nncase::ir

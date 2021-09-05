@@ -12,18 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/ir/call.h>
+#include <nncase/ir/expr.h>
 
 using namespace nncase;
 using namespace nncase::ir;
 
-call_node::call_node(expr target, std::vector<expr> arguments)
-    : target_(std::move(target)), arguments_(std::move(arguments)) {
-    if (!target_.is_a<function>() && !target_.is_a<op>()) {
-        throw std::invalid_argument(
-            "Call: target should be either a function or an op.");
-    }
+expr_node::~expr_node()
+{
 }
-
-call::call(expr target, std::vector<expr> arguments)
-    : expr_t(std::in_place, std::move(target), std::move(arguments)) {}

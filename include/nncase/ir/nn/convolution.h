@@ -12,18 +12,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/ir/call.h>
+#pragma once
+#include "../call.h"
+#include "../op.h"
+#include "nncase/runtime/datatypes.h"
+#include "opcode.h"
 
-using namespace nncase;
-using namespace nncase::ir;
+namespace nncase::ir::nn {
+/** @brief Conv1D operator node */
+class NNCASE_API conv1d_node : public op_node {
+  public:
+    DEFINE_NODE_OPCODE(op_nn_conv1d);
 
-call_node::call_node(expr target, std::vector<expr> arguments)
-    : target_(std::move(target)), arguments_(std::move(arguments)) {
-    if (!target_.is_a<function>() && !target_.is_a<op>()) {
-        throw std::invalid_argument(
-            "Call: target should be either a function or an op.");
-    }
-}
+    // conv1d_node();
+};
 
-call::call(expr target, std::vector<expr> arguments)
-    : expr_t(std::in_place, std::move(target), std::move(arguments)) {}
+/** @brief Conv1D expression */
+class conv1d : public call {
+  public:
+    /** @brief Construct a conv1d expression
+     *  @param[in] input The input of the conv1d
+     */
+    // NNCASE_API conv1d(expr input);
+};
+} // namespace nncase::ir::nn

@@ -17,7 +17,20 @@
 using namespace nncase;
 using namespace nncase::ir;
 
-function_node::function_node(std::vector<var> parameters, expr body)
-    : parameters_(std::move(parameters)), body_(std::move(body))
-{
+namespace {
+size_t global_func_index = 0;
 }
+
+function_node::function_node(std::string name, std::vector<var> parameters,
+                             expr body)
+    : name_(std::move(name)),
+      parameters_(std::move(parameters)),
+      body_(std::move(body)) {}
+
+function::function(std::vector<var> parameters, expr body)
+    : function("func_" + std::to_string(global_func_index++),
+               std::move(parameters), std::move(body)) {}
+
+function::function(std::string name, std::vector<var> parameters, expr body)
+    : expr_t(std::in_place, std::move(name), std::move(parameters),
+             std::move(body)) {}

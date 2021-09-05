@@ -17,15 +17,13 @@
 #include "op.h"
 #include <variant>
 
-namespace nncase::ir
-{
+namespace nncase::ir {
 /** @brief Call node */
-class NNCASE_API call_node : public expr_node
-{
-public:
+class NNCASE_API call_node : public expr_node {
+  public:
     DEFINE_NODE_NODEKIND(node_call);
 
-    call_node(std::variant<function, op> target, std::vector<expr> arguments);
+    call_node(expr target, std::vector<expr> arguments);
 
     /** @brief Get the arguments of the call expression */
     std::span<const expr> arguments() const noexcept { return arguments_; }
@@ -33,14 +31,17 @@ public:
     std::span<expr> arguments() noexcept { return arguments_; }
 
     /** @brief Get the target of the call expression */
-    const std::variant<function, op> &target() const noexcept { return target_; }
+    const expr &target() const noexcept { return target_; }
     /** @brief Set the target of the function expression */
-    void target(std::variant<function, op> value) noexcept { target_ = std::move(value); }
+    void target(expr value) noexcept { target_ = std::move(value); }
 
-private:
-    std::variant<function, op> target_;
+  private:
+    expr target_;
     std::vector<expr> arguments_;
 };
 
-using call = expr_t<call_node>;
-}
+class call : public expr_t<call_node> {
+  public:
+    NNCASE_API call(expr target, std::vector<expr> arguments);
+};
+} // namespace nncase::ir

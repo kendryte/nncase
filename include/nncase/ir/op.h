@@ -15,31 +15,40 @@
 #pragma once
 #include "expr.h"
 #include "opcode.h"
+#include <utility>
 
-namespace nncase::ir
-{
-#define DEFINE_NODE_OPCODE(value)                                 \
-    static constexpr opcode_t opcode() noexcept { return value; } \
+namespace nncase::ir {
+#define DEFINE_NODE_OPCODE(value)                                              \
+    static constexpr opcode_t opcode() noexcept { return value; }              \
     const opcode_t &runtime_opcode() const noexcept override { return value; }
 
 /** @brief Operator node */
-class NNCASE_API op_node : public expr_node
-{
-public:
+class NNCASE_API op_node : public expr_node {
+  public:
     DEFINE_NODE_NODEKIND(node_op);
 
     /** @brief Get the parameters of the function expression */
-    std::span<const connector_info> parameters() const noexcept { return parameters_; }
+    std::span<const connector_info> parameters() const noexcept {
+        return parameters_;
+    }
 
     /** @brief Get the opcode of the operator expression */
     virtual const opcode_t &runtime_opcode() const noexcept = 0;
 
-protected:
+  protected:
     connector_info &add_parameter(std::string name);
 
-private:
+  private:
     std::vector<connector_info> parameters_;
 };
 
-using op = expr_t<op_node>;
-}
+template <class T> struct in_place_op_t {};
+template <class T> inline constexpr in_place_op_t<T> in_place_op;
+
+class op : public expr_t<op_node> {
+  public:
+    template <class T, class... TArgs>
+    op(in_place_op_t<T>, TArgs &&...args)
+        : expr_t(std::make_shared<T>(std::forward<TArgs>(args)...)) {}
+};
+} // namespace nncase::ir

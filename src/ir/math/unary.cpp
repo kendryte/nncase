@@ -19,8 +19,9 @@ using namespace nncase;
 using namespace nncase::ir;
 using namespace nncase::ir::math;
 
-unary_node::unary_node(unary_op_t unary_op)
-    : unary_op_(unary_op)
-{
+unary_node::unary_node(unary_op_t unary_op) : unary_op_(unary_op) {
     add_parameter("input");
 }
+
+unary::unary(unary_op_t unary_op, expr input)
+    : call(op(in_place_op<unary_node>, unary_op), {input}) {}

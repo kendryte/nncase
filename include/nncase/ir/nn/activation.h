@@ -12,18 +12,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/ir/call.h>
+#pragma once
+#include "../call.h"
+#include "../op.h"
+#include "nncase/runtime/datatypes.h"
+#include "opcode.h"
 
-using namespace nncase;
-using namespace nncase::ir;
+namespace nncase::ir::nn {
+/** @brief Sigmoid operator node */
+class NNCASE_API sigmoid_node : public op_node {
+  public:
+    DEFINE_NODE_OPCODE(op_nn_sigmoid);
 
-call_node::call_node(expr target, std::vector<expr> arguments)
-    : target_(std::move(target)), arguments_(std::move(arguments)) {
-    if (!target_.is_a<function>() && !target_.is_a<op>()) {
-        throw std::invalid_argument(
-            "Call: target should be either a function or an op.");
-    }
-}
+    sigmoid_node();
+};
 
-call::call(expr target, std::vector<expr> arguments)
-    : expr_t(std::in_place, std::move(target), std::move(arguments)) {}
+/** @brief Sigmoid expression */
+class sigmoid : public call {
+  public:
+    /** @brief Construct a sigmoid expression
+     *  @param[in] input The input of the sigmoid
+     */
+    NNCASE_API sigmoid(expr input);
+};
+} // namespace nncase::ir::nn

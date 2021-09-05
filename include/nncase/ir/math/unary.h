@@ -13,16 +13,15 @@
  * limitations under the License.
  */
 #pragma once
+#include "../call.h"
 #include "../op.h"
 #include "nncase/runtime/datatypes.h"
 #include "opcode.h"
 
-namespace nncase::ir::math
-{
+namespace nncase::ir::math {
 /** @brief Unary operator node */
-class NNCASE_API unary_node : public op_node
-{
-public:
+class NNCASE_API unary_node : public op_node {
+  public:
     DEFINE_NODE_OPCODE(op_math_unary);
 
     unary_node(unary_op_t unary_op);
@@ -32,9 +31,17 @@ public:
     /** @brief Set the unary opcode of the unary expression */
     void unary_op(unary_op_t value) noexcept { unary_op_ = value; }
 
-private:
+  private:
     unary_op_t unary_op_;
 };
 
-using unary = expr_t<unary_node>;
-}
+/** @brief Unary expression */
+class unary : public call {
+  public:
+    /** @brief Construct an unary expression
+     *  @param[in] unary_op The opcode of the unary
+     *  @param[in] input The input of the unary
+     */
+    NNCASE_API unary(unary_op_t unary_op, expr input);
+};
+} // namespace nncase::ir::math

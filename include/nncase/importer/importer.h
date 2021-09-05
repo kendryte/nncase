@@ -14,7 +14,7 @@
  */
 #pragma once
 #include <filesystem>
-#include <nncase/ir/graph.h>
+#include <nncase/ir/module.h>
 #include <span>
 #include <unordered_map>
 #include <vector>
@@ -28,6 +28,6 @@ struct import_options
     std::span<const std::string> output_arrays;
 };
 
-void import_tflite(ir::graph &graph, std::span<const uint8_t> model, const import_options &options);
-void import_onnx(ir::graph &graph, std::span<const uint8_t> model, const import_options &options);
+NNCASE_API ir::module_t import_tflite(std::span<const uint8_t> model, const import_options &options);
+//ir::module import_onnx(std::span<const uint8_t> model, const import_options &options);
 }

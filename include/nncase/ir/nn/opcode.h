@@ -12,18 +12,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/ir/call.h>
+#pragma once
+#include "../opcode.h"
 
-using namespace nncase;
-using namespace nncase::ir;
+namespace nncase::ir::nn
+{
+#define DEFINE_OPCODE(dialect, id, name, value) NNCASE_INLINE_VAR constexpr opcode_t op_##dialect##_##id { value, #name };
 
-call_node::call_node(expr target, std::vector<expr> arguments)
-    : target_(std::move(target)), arguments_(std::move(arguments)) {
-    if (!target_.is_a<function>() && !target_.is_a<op>()) {
-        throw std::invalid_argument(
-            "Call: target should be either a function or an op.");
-    }
+#include "opcode.def"
+
+#undef DEFINE_OPCODE
 }
-
-call::call(expr target, std::vector<expr> arguments)
-    : expr_t(std::in_place, std::move(target), std::move(arguments)) {}

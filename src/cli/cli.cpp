@@ -27,7 +27,7 @@ int main(int argc, char *argv[])
     auto cli = lyra::cli();
     cli.add_argument(lyra::opt(show_version).name("-v").name("--version").help("show version"));
     compile_command compile(cli);
-    inference_command inference(cli);
+    //inference_command inference(cli);
 
     try
     {

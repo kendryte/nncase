@@ -16,29 +16,25 @@
 #include "nncase/ir/ir_types.h"
 #include "nncase/runtime/datatypes.h"
 
-namespace nncase::ir
-{
+namespace nncase::ir {
 /** @brief Expression type */
-class NNCASE_API type_t
-{
-public:
+class NNCASE_API type_t {
+  public:
+    static type_t any() noexcept;
+
     /** @brief Initialize a scalar type */
-    type_t(typecode_t elem_type) noexcept
-        : elem_type_(elem_type)
-    {
-    }
+    type_t(typecode_t elem_type) noexcept : elem_type_(elem_type) {}
 
     /** @brief Initialize a scalar/tensor type */
     type_t(typecode_t elem_type, shape_t shape) noexcept
-        : elem_type_(elem_type), shape_(std::move(shape))
-    {
-    }
+        : elem_type_(elem_type), shape_(std::move(shape)) {}
 
+    /** @brief Is this an any type */
+    bool is_any() const noexcept { return elem_type_ == typecode_t::any; }
     /** @brief Is this a scalar type */
-    bool is_scalar() const noexcept { return shape_.empty(); }
-
+    bool is_scalar() const noexcept { return shape_.is_scalar(); }
     /** @brief Is this a tensor type */
-    bool is_tensor() const noexcept { return !shape_.empty(); }
+    bool is_tensor() const noexcept { return !shape_.is_scalar(); }
 
     /** @brief Get element datatype */
     typecode_t elem_type() const noexcept { return elem_type_; }
@@ -52,8 +48,8 @@ public:
     /** @brief Set shape */
     void shape(shape_t value) noexcept { shape_ = std::move(value); }
 
-private:
+  private:
     typecode_t elem_type_;
     shape_t shape_;
 };
-}
+} // namespace nncase::ir

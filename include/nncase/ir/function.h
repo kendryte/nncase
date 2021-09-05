@@ -16,15 +16,18 @@
 #include "expr.h"
 #include "var.h"
 
-namespace nncase::ir
-{
+namespace nncase::ir {
 /** @brief Function node */
-class NNCASE_API function_node : public expr_node
-{
-public:
+class NNCASE_API function_node : public expr_node {
+  public:
     DEFINE_NODE_NODEKIND(node_function);
 
-    function_node(std::vector<var> parameters, expr body);
+    function_node(std::string name, std::vector<var> parameters, expr body);
+
+    /** @brief Get the name of the function expression */
+    const std::string &name() const noexcept { return name_; }
+    /** @brief Get the mutable name of the function expression */
+    std::string &name() noexcept { return name_; }
 
     /** @brief Get the parameters of the function expression */
     std::span<const var> parameters() const noexcept { return parameters_; }
@@ -34,10 +37,30 @@ public:
     /** @brief Set the body of the function expression */
     void body(expr value) noexcept { body_ = std::move(value); }
 
-private:
+  private:
+    std::string name_;
     std::vector<var> parameters_;
     expr body_;
 };
 
-using function = expr_t<function_node>;
-}
+/** @brief Function expression */
+class function : public expr_t<function_node> {
+  public:
+    using expr_t::expr_t;
+
+    /** @brief Construct a named function expression with auto-generated name
+     *  @param[in] name The name of the function
+     *  @param[in] parameters The parameters of the function
+     *  @param[in] body The body of the function
+     */
+    NNCASE_API function(std::vector<var> parameters, expr body);
+
+    /** @brief Construct a named function expression
+     *  @param[in] name The name of the function
+     *  @param[in] parameters The parameters of the function
+     *  @param[in] body The body of the function
+     */
+    NNCASE_API function(std::string name, std::vector<var> parameters,
+                        expr body);
+};
+} // namespace nncase::ir
