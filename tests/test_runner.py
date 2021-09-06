@@ -141,13 +141,14 @@ class TestRunner(metaclass=ABCMeta):
 
     def transform_input(self, values: np.array, type: str, stage: str):
         values = copy.deepcopy(values)
-        if(len(values.shape) == 4 and self.pre_process[0]['flag']):
+        if(len(values.shape) == 4 and self.pre_process[0]['preprocess']):
             if stage == "CPU":
                 # onnx \ caffe
-                if self.model_type == "onnx" or self.model_type == "caffe" or (self.model_type == "tflite" and self.cfg.case.importer_opt.kwargs['input_layout'] == "NCHW"):
+                if self.model_type == "onnx" or self.model_type == "caffe":
+                    # or (self.model_type == "tflite" and self.pre_process[-1]['input_layout'] == "NCHW")
                     values = np.transpose(values, [0, 3, 1, 2])
             else:
-                if self.cfg.case.importer_opt.kwargs['input_layout'] == "NCHW":
+                if self.pre_process[-1]['input_layout'] == "NCHW":
                     values = np.transpose(values, [0, 3, 1, 2])
 
             if type == 'float32':
@@ -166,21 +167,12 @@ class TestRunner(metaclass=ABCMeta):
     def get_process_config(self, config):
         # preprocess flag
         preprocess_flag = {}
-        preprocess_flag['flag'] = config['flag']
+        preprocess_flag['preprocess'] = config['preprocess']
 
         # dequant
         process_deq = {}
         process_deq['range'] = config['input_range']
         process_deq['input_type'] = config['input_type']
-
-        # norm
-        process_norm = {}
-        data = {}
-        data = {
-            'mean': config['mean'],
-            'scale': config['scale']
-        }
-        process_norm['norm'] = data
 
         # bgr2rgb
         process_format = {}
@@ -193,16 +185,30 @@ class TestRunner(metaclass=ABCMeta):
         process_letterbox['shape'] = self.inputs[0]['shape']
         process_letterbox['input_type'] = config['input_type']
 
+        # norm
+        process_norm = {}
+        data = {}
+        data = {
+            'mean': config['mean'],
+            'scale': config['scale']
+        }
+        process_norm['norm'] = data
+
+        # get layout
+        process_layout = {}
+        process_layout['input_layout'] = config['input_layout']
+
         self.pre_process.append(preprocess_flag)
         self.pre_process.append(process_deq)
         self.pre_process.append(process_format)
         self.pre_process.append(process_letterbox)
         self.pre_process.append(process_norm)
+        self.pre_process.append(process_layout)
 
     def data_pre_process(self, data):
         data = copy.deepcopy(data)
-        if self.pre_process[0]['flag'] and len(data.shape) == 4:
-            if self.cfg.case.compile_opt.kwargs['input_type'] == "uint8":
+        if self.pre_process[0]['preprocess'] and len(data.shape) == 4:
+            if self.pre_process[3]['input_type'] == "uint8":
                 data *= 255.
             # elif self.cfg.case.compile_opt.kwargs['input_type'] == "int8":
             #     data *= 255.
@@ -324,7 +330,7 @@ class TestRunner(metaclass=ABCMeta):
                 shutil.rmtree(case_dir)
         os.makedirs(case_dir)
 
-    @abstractmethod
+    @ abstractmethod
     def parse_model_input_output(self, model_path: Union[List[str], str]):
         pass
 
@@ -332,7 +338,7 @@ class TestRunner(metaclass=ABCMeta):
     def cpu_infer(self, case_dir: str, model_content: Union[List[str], str]):
         pass
 
-    @ abstractmethod
+    @abstractmethod
     def import_model(self, compiler, model_content, import_options):
         pass
 
@@ -346,26 +352,34 @@ class TestRunner(metaclass=ABCMeta):
         for combine_args in product(*args):
             dict_args = dict(zip(names, combine_args))
             self.get_process_config(dict_args)
-            if dict_args['flag'] and dict_args['input_shape'] != None:
-                self.generate_data(cfg.generate_inputs, case_dir,
-                                   self.inputs, self.input_paths, 'input', dict_args['input_shape'])
-                self.generate_data(cfg.generate_calibs, case_dir,
-                                   self.calibs, self.calib_paths, 'calib', dict_args['input_shape'])
-            else:
-                self.generate_data(cfg.generate_inputs, case_dir,
-                                   self.inputs, self.input_paths, 'input')
-                self.generate_data(cfg.generate_calibs, case_dir,
-                                   self.calibs, self.calib_paths, 'calib')
+            self.generate_data(cfg.generate_inputs, case_dir,
+                               self.inputs, self.input_paths, 'input', dict_args)
+            self.generate_data(cfg.generate_calibs, case_dir,
+                               self.calibs, self.calib_paths, 'calib', dict_args)
+
+            # write preprocess options in test_result
+            if dict_args['preprocess'] == True:
+                str_preprocess_opt = ""
+                pre_list = []
+                for key, value in dict_args.items():
+                    pre_list.append(str_preprocess_opt.join("{0}:{1}".format(key, value)))
+                with open(os.path.join(self.case_dir, 'test_result.txt'), 'a+') as f:
+                    f.write("\n----preprocess option----\n")
+                    f.write('\n'.join(pre_list[:]) + "\n")
+                    f.write("-------------------------\n")
+
             self.cpu_infer(case_dir, model_file, dict_args['input_type'])
             import_options, compile_options = self.get_compiler_options(dict_args, model_file)
             # print(import_options)
             model_content = self.read_model_file(model_file)
-            self.run_evaluator(cfg, case_dir, import_options, compile_options, model_content)
+            self.run_evaluator(cfg, case_dir, import_options,
+                               compile_options, model_content)
             self.run_inference(cfg, case_dir, import_options,
                                compile_options, model_content, dict_args)
 
     def get_compiler_options(self, cfg, model_file):
         import_options = nncase.ImportOptions()
+        compile_options = nncase.CompileOptions()
         if isinstance(model_file, str):
             if os.path.splitext(model_file)[-1] == ".tflite":
                 import_options.input_layout = cfg['input_layout']
@@ -378,7 +392,6 @@ class TestRunner(metaclass=ABCMeta):
                 import_options.input_layout = cfg['input_layout']
                 import_options.output_layout = cfg['output_layout']
 
-        compile_options = nncase.CompileOptions()
         for k, v in cfg.items():
             e = '"'
             if k not in ['input_layout', 'output_layout', 'flag']:
@@ -410,7 +423,7 @@ class TestRunner(metaclass=ABCMeta):
                 self.output_paths, infer_output_paths, dict_args)
             assert(judge), 'Fault result in infer' + result
 
-    @ staticmethod
+    @staticmethod
     def split_value(kwcfg: List[Dict[str, str]]) -> Tuple[List[str], List[str]]:
         arg_names = []
         arg_values = []
@@ -480,12 +493,14 @@ class TestRunner(metaclass=ABCMeta):
             os.path.join(case_dir, 'infer'), kwargs)
         compile_options.target = kwargs['target']
         compile_options.dump_dir = infer_dir
+        compile_options.dump_asm = cfg.compile_opt.dump_asm
+        compile_options.dump_ir = cfg.compile_opt.dump_ir
         compile_options.input_type = preprocess['input_type']
         compile_options.quant_type = cfg.compile_opt.quant_type
         compile_options.image_format = preprocess['image_format']
         compile_options.input_shape = preprocess['input_shape']
         compile_options.input_range = preprocess['input_range']
-        compile_options.preprocess = preprocess['flag']
+        compile_options.preprocess = preprocess['preprocess']
         compile_options.mean = preprocess['mean']
         compile_options.scale = preprocess['scale']
         compiler = nncase.Compiler(compile_options)
@@ -523,13 +538,14 @@ class TestRunner(metaclass=ABCMeta):
     def on_test_start(self) -> None:
         pass
 
-    def generate_data(self, cfg, case_dir: str, inputs: List[Dict], path_list: List[str], name: str, input_shape: List = []):
+    def generate_data(self, cfg, case_dir: str, inputs: List[Dict], path_list: List[str], name: str, preprocess_opt):
         for n in range(cfg.numbers):
             i = 0
             for input in inputs:
                 shape = []
-                if input_shape != [] and len(input_shape) == 3 and self.cfg.case.preprocess_opt.flag:
-                    shape = [1, input_shape[0], input_shape[1], input_shape[2]]
+                if preprocess_opt['preprocess'] and preprocess_opt['input_shape'] != [] and len(preprocess_opt['input_shape']) == 3:
+                    shape = [1, preprocess_opt['input_shape'][0],
+                             preprocess_opt['input_shape'][1], preprocess_opt['input_shape'][2]]
                 else:
                     shape = input['shape']
                 shape[0] *= cfg.batch_size

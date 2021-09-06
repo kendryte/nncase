@@ -47,25 +47,10 @@ void tflite_importer::import(const import_options &options, std::string &real_la
         auto &tensor = *subgraph_->tensors()->Get(in);
         auto shape = get_shape(tensor.shape());
         auto type = to_data_type(tensor.type());
-        // image
-        if (options.input_layout == "NCHW" && shape.size() == 4)
-        {
-            auto trans = nhwc_to_nchw(shape);
-            auto node = graph_.emplace<input_node>(type, trans);
-            node->name(tensor.name()->string_view());
-            auto sur_trans = nchw_to_nhwc(node->output().type(), node->output().shape());
-            sur_trans->name(tensor.name()->string_view());
-            sur_trans->input().connect(node->output());
-            created_inputs.emplace(in, &sur_trans->output());
-            real_layout = "NCHW";
-        }
-        else
-        {
-            auto node = graph_.emplace<input_node>(type, shape);
-            node->name(tensor.name()->string_view());
-            created_inputs.emplace(in, &node->output());
-            real_layout = "NHWC";
-        }
+        auto node = graph_.emplace<input_node>(type, shape);
+        node->name(tensor.name()->string_view());
+        created_inputs.emplace(in, &node->output());
+        real_layout = "NHWC";
     }
 
     std::vector<int32_t> outputs;
