@@ -6,6 +6,7 @@ from pathlib import Path
 import cv2
 import nncase
 import numpy as np
+print(os.getpid())
 
 
 def preproc(img, input_size, transpose=True):

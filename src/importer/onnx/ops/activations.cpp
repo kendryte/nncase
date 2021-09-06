@@ -137,7 +137,7 @@ void onnx_importer::convert_op_Sigmoid(const NodeProto &node)
 
     const auto &op_name { generate_name(node) };
 
-#if 0
+#if 1
     // y = 1 / (1 + exp(-x))
     auto one = graph_.emplace<constant>(1.f);
     auto neg = graph_.emplace<unary>(unary_neg, in_shape);

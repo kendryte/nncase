@@ -1,17 +1,19 @@
-from typing import Dict, List, Tuple, Union, Any
-from itertools import product
-import re
-import yaml
-from pathlib import Path
-import numpy as np
-import os
-import shutil
-from abc import ABCMeta, abstractmethod
-import nncase
-import struct
-from compare_util import compare
 import copy
+import os
+import re
+import shutil
+import struct
+from abc import ABCMeta, abstractmethod
+from itertools import product
+from pathlib import Path
+from typing import Any, Dict, List, Tuple, Union
+
+import nncase
+import numpy as np
 import tensorflow as tf
+import yaml
+
+from compare_util import compare
 
 
 class Edict:
@@ -79,6 +81,7 @@ class Edict:
 
 
 def generate_random(shape: List[int], dtype: np.dtype,
+                    number: int, batch_size: int,
                     abs: bool = False) -> np.ndarray:
     if dtype is np.uint8:
         data = np.random.randint(0, 256, shape)
@@ -103,12 +106,48 @@ def _cast_bfloat16_then_float32(values: np.array):
         value = struct.unpack('!f', bytes(integers))[0]
         values[i] = value
 
-    values = values.reshape(shape)
-    return values
+
+def generate_image_dataset(shape: List[int], dtype: np.dtype,
+                           batch_index: int, batch_size: int,
+                           dir_path: str) -> np.ndarray:
+    import cv2
+    assert(os.path.isdir(dir_path) or os.path.exists(dir_path))
+
+    def preproc(img, input_size, transpose=True):
+        # todo maybe need move this to postprocess
+        if len(img.shape) == 3:
+            padded_img = np.ones((input_size[0], input_size[1], 3), dtype=np.uint8) * 114
+        else:
+            padded_img = np.ones(input_size, dtype=np.uint8) * 114
+
+        r = min(input_size[0] / img.shape[0], input_size[1] / img.shape[1])
+        resized_img = cv2.resize(
+            img,
+            (int(img.shape[1] * r), int(img.shape[0] * r)),
+            interpolation=cv2.INTER_LINEAR,
+        ).astype(np.uint8)
+        padded_img[: int(img.shape[0] * r), : int(img.shape[1] * r)] = resized_img
+        if transpose:
+            padded_img = padded_img.transpose((2, 0, 1))
+        padded_img = np.ascontiguousarray(padded_img)
+        return padded_img
+    img_paths = []
+    if os.path.isdir(dir_path):
+        img_paths.extend([os.path.join(dir_path, p) for p in os.listdir(dir_path)])
+    else:
+        img_paths.append(dir_path)
+    imgs = []
+    for p in img_paths[batch_index * batch_size:
+                       (batch_index + 1) * batch_size]:
+        img = cv2.imread(p)
+        img = preproc(img, shape[1:3], False)  # img [h,w,c] rgb,
+        imgs.append(img)
+    return np.stack(imgs)
 
 
 DataFactory = {
-    'generate_random': generate_random
+    'generate_random': generate_random,
+    'generate_image_dataset': generate_image_dataset
 }
 
 
@@ -139,6 +178,7 @@ class TestRunner(metaclass=ABCMeta):
         self.num_pattern = re.compile("(\d+)")
 
     def transform_input(self, values: np.array, type: str, stage: str):
+        # todo remove this, keep stackvm model inner preprocess
         values = copy.deepcopy(values)
         if(len(values.shape) == 4 and self.cfg.case.preprocess_opt.flag):
             if stage == "CPU":
@@ -151,11 +191,13 @@ class TestRunner(metaclass=ABCMeta):
 
             if type == 'float32':
                 return values.astype(np.float32)
-            elif type == 'uint8':
-                values = ((values) * 255).astype(np.uint8)
+            elif type == 'uint8' :
+                if values.dtype == np.float32:
+                    values = ((values) * 255).astype(np.uint8)
                 return values
-            elif type == 'int8':
-                values = (values * 255 - 128).astype(np.int8)
+            elif type == 'int8' :
+                if values.dtype == np.float32:
+                    values = (values * 255 - 128).astype(np.int8)
                 return values
             else:
                 raise TypeError(" Not support type for quant input")
@@ -196,8 +238,8 @@ class TestRunner(metaclass=ABCMeta):
     def data_pre_process(self, data):
         data = copy.deepcopy(data)
         if self.cfg.case.preprocess_opt.flag and len(data.shape) == 4:
-            if self.cfg.case.compile_opt.kwargs['input_type'] == "uint8":
-                data *= 255.
+            if self.cfg.case.compile_opt.kwargs['input_type'] == "uint8" and data.dtype != np.uint8:
+                data = data * 255.
             # elif self.cfg.case.compile_opt.kwargs['input_type'] == "int8":
             #     data *= 255.
             #     data -= 128.
@@ -214,8 +256,8 @@ class TestRunner(metaclass=ABCMeta):
                     scale = (item['range'][1] - item['range'][0]) / (Q_max - Q_min)
                     bias = round((item['range'][1] * Q_min - item['range'][0] *
                                   Q_max) / (item['range'][1] - item['range'][0]))
-                    data *= scale
-                    data -= bias
+                    data = data * scale
+                    data = data - bias
 
                 # BGR2RGB
                 if 'image_format' in item.keys():
@@ -528,7 +570,10 @@ class TestRunner(metaclass=ABCMeta):
                 else:
                     shape = input['shape']
                 shape[0] *= cfg.batch_size
-                data = DataFactory[cfg.name](shape, input['dtype'], **cfg.kwargs)
+                data = DataFactory[cfg.name](
+                    shape, input['dtype'],
+                    n, cfg.batch_size,
+                    **cfg.kwargs)
 
                 path_list.append(
                     (os.path.join(case_dir, f'{name}_{n}_{i}.bin'),

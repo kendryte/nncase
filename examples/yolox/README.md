@@ -45,15 +45,18 @@ python tools/simulate.py yolox_nano_224.kmodel ../20classes_yolo/images/dog.bmp
 
 ## 2. 编译定点模型与验证:
 
+- 编译cpu所使用的定点模型:
+
 ```sh
 cd examples/yolox
 python tools/compile.py model/yolox_nano_224.onnx yolox_nano_224_quant.kmodel --imgs_dir ../20classes_yolo/images/ --legacy
 python tools/simulate.py yolox_nano_224_quant.kmodel ../20classes_yolo/images/dog.bmp
 ```
 
-或者也可以使用老版本的yolox模型
+-  编译k210所使用的定点模型
 ```sh
-python tools/compile.py model/yolox_nano_224.onnx yolox_nano_224_quant.kmodel --legacy --imgs_dir ../20classes_yolo/images/
+cd examples/yolox
+python tools/compile.py model/yolox_nano_224.onnx yolox_nano_224_quant.kmodel --imgs_dir ../20classes_yolo/images/ --legacy --target k210
 python tools/simulate.py yolox_nano_224_quant.kmodel ../20classes_yolo/images/dog.bmp
 ```
 
