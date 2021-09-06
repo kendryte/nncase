@@ -270,3 +270,61 @@ void onnx_importer::convert_op_HardSwish(const NodeProto &node)
     input_tensors_.emplace(&mul_2->input_a(), input);
     output_tensors_.emplace(output, &mul_2->output());
 }
+
+// Elu(x) = alpha * (exp(x) - 1.), for x < 0
+// Elu(x) = x, for x >= 0
+// Elu(x) can be transformed as: Elu(x) = alpha * min(exp(x) - 1.f, 0) + max(x, 0.f)
+void onnx_importer::convert_op_Elu(const NodeProto &node)
+{
+    assert(node.input().size() == 1);
+    assert(node.output().size() == 1);
+
+    const auto &op_name { generate_name(node) };
+
+    const auto &input = node.input()[0];
+    const auto &output = node.output()[0];
+
+    auto in_shape = get_shape(input);
+
+    const auto alpha_value = get_attribute<float>(node, "alpha").value_or(1.0f);
+    auto alpha = graph_.emplace<constant>(alpha_value);
+    alpha->name(op_name + ".alpha(Elu)");
+
+    auto exp = graph_.emplace<unary>(unary_exp, in_shape);
+    exp->name(op_name + ".exp(Elu)");
+
+    auto one = graph_.emplace<constant>(1.f);
+    one->name(op_name + ".one(Elu)");
+
+    auto sub = graph_.emplace<binary>(binary_sub, exp->output().shape(), one->output().shape(), value_range<float>::full());
+    sub->name(generate_name(node) + ".sub(Elu)");
+
+    auto zero = graph_.emplace<constant>(0.f);
+    zero->name(op_name + ".zero(Elu)");
+
+    auto min = graph_.emplace<binary>(binary_min, sub->output().shape(), zero->output().shape(), value_range<float>::full());
+    min->name(generate_name(node) + ".min(Elu)");
+
+    auto mul = graph_.emplace<binary>(binary_mul, min->output().shape(), alpha->output().shape(), value_range<float>::full());
+    mul->name(generate_name(node) + ".mul(Elu)");
+
+    auto max = graph_.emplace<binary>(binary_max, in_shape, zero->output().shape(), value_range<float>::full());
+    max->name(generate_name(node) + ".max(Elu)");
+
+    auto add = graph_.emplace<binary>(binary_add, mul->output().shape(), max->output().shape(), value_range<float>::full());
+    add->name(generate_name(node) + ".add(Elu)");
+
+    sub->input_a().connect(exp->output());
+    sub->input_b().connect(one->output());
+    min->input_a().connect(sub->output());
+    min->input_b().connect(zero->output());
+    mul->input_a().connect(min->output());
+    mul->input_b().connect(alpha->output());
+    max->input_b().connect(zero->output());
+    add->input_a().connect(mul->output());
+    add->input_b().connect(max->output());
+
+    input_tensors_.emplace(&exp->input(), input);
+    input_tensors_.emplace(&max->input_a(), input);
+    output_tensors_.emplace(output, &add->output());
+}
