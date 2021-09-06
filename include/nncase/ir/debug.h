@@ -21,20 +21,6 @@
 
 namespace nncase
 {
-constexpr std::string_view datatype_names(datatype_t dt)
-{
-    switch (dt)
-    {
-#define DEFINE_DATATYPE(id, t, name, value) \
-    case dt_##id:                           \
-        return #name;
-#include <nncase/runtime/datatypes.def>
-#undef DEFINE_DATATYPE
-    default:
-        throw std::invalid_argument("invalid datatype");
-    }
-}
-
 inline std::string to_string(const padding &value)
 {
     return "{" + std::to_string(value.before) + ", " + std::to_string(value.after) + "}";
