@@ -47,7 +47,7 @@ python tools/simulate.py yolox_nano_224.kmodel ../20classes_yolo/images/dog.bmp
 
 ```sh
 cd examples/yolox
-python tools/compile.py model/yolox_nano_224.onnx yolox_nano_224_quant.kmodel --imgs_dir ../20classes_yolo/images/
+python tools/compile.py model/yolox_nano_224.onnx yolox_nano_224_quant.kmodel --imgs_dir ../20classes_yolo/images/ --legacy
 python tools/simulate.py yolox_nano_224_quant.kmodel ../20classes_yolo/images/dog.bmp
 ```
 
