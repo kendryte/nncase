@@ -17,27 +17,11 @@ import pytest
 from onnx_test_runner import OnnxTestRunner
 
 
-def test_shufflenet_6(request):
-    overwrite_cfg = """
-     judge:
-       specifics:
-         - matchs:
-             target: [cpu, k510]
-             ptq: true
-           threshold: 0.98
-         - matchs:
-             target: [k210]
-             ptq: true
-           threshold: 0.95
-         - matchs:
-             target: [k510]
-             ptq: false
-           threshold: 0.99
-     """
-    runner = OnnxTestRunner(request.node.name, overwrite_configs=overwrite_cfg)
-    model_file = 'onnx-models/vision/classification/shufflenet/model/shufflenet-6.onnx'
+def test_resnet152_v1_7(request):
+    runner = OnnxTestRunner(request.node.name, ['cpu', 'k510'])
+    model_file = 'onnx-models/vision/classification/resnet/model/resnet152-v1-7.onnx'
     runner.run(model_file)
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_shufflenet-6.py'])
+    pytest.main(['-vv', 'test_resnet152-v1-7.py'])
