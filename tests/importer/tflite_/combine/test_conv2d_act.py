@@ -28,11 +28,12 @@ def _make_module(n, i_channels, i_size, k_size, o_channels, strides, padding, di
             super(Conv2DActModule).__init__()
             self.w = tf.constant(np.random.rand(
                 *k_size, i_channels, o_channels).astype(np.float32) - 0.5)
+            self.b = tf.constant(np.random.rand(o_channels).astype(np.float32) - 0.5)
 
         @tf.function(input_signature=[tf.TensorSpec([n, *i_size, i_channels], tf.float32)])
         def __call__(self, x):
             out = tf.nn.conv2d(x, self.w, strides, padding,
-                               dilations=dilations)
+                               dilations=dilations) + self.b
             if act == 'relu':
                 out = tf.nn.relu(out)
             elif act == 'relu6':

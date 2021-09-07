@@ -13,7 +13,10 @@
  * limitations under the License.
  */
 #include <chrono>
+#include <cmath>
 #include <cstddef>
+#include <cstdint>
+#include <limits>
 #include <nncase/ir/ops/constant.h>
 #include <nncase/ir/quantizer.h>
 #include <nncase/ir/visitor.h>
@@ -270,23 +273,23 @@ value_range<float> quantizer::get(ir::output_connector &connector) const
 
 fixed_mul quantizer::get_fixed_mul(float value, int32_t max_bits, uint8_t max_shift, bool is_signed)
 {
-    // assert(!is_signed || value >= 0);
+    assert(is_signed || value >= 0);
 
     auto bits = is_signed ? max_bits - 1 : max_bits;
     int32_t shift = 0;
     float mul = 0;
 
-    if (std::abs(value) > 1)
+    if (value == 0)
+    {
+        mul = 0;
+        shift = 0;
+    }
+    else if (std::abs(value) > 1)
     {
         int mul_shift;
         mul = std::frexp(value, &mul_shift);
         shift = std::min((int32_t)max_shift, bits - mul_shift);
         mul = mul * std::pow(2.f, (float)(shift + mul_shift));
-    }
-    else if (value == 0)
-    {
-        mul = 0;
-        shift = 0;
     }
     else
     {
