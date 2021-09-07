@@ -482,7 +482,7 @@ private:
         schedule::scheduler sched(*target_, graph, graph.outputs());
         if (compile_options_.dump_ir)
         {
-            auto dump_path = before_quant ? compile_options_.dump_dir / "calibration" : compile_options_.dump_dir / "eval_quantized_graph";
+            auto dump_path = before_quant ? compile_options_.dump_dir / "calibration" : compile_options_.dump_dir / "quantized_graph";
             std::filesystem::create_directories(dump_path);
             sched.config_dump(dump_path);
         }
