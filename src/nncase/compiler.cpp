@@ -252,12 +252,12 @@ public:
             std::cout << "4.3. Quantize graph..." << std::endl;
             quantize_graph(graph_, evaluator);
 
-            std::cout << "4.4. Evaluate quantized graph..." << std::endl;
-            auto quant_evaluator = run_calibration(graph_, false);
-            quant_eval_quantizer = quant_evaluator.quantizer(graph_.module_type());
-
             if (compile_options_.dump_quant_error)
             {
+                std::cout << "4.4. Evaluate quantized graph..." << std::endl;
+                auto quant_evaluator = run_calibration(graph_, false);
+                quant_eval_quantizer = quant_evaluator.quantizer(graph_.module_type());
+
                 std::cout << "4.5. Summarize quant error for each layer..." << std::endl;
                 for (uint32_t i = 0; i < quant_eval_quantizer->insert_order().size(); i++)
                 {

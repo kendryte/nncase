@@ -24,7 +24,7 @@ case: # case的配置，应该是一个多层次的
     kwargs:
       dump_asm: true
       dump_ir: true
-      dump_quant_error: true
+      dump_quant_error: false
       input_type: 'uint8'
       quant_type: 'uint8'
   ptq_opt:
