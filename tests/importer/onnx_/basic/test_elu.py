@@ -68,6 +68,7 @@ alphas = [
     0.5
 ]
 
+
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('alpha', alphas)
 def test_elu(in_shape, alpha, request):

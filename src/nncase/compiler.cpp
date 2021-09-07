@@ -38,6 +38,20 @@ using namespace nncase::data;
 using namespace nncase::runtime;
 using namespace nncase::ir;
 
+static float dot(float *v1, float *v2, size_t size)
+{
+    float ret = 0.f;
+    for (size_t i = 0; i < size; i++)
+    {
+        ret += v1[i] * v2[i];
+    }
+    return ret;
+}
+
+static float cosine(float *v1, float *v2, size_t size)
+{
+    return dot(v1, v2, size) / ((sqrt(dot(v1, v1, size)) * sqrt(dot(v2, v2, size))));
+}
 namespace
 {
 calibrate_method to_calibrate_method(std::string name)
@@ -203,6 +217,8 @@ public:
 
     void compile() override
     {
+        quantizer *eval_quantizer;
+        quantizer *quant_eval_quantizer;
         if (use_ptq_)
         {
             if (compile_options_.input_type == "default")
@@ -231,10 +247,33 @@ public:
             add_quantize_annotation(graph_);
 
             std::cout << "4.2. Run calibration..." << std::endl;
-            auto evaluator = run_calibration(graph_);
+            auto evaluator = run_calibration(graph_, true);
+            eval_quantizer = evaluator.quantizer(graph_.module_type());
 
             std::cout << "4.3. Quantize graph..." << std::endl;
             quantize_graph(graph_, evaluator);
+
+            if (compile_options_.dump_quant_error)
+            {
+                std::cout << "4.4. Evaluate quantized graph..." << std::endl;
+                auto quant_evaluator = run_calibration(graph_, false);
+                quant_eval_quantizer = quant_evaluator.quantizer(graph_.module_type());
+
+                std::cout << "4.5. Summarize quant error for each layer..." << std::endl;
+                std::ofstream f;
+                f.open(compile_options_.dump_dir / "layer_quant_error.txt");
+                for (uint32_t i = 0; i < quant_eval_quantizer->insert_order().size(); i++)
+                {
+                    std::string layer_name = quant_eval_quantizer->insert_order()[i];
+                    auto data_size = quant_eval_quantizer->output_buffers()[layer_name].size();
+                    std::cout << "layer: " << layer_name << "   cosine: " << cosine(eval_quantizer->output_buffers()[layer_name].data(), quant_eval_quantizer->output_buffers()[layer_name].data(), data_size) << std::endl;
+                    if (compile_options_.dump_ir)
+                    {
+                        f << "layer: " << layer_name << "   cosine: " << cosine(eval_quantizer->output_buffers()[layer_name].data(), quant_eval_quantizer->output_buffers()[layer_name].data(), data_size) << std::endl;
+                    }
+                }
+                f.close();
+            }
         }
 
         std::cout << "5. Optimize target dependent after quantization..." << std::endl;
@@ -438,12 +477,12 @@ private:
     //         graph_runner(*subgraph);
     // }
 
-    ir::evaluator run_calibration(ir::graph &graph)
+    ir::evaluator run_calibration(ir::graph &graph, bool before_quant)
     {
         schedule::scheduler sched(*target_, graph, graph.outputs());
         if (compile_options_.dump_ir)
         {
-            auto dump_path = compile_options_.dump_dir / "calibration";
+            auto dump_path = before_quant ? compile_options_.dump_dir / "calibration" : compile_options_.dump_dir / "quantized_graph";
             std::filesystem::create_directories(dump_path);
             sched.config_dump(dump_path);
         }
@@ -475,13 +514,13 @@ private:
             switch (in_type)
             {
             case dt_float32:
-                run_calibration_eval<float>(options, *ds, evaluator);
+                run_calibration_eval<float>(options, *ds, evaluator, before_quant);
                 break;
             case dt_uint8:
-                run_calibration_eval<uint8_t>(options, *ds, evaluator);
+                run_calibration_eval<uint8_t>(options, *ds, evaluator, before_quant);
                 break;
             case dt_int8:
-                run_calibration_eval<int8_t>(options, *ds, evaluator);
+                run_calibration_eval<int8_t>(options, *ds, evaluator, before_quant);
                 break;
             default:
                 throw std::runtime_error("Unsupported input datatype: " + std::string(datatype_names(in_type)));
@@ -490,25 +529,26 @@ private:
         else
         {
             auto &options = std::get<ptq_tensor_options>(ptq_options_);
-            run_calibration_eval(options, evaluator);
+            run_calibration_eval(options, evaluator, before_quant);
         }
 
         return evaluator;
     }
 
     template <class T>
-    void run_calibration_eval(ptq_dataset_options &options, dataset &dataset, ir::evaluator &evaluator)
+    void run_calibration_eval(ptq_dataset_options &options, dataset &dataset, ir::evaluator &evaluator, bool before_quant)
     {
+        std::string step = before_quant ? "4.2" : "4.4";
         const size_t max_stages = options.calibrate_method == "no_clip" ? 1 : 2;
         for (size_t stage = 0; stage < max_stages; stage++)
         {
             if (stage == 0)
             {
-                std::cout << "4.2.1 Collecting ranges..." << std::endl;
+                std::cout << step + ".1 Collecting ranges..." << std::endl;
             }
             else
             {
-                std::cout << "4.2.2 Collecting distribution..." << std::endl;
+                std::cout << step + ".2 Collecting distribution..." << std::endl;
                 evaluator.begin_collect_distribution();
             }
 
@@ -519,7 +559,7 @@ private:
                 auto &tensor = it->tensor;
                 std::memcpy(input_buffer.data(), tensor.data(), input_buffer.size_bytes());
 
-                evaluator.evaluate();
+                evaluator.evaluate(before_quant, stage);
                 evaluator.end_sample();
                 if (options.progress)
                     options.progress(i++, dataset.total_size());
@@ -527,24 +567,25 @@ private:
 
             if (stage == 1)
             {
-                std::cout << "4.2.3. Find optimal quantization ranges..." << std::endl;
+                std::cout << step + "3. Find optimal quantization ranges..." << std::endl;
                 evaluator.end_collect_distribution(options.progress);
             }
         }
     }
 
-    void run_calibration_eval(ptq_tensor_options &options, ir::evaluator &evaluator)
+    void run_calibration_eval(ptq_tensor_options &options, ir::evaluator &evaluator, bool before_quant)
     {
+        std::string step = before_quant ? "4.2" : "4.4";
         const size_t max_stages = options.calibrate_method == "no_clip" ? 1 : 2;
         for (size_t stage = 0; stage < max_stages; stage++)
         {
             if (stage == 0)
             {
-                std::cout << "4.2.1 Collecting ranges..." << std::endl;
+                std::cout << step + ".1 Collecting ranges..." << std::endl;
             }
             else
             {
-                std::cout << "4.2.2 Collecting distribution..." << std::endl;
+                std::cout << step + ".2 Collecting distribution..." << std::endl;
                 evaluator.begin_collect_distribution();
             }
 
@@ -553,7 +594,7 @@ private:
                 auto input_buffer = evaluator.input_at(0).buffer();
                 std::memcpy(input_buffer.data(), options.tensor_data.data() + i * input_buffer.size_bytes(), input_buffer.size_bytes());
 
-                evaluator.evaluate();
+                evaluator.evaluate(before_quant, stage);
                 evaluator.end_sample();
                 if (options.progress)
                     options.progress(i++, options.samples_count);
@@ -561,7 +602,7 @@ private:
 
             if (stage == 1)
             {
-                std::cout << "4.2.3. Find optimal quantization ranges..." << std::endl;
+                std::cout << step + ".3. Find optimal quantization ranges..." << std::endl;
                 evaluator.end_collect_distribution(options.progress);
             }
         }

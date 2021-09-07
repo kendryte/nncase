@@ -43,6 +43,7 @@ struct compile_options
     bool quantize_binary = true;
     bool dump_ir = false;
     bool dump_weights_range = false;
+    bool dump_quant_error = false;
     bool use_dataset_as_input_stat = true;
     uint32_t max_solve_secs = 60;
 
