@@ -12,7 +12,6 @@ import struct
 from compare_util import compare
 import copy
 import tensorflow as tf
-import cv2
 
 
 class Edict:

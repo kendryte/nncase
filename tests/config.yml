@@ -9,11 +9,10 @@ case: # case的配置，应该是一个多层次的
   preprocess_opt:
     - name: preprocess
       values:
-        - true
+        - false
     - name: image_format
       values:
         - RGB
-        # - BGR
     - name: input_shape
       values:
         - [224,224,3] #HWC
