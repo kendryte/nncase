@@ -82,8 +82,7 @@ optional<Proto> extract(const ProtobufCollection<Proto> &collection, const strin
 {
     const auto it {
         find_if(begin(collection), end(collection),
-            [&value](const auto &e)
-            {
+            [&value](const auto &e) {
                 return e.name() == value;
             })
     };
@@ -557,8 +556,7 @@ optional<vector<int>> onnx_importer::get_attribute<vector<int>>(const onnx::Node
 
     target_type vec;
     std::transform(attr.value().ints().begin(), attr.value().ints().end(), std::back_inserter(vec),
-        [](int64_t val)
-        {
+        [](int64_t val) {
             int min = std::numeric_limits<int>::min();
             int max = std::numeric_limits<int>::max();
             if (val < min)
@@ -616,8 +614,7 @@ vector<T> onnx_importer::raw_to_vector(const onnx::TensorProto &tensor)
     std::vector<target_type> data;
     data.reserve(size);
     std::transform(ptr, ptr + size, std::back_inserter(data),
-        [](const storage_type &e)
-        {
+        [](const storage_type &e) {
             storage_type new_e = e;
             if constexpr (!native_little_endian)
             {

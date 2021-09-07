@@ -186,8 +186,7 @@ std::optional<std::vector<T>> onnx_importer::get_constant_input_data(const std::
     result.reserve(size);
 
     std::transform(ptr, ptr + size, std::back_inserter(result),
-        [](const auto &e)
-        { return e; });
+        [](const auto &e) { return e; });
 
     return result;
 }
@@ -216,8 +215,7 @@ std::vector<T> onnx_importer::get_constant_value(const std::string &name)
 
     std::vector<T> vec_target;
     std::transform(vec_storage.begin(), vec_storage.end(), std::back_inserter(vec_target),
-        [](const auto val)
-        {
+        [](const auto val) {
             T min = std::numeric_limits<T>::min();
             T max = std::numeric_limits<T>::max();
             if (val < min)
