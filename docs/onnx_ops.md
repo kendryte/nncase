@@ -18,6 +18,7 @@
 | Cos | ✅ |
 | Div | ✅ |
 | Dropout | ✅ |
+| Elu | ✅ |
 | Exp | ✅ |
 | Expand | ✅ |
 | Flatten | ✅ |

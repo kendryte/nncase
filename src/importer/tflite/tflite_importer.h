@@ -21,6 +21,7 @@
 #include <nncase/ir/ops/dequantize.h>
 #include <nncase/ir/ops/quantize.h>
 #include <nncase/ir/ops/transpose.h>
+#include <nncase/runtime/debug.h>
 #include <schema_generated.h>
 #include <span>
 #include <unordered_map>

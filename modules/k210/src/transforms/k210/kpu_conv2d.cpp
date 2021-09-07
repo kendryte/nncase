@@ -110,7 +110,7 @@ auto quantize_act(quantizer &quantizer, float act_in_scale, const quant_param_t 
 
         auto x0 = src.start / act_in_scale;
         auto mul = quantizer.get_fixed_mul(src.slop * zq_scale, 16, 43, true);
-        dest.start_x = (int64_t)std::lrint(x0);
+        dest.start_x = (int64_t)std::llrint(x0);
         dest.mul = mul.rounded_mul();
         dest.shift = mul.shift;
         dest.add = std::clamp((int32_t)std::lrint(src.intercept / zq_p.scale + zq_p.zero_point), 0, 255);
