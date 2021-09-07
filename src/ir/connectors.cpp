@@ -15,6 +15,7 @@
 #include <nncase/ir/connectors.h>
 #include <nncase/ir/debug.h>
 #include <nncase/ir/visitor.h>
+#include <nncase/runtime/debug.h>
 
 using namespace nncase;
 using namespace nncase::ir;

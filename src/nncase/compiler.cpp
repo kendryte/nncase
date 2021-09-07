@@ -23,6 +23,7 @@
 #include <nncase/ir/debug.h>
 #include <nncase/ir/evaluator.h>
 #include <nncase/runtime/datatypes.h>
+#include <nncase/runtime/debug.h>
 #include <nncase/transforms/neutral/add_quant_motion.h>
 #include <nncase/transforms/neutral/dequantize_motion.h>
 #include <nncase/transforms/neutral/fold_io_quant_motion.h>
@@ -258,6 +259,12 @@ public:
         {
             std::cout << "3. Optimize target dependent..." << std::endl;
             optimize_target_dependent(graph_, use_ptq_);
+
+            if (use_ptq_)
+            {
+                std::cout << "4.1. Add quantize annotation..." << std::endl;
+                add_quantize_annotation(graph_);
+            }
         }
 
         return graph_;
