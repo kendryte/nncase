@@ -260,6 +260,8 @@ public:
                 quant_eval_quantizer = quant_evaluator.quantizer(graph_.module_type());
 
                 std::cout << "4.5. Summarize quant error for each layer..." << std::endl;
+                std::ofstream f;
+                f.open(compile_options_.dump_dir / "layer_quant_error.txt");
                 for (uint32_t i = 0; i < quant_eval_quantizer->insert_order().size(); i++)
                 {
                     std::string layer_name = quant_eval_quantizer->insert_order()[i];
@@ -267,12 +269,10 @@ public:
                     std::cout << "layer: " << layer_name << "   cosine: " << cosine(eval_quantizer->output_buffers()[layer_name].data(), quant_eval_quantizer->output_buffers()[layer_name].data(), data_size) << std::endl;
                     if (compile_options_.dump_ir)
                     {
-                        std::ofstream f;
-                        f.open(compile_options_.dump_dir / "layer_quant_error.txt", std::ofstream::out | std::ofstream::app);
                         f << "layer: " << layer_name << "   cosine: " << cosine(eval_quantizer->output_buffers()[layer_name].data(), quant_eval_quantizer->output_buffers()[layer_name].data(), data_size) << std::endl;
-                        f.close();
                     }
                 }
+                f.close();
             }
         }
 
