@@ -17,6 +17,7 @@
 #include <nncase/data/dataset.h>
 #include <nncase/io_utils.h>
 #include <nncase/ir/debug.h>
+#include <nncase/runtime/debug.h>
 #include <nncase/runtime/interpreter.h>
 #include <nncase/simulator.h>
 

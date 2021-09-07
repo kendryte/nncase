@@ -53,11 +53,10 @@ def visual(output: torch.Tensor, ratio: float, raw_img: np.ndarray, cls_conf=0.3
 
 def main(kmodel: str, test_size: list, img_path: str, legacy: bool, no_preprocess: bool):
     sim = nncase.Simulator()
-    
+
     with open(kmodel, 'rb') as f:
-        kmodel_bytes=f.read()
-        sim.load_model(kmodel_bytes)
-        
+        sim.load_model(f.read())
+
     raw_img = cv2.imread(img_path)
     ratio = min(test_size[0] / raw_img.shape[0], test_size[1] / raw_img.shape[1])
 
@@ -70,7 +69,6 @@ def main(kmodel: str, test_size: list, img_path: str, legacy: bool, no_preproces
         img = img.astype(np.float32)
 
     img = np.expand_dims(img, 0)
-    # sim.load_model(kmodel_bytes)
     sim.set_input_tensor(0, nncase.RuntimeTensor.from_numpy(img))
     sim.run()
     prediction = sim.get_output_tensor(0)

@@ -14,16 +14,17 @@
  */
 #include <nncase/runtime/compiler_defs.h>
 #include <pybind11/pybind11.h>
+#include <span>
 
 namespace pybind11
 {
 namespace detail
 {
     template <>
-    struct type_caster<gsl::span<const gsl::byte>>
+    struct type_caster<std::span<const uint8_t>>
     {
     public:
-        PYBIND11_TYPE_CASTER(gsl::span<const gsl::byte>, _("bytes"));
+        PYBIND11_TYPE_CASTER(std::span<const uint8_t>, _("bytes"));
 
         bool load(handle src, bool)
         {
@@ -34,8 +35,7 @@ namespace detail
             py::ssize_t length;
             if (PyBytes_AsStringAndSize(src.ptr(), reinterpret_cast<char **>(&buffer), &length))
                 return false;
-            value = { (const gsl::byte *)buffer, (size_t)length };
-            loader_life_support::add_patient(src);
+            value = { buffer, (size_t)length };
             return true;
         }
     };

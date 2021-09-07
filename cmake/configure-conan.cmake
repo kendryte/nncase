@@ -20,7 +20,7 @@ _SET_CONANOPT(CONAN_OPTS "halide" ENABLE_HALIDE)
 
 if (NOT DEFINED CMAKE_CXX_STANDARD)
     if (BUILDING_RUNTIME)
-        set (CMAKE_CXX_STANDARD 14)
+        set (CMAKE_CXX_STANDARD 17)
     else ()
         set (CMAKE_CXX_STANDARD 20)
     endif ()
