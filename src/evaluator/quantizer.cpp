@@ -195,6 +195,40 @@ void quantizer::record(output_connector &connector, std::span<const bfloat16> da
     }
 }
 
+void quantizer::record_buffers(std::string node_name, std::span<const float> data)
+{
+    std::vector<float> data_vec;
+    data_vec.assign(data.begin(), data.end());
+    output_buffers_.emplace(node_name, data_vec);
+}
+
+void quantizer::record_buffers(std::string node_name, std::span<const bfloat16> data)
+{
+    std::vector<float> data_vec;
+    for (int i = 0; i < data.size(); i++)
+        data_vec.push_back(static_cast<float>(data.data()[i]));
+    output_buffers_.emplace(node_name, data_vec);
+}
+
+void quantizer::record_quant_buffers(std::string node_name, std::span<const float> data)
+{
+    std::vector<float> data_vec;
+    data_vec.assign(data.begin(), data.end());
+    output_buffers_.emplace(node_name, data_vec);
+    if (std::find(insert_order_.begin(), insert_order_.end(), node_name) == insert_order_.end())
+        insert_order_.push_back(node_name);
+}
+
+void quantizer::record_quant_buffers(std::string node_name, std::span<const bfloat16> data)
+{
+    std::vector<float> data_vec;
+    for (int i = 0; i < data.size(); i++)
+        data_vec.push_back(static_cast<float>(data.data()[i]));
+    output_buffers_.emplace(node_name, data_vec);
+    if (std::find(insert_order_.begin(), insert_order_.end(), node_name) == insert_order_.end())
+        insert_order_.push_back(node_name);
+}
+
 void quantizer::begin_collect_distribution()
 {
     for (auto &&p : quant_ranges_)
