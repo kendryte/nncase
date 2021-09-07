@@ -118,7 +118,7 @@ void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::targ
                 std::cout << " |Letterbox:" << std::endl;
                 size_t model_h;
                 size_t model_w;
-                if (real_layout_ == "NHWC")
+                if (real_inlayout_ == "NHWC")
                 {
                     model_h = in_node->output().shape()[1];
                     model_w = in_node->output().shape()[2];
@@ -193,7 +193,7 @@ void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::targ
                 mid_ptr = &out_convert->output();
             }
 
-            if (real_layout_ == "NHWC")
+            if (real_inlayout_ == "NHWC")
             {
                 auto transpose_post = graph.emplace<transpose>(mid_ptr->type(), mid_ptr->shape(), axis_t { 0, 2, 3, 1 });
                 transpose_post->name("NCHW_2_NHWC");

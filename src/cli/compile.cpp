@@ -37,10 +37,8 @@ compile_command::compile_command(lyra::cli &cli)
                          .add_argument(lyra::opt(dataset_, "dataset path").name("--dataset").optional().help("calibration dataset, used in post quantization"))
                          .add_argument(lyra::opt(dataset_format_, "dataset format").name("--dataset-format").optional().help("datset format: e.g. image, raw default is " + dataset_format_))
                          .add_argument(lyra::opt(calibrate_method_, "calibrate method").name("--calibrate-method").optional().help("calibrate method: e.g. no_clip, l2, default is " + calibrate_method_))
-                         .add_argument(lyra::opt(input_mean_, "input mean").name("--input-mean").optional().help("input mean, default is " + std::to_string(input_mean_)))
-                         .add_argument(lyra::opt(input_std_, "input std").name("--input-std").optional().help("input std, default is " + std::to_string(input_std_)))
-                         .add_argument(lyra::opt(mean_, "normalize mean").name("--mean").optional().help("normalize mean, default is " + std::to_string(input_mean_)))
-                         .add_argument(lyra::opt(scale_, "normalize scale").name("--scale").optional().help("normalize scale, default is " + std::to_string(input_std_)))
+                         .add_argument(lyra::opt(mean_, "normalize mean").name("--mean").optional().help("normalize mean, default is " + std::to_string(mean_[0])))
+                         .add_argument(lyra::opt(scale_, "normalize scale").name("--scale").optional().help("normalize scale, default is " + std::to_string(scale_[0])))
                          .add_argument(lyra::opt(image_format_, "image format").name("--image-format").optional().help("input image format, only support RGB!"))
                          .add_argument(lyra::opt(input_range_, "input range").name("--input-range").optional())
                          .add_argument(lyra::opt(input_shape_, "input shape").name("--input-shape").optional())
@@ -82,6 +80,8 @@ void compile_command::run()
     c_options.w_quant_type = w_quant_type_;
     c_options.benchmark_only = benchmark_only_;
     c_options.preprocess = preprocess_;
+    c_options.input_layout = input_layout_;
+    c_options.output_layout = output_layout_;
 
     import_options i_options;
     std::vector<std::string> output_arrays;
@@ -105,8 +105,6 @@ void compile_command::run()
     }
 
     i_options.output_arrays = output_arrays;
-    i_options.input_layout = input_layout_;
-    i_options.output_layout = output_layout_;
 
     auto compiler = nncase::compiler::create(c_options);
     if (input_format_ == "tflite")
@@ -139,8 +137,6 @@ void compile_command::run()
         ptq_options.dataset = dataset_;
         ptq_options.dataset_format = dataset_format_;
         ptq_options.calibrate_method = calibrate_method_;
-        ptq_options.input_mean = input_mean_;
-        ptq_options.input_std = input_std_;
         compiler->use_ptq(ptq_options);
     }
 

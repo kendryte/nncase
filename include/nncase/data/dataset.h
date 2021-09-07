@@ -94,7 +94,7 @@ public:
         std::optional<data_batch<T>> value_;
     };
 
-    dataset(const std::filesystem::path &path, std::function<bool(const std::filesystem::path &)> file_filter, xt::dynamic_shape<size_t> input_shape, std::string input_layout, float mean, float std);
+    dataset(const std::filesystem::path &path, std::function<bool(const std::filesystem::path &)> file_filter, xt::dynamic_shape<size_t> input_shape, std::string input_layout);
     virtual ~dataset() = default;
 
     template <class T>
@@ -129,11 +129,6 @@ private:
             xt::xarray<T> batch(input_shape_);
             auto file = read_file(filenames_[from++]);
             process(file, batch.data(), batch.shape(), input_layout_);
-            if constexpr (std::is_same_v<T, float>)
-            {
-                for (auto &v : batch)
-                    v = (v - mean_) / std_;
-            }
 
             std::span<const std::filesystem::path> filenames(filenames_.data() + start, filenames_.data() + from);
 
@@ -147,14 +142,12 @@ private:
     std::vector<std::filesystem::path> filenames_;
     xt::dynamic_shape<size_t> input_shape_;
     std::string input_layout_;
-    float mean_;
-    float std_;
 };
 
 class NNCASE_API image_dataset : public dataset
 {
 public:
-    image_dataset(const std::filesystem::path &path, xt::dynamic_shape<size_t> input_shape, std::string input_layout, float mean, float std);
+    image_dataset(const std::filesystem::path &path, xt::dynamic_shape<size_t> input_shape, std::string input_layout);
 
 protected:
     void process(const std::vector<uint8_t> &src, float *dest, const xt::dynamic_shape<size_t> &shape, std::string layout) override;
@@ -165,7 +158,7 @@ protected:
 class NNCASE_API raw_dataset : public dataset
 {
 public:
-    raw_dataset(const std::filesystem::path &path, xt::dynamic_shape<size_t> input_shape, float mean, float std);
+    raw_dataset(const std::filesystem::path &path, xt::dynamic_shape<size_t> input_shape);
 
 protected:
     void process(const std::vector<uint8_t> &src, float *dest, const xt::dynamic_shape<size_t> &shape, std::string layout) override;

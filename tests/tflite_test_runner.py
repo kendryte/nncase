@@ -49,7 +49,7 @@ class TfliteTestRunner(TestRunner):
             input_dict['dtype'] = item['dtype']
             input_dict['shape'] = item['shape']
             self.inputs.append(input_dict)
-            self.calibs.append(input_dict.copy())
+            self.calibs.append(copy.deepcopy(input_dict))
 
         for item in interp.get_output_details():
             output_dict = {}

@@ -23,12 +23,10 @@ namespace nncase::importer
 {
 struct import_options
 {
-    std::string input_layout = "NCHW";
-    std::string output_layout = "NCHW";
     std::span<const std::string> output_arrays;
 };
 
-void import_tflite(ir::graph &graph, std::span<const uint8_t> model, const import_options &options, std::string &real_layout);
-void import_onnx(ir::graph &graph, std::span<const uint8_t> model, const import_options &options, std::string &real_layout);
-void import_caffe(ir::graph &graph, std::span<const uint8_t> model, std::span<const uint8_t> prototxt, std::string &real_layout);
+void import_tflite(ir::graph &graph, std::span<const uint8_t> model, const import_options &options, std::string &real_inlayout, std::string &real_outlayout);
+void import_onnx(ir::graph &graph, std::span<const uint8_t> model, const import_options &options, std::string &real_inlayout, std::string &real_outlayout);
+void import_caffe(ir::graph &graph, std::span<const uint8_t> model, std::span<const uint8_t> prototxt, std::string &real_inlayout, std::string &real_outlayout);
 }

@@ -37,25 +37,26 @@ void post_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::tar
         if (out_node->input().shape().size() == 4)
         {
             auto old_output = out_node->input().connection();
-            if (output_layout_ == "NCHW")
+            if (output_layout_ != real_outlayout_)
             {
-                if (real_outlayout_ == "NHWC")
+                transpose *tp;
+                if (output_layout_ == "NCHW" && real_outlayout_ == "NHWC")
                 {
-                    auto tp = graph.emplace<transpose>(old_output->type(), old_output->shape(), axis_t { 0, 3, 1, 2 });
-                    auto new_output = graph.emplace<output_node>(tp->output().type(), tp->output().shape());
-                    tp->input().connect(*old_output);
-                    new_output->input().connect(tp->output());
+
+                    tp = graph.emplace<transpose>(old_output->type(), old_output->shape(), axis_t { 0, 3, 1, 2 });
                 }
-            }
-            else
-            {
-                if (real_outlayout_ == "NCHW")
+                else if (output_layout_ == "NHWC" && real_outlayout_ == "NCHW")
                 {
-                    auto tp = graph.emplace<transpose>(old_output->type(), old_output->shape(), axis_t { 0, 2, 3, 1 });
-                    auto new_output = graph.emplace<output_node>(tp->output().type(), tp->output().shape());
-                    tp->input().connect(*old_output);
-                    new_output->input().connect(tp->output());
+                    tp = graph.emplace<transpose>(old_output->type(), old_output->shape(), axis_t { 0, 2, 3, 1 });
                 }
+                else
+                {
+                    continue;
+                }
+                auto new_output = graph.emplace<output_node>(tp->output().type(), tp->output().shape());
+                tp->input().connect(*old_output);
+                new_output->input().connect(tp->output());
+                out_node->input().clear_connection();
             }
         }
         graph.dce();

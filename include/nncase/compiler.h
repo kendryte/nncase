@@ -51,12 +51,12 @@ struct compile_options
     std::vector<int32_t> input_shape {};
     std::string image_format = "RGB";
     std::string w_quant_type = "uint8";
+    std::string input_layout = "NCHW";
+    std::string output_layout = "NCHW";
 };
 
 struct import_options
 {
-    std::string input_layout = "NCHW";
-    std::string output_layout = "NCHW";
     std::span<const std::string> output_arrays;
 };
 
@@ -64,9 +64,6 @@ struct ptq_options_base
 {
     std::string calibrate_method = "no_clip";
     std::function<void(size_t cnt, size_t total)> progress;
-
-    float input_mean = 0.f;
-    float input_std = 1.f;
 };
 
 struct ptq_dataset_options : ptq_options_base

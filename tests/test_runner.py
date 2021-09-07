@@ -12,6 +12,7 @@ import struct
 from compare_util import compare
 import copy
 import tensorflow as tf
+import cv2
 
 
 class Edict:
@@ -345,10 +346,7 @@ class TestRunner(metaclass=ABCMeta):
     def run_single(self, cfg, case_dir: str, model_file: Union[List[str], str]):
         if not self.inputs:
             self.parse_model_input_output(model_file)
-        names_im, args_im = TestRunner.split_value(cfg.importer_opt)
-        names_pre, args_pre = TestRunner.split_value(cfg.preprocess_opt)
-        names = names_im + names_pre
-        args = args_im + args_pre
+        names, args = TestRunner.split_value(cfg.preprocess_opt)
         for combine_args in product(*args):
             dict_args = dict(zip(names, combine_args))
             self.get_process_config(dict_args)
@@ -382,20 +380,19 @@ class TestRunner(metaclass=ABCMeta):
         compile_options = nncase.CompileOptions()
         if isinstance(model_file, str):
             if os.path.splitext(model_file)[-1] == ".tflite":
-                import_options.input_layout = cfg['input_layout']
-                import_options.output_layout = cfg['output_layout']
+                compile_options.input_layout = cfg['input_layout']
+                compile_options.output_layout = cfg['output_layout']
             elif os.path.splitext(model_file)[-1] == ".onnx":
-                import_options.input_layout = cfg['input_layout']
-                import_options.output_layout = cfg['output_layout']
+                compile_options.input_layout = cfg['input_layout']
+                compile_options.output_layout = cfg['output_layout']
         elif isinstance(model_file, list):
             if os.path.splitext(model_file[1])[-1] == ".caffemodel":
-                import_options.input_layout = cfg['input_layout']
-                import_options.output_layout = cfg['output_layout']
+                compile_options.input_layout = cfg['input_layout']
+                compile_options.output_layout = cfg['output_layout']
 
         for k, v in cfg.items():
             e = '"'
-            if k not in ['input_layout', 'output_layout', 'flag']:
-                exec(f"compile_options.{k} = {e + v + e if isinstance(v, str) else v}")
+            exec(f"compile_options.{k} = {e + v + e if isinstance(v, str) else v}")
         return import_options, compile_options
 
     def run_evaluator(self, cfg, case_dir, import_options, compile_options, model_content):
@@ -462,6 +459,8 @@ class TestRunner(metaclass=ABCMeta):
             os.path.join(case_dir, 'eval'), kwargs)
         compile_options.target = kwargs['target']
         compile_options.dump_dir = eval_dir
+        compile_options.dump_asm = cfg.compile_opt.dump_asm
+        compile_options.dump_ir = cfg.compile_opt.dump_ir
         compiler = nncase.Compiler(compile_options)
         self.import_model(compiler, model_content, import_options)
         evaluator = compiler.create_evaluator(3)
@@ -503,6 +502,8 @@ class TestRunner(metaclass=ABCMeta):
         compile_options.preprocess = preprocess['preprocess']
         compile_options.mean = preprocess['mean']
         compile_options.scale = preprocess['scale']
+        compile_options.input_layout = preprocess['input_layout']
+        compile_options.output_layout = preprocess['output_layout']
         compiler = nncase.Compiler(compile_options)
         self.import_model(compiler, model_content, import_options)
         if kwargs['ptq']:
@@ -510,8 +511,6 @@ class TestRunner(metaclass=ABCMeta):
             ptq_options.set_tensor_data(np.asarray(
                 [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.calibs]).tobytes())
             ptq_options.samples_count = cfg.generate_calibs.batch_size
-            ptq_options.input_mean = cfg.ptq_opt.kwargs['input_mean']
-            ptq_options.input_std = cfg.ptq_opt.kwargs['input_std']
 
             compiler.use_ptq(ptq_options)
         compiler.compile()
@@ -548,7 +547,8 @@ class TestRunner(metaclass=ABCMeta):
                              preprocess_opt['input_shape'][1], preprocess_opt['input_shape'][2]]
                 else:
                     shape = input['shape']
-                shape[0] *= cfg.batch_size
+                if shape[0] != cfg.batch_size:
+                    shape[0] *= cfg.batch_size
                 data = DataFactory[cfg.name](shape, input['dtype'], **cfg.kwargs)
 
                 path_list.append(

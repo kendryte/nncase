@@ -82,7 +82,8 @@ optional<Proto> extract(const ProtobufCollection<Proto> &collection, const strin
 {
     const auto it {
         find_if(begin(collection), end(collection),
-            [&value](const auto &e) {
+            [&value](const auto &e)
+            {
                 return e.name() == value;
             })
     };
@@ -113,7 +114,7 @@ onnx_importer::onnx_importer(std::span<const uint8_t> model, ir::graph &graph)
         throw std::runtime_error("Invalid ONNX model");
 }
 
-void onnx_importer::import(const struct import_options &options, std::string &real_layout)
+void onnx_importer::import(const struct import_options &options, std::string &real_inlayout, std::string &real_outlayout)
 {
     const auto &graph = model_.graph();
 
@@ -144,7 +145,7 @@ void onnx_importer::import(const struct import_options &options, std::string &re
         node->name(input_name);
 
         output_tensors_.emplace(input_name, &node->output());
-        real_layout = "NCHW";
+        real_inlayout = "NCHW";
     }
 
     // create outputs
@@ -163,6 +164,7 @@ void onnx_importer::import(const struct import_options &options, std::string &re
 
             input_tensors_.emplace(&node->input(), output_name);
         }
+        real_outlayout = "NCHW";
     }
     else
     {
@@ -555,7 +557,8 @@ optional<vector<int>> onnx_importer::get_attribute<vector<int>>(const onnx::Node
 
     target_type vec;
     std::transform(attr.value().ints().begin(), attr.value().ints().end(), std::back_inserter(vec),
-        [](int64_t val) {
+        [](int64_t val)
+        {
             int min = std::numeric_limits<int>::min();
             int max = std::numeric_limits<int>::max();
             if (val < min)
@@ -613,7 +616,8 @@ vector<T> onnx_importer::raw_to_vector(const onnx::TensorProto &tensor)
     std::vector<target_type> data;
     data.reserve(size);
     std::transform(ptr, ptr + size, std::back_inserter(data),
-        [](const storage_type &e) {
+        [](const storage_type &e)
+        {
             storage_type new_e = e;
             if constexpr (!native_little_endian)
             {

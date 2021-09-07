@@ -9,11 +9,11 @@ case: # case的配置，应该是一个多层次的
   preprocess_opt:
     - name: preprocess
       values:
-        - false
+        - true
     - name: image_format
       values:
         - RGB
-        - BGR
+        # - BGR
     - name: input_shape
       values:
         - [224,224,3] #HWC
@@ -23,22 +23,24 @@ case: # case的配置，应该是一个多层次的
         - [0,0,0]
     - name: scale
       values:
-        - [255,255,255]
+        - [1,1,1]
     - name: input_range
       values:
         - [0,255]
     - name: input_type
       values:
-        - float32
-        # - uint8
-  importer_opt:
+        # - float32
+        - uint8
     - name: input_layout
       values:
-        - NHWC
+        # - NHWC
         - NCHW
     - name: output_layout
       values:
         - NHWC
+        # - NCHW
+  importer_opt:
+    kwargs: null
   compile_opt:
     dump_asm: true
     dump_ir: true
