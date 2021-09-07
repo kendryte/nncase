@@ -273,10 +273,6 @@ public:
                         f.close();
                     }
                 }
-                // for (auto iter_ptq : quant_eval_quantizer->output_buffers())
-                // {
-                //     std::cout << "layer: " << iter_ptq.first << "   cosine: " << cosine(&(eval_quantizer->output_buffers().find(iter_ptq.first)->second)[0], &(iter_ptq.second)[0], iter_ptq.second.size()) << std::endl;
-                // }
             }
         }
 

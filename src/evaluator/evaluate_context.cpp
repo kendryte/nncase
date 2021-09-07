@@ -97,7 +97,7 @@ evaluate_tensor function_evaluate_context::memory_at(const output_connector &con
     return evaluate_tensor(alloc.type, to(alloc.shape), to(alloc.strides), buffer);
 }
 
-void function_evaluate_context::evaluate([[maybe_unused]] bool before_quant = true, [[maybe_unused]] size_t stage = 0)
+void function_evaluate_context::evaluate(bool before_quant = true, size_t stage = 0)
 {
     using clock = chrono::high_resolution_clock;
     chrono::nanoseconds total_duration = {};
