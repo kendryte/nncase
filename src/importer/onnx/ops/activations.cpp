@@ -135,7 +135,7 @@ void onnx_importer::convert_op_Sigmoid(const NodeProto &node)
     const auto &output = node.output()[0];
     auto in_shape = get_shape(input);
 
-    const auto &op_name { generate_name(node) };
+    NNCASE_UNUSED const auto &op_name { generate_name(node) };
 
 #if 1
     // y = 1 / (1 + exp(-x))
