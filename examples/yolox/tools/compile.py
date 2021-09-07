@@ -22,6 +22,7 @@ def preproc(img, input_size, transpose=True):
         interpolation=cv2.INTER_LINEAR,
     ).astype(np.uint8)
     padded_img[: int(img.shape[0] * r), : int(img.shape[1] * r)] = resized_img
+    padded_img = cv2.cvtColor(padded_img, cv2.COLOR_BGR2RGB)
     if transpose:
         padded_img = padded_img.transpose((2, 0, 1))
     padded_img = np.ascontiguousarray(padded_img)
@@ -44,13 +45,14 @@ def main(onnx: str, kmodel: str, target: str, imgs_dir: str, test_size: list, le
     cpl_opt = nncase.CompileOptions()
     cpl_opt.preprocess = not no_preprocess
     cpl_opt.input_shape = test_size + [3]  # NOTE need modify it
-    cpl_opt.image_format = 'RGB'  # RGB == not swap RB
     # (x - mean) / scale
     if legacy:
+        cpl_opt.image_format = 'RGB'  # RGB == not swap RB
         cpl_opt.input_range = [0, 1]
         cpl_opt.mean = [0.485, 0.456, 0.406]
         cpl_opt.scale = [0.229, 0.224, 0.225]
     else:
+        cpl_opt.image_format = 'BGR'  # BGR == swap RB
         cpl_opt.input_range = [0, 255]
         cpl_opt.mean = [0, 0, 0]
         cpl_opt.scale = [1, 1, 1]

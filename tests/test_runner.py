@@ -110,6 +110,8 @@ def _cast_bfloat16_then_float32(values: np.array):
 def generate_image_dataset(shape: List[int], dtype: np.dtype,
                            batch_index: int, batch_size: int,
                            dir_path: str) -> np.ndarray:
+    """ read image from folder, return the rgb image with padding, dtype = float32, range = [0,255]. same as k210 carmera.
+    """
     import cv2
     assert(os.path.isdir(dir_path) or os.path.exists(dir_path))
 
@@ -127,6 +129,7 @@ def generate_image_dataset(shape: List[int], dtype: np.dtype,
             interpolation=cv2.INTER_LINEAR,
         ).astype(np.uint8)
         padded_img[: int(img.shape[0] * r), : int(img.shape[1] * r)] = resized_img
+        padded_img = cv2.cvtColor(padded_img, cv2.COLOR_BGR2RGB)
         if transpose:
             padded_img = padded_img.transpose((2, 0, 1))
         padded_img = np.ascontiguousarray(padded_img)
@@ -191,11 +194,11 @@ class TestRunner(metaclass=ABCMeta):
 
             if type == 'float32':
                 return values.astype(np.float32)
-            elif type == 'uint8' :
+            elif type == 'uint8':
                 if values.dtype == np.float32:
                     values = ((values) * 255).astype(np.uint8)
                 return values
-            elif type == 'int8' :
+            elif type == 'int8':
                 if values.dtype == np.float32:
                     values = (values * 255 - 128).astype(np.int8)
                 return values

@@ -27,8 +27,8 @@ class ResizeInfo(NamedTuple):
 
 def decode(prediction: torch.Tensor, test_size=[224, 224],
            num_classes=80,
-           conf_thre=0.1,
-           nms_thre=0.1,
+           conf_thre=0.01,
+           nms_thre=0.01,
            strides=[8, 16, 32],
            ):
 

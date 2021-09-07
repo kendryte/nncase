@@ -27,7 +27,7 @@ python tools/demo.py image -n yolox-nano -c yolox_nano.pth --path assets/dog.jpg
 python tools/export_onnx.py --output-name yolox_nano_224.onnx -f exps/default/nano.py  -c yolox_nano.pth  test_size "(224,224)" 
 ```
 
-
+****
 # 编译模型与测试 
 
 ## 1. 编译浮点模型与验证:
