@@ -67,7 +67,9 @@ def main(kmodel: str, test_size: list, img_path: str, legacy: bool, no_preproces
             img = img - np.array([0.485, 0.456, 0.406]).reshape((3, 1, 1))
             img = img / np.array([0.229, 0.224, 0.225]).reshape((3, 1, 1))
         img = img.astype(np.float32)
-
+    
+    img.tofile(f'./{Path(img_path).stem}.bin')
+    print(f"Save the image {img_path} as ./{Path(img_path).stem}.bin!")
     img = np.expand_dims(img, 0)
     sim.set_input_tensor(0, nncase.RuntimeTensor.from_numpy(img))
     sim.run()

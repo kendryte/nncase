@@ -64,14 +64,17 @@ python tools/simulate.py yolox_nano_224_quant.kmodel ../20classes_yolo/images/do
 
 ## 生成静态图像用于测试
 
-可以先利用我写好的脚本转换图像到`bin`文件,用于`k210`上的推理测试,以下命令将会在`yolox_detect_example`目录下生成`input.bin`用于后续测试.
+我在`simulate.py`中添加了自动导出测试图像`bin`的功能,此时导出的`bin`文件即可用于测试.
+
+将编译生成的`yolox_nano_224_quant.kmodel`与`xxx.bin`移动到`/k210/yolox_detect_example`目录以作测试:
 ```sh
-python tools/make_image_bin.py images/person.jpg k210/yolox_detect_example/input.bin
+mv yolox_nano_224_quant.kmodel k210/yolox_detect_example/yolox_nano_224.kmodel
+mv xxx.bin k210/yolox_detect_example/input.bin
 ```
 
 ## 浮点模型推理测试
 
-`yolox nano`模型还是略大于k210的内存,因此无法加载.
+`yolox nano`全浮点模型还是略大于k210的内存,因此无法加载.
 
 ## 定点模型推理测试
 
