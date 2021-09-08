@@ -363,7 +363,7 @@ void register_neutral_evaluators()
             unary([](auto a) { return acosf(a); });
             break;
         case unary_asin:
-            unary([](auto a) { return asin(a); });
+            unary([](auto a) { return asinf(a); });
             break;
         case unary_ceil:
             unary([](auto a) { return ceilf(a); });

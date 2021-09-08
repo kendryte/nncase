@@ -47,7 +47,7 @@ result<void> reference::unary(unary_op_t op, const float *input, float *output, 
     {
         UNARY_IMPL(unary_abs, fabsf);
         UNARY_IMPL(unary_acos, acosf);
-        UNARY_IMPL(unary_asin, asin);
+        UNARY_IMPL(unary_asin, asinf);
         UNARY_IMPL(unary_ceil, ceilf);
         UNARY_IMPL(unary_cos, cosf);
         UNARY_IMPL(unary_exp, expf);
