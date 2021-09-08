@@ -17,16 +17,13 @@
 #include "nncase/runtime/datatypes.h"
 #include "opcode.h"
 
-namespace nncase::ir::tensors
-{
+namespace nncase::ir::tensors {
 /** @brief Broadcast operator node */
-class NNCASE_API broadcast_node : public op_node
-{
-public:
-    DEFINE_NODE_OPCODE(op_tensors_broadcast);
-
+class NNCASE_API broadcast_node : public op_node {
+    DEFINE_OBJECT_KIND(op_node, op_tensors_broadcast)
+  public:
     broadcast_node();
 };
 
-using broadcast = expr_t<broadcast_node>;
-}
+using broadcast = object_t<broadcast_node>;
+} // namespace nncase::ir::tensors

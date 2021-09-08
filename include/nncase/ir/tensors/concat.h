@@ -17,24 +17,13 @@
 #include "nncase/runtime/datatypes.h"
 #include "opcode.h"
 
-namespace nncase::ir::tensors
-{
+namespace nncase::ir::tensors {
 /** @brief Concat operator node */
-class NNCASE_API concat_node : public op_node
-{
-public:
-    DEFINE_NODE_OPCODE(op_tensors_concat);
-
-    concat_node(int32_t axis);
-
-    /** @brief Get the axis of the concat expression */
-    int32_t axis() const noexcept { return axis_; }
-    /** @brief Set the axis of the concat expression */
-    void axis(int32_t value) noexcept { axis_ = value; }
-
-private:
-    int32_t axis_;
+class NNCASE_API concat_node : public op_node {
+    DEFINE_OBJECT_KIND(op_node, op_tensors_concat)
+  public:
+    concat_node();
 };
 
-using concat = expr_t<concat_node>;
-}
+using concat = object_t<concat_node>;
+} // namespace nncase::ir::tensors

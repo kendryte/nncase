@@ -13,33 +13,65 @@
  * limitations under the License.
  */
 #pragma once
-#include "nncase/ir/ir_types.h"
-#include "nncase/runtime/datatypes.h"
+#include "shape.h"
+#include <nncase/runtime/datatypes.h>
 
 namespace nncase::ir {
-/** @brief Expression type */
-class NNCASE_API type_t {
+/** @brief Type node */
+class NNCASE_API type_node : public object_node {
+    DEFINE_OBJECT_KIND(object_node, object_type);
+
   public:
-    static type_t any() noexcept;
+};
 
-    /** @brief Initialize a scalar type */
-    type_t(typecode_t elem_type) noexcept : elem_type_(elem_type) {}
+/** @brief Type */
+using type = object_t<type_node>;
 
-    /** @brief Initialize a scalar/tensor type */
-    type_t(typecode_t elem_type, shape_t shape) noexcept
-        : elem_type_(elem_type), shape_(std::move(shape)) {}
+/** @brief Any type node */
+class NNCASE_API any_type_node : public type_node {
+    DEFINE_OBJECT_KIND(object_node, object_any_type);
 
-    /** @brief Is this an any type */
-    bool is_any() const noexcept { return elem_type_ == typecode_t::any; }
+  public:
+};
+
+/** @brief Any type */
+class any_type : public object_t<any_type_node> {};
+
+/** @brief Primitive type node */
+class NNCASE_API prim_type_node : public type_node {
+    DEFINE_OBJECT_KIND(object_node, object_prim_type);
+
+  public:
+    prim_type_node(datatype_t prim_type);
+
+    /** @brief Get primitive datatype */
+    datatype_t prim_type() const noexcept { return prim_type_; }
+    /** @brief Set primitive datatype */
+    void prim_type(datatype_t value) noexcept { prim_type_ = value; }
+
+  private:
+    datatype_t prim_type_;
+};
+
+/** @brief Primitive type */
+class prim_type : public object_t<prim_type_node> {};
+
+/** @brief Tensor type node */
+class NNCASE_API tensor_type_node : public type_node {
+    DEFINE_OBJECT_KIND(object_node, object_tensor_type);
+
+  public:
+    tensor_type_node(datatype_t elem_type, shape_t shape);
+
     /** @brief Is this a scalar type */
     bool is_scalar() const noexcept { return shape_.is_scalar(); }
     /** @brief Is this a tensor type */
     bool is_tensor() const noexcept { return !shape_.is_scalar(); }
 
     /** @brief Get element datatype */
-    typecode_t elem_type() const noexcept { return elem_type_; }
+    datatype_t elem_type() const noexcept { return elem_type_; }
     /** @brief Set element datatype */
-    void elem_type(typecode_t value) noexcept { elem_type_ = value; }
+    void elem_type(datatype_t value) noexcept { elem_type_ = value; }
 
     /** @brief Get shape */
     const shape_t &shape() const noexcept { return shape_; }
@@ -49,7 +81,13 @@ class NNCASE_API type_t {
     void shape(shape_t value) noexcept { shape_ = std::move(value); }
 
   private:
-    typecode_t elem_type_;
+    datatype_t elem_type_;
     shape_t shape_;
+};
+
+/** @brief Tensor type */
+class tensor_type : public object_t<tensor_type_node> {
+  public:
+    NNCASE_API tensor_type(datatype_t elem_type, shape_t shape);
 };
 } // namespace nncase::ir

@@ -13,56 +13,116 @@
  * limitations under the License.
  */
 #pragma once
+#include "object_kind.h"
 #include "runtime/datatypes.h"
 #include <memory>
 #include <type_traits>
 #include <utility>
 
-namespace nncase
-{
-template <class T>
-class object_ref
-{
-public:
-    static inline constexpr bool is_default_constructible_v = std::is_default_constructible_v<T> && !std::is_abstract_v<T>;
-
-    object_ref()
-        : object_(default_construct())
-    {
-        static_assert(is_default_constructible_v, "Use nullptr to construct an empty object.");
+namespace nncase {
+#define DEFINE_OBJECT_KIND(base_t, kind_)                                      \
+  public:                                                                      \
+    static constexpr object_kind kind() noexcept { return kind_; }             \
+    const object_kind &runtime_kind() const noexcept override {                \
+        return kind_;                                                          \
+    }                                                                          \
+                                                                               \
+  protected:                                                                   \
+    bool is_a(const object_kind &kind) const noexcept override {               \
+        return kind == kind_ || base_t::is_a(kind);                            \
     }
 
-    /** @brief Construct an empty object **/
-    constexpr object_ref(std::nullptr_t) noexcept
-        : object_(nullptr)
-    {
+template <class T> class object_t;
+namespace detail {
+template <class T> concept Object = requires { typename T::node_type; };
+} // namespace detail
+
+class NNCASE_API object_node {
+  public:
+    constexpr object_node() noexcept = default;
+    object_node(const object_node &) = delete;
+    object_node &operator=(const object_node &) = delete;
+    virtual ~object_node();
+
+    /** @brief Get the kind of the object */
+    virtual const object_kind &runtime_kind() const noexcept = 0;
+
+  protected:
+    template <class T> friend class object_t;
+
+    /** @brief Is the object an instance of specific kind */
+    virtual bool is_a(const object_kind &kind) const noexcept;
+};
+
+template <class T> class object_t {
+  public:
+    using node_type = T;
+
+    static inline constexpr bool is_default_constructible_v =
+        std::is_default_constructible_v<T> && !std::is_abstract_v<T>;
+
+    object_t() : object_(default_construct()) {
+        static_assert(is_default_constructible_v,
+                      "Use nullptr to construct an empty object.");
     }
 
-    object_ref(std::shared_ptr<T> node) noexcept
-        : object_(std::move(node))
-    {
-    }
+    /** @brief Construct an empty object */
+    constexpr object_t(std::nullptr_t) noexcept : object_(nullptr) {}
 
-    template <class = std::enable_if_t<is_default_constructible_v>, class... TArgs>
-    object_ref(std::in_place_t, TArgs &&...args)
-        : object_(std::make_shared<T>(std::forward<TArgs>(args)...))
-    {
-    }
+    explicit object_t(std::shared_ptr<T> node) noexcept
+        : object_(std::move(node)) {}
 
-    /** @brief Get the managed pointer to the object **/
-    T *get() const noexcept { return object_.get(); }
+    template <
+        detail::Object U,
+        class = std::enable_if_t<std::is_base_of_v<T, typename U::node_type>>>
+    object_t(U &&other) noexcept : object_(std::move(other.object_)) {}
+
+    template <
+        detail::Object U,
+        class = std::enable_if_t<std::is_base_of_v<T, typename U::node_type>>>
+    object_t(const U &other) noexcept : object_(other.object_) {}
+
+    template <class... TArgs>
+    object_t(std::in_place_t, TArgs &&...args)
+        : object_(std::make_shared<T>(std::forward<TArgs>(args)...)) {}
+
+    /** @brief Get the managed pointer to the object */
+    T *get() const noexcept { return static_cast<T *>(object_.get()); }
     T *operator->() const noexcept { return get(); }
 
-private:
-    std::shared_ptr<T> default_construct()
-    {
+    bool empty() const noexcept { return !object_; }
+
+    /** @brief Is the object an instance of specific type */
+    bool is_a(const object_kind &kind) const noexcept {
+        return object_ && static_cast<object_node *>(object_.get())->is_a(kind);
+    }
+
+    /** @brief Is the object an instance of specific type */
+    template <detail::Object T> bool is_a() const noexcept {
+        return is_a(T::node_type::kind());
+    }
+
+    template <detail::Object T> T as() const noexcept {
+        if (is_a<T>()) {
+            return T(std::static_pointer_cast<typename T::node_type>(object_));
+        } else {
+            return nullptr;
+        }
+    }
+
+  private:
+    std::shared_ptr<T> default_construct() {
         if constexpr (is_default_constructible_v)
             return std::make_shared<T>();
         else
             return nullptr;
     }
 
-private:
+  private:
+    template <class U> friend class object_t;
+
     std::shared_ptr<T> object_;
 };
-}
+
+using object = object_t<object_node>;
+} // namespace nncase

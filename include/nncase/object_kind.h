@@ -19,32 +19,33 @@
 #include <string_view>
 #include <type_traits>
 
-namespace nncase::ir {
-struct node_kind {
+namespace nncase {
+struct object_kind {
     uint32_t id;
     std::string_view name;
 };
 
-constexpr inline bool operator==(const node_kind &lhs,
-                                 const node_kind &rhs) noexcept {
+constexpr inline bool operator==(const object_kind &lhs,
+                                 const object_kind &rhs) noexcept {
     return lhs.id == rhs.id;
 }
 
-#define DEFINE_NEUTRAL_NODEKIND(id, name, value)                               \
-    NNCASE_INLINE_VAR constexpr node_kind node_##id{value, #name};
-#define DEFINE_NODEKIND(target, id, name, value)                               \
-    NNCASE_INLINE_VAR constexpr node_kind node_##target##_##id{value, #name};
+#define DEFINE_NEUTRAL_OBJECT_KIND(id, name, value)                            \
+    NNCASE_INLINE_VAR constexpr object_kind object_##id{value, #name};
+#define DEFINE_OBJECT_KIND(target, id, name, value)                            \
+    NNCASE_INLINE_VAR constexpr object_kind object_##target##_##id{value,      \
+                                                                   #name};
 
-#include "node_kind.def"
+#include "object_kind.def"
 
-#undef DEFINE_NEUTRAL_NODEKIND
-#undef DEFINE_NODEKIND
-} // namespace nncase::ir
+#undef DEFINE_NEUTRAL_OBJECT_KIND
+#undef DEFINE_OBJECT_KIND
+} // namespace nncase
 
 namespace std {
-template <> struct hash<nncase::ir::node_kind> {
+template <> struct hash<nncase::object_kind> {
     [[nodiscard]] size_t
-    operator()(const nncase::ir::node_kind &opcode) const noexcept {
+    operator()(const nncase::object_kind &opcode) const noexcept {
         return std::hash<uint32_t>()(opcode.id);
     }
 };

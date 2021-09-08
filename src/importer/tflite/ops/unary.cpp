@@ -14,7 +14,7 @@
  */
 #include "../tflite_importer.h"
 #include <nncase/ir/constant.h>
-#include <nncase/ir/math/unary.h>
+#include <nncase/ir/math/functional.h>
 
 using namespace nncase;
 using namespace nncase::importer;
@@ -40,6 +40,6 @@ DEFINE_UNARY_TFLITE_LOWER(TANH, unary_tanh)
 void tflite_importer::convert_unary(const tflite::Operator &op,
                                     unary_op_t unary_op) {
     auto [input] = get_input_exprs(op, 0);
-    math::unary node(unary_op, input);
+    auto node = F::unary(unary_op, input);
     set_output_expr(op, 0, node);
 }

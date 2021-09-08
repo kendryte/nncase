@@ -17,14 +17,11 @@
 #include "nncase/runtime/datatypes.h"
 #include "opcode.h"
 
-namespace nncase::ir::math
-{
+namespace nncase::ir::math {
 /** @brief Binary operator node */
-class NNCASE_API binary_node : public op_node
-{
-public:
-    DEFINE_NODE_OPCODE(op_math_binary);
-
+class NNCASE_API binary_node : public op_node {
+    DEFINE_OBJECT_KIND(op_node, op_math_binary)
+  public:
     binary_node(binary_op_t binary_op);
 
     /** @brief Get the binary opcode of the binary expression */
@@ -32,9 +29,16 @@ public:
     /** @brief Set the binary opcode of the binary expression */
     void binary_op(binary_op_t value) noexcept { binary_op_ = value; }
 
-private:
+  private:
     binary_op_t binary_op_;
 };
 
-using binary = expr_t<binary_node>;
-}
+/** @brief Binary expression */
+class binary : public object_t<binary_node> {
+  public:
+    /** @brief Construct an binary expression
+     *  @param[in] binary_op The opcode of the binary
+     */
+    NNCASE_API binary(binary_op_t binary_op);
+};
+} // namespace nncase::ir::math

@@ -17,24 +17,13 @@
 #include "nncase/runtime/datatypes.h"
 #include "opcode.h"
 
-namespace nncase::ir::tensors
-{
+namespace nncase::ir::tensors {
 /** @brief Gather operator node */
-class NNCASE_API gather_node : public op_node
-{
-public:
-    DEFINE_NODE_OPCODE(op_tensors_gather);
-
-    gather_node(int32_t axis);
-
-    /** @brief Get the axis of the gather expression */
-    int32_t axis() const noexcept { return axis_; }
-    /** @brief Set the axis of the gather expression */
-    void axis(int32_t value) noexcept { axis_ = value; }
-
-private:
-    int32_t axis_;
+class NNCASE_API gather_node : public op_node {
+    DEFINE_OBJECT_KIND(op_node, op_tensors_gather)
+  public:
+    gather_node();
 };
 
-using gather = expr_t<gather_node>;
-}
+using gather = object_t<gather_node>;
+} // namespace nncase::ir::tensors

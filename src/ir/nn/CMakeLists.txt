@@ -2,4 +2,5 @@
 
 target_sources(ir PRIVATE
     activation.cpp
-    convolution.cpp)
+    convolution.cpp
+    functional.cpp)

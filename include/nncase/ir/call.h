@@ -20,9 +20,8 @@
 namespace nncase::ir {
 /** @brief Call node */
 class NNCASE_API call_node : public expr_node {
+    DEFINE_OBJECT_KIND(expr_node, object_call)
   public:
-    DEFINE_NODE_NODEKIND(node_call);
-
     call_node(expr target, std::vector<expr> arguments);
 
     /** @brief Get the arguments of the call expression */
@@ -40,8 +39,10 @@ class NNCASE_API call_node : public expr_node {
     std::vector<expr> arguments_;
 };
 
-class call : public expr_t<call_node> {
+class call : public object_t<call_node> {
   public:
+    using object_t::object_t;
+
     NNCASE_API call(expr target, std::vector<expr> arguments);
 };
 } // namespace nncase::ir

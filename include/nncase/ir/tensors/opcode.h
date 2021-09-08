@@ -13,13 +13,13 @@
  * limitations under the License.
  */
 #pragma once
-#include "../opcode.h"
+#include "../../object_kind.h"
 
-namespace nncase::ir::tensors
-{
-#define DEFINE_OPCODE(dialect, id, name, value) NNCASE_INLINE_VAR constexpr opcode_t op_##dialect##_##id { value, #name };
+namespace nncase::ir::tensors {
+#define DEFINE_OPCODE(dialect, id, name, value)                                \
+    NNCASE_INLINE_VAR constexpr object_kind op_##dialect##_##id{value, #name};
 
 #include "opcode.def"
 
 #undef DEFINE_OPCODE
-}
+} // namespace nncase::ir::tensors

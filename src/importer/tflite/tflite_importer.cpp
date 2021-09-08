@@ -222,51 +222,50 @@ module_t tflite_importer::import(const import_options &options) {
     return module_;
 }
 
-ir::type_t
-tflite_importer::get_ir_type(const flatbuffers::Vector<int32_t> *shape,
-                             tflite::TensorType type) {
+ir::type tflite_importer::get_ir_type(const flatbuffers::Vector<int32_t> *shape,
+                                      tflite::TensorType tflite_type) {
     shape_t ir_shape;
     if (shape) {
         std::ranges::transform(*shape, std::back_inserter(ir_shape),
                                [](int32_t dim) -> dim_t { return dim; });
     }
-    return type_t(to_typecode(type), ir_shape);
+    return tensor_type(to_datatype(tflite_type), ir_shape);
 }
 
-ir::typecode_t tflite_importer::to_typecode(tflite::TensorType type) {
-    switch (type) {
+datatype_t tflite_importer::to_datatype(tflite::TensorType tflite_type) {
+    switch (tflite_type) {
     case tflite::TensorType_FLOAT32:
-        return typecode_t::float32;
+        return dt_float32;
     case tflite::TensorType_FLOAT16:
-        return typecode_t::float16;
+        return dt_float16;
     case tflite::TensorType_INT32:
-        return typecode_t::int32;
+        return dt_int32;
     case tflite::TensorType_UINT8:
-        return typecode_t::uint8;
+        return dt_uint8;
     case tflite::TensorType_INT64:
-        return typecode_t::int64;
+        return dt_int64;
     case tflite::TensorType_STRING:
-        return typecode_t::string;
+        return dt_string;
     case tflite::TensorType_BOOL:
-        return typecode_t::boolean;
+        return dt_bool;
     case tflite::TensorType_INT16:
-        return typecode_t::int16;
+        return dt_int16;
     // case tflite::TensorType_COMPLEX64 = 8,
     case tflite::TensorType_INT8:
-        return typecode_t::int8;
+        return dt_int8;
     case tflite::TensorType_FLOAT64:
-        return typecode_t::float64;
+        return dt_float64;
     // case tflite::TensorType_COMPLEX128 = 11,
     case tflite::TensorType_UINT64:
-        return typecode_t::uint64;
+        return dt_uint64;
     // case tflite::TensorType_RESOURCE = 13,
-    case tflite::TensorType_VARIANT:
-        return typecode_t::any;
+    // case tflite::TensorType_VARIANT:
     case tflite::TensorType_UINT32:
-        return typecode_t::uint32;
+        return dt_uint32;
     default:
-        throw std::runtime_error("Unsupported tensor type: " +
-                                 std::string(tflite::EnumNameTensorType(type)));
+        throw std::runtime_error(
+            "Unsupported tensor type: " +
+            std::string(tflite::EnumNameTensorType(tflite_type)));
     }
 }
 

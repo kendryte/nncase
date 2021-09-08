@@ -17,16 +17,13 @@
 #include "nncase/runtime/datatypes.h"
 #include "opcode.h"
 
-namespace nncase::ir::tensors
-{
+namespace nncase::ir::tensors {
 /** @brief Transpose operator node */
-class NNCASE_API transpose_node : public op_node
-{
-public:
-    DEFINE_NODE_OPCODE(op_tensors_transpose);
-
+class NNCASE_API transpose_node : public op_node {
+    DEFINE_OBJECT_KIND(op_node, op_tensors_transpose)
+  public:
     transpose_node();
 };
 
-using transpose = expr_t<transpose_node>;
-}
+using transpose = object_t<transpose_node>;
+} // namespace nncase::ir::tensors

@@ -18,9 +18,9 @@ using namespace nncase;
 using namespace nncase::ir;
 using namespace nncase::ir::tensors;
 
-gather_nd_node::gather_nd_node(int32_t axis, int32_t batch_dims)
-    : axis_(axis), batch_dims_(batch_dims)
-{
+gather_nd_node::gather_nd_node() {
     add_parameter("input");
+    add_parameter("axis");
+    add_parameter("batch_dims");
     add_parameter("index");
 }

@@ -13,18 +13,20 @@
  * limitations under the License.
  */
 #pragma once
+#include "../object.h"
 #include "function.h"
 
-namespace nncase::ir
-{
+namespace nncase::ir {
 /** @brief Module node*/
-class NNCASE_API module_node
-{
-public:
+class NNCASE_API module_node : public object_node {
+    DEFINE_OBJECT_KIND(object_node, object_module)
+  public:
     module_node();
 
     /** @brief Get the functions of the module */
-    const std::vector<function> &functions() const noexcept { return functions_; }
+    const std::vector<function> &functions() const noexcept {
+        return functions_;
+    }
     /** @brief Get the mutable functions of the module */
     std::vector<function> &functions() noexcept { return functions_; }
 
@@ -35,15 +37,14 @@ public:
     /** @brief Set the entry of the module */
     void entry(function value) noexcept { entry_ = std::move(value); }
 
-private:
+  private:
     std::vector<function> functions_;
     function entry_;
 };
 
 /** @brief Module */
-class NNCASE_API module_t : public object_ref<module_node>
-{
-public:
-    using object_ref::object_ref;
+class NNCASE_API module_t : public object_t<module_node> {
+  public:
+    using object_t::object_t;
 };
-}
+} // namespace nncase::ir

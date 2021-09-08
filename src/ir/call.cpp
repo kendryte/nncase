@@ -26,4 +26,4 @@ call_node::call_node(expr target, std::vector<expr> arguments)
 }
 
 call::call(expr target, std::vector<expr> arguments)
-    : expr_t(std::in_place, std::move(target), std::move(arguments)) {}
+    : object_t(std::in_place, std::move(target), std::move(arguments)) {}

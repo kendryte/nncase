@@ -32,5 +32,5 @@ function::function(std::vector<var> parameters, expr body)
                std::move(parameters), std::move(body)) {}
 
 function::function(std::string name, std::vector<var> parameters, expr body)
-    : expr_t(std::in_place, std::move(name), std::move(parameters),
-             std::move(body)) {}
+    : object_t(std::in_place, std::move(name), std::move(parameters),
+               std::move(body)) {}

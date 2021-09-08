@@ -17,16 +17,13 @@
 #include "nncase/runtime/datatypes.h"
 #include "opcode.h"
 
-namespace nncase::ir::tensors
-{
+namespace nncase::ir::tensors {
 /** @brief Slice operator node */
-class NNCASE_API slice_node : public op_node
-{
-public:
-    DEFINE_NODE_OPCODE(op_tensors_slice);
-
+class NNCASE_API slice_node : public op_node {
+    DEFINE_OBJECT_KIND(op_node, op_tensors_slice)
+  public:
     slice_node();
 };
 
-using slice = expr_t<slice_node>;
-}
+using slice = object_t<slice_node>;
+} // namespace nncase::ir::tensors

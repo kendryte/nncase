@@ -18,9 +18,9 @@ using namespace nncase;
 using namespace nncase::ir;
 using namespace nncase::ir::math;
 
-binary_node::binary_node(binary_op_t binary_op)
-    : binary_op_(binary_op)
-{
-    add_parameter("input_a");
-    add_parameter("input_b");
+binary_node::binary_node(binary_op_t binary_op) : binary_op_(binary_op) {
+    add_parameter("lhs");
+    add_parameter("rhs");
 }
+
+binary::binary(binary_op_t binary_op) : object_t(std::in_place, binary_op) {}

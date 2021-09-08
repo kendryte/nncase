@@ -9,6 +9,7 @@
 #         visitor.cpp)
 
 set(SRCS var.cpp
+		 object.cpp
          expr.cpp
 		 constant.cpp
 		 debug.cpp

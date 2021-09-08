@@ -19,9 +19,8 @@
 namespace nncase::ir {
 /** @brief Function node */
 class NNCASE_API function_node : public expr_node {
+    DEFINE_OBJECT_KIND(expr_node, object_function)
   public:
-    DEFINE_NODE_NODEKIND(node_function);
-
     function_node(std::string name, std::vector<var> parameters, expr body);
 
     /** @brief Get the name of the function expression */
@@ -44,9 +43,9 @@ class NNCASE_API function_node : public expr_node {
 };
 
 /** @brief Function expression */
-class function : public expr_t<function_node> {
+class function : public object_t<function_node> {
   public:
-    using expr_t::expr_t;
+    using object_t::object_t;
 
     /** @brief Construct a named function expression with auto-generated name
      *  @param[in] name The name of the function

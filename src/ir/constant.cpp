@@ -17,12 +17,5 @@
 using namespace nncase;
 using namespace nncase::ir;
 
-constant_node::constant_node(type_t type, std::vector<std::byte> data)
-    : type_(std::move(type)), data_(std::move(data))
-{
-}
-
-const type_t &constant_node::type() const noexcept
-{
-    return type_;
-}
+constant_node::constant_node(type value_type, std::vector<std::byte> data)
+    : value_type_(std::move(value_type)), data_(std::move(data)) {}

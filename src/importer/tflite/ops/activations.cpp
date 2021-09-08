@@ -13,7 +13,7 @@
  * limitations under the License.
  */
 #include "../tflite_importer.h"
-#include <nncase/ir/nn/activation.h>
+#include <nncase/ir/nn/functional.h>
 
 using namespace nncase;
 using namespace nncase::importer;
@@ -173,6 +173,6 @@ using namespace nncase::ir;
 
 DEFINE_TFLITE_LOWER(LOGISTIC) {
     auto [input] = get_input_exprs(op, 0);
-    nn::sigmoid node(input);
+    auto node = F::nn::sigmoid(input);
     set_output_expr(op, 0, node);
 }

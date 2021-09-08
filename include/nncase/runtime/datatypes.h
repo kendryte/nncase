@@ -29,76 +29,54 @@
 #include <type_traits>
 #include <vector>
 
-namespace nncase
-{
-typedef enum _datatype : uint8_t
-{
+namespace nncase {
+typedef enum _datatype : uint8_t {
 #define DEFINE_DATATYPE(id, t, name, value) dt_##id = value,
 #include "datatypes.def"
 #undef DEFINE_DATATYPE
 } datatype_t;
 
-namespace detail
-{
-    template <datatype_t Type>
-    struct datatype_to_cpp_type
-    {
-    };
+namespace detail {
+template <datatype_t Type> struct datatype_to_cpp_type {};
 
-    template <class T>
-    struct cpp_type_to_datatype
-    {
-    };
+template <class T> struct cpp_type_to_datatype {};
 
 #if NNCASE_HAVE_STD_BYTE
-    template <>
-    struct cpp_type_to_datatype<std::byte>
-    {
-        static constexpr datatype_t type = dt_uint8;
-    };
+template <> struct cpp_type_to_datatype<std::byte> {
+    static constexpr datatype_t type = dt_uint8;
+};
 #endif
 
-#define DEFINE_DATATYPE(id, t, name, value)         \
-    template <>                                     \
-    struct datatype_to_cpp_type<dt_##id>            \
-    {                                               \
-        using type = t;                             \
-    };                                              \
-    template <>                                     \
-    struct cpp_type_to_datatype<t>                  \
-    {                                               \
-        static constexpr datatype_t type = dt_##id; \
+#define DEFINE_DATATYPE(id, t, name, value)                                    \
+    template <> struct datatype_to_cpp_type<dt_##id> { using type = t; };      \
+    template <> struct cpp_type_to_datatype<t> {                               \
+        static constexpr datatype_t type = dt_##id;                            \
     };
 #include "datatypes.def"
 #undef DEFINE_DATATYPE
 
-    inline constexpr size_t datatype_bytes(datatype_t type)
-    {
-        switch (type)
-        {
-#define DEFINE_DATATYPE(id, t, name, value) \
-    case (dt_##id):                         \
+inline constexpr size_t datatype_bytes(datatype_t type) {
+    switch (type) {
+#define DEFINE_DATATYPE(id, t, name, value)                                    \
+    case (dt_##id):                                                            \
         return sizeof(t);
 #include "datatypes.def"
 #undef DEFINE_DATATYPE
-        default:
-            return -1;
-        }
+    default:
+        return -1;
     }
-
 }
 
-template <class T>
-constexpr datatype_t to_datatype() noexcept
-{
+} // namespace detail
+
+template <class T> constexpr datatype_t to_datatype() noexcept {
     return detail::cpp_type_to_datatype<T>::type;
 }
 
 template <datatype_t Type>
 using to_cpp_type_t = typename detail::datatype_to_cpp_type<Type>::type;
 
-struct padding
-{
+struct padding {
     int32_t before;
     int32_t after;
 
@@ -107,40 +85,36 @@ struct padding
     static padding zero() noexcept { return {}; }
 };
 
-template <class T>
-struct value_range
-{
+template <class T> struct value_range {
     T min;
     T max;
 
-    static constexpr value_range<T> full() noexcept
-    {
-        if (std::is_floating_point<T>::value || std::is_same<T, bfloat16>::value || std::is_same<T, half>::value)
-            return { -std::numeric_limits<T>::infinity(), std::numeric_limits<T>::infinity() };
+    static constexpr value_range<T> full() noexcept {
+        if (std::is_floating_point<T>::value ||
+            std::is_same<T, bfloat16>::value || std::is_same<T, half>::value)
+            return {-std::numeric_limits<T>::infinity(),
+                    std::numeric_limits<T>::infinity()};
         else
-            return { std::numeric_limits<T>::lowest(), std::numeric_limits<T>::max() };
+            return {std::numeric_limits<T>::lowest(),
+                    std::numeric_limits<T>::max()};
     }
 
-    static constexpr value_range<T> nonnegative() noexcept
-    {
-        return { 0, std::numeric_limits<T>::max() };
+    static constexpr value_range<T> nonnegative() noexcept {
+        return {0, std::numeric_limits<T>::max()};
     }
 
     constexpr T length() const noexcept { return max - min; }
 };
 
-typedef enum _reduce_op
-{
+typedef enum _reduce_op {
     reduce_mean,
     reduce_min,
     reduce_max,
     reduce_sum
 } reduce_op_t;
 
-inline std::string reduce_op_to_string(reduce_op_t op)
-{
-    switch (op)
-    {
+inline std::string reduce_op_to_string(reduce_op_t op) {
+    switch (op) {
     case reduce_mean:
         return "reduce_mean";
     case reduce_min:
@@ -153,12 +127,12 @@ inline std::string reduce_op_to_string(reduce_op_t op)
     return "unknown";
 }
 
-typedef enum _binary_op
-{
+typedef enum _binary_op {
     binary_add,
     binary_sub,
     binary_mul,
     binary_div,
+    binary_mod,
     binary_min,
     binary_max,
     binary_pow,
@@ -172,10 +146,8 @@ typedef enum _binary_op
     binary_logical_xor
 } binary_op_t;
 
-inline std::string binary_op_to_string(binary_op_t op)
-{
-    switch (op)
-    {
+inline std::string binary_op_to_string(binary_op_t op) {
+    switch (op) {
     case binary_add:
         return "binary_add";
     case binary_sub:
@@ -184,6 +156,8 @@ inline std::string binary_op_to_string(binary_op_t op)
         return "binary_mul";
     case binary_div:
         return "binary_div";
+    case binary_mod:
+        return "binary_mod";
     case binary_min:
         return "binary_min";
     case binary_max:
@@ -210,8 +184,7 @@ inline std::string binary_op_to_string(binary_op_t op)
     return "unknown";
 }
 
-typedef enum _unary_op
-{
+typedef enum _unary_op {
     unary_abs,
     unary_ceil,
     unary_cos,
@@ -229,10 +202,8 @@ typedef enum _unary_op
     unary_logical_not
 } unary_op_t;
 
-inline std::string unary_op_to_string(unary_op_t op)
-{
-    switch (op)
-    {
+inline std::string unary_op_to_string(unary_op_t op) {
+    switch (op) {
     case unary_abs:
         return "unary_abs";
     case unary_ceil:
@@ -267,53 +238,42 @@ inline std::string unary_op_to_string(unary_op_t op)
     return "unknown";
 }
 
-typedef enum _image_resize_mode
-{
+typedef enum _image_resize_mode {
     image_resize_bilinear,
     image_resize_nearest_neighbor
 } image_resize_mode_t;
 
-typedef enum _onehot_mode
-{
-    onehot_normal,
-    onehot_process_neg
-} onehot_mode_t;
+typedef enum _onehot_mode { onehot_normal, onehot_process_neg } onehot_mode_t;
 
-typedef enum _pad_mode
-{
+typedef enum _pad_mode {
     pad_constant,
     pad_reflect,
     pad_symmetric,
     pad_edge
 } pad_mode_t;
 
-typedef struct _quant_param
-{
+typedef struct _quant_param {
     int32_t zero_point;
     float scale;
 
-    template <class T>
-    constexpr value_range<float> range() const noexcept
-    {
-        return {
-            (std::numeric_limits<T>::lowest() - zero_point) * scale, (std::numeric_limits<T>::max() - zero_point) * scale
-        };
+    template <class T> constexpr value_range<float> range() const noexcept {
+        return {(std::numeric_limits<T>::lowest() - zero_point) * scale,
+                (std::numeric_limits<T>::max() - zero_point) * scale};
     }
 } quant_param_t;
 
-inline bool operator==(const quant_param_t &lhs, const quant_param_t &rhs) noexcept
-{
+inline bool operator==(const quant_param_t &lhs,
+                       const quant_param_t &rhs) noexcept {
     return lhs.zero_point == rhs.zero_point && lhs.scale == rhs.scale;
 }
 
-inline bool almost_equal(const quant_param_t &lhs, const quant_param_t &rhs) noexcept
-{
-    return lhs.zero_point == rhs.zero_point
-        && fabs(lhs.scale - rhs.scale) <= std::numeric_limits<float>::epsilon();
+inline bool almost_equal(const quant_param_t &lhs,
+                         const quant_param_t &rhs) noexcept {
+    return lhs.zero_point == rhs.zero_point &&
+           fabs(lhs.scale - rhs.scale) <= std::numeric_limits<float>::epsilon();
 }
 
-struct fixed_mul
-{
+struct fixed_mul {
     float mul;
     int8_t shift;
 
@@ -332,76 +292,67 @@ using runtime_shape_t = itlib::small_vector<size_t, 4>;
 using runtime_axis_t = itlib::small_vector<int32_t, 4>;
 using runtime_paddings_t = itlib::small_vector<padding, 4>;
 
-struct scalar
-{
+struct scalar {
     datatype_t type;
     std::aligned_storage_t<8> storage;
 
     scalar() = default;
 
-    scalar(int8_t value) noexcept
-    {
+    scalar(int8_t value) noexcept {
         type = dt_int8;
         as<int8_t>() = value;
     }
 
-    scalar(int16_t value) noexcept
-    {
+    scalar(int16_t value) noexcept {
         type = dt_int16;
         as<int16_t>() = value;
     }
 
-    scalar(int32_t value) noexcept
-    {
+    scalar(int32_t value) noexcept {
         type = dt_int32;
         as<int32_t>() = value;
     }
 
-    scalar(uint8_t value) noexcept
-    {
+    scalar(uint8_t value) noexcept {
         type = dt_uint8;
         as<uint8_t>() = value;
     }
 
-    scalar(uint16_t value) noexcept
-    {
+    scalar(uint16_t value) noexcept {
         type = dt_uint16;
         as<uint16_t>() = value;
     }
 
-    scalar(uint32_t value) noexcept
-    {
+    scalar(uint32_t value) noexcept {
         type = dt_uint32;
         as<uint32_t>() = value;
     }
 
-    scalar(bfloat16 value) noexcept
-    {
+    scalar(bfloat16 value) noexcept {
         type = dt_bfloat16;
         as<bfloat16>() = value;
     }
 
-    scalar(half value) noexcept
-    {
+    scalar(half value) noexcept {
         type = dt_float16;
         as<half>() = value;
     }
 
-    scalar(float value) noexcept
-    {
+    scalar(float value) noexcept {
         type = dt_float32;
         as<float>() = value;
     }
 
-    template <class T>
-    T &as() noexcept { return *reinterpret_cast<T *>(&storage); }
+    template <class T> T &as() noexcept {
+        return *reinterpret_cast<T *>(&storage);
+    }
 
-    template <class T>
-    const T &as() const noexcept { return *reinterpret_cast<const T *>(&storage); }
+    template <class T> const T &as() const noexcept {
+        return *reinterpret_cast<const T *>(&storage);
+    }
 };
 
-struct memory_range
-{
+struct memory_range {
     memory_location_t memory_location;
     datatype_t datatype;
     uint16_t shared_module;
@@ -414,63 +365,53 @@ NNCASE_INLINE_VAR constexpr size_t MAX_MODULE_TYPE_LENGTH = 16;
 typedef std::array<char, MAX_MODULE_TYPE_LENGTH> module_type_t;
 
 template <std::size_t N, std::size_t... Is>
-constexpr module_type_t
-to_module_type(const char (&a)[N], std::index_sequence<Is...>)
-{
-    return { { a[Is]... } };
+constexpr module_type_t to_module_type(const char (&a)[N],
+                                       std::index_sequence<Is...>) {
+    return {{a[Is]...}};
 }
 
 template <std::size_t N>
-constexpr module_type_t to_module_type(const char (&a)[N])
-{
+constexpr module_type_t to_module_type(const char (&a)[N]) {
     return to_module_type(a, std::make_index_sequence<N>());
 }
 
-inline padding operator+(const padding &lhs, const padding &rhs) noexcept
-{
-    return { lhs.before + rhs.before, lhs.after + rhs.after };
+inline padding operator+(const padding &lhs, const padding &rhs) noexcept {
+    return {lhs.before + rhs.before, lhs.after + rhs.after};
 }
 
-inline bool operator==(const padding &lhs, const padding &rhs) noexcept
-{
+inline bool operator==(const padding &lhs, const padding &rhs) noexcept {
     return lhs.before == rhs.before && lhs.after == rhs.after;
 }
 
-inline bool operator!=(const padding &lhs, const padding &rhs) noexcept
-{
+inline bool operator!=(const padding &lhs, const padding &rhs) noexcept {
     return lhs.before != rhs.before || lhs.after != rhs.after;
 }
 
 template <class T>
-bool operator==(const value_range<T> &lhs, const value_range<T> &rhs) noexcept
-{
+bool operator==(const value_range<T> &lhs, const value_range<T> &rhs) noexcept {
     return lhs.min == rhs.min && lhs.max == rhs.max;
 }
 
 template <class T>
-bool operator!=(const value_range<T> &lhs, const value_range<T> &rhs) noexcept
-{
+bool operator!=(const value_range<T> &lhs, const value_range<T> &rhs) noexcept {
     return lhs.min != rhs.min || lhs.max != rhs.max;
 }
 
-inline bool operator==(const scalar &lhs, const scalar &rhs) noexcept
-{
+inline bool operator==(const scalar &lhs, const scalar &rhs) noexcept {
     auto valid_bytes = detail::datatype_bytes(lhs.type);
-    return lhs.type == rhs.type && !memcmp(&lhs.storage, &rhs.storage, valid_bytes);
+    return lhs.type == rhs.type &&
+           !memcmp(&lhs.storage, &rhs.storage, valid_bytes);
 }
 
-inline bool operator!=(const scalar &lhs, const scalar &rhs) noexcept
-{
+inline bool operator!=(const scalar &lhs, const scalar &rhs) noexcept {
     auto valid_bytes = detail::datatype_bytes(lhs.type);
-    return lhs.type != rhs.type || memcmp(&lhs.storage, &rhs.storage, valid_bytes);
+    return lhs.type != rhs.type ||
+           memcmp(&lhs.storage, &rhs.storage, valid_bytes);
 }
-}
+} // namespace nncase
 
-template <>
-struct std::hash<nncase::module_type_t>
-{
-    auto operator()(const nncase::module_type_t &key) const noexcept
-    {
+template <> struct std::hash<nncase::module_type_t> {
+    auto operator()(const nncase::module_type_t &key) const noexcept {
         size_t result = 0;
         const size_t prime = 31;
         for (auto c : key)

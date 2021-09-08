@@ -17,14 +17,11 @@
 #include "nncase/runtime/datatypes.h"
 #include "opcode.h"
 
-namespace nncase::ir::tensors
-{
+namespace nncase::ir::tensors {
 /** @brief Split operator node */
-class NNCASE_API split_node : public op_node
-{
-public:
-    DEFINE_NODE_OPCODE(op_tensors_split);
-
+class NNCASE_API split_node : public op_node {
+    DEFINE_OBJECT_KIND(op_node, op_tensors_split)
+  public:
     split_node(int32_t axis);
 
     /** @brief Get the axis of the concat expression */
@@ -32,9 +29,9 @@ public:
     /** @brief Set the axis of the concat expression */
     void axis(int32_t value) noexcept { axis_ = value; }
 
-private:
+  private:
     int32_t axis_;
 };
 
-using split = expr_t<split_node>;
-}
+using split = object_t<split_node>;
+} // namespace nncase::ir::tensors

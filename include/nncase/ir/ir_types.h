@@ -14,7 +14,7 @@
  */
 #pragma once
 #include "shape.h"
-#include "typecode.h"
+#include "type.h"
 #include <span>
 #include <type_traits>
 #include <xtensor/xshape.hpp>

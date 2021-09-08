@@ -25,36 +25,36 @@ using namespace nncase::ir;
 using namespace google::protobuf;
 
 namespace {
-std::unordered_map<typecode_t, int32> onnx_types_map{
-    {typecode_t::int8, onnx::TensorProto_DataType_INT8},
-    {typecode_t::int16, onnx::TensorProto_DataType_INT16},
-    {typecode_t::int32, onnx::TensorProto_DataType_INT32},
-    {typecode_t::int64, onnx::TensorProto_DataType_INT64},
-    {typecode_t::uint8, onnx::TensorProto_DataType_UINT8},
-    {typecode_t::uint16, onnx::TensorProto_DataType_UINT16},
-    {typecode_t::uint32, onnx::TensorProto_DataType_UINT32},
-    {typecode_t::uint64, onnx::TensorProto_DataType_UINT64},
-    {typecode_t::float16, onnx::TensorProto_DataType_FLOAT16},
-    {typecode_t::float32, onnx::TensorProto_DataType_FLOAT},
-    {typecode_t::float64, onnx::TensorProto_DataType_DOUBLE},
-    {typecode_t::bfloat16, onnx::TensorProto_DataType_BFLOAT16},
-    {typecode_t::boolean, onnx::TensorProto_DataType_BOOL},
-    {typecode_t::string, onnx::TensorProto_DataType_STRING}};
+std::unordered_map<datatype_t, int32> onnx_types_map{
+    {dt_int8, onnx::TensorProto_DataType_INT8},
+    {dt_int16, onnx::TensorProto_DataType_INT16},
+    {dt_int32, onnx::TensorProto_DataType_INT32},
+    {dt_int64, onnx::TensorProto_DataType_INT64},
+    {dt_uint8, onnx::TensorProto_DataType_UINT8},
+    {dt_uint16, onnx::TensorProto_DataType_UINT16},
+    {dt_uint32, onnx::TensorProto_DataType_UINT32},
+    {dt_uint64, onnx::TensorProto_DataType_UINT64},
+    {dt_float16, onnx::TensorProto_DataType_FLOAT16},
+    {dt_float32, onnx::TensorProto_DataType_FLOAT},
+    {dt_float64, onnx::TensorProto_DataType_DOUBLE},
+    {dt_bfloat16, onnx::TensorProto_DataType_BFLOAT16},
+    {dt_bfloat16, onnx::TensorProto_DataType_BOOL},
+    {dt_string, onnx::TensorProto_DataType_STRING}};
 
-int32 to_pb(typecode_t dt) {
+int32 to_pb(datatype_t dt) {
     assert(onnx_types_map.contains(dt));
     return onnx_types_map.at(dt);
 }
 
-void to_pb(onnx::TypeProto_Tensor *dst, const type_t &src) {
-    dst->set_elem_type(to_pb(src.elem_type()));
-    if (src.shape().is_fixed() || src.shape().has_unknown_dim()) {
-        auto shape_proto = dst->mutable_shape();
-        for (auto dim : src.shape()) {
-            shape_proto->add_dim()->set_dim_value(dim.is_fixed() ? dim.value
-                                                                 : -1);
-        }
-    }
+void to_pb(onnx::TypeProto_Tensor *dst, const type &src) {
+    // dst->set_elem_type(to_pb(src.elem_type()));
+    // if (src.shape().is_fixed() || src.shape().has_unknown_dim()) {
+    //    auto shape_proto = dst->mutable_shape();
+    //    for (auto dim : src.shape()) {
+    //        shape_proto->add_dim()->set_dim_value(dim.is_fixed() ? dim.value
+    //                                                             : -1);
+    //    }
+    //}
 }
 } // namespace
 
@@ -74,7 +74,7 @@ void ir::dump_function(const ir::function &func,
         auto inp = gp->add_input();
         inp->set_name(in->name());
         auto type = inp->mutable_type();
-        to_pb(type->mutable_tensor_type(), in->type());
+        to_pb(type->mutable_tensor_type(), in->type_annotation());
     }
 
     // 2. outputs

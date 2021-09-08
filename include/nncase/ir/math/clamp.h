@@ -17,16 +17,13 @@
 #include "nncase/runtime/datatypes.h"
 #include "opcode.h"
 
-namespace nncase::ir::math
-{
+namespace nncase::ir::math {
 /** @brief Clamp operator node */
-class NNCASE_API clamp_node : public op_node
-{
-public:
-    DEFINE_NODE_OPCODE(op_math_clamp);
-
+class NNCASE_API clamp_node : public op_node {
+    DEFINE_OBJECT_KIND(op_node, op_math_clamp)
+  public:
     clamp_node();
 };
 
-using clamp = expr_t<clamp_node>;
-}
+using clamp = object_t<clamp_node>;
+} // namespace nncase::ir::math

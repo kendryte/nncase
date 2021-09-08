@@ -14,46 +14,43 @@
  */
 #pragma once
 #include "expr.h"
+#include "type.h"
 
-namespace nncase::ir
-{
+namespace nncase::ir {
 /** @brief Constant node */
-class NNCASE_API constant_node : public expr_node
-{
-public:
-    DEFINE_NODE_NODEKIND(node_constant);
+class NNCASE_API constant_node : public expr_node {
+  public:
+    DEFINE_OBJECT_KIND(expr_node, object_constant);
 
-    constant_node(type_t type, std::vector<std::byte> data);
+    constant_node(type value_type, std::vector<std::byte> data);
 
-    constant_node(type_t type, std::span<const std::byte> data)
-        : constant_node(std::move(type), std::vector<std::byte>(data.begin(), data.end()))
-    {
-    }
+    constant_node(type value_type, std::span<const std::byte> data)
+        : constant_node(std::move(value_type),
+                        std::vector<std::byte>(data.begin(), data.end())) {}
 
     template <class T>
-    constant_node(type_t type, std::span<const T> data)
-        : constant_node(std::move(type), std::as_bytes(data))
-    {
-    }
+    constant_node(type value_type, std::span<const T> data)
+        : constant_node(std::move(type), std::as_bytes(data)) {}
 
     template <class TScalar>
     constant_node(TScalar scalar)
-        : constant_node(type_t(to_datatype<TScalar>(), shape_t { 1 }), std::span<const TScalar>(&scalar, 1))
-    {
-    }
+        : constant_node(type_t(to_datatype<TScalar>(), shape_t{1}),
+                        std::span<const TScalar>(&scalar, 1)) {}
 
     /** @brief Get the type of the constant expression */
-    const type_t &type() const noexcept;
+    const type &value_type() const noexcept { return value_type_; }
+    /** @brief Get the mutable type of the constant expression */
+    type &value_type() noexcept { return value_type_; }
 
     /** @brief Get the data of the constant expression */
     std::span<const std::byte> data() const noexcept { return data_; }
     /** @brief Get the mutable data of the constant expression */
     std::span<std::byte> data() noexcept { return data_; }
 
-private:
-    type_t type_;
+  private:
+    type value_type_;
     std::vector<std::byte> data_;
 };
 
-using constant = expr_t<constant_node>;
-}
+using constant = object_t<constant_node>;
+} // namespace nncase::ir

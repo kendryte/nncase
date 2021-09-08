@@ -21,18 +21,11 @@
 namespace nncase::ir::nn {
 /** @brief Conv1D operator node */
 class NNCASE_API conv1d_node : public op_node {
+    DEFINE_OBJECT_KIND(op_node, op_nn_conv1d)
   public:
-    DEFINE_NODE_OPCODE(op_nn_conv1d);
-
     // conv1d_node();
 };
 
 /** @brief Conv1D expression */
-class conv1d : public call {
-  public:
-    /** @brief Construct a conv1d expression
-     *  @param[in] input The input of the conv1d
-     */
-    // NNCASE_API conv1d(expr input);
-};
+using conv1d = object_t<conv1d_node>;
 } // namespace nncase::ir::nn

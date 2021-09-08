@@ -20,5 +20,3 @@ using namespace nncase::ir;
 using namespace nncase::ir::nn;
 
 sigmoid_node::sigmoid_node() { add_parameter("input"); }
-
-sigmoid::sigmoid(expr input) : call(op(in_place_op<sigmoid_node>), {input}) {}

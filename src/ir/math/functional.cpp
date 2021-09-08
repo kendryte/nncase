@@ -12,24 +12,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#pragma once
-#include "../object.h"
-#include "type.h"
+#include <nncase/ir/math/binary.h>
+#include <nncase/ir/math/functional.h>
+#include <nncase/ir/math/unary.h>
 
-namespace nncase::ir {
-/** @brief Expression node */
-class NNCASE_API expr_node : public object_node {
-  public:
-    DEFINE_OBJECT_KIND(object_node, object_expr)
+using namespace nncase;
+using namespace nncase::ir;
 
-    /** @brief Get the checked type of the expression */
-    const type &checked_type() const noexcept { return checked_type_; }
-    /** @brief Get the mutable checked type of the variable expression */
-    type &checked_type() noexcept { return checked_type_; }
+call F::unary(unary_op_t unary_op, expr input) {
+    return call(math::unary(unary_op), {input});
+}
 
-  private:
-    type checked_type_;
-};
-
-using expr = object_t<expr_node>;
-} // namespace nncase::ir
+call F::binary(binary_op_t unary_op, expr lhs, expr rhs) {
+    return call(math::binary(unary_op), {lhs, rhs});
+}

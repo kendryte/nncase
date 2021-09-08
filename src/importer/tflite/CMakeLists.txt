@@ -6,10 +6,10 @@ set(SRCS tflite_importer.cpp
          #ops/conv2d.cpp
          #ops/transpose_conv.cpp
          #ops/pool2d.cpp
-         #ops/binary.cpp
          #ops/cast.cpp
          #ops/reduce.cpp
          ops/activations.cpp
+         ops/binary.cpp
          ops/unary.cpp
          #ops/concat.cpp
          #ops/matmul.cpp

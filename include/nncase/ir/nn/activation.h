@@ -21,18 +21,11 @@
 namespace nncase::ir::nn {
 /** @brief Sigmoid operator node */
 class NNCASE_API sigmoid_node : public op_node {
+    DEFINE_OBJECT_KIND(op_node, op_nn_sigmoid)
   public:
-    DEFINE_NODE_OPCODE(op_nn_sigmoid);
-
     sigmoid_node();
 };
 
 /** @brief Sigmoid expression */
-class sigmoid : public call {
-  public:
-    /** @brief Construct a sigmoid expression
-     *  @param[in] input The input of the sigmoid
-     */
-    NNCASE_API sigmoid(expr input);
-};
+using sigmoid = object_t<sigmoid_node>;
 } // namespace nncase::ir::nn

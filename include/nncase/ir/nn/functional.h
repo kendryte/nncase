@@ -12,14 +12,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/ir/tensors/convert.h>
+#pragma once
+#include "../call.h"
 
-using namespace nncase;
-using namespace nncase::ir;
-using namespace nncase::ir::tensors;
-
-convert_node::convert_node(typecode_t new_type)
-    : new_type_(new_type)
-{
-    add_parameter("input");
-}
+namespace nncase::ir::F::nn {
+NNCASE_API call sigmoid(expr input);
+} // namespace nncase::ir::F::nn

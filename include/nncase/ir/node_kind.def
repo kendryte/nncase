@@ -1,5 +1,0 @@
-DEFINE_NEUTRAL_NODEKIND(var,              Var,            0x01)
-DEFINE_NEUTRAL_NODEKIND(constant,         Constant,       0x02)
-DEFINE_NEUTRAL_NODEKIND(function,         Function,       0x03)
-DEFINE_NEUTRAL_NODEKIND(call,             Call,           0x04)
-DEFINE_NEUTRAL_NODEKIND(op,               Op,             0x05)

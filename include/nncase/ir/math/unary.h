@@ -21,9 +21,8 @@
 namespace nncase::ir::math {
 /** @brief Unary operator node */
 class NNCASE_API unary_node : public op_node {
+    DEFINE_OBJECT_KIND(op_node, op_math_unary)
   public:
-    DEFINE_NODE_OPCODE(op_math_unary);
-
     unary_node(unary_op_t unary_op);
 
     /** @brief Get the unary opcode of the unary expression */
@@ -36,12 +35,11 @@ class NNCASE_API unary_node : public op_node {
 };
 
 /** @brief Unary expression */
-class unary : public call {
+class unary : public object_t<unary_node> {
   public:
     /** @brief Construct an unary expression
      *  @param[in] unary_op The opcode of the unary
-     *  @param[in] input The input of the unary
      */
-    NNCASE_API unary(unary_op_t unary_op, expr input);
+    NNCASE_API unary(unary_op_t unary_op);
 };
 } // namespace nncase::ir::math

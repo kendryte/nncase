@@ -18,8 +18,7 @@ using namespace nncase;
 using namespace nncase::ir;
 using namespace nncase::ir::tensors;
 
-concat_node::concat_node(int32_t axis)
-    : axis_(axis)
-{
+concat_node::concat_node() {
     add_parameter("input");
+    add_parameter("axis");
 }

@@ -17,24 +17,24 @@
 #include "nncase/runtime/datatypes.h"
 #include "opcode.h"
 
-namespace nncase::ir::tensors
-{
-/** @brief Convert operator node */
-class NNCASE_API convert_node : public op_node
-{
-public:
-    DEFINE_NODE_OPCODE(op_tensors_convert);
+namespace nncase::ir::tensors {
+/** @brief Cast operator node */
+class NNCASE_API cast_node : public op_node {
+    DEFINE_OBJECT_KIND(op_node, op_tensors_cast)
+  public:
+    cast_node(datatype_t new_type);
 
-    convert_node(typecode_t new_type);
+    /** @brief Get the new type of the cast expression */
+    datatype_t new_type() const noexcept { return new_type_; }
+    /** @brief Set the new type of the cast expression */
+    void new_type(datatype_t value) noexcept { new_type_ = value; }
 
-    /** @brief Get the new type of the convert expression */
-    typecode_t new_type() const noexcept { return new_type_; }
-    /** @brief Set the new type of the convert expression */
-    void new_type(typecode_t value) noexcept { new_type_ = value; }
-
-private:
-    typecode_t new_type_;
+  private:
+    datatype_t new_type_;
 };
 
-using convert = expr_t<convert_node>;
-}
+class cast : public object_t<cast_node> {
+  public:
+    NNCASE_API cast(datatype_t new_type);
+};
+} // namespace nncase::ir::tensors

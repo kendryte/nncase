@@ -3,7 +3,7 @@
 target_sources(ir PRIVATE
     broadcast.cpp
     concat.cpp
-    convert.cpp
+    cast.cpp
     copy.cpp
     gather.cpp
     gather_nd.cpp

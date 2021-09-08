@@ -11,7 +11,7 @@
     <Type Name="nncase::ir::shape_t">
         <DisplayString Condition="kind_ == 1">invalid</DisplayString>
         <DisplayString Condition="kind_ == 2">*</DisplayString>
-        <DisplayString>[{ *dims_.m_begin,[dims_.m_end - dims_.m_begin] }]</DisplayString>
+        <DisplayString>[{ dims_.m_begin,[dims_.m_end - dims_.m_begin] }]</DisplayString>
         <Expand>
             <Item Name="[kind]" ExcludeView="simple">kind_</Item>
             <Item Name="[rank]" ExcludeView="simple">dims_.m_end - dims_.m_begin</Item>
@@ -21,33 +21,28 @@
             </ArrayItems>
         </Expand>
     </Type>
-    <Type Name="nncase::ir::type_t">
+    <Type Name="nncase::ir::tensor_type_node">
         <DisplayString Condition="elem_type_ == 0">any</DisplayString>
         <DisplayString>{elem_type_} {shape_}</DisplayString>
+        <Expand>
+            <Item Name="[elem_type]" ExcludeView="simple">elem_type_</Item>
+            <Item Name="[shape]" ExcludeView="simple">shape_</Item>
+        </Expand>
     </Type>
 
-    <Type Name="nncase::ir::expr">
-        <DisplayString Condition="node_._Ptr == 0">empty</DisplayString>
-        <DisplayString>{*node_._Ptr}</DisplayString>
+    <Type Name="nncase::object_t&lt;*&gt;">
+        <DisplayString Condition="object_._Ptr == 0">empty</DisplayString>
+        <DisplayString>{*object_._Ptr}</DisplayString>
         <Expand>
-            <Item Name="[ptr]" ExcludeView="simple">node_._Ptr</Item>
+            <Item Name="[ptr]" ExcludeView="simple">($T1*)object_._Ptr</Item>
         </Expand>
     </Type>
-    <Type Name="nncase::ir::expr&lt;*&gt;">
-        <DisplayString Condition="node_._Ptr == 0">empty</DisplayString>
-        <DisplayString>{*node_._Ptr}</DisplayString>
+
+    <Type Name="nncase::ir::var_node">
+        <DisplayString>{name_}: {type_annotation_}</DisplayString>
         <Expand>
-            <Item Name="[ptr]" ExcludeView="simple">($T1*)node_._Ptr</Item>
+            <Item Name="[name]" ExcludeView="simple">name_</Item>
+            <Item Name="[type_annotation]" ExcludeView="simple">type_annotation_</Item>
         </Expand>
     </Type>
-    
-    <Type Name="nncase::ir::var">
-        <DisplayString Condition="node_._Ptr == 0">empty</DisplayString>
-        <DisplayString>{((var_node*)node_._Ptr)->name_}: {((var_node*)node_._Ptr)->type_}</DisplayString>
-        <Expand>
-            <Item Name="[ptr]" ExcludeView="simple">(var_node*)node_._Ptr</Item>
-            <Item Name="[name]" ExcludeView="simple">((var_node*)node_._Ptr)->name_</Item>
-            <Item Name="[type]" ExcludeView="simple">((var_node*)node_._Ptr)->type_</Item>
-        </Expand>
-    </Type>
-</AutoVisualizer>  
+</AutoVisualizer>

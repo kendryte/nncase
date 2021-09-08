@@ -52,8 +52,8 @@ class tflite_importer {
     void convert_resize_image(const tflite::Operator &op,
                               image_resize_mode_t mode);
 
-    ir::type_t get_ir_type(const flatbuffers::Vector<int32_t> *shape,
-                           tflite::TensorType type);
+    ir::type get_ir_type(const flatbuffers::Vector<int32_t> *shape,
+                         tflite::TensorType tflite_type);
     ir::expr get_tensor_expr(const flatbuffers::Vector<int32_t> *ids,
                              int32_t offset);
     ir::expr get_input_expr(const tflite::Operator &op, int32_t offset);
@@ -75,7 +75,7 @@ class tflite_importer {
     void set_output_expr(const tflite::Operator &op, int32_t offset,
                          ir::expr ex);
 
-    static ir::typecode_t to_typecode(tflite::TensorType type);
+    static datatype_t to_datatype(tflite::TensorType tflite_type);
 
     // ir::transpose *nhwc_to_nchw(datatype_t type, const ir::shape_t
     // &input_shape)

@@ -3,4 +3,5 @@
 target_sources(ir PRIVATE
     binary.cpp
     clamp.cpp
-    unary.cpp)
+    unary.cpp
+    functional.cpp)

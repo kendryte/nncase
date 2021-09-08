@@ -17,16 +17,13 @@
 #include "nncase/runtime/datatypes.h"
 #include "opcode.h"
 
-namespace nncase::ir::tensors
-{
+namespace nncase::ir::tensors {
 /** @brief Reshape operator node */
-class NNCASE_API reshape_node : public op_node
-{
-public:
-    DEFINE_NODE_OPCODE(op_tensors_reshape);
-
+class NNCASE_API reshape_node : public op_node {
+    DEFINE_OBJECT_KIND(op_node, op_tensors_reshape)
+  public:
     reshape_node();
 };
 
-using reshape = expr_t<reshape_node>;
-}
+using reshape = object_t<reshape_node>;
+} // namespace nncase::ir::tensors

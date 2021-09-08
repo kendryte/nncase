@@ -18,9 +18,8 @@ using namespace nncase;
 using namespace nncase::ir;
 using namespace nncase::ir::tensors;
 
-gather_node::gather_node(int32_t axis)
-    : axis_(axis)
-{
+gather_node::gather_node() {
     add_parameter("input");
+    add_parameter("axis");
     add_parameter("index");
 }

@@ -13,6 +13,7 @@
  * limitations under the License.
  */
 #pragma once
+#include "../object.h"
 #include <nncase/runtime/datatypes.h>
 #include <nncase/runtime/small_vector.hpp>
 #include <optional>

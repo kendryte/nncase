@@ -17,22 +17,16 @@
 using namespace nncase;
 using namespace nncase::ir;
 
-namespace
-{
+namespace {
 size_t global_var_index = 0;
 }
 
-var_node::var_node(std::string name, type_t type) noexcept
-    : name_(std::move(name)), type_(std::move(type))
-{
-}
+var_node::var_node(std::string name, type type_annotation) noexcept
+    : name_(std::move(name)), type_annotation_(std::move(type_annotation)) {}
 
-var::var(type_t type)
-    : var("var_" + std::to_string(global_var_index++), std::move(type))
-{
-}
+var::var(type type_annotation)
+    : var("var_" + std::to_string(global_var_index++),
+          std::move(type_annotation)) {}
 
-var::var(std::string name, type_t type)
-    : expr_t(std::in_place, std::move(name), std::move(type))
-{
-}
+var::var(std::string name, type type_annotation)
+    : object_t(std::in_place, std::move(name), std::move(type_annotation)) {}

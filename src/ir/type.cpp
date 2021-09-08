@@ -17,7 +17,8 @@
 using namespace nncase;
 using namespace nncase::ir;
 
-type_t type_t::any() noexcept
-{
-    return type_t(typecode_t::any);
-}
+tensor_type_node::tensor_type_node(datatype_t elem_type, shape_t shape)
+    : elem_type_(elem_type), shape_(std::move(shape)) {}
+
+tensor_type::tensor_type(datatype_t elem_type, shape_t shape)
+    : object_t(std::in_place, elem_type, std::move(shape)) {}
