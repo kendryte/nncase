@@ -215,7 +215,7 @@ public:
             std::cout << "1.1 Pre-process..." << std::endl;
             input_layout_ = compile_options_.input_layout;
             pre_process(graph_, compile_options_);
-            // post_process(graph_, compile_options_);
+            post_process(graph_, compile_options_);
         }
 
         std::cout << "2. Optimize target independent..." << std::endl;

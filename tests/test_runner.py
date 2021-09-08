@@ -271,7 +271,6 @@ class TestRunner(metaclass=ABCMeta):
                             k = 0
                         data[:, :, :, i] = (data[:, :, :, i] - float(item['norm']['mean'][k])) / \
                             float(item['norm']['scale'][k])
-
         return data
 
     def validte_config(self, config):
@@ -370,7 +369,7 @@ class TestRunner(metaclass=ABCMeta):
             # print(import_options)
             model_content = self.read_model_file(model_file)
             self.run_evaluator(cfg, case_dir, import_options,
-                               compile_options, model_content)
+                               compile_options, model_content, dict_args)
             self.run_inference(cfg, case_dir, import_options,
                                compile_options, model_content, dict_args)
 
@@ -394,13 +393,13 @@ class TestRunner(metaclass=ABCMeta):
             exec(f"compile_options.{k} = {e + v + e if isinstance(v, str) else v}")
         return import_options, compile_options
 
-    def run_evaluator(self, cfg, case_dir, import_options, compile_options, model_content):
+    def run_evaluator(self, cfg, case_dir, import_options, compile_options, model_content, preprocess_opt):
         names, args = TestRunner.split_value(cfg.eval)
         for combine_args in product(*args):
             dict_args = dict(zip(names, combine_args))
             eval_output_paths = self.generate_evaluates(
                 cfg, case_dir, import_options,
-                compile_options, model_content, dict_args)
+                compile_options, model_content, dict_args, preprocess_opt)
             judge, result = self.compare_results(
                 self.output_paths, eval_output_paths, dict_args)
             assert(judge), 'Fault result in eval' + result
@@ -452,7 +451,9 @@ class TestRunner(metaclass=ABCMeta):
     def generate_evaluates(self, cfg, case_dir: str,
                            import_options: nncase.ImportOptions,
                            compile_options: nncase.CompileOptions,
-                           model_content: Union[List[bytes], bytes], kwargs: Dict[str, str]
+                           model_content: Union[List[bytes], bytes],
+                           kwargs: Dict[str, str],
+                           preprocess: Dict[str, str]
                            ) -> List[Tuple[str, str]]:
         eval_dir = TestRunner.kwargs_to_path(
             os.path.join(case_dir, 'eval'), kwargs)
@@ -526,6 +527,10 @@ class TestRunner(metaclass=ABCMeta):
 
         for i in range(sim.outputs_size):
             result = sim.get_output_tensor(i).to_numpy()
+            if(preprocess['output_layout'] == 'NHWC' and self.model_type in ['caffe', 'onnx']):
+                result = np.transpose(result, [0, 3, 1, 2])
+            elif (preprocess['output_layout'] == 'NCHW' and self.model_type in ['tflite']):
+                result = np.transpose(result, [0, 2, 3, 1])
             infer_output_paths.append((
                 os.path.join(infer_dir, f'nncase_result_{i}.bin'),
                 os.path.join(infer_dir, f'nncase_result_{i}.txt')))
