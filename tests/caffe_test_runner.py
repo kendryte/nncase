@@ -21,7 +21,7 @@ class CaffeTestRunner(TestRunner):
                 input_dict = {}
                 input_dict['name'] = name
                 input_dict['dtype'] = np.float32
-                input_dict['shape'] = list(caffe_model.blobs[name].data.shape)
+                input_dict['model_shape'] = list(caffe_model.blobs[name].data.shape)
                 self.inputs.append(input_dict)
                 self.calibs.append(input_dict.copy())
 
