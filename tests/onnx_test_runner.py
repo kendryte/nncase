@@ -112,6 +112,8 @@ class OnnxTestRunner(TestRunner):
             input_dict['dtype'] = onnx.mapping.TENSOR_TYPE_TO_NP_TYPE[onnx_type.elem_type]
             input_dict['shape'] = [(i.dim_value if i.dim_value != 0 else d) for i, d in zip(
                 onnx_type.shape.dim, [1, 3, 224, 224])]
+            input_dict['model_shape'] = [(i.dim_value if i.dim_value != 0 else d) for i, d in zip(
+                onnx_type.shape.dim, [1, 3, 224, 224])]
             self.inputs.append(input_dict)
             self.calibs.append(copy.deepcopy(input_dict))
 

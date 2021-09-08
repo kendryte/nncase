@@ -12,10 +12,10 @@ case: # case的配置，应该是一个多层次的
         - false
     - name: exchange_channel
       values:
-        - false
+        - true
     - name: input_shape
       values:
-        - [224,224,3] #HWC
+        - [1,224,224,3]
         # - [256,256,3]
     - name: mean
       values:
@@ -61,9 +61,9 @@ case: # case的配置，应该是一个多层次的
   eval:
     - name: target
       values:
-        # - cpu
+        - cpu
         #- vulkan
-        # - k210
+        - k210
         - k510
     - name: ptq
       values:
@@ -71,9 +71,9 @@ case: # case的配置，应该是一个多层次的
   infer:
     - name: target
       values:
-        # - cpu
+        - cpu
         #- vulkan
-        # - k210
+        - k210
         - k510
     - name: ptq
       values:

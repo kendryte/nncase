@@ -42,7 +42,6 @@ void post_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::tar
                 transpose *tp = nullptr;
                 if (output_layout_ == "NCHW" && real_outlayout_ == "NHWC")
                 {
-
                     tp = graph.emplace<transpose>(old_output->type(), old_output->shape(), axis_t { 0, 3, 1, 2 });
                 }
                 else if (output_layout_ == "NHWC" && real_outlayout_ == "NCHW")

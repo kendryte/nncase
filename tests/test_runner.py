@@ -144,12 +144,11 @@ class TestRunner(metaclass=ABCMeta):
         if(len(values.shape) == 4 and self.pre_process[0]['preprocess']):
             if stage == "CPU":
                 # onnx \ caffe
-                if self.model_type == "onnx" or self.model_type == "caffe":
+                if (self.model_type == "onnx" or self.model_type == "caffe"):
                     # or (self.model_type == "tflite" and self.pre_process[-1]['input_layout'] == "NCHW")
                     values = np.transpose(values, [0, 3, 1, 2])
-            else:
-                if self.pre_process[-1]['input_layout'] == "NCHW":
-                    values = np.transpose(values, [0, 3, 1, 2])
+                # elif self.model_type == "tflite" and self.pre_process[-1]['input_layout'] == "NCHW":
+                #     values = np.transpose(values, [0, 2, 3, 1])
 
             if type == 'float32':
                 return values.astype(np.float32)
@@ -182,7 +181,7 @@ class TestRunner(metaclass=ABCMeta):
         process_letterbox = {}
         process_letterbox['input_range'] = config['input_range']
         process_letterbox['input_shape'] = config['input_shape']
-        process_letterbox['shape'] = self.inputs[0]['shape']
+        process_letterbox['model_shape'] = self.inputs[0]['model_shape']
         process_letterbox['input_type'] = config['input_type']
 
         # norm
@@ -208,6 +207,8 @@ class TestRunner(metaclass=ABCMeta):
     def data_pre_process(self, data):
         data = copy.deepcopy(data)
         if self.pre_process[0]['preprocess'] and len(data.shape) == 4:
+            if self.pre_process[-1]['input_layout'] == 'NCHW':
+                data = np.transpose(data, [0, 2, 3, 1])
             if self.pre_process[3]['input_type'] == "uint8":
                 data *= 255.
             # elif self.cfg.case.compile_opt.kwargs['input_type'] == "int8":
@@ -231,17 +232,20 @@ class TestRunner(metaclass=ABCMeta):
 
                 # BGR2RGB
                 if 'exchange_channel' in item.keys():
-                    if item['exchange_channel'] == True and data.shape[-1] == 3:
+                    if data.shape[-1] != 3:
+                        assert("Please confirm your input channel is 3.")
+                    if item['exchange_channel'] == True:
                         data = data[:, :, :, ::-1]
                         data = np.array(data)
 
                 # LetterBox
-                if 'input_range' in item.keys() and 'input_shape' in item.keys() and 'shape' in item.keys():
+                if 'input_range' in item.keys() and 'input_shape' in item.keys() and 'model_shape' in item.keys():
                     model_shape: List = []
                     if self.model_type == "onnx" or self.model_type == "caffe":
-                        model_shape = [1, item['shape'][2], item['shape'][3], item['shape'][1]]
+                        model_shape = [1, item['model_shape'][2],
+                                       item['model_shape'][3], item['model_shape'][1]]
                     else:
-                        model_shape = item['shape']
+                        model_shape = item['model_shape']
                     if model_shape[1] != data.shape[1] or model_shape[2] != data.shape[2]:
                         in_h, in_w = data.shape[1], data.shape[2]
                         model_h, model_w = model_shape[1], model_shape[2]
@@ -271,6 +275,9 @@ class TestRunner(metaclass=ABCMeta):
                             k = 0
                         data[:, :, :, i] = (data[:, :, :, i] - float(item['norm']['mean'][k])) / \
                             float(item['norm']['scale'][k])
+        else:
+            assert("Please confirm your input shape and model shape is 4D!")
+
         return data
 
     def validte_config(self, config):
@@ -353,16 +360,16 @@ class TestRunner(metaclass=ABCMeta):
             self.generate_data(cfg.generate_calibs, case_dir,
                                self.calibs, self.calib_paths, 'calib', dict_args)
 
-            # write preprocess options in test_result
-            if dict_args['preprocess'] == True:
-                str_preprocess_opt = ""
-                pre_list = []
-                for key, value in dict_args.items():
-                    pre_list.append(str_preprocess_opt.join("{0}:{1}".format(key, value)))
-                with open(os.path.join(self.case_dir, 'test_result.txt'), 'a+') as f:
-                    f.write("\n----preprocess option----\n")
-                    f.write('\n'.join(pre_list[:]) + "\n")
-                    f.write("-------------------------\n")
+            # local test: write preprocess options in test_result
+            # if dict_args['preprocess'] == True:
+            #     str_preprocess_opt = ""
+            #     pre_list = []
+            #     for key, value in dict_args.items():
+            #         pre_list.append(str_preprocess_opt.join("{0}:{1}".format(key, value)))
+            #     with open(os.path.join(self.case_dir, 'test_result.txt'), 'a+') as f:
+            #         f.write("\n----preprocess option----\n")
+            #         f.write('\n'.join(pre_list[:]) + "\n")
+            #         f.write("-------------------------\n")
 
             self.cpu_infer(case_dir, model_file, dict_args['input_type'])
             import_options, compile_options = self.get_compiler_options(dict_args, model_file)
@@ -527,10 +534,11 @@ class TestRunner(metaclass=ABCMeta):
 
         for i in range(sim.outputs_size):
             result = sim.get_output_tensor(i).to_numpy()
-            if(preprocess['output_layout'] == 'NHWC' and self.model_type in ['caffe', 'onnx']):
-                result = np.transpose(result, [0, 3, 1, 2])
-            elif (preprocess['output_layout'] == 'NCHW' and self.model_type in ['tflite']):
-                result = np.transpose(result, [0, 2, 3, 1])
+            if preprocess['preprocess'] and len(result.shape) == 4:
+                if(preprocess['output_layout'] == 'NHWC' and self.model_type in ['caffe', 'onnx']):
+                    result = np.transpose(result, [0, 3, 1, 2])
+                elif (preprocess['output_layout'] == 'NCHW' and self.model_type in ['tflite']):
+                    result = np.transpose(result, [0, 2, 3, 1])
             infer_output_paths.append((
                 os.path.join(infer_dir, f'nncase_result_{i}.bin'),
                 os.path.join(infer_dir, f'nncase_result_{i}.txt')))
@@ -546,11 +554,10 @@ class TestRunner(metaclass=ABCMeta):
             i = 0
             for input in inputs:
                 shape = []
-                if preprocess_opt['preprocess'] and preprocess_opt['input_shape'] != [] and len(preprocess_opt['input_shape']) == 3:
-                    shape = [1, preprocess_opt['input_shape'][0],
-                             preprocess_opt['input_shape'][1], preprocess_opt['input_shape'][2]]
+                if preprocess_opt['preprocess'] and preprocess_opt['input_shape'] != [] and len(preprocess_opt['input_shape']) == 4:
+                    shape = preprocess_opt['input_shape']
                 else:
-                    shape = input['shape']
+                    shape = input['model_shape']
                 if shape[0] != cfg.batch_size:
                     shape[0] *= cfg.batch_size
                 data = DataFactory[cfg.name](shape, input['dtype'], **cfg.kwargs)
