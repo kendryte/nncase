@@ -176,7 +176,7 @@ class TestRunner(metaclass=ABCMeta):
 
         # bgr2rgb
         process_format = {}
-        process_format['image_format'] = config['image_format']
+        process_format['exchange_channel'] = config['exchange_channel']
 
         # letter box
         process_letterbox = {}
@@ -230,8 +230,8 @@ class TestRunner(metaclass=ABCMeta):
                     data -= bias
 
                 # BGR2RGB
-                if 'image_format' in item.keys():
-                    if item['image_format'] == 'BGR' and data.shape[-1] == 3:
+                if 'exchange_channel' in item.keys():
+                    if item['exchange_channel'] == True and data.shape[-1] == 3:
                         data = data[:, :, :, ::-1]
                         data = np.array(data)
 
@@ -495,7 +495,7 @@ class TestRunner(metaclass=ABCMeta):
         compile_options.dump_ir = cfg.compile_opt.dump_ir
         compile_options.input_type = preprocess['input_type']
         compile_options.quant_type = cfg.compile_opt.quant_type
-        compile_options.image_format = preprocess['image_format']
+        compile_options.exchange_channel = preprocess['exchange_channel']
         compile_options.input_shape = preprocess['input_shape']
         compile_options.input_range = preprocess['input_range']
         compile_options.preprocess = preprocess['preprocess']

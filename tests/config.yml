@@ -10,9 +10,9 @@ case: # case的配置，应该是一个多层次的
     - name: preprocess
       values:
         - false
-    - name: image_format
+    - name: exchange_channel
       values:
-        - RGB
+        - false
     - name: input_shape
       values:
         - [224,224,3] #HWC
@@ -32,8 +32,8 @@ case: # case的配置，应该是一个多层次的
         - uint8
     - name: input_layout
       values:
-        # - NHWC
-        - NCHW
+        - NHWC
+        # - NCHW
     - name: output_layout
       values:
         - NHWC
@@ -61,9 +61,9 @@ case: # case的配置，应该是一个多层次的
   eval:
     - name: target
       values:
-        - cpu
+        # - cpu
         #- vulkan
-        - k210
+        # - k210
         - k510
     - name: ptq
       values:
@@ -71,9 +71,9 @@ case: # case的配置，应该是一个多层次的
   infer:
     - name: target
       values:
-        - cpu
+        # - cpu
         #- vulkan
-        - k210
+        # - k210
         - k510
     - name: ptq
       values:

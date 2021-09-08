@@ -39,7 +39,7 @@ void post_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::tar
             auto old_output = out_node->input().connection();
             if (output_layout_ != real_outlayout_)
             {
-                transpose *tp;
+                transpose *tp = nullptr;
                 if (output_layout_ == "NCHW" && real_outlayout_ == "NHWC")
                 {
 
@@ -53,7 +53,9 @@ void post_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::tar
                 {
                     continue;
                 }
+                tp->name("output_pre_tp");
                 auto new_output = graph.emplace<output_node>(tp->output().type(), tp->output().shape());
+                new_output->name("exchange_channel_output");
                 tp->input().connect(*old_output);
                 new_output->input().connect(tp->output());
                 out_node->input().clear_connection();

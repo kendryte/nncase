@@ -20,8 +20,8 @@ namespace nncase::ir::transforms
 class NNCASE_API pre_process_transform : public graph_pass
 {
 public:
-    pre_process_transform(std::vector<float> mean, std::vector<float> scale, std::vector<float> input_range, std::vector<int32_t> input_shape, std::string image_format, std::string input_layout, std::string input_type, std::string quant_type, std::string real_inlayout) noexcept
-        : means_(std::move(mean)), scales_(std::move(scale)), input_range_(input_range), input_shape_(input_shape), image_format_(image_format), input_layout_(input_layout), input_type_(input_type), quant_type_(quant_type), real_inlayout_(real_inlayout) {};
+    pre_process_transform(std::vector<float> mean, std::vector<float> scale, std::vector<float> input_range, std::vector<int32_t> input_shape, bool exchange_channel, std::string input_layout, std::string input_type, std::string quant_type, std::string real_inlayout) noexcept
+        : means_(std::move(mean)), scales_(std::move(scale)), input_range_(input_range), input_shape_(input_shape), exchange_channel_(exchange_channel), input_layout_(input_layout), input_type_(input_type), quant_type_(quant_type), real_inlayout_(real_inlayout) {};
     using graph_pass::graph_pass;
 
 protected:
@@ -32,7 +32,7 @@ private:
     std::vector<float> scales_;
     std::vector<float> input_range_;
     std::vector<int32_t> input_shape_;
-    std::string image_format_;
+    bool exchange_channel_;
     std::string input_layout_;
     std::string input_type_;
     std::string quant_type_;

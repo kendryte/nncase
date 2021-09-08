@@ -43,13 +43,13 @@ private:
     std::string w_quant_type_ = "uint8";
     std::string input_layout_ = "NCHW";
     std::string output_layout_ = "NCHW";
-    std::string image_format_ = "RGB";
 
     std::vector<float> mean_;
     std::vector<float> scale_;
     std::vector<float> input_range_;
     std::vector<int32_t> input_shape_;
 
+    bool exchange_channel_ = false;
     bool dump_ir_ = false;
     bool dump_asm_ = false;
     bool is_fpga_ = false;

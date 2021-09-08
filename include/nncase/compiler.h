@@ -40,6 +40,7 @@ struct compile_options
     bool use_dataset_as_input_stat = false;
     bool benchmark_only = false;
     bool preprocess = false;
+    bool exchange_channel = false;
     std::string target;
     std::filesystem::path dump_dir;
     std::string input_type = "default";
@@ -49,7 +50,6 @@ struct compile_options
     std::vector<float> scale { 1.f, 1.f, 1.f };
     std::vector<float> input_range { 0.f, 1.f };
     std::vector<int32_t> input_shape {};
-    std::string image_format = "RGB";
     std::string w_quant_type = "uint8";
     std::string input_layout = "NCHW";
     std::string output_layout = "NCHW";
