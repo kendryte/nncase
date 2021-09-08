@@ -31,6 +31,16 @@ void onnx_importer::convert_op_Abs(const onnx::NodeProto &node)
     convert_unary(node, unary_abs);
 }
 
+void onnx_importer::convert_op_Acos(const onnx::NodeProto &node)
+{
+    convert_unary(node, unary_acos);
+}
+
+void onnx_importer::convert_op_Asin(const onnx::NodeProto &node)
+{
+    convert_unary(node, unary_asin);
+}
+
 void onnx_importer::convert_op_Ceil(const onnx::NodeProto &node)
 {
     convert_unary(node, unary_ceil);
@@ -74,6 +84,11 @@ void onnx_importer::convert_op_Round(const onnx::NodeProto &node)
 void onnx_importer::convert_op_Sqrt(const onnx::NodeProto &node)
 {
     convert_unary(node, unary_sqrt);
+}
+
+void onnx_importer::convert_op_Tanh(const onnx::NodeProto &node)
+{
+    convert_unary(node, unary_tanh);
 }
 
 void onnx_importer::convert_unary(const onnx::NodeProto &node, const unary_op_t unary_op)

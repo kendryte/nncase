@@ -5,6 +5,8 @@
 | Operator | Is Supported |
 |-------|------------------ |
 | Abs | ✅ |
+| Acos | ✅ |
+| Asin | ✅ |
 | Add | ✅ |
 | AveragePool | ✅ |
 | BatchNormalization | ✅ |
@@ -67,6 +69,7 @@
 | Squeeze | ✅ |
 | Sub | ✅ |
 | Sum | ✅ |
+| Tanh | ✅ |
 | Transpose | ✅ |
 | Upsample | ✅ |
 | Unsqueeze | ✅ |
