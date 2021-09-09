@@ -18,4 +18,4 @@
 using namespace nncase;
 using namespace nncase::ir;
 
-call F::nn::sigmoid(expr input) { return call(ir::nn::sigmoid(), {input}); }
+call F::nn::sigmoid(F::fexpr input) { return call(ir::nn::sigmoid(), {input}); }

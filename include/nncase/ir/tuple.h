@@ -13,28 +13,28 @@
  * limitations under the License.
  */
 #pragma once
-#include "../object.h"
-#include "type.h"
+#include "expr.h"
 
 namespace nncase::ir {
-/** @brief Expression node */
-class NNCASE_API expr_node : public object_node {
+/** @brief Tuple node */
+class NNCASE_API tuple_node : public expr_node {
+    DEFINE_OBJECT_KIND(expr_node, object_tuple)
   public:
-    DEFINE_OBJECT_KIND(object_node, object_expr)
+    tuple_node(std::vector<expr> fields);
 
-    /** @brief Get the checked type of the expression */
-    const type &checked_type() const noexcept { return checked_type_; }
-    /** @brief Get the mutable checked type of the variable expression */
-    type &checked_type() noexcept { return checked_type_; }
+    /** @brief Get the fields of the call expression */
+    std::span<const expr> fields() const noexcept { return fields_; }
+    /** @brief Get the mutable fields of the call expression */
+    std::span<expr> fields() noexcept { return fields_; }
 
   private:
-    type checked_type_;
+    std::vector<expr> fields_;
 };
 
-using expr = object_t<expr_node>;
+class tuple : public object_t<tuple_node> {
+  public:
+    using object_t::object_t;
 
-template <class T>
-concept Expr = Object<T> &&
-               (std::same_as<expr_node, typename T::node_type> ||
-                std::derived_from<typename T::node_type, expr_node>);
+    NNCASE_API tuple(std::vector<expr> fields);
+};
 } // namespace nncase::ir

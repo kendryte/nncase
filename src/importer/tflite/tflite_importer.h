@@ -14,6 +14,7 @@
  */
 #pragma once
 #include <nncase/importer/importer.h>
+#include <nncase/ir/call.h>
 #include <nncase/ir/debug.h>
 #include <nncase/ir/module.h>
 //#include <nncase/ir/op_utils.h>
@@ -45,18 +46,23 @@ class tflite_importer {
     void convert_pool2d(const tflite::Operator &op, reduce_op_t reduce_op,
                         float init_value);
     void convert_binary(const tflite::Operator &op, binary_op_t binary_op,
-                        tflite::ActivationFunctionType activation);
+                        tflite::ActivationFunctionType activation =
+                            tflite::ActivationFunctionType_NONE);
     void convert_reduce(const tflite::Operator &op, reduce_op_t reduce_op,
                         float init_value);
     void convert_unary(const tflite::Operator &op, unary_op_t unary_op);
     void convert_resize_image(const tflite::Operator &op,
                               image_resize_mode_t mode);
 
+    ir::shape_t get_ir_shape(const flatbuffers::Vector<int32_t> *shape);
     ir::type get_ir_type(const flatbuffers::Vector<int32_t> *shape,
                          tflite::TensorType tflite_type);
     ir::expr get_tensor_expr(const flatbuffers::Vector<int32_t> *ids,
                              int32_t offset);
     ir::expr get_input_expr(const tflite::Operator &op, int32_t offset);
+
+    ir::call activate(ir::expr input,
+                      tflite::ActivationFunctionType activation);
 
     template <class... TArgs, class = std::enable_if_t<std::conjunction_v<
                                   std::is_convertible<TArgs, int32_t>...>>>

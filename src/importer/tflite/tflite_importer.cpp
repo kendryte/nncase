@@ -15,6 +15,8 @@
 #include "tflite_importer.h"
 //#include <nncase/importer/util.h>
 #include <nncase/ir/constant.h>
+#include <nncase/ir/math/functional.h>
+#include <nncase/ir/tuple.h>
 //#include <nncase/ir/ops/convert.h>
 
 using namespace nncase;
@@ -46,190 +48,36 @@ module_t tflite_importer::import(const import_options &options) {
     for (auto op : operators)
         convert_op(*op);
 
-    // 3. Create function
-    function main_func("main", created_inputs, expr(nullptr));
+    // 3. Create outputs
+    std::vector<expr> output_exprs;
+    output_exprs.reserve(subgraph_->outputs()->size());
+    for (auto out : *subgraph_->outputs())
+        output_exprs.emplace_back(output_tensors_.at(out));
+    tuple output(std::move(output_exprs));
+
+    // 4. Create function
+    function main_func("main", created_inputs, output);
     module_->functions().emplace_back(main_func);
     module_->entry(main_func);
-
-    // std::unordered_map<int32_t, input_connector *> created_outputs;
-
-    // create inputs
-    // for (auto &&in : *subgraph_->inputs())
-    //{
-    //    auto &tensor = *subgraph_->tensors()->Get(in);
-    //    auto type = get_ir_type(tensor.shape(), tensor.type());
-    //    auto shape = get_shape(tensor.shape());
-    //    auto type = to_data_type(tensor.type());
-    //    // image
-    //    if (options.input_layout == "NCHW" && shape.size() == 4)
-    //    {
-    //        auto trans = nhwc_to_nchw(shape);
-    //        auto node = graph_.emplace<input_node>(type, trans);
-    //        node->name(tensor.name()->string_view());
-    //        auto sur_trans = nchw_to_nhwc(node->output().type(),
-    //        node->output().shape());
-    //        sur_trans->name(tensor.name()->string_view());
-    //        sur_trans->input().connect(node->output());
-    //        created_inputs.emplace(in, &sur_trans->output());
-    //    }
-    //    else
-    //    {
-    //        auto node = graph_.emplace<input_node>(type, shape);
-    //        node->name(tensor.name()->string_view());
-    //        created_inputs.emplace(in, &node->output());
-    //    }
-    //}
-
-    // auto &operators = *subgraph_->operators();
-    // for (auto &&op : operators)
-    //    convert_op(*op);
-
-    // std::vector<int32_t> outputs;
-    // if (options.output_arrays.empty())
-    //{
-    //    for (auto &&out : *subgraph_->outputs())
-    //    {
-    //        outputs.emplace_back(out);
-    //    }
-    //}
-    // else
-    //{
-    //    for (auto &&name : options.output_arrays)
-    //    {
-    //        bool found = false;
-    //        size_t i = 0;
-    //        for (auto &&t : *subgraph_->tensors())
-    //        {
-    //            auto t_name = t->name();
-    //            if (t_name && t_name->string_view() == name)
-    //            {
-    //                outputs.emplace_back(i);
-    //                found = true;
-    //                break;
-    //            }
-
-    //            i++;
-    //        }
-
-    //        if (!found)
-    //        {
-    //            throw std::runtime_error("Cannot find output tensor: " +
-    //            name);
-    //        }
-    //    }
-    //}
-
-    // create outputs
-    // for (auto &&out : outputs)
-    //{
-    //    auto &tensor = *subgraph_->tensors()->Get(out);
-    //    auto shape = get_shape(tensor.shape());
-    //    auto type = to_data_type(tensor.type());
-    //    // image
-    //    if (options.output_layout == "NCHW" && shape.size() == 4)
-    //    {
-    //        auto pre_trans = nhwc_to_nchw(type, shape);
-    //        pre_trans->name(tensor.name()->string_view());
-    //        auto node =
-    //        graph_.emplace<output_node>(pre_trans->output().type(),
-    //        pre_trans->output().shape());
-    //        node->name(tensor.name()->string_view());
-    //        node->input().connect(pre_trans->output());
-    //        created_outputs.emplace(out, &pre_trans->input());
-    //    }
-    //    else
-    //    {
-    //        auto node = graph_.emplace<output_node>(type, shape);
-    //        node->name(tensor.name()->string_view());
-    //        created_outputs.emplace(out, &node->input());
-    //    }
-    //}
-
-    // connect tensors
-    // for (auto &&in : input_tensors_)
-    //{
-    //    auto out_it = output_tensors_.find(in.second);
-    //    if (out_it != output_tensors_.end())
-    //    {
-    //        in.first->connect(*out_it->second);
-    //    }
-    //    else
-    //    {
-    //        auto &tensor = *subgraph_->tensors()->Get(in.second);
-    //        auto &buffer = *model_->buffers()->Get(tensor.buffer());
-    //        auto data = buffer.data();
-
-    //        if (data)
-    //        {
-    //            auto type = to_data_type(tensor.type());
-    //            auto shape = get_shape(tensor.shape());
-    //            auto con = graph_.emplace<constant>(type, shape,
-    //            std::as_bytes(std::span(data->data(), data->data() +
-    //            data->size()))); con->name(tensor.name()->string_view());
-    //            link_output_tensor(in.second, &con->output());
-    //            in.first->connect(con->output());
-    //        }
-    //    }
-    //}
-
-    // inputs
-    // for (auto &&in : input_tensors_)
-    //{
-    //    if (!in.first->connection())
-    //    {
-    //        auto out = created_inputs.at(in.second);
-    //        in.first->connect(*out);
-    //    }
-    //}
-
-    // outputs
-    // for (auto &&out : output_tensors_)
-    //{
-    //    auto in = created_outputs.find(out.first);
-    //    if (in != created_outputs.end())
-    //    {
-    //        in->second->connect(*out.second);
-    //    }
-    //}
-
-    // outputs that connect to inputs or constants
-    // for (auto &&out : created_outputs)
-    //{
-    //    if (!out.second->connection())
-    //    {
-    //        auto &tensor = *subgraph_->tensors()->Get(out.first);
-    //        auto &buffer = *model_->buffers()->Get(tensor.buffer());
-    //        auto data = buffer.data();
-
-    //        if (data)
-    //        {
-    //            auto type = to_data_type(tensor.type());
-    //            auto shape = get_shape(tensor.shape());
-    //            auto con = graph_.emplace<constant>(type, shape,
-    //            std::as_bytes(std::span(data->data(), data->data() +
-    //            data->size()))); con->name(tensor.name()->str() + "/const");
-    //            out.second->connect(con->output());
-    //        }
-    //        else
-    //        {
-    //            auto in = created_inputs.find(out.first);
-    //            if (in != created_inputs.end())
-    //                out.second->connect(*in->second);
-    //        }
-    //    }
-    //}
-
     return module_;
+}
+
+ir::shape_t
+tflite_importer::get_ir_shape(const flatbuffers::Vector<int32_t> *shape) {
+    if (shape) {
+        std::vector<dim_t> dims;
+        dims.reserve(shape->size());
+        std::ranges::transform(*shape, std::back_inserter(dims),
+                               [](int32_t dim) -> dim_t { return dim; });
+        return dims;
+    } else {
+        return unranked_shape;
+    }
 }
 
 ir::type tflite_importer::get_ir_type(const flatbuffers::Vector<int32_t> *shape,
                                       tflite::TensorType tflite_type) {
-    shape_t ir_shape;
-    if (shape) {
-        std::ranges::transform(*shape, std::back_inserter(ir_shape),
-                               [](int32_t dim) -> dim_t { return dim; });
-    }
-    return tensor_type(to_datatype(tflite_type), ir_shape);
+    return tensor_type(to_datatype(tflite_type), get_ir_shape(shape));
 }
 
 datatype_t tflite_importer::to_datatype(tflite::TensorType tflite_type) {
@@ -289,7 +137,24 @@ ir::expr
 tflite_importer::get_tensor_expr(const flatbuffers::Vector<int32_t> *ids,
                                  int32_t offset) {
     auto id = ids->Get(offset);
-    return output_tensors_.at(id);
+    auto it = output_tensors_.find(id);
+    if (it != output_tensors_.end()) {
+        return it->second;
+    } else { // Maybe constant
+        auto &tensor = *subgraph_->tensors()->Get(id);
+        auto &buffer = *model_->buffers()->Get(tensor.buffer());
+        auto data = buffer.data();
+
+        if (data) {
+            auto ir_type = get_ir_type(tensor.shape(), tensor.type());
+            constant con(ir_type,
+                         std::span(data->data(), data->data() + data->size()));
+            return output_tensors_.emplace(id, con).first->second;
+        } else {
+            throw std::runtime_error("Unable to load tflite tensor: " +
+                                     tensor.name()->str());
+        }
+    }
 }
 
 ir::expr tflite_importer::get_input_expr(const tflite::Operator &op,
@@ -306,6 +171,12 @@ void tflite_importer::set_tensor_expr(const flatbuffers::Vector<int32_t> *ids,
 void tflite_importer::set_output_expr(const tflite::Operator &op,
                                       int32_t offset, ir::expr ex) {
     set_tensor_expr(op.outputs(), offset, ex);
+}
+
+ir::call tflite_importer::activate(ir::expr input,
+                                   tflite::ActivationFunctionType activation) {
+    auto range = to_float_clamp_range(activation);
+    return F::clamp(input, range.min, range.max);
 }
 //
 // quant_param_t tflite_importer::to_quant_param(const

@@ -12,22 +12,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/ir/math/binary.h>
-#include <nncase/ir/math/clamp.h>
-#include <nncase/ir/math/functional.h>
-#include <nncase/ir/math/unary.h>
+#include <nncase/ir/tuple.h>
 
 using namespace nncase;
 using namespace nncase::ir;
 
-call F::unary(unary_op_t unary_op, F::fexpr input) {
-    return call(math::unary(unary_op), {input});
-}
+tuple_node::tuple_node(std::vector<expr> fields) : fields_(std::move(fields)) {}
 
-call F::binary(binary_op_t unary_op, F::fexpr lhs, F::fexpr rhs) {
-    return call(math::binary(unary_op), {lhs, rhs});
-}
-
-call F::clamp(F::fexpr input, F::fexpr min, F::fexpr max) {
-    return call(math::clamp(), {input, min, max});
-}
+tuple::tuple(std::vector<expr> fields)
+    : object_t(std::in_place, std::move(fields)) {}

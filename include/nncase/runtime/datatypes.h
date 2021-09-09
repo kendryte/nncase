@@ -136,8 +136,6 @@ typedef enum _binary_op {
     binary_min,
     binary_max,
     binary_pow,
-    binary_floor_div,
-    binary_floor_mod,
     binary_bitwise_and,
     binary_bitwise_or,
     binary_bitwise_xor,
@@ -164,10 +162,6 @@ inline std::string binary_op_to_string(binary_op_t op) {
         return "binary_max";
     case binary_pow:
         return "binary_pow";
-    case binary_floor_div:
-        return "binary_floor_div";
-    case binary_floor_mod:
-        return "binary_floor_mod";
     case binary_bitwise_and:
         return "binary_bitwise_and";
     case binary_bitwise_or:

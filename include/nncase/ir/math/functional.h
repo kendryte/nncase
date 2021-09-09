@@ -14,13 +14,15 @@
  */
 #pragma once
 #include "../call.h"
+#include "../functional.h"
 
 namespace nncase::ir::F {
-NNCASE_API call unary(unary_op_t unary_op, expr input);
-NNCASE_API call binary(binary_op_t binary_op, expr lhs, expr rhs);
+NNCASE_API call unary(unary_op_t unary_op, fexpr input);
+NNCASE_API call binary(binary_op_t binary_op, fexpr lhs, fexpr rhs);
+NNCASE_API call clamp(fexpr input, fexpr min, fexpr max);
 
 #define DEFINE_UNARY_FUNC(name, unary_op)                                      \
-    inline call name(expr input) { return F::unary(unary_op, input); }
+    inline call name(fexpr input) { return F::unary(unary_op, input); }
 
 DEFINE_UNARY_FUNC(abs, unary_abs)
 DEFINE_UNARY_FUNC(ceil, unary_ceil)
@@ -41,7 +43,7 @@ DEFINE_UNARY_FUNC(logical_not, unary_logical_not)
 #undef DEFINE_UNARY_FUNC
 
 #define DEFINE_BINARY_FUNC(name, binary_op)                                    \
-    inline call name(expr lhs, expr rhs) {                                     \
+    inline call name(fexpr lhs, expr rhs) {                                    \
         return F::binary(binary_op, lhs, rhs);                                 \
     }
 
@@ -68,14 +70,25 @@ inline call operator-(expr input) { return F::neg(input); }
 inline call operator~(expr input) { return F::bitwise_not(input); }
 inline call operator!(expr input) { return F::logical_not(input); }
 
-inline call operator+(expr lhs, expr rhs) { return F::add(lhs, rhs); }
-inline call operator-(expr lhs, expr rhs) { return F::sub(lhs, rhs); }
-inline call operator*(expr lhs, expr rhs) { return F::mul(lhs, rhs); }
-inline call operator/(expr lhs, expr rhs) { return F::div(lhs, rhs); }
-inline call operator%(expr lhs, expr rhs) { return F::mod(lhs, rhs); }
-inline call operator&(expr lhs, expr rhs) { return F::bitwise_and(lhs, rhs); }
-inline call operator|(expr lhs, expr rhs) { return F::bitwise_or(lhs, rhs); }
-inline call operator^(expr lhs, expr rhs) { return F::bitwise_xor(lhs, rhs); }
-inline call operator&&(expr lhs, expr rhs) { return F::logical_and(lhs, rhs); }
-inline call operator||(expr lhs, expr rhs) { return F::logical_or(lhs, rhs); }
+#define DEFINE_BINARY_OPERATOR(op, impl)                                       \
+    inline call operator##op(expr lhs, expr rhs) { return F::impl(lhs, rhs); } \
+    inline call operator##op(expr lhs, F::fexpr rhs) {                         \
+        return F::impl(lhs, rhs);                                              \
+    }                                                                          \
+    inline call operator##op(F::fexpr lhs, expr rhs) {                         \
+        return F::impl(lhs, rhs);                                              \
+    }
+
+DEFINE_BINARY_OPERATOR(+, add)
+DEFINE_BINARY_OPERATOR(-, sub)
+DEFINE_BINARY_OPERATOR(*, mul)
+DEFINE_BINARY_OPERATOR(/, div)
+DEFINE_BINARY_OPERATOR(%, mod)
+DEFINE_BINARY_OPERATOR(&, bitwise_and)
+DEFINE_BINARY_OPERATOR(|, bitwise_or)
+DEFINE_BINARY_OPERATOR(^, bitwise_xor)
+DEFINE_BINARY_OPERATOR(&&, logical_and)
+DEFINE_BINARY_OPERATOR(||, logical_or)
+
+#undef DEFINE_BINARY_OPERATOR
 } // namespace nncase::ir

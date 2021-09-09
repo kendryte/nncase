@@ -72,8 +72,8 @@ class NNCASE_API shape_t {
     shape_t(invalid_shape_t) noexcept : kind_(shape_kind_invalid) {}
 
     /** @brief Initialize a ranked shape */
-    shape_t(std::initializer_list<dim_t> dims)
-        : kind_(kind_of(dims)), dims_(dims) {}
+    template <std::ranges::range R>
+    shape_t(R dims) : kind_(kind_of(dims)), dims_(dims.begin(), dims.end()) {}
 
     /** @brief Initialize a fixed shape */
     shape_t(std::initializer_list<int64_t> dims) : kind_(shape_kind_fixed) {

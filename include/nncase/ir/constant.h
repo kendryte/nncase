@@ -19,23 +19,10 @@
 namespace nncase::ir {
 /** @brief Constant node */
 class NNCASE_API constant_node : public expr_node {
-  public:
     DEFINE_OBJECT_KIND(expr_node, object_constant);
 
+  public:
     constant_node(type value_type, std::vector<std::byte> data);
-
-    constant_node(type value_type, std::span<const std::byte> data)
-        : constant_node(std::move(value_type),
-                        std::vector<std::byte>(data.begin(), data.end())) {}
-
-    template <class T>
-    constant_node(type value_type, std::span<const T> data)
-        : constant_node(std::move(type), std::as_bytes(data)) {}
-
-    template <class TScalar>
-    constant_node(TScalar scalar)
-        : constant_node(type_t(to_datatype<TScalar>(), shape_t{1}),
-                        std::span<const TScalar>(&scalar, 1)) {}
 
     /** @brief Get the type of the constant expression */
     const type &value_type() const noexcept { return value_type_; }
@@ -52,5 +39,21 @@ class NNCASE_API constant_node : public expr_node {
     std::vector<std::byte> data_;
 };
 
-using constant = object_t<constant_node>;
+class constant : public object_t<constant_node> {
+  public:
+    NNCASE_API constant(type value_type, std::vector<std::byte> data);
+
+    constant(type value_type, std::span<const std::byte> data)
+        : constant(std::move(value_type),
+                   std::vector<std::byte>(data.begin(), data.end())) {}
+
+    template <class T>
+    constant(type value_type, std::span<const T> data)
+        : constant(std::move(value_type), std::as_bytes(data)) {}
+
+    template <class TScalar>
+    constant(TScalar scalar)
+        : constant(prim_type(to_datatype<TScalar>()),
+                   std::span<const TScalar>(&scalar, 1)) {}
+};
 } // namespace nncase::ir

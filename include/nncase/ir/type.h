@@ -15,6 +15,7 @@
 #pragma once
 #include "shape.h"
 #include <nncase/runtime/datatypes.h>
+#include <ranges>
 
 namespace nncase::ir {
 /** @brief Type node */
@@ -42,19 +43,22 @@ class NNCASE_API prim_type_node : public type_node {
     DEFINE_OBJECT_KIND(object_node, object_prim_type);
 
   public:
-    prim_type_node(datatype_t prim_type);
+    prim_type_node(datatype_t dtype);
 
     /** @brief Get primitive datatype */
-    datatype_t prim_type() const noexcept { return prim_type_; }
+    datatype_t dtype() const noexcept { return dtype_; }
     /** @brief Set primitive datatype */
-    void prim_type(datatype_t value) noexcept { prim_type_ = value; }
+    void dtype(datatype_t value) noexcept { dtype_ = value; }
 
   private:
-    datatype_t prim_type_;
+    datatype_t dtype_;
 };
 
 /** @brief Primitive type */
-class prim_type : public object_t<prim_type_node> {};
+class prim_type : public object_t<prim_type_node> {
+  public:
+    NNCASE_API prim_type(datatype_t dtype);
+};
 
 /** @brief Tensor type node */
 class NNCASE_API tensor_type_node : public type_node {
@@ -69,9 +73,9 @@ class NNCASE_API tensor_type_node : public type_node {
     bool is_tensor() const noexcept { return !shape_.is_scalar(); }
 
     /** @brief Get element datatype */
-    datatype_t elem_type() const noexcept { return elem_type_; }
+    datatype_t dtype() const noexcept { return dtype_; }
     /** @brief Set element datatype */
-    void elem_type(datatype_t value) noexcept { elem_type_ = value; }
+    void dtype(datatype_t value) noexcept { dtype_ = value; }
 
     /** @brief Get shape */
     const shape_t &shape() const noexcept { return shape_; }
@@ -81,7 +85,7 @@ class NNCASE_API tensor_type_node : public type_node {
     void shape(shape_t value) noexcept { shape_ = std::move(value); }
 
   private:
-    datatype_t elem_type_;
+    datatype_t dtype_;
     shape_t shape_;
 };
 
@@ -89,5 +93,35 @@ class NNCASE_API tensor_type_node : public type_node {
 class tensor_type : public object_t<tensor_type_node> {
   public:
     NNCASE_API tensor_type(datatype_t elem_type, shape_t shape);
+};
+
+/** @brief Tuple type node */
+class NNCASE_API tuple_type_node : public type_node {
+    DEFINE_OBJECT_KIND(object_node, object_tuple_type);
+
+  public:
+    tuple_type_node(itlib::small_vector<type> fields);
+
+    /** @brief Get fields */
+    std::span<const type> fields() const noexcept { return fields_; }
+    /** @brief Get mutable fields */
+    itlib::small_vector<type> &shape() noexcept { return fields_; }
+    /** @brief Set fields */
+    void shape(itlib::small_vector<type> value) noexcept {
+        fields_ = std::move(value);
+    }
+
+  private:
+    itlib::small_vector<type> fields_;
+};
+
+/** @brief Tuple type */
+class tuple_type : public object_t<tuple_type_node> {
+  public:
+    NNCASE_API tuple_type(itlib::small_vector<type> fields);
+
+    template <std::ranges::range R>
+    tuple_type(R &&fields)
+        : tuple_type(itlib::small_vector<type>{fields.begin(), fields.end()}) {}
 };
 } // namespace nncase::ir

@@ -19,3 +19,6 @@ using namespace nncase::ir;
 
 constant_node::constant_node(type value_type, std::vector<std::byte> data)
     : value_type_(std::move(value_type)), data_(std::move(data)) {}
+
+constant::constant(type value_type, std::vector<std::byte> data)
+    : object_t(std::in_place, std::move(value_type), std::move(data)) {}

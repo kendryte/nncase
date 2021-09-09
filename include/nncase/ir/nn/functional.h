@@ -14,7 +14,8 @@
  */
 #pragma once
 #include "../call.h"
+#include "../functional.h"
 
 namespace nncase::ir::F::nn {
-NNCASE_API call sigmoid(expr input);
+NNCASE_API call sigmoid(fexpr input);
 } // namespace nncase::ir::F::nn

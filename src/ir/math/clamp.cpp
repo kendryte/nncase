@@ -19,8 +19,7 @@ using namespace nncase;
 using namespace nncase::ir;
 using namespace nncase::ir::math;
 
-clamp_node::clamp_node()
-{
+clamp_node::clamp_node() {
     add_parameter("input");
     add_parameter("min");
     add_parameter("max");

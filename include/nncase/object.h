@@ -33,9 +33,7 @@ namespace nncase {
     }
 
 template <class T> class object_t;
-namespace detail {
 template <class T> concept Object = requires { typename T::node_type; };
-} // namespace detail
 
 class NNCASE_API object_node {
   public:
@@ -72,14 +70,12 @@ template <class T> class object_t {
     explicit object_t(std::shared_ptr<T> node) noexcept
         : object_(std::move(node)) {}
 
-    template <
-        detail::Object U,
-        class = std::enable_if_t<std::is_base_of_v<T, typename U::node_type>>>
+    template <Object U, class = std::enable_if_t<
+                            std::is_base_of_v<T, typename U::node_type>>>
     object_t(U &&other) noexcept : object_(std::move(other.object_)) {}
 
-    template <
-        detail::Object U,
-        class = std::enable_if_t<std::is_base_of_v<T, typename U::node_type>>>
+    template <Object U, class = std::enable_if_t<
+                            std::is_base_of_v<T, typename U::node_type>>>
     object_t(const U &other) noexcept : object_(other.object_) {}
 
     template <class... TArgs>
@@ -90,7 +86,7 @@ template <class T> class object_t {
     T *get() const noexcept { return static_cast<T *>(object_.get()); }
     T *operator->() const noexcept { return get(); }
 
-    bool empty() const noexcept { return !object_; }
+    bool empty() const noexcept { return object_.get() == nullptr; }
 
     /** @brief Is the object an instance of specific type */
     bool is_a(const object_kind &kind) const noexcept {
@@ -98,11 +94,11 @@ template <class T> class object_t {
     }
 
     /** @brief Is the object an instance of specific type */
-    template <detail::Object T> bool is_a() const noexcept {
+    template <Object T> bool is_a() const noexcept {
         return is_a(T::node_type::kind());
     }
 
-    template <detail::Object T> T as() const noexcept {
+    template <Object T> T as() const noexcept {
         if (is_a<T>()) {
             return T(std::static_pointer_cast<typename T::node_type>(object_));
         } else {
