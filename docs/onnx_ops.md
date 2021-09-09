@@ -6,7 +6,9 @@
 |-------|------------------ |
 | Abs | ✅ |
 | Acos | ✅ |
+| Acosh | ✅ |
 | Asin | ✅ |
+| Asinh | ✅ |
 | Add | ✅ |
 | AveragePool | ✅ |
 | BatchNormalization | ✅ |
@@ -18,6 +20,7 @@
 | Conv | ✅ |
 | ConvTranspose | ✅ |
 | Cos | ✅ |
+| Cosh | ✅ |
 | Div | ✅ |
 | Dropout | ✅ |
 | Elu | ✅ |
@@ -60,6 +63,7 @@
 | Round | ✅ |
 | Shape | ✅ |
 | Sin | ✅ |
+| Sinh | ✅ |
 | Sigmoid | ✅ |
 | Slice | ✅ |
 | Softmax | ✅ |
