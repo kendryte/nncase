@@ -45,7 +45,7 @@ void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::targ
     {
         if (in_node->output().shape().size() == 4)
         {
-            auto old_inputs = in_node->output().connections();
+            auto old_inputs = dup(in_node->output().connections());
             shape_t new_shape = { size_t(in_node->output().shape()[0]), size_t(input_shape_[1]), size_t(input_shape_[2]), size_t(input_shape_[3]) };
             auto new_input = graph.emplace<input_node>(get_datatype(input_type_), new_shape);
             new_input->name("new_input");
