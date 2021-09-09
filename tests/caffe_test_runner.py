@@ -7,8 +7,8 @@ import numpy as np
 
 
 class CaffeTestRunner(TestRunner):
-    def __init__(self, case_name, targets=None, overwirte_configs: dict = None):
-        super().__init__(case_name, targets, overwirte_configs)
+    def __init__(self, case_name, targets=None, overwrite_configs: dict = None):
+        super().__init__(case_name, targets, overwrite_configs)
         self.model_type = "caffe"
 
     def run(self, model_file_list):

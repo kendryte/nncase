@@ -227,7 +227,7 @@ class TestRunner(metaclass=ABCMeta):
         process_deq['range'] = config['input_range']
         process_deq['input_type'] = config['input_type']
 
-        # bgr2rgb
+        # exchange_channel
         process_format = {}
         process_format['exchange_channel'] = config['exchange_channel']
 
@@ -306,16 +306,13 @@ class TestRunner(metaclass=ABCMeta):
                         model_h, model_w = model_shape[1], model_shape[2]
                         ratio = min(model_h / in_h, model_w / in_w)
                         resize_shape = data.shape[0], round(in_h * ratio), round(in_w * ratio), 3
-
                         resize_data = cv2.resize(data[0], (resize_shape[2],
                                                            resize_shape[1]), interpolation=cv2.INTER_LINEAR)
                         dh = model_shape[1] - resize_shape[1]
                         dw = model_shape[2] - resize_shape[2]
                         dh /= 2
                         dw /= 2
-
                         resize_data = np.array(resize_data, dtype=np.float32)
-
                         data = cv2.copyMakeBorder(resize_data, round(dh - 0.1), round(model_h - resize_shape[1] - round(dh - 0.1)), round(dw - 0.1), round(
                             model_w - resize_shape[2] - round(dw - 0.1)), cv2.BORDER_CONSTANT, value=(item['letterbox_value'], item['letterbox_value'], item['letterbox_value']))
 
@@ -415,7 +412,7 @@ class TestRunner(metaclass=ABCMeta):
             self.generate_data(cfg.generate_calibs, case_dir,
                                self.calibs, self.calib_paths, 'calib', dict_args)
 
-            # local test: write preprocess options in test_result
+            # write preprocess options in test_result
             if dict_args['preprocess'] == True:
                 str_preprocess_opt = ""
                 pre_list = []
@@ -428,7 +425,6 @@ class TestRunner(metaclass=ABCMeta):
 
             self.cpu_infer(case_dir, model_file, dict_args['input_type'])
             import_options, compile_options = self.get_compiler_options(dict_args, model_file)
-            # print(import_options)
             model_content = self.read_model_file(model_file)
             self.run_evaluator(cfg, case_dir, import_options,
                                compile_options, model_content, dict_args)
@@ -530,10 +526,8 @@ class TestRunner(metaclass=ABCMeta):
         if kwargs['ptq']:
             ptq_options = nncase.PTQTensorOptions()
             ptq_options.set_tensor_data(np.asarray(
-                [self.transform_input(sample['data'], cfg.compile_opt.kwargs['input_type'], "infer") for sample in self.calibs]).tobytes())
+                [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.calibs]).tobytes())
             ptq_options.samples_count = cfg.generate_calibs.batch_size
-            ptq_options.input_mean = cfg.ptq_opt.kwargs['input_mean']
-            ptq_options.input_std = cfg.ptq_opt.kwargs['input_std']
 
             compiler.use_ptq(ptq_options)
         evaluator = compiler.create_evaluator(3)
@@ -541,7 +535,6 @@ class TestRunner(metaclass=ABCMeta):
         for i in range(len(self.inputs)):
             input_tensor = nncase.RuntimeTensor.from_numpy(
                 self.transform_input(self.data_pre_process(self.inputs[i]['data']), "float32", "CPU"))
-            # self.data_pre_process(self.inputs[i]['data']))
             input_tensor.copy_to(evaluator.get_input_tensor(i))
             evaluator.run()
 
