@@ -35,6 +35,7 @@ namespace detail
             if (PyBytes_AsStringAndSize(src.ptr(), reinterpret_cast<char **>(&buffer), &length))
                 return false;
             value = { (const gsl::byte *)buffer, (size_t)length };
+            loader_life_support::add_patient(src);
             return true;
         }
     };
