@@ -359,6 +359,12 @@ void register_neutral_evaluators()
         case unary_abs:
             unary([](auto a) { return fabs(a); });
             break;
+        case unary_acos:
+            unary([](auto a) { return acosf(a); });
+            break;
+        case unary_asin:
+            unary([](auto a) { return asinf(a); });
+            break;
         case unary_ceil:
             unary([](auto a) { return ceilf(a); });
             break;

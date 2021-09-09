@@ -27,6 +27,8 @@ def _make_module():
         def forward(self, x):
             outs = []
             outs.append(torch.abs(-x))
+            outs.append(torch.acos(x))
+            outs.append(torch.asin(x))
             outs.append(torch.ceil(x))
             outs.append(torch.cos(x))
             outs.append(torch.exp(x))
@@ -34,22 +36,17 @@ def _make_module():
             outs.append(torch.log(x + 2))
             outs.append(torch.neg(x))
             outs.append(torch.round(x))
-            # outs.append(torch.rsqrt(x))
             outs.append(torch.sin(x))
             outs.append(torch.sqrt(x + 2))
-            outs.append(torch.square(x))
-            # outs.append(torch.tanh(x))
-            outs.append(torch.sigmoid(x))
+            outs.append(torch.tanh(x))
             return outs
 
     return UnaryModule()
 
 
 in_shapes = [
-    [3],
-    [64, 3],
-    [3, 64, 3],
-    [8, 6, 16, 3]
+    [16],
+    [1, 3, 16, 16]
 ]
 
 
