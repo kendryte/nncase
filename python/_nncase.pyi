@@ -20,6 +20,7 @@ class CompileOptions:
     scale: List[float]
     target: str
     w_quant_type: str
+    use_mse_quant_w: bool
     def __init__(self) -> None: ...
 
 

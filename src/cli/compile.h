@@ -44,6 +44,7 @@ private:
     std::string input_layout_ = "NCHW";
     std::string output_layout_ = "NCHW";
     std::string image_format_ = "RGB";
+    bool use_mse_quant_w_ = false;
 
     float input_mean_ = 0.f;
     float input_std_ = 1.f;

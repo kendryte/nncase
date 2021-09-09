@@ -123,11 +123,11 @@ void k210_target::register_quantize_annotation_passes(const module_type_t &type,
     }
 }
 
-void k210_target::register_quantize_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] datatype_t quant_type, [[maybe_unused]] datatype_t w_quant_type)
+void k210_target::register_quantize_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] datatype_t quant_type, [[maybe_unused]] datatype_t w_quant_type, [[maybe_unused]] bool use_mse_quant_w)
 {
     {
         transform_pass p("lowering_kpu_conv2d");
-        p.emplace<kpu_conv2d_transform>();
+        p.emplace<kpu_conv2d_transform>(use_mse_quant_w);
         p.emplace<fold_quantize_transform>();
         pass_mgr.add_pass(std::move(p));
     }
@@ -144,7 +144,7 @@ void k210_target::register_quantize_passes(const module_type_t &type, ir::transf
         pass_mgr.add_pass(std::move(p));
     }
     {
-        neutral_target::register_quantize_passes(type, pass_mgr, quant_type, w_quant_type);
+        neutral_target::register_quantize_passes(type, pass_mgr, quant_type, w_quant_type, use_mse_quant_w);
 
         transform_pass p("fold_kpu_data_exchg2");
         //p.emplace<fuse_kpu_download_transform>();

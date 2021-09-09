@@ -27,7 +27,8 @@ compile_command::compile_command(lyra::cli &cli)
                          .add_argument(lyra::opt(input_type_, "input type").name("--input-type").optional().help("post trainning quantize input type, e.g float32|uint8|default, default is " + input_type_))
                          .add_argument(lyra::opt(output_type_, "output type").name("--output-type").optional().help("post trainning quantize output type, e.g float32|uint8, default is " + output_type_))
                          .add_argument(lyra::opt(quant_type_, "quant type").name("--quant-type").optional().help("post trainning quantize type, e.g uint8|int8, default is " + quant_type_))
-                         .add_argument(lyra::opt(w_quant_type_, "pu output quant type").name("--pu-output-quant-type").optional().help("post trainning weights quantize type, e.g uint8|int8, default is " + w_quant_type_))
+                         .add_argument(lyra::opt(w_quant_type_, "w quant type").name("--w_quant-type").optional().help("post trainning weights quantize type, e.g uint8|int8, default is " + w_quant_type_))
+                         .add_argument(lyra::opt(use_mse_quant_w_).name("--use-mse-quant-w").optional().help("use mse to refine weights quantilization or not"))
                          .add_argument(lyra::opt(input_layout_, "input layout").name("--input-layout").optional().help("input layout, e.g NCHW|NHWC, default is " + input_layout_))
                          .add_argument(lyra::opt(output_layout_, "output layout").name("--output-layout").optional().help("output layout, e.g nchw|default, default is " + output_layout_))
                          .add_argument(lyra::arg(input_filename_, "input file").required().help("input file"))
@@ -84,6 +85,7 @@ void compile_command::run()
     c_options.w_quant_type = w_quant_type_;
     c_options.benchmark_only = benchmark_only_;
     c_options.preprocess = preprocess_;
+    c_options.use_mse_quant_w = use_mse_quant_w_;
 
     import_options i_options;
     std::vector<std::string> output_arrays;
