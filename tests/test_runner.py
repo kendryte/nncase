@@ -615,8 +615,7 @@ class TestRunner(metaclass=ABCMeta):
                     shape = input['model_shape']
                 if shape[0] != cfg.batch_size:
                     shape[0] *= cfg.batch_size
-                data = DataFactory[cfg.name](
-                    [shape[0], shape[1], shape[2], shape[3]], input['dtype'], n, cfg.batch_size, **cfg.kwargs)
+                data = DataFactory[cfg.name](shape, input['dtype'], n, cfg.batch_size, **cfg.kwargs)
 
                 path_list.append(
                     (os.path.join(case_dir, f'{name}_{n}_{i}.bin'),
