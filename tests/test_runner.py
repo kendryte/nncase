@@ -57,7 +57,16 @@ class Edict:
     def update(self, d: Dict):
         for name, new_value in d.items():
             if name in self.keys():
-                if isinstance(new_value, dict):
+                if isinstance(new_value, dict) and name == 'case':
+                    old_value = getattr(self, name)
+                    if old_value is None:
+                        setattr(self, name, Edict(new_value))
+                    case = getattr(self, 'case')
+                    preprocess = getattr(case, 'preprocess_opt')
+                    for i in range(len(new_value['preprocess_opt'])):
+                        self.case.preprocess_opt[i].values = copy.deepcopy(
+                            new_value['preprocess_opt'][i]['values'])
+                elif isinstance(new_value, dict):
                     old_value = getattr(self, name)
                     if old_value is None:
                         setattr(self, name, Edict(new_value))
@@ -73,6 +82,7 @@ class Edict:
                         import_common = copy.deepcopy(common)
                         import_common.update(specific)
                         getattr(self, name).append(import_common)
+                # elif isinstance(new_value)
                 else:
                     setattr(self, name, new_value)
             else:
@@ -230,7 +240,7 @@ class TestRunner(metaclass=ABCMeta):
                     data *= scale
                     data -= bias
 
-                # BGR2RGB
+                # exchange_channel
                 if 'exchange_channel' in item.keys():
                     if data.shape[-1] != 3:
                         assert("Please confirm your input channel is 3.")
@@ -361,15 +371,15 @@ class TestRunner(metaclass=ABCMeta):
                                self.calibs, self.calib_paths, 'calib', dict_args)
 
             # local test: write preprocess options in test_result
-            # if dict_args['preprocess'] == True:
-            #     str_preprocess_opt = ""
-            #     pre_list = []
-            #     for key, value in dict_args.items():
-            #         pre_list.append(str_preprocess_opt.join("{0}:{1}".format(key, value)))
-            #     with open(os.path.join(self.case_dir, 'test_result.txt'), 'a+') as f:
-            #         f.write("\n----preprocess option----\n")
-            #         f.write('\n'.join(pre_list[:]) + "\n")
-            #         f.write("-------------------------\n")
+            if dict_args['preprocess'] == True:
+                str_preprocess_opt = ""
+                pre_list = []
+                for key, value in dict_args.items():
+                    pre_list.append(str_preprocess_opt.join("{0}:{1}".format(key, value)))
+                with open(os.path.join(self.case_dir, 'test_result.txt'), 'a+') as f:
+                    f.write("\n----preprocess option----\n")
+                    f.write('\n'.join(pre_list[:]) + "\n")
+                    f.write("-------------------------\n")
 
             self.cpu_infer(case_dir, model_file, dict_args['input_type'])
             import_options, compile_options = self.get_compiler_options(dict_args, model_file)
@@ -555,12 +565,13 @@ class TestRunner(metaclass=ABCMeta):
             for input in inputs:
                 shape = []
                 if preprocess_opt['preprocess'] and preprocess_opt['input_shape'] != [] and len(preprocess_opt['input_shape']) == 4:
-                    shape = preprocess_opt['input_shape']
+                    shape = copy.deepcopy(preprocess_opt['input_shape'])
                 else:
                     shape = input['model_shape']
                 if shape[0] != cfg.batch_size:
                     shape[0] *= cfg.batch_size
-                data = DataFactory[cfg.name](shape, input['dtype'], **cfg.kwargs)
+                data = DataFactory[cfg.name](
+                    [shape[0], shape[1], shape[2], shape[3]], input['dtype'], **cfg.kwargs)
 
                 path_list.append(
                     (os.path.join(case_dir, f'{name}_{n}_{i}.bin'),

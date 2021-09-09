@@ -7,8 +7,8 @@ import numpy as np
 
 
 class CaffeTestRunner(TestRunner):
-    def __init__(self, case_name, targets=None):
-        super().__init__(case_name, targets)
+    def __init__(self, case_name, targets=None, overwirte_configs: dict = None):
+        super().__init__(case_name, targets, overwirte_configs)
         self.model_type = "caffe"
 
     def run(self, model_file_list):
@@ -38,8 +38,8 @@ class CaffeTestRunner(TestRunner):
         caffe_model = caffe.Net(model_file_list[0], model_file_list[1], caffe.TEST)
 
         for input in self.inputs:
-            caffe_model.blobs[input['name']].data[...] = self.data_pre_process(
-                input['data'])
+            caffe_model.blobs[input['name']].data[...] = self.transform_input(
+                self.data_pre_process(input['data']), "float32", "CPU")
 
         outputs = caffe_model.forward()
 

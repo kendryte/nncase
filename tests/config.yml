@@ -12,11 +12,10 @@ case: # case的配置，应该是一个多层次的
         - false
     - name: exchange_channel
       values:
-        - true
+        - false
     - name: input_shape
       values:
         - [1,224,224,3]
-        # - [256,256,3]
     - name: mean
       values:
         - [0,0,0]
@@ -28,16 +27,13 @@ case: # case的配置，应该是一个多层次的
         - [0,255]
     - name: input_type
       values:
-        # - float32
         - uint8
     - name: input_layout
       values:
         - NHWC
-        # - NCHW
     - name: output_layout
       values:
         - NHWC
-        # - NCHW
   importer_opt:
     kwargs: null
   compile_opt:
