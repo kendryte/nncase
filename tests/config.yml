@@ -19,7 +19,7 @@ case: # case的配置，应该是一个多层次的
     - name: mean
       values:
         - [0,0,0]
-    - name: scale
+    - name: std
       values:
         - [1,1,1]
     - name: input_range
@@ -34,6 +34,9 @@ case: # case的配置，应该是一个多层次的
     - name: output_layout
       values:
         - NHWC
+    - name: letterbox_value
+      values:
+        - 0.
   importer_opt:
     kwargs: null
   compile_opt:

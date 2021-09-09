@@ -47,8 +47,9 @@ struct compile_options
     std::string output_type = "float32";
     std::string quant_type = "uint8";
     std::vector<float> mean { 0.f, 0.f, 0.f };
-    std::vector<float> scale { 1.f, 1.f, 1.f };
+    std::vector<float> std { 1.f, 1.f, 1.f };
     std::vector<float> input_range { 0.f, 1.f };
+    float letterbox_value = 0.f;
     std::vector<int32_t> input_shape {};
     std::string w_quant_type = "uint8";
     std::string input_layout = "NCHW";

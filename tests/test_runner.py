@@ -11,7 +11,7 @@ import nncase
 import struct
 from compare_util import compare
 import copy
-import tensorflow as tf
+import cv2
 
 
 class Edict:
@@ -193,13 +193,14 @@ class TestRunner(metaclass=ABCMeta):
         process_letterbox['input_shape'] = config['input_shape']
         process_letterbox['model_shape'] = self.inputs[0]['model_shape']
         process_letterbox['input_type'] = config['input_type']
+        process_letterbox['letterbox_value'] = config['letterbox_value']
 
         # norm
         process_norm = {}
         data = {}
         data = {
             'mean': config['mean'],
-            'scale': config['scale']
+            'std': config['std']
         }
         process_norm['norm'] = data
 
@@ -262,8 +263,8 @@ class TestRunner(metaclass=ABCMeta):
                         ratio = min(model_h / in_h, model_w / in_w)
                         resize_shape = data.shape[0], round(in_h * ratio), round(in_w * ratio), 3
 
-                        resize_data = tf.image.resize(
-                            data[0], [resize_shape[1], resize_shape[2]], method=tf.image.ResizeMethod.BILINEAR)
+                        resize_data = cv2.resize(data[0], (resize_shape[2],
+                                                           resize_shape[1]), interpolation=cv2.INTER_LINEAR)
                         dh = model_shape[1] - resize_shape[1]
                         dw = model_shape[2] - resize_shape[2]
                         dh /= 2
@@ -271,20 +272,20 @@ class TestRunner(metaclass=ABCMeta):
 
                         resize_data = np.array(resize_data, dtype=np.float32)
 
-                        data = tf.image.pad_to_bounding_box(resize_data, round(
-                            dh - 0.1), round(dw - 0.1), model_h, model_w)
+                        data = cv2.copyMakeBorder(resize_data, round(dh - 0.1), round(model_h - resize_shape[1] - round(dh - 0.1)), round(dw - 0.1), round(
+                            model_w - resize_shape[2] - round(dw - 0.1)), cv2.BORDER_CONSTANT, value=(item['letterbox_value'], item['letterbox_value'], item['letterbox_value']))
 
                         data = np.array(data, dtype=np.float32)
                         data = np.expand_dims(data, 0)
 
-                # Normalize(Standardization)
+                # Normalize
                 if 'norm' in item.keys():
                     for i in range(data.shape[-1]):
                         k = i
                         if data.shape[-1] > 3:
                             k = 0
                         data[:, :, :, i] = (data[:, :, :, i] - float(item['norm']['mean'][k])) / \
-                            float(item['norm']['scale'][k])
+                            float(item['norm']['std'][k])
         else:
             assert("Please confirm your input shape and model shape is 4D!")
 
@@ -518,7 +519,7 @@ class TestRunner(metaclass=ABCMeta):
         compile_options.input_range = preprocess['input_range']
         compile_options.preprocess = preprocess['preprocess']
         compile_options.mean = preprocess['mean']
-        compile_options.scale = preprocess['scale']
+        compile_options.std = preprocess['std']
         compile_options.input_layout = preprocess['input_layout']
         compile_options.output_layout = preprocess['output_layout']
         compiler = nncase.Compiler(compile_options)

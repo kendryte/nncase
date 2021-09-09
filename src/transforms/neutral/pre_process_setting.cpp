@@ -136,7 +136,7 @@ void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::targ
                 pad_size[2] = { int(std::round(pad_H / 2 - 0.1)), pad_H - int(std::round(pad_H / 2 - 0.1)) };
                 pad_size[3] = { int(std::round(pad_W / 2 - 0.1)), pad_W - int(std::round(pad_W / 2 - 0.1)) };
 
-                scalar pad_value = float(0);
+                scalar pad_value = letterbox_value_;
                 auto input_resize = graph.emplace<resize_image>(mid_ptr->type(), image_resize_bilinear, mid_ptr->shape(), resize_shape, false, true);
                 auto letter_box_pad = graph.emplace<pad>(input_resize->output().type(), input_resize->output().shape(), pad_size, pad_constant, pad_value);
                 input_resize->name("letterbox_resize");
@@ -147,21 +147,21 @@ void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::targ
             }
 
             //normalize : mean scale input_layout
-            if (scales_[0] != 0)
+            if (std_[0] != 0)
             {
                 std::cout << " |Normalize:" << std::endl;
                 constant *mean, *scale;
                 if (mid_ptr->shape()[1] != 3)
                 {
-                    auto single_mean = means_[0];
+                    auto single_mean = mean_[0];
                     mean = graph.emplace<constant>(single_mean);
-                    auto single_scale = scales_[0];
+                    auto single_scale = std_[0];
                     scale = graph.emplace<constant>(single_scale);
                 }
                 else
                 {
-                    mean = graph.emplace<constant>(dt_float32, shape_t { 1, 3, 1, 1 }, means_);
-                    scale = graph.emplace<constant>(dt_float32, shape_t { 1, 3, 1, 1 }, scales_);
+                    mean = graph.emplace<constant>(dt_float32, shape_t { 1, 3, 1, 1 }, mean_);
+                    scale = graph.emplace<constant>(dt_float32, shape_t { 1, 3, 1, 1 }, std_);
                 }
                 mean->name("normalize_mean");
                 scale->name("normalize_scale");

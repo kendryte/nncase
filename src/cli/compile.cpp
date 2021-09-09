@@ -38,7 +38,8 @@ compile_command::compile_command(lyra::cli &cli)
                          .add_argument(lyra::opt(dataset_format_, "dataset format").name("--dataset-format").optional().help("datset format: e.g. image, raw default is " + dataset_format_))
                          .add_argument(lyra::opt(calibrate_method_, "calibrate method").name("--calibrate-method").optional().help("calibrate method: e.g. no_clip, l2, default is " + calibrate_method_))
                          .add_argument(lyra::opt(mean_, "normalize mean").name("--mean").optional().help("normalize mean, default is " + std::to_string(mean_[0])))
-                         .add_argument(lyra::opt(scale_, "normalize scale").name("--scale").optional().help("normalize scale, default is " + std::to_string(scale_[0])))
+                         .add_argument(lyra::opt(std_, "normalize scale").name("--scale").optional().help("normalize scale, default is " + std::to_string(std_[0])))
+                         .add_argument(lyra::opt(letterbox_value_, "latter box value").name("--letterbox-value").optional().help("letter box pad value, default is " + std::to_string(letterbox_value_)))
                          .add_argument(lyra::opt(exchange_channel_, "image format").name("--image-format").optional().help("exchange image channel, default is " + std::to_string(exchange_channel_)))
                          .add_argument(lyra::opt(input_range_, "input range").name("--input-range").optional())
                          .add_argument(lyra::opt(input_shape_, "input shape").name("--input-shape").optional())
@@ -74,7 +75,7 @@ void compile_command::run()
     c_options.quant_type = quant_type_;
     c_options.exchange_channel = exchange_channel_;
     c_options.mean = mean_;
-    c_options.scale = scale_;
+    c_options.std = std_;
     c_options.input_range = input_range_;
     c_options.input_shape = input_shape_;
     c_options.w_quant_type = w_quant_type_;
@@ -82,6 +83,7 @@ void compile_command::run()
     c_options.preprocess = preprocess_;
     c_options.input_layout = input_layout_;
     c_options.output_layout = output_layout_;
+    c_options.letterbox_value = letterbox_value_;
 
     import_options i_options;
     std::vector<std::string> output_arrays;

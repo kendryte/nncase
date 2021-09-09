@@ -60,7 +60,7 @@ case:
     - name: mean
       values:
         - [0,0,0]
-    - name: scale
+    - name: std
       values:
         - [1,1,1]
     - name: input_range
@@ -76,6 +76,9 @@ case:
       values:
         - NHWC
         - NCHW
+    - name: letter_value
+      values:
+        - 0.
 """
 
     runner = OnnxTestRunner(request.node.name, overwirte_configs=overwrite_cfg)

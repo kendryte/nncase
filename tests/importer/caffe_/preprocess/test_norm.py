@@ -80,7 +80,7 @@ case:
     - name: mean
       values:
         - [123,114,109]
-    - name: scale
+    - name: std
       values:
         - [2,2,2]
     - name: input_range
@@ -95,6 +95,9 @@ case:
     - name: output_layout
       values:
         - NCHW
+    - name: letter_value
+      values:
+        - 0.
 """
 
     runner = CaffeTestRunner(request.node.name, overwirte_configs=overwrite_cfg)

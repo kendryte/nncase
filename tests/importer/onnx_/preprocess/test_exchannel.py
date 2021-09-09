@@ -60,7 +60,7 @@ case:
     - name: mean
       values:
         - [0,0,0]
-    - name: scale
+    - name: std
       values:
         - [1,1,1]
     - name: input_range
@@ -75,6 +75,9 @@ case:
     - name: output_layout
       values:
         - NCHW
+    - name: letter_value
+      values:
+        - 0.
 """
 
     runner = OnnxTestRunner(request.node.name, overwirte_configs=overwrite_cfg)
@@ -83,39 +86,5 @@ case:
     runner.run(model_file)
 
 
-'''  exchange_channel: true
-    input_shape: [1,3,224,224]
-    mean: [0,0,0]
-    scale: [1,1,1]
-    input_range: [0,1]
-    input_type: float32
-    input_layout: NCHW
-    output_layout: NCHW'''
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_exchannel.py'])
-""" - name: exchange_channel
-      values:
-        - true
-        - flase
-    - name: input_shape
-      values:
-        - [1,3,320,320]
-    - name: mean
-      values:
-        - [104,117,123]
-    - name: scale
-      values:
-        - [1,1,1]
-    - name: input_range
-      values:
-        - [0,255]
-    - name: input_type
-      values:
-        - uint8
-    - name: input_layout
-      values:
-        - NHWC
-    - name: output_layout
-      values:
-        - NHWC
-        - NCHW  """
