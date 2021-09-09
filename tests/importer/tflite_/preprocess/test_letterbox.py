@@ -85,7 +85,7 @@ case:
         - 114.
 """
 
-    runner = TfliteTestRunner(request.node.name, overwirte_configs=overwrite_cfg)
+    runner = TfliteTestRunner(request.node.name, overwrite_configs=overwrite_cfg)
     model_file = runner.from_tensorflow(module)
     runner.run(model_file)
 

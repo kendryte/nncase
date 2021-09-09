@@ -81,7 +81,7 @@ case:
         - 0.
 """
 
-    runner = OnnxTestRunner(request.node.name, overwirte_configs=overwrite_cfg)
+    runner = OnnxTestRunner(request.node.name, overwrite_configs=overwrite_cfg)
     model_file = runner.from_torch(module, lhs_shape)
     runner.run(model_file)
 

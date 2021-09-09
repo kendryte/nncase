@@ -213,6 +213,8 @@ inline std::string binary_op_to_string(binary_op_t op)
 typedef enum _unary_op
 {
     unary_abs,
+    unary_acos,
+    unary_asin,
     unary_ceil,
     unary_cos,
     unary_exp,
@@ -235,6 +237,10 @@ inline std::string unary_op_to_string(unary_op_t op)
     {
     case unary_abs:
         return "unary_abs";
+    case unary_acos:
+        return "unary_acos";
+    case unary_asin:
+        return "unary_asin";
     case unary_ceil:
         return "unary_ceil";
     case unary_cos:

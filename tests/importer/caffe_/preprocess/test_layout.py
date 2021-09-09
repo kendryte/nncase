@@ -101,7 +101,7 @@ case:
         - 0.
 """
 
-    runner = CaffeTestRunner(request.node.name, overwirte_configs=overwrite_cfg)
+    runner = CaffeTestRunner(request.node.name, overwrite_configs=overwrite_cfg)
     model_path = os.path.join(os.getcwd(), 'tests_output',
                               request.node.name.replace('[', '_').replace(']', '_'))
     _make_module(model_path, n, i_channel, i_size, operation)

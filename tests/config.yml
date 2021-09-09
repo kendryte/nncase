@@ -43,6 +43,7 @@ case: # case的配置，应该是一个多层次的
     dump_asm: true
     dump_ir: true
     quant_type: uint8
+    dump_quant_error: false
   ptq_opt:
     kwargs:
       input_mean: 0.5
@@ -67,6 +68,7 @@ case: # case的配置，应该是一个多层次的
     - name: ptq
       values:
         - false
+        - true
   infer:
     - name: target
       values:

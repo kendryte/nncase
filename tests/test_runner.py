@@ -1,17 +1,20 @@
-from typing import Dict, List, Tuple, Union, Any
-from itertools import product
-import re
-import yaml
-from pathlib import Path
-import numpy as np
+import copy
 import os
+import re
 import shutil
+import struct
 from abc import ABCMeta, abstractmethod
+from itertools import product
+from pathlib import Path
+from typing import Any, Dict, List, Tuple, Union
+
 import nncase
 import struct
 from compare_util import compare
 import copy
 import cv2
+import numpy as np
+import yaml
 
 
 class Edict:
@@ -73,8 +76,7 @@ class Edict:
                     elif isinstance(old_value, (Edict, dict)):
                         old_value.update(new_value)
                 elif isinstance(new_value, (list, tuple)) and name == 'specifics':
-                    if getattr(self, name) == None:
-                        setattr(self, name, [])
+                    setattr(self, name, [])
                     assert(hasattr(self, 'common')
                            ), "The specifics new_value need common dict to overload !"
                     common = getattr(self, 'common')
@@ -90,6 +92,7 @@ class Edict:
 
 
 def generate_random(shape: List[int], dtype: np.dtype,
+                    number: int, batch_size: int,
                     abs: bool = False) -> np.ndarray:
     if dtype is np.uint8:
         data = np.random.randint(0, 256, shape)
@@ -114,22 +117,60 @@ def _cast_bfloat16_then_float32(values: np.array):
         value = struct.unpack('!f', bytes(integers))[0]
         values[i] = value
 
-    values = values.reshape(shape)
-    return values
+
+def generate_image_dataset(shape: List[int], dtype: np.dtype,
+                           batch_index: int, batch_size: int,
+                           dir_path: str) -> np.ndarray:
+    """ read image from folder, return the rgb image with padding, dtype = float32, range = [0,255]. same as k210 carmera.
+    """
+    assert(os.path.isdir(dir_path) or os.path.exists(dir_path))
+
+    def preproc(img, input_size, transpose=True):
+        # todo maybe need move this to postprocess
+        if len(img.shape) == 3:
+            padded_img = np.ones((input_size[0], input_size[1], 3), dtype=np.uint8) * 114
+        else:
+            padded_img = np.ones(input_size, dtype=np.uint8) * 114
+
+        r = min(input_size[0] / img.shape[0], input_size[1] / img.shape[1])
+        resized_img = cv2.resize(
+            img,
+            (int(img.shape[1] * r), int(img.shape[0] * r)),
+            interpolation=cv2.INTER_LINEAR,
+        ).astype(np.uint8)
+        padded_img[: int(img.shape[0] * r), : int(img.shape[1] * r)] = resized_img
+        padded_img = cv2.cvtColor(padded_img, cv2.COLOR_BGR2RGB)
+        if transpose:
+            padded_img = padded_img.transpose((2, 0, 1))
+        padded_img = np.ascontiguousarray(padded_img)
+        return padded_img
+    img_paths = []
+    if os.path.isdir(dir_path):
+        img_paths.extend([os.path.join(dir_path, p) for p in os.listdir(dir_path)])
+    else:
+        img_paths.append(dir_path)
+    imgs = []
+    for p in img_paths[batch_index * batch_size:
+                       (batch_index + 1) * batch_size]:
+        img = cv2.imread(p)
+        img = preproc(img, shape[1:3], False)  # img [h,w,c] rgb,
+        imgs.append(img)
+    return np.stack(imgs)
 
 
 DataFactory = {
-    'generate_random': generate_random
+    'generate_random': generate_random,
+    'generate_image_dataset': generate_image_dataset
 }
 
 
 class TestRunner(metaclass=ABCMeta):
-    def __init__(self, case_name, targets=None, overwirte_configs: Union[Dict, str] = None) -> None:
+    def __init__(self, case_name, targets=None, overwrite_configs: Union[Dict, str] = None) -> None:
         config_root = os.path.dirname(__file__)
         with open(os.path.join(config_root, 'config.yml'), encoding='utf8') as f:
             cfg: dict = yaml.safe_load(f)
             config = Edict(cfg)
-        config = self.update_config(config, overwirte_configs)
+        config = self.update_config(config, overwrite_configs)
         self.cfg = self.validte_config(config)
 
         case_name = case_name.replace('[', '_').replace(']', '_')
@@ -150,6 +191,7 @@ class TestRunner(metaclass=ABCMeta):
         self.num_pattern = re.compile("(\d+)")
 
     def transform_input(self, values: np.array, type: str, stage: str):
+        # todo remove this, keep stackvm model inner preprocess
         values = copy.deepcopy(values)
         if(len(values.shape) == 4 and self.pre_process[0]['preprocess']):
             if stage == "CPU":
@@ -163,10 +205,12 @@ class TestRunner(metaclass=ABCMeta):
             if type == 'float32':
                 return values.astype(np.float32)
             elif type == 'uint8':
-                values = ((values) * 255).astype(np.uint8)
+                if values.dtype == np.float32:
+                    values = ((values) * 255).astype(np.uint8)
                 return values
             elif type == 'int8':
-                values = (values * 255 - 128).astype(np.int8)
+                if values.dtype == np.float32:
+                    values = (values * 255 - 128).astype(np.int8)
                 return values
             else:
                 raise TypeError(" Not support type for quant input")
@@ -238,8 +282,8 @@ class TestRunner(metaclass=ABCMeta):
                     scale = (item['range'][1] - item['range'][0]) / (Q_max - Q_min)
                     bias = round((item['range'][1] * Q_min - item['range'][0] *
                                   Q_max) / (item['range'][1] - item['range'][0]))
-                    data *= scale
-                    data -= bias
+                    data = data * scale
+                    data = data - bias
 
                 # exchange_channel
                 if 'exchange_channel' in item.keys():
@@ -415,6 +459,8 @@ class TestRunner(metaclass=ABCMeta):
         names, args = TestRunner.split_value(cfg.eval)
         for combine_args in product(*args):
             dict_args = dict(zip(names, combine_args))
+            if dict_args['ptq'] and len(self.inputs) != 1:
+                continue
             eval_output_paths = self.generate_evaluates(
                 cfg, case_dir, import_options,
                 compile_options, model_content, dict_args, preprocess_opt)
@@ -481,6 +527,15 @@ class TestRunner(metaclass=ABCMeta):
         compile_options.dump_ir = cfg.compile_opt.dump_ir
         compiler = nncase.Compiler(compile_options)
         self.import_model(compiler, model_content, import_options)
+        if kwargs['ptq']:
+            ptq_options = nncase.PTQTensorOptions()
+            ptq_options.set_tensor_data(np.asarray(
+                [self.transform_input(sample['data'], cfg.compile_opt.kwargs['input_type'], "infer") for sample in self.calibs]).tobytes())
+            ptq_options.samples_count = cfg.generate_calibs.batch_size
+            ptq_options.input_mean = cfg.ptq_opt.kwargs['input_mean']
+            ptq_options.input_std = cfg.ptq_opt.kwargs['input_std']
+
+            compiler.use_ptq(ptq_options)
         evaluator = compiler.create_evaluator(3)
         eval_output_paths = []
         for i in range(len(self.inputs)):
@@ -572,7 +627,7 @@ class TestRunner(metaclass=ABCMeta):
                 if shape[0] != cfg.batch_size:
                     shape[0] *= cfg.batch_size
                 data = DataFactory[cfg.name](
-                    [shape[0], shape[1], shape[2], shape[3]], input['dtype'], **cfg.kwargs)
+                    [shape[0], shape[1], shape[2], shape[3]], input['dtype'], n, cfg.batch_size, **cfg.kwargs)
 
                 path_list.append(
                     (os.path.join(case_dir, f'{name}_{n}_{i}.bin'),

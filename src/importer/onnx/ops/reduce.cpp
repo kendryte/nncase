@@ -77,6 +77,41 @@ void onnx_importer::convert_reduce(const NodeProto &node, const reduce_op_t redu
     output_tensors_.emplace(output, &op->output());
 }
 
+void onnx_importer::convert_op_ReduceL1(const NodeProto &node)
+{
+    const auto &op_name { generate_name(node) };
+
+    const auto &input = node.input()[0];
+    const auto &output = node.output()[0];
+    const auto &input_shape = get_shape(input);
+
+    // axes
+    axis_t axes(input_shape.size());
+    std::iota(begin(axes), end(axes), 0);
+    const auto &axes_attr = get_attribute<axis_t>(node, "axes");
+    if (axes_attr)
+    {
+        axes = axes_attr.value();
+        std::transform(std::begin(axes), std::end(axes), std::begin(axes),
+            [&input_shape](const auto e) { return real_axis(e, input_shape.size()); });
+    }
+
+    // keepdims
+    auto keepdims_attr = get_attribute<int>(node, "keepdims");
+    bool keepdims = keepdims_attr ? keepdims_attr.value() == 1 : true;
+
+    auto abs = graph_.emplace<unary>(unary_abs, input_shape);
+    abs->name(op_name + ".abs(ReduceL1)");
+
+    auto sum = graph_.emplace<reduce>(reduce_sum, abs->output().shape(), axes, 0.f, keepdims);
+    sum->name(op_name + ".reduce_sum(ReduceL1)");
+
+    sum->input().connect(abs->output());
+
+    input_tensors_.emplace(&abs->input(), input);
+    output_tensors_.emplace(output, &sum->output());
+}
+
 void onnx_importer::convert_op_ReduceL2(const NodeProto &node)
 {
     const auto &op_name { generate_name(node) };

@@ -14,6 +14,7 @@
  */
 #include "pystreambuf.h"
 #include "pytype_utils.h"
+#include "type_casters.20.h"
 #include "type_casters.h"
 #include <iostream>
 #include <nncase/compiler.h>
@@ -124,7 +125,7 @@ private:
 PYBIND11_MODULE(_nncase, m)
 {
     m.doc() = "nncase Library";
-    m.attr("__version__") = NNCASE_VERSION;
+    m.attr("__version__") = NNCASE_VERSION NNCASE_VERSION_SUFFIX;
 
     // LaunchDebugger();
     py::class_<std::filesystem::path>(m, "Path")
@@ -135,6 +136,7 @@ PYBIND11_MODULE(_nncase, m)
         .def(py::init())
         .def_readwrite("dump_ir", &compile_options::dump_ir)
         .def_readwrite("dump_asm", &compile_options::dump_asm)
+        .def_readwrite("dump_quant_error", &compile_options::dump_quant_error)
         .def_readwrite("target", &compile_options::target)
         .def_readwrite("dump_dir", &compile_options::dump_dir)
         .def_readwrite("is_fpga", &compile_options::is_fpga)

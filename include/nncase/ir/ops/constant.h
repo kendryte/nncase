@@ -16,6 +16,7 @@
 #include "../debug.h"
 #include "../node.h"
 #include "../op_utils.h"
+#include <nncase/runtime/debug.h>
 #include <vector>
 
 namespace nncase::ir

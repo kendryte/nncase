@@ -46,6 +46,7 @@ compile_command::compile_command(lyra::cli &cli)
                          .add_argument(lyra::opt(is_fpga_).name("--is-fpga").optional().help("use fpga parameters"))
                          .add_argument(lyra::opt(dump_ir_).name("--dump-ir").optional().help("dump ir to .dot"))
                          .add_argument(lyra::opt(dump_asm_).name("--dump-asm").optional().help("dump assembly"))
+                         .add_argument(lyra::opt(dump_quant_error_).name("--dump-quant-error").optional().help("dump quant error"))
                          .add_argument(lyra::opt(dump_dir_, "dump directory").name("--dump-dir").optional().help("dump to directory"))
                          .add_argument(lyra::opt(benchmark_only_, "benchmark only").name("--benchmark-only").optional().help("compile kmodel only for benchmark use"))
                          .add_argument(lyra::opt(preprocess_, "preprocess").name("--preprocess_").optional().help("enable preprocess , default is false")));
@@ -67,6 +68,7 @@ void compile_command::run()
     compile_options c_options;
     c_options.dump_asm = dump_asm_;
     c_options.dump_ir = dump_ir_;
+    c_options.dump_quant_error = dump_quant_error_;
     c_options.dump_dir = dump_dir_;
     c_options.target = target_name_;
     c_options.is_fpga = is_fpga_;
