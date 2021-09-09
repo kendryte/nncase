@@ -191,16 +191,12 @@ class TestRunner(metaclass=ABCMeta):
         self.num_pattern = re.compile("(\d+)")
 
     def transform_input(self, values: np.array, type: str, stage: str):
-        # todo remove this, keep stackvm model inner preprocess
         values = copy.deepcopy(values)
         if(len(values.shape) == 4 and self.pre_process[0]['preprocess']):
             if stage == "CPU":
                 # onnx \ caffe
                 if (self.model_type == "onnx" or self.model_type == "caffe"):
-                    # or (self.model_type == "tflite" and self.pre_process[-1]['input_layout'] == "NCHW")
                     values = np.transpose(values, [0, 3, 1, 2])
-                # elif self.model_type == "tflite" and self.pre_process[-1]['input_layout'] == "NCHW":
-                #     values = np.transpose(values, [0, 2, 3, 1])
 
             if type == 'float32':
                 return values.astype(np.float32)
