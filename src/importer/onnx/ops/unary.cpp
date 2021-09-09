@@ -90,6 +90,24 @@ void onnx_importer::convert_op_Tanh(const onnx::NodeProto &node)
     convert_unary(node, unary_tanh);
 }
 
+void onnx_importer::convert_unary(const onnx::NodeProto &node, const unary_op_t unary_op)
+{
+    assert(node.input().size() == 1);
+    assert(node.output().size() == 1);
+
+    const auto &op_name { generate_name(node) };
+
+    const auto &input = node.input()[0];
+    const auto &output = node.output()[0];
+
+    const auto &input_shape = get_shape(input);
+    auto op = graph_.emplace<unary>(unary_op, input_shape);
+    op->name(op_name + '(' + unary_op_to_string(unary_op) + ')');
+
+    input_tensors_.emplace(&op->input(), input);
+    output_tensors_.emplace(output, &op->output());
+}
+
 // Sinh(x) = (exp(x) - exp(-x)) / 2
 void onnx_importer::convert_op_Sinh(const onnx::NodeProto &node)
 {
@@ -256,22 +274,4 @@ void onnx_importer::convert_op_Acosh(const onnx::NodeProto &node)
     input_tensors_.emplace(&square->input(), input);
     input_tensors_.emplace(&add->input_a(), input);
     output_tensors_.emplace(output, &log->output());
-}
-
-void onnx_importer::convert_unary(const onnx::NodeProto &node, const unary_op_t unary_op)
-{
-    assert(node.input().size() == 1);
-    assert(node.output().size() == 1);
-
-    const auto &op_name { generate_name(node) };
-
-    const auto &input = node.input()[0];
-    const auto &output = node.output()[0];
-
-    const auto &input_shape = get_shape(input);
-    auto op = graph_.emplace<unary>(unary_op, input_shape);
-    op->name(op_name + '(' + unary_op_to_string(unary_op) + ')');
-
-    input_tensors_.emplace(&op->input(), input);
-    output_tensors_.emplace(output, &op->output());
 }
