@@ -612,7 +612,7 @@ class TestRunner(metaclass=ABCMeta):
                 if preprocess_opt['preprocess'] and preprocess_opt['input_shape'] != [] and len(preprocess_opt['input_shape']) == 4:
                     shape = copy.deepcopy(preprocess_opt['input_shape'])
                 else:
-                    shape = input['model_shape']
+                    shape = copy.deepcopy(input['model_shape'])
                 if shape[0] != cfg.batch_size:
                     shape[0] *= cfg.batch_size
                 data = DataFactory[cfg.name](shape, input['dtype'], n, cfg.batch_size, **cfg.kwargs)
