@@ -64,8 +64,6 @@ class Edict:
                     old_value = getattr(self, name)
                     if old_value is None:
                         setattr(self, name, Edict(new_value))
-                    case = getattr(self, 'case')
-                    preprocess = getattr(case, 'preprocess_opt')
                     for i in range(len(new_value['preprocess_opt'])):
                         self.case.preprocess_opt[i].values = copy.deepcopy(
                             new_value['preprocess_opt'][i]['values'])
