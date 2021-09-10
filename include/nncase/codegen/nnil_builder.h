@@ -39,6 +39,8 @@ public:
     }
 
     void emit_abs() { emit_opcode(runtime::nnil_abs); }
+    void emit_acos() { emit_opcode(runtime::nnil_acos); }
+    void emit_asin() { emit_opcode(runtime::nnil_asin); }
     void emit_ceil() { emit_opcode(runtime::nnil_ceil); }
     void emit_cos() { emit_opcode(runtime::nnil_cos); }
     void emit_exp() { emit_opcode(runtime::nnil_exp); }
