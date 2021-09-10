@@ -41,6 +41,8 @@ class NNCASE_API constant_node : public expr_node {
 
 class constant : public object_t<constant_node> {
   public:
+    using object_t::object_t;
+
     NNCASE_API constant(type value_type, std::vector<std::byte> data);
 
     constant(type value_type, std::span<const std::byte> data)

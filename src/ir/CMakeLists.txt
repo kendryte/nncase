@@ -19,7 +19,8 @@ set(SRCS var.cpp
 		 type.cpp
 		 shape.cpp
 		 module.cpp
-		 tuple.cpp)
+		 tuple.cpp
+		 visitor.cpp)
 
 if(MSVC)
 	list(APPEND SRCS ir_types.natvis)

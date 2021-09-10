@@ -16,6 +16,7 @@
 #include "object_kind.h"
 #include "runtime/datatypes.h"
 #include <memory>
+#include <optional>
 #include <type_traits>
 #include <utility>
 
@@ -98,11 +99,12 @@ template <class T> class object_t {
         return is_a(T::node_type::kind());
     }
 
-    template <Object T> T as() const noexcept {
+    template <Object T> std::optional<T> as() const noexcept {
         if (is_a<T>()) {
-            return T(std::static_pointer_cast<typename T::node_type>(object_));
+            return std::make_optional(
+                T(std::static_pointer_cast<typename T::node_type>(object_)));
         } else {
-            return nullptr;
+            return std::nullopt;
         }
     }
 
