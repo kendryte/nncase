@@ -95,14 +95,14 @@ template <class T> class object_t {
     }
 
     /** @brief Is the object an instance of specific type */
-    template <Object T> bool is_a() const noexcept {
-        return is_a(T::node_type::kind());
+    template <Object U> bool is_a() const noexcept {
+        return is_a(U::node_type::kind());
     }
 
-    template <Object T> std::optional<T> as() const noexcept {
-        if (is_a<T>()) {
+    template <Object U> std::optional<U> as() const noexcept {
+        if (is_a<U>()) {
             return std::make_optional(
-                T(std::static_pointer_cast<typename T::node_type>(object_)));
+                U(std::static_pointer_cast<typename U::node_type>(object_)));
         } else {
             return std::nullopt;
         }

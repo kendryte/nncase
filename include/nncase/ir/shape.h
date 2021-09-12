@@ -14,10 +14,12 @@
  */
 #pragma once
 #include "../object.h"
+#include <algorithm>
 #include <nncase/runtime/datatypes.h>
 #include <nncase/runtime/small_vector.hpp>
 #include <optional>
-#include <ranges>
+#include <range/v3/algorithm/any_of.hpp>
+#include <range/v3/range/concepts.hpp>
 
 namespace nncase::ir {
 struct unknown_dim_t {};
@@ -72,14 +74,14 @@ class NNCASE_API shape_t {
     shape_t(invalid_shape_t) noexcept : kind_(shape_kind_invalid) {}
 
     /** @brief Initialize a ranked shape */
-    template <std::ranges::range R>
+    template <ranges::range R>
     shape_t(R dims) : kind_(kind_of(dims)), dims_(dims.begin(), dims.end()) {}
 
     /** @brief Initialize a fixed shape */
     shape_t(std::initializer_list<int64_t> dims) : kind_(shape_kind_fixed) {
         dims_.reserve(dims.size());
-        std::ranges::transform(dims, std::back_inserter(dims_),
-                               [](int64_t dim) -> dim_t { return dim; });
+        std::transform(dims.begin(), dims.end(), std::back_inserter(dims_),
+                       [](int64_t dim) -> dim_t { return dim; });
     }
 
     /** @brief Get kind */
@@ -133,10 +135,9 @@ class NNCASE_API shape_t {
     void pop_back();
 
   private:
-    template <std::ranges::range R>
-    static shape_kind_t kind_of(R &&range) noexcept {
-        return std::ranges::any_of(
-                   range, [](const dim_t &dim) { return dim.is_unknown(); })
+    template <ranges::range R> static shape_kind_t kind_of(R &&range) noexcept {
+        return ranges::any_of(range,
+                              [](const dim_t &dim) { return dim.is_unknown(); })
                    ? shape_kind_has_unknown_dim
                    : shape_kind_fixed;
     }

@@ -15,6 +15,7 @@
 #pragma once
 #include "../object.h"
 #include "type.h"
+#include <range/v3/range/concepts.hpp>
 
 namespace nncase::ir {
 /** @brief Expression node */
@@ -35,6 +36,6 @@ using expr = object_t<expr_node>;
 
 template <class T>
 concept Expr = Object<T> &&
-               (std::same_as<expr_node, typename T::node_type> ||
-                std::derived_from<typename T::node_type, expr_node>);
+    (concepts::same_as<expr_node, typename T::node_type> ||
+     concepts::derived_from<typename T::node_type, expr_node>);
 } // namespace nncase::ir

@@ -17,7 +17,14 @@
 #include <nncase/ir/visitor.h>
 #include <nncase/version.h>
 #include <onnx.pb.h>
+#include <ostream>
+#include <queue>
+#include <range/v3/range/conversion.hpp>
+#include <range/v3/view/transform.hpp>
+#include <sstream>
+#include <string>
 #include <unordered_map>
+#include <vector>
 
 using namespace nncase;
 using namespace nncase::ir;
@@ -45,7 +52,8 @@ int32 to_pb(datatype_t dt) {
     return onnx_types_map.at(dt);
 }
 
-void to_pb(onnx::TypeProto_Tensor *dst, const type &src) {
+void to_pb([[maybe_unused]] onnx::TypeProto_Tensor *dst,
+           [[maybe_unused]] const type &src) {
     // dst->set_elem_type(to_pb(src.elem_type()));
     // if (src.shape().is_fixed() || src.shape().has_unknown_dim()) {
     //    auto shape_proto = dst->mutable_shape();
@@ -156,96 +164,98 @@ void dump_function_pb(const ir::function &func,
     model.SerializeToOstream(&ofile);
 }
 
-// class il_dump_visitor : public expr_functor<std::string> {
-//  public:
-//    using expr_functor::visit;
-//
-//    il_dump_visitor(std::ostream &os) : os_(os) {}
-//
-//    std::string visit(const function &ex) override {
-//        // 1. Function signature
-//        {
-//            in_function_body_ = false;
-//            auto name = "%" + ex->name();
-//            names_.emplace(ex.get(), name);
-//            ident() << name << " = fn (";
-//            size_t i = 0;
-//            for (auto &par : ex->parameters()) {
-//                visit(par);
-//                if (++i != ex->parameters().size())
-//                    os_ << ", ";
-//            }
-//            os_ << ") {" << std::endl;
-//        }
-//
-//        // 2. Function body
-//        {
-//            in_function_body_ = true;
-//            ident_level_++;
-//            visit(ex->body());
-//            ident_level_--;
-//        }
-//
-//        // 3. Function closing
-//        ident() << "}" << std::endl;
-//    }
-//
-//    std::string visit(const var &ex) override {
-//        auto name = "%" + ex->name();
-//        names_.emplace(ex.get(), name);
-//        if (in_function_body_) {
-//            ident() << name << std::endl;
-//        } else {
-//            os_ << name;
-//            if (!ex->type_annotation().empty())
-//                visit_type(ex->type_annotation());
-//        }
-//    }
-//
-//    std::string visit(const call &ex) override {
-//        auto it = names_.find(ex.get());
-//        if (it != names_.end()) {
-//            ident() << it->second;
-//        } else {
-//            expr_functor::visit(ex);
-//            auto name = "%" + std::to_string(local_id_++);
-//            names_.emplace(ex.get(), name);
-//
-//            // ident() << " = " <<
-//        }
-//    }
-//
-//    std::string visit_type(const type &t) override {
-//        os_ << ": "
-//            << "any" /*to_string(t)*/;
-//    }
-//
-//  private:
-//    std::ostream &ident() {
-//        for (size_t i = 0; i < ident_level_; i++)
-//            os_ << "  ";
-//        return os_;
-//    }
-//
-//  private:
-//    std::ostream &os_;
-//    size_t ident_level_ = 0;
-//    bool in_function_body_;
-//    std::unordered_map<expr_node *, std::string> names_;
-//    size_t local_id_ = 0;
-//};
+class il_dump_visitor : public expr_functor<std::string> {
+  public:
+    using expr_functor::visit;
 
-// void dump_function_il(const ir::function &func,
-//                      const std::filesystem::path &dst_path) {
-//    auto filename = dst_path / (func->name() + ".nnir.il");
-//    auto dirname = filename.parent_path();
-//    if (!std::filesystem::exists(dirname))
-//        std::filesystem::create_directories(dirname);
-//
-//    std::ofstream ofile(filename, std::ios::out);
-//    il_dump_visitor dumper(ofile);
-//    dumper(func);
-//}
+    std::string visit(const function &ex) override {
+        std::stringstream ss;
+        // 1. Function signature
+        {
+            in_function_body_ = false;
+            auto name = "%" + ex->name();
+            names_.emplace(ex.get(), name);
+            ident(ss) << name << " = fn (";
+            size_t i = 0;
+            for (auto &par : ex->parameters()) {
+                ss << visit(par);
+                if (++i != ex->parameters().size())
+                    ss << ", ";
+            }
+            ss << ") {" << std::endl;
+        }
+
+        // 2. Function body
+        {
+            in_function_body_ = true;
+            ident_level_++;
+            ss << visit(ex->body());
+            ident_level_--;
+        }
+
+        // 3. Function closing
+        ident(ss) << "}" << std::endl;
+        return ss.str();
+    }
+
+    std::string visit(const var &ex) override {
+        std::stringstream ss;
+        auto name = "%" + ex->name();
+        names_.emplace(ex.get(), name);
+        if (in_function_body_) {
+            ident(ss) << name << std::endl;
+        } else {
+            ss << name;
+            // if (!ex->type_annotation().empty())
+            //    visit_type(ex->type_annotation());
+        }
+        return ss.str();
+    }
+
+    std::string visit(const call &ex) override {
+        auto it = names_.find(ex.get());
+        if (it != names_.end()) {
+            return it->second;
+        } else {
+            std::stringstream ss;
+            auto name = "%" + std::to_string(local_id_++);
+            names_.emplace(ex.get(), name);
+            ident(ss) << " = " << expr_functor::visit(ex->target());
+            temp_vars_.emplace(ss.str());
+            return name;
+        }
+    }
+
+    // std::string visit_type(const type &t) override {
+    //    os_ << ": "
+    //        << "any" /*to_string(t)*/;
+    //}
+
+  private:
+    std::ostream &ident(std::ostream &os) {
+        for (size_t i = 0; i < ident_level_; i++)
+            os << "  ";
+        return os;
+    }
+
+  private:
+    size_t ident_level_ = 0;
+    bool in_function_body_;
+    std::unordered_map<expr_node *, std::string> names_;
+    std::stack<std::string> temp_vars_;
+    size_t local_id_ = 0;
+};
+void dump_function_il(const ir::function &func,
+                      const std::filesystem::path &dst_path) {
+    auto filename = dst_path / (func->name() + ".nnir.il");
+    auto dirname = filename.parent_path();
+    if (!std::filesystem::exists(dirname))
+        std::filesystem::create_directories(dirname);
+
+    std::ofstream ofile(filename, std::ios::out);
+    il_dump_visitor dumper;
+    ofile << dumper(func);
+}
 } // namespace
 
 void ir::dump_function(const ir::function &func,

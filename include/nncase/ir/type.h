@@ -15,7 +15,7 @@
 #pragma once
 #include "shape.h"
 #include <nncase/runtime/datatypes.h>
-#include <ranges>
+#include <range/v3/range/concepts.hpp>
 
 namespace nncase::ir {
 /** @brief Type node */
@@ -120,7 +120,7 @@ class tuple_type : public object_t<tuple_type_node> {
   public:
     NNCASE_API tuple_type(itlib::small_vector<type> fields);
 
-    template <std::ranges::range R>
+    template <ranges::range R>
     tuple_type(R &&fields)
         : tuple_type(itlib::small_vector<type>{fields.begin(), fields.end()}) {}
 };

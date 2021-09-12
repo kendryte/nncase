@@ -63,6 +63,7 @@ class nncaseConan(ConanFile):
             self.requires('libzippp/4.0')
             self.requires('inja/3.2.0')
             self.requires('shaderc/2021.1')
+            self.requires('range-v3/0.11.0')
             if self.options.tests:
                 self.requires('gtest/1.10.0')
 

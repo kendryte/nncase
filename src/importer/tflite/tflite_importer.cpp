@@ -17,6 +17,8 @@
 #include <nncase/ir/constant.h>
 #include <nncase/ir/math/functional.h>
 #include <nncase/ir/tuple.h>
+#include <range/v3/range/conversion.hpp>
+#include <range/v3/view/transform.hpp>
 //#include <nncase/ir/ops/convert.h>
 
 using namespace nncase;
@@ -32,7 +34,8 @@ tflite_importer::tflite_importer(std::span<const uint8_t> model)
         throw std::runtime_error("Invalid tflite model");
 }
 
-module_t tflite_importer::import(const import_options &options) {
+module_t
+tflite_importer::import([[maybe_unused]] const import_options &options) {
     // 1. Create inputs
     std::vector<var> created_inputs;
     for (auto in : *subgraph_->inputs()) {
@@ -65,11 +68,9 @@ module_t tflite_importer::import(const import_options &options) {
 ir::shape_t
 tflite_importer::get_ir_shape(const flatbuffers::Vector<int32_t> *shape) {
     if (shape) {
-        std::vector<dim_t> dims;
-        dims.reserve(shape->size());
-        std::ranges::transform(*shape, std::back_inserter(dims),
-                               [](int32_t dim) -> dim_t { return dim; });
-        return dims;
+        return *shape | ranges::views::transform([](int32_t dim) -> dim_t {
+            return dim;
+        }) | ranges::to<std::vector>();
     } else {
         return unranked_shape;
     }

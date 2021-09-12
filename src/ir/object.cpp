@@ -18,4 +18,4 @@ using namespace nncase;
 
 object_node::~object_node() {}
 
-bool object_node::is_a(const object_kind &kind) const noexcept { return false; }
+bool object_node::is_a([[maybe_unused]] const object_kind &kind) const noexcept { return false; }

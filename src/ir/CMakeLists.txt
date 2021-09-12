@@ -27,8 +27,8 @@ if(MSVC)
 endif()
 
 add_library(ir OBJECT ${SRCS})
-target_link_libraries(ir PUBLIC gsl::gsl-lite xtensor::xtensor magic_enum::magic_enum)
-target_link_libraries(ir PRIVATE onnx_proto mpark_variant::mpark_variant)
+target_link_libraries(ir PUBLIC gsl::gsl-lite xtensor::xtensor magic_enum::magic_enum range-v3::range-v3)
+target_link_libraries(ir PRIVATE onnx_proto)
 target_compile_definitions(ir PUBLIC -DNNCASE_DLL)
 set_property(TARGET ir PROPERTY POSITION_INDEPENDENT_CODE ON)
 

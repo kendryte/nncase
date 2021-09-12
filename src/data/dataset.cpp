@@ -46,7 +46,7 @@ dataset::dataset(const std::filesystem::path &path, std::function<bool(const std
         throw std::invalid_argument("Invalid dataset, should contain one file at least");
 }
 
-image_dataset::image_dataset(const std::filesystem::path &path, xt::dynamic_shape<size_t> input_shape, std::string input_layout, float mean, float std)
+image_dataset::image_dataset(const std::filesystem::path &path, xt::dynamic_shape<size_t> input_shape, std::string input_layout)
     : dataset(
         path, [](const std::filesystem::path &filename) { return cv::haveImageReader(filename.string()); },
         std::move(input_shape), input_layout)
@@ -248,7 +248,7 @@ void image_dataset::process(const std::vector<uint8_t> &src, int8_t *dest, const
     }
 }
 
-raw_dataset::raw_dataset(const std::filesystem::path &path, xt::dynamic_shape<size_t> input_shape, float mean, float std)
+raw_dataset::raw_dataset(const std::filesystem::path &path, xt::dynamic_shape<size_t> input_shape)
     : dataset(
         path, []([[maybe_unused]] const std::filesystem::path &filename) { return true; },
         std::move(input_shape), "")

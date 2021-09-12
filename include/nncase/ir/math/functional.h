@@ -71,11 +71,11 @@ inline call operator~(expr input) { return F::bitwise_not(input); }
 inline call operator!(expr input) { return F::logical_not(input); }
 
 #define DEFINE_BINARY_OPERATOR(op, impl)                                       \
-    inline call operator##op(expr lhs, expr rhs) { return F::impl(lhs, rhs); } \
-    inline call operator##op(expr lhs, F::fexpr rhs) {                         \
+    inline call operator op(expr lhs, expr rhs) { return F::impl(lhs, rhs); }  \
+    inline call operator op(expr lhs, F::fexpr rhs) {                          \
         return F::impl(lhs, rhs);                                              \
     }                                                                          \
-    inline call operator##op(F::fexpr lhs, expr rhs) {                         \
+    inline call operator op(F::fexpr lhs, expr rhs) {                          \
         return F::impl(lhs, rhs);                                              \
     }
 
