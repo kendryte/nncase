@@ -22,7 +22,7 @@ def test_resnet152_v1_7(request):
     judge:
       specifics:
         - matchs:
-            target: [cpu, k210]
+            target: [cpu]
             ptq: true
           threshold: 0.95
         - matchs:
