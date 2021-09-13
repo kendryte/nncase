@@ -18,19 +18,7 @@ from onnx_test_runner import OnnxTestRunner
 
 
 def test_resnet152_v1_7(request):
-    overwrite_cfg = """
-    judge:
-      specifics:
-        - matchs:
-            target: [cpu]
-            ptq: true
-          threshold: 0.95
-        - matchs:
-            target: [k510]
-            ptq: false
-          threshold: 0.98
-    """
-    runner = OnnxTestRunner(request.node.name, overwrite_configs=overwrite_cfg)
+    runner = OnnxTestRunner(request.node.name, ['k510'])
     model_file = 'onnx-models/vision/classification/resnet/model/resnet152-v1-7.onnx'
     runner.run(model_file)
 
