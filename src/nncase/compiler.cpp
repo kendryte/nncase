@@ -29,6 +29,7 @@
 #include <nncase/transforms/neutral/fold_io_quant_motion.h>
 #include <nncase/transforms/neutral/optimize_allocation.h>
 #include <nncase/transforms/neutral/optimize_benchmark.h>
+#include <nncase/transforms/neutral/post_process_transform.h>
 #include <nncase/transforms/neutral/pre_process_setting.h>
 #include <nncase/transforms/pass.h>
 #include <variant>
@@ -165,14 +166,11 @@ public:
 
     nncase::target &target() noexcept override { return *target_; }
 
-#define BEGIN_IMPORT()                                 \
-    std::cout << "1. Import graph..." << std::endl;    \
-                                                       \
-    importer::import_options imp_options;              \
-    imp_options.input_layout = options.input_layout;   \
-    imp_options.output_layout = options.output_layout; \
-    imp_options.output_arrays = options.output_arrays; \
-    input_layout_ = options.input_layout;
+#define BEGIN_IMPORT()                              \
+    std::cout << "1. Import graph..." << std::endl; \
+                                                    \
+    importer::import_options imp_options;           \
+    imp_options.output_arrays = options.output_arrays;
 
 #define END_IMPORT()                                                  \
     if (compile_options_.dump_ir)                                     \
@@ -185,21 +183,21 @@ public:
     void import_tflite(std::span<const uint8_t> model, const import_options &options) override
     {
         BEGIN_IMPORT()
-        importer::import_tflite(graph_, model, imp_options, real_layout_);
+        importer::import_tflite(graph_, model, imp_options, real_inlayout_, real_outlayout_);
         END_IMPORT()
     }
 
     void import_onnx(std::span<const uint8_t> model, const import_options &options) override
     {
         BEGIN_IMPORT()
-        importer::import_onnx(graph_, model, imp_options, real_layout_);
+        importer::import_onnx(graph_, model, imp_options, real_inlayout_, real_outlayout_);
         END_IMPORT()
     }
 
     void import_caffe(std::span<const uint8_t> model, std::span<const uint8_t> prototxt) override
     {
         std::cout << "1. Import graph..." << std::endl;
-        importer::import_caffe(graph_, model, prototxt, real_layout_);
+        importer::import_caffe(graph_, model, prototxt, real_inlayout_, real_outlayout_);
         END_IMPORT()
     }
 
@@ -232,7 +230,9 @@ public:
         if (compile_options_.preprocess)
         {
             std::cout << "1.1 Pre-process..." << std::endl;
+            input_layout_ = compile_options_.input_layout;
             pre_process(graph_, compile_options_);
+            post_process(graph_, compile_options_);
         }
 
         std::cout << "2. Optimize target independent..." << std::endl;
@@ -343,14 +343,14 @@ private:
     void pre_process(ir::graph &graph, compile_options &cmp_options)
     {
         using namespace ir::transforms;
-        run_passes("pre_process", graph, [&]([[maybe_unused]] const module_type_t &module_type, ir::transforms::pass_manager &pmgr) {
-            pmgr.add_pass<pre_process_transform>(
-                cmp_options.mean, cmp_options.scale,
-                cmp_options.input_range, cmp_options.input_shape,
-                cmp_options.image_format, input_layout_,
-                cmp_options.input_type, cmp_options.quant_type,
-                real_layout_);
-        });
+        run_passes("pre_process", graph, [&]([[maybe_unused]] const module_type_t &module_type, ir::transforms::pass_manager &pmgr) { pmgr.add_pass<pre_process_transform>(
+                                                                                                                                          cmp_options.mean, cmp_options.std, cmp_options.input_range, cmp_options.input_shape, cmp_options.swapRB, input_layout_, cmp_options.input_type, cmp_options.quant_type, real_inlayout_, cmp_options.letterbox_value); });
+    }
+    void post_process(ir::graph &graph, compile_options &cmp_options)
+    {
+        using namespace ir::transforms;
+        run_passes("pre_process", graph, [&]([[maybe_unused]] const module_type_t &module_type, ir::transforms::pass_manager &pmgr) { pmgr.add_pass<post_process_transform>(
+                                                                                                                                          cmp_options.output_layout, cmp_options.output_type, real_outlayout_); });
     }
 
     void optimize_target_independent(ir::graph &graph)
@@ -458,25 +458,6 @@ private:
             graph_runner(*subgraph);
     }
 
-    // void process_input(ir::graph &graph, datatype_t input_type, value_range<float> input_range)
-    // {
-    //     auto graph_runner = [&](ir::graph &graph) {
-    //         ir::transforms::pass_manager pmgr(graph, *target_);
-
-    //         ir::transforms::transform_pass p("process i&o node");
-    //         p.emplace<nncase::ir::transforms::process_input>(input_type, input_range);
-    //         p.emplace<nncase::ir::transforms::dequantize_bitcast_motion_transform>();
-    //         pmgr.add_pass(std::move(p));
-
-    //         pmgr.run();
-    //         dump_graph(graph, "process_input_node");
-    //     };
-
-    //     graph_runner(graph);
-    //     for (auto &subgraph : graph.subgraphs())
-    //         graph_runner(*subgraph);
-    // }
-
     ir::evaluator run_calibration(ir::graph &graph, bool before_quant)
     {
         schedule::scheduler sched(*target_, graph, graph.outputs());
@@ -504,9 +485,9 @@ private:
             xt::dynamic_shape<size_t> dataset_in_shape(in_shape.begin(), in_shape.end());
             std::unique_ptr<dataset> ds;
             if (options.dataset_format == "image")
-                ds = std::make_unique<image_dataset>(options.dataset, dataset_in_shape, input_layout_, options.input_mean, options.input_std);
+                ds = std::make_unique<image_dataset>(options.dataset, dataset_in_shape, input_layout_);
             else if (options.dataset_format == "raw")
-                ds = std::make_unique<raw_dataset>(options.dataset, dataset_in_shape, options.input_mean, options.input_std);
+                ds = std::make_unique<raw_dataset>(options.dataset, dataset_in_shape);
             else
                 throw std::runtime_error("Invalid calibration dataset format: " + options.dataset_format);
 
@@ -685,7 +666,8 @@ private:
     std::variant<ptq_dataset_options, ptq_tensor_options> ptq_options_;
     bool use_ptq_ = false;
     std::unique_ptr<nncase::target> target_;
-    std::string real_layout_ = "";
+    std::string real_inlayout_ = "";
+    std::string real_outlayout_ = "";
 };
 }
 

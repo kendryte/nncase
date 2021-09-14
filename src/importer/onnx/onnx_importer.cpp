@@ -113,7 +113,7 @@ onnx_importer::onnx_importer(std::span<const uint8_t> model, ir::graph &graph)
         throw std::runtime_error("Invalid ONNX model");
 }
 
-void onnx_importer::import(const struct import_options &options, std::string &real_layout)
+void onnx_importer::import(const struct import_options &options, std::string &real_inlayout, std::string &real_outlayout)
 {
     const auto &graph = model_.graph();
 
@@ -144,7 +144,7 @@ void onnx_importer::import(const struct import_options &options, std::string &re
         node->name(input_name);
 
         output_tensors_.emplace(input_name, &node->output());
-        real_layout = "NCHW";
+        real_inlayout = "NCHW";
     }
 
     // create outputs
@@ -163,6 +163,7 @@ void onnx_importer::import(const struct import_options &options, std::string &re
 
             input_tensors_.emplace(&node->input(), output_name);
         }
+        real_outlayout = "NCHW";
     }
     else
     {
