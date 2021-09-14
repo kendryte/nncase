@@ -37,6 +37,8 @@ class NNCASE_API unary_node : public op_node {
 /** @brief Unary expression */
 class unary : public object_t<unary_node> {
   public:
+    using object_t::object_t;
+
     /** @brief Construct an unary expression
      *  @param[in] unary_op The opcode of the unary
      */

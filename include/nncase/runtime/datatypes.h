@@ -147,33 +147,33 @@ typedef enum _binary_op {
 inline std::string binary_op_to_string(binary_op_t op) {
     switch (op) {
     case binary_add:
-        return "binary_add";
+        return "add";
     case binary_sub:
-        return "binary_sub";
+        return "sub";
     case binary_mul:
-        return "binary_mul";
+        return "mul";
     case binary_div:
-        return "binary_div";
+        return "div";
     case binary_mod:
-        return "binary_mod";
+        return "mod";
     case binary_min:
-        return "binary_min";
+        return "min";
     case binary_max:
-        return "binary_max";
+        return "max";
     case binary_pow:
-        return "binary_pow";
+        return "pow";
     case binary_bitwise_and:
-        return "binary_bitwise_and";
+        return "bitwise_and";
     case binary_bitwise_or:
-        return "binary_bitwise_or";
+        return "bitwise_or";
     case binary_bitwise_xor:
-        return "binary_bitwise_xor";
+        return "bitwise_xor";
     case binary_logical_and:
-        return "binary_logical_and";
+        return "logical_and";
     case binary_logical_or:
-        return "binary_logical_or";
+        return "logical_or";
     case binary_logical_xor:
-        return "binary_logical_xor";
+        return "logical_xor";
     }
     return "unknown";
 }
@@ -199,35 +199,35 @@ typedef enum _unary_op {
 inline std::string unary_op_to_string(unary_op_t op) {
     switch (op) {
     case unary_abs:
-        return "unary_abs";
+        return "abs";
     case unary_ceil:
-        return "unary_ceil";
+        return "ceil";
     case unary_cos:
-        return "unary_cos";
+        return "cos";
     case unary_exp:
-        return "unary_exp";
+        return "exp";
     case unary_floor:
-        return "unary_floor";
+        return "floor";
     case unary_log:
-        return "unary_log";
+        return "log";
     case unary_neg:
-        return "unary_neg";
+        return "neg";
     case unary_round:
-        return "unary_round";
+        return "round";
     case unary_rsqrt:
-        return "unary_rsqrt";
+        return "rsqrt";
     case unary_sin:
-        return "unary_sin";
+        return "sin";
     case unary_sqrt:
-        return "unary_sqrt";
+        return "sqrt";
     case unary_square:
-        return "unary_square";
+        return "square";
     case unary_tanh:
-        return "unary_tanh";
+        return "tanh";
     case unary_bitwise_not:
-        return "unary_bitwise_not";
+        return "bitwise_not";
     case unary_logical_not:
-        return "unary_logical_not";
+        return "logical_not";
     }
     return "unknown";
 }

@@ -36,6 +36,8 @@ class NNCASE_API binary_node : public op_node {
 /** @brief Binary expression */
 class binary : public object_t<binary_node> {
   public:
+    using object_t::object_t;
+
     /** @brief Construct an binary expression
      *  @param[in] binary_op The opcode of the binary
      */

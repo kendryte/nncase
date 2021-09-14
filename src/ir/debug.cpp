@@ -14,6 +14,9 @@
  */
 #include <fstream>
 #include <nncase/ir/debug.h>
+#include <nncase/ir/math/binary.h>
+#include <nncase/ir/math/unary.h>
+#include <nncase/ir/type_visitor.h>
 #include <nncase/ir/visitor.h>
 #include <nncase/version.h>
 #include <onnx.pb.h>
@@ -44,7 +47,7 @@ std::unordered_map<datatype_t, int32> onnx_types_map{
     {dt_float32, onnx::TensorProto_DataType_FLOAT},
     {dt_float64, onnx::TensorProto_DataType_DOUBLE},
     {dt_bfloat16, onnx::TensorProto_DataType_BFLOAT16},
-    {dt_bfloat16, onnx::TensorProto_DataType_BOOL},
+    {dt_bool, onnx::TensorProto_DataType_BOOL},
     {dt_string, onnx::TensorProto_DataType_STRING}};
 
 int32 to_pb(datatype_t dt) {
@@ -164,66 +167,106 @@ void dump_function_pb(const ir::function &func,
     model.SerializeToOstream(&ofile);
 }
 
+#define RETURN_IF_VISITED()                                                    \
+    {                                                                          \
+        auto it = names_.find(ex.get());                                       \
+        if (it != names_.end())                                                \
+            return it->second;                                                 \
+    }
+
 class il_dump_visitor : public expr_functor<std::string> {
   public:
     using expr_functor::visit;
 
+    il_dump_visitor(std::ostream &os) : os_(os) {}
+
     std::string visit(const function &ex) override {
-        std::stringstream ss;
+        RETURN_IF_VISITED();
+        auto name = "%" + ex->name();
         // 1. Function signature
         {
             in_function_body_ = false;
-            auto name = "%" + ex->name();
             names_.emplace(ex.get(), name);
-            ident(ss) << name << " = fn (";
+            ident() << name << " = fn (";
             size_t i = 0;
             for (auto &par : ex->parameters()) {
-                ss << visit(par);
+                os_ << visit(par);
                 if (++i != ex->parameters().size())
-                    ss << ", ";
+                    os_ << ", ";
             }
-            ss << ") {" << std::endl;
+            os_ << ") {" << std::endl;
         }
 
         // 2. Function body
         {
             in_function_body_ = true;
             ident_level_++;
-            ss << visit(ex->body());
+            auto result = visit(ex->body());
+            ident() << result << std::endl;
             ident_level_--;
         }
 
         // 3. Function closing
-        ident(ss) << "}" << std::endl;
-        return ss.str();
+        ident() << "}" << std::endl;
+        return name;
     }
 
     std::string visit(const var &ex) override {
-        std::stringstream ss;
+        RETURN_IF_VISITED();
         auto name = "%" + ex->name();
         names_.emplace(ex.get(), name);
-        if (in_function_body_) {
-            ident(ss) << name << std::endl;
-        } else {
-            ss << name;
-            // if (!ex->type_annotation().empty())
-            //    visit_type(ex->type_annotation());
-        }
-        return ss.str();
+        // if (!ex->type_annotation().empty())
+        //    visit_type(ex->type_annotation());
+        return name;
     }
 
-    std::string visit(const call &ex) override {
-        auto it = names_.find(ex.get());
-        if (it != names_.end()) {
-            return it->second;
-        } else {
-            std::stringstream ss;
-            auto name = "%" + std::to_string(local_id_++);
-            names_.emplace(ex.get(), name);
-            ident(ss) << " = " << expr_functor::visit(ex->target());
-            temp_vars_.emplace(ss.str());
-            return name;
+    std::string visit(const op &ex) override {
+        if (auto u = ex.as<math::unary>()) {
+            return unary_op_to_string((*u)->unary_op());
         }
+        if (auto b = ex.as<math::binary>()) {
+            return binary_op_to_string((*b)->binary_op());
+        }
+        return std::string(ex->runtime_kind().name);
+    }
+
+    std::string visit(const constant &ex) override { return "Constant[]"; }
+
+    std::string visit(const call &ex) override {
+        RETURN_IF_VISITED();
+        auto target = visit(ex->target());
+        auto args = ex->arguments() |
+                    ranges::views::transform(
+                        [this](const expr &arg) { return visit(arg); }) |
+                    ranges::to<std::vector>();
+        auto &name = alloc_temp_var(ex);
+        ident() << name << " = " << target << "(";
+        size_t i = 0;
+        for (auto &arg : args) {
+            os_ << arg;
+            if (++i != args.size())
+                os_ << ", ";
+        }
+        os_ << ")" << std::endl;
+        return name;
+    }
+
+    std::string visit(const tuple &ex) override {
+        RETURN_IF_VISITED();
+        auto fields = ex->fields() |
+                      ranges::views::transform(
+                          [this](const expr &field) { return visit(field); }) |
+                      ranges::to<std::vector>();
+        auto &name = alloc_temp_var(ex);
+        ident() << name << " = (";
+        size_t i = 0;
+        for (auto &field : fields) {
+            os_ << field;
+            if (++i != fields.size())
+                os_ << ", ";
+        }
+        os_ << ")" << std::endl;
+        return name;
     }
 
     // std::string visit_type(const type &t) override {
@@ -232,19 +275,25 @@ class il_dump_visitor : public expr_functor<std::string> {
     //}
 
   private:
-    std::ostream &ident(std::ostream &os) {
+    std::ostream &ident() {
         for (size_t i = 0; i < ident_level_; i++)
-            os << "  ";
-        return os;
+            os_ << "  ";
+        return os_;
+    }
+
+    const std::string &alloc_temp_var(const expr &ex) {
+        auto name = "%" + std::to_string(local_id_++);
+        return names_.emplace(ex.get(), name).first->second;
     }
 
   private:
     size_t ident_level_ = 0;
     bool in_function_body_;
     std::unordered_map<expr_node *, std::string> names_;
-    std::stack<std::string> temp_vars_;
+    std::ostream &os_;
     size_t local_id_ = 0;
 };
+
 void dump_function_il(const ir::function &func,
                       const std::filesystem::path &dst_path) {
     auto filename = dst_path / (func->name() + ".nnir.il");
@@ -253,13 +302,13 @@ void dump_function_il(const ir::function &func,
         std::filesystem::create_directories(dirname);
 
     std::ofstream ofile(filename, std::ios::out);
-    il_dump_visitor dumper;
-    ofile << dumper(func);
+    il_dump_visitor dumper(ofile);
+    dumper(func);
 }
 } // namespace
 
 void ir::dump_function(const ir::function &func,
                        const std::filesystem::path &dst_path) {
     dump_function_pb(func, dst_path);
-    // dump_function_il(func, dst_path);
+    dump_function_il(func, dst_path);
 }
