@@ -5,6 +5,10 @@
 | Operator | Is Supported |
 |-------|------------------ |
 | Abs | ✅ |
+| Acos | ✅ |
+| Acosh | ✅ |
+| Asin | ✅ |
+| Asinh | ✅ |
 | Add | ✅ |
 | AveragePool | ✅ |
 | BatchNormalization | ✅ |
@@ -16,6 +20,7 @@
 | Conv | ✅ |
 | ConvTranspose | ✅ |
 | Cos | ✅ |
+| Cosh | ✅ |
 | Div | ✅ |
 | Dropout | ✅ |
 | Elu | ✅ |
@@ -58,6 +63,7 @@
 | Round | ✅ |
 | Shape | ✅ |
 | Sin | ✅ |
+| Sinh | ✅ |
 | Sigmoid | ✅ |
 | Slice | ✅ |
 | Softmax | ✅ |
@@ -67,6 +73,7 @@
 | Squeeze | ✅ |
 | Sub | ✅ |
 | Sum | ✅ |
+| Tanh | ✅ |
 | Transpose | ✅ |
 | Upsample | ✅ |
 | Unsqueeze | ✅ |

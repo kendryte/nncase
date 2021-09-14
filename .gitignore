@@ -290,3 +290,4 @@ tests_output
 .DS_Store
 RC*
 wheelhouse/
+test_local*

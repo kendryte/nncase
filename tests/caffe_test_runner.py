@@ -7,8 +7,8 @@ import numpy as np
 
 
 class CaffeTestRunner(TestRunner):
-    def __init__(self, case_name, targets=None):
-        super().__init__(case_name, targets)
+    def __init__(self, case_name, targets=None, overwrite_configs: dict = None):
+        super().__init__(case_name, targets, overwrite_configs)
         self.model_type = "caffe"
 
     def run(self, model_file_list):
@@ -21,9 +21,9 @@ class CaffeTestRunner(TestRunner):
                 input_dict = {}
                 input_dict['name'] = name
                 input_dict['dtype'] = np.float32
-                input_dict['shape'] = list(caffe_model.blobs[name].data.shape)
+                input_dict['model_shape'] = list(caffe_model.blobs[name].data.shape)
                 self.inputs.append(input_dict)
-                self.calibs.append(input_dict.copy())
+                self.calibs.append(copy.deepcopy(input_dict))
 
         used_inputs = set([name for _, l in caffe_model.bottom_names.items() for name in l])
         seen_outputs = set()
@@ -38,8 +38,8 @@ class CaffeTestRunner(TestRunner):
         caffe_model = caffe.Net(model_file_list[0], model_file_list[1], caffe.TEST)
 
         for input in self.inputs:
-            caffe_model.blobs[input['name']].data[...] = self.data_pre_process(
-                input['data'])
+            caffe_model.blobs[input['name']].data[...] = self.transform_input(
+                self.data_pre_process(input['data']), "float32", "CPU")
 
         outputs = caffe_model.forward()
 
