@@ -6,20 +6,39 @@ running: # 每个case运行时的处理配置
   preprocess: null
   postprocess: null
 case: # case的配置，应该是一个多层次的
-  importer_opt:
-    kwargs: 
-      input_layout: 'NHWC'
-      output_layout: 'NHWC'
   preprocess_opt:
-    flag: false
-    kwargs:
-      image_format: 'RGB' 
-      input_shape: [128,128,3] # HWC
-      norm: {
-        mean: [128., 128., 128.],
-        scale: [128, 128, 128]
-        }
-      input_range: [0, 255] 
+    - name: preprocess
+      values:
+        - false
+    - name: swapRB
+      values:
+        - false
+    - name: input_shape
+      values:
+        - [1,224,224,3]
+    - name: mean
+      values:
+        - [0,0,0]
+    - name: std
+      values:
+        - [1,1,1]
+    - name: input_range
+      values:
+        - [0,255]
+    - name: input_type
+      values:
+        - uint8
+    - name: input_layout
+      values:
+        - NHWC
+    - name: output_layout
+      values:
+        - NHWC
+    - name: letterbox_value
+      values:
+        - 0.
+  importer_opt:
+    kwargs: null
   compile_opt:
     kwargs:
       dump_asm: true

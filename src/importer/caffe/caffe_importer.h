@@ -32,7 +32,7 @@ namespace importer
     public:
         caffe_importer(std::span<const uint8_t> model, std::span<const uint8_t> prototxt, ir::graph &graph);
 
-        void import(std::string &real_layout);
+        void import(std::string &real_inlayout, std::string &real_outlayout);
 
     private:
         void convert_op(const caffe::LayerParameter &op, caffe::NetParameter caffemodel);

@@ -13,24 +13,23 @@
  * limitations under the License.
  */
 #pragma once
-#include <lyra/lyra.hpp>
-#include <string>
+#include "../pass.h"
 
-namespace nncase::cli
+namespace nncase::ir::transforms
 {
-class inference_command
+class NNCASE_API post_process_transform : public graph_pass
 {
 public:
-    inference_command(lyra::cli &cli);
+    post_process_transform(std::string output_layout, std::string output_type, std::string real_outlayout) noexcept
+        : output_layout_(output_layout), output_type_(output_type), real_outlayout_(real_outlayout) {};
+    using graph_pass::graph_pass;
+
+protected:
+    void run_core(graph &graph, nncase::target &target, const run_pass_options &options) override;
 
 private:
-    void run();
-
-private:
-    std::string model_filename_;
-    std::string output_path_;
-    std::string dataset_;
-    std::string dataset_format_ = "image";
-    std::string input_layout_ = "NCHW";
+    std::string output_layout_;
+    std::string output_type_;
+    std::string real_outlayout_;
 };
 }

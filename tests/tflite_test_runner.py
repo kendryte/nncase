@@ -49,16 +49,16 @@ class TfliteTestRunner(TestRunner):
             input_dict['index'] = item['index']
             input_dict['name'] = item['name']
             input_dict['dtype'] = item['dtype']
-            input_dict['shape'] = item['shape']
+            input_dict['model_shape'] = item['shape']
             self.inputs.append(input_dict)
-            self.calibs.append(input_dict.copy())
+            self.calibs.append(copy.deepcopy(input_dict))
 
         for item in interp.get_output_details():
             output_dict = {}
             output_dict['index'] = item['index']
             output_dict['name'] = item['name']
             output_dict['dtype'] = item['dtype']
-            output_dict['shape'] = item['shape']
+            output_dict['model_shape'] = item['shape']
             self.outputs.append(output_dict)
 
     def cpu_infer(self, case_dir: str, model_file: bytes, type: str):
