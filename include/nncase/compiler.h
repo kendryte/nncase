@@ -41,7 +41,7 @@ struct compile_options
     bool use_dataset_as_input_stat = false;
     bool benchmark_only = false;
     bool preprocess = false;
-    bool exchange_channel = false;
+    bool swapRB = false;
     std::string target;
     std::filesystem::path dump_dir;
     std::string input_type = "default";

@@ -221,9 +221,9 @@ class TestRunner(metaclass=ABCMeta):
         process_deq['range'] = config['input_range']
         process_deq['input_type'] = config['input_type']
 
-        # exchange_channel
+        # swapRB
         process_format = {}
-        process_format['exchange_channel'] = config['exchange_channel']
+        process_format['swapRB'] = config['swapRB']
 
         # letter box
         process_letterbox = {}
@@ -279,11 +279,11 @@ class TestRunner(metaclass=ABCMeta):
                     data = data * scale
                     data = data - bias
 
-                # exchange_channel
-                if 'exchange_channel' in item.keys():
+                # swapRB
+                if 'swapRB' in item.keys():
                     if data.shape[-1] != 3:
                         assert("Please confirm your input channel is 3.")
-                    if item['exchange_channel'] == True:
+                    if item['swapRB'] == True:
                         data = data[:, :, :, ::-1]
                         data = np.array(data)
 
@@ -556,7 +556,7 @@ class TestRunner(metaclass=ABCMeta):
         compile_options.dump_ir = cfg.compile_opt.dump_ir
         compile_options.input_type = preprocess['input_type']
         compile_options.quant_type = cfg.compile_opt.quant_type
-        compile_options.exchange_channel = preprocess['exchange_channel']
+        compile_options.swapRB = preprocess['swapRB']
         compile_options.input_shape = preprocess['input_shape']
         compile_options.input_range = preprocess['input_range']
         compile_options.preprocess = preprocess['preprocess']

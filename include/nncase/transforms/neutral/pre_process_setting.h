@@ -20,8 +20,8 @@ namespace nncase::ir::transforms
 class NNCASE_API pre_process_transform : public graph_pass
 {
 public:
-    pre_process_transform(std::vector<float> mean, std::vector<float> std, std::vector<float> input_range, std::vector<int32_t> input_shape, bool exchange_channel, std::string input_layout, std::string input_type, std::string quant_type, std::string real_inlayout, float letterbox_value) noexcept
-        : mean_(std::move(mean)), std_(std::move(std)), input_range_(input_range), input_shape_(input_shape), exchange_channel_(exchange_channel), input_layout_(input_layout), input_type_(input_type), quant_type_(quant_type), real_inlayout_(real_inlayout), letterbox_value_(letterbox_value) {};
+    pre_process_transform(std::vector<float> mean, std::vector<float> std, std::vector<float> input_range, std::vector<int32_t> input_shape, bool swapRB, std::string input_layout, std::string input_type, std::string quant_type, std::string real_inlayout, float letterbox_value) noexcept
+        : mean_(std::move(mean)), std_(std::move(std)), input_range_(input_range), input_shape_(input_shape), swapRB_(swapRB), input_layout_(input_layout), input_type_(input_type), quant_type_(quant_type), real_inlayout_(real_inlayout), letterbox_value_(letterbox_value) {};
     using graph_pass::graph_pass;
 
 protected:
@@ -32,7 +32,7 @@ private:
     std::vector<float> std_;
     std::vector<float> input_range_;
     std::vector<int32_t> input_shape_;
-    bool exchange_channel_;
+    bool swapRB_;
     std::string input_layout_;
     std::string input_type_;
     std::string quant_type_;

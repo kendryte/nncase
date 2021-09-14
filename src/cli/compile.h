@@ -50,7 +50,7 @@ private:
     float letterbox_value_;
     std::vector<int32_t> input_shape_;
 
-    bool exchange_channel_ = false;
+    bool swapRB_ = false;
     bool dump_ir_ = false;
     bool dump_asm_ = false;
     bool dump_quant_error_ = false;

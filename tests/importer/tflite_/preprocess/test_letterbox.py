@@ -56,7 +56,7 @@ case:
     - name: preprocess
       values:
         - true
-    - name: exchange_channel
+    - name: swapRB
       values:
         - false
     - name: input_shape

@@ -54,7 +54,7 @@ void post_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::tar
                 }
                 tp->name("output_pre_tp");
                 auto new_output = graph.emplace<output_node>(tp->output().type(), tp->output().shape());
-                new_output->name("exchange_channel_output");
+                new_output->name("swapRB_output");
                 tp->input().connect(*old_output);
                 new_output->input().connect(tp->output());
                 out_node->input().clear_connection();

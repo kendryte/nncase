@@ -79,19 +79,19 @@ void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::targ
                 mid_ptr = &transpose_pre->output();
             }
 
-            // exchange_channel : input_layout ,exchange_channel_
-            if (exchange_channel_ == true && mid_ptr->shape()[1] == 3)
+            // swapRB : input_layout ,swapRB_
+            if (swapRB_ == true && mid_ptr->shape()[1] == 3)
             {
                 std::cout << " |Exchange image channel:" << std::endl;
                 std::vector<shape_t> concat_shapes { 3, shape_t { (mid_ptr->shape()[0]), 1, (mid_ptr->shape()[2]), (mid_ptr->shape()[3]) } };
                 auto concat_slice = graph.emplace<concat>(mid_ptr->type(), concat_shapes, 1);
-                concat_slice->name("exchange_channel_concat_NCHW");
+                concat_slice->name("swapRB_concat_NCHW");
                 for (int i = 0; i < 3; i++)
                 {
                     auto slice_input = graph.emplace<slice>(mid_ptr->type(), mid_ptr->shape(),
                         axis_t { 0, i, 0, 0 },
                         axis_t { int(mid_ptr->shape()[0]), i + 1, int(mid_ptr->shape()[2]), int(mid_ptr->shape()[3]) });
-                    slice_input->name("exchange_channel_slice_NCHW_" + std::to_string(i));
+                    slice_input->name("swapRB_slice_NCHW_" + std::to_string(i));
                     slice_input->input().connect(*mid_ptr);
                     concat_slice->input_at(2 - i).connect(slice_input->output());
                 }

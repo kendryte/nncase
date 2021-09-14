@@ -10,7 +10,7 @@ case: # case的配置，应该是一个多层次的
     - name: preprocess
       values:
         - false
-    - name: exchange_channel
+    - name: swapRB
       values:
         - false
     - name: input_shape

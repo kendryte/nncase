@@ -40,7 +40,7 @@ compile_command::compile_command(lyra::cli &cli)
                          .add_argument(lyra::opt(mean_, "normalize mean").name("--mean").optional().help("normalize mean, default is " + std::to_string(mean_[0])))
                          .add_argument(lyra::opt(std_, "normalize scale").name("--scale").optional().help("normalize scale, default is " + std::to_string(std_[0])))
                          .add_argument(lyra::opt(letterbox_value_, "latter box value").name("--letterbox-value").optional().help("letter box pad value, default is " + std::to_string(letterbox_value_)))
-                         .add_argument(lyra::opt(exchange_channel_, "image format").name("--image-format").optional().help("exchange image channel, default is " + std::to_string(exchange_channel_)))
+                         .add_argument(lyra::opt(swapRB_, "image format").name("--image-format").optional().help("exchange image channel, default is " + std::to_string(swapRB_)))
                          .add_argument(lyra::opt(input_range_, "input range").name("--input-range").optional())
                          .add_argument(lyra::opt(input_shape_, "input shape").name("--input-shape").optional())
                          .add_argument(lyra::opt(is_fpga_).name("--is-fpga").optional().help("use fpga parameters"))
@@ -75,7 +75,7 @@ void compile_command::run()
     c_options.input_type = input_type_;
     c_options.output_type = output_type_;
     c_options.quant_type = quant_type_;
-    c_options.exchange_channel = exchange_channel_;
+    c_options.swapRB = swapRB_;
     c_options.mean = mean_;
     c_options.std = std_;
     c_options.input_range = input_range_;
