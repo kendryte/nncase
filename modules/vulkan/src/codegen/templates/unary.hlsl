@@ -24,6 +24,10 @@ void main(uint3 id : SV_DispatchThreadID)
 	float v = input[id.x];
 ## if unary_op == "unary_abs"
 	v = abs(v);
+## if unary_op == "unary_acos"
+	v = acos(v);
+## if unary_op == "unary_asin"
+	v = asin(v);
 ## else if unary_op == "unary_ceil"
 	v = ceil(v);
 ## else if unary_op == "unary_cos"

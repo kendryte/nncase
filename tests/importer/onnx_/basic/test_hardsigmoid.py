@@ -14,26 +14,77 @@
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
 
 import pytest
-import torch
+import onnx
+from onnx import helper
+from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
 
 
-def _make_module():
-    return torch.nn.Hardsigmoid()
+def _make_module(in_shape, alpha, beta):
+    inputs = []
+    outputs = []
+    initializers = []
+    attributes_dict = {}
+
+    # input
+    input = helper.make_tensor_value_info('input', TensorProto.FLOAT, in_shape)
+    inputs.append('input')
+
+    # output
+    output = helper.make_tensor_value_info('output', TensorProto.FLOAT, in_shape)
+    outputs.append('output')
+
+    if alpha is not None:
+        attributes_dict['alpha'] = alpha
+
+    if beta is not None:
+        attributes_dict['beta'] = beta
+
+    node = onnx.helper.make_node(
+        'HardSigmoid',
+        inputs=inputs,
+        outputs=outputs,
+        **attributes_dict
+    )
+
+    nodes = []
+    nodes.append(node)
+
+    graph_def = helper.make_graph(
+        nodes,
+        'test-model',
+        [input],
+        [output],
+        initializer=initializers)
+
+    model_def = helper.make_model(graph_def, producer_name='kendryte')
+
+    return model_def
 
 
 in_shapes = [
-    [1],
-    [1, 3, 224, 224]
+    [1, 3, 16, 16]
+]
+
+alphas = [
+    None,
+    0.5
+]
+
+betas = [
+    None,
+    0.6
 ]
 
 
 @pytest.mark.parametrize('in_shape', in_shapes)
-def test_hardsigmoid(in_shape, request):
-    module = _make_module()
+@pytest.mark.parametrize('alpha', alphas)
+@pytest.mark.parametrize('beta', betas)
+def test_hardsigmoid(in_shape, alpha, beta, request):
+    model_def = _make_module(in_shape, alpha, beta)
 
     runner = OnnxTestRunner(request.node.name)
-    model_file = runner.from_torch(module, in_shape)
+    model_file = runner.from_onnx_helper(model_def)
     runner.run(model_file)
 
 

@@ -18,7 +18,9 @@ from onnx_test_runner import OnnxTestRunner
 
 
 def test_yolox(request):
-    runner = OnnxTestRunner(request.node.name, ['k510'])
+    overwrite_cfg = open('tests/importer/onnx_/model/test_yolox.yml', 'r', encoding="utf8").read()
+    runner = OnnxTestRunner(request.node.name, ['cpu', 'k210'],
+                            overwrite_configs=overwrite_cfg)
     model_file = 'examples/yolox/model/yolox_nano_224.onnx'
     runner.run(model_file)
 

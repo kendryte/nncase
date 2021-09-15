@@ -25,7 +25,8 @@ from caffe_test_runner import CaffeTestRunner
 def _make_module(model_path, in1_shape, time_step, batch_size, num_output):
     ns = caffe.NetSpec()
     ns.data1 = L.Input(name="data1", input_param={"shape": {"dim": in1_shape}})
-    ns.data2 = L.ContinuationIndicator(name="data2", continuation_indicator_param={"time_step": time_step, "batch_size": batch_size})
+    ns.data2 = L.ContinuationIndicator(name="data2", continuation_indicator_param={
+                                       "time_step": time_step, "batch_size": batch_size})
     ns.lstm = L.LSTM(ns.data1, ns.data2, name="lstm", recurrent_param={"num_output": num_output})
 
     with open(os.path.join(model_path, 'test.prototxt'), 'w') as f:
