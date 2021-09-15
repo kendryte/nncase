@@ -45,7 +45,7 @@ case: # case的配置，应该是一个多层次的
     dump_quant_error: false
     quant_type: 'uint8'
     w_quant_type: 'uint8'
-    use_mse_quant_w: false
+    use_mse_quant_w: true
 
   ptq_opt:
     kwargs:
