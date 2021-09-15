@@ -42,8 +42,11 @@ case: # case的配置，应该是一个多层次的
   compile_opt:
     dump_asm: true
     dump_ir: true
-    quant_type: uint8
     dump_quant_error: false
+    quant_type: 'uint8'
+    w_quant_type: 'uint8'
+    use_mse_quant_w: true
+
   ptq_opt:
     kwargs:
       input_mean: 0.5

@@ -43,27 +43,81 @@ namespace
 {
 constexpr int32_t w_zero_point = 128;
 
-auto quantize_weights(quantizer &quantizer, fake_kpu_conv2d &conv, constant &weights)
+auto quantize_weights(quantizer &quantizer, fake_kpu_conv2d &conv, constant &weights, bool use_mse_quant_w)
 {
     auto old_weights_data = as_span<const float>(weights.data());
     std::vector<float> weights_data(old_weights_data.begin(), old_weights_data.end());
     std::vector<uint8_t> q_weights(xt::compute_size(conv.weights().shape()));
     std::vector<float> scales(conv.output_channels());
-
     const auto channel_w_size = q_weights.size() / conv.output_channels();
-    for (size_t oc = 0; oc < (size_t)conv.output_channels(); oc++)
-    {
-        std::span<float> w_ch(weights_data.data() + oc * channel_w_size, channel_w_size);
-        std::span<uint8_t> qw_ch(q_weights.data() + oc * channel_w_size, channel_w_size);
-        auto range = quantizer.fixup_range(quantizer.get_range(w_ch.begin(), w_ch.end()), true);
-        auto q_p = quantizer.get_quant_param(range, 8);
-        assert(q_p.zero_point == w_zero_point);
-        for (size_t i = 0; i < w_ch.size(); i++)
-            qw_ch[i] = kernels::detail::quantize<uint8_t>(w_ch[i], q_p);
-        scales[oc] = q_p.scale;
-    }
 
-    return std::make_tuple(std::move(scales), std::move(q_weights));
+    if (use_mse_quant_w)
+    {
+        for (size_t oc = 0; oc < (size_t)conv.output_channels(); oc++)
+        {
+            std::span<float> w_ch(weights_data.data() + oc * channel_w_size, channel_w_size);
+            std::span<uint8_t> qw_ch(q_weights.data() + oc * channel_w_size, channel_w_size);
+            std::vector<float> deqw_ch(channel_w_size);
+            auto range = quantizer.fixup_range(quantizer.get_range(w_ch.begin(), w_ch.end()), true);
+            uint32_t steps_num = 256;
+            float step = (range.max - range.min) / steps_num;
+            float min_max_step = 0.f;
+            float min_mse = FLT_MAX;
+            std::vector<uint8_t> q_weights_channel(channel_w_size);
+            std::vector<float> deq_weights_channel(channel_w_size);
+
+            // choose the best min_max_step (min_step and max_step are same for symmetric quantize)
+            for (uint32_t i = 0; i < steps_num / 8; i++)
+            {
+                value_range<float> new_range { range.min - step * i, range.max + step * i };
+                auto q_p = quantizer.get_quant_param(new_range, 8);
+                assert(q_p.zero_point == w_zero_point);
+                for (size_t i = 0; i < w_ch.size(); i++)
+                {
+                    qw_ch[i] = kernels::detail::quantize<uint8_t>(w_ch[i], q_p);
+                    deqw_ch[i] = (qw_ch[i] - q_p.zero_point) * q_p.scale;
+                }
+
+                float mse_i = 0.f;
+                for (uint32_t j = 0; j < qw_ch.size(); j++)
+                {
+                    mse_i += std::pow((w_ch[j] - deqw_ch[j]), 2);
+                }
+
+                if (min_mse > mse_i)
+                {
+                    min_max_step = step * i;
+                    min_mse = mse_i;
+                }
+            }
+
+            // quant with range refined with min_max_step
+            value_range<float> final_range { range.min - min_max_step, range.max + min_max_step };
+            auto q_p = quantizer.get_quant_param(final_range, 8);
+            assert(q_p.zero_point == w_zero_point);
+            for (size_t i = 0; i < w_ch.size(); i++)
+                qw_ch[i] = kernels::detail::quantize<uint8_t>(w_ch[i], q_p);
+            scales[oc] = q_p.scale;
+        }
+
+        return std::make_tuple(std::move(scales), std::move(q_weights));
+    }
+    else
+    {
+        for (size_t oc = 0; oc < (size_t)conv.output_channels(); oc++)
+        {
+            std::span<float> w_ch(weights_data.data() + oc * channel_w_size, channel_w_size);
+            std::span<uint8_t> qw_ch(q_weights.data() + oc * channel_w_size, channel_w_size);
+            auto range = quantizer.fixup_range(quantizer.get_range(w_ch.begin(), w_ch.end()), true);
+            auto q_p = quantizer.get_quant_param(range, 8);
+            assert(q_p.zero_point == w_zero_point);
+            for (size_t i = 0; i < w_ch.size(); i++)
+                qw_ch[i] = kernels::detail::quantize<uint8_t>(w_ch[i], q_p);
+            scales[oc] = q_p.scale;
+        }
+
+        return std::make_tuple(std::move(scales), std::move(q_weights));
+    }
 }
 
 auto quantize_act(quantizer &quantizer, float act_in_scale, const quant_param_t &yq_p, const quant_param_t &zq_p, value_range<float> activation, fused_unary *fu)
@@ -246,7 +300,7 @@ void kpu_conv2d_transform::process(transform_context &context)
 
     auto &quantizer = *context.quantizer;
     auto iq_p = quantizer.get_quant_param(quantizer.get(output), 8);
-    auto [w_scales, q_weights] = quantize_weights(quantizer, old_conv, weights);
+    auto [w_scales, q_weights] = quantize_weights(quantizer, old_conv, weights, use_mse_quant_w_);
     auto yq_p = quantizer.get_quant_param(quantizer.get(old_conv.output()), 8);
     auto zq_p = quantizer.get_quant_param(quantizer.get(*context.outputs[0]), 8);
     auto [bn, s_act_in] = quantize_bn(quantizer, old_conv, bias, iq_p.scale, w_scales, yq_p);

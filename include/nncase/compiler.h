@@ -53,6 +53,7 @@ struct compile_options
     float letterbox_value = 0.f;
     std::vector<int32_t> input_shape {};
     std::string w_quant_type = "uint8";
+    bool use_mse_quant_w = false;
     std::string input_layout = "NCHW";
     std::string output_layout = "NCHW";
 };
