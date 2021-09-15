@@ -43,7 +43,6 @@ case: # case的配置，应该是一个多层次的
     dump_asm: true
     dump_ir: true
     dump_quant_error: false
-    input_type: 'uint8'
     quant_type: 'uint8'
     w_quant_type: 'uint8'
     use_mse_quant_w: false
