@@ -38,34 +38,14 @@ typedef enum _datatype : uint8_t
 #undef DEFINE_DATATYPE
 } datatype_t;
 
-inline datatype_t to_datatype_method(std::string_view name)
+inline datatype_t parse_datatype_str([[maybe_unused]] std::string_view name)
 {
-    if (name == "int8")
-        return datatype_t::dt_int8;
-    else if (name == "int16")
-        return datatype_t::dt_int16;
-    else if (name == "int32")
-        return datatype_t::dt_int32;
-    else if (name == "int64")
-        return datatype_t::dt_int64;
-    else if (name == "uint8")
-        return datatype_t::dt_uint8;
-    else if (name == "uint16")
-        return datatype_t::dt_uint16;
-    else if (name == "uint32")
-        return datatype_t::dt_uint32;
-    else if (name == "uint64")
-        return datatype_t::dt_uint64;
-    else if (name == "float16")
-        return datatype_t::dt_float16;
-    else if (name == "float32")
-        return datatype_t::dt_float32;
-    else if (name == "float64")
-        return datatype_t::dt_float64;
-    else if (name == "bfloat16")
-        return datatype_t::dt_bfloat16;
-    else
-        throw std::runtime_error("Unsupported data type");
+#define DEFINE_DATATYPE(id, t, n, value) \
+    if (name == ""#id"")                 \
+        return datatype_t::dt_##id;
+#include "datatypes.def"
+#undef DEFINE_DATATYPE
+    throw std::runtime_error("Unsupported data type:" + std::string(name));
 }
 
 namespace detail
