@@ -16,3 +16,5 @@
 
 using namespace nncase;
 using namespace nncase::ir;
+
+expr_node::expr_node() : checked_type_(nullptr) {}

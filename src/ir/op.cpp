@@ -17,7 +17,6 @@
 using namespace nncase;
 using namespace nncase::ir;
 
-connector_info &op_node::add_parameter(std::string name)
-{
-    return parameters_.emplace_back(*this, std::move(name));
+connector_info &op_node::add_parameter(std::string name) {
+    return parameters_.emplace_back(*this, std::move(name), parameters_.size());
 }

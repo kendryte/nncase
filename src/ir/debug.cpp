@@ -174,9 +174,11 @@ void dump_function_pb(const ir::function &func,
             return it->second;                                                 \
     }
 
-class il_dump_visitor : public expr_functor<std::string> {
+class il_dump_visitor : public expr_functor<std::string>,
+                        private type_functor<std::string> {
   public:
     using expr_functor::visit;
+    using type_functor::visit_type;
 
     il_dump_visitor(std::ostream &os) : os_(os) {}
 
@@ -215,8 +217,8 @@ class il_dump_visitor : public expr_functor<std::string> {
         RETURN_IF_VISITED();
         auto name = "%" + ex->name();
         names_.emplace(ex.get(), name);
-        // if (!ex->type_annotation().empty())
-        //    visit_type(ex->type_annotation());
+        if (!ex->type_annotation().empty())
+            name += ": " + visit_type(ex->type_annotation());
         return name;
     }
 
@@ -269,10 +271,15 @@ class il_dump_visitor : public expr_functor<std::string> {
         return name;
     }
 
-    // std::string visit_type(const type &t) override {
-    //    os_ << ": "
-    //        << "any" /*to_string(t)*/;
-    //}
+    std::string visit_type(const any_type &t) override { return "any"; }
+
+    std::string visit_type(const invalid_type &t) override {
+        return "invalid";
+    }
+
+    std::string visit_type(const tensor_type &t) override {
+        return std::string(datatype_names(t->dtype())) + to_string(t->shape());
+    }
 
   private:
     std::ostream &ident() {

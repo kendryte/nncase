@@ -24,6 +24,11 @@ class NNCASE_API sigmoid_node : public op_node {
     DEFINE_OBJECT_KIND(op_node, op_nn_sigmoid)
   public:
     sigmoid_node();
+
+    /** @brief Get the input the sigmoid expression */
+    const connector_info &input() const noexcept { return parameter_at(0); }
+
+    type infer_invoke_result_type(type_infer_context &context) override;
 };
 
 /** @brief Sigmoid expression */

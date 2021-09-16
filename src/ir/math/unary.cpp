@@ -24,3 +24,8 @@ unary_node::unary_node(unary_op_t unary_op) : unary_op_(unary_op) {
 }
 
 unary::unary(unary_op_t unary_op) : object_t(std::in_place, unary_op) {}
+
+type unary_node::infer_invoke_result_type(type_infer_context &context) {
+    CHECK_ARGUMENT_AS_TENSOR(input);
+    return input_t;
+}

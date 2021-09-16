@@ -40,14 +40,14 @@ template <class R> class type_functor {
         assert(!t.empty());
 
         TYPE_FUNCTOR_DISPATCH(any_type);
-        TYPE_FUNCTOR_DISPATCH(prim_type);
+        TYPE_FUNCTOR_DISPATCH(invalid_type);
         TYPE_FUNCTOR_DISPATCH(tensor_type);
         TYPE_FUNCTOR_DISPATCH(tuple_type);
         return default_visit_type(t);
     }
 
     virtual R visit_type(const any_type &t) TYPE_FUNCTOR_DEFAULT;
-    virtual R visit_type(const prim_type &t) TYPE_FUNCTOR_DEFAULT;
+    virtual R visit_type(const invalid_type &t) TYPE_FUNCTOR_DEFAULT;
     virtual R visit_type(const tensor_type &t) TYPE_FUNCTOR_DEFAULT;
     virtual R visit_type(const tuple_type &t) TYPE_FUNCTOR_DEFAULT;
 };

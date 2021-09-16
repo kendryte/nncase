@@ -28,6 +28,8 @@ inline constexpr unknown_dim_t unknown_dim;
 
 enum dim_kind_t { dim_fixed = 0, dim_unknown = 1 };
 
+using dim_value_t = int64_t;
+
 /** @brief Dimension */
 struct dim_t {
     /** @brief Initialize an unknown dim */
@@ -35,16 +37,26 @@ struct dim_t {
         : kind(dim_unknown), value(0) {}
 
     /** @brief Initialize an fixed dim */
-    constexpr dim_t(int64_t value) noexcept : kind(dim_fixed), value(value) {}
+    constexpr dim_t(dim_value_t value) noexcept
+        : kind(dim_fixed), value(value) {}
 
     /** @brief Is this a fixed dim */
     bool is_fixed() const noexcept { return kind == dim_fixed; }
     /** @brief Is this an unknown dim */
     bool is_unknown() const noexcept { return kind == dim_unknown; }
 
+    dim_value_t fixed_value() const {
+        assert(is_fixed());
+        return value;
+    }
+
     dim_kind_t kind;
-    int64_t value;
+    dim_value_t value;
 };
+
+struct scalar_shape_t {};
+
+inline constexpr scalar_shape_t scalar_shape;
 
 struct unranked_shape_t {};
 
@@ -58,17 +70,19 @@ inline constexpr invalid_shape_t invalid_shape;
 class NNCASE_API shape_t {
     enum shape_kind_t {
         shape_kind_fixed,
-        shape_kind_invalid,
+        shape_kind_has_unknown_dim,
         shape_kind_unranked,
-        shape_kind_has_unknown_dim
+        shape_kind_invalid
     };
 
   public:
     using value_type = dim_t;
 
+    /** @brief Initialize a scalar shape */
+    shape_t(scalar_shape_t) noexcept : kind_(shape_kind_fixed) {}
+
     /** @brief Initialize an unranked shape */
-    shape_t(unranked_shape_t = unranked_shape) noexcept
-        : kind_(shape_kind_unranked) {}
+    shape_t(unranked_shape_t) noexcept : kind_(shape_kind_unranked) {}
 
     /** @brief Initialize an invalid shape */
     shape_t(invalid_shape_t) noexcept : kind_(shape_kind_invalid) {}
@@ -78,10 +92,10 @@ class NNCASE_API shape_t {
     shape_t(R dims) : kind_(kind_of(dims)), dims_(dims.begin(), dims.end()) {}
 
     /** @brief Initialize a fixed shape */
-    shape_t(std::initializer_list<int64_t> dims) : kind_(shape_kind_fixed) {
+    shape_t(std::initializer_list<dim_value_t> dims) : kind_(shape_kind_fixed) {
         dims_.reserve(dims.size());
         std::transform(dims.begin(), dims.end(), std::back_inserter(dims_),
-                       [](int64_t dim) -> dim_t { return dim; });
+                       [](dim_value_t dim) -> dim_t { return dim; });
     }
 
     /** @brief Get kind */

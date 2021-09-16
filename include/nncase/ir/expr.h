@@ -20,13 +20,17 @@
 namespace nncase::ir {
 /** @brief Expression node */
 class NNCASE_API expr_node : public object_node {
-  public:
     DEFINE_OBJECT_KIND(object_node, object_expr)
+
+  public:
+    expr_node();
 
     /** @brief Get the checked type of the expression */
     const type &checked_type() const noexcept { return checked_type_; }
-    /** @brief Get the mutable checked type of the variable expression */
+    /** @brief Get the mutable checked type of the expression */
     type &checked_type() noexcept { return checked_type_; }
+    /** @brief Set the checked type of the expression */
+    void checked_type(type value) noexcept { checked_type_ = std::move(value); }
 
   private:
     type checked_type_;

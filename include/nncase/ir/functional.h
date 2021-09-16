@@ -31,7 +31,7 @@ class fexpr : public expr {
 
     template <detail::Scalar T>
     fexpr(T scalar)
-        : expr(constant(prim_type(to_datatype<T>()),
+        : expr(constant(tensor_type(to_datatype<T>()),
                         std::span<const T>(&scalar, 1))) {}
 };
 } // namespace nncase::ir::F

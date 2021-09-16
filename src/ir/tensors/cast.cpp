@@ -23,3 +23,8 @@ cast_node::cast_node(datatype_t new_type) : new_type_(new_type) {
 }
 
 cast::cast(datatype_t new_type) : object_t(std::in_place, new_type) {}
+
+type cast_node::infer_invoke_result_type(type_infer_context &context) {
+    CHECK_ARGUMENT_AS_TENSOR(input);
+    return tensor_type(new_type(), input_t->shape());
+}

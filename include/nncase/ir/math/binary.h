@@ -29,6 +29,13 @@ class NNCASE_API binary_node : public op_node {
     /** @brief Set the binary opcode of the binary expression */
     void binary_op(binary_op_t value) noexcept { binary_op_ = value; }
 
+    /** @brief Get the lhs the binary expression */
+    const connector_info &lhs() const noexcept { return parameter_at(0); }
+    /** @brief Get the rhs the binary expression */
+    const connector_info &rhs() const noexcept { return parameter_at(1); }
+
+    type infer_invoke_result_type(type_infer_context &context) override;
+
   private:
     binary_op_t binary_op_;
 };

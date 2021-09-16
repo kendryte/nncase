@@ -15,6 +15,7 @@
 #pragma once
 #include "expr.h"
 #include "ir_types.h"
+#include "type_infer.h"
 #include <utility>
 
 namespace nncase::ir {
@@ -26,6 +27,14 @@ class NNCASE_API op_node : public expr_node {
     std::span<const connector_info> parameters() const noexcept {
         return parameters_;
     }
+
+    /** @brief Get the parameter at the index */
+    const connector_info &parameter_at(size_t index) const noexcept {
+        return parameters_.at(index);
+    }
+
+    /** @brief Infer the invoke result type */
+    virtual type infer_invoke_result_type(type_infer_context &context) = 0;
 
   protected:
     connector_info &add_parameter(std::string name);

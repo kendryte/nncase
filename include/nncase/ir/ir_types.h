@@ -46,8 +46,8 @@ DEFINE_ENUM_BITMASK_OPERATORS(connector_attributes)
 
 class NNCASE_API connector_info {
   public:
-    connector_info(op_node &owner, std::string name)
-        : owner_(owner), name_(std::move(name)) {}
+    connector_info(op_node &owner, std::string name, size_t index)
+        : owner_(owner), name_(std::move(name)), index_(index) {}
 
     connector_info(const connector_info &) = delete;
     connector_info(connector_info &&) = default;
@@ -55,6 +55,8 @@ class NNCASE_API connector_info {
 
     op_node &owner() const noexcept { return owner_; }
     const std::string &name() const noexcept { return name_; }
+    size_t index() const noexcept { return index_; }
+
     connector_attributes attributes() const noexcept { return attributes_; }
     void attributes(connector_attributes value) noexcept {
         attributes_ = value;
@@ -63,6 +65,7 @@ class NNCASE_API connector_info {
   private:
     op_node &owner_;
     std::string name_;
+    size_t index_;
     connector_attributes attributes_ = cnctr_attr_none;
 };
 

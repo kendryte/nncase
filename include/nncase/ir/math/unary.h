@@ -30,6 +30,11 @@ class NNCASE_API unary_node : public op_node {
     /** @brief Set the unary opcode of the unary expression */
     void unary_op(unary_op_t value) noexcept { unary_op_ = value; }
 
+    /** @brief Get the input the unary expression */
+    const connector_info &input() const noexcept { return parameter_at(0); }
+
+    type infer_invoke_result_type(type_infer_context &context) override;
+
   private:
     unary_op_t unary_op_;
 };

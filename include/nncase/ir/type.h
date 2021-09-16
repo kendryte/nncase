@@ -22,7 +22,8 @@ namespace nncase::ir {
 class NNCASE_API type_node : public object_node {
     DEFINE_OBJECT_KIND(object_node, object_type);
 
-  public:
+  protected:
+    type_node() = default;
 };
 
 /** @brief Type */
@@ -36,28 +37,37 @@ class NNCASE_API any_type_node : public type_node {
 };
 
 /** @brief Any type */
-class any_type : public object_t<any_type_node> {};
-
-/** @brief Primitive type node */
-class NNCASE_API prim_type_node : public type_node {
-    DEFINE_OBJECT_KIND(object_node, object_prim_type);
-
+class any_type : public object_t<any_type_node> {
   public:
-    prim_type_node(datatype_t dtype);
-
-    /** @brief Get primitive datatype */
-    datatype_t dtype() const noexcept { return dtype_; }
-    /** @brief Set primitive datatype */
-    void dtype(datatype_t value) noexcept { dtype_ = value; }
-
-  private:
-    datatype_t dtype_;
+    using object_t::object_t;
 };
 
-/** @brief Primitive type */
-class prim_type : public object_t<prim_type_node> {
+/** @brief Invalid type node */
+class NNCASE_API invalid_type_node : public type_node {
+    DEFINE_OBJECT_KIND(object_node, object_invalid_type);
+
   public:
-    NNCASE_API prim_type(datatype_t dtype);
+    invalid_type_node();
+    invalid_type_node(std::string reason);
+
+    /** @brief Get reason */
+    const std::string &reason() const noexcept { return reason_; }
+    /** @brief Get mutable reason */
+    std::string &reason() noexcept { return reason_; }
+    /** @brief Set reason */
+    void reason(std::string value) noexcept { reason_ = std::move(value); }
+
+  private:
+    std::string reason_;
+};
+
+/** @brief Invalid type */
+class invalid_type : public object_t<invalid_type_node> {
+  public:
+    using object_t::object_t;
+
+    NNCASE_API invalid_type();
+    NNCASE_API invalid_type(std::string reason);
 };
 
 /** @brief Tensor type node */
@@ -92,7 +102,9 @@ class NNCASE_API tensor_type_node : public type_node {
 /** @brief Tensor type */
 class tensor_type : public object_t<tensor_type_node> {
   public:
-    NNCASE_API tensor_type(datatype_t elem_type, shape_t shape);
+    using object_t::object_t;
+
+    NNCASE_API tensor_type(datatype_t elem_type, shape_t shape = scalar_shape);
 };
 
 /** @brief Tuple type node */
@@ -118,6 +130,8 @@ class NNCASE_API tuple_type_node : public type_node {
 /** @brief Tuple type */
 class tuple_type : public object_t<tuple_type_node> {
   public:
+    using object_t::object_t;
+
     NNCASE_API tuple_type(itlib::small_vector<type> fields);
 
     template <ranges::range R>

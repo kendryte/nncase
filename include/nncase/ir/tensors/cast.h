@@ -29,6 +29,11 @@ class NNCASE_API cast_node : public op_node {
     /** @brief Set the new type of the cast expression */
     void new_type(datatype_t value) noexcept { new_type_ = value; }
 
+    /** @brief Get the input the unary expression */
+    const connector_info &input() const noexcept { return parameter_at(0); }
+
+    type infer_invoke_result_type(type_infer_context &context) override;
+
   private:
     datatype_t new_type_;
 };

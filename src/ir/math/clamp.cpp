@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "nncase/runtime/datatypes.h"
 #include <nncase/ir/math/clamp.h>
 
 using namespace nncase;
@@ -23,4 +22,11 @@ clamp_node::clamp_node() {
     add_parameter("input");
     add_parameter("min");
     add_parameter("max");
+}
+
+type clamp_node::infer_invoke_result_type(type_infer_context &context) {
+    CHECK_ARGUMENT_AS_TENSOR(input);
+    CHECK_ARGUMENT_AS_TENSOR(min);
+    CHECK_ARGUMENT_AS_TENSOR(max);
+    return broadcast_type({input_t, min_t, max_t});
 }

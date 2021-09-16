@@ -8,18 +8,19 @@
 #         placeholders.cpp
 #         visitor.cpp)
 
-set(SRCS var.cpp
-		 object.cpp
+set(SRCS call.cpp
          expr.cpp
 		 constant.cpp
 		 debug.cpp
 		 function.cpp
-		 call.cpp
-		 op.cpp
-		 type.cpp
-		 shape.cpp
 		 module.cpp
+		 object.cpp
+		 op.cpp
+		 shape.cpp
+		 type.cpp
+		 type_infer.cpp
 		 tuple.cpp
+		 var.cpp
 		 visitor.cpp)
 
 if(MSVC)

@@ -17,9 +17,15 @@
 using namespace nncase;
 using namespace nncase::ir;
 
-prim_type_node::prim_type_node(datatype_t dtype) : dtype_(dtype) {}
+invalid_type_node::invalid_type_node() {}
 
-prim_type::prim_type(datatype_t dtype) : object_t(std::in_place, dtype) {}
+invalid_type_node::invalid_type_node(std::string reason)
+    : reason_(std::move(reason)) {}
+
+invalid_type::invalid_type() {}
+
+invalid_type::invalid_type(std::string reason)
+    : object_t(std::in_place, std::move(reason)) {}
 
 tensor_type_node::tensor_type_node(datatype_t dtype, shape_t shape)
     : dtype_(dtype), shape_(std::move(shape)) {}

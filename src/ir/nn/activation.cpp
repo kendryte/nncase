@@ -12,7 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "nncase/runtime/datatypes.h"
 #include <nncase/ir/nn/activation.h>
 
 using namespace nncase;
@@ -20,3 +19,8 @@ using namespace nncase::ir;
 using namespace nncase::ir::nn;
 
 sigmoid_node::sigmoid_node() { add_parameter("input"); }
+
+type sigmoid_node::infer_invoke_result_type(type_infer_context &context) {
+    CHECK_ARGUMENT_AS_TENSOR(input);
+    return input_t;
+}
