@@ -123,7 +123,7 @@ void k210_target::register_quantize_annotation_passes(const module_type_t &type,
     }
 }
 
-void k210_target::register_quantize_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] datatype_t quant_type, [[maybe_unused]] datatype_t w_quant_type, [[maybe_unused]] bool use_mse_quant_w)
+void k210_target::register_quantize_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] datatype_t quant_type, [[maybe_unused]] std::string_view w_quant_type, [[maybe_unused]] bool use_mse_quant_w)
 {
     {
         transform_pass p("lowering_kpu_conv2d");

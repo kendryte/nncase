@@ -19,14 +19,11 @@
 #include <nncase/compiler.h>
 #include <nncase/data/dataset.h>
 #include <nncase/importer/importer.h>
-#include <nncase/io_utils.h>
 #include <nncase/ir/debug.h>
 #include <nncase/ir/evaluator.h>
 #include <nncase/runtime/datatypes.h>
 #include <nncase/runtime/debug.h>
 #include <nncase/transforms/neutral/add_quant_motion.h>
-#include <nncase/transforms/neutral/dequantize_motion.h>
-#include <nncase/transforms/neutral/fold_io_quant_motion.h>
 #include <nncase/transforms/neutral/optimize_allocation.h>
 #include <nncase/transforms/neutral/optimize_benchmark.h>
 #include <nncase/transforms/neutral/post_process_transform.h>
@@ -68,36 +65,6 @@ calibrate_method to_calibrate_method(std::string name)
     if (name == "cdf")
         return calibrate_method::cdf;
     return calibrate_method::no_clip;
-}
-
-datatype_t to_datatype_method(std::string name)
-{
-    if (name == "int8")
-        return datatype_t::dt_int8;
-    else if (name == "int16")
-        return datatype_t::dt_int16;
-    else if (name == "int32")
-        return datatype_t::dt_int32;
-    else if (name == "int64")
-        return datatype_t::dt_int64;
-    else if (name == "uint8")
-        return datatype_t::dt_uint8;
-    else if (name == "uint16")
-        return datatype_t::dt_uint16;
-    else if (name == "uint32")
-        return datatype_t::dt_uint32;
-    else if (name == "uint64")
-        return datatype_t::dt_uint64;
-    else if (name == "float16")
-        return datatype_t::dt_float16;
-    else if (name == "float32")
-        return datatype_t::dt_float32;
-    else if (name == "float64")
-        return datatype_t::dt_float64;
-    else if (name == "bfloat16")
-        return datatype_t::dt_bfloat16;
-    else
-        throw std::runtime_error("Unsupported data type");
 }
 
 void do_dump_graph(ir::graph &graph, std::ostream &output)
@@ -448,7 +415,7 @@ private:
             pmgr.quantizer(quant);
             if (compile_options_.dump_ir)
                 pmgr.dump_dir(compile_options_.dump_dir);
-            target_->register_quantize_passes(graph.module_type(), pmgr, to_datatype_method(compile_options_.quant_type), to_datatype_method(compile_options_.w_quant_type), compile_options_.use_mse_quant_w);
+            target_->register_quantize_passes(graph.module_type(), pmgr, to_datatype_method(compile_options_.quant_type), compile_options_.w_quant_type, compile_options_.use_mse_quant_w);
             pmgr.run();
             dump_graph(graph, "quantize");
         };
