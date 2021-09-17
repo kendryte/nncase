@@ -329,7 +329,7 @@ void kpu_conv2d_transform::process(transform_context &context)
     q_args.arg_add = (int64_t)filter * filter * w_zero_point * iq_p.zero_point;
 
     auto conv = context.graph.emplace<kpu_conv2d>(false, upload->output().shape(), old_conv.is_depthwise(), old_conv.weights().shape(),
-        old_conv.filter_type(), old_conv.pool_type(), (uint8_t)iq_p.zero_point, q_args);
+        old_conv.filter_type(), old_conv.pool_type(), (uint8_t)iq_p.zero_point, q_args, bn, act);
     conv->name(old_conv.name());
     conv->weights().connect(c_weights->output());
     conv->batch_norm().connect(c_bn->output());
@@ -338,6 +338,8 @@ void kpu_conv2d_transform::process(transform_context &context)
     auto download = context.graph.emplace<kpu_download>(conv->kpu_output().shape());
     upload->name(old_conv.name() + "/kpu_download");
     auto deq = context.graph.emplace<dequantize>(download->output().type(), download->output().shape(), dt_float32, zq_p);
+    deq->record_output_connectors_quant_map(deq->output_at(0), old_conv.output_at(0));
+    deq->record_node_name_before_quant(old_conv.name());
     deq->name(old_conv.name() + "/dequantize");
     link(*context.outputs[0], deq->output(), &quantizer);
 
