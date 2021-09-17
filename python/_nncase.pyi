@@ -8,19 +8,22 @@ class CompileOptions:
     dump_asm: bool
     dump_dir: Path
     dump_ir: bool
-    image_format: str
+    swapRB: bool
     input_range: List[float]
     input_shape: List[int]
     input_type: str
     is_fpga: bool
     mean: List[float]
+    std: List[float]
     output_type: str
     preprocess: bool
     quant_type: str
-    scale: List[float]
     target: str
     w_quant_type: str
     use_mse_quant_w: bool
+    input_layout: str
+    output_layout: str
+    letterbox_value: float
     def __init__(self) -> None: ...
 
 
@@ -46,8 +49,6 @@ class GraphEvaluator:
 
 
 class ImportOptions:
-    input_layout: str
-    output_layout: str
     def __init__(self) -> None: ...
 
 
