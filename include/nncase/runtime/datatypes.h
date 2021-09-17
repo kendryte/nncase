@@ -38,6 +38,16 @@ typedef enum _datatype : uint8_t
 #undef DEFINE_DATATYPE
 } datatype_t;
 
+inline datatype_t parse_datatype_str([[maybe_unused]] std::string_view name)
+{
+#define DEFINE_DATATYPE(id, t, n, value) \
+    if (name == #id)                     \
+        return datatype_t::dt_##id;
+#include "datatypes.def"
+#undef DEFINE_DATATYPE
+    throw std::runtime_error("Unsupported data type:" + std::string(name));
+}
+
 namespace detail
 {
     template <datatype_t Type>
