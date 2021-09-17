@@ -420,8 +420,8 @@ class TestRunner(metaclass=ABCMeta):
             self.cpu_infer(case_dir, model_file, dict_args['input_type'])
             import_options, compile_options = self.get_compiler_options(dict_args, model_file)
             model_content = self.read_model_file(model_file)
-            self.run_evaluator(cfg, case_dir, import_options,
-                               compile_options, model_content, dict_args)
+            #self.run_evaluator(cfg, case_dir, import_options,
+            #                   compile_options, model_content, dict_args)
             self.run_inference(cfg, case_dir, import_options,
                                compile_options, model_content, dict_args)
 
