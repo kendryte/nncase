@@ -13,11 +13,14 @@
  * limitations under the License.
  */
 #include <nncase/ir/module.h>
+#include <nncase/ir/type_infer.h>
 
 using namespace nncase;
 using namespace nncase::ir;
 
-module_node::module_node()
-    : entry_(nullptr)
-{
+module_node::module_node() : entry_(nullptr) {}
+
+const function &module_node::add_function(function func) {
+    infer_type(func);
+    return functions_.emplace_back(std::move(func));
 }

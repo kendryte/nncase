@@ -19,6 +19,8 @@
 #include "type.h"
 
 namespace nncase::ir {
+class call;
+
 class NNCASE_API type_infer_context {
   public:
     virtual ~type_infer_context() = default;

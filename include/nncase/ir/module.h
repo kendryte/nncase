@@ -27,8 +27,9 @@ class NNCASE_API module_node : public object_node {
     const std::vector<function> &functions() const noexcept {
         return functions_;
     }
-    /** @brief Get the mutable functions of the module */
-    std::vector<function> &functions() noexcept { return functions_; }
+
+    /** @brief Add new funtion to the module */
+    const function &add_function(function func);
 
     /** @brief Get the entry of the module */
     const function &entry() const noexcept { return entry_; }

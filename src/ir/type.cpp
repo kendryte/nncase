@@ -38,3 +38,12 @@ tuple_type_node::tuple_type_node(itlib::small_vector<type> fields)
 
 tuple_type::tuple_type(itlib::small_vector<type> fields)
     : object_t(std::in_place, std::move(fields)) {}
+
+callable_type_node::callable_type_node(itlib::small_vector<type> parameters,
+                                       type return_type)
+    : parameters_(std::move(parameters)),
+      return_type_(std::move(return_type)) {}
+
+callable_type::callable_type(itlib::small_vector<type> parameters,
+                             type return_type)
+    : object_t(std::in_place, std::move(parameters), std::move(return_type)) {}

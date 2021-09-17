@@ -138,4 +138,47 @@ class tuple_type : public object_t<tuple_type_node> {
     tuple_type(R &&fields)
         : tuple_type(itlib::small_vector<type>{fields.begin(), fields.end()}) {}
 };
+
+/** @brief Callable type node */
+class NNCASE_API callable_type_node : public type_node {
+    DEFINE_OBJECT_KIND(object_node, object_callable_type);
+
+  public:
+    callable_type_node(itlib::small_vector<type> parameters, type return_type);
+
+    /** @brief Get parameters */
+    std::span<const type> parameters() const noexcept { return parameters_; }
+    /** @brief Get parameters */
+    itlib::small_vector<type> &parameters() noexcept { return parameters_; }
+    /** @brief Set parameters */
+    void parameters(itlib::small_vector<type> value) noexcept {
+        parameters_ = std::move(value);
+    }
+
+    /** @brief Get return type */
+    const type &return_type() const noexcept { return return_type_; }
+    /** @brief Get mutable return type */
+    type &return_type() noexcept { return return_type_; }
+    /** @brief Set return type */
+    void return_type(type value) noexcept { return_type_ = std::move(value); }
+
+  private:
+    itlib::small_vector<type> parameters_;
+    type return_type_;
+};
+
+/** @brief Callable type */
+class callable_type : public object_t<callable_type_node> {
+  public:
+    using object_t::object_t;
+
+    NNCASE_API callable_type(itlib::small_vector<type> parameters,
+                             type return_type);
+
+    template <ranges::range R>
+    callable_type(R &&parameters, type return_type)
+        : callable_type(
+              itlib::small_vector<type>{parameters.begin(), parameters.end()},
+              std::move(return_type)) {}
+};
 } // namespace nncase::ir

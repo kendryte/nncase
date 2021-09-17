@@ -60,7 +60,7 @@ tflite_importer::import([[maybe_unused]] const import_options &options) {
 
     // 4. Create function
     function main_func("main", created_inputs, output);
-    module_->functions().emplace_back(main_func);
+    module_->add_function(main_func);
     module_->entry(main_func);
     return module_;
 }

@@ -34,7 +34,10 @@ namespace nncase {
     }
 
 template <class T> class object_t;
-template <class T> concept Object = requires { typename T::node_type; };
+template <class T>
+concept Object = requires {
+    typename T::node_type;
+};
 
 class NNCASE_API object_node {
   public:
@@ -88,6 +91,12 @@ template <class T> class object_t {
     T *operator->() const noexcept { return get(); }
 
     bool empty() const noexcept { return object_.get() == nullptr; }
+
+    object_t value_or(object_t &&other) const noexcept {
+        if (!empty())
+            return *this;
+        return std::move(other);
+    }
 
     /** @brief Is the object an instance of specific type */
     bool is_a(const object_kind &kind) const noexcept {

@@ -196,7 +196,10 @@ class il_dump_visitor : public expr_functor<std::string>,
                 if (++i != ex->parameters().size())
                     os_ << ", ";
             }
-            os_ << ") {" << std::endl;
+            os_ << ")";
+            if (!ex->checked_type().empty())
+                os_ << ": " << visit_type(ex->checked_type());
+            os_ << " {" << std::endl;
         }
 
         // 2. Function body
@@ -232,7 +235,17 @@ class il_dump_visitor : public expr_functor<std::string>,
         return std::string(ex->runtime_kind().name);
     }
 
-    std::string visit(const constant &ex) override { return "Constant[]"; }
+    std::string visit(const constant &ex) override {
+        RETURN_IF_VISITED();
+        std::stringstream ss;
+        ss << "const(";
+        if (!ex->checked_type().empty())
+            ss << visit_type(ex->checked_type());
+        ss << ")";
+        auto name = ss.str();
+        names_.emplace(ex.get(), name);
+        return name;
+    }
 
     std::string visit(const call &ex) override {
         RETURN_IF_VISITED();
@@ -249,7 +262,10 @@ class il_dump_visitor : public expr_functor<std::string>,
             if (++i != args.size())
                 os_ << ", ";
         }
-        os_ << ")" << std::endl;
+        os_ << ")";
+        if (!ex->checked_type().empty())
+            os_ << ": " << visit_type(ex->checked_type());
+        os_ << std::endl;
         return name;
     }
 
@@ -267,18 +283,45 @@ class il_dump_visitor : public expr_functor<std::string>,
             if (++i != fields.size())
                 os_ << ", ";
         }
-        os_ << ")" << std::endl;
+        os_ << ")";
+        if (!ex->checked_type().empty())
+            os_ << ": " << visit_type(ex->checked_type());
+        os_ << std::endl;
         return name;
     }
 
     std::string visit_type(const any_type &t) override { return "any"; }
 
-    std::string visit_type(const invalid_type &t) override {
-        return "invalid";
+    std::string visit_type(const invalid_type &t) override { return "invalid"; }
+
+    std::string visit_type(const tuple_type &t) override {
+        std::stringstream ss;
+        ss << "(";
+        size_t i = 0;
+        for (auto &field : t->fields()) {
+            ss << visit_type(field);
+            if (++i != t->fields().size())
+                ss << ", ";
+        }
+        ss << ")";
+        return ss.str();
     }
 
     std::string visit_type(const tensor_type &t) override {
         return std::string(datatype_names(t->dtype())) + to_string(t->shape());
+    }
+
+    std::string visit_type(const callable_type &t) override {
+        std::stringstream ss;
+        ss << "(";
+        size_t i = 0;
+        for (auto &par : t->parameters()) {
+            ss << visit_type(par);
+            if (++i != t->parameters().size())
+                ss << ", ";
+        }
+        ss << ") -> " << visit_type(t->return_type());
+        return ss.str();
     }
 
   private:
