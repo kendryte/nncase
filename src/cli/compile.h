@@ -43,7 +43,6 @@ private:
     std::string w_quant_type_ = "uint8";
     std::string input_layout_ = "NCHW";
     std::string output_layout_ = "NCHW";
-    std::string image_format_ = "RGB";
     bool use_mse_quant_w_ = false;
     std::vector<float> mean_ = { 0.f, 0.f, 0.f };
     std::vector<float> std_ = { 1.f, 1.f, 1.f };
