@@ -38,7 +38,7 @@ typedef enum _datatype : uint8_t
 #undef DEFINE_DATATYPE
 } datatype_t;
 
-inline datatype_t parse_datatype_str([[maybe_unused]] std::string_view name)
+inline datatype_t parse_datatype_str(const std::string &name)
 {
 #define DEFINE_DATATYPE(id, t, n, value) \
     if (name == #id)                     \
