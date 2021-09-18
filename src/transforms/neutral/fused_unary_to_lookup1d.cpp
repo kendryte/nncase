@@ -90,6 +90,8 @@ void fused_unary_to_lookup1d_transform::process(transform_context &context)
     auto lut = context.graph.emplace<table_lookup1d>(dt_uint8, q->output().shape(), 256);
     lut->name(old_fu.name());
     auto deq = context.graph.emplace<dequantize>(dt_uint8, old_fu.output().shape(), output.type(), yq_p);
+    deq->record_output_connectors_quant_map(deq->output_at(0), old_fu.output_at(0));
+    deq->record_node_name_before_quant(old_fu.name());
     deq->name(old_fu.name() + "/dequantize");
     link(old_fu.output(), deq->output(), &quantizer);
     lut->input().connect(q->output());

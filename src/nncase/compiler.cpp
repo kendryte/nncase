@@ -21,6 +21,7 @@
 #include <nncase/importer/importer.h>
 #include <nncase/ir/debug.h>
 #include <nncase/ir/evaluator.h>
+#include <nncase/kernels/neutral/neutral_kernels.h>
 #include <nncase/runtime/datatypes.h>
 #include <nncase/runtime/debug.h>
 #include <nncase/transforms/neutral/add_quant_motion.h>
@@ -182,8 +183,6 @@ public:
 
     void compile() override
     {
-        quantizer *eval_quantizer;
-        quantizer *quant_eval_quantizer;
         if (use_ptq_)
         {
             if (compile_options_.input_type == "default")
@@ -215,7 +214,7 @@ public:
 
             std::cout << "4.2. Run calibration..." << std::endl;
             auto evaluator = run_calibration(graph_, true);
-            eval_quantizer = evaluator.quantizer(graph_.module_type());
+            quantizer *eval_quantizer = evaluator.quantizer(graph_.module_type());
 
             std::cout << "4.3. Quantize graph..." << std::endl;
             quantize_graph(graph_, evaluator);
@@ -223,27 +222,49 @@ public:
             if (compile_options_.dump_quant_error)
             {
                 std::cout << "4.4. Evaluate quantized graph..." << std::endl;
-                auto quant_evaluator = run_calibration(graph_, false);
-                quant_eval_quantizer = quant_evaluator.quantizer(graph_.module_type());
+                char target_name[MAX_MODULE_TYPE_LENGTH];
+                memset(target_name, '\0', sizeof(target_name));
+                char *p = const_cast<char *>(compile_options_.target.c_str());
+                strcpy(target_name, p);
+                graph_.set_module_type(to_module_type(target_name));
 
-                std::cout << "4.5. Summarize quant error for each layer..." << std::endl;
+                auto quant_evaluator = run_calibration(graph_, false);
+                quantizer *quant_eval_quantizer = quant_evaluator.quantizer(graph_.module_type());
+
+                std::cout << "4.5. Summarize accumulated quant error for layer output..." << std::endl;
                 std::ofstream f;
-                f.open(compile_options_.dump_dir / "layer_quant_error.txt");
+                if (compile_options_.dump_ir)
+                    f.open(compile_options_.dump_dir / "layer_quant_error.txt");
+
                 for (uint32_t i = 0; i < quant_eval_quantizer->insert_order().size(); i++)
                 {
-                    std::string layer_name = quant_eval_quantizer->insert_order()[i];
-                    auto data_size = quant_eval_quantizer->output_buffers()[layer_name].size();
-                    std::cout << "layer: " << layer_name << "   cosine: " << cosine(eval_quantizer->output_buffers()[layer_name].data(), quant_eval_quantizer->output_buffers()[layer_name].data(), data_size) << std::endl;
-                    if (compile_options_.dump_ir)
+                    auto quant_layer_connector = quant_eval_quantizer->insert_order()[i];
+                    auto data_size = kernels::detail::compute_size(quant_layer_connector->shape());
+                    if (quant_layer_connector->owner().get_output_connectors_quant_map().size() != 0)
                     {
-                        f << "layer: " << layer_name << "   cosine: " << cosine(eval_quantizer->output_buffers()[layer_name].data(), quant_eval_quantizer->output_buffers()[layer_name].data(), data_size) << std::endl;
+                        std::string layer_name = quant_layer_connector->owner().get_node_name_before_quant();
+                        std::cout << "layer name: " << layer_name << "   cosine: " << cosine(eval_quantizer->output_buffers()[quant_layer_connector->owner().get_output_connectors_quant_map()[quant_layer_connector]].data(), quant_eval_quantizer->output_buffers()[quant_layer_connector].data(), data_size) << std::endl;
+                        if (compile_options_.dump_ir)
+                            f << "layer name: " << layer_name << "   cosine: " << cosine(eval_quantizer->output_buffers()[quant_layer_connector->owner().get_output_connectors_quant_map()[quant_layer_connector]].data(), quant_eval_quantizer->output_buffers()[quant_layer_connector].data(), data_size) << std::endl;
+                    }
+                    else
+                    {
+                        std::string layer_name = quant_layer_connector->owner().name();
+                        if (quant_layer_connector->owner().runtime_opcode() != ir::op_pad)
+                        {
+                            std::cout << "layer name: " << layer_name << "   cosine: " << cosine(eval_quantizer->output_buffers()[quant_layer_connector].data(), quant_eval_quantizer->output_buffers()[quant_layer_connector].data(), data_size) << std::endl;
+                            if (compile_options_.dump_ir)
+                                f << "layer name: " << layer_name << "   cosine: " << cosine(eval_quantizer->output_buffers()[quant_layer_connector].data(), quant_eval_quantizer->output_buffers()[quant_layer_connector].data(), data_size) << std::endl;
+                        }
                     }
                 }
-                f.close();
+                if (compile_options_.dump_ir)
+                    f.close();
             }
         }
 
         std::cout << "5. Optimize target dependent after quantization..." << std::endl;
+        graph_.set_module_type(to_module_type("stackvm"));
         optimize_target_dependent_after_quant(graph_);
 
         std::cout << "6. Optimize modules..." << std::endl;
@@ -452,7 +473,7 @@ private:
             xt::dynamic_shape<size_t> dataset_in_shape(in_shape.begin(), in_shape.end());
             std::unique_ptr<dataset> ds;
             if (options.dataset_format == "image")
-                ds = std::make_unique<image_dataset>(options.dataset, dataset_in_shape, input_layout_);
+                ds = std::make_unique<image_dataset>(options.dataset, dataset_in_shape, compile_options_.input_layout);
             else if (options.dataset_format == "raw")
                 ds = std::make_unique<raw_dataset>(options.dataset, dataset_in_shape);
             else
@@ -492,11 +513,11 @@ private:
         {
             if (stage == 0)
             {
-                std::cout << step + ".1 Collecting ranges..." << std::endl;
+                std::cout << step + ".1. Collecting ranges..." << std::endl;
             }
             else
             {
-                std::cout << step + ".2 Collecting distribution..." << std::endl;
+                std::cout << step + ".2. Collecting distribution..." << std::endl;
                 evaluator.begin_collect_distribution();
             }
 
@@ -507,7 +528,7 @@ private:
                 auto &tensor = it->tensor;
                 std::memcpy(input_buffer.data(), tensor.data(), input_buffer.size_bytes());
 
-                evaluator.evaluate(before_quant, stage);
+                evaluator.evaluate(before_quant, stage, compile_options_.dump_quant_error);
                 evaluator.end_sample();
                 if (options.progress)
                     options.progress(i++, dataset.total_size());
@@ -515,7 +536,7 @@ private:
 
             if (stage == 1)
             {
-                std::cout << step + "3. Find optimal quantization ranges..." << std::endl;
+                std::cout << step + ".3. Find optimal quantization ranges..." << std::endl;
                 evaluator.end_collect_distribution(options.progress);
             }
         }
@@ -529,11 +550,11 @@ private:
         {
             if (stage == 0)
             {
-                std::cout << step + ".1 Collecting ranges..." << std::endl;
+                std::cout << step + ".1. Collecting ranges..." << std::endl;
             }
             else
             {
-                std::cout << step + ".2 Collecting distribution..." << std::endl;
+                std::cout << step + ".2. Collecting distribution..." << std::endl;
                 evaluator.begin_collect_distribution();
             }
 
@@ -542,7 +563,7 @@ private:
                 auto input_buffer = evaluator.input_at(0).buffer();
                 std::memcpy(input_buffer.data(), options.tensor_data.data() + i * input_buffer.size_bytes(), input_buffer.size_bytes());
 
-                evaluator.evaluate(before_quant, stage);
+                evaluator.evaluate(before_quant, stage, compile_options_.dump_quant_error);
                 evaluator.end_sample();
                 if (options.progress)
                     options.progress(i++, options.samples_count);

@@ -44,8 +44,8 @@ private:
     std::string input_layout_ = "NCHW";
     std::string output_layout_ = "NCHW";
     bool use_mse_quant_w_ = false;
-    std::vector<float> mean_;
-    std::vector<float> std_;
+    std::vector<float> mean_ = { 0.f, 0.f, 0.f };
+    std::vector<float> std_ = { 1.f, 1.f, 1.f };
     std::vector<float> input_range_;
     float letterbox_value_;
     std::vector<int32_t> input_shape_;
