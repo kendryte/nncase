@@ -47,7 +47,7 @@ host_memory_block &host_memory_block::operator=(host_memory_block &&other) noexc
 }
 
 host_runtime_tensor_impl::host_runtime_tensor_impl(datatype_t datatype, runtime_shape_t shape, runtime_shape_t strides, host_memory_block memory_block)
-    : datatype_(datatype), shape_(std::move(shape)), strides_(std::move(strides)), memory_block_(std::move(memory_block))
+    : datatype_(datatype), shape_(std::move(shape)), strides_(std::move(strides)), memory_block_(std::move(memory_block)), quant_({ 0, 1 })
 {
 }
 
