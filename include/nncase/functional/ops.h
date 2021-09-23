@@ -65,4 +65,59 @@ NNCASE_API inline result<runtime::runtime_tensor> neg(runtime::runtime_tensor &i
     return impl::unary(input, dtype, unary_neg);
 }
 
+NNCASE_API inline result<runtime::runtime_tensor> add(runtime::runtime_tensor &input_a, runtime::runtime_tensor &input_b, datatype_t dtype) noexcept
+{
+    return impl::binary(input_a, input_b, dtype, binary_add);
+}
+
+NNCASE_API inline result<runtime::runtime_tensor> sub(runtime::runtime_tensor &input_a, runtime::runtime_tensor &input_b, datatype_t dtype) noexcept
+{
+    return impl::binary(input_a, input_b, dtype, binary_sub);
+}
+
+NNCASE_API inline result<runtime::runtime_tensor> mul(runtime::runtime_tensor &input_a, runtime::runtime_tensor &input_b, datatype_t dtype) noexcept
+{
+    return impl::binary(input_a, input_b, dtype, binary_mul);
+}
+
+NNCASE_API inline result<runtime::runtime_tensor> div(runtime::runtime_tensor &input_a, runtime::runtime_tensor &input_b, datatype_t dtype) noexcept
+{
+    return impl::binary(input_a, input_b, dtype, binary_div);
+}
+
+NNCASE_API inline result<runtime::runtime_tensor> min(runtime::runtime_tensor &input_a, runtime::runtime_tensor &input_b, datatype_t dtype) noexcept
+{
+    return impl::binary(input_a, input_b, dtype, binary_min);
+}
+
+NNCASE_API inline result<runtime::runtime_tensor> max(runtime::runtime_tensor &input_a, runtime::runtime_tensor &input_b, datatype_t dtype) noexcept
+{
+    return impl::binary(input_a, input_b, dtype, binary_max);
+}
+
+NNCASE_API inline result<runtime::runtime_tensor> quantize(runtime::runtime_tensor &input, datatype_t dtype) noexcept
+{
+    return impl::quantize(input, dtype);
+}
+
+NNCASE_API inline result<runtime::runtime_tensor> dequantize(runtime::runtime_tensor &input, datatype_t dtype) noexcept
+{
+    return impl::dequantize(input, dtype);
+}
+
+NNCASE_API inline result<runtime::runtime_tensor> crop(runtime::runtime_tensor &input, runtime::runtime_tensor &bbox, size_t out_h, size_t out_w, image_resize_mode_t resize_mode) noexcept
+{
+    return impl::crop(input, bbox, out_h, out_w, resize_mode);
+}
+
+NNCASE_API inline result<runtime::runtime_tensor> resize(runtime::runtime_tensor &input, size_t out_h, size_t out_w, image_resize_mode_t resize_mode) noexcept
+{
+    return impl::resize(input, out_h, out_w, resize_mode);
+}
+
+NNCASE_API inline result<runtime::runtime_tensor> pad(runtime::runtime_tensor &input, std::vector<padding> &padding, pad_mode_t pad_mode, float fill_v) noexcept
+{
+    return impl::pad(input, padding, pad_mode, fill_v);
+}
+
 }

@@ -3,7 +3,7 @@ cmake_minimum_required (VERSION 3.13)
 set(SRCS)
 
 if ((NOT BUILDING_RUNTIME) OR NNCASE_FUNCTIONAL_IMPL_PLATFORM_HEADER)
-    list(APPEND SRCS ops.platform.cpp)
+    list(APPEND SRCS ops.cpu.cpp)
 endif()
 
 if (BUILDING_RUNTIME)
