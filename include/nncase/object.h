@@ -54,6 +54,12 @@ class NNCASE_API object_node {
 
     /** @brief Is the object an instance of specific kind */
     virtual bool is_a(const object_kind &kind) const noexcept;
+
+    /** @brief Get the hashcode of the object */
+    virtual size_t hashcode() const noexcept;
+
+    /** @brief Is the object equal to another instance */
+    virtual bool equals(const object_node &other) const noexcept;
 };
 
 template <class T> class object_t {
@@ -117,6 +123,20 @@ template <class T> class object_t {
         }
     }
 
+    /** @brief Get the hashcode of the object */
+    size_t hashcode() const noexcept {
+        return object_ ? object_->hashcode() : 0;
+    }
+
+    /** @brief Is the object equal to another instance */
+    template <Object U> bool equals(const U &other) const noexcept {
+        if (get() == other.get())
+            return true;
+        else if (!empty() && !other.empty())
+            return object_->equals(*other.get());
+        return false;
+    }
+
   private:
     std::shared_ptr<T> default_construct() {
         if constexpr (is_default_constructible_v)
@@ -132,4 +152,22 @@ template <class T> class object_t {
 };
 
 using object = object_t<object_node>;
+
+template <Object T, Object U>
+bool operator==(const T &lhs, const U &rhs) noexcept {
+    return lhs.equals(rhs);
+}
+
+template <Object T, Object U>
+bool operator!=(const T &lhs, const U &rhs) noexcept {
+    return !lhs.equals(rhs);
+}
 } // namespace nncase
+
+namespace std {
+template <class T> struct hash<nncase::object_t<T>> {
+    size_t operator()(const nncase::object_t<T> &obj) const noexcept {
+        return obj.hashcode();
+    }
+};
+} // namespace std

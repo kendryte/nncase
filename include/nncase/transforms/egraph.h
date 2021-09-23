@@ -17,10 +17,12 @@
 #include <nncase/ir/function.h>
 
 namespace nncase::ir::transforms {
-using eid_t = size_t;
+class eclass;
 
 class NNCASE_API enode {
   public:
+    enode(ir::expr ex, eclass &ecls);
+
     /** @brief Get the expression of the enode */
     const ir::expr &expr() const noexcept { return expr_; }
     /** @brief Get the mutable expression of the enode */
@@ -28,14 +30,20 @@ class NNCASE_API enode {
     /** @brief Set the expression of the enode */
     void expr(ir::expr value) noexcept { expr_ = std::move(value); }
 
-    /** @brief Get the children eids of the enode */
-    const std::vector<eid_t> &children() const noexcept { return children_; }
-    /** @brief Get the mutable children eids of the enode */
-    std::vector<eid_t> &children() noexcept { return children_; }
+    /** @brief Get the eclass of the enode */
+    eclass &ecls() const noexcept { return *ecls_; }
+    /** @brief Set the eclass of the enode */
+    void ecls(eclass &value) noexcept { ecls_ = &value; }
+
+    /** @brief Get the children eclasses of the enode */
+    const std::vector<eclass *> &children() const noexcept { return children_; }
+    /** @brief Get the mutable children eclasses of the enode */
+    std::vector<eclass *> &children() noexcept { return children_; }
 
   private:
     ir::expr expr_;
-    std::vector<eid_t> children_;
+    eclass *ecls_;
+    std::vector<eclass *> children_;
 };
 
 class NNCASE_API eclass {
@@ -46,13 +54,22 @@ class NNCASE_API eclass {
     std::vector<enode *> &nodes() noexcept { return nodes_; }
 
   private:
-    eid_t id_;
     std::vector<enode *> nodes_;
 };
 
 class NNCASE_API egraph {
+    class converter;
+
+  public:
+    /** @brief Add enode */
+    eclass *add(const expr &ex);
+
+  private:
+    enode *make_node(const expr &ex);
+    void fill_node_children(enode &node, const expr &ex);
+
   private:
     std::list<eclass> classes_;
-    std::list<enode> nodes_;
+    std::unordered_map<expr, enode> nodes_;
 };
 } // namespace nncase::ir::transforms
