@@ -43,15 +43,14 @@ private:
     std::string w_quant_type_ = "uint8";
     std::string input_layout_ = "NCHW";
     std::string output_layout_ = "NCHW";
-    std::string image_format_ = "RGB";
-
-    float input_mean_ = 0.f;
-    float input_std_ = 1.f;
-    std::vector<float> mean_;
-    std::vector<float> scale_;
+    bool use_mse_quant_w_ = false;
+    std::vector<float> mean_ = { 0.f, 0.f, 0.f };
+    std::vector<float> std_ = { 1.f, 1.f, 1.f };
     std::vector<float> input_range_;
+    float letterbox_value_;
     std::vector<int32_t> input_shape_;
 
+    bool swapRB_ = false;
     bool dump_ir_ = false;
     bool dump_asm_ = false;
     bool dump_quant_error_ = false;

@@ -66,6 +66,7 @@ def _make_module(name, target):
     compile_options.dump_ir = True
     compile_options.dump_asm = True
     compile_options.dump_quant_error = True
+    compile_options.use_mse_quant_w = True
     compile_options.benchmark_only = True
     compiler = nncase.Compiler(compile_options)
 

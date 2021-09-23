@@ -53,7 +53,7 @@ public:
 
     module_evaluate_context &module() const noexcept { return mod_eval_; }
 
-    void evaluate(bool before_quant, size_t stage);
+    void evaluate(bool before_quant, size_t stage, bool record_output_buffers);
 
 private:
     const schedule::function_schedule_result &sched_;
@@ -129,7 +129,7 @@ public:
     void end_sample();
     void end_collect_distribution(const std::function<void(size_t cnt, size_t total)> &progress);
 
-    void evaluate(bool before_quant, size_t stage);
+    void evaluate(bool before_quant, size_t stage, bool record_output_buffers);
 
 private:
     const schedule::model_schedule_result &sched_;

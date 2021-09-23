@@ -37,4 +37,5 @@ target_sources(transforms PRIVATE
     optimize_benchmark.cpp
     space_to_batch_transform.cpp
     pre_process_setting.cpp
+    post_process_transform.cpp
     )

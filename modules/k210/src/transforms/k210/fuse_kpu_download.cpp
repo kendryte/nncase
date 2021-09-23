@@ -57,7 +57,7 @@ void fuse_kpu_download_transform::process(transform_context &context)
     auto &old_conv = static_cast<kpu_conv2d &>(*context.matched_nodes[0]);
 
     auto conv = context.graph.emplace<kpu_conv2d>(true, old_conv.input().shape(), old_conv.is_depthwise(), old_conv.weights().shape(),
-        old_conv.filter_type(), old_conv.pool_type(), old_conv.pad_value(), old_conv.quant_args());
+        old_conv.filter_type(), old_conv.pool_type(), old_conv.pad_value(), old_conv.quant_args(), old_conv.bn(), old_conv.act());
     conv->name(old_conv.name());
     conv->weights().connect(weights);
     conv->batch_norm().connect(batch_norm);
