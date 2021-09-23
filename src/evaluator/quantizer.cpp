@@ -256,11 +256,28 @@ void quantizer::end_collect_distribution(std::function<void(size_t cnt, size_t t
     }
 }
 
-quant_param_t quantizer::get_quant_param(value_range<float> range, int32_t bits)
+quant_param_t quantizer::get_quant_param(value_range<float> range, int32_t bits, QuantMode qm)
 {
     range = fixup_range(range);
-    auto Q_max = pow(2, bits) - 1;
-    auto Q_min = bits % 2 == 0 ? 0 : -pow(2, bits);
+    int32_t Q_max = 0;
+    int32_t Q_min = 0;
+    switch (qm)
+    {
+    case UNSIGNED:
+        Q_min = 0;
+        Q_max = pow(2, bits);
+        break;
+    case SIGNED_SYMMETRIC:
+        Q_min = -pow(2, (bits - 1));
+        Q_max = pow(2, (bits - 1));
+        break;
+    case SIGNED_ASYMMETRIC:
+        Q_min = -pow(2, (bits - 1)) - 1;
+        Q_max = pow(2, (bits - 1));
+        break;
+    default:
+        throw std::runtime_error("Invald quant mode");
+    }
     auto scale = (range.max - range.min) / (Q_max - Q_min);
     auto bias = std::round((range.max * Q_min - range.min * Q_max) / (range.max - range.min));
     return { static_cast<int32_t>(bias), (float)scale };
