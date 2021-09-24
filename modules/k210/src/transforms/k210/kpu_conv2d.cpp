@@ -71,7 +71,6 @@ auto quantize_weights(quantizer &quantizer, fake_kpu_conv2d &conv, constant &wei
             {
                 value_range<float> new_range { range.min - step * i, range.max + step * i };
                 auto q_p = quantizer.get_quant_param(new_range, 8, quantizer::quant_mode::unsigned_mode);
-                assert(q_p.zero_point == w_zero_point);
                 for (size_t i = 0; i < w_ch.size(); i++)
                 {
                     qw_ch[i] = kernels::detail::quantize<uint8_t>(w_ch[i], q_p);
@@ -94,7 +93,6 @@ auto quantize_weights(quantizer &quantizer, fake_kpu_conv2d &conv, constant &wei
             // quant with range refined with min_max_step
             value_range<float> final_range { range.min - min_max_step, range.max + min_max_step };
             auto q_p = quantizer.get_quant_param(final_range, 8, quantizer::quant_mode::unsigned_mode);
-            assert(q_p.zero_point == w_zero_point);
             for (size_t i = 0; i < w_ch.size(); i++)
                 qw_ch[i] = kernels::detail::quantize<uint8_t>(w_ch[i], q_p);
             scales[oc] = q_p.scale;
@@ -110,7 +108,6 @@ auto quantize_weights(quantizer &quantizer, fake_kpu_conv2d &conv, constant &wei
             std::span<uint8_t> qw_ch(q_weights.data() + oc * channel_w_size, channel_w_size);
             auto range = quantizer.fixup_range(quantizer.get_range(w_ch.begin(), w_ch.end()), true);
             auto q_p = quantizer.get_quant_param(range, 8, quantizer::quant_mode::unsigned_mode);
-            assert(q_p.zero_point == w_zero_point);
             for (size_t i = 0; i < w_ch.size(); i++)
                 qw_ch[i] = kernels::detail::quantize<uint8_t>(w_ch[i], q_p);
             scales[oc] = q_p.scale;
