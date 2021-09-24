@@ -256,24 +256,24 @@ void quantizer::end_collect_distribution(std::function<void(size_t cnt, size_t t
     }
 }
 
-quant_param_t quantizer::get_quant_param(value_range<float> range, int32_t bits, QuantMode qm)
+quant_param_t quantizer::get_quant_param(value_range<float> range, int32_t bits, quant_mode qm)
 {
     range = fixup_range(range);
     int32_t Q_max = 0;
     int32_t Q_min = 0;
     switch (qm)
     {
-    case UNSIGNED:
+    case quant_mode::unsigned_mode:
         Q_min = 0;
-        Q_max = pow(2, bits);
+        Q_max = (1 << bits) - 1;
         break;
-    case SIGNED_SYMMETRIC:
-        Q_min = -pow(2, (bits - 1)) + 1;
-        Q_max = pow(2, (bits - 1)) - 1;
+    case quant_mode::signed_symmetric_mode:
+        Q_min = -(1 << (bits - 1)) + 1;
+        Q_max = (1 << (bits - 1)) - 1;
         break;
-    case SIGNED_ASYMMETRIC:
-        Q_min = -pow(2, (bits - 1));
-        Q_max = pow(2, (bits - 1)) - 1;
+    case quant_mode::signed_asymmetric_mode:
+        Q_min = -(1 << (bits - 1));
+        Q_max = (1 << (bits - 1)) - 1;
         break;
     default:
         throw std::runtime_error("Invalid quant mode.");

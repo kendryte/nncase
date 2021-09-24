@@ -80,8 +80,8 @@ void fused_unary_to_lookup1d_transform::process(transform_context &context)
     auto &old_fu = static_cast<fused_unary &>(*context.matched_nodes[0]);
 
     auto &quantizer = *context.quantizer;
-    auto iq_p = quantizer.get_quant_param(quantizer.get(output), 8, quantizer::QuantMode::UNSIGNED);
-    auto yq_p = quantizer.get_quant_param(quantizer.get(old_fu.output()), 8, quantizer::QuantMode::UNSIGNED);
+    auto iq_p = quantizer.get_quant_param(quantizer.get(output), 8, quantizer::quant_mode::unsigned_mode);
+    auto yq_p = quantizer.get_quant_param(quantizer.get(old_fu.output()), 8, quantizer::quant_mode::unsigned_mode);
 
     auto q = context.graph.emplace<quantize>(output.type(), output.shape(), dt_uint8, iq_p);
     q->name(output.owner().name() + "/quantize");

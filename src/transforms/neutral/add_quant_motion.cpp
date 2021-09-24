@@ -45,7 +45,7 @@ void add_input_dequantize_transform::process(transform_context &context)
     auto &quantizer = *context.quantizer;
     assert(input_type_ == dt_uint8 || input_type_ == dt_int8);
     size_t bits = 8;
-    auto qm = input_type_ == dt_uint8 ? quantizer::QuantMode::UNSIGNED : quantizer::QuantMode::SIGNED_ASYMMETRIC;
+    auto qm = input_type_ == dt_uint8 ? quantizer::quant_mode::unsigned_mode : quantizer::quant_mode::signed_asymmetric_mode;
     auto old_range = quantizer.get(old_in->output());
     auto params = quantizer.get_quant_param(old_range, bits, qm);
     auto new_in_node = context.graph.emplace<input_node>(input_type_, old_in->output().shape());
@@ -84,7 +84,7 @@ void add_output_quantize_transform::process(transform_context &context)
     auto &quantizer = *context.quantizer;
     assert(output_type_ == dt_uint8 || output_type_ == dt_int8);
     size_t bits = 8;
-    auto qm = output_type_ == dt_uint8 ? quantizer::QuantMode::UNSIGNED : quantizer::QuantMode::SIGNED_ASYMMETRIC;
+    auto qm = output_type_ == dt_uint8 ? quantizer::quant_mode::unsigned_mode : quantizer::quant_mode::signed_asymmetric_mode;
     auto old_range = quantizer.get(output.owner().output_at(0));
     auto params = quantizer.get_quant_param(old_range, bits, qm);
 
