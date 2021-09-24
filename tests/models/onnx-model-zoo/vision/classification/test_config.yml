@@ -44,3 +44,17 @@ case: # case的配置，应该是一个多层次的
     batch_size: 13
     kwargs: 
       dir_path: examples/20classes_yolo/images
+judge:
+  specifics:
+    - matchs:
+        target: [cpu, k510]
+        ptq: true
+      threshold: 0.97
+    - matchs:
+        target: [k210]
+        ptq: true
+      threshold: 0.95
+    - matchs:
+        target: [k510]
+        ptq: false
+      threshold: 0.99
