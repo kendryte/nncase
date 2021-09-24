@@ -12,15 +12,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/targets/neutral_target.h>
-#include <nncase/transforms/egraph_pass.h>
+#pragma once
+#include "runtime/datatypes.h"
+#include <memory>
+#include <optional>
+#include <type_traits>
+#include <utility>
 
-using namespace nncase;
-using namespace nncase::targets;
-using namespace nncase::ir::transforms;
-
-void neutral_target::configure_passes_pre_schedule(
-    [[maybe_unused]] ir::transforms::pass_manager &pmgr) {
-    auto p = std::make_unique<egraph_pass>();
-    pmgr.emplace(std::move(p));
-}
+namespace nncase {
+class NNCASE_API attribute_map {};
+} // namespace nncase

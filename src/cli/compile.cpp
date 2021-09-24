@@ -17,6 +17,8 @@
 #include <nncase/importer/importer.h>
 #include <nncase/io_utils.h>
 #include <nncase/ir/debug.h>
+#include <nncase/targets/neutral_target.h>
+#include <nncase/transforms/pass.h>
 
 using namespace nncase;
 using namespace nncase::cli;
@@ -160,6 +162,19 @@ void compile_command::run() {
         std::filesystem::create_directories(dump_path);
         ir::dump_function(mod->entry(), dump_path);
     }
+
+    auto t = std::make_unique<targets::neutral_target>();
+
+    // 1. Optimize before schedule
+    {
+        ir::transforms::run_pass_options p_options;
+        p_options.target = t.get();
+        if (dump_ir_)
+            p_options.dump_dir = dump_dir_;
+        ir::transforms::pass_manager pmgr(mod->entry(), p_options);
+        pmgr.run();
+    }
+
     // if (!dataset_.empty())
     //{
     //    if (input_type_ == "default")

@@ -1,6 +1,9 @@
 ﻿cmake_minimum_required (VERSION 3.16)
 
-set(SRCS egraph.cpp)
+set(SRCS egraph.cpp
+         egraph_pass.cpp
+         egraph_pattern.cpp
+         pass.cpp)
 
 add_library(transforms OBJECT ${SRCS})
 #target_link_libraries(transforms PUBLIC ir evaluator)

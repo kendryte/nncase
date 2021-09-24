@@ -12,15 +12,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/targets/neutral_target.h>
-#include <nncase/transforms/egraph_pass.h>
+#pragma once
+#include "pass.h"
 
-using namespace nncase;
-using namespace nncase::targets;
-using namespace nncase::ir::transforms;
+namespace nncase::ir::transforms {
+class NNCASE_API egraph_pass : public function_pass {
+  public:
+    using function_pass::function_pass;
 
-void neutral_target::configure_passes_pre_schedule(
-    [[maybe_unused]] ir::transforms::pass_manager &pmgr) {
-    auto p = std::make_unique<egraph_pass>();
-    pmgr.emplace(std::move(p));
-}
+  protected:
+    void run_core(const function &func,
+                  const run_pass_options &options) override;
+
+  private:
+};
+} // namespace nncase::ir::transforms

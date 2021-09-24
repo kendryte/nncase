@@ -171,7 +171,7 @@ else()
     #add_subdirectory(src/codegen)
     #add_subdirectory(src/kernels)
     #add_subdirectory(src/runtime)
-    #add_subdirectory(src/targets)
+    add_subdirectory(src/targets)
     #add_subdirectory(src/plugin)
     add_subdirectory(src/cli)
 

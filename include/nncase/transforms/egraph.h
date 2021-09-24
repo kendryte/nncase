@@ -66,7 +66,6 @@ class NNCASE_API egraph {
 
   private:
     enode *make_node(const expr &ex);
-    void fill_node_children(enode &node, const expr &ex);
 
   private:
     std::list<eclass> classes_;
