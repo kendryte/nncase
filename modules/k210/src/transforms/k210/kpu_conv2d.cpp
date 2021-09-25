@@ -70,8 +70,7 @@ auto quantize_weights(quantizer &quantizer, fake_kpu_conv2d &conv, constant &wei
             for (uint32_t i = 0; i < steps_num / 8; i++)
             {
                 value_range<float> new_range { range.min - step * i, range.max + step * i };
-                auto q_p = quantizer.get_quant_param(new_range, 8);
-                assert(q_p.zero_point == w_zero_point);
+                auto q_p = quantizer.get_quant_param(new_range, 8, quantizer::quant_mode::unsigned_mode);
                 for (size_t i = 0; i < w_ch.size(); i++)
                 {
                     qw_ch[i] = kernels::detail::quantize<uint8_t>(w_ch[i], q_p);
@@ -93,8 +92,7 @@ auto quantize_weights(quantizer &quantizer, fake_kpu_conv2d &conv, constant &wei
 
             // quant with range refined with min_max_step
             value_range<float> final_range { range.min - min_max_step, range.max + min_max_step };
-            auto q_p = quantizer.get_quant_param(final_range, 8);
-            assert(q_p.zero_point == w_zero_point);
+            auto q_p = quantizer.get_quant_param(final_range, 8, quantizer::quant_mode::unsigned_mode);
             for (size_t i = 0; i < w_ch.size(); i++)
                 qw_ch[i] = kernels::detail::quantize<uint8_t>(w_ch[i], q_p);
             scales[oc] = q_p.scale;
@@ -109,8 +107,7 @@ auto quantize_weights(quantizer &quantizer, fake_kpu_conv2d &conv, constant &wei
             std::span<float> w_ch(weights_data.data() + oc * channel_w_size, channel_w_size);
             std::span<uint8_t> qw_ch(q_weights.data() + oc * channel_w_size, channel_w_size);
             auto range = quantizer.fixup_range(quantizer.get_range(w_ch.begin(), w_ch.end()), true);
-            auto q_p = quantizer.get_quant_param(range, 8);
-            assert(q_p.zero_point == w_zero_point);
+            auto q_p = quantizer.get_quant_param(range, 8, quantizer::quant_mode::unsigned_mode);
             for (size_t i = 0; i < w_ch.size(); i++)
                 qw_ch[i] = kernels::detail::quantize<uint8_t>(w_ch[i], q_p);
             scales[oc] = q_p.scale;
@@ -299,10 +296,10 @@ void kpu_conv2d_transform::process(transform_context &context)
     auto old_fu = context.matched_nodes.size() > 3 ? static_cast<fused_unary *>(context.matched_nodes[3]) : nullptr;
 
     auto &quantizer = *context.quantizer;
-    auto iq_p = quantizer.get_quant_param(quantizer.get(output), 8);
+    auto iq_p = quantizer.get_quant_param(quantizer.get(output), 8, quantizer::quant_mode::unsigned_mode);
     auto [w_scales, q_weights] = quantize_weights(quantizer, old_conv, weights, use_mse_quant_w_);
-    auto yq_p = quantizer.get_quant_param(quantizer.get(old_conv.output()), 8);
-    auto zq_p = quantizer.get_quant_param(quantizer.get(*context.outputs[0]), 8);
+    auto yq_p = quantizer.get_quant_param(quantizer.get(old_conv.output()), 8, quantizer::quant_mode::unsigned_mode);
+    auto zq_p = quantizer.get_quant_param(quantizer.get(*context.outputs[0]), 8, quantizer::quant_mode::unsigned_mode);
     auto [bn, s_act_in] = quantize_bn(quantizer, old_conv, bias, iq_p.scale, w_scales, yq_p);
     auto act = quantize_act(quantizer, (float)s_act_in, yq_p, zq_p, old_conv.fused_activation(), old_fu);
     auto filter = get_kpu_filter_size(old_conv.filter_type());

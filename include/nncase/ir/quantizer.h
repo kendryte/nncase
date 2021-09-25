@@ -110,7 +110,14 @@ public:
         return range;
     }
 
-    static quant_param_t get_quant_param(value_range<float> range, int32_t bits);
+    enum class quant_mode
+    {
+        unsigned_mode,
+        signed_symmetric_mode,
+        signed_asymmetric_mode
+    };
+
+    static quant_param_t get_quant_param(value_range<float> range, int32_t bits, quant_mode qm);
     static fixed_mul get_fixed_mul(float value, int32_t max_bits, uint8_t max_shift, bool is_signed);
 
     void record(ir::output_connector &connector, value_range<float> range);
