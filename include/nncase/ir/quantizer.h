@@ -90,10 +90,6 @@ public:
         }
         else
         {
-            if (range.min < -1e3)
-                range.min = -1e3;
-            if (range.max > 1e3)
-                range.max = 1e3;
             auto r = range.max - range.min;
             if (r == 0)
                 r = 0.1f;
