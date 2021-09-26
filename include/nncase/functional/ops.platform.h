@@ -12,7 +12,7 @@ result<runtime::runtime_tensor> quantize(runtime::runtime_tensor &input, datatyp
 
 result<runtime::runtime_tensor> dequantize(runtime::runtime_tensor &input, datatype_t dtype) noexcept;
 
-result<runtime::runtime_tensor> crop(runtime::runtime_tensor &input, std::vector<runtime_shape_t> &bbox, size_t out_h, size_t out_w, image_resize_mode_t resize_mode) noexcept;
+result<runtime::runtime_tensor> crop(runtime::runtime_tensor &input, runtime::runtime_tensor &bbox, size_t out_h, size_t out_w, image_resize_mode_t resize_mode) noexcept;
 
 result<runtime::runtime_tensor> resize(runtime::runtime_tensor &input, size_t out_h, size_t out_w, image_resize_mode_t resize_mode) noexcept;
 

@@ -23,7 +23,7 @@ result<runtime::runtime_tensor> dequantize(NNCASE_UNUSED runtime::runtime_tensor
     return err(std::errc::not_supported);
 }
 
-result<runtime::runtime_tensor> crop(NNCASE_UNUSED runtime::runtime_tensor &input, NNCASE_UNUSED std::vector<runtime_shape_t> &bbox, NNCASE_UNUSED size_t out_h, NNCASE_UNUSED size_t out_w, NNCASE_UNUSED image_resize_mode_t resize_mode) noexcept
+result<runtime::runtime_tensor> crop(NNCASE_UNUSED runtime::runtime_tensor &input, NNCASE_UNUSED runtime::runtime_tensor &bbox, NNCASE_UNUSED size_t out_h, NNCASE_UNUSED size_t out_w, NNCASE_UNUSED image_resize_mode_t resize_mode) noexcept
 {
     return err(std::errc::not_supported);
 }
