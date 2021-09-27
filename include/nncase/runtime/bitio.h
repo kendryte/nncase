@@ -18,14 +18,14 @@
 #include <cassert>
 #include <cstdint>
 #include <cstring>
-#include <span>
+#include <gsl/gsl-lite.hpp>
 
 namespace nncase::runtime
 {
 class bitreader
 {
 public:
-    bitreader(std::span<const uint8_t> data)
+    bitreader(gsl::span<const uint8_t> data)
         : data_(data), buffer_(0), avail_(0) { }
 
     void read(uint8_t *dest, size_t bits)
@@ -74,7 +74,7 @@ private:
     }
 
 private:
-    std::span<const uint8_t> data_;
+    gsl::span<const uint8_t> data_;
     uint64_t buffer_;
     size_t avail_;
 };
@@ -82,7 +82,7 @@ private:
 class bitwriter
 {
 public:
-    bitwriter(std::span<uint8_t> data, size_t bitoffset = 0)
+    bitwriter(gsl::span<uint8_t> data, size_t bitoffset = 0)
         : data_(data), buffer_(0), avail_(sizeof(buffer_) * 8)
     {
         if (bitoffset)
@@ -160,7 +160,7 @@ private:
     }
 
 private:
-    std::span<uint8_t> data_;
+    gsl::span<uint8_t> data_;
     uint64_t buffer_;
     size_t avail_;
 };

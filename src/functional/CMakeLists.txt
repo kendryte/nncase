@@ -18,13 +18,17 @@ if (BUILDING_RUNTIME)
     target_link_libraries(nncasefunctional PUBLIC gsl::gsl-lite mpark_variant::mpark_variant)
     set_target_properties(nncasefunctional PROPERTIES
                                         OUTPUT_NAME "nncase.functional")
+    INSTALL (
+        DIRECTORY ${CMAKE_SOURCE_DIR}/include/nncase/functional/
+        DESTINATION include/nncase/functional/
+        FILES_MATCHING PATTERN "*.h")
+
     install(TARGETS nncasefunctional EXPORT nncasefunctionalTargets
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib
         RUNTIME DESTINATION bin
-        INCLUDES DESTINATION include
-    )
-
+        INCLUDES DESTINATION include)
+    
     install(EXPORT nncasefunctionalTargets
             DESTINATION lib/cmake/nncasefunctional)
     
