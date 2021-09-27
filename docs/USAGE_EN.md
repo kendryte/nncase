@@ -98,8 +98,8 @@ OPTIONS
 - `--quant-type` is used to specify quantize type, such as `uint8` by default and `int8`.
 - `--w-quant-type` is used to specify quantize type for weight, such as `uint8` by default and `int8`.
 - `--use-mse-quant-w ` is used to specify whether use mse(mean-square error, mse) to quantize weight or not.
-- `--dataset` is to provide your quantization calibration dataset to quantize your models. You should put hundreds or thousands of data in training set to this directory. 
-- `--dataset-format` is to set the format of the calibration dataset. Default is `image`, nncase will use `opencv` to read your images and autoscale to the desired input size of your model. If the input has 3 channels, ncc will convert images to RGB float tensors [0,1] in `NCHW` layout. If the input has only 1 channel, ncc will grayscale your images. Set to `raw` if your dataset is not image dataset for example, audio or matrices. In this scenario you should convert your dataset to raw binaries which contains float tensors. 
+- `--dataset` is to provide your quantization calibration dataset to quantize your models. You should put hundreds or thousands of data in training set to this directory.
+- `--dataset-format` is to set the format of the calibration dataset. Default is `image`, nncase will use `opencv` to read your images and autoscale to the desired input size of your model. If the input has 3 channels, ncc will convert images to RGB float tensors [0,1] in `NCHW` layout. If the input has only 1 channel, ncc will grayscale your images. Set to `raw` if your dataset is not image dataset for example, audio or matrices. In this scenario you should convert your dataset to raw binaries which contains float tensors.
 - `--calibrate-method` is to set your desired calibration method, which is used to select the optimal activation ranges. The default is `no_clip` in that ncc will use the full range of activations. If you want a better quantization result, you can use `l2` but it will take a longer time to find the optimal ranges.
 - `--preprocess ` is used specify whether enable preprocessing or not.
 - `--swapRB ` is used specify whether swap red and blue channel or not. You can use this flag to implement RGB2BGR or BGR2RGB feature.
@@ -113,9 +113,9 @@ OPTIONS
 - `--input-layout` is the layout of input data.
 - `--output-layout` is the layout of output data.
 - `--is-fpga` is a debug option. It is used to specify whether the kmodel run on fpga or not.
-- `--dump-ir` is a debug option. It is used to specify whether dump IR or not. 
-- `--dump-asm` is a debug option. It is used to specify whether dump asm file or not. 
-- `--dump-quant-error` is a debug option. It is used to specify whether dump quantization error information or not. 
+- `--dump-ir` is a debug option. It is used to specify whether dump IR or not.
+- `--dump-asm` is a debug option. It is used to specify whether dump asm file or not.
+- `--dump-quant-error` is a debug option. It is used to specify whether dump quantization error information or not.
 - `--dump-dir` is used to specify dump directory.
 - `--benchmark-only` is used to specify whether the kmodel is used for benchmark or not.
 

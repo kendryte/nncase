@@ -134,27 +134,27 @@ PYBIND11_MODULE(_nncase, m)
 
     py::class_<compile_options>(m, "CompileOptions")
         .def(py::init())
-        .def_readwrite("dump_ir", &compile_options::dump_ir)
-        .def_readwrite("dump_asm", &compile_options::dump_asm)
-        .def_readwrite("dump_quant_error", &compile_options::dump_quant_error)
         .def_readwrite("target", &compile_options::target)
-        .def_readwrite("dump_dir", &compile_options::dump_dir)
-        .def_readwrite("is_fpga", &compile_options::is_fpga)
-        .def_readwrite("input_type", &compile_options::input_type)
-        .def_readwrite("output_type", &compile_options::output_type)
         .def_readwrite("quant_type", &compile_options::quant_type)
+        .def_readwrite("w_quant_type", &compile_options::w_quant_type)
+        .def_readwrite("use_mse_quant_w", &compile_options::use_mse_quant_w)
+        .def_readwrite("preprocess", &compile_options::preprocess)
         .def_readwrite("swapRB", &compile_options::swapRB)
         .def_readwrite("mean", &compile_options::mean)
         .def_readwrite("std", &compile_options::std)
-        .def_readwrite("letterbox_value", &compile_options::letterbox_value)
         .def_readwrite("input_range", &compile_options::input_range)
         .def_readwrite("input_shape", &compile_options::input_shape)
-        .def_readwrite("w_quant_type", &compile_options::w_quant_type)
-        .def_readwrite("use_mse_quant_w", &compile_options::use_mse_quant_w)
-        .def_readwrite("benchmark_only", &compile_options::benchmark_only)
-        .def_readwrite("preprocess", &compile_options::preprocess)
+        .def_readwrite("letterbox_value", &compile_options::letterbox_value)
+        .def_readwrite("input_type", &compile_options::input_type)
+        .def_readwrite("output_type", &compile_options::output_type)
         .def_readwrite("input_layout", &compile_options::input_layout)
-        .def_readwrite("output_layout", &compile_options::output_layout);
+        .def_readwrite("output_layout", &compile_options::output_layout)
+        .def_readwrite("is_fpga", &compile_options::is_fpga)
+        .def_readwrite("dump_ir", &compile_options::dump_ir)
+        .def_readwrite("dump_asm", &compile_options::dump_asm)
+        .def_readwrite("dump_quant_error", &compile_options::dump_quant_error)
+        .def_readwrite("dump_dir", &compile_options::dump_dir)
+        .def_readwrite("benchmark_only", &compile_options::benchmark_only);
 
     py::class_<import_options>(m, "ImportOptions")
         .def(py::init())
@@ -163,14 +163,14 @@ PYBIND11_MODULE(_nncase, m)
     py::class_<ptq_tensor_options>(m, "PTQTensorOptions")
         .def(py::init())
         .def_readwrite("calibrate_method", &ptq_tensor_options::calibrate_method)
+        .def_readwrite("samples_count", &ptq_tensor_options::samples_count)
         .def("set_tensor_data", [](ptq_tensor_options &o, py::bytes bytes) {
             uint8_t *buffer;
             py::ssize_t length;
             if (PyBytes_AsStringAndSize(bytes.ptr(), reinterpret_cast<char **>(&buffer), &length))
                 throw std::invalid_argument("Invalid bytes");
             o.tensor_data.assign(buffer, buffer + length);
-        })
-        .def_readwrite("samples_count", &ptq_tensor_options::samples_count);
+        });
 
     py::class_<graph_evaluator>(m, "GraphEvaluator")
         .def_property_readonly("outputs_size", &graph_evaluator::outputs_size)
