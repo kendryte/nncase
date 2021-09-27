@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 3.13)
 
-set(SRCS)
+set(SRCS dummy.cpp)
 
 if ((NOT BUILDING_RUNTIME) OR NNCASE_FUNCTIONAL_IMPL_PLATFORM_HEADER)
     list(APPEND SRCS ops.cpu.cpp)
@@ -21,7 +21,7 @@ if (BUILDING_RUNTIME)
     install(TARGETS nncasefunctional EXPORT nncasefunctionalTargets
         ARCHIVE DESTINATION lib
         LIBRARY DESTINATION lib
-        functional DESTINATION bin
+        RUNTIME DESTINATION bin
         INCLUDES DESTINATION include
     )
 
