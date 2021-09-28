@@ -38,7 +38,7 @@ OPTIONS
                           post trainning quantize type, e.g uint8|int8, default is uint8
   --w-quant-type <w quant type>
                           post trainning weights quantize type, e.g uint8|int8, default is uint8
-  --use-mse-quant-w       use mse to refine weights quantilization or not, default is 0
+  --use-mse-quant-w       use min mse algorithm to refine weights quantilization or not, default is 0
   --dataset <dataset path>
                           calibration dataset, used in post quantization
   --dataset-format <dataset format>
