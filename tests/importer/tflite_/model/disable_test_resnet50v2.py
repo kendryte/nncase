@@ -28,13 +28,15 @@ in_shapes = [
     (224, 224, 3)
 ]
 
+
 @pytest.mark.parametrize('in_shape', in_shapes)
 def test_resnet50v2(in_shape, request):
-     module = _make_module(in_shape)
-     runner = TfliteTestRunner(
-         request.node.name, ['cpu', 'k510'])
-     model_file = runner.from_tensorflow(module)
-     runner.run(model_file)
-     
+    module = _make_module(in_shape)
+    runner = TfliteTestRunner(
+        request.node.name, ['cpu', 'k510'])
+    model_file = runner.from_tensorflow(module)
+    runner.run(model_file)
+
+
 if __name__ == "__main__":
-     pytest.main(['-vv', 'test_resnet50v2.py'])
+    pytest.main(['-vv', 'test_resnet50v2.py'])

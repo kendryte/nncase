@@ -94,7 +94,7 @@ void fuse_kpu_conv2d_pool_transform::process(transform_context &context)
     auto pool_type = get_filter_type(old_reduce.reduce_op(), old_reduce.filter_h(), old_reduce.stride_h());
 
     auto conv = context.graph.emplace<kpu_conv2d>(old_conv.has_main_mem_output(), old_conv.input().shape(), old_conv.is_depthwise(),
-        old_conv.weights().shape(), old_conv.filter_type(), pool_type, old_conv.pad_value(), old_conv.quant_args());
+        old_conv.weights().shape(), old_conv.filter_type(), pool_type, old_conv.pad_value(), old_conv.quant_args(), old_conv.bn(), old_conv.act());
     conv->weights().connect(weights);
     conv->batch_norm().connect(batch_norm);
     conv->activation().connect(activation);
@@ -102,6 +102,8 @@ void fuse_kpu_conv2d_pool_transform::process(transform_context &context)
     auto kd = context.graph.emplace<kpu_download>(conv->kpu_output().shape());
     kd->name(conv->name() + "/kpu_download");
     auto deq = context.graph.emplace<dequantize>(kd->output().type(), kd->output().shape(), dt_float32, old_deq.quant_param());
+    deq->record_output_connectors_quant_map(deq->output_at(0), old_reduce.output_at(0));
+    deq->record_node_name_before_quant(old_conv.name());
     deq->name(conv->name() + "/dequantize");
     kd->input().connect(conv->kpu_output());
     deq->input().connect(kd->output());

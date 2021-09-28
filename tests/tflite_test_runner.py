@@ -5,8 +5,8 @@ import shutil
 
 
 class TfliteTestRunner(TestRunner):
-    def __init__(self, case_name, targets=None, overwirte_configs: dict = None):
-        super().__init__(case_name, targets, overwirte_configs)
+    def __init__(self, case_name, targets=None, overwrite_configs: dict = None):
+        super().__init__(case_name, targets, overwrite_configs)
         self.model_type = "tflite"
 
     def from_tensorflow(self, module):
@@ -32,6 +32,8 @@ class TfliteTestRunner(TestRunner):
         return model_file
 
     def run(self, model_file):
+        if model_file.startswith('examples'):
+            model_file = os.path.join(os.path.dirname(__file__), '..', model_file)
         if self.case_dir != os.path.dirname(model_file):
             shutil.copy(model_file, self.case_dir)
             model_file = os.path.join(
@@ -47,16 +49,16 @@ class TfliteTestRunner(TestRunner):
             input_dict['index'] = item['index']
             input_dict['name'] = item['name']
             input_dict['dtype'] = item['dtype']
-            input_dict['shape'] = item['shape']
+            input_dict['model_shape'] = item['shape']
             self.inputs.append(input_dict)
-            self.calibs.append(input_dict.copy())
+            self.calibs.append(copy.deepcopy(input_dict))
 
         for item in interp.get_output_details():
             output_dict = {}
             output_dict['index'] = item['index']
             output_dict['name'] = item['name']
             output_dict['dtype'] = item['dtype']
-            output_dict['shape'] = item['shape']
+            output_dict['model_shape'] = item['shape']
             self.outputs.append(output_dict)
 
     def cpu_infer(self, case_dir: str, model_file: bytes, type: str):

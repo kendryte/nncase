@@ -55,20 +55,20 @@ result<void> reference::conv2d(const float *input, const float *weights, const f
                         out_index[3] = ox;
                         const int32_t in_y_origin = (oy * stride_h) - padding_h.before;
                         const int32_t in_x_origin = (ox * stride_w) - padding_w.before;
-                        const size_t filter_y_start = (size_t)std::max(0, (-in_y_origin + dilation_h - 1) / dilation_h);
-                        const size_t filter_y_end = (size_t)std::min(filter_h, ((int32_t)in_shape[2] - in_y_origin + dilation_h - 1) / dilation_h);
-                        const size_t filter_x_start = (size_t)std::max(0, (-in_x_origin + dilation_w - 1) / dilation_w);
-                        const size_t filter_x_end = (size_t)std::min(filter_w, ((int32_t)in_shape[3] - in_x_origin + dilation_w - 1) / dilation_w);
+                        const int32_t filter_y_start = (int32_t)std::max(0, (-in_y_origin + dilation_h - 1) / dilation_h);
+                        const int32_t filter_y_end = (int32_t)std::min(filter_h, ((int32_t)in_shape[2] - in_y_origin + dilation_h - 1) / dilation_h);
+                        const int32_t filter_x_start = (int32_t)std::max(0, (-in_x_origin + dilation_w - 1) / dilation_w);
+                        const int32_t filter_x_end = (int32_t)std::min(filter_w, ((int32_t)in_shape[3] - in_x_origin + dilation_w - 1) / dilation_w);
                         float value = bias[offset(bias_strides, bias_index)];
 
                         for (size_t ic = 0; ic < g_ic; ic++)
                         {
                             in_index[1] = og * g_ic + ic;
                             w_index[1] = ic;
-                            for (size_t ky = filter_y_start; ky < filter_y_end; ky++)
+                            for (int32_t ky = filter_y_start; ky < filter_y_end; ky++)
                             {
                                 w_index[2] = ky;
-                                for (size_t kx = filter_x_start; kx < filter_x_end; kx++)
+                                for (int32_t kx = filter_x_start; kx < filter_x_end; kx++)
                                 {
                                     w_index[3] = kx;
                                     in_index[2] = in_y_origin + dilation_h * ky;

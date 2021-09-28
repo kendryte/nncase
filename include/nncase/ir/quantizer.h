@@ -90,10 +90,6 @@ public:
         }
         else
         {
-            if (range.min < -1e3)
-                range.min = -1e3;
-            if (range.max > 1e3)
-                range.max = 1e3;
             auto r = range.max - range.min;
             if (r == 0)
                 r = 0.1f;
@@ -110,7 +106,14 @@ public:
         return range;
     }
 
-    static quant_param_t get_quant_param(value_range<float> range, int32_t bits);
+    enum class quant_mode
+    {
+        unsigned_mode,
+        signed_symmetric_mode,
+        signed_asymmetric_mode
+    };
+
+    static quant_param_t get_quant_param(value_range<float> range, int32_t bits, quant_mode qm);
     static fixed_mul get_fixed_mul(float value, int32_t max_bits, uint8_t max_shift, bool is_signed);
 
     void record(ir::output_connector &connector, value_range<float> range);
@@ -118,6 +121,10 @@ public:
     bool has_record(ir::output_connector &connector) const;
     void record(ir::output_connector &connector, std::span<const float> data);
     void record(ir::output_connector &connector, std::span<const bfloat16> data);
+    void record_buffers(ir::output_connector &connector, std::span<const float> data);
+    void record_buffers(ir::output_connector &connector, std::span<const bfloat16> data);
+    void record_quant_buffers(ir::output_connector &connector, std::span<const float> data);
+    void record_quant_buffers(ir::output_connector &connector, std::span<const bfloat16> data);
     value_range<float> get(ir::output_connector &connector) const;
     void broadcast_output(ir::graph &graph, const std::unordered_set<node_opcode> &ops);
     void broadcast_output(ir::node &node, const value_range<float> &range, const std::unordered_set<node_opcode> &ops);
@@ -125,6 +132,8 @@ public:
     void end_collect_distribution(std::function<void(size_t cnt, size_t total)> progress);
     size_t histograms_count() const noexcept { return histograms_.size(); }
     void end_sample() { has_record_.clear(); }
+    std::unordered_map<ir::output_connector *, std::vector<float>> output_buffers() const noexcept { return output_buffers_; }
+    std::vector<ir::output_connector *> insert_order() const noexcept { return insert_order_; }
 
 private:
     calibrate_method cali_method_;
@@ -133,5 +142,7 @@ private:
     std::unordered_map<ir::output_connector *, value_range<float>> quant_ranges_;
     std::unordered_map<ir::output_connector *, histogram> histograms_;
     std::unordered_map<ir::output_connector *, bool> has_record_;
+    std::unordered_map<ir::output_connector *, std::vector<float>> output_buffers_;
+    std::vector<ir::output_connector *> insert_order_;
 };
 }

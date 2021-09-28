@@ -16,6 +16,7 @@
 #include <nncase/ir/debug.h>
 #include <nncase/ir/ir_types.h>
 #include <nncase/ir/ops/convert.h>
+#include <nncase/runtime/debug.h>
 
 namespace nncase::importer
 {

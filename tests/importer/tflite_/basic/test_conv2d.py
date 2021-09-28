@@ -25,12 +25,14 @@ def _make_module(n, i_channels, i_size, k_size, o_channels, strides, padding, di
         def __init__(self):
             super(Conv2DModule).__init__()
             self.w = tf.constant(np.random.rand(
-                *k_size, i_channels, o_channels).astype(np.float32) - 1)
+                *k_size, i_channels, o_channels).astype(np.float32) - 0.5)
+            self.b = tf.constant(np.random.rand(o_channels).astype(np.float32) - 0.5)
 
         @tf.function(input_signature=[tf.TensorSpec([n, *i_size, i_channels], tf.float32)])
         def __call__(self, x):
             out = tf.nn.conv2d(x, self.w, strides, padding,
                                dilations=dilations)
+            out = out + self.b
             return out
     return Conv2DModule()
 

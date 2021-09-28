@@ -43,9 +43,11 @@ void add_input_dequantize_transform::process(transform_context &context)
     auto old_in = node_cast<input_node>(*context.matched_nodes[0]);
 
     auto &quantizer = *context.quantizer;
-    size_t bits = input_type_ == dt_uint8 ? 8 : 7;
+    assert(input_type_ == dt_uint8 || input_type_ == dt_int8);
+    size_t bits = 8;
+    auto qm = input_type_ == dt_uint8 ? quantizer::quant_mode::unsigned_mode : quantizer::quant_mode::signed_asymmetric_mode;
     auto old_range = quantizer.get(old_in->output());
-    auto params = quantizer.get_quant_param(old_range, bits);
+    auto params = quantizer.get_quant_param(old_range, bits, qm);
     auto new_in_node = context.graph.emplace<input_node>(input_type_, old_in->output().shape());
     auto deq = context.graph.emplace<dequantize>(new_in_node->output().type(), new_in_node->output().shape(), dt_float32, params);
     deq->input().connect(new_in_node->output());
@@ -80,9 +82,11 @@ void add_output_quantize_transform::process(transform_context &context)
     auto old_out = node_cast<output_node>(*context.matched_nodes[0]);
 
     auto &quantizer = *context.quantizer;
-    size_t bits = output_type_ == dt_uint8 ? 8 : 7;
+    assert(output_type_ == dt_uint8 || output_type_ == dt_int8);
+    size_t bits = 8;
+    auto qm = output_type_ == dt_uint8 ? quantizer::quant_mode::unsigned_mode : quantizer::quant_mode::signed_asymmetric_mode;
     auto old_range = quantizer.get(output.owner().output_at(0));
-    auto params = quantizer.get_quant_param(old_range, bits);
+    auto params = quantizer.get_quant_param(old_range, bits, qm);
 
     auto q = context.graph.emplace<quantize>(dt_float32, output.shape(), output_type_, params);
     auto new_out_node = context.graph.emplace<output_node>(q->output().type(), q->output().shape());

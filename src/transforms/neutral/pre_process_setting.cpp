@@ -46,15 +46,7 @@ void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::targ
         if (in_node->output().shape().size() == 4)
         {
             auto old_inputs = dup(in_node->output().connections());
-            shape_t new_shape, old_shape;
-            if (input_layout_ == "NHWC")
-            {
-                new_shape = { size_t(in_node->output().shape()[0]), size_t(input_shape_[0]), size_t(input_shape_[1]), size_t(input_shape_[2]) };
-            }
-            else
-            {
-                new_shape = { size_t(in_node->output().shape()[0]), size_t(input_shape_[2]), size_t(input_shape_[0]), size_t(input_shape_[1]) };
-            }
+            shape_t new_shape = { size_t(in_node->output().shape()[0]), size_t(input_shape_[1]), size_t(input_shape_[2]), size_t(input_shape_[3]) };
             auto new_input = graph.emplace<input_node>(get_datatype(input_type_), new_shape);
             new_input->name("new_input");
 
@@ -87,19 +79,19 @@ void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::targ
                 mid_ptr = &transpose_pre->output();
             }
 
-            // BGR2RGB : input_layout ,image_format_
-            if (image_format_ == "BGR" && mid_ptr->shape()[1] == 3)
+            // swapRB : input_layout ,swapRB_
+            if (swapRB_ == true && mid_ptr->shape()[1] == 3)
             {
-                std::cout << " |BGR:" << std::endl;
+                std::cout << " |Exchange image channel:" << std::endl;
                 std::vector<shape_t> concat_shapes { 3, shape_t { (mid_ptr->shape()[0]), 1, (mid_ptr->shape()[2]), (mid_ptr->shape()[3]) } };
                 auto concat_slice = graph.emplace<concat>(mid_ptr->type(), concat_shapes, 1);
-                concat_slice->name("BGR2RGB_concat_NCHW");
+                concat_slice->name("swapRB_concat_NCHW");
                 for (int i = 0; i < 3; i++)
                 {
                     auto slice_input = graph.emplace<slice>(mid_ptr->type(), mid_ptr->shape(),
                         axis_t { 0, i, 0, 0 },
                         axis_t { int(mid_ptr->shape()[0]), i + 1, int(mid_ptr->shape()[2]), int(mid_ptr->shape()[3]) });
-                    slice_input->name("BGR2RGB_slice_NCHW_" + std::to_string(i));
+                    slice_input->name("swapRB_slice_NCHW_" + std::to_string(i));
                     slice_input->input().connect(*mid_ptr);
                     concat_slice->input_at(2 - i).connect(slice_input->output());
                 }
@@ -118,7 +110,7 @@ void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::targ
                 std::cout << " |Letterbox:" << std::endl;
                 size_t model_h;
                 size_t model_w;
-                if (real_layout_ == "NHWC")
+                if (real_inlayout_ == "NHWC")
                 {
                     model_h = in_node->output().shape()[1];
                     model_w = in_node->output().shape()[2];
@@ -144,7 +136,7 @@ void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::targ
                 pad_size[2] = { int(std::round(pad_H / 2 - 0.1)), pad_H - int(std::round(pad_H / 2 - 0.1)) };
                 pad_size[3] = { int(std::round(pad_W / 2 - 0.1)), pad_W - int(std::round(pad_W / 2 - 0.1)) };
 
-                scalar pad_value = float(0);
+                scalar pad_value = letterbox_value_;
                 auto input_resize = graph.emplace<resize_image>(mid_ptr->type(), image_resize_bilinear, mid_ptr->shape(), resize_shape, false, true);
                 auto letter_box_pad = graph.emplace<pad>(input_resize->output().type(), input_resize->output().shape(), pad_size, pad_constant, pad_value);
                 input_resize->name("letterbox_resize");
@@ -155,21 +147,21 @@ void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::targ
             }
 
             //normalize : mean scale input_layout
-            if (scales_[0] != 0)
+            if (std_[0] != 0)
             {
                 std::cout << " |Normalize:" << std::endl;
                 constant *mean, *scale;
                 if (mid_ptr->shape()[1] != 3)
                 {
-                    auto single_mean = means_[0];
+                    auto single_mean = mean_[0];
                     mean = graph.emplace<constant>(single_mean);
-                    auto single_scale = scales_[0];
+                    auto single_scale = std_[0];
                     scale = graph.emplace<constant>(single_scale);
                 }
                 else
                 {
-                    mean = graph.emplace<constant>(dt_float32, shape_t { 1, 3, 1, 1 }, means_);
-                    scale = graph.emplace<constant>(dt_float32, shape_t { 1, 3, 1, 1 }, scales_);
+                    mean = graph.emplace<constant>(dt_float32, shape_t { 1, 3, 1, 1 }, mean_);
+                    scale = graph.emplace<constant>(dt_float32, shape_t { 1, 3, 1, 1 }, std_);
                 }
                 mean->name("normalize_mean");
                 scale->name("normalize_scale");
@@ -193,7 +185,7 @@ void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::targ
                 mid_ptr = &out_convert->output();
             }
 
-            if (real_layout_ == "NHWC")
+            if (real_inlayout_ == "NHWC")
             {
                 auto transpose_post = graph.emplace<transpose>(mid_ptr->type(), mid_ptr->shape(), axis_t { 0, 2, 3, 1 });
                 transpose_post->name("NCHW_2_NHWC");

@@ -97,7 +97,7 @@ evaluate_tensor function_evaluate_context::memory_at(const output_connector &con
     return evaluate_tensor(alloc.type, to(alloc.shape), to(alloc.strides), buffer);
 }
 
-void function_evaluate_context::evaluate()
+void function_evaluate_context::evaluate(bool before_quant = true, size_t stage = 0, bool record_output_buffers = false)
 {
     using clock = chrono::high_resolution_clock;
     chrono::nanoseconds total_duration = {};
@@ -126,11 +126,37 @@ void function_evaluate_context::evaluate()
                         {
                             auto buffer = mem.buffer().as_span<bfloat16>();
                             quantizer->record(*out, buffer);
+                            if (record_output_buffers)
+                            {
+                                // just record the first input buffers by emplace below
+                                if (before_quant && stage == 0)
+                                {
+                                    quantizer->record_buffers(*out, buffer);
+                                }
+                                // just record the first input buffers by emplace below
+                                if (!before_quant && stage == 0)
+                                {
+                                    quantizer->record_quant_buffers(*out, buffer);
+                                }
+                            }
                         }
                         else if (dtype == dt_float32)
                         {
                             auto buffer = mem.buffer().as_span<float>();
                             quantizer->record(*out, buffer);
+                            if (record_output_buffers)
+                            {
+                                // just record the first input buffers by emplace below
+                                if (before_quant && stage == 0)
+                                {
+                                    quantizer->record_buffers(*out, buffer);
+                                }
+                                // just record the first input buffers by emplace below
+                                if (!before_quant && stage == 0)
+                                {
+                                    quantizer->record_quant_buffers(*out, buffer);
+                                }
+                            }
                         }
                         else
                         {
@@ -232,7 +258,7 @@ void model_evaluate_context::end_collect_distribution(const std::function<void(s
         mod.second.end_collect_distribution(progress);
 }
 
-void model_evaluate_context::evaluate()
+void model_evaluate_context::evaluate(bool before_quant = true, size_t stage = 0, bool record_output_buffers = false)
 {
-    entrypoint().evaluate();
+    entrypoint().evaluate(before_quant, stage, record_output_buffers);
 }

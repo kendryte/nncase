@@ -14,44 +14,68 @@
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
 
 import pytest
-import torch
+import onnx
+from onnx import helper
+from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
 
 
-def _make_module(negative_slope):
+def _make_module(in_shape, alpha):
+    inputs = []
+    outputs = []
+    initializers = []
+    attributes_dict = {}
 
-    class LeakyReluModule(torch.nn.Module):
-        def __init__(self):
-            super(LeakyReluModule, self).__init__()
-            self.leakyrelu = torch.nn.LeakyReLU(negative_slope)
+    # input
+    input = helper.make_tensor_value_info('input', TensorProto.FLOAT, in_shape)
+    inputs.append('input')
 
-        def forward(self, x):
-            x = self.leakyrelu(x)
-            return x
+    # output
+    output = helper.make_tensor_value_info('output', TensorProto.FLOAT, in_shape)
+    outputs.append('output')
 
-    return LeakyReluModule()
+    if alpha is not None:
+        attributes_dict['alpha'] = alpha
+
+    node = onnx.helper.make_node(
+        'LeakyRelu',
+        inputs=inputs,
+        outputs=outputs,
+        **attributes_dict
+    )
+
+    nodes = []
+    nodes.append(node)
+
+    graph_def = helper.make_graph(
+        nodes,
+        'test-model',
+        [input],
+        [output],
+        initializer=initializers)
+
+    model_def = helper.make_model(graph_def, producer_name='kendryte')
+
+    return model_def
 
 
 in_shapes = [
-    [1],
-    [1, 3, 224, 224]
+    [1, 3, 16, 16]
 ]
 
-negative_slopes = [
-    0,
-    0.01,
-    0.4,
-    0.8
+alphas = [
+    None,
+    0.5
 ]
 
 
 @pytest.mark.parametrize('in_shape', in_shapes)
-@pytest.mark.parametrize('negative_slope', negative_slopes)
-def test_leakyrelu(in_shape, negative_slope, request):
-    module = _make_module(negative_slope)
+@pytest.mark.parametrize('alpha', alphas)
+def test_leakyrelu(in_shape, alpha, request):
+    model_def = _make_module(in_shape, alpha)
 
     runner = OnnxTestRunner(request.node.name)
-    model_file = runner.from_torch(module, in_shape)
+    model_file = runner.from_onnx_helper(model_def)
     runner.run(model_file)
 
 

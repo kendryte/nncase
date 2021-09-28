@@ -22,8 +22,8 @@ using namespace nncase::ir::k210;
 using namespace nncase::runtime::k210;
 
 kpu_conv2d::kpu_conv2d(bool has_main_mem_output, shape_t input_shape, bool is_depthwise, shape_t weights_shape,
-    runtime::k210::kpu_filter_type_t filter_type, runtime::k210::kpu_pool_type_t pool_type, uint8_t pad_value, kpu_conv2d_quant_args quant_args)
-    : is_depthwise_(is_depthwise), filter_type_(filter_type), pool_type_(pool_type), pad_value_(pad_value), quant_args_(quant_args)
+    runtime::k210::kpu_filter_type_t filter_type, runtime::k210::kpu_pool_type_t pool_type, uint8_t pad_value, kpu_conv2d_quant_args quant_args, std::vector<kpu_batchnorm_segment> bn, kpu_activation_table_t act)
+    : is_depthwise_(is_depthwise), filter_type_(filter_type), pool_type_(pool_type), pad_value_(pad_value), quant_args_(quant_args), bn_(bn), act_(act)
 {
     module_type(k210_module_type);
     add_input("input", dt_uint8, input_shape);
@@ -48,5 +48,5 @@ bool kpu_conv2d::properties_equal(node &other) const
 {
     auto &r = static_cast<kpu_conv2d &>(other);
     return is_depthwise() == r.is_depthwise() && filter_type() == r.filter_type() && pool_type() == r.pool_type()
-        && pad_value() == r.pad_value() && quant_args() == r.quant_args();
+        && pad_value() == r.pad_value() && quant_args() == r.quant_args() && bn() == r.bn() && act() == r.act();
 }
