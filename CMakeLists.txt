@@ -32,6 +32,7 @@ project(nncase
 option(ENABLE_OPENMP "OpenMP support" ON)
 option(ENABLE_HALIDE "halide kernels support" ON)
 option(BUILD_PYTHON_BINDING "Build python binding" ON)
+option(BUILD_BENCHMARK "Build benchmark programs" ON)
 option(BUILD_TESTING "Build test programs" OFF)
 
 if (BUILDING_RUNTIME)
@@ -93,7 +94,9 @@ if (BUILDING_RUNTIME)
     add_subdirectory(src/kernels)
     add_subdirectory(src/runtime)
     add_subdirectory(src/functional)
-    add_subdirectory(benchmark)
+    if(BUILD_BENCHMARK)
+        add_subdirectory(benchmark)
+    endif()
     
     # Python binding
     if(BUILD_PYTHON_BINDING)
