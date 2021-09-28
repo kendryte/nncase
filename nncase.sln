@@ -13,7 +13,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tools", "tools", "{E11A07F5
 		tools\StyleCopAnalyzers.ruleset = tools\StyleCopAnalyzers.ruleset
 	EndProjectSection
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nncase.Core", "src\Nncase.Core\Nncase.Core.csproj", "{2978CFB1-1530-4EC3-BB5F-130B6F606F85}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nncase.Core", "src\Nncase.Core\Nncase.Core.csproj", "{2978CFB1-1530-4EC3-BB5F-130B6F606F85}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nncase.IR", "src\Nncase.IR\Nncase.IR.csproj", "{16C7EE93-BBB2-40AF-AC16-E62A7A3EC184}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -29,6 +31,10 @@ Global
 		{2978CFB1-1530-4EC3-BB5F-130B6F606F85}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{2978CFB1-1530-4EC3-BB5F-130B6F606F85}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{2978CFB1-1530-4EC3-BB5F-130B6F606F85}.Release|Any CPU.Build.0 = Release|Any CPU
+		{16C7EE93-BBB2-40AF-AC16-E62A7A3EC184}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{16C7EE93-BBB2-40AF-AC16-E62A7A3EC184}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{16C7EE93-BBB2-40AF-AC16-E62A7A3EC184}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{16C7EE93-BBB2-40AF-AC16-E62A7A3EC184}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -36,6 +42,7 @@ Global
 	GlobalSection(NestedProjects) = preSolution
 		{660FD7A4-00E7-42EA-A119-64FB0125A7D7} = {BCA74168-F015-4B5B-B4CD-C83AE06B9822}
 		{2978CFB1-1530-4EC3-BB5F-130B6F606F85} = {BCA74168-F015-4B5B-B4CD-C83AE06B9822}
+		{16C7EE93-BBB2-40AF-AC16-E62A7A3EC184} = {BCA74168-F015-4B5B-B4CD-C83AE06B9822}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B251C48E-7D05-4662-8DFF-20843CB2DB99}

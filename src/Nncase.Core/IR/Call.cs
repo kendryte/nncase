@@ -11,19 +11,17 @@ using System.Threading.Tasks;
 namespace Nncase.IR
 {
     /// <summary>
-    /// Function expression.
+    /// Call expression.
     /// </summary>
-    public sealed record Function(string Name, ImmutableArray<Expr> Parameters, Expr Body) : Expr
+    public sealed record Call(Expr Target, ImmutableArray<Expr> Parameters) : Expr
     {
-        private static int _globalFuncIndex = 0;
-
         /// <summary>
-        /// Initializes a new instance of the <see cref="Function"/> class.
+        /// Initializes a new instance of the <see cref="Call"/> class.
         /// </summary>
+        /// <param name="target">Call target.</param>
         /// <param name="parameters">Parameters.</param>
-        /// <param name="body">Body.</param>
-        public Function(ImmutableArray<Expr> parameters, Expr body)
-            : this($"func_{_globalFuncIndex++}", parameters, body)
+        public Call(Expr target, params Expr[] parameters)
+            : this(target, ImmutableArray.Create(parameters))
         {
         }
     }

@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -10,9 +11,13 @@ using System.Threading.Tasks;
 namespace Nncase.IR
 {
     /// <summary>
-    /// Expression.
+    /// Tuple expression.
     /// </summary>
-    public abstract class Expression
+    public sealed record Tuple(ImmutableArray<Expr> Fields) : Expr
     {
+        /// <summary>
+        /// Void type.
+        /// </summary>
+        public static readonly Tuple Void = new(ImmutableArray<Expr>.Empty);
     }
 }

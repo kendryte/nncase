@@ -1,6 +1,10 @@
-﻿using System;
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -8,100 +12,153 @@ using System.Threading.Tasks;
 namespace Nncase.IR
 {
     /// <summary>
+    /// Shape kind.
+    /// </summary>
+    public enum ShapeKind
+    {
+        /// <summary>
+        /// Invalid shape.
+        /// </summary>
+        Invalid,
+
+        /// <summary>
+        /// Unranked shape.
+        /// </summary>
+        Unranked,
+
+        /// <summary>
+        /// Shape contains unknown dimensions.
+        /// </summary>
+        HasUnknownDimension,
+
+        /// <summary>
+        /// Fixed shape.
+        /// </summary>
+        Fixed,
+    }
+
+    /// <summary>
     /// Tensor shape.
     /// </summary>
-    public sealed class Shape : IList<Dimension>, IReadOnlyList<Dimension>
+    public sealed class Shape : IReadOnlyList<Dimension>
     {
-        private ShapeKind _kind;
-        private List<Dimension> _dimensions;
+        private ReadOnlyCollection<Dimension> _dimensions;
 
-        private Shape(ShapeKind kind, List<Dimension> dimensions, bool isReadOnly = false)
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Shape"/> class.
+        /// </summary>
+        /// <param name="dimensions">Dimensions.</param>
+        public Shape(IEnumerable<Dimension> dimensions)
         {
-            _kind = kind;
-            _dimensions = dimensions;
-            IsReadOnly = isReadOnly;
+            Kind = KindOf(dimensions);
+            _dimensions = dimensions.ToList().AsReadOnly();
         }
 
-        private enum ShapeKind
+        private Shape(ShapeKind kind, IEnumerable<Dimension> dimensions)
         {
-            Invalid,
-            Unranked,
-            HasUnknownDimension,
-            Fixed,
+            Kind = kind;
+            _dimensions = dimensions.ToList().AsReadOnly();
         }
 
         /// <summary>
         /// Gets an invalid shape.
         /// </summary>
-        public static Shape Invalid { get; } = new Shape(ShapeKind.Invalid, new List<Dimension>(), isReadOnly: true);
+        public static Shape Invalid { get; } = new Shape(ShapeKind.Invalid, new List<Dimension>());
 
         /// <summary>
         /// Gets an unranked shape.
         /// </summary>
-        public static Shape Unranked { get; } = new Shape(ShapeKind.Unranked, new List<Dimension>(), isReadOnly: true);
+        public static Shape Unranked { get; } = new Shape(ShapeKind.Unranked, new List<Dimension>());
 
         /// <summary>
         /// Gets a scalar shape.
         /// </summary>
-        public static Shape Scalar { get; } = new Shape(ShapeKind.Fixed, new List<Dimension>(), isReadOnly: true);
+        public static Shape Scalar { get; } = new Shape(ShapeKind.Fixed, new List<Dimension>());
+
+        /// <summary>
+        /// Gets kind.
+        /// </summary>
+        public ShapeKind Kind { get; private set; }
 
         /// <summary>
         /// Gets a value indicating whether is readonly.
         /// </summary>
-        public bool IsReadOnly { get; }
+        public bool IsReadOnly => true;
+
+        /// <summary>
+        /// Gets a value indicating whether fixed.
+        /// </summary>
+        public bool IsFixed => Kind == ShapeKind.Fixed;
+
+        /// <summary>
+        /// Gets a value indicating whether invalid.
+        /// </summary>
+        public bool IsInvalid => Kind == ShapeKind.Invalid;
+
+        /// <summary>
+        /// Gets a value indicating whether unranked.
+        /// </summary>
+        public bool IsUnranked => Kind == ShapeKind.Unranked;
+
+        /// <summary>
+        /// Gets a value indicating whether has unknown dimension.
+        /// </summary>
+        public bool HasUnknownDimension => Kind == ShapeKind.HasUnknownDimension;
+
+        /// <summary>
+        /// Gets a value indicating whether ranked.
+        /// </summary>
+        public bool IsRanked => IsFixed || HasUnknownDimension;
+
+        /// <summary>
+        /// Gets a value indicating whether scalar.
+        /// </summary>
+        public bool IsScalar => IsFixed && _dimensions.Count == 0;
+
+        /// <summary>
+        /// Gets rank.
+        /// </summary>
+        public int Rank => _dimensions.Count;
+
+        int IReadOnlyCollection<Dimension>.Count => Rank;
 
         /// <inheritdoc/>
-        public int Count => _dimensions.Count;
+        public Dimension this[int index] => _dimensions[index];
 
-        /// <inheritdoc/>
-        public Dimension this[int index] { get => _dimensions[index]; set => throw new NotImplementedException(); }
-
-        /// <inheritdoc/>
+        /// <summary>
+        /// Searches for the specified item and returns the zero-based index of the first occurrence.
+        /// </summary>
+        /// <param name="item">The item to find.</param>
+        /// <returns>The founded index or -1.</returns>
         public int IndexOf(Dimension item) => _dimensions.IndexOf(item);
 
-        public void Insert(int index, Dimension item)
-        {
-            throw new NotImplementedException();
-        }
+        /// <summary>
+        /// Determine whether the item is in the <seealso cref="Shape"/>.
+        /// </summary>
+        /// <param name="item">The item to find.</param>
+        /// <returns>true if value is found, otherwise false.</returns>
+        public bool Contains(Dimension item) => _dimensions.Contains(item);
 
-        public void RemoveAt(int index)
-        {
-            throw new NotImplementedException();
-        }
+        /// <summary>
+        /// Copy all dimensions to an array.
+        /// </summary>
+        /// <param name="array">The desitination array.</param>
+        /// <param name="arrayIndex">The zero-based index in array at which copying begins.</param>
+        public void CopyTo(Dimension[] array, int arrayIndex) => _dimensions.CopyTo(array, arrayIndex);
 
-        public void Add(Dimension item)
-        {
-            throw new NotImplementedException();
-        }
+        /// <summary>
+        /// Get enumerator.
+        /// </summary>
+        /// <returns>The enumerator.</returns>
+        public IEnumerator<Dimension> GetEnumerator() => _dimensions.GetEnumerator();
 
-        public void Clear()
-        {
-            throw new NotImplementedException();
-        }
+        IEnumerator<Dimension> IEnumerable<Dimension>.GetEnumerator() => GetEnumerator();
 
-        public bool Contains(Dimension item)
-        {
-            throw new NotImplementedException();
-        }
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-        public void CopyTo(Dimension[] array, int arrayIndex)
+        private static ShapeKind KindOf(IEnumerable<Dimension> dimensions)
         {
-            throw new NotImplementedException();
-        }
-
-        public bool Remove(Dimension item)
-        {
-            throw new NotImplementedException();
-        }
-
-        public IEnumerator<Dimension> GetEnumerator()
-        {
-            throw new NotImplementedException();
-        }
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            throw new NotImplementedException();
+            return dimensions.Any(x => x.IsUnknown) ? ShapeKind.HasUnknownDimension : ShapeKind.Fixed;
         }
     }
 }

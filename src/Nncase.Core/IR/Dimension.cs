@@ -54,5 +54,21 @@ namespace Nncase.IR
         /// Gets value.
         /// </summary>
         public long? Value { get; }
+
+        /// <summary>
+        /// Gets a value indicating whether unknown.
+        /// </summary>
+        public bool IsUnknown => Kind == DimensionKind.Unknown;
+
+        /// <summary>
+        /// Gets a value indicating whether fixed.
+        /// </summary>
+        public bool IsFixed => Kind == DimensionKind.Fixed;
+
+        /// <summary>
+        /// Convert <see cref="long"/> to a fixed <see cref="Dimension"/>.
+        /// </summary>
+        /// <param name="value">Dimension value.</param>
+        public static implicit operator Dimension(long value) => new(value);
     }
 }
