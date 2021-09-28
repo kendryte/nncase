@@ -20,7 +20,7 @@ if (BUILDING_RUNTIME)
                                         OUTPUT_NAME "nncase.functional")
     INSTALL (
         DIRECTORY ${CMAKE_SOURCE_DIR}/include/nncase/functional/
-        DESTINATION include/nncase/functional/
+        DESTINATION include/nncase/functional
         FILES_MATCHING PATTERN "*.h")
 
     install(TARGETS nncasefunctional EXPORT nncasefunctionalTargets
