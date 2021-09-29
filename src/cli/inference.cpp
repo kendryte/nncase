@@ -26,7 +26,7 @@ inference_command::inference_command(lyra::cli &cli)
                          .add_argument(lyra::arg(model_filename_, "model filename").required().help("kmodel filename"))
                          .add_argument(lyra::arg(output_path_, "output path").required().help("output path"))
                          .add_argument(lyra::opt(dataset_, "dataset path").name("--dataset").required().help("dataset path"))
-                         .add_argument(lyra::opt(dataset_format_, "dataset format").name("--dataset-format").optional().help("dataset format, e.g. image, raw, default is " + dataset_format_))
+                         .add_argument(lyra::opt(dataset_format_, "dataset format").name("--dataset-format").optional().help("dataset format, e.g. image|raw, default is " + dataset_format_))
                          .add_argument(lyra::opt(input_layout_, "input layout").name("--input-layout").optional().help("input layout, e.g NCHW|NHWC, default is " + input_layout_)));
 }
 
