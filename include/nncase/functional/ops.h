@@ -257,9 +257,9 @@ NNCASE_API inline result<runtime::runtime_tensor> dequantize(runtime::runtime_te
  * @param resize_mode resize mode
  * @return result<runtime_tensor>
  */
-NNCASE_API inline result<runtime::runtime_tensor> crop(runtime::runtime_tensor &input, runtime::runtime_tensor &bbox, size_t out_h, size_t out_w, image_resize_mode_t resize_mode) noexcept
+NNCASE_API inline result<runtime::runtime_tensor> crop(runtime::runtime_tensor &input, runtime::runtime_tensor &bbox, size_t out_h, size_t out_w, image_resize_mode_t resize_mode, bool align_corners, bool half_pixel_centers) noexcept
 {
-    return impl::crop(input, bbox, out_h, out_w, resize_mode);
+    return impl::crop(input, bbox, out_h, out_w, resize_mode, align_corners, half_pixel_centers);
 }
 
 /**
@@ -271,9 +271,9 @@ NNCASE_API inline result<runtime::runtime_tensor> crop(runtime::runtime_tensor &
  * @param resize_mode 
  * @return result<runtime_tensor>
  */
-NNCASE_API inline result<runtime::runtime_tensor> resize(runtime::runtime_tensor &input, size_t out_h, size_t out_w, image_resize_mode_t resize_mode) noexcept
+NNCASE_API inline result<runtime::runtime_tensor> resize(runtime::runtime_tensor &input, size_t out_h, size_t out_w, image_resize_mode_t resize_mode, bool align_corners, bool half_pixel_centers) noexcept
 {
-    return impl::resize(input, out_h, out_w, resize_mode);
+    return impl::resize(input, out_h, out_w, resize_mode, align_corners, half_pixel_centers);
 }
 
 /**
