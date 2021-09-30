@@ -112,7 +112,7 @@ class nncaseConan(ConanFile):
         cmake.definitions['ENABLE_HALIDE'] = self.options.halide
         cmake.definitions['BUILD_PYTHON_BINDING'] = self.options.python
         if self.options.runtime:
-            cmake.definitions["CMAKE_CXX_STANDARD"] = 14
+            cmake.definitions["CMAKE_CXX_STANDARD"] = 17
         cmake.configure()
         return cmake
 

@@ -44,6 +44,7 @@ public:
     std::string escaped_name() const noexcept;
     void name(std::string value) { name_ = std::move(value); }
     const module_type_t &module_type() const noexcept { return module_type_; }
+    void set_module_type(module_type_t type) { this->module_type_ = type; }
 
     std::span<std::unique_ptr<node>> nodes() noexcept { return nodes_; }
     std::span<input_node *> inputs() noexcept { return inputs_; }

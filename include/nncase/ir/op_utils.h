@@ -27,13 +27,20 @@ inline shape_t get_transposed_shape(const shape_t &input_shape, const axis_t &pe
     return new_shape;
 }
 
-inline size_t get_windowed_output_size(int32_t size, int32_t filter, int32_t stride, int32_t dilation, bool same)
+inline size_t get_windowed_output_size(int32_t size, int32_t filter, int32_t stride, int32_t dilation, bool same, bool ceil_mode = false)
 {
     auto effective_filter_size = (filter - 1) * dilation + 1;
     if (same)
         return (size_t(size) + stride - 1) / stride;
     else
-        return (size_t(size) - effective_filter_size + stride) / stride;
+    {
+        if (!ceil_mode)
+            return (size_t(size) - effective_filter_size + stride) / stride;
+        else
+        {
+            return static_cast<int>(ceil(static_cast<float>(size_t(size) - effective_filter_size + stride) / stride));
+        }
+    }
 }
 
 inline padding get_windowed_padding(int32_t input_size, int32_t output_size, int32_t filter, int32_t stride, int32_t dilation)
@@ -131,7 +138,7 @@ inline shape_t normalize_reshape(const shape_t &in_shape, const axis_t &new_shap
         if (v == -1)
         {
             if (non_det_id)
-                throw std::runtime_error("Reshap can only have 1 non-determined dimension at most");
+                throw std::runtime_error("Reshape can only have 1 non-determined dimension at most");
             non_det_id = i;
         }
         else
@@ -291,6 +298,37 @@ inline shape_t get_strided_slice_output_shape(const axis_t &begin, const axis_t 
     }
 
     return new_shape.size() ? new_shape : shape_t { 1 };
+}
+
+inline bool is_simple_slice(const axis_t &begin, const axis_t &end, const axis_t &strides, const shape_t &input_shape)
+{
+    if (!std::all_of(strides.begin(), strides.end(), [](int32_t stride) { return stride == 1; }))
+        return false;
+
+    bool is_simple_slice = true;
+    bool allow_not_equal = true;
+    for (size_t i = 0; i < begin.size(); i++)
+    {
+        if (begin[i] != 0
+            || end[i] != input_shape[i])
+        {
+            if (allow_not_equal)
+            {
+                allow_not_equal = false;
+            }
+            else
+            {
+                is_simple_slice = false;
+                break;
+            }
+        }
+        else if (input_shape[i] != 1)
+        {
+            allow_not_equal = false;
+        }
+    }
+
+    return is_simple_slice;
 }
 
 template <class U, class T>

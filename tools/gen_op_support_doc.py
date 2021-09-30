@@ -23,6 +23,6 @@ if __name__ == "__main__":
         with open(f'src/importer/{alias}/opcode.def', 'r') as f:
             opcodes = f.read()
             for case in pattern.findall(opcodes):
-                txt += f'| {case.capitalize()} | ✅ |\n'
+                txt += f'| {case} | ✅ |\n'
         with open(f'docs/{alias}_ops.md', 'w') as f:
             f.write(txt)

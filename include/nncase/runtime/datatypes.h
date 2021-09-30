@@ -38,6 +38,16 @@ typedef enum _datatype : uint8_t
 #undef DEFINE_DATATYPE
 } datatype_t;
 
+inline datatype_t parse_datatype_str(const std::string &name)
+{
+#define DEFINE_DATATYPE(id, t, n, value) \
+    if (name == #id)                     \
+        return datatype_t::dt_##id;
+#include "datatypes.def"
+#undef DEFINE_DATATYPE
+    throw std::runtime_error("Unsupported data type:" + std::string(name));
+}
+
 namespace detail
 {
     template <datatype_t Type>
@@ -213,6 +223,8 @@ inline std::string binary_op_to_string(binary_op_t op)
 typedef enum _unary_op
 {
     unary_abs,
+    unary_acos,
+    unary_asin,
     unary_ceil,
     unary_cos,
     unary_exp,
@@ -235,6 +247,10 @@ inline std::string unary_op_to_string(unary_op_t op)
     {
     case unary_abs:
         return "unary_abs";
+    case unary_acos:
+        return "unary_acos";
+    case unary_asin:
+        return "unary_asin";
     case unary_ceil:
         return "unary_ceil";
     case unary_cos:

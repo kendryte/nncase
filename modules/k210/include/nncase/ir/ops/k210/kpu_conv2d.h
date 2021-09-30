@@ -53,9 +53,12 @@ public:
     runtime::k210::kpu_pool_type_t pool_type() const noexcept { return pool_type_; }
     uint8_t pad_value() const noexcept { return pad_value_; }
     const kpu_conv2d_quant_args &quant_args() const noexcept { return quant_args_; }
+    const std::vector<nncase::runtime::k210::kpu_batchnorm_segment> bn() const noexcept { return bn_; }
+    const nncase::runtime::k210::kpu_activation_table_t act() const noexcept { return act_; }
 
     kpu_conv2d(bool has_main_mem_output, shape_t input_shape, bool is_depthwise, shape_t weights_shape, runtime::k210::kpu_filter_type_t filter_type,
-        runtime::k210::kpu_pool_type_t pool_type, uint8_t pad_value, kpu_conv2d_quant_args quant_args);
+        runtime::k210::kpu_pool_type_t pool_type, uint8_t pad_value, kpu_conv2d_quant_args quant_args,
+        std::vector<nncase::runtime::k210::kpu_batchnorm_segment> bn, nncase::runtime::k210::kpu_activation_table_t act);
 
 protected:
     bool properties_equal(node &other) const override;
@@ -66,5 +69,7 @@ private:
     runtime::k210::kpu_pool_type_t pool_type_;
     uint8_t pad_value_;
     kpu_conv2d_quant_args quant_args_;
+    std::vector<nncase::runtime::k210::kpu_batchnorm_segment> bn_;
+    nncase::runtime::k210::kpu_activation_table_t act_;
 };
 }

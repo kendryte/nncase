@@ -696,6 +696,12 @@ inline void nnil_unary_method(const float *input, float *output, size_t count, g
             case nnil_abs:
                 stack.push(fabsf(stack.pop()));
                 break;
+            case nnil_acos:
+                stack.push(acosf(stack.pop()));
+                break;
+            case nnil_asin:
+                stack.push(asin(stack.pop()));
+                break;
             case nnil_ceil:
                 stack.push(ceilf(stack.pop()));
                 break;

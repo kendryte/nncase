@@ -30,7 +30,7 @@ tflite_importer::tflite_importer(std::span<const uint8_t> model, graph &graph)
         throw std::runtime_error("Invalid tflite model");
 }
 
-void tflite_importer::import(const import_options &options)
+void tflite_importer::import(const import_options &options, std::string &real_inlayout, std::string &real_outlayout)
 {
     auto &operators = *subgraph_->operators();
     for (auto &&op : operators)
@@ -47,23 +47,11 @@ void tflite_importer::import(const import_options &options)
         auto &tensor = *subgraph_->tensors()->Get(in);
         auto shape = get_shape(tensor.shape());
         auto type = to_data_type(tensor.type());
-        // image
-        if (options.input_layout == "NCHW" && shape.size() == 4)
-        {
-            auto trans = nhwc_to_nchw(shape);
-            auto node = graph_.emplace<input_node>(type, trans);
-            node->name(tensor.name()->string_view());
-            auto sur_trans = nchw_to_nhwc(node->output().type(), node->output().shape());
-            sur_trans->name(tensor.name()->string_view());
-            sur_trans->input().connect(node->output());
-            created_inputs.emplace(in, &sur_trans->output());
-        }
-        else
-        {
-            auto node = graph_.emplace<input_node>(type, shape);
-            node->name(tensor.name()->string_view());
-            created_inputs.emplace(in, &node->output());
-        }
+
+        auto node = graph_.emplace<input_node>(type, shape);
+        node->name(tensor.name()->string_view());
+        created_inputs.emplace(in, &node->output());
+        real_inlayout = "NHWC";
     }
 
     std::vector<int32_t> outputs;
@@ -106,22 +94,10 @@ void tflite_importer::import(const import_options &options)
         auto &tensor = *subgraph_->tensors()->Get(out);
         auto shape = get_shape(tensor.shape());
         auto type = to_data_type(tensor.type());
-        // image
-        if (options.output_layout == "NCHW" && shape.size() == 4)
-        {
-            auto pre_trans = nhwc_to_nchw(type, shape);
-            pre_trans->name(tensor.name()->string_view());
-            auto node = graph_.emplace<output_node>(pre_trans->output().type(), pre_trans->output().shape());
-            node->name(tensor.name()->string_view());
-            node->input().connect(pre_trans->output());
-            created_outputs.emplace(out, &pre_trans->input());
-        }
-        else
-        {
-            auto node = graph_.emplace<output_node>(type, shape);
-            node->name(tensor.name()->string_view());
-            created_outputs.emplace(out, &node->input());
-        }
+        auto node = graph_.emplace<output_node>(type, shape);
+        node->name(tensor.name()->string_view());
+        created_outputs.emplace(out, &node->input());
+        real_outlayout = "NHWC";
     }
 
     // connect tensors

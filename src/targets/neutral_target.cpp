@@ -31,6 +31,7 @@
 #include <nncase/transforms/neutral/fuse_unary.h>
 #include <nncase/transforms/neutral/fused_unary_to_lookup1d.h>
 #include <nncase/transforms/neutral/global_reduce_window_to_reduce.h>
+#include <nncase/transforms/neutral/lstm_transform.h>
 #include <nncase/transforms/neutral/matmul_to_conv2d.h>
 #include <nncase/transforms/neutral/quantize_motion.h>
 #include <nncase/transforms/neutral/remove_binary.h>
@@ -86,11 +87,11 @@ void neutral_target::add_default_transforms(ir::transforms::transform_pass &pass
     if (add_constant_folding)
         pass.emplace<fold_constant_transform>();
     pass.emplace<dequantize_transbin_motion_transform>();
-    pass.emplace<dequantize_transpose_motion_transform>();
+    // pass.emplace<dequantize_transpose_motion_transform>();
     pass.emplace<dequantize_bitcast_motion_transform>();
     pass.emplace<dequantize_reshape_motion_transform>();
     pass.emplace<dequantize_slice_motion_transform>();
-    pass.emplace<dequantize_pad_motion_transform>();
+    // pass.emplace<dequantize_pad_motion_transform>();
     pass.emplace<quantize_pad_motion_transform>();
     //    pass.emplace<quantize_transbin_motion_transform>();
     pass.emplace<quantize_transpose_motion_transform>();
@@ -136,7 +137,7 @@ void neutral_target::fold_pad_conv_transform(ir::transforms::transform_pass &pas
     using namespace nncase::ir::transforms;
     if (add_constant_folding)
         pass.emplace<fold_constant_transform>();
-    pass.emplace<dequantize_pad_motion_transform>();
+    // pass.emplace<dequantize_pad_motion_transform>();
     pass.emplace<transpose_pad_motion_transform>();
     pass.emplace<fold_transpose_transform>();
     pass.emplace<fold_nop_transpose_transform>();
@@ -155,7 +156,7 @@ void neutral_target::fold_dilated_conv_transform(ir::transforms::transform_pass 
         pass.emplace<fold_constant_transform>();
     pass.emplace<transpose_binary_motion_transform>();
     pass.emplace<quantize_transpose_motion_transform>();
-    pass.emplace<dequantize_transpose_motion_transform>();
+    // pass.emplace<dequantize_transpose_motion_transform>();
     pass.emplace<fold_transpose_transform>();
     pass.emplace<fold_nop_transpose_transform>();
     pass.emplace<dequantize_s2b_motion_transform>();
@@ -170,12 +171,19 @@ void neutral_target::register_target_independent_passes(const module_type_t &typ
 
     if (type == runtime::stackvm::stackvm_module_type)
     {
+        //lstm_transform
+        {
+            transform_pass p("lstm_transform");
+            p.emplace<lstm_transform>();
+            pass_mgr.add_pass(std::move(p));
+        }
         //matmul to conv2d
         {
             transform_pass p("matmul_to_conv2d");
             p.emplace<matmul_to_conv2d_transform>();
             pass_mgr.add_pass(std::move(p));
         }
+
         //fold_pad_conv
         {
             transform_pass p("fold_pad_conv");
@@ -228,7 +236,7 @@ void neutral_target::register_quantize_annotation_passes([[maybe_unused]] const 
     }
 }
 
-void neutral_target::register_quantize_passes([[maybe_unused]] const module_type_t &type, ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] datatype_t quant_type, [[maybe_unused]] datatype_t w_quant_type)
+void neutral_target::register_quantize_passes([[maybe_unused]] const module_type_t &type, ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] datatype_t quant_type, [[maybe_unused]] std::string_view w_quant_type, [[maybe_unused]] bool use_mse_quant_w)
 {
     {
         transform_pass p("fused_unary_to_lut");

@@ -9,8 +9,15 @@
 | Convolution | ✅ |
 | Eltwise | ✅ |
 | Permute | ✅ |
-| Relu | ✅ |
+| ReLU | ✅ |
 | Reshape | ✅ |
 | Slice | ✅ |
 | Softmax | ✅ |
 | Split | ✅ |
+| ContinuationIndicator | ✅ |
+| Pooling | ✅ |
+| BatchNorm | ✅ |
+| Scale | ✅ |
+| Reverse | ✅ |
+| LSTM | ✅ |
+| InnerProduct | ✅ |

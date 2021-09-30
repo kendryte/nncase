@@ -4,5 +4,5 @@
 
 | Operator | Is Supported |
 |-------|------------------ |
-| Feed | ✅ |
-| Conv2d | ✅ |
+| feed | ✅ |
+| conv2d | ✅ |

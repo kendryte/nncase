@@ -36,21 +36,30 @@ struct compile_options
 {
     bool dump_ir;
     bool dump_asm;
+    bool dump_quant_error;
     bool is_fpga;
     bool use_dataset_as_input_stat = false;
     bool benchmark_only = false;
+    bool preprocess = false;
+    bool swapRB = false;
     std::string target;
     std::filesystem::path dump_dir;
     std::string input_type = "default";
     std::string output_type = "float32";
     std::string quant_type = "uint8";
+    std::vector<float> mean { 0.f, 0.f, 0.f };
+    std::vector<float> std { 1.f, 1.f, 1.f };
+    std::vector<float> input_range { 0.f, 1.f };
+    float letterbox_value = 0.f;
+    std::vector<int32_t> input_shape {};
     std::string w_quant_type = "uint8";
+    bool use_mse_quant_w = false;
+    std::string input_layout = "NCHW";
+    std::string output_layout = "NCHW";
 };
 
 struct import_options
 {
-    std::string input_layout = "NCHW";
-    std::string output_layout = "NCHW";
     std::span<const std::string> output_arrays;
 };
 
@@ -58,9 +67,6 @@ struct ptq_options_base
 {
     std::string calibrate_method = "no_clip";
     std::function<void(size_t cnt, size_t total)> progress;
-
-    float input_mean = 0.f;
-    float input_std = 1.f;
 };
 
 struct ptq_dataset_options : ptq_options_base
@@ -83,6 +89,7 @@ public:
     virtual ~compiler();
     virtual void import_tflite(std::span<const uint8_t> model, const import_options &options) = 0;
     virtual void import_onnx(std::span<const uint8_t> model, const import_options &options) = 0;
+    virtual void import_caffe(std::span<const uint8_t> model, std::span<const uint8_t> prototxt) = 0;
     virtual void use_ptq(ptq_dataset_options options) = 0;
     virtual void use_ptq(ptq_tensor_options options) = 0;
     virtual ir::graph &graph(uint32_t stage) = 0;

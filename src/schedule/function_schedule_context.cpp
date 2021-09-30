@@ -31,7 +31,7 @@ using namespace nncase::ir::transforms;
 
 namespace
 {
-memory_location_t decide_memory_location(ir::output_connector &conn, bool skip_buffer_alias) noexcept
+memory_location_t decide_memory_location(ir::output_connector &conn, [[maybe_unused]] bool skip_buffer_alias) noexcept
 {
     auto &opcode = conn.owner().runtime_opcode();
     if (opcode == op_input_node)
@@ -40,11 +40,8 @@ memory_location_t decide_memory_location(ir::output_connector &conn, bool skip_b
         return conn.memory_location();
 
     auto inputs = conn.connections();
-    if (skip_buffer_alias)
-    {
-        if (std::any_of(inputs.begin(), inputs.end(), [](input_connector *conn) { return conn->owner().runtime_opcode() == op_output_node; }))
-            return mem_output;
-    }
+    if (std::any_of(inputs.begin(), inputs.end(), [](input_connector *conn) { return conn->owner().runtime_opcode() == op_output_node; }))
+        return mem_output;
 
     //if (opcode == op_call && conn.memory_location() == mem_data)
     //    return mem_shared_data;
@@ -53,6 +50,23 @@ memory_location_t decide_memory_location(ir::output_connector &conn, bool skip_b
     //    return mem_shared_data;
 
     return conn.memory_location();
+}
+
+void update_absolute_offset(logical_buffer &buffer)
+{
+    if (buffer.absolute_offset())
+        return;
+
+    if (buffer.parent())
+    {
+        auto &parent_buffer = *buffer.parent()->parent;
+        update_absolute_offset(parent_buffer);
+        buffer.absolute_offset() = buffer.parent()->offset + *parent_buffer.absolute_offset();
+    }
+    else
+    {
+        buffer.absolute_offset() = 0;
+    }
 }
 }
 
@@ -175,47 +189,14 @@ void function_schedule_context::analyze_buffer_alias()
     pmgr.schedule_context(this);
     pmgr.add_pass<alias_bitcast_buffer_pass>();
     pmgr.add_pass<alias_concat_buffer_pass>();
+    pmgr.add_pass<alias_slice_buffer_pass>();
     pmgr.run();
 }
 
 void function_schedule_context::update_offset()
 {
-    auto visitor = make_relay_ir_visitor<bfs_ir_pre_order_visitor>([&](node &node) {
-        if (auto b = node_cast<bitcast>(node))
-        {
-            if (b->attributes() & node_attr_action)
-                return;
-
-            auto &in_buf = logical_buffer_map_.at(b->input().connection());
-            auto &out_buf = logical_buffer_map_.at(&b->output());
-
-            if (in_buf->memory_location() == mem_data && in_buf->parent() && out_buf->parent())
-            {
-                in_buf->parent()->offset += out_buf->parent()->offset;
-            }
-        }
-        else if (auto c = node_cast<concat>(node))
-        {
-            if (c->attributes() & node_attr_action)
-                return;
-
-            auto &out_buf = logical_buffer_map_.at(&c->output());
-
-            for (auto &in : c->inputs())
-            {
-                auto in_buf = logical_buffer_map_.at(in->connection());
-                if (in_buf->parent() && out_buf->parent())
-                {
-                    in_buf->parent()->offset += out_buf->parent()->offset;
-                }
-            }
-        }
-        // TODO: slice
-        // else if (auto s = node_cast<slice>(node))
-        // {
-        // }
-    });
-    visitor.visit(outputs_);
+    for (auto &bp : logical_buffers_)
+        update_absolute_offset(bp);
 }
 
 void function_schedule_context::fix_lifetime()
@@ -311,10 +292,7 @@ void function_schedule_context::assign_allocations()
             alloc.strides_shape = lbuf.strides_shape();
             alloc.strides = to_strides(alloc.strides_shape);
             alloc.start = memory.start;
-            if (lbuf.parent())
-            {
-                alloc.start += lbuf.parent()->offset;
-            }
+            alloc.start += *lbuf.absolute_offset();
 
             module->allocations.emplace(out, alloc);
         }

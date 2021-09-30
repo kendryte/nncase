@@ -198,14 +198,14 @@ void onnx_importer::convert_op_ConvTranspose(const NodeProto &node)
             paddings[0].before = total_paddings[0] / 2;
             paddings[0].after = total_paddings[0] - paddings[0].before;
             paddings[1].before = total_paddings[1] / 2;
-            paddings[0].after = total_paddings[1] - paddings[1].before;
+            paddings[1].after = total_paddings[1] - paddings[1].before;
         }
         else
         {
             paddings[0].after = total_paddings[0] / 2;
             paddings[0].before = total_paddings[0] - paddings[0].after;
             paddings[1].after = total_paddings[1] / 2;
-            paddings[0].before = total_paddings[1] - paddings[1].after;
+            paddings[1].before = total_paddings[1] - paddings[1].after;
         }
     }
     else

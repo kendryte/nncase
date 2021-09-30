@@ -21,6 +21,7 @@
 #include <nncase/ir/ops/dequantize.h>
 #include <nncase/ir/ops/quantize.h>
 #include <nncase/ir/ops/transpose.h>
+#include <nncase/runtime/debug.h>
 #include <schema_generated.h>
 #include <span>
 #include <unordered_map>
@@ -35,7 +36,7 @@ class tflite_importer
 public:
     tflite_importer(std::span<const uint8_t> model, ir::graph &graph);
 
-    void import(const import_options &options);
+    void import(const import_options &options, std::string &real_inlayout, std::string &real_outlayout);
 
 private:
     void convert_op(const tflite::Operator &op);

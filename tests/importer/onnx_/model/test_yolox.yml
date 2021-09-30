@@ -1,0 +1,56 @@
+case: # case的配置，应该是一个多层次的
+  importer_opt:
+    kwargs: null
+  preprocess_opt:
+    - name: preprocess
+      values:
+        - true
+    - name: swapRB
+      values:
+        - false
+    - name: input_shape
+      values:
+        - [1,3,224,224]
+    - name: mean
+      values:
+        - [0.485, 0.456, 0.406]
+    - name: std
+      values:
+        - [0.229, 0.224, 0.225]
+    - name: input_range
+      values:
+        - [0,1]
+    - name: input_type
+      values:
+        - float32
+    - name: input_layout
+      values:
+        - NCHW
+    - name: output_layout
+      values:
+        - NCHW
+    - name: letterbox_value
+      values:
+        - 0.
+  generate_inputs:
+    name: generate_image_dataset
+    numbers: 1
+    batch_size: 1
+    kwargs: 
+      dir_path: examples/20classes_yolo/images/dog.bmp
+  generate_calibs:
+    name: generate_image_dataset
+    numbers: 1
+    batch_size: 13
+    kwargs: 
+      dir_path: examples/20classes_yolo/images
+judge:
+  specifics:
+    - matchs:
+        target: [cpu]
+        ptq: true
+      threshold: 0.8
+    - matchs:
+        target: [k210]
+        ptq: true
+      threshold: 0.8

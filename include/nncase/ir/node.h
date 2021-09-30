@@ -53,6 +53,12 @@ public:
 
     bool equals(node &other) const;
 
+    void record_output_connectors_quant_map(output_connector &oc_after_quant, output_connector &oc_before_quant) noexcept { output_connectors_quant_map_.emplace(&oc_after_quant, &oc_before_quant); }
+    std::unordered_map<output_connector *, output_connector *> get_output_connectors_quant_map() const noexcept { return output_connectors_quant_map_; }
+
+    void record_node_name_before_quant(std::string name) noexcept { node_name_before_quant_.assign(name); }
+    std::string get_node_name_before_quant() const noexcept { return node_name_before_quant_; }
+
 protected:
     template <class TName, class TShape>
     input_connector &add_input(TName &&name, datatype_t type, TShape &&shape)
@@ -80,5 +86,7 @@ private:
     std::vector<output_connector *> output_connectors_;
     std::vector<std::unique_ptr<input_connector>> input_connectors_storage_;
     std::vector<std::unique_ptr<output_connector>> output_connectors_storage_;
+    std::unordered_map<output_connector *, output_connector *> output_connectors_quant_map_;
+    std::string node_name_before_quant_;
 };
 }

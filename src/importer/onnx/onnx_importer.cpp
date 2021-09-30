@@ -113,7 +113,7 @@ onnx_importer::onnx_importer(std::span<const uint8_t> model, ir::graph &graph)
         throw std::runtime_error("Invalid ONNX model");
 }
 
-void onnx_importer::import(const struct import_options &options)
+void onnx_importer::import(const struct import_options &options, std::string &real_inlayout, std::string &real_outlayout)
 {
     const auto &graph = model_.graph();
 
@@ -144,6 +144,7 @@ void onnx_importer::import(const struct import_options &options)
         node->name(input_name);
 
         output_tensors_.emplace(input_name, &node->output());
+        real_inlayout = "NCHW";
     }
 
     // create outputs
@@ -162,6 +163,7 @@ void onnx_importer::import(const struct import_options &options)
 
             input_tensors_.emplace(&node->input(), output_name);
         }
+        real_outlayout = "NCHW";
     }
     else
     {
@@ -328,11 +330,17 @@ optional<datatype_t> onnx_importer::get_datatype(const TensorProto_DataType data
     case TensorProto_DataType_FLOAT:
         return dt_float32;
 
-    case TensorProto_DataType_FLOAT16:
-        return dt_float16;
-
     case TensorProto_DataType_UINT8:
         return dt_uint8;
+
+    case TensorProto_DataType_INT8:
+        return dt_int8;
+
+    case TensorProto_DataType_UINT16:
+        return dt_uint16;
+
+    case TensorProto_DataType_INT16:
+        return dt_int16;
 
     case TensorProto_DataType_INT32:
         return dt_int32;
@@ -340,7 +348,23 @@ optional<datatype_t> onnx_importer::get_datatype(const TensorProto_DataType data
     case TensorProto_DataType_INT64:
         return dt_int64;
 
+    case TensorProto_DataType_FLOAT16:
+        return dt_float16;
+
+    case TensorProto_DataType_DOUBLE:
+        return dt_float64;
+
+    case TensorProto_DataType_UINT32:
+        return dt_uint32;
+
+    case TensorProto_DataType_UINT64:
+        return dt_uint64;
+
+    case TensorProto_DataType_BFLOAT16:
+        return dt_bfloat16;
+
     default:
+        std::cerr << "unsupported onnx data type: " << datatype << std::endl;
         return optional<datatype_t> {};
     }
 }

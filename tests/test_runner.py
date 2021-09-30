@@ -1,16 +1,20 @@
-from typing import Dict, List, Tuple, Union, Any
-from itertools import product
-import re
-import yaml
-from pathlib import Path
-import numpy as np
+import copy
 import os
+import re
 import shutil
+import struct
 from abc import ABCMeta, abstractmethod
+from itertools import product
+from pathlib import Path
+from typing import Any, Dict, List, Tuple, Union
+
 import nncase
 import struct
 from compare_util import compare
 import copy
+import cv2
+import numpy as np
+import yaml
 
 
 class Edict:
@@ -56,15 +60,21 @@ class Edict:
     def update(self, d: Dict):
         for name, new_value in d.items():
             if name in self.keys():
-                if isinstance(new_value, dict):
+                if isinstance(new_value, dict) and name == 'case':
+                    old_value = getattr(self, name)
+                    if old_value is None:
+                        setattr(self, name, Edict(new_value))
+                    for i in range(len(new_value['preprocess_opt'])):
+                        self.case.preprocess_opt[i].values = copy.deepcopy(
+                            new_value['preprocess_opt'][i]['values'])
+                elif isinstance(new_value, dict):
                     old_value = getattr(self, name)
                     if old_value is None:
                         setattr(self, name, Edict(new_value))
                     elif isinstance(old_value, (Edict, dict)):
                         old_value.update(new_value)
                 elif isinstance(new_value, (list, tuple)) and name == 'specifics':
-                    if getattr(self, name) == None:
-                        setattr(self, name, [])
+                    setattr(self, name, [])
                     assert(hasattr(self, 'common')
                            ), "The specifics new_value need common dict to overload !"
                     common = getattr(self, 'common')
@@ -72,6 +82,7 @@ class Edict:
                         import_common = copy.deepcopy(common)
                         import_common.update(specific)
                         getattr(self, name).append(import_common)
+                # elif isinstance(new_value)
                 else:
                     setattr(self, name, new_value)
             else:
@@ -79,13 +90,14 @@ class Edict:
 
 
 def generate_random(shape: List[int], dtype: np.dtype,
+                    number: int, batch_size: int,
                     abs: bool = False) -> np.ndarray:
     if dtype is np.uint8:
         data = np.random.randint(0, 256, shape)
     elif dtype is np.int8:
         data = np.random.randint(-128, 128, shape)
     else:
-        data = np.random.rand(*shape) * 2 - 1
+        data = np.random.rand(*shape)
     data = data.astype(dtype=dtype)
     if abs:
         return np.abs(data)
@@ -103,22 +115,60 @@ def _cast_bfloat16_then_float32(values: np.array):
         value = struct.unpack('!f', bytes(integers))[0]
         values[i] = value
 
-    values = values.reshape(shape)
-    return values
+
+def generate_image_dataset(shape: List[int], dtype: np.dtype,
+                           batch_index: int, batch_size: int,
+                           dir_path: str) -> np.ndarray:
+    """ read image from folder, return the rgb image with padding, dtype = float32, range = [0,255]. same as k210 carmera.
+    """
+    assert(os.path.isdir(dir_path) or os.path.exists(dir_path))
+
+    def preproc(img, input_size, transpose=True):
+        # todo maybe need move this to postprocess
+        if len(img.shape) == 3:
+            padded_img = np.ones((input_size[0], input_size[1], 3), dtype=np.uint8) * 114
+        else:
+            padded_img = np.ones(input_size, dtype=np.uint8) * 114
+
+        r = min(input_size[0] / img.shape[0], input_size[1] / img.shape[1])
+        resized_img = cv2.resize(
+            img,
+            (int(img.shape[1] * r), int(img.shape[0] * r)),
+            interpolation=cv2.INTER_LINEAR,
+        ).astype(np.uint8)
+        padded_img[: int(img.shape[0] * r), : int(img.shape[1] * r)] = resized_img
+        padded_img = cv2.cvtColor(padded_img, cv2.COLOR_BGR2RGB)
+        if transpose:
+            padded_img = padded_img.transpose((2, 0, 1))
+        padded_img = np.ascontiguousarray(padded_img)
+        return padded_img
+    img_paths = []
+    if os.path.isdir(dir_path):
+        img_paths.extend([os.path.join(dir_path, p) for p in os.listdir(dir_path)])
+    else:
+        img_paths.append(dir_path)
+    imgs = []
+    for p in img_paths[batch_index * batch_size:
+                       (batch_index + 1) * batch_size]:
+        img = cv2.imread(p)
+        img = preproc(img, shape[1:3], False)  # img [h,w,c] rgb,
+        imgs.append(img)
+    return np.stack(imgs)
 
 
 DataFactory = {
-    'generate_random': generate_random
+    'generate_random': generate_random,
+    'generate_image_dataset': generate_image_dataset
 }
 
 
 class TestRunner(metaclass=ABCMeta):
-    def __init__(self, case_name, targets=None, overwirte_configs: Union[Dict, str] = None) -> None:
+    def __init__(self, case_name, targets=None, overwrite_configs: Union[Dict, str] = None) -> None:
         config_root = os.path.dirname(__file__)
         with open(os.path.join(config_root, 'config.yml'), encoding='utf8') as f:
             cfg: dict = yaml.safe_load(f)
             config = Edict(cfg)
-        config = self.update_config(config, overwirte_configs)
+        config = self.update_config(config, overwrite_configs)
         self.cfg = self.validte_config(config)
 
         case_name = case_name.replace('[', '_').replace(']', '_')
@@ -133,7 +183,148 @@ class TestRunner(metaclass=ABCMeta):
         self.input_paths: List[Tuple[str, str]] = []
         self.calib_paths: List[Tuple[str, str]] = []
         self.output_paths: List[Tuple[str, str]] = []
+        self.model_type: str = ""
+        self.pre_process: List[Dict] = []
+
         self.num_pattern = re.compile("(\d+)")
+
+    def transform_input(self, values: np.array, type: str, stage: str):
+        values = copy.deepcopy(values)
+        if(len(values.shape) == 4 and self.pre_process[0]['preprocess']):
+            if stage == "CPU":
+                # onnx \ caffe
+                if (self.model_type == "onnx" or self.model_type == "caffe"):
+                    values = np.transpose(values, [0, 3, 1, 2])
+
+            if type == 'float32':
+                return values.astype(np.float32)
+            elif type == 'uint8':
+                if values.dtype == np.float32:
+                    values = ((values) * 255).astype(np.uint8)
+                return values
+            elif type == 'int8':
+                if values.dtype == np.float32:
+                    values = (values * 255 - 128).astype(np.int8)
+                return values
+            else:
+                raise TypeError(" Not support type for quant input")
+        else:
+            return values
+
+    def get_process_config(self, config):
+        # preprocess flag
+        preprocess_flag = {}
+        preprocess_flag['preprocess'] = config['preprocess']
+
+        # dequant
+        process_deq = {}
+        process_deq['range'] = config['input_range']
+        process_deq['input_type'] = config['input_type']
+
+        # swapRB
+        process_format = {}
+        process_format['swapRB'] = config['swapRB']
+
+        # letter box
+        process_letterbox = {}
+        process_letterbox['input_range'] = config['input_range']
+        process_letterbox['input_shape'] = config['input_shape']
+        process_letterbox['model_shape'] = self.inputs[0]['model_shape']
+        process_letterbox['input_type'] = config['input_type']
+        process_letterbox['letterbox_value'] = config['letterbox_value']
+
+        # norm
+        process_norm = {}
+        data = {}
+        data = {
+            'mean': config['mean'],
+            'std': config['std']
+        }
+        process_norm['norm'] = data
+
+        # get layout
+        process_layout = {}
+        process_layout['input_layout'] = config['input_layout']
+
+        self.pre_process.append(preprocess_flag)
+        self.pre_process.append(process_deq)
+        self.pre_process.append(process_format)
+        self.pre_process.append(process_letterbox)
+        self.pre_process.append(process_norm)
+        self.pre_process.append(process_layout)
+
+    def data_pre_process(self, data):
+        data = copy.deepcopy(data)
+        if self.pre_process[0]['preprocess'] and len(data.shape) == 4:
+            if self.pre_process[-1]['input_layout'] == 'NCHW':
+                data = np.transpose(data, [0, 2, 3, 1])
+            if self.pre_process[3]['input_type'] == "uint8":
+                data *= 255.
+            # elif self.cfg.case.compile_opt.kwargs['input_type'] == "int8":
+            #     data *= 255.
+            #     data -= 128.
+            for item in self.pre_process:
+                # dequantize
+                if 'range' in item.keys() and 'input_type' in item.keys():
+                    Q_max, Q_min = 0, 0
+                    if item['input_type'] == 'uint8':
+                        Q_max, Q_min = 255, 0
+                    # elif item['input_type'] == 'int8':
+                    #     Q_max, Q_min = 127, -128
+                    else:
+                        continue
+                    scale = (item['range'][1] - item['range'][0]) / (Q_max - Q_min)
+                    bias = round((item['range'][1] * Q_min - item['range'][0] *
+                                  Q_max) / (item['range'][1] - item['range'][0]))
+                    data = data * scale
+                    data = data - bias
+
+                # swapRB
+                if 'swapRB' in item.keys():
+                    if data.shape[-1] != 3:
+                        assert("Please confirm your input channel is 3.")
+                    if item['swapRB'] == True:
+                        data = data[:, :, :, ::-1]
+                        data = np.array(data)
+
+                # LetterBox
+                if 'input_range' in item.keys() and 'input_shape' in item.keys() and 'model_shape' in item.keys():
+                    model_shape: List = []
+                    if self.model_type == "onnx" or self.model_type == "caffe":
+                        model_shape = [1, item['model_shape'][2],
+                                       item['model_shape'][3], item['model_shape'][1]]
+                    else:
+                        model_shape = item['model_shape']
+                    if model_shape[1] != data.shape[1] or model_shape[2] != data.shape[2]:
+                        in_h, in_w = data.shape[1], data.shape[2]
+                        model_h, model_w = model_shape[1], model_shape[2]
+                        ratio = min(model_h / in_h, model_w / in_w)
+                        resize_shape = data.shape[0], round(in_h * ratio), round(in_w * ratio), 3
+                        resize_data = cv2.resize(data[0], (resize_shape[2],
+                                                           resize_shape[1]), interpolation=cv2.INTER_LINEAR)
+                        dh = model_shape[1] - resize_shape[1]
+                        dw = model_shape[2] - resize_shape[2]
+                        dh /= 2
+                        dw /= 2
+                        resize_data = np.array(resize_data, dtype=np.float32)
+                        data = cv2.copyMakeBorder(resize_data, round(dh - 0.1), round(model_h - resize_shape[1] - round(dh - 0.1)), round(dw - 0.1), round(
+                            model_w - resize_shape[2] - round(dw - 0.1)), cv2.BORDER_CONSTANT, value=(item['letterbox_value'], item['letterbox_value'], item['letterbox_value']))
+
+                        data = np.array(data, dtype=np.float32)
+                        data = np.expand_dims(data, 0)
+
+                # Normalize
+                if 'norm' in item.keys():
+                    for i in range(data.shape[-1]):
+                        k = i
+                        if data.shape[-1] > 3:
+                            k = 0
+                        data[:, :, :, i] = (data[:, :, :, i] - float(item['norm']['mean'][k])) / \
+                            float(item['norm']['std'][k])
+        else:
+            assert("Please confirm your input shape and model shape is 4D!")
+
+        return data
 
     def validte_config(self, config):
         in_ci = os.getenv('CI', False)
@@ -163,13 +354,16 @@ class TestRunner(metaclass=ABCMeta):
         self.cfg.case.infer[0].values = _validate_targets(
             targets if targets else self.cfg.case.infer[0].values)
 
-    def run(self, model_path: str):
+    def run(self, model_path: Union[List[str], str]):
         # TODO add mulit process pool
         # case_name = self.process_model_path_name(model_path)
         # case_dir = os.path.join(self.cfg.setup.root, case_name)
         # if not os.path.exists(case_dir):
         #     os.makedirs(case_dir)
-        case_dir = os.path.dirname(model_path)
+        if isinstance(model_path, str):
+            case_dir = os.path.dirname(model_path)
+        elif isinstance(model_path, list):
+            case_dir = os.path.dirname(model_path[0])
         self.run_single(self.cfg.case, case_dir, model_path)
 
     def process_model_path_name(self, model_path: str) -> str:
@@ -188,59 +382,83 @@ class TestRunner(metaclass=ABCMeta):
                 shutil.rmtree(case_dir)
         os.makedirs(case_dir)
 
-    @abstractmethod
-    def parse_model_input_output(self, model_path: str):
+    @ abstractmethod
+    def parse_model_input_output(self, model_path: Union[List[str], str]):
         pass
 
     @abstractmethod
-    def cpu_infer(self, case_dir: str, model_content: bytes):
+    def cpu_infer(self, case_dir: str, model_content: Union[List[str], str]):
         pass
 
     @abstractmethod
     def import_model(self, compiler, model_content, import_options):
         pass
 
-    def run_single(self, cfg, case_dir: str, model_file: str):
+    def run_single(self, cfg, case_dir: str, model_file: Union[List[str], str]):
         if not self.inputs:
             self.parse_model_input_output(model_file)
-        self.generate_data(cfg.generate_inputs, case_dir,
-                           self.inputs, self.input_paths, 'input')
-        self.generate_data(cfg.generate_calibs, case_dir,
-                           self.calibs, self.calib_paths, 'calib')
-        self.cpu_infer(case_dir, model_file)
-        import_options, compile_options = self.get_compiler_options(cfg, model_file)
-        model_content = self.read_model_file(model_file)
-        self.run_evaluator(cfg, case_dir, import_options, compile_options, model_content)
-        self.run_inference(cfg, case_dir, import_options, compile_options, model_content)
+        names, args = TestRunner.split_value(cfg.preprocess_opt)
+        for combine_args in product(*args):
+            dict_args = dict(zip(names, combine_args))
+            self.get_process_config(dict_args)
+            self.generate_data(cfg.generate_inputs, case_dir,
+                               self.inputs, self.input_paths, 'input', dict_args)
+            self.generate_data(cfg.generate_calibs, case_dir,
+                               self.calibs, self.calib_paths, 'calib', dict_args)
+
+            # write preprocess options in test_result
+            if dict_args['preprocess'] == True:
+                str_preprocess_opt = ""
+                pre_list = []
+                for key, value in dict_args.items():
+                    pre_list.append(str_preprocess_opt.join("{0}:{1}".format(key, value)))
+                with open(os.path.join(self.case_dir, 'test_result.txt'), 'a+') as f:
+                    f.write("\n----preprocess option----\n")
+                    f.write('\n'.join(pre_list[:]) + "\n")
+                    f.write("-------------------------\n")
+
+            self.cpu_infer(case_dir, model_file, dict_args['input_type'])
+            import_options, compile_options = self.get_compiler_options(dict_args, model_file)
+            model_content = self.read_model_file(model_file)
+            self.run_evaluator(cfg, case_dir, import_options,
+                               compile_options, model_content, dict_args)
+            self.run_inference(cfg, case_dir, import_options,
+                               compile_options, model_content, dict_args)
 
     def get_compiler_options(self, cfg, model_file):
-        import_options = nncase.ImportOptions(**cfg.importer_opt.kwargs)
-        if os.path.splitext(model_file)[-1] == ".tflite":
-            import_options.input_layout = "NHWC"
-            import_options.output_layout = "NHWC"
-        elif os.path.splitext(model_file)[-1] == ".onnx":
-            import_options.input_layout = "NCHW"
-            import_options.output_layout = "NCHW"
-
+        import_options = nncase.ImportOptions()
         compile_options = nncase.CompileOptions()
-        for k, v in cfg.compile_opt.kwargs.items():
+        if isinstance(model_file, str):
+            if os.path.splitext(model_file)[-1] == ".tflite":
+                compile_options.input_layout = cfg['input_layout']
+                compile_options.output_layout = cfg['output_layout']
+            elif os.path.splitext(model_file)[-1] == ".onnx":
+                compile_options.input_layout = cfg['input_layout']
+                compile_options.output_layout = cfg['output_layout']
+        elif isinstance(model_file, list):
+            if os.path.splitext(model_file[1])[-1] == ".caffemodel":
+                compile_options.input_layout = cfg['input_layout']
+                compile_options.output_layout = cfg['output_layout']
+
+        for k, v in cfg.items():
             e = '"'
-            exec(
-                f'compile_options.{k} = {e + v + e if isinstance(v, str) else v}')
+            exec(f"compile_options.{k} = {e + v + e if isinstance(v, str) else v}")
         return import_options, compile_options
 
-    def run_evaluator(self, cfg, case_dir, import_options, compile_options, model_content):
+    def run_evaluator(self, cfg, case_dir, import_options, compile_options, model_content, preprocess_opt):
         names, args = TestRunner.split_value(cfg.eval)
         for combine_args in product(*args):
             dict_args = dict(zip(names, combine_args))
+            if dict_args['ptq'] and len(self.inputs) != 1:
+                continue
             eval_output_paths = self.generate_evaluates(
                 cfg, case_dir, import_options,
-                compile_options, model_content, dict_args)
+                compile_options, model_content, dict_args, preprocess_opt)
             judge, result = self.compare_results(
                 self.output_paths, eval_output_paths, dict_args)
-            assert(judge), result
+            assert(judge), 'Fault result in eval' + result
 
-    def run_inference(self, cfg, case_dir, import_options, compile_options, model_content):
+    def run_inference(self, cfg, case_dir, import_options, compile_options, model_content, preprocess_opt):
         names, args = TestRunner.split_value(cfg.infer)
         for combine_args in product(*args):
             dict_args = dict(zip(names, combine_args))
@@ -249,10 +467,10 @@ class TestRunner(metaclass=ABCMeta):
 
             infer_output_paths = self.nncase_infer(
                 cfg, case_dir, import_options,
-                compile_options, model_content, dict_args)
+                compile_options, model_content, dict_args, preprocess_opt)
             judge, result = self.compare_results(
                 self.output_paths, infer_output_paths, dict_args)
-            assert(judge), result
+            assert(judge), 'Fault result in infer' + result
 
     @staticmethod
     def split_value(kwcfg: List[Dict[str, str]]) -> Tuple[List[str], List[str]]:
@@ -263,12 +481,19 @@ class TestRunner(metaclass=ABCMeta):
             arg_values.append(d.values)
         return (arg_names, arg_values)
 
-    def read_model_file(self, model_file: str) -> bytes:
-        with open(model_file, 'rb') as f:
-            model_content = f.read()
-        return model_content
+    def read_model_file(self, model_file: Union[List[str], str]):
+        if isinstance(model_file, str):
+            with open(model_file, 'rb') as f:
+                return f.read()
+        elif isinstance(model_file, list):
+            model_content = []
+            with open(model_file[0], 'rb') as f:
+                model_content.append(f.read())
+            with open(model_file[1], 'rb') as f:
+                model_content.append(f.read())
+            return model_content
 
-    @staticmethod
+    @ staticmethod
     def kwargs_to_path(path: str, kwargs: Dict[str, str]):
         for k, v in kwargs.items():
             if isinstance(v, str):
@@ -280,19 +505,30 @@ class TestRunner(metaclass=ABCMeta):
     def generate_evaluates(self, cfg, case_dir: str,
                            import_options: nncase.ImportOptions,
                            compile_options: nncase.CompileOptions,
-                           model_content: bytes, kwargs: Dict[str, str]
+                           model_content: Union[List[bytes], bytes],
+                           kwargs: Dict[str, str],
+                           preprocess: Dict[str, str]
                            ) -> List[Tuple[str, str]]:
         eval_dir = TestRunner.kwargs_to_path(
             os.path.join(case_dir, 'eval'), kwargs)
         compile_options.target = kwargs['target']
         compile_options.dump_dir = eval_dir
+        compile_options.dump_asm = cfg.compile_opt.dump_asm
+        compile_options.dump_ir = cfg.compile_opt.dump_ir
         compiler = nncase.Compiler(compile_options)
         self.import_model(compiler, model_content, import_options)
+        if kwargs['ptq']:
+            ptq_options = nncase.PTQTensorOptions()
+            ptq_options.set_tensor_data(np.asarray(
+                [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.calibs]).tobytes())
+            ptq_options.samples_count = cfg.generate_calibs.batch_size
+
+            compiler.use_ptq(ptq_options)
         evaluator = compiler.create_evaluator(3)
         eval_output_paths = []
         for i in range(len(self.inputs)):
             input_tensor = nncase.RuntimeTensor.from_numpy(
-                self.inputs[i]['data'])
+                self.transform_input(self.data_pre_process(self.inputs[i]['data']), "float32", "CPU"))
             input_tensor.copy_to(evaluator.get_input_tensor(i))
             evaluator.run()
 
@@ -308,21 +544,35 @@ class TestRunner(metaclass=ABCMeta):
     def nncase_infer(self, cfg, case_dir: str,
                      import_options: nncase.ImportOptions,
                      compile_options: nncase.CompileOptions,
-                     model_content: bytes, kwargs: Dict[str, str]
+                     model_content: Union[List[bytes], bytes],
+                     kwargs: Dict[str, str],
+                     preprocess: Dict[str, str]
                      ) -> List[Tuple[str, str]]:
         infer_dir = TestRunner.kwargs_to_path(
             os.path.join(case_dir, 'infer'), kwargs)
         compile_options.target = kwargs['target']
         compile_options.dump_dir = infer_dir
+        compile_options.dump_asm = cfg.compile_opt.dump_asm
+        compile_options.dump_ir = cfg.compile_opt.dump_ir
+        compile_options.dump_quant_error = cfg.compile_opt.dump_quant_error
+        compile_options.use_mse_quant_w = cfg.compile_opt.use_mse_quant_w
+        compile_options.input_type = preprocess['input_type']
+        compile_options.quant_type = cfg.compile_opt.quant_type
+        compile_options.swapRB = preprocess['swapRB']
+        compile_options.input_shape = preprocess['input_shape']
+        compile_options.input_range = preprocess['input_range']
+        compile_options.preprocess = preprocess['preprocess']
+        compile_options.mean = preprocess['mean']
+        compile_options.std = preprocess['std']
+        compile_options.input_layout = preprocess['input_layout']
+        compile_options.output_layout = preprocess['output_layout']
         compiler = nncase.Compiler(compile_options)
         self.import_model(compiler, model_content, import_options)
         if kwargs['ptq']:
             ptq_options = nncase.PTQTensorOptions()
             ptq_options.set_tensor_data(np.asarray(
-                [sample['data'] for sample in self.calibs]).tobytes())
+                [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.calibs]).tobytes())
             ptq_options.samples_count = cfg.generate_calibs.batch_size
-            ptq_options.input_mean = cfg.ptq_opt.kwargs['input_mean']
-            ptq_options.input_std = cfg.ptq_opt.kwargs['input_std']
 
             compiler.use_ptq(ptq_options)
         compiler.compile()
@@ -334,12 +584,16 @@ class TestRunner(metaclass=ABCMeta):
         infer_output_paths: List[np.ndarray] = []
         for i in range(len(self.inputs)):
             sim.set_input_tensor(
-                i, nncase.RuntimeTensor.from_numpy(self.inputs[i]['data']))
-
+                i, nncase.RuntimeTensor.from_numpy(self.transform_input(self.inputs[i]['data'], preprocess['input_type'], "infer")))
         sim.run()
 
         for i in range(sim.outputs_size):
             result = sim.get_output_tensor(i).to_numpy()
+            if preprocess['preprocess'] and len(result.shape) == 4:
+                if(preprocess['output_layout'] == 'NHWC' and self.model_type in ['caffe', 'onnx']):
+                    result = np.transpose(result, [0, 3, 1, 2])
+                elif (preprocess['output_layout'] == 'NCHW' and self.model_type in ['tflite']):
+                    result = np.transpose(result, [0, 2, 3, 1])
             infer_output_paths.append((
                 os.path.join(infer_dir, f'nncase_result_{i}.bin'),
                 os.path.join(infer_dir, f'nncase_result_{i}.txt')))
@@ -350,13 +604,18 @@ class TestRunner(metaclass=ABCMeta):
     def on_test_start(self) -> None:
         pass
 
-    def generate_data(self, cfg, case_dir: str, inputs: List[Dict], path_list: List[str], name: str):
+    def generate_data(self, cfg, case_dir: str, inputs: List[Dict], path_list: List[str], name: str, preprocess_opt):
         for n in range(cfg.numbers):
             i = 0
             for input in inputs:
-                shape = input['shape']
-                shape[0] *= cfg.batch_size
-                data = DataFactory[cfg.name](shape, input['dtype'], **cfg.kwargs)
+                shape = []
+                if preprocess_opt['preprocess'] and preprocess_opt['input_shape'] != [] and len(preprocess_opt['input_shape']) == 4:
+                    shape = copy.deepcopy(preprocess_opt['input_shape'])
+                else:
+                    shape = copy.deepcopy(input['model_shape'])
+                if shape[0] != cfg.batch_size:
+                    shape[0] *= cfg.batch_size
+                data = DataFactory[cfg.name](shape, input['dtype'], n, cfg.batch_size, **cfg.kwargs)
 
                 path_list.append(
                     (os.path.join(case_dir, f'{name}_{n}_{i}.bin'),

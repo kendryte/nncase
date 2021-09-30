@@ -13,7 +13,10 @@
  * limitations under the License.
  */
 #include <chrono>
+#include <cmath>
 #include <cstddef>
+#include <cstdint>
+#include <limits>
 #include <nncase/ir/ops/constant.h>
 #include <nncase/ir/quantizer.h>
 #include <nncase/ir/visitor.h>
@@ -195,6 +198,40 @@ void quantizer::record(output_connector &connector, std::span<const bfloat16> da
     }
 }
 
+void quantizer::record_buffers(output_connector &connector, std::span<const float> data)
+{
+    std::vector<float> data_vec;
+    data_vec.assign(data.begin(), data.end());
+    output_buffers_.emplace(&connector, data_vec);
+}
+
+void quantizer::record_buffers(output_connector &connector, std::span<const bfloat16> data)
+{
+    std::vector<float> data_vec;
+    for (int i = 0; i < data.size(); i++)
+        data_vec.push_back(static_cast<float>(data.data()[i]));
+    output_buffers_.emplace(&connector, data_vec);
+}
+
+void quantizer::record_quant_buffers(output_connector &connector, std::span<const float> data)
+{
+    std::vector<float> data_vec;
+    data_vec.assign(data.begin(), data.end());
+    output_buffers_.emplace(&connector, data_vec);
+    if (std::find(insert_order_.begin(), insert_order_.end(), &connector) == insert_order_.end())
+        insert_order_.push_back(&connector);
+}
+
+void quantizer::record_quant_buffers(output_connector &connector, std::span<const bfloat16> data)
+{
+    std::vector<float> data_vec;
+    for (int i = 0; i < data.size(); i++)
+        data_vec.push_back(static_cast<float>(data.data()[i]));
+    output_buffers_.emplace(&connector, data_vec);
+    if (std::find(insert_order_.begin(), insert_order_.end(), &connector) == insert_order_.end())
+        insert_order_.push_back(&connector);
+}
+
 void quantizer::begin_collect_distribution()
 {
     for (auto &&p : quant_ranges_)
@@ -219,11 +256,28 @@ void quantizer::end_collect_distribution(std::function<void(size_t cnt, size_t t
     }
 }
 
-quant_param_t quantizer::get_quant_param(value_range<float> range, int32_t bits)
+quant_param_t quantizer::get_quant_param(value_range<float> range, int32_t bits, quant_mode qm)
 {
     range = fixup_range(range);
-    auto Q_max = pow(2, bits) - 1;
-    auto Q_min = bits % 2 == 0 ? 0 : -pow(2, bits);
+    double Q_max = 255;
+    double Q_min = 0;
+    switch (qm)
+    {
+    case quant_mode::unsigned_mode:
+        Q_min = 0;
+        Q_max = (1 << bits) - 1;
+        break;
+    case quant_mode::signed_symmetric_mode:
+        Q_min = -(1 << (bits - 1)) + 1;
+        Q_max = (1 << (bits - 1)) - 1;
+        break;
+    case quant_mode::signed_asymmetric_mode:
+        Q_min = -(1 << (bits - 1));
+        Q_max = (1 << (bits - 1)) - 1;
+        break;
+    default:
+        throw std::runtime_error("Invalid quant mode");
+    }
     auto scale = (range.max - range.min) / (Q_max - Q_min);
     auto bias = std::round((range.max * Q_min - range.min * Q_max) / (range.max - range.min));
     return { static_cast<int32_t>(bias), (float)scale };
@@ -236,23 +290,23 @@ value_range<float> quantizer::get(ir::output_connector &connector) const
 
 fixed_mul quantizer::get_fixed_mul(float value, int32_t max_bits, uint8_t max_shift, bool is_signed)
 {
-    // assert(!is_signed || value >= 0);
+    assert(is_signed || value >= 0);
 
     auto bits = is_signed ? max_bits - 1 : max_bits;
     int32_t shift = 0;
     float mul = 0;
 
-    if (std::abs(value) > 1)
+    if (value == 0)
+    {
+        mul = 0;
+        shift = 0;
+    }
+    else if (std::abs(value) > 1)
     {
         int mul_shift;
         mul = std::frexp(value, &mul_shift);
         shift = std::min((int32_t)max_shift, bits - mul_shift);
         mul = mul * std::pow(2.f, (float)(shift + mul_shift));
-    }
-    else if (value == 0)
-    {
-        mul = 0;
-        shift = 0;
     }
     else
     {
