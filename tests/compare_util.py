@@ -73,6 +73,6 @@ def compare(result_path: Tuple[str, str],
         compare_op = lt
     else:
         compare_op = gt
-    if compare_op(simarity, threshold):
+    if compare_op(simarity, threshold) or np.isnan(simarity):
         return False, simarity_info
     return True, simarity_info
