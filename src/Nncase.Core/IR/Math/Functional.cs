@@ -39,6 +39,30 @@ namespace Nncase.IR.F
         }
 
         /// <summary>
+        /// Call clamp.
+        /// </summary>
+        /// <param name="input">Input expression.</param>
+        /// <param name="min">Left operand.</param>
+        /// <param name="max">Right operand.</param>
+        /// <returns>Result expression.</returns>
+        public static Call Clamp(Expr input, Expr min, Expr max)
+        {
+            return new Call(new Clamp(), min, max);
+        }
+
+        /// <summary>
+        /// Call clamp.
+        /// </summary>
+        /// <param name="input">Input expression.</param>
+        /// <param name="range">Value range.</param>
+        /// <returns>Result expression.</returns>
+        public static Call Clamp<T>(Expr input, ValueRange<T> range)
+            where T : unmanaged
+        {
+            return new Call(new Clamp(), Const.FromScalar(range.Min), Const.FromScalar(range.Max));
+        }
+
+        /// <summary>
         /// Call abs.
         /// </summary>
         /// <param name="expr">Source expression.</param>

@@ -27,7 +27,7 @@ namespace Nncase.IR
         /// <param name="reason">Reason text if not satisfied.</param>
         /// <returns>The desired type.</returns>
         public static T CheckArgumentType<T>(this ITypeInferenceContext context, Op op, ParameterInfo parameter, string? reason = null)
-            where T : Type
+            where T : IRType
         {
             return context.GetArgumentType(op, parameter) switch
             {
@@ -44,7 +44,7 @@ namespace Nncase.IR
         /// <param name="t">Type instance.</param>
         /// <returns>Original type instance.</returns>
         public static T ThrowIfTypeInferenceInterrupt<T>(this T t)
-            where T : Type
+            where T : IRType
         {
             return t switch
             {
@@ -59,7 +59,7 @@ namespace Nncase.IR
         /// </summary>
         /// <param name="inputs">Input shapes.</param>
         /// <returns>Broadcasted shape.</returns>
-        public static Type BroadcastType(params TensorType[] inputs)
+        public static IRType BroadcastType(params TensorType[] inputs)
         {
             if (inputs.Length < 2)
             {

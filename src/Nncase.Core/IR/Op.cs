@@ -25,6 +25,6 @@ namespace Nncase.IR
         /// </summary>
         /// <param name="context">Context.</param>
         /// <returns>Inferred type.</returns>
-        public abstract Type InferInvokeResultType(ITypeInferenceContext context);
+        public abstract IRType InferInvokeResultType(ITypeInferenceContext context);
     }
 }

@@ -70,5 +70,11 @@ namespace Nncase.IR
         /// </summary>
         /// <param name="value">Dimension value.</param>
         public static implicit operator Dimension(long value) => new(value);
+
+        /// <inheritdoc/>
+        public override string ToString()
+        {
+            return Value?.ToString() ?? "?";
+        }
     }
 }

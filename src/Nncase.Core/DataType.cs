@@ -3,7 +3,9 @@
 
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -18,71 +20,85 @@ namespace Nncase
         /// <summary>
         /// Int8.
         /// </summary>
+        [Display(Name = "i8")]
         Int8,
 
         /// <summary>
         /// Int16.
         /// </summary>
+        [Display(Name = "i16")]
         Int16,
 
         /// <summary>
         /// Int32.
         /// </summary>
+        [Display(Name = "i32")]
         Int32,
 
         /// <summary>
         /// Int64.
         /// </summary>
+        [Display(Name = "i64")]
         Int64,
 
         /// <summary>
         /// UInt8.
         /// </summary>
+        [Display(Name = "u8")]
         UInt8,
 
         /// <summary>
         /// UInt16.
         /// </summary>
+        [Display(Name = "u16")]
         UInt16,
 
         /// <summary>
         /// UInt32.
         /// </summary>
+        [Display(Name = "u32")]
         UInt32,
 
         /// <summary>
         /// UInt64.
         /// </summary>
+        [Display(Name = "u64")]
         UInt64,
 
         /// <summary>
         /// Float16 (Half).
         /// </summary>
+        [Display(Name = "f16")]
         Float16,
 
         /// <summary>
         /// Float32.
         /// </summary>
+        [Display(Name = "f32")]
         Float32,
 
         /// <summary>
         /// Float64.
         /// </summary>
+        [Display(Name = "f64")]
         Float64,
 
         /// <summary>
         /// BFloat16.
         /// </summary>
+        [Display(Name = "bf16")]
         BFloat16,
 
         /// <summary>
         /// Boolean.
         /// </summary>
+        [Display(Name = "bool")]
         Bool,
 
         /// <summary>
         /// String.
         /// </summary>
+        [Display(Name = "str")]
         String,
     }
 
@@ -139,5 +155,15 @@ namespace Nncase
         public static byte[] GetBytes<T>(ReadOnlySpan<T> span)
             where T : unmanaged
             => MemoryMarshal.AsBytes(span).ToArray();
+
+        /// <summary>
+        /// Get display name for a datatype.
+        /// </summary>
+        /// <param name="dataType">Datatype.</param>
+        /// <returns>The display name.</returns>
+        public static string GetDisplayName(DataType dataType)
+        {
+            return typeof(DataType).GetField(Enum.GetName(dataType)!)!.GetCustomAttribute<DisplayAttribute>()?.GetName() ?? dataType.ToString();
+        }
     }
 }

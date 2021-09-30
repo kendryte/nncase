@@ -12,7 +12,7 @@ namespace Nncase.IR
     /// <summary>
     /// Constant expression.
     /// </summary>
-    public sealed record Const(Type ValueType, byte[] Data) : Expr
+    public sealed record Const(IRType ValueType, byte[] Data) : Expr
     {
         /// <summary>
         /// Create constant from a <see cref="byte"/>.

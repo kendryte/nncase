@@ -46,7 +46,7 @@ namespace Nncase.IR.Tensors
         public ParameterInfo Strides => Parameters[4];
 
         /// <inheritdoc/>
-        public override Type InferInvokeResultType(ITypeInferenceContext context)
+        public override IRType InferInvokeResultType(ITypeInferenceContext context)
         {
             throw new NotImplementedException();
         }

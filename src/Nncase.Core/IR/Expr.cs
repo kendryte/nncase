@@ -17,6 +17,6 @@ namespace Nncase.IR
         /// <summary>
         /// Gets or sets checked type.
         /// </summary>
-        public Type? CheckedType { get; set; }
+        public IRType? CheckedType { get; set; }
     }
 }

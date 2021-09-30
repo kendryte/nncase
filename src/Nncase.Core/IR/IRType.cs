@@ -13,14 +13,14 @@ namespace Nncase.IR
     /// <summary>
     /// Expression type.
     /// </summary>
-    public abstract record Type
+    public abstract record IRType
     {
     }
 
     /// <summary>
     /// Any type.
     /// </summary>
-    public sealed record AnyType : Type
+    public sealed record AnyType : IRType
     {
         /// <summary>
         /// The default any type instance.
@@ -31,12 +31,12 @@ namespace Nncase.IR
     /// <summary>
     /// Invalid type.
     /// </summary>
-    public sealed record InvalidType(string Reason) : Type;
+    public sealed record InvalidType(string Reason) : IRType;
 
     /// <summary>
     /// Tensor type.
     /// </summary>
-    public sealed record TensorType(DataType DataType, Shape Shape) : Type
+    public sealed record TensorType(DataType DataType, Shape Shape) : IRType
     {
         /// <summary>
         /// Gets a value indicating whether scalar.
@@ -73,16 +73,16 @@ namespace Nncase.IR
     /// <summary>
     /// Tuple type.
     /// </summary>
-    public sealed record TupleType(ImmutableArray<Type> Fields) : Type
+    public sealed record TupleType(ImmutableArray<IRType> Fields) : IRType
     {
         /// <summary>
         /// Void type.
         /// </summary>
-        public static readonly TupleType Void = new(ImmutableArray<Type>.Empty);
+        public static readonly TupleType Void = new(ImmutableArray<IRType>.Empty);
     }
 
     /// <summary>
     /// Callable type.
     /// </summary>
-    public sealed record CallableType(Type ReturnType, ImmutableArray<Type> Parameters) : Type;
+    public sealed record CallableType(IRType ReturnType, ImmutableArray<IRType> Parameters) : IRType;
 }

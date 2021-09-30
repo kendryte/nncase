@@ -8,6 +8,7 @@ using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using NetFabric.Hyperlinq;
 
 namespace Nncase.IR
 {
@@ -52,6 +53,46 @@ namespace Nncase.IR
         {
             Kind = KindOf(dimensions);
             _dimensions = dimensions.ToList().AsReadOnly();
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Shape"/> class.
+        /// </summary>
+        /// <param name="dimensions">Dimensions.</param>
+        public Shape(IEnumerable<long> dimensions)
+        {
+            Kind = ShapeKind.Fixed;
+            _dimensions = dimensions.Select(x => new Dimension(x)).ToList().AsReadOnly();
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Shape"/> class.
+        /// </summary>
+        /// <param name="dimensions">Dimensions.</param>
+        public Shape(IEnumerable<int> dimensions)
+        {
+            Kind = ShapeKind.Fixed;
+            _dimensions = dimensions.Select(x => new Dimension(x)).ToList().AsReadOnly();
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Shape"/> class.
+        /// </summary>
+        /// <param name="dimensions">Dimensions.</param>
+        public Shape(ReadOnlySpan<long> dimensions)
+        {
+            Kind = ShapeKind.Fixed;
+            _dimensions = dimensions.AsValueEnumerable().Select(x => new Dimension(x)).ToList().AsReadOnly();
+        }
+
+        /// <summary>
+        /// Initializes a new instance of the <see cref="Shape"/> class.
+        /// </summary>
+        /// <param name="dimensions">Dimensions.</param>
+        public Shape(ReadOnlySpan<int> dimensions)
+        {
+            Kind = ShapeKind.Fixed;
+            _dimensions = dimensions.AsValueEnumerable().Select(x => new Dimension(x)).ToList().AsReadOnly();
         }
 
         private Shape(ShapeKind kind, IEnumerable<Dimension> dimensions)
@@ -151,6 +192,12 @@ namespace Nncase.IR
         /// </summary>
         /// <returns>The enumerator.</returns>
         public IEnumerator<Dimension> GetEnumerator() => _dimensions.GetEnumerator();
+
+        /// <inheritdoc/>
+        public override string ToString()
+        {
+            return $"[{string.Join(',', _dimensions)}]";
+        }
 
         IEnumerator<Dimension> IEnumerable<Dimension>.GetEnumerator() => GetEnumerator();
 

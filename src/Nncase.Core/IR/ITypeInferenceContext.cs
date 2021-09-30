@@ -28,7 +28,7 @@ namespace Nncase.IR
         /// <param name="op">Operator.</param>
         /// <param name="parameter">Parameter.</param>
         /// <returns>The argument type.</returns>
-        Type GetArgumentType(Op op, ParameterInfo parameter);
+        IRType GetArgumentType(Op op, ParameterInfo parameter);
     }
 
     /// <summary>
@@ -40,7 +40,7 @@ namespace Nncase.IR
         /// Initializes a new instance of the <see cref="TypeInferenceInterruptException"/> class.
         /// </summary>
         /// <param name="reasonType">Reason type.</param>
-        public TypeInferenceInterruptException(Type reasonType)
+        public TypeInferenceInterruptException(IRType reasonType)
         {
             Type = reasonType;
         }
@@ -48,6 +48,6 @@ namespace Nncase.IR
         /// <summary>
         /// Gets reason type.
         /// </summary>
-        public Type Type { get; }
+        public IRType Type { get; }
     }
 }

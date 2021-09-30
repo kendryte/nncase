@@ -12,7 +12,7 @@ namespace Nncase.IR
     /// <summary>
     /// Variable expression.
     /// </summary>
-    public sealed record Var(string Name, Type? TypeAnnotation) : Expr
+    public sealed record Var(string Name, IRType? TypeAnnotation = null) : Expr
     {
         private static int _globalVarIndex = 0;
 
@@ -20,7 +20,7 @@ namespace Nncase.IR
         /// Initializes a new instance of the <see cref="Var"/> class.
         /// </summary>
         /// <param name="typeAnnotation">Type annotation.</param>
-        public Var(Type? typeAnnotation)
+        public Var(IRType? typeAnnotation)
             : this($"var_{_globalVarIndex++}", typeAnnotation)
         {
         }
