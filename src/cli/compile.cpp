@@ -21,8 +21,7 @@ using namespace nncase::cli;
 
 compile_command::compile_command(lyra::cli &cli)
 {
-    cli.add_argument(lyra::command("compile", [this](const lyra::group &)
-        { this->run(); })
+    cli.add_argument(lyra::command("compile", [this](const lyra::group &) { this->run(); })
                          .add_argument(lyra::opt(input_format_, "input format").name("-i").name("--input-format").required().help("input format, e.g. tflite|onnx|caffe"))
                          .add_argument(lyra::opt(target_name_, "target").name("-t").name("--target").required().help("target architecture, e.g. cpu|k210|k510"))
                          .add_argument(lyra::arg(input_filename_, "input file").required().help("input file"))
