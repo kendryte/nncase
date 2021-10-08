@@ -36,10 +36,10 @@ compile_command::compile_command(lyra::cli &cli)
                          .add_argument(lyra::opt(calibrate_method_, "calibrate method").name("--calibrate-method").optional().help("calibrate method: e.g. no_clip|l2|kld_m0|kld_m1|kld_m2|cdf, default is " + calibrate_method_))
                          .add_argument(lyra::opt(preprocess_).name("--preprocess").optional().help("enable preprocess, default is " + std::to_string(preprocess_)))
                          .add_argument(lyra::opt(swapRB_).name("--swapRB").optional().help("swap red and blue channel, default is " + std::to_string(swapRB_)))
-                         .add_argument(lyra::opt(mean_, "normalize mean").name("--mean").optional().help("normalize mean, default is " + std::to_string(mean_[0])))
-                         .add_argument(lyra::opt(std_, "normalize std").name("--std").optional().help("normalize std, default is " + std::to_string(std_[0])))
-                         .add_argument(lyra::opt(input_range_, "input range").name("--input-range").optional().help("float range after preprocess"))
-                         .add_argument(lyra::opt(input_shape_, "input shape").name("--input-shape").optional().help("shape for input data"))
+                         .add_argument(lyra::opt(cli_mean_, "normalize mean").name("--mean").optional().help("normalize mean, default is " + cli_mean_))
+                         .add_argument(lyra::opt(cli_std_, "normalize std").name("--std").optional().help("normalize std, default is " + cli_std_))
+                         .add_argument(lyra::opt(cli_input_range_, "input range").name("--input-range").optional().help("float range after preprocess"))
+                         .add_argument(lyra::opt(cli_input_shape_, "input shape").name("--input-shape").optional().help("shape for input data"))
                          .add_argument(lyra::opt(letterbox_value_, "letter box value").name("--letterbox-value").optional().help("letter box pad value, default is " + std::to_string(letterbox_value_)))
                          .add_argument(lyra::opt(input_type_, "input type").name("--input-type").optional().help("input type, e.g float32|uint8|default, default is " + input_type_))
                          .add_argument(lyra::opt(output_type_, "output type").name("--output-type").optional().help("output type, e.g float32|uint8, default is " + output_type_))
@@ -65,6 +65,12 @@ void compile_command::run()
         if (input_type_ == "default")
             input_type_ = "float32";
     }
+    // manual parser the str to vector options
+    mean_.clear(), std_.clear();
+    parser_vector_opt(cli_mean_, mean_);
+    parser_vector_opt(cli_std_, std_);
+    parser_vector_opt(cli_input_range_, input_range_);
+    parser_vector_opt(cli_input_shape_, input_shape_);
 
     compile_options c_options;
     c_options.dump_asm = dump_asm_;
@@ -88,6 +94,13 @@ void compile_command::run()
     c_options.input_layout = input_layout_;
     c_options.output_layout = output_layout_;
     c_options.letterbox_value = letterbox_value_;
+    if (c_options.preprocess)
+    {
+        if (c_options.input_shape.empty())
+        {
+            throw std::invalid_argument("Empty input shape. If enable preprocess you must set input shape");
+        }
+    }
 
     import_options i_options;
     std::vector<std::string> output_arrays;
