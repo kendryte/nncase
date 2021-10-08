@@ -55,6 +55,7 @@ namespace Nncase.IR.F
         /// </summary>
         /// <param name="input">Input expression.</param>
         /// <param name="range">Value range.</param>
+        /// <typeparam name="T">Data type.</typeparam>
         /// <returns>Result expression.</returns>
         public static Call Clamp<T>(Expr input, ValueRange<T> range)
             where T : unmanaged
@@ -278,5 +279,21 @@ namespace Nncase.IR.F
         /// <param name="rhs">Right operand.</param>
         /// <returns>Result expression.</returns>
         public static Call LogicalXor(Expr lhs, Expr rhs) => Binary(BinaryOp.LogicalXor, lhs, rhs);
+
+        /// <summary>
+        /// Call floor div.
+        /// </summary>
+        /// <param name="lhs">Left operand.</param>
+        /// <param name="rhs">Right operand.</param>
+        /// <returns>Result expression.</returns>
+        public static Call FloorDiv(Expr lhs, Expr rhs) => Floor(lhs / rhs);
+
+        /// <summary>
+        /// Call floor mod.
+        /// </summary>
+        /// <param name="lhs">Left operand.</param>
+        /// <param name="rhs">Right operand.</param>
+        /// <returns>Result expression.</returns>
+        public static Call FloorMod(Expr lhs, Expr rhs) => lhs - (FloorDiv(lhs, rhs) * rhs);
     }
 }

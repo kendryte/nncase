@@ -1,10 +1,15 @@
-﻿using System;
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
+using System;
 using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.IR;
 
 namespace Nncase.Cli.Commands
 {
@@ -45,6 +50,20 @@ namespace Nncase.Cli.Commands
         private void Run(CompileOptions options)
         {
             Console.WriteLine($"Target: {options.Target}");
+
+            var module = Importers.ImportTFLite(options.InputFile);
+            DumpModule(module, "ir_import");
+        }
+
+        private void DumpModule(Module module, string prefix)
+        {
+            var dumpPath = Path.Combine("dump", prefix);
+            Directory.CreateDirectory(dumpPath);
+
+            var func = module.Entry;
+            using var dumpFile = File.Open(Path.Combine(dumpPath, $"{func.Name}.il"), FileMode.Create);
+            using var dumpWriter = new StreamWriter(dumpFile);
+            IRPrinter.DumpFunctionAsIL(dumpWriter, func);
         }
     }
 }

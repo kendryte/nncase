@@ -41,6 +41,7 @@ namespace Nncase.IR
         /// <param name="function">Function to add.</param>
         public void Add(Function function)
         {
+            TypeInference.InferenceType(function);
             _functions.Add(function);
         }
     }

@@ -26,6 +26,10 @@ namespace Nncase.IR
         /// The default any type instance.
         /// </summary>
         public static readonly AnyType Default = new();
+
+        private AnyType()
+        {
+        }
     }
 
     /// <summary>

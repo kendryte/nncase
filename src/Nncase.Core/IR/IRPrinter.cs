@@ -14,7 +14,7 @@ namespace Nncase.IR
     /// <summary>
     /// IR printer.
     /// </summary>
-    public class IRPrinter
+    public static class IRPrinter
     {
         /// <summary>
         /// Dump function to IL text.
@@ -63,7 +63,6 @@ namespace Nncase.IR
                 }
 
                 name = $"const({(expr.CheckedType is null ? string.Empty : VisitType(expr.CheckedType))})";
-                _textWriter.Write(name);
                 _names.Add(expr, name);
                 return name;
             }

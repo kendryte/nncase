@@ -121,5 +121,17 @@ namespace Nncase.IR
 
             return new TensorType(dataType, new Shape(outputShape));
         }
+
+        /// <summary>
+        /// Inference type of the expression tree.
+        /// </summary>
+        /// <param name="expr">Expression.</param>
+        /// <returns>Is fully inferenced.</returns>
+        public static bool InferenceType(Expr expr)
+        {
+            var inferVisitor = new TypeInferenceVisitor();
+            inferVisitor.Visit(expr);
+            return inferVisitor.IsFullyInferenced;
+        }
     }
 }

@@ -26,5 +26,26 @@ namespace Nncase.IR
         /// <param name="context">Context.</param>
         /// <returns>Inferred type.</returns>
         public abstract IRType InferInvokeResultType(ITypeInferenceContext context);
+
+        /// <summary>
+        /// Inference type (nothrow).
+        /// </summary>
+        /// <param name="context">Context.</param>
+        /// <returns>Inferred type.</returns>
+        internal IRType InferInvokeResultTypeNoThrow(ITypeInferenceContext context)
+        {
+            try
+            {
+                return InferInvokeResultType(context);
+            }
+            catch (TypeInferenceInterruptException ex)
+            {
+                return ex.Type;
+            }
+            catch (Exception ex)
+            {
+                return new InvalidType(ex.Message);
+            }
+        }
     }
 }
