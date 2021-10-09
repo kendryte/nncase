@@ -51,7 +51,7 @@ def visual(output: torch.Tensor, ratio: float, raw_img: np.ndarray, cls_conf=0.3
     return vis_res
 
 
-def main(kmodel: str, test_size: list, img_path: str, legacy: bool, no_preprocess: bool):
+def main(kmodel: str, test_size: list, img_path: str, legacy: bool, no_preprocess: bool, no_display: bool):
     sim = nncase.Simulator()
 
     with open(kmodel, 'rb') as f:
@@ -67,7 +67,7 @@ def main(kmodel: str, test_size: list, img_path: str, legacy: bool, no_preproces
             img = img - np.array([0.485, 0.456, 0.406]).reshape((3, 1, 1))
             img = img / np.array([0.229, 0.224, 0.225]).reshape((3, 1, 1))
         img = img.astype(np.float32)
-    
+
     img.tofile(f'./{Path(img_path).stem}.bin')
     print(f"Save the image {img_path} as ./{Path(img_path).stem}.bin!")
     img = np.expand_dims(img, 0)
@@ -76,8 +76,9 @@ def main(kmodel: str, test_size: list, img_path: str, legacy: bool, no_preproces
     prediction = sim.get_output_tensor(0)
     outputs = decode(torch.from_numpy(prediction.to_numpy()), test_size)
     res_img = visual(outputs[0], ratio, raw_img)
-    plt.imshow(res_img)
-    plt.show()
+    if not no_display:
+        plt.imshow(res_img)
+        plt.show()
 
 
 if __name__ == '__main__':
@@ -90,6 +91,9 @@ if __name__ == '__main__':
                         action="store_true", help="To be compatible with older versions (only for no_preprocess)")
     parser.add_argument("--no_preprocess", default=False,
                         action="store_true", help="disable nncase preprocess for debug")
+    parser.add_argument("--no_display", default=False,
+                        action="store_true", help="disable imshow")
 
     args = parser.parse_args()
-    main(args.kmodel, args.test_size, args.img_path, args.legacy, args.no_preprocess)
+    main(args.kmodel, args.test_size, args.img_path,
+         args.legacy, args.no_preprocess, args.no_display)

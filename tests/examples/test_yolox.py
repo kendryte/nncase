@@ -28,14 +28,14 @@ def test_yolox(request):
         shlex.split('python tools/compile.py model/yolox_nano_224.onnx yolox_nano_224.kmodel --legacy'), env=my_env)
     ret.check_returncode()
     ret = subprocess.run(
-        shlex.split('python tools/simulate.py yolox_nano_224.kmodel ../20classes_yolo/images/dog.bmp'), env=my_env)
+        shlex.split('python tools/simulate.py yolox_nano_224.kmodel ../20classes_yolo/images/dog.bmp --no_display'), env=my_env)
     ret.check_returncode()
     # run k210 quant
     ret = subprocess.run(
         shlex.split('python tools/compile.py model/yolox_nano_224.onnx yolox_nano_224_quant.kmodel --imgs_dir ../20classes_yolo/images/ --legacy --target k210'), env=my_env)
     ret.check_returncode()
     ret = subprocess.run(
-        shlex.split('python tools/simulate.py yolox_nano_224_quant.kmodel ../20classes_yolo/images/dog.bmp'), env=my_env)
+        shlex.split('python tools/simulate.py yolox_nano_224_quant.kmodel ../20classes_yolo/images/dog.bmp --no_display'), env=my_env)
     ret.check_returncode()
     os.chdir('../..')
 
