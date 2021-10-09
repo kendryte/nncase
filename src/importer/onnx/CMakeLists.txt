@@ -12,6 +12,7 @@ set(ONNX_IMPORTER_OPS_SOURCES
     ops/batchnorm.cpp
     ops/concat.cpp
     ops/constant.cpp
+    ops/constantofshape.cpp
     ops/conv.cpp
     ops/cast.cpp
     ops/dropout.cpp

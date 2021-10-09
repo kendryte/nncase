@@ -26,9 +26,9 @@ conv2d_transpose::conv2d_transpose(shape_t input_shape, shape_t weights_shape, s
     add_input("bias", dt_float32, shape_t { (size_t)output_channels() });
     add_output("output", dt_float32, output_shape);
 
-    if (get_windowed_output_size((int32_t)output_shape[2] + padding_h_.sum(), filter_h(), stride_h_, dilation_h_, false) != input_shape[2]
-        || get_windowed_output_size((int32_t)output_shape[3] + padding_w_.sum(), filter_w(), stride_w_, dilation_w_, false) != input_shape[3])
-        throw std::runtime_error("Invalid conv2d transpose shape");
+    // if (get_windowed_output_size((int32_t)output_shape[2] + padding_h_.sum(), filter_h(), stride_h_, dilation_h_, false) != input_shape[2]
+    //     || get_windowed_output_size((int32_t)output_shape[3] + padding_w_.sum(), filter_w(), stride_w_, dilation_w_, false) != input_shape[3])
+    //     throw std::runtime_error("Invalid conv2d transpose shape");
 }
 
 bool conv2d_transpose::properties_equal(node &other) const
