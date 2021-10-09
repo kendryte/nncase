@@ -17,6 +17,7 @@
 | Clip | ✅ |
 | Concat | ✅ |
 | Constant | ✅ |
+| ConstantOfShape | ✅ |
 | Conv | ✅ |
 | ConvTranspose | ✅ |
 | Cos | ✅ |
