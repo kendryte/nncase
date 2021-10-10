@@ -285,9 +285,9 @@ NNCASE_API inline result<runtime::runtime_tensor> resize(runtime::runtime_tensor
  * @param fill_v const fill value
  * @return result<runtime_tensor>
  */
-NNCASE_API inline result<runtime::runtime_tensor> pad(runtime::runtime_tensor &input, std::vector<padding> &padding, pad_mode_t pad_mode, float fill_v) noexcept
+NNCASE_API inline result<runtime::runtime_tensor> pad(runtime::runtime_tensor &input, runtime_paddings_t &paddings, pad_mode_t pad_mode, float fill_v) noexcept
 {
-    return impl::pad(input, padding, pad_mode, fill_v);
+    return impl::pad(input, paddings, pad_mode, fill_v);
 }
 
 }

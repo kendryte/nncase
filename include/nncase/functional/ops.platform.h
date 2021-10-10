@@ -33,5 +33,5 @@ result<runtime::runtime_tensor> crop(runtime::runtime_tensor &input, runtime::ru
 
 result<runtime::runtime_tensor> resize(runtime::runtime_tensor &input, size_t out_h, size_t out_w, image_resize_mode_t resize_mode, bool align_corners, bool half_pixel_centers) noexcept;
 
-result<runtime::runtime_tensor> pad(runtime::runtime_tensor &input, std::vector<padding> &padding, pad_mode_t pad_mode, float fill_v) noexcept;
+result<runtime::runtime_tensor> pad(runtime::runtime_tensor &input, runtime_paddings_t &paddings, pad_mode_t pad_mode, float fill_v) noexcept;
 }
