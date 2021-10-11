@@ -583,8 +583,13 @@ class TestRunner(metaclass=ABCMeta):
         sim.load_model(kmodel)
         infer_output_paths: List[np.ndarray] = []
         for i in range(len(self.inputs)):
-            sim.set_input_tensor(
-                i, nncase.RuntimeTensor.from_numpy(self.transform_input(self.inputs[i]['data'], preprocess['input_type'], "infer")))
+            data = self.transform_input(self.inputs[i]['data'], preprocess['input_type'], "infer")
+            dtype = preprocess['input_type']
+            if preprocess['preprocess'] and dtype != 'float32':
+                data.tofile(os.path.join(case_dir, f'input_{i}_{dtype}.bin'))
+                self.totxtfile(os.path.join(case_dir, f'input_{i}_{dtype}.txt'), data)
+
+            sim.set_input_tensor(i, nncase.RuntimeTensor.from_numpy(data))
         sim.run()
 
         for i in range(sim.outputs_size):
@@ -665,10 +670,17 @@ class TestRunner(metaclass=ABCMeta):
                 return False, result
         return True, result
 
-    def totxtfile(self, save_path, value_np: np.array, bit_16_represent=False):
+    def totxtfile(self, save_path, ndarray: np.array, bit_16_represent=False):
         if self.cfg.setup.log_txt:
             if bit_16_represent:
-                np.save(save_path, _cast_bfloat16_then_float32(value_np))
+                np.save(save_path, _cast_bfloat16_then_float32(ndarray))
             else:
-                np.savetxt(save_path, value_np.flatten(), fmt='%f', header=str(value_np.shape))
+                if ndarray.dtype == np.uint8:
+                    fmt='%u'
+                elif ndarray.dtype == np.int8:
+                    fmt='%d'
+                else:
+                    fmt='%f'
+                np.savetxt(save_path, ndarray.flatten(), fmt=fmt, header=str(ndarray.shape))
+
             print("----> %s" % save_path)
