@@ -10,6 +10,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
+using Nncase.Transform;
 
 namespace Nncase.Cli.Commands
 {
@@ -53,6 +54,10 @@ namespace Nncase.Cli.Commands
 
             var module = Importers.ImportTFLite(options.InputFile);
             DumpModule(module, "ir_import");
+
+            var pmgr = new PassManager(module.Entry, new RunPassOptions(null));
+            pmgr.Add(new EGraphPass("eoptimize"));
+            pmgr.Run();
         }
 
         private void DumpModule(Module module, string prefix)
