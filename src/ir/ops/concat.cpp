@@ -31,7 +31,7 @@ concat::concat(datatype_t type, std::span<shape_t> input_shapes, int32_t axis)
         concat_dims_.emplace_back(input_shapes[i][axis]);
     }
 
-    add_output("output", type, get_concated_shape(input_shapes, size_t(axis)));
+    add_output("output", type, get_concated_shape(input_shapes, size_t(axis_)));
 }
 
 bool concat::properties_equal(node &other) const
