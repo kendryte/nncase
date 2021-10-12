@@ -18,22 +18,7 @@ from onnx_test_runner import OnnxTestRunner
 
 
 def test_shufflenet_6(request):
-    overwrite_cfg = """
-     judge:
-       specifics:
-         - matchs:
-             target: [cpu, k510]
-             ptq: true
-           threshold: 0.98
-         - matchs:
-             target: [k210]
-             ptq: true
-           threshold: 0.95
-         - matchs:
-             target: [k510]
-             ptq: false
-           threshold: 0.99
-     """
+    overwrite_cfg = open('tests/models/onnx-model-zoo/vision/classification/test_config.yml', 'r', encoding="utf8").read()
     runner = OnnxTestRunner(request.node.name, overwrite_configs=overwrite_cfg)
     model_file = 'onnx-models/vision/classification/shufflenet/model/shufflenet-6.onnx'
     runner.run(model_file)
