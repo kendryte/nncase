@@ -70,6 +70,8 @@ public:
     const runtime_shape_t &shape() const noexcept override;
     const runtime_shape_t &strides() const noexcept override;
     runtime_tensor_type &tensor_type() const noexcept override;
+    const quant_param_t &quant_param() const noexcept override;
+    void quant_param(const quant_param_t &quant_param) noexcept override;
 
     bool can_copy_from_different_type(const runtime_tensor_impl &src) const noexcept override;
     bool can_copy_to_different_type(const runtime_tensor_impl &dest) const noexcept override;
@@ -91,6 +93,7 @@ private:
     runtime_shape_t shape_;
     runtime_shape_t strides_;
     host_memory_block memory_block_;
+    quant_param_t quant_;
 };
 }
 
