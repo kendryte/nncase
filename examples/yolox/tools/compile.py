@@ -44,27 +44,26 @@ def read_images(imgs_dir: str, test_size: list):
 def main(onnx: str, kmodel: str, target: str, method: str, imgs_dir: str, test_size: list, legacy: bool, no_preprocess: bool):
     cpl_opt = nncase.CompileOptions()
     cpl_opt.preprocess = not no_preprocess
-    cpl_opt.input_shape = test_size + [3]  # NOTE maybe update this option
     # (x - mean) / scale
     if legacy:
-        cpl_opt.image_format = 'RGB'  # RGB mean not swap RB
+        cpl_opt.swapRB = False  # legacy use RGB 
         cpl_opt.input_range = [0, 1]
         cpl_opt.mean = [0.485, 0.456, 0.406]
-        cpl_opt.scale = [0.229, 0.224, 0.225]
+        cpl_opt.std = [0.229, 0.224, 0.225]
     else:
-        cpl_opt.image_format = 'BGR'  # BGR mean swap RB
+        cpl_opt.swapRB = True  # new model use BGR 
         cpl_opt.input_range = [0, 255]
         cpl_opt.mean = [0, 0, 0]
-        cpl_opt.scale = [1, 1, 1]
+        cpl_opt.std = [1, 1, 1]
     cpl_opt.target = target  # cpu , k210, k510!
     cpl_opt.input_type = 'uint8'
+    cpl_opt.input_layout = 'NCHW'
+    cpl_opt.input_shape = [1, 3, 224, 224]
     cpl_opt.quant_type = 'uint8'  # uint8 or int8
 
     compiler = nncase.Compiler(cpl_opt)
     with open(onnx, 'rb') as f:
         imp_opt = nncase.ImportOptions()
-        imp_opt.input_layout = 'NCHW'
-        imp_opt.output_layout = 'NCHW'
         compiler.import_onnx(f.read(), imp_opt)
         # ptq
         if imgs_dir is not None:

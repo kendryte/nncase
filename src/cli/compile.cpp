@@ -100,6 +100,10 @@ void compile_command::run()
         {
             throw std::invalid_argument("Empty input shape. If enable preprocess you must set input shape");
         }
+        if (c_options.input_range.empty())
+        {
+            throw std::invalid_argument("Empty input range. If enable preprocess you must set input range");
+        }
     }
 
     import_options i_options;
