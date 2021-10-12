@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.CommandLine.Builder;
 using System.CommandLine.Hosting;
 using System.CommandLine.Parsing;
 using System.IO;
@@ -27,6 +28,7 @@ namespace Nncase.Cli
                         .ConfigureLogging(ConfigureLogging)
                         .UseConsoleLifetime();
                     })
+                .UseDefaults()
                 .Build().InvokeAsync(args);
         }
 
