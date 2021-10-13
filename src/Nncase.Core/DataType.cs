@@ -110,6 +110,9 @@ namespace Nncase
         private static readonly Dictionary<RuntimeTypeHandle, DataType> _typeToDataTypes = new()
         {
             { typeof(byte).TypeHandle, DataType.UInt8 },
+            { typeof(int).TypeHandle, DataType.Int32 },
+            { typeof(float).TypeHandle, DataType.Float32 },
+            { typeof(double).TypeHandle, DataType.Float64 }
         };
 
         /// <summary>

@@ -19,4 +19,10 @@
     </PackageReference>
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\Nncase.EGraph\Nncase.EGraph.csproj" />
+    <ProjectReference Include="..\Nncase.IR\Nncase.IR.csproj" />
+    <ProjectReference Include="..\Nncase.Core\Nncase.Core.csproj" />
+  </ItemGroup>
+
 </Project>
