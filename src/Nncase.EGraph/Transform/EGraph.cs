@@ -170,21 +170,16 @@ namespace Nncase.Transform
                     var args = new List<string> { $"{enode.Expr.GetType().Name}" };
                     for (int i = 0; i < enode.Children.Length; i++)
                     {
-                        args.Append($"{exprId}:p{i}");
+                        args.Add($"{exprId}:p{i}");
                     }
-                    var exprNodeLabel = new DotRecord(args);
-                    var exprNode = g.Nodes.Add(exprId, node =>
-                    {
-                        node.Label = exprNodeLabel;
-                        node.Shape = DotNodeShape.Record;
-                    });
-
+                    var exprNode = g.Nodes.Add(exprId);
+                    exprNode.ToRecordNode(new DotRecord(args));
                     for (int i = 0; i < enode.Children.Length; i++)
                     {
-                        g.Edges.Add(eclassNode, exprNode, edge =>
-{
-    edge.Head.Endpoint.Port = new DotEndpointPort($"{exprId}:p{i}", DotCompassPoint.NorthEast);
-});
+                        g.Edges.Add($"{enode.Children[i].Id}", exprNode, edge =>
+                       {
+                           edge.Head.Endpoint.Port = new DotEndpointPort($"{exprId}:p{i}");
+                       });
                     }
 
                     //                         recordBuilder.AppendField($"{exprId}:p{i}");
