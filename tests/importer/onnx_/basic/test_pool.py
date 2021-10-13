@@ -18,18 +18,22 @@ import torch
 from onnx_test_runner import OnnxTestRunner
 
 
-def _make_module(kernel_size, stride, padding):
+def _make_module(kernel_size, stride, padding, count_include_pad):
 
     class PoolModule(torch.nn.Module):
         def __init__(self):
             super(PoolModule, self).__init__()
             # self.avgpool2d = torch.nn.AvgPool2d(kernel_size, stride=stride, padding=padding) # dsp pad
-            self.avgpool2d = torch.nn.AvgPool2d(kernel_size, stride=stride)
+            self.avgpool2d = torch.nn.AvgPool2d(
+                kernel_size, stride=stride, padding=padding, count_include_pad=count_include_pad)
             self.global_avgpool = torch.nn.AdaptiveAvgPool2d(1)
             self.maxpool2d = torch.nn.MaxPool2d(kernel_size, stride=stride, padding=padding)
             self.global_maxpool = torch.nn.AdaptiveMaxPool2d(1)
 
         def forward(self, x):
+            if(count_include_pad):
+                return self.avgpool2d(x)
+
             outs = []
             outs.append(self.avgpool2d(x))
             outs.append(self.global_avgpool(x))
@@ -61,14 +65,20 @@ paddings = [
     (2, 3)
 ]
 
+count_include_pads = [
+    False,
+    True
+]
+
 
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('kernel_size', kernel_sizes)
 @pytest.mark.parametrize('stride', strides)
 @pytest.mark.parametrize('padding', paddings)
-def test_pool(in_shape, kernel_size, stride, padding, request):
+@pytest.mark.parametrize('count_include_pad', count_include_pads)
+def test_pool(in_shape, kernel_size, stride, padding, count_include_pad, request):
     if kernel_size[0] / 2 > padding[0] and kernel_size[1] / 2 > padding[1]:
-        module = _make_module(kernel_size, stride, padding)
+        module = _make_module(kernel_size, stride, padding, count_include_pad)
 
         runner = OnnxTestRunner(request.node.name)
         model_file = runner.from_torch(module, in_shape)
