@@ -46,6 +46,7 @@ simarity_func = {
 
 def compare(result_path: Tuple[str, str],
             ground_truth_path: Tuple[str, str],
+            dtype,
             simarity_name: str = 'cosine',
             threshold: float = 0.99,
             hist: bool = True) -> bool:
@@ -56,9 +57,9 @@ def compare(result_path: Tuple[str, str],
         # gt, pred = bytes.fromhex(gt.strip()), bytes.fromhex(pred.strip())
         # gt, pred = struct.unpack('>H', gt)[0], struct.unpack('>H', pred)[0]
         raise NotImplemented("need support bfloat16 judge!")
-    else:  # float
-        gt_arr = np.fromfile(ground_truth_path_bin, np.float32)
-        pred_arr = np.fromfile(result_path_bin, np.float32)
+    else:
+        gt_arr = np.fromfile(ground_truth_path_bin, dtype).astype(np.float32)
+        pred_arr = np.fromfile(result_path_bin, dtype).astype(np.float32)
         if gt_arr.size == pred_arr.size:
             simarity = simarity_func[simarity_name](gt_arr, pred_arr)
         else:
