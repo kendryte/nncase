@@ -31,9 +31,9 @@ void evaluator::enable_ptq(target &target, ir::calibrate_method calib_method)
     return model_eval_.enable_ptq(target, calib_method);
 }
 
-void evaluator::evaluate(bool before_quant, size_t stage, bool record_output_buffers)
+void evaluator::evaluate(eval_step step, size_t stage, bool record_output_buffers)
 {
-    return model_eval_.evaluate(before_quant, stage, record_output_buffers);
+    return model_eval_.evaluate(step, stage, record_output_buffers);
 }
 
 quantizer *evaluator::quantizer(const module_type_t &module_type)
@@ -43,7 +43,7 @@ quantizer *evaluator::quantizer(const module_type_t &module_type)
 
 void evaluator::begin_collect_distribution()
 {
-    model_eval_.end_sample();
+    model_eval_.begin_collect_distribution();
 }
 
 void evaluator::end_sample()

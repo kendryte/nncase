@@ -555,6 +555,7 @@ class TestRunner(metaclass=ABCMeta):
         compile_options.dump_asm = cfg.compile_opt.dump_asm
         compile_options.dump_ir = cfg.compile_opt.dump_ir
         compile_options.dump_quant_error = cfg.compile_opt.dump_quant_error
+        compile_options.dump_import_op_range = cfg.compile_opt.dump_import_op_range
         compile_options.use_mse_quant_w = cfg.compile_opt.use_mse_quant_w
         compile_options.input_type = preprocess['input_type']
         compile_options.quant_type = cfg.compile_opt.quant_type
@@ -676,11 +677,11 @@ class TestRunner(metaclass=ABCMeta):
                 np.save(save_path, _cast_bfloat16_then_float32(ndarray))
             else:
                 if ndarray.dtype == np.uint8:
-                    fmt='%u'
+                    fmt = '%u'
                 elif ndarray.dtype == np.int8:
-                    fmt='%d'
+                    fmt = '%d'
                 else:
-                    fmt='%f'
+                    fmt = '%f'
                 np.savetxt(save_path, ndarray.flatten(), fmt=fmt, header=str(ndarray.shape))
 
             print("----> %s" % save_path)

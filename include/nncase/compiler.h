@@ -37,6 +37,7 @@ struct compile_options
     bool dump_ir;
     bool dump_asm;
     bool dump_quant_error;
+    bool dump_import_op_range;
     bool is_fpga;
     bool use_dataset_as_input_stat = false;
     bool benchmark_only = false;

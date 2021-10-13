@@ -46,6 +46,7 @@ class NNCASE_API quantizer
 
         void record(std::span<const float> data);
         void record(std::span<const bfloat16> data);
+        void record(std::span<const half> data);
         void finish();
         value_range<float> optimal_range() const noexcept { return optimal_range_; }
 
@@ -121,10 +122,13 @@ public:
     bool has_record(ir::output_connector &connector) const;
     void record(ir::output_connector &connector, std::span<const float> data);
     void record(ir::output_connector &connector, std::span<const bfloat16> data);
+    void record(ir::output_connector &connector, std::span<const half> data);
     void record_buffers(ir::output_connector &connector, std::span<const float> data);
     void record_buffers(ir::output_connector &connector, std::span<const bfloat16> data);
+    void record_buffers(ir::output_connector &connector, std::span<const half> data);
     void record_quant_buffers(ir::output_connector &connector, std::span<const float> data);
     void record_quant_buffers(ir::output_connector &connector, std::span<const bfloat16> data);
+    void record_quant_buffers(ir::output_connector &connector, std::span<const half> data);
     value_range<float> get(ir::output_connector &connector) const;
     void broadcast_output(ir::graph &graph, const std::unordered_set<node_opcode> &ops);
     void broadcast_output(ir::node &node, const value_range<float> &range, const std::unordered_set<node_opcode> &ops);
@@ -134,6 +138,7 @@ public:
     void end_sample() { has_record_.clear(); }
     std::unordered_map<ir::output_connector *, std::vector<float>> output_buffers() const noexcept { return output_buffers_; }
     std::vector<ir::output_connector *> insert_order() const noexcept { return insert_order_; }
+    std::unordered_map<ir::output_connector *, value_range<float>> quant_ranges() const noexcept { return quant_ranges_; }
 
 private:
     calibrate_method cali_method_;

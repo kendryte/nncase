@@ -14,7 +14,8 @@ SYNOPSIS
         [--input-range <input range>] [--input-shape <input shape>] [--letterbox-value <letter box value>]
         [--input-type <input type>] [--output-type <output type>]
         [--input-layout <input layout>] [--output-layout <output layout>]
-        [--is-fpga] [--dump-ir] [--dump-asm] [--dump-quant-error] [--dump-dir <dump directory>] [--benchmark-only]
+        [--is-fpga] [--dump-ir] [--dump-asm] [--dump-quant-error] [--dump-import-op-range] [--dump-dir <dump directory>]
+        [--benchmark-only]
 
     ncc infer <input file> <output path>
         --dataset <dataset path> [--dataset-format <dataset format>]
@@ -67,6 +68,7 @@ OPTIONS
   --dump-ir               dump ir to .dot, default is 0
   --dump-asm              dump assembly, default is 0
   --dump-quant-error      dump quant error, default is 0
+  --dump-import-op-range  dump imported op data range, default is 0
   --dump-dir <dump directory>
                           dump to directory
   --benchmark-only        compile kmodel only for benchmark use, default is 0
@@ -116,6 +118,7 @@ OPTIONS
 - `--dump-ir` is a debug option. It is used to specify whether dump IR or not.
 - `--dump-asm` is a debug option. It is used to specify whether dump asm file or not.
 - `--dump-quant-error` is a debug option. It is used to specify whether dump quantization error information or not.
+- `--dump-import-op-range` is a debug option. It is used to specify whether dump imported op data range or not.
 - `--dump-dir` is used to specify dump directory.
 - `--benchmark-only` is used to specify whether the kmodel is used for benchmark or not.
 

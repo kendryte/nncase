@@ -14,7 +14,8 @@ SYNOPSIS
         [--input-range <input range>] [--input-shape <input shape>] [--letterbox-value <letter box value>]
         [--input-type <input type>] [--output-type <output type>]
         [--input-layout <input layout>] [--output-layout <output layout>]
-        [--is-fpga] [--dump-ir] [--dump-asm] [--dump-quant-error] [--dump-dir <dump directory>] [--benchmark-only]
+        [--is-fpga] [--dump-ir] [--dump-asm] [--dump-quant-error] [--dump-import-op-range] [--dump-dir <dump directory>]
+        [--benchmark-only]
 
     ncc infer <input file> <output path>
         --dataset <dataset path> [--dataset-format <dataset format>]
@@ -67,6 +68,7 @@ OPTIONS
   --dump-ir               dump ir to .dot, default is 0
   --dump-asm              dump assembly, default is 0
   --dump-quant-error      dump quant error, default is 0
+  --dump-import-op-range  dump imported op data range, default is 0
   --dump-dir <dump directory>
                           dump to directory
   --benchmark-only        compile kmodel only for benchmark use, default is 0
@@ -118,6 +120,7 @@ OPTIONS
 - `--dump-ir` 是一个调试选项。当它打开时 ncc 会在工作目录产生一些 `.dot` 文件。你可以使用 `Graphviz` 或 [Graphviz Online](https://dreampuf.github.io/GraphvizOnline) 来查看这些文件。
 - `--dump-asm` 是一个调试选项。当它打开时 ncc 会生成硬件指令文件compile.text.asm
 - `--dump-quant-error`是一个调试选项, 用于dump量化错误信息
+- `--dump-import-op-range`是一个调试选项, 用于dump import之后节点的数据范围
 - `--dump-dir`是一个调试选项, 用于指定dump目录.
 - `--benchmark-only`是一个调试选项, 用于指定编译后的kmodel用于benchmark.
 

@@ -44,6 +44,7 @@ struct compile_options
     bool dump_ir = false;
     bool dump_weights_range = false;
     bool dump_quant_error = false;
+    bool dump_import_op_range = false;
     bool use_dataset_as_input_stat = true;
     bool use_mse_quant_w = false;
     uint32_t max_solve_secs = 60;

@@ -153,6 +153,7 @@ PYBIND11_MODULE(_nncase, m)
         .def_readwrite("dump_ir", &compile_options::dump_ir)
         .def_readwrite("dump_asm", &compile_options::dump_asm)
         .def_readwrite("dump_quant_error", &compile_options::dump_quant_error)
+        .def_readwrite("dump_import_op_range", &compile_options::dump_import_op_range)
         .def_readwrite("dump_dir", &compile_options::dump_dir)
         .def_readwrite("benchmark_only", &compile_options::benchmark_only);
 
