@@ -27,7 +27,9 @@ def _make_module(in_shape, dst_type):
 
         @tf.function(input_signature=[tf.TensorSpec(in_shape, tf.float32)])
         def __call__(self, x):
-            return tf.cast(x, dst_type)
+            out = tf.multiply(x, 10)
+            out = tf.cast(out, dst_type)
+            return out
     return ConvertModule()
 
 
