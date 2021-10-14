@@ -33,41 +33,36 @@ void onnx_importer::convert_op_DepthToSpace(const NodeProto &node)
     const auto &output = node.output()[0];
     const auto &op_name { generate_name(node) };
 
-    // blocksize attribute
+    // blocksize
     auto blocksize_attr = get_attribute<int>(node, "blocksize");
     assert(blocksize_attr);
     auto blocksize = static_cast<size_t>(blocksize_attr.value());
 
-    // mode attribute
+    // mode
     auto mode_attr = get_attribute<std::string>(node, "mode");
     std::string mode = mode_attr ? mode_attr.value() : "DCR";
 
-    // reshape_1
     shape_t new_shape { input_shape[0], 1, blocksize, 1, input_shape[2], input_shape[3] };
+    axis_t perm;
     auto depth = input_shape[1] / (blocksize * blocksize);
     if (mode == "DCR")
     {
         new_shape[1] = blocksize;
         new_shape[3] = depth;
+        perm.assign({ 0, 3, 4, 1, 5, 2 });
     }
     else
     {
         new_shape[1] = depth;
         new_shape[3] = blocksize;
+        perm.assign({ 0, 1, 4, 2, 5, 3 });
     }
+
+    // reshape_1
     auto bc1 = graph_.emplace<bitcast>(input_type, input_shape, new_shape);
     bc1->name(op_name + "(Reshape_1)");
 
     // transpose
-    axis_t perm;
-    if (mode == "DCR")
-    {
-        perm.assign({ 0, 3, 4, 1, 5, 2 });
-    }
-    else
-    {
-        perm.assign({ 0, 1, 4, 2, 5, 3 });
-    }
     auto tp = graph_.emplace<transpose>(bc1->output().type(), bc1->output().shape(), std::move(perm));
     tp->name(op_name + "(Transpose)");
 
