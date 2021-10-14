@@ -2,7 +2,7 @@ using System;
 using Xunit;
 using Nncase.Transform;
 using Nncase.IR;
-using GiGraph.Dot.Extensions;
+using static Nncase.IR.F.Math;
 
 namespace Nncase.Tests
 {
@@ -24,8 +24,21 @@ namespace Nncase.Tests
             Expr c = a * b;
             EGraph graph = new EGraph();
             graph.Add(c);
-            var dot = graph.Dump();
-            dot.SaveToFile("example.dot");
+            EGraphPrinter.DumpEgraphAsDot(graph, "example.dot");
         }
+
+        [Fact]
+        public void TestEgraphDumpVieta()
+        {
+            Var a = new Var("a");
+            Var b = new Var("b");
+            Var c = new Var("c");
+            Expr d = (-b + Sqrt(Pow(b, 2) - 4 * a * c)) / (2 * a);
+
+            EGraph graph = new EGraph();
+            graph.Add(d);
+            EGraphPrinter.DumpEgraphAsDot(graph, "exampleVieta.dot");
+        }
+
     }
 }

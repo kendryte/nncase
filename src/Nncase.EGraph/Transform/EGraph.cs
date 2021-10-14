@@ -7,13 +7,6 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
-using GiGraph.Dot.Entities.Graphs;
-using GiGraph.Dot.Entities.Nodes;
-using GiGraph.Dot.Extensions;
-using GiGraph.Dot.Types.Nodes;
-using GiGraph.Dot.Types.Styling;
-using GiGraph.Dot.Types.Records;
-using GiGraph.Dot.Types.Edges;
 
 
 namespace Nncase.Transform
@@ -120,6 +113,9 @@ namespace Nncase.Transform
         private readonly Dictionary<Expr, ENode> _nodes = new Dictionary<Expr, ENode>();
         private readonly List<EClass> _classes = new List<EClass>();
 
+        public List<EClass> Classes => _classes;
+        public Dictionary<Expr, ENode> Nodes => _nodes;
+
         /// <summary>
         /// Add enode.
         /// </summary>
@@ -149,56 +145,6 @@ namespace Nncase.Transform
             return node;
         }
 
-
-
-        public DotGraph Dump()
-        {
-            var g = new DotGraph(directed: true);
-            foreach (var eclass in _classes)
-            {
-                var eclassNode = new DotNode($"{eclass.Id}")
-                {
-                    Label = $"{eclass.Id}",
-                    Shape = DotNodeShape.Circle
-                };
-                g.Nodes.Add(eclassNode);
-
-                foreach (var enode in eclass.Nodes)
-                {
-                    string exprId = enode.Expr.GetHashCode().ToString();
-
-                    var args = new List<string> { $"{enode.Expr.GetType().Name}" };
-                    for (int i = 0; i < enode.Children.Length; i++)
-                    {
-                        args.Add($"{exprId}:p{i}");
-                    }
-                    var exprNode = g.Nodes.Add(exprId);
-                    exprNode.ToRecordNode(new DotRecord(args));
-                    for (int i = 0; i < enode.Children.Length; i++)
-                    {
-                        g.Edges.Add($"{enode.Children[i].Id}", exprNode, edge =>
-                       {
-                           edge.Head.Endpoint.Port = new DotEndpointPort($"{exprId}:p{i}");
-                       });
-                    }
-
-                    //                         recordBuilder.AppendField($"{exprId}:p{i}");
-                    //                         // link expr's children with their eclass
-                    //                         g.Edges.Add($"{enode.Children[i].Id}", , edge =>
-                    //  {
-                    //      edge.Head.Endpoint.Port = new DotEndpointPort($"{exprId}:p{i}");
-                    //  });
-
-                    // edge eclass with enode
-                    g.Edges.Add(exprNode, eclassNode, edge =>
-                    {
-                        edge.Style.LineStyle = DotLineStyle.Dashed;
-                    });
-                }
-            }
-            g.Build();
-            return g;
-        }
 
         private sealed class ENodeConverter : ExprVisitor<ENode, IRType>
         {
