@@ -8,6 +8,7 @@ using Nncase.Transform;
 using GiGraph.Dot.Entities.Graphs;
 using GiGraph.Dot.Entities.Nodes;
 using GiGraph.Dot.Extensions;
+using GiGraph.Dot.Types.Graphs;
 using GiGraph.Dot.Types.Nodes;
 using GiGraph.Dot.Types.Styling;
 using GiGraph.Dot.Types.Records;
@@ -22,42 +23,49 @@ namespace Nncase.Transform
         {
             DotDumpVisitor visitor = new DotDumpVisitor();
             var g = new DotGraph(directed: true);
+            g.Clusters.AllowEdgeClipping = true;
+
             foreach (var eclass in eGraph.Classes)
             {
-                var eclassNode = new DotNode($"{eclass.Id}")
-                {
-                    Label = $"{eclass.Id}",
-                    Shape = DotNodeShape.Circle
-                };
-                g.Nodes.Add(eclassNode);
+                // make eclass as cluster
+                var eclassCluster = g.Clusters.Add($"{eclass.Id}", cluster =>
+               {
+                   cluster.Style.BorderStyle = DotBorderStyle.Dotted;
+                   cluster.Label = $"{eclass.Id}";
+               });
+
+                eclassCluster.Nodes.Add(new DotNode(eclassCluster.Id + "dummy"), node =>
+                  {
+                      node.Label = "";
+                      node.Style.Invisible = true;
+                      node.Size.Height = 0;
+                      node.Size.Width = 0;
+                  });
 
                 foreach (var enode in eclass.Nodes)
                 {
                     string exprId = enode.Expr.GetHashCode().ToString();
 
                     var args = new List<DotRecordTextField> {
-                      new DotRecordTextField(visitor.Visit(enode.Expr),
-                                             "Type") };
+                      new DotRecordTextField(visitor.Visit(enode.Expr), "Type") };
 
                     for (int i = 0; i < enode.Children.Length; i++)
                     {
                         args.Add(new DotRecordTextField(null, $"P{i}"));
                     }
-                    var exprNode = g.Nodes.Add(exprId);
+
+                    var exprNode = eclassCluster.Nodes.Add(exprId);
+
                     exprNode.ToRecordNode(new DotRecord(args));
                     for (int i = 0; i < enode.Children.Length; i++)
                     {
-                        g.Edges.Add($"{enode.Children[i].Id}", exprNode, edge =>
-                       {
-                           edge.Head.Endpoint.Port = new DotEndpointPort($"P{i}");
-                       });
+                        // var pnode =  from pnode in select
+                        g.Edges.Add($"{enode.Children[i].Id}" + "dummy", exprNode, edge =>
+                         {
+                             edge.Tail.ClusterId = $"{enode.Children[i].Id}";
+                             edge.Head.Endpoint.Port = new DotEndpointPort($"P{i}");
+                         });
                     }
-
-                    // edge eclass with enode
-                    g.Edges.Add(eclassNode, exprNode, edge =>
-                    {
-                        edge.Style.LineStyle = DotLineStyle.Dashed;
-                    });
                 }
             }
             g.Build();
@@ -84,7 +92,19 @@ namespace Nncase.Transform
                 {
                     if (((TensorType)expr.ValueType).IsScalar)
                     {
-                        name += " " + (expr.Data.ToString());
+                        object data = ((TensorType)expr.ValueType).DataType switch
+                        {
+                            DataType.Bool => BitConverter.ToBoolean(expr.Data),
+                            DataType.Int16 => BitConverter.ToInt16(expr.Data),
+                            DataType.Int32 => BitConverter.ToInt32(expr.Data),
+                            DataType.Int64 => BitConverter.ToInt64(expr.Data),
+                            DataType.UInt16 => BitConverter.ToUInt16(expr.Data),
+                            DataType.UInt32 => BitConverter.ToUInt32(expr.Data),
+                            DataType.UInt64 => BitConverter.ToUInt64(expr.Data),
+                            DataType.Float64 => BitConverter.ToDouble(expr.Data),
+                            _ => "InVaild"
+                        };
+                        name += " " + data.ToString();
                     }
                 }
                 return name;
