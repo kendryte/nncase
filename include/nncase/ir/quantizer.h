@@ -90,17 +90,17 @@ public:
         }
         else
         {
+            if (range.max < 0)
+                range.max = 0;
+            if (range.min > 0)
+                range.min = 0;
+
             auto r = range.max - range.min;
             if (r == 0)
                 r = 0.1f;
             else if (r < 0.01f)
                 r = 0.01f;
             range.max = range.min + r;
-
-            if (range.max < 0)
-                range.max = 0;
-            if (range.min > 0)
-                range.min = 0;
         }
 
         return range;
