@@ -57,7 +57,7 @@ datatype_t from_dtype(pybind11::dtype dtype)
 {
     namespace py = pybind11;
 
-    if (dtype.is(py::dtype::of<uint8_t>()))
+    if (dtype.is(py::dtype::of<uint8_t>()) || dtype.is(py::dtype::of<bool>()))
         return dt_uint8;
     else if (dtype.is(py::dtype::of<uint16_t>()))
         return dt_uint16;

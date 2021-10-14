@@ -7,6 +7,7 @@
 | Abs | ✅ |
 | Acos | ✅ |
 | Acosh | ✅ |
+| And | ✅ |
 | Asin | ✅ |
 | Asinh | ✅ |
 | Add | ✅ |
