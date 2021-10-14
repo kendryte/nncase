@@ -13,7 +13,7 @@ namespace Nncase.IR
     /// <summary>
     /// Call expression.
     /// </summary>
-    public sealed record Call(Expr Target, ImmutableArray<Expr> Parameters) : Expr
+    public sealed record Call(Expr Target, IRArray<Expr> Parameters) : Expr
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="Call"/> class.

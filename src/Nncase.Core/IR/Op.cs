@@ -18,7 +18,7 @@ namespace Nncase.IR
     /// <summary>
     /// Operator expression.
     /// </summary>
-    public abstract record Op(ImmutableArray<ParameterInfo> Parameters) : Expr
+    public abstract record Op(IRArray<ParameterInfo> Parameters) : Expr
     {
         /// <summary>
         /// Inference type.
