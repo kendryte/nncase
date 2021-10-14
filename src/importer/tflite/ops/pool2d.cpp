@@ -21,15 +21,15 @@ using namespace nncase::ir;
 
 DEFINE_TFLITE_LOWER(AVERAGE_POOL_2D)
 {
-    convert_pool2d(op, reduce_mean, 0.f, false);
+    convert_pool2d(op, reduce_mean, 0.f);
 }
 
 DEFINE_TFLITE_LOWER(MAX_POOL_2D)
 {
-    convert_pool2d(op, reduce_max, std::numeric_limits<float>::lowest(), true);
+    convert_pool2d(op, reduce_max, std::numeric_limits<float>::lowest());
 }
 
-void tflite_importer::convert_pool2d(const tflite::Operator &op, reduce_op_t reduce_op, float init_value, bool count_include_pad)
+void tflite_importer::convert_pool2d(const tflite::Operator &op, reduce_op_t reduce_op, float init_value)
 {
     auto &input = get_tensor(op.inputs(), 0);
     auto &output = get_tensor(op.outputs(), 0);
@@ -68,7 +68,7 @@ void tflite_importer::convert_pool2d(const tflite::Operator &op, reduce_op_t red
     auto pad_h = get_windowed_padding(in_h, f_h, stride_h, dilation_h, options.padding() == tflite::Padding_SAME);
     auto pad_w = get_windowed_padding(in_w, f_w, stride_w, dilation_w, options.padding() == tflite::Padding_SAME);
     auto conv = graph_.emplace<reduce_window2d>(reduce_op, pre_trans->output().shape(), init_value, f_h, f_w, pad_h, pad_w,
-        stride_h, stride_w, dilation_h, dilation_w, to_float_clamp_range(options.fused_activation_function()), false, count_include_pad);
+        stride_h, stride_w, dilation_h, dilation_w, to_float_clamp_range(options.fused_activation_function()));
     conv->name(get_tensor(op.outputs(), 0).name()->string_view());
 
     conv->input().connect(pre_trans->output());

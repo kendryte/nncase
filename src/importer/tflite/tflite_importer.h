@@ -45,7 +45,7 @@ private:
 #include "opcode.def"
 #undef DEFINE_OPCODE
 
-    void convert_pool2d(const tflite::Operator &op, reduce_op_t reduce_op, float init_value, bool count_include_pad);
+    void convert_pool2d(const tflite::Operator &op, reduce_op_t reduce_op, float init_value);
     void convert_binary(const tflite::Operator &op, binary_op_t binary_op, tflite::ActivationFunctionType activation);
     void convert_reduce(const tflite::Operator &op, reduce_op_t reduce_op, float init_value);
     void convert_unary(const tflite::Operator &op, unary_op_t unary_op);
