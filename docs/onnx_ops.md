@@ -22,6 +22,7 @@
 | ConvTranspose | ✅ |
 | Cos | ✅ |
 | Cosh | ✅ |
+| DepthToSpace | ✅ |
 | Div | ✅ |
 | Dropout | ✅ |
 | Elu | ✅ |
