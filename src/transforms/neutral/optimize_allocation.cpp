@@ -338,6 +338,7 @@ void alias_slice_buffer_pass::run_core(graph &graph, [[maybe_unused]] nncase::ta
 
                 out_buf->parent() = { in_buf, offset, s->output().shape() };
                 out_buf->strides_shape() = s->input().shape();
+                out_buf->memory_location() = in_buf->memory_location();
             }
         }
     });
