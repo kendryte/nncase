@@ -169,6 +169,8 @@ void quantizer::record(output_connector &connector, std::span<const float> data)
     case quantize_stage::collect_range:
         record(connector, get_range(data.begin(), data.end()));
         has_record_.emplace(&connector, true);
+        if (std::find(ranges_insert_order_.begin(), ranges_insert_order_.end(), &connector) == ranges_insert_order_.end())
+            ranges_insert_order_.push_back(&connector);
         break;
     case quantize_stage::collect_distribution:
         if (connector.owner().runtime_opcode() != op_constant)
@@ -187,6 +189,8 @@ void quantizer::record(output_connector &connector, std::span<const bfloat16> da
     case quantize_stage::collect_range:
         record(connector, get_range(data.begin(), data.end()));
         has_record_.emplace(&connector, true);
+        if (std::find(ranges_insert_order_.begin(), ranges_insert_order_.end(), &connector) == ranges_insert_order_.end())
+            ranges_insert_order_.push_back(&connector);
         break;
     case quantize_stage::collect_distribution:
         if (connector.owner().runtime_opcode() != op_constant)
@@ -205,6 +209,8 @@ void quantizer::record(output_connector &connector, std::span<const half> data)
     case quantize_stage::collect_range:
         record(connector, get_range(data.begin(), data.end()));
         has_record_.emplace(&connector, true);
+        if (std::find(ranges_insert_order_.begin(), ranges_insert_order_.end(), &connector) == ranges_insert_order_.end())
+            ranges_insert_order_.push_back(&connector);
         break;
     case quantize_stage::collect_distribution:
         if (connector.owner().runtime_opcode() != op_constant)
@@ -244,8 +250,8 @@ void quantizer::record_quant_buffers(output_connector &connector, std::span<cons
     std::vector<float> data_vec;
     data_vec.assign(data.begin(), data.end());
     output_buffers_.emplace(&connector, data_vec);
-    if (std::find(insert_order_.begin(), insert_order_.end(), &connector) == insert_order_.end())
-        insert_order_.push_back(&connector);
+    if (std::find(quant_buffers_insert_order_.begin(), quant_buffers_insert_order_.end(), &connector) == quant_buffers_insert_order_.end())
+        quant_buffers_insert_order_.push_back(&connector);
 }
 
 void quantizer::record_quant_buffers(output_connector &connector, std::span<const bfloat16> data)
@@ -254,8 +260,8 @@ void quantizer::record_quant_buffers(output_connector &connector, std::span<cons
     for (int i = 0; i < data.size(); i++)
         data_vec.push_back(static_cast<float>(data.data()[i]));
     output_buffers_.emplace(&connector, data_vec);
-    if (std::find(insert_order_.begin(), insert_order_.end(), &connector) == insert_order_.end())
-        insert_order_.push_back(&connector);
+    if (std::find(quant_buffers_insert_order_.begin(), quant_buffers_insert_order_.end(), &connector) == quant_buffers_insert_order_.end())
+        quant_buffers_insert_order_.push_back(&connector);
 }
 
 void quantizer::record_quant_buffers(output_connector &connector, std::span<const half> data)
@@ -264,8 +270,8 @@ void quantizer::record_quant_buffers(output_connector &connector, std::span<cons
     for (int i = 0; i < data.size(); i++)
         data_vec.push_back(static_cast<float>(data.data()[i]));
     output_buffers_.emplace(&connector, data_vec);
-    if (std::find(insert_order_.begin(), insert_order_.end(), &connector) == insert_order_.end())
-        insert_order_.push_back(&connector);
+    if (std::find(quant_buffers_insert_order_.begin(), quant_buffers_insert_order_.end(), &connector) == quant_buffers_insert_order_.end())
+        quant_buffers_insert_order_.push_back(&connector);
 }
 
 void quantizer::begin_collect_distribution()

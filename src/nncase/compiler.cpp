@@ -209,10 +209,12 @@ public:
             if (compile_options_.dump_ir)
                 f.open(compile_options_.dump_dir / "origin_layer_data_range.txt");
             std::cout << "Collected ranges:" << std::endl;
-            for (auto &it : eval_import_quantizer->quant_ranges())
+            for (uint32_t i = 0; i < eval_import_quantizer->ranges_insert_order().size(); i++)
             {
-                std::cout << "node name: " << it.first->owner().name() << "   range min: " << it.second.min << "   range max: " << it.second.max << std::endl;
-                f << "node name: " << it.first->owner().name() << "   range min: " << it.second.min << "   range max: " << it.second.max << std::endl;
+                auto quant_layer_connector = eval_import_quantizer->ranges_insert_order()[i];
+                auto ranges_map = eval_import_quantizer->ranges();
+                std::cout << "node name: " << quant_layer_connector->owner().name() << "   range min: " << ranges_map[quant_layer_connector].min << "   range max: " << ranges_map[quant_layer_connector].max << std::endl;
+                f << "node name: " << quant_layer_connector->owner().name() << "   range min: " << ranges_map[quant_layer_connector].min << "   range max: " << ranges_map[quant_layer_connector].max << std::endl;
             }
             f.close();
         }
@@ -253,9 +255,9 @@ public:
                 if (compile_options_.dump_ir)
                     f.open(compile_options_.dump_dir / "layer_quant_error.txt");
 
-                for (uint32_t i = 0; i < quant_eval_quantizer->insert_order().size(); i++)
+                for (uint32_t i = 0; i < quant_eval_quantizer->quant_buffers_insert_order().size(); i++)
                 {
-                    auto quant_layer_connector = quant_eval_quantizer->insert_order()[i];
+                    auto quant_layer_connector = quant_eval_quantizer->quant_buffers_insert_order()[i];
                     auto data_size = kernels::detail::compute_size(quant_layer_connector->shape());
                     if (quant_layer_connector->owner().get_output_connectors_quant_map().size() != 0)
                     {
