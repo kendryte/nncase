@@ -12,11 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <iostream>
+#include <limits>
 #include <nncase/kernels/cpu/reference/tensor_compute.h>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/runtime/runtime_op_utility.h>
-#include <iostream>
-#include <limits>
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -29,8 +29,8 @@ namespace
 template <class TReducer>
 result<void> reduce_arg_impl(TReducer &&reducer, float init_value,
     const float *input, int64_t *output,
-    const runtime_shape_t &in_shape,const runtime_shape_t &out_shape,
-    const runtime_shape_t &in_strides,  const runtime_shape_t &out_strides,
+    const runtime_shape_t &in_shape, const runtime_shape_t &out_shape,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides,
     const runtime_shape_t &axes, bool keep_dims, NNCASE_UNUSED bool select_last_idx, NNCASE_UNUSED kernel_context &context) noexcept
 {
     const float epsilon = 0.000001f;
@@ -55,7 +55,6 @@ result<void> reduce_arg_impl(TReducer &&reducer, float init_value,
         ptr[offset(out_strides, index)] = init_value;
         return ok();
     }));
-
 
     // collact all max/min indices
     std::unordered_map<size_t, std::vector<size_t>> out_map;
@@ -93,13 +92,12 @@ result<void> reduce_arg_impl(TReducer &&reducer, float init_value,
         // TODO: how to determine the N/C/H/W index?
         // output[out_idx] = in_idx / in_strides[axes[0]];
         output[out_idx] = in_idx;
-        std::cout << "in_idx = " << in_idx << ", output = " << output[out_idx]  << std::endl;
+        std::cout << "in_idx = " << in_idx << ", output = " << output[out_idx] << std::endl;
         return ok();
     }));
     return ok();
 }
 }
-
 
 result<void> reference::reduce_arg(reduce_arg_op_t op, const float *input, int64_t *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides,
@@ -117,5 +115,4 @@ result<void> reference::reduce_arg(reduce_arg_op_t op, const float *input, int64
     default:
         return err(std::errc::not_supported);
     }
-
 }

@@ -172,7 +172,6 @@ result<void> kernels::reduce_arg(reduce_arg_op_t op, const float *input, int64_t
     return cpu::reference::reduce_arg(op, input, output, in_shape, in_strides, out_strides, axis, keep_dims, select_last_idx, context);
 }
 
-
 #define DISPATCH_RESIZE(resize_fun)                                                                                                                          \
     runtime_shape_t out_shape { in_shape[0], in_shape[1], static_cast<size_t>(out_h), static_cast<size_t>(out_w) };                                          \
     if (is_contiguous(in_shape, in_strides) && is_contiguous(out_shape, out_strides))                                                                        \
