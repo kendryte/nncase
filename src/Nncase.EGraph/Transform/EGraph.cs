@@ -20,12 +20,10 @@ namespace Nncase.Transform
         /// Initializes a new instance of the <see cref="ENode"/> class.
         /// </summary>
         /// <param name="expr">Expression.</param>
-        /// <param name="eclass">EClass.</param>
         /// <param name="children">Children.</param>
-        public ENode(Expr expr, EClass eclass, EClass[] children)
+        public ENode(Expr expr, EClass[] children)
         {
             Expr = expr;
-            Class = eclass;
             Children = children;
         }
 
@@ -35,11 +33,6 @@ namespace Nncase.Transform
         public Expr Expr { get; set; }
 
         /// <summary>
-        /// Gets or sets eclass.
-        /// </summary>
-        public EClass Class { get; set; }
-
-        /// <summary>
         /// Gets children.
         /// </summary>
         public EClass[] Children { get; }
@@ -47,11 +40,11 @@ namespace Nncase.Transform
         /// <summary>
         /// Add current enode information to childrens. 
         /// </summary>
-        public void AddUsed()
+        public void AddUsed(EClass eClass)
         {
             foreach (var children in Children)
             {
-                children.Used.Add(this);
+                children.Used.Add((this, eClass));
             }
         }
 
@@ -81,6 +74,11 @@ namespace Nncase.Transform
         {
             return !(left == right);
         }
+
+        public ENode Canonicalize()
+        {
+            return new ENode(Expr, (from c in Children select c.Find()).ToArray());
+        }
     }
 
     /// <summary>
@@ -100,9 +98,19 @@ namespace Nncase.Transform
         /// <summary>
         /// Gets enodes.
         /// </summary>
-        public List<ENode> Nodes { get; } = new List<ENode>();
+        public List<ENode> Nodes { get; set; } = new List<ENode>();
 
-        public List<ENode> Used { get; } = new List<ENode>();
+        public List<(ENode, EClass)> Used { get; set; } = new List<(ENode, EClass)>();
+
+        public EClass Find()
+        {
+            if (_parent is null)
+            {
+                return this;
+            }
+            _parent = Find();
+            return _parent;
+        }
     }
 
     /// <summary>
@@ -110,11 +118,17 @@ namespace Nncase.Transform
     /// </summary>
     public sealed class EGraph
     {
-        private readonly Dictionary<Expr, ENode> _nodes = new Dictionary<Expr, ENode>();
+        private readonly Dictionary<ENode, EClass> _hascons = new Dictionary<ENode, EClass>();
+
         private readonly List<EClass> _classes = new List<EClass>();
+        private int _version = 0;
+
+        private readonly List<EClass> _worklist = new List<EClass>();
 
         public List<EClass> Classes => _classes;
-        public Dictionary<Expr, ENode> Nodes => _nodes;
+        public Dictionary<ENode, EClass> Nodes => _hascons;
+
+        public int Version => _version;
 
         /// <summary>
         /// Add enode.
@@ -123,30 +137,100 @@ namespace Nncase.Transform
         /// <returns>Corresponding eclass.</returns>
         public EClass Add(Expr expr)
         {
-            if (!_nodes.TryGetValue(expr, out var node))
+            var converter = new ENodeConverter(this);
+            return converter.Visit(expr);
+        }
+
+        private EClass MakeNode(Expr expr, EClass[] children)
+        {
+            // todo rewrite it.
+            // EClass eclass = new EClass(_classes.Count);
+            // ENode node = new ENode(expr, eclass, children);
+
+            // node.AddUsed();
+            // eclass.Nodes.Add(node);
+
+            // _nodes.Add(expr, node);
+            // _classes.Add(eclass);
+
+            // return;
+            return new EClass(_classes.Count); //new ENode(expr, children);
+        }
+
+
+        public bool Merge(EClass to, EClass from)
+        {
+            to = to.Find();
+            from = to.Find();
+            if (to == from)
             {
-                var converter = new ENodeConverter(this);
-                node = converter.Visit(expr);
+                return false;
             }
 
-            return node.Class;
+            _version++;
+
+            to.Used.AddRange(from.Used);
+            from.Used.Clear();
+
+            to.Nodes.AddRange(from.Nodes);
+            from.Nodes.Clear();
+
+            _worklist.Add(to);
+            return true;
         }
 
-        private ENode MakeNode(Expr expr, EClass[] children)
+        public void ReBuild()
         {
-            var eclass = new EClass(_classes.Count);
-            var node = new ENode(expr, eclass, children);
+            while (_worklist.Count > 0)
+            {
+                // remove same eclass avoid duplicate repair
+                var todos = _worklist.GroupBy(x => x).Select(x => x.First());
+                _worklist.Clear();
+                foreach (var eclass in todos)
+                {
+                    Repair(eclass);
+                }
+            }
+        }
 
-            node.AddUsed();
-            eclass.Nodes.Add(node);
-
-            _nodes.Add(expr, node);
-            _classes.Add(eclass);
-            return node;
+        public void Repair(EClass eclass)
+        {
+            // copy and reset the used, will reassgin new used
+            var used = new List<(ENode, EClass)>(eclass.Used);
+            eclass.Used.Clear();
+            foreach (var (pnode, pclass) in used)
+            {   // update the parent node.
+                if (_hascons.ContainsKey(pnode))
+                {
+                    pclass.Nodes.Remove(pnode);
+                    _hascons.Remove(pnode);
+                }
+                var newPnode = pnode.Canonicalize();
+                _hascons.Add(newPnode, pclass.Find());
+                pclass.Find().Nodes.Add(newPnode);
+            }
+            /* when merged eclasses, some enodes will be same. 
+            eg. b1 = 1 + mul(a,2) and b2 = 1 + a<<2. =>  b1 will equal b2
+            so we need remove duplicate enode b1 and b2.  */
+            var newUsed = new Dictionary<ENode, EClass>();
+            foreach (var (pnode, pclass) in used)
+            {
+                var newPnode = pnode.Canonicalize();
+                if (newUsed.ContainsKey(newPnode))
+                {
+                    Merge(pclass, newUsed[newPnode]);
+                }
+                newUsed.Add(newPnode, _hascons[newPnode]);
+            }
+            // reassgin current eclass's Used.
+            foreach (var item in newUsed)
+            {
+                eclass.Find().Used.Add((item.Key, item.Value));
+            }
         }
 
 
-        private sealed class ENodeConverter : ExprVisitor<ENode, IRType>
+        private sealed class ENodeConverter : ExprVisitor<EClass, IRType>
         {
             private readonly EGraph _graph;
 
@@ -155,37 +239,37 @@ namespace Nncase.Transform
                 _graph = graph;
             }
 
-            public override ENode VisitLeaf(Call expr)
+            public override EClass VisitLeaf(Call expr)
             {
-                var children = new[] { Visit(expr.Target).Class }.Concat(
-                    from p in expr.Parameters select Visit(p).Class).ToArray();
+                var children = new[] { Visit(expr.Target) }.Concat(
+                    from p in expr.Parameters select Visit(p)).ToArray();
                 return _graph.MakeNode(expr, children);
             }
 
-            public override ENode VisitLeaf(Const expr)
+            public override EClass VisitLeaf(Const expr)
             {
                 return _graph.MakeNode(expr, Array.Empty<EClass>());
             }
 
-            public override ENode VisitLeaf(Function expr)
+            public override EClass VisitLeaf(Function expr)
             {
-                var children = (from p in expr.Parameters select Visit(p).Class)
-                    .Concat(new[] { Visit(expr.Body).Class }).ToArray();
+                var children = (from p in expr.Parameters select Visit(p))
+                    .Concat(new[] { Visit(expr.Body) }).ToArray();
                 return _graph.MakeNode(expr, children);
             }
 
-            public override ENode VisitLeaf(IR.Tuple expr)
+            public override EClass VisitLeaf(IR.Tuple expr)
             {
-                var children = (from p in expr.Fields select Visit(p).Class).ToArray();
+                var children = (from p in expr.Fields select Visit(p)).ToArray();
                 return _graph.MakeNode(expr, children);
             }
 
-            public override ENode VisitLeaf(Op expr)
+            public override EClass VisitLeaf(Op expr)
             {
                 return _graph.MakeNode(expr, Array.Empty<EClass>());
             }
 
-            public override ENode VisitLeaf(Var expr)
+            public override EClass VisitLeaf(Var expr)
             {
                 return _graph.MakeNode(expr, Array.Empty<EClass>());
             }

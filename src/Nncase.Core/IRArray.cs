@@ -1,4 +1,6 @@
-﻿
+﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+
 using System;
 using System.Collections;
 using System.Collections.Generic;
@@ -70,7 +72,7 @@ namespace Nncase.IR
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(_array);
+            return HashCode.Combine(StructuralComparisons.StructuralEqualityComparer.GetHashCode(_array));
         }
 
         public int IndexOf(T item)

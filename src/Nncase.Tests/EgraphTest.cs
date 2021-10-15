@@ -3,11 +3,27 @@ using Xunit;
 using Nncase.Transform;
 using Nncase.IR;
 using static Nncase.IR.F.Math;
+using System.Collections.Generic;
 
 namespace Nncase.Tests
 {
     public class UnitTestEGraph
     {
+        [Fact]
+        public void TestExprEqual()
+        {
+            Call a = Mul(1, 12);
+            Call b = Mul(2, 3);
+            EGraph graph = new EGraph();
+            graph.Add(a * b);
+            var d = new Dictionary<Expr, int>();
+            Console.WriteLine(a.Target == b.Target);
+            d.Add(a.Target, 1);
+            Console.WriteLine(d.TryGetValue(b.Target, out var res));
+            d.Add(b.Target, 2);
+
+            EGraphPrinter.DumpEgraphAsDot(graph, "exampleEqual.dot");
+        }
         [Fact]
         public void TestAddExpr()
         {
