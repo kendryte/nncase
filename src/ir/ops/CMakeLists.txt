@@ -10,6 +10,7 @@ target_sources(ir PRIVATE
     matmul.cpp
     transpose.cpp
     reduce.cpp
+    reduce_arg.cpp
     reduce_window2d.cpp
     binary.cpp
     concat.cpp

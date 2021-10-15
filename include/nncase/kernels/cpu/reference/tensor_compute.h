@@ -66,6 +66,10 @@ NNCASE_API result<void> unary(unary_op_t op, const float *input, float *output, 
 NNCASE_API result<void> reduce(reduce_op_t op, float init_value, const float *input, float *output, const runtime_shape_t &in_shape, const runtime_shape_t &axis,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, bool keep_dims, kernel_context &context) noexcept;
 
+NNCASE_API result<void> reduce_arg(reduce_arg_op_t op, const float *input, int64_t *output, const runtime_shape_t &in_shape,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides,
+    const runtime_shape_t &axis, bool keep_dims, bool select_last_idx, kernel_context &context) noexcept;
+
 NNCASE_API result<void> resize_bilinear(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, int32_t out_h, int32_t out_w, bool align_corners, bool half_pixel_centers,
     kernel_context &context) noexcept;
