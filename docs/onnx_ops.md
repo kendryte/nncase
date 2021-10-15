@@ -7,6 +7,7 @@
 | Abs | ✅ |
 | Acos | ✅ |
 | Acosh | ✅ |
+| And | ✅ |
 | Asin | ✅ |
 | Asinh | ✅ |
 | Add | ✅ |
@@ -22,6 +23,7 @@
 | ConvTranspose | ✅ |
 | Cos | ✅ |
 | Cosh | ✅ |
+| DepthToSpace | ✅ |
 | Div | ✅ |
 | Dropout | ✅ |
 | Elu | ✅ |

@@ -652,21 +652,24 @@ class TestRunner(metaclass=ABCMeta):
                     judeg_cfg.update(specific)
                     break
 
+        i = 0
         for ref_file, test_file in zip(ref_ouputs, test_outputs):
 
             judge, simarity_info = compare(test_file, ref_file,
+                                           self.outputs[i]['dtype'],
                                            judeg_cfg.simarity_name,
                                            judeg_cfg.threshold,
                                            judeg_cfg.log_hist)
             name_list = test_file[1].split(os.path.sep)
             kw_names = ' '.join(name_list[-len(kwargs) - 2:-1])
-            i = self.num_pattern.findall(name_list[-1])
+            j = self.num_pattern.findall(name_list[-1])
             result_info = "\n{0} [ {1} ] Output: {2}!!\n".format(
-                'Pass' if judge else 'Fail', kw_names, i)
+                'Pass' if judge else 'Fail', kw_names, j)
             result = simarity_info + result_info
             # print(result) temp disable
             with open(os.path.join(self.case_dir, 'test_result.txt'), 'a+') as f:
                 f.write(result)
+            i = i + 1
             if not judge:
                 return False, result
         return True, result

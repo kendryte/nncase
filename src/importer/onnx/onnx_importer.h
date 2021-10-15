@@ -50,6 +50,7 @@ private:
 
     void convert_unary(const onnx::NodeProto &node, const unary_op_t unary_op);
     void convert_binary(const onnx::NodeProto &node, const binary_op_t binary_op);
+    void convert_op_logical(const onnx::NodeProto &node, const binary_op_t binary_op);
 
     template <bool global = false>
     void convert_pool(const onnx::NodeProto &node, const reduce_op_t reduce_op, const float initial_value);

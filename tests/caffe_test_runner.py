@@ -30,9 +30,11 @@ class CaffeTestRunner(TestRunner):
         for n in [name for _, l in caffe_model.top_names.items() for name in l]:
             if not n in used_inputs and not n in seen_outputs:
                 seen_outputs.add(n)
-                input_dict = {}
-                input_dict['name'] = n
-                self.outputs.append(input_dict)
+                output_dict = {}
+                output_dict['name'] = n
+                output_dict['dtype'] = np.float32
+                output_dict['model_shape'] = list(caffe_model.blobs[n].data.shape)
+                self.outputs.append(output_dict)
 
     def cpu_infer(self, case_dir: str, model_file_list, type: str):
         caffe_model = caffe.Net(model_file_list[0], model_file_list[1], caffe.TEST)

@@ -82,6 +82,11 @@ void onnx_importer::convert_pool(const NodeProto &node, const reduce_op_t reduce
         pad_mode = parse_padding_mode(auto_pad_attr.value());
     }
 
+    bool count_include_pad = false;
+    const auto &count_include_pad_attr = get_attribute<int>(node, "count_include_pad");
+    if (count_include_pad_attr)
+        count_include_pad = static_cast<bool>(count_include_pad_attr.value());
+
     std::array<size_t, 2> dilations = { 1, 1 };
 
     if (input_shape.size() < 4)
@@ -129,7 +134,7 @@ void onnx_importer::convert_pool(const NodeProto &node, const reduce_op_t reduce
     }
 
     auto op = graph_.emplace<reduce_window2d>(reduce_op, move(input_shape), init_value, kernel_shape[0], kernel_shape[1],
-        pads[0], pads[1], strides[0], strides[1], dilations[0], dilations[1], value_range<float>::full());
+        pads[0], pads[1], strides[0], strides[1], dilations[0], dilations[1], value_range<float>::full(), false, count_include_pad);
 
     op->name(op_name + '.' + reduce_op_to_string(reduce_op) + "(Pool)");
 

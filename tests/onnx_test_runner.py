@@ -123,6 +123,14 @@ class OnnxTestRunner(TestRunner):
             self.calibs.append(copy.deepcopy(input_dict))
 
         # output
+        for e in onnx_model.graph.output:
+            output_dict = {}
+            onnx_type = e.type.tensor_type
+            output_dict['name'] = e.name
+            output_dict['dtype'] = onnx.mapping.TENSOR_TYPE_TO_NP_TYPE[onnx_type.elem_type]
+            output_dict['model_shape'] = [i.dim_value for i in onnx_type.shape.dim]
+            print(output_dict)
+            self.outputs.append(output_dict)
 
     def cpu_infer(self, case_dir: str, model_file: bytes, type: str):
         # create session
