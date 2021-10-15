@@ -25,7 +25,7 @@ namespace Nncase.Transform
             var g = new DotGraph(directed: true);
             g.Clusters.AllowEdgeClipping = true;
 
-            foreach (var eclass in eGraph.Classes)
+            foreach (var eclass in eGraph.Classes.Select(x => x.Find()).Distinct())
             {
                 // make eclass as cluster
                 var eclassCluster = g.Clusters.Add($"{eclass.Id}", cluster =>
@@ -49,7 +49,7 @@ namespace Nncase.Transform
                     var args = new List<DotRecordTextField> {
                       new DotRecordTextField(visitor.Visit(enode.Expr), "Type") };
 
-                    for (int i = 0; i < enode.Children.Length; i++)
+                    for (int i = 0; i < enode.Children.Count; i++)
                     {
                         args.Add(new DotRecordTextField(null, $"P{i}"));
                     }
@@ -57,10 +57,10 @@ namespace Nncase.Transform
                     var exprNode = eclassCluster.Nodes.Add(exprId);
 
                     exprNode.ToRecordNode(new DotRecord(args));
-                    for (int i = 0; i < enode.Children.Length; i++)
+                    for (int i = 0; i < enode.Children.Count; i++)
                     {
                         // var pnode =  from pnode in select
-                        g.Edges.Add($"{enode.Children[i].Id}" + "dummy", exprNode, edge =>
+                        g.Edges.Add($"{enode.Children[i].Find().Id}" + "dummy", exprNode, edge =>
                          {
                              edge.Tail.ClusterId = $"{enode.Children[i].Id}";
                              edge.Head.Endpoint.Port = new DotEndpointPort($"P{i}");

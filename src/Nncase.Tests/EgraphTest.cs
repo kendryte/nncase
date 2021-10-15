@@ -10,6 +10,17 @@ namespace Nncase.Tests
     public class UnitTestEGraph
     {
         [Fact]
+        public void TestConstEqual()
+        {
+            Const a = 2;
+            Const b = 2;
+            var d = new Dictionary<Expr, int>();
+            Console.WriteLine(a.Data == b.Data);
+            d.Add(a, 1);
+            Console.WriteLine(d.TryGetValue(b, out var res));
+        }
+
+        [Fact]
         public void TestExprEqual()
         {
             Call a = Mul(1, 12);
@@ -20,10 +31,10 @@ namespace Nncase.Tests
             Console.WriteLine(a.Target == b.Target);
             d.Add(a.Target, 1);
             Console.WriteLine(d.TryGetValue(b.Target, out var res));
-            d.Add(b.Target, 2);
 
             EGraphPrinter.DumpEgraphAsDot(graph, "exampleEqual.dot");
         }
+
         [Fact]
         public void TestAddExpr()
         {
@@ -44,6 +55,17 @@ namespace Nncase.Tests
         }
 
         [Fact]
+        public void TestEgraphDumpAddSame()
+        {
+            Expr a = (Const)1 * 2;
+            Expr b = (Const)1 * 2;
+            EGraph graph = new EGraph();
+            graph.Add(a);
+            graph.Add(b);
+            EGraphPrinter.DumpEgraphAsDot(graph, "exampleAddSame.dot");
+        }
+
+        [Fact]
         public void TestEgraphDumpVieta()
         {
             Var a = new Var("a");
@@ -54,6 +76,26 @@ namespace Nncase.Tests
             EGraph graph = new EGraph();
             graph.Add(d);
             EGraphPrinter.DumpEgraphAsDot(graph, "exampleVieta.dot");
+        }
+
+        [Fact]
+        public void TestEgraphMerge()
+        {
+            EGraph graph = new EGraph();
+            Var a = new Var("a");
+            Expr b = a * 2 / 2;
+            var bId = graph.Add(b);
+            EGraphPrinter.DumpEgraphAsDot(graph, "exampleMerge1.dot");
+            Expr c = a * 1;
+            var cId = graph.Add(c);
+            EGraphPrinter.DumpEgraphAsDot(graph, "exampleMerge2.dot");
+            var dId = graph.Add(Exp(b) + 3);
+            EGraphPrinter.DumpEgraphAsDot(graph, "exampleMerge3.dot");
+
+            graph.Merge(cId, bId);
+            EGraphPrinter.DumpEgraphAsDot(graph, "exampleMerge4.dot");
+            graph.ReBuild();
+            EGraphPrinter.DumpEgraphAsDot(graph, "exampleMerge5.dot");
         }
 
     }

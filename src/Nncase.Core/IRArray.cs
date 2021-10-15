@@ -112,5 +112,8 @@ namespace Nncase.IR
 
         public static implicit operator IRArray<T>(ImmutableArray<T> array) =>
             new IRArray<T>(array);
+
+        public static implicit operator IRArray<T>(T[] array) =>
+            new IRArray<T>(ImmutableArray.Create(array));
     }
 }
