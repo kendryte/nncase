@@ -49,6 +49,7 @@ compile_command::compile_command(lyra::cli &cli)
                          .add_argument(lyra::opt(dump_ir_).name("--dump-ir").optional().help("dump ir to .dot, default is " + std::to_string(dump_ir_)))
                          .add_argument(lyra::opt(dump_asm_).name("--dump-asm").optional().help("dump assembly, default is " + std::to_string(dump_asm_)))
                          .add_argument(lyra::opt(dump_quant_error_).name("--dump-quant-error").optional().help("dump quant error, default is " + std::to_string(dump_quant_error_)))
+                         .add_argument(lyra::opt(dump_import_op_range_).name("--dump-import-op-range").optional().help("dump import op range, default is " + std::to_string(dump_import_op_range_)))
                          .add_argument(lyra::opt(dump_dir_, "dump directory").name("--dump-dir").optional().help("dump to directory"))
                          .add_argument(lyra::opt(benchmark_only_).name("--benchmark-only").optional().help("compile kmodel only for benchmark use, default is " + std::to_string(benchmark_only_))));
 }
@@ -76,6 +77,7 @@ void compile_command::run()
     c_options.dump_asm = dump_asm_;
     c_options.dump_ir = dump_ir_;
     c_options.dump_quant_error = dump_quant_error_;
+    c_options.dump_import_op_range = dump_import_op_range_;
     c_options.dump_dir = dump_dir_;
     c_options.target = target_name_;
     c_options.is_fpga = is_fpga_;
