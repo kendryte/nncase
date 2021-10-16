@@ -51,7 +51,7 @@ def _make_module(in_shape, axis, keepdim, select_last_index):
         attributes_dict['select_last_index'] = select_last_index
 
     node = onnx.helper.make_node(
-        'ArgMax',
+        'ArgMin',
         inputs=inputs,
         outputs=outputs,
         **attributes_dict
@@ -104,7 +104,7 @@ select_last_indices = [
 @pytest.mark.parametrize('axis', axes)
 @pytest.mark.parametrize('keepdim', keepdims)
 @pytest.mark.parametrize('select_last_index', select_last_indices)
-def test_argmax(in_shape, axis, keepdim, select_last_index, request):
+def test_argmin(in_shape, axis, keepdim, select_last_index, request):
     model_def = _make_module(in_shape, axis, keepdim, select_last_index)
 
     runner = OnnxTestRunner(request.node.name)
@@ -113,4 +113,4 @@ def test_argmax(in_shape, axis, keepdim, select_last_index, request):
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_argmax.py'])
+    pytest.main(['-vv', 'test_argmin.py'])

@@ -12,11 +12,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <iostream>
 #include <limits>
 #include <nncase/kernels/cpu/reference/tensor_compute.h>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/runtime/runtime_op_utility.h>
+#include <unordered_map>
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -31,68 +31,41 @@ result<void> reduce_arg_impl(TReducer &&reducer, float init_value,
     const float *input, int64_t *output,
     const runtime_shape_t &in_shape, const runtime_shape_t &out_shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides,
-    const runtime_shape_t &axes, bool keep_dims, NNCASE_UNUSED bool select_last_idx, NNCASE_UNUSED kernel_context &context) noexcept
+    const runtime_shape_t &axes, bool keep_dims, bool select_last_idx, NNCASE_UNUSED kernel_context &context) noexcept
 {
     const float epsilon = 0.000001f;
-    std::cout << "in_strides :" << std::endl;
-    for (auto i : in_strides)
-        std::cout << i << std::endl;
-
-    std::cout << "out_strides :" << std::endl;
-    for (auto i : out_strides)
-        std::cout << i << std::endl;
-
-    std::cout << "axes :" << std::endl;
-    for (auto i : axes)
-        std::cout << i << std::endl;
-
-    std::cout << "keep_dims = " << keep_dims << ", select_last_idx = " << select_last_idx << std::endl;
 
     // init with init_value
-    auto size = compute_size(out_shape);
-    std::unique_ptr<float[]> ptr(new float[size]);
+    std::unique_ptr<float[]> ptr(new float[compute_size(out_shape)]);
     try_(apply(out_shape, [&](const runtime_shape_t &index) -> result<void> {
         ptr[offset(out_strides, index)] = init_value;
         return ok();
     }));
 
-    // collact all max/min indices
+    // collact all min/max indices
     std::unordered_map<size_t, std::vector<size_t>> out_map;
     try_(apply(in_shape, [&](const runtime_shape_t &index) -> result<void> {
-        // std::cout << "index shape: " << std::endl;
-        // for (auto i : index)
-        //     std::cout << i << std::endl;
-
-        auto in_idx = offset(in_strides, index);
-        const auto src = input[in_idx];
-        const auto out_index = kernels::detail::get_reduced_offset(index, axes, keep_dims);
-        auto out_idx = offset(out_strides, out_index);
+        const auto src = input[offset(in_strides, index)];
+        auto out_idx = offset(out_strides, kernels::detail::get_reduced_offset(index, axes, keep_dims));
         auto &dst = ptr[out_idx];
-        std::cout << "in_idx = " << in_idx << ", src = " << src << ", out_idx = " << out_idx << ", dst = " << dst << std::endl;
         auto ret = reducer(src, dst);
         if (ret)
         {
             out_map[out_idx].clear();
             out_map[out_idx].push_back(index[axes[0]]);
             dst = src;
-            std::cout << "out_idx = " << out_idx << "-> in_idx = " << in_idx << std::endl;
         }
-        else if (abs(src - dst) < epsilon)
+        else if (fabs(src - dst) < epsilon)
         {
-            out_map[out_idx].push_back(in_idx);
+            out_map[out_idx].push_back(index[axes[0]]);
         }
         return ok();
     }));
 
-    // update max/min idx
+    // update min/max idx
     try_(apply(out_shape, [&](const runtime_shape_t &index) -> result<void> {
         auto out_idx = offset(out_strides, index);
-        auto in_idx = select_last_idx ? out_map[out_idx].back() : out_map[out_idx].front();
-
-        // TODO: how to determine the N/C/H/W index?
-        // output[out_idx] = in_idx / in_strides[axes[0]];
-        output[out_idx] = in_idx;
-        std::cout << "in_idx = " << in_idx << ", output = " << output[out_idx] << std::endl;
+        output[out_idx] = select_last_idx ? out_map[out_idx].back() : out_map[out_idx].front();
         return ok();
     }));
     return ok();
