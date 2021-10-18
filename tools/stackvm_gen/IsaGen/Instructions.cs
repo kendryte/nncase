@@ -1575,9 +1575,9 @@ namespace IsaGen
         {
             public override TensorFunction Function => TensorFunction.REDUCEARG;
 
-            [DisplayName("datatype")]
-            [Description("Datatype")]
-            public DataType DataType { get; set; }
+            [DisplayName("datatype_src")]
+            [Description("Input datatype")]
+            public DataType DataTypeSrc { get; set; }
 
             [DisplayName("rshape_src")]
             [Description("Source shape register")]
@@ -1586,6 +1586,10 @@ namespace IsaGen
             [DisplayName("rstride_src")]
             [Description("Source stride register")]
             public byte RstrideSrc { get; set; }
+
+            [DisplayName("datatype_dest")]
+            [Description("Output datatype")]
+            public DataType DataTypeDest { get; set; }
 
             [DisplayName("rstride_dest")]
             [Description("Dest stride register")]

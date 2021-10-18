@@ -26,9 +26,9 @@ using namespace nncase::kernels::cpu::reference;
 
 namespace
 {
-template <class TReducer>
+template <class TReducer, class TOutput>
 result<void> reduce_arg_impl(TReducer &&reducer, float init_value,
-    const float *input, int64_t *output,
+    const float *input, TOutput *output,
     const runtime_shape_t &in_shape, const runtime_shape_t &out_shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides,
     const runtime_shape_t &axes, bool keep_dims, bool select_last_idx, NNCASE_UNUSED kernel_context &context) noexcept
@@ -43,7 +43,7 @@ result<void> reduce_arg_impl(TReducer &&reducer, float init_value,
     }));
 
     // collact all min/max indices
-    std::unordered_map<size_t, std::vector<size_t>> out_map;
+    std::unordered_map<size_t, std::vector<TOutput>> out_map;
     try_(apply(in_shape, [&](const runtime_shape_t &index) -> result<void> {
         const auto src = input[offset(in_strides, index)];
         auto out_idx = offset(out_strides, kernels::detail::get_reduced_offset(index, axes, keep_dims));
@@ -72,7 +72,16 @@ result<void> reduce_arg_impl(TReducer &&reducer, float init_value,
 }
 }
 
-result<void> reference::reduce_arg(reduce_arg_op_t op, const float *input, int64_t *output, const runtime_shape_t &in_shape,
+template NNCASE_API result<void> reference::reduce_arg<int32_t>(reduce_arg_op_t op, const float *input, int32_t *output, const runtime_shape_t &in_shape,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides,
+    const runtime_shape_t &axis, bool keep_dims, bool select_last_idx, kernel_context &context) noexcept;
+
+template NNCASE_API result<void> reference::reduce_arg<int64_t>(reduce_arg_op_t op, const float *input, int64_t *output, const runtime_shape_t &in_shape,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides,
+    const runtime_shape_t &axis, bool keep_dims, bool select_last_idx, kernel_context &context) noexcept;
+
+template <typename T>
+result<void> reference::reduce_arg(reduce_arg_op_t op, const float *input, T *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides,
     const runtime_shape_t &axes, bool keep_dims, bool select_last_idx, kernel_context &context) noexcept
 {

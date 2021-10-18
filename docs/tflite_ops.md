@@ -6,6 +6,8 @@
 |-------|------------------ |
 | ABS | ✅ |
 | ADD | ✅ |
+| ARG_MAX | ✅ |
+| ARG_MIN | ✅ |
 | AVERAGE_POOL_2D | ✅ |
 | CAST | ✅ |
 | CEIL | ✅ |

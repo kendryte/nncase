@@ -46,6 +46,7 @@
 #include <nncase/kernels/nnil.h>
 #include <nncase/kernels/reduce_window.h>
 #include <nncase/kernels/tensor_compute.h>
+#include <nncase/runtime/debug.h>
 
 using namespace nncase;
 using namespace nncase::schedule;
@@ -273,15 +274,29 @@ void register_neutral_evaluators()
     register_evaluator(op_reduce_arg, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<reduce_arg &>(node);
         assert(rnode.input().type() == dt_float32);
+        auto output_type = rnode.output().type();
+        assert(output_type == dt_int32 || output_type == dt_int64);
         auto input = context.memory_at(rnode.input());
         auto output = context.memory_at(rnode.output());
         auto input_mem = input.buffer().as_span<float>();
-        auto output_mem = output.buffer().as_span<int64_t>();
-
         axis_t axes { rnode.axis() };
-        kernels::reduce_arg(rnode.reduce_arg_op(), input_mem.data(), output_mem.data(), input.shape(),
-            input.strides(), output.strides(), to(axes), rnode.keep_dims(), rnode.select_last_index())
-            .unwrap_or_throw();
+
+        switch (output_type)
+        {
+        case dt_int32:
+            kernels::reduce_arg(rnode.reduce_arg_op(), input_mem.data(), output.buffer().as_span<int32_t>().data(), input.shape(),
+                input.strides(), output.strides(), to(axes), rnode.keep_dims(), rnode.select_last_index())
+                .unwrap_or_throw();
+            break;
+        case dt_int64:
+            kernels::reduce_arg(rnode.reduce_arg_op(), input_mem.data(), output.buffer().as_span<int64_t>().data(), input.shape(),
+                input.strides(), output.strides(), to(axes), rnode.keep_dims(), rnode.select_last_index())
+                .unwrap_or_throw();
+            break;
+        default:
+            std::cerr << "unsupported dtype for reduce_arg: " + std::string(datatype_names(output_type));
+            std::abort();
+        }
     });
 
     register_evaluator(op_reduce_window2d, [](ir::node &node, function_evaluate_context &context) {

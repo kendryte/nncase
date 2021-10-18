@@ -13,7 +13,9 @@
  * limitations under the License.
  */
 #include "../runtime_function.h"
+#include <iostream>
 #include <nncase/kernels/tensor_compute.h>
+#include <nncase/runtime/debug.h>
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -28,6 +30,18 @@ result<void> stackvm_runtime_function::visit(const tensor_reduce_arg_op_t &op) n
     try_var(in_strides, module().shape_reg(op.rstride_src));
     try_var(out_strides, module().shape_reg(op.rstride_dest));
 
-    return kernels::reduce_arg(op.reduce_arg_op, reinterpret_cast<const float *>(input), reinterpret_cast<int64_t *>(output),
-        in_shape, in_strides, out_strides, axis, op.keep_dims, op.select_last_idx, module().kernel_context());
+    switch (op.datatype_dest)
+    {
+    case dt_int32:
+        return kernels::reduce_arg(op.reduce_arg_op, reinterpret_cast<const float *>(input), reinterpret_cast<int32_t *>(output),
+            in_shape, in_strides, out_strides, axis, op.keep_dims, op.select_last_idx, module().kernel_context());
+        break;
+    case dt_int64:
+        return kernels::reduce_arg(op.reduce_arg_op, reinterpret_cast<const float *>(input), reinterpret_cast<int64_t *>(output),
+            in_shape, in_strides, out_strides, axis, op.keep_dims, op.select_last_idx, module().kernel_context());
+        break;
+    default:
+        std::cerr << "unsupported dtype for reduce_arg: " + std::string(datatype_names(op.datatype_dest));
+        std::abort();
+    }
 }
