@@ -163,6 +163,24 @@ inline std::string reduce_op_to_string(reduce_op_t op)
     return "unknown";
 }
 
+typedef enum _reduce_arg_op
+{
+    reduce_arg_min,
+    reduce_arg_max,
+} reduce_arg_op_t;
+
+inline std::string reduce_arg_op_to_string(reduce_arg_op_t op)
+{
+    switch (op)
+    {
+    case reduce_arg_min:
+        return "reduce_arg_min";
+    case reduce_arg_max:
+        return "reduce_arg_max";
+    }
+    return "unknown reduce arg op";
+}
+
 typedef enum _binary_op
 {
     binary_add,
