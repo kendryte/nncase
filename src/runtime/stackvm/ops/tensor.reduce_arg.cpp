@@ -42,5 +42,6 @@ result<void> stackvm_runtime_function::visit(const tensor_reduce_arg_op_t &op) n
         break;
     default:
         std::cerr << "unsupported dtype for reduce_arg: " + std::string(datatype_names(op.datatype_dest));
+        return err(std::errc::invalid_argument);
     }
 }
