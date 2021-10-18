@@ -187,9 +187,9 @@ void function_schedule_context::analyze_buffer_alias()
 {
     pass_manager pmgr(*graph, mod_sched_.model_sched().target());
     pmgr.schedule_context(this);
+    pmgr.add_pass<alias_slice_buffer_pass>();
     pmgr.add_pass<alias_bitcast_buffer_pass>();
     pmgr.add_pass<alias_concat_buffer_pass>();
-    pmgr.add_pass<alias_slice_buffer_pass>();
     pmgr.run();
 }
 
