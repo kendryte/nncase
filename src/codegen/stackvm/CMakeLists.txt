@@ -16,6 +16,7 @@ set(SRCS module_builder.cpp
          ops/pad.cpp
          ops/quantize.cpp
          ops/reduce.cpp
+         ops/reduce_arg.cpp
          ops/reduce_window2d.cpp
          ops/resize_image.cpp
          ops/slice.cpp

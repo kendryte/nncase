@@ -152,6 +152,7 @@ protected:
     result<void> visit(const tensor_pad_op_t &op) noexcept override;
     result<void> visit(const tensor_quantize_op_t &op) noexcept override;
     result<void> visit(const tensor_reduce_op_t &op) noexcept override;
+    result<void> visit(const tensor_reduce_arg_op_t &op) noexcept override;
     result<void> visit(const tensor_reduce_window2d_op_t &op) noexcept override;
     result<void> visit(const tensor_resize_image_op_t &op) noexcept override;
     result<void> visit(const tensor_slice_op_t &op) noexcept override;

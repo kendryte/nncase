@@ -33,6 +33,7 @@
 #include <nncase/ir/ops/pad.h>
 #include <nncase/ir/ops/quantize.h>
 #include <nncase/ir/ops/reduce.h>
+#include <nncase/ir/ops/reduce_arg.h>
 #include <nncase/ir/ops/reduce_window2d.h>
 #include <nncase/ir/ops/resize_image.h>
 #include <nncase/ir/ops/slice.h>
@@ -266,6 +267,20 @@ void register_neutral_evaluators()
 
         kernels::reduce(rnode.reduce_op(), rnode.init_value(), input_mem.data(), output_mem.data(), input.shape(),
             to(rnode.axis()), input.strides(), output.strides(), rnode.keep_dims())
+            .unwrap_or_throw();
+    });
+
+    register_evaluator(op_reduce_arg, [](ir::node &node, function_evaluate_context &context) {
+        auto &rnode = static_cast<reduce_arg &>(node);
+        assert(rnode.input().type() == dt_float32);
+        auto input = context.memory_at(rnode.input());
+        auto output = context.memory_at(rnode.output());
+        auto input_mem = input.buffer().as_span<float>();
+        auto output_mem = output.buffer().as_span<int64_t>();
+
+        axis_t axes { rnode.axis() };
+        kernels::reduce_arg(rnode.reduce_arg_op(), input_mem.data(), output_mem.data(), input.shape(),
+            input.strides(), output.strides(), to(axes), rnode.keep_dims(), rnode.select_last_index())
             .unwrap_or_throw();
     });
 

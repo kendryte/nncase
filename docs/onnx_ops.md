@@ -8,6 +8,8 @@
 | Acos | ✅ |
 | Acosh | ✅ |
 | And | ✅ |
+| ArgMax | ✅ |
+| ArgMin | ✅ |
 | Asin | ✅ |
 | Asinh | ✅ |
 | Add | ✅ |

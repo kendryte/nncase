@@ -163,6 +163,7 @@ namespace IsaGen
         PAD,
         QUANTIZE,
         REDUCE,
+        REDUCEARG,
         REDUCE_WINDOW2D,
         RESIZE_IMAGE,
         SLICE,
@@ -205,6 +206,13 @@ namespace IsaGen
     [EnumName("reduce_op_t")]
     [Browsable(false)]
     public enum ReduceOp
+    {
+    }
+
+    [BitLength(8)]
+    [EnumName("reduce_arg_op_t")]
+    [Browsable(false)]
+    public enum ReduceArgOp
     {
     }
 
@@ -1558,6 +1566,46 @@ namespace IsaGen
             [DisplayName("keep_dims")]
             [Description("Keep dimensions")]
             public bool KeepDims { get; set; }
+        }
+
+        [DisplayName("TENSOR.REDUCE_ARG")]
+        [Category("Tensor Instructions")]
+        [Description("ReduceArg")]
+        public class ReduceArgInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.REDUCEARG;
+
+            [DisplayName("datatype")]
+            [Description("Datatype")]
+            public DataType DataType { get; set; }
+
+            [DisplayName("rshape_src")]
+            [Description("Source shape register")]
+            public byte RshapeSrc { get; set; }
+
+            [DisplayName("rstride_src")]
+            [Description("Source stride register")]
+            public byte RstrideSrc { get; set; }
+
+            [DisplayName("rstride_dest")]
+            [Description("Dest stride register")]
+            public byte RstrideDest { get; set; }
+
+            [DisplayName("reduce_arg_op")]
+            [Description("Reduce arg operator")]
+            public ReduceArgOp ReduceArgOp { get; set; }
+
+            [DisplayName("rshape_axis")]
+            [Description("Axis shape register")]
+            public byte RshapeAxis { get; set; }
+
+            [DisplayName("keep_dims")]
+            [Description("Keep dimensions")]
+            public bool KeepDims { get; set; }
+
+            [DisplayName("select_last_idx")]
+            [Description("select last index")]
+            public bool select_last_idx { get; set; }
         }
 
         [DisplayName("TENSOR.REDUCE_WINDOW2D")]

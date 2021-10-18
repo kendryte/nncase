@@ -31,6 +31,7 @@ set(ONNX_IMPORTER_OPS_SOURCES
     ops/pad.cpp
     ops/pool.cpp
     ops/reduce.cpp
+    ops/reduce_arg.cpp
     ops/reshape.cpp
     ops/resize.cpp
     ops/shape.cpp
