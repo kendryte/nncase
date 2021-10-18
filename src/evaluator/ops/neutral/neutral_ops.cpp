@@ -295,7 +295,6 @@ void register_neutral_evaluators()
             break;
         default:
             std::cerr << "unsupported dtype for reduce_arg: " + std::string(datatype_names(output_type));
-            std::abort();
         }
     });
 
