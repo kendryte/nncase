@@ -92,9 +92,9 @@ class Edict:
 def generate_random(shape: List[int], dtype: np.dtype,
                     number: int, batch_size: int,
                     abs: bool = False) -> np.ndarray:
-    if dtype is np.uint8:
+    if dtype == np.uint8:
         data = np.random.randint(0, 256, shape)
-    elif dtype is np.int8:
+    elif dtype == np.int8:
         data = np.random.randint(-128, 128, shape)
     else:
         data = np.random.rand(*shape)

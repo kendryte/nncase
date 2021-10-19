@@ -153,6 +153,12 @@ constexpr nncase::datatype_t onnx_importer::get_datatype<std::uint8_t>()
 }
 
 template <>
+constexpr nncase::datatype_t onnx_importer::get_datatype<std::int8_t>()
+{
+    return nncase::dt_int8;
+}
+
+template <>
 constexpr nncase::datatype_t onnx_importer::get_datatype<std::int32_t>()
 {
     return nncase::dt_int32;

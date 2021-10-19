@@ -26,6 +26,7 @@
 | Cos | ✅ |
 | Cosh | ✅ |
 | DepthToSpace | ✅ |
+| DequantizeLinear | ✅ |
 | Div | ✅ |
 | Dropout | ✅ |
 | Elu | ✅ |
