@@ -1,45 +1,42 @@
-﻿// Copyright (c) Canaan Inc. All rights reserved.
-// Licensed under the Apache license. See LICENSE file in the project root for full license information.
+﻿// // Copyright (c) Canaan Inc. All rights reserved.
+// // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+// using System;
+// using System.Collections.Generic;
+// using System.Linq;
+// using Nncase.IR;
 
-namespace Nncase.Transform.EGraphPatterns
-{
-    /// <summary>
-    /// EGraph pattern.
-    /// </summary>
-    public abstract record EGraphPattern
-    {
-    }
+// namespace Nncase.Transform.EGraphPatterns
+// {
 
-    /// <summary>
-    /// Wildcard pattern.
-    /// </summary>
-    public sealed record WildcardPattern() : EGraphPattern;
+//     public delegate bool Condition<in T>(T obj);
 
-    /// <summary>
-    /// Variable pattern.
-    /// </summary>
-    public sealed record VarPattern() : EGraphPattern
-    {
-    }
+//     /// <summary>
+//     /// EGraph pattern.
+//     /// </summary>
+//     public abstract record EGraphPattern
+//     {
+//     }
 
-    public sealed record ConstPattern() : EGraphPattern
-    {
-    }
+//     /// <summary>
+//     /// Wildcard pattern.
+//     /// </summary>
+//     public sealed record WildcardPattern() : EGraphPattern;
 
-    /// <summary>
-    /// Functional patterns.
-    /// </summary>
-    public static class Functional
-    {
-        /// <summary>
-        /// Wildcard.
-        /// </summary>
-        public static readonly WildcardPattern Wildcard = new WildcardPattern();
-    }
-}
+//     /// <summary>
+//     /// Variable pattern.
+//     /// </summary>
+//     public sealed record VarPattern(Var expr, Condition<Var> cond) : EGraphPattern
+//     {
+//     }
+
+//     public sealed record ConstPattern(Const? expr, Condition<Const> cond) : EGraphPattern
+//     {
+
+//     }
+
+//     /// <summary>
+//     /// Functional patterns.
+//     /// </summary>
+    
+// }

@@ -7,20 +7,28 @@ using Nncase.IR;
 using Nncase.Transform;
 using GiGraph.Dot.Entities.Graphs;
 using GiGraph.Dot.Entities.Nodes;
+using GiGraph.Dot.Entities.Clusters;
 using GiGraph.Dot.Extensions;
 using GiGraph.Dot.Types.Graphs;
 using GiGraph.Dot.Types.Nodes;
 using GiGraph.Dot.Types.Styling;
+using GiGraph.Dot.Types.Colors;
 using GiGraph.Dot.Types.Records;
 using GiGraph.Dot.Types.Edges;
 using Nncase.IR.Math;
+using System.Drawing;
 
 namespace Nncase.Transform
 {
-    public static class EGraphPrinter
+
+    public class EGraphPrinter
     {
-        public static DotGraph DumpEgraphAsDot(EGraph eGraph, string file)
+
+        private readonly Dictionary<EClass, DotCluster> _classes = new Dictionary<EClass, DotCluster>();
+
+        public DotGraph ConvertEGraphAsDot(EGraph eGraph)
         {
+
             DotDumpVisitor visitor = new DotDumpVisitor();
             var g = new DotGraph(directed: true);
             g.Clusters.AllowEdgeClipping = true;
@@ -33,6 +41,7 @@ namespace Nncase.Transform
                    cluster.Style.BorderStyle = DotBorderStyle.Dotted;
                    cluster.Label = $"{eclass.Id}";
                });
+                _classes.Add(eclass, eclassCluster);
 
                 eclassCluster.Nodes.Add(new DotNode(eclassCluster.Id + "dummy"), node =>
                   {
@@ -68,9 +77,59 @@ namespace Nncase.Transform
                     }
                 }
             }
+            return g;
+        }
+        public DotGraph ConvertEGraphAsDot(EGraph eGraph, List<(EClass, Dictionary<string, EClass>)> matches)
+        {
+            DotGraph g = ConvertEGraphAsDot(eGraph);
+            Array knowcolors = Enum.GetValues(typeof(KnownColor));
+            var random = new Random(123);
+            int count = 0;
+            foreach (var (parentEclass, env) in matches)
+            {
+                var eclassCluster = _classes[parentEclass];
+                Color color = (Color)knowcolors.GetValue(random.Next(knowcolors.Length - 1));
+                eclassCluster.Nodes.Add($"m{eclassCluster.Id}_{count}", node =>
+                {
+                    node.Label = $"^m{count}";
+                    node.Color = color;
+                    node.Shape = DotNodeShape.Circle;
+                    node.Size.Height = 2;
+                    node.Size.Width = 2;
+                });
+                foreach (var (name, childEclass) in env)
+                {
+                    var childeclassCluster = _classes[childEclass];
+                    childeclassCluster.Nodes.Add($"m{childEclass.Id}_{count}", node =>
+                    {
+                        node.Label = $">m{count}";
+                        node.Color = color;
+                        node.Shape = DotNodeShape.Circle;
+                        node.Size.Height = 2;
+                        node.Size.Width = 2;
+                    });
+                }
+            }
+            return g;
+        }
+
+        public DotGraph SaveToFile(DotGraph g, string file)
+        {
             g.Build();
             g.SaveToFile(file);
             return g;
+        }
+
+        public static DotGraph DumpEgraphAsDot(EGraph eGraph, string file)
+        {
+            return DumpEgraphAsDot(eGraph, new List<(EClass, Dictionary<string, EClass>)> { }, file);
+        }
+
+        public static DotGraph DumpEgraphAsDot(EGraph eGraph, List<(EClass, Dictionary<string, EClass>)> matches, string file)
+        {
+            var printer = new EGraphPrinter();
+            var g = printer.ConvertEGraphAsDot(eGraph, matches);
+            return printer.SaveToFile(g, file);
         }
 
         private class DotDumpVisitor : ExprFunctor<string, string>

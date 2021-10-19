@@ -4,8 +4,6 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 using Nncase.IR;
 
 
@@ -75,7 +73,7 @@ namespace Nncase.Transform
         private readonly List<EClass> _classes = new List<EClass>();
         private int _version = 0;
 
-        private readonly List<EClass> _worklist = new List<EClass>();
+        private List<EClass> _worklist = new List<EClass>();
 
         public List<EClass> Classes => _classes;
         public Dictionary<ENode, EClass> Nodes => _hascons;
@@ -137,8 +135,9 @@ namespace Nncase.Transform
             while (_worklist.Count > 0)
             {
                 // remove same eclass avoid duplicate repair
-                var todos = _worklist.Distinct();
-                _worklist.Clear();
+
+                var todos = _worklist.Select(x => x.Find()).Distinct();
+                _worklist = new List<EClass>();
                 foreach (var eclass in todos)
                 {
                     RePair(eclass);
@@ -181,6 +180,7 @@ namespace Nncase.Transform
                 eclass.Find().Used.Add((item.Key, item.Value));
             }
         }
+
 
 
         private sealed class ENodeConverter : ExprVisitor<EClass, IRType>

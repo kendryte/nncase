@@ -8,16 +8,17 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Nncase.IR
+namespace Nncase.Transform.Pattern.Math
 {
     /// <summary>
-    /// Tuple expression.
+    /// Unary expression.
     /// </summary>
-    public sealed record Tuple(IRArray<Expr> Fields) : Expr
+    public record UnaryPattern(UnaryOp UnaryOp) : OpPattern(ImmutableArray.Create(new ParameterInfoPattern("input")))
     {
         /// <summary>
-        /// Void type.
+        /// Gets input.
         /// </summary>
-        public static readonly Tuple Void = new(ImmutableArray<Expr>.Empty);
+        public ParameterInfoPattern Input => ParameterPats[0];
+
     }
 }

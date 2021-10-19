@@ -13,7 +13,7 @@ namespace Nncase.IR
     /// <summary>
     /// Function expression.
     /// </summary>
-    public sealed record Function(string Name, ImmutableArray<Expr> Parameters, Expr Body) : Expr
+    public sealed record Function(string Name, IRArray<Expr> Parameters, Expr Body) : Expr
     {
         private static int _globalFuncIndex = 0;
 
@@ -22,7 +22,7 @@ namespace Nncase.IR
         /// </summary>
         /// <param name="parameters">Parameters.</param>
         /// <param name="body">Body.</param>
-        public Function(ImmutableArray<Expr> parameters, Expr body)
+        public Function(IRArray<Expr> parameters, Expr body)
             : this($"func_{_globalFuncIndex++}", parameters, body)
         {
         }

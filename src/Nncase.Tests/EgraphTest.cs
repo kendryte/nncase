@@ -98,5 +98,20 @@ namespace Nncase.Tests
             EGraphPrinter.DumpEgraphAsDot(graph, "exampleMerge5.dot");
         }
 
+        [Fact]
+        public void TestEgraphMatch()
+        {
+            //Given
+            Var x = new Var("x", new TensorType(DataType.Float32, Shape.Scalar));
+            Var y = new Var("y", new TensorType(DataType.Float32, Shape.Scalar));
+            Expr pattern = x + y;
+            //When
+            Expr e1 = (Expr)1.0f * 2 / 2;
+            Expr e2 = e1 + 100.0f; /* will match */
+            Expr e3 = e2 - 10 + 100; /* will match in subset */
+            var g = new EGraph();
+            g.Add(e3);
+        }
+
     }
 }

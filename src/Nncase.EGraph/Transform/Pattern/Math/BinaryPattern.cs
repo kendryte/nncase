@@ -8,16 +8,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Nncase.IR
+namespace Nncase.Transform.Pattern.Math
 {
     /// <summary>
-    /// Tuple expression.
+    /// Binary expression.
     /// </summary>
-    public sealed record Tuple(IRArray<Expr> Fields) : Expr
+    public record BinaryPattern(BinaryOp BinaryOp) : OpPattern(ImmutableArray.Create(new ParameterInfoPattern("lhs"), new ParameterInfoPattern("rhs")))
     {
-        /// <summary>
-        /// Void type.
-        /// </summary>
-        public static readonly Tuple Void = new(ImmutableArray<Expr>.Empty);
     }
 }
