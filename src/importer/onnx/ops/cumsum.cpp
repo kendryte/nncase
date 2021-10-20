@@ -32,7 +32,6 @@ void onnx_importer::convert_op_CumSum(const NodeProto &node)
     const auto input_type = get_datatype(input).value();
     auto input_shape = get_shape(input);
     const auto &output = node.output()[0];
-    // const auto output_type = get_datatype(output).value();
 
     // exclusive
     auto exclusive_attr = get_attribute<int>(node, "exclusive");

@@ -23,7 +23,6 @@ cumsum::cumsum(datatype_t input_type, shape_t input_shape, int32_t axis, bool ex
     : axis_(normalize_axis(input_shape, axis)), exclusive_(exclusive), reverse_(reverse)
 {
     add_input("input", input_type, input_shape);
-    axis_t axes { axis_ };
     add_output("output", input_type, input_shape);
 }
 

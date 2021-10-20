@@ -25,7 +25,6 @@ void stackvm_module_builder::emit(cumsum &node, stackvm_op_builder &builder)
     auto &output = allocation(node.output());
     builder.lea_buffer(input);
     builder.lea_buffer(output);
-
     builder.stshape(0, input.shape);
     builder.tensor_cumsum_(node.input().type(), 0, node.axis(), node.exclusive(), node.reverse());
 }
