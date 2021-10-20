@@ -62,6 +62,8 @@ def _make_module(name, target):
     # import
     compile_options = nncase.CompileOptions()
     compile_options.target = target
+    compile_options.input_layout = "NCHW"
+    compile_options.output_layout = "NCHW"
     compile_options.dump_dir = os.path.join(TEMP_DIR, name)
     compile_options.dump_ir = True
     compile_options.dump_asm = True
@@ -70,10 +72,7 @@ def _make_module(name, target):
     compile_options.use_mse_quant_w = True
     compile_options.benchmark_only = True
     compiler = nncase.Compiler(compile_options)
-
     import_options = nncase.ImportOptions()
-    import_options.input_layout = "NCHW"
-    import_options.output_layout = "NCHW"
     compiler.import_onnx(onnx_model, import_options)
 
     # compile

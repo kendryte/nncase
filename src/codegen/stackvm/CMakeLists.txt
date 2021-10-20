@@ -9,6 +9,7 @@ set(SRCS module_builder.cpp
          ops/conv2d.cpp
          ops/convert.cpp
          ops/copy.cpp
+         ops/cumsum.cpp
          ops/dequantize.cpp
          ops/gather.cpp
          ops/gather_nd.cpp

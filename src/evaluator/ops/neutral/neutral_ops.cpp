@@ -24,6 +24,7 @@
 #include <nncase/ir/ops/conv2d.h>
 #include <nncase/ir/ops/conv2d_transpose.h>
 #include <nncase/ir/ops/convert.h>
+#include <nncase/ir/ops/cumsum.h>
 #include <nncase/ir/ops/dequantize.h>
 #include <nncase/ir/ops/fused_unary.h>
 #include <nncase/ir/ops/gather.h>
@@ -538,6 +539,24 @@ void register_neutral_evaluators()
         kernels::onehot(output.datatype(), indices_mem, output_mem, indices.shape(), output.shape(),
             output.strides(), depth_mem, off_value_mem, on_value_mem, rnode.axis(), rnode.mode())
             .unwrap_or_throw();
+    });
+
+    register_evaluator(op_cumsum, [](ir::node &node, function_evaluate_context &context) {
+        auto &rnode = static_cast<cumsum &>(node);
+        auto datatype = rnode.input().type();
+        auto input = context.memory_at(rnode.input());
+        auto output = context.memory_at(rnode.output());
+
+        switch (datatype)
+        {
+        case dt_float32:
+            kernels::cumsum(input.buffer().as_span<float>().data(), output.buffer().as_span<float>().data(),
+                input.shape(), rnode.axis(), rnode.exclusive(), rnode.reverse())
+                .unwrap_or_throw();
+            break;
+        default:
+            throw std::runtime_error("unsupported dtype for cumsum: " + std::string(datatype_names(datatype)));
+        }
     });
 }
 

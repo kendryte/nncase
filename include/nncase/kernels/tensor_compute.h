@@ -91,4 +91,9 @@ NNCASE_API result<void> gather(datatype_t in_type, const gsl::byte *input, gsl::
 
 NNCASE_API result<void> gather_nd(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape, const runtime_shape_t &out_shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const int32_t *indices, const runtime_shape_t &indices_shape, int32_t batch_dims, kernel_context &context = default_kernel_context()) noexcept;
+
+template <typename T>
+NNCASE_API result<void> cumsum(const T *input, T *output, const runtime_shape_t &in_shape,
+    int32_t axis, bool exclusive, bool reverse) noexcept;
+
 END_NS_NNCASE_KERNELS

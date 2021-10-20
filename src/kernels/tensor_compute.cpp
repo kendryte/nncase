@@ -252,3 +252,13 @@ result<void> kernels::gather_nd(datatype_t in_type, const gsl::byte *input, gsl:
         return cpu::reference::gather_nd(in_type, input, output, in_shape, out_shape, in_strides, out_strides, indices, indices_shape, batch_dims, context);
     }
 }
+
+template result<void> kernels::cumsum<float>(const float *input, float *output, const runtime_shape_t &in_shape,
+    int32_t axis, bool exclusive, bool reverse) noexcept;
+
+template <typename T>
+result<void> kernels::cumsum(const T *input, T *output, const runtime_shape_t &in_shape,
+    int32_t axis, bool exclusive, bool reverse) noexcept
+{
+    return cpu::reference::cumsum(input, output, in_shape, axis, exclusive, reverse);
+}

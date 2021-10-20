@@ -25,6 +25,7 @@
 | ConvTranspose | ✅ |
 | Cos | ✅ |
 | Cosh | ✅ |
+| CumSum | ✅ |
 | DepthToSpace | ✅ |
 | DequantizeLinear | ✅ |
 | Div | ✅ |

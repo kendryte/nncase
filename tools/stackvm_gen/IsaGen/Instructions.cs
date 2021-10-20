@@ -153,6 +153,7 @@ namespace IsaGen
         CONV2D_TRANSPOSE,
         CONVERT,
         COPY,
+        CUMSUM,
         DEQUANTIZE,
         GATHER,
         GATHER_ND,
@@ -1310,6 +1311,34 @@ namespace IsaGen
             [DisplayName("rstride_dest")]
             [Description("Dest stride register")]
             public byte RstrideDest { get; set; }
+        }
+
+        [DisplayName("TENSOR.CUMSUM")]
+        [Category("Tensor Instructions")]
+        [Description("CumSum")]
+        public class CumSumInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.CUMSUM;
+
+            [DisplayName("datatype")]
+            [Description("Input/Output datatype")]
+            public DataType DataType { get; set; }
+
+            [DisplayName("rshape_src")]
+            [Description("Source shape register")]
+            public byte RshapeSrc { get; set; }
+
+            [DisplayName("axis")]
+            [Description("Axis")]
+            public int Axis { get; set; }
+
+            [DisplayName("exclusive")]
+            [Description("Exclusive")]
+            public bool Exclusive { get; set; }
+
+            [DisplayName("reverse")]
+            [Description("Reverse")]
+            public bool Reverse { get; set; }
         }
 
         [DisplayName("TENSOR.DEQUANTIZE")]

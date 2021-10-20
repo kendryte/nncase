@@ -144,6 +144,7 @@ protected:
     result<void> visit(const tensor_conv2d_op_t &op) noexcept override;
     result<void> visit(const tensor_convert_op_t &op) noexcept override;
     result<void> visit(const tensor_copy_op_t &op) noexcept override;
+    result<void> visit(const tensor_cumsum_op_t &op) noexcept override;
     result<void> visit(const tensor_dequantize_op_t &op) noexcept override;
     result<void> visit(const tensor_gather_op_t &op) noexcept override;
     result<void> visit(const tensor_gather_nd_op_t &op) noexcept override;
