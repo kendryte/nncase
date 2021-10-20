@@ -54,7 +54,7 @@ namespace Nncase.Transform
             {
                 // TODO need check the function Enode's children
                 return MatchENodeArgs(
-                  pattern.ParameterPats.Concat(new[] { pattern.BodyPat }).ToArray(),
+                  pattern.Parameters.Concat(new[] { pattern.Body }).ToArray(),
                   enode.Children, env);
             }
             return (false, env);
@@ -64,7 +64,7 @@ namespace Nncase.Transform
         {
             if (pattern.MatchLeaf((Call)enode.Expr))
             {
-                return MatchENodeArgs(new[] { pattern.TargetPat }.Concat(pattern.ParameterPats).ToArray(),
+                return MatchENodeArgs(new[] { pattern.Target }.Concat(pattern.Parameters).ToArray(),
                 enode.Children, env);
             }
             return (false, env);
@@ -73,7 +73,7 @@ namespace Nncase.Transform
         {
             if (pattern.MatchLeaf((Tuple)enode.Expr))
             {
-                return MatchENodeArgs(pattern.FieldPats, enode.Children, env);
+                return MatchENodeArgs(pattern.Fields, enode.Children, env);
             }
             return (false, env);
         }

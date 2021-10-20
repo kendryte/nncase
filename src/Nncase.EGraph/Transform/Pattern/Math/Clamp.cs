@@ -19,17 +19,17 @@ namespace Nncase.Transform.Pattern.Math
         /// <summary>
         /// Gets input.
         /// </summary>
-        public ParameterInfoPattern Input => ParameterPats[0];
+        public ParameterInfoPattern Input => Parameters[0];
 
         /// <summary>
         /// Gets min.
         /// </summary>
-        public ParameterInfoPattern Min => ParameterPats[1];
+        public ParameterInfoPattern Min => Parameters[1];
 
         /// <summary>
         /// Gets max.
         /// </summary>
-        public ParameterInfoPattern Max => ParameterPats[2];
+        public ParameterInfoPattern Max => Parameters[2];
 
     }
 }

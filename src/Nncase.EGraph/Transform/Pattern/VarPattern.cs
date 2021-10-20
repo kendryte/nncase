@@ -9,7 +9,7 @@ using Nncase.IR;
 
 namespace Nncase.Transform.Pattern
 {
-    public sealed record VarPattern(string Name, TypePattern TypePat) : ExprPattern
+    public sealed record VarPattern(string Name, TypePattern Type) : ExprPattern
     {
 
         public VarPattern(Var var) : this(var.Name, new TypePattern(var.TypeAnnotation)) { }
@@ -28,7 +28,7 @@ namespace Nncase.Transform.Pattern
 
         public bool MatchLeaf(Var var)
         {
-            return TypePat.MatchLeaf(var.TypeAnnotation) && MatchCheckedType(var);
+            return Type.MatchLeaf(var.TypeAnnotation) && MatchCheckedType(var);
         }
 
     }

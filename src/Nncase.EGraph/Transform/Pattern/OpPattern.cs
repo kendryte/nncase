@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Nncase.IR;
+using Nncase.IR.Math;
 
 namespace Nncase.Transform.Pattern
 {
@@ -22,24 +23,14 @@ namespace Nncase.Transform.Pattern
         }
     };
 
-    public abstract record OpPattern(IRArray<ParameterInfoPattern> ParameterPats) : ExprPattern
+    public abstract record OpPattern(IRArray<ParameterInfoPattern> Parameters) : ExprPattern
     {
-        public OpPattern(Op op) : this(ImmutableArray.Create((from p in op.Parameters select new ParameterInfoPattern(p)).ToArray())) { }
-
-        public bool MatchLeaf(Op op)
+        public bool MatchLeaf(Op op) => (this, op) switch
         {
-            if (ParameterPats.Count != op.Parameters.Count)
-            {
-                return false;
-            }
-            foreach (var (ppat, p) in ParameterPats.Zip(op.Parameters))
-            {
-                if (!ppat.Match(p))
-                {
-                    return false;
-                }
-            }
-            return true && MatchCheckedType(op);
-        }
+            (Math.BinaryPattern binaryPat, Binary binary) => binaryPat.MatchLeaf(binary),
+            (Math.ClampPattern clampPat, Clamp clamp) => clampPat.MatchLeaf(clamp),
+            (Math.UnaryPattern unaryPat, Unary unary) => unaryPat.MatchLeaf(unary),
+            (_, _) => throw new NotImplementedException($"Can't Match Pattern {this.GetType()} and Op {op.GetType()}")
+        };
     }
 }

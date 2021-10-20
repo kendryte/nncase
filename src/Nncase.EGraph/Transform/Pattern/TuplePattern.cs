@@ -9,15 +9,18 @@ using Nncase.IR;
 
 namespace Nncase.Transform.Pattern
 {
-    public sealed record TuplePattern(IRArray<ExprPattern> FieldPats) : ExprPattern
+    public sealed record TuplePattern(IRArray<ExprPattern> Fields) : ExprPattern
     {
-
         public TuplePattern(IR.Tuple tuple) : this(ImmutableArray.Create((from f in tuple.Fields select (ExprPattern)f).ToArray())) { }
 
         public bool MatchLeaf(IR.Tuple tuple)
         {
-            return (FieldPats.Count == tuple.Fields.Count) && MatchCheckedType(tuple);
+            return (Fields.Count == tuple.Fields.Count) && MatchCheckedType(tuple);
         }
 
+    }
+    public static partial class Functional
+    {
+        public static TuplePattern IsTuple(ExprPattern[] Fields) => new TuplePattern(Fields);
     }
 }

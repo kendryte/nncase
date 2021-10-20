@@ -9,19 +9,19 @@ using Nncase.IR;
 
 namespace Nncase.Transform.Pattern
 {
-    public sealed record CallPattern(ExprPattern TargetPat, IRArray<ExprPattern> ParameterPats) : ExprPattern
+    public sealed record CallPattern(ExprPattern Target, IRArray<ExprPattern> Parameters) : ExprPattern
     {
         // public override bool Match(Call call)
         // {
-        //     if (ParameterPats.Count != call.Parameters.Count)
+        //     if (Parameters.Count != call.Parameters.Count)
         //     {
         //         return false;
         //     }
-        //     if (!TargetPat.Match(call.Target))
+        //     if (!Target.Match(call.Target))
         //     {
         //         return false;
         //     }
-        //     foreach (var (ppat, p) in ParameterPats.Zip(call.Parameters))
+        //     foreach (var (ppat, p) in Parameters.Zip(call.Parameters))
         //     {
         //         if (!ppat.Match(p))
         //         {
@@ -33,7 +33,7 @@ namespace Nncase.Transform.Pattern
 
         public bool MatchLeaf(Call call)
         {
-            return MatchCheckedType(call);
+            return (Parameters.Count == call.Parameters.Count) && MatchCheckedType(call);
         }
 
         public CallPattern(ExprPattern target, params ExprPattern[] parameters)
@@ -41,5 +41,14 @@ namespace Nncase.Transform.Pattern
         {
         }
 
+    }
+
+    public static partial class Functional
+    {
+        public static CallPattern IsBinary(Func<BinaryOp, bool> OpTypeCond, ExprPattern lhs, ExprPattern rhs) =>
+          new CallPattern(new Math.BinaryPattern(OpTypeCond), lhs, rhs);
+
+        public static CallPattern IsBinary(BinaryOp opType, ExprPattern lhs, ExprPattern rhs) =>
+          new CallPattern(new Math.BinaryPattern(opType), lhs, rhs);
     }
 }

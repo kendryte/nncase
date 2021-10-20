@@ -65,6 +65,8 @@ namespace Nncase.IR
             _dimensions = dimensions.Select(x => new Dimension(x)).ToList().AsReadOnly();
         }
 
+        public static implicit operator Shape(int[] dimensions) => new Shape((ReadOnlySpan<int>)dimensions);
+
         /// <summary>
         /// Initializes a new instance of the <see cref="Shape"/> class.
         /// </summary>

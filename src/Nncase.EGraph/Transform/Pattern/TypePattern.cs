@@ -23,6 +23,26 @@ namespace Nncase.Transform.Pattern
     {
         public static TypePattern IsAnyType() => new TypePattern(AnyType.Default);
 
+        public static TypePattern HasType(Func<IRType, bool> TypeCond) => new TypePattern(TypeCond);
+
+        public static TypePattern HasType(IRType Type) => HasType(x => x == Type);
+
+        public static TypePattern HasDType(Func<DataType, bool> DTypeCond) => new TypePattern(x => x switch
+         {
+             TensorType ttype => DTypeCond(ttype.DataType),
+             _ => false
+         });
+
+        public static TypePattern HasDType(DataType DType) => HasDType((DataType x) => x == DType);
+
+        public static TypePattern HasShape(Func<Shape, bool> shapeCond) => new TypePattern(x => x switch
+        {
+            TensorType ttype => ttype.IsTensor && shapeCond(ttype.Shape),
+            _ => false
+        });
+
+        public static TypePattern HasShape(Shape shape) => HasShape(x => x == shape);
+        
     }
 
 }

@@ -18,7 +18,7 @@ namespace Nncase.Transform.Pattern.Math
         /// <summary>
         /// Gets input.
         /// </summary>
-        public ParameterInfoPattern Input => ParameterPats[0];
+        public ParameterInfoPattern Input => Parameters[0];
 
     }
 }
