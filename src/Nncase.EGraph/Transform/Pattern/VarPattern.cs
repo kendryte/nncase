@@ -12,6 +12,8 @@ namespace Nncase.Transform.Pattern
     public sealed record VarPattern(string Name, TypePattern TypePat) : ExprPattern
     {
 
+        public VarPattern(Var var) : this(var.Name, new TypePattern(var.TypeAnnotation)) { }
+
         private static int _globalVarIndex = 0;
 
         public VarPattern(TypePattern typePat)
@@ -26,7 +28,7 @@ namespace Nncase.Transform.Pattern
 
         public bool MatchLeaf(Var var)
         {
-            return TypePat.MatchLeaf(var.TypeAnnotation);
+            return TypePat.MatchLeaf(var.TypeAnnotation) && MatchCheckedType(var);
         }
 
     }

@@ -11,6 +11,9 @@ namespace Nncase.Transform.Pattern
 {
     public sealed record TuplePattern(IRArray<ExprPattern> FieldPats) : ExprPattern
     {
+
+        public TuplePattern(IR.Tuple tuple) : this(ImmutableArray.Create((from f in tuple.Fields select (ExprPattern)f).ToArray())) { }
+
         public bool MatchLeaf(IR.Tuple tuple)
         {
             return (FieldPats.Count == tuple.Fields.Count) && MatchCheckedType(tuple);

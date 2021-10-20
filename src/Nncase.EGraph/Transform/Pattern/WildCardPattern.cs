@@ -8,7 +8,7 @@ namespace Nncase.Transform.Pattern
 {
     public sealed record WildCardPattern(Func<Expr, bool> Cond) : ExprPattern
     {
-        public bool MatchLeaf(Expr expr) => Cond(expr) && MatchCheckedType(expr);
+        public override bool MatchLeaf(Expr expr) => Cond(expr) && MatchCheckedType(expr);
     }
 
     public static partial class Functional

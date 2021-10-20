@@ -11,6 +11,8 @@ namespace Nncase.Transform.Pattern
 {
     public sealed record FunctionPattern(Func<string, bool> NameCond, IRArray<ExprPattern> ParameterPats, ExprPattern BodyPat) : ExprPattern
     {
+        public FunctionPattern(Function func) : this(x => x == func.Name, ImmutableArray.Create((from p in func.Parameters select ((ExprPattern)p)).ToArray()), (ExprPattern)func.Body) { }
+
         // public override bool Match(Function func)
         // {
         //     if (!(ParameterPats.Count == func.Parameters.Count))

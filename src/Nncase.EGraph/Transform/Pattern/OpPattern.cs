@@ -13,6 +13,10 @@ namespace Nncase.Transform.Pattern
     {
         public bool Match(ParameterInfo x) => Cond(x);
 
+        public ParameterInfoPattern(ParameterInfo Info) : this(info => info == Info)
+        {
+        }
+
         public ParameterInfoPattern(string Name) : this(info => info.Name == Name)
         {
         }
@@ -20,6 +24,8 @@ namespace Nncase.Transform.Pattern
 
     public abstract record OpPattern(IRArray<ParameterInfoPattern> ParameterPats) : ExprPattern
     {
+        public OpPattern(Op op) : this(ImmutableArray.Create((from p in op.Parameters select new ParameterInfoPattern(p)).ToArray())) { }
+
         public bool MatchLeaf(Op op)
         {
             if (ParameterPats.Count != op.Parameters.Count)
