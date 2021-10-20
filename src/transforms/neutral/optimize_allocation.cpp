@@ -276,7 +276,8 @@ void alias_bitcast_buffer_pass::run_core(graph &graph, [[maybe_unused]] nncase::
 
                 size_t offset = 0;
                 // input & rdata should remain locations
-                if (in_buf.memory_location() == mem_input || in_buf.memory_location() == mem_rdata)
+                if (in_buf.memory_location() == mem_input || in_buf.memory_location() == mem_rdata
+                    || (input.attributes() & cnctr_attr_buffer_slice))
                 {
                     // owner is input, parent shape is bitcast's
                     out_buf.parent() = { &in_buf, offset, b->output().shape() };
