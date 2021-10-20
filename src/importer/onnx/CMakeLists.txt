@@ -16,6 +16,7 @@ set(ONNX_IMPORTER_OPS_SOURCES
     ops/conv.cpp
     ops/cast.cpp
     ops/depthtospace.cpp
+    ops/dequantizelinear.cpp
     ops/dropout.cpp
     ops/expand.cpp
     ops/gather.cpp
