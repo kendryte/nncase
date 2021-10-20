@@ -53,9 +53,9 @@ void onnx_importer::convert_op_arg(const NodeProto &node, reduce_arg_op_t op)
     auto select_last_index_attr = get_attribute<int>(node, "select_last_index");
     bool select_last_index = select_last_index_attr ? select_last_index_attr.value() : false;
 
-    auto am = graph_.emplace<reduce_arg>(op, input_type, input_shape, output_type, axis, keepdims, select_last_index);
-    am->name(generate_name(node) + reduce_arg_op_to_string(op));
+    auto ra = graph_.emplace<reduce_arg>(op, input_type, input_shape, output_type, axis, keepdims, select_last_index);
+    ra->name(generate_name(node) + reduce_arg_op_to_string(op));
 
-    input_tensors_.emplace(&am->input(), input);
-    output_tensors_.emplace(output, &am->output());
+    input_tensors_.emplace(&ra->input(), input);
+    output_tensors_.emplace(output, &ra->output());
 }

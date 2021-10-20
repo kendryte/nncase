@@ -66,7 +66,8 @@ NNCASE_API result<void> unary(unary_op_t op, const float *input, float *output, 
 NNCASE_API result<void> reduce(reduce_op_t op, float init_value, const float *input, float *output, const runtime_shape_t &in_shape, const runtime_shape_t &axis,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, bool keep_dims, kernel_context &context) noexcept;
 
-NNCASE_API result<void> reduce_arg(reduce_arg_op_t op, const float *input, int64_t *output, const runtime_shape_t &in_shape,
+template <typename T>
+NNCASE_API result<void> reduce_arg(reduce_arg_op_t op, const float *input, T *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides,
     const runtime_shape_t &axis, bool keep_dims, bool select_last_idx, kernel_context &context) noexcept;
 

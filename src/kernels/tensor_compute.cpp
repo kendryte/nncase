@@ -165,7 +165,16 @@ result<void> kernels::reduce(reduce_op_t op, float init_value, const float *inpu
     return cpu::reference::reduce(op, init_value, input, output, in_shape, axis, in_strides, out_strides, keep_dims, context);
 }
 
-result<void> kernels::reduce_arg(reduce_arg_op_t op, const float *input, int64_t *output, const runtime_shape_t &in_shape,
+template result<void> kernels::reduce_arg<int32_t>(reduce_arg_op_t op, const float *input, int32_t *output, const runtime_shape_t &in_shape,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const runtime_shape_t &axis,
+    bool keep_dims, bool select_last_idx, kernel_context &context) noexcept;
+
+template result<void> kernels::reduce_arg<int64_t>(reduce_arg_op_t op, const float *input, int64_t *output, const runtime_shape_t &in_shape,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const runtime_shape_t &axis,
+    bool keep_dims, bool select_last_idx, kernel_context &context) noexcept;
+
+template <typename T>
+result<void> kernels::reduce_arg(reduce_arg_op_t op, const float *input, T *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const runtime_shape_t &axis,
     bool keep_dims, bool select_last_idx, kernel_context &context) noexcept
 {

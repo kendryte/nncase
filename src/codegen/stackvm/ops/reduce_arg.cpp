@@ -31,5 +31,5 @@ void stackvm_module_builder::emit(reduce_arg &node, stackvm_op_builder &builder)
     builder.stshape(2, output.strides);
     axis_t axes { node.axis() };
     builder.staxis(3, axes);
-    builder.tensor_reduce_arg_(node.input().type(), 0, 1, 2, node.reduce_arg_op(), 3, node.keep_dims(), node.select_last_index());
+    builder.tensor_reduce_arg_(node.input().type(), 0, 1, node.output().type(), 2, node.reduce_arg_op(), 3, node.keep_dims(), node.select_last_index());
 }
