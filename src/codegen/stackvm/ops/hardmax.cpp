@@ -27,6 +27,5 @@ void stackvm_module_builder::emit(hardmax &node, stackvm_op_builder &builder)
     builder.lea_buffer(output);
     builder.stshape(0, input.shape);
     builder.stshape(1, input.strides);
-    builder.stshape(2, output.strides);
-    builder.tensor_hardmax_(node.input().type(), 0, 1, 2, node.axis());
+    builder.tensor_hardmax_(node.input().type(), 0, 1, node.axis());
 }

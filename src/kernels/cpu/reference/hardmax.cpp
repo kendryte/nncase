@@ -25,12 +25,11 @@ using namespace nncase::kernels::cpu;
 using namespace nncase::kernels::cpu::reference;
 
 template result<void> reference::hardmax<float>(const float *input, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides,
-    float *output, NNCASE_UNUSED const runtime_shape_t &out_strides, int32_t axis) noexcept;
+    float *output, int32_t axis) noexcept;
 
 template <typename T>
 result<void> reference::hardmax(const T *input, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides,
-    T *output, NNCASE_UNUSED const runtime_shape_t &out_strides, int32_t axis) noexcept
-
+    T *output, int32_t axis) noexcept
 {
     // init with init_value
     auto cmp = [](T a, T b) { return a > b; };

@@ -1461,10 +1461,6 @@ namespace IsaGen
             [Description("Source stride register")]
             public byte RstrideSrc { get; set; }
 
-            [DisplayName("rstride_dest")]
-            [Description("Dest stride register")]
-            public byte RstrideDest { get; set; }
-
             [DisplayName("axis")]
             [Description("Axis")]
             public int Axis { get; set; }

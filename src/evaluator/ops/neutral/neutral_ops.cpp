@@ -570,7 +570,7 @@ void register_neutral_evaluators()
         {
         case dt_float32:
             kernels::hardmax(input.buffer().as_span<float>().data(), input.shape(), input.strides(),
-                output.buffer().as_span<float>().data(), output.strides(), rnode.axis())
+                output.buffer().as_span<float>().data(), rnode.axis())
                 .unwrap_or_throw();
             break;
         default:

@@ -27,13 +27,12 @@ result<void> stackvm_runtime_function::visit(const tensor_hardmax_op_t &op) noex
     try_var(input, pop_addr());
     try_var(in_shape, module().shape_reg(op.rshape_src));
     try_var(in_strides, module().shape_reg(op.rstride_src));
-    try_var(out_strides, module().shape_reg(op.rstride_dest));
 
     switch (op.datatype)
     {
     case dt_float32:
         return kernels::hardmax(reinterpret_cast<const float *>(input), in_shape, in_strides,
-            reinterpret_cast<float *>(output), out_strides, op.axis);
+            reinterpret_cast<float *>(output), op.axis);
         break;
     default:
         std::cerr << "unsupported dtype for hardmax: " + std::string(datatype_names(op.datatype));
