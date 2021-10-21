@@ -40,6 +40,7 @@
 | Gemm | ✅ |
 | GlobalAveragePool | ✅ |
 | GlobalMaxPool | ✅ |
+| Hardmax | ✅ |
 | HardSigmoid | ✅ |
 | HardSwish | ✅ |
 | Identity | ✅ |

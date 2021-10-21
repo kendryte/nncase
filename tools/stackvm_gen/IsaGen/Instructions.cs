@@ -157,6 +157,7 @@ namespace IsaGen
         DEQUANTIZE,
         GATHER,
         GATHER_ND,
+        HARDMAX,
         LOGISTIC,
         LUT1D,
         MATMUL,
@@ -1439,6 +1440,34 @@ namespace IsaGen
             [DisplayName("batch_dims")]
             [Description("Batch Dims")]
             public byte Batchdims { get; set; }
+        }
+
+        [DisplayName("TENSOR.HARDMAX")]
+        [Category("Tensor Instructions")]
+        [Description("Hardmax")]
+        public class HardmaxInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.HARDMAX;
+
+            [DisplayName("datatype")]
+            [Description("Input/Output datatype")]
+            public DataType DataType { get; set; }
+
+            [DisplayName("rshape_src")]
+            [Description("Source shape register")]
+            public byte RshapeSrc { get; set; }
+
+            [DisplayName("rstride_src")]
+            [Description("Source stride register")]
+            public byte RstrideSrc { get; set; }
+
+            [DisplayName("rstride_dest")]
+            [Description("Dest stride register")]
+            public byte RstrideDest { get; set; }
+
+            [DisplayName("axis")]
+            [Description("Axis")]
+            public int Axis { get; set; }
         }
 
         [DisplayName("TENSOR.LUT1D")]

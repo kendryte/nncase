@@ -96,4 +96,8 @@ template <typename T>
 NNCASE_API result<void> cumsum(const T *input, T *output, const runtime_shape_t &in_shape,
     int32_t axis, bool exclusive, bool reverse) noexcept;
 
+template <typename T>
+NNCASE_API result<void> hardmax(const T *input, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides,
+    T *output, const runtime_shape_t &out_strides, int32_t axis) noexcept;
+
 END_NS_NNCASE_KERNELS
