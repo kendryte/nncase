@@ -46,9 +46,7 @@ namespace Nncase.Transform.Pattern
     public static partial class Functional
     {
 
-        public static ConstPattern IsConst() => new ConstPattern(x => true);
-
-        public delegate bool FloatConstCond(float x);
+        public static ConstPattern IsConst() => new ConstPattern(x => x is Const);
 
         public static ConstPattern IsConst(Func<float, bool> cond) => new ConstPattern(
           x => x.ValueType switch

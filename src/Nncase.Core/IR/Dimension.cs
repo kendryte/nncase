@@ -28,7 +28,7 @@ namespace Nncase.IR
     /// <summary>
     /// Shape dimension.
     /// </summary>
-    public struct Dimension
+    public struct Dimension : IEquatable<Dimension>
     {
         /// <summary>
         /// An unknown dimension.
@@ -71,10 +71,36 @@ namespace Nncase.IR
         /// <param name="value">Dimension value.</param>
         public static implicit operator Dimension(long value) => new(value);
 
+        public static bool operator ==(Dimension left, Dimension right)
+        {
+            return left.Equals(right);
+        }
+
+        public static bool operator !=(Dimension left, Dimension right)
+        {
+            return !(left == right);
+        }
+
         /// <inheritdoc/>
         public override string ToString()
         {
             return Value?.ToString() ?? "?";
+        }
+
+        public override bool Equals(object? obj)
+        {
+            return obj is Dimension dimension && Equals(dimension);
+        }
+
+        public bool Equals(Dimension other)
+        {
+            return Kind == other.Kind &&
+                   Value == other.Value;
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(Kind, Value);
         }
     }
 }

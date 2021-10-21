@@ -41,7 +41,7 @@ namespace Nncase.IR
     /// <summary>
     /// Tensor shape.
     /// </summary>
-    public sealed class Shape : IReadOnlyList<Dimension>
+    public sealed class Shape : IReadOnlyList<Dimension>, IEquatable<Shape?>
     {
         private ReadOnlyCollection<Dimension> _dimensions;
 
@@ -66,6 +66,16 @@ namespace Nncase.IR
         }
 
         public static implicit operator Shape(int[] dimensions) => new Shape((ReadOnlySpan<int>)dimensions);
+
+        public static bool operator ==(Shape? left, Shape? right)
+        {
+            return EqualityComparer<Shape>.Default.Equals(left, right);
+        }
+
+        public static bool operator !=(Shape? left, Shape? right)
+        {
+            return !(left == right);
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Shape"/> class.
@@ -208,6 +218,25 @@ namespace Nncase.IR
         private static ShapeKind KindOf(IEnumerable<Dimension> dimensions)
         {
             return dimensions.Any(x => x.IsUnknown) ? ShapeKind.HasUnknownDimension : ShapeKind.Fixed;
+        }
+
+        public override bool Equals(object? obj)
+        {
+            return Equals(obj as Shape);
+        }
+
+        public bool Equals(Shape? other)
+        {
+            if (other is null)
+            {
+                return false;
+            }          
+            return _dimensions.SequenceEqual(other._dimensions);
+        }
+
+        public override int GetHashCode()
+        {
+            return HashCode.Combine(StructuralComparisons.StructuralEqualityComparer.GetHashCode(_dimensions));
         }
     }
 }

@@ -109,7 +109,7 @@ namespace Nncase.Transform
                 (TuplePattern tuplePat, Tuple) => MatchENode(tuplePat, enode, env),
                 (OpPattern opPat, Op) => MatchENode(opPat, enode, env),
                 (WildCardPattern wildcardPat, _) => MatchENode(wildcardPat, enode, env),
-                (_, _) => throw new NotImplementedException($"Can't Handle Pattern {pattern.GetType().Name} and Expr {enode.Expr.GetType().Name}")
+                (_, _) => (false, env)
             };
         }
 

@@ -1,6 +1,7 @@
 using System;
 using Xunit;
 using Nncase.Transform.Pattern;
+using Nncase.Transform;
 using Nncase.IR;
 using System.Collections.Generic;
 using PF = Nncase.Transform.Pattern.Functional;
@@ -11,7 +12,6 @@ namespace Nncase.Tests
 {
     public class UnitTestEGraphPattern
     {
-
 
         [Fact]
         public void TestVarPattern()
@@ -137,12 +137,22 @@ namespace Nncase.Tests
             Assert.Equal(sp.MatchLeaf(ttype1), true);
             Assert.Equal(sp.MatchLeaf(ttype2), false);
         }
+    }
 
+    public class UnitTestGraphMatch
+    {
         [Fact]
-        public void TestAttrPattern() { }
-        [Fact]
-        public void TestIfPattern() { }
-        [Fact]
-        public void TestLetPattern() { }
+        public void TestMatchOpAlt()
+        {
+            var wc1 = PF.WildCard();
+            var pat = wc1 + 1;
+
+            var a = new Var("a");
+            var e = a * 100 - 32 / 320 + 1;
+            var g = new EGraph();
+            g.Add(e);
+
+            var matched = EClassMatcher.EMatch(g, pat);
+        }
     }
 }
