@@ -21,27 +21,20 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::stackvm;
 
-result<void> stackvm_runtime_function::visit(const tensor_reduce_arg_op_t &op) noexcept
+result<void> stackvm_runtime_function::visit(const tensor_cumsum_op_t &op) noexcept
 {
     try_var(output, pop_addr());
     try_var(input, pop_addr());
     try_var(in_shape, module().shape_reg(op.rshape_src));
-    try_var(axis, module().shape_reg(op.rshape_axis));
-    try_var(in_strides, module().shape_reg(op.rstride_src));
-    try_var(out_strides, module().shape_reg(op.rstride_dest));
 
-    switch (op.datatype_dest)
+    switch (op.datatype)
     {
-    case dt_int32:
-        return kernels::reduce_arg(op.reduce_arg_op, reinterpret_cast<const float *>(input), reinterpret_cast<int32_t *>(output),
-            in_shape, in_strides, out_strides, axis, op.keep_dims, op.select_last_idx, module().kernel_context());
-        break;
-    case dt_int64:
-        return kernels::reduce_arg(op.reduce_arg_op, reinterpret_cast<const float *>(input), reinterpret_cast<int64_t *>(output),
-            in_shape, in_strides, out_strides, axis, op.keep_dims, op.select_last_idx, module().kernel_context());
+    case dt_float32:
+        return kernels::cumsum(reinterpret_cast<const float *>(input), reinterpret_cast<float *>(output),
+            in_shape, op.axis, op.exclusive, op.reverse);
         break;
     default:
-        std::cerr << "unsupported dtype for reduce_arg: " + std::string(datatype_names(op.datatype_dest));
+        std::cerr << "unsupported dtype for cumsum: " + std::string(datatype_names(op.datatype));
         return err(std::errc::invalid_argument);
     }
 }

@@ -71,5 +71,6 @@ result<void> optimized::dequantize(datatype_t in_type, datatype_t out_type, cons
     const runtime_shape_t &in_shape, NNCASE_UNUSED const runtime_shape_t &in_strides, NNCASE_UNUSED const runtime_shape_t &out_strides, float scale, float bias, NNCASE_UNUSED kernel_context &context) noexcept
 {
     DEQUANTIZE_IMPL(uint8_t, float)
+    DEQUANTIZE_IMPL(int8_t, float)
     return err(std::errc::not_supported);
 }

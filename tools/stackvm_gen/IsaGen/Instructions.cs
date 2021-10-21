@@ -153,6 +153,7 @@ namespace IsaGen
         CONV2D_TRANSPOSE,
         CONVERT,
         COPY,
+        CUMSUM,
         DEQUANTIZE,
         GATHER,
         GATHER_ND,
@@ -1312,6 +1313,34 @@ namespace IsaGen
             public byte RstrideDest { get; set; }
         }
 
+        [DisplayName("TENSOR.CUMSUM")]
+        [Category("Tensor Instructions")]
+        [Description("CumSum")]
+        public class CumSumInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.CUMSUM;
+
+            [DisplayName("datatype")]
+            [Description("Input/Output datatype")]
+            public DataType DataType { get; set; }
+
+            [DisplayName("rshape_src")]
+            [Description("Source shape register")]
+            public byte RshapeSrc { get; set; }
+
+            [DisplayName("axis")]
+            [Description("Axis")]
+            public int Axis { get; set; }
+
+            [DisplayName("exclusive")]
+            [Description("Exclusive")]
+            public bool Exclusive { get; set; }
+
+            [DisplayName("reverse")]
+            [Description("Reverse")]
+            public bool Reverse { get; set; }
+        }
+
         [DisplayName("TENSOR.DEQUANTIZE")]
         [Category("Tensor Instructions")]
         [Description("Dequantize")]
@@ -1575,9 +1604,9 @@ namespace IsaGen
         {
             public override TensorFunction Function => TensorFunction.REDUCEARG;
 
-            [DisplayName("datatype")]
-            [Description("Datatype")]
-            public DataType DataType { get; set; }
+            [DisplayName("datatype_src")]
+            [Description("Input datatype")]
+            public DataType DataTypeSrc { get; set; }
 
             [DisplayName("rshape_src")]
             [Description("Source shape register")]
@@ -1586,6 +1615,10 @@ namespace IsaGen
             [DisplayName("rstride_src")]
             [Description("Source stride register")]
             public byte RstrideSrc { get; set; }
+
+            [DisplayName("datatype_dest")]
+            [Description("Output datatype")]
+            public DataType DataTypeDest { get; set; }
 
             [DisplayName("rstride_dest")]
             [Description("Dest stride register")]

@@ -19,17 +19,12 @@ using namespace nncase::codegen;
 using namespace nncase::codegen::stackvm;
 using namespace nncase::ir;
 
-void stackvm_module_builder::emit(reduce_arg &node, stackvm_op_builder &builder)
+void stackvm_module_builder::emit(cumsum &node, stackvm_op_builder &builder)
 {
     auto &input = allocation(node.input());
     auto &output = allocation(node.output());
     builder.lea_buffer(input);
     builder.lea_buffer(output);
-
     builder.stshape(0, input.shape);
-    builder.stshape(1, input.strides);
-    builder.stshape(2, output.strides);
-    axis_t axes { node.axis() };
-    builder.staxis(3, axes);
-    builder.tensor_reduce_arg_(node.input().type(), 0, 1, node.output().type(), 2, node.reduce_arg_op(), 3, node.keep_dims(), node.select_last_index());
+    builder.tensor_cumsum_(node.input().type(), 0, node.axis(), node.exclusive(), node.reverse());
 }

@@ -7,6 +7,7 @@ set(SRCS batch_to_space.cpp
          convolution.cpp
          convert.cpp
          copy.cpp
+         cumsum.cpp
          dequantize.cpp
          gather.cpp
          gather_nd.cpp

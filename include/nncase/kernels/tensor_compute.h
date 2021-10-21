@@ -69,7 +69,8 @@ NNCASE_API result<void> unary(unary_op_t op, const float *input, float *output, 
 NNCASE_API result<void> reduce(reduce_op_t op, float init_value, const float *input, float *output, const runtime_shape_t &in_shape, const runtime_shape_t &axis,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, bool keep_dims, kernel_context &context = default_kernel_context()) noexcept;
 
-NNCASE_API result<void> reduce_arg(reduce_arg_op_t op, const float *input, int64_t *output, const runtime_shape_t &in_shape,
+template <typename T>
+NNCASE_API result<void> reduce_arg(reduce_arg_op_t op, const float *input, T *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides,
     const runtime_shape_t &axis, bool keep_dims, bool select_last_index, kernel_context &context = default_kernel_context()) noexcept;
 
@@ -90,4 +91,9 @@ NNCASE_API result<void> gather(datatype_t in_type, const gsl::byte *input, gsl::
 
 NNCASE_API result<void> gather_nd(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape, const runtime_shape_t &out_shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const int32_t *indices, const runtime_shape_t &indices_shape, int32_t batch_dims, kernel_context &context = default_kernel_context()) noexcept;
+
+template <typename T>
+NNCASE_API result<void> cumsum(const T *input, T *output, const runtime_shape_t &in_shape,
+    int32_t axis, bool exclusive, bool reverse) noexcept;
+
 END_NS_NNCASE_KERNELS
