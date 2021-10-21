@@ -148,11 +148,14 @@ namespace Nncase.Tests
             var pat = wc1 + 1;
 
             var a = new Var("a");
-            var e = a * 100 - 32 / 320 + 1;
+            var left = a * 100 - 32 / 320;
+            var e = left + 1;
             var g = new EGraph();
             g.Add(e);
 
             var matched = EClassMatcher.EMatch(g, pat);
+            Assert.Equal(matched.Count, 1);
+            var env = matched[0]
         }
     }
 }
