@@ -525,11 +525,12 @@ class TestRunner(metaclass=ABCMeta):
         compiler = nncase.Compiler(compile_options)
         self.import_model(compiler, model_content, import_options)
 
-        dump_range_options = nncase.DumpRangeTensorOptions()
-        dump_range_options.set_tensor_data(np.asarray(
-            [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.dump_range_data]).tobytes())
-        dump_range_options.samples_count = cfg.generate_dump_range_data.batch_size
-        compiler.dump_range_options(dump_range_options)
+        if cfg.compile_opt.dump_import_op_range:
+            dump_range_options = nncase.DumpRangeTensorOptions()
+            dump_range_options.set_tensor_data(np.asarray(
+                [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.dump_range_data]).tobytes())
+            dump_range_options.samples_count = cfg.generate_dump_range_data.batch_size
+            compiler.dump_range_options(dump_range_options)
         if kwargs['ptq']:
             ptq_options = nncase.PTQTensorOptions()
             ptq_options.set_tensor_data(np.asarray(
@@ -583,11 +584,12 @@ class TestRunner(metaclass=ABCMeta):
         compiler = nncase.Compiler(compile_options)
         self.import_model(compiler, model_content, import_options)
 
-        dump_range_options = nncase.DumpRangeTensorOptions()
-        dump_range_options.set_tensor_data(np.asarray(
-            [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.dump_range_data]).tobytes())
-        dump_range_options.samples_count = cfg.generate_dump_range_data.batch_size
-        compiler.dump_range_options(dump_range_options)
+        if cfg.compile_opt.dump_import_op_range:
+            dump_range_options = nncase.DumpRangeTensorOptions()
+            dump_range_options.set_tensor_data(np.asarray(
+                [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.dump_range_data]).tobytes())
+            dump_range_options.samples_count = cfg.generate_dump_range_data.batch_size
+            compiler.dump_range_options(dump_range_options)
         if kwargs['ptq']:
             ptq_options = nncase.PTQTensorOptions()
             ptq_options.set_tensor_data(np.asarray(
