@@ -101,7 +101,8 @@ void add_copy_to_slice_pass::run_core(graph &graph, [[maybe_unused]] nncase::tar
     auto alias_visitor = make_relay_ir_visitor([&](node &node) {
         slice *s;
         if ((s = node_cast<slice>(node))
-            && (s->attributes() & node_attr_action) == 0)
+            && (s->attributes() & node_attr_action) == 0
+            && is_simple_slice(s->begin(), s->end(), s->strides(), s->input().shape()))
         {
             auto outputs = dup(s->output().connections());
             if (std::any_of(outputs.begin(), outputs.end(), [](input_connector *in) { return in->owner().runtime_opcode() != op_copy; }))
