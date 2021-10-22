@@ -15,7 +15,7 @@ SYNOPSIS
         [--input-type <input type>] [--output-type <output type>]
         [--input-layout <input layout>] [--output-layout <output layout>]
         [--is-fpga] [--dump-ir] [--dump-asm] [--dump-quant-error] [--dump-import-op-range] [--dump-dir <dump directory>]
-        [--benchmark-only]
+        [--dump-range-dataset <dataset path>] [--dump-range-dataset-format <dataset format>] [--benchmark-only]
 
     ncc infer <input file> <output path>
         --dataset <dataset path> [--dataset-format <dataset format>]
@@ -44,6 +44,10 @@ OPTIONS
                           calibration dataset, used in post quantization
   --dataset-format <dataset format>
                           datset format: e.g. image|raw, default is image
+  --dump-range-dataset <dataset path>
+                          dataset for dump import op range
+  --dump-range-dataset-format <dataset format>
+                          datset format: e.g. image|raw, default is image
   --calibrate-method <calibrate method>
                           calibrate method: e.g. no_clip|l2|kld_m0|kld_m1|kld_m2|cdf, default is no_clip
   --preprocess            enable preprocess, default is 0
@@ -68,7 +72,7 @@ OPTIONS
   --dump-ir               dump ir to .dot, default is 0
   --dump-asm              dump assembly, default is 0
   --dump-quant-error      dump quant error, default is 0
-  --dump-import-op-range  dump imported op data range, default is 0
+  --dump-import-op-range  dump imported op data range, must specify dump-range-dataset if enable, default is 0
   --dump-dir <dump directory>
                           dump to directory
   --benchmark-only        compile kmodel only for benchmark use, default is 0
@@ -102,6 +106,8 @@ OPTIONS
 - `--use-mse-quant-w ` is used to specify whether use minimize mse(mean-square error, mse) algorithm to quantize weight or not.
 - `--dataset` is to provide your quantization calibration dataset to quantize your models. You should put hundreds or thousands of data in training set to this directory.
 - `--dataset-format` is to set the format of the calibration dataset. Default is `image`, nncase will use `opencv` to read your images and autoscale to the desired input size of your model. If the input has 3 channels, ncc will convert images to RGB float tensors [0,1] in `NCHW` layout. If the input has only 1 channel, ncc will grayscale your images. Set to `raw` if your dataset is not image dataset for example, audio or matrices. In this scenario you should convert your dataset to raw binaries which contains float tensors.
+- `--dump-range-dataset` is to provide your dump range dataset to dump each op data range of your models. You should put hundreds or thousands of data in training set to this directory.
+- `--dump-range-dataset-format` is to set the format of the dump range dataset. Default is `image`, nncase will use `opencv` to read your images and autoscale to the desired input size of your model. If the input has 3 channels, ncc will convert images to RGB float tensors [0,1] in `NCHW` layout. If the input has only 1 channel, ncc will grayscale your images. Set to `raw` if your dataset is not image dataset for example, audio or matrices. In this scenario you should convert your dataset to raw binaries which contains float tensors.
 - `--calibrate-method` is to set your desired calibration method, which is used to select the optimal activation ranges. The default is `no_clip` in that ncc will use the full range of activations. If you want a better quantization result, you can use `l2` but it will take a longer time to find the optimal ranges.
 - `--preprocess ` is used specify whether enable preprocessing or not.
 - `--swapRB ` is used specify whether swap red and blue channel or not. You can use this flag to implement RGB2BGR or BGR2RGB feature.
@@ -118,7 +124,7 @@ OPTIONS
 - `--dump-ir` is a debug option. It is used to specify whether dump IR or not.
 - `--dump-asm` is a debug option. It is used to specify whether dump asm file or not.
 - `--dump-quant-error` is a debug option. It is used to specify whether dump quantization error information or not.
-- `--dump-import-op-range` is a debug option. It is used to specify whether dump imported op data range or not.
+- `--dump-import-op-range` is a debug option. It is used to specify whether dump imported op data range or not, need to also specify dump-range-dataset if enabled.
 - `--dump-dir` is used to specify dump directory.
 - `--benchmark-only` is used to specify whether the kmodel is used for benchmark or not.
 

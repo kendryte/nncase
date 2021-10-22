@@ -179,9 +179,11 @@ class TestRunner(metaclass=ABCMeta):
 
         self.inputs: List[Dict] = []
         self.calibs: List[Dict] = []
+        self.dump_range_data: List[Dict] = []
         self.outputs: List[Dict] = []
         self.input_paths: List[Tuple[str, str]] = []
         self.calib_paths: List[Tuple[str, str]] = []
+        self.dump_range_data_paths: List[Tuple[str, str]] = []
         self.output_paths: List[Tuple[str, str]] = []
         self.model_type: str = ""
         self.pre_process: List[Dict] = []
@@ -405,6 +407,8 @@ class TestRunner(metaclass=ABCMeta):
                                self.inputs, self.input_paths, 'input', dict_args)
             self.generate_data(cfg.generate_calibs, case_dir,
                                self.calibs, self.calib_paths, 'calib', dict_args)
+            self.generate_data(cfg.generate_dump_range_data, case_dir,
+                               self.dump_range_data, self.dump_range_data_paths, 'dump_range_data', dict_args)
 
             # write preprocess options in test_result
             if dict_args['preprocess'] == True:
@@ -451,6 +455,8 @@ class TestRunner(metaclass=ABCMeta):
             dict_args = dict(zip(names, combine_args))
             if dict_args['ptq'] and len(self.inputs) != 1:
                 continue
+            if not dict_args['ptq'] and compile_options.dump_import_op_range and len(self.inputs) != 1:
+                continue
             eval_output_paths = self.generate_evaluates(
                 cfg, case_dir, import_options,
                 compile_options, model_content, dict_args, preprocess_opt)
@@ -464,7 +470,8 @@ class TestRunner(metaclass=ABCMeta):
             dict_args = dict(zip(names, combine_args))
             if dict_args['ptq'] and len(self.inputs) != 1:
                 continue
-
+            if not dict_args['ptq'] and compile_options.dump_import_op_range and len(self.inputs) != 1:
+                continue
             infer_output_paths = self.nncase_infer(
                 cfg, case_dir, import_options,
                 compile_options, model_content, dict_args, preprocess_opt)
@@ -517,13 +524,19 @@ class TestRunner(metaclass=ABCMeta):
         compile_options.dump_ir = cfg.compile_opt.dump_ir
         compiler = nncase.Compiler(compile_options)
         self.import_model(compiler, model_content, import_options)
+
+        dump_range_options = nncase.DumpRangeTensorOptions()
+        dump_range_options.set_tensor_data(np.asarray(
+            [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.dump_range_data]).tobytes())
+        dump_range_options.samples_count = cfg.generate_dump_range_data.batch_size
+        compiler.dump_range_options(dump_range_options)
         if kwargs['ptq']:
             ptq_options = nncase.PTQTensorOptions()
             ptq_options.set_tensor_data(np.asarray(
                 [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.calibs]).tobytes())
             ptq_options.samples_count = cfg.generate_calibs.batch_size
-
             compiler.use_ptq(ptq_options)
+
         evaluator = compiler.create_evaluator(3)
         eval_output_paths = []
         for i in range(len(self.inputs)):
@@ -569,13 +582,19 @@ class TestRunner(metaclass=ABCMeta):
         compile_options.output_layout = preprocess['output_layout']
         compiler = nncase.Compiler(compile_options)
         self.import_model(compiler, model_content, import_options)
+
+        dump_range_options = nncase.DumpRangeTensorOptions()
+        dump_range_options.set_tensor_data(np.asarray(
+            [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.dump_range_data]).tobytes())
+        dump_range_options.samples_count = cfg.generate_dump_range_data.batch_size
+        compiler.dump_range_options(dump_range_options)
         if kwargs['ptq']:
             ptq_options = nncase.PTQTensorOptions()
             ptq_options.set_tensor_data(np.asarray(
                 [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.calibs]).tobytes())
             ptq_options.samples_count = cfg.generate_calibs.batch_size
-
             compiler.use_ptq(ptq_options)
+
         compiler.compile()
         kmodel = compiler.gencode_tobytes()
         with open(os.path.join(infer_dir, 'test.kmodel'), 'wb') as f:

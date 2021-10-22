@@ -64,6 +64,8 @@ private:
     std::string dump_dir_;
     std::string dataset_;
     std::string dataset_format_ = "image";
+    std::string dump_range_dataset_;
+    std::string dump_range_dataset_format_ = "image";
     std::string calibrate_method_ = "no_clip";
     std::string input_type_ = "default";
     std::string output_type_ = "float32";

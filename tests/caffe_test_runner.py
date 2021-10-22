@@ -24,6 +24,7 @@ class CaffeTestRunner(TestRunner):
                 input_dict['model_shape'] = list(caffe_model.blobs[name].data.shape)
                 self.inputs.append(input_dict)
                 self.calibs.append(copy.deepcopy(input_dict))
+                self.dump_range_data.append(copy.deepcopy(input_dict))
 
         used_inputs = set([name for _, l in caffe_model.bottom_names.items() for name in l])
         seen_outputs = set()
