@@ -455,7 +455,7 @@ class TestRunner(metaclass=ABCMeta):
             dict_args = dict(zip(names, combine_args))
             if dict_args['ptq'] and len(self.inputs) != 1:
                 continue
-            if not dict_args['ptq'] and compile_options.dump_import_op_range and len(self.inputs) != 1:
+            if cfg.compile_opt.dump_import_op_range and len(self.inputs) != 1:
                 continue
             eval_output_paths = self.generate_evaluates(
                 cfg, case_dir, import_options,
@@ -470,7 +470,7 @@ class TestRunner(metaclass=ABCMeta):
             dict_args = dict(zip(names, combine_args))
             if dict_args['ptq'] and len(self.inputs) != 1:
                 continue
-            if not dict_args['ptq'] and compile_options.dump_import_op_range and len(self.inputs) != 1:
+            if cfg.compile_opt.dump_import_op_range and len(self.inputs) != 1:
                 continue
             infer_output_paths = self.nncase_infer(
                 cfg, case_dir, import_options,
