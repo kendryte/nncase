@@ -37,5 +37,7 @@ namespace Nncase.IR
             : this($"var_{_globalVarIndex++}", AnyType.Default)
         {
         }
+
+        public static implicit operator Var(string Name) => new Var(Name);
     }
 }

@@ -45,11 +45,6 @@ namespace Nncase.Transform
 
         public EClass? Parent = null;
 
-        /// <summary>
-        /// Gets enodes.
-        /// </summary>
-        public readonly List<ENode> Nodes = new List<ENode>();
-
         public readonly List<(ENode, EClass)> Used = new List<(ENode, EClass)>();
 
         public EClass Find()
@@ -75,10 +70,27 @@ namespace Nncase.Transform
 
         private List<EClass> _worklist = new List<EClass>();
 
-        public List<EClass> Classes => _classes;
+        public Dictionary<EClass, List<ENode>> EClasses()
+        {
+            var eclasses = new Dictionary<EClass, List<ENode>>();
+            foreach (var (enode, eclass) in _hascons)
+            {
+                var parentEclass = eclass.Find();
+                if (!eclasses.ContainsKey(parentEclass))
+                    eclasses.Add(parentEclass, new List<ENode> { enode });
+                else
+                    eclasses[parentEclass].Add(enode);
+            }
+            return eclasses;
+        }
         public Dictionary<ENode, EClass> Nodes => _hascons;
 
         public int Version => _version;
+
+
+        public EGraph() { }
+
+        public EGraph(Expr expr) => Add(expr);
 
         /// <summary>
         /// Add enode.
@@ -91,6 +103,14 @@ namespace Nncase.Transform
             return converter.Visit(expr);
         }
 
+        public void Clear()
+        {
+            _worklist.Clear();
+            _version = 0;
+            _hascons.Clear();
+            _classes.Clear();
+        }
+
         private EClass AddENode(Expr expr, IRArray<EClass> children)
         {
             // todo rewrite it.
@@ -98,7 +118,6 @@ namespace Nncase.Transform
             if (!_hascons.TryGetValue(enode, out var eclass))
             {
                 eclass = new EClass(_classes.Count);
-                eclass.Nodes.Add(enode);
                 enode.AddUsed(eclass);
 
                 _hascons.Add(enode, eclass);
@@ -123,9 +142,6 @@ namespace Nncase.Transform
             to.Used.AddRange(from.Used);
             from.Used.Clear();
 
-            to.Nodes.AddRange(from.Nodes);
-            from.Nodes.Clear();
-
             _worklist.Add(to);
             return true;
         }
@@ -135,7 +151,6 @@ namespace Nncase.Transform
             while (_worklist.Count > 0)
             {
                 // remove same eclass avoid duplicate repair
-
                 var todos = _worklist.Select(x => x.Find()).Distinct();
                 _worklist = new List<EClass>();
                 foreach (var eclass in todos)
@@ -154,16 +169,13 @@ namespace Nncase.Transform
             {   // update the parent node.
                 if (_hascons.ContainsKey(pnode))
                 {
-                    pclass.Nodes.Remove(pnode);
                     _hascons.Remove(pnode);
                 }
                 var newPnode = pnode.Canonicalize();
-                _hascons.Add(newPnode, pclass.Find());
-                pclass.Find().Nodes.Add(newPnode);
+                var newPclass = pclass.Find();
+                _hascons.Add(newPnode, newPclass);
             }
-            /* when merged eclasses, some enodes will be same. 
-            eg. b1 = 1 + mul(a,2) and b2 = 1 + a<<2. =>  b1 will equal b2
-            so we need remove duplicate enode b1 and b2.  */
+            /* when merge eclass, eg. x+0 => x, the x's class will have the Node (x+0), then update the Node (x+0)ˆ, the newPclass will have (x+0) and (x+0)ˆ  */
             var newUsed = new Dictionary<ENode, EClass>();
             foreach (var (pnode, pclass) in used)
             {
@@ -180,8 +192,6 @@ namespace Nncase.Transform
                 eclass.Find().Used.Add((item.Key, item.Value));
             }
         }
-
-
 
         private sealed class ENodeConverter : ExprVisitor<EClass, IRType>
         {

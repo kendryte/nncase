@@ -13,10 +13,12 @@ namespace Nncase.Transform.Pattern
         public WildCardPattern() : this($"wc_{_globalCardIndex++}", x => (true))
         {
         }
-        
+
         public WildCardPattern(string Name) : this(Name, x => (true))
         {
         }
+
+        public static implicit operator WildCardPattern(string Name) => new WildCardPattern(Name);
 
         public override bool MatchLeaf(Expr expr) => Cond(expr) && MatchCheckedType(expr);
     }

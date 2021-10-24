@@ -27,6 +27,12 @@ namespace Nncase.IR
             visitor.Visit(function);
         }
 
+        public static void DumpExprAsIL(TextWriter textWriter, Expr expr)
+        {
+            var visitor = new ILDumpVisitor(textWriter);
+            visitor.Visit(expr);
+        }
+
         private class ILDumpVisitor : ExprFunctor<string, string>
         {
             private readonly TextWriter _textWriter;

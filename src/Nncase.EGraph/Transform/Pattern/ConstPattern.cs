@@ -48,10 +48,12 @@ namespace Nncase.Transform.Pattern
 
         public static ConstPattern IsConst() => new ConstPattern(x => x is Const);
 
+        public static ConstPattern IsConst(Func<Const, bool> Cond) => new ConstPattern(Cond);
+
         public static ConstPattern IsConst(Func<float, bool> cond) => new ConstPattern(
           x => x.ValueType switch
           {
-              TensorType tensor => tensor.IsScalar && (tensor.DataType is (DataType.Float32 or DataType.Float64)) && cond(ToFloat(x.Data)),
+              TensorType tensor => tensor.IsScalar && (tensor.DataType is (DataType.Float32 or DataType.Float64)) && cond(ToFloat(tensor.DataType, x.Data)),
               _ => false
           }
         );
@@ -59,25 +61,40 @@ namespace Nncase.Transform.Pattern
         public static ConstPattern IsConst(Func<int, bool> cond) => new ConstPattern(
           x => x.ValueType switch
           {
-              TensorType tensor => tensor.IsScalar && (tensor.DataType is (DataType.Int8 or DataType.Int16 or DataType.Int32 or DataType.Int64)) && cond(ToInt(x.Data)),
+              TensorType tensor => tensor.IsScalar && (tensor.DataType is (DataType.Int8 or DataType.Int16 or DataType.Int32 or DataType.Int64)) && cond(ToInt(tensor.DataType, x.Data)),
               _ => false
           }
         );
 
-        private static float ToFloat(byte[] bytes) => bytes.Length switch
+        public static ConstPattern IsConst<T>(T Value)
+        where T : unmanaged
+        => new ConstPattern(Const.FromScalar<T>(Value));
+
+        public static int ToInt(DataType dataType, byte[] bytes) => dataType switch
         {
-            8 => (float)BitConverter.ToDouble(bytes),
-            4 => (float)BitConverter.ToSingle(bytes),
-            _ => throw new InvalidCastException($"Can't Cast Bytes Data To Float, Length is {bytes.Length}!")
+            DataType.Int64 => (int)BitConverter.ToInt64(bytes),
+            DataType.Int32 => (int)BitConverter.ToInt32(bytes),
+            DataType.Int16 => (int)BitConverter.ToInt16(bytes),
+            DataType.Int8 => (int)bytes[0],
+            _ => throw new InvalidCastException($"Can't Cast Bytes Data")
+        };
+        public static uint ToUInt(DataType dataType, byte[] bytes) =>
+        dataType switch
+        {
+            DataType.UInt64 => (uint)BitConverter.ToUInt64(bytes),
+            DataType.UInt32 => (uint)BitConverter.ToUInt32(bytes),
+            DataType.UInt16 => (uint)BitConverter.ToUInt16(bytes),
+            DataType.UInt8 => (uint)bytes[0],
+            _ => throw new InvalidCastException($"Can't Cast Bytes Data")
         };
 
-        private static int ToInt(byte[] bytes) => bytes.Length switch
+        public static float ToFloat(DataType dataType, byte[] bytes) =>
+        dataType switch
         {
-            8 => (int)BitConverter.ToInt64(bytes),
-            4 => (int)BitConverter.ToInt32(bytes),
-            2 => (int)BitConverter.ToInt16(bytes),
-            1 => (int)bytes[0],
-            _ => throw new InvalidCastException($"Can't Cast Bytes Data To Int, Length is {bytes.Length}!")
+            DataType.Float64 => (float)BitConverter.ToDouble(bytes),
+            DataType.Float32 => (float)BitConverter.ToSingle(bytes),
+            DataType.BFloat16 => (float)(new BFloat16(bytes[0])),
+            _ => throw new InvalidCastException($"Can't Cast Bytes Data")
         };
 
     }

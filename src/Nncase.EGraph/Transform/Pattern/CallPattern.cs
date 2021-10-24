@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Nncase.IR;
+using Nncase.Transform.Pattern.Math;
 
 namespace Nncase.Transform.Pattern
 {
@@ -46,9 +47,16 @@ namespace Nncase.Transform.Pattern
     public static partial class Functional
     {
         public static CallPattern IsBinary(Func<BinaryOp, bool> OpTypeCond, ExprPattern lhs, ExprPattern rhs) =>
-          new CallPattern(new Math.BinaryPattern(OpTypeCond), lhs, rhs);
+          new CallPattern(new BinaryPattern(OpTypeCond), lhs, rhs);
 
         public static CallPattern IsBinary(BinaryOp opType, ExprPattern lhs, ExprPattern rhs) =>
-          new CallPattern(new Math.BinaryPattern(opType), lhs, rhs);
+          new CallPattern(new BinaryPattern(opType), lhs, rhs);
+
+        public static CallPattern IsUnary(Func<UnaryOp, bool> OpTypeCond, ExprPattern input) =>
+          new CallPattern(new UnaryPattern(OpTypeCond), input);
+
+        public static CallPattern IsUnary(UnaryOp opType, ExprPattern input) =>
+          new CallPattern(new UnaryPattern(opType), input);
+
     }
 }

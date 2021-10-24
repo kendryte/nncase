@@ -13,7 +13,7 @@ namespace Nncase.IR
     /// <summary>
     /// Function expression.
     /// </summary>
-    public sealed record Function(string Name, IRArray<Expr> Parameters, Expr Body) : Expr
+    public sealed record Function(string Name, Expr Body, IRArray<Expr> Parameters) : Expr
     {
         private static int _globalFuncIndex = 0;
 
@@ -22,9 +22,14 @@ namespace Nncase.IR
         /// </summary>
         /// <param name="parameters">Parameters.</param>
         /// <param name="body">Body.</param>
-        public Function(IRArray<Expr> parameters, Expr body)
-            : this($"func_{_globalFuncIndex++}", parameters, body)
+        public Function(Expr body, IRArray<Expr> parameters)
+            : this($"func_{_globalFuncIndex++}", body, parameters)
+        {
+        }
+        public Function(Expr body, params Expr[] parameters)
+            : this($"func_{_globalFuncIndex++}", body, parameters)
         {
         }
     }
+
 }

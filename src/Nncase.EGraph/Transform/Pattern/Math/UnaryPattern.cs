@@ -7,18 +7,27 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.IR.Math;
 
 namespace Nncase.Transform.Pattern.Math
 {
     /// <summary>
     /// Unary expression.
     /// </summary>
-    public record UnaryPattern(UnaryOp UnaryOp) : OpPattern(ImmutableArray.Create(new ParameterInfoPattern("input")))
+    public record UnaryPattern(Func<Unary, bool> Cond) : OpPattern(ImmutableArray.Create(new ParameterInfoPattern("input")))
     {
-        /// <summary>
-        /// Gets input.
-        /// </summary>
         public ParameterInfoPattern Input => Parameters[0];
+
+        public UnaryPattern(Unary unary) : this(x => x == unary) { }
+
+        public UnaryPattern(UnaryOp unaryOp) : this(x => x.UnaryOp == unaryOp) { }
+
+        public UnaryPattern(Func<UnaryOp, bool> OpTypeCond) : this(x => OpTypeCond(x.UnaryOp)) { }
+
+        public bool MatchLeaf(Unary unary)
+        {
+            return Cond(unary) && MatchCheckedType(unary);
+        }
 
     }
 }

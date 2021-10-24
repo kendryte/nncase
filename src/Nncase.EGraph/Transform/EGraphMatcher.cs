@@ -6,18 +6,28 @@ using Nncase.Transform.Pattern;
 
 namespace Nncase.Transform
 {
-    using ContextEnv = Dictionary<WildCardPattern, ENode>;
+    using EContextEnv = Dictionary<WildCardPattern, ENode>;
     using Tuple = IR.Tuple;
-
-    public sealed class EClassMatcher
+    public record EMatchResult(EClass eClass, EContextEnv Context)
     {
-        public (bool, ContextEnv) DefaultMatchEnode(ExprPattern pattern, ENode enode, ContextEnv env)
+    }
+
+    public sealed class EGraphMatcher
+    {
+        public Dictionary<EClass, List<ENode>> eClasses;
+
+        public EGraphMatcher(Dictionary<EClass, List<ENode>> eclasses)
         {
-            throw new NotImplementedException($"Unhandled Match Pattern {pattern.GetType()} and Enode {enode.Expr.GetType()} .");
+            eClasses = eclasses;
+        }
+
+        public (bool, EContextEnv) DefaultMatchEnode(ExprPattern pattern, ENode enode, EContextEnv env)
+        {
+            throw new NotImplementedException($"Unhandled Match ExprPattern {pattern.GetType()} and Enode {enode.Expr.GetType()} .");
         }
 
 
-        public (bool, ContextEnv) MatchENodeArgs(IRArray<ExprPattern> Patterns, IRArray<EClass> Childrens, ContextEnv env)
+        public (bool, EContextEnv) MatchENodeArgs(IRArray<ExprPattern> Patterns, IRArray<EClass> Childrens, EContextEnv env)
         {
             if (!(Patterns.Count == Childrens.Count))
             {
@@ -26,7 +36,7 @@ namespace Nncase.Transform
             var new_env = env;
             foreach (var (argPattern, argEclass) in Patterns.Zip(Childrens))
             {
-                var (match, looped_env) = MatchEclass(argPattern, argEclass, new_env);
+                var (match, looped_env) = MatchEclass(argPattern, eClasses[argEclass], new_env);
                 new_env = looped_env; /* update env */
                 if (!match)
                 {
@@ -36,7 +46,7 @@ namespace Nncase.Transform
             return (true, new_env);
         }
 
-        public (bool, ContextEnv) MatchENode(VarPattern pattern, ENode enode, ContextEnv env)
+        public (bool, EContextEnv) MatchENode(VarPattern pattern, ENode enode, EContextEnv env)
         {
             if (pattern.MatchLeaf((Var)enode.Expr))
             {
@@ -45,9 +55,9 @@ namespace Nncase.Transform
             return (false, env);
         }
 
-        public (bool, ContextEnv) MatchENode(ConstPattern pattern, ENode enode, ContextEnv env) => (pattern.MatchLeaf((Const)enode.Expr), env);
+        public (bool, EContextEnv) MatchENode(ConstPattern pattern, ENode enode, EContextEnv env) => (pattern.MatchLeaf((Const)enode.Expr), env);
 
-        public (bool, ContextEnv) MatchENode(FunctionPattern pattern, ENode enode, ContextEnv env)
+        public (bool, EContextEnv) MatchENode(FunctionPattern pattern, ENode enode, EContextEnv env)
         {
             var func = (Function)enode.Expr;
             if (pattern.MatchLeaf(func))
@@ -60,7 +70,7 @@ namespace Nncase.Transform
             return (false, env);
         }
 
-        public (bool, ContextEnv) MatchENode(CallPattern pattern, ENode enode, ContextEnv env)
+        public (bool, EContextEnv) MatchENode(CallPattern pattern, ENode enode, EContextEnv env)
         {
             if (pattern.MatchLeaf((Call)enode.Expr))
             {
@@ -69,7 +79,7 @@ namespace Nncase.Transform
             }
             return (false, env);
         }
-        public (bool, ContextEnv) MatchENode(TuplePattern pattern, ENode enode, ContextEnv env)
+        public (bool, EContextEnv) MatchENode(TuplePattern pattern, ENode enode, EContextEnv env)
         {
             if (pattern.MatchLeaf((Tuple)enode.Expr))
             {
@@ -78,12 +88,12 @@ namespace Nncase.Transform
             return (false, env);
         }
 
-        public (bool, ContextEnv) MatchENode(OpPattern pattern, ENode enode, ContextEnv env)
+        public (bool, EContextEnv) MatchENode(OpPattern pattern, ENode enode, EContextEnv env)
         {
             return (pattern.MatchLeaf((Op)enode.Expr), env);
         }
 
-        public (bool, ContextEnv) MatchENode(WildCardPattern pattern, ENode enode, ContextEnv env)
+        public (bool, EContextEnv) MatchENode(WildCardPattern pattern, ENode enode, EContextEnv env)
         {
             if (!pattern.MatchLeaf(enode.Expr))
             {
@@ -91,14 +101,14 @@ namespace Nncase.Transform
             }
             if (!env.ContainsKey(pattern))
             {
-                var new_env = new ContextEnv(env);
+                var new_env = new EContextEnv(env);
                 new_env.Add(pattern, enode);
                 return (true, new_env);
             }
             return (env[pattern] == enode, env);
         }
 
-        public (bool, ContextEnv) MatchENode(ExprPattern pattern, ENode enode, ContextEnv env)
+        public (bool, EContextEnv) MatchENode(ExprPattern pattern, ENode enode, EContextEnv env)
         {
             return (pattern, enode.Expr) switch
             {
@@ -113,11 +123,11 @@ namespace Nncase.Transform
             };
         }
 
-        public (bool, ContextEnv) MatchEclass(ExprPattern pattern, EClass eclass, ContextEnv env)
+        public (bool, EContextEnv) MatchEclass(ExprPattern pattern, List<ENode> eNodes, EContextEnv env)
         {
-            foreach (var enode in eclass.Nodes)
+            foreach (var eNode in eNodes)
             {
-                var (match, new_env) = MatchENode(pattern, enode, env);
+                var (match, new_env) = MatchENode(pattern, eNode, env);
                 if (match)
                 {
                     return (match, new_env);
@@ -126,19 +136,22 @@ namespace Nncase.Transform
             return (false, env);
         }
 
-        public static List<(EClass, ContextEnv)> EMatch(EGraph graph, ExprPattern pattern)
+        public static List<EMatchResult> EMatch(Dictionary<EClass, List<ENode>> eClasses, ExprPattern pattern)
         {
-            var matcher = new EClassMatcher();
-            var matches = new List<(EClass, ContextEnv)>(); // 保存了每个eclassid和入参信息.
-            foreach (var eclass in graph.Classes)
+            var matcher = new EGraphMatcher(eClasses);
+            var matchResults = new List<EMatchResult>(); // 保存了每个eclassid和入参信息.
+            foreach (var (eclass, enodes) in matcher.eClasses)
             {
-                var (match, env) = matcher.MatchEclass(pattern, eclass, new ContextEnv());
+                var (match, env) = matcher.MatchEclass(pattern, enodes, new EContextEnv());
                 if (match)
                 {
-                    matches.Add((eclass, env));
+                    matchResults.Add(new EMatchResult(eclass, env));
                 }
             }
-            return matches;
+            return matchResults;
         }
+
+
+        public static List<EMatchResult> EMatch(EGraph eGraph, ExprPattern pattern) => EMatch(eGraph.EClasses(), pattern);
     }
 }

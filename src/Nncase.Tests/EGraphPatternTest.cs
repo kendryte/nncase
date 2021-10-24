@@ -7,6 +7,8 @@ using System.Collections.Generic;
 using PF = Nncase.Transform.Pattern.Functional;
 using PM = Nncase.Transform.Pattern.Math;
 using static Nncase.IR.F.Math;
+using static Nncase.Transform.Pattern.Functional.Math;
+using static Nncase.Transform.EGraphMatcher;
 
 namespace Nncase.Tests
 {
@@ -31,10 +33,12 @@ namespace Nncase.Tests
 
             ExprPattern cp2 = PF.IsConst((float x) => x > 1.2f);
             ExprPattern cp3 = PF.IsConst((int x) => x > 1);
+            var cp4 = (ConstPattern)1.1f;
 
             Assert.Equal(cp1.MatchLeaf(con), true);
             Assert.Equal(cp2.MatchLeaf(con), false);
             Assert.Equal(cp3.MatchLeaf(con), false);
+            Assert.Equal(cp4.MatchLeaf(con), true);
         }
 
         [Fact]
@@ -73,7 +77,7 @@ namespace Nncase.Tests
             var wc1 = PF.WildCard();
             var wc2 = PF.WildCard();
             var c = wc1 + wc2;
-            var fp = new FunctionPattern(new[] { wc1, wc2 }, c);
+            var fp = new FunctionPattern(c, wc1, wc2);
             Assert.IsType<FunctionPattern>(fp);
             Assert.IsType<WildCardPattern>(fp.Parameters[0]);
             Assert.IsType<WildCardPattern>(fp.Parameters[1]);
@@ -139,23 +143,87 @@ namespace Nncase.Tests
         }
     }
 
-    public class UnitTestGraphMatch
+    public class UnitTestGraphMatch : IDisposable
     {
+
+        private readonly EGraph eGraph;
+        public UnitTestGraphMatch()
+        {
+            eGraph = new EGraph();
+        }
+
+        public void Dispose()
+        {
+        }
+
         [Fact]
-        public void TestMatchOpAlt()
+        public void TestMatchOpAdd()
         {
             var wc1 = PF.WildCard();
             var pat = wc1 + 1;
 
             var a = new Var("a");
-            var left = a * 100 - 32 / 320;
-            var e = left + 1;
+            var wce1 = a * 100 - 32 / 320;
+            var e = wce1 + 1;
             var g = new EGraph();
             g.Add(e);
 
-            var matched = EClassMatcher.EMatch(g, pat);
-            Assert.Equal(matched.Count, 1);
-            var env = matched[0]
+            var matchs = EMatch(g, pat);
+            Assert.Equal(matchs.Count, 1);
+            var result = matchs[0];
+            Assert.Contains(wc1, result.Context.Keys);
+            Assert.Equal(result.Context[wc1].Expr, wce1);
         }
+
+        [Fact]
+        public void TestMatchOpOR()
+        {
+            eGraph.Clear();
+            var x = new Var("a");
+            var y = x + 10;
+            var y1 = y - 10;
+
+            var px = PF.WildCard();
+            var py = PF.IsBinary(op => op is (BinaryOp.Add or BinaryOp.Sub), px, 10);
+
+
+            eGraph.Add(y);
+            var matchs = EMatch(eGraph, py);
+            Assert.Equal(matchs.Count, 1);
+            eGraph.Add(y1);
+
+            var matchs2 = EMatch(eGraph, py);
+            Assert.Equal(matchs2.Count, 2);
+
+            var py1 = PF.IsUnary(UnaryOp.Abs, px);
+            Assert.Equal(EMatch(eGraph, py1).Count, 0);
+        }
+
+        [Fact]
+        public void MatchFunction()
+        {
+            eGraph.Clear();
+            Var x = "x";
+            Var y = "y";
+
+            WildCardPattern wc1 = "x";
+            WildCardPattern wc2 = "y";
+
+            Expr func = new Function(x + y - 1200, x, y);
+            ExprPattern pat_1 = new FunctionPattern(x + y - 1200, wc1, wc2);
+
+            ExprPattern pat_2 = new FunctionPattern(x - y, wc1, wc2);
+
+            eGraph.Add(func);
+            var res_1 = EMatch(eGraph, pat_1);
+            Assert.Equal(res_1.Count, 1);
+
+            Assert.Contains(wc1, res_1[0].Context.Keys);
+            Assert.Contains(wc2, res_1[0].Context.Keys);
+
+            var res_2 = EMatch(eGraph, pat_2);
+            Assert.Equal(res_2.Count, 0);
+        }
+
     }
 }

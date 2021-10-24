@@ -7,13 +7,14 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.IR.Math;
 
 namespace Nncase.Transform.Pattern.Math
 {
     /// <summary>
     /// Clamp expression.
     /// </summary>
-    public record ClampPattern() : OpPattern(ImmutableArray.Create(
+    public record ClampPattern(Func<Clamp, bool> Cond) : OpPattern(ImmutableArray.Create(
         new ParameterInfoPattern("input"), new ParameterInfoPattern("min"), new ParameterInfoPattern("max")))
     {
         /// <summary>
@@ -31,5 +32,11 @@ namespace Nncase.Transform.Pattern.Math
         /// </summary>
         public ParameterInfoPattern Max => Parameters[2];
 
+        public ClampPattern(Clamp clamp) : this(x => x == clamp) { }
+
+        public bool MatchLeaf(Clamp clamp)
+        {
+            return Cond(clamp) && MatchCheckedType(clamp);
+        }
     }
 }

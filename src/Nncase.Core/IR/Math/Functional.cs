@@ -47,7 +47,7 @@ namespace Nncase.IR.F
         /// <returns>Result expression.</returns>
         public static Call Clamp(Expr input, Expr min, Expr max)
         {
-            return new Call(new Clamp(), min, max);
+            return new Call(new Clamp(), input, min, max);
         }
 
         /// <summary>
@@ -60,7 +60,7 @@ namespace Nncase.IR.F
         public static Call Clamp<T>(Expr input, ValueRange<T> range)
             where T : unmanaged
         {
-            return new Call(new Clamp(), Const.FromScalar(range.Min), Const.FromScalar(range.Max));
+            return new Call(new Clamp(), input, Const.FromScalar(range.Min), Const.FromScalar(range.Max));
         }
 
         /// <summary>

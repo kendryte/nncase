@@ -9,36 +9,21 @@ using Nncase.IR;
 
 namespace Nncase.Transform.Pattern
 {
-    public sealed record FunctionPattern(Func<string, bool> NameCond, IRArray<ExprPattern> Parameters, ExprPattern Body) : ExprPattern
+    public sealed record FunctionPattern(string Name, ExprPattern Body, IRArray<ExprPattern> Parameters) : ExprPattern
     {
-        public FunctionPattern(Function func) : this(x => x == func.Name, ImmutableArray.Create((from p in func.Parameters select ((ExprPattern)p)).ToArray()), (ExprPattern)func.Body) { }
+        private static int _globalFuncIndex = 0;
+        public FunctionPattern(Function func) : this($"func_{_globalFuncIndex++}", (ExprPattern)func.Body, ImmutableArray.Create((from p in func.Parameters select ((ExprPattern)p)).ToArray())) { }
 
-        // public override bool Match(Function func)
-        // {
-        //     if (!(Parameters.Count == func.Parameters.Count))
-        //     {
-        //         return false;
-        //     }
 
-        //     foreach (var (ppat, p) in Parameters.Zip(func.Parameters))
-        //     {
-        //         if (!ppat.Match(p))
-        //         {
-        //             return false;
-        //         }
-        //     }
-        //     return Body.Match(func.Body);
-        // }
-
-        public FunctionPattern(ExprPattern[] parameters, ExprPattern body) : this(x => true, parameters, body)
+        public FunctionPattern(ExprPattern body, params ExprPattern[] parameters) : this($"func_{_globalFuncIndex++}", body, parameters)
         {
         }
 
-        public FunctionPattern(IRArray<ExprPattern> parameters, ExprPattern body) : this(x => true, parameters, body)
+        public FunctionPattern(ExprPattern body, IRArray<ExprPattern> parameters) : this($"func_{_globalFuncIndex++}", body, parameters)
         {
         }
 
-        public bool MatchLeaf(Function func) => NameCond(func.Name) && MatchCheckedType(func);
+        public bool MatchLeaf(Function func) => (Parameters.Count == func.Parameters.Count) && MatchCheckedType(func);
 
     }
 }

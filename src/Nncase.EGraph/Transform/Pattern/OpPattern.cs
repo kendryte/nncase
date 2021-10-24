@@ -7,6 +7,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using Nncase.IR;
 using Nncase.IR.Math;
+using Nncase.Transform.Pattern.Math;
 
 namespace Nncase.Transform.Pattern
 {
@@ -27,10 +28,10 @@ namespace Nncase.Transform.Pattern
     {
         public bool MatchLeaf(Op op) => (this, op) switch
         {
-            (Math.BinaryPattern binaryPat, Binary binary) => binaryPat.MatchLeaf(binary),
-            (Math.ClampPattern clampPat, Clamp clamp) => clampPat.MatchLeaf(clamp),
-            (Math.UnaryPattern unaryPat, Unary unary) => unaryPat.MatchLeaf(unary),
-            (_, _) => throw new NotImplementedException($"Can't Match Pattern {this.GetType()} and Op {op.GetType()}")
+            (BinaryPattern binaryPat, Binary binary) => binaryPat.MatchLeaf(binary),
+            (ClampPattern clampPat, Clamp clamp) => clampPat.MatchLeaf(clamp),
+            (UnaryPattern unaryPat, Unary unary) => unaryPat.MatchLeaf(unary),
+            (_, _) => false
         };
     }
 }

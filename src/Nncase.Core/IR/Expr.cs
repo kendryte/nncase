@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace Nncase.IR
 {
@@ -18,5 +19,14 @@ namespace Nncase.IR
         /// Gets or sets checked type.
         /// </summary>
         public IRType? CheckedType { get; set; }
+
+        public override string ToString()
+        {
+            var builder = new StringBuilder();
+            var writer = new StringWriter(builder);
+            IRPrinter.DumpExprAsIL(writer, this);
+            return builder.ToString();
+        }
+
     }
 }

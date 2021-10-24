@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.IO;
 using Nncase.IR;
 using Nncase.Transform;
 using GiGraph.Dot.Entities.Graphs;
@@ -16,12 +17,11 @@ using GiGraph.Dot.Types.Colors;
 using GiGraph.Dot.Types.Records;
 using GiGraph.Dot.Types.Edges;
 using Nncase.IR.Math;
-using System.Drawing;
 
 namespace Nncase.Transform
 {
 
-    public class EGraphPrinter
+    public partial class EGraphPrinter
     {
 
         private readonly Dictionary<EClass, DotCluster> _classes = new Dictionary<EClass, DotCluster>();
@@ -33,15 +33,16 @@ namespace Nncase.Transform
             var g = new DotGraph(directed: true);
             g.Clusters.AllowEdgeClipping = true;
 
-            foreach (var eclass in eGraph.Classes.Select(x => x.Find()).Distinct())
+            foreach (var (eClass, eNodes) in eGraph.EClasses())
             {
-                // make eclass as cluster
-                var eclassCluster = g.Clusters.Add($"{eclass.Id}", cluster =>
+                // make eClass as cluster
+                var eclassCluster = g.Clusters.Add($"{eClass.Id}", cluster =>
                {
                    cluster.Style.BorderStyle = DotBorderStyle.Dotted;
-                   cluster.Label = $"{eclass.Id}";
+                   cluster.Label = $"{eClass.Id}";
+                   cluster.LabelAlignment.Horizontal = GiGraph.Dot.Types.Alignment.DotHorizontalAlignment.Left;
                });
-                _classes.Add(eclass, eclassCluster);
+                _classes.Add(eClass, eclassCluster);
 
                 eclassCluster.Nodes.Add(new DotNode(eclassCluster.Id + "dummy"), node =>
                   {
@@ -51,7 +52,7 @@ namespace Nncase.Transform
                       node.Size.Width = 0;
                   });
 
-                foreach (var enode in eclass.Nodes)
+                foreach (var enode in eNodes)
                 {
                     string exprId = enode.Expr.GetHashCode().ToString();
 
@@ -60,7 +61,7 @@ namespace Nncase.Transform
 
                     for (int i = 0; i < enode.Children.Count; i++)
                     {
-                        args.Add(new DotRecordTextField(null, $"P{i}"));
+                        args.Add(new DotRecordTextField($"{enode.Children[i].Find().Id}", $"P{i}"));
                     }
 
                     var exprNode = eclassCluster.Nodes.Add(exprId);
@@ -79,42 +80,19 @@ namespace Nncase.Transform
             }
             return g;
         }
-        public DotGraph ConvertEGraphAsDot(EGraph eGraph, List<(EClass, Dictionary<string, EClass>)> matches)
-        {
-            DotGraph g = ConvertEGraphAsDot(eGraph);
-            Array knowcolors = Enum.GetValues(typeof(KnownColor));
-            var random = new Random(123);
-            int count = 0;
-            foreach (var (parentEclass, env) in matches)
-            {
-                var eclassCluster = _classes[parentEclass];
-                Color color = (Color)knowcolors.GetValue(random.Next(knowcolors.Length - 1));
-                eclassCluster.Nodes.Add($"m{eclassCluster.Id}_{count}", node =>
-                {
-                    node.Label = $"^m{count}";
-                    node.Color = color;
-                    node.Shape = DotNodeShape.Circle;
-                    node.Size.Height = 2;
-                    node.Size.Width = 2;
-                });
-                foreach (var (name, childEclass) in env)
-                {
-                    var childeclassCluster = _classes[childEclass];
-                    childeclassCluster.Nodes.Add($"m{childEclass.Id}_{count}", node =>
-                    {
-                        node.Label = $">m{count}";
-                        node.Color = color;
-                        node.Shape = DotNodeShape.Circle;
-                        node.Size.Height = 2;
-                        node.Size.Width = 2;
-                    });
-                }
-            }
-            return g;
-        }
 
         public DotGraph SaveToFile(DotGraph g, string file)
         {
+
+            if (!file.EndsWith(".dot"))
+            {
+                file += ".dot";
+            }
+            var dirName = Path.GetDirectoryName(file);
+            if (dirName is not null)
+            {
+                Directory.CreateDirectory(dirName);
+            }
             g.Build();
             g.SaveToFile(file);
             return g;
@@ -122,15 +100,11 @@ namespace Nncase.Transform
 
         public static DotGraph DumpEgraphAsDot(EGraph eGraph, string file)
         {
-            return DumpEgraphAsDot(eGraph, new List<(EClass, Dictionary<string, EClass>)> { }, file);
-        }
-
-        public static DotGraph DumpEgraphAsDot(EGraph eGraph, List<(EClass, Dictionary<string, EClass>)> matches, string file)
-        {
             var printer = new EGraphPrinter();
-            var g = printer.ConvertEGraphAsDot(eGraph, matches);
+            var g = printer.ConvertEGraphAsDot(eGraph);
             return printer.SaveToFile(g, file);
         }
+
 
         private class DotDumpVisitor : ExprFunctor<string, string>
         {
@@ -141,7 +115,6 @@ namespace Nncase.Transform
 
             public override string Visit(Const expr)
             {
-
                 string name = expr.GetType().Name;
                 if (expr.CheckedType is not null)
                 {
@@ -161,6 +134,7 @@ namespace Nncase.Transform
                             DataType.UInt32 => BitConverter.ToUInt32(expr.Data),
                             DataType.UInt64 => BitConverter.ToUInt64(expr.Data),
                             DataType.Float64 => BitConverter.ToDouble(expr.Data),
+                            DataType.Float32 => BitConverter.ToSingle(expr.Data),
                             _ => "InVaild"
                         };
                         name += " " + data.ToString();

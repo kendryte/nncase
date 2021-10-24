@@ -84,7 +84,7 @@ namespace Nncase.Importer.TFLite
             var outputs = (from o in _subGraph.GetOutputsBytes().AsValueEnumerable()
                            select _outputTensors[o]).ToArray();
             var outputTuple = new IR.Tuple(ImmutableArray.Create(outputs));
-            var mainFunc = new Function("main", ImmutableArray.Create(created_inputs), outputTuple);
+            var mainFunc = new Function("main", outputTuple, created_inputs);
 
             var module = new Module();
             module.Add(mainFunc);

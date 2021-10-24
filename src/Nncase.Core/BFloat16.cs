@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -66,6 +67,14 @@ namespace Nncase
         public bool Equals(BFloat16 other)
         {
             return (other == this);
+        }
+
+        public static implicit operator float(BFloat16 input)
+        {
+          float value;
+          Unsafe.SkipInit(out value);
+          Unsafe.As<float, int>(ref value) = input.value << 16;
+          return value;
         }
 
         /// <summary>
