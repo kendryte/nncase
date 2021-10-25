@@ -78,6 +78,7 @@ if __name__ == '__main__':
 ```
 
 **quant error dump output:**
+
 layer name: tfl.conv_2d/in_tp/store   cosine: 1
 
 layer name: tfl.conv_2d/conv/conv2d   cosine: 1.00038
