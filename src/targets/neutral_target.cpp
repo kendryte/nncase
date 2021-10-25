@@ -21,6 +21,7 @@
 #include <nncase/transforms/neutral/fold_bitcast.h>
 #include <nncase/transforms/neutral/fold_constant.h>
 #include <nncase/transforms/neutral/fold_conv2d_biasadd.h>
+#include <nncase/transforms/neutral/fold_convert.h>
 #include <nncase/transforms/neutral/fold_dilated_conv2d.h>
 #include <nncase/transforms/neutral/fold_pad.h>
 #include <nncase/transforms/neutral/fold_quantize.h>
@@ -106,6 +107,9 @@ void neutral_target::add_default_transforms(ir::transforms::transform_pass &pass
     pass.emplace<fold_pad_strided_slice_transform>();
 
     pass.emplace<fold_bitcast_transform>();
+
+    pass.emplace<fold_convert_transform>();
+    pass.emplace<fold_nop_convert_transform>();
 
     pass.emplace<remove_nonsense_binary>();
     pass.emplace<strided_slice_to_pad_transform>();
