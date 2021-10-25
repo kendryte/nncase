@@ -29,6 +29,7 @@
 #include <nncase/ir/ops/fused_unary.h>
 #include <nncase/ir/ops/gather.h>
 #include <nncase/ir/ops/gather_nd.h>
+#include <nncase/ir/ops/hardmax.h>
 #include <nncase/ir/ops/matmul.h>
 #include <nncase/ir/ops/onehot.h>
 #include <nncase/ir/ops/pad.h>
@@ -556,6 +557,24 @@ void register_neutral_evaluators()
             break;
         default:
             throw std::runtime_error("unsupported dtype for cumsum: " + std::string(datatype_names(datatype)));
+        }
+    });
+
+    register_evaluator(op_hardmax, [](ir::node &node, function_evaluate_context &context) {
+        auto &rnode = static_cast<hardmax &>(node);
+        auto datatype = rnode.input().type();
+        auto input = context.memory_at(rnode.input());
+        auto output = context.memory_at(rnode.output());
+
+        switch (datatype)
+        {
+        case dt_float32:
+            kernels::hardmax(input.buffer().as_span<float>().data(), input.shape(), input.strides(),
+                output.buffer().as_span<float>().data(), rnode.axis())
+                .unwrap_or_throw();
+            break;
+        default:
+            throw std::runtime_error("unsupported dtype for hardmax: " + std::string(datatype_names(datatype)));
         }
     });
 }

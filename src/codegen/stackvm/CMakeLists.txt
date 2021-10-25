@@ -13,6 +13,7 @@ set(SRCS module_builder.cpp
          ops/dequantize.cpp
          ops/gather.cpp
          ops/gather_nd.cpp
+         ops/hardmax.cpp
          ops/onehot.cpp
          ops/pad.cpp
          ops/quantize.cpp

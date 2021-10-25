@@ -24,6 +24,7 @@ set(ONNX_IMPORTER_OPS_SOURCES
     ops/gather_nd.cpp
     ops/gemm.cpp
     ops/flatten.cpp
+    ops/hardmax.cpp
     ops/identity.cpp
     ops/instancenorm.cpp
     ops/lpnorm.cpp

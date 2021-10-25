@@ -11,6 +11,7 @@ set(SRCS batch_to_space.cpp
          dequantize.cpp
          gather.cpp
          gather_nd.cpp
+         hardmax.cpp
          lut1d.cpp
          nnil.cpp
          onehot.cpp
