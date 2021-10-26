@@ -13,7 +13,7 @@ namespace Nncase.Transform
     {
         private bool dumpIr_, isMatchCache_;
 
-        public readonly Dictionary<IEGraphRule, List<Expr>> MatchCache = new();
+        public readonly Dictionary<EGraphRule, List<Expr>> MatchCache = new();
 
         private string _prefix;
 
@@ -25,16 +25,16 @@ namespace Nncase.Transform
 
         public bool IsMatchCache(bool value) => isMatchCache_ = value;
 
-        public EGraph Apply(EGraph eGraph, params IEGraphRule[] Rules) => Apply(eGraph, new List<IEGraphRule>(Rules));
+        public EGraph Apply(EGraph eGraph, params EGraphRule[] Rules) => Apply(eGraph, new List<EGraphRule>(Rules));
 
-        public EGraph Apply(EGraph eGraph, List<IEGraphRule> Rules)
+        public EGraph Apply(EGraph eGraph, List<EGraphRule> Rules)
         {
             var eClass = eGraph.EClasses();
-            var matches = new List<(IEGraphRule, EMatchResult)> { };
+            var matches = new List<(EGraphRule, EMatchResult)> { };
             // batch pattern match
             foreach (var rule in Rules)
             {
-                var results = EGraphMatcher.EMatch(eClass, rule.GetPattern());
+                var results = EGraphMatcher.EMatch(eClass, rule.GetPatterns());
                 foreach (var result in results)
                 {
                     matches.Add((rule, result));
@@ -49,7 +49,7 @@ namespace Nncase.Transform
             {
                 var replaceExpr = rule.GetRePlace(result);
                 var neweClass = eGraph.Add(replaceExpr);
-                eGraph.Merge(neweClass, result.eClass);
+                eGraph.Merge(neweClass, eGraph.Nodes[result.Root]);
                 if (isMatchCache_)
                 {
                     if (MatchCache.ContainsKey(rule))

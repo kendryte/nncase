@@ -11,13 +11,10 @@ using Nncase.IR.Math;
 
 namespace Nncase.Transform.Pattern.Math
 {
-    public record BinaryPattern(Func<Binary, bool> Cond) : OpPattern(ImmutableArray.Create(new ParameterInfoPattern("lhs"), new ParameterInfoPattern("rhs")))
+    public record BinaryPattern(Func<Binary, bool> Cond) : OpPattern
     {
         public BinaryPattern(Binary binary) : this(x => x == binary) { }
-
         public BinaryPattern(BinaryOp binaryOp) : this(x => x.BinaryOp == binaryOp) { }
-
-        public BinaryPattern(Func<BinaryOp, bool> OpTypeCond) : this(x => OpTypeCond(x.BinaryOp)) { }
 
         public bool MatchLeaf(Binary binary)
         {

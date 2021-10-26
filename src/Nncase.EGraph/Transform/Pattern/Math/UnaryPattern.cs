@@ -14,15 +14,12 @@ namespace Nncase.Transform.Pattern.Math
     /// <summary>
     /// Unary expression.
     /// </summary>
-    public record UnaryPattern(Func<Unary, bool> Cond) : OpPattern(ImmutableArray.Create(new ParameterInfoPattern("input")))
+    public record UnaryPattern(Func<Unary, bool> Cond) : OpPattern
     {
-        public ParameterInfoPattern Input => Parameters[0];
 
         public UnaryPattern(Unary unary) : this(x => x == unary) { }
 
         public UnaryPattern(UnaryOp unaryOp) : this(x => x.UnaryOp == unaryOp) { }
-
-        public UnaryPattern(Func<UnaryOp, bool> OpTypeCond) : this(x => OpTypeCond(x.UnaryOp)) { }
 
         public bool MatchLeaf(Unary unary)
         {

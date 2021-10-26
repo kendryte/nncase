@@ -9,21 +9,25 @@ using Nncase.IR;
 
 namespace Nncase.Transform.Pattern
 {
-    public sealed record FunctionPattern(string Name, ExprPattern Body, IRArray<ExprPattern> Parameters) : ExprPattern
+    public sealed record FunctionPattern(string Name, ExprPattern Body, VArgsPattern Parameters) : ExprPattern
     {
         private static int _globalFuncIndex = 0;
-        public FunctionPattern(Function func) : this($"func_{_globalFuncIndex++}", (ExprPattern)func.Body, ImmutableArray.Create((from p in func.Parameters select ((ExprPattern)p)).ToArray())) { }
+        public FunctionPattern(Function func) : this(
+            $"func_{_globalFuncIndex++}",
+            (ExprPattern)func.Body,
+            new VArgsPattern((from p in func.Parameters select ((ExprPattern)p)).ToArray()))
+        { }
 
 
-        public FunctionPattern(ExprPattern body, params ExprPattern[] parameters) : this($"func_{_globalFuncIndex++}", body, parameters)
+        public FunctionPattern(ExprPattern body, params ExprPattern[] parameters) : this($"func_{_globalFuncIndex++}", body, new VArgsPattern(parameters))
         {
         }
 
-        public FunctionPattern(ExprPattern body, IRArray<ExprPattern> parameters) : this($"func_{_globalFuncIndex++}", body, parameters)
+        public FunctionPattern(ExprPattern body, IRArray<ExprPattern> parameters) : this($"func_{_globalFuncIndex++}", body, new VArgsPattern(parameters))
         {
         }
 
-        public bool MatchLeaf(Function func) => (Parameters.Count == func.Parameters.Count) && MatchCheckedType(func);
+        public bool MatchLeaf(Function func) => Parameters.MatchLeaf(func.Parameters) && MatchCheckedType(func);
 
     }
 }

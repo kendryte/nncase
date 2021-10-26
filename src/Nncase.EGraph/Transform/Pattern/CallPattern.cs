@@ -10,53 +10,39 @@ using Nncase.Transform.Pattern.Math;
 
 namespace Nncase.Transform.Pattern
 {
-    public sealed record CallPattern(ExprPattern Target, IRArray<ExprPattern> Parameters) : ExprPattern
+    public sealed record CallPattern(ExprPattern Target, VArgsPattern Parameters) : ExprPattern
     {
-        // public override bool Match(Call call)
-        // {
-        //     if (Parameters.Count != call.Parameters.Count)
-        //     {
-        //         return false;
-        //     }
-        //     if (!Target.Match(call.Target))
-        //     {
-        //         return false;
-        //     }
-        //     foreach (var (ppat, p) in Parameters.Zip(call.Parameters))
-        //     {
-        //         if (!ppat.Match(p))
-        //         {
-        //             return false;
-        //         }
-        //     }
-        //     return true;
-        // }
+
+        public CallPattern(Call call) : this((ExprPattern)call.Target, new VArgsPattern(call.Parameters)){}
 
         public bool MatchLeaf(Call call)
         {
-            return (Parameters.Count == call.Parameters.Count) && MatchCheckedType(call);
+            return (Parameters.MatchLeaf(call.Parameters)) && MatchCheckedType(call);
         }
 
         public CallPattern(ExprPattern target, params ExprPattern[] parameters)
-            : this(target, ImmutableArray.Create(parameters))
+            : this(target, new VArgsPattern(parameters))
         {
         }
 
     }
 
-    public static partial class Functional
+    public static partial class Utility
     {
         public static CallPattern IsBinary(Func<BinaryOp, bool> OpTypeCond, ExprPattern lhs, ExprPattern rhs) =>
-          new CallPattern(new BinaryPattern(OpTypeCond), lhs, rhs);
+          new CallPattern(new BinaryPattern(binary => OpTypeCond(binary.BinaryOp)), lhs, rhs);
 
         public static CallPattern IsBinary(BinaryOp opType, ExprPattern lhs, ExprPattern rhs) =>
-          new CallPattern(new BinaryPattern(opType), lhs, rhs);
+          IsBinary(binaryOp => opType == binaryOp, lhs, rhs);
+
+        public static CallPattern IsBinary(ExprPattern lhs, ExprPattern rhs) => IsBinary(binaryOp => true, lhs, rhs);
 
         public static CallPattern IsUnary(Func<UnaryOp, bool> OpTypeCond, ExprPattern input) =>
-          new CallPattern(new UnaryPattern(OpTypeCond), input);
+          new CallPattern(new UnaryPattern(unary => OpTypeCond(unary.UnaryOp)), input);
 
-        public static CallPattern IsUnary(UnaryOp opType, ExprPattern input) =>
-          new CallPattern(new UnaryPattern(opType), input);
+        public static CallPattern IsUnary(UnaryOp opType, ExprPattern input) => IsUnary(unaryOp => opType == unaryOp, input);
+
+        public static CallPattern IsUnary(ExprPattern input) => IsUnary(unaryOp => true, input);
 
     }
 }

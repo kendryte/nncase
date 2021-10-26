@@ -43,7 +43,7 @@ namespace Nncase.Transform.Pattern
         }
     }
 
-    public static partial class Functional
+    public static partial class Utility
     {
 
         public static ConstPattern IsConst() => new ConstPattern(x => x is Const);
@@ -62,6 +62,22 @@ namespace Nncase.Transform.Pattern
           x => x.ValueType switch
           {
               TensorType tensor => tensor.IsScalar && (tensor.DataType is (DataType.Int8 or DataType.Int16 or DataType.Int32 or DataType.Int64)) && cond(ToInt(tensor.DataType, x.Data)),
+              _ => false
+          }
+        );
+
+        public static ConstPattern IsConstTensor() => new ConstPattern(
+          x => x.ValueType switch
+          {
+              TensorType tensor => tensor.IsTensor,
+              _ => false
+          }
+        );
+
+        public static ConstPattern IsConstScalar() => new ConstPattern(
+          x => x.ValueType switch
+          {
+              TensorType tensor => tensor.IsScalar,
               _ => false
           }
         );

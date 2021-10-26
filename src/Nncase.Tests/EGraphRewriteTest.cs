@@ -6,7 +6,8 @@ using Nncase.Transform;
 using Nncase.Transform.Pattern;
 using static Nncase.IR.F.Math;
 using Rule = Nncase.Transform.Rule;
-using PF = Nncase.Transform.Pattern.Functional;
+using static Nncase.Transform.Pattern.F.Math;
+using static Nncase.Transform.Pattern.Utility;
 using System.IO;
 
 
@@ -32,7 +33,7 @@ public class EGraphRewriteTest : IDisposable
         EGraphPrinter.DumpEgraphAsDot(egraph, $"{Name}_ADD");
 
         WildCardPattern wcx = "a";
-        var pattern = wcx + PF.IsConst(0);
+        var pattern = wcx + IsConst(0);
 
         // rule  (? + 0) => (?)
         Func<Expr, Expr> nawPass = x => x;
@@ -44,7 +45,7 @@ public class EGraphRewriteTest : IDisposable
         Assert.Equal(wcxv.Expr, lhs);
         var to_eid = egraph.Add(nawPass(wcxv.Expr));
 
-        egraph.Merge(to_eid, EResults[0].eClass);
+        egraph.Merge(to_eid, egraph.Nodes[EResults[0].Root]);
         EGraphPrinter.DumpEgraphAsDot(egraph, $"{Name}_Merge");
         egraph.ReBuild();
         EGraphPrinter.DumpEgraphAsDot(egraph, $"{Name}_ReBuild");

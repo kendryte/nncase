@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using Nncase.IR;
 using Nncase.IR.Math;
+using Nncase.Transform.Pattern.Math;
 
 namespace Nncase.Transform.Pattern
 {
@@ -16,14 +17,14 @@ namespace Nncase.Transform.Pattern
             (Function function) => new FunctionPattern(function),
             (Call call) => new CallPattern(call),
             (IR.Tuple tuple) => new TuplePattern(tuple),
+            (Op op) => op switch
+            {
+                Binary binary => new BinaryPattern(binary),
+                Unary unary => new UnaryPattern(unary),
+                _ => throw new NotImplementedException($"Can't Convert OP {expr.GetType().Name} To ExprPattern")
+            },
             _ => throw new NotImplementedException($"Can't Convert The Expr {expr.GetType().Name} To ExprPattern")
         };
-
-        public static implicit operator ExprPattern(Var var) => new VarPattern(var);
-        public static implicit operator ExprPattern(Const con) => new ConstPattern(con);
-        public static implicit operator ExprPattern(Function function) => new FunctionPattern(function);
-        public static implicit operator ExprPattern(Call call) => new CallPattern(call);
-        public static implicit operator ExprPattern(IR.Tuple tuple) => new TuplePattern(tuple);
 
         public TypePattern? CheckedTypePat { get; set; }
 

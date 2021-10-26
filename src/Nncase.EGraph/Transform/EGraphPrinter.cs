@@ -89,7 +89,7 @@ namespace Nncase.Transform
                 file += ".dot";
             }
             var dirName = Path.GetDirectoryName(file);
-            if (dirName is not null)
+            if (dirName is not null && dirName != "")
             {
                 Directory.CreateDirectory(dirName);
             }

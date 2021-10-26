@@ -26,9 +26,9 @@ namespace Nncase.Transform
             System.Reflection.PropertyInfo[] knowcolors = typeof(Color).GetProperties();
             var random = new Random(123);
             int count = 0;
-            foreach (var (parentEclass, env) in matches)
+            foreach (var (root, env) in matches)
             {
-                var eclassCluster = _classes[parentEclass];
+                var eclassCluster = _classes[eGraph.Nodes[root]];
                 Color color = KnownColors[random.Next(KnownColors.Length - 1)];
                 eclassCluster.Nodes.Add($"m{eclassCluster.Id}_{count}", node =>
                 {

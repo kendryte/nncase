@@ -19,7 +19,7 @@ namespace Nncase.Transform.Pattern
             return Cond(ValueType);
         }
     }
-    public static partial class Functional
+    public static partial class Utility
     {
         public static TypePattern IsAnyType() => new TypePattern(AnyType.Default);
 

@@ -38,6 +38,6 @@ namespace Nncase.IR
         {
         }
 
-        public static implicit operator Var(string Name) => new Var(Name);
+        public static implicit operator Var(string Name) => new Var(Name, AnyType.Default);
     }
 }

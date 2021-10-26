@@ -9,18 +9,32 @@ using Nncase.IR;
 
 namespace Nncase.Transform.Pattern
 {
-    public sealed record TuplePattern(IRArray<ExprPattern> Fields) : ExprPattern
+    public sealed record TuplePattern(VArgsPattern Fields) : ExprPattern
     {
-        public TuplePattern(IR.Tuple tuple) : this(ImmutableArray.Create((from f in tuple.Fields select (ExprPattern)f).ToArray())) { }
+        public TuplePattern(IR.Tuple tuple) : this(
+          new VArgsPattern(
+            ImmutableArray.Create((from f in tuple.Fields select (ExprPattern)f).ToArray()))
+          )
+        { }
 
         public bool MatchLeaf(IR.Tuple tuple)
         {
-            return (Fields.Count == tuple.Fields.Count) && MatchCheckedType(tuple);
+            return Fields.MatchLeaf(tuple.Fields) && MatchCheckedType(tuple);
         }
 
     }
-    public static partial class Functional
+    public static partial class Utility
     {
-        public static TuplePattern IsTuple(ExprPattern[] Fields) => new TuplePattern(Fields);
+        public static TuplePattern IsTuple(params ExprPattern[] Fields)
+          => new TuplePattern(
+            Fields.Length switch
+            {
+                1 => Fields[0] switch
+                {
+                    VArgsPattern vArgsPat => vArgsPat,
+                    _ => new VArgsPattern(Fields),
+                },
+                _ => new VArgsPattern(Fields),
+            });
     }
 }

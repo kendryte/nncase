@@ -2,33 +2,39 @@ using System;
 using Nncase.IR;
 using Nncase.Transform;
 using Nncase.Transform.Pattern;
-using static Nncase.Transform.Pattern.Functional;
+using static Nncase.Transform.Pattern.Utility;
 namespace Nncase.Transform.Rule
 {
 
-    public interface IEGraphRule
+    public abstract class EGraphRule
     {
-        public ExprPattern GetPattern();
-        public Expr GetRePlace(EMatchResult result);
+        public virtual ExprPattern[] GetPatterns()
+        {
+            return new ExprPattern[] { GetPattern() };
+        }
+
+        public virtual ExprPattern GetPattern() => throw new NotImplementedException("Not Implement GetPattern!");
+
+        public virtual Expr GetRePlace(EMatchResult result) => throw new NotImplementedException("Not Implement GetRePlace!");
     }
 
-    public class Reassociate : IEGraphRule
+    public sealed class Reassociate : EGraphRule
     {
         private WildCardPattern wx = "x", wy = "y", wz = "z";
 
-        public ExprPattern GetPattern()
+        public override ExprPattern GetPattern()
         {
             return (wx * wy) * wz;
         }
 
-        public Expr GetRePlace(EMatchResult result)
+        public override Expr GetRePlace(EMatchResult result)
         {
             Expr x = result.Context[wx].Expr, y = result.Context[wy].Expr, z = result.Context[wz].Expr;
             return x * (y * z);
         }
     }
 
-    public class RemoveNoSenceAddSub : IEGraphRule
+    public sealed class RemoveNoSenceAddSub : EGraphRule
     {
 
         private bool CheckScalarIsZero(DataType dataType, IRBytes bytes)
@@ -53,9 +59,9 @@ namespace Nncase.Transform.Rule
             throw new NotImplementedException("Not Implement For Check Tensor Is Zero.");
         }
 
-        private readonly WildCardPattern[] wcs = new WildCardPattern[] { WildCard() };
+        private readonly WildCardPattern[] wcs = new WildCardPattern[] { IsWildCard() };
 
-        public ExprPattern GetPattern()
+        public override ExprPattern GetPattern()
         {
             return IsBinary(x => x is (BinaryOp.Add or BinaryOp.Sub), wcs[0], IsConst(
               (Const x) => (x.ValueType, x.Data) switch
@@ -70,7 +76,7 @@ namespace Nncase.Transform.Rule
             ));
         }
 
-        public Expr GetRePlace(EMatchResult result)
+        public override Expr GetRePlace(EMatchResult result)
         {
             return result.Context[wcs[0]].Expr;
         }

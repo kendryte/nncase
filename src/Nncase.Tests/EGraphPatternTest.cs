@@ -4,10 +4,12 @@ using Nncase.Transform.Pattern;
 using Nncase.Transform;
 using Nncase.IR;
 using System.Collections.Generic;
-using PF = Nncase.Transform.Pattern.Functional;
-using PM = Nncase.Transform.Pattern.Math;
+using Nncase.Transform.Pattern.Math;
 using static Nncase.IR.F.Math;
-using static Nncase.Transform.Pattern.Functional.Math;
+using static Nncase.IR.F.Tensors;
+using static Nncase.Transform.Pattern.Utility;
+using static Nncase.Transform.Pattern.F.Math;
+using static Nncase.Transform.Pattern.F.Tensor;
 using static Nncase.Transform.EGraphMatcher;
 
 namespace Nncase.Tests
@@ -31,8 +33,8 @@ namespace Nncase.Tests
             ExprPattern cp1 = con;
             Assert.IsType<ConstPattern>(cp1);
 
-            ExprPattern cp2 = PF.IsConst((float x) => x > 1.2f);
-            ExprPattern cp3 = PF.IsConst((int x) => x > 1);
+            ExprPattern cp2 = IsConst((float x) => x > 1.2f);
+            ExprPattern cp3 = IsConst((int x) => x > 1);
             var cp4 = (ConstPattern)1.1f;
 
             Assert.Equal(cp1.MatchLeaf(con), true);
@@ -44,27 +46,39 @@ namespace Nncase.Tests
         [Fact]
         public void TestWildcardPattern()
         {
-            var wc = PF.WildCard();
+            var wc = IsWildCard();
             Assert.IsType<WildCardPattern>(wc);
         }
 
+        /// check the same args patten has same hashcode.
+        [Fact]
+        public void TestWildCardPatternHash()
+        {
+            var wc = IsWildCard();
+            var wc2 = new WildCardPattern($"{wc.Name}_1", wc.Pattern);
+            var wc3 = new WildCardPattern($"{wc.Name}_1", wc.Pattern);
+            var d = new Dictionary<WildCardPattern, int>();
+            d.Add(wc, 1);
+            d.Add(wc2, 2);
+            Assert.Equal(d[wc3], 2);
+        }
 
         [Fact]
         public void TestCallPattern()
         {
             var e = (Const)1 + Exp(10);
 
-            var wc1 = PF.WildCard();
-            var wc2 = PF.WildCard();
+            var wc1 = IsWildCard();
+            var wc2 = IsWildCard();
             var c = wc1 + wc2;
             Assert.IsType<CallPattern>(c);
-            Assert.IsType<PM.BinaryPattern>(c.Target);
+            Assert.IsType<BinaryPattern>(c.Target);
             Assert.IsType<WildCardPattern>(c.Parameters[0]);
             Assert.IsType<WildCardPattern>(c.Parameters[1]);
 
-            var c2 = PF.IsBinary(BinaryOp.Add, wc1, wc2);
+            var c2 = IsBinary(BinaryOp.Add, wc1, wc2);
 
-            var c3 = PF.IsBinary(x => x is (BinaryOp.Div or BinaryOp.Sub), wc1, wc2);
+            var c3 = IsBinary(x => x is (BinaryOp.Div or BinaryOp.Sub), wc1, wc2);
 
             Assert.Equal(c.Target.MatchLeaf(e.Target), true);
             Assert.Equal(c2.Target.MatchLeaf(e.Target), true);
@@ -74,8 +88,8 @@ namespace Nncase.Tests
         [Fact]
         public void TestFunctionPattern()
         {
-            var wc1 = PF.WildCard();
-            var wc2 = PF.WildCard();
+            var wc1 = IsWildCard();
+            var wc2 = IsWildCard();
             var c = wc1 + wc2;
             var fp = new FunctionPattern(c, wc1, wc2);
             Assert.IsType<FunctionPattern>(fp);
@@ -89,20 +103,36 @@ namespace Nncase.Tests
         [Fact]
         public void TestTuplePattern()
         {
-            var wc1 = PF.WildCard();
-            var wc2 = PF.WildCard();
-            var t = PF.IsTuple(new[] { wc1, wc2 });
+            var wc1 = IsWildCard();
+            var wc2 = IsWildCard();
+            var t = IsTuple(wc1, wc2);
             Assert.IsType<TuplePattern>(t);
             Assert.IsType<WildCardPattern>(t.Fields[0]);
             Assert.IsType<WildCardPattern>(t.Fields[1]);
         }
 
         [Fact]
+        public void TestVArgsPattern()
+        {
+            var wc = IsWildCard();
+            var t = new VArgsPattern(wc)
+            {
+                Repeat = true
+            };
+
+            var tuple = new IR.Tuple(1, 2, 3, 4);
+            Assert.Equal(t[0].MatchLeaf(tuple[0]), true);
+            Assert.Equal(t[1].MatchLeaf(tuple[1]), true);
+            Assert.Equal(t[2].MatchLeaf(tuple[2]), true);
+            Assert.Equal(t[3].MatchLeaf(tuple[3]), true);
+        }
+
+        [Fact]
         public void TestAltPattern()
         {
-            var lhs = PF.WildCard();
-            var rhs = PF.WildCard();
-            var is_op_call = new CallPattern(PF.WildCard(), lhs, rhs);
+            var lhs = IsWildCard();
+            var rhs = IsWildCard();
+            var is_op_call = new CallPattern(IsWildCard(), lhs, rhs);
             Const x = (Const)1;
             Const y = (Const)2;
             var z1 = x + y;
@@ -115,7 +145,7 @@ namespace Nncase.Tests
         public void TestTypePattern()
         {
             var ttype = new TensorType(DataType.Float32, new[] { 10, 10 });
-            var ty_pat = PF.HasType(ttype);
+            var ty_pat = HasType(ttype);
             Assert.IsType<TypePattern>(ty_pat);
             Assert.Equal(ty_pat.MatchLeaf(ttype), true);
         }
@@ -125,7 +155,7 @@ namespace Nncase.Tests
         {
             var ttype1 = new TensorType(DataType.Float32, new[] { 10, 10 });
             var ttype2 = new TensorType(DataType.Int16, new[] { 10 });
-            var ty_pat = PF.HasDType(DataType.Float32);
+            var ty_pat = HasDType(DataType.Float32);
             Assert.IsType<TypePattern>(ty_pat);
             Assert.Equal(ty_pat.MatchLeaf(ttype1), true);
             Assert.Equal(ty_pat.MatchLeaf(ttype2), false);
@@ -135,7 +165,7 @@ namespace Nncase.Tests
         public void TestShapePattern()
         {
             var shape = new int[] { 10, 10 };
-            var sp = PF.HasShape(shape);
+            var sp = HasShape(shape);
             var ttype1 = new TensorType(DataType.Float32, new[] { 10, 10 });
             var ttype2 = new TensorType(DataType.Int16, new[] { 10 });
             Assert.Equal(sp.MatchLeaf(ttype1), true);
@@ -159,7 +189,7 @@ namespace Nncase.Tests
         [Fact]
         public void TestMatchOpAdd()
         {
-            var wc1 = PF.WildCard();
+            var wc1 = IsWildCard();
             var pat = wc1 + 1;
 
             var a = new Var("a");
@@ -183,8 +213,8 @@ namespace Nncase.Tests
             var y = x + 10;
             var y1 = y - 10;
 
-            var px = PF.WildCard();
-            var py = PF.IsBinary(op => op is (BinaryOp.Add or BinaryOp.Sub), px, 10);
+            var px = IsWildCard();
+            var py = IsBinary(op => op is (BinaryOp.Add or BinaryOp.Sub), px, 10);
 
 
             eGraph.Add(y);
@@ -195,7 +225,7 @@ namespace Nncase.Tests
             var matchs2 = EMatch(eGraph, py);
             Assert.Equal(matchs2.Count, 2);
 
-            var py1 = PF.IsUnary(UnaryOp.Abs, px);
+            var py1 = IsUnary(UnaryOp.Abs, px);
             Assert.Equal(EMatch(eGraph, py1).Count, 0);
         }
 
@@ -223,6 +253,29 @@ namespace Nncase.Tests
 
             var res_2 = EMatch(eGraph, pat_2);
             Assert.Equal(res_2.Count, 0);
+        }
+
+        [Fact]
+        public void TestMatchVArgs()
+        {
+            eGraph.Clear();
+            Var x = "x";
+            Var y = "y";
+            Var z = "z";
+
+            WildCardPattern wc = "x";
+
+            Expr expr = Concat(new IR.Tuple(x, y, z), 0);
+
+            ExprPattern vpat = Concat(IsTuple(IsVArgsWildCard("x", null)), 0);
+
+            eGraph.Add(expr);
+
+            var res_1 = EMatch(eGraph, vpat);
+            Assert.Equal(res_1.Count, 1);
+            Assert.Contains(wc.Dup(0), res_1[0].Context.Keys);
+            Assert.Contains(wc.Dup(1), res_1[0].Context.Keys);
+            Assert.Contains(wc.Dup(2), res_1[0].Context.Keys);
         }
 
     }

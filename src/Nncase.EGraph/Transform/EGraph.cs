@@ -216,8 +216,7 @@ namespace Nncase.Transform
 
             public override EClass VisitLeaf(Function expr)
             {
-                var children = (from p in expr.Parameters select Visit(p))
-                    .Concat(new[] { Visit(expr.Body) }).ToArray();
+                var children = new[] { Visit(expr.Body) }.Concat(from p in expr.Parameters select Visit(p)).ToArray();
                 return _graph.AddENode(expr, children);
             }
 

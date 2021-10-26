@@ -7,30 +7,22 @@ using System.Collections.Immutable;
 using System.Linq;
 using Nncase.IR;
 using Nncase.IR.Math;
+using Nncase.IR.Tensors;
 using Nncase.Transform.Pattern.Math;
+using Nncase.Transform.Pattern.Tensors;
 
 namespace Nncase.Transform.Pattern
 {
-    public sealed record ParameterInfoPattern(Func<ParameterInfo, bool> Cond)
-    {
-        public bool Match(ParameterInfo x) => Cond(x);
-
-        public ParameterInfoPattern(ParameterInfo Info) : this(info => info == Info)
-        {
-        }
-
-        public ParameterInfoPattern(string Name) : this(info => info.Name == Name)
-        {
-        }
-    };
-
-    public abstract record OpPattern(IRArray<ParameterInfoPattern> Parameters) : ExprPattern
+    public abstract record OpPattern() : ExprPattern
     {
         public bool MatchLeaf(Op op) => (this, op) switch
         {
             (BinaryPattern binaryPat, Binary binary) => binaryPat.MatchLeaf(binary),
             (ClampPattern clampPat, Clamp clamp) => clampPat.MatchLeaf(clamp),
             (UnaryPattern unaryPat, Unary unary) => unaryPat.MatchLeaf(unary),
+            (TransposePattern transposePat, Transpose transpose) => transposePat.MatchLeaf(transpose),
+            (SlicePattern slicePat, Slice slice) => slicePat.MatchLeaf(slice),
+            (ConcatPattern concatPat, Concat concat) => concatPat.MatchLeaf(concat),
             (_, _) => false
         };
     }
