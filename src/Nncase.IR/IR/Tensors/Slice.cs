@@ -13,37 +13,32 @@ namespace Nncase.IR.Tensors
     /// <summary>
     /// Slice expression.
     /// </summary>
-    public record Slice() : Op(ImmutableArray.Create(
-        new ParameterInfo("input"),
-        new ParameterInfo("begins"),
-        new ParameterInfo("ends"),
-        new ParameterInfo("axes"),
-        new ParameterInfo("strides")))
+    public sealed record Slice() : Op
     {
         /// <summary>
         /// Gets input.
         /// </summary>
-        public ParameterInfo Input => Parameters[0];
+        public static readonly ParameterInfo Input = new(typeof(Slice), 0, "input");
 
         /// <summary>
         /// Gets begins.
         /// </summary>
-        public ParameterInfo Begins => Parameters[1];
+        public static readonly ParameterInfo Begins = new(typeof(Slice), 1, "begins");
 
         /// <summary>
         /// Gets ends.
         /// </summary>
-        public ParameterInfo Ends => Parameters[2];
+        public static readonly ParameterInfo Ends = new(typeof(Slice), 2, "ends");
 
         /// <summary>
         /// Gets axes.
         /// </summary>
-        public ParameterInfo Axes => Parameters[3];
+        public static readonly ParameterInfo Axes = new(typeof(Slice), 3, "axes");
 
         /// <summary>
         /// Gets strides.
         /// </summary>
-        public ParameterInfo Strides => Parameters[4];
+        public static readonly ParameterInfo Strides = new(typeof(Slice), 4, "strides");
 
         /// <inheritdoc/>
         public override IRType InferInvokeResultType(ITypeInferenceContext context)

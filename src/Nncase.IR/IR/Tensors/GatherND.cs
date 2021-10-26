@@ -13,28 +13,27 @@ namespace Nncase.IR.Tensors
     /// <summary>
     /// GatherND expression.
     /// </summary>
-    public record GatherND() : Op(ImmutableArray.Create(
-        new ParameterInfo("input"), new ParameterInfo("axis"), new ParameterInfo("batch_dims"), new ParameterInfo("index")))
+    public sealed record GatherND() : Op
     {
         /// <summary>
         /// Gets input.
         /// </summary>
-        public ParameterInfo Input => Parameters[0];
+        public static readonly ParameterInfo Input = new(typeof(GatherND), 0, "input");
 
         /// <summary>
         /// Gets axis.
         /// </summary>
-        public ParameterInfo Axis => Parameters[1];
+        public static readonly ParameterInfo Axis = new(typeof(GatherND), 1, "axis");
 
         /// <summary>
         /// Gets batch dims.
         /// </summary>
-        public ParameterInfo BatchDims => Parameters[2];
+        public static readonly ParameterInfo BatchDims = new(typeof(GatherND), 2, "batch_dims");
 
         /// <summary>
         /// Gets index.
         /// </summary>
-        public ParameterInfo Index => Parameters[3];
+        public static readonly ParameterInfo Index = new(typeof(GatherND), 3, "index");
 
         /// <inheritdoc/>
         public override IRType InferInvokeResultType(ITypeInferenceContext context)

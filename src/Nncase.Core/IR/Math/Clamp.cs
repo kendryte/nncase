@@ -13,23 +13,22 @@ namespace Nncase.IR.Math
     /// <summary>
     /// Clamp expression.
     /// </summary>
-    public record Clamp() : Op(ImmutableArray.Create(
-        new ParameterInfo("input"), new ParameterInfo("min"), new ParameterInfo("max")))
+    public sealed record Clamp() : Op
     {
         /// <summary>
         /// Gets input.
         /// </summary>
-        public ParameterInfo Input => Parameters[0];
+        public static readonly ParameterInfo Input = new(typeof(Clamp), 0, "input");
 
         /// <summary>
         /// Gets min.
         /// </summary>
-        public ParameterInfo Min => Parameters[1];
+        public static readonly ParameterInfo Min = new(typeof(Clamp), 1, "min");
 
         /// <summary>
         /// Gets max.
         /// </summary>
-        public ParameterInfo Max => Parameters[2];
+        public static readonly ParameterInfo Max = new(typeof(Clamp), 2, "max");
 
         /// <inheritdoc/>
         public override IRType InferInvokeResultType(ITypeInferenceContext context)

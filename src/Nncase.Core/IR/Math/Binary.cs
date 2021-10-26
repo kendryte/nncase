@@ -13,17 +13,17 @@ namespace Nncase.IR.Math
     /// <summary>
     /// Binary expression.
     /// </summary>
-    public record Binary(BinaryOp BinaryOp) : Op(ImmutableArray.Create(new ParameterInfo("lhs"), new ParameterInfo("rhs")))
+    public sealed record Binary(BinaryOp BinaryOp) : Op
     {
         /// <summary>
         /// Gets lhs.
         /// </summary>
-        public ParameterInfo Lhs => Parameters[0];
+        public static readonly ParameterInfo Lhs = new(typeof(Binary), 0, "lhs");
 
         /// <summary>
         /// Gets rhs.
         /// </summary>
-        public ParameterInfo Rhs => Parameters[1];
+        public static readonly ParameterInfo Rhs = new(typeof(Binary), 1, "rhs");
 
         /// <inheritdoc/>
         public override IRType InferInvokeResultType(ITypeInferenceContext context)

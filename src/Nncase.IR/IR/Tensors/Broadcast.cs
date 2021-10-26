@@ -13,17 +13,17 @@ namespace Nncase.IR.Tensors
     /// <summary>
     /// Broadcast expression.
     /// </summary>
-    public record Broadcast() : Op(ImmutableArray.Create(new ParameterInfo("input"), new ParameterInfo("shape")))
+    public sealed record Broadcast() : Op
     {
         /// <summary>
         /// Gets input.
         /// </summary>
-        public ParameterInfo Input => Parameters[0];
+        public static readonly ParameterInfo Input = new(typeof(Broadcast), 0, "input");
 
         /// <summary>
         /// Gets input.
         /// </summary>
-        public ParameterInfo Shape => Parameters[1];
+        public static readonly ParameterInfo Shape = new(typeof(Broadcast), 1, "shape");
 
         /// <inheritdoc/>
         public override IRType InferInvokeResultType(ITypeInferenceContext context)

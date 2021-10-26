@@ -13,23 +13,22 @@ namespace Nncase.IR.Tensors
     /// <summary>
     /// Gather expression.
     /// </summary>
-    public record Gather() : Op(ImmutableArray.Create(
-        new ParameterInfo("input"), new ParameterInfo("axis"), new ParameterInfo("index")))
+    public sealed record Gather() : Op
     {
         /// <summary>
         /// Gets input.
         /// </summary>
-        public ParameterInfo Input => Parameters[0];
+        public static readonly ParameterInfo Input = new(typeof(Gather), 0, "input");
 
         /// <summary>
         /// Gets axis.
         /// </summary>
-        public ParameterInfo Axis => Parameters[1];
+        public static readonly ParameterInfo Axis = new(typeof(Gather), 1, "axis");
 
         /// <summary>
         /// Gets index.
         /// </summary>
-        public ParameterInfo Index => Parameters[2];
+        public static readonly ParameterInfo Index = new(typeof(Gather), 2, "index");
 
         /// <inheritdoc/>
         public override IRType InferInvokeResultType(ITypeInferenceContext context)

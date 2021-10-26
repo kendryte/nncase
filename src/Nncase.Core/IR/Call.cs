@@ -24,5 +24,21 @@ namespace Nncase.IR
             : this(target, ImmutableArray.Create(parameters))
         {
         }
+
+        public Expr this[ParameterInfo parameter]
+        {
+            get
+            {
+                var type = Target.GetType();
+                if (type == parameter.OwnerType)
+                {
+                    return Parameters[parameter.Index];
+                }
+                else
+                {
+                    throw new ArgumentOutOfRangeException($"Target {Target} doesn't have parameter: {parameter.Name}.");
+                }
+            }
+        }
     }
 }

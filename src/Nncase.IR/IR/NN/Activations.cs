@@ -13,12 +13,12 @@ namespace Nncase.IR.NN
     /// <summary>
     /// Sigmoid expression.
     /// </summary>
-    public record Sigmoid() : Op(ImmutableArray.Create(new ParameterInfo("input")))
+    public sealed record Sigmoid() : Op
     {
         /// <summary>
         /// Gets input.
         /// </summary>
-        public ParameterInfo Input => Parameters[0];
+        public static readonly ParameterInfo Input = new(typeof(Sigmoid), 0, "input");
 
         /// <inheritdoc/>
         public override IRType InferInvokeResultType(ITypeInferenceContext context)

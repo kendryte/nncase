@@ -13,17 +13,17 @@ namespace Nncase.IR.Tensors
     /// <summary>
     /// Concat expression.
     /// </summary>
-    public record Concat() : Op(ImmutableArray.Create(new ParameterInfo("input"), new ParameterInfo("axis")))
+    public sealed record Concat() : Op
     {
         /// <summary>
         /// Gets input.
         /// </summary>
-        public ParameterInfo Input => Parameters[0];
+        public static readonly ParameterInfo Input = new(typeof(Concat), 0, "input");
 
         /// <summary>
         /// Gets axis.
         /// </summary>
-        public ParameterInfo Axis => Parameters[1];
+        public static readonly ParameterInfo Axis = new(typeof(Concat), 1, "axis");
 
         /// <inheritdoc/>
         public override IRType InferInvokeResultType(ITypeInferenceContext context)

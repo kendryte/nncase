@@ -13,12 +13,12 @@ namespace Nncase.IR.Math
     /// <summary>
     /// Unary expression.
     /// </summary>
-    public record Unary(UnaryOp UnaryOp) : Op(ImmutableArray.Create(new ParameterInfo("input")))
+    public sealed record Unary(UnaryOp UnaryOp) : Op
     {
         /// <summary>
         /// Gets input.
         /// </summary>
-        public ParameterInfo Input => Parameters[0];
+        public static readonly ParameterInfo Input = new(typeof(Unary), 0, "input");
 
         /// <inheritdoc/>
         public override IRType InferInvokeResultType(ITypeInferenceContext context)

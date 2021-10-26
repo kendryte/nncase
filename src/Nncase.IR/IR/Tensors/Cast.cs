@@ -13,12 +13,12 @@ namespace Nncase.IR.Tensors
     /// <summary>
     /// Cast expression.
     /// </summary>
-    public record Cast(DataType NewType) : Op(ImmutableArray.Create(new ParameterInfo("input")))
+    public sealed record Cast(DataType NewType) : Op
     {
         /// <summary>
         /// Gets input.
         /// </summary>
-        public ParameterInfo Input => Parameters[0];
+        public static readonly ParameterInfo Input = new(typeof(Cast), 0, "input");
 
         /// <inheritdoc/>
         public override IRType InferInvokeResultType(ITypeInferenceContext context)

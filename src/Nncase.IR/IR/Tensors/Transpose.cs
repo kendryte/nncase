@@ -13,19 +13,17 @@ namespace Nncase.IR.Tensors
     /// <summary>
     /// Transpose expression.
     /// </summary>
-    public record Transpose() : Op(ImmutableArray.Create(
-        new ParameterInfo("input"),
-        new ParameterInfo("perm")))
+    public sealed record Transpose() : Op
     {
         /// <summary>
         /// Gets input.
         /// </summary>
-        public ParameterInfo Input => Parameters[0];
+        public static readonly ParameterInfo Input = new(typeof(Transpose), 0, "input");
 
         /// <summary>
         /// Gets perm.
         /// </summary>
-        public ParameterInfo Perm => Parameters[1];
+        public static readonly ParameterInfo Perm = new(typeof(Transpose), 1, "perm");
 
         /// <inheritdoc/>
         public override IRType InferInvokeResultType(ITypeInferenceContext context)

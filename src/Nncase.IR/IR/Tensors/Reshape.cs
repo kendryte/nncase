@@ -13,18 +13,17 @@ namespace Nncase.IR.Tensors
     /// <summary>
     /// Reshape expression.
     /// </summary>
-    public record Reshape() : Op(ImmutableArray.Create(
-        new ParameterInfo("input"), new ParameterInfo("shape")))
+    public sealed record Reshape() : Op
     {
         /// <summary>
         /// Gets input.
         /// </summary>
-        public ParameterInfo Input => Parameters[0];
+        public static readonly ParameterInfo Input = new(typeof(Reshape), 0, "input");
 
         /// <summary>
         /// Gets shape.
         /// </summary>
-        public ParameterInfo Shape => Parameters[1];
+        public static readonly ParameterInfo Shape = new(typeof(Reshape), 1, "shape");
 
         /// <inheritdoc/>
         public override IRType InferInvokeResultType(ITypeInferenceContext context)

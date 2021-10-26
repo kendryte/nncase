@@ -13,25 +13,22 @@ namespace Nncase.IR.Tensors
     /// <summary>
     /// Split expression.
     /// </summary>
-    public record Split() : Op(ImmutableArray.Create(
-        new ParameterInfo("input"),
-        new ParameterInfo("axis"),
-        new ParameterInfo("sections")))
+    public sealed record Split() : Op
     {
         /// <summary>
         /// Gets input.
         /// </summary>
-        public ParameterInfo Input => Parameters[0];
+        public static readonly ParameterInfo Input = new(typeof(Split), 0, "input");
 
         /// <summary>
         /// Gets axis.
         /// </summary>
-        public ParameterInfo Axis => Parameters[1];
+        public static readonly ParameterInfo Axis = new(typeof(Split), 1, "axis");
 
         /// <summary>
         /// Gets sections.
         /// </summary>
-        public ParameterInfo Sections => Parameters[2];
+        public static readonly ParameterInfo Sections = new(typeof(Split), 2, "sections");
 
         /// <inheritdoc/>
         public override IRType InferInvokeResultType(ITypeInferenceContext context)

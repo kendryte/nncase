@@ -23,11 +23,14 @@ namespace Nncase.IR
 
         public Expr GetArgument(Op op, ParameterInfo parameter)
         {
-            return op.Parameters.IndexOf(parameter) switch
+            if (op.GetType() == parameter.OwnerType)
             {
-                < 0 => throw new ArgumentOutOfRangeException($"Operator {op} doesn't have parameter: {parameter.Name}."),
-                int index => GetCurrentCall().Parameters[index],
-            };
+                return GetCurrentCall().Parameters[parameter.Index];
+            }
+            else
+            {
+                throw new ArgumentOutOfRangeException($"Operator {op} doesn't have parameter: {parameter.Name}.");
+            }
         }
 
         public IRType GetArgumentType(Op op, ParameterInfo parameter) =>
