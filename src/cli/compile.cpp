@@ -33,6 +33,8 @@ compile_command::compile_command(lyra::cli &cli)
                          .add_argument(lyra::opt(use_mse_quant_w_).name("--use-mse-quant-w").optional().help("use min mse algorithm to refine weights quantilization or not, default is " + std::to_string(use_mse_quant_w_)))
                          .add_argument(lyra::opt(dataset_, "dataset path").name("--dataset").optional().help("calibration dataset, used in post quantization"))
                          .add_argument(lyra::opt(dataset_format_, "dataset format").name("--dataset-format").optional().help("datset format: e.g. image|raw, default is " + dataset_format_))
+                         .add_argument(lyra::opt(dump_range_dataset_, "dataset path").name("--dump-range-dataset").optional().help("dump import op range dataset"))
+                         .add_argument(lyra::opt(dump_range_dataset_format_, "dataset format").name("--dump-range-dataset-format").optional().help("datset format: e.g. image|raw, default is " + dump_range_dataset_format_))
                          .add_argument(lyra::opt(calibrate_method_, "calibrate method").name("--calibrate-method").optional().help("calibrate method: e.g. no_clip|l2|kld_m0|kld_m1|kld_m2|cdf, default is " + calibrate_method_))
                          .add_argument(lyra::opt(preprocess_).name("--preprocess").optional().help("enable preprocess, default is " + std::to_string(preprocess_)))
                          .add_argument(lyra::opt(swapRB_).name("--swapRB").optional().help("swap red and blue channel, default is " + std::to_string(swapRB_)))
@@ -164,6 +166,18 @@ void compile_command::run()
         ptq_options.calibrate_method = calibrate_method_;
         compiler->use_ptq(ptq_options);
     }
+
+    if (!dump_range_dataset_.empty())
+    {
+        nncase::dump_range_dataset_options dump_range_options;
+        dump_range_options.dataset = dump_range_dataset_;
+        dump_range_options.dataset_format = dump_range_dataset_format_;
+        dump_range_options.calibrate_method = calibrate_method_;
+        compiler->dump_range_options(dump_range_options);
+    }
+
+    if (dump_import_op_range_ && dump_range_dataset_.empty())
+        throw std::runtime_error("Dump range dataset has not been set.");
 
     compiler->compile();
 

@@ -15,7 +15,7 @@ SYNOPSIS
         [--input-type <input type>] [--output-type <output type>]
         [--input-layout <input layout>] [--output-layout <output layout>]
         [--is-fpga] [--dump-ir] [--dump-asm] [--dump-quant-error] [--dump-import-op-range] [--dump-dir <dump directory>]
-        [--benchmark-only]
+        [--dump-range-dataset <dataset path>] [--dump-range-dataset-format <dataset format>] [--benchmark-only]
 
     ncc infer <input file> <output path>
         --dataset <dataset path> [--dataset-format <dataset format>]
@@ -44,6 +44,10 @@ OPTIONS
                           calibration dataset, used in post quantization
   --dataset-format <dataset format>
                           datset format: e.g. image|raw, default is image
+  --dump-range-dataset <dataset path>
+                          dataset for dump import op range
+  --dump-range-dataset-format <dataset format>
+                          datset format: e.g. image|raw, default is image
   --calibrate-method <calibrate method>
                           calibrate method: e.g. no_clip|l2|kld_m0|kld_m1|kld_m2|cdf, default is no_clip
   --preprocess            enable preprocess, default is 0
@@ -68,7 +72,7 @@ OPTIONS
   --dump-ir               dump ir to .dot, default is 0
   --dump-asm              dump assembly, default is 0
   --dump-quant-error      dump quant error, default is 0
-  --dump-import-op-range  dump imported op data range, default is 0
+  --dump-import-op-range  dump imported op data range, must specify dump-range-dataset if enable, default is 0
   --dump-dir <dump directory>
                           dump to directory
   --benchmark-only        compile kmodel only for benchmark use, default is 0
@@ -104,6 +108,8 @@ OPTIONS
 - `--use-mse-quant-w`指定是否使用最小化mse(mean-square error, 均方误差)算法来量化权重.
 - `--dataset` 用于提供量化校准集来量化你的模型。你需要从训练集中选择几百到上千个数据放到这个目录里。
 - `--dataset-format` 用于指定量化校准集的格式。默认是 `image`，nncase 将使用 `opencv` 读取你的图片，并自动缩放到你的模型输入需要的尺寸。如果你的输入有 3 个通道，ncc 会将你的图片转换为值域是 [0,1] 布局是 `NCHW` 的张量。如果你的输入只有 1 个通道，ncc 会灰度化你的图片。如果你的数据集不是图片（例如音频或者矩阵），把它设置为 `raw`。这种场景下你需要把你的数据集转换为 float 张量的二进制文件。
+- `--dump-range-dataset` 用于提供统计范围数据集来统计原始模型每个节点输出数据范围。你需要从训练集中选择几百到上千个数据放到这个目录里。
+- `--dump-range-dataset-format` 用于指定统计范围数据集的格式。默认是 `image`，nncase 将使用 `opencv` 读取你的图片，并自动缩放到你的模型输入需要的尺寸。如果你的输入有 3 个通道，ncc 会将你的图片转换为值域是 [0,1] 布局是 `NCHW` 的张量。如果你的输入只有 1 个通道，ncc 会灰度化你的图片。如果你的数据集不是图片（例如音频或者矩阵），把它设置为 `raw`。这种场景下你需要把你的数据集转换为 float 张量的二进制文件。
 - `--calibrate-method` 用于设置量化校准方法，它被用来选择最优的激活函数值域。默认值是 `no_clip`，ncc 会使用整个激活函数值域。如果你需要更好的量化结果，你可以使用 `l2`，但它需要花更长的时间寻找最优值域。
 - `--preprocess`指定是否预处理, 添加后表示开启预处理
 - `--swapRB`指定**预处理时**是否交换红和蓝两个通道数据, 用于实现RGB2BGR或BGR2RGB功能
@@ -120,7 +126,7 @@ OPTIONS
 - `--dump-ir` 是一个调试选项。当它打开时 ncc 会在工作目录产生一些 `.dot` 文件。你可以使用 `Graphviz` 或 [Graphviz Online](https://dreampuf.github.io/GraphvizOnline) 来查看这些文件。
 - `--dump-asm` 是一个调试选项。当它打开时 ncc 会生成硬件指令文件compile.text.asm
 - `--dump-quant-error`是一个调试选项, 用于dump量化错误信息
-- `--dump-import-op-range`是一个调试选项, 用于dump import之后节点的数据范围
+- `--dump-import-op-range`是一个调试选项, 用于dump import之后节点的数据范围，需要同时指定dump-range-dataset
 - `--dump-dir`是一个调试选项, 用于指定dump目录.
 - `--benchmark-only`是一个调试选项, 用于指定编译后的kmodel用于benchmark.
 

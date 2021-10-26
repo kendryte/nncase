@@ -181,6 +181,16 @@ public:
         use_ptq_ = true;
     }
 
+    void dump_range_options(dump_range_dataset_options options) override
+    {
+        dump_range_options_ = std::move(options);
+    }
+
+    void dump_range_options(dump_range_tensor_options options) override
+    {
+        dump_range_options_ = std::move(options);
+    }
+
     void compile() override
     {
         if (use_ptq_)
@@ -477,57 +487,105 @@ private:
 
         auto sched_result = sched.schedule(true);
         ir::evaluator evaluator(sched_result);
-        auto calib_method = std::visit([](auto &options) { return to_calibrate_method(options.calibrate_method); },
-            ptq_options_);
 
-        evaluator.enable_ptq(*target_, calib_method);
+        if (step != eval_step::after_import)
+        {
+            auto calib_method = std::visit([](auto &options) { return to_calibrate_method(options.calibrate_method); }, ptq_options_);
+            evaluator.enable_ptq(*target_, calib_method);
+        }
+        else
+        {
+            auto calib_method = std::visit([](auto &options) { return to_calibrate_method(options.calibrate_method); }, dump_range_options_);
+            evaluator.enable_ptq(*target_, calib_method);
+        }
 
         if (graph.inputs().size() != 1)
-            throw std::invalid_argument("PTQ only support models that have single 1 input");
+            throw std::invalid_argument("Collect ranges only support models that have single 1 input");
 
-        if (ptq_options_.index() == 0)
+        if (step != eval_step::after_import)
         {
-            auto &options = std::get<ptq_dataset_options>(ptq_options_);
-            auto &in_shape = graph.inputs()[0]->output().shape();
-            xt::dynamic_shape<size_t> dataset_in_shape(in_shape.begin(), in_shape.end());
-            std::unique_ptr<dataset> ds;
-            if (options.dataset_format == "image")
-                ds = std::make_unique<image_dataset>(options.dataset, dataset_in_shape, compile_options_.input_layout);
-            else if (options.dataset_format == "raw")
-                ds = std::make_unique<raw_dataset>(options.dataset, dataset_in_shape);
-            else
-                throw std::runtime_error("Invalid calibration dataset format: " + options.dataset_format);
-
-            auto in_type = graph.inputs()[0]->output().type();
-            switch (in_type)
+            if (ptq_options_.index() == 0)
             {
-            case dt_float32:
-                run_calibration_eval<float>(options, *ds, evaluator, step);
-                break;
-            case dt_uint8:
-                run_calibration_eval<uint8_t>(options, *ds, evaluator, step);
-                break;
-            case dt_int8:
-                run_calibration_eval<int8_t>(options, *ds, evaluator, step);
-                break;
-            default:
-                throw std::runtime_error("Unsupported input datatype: " + std::string(datatype_names(in_type)));
+                auto &options = std::get<ptq_dataset_options>(ptq_options_);
+                auto &in_shape = graph.inputs()[0]->output().shape();
+                xt::dynamic_shape<size_t> dataset_in_shape(in_shape.begin(), in_shape.end());
+                std::unique_ptr<dataset> ds;
+                if (options.dataset_format == "image")
+                    ds = std::make_unique<image_dataset>(options.dataset, dataset_in_shape, compile_options_.input_layout);
+                else if (options.dataset_format == "raw")
+                    ds = std::make_unique<raw_dataset>(options.dataset, dataset_in_shape);
+                else
+                    throw std::runtime_error("Invalid calibration dataset format: " + options.dataset_format);
+
+                auto in_type = graph.inputs()[0]->output().type();
+                switch (in_type)
+                {
+                case dt_float32:
+                    run_calibration_eval<float, ptq_dataset_options>(options, *ds, evaluator, step);
+                    break;
+                case dt_uint8:
+                    run_calibration_eval<uint8_t, ptq_dataset_options>(options, *ds, evaluator, step);
+                    break;
+                case dt_int8:
+                    run_calibration_eval<int8_t, ptq_dataset_options>(options, *ds, evaluator, step);
+                    break;
+                default:
+                    throw std::runtime_error("Unsupported input datatype: " + std::string(datatype_names(in_type)));
+                }
+            }
+            else
+            {
+                auto &options = std::get<ptq_tensor_options>(ptq_options_);
+                run_calibration_eval<ptq_tensor_options>(options, evaluator, step);
             }
         }
         else
         {
-            auto &options = std::get<ptq_tensor_options>(ptq_options_);
-            run_calibration_eval(options, evaluator, step);
+            if (dump_range_options_.index() == 0)
+            {
+                auto &options = std::get<dump_range_dataset_options>(dump_range_options_);
+                auto &in_shape = graph.inputs()[0]->output().shape();
+                xt::dynamic_shape<size_t> dataset_in_shape(in_shape.begin(), in_shape.end());
+                std::unique_ptr<dataset> ds;
+                if (options.dataset_format == "image")
+                    ds = std::make_unique<image_dataset>(options.dataset, dataset_in_shape, compile_options_.input_layout);
+                else if (options.dataset_format == "raw")
+                    ds = std::make_unique<raw_dataset>(options.dataset, dataset_in_shape);
+                else
+                    throw std::runtime_error("Invalid calibration dataset format: " + options.dataset_format);
+
+                auto in_type = graph.inputs()[0]->output().type();
+                switch (in_type)
+                {
+                case dt_float32:
+                    run_calibration_eval<float, dump_range_dataset_options>(options, *ds, evaluator, step);
+                    break;
+                case dt_uint8:
+                    run_calibration_eval<uint8_t, dump_range_dataset_options>(options, *ds, evaluator, step);
+                    break;
+                case dt_int8:
+                    run_calibration_eval<int8_t, dump_range_dataset_options>(options, *ds, evaluator, step);
+                    break;
+                default:
+                    throw std::runtime_error("Unsupported input datatype: " + std::string(datatype_names(in_type)));
+                }
+            }
+            else
+            {
+                auto &options = std::get<dump_range_tensor_options>(dump_range_options_);
+                run_calibration_eval<dump_range_tensor_options>(options, evaluator, step);
+            }
         }
 
         return evaluator;
     }
 
-    template <class T>
-    void run_calibration_eval(ptq_dataset_options &options, dataset &dataset, ir::evaluator &evaluator, eval_step step)
+    template <class T, class TOpt>
+    void run_calibration_eval(TOpt &options, dataset &dataset, ir::evaluator &evaluator, eval_step step)
     {
         std::string step_str = step == nncase::ir::eval_step::after_import ? "1" : (step == nncase::ir::eval_step::after_calib ? "4.2" : "4.4");
-        const size_t max_stages = (options.calibrate_method == "no_clip" || step == nncase::ir::eval_step::after_import) ? 1 : 2;
+        const size_t max_stages = options.calibrate_method == "no_clip" ? 1 : 2;
+
         for (size_t stage = 0; stage < max_stages; stage++)
         {
             if (stage == 0)
@@ -561,7 +619,8 @@ private:
         }
     }
 
-    void run_calibration_eval(ptq_tensor_options &options, ir::evaluator &evaluator, eval_step step)
+    template <class TOpt>
+    void run_calibration_eval(TOpt &options, ir::evaluator &evaluator, eval_step step)
     {
         std::string step_str = step == nncase::ir::eval_step::after_import ? "1" : (step == nncase::ir::eval_step::after_calib ? "4.2" : "4.4");
         const size_t max_stages = options.calibrate_method == "no_clip" ? 1 : 2;
@@ -671,6 +730,7 @@ private:
     target_options target_options_;
     std::string input_layout_;
     std::variant<ptq_dataset_options, ptq_tensor_options> ptq_options_;
+    std::variant<dump_range_dataset_options, dump_range_tensor_options> dump_range_options_;
     bool use_ptq_ = false;
     std::unique_ptr<nncase::target> target_;
     std::string real_inlayout_ = "";
