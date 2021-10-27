@@ -31,5 +31,7 @@ namespace Nncase.Transform.Pattern
             return Type.MatchLeaf(var.TypeAnnotation) && MatchCheckedType(var);
         }
 
+        public override ExprPattern Dup(string Suffix) => this;
+
     }
 }

@@ -100,12 +100,11 @@ namespace Nncase.Transform
             return (pattern.MatchLeaf((Op)enode.Expr), env);
         }
 
-        public (bool, EContextEnv) MatchENode(WildCardPattern pattern, ENode enode, EContextEnv env)
+        private (bool, EContextEnv) UpdateEnv(bool Match, WildCardPattern pattern, ENode enode, EContextEnv env)
         {
-            if (!pattern.MatchLeaf(enode.Expr))
-            {
-                return (false, env);
-            }
+            if (!Match)
+                return (Match, env);
+
             if (!env.ContainsKey(pattern))
             {
                 var new_env = new EContextEnv(env);
@@ -113,6 +112,16 @@ namespace Nncase.Transform
                 return (true, new_env);
             }
             return (env[pattern] == enode, env);
+        }
+
+        public (bool, EContextEnv) MatchENode(WildCardPattern pattern, ENode enode, EContextEnv env)
+        {
+            if (pattern.SubPattern is not null)
+            {
+                var (match, new_env) = MatchENode(pattern.SubPattern, enode, env);
+                return UpdateEnv(match, pattern, enode, new_env);
+            }
+            return UpdateEnv(true, pattern, enode, env);
         }
 
         public (bool, EContextEnv) MatchENode(ExprPattern pattern, ENode enode, EContextEnv env)

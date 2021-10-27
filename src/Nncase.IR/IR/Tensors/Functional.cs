@@ -22,6 +22,6 @@ namespace Nncase.IR.F
         /// <returns>Result expression.</returns>
         public static Call Transpose(Expr input, Expr perm) => new Call(new Transpose(), input, perm);
 
-        public static Call Concat(IR.Tuple input, Expr axis) => new Call(new Concat(), input, axis);
+        public static Call Concat(Tuple input, Expr axis) => new Call(new Concat(), input, axis);
     }
 }

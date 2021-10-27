@@ -20,7 +20,7 @@ namespace Nncase.Transform.Pattern
             {
                 return Parameters[Repeat ? index % Count : index] switch
                 {
-                    WildCardPattern wc => Repeat ? wc.Dup(index) : wc,
+                    WildCardPattern wc => Repeat ? wc.Dup($"{index}") : wc,
                     ExprPattern pat => pat
                 };
             }
@@ -39,5 +39,19 @@ namespace Nncase.Transform.Pattern
         {
             return ((IEnumerable)Parameters).GetEnumerator();
         }
+
+        public override VArgsPattern Dup(string Suffix)
+          => new VArgsPattern(
+             Parameters.Select((p, i) => p.Dup($"{Suffix}_{i}")).ToArray()
+          );
+    }
+
+    public partial class Utility
+    {
+        public static VArgsPattern IsVArgs(params ExprPattern[] Patterns)
+          => new VArgsPattern(Patterns);
+
+        public static VArgsPattern IsVArgsRepeat(params ExprPattern[] Patterns)
+          => new VArgsPattern(Patterns) { Repeat = true };
     }
 }

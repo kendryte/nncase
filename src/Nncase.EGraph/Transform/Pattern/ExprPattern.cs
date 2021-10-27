@@ -64,6 +64,20 @@ namespace Nncase.Transform.Pattern
                  TensorType xt => xt.IsScalar,
                  _ => false
              });
+
+
+        public virtual ExprPattern Dup(string Suffix) => this switch
+        {
+            WildCardPattern wcPat => wcPat.Dup(Suffix),
+            VarPattern varPat => varPat.Dup(Suffix),
+            ConstPattern conPat => conPat.Dup(Suffix),
+            FunctionPattern functionPat => functionPat.Dup(Suffix),
+            CallPattern callPat => callPat.Dup(Suffix),
+            TuplePattern tuplePat => tuplePat.Dup(Suffix),
+            OpPattern opPat => opPat.Dup(Suffix),
+            VArgsPattern vArgsPat => vArgsPat.Dup(Suffix),
+            _ => throw new NotImplementedException($"The {this.GetType().Name} Can't Dup!")
+        };
     };
 
 }

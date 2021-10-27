@@ -19,6 +19,9 @@ namespace Nncase.Transform.Pattern
         { }
 
 
+        public FunctionPattern(ExprPattern body, VArgsPattern parameters) : this($"func_{_globalFuncIndex++}", body, parameters) { }
+        
+
         public FunctionPattern(ExprPattern body, params ExprPattern[] parameters) : this($"func_{_globalFuncIndex++}", body, new VArgsPattern(parameters))
         {
         }
@@ -28,6 +31,11 @@ namespace Nncase.Transform.Pattern
         }
 
         public bool MatchLeaf(Function func) => Parameters.MatchLeaf(func.Parameters) && MatchCheckedType(func);
+
+        public override ExprPattern Dup(string Suffix) => new FunctionPattern(this.Name, Body.Dup(Suffix), this.Parameters.Dup(Suffix))
+        {
+            CheckedTypePat = this.CheckedTypePat
+        };
 
     }
 }

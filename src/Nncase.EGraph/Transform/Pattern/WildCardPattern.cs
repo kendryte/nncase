@@ -6,7 +6,7 @@ using Nncase.IR;
 
 namespace Nncase.Transform.Pattern
 {
-    public sealed record WildCardPattern(string Name, ExprPattern? Pattern) : ExprPattern
+    public sealed record WildCardPattern(string Name, ExprPattern? SubPattern) : ExprPattern
     {
         private static int _globalCardIndex = 0;
 
@@ -16,20 +16,25 @@ namespace Nncase.Transform.Pattern
 
         public static implicit operator WildCardPattern(string Name) => new WildCardPattern(Name, null);
 
-        public override bool MatchLeaf(Expr expr) => (Pattern?.MatchLeaf(expr) ?? true) && MatchCheckedType(expr);
+        public override bool MatchLeaf(Expr expr) => MatchCheckedType(expr);
 
-        public WildCardPattern Dup(int index) => new WildCardPattern($"{this.Name}_{index}", this.Pattern)
-        {
-            CheckedTypePat = this.CheckedTypePat
-        };
+        public override WildCardPattern Dup(string Suffix)
+          => new WildCardPattern(
+            $"{this.Name}_{Suffix}",
+            this.SubPattern?.Dup($"{Suffix}"))
+          {
+              CheckedTypePat = this.CheckedTypePat
+          };
     }
 
     public static partial class Utility
     {
         public static WildCardPattern IsWildCard() => new WildCardPattern();
+        public static WildCardPattern IsWildCard(string Name) => new WildCardPattern(Name, null);
+        public static WildCardPattern IsWildCard(string Name, ExprPattern SubPattern) => new WildCardPattern(Name, SubPattern);
 
-        public static VArgsPattern IsVArgsWildCard(string Name, ExprPattern? pattern)
-          => new VArgsPattern(new WildCardPattern(Name, pattern)) { Repeat = true };
+        // public static VArgsPattern IsVArgsWildCard(string Name, ExprPattern? pattern)
+        //   => new VArgsPattern(new WildCardPattern(Name, pattern)) { Repeat = true };
     }
 
 }

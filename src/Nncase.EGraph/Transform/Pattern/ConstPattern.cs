@@ -41,6 +41,9 @@ namespace Nncase.Transform.Pattern
         {
             return Cond(expr) && MatchCheckedType(expr);
         }
+
+        public override ExprPattern Dup(string Suffix)
+        => this;
     }
 
     public static partial class Utility

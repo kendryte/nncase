@@ -25,5 +25,8 @@ namespace Nncase.Transform.Pattern
             (ConcatPattern concatPat, Concat concat) => concatPat.MatchLeaf(concat),
             (_, _) => false
         };
+
+        public override ExprPattern Dup(string Suffix)
+          => this;
     }
 }

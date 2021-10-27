@@ -31,11 +31,6 @@ namespace Nncase.Transform.Rule
         protected WildCardPattern wx = "x", wperm = "wperm";
         protected WildCardPattern wcon = new WildCardPattern("wcon", IsConstTensor());
 
-        // protected virtual CheckPerm()
-        // {
-        //     // pass
-        // }
-
     }
 
     public class TransposeConstantBinaryMotionLeft : TransposeConstantBinaryMotion
@@ -69,20 +64,42 @@ namespace Nncase.Transform.Rule
     }
 
 
-    // public class TransposeConcatMotion : EGraphRule
-    // {
+    public class TransposeConcatMotion : EGraphRule
+    {
 
-    //     public override ExprPattern GetPattern()
-    //     {
-    //         // return 
-    //         // return IsAnyType;
-    //     }
+        private class Comparer
+        {
+            private Expr? last_const_;
+            public bool Cond(Const con)
+            {
+                last_const_ ??= con;
+                return last_const_ == con;
+            }
+        }
+        private Func<Const, bool> comp = new(new Comparer().Cond);
 
-    //     public override Expr GetRePlace(EMatchResult result)
-    //     {
-    //         return base.GetRePlace(result);
-    //     }
+        private WildCardPattern wcin = "wcin", wcaxis = "wcaxis";
+        private WildCardPattern wcperm;
+        private WildCardPattern wcinputs;
+        private WildCardPattern wcvargs;
+        public TransposeConcatMotion()
+        {
+            wcperm = new WildCardPattern("wcperm", IsConst(comp));
+            wcinputs = IsWildCard("wcinputs");
+            wcvargs = IsWildCard("wcvargs", Transpose(wcinputs, wcperm));
+        }
 
-    // }
+        public override ExprPattern GetPattern()
+        {
+            return Concat(IsTuple(IsVArgsRepeat(wcvargs)), wcaxis);
+        }
+
+        public override Expr GetRePlace(EMatchResult result)
+        {
+            // Expr inputs = result.Context[wcin].Expr, axis = result.Context[wcaxis].Expr;
+            return result.Context[wcin].Expr;
+        }
+
+    }
 
 }

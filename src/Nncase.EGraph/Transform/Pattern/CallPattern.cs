@@ -13,7 +13,7 @@ namespace Nncase.Transform.Pattern
     public sealed record CallPattern(ExprPattern Target, VArgsPattern Parameters) : ExprPattern
     {
 
-        public CallPattern(Call call) : this((ExprPattern)call.Target, new VArgsPattern(call.Parameters)){}
+        public CallPattern(Call call) : this((ExprPattern)call.Target, new VArgsPattern(call.Parameters)) { }
 
         public bool MatchLeaf(Call call)
         {
@@ -24,6 +24,11 @@ namespace Nncase.Transform.Pattern
             : this(target, new VArgsPattern(parameters))
         {
         }
+
+        public override ExprPattern Dup(string Suffix)
+        => new CallPattern(Target.Dup(Suffix), Parameters.Dup(Suffix)){
+          CheckedTypePat = this.CheckedTypePat
+        };
 
     }
 

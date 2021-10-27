@@ -22,19 +22,17 @@ namespace Nncase.Transform.Pattern
             return Fields.MatchLeaf(tuple.Fields) && MatchCheckedType(tuple);
         }
 
+        public override ExprPattern Dup(string Suffix)
+        => new TuplePattern(Fields.Dup(Suffix))
+        {
+            CheckedTypePat = this.CheckedTypePat
+        };
+
     }
     public static partial class Utility
     {
-        public static TuplePattern IsTuple(params ExprPattern[] Fields)
-          => new TuplePattern(
-            Fields.Length switch
-            {
-                1 => Fields[0] switch
-                {
-                    VArgsPattern vArgsPat => vArgsPat,
-                    _ => new VArgsPattern(Fields),
-                },
-                _ => new VArgsPattern(Fields),
-            });
+        public static TuplePattern IsTuple(params ExprPattern[] Fields) => new TuplePattern(new VArgsPattern(Fields));
+
+        public static TuplePattern IsTuple(VArgsPattern Fields) => new TuplePattern(Fields);
     }
 }
