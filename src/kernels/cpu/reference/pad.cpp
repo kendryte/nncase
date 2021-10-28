@@ -95,11 +95,15 @@ result<void> interior_pad_impl(const T *input, T *output, NNCASE_UNUSED const ru
     NNCASE_UNUSED const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const runtime_paddings_t &paddings, T pad_value, NNCASE_UNUSED kernel_context &context) noexcept
 {
     size_t idx = 0;
-    bool h_pad = paddings[2].interior != 0 ? true : false;
-    bool w_pad = paddings[3].interior != 0 ? true : false;
+    size_t size = paddings.size();
+    assert(size >= 2);
+    size_t h_axis = size - 2;
+    size_t w_axis = size - 1;
+    bool h_pad = paddings[h_axis].interior != 0 ? true : false;
+    bool w_pad = paddings[w_axis].interior != 0 ? true : false;
 
     return apply(out_shape, [&](const runtime_shape_t &index) -> result<void> {
-        bool pad_element = (h_pad && (index[2] % (paddings[2].interior + 1) != 0)) || (w_pad && (index[3] % (paddings[3].interior + 1) != 0));
+        bool pad_element = (h_pad && (index[h_axis] % (paddings[h_axis].interior + 1) != 0)) || (w_pad && (index[w_axis] % (paddings[w_axis].interior + 1) != 0));
         T value = pad_element ? pad_value : input[idx++];
         assert(idx <= compute_size(in_shape));
         output[offset(out_strides, index)] = value;
@@ -113,7 +117,7 @@ result<void> reference::pad(datatype_t type, const gsl::byte *input, gsl::byte *
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const runtime_paddings_t &paddings, pad_mode_t mode, const scalar &pad_value, kernel_context &context) noexcept
 {
     auto unit = runtime::get_bytes(type);
-    if (paddings[2].interior == 0 && paddings[3].interior == 0)
+    if (std::all_of(paddings.begin(), paddings.end(), [](const padding &p) { return p.interior == 0; }))
     {
         auto out_shape = get_padded_shape(in_shape, paddings);
         switch (unit)
@@ -139,10 +143,11 @@ result<void> reference::pad(datatype_t type, const gsl::byte *input, gsl::byte *
 
         // interior padding
         runtime_paddings_t padding_cfg = paddings;
-        padding_cfg[2].before = 0;
-        padding_cfg[2].after = 0;
-        padding_cfg[3].before = 0;
-        padding_cfg[3].after = 0;
+        for (auto &p : padding_cfg)
+        {
+            p.before = 0;
+            p.after = 0;
+        }
 
         auto out_shape = get_padded_shape(in_shape, padding_cfg);
         auto out_size = compute_size(out_shape);
@@ -176,8 +181,11 @@ result<void> reference::pad(datatype_t type, const gsl::byte *input, gsl::byte *
 
         // edge padding
         padding_cfg = paddings;
-        padding_cfg[2].interior = 0;
-        padding_cfg[3].interior = 0;
+        for (auto &p : padding_cfg)
+        {
+            p.interior = 0;
+        }
+
         auto out_shape2 = get_padded_shape(out_shape, padding_cfg);
         switch (unit)
         {
