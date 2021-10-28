@@ -23,5 +23,7 @@ namespace Nncase.IR.F
         public static Call Transpose(Expr input, Expr perm) => new Call(new Transpose(), input, perm);
 
         public static Call Concat(Tuple input, Expr axis) => new Call(new Concat(), input, axis);
+
+        public static Call Pad(Expr Input, Tuple Pads, Expr Mode, Expr Value) => new Call(new Pad(), Input, Pads, Mode, Value);
     }
 }

@@ -96,13 +96,15 @@ namespace Nncase.IR
 
         public DenseTensor<T> ToTensor<T>()
            where T : unmanaged
-           => ValueType switch
-           {
-               TensorType dtype => dtype.DType == DataTypes.FromType<T>() ?
-               new DenseTensor<T>(Data.ToMemory<T>(), dtype.Shape) :
-                throw new InvalidCastException($"The Target Type {DataTypes.FromType<T>().ToString()} Is Not Equal Current Type {dtype.DType.ToString()}!"),
-               _ => throw new InvalidCastException($"The {ValueType.GetType().Name} Can't Cast To Tensor!")
-           };
+           => ValueType.DType == DataTypes.FromType<T>() ?
+             new DenseTensor<T>(Data.ToMemory<T>(), ValueType.Shape) :
+              throw new InvalidCastException($"The Target Type {DataTypes.FromType<T>().ToString()} Is Not Equal Current Type {ValueType.DType.ToString()}!");
+
+        public T ToScalar<T>()
+          where T : unmanaged
+          => ValueType.IsScalar ?
+           ToTensor<T>()[0] :
+           throw new InvalidCastException($"This Const is Not Scalar!");
 
         /// <summary>
         /// Create constant from a scalar.

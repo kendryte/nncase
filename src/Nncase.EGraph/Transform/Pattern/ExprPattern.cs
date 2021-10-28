@@ -66,4 +66,13 @@ namespace Nncase.Transform.Pattern
              });
     };
 
+    public static partial class Utility
+    {
+        public static List<Dimension> GetShape(Expr expr) => expr.CheckedType switch
+        {
+            TensorType type => new List<Dimension>(type.Shape),
+            _ => throw new InvalidOperationException($"The Expr {expr.GetType().Name} Has No Shape!")
+        };
+    }
+
 }

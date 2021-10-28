@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.Transform.Pattern;
@@ -98,40 +100,54 @@ namespace Nncase.Transform.Rule
             private Expr? last_const_ = null;
             public bool Cond(Const con)
             {
-                last_const_ ??= con;
+                if (last_const_ is null)
+                    last_const_ = con;
                 return last_const_ == con;
             }
         }
-        private Func<Const, bool> comp = new(new Comparer().Cond);
+        private Func<Const, bool> permCond = new(new Comparer().Cond);
 
-        ID wcvargs, wcaxis;
+        ID wcprem = "wcprem", wcaxis = "axis";
 
-        public TransposeConcatMotion()
-        {
-            // wcperm = new WildCardPattern(GetID(), IsConst(comp));
-            // wcinputs = IsWildCard(GetID());
-            // wcvargs = IsWildCard("wcvargs", Transpose(wcinputs, wcperm));
-        }
+        List<ID> wcinputs = new();
 
         public override ExprPattern GetPattern()
         {
             return Concat(IsTuple(IsVArgsRepeat(n =>
             {
-                var pats = new ExprPattern[n];
+                var ret = new ExprPattern[n];
                 for (int i = 0; i < n; i++)
                 {
-                    pats[i] = Transpose(IsWildCard(), IsConst(comp));
+                    var wcin = IsWildCard();
+                    ret[i] = Transpose(wcin, IsConst(wcprem, permCond));
                 }
-                return pats;
-            })), IsConst(wcaxis));
+                return ret;
+            }
+            )), IsConst(wcaxis));
         }
 
         public override Expr GetRePlace(EMatchResult result)
         {
-            // Expr inputs = result.Context[wcin].Expr, axis = result.Context[wcaxis].Expr;
-            return result.GetRoot();
+            var newShapes = (from input in wcinputs select GetShape(result.GetExpr(input))).ToArray();
+            var oldPerm = result.GetExpr<Const>(wcprem);
+            var permt = oldPerm.ToTensor<int>();
+            var oldAxis = result.GetExpr<Const>(wcaxis).ToScalar<int>();
+            var newAxis = permt[oldAxis];
+
+            var newCon = Concat(new IR.Tuple((from input in wcinputs select result.GetExpr(input)).ToArray()), newAxis);
+            var newTran = Transpose(newCon, oldPerm);
+            return newTran;
         }
 
     }
+
+    // public class TransPosePadMotion : EGraphRule
+    // {
+    //     ID wcpad = "pad", wctran = "tran", wcperm = "perm";
+    //     public override ExprPattern GetPattern()
+    //     {
+    //         Transpose(Pad(), IsConst("perm"));
+    //     }
+    // }
 
 }

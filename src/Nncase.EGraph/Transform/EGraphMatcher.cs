@@ -15,6 +15,10 @@ namespace Nncase.Transform
         {
             return Context[Id].Expr;
         }
+        public T GetExpr<T>(ID Id) where T : Expr
+        {
+            return (T)Context[Id].Expr;
+        }
 
         public Expr GetExpr(ExprPattern pattern) => GetExpr(pattern.Id);
 
