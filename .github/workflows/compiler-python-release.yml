@@ -1,9 +1,6 @@
 name: compiler-python-release
 
-on:
-  push:
-    tags:
-      - '*'
+on: [push, pull_request]
 
 env:
   BUILD_TYPE: Release
