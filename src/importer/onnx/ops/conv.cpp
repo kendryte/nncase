@@ -131,30 +131,18 @@ void onnx_importer::convert_op_ConvTranspose(const NodeProto &node)
     const auto &weight = node.input()[1];
     const auto &output = node.output()[0];
 
-    auto input_type = get_datatype(input).value();
     auto input_shape = get_shape(input);
     auto weight_shape = get_shape(weight);
+    auto weight_type = get_datatype(weight).value();
     auto output_shape = get_shape(output);
 
-    auto tp = graph_.emplace<transpose>(dt_float32, weight_shape, axis_t { 1, 0, 2, 3 });
+    auto tp = graph_.emplace<transpose>(weight_type, weight_shape, axis_t { 1, 0, 2, 3 });
     tp->name(op_name + "(Transpose)");
     auto tp_shape = tp->output().shape();
 
     // group
     const auto &group_attr = get_attribute<int>(node, "group");
     size_t group = group_attr ? group_attr.value() : 1;
-
-    // output_padding
-    xt::svector<padding> output_paddings(4, { 0, 0 });
-    const auto &output_padding_attr = get_attribute<std::vector<int>>(node, "output_padding");
-    if (output_padding_attr)
-    {
-        const auto &output_padding_values = output_padding_attr.value();
-        if (output_padding_values.size() > 0)
-            output_paddings[2].after = output_padding_values[0];
-        if (output_padding_values.size() > 1)
-            output_paddings[3].after = output_padding_values[1];
-    }
 
     // stride
     std::array<size_t, 2> strides = { 1, 1 };
@@ -180,6 +168,25 @@ void onnx_importer::convert_op_ConvTranspose(const NodeProto &node)
             dilations[1] = dilations_values[1];
     }
 
+    // output_padding
+    std::array<int32_t, 2> output_paddings = { 0, 0 };
+    const auto &output_padding_attr = get_attribute<std::vector<int>>(node, "output_padding");
+    if (output_padding_attr)
+    {
+        const auto &output_padding_values = output_padding_attr.value();
+        if (output_padding_values.size() > 0)
+        {
+            output_paddings[0] = output_padding_values[0];
+            assert(output_paddings[0] < strides[0] || output_paddings[0] < dilations[0]);
+        }
+
+        if (output_padding_values.size() > 1)
+        {
+            output_paddings[1] = output_padding_values[1];
+            assert(output_paddings[1] < strides[1] || output_paddings[1] < dilations[1]);
+        }
+    }
+
     // pad
     std::array<padding, 2> paddings { { { 0, 0 }, { 0, 0 } } };
     const auto &auto_pad_attr = get_attribute<std::string>(node, "auto_pad");
@@ -190,8 +197,8 @@ void onnx_importer::convert_op_ConvTranspose(const NodeProto &node)
     if (output_shape_attr)
     {
         std::array<int, 2> total_paddings { { 0, 0 } };
-        total_paddings[0] = strides[0] * (input_shape[2] - 1) + output_paddings[2].after + ((tp_shape[2] - 1) * dilations[0] + 1) - output_shape[2];
-        total_paddings[1] = strides[1] * (input_shape[3] - 1) + output_paddings[3].after + ((tp_shape[3] - 1) * dilations[1] + 1) - output_shape[3];
+        total_paddings[0] = strides[0] * (input_shape[2] - 1) + output_paddings[0] + ((tp_shape[2] - 1) * dilations[0] + 1) - output_shape[2];
+        total_paddings[1] = strides[1] * (input_shape[3] - 1) + output_paddings[1] + ((tp_shape[3] - 1) * dilations[1] + 1) - output_shape[3];
 
         if (pad_mode == "SAME_UPPER")
         {
@@ -246,20 +253,13 @@ void onnx_importer::convert_op_ConvTranspose(const NodeProto &node)
         }
     }
 
-    // Pad
-    pad_mode_t mode = pad_constant;
-    scalar zero = 0.f;
-    auto pad_node = graph_.emplace<pad>(input_type, input_shape, output_paddings, mode, std::move(zero));
-    pad_node->name(op_name + "(Pad)");
-
     // ConvTranspose
-    auto conv_transpose = graph_.emplace<conv2d_transpose>(pad_node->output().shape(), tp_shape, output_shape, group, paddings[0], paddings[1], strides[0], strides[1],
-        dilations[0], dilations[1], value_range<float>::full());
+    auto conv_transpose = graph_.emplace<conv2d_transpose>(input_shape, tp_shape, output_shape, group, paddings[0], paddings[1],
+        output_paddings[0], output_paddings[1], strides[0], strides[1], dilations[0], dilations[1], value_range<float>::full());
     conv_transpose->name(op_name + "(ConvTranspose)");
-    conv_transpose->input().connect(pad_node->output());
     conv_transpose->weights().connect(tp->output());
 
-    input_tensors_.emplace(&pad_node->input(), input);
+    input_tensors_.emplace(&conv_transpose->input(), input);
     input_tensors_.emplace(&tp->input(), weight);
     if (node.input().size() > 2)
     {

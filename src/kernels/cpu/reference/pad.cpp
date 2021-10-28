@@ -28,7 +28,7 @@ runtime_shape_t get_padded_shape(const runtime_shape_t &in_shape, const runtime_
 {
     runtime_shape_t out_shape(in_shape.size());
     for (size_t i = 0; i < in_shape.size(); i++)
-        out_shape[i] = (size_t)((int32_t)in_shape[i] + paddings[i].sum());
+        out_shape[i] = (size_t)((int32_t)in_shape[i] + paddings[i].sum() + (in_shape[i] - 1) * paddings[i].interior);
     return out_shape;
 }
 
@@ -89,22 +89,111 @@ result<void> pad_impl(const T *input, T *output, const runtime_shape_t &in_shape
         return ok();
     });
 }
+
+template <class T>
+result<void> interior_pad_impl(const T *input, T *output, NNCASE_UNUSED const runtime_shape_t &in_shape, const runtime_shape_t &out_shape,
+    NNCASE_UNUSED const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const runtime_paddings_t &paddings, T pad_value, NNCASE_UNUSED kernel_context &context) noexcept
+{
+    size_t idx = 0;
+    bool h_pad = paddings[2].interior != 0 ? true : false;
+    bool w_pad = paddings[3].interior != 0 ? true : false;
+
+    return apply(out_shape, [&](const runtime_shape_t &index) -> result<void> {
+        bool pad_element = (h_pad && (index[2] % (paddings[2].interior + 1) != 0)) || (w_pad && (index[3] % (paddings[3].interior + 1) != 0));
+        T value = pad_element ? pad_value : input[idx++];
+        assert(idx <= compute_size(in_shape));
+        output[offset(out_strides, index)] = value;
+        return ok();
+    });
 }
 
-#define PAD_IMPL(size, type) \
-    case size:               \
-        return pad_impl(reinterpret_cast<const type *>(input), reinterpret_cast<type *>(output), in_shape, out_shape, in_strides, out_strides, paddings, mode, pad_value.as<type>(), context)
+}
 
 result<void> reference::pad(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const runtime_paddings_t &paddings, pad_mode_t mode, const scalar &pad_value, kernel_context &context) noexcept
 {
-    auto out_shape = get_padded_shape(in_shape, paddings);
-    switch (runtime::get_bytes(type))
+    auto unit = runtime::get_bytes(type);
+    if (paddings[2].interior == 0 && paddings[3].interior == 0)
     {
-        PAD_IMPL(1, uint8_t);
-        PAD_IMPL(2, uint16_t);
-        PAD_IMPL(4, uint32_t);
-    default:
-        return err(std::errc::not_supported);
+        auto out_shape = get_padded_shape(in_shape, paddings);
+        switch (unit)
+        {
+        case 1:
+            return pad_impl(reinterpret_cast<const uint8_t *>(input), reinterpret_cast<uint8_t *>(output), in_shape, out_shape,
+                in_strides, out_strides, paddings, mode, pad_value.as<uint8_t>(), context);
+
+        case 2:
+            return pad_impl(reinterpret_cast<const uint16_t *>(input), reinterpret_cast<uint16_t *>(output), in_shape, out_shape,
+                in_strides, out_strides, paddings, mode, pad_value.as<uint16_t>(), context);
+
+        case 4:
+            return pad_impl(reinterpret_cast<const uint32_t *>(input), reinterpret_cast<uint32_t *>(output), in_shape, out_shape,
+                in_strides, out_strides, paddings, mode, pad_value.as<uint32_t>(), context);
+        default:
+            return err(std::errc::not_supported);
+        }
+    }
+    else
+    {
+        assert(mode == pad_constant);
+
+        // interior padding
+        runtime_paddings_t padding_cfg = paddings;
+        padding_cfg[2].before = 0;
+        padding_cfg[2].after = 0;
+        padding_cfg[3].before = 0;
+        padding_cfg[3].after = 0;
+
+        auto out_shape = get_padded_shape(in_shape, padding_cfg);
+        auto out_size = compute_size(out_shape);
+        auto strides = get_default_strides(out_shape);
+        std::vector<uint8_t> v(out_size * unit, 0);
+
+        switch (unit)
+        {
+        case 1:
+        {
+            NNCASE_UNUSED auto ret = interior_pad_impl(reinterpret_cast<const uint8_t *>(input), reinterpret_cast<uint8_t *>(v.data()), in_shape, out_shape,
+                in_strides, strides, padding_cfg, pad_value.as<uint8_t>(), context);
+            break;
+        }
+
+        case 2:
+        {
+            NNCASE_UNUSED auto ret = interior_pad_impl(reinterpret_cast<const uint16_t *>(input), reinterpret_cast<uint16_t *>(v.data()), in_shape, out_shape,
+                in_strides, strides, padding_cfg, pad_value.as<uint16_t>(), context);
+            break;
+        }
+        case 4:
+        {
+            NNCASE_UNUSED auto ret = interior_pad_impl(reinterpret_cast<const uint32_t *>(input), reinterpret_cast<uint32_t *>(v.data()), in_shape, out_shape,
+                in_strides, strides, padding_cfg, pad_value.as<uint32_t>(), context);
+            break;
+        }
+        default:
+            return err(std::errc::not_supported);
+        }
+
+        // edge padding
+        padding_cfg = paddings;
+        padding_cfg[2].interior = 0;
+        padding_cfg[3].interior = 0;
+        auto out_shape2 = get_padded_shape(out_shape, padding_cfg);
+        switch (unit)
+        {
+        case 1:
+            return pad_impl(reinterpret_cast<const uint8_t *>(v.data()), reinterpret_cast<uint8_t *>(output), out_shape, out_shape2,
+                strides, out_strides, padding_cfg, mode, pad_value.as<uint8_t>(), context);
+
+        case 2:
+            return pad_impl(reinterpret_cast<const uint16_t *>(v.data()), reinterpret_cast<uint16_t *>(output), out_shape, out_shape2,
+                strides, out_strides, padding_cfg, mode, pad_value.as<uint16_t>(), context);
+
+        case 4:
+            return pad_impl(reinterpret_cast<const uint32_t *>(v.data()), reinterpret_cast<uint32_t *>(output), out_shape, out_shape2,
+                strides, out_strides, padding_cfg, mode, pad_value.as<uint32_t>(), context);
+        default:
+            return err(std::errc::not_supported);
+        }
     }
 }

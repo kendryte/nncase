@@ -18,6 +18,7 @@
 #include <nncase/ir/ops/k210/opcode.h>
 #include <nncase/runtime/k210/runtime_types.h>
 #include <nncase/schedule/k210/kpu_buffer_allocator.h>
+#include <nncase/transforms/k210/conv2d_transpose_transform.h>
 #include <nncase/transforms/k210/fake_kpu_conv2d.h>
 #include <nncase/transforms/k210/fold_kpu_upload.h>
 #include <nncase/transforms/k210/fuse_kpu_conv2d_pool.h>
@@ -89,9 +90,17 @@ void k210_target::register_evaluator_ops()
 
 void k210_target::register_target_dependent_passes([[maybe_unused]] const module_type_t &type, [[maybe_unused]] ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] bool use_ptq)
 {
-    transform_pass p("strided_slice_lowering");
-    p.emplace<strided_slice_conv2d_pool>();
-    pass_mgr.add_pass(std::move(p));
+    {
+        transform_pass p("strided_slice_lowering");
+        p.emplace<strided_slice_conv2d_pool>();
+        pass_mgr.add_pass(std::move(p));
+    }
+
+    {
+        transform_pass p("conv2d_transpose_lowering");
+        p.emplace<conv2d_transpose_transform>();
+        pass_mgr.add_pass(std::move(p));
+    }
 }
 
 void k210_target::register_quantize_annotation_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr)
