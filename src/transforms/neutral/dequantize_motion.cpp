@@ -347,7 +347,7 @@ void dequantize_bitcast_motion_transform::process(transform_context &context)
     bc->name(old_bc.name());
     auto deq = context.graph.emplace<dequantize>(bc->output().type(), bc->output().shape(), old_deq.output().type(), old_deq.quant_param());
     deq->name(old_deq.name());
-
+    link(old_bc.output(), deq->output(), context.quantizer);
     deq->input().connect(bc->output());
 
     bc->input().connect(output);

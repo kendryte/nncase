@@ -32,7 +32,7 @@ def _make_module():
             outs.append(torch.ceil(x))
             outs.append(torch.cos(x))
             outs.append(torch.exp(x))
-            outs.append(torch.floor(x))
+            outs.append(torch.floor(x * 10))
             outs.append(torch.log(x + 2))
             outs.append(torch.neg(x))
             outs.append(torch.round(x))

@@ -45,5 +45,5 @@ _add_dllpath()
 
 from . import base
 from _nncase import test_target
-from _nncase import Compiler, CompileOptions, ImportOptions, PTQTensorOptions, MemoryRange, RuntimeTensor, GraphEvaluator
+from _nncase import Compiler, CompileOptions, ImportOptions, PTQTensorOptions, MemoryRange, RuntimeTensor, GraphEvaluator, DumpRangeTensorOptions
 from .simulator import Simulator

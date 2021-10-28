@@ -7,6 +7,9 @@
 | Abs | ✅ |
 | Acos | ✅ |
 | Acosh | ✅ |
+| And | ✅ |
+| ArgMax | ✅ |
+| ArgMin | ✅ |
 | Asin | ✅ |
 | Asinh | ✅ |
 | Add | ✅ |
@@ -17,10 +20,14 @@
 | Clip | ✅ |
 | Concat | ✅ |
 | Constant | ✅ |
+| ConstantOfShape | ✅ |
 | Conv | ✅ |
 | ConvTranspose | ✅ |
 | Cos | ✅ |
 | Cosh | ✅ |
+| CumSum | ✅ |
+| DepthToSpace | ✅ |
+| DequantizeLinear | ✅ |
 | Div | ✅ |
 | Dropout | ✅ |
 | Elu | ✅ |
@@ -33,6 +40,7 @@
 | Gemm | ✅ |
 | GlobalAveragePool | ✅ |
 | GlobalMaxPool | ✅ |
+| Hardmax | ✅ |
 | HardSigmoid | ✅ |
 | HardSwish | ✅ |
 | Identity | ✅ |

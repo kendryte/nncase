@@ -153,6 +153,7 @@ PYBIND11_MODULE(_nncase, m)
         .def_readwrite("dump_ir", &compile_options::dump_ir)
         .def_readwrite("dump_asm", &compile_options::dump_asm)
         .def_readwrite("dump_quant_error", &compile_options::dump_quant_error)
+        .def_readwrite("dump_import_op_range", &compile_options::dump_import_op_range)
         .def_readwrite("dump_dir", &compile_options::dump_dir)
         .def_readwrite("benchmark_only", &compile_options::benchmark_only);
 
@@ -165,6 +166,18 @@ PYBIND11_MODULE(_nncase, m)
         .def_readwrite("calibrate_method", &ptq_tensor_options::calibrate_method)
         .def_readwrite("samples_count", &ptq_tensor_options::samples_count)
         .def("set_tensor_data", [](ptq_tensor_options &o, py::bytes bytes) {
+            uint8_t *buffer;
+            py::ssize_t length;
+            if (PyBytes_AsStringAndSize(bytes.ptr(), reinterpret_cast<char **>(&buffer), &length))
+                throw std::invalid_argument("Invalid bytes");
+            o.tensor_data.assign(buffer, buffer + length);
+        });
+
+    py::class_<dump_range_tensor_options>(m, "DumpRangeTensorOptions")
+        .def(py::init())
+        .def_readwrite("calibrate_method", &dump_range_tensor_options::calibrate_method)
+        .def_readwrite("samples_count", &dump_range_tensor_options::samples_count)
+        .def("set_tensor_data", [](dump_range_tensor_options &o, py::bytes bytes) {
             uint8_t *buffer;
             py::ssize_t length;
             if (PyBytes_AsStringAndSize(bytes.ptr(), reinterpret_cast<char **>(&buffer), &length))
@@ -185,6 +198,7 @@ PYBIND11_MODULE(_nncase, m)
         .def("import_caffe", &compiler::import_caffe)
         .def("compile", &compiler::compile)
         .def("use_ptq", py::overload_cast<ptq_tensor_options>(&compiler::use_ptq))
+        .def("dump_range_options", py::overload_cast<dump_range_tensor_options>(&compiler::dump_range_options))
         .def("gencode", [](compiler &c, std::ostream &stream) { c.gencode(stream); })
         .def("gencode_tobytes", [](compiler &c) {
             std::stringstream ss;

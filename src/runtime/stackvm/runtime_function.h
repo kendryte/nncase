@@ -144,14 +144,17 @@ protected:
     result<void> visit(const tensor_conv2d_op_t &op) noexcept override;
     result<void> visit(const tensor_convert_op_t &op) noexcept override;
     result<void> visit(const tensor_copy_op_t &op) noexcept override;
+    result<void> visit(const tensor_cumsum_op_t &op) noexcept override;
     result<void> visit(const tensor_dequantize_op_t &op) noexcept override;
     result<void> visit(const tensor_gather_op_t &op) noexcept override;
+    result<void> visit(const tensor_hardmax_op_t &op) noexcept override;
     result<void> visit(const tensor_gather_nd_op_t &op) noexcept override;
     result<void> visit(const tensor_lut1d_op_t &op) noexcept override;
     result<void> visit(const tensor_onehot_op_t &op) noexcept override;
     result<void> visit(const tensor_pad_op_t &op) noexcept override;
     result<void> visit(const tensor_quantize_op_t &op) noexcept override;
     result<void> visit(const tensor_reduce_op_t &op) noexcept override;
+    result<void> visit(const tensor_reduce_arg_op_t &op) noexcept override;
     result<void> visit(const tensor_reduce_window2d_op_t &op) noexcept override;
     result<void> visit(const tensor_resize_image_op_t &op) noexcept override;
     result<void> visit(const tensor_slice_op_t &op) noexcept override;

@@ -66,6 +66,11 @@ NNCASE_API result<void> unary(unary_op_t op, const float *input, float *output, 
 NNCASE_API result<void> reduce(reduce_op_t op, float init_value, const float *input, float *output, const runtime_shape_t &in_shape, const runtime_shape_t &axis,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, bool keep_dims, kernel_context &context) noexcept;
 
+template <typename T>
+NNCASE_API result<void> reduce_arg(reduce_arg_op_t op, const float *input, T *output, const runtime_shape_t &in_shape,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides,
+    const runtime_shape_t &axis, bool keep_dims, bool select_last_idx, kernel_context &context) noexcept;
+
 NNCASE_API result<void> resize_bilinear(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, int32_t out_h, int32_t out_w, bool align_corners, bool half_pixel_centers,
     kernel_context &context) noexcept;
@@ -83,5 +88,13 @@ NNCASE_API result<void> gather(datatype_t type, const gsl::byte *input, gsl::byt
 
 NNCASE_API result<void> gather_nd(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape, const runtime_shape_t &out_shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const int32_t *indices, const runtime_shape_t &indices_shape, size_t batch_dims, kernel_context &context) noexcept;
+
+template <typename T>
+NNCASE_API result<void> cumsum(const T *input, T *output, const runtime_shape_t &in_shape,
+    int32_t axis, bool exclusive, bool reverse) noexcept;
+
+template <typename T>
+NNCASE_API result<void> hardmax(const T *input, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides,
+    T *output, int32_t axis) noexcept;
 
 END_NS_NNCASE_KERNELS_CPU_REF

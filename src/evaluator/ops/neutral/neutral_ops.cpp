@@ -24,15 +24,18 @@
 #include <nncase/ir/ops/conv2d.h>
 #include <nncase/ir/ops/conv2d_transpose.h>
 #include <nncase/ir/ops/convert.h>
+#include <nncase/ir/ops/cumsum.h>
 #include <nncase/ir/ops/dequantize.h>
 #include <nncase/ir/ops/fused_unary.h>
 #include <nncase/ir/ops/gather.h>
 #include <nncase/ir/ops/gather_nd.h>
+#include <nncase/ir/ops/hardmax.h>
 #include <nncase/ir/ops/matmul.h>
 #include <nncase/ir/ops/onehot.h>
 #include <nncase/ir/ops/pad.h>
 #include <nncase/ir/ops/quantize.h>
 #include <nncase/ir/ops/reduce.h>
+#include <nncase/ir/ops/reduce_arg.h>
 #include <nncase/ir/ops/reduce_window2d.h>
 #include <nncase/ir/ops/resize_image.h>
 #include <nncase/ir/ops/slice.h>
@@ -45,6 +48,7 @@
 #include <nncase/kernels/nnil.h>
 #include <nncase/kernels/reduce_window.h>
 #include <nncase/kernels/tensor_compute.h>
+#include <nncase/runtime/debug.h>
 
 using namespace nncase;
 using namespace nncase::schedule;
@@ -267,6 +271,33 @@ void register_neutral_evaluators()
         kernels::reduce(rnode.reduce_op(), rnode.init_value(), input_mem.data(), output_mem.data(), input.shape(),
             to(rnode.axis()), input.strides(), output.strides(), rnode.keep_dims())
             .unwrap_or_throw();
+    });
+
+    register_evaluator(op_reduce_arg, [](ir::node &node, function_evaluate_context &context) {
+        auto &rnode = static_cast<reduce_arg &>(node);
+        assert(rnode.input().type() == dt_float32);
+        auto output_type = rnode.output().type();
+        assert(output_type == dt_int32 || output_type == dt_int64);
+        auto input = context.memory_at(rnode.input());
+        auto output = context.memory_at(rnode.output());
+        auto input_mem = input.buffer().as_span<float>();
+        axis_t axes { rnode.axis() };
+
+        switch (output_type)
+        {
+        case dt_int32:
+            kernels::reduce_arg(rnode.reduce_arg_op(), input_mem.data(), output.buffer().as_span<int32_t>().data(), input.shape(),
+                input.strides(), output.strides(), to(axes), rnode.keep_dims(), rnode.select_last_index())
+                .unwrap_or_throw();
+            break;
+        case dt_int64:
+            kernels::reduce_arg(rnode.reduce_arg_op(), input_mem.data(), output.buffer().as_span<int64_t>().data(), input.shape(),
+                input.strides(), output.strides(), to(axes), rnode.keep_dims(), rnode.select_last_index())
+                .unwrap_or_throw();
+            break;
+        default:
+            std::cerr << "unsupported dtype for reduce_arg: " + std::string(datatype_names(output_type));
+        }
     });
 
     register_evaluator(op_reduce_window2d, [](ir::node &node, function_evaluate_context &context) {
@@ -509,6 +540,42 @@ void register_neutral_evaluators()
         kernels::onehot(output.datatype(), indices_mem, output_mem, indices.shape(), output.shape(),
             output.strides(), depth_mem, off_value_mem, on_value_mem, rnode.axis(), rnode.mode())
             .unwrap_or_throw();
+    });
+
+    register_evaluator(op_cumsum, [](ir::node &node, function_evaluate_context &context) {
+        auto &rnode = static_cast<cumsum &>(node);
+        auto datatype = rnode.input().type();
+        auto input = context.memory_at(rnode.input());
+        auto output = context.memory_at(rnode.output());
+
+        switch (datatype)
+        {
+        case dt_float32:
+            kernels::cumsum(input.buffer().as_span<float>().data(), output.buffer().as_span<float>().data(),
+                input.shape(), rnode.axis(), rnode.exclusive(), rnode.reverse())
+                .unwrap_or_throw();
+            break;
+        default:
+            throw std::runtime_error("unsupported dtype for cumsum: " + std::string(datatype_names(datatype)));
+        }
+    });
+
+    register_evaluator(op_hardmax, [](ir::node &node, function_evaluate_context &context) {
+        auto &rnode = static_cast<hardmax &>(node);
+        auto datatype = rnode.input().type();
+        auto input = context.memory_at(rnode.input());
+        auto output = context.memory_at(rnode.output());
+
+        switch (datatype)
+        {
+        case dt_float32:
+            kernels::hardmax(input.buffer().as_span<float>().data(), input.shape(), input.strides(),
+                output.buffer().as_span<float>().data(), rnode.axis())
+                .unwrap_or_throw();
+            break;
+        default:
+            throw std::runtime_error("unsupported dtype for hardmax: " + std::string(datatype_names(datatype)));
+        }
     });
 }
 

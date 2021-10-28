@@ -92,9 +92,9 @@ class Edict:
 def generate_random(shape: List[int], dtype: np.dtype,
                     number: int, batch_size: int,
                     abs: bool = False) -> np.ndarray:
-    if dtype is np.uint8:
+    if dtype == np.uint8:
         data = np.random.randint(0, 256, shape)
-    elif dtype is np.int8:
+    elif dtype == np.int8:
         data = np.random.randint(-128, 128, shape)
     else:
         data = np.random.rand(*shape)
@@ -179,9 +179,11 @@ class TestRunner(metaclass=ABCMeta):
 
         self.inputs: List[Dict] = []
         self.calibs: List[Dict] = []
+        self.dump_range_data: List[Dict] = []
         self.outputs: List[Dict] = []
         self.input_paths: List[Tuple[str, str]] = []
         self.calib_paths: List[Tuple[str, str]] = []
+        self.dump_range_data_paths: List[Tuple[str, str]] = []
         self.output_paths: List[Tuple[str, str]] = []
         self.model_type: str = ""
         self.pre_process: List[Dict] = []
@@ -229,7 +231,7 @@ class TestRunner(metaclass=ABCMeta):
         process_letterbox = {}
         process_letterbox['input_range'] = config['input_range']
         process_letterbox['input_shape'] = config['input_shape']
-        process_letterbox['model_shape'] = self.inputs[0]['model_shape']
+        process_letterbox['model_shape'] = self.inputs[0]['model_shape'] if self.inputs else config['input_shape']
         process_letterbox['input_type'] = config['input_type']
         process_letterbox['letterbox_value'] = config['letterbox_value']
 
@@ -405,6 +407,8 @@ class TestRunner(metaclass=ABCMeta):
                                self.inputs, self.input_paths, 'input', dict_args)
             self.generate_data(cfg.generate_calibs, case_dir,
                                self.calibs, self.calib_paths, 'calib', dict_args)
+            self.generate_data(cfg.generate_dump_range_data, case_dir,
+                               self.dump_range_data, self.dump_range_data_paths, 'dump_range_data', dict_args)
 
             # write preprocess options in test_result
             if dict_args['preprocess'] == True:
@@ -451,6 +455,8 @@ class TestRunner(metaclass=ABCMeta):
             dict_args = dict(zip(names, combine_args))
             if dict_args['ptq'] and len(self.inputs) != 1:
                 continue
+            if cfg.compile_opt.dump_import_op_range and len(self.inputs) != 1:
+                continue
             eval_output_paths = self.generate_evaluates(
                 cfg, case_dir, import_options,
                 compile_options, model_content, dict_args, preprocess_opt)
@@ -464,7 +470,8 @@ class TestRunner(metaclass=ABCMeta):
             dict_args = dict(zip(names, combine_args))
             if dict_args['ptq'] and len(self.inputs) != 1:
                 continue
-
+            if cfg.compile_opt.dump_import_op_range and len(self.inputs) != 1:
+                continue
             infer_output_paths = self.nncase_infer(
                 cfg, case_dir, import_options,
                 compile_options, model_content, dict_args, preprocess_opt)
@@ -517,13 +524,20 @@ class TestRunner(metaclass=ABCMeta):
         compile_options.dump_ir = cfg.compile_opt.dump_ir
         compiler = nncase.Compiler(compile_options)
         self.import_model(compiler, model_content, import_options)
+
+        if cfg.compile_opt.dump_import_op_range:
+            dump_range_options = nncase.DumpRangeTensorOptions()
+            dump_range_options.set_tensor_data(np.asarray(
+                [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.dump_range_data]).tobytes())
+            dump_range_options.samples_count = cfg.generate_dump_range_data.batch_size
+            compiler.dump_range_options(dump_range_options)
         if kwargs['ptq']:
             ptq_options = nncase.PTQTensorOptions()
             ptq_options.set_tensor_data(np.asarray(
                 [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.calibs]).tobytes())
             ptq_options.samples_count = cfg.generate_calibs.batch_size
-
             compiler.use_ptq(ptq_options)
+
         evaluator = compiler.create_evaluator(3)
         eval_output_paths = []
         for i in range(len(self.inputs)):
@@ -555,6 +569,7 @@ class TestRunner(metaclass=ABCMeta):
         compile_options.dump_asm = cfg.compile_opt.dump_asm
         compile_options.dump_ir = cfg.compile_opt.dump_ir
         compile_options.dump_quant_error = cfg.compile_opt.dump_quant_error
+        compile_options.dump_import_op_range = cfg.compile_opt.dump_import_op_range
         compile_options.use_mse_quant_w = cfg.compile_opt.use_mse_quant_w
         compile_options.input_type = preprocess['input_type']
         compile_options.quant_type = cfg.compile_opt.quant_type
@@ -568,13 +583,20 @@ class TestRunner(metaclass=ABCMeta):
         compile_options.output_layout = preprocess['output_layout']
         compiler = nncase.Compiler(compile_options)
         self.import_model(compiler, model_content, import_options)
+
+        if cfg.compile_opt.dump_import_op_range:
+            dump_range_options = nncase.DumpRangeTensorOptions()
+            dump_range_options.set_tensor_data(np.asarray(
+                [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.dump_range_data]).tobytes())
+            dump_range_options.samples_count = cfg.generate_dump_range_data.batch_size
+            compiler.dump_range_options(dump_range_options)
         if kwargs['ptq']:
             ptq_options = nncase.PTQTensorOptions()
             ptq_options.set_tensor_data(np.asarray(
                 [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.calibs]).tobytes())
             ptq_options.samples_count = cfg.generate_calibs.batch_size
-
             compiler.use_ptq(ptq_options)
+
         compiler.compile()
         kmodel = compiler.gencode_tobytes()
         with open(os.path.join(infer_dir, 'test.kmodel'), 'wb') as f:
@@ -583,8 +605,13 @@ class TestRunner(metaclass=ABCMeta):
         sim.load_model(kmodel)
         infer_output_paths: List[np.ndarray] = []
         for i in range(len(self.inputs)):
-            sim.set_input_tensor(
-                i, nncase.RuntimeTensor.from_numpy(self.transform_input(self.inputs[i]['data'], preprocess['input_type'], "infer")))
+            data = self.transform_input(self.inputs[i]['data'], preprocess['input_type'], "infer")
+            dtype = preprocess['input_type']
+            if preprocess['preprocess'] and dtype != 'float32':
+                data.tofile(os.path.join(case_dir, f'input_{i}_{dtype}.bin'))
+                self.totxtfile(os.path.join(case_dir, f'input_{i}_{dtype}.txt'), data)
+
+            sim.set_input_tensor(i, nncase.RuntimeTensor.from_numpy(data))
         sim.run()
 
         for i in range(sim.outputs_size):
@@ -646,29 +673,39 @@ class TestRunner(metaclass=ABCMeta):
                     judeg_cfg.update(specific)
                     break
 
+        i = 0
         for ref_file, test_file in zip(ref_ouputs, test_outputs):
 
             judge, simarity_info = compare(test_file, ref_file,
+                                           self.outputs[i]['dtype'],
                                            judeg_cfg.simarity_name,
                                            judeg_cfg.threshold,
                                            judeg_cfg.log_hist)
             name_list = test_file[1].split(os.path.sep)
             kw_names = ' '.join(name_list[-len(kwargs) - 2:-1])
-            i = self.num_pattern.findall(name_list[-1])
+            j = self.num_pattern.findall(name_list[-1])
             result_info = "\n{0} [ {1} ] Output: {2}!!\n".format(
-                'Pass' if judge else 'Fail', kw_names, i)
+                'Pass' if judge else 'Fail', kw_names, j)
             result = simarity_info + result_info
             # print(result) temp disable
             with open(os.path.join(self.case_dir, 'test_result.txt'), 'a+') as f:
                 f.write(result)
+            i = i + 1
             if not judge:
                 return False, result
         return True, result
 
-    def totxtfile(self, save_path, value_np: np.array, bit_16_represent=False):
+    def totxtfile(self, save_path, ndarray: np.array, bit_16_represent=False):
         if self.cfg.setup.log_txt:
             if bit_16_represent:
-                np.save(save_path, _cast_bfloat16_then_float32(value_np))
+                np.save(save_path, _cast_bfloat16_then_float32(ndarray))
             else:
-                np.savetxt(save_path, value_np.flatten(), fmt='%f', header=str(value_np.shape))
+                if ndarray.dtype == np.uint8:
+                    fmt = '%u'
+                elif ndarray.dtype == np.int8:
+                    fmt = '%d'
+                else:
+                    fmt = '%f'
+                np.savetxt(save_path, ndarray.flatten(), fmt=fmt, header=str(ndarray.shape))
+
             print("----> %s" % save_path)

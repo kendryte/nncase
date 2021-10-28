@@ -50,6 +50,8 @@ private:
 
     void convert_unary(const onnx::NodeProto &node, const unary_op_t unary_op);
     void convert_binary(const onnx::NodeProto &node, const binary_op_t binary_op);
+    void convert_op_logical(const onnx::NodeProto &node, const binary_op_t binary_op);
+    void convert_op_arg(const onnx::NodeProto &node, reduce_arg_op_t op);
 
     template <bool global = false>
     void convert_pool(const onnx::NodeProto &node, const reduce_op_t reduce_op, const float initial_value);
@@ -148,6 +150,12 @@ template <>
 constexpr nncase::datatype_t onnx_importer::get_datatype<std::uint8_t>()
 {
     return nncase::dt_uint8;
+}
+
+template <>
+constexpr nncase::datatype_t onnx_importer::get_datatype<std::int8_t>()
+{
+    return nncase::dt_int8;
 }
 
 template <>

@@ -165,6 +165,22 @@ result<void> kernels::reduce(reduce_op_t op, float init_value, const float *inpu
     return cpu::reference::reduce(op, init_value, input, output, in_shape, axis, in_strides, out_strides, keep_dims, context);
 }
 
+template result<void> kernels::reduce_arg<int32_t>(reduce_arg_op_t op, const float *input, int32_t *output, const runtime_shape_t &in_shape,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const runtime_shape_t &axis,
+    bool keep_dims, bool select_last_idx, kernel_context &context) noexcept;
+
+template result<void> kernels::reduce_arg<int64_t>(reduce_arg_op_t op, const float *input, int64_t *output, const runtime_shape_t &in_shape,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const runtime_shape_t &axis,
+    bool keep_dims, bool select_last_idx, kernel_context &context) noexcept;
+
+template <typename T>
+result<void> kernels::reduce_arg(reduce_arg_op_t op, const float *input, T *output, const runtime_shape_t &in_shape,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const runtime_shape_t &axis,
+    bool keep_dims, bool select_last_idx, kernel_context &context) noexcept
+{
+    return cpu::reference::reduce_arg(op, input, output, in_shape, in_strides, out_strides, axis, keep_dims, select_last_idx, context);
+}
+
 #define DISPATCH_RESIZE(resize_fun)                                                                                                                          \
     runtime_shape_t out_shape { in_shape[0], in_shape[1], static_cast<size_t>(out_h), static_cast<size_t>(out_w) };                                          \
     if (is_contiguous(in_shape, in_strides) && is_contiguous(out_shape, out_strides))                                                                        \
@@ -235,4 +251,24 @@ result<void> kernels::gather_nd(datatype_t in_type, const gsl::byte *input, gsl:
     {
         return cpu::reference::gather_nd(in_type, input, output, in_shape, out_shape, in_strides, out_strides, indices, indices_shape, batch_dims, context);
     }
+}
+
+template result<void> kernels::cumsum<float>(const float *input, float *output, const runtime_shape_t &in_shape,
+    int32_t axis, bool exclusive, bool reverse) noexcept;
+
+template <typename T>
+result<void> kernels::cumsum(const T *input, T *output, const runtime_shape_t &in_shape,
+    int32_t axis, bool exclusive, bool reverse) noexcept
+{
+    return cpu::reference::cumsum(input, output, in_shape, axis, exclusive, reverse);
+}
+
+template result<void> kernels::hardmax<float>(const float *input, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides,
+    float *output, int32_t axis) noexcept;
+
+template <typename T>
+result<void> kernels::hardmax(const T *input, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides,
+    T *output, int32_t axis) noexcept
+{
+    return cpu::reference::hardmax(input, in_shape, in_strides, output, axis);
 }

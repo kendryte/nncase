@@ -21,6 +21,7 @@
 #include <nncase/transforms/neutral/fold_bitcast.h>
 #include <nncase/transforms/neutral/fold_constant.h>
 #include <nncase/transforms/neutral/fold_conv2d_biasadd.h>
+#include <nncase/transforms/neutral/fold_convert.h>
 #include <nncase/transforms/neutral/fold_dilated_conv2d.h>
 #include <nncase/transforms/neutral/fold_pad.h>
 #include <nncase/transforms/neutral/fold_quantize.h>
@@ -107,10 +108,10 @@ void neutral_target::add_default_transforms(ir::transforms::transform_pass &pass
 
     pass.emplace<fold_bitcast_transform>();
 
-    pass.emplace<remove_nonsense_binary>();
+    pass.emplace<fold_convert_transform>();
+    pass.emplace<fold_nop_convert_transform>();
 
-    pass.emplace<fuse_clamp_conv2d_transform>();
-    pass.emplace<fuse_clamp_binary_transform>();
+    pass.emplace<remove_nonsense_binary>();
     pass.emplace<strided_slice_to_pad_transform>();
 
     pass.emplace<transpose_binary_motion_transform>();
@@ -118,6 +119,10 @@ void neutral_target::add_default_transforms(ir::transforms::transform_pass &pass
     pass.emplace<transpose_concat_motion_transform>();
     pass.emplace<transpose_pad_motion_transform>();
     pass.emplace<transpose_clamp_motion_transform>();
+
+    pass.emplace<fuse_clamp_conv2d_transform>();
+    pass.emplace<fuse_clamp_conv2d_transpose_transform>();
+    pass.emplace<fuse_clamp_binary_transform>();
 
     pass.emplace<fold_conv2d_biasadd_transform>();
     pass.emplace<transpose_reduce_motion_transform>();

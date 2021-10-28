@@ -46,6 +46,7 @@ class NNCASE_API quantizer
 
         void record(std::span<const float> data);
         void record(std::span<const bfloat16> data);
+        void record(std::span<const half> data);
         void finish();
         value_range<float> optimal_range() const noexcept { return optimal_range_; }
 
@@ -90,17 +91,17 @@ public:
         }
         else
         {
+            if (range.max < 0)
+                range.max = 0;
+            if (range.min > 0)
+                range.min = 0;
+
             auto r = range.max - range.min;
             if (r == 0)
                 r = 0.1f;
             else if (r < 0.01f)
                 r = 0.01f;
             range.max = range.min + r;
-
-            if (range.max < 0)
-                range.max = 0;
-            if (range.min > 0)
-                range.min = 0;
         }
 
         return range;
@@ -121,10 +122,13 @@ public:
     bool has_record(ir::output_connector &connector) const;
     void record(ir::output_connector &connector, std::span<const float> data);
     void record(ir::output_connector &connector, std::span<const bfloat16> data);
+    void record(ir::output_connector &connector, std::span<const half> data);
     void record_buffers(ir::output_connector &connector, std::span<const float> data);
     void record_buffers(ir::output_connector &connector, std::span<const bfloat16> data);
+    void record_buffers(ir::output_connector &connector, std::span<const half> data);
     void record_quant_buffers(ir::output_connector &connector, std::span<const float> data);
     void record_quant_buffers(ir::output_connector &connector, std::span<const bfloat16> data);
+    void record_quant_buffers(ir::output_connector &connector, std::span<const half> data);
     value_range<float> get(ir::output_connector &connector) const;
     void broadcast_output(ir::graph &graph, const std::unordered_set<node_opcode> &ops);
     void broadcast_output(ir::node &node, const value_range<float> &range, const std::unordered_set<node_opcode> &ops);
@@ -133,7 +137,9 @@ public:
     size_t histograms_count() const noexcept { return histograms_.size(); }
     void end_sample() { has_record_.clear(); }
     std::unordered_map<ir::output_connector *, std::vector<float>> output_buffers() const noexcept { return output_buffers_; }
-    std::vector<ir::output_connector *> insert_order() const noexcept { return insert_order_; }
+    std::vector<ir::output_connector *> quant_buffers_insert_order() const noexcept { return quant_buffers_insert_order_; }
+    std::unordered_map<ir::output_connector *, value_range<float>> ranges() const noexcept { return quant_ranges_; }
+    std::vector<ir::output_connector *> ranges_insert_order() const noexcept { return ranges_insert_order_; }
 
 private:
     calibrate_method cali_method_;
@@ -143,6 +149,7 @@ private:
     std::unordered_map<ir::output_connector *, histogram> histograms_;
     std::unordered_map<ir::output_connector *, bool> has_record_;
     std::unordered_map<ir::output_connector *, std::vector<float>> output_buffers_;
-    std::vector<ir::output_connector *> insert_order_;
+    std::vector<ir::output_connector *> quant_buffers_insert_order_;
+    std::vector<ir::output_connector *> ranges_insert_order_;
 };
 }

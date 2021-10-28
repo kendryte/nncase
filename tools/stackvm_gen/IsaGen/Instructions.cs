@@ -153,9 +153,11 @@ namespace IsaGen
         CONV2D_TRANSPOSE,
         CONVERT,
         COPY,
+        CUMSUM,
         DEQUANTIZE,
         GATHER,
         GATHER_ND,
+        HARDMAX,
         LOGISTIC,
         LUT1D,
         MATMUL,
@@ -163,6 +165,7 @@ namespace IsaGen
         PAD,
         QUANTIZE,
         REDUCE,
+        REDUCEARG,
         REDUCE_WINDOW2D,
         RESIZE_IMAGE,
         SLICE,
@@ -205,6 +208,13 @@ namespace IsaGen
     [EnumName("reduce_op_t")]
     [Browsable(false)]
     public enum ReduceOp
+    {
+    }
+
+    [BitLength(8)]
+    [EnumName("reduce_arg_op_t")]
+    [Browsable(false)]
+    public enum ReduceArgOp
     {
     }
 
@@ -1304,6 +1314,34 @@ namespace IsaGen
             public byte RstrideDest { get; set; }
         }
 
+        [DisplayName("TENSOR.CUMSUM")]
+        [Category("Tensor Instructions")]
+        [Description("CumSum")]
+        public class CumSumInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.CUMSUM;
+
+            [DisplayName("datatype")]
+            [Description("Input/Output datatype")]
+            public DataType DataType { get; set; }
+
+            [DisplayName("rshape_src")]
+            [Description("Source shape register")]
+            public byte RshapeSrc { get; set; }
+
+            [DisplayName("axis")]
+            [Description("Axis")]
+            public int Axis { get; set; }
+
+            [DisplayName("exclusive")]
+            [Description("Exclusive")]
+            public bool Exclusive { get; set; }
+
+            [DisplayName("reverse")]
+            [Description("Reverse")]
+            public bool Reverse { get; set; }
+        }
+
         [DisplayName("TENSOR.DEQUANTIZE")]
         [Category("Tensor Instructions")]
         [Description("Dequantize")]
@@ -1402,6 +1440,30 @@ namespace IsaGen
             [DisplayName("batch_dims")]
             [Description("Batch Dims")]
             public byte Batchdims { get; set; }
+        }
+
+        [DisplayName("TENSOR.HARDMAX")]
+        [Category("Tensor Instructions")]
+        [Description("Hardmax")]
+        public class HardmaxInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.HARDMAX;
+
+            [DisplayName("datatype")]
+            [Description("Input/Output datatype")]
+            public DataType DataType { get; set; }
+
+            [DisplayName("rshape_src")]
+            [Description("Source shape register")]
+            public byte RshapeSrc { get; set; }
+
+            [DisplayName("rstride_src")]
+            [Description("Source stride register")]
+            public byte RstrideSrc { get; set; }
+
+            [DisplayName("axis")]
+            [Description("Axis")]
+            public int Axis { get; set; }
         }
 
         [DisplayName("TENSOR.LUT1D")]
@@ -1558,6 +1620,50 @@ namespace IsaGen
             [DisplayName("keep_dims")]
             [Description("Keep dimensions")]
             public bool KeepDims { get; set; }
+        }
+
+        [DisplayName("TENSOR.REDUCE_ARG")]
+        [Category("Tensor Instructions")]
+        [Description("ReduceArg")]
+        public class ReduceArgInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.REDUCEARG;
+
+            [DisplayName("datatype_src")]
+            [Description("Input datatype")]
+            public DataType DataTypeSrc { get; set; }
+
+            [DisplayName("rshape_src")]
+            [Description("Source shape register")]
+            public byte RshapeSrc { get; set; }
+
+            [DisplayName("rstride_src")]
+            [Description("Source stride register")]
+            public byte RstrideSrc { get; set; }
+
+            [DisplayName("datatype_dest")]
+            [Description("Output datatype")]
+            public DataType DataTypeDest { get; set; }
+
+            [DisplayName("rstride_dest")]
+            [Description("Dest stride register")]
+            public byte RstrideDest { get; set; }
+
+            [DisplayName("reduce_arg_op")]
+            [Description("Reduce arg operator")]
+            public ReduceArgOp ReduceArgOp { get; set; }
+
+            [DisplayName("rshape_axis")]
+            [Description("Axis shape register")]
+            public byte RshapeAxis { get; set; }
+
+            [DisplayName("keep_dims")]
+            [Description("Keep dimensions")]
+            public bool KeepDims { get; set; }
+
+            [DisplayName("select_last_idx")]
+            [Description("select last index")]
+            public bool select_last_idx { get; set; }
         }
 
         [DisplayName("TENSOR.REDUCE_WINDOW2D")]

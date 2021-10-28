@@ -59,6 +59,8 @@ public:
     const runtime_shape_t &shape() const noexcept;
     const runtime_shape_t &strides() const noexcept;
     runtime_tensor_type &tensor_type() const noexcept;
+    const quant_param_t &quant_param() const noexcept;
+    void quant_param(const quant_param_t &quant_param) const noexcept;
     bool empty() const noexcept;
     bool is_host() const noexcept;
     bool is_contiguous() const noexcept;

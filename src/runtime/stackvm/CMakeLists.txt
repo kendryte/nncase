@@ -16,14 +16,17 @@ set(SRCS runtime_module.cpp
          ops/tensor.conv2d.cpp
          ops/tensor.convert.cpp
          ops/tensor.copy.cpp
+         ops/tensor.cumsum.cpp
          ops/tensor.dequantize.cpp
          ops/tensor.gather.cpp
          ops/tensor.gather_nd.cpp
+         ops/tensor.hardmax.cpp
          ops/tensor.lut1d.cpp
          ops/tensor.onehot.cpp
          ops/tensor.pad.cpp
          ops/tensor.quantize.cpp
          ops/tensor.reduce.cpp
+         ops/tensor.reduce_arg.cpp
          ops/tensor.reduce_window2d.cpp
          ops/tensor.resize_image.cpp
          ops/tensor.slice.cpp

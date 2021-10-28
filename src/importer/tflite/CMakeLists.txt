@@ -9,6 +9,7 @@ set(SRCS tflite_importer.cpp
          ops/binary.cpp
          ops/cast.cpp
          ops/reduce.cpp
+         ops/reduce_arg.cpp
          ops/unary.cpp
          ops/concat.cpp
          ops/matmul.cpp

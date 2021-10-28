@@ -97,7 +97,29 @@ evaluate_tensor function_evaluate_context::memory_at(const output_connector &con
     return evaluate_tensor(alloc.type, to(alloc.shape), to(alloc.strides), buffer);
 }
 
-void function_evaluate_context::evaluate(bool before_quant = true, size_t stage = 0, bool record_output_buffers = false)
+template <class T>
+void record_range_and_buffers(gsl::span<T> buffer, eval_step step, size_t stage, output_connector *out, quantizer *q, bool record_output_buffers)
+{
+    if (step == nncase::ir::eval_step::after_import)
+        q->record(*out, buffer);
+    else if (out->attributes() & cnctr_attr_need_quantize)
+        q->record(*out, buffer);
+    if (record_output_buffers)
+    {
+        if (step == nncase::ir::eval_step::after_calib && stage == 0)
+        {
+            if (out->attributes() & cnctr_attr_need_quantize)
+                q->record_buffers(*out, buffer);
+        }
+        if (step == nncase::ir::eval_step::after_quant && stage == 0)
+        {
+            if (out->attributes() & cnctr_attr_need_quantize)
+                q->record_quant_buffers(*out, buffer);
+        }
+    }
+}
+
+void function_evaluate_context::evaluate(eval_step step = nncase::ir::eval_step::after_import, size_t stage = 0, bool record_output_buffers = false)
 {
     using clock = chrono::high_resolution_clock;
     chrono::nanoseconds total_duration = {};
@@ -116,53 +138,20 @@ void function_evaluate_context::evaluate(bool before_quant = true, size_t stage 
         {
             for (auto out : node->outputs())
             {
-                if (out->attributes() & cnctr_attr_need_quantize)
+                auto mem = memory_at(*out);
+                auto dtype = mem.datatype();
+                auto raw_buffer = mem.buffer();
+
+#define RECORD(datatype) record_range_and_buffers(raw_buffer.as_span<datatype>(), step, stage, out, quantizer, record_output_buffers);
+
+                if (!quantizer->has_record(*out))
                 {
-                    if (!quantizer->has_record(*out))
-                    {
-                        auto mem = memory_at(*out);
-                        auto dtype = mem.datatype();
-                        if (dtype == dt_bfloat16)
-                        {
-                            auto buffer = mem.buffer().as_span<bfloat16>();
-                            quantizer->record(*out, buffer);
-                            if (record_output_buffers)
-                            {
-                                // just record the first input buffers by emplace below
-                                if (before_quant && stage == 0)
-                                {
-                                    quantizer->record_buffers(*out, buffer);
-                                }
-                                // just record the first input buffers by emplace below
-                                if (!before_quant && stage == 0)
-                                {
-                                    quantizer->record_quant_buffers(*out, buffer);
-                                }
-                            }
-                        }
-                        else if (dtype == dt_float32)
-                        {
-                            auto buffer = mem.buffer().as_span<float>();
-                            quantizer->record(*out, buffer);
-                            if (record_output_buffers)
-                            {
-                                // just record the first input buffers by emplace below
-                                if (before_quant && stage == 0)
-                                {
-                                    quantizer->record_buffers(*out, buffer);
-                                }
-                                // just record the first input buffers by emplace below
-                                if (!before_quant && stage == 0)
-                                {
-                                    quantizer->record_quant_buffers(*out, buffer);
-                                }
-                            }
-                        }
-                        else
-                        {
-                            throw std::runtime_error("Quantizer doesn't support datatype of " + std::string(datatype_names(dtype)));
-                        }
-                    }
+                    if (dtype == dt_bfloat16)
+                        RECORD(bfloat16)
+                    else if (dtype == dt_float16)
+                        RECORD(half)
+                    else if (dtype == dt_float32)
+                        RECORD(float)
                 }
             }
         }
@@ -258,7 +247,7 @@ void model_evaluate_context::end_collect_distribution(const std::function<void(s
         mod.second.end_collect_distribution(progress);
 }
 
-void model_evaluate_context::evaluate(bool before_quant = true, size_t stage = 0, bool record_output_buffers = false)
+void model_evaluate_context::evaluate(eval_step step = nncase::ir::eval_step::after_import, size_t stage = 0, bool record_output_buffers = false)
 {
-    entrypoint().evaluate(before_quant, stage, record_output_buffers);
+    entrypoint().evaluate(step, stage, record_output_buffers);
 }

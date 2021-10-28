@@ -37,6 +37,7 @@ struct compile_options
     bool dump_ir;
     bool dump_asm;
     bool dump_quant_error;
+    bool dump_import_op_range;
     bool is_fpga;
     bool use_dataset_as_input_stat = false;
     bool benchmark_only = false;
@@ -81,6 +82,23 @@ struct ptq_tensor_options : ptq_options_base
     size_t samples_count;
 };
 
+struct dump_range_options_base
+{
+    std::string calibrate_method = "no_clip";
+    std::function<void(size_t cnt, size_t total)> progress;
+};
+
+struct dump_range_dataset_options : dump_range_options_base
+{
+    std::filesystem::path dataset;
+    std::string dataset_format;
+};
+struct dump_range_tensor_options : dump_range_options_base
+{
+    std::vector<uint8_t> tensor_data;
+    size_t samples_count;
+};
+
 class NNCASE_API compiler
 {
 public:
@@ -92,6 +110,8 @@ public:
     virtual void import_caffe(std::span<const uint8_t> model, std::span<const uint8_t> prototxt) = 0;
     virtual void use_ptq(ptq_dataset_options options) = 0;
     virtual void use_ptq(ptq_tensor_options options) = 0;
+    virtual void dump_range_options(dump_range_dataset_options options) = 0;
+    virtual void dump_range_options(dump_range_tensor_options options) = 0;
     virtual ir::graph &graph(uint32_t stage) = 0;
     virtual nncase::target &target() = 0;
     virtual void compile() = 0;

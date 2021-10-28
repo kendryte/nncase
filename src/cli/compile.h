@@ -26,6 +26,34 @@ public:
 private:
     void run();
 
+    template <typename T>
+    void parser_vector_opt(const std::string &cli_opt, std::vector<T> &opt)
+    {
+        std::string::const_iterator last_pos, pos;
+        last_pos = pos = cli_opt.cbegin();
+        do
+        {
+            pos = std::find(last_pos, cli_opt.cend(), ' ');
+            if (last_pos != pos)
+            {
+                std::string substr = cli_opt.substr(last_pos - cli_opt.begin(), pos - last_pos);
+                if constexpr (std::is_same_v<T, int32_t>)
+                {
+                    opt.push_back(std::stoi(substr));
+                }
+                else if constexpr (std::is_same_v<T, float>)
+                {
+                    opt.push_back(std::stof(substr));
+                }
+                else
+                {
+                    throw std::runtime_error("not supported arguments type");
+                }
+            }
+            last_pos = pos + 1;
+        } while (pos != cli_opt.cend());
+    }
+
 private:
     std::string input_filename_;
     std::string output_filename_;
@@ -36,6 +64,8 @@ private:
     std::string dump_dir_;
     std::string dataset_;
     std::string dataset_format_ = "image";
+    std::string dump_range_dataset_;
+    std::string dump_range_dataset_format_ = "image";
     std::string calibrate_method_ = "no_clip";
     std::string input_type_ = "default";
     std::string output_type_ = "float32";
@@ -50,10 +80,16 @@ private:
     float letterbox_value_;
     std::vector<int32_t> input_shape_;
 
+    std::string cli_mean_ = "0. 0. 0.";
+    std::string cli_std_ = "1. 1. 1.";
+    std::string cli_input_range_;
+    std::string cli_input_shape_;
+
     bool swapRB_ = false;
     bool dump_ir_ = false;
     bool dump_asm_ = false;
     bool dump_quant_error_ = false;
+    bool dump_import_op_range_ = false;
     bool is_fpga_ = false;
     bool benchmark_only_ = false;
     bool preprocess_ = false;

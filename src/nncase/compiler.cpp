@@ -181,6 +181,16 @@ public:
         use_ptq_ = true;
     }
 
+    void dump_range_options(dump_range_dataset_options options) override
+    {
+        dump_range_options_ = std::move(options);
+    }
+
+    void dump_range_options(dump_range_tensor_options options) override
+    {
+        dump_range_options_ = std::move(options);
+    }
+
     void compile() override
     {
         if (use_ptq_)
@@ -201,6 +211,24 @@ public:
             post_process(graph_, compile_options_);
         }
 
+        if (compile_options_.dump_import_op_range)
+        {
+            std::ofstream f;
+            auto evaluator_import = run_calibration(graph_, nncase::ir::eval_step::after_import);
+            quantizer *eval_import_quantizer = evaluator_import.quantizer(graph_.module_type());
+            if (compile_options_.dump_ir)
+                f.open(compile_options_.dump_dir / "origin_layer_data_range.txt");
+            std::cout << "Collected ranges:" << std::endl;
+            for (uint32_t i = 0; i < eval_import_quantizer->ranges_insert_order().size(); i++)
+            {
+                auto quant_layer_connector = eval_import_quantizer->ranges_insert_order()[i];
+                auto ranges_map = eval_import_quantizer->ranges();
+                std::cout << "node name: " << quant_layer_connector->owner().name() << "   range min: " << ranges_map[quant_layer_connector].min << "   range max: " << ranges_map[quant_layer_connector].max << std::endl;
+                f << "node name: " << quant_layer_connector->owner().name() << "   range min: " << ranges_map[quant_layer_connector].min << "   range max: " << ranges_map[quant_layer_connector].max << std::endl;
+            }
+            f.close();
+        }
+
         std::cout << "2. Optimize target independent..." << std::endl;
         optimize_target_independent(graph_);
 
@@ -213,7 +241,7 @@ public:
             add_quantize_annotation(graph_);
 
             std::cout << "4.2. Run calibration..." << std::endl;
-            auto evaluator = run_calibration(graph_, true);
+            auto evaluator = run_calibration(graph_, nncase::ir::eval_step::after_calib);
             quantizer *eval_quantizer = evaluator.quantizer(graph_.module_type());
 
             std::cout << "4.3. Quantize graph..." << std::endl;
@@ -226,9 +254,10 @@ public:
                 memset(target_name, '\0', sizeof(target_name));
                 char *p = const_cast<char *>(compile_options_.target.c_str());
                 strcpy(target_name, p);
-                graph_.set_module_type(to_module_type(target_name));
+                if (strcmp(target_name, "cpu"))
+                    graph_.set_module_type(to_module_type(target_name));
 
-                auto quant_evaluator = run_calibration(graph_, false);
+                auto quant_evaluator = run_calibration(graph_, nncase::ir::eval_step::after_quant);
                 quantizer *quant_eval_quantizer = quant_evaluator.quantizer(graph_.module_type());
 
                 std::cout << "4.5. Summarize accumulated quant error for layer output..." << std::endl;
@@ -236,9 +265,9 @@ public:
                 if (compile_options_.dump_ir)
                     f.open(compile_options_.dump_dir / "layer_quant_error.txt");
 
-                for (uint32_t i = 0; i < quant_eval_quantizer->insert_order().size(); i++)
+                for (uint32_t i = 0; i < quant_eval_quantizer->quant_buffers_insert_order().size(); i++)
                 {
-                    auto quant_layer_connector = quant_eval_quantizer->insert_order()[i];
+                    auto quant_layer_connector = quant_eval_quantizer->quant_buffers_insert_order()[i];
                     auto data_size = kernels::detail::compute_size(quant_layer_connector->shape());
                     if (quant_layer_connector->owner().get_output_connectors_quant_map().size() != 0)
                     {
@@ -446,78 +475,126 @@ private:
             graph_runner(*subgraph);
     }
 
-    ir::evaluator run_calibration(ir::graph &graph, bool before_quant)
+    ir::evaluator run_calibration(ir::graph &graph, eval_step step)
     {
         schedule::scheduler sched(*target_, graph, graph.outputs());
         if (compile_options_.dump_ir)
         {
-            auto dump_path = before_quant ? compile_options_.dump_dir / "calibration" : compile_options_.dump_dir / "quantized_graph";
+            auto dump_path = step == nncase::ir::eval_step::after_import ? compile_options_.dump_dir / "after_import" : (step == nncase::ir::eval_step::after_calib ? compile_options_.dump_dir / "after_calibration" : compile_options_.dump_dir / "after_quantize");
             std::filesystem::create_directories(dump_path);
             sched.config_dump(dump_path);
         }
 
         auto sched_result = sched.schedule(true);
         ir::evaluator evaluator(sched_result);
-        auto calib_method = std::visit([](auto &options) { return to_calibrate_method(options.calibrate_method); },
-            ptq_options_);
 
-        evaluator.enable_ptq(*target_, calib_method);
+        if (step != eval_step::after_import)
+        {
+            auto calib_method = std::visit([](auto &options) { return to_calibrate_method(options.calibrate_method); }, ptq_options_);
+            evaluator.enable_ptq(*target_, calib_method);
+        }
+        else
+        {
+            auto calib_method = std::visit([](auto &options) { return to_calibrate_method(options.calibrate_method); }, dump_range_options_);
+            evaluator.enable_ptq(*target_, calib_method);
+        }
 
         if (graph.inputs().size() != 1)
-            throw std::invalid_argument("PTQ only support models that have single 1 input");
+            throw std::invalid_argument("Collect ranges only support models that have single 1 input");
 
-        if (ptq_options_.index() == 0)
+        if (step != eval_step::after_import)
         {
-            auto &options = std::get<ptq_dataset_options>(ptq_options_);
-            auto &in_shape = graph.inputs()[0]->output().shape();
-            xt::dynamic_shape<size_t> dataset_in_shape(in_shape.begin(), in_shape.end());
-            std::unique_ptr<dataset> ds;
-            if (options.dataset_format == "image")
-                ds = std::make_unique<image_dataset>(options.dataset, dataset_in_shape, compile_options_.input_layout);
-            else if (options.dataset_format == "raw")
-                ds = std::make_unique<raw_dataset>(options.dataset, dataset_in_shape);
-            else
-                throw std::runtime_error("Invalid calibration dataset format: " + options.dataset_format);
-
-            auto in_type = graph.inputs()[0]->output().type();
-            switch (in_type)
+            if (ptq_options_.index() == 0)
             {
-            case dt_float32:
-                run_calibration_eval<float>(options, *ds, evaluator, before_quant);
-                break;
-            case dt_uint8:
-                run_calibration_eval<uint8_t>(options, *ds, evaluator, before_quant);
-                break;
-            case dt_int8:
-                run_calibration_eval<int8_t>(options, *ds, evaluator, before_quant);
-                break;
-            default:
-                throw std::runtime_error("Unsupported input datatype: " + std::string(datatype_names(in_type)));
+                auto &options = std::get<ptq_dataset_options>(ptq_options_);
+                auto &in_shape = graph.inputs()[0]->output().shape();
+                xt::dynamic_shape<size_t> dataset_in_shape(in_shape.begin(), in_shape.end());
+                std::unique_ptr<dataset> ds;
+                if (options.dataset_format == "image")
+                    ds = std::make_unique<image_dataset>(options.dataset, dataset_in_shape, compile_options_.input_layout);
+                else if (options.dataset_format == "raw")
+                    ds = std::make_unique<raw_dataset>(options.dataset, dataset_in_shape);
+                else
+                    throw std::runtime_error("Invalid calibration dataset format: " + options.dataset_format);
+
+                auto in_type = graph.inputs()[0]->output().type();
+                switch (in_type)
+                {
+                case dt_float32:
+                    run_calibration_eval<float, ptq_dataset_options>(options, *ds, evaluator, step);
+                    break;
+                case dt_uint8:
+                    run_calibration_eval<uint8_t, ptq_dataset_options>(options, *ds, evaluator, step);
+                    break;
+                case dt_int8:
+                    run_calibration_eval<int8_t, ptq_dataset_options>(options, *ds, evaluator, step);
+                    break;
+                default:
+                    throw std::runtime_error("Unsupported input datatype: " + std::string(datatype_names(in_type)));
+                }
+            }
+            else
+            {
+                auto &options = std::get<ptq_tensor_options>(ptq_options_);
+                run_calibration_eval<ptq_tensor_options>(options, evaluator, step);
             }
         }
         else
         {
-            auto &options = std::get<ptq_tensor_options>(ptq_options_);
-            run_calibration_eval(options, evaluator, before_quant);
+            if (dump_range_options_.index() == 0)
+            {
+                auto &options = std::get<dump_range_dataset_options>(dump_range_options_);
+                auto &in_shape = graph.inputs()[0]->output().shape();
+                xt::dynamic_shape<size_t> dataset_in_shape(in_shape.begin(), in_shape.end());
+                std::unique_ptr<dataset> ds;
+                if (options.dataset_format == "image")
+                    ds = std::make_unique<image_dataset>(options.dataset, dataset_in_shape, compile_options_.input_layout);
+                else if (options.dataset_format == "raw")
+                    ds = std::make_unique<raw_dataset>(options.dataset, dataset_in_shape);
+                else
+                    throw std::runtime_error("Invalid calibration dataset format: " + options.dataset_format);
+
+                auto in_type = graph.inputs()[0]->output().type();
+                switch (in_type)
+                {
+                case dt_float32:
+                    run_calibration_eval<float, dump_range_dataset_options>(options, *ds, evaluator, step);
+                    break;
+                case dt_uint8:
+                    run_calibration_eval<uint8_t, dump_range_dataset_options>(options, *ds, evaluator, step);
+                    break;
+                case dt_int8:
+                    run_calibration_eval<int8_t, dump_range_dataset_options>(options, *ds, evaluator, step);
+                    break;
+                default:
+                    throw std::runtime_error("Unsupported input datatype: " + std::string(datatype_names(in_type)));
+                }
+            }
+            else
+            {
+                auto &options = std::get<dump_range_tensor_options>(dump_range_options_);
+                run_calibration_eval<dump_range_tensor_options>(options, evaluator, step);
+            }
         }
 
         return evaluator;
     }
 
-    template <class T>
-    void run_calibration_eval(ptq_dataset_options &options, dataset &dataset, ir::evaluator &evaluator, bool before_quant)
+    template <class T, class TOpt>
+    void run_calibration_eval(TOpt &options, dataset &dataset, ir::evaluator &evaluator, eval_step step)
     {
-        std::string step = before_quant ? "4.2" : "4.4";
+        std::string step_str = step == nncase::ir::eval_step::after_import ? "1" : (step == nncase::ir::eval_step::after_calib ? "4.2" : "4.4");
         const size_t max_stages = options.calibrate_method == "no_clip" ? 1 : 2;
+
         for (size_t stage = 0; stage < max_stages; stage++)
         {
             if (stage == 0)
             {
-                std::cout << step + ".1. Collecting ranges..." << std::endl;
+                std::cout << step_str + ".1. Collecting ranges..." << std::endl;
             }
             else
             {
-                std::cout << step + ".2. Collecting distribution..." << std::endl;
+                std::cout << step_str + ".2. Collecting distribution..." << std::endl;
                 evaluator.begin_collect_distribution();
             }
 
@@ -528,7 +605,7 @@ private:
                 auto &tensor = it->tensor;
                 std::memcpy(input_buffer.data(), tensor.data(), input_buffer.size_bytes());
 
-                evaluator.evaluate(before_quant, stage, compile_options_.dump_quant_error);
+                evaluator.evaluate(step, stage, compile_options_.dump_quant_error);
                 evaluator.end_sample();
                 if (options.progress)
                     options.progress(i++, dataset.total_size());
@@ -536,25 +613,26 @@ private:
 
             if (stage == 1)
             {
-                std::cout << step + ".3. Find optimal quantization ranges..." << std::endl;
+                std::cout << step_str + ".3. Find optimal quantization ranges..." << std::endl;
                 evaluator.end_collect_distribution(options.progress);
             }
         }
     }
 
-    void run_calibration_eval(ptq_tensor_options &options, ir::evaluator &evaluator, bool before_quant)
+    template <class TOpt>
+    void run_calibration_eval(TOpt &options, ir::evaluator &evaluator, eval_step step)
     {
-        std::string step = before_quant ? "4.2" : "4.4";
+        std::string step_str = step == nncase::ir::eval_step::after_import ? "1" : (step == nncase::ir::eval_step::after_calib ? "4.2" : "4.4");
         const size_t max_stages = options.calibrate_method == "no_clip" ? 1 : 2;
         for (size_t stage = 0; stage < max_stages; stage++)
         {
             if (stage == 0)
             {
-                std::cout << step + ".1. Collecting ranges..." << std::endl;
+                std::cout << step_str + ".1. Collecting ranges..." << std::endl;
             }
             else
             {
-                std::cout << step + ".2. Collecting distribution..." << std::endl;
+                std::cout << step_str + ".2. Collecting distribution..." << std::endl;
                 evaluator.begin_collect_distribution();
             }
 
@@ -563,7 +641,7 @@ private:
                 auto input_buffer = evaluator.input_at(0).buffer();
                 std::memcpy(input_buffer.data(), options.tensor_data.data() + i * input_buffer.size_bytes(), input_buffer.size_bytes());
 
-                evaluator.evaluate(before_quant, stage, compile_options_.dump_quant_error);
+                evaluator.evaluate(step, stage, compile_options_.dump_quant_error);
                 evaluator.end_sample();
                 if (options.progress)
                     options.progress(i++, options.samples_count);
@@ -571,7 +649,7 @@ private:
 
             if (stage == 1)
             {
-                std::cout << step + ".3. Find optimal quantization ranges..." << std::endl;
+                std::cout << step_str + ".3. Find optimal quantization ranges..." << std::endl;
                 evaluator.end_collect_distribution(options.progress);
             }
         }
@@ -652,6 +730,7 @@ private:
     target_options target_options_;
     std::string input_layout_;
     std::variant<ptq_dataset_options, ptq_tensor_options> ptq_options_;
+    std::variant<dump_range_dataset_options, dump_range_tensor_options> dump_range_options_;
     bool use_ptq_ = false;
     std::unique_ptr<nncase::target> target_;
     std::string real_inlayout_ = "";

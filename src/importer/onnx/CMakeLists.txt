@@ -12,14 +12,19 @@ set(ONNX_IMPORTER_OPS_SOURCES
     ops/batchnorm.cpp
     ops/concat.cpp
     ops/constant.cpp
+    ops/constantofshape.cpp
     ops/conv.cpp
     ops/cast.cpp
+    ops/cumsum.cpp
+    ops/depthtospace.cpp
+    ops/dequantizelinear.cpp
     ops/dropout.cpp
     ops/expand.cpp
     ops/gather.cpp
     ops/gather_nd.cpp
     ops/gemm.cpp
     ops/flatten.cpp
+    ops/hardmax.cpp
     ops/identity.cpp
     ops/instancenorm.cpp
     ops/lpnorm.cpp
@@ -29,6 +34,7 @@ set(ONNX_IMPORTER_OPS_SOURCES
     ops/pad.cpp
     ops/pool.cpp
     ops/reduce.cpp
+    ops/reduce_arg.cpp
     ops/reshape.cpp
     ops/resize.cpp
     ops/shape.cpp

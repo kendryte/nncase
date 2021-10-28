@@ -48,6 +48,7 @@ private:
     void convert_pool2d(const tflite::Operator &op, reduce_op_t reduce_op, float init_value);
     void convert_binary(const tflite::Operator &op, binary_op_t binary_op, tflite::ActivationFunctionType activation);
     void convert_reduce(const tflite::Operator &op, reduce_op_t reduce_op, float init_value);
+    void convert_reduce_arg(const tflite::Operator &op, reduce_arg_op_t reduce_arg_op, const tflite::TensorType output_type);
     void convert_unary(const tflite::Operator &op, unary_op_t unary_op);
     void convert_resize_image(const tflite::Operator &op, image_resize_mode_t mode);
 

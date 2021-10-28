@@ -12,5 +12,5 @@ class Simulator(InternelSimulator):
     kmodel_bytes: bytes = property(__get_kmodel_bytes, __set_kmodel_bytes)
 
     def load_model(self, model: bytes) -> None:
-        self.kmodel_bytes = model # keep the model data alive
+        self.kmodel_bytes = model  # keep the model data alive
         return super().load_model(self.kmodel_bytes)

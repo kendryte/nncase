@@ -12,6 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <iostream>
 #include <nncase/kernels/cpu/reference/tensor_compute.h>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/runtime/runtime_op_utility.h>
@@ -59,7 +60,9 @@ result<void> reference::binary(binary_op_t op, const float *input_a, const float
         BINARY_IMPL(binary_min, [](float a, float b) { return std::min(a, b); });
         BINARY_IMPL(binary_max, [](float a, float b) { return std::max(a, b); });
         BINARY_IMPL(binary_pow, powf);
+        BINARY_IMPL(binary_logical_and, [](float a, float b) { return static_cast<float>(a && b); });
     default:
+        std::cerr << "Unsupported binary op: " + binary_op_to_string(op) << std::endl;
         return err(std::errc::not_supported);
     }
 }

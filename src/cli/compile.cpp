@@ -33,13 +33,15 @@ compile_command::compile_command(lyra::cli &cli)
                          .add_argument(lyra::opt(use_mse_quant_w_).name("--use-mse-quant-w").optional().help("use min mse algorithm to refine weights quantilization or not, default is " + std::to_string(use_mse_quant_w_)))
                          .add_argument(lyra::opt(dataset_, "dataset path").name("--dataset").optional().help("calibration dataset, used in post quantization"))
                          .add_argument(lyra::opt(dataset_format_, "dataset format").name("--dataset-format").optional().help("datset format: e.g. image|raw, default is " + dataset_format_))
+                         .add_argument(lyra::opt(dump_range_dataset_, "dataset path").name("--dump-range-dataset").optional().help("dump import op range dataset"))
+                         .add_argument(lyra::opt(dump_range_dataset_format_, "dataset format").name("--dump-range-dataset-format").optional().help("datset format: e.g. image|raw, default is " + dump_range_dataset_format_))
                          .add_argument(lyra::opt(calibrate_method_, "calibrate method").name("--calibrate-method").optional().help("calibrate method: e.g. no_clip|l2|kld_m0|kld_m1|kld_m2|cdf, default is " + calibrate_method_))
                          .add_argument(lyra::opt(preprocess_).name("--preprocess").optional().help("enable preprocess, default is " + std::to_string(preprocess_)))
                          .add_argument(lyra::opt(swapRB_).name("--swapRB").optional().help("swap red and blue channel, default is " + std::to_string(swapRB_)))
-                         .add_argument(lyra::opt(mean_, "normalize mean").name("--mean").optional().help("normalize mean, default is " + std::to_string(mean_[0])))
-                         .add_argument(lyra::opt(std_, "normalize std").name("--std").optional().help("normalize std, default is " + std::to_string(std_[0])))
-                         .add_argument(lyra::opt(input_range_, "input range").name("--input-range").optional().help("float range after preprocess"))
-                         .add_argument(lyra::opt(input_shape_, "input shape").name("--input-shape").optional().help("shape for input data"))
+                         .add_argument(lyra::opt(cli_mean_, "normalize mean").name("--mean").optional().help("normalize mean, default is " + cli_mean_))
+                         .add_argument(lyra::opt(cli_std_, "normalize std").name("--std").optional().help("normalize std, default is " + cli_std_))
+                         .add_argument(lyra::opt(cli_input_range_, "input range").name("--input-range").optional().help("float range after preprocess"))
+                         .add_argument(lyra::opt(cli_input_shape_, "input shape").name("--input-shape").optional().help("shape for input data"))
                          .add_argument(lyra::opt(letterbox_value_, "letter box value").name("--letterbox-value").optional().help("letter box pad value, default is " + std::to_string(letterbox_value_)))
                          .add_argument(lyra::opt(input_type_, "input type").name("--input-type").optional().help("input type, e.g float32|uint8|default, default is " + input_type_))
                          .add_argument(lyra::opt(output_type_, "output type").name("--output-type").optional().help("output type, e.g float32|uint8, default is " + output_type_))
@@ -49,6 +51,7 @@ compile_command::compile_command(lyra::cli &cli)
                          .add_argument(lyra::opt(dump_ir_).name("--dump-ir").optional().help("dump ir to .dot, default is " + std::to_string(dump_ir_)))
                          .add_argument(lyra::opt(dump_asm_).name("--dump-asm").optional().help("dump assembly, default is " + std::to_string(dump_asm_)))
                          .add_argument(lyra::opt(dump_quant_error_).name("--dump-quant-error").optional().help("dump quant error, default is " + std::to_string(dump_quant_error_)))
+                         .add_argument(lyra::opt(dump_import_op_range_).name("--dump-import-op-range").optional().help("dump import op range, default is " + std::to_string(dump_import_op_range_)))
                          .add_argument(lyra::opt(dump_dir_, "dump directory").name("--dump-dir").optional().help("dump to directory"))
                          .add_argument(lyra::opt(benchmark_only_).name("--benchmark-only").optional().help("compile kmodel only for benchmark use, default is " + std::to_string(benchmark_only_))));
 }
@@ -65,11 +68,18 @@ void compile_command::run()
         if (input_type_ == "default")
             input_type_ = "float32";
     }
+    // manual parser the str to vector options
+    mean_.clear(), std_.clear();
+    parser_vector_opt(cli_mean_, mean_);
+    parser_vector_opt(cli_std_, std_);
+    parser_vector_opt(cli_input_range_, input_range_);
+    parser_vector_opt(cli_input_shape_, input_shape_);
 
     compile_options c_options;
     c_options.dump_asm = dump_asm_;
     c_options.dump_ir = dump_ir_;
     c_options.dump_quant_error = dump_quant_error_;
+    c_options.dump_import_op_range = dump_import_op_range_;
     c_options.dump_dir = dump_dir_;
     c_options.target = target_name_;
     c_options.is_fpga = is_fpga_;
@@ -88,6 +98,17 @@ void compile_command::run()
     c_options.input_layout = input_layout_;
     c_options.output_layout = output_layout_;
     c_options.letterbox_value = letterbox_value_;
+    if (c_options.preprocess)
+    {
+        if (c_options.input_shape.empty())
+        {
+            throw std::invalid_argument("Empty input shape. If enable preprocess you must set input shape");
+        }
+        if (c_options.input_range.empty())
+        {
+            throw std::invalid_argument("Empty input range. If enable preprocess you must set input range");
+        }
+    }
 
     import_options i_options;
     std::vector<std::string> output_arrays;
@@ -145,6 +166,18 @@ void compile_command::run()
         ptq_options.calibrate_method = calibrate_method_;
         compiler->use_ptq(ptq_options);
     }
+
+    if (!dump_range_dataset_.empty())
+    {
+        nncase::dump_range_dataset_options dump_range_options;
+        dump_range_options.dataset = dump_range_dataset_;
+        dump_range_options.dataset_format = dump_range_dataset_format_;
+        dump_range_options.calibrate_method = calibrate_method_;
+        compiler->dump_range_options(dump_range_options);
+    }
+
+    if (dump_import_op_range_ && dump_range_dataset_.empty())
+        throw std::runtime_error("Dump range dataset has not been set.");
 
     compiler->compile();
 
