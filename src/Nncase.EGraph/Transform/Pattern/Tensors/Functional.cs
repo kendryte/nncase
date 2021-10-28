@@ -14,8 +14,10 @@ namespace Nncase.Transform.Pattern.F
 {
     public static class Tensor
     {
-        public static CallPattern Transpose(ExprPattern input, ExprPattern perm) => new CallPattern(new TransposePattern(x => true), input, perm);
+        public static CallPattern Transpose(ExprPattern input, ExprPattern perm) => Transpose(GetID(), input, perm);
+        public static CallPattern Transpose(ID Id, ExprPattern input, ExprPattern perm) => new CallPattern(Id, new TransposePattern(x => true), input, perm);
 
-        public static CallPattern Concat(TuplePattern input, ExprPattern axis) => new CallPattern(new ConcatPattern(x => true), input, axis);
+        public static CallPattern Concat(TuplePattern input, ExprPattern axis) => Concat(GetID(), input, axis);
+        public static CallPattern Concat(ID Id, TuplePattern input, ExprPattern axis) => new CallPattern(Id, new ConcatPattern(x => true), input, axis);
     }
 }

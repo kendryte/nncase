@@ -29,7 +29,7 @@ namespace Nncase.Transform.Rule
 
         public override Expr GetRePlace(EMatchResult result)
         {
-            Expr x = result.Context[wx].Expr, y = result.Context[wy].Expr, z = result.Context[wz].Expr;
+            Expr x = result.GetExpr(wx), y = result.GetExpr(wy), z = result.GetExpr(wz);
             return x * (y * z);
         }
     }
@@ -78,7 +78,7 @@ namespace Nncase.Transform.Rule
 
         public override Expr GetRePlace(EMatchResult result)
         {
-            return result.Context[wcs[0]].Expr;
+            return result.GetExpr(wcs[0]);
         }
 
     }

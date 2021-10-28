@@ -6,9 +6,19 @@ using Nncase.Transform.Pattern;
 
 namespace Nncase.Transform
 {
-    using EContextEnv = Dictionary<WildCardPattern, ENode>;
+    using EContextEnv = Dictionary<ID, ENode>;
     using Tuple = IR.Tuple;
-    public record EMatchResult(ENode Root, EContextEnv Context);
+    
+    public record EMatchResult(ENode Root, EContextEnv Context)
+    {
+        public Expr GetExpr(ID Id)
+        {
+            return Context[Id].Expr;
+        }
+
+        public Expr GetExpr(ExprPattern pattern) => GetExpr(pattern.Id);
+
+    }
 
     public sealed class EGraphMatcher
     {
@@ -100,33 +110,28 @@ namespace Nncase.Transform
             return (pattern.MatchLeaf((Op)enode.Expr), env);
         }
 
-        private (bool, EContextEnv) UpdateEnv(bool Match, WildCardPattern pattern, ENode enode, EContextEnv env)
+        private (bool, EContextEnv) UpdateEnv(bool Match, EContextEnv env, ExprPattern pattern, ENode enode)
         {
-            if (!Match)
+            if (Match == false)
                 return (Match, env);
 
-            if (!env.ContainsKey(pattern))
+            if (!env.ContainsKey(pattern.Id))
             {
                 var new_env = new EContextEnv(env);
-                new_env.Add(pattern, enode);
+                new_env.Add(pattern.Id, enode);
                 return (true, new_env);
             }
-            return (env[pattern] == enode, env);
+            return (env[pattern.Id] == enode, env);
         }
 
         public (bool, EContextEnv) MatchENode(WildCardPattern pattern, ENode enode, EContextEnv env)
         {
-            if (pattern.SubPattern is not null)
-            {
-                var (match, new_env) = MatchENode(pattern.SubPattern, enode, env);
-                return UpdateEnv(match, pattern, enode, new_env);
-            }
-            return UpdateEnv(true, pattern, enode, env);
+            return (true, env);
         }
 
         public (bool, EContextEnv) MatchENode(ExprPattern pattern, ENode enode, EContextEnv env)
         {
-            return (pattern, enode.Expr) switch
+            var (match, new_env) = (pattern, enode.Expr) switch
             {
                 (VarPattern varPat, Var) => MatchENode(varPat, enode, env),
                 (ConstPattern conPat, Const) => MatchENode(conPat, enode, env),
@@ -137,6 +142,7 @@ namespace Nncase.Transform
                 (WildCardPattern wildcardPat, _) => MatchENode(wildcardPat, enode, env),
                 (_, _) => (false, env)
             };
+            return UpdateEnv(match, new_env, pattern, enode);
         }
 
         public (int, EContextEnv) MatchEclass(ExprPattern pattern, List<ENode> eNodes, EContextEnv env)
@@ -169,7 +175,6 @@ namespace Nncase.Transform
             }
             return matchResults;
         }
-
 
         public static List<EMatchResult> EMatch(EGraph eGraph, ExprPattern pattern) => EMatch(eGraph.EClasses(), pattern);
     }

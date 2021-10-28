@@ -6,9 +6,9 @@ using Nncase.IR;
 namespace Nncase.Transform.Pattern
 {
 
-    public sealed record ConstPattern(Func<Const, bool> Cond) : ExprPattern
+    public sealed record ConstPattern(ID Id, Func<Const, bool> Cond) : ExprPattern(Id)
     {
-        public ConstPattern(Const expr) : this(x => x == expr) { }
+        public ConstPattern(Const expr) : this(Utility.GetID(), x => x == expr) { }
 
         public static implicit operator ConstPattern(byte value) => new ConstPattern((Const)value);
 
@@ -41,19 +41,19 @@ namespace Nncase.Transform.Pattern
         {
             return Cond(expr) && MatchCheckedType(expr);
         }
-
-        public override ExprPattern Dup(string Suffix)
-        => this;
     }
 
     public static partial class Utility
     {
 
-        public static ConstPattern IsConst() => new ConstPattern(x => x is Const);
+        public static ConstPattern IsConst(ID Id) => new ConstPattern(Id, x => x is Const);
 
-        public static ConstPattern IsConst(Func<Const, bool> Cond) => new ConstPattern(Cond);
+        public static ConstPattern IsConst() => IsConst(GetID());
 
-        public static ConstPattern IsConst(Func<float, bool> cond) => new ConstPattern(
+        public static ConstPattern IsConst(ID Id, Func<Const, bool> Cond) => new ConstPattern(Id, Cond);
+        public static ConstPattern IsConst(Func<Const, bool> Cond) => new ConstPattern(GetID(), Cond);
+
+        public static ConstPattern IsConst(ID Id, Func<float, bool> cond) => new ConstPattern(Id,
           x => x.ValueType switch
           {
               TensorType tensor => tensor.IsScalar && (tensor.DataType is (DataType.Float32 or DataType.Float64)) && cond(ToFloat(tensor.DataType, x.Data)),
@@ -61,7 +61,9 @@ namespace Nncase.Transform.Pattern
           }
         );
 
-        public static ConstPattern IsConst(Func<int, bool> cond) => new ConstPattern(
+        public static ConstPattern IsConst(Func<float, bool> cond) => IsConst(GetID(), cond);
+
+        public static ConstPattern IsConst(ID Id, Func<int, bool> cond) => new ConstPattern(Id,
           x => x.ValueType switch
           {
               TensorType tensor => tensor.IsScalar && (tensor.DataType is (DataType.Int8 or DataType.Int16 or DataType.Int32 or DataType.Int64)) && cond(ToInt(tensor.DataType, x.Data)),
@@ -69,15 +71,19 @@ namespace Nncase.Transform.Pattern
           }
         );
 
-        public static ConstPattern IsConstTensor() => new ConstPattern(
+        public static ConstPattern IsConst(Func<int, bool> cond) => IsConst(GetID(), cond);
+
+
+        public static ConstPattern IsConstTensor(ID Id) => new ConstPattern(Id,
           x => x.ValueType switch
           {
               TensorType tensor => tensor.IsTensor,
               _ => false
           }
         );
+        public static ConstPattern IsConstTensor() => IsConstTensor(GetID());
 
-        public static ConstPattern IsConstScalar() => new ConstPattern(
+        public static ConstPattern IsConstScalar(ID Id) => new ConstPattern(Id,
           x => x.ValueType switch
           {
               TensorType tensor => tensor.IsScalar,
@@ -85,9 +91,15 @@ namespace Nncase.Transform.Pattern
           }
         );
 
+        public static ConstPattern IsConstScalar() => IsConstScalar(GetID());
+
+        public static ConstPattern IsConst<T>(ID Id, T Value)
+        where T : unmanaged
+        => new ConstPattern(Id, x => x == Const.FromScalar<T>(Value));
+
         public static ConstPattern IsConst<T>(T Value)
         where T : unmanaged
-        => new ConstPattern(Const.FromScalar<T>(Value));
+        => new ConstPattern(GetID(), x => x == Const.FromScalar<T>(Value));
 
         public static int ToInt(DataType dataType, byte[] bytes) => dataType switch
         {

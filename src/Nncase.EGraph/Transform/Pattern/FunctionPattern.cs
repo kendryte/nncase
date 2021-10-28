@@ -9,33 +9,25 @@ using Nncase.IR;
 
 namespace Nncase.Transform.Pattern
 {
-    public sealed record FunctionPattern(string Name, ExprPattern Body, VArgsPattern Parameters) : ExprPattern
+    public sealed record FunctionPattern(ID Id, ExprPattern Body, VArgsPattern Parameters) : ExprPattern(Id)
     {
-        private static int _globalFuncIndex = 0;
         public FunctionPattern(Function func) : this(
-            $"func_{_globalFuncIndex++}",
+            Utility.GetID(),
             (ExprPattern)func.Body,
             new VArgsPattern((from p in func.Parameters select ((ExprPattern)p)).ToArray()))
         { }
 
+        public FunctionPattern(ExprPattern body, VArgsPattern parameters) : this(Utility.GetID(), body, parameters) { }
 
-        public FunctionPattern(ExprPattern body, VArgsPattern parameters) : this($"func_{_globalFuncIndex++}", body, parameters) { }
-        
 
-        public FunctionPattern(ExprPattern body, params ExprPattern[] parameters) : this($"func_{_globalFuncIndex++}", body, new VArgsPattern(parameters))
+        public FunctionPattern(ExprPattern body, params ExprPattern[] parameters) : this(Utility.GetID(), body, new VArgsPattern(parameters, null))
         {
         }
 
-        public FunctionPattern(ExprPattern body, IRArray<ExprPattern> parameters) : this($"func_{_globalFuncIndex++}", body, new VArgsPattern(parameters))
+        public FunctionPattern(ExprPattern body, IRArray<ExprPattern> parameters) : this(Utility.GetID(), body, new VArgsPattern(parameters, null))
         {
         }
 
-        public bool MatchLeaf(Function func) => Parameters.MatchLeaf(func.Parameters) && MatchCheckedType(func);
-
-        public override ExprPattern Dup(string Suffix) => new FunctionPattern(this.Name, Body.Dup(Suffix), this.Parameters.Dup(Suffix))
-        {
-            CheckedTypePat = this.CheckedTypePat
-        };
-
+        public bool MatchLeaf(Function func) => MatchCheckedType(func);
     }
 }

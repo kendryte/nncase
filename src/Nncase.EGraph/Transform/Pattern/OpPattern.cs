@@ -13,7 +13,7 @@ using Nncase.Transform.Pattern.Tensors;
 
 namespace Nncase.Transform.Pattern
 {
-    public abstract record OpPattern() : ExprPattern
+    public abstract record OpPattern() : ExprPattern(Utility.GetID())
     {
         public bool MatchLeaf(Op op) => (this, op) switch
         {
@@ -25,8 +25,5 @@ namespace Nncase.Transform.Pattern
             (ConcatPattern concatPat, Concat concat) => concatPat.MatchLeaf(concat),
             (_, _) => false
         };
-
-        public override ExprPattern Dup(string Suffix)
-          => this;
     }
 }

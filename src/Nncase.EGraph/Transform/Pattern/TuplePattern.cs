@@ -9,30 +9,27 @@ using Nncase.IR;
 
 namespace Nncase.Transform.Pattern
 {
-    public sealed record TuplePattern(VArgsPattern Fields) : ExprPattern
+    public sealed record TuplePattern(ID Id, VArgsPattern Fields) : ExprPattern(Id)
     {
         public TuplePattern(IR.Tuple tuple) : this(
-          new VArgsPattern(
-            ImmutableArray.Create((from f in tuple.Fields select (ExprPattern)f).ToArray()))
-          )
+          Utility.GetID(),
+          new VArgsPattern((from f in tuple.Fields select (ExprPattern)f).ToArray()))
         { }
 
         public bool MatchLeaf(IR.Tuple tuple)
         {
-            return Fields.MatchLeaf(tuple.Fields) && MatchCheckedType(tuple);
+            return MatchCheckedType(tuple);
         }
-
-        public override ExprPattern Dup(string Suffix)
-        => new TuplePattern(Fields.Dup(Suffix))
-        {
-            CheckedTypePat = this.CheckedTypePat
-        };
 
     }
     public static partial class Utility
     {
-        public static TuplePattern IsTuple(params ExprPattern[] Fields) => new TuplePattern(new VArgsPattern(Fields));
+        public static TuplePattern IsTuple(ID Id, params ExprPattern[] Fields) => new TuplePattern(Id, new VArgsPattern(Fields));
 
-        public static TuplePattern IsTuple(VArgsPattern Fields) => new TuplePattern(Fields);
+        public static TuplePattern IsTuple(params ExprPattern[] Fields) => IsTuple(GetID(), Fields);
+
+        public static TuplePattern IsTuple(ID Id, VArgsPattern Fields) => new TuplePattern(Id, Fields);
+
+        public static TuplePattern IsTuple(VArgsPattern Fields) => IsTuple(GetID(), Fields);
     }
 }

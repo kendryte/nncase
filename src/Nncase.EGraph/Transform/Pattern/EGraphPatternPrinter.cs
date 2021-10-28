@@ -36,13 +36,13 @@ namespace Nncase.Transform
                     node.Color = color;
                     node.Shape = DotNodeShape.Circle;
                 });
-                foreach (var (wc, wcNode) in env)
+                foreach (var (Id, wcNode) in env)
                 {
                     EClass matcheClass = eGraph.Nodes[wcNode];
                     var childeclassCluster = _classes[matcheClass];
                     childeclassCluster.Nodes.Add($"m{matcheClass.Id}_{count}", node =>
                     {
-                        node.Label = $"m {count} :\n {wc.Name}";
+                        node.Label = $"m {count} :\n {Id}";
                         node.Color = color;
                         node.Shape = DotNodeShape.Circle;
                     });
