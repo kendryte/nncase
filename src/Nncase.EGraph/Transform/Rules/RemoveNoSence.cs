@@ -68,8 +68,8 @@ namespace Nncase.Transform.Rule
               {
                   (TensorType type, _) => type.IsScalar switch
                   {
-                      true => CheckScalarIsZero(type.DataType, x.Data),
-                      false => CheckTensorIsZero(type.DataType, x.Data)
+                      true => CheckScalarIsZero(type.DType, x.Data),
+                      false => CheckTensorIsZero(type.DType, x.Data)
                   },
                   (_, _) => false
               }

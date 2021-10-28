@@ -124,7 +124,7 @@ namespace Nncase.Transform
                 {
                     if (((TensorType)expr.ValueType).IsScalar)
                     {
-                        object data = ((TensorType)expr.ValueType).DataType switch
+                        object data = ((TensorType)expr.ValueType).DType switch
                         {
                             DataType.Bool => BitConverter.ToBoolean(expr.Data),
                             DataType.Int16 => BitConverter.ToInt16(expr.Data),
@@ -172,7 +172,7 @@ namespace Nncase.Transform
             public override string VisitType(InvalidType type) => "invalid";
 
             public override string VisitType(TensorType type) =>
-                $"{DataTypes.GetDisplayName(type.DataType)}{type.Shape}";
+                $"{DataTypes.GetDisplayName(type.DType)}{type.Shape}";
 
             public override string VisitType(TupleType type) =>
                 $"({string.Join(", ", type.Fields.Select(VisitType))})";

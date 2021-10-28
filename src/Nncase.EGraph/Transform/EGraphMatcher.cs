@@ -8,7 +8,7 @@ namespace Nncase.Transform
 {
     using EContextEnv = Dictionary<ID, ENode>;
     using Tuple = IR.Tuple;
-    
+
     public record EMatchResult(ENode Root, EContextEnv Context)
     {
         public Expr GetExpr(ID Id)
@@ -17,6 +17,8 @@ namespace Nncase.Transform
         }
 
         public Expr GetExpr(ExprPattern pattern) => GetExpr(pattern.Id);
+
+        public Expr GetRoot() => Root.Expr;
 
     }
 

@@ -4,6 +4,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System.Runtime.CompilerServices;
+// using Microsoft.Toolkit.HighPerformance;
+using System.Buffers;
 
 namespace Nncase.IR
 {
@@ -56,5 +60,8 @@ namespace Nncase.IR
         public static implicit operator ReadOnlySpan<byte>(IRBytes irByte) => irByte._array;
 
         public static implicit operator IRBytes(byte[] array) => new IRBytes(array);
+        
+        public Memory<T> ToMemory<T>()
+          where T : unmanaged => Microsoft.Toolkit.HighPerformance.MemoryExtensions.Cast<byte, T>(_array.AsMemory<byte>());
     }
 }

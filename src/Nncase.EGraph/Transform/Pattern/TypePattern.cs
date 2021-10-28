@@ -29,7 +29,7 @@ namespace Nncase.Transform.Pattern
 
         public static TypePattern HasDType(Func<DataType, bool> DTypeCond) => new TypePattern(x => x switch
          {
-             TensorType ttype => DTypeCond(ttype.DataType),
+             TensorType ttype => DTypeCond(ttype.DType),
              _ => false
          });
 

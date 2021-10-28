@@ -2,18 +2,20 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Numerics.Tensors;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Nncase.IR
 {
     /// <summary>
     /// Constant expression.
     /// </summary>
-    public sealed record Const(IRType ValueType, IRBytes Data) : Expr
+    public sealed record Const(TensorType ValueType, IRBytes Data) : Expr
     {
+
+        public List<Dimension> Shape => new List<Dimension>(ValueType.Shape);
+
+
         /// <summary>
         /// Create constant from a <see cref="byte"/>.
         /// </summary>
@@ -92,6 +94,16 @@ namespace Nncase.IR
         /// <param name="value">Value.</param>
         public static implicit operator Const(bool value) => FromScalar(value);
 
+        public DenseTensor<T> ToTensor<T>()
+           where T : unmanaged
+           => ValueType switch
+           {
+               TensorType dtype => dtype.DType == DataTypes.FromType<T>() ?
+               new DenseTensor<T>(Data.ToMemory<T>(), dtype.Shape) :
+                throw new InvalidCastException($"The Target Type {DataTypes.FromType<T>().ToString()} Is Not Equal Current Type {dtype.DType.ToString()}!"),
+               _ => throw new InvalidCastException($"The {ValueType.GetType().Name} Can't Cast To Tensor!")
+           };
+
         /// <summary>
         /// Create constant from a scalar.
         /// </summary>
@@ -112,5 +124,10 @@ namespace Nncase.IR
         public static Const FromSpan<T>(ReadOnlySpan<T> span, Shape shape)
             where T : unmanaged
             => new(new TensorType(DataTypes.FromType<T>(), shape), DataTypes.GetBytes(span));
+
+        public static Const FromTensor<T>(DenseTensor<T> ts)
+          where T : unmanaged
+          => FromSpan<T>(ts.Buffer.Span, new Shape(ts.Dimensions));
+
     }
 }

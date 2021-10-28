@@ -149,7 +149,7 @@ namespace Nncase.IR
             public override string VisitType(InvalidType type) => "invalid";
 
             public override string VisitType(TensorType type) =>
-                $"{DataTypes.GetDisplayName(type.DataType)}{type.Shape}";
+                $"{DataTypes.GetDisplayName(type.DType)}{type.Shape}";
 
             public override string VisitType(TupleType type) =>
                 $"({string.Join(", ", type.Fields.Select(VisitType))})";

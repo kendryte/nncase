@@ -66,8 +66,8 @@ namespace Nncase.IR
                 throw new ArgumentException("Broadcast must have 2 inputs at least.");
             }
 
-            var dataType = inputs[0].DataType;
-            if (inputs.Any(x => x.DataType != dataType))
+            var dataType = inputs[0].DType;
+            if (inputs.Any(x => x.DType != dataType))
             {
                 return new InvalidType("Inputs of broadcast must have same datatype.");
             }

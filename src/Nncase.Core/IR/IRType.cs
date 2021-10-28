@@ -40,7 +40,7 @@ namespace Nncase.IR
     /// <summary>
     /// Tensor type.
     /// </summary>
-    public sealed record TensorType(DataType DataType, Shape Shape) : IRType
+    public sealed record TensorType(DataType DType, Shape Shape) : IRType
     {
         /// <summary>
         /// Gets a value indicating whether scalar.
@@ -57,21 +57,21 @@ namespace Nncase.IR
         /// </summary>
         /// <param name="dataType">Data type.</param>
         /// <returns>The scalar tensor type.</returns>
-        public static TensorType Scalar(DataType dataType) => new(dataType, Shape.Scalar);
+        public static TensorType Scalar(DataType DType) => new(DType, Shape.Scalar);
 
         /// <summary>
         /// Initialize an unranked tensor type.
         /// </summary>
         /// <param name="dataType">Data type.</param>
         /// <returns>The unranked tensor type.</returns>
-        public static TensorType Unranked(DataType dataType) => new(dataType, Shape.Unranked);
+        public static TensorType Unranked(DataType DType) => new(DType, Shape.Unranked);
 
         /// <summary>
         /// Initialize an invalid tensor type.
         /// </summary>
         /// <param name="dataType">Data type.</param>
         /// <returns>The invalid tensor type.</returns>
-        public static TensorType Invalid(DataType dataType) => new(dataType, Shape.Invalid);
+        public static TensorType Invalid(DataType DType) => new(DType, Shape.Invalid);
     }
 
     /// <summary>

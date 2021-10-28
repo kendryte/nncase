@@ -40,6 +40,7 @@ namespace Nncase.Transform.Pattern
           new CallPattern(Id, new BinaryPattern(binary => OpTypeCond(binary.BinaryOp)), lhs, rhs);
 
         public static CallPattern IsBinary(Func<BinaryOp, bool> OpTypeCond, ExprPattern lhs, ExprPattern rhs) => IsBinary(GetID(), OpTypeCond, lhs, rhs);
+        
         public static CallPattern IsBinary(ID Id, BinaryOp opType, ExprPattern lhs, ExprPattern rhs) =>
           IsBinary(Id, binaryOp => opType == binaryOp, lhs, rhs);
 

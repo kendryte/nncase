@@ -230,7 +230,7 @@ namespace Nncase.IR
             if (other is null)
             {
                 return false;
-            }          
+            }
             return _dimensions.SequenceEqual(other._dimensions);
         }
 
@@ -238,5 +238,8 @@ namespace Nncase.IR
         {
             return HashCode.Combine(StructuralComparisons.StructuralEqualityComparer.GetHashCode(_dimensions));
         }
+
+        public static implicit operator ReadOnlySpan<int>(Shape shape) => shape._dimensions.Select(x => (int)(x.Value ?? -1)).ToArray();
+
     }
 }
