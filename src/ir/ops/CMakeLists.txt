@@ -17,6 +17,7 @@ target_sources(ir PRIVATE
     concat.cpp
     clamp.cpp
     constant.cpp
+    hardmax.cpp
     quantize.cpp
     dequantize.cpp
     unary.cpp

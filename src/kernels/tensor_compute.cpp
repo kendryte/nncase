@@ -262,3 +262,13 @@ result<void> kernels::cumsum(const T *input, T *output, const runtime_shape_t &i
 {
     return cpu::reference::cumsum(input, output, in_shape, axis, exclusive, reverse);
 }
+
+template result<void> kernels::hardmax<float>(const float *input, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides,
+    float *output, int32_t axis) noexcept;
+
+template <typename T>
+result<void> kernels::hardmax(const T *input, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides,
+    T *output, int32_t axis) noexcept
+{
+    return cpu::reference::hardmax(input, in_shape, in_strides, output, axis);
+}
