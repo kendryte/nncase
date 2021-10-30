@@ -39,7 +39,7 @@ namespace Nncase.IR
         /// Initializes a new instance of the <see cref="Dimension"/> struct.
         /// </summary>
         /// <param name="value">Dimension value.</param>
-        public Dimension(long value)
+        public Dimension(int value)
         {
             Kind = DimensionKind.Fixed;
             Value = value;
@@ -53,7 +53,7 @@ namespace Nncase.IR
         /// <summary>
         /// Gets value.
         /// </summary>
-        public long? Value { get; }
+        public int? Value { get; }
 
         /// <summary>
         /// Gets a value indicating whether unknown.
@@ -69,7 +69,7 @@ namespace Nncase.IR
         /// Convert <see cref="long"/> to a fixed <see cref="Dimension"/>.
         /// </summary>
         /// <param name="value">Dimension value.</param>
-        public static implicit operator Dimension(long value) => new(value);
+        public static implicit operator Dimension(int value) => new(value);
 
         public static bool operator ==(Dimension left, Dimension right)
         {

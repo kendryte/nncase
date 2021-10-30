@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Nncase.IR;
 using Nncase.IR.Math;
@@ -30,7 +31,8 @@ namespace Nncase.Transform.Rule
 
     public class TransposeConstantBinaryMotion : EGraphRule
     {
-        protected ID wx = "x", wperm = "perm", wcon = "con";
+        protected WildCardPattern wx = "x";
+        protected ConstPattern wperm = IsConstTensor(), wcon = IsConst();
 
         protected Expr x;
         protected Const con, perm;
@@ -67,7 +69,7 @@ namespace Nncase.Transform.Rule
     {
         public override ExprPattern GetPattern()
         {
-            return IsBinary(Transpose(IsWildCard(wx), IsConst(wperm)), IsConst(wcon));
+            return IsBinary(Transpose(wx, wperm), wcon);
         }
 
         public override Expr GetRePlace(EMatchResult result)
@@ -81,7 +83,7 @@ namespace Nncase.Transform.Rule
     {
         public override ExprPattern GetPattern()
         {
-            return IsBinary(IsConst(wcon), Transpose(IsWildCard(wx), IsConst(wperm)));
+            return IsBinary(wcon, Transpose(wx, wperm));
         }
 
         public override Expr GetRePlace(EMatchResult result)
@@ -106,24 +108,26 @@ namespace Nncase.Transform.Rule
             }
         }
         private Func<Const, bool> permCond = new(new Comparer().Cond);
+        List<WildCardPattern> wcinputs = new();
+        ConstPattern wcprem, wcaxis;
 
-        ID wcprem = "wcprem", wcaxis = "axis";
-
-        List<ID> wcinputs = new();
+        public TransposeConcatMotion()
+        {
+            wcprem = IsConstTensor();
+            wcaxis = IsConstScalar();
+        }
 
         public override ExprPattern GetPattern()
         {
-            return Concat(IsTuple(IsVArgsRepeat(n =>
-            {
-                var ret = new ExprPattern[n];
-                for (int i = 0; i < n; i++)
-                {
-                    var wcin = IsWildCard();
-                    ret[i] = Transpose(wcin, IsConst(wcprem, permCond));
-                }
-                return ret;
-            }
-            )), IsConst(wcaxis));
+            return Concat(IsTuple(IsVArgsRepeat((n, param) =>
+             {
+                 for (int i = 0; i < n; i++)
+                 {
+                     var wcin = IsWildCard();
+                     param.Add(Transpose(wcin, wcprem));
+                 }
+             }
+            )), wcaxis);
         }
 
         public override Expr GetRePlace(EMatchResult result)
@@ -141,13 +145,52 @@ namespace Nncase.Transform.Rule
 
     }
 
-    // public class TransPosePadMotion : EGraphRule
-    // {
-    //     ID wcpad = "pad", wctran = "tran", wcperm = "perm";
-    //     public override ExprPattern GetPattern()
-    //     {
-    //         Transpose(Pad(), IsConst("perm"));
-    //     }
-    // }
+    public class TransPosePadMotion : EGraphRule
+    {
+        WildCardPattern wcin = "input";
+        List<ConstPattern> wcpads = new();
+
+        ConstPattern wcmode = IsConstScalar(), wcpadv = IsConstScalar(), wcperm = IsConstScalar();
+
+        public override ExprPattern GetPattern()
+        {
+            return Transpose(Pad(wcin, IsTuple(IsVArgsRepeat(
+              (n, param) =>
+              {
+                  for (int i = 0; i < n; i++)
+                  {
+                      var pad = IsConstTensor();
+                      wcpads.Add(pad);
+                      param.Add(pad);
+                  }
+              },
+              (match, param) =>
+              {
+                  if (!match)
+                  {
+                      wcpads.Clear();
+                      param.Clear();
+                  }
+              }
+            )), wcmode, wcpadv), wcperm);
+        }
+
+        public override Expr GetRePlace(EMatchResult result)
+        {
+            var input = result.GetExpr(wcin);
+            var (mode, padv, perm) = result.GetExpr(wcmode, wcpadv, wcperm);
+            var newPads = perm.ToTensor<int>().Select(i => (Expr)result.GetExpr(wcpads[i])).ToImmutableArray();
+            return Pad(Transpose(input, perm), new IR.Tuple(newPads), mode, padv);
+        }
+    }
+
+    public class TransposeReduceMotion : EGraphRule
+    {
+
+        // public override ExprPattern GetPattern()
+        // {
+
+        // }
+    }
 
 }

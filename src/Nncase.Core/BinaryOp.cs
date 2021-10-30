@@ -84,4 +84,12 @@ namespace Nncase
         /// </summary>
         LogicalXor,
     }
+
+    public enum ReduceOp
+    {
+        Mean,
+        Min,
+        Max,
+        Sum
+    }
 }

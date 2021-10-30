@@ -6,9 +6,9 @@ using Nncase.IR;
 namespace Nncase.Transform.Pattern
 {
 
-    public sealed record ConstPattern(ID Id, Func<Const, bool> Cond) : ExprPattern(Id)
+    public sealed record ConstPattern(Func<Const, bool> Cond) : ExprPattern
     {
-        public ConstPattern(Const expr) : this(Utility.GetID(), x => x == expr) { }
+        public ConstPattern(Const expr) : this(x => x == expr) { }
 
         public static implicit operator ConstPattern(byte value) => new ConstPattern((Const)value);
 
@@ -46,44 +46,42 @@ namespace Nncase.Transform.Pattern
     public static partial class Utility
     {
 
-        public static ConstPattern IsConst(ID Id) => new ConstPattern(Id, x => x is Const);
+        public static ConstPattern IsConst() => new ConstPattern(x => x is Const);
 
-        public static ConstPattern IsConst() => IsConst(GetID());
 
-        public static ConstPattern IsConst(ID Id, Func<Const, bool> Cond) => new ConstPattern(Id, Cond);
-        public static ConstPattern IsConst(Func<Const, bool> Cond) => new ConstPattern(GetID(), Cond);
+        public static ConstPattern IsConst(Func<Const, bool> Cond) => new ConstPattern(Cond);
 
-        public static ConstPattern IsConst(ID Id, Func<float, bool> cond) => new ConstPattern(Id,
+        public static ConstPattern IsConst(Func<float, bool> cond) => new ConstPattern(
           x => x.ValueType switch
           {
-              TensorType tensor => tensor.IsScalar && (tensor.DType is (DataType.Float32 or DataType.Float64)) && cond(ToFloat(tensor.DType, x.Data)),
+              TensorType tensor => tensor.IsScalar &&
+                   (tensor.DType is (DataType.BFloat16 or DataType.Float16 or DataType.Float32 or DataType.Float64)) &&
+                   cond(DataTypes.ToScalar<float>(tensor.DType, x.Data)),
               _ => false
           }
         );
 
-        public static ConstPattern IsConst(Func<float, bool> cond) => IsConst(GetID(), cond);
 
-        public static ConstPattern IsConst(ID Id, Func<int, bool> cond) => new ConstPattern(Id,
+        public static ConstPattern IsConst(Func<int, bool> cond) => new ConstPattern(
           x => x.ValueType switch
           {
-              TensorType tensor => tensor.IsScalar && (tensor.DType is (DataType.Int8 or DataType.Int16 or DataType.Int32 or DataType.Int64)) && cond(ToInt(tensor.DType, x.Data)),
+              TensorType tensor => tensor.IsScalar &&
+                (tensor.DType is (DataType.UInt8 or DataType.UInt16 or DataType.UInt32 or DataType.UInt64 or
+                                  DataType.Int8 or DataType.Int16 or DataType.Int32 or DataType.Int64))
+                  && cond(DataTypes.ToScalar<int>(tensor.DType, x.Data)),
               _ => false
           }
         );
 
-        public static ConstPattern IsConst(Func<int, bool> cond) => IsConst(GetID(), cond);
-
-
-        public static ConstPattern IsConstTensor(ID Id) => new ConstPattern(Id,
+        public static ConstPattern IsConstTensor() => new ConstPattern(
           x => x.ValueType switch
           {
               TensorType tensor => tensor.IsTensor,
               _ => false
           }
         );
-        public static ConstPattern IsConstTensor() => IsConstTensor(GetID());
 
-        public static ConstPattern IsConstScalar(ID Id) => new ConstPattern(Id,
+        public static ConstPattern IsConstScalar() => new ConstPattern(
           x => x.ValueType switch
           {
               TensorType tensor => tensor.IsScalar,
@@ -91,42 +89,11 @@ namespace Nncase.Transform.Pattern
           }
         );
 
-        public static ConstPattern IsConstScalar() => IsConstScalar(GetID());
-
-        public static ConstPattern IsConst<T>(ID Id, T Value)
-        where T : unmanaged
-        => new ConstPattern(Id, x => x == Const.FromScalar<T>(Value));
-
         public static ConstPattern IsConst<T>(T Value)
         where T : unmanaged
-        => new ConstPattern(GetID(), x => x == Const.FromScalar<T>(Value));
+        => new ConstPattern(x => x == Const.FromScalar<T>(Value));
 
-        public static int ToInt(DataType dataType, byte[] bytes) => dataType switch
-        {
-            DataType.Int64 => (int)BitConverter.ToInt64(bytes),
-            DataType.Int32 => (int)BitConverter.ToInt32(bytes),
-            DataType.Int16 => (int)BitConverter.ToInt16(bytes),
-            DataType.Int8 => (int)bytes[0],
-            _ => throw new InvalidCastException($"Can't Cast Bytes Data")
-        };
-        public static uint ToUInt(DataType dataType, byte[] bytes) =>
-        dataType switch
-        {
-            DataType.UInt64 => (uint)BitConverter.ToUInt64(bytes),
-            DataType.UInt32 => (uint)BitConverter.ToUInt32(bytes),
-            DataType.UInt16 => (uint)BitConverter.ToUInt16(bytes),
-            DataType.UInt8 => (uint)bytes[0],
-            _ => throw new InvalidCastException($"Can't Cast Bytes Data")
-        };
 
-        public static float ToFloat(DataType dataType, byte[] bytes) =>
-        dataType switch
-        {
-            DataType.Float64 => (float)BitConverter.ToDouble(bytes),
-            DataType.Float32 => (float)BitConverter.ToSingle(bytes),
-            DataType.BFloat16 => (float)(new BFloat16(bytes[0])),
-            _ => throw new InvalidCastException($"Can't Cast Bytes Data")
-        };
 
     }
 

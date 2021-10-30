@@ -6,23 +6,37 @@ using Nncase.Transform.Pattern;
 
 namespace Nncase.Transform
 {
-    using EContextEnv = Dictionary<ID, ENode>;
+    using EContextEnv = Dictionary<ExprPattern, ENode>;
     using Tuple = IR.Tuple;
 
     public record EMatchResult(ENode Root, EContextEnv Context)
     {
-        public Expr GetExpr(ID Id)
+        public Expr GetExpr(ExprPattern expr)
         {
-            return Context[Id].Expr;
-        }
-        public T GetExpr<T>(ID Id) where T : Expr
-        {
-            return (T)Context[Id].Expr;
+            return Context[expr].Expr;
         }
 
-        public Expr GetExpr(ExprPattern pattern) => GetExpr(pattern.Id);
+        public Var GetExpr(VarPattern pat) => (Var)Context[pat].Expr;
+        public Const GetExpr(ConstPattern pat) => (Const)Context[pat].Expr;
+        public Function GetExpr(FunctionPattern pat) => (Function)Context[pat].Expr;
+        public Call GetExpr(CallPattern pat) => (Call)Context[pat].Expr;
+        public Tuple GetExpr(TuplePattern pat) => (Tuple)Context[pat].Expr;
+
+
+        public T GetExpr<T>(ExprPattern expr) where T : Expr
+        {
+            return (T)Context[expr].Expr;
+        }
 
         public Expr GetRoot() => Root.Expr;
+
+        public T GetRoot<T>() where T : Expr
+        {
+            return (T)Root.Expr;
+        }
+
+        public (Const, Const) GetExpr(ConstPattern pat1, ConstPattern pat2) => (GetExpr(pat1), GetExpr(pat2));
+        public (Const, Const, Const) GetExpr(ConstPattern pat1, ConstPattern pat2, ConstPattern pat3) => (GetExpr(pat1), GetExpr(pat2), GetExpr(pat3));
 
     }
 
@@ -55,10 +69,12 @@ namespace Nncase.Transform
                 new_env = looped_env; /* update env */
                 if (matchIdx == -1)
                 {
+                    Patterns.MatchEnd(false);
                     return (false, env);
                 }
                 i++;
             }
+            Patterns.MatchEnd(true);
             return (true, new_env);
         }
 
@@ -121,13 +137,13 @@ namespace Nncase.Transform
             if (Match == false)
                 return (Match, env);
 
-            if (!env.ContainsKey(pattern.Id))
+            if (!env.ContainsKey(pattern))
             {
                 var new_env = new EContextEnv(env);
-                new_env.Add(pattern.Id, enode);
+                new_env.Add(pattern, enode);
                 return (true, new_env);
             }
-            return (env[pattern.Id] == enode, env);
+            return (env[pattern] == enode, env);
         }
 
         public (bool, EContextEnv) MatchENode(WildCardPattern pattern, ENode enode, EContextEnv env)

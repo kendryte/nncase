@@ -115,6 +115,22 @@ namespace Nncase
             { typeof(double).TypeHandle, DataType.Float64 }
         };
 
+        private static readonly Dictionary<DataType, int> _DataTypeToLengths = new()
+        {
+            { DataType.UInt8, 1 },
+            { DataType.UInt16, 2 },
+            { DataType.UInt32, 4 },
+            { DataType.UInt64, 8 },
+            { DataType.Int8, 1 },
+            { DataType.Int16, 2 },
+            { DataType.Int32, 4 },
+            { DataType.Int64, 8 },
+            { DataType.Float16, 2 },
+            { DataType.BFloat16, 2 },
+            { DataType.Float32, 4 },
+            { DataType.Float64, 8 }
+        };
+
         /// <summary>
         /// Get data type from CLR type.
         /// </summary>
@@ -138,6 +154,8 @@ namespace Nncase
         public static DataType FromType<T>()
             where T : unmanaged
             => FromType(typeof(T));
+
+        public static int GetLength(DataType dataType) => _DataTypeToLengths[dataType];
 
         /// <summary>
         /// Convert unmanaged type to bytes.
@@ -168,5 +186,26 @@ namespace Nncase
         {
             return typeof(DataType).GetField(Enum.GetName(dataType)!)!.GetCustomAttribute<DisplayAttribute>()?.GetName() ?? dataType.ToString();
         }
+
+        public static T ToScalar<T>(DataType dataType, byte[] bytes, int start = 0)
+        where T : unmanaged
+        => dataType switch
+        {
+            DataType.Int64 => (T)(object)BitConverter.ToInt64(bytes, start),
+            DataType.Int32 => (T)(object)BitConverter.ToInt32(bytes, start),
+            DataType.Int16 => (T)(object)BitConverter.ToInt16(bytes, start),
+            DataType.Int8 => (T)(object)bytes[start],
+            DataType.UInt64 => (T)(object)BitConverter.ToUInt64(bytes, start),
+            DataType.UInt32 => (T)(object)BitConverter.ToUInt32(bytes, start),
+            DataType.UInt16 => (T)(object)BitConverter.ToUInt16(bytes, start),
+            DataType.UInt8 => (T)(object)bytes[start],
+            DataType.Float64 => (T)(object)BitConverter.ToDouble(bytes, start),
+            DataType.Float32 => (T)(object)BitConverter.ToSingle(bytes, start),
+            DataType.BFloat16 => (T)(object)(new BFloat16(bytes[start])),
+            DataType.Float16 => (T)(object)(Half)(bytes[start]),
+            DataType.Bool => (T)(object)BitConverter.ToBoolean(bytes, start),
+            // DataType.String => (T)(object)BitConverter.ToString(bytes, start),
+            _ => throw new InvalidCastException($"Can't Cast the {dataType.ToString()}!")
+        };
     }
 }

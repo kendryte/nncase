@@ -6,25 +6,21 @@ using Nncase.IR;
 
 namespace Nncase.Transform.Pattern
 {
-    public sealed record WildCardPattern(ID Id) : ExprPattern(Id)
+    public sealed record WildCardPattern(string Name) : ExprPattern
     {
-        public WildCardPattern() : this(Utility.GetID())
-        {
-        }
 
-        public static implicit operator WildCardPattern(string Prefix) => Utility.IsWildCard(Prefix);
+        public WildCardPattern() : this($"wc") { }
+
+        public static implicit operator WildCardPattern(string Name) => new WildCardPattern(Name);
 
         public override bool MatchLeaf(Expr expr) => MatchCheckedType(expr);
-
     }
 
     public static partial class Utility
     {
-        public static WildCardPattern IsWildCard(ID Id) => new WildCardPattern(Id);
+        public static WildCardPattern IsWildCard() => new WildCardPattern();
 
-        public static WildCardPattern IsWildCard(string Prefix) => new WildCardPattern(GetID(Prefix));
-
-        public static WildCardPattern IsWildCard() => IsWildCard(GetID());
+        public static WildCardPattern IsWildCard(string Name) => new WildCardPattern(Name);
     }
 
 }

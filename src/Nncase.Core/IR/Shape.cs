@@ -62,7 +62,7 @@ namespace Nncase.IR
         public Shape(IEnumerable<long> dimensions)
         {
             Kind = ShapeKind.Fixed;
-            _dimensions = dimensions.Select(x => new Dimension(x)).ToList().AsReadOnly();
+            _dimensions = dimensions.Select(x => new Dimension((int)x)).ToList().AsReadOnly();
         }
 
         public static implicit operator Shape(int[] dimensions) => new Shape((ReadOnlySpan<int>)dimensions);
@@ -94,7 +94,7 @@ namespace Nncase.IR
         public Shape(ReadOnlySpan<long> dimensions)
         {
             Kind = ShapeKind.Fixed;
-            _dimensions = dimensions.AsValueEnumerable().Select(x => new Dimension(x)).ToList().AsReadOnly();
+            _dimensions = dimensions.AsValueEnumerable().Select(x => new Dimension((int)x)).ToList().AsReadOnly();
         }
 
         /// <summary>

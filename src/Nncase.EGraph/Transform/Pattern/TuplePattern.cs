@@ -9,11 +9,10 @@ using Nncase.IR;
 
 namespace Nncase.Transform.Pattern
 {
-    public sealed record TuplePattern(ID Id, VArgsPattern Fields) : ExprPattern(Id)
+    public sealed record TuplePattern(VArgsPattern Fields) : ExprPattern
     {
         public TuplePattern(IR.Tuple tuple) : this(
-          Utility.GetID(),
-          new VArgsPattern((from f in tuple.Fields select (ExprPattern)f).ToArray()))
+          new FixedVArgsPattern((from f in tuple.Fields select (ExprPattern)f).ToArray()))
         { }
 
         public bool MatchLeaf(IR.Tuple tuple)
@@ -24,12 +23,9 @@ namespace Nncase.Transform.Pattern
     }
     public static partial class Utility
     {
-        public static TuplePattern IsTuple(ID Id, params ExprPattern[] Fields) => new TuplePattern(Id, new VArgsPattern(Fields));
+        public static TuplePattern IsTuple(params ExprPattern[] Fields) => new TuplePattern(new FixedVArgsPattern(Fields));
 
-        public static TuplePattern IsTuple(params ExprPattern[] Fields) => IsTuple(GetID(), Fields);
+        public static TuplePattern IsTuple(VArgsPattern Fields) => new TuplePattern(Fields);
 
-        public static TuplePattern IsTuple(ID Id, VArgsPattern Fields) => new TuplePattern(Id, Fields);
-
-        public static TuplePattern IsTuple(VArgsPattern Fields) => IsTuple(GetID(), Fields);
     }
 }

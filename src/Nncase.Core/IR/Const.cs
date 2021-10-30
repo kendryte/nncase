@@ -94,17 +94,36 @@ namespace Nncase.IR
         /// <param name="value">Value.</param>
         public static implicit operator Const(bool value) => FromScalar(value);
 
+
+        private DenseTensor<T> ToTensor<T>(DataType destType)
+          where T : unmanaged
+        {
+            var src = (byte[])Data;
+            var src_stride = DataTypes.GetLength(ValueType.DType);
+            var n = src.Length / src_stride;
+            var dest = new T[n];
+            for (int i = 0; i < n; i++)
+            {
+                dest[i] = DataTypes.ToScalar<T>(destType, src, src_stride * i);
+            }
+            return new DenseTensor<T>(dest, ValueType.Shape);
+        }
+
         public DenseTensor<T> ToTensor<T>()
            where T : unmanaged
-           => ValueType.DType == DataTypes.FromType<T>() ?
-             new DenseTensor<T>(Data.ToMemory<T>(), ValueType.Shape) :
-              throw new InvalidCastException($"The Target Type {DataTypes.FromType<T>().ToString()} Is Not Equal Current Type {ValueType.DType.ToString()}!");
+        {
+            var srcType = ValueType.DType;
+            var destType = DataTypes.FromType<T>();
+            if (srcType == destType)
+                return new DenseTensor<T>(Data.ToMemory<T>(), ValueType.Shape);
+            else
+                return ToTensor<T>(destType);
+        }
 
         public T ToScalar<T>()
           where T : unmanaged
-          => ValueType.IsScalar ?
-           ToTensor<T>()[0] :
-           throw new InvalidCastException($"This Const is Not Scalar!");
+          => ValueType.IsScalar ? DataTypes.ToScalar<T>(DataTypes.FromType<T>(), Data, 0) :
+          throw new InvalidCastException($"This Const is Not Scalar!");
 
         /// <summary>
         /// Create constant from a scalar.

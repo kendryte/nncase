@@ -20,21 +20,21 @@ namespace Nncase.Transform.Pattern
         /// </summary>
         /// <param name="lhs">Source operand.</param>
         /// <returns>Result.</returns>
-        public static CallPattern operator -(ExprPattern lhs) => Neg(Utility.GetID(), lhs);
+        public static CallPattern operator -(ExprPattern lhs) => Neg(lhs);
 
         /// <summary>
         /// Unary bitwise not.
         /// </summary>
         /// <param name="lhs">Source operand.</param>
         /// <returns>Result.</returns>
-        public static CallPattern operator ~(ExprPattern lhs) => BitwiseNot(Utility.GetID(), lhs);
+        public static CallPattern operator ~(ExprPattern lhs) => BitwiseNot(lhs);
 
         /// <summary>
         /// Unary logical not.
         /// </summary>
         /// <param name="lhs">Source operand.</param>
         /// <returns>Result.</returns>
-        public static CallPattern operator !(ExprPattern lhs) => LogicalNot(Utility.GetID(), lhs);
+        public static CallPattern operator !(ExprPattern lhs) => LogicalNot(lhs);
 
         /// <summary>
         /// Binary add.
@@ -42,7 +42,7 @@ namespace Nncase.Transform.Pattern
         /// <param name="lhs">Left operand.</param>
         /// <param name="rhs">Right operand.</param>
         /// <returns>Result.</returns>
-        public static CallPattern operator +(ExprPattern lhs, ExprPattern rhs) => Add(Utility.GetID(), lhs, rhs);
+        public static CallPattern operator +(ExprPattern lhs, ExprPattern rhs) => Add(lhs, rhs);
 
         /// <summary>
         /// Binary sub.
@@ -50,7 +50,7 @@ namespace Nncase.Transform.Pattern
         /// <param name="lhs">Left operand.</param>
         /// <param name="rhs">Right operand.</param>
         /// <returns>Result.</returns>
-        public static CallPattern operator -(ExprPattern lhs, ExprPattern rhs) => Sub(Utility.GetID(), lhs, rhs);
+        public static CallPattern operator -(ExprPattern lhs, ExprPattern rhs) => Sub(lhs, rhs);
 
         /// <summary>
         /// Binary mul.
@@ -58,7 +58,7 @@ namespace Nncase.Transform.Pattern
         /// <param name="lhs">Left operand.</param>
         /// <param name="rhs">Right operand.</param>
         /// <returns>Result.</returns>
-        public static CallPattern operator *(ExprPattern lhs, ExprPattern rhs) => Mul(Utility.GetID(), lhs, rhs);
+        public static CallPattern operator *(ExprPattern lhs, ExprPattern rhs) => Mul(lhs, rhs);
 
         /// <summary>
         /// Binary div.
@@ -66,7 +66,7 @@ namespace Nncase.Transform.Pattern
         /// <param name="lhs">Left operand.</param>
         /// <param name="rhs">Right operand.</param>
         /// <returns>Result.</returns>
-        public static CallPattern operator /(ExprPattern lhs, ExprPattern rhs) => Div(Utility.GetID(), lhs, rhs);
+        public static CallPattern operator /(ExprPattern lhs, ExprPattern rhs) => Div(lhs, rhs);
 
         /// <summary>
         /// Binary mod.
@@ -74,7 +74,7 @@ namespace Nncase.Transform.Pattern
         /// <param name="lhs">Left operand.</param>
         /// <param name="rhs">Right operand.</param>
         /// <returns>Result.</returns>
-        public static CallPattern operator %(ExprPattern lhs, ExprPattern rhs) => Mod(Utility.GetID(), lhs, rhs);
+        public static CallPattern operator %(ExprPattern lhs, ExprPattern rhs) => Mod(lhs, rhs);
 
         /// <summary>
         /// Binary bitwise and.
@@ -82,7 +82,7 @@ namespace Nncase.Transform.Pattern
         /// <param name="lhs">Left operand.</param>
         /// <param name="rhs">Right operand.</param>
         /// <returns>Result.</returns>
-        public static CallPattern operator &(ExprPattern lhs, ExprPattern rhs) => BitwiseAnd(Utility.GetID(), lhs, rhs);
+        public static CallPattern operator &(ExprPattern lhs, ExprPattern rhs) => BitwiseAnd(lhs, rhs);
 
         /// <summary>
         /// Binary bitwise or.
@@ -90,7 +90,7 @@ namespace Nncase.Transform.Pattern
         /// <param name="lhs">Left operand.</param>
         /// <param name="rhs">Right operand.</param>
         /// <returns>Result.</returns>
-        public static CallPattern operator |(ExprPattern lhs, ExprPattern rhs) => BitwiseOr(Utility.GetID(), lhs, rhs);
+        public static CallPattern operator |(ExprPattern lhs, ExprPattern rhs) => BitwiseOr(lhs, rhs);
 
         /// <summary>
         /// Binary bitwise xor.
@@ -98,6 +98,6 @@ namespace Nncase.Transform.Pattern
         /// <param name="lhs">Left operand.</param>
         /// <param name="rhs">Right operand.</param>
         /// <returns>Result.</returns>
-        public static CallPattern operator ^(ExprPattern lhs, ExprPattern rhs) => BitwiseXor(Utility.GetID(), lhs, rhs);
+        public static CallPattern operator ^(ExprPattern lhs, ExprPattern rhs) => BitwiseXor(lhs, rhs);
     }
 }

@@ -38,20 +38,7 @@ namespace Nncase.Transform.Rule
     {
 
         private bool CheckScalarIsZero(DataType dataType, IRBytes bytes)
-        =>
-            dataType switch
-            {
-                (DataType.Int8 or DataType.Int16
-                or DataType.Int32 or DataType.Int64)
-                => ToInt(dataType, bytes) == 0,
-                (DataType.UInt8 or DataType.UInt16
-                or DataType.UInt32 or DataType.UInt64)
-                => ToUInt(dataType, bytes) == 0,
-                (DataType.BFloat16 or DataType.Float16
-                or DataType.Float32 or DataType.Float64)
-                => ToFloat(dataType, bytes) == 0.0f,
-                _ => ToFloat(dataType, bytes) == 0.0f
-            };
+        => DataTypes.ToScalar<float>(dataType, bytes) == 0.0f;
 
 
         private bool CheckTensorIsZero(DataType dataType, IRBytes bytes)

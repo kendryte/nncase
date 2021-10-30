@@ -25,5 +25,15 @@ namespace Nncase.IR.F
         public static Call Concat(Tuple input, Expr axis) => new Call(new Concat(), input, axis);
 
         public static Call Pad(Expr Input, Tuple Pads, Expr Mode, Expr Value) => new Call(new Pad(), Input, Pads, Mode, Value);
+
+        public static Call ReduceMean(Expr InShape, Expr Axis, Expr InitValue, Expr KeepDims) => new Call(new Reduce(ReduceOp.Mean), InShape, Axis, InitValue, KeepDims);
+
+        public static Call ReduceMin(Expr InShape, Expr Axis, Expr InitValue, Expr KeepDims) => new Call(new Reduce(ReduceOp.Min), InShape, Axis, InitValue, KeepDims);
+
+        public static Call ReduceMax(Expr InShape, Expr Axis, Expr InitValue, Expr KeepDims) => new Call(new Reduce(ReduceOp.Max), InShape, Axis, InitValue, KeepDims);
+        
+        public static Call ReduceSum(Expr InShape, Expr Axis, Expr InitValue, Expr KeepDims) => new Call(new Reduce(ReduceOp.Sum), InShape, Axis, InitValue, KeepDims);
+
+
     }
 }

@@ -44,6 +44,22 @@ namespace Nncase.Tests
         }
 
         [Fact]
+        public void TestConstantPatternEqual()
+        {
+            ConstPattern cp1 = (ConstPattern)1;
+            ConstPattern cp2 = (ConstPattern)1;
+            Dictionary<ConstPattern, int> d = new();
+            d.Add(cp1, 1);
+            Assert.NotEqual(cp1, cp2);
+            Assert.DoesNotContain(cp2, d.Keys);
+            ConstPattern cp3 = IsConst();
+            ConstPattern cp4 = IsConst();
+            d.Add(cp3, 1);
+            Assert.NotEqual(cp3, cp4);
+            Assert.DoesNotContain(cp4, d.Keys);
+        }
+
+        [Fact]
         public void TestWildcardPattern()
         {
             var wc = IsWildCard();
@@ -54,13 +70,12 @@ namespace Nncase.Tests
         public void TestWildCardPatternHash()
         {
             var wc = IsWildCard();
-            var id = GetID();
-            var wc2 = new WildCardPattern(id);
-            var wc3 = new WildCardPattern(id);
+            var wc2 = new WildCardPattern();
+            var wc3 = new WildCardPattern(wc2.Name);
             var d = new Dictionary<WildCardPattern, int>();
             d.Add(wc, 1);
             d.Add(wc2, 2);
-            Assert.Equal(d[wc3], 2);
+            d.Add(wc3, 2);
         }
 
         [Fact]
@@ -99,7 +114,7 @@ namespace Nncase.Tests
             Assert.IsType<WildCardPattern>(((CallPattern)fp.Body).Parameters[0]);
             Assert.IsType<WildCardPattern>(((CallPattern)fp.Body).Parameters[1]);
 
-            var fp2 = new FunctionPattern(c, new VArgsPattern(wc1, wc2));
+            var fp2 = new FunctionPattern(c, IsVArgs(wc1, wc2));
             Assert.IsType<WildCardPattern>(fp.Parameters[0]);
             Assert.IsType<WildCardPattern>(fp.Parameters[1]);
         }
@@ -114,7 +129,7 @@ namespace Nncase.Tests
             Assert.IsType<WildCardPattern>(t.Fields[0]);
             Assert.IsType<WildCardPattern>(t.Fields[1]);
 
-            var t2 = IsTuple(new VArgsPattern(wc1, wc2));
+            var t2 = IsTuple(IsVArgs(wc1, wc2));
             Assert.IsType<TuplePattern>(t2);
             Assert.IsType<WildCardPattern>(t2.Fields[0]);
             Assert.IsType<WildCardPattern>(t2.Fields[1]);
@@ -125,18 +140,26 @@ namespace Nncase.Tests
         {
             var wc = IsWildCard();
             var vwcs = new List<ExprPattern>();
-            var pattern = IsVArgsRepeat(n =>
+            var pattern = IsVArgsRepeat((n, param) =>
             {
-                var pats = new ExprPattern[n];
                 for (int i = 0; i < n; i++)
                 {
-                    pats[i] = IsWildCard();
-                    vwcs.Add(pats[i]);
+                    var wc = IsWildCard();
+                    param.Add(wc);
+                    vwcs.Add(wc);
                 }
-                return pats;
-            });
+            },
+            (match, param) =>
+            {
+                if (match == false)
+                {
+                    param.Clear();
+                    vwcs.Clear();
+                }
+            }
+            );
 
-            var tuple = new IR.Tuple(1, 2, 3, 4);
+            var tuple = new IR.Tuple(1, new IR.Tuple(6, 7, 8), 3, 4);
             Assert.Equal(pattern.MatchLeaf(tuple.Fields), true);
             Assert.Equal(pattern[0].MatchLeaf(tuple[0]), true);
             Assert.Equal(pattern[1].MatchLeaf(tuple[1]), true);
@@ -226,8 +249,8 @@ namespace Nncase.Tests
             var res = EGraphMatcher.EMatch(eGraph, pat);
 
             Assert.Equal(res.Count, 1);
-            Assert.Contains(wcx.Id, res[0].Context.Keys);
-            Assert.Contains(wcy.Id, res[0].Context.Keys);
+            Assert.Contains(wcx, res[0].Context.Keys);
+            Assert.Contains(wcy, res[0].Context.Keys);
         }
 
         [Fact]
@@ -245,8 +268,8 @@ namespace Nncase.Tests
             var res = EGraphMatcher.EMatch(eGraph, pat);
 
             Assert.Equal(res.Count, 1);
-            Assert.Contains(wcx.Id, res[0].Context.Keys);
-            Assert.Contains(wcy.Id, res[0].Context.Keys);
+            Assert.Contains(wcx, res[0].Context.Keys);
+            Assert.Contains(wcy, res[0].Context.Keys);
         }
 
         [Fact]
@@ -270,7 +293,7 @@ namespace Nncase.Tests
             var matchs = EMatch(g, pat);
             Assert.Equal(matchs.Count, 1);
             var result = matchs[0];
-            Assert.Contains(wc1.Id, result.Context.Keys);
+            Assert.Contains(wc1, result.Context.Keys);
             Assert.Equal(result.GetExpr(wc1), wce1);
         }
 
@@ -317,8 +340,8 @@ namespace Nncase.Tests
             var res_1 = EMatch(eGraph, pat_1);
             Assert.Equal(res_1.Count, 1);
 
-            Assert.Contains(wc1.Id, res_1[0].Context.Keys);
-            Assert.Contains(wc2.Id, res_1[0].Context.Keys);
+            Assert.Contains(wc1, res_1[0].Context.Keys);
+            Assert.Contains(wc2, res_1[0].Context.Keys);
 
             var res_2 = EMatch(eGraph, pat_2);
             Assert.Equal(res_2.Count, 0);
@@ -328,26 +351,33 @@ namespace Nncase.Tests
         public void TestMatchVArgs()
         {
             eGraph.Clear();
-            Var x = "x";
-            Var y = "y";
-            Var z = "z";
 
             WildCardPattern wc = "x";
-            IRArray<ExprPattern> wcs = new();
+            List<ExprPattern> wcs = new();
 
-            var tuple = new IR.Tuple(x, y, z);
+            var nest_tuple = new IR.Tuple(4, 5, 6);
+            var tuple = new IR.Tuple(1, nest_tuple, 3);
             Expr expr = Concat(tuple, 0);
 
-            ExprPattern vpat = Concat(IsTuple(IsVArgsRepeat(n =>
+
+            ExprPattern vpat = Concat(IsTuple(IsVArgsRepeat((n, param) =>
             {
-                var ret = new ExprPattern[n];
                 for (int i = 0; i < n; i++)
                 {
-                    ret[i] = IsVar((ID)i);
+                    var wc = IsWildCard();
+                    param.Add(wc);
+                    wcs.Add(wc);
                 }
-                wcs = ret;
-                return ret;
-            })), 0);
+            },
+            (match, param) =>
+            {
+                if (!match)
+                {
+                    param.Clear();
+                    wcs.Clear();
+                }
+            }
+            )), 0);
 
             eGraph.Add(expr);
 
@@ -357,6 +387,47 @@ namespace Nncase.Tests
             Assert.Equal(eMatch.GetExpr(wcs[0]), tuple[0]);
             Assert.Equal(eMatch.GetExpr(wcs[1]), tuple[1]);
             Assert.Equal(eMatch.GetExpr(wcs[2]), tuple[2]);
+        }
+
+        [Fact]
+        public void TestMatchVArgsTwice()
+        {
+            eGraph.Clear();
+
+            ConstPattern wcaxis = IsConst();
+            List<ConstPattern> wccons = new();
+
+            var tuple_lhs = new IR.Tuple(1, new Var(), 3);
+            var tuple_rhs = new IR.Tuple(4, 5, 6);
+            Expr expr = Concat(tuple_lhs, 0) + Concat(tuple_rhs, 1);
+
+            ExprPattern vpat = Concat(IsTuple(IsVArgsRepeat((n, param) =>
+            {
+                for (int i = 0; i < n; i++)
+                {
+                    var wc = IsConst();
+                    param.Add(wc);
+                    wccons.Add(wc);
+                }
+            },
+            (match, param) =>
+            {
+                if (!match)
+                {
+                    param.Clear();
+                    wccons.Clear();
+                }
+            }
+            )), wcaxis);
+
+            eGraph.Add(expr);
+
+            var eMatches = EMatch(eGraph, vpat);
+            Assert.Equal(eMatches.Count, 1);
+            var eMatch = eMatches[0];
+            Assert.Equal(eMatch.GetExpr(wccons[0]), tuple_rhs[0]);
+            Assert.Equal(eMatch.GetExpr(wccons[1]), tuple_rhs[1]);
+            Assert.Equal(eMatch.GetExpr(wccons[2]), tuple_rhs[2]);
         }
 
         [Fact]
@@ -376,16 +447,14 @@ namespace Nncase.Tests
 
             WildCardPattern wc = "wc", wcperm = "perm", wcaxis = "axis";
             List<WildCardPattern> wcin = new();
-            var wcvargs = IsVArgsRepeat(n =>
+            var wcvargs = IsVArgsRepeat((n, param) =>
             {
-                var vpats = new ExprPattern[n];
                 for (int i = 0; i < n; i++)
                 {
                     var input = IsWildCard();
-                    vpats[i] = Transpose(input, wcperm);
+                    param.Add(Transpose(input, wcperm));
                     wcin.Add(input);
                 }
-                return vpats;
             });
             var pattern = Concat(IsTuple(wcvargs), wcaxis);
 

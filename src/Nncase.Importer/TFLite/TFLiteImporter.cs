@@ -98,7 +98,7 @@ namespace Nncase.Importer.TFLite
         /// <param name="shape">Shape.</param>
         /// <param name="type">Tensor type.</param>
         /// <returns>Created IR type.</returns>
-        private static IRType GetIRType(Span<int> shape, tflite.TensorType type)
+        private static TensorType GetIRType(Span<int> shape, tflite.TensorType type)
         {
             var dataType = GetDataType(type);
             if (shape.IsEmpty)

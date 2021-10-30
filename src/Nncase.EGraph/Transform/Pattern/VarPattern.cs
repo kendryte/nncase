@@ -9,20 +9,17 @@ using Nncase.IR;
 
 namespace Nncase.Transform.Pattern
 {
-    public sealed record VarPattern(ID Id, TypePattern Type) : ExprPattern(Id)
+    public sealed record VarPattern(string Name, TypePattern Type) : ExprPattern
     {
 
-        public VarPattern(Var var) : this(Utility.GetID(), new TypePattern(var.TypeAnnotation)) { }
-
-        public VarPattern(TypePattern typePat)
-            : this(Utility.GetID(), typePat)
-        {
-        }
+        public VarPattern(Var var) : this($"var", new TypePattern(var.TypeAnnotation)) { }
 
         public VarPattern()
-            : this(Utility.GetID(), new TypePattern(AnyType.Default))
+            : this($"var", new TypePattern(AnyType.Default))
         {
         }
+
+        public VarPattern(TypePattern Type) : this($"var", Type) { }
 
         public bool MatchLeaf(Var var)
         {
@@ -31,8 +28,8 @@ namespace Nncase.Transform.Pattern
     }
     public static partial class Utility
     {
-        public static VarPattern IsVar(ID Id, TypePattern Type) => new VarPattern(Id, Type);
+        public static VarPattern IsVar(TypePattern Type) => new VarPattern(Type);
 
-        public static VarPattern IsVar(ID Id) => IsVar(Id, IsAnyType());
+        public static VarPattern IsVar() => new VarPattern(IsAnyType());
     }
 }

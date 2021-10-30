@@ -14,8 +14,7 @@ namespace Nncase.Transform.Pattern.F
 {
     public static class NN
     {
-        public static CallPattern Sigmoid(ID Id, ExprPattern expr) => new CallPattern(Id, new SigmoidPattern(x => true), expr);
-        
-        public static CallPattern Sigmoid(ExprPattern expr) => Sigmoid(GetID(), expr);
+        public static CallPattern Sigmoid(ExprPattern expr) => new CallPattern(new SigmoidPattern(x => true), expr);
+
     }
 }

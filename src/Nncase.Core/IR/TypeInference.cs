@@ -86,7 +86,7 @@ namespace Nncase.IR
 
             var outputRank = inputs.Select(x => x.Shape.Rank).Max();
             var outputShape = new Dimension[outputRank];
-            Span<long> inputDims = stackalloc long[inputs.Length];
+            Span<int> inputDims = stackalloc int[inputs.Length];
 
             for (int dimIndex = 0; dimIndex < outputShape.Length; dimIndex++)
             {

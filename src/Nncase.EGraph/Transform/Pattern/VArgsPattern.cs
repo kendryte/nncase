@@ -6,49 +6,79 @@ using System.Linq;
 using Nncase.IR;
 namespace Nncase.Transform.Pattern
 {
-    public sealed record VArgsPattern(IRArray<ExprPattern>? Parameters, Func<int, IRArray<ExprPattern>>? CallBack)
+
+    public abstract record VArgsPattern()
     {
-        public IRArray<ExprPattern>? GeneratedParameters { get; set; } = null;
-
-        public VArgsPattern(params ExprPattern[] Parameters) : this(ImmutableArray.Create(Parameters), null) { }
-
-        public VArgsPattern(IRArray<Expr> Parameters) : this((from p in Parameters select (ExprPattern)p).ToArray(), null) { }
-
-        public ExprPattern this[int index]
+        public virtual ExprPattern this[int index] => this switch
         {
-            get => (Parameters, GeneratedParameters) switch
-            {
-                (null, IRArray<ExprPattern> parameters) => parameters[index],
-                (IRArray<ExprPattern> parameters, null) => parameters[index],
-                (_, _) => throw new InvalidOperationException("This VArgsPattern Must have one Parameter!")
-            };
-        }
+            FixedVArgsPattern fixPat => fixPat[index],
+            RepeatVArgsPattern repeatPat => repeatPat[index],
+            _ => throw new NotImplementedException($"Can't Handle the Type {this.GetType().Name}!")
+        };
 
-        public bool MatchLeaf<T>(IEnumerable<T> other)
+        public virtual bool MatchLeaf<T>(IEnumerable<T> other) => this switch
         {
-            bool createPatterns(Func<int, IRArray<ExprPattern>> callback)
+            FixedVArgsPattern fixPat => fixPat.MatchLeaf(other),
+            RepeatVArgsPattern repeatPat => repeatPat.MatchLeaf(other),
+            _ => throw new NotImplementedException($"Can't Handle the Type {this.GetType().Name}!")
+        };
+
+        public virtual void MatchEnd(bool Match)
+        {
+            switch (this)
             {
-                GeneratedParameters = callback(other.Count());
-                return true;
+                case RepeatVArgsPattern repeatPat:
+                    repeatPat.TearDown(Match, repeatPat.Parameters);
+                    break;
+                default:
+                    break;
             }
+        }
+    }
 
-            return (Parameters, CallBack, GeneratedParameters) switch
-            {
-                (null, not null, null) => createPatterns(CallBack),
-                (null, not null, not null) => GeneratedParameters?.Count == other.Count(),
-                (not null, null, null) => Parameters?.Count == other.Count(),
-                (_, _, _) => false
-            };
+    public sealed record FixedVArgsPattern(IRArray<ExprPattern> Parameters) : VArgsPattern
+    {
+        public FixedVArgsPattern(IRArray<Expr> Parameters) : this((from p in Parameters select (ExprPattern)p).ToArray()) { }
+        public override ExprPattern this[int index]
+        {
+            get => Parameters[index];
         }
 
+        public override bool MatchLeaf<T>(IEnumerable<T> other) => Parameters.Count == other.Count();
+
+    }
+
+    public sealed record RepeatVArgsPattern(Action<int, List<ExprPattern>> SetUp, Action<bool, List<ExprPattern>> TearDown) : VArgsPattern
+    {
+        public readonly List<ExprPattern> Parameters = new();
+
+        public override ExprPattern this[int index]
+        {
+            get => Parameters[index];
+        }
+
+        public override bool MatchLeaf<T>(IEnumerable<T> other)
+        {
+            if (!Parameters.Any())
+                SetUp(other.Count(), Parameters);
+            return true;
+        }
     }
 
     public partial class Utility
     {
         public static VArgsPattern IsVArgs(params ExprPattern[] Parameters)
-          => new VArgsPattern(Parameters, null);
+          => new FixedVArgsPattern(Parameters);
 
-        public static VArgsPattern IsVArgsRepeat(Func<int, IRArray<ExprPattern>> CallBack)
-          => new VArgsPattern(null, CallBack);
+        // 默认只生成一次
+        public static VArgsPattern IsVArgsRepeat(Action<int, List<ExprPattern>> SetUp)
+          => new RepeatVArgsPattern(SetUp, (match, param) =>
+          {
+              if (match == false)
+                  param.Clear();
+          });
+
+        public static VArgsPattern IsVArgsRepeat(Action<int, List<ExprPattern>> SetUp, Action<bool, List<ExprPattern>> TearDown)
+          => new RepeatVArgsPattern(SetUp, TearDown);
     }
 }

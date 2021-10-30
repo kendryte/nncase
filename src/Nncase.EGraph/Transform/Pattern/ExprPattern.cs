@@ -8,8 +8,12 @@ using Nncase.Transform.Pattern.Math;
 namespace Nncase.Transform.Pattern
 {
 
-    public abstract partial record ExprPattern(ID Id)
+    public abstract partial record ExprPattern(int Id)
     {
+        private static int _globalPatIndex = 0;
+
+        public ExprPattern() : this(_globalPatIndex++) { }
+
         public static implicit operator ExprPattern(Expr expr) => expr switch
         {
             (Var var) => new VarPattern(var),

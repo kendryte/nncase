@@ -9,22 +9,18 @@ using Nncase.IR;
 
 namespace Nncase.Transform.Pattern
 {
-    public sealed record FunctionPattern(ID Id, ExprPattern Body, VArgsPattern Parameters) : ExprPattern(Id)
+    public sealed record FunctionPattern(ExprPattern Body, VArgsPattern Parameters) : ExprPattern
     {
         public FunctionPattern(Function func) : this(
-            Utility.GetID(),
             (ExprPattern)func.Body,
-            new VArgsPattern((from p in func.Parameters select ((ExprPattern)p)).ToArray()))
+            new FixedVArgsPattern((from p in func.Parameters select ((ExprPattern)p)).ToArray()))
         { }
 
-        public FunctionPattern(ExprPattern body, VArgsPattern parameters) : this(Utility.GetID(), body, parameters) { }
-
-
-        public FunctionPattern(ExprPattern body, params ExprPattern[] parameters) : this(Utility.GetID(), body, new VArgsPattern(parameters, null))
+        public FunctionPattern(ExprPattern body, params ExprPattern[] parameters) : this(body, new FixedVArgsPattern(parameters))
         {
         }
 
-        public FunctionPattern(ExprPattern body, IRArray<ExprPattern> parameters) : this(Utility.GetID(), body, new VArgsPattern(parameters, null))
+        public FunctionPattern(ExprPattern body, IRArray<ExprPattern> parameters) : this(body, new FixedVArgsPattern(parameters))
         {
         }
 
