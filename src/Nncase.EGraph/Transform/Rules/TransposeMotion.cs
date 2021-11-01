@@ -6,8 +6,10 @@ using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
 using Nncase.Transform.Pattern;
+using static Nncase.Transform.Pattern.F.Math;
 using static Nncase.Transform.Pattern.F.Tensor;
 using static Nncase.Transform.Pattern.Utility;
+using static Nncase.IR.F.Math;
 using static Nncase.IR.F.Tensors;
 
 namespace Nncase.Transform.Rule
@@ -16,10 +18,9 @@ namespace Nncase.Transform.Rule
     {
         private WildCardPattern wx = "x", wy = "y", wperm = "perm";
         private WildCardPattern wbin = new();
-
-        public override ExprPattern GetPattern()
+        public TransposeBinaryMotion()
         {
-            return IsBinary(Transpose(wx, wperm), Transpose(wy, wperm));
+            Pattern = IsBinary(Transpose(wx, wperm), Transpose(wy, wperm));
         }
 
         public override Expr GetRePlace(EMatchResult result)
@@ -41,6 +42,7 @@ namespace Nncase.Transform.Rule
 
         protected Shape newShape;
         protected Const newCon;
+
 
         public Shape GetNewConstShape(Const oldCon, Const oldPerm)
         {
@@ -68,9 +70,9 @@ namespace Nncase.Transform.Rule
 
     public class TransposeConstantBinaryMotionLeft : TransposeConstantBinaryMotion
     {
-        public override ExprPattern GetPattern()
+        public TransposeConstantBinaryMotionLeft()
         {
-            return IsBinary(Transpose(wx, wperm), wcon);
+            Pattern = IsBinary(Transpose(wx, wperm), wcon);
         }
 
         public override Expr GetRePlace(EMatchResult result)
@@ -82,9 +84,9 @@ namespace Nncase.Transform.Rule
 
     public class TransposeConstantBinaryMotionRight : TransposeConstantBinaryMotion
     {
-        public override ExprPattern GetPattern()
+        public TransposeConstantBinaryMotionRight()
         {
-            return IsBinary(wcon, Transpose(wx, wperm));
+            Pattern = IsBinary(wcon, Transpose(wx, wperm));
         }
 
         public override Expr GetRePlace(EMatchResult result)
@@ -116,18 +118,14 @@ namespace Nncase.Transform.Rule
         {
             wcprem = IsConst(IsTensor());
             wcaxis = IsConst(IsScalar());
-        }
-
-        public override ExprPattern GetPattern()
-        {
-            return Concat(IsTuple(IsVArgsRepeat((n, param) =>
-             {
-                 for (int i = 0; i < n; i++)
-                 {
-                     var wcin = IsWildCard();
-                     param.Add(Transpose(wcin, wcprem));
-                 }
-             }
+            Pattern = Concat(IsTuple(IsVArgsRepeat((n, param) =>
+              {
+                  for (int i = 0; i < n; i++)
+                  {
+                      var wcin = IsWildCard();
+                      param.Add(Transpose(wcin, wcprem));
+                  }
+              }
             )), wcaxis);
         }
 
@@ -153,9 +151,9 @@ namespace Nncase.Transform.Rule
 
         ConstPattern wcmode = IsConst(IsScalar()), wcpadv = IsConst(IsScalar()), wcperm = IsConst(IsScalar());
 
-        public override ExprPattern GetPattern()
+        public TransPosePadMotion()
         {
-            return Transpose(Pad(wcin, IsTuple(IsVArgsRepeat(
+            Pattern = Transpose(Pad(wcin, IsTuple(IsVArgsRepeat(
               (n, param) =>
               {
                   for (int i = 0; i < n; i++)
@@ -188,25 +186,72 @@ namespace Nncase.Transform.Rule
     public class TransposeReduceMotion : EGraphRule
     {
 
-        WildCardPattern wcinput = "input", wcinit = "init", wckeepdims = "keepdims";
+        WildCardPattern wcinput = "input", wcinit = "init";
+        ConstPattern wckeepdims = IsConst(IsScalar() | IsIntegral());
         WildCardPattern wcaxis = "axis", wcperm = "axis";
 
-        public override ExprPattern GetPattern()
+        public TransposeReduceMotion()
         {
-            return IsReduce(Transpose(wcinput, wcperm), wcaxis, wcinit, wckeepdims);
+            Pattern = IsReduce(Transpose(wcinput, wcperm), wcaxis, wcinit, wckeepdims);
         }
 
         public override Expr? GetRePlace(EMatchResult result)
         {
-            var (input, axis, init, keepdims) = result.GetExpr(wcinput, wcaxis, wcinit, wckeepdims);
-            Expr perm = result.GetExpr(wcperm);
-
+            var (input, axis, init) = result.GetExpr(wcinput, wcaxis, wcinit);
+            var perm = result.GetExpr(wcperm);
+            var keepdims = result.GetExpr(wckeepdims).ToScalar<bool>();
             var reduce = result.GetRoot<Reduce>();
-
-            // var new_axis = perm[axis];
-
-            return Transpose(Reduce(reduce.reduceOp, input, axis, init, keepdims), perm);
+            var new_axis = Gather(perm, 0, axis);
+            if (keepdims == false)
+            {
+                return Squeeze(Transpose(Reduce(reduce.reduceOp, input, new_axis, init, true), perm), axis);
+            }
+            return Transpose(Reduce(reduce.reduceOp, input, new_axis, init, keepdims), perm);
         }
+    }
+
+    public class TransposeUnaryMotion : EGraphRule
+    {
+
+        WildCardPattern wcinput = "input", wcperm = "perm";
+
+        CallPattern wcunary;
+        public TransposeUnaryMotion()
+        {
+            wcunary = IsUnary(wcinput);
+            Pattern = Transpose(wcunary, wcperm);
+        }
+
+        public override Expr? GetRePlace(EMatchResult result)
+        {
+            var (input, perm) = result.GetExpr(wcinput, wcperm);
+            var unarycall = result.GetExpr(wcunary);
+            var unaryop = ((Unary)unarycall.Target).UnaryOp;
+
+            return Unary(unaryop, Transpose(input, perm));
+        }
+    }
+
+    public class TransposeClampMotion : EGraphRule
+    {
+        ConstPattern wcmin, wcmax, wcperm;
+        WildCardPattern wcinput;
+        TransposeClampMotion()
+        {
+            wcmin = IsConst(IsScalar());
+            wcmax = IsConst(IsScalar());
+            wcperm = IsConst(IsTensor() & IsIntegral());
+            wcinput = IsWildCard();
+            Pattern = Clamp(Transpose(wcinput, wcperm), wcmin, wcmax);
+        }
+
+        public override Expr? GetRePlace(EMatchResult result)
+        {
+            var (min, max, perm) = result.GetExpr(wcmin, wcmax, wcperm);
+            var input = result.GetExpr(wcinput);
+            return Transpose(Clamp(input, min, max), perm);
+        }
+
     }
 
 }

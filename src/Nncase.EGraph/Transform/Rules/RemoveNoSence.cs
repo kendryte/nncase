@@ -10,10 +10,11 @@ namespace Nncase.Transform.Rule
     {
         public virtual ExprPattern[] GetPatterns()
         {
-            return new ExprPattern[] { GetPattern() };
+            return new ExprPattern[] { Pattern };
         }
 
-        public virtual ExprPattern GetPattern() => throw new NotImplementedException("Not Implement GetPattern!");
+        public ExprPattern Pattern { get; set; }
+
 
         public virtual Expr? GetRePlace(EMatchResult result) => throw new NotImplementedException("Not Implement GetRePlace!");
     }
@@ -22,10 +23,12 @@ namespace Nncase.Transform.Rule
     {
         private WildCardPattern wx = "x", wy = "y", wz = "z";
 
-        public override ExprPattern GetPattern()
+        public Reassociate()
         {
-            return (wx * wy) * wz;
+
+            Pattern = (wx * wy) * wz;
         }
+
 
         public override Expr GetRePlace(EMatchResult result)
         {
@@ -48,9 +51,10 @@ namespace Nncase.Transform.Rule
 
         private readonly WildCardPattern[] wcs = new WildCardPattern[] { IsWildCard() };
 
-        public override ExprPattern GetPattern()
+        public RemoveNoSenceAddSub()
         {
-            return IsBinary(x => x is (BinaryOp.Add or BinaryOp.Sub), wcs[0], IsConst(
+
+            Pattern = IsBinary(x => x is (BinaryOp.Add or BinaryOp.Sub), wcs[0], IsConst(
               (Const x) => (x.ValueType, x.Data) switch
               {
                   (TensorType type, _) => type.IsScalar switch

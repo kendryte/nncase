@@ -32,14 +32,13 @@ namespace Nncase.Transform.Pattern
 
         public TypePattern? CheckedTypePat { get; set; }
 
-        public bool MatchCheckedType(Expr expr)
+        public bool MatchCheckedType(Expr expr) => (expr.CheckedType, this.CheckedTypePat) switch
         {
-            if (expr.CheckedType is not null && CheckedTypePat is not null)
-            {
-                return CheckedTypePat.MatchLeaf(expr.CheckedType);
-            }
-            return true;
-        }
+            (null, null) => true,
+            (null, TypePattern pat) => false,
+            (IRType type, null) => true,
+            (IRType type, TypePattern pat) => pat.MatchLeaf(type)
+        };
 
         public virtual bool MatchLeaf(Expr expr) => (this, expr) switch
         {
