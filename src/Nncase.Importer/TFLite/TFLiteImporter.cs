@@ -146,7 +146,7 @@ namespace Nncase.Importer.TFLite
                 // tflite.BuiltinOperator.BROADCAST_TO,
                 // tflite.BuiltinOperator.CALL,
                 // tflite.BuiltinOperator.CALL_ONCE,
-                // tflite.BuiltinOperator.CAST,
+                tflite.BuiltinOperator.CAST => VisitCast(op),
                 tflite.BuiltinOperator.CEIL => VisitUnary(op, UnaryOp.Ceil),
 
                 // tflite.BuiltinOperator.COMPLEX_ABS,
@@ -342,7 +342,7 @@ namespace Nncase.Importer.TFLite
                 }
             }
         }
-
+        
         private (Expr Expr0, Expr Expr1) GetInputExprs(in tflite.Operator op, int index0, int index1) =>
             (GetInputExprs(op, index0), GetInputExprs(op, index1));
     }

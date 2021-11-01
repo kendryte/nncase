@@ -17,6 +17,8 @@ namespace Nncase.IR.F
     {
         public static Call Transpose(Expr input, Expr perm) => new Call(new Transpose(), input, perm);
 
+        public static Call Cast(Expr input, DataType newType) => new Call(new Cast(newType), input);
+        
         public static Call Concat(Tuple input, Expr axis) => new Call(new Concat(), input, axis);
 
         public static Call Gather(Expr input, Expr axis, Expr index) => new Call(new Gather(), input, axis, index);
