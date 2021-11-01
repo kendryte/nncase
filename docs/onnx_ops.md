@@ -59,6 +59,7 @@
 | Pad | ✅ |
 | Pow | ✅ |
 | PRelu | ✅ |
+| QuantizeLinear | ✅ |
 | ReduceL1 | ✅ |
 | ReduceL2 | ✅ |
 | ReduceMax | ✅ |
