@@ -256,11 +256,12 @@ void quantized_conv2d(const uint8_t *input, uint8_t *output, const uint8_t *weig
 }
 
 template <class TShape>
-void conv2d_transpose(const float *input, float *output, const float *weights, [[maybe_unused]] const float *bias, const TShape &in_shape,
+void conv2d_transpose(const float *input, float *output, const float *weights, const float *bias, const TShape &in_shape,
     int32_t groups, const TShape &out_shape, int32_t filter_h, int32_t filter_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
     const padding &padding_h, const padding &padding_w, const value_range<float> &fused_activation)
 {
-    std::fill(output, output + kernels::detail::compute_size(out_shape), 0.f);
+    auto output_size = kernels::detail::compute_size(out_shape);
+    std::fill(output, output + output_size, 0.f);
     const auto g_ic = in_shape[1] / groups;
     const auto g_oc = out_shape[1] / groups;
 
@@ -289,7 +290,6 @@ void conv2d_transpose(const float *input, float *output, const float *weights, [
 
                         for (size_t oc = 0; oc < g_oc; oc++)
                         {
-                            // assert(bias[g * g_oc + oc] == 0.f);
                             float *out_c_p = out_group_p + (size_t)oc * out_shape[2] * out_shape[3];
                             const float *w_oc_p = w_group_p + (size_t)oc * g_ic * filter_h * filter_w;
                             const float *w_ic_p = w_oc_p + (size_t)ic * filter_h * filter_w;
@@ -313,9 +313,14 @@ void conv2d_transpose(const float *input, float *output, const float *weights, [
         }
     }
 
+    // bias
+    auto hw = out_shape[2] * out_shape[3];
+    for (size_t i = 0; i < output_size; i++)
+        output[i] += bias[i / hw % out_shape[1]];
+
     if (fused_activation != value_range<float>::full())
     {
-        for (size_t i = 0; i < kernels::detail::compute_size(out_shape); i++)
+        for (size_t i = 0; i < output_size; i++)
             output[i] = detail::apply_activation(output[i], fused_activation);
     }
 }

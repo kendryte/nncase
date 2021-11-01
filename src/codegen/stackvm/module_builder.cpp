@@ -103,6 +103,7 @@ void stackvm_op_builder::ldpadding(const padding &pad)
 {
     ldc_i4_((int32_t)pad.before);
     ldc_i4_((int32_t)pad.after);
+    ldc_i4_((int32_t)pad.interior);
 }
 
 void stackvm_op_builder::ldscalar(const scalar &value)

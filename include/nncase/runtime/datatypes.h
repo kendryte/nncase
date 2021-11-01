@@ -111,6 +111,7 @@ struct padding
 {
     int32_t before;
     int32_t after;
+    int32_t interior = 0;
 
     int32_t sum() const noexcept { return before + after; }
 
