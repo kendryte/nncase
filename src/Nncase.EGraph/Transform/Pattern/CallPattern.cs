@@ -3,7 +3,9 @@
 
 using System;
 using Nncase.IR;
+using Nncase.IR.Tensors;
 using Nncase.Transform.Pattern.Math;
+using Nncase.Transform.Pattern.Tensors;
 
 
 namespace Nncase.Transform.Pattern
@@ -46,6 +48,15 @@ namespace Nncase.Transform.Pattern
 
         public static CallPattern IsUnary(UnaryOp opType, ExprPattern input) => IsUnary(unaryOp => opType == unaryOp, input);
         public static CallPattern IsUnary(ExprPattern input) => IsUnary(unaryOp => true, input);
+
+
+        public static CallPattern IsReduce(Func<Reduce, bool> Cond, ExprPattern Input, ExprPattern Axis, ExprPattern InitValue, ExprPattern KeepDims) => new CallPattern(new ReducePattern(Cond), Input, Axis, InitValue, KeepDims);
+
+        public static CallPattern IsReduce(Func<ReduceOp, bool> Cond, ExprPattern Input, ExprPattern Axis, ExprPattern InitValue, ExprPattern KeepDims) => IsReduce(x => Cond(x.reduceOp), Input, Axis, InitValue, KeepDims);
+
+        public static CallPattern IsReduce(ReduceOp opType, ExprPattern Input, ExprPattern Axis, ExprPattern InitValue, ExprPattern KeepDims) => IsReduce(x => x == opType, Input, Axis, InitValue, KeepDims);
+
+        public static CallPattern IsReduce(ExprPattern Input, ExprPattern Axis, ExprPattern InitValue, ExprPattern KeepDims) => IsReduce((ReduceOp x) => true, Input, Axis, InitValue, KeepDims);
 
     }
 }

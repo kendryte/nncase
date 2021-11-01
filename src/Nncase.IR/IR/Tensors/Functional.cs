@@ -15,11 +15,6 @@ namespace Nncase.IR.F
     /// </summary>
     public static class Tensors
     {
-        /// <summary>
-        /// Call sigmoid.
-        /// </summary>
-        /// <param name="expr">Source expression.</param>
-        /// <returns>Result expression.</returns>
         public static Call Transpose(Expr input, Expr perm) => new Call(new Transpose(), input, perm);
 
         public static Call Concat(Tuple input, Expr axis) => new Call(new Concat(), input, axis);
@@ -28,13 +23,14 @@ namespace Nncase.IR.F
         
         public static Call Pad(Expr Input, Tuple Pads, Expr Mode, Expr Value) => new Call(new Pad(), Input, Pads, Mode, Value);
 
-        public static Call ReduceMean(Expr InShape, Expr Axis, Expr InitValue, Expr KeepDims) => new Call(new Reduce(ReduceOp.Mean), InShape, Axis, InitValue, KeepDims);
+        public static Call Reduce(ReduceOp reduceOp, Expr Input, Expr Axis, Expr InitValue, Expr KeepDims) => new Call(new Reduce(reduceOp), Input, Axis, InitValue, KeepDims);
 
-        public static Call ReduceMin(Expr InShape, Expr Axis, Expr InitValue, Expr KeepDims) => new Call(new Reduce(ReduceOp.Min), InShape, Axis, InitValue, KeepDims);
+        public static Call ReduceMean(Expr Input, Expr Axis, Expr InitValue, Expr KeepDims) => new Call(new Reduce(ReduceOp.Mean), Input, Axis, InitValue, KeepDims);
 
-        public static Call ReduceMax(Expr InShape, Expr Axis, Expr InitValue, Expr KeepDims) => new Call(new Reduce(ReduceOp.Max), InShape, Axis, InitValue, KeepDims);
+        public static Call ReduceMin(Expr Input, Expr Axis, Expr InitValue, Expr KeepDims) => new Call(new Reduce(ReduceOp.Min), Input, Axis, InitValue, KeepDims);
 
-        public static Call ReduceSum(Expr InShape, Expr Axis, Expr InitValue, Expr KeepDims) => new Call(new Reduce(ReduceOp.Sum), InShape, Axis, InitValue, KeepDims);
+        public static Call ReduceMax(Expr Input, Expr Axis, Expr InitValue, Expr KeepDims) => new Call(new Reduce(ReduceOp.Max), Input, Axis, InitValue, KeepDims);
 
+        public static Call ReduceSum(Expr Input, Expr Axis, Expr InitValue, Expr KeepDims) => new Call(new Reduce(ReduceOp.Sum), Input, Axis, InitValue, KeepDims);
     }
 }

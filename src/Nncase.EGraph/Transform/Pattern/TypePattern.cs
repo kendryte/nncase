@@ -18,6 +18,10 @@ namespace Nncase.Transform.Pattern
         {
             return Cond(ValueType);
         }
+
+        public static TypePattern operator &(TypePattern lhs, TypePattern rhs) => new TypePattern(x => lhs.Cond(x) && rhs.Cond(x));
+
+        public static TypePattern operator |(TypePattern lhs, TypePattern rhs) => new TypePattern(x => lhs.Cond(x) || rhs.Cond(x));
     }
     public static partial class Utility
     {
@@ -44,6 +48,45 @@ namespace Nncase.Transform.Pattern
 
         public static TypePattern HasShape(Shape shape) => HasShape(x => x == shape);
 
+        public static TypePattern IsTensor() => new TypePattern(
+          x => x switch
+          {
+              TensorType ttype => ttype.IsTensor,
+              _ => false
+          }
+        );
+
+        public static TypePattern IsScalar() => new TypePattern(
+          x => x switch
+          {
+              TensorType ttype => ttype.IsScalar,
+              _ => false
+          }
+        );
+
+        public static TypePattern IsIntegral() => new TypePattern(
+          x => x switch
+          {
+              TensorType ttype => ttype.DType is (
+                DataType.Bool or
+                DataType.UInt8 or DataType.UInt16 or DataType.UInt32 or DataType.UInt64 or
+                DataType.Int8 or DataType.Int16 or DataType.Int32 or DataType.Int64),
+              _ => false
+          }
+        );
+
+        public static TypePattern IsFloat() => new TypePattern(
+          x => x switch
+          {
+              TensorType ttype => ttype.DType is (
+                DataType.BFloat16 or DataType.Float16 or DataType.Float32 or DataType.Float64),
+              _ => false
+          }
+        );
+
+
+
     }
+
 
 }

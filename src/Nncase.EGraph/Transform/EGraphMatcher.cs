@@ -35,6 +35,10 @@ namespace Nncase.Transform
             return (T)Root.Expr;
         }
 
+        public (Expr, Expr) GetExpr(ExprPattern pat1, ExprPattern pat2) => (GetExpr(pat1), GetExpr(pat2));
+        public (Expr, Expr, Expr) GetExpr(ExprPattern pat1, ExprPattern pat2, ExprPattern pat3) => (GetExpr(pat1), GetExpr(pat2), GetExpr(pat3));
+        public (Expr, Expr, Expr, Expr) GetExpr(ExprPattern pat1, ExprPattern pat2, ExprPattern pat3, ExprPattern pat4) => (GetExpr(pat1), GetExpr(pat2), GetExpr(pat3), GetExpr(pat4));
+
         public (Const, Const) GetExpr(ConstPattern pat1, ConstPattern pat2) => (GetExpr(pat1), GetExpr(pat2));
         public (Const, Const, Const) GetExpr(ConstPattern pat1, ConstPattern pat2, ConstPattern pat3) => (GetExpr(pat1), GetExpr(pat2), GetExpr(pat3));
 

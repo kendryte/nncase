@@ -15,7 +15,7 @@ namespace Nncase.IR.Tensors
     /// </summary>
     public sealed record Reduce(ReduceOp reduceOp) : Op
     {
-        public static readonly ParameterInfo InShape = new(typeof(Reduce), 0, "InShape");
+        public static readonly ParameterInfo Input = new(typeof(Reduce), 0, "Input");
         public static readonly ParameterInfo Axis = new(typeof(Reduce), 1, "Axis");
         public static readonly ParameterInfo InitValue = new(typeof(Reduce), 2, "InitValue");
         public static readonly ParameterInfo KeepDims = new(typeof(Reduce), 3, "KeepDims");

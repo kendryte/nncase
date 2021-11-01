@@ -48,6 +48,8 @@ namespace Nncase.Transform
             foreach (var (rule, result) in matches)
             {
                 var replaceExpr = rule.GetRePlace(result);
+                if (replaceExpr is null)
+                    continue;
                 var neweClass = eGraph.Add(replaceExpr);
                 eGraph.Merge(neweClass, eGraph.Nodes[result.Root]);
                 if (isMatchCache_)

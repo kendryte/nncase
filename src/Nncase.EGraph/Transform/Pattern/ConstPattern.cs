@@ -74,28 +74,12 @@ namespace Nncase.Transform.Pattern
           }
         );
 
-        public static ConstPattern IsConstTensor() => new ConstPattern(
-          x => x.ValueType switch
-          {
-              TensorType tensor => tensor.IsTensor,
-              _ => false
-          }
-        );
+        public static ConstPattern IsConst(TypePattern typePattern) => new ConstPattern(x => typePattern.MatchLeaf(x.ValueType));
 
-        public static ConstPattern IsConstScalar() => new ConstPattern(
-          x => x.ValueType switch
-          {
-              TensorType tensor => tensor.IsScalar,
-              _ => false
-          }
-        );
 
         public static ConstPattern IsConst<T>(T Value)
         where T : unmanaged
         => new ConstPattern(x => x == Const.FromScalar<T>(Value));
-
-
-
     }
 
 }

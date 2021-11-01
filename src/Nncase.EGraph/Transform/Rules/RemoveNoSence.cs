@@ -15,7 +15,7 @@ namespace Nncase.Transform.Rule
 
         public virtual ExprPattern GetPattern() => throw new NotImplementedException("Not Implement GetPattern!");
 
-        public virtual Expr GetRePlace(EMatchResult result) => throw new NotImplementedException("Not Implement GetRePlace!");
+        public virtual Expr? GetRePlace(EMatchResult result) => throw new NotImplementedException("Not Implement GetRePlace!");
     }
 
     public sealed class Reassociate : EGraphRule

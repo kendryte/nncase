@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using Nncase.IR;
 using Nncase.IR.Math;
+using Nncase.IR.Tensors;
 using Nncase.Transform.Pattern;
 using static Nncase.Transform.Pattern.F.Tensor;
 using static Nncase.Transform.Pattern.Utility;
@@ -32,7 +33,7 @@ namespace Nncase.Transform.Rule
     public class TransposeConstantBinaryMotion : EGraphRule
     {
         protected WildCardPattern wx = "x";
-        protected ConstPattern wperm = IsConstTensor(), wcon = IsConst();
+        protected ConstPattern wperm = IsConst(IsTensor()), wcon = IsConst();
 
         protected Expr x;
         protected Const con, perm;
@@ -113,8 +114,8 @@ namespace Nncase.Transform.Rule
 
         public TransposeConcatMotion()
         {
-            wcprem = IsConstTensor();
-            wcaxis = IsConstScalar();
+            wcprem = IsConst(IsTensor());
+            wcaxis = IsConst(IsScalar());
         }
 
         public override ExprPattern GetPattern()
@@ -150,7 +151,7 @@ namespace Nncase.Transform.Rule
         WildCardPattern wcin = "input";
         List<ConstPattern> wcpads = new();
 
-        ConstPattern wcmode = IsConstScalar(), wcpadv = IsConstScalar(), wcperm = IsConstScalar();
+        ConstPattern wcmode = IsConst(IsScalar()), wcpadv = IsConst(IsScalar()), wcperm = IsConst(IsScalar());
 
         public override ExprPattern GetPattern()
         {
@@ -159,7 +160,7 @@ namespace Nncase.Transform.Rule
               {
                   for (int i = 0; i < n; i++)
                   {
-                      var pad = IsConstTensor();
+                      var pad = IsConst(IsTensor());
                       wcpads.Add(pad);
                       param.Add(pad);
                   }
@@ -187,10 +188,25 @@ namespace Nncase.Transform.Rule
     public class TransposeReduceMotion : EGraphRule
     {
 
-        // public override ExprPattern GetPattern()
-        // {
+        WildCardPattern wcinput = "input", wcinit = "init", wckeepdims = "keepdims";
+        WildCardPattern wcaxis = "axis", wcperm = "axis";
 
-        // }
+        public override ExprPattern GetPattern()
+        {
+            return IsReduce(Transpose(wcinput, wcperm), wcaxis, wcinit, wckeepdims);
+        }
+
+        public override Expr? GetRePlace(EMatchResult result)
+        {
+            var (input, axis, init, keepdims) = result.GetExpr(wcinput, wcaxis, wcinit, wckeepdims);
+            Expr perm = result.GetExpr(wcperm);
+
+            var reduce = result.GetRoot<Reduce>();
+
+            // var new_axis = perm[axis];
+
+            return Transpose(Reduce(reduce.reduceOp, input, axis, init, keepdims), perm);
+        }
     }
 
 }
