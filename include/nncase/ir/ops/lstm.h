@@ -26,14 +26,16 @@ public:
     input_connector &input() { return input_at(0); }
     input_connector &w_xc() { return input_at(1); }
     input_connector &b_xc() { return input_at(2); }
-    input_connector &w_hc() { return input_at(3); }
-    input_connector &w_static() { return input_at(4); }
+    input_connector &w_rc() { return input_at(3); }
+    input_connector &b_rc() { return input_at(4); }
+    input_connector &w_static() { return input_at(5); }
     output_connector &output() { return output_at(0); }
 
     int32_t num_output() const noexcept { return num_output_; }
     bool has_static() const noexcept { return has_static_; }
+    std::string framework() const noexcept { return framework_; }
 
-    lstm(shape_t input_shape, shape_t w_xc_shape, shape_t b_xc_shape, shape_t w_hc_shape, int32_t num_output, bool has_static);
+    lstm(shape_t input_shape, shape_t w_xc_shape, shape_t b_xc_shape, shape_t w_rc_shape, shape_t b_rc_shape, int32_t num_output, bool has_static, std::string framework);
 
 protected:
     bool properties_equal(node &other) const override;
@@ -41,5 +43,6 @@ protected:
 private:
     int32_t num_output_;
     bool has_static_;
+    std::string framework_;
 };
 }

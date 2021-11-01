@@ -19,13 +19,14 @@
 using namespace nncase;
 using namespace nncase::ir;
 
-lstm::lstm(shape_t input_shape, shape_t w_xc_shape, shape_t b_xc_shape, shape_t w_hc_shape, int32_t num_output, bool has_static)
-    : num_output_(num_output), has_static_(has_static)
+lstm::lstm(shape_t input_shape, shape_t w_xc_shape, shape_t b_xc_shape, shape_t w_rc_shape, shape_t b_rc_shape, int32_t num_output, bool has_static, std::string framework)
+    : num_output_(num_output), has_static_(has_static), framework_(framework)
 {
     add_input("input", dt_float32, input_shape);
     add_input("w_xc", dt_float32, w_xc_shape);
     add_input("b_xc", dt_float32, b_xc_shape);
-    add_input("w_hc", dt_float32, w_hc_shape);
+    add_input("w_rc", dt_float32, w_rc_shape);
+    add_input("b_rc", dt_float32, b_rc_shape);
     if (has_static)
         add_input("w_static", dt_float32, shape_t { w_xc_shape[1], w_xc_shape[2] });
 
