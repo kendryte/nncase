@@ -263,7 +263,7 @@ namespace Nncase.Importer.TFLite
                 tflite.BuiltinOperator.SIN => VisitUnary(op, UnaryOp.Sin),
 
                 // tflite.BuiltinOperator.SKIP_GRAM,
-                // tflite.BuiltinOperator.SLICE,
+                tflite.BuiltinOperator.SLICE => VisitSlice(op),
                 // tflite.BuiltinOperator.SOFTMAX,
                 // tflite.BuiltinOperator.SPACE_TO_BATCH_ND,
                 // tflite.BuiltinOperator.SPACE_TO_DEPTH,

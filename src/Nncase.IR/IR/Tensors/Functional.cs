@@ -32,5 +32,7 @@ namespace Nncase.IR.F
         public static Call ReduceMax(Expr Input, Expr Axis, Expr InitValue, Expr KeepDims) => new Call(new Reduce(ReduceOp.Max), Input, Axis, InitValue, KeepDims);
 
         public static Call ReduceSum(Expr Input, Expr Axis, Expr InitValue, Expr KeepDims) => new Call(new Reduce(ReduceOp.Sum), Input, Axis, InitValue, KeepDims);
+        
+        public static Call Slice(Expr input, Expr begins, Expr ends) => new Call(new Slice(), input, begins, ends);
     }
 }
