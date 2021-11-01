@@ -53,13 +53,14 @@ namespace Nncase.Transform.Pattern
 
         public static ConstPattern IsConst(Func<float, bool> cond) => new ConstPattern(
           x => x.ValueType switch
-          {
-              TensorType tensor => tensor.IsScalar &&
+              {
+
+                  TensorType tensor => tensor.IsScalar &&
                    (tensor.DType is (DataType.BFloat16 or DataType.Float16 or DataType.Float32 or DataType.Float64)) &&
-                   cond(DataTypes.ToScalar<float>(tensor.DType, x.Data)),
-              _ => false
-          }
-        );
+                       cond(DataTypes.ToScalar<float>(tensor.DType, x.Data)),
+                  _ => false
+              }
+            );
 
 
         public static ConstPattern IsConst(Func<int, bool> cond) => new ConstPattern(

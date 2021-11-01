@@ -64,10 +64,11 @@ namespace Nncase.Transform.Pattern
         public ExprPattern IsTensor() => IsSomeType(x => x is TensorType);
 
         public ExprPattern IsScalar() => IsSomeType(x => x switch
-             {
-                 TensorType xt => xt.IsScalar,
-                 _ => false
-             });
+                     {
+
+                         TensorType xt => xt.IsScalar,
+                         _ => false
+                     });
     };
 
     public static partial class Utility

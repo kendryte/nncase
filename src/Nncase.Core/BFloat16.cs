@@ -71,10 +71,10 @@ namespace Nncase
 
         public static implicit operator float(BFloat16 input)
         {
-          float value;
-          Unsafe.SkipInit(out value);
-          Unsafe.As<float, int>(ref value) = input.value << 16;
-          return value;
+            float value;
+            Unsafe.SkipInit(out value);
+            Unsafe.As<float, int>(ref value) = input.value << 16;
+            return value;
         }
 
         /// <summary>

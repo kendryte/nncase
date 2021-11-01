@@ -27,11 +27,11 @@ public class UnitTestExpr
     {
         var con = Const.FromSpan<int>(new[] { 1, 2, 3, 4, 5 }, new[] { 5 });
         var t = con.ToTensor<int>();
-        Assert.Equal(t[0],1);
-        Assert.Equal(t[1],2);
-        Assert.Equal(t[2],3);
-        Assert.Equal(t[3],4);
-        Assert.Equal(t[4],5);
+        Assert.Equal(t[0], 1);
+        Assert.Equal(t[1], 2);
+        Assert.Equal(t[2], 3);
+        Assert.Equal(t[3], 4);
+        Assert.Equal(t[4], 5);
     }
 
 }

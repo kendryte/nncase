@@ -38,5 +38,5 @@
 //     /// <summary>
 //     /// Functional patterns.
 //     /// </summary>
-    
+
 // }
