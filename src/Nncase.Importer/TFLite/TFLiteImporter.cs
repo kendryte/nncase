@@ -150,7 +150,7 @@ namespace Nncase.Importer.TFLite
                 tflite.BuiltinOperator.CEIL => VisitUnary(op, UnaryOp.Ceil),
 
                 // tflite.BuiltinOperator.COMPLEX_ABS,
-                // tflite.BuiltinOperator.CONCATENATION,
+                tflite.BuiltinOperator.CONCATENATION => VisitConcat(op),
                 // tflite.BuiltinOperator.CONCAT_EMBEDDINGS,
                 // tflite.BuiltinOperator.CONV_2D,
                 // tflite.BuiltinOperator.CONV_3D,
