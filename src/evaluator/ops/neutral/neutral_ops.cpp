@@ -252,11 +252,22 @@ void register_neutral_evaluators()
 
     register_evaluator(op_quantize, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<quantize &>(node);
-
         auto input = context.memory_at(rnode.input()).buffer().as_span<float>();
-        auto output = context.memory_at(rnode.output()).buffer().as_span<uint8_t>();
-
-        neutral::quantize(input.data(), output.data(), xt::compute_size(rnode.input().shape()), rnode.quant_param());
+        switch (rnode.output().type())
+        {
+#define QUANTIZE(type)                                                                                                \
+    case type:                                                                                                        \
+    {                                                                                                                 \
+        auto output = context.memory_at(rnode.output()).buffer().as_span<to_cpp_type_t<type>>();                      \
+        neutral::quantize(input.data(), output.data(), xt::compute_size(rnode.input().shape()), rnode.quant_param()); \
+        break;                                                                                                        \
+    }
+            QUANTIZE(dt_uint8)
+            QUANTIZE(dt_int8)
+        default:
+            assert(false && "not supported type!");
+#undef QUANTIZE
+        }
     });
 
     register_evaluator(op_reduce, [](ir::node &node, function_evaluate_context &context) {
