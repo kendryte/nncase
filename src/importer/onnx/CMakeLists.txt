@@ -33,6 +33,7 @@ set(ONNX_IMPORTER_OPS_SOURCES
     ops/onehot.cpp
     ops/pad.cpp
     ops/pool.cpp
+    ops/quantizelinear.cpp
     ops/reduce.cpp
     ops/reduce_arg.cpp
     ops/reshape.cpp
