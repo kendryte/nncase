@@ -23,6 +23,8 @@ namespace Nncase.IR.F
 
         public static Call Gather(Expr input, Expr axis, Expr index) => new Call(new Gather(), input, axis, index);
         
+        public static Call GatherND(Expr input, Expr axis, Expr batch_dims, Expr index) => new Call(new Gather(), input, axis, batch_dims, index);
+        
         public static Call Pad(Expr Input, Expr Pads, PadMode Mode, Expr Value) => new Call(new Pad(Mode), Input, Pads, Value);
         
         public static Call Reduce(ReduceOp reduceOp, Expr input, Expr axis, Expr initValue, Expr keepDims) => new Call(new Reduce(reduceOp), input, axis, initValue, keepDims);

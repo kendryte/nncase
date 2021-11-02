@@ -182,7 +182,7 @@ namespace Nncase.Importer.TFLite
 
                 // tflite.BuiltinOperator.FULLY_CONNECTED,
                 tflite.BuiltinOperator.GATHER => VisitGather(op),
-                // tflite.BuiltinOperator.GATHER_ND,
+                tflite.BuiltinOperator.GATHER_ND => VisitGatherND(op),
                 // tflite.BuiltinOperator.GREATER,
                 // tflite.BuiltinOperator.GREATER_EQUAL,
                 // tflite.BuiltinOperator.HARD_SWISH,

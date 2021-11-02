@@ -13,5 +13,11 @@ namespace Nncase.Importer.TFLite
             var (input, indices) = GetInputExprs(op, 0, 1);
             return F.Tensors.Gather(input, indices, op.BuiltinOptionsAsGatherOptions().Axis);
         }
+
+        private Expr VisitGatherND(in tflite.Operator op)
+        {
+            var (input, indices) = GetInputExprs(op, 0, 1);
+            return F.Tensors.GatherND(input, 0, 0, indices);
+        }
     }
 }
