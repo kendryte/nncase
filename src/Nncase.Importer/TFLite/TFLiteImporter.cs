@@ -284,7 +284,7 @@ namespace Nncase.Importer.TFLite
 
                 // tflite.BuiltinOperator.TILE,
                 // tflite.BuiltinOperator.TOPK_V2,
-                // tflite.BuiltinOperator.TRANSPOSE,
+                tflite.BuiltinOperator.TRANSPOSE => VisitTranspose(op),
                 // tflite.BuiltinOperator.TRANSPOSE_CONV,
                 // tflite.BuiltinOperator.UNIDIRECTIONAL_SEQUENCE_LSTM,
                 // tflite.BuiltinOperator.UNIDIRECTIONAL_SEQUENCE_RNN,
