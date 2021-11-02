@@ -15,13 +15,5 @@ namespace Nncase.Importer.TFLite
             var output = GetOutputTensor(op, 0);
             return F.Tensors.Cast(input, GetDataType(output.Type));
         }
-
-        private tflite.Tensor GetOutputTensor(in tflite.Operator op, int index)
-        {
-            var id = op.Outputs(index);
-            var output = _subGraph.Tensors(id) ??
-                         throw new InvalidDataException($"Cannot find tensor (id:{id}).");
-            return output;
-        }
     }
 }

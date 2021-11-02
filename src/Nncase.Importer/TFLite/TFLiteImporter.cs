@@ -226,7 +226,7 @@ namespace Nncase.Importer.TFLite
                 // tflite.BuiltinOperator.NOT_EQUAL,
                 // tflite.BuiltinOperator.ONE_HOT,
                 // tflite.BuiltinOperator.PACK,
-                // tflite.BuiltinOperator.PAD,
+                tflite.BuiltinOperator.PAD => VisitPad(op),
                 // tflite.BuiltinOperator.PADV2,
                 // tflite.BuiltinOperator.PLACEHOLDER_FOR_GREATER_OP_CODES,
                 tflite.BuiltinOperator.POW => VisitBinary(op, BinaryOp.Pow),
@@ -345,5 +345,22 @@ namespace Nncase.Importer.TFLite
         
         private (Expr Expr0, Expr Expr1) GetInputExprs(in tflite.Operator op, int index0, int index1) =>
             (GetInputExprs(op, index0), GetInputExprs(op, index1));
+        
+        private tflite.Tensor GetTfliteTensor(int id)
+        {
+            var output = _subGraph.Tensors(id) ??
+                         throw new InvalidDataException($"Cannot find tensor (id:{id}).");
+            return output;
+        }
+
+        private tflite.Tensor GetInputTensor(in tflite.Operator op, int index)
+        {
+            return GetTfliteTensor(op.Inputs(index));
+        }
+        
+        private tflite.Tensor GetOutputTensor(in tflite.Operator op, int index)
+        {
+            return GetTfliteTensor(op.Outputs(index));
+        }
     }
 }

@@ -10,12 +10,11 @@ using System.Threading.Tasks;
 
 namespace Nncase.IR.Tensors
 {
-    public sealed record Pad() : Op
+    public sealed record Pad(PadMode padMode) : Op
     {
         public static ParameterInfo Input = new(typeof(Pad), 0, "Input");
         public static ParameterInfo Pads = new(typeof(Pad), 1, "Pads");
-        public static ParameterInfo Mode = new(typeof(Pad), 2, "Mode");
-        public static ParameterInfo Value = new(typeof(Pad), 3, "Value");
+        public static ParameterInfo Value = new(typeof(Pad), 2, "Value");
 
         /// <inheritdoc/>
         public override IRType InferInvokeResultType(ITypeInferenceContext context)
