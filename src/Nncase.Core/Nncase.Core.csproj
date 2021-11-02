@@ -9,11 +9,13 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Toolkit.HighPerformance" Version="7.1.1" />
     <PackageReference Include="NetFabric.Hyperlinq" Version="3.0.0-beta48" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.354">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
+    <PackageReference Include="System.Numerics.Tensors" Version="6.0.0-rc.2.21480.5" />
     <PackageReference Include="ValueTaskSupplement" Version="1.1.0" />
     <PackageReference Include="System.Numerics.Tensors" Version="5.0.0-preview.8.20407.11" />
     <PackageReference Include="Microsoft.Toolkit.HighPerformance" Version="7.1.1" />
