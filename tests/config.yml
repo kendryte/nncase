@@ -74,6 +74,7 @@ case: # case的配置，应该是一个多层次的
         #- vulkan
         - k210
         - k510
+        - k230
     - name: ptq
       values:
         - false
@@ -85,6 +86,7 @@ case: # case的配置，应该是一个多层次的
         #- vulkan
         - k210
         - k510
+        - k230
     - name: ptq
       values:
         - false
