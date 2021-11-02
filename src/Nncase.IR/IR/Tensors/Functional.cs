@@ -22,18 +22,19 @@ namespace Nncase.IR.F
         public static Call Concat(Tuple input, Expr axis) => new Call(new Concat(), input, axis);
 
         public static Call Gather(Expr input, Expr axis, Expr index) => new Call(new Gather(), input, axis, index);
-        
+
         public static Call GatherND(Expr input, Expr axis, Expr batch_dims, Expr index) => new Call(new Gather(), input, axis, batch_dims, index);
-        
-        public static Call Pad(Expr Input, Expr Pads, PadMode Mode, Expr Value) => new Call(new Pad(Mode), Input, Pads, Value);
-        
+
+        /// Pads is Const tensor, shape = [channels, 2(before, after)]
+        public static Call Pad(Expr input, Expr pads, PadMode mode, Expr value) => new Call(new Pad(mode), input, pads, value);
+
         public static Call Reduce(ReduceOp reduceOp, Expr input, Expr axis, Expr initValue, Expr keepDims) => new Call(new Reduce(reduceOp), input, axis, initValue, keepDims);
 
         public static Call ReduceMean(Expr input, Expr axis, Expr initValue, Expr keepDims) => new Call(new Reduce(ReduceOp.Mean), input, axis, initValue, keepDims);
 
         public static Call ReduceMin(Expr input, Expr axis, Expr initValue, Expr keepDims) => new Call(new Reduce(ReduceOp.Min), input, axis, initValue, keepDims);
 
-        public static Call ReduceSum(Expr Input, Expr Axis, Expr InitValue, Expr KeepDims) => new Call(new Reduce(ReduceOp.Sum), Input, Axis, InitValue, KeepDims);
+        public static Call ReduceSum(Expr input, Expr axis, Expr initValue, Expr keepDims) => new Call(new Reduce(ReduceOp.Sum), input, axis, initValue, keepDims);
 
         public static Call Reshape(Expr input, Expr shape) => new Call(new Reshape(), input, shape);
 

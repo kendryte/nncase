@@ -26,4 +26,8 @@ namespace Nncase.Transform.Pattern
 
         public bool MatchLeaf(Function func) => MatchCheckedType(func);
     }
+    public static partial class Utility
+    {
+        public static FunctionPattern IsFunction(ExprPattern Body, VArgsPattern Parameters) => new FunctionPattern(Body, Parameters);
+    }
 }

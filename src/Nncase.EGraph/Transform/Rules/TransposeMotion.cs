@@ -144,44 +144,36 @@ namespace Nncase.Transform.Rule
 
     }
 
-    // public class TransPosePadMotion : EGraphRule
-    // {
-    //     WildCardPattern wcin = "input";
-    //     List<ConstPattern> wcpads = new();
-    //
-    //     ConstPattern wcmode = IsConst(IsScalar()), wcpadv = IsConst(IsScalar()), wcperm = IsConst(IsScalar());
-    //
-    //     public TransPosePadMotion()
-    //     {
-    //         Pattern = Transpose(Pad(wcin, IsTuple(IsVArgsRepeat(
-    //           (n, param) =>
-    //           {
-    //               for (int i = 0; i < n; i++)
-    //               {
-    //                   var pad = IsConst(IsTensor());
-    //                   wcpads.Add(pad);
-    //                   param.Add(pad);
-    //               }
-    //           },
-    //           (match, param) =>
-    //           {
-    //               if (!match)
-    //               {
-    //                   wcpads.Clear();
-    //                   param.Clear();
-    //               }
-    //           }
-    //         )), wcmode, wcpadv), wcperm);
-    //     }
-    //
-    //     public override Expr GetRePlace(EMatchResult result)
-    //     {
-    //         var input = result.GetExpr(wcin);
-    //         var (mode, padv, perm) = result.GetExpr(wcmode, wcpadv, wcperm);
-    //         var newPads = perm.ToTensor<int>().Select(i => (Expr)result.GetExpr(wcpads[i])).ToImmutableArray();
-    //         return Pad(Transpose(input, perm), new IR.Tuple(newPads), mode, padv);
-    //     }
-    // }
+    public class TransPosePadMotion : EGraphRule
+    {
+        WildCardPattern wcin = "input";
+
+        ConstPattern wcmode = IsConst(IsScalar()), wcpadv = IsConst(IsScalar()), wcperm = IsConst(IsScalar()), wcpads = IsConst(IsTensor() & IsIntegral());
+
+        CallPattern wcpad;
+
+        public TransPosePadMotion()
+        {
+            wcpad = IsPad(wcin, wcpads, wcpadv);
+            Pattern = Transpose(wcpad, wcperm);
+        }
+
+        public override Expr GetRePlace(EMatchResult result)
+        {
+            var input = result.GetExpr(wcin);
+            var (mode, padv, perm) = result.GetExpr(wcmode, wcpadv, wcperm);
+            var padst = result.GetExpr(wcpads).ToTensor<int>();
+            var newpadspan = new int[padst.Dimensions[0] * 2];
+            var permt = perm.ToTensor<int>();
+            for (int i = 0; i < permt.Dimensions[0]; i++)
+            {
+                newpadspan[i * 2] = padst[permt[i], 0];
+                newpadspan[(i * 2) + 1] = padst[permt[i], 1];
+            }
+            Const newPads = new Const(result.GetExpr(wcpads).ValueType, newpadspan.Cast<byte>().ToArray());
+            return Pad(Transpose(input, perm), (newPads), ((Pad)result.GetExpr(wcpad).Target).padMode, padv);
+        }
+    }
 
     public class TransposeReduceMotion : EGraphRule
     {

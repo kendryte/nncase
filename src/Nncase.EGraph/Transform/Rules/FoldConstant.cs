@@ -14,8 +14,54 @@ using static Nncase.IR.F.Tensors;
 
 namespace Nncase.Transform.Rule
 {
-    public class FoldConstant : EGraphRule
+    public class FoldConstantBase : EGraphRule
     {
+        public List<ConstPattern> wcconsts = new();
 
+        public VArgsPattern wcargs;
+
+        public FoldConstantBase()
+        {
+            wcargs = IsVArgsRepeat(
+                     (n, param) =>
+                     {
+                         for (int i = 0; i < n; i++)
+                         {
+                             var wcconst = IsConst();
+                             param.Add(wcconst);
+                             wcconsts.Add(wcconst);
+                         }
+                     },
+                     (match, param) =>
+                     {
+                         if (!match)
+                         {
+                             param.Clear();
+                             wcconsts.Clear();
+                         }
+                     }
+                   );
+        }
+    }
+
+    public class FoldConstantCall : FoldConstantBase
+    {
+        public WildCardPattern wctarget = "target";
+        public CallPattern wccall;
+        public FoldConstantCall()
+        {
+            wccall = IsCall(wctarget, wcargs);
+            Pattern = wccall;
+        }
+    }
+
+    public class FoldConstantFunction : FoldConstantBase
+    {
+        public WildCardPattern wcbody = "body";
+        public FunctionPattern wcfunc;
+        public FoldConstantFunction()
+        {
+            wcfunc = IsFunction(wcbody, wcargs);
+        }
     }
 }

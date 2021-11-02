@@ -13,7 +13,7 @@ namespace Nncase.Transform.Rule
             return new ExprPattern[] { Pattern };
         }
 
-        public ExprPattern Pattern { get; set; };
+        public ExprPattern Pattern { get; set; }
 
 
         public virtual Expr? GetRePlace(EMatchResult result) => throw new NotImplementedException("Not Implement GetRePlace!");

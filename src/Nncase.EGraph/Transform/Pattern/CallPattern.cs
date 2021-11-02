@@ -58,5 +58,15 @@ namespace Nncase.Transform.Pattern
 
         public static CallPattern IsReduce(ExprPattern Input, ExprPattern Axis, ExprPattern InitValue, ExprPattern KeepDims) => IsReduce((ReduceOp x) => true, Input, Axis, InitValue, KeepDims);
 
+        public static CallPattern IsPad(Func<PadMode, bool> cond, ExprPattern input, ExprPattern pads, ExprPattern value) => new CallPattern(new PadPattern(pad => cond(pad.padMode)), input, pads, value);
+
+        public static CallPattern IsPad(ExprPattern input, ExprPattern pads, ExprPattern value) =>
+        IsPad((PadMode padmode) => true, input, pads, value);
+
+        public static CallPattern IsCast(Func<DataType, bool> Cond, ExprPattern input) => new CallPattern(new CastPattern(Cond), input);
+
+        public static CallPattern IsCast(ExprPattern input) =>
+        IsCast(x => true, input);
+
     }
 }

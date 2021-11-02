@@ -7,13 +7,15 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.IR.Tensors;
 
 namespace Nncase.Transform.Pattern.Tensors
 {
     /// <summary>
     /// Cast expression.
     /// </summary>
-    public record CastPattern(DataType NewType) : OpPattern
+    public record CastPattern(Func<Cast, bool> Cond) : OpPattern
     {
+        public CastPattern(Func<DataType, bool> Cond) : this((Cast x) => Cond(x.NewType)) { }
     }
 }
