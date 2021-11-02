@@ -18,8 +18,8 @@ namespace Nncase.Transform.Pattern.F
 
         public static CallPattern Concat(TuplePattern input, ExprPattern axis) => new CallPattern(new ConcatPattern(x => true), input, axis);
 
-        public static CallPattern Pad(ExprPattern Input, TuplePattern Pads, ExprPattern Mode, ExprPattern Value) => new CallPattern(new PadPattern(), Input, Pads, Mode, Value);        
-        
+        public static CallPattern Pad(ExprPattern Input, TuplePattern Pads, ExprPattern Mode, ExprPattern Value) => new CallPattern(new PadPattern(), Input, Pads, Mode, Value);
+
         public static CallPattern ReduceMean(ExprPattern Input, ExprPattern Axis, ExprPattern InitValue, ExprPattern KeepDims) => new CallPattern(new ReducePattern(ReduceOp.Mean), Input, Axis, InitValue, KeepDims);
 
         public static CallPattern ReduceMin(ExprPattern Input, ExprPattern Axis, ExprPattern InitValue, ExprPattern KeepDims) => new CallPattern(new ReducePattern(ReduceOp.Min), Input, Axis, InitValue, KeepDims);
@@ -27,6 +27,10 @@ namespace Nncase.Transform.Pattern.F
         public static CallPattern ReduceMax(ExprPattern Input, ExprPattern Axis, ExprPattern InitValue, ExprPattern KeepDims) => new CallPattern(new ReducePattern(ReduceOp.Max), Input, Axis, InitValue, KeepDims);
 
         public static CallPattern ReduceSum(ExprPattern Input, ExprPattern Axis, ExprPattern InitValue, ExprPattern KeepDims) => new CallPattern(new ReducePattern(ReduceOp.Sum), Input, Axis, InitValue, KeepDims);
+
+        public static CallPattern Squeeze(ExprPattern input, ExprPattern dims) => new CallPattern(new SqueezePattern(), input, dims);
+
+        public static CallPattern ReShape(ExprPattern input, ExprPattern shape) => new CallPattern(new ReshapePattern(), input, shape);
     }
 
 }

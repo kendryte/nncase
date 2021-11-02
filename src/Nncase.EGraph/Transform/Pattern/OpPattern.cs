@@ -24,6 +24,7 @@ namespace Nncase.Transform.Pattern
             (SlicePattern slicePat, Slice slice) => slicePat.MatchLeaf(slice),
             (ConcatPattern concatPat, Concat concat) => concatPat.MatchLeaf(concat),
             (PadPattern padPat, Pad pad) => padPat.MatchLeaf(pad),
+            (SqueezePattern squeezePat, Squeeze squeeze) => squeezePat.MatchLeaf(squeeze),
             (_, _) => false
         };
     }

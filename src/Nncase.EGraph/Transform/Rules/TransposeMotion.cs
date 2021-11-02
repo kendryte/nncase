@@ -64,7 +64,7 @@ namespace Nncase.Transform.Rule
             perm = (Const)result.GetExpr(wperm);
             binary = (Binary)result.GetRoot();
             newShape = GetNewConstShape((Const)con, (Const)perm);
-            newCon = con with { ValueType = con.ValueType with { Shape = newShape } };
+            newCon = con with { ValueType = (TensorType)con.ValueType with { Shape = newShape } };
         }
     }
 
@@ -129,7 +129,7 @@ namespace Nncase.Transform.Rule
             )), wcaxis);
         }
 
-        public override Expr GetRePlace(EMatchResult result)
+        public override Expr? GetRePlace(EMatchResult result)
         {
             var newShapes = (from input in wcinputs select GetShape(result.GetExpr(input))).ToArray();
             var oldPerm = result.GetExpr<Const>(wcprem);

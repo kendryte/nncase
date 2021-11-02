@@ -41,5 +41,7 @@ namespace Nncase.IR.F
 
         /// squeeze input by give dims
         public static Call Squeeze(Expr input, Expr dims) => new Call(new Squeeze(), input, dims);
+
+        public static Call ReShape(Expr input, Expr shape) => new Call(new Reshape(), input, shape);
     }
 }
