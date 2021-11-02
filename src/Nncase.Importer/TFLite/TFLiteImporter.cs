@@ -245,7 +245,7 @@ namespace Nncase.Importer.TFLite
                 // tflite.BuiltinOperator.RELU,
                 // tflite.BuiltinOperator.RELU6,
                 // tflite.BuiltinOperator.RELU_N1_TO_1,
-                // tflite.BuiltinOperator.RESHAPE,
+                tflite.BuiltinOperator.RESHAPE => VisitReshape(op),
                 // tflite.BuiltinOperator.RESIZE_BILINEAR,
                 // tflite.BuiltinOperator.RESIZE_NEAREST_NEIGHBOR,
                 // tflite.BuiltinOperator.REVERSE_SEQUENCE,

@@ -33,6 +33,8 @@ namespace Nncase.IR.F
 
         public static Call ReduceSum(Expr Input, Expr Axis, Expr InitValue, Expr KeepDims) => new Call(new Reduce(ReduceOp.Sum), Input, Axis, InitValue, KeepDims);
 
+        public static Call Reshape(Expr input, Expr shape) => new Call(new Reshape(), input, shape);
+
         public static Call Slice(Expr input, Expr begins, Expr ends) => new Call(new Slice(), input, begins, ends);
 
         /// squeeze input by give dims
