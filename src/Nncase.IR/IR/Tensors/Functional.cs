@@ -24,9 +24,7 @@ namespace Nncase.IR.F
         public static Call Gather(Expr input, Expr axis, Expr index) => new Call(new Gather(), input, axis, index);
         
         public static Call Pad(Expr Input, Expr Pads, PadMode Mode, Expr Value) => new Call(new Pad(Mode), Input, Pads, Value);
-
-        public static Call Pad(Expr input, Tuple pads, Expr mode, Expr value) => new Call(new Pad(), input, pads, mode, value);
-
+        
         public static Call Reduce(ReduceOp reduceOp, Expr input, Expr axis, Expr initValue, Expr keepDims) => new Call(new Reduce(reduceOp), input, axis, initValue, keepDims);
 
         public static Call ReduceMean(Expr input, Expr axis, Expr initValue, Expr keepDims) => new Call(new Reduce(ReduceOp.Mean), input, axis, initValue, keepDims);
