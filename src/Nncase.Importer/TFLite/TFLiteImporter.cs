@@ -217,7 +217,7 @@ namespace Nncase.Importer.TFLite
                 // tflite.BuiltinOperator.MEAN,
                 tflite.BuiltinOperator.MINIMUM => VisitBinary(op, BinaryOp.Min),
 
-                // tflite.BuiltinOperator.MIRROR_PAD,
+                tflite.BuiltinOperator.MIRROR_PAD => VisitMirrorPad(op),
                 tflite.BuiltinOperator.MUL => VisitBinary(op, BinaryOp.Mul, op.BuiltinOptionsAsMulOptions().FusedActivationFunction),
                 tflite.BuiltinOperator.NEG => VisitUnary(op, UnaryOp.Neg),
 
@@ -227,7 +227,7 @@ namespace Nncase.Importer.TFLite
                 // tflite.BuiltinOperator.ONE_HOT,
                 // tflite.BuiltinOperator.PACK,
                 tflite.BuiltinOperator.PAD => VisitPad(op),
-                // tflite.BuiltinOperator.PADV2,
+                tflite.BuiltinOperator.PADV2 => VisitPadV2(op),
                 // tflite.BuiltinOperator.PLACEHOLDER_FOR_GREATER_OP_CODES,
                 tflite.BuiltinOperator.POW => VisitBinary(op, BinaryOp.Pow),
 
