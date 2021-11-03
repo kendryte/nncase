@@ -23,6 +23,7 @@ target_sources(ir PRIVATE
     unary.cpp
     pad.cpp
     bitcast.cpp
+    random_normal.cpp
     resize_image.cpp
     slice.cpp
     table_lookup.cpp

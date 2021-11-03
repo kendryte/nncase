@@ -25,6 +25,7 @@ set(SRCS runtime_module.cpp
          ops/tensor.onehot.cpp
          ops/tensor.pad.cpp
          ops/tensor.quantize.cpp
+         ops/tensor.random_normal.cpp
          ops/tensor.reduce.cpp
          ops/tensor.reduce_arg.cpp
          ops/tensor.reduce_window2d.cpp

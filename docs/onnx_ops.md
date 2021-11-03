@@ -60,6 +60,8 @@
 | Pow | ✅ |
 | PRelu | ✅ |
 | QuantizeLinear | ✅ |
+| RandomNormal | ✅ |
+| RandomNormalLike | ✅ |
 | ReduceL1 | ✅ |
 | ReduceL2 | ✅ |
 | ReduceMax | ✅ |
