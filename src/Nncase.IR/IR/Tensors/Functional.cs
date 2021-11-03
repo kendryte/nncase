@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.IR.Math;
 using Nncase.IR.Tensors;
 
 namespace Nncase.IR.F
@@ -20,6 +21,8 @@ namespace Nncase.IR.F
         public static Call Cast(Expr input, DataType newType) => new Call(new Cast(newType), input);
 
         public static Call Concat(Tuple input, Expr axis) => new Call(new Concat(), input, axis);
+
+        public static Call Conv2D(Expr input, Expr weights, Expr bias, Expr padding, Expr stride, Expr dilation, PadMode padMode) => new Call(new Conv2D(padMode), input, padding, stride, dilation);
 
         public static Call Gather(Expr input, Expr axis, Expr index) => new Call(new Gather(), input, axis, index);
 

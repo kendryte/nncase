@@ -49,6 +49,11 @@ namespace Nncase
                         return (T)(object)byte.MinValue;
                     }
 
+                    if (typeof(T) == typeof(float))
+                    {
+                        return (T)(object)float.NegativeInfinity;
+                    }
+
                     throw new NotSupportedException();
                 }
             }
@@ -60,6 +65,11 @@ namespace Nncase
                     if (typeof(T) == typeof(byte))
                     {
                         return (T)(object)byte.MaxValue;
+                    }
+
+                    if (typeof(T) == typeof(float))
+                    {
+                        return (T)(object) float.PositiveInfinity;
                     }
 
                     throw new NotSupportedException();
