@@ -30,7 +30,7 @@ using namespace nncase;
 using namespace nncase::ir;
 using namespace nncase::ir::transforms;
 
-output_connector *local_sigmoid(output_connector *x, transform_context &context)
+output_connector *local_sigmoid(output_connector *x, transform_context &context, std::string i)
 {
     std::vector<float> one_data(xt::compute_size(x->shape()), 1.f);
 
@@ -40,11 +40,11 @@ output_connector *local_sigmoid(output_connector *x, transform_context &context)
     auto add_ = context.graph.emplace<binary>(binary_add, exp_->output().shape(), one->output().shape(), value_range<float>::full());
     auto div_ = context.graph.emplace<binary>(binary_div, one->output().shape(), add_->output().shape(), value_range<float>::full());
 
-    one->name(x->name() + "/one");
-    neg_->name(x->name() + "/neg_");
-    exp_->name(x->name() + "/exp_");
-    add_->name(x->name() + "/add_");
-    div_->name(x->name() + "/div_");
+    one->name(x->owner().name() + "/sig_one" + i);
+    neg_->name(x->owner().name() + "/sig_neg_" + i);
+    exp_->name(x->owner().name() + "/sig_exp_" + i);
+    add_->name(x->owner().name() + "/sig_add_" + i);
+    div_->name(x->owner().name() + "/sig_div_" + i);
 
     neg_->input().connect(*x);
     exp_->input().connect(neg_->output());
@@ -56,7 +56,7 @@ output_connector *local_sigmoid(output_connector *x, transform_context &context)
     return &div_->output();
 }
 
-output_connector *local_tanh(output_connector *x, transform_context &context)
+output_connector *local_tanh(output_connector *x, transform_context &context, std::string i)
 {
     std::vector<float> one_data(xt::compute_size(x->shape()), 1.f);
     std::vector<float> two_data(xt::compute_size(x->shape()), 2.f);
@@ -64,15 +64,15 @@ output_connector *local_tanh(output_connector *x, transform_context &context)
     auto two_ = context.graph.emplace<constant>(dt_float32, x->shape(), two_data);
     auto one_ = context.graph.emplace<constant>(dt_float32, x->shape(), one_data);
     auto mul_1 = context.graph.emplace<binary>(binary_mul, x->shape(), two_->output().shape(), value_range<float>::full());
-    auto sigm = local_sigmoid(&mul_1->output(), context);
+    one_->name(x->owner().name() + "/tanh_one_" + i);
+    two_->name(x->owner().name() + "/tanh_two_" + i);
+    mul_1->name(x->owner().name() + "/tanh_mul_" + i + "_1");
+
+    auto sigm = local_sigmoid(&mul_1->output(), context, "_tanh_" + i + "_");
     auto mul_2 = context.graph.emplace<binary>(binary_mul, sigm->shape(), two_->output().shape(), value_range<float>::full());
     auto sub_ = context.graph.emplace<binary>(binary_sub, mul_2->output().shape(), one_->output().shape(), value_range<float>::full());
-
-    one_->name(x->name() + "/one_");
-    two_->name(x->name() + "/two_");
-    mul_1->name(x->name() + "/mul_1");
-    mul_2->name(x->name() + "/mul_2");
-    sub_->name(x->name() + "/sub_");
+    mul_2->name(x->owner().name() + "/tanh_mul_" + i + "_2");
+    sub_->name(x->owner().name() + "/tanh_sub_" + i);
 
     mul_1->input_a().connect(*x);
     mul_1->input_b().connect(two_->output());
@@ -148,7 +148,11 @@ void lstm_transform::process(transform_context &context)
     auto bitcast_wxc_post = context.graph.emplace<bitcast>(dt_float32, matmul_wxc->output().shape(),
         shape_t { old_lstm.input().shape()[0], old_lstm.input().shape()[1], matmul_wxc->output().shape()[1] });
     // auto matmul_bxc = context.graph.emplace<binary>(binary_add, matmul_wxc->output().shape(), b_xc.output().shape(), value_range<float>::full());
+    bitc_wxc->name(old_lstm.name() + "/bitc_wxc");
+    tp_wxc->name(old_lstm.name() + "/tp_wxc");
+    bitcast_wxc_pre->name(old_lstm.name() + "/bitcast_wxc_pre");
     matmul_wxc->name(old_lstm.name() + "/matmul_wxc");
+    bitcast_wxc_post->name(old_lstm.name() + "/bitcast_wxc_post");
     // matmul_bxc->name(old_lstm.name() + "/matmul_bxc");
     bitc_wxc->input().connect(w_xc.output());
     tp_wxc->input().connect(bitc_wxc->output());
@@ -164,12 +168,16 @@ void lstm_transform::process(transform_context &context)
     auto bitc_wrc = context.graph.emplace<bitcast>(dt_float32, w_rc.output().shape(), shape_t { w_rc.output().shape()[1], w_rc.output().shape()[2] });
     //transpose w_rc
     auto tp_wrc = context.graph.emplace<transpose>(dt_float32, bitc_wrc->output().shape(), axis_t { 1, 0 });
+    bitc_wrc->name(old_lstm.name() + "/bitc_wrc");
+    tp_wrc->name(old_lstm.name() + "/tp_wrc");
     bitc_wrc->input().connect(w_rc.output());
     tp_wrc->input().connect(bitc_wrc->output());
 
     std::vector<float> constant_data((int)bitcast_wxc_post->output().shape()[1] * (int)bitcast_wxc_post->output().shape()[2] / 4, 0.f);
     auto c_0 = context.graph.emplace<constant>(dt_float32, shape_t { 1, bitcast_wxc_post->output().shape()[1], bitcast_wxc_post->output().shape()[2] / 4 }, constant_data);
     auto h_0 = context.graph.emplace<constant>(dt_float32, shape_t { 1, bitcast_wxc_post->output().shape()[1], bitcast_wxc_post->output().shape()[2] / 4 }, constant_data);
+    c_0->name(old_lstm.name() + "_c_0");
+    h_0->name(old_lstm.name() + "_h_0");
     auto c_ = &c_0->output();
     auto h_ = &h_0->output();
 
@@ -180,6 +188,7 @@ void lstm_transform::process(transform_context &context)
     }
     //h_concat
     auto h_concat = context.graph.emplace<concat>(dt_float32, lstm_h_s, 0);
+    h_concat->name(old_lstm.name() + "/h_concat");
 
     // 0 constant for matmul
     // std::vector<float> zero(tp_wrc->output().shape()[1], 0.f);
@@ -187,7 +196,7 @@ void lstm_transform::process(transform_context &context)
 
     for (size_t i = 0; i < (size_t)(bitcast_wxc_post->output().shape()[0]); i++)
     {
-        std::vector<float> cont_data((int)bitcast_wxc_post->output().shape()[1], (i == 0) ? 1.f : 1.f);
+        std::vector<float> cont_data((int)bitcast_wxc_post->output().shape()[1], (i == 0) ? (old_lstm.framework() == "caffe" ? 0.f : 1.f) : 1.f);
         auto cont_ = context.graph.emplace<constant>(dt_float32, shape_t { 1, 1 }, cont_data);
         cont_->name(old_lstm.name() + "/cont_" + std::to_string(i));
 
@@ -203,7 +212,11 @@ void lstm_transform::process(transform_context &context)
         auto w_rc_h = context.graph.emplace<matmul>(bitcast_wrc_pre->output().shape(), tp_wrc->output().shape(), value_range<float>::full());
         auto bitcast_wrc_post = context.graph.emplace<bitcast>(dt_float32, w_rc_h->output().shape(),
             shape_t { scale_->output().shape()[0], scale_->output().shape()[1], w_rc_h->output().shape()[1] });
+
+        bitcast_wrc_pre->name(old_lstm.name() + "/bitcast_wrc_pre" + std::to_string(i));
         w_rc_h->name(old_lstm.name() + "/w_rc_h_" + std::to_string(i));
+        bitcast_wrc_post->name(old_lstm.name() + "/bitcast_wrc_post" + std::to_string(i));
+
         bitcast_wrc_pre->input().connect(scale_->output());
         w_rc_h->input_a().connect(bitcast_wrc_pre->output());
         w_rc_h->input_b().connect(tp_wrc->output());
@@ -234,11 +247,13 @@ void lstm_transform::process(transform_context &context)
                 suit_for_framework.push_back(shape_t { (size_t)gate_input->output().shape()[0], (size_t)gate_input->output().shape()[1], (size_t)c_->shape()[2] });
             }
             auto framework_concat = context.graph.emplace<concat>(dt_float32, suit_for_framework, 2);
+            framework_concat->name(old_lstm.name() + "/fit_framework_concat");
             for (auto index : caffe_sequence)
             {
                 auto slice_gate_output = context.graph.emplace<slice>(dt_float32, gate_input->output().shape(),
                     axis_t { 0, 0, index * (int32_t)c_->shape()[2] },
-                    axis_t { (int32_t)gate_input->output().shape()[0], (int32_t)gate_input->output().shape()[1], index * (int32_t)c_->shape()[2] });
+                    axis_t { (int32_t)gate_input->output().shape()[0], (int32_t)gate_input->output().shape()[1], (index + 1) * (int32_t)c_->shape()[2] });
+                slice_gate_output->name(old_lstm.name() + "/slice_gate");
                 slice_gate_output->input().connect(*gate_output_ptr);
                 framework_concat->input_at(index).connect(slice_gate_output->output());
             }
@@ -246,8 +261,8 @@ void lstm_transform::process(transform_context &context)
         }
 
         // get gate_output
-        auto in_sigmoid = local_sigmoid(gate_output_ptr, context);
-        auto in_tanh = local_tanh(gate_output_ptr, context);
+        auto in_sigmoid = local_sigmoid(gate_output_ptr, context, std::to_string(i));
+        auto in_tanh = local_tanh(gate_output_ptr, context, std::to_string(i));
 
         // slice the in_sidmoid into i_t, f_t, o_t, g_t
         // i_t
@@ -296,7 +311,7 @@ void lstm_transform::process(transform_context &context)
         c_t->input_b().connect(i_g_mul->output());
 
         //h_t = o_t * tanh(c_t)
-        auto tanh_c_t = local_tanh(&c_t->output(), context);
+        auto tanh_c_t = local_tanh(&c_t->output(), context, std::to_string(i));
         auto h_t = context.graph.emplace<binary>(binary_mul, o_t->output().shape(), tanh_c_t->shape(), value_range<float>::full());
         h_t->name(old_lstm.name() + "/h_t_" + std::to_string(i));
         h_t->input_a().connect(o_t->output());
