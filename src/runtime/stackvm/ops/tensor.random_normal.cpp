@@ -24,7 +24,7 @@ using namespace nncase::runtime::stackvm;
 result<void> stackvm_runtime_function::visit(const tensor_random_normal_op_t &op) noexcept
 {
     try_var(output, pop_addr());
-    try_var(out_shape, module().shape_reg(op.rshape_dst));
+    try_var(out_shape, module().shape_reg(op.rshape_dest));
     switch (op.datatype_dest)
     {
     case dt_float32:
