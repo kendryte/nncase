@@ -26,7 +26,9 @@ namespace Nncase.IR.F
 
         public static Call Gather(Expr input, Expr axis, Expr index) => new Call(new Gather(), input, axis, index);
 
-        public static Call GatherND(Expr input, Expr axis, Expr batch_dims, Expr index) => new Call(new Gather(), input, axis, batch_dims, index);
+        public static Call GatherND(Expr input, Expr axis, Expr batch_dims, Expr index) => new Call(new GatherND(), input, axis, batch_dims, index);
+        
+        public static Call MatMul(Expr input, Expr other) => new Call(new MatMul(), input, other);
 
         /// Pads is Const tensor, shape = [channels, 2(before, after)]
         public static Call Pad(Expr input, Expr pads, PadMode mode, Expr value) => new Call(new Pad(mode), input, pads, value);
@@ -56,8 +58,5 @@ namespace Nncase.IR.F
         public static Call SpaceToBatch(Expr input, Expr blockShape, Expr paddings) => new Call(new SpaceToBatch(), input, blockShape, paddings);
 
         public static Call BatchToSpace(Expr input, Expr blockShape, Expr crops) => new Call(new BatchToSpace(), input, blockShape, crops);
-
-
-
     }
 }

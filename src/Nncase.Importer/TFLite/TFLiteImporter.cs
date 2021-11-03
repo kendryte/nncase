@@ -180,7 +180,7 @@ namespace Nncase.Importer.TFLite
                 tflite.BuiltinOperator.FLOOR_DIV => VisitFloorDiv(op),
                 tflite.BuiltinOperator.FLOOR_MOD => VisitFloorMod(op),
 
-                // tflite.BuiltinOperator.FULLY_CONNECTED,
+                tflite.BuiltinOperator.FULLY_CONNECTED => VisitMatMul(op),
                 tflite.BuiltinOperator.GATHER => VisitGather(op),
                 tflite.BuiltinOperator.GATHER_ND => VisitGatherND(op),
                 // tflite.BuiltinOperator.GREATER,
