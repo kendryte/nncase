@@ -171,4 +171,3 @@ void onnx_importer::convert_op_RandomUniformLike(const onnx::NodeProto &node)
 
     output_tensors_.emplace(node.output()[0], &op->output());
 }
-
