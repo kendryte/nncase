@@ -48,5 +48,13 @@ namespace Nncase.IR.F
         public static Call Quantize(Expr input, Expr quantParam, DataType targetType) => new Call(new Quantize(targetType), input, quantParam);
 
         public static Call DeQuantize(Expr input, Expr quantParam, DataType targetType) => new Call(new DeQuantize(targetType), input, quantParam);
+
+        // same like tensorflow
+        public static Call SpaceToBatch(Expr input, Expr blockShape, Expr paddings) => new Call(new SpaceToBatch(), input, blockShape, paddings);
+
+        public static Call BatchToSpace(Expr input, Expr blockShape, Expr crops) => new Call(new BatchToSpace(), input, blockShape, crops);
+
+
+
     }
 }

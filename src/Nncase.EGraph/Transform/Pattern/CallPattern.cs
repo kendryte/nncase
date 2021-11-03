@@ -68,5 +68,12 @@ namespace Nncase.Transform.Pattern
         public static CallPattern IsCast(ExprPattern input) =>
         IsCast(x => true, input);
 
+        public static CallPattern IsQuantize(Func<DataType, bool> Cond, ExprPattern input, ExprPattern quantParam) => new CallPattern(new QuantizePattern(x => Cond(x.TargetType)), input, quantParam);
+
+        public static CallPattern IsQuantize(ExprPattern input, ExprPattern quantParam) => IsQuantize(x => true, input, quantParam);
+
+        public static CallPattern IsDeQuantize(Func<DataType, bool> Cond, ExprPattern input, ExprPattern quantParam) => new CallPattern(new DeQuantizePattern(x => Cond(x.TargetType)), input, quantParam);
+
+        public static CallPattern IsDeQuantize(ExprPattern input, ExprPattern quantParam) => IsDeQuantize(x => true, input, quantParam);
     }
 }

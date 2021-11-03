@@ -33,6 +33,10 @@ namespace Nncase.Transform.Pattern.F
         public static CallPattern ReShape(ExprPattern input, ExprPattern shape) => new CallPattern(new ReshapePattern(), input, shape);
 
         public static CallPattern Cast(ExprPattern input, DataType newType) => new CallPattern(new CastPattern((DataType t) => t == newType), input);
+
+        public static CallPattern Quantize(ExprPattern input, ExprPattern quantParam, DataType targetType) => new CallPattern(new QuantizePattern(targetType), input, quantParam);
+
+        public static CallPattern DeQuantize(ExprPattern input, ExprPattern quantParam, DataType targetType) => new CallPattern(new DeQuantizePattern(targetType), input, quantParam);
     }
 
 }
