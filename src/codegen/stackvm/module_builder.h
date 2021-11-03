@@ -31,6 +31,7 @@
 #include <nncase/ir/ops/pad.h>
 #include <nncase/ir/ops/quantize.h>
 #include <nncase/ir/ops/random_normal.h>
+#include <nncase/ir/ops/random_uniform.h>
 #include <nncase/ir/ops/reduce.h>
 #include <nncase/ir/ops/reduce_arg.h>
 #include <nncase/ir/ops/reduce_window2d.h>

@@ -280,3 +280,11 @@ result<void> kernels::random_normal(T *output, const runtime_shape_t &out_shape,
 {
     return cpu::reference::random_normal(output, out_shape, mean, std, seed);
 }
+
+template result<void> kernels::random_uniform<float>(float *output, const runtime_shape_t &out_shape, float low, float high, float seed) noexcept;
+
+template <typename T>
+result<void> kernels::random_uniform(T *output, const runtime_shape_t &out_shape, float low, float high, float seed) noexcept
+{
+    return cpu::reference::random_uniform(output, out_shape, low, high, seed);
+}

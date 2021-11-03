@@ -165,6 +165,7 @@ namespace IsaGen
         PAD,
         QUANTIZE,
         RANDOM_NORMAL,
+        RANDOM_UNIFORM,
         REDUCE,
         REDUCEARG,
         REDUCE_WINDOW2D,
@@ -1614,6 +1615,35 @@ namespace IsaGen
             [Description("Seed")]
             public float Seed { get; set; }
         }
+
+        [DisplayName("TENSOR.RANDOM_UNIFORM")]
+        [Category("Tensor Instructions")]
+        [Description("RandomUniform")]
+        public class RandomUniformInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.RANDOM_UNIFORM;
+
+            [DisplayName("datatype_dest")]
+            [Description("Output datatype")]
+            public DataType DataTypeDest { get; set; }
+
+            [DisplayName("rshape_dest")]
+            [Description("output shape register")]
+            public byte RshapeDest { get; set; }
+
+            [DisplayName("low")]
+            [Description("Low")]
+            public float Low { get; set; }
+
+            [DisplayName("high")]
+            [Description("High")]
+            public float High { get; set; }
+
+            [DisplayName("seed")]
+            [Description("Seed")]
+            public float Seed { get; set; }
+        }
+
         [DisplayName("TENSOR.REDUCE")]
         [Category("Tensor Instructions")]
         [Description("Reduce")]

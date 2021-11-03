@@ -29,13 +29,23 @@ template result<void> reference::random_normal<float>(float *output, const runti
 template <typename T>
 result<void> reference::random_normal(T *output, const runtime_shape_t &out_shape, float mean, float std, float seed) noexcept
 {
-    auto out_strides = get_default_strides(out_shape);
     std::default_random_engine engine(seed);
     std::normal_distribution<T> dis(mean, std);
-    try_(reference::apply(out_shape, [&](const runtime_shape_t &index) -> result<void> {
-        output[offset(out_strides, index)] = dis(engine);
-        return ok();
-    }));
+    auto size = compute_size(out_shape);
+    std::generate_n(output, size, [&] { return dis(engine); });
+
+    return ok();
+}
+
+template result<void> reference::random_uniform<float>(float *output, const runtime_shape_t &out_shape, float low, float high, float seed) noexcept;
+
+template <typename T>
+result<void> reference::random_uniform(T *output, const runtime_shape_t &out_shape, float low, float high, float seed) noexcept
+{
+    std::default_random_engine engine(seed);
+    std::uniform_real_distribution<T> dis(low, high);
+    auto size = compute_size(out_shape);
+    std::generate_n(output, size, [&] { return dis(engine); });
 
     return ok();
 }

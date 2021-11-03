@@ -18,6 +18,7 @@ set(SRCS module_builder.cpp
          ops/pad.cpp
          ops/quantize.cpp
          ops/random_normal.cpp
+         ops/random_uniform.cpp
          ops/reduce.cpp
          ops/reduce_arg.cpp
          ops/reduce_window2d.cpp

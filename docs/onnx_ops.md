@@ -62,6 +62,8 @@
 | QuantizeLinear | ✅ |
 | RandomNormal | ✅ |
 | RandomNormalLike | ✅ |
+| RandomUniform | ✅ |
+| RandomUniformLike | ✅ |
 | ReduceL1 | ✅ |
 | ReduceL2 | ✅ |
 | ReduceMax | ✅ |
