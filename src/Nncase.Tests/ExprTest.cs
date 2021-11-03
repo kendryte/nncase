@@ -9,7 +9,7 @@ public class UnitTestExpr
     public void TestConstEqual()
     {
         var b = (Const)(1.1f) == (Const)(1.1f);
-        Assert.Equal(b, true);
+        Assert.True(b);
     }
 
     [Fact]
@@ -27,11 +27,11 @@ public class UnitTestExpr
     {
         var con = Const.FromSpan<int>(new[] { 1, 2, 3, 4, 5 }, new[] { 5 });
         var t = con.ToTensor<int>();
-        Assert.Equal(t[0], 1);
-        Assert.Equal(t[1], 2);
-        Assert.Equal(t[2], 3);
-        Assert.Equal(t[3], 4);
-        Assert.Equal(t[4], 5);
+        Assert.Equal(1, t[0]);
+        Assert.Equal(2, t[1]);
+        Assert.Equal(3, t[2]);
+        Assert.Equal(4, t[3]);
+        Assert.Equal(5, t[4]);
     }
 
 }

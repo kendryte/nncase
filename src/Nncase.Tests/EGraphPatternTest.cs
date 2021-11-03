@@ -23,7 +23,7 @@ namespace Nncase.Tests
             Var e = new Var("x", AnyType.Default);
             ExprPattern ep = e;
             Assert.IsType<VarPattern>(ep);
-            Assert.Equal(ep.MatchLeaf(e), true);
+            Assert.True(ep.MatchLeaf(e));
         }
 
         [Fact]
@@ -37,10 +37,10 @@ namespace Nncase.Tests
             ExprPattern cp3 = IsConst((int x) => x > 1);
             var cp4 = (ConstPattern)1.1f;
 
-            Assert.Equal(cp1.MatchLeaf(con), true);
-            Assert.Equal(cp2.MatchLeaf(con), false);
-            Assert.Equal(cp3.MatchLeaf(con), false);
-            Assert.Equal(cp4.MatchLeaf(con), true);
+            Assert.True(cp1.MatchLeaf(con));
+            Assert.False(cp2.MatchLeaf(con));
+            Assert.False(cp3.MatchLeaf(con));
+            Assert.True(cp4.MatchLeaf(con));
         }
 
         [Fact]
@@ -95,9 +95,9 @@ namespace Nncase.Tests
 
             var c3 = IsBinary(x => x is (BinaryOp.Div or BinaryOp.Sub), wc1, wc2);
 
-            Assert.Equal(c.Target.MatchLeaf(e.Target), true);
-            Assert.Equal(c2.Target.MatchLeaf(e.Target), true);
-            Assert.Equal(c3.Target.MatchLeaf(e.Target), false);
+            Assert.True(c.Target.MatchLeaf(e.Target));
+            Assert.True(c2.Target.MatchLeaf(e.Target));
+            Assert.False(c3.Target.MatchLeaf(e.Target));
         }
 
         [Fact]
@@ -160,11 +160,11 @@ namespace Nncase.Tests
             );
 
             var tuple = new IR.Tuple(1, new IR.Tuple(6, 7, 8), 3, 4);
-            Assert.Equal(pattern.MatchLeaf(tuple.Fields), true);
-            Assert.Equal(pattern[0].MatchLeaf(tuple[0]), true);
-            Assert.Equal(pattern[1].MatchLeaf(tuple[1]), true);
-            Assert.Equal(pattern[2].MatchLeaf(tuple[2]), true);
-            Assert.Equal(pattern[3].MatchLeaf(tuple[3]), true);
+            Assert.True(pattern.MatchLeaf(tuple.Fields));
+            Assert.True(pattern[0].MatchLeaf(tuple[0]));
+            Assert.True(pattern[1].MatchLeaf(tuple[1]));
+            Assert.True(pattern[2].MatchLeaf(tuple[2]));
+            Assert.True(pattern[3].MatchLeaf(tuple[3]));
         }
 
         [Fact]
@@ -177,8 +177,8 @@ namespace Nncase.Tests
             Const y = (Const)2;
             var z1 = x + y;
             var z2 = x * y;
-            Assert.Equal(is_op_call.MatchLeaf(z1), true);
-            Assert.Equal(is_op_call.Target.MatchLeaf(z2.Target), true);
+            Assert.True(is_op_call.MatchLeaf(z1));
+            Assert.True(is_op_call.Target.MatchLeaf(z2.Target));
 
             var is_op_call2 = IsCall(IsWildCard(), IsVArgs(lhs, rhs));
 
@@ -192,7 +192,7 @@ namespace Nncase.Tests
             var ttype = new TensorType(DataType.Float32, new[] { 10, 10 });
             var ty_pat = HasType(ttype);
             Assert.IsType<TypePattern>(ty_pat);
-            Assert.Equal(ty_pat.MatchLeaf(ttype), true);
+            Assert.True(ty_pat.MatchLeaf(ttype));
         }
 
         [Fact]
@@ -202,8 +202,8 @@ namespace Nncase.Tests
             var ttype2 = new TensorType(DataType.Int16, new[] { 10 });
             var ty_pat = HasDType(DataType.Float32);
             Assert.IsType<TypePattern>(ty_pat);
-            Assert.Equal(ty_pat.MatchLeaf(ttype1), true);
-            Assert.Equal(ty_pat.MatchLeaf(ttype2), false);
+            Assert.True(ty_pat.MatchLeaf(ttype1));
+            Assert.False(ty_pat.MatchLeaf(ttype2));
         }
 
         [Fact]
@@ -213,10 +213,9 @@ namespace Nncase.Tests
             var sp = HasShape(shape);
             var ttype1 = new TensorType(DataType.Float32, new[] { 10, 10 });
             var ttype2 = new TensorType(DataType.Int16, new[] { 10 });
-            Assert.Equal(sp.MatchLeaf(ttype1), true);
-            Assert.Equal(sp.MatchLeaf(ttype2), false);
+            Assert.True(sp.MatchLeaf(ttype1));
+            Assert.False(sp.MatchLeaf(ttype2));
         }
-
 
     }
 
@@ -248,7 +247,7 @@ namespace Nncase.Tests
 
             var res = EGraphMatcher.EMatch(eGraph, pat);
 
-            Assert.Equal(res.Count, 1);
+            Assert.Single(res);
             Assert.Contains(wcx, res[0].Context.Keys);
             Assert.Contains(wcy, res[0].Context.Keys);
         }
@@ -267,7 +266,7 @@ namespace Nncase.Tests
 
             var res = EGraphMatcher.EMatch(eGraph, pat);
 
-            Assert.Equal(res.Count, 1);
+            Assert.Single(res);
             Assert.Contains(wcx, res[0].Context.Keys);
             Assert.Contains(wcy, res[0].Context.Keys);
         }
@@ -291,7 +290,7 @@ namespace Nncase.Tests
             g.Add(e);
 
             var matchs = EMatch(g, pat);
-            Assert.Equal(matchs.Count, 1);
+            Assert.Single(matchs);
             var result = matchs[0];
             Assert.Contains(wc1, result.Context.Keys);
             Assert.Equal(result.GetExpr(wc1), wce1);
@@ -311,14 +310,14 @@ namespace Nncase.Tests
 
             eGraph.Add(y);
             var matchs = EMatch(eGraph, py);
-            Assert.Equal(matchs.Count, 1);
+            Assert.Single(matchs);
             eGraph.Add(y1);
 
             var matchs2 = EMatch(eGraph, py);
-            Assert.Equal(matchs2.Count, 2);
+            Assert.Equal(2, matchs2.Count);
 
             var py1 = IsUnary(UnaryOp.Abs, px);
-            Assert.Equal(EMatch(eGraph, py1).Count, 0);
+            Assert.Empty(EMatch(eGraph, py1));
         }
 
         [Fact]
@@ -338,13 +337,13 @@ namespace Nncase.Tests
 
             eGraph.Add(func);
             var res_1 = EMatch(eGraph, pat_1);
-            Assert.Equal(res_1.Count, 1);
+            Assert.Single(res_1);
 
             Assert.Contains(wc1, res_1[0].Context.Keys);
             Assert.Contains(wc2, res_1[0].Context.Keys);
 
             var res_2 = EMatch(eGraph, pat_2);
-            Assert.Equal(res_2.Count, 0);
+            Assert.Empty(res_2);
         }
 
         [Fact]
@@ -382,7 +381,7 @@ namespace Nncase.Tests
             eGraph.Add(expr);
 
             var eMatches = EMatch(eGraph, vpat);
-            Assert.Equal(eMatches.Count, 1);
+            Assert.Single(eMatches);
             var eMatch = eMatches[0];
             Assert.Equal(eMatch.GetExpr(wcs[0]), tuple[0]);
             Assert.Equal(eMatch.GetExpr(wcs[1]), tuple[1]);
@@ -423,7 +422,7 @@ namespace Nncase.Tests
             eGraph.Add(expr);
 
             var eMatches = EMatch(eGraph, vpat);
-            Assert.Equal(eMatches.Count, 1);
+            Assert.Single(eMatches);
             var eMatch = eMatches[0];
             Assert.Equal(eMatch.GetExpr(wccons[0]), tuple_rhs[0]);
             Assert.Equal(eMatch.GetExpr(wccons[1]), tuple_rhs[1]);
@@ -461,7 +460,7 @@ namespace Nncase.Tests
             eGraph.Add(expr);
 
             var results = EMatch(eGraph, pattern);
-            Assert.Equal(results.Count, 1);
+            Assert.Single(results);
             var result = results[0];
             Assert.Equal(result.GetExpr(wcin[0]), x);
             Assert.Equal(result.GetExpr(wcin[1]), y);

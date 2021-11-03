@@ -44,5 +44,9 @@ namespace Nncase.IR.F
         public static Call Squeeze(Expr input, Expr dims) => new Call(new Squeeze(), input, dims);
 
         public static Call ReShape(Expr input, Expr shape) => new Call(new Reshape(), input, shape);
+
+        public static Call Quantize(Expr input, Expr quantParam, DataType targetType) => new Call(new Quantize(targetType), input, quantParam);
+
+        public static Call DeQuantize(Expr input, Expr quantParam, DataType targetType) => new Call(new DeQuantize(targetType), input, quantParam);
     }
 }

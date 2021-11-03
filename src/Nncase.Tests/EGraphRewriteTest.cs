@@ -40,7 +40,7 @@ public class EGraphRewriteTest : IDisposable
 
         var EResults = EGraphMatcher.EMatch(egraph, pattern);
         EGraphPrinter.DumpEgraphAsDot(egraph, EResults, $"{Name}_Ematch");
-        Assert.Equal(EResults.Count, 1);
+        Assert.Single(EResults);
         var wcxv = EResults[0].GetExpr(wcx);
         Assert.Equal(wcxv, lhs);
         var to_eid = egraph.Add(nawPass(wcxv));
@@ -62,7 +62,7 @@ public class EGraphRewriteTest : IDisposable
         var rewriter = new EGraphReWriter(true, "TestReassociate");
         rewriter.IsMatchCache(true);
         rewriter.Apply(eGraph, rule);
-        Assert.Equal(rewriter.MatchCache[rule].Count, 1);
+        Assert.Single(rewriter.MatchCache[rule]);
         var newExpr = rewriter.MatchCache[rule][0];
         Assert.Equal(newExpr, 10 * ((Const)11 * 12));
     }
