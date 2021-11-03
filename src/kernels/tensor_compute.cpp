@@ -276,7 +276,7 @@ result<void> kernels::hardmax(const T *input, const runtime_shape_t &in_shape, c
 template result<void> kernels::random_normal<float>(float *output, const runtime_shape_t &out_shape, float mean, float std, float seed) noexcept;
 
 template <typename T>
-NNCASE_API result<void> kernels::random_normal(T *output, const runtime_shape_t &out_shape, float mean, float std, float seed) noexcept
+result<void> kernels::random_normal(T *output, const runtime_shape_t &out_shape, float mean, float std, float seed) noexcept
 {
     return cpu::reference::random_normal(output, out_shape, mean, std, seed);
 }
