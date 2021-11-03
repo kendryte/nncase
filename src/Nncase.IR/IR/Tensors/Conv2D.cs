@@ -20,16 +20,34 @@ namespace Nncase.IR.Tensors
         /// </summary>
         public static readonly ParameterInfo Input = new(typeof(Conv2D), 0, "input");
 
+        /// <summary>
+        /// Gets Weights.
+        /// </summary>
         public static readonly ParameterInfo Weights = new(typeof(Conv2D), 1, "weights");
 
+        /// <summary>
+        /// Gets Bias.
+        /// </summary>
         public static readonly ParameterInfo Bias = new(typeof(Conv2D), 2, "bias");
 
+        /// <summary>
+        /// Gets Stride.
+        /// </summary>
         public static readonly ParameterInfo Stride = new(typeof(Conv2D), 3, "stride");
 
+        /// <summary>
+        /// Gets Padding.
+        /// </summary>
         public static readonly ParameterInfo Padding = new(typeof(Conv2D), 4, "padding");
 
+        /// <summary>
+        /// Gets Dilation.
+        /// </summary>
         public static readonly ParameterInfo Dilation = new(typeof(Conv2D), 5, "dilation");
         
+        /// <summary>
+        /// Gets Groups.
+        /// </summary>
         public static readonly ParameterInfo Groups = new(typeof(Conv2D), 6, "groups");
         
         /// <inheritdoc/>
