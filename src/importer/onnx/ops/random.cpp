@@ -33,7 +33,7 @@ void onnx_importer::convert_op_RandomNormal(const onnx::NodeProto &node)
 
     // dtype
     auto dtype_attr = get_attribute<int>(node, "dtype");
-    TensorProto_DataType dtype = static_cast<TensorProto_DataType>(dtype_attr ? dtype_attr.value() : 1);
+    TensorProto_DataType dtype = static_cast<TensorProto_DataType>(dtype_attr ? dtype_attr.value() : TensorProto_DataType_FLOAT);
     auto output_type = get_datatype(dtype).value();
     if (output_type != dt_float32)
     {
@@ -106,7 +106,7 @@ void onnx_importer::convert_op_RandomUniform(const onnx::NodeProto &node)
 
     // dtype
     auto dtype_attr = get_attribute<int>(node, "dtype");
-    TensorProto_DataType dtype = static_cast<TensorProto_DataType>(dtype_attr ? dtype_attr.value() : 1);
+    TensorProto_DataType dtype = static_cast<TensorProto_DataType>(dtype_attr ? dtype_attr.value() : TensorProto_DataType_FLOAT);
     auto output_type = get_datatype(dtype).value();
     if (output_type != dt_float32)
     {
@@ -171,3 +171,4 @@ void onnx_importer::convert_op_RandomUniformLike(const onnx::NodeProto &node)
 
     output_tensors_.emplace(node.output()[0], &op->output());
 }
+
