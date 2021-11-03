@@ -31,8 +31,7 @@ result<void> reference::random_normal(T *output, const runtime_shape_t &out_shap
 {
     std::default_random_engine engine(seed);
     std::normal_distribution<T> dis(mean, std);
-    auto size = compute_size(out_shape);
-    std::generate_n(output, size, [&] { return dis(engine); });
+    std::generate_n(output, compute_size(out_shape), [&] { return dis(engine); });
 
     return ok();
 }
@@ -44,8 +43,7 @@ result<void> reference::random_uniform(T *output, const runtime_shape_t &out_sha
 {
     std::default_random_engine engine(seed);
     std::uniform_real_distribution<T> dis(low, high);
-    auto size = compute_size(out_shape);
-    std::generate_n(output, size, [&] { return dis(engine); });
+    std::generate_n(output, compute_size(out_shape), [&] { return dis(engine); });
 
     return ok();
 }
