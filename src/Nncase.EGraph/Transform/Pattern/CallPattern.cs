@@ -63,7 +63,7 @@ namespace Nncase.Transform.Pattern
         public static CallPattern IsPad(ExprPattern input, ExprPattern pads, ExprPattern value) =>
         IsPad((PadMode padmode) => true, input, pads, value);
 
-        public static CallPattern IsCast(Func<DataType, bool> Cond, ExprPattern input) => new CallPattern(new CastPattern(Cond), input);
+        public static CallPattern IsCast(Func<DataType, bool> Cond, ExprPattern input) => new CallPattern(new CastPattern((Cast x) => Cond(x.NewType)), input);
 
         public static CallPattern IsCast(ExprPattern input) =>
         IsCast(x => true, input);
