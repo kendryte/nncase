@@ -34,6 +34,8 @@
 #include <nncase/ir/ops/onehot.h>
 #include <nncase/ir/ops/pad.h>
 #include <nncase/ir/ops/quantize.h>
+#include <nncase/ir/ops/random_normal.h>
+#include <nncase/ir/ops/random_uniform.h>
 #include <nncase/ir/ops/reduce.h>
 #include <nncase/ir/ops/reduce_arg.h>
 #include <nncase/ir/ops/reduce_window2d.h>
@@ -586,6 +588,38 @@ void register_neutral_evaluators()
             break;
         default:
             throw std::runtime_error("unsupported dtype for hardmax: " + std::string(datatype_names(datatype)));
+        }
+    });
+
+    register_evaluator(op_random_normal, [](ir::node &node, function_evaluate_context &context) {
+        auto &rnode = static_cast<random_normal &>(node);
+        auto datatype = rnode.output().type();
+        auto output = context.memory_at(rnode.output());
+
+        switch (datatype)
+        {
+        case dt_float32:
+            kernels::random_normal(output.buffer().as_span<float>().data(), output.shape(), rnode.mean(), rnode.std(), rnode.seed())
+                .unwrap_or_throw();
+            break;
+        default:
+            throw std::runtime_error("unsupported dtype for random_normal: " + std::string(datatype_names(datatype)));
+        }
+    });
+
+    register_evaluator(op_random_uniform, [](ir::node &node, function_evaluate_context &context) {
+        auto &rnode = static_cast<random_uniform &>(node);
+        auto datatype = rnode.output().type();
+        auto output = context.memory_at(rnode.output());
+
+        switch (datatype)
+        {
+        case dt_float32:
+            kernels::random_uniform(output.buffer().as_span<float>().data(), output.shape(), rnode.low(), rnode.high(), rnode.seed())
+                .unwrap_or_throw();
+            break;
+        default:
+            throw std::runtime_error("unsupported dtype for random_uniform: " + std::string(datatype_names(datatype)));
         }
     });
 }

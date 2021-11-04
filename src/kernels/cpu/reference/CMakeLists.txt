@@ -17,6 +17,7 @@ set(SRCS batch_to_space.cpp
          onehot.cpp
          pad.cpp
          quantize.cpp
+         random.cpp
          reduce.cpp
          reduce_arg.cpp
          reduce_window.cpp
