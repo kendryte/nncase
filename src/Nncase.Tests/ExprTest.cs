@@ -2,14 +2,29 @@ using Xunit;
 using Nncase;
 using Nncase.IR;
 using System.Numerics.Tensors;
+using System.Collections.Generic;
 
 public class UnitTestExpr
 {
     [Fact]
     public void TestConstEqual()
     {
-        var b = (Const)(1.1f) == (Const)(1.1f);
-        Assert.True(b);
+        var a = (Const)(1.1f) == (Const)(1.1f);
+        Assert.True(a);
+        var b = (Const)(1.1f) == (Const)(1.2f);
+        Assert.False(b);
+    }
+
+    [Fact]
+    public void TestConstEqualWithCheckType()
+    {
+        var a = (Const)(1.1f);
+        var b = (Const)(1.1f);
+        a.CheckedType = a.ValueType;
+        Assert.True(a == b);
+        var d = new HashSet<Const>();
+        d.Add(a);
+        Assert.Contains(b, d);
     }
 
     [Fact]

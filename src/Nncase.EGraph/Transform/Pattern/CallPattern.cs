@@ -60,6 +60,8 @@ namespace Nncase.Transform.Pattern
 
         public static CallPattern IsPad(Func<PadMode, bool> cond, ExprPattern input, ExprPattern pads, ExprPattern value) => new CallPattern(new PadPattern(pad => cond(pad.padMode)), input, pads, value);
 
+        public static CallPattern IsPad(ExprPattern input, ExprPattern pads, PadMode mode, ExprPattern value) => new CallPattern(new PadPattern(mode), input, pads, value);
+
         public static CallPattern IsPad(ExprPattern input, ExprPattern pads, ExprPattern value) =>
         IsPad((PadMode padmode) => true, input, pads, value);
 

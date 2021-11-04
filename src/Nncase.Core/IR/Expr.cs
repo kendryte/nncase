@@ -20,6 +20,16 @@ namespace Nncase.IR
         /// </summary>
         public IRType? CheckedType { get; set; }
 
+        public virtual bool Equals(Expr? other)
+        {
+            return !(other is null) && EqualityContract == other.EqualityContract;
+        }
+
+        public override int GetHashCode()
+        {
+            return EqualityComparer<Type>.Default.GetHashCode(EqualityContract);
+        }
+
         public override string ToString()
         {
             var builder = new StringBuilder();
