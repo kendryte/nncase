@@ -12,11 +12,7 @@ namespace Nncase.Importer.TFLite
     {
         private Expr VisitReshape(in tflite.Operator op)
         {
-            var input = GetInputExprs(op, 0);
-            var output = GetOutputTensor(op, 0);
-            var outShape = new Const(
-                GetIRType(new[] { output.ShapeLength }, output.Type),
-                DataTypes.GetBytes<int>(output.GetShapeBytes()));
+            var (input, outShape) = GetInputExprs(op, 0, 1);
             return F.Tensors.Reshape(input, outShape);
         }
     }
