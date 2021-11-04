@@ -152,6 +152,6 @@ namespace Nncase.IR
           where T : unmanaged
           => FromSpan<T>(ts.Buffer.Span, new Shape(ts.Dimensions));
 
-        public static Const FromShape(Shape shape) => FromSpan<int>(shape.ToArray().Select(x => x.Value?), new[] {shape.Rank});
+        public static Const FromShape(Shape shape) => FromSpan<int>(shape.Select(x => x.Value ?? throw new InvalidOperationException("Only Can't Convert Fixed Shape to Const!")).ToArray(), new[] {shape.Rank});
     }
 }
