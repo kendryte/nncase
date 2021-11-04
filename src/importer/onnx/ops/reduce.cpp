@@ -150,3 +150,40 @@ void onnx_importer::convert_op_ReduceL2(const NodeProto &node)
     input_tensors_.emplace(&square->input(), input);
     output_tensors_.emplace(output, &sqrt->output());
 }
+
+// ReduceLogSum(x) = Log(ReduceSum(x))
+void onnx_importer::convert_op_ReduceLogSum(const NodeProto &node)
+{
+    const auto &op_name { generate_name(node) };
+
+    const auto &input = node.input()[0];
+    const auto &output = node.output()[0];
+    const auto &input_shape = get_shape(input);
+
+    // axes
+    axis_t axes(input_shape.size());
+    std::iota(begin(axes), end(axes), 0);
+    const auto &axes_attr = get_attribute<axis_t>(node, "axes");
+    if (axes_attr)
+    {
+        axes = axes_attr.value();
+        std::transform(std::begin(axes), std::end(axes), std::begin(axes),
+            [&input_shape](const auto e) { return real_axis(e, input_shape.size()); });
+    }
+
+    // keepdims
+    auto keepdims_attr = get_attribute<int>(node, "keepdims");
+    bool keepdims = keepdims_attr ? keepdims_attr.value() == 1 : true;
+
+    // sum
+    auto sum = graph_.emplace<reduce>(reduce_sum, input_shape, axes, 0.f, keepdims);
+    sum->name(op_name + ".reduce_sum(ReduceLogSum)");
+
+    // log
+    auto log = graph_.emplace<unary>(unary_log, sum->output().shape());
+    log->name(op_name + ".log(ReduceLogSum)");
+    log->input().connect(sum->output());
+
+    input_tensors_.emplace(&sum->input(), input);
+    output_tensors_.emplace(output, &log->output());
+}

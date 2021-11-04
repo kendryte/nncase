@@ -66,6 +66,7 @@
 | RandomUniformLike | ✅ |
 | ReduceL1 | ✅ |
 | ReduceL2 | ✅ |
+| ReduceLogSum | ✅ |
 | ReduceMax | ✅ |
 | ReduceMean | ✅ |
 | ReduceMin | ✅ |

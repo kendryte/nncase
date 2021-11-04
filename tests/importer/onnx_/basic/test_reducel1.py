@@ -97,7 +97,7 @@ keep_dims = [
 @pytest.mark.parametrize('axes', axes_list)
 @pytest.mark.parametrize('keep_dim', keep_dims)
 def test_reducel1(in_shape, axes, keep_dim, request):
-    if axes is None or len(axes) <= len(in_shapes):
+    if axes is None or len(axes) <= len(in_shape):
         model_def = _make_module(in_shape, axes, keep_dim)
 
         runner = OnnxTestRunner(request.node.name)
