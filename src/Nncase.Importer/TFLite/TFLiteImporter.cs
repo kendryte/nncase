@@ -225,7 +225,7 @@ namespace Nncase.Importer.TFLite
                 // tflite.BuiltinOperator.NON_MAX_SUPPRESSION_V5,
                 // tflite.BuiltinOperator.NOT_EQUAL,
                 // tflite.BuiltinOperator.ONE_HOT,
-                // tflite.BuiltinOperator.PACK,
+                tflite.BuiltinOperator.PACK => VisitPack(op),
                 tflite.BuiltinOperator.PAD => VisitPad(op),
                 tflite.BuiltinOperator.PADV2 => VisitPadV2(op),
                 // tflite.BuiltinOperator.PLACEHOLDER_FOR_GREATER_OP_CODES,
@@ -361,6 +361,17 @@ namespace Nncase.Importer.TFLite
         private tflite.Tensor GetOutputTensor(in tflite.Operator op, int index)
         {
             return GetTfliteTensor(op.Outputs(index));
+        }
+
+        private Shape GetTensorShape(in tflite.Tensor tensor)
+        {
+            var tensorCopy = tensor;
+            return Enumerable.Range(0, tensor.ShapeLength).Select(i => tensorCopy.Shape(i)).ToArray();
+        }
+        
+        private static IEnumerable<int> GetShapeDataFromConst(Expr shape)
+        {
+            return ((Const)shape).ToTensor<int>().ToArray();
         }
     }
 }

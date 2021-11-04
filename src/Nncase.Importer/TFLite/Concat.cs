@@ -1,7 +1,10 @@
 // Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 using F = Nncase.IR.F;
 
@@ -11,12 +14,25 @@ namespace Nncase.Importer.TFLite
     {
         private Expr VisitConcat(in tflite.Operator op)
         {
-            var inputs = new Expr[op.InputsLength];
-            for (int i = 0; i < inputs.Length; i++)
-            {
-                inputs[i] = GetInputExprs(op, i);
-            }
+            var @operator = op;
+            var inputs = Enumerable.Range(0, op.InputsLength).Select(i => GetInputExprs(@operator, i));
             return F.Tensors.Concat(new Tuple(inputs), op.BuiltinOptionsAsConcatenationOptions().Axis);
+        }
+
+        private Expr VisitPack(in tflite.Operator op)
+        {
+            var @operator = op;
+            var axis = op.BuiltinOptionsAsPackOptions().Axis;
+            var inputs = Enumerable.Range(0, op.InputsLength).Select(i =>
+            {
+                var input = GetInputExprs(@operator, i);
+                var inputTensor = GetInputTensor(@operator, i);
+                
+                var shape = GetTensorShape(inputTensor).ToList();
+                shape.Insert(axis, 1);
+                return F.Tensors.Reshape(input, Const.FromShape(new Shape(shape.ToArray())));
+            });
+            return F.Tensors.Concat(new Tuple(inputs), axis);
         }
     }
 }

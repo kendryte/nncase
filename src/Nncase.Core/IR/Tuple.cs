@@ -23,6 +23,8 @@ namespace Nncase.IR
 
         public Tuple(params Expr[] Fields) : this(ImmutableArray.Create<Expr>(Fields)) { }
 
+        public Tuple(IEnumerable<Expr> Fields) : this(Fields.ToArray()) { }
+
         public Expr this[int index] => Fields[index];
 
         public int Count => Fields.Count;

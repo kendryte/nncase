@@ -4,6 +4,8 @@
 using System;
 using System.Numerics.Tensors;
 using System.Collections.Generic;
+using System.Linq;
+using NetFabric.Hyperlinq;
 
 namespace Nncase.IR
 {
@@ -150,5 +152,6 @@ namespace Nncase.IR
           where T : unmanaged
           => FromSpan<T>(ts.Buffer.Span, new Shape(ts.Dimensions));
 
+        public static Const FromShape(Shape shape) => FromSpan<int>(shape.ToArray().Select(x => x.Value?), new[] {shape.Rank});
     }
 }
