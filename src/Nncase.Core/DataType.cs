@@ -112,11 +112,13 @@ namespace Nncase
             { typeof(byte).TypeHandle, DataType.UInt8 },
             { typeof(int).TypeHandle, DataType.Int32 },
             { typeof(float).TypeHandle, DataType.Float32 },
-            { typeof(double).TypeHandle, DataType.Float64 }
+            { typeof(double).TypeHandle, DataType.Float64 },
+            { typeof(bool).TypeHandle, DataType.Bool },
         };
 
         private static readonly Dictionary<DataType, int> _DataTypeToLengths = new()
         {
+            { DataType.Bool, 1 },
             { DataType.UInt8, 1 },
             { DataType.UInt16, 2 },
             { DataType.UInt32, 4 },

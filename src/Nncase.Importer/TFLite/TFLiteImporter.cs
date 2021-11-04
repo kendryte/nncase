@@ -214,7 +214,7 @@ namespace Nncase.Importer.TFLite
                 tflite.BuiltinOperator.MAXIMUM => VisitBinary(op, BinaryOp.Max),
 
                 // tflite.BuiltinOperator.MAX_POOL_2D,
-                // tflite.BuiltinOperator.MEAN,
+                tflite.BuiltinOperator.MEAN => VisitReduce(op, ReduceOp.Mean, 0f),
                 tflite.BuiltinOperator.MINIMUM => VisitBinary(op, BinaryOp.Min),
 
                 tflite.BuiltinOperator.MIRROR_PAD => VisitMirrorPad(op),
@@ -239,8 +239,8 @@ namespace Nncase.Importer.TFLite
                 // tflite.BuiltinOperator.REAL,
                 // tflite.BuiltinOperator.REDUCE_ALL,
                 // tflite.BuiltinOperator.REDUCE_ANY,
-                // tflite.BuiltinOperator.REDUCE_MAX,
-                // tflite.BuiltinOperator.REDUCE_MIN,
+                tflite.BuiltinOperator.REDUCE_MAX => VisitReduce(op, ReduceOp.Max, float.MinValue),
+                tflite.BuiltinOperator.REDUCE_MIN => VisitReduce(op, ReduceOp.Min, float.MaxValue),
                 // tflite.BuiltinOperator.REDUCE_PROD,
                 // tflite.BuiltinOperator.RELU,
                 // tflite.BuiltinOperator.RELU6,
@@ -278,7 +278,7 @@ namespace Nncase.Importer.TFLite
                 // tflite.BuiltinOperator.STRIDED_SLICE,
                 tflite.BuiltinOperator.SUB => VisitBinary(op, BinaryOp.Sub, op.BuiltinOptionsAsSubOptions().FusedActivationFunction),
 
-                // tflite.BuiltinOperator.SUM,
+                tflite.BuiltinOperator.SUM => VisitReduce(op, ReduceOp.Sum, 0f),
                 // tflite.BuiltinOperator.SVDF,
                 tflite.BuiltinOperator.TANH => VisitUnary(op, UnaryOp.Tanh),
 
