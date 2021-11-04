@@ -161,7 +161,7 @@ namespace Nncase.Importer.TFLite
                 // tflite.BuiltinOperator.CUSTOM,
                 // tflite.BuiltinOperator.DELEGATE,
                 // tflite.BuiltinOperator.DENSIFY,
-                // tflite.BuiltinOperator.DEPTHWISE_CONV_2D,
+                tflite.BuiltinOperator.DEPTHWISE_CONV_2D => VisitDepthwiseConv2D(op),
                 // tflite.BuiltinOperator.DEPTH_TO_SPACE,
                 // tflite.BuiltinOperator.DEQUANTIZE,
                 tflite.BuiltinOperator.DIV => VisitBinary(op, BinaryOp.Div, op.BuiltinOptionsAsDivOptions().FusedActivationFunction),
