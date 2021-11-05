@@ -164,6 +164,8 @@ namespace IsaGen
         ONEHOT,
         PAD,
         QUANTIZE,
+        RANDOM_NORMAL,
+        RANDOM_UNIFORM,
         REDUCE,
         REDUCEARG,
         REDUCE_WINDOW2D,
@@ -1586,6 +1588,62 @@ namespace IsaGen
             public byte RstrideDest { get; set; }
         }
 
+        [DisplayName("TENSOR.RANDOM_NORMAL")]
+        [Category("Tensor Instructions")]
+        [Description("RandomNormal")]
+        public class RandomNormalInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.RANDOM_NORMAL;
+
+            [DisplayName("datatype_dest")]
+            [Description("Output datatype")]
+            public DataType DataTypeDest { get; set; }
+
+            [DisplayName("rshape_dest")]
+            [Description("output shape register")]
+            public byte RshapeDest { get; set; }
+
+            [DisplayName("mean")]
+            [Description("Mean")]
+            public float Mean { get; set; }
+
+            [DisplayName("std")]
+            [Description("Std")]
+            public float Std { get; set; }
+
+            [DisplayName("seed")]
+            [Description("Seed")]
+            public float Seed { get; set; }
+        }
+
+        [DisplayName("TENSOR.RANDOM_UNIFORM")]
+        [Category("Tensor Instructions")]
+        [Description("RandomUniform")]
+        public class RandomUniformInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.RANDOM_UNIFORM;
+
+            [DisplayName("datatype_dest")]
+            [Description("Output datatype")]
+            public DataType DataTypeDest { get; set; }
+
+            [DisplayName("rshape_dest")]
+            [Description("output shape register")]
+            public byte RshapeDest { get; set; }
+
+            [DisplayName("low")]
+            [Description("Low")]
+            public float Low { get; set; }
+
+            [DisplayName("high")]
+            [Description("High")]
+            public float High { get; set; }
+
+            [DisplayName("seed")]
+            [Description("Seed")]
+            public float Seed { get; set; }
+        }
+
         [DisplayName("TENSOR.REDUCE")]
         [Category("Tensor Instructions")]
         [Description("Reduce")]
@@ -1663,7 +1721,7 @@ namespace IsaGen
 
             [DisplayName("select_last_idx")]
             [Description("select last index")]
-            public bool select_last_idx { get; set; }
+            public bool SelectLastIdx { get; set; }
         }
 
         [DisplayName("TENSOR.REDUCE_WINDOW2D")]
