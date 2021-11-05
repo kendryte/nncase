@@ -36,7 +36,7 @@ template <class TBinaryOp, class TWindowOp>
 result<void> reduce_window2d_impl(const float *input, float init_value, float *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const padding &padding_h, const padding &padding_w,
     int32_t filter_h, int32_t filter_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
-    value_range<float> fused_activation, TBinaryOp &&binary_op, TWindowOp &&window_op, NNCASE_UNUSED kernel_context &context) noexcept
+    value_range<float> fused_activation, TBinaryOp &&binary_op, TWindowOp &&window_op, [[maybe_unused]]bool count_include_pad, NNCASE_UNUSED kernel_context &context) noexcept
 {
     const auto out_h = kernels::detail::get_windowed_output_size(in_shape[2], filter_h, stride_h, dilation_h, padding_h);
     const auto out_w = kernels::detail::get_windowed_output_size(in_shape[3], filter_w, stride_w, dilation_w, padding_w);
@@ -73,6 +73,13 @@ result<void> reduce_window2d_impl(const float *input, float init_value, float *o
                         }
                     }
 
+                    if (count_include_pad)
+                    {
+                        for (int32_t i = 0; i < filter_h * filter_w - kernel_count; i++)
+                            value = binary_op(value, 0.f);
+                        kernel_count = filter_h * filter_w;
+                    }
+
                     output[offset(out_strides, { batch, oc, oy, ox })] = kernels::detail::apply_activation(window_op(value, kernel_count), fused_activation);
                 }
             }
@@ -85,15 +92,15 @@ result<void> reduce_window2d_impl(const float *input, float init_value, float *o
 
 #define REDUCE_WINDOW2D_IMPL(op, reducer, post_process) \
     case op:                                            \
-        return reduce_window2d_impl(input, init_value, output, in_shape, in_strides, out_strides, padding_h, padding_w, filter_h, filter_w, stride_h, stride_w, dilation_h, dilation_w, fused_activation, reducer, post_process, context)
+        return reduce_window2d_impl(input, init_value, output, in_shape, in_strides, out_strides, padding_h, padding_w, filter_h, filter_w, stride_h, stride_w, dilation_h, dilation_w, fused_activation, reducer, post_process, count_include_pad, context)
 
 #define REDUCE_WINDOW2D_IMPL_NO_POST(op, reducer) \
     case op:                                      \
-        return reduce_window2d_impl(input, init_value, output, in_shape, in_strides, out_strides, padding_h, padding_w, filter_h, filter_w, stride_h, stride_w, dilation_h, dilation_w, fused_activation, reducer, identity_window(), context)
+        return reduce_window2d_impl(input, init_value, output, in_shape, in_strides, out_strides, padding_h, padding_w, filter_h, filter_w, stride_h, stride_w, dilation_h, dilation_w, fused_activation, reducer, identity_window(), count_include_pad, context)
 
 result<void> reference::reduce_window2d(reduce_op_t op, const float *input, float init_value, float *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const padding &padding_h, const padding &padding_w,
-    int32_t filter_h, int32_t filter_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w, value_range<float> fused_activation,
+    int32_t filter_h, int32_t filter_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w, value_range<float> fused_activation, bool count_include_pad,
     kernel_context &context) noexcept
 {
     switch (op)

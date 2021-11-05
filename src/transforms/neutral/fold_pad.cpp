@@ -262,12 +262,15 @@ bool pad_to_maxpool_transform::on_try_match(node &node, transform_context &conte
         {
             if (mxp->reduce_op() == reduce_op_t::reduce_max)
             {
-                context.inputs.emplace_back(&pd->input());
-                context.outputs.emplace_back(&mxp->output());
+                if (mxp->padding_h().before == 0 && mxp->padding_h().after == 0 && mxp->padding_w().before == 0 && mxp->padding_w().after == 0)
+                {
+                    context.inputs.emplace_back(&pd->input());
+                    context.outputs.emplace_back(&mxp->output());
 
-                context.matched_nodes.emplace_back(pd);
-                context.matched_nodes.emplace_back(mxp);
-                return true;
+                    context.matched_nodes.emplace_back(pd);
+                    context.matched_nodes.emplace_back(mxp);
+                    return true;
+                }
             }
         }
     }
@@ -287,7 +290,7 @@ void pad_to_maxpool_transform::process(transform_context &context)
     auto pad_W = pd.paddings()[3];
     auto new_mxp = context.graph.emplace<ir::reduce_window2d>(reduce_max, pd.input().shape(), old_mxp.init_value(),
         old_mxp.filter_h(), old_mxp.filter_w(), pad_h, pad_W, old_mxp.stride_h(), old_mxp.stride_w(),
-        old_mxp.dilation_h(), old_mxp.dilation_w(), old_mxp.fused_activation(), old_mxp.ceil_mode(), old_mxp.count_include_pad());
+        old_mxp.dilation_h(), old_mxp.dilation_w(), old_mxp.fused_activation(), old_mxp.ceil_mode(), old_mxp.count_include_pad(), old_mxp.padding_h_w_after(), old_mxp.strict_inside_input(), pd.pad_value());
     new_mxp->name(old_mxp.name());
 
     new_mxp->input().connect(output);

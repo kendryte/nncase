@@ -1230,6 +1230,7 @@ struct op_writer<nncase::runtime::stackvm::tensor_reduce_window2d_op_t>
         writer.write(op.dilation_w);
         writer.write(op.fused_clamp_low);
         writer.write(op.fused_clamp_high);
+        writer.write(op.count_include_pad);
     }
 };
 
@@ -1418,7 +1419,7 @@ public:
     void tensor_random_uniform_(datatype_t datatype_dest, uint8_t rshape_dest, float low, float high, float seed);
     void tensor_reduce_(datatype_t datatype, uint8_t rshape_src, uint8_t rstride_src, uint8_t rstride_dest, reduce_op_t reduce_op, uint8_t rshape_axis, bool keep_dims);
     void tensor_reduce_arg_(datatype_t datatype_src, uint8_t rshape_src, uint8_t rstride_src, datatype_t datatype_dest, uint8_t rstride_dest, reduce_arg_op_t reduce_arg_op, uint8_t rshape_axis, bool keep_dims, bool select_last_idx);
-    void tensor_reduce_window2d_(datatype_t datatype, reduce_op_t reduce_op, uint8_t rshape_src, uint8_t rstride_src, uint8_t rstride_dest, uint16_t filter_h, uint16_t filter_w, uint16_t stride_h, uint16_t stride_w, uint16_t dilation_h, uint16_t dilation_w, float fused_clamp_low, float fused_clamp_high);
+    void tensor_reduce_window2d_(datatype_t datatype, reduce_op_t reduce_op, uint8_t rshape_src, uint8_t rstride_src, uint8_t rstride_dest, uint16_t filter_h, uint16_t filter_w, uint16_t stride_h, uint16_t stride_w, uint16_t dilation_h, uint16_t dilation_w, float fused_clamp_low, float fused_clamp_high, bool count_include_pad);
     void tensor_resize_image_(datatype_t datatype, uint8_t rshape_src, uint8_t rstride_src, uint8_t rstride_dest, bool align_corners, bool half_pixel_centers, image_resize_mode_t image_resize_mode);
     void tensor_slice_(datatype_t datatype, uint8_t rshape_src, uint8_t rstride_src, uint8_t rstride_dest, uint8_t rbegins, uint8_t rends, uint8_t rstrides);
     void tensor_unary_(datatype_t datatype, uint8_t rshape_src, uint8_t rstride_src, uint8_t rstride_dest, unary_op_t unary_op);

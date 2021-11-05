@@ -41,8 +41,9 @@ public:
     bool count_include_pad() const noexcept { return count_include_pad_; }
     std::vector<int32_t> padding_h_w_after() const noexcept { return padding_h_w_after_; }
     bool strict_inside_input() const noexcept { return strict_inside_input_; }
+    scalar pad_value() const noexcept { return pad_value_; }
 
-    reduce_window2d(reduce_op_t reduce_op, shape_t input_shape, float init_value, int32_t filter_h, int32_t filter_w, padding padding_h, padding padding_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w, value_range<float> fused_activation, bool ceil_mode = false, bool count_include_pad = false, std::vector<int32_t> padding_h_w_after = { 0, 0 }, bool strict_inside_input = false);
+    reduce_window2d(reduce_op_t reduce_op, shape_t input_shape, float init_value, int32_t filter_h, int32_t filter_w, padding padding_h, padding padding_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w, value_range<float> fused_activation, bool ceil_mode = false, bool count_include_pad = false, std::vector<int32_t> padding_h_w_after = { 0, 0 }, bool strict_inside_input = false, scalar pad_value = 0.f);
 
 protected:
     bool properties_equal(node &other) const override;
@@ -63,5 +64,6 @@ private:
     bool count_include_pad_;
     std::vector<int32_t> padding_h_w_after_;
     bool strict_inside_input_;
+    scalar pad_value_;
 };
 }

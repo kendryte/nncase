@@ -34,5 +34,5 @@ void stackvm_module_builder::emit(reduce_window2d &node, stackvm_op_builder &bui
     builder.stshape(2, output.strides);
     builder.tensor_reduce_window2d_(node.input().type(), node.reduce_op(), 0, 1, 2, (uint16_t)node.filter_h(),
         (uint16_t)node.filter_w(), (uint16_t)node.stride_h(), (uint16_t)node.stride_w(),
-        (uint16_t)node.dilation_h(), (uint16_t)node.dilation_w(), node.fused_activation().min, node.fused_activation().max);
+        (uint16_t)node.dilation_h(), (uint16_t)node.dilation_w(), node.fused_activation().min, node.fused_activation().max, node.count_include_pad());
 }

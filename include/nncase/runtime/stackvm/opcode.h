@@ -1590,10 +1590,11 @@ struct tensor_reduce_window2d_op_t
     uint16_t dilation_w;
     float fused_clamp_low;
     float fused_clamp_high;
+    bool count_include_pad;
 
     tensor_reduce_window2d_op_t(default_init_t) noexcept { }
-    explicit tensor_reduce_window2d_op_t(datatype_t datatype, reduce_op_t reduce_op, uint8_t rshape_src, uint8_t rstride_src, uint8_t rstride_dest, uint16_t filter_h, uint16_t filter_w, uint16_t stride_h, uint16_t stride_w, uint16_t dilation_h, uint16_t dilation_w, float fused_clamp_low, float fused_clamp_high) noexcept
-        : opcode(opcode_t::TENSOR), funct(tensor_function_t::REDUCE_WINDOW2D), datatype(datatype), reduce_op(reduce_op), rshape_src(rshape_src), rstride_src(rstride_src), rstride_dest(rstride_dest), filter_h(filter_h), filter_w(filter_w), stride_h(stride_h), stride_w(stride_w), dilation_h(dilation_h), dilation_w(dilation_w), fused_clamp_low(fused_clamp_low), fused_clamp_high(fused_clamp_high)
+    explicit tensor_reduce_window2d_op_t(datatype_t datatype, reduce_op_t reduce_op, uint8_t rshape_src, uint8_t rstride_src, uint8_t rstride_dest, uint16_t filter_h, uint16_t filter_w, uint16_t stride_h, uint16_t stride_w, uint16_t dilation_h, uint16_t dilation_w, float fused_clamp_low, float fused_clamp_high, bool count_include_pad) noexcept
+        : opcode(opcode_t::TENSOR), funct(tensor_function_t::REDUCE_WINDOW2D), datatype(datatype), reduce_op(reduce_op), rshape_src(rshape_src), rstride_src(rstride_src), rstride_dest(rstride_dest), filter_h(filter_h), filter_w(filter_w), stride_h(stride_h), stride_w(stride_w), dilation_h(dilation_h), dilation_w(dilation_w), fused_clamp_low(fused_clamp_low), fused_clamp_high(fused_clamp_high), count_include_pad(count_include_pad)
     {
     }
 };

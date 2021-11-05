@@ -1461,6 +1461,7 @@ struct op_reader<tensor_reduce_window2d_op_t>
         op.dilation_w = reader.read_unaligned<uint16_t>();
         op.fused_clamp_low = reader.read_unaligned<float>();
         op.fused_clamp_high = reader.read_unaligned<float>();
+        op.count_include_pad = reader.read_unaligned<bool>();
         return op;
     }
 };
