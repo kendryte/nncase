@@ -36,7 +36,7 @@ template <class TBinaryOp, class TWindowOp>
 result<void> reduce_window2d_impl(const float *input, float init_value, float *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const padding &padding_h, const padding &padding_w,
     int32_t filter_h, int32_t filter_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w,
-    value_range<float> fused_activation, TBinaryOp &&binary_op, TWindowOp &&window_op, [[maybe_unused]]bool count_include_pad, NNCASE_UNUSED kernel_context &context) noexcept
+    value_range<float> fused_activation, TBinaryOp &&binary_op, TWindowOp &&window_op, [[maybe_unused]] bool count_include_pad, NNCASE_UNUSED kernel_context &context) noexcept
 {
     const auto out_h = kernels::detail::get_windowed_output_size(in_shape[2], filter_h, stride_h, dilation_h, padding_h);
     const auto out_w = kernels::detail::get_windowed_output_size(in_shape[3], filter_w, stride_w, dilation_w, padding_w);
