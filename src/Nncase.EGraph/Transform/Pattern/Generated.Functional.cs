@@ -281,8 +281,10 @@ namespace Nncase.Transform.Pattern.F
         public static CallPattern Transpose(ExprPattern input, ExprPattern perm) => new CallPattern(new TransposePattern(), input, perm);
         public static CallPattern Cast(ExprPattern input, DataType newType) => new CallPattern(new CastPattern(newType), input);
         public static CallPattern Concat(TuplePattern input, ExprPattern axis) => new CallPattern(new ConcatPattern(), input, axis);
+        public static CallPattern Conv2D(ExprPattern input, ExprPattern weights, ExprPattern bias, ExprPattern padding, ExprPattern stride, ExprPattern dilation, PadMode padMode) => new CallPattern(new Conv2DPattern(padMode), input, padding, stride, dilation);
         public static CallPattern Gather(ExprPattern input, ExprPattern axis, ExprPattern index) => new CallPattern(new GatherPattern(), input, axis, index);
-        public static CallPattern GatherND(ExprPattern input, ExprPattern axis, ExprPattern batch_dims, ExprPattern index) => new CallPattern(new GatherPattern(), input, axis, batch_dims, index);
+        public static CallPattern GatherND(ExprPattern input, ExprPattern axis, ExprPattern batch_dims, ExprPattern index) => new CallPattern(new GatherNDPattern(), input, axis, batch_dims, index);
+        public static CallPattern MatMul(ExprPattern input, ExprPattern other) => new CallPattern(new MatMulPattern(), input, other);
         /// Pads is Const tensor, shape = [channels, 2(before, after)]
         public static CallPattern Pad(ExprPattern input, ExprPattern pads, PadMode mode, ExprPattern value) => new CallPattern(new PadPattern(mode), input, pads, value);
         public static CallPattern Reduce(ReduceOp reduceOp, ExprPattern input, ExprPattern axis, ExprPattern initValue, ExprPattern keepDims) => new CallPattern(new ReducePattern(reduceOp), input, axis, initValue, keepDims);
@@ -290,7 +292,8 @@ namespace Nncase.Transform.Pattern.F
         public static CallPattern ReduceMin(ExprPattern input, ExprPattern axis, ExprPattern initValue, ExprPattern keepDims) => new CallPattern(new ReducePattern(ReduceOp.Min), input, axis, initValue, keepDims);
         public static CallPattern ReduceSum(ExprPattern input, ExprPattern axis, ExprPattern initValue, ExprPattern keepDims) => new CallPattern(new ReducePattern(ReduceOp.Sum), input, axis, initValue, keepDims);
         public static CallPattern Reshape(ExprPattern input, ExprPattern shape) => new CallPattern(new ReshapePattern(), input, shape);
-        public static CallPattern Slice(ExprPattern input, ExprPattern begins, ExprPattern ends) => new CallPattern(new SlicePattern(), input, begins, ends);
+        ///https://github.com/onnx/onnx/blob/master/docs/Operators.md#slice
+        public static CallPattern Slice(ExprPattern input, ExprPattern begins, ExprPattern ends, ExprPattern axes, ExprPattern strides) => new CallPattern(new SlicePattern(), input, begins, ends, axes, strides);
         /// squeeze input by give dims
         public static CallPattern Squeeze(ExprPattern input, ExprPattern dims) => new CallPattern(new SqueezePattern(), input, dims);
         public static CallPattern ReShape(ExprPattern input, ExprPattern shape) => new CallPattern(new ReshapePattern(), input, shape);

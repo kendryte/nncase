@@ -41,7 +41,7 @@ public class EGraphRewriteTest : IDisposable
         var EResults = EGraphMatcher.EMatch(egraph, pattern);
         EGraphPrinter.DumpEgraphAsDot(egraph, EResults, $"{Name}_Ematch");
         Assert.Single(EResults);
-        var wcxv = EResults[0].GetExpr(wcx);
+        var wcxv = EResults[0][wcx];
         Assert.Equal(wcxv, lhs);
         var to_eid = egraph.Add(nawPass(wcxv));
 

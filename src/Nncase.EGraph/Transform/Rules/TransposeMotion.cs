@@ -25,7 +25,7 @@ namespace Nncase.Transform.Rule
 
         public override Expr GetRePlace(EMatchResult result)
         {
-            Expr x = result.GetExpr(wx), y = result.GetExpr(wy), perm = result.GetExpr(wperm);
+            var (x, y, perm) = result[wx, wy, wperm];
             var bin = (Binary)result.Root.Expr;
             return Transpose(new Call(new Binary(bin.BinaryOp), x, y), perm);
         }
@@ -59,9 +59,9 @@ namespace Nncase.Transform.Rule
 
         public void ParserResult(EMatchResult result)
         {
-            x = result.GetExpr(wx);
-            con = (Const)result.GetExpr(wcon);
-            perm = (Const)result.GetExpr(wperm);
+            x = result[wx];
+            con = (Const)result[wcon];
+            perm = (Const)result[wperm];
             binary = (Binary)result.GetRoot();
             newShape = GetNewConstShape((Const)con, (Const)perm);
             newCon = con with { ValueType = (TensorType)con.ValueType with { Shape = newShape } };
@@ -131,13 +131,13 @@ namespace Nncase.Transform.Rule
 
         public override Expr? GetRePlace(EMatchResult result)
         {
-            var newShapes = (from input in wcinputs select GetShape(result.GetExpr(input))).ToArray();
+            var newShapes = (from input in wcinputs select GetShape(result[input])).ToArray();
             var oldPerm = result.GetExpr<Const>(wcprem);
             var permt = oldPerm.ToTensor<int>();
             var oldAxis = result.GetExpr<Const>(wcaxis).ToScalar<int>();
             var newAxis = permt[oldAxis];
 
-            var newCon = Concat(new IR.Tuple((from input in wcinputs select result.GetExpr(input)).ToArray()), newAxis);
+            var newCon = Concat(new IR.Tuple((from input in wcinputs select result[input]).ToArray()), newAxis);
             var newTran = Transpose(newCon, oldPerm);
             return newTran;
         }
@@ -160,9 +160,9 @@ namespace Nncase.Transform.Rule
 
         public override Expr GetRePlace(EMatchResult result)
         {
-            var input = result.GetExpr(wcin);
-            var (mode, padv, perm) = result.GetExpr(wcmode, wcpadv, wcperm);
-            var padst = result.GetExpr(wcpads).ToTensor<int>();
+            var input = result[wcin];
+            var (mode, padv, perm) = result[wcmode, wcpadv, wcperm];
+            var padst = result[wcpads].ToTensor<int>();
             var newpadspan = new int[padst.Dimensions[0] * 2];
             var permt = perm.ToTensor<int>();
             for (int i = 0; i < permt.Dimensions[0]; i++)
@@ -170,8 +170,8 @@ namespace Nncase.Transform.Rule
                 newpadspan[i * 2] = padst[permt[i], 0];
                 newpadspan[(i * 2) + 1] = padst[permt[i], 1];
             }
-            Const newPads = new Const(result.GetExpr(wcpads).ValueType, newpadspan.Cast<byte>().ToArray());
-            return Pad(Transpose(input, perm), (newPads), ((Pad)result.GetExpr(wcpad).Target).padMode, padv);
+            Const newPads = new Const(result[wcpads].ValueType, newpadspan.Cast<byte>().ToArray());
+            return Pad(Transpose(input, perm), (newPads), ((Pad)result[wcpad].Target).padMode, padv);
         }
     }
 
@@ -189,9 +189,9 @@ namespace Nncase.Transform.Rule
 
         public override Expr? GetRePlace(EMatchResult result)
         {
-            var (input, axis, init) = result.GetExpr(wcinput, wcaxis, wcinit);
-            var perm = result.GetExpr(wcperm);
-            var keepdims = result.GetExpr(wckeepdims).ToScalar<bool>();
+            var (input, axis, init) = result[wcinput, wcaxis, wcinit];
+            var perm = result[wcperm];
+            var keepdims = result[wckeepdims].ToScalar<bool>();
             var reduce = result.GetRoot<Reduce>();
             var new_axis = Gather(perm, 0, axis);
             if (keepdims == false)
@@ -216,8 +216,8 @@ namespace Nncase.Transform.Rule
 
         public override Expr? GetRePlace(EMatchResult result)
         {
-            var (input, perm) = result.GetExpr(wcinput, wcperm);
-            var unarycall = result.GetExpr(wcunary);
+            var (input, perm) = result[wcinput, wcperm];
+            var unarycall = result[wcunary];
             var unaryop = ((Unary)unarycall.Target).UnaryOp;
 
             return Unary(unaryop, Transpose(input, perm));
@@ -239,8 +239,8 @@ namespace Nncase.Transform.Rule
 
         public override Expr? GetRePlace(EMatchResult result)
         {
-            var (min, max, perm) = result.GetExpr(wcmin, wcmax, wcperm);
-            var input = result.GetExpr(wcinput);
+            var (min, max, perm) = result[wcmin, wcmax, wcperm];
+            var input = result[wcinput];
             return Transpose(Clamp(input, min, max), perm);
         }
 

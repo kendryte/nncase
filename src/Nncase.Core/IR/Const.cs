@@ -17,6 +17,8 @@ namespace Nncase.IR
 
         public List<Dimension> Shape => new List<Dimension>(ValueType.Shape);
 
+        public int Rank => ValueType.Shape.Rank;
+
 
         /// <summary>
         /// Create constant from a <see cref="byte"/>.
@@ -148,10 +150,21 @@ namespace Nncase.IR
             where T : unmanaged
             => new(new TensorType(DataTypes.FromType<T>(), shape), DataTypes.GetBytes(span));
 
+        /// <summary>
+        /// Create constant from a span, Set the shape as [n]
+        /// </summary>
+        /// <typeparam name="T">CLR type.</typeparam>
+        /// <param name="span">Span.</param>
+        /// <param name="shape">Shape.</param>
+        /// <returns>Created constant expression.</returns>
+        public static Const FromSpan<T>(ReadOnlySpan<T> span)
+            where T : unmanaged
+            => new(new TensorType(DataTypes.FromType<T>(), new int[] { span.Length }), DataTypes.GetBytes(span));
+
         public static Const FromTensor<T>(DenseTensor<T> ts)
           where T : unmanaged
           => FromSpan<T>(ts.Buffer.Span, new Shape(ts.Dimensions));
 
-        public static Const FromShape(Shape shape) => FromSpan<int>(shape.Select(x => x.Value ?? throw new InvalidOperationException("Only Can't Convert Fixed Shape to Const!")).ToArray(), new[] {shape.Rank});
+        public static Const FromShape(Shape shape) => FromSpan<int>(shape.Select(x => x.FixedValue).ToArray(), new[] { shape.Rank });
     }
 }

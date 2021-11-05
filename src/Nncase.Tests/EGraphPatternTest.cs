@@ -293,7 +293,7 @@ namespace Nncase.Tests
             Assert.Single(matchs);
             var result = matchs[0];
             Assert.Contains(wc1, result.Context.Keys);
-            Assert.Equal(result.GetExpr(wc1), wce1);
+            Assert.Equal(result[wc1], wce1);
         }
 
         [Fact]
@@ -383,9 +383,9 @@ namespace Nncase.Tests
             var eMatches = EMatch(eGraph, vpat);
             Assert.Single(eMatches);
             var eMatch = eMatches[0];
-            Assert.Equal(eMatch.GetExpr(wcs[0]), tuple[0]);
-            Assert.Equal(eMatch.GetExpr(wcs[1]), tuple[1]);
-            Assert.Equal(eMatch.GetExpr(wcs[2]), tuple[2]);
+            Assert.Equal(eMatch[wcs[0]], tuple[0]);
+            Assert.Equal(eMatch[wcs[1]], tuple[1]);
+            Assert.Equal(eMatch[wcs[2]], tuple[2]);
         }
 
         [Fact]
@@ -424,9 +424,9 @@ namespace Nncase.Tests
             var eMatches = EMatch(eGraph, vpat);
             Assert.Single(eMatches);
             var eMatch = eMatches[0];
-            Assert.Equal(eMatch.GetExpr(wccons[0]), tuple_rhs[0]);
-            Assert.Equal(eMatch.GetExpr(wccons[1]), tuple_rhs[1]);
-            Assert.Equal(eMatch.GetExpr(wccons[2]), tuple_rhs[2]);
+            Assert.Equal(eMatch[wccons[0]], tuple_rhs[0]);
+            Assert.Equal(eMatch[wccons[1]], tuple_rhs[1]);
+            Assert.Equal(eMatch[wccons[2]], tuple_rhs[2]);
         }
 
         [Fact]
@@ -462,11 +462,11 @@ namespace Nncase.Tests
             var results = EMatch(eGraph, pattern);
             Assert.Single(results);
             var result = results[0];
-            Assert.Equal(result.GetExpr(wcin[0]), x);
-            Assert.Equal(result.GetExpr(wcin[1]), y);
-            Assert.Equal(result.GetExpr(wcin[2]), z);
-            Assert.Equal(result.GetExpr(wcperm), perm);
-            Assert.Equal(result.GetExpr(wcaxis), (Const)0);
+            Assert.Equal(result[wcin[0]], x);
+            Assert.Equal(result[wcin[1]], y);
+            Assert.Equal(result[wcin[2]], z);
+            Assert.Equal(result[wcperm], perm);
+            Assert.Equal(result[wcaxis], (Const)0);
         }
 
     }

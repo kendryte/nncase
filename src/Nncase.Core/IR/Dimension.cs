@@ -56,6 +56,15 @@ namespace Nncase.IR
         public int? Value { get; }
 
         /// <summary>
+        /// Gets FixedValue.
+        /// </summary>
+        public int FixedValue
+        {
+            get => Value ??
+               throw new InvalidOperationException("Only Can Get It When Shape Is Fixed !");
+        }
+
+        /// <summary>
         /// Gets a value indicating whether unknown.
         /// </summary>
         public bool IsUnknown => Kind == DimensionKind.Unknown;

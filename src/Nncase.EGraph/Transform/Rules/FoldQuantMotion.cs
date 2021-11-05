@@ -27,7 +27,7 @@ namespace Nncase.Transform.Rule
 
         public override Expr? GetRePlace(EMatchResult result)
         {
-            var input = result.GetExpr(wcin);
+            var input = result[wcin];
             var output = result.GetRoot();
             bool check = (input.CheckedType, output.CheckedType) switch
             {

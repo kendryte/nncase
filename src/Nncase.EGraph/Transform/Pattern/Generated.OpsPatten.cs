@@ -124,6 +124,22 @@ namespace Nncase.Transform.Pattern.Tensors
         }
     }
 
+    public sealed record Conv2DPattern(Func<Conv2D, bool> Cond) : OpPattern
+    {
+        public Conv2DPattern(Conv2D conv2d): this(x => x == conv2d)
+        {
+        }
+
+        public bool MatchLeaf(Conv2D conv2d) => Cond(conv2d) && MatchCheckedType(conv2d);
+        public Conv2DPattern(): this((Conv2D x) => true)
+        {
+        }
+
+        public Conv2DPattern(PadMode padMode): this((Conv2D x) => padMode == x.padMode)
+        {
+        }
+    }
+
     public sealed record DeQuantizePattern(Func<DeQuantize, bool> Cond) : OpPattern
     {
         public DeQuantizePattern(DeQuantize dequantize): this(x => x == dequantize)
@@ -160,6 +176,18 @@ namespace Nncase.Transform.Pattern.Tensors
 
         public bool MatchLeaf(GatherND gathernd) => Cond(gathernd) && MatchCheckedType(gathernd);
         public GatherNDPattern(): this((GatherND x) => true)
+        {
+        }
+    }
+
+    public sealed record MatMulPattern(Func<MatMul, bool> Cond) : OpPattern
+    {
+        public MatMulPattern(MatMul matmul): this(x => x == matmul)
+        {
+        }
+
+        public bool MatchLeaf(MatMul matmul) => Cond(matmul) && MatchCheckedType(matmul);
+        public MatMulPattern(): this((MatMul x) => true)
         {
         }
     }

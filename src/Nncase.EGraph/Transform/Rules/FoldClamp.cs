@@ -27,8 +27,8 @@ namespace Nncase.Transform.Rule
 
         public override Expr? GetRePlace(EMatchResult result)
         {
-            var input = result.GetExpr(wcin);
-            var (min, max) = result.GetExpr(wcmin, wcmax);
+            var input = result[wcin];
+            var (min, max) = result[wcmin, wcmax];
             if (min.ToScalar<float>() == Single.MinValue &&
                 max.ToScalar<float>() == Single.MaxValue)
             {

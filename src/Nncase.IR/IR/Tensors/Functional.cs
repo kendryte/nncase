@@ -27,7 +27,7 @@ namespace Nncase.IR.F
         public static Call Gather(Expr input, Expr axis, Expr index) => new Call(new Gather(), input, axis, index);
 
         public static Call GatherND(Expr input, Expr axis, Expr batch_dims, Expr index) => new Call(new GatherND(), input, axis, batch_dims, index);
-        
+
         public static Call MatMul(Expr input, Expr other) => new Call(new MatMul(), input, other);
 
         /// Pads is Const tensor, shape = [channels, 2(before, after)]
@@ -43,7 +43,16 @@ namespace Nncase.IR.F
 
         public static Call Reshape(Expr input, Expr shape) => new Call(new Reshape(), input, shape);
 
-        public static Call Slice(Expr input, Expr begins, Expr ends) => new Call(new Slice(), input, begins, ends);
+        ///https://github.com/onnx/onnx/blob/master/docs/Operators.md#slice
+        public static Call Slice(Expr input, Expr begins, Expr ends, Expr axes, Expr strides) =>
+          new Call(new Slice(), input, begins, ends, axes, strides);
+
+        public static Call Slice(Expr input, Const begins, Const ends)
+        {
+            var axes = Const.FromSpan<int>(Enumerable.Range(0, ends.Rank).ToArray());
+            var strides = axes with { Data = new IRBytes(DataTypes.GetBytes<int>(Enumerable.Repeat(1, ends.Rank).ToArray())) };
+            return new Call(new Slice(), input, begins, ends, axes, strides);
+        }
 
         /// squeeze input by give dims
         public static Call Squeeze(Expr input, Expr dims) => new Call(new Squeeze(), input, dims);

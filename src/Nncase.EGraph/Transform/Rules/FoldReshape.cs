@@ -26,7 +26,7 @@ namespace Nncase.Transform.Rule
 
         public override Expr? GetRePlace(EMatchResult result)
         {
-            return ReShape(result.GetExpr(wcin), result.GetExpr(shape2));
+            return ReShape(result[wcin], result[shape2]);
         }
     }
 
@@ -42,8 +42,8 @@ namespace Nncase.Transform.Rule
 
         public override Expr? GetRePlace(EMatchResult result)
         {
-            var input = result.GetExpr(wcin);
-            var shape = result.GetExpr(wcshape).ToTensor<int>();
+            var input = result[wcin];
+            var shape = result[wcshape].ToTensor<int>();
             var type = input.CheckedType;
             if (type is TensorType ttype)
             {
