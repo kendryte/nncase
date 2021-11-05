@@ -35,11 +35,13 @@ namespace Nncase.IR.F
 
         public static Call Reduce(ReduceOp reduceOp, Expr input, Expr axis, Expr initValue, Expr keepDims) => new Call(new Reduce(reduceOp), input, axis, initValue, keepDims);
 
-        public static Call ReduceMean(Expr input, Expr axis, Expr initValue, Expr keepDims) => new Call(new Reduce(ReduceOp.Mean), input, axis, initValue, keepDims);
+        public static Call ReduceMean(Expr input, Expr axis, Expr initValue, Expr keepDims) => Reduce(ReduceOp.Mean, input, axis, initValue, keepDims);
 
-        public static Call ReduceMin(Expr input, Expr axis, Expr initValue, Expr keepDims) => new Call(new Reduce(ReduceOp.Min), input, axis, initValue, keepDims);
+        public static Call ReduceMin(Expr input, Expr axis, Expr initValue, Expr keepDims) => Reduce(ReduceOp.Min, input, axis, initValue, keepDims);
 
-        public static Call ReduceSum(Expr input, Expr axis, Expr initValue, Expr keepDims) => new Call(new Reduce(ReduceOp.Sum), input, axis, initValue, keepDims);
+        public static Call ReduceMax(Expr input, Expr axis, Expr initValue, Expr keepDims) => Reduce(ReduceOp.Min, input, axis, initValue, keepDims);
+
+        public static Call ReduceSum(Expr input, Expr axis, Expr initValue, Expr keepDims) => Reduce(ReduceOp.Sum, input, axis, initValue, keepDims);
 
         public static Call Reshape(Expr input, Expr shape) => new Call(new Reshape(), input, shape);
 
@@ -56,8 +58,6 @@ namespace Nncase.IR.F
 
         /// squeeze input by give dims
         public static Call Squeeze(Expr input, Expr dims) => new Call(new Squeeze(), input, dims);
-
-        public static Call ReShape(Expr input, Expr shape) => new Call(new Reshape(), input, shape);
 
         public static Call Quantize(Expr input, Expr quantParam, DataType targetType) => new Call(new Quantize(targetType), input, quantParam);
 

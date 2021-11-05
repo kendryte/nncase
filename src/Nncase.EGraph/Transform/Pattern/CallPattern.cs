@@ -20,10 +20,17 @@ namespace Nncase.Transform.Pattern
             return MatchCheckedType(call);
         }
 
+        public ExprPattern this[ParameterInfo parameter]
+        {
+            get => Parameters[parameter.Index];
+        }
+
+
         public CallPattern(ExprPattern target, params ExprPattern[] parameters)
             : this(target, new FixedVArgsPattern(parameters))
         {
         }
+
     }
 
     public static partial class Utility

@@ -21,12 +21,12 @@ namespace Nncase.Transform.Rule
 
         FoldReshape()
         {
-            Pattern = ReShape(ReShape(wcin, shape1), shape2);
+            Pattern = Reshape(Reshape(wcin, shape1), shape2);
         }
 
         public override Expr? GetRePlace(EMatchResult result)
         {
-            return ReShape(result[wcin], result[shape2]);
+            return Reshape(result[wcin], result[shape2]);
         }
     }
 
@@ -37,7 +37,7 @@ namespace Nncase.Transform.Rule
 
         FoldNopReshape()
         {
-            Pattern = ReShape(wcin, wcshape);
+            Pattern = Reshape(wcin, wcshape);
         }
 
         public override Expr? GetRePlace(EMatchResult result)

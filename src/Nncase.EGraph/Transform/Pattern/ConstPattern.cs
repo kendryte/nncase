@@ -52,10 +52,30 @@ namespace Nncase.Transform.Pattern
         public static ConstPattern IsConst(Func<Const, bool> Cond) => new ConstPattern(Cond);
 
         public static ConstPattern IsConst(Func<float, bool> cond) => new ConstPattern(
-          x => x.ValueType.DType is (DataType.BFloat16 or DataType.Float16 or DataType.Float32 or DataType.Float64) && x.ToTensor<float>().All(cond));
+          x =>
+          {
+              if (x.ValueType.DType is (DataType.BFloat16 or DataType.Float16 or DataType.Float32 or DataType.Float64))
+              {
+                  if (x.ValueType.IsScalar)
+                      return cond(x.ToScalar<float>());
+                  else
+                      return x.ToTensor<float>().All(cond);
+              }
+              return false;
+          });
 
         public static ConstPattern IsConst(Func<int, bool> cond) => new ConstPattern(
-          x => (x.ValueType.DType is (DataType.Int8 or DataType.Int16 or DataType.Int32 or DataType.Int64 or DataType.UInt8 or DataType.UInt16 or DataType.UInt32 or DataType.UInt64) && x.ToTensor<int>().All(cond)));
+          x =>
+          {
+              if (x.ValueType.DType is (DataType.Int8 or DataType.Int16 or DataType.Int32 or DataType.Int64 or DataType.UInt8 or DataType.UInt16 or DataType.UInt32 or DataType.UInt64))
+              {
+                  if (x.ValueType.IsScalar)
+                      return cond(x.ToScalar<int>());
+                  else
+                      return x.ToTensor<int>().All(cond);
+              }
+              return false;
+          });
 
         public static ConstPattern IsConst(TypePattern typePattern) => new ConstPattern(x => typePattern.MatchLeaf(x.ValueType));
 

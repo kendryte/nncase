@@ -294,6 +294,6 @@ namespace Nncase.IR.F
         /// <param name="lhs">Left operand.</param>
         /// <param name="rhs">Right operand.</param>
         /// <returns>Result expression.</returns>
-        public static Call FloorMod(Expr lhs, Expr rhs) => lhs - (FloorDiv(lhs, rhs) * rhs);
+        public static Call FloorMod(Expr lhs, Expr rhs) => Sub(lhs, (FloorDiv(lhs, rhs) * rhs));
     }
 }
