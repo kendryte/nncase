@@ -138,7 +138,7 @@ namespace Nncase.Importer.TFLite
                 // tflite.BuiltinOperator.ARG_MAX,
                 // tflite.BuiltinOperator.ARG_MIN,
                 // tflite.BuiltinOperator.ASSIGN_VARIABLE,
-                // tflite.BuiltinOperator.AVERAGE_POOL_2D,
+                tflite.BuiltinOperator.AVERAGE_POOL_2D => VisitReduceWindow2D(op, ReduceOp.Mean, 0f),
                 // tflite.BuiltinOperator.BATCH_MATMUL,
                 // tflite.BuiltinOperator.BATCH_TO_SPACE_ND,
                 // tflite.BuiltinOperator.BIDIRECTIONAL_SEQUENCE_LSTM,
@@ -213,7 +213,7 @@ namespace Nncase.Importer.TFLite
                 // tflite.BuiltinOperator.MATRIX_SET_DIAG,
                 tflite.BuiltinOperator.MAXIMUM => VisitBinary(op, BinaryOp.Max),
 
-                // tflite.BuiltinOperator.MAX_POOL_2D,
+                tflite.BuiltinOperator.MAX_POOL_2D => VisitReduceWindow2D(op, ReduceOp.Max, float.MinValue),
                 tflite.BuiltinOperator.MEAN => VisitReduce(op, ReduceOp.Mean, 0f),
                 tflite.BuiltinOperator.MINIMUM => VisitBinary(op, BinaryOp.Min),
 

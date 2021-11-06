@@ -42,6 +42,9 @@ namespace Nncase.IR.F
         public static Call ReduceMax(Expr input, Expr axis, Expr initValue, Expr keepDims) => Reduce(ReduceOp.Min, input, axis, initValue, keepDims);
 
         public static Call ReduceSum(Expr input, Expr axis, Expr initValue, Expr keepDims) => Reduce(ReduceOp.Sum, input, axis, initValue, keepDims);
+        
+        public static Call ReduceWindow2D(ReduceOp reduceOp, Expr input, Expr initValue, Expr filter, Expr stride, Expr padding, Expr dilation) => 
+            new Call(new ReduceWindow2D(reduceOp), input, initValue, filter, stride, padding, dilation);
 
         public static Call Reshape(Expr input, Expr shape) => new Call(new Reshape(), input, shape);
 
