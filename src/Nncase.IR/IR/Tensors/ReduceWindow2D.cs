@@ -23,7 +23,7 @@ namespace Nncase.IR.Tensors
         /// <summary>
         /// Get init_value.
         /// </summary>
-        public static readonly ParameterInfo InitValue = new(typeof(Reduce), 2, "init_value");
+        public static readonly ParameterInfo InitValue = new(typeof(Reduce), 1, "init_value");
         
         /// <summary>
         /// Get filter.
