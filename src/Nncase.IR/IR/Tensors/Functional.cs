@@ -22,8 +22,6 @@ namespace Nncase.IR.F
 
         public static Call Concat(Tuple input, Expr axis) => new Call(new Concat(), input, axis);
 
-        public static Call Conv2D(Expr input, Expr weights, Expr bias, Expr padding, Expr stride, Expr dilation, PadMode padMode) => new Call(new Conv2D(padMode), input, padding, stride, dilation);
-
         public static Call Gather(Expr input, Expr axis, Expr index) => new Call(new Gather(), input, axis, index);
 
         public static Call GatherND(Expr input, Expr axis, Expr batch_dims, Expr index) => new Call(new GatherND(), input, axis, batch_dims, index);

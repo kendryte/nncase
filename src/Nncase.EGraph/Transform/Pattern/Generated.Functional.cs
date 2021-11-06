@@ -12,7 +12,7 @@ using Nncase.IR.Tensors;
 
 namespace Nncase.Transform.Pattern.F
 {
-    public static class Math
+    public static partial class Math
     {
         /// <summary>
         /// CallPattern unary.
@@ -266,7 +266,7 @@ namespace Nncase.Transform.Pattern.F
         public static BinaryWrapper FloorMod(ExprPattern lhs, ExprPattern rhs) => Sub(lhs, (FloorDiv(lhs, rhs) * rhs));
     }
 
-    public static class NN
+    public static partial class NN
     {
         /// <summary>
         /// CallPattern sigmoid.
@@ -274,14 +274,14 @@ namespace Nncase.Transform.Pattern.F
         /// <param name = "expr">Source expression.</param>
         /// <returns>Result expression.</returns>
         public static SigmoidWrapper Sigmoid(ExprPattern expr) => new SigmoidWrapper(new CallPattern(new SigmoidPattern(), expr));
+        public static Conv2DWrapper Conv2D(ExprPattern input, ExprPattern weights, ExprPattern bias, ExprPattern padding, ExprPattern stride, ExprPattern dilation, PadMode padMode) => new Conv2DWrapper(new CallPattern(new Conv2DPattern(padMode), input, padding, stride, dilation));
     }
 
-    public static class Tensors
+    public static partial class Tensors
     {
         public static TransposeWrapper Transpose(ExprPattern input, ExprPattern perm) => new TransposeWrapper(new CallPattern(new TransposePattern(), input, perm));
         public static CastWrapper Cast(ExprPattern input, DataType newType) => new CastWrapper(new CallPattern(new CastPattern(newType), input));
         public static ConcatWrapper Concat(TuplePattern input, ExprPattern axis) => new ConcatWrapper(new CallPattern(new ConcatPattern(), input, axis));
-        public static Conv2DWrapper Conv2D(ExprPattern input, ExprPattern weights, ExprPattern bias, ExprPattern padding, ExprPattern stride, ExprPattern dilation, PadMode padMode) => new Conv2DWrapper(new CallPattern(new Conv2DPattern(padMode), input, padding, stride, dilation));
         public static GatherWrapper Gather(ExprPattern input, ExprPattern axis, ExprPattern index) => new GatherWrapper(new CallPattern(new GatherPattern(), input, axis, index));
         public static GatherNDWrapper GatherND(ExprPattern input, ExprPattern axis, ExprPattern batch_dims, ExprPattern index) => new GatherNDWrapper(new CallPattern(new GatherNDPattern(), input, axis, batch_dims, index));
         public static MatMulWrapper MatMul(ExprPattern input, ExprPattern other) => new MatMulWrapper(new CallPattern(new MatMulPattern(), input, other));

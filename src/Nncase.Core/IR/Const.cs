@@ -15,9 +15,9 @@ namespace Nncase.IR
     public sealed record Const(TensorType ValueType, IRBytes Data) : Expr
     {
 
-        public List<Dimension> Shape => new List<Dimension>(ValueType.Shape);
+        public override Shape Shape => ValueType.Shape;
 
-        public int Rank => ValueType.Shape.Rank;
+        public override int Rank => ValueType.Shape.Rank;
 
 
         /// <summary>
@@ -164,6 +164,9 @@ namespace Nncase.IR
         public static Const FromTensor<T>(DenseTensor<T> ts)
           where T : unmanaged
           => FromSpan<T>(ts.Buffer.Span, new Shape(ts.Dimensions));
+
+        public static Const FromTensor(DenseTensor<int> ts)
+          => FromSpan<int>(ts.Buffer.Span, new Shape(ts.Dimensions));
 
         public static Const FromShape(Shape shape) => FromSpan<int>(shape.Select(x => x.FixedValue).ToArray(), new[] { shape.Rank });
     }

@@ -20,6 +20,13 @@ namespace Nncase.IR
         /// </summary>
         public IRType? CheckedType { get; set; }
 
+        public virtual Shape Shape => CheckedType switch
+        {
+            TensorType type => type.Shape,
+            _ => throw new InvalidOperationException("Only The Expr Have CheckedType Can Get It's Shape")
+        };
+        public virtual int Rank => Shape.Rank;
+
         public virtual bool Equals(Expr? other)
         {
             return !(other is null) && EqualityContract == other.EqualityContract;

@@ -80,6 +80,7 @@ namespace Nncase.Transform.Pattern
         public static ConstPattern IsConst(TypePattern typePattern) => new ConstPattern(x => typePattern.MatchLeaf(x.ValueType));
 
         public static ConstPattern IsConstIntTensor() => IsConst(IsTensor() & IsIntegral());
+        public static ConstPattern IsConstIntSclar() => IsConst(IsScalar() & IsIntegral());
 
         public static ConstPattern IsConst<T>(T Value)
         where T : unmanaged

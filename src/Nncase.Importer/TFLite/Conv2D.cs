@@ -33,7 +33,7 @@ namespace Nncase.Importer.TFLite
             var padding = Const.FromSpan<int>(paddingValue, new[] { 2, 2 });
             var clamp = ToFloatClampRange(options.FusedActivationFunction);
             return F.Math.Clamp(
-                F.Tensors.Conv2D(input, weights, bias, padding, stride, dilation, PadMode.Constant),
+                F.NN.Conv2D(input, weights, bias, padding, stride, dilation, PadMode.Constant),
                 clamp.Min, clamp.Max);
         }
 
@@ -64,7 +64,7 @@ namespace Nncase.Importer.TFLite
             }
             var clamp = ToFloatClampRange(options.FusedActivationFunction);
             return F.Math.Clamp(
-                F.Tensors.Conv2D(input, weights, bias, padding, stride, dilation, PadMode.Constant),
+                F.NN.Conv2D(input, weights, bias, padding, stride, dilation, PadMode.Constant),
                 clamp.Min, clamp.Max);
         }
         

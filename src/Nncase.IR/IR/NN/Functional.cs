@@ -21,5 +21,7 @@ namespace Nncase.IR.F
         /// <param name="expr">Source expression.</param>
         /// <returns>Result expression.</returns>
         public static Call Sigmoid(Expr expr) => new Call(new Sigmoid(), expr);
+
+        public static Call Conv2D(Expr input, Expr weights, Expr bias, Expr padding, Expr stride, Expr dilation, PadMode padMode) => new Call(new Conv2D(padMode), input, padding, stride, dilation);
     }
 }

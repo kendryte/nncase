@@ -178,9 +178,4 @@ namespace Nncase.Transform.Rule
             return null;
         }
     }
-
-    public class PadToMaxPool : EGraphRule
-    {
-      
-    }
 }

@@ -91,9 +91,9 @@ namespace Nncase.Tests
             Assert.IsType<WildCardPattern>(c.Parameters[0]);
             Assert.IsType<WildCardPattern>(c.Parameters[1]);
 
-            var c2 = IsBinary(BinaryOp.Add, wc1, wc2);
+            CallPattern c2 = IsBinary(BinaryOp.Add, wc1, wc2);
 
-            var c3 = IsBinary(x => x is (BinaryOp.Div or BinaryOp.Sub), wc1, wc2);
+            CallPattern c3 = IsBinary(x => x is (BinaryOp.Div or BinaryOp.Sub), wc1, wc2);
 
             Assert.True(c.Target.MatchLeaf(e.Target));
             Assert.True(c2.Target.MatchLeaf(e.Target));

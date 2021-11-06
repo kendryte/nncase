@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Nncase.IR.Tensors
+namespace Nncase.IR.NN
 {
     /// <summary>
     /// Conv2D.

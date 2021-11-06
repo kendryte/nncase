@@ -4,6 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
 using Nncase.IR.Tensors;
@@ -68,6 +69,22 @@ namespace Nncase.Transform.Pattern.NN
         {
         }
     }
+
+    public sealed record Conv2DPattern(Func<Conv2D, bool> Cond) : OpPattern
+    {
+        public Conv2DPattern(Conv2D conv2d): this(x => x == conv2d)
+        {
+        }
+
+        public bool MatchLeaf(Conv2D conv2d) => Cond(conv2d) && MatchCheckedType(conv2d);
+        public Conv2DPattern(): this((Conv2D x) => true)
+        {
+        }
+
+        public Conv2DPattern(PadMode padMode): this((Conv2D x) => padMode == x.padMode)
+        {
+        }
+    }
 }
 
 namespace Nncase.Transform.Pattern.Tensors
@@ -120,22 +137,6 @@ namespace Nncase.Transform.Pattern.Tensors
 
         public bool MatchLeaf(Concat concat) => Cond(concat) && MatchCheckedType(concat);
         public ConcatPattern(): this((Concat x) => true)
-        {
-        }
-    }
-
-    public sealed record Conv2DPattern(Func<Conv2D, bool> Cond) : OpPattern
-    {
-        public Conv2DPattern(Conv2D conv2d): this(x => x == conv2d)
-        {
-        }
-
-        public bool MatchLeaf(Conv2D conv2d) => Cond(conv2d) && MatchCheckedType(conv2d);
-        public Conv2DPattern(): this((Conv2D x) => true)
-        {
-        }
-
-        public Conv2DPattern(PadMode padMode): this((Conv2D x) => padMode == x.padMode)
         {
         }
     }
