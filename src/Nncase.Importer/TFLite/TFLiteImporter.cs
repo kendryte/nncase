@@ -12,6 +12,7 @@ using System.Threading.Tasks;
 using FlatBuffers;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
+using Nncase.IR.Tensors;
 
 namespace Nncase.Importer.TFLite
 {
@@ -246,8 +247,8 @@ namespace Nncase.Importer.TFLite
                 // tflite.BuiltinOperator.RELU6,
                 // tflite.BuiltinOperator.RELU_N1_TO_1,
                 tflite.BuiltinOperator.RESHAPE => VisitReshape(op),
-                // tflite.BuiltinOperator.RESIZE_BILINEAR,
-                // tflite.BuiltinOperator.RESIZE_NEAREST_NEIGHBOR,
+                tflite.BuiltinOperator.RESIZE_BILINEAR => VisitResizeImage(op, ImageResizeMode.Bilinear),
+                tflite.BuiltinOperator.RESIZE_NEAREST_NEIGHBOR => VisitResizeImage(op, ImageResizeMode.NearestNeighbor),
                 // tflite.BuiltinOperator.REVERSE_SEQUENCE,
                 // tflite.BuiltinOperator.REVERSE_V2,
                 // tflite.BuiltinOperator.RFFT2D,
