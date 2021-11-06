@@ -225,7 +225,7 @@ namespace Nncase.Importer.TFLite
                 // tflite.BuiltinOperator.NON_MAX_SUPPRESSION_V4,
                 // tflite.BuiltinOperator.NON_MAX_SUPPRESSION_V5,
                 // tflite.BuiltinOperator.NOT_EQUAL,
-                // tflite.BuiltinOperator.ONE_HOT,
+                tflite.BuiltinOperator.ONE_HOT => VisitOneHot(op),
                 tflite.BuiltinOperator.PACK => VisitPack(op),
                 tflite.BuiltinOperator.PAD => VisitPad(op),
                 tflite.BuiltinOperator.PADV2 => VisitPadV2(op),
