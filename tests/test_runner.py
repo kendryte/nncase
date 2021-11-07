@@ -1,3 +1,4 @@
+from array import array
 import copy
 import os
 import re
@@ -8,13 +9,13 @@ from itertools import product
 from pathlib import Path
 from typing import Any, Dict, List, Tuple, Union
 
-import nncase
-import struct
-from compare_util import compare
-import copy
 import cv2
+import nncase
 import numpy as np
 import yaml
+form PIL import Image
+
+from compare_util import compare
 
 
 class Edict:
@@ -142,6 +143,7 @@ def generate_image_dataset(shape: List[int], dtype: np.dtype,
             padded_img = padded_img.transpose((2, 0, 1))
         padded_img = np.ascontiguousarray(padded_img)
         return padded_img
+
     img_paths = []
     if os.path.isdir(dir_path):
         img_paths.extend([os.path.join(dir_path, p) for p in os.listdir(dir_path)])
@@ -155,10 +157,52 @@ def generate_image_dataset(shape: List[int], dtype: np.dtype,
         imgs.append(img)
     return np.stack(imgs)
 
+    
+def generate_imagenet_dataset(shape: List[int], dtype: np.dtype,
+                           batch_index: int, batch_size: int,
+                           dir_path: str) -> np.ndarry:
+    """ read image from folder, return the rgb image with padding, dtype = float32, range = [0,255]. same as k210 carmera.
+    """
+    assert(os.path.isdir(dir_path) or os.path.exists(dir_path))
+
+    def preproc(img, input_size, transpose=True):
+        pass
+        # todo maybe need move this to postprocess
+        # if len(img.shape) == 3:
+        #     padded_img = np.ones((input_size[0], input_size[1], 3), dtype=np.uint8) * 114
+        # else:
+        #     padded_img = np.ones(input_size, dtype=np.uint8) * 114
+
+        # r = min(input_size[0] / img.shape[0], input_size[1] / img.shape[1])
+        # resized_img = cv2.resize(
+        #     img,
+        #     (int(img.shape[1] * r), int(img.shape[0] * r)),
+        #     interpolation=cv2.INTER_LINEAR,
+        # ).astype(np.uint8)
+        # padded_img[: int(img.shape[0] * r), : int(img.shape[1] * r)] = resized_img
+        # padded_img = cv2.cvtColor(padded_img, cv2.COLOR_BGR2RGB)
+        # if transpose:
+        #     padded_img = padded_img.transpose((2, 0, 1))
+        # padded_img = np.ascontiguousarray(padded_img)
+        # return padded_img
+    img_paths = []
+    if os.path.isdir(dir_path):
+        img_paths.extend([os.path.join(dir_path, p) for p in os.listdir(dir_path)])
+    else:
+        img_paths.append(dir_path)
+    imgs = []
+    for p in img_paths[batch_index * batch_size:
+                       (batch_index + 1) * batch_size]:
+        img_data = Image.open(p).convert('RGB')
+        img_data = np.asarray(img_data, dtype=dtype)
+        data = preprocess_image(img_data, 224,224,False, 256,256,False)
+        data = np.expand_dims(data, axis=0)
+    return np.stack(imgs)
 
 DataFactory = {
     'generate_random': generate_random,
-    'generate_image_dataset': generate_image_dataset
+    'generate_image_dataset': generate_image_dataset,
+    'generate_imagenet_dataset': generate_imagenet_dataset
 }
 
 
