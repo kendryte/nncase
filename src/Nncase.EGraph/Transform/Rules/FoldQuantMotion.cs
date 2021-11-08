@@ -20,8 +20,8 @@ namespace Nncase.Transform.Rule
 
         public FoldInQuant()
         {
-            var quant = IsQuantize(wcin, IsWildCard());
-            var dequant = IsDeQuantize(quant, IsWildCard());
+            var quant = IsQuantize(wcin);
+            var dequant = IsDeQuantize(quant);
             Pattern = dequant;
         }
 

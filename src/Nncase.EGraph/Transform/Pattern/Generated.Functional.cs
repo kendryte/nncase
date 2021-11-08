@@ -304,7 +304,7 @@ namespace Nncase.Transform.Pattern.F
         public static SliceWrapper Slice(ExprPattern input, Const begins, Const ends)
         {
             var axes = Const.FromSpan<int>(Enumerable.Range(0, ends.Rank).ToArray());
-            var strides = axes with {Data = new IRBytes(DataTypes.GetBytes<int>(Enumerable.Repeat(1, ends.Rank).ToArray()))};
+            var strides = axes with { Data = new IRBytes(DataTypes.GetBytes<int>(Enumerable.Repeat(1, ends.Rank).ToArray())) };
             return new SliceWrapper(new CallPattern(new SlicePattern(), input, begins, ends, axes, strides));
         }
 

@@ -77,13 +77,13 @@ namespace Nncase.Transform.Pattern
         public static CastWrapper IsCast(ExprPattern input) =>
         IsCast(x => true, input);
 
-        public static QuantizeWrapper IsQuantize(Func<DataType, bool> Cond, ExprPattern input, ExprPattern quantParam) => new QuantizeWrapper(new CallPattern(new QuantizePattern(x => Cond(x.TargetType)), input, quantParam));
+        public static QuantizeWrapper IsQuantize(Func<DataType, bool> Cond, ExprPattern input, ExprPattern zeroPoint, ExprPattern scale) => new QuantizeWrapper(new CallPattern(new QuantizePattern(x => Cond(x.TargetType)), input, zeroPoint, scale));
 
-        public static QuantizeWrapper IsQuantize(ExprPattern input, ExprPattern quantParam) => IsQuantize(x => true, input, quantParam);
+        public static QuantizeWrapper IsQuantize(ExprPattern input) => IsQuantize(x => true, input, IsConst(), IsConst());
 
-        public static DeQuantizeWrapper IsDeQuantize(Func<DataType, bool> Cond, ExprPattern input, ExprPattern quantParam) => new DeQuantizeWrapper(new CallPattern(new DeQuantizePattern(x => Cond(x.TargetType)), input, quantParam));
+        public static DeQuantizeWrapper IsDeQuantize(Func<DataType, bool> Cond, ExprPattern input, ExprPattern zeroPoint, ExprPattern scale) => new DeQuantizeWrapper(new CallPattern(new DeQuantizePattern(x => Cond(x.TargetType)), input, zeroPoint, scale));
 
-        public static DeQuantizeWrapper IsDeQuantize(ExprPattern input, ExprPattern quantParam) => IsDeQuantize(x => true, input, quantParam);
+        public static DeQuantizeWrapper IsDeQuantize(ExprPattern input) => IsDeQuantize(x => true, input, IsConst(), IsConst());
 
         public static SliceWrapper IsSlice(ExprPattern input) => F.Tensors.Slice(input, IsConstIntTensor(), IsConstIntTensor(), IsConstIntTensor(), IsConstIntTensor());
 
@@ -99,5 +99,9 @@ namespace Nncase.Transform.Pattern
         public static Conv2DWrapper IsConv2D(ExprPattern input, PadMode padMode) => IsConv2D(input, IsWildCard(), IsWildCard(), padMode);
 
         public static ClampWrapper IsClamp(ExprPattern input) => new ClampWrapper(new CallPattern(new ClampPattern(), input, IsConst(), IsConst()));
+
+        public static ResizeImageWrapper IsResize(ExprPattern input, ExprPattern newSize, ExprPattern alignCorners, ExprPattern halfPixelCenters) => new ResizeImageWrapper(new CallPattern(new ResizeImagePattern(x => true), input, newSize, alignCorners, halfPixelCenters));
+
+        public static ResizeImageWrapper IsResize(ExprPattern input, ExprPattern newSize) => IsResize(input, newSize, IsConst(), IsConst());
     }
 }
