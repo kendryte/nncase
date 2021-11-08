@@ -194,7 +194,7 @@ namespace Nncase.Importer.TFLite
                 // tflite.BuiltinOperator.HASHTABLE_SIZE,
                 // tflite.BuiltinOperator.IF,
                 // tflite.BuiltinOperator.IMAG,
-                // tflite.BuiltinOperator.L2_NORMALIZATION,
+                tflite.BuiltinOperator.L2_NORMALIZATION => VisitL2Normalization(op),
                 // tflite.BuiltinOperator.L2_POOL_2D,
                 tflite.BuiltinOperator.LEAKY_RELU => VisitLeakyRelu(op),
                 // tflite.BuiltinOperator.LESS,

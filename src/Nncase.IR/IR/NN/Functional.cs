@@ -21,6 +21,8 @@ namespace Nncase.IR.F
 
         public static Call LeakyRelu(Expr input) => new Call(new LeakyRelu(), input);
         
+        public static Call L2Normalization(Expr input) => new Call(new L2Normalization(), input);
+        
         public static Call Relu(Expr input) => new Call(new Relu(), input);
         
         public static Call Relu6(Expr input) => new Call(new Relu6(), input);
