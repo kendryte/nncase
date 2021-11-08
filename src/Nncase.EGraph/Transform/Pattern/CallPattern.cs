@@ -89,7 +89,5 @@ namespace Nncase.Transform.Pattern
 
         public static SliceWrapper IsSlice(ExprPattern input, ExprPattern begins, ExprPattern ends) => F.Tensors.Slice(input, begins, ends, IsConstIntTensor(), IsConstIntTensor());
 
-        public static Conv2DWrapper IsConv2D(ExprPattern input) => F.NN.Conv2D(input, IsWildCard(), IsConst(), IsConst(), IsConst(), IsConst(), PadMode.Constant);
-
     }
 }

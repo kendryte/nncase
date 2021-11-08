@@ -15,14 +15,12 @@ namespace Nncase.Transform.Rule
 
     public class FuseClampConv2D : EGraphRule
     {
-        //  cp;
         Conv2DWrapper conv2d;
         ClampWrapper cp;
 
         public FuseClampConv2D()
         {
-            // conv2d = Conv2D();
-            Pattern = cp = Clamp(IsWildCard(), IsConstIntSclar(), IsConstIntSclar());
+            Pattern = cp = Clamp(IsWildCard(), IsConst(IsScalar()), IsConst(IsScalar()));
         }
 
     }
