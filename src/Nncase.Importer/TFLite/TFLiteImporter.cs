@@ -196,7 +196,7 @@ namespace Nncase.Importer.TFLite
                 // tflite.BuiltinOperator.IMAG,
                 // tflite.BuiltinOperator.L2_NORMALIZATION,
                 // tflite.BuiltinOperator.L2_POOL_2D,
-                // tflite.BuiltinOperator.LEAKY_RELU,
+                tflite.BuiltinOperator.LEAKY_RELU => VisitLeakyRelu(op),
                 // tflite.BuiltinOperator.LESS,
                 // tflite.BuiltinOperator.LESS_EQUAL,
                 // tflite.BuiltinOperator.LOCAL_RESPONSE_NORMALIZATION,

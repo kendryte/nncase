@@ -19,6 +19,8 @@ namespace Nncase.IR.F
         
         public static Call Conv2DTranspose(Expr input, Expr weights, Expr bias, Expr padding, Expr stride, Expr dilation, PadMode padMode) => new Call(new Conv2DTranspose(padMode), input, weights, bias, padding, stride, dilation);
 
+        public static Call LeakyRelu(Expr input) => new Call(new LeakyRelu(), input);
+        
         public static Call Relu(Expr input) => new Call(new Relu(), input);
         
         public static Call Relu6(Expr input) => new Call(new Relu6(), input);

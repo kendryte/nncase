@@ -69,4 +69,18 @@ namespace Nncase.IR.NN
             throw new NotImplementedException();
         }
     }
+    
+    public sealed record LeakyRelu() : Op
+    {
+        /// <summary>
+        /// Gets input.
+        /// </summary>
+        public static readonly ParameterInfo Input = new(typeof(Sigmoid), 0, "input");
+
+        /// <inheritdoc/>
+        public override IRType InferInvokeResultType(ITypeInferenceContext context)
+        {
+            throw new NotImplementedException();
+        }
+    }
 }
