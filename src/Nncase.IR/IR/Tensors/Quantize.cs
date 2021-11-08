@@ -8,9 +8,11 @@ namespace Nncase.IR.Tensors
 
     public sealed record Quantize(DataType TargetType) : Op
     {
-        public static ParameterInfo Input = new(typeof(Quantize), 0, "Input");
-        
-        public static ParameterInfo QuantParam = new(typeof(Quantize), 1, "QuantParam");
+        public static ParameterInfo Input = new(typeof(Quantize), 0, "input");
+
+        public static ParameterInfo ZeroPoint = new(typeof(Quantize), 1, "zeroPoint");
+
+        public static ParameterInfo Scale = new(typeof(Quantize), 2, "scale");
 
         /// <inheritdoc/>
         public override IRType InferInvokeResultType(ITypeInferenceContext context)

@@ -331,12 +331,18 @@ namespace Nncase.Transform.Pattern.Tensors
         public Expr Input() => GetCast<Expr>(InputPat());
         public T Input<T>()
             where T : Expr => GetCast<T>(InputPat());
-        public ExprPattern QuantParamPat() => Pattern[DeQuantize.QuantParam];
-        public T QuantParamPat<T>()
-            where T : ExprPattern => (T)QuantParamPat();
-        public Expr QuantParam() => GetCast<Expr>(QuantParamPat());
-        public T QuantParam<T>()
-            where T : Expr => GetCast<T>(QuantParamPat());
+        public ExprPattern ZeroPointPat() => Pattern[DeQuantize.ZeroPoint];
+        public T ZeroPointPat<T>()
+            where T : ExprPattern => (T)ZeroPointPat();
+        public Expr ZeroPoint() => GetCast<Expr>(ZeroPointPat());
+        public T ZeroPoint<T>()
+            where T : Expr => GetCast<T>(ZeroPointPat());
+        public ExprPattern ScalePat() => Pattern[DeQuantize.Scale];
+        public T ScalePat<T>()
+            where T : ExprPattern => (T)ScalePat();
+        public Expr Scale() => GetCast<Expr>(ScalePat());
+        public T Scale<T>()
+            where T : Expr => GetCast<T>(ScalePat());
         public DataType TargetType => ((DeQuantize)GetCast<Call>(this).Target).TargetType;
         public static implicit operator CallPattern(DeQuantizeWrapper warper) => warper.Pattern;
     }
@@ -478,12 +484,18 @@ namespace Nncase.Transform.Pattern.Tensors
         public Expr Input() => GetCast<Expr>(InputPat());
         public T Input<T>()
             where T : Expr => GetCast<T>(InputPat());
-        public ExprPattern QuantParamPat() => Pattern[Quantize.QuantParam];
-        public T QuantParamPat<T>()
-            where T : ExprPattern => (T)QuantParamPat();
-        public Expr QuantParam() => GetCast<Expr>(QuantParamPat());
-        public T QuantParam<T>()
-            where T : Expr => GetCast<T>(QuantParamPat());
+        public ExprPattern ZeroPointPat() => Pattern[Quantize.ZeroPoint];
+        public T ZeroPointPat<T>()
+            where T : ExprPattern => (T)ZeroPointPat();
+        public Expr ZeroPoint() => GetCast<Expr>(ZeroPointPat());
+        public T ZeroPoint<T>()
+            where T : Expr => GetCast<T>(ZeroPointPat());
+        public ExprPattern ScalePat() => Pattern[Quantize.Scale];
+        public T ScalePat<T>()
+            where T : ExprPattern => (T)ScalePat();
+        public Expr Scale() => GetCast<Expr>(ScalePat());
+        public T Scale<T>()
+            where T : Expr => GetCast<T>(ScalePat());
         public DataType TargetType => ((Quantize)GetCast<Call>(this).Target).TargetType;
         public static implicit operator CallPattern(QuantizeWrapper warper) => warper.Pattern;
     }

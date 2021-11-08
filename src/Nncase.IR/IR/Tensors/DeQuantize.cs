@@ -9,8 +9,10 @@ namespace Nncase.IR.Tensors
     public sealed record DeQuantize(DataType TargetType) : Op
     {
         public static ParameterInfo Input = new(typeof(DeQuantize), 0, "Input");
+
+        public static ParameterInfo ZeroPoint = new(typeof(DeQuantize), 1, "zeroPoint");
         
-        public static ParameterInfo QuantParam = new(typeof(DeQuantize), 1, "QuantParam");
+        public static ParameterInfo Scale = new(typeof(DeQuantize), 1, "scale");
 
         /// <inheritdoc/>
         public override IRType InferInvokeResultType(ITypeInferenceContext context)

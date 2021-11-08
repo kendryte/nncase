@@ -310,8 +310,8 @@ namespace Nncase.Transform.Pattern.F
 
         /// squeeze input by give dims
         public static SqueezeWrapper Squeeze(ExprPattern input, ExprPattern dims) => new SqueezeWrapper(new CallPattern(new SqueezePattern(), input, dims));
-        public static QuantizeWrapper Quantize(ExprPattern input, ExprPattern quantParam, DataType targetType) => new QuantizeWrapper(new CallPattern(new QuantizePattern(targetType), input, quantParam));
-        public static DeQuantizeWrapper DeQuantize(ExprPattern input, ExprPattern deqParam, DataType targetType) => new DeQuantizeWrapper(new CallPattern(new DeQuantizePattern(targetType), input, deqParam));
+        public static QuantizeWrapper Quantize(ExprPattern input, ExprPattern zeroPoint, ExprPattern scale, DataType targetType) => new QuantizeWrapper(new CallPattern(new QuantizePattern(targetType), input, zeroPoint, scale));
+        public static DeQuantizeWrapper DeQuantize(ExprPattern input, ExprPattern zeroPoint, ExprPattern scale, DataType targetType) => new DeQuantizeWrapper(new CallPattern(new DeQuantizePattern(targetType), input, zeroPoint, scale));
         // same like tensorflow
         public static SpaceToBatchWrapper SpaceToBatch(ExprPattern input, ExprPattern blockShape, ExprPattern paddings) => new SpaceToBatchWrapper(new CallPattern(new SpaceToBatchPattern(), input, blockShape, paddings));
         public static BatchToSpaceWrapper BatchToSpace(ExprPattern input, ExprPattern blockShape, ExprPattern crops) => new BatchToSpaceWrapper(new CallPattern(new BatchToSpacePattern(), input, blockShape, crops));

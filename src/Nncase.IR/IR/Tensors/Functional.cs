@@ -27,7 +27,7 @@ namespace Nncase.IR.F
         public static Call GatherND(Expr input, Expr axis, Expr batch_dims, Expr index) => new Call(new GatherND(), input, axis, batch_dims, index);
 
         public static Call MatMul(Expr input, Expr other) => new Call(new MatMul(), input, other);
-        
+
         public static Call OneHot(OneHotMode oneHotMode, Expr input, Expr depth, Expr onValue, Expr offValue, Expr axis) => new Call(new OneHot(oneHotMode), input, depth, onValue, offValue, axis);
 
         /// Pads is Const tensor, shape = [channels, 2(before, after)]
@@ -42,10 +42,10 @@ namespace Nncase.IR.F
         public static Call ReduceMax(Expr input, Expr axis, Expr initValue, Expr keepDims) => Reduce(ReduceOp.Min, input, axis, initValue, keepDims);
 
         public static Call ReduceSum(Expr input, Expr axis, Expr initValue, Expr keepDims) => Reduce(ReduceOp.Sum, input, axis, initValue, keepDims);
-        
+
         public static Call ResizeImage(ImageResizeMode resizeMode, Expr input, Expr newSize, Expr alignCorners, Expr halfPixelCenters) => new Call(new ResizeImage(resizeMode), input, newSize, alignCorners, halfPixelCenters);
-        
-        public static Call ReduceWindow2D(ReduceOp reduceOp, Expr input, Expr initValue, Expr filter, Expr stride, Expr padding, Expr dilation) => 
+
+        public static Call ReduceWindow2D(ReduceOp reduceOp, Expr input, Expr initValue, Expr filter, Expr stride, Expr padding, Expr dilation) =>
             new Call(new ReduceWindow2D(reduceOp), input, initValue, filter, stride, padding, dilation);
 
         public static Call Reshape(Expr input, Expr shape) => new Call(new Reshape(), input, shape);
@@ -64,9 +64,9 @@ namespace Nncase.IR.F
         /// squeeze input by give dims
         public static Call Squeeze(Expr input, Expr dims) => new Call(new Squeeze(), input, dims);
 
-        public static Call Quantize(Expr input, Expr quantParam, DataType targetType) => new Call(new Quantize(targetType), input, quantParam);
+        public static Call Quantize(Expr input, Expr zeroPoint, Expr scale, DataType targetType) => new Call(new Quantize(targetType), input, zeroPoint, scale);
 
-        public static Call DeQuantize(Expr input, Expr deqParam, DataType targetType) => new Call(new DeQuantize(targetType), input, deqParam);
+        public static Call DeQuantize(Expr input, Expr zeroPoint, Expr scale, DataType targetType) => new Call(new DeQuantize(targetType), input, zeroPoint, scale);
 
         // same like tensorflow
         public static Call SpaceToBatch(Expr input, Expr blockShape, Expr paddings) => new Call(new SpaceToBatch(), input, blockShape, paddings);
