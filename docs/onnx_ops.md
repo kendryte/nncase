@@ -67,10 +67,12 @@
 | ReduceL1 | ✅ |
 | ReduceL2 | ✅ |
 | ReduceLogSum | ✅ |
+| ReduceLogSumExp | ✅ |
 | ReduceMax | ✅ |
 | ReduceMean | ✅ |
 | ReduceMin | ✅ |
 | ReduceSum | ✅ |
+| ReduceSumSquare | ✅ |
 | Relu | ✅ |
 | Reshape | ✅ |
 | Resize | ✅ |

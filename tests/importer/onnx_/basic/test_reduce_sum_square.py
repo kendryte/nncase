@@ -49,9 +49,9 @@ def _make_module(in_shape, axes, keepdims):
     if keepdims is not None:
         attributes_dict['keepdims'] = keepdims
 
-    # ReduceLogSum node
+    # ReduceSumSquare node
     node = onnx.helper.make_node(
-        'ReduceLogSum',
+        'ReduceSumSquare',
         inputs=inputs,
         outputs=outputs,
         **attributes_dict
@@ -99,7 +99,7 @@ keepdims_lists = [
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('axes', axes_list)
 @pytest.mark.parametrize('keepdims', keepdims_lists)
-def test_reduce_log_sum(in_shape, axes, keepdims, request):
+def test_reduce_sum_square(in_shape, axes, keepdims, request):
     if axes is None or len(axes) <= len(in_shape):
         model_def = _make_module(in_shape, axes, keepdims)
 
@@ -109,4 +109,4 @@ def test_reduce_log_sum(in_shape, axes, keepdims, request):
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_reduce_log_sum.py'])
+    pytest.main(['-vv', 'test_reduce_sum_square.py'])
