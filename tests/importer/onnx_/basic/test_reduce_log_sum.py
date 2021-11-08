@@ -24,7 +24,10 @@ import numpy as np
 
 def _make_module(in_shape, axes, keepdims):
     inputs = []
+    outputs = []
     initializers = []
+    attributes_dict = {}
+    nodes = []
 
     # input
     input = helper.make_tensor_value_info('input', TensorProto.FLOAT, in_shape)
@@ -34,27 +37,28 @@ def _make_module(in_shape, axes, keepdims):
     a = np.arange(len(in_shape)) if axes is None else axes
     kd = 1 if keepdims is None else keepdims
     data = np.ones(in_shape)
-    out_shape = np.sqrt(np.sum(np.square(data), axis=tuple(a), keepdims=kd)).shape
+    out_shape = np.log(np.sum(data, axis=tuple(a), keepdims=kd)).shape
     output = helper.make_tensor_value_info('output', TensorProto.FLOAT, out_shape)
+    outputs.append('output')
 
-    attributes_dict = {}
-
+    # axes
     if axes is not None:
         attributes_dict['axes'] = axes
 
+    # keepdims
     if keepdims is not None:
         attributes_dict['keepdims'] = keepdims
 
+    # ReduceLogSum node
     node = onnx.helper.make_node(
-        'ReduceL2',
+        'ReduceLogSum',
         inputs=inputs,
-        outputs=['output'],
+        outputs=outputs,
         **attributes_dict
     )
-
-    nodes = []
     nodes.append(node)
 
+    # graph
     graph_def = helper.make_graph(
         nodes,
         'test-model',
@@ -62,13 +66,12 @@ def _make_module(in_shape, axes, keepdims):
         [output],
         initializer=initializers)
 
-    model_def = helper.make_model(graph_def, producer_name='kendryte')
-
+    model_def = helper.make_model(graph_def, producer_name='onnx')
     return model_def
 
 
 in_shapes = [
-    [1, 2, 16, 16]
+    [1, 3, 16, 16]
 ]
 
 axes_list = [
@@ -87,7 +90,7 @@ axes_list = [
     [-1, -2, -3, -4]
 ]
 
-keep_dims = [
+keepdims_lists = [
     None,
     0
 ]
@@ -95,10 +98,10 @@ keep_dims = [
 
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('axes', axes_list)
-@pytest.mark.parametrize('keep_dim', keep_dims)
-def test_reducel2(in_shape, axes, keep_dim, request):
+@pytest.mark.parametrize('keepdims', keepdims_lists)
+def test_reduce_log_sum(in_shape, axes, keepdims, request):
     if axes is None or len(axes) <= len(in_shape):
-        model_def = _make_module(in_shape, axes, keep_dim)
+        model_def = _make_module(in_shape, axes, keepdims)
 
         runner = OnnxTestRunner(request.node.name)
         model_file = runner.from_onnx_helper(model_def)
@@ -106,4 +109,4 @@ def test_reducel2(in_shape, axes, keep_dim, request):
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_reducel2.py'])
+    pytest.main(['-vv', 'test_reduce_log_sum.py'])
