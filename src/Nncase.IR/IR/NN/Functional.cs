@@ -22,8 +22,8 @@ namespace Nncase.IR.F
         /// <returns>Result expression.</returns>
         public static Call Sigmoid(Expr expr) => new Call(new Sigmoid(), expr);
 
-        public static Call Conv2D(Expr input, Expr weights, Expr bias, Expr padding, Expr stride, Expr dilation, PadMode padMode) => new Call(new Conv2D(padMode), input, padding, stride, dilation);
+        public static Call Conv2D(Expr input, Expr weights, Expr bias, Expr padding, Expr stride, Expr dilation, PadMode padMode) => new Call(new Conv2D(padMode), input, weights, bias, padding, stride, dilation);
         
-        public static Call Conv2DTranspose(Expr input, Expr weights, Expr bias, Expr padding, Expr stride, Expr dilation, PadMode padMode) => new Call(new Conv2DTranspose(padMode), input, padding, stride, dilation);
+        public static Call Conv2DTranspose(Expr input, Expr weights, Expr bias, Expr padding, Expr stride, Expr dilation, PadMode padMode) => new Call(new Conv2DTranspose(padMode), input, weights, bias, padding, stride, dilation);
     }
 }
