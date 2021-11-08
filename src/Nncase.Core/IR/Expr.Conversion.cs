@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Numerics.Tensors;
 
 namespace Nncase.IR
 {
@@ -91,5 +92,18 @@ namespace Nncase.IR
         /// </summary>
         /// <param name="value">Value.</param>
         public static implicit operator Expr(bool value) => (Const)value;
+
+        public static implicit operator Expr(Shape shape) => Const.FromShape(shape);
+
+        public static implicit operator Expr(int[] span) => Const.FromSpan<int>(span);
+        public static implicit operator Expr(float[] span) => Const.FromSpan<float>(span);
+
+        public static implicit operator Expr(ReadOnlySpan<int> span) => Const.FromSpan<int>(span);
+
+        public static implicit operator Expr(ReadOnlySpan<float> span) => Const.FromSpan<float>(span);
+
+        public static implicit operator Expr(DenseTensor<int> tensor) => Const.FromTensor<int>(tensor);
+
+        public static implicit operator Expr(DenseTensor<float> tensor) => Const.FromTensor<float>(tensor);
     }
 }

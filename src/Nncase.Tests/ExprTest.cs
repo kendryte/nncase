@@ -49,4 +49,12 @@ public class UnitTestExpr
         Assert.Equal(5, t[4]);
     }
 
+    [Fact]
+    public void TestDenseTensorLength()
+    {
+        var t = new DenseTensor<int>(new[] { 1, 2, 3, 4 }, new[] { 2, 2 });
+        Assert.Equal(4, t.Length);
+        Assert.Equal(2, t.Dimensions[0]);
+    }
+
 }

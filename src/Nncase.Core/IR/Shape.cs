@@ -81,16 +81,6 @@ namespace Nncase.IR
         /// Initializes a new instance of the <see cref="Shape"/> class.
         /// </summary>
         /// <param name="dimensions">Dimensions.</param>
-        public Shape(IEnumerable<int> dimensions)
-        {
-            Kind = ShapeKind.Fixed;
-            _dimensions = dimensions.Select(x => new Dimension(x)).ToList().AsReadOnly();
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Shape"/> class.
-        /// </summary>
-        /// <param name="dimensions">Dimensions.</param>
         public Shape(ReadOnlySpan<long> dimensions)
         {
             Kind = ShapeKind.Fixed;
@@ -172,6 +162,8 @@ namespace Nncase.IR
         /// Gets rank.
         /// </summary>
         public int Rank => _dimensions.Count;
+
+        public int Size => Enumerable.Range(0, Rank).Aggregate(1, (size, i) => size * _dimensions[i].FixedValue);
 
         int IReadOnlyCollection<Dimension>.Count => Rank;
 

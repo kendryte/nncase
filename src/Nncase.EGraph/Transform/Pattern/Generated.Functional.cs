@@ -268,13 +268,16 @@ namespace Nncase.Transform.Pattern.F
 
     public static partial class NN
     {
-        /// <summary>
-        /// CallPattern sigmoid.
-        /// </summary>
-        /// <param name = "expr">Source expression.</param>
-        /// <returns>Result expression.</returns>
+        public static Conv2DWrapper Conv2D(ExprPattern input, ExprPattern weights, ExprPattern bias, ExprPattern padding, ExprPattern stride, ExprPattern dilation, PadMode padMode, ExprPattern groups) => new Conv2DWrapper(new CallPattern(new Conv2DPattern(padMode), input, weights, bias, padding, stride, dilation, groups));
+        public static Conv2DTransposeWrapper Conv2DTranspose(ExprPattern input, ExprPattern weights, ExprPattern bias, ExprPattern padding, ExprPattern stride, ExprPattern dilation, PadMode padMode, ExprPattern groups) => new Conv2DTransposeWrapper(new CallPattern(new Conv2DTransposePattern(padMode), input, weights, bias, padding, stride, dilation, groups));
+        public static LeakyReluWrapper LeakyRelu(ExprPattern input) => new LeakyReluWrapper(new CallPattern(new LeakyReluPattern(), input));
+        public static L2NormalizationWrapper L2Normalization(ExprPattern input) => new L2NormalizationWrapper(new CallPattern(new L2NormalizationPattern(), input));
+        public static ReluWrapper Relu(ExprPattern input) => new ReluWrapper(new CallPattern(new ReluPattern(), input));
+        public static Relu6Wrapper Relu6(ExprPattern input) => new Relu6Wrapper(new CallPattern(new Relu6Pattern(), input));
+        public static PReluWrapper PRelu(ExprPattern input) => new PReluWrapper(new CallPattern(new PReluPattern(), input));
         public static SigmoidWrapper Sigmoid(ExprPattern expr) => new SigmoidWrapper(new CallPattern(new SigmoidPattern(), expr));
-        public static Conv2DWrapper Conv2D(ExprPattern input, ExprPattern weights, ExprPattern bias, ExprPattern padding, ExprPattern stride, ExprPattern dilation, PadMode padMode) => new Conv2DWrapper(new CallPattern(new Conv2DPattern(padMode), input, padding, stride, dilation));
+        public static SoftMaxWrapper SoftMax(ExprPattern expr) => new SoftMaxWrapper(new CallPattern(new SoftMaxPattern(), expr));
+        public static LogSoftMaxWrapper LogSoftMax(ExprPattern expr) => new LogSoftMaxWrapper(new CallPattern(new LogSoftMaxPattern(), expr));
     }
 
     public static partial class Tensors
@@ -285,6 +288,7 @@ namespace Nncase.Transform.Pattern.F
         public static GatherWrapper Gather(ExprPattern input, ExprPattern axis, ExprPattern index) => new GatherWrapper(new CallPattern(new GatherPattern(), input, axis, index));
         public static GatherNDWrapper GatherND(ExprPattern input, ExprPattern axis, ExprPattern batch_dims, ExprPattern index) => new GatherNDWrapper(new CallPattern(new GatherNDPattern(), input, axis, batch_dims, index));
         public static MatMulWrapper MatMul(ExprPattern input, ExprPattern other) => new MatMulWrapper(new CallPattern(new MatMulPattern(), input, other));
+        public static OneHotWrapper OneHot(OneHotMode oneHotMode, ExprPattern input, ExprPattern depth, ExprPattern onValue, ExprPattern offValue, ExprPattern axis) => new OneHotWrapper(new CallPattern(new OneHotPattern(oneHotMode), input, depth, onValue, offValue, axis));
         /// Pads is Const tensor, shape = [channels, 2(before, after)]
         public static PadWrapper Pad(ExprPattern input, ExprPattern pads, PadMode mode, ExprPattern value) => new PadWrapper(new CallPattern(new PadPattern(mode), input, pads, value));
         public static ReduceWrapper Reduce(ReduceOp reduceOp, ExprPattern input, ExprPattern axis, ExprPattern initValue, ExprPattern keepDims) => new ReduceWrapper(new CallPattern(new ReducePattern(reduceOp), input, axis, initValue, keepDims));
@@ -292,6 +296,8 @@ namespace Nncase.Transform.Pattern.F
         public static ReduceWrapper ReduceMin(ExprPattern input, ExprPattern axis, ExprPattern initValue, ExprPattern keepDims) => Reduce(ReduceOp.Min, input, axis, initValue, keepDims);
         public static ReduceWrapper ReduceMax(ExprPattern input, ExprPattern axis, ExprPattern initValue, ExprPattern keepDims) => Reduce(ReduceOp.Min, input, axis, initValue, keepDims);
         public static ReduceWrapper ReduceSum(ExprPattern input, ExprPattern axis, ExprPattern initValue, ExprPattern keepDims) => Reduce(ReduceOp.Sum, input, axis, initValue, keepDims);
+        public static ResizeImageWrapper ResizeImage(ImageResizeMode resizeMode, ExprPattern input, ExprPattern newSize, ExprPattern alignCorners, ExprPattern halfPixelCenters) => new ResizeImageWrapper(new CallPattern(new ResizeImagePattern(resizeMode), input, newSize, alignCorners, halfPixelCenters));
+        public static ReduceWindow2DWrapper ReduceWindow2D(ReduceOp reduceOp, ExprPattern input, ExprPattern initValue, ExprPattern filter, ExprPattern stride, ExprPattern padding, ExprPattern dilation) => new ReduceWindow2DWrapper(new CallPattern(new ReduceWindow2DPattern(reduceOp), input, initValue, filter, stride, padding, dilation));
         public static ReshapeWrapper Reshape(ExprPattern input, ExprPattern shape) => new ReshapeWrapper(new CallPattern(new ReshapePattern(), input, shape));
         ///https://github.com/onnx/onnx/blob/master/docs/Operators.md#slice
         public static SliceWrapper Slice(ExprPattern input, ExprPattern begins, ExprPattern ends, ExprPattern axes, ExprPattern strides) => new SliceWrapper(new CallPattern(new SlicePattern(), input, begins, ends, axes, strides));
@@ -305,7 +311,7 @@ namespace Nncase.Transform.Pattern.F
         /// squeeze input by give dims
         public static SqueezeWrapper Squeeze(ExprPattern input, ExprPattern dims) => new SqueezeWrapper(new CallPattern(new SqueezePattern(), input, dims));
         public static QuantizeWrapper Quantize(ExprPattern input, ExprPattern quantParam, DataType targetType) => new QuantizeWrapper(new CallPattern(new QuantizePattern(targetType), input, quantParam));
-        public static DeQuantizeWrapper DeQuantize(ExprPattern input, ExprPattern quantParam, DataType targetType) => new DeQuantizeWrapper(new CallPattern(new DeQuantizePattern(targetType), input, quantParam));
+        public static DeQuantizeWrapper DeQuantize(ExprPattern input, ExprPattern deqParam, DataType targetType) => new DeQuantizeWrapper(new CallPattern(new DeQuantizePattern(targetType), input, deqParam));
         // same like tensorflow
         public static SpaceToBatchWrapper SpaceToBatch(ExprPattern input, ExprPattern blockShape, ExprPattern paddings) => new SpaceToBatchWrapper(new CallPattern(new SpaceToBatchPattern(), input, blockShape, paddings));
         public static BatchToSpaceWrapper BatchToSpace(ExprPattern input, ExprPattern blockShape, ExprPattern crops) => new BatchToSpaceWrapper(new CallPattern(new BatchToSpacePattern(), input, blockShape, crops));

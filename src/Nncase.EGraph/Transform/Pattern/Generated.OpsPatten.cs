@@ -70,6 +70,54 @@ namespace Nncase.Transform.Pattern.NN
         }
     }
 
+    public sealed record ReluPattern(Func<Relu, bool> Cond) : OpPattern
+    {
+        public ReluPattern(Relu relu): this(x => x == relu)
+        {
+        }
+
+        public bool MatchLeaf(Relu relu) => Cond(relu) && MatchCheckedType(relu);
+        public ReluPattern(): this((Relu x) => true)
+        {
+        }
+    }
+
+    public sealed record Relu6Pattern(Func<Relu6, bool> Cond) : OpPattern
+    {
+        public Relu6Pattern(Relu6 relu6): this(x => x == relu6)
+        {
+        }
+
+        public bool MatchLeaf(Relu6 relu6) => Cond(relu6) && MatchCheckedType(relu6);
+        public Relu6Pattern(): this((Relu6 x) => true)
+        {
+        }
+    }
+
+    public sealed record PReluPattern(Func<PRelu, bool> Cond) : OpPattern
+    {
+        public PReluPattern(PRelu prelu): this(x => x == prelu)
+        {
+        }
+
+        public bool MatchLeaf(PRelu prelu) => Cond(prelu) && MatchCheckedType(prelu);
+        public PReluPattern(): this((PRelu x) => true)
+        {
+        }
+    }
+
+    public sealed record LeakyReluPattern(Func<LeakyRelu, bool> Cond) : OpPattern
+    {
+        public LeakyReluPattern(LeakyRelu leakyrelu): this(x => x == leakyrelu)
+        {
+        }
+
+        public bool MatchLeaf(LeakyRelu leakyrelu) => Cond(leakyrelu) && MatchCheckedType(leakyrelu);
+        public LeakyReluPattern(): this((LeakyRelu x) => true)
+        {
+        }
+    }
+
     public sealed record Conv2DPattern(Func<Conv2D, bool> Cond) : OpPattern
     {
         public Conv2DPattern(Conv2D conv2d): this(x => x == conv2d)
@@ -81,7 +129,59 @@ namespace Nncase.Transform.Pattern.NN
         {
         }
 
-        public Conv2DPattern(PadMode padMode): this((Conv2D x) => padMode == x.PadMode)
+        public Conv2DPattern(PadMode PadMode): this((Conv2D x) => PadMode == x.PadMode)
+        {
+        }
+    }
+
+    public sealed record Conv2DTransposePattern(Func<Conv2DTranspose, bool> Cond) : OpPattern
+    {
+        public Conv2DTransposePattern(Conv2DTranspose conv2dtranspose): this(x => x == conv2dtranspose)
+        {
+        }
+
+        public bool MatchLeaf(Conv2DTranspose conv2dtranspose) => Cond(conv2dtranspose) && MatchCheckedType(conv2dtranspose);
+        public Conv2DTransposePattern(): this((Conv2DTranspose x) => true)
+        {
+        }
+
+        public Conv2DTransposePattern(PadMode PadMode): this((Conv2DTranspose x) => PadMode == x.PadMode)
+        {
+        }
+    }
+
+    public sealed record L2NormalizationPattern(Func<L2Normalization, bool> Cond) : OpPattern
+    {
+        public L2NormalizationPattern(L2Normalization l2normalization): this(x => x == l2normalization)
+        {
+        }
+
+        public bool MatchLeaf(L2Normalization l2normalization) => Cond(l2normalization) && MatchCheckedType(l2normalization);
+        public L2NormalizationPattern(): this((L2Normalization x) => true)
+        {
+        }
+    }
+
+    public sealed record SoftMaxPattern(Func<SoftMax, bool> Cond) : OpPattern
+    {
+        public SoftMaxPattern(SoftMax softmax): this(x => x == softmax)
+        {
+        }
+
+        public bool MatchLeaf(SoftMax softmax) => Cond(softmax) && MatchCheckedType(softmax);
+        public SoftMaxPattern(): this((SoftMax x) => true)
+        {
+        }
+    }
+
+    public sealed record LogSoftMaxPattern(Func<LogSoftMax, bool> Cond) : OpPattern
+    {
+        public LogSoftMaxPattern(LogSoftMax logsoftmax): this(x => x == logsoftmax)
+        {
+        }
+
+        public bool MatchLeaf(LogSoftMax logsoftmax) => Cond(logsoftmax) && MatchCheckedType(logsoftmax);
+        public LogSoftMaxPattern(): this((LogSoftMax x) => true)
         {
         }
     }
@@ -193,6 +293,22 @@ namespace Nncase.Transform.Pattern.Tensors
         }
     }
 
+    public sealed record OneHotPattern(Func<OneHot, bool> Cond) : OpPattern
+    {
+        public OneHotPattern(OneHot onehot): this(x => x == onehot)
+        {
+        }
+
+        public bool MatchLeaf(OneHot onehot) => Cond(onehot) && MatchCheckedType(onehot);
+        public OneHotPattern(): this((OneHot x) => true)
+        {
+        }
+
+        public OneHotPattern(OneHotMode OneHotMode): this((OneHot x) => OneHotMode == x.OneHotMode)
+        {
+        }
+    }
+
     public sealed record PadPattern(Func<Pad, bool> Cond) : OpPattern
     {
         public PadPattern(Pad pad): this(x => x == pad)
@@ -204,7 +320,7 @@ namespace Nncase.Transform.Pattern.Tensors
         {
         }
 
-        public PadPattern(PadMode padMode): this((Pad x) => padMode == x.PadMode)
+        public PadPattern(PadMode PadMode): this((Pad x) => PadMode == x.PadMode)
         {
         }
     }
@@ -236,7 +352,23 @@ namespace Nncase.Transform.Pattern.Tensors
         {
         }
 
-        public ReducePattern(ReduceOp reduceOp): this((Reduce x) => reduceOp == x.ReduceOp)
+        public ReducePattern(ReduceOp ReduceOp): this((Reduce x) => ReduceOp == x.ReduceOp)
+        {
+        }
+    }
+
+    public sealed record ReduceWindow2DPattern(Func<ReduceWindow2D, bool> Cond) : OpPattern
+    {
+        public ReduceWindow2DPattern(ReduceWindow2D reducewindow2d): this(x => x == reducewindow2d)
+        {
+        }
+
+        public bool MatchLeaf(ReduceWindow2D reducewindow2d) => Cond(reducewindow2d) && MatchCheckedType(reducewindow2d);
+        public ReduceWindow2DPattern(): this((ReduceWindow2D x) => true)
+        {
+        }
+
+        public ReduceWindow2DPattern(ReduceOp ReduceOp): this((ReduceWindow2D x) => ReduceOp == x.ReduceOp)
         {
         }
     }
@@ -249,6 +381,22 @@ namespace Nncase.Transform.Pattern.Tensors
 
         public bool MatchLeaf(Reshape reshape) => Cond(reshape) && MatchCheckedType(reshape);
         public ReshapePattern(): this((Reshape x) => true)
+        {
+        }
+    }
+
+    public sealed record ResizeImagePattern(Func<ResizeImage, bool> Cond) : OpPattern
+    {
+        public ResizeImagePattern(ResizeImage resizeimage): this(x => x == resizeimage)
+        {
+        }
+
+        public bool MatchLeaf(ResizeImage resizeimage) => Cond(resizeimage) && MatchCheckedType(resizeimage);
+        public ResizeImagePattern(): this((ResizeImage x) => true)
+        {
+        }
+
+        public ResizeImagePattern(ImageResizeMode ResizeMode): this((ResizeImage x) => ResizeMode == x.ResizeMode)
         {
         }
     }

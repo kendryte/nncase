@@ -33,7 +33,7 @@ namespace Nncase.Importer.TFLite
             var padding = Const.FromSpan<int>(paddingValue, new[] { 2, 2 });
             var clamp = ValueRange<float>.Full;
             return F.Math.Clamp(
-                F.NN.Conv2DTranspose(input, weights, bias, padding, stride, dilation, PadMode.Constant),
+                F.NN.Conv2DTranspose(input, weights, bias, padding, stride, dilation, PadMode.Constant, 1),
                 clamp.Min, clamp.Max);
         }
     }

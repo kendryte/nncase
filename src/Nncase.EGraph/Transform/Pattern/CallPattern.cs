@@ -1,4 +1,4 @@
-﻿// Copyright (c) Canaan Inc. All rights reserved.
+// Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
@@ -89,5 +89,15 @@ namespace Nncase.Transform.Pattern
 
         public static SliceWrapper IsSlice(ExprPattern input, ExprPattern begins, ExprPattern ends) => F.Tensors.Slice(input, begins, ends, IsConstIntTensor(), IsConstIntTensor());
 
+
+        public static Conv2DWrapper IsConv2D(ExprPattern input, ExprPattern weights, ExprPattern bias, PadMode padMode) => new Conv2DWrapper(new CallPattern(new Conv2DPattern(x => x.PadMode == padMode), input, weights, bias, IsConst(), IsConst(), IsConst()));
+
+        public static Conv2DWrapper IsConv2D(ExprPattern input, ExprPattern weights, ExprPattern bias) => new Conv2DWrapper(new CallPattern(new Conv2DPattern(x => true), input, weights, bias, IsConst(), IsConst(), IsConst(), IsConst()));
+
+        public static Conv2DWrapper IsConv2D(ExprPattern input) => IsConv2D(input, IsWildCard(), IsWildCard());
+
+        public static Conv2DWrapper IsConv2D(ExprPattern input, PadMode padMode) => IsConv2D(input, IsWildCard(), IsWildCard(), padMode);
+
+        public static ClampWrapper IsClamp(ExprPattern input) => new ClampWrapper(new CallPattern(new ClampPattern(), input, IsConst(), IsConst()));
     }
 }

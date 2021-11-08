@@ -50,7 +50,7 @@ namespace Nncase.Transform.Rule
                 if (!ttype.Shape.IsFixed)
                     return null;
                 // ttype.Shape
-                var targetShape = new Shape(shape.ToImmutableArray());
+                var targetShape = new Shape(shape.ToArray());
                 if (ttype.Shape == targetShape)
                     return input;
             }
