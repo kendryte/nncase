@@ -20,7 +20,7 @@ namespace Nncase.Importer.TFLite
             var inH = GetInputTensor(op, 0).Shape(2);
             var inW = GetInputTensor(op, 0).Shape(3);
             var fH = GetInputTensor(op, 1).Shape(2);
-            var fW = GetInputTensor(op, 1).Shape(2);
+            var fW = GetInputTensor(op, 1).Shape(3);
             var strideH = options.StrideH;
             var strideW = options.StrideW;
             var dilationH = options.DilationHFactor;
@@ -45,7 +45,7 @@ namespace Nncase.Importer.TFLite
             var inH = GetInputTensor(op, 0).Shape(2);
             var inW = GetInputTensor(op, 0).Shape(3);
             var fH = GetInputTensor(op, 1).Shape(2);
-            var fW = GetInputTensor(op, 1).Shape(2);
+            var fW = GetInputTensor(op, 1).Shape(3);
             var strideH = options.StrideH;
             var strideW = options.StrideW;
             var dilationH = options.DilationHFactor;
