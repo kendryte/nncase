@@ -207,7 +207,7 @@ namespace Nncase.Importer.TFLite
                 // tflite.BuiltinOperator.LOGICAL_OR,
                 tflite.BuiltinOperator.LOGISTIC => VisitLogistic(op),
 
-                // tflite.BuiltinOperator.LOG_SOFTMAX,
+                tflite.BuiltinOperator.LOG_SOFTMAX => VisitLogSoftMax(op),
                 // tflite.BuiltinOperator.LSH_PROJECTION,
                 // tflite.BuiltinOperator.LSTM,
                 // tflite.BuiltinOperator.MATRIX_DIAG,
@@ -265,7 +265,7 @@ namespace Nncase.Importer.TFLite
 
                 // tflite.BuiltinOperator.SKIP_GRAM,
                 tflite.BuiltinOperator.SLICE => VisitSlice(op),
-                // tflite.BuiltinOperator.SOFTMAX,
+                tflite.BuiltinOperator.SOFTMAX => VisitSoftMax(op),
                 // tflite.BuiltinOperator.SPACE_TO_BATCH_ND,
                 // tflite.BuiltinOperator.SPACE_TO_DEPTH,
                 // tflite.BuiltinOperator.SPARSE_TO_DENSE,

@@ -32,5 +32,9 @@ namespace Nncase.IR.F
         /// <param name="expr">Source expression.</param>
         /// <returns>Result expression.</returns>
         public static Call Sigmoid(Expr expr) => new Call(new Sigmoid(), expr);
+        
+        public static Call SoftMax(Expr expr) => new Call(new SoftMax(), expr);
+        
+        public static Call LogSoftMax(Expr expr) => new Call(new LogSoftMax(), expr);
     }
 }
