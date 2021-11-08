@@ -12,11 +12,11 @@ namespace Nncase.IR.Tensors
 {
     public sealed record SpaceToBatch() : Op
     {
-        public static readonly ParameterInfo Input = new(typeof(SpaceToBatch), 0, "Input");
+        public static readonly ParameterInfo Input = new(typeof(SpaceToBatch), 0, "input");
 
-        public static readonly ParameterInfo BlockShape = new(typeof(SpaceToBatch), 1, "BlockShape");
+        public static readonly ParameterInfo BlockShape = new(typeof(SpaceToBatch), 1, "block_shape");
 
-        public static readonly ParameterInfo Paddings = new(typeof(SpaceToBatch), 2, "Paddings");
+        public static readonly ParameterInfo Paddings = new(typeof(SpaceToBatch), 2, "paddings");
 
         public override IRType InferInvokeResultType(ITypeInferenceContext context)
         {

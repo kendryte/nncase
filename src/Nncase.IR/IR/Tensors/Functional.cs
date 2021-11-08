@@ -60,7 +60,7 @@ namespace Nncase.IR.F
             var strides = axes with { Data = new IRBytes(DataTypes.GetBytes<int>(Enumerable.Repeat(1, ends.Rank).ToArray())) };
             return new Call(new Slice(), input, begins, ends, axes, strides);
         }
-
+        
         /// squeeze input by give dims
         public static Call Squeeze(Expr input, Expr dims) => new Call(new Squeeze(), input, dims);
 
