@@ -22,11 +22,11 @@ namespace Nncase.Importer.TFLite
         private Expr VisitDeQuantize(in tflite.Operator op)
         {
             var input = GetInputExprs(op, 0);
-            var inputTensor = GetInputTensor(op, 0);
-            var param = inputTensor.Quantization ?? throw new InvalidDataException(
+            var outputTensor = GetOutputTensor(op, 0);
+            var param = outputTensor.Quantization ?? throw new InvalidDataException(
                 "Quantize Parameter not found in tflite DeQuantize importer");
             var deqParam = new Tuple((Const)param.ZeroPoint(0), (Const)param.Scale(0));
-            return F.Tensors.DeQuantize(input, deqParam, GetDataType(inputTensor.Type));
+            return F.Tensors.DeQuantize(input, deqParam, GetDataType(outputTensor.Type));
         }
     }
 }
