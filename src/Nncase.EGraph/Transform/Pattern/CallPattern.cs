@@ -59,13 +59,13 @@ namespace Nncase.Transform.Pattern
 
         public static ReduceWrapper IsReduce(Func<Reduce, bool> Cond, ExprPattern Input, ExprPattern Axis, ExprPattern InitValue, ExprPattern KeepDims) => new ReduceWrapper(new CallPattern(new ReducePattern(Cond), Input, Axis, InitValue, KeepDims));
 
-        public static ReduceWrapper IsReduce(Func<ReduceOp, bool> Cond, ExprPattern Input, ExprPattern Axis, ExprPattern InitValue, ExprPattern KeepDims) => IsReduce(x => Cond(x.reduceOp), Input, Axis, InitValue, KeepDims);
+        public static ReduceWrapper IsReduce(Func<ReduceOp, bool> Cond, ExprPattern Input, ExprPattern Axis, ExprPattern InitValue, ExprPattern KeepDims) => IsReduce(x => Cond(x.ReduceOp), Input, Axis, InitValue, KeepDims);
 
         public static ReduceWrapper IsReduce(ReduceOp opType, ExprPattern Input, ExprPattern Axis, ExprPattern InitValue, ExprPattern KeepDims) => IsReduce(x => x == opType, Input, Axis, InitValue, KeepDims);
 
         public static ReduceWrapper IsReduce(ExprPattern Input, ExprPattern Axis, ExprPattern InitValue, ExprPattern KeepDims) => IsReduce((ReduceOp x) => true, Input, Axis, InitValue, KeepDims);
 
-        public static PadWrapper IsPad(Func<PadMode, bool> cond, ExprPattern input, ExprPattern pads, ExprPattern value) => new PadWrapper(new CallPattern(new PadPattern(pad => cond(pad.padMode)), input, pads, value));
+        public static PadWrapper IsPad(Func<PadMode, bool> cond, ExprPattern input, ExprPattern pads, ExprPattern value) => new PadWrapper(new CallPattern(new PadPattern(pad => cond(pad.PadMode)), input, pads, value));
 
         public static PadWrapper IsPad(ExprPattern input, ExprPattern pads, PadMode mode, ExprPattern value) => IsPad(x => x == mode, input, pads, value);
 

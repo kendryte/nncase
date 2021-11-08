@@ -81,7 +81,7 @@ namespace Nncase.Transform.Pattern.NN
         {
         }
 
-        public Conv2DPattern(PadMode padMode): this((Conv2D x) => padMode == x.padMode)
+        public Conv2DPattern(PadMode padMode): this((Conv2D x) => padMode == x.PadMode)
         {
         }
     }
@@ -204,7 +204,7 @@ namespace Nncase.Transform.Pattern.Tensors
         {
         }
 
-        public PadPattern(PadMode padMode): this((Pad x) => padMode == x.padMode)
+        public PadPattern(PadMode padMode): this((Pad x) => padMode == x.PadMode)
         {
         }
     }
@@ -236,7 +236,7 @@ namespace Nncase.Transform.Pattern.Tensors
         {
         }
 
-        public ReducePattern(ReduceOp reduceOp): this((Reduce x) => reduceOp == x.reduceOp)
+        public ReducePattern(ReduceOp reduceOp): this((Reduce x) => reduceOp == x.ReduceOp)
         {
         }
     }

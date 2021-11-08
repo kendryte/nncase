@@ -13,7 +13,7 @@ namespace Nncase.IR.NN
     /// <summary>
     /// Conv2DTranspose.
     /// </summary>
-    public sealed record Conv2DTranspose(PadMode padMode) : Op
+    public sealed record Conv2DTranspose(PadMode PadMode) : Op
     {
         /// <summary>
         /// Gets input.

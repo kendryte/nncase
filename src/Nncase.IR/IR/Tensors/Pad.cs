@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace Nncase.IR.Tensors
 {
-    public sealed record Pad(PadMode padMode) : Op
+    public sealed record Pad(PadMode PadMode) : Op
     {
         public static ParameterInfo Input = new(typeof(Pad), 0, "Input");
         public static ParameterInfo Pads = new(typeof(Pad), 1, "Pads");

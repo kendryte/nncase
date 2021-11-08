@@ -13,7 +13,7 @@ namespace Nncase.IR.Tensors
     /// <summary>
     /// ResizeImage expression.
     /// </summary>
-    public sealed record ResizeImage(ImageResizeMode resizeMode) : Op
+    public sealed record ResizeImage(ImageResizeMode ResizeMode) : Op
     {
         /// <summary>
         /// Gets input.

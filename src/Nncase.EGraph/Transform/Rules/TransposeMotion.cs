@@ -171,7 +171,7 @@ namespace Nncase.Transform.Rule
                 newpadspan[(i * 2) + 1] = padst[permt[i], 1];
             }
             Const newPads = new Const(result[wcpads].ValueType, newpadspan.Cast<byte>().ToArray());
-            return Pad(Transpose(input, perm), (newPads), ((Pad)result[wcpad].Target).padMode, padv);
+            return Pad(Transpose(input, perm), (newPads), ((Pad)result[wcpad].Target).PadMode, padv);
         }
     }
 
@@ -196,9 +196,9 @@ namespace Nncase.Transform.Rule
             var new_axis = Gather(perm, 0, axis);
             if (keepdims == false)
             {
-                return Squeeze(Transpose(Reduce(reduce.reduceOp, input, new_axis, init, true), perm), axis);
+                return Squeeze(Transpose(Reduce(reduce.ReduceOp, input, new_axis, init, true), perm), axis);
             }
-            return Transpose(Reduce(reduce.reduceOp, input, new_axis, init, keepdims), perm);
+            return Transpose(Reduce(reduce.ReduceOp, input, new_axis, init, keepdims), perm);
         }
     }
 

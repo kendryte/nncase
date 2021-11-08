@@ -122,7 +122,7 @@ namespace Nncase.Transform.Pattern.NN
         public Expr Groups() => GetCast<Expr>(GroupsPat());
         public T Groups<T>()
             where T : Expr => GetCast<T>(GroupsPat());
-        public PadMode padMode => ((Conv2D)GetCast<Call>(this).Target).padMode;
+        public PadMode padMode => ((Conv2D)GetCast<Call>(this).Target).PadMode;
         public static implicit operator CallPattern(Conv2DWrapper warper) => warper.Pattern;
     }
 }
@@ -305,7 +305,7 @@ namespace Nncase.Transform.Pattern.Tensors
         public Expr Value() => GetCast<Expr>(ValuePat());
         public T Value<T>()
             where T : Expr => GetCast<T>(ValuePat());
-        public PadMode padMode => ((Pad)GetCast<Call>(this).Target).padMode;
+        public PadMode padMode => ((Pad)GetCast<Call>(this).Target).PadMode;
         public static implicit operator CallPattern(PadWrapper warper) => warper.Pattern;
     }
 
@@ -353,7 +353,7 @@ namespace Nncase.Transform.Pattern.Tensors
         public Expr KeepDims() => GetCast<Expr>(KeepDimsPat());
         public T KeepDims<T>()
             where T : Expr => GetCast<T>(KeepDimsPat());
-        public ReduceOp reduceOp => ((Reduce)GetCast<Call>(this).Target).reduceOp;
+        public ReduceOp reduceOp => ((Reduce)GetCast<Call>(this).Target).ReduceOp;
         public static implicit operator CallPattern(ReduceWrapper warper) => warper.Pattern;
     }
 

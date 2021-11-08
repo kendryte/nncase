@@ -13,7 +13,7 @@ namespace Nncase.IR.Tensors
     /// <summary>
     /// Reshape expression.
     /// </summary>
-    public sealed record Reduce(ReduceOp reduceOp) : Op
+    public sealed record Reduce(ReduceOp ReduceOp) : Op
     {
         public static readonly ParameterInfo Input = new(typeof(Reduce), 0, "Input");
         public static readonly ParameterInfo Axis = new(typeof(Reduce), 1, "Axis");

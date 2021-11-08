@@ -13,7 +13,7 @@ namespace Nncase.IR.NN
     /// <summary>
     /// Conv2D.
     /// </summary>
-    public sealed record Conv2D(PadMode padMode) : Op
+    public sealed record Conv2D(PadMode PadMode) : Op
     {
         /// <summary>
         /// Gets input.

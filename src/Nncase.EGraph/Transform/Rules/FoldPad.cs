@@ -53,8 +53,8 @@ namespace Nncase.Transform.Rule
         public override Expr? GetRePlace(EMatchResult result)
         {
             var (value1, value2) = result[wcvalue1, wcvalue2];
-            var mode1 = ((Pad)result[pad1].Target).padMode;
-            var mode2 = ((Pad)result[pad2].Target).padMode;
+            var mode1 = ((Pad)result[pad1].Target).PadMode;
+            var mode2 = ((Pad)result[pad2].Target).PadMode;
             if ((mode1 == mode2) && (mode1 != PadMode.Constant || value1.Data == value2.Data))
             {
                 var (t1, t2) = (value1.ToTensor<int>(), value2.ToTensor<int>());
@@ -111,7 +111,7 @@ namespace Nncase.Transform.Rule
                     Const newbegin = Const.FromTensor(begin), newend = Const.FromTensor(end);
                     var newpad = Pad(result[wcin],
                               Const.FromTensor(pads),
-                              ((Pad)result[wcpad].Target).padMode,
+                              ((Pad)result[wcpad].Target).PadMode,
                               result[wcvalue]);
                     return Slice(newpad, newbegin, newend, result[wcaxes], result[wcstride]);
                 }

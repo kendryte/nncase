@@ -13,7 +13,7 @@ namespace Nncase.IR.Tensors
     /// <summary>
     /// ReduceWindow2D.
     /// </summary>
-    public sealed record ReduceWindow2D(ReduceOp reduceOp) : Op
+    public sealed record ReduceWindow2D(ReduceOp ReduceOp) : Op
     {
         /// <summary>
         /// Gets input.
