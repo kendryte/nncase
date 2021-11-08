@@ -164,7 +164,7 @@ namespace Nncase.Importer.TFLite
                 // tflite.BuiltinOperator.DENSIFY,
                 tflite.BuiltinOperator.DEPTHWISE_CONV_2D => VisitDepthwiseConv2D(op),
                 // tflite.BuiltinOperator.DEPTH_TO_SPACE,
-                // tflite.BuiltinOperator.DEQUANTIZE,
+                tflite.BuiltinOperator.DEQUANTIZE => VisitDeQuantize(op),
                 tflite.BuiltinOperator.DIV => VisitBinary(op, BinaryOp.Div, op.BuiltinOptionsAsDivOptions().FusedActivationFunction),
 
                 // tflite.BuiltinOperator.ELU,
@@ -233,7 +233,7 @@ namespace Nncase.Importer.TFLite
                 tflite.BuiltinOperator.POW => VisitBinary(op, BinaryOp.Pow),
 
                 // tflite.BuiltinOperator.PRELU,
-                // tflite.BuiltinOperator.QUANTIZE,
+                tflite.BuiltinOperator.QUANTIZE => VisitQuantize(op),
                 // tflite.BuiltinOperator.RANGE,
                 // tflite.BuiltinOperator.RANK,
                 // tflite.BuiltinOperator.READ_VARIABLE,
