@@ -59,6 +59,7 @@ py::class_<compile_options>(m, "CompileOptions")
     .def_readwrite("output_type", &compile_options::output_type)
     .def_readwrite("input_layout", &compile_options::input_layout)
     .def_readwrite("output_layout", &compile_options::output_layout)
+    .def_readwrite("tcu_num", &compile_options::tcu_num)
     .def_readwrite("is_fpga", &compile_options::is_fpga)
     .def_readwrite("dump_ir", &compile_options::dump_ir)
     .def_readwrite("dump_asm", &compile_options::dump_asm)
@@ -86,6 +87,7 @@ The details of all attributes are following.
 | output_type      | string    | N          | Specify the data type of output data, 'float32' by default.  |
 | input_layout     | string    | N          | Specify the layout of input data, such as 'NCHW', 'NHWC'.  Nncase will insert transpose operation if input_layout is different with the layout of model. |
 | output_layout    | string    | N          | Specify the layout of output data, such as 'NCHW', 'NHWC'.  Nncase will insert transpose operation if output_layout is different with the layout of model. |
+| tcu_num          | int       | N          | Specify the number of TCU. 0 by default, means do not configure the number of TCU. |
 | is_fpga          | bool      | N          | Specify the generated kmodel is used for fpga or not, False by default. |
 | dump_ir          | bool      | N          | Specify whether dump IR, False by default.                   |
 | dump_asm         | bool      | N          | Specify whether dump asm file, False by default.             |
@@ -1157,7 +1159,7 @@ sim.run()
 # ncc
 
 ## Comannd line
-```
+```shell
 DESCRIPTION
 NNCASE model compiler and inference tool.
 
@@ -1169,7 +1171,7 @@ SYNOPSIS
         [--preprocess] [--swapRB] [--mean <normalize mean>] [--std <normalize std>]
         [--input-range <input range>] [--input-shape <input shape>] [--letterbox-value <letter box value>]
         [--input-type <input type>] [--output-type <output type>]
-        [--input-layout <input layout>] [--output-layout <output layout>]
+        [--input-layout <input layout>] [--output-layout <output layout>] [--tcu-num <tcu number>]
         [--is-fpga] [--dump-ir] [--dump-asm] [--dump-quant-error] [--dump-import-op-range] [--dump-dir <dump directory>]
         [--dump-range-dataset <dataset path>] [--dump-range-dataset-format <dataset format>] [--benchmark-only]
 
@@ -1201,15 +1203,15 @@ OPTIONS
   --dataset-format <dataset format>
                           datset format: e.g. image|raw, default is image
   --dump-range-dataset <dataset path>
-                          dataset for dump import op range
+                          dump import op range dataset
   --dump-range-dataset-format <dataset format>
                           datset format: e.g. image|raw, default is image
   --calibrate-method <calibrate method>
                           calibrate method: e.g. no_clip|l2|kld_m0|kld_m1|kld_m2|cdf, default is no_clip
   --preprocess            enable preprocess, default is 0
   --swapRB                swap red and blue channel, default is 0
-  --mean <normalize mean> normalize mean, default is 0.000000
-  --std <normalize std>   normalize std, default is 1.000000
+  --mean <normalize mean> normalize mean, default is 0. 0. 0.
+  --std <normalize std>   normalize std, default is 1. 1. 1.
   --input-range <input range>
                           float range after preprocess
   --input-shape <input shape>
@@ -1224,11 +1226,12 @@ OPTIONS
                           input layout, e.g NCHW|NHWC, default is NCHW
   --output-layout <output layout>
                           output layout, e.g NCHW|NHWC, default is NCHW
+  --tcu-num <tcu number>  tcu number, e.g 1|2|3|4, default is 0
   --is-fpga               use fpga parameters, default is 0
   --dump-ir               dump ir to .dot, default is 0
   --dump-asm              dump assembly, default is 0
   --dump-quant-error      dump quant error, default is 0
-  --dump-import-op-range  dump imported op data range, must specify dump-range-dataset if enable, default is 0
+  --dump-import-op-range  dump import op range, default is 0
   --dump-dir <dump directory>
                           dump to directory
   --benchmark-only        compile kmodel only for benchmark use, default is 0
@@ -1276,6 +1279,7 @@ OPTIONS
 - `--output-type` is the type of output data.
 - `--input-layout` is the layout of input data.
 - `--output-layout` is the layout of output data.
+- `--tcu-num` is used to configure the number of TCU. 0 means do not configure the number of TCU.
 - `--is-fpga` is a debug option. It is used to specify whether the kmodel run on fpga or not.
 - `--dump-ir` is a debug option. It is used to specify whether dump IR or not.
 - `--dump-asm` is a debug option. It is used to specify whether dump asm file or not.

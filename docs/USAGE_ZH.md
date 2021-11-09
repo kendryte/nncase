@@ -61,6 +61,7 @@ py::class_<compile_options>(m, "CompileOptions")
     .def_readwrite("output_type", &compile_options::output_type)
     .def_readwrite("input_layout", &compile_options::input_layout)
     .def_readwrite("output_layout", &compile_options::output_layout)
+    .def_readwrite("tcu_num", &compile_options::tcu_num)
     .def_readwrite("is_fpga", &compile_options::is_fpga)
     .def_readwrite("dump_ir", &compile_options::dump_ir)
     .def_readwrite("dump_asm", &compile_options::dump_asm)
@@ -88,6 +89,7 @@ py::class_<compile_options>(m, "CompileOptions")
 | output_type      | string | 否       | 指定输出数据的类型, 如'float32', 'uint8'(仅用于指定量化情况下), 默认为'float32' |
 | input_layout     | string | 否       | 指定输入数据的layout, 如'NCHW', 'NHWC'. 若输入数据layout与模型本身layout不同, nncase会插入transpose进行转换 |
 | output_layout    | string | 否       | 指定输出数据的layout, 如'NCHW', 'NHWC'. 若输出数据layout与模型本身layout不同, nncase会插入transpose进行转换 |
+| tcu_num          | int    | 否       | 指定tcu的个数. 默认值为0, 表示不配置.                        |
 | is_fpga          | bool   | 否       | 指定kmodel是否用于fpga, 默认为False                          |
 | dump_ir          | bool   | 否       | 指定是否dump IR, 默认为False                                 |
 | dump_asm         | bool   | 否       | 指定是否dump asm汇编文件, 默认为False                        |
@@ -1167,7 +1169,7 @@ sim.run()
 # ncc
 
 ## 命令行
-```
+```shell
 DESCRIPTION
 NNCASE model compiler and inference tool.
 
@@ -1179,7 +1181,7 @@ SYNOPSIS
         [--preprocess] [--swapRB] [--mean <normalize mean>] [--std <normalize std>]
         [--input-range <input range>] [--input-shape <input shape>] [--letterbox-value <letter box value>]
         [--input-type <input type>] [--output-type <output type>]
-        [--input-layout <input layout>] [--output-layout <output layout>]
+        [--input-layout <input layout>] [--output-layout <output layout>] [--tcu-num <tcu number>]
         [--is-fpga] [--dump-ir] [--dump-asm] [--dump-quant-error] [--dump-import-op-range] [--dump-dir <dump directory>]
         [--dump-range-dataset <dataset path>] [--dump-range-dataset-format <dataset format>] [--benchmark-only]
 
@@ -1211,15 +1213,15 @@ OPTIONS
   --dataset-format <dataset format>
                           datset format: e.g. image|raw, default is image
   --dump-range-dataset <dataset path>
-                          dataset for dump import op range
+                          dump import op range dataset
   --dump-range-dataset-format <dataset format>
                           datset format: e.g. image|raw, default is image
   --calibrate-method <calibrate method>
                           calibrate method: e.g. no_clip|l2|kld_m0|kld_m1|kld_m2|cdf, default is no_clip
   --preprocess            enable preprocess, default is 0
   --swapRB                swap red and blue channel, default is 0
-  --mean <normalize mean> normalize mean, default is 0.000000
-  --std <normalize std>   normalize std, default is 1.000000
+  --mean <normalize mean> normalize mean, default is 0. 0. 0.
+  --std <normalize std>   normalize std, default is 1. 1. 1.
   --input-range <input range>
                           float range after preprocess
   --input-shape <input shape>
@@ -1234,11 +1236,12 @@ OPTIONS
                           input layout, e.g NCHW|NHWC, default is NCHW
   --output-layout <output layout>
                           output layout, e.g NCHW|NHWC, default is NCHW
+  --tcu-num <tcu number>  tcu number, e.g 1|2|3|4, default is 0
   --is-fpga               use fpga parameters, default is 0
   --dump-ir               dump ir to .dot, default is 0
   --dump-asm              dump assembly, default is 0
   --dump-quant-error      dump quant error, default is 0
-  --dump-import-op-range  dump imported op data range, must specify dump-range-dataset if enable, default is 0
+  --dump-import-op-range  dump import op range, default is 0
   --dump-dir <dump directory>
                           dump to directory
   --benchmark-only        compile kmodel only for benchmark use, default is 0
@@ -1288,6 +1291,7 @@ OPTIONS
 - `--output-type` 用于指定推理时输出的数据类型。如`float`/`uint8`,  `uint8`仅在量化模型时才有效. 默认是`float`
 - `--input-layout`用于指定输入数据的layout. 若输入数据的layout与模型的layout不同, 预处理会添加transpose进行转换.
 - `--output-layout`用于指定输出数据的layout
+- `--tcu-num`用于指定tcu个数, 默认值为0, 表示不配置tcu个数.
 - `--is-fpga`指定编译后的kmodel是否运行在fpga上
 - `--dump-ir` 是一个调试选项。当它打开时 ncc 会在工作目录产生一些 `.dot` 文件。你可以使用 `Graphviz` 或 [Graphviz Online](https://dreampuf.github.io/GraphvizOnline) 来查看这些文件。
 - `--dump-asm` 是一个调试选项。当它打开时 ncc 会生成硬件指令文件compile.text.asm
