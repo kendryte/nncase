@@ -23,16 +23,8 @@ namespace Nncase.Importer.TFLite
         {
             var @operator = op;
             var axis = op.BuiltinOptionsAsPackOptions().Axis;
-            var inputs = Enumerable.Range(0, op.InputsLength).Select(i =>
-            {
-                var input = GetInputExprs(@operator, i);
-                var inputTensor = GetInputTensor(@operator, i);
-                
-                var shape = GetTensorShape(inputTensor).ToList();
-                shape.Insert(axis, 1);
-                return F.Tensors.Reshape(input, Const.FromShape(new Shape(shape.ToArray())));
-            });
-            return F.Tensors.Concat(new Tuple(inputs), axis);
+            var inputs = Enumerable.Range(0, op.InputsLength).Select(i => GetInputExprs(@operator, i));
+            return F.Tensors.Stack(new Tuple(inputs), axis);
         }
     }
 }

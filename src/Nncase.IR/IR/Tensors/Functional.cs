@@ -63,6 +63,8 @@ namespace Nncase.IR.F
             return new Call(new Slice(), input, begins, ends, axes, strides);
         }
         
+        public static Call Stack(Expr inputs, Expr axis) => new Call(new Stack(), inputs, axis);
+        
         /// squeeze input by give dims
         public static Call Squeeze(Expr input, Expr dims) => new Call(new Squeeze(), input, dims);
         
