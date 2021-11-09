@@ -260,7 +260,7 @@ namespace Nncase.Importer.TFLite
                 // tflite.BuiltinOperator.SEGMENT_SUM,
                 // tflite.BuiltinOperator.SELECT,
                 // tflite.BuiltinOperator.SELECT_V2,
-                // tflite.BuiltinOperator.SHAPE,
+                tflite.BuiltinOperator.SHAPE => VisitShape(op),
                 tflite.BuiltinOperator.SIN => VisitUnary(op, UnaryOp.Sin),
 
                 // tflite.BuiltinOperator.SKIP_GRAM,

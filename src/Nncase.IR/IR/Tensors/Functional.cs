@@ -49,6 +49,8 @@ namespace Nncase.IR.F
             new Call(new ReduceWindow2D(reduceOp), input, initValue, filter, stride, padding, dilation);
 
         public static Call Reshape(Expr input, Expr shape) => new Call(new Reshape(), input, shape);
+        
+        public static Call ShapeOp(Expr input) => new Call(new ShapeOp(), input);
 
         ///https://github.com/onnx/onnx/blob/master/docs/Operators.md#slice
         public static Call Slice(Expr input, Expr begins, Expr ends, Expr axes, Expr strides) =>
