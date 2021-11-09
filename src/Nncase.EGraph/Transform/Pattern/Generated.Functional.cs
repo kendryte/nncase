@@ -283,6 +283,7 @@ namespace Nncase.Transform.Pattern.F
     public static partial class Tensors
     {
         public static TransposeWrapper Transpose(ExprPattern input, ExprPattern perm) => new TransposeWrapper(new CallPattern(new TransposePattern(), input, perm));
+        public static BroadcastWrapper Broadcast(ExprPattern input, ExprPattern shape) => new BroadcastWrapper(new CallPattern(new BroadcastPattern(), input, shape));
         public static CastWrapper Cast(ExprPattern input, DataType newType) => new CastWrapper(new CallPattern(new CastPattern(newType), input));
         public static ConcatWrapper Concat(TuplePattern input, ExprPattern axis) => new ConcatWrapper(new CallPattern(new ConcatPattern(), input, axis));
         public static GatherWrapper Gather(ExprPattern input, ExprPattern axis, ExprPattern index) => new GatherWrapper(new CallPattern(new GatherPattern(), input, axis, index));
@@ -304,7 +305,7 @@ namespace Nncase.Transform.Pattern.F
         public static SliceWrapper Slice(ExprPattern input, Const begins, Const ends)
         {
             var axes = Const.FromSpan<int>(Enumerable.Range(0, ends.Rank).ToArray());
-            var strides = axes with { Data = new IRBytes(DataTypes.GetBytes<int>(Enumerable.Repeat(1, ends.Rank).ToArray())) };
+            var strides = axes with {Data = new IRBytes(DataTypes.GetBytes<int>(Enumerable.Repeat(1, ends.Rank).ToArray()))};
             return new SliceWrapper(new CallPattern(new SlicePattern(), input, begins, ends, axes, strides));
         }
 
@@ -315,5 +316,7 @@ namespace Nncase.Transform.Pattern.F
         // same like tensorflow
         public static SpaceToBatchWrapper SpaceToBatch(ExprPattern input, ExprPattern blockShape, ExprPattern paddings) => new SpaceToBatchWrapper(new CallPattern(new SpaceToBatchPattern(), input, blockShape, paddings));
         public static BatchToSpaceWrapper BatchToSpace(ExprPattern input, ExprPattern blockShape, ExprPattern crops) => new BatchToSpaceWrapper(new CallPattern(new BatchToSpacePattern(), input, blockShape, crops));
+        // sections (int or list[int])
+        public static SplitWrapper Split(ExprPattern input, ExprPattern axis, ExprPattern sections) => new SplitWrapper(new CallPattern(new SplitPattern(), input, axis, sections));
     }
 }

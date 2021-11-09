@@ -18,6 +18,8 @@ namespace Nncase.IR.F
     {
         public static Call Transpose(Expr input, Expr perm) => new Call(new Transpose(), input, perm);
 
+        public static Call Broadcast(Expr input, Expr shape) => new Call(new Broadcast(), input, shape);
+
         public static Call Cast(Expr input, DataType newType) => new Call(new Cast(newType), input);
 
         public static Call Concat(Tuple input, Expr axis) => new Call(new Concat(), input, axis);
@@ -78,5 +80,8 @@ namespace Nncase.IR.F
         public static Call SpaceToBatch(Expr input, Expr blockShape, Expr paddings) => new Call(new SpaceToBatch(), input, blockShape, paddings);
 
         public static Call BatchToSpace(Expr input, Expr blockShape, Expr crops) => new Call(new BatchToSpace(), input, blockShape, crops);
+
+        // sections (int or list[int])
+        public static Call Split(Expr input, Expr axis, Expr sections) => new Call(new Split(), input, axis, sections);
     }
 }

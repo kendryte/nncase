@@ -50,7 +50,7 @@ namespace Nncase.Transform.Rule
         {
             tp.Bind(result);
             var perm = tp.Perm<Const>().ToTensor<int>();
-            if (Enumerable.Range(0, (int)tp.Input().Shape.Rank).All(dim => perm[dim] == dim))
+            if (Enumerable.Range(0, (int)tp.Input().CheckedShape.Rank).All(dim => perm[dim] == dim))
             {
                 return tp.Input();
             }
@@ -69,7 +69,7 @@ namespace Nncase.Transform.Rule
         {
             tp.Bind(result);
             var perm = tp.Perm<Const>().ToTensor<int>();
-            var in_shape = tp.Input().Shape;
+            var in_shape = tp.Input().CheckedShape;
             int last_sig_dim = 0;
             for (int i = 0; i < perm.Length; i++)
             {
@@ -81,7 +81,7 @@ namespace Nncase.Transform.Rule
                     last_sig_dim = i_dim;
                 }
             }
-            var outshape = result[Pattern].Shape;
+            var outshape = result[Pattern].CheckedShape;
             return Reshape(tp.Input(), Const.FromShape(outshape));
         }
     }

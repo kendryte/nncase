@@ -48,7 +48,7 @@ namespace Nncase.Transform.Rule
         {
             var perm = oldPerm.ToTensor<int>();
             var expand_dim = perm.Length - perm[(int)perm.Length - 1] - 1;
-            var shape = oldCon.Shape.ToList();
+            var shape = oldCon.CheckedShape.ToList();
             if (shape[0] != 1)
             {
                 for (int i = 0; i < expand_dim; i++)

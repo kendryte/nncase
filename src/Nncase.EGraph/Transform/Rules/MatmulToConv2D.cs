@@ -24,8 +24,8 @@ namespace Nncase.Transform.Rule
         public override Expr? GetRePlace(EMatchResult result)
         {
             matmul.Bind(result);
-            var input_shape = matmul.Input().Shape;
-            var other_shape = matmul.Other().Shape;
+            var input_shape = matmul.Input().CheckedShape;
+            var other_shape = matmul.Other().CheckedShape;
             var if_shape = new Shape(new[] { input_shape[0].FixedValue, input_shape[1].FixedValue, 1, 1 });
             var w_shape = new Shape(new[] { other_shape[1].FixedValue, other_shape[0].FixedValue, 1, 1 });
 

@@ -21,7 +21,7 @@ namespace Nncase.Transform.Rule
         private bool IsNoSlice(SliceWrapper slice, int dim)
         {
 
-            var inshape = slice.Input().Shape;
+            var inshape = slice.Input().CheckedShape;
 
             var begin = slice.Begins<Const>().ToTensor<int>();
             var end = slice.Ends<Const>().ToTensor<int>();
@@ -32,7 +32,7 @@ namespace Nncase.Transform.Rule
 
         private bool CanMerge(SliceWrapper slice1, SliceWrapper slice2)
         {
-            var inshape = slice1.Input().Shape;
+            var inshape = slice1.Input().CheckedShape;
             var axes1 = slice1.Axes<Const>().ToTensor<int>();
             var axes2 = slice2.Axes<Const>().ToTensor<int>();
             return Enumerable.Range(0, inshape.Rank).All(
