@@ -77,12 +77,15 @@
 | Reshape | ✅ |
 | Resize | ✅ |
 | Round | ✅ |
+| Selu | ✅ |
 | Shape | ✅ |
 | Sin | ✅ |
 | Sinh | ✅ |
 | Sigmoid | ✅ |
 | Slice | ✅ |
 | Softmax | ✅ |
+| Softplus | ✅ |
+| Softsign | ✅ |
 | SpaceToDepth | ✅ |
 | Split | ✅ |
 | Sqrt | ✅ |
