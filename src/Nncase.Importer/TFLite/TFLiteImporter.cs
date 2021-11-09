@@ -276,7 +276,7 @@ namespace Nncase.Importer.TFLite
 
                 tflite.BuiltinOperator.SQUARED_DIFFERENCE => VisitSquareDifference(op),
                 tflite.BuiltinOperator.SQUEEZE => VisitSqueeze(op),
-                // tflite.BuiltinOperator.STRIDED_SLICE,
+                tflite.BuiltinOperator.STRIDED_SLICE => VisitStrideSlice(op),
                 tflite.BuiltinOperator.SUB => VisitBinary(op, BinaryOp.Sub, op.BuiltinOptionsAsSubOptions().FusedActivationFunction),
 
                 tflite.BuiltinOperator.SUM => VisitReduce(op, ReduceOp.Sum, 0f),

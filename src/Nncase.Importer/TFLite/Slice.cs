@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 using F = Nncase.IR.F;
 
@@ -19,6 +20,22 @@ namespace Nncase.Importer.TFLite
             var endValue = GetShapeDataFromConst(begin).Zip(GetShapeDataFromConst(size), (x, y) => x + y).ToArray();
             var end = new Const(((Const)begin).ValueType, DataTypes.GetBytes<int>(endValue));
             return F.Tensors.Slice(input, (Const)begin, end);
+        }
+
+        private Expr VisitStrideSlice(in tflite.Operator op)
+        {
+            var (input, begin) = GetInputExprs(op, 0, 1);
+            var (end, strides) = GetInputExprs(op, 0, 1);
+            var options = op.BuiltinOptionsAsStridedSliceOptions();
+            if (options.BeginMask != 0 || options.EndMask != 0 || options.EllipsisMask != 0
+                || options.NewAxisMask != 0 || options.ShrinkAxisMask != 0)
+            {
+                throw new NotSupportedException("Unsupported StrideSlice no 0 mask");
+            }
+
+            var tensor = GetInputTensor(op, 0);
+            var axes = Const.FromSpan<int>(Enumerable.Range(0, tensor.ShapeLength).ToArray());
+            return F.Tensors.Slice(input, begin, end, axes, strides);
         }
     }
 }
