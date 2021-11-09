@@ -352,8 +352,8 @@ private:
     void set_target(std::string_view type)
     {
         target_ = plugin_loader::create_target(type);
-        target_options_.is_fpga = compile_options_.is_fpga;
-
+        target_->options().is_fpga = compile_options_.is_fpga;
+        target_->options().tcu_num = compile_options_.tcu_num;
         target_->register_evaluator_ops();
     }
 
@@ -727,7 +727,6 @@ private:
 private:
     ir::graph graph_;
     compile_options compile_options_;
-    target_options target_options_;
     std::string input_layout_;
     std::variant<ptq_dataset_options, ptq_tensor_options> ptq_options_;
     std::variant<dump_range_dataset_options, dump_range_tensor_options> dump_range_options_;
