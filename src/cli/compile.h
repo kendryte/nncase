@@ -78,6 +78,7 @@ private:
     std::vector<float> std_ = { 1.f, 1.f, 1.f };
     std::vector<float> input_range_;
     float letterbox_value_;
+    uint32_t tcu_num_ = 0;
     std::vector<int32_t> input_shape_;
 
     std::string cli_mean_ = "0. 0. 0.";
