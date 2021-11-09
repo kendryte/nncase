@@ -65,6 +65,8 @@ namespace Nncase.IR.F
         
         /// squeeze input by give dims
         public static Call Squeeze(Expr input, Expr dims) => new Call(new Squeeze(), input, dims);
+        
+        public static Call UnSqueeze(Expr input, Expr dims) => new Call(new UnSqueeze(), input, dims);
 
         public static Call Quantize(Expr input, Expr zeroPoint, Expr scale, DataType targetType) => new Call(new Quantize(targetType), input, zeroPoint, scale);
 

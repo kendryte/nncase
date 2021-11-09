@@ -173,7 +173,7 @@ namespace Nncase.Importer.TFLite
                 // tflite.BuiltinOperator.EQUAL,
                 tflite.BuiltinOperator.EXP => VisitUnary(op, UnaryOp.Exp),
 
-                // tflite.BuiltinOperator.EXPAND_DIMS,
+                tflite.BuiltinOperator.EXPAND_DIMS => VisitExpandDims(op),
                 // tflite.BuiltinOperator.FAKE_QUANT,
                 // tflite.BuiltinOperator.FILL,
                 tflite.BuiltinOperator.FLOOR => VisitUnary(op, UnaryOp.Ceil),
@@ -275,7 +275,7 @@ namespace Nncase.Importer.TFLite
                 tflite.BuiltinOperator.SQUARE => VisitUnary(op, UnaryOp.Square),
 
                 tflite.BuiltinOperator.SQUARED_DIFFERENCE => VisitSquareDifference(op),
-                // tflite.BuiltinOperator.SQUEEZE,
+                tflite.BuiltinOperator.SQUEEZE => VisitSqueeze(op),
                 // tflite.BuiltinOperator.STRIDED_SLICE,
                 tflite.BuiltinOperator.SUB => VisitBinary(op, BinaryOp.Sub, op.BuiltinOptionsAsSubOptions().FusedActivationFunction),
 

@@ -10,11 +10,11 @@ using System.Threading.Tasks;
 
 namespace Nncase.IR.Tensors
 {
-    public sealed record Squeeze() : Op
+    public sealed record UnSqueeze() : Op
     {
-        public static ParameterInfo Input = new(typeof(Squeeze), 0, "input");
+        public static ParameterInfo Input = new(typeof(UnSqueeze), 0, "input");
         
-        public static ParameterInfo Dims = new(typeof(Squeeze), 1, "dims");
+        public static ParameterInfo Dims = new(typeof(UnSqueeze), 1, "dims");
 
         /// <inheritdoc/>
         public override IRType InferInvokeResultType(ITypeInferenceContext context)
