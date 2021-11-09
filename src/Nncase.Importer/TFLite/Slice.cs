@@ -17,9 +17,8 @@ namespace Nncase.Importer.TFLite
         {
             var input = GetInputExprs(op, 0);
             var (begin, size) = GetInputExprs(op, 1, 2);
-            var endValue = GetShapeDataFromConst(begin).Zip(GetShapeDataFromConst(size), (x, y) => x + y).ToArray();
-            var end = new Const(((Const)begin).ValueType, DataTypes.GetBytes<int>(endValue));
-            return F.Tensors.Slice(input, (Const)begin, end);
+            var end = F.Tensors.ShapeOp(begin) + F.Tensors.ShapeOp(size);
+            return F.Tensors.Slice(input, begin, end);
         }
 
         private Expr VisitStrideSlice(in tflite.Operator op)
