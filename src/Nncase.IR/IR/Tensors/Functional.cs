@@ -56,10 +56,10 @@ namespace Nncase.IR.F
         public static Call Slice(Expr input, Expr begins, Expr ends, Expr axes, Expr strides) =>
           new Call(new Slice(), input, begins, ends, axes, strides);
 
-        public static Call Slice(Expr input, Expr begins, Expr ends)
+        public static Call Slice(Expr input, Expr begins, Expr ends, int rank)
         {
-            var axes = Const.FromSpan<int>(Enumerable.Range(0, ends.Rank).ToArray());
-            var strides = axes with { Data = new IRBytes(DataTypes.GetBytes<int>(Enumerable.Repeat(1, ends.Rank).ToArray())) };
+            var axes = Const.FromSpan<int>(Enumerable.Range(0, rank).ToArray());
+            var strides = axes with { Data = new IRBytes(DataTypes.GetBytes<int>(Enumerable.Repeat(1, rank).ToArray())) };
             return new Call(new Slice(), input, begins, ends, axes, strides);
         }
         
