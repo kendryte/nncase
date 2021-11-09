@@ -401,6 +401,18 @@ namespace Nncase.Transform.Pattern.Tensors
         }
     }
 
+    public sealed record ShapeOpPattern(Func<ShapeOp, bool> Cond) : OpPattern
+    {
+        public ShapeOpPattern(ShapeOp shapeop): this(x => x == shapeop)
+        {
+        }
+
+        public bool MatchLeaf(ShapeOp shapeop) => Cond(shapeop) && MatchCheckedType(shapeop);
+        public ShapeOpPattern(): this((ShapeOp x) => true)
+        {
+        }
+    }
+
     public sealed record SlicePattern(Func<Slice, bool> Cond) : OpPattern
     {
         public SlicePattern(Slice slice): this(x => x == slice)
@@ -449,6 +461,18 @@ namespace Nncase.Transform.Pattern.Tensors
         }
     }
 
+    public sealed record StackPattern(Func<Stack, bool> Cond) : OpPattern
+    {
+        public StackPattern(Stack stack): this(x => x == stack)
+        {
+        }
+
+        public bool MatchLeaf(Stack stack) => Cond(stack) && MatchCheckedType(stack);
+        public StackPattern(): this((Stack x) => true)
+        {
+        }
+    }
+
     public sealed record TransposePattern(Func<Transpose, bool> Cond) : OpPattern
     {
         public TransposePattern(Transpose transpose): this(x => x == transpose)
@@ -457,6 +481,18 @@ namespace Nncase.Transform.Pattern.Tensors
 
         public bool MatchLeaf(Transpose transpose) => Cond(transpose) && MatchCheckedType(transpose);
         public TransposePattern(): this((Transpose x) => true)
+        {
+        }
+    }
+
+    public sealed record UnSqueezePattern(Func<UnSqueeze, bool> Cond) : OpPattern
+    {
+        public UnSqueezePattern(UnSqueeze unsqueeze): this(x => x == unsqueeze)
+        {
+        }
+
+        public bool MatchLeaf(UnSqueeze unsqueeze) => Cond(unsqueeze) && MatchCheckedType(unsqueeze);
+        public UnSqueezePattern(): this((UnSqueeze x) => true)
         {
         }
     }

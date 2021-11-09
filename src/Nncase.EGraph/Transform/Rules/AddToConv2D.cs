@@ -13,43 +13,43 @@ using System.Numerics.Tensors;
 using Nncase.IR;
 using Nncase.Transform.Pattern.Math;
 
-namespace Nncase.Transform.Rule;
-
-
-public sealed class AddToConv2D : EGraphRule
+namespace Nncase.Transform.Rule
 {
-    private BinaryWrapper ad;
-
-    public AddToConv2D()
+    public sealed class AddToConv2D : EGraphRule
     {
-        Pattern = ad = Add(IsWildCard(), IsWildCard());
-    }
+        private BinaryWrapper ad;
 
-    public override Expr? GetRePlace(EMatchResult result)
-    {
-        ad.Bind(result);
-        var a_sp = ad.Lhs().CheckedShape;
-        var b_sp = ad.Rhs().CheckedShape;
-        if (a_sp.Rank == 4 && a_sp == b_sp)
+        public AddToConv2D()
         {
-            var channels = a_sp[1].FixedValue;
-            var weights = new DenseTensor<float>(channels * 2 * channels);
-            for (int i = 0; i < channels; i++)
-            {
-                weights[2 * channels * i + i] = 1.0f;
-                weights[2 * channels * i + i + channels] = 1.0f;
-            }
-            var c = Concat(new IR.Tuple(ad.Lhs(), ad.Rhs()), 1);
-            var con_weights = Const.FromTensor<float>(weights.Reshape(new[] { channels, 2 * channels, 1, 1 }));
-
-            return Conv2D(c, con_weights,
-              Enumerable.Repeat(0.0f, channels).ToArray(),
-              new DenseTensor<int>(new[] { 0, 0, 0, 0 }, new[] { 2, 2 }),
-              new[] { 1, 1 },
-              new[] { 1, 1 },
-              PadMode.Constant,
-              1);
+            Pattern = ad = Add(IsWildCard(), IsWildCard());
         }
-        return null;
+
+        public override Expr? GetRePlace(EMatchResult result)
+        {
+            ad.Bind(result);
+            var a_sp = ad.Lhs().CheckedShape;
+            var b_sp = ad.Rhs().CheckedShape;
+            if (a_sp.Rank == 4 && a_sp == b_sp)
+            {
+                var channels = a_sp[1].FixedValue;
+                var weights = new DenseTensor<float>(channels * 2 * channels);
+                for (int i = 0; i < channels; i++)
+                {
+                    weights[2 * channels * i + i] = 1.0f;
+                    weights[2 * channels * i + i + channels] = 1.0f;
+                }
+                var c = Concat(new IR.Tuple(ad.Lhs(), ad.Rhs()), 1);
+                var con_weights = Const.FromTensor<float>(weights.Reshape(new[] { channels, 2 * channels, 1, 1 }));
+
+                return Conv2D(c, con_weights,
+                  Enumerable.Repeat(0.0f, channels).ToArray(),
+                  new DenseTensor<int>(new[] { 0, 0, 0, 0 }, new[] { 2, 2 }),
+                  new[] { 1, 1 },
+                  new[] { 1, 1 },
+                  PadMode.Constant,
+                  1);
+            }
+            return null;
+        }
     }
 }

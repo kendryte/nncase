@@ -12,25 +12,27 @@ using static Nncase.Transform.Pattern.Utility;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.Tensors;
 
-namespace Nncase.Transform.Rule;
-
-public class FoldNopCast : EGraphRule
+namespace Nncase.Transform.Rule
 {
-    WildCardPattern wcin = "input";
-    CallPattern wccast1, wccast2;
-    FoldNopCast()
-    {
-        wccast1 = IsCast(wcin);
-        wccast2 = IsCast(wccast1);
-        Pattern = wccast2;
-    }
 
-    public override Expr? GetRePlace(EMatchResult result)
+    public class FoldNopCast : EGraphRule
     {
-        var cast1 = (Cast)result[wccast1].Target;
-        var cast2 = (Cast)result[wccast2].Target;
-        if (cast1.NewType == cast2.NewType)
-            return result[wcin];
-        return null;
+        WildCardPattern wcin = "input";
+        CallPattern wccast1, wccast2;
+        FoldNopCast()
+        {
+            wccast1 = IsCast(wcin);
+            wccast2 = IsCast(wccast1);
+            Pattern = wccast2;
+        }
+
+        public override Expr? GetRePlace(EMatchResult result)
+        {
+            var cast1 = (Cast)result[wccast1].Target;
+            var cast2 = (Cast)result[wccast2].Target;
+            if (cast1.NewType == cast2.NewType)
+                return result[wcin];
+            return null;
+        }
     }
 }

@@ -9,7 +9,7 @@ using static Nncase.Transform.Pattern.F.Tensors;
 using Nncase.Transform.Pattern.Tensors;
 using System.Numerics.Tensors;
 
-namespace Nncase.Transform.Rule;
+namespace Nncase.Transform.Rule{
 
 public class SpaceToBatchToPad : EGraphRule
 {
@@ -33,4 +33,5 @@ public class SpaceToBatchToPad : EGraphRule
         }
         return null;
     }
+}
 }

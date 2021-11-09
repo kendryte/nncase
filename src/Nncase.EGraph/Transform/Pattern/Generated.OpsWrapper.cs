@@ -619,6 +619,17 @@ namespace Nncase.Transform.Pattern.Tensors
         public static implicit operator CallPattern(ResizeImageWrapper warper) => warper.Pattern;
     }
 
+    public sealed record ShapeOpWrapper(CallPattern Pattern) : PatternWrapper
+    {
+        public ExprPattern InputPat() => Pattern[ShapeOp.Input];
+        public T InputPat<T>()
+            where T : ExprPattern => (T)InputPat();
+        public Expr Input() => GetCast<Expr>(InputPat());
+        public T Input<T>()
+            where T : Expr => GetCast<T>(InputPat());
+        public static implicit operator CallPattern(ShapeOpWrapper warper) => warper.Pattern;
+    }
+
     public sealed record SliceWrapper(CallPattern Pattern) : PatternWrapper
     {
         public ExprPattern InputPat() => Pattern[Slice.Input];
@@ -717,6 +728,23 @@ namespace Nncase.Transform.Pattern.Tensors
         public static implicit operator CallPattern(SqueezeWrapper warper) => warper.Pattern;
     }
 
+    public sealed record StackWrapper(CallPattern Pattern) : PatternWrapper
+    {
+        public ExprPattern InputsPat() => Pattern[Stack.Inputs];
+        public T InputsPat<T>()
+            where T : ExprPattern => (T)InputsPat();
+        public Expr Inputs() => GetCast<Expr>(InputsPat());
+        public T Inputs<T>()
+            where T : Expr => GetCast<T>(InputsPat());
+        public ExprPattern AxisPat() => Pattern[Stack.Axis];
+        public T AxisPat<T>()
+            where T : ExprPattern => (T)AxisPat();
+        public Expr Axis() => GetCast<Expr>(AxisPat());
+        public T Axis<T>()
+            where T : Expr => GetCast<T>(AxisPat());
+        public static implicit operator CallPattern(StackWrapper warper) => warper.Pattern;
+    }
+
     public sealed record TransposeWrapper(CallPattern Pattern) : PatternWrapper
     {
         public ExprPattern InputPat() => Pattern[Transpose.Input];
@@ -732,5 +760,22 @@ namespace Nncase.Transform.Pattern.Tensors
         public T Perm<T>()
             where T : Expr => GetCast<T>(PermPat());
         public static implicit operator CallPattern(TransposeWrapper warper) => warper.Pattern;
+    }
+
+    public sealed record UnSqueezeWrapper(CallPattern Pattern) : PatternWrapper
+    {
+        public ExprPattern InputPat() => Pattern[UnSqueeze.Input];
+        public T InputPat<T>()
+            where T : ExprPattern => (T)InputPat();
+        public Expr Input() => GetCast<Expr>(InputPat());
+        public T Input<T>()
+            where T : Expr => GetCast<T>(InputPat());
+        public ExprPattern DimsPat() => Pattern[UnSqueeze.Dims];
+        public T DimsPat<T>()
+            where T : ExprPattern => (T)DimsPat();
+        public Expr Dims() => GetCast<Expr>(DimsPat());
+        public T Dims<T>()
+            where T : Expr => GetCast<T>(DimsPat());
+        public static implicit operator CallPattern(UnSqueezeWrapper warper) => warper.Pattern;
     }
 }

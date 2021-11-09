@@ -300,17 +300,20 @@ namespace Nncase.Transform.Pattern.F
         public static ResizeImageWrapper ResizeImage(ImageResizeMode resizeMode, ExprPattern input, ExprPattern newSize, ExprPattern alignCorners, ExprPattern halfPixelCenters) => new ResizeImageWrapper(new CallPattern(new ResizeImagePattern(resizeMode), input, newSize, alignCorners, halfPixelCenters));
         public static ReduceWindow2DWrapper ReduceWindow2D(ReduceOp reduceOp, ExprPattern input, ExprPattern initValue, ExprPattern filter, ExprPattern stride, ExprPattern padding, ExprPattern dilation) => new ReduceWindow2DWrapper(new CallPattern(new ReduceWindow2DPattern(reduceOp), input, initValue, filter, stride, padding, dilation));
         public static ReshapeWrapper Reshape(ExprPattern input, ExprPattern shape) => new ReshapeWrapper(new CallPattern(new ReshapePattern(), input, shape));
+        public static ShapeOpWrapper ShapeOp(ExprPattern input) => new ShapeOpWrapper(new CallPattern(new ShapeOpPattern(), input));
         ///https://github.com/onnx/onnx/blob/master/docs/Operators.md#slice
         public static SliceWrapper Slice(ExprPattern input, ExprPattern begins, ExprPattern ends, ExprPattern axes, ExprPattern strides) => new SliceWrapper(new CallPattern(new SlicePattern(), input, begins, ends, axes, strides));
-        public static SliceWrapper Slice(ExprPattern input, Const begins, Const ends)
+        public static SliceWrapper Slice(ExprPattern input, ExprPattern begins, ExprPattern ends, int rank)
         {
-            var axes = Const.FromSpan<int>(Enumerable.Range(0, ends.Rank).ToArray());
-            var strides = axes with {Data = new IRBytes(DataTypes.GetBytes<int>(Enumerable.Repeat(1, ends.Rank).ToArray()))};
+            var axes = Const.FromSpan<int>(Enumerable.Range(0, rank).ToArray());
+            var strides = axes with {Data = new IRBytes(DataTypes.GetBytes<int>(Enumerable.Repeat(1, rank).ToArray()))};
             return new SliceWrapper(new CallPattern(new SlicePattern(), input, begins, ends, axes, strides));
         }
 
+        public static StackWrapper Stack(ExprPattern inputs, ExprPattern axis) => new StackWrapper(new CallPattern(new StackPattern(), inputs, axis));
         /// squeeze input by give dims
         public static SqueezeWrapper Squeeze(ExprPattern input, ExprPattern dims) => new SqueezeWrapper(new CallPattern(new SqueezePattern(), input, dims));
+        public static UnSqueezeWrapper UnSqueeze(ExprPattern input, ExprPattern dims) => new UnSqueezeWrapper(new CallPattern(new UnSqueezePattern(), input, dims));
         public static QuantizeWrapper Quantize(ExprPattern input, ExprPattern zeroPoint, ExprPattern scale, DataType targetType) => new QuantizeWrapper(new CallPattern(new QuantizePattern(targetType), input, zeroPoint, scale));
         public static DeQuantizeWrapper DeQuantize(ExprPattern input, ExprPattern zeroPoint, ExprPattern scale, DataType targetType) => new DeQuantizeWrapper(new CallPattern(new DeQuantizePattern(targetType), input, zeroPoint, scale));
         // same like tensorflow
