@@ -12,7 +12,9 @@ namespace Nncase.Importer.TFLite
         private Expr VisitMatMul(in tflite.Operator op)
         {
             var (input, other) = GetInputExprs(op, 0, 1);
-            return F.Tensors.MatMul(input, other);
+            return F.Tensors.MatMul(
+                F.Tensors.Transpose(input, new[] { 1, 0 }),
+                other);
         }
     }
 }

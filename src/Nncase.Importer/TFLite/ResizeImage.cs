@@ -17,7 +17,9 @@ namespace Nncase.Importer.TFLite
         {
             var (input, newSize) = GetInputExprs(op, 0, 1);
             var (alignCorners, halfPixelCenters) = GetResizeOptions(op);
-            return F.Tensors.ResizeImage(resizeMode, input, newSize, alignCorners, halfPixelCenters); 
+            return Util.NCHWToNHWC(
+                F.Tensors.ResizeImage(
+                    resizeMode, Util.NHWCToNCHW(input), newSize, alignCorners, halfPixelCenters)); 
         }
 
         private (bool, bool) GetResizeOptions(in tflite.Operator op)

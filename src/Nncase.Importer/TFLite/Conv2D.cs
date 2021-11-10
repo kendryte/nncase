@@ -32,9 +32,9 @@ namespace Nncase.Importer.TFLite
             var dilation = Const.FromSpan<int>(new[] { dilationH, dilationW }, new[] { 2 });
             var padding = Const.FromSpan<int>(paddingValue, new[] { 2, 2 });
             var clamp = ToFloatClampRange(options.FusedActivationFunction);
-            return F.Math.Clamp(
-                F.NN.Conv2D(input, weights, bias, padding, stride, dilation, PadMode.Constant, 1),
-                clamp.Min, clamp.Max);
+            return Util.NCHWToNHWC(F.Math.Clamp(
+                F.NN.Conv2D(Util.NHWCToNCHW(input), Util.NHWCToNCHW(weights), bias, padding, stride, dilation, PadMode.Constant, 1),
+                clamp.Min, clamp.Max));
         }
 
         private Expr VisitDepthwiseConv2D(in tflite.Operator op)
@@ -63,9 +63,9 @@ namespace Nncase.Importer.TFLite
                                                 " is not supported");
             }
             var clamp = ToFloatClampRange(options.FusedActivationFunction);
-            return F.Math.Clamp(
-                F.NN.Conv2D(input, weights, bias, padding, stride, dilation, PadMode.Constant, 1),
-                clamp.Min, clamp.Max);
+            return Util.NCHWToNHWC(F.Math.Clamp(
+                F.NN.Conv2D(Util.NHWCToNCHW(input), Util.NHWCToNCHW(weights), bias, padding, stride, dilation, PadMode.Constant, 1),
+                clamp.Min, clamp.Max));
         }
 
         private static ValueRange<float> ToFloatClampRange(tflite.ActivationFunctionType func) => func switch

@@ -32,9 +32,9 @@ namespace Nncase.Importer.TFLite
             var dilation = Const.FromSpan<int>(new[] { dilationH, dilationW }, new[] { 2 });
             var padding = Const.FromSpan<int>(paddingValue, new[] { 2, 2 });
             var clamp = ValueRange<float>.Full;
-            return F.Math.Clamp(
-                F.NN.Conv2DTranspose(input, weights, bias, padding, stride, dilation, PadMode.Constant, 1),
-                clamp.Min, clamp.Max);
+            return Util.NCHWToNHWC(F.Math.Clamp(
+                F.NN.Conv2DTranspose(Util.NHWCToNCHW(input), Util.NHWCToNCHW(weights), bias, padding, stride, dilation, PadMode.Constant, 1),
+                clamp.Min, clamp.Max));
         }
     }
 }

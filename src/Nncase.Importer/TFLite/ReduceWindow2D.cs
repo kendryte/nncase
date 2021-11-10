@@ -29,7 +29,9 @@ namespace Nncase.Importer.TFLite
             var stride = Const.FromSpan<int>(new[] { strideH, strideW }, new[] { 2 });
             var dilation = Const.FromSpan<int>(new[] { dilationH, dilationW }, new[] { 2 });
             var padding = Const.FromSpan<int>(paddingValue, new[] { 2, 2 });
-            return F.Tensors.ReduceWindow2D(reduceOp, input, initValue, filter, stride, padding, dilation);
+            return Util.NCHWToNHWC(
+                F.Tensors.ReduceWindow2D(
+                    reduceOp, Util.NHWCToNCHW(input), initValue, filter, stride, padding, dilation));
         }
     }
 }
