@@ -36,11 +36,32 @@ def segment_close(gt: np.ndarray, pred: np.ndarray):
     return ret
 
 
+def top1(gt_res, result_res):
+    case_name = gt_res.split('/')[-2]
+    result_data_dict = {}
+    gt_data_dict = {}
+    with open(gt_res, 'r') as gt_f, open(result_res, 'r') as result_f:
+        for line in result_f.readlines():
+            result_data_dict[line.strip('\n').split(' ')[0]] = line.strip('\n').split(' ')[1]
+
+        for line in gt_f.readlines():
+            print(line)
+            gt_data_dict[line.strip('\n').split(' ')[0]] = line.strip('\n').split(' ')[1]
+
+    true_result = 0
+    for key, value in result_data_dict.items():
+        if (int(value) == int(gt_data_dict[key])):
+            true_result = true_result + 1
+    result_map = true_result / len(result_data_dict)
+    return result_map
+
+
 simarity_func = {
     'cosine': cosine,
     'euclidean': euclidean,
     'allclose': np.allclose,
-    'segment': segment_close
+    'segment': segment_close,
+    'top1': top1
 }
 
 
@@ -51,26 +72,34 @@ def compare(result_path: Tuple[str, str],
             threshold: float = 0.99,
             hist: bool = True) -> bool:
     # NOTE the result_path is Tuple[ bin_path, txt_path ]
-    ground_truth_path_bin, ground_truth_path_txt = result_path
-    result_path_bin, result_path_txt = ground_truth_path
-    if 'npy' in ground_truth_path_bin:  # bfloat16
-        # gt, pred = bytes.fromhex(gt.strip()), bytes.fromhex(pred.strip())
-        # gt, pred = struct.unpack('>H', gt)[0], struct.unpack('>H', pred)[0]
-        raise NotImplemented("need support bfloat16 judge!")
-    else:
-        gt_arr = np.fromfile(ground_truth_path_bin, dtype).astype(np.float32)
-        pred_arr = np.fromfile(result_path_bin, dtype).astype(np.float32)
-        if gt_arr.size == pred_arr.size:
-            simarity = simarity_func[simarity_name](gt_arr, pred_arr)
-        else:
-            raise ValueError("The number of elements in gt and result not match\n")
-        if hist:
-            y, x = np.histogram(gt_arr - pred_arr, 100)
-            p = Path(result_path_bin)
-            np.savetxt(str(p.parent / (p.stem + '_hist.csv')),
-                       np.stack((x[:-1], y)).T, fmt='%f', delimiter=',')
+    if simarity_name == "top1":
+        simarity = top1(ground_truth_path, result_path)
         simarity_info = f"\n{simarity_name} similarity = {simarity}, threshold = {threshold}\n"
-    if simarity_name in ['cosine', 'euclidean', 'segment']:
+    else:
+        ground_truth_path_bin, ground_truth_path_txt = result_path
+        result_path_bin, result_path_txt = ground_truth_path
+        # if simarity_name == "top1":
+        #     result = top1(ground_truth_path_txt, result_path_txt, result_path_txt.split('/')[3])
+        #     simarity_info = f"\n{simarity_name} similarity = {simarity}, threshold = {threshold}\n"
+        # else:
+        if 'npy' in ground_truth_path_bin:  # bfloat16
+            # gt, pred = bytes.fromhex(gt.strip()), bytes.fromhex(pred.strip())
+            # gt, pred = struct.unpack('>H', gt)[0], struct.unpack('>H', pred)[0]
+            raise NotImplemented("need support bfloat16 judge!")
+        else:
+            gt_arr = np.fromfile(ground_truth_path_bin, dtype).astype(np.float32)
+            pred_arr = np.fromfile(result_path_bin, dtype).astype(np.float32)
+            if gt_arr.size == pred_arr.size:
+                simarity = simarity_func[simarity_name](gt_arr, pred_arr)
+            else:
+                raise ValueError("The number of elements in gt and result not match\n")
+            if hist:
+                y, x = np.histogram(gt_arr - pred_arr, 100)
+                p = Path(result_path_bin)
+                np.savetxt(str(p.parent / (p.stem + '_hist.csv')),
+                           np.stack((x[:-1], y)).T, fmt='%f', delimiter=',')
+            simarity_info = f"\n{simarity_name} similarity = {simarity}, threshold = {threshold}\n"
+    if simarity_name in ['cosine', 'euclidean', 'segment', 'top1']:
         compare_op = lt
     else:
         compare_op = gt

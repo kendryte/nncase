@@ -13,9 +13,10 @@ import cv2
 import nncase
 import numpy as np
 import yaml
-form PIL import Image
+from PIL import Image
 
 from compare_util import compare
+from vgg_preprocess import preprocess_image
 
 
 class Edict:
@@ -68,6 +69,8 @@ class Edict:
                     for i in range(len(new_value['preprocess_opt'])):
                         self.case.preprocess_opt[i].values = copy.deepcopy(
                             new_value['preprocess_opt'][i]['values'])
+                    if isinstance(old_value, (Edict, dict)):
+                        old_value.update(new_value)
                 elif isinstance(new_value, dict):
                     old_value = getattr(self, name)
                     if old_value is None:
@@ -88,6 +91,14 @@ class Edict:
                     setattr(self, name, new_value)
             else:
                 setattr(self, name, new_value)
+
+
+def get_topK(info, k, result):
+    tmp = copy.deepcopy(result)
+    predictions = np.squeeze(tmp)
+    topK = predictions.argsort()[-k:]
+    print('{0}: top_{1} = {2}'.format(info, k, topK))
+    return topK
 
 
 def generate_random(shape: List[int], dtype: np.dtype,
@@ -157,47 +168,28 @@ def generate_image_dataset(shape: List[int], dtype: np.dtype,
         imgs.append(img)
     return np.stack(imgs)
 
-    
+
 def generate_imagenet_dataset(shape: List[int], dtype: np.dtype,
-                           batch_index: int, batch_size: int,
-                           dir_path: str) -> np.ndarry:
+                              batch_index: int, batch_size: int,
+                              dir_path: str) -> np.ndarray:
     """ read image from folder, return the rgb image with padding, dtype = float32, range = [0,255]. same as k210 carmera.
     """
     assert(os.path.isdir(dir_path) or os.path.exists(dir_path))
 
-    def preproc(img, input_size, transpose=True):
-        pass
-        # todo maybe need move this to postprocess
-        # if len(img.shape) == 3:
-        #     padded_img = np.ones((input_size[0], input_size[1], 3), dtype=np.uint8) * 114
-        # else:
-        #     padded_img = np.ones(input_size, dtype=np.uint8) * 114
-
-        # r = min(input_size[0] / img.shape[0], input_size[1] / img.shape[1])
-        # resized_img = cv2.resize(
-        #     img,
-        #     (int(img.shape[1] * r), int(img.shape[0] * r)),
-        #     interpolation=cv2.INTER_LINEAR,
-        # ).astype(np.uint8)
-        # padded_img[: int(img.shape[0] * r), : int(img.shape[1] * r)] = resized_img
-        # padded_img = cv2.cvtColor(padded_img, cv2.COLOR_BGR2RGB)
-        # if transpose:
-        #     padded_img = padded_img.transpose((2, 0, 1))
-        # padded_img = np.ascontiguousarray(padded_img)
-        # return padded_img
     img_paths = []
     if os.path.isdir(dir_path):
         img_paths.extend([os.path.join(dir_path, p) for p in os.listdir(dir_path)])
     else:
         img_paths.append(dir_path)
     imgs = []
-    for p in img_paths[batch_index * batch_size:
-                       (batch_index + 1) * batch_size]:
+    for p in img_paths[0:batch_size]:
         img_data = Image.open(p).convert('RGB')
         img_data = np.asarray(img_data, dtype=dtype)
-        data = preprocess_image(img_data, 224,224,False, 256,256,False)
+        data = preprocess_image(img_data, 224, 224, False, 256, 256, False)
         data = np.expand_dims(data, axis=0)
-    return np.stack(imgs)
+        imgs.append((data, p))
+    return imgs
+
 
 DataFactory = {
     'generate_random': generate_random,
@@ -465,11 +457,13 @@ class TestRunner(metaclass=ABCMeta):
                     f.write('\n'.join(pre_list[:]) + "\n")
                     f.write("-------------------------\n")
 
-            self.cpu_infer(case_dir, model_file, dict_args['input_type'])
+            self.cpu_infer(case_dir, model_file, dict_args['input_type'],
+                           "dataset" if cfg.generate_inputs.name == 'generate_imagenet_dataset' else "random")
             import_options, compile_options = self.get_compiler_options(dict_args, model_file)
             model_content = self.read_model_file(model_file)
-            self.run_evaluator(cfg, case_dir, import_options,
-                               compile_options, model_content, dict_args)
+            if cfg.generate_inputs.name != 'generate_imagenet_dataset':
+                self.run_evaluator(cfg, case_dir, import_options,
+                                   compile_options, model_content, dict_args)
             self.run_inference(cfg, case_dir, import_options,
                                compile_options, model_content, dict_args)
 
@@ -528,8 +522,12 @@ class TestRunner(metaclass=ABCMeta):
         arg_names = []
         arg_values = []
         for d in kwcfg:
-            arg_names.append(d.name)
-            arg_values.append(d.values)
+            if type(d) is dict:
+                arg_names.append(d['name'])
+                arg_values.append(d['values'])
+            else:
+                arg_names.append(d.name)
+                arg_values.append(d.values)
         return (arg_names, arg_values)
 
     def read_model_file(self, model_file: Union[List[str], str]):
@@ -584,19 +582,35 @@ class TestRunner(metaclass=ABCMeta):
 
         evaluator = compiler.create_evaluator(3)
         eval_output_paths = []
-        for i in range(len(self.inputs)):
-            input_tensor = nncase.RuntimeTensor.from_numpy(
-                self.transform_input(self.data_pre_process(self.inputs[i]['data']), "float32", "CPU"))
-            input_tensor.copy_to(evaluator.get_input_tensor(i))
-            evaluator.run()
+        if cfg.generate_inputs.name == "generate_imagenet_dataset":
+            # for i in range(len(self.inputs)):
+            topk = []
+            for in_data in self.inputs[0]['data']:
+                input_tensor = nncase.RuntimeTensor.from_numpy(in_data[0])
+                input_tensor.copy_to(evaluator.get_input_tensor(0))
+                evaluator.run()
+                result = evaluator.get_output_tensor(i).to_numpy()
+                topk.append((in_data[1], get_topK(kwargs['target'], 1, result)))
+            gnne_txt = "gnne_no_ptq.txt" if kwargs['ptq'] is False else "gnne_ptq.txt"
+            with open(os.path.join(eval_dir, gnne_txt), 'a') as f:
+                for i in range(len(topk)):
+                    f.write(topk[i][0].split("/")[-1] + " " + str(topk[i][1]) + '\n')
+            return os.path.join(eval_dir, gnne_txt)
 
-        for i in range(evaluator.outputs_size):
-            result = evaluator.get_output_tensor(i).to_numpy()
-            eval_output_paths.append((
-                os.path.join(eval_dir, f'nncase_result_{i}.bin'),
-                os.path.join(eval_dir, f'nncase_result_{i}.txt')))
-            result.tofile(eval_output_paths[-1][0])
-            self.totxtfile(eval_output_paths[-1][1], result)
+        else:
+            for i in range(len(self.inputs)):
+                input_tensor = nncase.RuntimeTensor.from_numpy(
+                    self.transform_input(self.data_pre_process(self.inputs[i]['data']), "float32", "CPU"))
+                input_tensor.copy_to(evaluator.get_input_tensor(i))
+                evaluator.run()
+
+            for i in range(evaluator.outputs_size):
+                result = evaluator.get_output_tensor(i).to_numpy()
+                eval_output_paths.append((
+                    os.path.join(eval_dir, f'nncase_result_{i}.bin'),
+                    os.path.join(eval_dir, f'nncase_result_{i}.txt')))
+                result.tofile(eval_output_paths[-1][0])
+                self.totxtfile(eval_output_paths[-1][1], result)
         return eval_output_paths
 
     def nncase_infer(self, cfg, case_dir: str,
@@ -637,8 +651,12 @@ class TestRunner(metaclass=ABCMeta):
             compiler.dump_range_options(dump_range_options)
         if kwargs['ptq']:
             ptq_options = nncase.PTQTensorOptions()
-            ptq_options.set_tensor_data(np.asarray(
-                [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.calibs]).tobytes())
+            if cfg.generate_calibs.name == "generate_imagenet_dataset":
+                ptq_options.set_tensor_data(np.asarray(
+                    [sample['data'] for sample in self.calibs]).tobytes())
+            else:
+                ptq_options.set_tensor_data(np.asarray(
+                    [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.calibs]).tobytes())
             ptq_options.samples_count = cfg.generate_calibs.batch_size
             compiler.use_ptq(ptq_options)
 
@@ -649,29 +667,44 @@ class TestRunner(metaclass=ABCMeta):
         sim = nncase.Simulator()
         sim.load_model(kmodel)
         infer_output_paths: List[np.ndarray] = []
-        for i in range(len(self.inputs)):
-            data = self.transform_input(self.inputs[i]['data'], preprocess['input_type'], "infer")
-            dtype = preprocess['input_type']
-            if preprocess['preprocess'] and dtype != 'float32':
-                data.tofile(os.path.join(case_dir, f'input_{i}_{dtype}.bin'))
-                self.totxtfile(os.path.join(case_dir, f'input_{i}_{dtype}.txt'), data)
+        if cfg.generate_inputs.name == "generate_imagenet_dataset":
+            # for i in range(len(self.inputs)):
+            topk = []
+            for in_data in self.inputs[0]['data']:
+                sim.set_input_tensor(0, nncase.RuntimeTensor.from_numpy(in_data[0]))
+                sim.run()
+                result = sim.get_output_tensor(0).to_numpy()
+                topk.append((in_data[1], get_topK(kwargs['target'], 1, result)))
+            gnne_txt = "gnne_no_ptq.txt" if kwargs['ptq'] is False else "gnne_ptq.txt"
+            with open(os.path.join(infer_dir, gnne_txt), 'a') as f:
+                for i in range(len(topk)):
+                    f.write(topk[i][0].split("/")[-1] + " " + str(topk[i][1][0]) + '\n')
+            return [os.path.join(infer_dir, gnne_txt)]
+        else:
+            for i in range(len(self.inputs)):
+                data = self.transform_input(
+                    self.inputs[i]['data'], preprocess['input_type'], "infer")
+                dtype = preprocess['input_type']
+                if preprocess['preprocess'] and dtype != 'float32':
+                    data.tofile(os.path.join(case_dir, f'input_{i}_{dtype}.bin'))
+                    self.totxtfile(os.path.join(case_dir, f'input_{i}_{dtype}.txt'), data)
 
-            sim.set_input_tensor(i, nncase.RuntimeTensor.from_numpy(data))
-        sim.run()
+                sim.set_input_tensor(i, nncase.RuntimeTensor.from_numpy(data))
+            sim.run()
 
-        for i in range(sim.outputs_size):
-            result = sim.get_output_tensor(i).to_numpy()
-            if preprocess['preprocess'] and len(result.shape) == 4:
-                if(preprocess['output_layout'] == 'NHWC' and self.model_type in ['caffe', 'onnx']):
-                    result = np.transpose(result, [0, 3, 1, 2])
-                elif (preprocess['output_layout'] == 'NCHW' and self.model_type in ['tflite']):
-                    result = np.transpose(result, [0, 2, 3, 1])
-            infer_output_paths.append((
-                os.path.join(infer_dir, f'nncase_result_{i}.bin'),
-                os.path.join(infer_dir, f'nncase_result_{i}.txt')))
-            result.tofile(infer_output_paths[-1][0])
-            self.totxtfile(infer_output_paths[-1][1], result)
-        return infer_output_paths
+            for i in range(sim.outputs_size):
+                result = sim.get_output_tensor(i).to_numpy()
+                if preprocess['preprocess'] and len(result.shape) == 4:
+                    if(preprocess['output_layout'] == 'NHWC' and self.model_type in ['caffe', 'onnx']):
+                        result = np.transpose(result, [0, 3, 1, 2])
+                    elif (preprocess['output_layout'] == 'NCHW' and self.model_type in ['tflite']):
+                        result = np.transpose(result, [0, 2, 3, 1])
+                infer_output_paths.append((
+                    os.path.join(infer_dir, f'nncase_result_{i}.bin'),
+                    os.path.join(infer_dir, f'nncase_result_{i}.txt')))
+                result.tofile(infer_output_paths[-1][0])
+                self.totxtfile(infer_output_paths[-1][1], result)
+            return infer_output_paths
 
     def on_test_start(self) -> None:
         pass
@@ -689,11 +722,12 @@ class TestRunner(metaclass=ABCMeta):
                     shape[0] *= cfg.batch_size
                 data = DataFactory[cfg.name](shape, input['dtype'], n, cfg.batch_size, **cfg.kwargs)
 
-                path_list.append(
-                    (os.path.join(case_dir, f'{name}_{n}_{i}.bin'),
-                     os.path.join(case_dir, f'{name}_{n}_{i}.txt')))
-                data.tofile(path_list[-1][0])
-                self.totxtfile(path_list[-1][1], data)
+                if cfg.name != "generate_imagenet_dataset":
+                    path_list.append(
+                        (os.path.join(case_dir, f'{name}_{n}_{i}.bin'),
+                         os.path.join(case_dir, f'{name}_{n}_{i}.txt')))
+                    data.tofile(path_list[-1][0])
+                    self.totxtfile(path_list[-1][1], data)
                 i += 1
                 input['data'] = data
 
