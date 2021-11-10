@@ -7,6 +7,7 @@ using System.Linq;
 using Nncase.IR;
 using F = Nncase.IR.F;
 using TensorType = tflite.TensorType;
+using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Importer.TFLite
 {
@@ -17,20 +18,17 @@ namespace Nncase.Importer.TFLite
             var (input, weights) = GetInputExprs(op, 0, 1);
             var bias = GetInputExprs(op, 2);
             var options = op.BuiltinOptionsAsTransposeConvOptions();
-            var inH = GetInputTensor(op, 0).Shape(2);
-            var inW = GetInputTensor(op, 0).Shape(3);
-            var fH = GetInputTensor(op, 1).Shape(2);
-            var fW = GetInputTensor(op, 1).Shape(3);
+            var (inH, inW) = Util.GetHW(input);
+            var (fH, fW) = Util.GetHW(weights);
             var strideH = options.StrideH;
             var strideW = options.StrideW;
             var dilationH = 1;
             var dilationW = 1;
             var padH = GetWindowedPadding(inH, fH, strideH, dilationH, options.Padding == tflite.Padding.SAME);
             var padW = GetWindowedPadding(inW, fW, strideW, dilationW, options.Padding == tflite.Padding.SAME);
-            var paddingValue = padH.Concat(padW).ToArray();
             var stride = Const.FromSpan<int>(new[] { strideH, strideW }, new[] { 2 });
             var dilation = Const.FromSpan<int>(new[] { dilationH, dilationW }, new[] { 2 });
-            var padding = Const.FromSpan<int>(paddingValue, new[] { 2, 2 });
+            var padding = Util.ConcatPadding(padH, padW);
             var clamp = ValueRange<float>.Full;
             return Util.NCHWToNHWC(F.Math.Clamp(
                 F.NN.Conv2DTranspose(Util.NHWCToNCHW(input), Util.NHWCToNCHW(weights), bias, padding, stride, dilation, PadMode.Constant, 1),
