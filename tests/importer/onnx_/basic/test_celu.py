@@ -20,7 +20,7 @@ from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
 
 
-def _make_module(in_shape, alpha, gamma):
+def _make_module(in_shape, alpha):
     inputs = []
     outputs = []
     initializers = []
@@ -39,13 +39,9 @@ def _make_module(in_shape, alpha, gamma):
     if alpha is not None:
         attributes_dict['alpha'] = alpha
 
-    # gamma
-    if gamma is not None:
-        attributes_dict['gamma'] = gamma
-
-    # Selu node
+    # Celu node
     node = onnx.helper.make_node(
-        'Selu',
+        'Celu',
         inputs=inputs,
         outputs=outputs,
         **attributes_dict
@@ -70,24 +66,17 @@ in_shapes = [
 
 alphas = [
     None,
-    1.5
-]
-
-gammas = [
-    None,
-    1.5
+    1.2
 ]
 
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('alpha', alphas)
-@pytest.mark.parametrize('gamma', gammas)
-def test_selu(in_shape, alpha, gamma, request):
-    model_def = _make_module(in_shape, alpha, gamma)
+def test_celu(in_shape, alpha, request):
+    model_def = _make_module(in_shape, alpha)
 
-    runner = OnnxTestRunner(request.node.name, ['cpu', 'k510', 'k230'])
+    runner = OnnxTestRunner(request.node.name)
     model_file = runner.from_onnx_helper(model_def)
     runner.run(model_file)
 
-
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_selu.py'])
+    pytest.main(['-vv', 'test_celu.py'])

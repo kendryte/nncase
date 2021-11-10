@@ -17,6 +17,7 @@
 | BatchNormalization | ✅ |
 | Cast | ✅ |
 | Ceil | ✅ |
+| Celu | ✅ |
 | Clip | ✅ |
 | Concat | ✅ |
 | Constant | ✅ |

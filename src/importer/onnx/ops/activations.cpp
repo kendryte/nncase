@@ -317,6 +317,66 @@ void onnx_importer::convert_op_Elu(const NodeProto &node)
     output_tensors_.emplace(output, &add->output());
 }
 
+// Celu(x) = max(0, x) + min(0, alpha * (exp(x / alpha) - 1))
+void onnx_importer::convert_op_Celu(const NodeProto &node)
+{
+    assert(node.input().size() == 1);
+    assert(node.output().size() == 1);
+
+    const auto &op_name { generate_name(node) };
+    const auto &input = node.input()[0];
+    const auto &output = node.output()[0];
+    auto in_shape = get_shape(input);
+
+    // alpha
+    const auto alpha_value = get_attribute<float>(node, "alpha").value_or(1.0f);
+    auto alpha = graph_.emplace<constant>(alpha_value);
+    alpha->name(op_name + ".alpha(Celu)");
+
+    auto zero = graph_.emplace<constant>(0.f);
+    zero->name(op_name + ".zero(Celu)");
+
+    auto max = graph_.emplace<binary>(binary_max, in_shape, zero->output().shape(), value_range<float>::nonnegative());
+    max->name(op_name + ".max(Celu)");
+
+    auto div = graph_.emplace<binary>(binary_div, in_shape, alpha->output().shape(), value_range<float>::full());
+    div->name(op_name + ".div(Celu)");
+
+    auto exp = graph_.emplace<unary>(unary_exp, div->output().shape());
+    exp->name(op_name + ".exp(Celu)");
+
+    auto one = graph_.emplace<constant>(1.f);
+    one->name(op_name + ".one(Celu)");
+
+    auto sub = graph_.emplace<binary>(binary_sub, exp->output().shape(), one->output().shape(), value_range<float>::full());
+    sub->name(op_name + ".sub(Celu)");
+
+    auto mul = graph_.emplace<binary>(binary_mul, sub->output().shape(), alpha->output().shape(), value_range<float>::full());
+    mul->name(op_name + ".mul(Celu)");
+
+    auto min = graph_.emplace<binary>(binary_min, mul->output().shape(), zero->output().shape(), value_range<float>::full());
+    min->name(op_name + ".min(Celu)");
+
+    auto add = graph_.emplace<binary>(binary_add, max->output().shape(), min->output().shape(), value_range<float>::full());
+    add->name(op_name + ".add(Celu)");
+
+    max->input_b().connect(zero->output());
+    div->input_b().connect(alpha->output());
+    exp->input().connect(div->output());
+    sub->input_a().connect(exp->output());
+    sub->input_b().connect(one->output());
+    mul->input_a().connect(sub->output());
+    mul->input_b().connect(alpha->output());
+    min->input_a().connect(mul->output());
+    min->input_b().connect(zero->output());
+    add->input_a().connect(max->output());
+    add->input_b().connect(min->output());
+
+    input_tensors_.emplace(&max->input_a(), input);
+    input_tensors_.emplace(&div->input_a(), input);
+    output_tensors_.emplace(output, &add->output());
+}
+
 // y = gamma * (alpha * e^x - alpha), for x <= 0
 // y = gamma * x,                     for x > 0
 // Selu(x) can be transformed as y = gamma * (alpha * min(e^x - 1, 0) + max(x, 0))
