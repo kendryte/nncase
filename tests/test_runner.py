@@ -570,6 +570,7 @@ class TestRunner(metaclass=ABCMeta):
         compile_options.dump_ir = cfg.compile_opt.dump_ir
         compile_options.dump_quant_error = cfg.compile_opt.dump_quant_error
         compile_options.dump_import_op_range = cfg.compile_opt.dump_import_op_range
+        compile_options.is_fpga = cfg.compile_opt.is_fpga
         compile_options.use_mse_quant_w = cfg.compile_opt.use_mse_quant_w
         compile_options.input_type = preprocess['input_type']
         compile_options.quant_type = cfg.compile_opt.quant_type
@@ -582,6 +583,7 @@ class TestRunner(metaclass=ABCMeta):
         compile_options.std = preprocess['std']
         compile_options.input_layout = preprocess['input_layout']
         compile_options.output_layout = preprocess['output_layout']
+        compile_options.tcu_num = cfg.compile_opt.tcu_num
         compiler = nncase.Compiler(compile_options)
         self.import_model(compiler, model_content, import_options)
 
