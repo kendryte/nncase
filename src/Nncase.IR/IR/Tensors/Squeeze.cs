@@ -14,7 +14,7 @@ namespace Nncase.IR.Tensors
     {
         public static ParameterInfo Input = new(typeof(Squeeze), 0, "input");
         
-        public static ParameterInfo Dims = new(typeof(Squeeze), 1, "dims");
+        public static ParameterInfo Dim = new(typeof(Squeeze), 1, "dim");
 
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context)

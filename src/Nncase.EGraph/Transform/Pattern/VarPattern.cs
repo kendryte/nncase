@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using Nncase.IR;
+using static Nncase.IR.Utility;
 
 namespace Nncase.Transform.Pattern
 {

@@ -719,12 +719,12 @@ namespace Nncase.Transform.Pattern.Tensors
         public Expr Input() => GetCast<Expr>(InputPat());
         public T Input<T>()
             where T : Expr => GetCast<T>(InputPat());
-        public ExprPattern DimsPat() => Pattern[Squeeze.Dims];
-        public T DimsPat<T>()
-            where T : ExprPattern => (T)DimsPat();
-        public Expr Dims() => GetCast<Expr>(DimsPat());
-        public T Dims<T>()
-            where T : Expr => GetCast<T>(DimsPat());
+        public ExprPattern DimPat() => Pattern[Squeeze.Dim];
+        public T DimPat<T>()
+            where T : ExprPattern => (T)DimPat();
+        public Expr Dim() => GetCast<Expr>(DimPat());
+        public T Dim<T>()
+            where T : Expr => GetCast<T>(DimPat());
         public static implicit operator CallPattern(SqueezeWrapper warper) => warper.Pattern;
     }
 
@@ -770,12 +770,12 @@ namespace Nncase.Transform.Pattern.Tensors
         public Expr Input() => GetCast<Expr>(InputPat());
         public T Input<T>()
             where T : Expr => GetCast<T>(InputPat());
-        public ExprPattern DimsPat() => Pattern[UnSqueeze.Dims];
-        public T DimsPat<T>()
-            where T : ExprPattern => (T)DimsPat();
-        public Expr Dims() => GetCast<Expr>(DimsPat());
-        public T Dims<T>()
-            where T : Expr => GetCast<T>(DimsPat());
+        public ExprPattern DimPat() => Pattern[UnSqueeze.Dim];
+        public T DimPat<T>()
+            where T : ExprPattern => (T)DimPat();
+        public Expr Dim() => GetCast<Expr>(DimPat());
+        public T Dim<T>()
+            where T : Expr => GetCast<T>(DimPat());
         public static implicit operator CallPattern(UnSqueezeWrapper warper) => warper.Pattern;
     }
 }

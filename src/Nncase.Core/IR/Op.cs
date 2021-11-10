@@ -8,6 +8,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using static Nncase.IR.Utility;
 
 namespace Nncase.IR
 {
@@ -22,11 +23,21 @@ namespace Nncase.IR
 
         public string Name { get; }
 
+        public TypePattern Pattern { get; } = IsType();
+
+        public bool CheckType(IRType type) => Pattern.MatchLeaf(type);
+
         public ParameterInfo(Type ownerType, int index, string name)
         {
             OwnerType = ownerType;
             Index = index;
             Name = name;
+        }
+
+        public ParameterInfo(Type ownerType, int index, string name, TypePattern pattern) :
+          this(ownerType, index, name)
+        {
+            Pattern = pattern;
         }
     }
 
@@ -71,7 +82,6 @@ namespace Nncase.IR
             }
             return ((IRType)(typeinferFunc.Invoke(this, targetParams.ToArray())
                   ?? throw new InvalidProgramException("The InferInvokeResultType Function must return IRType!"))).ThrowIfTypeInferenceInterrupt();
-
         }
     }
 }

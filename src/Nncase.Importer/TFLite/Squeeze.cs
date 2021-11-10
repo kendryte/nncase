@@ -14,14 +14,25 @@ namespace Nncase.Importer.TFLite
         {
             var input = GetInputExprs(op, 0);
             var options = op.BuiltinOptionsAsSqueezeOptions();
-            var dims = Const.FromSpan<int>(options.GetSqueezeDimsArray());
-            return F.Tensors.Squeeze(input, dims);
+            var dims = options.GetSqueezeDimsArray().ToList();
+            var tmp = input;
+            while (dims.Any())
+            {
+                var dim = dims.First();
+                tmp = F.Tensors.Squeeze(tmp, dim);
+                dims.ForEach(d =>
+                {
+                    if (d >= dim)
+                        d -= 1;
+                });
+            }
+            return tmp;
         }
-        
+
         private Expr VisitExpandDims(in tflite.Operator op)
         {
-            var (input, dims) = GetInputExprs(op, 0, 1);
-            return F.Tensors.UnSqueeze(input, dims);
+            var (input, dim) = GetInputExprs(op, 0, 1);
+            return F.Tensors.UnSqueeze(input, dim);
         }
     }
 }

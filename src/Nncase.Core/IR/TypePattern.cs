@@ -2,9 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
-using Nncase.IR;
 
-namespace Nncase.Transform.Pattern
+
+namespace Nncase.IR
 {
     public record TypePattern(Func<IRType, bool> Cond)
     {
@@ -27,7 +27,10 @@ namespace Nncase.Transform.Pattern
     {
         public static TypePattern IsAnyType() => new TypePattern(AnyType.Default);
 
+
         public static TypePattern HasType(Func<IRType, bool> TypeCond) => new TypePattern(TypeCond);
+
+        public static TypePattern IsType() => HasType(t => true);
 
         public static TypePattern HasType(IRType Type) => HasType(x => x == Type);
 
@@ -46,7 +49,15 @@ namespace Nncase.Transform.Pattern
                 _ => false
             });
 
-        public static TypePattern HasShape(Shape shape) => HasShape(x => x == shape);
+        public static TypePattern HasShape(Shape target_shape) => HasShape(
+          inshape =>
+            inshape.Rank == target_shape.Rank &&
+            inshape.Zip(target_shape).All(
+              (dim) => dim.Second == Dimension.Unknown ? true : dim.Second == dim.First
+            ));
+
+        public static TypePattern HasRank(int rank) => HasShape(
+          inshape => inshape.Rank == rank);
 
         public static TypePattern IsTensor() => new TypePattern(
           x => x switch
@@ -60,6 +71,14 @@ namespace Nncase.Transform.Pattern
           x => x switch
           {
               TensorType ttype => ttype.IsScalar,
+              _ => false
+          }
+        );
+
+        public static TypePattern IsScalar(TypePattern pattern) => new TypePattern(
+          x => x switch
+          {
+              TensorType ttype => ttype.IsScalar && pattern.MatchLeaf(x),
               _ => false
           }
         );
@@ -83,10 +102,5 @@ namespace Nncase.Transform.Pattern
               _ => false
           }
         );
-
-
-
     }
-
-
 }
