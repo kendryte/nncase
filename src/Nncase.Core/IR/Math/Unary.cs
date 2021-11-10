@@ -21,10 +21,9 @@ namespace Nncase.IR.Math
         public static readonly ParameterInfo Input = new(typeof(Unary), 0, "input");
 
         /// <inheritdoc/>
-        public override IRType InferInvokeResultType(ITypeInferenceContext context)
+        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input)
         {
-            var inputType = context.CheckArgumentType<TensorType>(this, Input);
-            return inputType;
+            return input;
         }
     }
 }

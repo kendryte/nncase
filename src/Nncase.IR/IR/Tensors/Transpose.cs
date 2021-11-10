@@ -26,7 +26,7 @@ namespace Nncase.IR.Tensors
         public static readonly ParameterInfo Perm = new(typeof(Transpose), 1, "perm");
 
         /// <inheritdoc/>
-        public override IRType InferInvokeResultType(ITypeInferenceContext context)
+        public IRType InferInvokeResultType(ITypeInferenceContext context)
         {
             throw new NotImplementedException();
         }

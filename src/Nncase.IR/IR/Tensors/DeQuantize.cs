@@ -15,7 +15,7 @@ namespace Nncase.IR.Tensors
         public static ParameterInfo Scale = new(typeof(DeQuantize), 1, "scale");
 
         /// <inheritdoc/>
-        public override IRType InferInvokeResultType(ITypeInferenceContext context)
+        public IRType InferInvokeResultType(ITypeInferenceContext context)
         {
             throw new NotImplementedException();
         }

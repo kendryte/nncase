@@ -46,7 +46,7 @@ namespace Nncase.IR.Tensors
         public static readonly ParameterInfo Dilation = new(typeof(ReduceWindow2D), 5, "dilation");
         
         /// <inheritdoc/>
-        public override IRType InferInvokeResultType(ITypeInferenceContext context)
+        public IRType InferInvokeResultType(ITypeInferenceContext context)
         {
             throw new NotImplementedException();
         }

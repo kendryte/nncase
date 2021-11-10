@@ -51,7 +51,7 @@ namespace Nncase.IR.NN
         public static readonly ParameterInfo Groups = new(typeof(Conv2DTranspose), 6, "groups");
         
         /// <inheritdoc/>
-        public override IRType InferInvokeResultType(ITypeInferenceContext context)
+        public IRType InferInvokeResultType(ITypeInferenceContext context)
         {
             throw new NotImplementedException();
         }

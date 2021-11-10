@@ -31,7 +31,7 @@ namespace Nncase.IR.Tensors
         public static readonly ParameterInfo Index = new(typeof(Gather), 2, "index");
 
         /// <inheritdoc/>
-        public override IRType InferInvokeResultType(ITypeInferenceContext context)
+        public IRType InferInvokeResultType(ITypeInferenceContext context)
         {
             throw new NotImplementedException();
         }

@@ -163,14 +163,14 @@ namespace Nncase.IR
 
         public static Const FromTensor<T>(DenseTensor<T> ts)
           where T : unmanaged
-          => FromSpan<T>(ts.Buffer.Span, new Shape(ts.Dimensions));
+          => FromSpan<T>(ts.Buffer.Span, new Shape(ts.Dimensions.ToArray()));
           
         public static Const FromTensor<T>(Tensor<T> ts)
           where T : unmanaged
           => FromTensor<T>(ts.ToDenseTensor());
 
         public static Const FromTensor(DenseTensor<int> ts)
-          => FromSpan<int>(ts.Buffer.Span, new Shape(ts.Dimensions));
+          => FromSpan<int>(ts.Buffer.Span, new Shape(ts.Dimensions.ToArray()));
 
         public static Const FromShape(Shape shape) => FromSpan<int>(shape.Select(x => x.FixedValue).ToArray(), new[] { shape.Rank });
 

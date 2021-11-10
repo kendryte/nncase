@@ -10,7 +10,7 @@ namespace Nncase.IR.NN
         public static readonly ParameterInfo Input = new(typeof(Sigmoid), 0, "input");
 
         /// <inheritdoc/>
-        public override IRType InferInvokeResultType(ITypeInferenceContext context)
+        public IRType InferInvokeResultType(ITypeInferenceContext context)
         {
             throw new NotImplementedException();
         }

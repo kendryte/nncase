@@ -26,7 +26,7 @@ namespace Nncase.IR.Tensors
         public static readonly ParameterInfo Shape = new(typeof(Broadcast), 1, "shape");
 
         /// <inheritdoc/>
-        public override IRType InferInvokeResultType(ITypeInferenceContext context)
+        public IRType InferInvokeResultType(ITypeInferenceContext context)
         {
             throw new NotImplementedException();
         }

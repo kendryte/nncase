@@ -17,7 +17,7 @@ namespace Nncase.IR.Tensors
         public static ParameterInfo Axis = new(typeof(Stack), 1, "axis");
 
         /// <inheritdoc/>
-        public override IRType InferInvokeResultType(ITypeInferenceContext context)
+        public IRType InferInvokeResultType(ITypeInferenceContext context)
         {
             throw new NotImplementedException();
         }

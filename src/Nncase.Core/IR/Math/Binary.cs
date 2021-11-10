@@ -26,11 +26,9 @@ namespace Nncase.IR.Math
         public static readonly ParameterInfo Rhs = new(typeof(Binary), 1, "rhs");
 
         /// <inheritdoc/>
-        public override IRType InferInvokeResultType(ITypeInferenceContext context)
+        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType lhs, TensorType rhs)
         {
-            var lhsType = context.CheckArgumentType<TensorType>(this, Lhs);
-            var rhsType = context.CheckArgumentType<TensorType>(this, Rhs);
-            return TypeInference.BroadcastType(lhsType, rhsType).ThrowIfTypeInferenceInterrupt();
+            return TypeInference.BroadcastType(lhs, rhs);
         }
     }
 }

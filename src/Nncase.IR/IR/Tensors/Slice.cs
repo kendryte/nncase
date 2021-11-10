@@ -41,7 +41,7 @@ namespace Nncase.IR.Tensors
         public static readonly ParameterInfo Strides = new(typeof(Slice), 4, "strides");
 
         /// <inheritdoc/>
-        public override IRType InferInvokeResultType(ITypeInferenceContext context)
+        public IRType InferInvokeResultType(ITypeInferenceContext context)
         {
             throw new NotImplementedException();
         }

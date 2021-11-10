@@ -65,33 +65,11 @@ namespace Nncase.IR
             _dimensions = dimensions.Select(x => new Dimension((int)x)).ToList().AsReadOnly();
         }
 
-        public static implicit operator Shape(int[] dimensions) => new Shape((ReadOnlySpan<int>)dimensions);
-
-        public static bool operator ==(Shape? left, Shape? right)
-        {
-            return EqualityComparer<Shape>.Default.Equals(left, right);
-        }
-
-        public static bool operator !=(Shape? left, Shape? right)
-        {
-            return !(left == right);
-        }
-
         /// <summary>
         /// Initializes a new instance of the <see cref="Shape"/> class.
         /// </summary>
         /// <param name="dimensions">Dimensions.</param>
-        public Shape(ReadOnlySpan<long> dimensions)
-        {
-            Kind = ShapeKind.Fixed;
-            _dimensions = dimensions.AsValueEnumerable().Select(x => new Dimension((int)x)).ToList().AsReadOnly();
-        }
-
-        /// <summary>
-        /// Initializes a new instance of the <see cref="Shape"/> class.
-        /// </summary>
-        /// <param name="dimensions">Dimensions.</param>
-        public Shape(ReadOnlySpan<int> dimensions)
+        public Shape(IEnumerable<int> dimensions)
         {
             Kind = ShapeKind.Fixed;
             _dimensions = dimensions.AsValueEnumerable().Select(x => new Dimension(x)).ToList().AsReadOnly();
@@ -101,6 +79,16 @@ namespace Nncase.IR
         {
             Kind = kind;
             _dimensions = dimensions.ToList().AsReadOnly();
+        }
+
+        public static bool operator ==(Shape? left, Shape? right)
+        {
+            return EqualityComparer<Shape>.Default.Equals(left, right);
+        }
+
+        public static bool operator !=(Shape? left, Shape? right)
+        {
+            return !(left == right);
         }
 
         /// <summary>
@@ -233,5 +221,8 @@ namespace Nncase.IR
 
         public static implicit operator ReadOnlySpan<int>(Shape shape) => shape._dimensions.Select(x => (int)(x.Value ?? -1)).ToArray();
 
+        public static implicit operator Shape(Dimension[] dimensions) => new Shape(dimensions);
+
+        public static implicit operator Shape(int[] dimensions) => new Shape(dimensions);
     }
 }

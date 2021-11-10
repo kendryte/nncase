@@ -18,7 +18,7 @@ namespace Nncase.IR.Tensors
 
         public static readonly ParameterInfo Paddings = new(typeof(SpaceToBatch), 2, "paddings");
 
-        public override IRType InferInvokeResultType(ITypeInferenceContext context)
+        public IRType InferInvokeResultType(ITypeInferenceContext context)
         {
             throw new NotImplementedException();
         }

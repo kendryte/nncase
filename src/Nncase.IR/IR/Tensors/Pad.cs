@@ -17,7 +17,7 @@ namespace Nncase.IR.Tensors
         public static ParameterInfo Value = new(typeof(Pad), 2, "Value");
 
         /// <inheritdoc/>
-        public override IRType InferInvokeResultType(ITypeInferenceContext context)
+        public IRType InferInvokeResultType(ITypeInferenceContext context)
         {
             throw new NotImplementedException();
         }

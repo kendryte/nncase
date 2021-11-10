@@ -31,7 +31,7 @@ namespace Nncase.IR.Math
         public static readonly ParameterInfo Max = new(typeof(Clamp), 2, "max");
 
         /// <inheritdoc/>
-        public override IRType InferInvokeResultType(ITypeInferenceContext context)
+        public IRType InferInvokeResultType(ITypeInferenceContext context)
         {
             var inputType = context.CheckArgumentType<TensorType>(this, Input);
             var minType = context.CheckArgumentType<TensorType>(this, Min);

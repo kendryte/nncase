@@ -21,7 +21,7 @@ namespace Nncase.IR.Tensors
         public static readonly ParameterInfo KeepDims = new(typeof(Reduce), 3, "KeepDims");
 
         /// <inheritdoc/>
-        public override IRType InferInvokeResultType(ITypeInferenceContext context)
+        public IRType InferInvokeResultType(ITypeInferenceContext context)
         {
             throw new NotImplementedException();
         }

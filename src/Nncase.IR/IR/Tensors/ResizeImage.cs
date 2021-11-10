@@ -36,7 +36,7 @@ namespace Nncase.IR.Tensors
         public static readonly ParameterInfo HalfPixelCenters = new(typeof(ResizeImage), 3, "half_pixel_centers");
 
         /// <inheritdoc/>
-        public override IRType InferInvokeResultType(ITypeInferenceContext context)
+        public IRType InferInvokeResultType(ITypeInferenceContext context)
         {
             throw new NotImplementedException();
         }

@@ -108,7 +108,7 @@ namespace Nncase.Importer.TFLite
             }
             else
             {
-                return new TensorType(dataType, new Shape(shape));
+                return new TensorType(dataType, new Shape(shape.ToArray()));
             }
         }
 

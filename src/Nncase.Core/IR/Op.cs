@@ -45,31 +45,33 @@ namespace Nncase.IR
                              select param).ToArray();
 
         /// <summary>
-        /// Inference type.
-        /// </summary>
-        /// <param name="context">Context.</param>
-        /// <returns>Inferred type.</returns>
-        public abstract IRType InferInvokeResultType(ITypeInferenceContext context);
-
-        /// <summary>
         /// Inference type (nothrow).
         /// </summary>
         /// <param name="context">Context.</param>
         /// <returns>Inferred type.</returns>
         internal IRType InferInvokeResultTypeNoThrow(ITypeInferenceContext context)
         {
-            try
+            var thistype = this.GetType();
+            var properties = thistype.GetFields(
+              BindingFlags.Public |
+              BindingFlags.Static);
+
+            var typeinferFunc = thistype.GetMethod("InferInvokeResultType") ??
+               throw new InvalidProgramException("The Ops Must Have `InferInvokeResultType` method!");
+            var inferFuncParams = typeinferFunc.GetParameters();
+            var inferTypedict = inferFuncParams.Skip(1).ToDictionary(p => p.Name ?? "_", p => p.ParameterType);
+            var targetParams = new List<object> { context };
+            foreach (var info in properties)
             {
-                return InferInvokeResultType(context);
+                var paraminfo = (ParameterInfo)(info.GetValue(null)
+                    ?? throw new InvalidProgramException($"Can't Get The ParameterInfo {info.Name}"));
+                var targetType = inferTypedict[paraminfo.Name];
+                var paramActualType = context.GetArgumentType(this, paraminfo).ThrowIfTypeInferenceInterrupt();
+                targetParams.Add(Convert.ChangeType(paramActualType, targetType));
             }
-            catch (TypeInferenceInterruptException ex)
-            {
-                return ex.Type;
-            }
-            catch (Exception ex)
-            {
-                return new InvalidType(ex.Message);
-            }
+            return ((IRType)(typeinferFunc.Invoke(this, targetParams.ToArray())
+                  ?? throw new InvalidProgramException("The InferInvokeResultType Function must return IRType!"))).ThrowIfTypeInferenceInterrupt();
+
         }
     }
 }

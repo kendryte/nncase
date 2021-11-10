@@ -17,7 +17,7 @@ namespace Nncase.IR.Tensors
         public static ParameterInfo Dims = new(typeof(UnSqueeze), 1, "dims");
 
         /// <inheritdoc/>
-        public override IRType InferInvokeResultType(ITypeInferenceContext context)
+        public IRType InferInvokeResultType(ITypeInferenceContext context)
         {
             throw new NotImplementedException();
         }
