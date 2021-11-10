@@ -17,6 +17,7 @@
 | BatchNormalization | ✅ |
 | Cast | ✅ |
 | Ceil | ✅ |
+| Celu | ✅ |
 | Clip | ✅ |
 | Concat | ✅ |
 | Constant | ✅ |
@@ -77,12 +78,15 @@
 | Reshape | ✅ |
 | Resize | ✅ |
 | Round | ✅ |
+| Selu | ✅ |
 | Shape | ✅ |
 | Sin | ✅ |
 | Sinh | ✅ |
 | Sigmoid | ✅ |
 | Slice | ✅ |
 | Softmax | ✅ |
+| Softplus | ✅ |
+| Softsign | ✅ |
 | SpaceToDepth | ✅ |
 | Split | ✅ |
 | Sqrt | ✅ |
