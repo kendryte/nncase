@@ -77,11 +77,11 @@ namespace Nncase.IR
                 var paraminfo = (ParameterInfo)(info.GetValue(null)
                     ?? throw new InvalidProgramException($"Can't Get The ParameterInfo {info.Name}"));
                 var targetType = inferTypedict[paraminfo.Name];
-                var paramActualType = context.GetArgumentType(this, paraminfo).ThrowIfTypeInferenceInterrupt();
+                var paramActualType = context.GetArgumentType(this, paraminfo);
                 targetParams.Add(Convert.ChangeType(paramActualType, targetType));
             }
             return ((IRType)(typeinferFunc.Invoke(this, targetParams.ToArray())
-                  ?? throw new InvalidProgramException("The InferInvokeResultType Function must return IRType!"))).ThrowIfTypeInferenceInterrupt();
+                  ?? throw new InvalidProgramException("The InferInvokeResultType Function must return IRType!")));
         }
     }
 }

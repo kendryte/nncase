@@ -7,6 +7,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Nncase.IR.Utility;
 
 namespace Nncase.IR.Tensors
 {
@@ -23,12 +24,26 @@ namespace Nncase.IR.Tensors
         /// <summary>
         /// Gets perm.
         /// </summary>
-        public static readonly ParameterInfo Perm = new(typeof(Transpose), 1, "perm");
+        public static readonly ParameterInfo Perm = new(typeof(Transpose), 1, "perm", IsTensor(HasRank(1) & IsIntegral()));
 
         /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context)
+        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType perm)
         {
-            throw new NotImplementedException();
+            if (!Perm.CheckType(perm))
+                return new InvalidType("The Perm RanK Must Equal 1");
+
+            if (context.GetArgument(this, Perm) is Const perm_con)
+            {
+                var permt = perm_con.ToTensor<int>();
+                var inshape = input.Shape;
+                var outshape = inshape.ToArray();
+                foreach (var i in Enumerable.Range(0, inshape.Rank))
+                {
+                    outshape[permt[i]] = inshape[i];
+                }
+                return input with { Shape = outshape };
+            }
+            return input with { Shape = new Shape(Enumerable.Repeat(Dimension.Unknown, input.Shape.Rank)) };
         }
     }
 }

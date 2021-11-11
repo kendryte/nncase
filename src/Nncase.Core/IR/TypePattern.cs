@@ -67,6 +67,15 @@ namespace Nncase.IR
           }
         );
 
+        public static TypePattern IsTensor(TypePattern pattern) => new TypePattern(
+          x => x switch
+          {
+              TensorType ttype => ttype.IsTensor,
+              _ => false
+          }
+        ) & pattern;
+
+
         public static TypePattern IsScalar() => new TypePattern(
           x => x switch
           {
@@ -78,10 +87,10 @@ namespace Nncase.IR
         public static TypePattern IsScalar(TypePattern pattern) => new TypePattern(
           x => x switch
           {
-              TensorType ttype => ttype.IsScalar && pattern.MatchLeaf(x),
+              TensorType ttype => ttype.IsScalar,
               _ => false
           }
-        );
+        ) & pattern;
 
         public static TypePattern IsIntegral() => new TypePattern(
           x => x switch

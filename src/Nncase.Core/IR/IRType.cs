@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -77,12 +78,26 @@ namespace Nncase.IR
     /// <summary>
     /// Tuple type.
     /// </summary>
-    public sealed record TupleType(ImmutableArray<IRType> Fields) : IRType
+    public sealed record TupleType(ImmutableArray<IRType> Fields) : IRType, IEnumerable<IRType>, IReadOnlyList<IRType>
     {
         /// <summary>
         /// Void type.
         /// </summary>
         public static readonly TupleType Void = new(ImmutableArray<IRType>.Empty);
+
+        public IRType this[int index] => ((IReadOnlyList<IRType>)Fields)[index];
+
+        public int Count => ((IReadOnlyCollection<IRType>)Fields).Count;
+
+        public IEnumerator<IRType> GetEnumerator()
+        {
+            return ((IEnumerable<IRType>)Fields).GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return ((IEnumerable)Fields).GetEnumerator();
+        }
     }
 
     /// <summary>
