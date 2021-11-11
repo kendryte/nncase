@@ -56,8 +56,9 @@ namespace Nncase.IR
               (dim) => dim.Second == Dimension.Unknown ? true : dim.Second == dim.First
             ));
 
-        public static TypePattern HasRank(int rank) => HasShape(
-          inshape => inshape.Rank == rank);
+        public static TypePattern HasRank(Func<int, bool> cond) => HasShape(
+          inshape => cond(inshape.Rank));
+        public static TypePattern HasRank(int rank) => HasRank(r => r == rank);
 
         public static TypePattern IsTensor() => new TypePattern(
           x => x switch

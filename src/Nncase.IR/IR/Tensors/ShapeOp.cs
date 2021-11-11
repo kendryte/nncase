@@ -23,7 +23,7 @@ namespace Nncase.IR.Tensors
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context)
         {
-            throw new NotImplementedException();
+            return new TensorType(DataType.Int32, new Shape(new[] { 1 }));
         }
     }
 }
