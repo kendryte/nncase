@@ -15,9 +15,19 @@ namespace Nncase.IR.Tensors
         public static ParameterInfo Scale = new(typeof(Quantize), 2, "scale");
 
         /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context)
+        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType zero_point, TensorType scale)
         {
-            throw new NotImplementedException();
+            if (!ZeroPoint.CheckType(zero_point))
+            {
+                return new InvalidType("DeQuantize zero_point must be scalar");
+            }
+
+            if (!Scale.CheckType(scale))
+            {
+                return new InvalidType("DeQuantize scale must be scalar");
+            }
+            
+            return new TensorType(TargetType, input.Shape);
         }
     }
 }
