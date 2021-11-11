@@ -115,12 +115,8 @@ onnx_importer::onnx_importer(std::span<const uint8_t> model, ir::graph &graph)
 
 void onnx_importer::import(const struct import_options &options, std::string &real_inlayout, std::string &real_outlayout)
 {
-    for (int i = 0; i < model_.opset_import().size(); ++i)
-    {
-        std::string domain = model_.opset_import(i).domain();
-        int64_t version = model_.opset_import(i).version();
-        opset_map_.emplace(domain, version);
-    }
+    for (auto &opset : model_.opset_import())
+        opset_map_.emplace(opset.domain(), opset.version());
 
     const auto &graph = model_.graph();
 
