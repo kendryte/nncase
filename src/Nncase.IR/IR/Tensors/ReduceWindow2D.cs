@@ -46,16 +46,6 @@ namespace Nncase.IR.Tensors
         /// </summary>
         public static readonly ParameterInfo Dilation = new(typeof(ReduceWindow2D), 5, "dilation", HasRank(1) & IsIntegral());
 
-        private int GetWindowedOutputSize(int size, int filter, int stride, int dilation, bool same)
-        {
-            var effective_filter_size = (filter - 1) * dilation + 1;
-            if (same)
-                return (size + stride - 1) / stride;
-            else
-                return (size - effective_filter_size + stride) / stride;
-        }
-
-
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType initValue, TensorType filter, TensorType stride, TensorType padding, TensorType dilation)
         {
@@ -84,7 +74,7 @@ namespace Nncase.IR.Tensors
 
                 return input with { Shape = new Shape(outshape) };
             }
-            return new InvalidType("Not Support Dynamic Input Padding!");
+            return new InvalidType("Can't Infer Shape With Dynamic Input!");
         }
     }
 }

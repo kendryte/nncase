@@ -7,12 +7,12 @@ namespace Nncase.IR.NN
         /// <summary>
         /// Gets input.
         /// </summary>
-        public static readonly ParameterInfo Input = new(typeof(Sigmoid), 0, "input");
+        public static readonly ParameterInfo Input = new(typeof(L2Normalization), 0, "input");
 
         /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context)
+        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input)
         {
-            throw new NotImplementedException();
+          return input;
         }
     }
 }

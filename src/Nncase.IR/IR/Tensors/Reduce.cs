@@ -7,6 +7,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Nncase.IR.Utility;
 
 namespace Nncase.IR.Tensors
 {
@@ -15,15 +16,30 @@ namespace Nncase.IR.Tensors
     /// </summary>
     public sealed record Reduce(ReduceOp ReduceOp) : Op
     {
-        public static readonly ParameterInfo Input = new(typeof(Reduce), 0, "Input");
-        public static readonly ParameterInfo Axis = new(typeof(Reduce), 1, "Axis");
-        public static readonly ParameterInfo InitValue = new(typeof(Reduce), 2, "InitValue");
-        public static readonly ParameterInfo KeepDims = new(typeof(Reduce), 3, "KeepDims");
+        public static readonly ParameterInfo Input = new(typeof(Reduce), 0, "input");
+        public static readonly ParameterInfo Axis = new(typeof(Reduce), 1, "axis", IsScalar() & IsIntegral());
+        public static readonly ParameterInfo InitValue = new(typeof(Reduce), 2, "initValue", IsScalar());
+        public static readonly ParameterInfo KeepDims = new(typeof(Reduce), 3, "keepDims", IsScalar() & IsIntegral());
 
         /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context)
+        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType axis,
+          TensorType initValue, TensorType keepDims)
         {
-            throw new NotImplementedException();
+            Axis.CheckTypeThrow(axis);
+            InitValue.CheckTypeThrow(initValue);
+            KeepDims.CheckTypeThrow(keepDims);
+            if (context.GetArgument(this, KeepDims) is Const keepDims_con &&
+                context.GetArgument(this, Axis) is Const axis_con)
+            {
+                var axis_v = axis_con.ToScalar<int>();
+                var outshape = input.Shape.ToList();
+                if (1 == keepDims_con.ToScalar<int>())
+                    outshape[axis_v] = 1;
+                else
+                    outshape.RemoveAt(axis_v);
+                return input with { Shape = new Shape(outshape) };
+            }
+            return new InvalidType("Can't Infer Shape With Dynamic Input!");
         }
     }
 }

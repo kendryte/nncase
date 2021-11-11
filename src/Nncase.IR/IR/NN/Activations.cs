@@ -21,66 +21,50 @@ namespace Nncase.IR.NN
         public static readonly ParameterInfo Input = new(typeof(Sigmoid), 0, "input");
 
         /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context)
-        {
-            var inputType = context.CheckArgumentType<TensorType>(this, Input);
-            return inputType;
-        }
+        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input) => input;
     }
-    
+
     public sealed record Relu() : Op
     {
         /// <summary>
         /// Gets input.
         /// </summary>
-        public static readonly ParameterInfo Input = new(typeof(Sigmoid), 0, "input");
+        public static readonly ParameterInfo Input = new(typeof(Relu), 0, "input");
 
         /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context)
-        {
-            throw new NotImplementedException();
-        }
+        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input) => input;
     }
-    
+
     public sealed record Relu6() : Op
     {
         /// <summary>
         /// Gets input.
         /// </summary>
-        public static readonly ParameterInfo Input = new(typeof(Sigmoid), 0, "input");
+        public static readonly ParameterInfo Input = new(typeof(Relu6), 0, "input");
 
         /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context)
-        {
-            throw new NotImplementedException();
-        }
+        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input) => input;
     }
-    
+
     public sealed record PRelu() : Op
     {
         /// <summary>
         /// Gets input.
         /// </summary>
-        public static readonly ParameterInfo Input = new(typeof(Sigmoid), 0, "input");
+        public static readonly ParameterInfo Input = new(typeof(PRelu), 0, "input");
 
         /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context)
-        {
-            throw new NotImplementedException();
-        }
+        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input) => input;
     }
-    
+
     public sealed record LeakyRelu() : Op
     {
         /// <summary>
         /// Gets input.
         /// </summary>
-        public static readonly ParameterInfo Input = new(typeof(Sigmoid), 0, "input");
+        public static readonly ParameterInfo Input = new(typeof(LeakyRelu), 0, "input");
 
         /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context)
-        {
-            throw new NotImplementedException();
-        }
+        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input) => input;
     }
 }

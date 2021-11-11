@@ -1,4 +1,5 @@
 using System;
+using static Nncase.IR.Utility;
 
 namespace Nncase.IR.NN
 {
@@ -7,26 +8,26 @@ namespace Nncase.IR.NN
         /// <summary>
         /// Gets input.
         /// </summary>
-        public static readonly ParameterInfo Input = new(typeof(Sigmoid), 0, "input");
+        public static readonly ParameterInfo Input = new(typeof(SoftMax), 0, "input");
 
         /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context)
+        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input)
         {
-            throw new NotImplementedException();
+            return input;
         }
     }
-    
+
     public sealed record LogSoftMax() : Op
     {
         /// <summary>
         /// Gets input.
         /// </summary>
-        public static readonly ParameterInfo Input = new(typeof(Sigmoid), 0, "input");
+        public static readonly ParameterInfo Input = new(typeof(LogSoftMax), 0, "input");
 
         /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context)
+        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input)
         {
-            throw new NotImplementedException();
+            return input;
         }
     }
 }

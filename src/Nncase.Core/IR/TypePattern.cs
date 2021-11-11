@@ -112,5 +112,14 @@ namespace Nncase.IR
               _ => false
           }
         );
+
+        public static int GetWindowedOutputSize(int size, int filter, int stride, int dilation, bool same)
+        {
+            var effective_filter_size = (filter - 1) * dilation + 1;
+            if (same)
+                return (size + stride - 1) / stride;
+            else
+                return (size - effective_filter_size + stride) / stride;
+        }
     }
 }
