@@ -44,18 +44,32 @@ namespace Nncase.IR.Tensors
             {
                 var axis_v = axis_con.ToScalar<int>();
                 var sections_v = sections_con.ToTensor<int>();
+                var inshape = input.Shape.ToArray();
+                if (inshape[axis_v] == Dimension.Unknown)
+                    return new InvalidType("The Input Shape Axis Can Not Be Unknown!");
 
-                // var dim_v = dim_con.ToScalar<int>();
-                // var outshape = input.Shape.ToList();
-                // if (outshape[dim_v].IsFixed && outshape[dim_v].FixedValue == 1)
-                // {
-                //     outshape.RemoveAt(dim_v);
-                //     return input with { Shape = new Shape(outshape) };
-                // }
-                // return new InvalidType("The Shape[dim] is not 1!");
+                if (sections_v.Length == 1) /* split */
+                {
+                    if (0 != inshape[axis_v].FixedValue % sections_v[0])
+                        return new InvalidType("The Section Value Not Match Shape[Axis]!");
+                    var outshape = new Dimension[inshape.Length];
+                    Array.Copy(inshape, outshape, inshape.Length);
+                    outshape[axis_v] = new Dimension(inshape[axis_v].FixedValue / sections_v[0]);
+                    return new TupleType(Enumerable.Repeat((IRType)(input with { Shape = new Shape(outshape) }), sections_v[0]));
+                }
+                else
+                {
+                    if (sections_v.Sum() != inshape[axis_v].FixedValue)
+                        return new InvalidType("The Sections Sum Must Equal To Shape[Axis]!");
+                    var outshape = new Dimension[inshape.Length];
+                    Array.Copy(inshape, outshape, inshape.Length);
+                    return new TupleType(from section in sections_v
+                                         let x = (outshape[axis_v] = section)
+                                         select input with { Shape = new Shape(outshape) });
+
+                }
             }
             return new InvalidType("The Sections And Axis Must Be Const!");
-
         }
     }
 }

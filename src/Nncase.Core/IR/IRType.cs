@@ -85,6 +85,8 @@ namespace Nncase.IR
         /// </summary>
         public static readonly TupleType Void = new(ImmutableArray<IRType>.Empty);
 
+        public TupleType(IEnumerable<IRType> Fields) : this(Fields.ToImmutableArray()) { }
+
         public IRType this[int index] => ((IReadOnlyList<IRType>)Fields)[index];
 
         public int Count => ((IReadOnlyCollection<IRType>)Fields).Count;
