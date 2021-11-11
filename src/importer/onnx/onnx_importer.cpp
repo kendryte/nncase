@@ -115,6 +115,13 @@ onnx_importer::onnx_importer(std::span<const uint8_t> model, ir::graph &graph)
 
 void onnx_importer::import(const struct import_options &options, std::string &real_inlayout, std::string &real_outlayout)
 {
+    for (int i = 0; i < model_.opset_import().size(); ++i)
+    {
+        std::string domain = model_.opset_import(i).domain();
+        int64_t version = model_.opset_import(i).version();
+        opset_map_.emplace(domain, version);
+    }
+
     const auto &graph = model_.graph();
 
     for (const auto &node : graph.node())
@@ -207,6 +214,23 @@ void onnx_importer::convert_op(const NodeProto &node)
 #undef DEFINE_OPCODE
 
     throw runtime_error("Not supported ONNX opcode: " + op_type);
+}
+
+int64_t onnx_importer::get_opset_version(std::string domain) const
+{
+    if (opset_map_.empty())
+    {
+        return 1;
+    }
+    else if (opset_map_.size() == 1)
+    {
+        return opset_map_.begin()->second;
+    }
+    else
+    {
+        assert(opset_map_.count(domain));
+        return opset_map_.at(domain);
+    }
 }
 
 optional<ValueInfoProto> onnx_importer::find_value_info(const string &value) const

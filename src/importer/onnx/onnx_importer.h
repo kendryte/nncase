@@ -59,9 +59,6 @@ private:
     template <class Node>
     void convert_conv(const onnx::NodeProto &node);
 
-    template <class Node>
-    Node *add_conv_node([[maybe_unused]] const onnx::NodeProto &node, ir::graph &graph, ir::shape_t input_shape, ir::shape_t weight_shape, const std::size_t group, const std::array<padding, 2> &pads, const std::array<size_t, 2> &strides, const std::array<size_t, 2> &dilations);
-
     std::optional<onnx::ValueInfoProto> find_value_info(const std::string &value) const;
     nncase::ir::shape_t get_shape(const std::string &value) const;
     static nncase::ir::shape_t get_shape(const onnx::ValueInfoProto &value);
@@ -131,10 +128,11 @@ private:
 
     nncase::ir::shape_t broadcast_shape(const nncase::ir::shape_t &v_shape, const nncase::ir::shape_t &input_shape) noexcept;
     std::string generate_name(const onnx::NodeProto &node) const;
+    int64_t get_opset_version(std::string domain = "") const;
 
     ir::graph &graph_;
     onnx::ModelProto model_;
-
+    std::unordered_map<std::string, int64_t> opset_map_;
     std::unordered_map<ir::input_connector *, std::string> input_tensors_;
     std::unordered_map<std::string, ir::output_connector *> output_tensors_;
     std::unordered_map<std::string, std::string> passthrough_connections_;
