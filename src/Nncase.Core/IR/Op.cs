@@ -27,6 +27,13 @@ namespace Nncase.IR
 
         public bool CheckType(IRType type) => Pattern.MatchLeaf(type);
 
+        public bool CheckTypeThrow(IRType type) =>
+          Pattern.MatchLeaf(type) ?
+            true :
+            throw new TypeInferenceInterruptException(
+              new InvalidType($"The {Name} Type or Shape Is InValid!")
+            );
+
         public ParameterInfo(Type ownerType, int index, string name)
         {
             OwnerType = ownerType;

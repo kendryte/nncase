@@ -111,5 +111,11 @@ namespace Nncase.IR
         {
             return HashCode.Combine(Kind, Value);
         }
+
+        public static Dimension operator +(Dimension lhs, Dimension rhs) => (lhs.IsFixed, lhs.IsFixed) switch
+        {
+            (true, true) => lhs.FixedValue + rhs.FixedValue,
+            (_, _) => Dimension.Unknown
+        };
     }
 }
