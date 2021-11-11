@@ -7,6 +7,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using NetFabric.Hyperlinq;
 
 namespace Nncase.IR.Tensors
 {
@@ -31,9 +32,11 @@ namespace Nncase.IR.Tensors
         public static readonly ParameterInfo Index = new(typeof(Gather), 2, "index");
 
         /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context)
+        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType axis, TensorType index)
         {
-            throw new NotImplementedException();
+            var axisValue = (context.GetArgument(this, Axis) as Const).ToScalar<int>();
+            var newShape = input.Shape.InsertAndClone(axisValue, index.Shape);
+            return new TensorType(input.DType, newShape);
         }
     }
 }

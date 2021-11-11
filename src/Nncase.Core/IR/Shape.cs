@@ -175,10 +175,26 @@ namespace Nncase.IR
         /// <summary>
         /// Copy all dimensions to an array.
         /// </summary>
-        /// <param name="array">The desitination array.</param>
+        /// <param name="array">The destination array.</param>
         /// <param name="arrayIndex">The zero-based index in array at which copying begins.</param>
         public void CopyTo(Dimension[] array, int arrayIndex) => _dimensions.CopyTo(array, arrayIndex);
 
+        public Shape InsertAndCopy(int index, Dimension dim)
+        {
+            var l = _dimensions.ToList();
+            l.Insert(index, dim);
+            return new Shape(l);
+        }
+        
+        public Shape InsertAndClone(int index, IEnumerable<Dimension> dims)
+        {
+            var l = _dimensions.ToList();
+            foreach (var d in dims)
+            {
+                l.Insert(index++, d);
+            }
+            return new Shape(l);
+        }
         /// <summary>
         /// Get enumerator.
         /// </summary>
