@@ -34,9 +34,20 @@ namespace Nncase.IR.Tensors
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType axis, TensorType index)
         {
-            var axisValue = (context.GetArgument(this, Axis) as Const).ToScalar<int>();
-            var newShape = input.Shape.InsertAndClone(axisValue, index.Shape);
-            return new TensorType(input.DType, newShape);
+            if (!Axis.CheckType(axis))
+            {
+                return new InvalidType("Gather axis must be scalar");
+            }
+
+            if (context.GetArgument(this, Axis) is Const axisValue)
+            {
+                var newShape = input.Shape.InsertAndClone(axisValue.ToScalar<int>(), index.Shape);
+                return new TensorType(input.DType, newShape);
+            }
+            else
+            {
+                return new InvalidType("Gather axis must be constant");
+            }
         }
     }
 }
