@@ -39,9 +39,9 @@ def _make_module(in_shape, axis, op_version):
     if axis is not None:
         attributes_dict['axis'] = axis
 
-    # Softmax node
+    # LogSoftmax node
     node = onnx.helper.make_node(
-        'Softmax',
+        'LogSoftmax',
         inputs=inputs,
         outputs=outputs,
         **attributes_dict
@@ -85,7 +85,7 @@ op_versions = [
 @pytest.mark.parametrize('in_shape', in_shapes)
 @pytest.mark.parametrize('axis', axes)
 @pytest.mark.parametrize('op_version', op_versions)
-def test_softmax(in_shape, axis, op_version, request):
+def test_logsoftmax(in_shape, axis, op_version, request):
     if (op_version in [1, 11] and axis in [None, 1, -3]) or op_version == 13:
         model_def = _make_module(in_shape, axis, op_version)
 
@@ -94,4 +94,4 @@ def test_softmax(in_shape, axis, op_version, request):
         runner.run(model_file)
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_softmax.py'])
+    pytest.main(['-vv', 'test_logsoftmax.py'])

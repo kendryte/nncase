@@ -49,6 +49,7 @@
 | LpNormalization | ✅ |
 | LeakyRelu | ✅ |
 | Log | ✅ |
+| LogSoftmax | ✅ |
 | LRN | ✅ |
 | MatMul | ✅ |
 | MaxPool | ✅ |

@@ -17,10 +17,11 @@
 #include <nncase/schedule/buffer_allocator.h>
 #include <nncase/targets/neutral_target.h>
 #include <nncase/transforms/neutral/add_quant_checkpoints.h>
+#include <nncase/transforms/neutral/binary_motion.h>
 #include <nncase/transforms/neutral/dequantize_motion.h>
 #include <nncase/transforms/neutral/fold_bitcast.h>
 #include <nncase/transforms/neutral/fold_constant.h>
-#include <nncase/transforms/neutral/fold_conv2d_biasadd.h>
+#include <nncase/transforms/neutral/fold_conv2d_binary.h>
 #include <nncase/transforms/neutral/fold_convert.h>
 #include <nncase/transforms/neutral/fold_dilated_conv2d.h>
 #include <nncase/transforms/neutral/fold_pad.h>
@@ -124,7 +125,10 @@ void neutral_target::add_default_transforms(ir::transforms::transform_pass &pass
     pass.emplace<fuse_clamp_conv2d_transpose_transform>();
     pass.emplace<fuse_clamp_binary_transform>();
 
+    pass.emplace<binary_reduce_window2d_motion_up_transform>();
+
     pass.emplace<fold_conv2d_biasadd_transform>();
+    pass.emplace<fold_conv2d_mul_transform>();
     pass.emplace<transpose_reduce_motion_transform>();
     pass.emplace<transpose_unary_motion_transform>();
     pass.emplace<simplify_reduce_transform>();
