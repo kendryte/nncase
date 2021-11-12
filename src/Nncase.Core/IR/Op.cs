@@ -85,10 +85,13 @@ namespace Nncase.IR
                     ?? throw new InvalidProgramException($"Can't Get The ParameterInfo {info.Name}"));
                 var targetType = inferTypedict[paraminfo.Name];
                 var paramActualType = context.GetArgumentType(this, paraminfo);
-                targetParams.Add(Convert.ChangeType(paramActualType, targetType));
+                var paramTensorType = Convert.ChangeType(paramActualType, targetType);
+                paraminfo.CheckTypeThrow(paramTensorType as TensorType);
+                targetParams.Add(paramTensorType);
             }
+
             return ((IRType)(typeinferFunc.Invoke(this, targetParams.ToArray())
-                  ?? throw new InvalidProgramException("The InferInvokeResultType Function must return IRType!")));
+                             ?? throw new InvalidProgramException("The InferInvokeResultType Function must return IRType!")));
         }
     }
 }
