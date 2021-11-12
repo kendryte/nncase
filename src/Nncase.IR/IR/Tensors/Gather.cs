@@ -41,6 +41,7 @@ namespace Nncase.IR.Tensors
 
             if (context.GetArgument(this, Axis) is Const axisValue)
             {
+                // input_shape[:axis] + index_shape + input_shape[axis + 1:]
                 var newShape = input.Shape.InsertAndClone(axisValue.ToScalar<int>(), index.Shape);
                 return new TensorType(input.DType, newShape);
             }

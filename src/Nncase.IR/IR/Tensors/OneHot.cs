@@ -18,7 +18,7 @@ namespace Nncase.IR.Tensors
         /// <summary>
         /// Gets input.
         /// </summary>
-        public static readonly ParameterInfo Input = new(typeof(OneHot), 0, "input");
+        public static readonly ParameterInfo Indices = new(typeof(OneHot), 0, "indices");
 
         /// <summary>
         /// Gets depth.
@@ -41,9 +41,37 @@ namespace Nncase.IR.Tensors
         public static readonly ParameterInfo Axis = new(typeof(OneHot), 4, "axis");
         
         /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context)
+        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType indices, TensorType depth, TensorType on_value, TensorType off_value, TensorType axis)
         {
-            throw new NotImplementedException();
+            if (!Depth.CheckType(depth))
+            {
+                return new InvalidType("OneHot depth must be scalar");
+            }
+            
+            if (!OnValue.CheckType(on_value))
+            {
+                return new InvalidType("OneHot on_value must be scalar");
+            }
+            
+            if (!OffValue.CheckType(off_value))
+            {
+                return new InvalidType("OneHot off_value must be scalar");
+            }
+            
+            if (!Axis.CheckType(axis))
+            {
+                return new InvalidType("OneHot axis must be scalar");
+            }
+            
+            // indices_shape[:axis] + [depth] + indices_shape[axis:]
+            if (context.GetArgument(this, Axis) is Const axisValue
+                && context.GetArgument(this, Depth) is Const depthValue)
+            {
+                var newShape = indices.Shape.InsertAndClone(axisValue.ToScalar<int>(), depthValue.ToScalar<int>());
+                return new TensorType(on_value.DType, newShape);
+            }
+
+            return new InvalidType("OneHot axis or depth is not const");
         }
     }
 }

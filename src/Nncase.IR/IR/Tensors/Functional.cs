@@ -30,7 +30,7 @@ namespace Nncase.IR.F
 
         public static Call MatMul(Expr input, Expr other) => new Call(new MatMul(), input, other);
 
-        public static Call OneHot(OneHotMode oneHotMode, Expr input, Expr depth, Expr onValue, Expr offValue, Expr axis) => new Call(new OneHot(oneHotMode), input, depth, onValue, offValue, axis);
+        public static Call OneHot(OneHotMode oneHotMode, Expr indices, Expr depth, Expr onValue, Expr offValue, Expr axis) => new Call(new OneHot(oneHotMode), indices, depth, onValue, offValue, axis);
 
         /// Pads is Const tensor, shape = [channels, 2(before, after)]
         public static Call Pad(Expr input, Expr pads, PadMode mode, Expr value) => new Call(new Pad(mode), input, pads, value);

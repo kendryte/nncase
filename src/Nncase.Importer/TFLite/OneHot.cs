@@ -11,9 +11,9 @@ namespace Nncase.Importer.TFLite
     {
         private Expr VisitOneHot(in tflite.Operator op)
         {
-            var (input, depth) = GetInputExprs(op, 0, 1);
+            var (indices, depth) = GetInputExprs(op, 0, 1);
             var (onValue, offValue) = GetInputExprs(op, 2, 3);
-            return F.Tensors.OneHot(OneHotMode.Normal, input, depth, onValue, offValue,
+            return F.Tensors.OneHot(OneHotMode.Normal, indices, depth, onValue, offValue,
                 op.BuiltinOptionsAsOneHotOptions().Axis);
         }
     }
