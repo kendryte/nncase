@@ -17,6 +17,7 @@
 #include <nncase/schedule/buffer_allocator.h>
 #include <nncase/targets/neutral_target.h>
 #include <nncase/transforms/neutral/add_quant_checkpoints.h>
+#include <nncase/transforms/neutral/binary_motion.h>
 #include <nncase/transforms/neutral/dequantize_motion.h>
 #include <nncase/transforms/neutral/fold_bitcast.h>
 #include <nncase/transforms/neutral/fold_constant.h>
@@ -41,7 +42,6 @@
 #include <nncase/transforms/neutral/split_to_slice.h>
 #include <nncase/transforms/neutral/take_to_slice.h>
 #include <nncase/transforms/neutral/transpose_motion.h>
-#include <nncase/transforms/neutral/binary_motion.h>
 #include <nncase/transforms/pass.h>
 
 using namespace nncase;

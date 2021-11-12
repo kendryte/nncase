@@ -51,8 +51,7 @@ bool binary_reduce_window2d_motion_up_transform::on_try_match(node &node, transf
         {
             auto data = as_span<const float>(c->data());
             if (b->binary_op() == binary_mul
-                && std::any_of(data.begin(), data.end(), [](float v)
-                    { return v < 0.f; }))
+                && std::any_of(data.begin(), data.end(), [](float v) { return v < 0.f; }))
                 return false;
 
             context.matched_nodes.emplace_back(conv);

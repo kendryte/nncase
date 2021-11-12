@@ -17,14 +17,14 @@
 
 namespace nncase::ir::transforms
 {
-#define DEFINE_BINARY_MOTION(name)                                                \
-    class NNCASE_API binary_##name##_motion_up_transform : public transform       \
-    {                                                                             \
-    public:                                                                       \
-        void process(transform_context &context) override;                        \
-                                                                                  \
-    protected:                                                                    \
-        bool on_try_match(ir::node &node, transform_context &context) override;   \
+#define DEFINE_BINARY_MOTION(name)                                              \
+    class NNCASE_API binary_##name##_motion_up_transform : public transform     \
+    {                                                                           \
+    public:                                                                     \
+        void process(transform_context &context) override;                      \
+                                                                                \
+    protected:                                                                  \
+        bool on_try_match(ir::node &node, transform_context &context) override; \
     };
 
 DEFINE_BINARY_MOTION(reduce_window2d)
