@@ -179,6 +179,11 @@ namespace Nncase.IR
         /// <param name="arrayIndex">The zero-based index in array at which copying begins.</param>
         public void CopyTo(Dimension[] array, int arrayIndex) => _dimensions.CopyTo(array, arrayIndex);
 
+        public Dimension Prod()
+        {
+            return _dimensions.Aggregate(new Dimension(1), (x, y) => x * y);
+        }
+        
         public Shape InsertAndClone(int index, Dimension dim)
         {
             var l = _dimensions.ToList();

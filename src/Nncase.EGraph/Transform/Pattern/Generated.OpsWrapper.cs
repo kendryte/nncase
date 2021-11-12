@@ -418,7 +418,7 @@ namespace Nncase.Transform.Pattern.Tensors
 
     public sealed record OneHotWrapper(CallPattern Pattern) : PatternWrapper
     {
-        public ExprPattern InputPat() => Pattern[OneHot.Input];
+        public ExprPattern InputPat() => Pattern[OneHot.Indices];
         public T InputPat<T>()
             where T : ExprPattern => (T)InputPat();
         public Expr Input() => GetCast<Expr>(InputPat());

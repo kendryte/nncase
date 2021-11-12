@@ -12,15 +12,32 @@ namespace Nncase.IR.Tensors
 {
     public sealed record BatchToSpace() : Op
     {
-        public static readonly ParameterInfo Input = new(typeof(BatchToSpace), 0, "Input");
+        public static readonly ParameterInfo Input = new(typeof(BatchToSpace), 0, "input");
 
-        public static readonly ParameterInfo BlockShape = new(typeof(BatchToSpace), 1, "BlockShape");
+        public static readonly ParameterInfo BlockShape = new(typeof(BatchToSpace), 1, "blockShape");
 
-        public static readonly ParameterInfo Crops = new(typeof(BatchToSpace), 2, "Crops");
+        public static readonly ParameterInfo Crops = new(typeof(BatchToSpace), 2, "crops");
 
-        public IRType InferInvokeResultType(ITypeInferenceContext context)
+        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType blockShape, TensorType crops)
         {
-            throw new NotImplementedException();
+            var newShape = input.Shape.ToList();
+            newShape[0] = input.Shape[0] / blockShape.Shape.Prod();
+            if (context.GetArgument(this, Crops) is Const cropsValue)
+            {
+                if (crops.Shape.Rank != 2)
+                {
+                    return new InvalidType("BatchToSpace crops rank must be 2");
+                }
+
+                var cropsV = cropsValue.ToTensor<int>();
+                var afterCropShape = Enumerable.Range(0, crops.Shape.Rank).Select(
+                    i => input.Shape[i + 1] * blockShape.Shape[0] - cropsV[i, 0] - cropsV[i, 1]);
+                return new TensorType(input.DType, input.Shape.InsertAndClone(1, afterCropShape));
+            }
+            else
+            {
+                return new InvalidType("BatchToSpace can't infer shape with dynamic crops");
+            }
         }
     }
 }
