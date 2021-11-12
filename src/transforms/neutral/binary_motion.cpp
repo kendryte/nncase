@@ -73,7 +73,6 @@ bool binary_reduce_window2d_motion_up_transform::on_try_match(node &node, transf
 
 void binary_reduce_window2d_motion_up_transform::process(transform_context &context)
 {
-    auto &output = *context.inputs[0]->connection();
     auto inputs = context.outputs[0]->connections();
 
     auto &conv = static_cast<conv2d &>(*context.matched_nodes[0]);
