@@ -15,7 +15,8 @@ namespace Nncase.Importer.TFLite
     {
         private Expr VisitConv2DTranspose(in tflite.Operator op)
         {
-            var (input, weights) = GetInputExprs(op, 0, 1);
+            var outShape = GetInputExprs(op, 0);
+            var (input, weights) = GetInputExprs(op, 1, 2);
             var bias = GetInputExprs(op, 2);
             var options = op.BuiltinOptionsAsTransposeConvOptions();
             var (inH, inW) = Util.GetHW(input);
@@ -31,7 +32,7 @@ namespace Nncase.Importer.TFLite
             var padding = Util.ConcatPadding(padH, padW);
             var clamp = ValueRange<float>.Full;
             return Util.NCHWToNHWC(F.Math.Clamp(
-                F.NN.Conv2DTranspose(Util.NHWCToNCHW(input), Util.NHWCToNCHW(weights), bias, padding, stride, dilation, PadMode.Constant, 1),
+                F.NN.Conv2DTranspose(Util.NHWCToNCHW(input), Util.NHWCToNCHW(weights), bias, Util.NHWCToNCHW(outShape), padding, stride, dilation, PadMode.Constant, 1),
                 clamp.Min, clamp.Max));
         }
     }

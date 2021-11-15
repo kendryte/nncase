@@ -25,7 +25,7 @@ namespace Nncase.IR.Tensors
             Value.CheckTypeThrow(value);
             if (context.GetArgument(this, Pads) is Const paddings)
             {
-                var (padH, padW) = GetPaddingFromConst(paddings);
+                var (padH, padW) = Paddings.GetPaddingFromConst(paddings);
                 var newShape = input.Shape.ToList();
                 newShape[2] += padH.Sum;
                 newShape[3] += padW.Sum;
@@ -37,24 +37,26 @@ namespace Nncase.IR.Tensors
             }
         }
         
-        public static (Padding, Padding) GetPaddingFromConst(Const c)
+
+    }
+
+    public record Paddings()
+    {
+        public int before = 0;
+        public int after = 0;
+
+        public int Sum => before + after;
+        
+        public static (Paddings, Paddings) GetPaddingFromConst(Const c)
         {
             var v = c.ToTensor<int>();
-            var padH = new Padding();
-            var padW = new Padding();
+            var padH = new Paddings();
+            var padW = new Paddings();
             padH.before = v[0, 0];
             padH.after = v[0, 1];
             padW.before = v[1, 0];
             padW.after = v[1, 1];
             return (padH, padW);
         }
-    }
-
-    public record Padding()
-    {
-        public int before = 0;
-        public int after = 0;
-
-        public int Sum => before + after;
     }
 }
