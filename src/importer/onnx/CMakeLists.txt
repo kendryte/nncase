@@ -42,6 +42,7 @@ set(ONNX_IMPORTER_OPS_SOURCES
     ops/shape.cpp
     ops/slice.cpp
     ops/softmax.cpp
+    ops/spacetodepth.cpp
     ops/split.cpp
     ops/squeeze.cpp
     ops/sum.cpp
