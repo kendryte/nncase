@@ -39,6 +39,8 @@ bool fold_add_before_conv_transform::on_try_match(node &node, transform_context 
 {
     if (auto b = node_cast<binary>(node))
     {
+        if (b->binary_op() != binary_add)
+            return false;
         if (b->fused_activation() != value_range<float>::full())
         {
             return false;
@@ -137,4 +139,62 @@ void fold_add_before_conv_transform::process(transform_context &context)
     {
         in->connect(bias_add->output());
     }
+}
+
+bool fold_mul_before_conv_transform::on_try_match(node &node, transform_context &context)
+{
+    if (auto b = node_cast<binary>(node))
+    {
+        if (b->binary_op() != binary_mul)
+            return false;
+        if (b->fused_activation() != value_range<float>::full())
+        {
+            return false;
+        }
+        if (auto conv = try_get_direct_child<conv2d>(*b))
+        {
+            if (auto b_const = try_get_direct_parent<constant>(*b, 1))
+            {
+                context.inputs.emplace_back(&b->input_a());
+                context.matched_nodes.emplace_back(b_const);
+            }
+            else if (auto b_const = try_get_direct_parent<constant>(*b, 0))
+            {
+                context.inputs.emplace_back(&b->input_b());
+                context.matched_nodes.emplace_back(b_const);
+            }
+            context.matched_nodes.emplace_back(b);
+            context.matched_nodes.emplace_back(conv);
+
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void fold_mul_before_conv_transform::process(transform_context &context)
+{
+    auto &output = *context.inputs[0]->connection();
+
+    auto &binary_c = *static_cast<constant *>(context.matched_nodes[0]);
+    auto &conv = *static_cast<conv2d *>(context.matched_nodes[2]);
+
+    auto old_weights = node_cast<constant>(conv.input_at(1).connection()->owner());
+    std::vector<std::byte> binary_c_byte { binary_c.data().begin(), binary_c.data().end() };
+    auto binary_const = ToFloats(binary_c_byte);
+    if (binary_const.size() == 1)
+    {
+        for (size_t i = 1; i < old_weights->output().shape()[1]; i++)
+            binary_const.emplace_back(binary_const[0]);
+    }
+    auto mul_constant = context.graph.emplace<constant>(dt_float32, shape_t { 1, old_weights->output().shape()[1], 1, 1 }, binary_const);
+    mul_constant->name(binary_c.name() + "/mul_const");
+    auto b_mul_weights = context.graph.emplace<binary>(binary_mul, old_weights->output().shape(), mul_constant->output().shape(), value_range<float>::full());
+    b_mul_weights->name(conv.name() + "/mul_weights");
+    b_mul_weights->input_a().connect(old_weights->output());
+    b_mul_weights->input_b().connect(mul_constant->output());
+
+    conv.weights().connect(b_mul_weights->output());
+    conv.input().connect(output);
 }
