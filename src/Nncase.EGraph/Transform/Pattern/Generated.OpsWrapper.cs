@@ -482,23 +482,6 @@ namespace Nncase.Transform.Pattern.Tensors
         public static implicit operator CallPattern(PadWrapper warper) => warper.Pattern;
     }
 
-    public sealed record PaddingsWrapper(CallPattern Pattern) : PatternWrapper
-    {
-        public ExprPattern beforePat() => Pattern[Paddings.before];
-        public T beforePat<T>()
-            where T : ExprPattern => (T)beforePat();
-        public Expr before() => GetCast<Expr>(beforePat());
-        public T before<T>()
-            where T : Expr => GetCast<T>(beforePat());
-        public ExprPattern afterPat() => Pattern[Paddings.after];
-        public T afterPat<T>()
-            where T : ExprPattern => (T)afterPat();
-        public Expr after() => GetCast<Expr>(afterPat());
-        public T after<T>()
-            where T : Expr => GetCast<T>(afterPat());
-        public static implicit operator CallPattern(PaddingsWrapper warper) => warper.Pattern;
-    }
-
     public sealed record QuantizeWrapper(CallPattern Pattern) : PatternWrapper
     {
         public ExprPattern InputPat() => Pattern[Quantize.Input];
