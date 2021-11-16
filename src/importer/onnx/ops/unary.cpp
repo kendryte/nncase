@@ -55,6 +55,11 @@ void onnx_importer::convert_op_Cos(const onnx::NodeProto &node)
     convert_unary(node, unary_cos);
 }
 
+void onnx_importer::convert_op_Sign(const onnx::NodeProto &node)
+{
+    convert_unary(node, unary_sign);
+}
+
 void onnx_importer::convert_op_Sin(const onnx::NodeProto &node)
 {
     convert_unary(node, unary_sin);

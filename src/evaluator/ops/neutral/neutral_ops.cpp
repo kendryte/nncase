@@ -449,6 +449,9 @@ void register_neutral_evaluators()
         case unary_rsqrt:
             unary([](auto a) { return 1.f / sqrtf(a); });
             break;
+        case unary_sign:
+            unary([](auto a) { return (0 < a) - (a < 0); });
+            break;
         case unary_sin:
             unary([](auto a) { return sinf(a); });
             break;

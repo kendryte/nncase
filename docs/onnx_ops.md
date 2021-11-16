@@ -81,6 +81,7 @@
 | Round | ✅ |
 | Selu | ✅ |
 | Shape | ✅ |
+| Sign | ✅ |
 | Sin | ✅ |
 | Sinh | ✅ |
 | Sigmoid | ✅ |
