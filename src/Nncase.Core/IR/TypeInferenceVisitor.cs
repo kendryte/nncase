@@ -107,7 +107,7 @@ namespace Nncase.IR
 
         private void SetCheckedType(Expr expr, IRType type)
         {
-            expr.CheckedType = type.ThrowIfTypeInferenceInterrupt();
+            expr.CheckedType = type;
             IsFullyInferenced &= type is not (AnyType or InvalidType);
         }
     }

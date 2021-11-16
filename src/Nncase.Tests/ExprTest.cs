@@ -31,29 +31,43 @@ public class UnitTestExpr
     }
 
     [Fact]
-    public void TestOPEqualWithCheckType()
+    public void TestBinaryAddEqualWithCheckType()
     {
         var a = (Const)(1.1f) + (Const)(1.1f);
         var b = (Const)(2) + (new Var("c"));
+        var dict = new Dictionary<Expr, int> { };
+        Op opa = (Op)a.Target, opb = (Op)b.Target;
 
-        Assert.True(a.Target == b.Target);
+        Assert.True(opa == opb);
+        dict.Add(opa, 0);
+        Assert.True(dict.ContainsKey(opa));
 
-        var paramTypes = ((Op)a.Target).Parameters.Select(_ => (IRType)AnyType.Default).ToArray();
+        var paramTypes = opa.Parameters.Select(_ => (IRType)AnyType.Default).ToArray();
         var type = new CallableType(AnyType.Default, ImmutableArray.Create(paramTypes));
-        a.Target.CheckedType = type;
+        opa.CheckedType = type;
 
-        Assert.True(a.Target.Equals(b.Target));
-        Assert.True(a.Target == b.Target);
-        var d = new HashSet<Expr>();
-        d.Add(a.Target);
-        Assert.Contains(b.Target, d);
+        Assert.Contains(opa, dict.Keys);
+        Assert.True(dict.ContainsKey(opa));
+        Assert.True(opa.Equals(opb));
+        Assert.True(opa == opb);
 
-        var paramTypesb = ((Op)b.Target).Parameters.Select(_ => (IRType)AnyType.Default).ToArray();
+        Assert.True(dict.TryGetValue(opb, out var result));
+
+        var paramTypesb = opb.Parameters.Select(_ => (IRType)AnyType.Default).ToArray();
         var typeb = new CallableType(AnyType.Default, ImmutableArray.Create(paramTypesb));
-        b.Target.CheckedType = typeb;
+        opb.CheckedType = typeb;
 
-        Assert.True(a.Target == b.Target);
-        Assert.Contains(b.Target, d);
+        Assert.True(opa == opb);
+        Assert.Contains(opb, dict.Keys);
+    }
+
+    [Fact]
+    public void TestBinaryOpEqualWithCheckType()
+    {
+        var a = (Const)(1.1f) + (Const)(1.1f);
+        var b = (Const)(2) - (new Var("c"));
+
+        Assert.False(a.Target == b.Target);
     }
 
     [Fact]

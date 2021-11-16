@@ -71,6 +71,11 @@ namespace Nncase.IR
             return !(other is null) && EqualityContract == other.EqualityContract;
         }
 
+        public override int GetHashCode()
+        {
+            return EqualityComparer<Type>.Default.GetHashCode(EqualityContract);
+        }
+
         /// <summary>
         /// Inference type (nothrow).
         /// </summary>
@@ -94,9 +99,16 @@ namespace Nncase.IR
                     ?? throw new InvalidProgramException($"Can't Get The ParameterInfo {info.Name}"));
                 var targetType = inferTypedict[paraminfo.Name];
                 var paramActualType = context.GetArgumentType(this, paraminfo);
-                var paramTensorType = Convert.ChangeType(paramActualType, targetType);
-                paraminfo.CheckTypeThrow(paramTensorType as TensorType);
-                targetParams.Add(paramTensorType);
+                try
+                {
+                    var paramTensorType = Convert.ChangeType(paramActualType, targetType);
+                    paraminfo.CheckTypeThrow(paramTensorType as TensorType);
+                    targetParams.Add(paramTensorType);
+                }
+                catch (System.InvalidCastException)
+                {
+                    return new InvalidType($"The Param {paraminfo.Name} Require {targetType} But Give The {paramActualType}!");
+                }
             }
 
             return ((IRType)(typeinferFunc.Invoke(this, targetParams.ToArray())

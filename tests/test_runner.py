@@ -268,13 +268,16 @@ class TestRunner(metaclass=ABCMeta):
         return model_path
 
     @staticmethod
-    def kwargs_to_path(path: str, kwargs: Dict[str, str]):
+    def kwargs_to_path(path: str, kwargs: Dict[str, str]) -> str:
         for k, v in kwargs.items():
             if isinstance(v, str):
                 path = os.path.join(path, v)
             elif isinstance(v, bool):
                 path = os.path.join(path, ('' if v else 'no') + k)
-        return path
+        path: Path = Path(path)
+        if not path.exists():
+            path.mkdir(parents=True)
+        return str(path)
 
     def generate_evaluates(self, cfg, case_dir: str,
                            compile_options: nncase.CompileOptions,
@@ -287,7 +290,7 @@ class TestRunner(metaclass=ABCMeta):
         compiler = nncase.Compile()
         compiler.ImportModel(compile_options)
         # evaluator = compiler.create_evaluator(3)
-        # eval_output_paths = []
+        eval_output_paths = []
         # for i in range(len(self.inputs)):
         #     input_tensor = nncase.RuntimeTensor.from_numpy(
         #         self.inputs[i]['data'])
@@ -302,6 +305,15 @@ class TestRunner(metaclass=ABCMeta):
         #     result.tofile(eval_output_paths[-1][0])
         #     self.totxtfile(eval_output_paths[-1][1], result)
         # return eval_output_paths
+        # TODO temp make dummpy result
+        for i in range(1):
+            result = np.random.rand(10, 10)
+            eval_output_paths.append((
+                os.path.join(eval_dir, f'nncase_result_{i}.bin'),
+                os.path.join(eval_dir, f'nncase_result_{i}.txt')))
+            result.tofile(eval_output_paths[-1][0])
+            self.totxtfile(eval_output_paths[-1][1], result)
+        return eval_output_paths
 
     # def nncase_infer(self, cfg, case_dir: str,
     #                  import_options: nncase.ImportOptions,
