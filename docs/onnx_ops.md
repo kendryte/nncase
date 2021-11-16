@@ -84,6 +84,7 @@
 | Sin | ✅ |
 | Sinh | ✅ |
 | Sigmoid | ✅ |
+| Size | ✅ |
 | Slice | ✅ |
 | Softmax | ✅ |
 | Softplus | ✅ |
