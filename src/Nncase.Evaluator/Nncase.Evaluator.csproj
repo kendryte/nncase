@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net5.0</TargetFramework>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <PackageReference Include="libtorch-cpu" Version="1.10.0.1" />
+      <PackageReference Include="TorchSharp" Version="0.95.3" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <ProjectReference Include="..\Nncase.Core\Nncase.Core.csproj" />
+        <ProjectReference Include="..\Nncase.IR\Nncase.IR.csproj" />
+    </ItemGroup>
+    
+</Project>
