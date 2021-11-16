@@ -190,6 +190,12 @@ namespace Nncase.Transform.Pattern.NN
         public Expr Bias() => GetCast<Expr>(BiasPat());
         public T Bias<T>()
             where T : Expr => GetCast<T>(BiasPat());
+        public ExprPattern OutShapePat() => Pattern[Conv2DTranspose.OutShape];
+        public T OutShapePat<T>()
+            where T : ExprPattern => (T)OutShapePat();
+        public Expr OutShape() => GetCast<Expr>(OutShapePat());
+        public T OutShape<T>()
+            where T : Expr => GetCast<T>(OutShapePat());
         public ExprPattern StridePat() => Pattern[Conv2DTranspose.Stride];
         public T StridePat<T>()
             where T : ExprPattern => (T)StridePat();
@@ -378,12 +384,6 @@ namespace Nncase.Transform.Pattern.Tensors
         public Expr Input() => GetCast<Expr>(InputPat());
         public T Input<T>()
             where T : Expr => GetCast<T>(InputPat());
-        public ExprPattern AxisPat() => Pattern[GatherND.Axis];
-        public T AxisPat<T>()
-            where T : ExprPattern => (T)AxisPat();
-        public Expr Axis() => GetCast<Expr>(AxisPat());
-        public T Axis<T>()
-            where T : Expr => GetCast<T>(AxisPat());
         public ExprPattern BatchDimsPat() => Pattern[GatherND.BatchDims];
         public T BatchDimsPat<T>()
             where T : ExprPattern => (T)BatchDimsPat();
@@ -396,6 +396,12 @@ namespace Nncase.Transform.Pattern.Tensors
         public Expr Index() => GetCast<Expr>(IndexPat());
         public T Index<T>()
             where T : Expr => GetCast<T>(IndexPat());
+        public ExprPattern AxisPat() => Pattern[GatherND.Axis];
+        public T AxisPat<T>()
+            where T : ExprPattern => (T)AxisPat();
+        public Expr Axis() => GetCast<Expr>(AxisPat());
+        public T Axis<T>()
+            where T : Expr => GetCast<T>(AxisPat());
         public static implicit operator CallPattern(GatherNDWrapper warper) => warper.Pattern;
     }
 
@@ -418,12 +424,12 @@ namespace Nncase.Transform.Pattern.Tensors
 
     public sealed record OneHotWrapper(CallPattern Pattern) : PatternWrapper
     {
-        public ExprPattern InputPat() => Pattern[OneHot.Indices];
-        public T InputPat<T>()
-            where T : ExprPattern => (T)InputPat();
-        public Expr Input() => GetCast<Expr>(InputPat());
-        public T Input<T>()
-            where T : Expr => GetCast<T>(InputPat());
+        public ExprPattern IndicesPat() => Pattern[OneHot.Indices];
+        public T IndicesPat<T>()
+            where T : ExprPattern => (T)IndicesPat();
+        public Expr Indices() => GetCast<Expr>(IndicesPat());
+        public T Indices<T>()
+            where T : Expr => GetCast<T>(IndicesPat());
         public ExprPattern DepthPat() => Pattern[OneHot.Depth];
         public T DepthPat<T>()
             where T : ExprPattern => (T)DepthPat();
@@ -474,6 +480,23 @@ namespace Nncase.Transform.Pattern.Tensors
             where T : Expr => GetCast<T>(ValuePat());
         public PadMode PadMode => ((Pad)GetCast<Call>(this).Target).PadMode;
         public static implicit operator CallPattern(PadWrapper warper) => warper.Pattern;
+    }
+
+    public sealed record PaddingsWrapper(CallPattern Pattern) : PatternWrapper
+    {
+        public ExprPattern beforePat() => Pattern[Paddings.before];
+        public T beforePat<T>()
+            where T : ExprPattern => (T)beforePat();
+        public Expr before() => GetCast<Expr>(beforePat());
+        public T before<T>()
+            where T : Expr => GetCast<T>(beforePat());
+        public ExprPattern afterPat() => Pattern[Paddings.after];
+        public T afterPat<T>()
+            where T : ExprPattern => (T)afterPat();
+        public Expr after() => GetCast<Expr>(afterPat());
+        public T after<T>()
+            where T : Expr => GetCast<T>(afterPat());
+        public static implicit operator CallPattern(PaddingsWrapper warper) => warper.Pattern;
     }
 
     public sealed record QuantizeWrapper(CallPattern Pattern) : PatternWrapper

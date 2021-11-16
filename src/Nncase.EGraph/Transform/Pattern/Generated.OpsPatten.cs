@@ -325,6 +325,18 @@ namespace Nncase.Transform.Pattern.Tensors
         }
     }
 
+    public sealed record PaddingsPattern(Func<Paddings, bool> Cond) : OpPattern
+    {
+        public PaddingsPattern(Paddings paddings): this(x => x == paddings)
+        {
+        }
+
+        public bool MatchLeaf(Paddings paddings) => Cond(paddings) && MatchCheckedType(paddings);
+        public PaddingsPattern(): this((Paddings x) => true)
+        {
+        }
+    }
+
     public sealed record QuantizePattern(Func<Quantize, bool> Cond) : OpPattern
     {
         public QuantizePattern(Quantize quantize): this(x => x == quantize)

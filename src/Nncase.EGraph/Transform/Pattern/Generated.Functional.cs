@@ -269,7 +269,7 @@ namespace Nncase.Transform.Pattern.F
     public static partial class NN
     {
         public static Conv2DWrapper Conv2D(ExprPattern input, ExprPattern weights, ExprPattern bias, ExprPattern padding, ExprPattern stride, ExprPattern dilation, PadMode padMode, ExprPattern groups) => new Conv2DWrapper(new CallPattern(new Conv2DPattern(padMode), input, weights, bias, padding, stride, dilation, groups));
-        public static Conv2DTransposeWrapper Conv2DTranspose(ExprPattern input, ExprPattern weights, ExprPattern bias, ExprPattern padding, ExprPattern stride, ExprPattern dilation, PadMode padMode, ExprPattern groups) => new Conv2DTransposeWrapper(new CallPattern(new Conv2DTransposePattern(padMode), input, weights, bias, padding, stride, dilation, groups));
+        public static Conv2DTransposeWrapper Conv2DTranspose(ExprPattern input, ExprPattern weights, ExprPattern bias, ExprPattern outShape, ExprPattern padding, ExprPattern stride, ExprPattern dilation, PadMode padMode, ExprPattern groups) => new Conv2DTransposeWrapper(new CallPattern(new Conv2DTransposePattern(padMode), input, weights, bias, outShape, padding, stride, dilation, groups));
         public static LeakyReluWrapper LeakyRelu(ExprPattern input) => new LeakyReluWrapper(new CallPattern(new LeakyReluPattern(), input));
         public static L2NormalizationWrapper L2Normalization(ExprPattern input) => new L2NormalizationWrapper(new CallPattern(new L2NormalizationPattern(), input));
         public static ReluWrapper Relu(ExprPattern input) => new ReluWrapper(new CallPattern(new ReluPattern(), input));
@@ -289,7 +289,7 @@ namespace Nncase.Transform.Pattern.F
         public static GatherWrapper Gather(ExprPattern input, ExprPattern axis, ExprPattern index) => new GatherWrapper(new CallPattern(new GatherPattern(), input, axis, index));
         public static GatherNDWrapper GatherND(ExprPattern input, ExprPattern axis, ExprPattern batch_dims, ExprPattern index) => new GatherNDWrapper(new CallPattern(new GatherNDPattern(), input, axis, batch_dims, index));
         public static MatMulWrapper MatMul(ExprPattern input, ExprPattern other) => new MatMulWrapper(new CallPattern(new MatMulPattern(), input, other));
-        public static OneHotWrapper OneHot(OneHotMode oneHotMode, ExprPattern input, ExprPattern depth, ExprPattern onValue, ExprPattern offValue, ExprPattern axis) => new OneHotWrapper(new CallPattern(new OneHotPattern(oneHotMode), input, depth, onValue, offValue, axis));
+        public static OneHotWrapper OneHot(OneHotMode oneHotMode, ExprPattern indices, ExprPattern depth, ExprPattern onValue, ExprPattern offValue, ExprPattern axis) => new OneHotWrapper(new CallPattern(new OneHotPattern(oneHotMode), indices, depth, onValue, offValue, axis));
         /// Pads is Const tensor, shape = [channels, 2(before, after)]
         public static PadWrapper Pad(ExprPattern input, ExprPattern pads, PadMode mode, ExprPattern value) => new PadWrapper(new CallPattern(new PadPattern(mode), input, pads, value));
         public static ReduceWrapper Reduce(ReduceOp reduceOp, ExprPattern input, ExprPattern axis, ExprPattern initValue, ExprPattern keepDims) => new ReduceWrapper(new CallPattern(new ReducePattern(reduceOp), input, axis, initValue, keepDims));
