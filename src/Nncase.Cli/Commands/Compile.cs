@@ -25,6 +25,10 @@ namespace Nncase.Cli.Commands
         public string InputFile { get; set; }
 
         /// <summary>
+        /// The import model format
+        /// </summary>
+        public string InputFormat { get; set; }
+        /// <summary>
         /// Gets or sets target.
         /// </summary>
         public string Target { get; set; }
@@ -48,17 +52,26 @@ namespace Nncase.Cli.Commands
             Handler = CommandHandler.Create<CompileOptions>(Run);
         }
 
-        private void Run(CompileOptions options)
+        public void Run(CompileOptions options)
         {
             Console.WriteLine($"Target: {options.Target}");
-
-            var module = Importers.ImportTFLite(options.InputFile);
+            var module = ImportModel(options);
             DumpModule(module, "ir_import");
 
             var pmgr = new PassManager(module.Entry, new RunPassOptions(null));
             pmgr.Add(new EGraphPass("eoptimize"));
             pmgr.Run();
         }
+
+        public Module ImportModel(CompileOptions options) =>
+          ImportModel(File.OpenRead(options.InputFile), options);
+
+        public Module ImportModel(Stream content, CompileOptions options) =>
+          options.InputFormat switch
+          {
+              "tflite" => Importers.ImportTFLite(content),
+              _ => throw new NotImplementedException($"Not Implement {options.InputFormat} Impoter!")
+          };
 
         private void DumpModule(Module module, string prefix)
         {

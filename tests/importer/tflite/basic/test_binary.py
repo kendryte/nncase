@@ -13,7 +13,8 @@
 # limitations under the License.
 """System test: test binary"""
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
-
+import os
+print("-" * 10, os.getpid())
 import pytest
 import tensorflow as tf
 import numpy as np

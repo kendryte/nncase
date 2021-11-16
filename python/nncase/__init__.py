@@ -13,36 +13,22 @@
 # limitations under the License.
 #
 """nncase."""
-import ctypes
+import clr
 import sys
 import os
 
 
 def _add_dllpath():
-    if sys.platform == 'win32':
-        cur_dir = os.path.dirname(__file__)
-        site_pkgs_dir = os.path.join(cur_dir, '..')
-        dll_paths = [site_pkgs_dir]
-        kernel32 = ctypes.WinDLL('kernel32.dll', use_last_error=True)
-        with_load_library_flags = hasattr(kernel32, 'AddDllDirectory')
-        prev_error_mode = kernel32.SetErrorMode(0x0001)
-        kernel32.LoadLibraryW.restype = ctypes.c_void_p
-        if with_load_library_flags:
-            kernel32.AddDllDirectory.restype = ctypes.c_void_p
-            kernel32.LoadLibraryExW.restype = ctypes.c_void_p
-        for dll_path in dll_paths:
-            if sys.version_info >= (3, 8):
-                os.add_dll_directory(dll_path)
-            elif with_load_library_flags:
-                res = kernel32.AddDllDirectory(dll_path)
-                if res is None:
-                    err = ctypes.WinError(ctypes.get_last_error())
-                    err.strerror += f' Error adding "{dll_path}" to the DLL directories.'
-                    raise err
+    clr.AddReference(os.getenv('NNCASE_CORE_DLL'))
+    clr.AddReference(os.getenv('NNCASE_IMPORTER_DLL'))
+    clr.AddReference(os.getenv('NNCASE_CLI_DLL'))
+    clr.AddReference(os.getenv('FLATBUFFERS_DLL'))
+    clr.AddReference(os.getenv('HYPERLINQ_DLL'))
+    clr.AddReference(os.getenv('HYPERLINQ_ABS_DLL'))
 
 
 _add_dllpath()
 
-from . import base
-from _nncase import test_target
-from _nncase import Compiler, CompileOptions, ImportOptions, PTQTensorOptions, MemoryRange, RuntimeTensor, Simulator, GraphEvaluator
+
+from Nncase.Cli.Commands import CompileOptions, Compile
+from Nncase import Importers

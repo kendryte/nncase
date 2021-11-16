@@ -75,6 +75,3 @@ class TfliteTestRunner(TestRunner):
             data.tofile(self.output_paths[-1][0])
             self.totxtfile(self.output_paths[-1][1], data)
             i += 1
-
-    def import_model(self, compiler, model_content, import_options):
-        compiler.import_tflite(model_content, import_options)

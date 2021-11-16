@@ -3,6 +3,9 @@ using Nncase;
 using Nncase.IR;
 using System.Numerics.Tensors;
 using System.Collections.Generic;
+using System.Linq;
+using System.Collections.Immutable;
+
 
 public class UnitTestExpr
 {
@@ -24,6 +27,31 @@ public class UnitTestExpr
         Assert.True(a == b);
         var d = new HashSet<Const>();
         d.Add(a);
+        Assert.Contains(b, d);
+    }
+
+    [Fact]
+    public void TestOPEqualWithCheckType()
+    {
+        var a = (Const)(1.1f) + (Const)(1.1f);
+        var b = (Const)(2) + (new Var("c"));
+
+        Assert.True(a.Target == b.Target);
+
+        var paramTypes = ((Op)a.Target).Parameters.Select(_ => (IRType)AnyType.Default).ToArray();
+        var type = new CallableType(AnyType.Default, ImmutableArray.Create(paramTypes));
+        a.Target.CheckedType = type;
+
+        Assert.True(a.Target == b.Target);
+        var d = new HashSet<Expr>();
+        d.Add(a.Target);
+        Assert.Contains(b, d);
+
+        var paramTypesb = ((Op)b.Target).Parameters.Select(_ => (IRType)AnyType.Default).ToArray();
+        var typeb = new CallableType(AnyType.Default, ImmutableArray.Create(paramTypesb));
+        b.Target.CheckedType = typeb;
+
+        Assert.True(a.Target == b.Target);
         Assert.Contains(b, d);
     }
 

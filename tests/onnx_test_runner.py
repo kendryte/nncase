@@ -149,6 +149,3 @@ class OnnxTestRunner(TestRunner):
             output.tofile(bin_file)
             self.totxtfile(text_file, output)
             i += 1
-
-    def import_model(self, compiler, model_content, import_options):
-        compiler.import_onnx(model_content, import_options)

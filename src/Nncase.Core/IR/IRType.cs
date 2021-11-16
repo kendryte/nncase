@@ -78,7 +78,7 @@ namespace Nncase.IR
     /// <summary>
     /// Tuple type.
     /// </summary>
-    public sealed record TupleType(ImmutableArray<IRType> Fields) : IRType, IEnumerable<IRType>, IReadOnlyList<IRType>
+    public sealed record TupleType(IRArray<IRType> Fields) : IRType, IEnumerable<IRType>, IReadOnlyList<IRType>
     {
         /// <summary>
         /// Void type.
@@ -105,5 +105,5 @@ namespace Nncase.IR
     /// <summary>
     /// Callable type.
     /// </summary>
-    public sealed record CallableType(IRType ReturnType, ImmutableArray<IRType> Parameters) : IRType;
+    public sealed record CallableType(IRType ReturnType, IRArray<IRType> Parameters) : IRType;
 }

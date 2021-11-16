@@ -288,3 +288,4 @@ tests_output
 RC*
 wheelhouse/
 .cache
+.env

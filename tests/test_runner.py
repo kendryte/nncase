@@ -1,16 +1,19 @@
-from typing import Dict, List, Tuple, Union, Any
-from itertools import product
-import re
-import yaml
-from pathlib import Path
-import numpy as np
-import os
-import shutil
-from abc import ABCMeta, abstractmethod
-import nncase
-import struct
-from compare_util import compare
 import copy
+import os
+import re
+import shutil
+import struct
+from abc import ABCMeta, abstractmethod
+from itertools import product
+from pathlib import Path
+from typing import Dict, List, Tuple, Union
+from io import BytesIO
+
+import numpy as np
+import yaml
+import nncase
+
+from compare_util import compare
 
 
 class Edict:
@@ -151,13 +154,15 @@ class TestRunner(metaclass=ABCMeta):
 
     def validate_targets(self, targets: List[str]):
         def _validate_targets(old_targets: List[str]):
-            new_targets = []
-            for t in old_targets:
-                if nncase.test_target(t):
-                    new_targets.append(t)
-                else:
-                    print("WARN: target[{0}] not found".format(t))
-            return new_targets
+            #  TODO add nncase test_tartget
+            return list([t for t in old_targets if t == "cpu"])
+            # new_targets = []
+            # for t in old_targets:
+            #     if nncase.test_target(t):
+            #         new_targets.append(t)
+            #     else:
+            #         print("WARN: target[{0}] not found".format(t))
+            # return new_targets
         self.cfg.case.eval[0].values = _validate_targets(
             targets if targets else self.cfg.case.eval[0].values)
         self.cfg.case.infer[0].values = _validate_targets(
@@ -193,11 +198,7 @@ class TestRunner(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def cpu_infer(self, case_dir: str, model_content: bytes):
-        pass
-
-    @abstractmethod
-    def import_model(self, compiler, model_content, import_options):
+    def cpu_infer(self, case_dir: str, model_path: str):
         pass
 
     def run_single(self, cfg, case_dir: str, model_file: str):
@@ -208,39 +209,37 @@ class TestRunner(metaclass=ABCMeta):
         self.generate_data(cfg.generate_calibs, case_dir,
                            self.calibs, self.calib_paths, 'calib')
         self.cpu_infer(case_dir, model_file)
-        import_options, compile_options = self.get_compiler_options(cfg, model_file)
-        model_content = self.read_model_file(model_file)
-        self.run_evaluator(cfg, case_dir, import_options, compile_options, model_content)
-        self.run_inference(cfg, case_dir, import_options, compile_options, model_content)
+        compile_options = self.get_compiler_options(cfg, model_file)
+        # model_path = self.read_model_file(model_file)
+        self.run_evaluator(cfg, case_dir, compile_options)
+        # self.run_inference(cfg, case_dir, compile_options, model_path)
 
     def get_compiler_options(self, cfg, model_file):
-        import_options = nncase.ImportOptions(**cfg.importer_opt.kwargs)
-        if os.path.splitext(model_file)[-1] == ".tflite":
-            import_options.input_layout = "NHWC"
-            import_options.output_layout = "NHWC"
-        elif os.path.splitext(model_file)[-1] == ".onnx":
-            import_options.input_layout = "NCHW"
-            import_options.output_layout = "NCHW"
-
         compile_options = nncase.CompileOptions()
+        compile_options.InputFile = os.path.join(os.getcwd(), model_file)
+        if os.path.splitext(model_file)[-1] == ".tflite":
+            compile_options.InputFormat = "tflite"
+        # TODO add more import format
+        # elif os.path.splitext(model_file)[-1] == ".onnx":
+        #     import_options.input_layout = "NCHW"
+        #     import_options.output_layout = "NCHW"
+
         for k, v in cfg.compile_opt.kwargs.items():
             e = '"'
-            exec(
-                f'compile_options.{k} = {e + v + e if isinstance(v, str) else v}')
-        return import_options, compile_options
+            exec(f'compile_options.{k} = {e + v + e if isinstance(v, str) else v}')
+        return compile_options
 
-    def run_evaluator(self, cfg, case_dir, import_options, compile_options, model_content):
+    def run_evaluator(self, cfg, case_dir, compile_options):
         names, args = TestRunner.split_value(cfg.eval)
         for combine_args in product(*args):
             dict_args = dict(zip(names, combine_args))
             eval_output_paths = self.generate_evaluates(
-                cfg, case_dir, import_options,
-                compile_options, model_content, dict_args)
+                cfg, case_dir, compile_options, dict_args)
             judge, result = self.compare_results(
                 self.output_paths, eval_output_paths, dict_args)
             assert(judge), result
 
-    def run_inference(self, cfg, case_dir, import_options, compile_options, model_content):
+    def run_inference(self, cfg, case_dir, import_options, compile_options, model_path):
         names, args = TestRunner.split_value(cfg.infer)
         for combine_args in product(*args):
             dict_args = dict(zip(names, combine_args))
@@ -249,7 +248,7 @@ class TestRunner(metaclass=ABCMeta):
 
             infer_output_paths = self.nncase_infer(
                 cfg, case_dir, import_options,
-                compile_options, model_content, dict_args)
+                compile_options, model_path, dict_args)
             judge, result = self.compare_results(
                 self.output_paths, infer_output_paths, dict_args)
             assert(judge), result
@@ -265,8 +264,8 @@ class TestRunner(metaclass=ABCMeta):
 
     def read_model_file(self, model_file: str) -> bytes:
         with open(model_file, 'rb') as f:
-            model_content = f.read()
-        return model_content
+            model_path = f.read()
+        return model_path
 
     @staticmethod
     def kwargs_to_path(path: str, kwargs: Dict[str, str]):
@@ -278,74 +277,73 @@ class TestRunner(metaclass=ABCMeta):
         return path
 
     def generate_evaluates(self, cfg, case_dir: str,
-                           import_options: nncase.ImportOptions,
                            compile_options: nncase.CompileOptions,
-                           model_content: bytes, kwargs: Dict[str, str]
+                           kwargs: Dict[str, str]
                            ) -> List[Tuple[str, str]]:
         eval_dir = TestRunner.kwargs_to_path(
             os.path.join(case_dir, 'eval'), kwargs)
-        compile_options.target = kwargs['target']
+        compile_options.Target = kwargs['target']
         compile_options.dump_dir = eval_dir
-        compiler = nncase.Compiler(compile_options)
-        self.import_model(compiler, model_content, import_options)
-        evaluator = compiler.create_evaluator(3)
-        eval_output_paths = []
-        for i in range(len(self.inputs)):
-            input_tensor = nncase.RuntimeTensor.from_numpy(
-                self.inputs[i]['data'])
-            input_tensor.copy_to(evaluator.get_input_tensor(i))
-            evaluator.run()
+        compiler = nncase.Compile()
+        compiler.ImportModel(compile_options)
+        # evaluator = compiler.create_evaluator(3)
+        # eval_output_paths = []
+        # for i in range(len(self.inputs)):
+        #     input_tensor = nncase.RuntimeTensor.from_numpy(
+        #         self.inputs[i]['data'])
+        #     input_tensor.copy_to(evaluator.get_input_tensor(i))
+        #     evaluator.run()
 
-        for i in range(evaluator.outputs_size):
-            result = evaluator.get_output_tensor(i).to_numpy()
-            eval_output_paths.append((
-                os.path.join(eval_dir, f'nncase_result_{i}.bin'),
-                os.path.join(eval_dir, f'nncase_result_{i}.txt')))
-            result.tofile(eval_output_paths[-1][0])
-            self.totxtfile(eval_output_paths[-1][1], result)
-        return eval_output_paths
+        # for i in range(evaluator.outputs_size):
+        #     result = evaluator.get_output_tensor(i).to_numpy()
+        #     eval_output_paths.append((
+        #         os.path.join(eval_dir, f'nncase_result_{i}.bin'),
+        #         os.path.join(eval_dir, f'nncase_result_{i}.txt')))
+        #     result.tofile(eval_output_paths[-1][0])
+        #     self.totxtfile(eval_output_paths[-1][1], result)
+        # return eval_output_paths
 
-    def nncase_infer(self, cfg, case_dir: str,
-                     import_options: nncase.ImportOptions,
-                     compile_options: nncase.CompileOptions,
-                     model_content: bytes, kwargs: Dict[str, str]
-                     ) -> List[Tuple[str, str]]:
-        infer_dir = TestRunner.kwargs_to_path(
-            os.path.join(case_dir, 'infer'), kwargs)
-        compile_options.target = kwargs['target']
-        compile_options.dump_dir = infer_dir
-        compiler = nncase.Compiler(compile_options)
-        self.import_model(compiler, model_content, import_options)
-        if kwargs['ptq']:
-            ptq_options = nncase.PTQTensorOptions()
-            ptq_options.set_tensor_data(np.asarray(
-                [sample['data'] for sample in self.calibs]).tobytes())
-            ptq_options.samples_count = cfg.generate_calibs.batch_size
-            ptq_options.input_mean = cfg.ptq_opt.kwargs['input_mean']
-            ptq_options.input_std = cfg.ptq_opt.kwargs['input_std']
+    # def nncase_infer(self, cfg, case_dir: str,
+    #                  import_options: nncase.ImportOptions,
+    #                  compile_options: nncase.CompileOptions,
+    #                  model_path: str, kwargs: Dict[str, str]
+    #                  ) -> List[Tuple[str, str]]:
+    #     infer_dir = TestRunner.kwargs_to_path(
+    #         os.path.join(case_dir, 'infer'), kwargs)
+    #     compile_options.target = kwargs['target']
+    #     compile_options.dump_dir = infer_dir
+    #     compiler = nncase.Compiler(compile_options)
+    #     self.import_model(compiler, model_path, import_options)
+    #     if kwargs['ptq']:
+    #         ptq_options = nncase.PTQTensorOptions()
+    #         ptq_options.set_tensor_data(np.asarray(
+    #             [sample['data'] for sample in self.calibs]).tobytes())
+    #         ptq_options.samples_count = cfg.generate_calibs.batch_size
+    #         ptq_options.input_mean = cfg.ptq_opt.kwargs['input_mean']
+    #         ptq_options.input_std = cfg.ptq_opt.kwargs['input_std']
 
-            compiler.use_ptq(ptq_options)
-        compiler.compile()
-        kmodel = compiler.gencode_tobytes()
-        with open(os.path.join(infer_dir, 'test.kmodel'), 'wb') as f:
-            f.write(kmodel)
-        sim = nncase.Simulator()
-        sim.load_model(kmodel)
-        infer_output_paths: List[np.ndarray] = []
-        for i in range(len(self.inputs)):
-            sim.set_input_tensor(
-                i, nncase.RuntimeTensor.from_numpy(self.inputs[i]['data']))
+    #         compiler.use_ptq(ptq_options)
+    #     compiler.compile()
+    #     kmodel = compiler.gencode_tobytes()
+    #     with open(os.path.join(infer_dir, 'test.kmodel'), 'wb') as f:
+    #         f.write(kmodel)
+    #     sim = nncase.Simulator()
+    #     sim.load_model(kmodel)
+    #     infer_output_paths: List[np.ndarray] = []
+    #     for i in range(len(self.inputs)):
+    #         sim.set_input_tensor(
+    #             i, nncase.RuntimeTensor.from_numpy(self.inputs[i]['data']))
 
-        sim.run()
+    #     sim.run()
 
-        for i in range(sim.outputs_size):
-            result = sim.get_output_tensor(i).to_numpy()
-            infer_output_paths.append((
-                os.path.join(infer_dir, f'nncase_result_{i}.bin'),
-                os.path.join(infer_dir, f'nncase_result_{i}.txt')))
-            result.tofile(infer_output_paths[-1][0])
-            self.totxtfile(infer_output_paths[-1][1], result)
-        return infer_output_paths
+    #     for i in range(sim.outputs_size):
+    #         result = sim.get_output_tensor(i).to_numpy()
+    #         infer_output_paths.append((
+    #             os.path.join(infer_dir, f'nncase_result_{i}.bin'),
+    #             os.path.join(infer_dir, f'nncase_result_{i}.txt')))
+    #         result.tofile(infer_output_paths[-1][0])
+    #         self.totxtfile(infer_output_paths[-1][1], result)
+    #     return infer_output_paths
 
     def on_test_start(self) -> None:
         pass

@@ -62,6 +62,27 @@ namespace Nncase.IR
                              orderby param.Index
                              select param).ToArray();
 
+        public override Shape CheckedShape => base.CheckedShape;
+
+        public override int Rank => base.Rank;
+
+        protected override Type EqualityContract => base.EqualityContract;
+
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
+        }
+
+        public override string ToString()
+        {
+            return base.ToString();
+        }
+
+        protected override bool PrintMembers(StringBuilder builder)
+        {
+            return base.PrintMembers(builder);
+        }
+
         /// <summary>
         /// Inference type (nothrow).
         /// </summary>
