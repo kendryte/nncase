@@ -42,17 +42,18 @@ public class UnitTestExpr
         var type = new CallableType(AnyType.Default, ImmutableArray.Create(paramTypes));
         a.Target.CheckedType = type;
 
+        Assert.True(a.Target.Equals(b.Target));
         Assert.True(a.Target == b.Target);
         var d = new HashSet<Expr>();
         d.Add(a.Target);
-        Assert.Contains(b, d);
+        Assert.Contains(b.Target, d);
 
         var paramTypesb = ((Op)b.Target).Parameters.Select(_ => (IRType)AnyType.Default).ToArray();
         var typeb = new CallableType(AnyType.Default, ImmutableArray.Create(paramTypesb));
         b.Target.CheckedType = typeb;
 
         Assert.True(a.Target == b.Target);
-        Assert.Contains(b, d);
+        Assert.Contains(b.Target, d);
     }
 
     [Fact]

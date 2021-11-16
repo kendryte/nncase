@@ -66,21 +66,9 @@ namespace Nncase.IR
 
         public override int Rank => base.Rank;
 
-        protected override Type EqualityContract => base.EqualityContract;
-
-        public override int GetHashCode()
+        public virtual bool Equals(Op? other)
         {
-            return base.GetHashCode();
-        }
-
-        public override string ToString()
-        {
-            return base.ToString();
-        }
-
-        protected override bool PrintMembers(StringBuilder builder)
-        {
-            return base.PrintMembers(builder);
+            return !(other is null) && EqualityContract == other.EqualityContract;
         }
 
         /// <summary>
