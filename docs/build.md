@@ -1,103 +1,57 @@
 ## Build from source
+
 ## 从源码编译
 
-### Linux
-1. Install dependencies
 
-- gcc >= 10
-```bash
-sudo add-apt-repository ppa:ubuntu-toolchain-r/test
-sudo apt-get update
-sudo apt install gcc-10 g++-10
-sudo update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-10 40
-sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-10 40 
-```
+5. Python Test
 
-- cmake >=3.18
-- python >= 3.6
+- Install dependencies
+  
+  ```sh
+  git clone https://github.com/pythonnet/pythonnet
+  cd pythonnet
+  git checkout ac336a893de14aaf2c7b795568203b48030f9006
+  pip install -e .
+  ```
 
-2. Install conan and cmake
+  If you need change the defualt runtime, modify the `pythonnet/__init__.py` line 18:
+  ```python
+  def set_default_runtime() -> None:
+      set_runtime(clr_loader.get_coreclr("your-path-to/runtimeconfig.json"))
+      # if sys.platform == 'win32':
+      #     set_runtime(clr_loader.get_netfx())
+      # else:
+      #     set_runtime(clr_loader.get_mono())
+  ```
 
-```bash
-pip install conan cmake
-```
+  example for  `runtimeconfig.json`
+  ```json
+  {
+    "runtimeOptions": {
+      "tfm": "net6.0",
+      "framework": {
+        "name": "Microsoft.NETCore.App",
+        "version": "6.0.0"
+      }
+    }
+  }
+  ```
 
-3. Clone source
+- Setup Dotnet DLL Path
 
-```bash
-git clone https://github.com/kendryte/nncase.git
-```
+  NOTE change the env to your lib path.
+  ```sh
+  export NNCASE_CORE_DLL="/Users/lisa/Documents/nncase/src/Nncase.Core/bin/Debug/net6.0/Nncase.Core.dll"
+  export NNCASE_IMPORTER_DLL="/Users/lisa/Documents/nncase/src/Nncase.Importer/bin/Debug/net6.0/Nncase.Importer.dll"
+  export NNCASE_CLI_DLL="/Users/lisa/Documents/nncase/src/Nncase.Cli/bin/Debug/net6.0/Nncase.Cli.dll"
+  export FLATBUFFERS_DLL="/Users/lisa/.nuget/packages/nncase.flatbuffers/2.0.0/lib/netstandard2.1/FlatBuffers.dll"
+  export HYPERLINQ_DLL="/Users/lisa/.nuget/packages/netfabric.hyperlinq/3.0.0-beta48/lib/net6.0/NetFabric.Hyperlinq.dll"
+  export HYPERLINQ_ABS_DLL="/Users/lisa/.nuget/packages/netfabric.hyperlinq.abstractions/1.3.0/lib/netstandard2.1/NetFabric.Hyperlinq.Abstractions.dll"
+  ```
 
-4. Build
-```bash
-BUILD_TYPE=Debug
-mkdir build && cd build
-cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE
-make -j8
-cmake --install . --prefix ../install
-```
-5. Test (optional)
+- Run tests
 
-Install dependencies (MacOS)
-```bash
-pip install tensorflow==2.5.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0
-pip install torch==1.9.0 torchvision==0.10.0 -f https://download.pytorch.org/whl/torch_stable.html
-pip install pytest
-```
-
-Install dependencies
-```bash
-pip install tensorflow==2.5.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0
-pip install torch==1.9.0+cpu torchvision==0.10.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
-pip install pytest
-```
-
-Export environment
-
-```bash
-echo "export LD_LIBRARY_PATH=\"${PWD}/install/lib:\$LD_LIBRARY_PATH\"" >> ~/.zshrc
-echo "export PYTHONPATH=\"${PWD}/install/lib:${PWD}/install/python:${PWD}/tests:\${PYTHONPATH}\"" >> ~/.zshrc
-source ~/.zshrc
-```
-
-Run tests
-
-```bash
-pytest tests
-```
-
-### Windows
-1. Install dependencies
-- Visual Studio 2019
-- cmake >=3.18
-- python >= 3.6
-
-2. Install conan cmake
-```cmd
-pip install conan cmake
-```
-3. Clone source
-```cmd
-git clone https://github.com/kendryte/nncase.git --recursive
-```
-4. Build
-
-Open Developer Command Prompt for VS 2019
-
-```cmd
-md out && cd out
-cmake .. -G "Visual Studio 16 2019" -A x64 -DNNCASE_TARGET=k210 -DCMAKE_BUILD_TYPE=Release
-msbuild nncase.sln
-```
-5. Test (optional)
-
-Install dependencies
-```cmd
-pip install conan tensorflow==2.5.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0
-pip install torch==1.9.0+cpu torchvision==0.10.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
-pip install pytest
-```
-Run tests
-```cmd
-pytest tests
-```
+  ```sh
+  cd nncase
+  pytest tests
+  ```
