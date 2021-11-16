@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using System.Linq;
 using Nncase.IR;
 using Nncase.IR.Math;
@@ -10,57 +11,66 @@ namespace Nncase.Evaluator.Ops
     public sealed class EvaluatorContext
     {
         public Call? CurrentCall;
-        
-        public torch.Tensor GetParam(int index)
+        private readonly Dictionary<Expr, torch.Tensor> _exprMemo;
+
+        public EvaluatorContext(Dictionary<Expr, torch.Tensor> exprMemo)
         {
-            if (CurrentCall != null) return ToTorchTensor(CurrentCall.Parameters[index]);
-            else throw new NotImplementedException();
+            _exprMemo = exprMemo;
         }
         
-        private torch.Tensor ToTorchTensor(Expr expr)
+        private Call GetCurrentCall() => CurrentCall ?? throw new InvalidOperationException("Current call is not set in evaluator.");
+
+        public torch.Tensor GetArgument(Op op, ParameterInfo parameter)
         {
-            if (expr is Const exprValue)
+            if (op.GetType() == parameter.OwnerType)
             {
-                if (exprValue.ValueType.IsScalar)
-                {
-                    return torch.tensor(exprValue.ToScalar<float>());
-                }
-                else
-                {
-                    var shape = expr.CheckedShape.ToList().Select(x => x.FixedValue).ToList();
-                    return torch.tensor(exprValue.ToTensor<float>());
-                }
+                return _exprMemo[GetCurrentCall().Parameters[parameter.Index]];
             }
             else
             {
-                throw new NotImplementedException();
+                throw new ArgumentOutOfRangeException($"Operator {op} doesn't have parameter: {parameter.Name}.");
             }
+            // if (CurrentCall != null) return ToTorchTensor(CurrentCall.Parameters[index]);
+            // else throw new NotImplementedException();
         }
     }
     
-    public sealed partial class EvaluatorVisitor : ExprFunctor<torch.Tensor, torch.Tensor>
+    public sealed partial class EvaluatorVisitor : ExprVisitor<torch.Tensor, IRType>
     {
         private EvaluatorContext _context;
 
         public EvaluatorVisitor()
         {
-            _context = new EvaluatorContext();
+            _context = new EvaluatorContext(ExpressionMemo);
         }
         
-        public override torch.Tensor Visit(Call expr)
+        public override torch.Tensor VisitLeaf(Call expr)
         {
             _context.CurrentCall = expr;
-            return Visit(expr.Target);
-        }
-
-        public override torch.Tensor Visit(Op expr)
-        {
-            return expr switch
+            return expr.Target switch
             {
-                Sigmoid => torch.nn.functional.Sigmoid(_context.GetParam(0)),
                 Binary binary => VisitBinary(binary),
                 _ => throw new NotImplementedException()
             };
+        }
+
+        public override torch.Tensor VisitLeaf(Const expr)
+        {
+            if (expr.ValueType.IsScalar)
+            {
+                return torch.tensor(expr.ToScalar<float>());
+            }
+            else
+            {
+                var shape = expr.CheckedShape.ToList().Select(x => x.FixedValue).ToList();
+                return torch.tensor(expr.ToTensor<float>());
+            }
+        }
+
+        public override torch.Tensor VisitLeaf(Op expr)
+        {
+            // todo:maybe a problem
+            return torch.empty(1, 1);
         }
     }
 }

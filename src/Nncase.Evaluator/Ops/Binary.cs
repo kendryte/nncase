@@ -9,8 +9,8 @@ namespace Nncase.Evaluator.Ops
     {
         private torch.Tensor VisitBinary(Binary binary)
         {
-            var a = _context.GetParam(0);
-            var b = _context.GetParam(1);
+            var a = _context.GetArgument(binary, Binary.Lhs);
+            var b = _context.GetArgument(binary, Binary.Rhs);
             return binary.BinaryOp switch
             {
                 BinaryOp.Add => a + b,

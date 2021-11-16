@@ -1,15 +1,6 @@
-﻿using System;
-using System.Linq;
-using Nncase.Evaluator.Ops;
+﻿using Nncase.Evaluator.Ops;
 using Nncase.IR;
-using Nncase.IR.Math;
 using TorchSharp;
-
-using static TorchSharp.torch;
-using static TorchSharp.torch.nn;
-using static TorchSharp.torch.nn.functional;
-using static TorchSharp.TensorExtensionMethods;
-using Sigmoid = Nncase.IR.NN.Sigmoid;
 
 namespace Nncase.Evaluator
 {

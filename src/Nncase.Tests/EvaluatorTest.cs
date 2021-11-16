@@ -17,16 +17,6 @@ using Module = Nncase.IR.Module;
 public class EvaluatorTest
 {
     [Fact]
-    public void TestUnary()
-    {
-        var a = (Const) 9f;
-        var ta = tensor(1f);
-        Assert.Equal(
-            torch.nn.functional.Sigmoid(ta),
-            Evaluator.Eval(NN.Sigmoid(a)));
-    }
-    
-    [Fact]
     public void TestBinary()
     {
         var a = (Const) 1f;
