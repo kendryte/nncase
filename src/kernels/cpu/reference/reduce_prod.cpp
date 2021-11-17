@@ -16,8 +16,6 @@
 #include <nncase/kernels/cpu/reference/tensor_compute.h>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/runtime/runtime_op_utility.h>
-#include <xtensor/xadapt.hpp>
-#include <xtensor/xarray.hpp>
 
 using namespace nncase;
 using namespace nncase::runtime;
@@ -26,20 +24,29 @@ using namespace nncase::kernels::cpu;
 using namespace nncase::kernels::cpu::reference;
 
 template NNCASE_API result<void> reference::reduce_prod<float>(const float *input, float *output, const runtime_shape_t &in_shape,
-    const runtime_shape_t &out_shape, const runtime_shape_t &axes) noexcept;
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides,
+    const runtime_shape_t &axis, bool keep_dims, NNCASE_UNUSED kernel_context &context) noexcept;
 
 template <typename T>
-result<void> reference::reduce_prod(const T *input, T *output, const runtime_shape_t &in_shape,
-    const runtime_shape_t &out_shape, const runtime_shape_t &axes) noexcept
+result<void> reference::reduce_prod(NNCASE_UNUSED const T *input, NNCASE_UNUSED T *output, NNCASE_UNUSED const runtime_shape_t &in_shape,
+    NNCASE_UNUSED const runtime_shape_t &in_strides, NNCASE_UNUSED const runtime_shape_t &out_strides,
+    NNCASE_UNUSED const runtime_shape_t &axes, NNCASE_UNUSED bool keep_dims, NNCASE_UNUSED kernel_context &context) noexcept
 {
-    std::vector<size_t> xt_in_shape(in_shape.begin(), in_shape.end());
-    auto in_array = xt::adapt(input, compute_size(xt_in_shape), xt::no_ownership(), xt_in_shape);
+    auto out_shape = kernels::detail::get_reduced_shape(in_shape, axes, keep_dims);
 
-    std::vector<size_t> xt_out_shape(out_shape.begin(), out_shape.end());
-    auto out_array = xt::adapt(output, compute_size(xt_out_shape), xt::no_ownership(), xt_out_shape);
+    // init with init_value
+    try_(reference::apply(out_shape, [&](const runtime_shape_t &index) -> result<void> {
+        output[offset(out_strides, index)] = 1;
+        return ok();
+    }));
 
-    std::vector<size_t> xt_axes(axes.begin(), axes.end());
-    out_array = xt::prod(in_array, xt_axes);
+    try_(apply(in_shape, [&](const runtime_shape_t &index) -> result<void> {
+        const auto src = input[offset(in_strides, index)];
+        auto out_idx = offset(out_strides, kernels::detail::get_reduced_offset(index, axes, keep_dims));
+        auto &dst = output[out_idx];
+        dst *= src;
+        return ok();
+    }));
 
     return ok();
 }

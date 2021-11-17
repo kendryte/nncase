@@ -182,13 +182,15 @@ result<void> kernels::reduce_arg(reduce_arg_op_t op, const float *input, T *outp
 }
 
 template result<void> kernels::reduce_prod<float>(const float *input, float *output, const runtime_shape_t &in_shape,
-    const runtime_shape_t &out_shape, const runtime_shape_t &axes) noexcept;
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides,
+    const runtime_shape_t &axes, bool keep_dims, kernel_context &context) noexcept;
 
 template <typename T>
 result<void> kernels::reduce_prod(const T *input, T *output, const runtime_shape_t &in_shape,
-    const runtime_shape_t &out_shape, const runtime_shape_t &axes) noexcept
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides,
+    const runtime_shape_t &axes, bool keep_dims, kernel_context &context) noexcept
 {
-    return cpu::reference::reduce_prod(input, output, in_shape, out_shape, axes);
+    return cpu::reference::reduce_prod(input, output, in_shape, in_strides, out_strides, axes, keep_dims, context);
 }
 
 #define DISPATCH_RESIZE(resize_fun)                                                                                                                          \

@@ -323,7 +323,8 @@ void register_neutral_evaluators()
         auto input_mem = input.buffer().as_span<float>();
         auto output_mem = output.buffer().as_span<float>();
 
-        kernels::reduce_prod(input_mem.data(), output_mem.data(), input.shape(), output.shape(), to(rnode.axis()))
+        kernels::reduce_prod(input_mem.data(), output_mem.data(), input.shape(),
+            input.strides(), output.strides(), to(rnode.axis()), rnode.keep_dims())
             .unwrap_or_throw();
     });
 

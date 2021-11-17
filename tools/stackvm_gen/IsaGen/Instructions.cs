@@ -1736,13 +1736,21 @@ namespace IsaGen
             [Description("Source shape register")]
             public byte RshapeSrc { get; set; }
 
-            [DisplayName("rshape_dest")]
-            [Description("Dest shape register")]
-            public byte RshapeDest { get; set; }
+            [DisplayName("rstride_src")]
+            [Description("Source stride register")]
+            public byte RstrideSrc { get; set; }
+
+            [DisplayName("rstride_dest")]
+            [Description("Dest stride register")]
+            public byte RstrideDest { get; set; }
 
             [DisplayName("rshape_axes")]
             [Description("Axes shape register")]
             public byte RshapeAxes { get; set; }
+
+            [DisplayName("keep_dims")]
+            [Description("Keep dimensions")]
+            public bool KeepDims { get; set; }
         }
 
         [DisplayName("TENSOR.REDUCE_WINDOW2D")]

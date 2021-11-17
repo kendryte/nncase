@@ -26,8 +26,10 @@ result<void> stackvm_runtime_function::visit(const tensor_reduce_prod_op_t &op) 
     try_var(output, pop_addr());
     try_var(input, pop_addr());
     try_var(in_shape, module().shape_reg(op.rshape_src));
-    try_var(out_shape, module().shape_reg(op.rshape_dest));
+    try_var(in_strides, module().shape_reg(op.rstride_src));
+    try_var(out_strides, module().shape_reg(op.rstride_dest));
     try_var(axes, module().shape_reg(op.rshape_axes));
 
-    return kernels::reduce_prod(reinterpret_cast<const float *>(input), reinterpret_cast<float *>(output), in_shape, out_shape, axes);
+    return kernels::reduce_prod(reinterpret_cast<const float *>(input), reinterpret_cast<float *>(output),
+        in_shape, in_strides, out_strides, axes, op.keep_dims);
 }
