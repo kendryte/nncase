@@ -119,6 +119,9 @@ void fused_unary::compile_graph(const std::vector<fused_unary_op> &subgraph, cod
             case unary_rsqrt:
                 builder.emit_rsqrt();
                 break;
+            case unary_sign:
+                builder.emit_sign();
+                break;
             case unary_sin:
                 builder.emit_sin();
                 break;

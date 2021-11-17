@@ -728,6 +728,12 @@ inline void nnil_unary_method(const float *input, float *output, size_t count, g
             case nnil_rsqrt:
                 stack.push(1.f / sqrtf(stack.pop()));
                 break;
+            case nnil_sign:
+            {
+                auto val = stack.pop();
+                stack.push((0 < val) - (val < 0));
+                break;
+            }
             case nnil_sin:
                 stack.push(sinf(stack.pop()));
                 break;
