@@ -34,6 +34,7 @@
 #include <nncase/ir/ops/random_uniform.h>
 #include <nncase/ir/ops/reduce.h>
 #include <nncase/ir/ops/reduce_arg.h>
+#include <nncase/ir/ops/reduce_prod.h>
 #include <nncase/ir/ops/reduce_window2d.h>
 #include <nncase/ir/ops/resize_image.h>
 #include <nncase/ir/ops/slice.h>
