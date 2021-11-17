@@ -9,7 +9,7 @@ using Nncase.IR.Math;
 using Nncase.IR.NN;
 using Nncase.IR.Tensors;
 
-namespace Nncase.Transform.Pattern.Math
+namespace Nncase.Pattern.Math
 {
     public sealed record BinaryWrapper(CallPattern Pattern) : PatternWrapper
     {
@@ -65,7 +65,7 @@ namespace Nncase.Transform.Pattern.Math
     }
 }
 
-namespace Nncase.Transform.Pattern.NN
+namespace Nncase.Pattern.NN
 {
     public sealed record SigmoidWrapper(CallPattern Pattern) : PatternWrapper
     {
@@ -258,7 +258,7 @@ namespace Nncase.Transform.Pattern.NN
     }
 }
 
-namespace Nncase.Transform.Pattern.Tensors
+namespace Nncase.Pattern.Tensors
 {
     public sealed record BatchToSpaceWrapper(CallPattern Pattern) : PatternWrapper
     {

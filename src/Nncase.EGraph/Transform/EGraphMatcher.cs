@@ -2,24 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using Nncase.IR;
-using Nncase.Transform.Pattern;
+using Nncase.Pattern;
 
 namespace Nncase.Transform
 {
     using EContextEnv = Dictionary<ExprPattern, ENode>;
     using Tuple = IR.Tuple;
 
-    public record EMatchResult(ENode Root, EContextEnv Context)
+    public record EMatchResult(ENode Root, EContextEnv Context) : IMatchResult
     {
-
         public Expr this[ExprPattern expr] => Context[expr].Expr;
-
-        public Var this[VarPattern pat] => (Var)Context[pat].Expr;
-        public Const this[ConstPattern pat] => (Const)Context[pat].Expr;
-        public Function this[FunctionPattern pat] => (Function)Context[pat].Expr;
-        public Call this[CallPattern pat] => (Call)Context[pat].Expr;
-        public Tuple this[TuplePattern pat] => (Tuple)Context[pat].Expr;
-
 
         public T GetExpr<T>(ExprPattern expr) where T : Expr
         {
@@ -32,14 +24,6 @@ namespace Nncase.Transform
         {
             return (T)Root.Expr;
         }
-
-        public (Expr, Expr) this[ExprPattern pat1, ExprPattern pat2] => (this[pat1], this[pat2]);
-        public (Expr, Expr, Expr) this[ExprPattern pat1, ExprPattern pat2, ExprPattern pat3] => (this[pat1], this[pat2], this[pat3]);
-        public (Expr, Expr, Expr, Expr) this[ExprPattern pat1, ExprPattern pat2, ExprPattern pat3, ExprPattern pat4] => (this[pat1], this[pat2], this[pat3], this[pat4]);
-
-        public (Const, Const) this[ConstPattern pat1, ConstPattern pat2] => (this[pat1], this[pat2]);
-        public (Const, Const, Const) this[ConstPattern pat1, ConstPattern pat2, ConstPattern pat3] => (this[pat1], this[pat2], this[pat3]);
-
     }
 
     public sealed class EGraphMatcher

@@ -1,14 +1,14 @@
 using System;
 using System.Linq;
 using Nncase.IR;
-using Nncase.Transform.Pattern;
-using Nncase.Transform.Pattern.Math;
-using static Nncase.Transform.Pattern.Utility;
+using Nncase.Pattern;
+using Nncase.Pattern.Math;
+using static Nncase.Pattern.Utility;
 using static Nncase.IR.F.Tensors;
 
 namespace Nncase.Transform.Rule
 {
-    public sealed class Reassociate : EGraphRule
+    public sealed class Reassociate : PatternRule
     {
         private WildCardPattern wx = "x", wy = "y", wz = "z";
 
@@ -19,14 +19,14 @@ namespace Nncase.Transform.Rule
         }
 
 
-        public override Expr GetRePlace(EMatchResult result)
+        public override Expr GetRePlace(IMatchResult result)
         {
             var (x, y, z) = result[wx, wy, wz];
             return x * (y * z);
         }
     }
 
-    public sealed class RemoveNoSenceBinary : EGraphRule
+    public sealed class RemoveNoSenceBinary : PatternRule
     {
         private BinaryWrapper binary;
 
@@ -40,7 +40,7 @@ namespace Nncase.Transform.Rule
             con.ToScalar<float>() == value :
             con.ToTensor<float>().All(v => v == value);
 
-        public override Expr? GetRePlace(EMatchResult result)
+        public override Expr? GetRePlace(IMatchResult result)
         {
             binary.Bind(result);
             var binaryOp = binary.BinaryOp;

@@ -1,27 +1,28 @@
-using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
-using Nncase.Transform.Pattern.NN;
-using Nncase.Transform.Pattern.Tensors;
-using static Nncase.Transform.Pattern.Utility;
-using static Nncase.IR.F.NN;
-using static Nncase.IR.F.Tensors;
-using static Nncase.Transform.Pattern.F.Tensors;
 using System.Numerics.Tensors;
+using System.Linq;
+using System.Collections.Immutable;
+using System.Collections.Generic;
+using System;
+using static Nncase.Pattern.Utility;
+using static Nncase.Pattern.F.Tensors;
+using static Nncase.IR.F.Tensors;
+using static Nncase.IR.F.NN;
+using Nncase.Pattern.Tensors;
+using Nncase.Pattern.NN;
+using Nncase.Pattern;
 using Nncase.IR;
 
 namespace Nncase.Transform.Rule
 {
 
-    public class MatMulToConv2D : EGraphRule
+    public class MatMulToConv2D : PatternRule
     {
         MatMulWrapper matmul;
         public MatMulToConv2D()
         {
             Pattern = matmul = MatMul(IsWildCard(), IsWildCard());
         }
-        public override Expr? GetRePlace(EMatchResult result)
+        public override Expr? GetRePlace(IMatchResult result)
         {
             matmul.Bind(result);
             var input_shape = matmul.Input().CheckedShape;

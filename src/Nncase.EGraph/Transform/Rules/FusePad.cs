@@ -1,18 +1,19 @@
-using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
-using Nncase.Transform.Pattern.NN;
-using Nncase.Transform.Pattern.Tensors;
-using static Nncase.Transform.Pattern.Utility;
-using static Nncase.IR.F.NN;
-using static Nncase.IR.F.Tensors;
 using System.Numerics.Tensors;
+using System.Linq;
+using System.Collections.Immutable;
+using System.Collections.Generic;
+using System;
+using static Nncase.Pattern.Utility;
+using static Nncase.IR.F.Tensors;
+using static Nncase.IR.F.NN;
+using Nncase.Pattern.Tensors;
+using Nncase.Pattern.NN;
+using Nncase.Pattern;
 using Nncase.IR;
 
 namespace Nncase.Transform.Rule
 {
-    public class FoldPadConv2d : EGraphRule
+    public class FoldPadConv2d : PatternRule
     {
         Conv2DWrapper conv2d;
         PadWrapper pad;
@@ -22,7 +23,7 @@ namespace Nncase.Transform.Rule
             Pattern = conv2d = IsConv2D(pad, PadMode.Constant);
         }
 
-        public override Expr? GetRePlace(EMatchResult result)
+        public override Expr? GetRePlace(IMatchResult result)
         {
             pad.Bind(result);
             conv2d.Bind(result);

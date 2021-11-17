@@ -1,21 +1,21 @@
-using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
-using Nncase.IR;
-using Nncase.IR.Math;
-using Nncase.IR.Tensors;
-using Nncase.Transform.Pattern;
-using static Nncase.Transform.Pattern.F.Math;
-using static Nncase.Transform.Pattern.F.Tensors;
-using static Nncase.Transform.Pattern.Utility;
-using static Nncase.IR.F.Math;
+using System.Collections.Immutable;
+using System.Collections.Generic;
+using System;
+using static Nncase.Pattern.Utility;
+using static Nncase.Pattern.F.Tensors;
+using static Nncase.Pattern.F.Math;
 using static Nncase.IR.F.Tensors;
+using static Nncase.IR.F.Math;
+using Nncase.Pattern;
+using Nncase.IR.Tensors;
+using Nncase.IR.Math;
+using Nncase.IR;
 
 namespace Nncase.Transform.Rule
 {
 
-    public class FoldNopCast : EGraphRule
+    public class FoldNopCast : PatternRule
     {
         WildCardPattern wcin = "input";
         CallPattern wccast1, wccast2;
@@ -26,7 +26,7 @@ namespace Nncase.Transform.Rule
             Pattern = wccast2;
         }
 
-        public override Expr? GetRePlace(EMatchResult result)
+        public override Expr? GetRePlace(IMatchResult result)
         {
             var cast1 = (Cast)result[wccast1].Target;
             var cast2 = (Cast)result[wccast2].Target;

@@ -5,17 +5,17 @@ using System.Linq;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
-using Nncase.Transform.Pattern;
-using Nncase.Transform.Pattern.Tensors;
-using static Nncase.Transform.Pattern.F.Math;
-using static Nncase.Transform.Pattern.F.Tensors;
-using static Nncase.Transform.Pattern.Utility;
+using Nncase.Pattern;
+using Nncase.Pattern.Tensors;
+using static Nncase.Pattern.F.Math;
+using static Nncase.Pattern.F.Tensors;
+using static Nncase.Pattern.Utility;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.Tensors;
 
 namespace Nncase.Transform.Rule
 {
-    public class QuantPadMotion : EGraphRule
+    public class QuantPadMotion : PatternRule
     {
         QuantizeWrapper quant;
         PadWrapper pad;
@@ -25,7 +25,7 @@ namespace Nncase.Transform.Rule
             Pattern = quant = IsQuantize(pad);
         }
 
-        public override Expr? GetRePlace(EMatchResult result)
+        public override Expr? GetRePlace(IMatchResult result)
         {
             pad.Bind(result);
             quant.Bind(result);
@@ -38,7 +38,7 @@ namespace Nncase.Transform.Rule
         }
     }
 
-    public class QuantTransposeMotion : EGraphRule
+    public class QuantTransposeMotion : PatternRule
     {
         private TransposeWrapper trans;
         private QuantizeWrapper quant;
@@ -48,7 +48,7 @@ namespace Nncase.Transform.Rule
             trans = Transpose(IsWildCard(), IsConstIntTensor());
             Pattern = quant = IsQuantize(trans);
         }
-        public override Expr? GetRePlace(EMatchResult result)
+        public override Expr? GetRePlace(IMatchResult result)
         {
             trans.Bind(result);
             quant.Bind(result);
@@ -56,7 +56,7 @@ namespace Nncase.Transform.Rule
         }
     }
 
-    public class QuantSliceMotion : EGraphRule
+    public class QuantSliceMotion : PatternRule
     {
         private SliceWrapper slice;
         private QuantizeWrapper quant;
@@ -66,7 +66,7 @@ namespace Nncase.Transform.Rule
             slice = IsSlice(IsWildCard());
             Pattern = quant = IsQuantize(slice);
         }
-        public override Expr? GetRePlace(EMatchResult result)
+        public override Expr? GetRePlace(IMatchResult result)
         {
             slice.Bind(result);
             quant.Bind(result);
@@ -75,7 +75,7 @@ namespace Nncase.Transform.Rule
         }
     }
 
-    public class QuantResizeMotion : EGraphRule
+    public class QuantResizeMotion : PatternRule
     {
         private ResizeImageWrapper resize;
         private QuantizeWrapper quant;
@@ -86,7 +86,7 @@ namespace Nncase.Transform.Rule
             Pattern = quant = IsQuantize(resize);
         }
 
-        public override Expr? GetRePlace(EMatchResult result)
+        public override Expr? GetRePlace(IMatchResult result)
         {
             resize.Bind(result);
             quant.Bind(result);
@@ -94,7 +94,7 @@ namespace Nncase.Transform.Rule
         }
     }
 
-    public class QuantReshapeMotion : EGraphRule
+    public class QuantReshapeMotion : PatternRule
     {
         private ReshapeWrapper reshape;
         private QuantizeWrapper quant;
@@ -105,7 +105,7 @@ namespace Nncase.Transform.Rule
             Pattern = quant = IsQuantize(reshape);
         }
 
-        public override Expr? GetRePlace(EMatchResult result)
+        public override Expr? GetRePlace(IMatchResult result)
         {
             reshape.Bind(result);
             quant.Bind(result);
@@ -113,7 +113,7 @@ namespace Nncase.Transform.Rule
         }
     }
 
-    public class QuantBatchToSpaceMotion : EGraphRule
+    public class QuantBatchToSpaceMotion : PatternRule
     {
         private QuantizeWrapper quant;
         private BatchToSpaceWrapper b2s;
@@ -124,7 +124,7 @@ namespace Nncase.Transform.Rule
             Pattern = b2s = BatchToSpace(quant, IsWildCard(), IsWildCard());
         }
 
-        public override Expr? GetRePlace(EMatchResult result)
+        public override Expr? GetRePlace(IMatchResult result)
         {
             quant.Bind(result);
             b2s.Bind(result);

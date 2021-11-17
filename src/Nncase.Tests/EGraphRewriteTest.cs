@@ -3,11 +3,11 @@ using System;
 using System.Collections.Generic;
 using Nncase.IR;
 using Nncase.Transform;
-using Nncase.Transform.Pattern;
+using Nncase.Pattern;
 using static Nncase.IR.F.Math;
 using Rule = Nncase.Transform.Rule;
-using static Nncase.Transform.Pattern.F.Math;
-using static Nncase.Transform.Pattern.Utility;
+using static Nncase.Pattern.F.Math;
+using static Nncase.Pattern.Utility;
 using System.IO;
 
 

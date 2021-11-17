@@ -1,14 +1,15 @@
-using System.Linq;
-using Nncase.IR;
-using Nncase.Transform.Pattern.Tensors;
-using static Nncase.Transform.Pattern.Utility;
 using System.Numerics.Tensors;
+using System.Linq;
+using static Nncase.Pattern.Utility;
 using static Nncase.IR.F.Tensors;
+using Nncase.Pattern.Tensors;
+using Nncase.Pattern;
+using Nncase.IR;
 
 namespace Nncase.Transform.Rule
 {
 
-    public class FoldSliceSlice : EGraphRule
+    public class FoldSliceSlice : PatternRule
     {
         SliceWrapper slice1, slice2;
         public FoldSliceSlice()
@@ -40,7 +41,7 @@ namespace Nncase.Transform.Rule
             );
         }
 
-        public override Expr? GetRePlace(EMatchResult result)
+        public override Expr? GetRePlace(IMatchResult result)
         {
             slice1.Bind(result);
             slice2.Bind(result);

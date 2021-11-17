@@ -1,15 +1,15 @@
 using System;
 using Xunit;
-using Nncase.Transform.Pattern;
+using Nncase.Pattern;
 using Nncase.Transform;
 using Nncase.IR;
 using System.Collections.Generic;
-using Nncase.Transform.Pattern.Math;
+using Nncase.Pattern.Math;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.Tensors;
-using static Nncase.Transform.Pattern.Utility;
-using static Nncase.Transform.Pattern.F.Math;
-using static Nncase.Transform.Pattern.F.Tensors;
+using static Nncase.Pattern.Utility;
+using static Nncase.Pattern.F.Math;
+using static Nncase.Pattern.F.Tensors;
 using static Nncase.Transform.EGraphMatcher;
 using static Nncase.IR.Utility;
 

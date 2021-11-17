@@ -1,17 +1,17 @@
 using System;
 using System.Linq;
 using Nncase.IR;
-using Nncase.Transform.Pattern;
-using Nncase.Transform.Pattern.Math;
-using static Nncase.Transform.Pattern.Utility;
+using Nncase.Pattern;
+using Nncase.Pattern.Math;
+using static Nncase.Pattern.Utility;
 using static Nncase.IR.F.Tensors;
-using static Nncase.Transform.Pattern.F.Tensors;
-using Nncase.Transform.Pattern.Tensors;
+using static Nncase.Pattern.F.Tensors;
+using Nncase.Pattern.Tensors;
 using System.Numerics.Tensors;
 
 namespace Nncase.Transform.Rule{
 
-public class SpaceToBatchToPad : EGraphRule
+public class SpaceToBatchToPad : PatternRule
 {
     private SpaceToBatchWrapper s2b;
 
@@ -19,7 +19,7 @@ public class SpaceToBatchToPad : EGraphRule
     {
         Pattern = s2b = SpaceToBatch(IsWildCard(), IsConst(), IsConst());
     }
-    public override Expr? GetRePlace(EMatchResult result)
+    public override Expr? GetRePlace(IMatchResult result)
     {
         s2b.Bind(result);
         var block_shape = s2b.BlockShape<Const>().ToTensor<int>();

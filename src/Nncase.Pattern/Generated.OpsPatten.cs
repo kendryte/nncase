@@ -9,7 +9,7 @@ using Nncase.IR.Math;
 using Nncase.IR.NN;
 using Nncase.IR.Tensors;
 
-namespace Nncase.Transform.Pattern.Math
+namespace Nncase.Pattern.Math
 {
     public sealed record BinaryPattern(Func<Binary, bool> Cond) : OpPattern
     {
@@ -56,7 +56,7 @@ namespace Nncase.Transform.Pattern.Math
     }
 }
 
-namespace Nncase.Transform.Pattern.NN
+namespace Nncase.Pattern.NN
 {
     public sealed record SigmoidPattern(Func<Sigmoid, bool> Cond) : OpPattern
     {
@@ -187,7 +187,7 @@ namespace Nncase.Transform.Pattern.NN
     }
 }
 
-namespace Nncase.Transform.Pattern.Tensors
+namespace Nncase.Pattern.Tensors
 {
     public sealed record BatchToSpacePattern(Func<BatchToSpace, bool> Cond) : OpPattern
     {

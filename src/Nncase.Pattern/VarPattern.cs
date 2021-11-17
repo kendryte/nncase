@@ -8,7 +8,7 @@ using System.Linq;
 using Nncase.IR;
 using static Nncase.IR.Utility;
 
-namespace Nncase.Transform.Pattern
+namespace Nncase.Pattern
 {
     public sealed record VarPattern(string Name, TypePattern Type) : ExprPattern
     {

@@ -6,9 +6,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using static Nncase.Transform.Pattern.F.Math;
+using static Nncase.Pattern.F.Math;
 
-namespace Nncase.Transform.Pattern
+namespace Nncase.Pattern
 {
     /// <summary>
     /// Math operators for <see cref="ExprPattern"/>.

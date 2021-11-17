@@ -147,7 +147,7 @@ namespace PatternGenerator
 
                     wrappers.Add(wrapper);
                 }
-                var @namespace = NamespaceDeclaration(ParseName($"Nncase.Transform.Pattern.{scope}")).AddMembers(wrappers.ToArray());
+                var @namespace = NamespaceDeclaration(ParseName($"Nncase.Pattern.{scope}")).AddMembers(wrappers.ToArray());
                 namespcaes.Add(@namespace);
                 wrappers.Clear();
             }
@@ -210,7 +210,7 @@ namespace PatternGenerator
 
                     patterns.Add(pattern);
                 }
-                var @namespace = NamespaceDeclaration(ParseName($"Nncase.Transform.Pattern.{scope}")).AddMembers(patterns.ToArray());
+                var @namespace = NamespaceDeclaration(ParseName($"Nncase.Pattern.{scope}")).AddMembers(patterns.ToArray());
                 namespcaes.Add(@namespace);
                 patterns.Clear();
             }
@@ -241,33 +241,54 @@ namespace PatternGenerator
         public static void GenerateOpVisits(Receiver receiver, string filePath)
         {
             var baseType = SimpleBaseType(ParseTypeName("ExprPattern"));
-            var arms = new List<SwitchExpressionArmSyntax>();
+            var visitArms = new List<SwitchExpressionArmSyntax>();
+            var castArms = new List<SwitchExpressionArmSyntax>(); /* cast the op to OpPattern visit */
             foreach (var (scope, ops) in receiver.CandiateOps)
             {
                 foreach (var op in ops)
                 {
-                    var lhsDeclar = Subpattern(DeclarationPattern(ParseTypeName(op.PatternName), SingleVariableDesignation(Identifier(op.PatternName.ToLower()))));
-                    var rhsDeclar = Subpattern(DeclarationPattern(ParseTypeName(op.Name), SingleVariableDesignation(Identifier(op.Name.ToLower()))));
-                    var combineDeclar = RecursivePattern().AddPositionalPatternClauseSubpatterns(lhsDeclar, rhsDeclar);
+                    var lhsDeclar = DeclarationPattern(ParseTypeName(op.PatternName), SingleVariableDesignation(Identifier(op.PatternName.ToLower())));
+                    var rhsDeclar = DeclarationPattern(ParseTypeName(op.Name), SingleVariableDesignation(Identifier(op.Name.ToLower())));
+                    var combineDeclar = RecursivePattern().AddPositionalPatternClauseSubpatterns(Subpattern(lhsDeclar), Subpattern(rhsDeclar));
                     var invocation = ParseExpression($"{op.PatternName.ToLower()}.MatchLeaf({op.Name.ToLower()})");
-                    arms.Add(SwitchExpressionArm(combineDeclar, invocation));
+                    visitArms.Add(SwitchExpressionArm(combineDeclar, invocation));
+
+                    castArms.Add(SwitchExpressionArm(rhsDeclar, ParseExpression($"new {op.PatternName}({op.Name.ToLower()})")));
                 }
             }
-            arms.Add(SwitchExpressionArm(
+            visitArms.Add(SwitchExpressionArm(
                      RecursivePattern().
                      AddPositionalPatternClauseSubpatterns(
                        Subpattern(DiscardPattern()),
                        Subpattern(DiscardPattern())),
                      ParseExpression("false")));
-            var @switch = SwitchExpression(
+
+            castArms.Add(SwitchExpressionArm(DiscardPattern(),
+                     ParseExpression(@"throw new NotImplementedException($""Can't Convert OP {op.GetType().Name} To ExprPattern"")")));
+
+            var visitSwitch = SwitchExpression(
                   ParseExpression("(this, op)"),
-                  SeparatedList(arms));
+                  SeparatedList(visitArms));
+
             var matchMethod = MethodDeclaration(ParseTypeName("bool"), "MatchLeaf")
                 .AddModifiers(Token(SyntaxKind.PublicKeyword))
                 .AddParameterListParameters(
                     Parameter(Identifier("op")).WithType(ParseTypeName("Op")))
                 .WithLeadingTrivia(LineFeed)
-                .WithExpressionBody(ArrowExpressionClause(@switch))
+                .WithExpressionBody(ArrowExpressionClause(visitSwitch))
+                .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
+
+            /* build cast method */
+            var castSwitch = SwitchExpression(
+                  ParseExpression("op"),
+                  SeparatedList(castArms));
+
+            var castMethod = MethodDeclaration(ParseTypeName("ExprPattern"), "CastToPattern")
+                .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.StaticKeyword))
+                .AddParameterListParameters(
+                    Parameter(Identifier("op")).WithType(ParseTypeName("Op")))
+                .WithLeadingTrivia(LineFeed)
+                .WithExpressionBody(ArrowExpressionClause(castSwitch))
                 .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
 
             var @record = RecordDeclaration(Token(SyntaxKind.RecordKeyword), "OpPattern")
@@ -275,9 +296,10 @@ namespace PatternGenerator
                           .AddBaseListTypes(SimpleBaseType(ParseTypeName("ExprPattern")))
                           .WithOpenBraceToken(Token(SyntaxKind.OpenBraceToken))
                           .AddMembers(matchMethod)
+                          .AddMembers(castMethod)
                           .WithCloseBraceToken(Token(SyntaxKind.CloseBraceToken));
 
-            var @namespace = NamespaceDeclaration(ParseName("Nncase.Transform.Pattern"))
+            var @namespace = NamespaceDeclaration(ParseName("Nncase.Pattern"))
                 .AddMembers(@record);
 
             var compilationUnit = CompilationUnit()
@@ -291,9 +313,9 @@ namespace PatternGenerator
             UsingDirective(ParseName("Nncase.IR.NN")),
             UsingDirective(ParseName("Nncase.IR.Math")),
             UsingDirective(ParseName("Nncase.IR.Tensors")),
-            UsingDirective(ParseName("Nncase.Transform.Pattern.NN")),
-            UsingDirective(ParseName("Nncase.Transform.Pattern.Math")),
-            UsingDirective(ParseName("Nncase.Transform.Pattern.Tensors")))
+            UsingDirective(ParseName("Nncase.Pattern.NN")),
+            UsingDirective(ParseName("Nncase.Pattern.Math")),
+            UsingDirective(ParseName("Nncase.Pattern.Tensors")))
                 .NormalizeWhitespace();
             var syntaxTree = SyntaxTree(compilationUnit, encoding: Encoding.UTF8);
             var file = File.Open(Path.Combine(filePath, "Generated.OpPattern.cs"), FileMode.Create);
@@ -383,7 +405,7 @@ namespace PatternGenerator
                 functions.Clear();
                 classes.Add(@class);
             }
-            var @namespace = NamespaceDeclaration(ParseName($"Nncase.Transform.Pattern.F")).AddMembers(classes.ToArray());
+            var @namespace = NamespaceDeclaration(ParseName($"Nncase.Pattern.F")).AddMembers(classes.ToArray());
             var compilationUnit = CompilationUnit().
                 AddMembers(@namespace).
                 AddUsings(
@@ -391,9 +413,9 @@ namespace PatternGenerator
                   UsingDirective(ParseName("System.Linq")),
                   UsingDirective(ParseName("System.Text")),
                   UsingDirective(ParseName("System.Threading.Tasks")),
-                  UsingDirective(ParseName("Nncase.Transform.Pattern.Math")),
-                  UsingDirective(ParseName("Nncase.Transform.Pattern.NN")),
-                  UsingDirective(ParseName("Nncase.Transform.Pattern.Tensors")),
+                  UsingDirective(ParseName("Nncase.Pattern.Math")),
+                  UsingDirective(ParseName("Nncase.Pattern.NN")),
+                  UsingDirective(ParseName("Nncase.Pattern.Tensors")),
                   UsingDirective(ParseName("Nncase.IR")),
                   UsingDirective(ParseName("Nncase.IR.Math")),
                   UsingDirective(ParseName("Nncase.IR.NN")),
@@ -422,7 +444,7 @@ namespace PatternGenerator
         static async Task Main(string[] args)
         {
             var nncaseRoot = new DirectoryInfo("../../").FullName;
-            var patternRoot = Path.Combine(nncaseRoot, "src", "Nncase.EGraph", "Transform/Pattern");
+            var patternRoot = Path.Combine(nncaseRoot, "src", "Nncase.Pattern");
 
             // Console.WriteLine("Hello World!");
             // Locate and register the default instance of MSBuild installed on this machine.

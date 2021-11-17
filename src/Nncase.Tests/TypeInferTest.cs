@@ -7,7 +7,7 @@ using System.Linq;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Tensors;
-using static Nncase.Transform.Pattern.Utility;
+using static Nncase.Pattern.Utility;
 using static Nncase.IR.Utility;
 
 public class UnitTestTypeInfer
@@ -28,7 +28,7 @@ public class UnitTestTypeInfer
     {
         Var a = new Var(AnyType.Default);
         var c = Square(a);
-        Assert.Throws<TypeInferenceInterruptException>(() => TypeInference.InferenceType(c));
+        Assert.False(TypeInference.InferenceType(c));
     }
 
 }

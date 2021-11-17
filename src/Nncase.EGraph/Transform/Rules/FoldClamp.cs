@@ -1,21 +1,21 @@
-using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
 using System.Linq;
-using Nncase.IR;
-using Nncase.IR.Math;
-using Nncase.IR.Tensors;
-using Nncase.Transform.Pattern;
-using static Nncase.Transform.Pattern.F.Math;
-using static Nncase.Transform.Pattern.F.Tensors;
-using static Nncase.Transform.Pattern.Utility;
-using static Nncase.IR.F.Math;
-using static Nncase.IR.F.Tensors;
+using System.Collections.Immutable;
+using System.Collections.Generic;
+using System;
+using static Nncase.Pattern.Utility;
+using static Nncase.Pattern.F.Tensors;
+using static Nncase.Pattern.F.Math;
 using static Nncase.IR.Utility;
+using static Nncase.IR.F.Tensors;
+using static Nncase.IR.F.Math;
+using Nncase.Pattern;
+using Nncase.IR.Tensors;
+using Nncase.IR.Math;
+using Nncase.IR;
 
 namespace Nncase.Transform.Rule
 {
-    public class FoldNopClamp : EGraphRule
+    public class FoldNopClamp : PatternRule
     {
         WildCardPattern wcin = "input";
         ConstPattern wcmin = IsConst(IsScalar());
@@ -26,7 +26,7 @@ namespace Nncase.Transform.Rule
             Pattern = Clamp(wcin, wcmin, wcmax);
         }
 
-        public override Expr? GetRePlace(EMatchResult result)
+        public override Expr? GetRePlace(IMatchResult result)
         {
             var input = result[wcin];
             var (min, max) = result[wcmin, wcmax];

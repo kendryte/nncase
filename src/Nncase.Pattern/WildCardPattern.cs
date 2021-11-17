@@ -4,7 +4,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using Nncase.IR;
 
-namespace Nncase.Transform.Pattern
+namespace Nncase.Pattern
 {
     public sealed record WildCardPattern(string Name) : ExprPattern
     {

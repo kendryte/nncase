@@ -1,15 +1,16 @@
-using System.Linq;
-using Nncase.IR;
-using Nncase.Transform.Pattern.Tensors;
-using static Nncase.Transform.Pattern.Utility;
 using System.Numerics.Tensors;
+using System.Linq;
+using static Nncase.Pattern.Utility;
+using static Nncase.Pattern.F.Tensors;
 using static Nncase.IR.F.Tensors;
-using static Nncase.Transform.Pattern.F.Tensors;
+using Nncase.Pattern.Tensors;
+using Nncase.Pattern;
+using Nncase.IR;
 
 namespace Nncase.Transform.Rule
 {
 
-    public class FoldTranspose : EGraphRule
+    public class FoldTranspose : PatternRule
     {
         TransposeWrapper tp1, tp2;
         public FoldTranspose()
@@ -19,7 +20,7 @@ namespace Nncase.Transform.Rule
             Pattern = tp2;
         }
 
-        public override Expr? GetRePlace(EMatchResult result)
+        public override Expr? GetRePlace(IMatchResult result)
         {
             tp1.Bind(result);
             tp2.Bind(result);
@@ -39,14 +40,14 @@ namespace Nncase.Transform.Rule
     }
 
 
-    public class FoldNopTranspose : EGraphRule
+    public class FoldNopTranspose : PatternRule
     {
         TransposeWrapper tp;
         public FoldNopTranspose()
         {
             Pattern = tp = Transpose(IsWildCard(), IsConstIntTensor());
         }
-        public override Expr? GetRePlace(EMatchResult result)
+        public override Expr? GetRePlace(IMatchResult result)
         {
             tp.Bind(result);
             var perm = tp.Perm<Const>().ToTensor<int>();
@@ -58,14 +59,14 @@ namespace Nncase.Transform.Rule
         }
     }
 
-    public class TransposeToReshape : EGraphRule
+    public class TransposeToReshape : PatternRule
     {
         TransposeWrapper tp;
         public TransposeToReshape()
         {
             Pattern = tp = Transpose(IsWildCard(), IsConstIntTensor());
         }
-        public override Expr? GetRePlace(EMatchResult result)
+        public override Expr? GetRePlace(IMatchResult result)
         {
             tp.Bind(result);
             var perm = tp.Perm<Const>().ToTensor<int>();

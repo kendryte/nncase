@@ -4,7 +4,7 @@ using System.Linq;
 using Nncase.IR;
 using static Nncase.IR.Utility;
 
-namespace Nncase.Transform.Pattern
+namespace Nncase.Pattern
 {
 
     public sealed record ConstPattern(Func<Const, bool> Cond) : ExprPattern

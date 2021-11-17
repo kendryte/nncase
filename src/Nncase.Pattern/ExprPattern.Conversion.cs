@@ -7,7 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Nncase.Transform.Pattern
+namespace Nncase.Pattern
 {
     public abstract partial record ExprPattern
     {

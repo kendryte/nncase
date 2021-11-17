@@ -1,23 +1,23 @@
-using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
-using Nncase.IR;
-using Nncase.IR.Math;
-using Nncase.IR.Tensors;
-using Nncase.Transform.Pattern;
-using static Nncase.Transform.Pattern.F.Math;
-using static Nncase.Transform.Pattern.F.Tensors;
-using static Nncase.Transform.Pattern.Utility;
-using static Nncase.IR.F.Math;
-using static Nncase.IR.F.Tensors;
-using static Nncase.IR.Utility;
 using System.Numerics.Tensors;
+using System.Linq;
+using System.Collections.Immutable;
+using System.Collections.Generic;
+using System;
+using static Nncase.Pattern.Utility;
+using static Nncase.Pattern.F.Tensors;
+using static Nncase.Pattern.F.Math;
+using static Nncase.IR.Utility;
+using static Nncase.IR.F.Tensors;
+using static Nncase.IR.F.Math;
+using Nncase.Pattern;
+using Nncase.IR.Tensors;
+using Nncase.IR.Math;
+using Nncase.IR;
 
 
 namespace Nncase.Transform.Rule
 {
-    public class FoldNopPad : EGraphRule
+    public class FoldNopPad : PatternRule
     {
         WildCardPattern wcin = "input";
         ConstPattern wcpad = IsConst(IsTensor() & IsIntegral());
@@ -26,7 +26,7 @@ namespace Nncase.Transform.Rule
             Pattern = IsPad(wcin, wcpad, IsWildCard());
         }
 
-        public override Expr? GetRePlace(EMatchResult result)
+        public override Expr? GetRePlace(IMatchResult result)
         {
             var pad = result[wcpad].ToTensor<int>();
             if (pad.All(x => x == 0))
@@ -35,7 +35,7 @@ namespace Nncase.Transform.Rule
         }
     }
 
-    public class FoldPadPad : EGraphRule
+    public class FoldPadPad : PatternRule
     {
         WildCardPattern wcin = "input";
         ConstPattern wcpad1, wcpad2;
@@ -51,7 +51,7 @@ namespace Nncase.Transform.Rule
             pad2 = IsPad(pad1, wcpad2, wcvalue2);
         }
 
-        public override Expr? GetRePlace(EMatchResult result)
+        public override Expr? GetRePlace(IMatchResult result)
         {
             var (value1, value2) = result[wcvalue1, wcvalue2];
             var mode1 = ((Pad)result[pad1].Target).PadMode;
@@ -73,7 +73,7 @@ namespace Nncase.Transform.Rule
     }
 
 
-    public class FoldPadStrideSlice : EGraphRule
+    public class FoldPadStrideSlice : PatternRule
     {
         WildCardPattern wcin = "input", wcvalue = "value";
         CallPattern wcpad;
@@ -85,7 +85,7 @@ namespace Nncase.Transform.Rule
             Pattern = Slice(wcpad, wcbegin, wcend, wcaxes, wcstride);
         }
 
-        public override Expr? GetRePlace(EMatchResult result)
+        public override Expr? GetRePlace(IMatchResult result)
         {
             var pads = result[wcpads].ToTensor<int>();
             if (pads.Any(x => x < 0))
@@ -121,7 +121,7 @@ namespace Nncase.Transform.Rule
         }
     }
 
-    public class StrideSliceToPad : EGraphRule
+    public class StrideSliceToPad : PatternRule
     {
         WildCardPattern wcin = "input";
         ConstPattern wcbegin = IsConstIntTensor(),
@@ -131,7 +131,7 @@ namespace Nncase.Transform.Rule
             Pattern = Slice(wcin, wcbegin, wcend, wcaxes, wcstride);
         }
 
-        public override Expr? GetRePlace(EMatchResult result)
+        public override Expr? GetRePlace(IMatchResult result)
         {
             var begin = result[wcbegin].ToTensor<int>();
             var end = result[wcend].ToTensor<int>();
@@ -149,7 +149,7 @@ namespace Nncase.Transform.Rule
         }
     }
 
-    public class PadToSlice : EGraphRule
+    public class PadToSlice : PatternRule
     {
         WildCardPattern wcin = "input";
         ConstPattern wcpads = IsConst((int x) => x <= 0);
@@ -159,7 +159,7 @@ namespace Nncase.Transform.Rule
             IsPad(wcin, wcpads, wcvalue);
         }
 
-        public override Expr? GetRePlace(EMatchResult result)
+        public override Expr? GetRePlace(IMatchResult result)
         {
             var input = result[wcin];
             if (input.CheckedType is TensorType intype)

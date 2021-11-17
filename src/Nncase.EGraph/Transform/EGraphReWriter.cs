@@ -4,6 +4,7 @@ using System.IO;
 using System.Collections.Generic;
 using Nncase.Transform.Rule;
 using Nncase.IR;
+using Nncase.Pattern;
 
 
 namespace Nncase.Transform
@@ -13,7 +14,7 @@ namespace Nncase.Transform
     {
         private bool dumpIr_, isMatchCache_;
 
-        public readonly Dictionary<EGraphRule, List<Expr>> MatchCache = new();
+        public readonly Dictionary<PatternRule, List<Expr>> MatchCache = new();
 
         private string _prefix;
 
@@ -25,16 +26,16 @@ namespace Nncase.Transform
 
         public bool IsMatchCache(bool value) => isMatchCache_ = value;
 
-        public EGraph Apply(EGraph eGraph, params EGraphRule[] Rules) => Apply(eGraph, new List<EGraphRule>(Rules));
+        public EGraph Apply(EGraph eGraph, params PatternRule[] Rules) => Apply(eGraph, new List<PatternRule>(Rules));
 
-        public EGraph Apply(EGraph eGraph, List<EGraphRule> Rules)
+        public EGraph Apply(EGraph eGraph, List<PatternRule> Rules)
         {
             var eClass = eGraph.EClasses();
-            var matches = new List<(EGraphRule, EMatchResult)> { };
+            var matches = new List<(PatternRule, EMatchResult)> { };
             // batch pattern match
             foreach (var rule in Rules)
             {
-                var results = EGraphMatcher.EMatch(eClass, rule.GetPatterns());
+                var results = EGraphMatcher.EMatch(eClass, rule.Patterns);
                 foreach (var result in results)
                 {
                     matches.Add((rule, result));

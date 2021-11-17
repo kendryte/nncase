@@ -1,49 +1,21 @@
-// Copyright (c) Canaan Inc. All rights reserved.
-// Licensed under the Apache license. See LICENSE file in the project root for full license information.
-
 using System;
-using Nncase.IR;
+using static Nncase.Pattern.Utility;
+using Nncase.Pattern.Tensors;
+using Nncase.Pattern.NN;
+using Nncase.Pattern.Math;
+using Nncase.Pattern;
 using Nncase.IR.Tensors;
-using Nncase.Transform.Pattern.NN;
-using Nncase.Transform.Pattern.Math;
-using Nncase.Transform.Pattern.Tensors;
+using Nncase.IR.NN;
+using Nncase.IR.Math;
+using Nncase;
+using static Nncase.Pattern.F.Tensors;
 
-
-namespace Nncase.Transform.Pattern
+namespace Nncase.Pattern
 {
-    public sealed record CallPattern(ExprPattern Target, VArgsPattern Parameters) : ExprPattern
-    {
-
-        public CallPattern(Call call) : this((ExprPattern)call.Target, new FixedVArgsPattern(call.Parameters)) { }
-
-        public bool MatchLeaf(Call call)
-        {
-            return MatchCheckedType(call);
-        }
-
-        public ExprPattern this[ParameterInfo parameter]
-        {
-            get => Parameters[parameter.Index];
-        }
-
-
-        public CallPattern(ExprPattern target, params ExprPattern[] parameters)
-            : this(target, new FixedVArgsPattern(parameters))
-        {
-        }
-
-    }
-
     public static partial class Utility
     {
-
-        public static CallPattern IsCall(ExprPattern Target, VArgsPattern Parameters) => new CallPattern(Target, Parameters);
-
-        public static CallPattern IsCall(ExprPattern Target, params ExprPattern[] Parameters) => new CallPattern(Target, Parameters);
-
-
         public static BinaryWrapper IsBinary(Func<BinaryOp, bool> OpTypeCond, ExprPattern lhs, ExprPattern rhs) =>
-          new BinaryWrapper(new CallPattern(new BinaryPattern(binary => OpTypeCond(binary.BinaryOp)), lhs, rhs));
+                  new BinaryWrapper(new CallPattern(new BinaryPattern(binary => OpTypeCond(binary.BinaryOp)), lhs, rhs));
 
         public static BinaryWrapper IsBinary(BinaryOp opType, ExprPattern lhs, ExprPattern rhs) =>
           IsBinary(binaryOp => opType == binaryOp, lhs, rhs);
@@ -85,9 +57,9 @@ namespace Nncase.Transform.Pattern
 
         public static DeQuantizeWrapper IsDeQuantize(ExprPattern input) => IsDeQuantize(x => true, input, IsConst(), IsConst());
 
-        public static SliceWrapper IsSlice(ExprPattern input) => F.Tensors.Slice(input, IsConstIntTensor(), IsConstIntTensor(), IsConstIntTensor(), IsConstIntTensor());
+        public static SliceWrapper IsSlice(ExprPattern input) => Slice(input, IsConstIntTensor(), IsConstIntTensor(), IsConstIntTensor(), IsConstIntTensor());
 
-        public static SliceWrapper IsSlice(ExprPattern input, ExprPattern begins, ExprPattern ends) => F.Tensors.Slice(input, begins, ends, IsConstIntTensor(), IsConstIntTensor());
+        public static SliceWrapper IsSlice(ExprPattern input, ExprPattern begins, ExprPattern ends) => Slice(input, begins, ends, IsConstIntTensor(), IsConstIntTensor());
 
 
         public static Conv2DWrapper IsConv2D(ExprPattern input, ExprPattern weights, ExprPattern bias, PadMode padMode) => new Conv2DWrapper(new CallPattern(new Conv2DPattern(x => x.PadMode == padMode), input, weights, bias, IsConst(), IsConst(), IsConst()));

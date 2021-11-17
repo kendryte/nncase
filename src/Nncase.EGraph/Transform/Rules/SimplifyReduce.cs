@@ -1,16 +1,16 @@
 using System;
 using System.Linq;
 using Nncase.IR;
-using Nncase.Transform.Pattern;
-using Nncase.Transform.Pattern.Math;
-using static Nncase.Transform.Pattern.Utility;
+using Nncase.Pattern;
+using Nncase.Pattern.Math;
+using static Nncase.Pattern.Utility;
 using static Nncase.IR.F.Tensors;
-using Nncase.Transform.Pattern.Tensors;
+using Nncase.Pattern.Tensors;
 using System.Collections.Generic;
 
 namespace Nncase.Transform.Rule
 {
-    public class SimplifyReduce : EGraphRule
+    public class SimplifyReduce : PatternRule
     {
         private ReduceWrapper reduce;
 
@@ -19,7 +19,7 @@ namespace Nncase.Transform.Rule
             Pattern = reduce = IsReduce((ReduceOp op) => true, IsWildCard(), IsConst(), IsConst(), IsConst());
         }
 
-        public override Expr? GetRePlace(EMatchResult result)
+        public override Expr? GetRePlace(IMatchResult result)
         {
             reduce.Bind(result);
 

@@ -3,9 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Nncase.IR;
 using Nncase.IR.Math;
-using Nncase.Transform.Pattern.Math;
 
-namespace Nncase.Transform.Pattern
+namespace Nncase.Pattern
 {
 
     public abstract partial record ExprPattern(int Id)
@@ -21,12 +20,7 @@ namespace Nncase.Transform.Pattern
             (Function function) => new FunctionPattern(function),
             (Call call) => new CallPattern(call),
             (IR.Tuple tuple) => new TuplePattern(tuple),
-            (Op op) => op switch
-            {
-                Binary binary => new BinaryPattern(binary),
-                Unary unary => new UnaryPattern(unary),
-                _ => throw new NotImplementedException($"Can't Convert OP {expr.GetType().Name} To ExprPattern")
-            },
+            (Op op) => OpPattern.CastToPattern(op),
             _ => throw new NotImplementedException($"Can't Convert The Expr {expr.GetType().Name} To ExprPattern")
         };
 

@@ -2,15 +2,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Nncase.Transform.Pattern.Math;
-using Nncase.Transform.Pattern.NN;
-using Nncase.Transform.Pattern.Tensors;
+using Nncase.Pattern.Math;
+using Nncase.Pattern.NN;
+using Nncase.Pattern.Tensors;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
 using Nncase.IR.Tensors;
 
-namespace Nncase.Transform.Pattern.F
+namespace Nncase.Pattern.F
 {
     public static partial class Math
     {

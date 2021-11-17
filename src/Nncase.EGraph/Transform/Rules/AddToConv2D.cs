@@ -1,21 +1,22 @@
-using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
-using Nncase.Transform.Pattern.NN;
-using Nncase.Transform.Pattern.Tensors;
-using static Nncase.Transform.Pattern.Utility;
-using static Nncase.IR.F.NN;
-using static Nncase.IR.F.Tensors;
-using static Nncase.Transform.Pattern.F.Math;
-using static Nncase.Transform.Pattern.F.Tensors;
 using System.Numerics.Tensors;
+using System.Linq;
+using System.Collections.Immutable;
+using System.Collections.Generic;
+using System;
+using static Nncase.Pattern.Utility;
+using static Nncase.Pattern.F.Tensors;
+using static Nncase.Pattern.F.Math;
+using static Nncase.IR.F.Tensors;
+using static Nncase.IR.F.NN;
+using Nncase.Pattern.Tensors;
+using Nncase.Pattern.NN;
+using Nncase.Pattern.Math;
+using Nncase.Pattern;
 using Nncase.IR;
-using Nncase.Transform.Pattern.Math;
 
 namespace Nncase.Transform.Rule
 {
-    public sealed class AddToConv2D : EGraphRule
+    public sealed class AddToConv2D : PatternRule
     {
         private BinaryWrapper ad;
 
@@ -24,7 +25,7 @@ namespace Nncase.Transform.Rule
             Pattern = ad = Add(IsWildCard(), IsWildCard());
         }
 
-        public override Expr? GetRePlace(EMatchResult result)
+        public override Expr? GetRePlace(IMatchResult result)
         {
             ad.Bind(result);
             var a_sp = ad.Lhs().CheckedShape;
