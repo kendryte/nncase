@@ -75,14 +75,14 @@ namespace Nncase.Importer.TFLite
             _ => throw new NotSupportedException("Unsupported Activation:" + func),
         };
 
-        private static Expr GetWindowedOutputSize(Expr size, Expr filter, Expr stride, Expr dilation, Expr same, Expr ceilMode)
+        private static Expr GetWindowedOutputSize(Expr size, Expr filter, Expr stride, Expr dilation, bool same, bool ceilMode)
         {
             var effectiveFilterSize = ((filter - 1) * dilation) + 1;
-            var trueBranch = ((size + stride - 1) / stride);
-            var falseBranch = new If(ceilMode,
-                ((size - effectiveFilterSize + stride) / stride),
-                F.Math.Ceil((size - effectiveFilterSize + stride) / stride));
-            return new If(same, trueBranch, falseBranch);
+            var falseBranch = ceilMode
+                ? ((size - effectiveFilterSize + stride) / stride)
+                : F.Math.Ceil((size - effectiveFilterSize + stride) / stride);
+            var trueBranch = (size + stride - 1) / stride;
+            return same ? trueBranch : falseBranch;
         }
 
         private static Expr[] GetWindowedPaddingValue(Expr inputSize, Expr outputSize, Expr filter, Expr stride, Expr dilation)
@@ -92,44 +92,10 @@ namespace Nncase.Importer.TFLite
             return new[] { padding / 2, padding - (padding / 2) };
         }
         
-        private static Expr[] GetWindowedPadding(Expr inputSize, Expr filter, Expr stride, Expr dilation, Expr same)
+        private static Expr[] GetWindowedPadding(Expr inputSize, Expr filter, Expr stride, Expr dilation, bool same)
         {
             var outputSize = GetWindowedOutputSize(inputSize, filter, stride, dilation, same, false);
             return GetWindowedPaddingValue(inputSize, outputSize, filter, stride, dilation);
         }
-
-        // private static int GetWindowedOutputSize(int size, int filter, int stride, int dilation, bool same,
-        //     bool ceilMode = false)
-        // {
-        //     var effectiveFilterSize = ((filter - 1) * dilation) + 1;
-        //     if (same)
-        //     {
-        //         return (int)(((uint)size + stride - 1) / stride);
-        //     }
-        //     else
-        //     {
-        //         if (!ceilMode)
-        //         {
-        //             return (int)(((uint)size - effectiveFilterSize + stride) / stride);
-        //         }
-        //         else
-        //         {
-        //             return (int)Math.Ceiling((float)((uint)size - effectiveFilterSize + stride) / stride);
-        //         }
-        //     }
-        // }
-        //
-        // private static int[] GetWindowedPadding(int inputSize, int filter, int stride, int dilation, bool same)
-        // {
-        //     var outputSize = GetWindowedOutputSize(inputSize, filter, stride, dilation, same);
-        //     return GetWindowedPadding(inputSize, outputSize, filter, stride, dilation);
-        // }
-        //
-        // private static int[] GetWindowedPadding(int inputSize, int outputSize, int filter, int stride, int dilation)
-        // {
-        //     var effectiveFilterSize = ((filter - 1) * dilation) + 1;
-        //     var padding = Math.Max(0, ((outputSize - 1) * stride) + effectiveFilterSize - inputSize);
-        //     return new[] { padding / 2, padding - (padding / 2) };
-        // }
     }
 }
