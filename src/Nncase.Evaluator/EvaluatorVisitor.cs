@@ -4,6 +4,7 @@ using System.Linq;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
+using Nncase.IR.Tensors;
 using TorchSharp;
 
 namespace Nncase.Evaluator.Ops
@@ -17,21 +18,42 @@ namespace Nncase.Evaluator.Ops
         {
             _exprMemo = exprMemo;
         }
-        
-        private Call GetCurrentCall() => CurrentCall ?? throw new InvalidOperationException("Current call is not set in evaluator.");
+
+        private Call GetCurrentCall() =>
+            CurrentCall ?? throw new InvalidOperationException("Current call is not set in evaluator.");
 
         public torch.Tensor GetArgument(Op op, ParameterInfo parameter)
         {
+            return _exprMemo[GetArgumentExpr(op, parameter)];
+        }
+        
+        public torch.Tensor GetArgument(Expr expr)
+        {
+            return _exprMemo[expr];
+        }
+
+        public Expr GetArgumentExpr(Op op, ParameterInfo parameter)
+        {
             if (op.GetType() == parameter.OwnerType)
             {
-                return _exprMemo[GetCurrentCall().Parameters[parameter.Index]];
+                return GetCurrentCall().Parameters[parameter.Index];
             }
             else
             {
                 throw new ArgumentOutOfRangeException($"Operator {op} doesn't have parameter: {parameter.Name}.");
             }
-            // if (CurrentCall != null) return ToTorchTensor(CurrentCall.Parameters[index]);
-            // else throw new NotImplementedException();
+        }
+
+        public Const GetArgumentConst(Op op, ParameterInfo parameter)
+        {
+            if(GetArgumentExpr(op, parameter) is Const constValue)
+            {
+                return constValue;
+            }
+            else
+            {
+                throw new InvalidOperationException($"Op:{op} Parameter:{parameter} is not const");
+            }
         }
     }
     
@@ -49,27 +71,39 @@ namespace Nncase.Evaluator.Ops
             _context.CurrentCall = expr;
             return expr.Target switch
             {
-                Binary binary => VisitBinary(binary),
+                Binary bn => VisitBinary(bn),
+                Concat con => VisitConcat(con),
+                ShapeOp sp => VisitShape(sp),
+                Slice sl => VisitSlice(sl),
+                Transpose tr => VisitTranspose(tr),
+                Unary un => VisitUnary(un),
                 _ => throw new NotImplementedException()
             };
         }
 
         public override torch.Tensor VisitLeaf(Const expr)
         {
-            if (expr.ValueType.IsScalar)
-            {
-                return torch.tensor(expr.ToScalar<float>());
-            }
-            else
-            {
-                var shape = expr.CheckedShape.ToList().Select(x => x.FixedValue).ToList();
-                return torch.tensor(expr.ToTensor<float>());
-            }
+            return Util.ToTorchTensor(expr);
         }
-
+        
         public override torch.Tensor VisitLeaf(Op expr)
         {
             // todo:maybe a problem
+            return torch.empty(1, 1);
+        }
+
+        public override torch.Tensor VisitLeaf(Function expr)
+        {
+            return torch.empty(1, 1);
+        }
+        
+        public override torch.Tensor VisitLeaf(IR.Tuple expr)
+        {
+            return torch.empty(1, 1);
+        }
+        
+        public override torch.Tensor VisitLeaf(Var expr)
+        {
             return torch.empty(1, 1);
         }
     }
