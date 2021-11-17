@@ -28,9 +28,9 @@ template NNCASE_API result<void> reference::reduce_prod<float>(const float *inpu
     const runtime_shape_t &axis, bool keep_dims, NNCASE_UNUSED kernel_context &context) noexcept;
 
 template <typename T>
-result<void> reference::reduce_prod(NNCASE_UNUSED const T *input, NNCASE_UNUSED T *output, NNCASE_UNUSED const runtime_shape_t &in_shape,
-    NNCASE_UNUSED const runtime_shape_t &in_strides, NNCASE_UNUSED const runtime_shape_t &out_strides,
-    NNCASE_UNUSED const runtime_shape_t &axes, NNCASE_UNUSED bool keep_dims, NNCASE_UNUSED kernel_context &context) noexcept
+result<void> reference::reduce_prod(const T *input, T *output, const runtime_shape_t &in_shape,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides,
+    const runtime_shape_t &axes, bool keep_dims, NNCASE_UNUSED kernel_context &context) noexcept
 {
     auto out_shape = kernels::detail::get_reduced_shape(in_shape, axes, keep_dims);
 
