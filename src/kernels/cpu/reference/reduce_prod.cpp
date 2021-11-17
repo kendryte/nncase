@@ -25,12 +25,12 @@ using namespace nncase::kernels::cpu::reference;
 
 template NNCASE_API result<void> reference::reduce_prod<float>(const float *input, float *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides,
-    const runtime_shape_t &axis, bool keep_dims, NNCASE_UNUSED kernel_context &context) noexcept;
+    const runtime_shape_t &axis, bool keep_dims) noexcept;
 
 template <typename T>
 result<void> reference::reduce_prod(const T *input, T *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides,
-    const runtime_shape_t &axes, bool keep_dims, NNCASE_UNUSED kernel_context &context) noexcept
+    const runtime_shape_t &axes, bool keep_dims) noexcept
 {
     auto out_shape = kernels::detail::get_reduced_shape(in_shape, axes, keep_dims);
 
