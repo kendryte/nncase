@@ -49,8 +49,8 @@ public class EvaluatorTest
         var expr = Tensors.Concat(inputList, 0);
         TypeInference.InferenceType(expr);
 
-        var tA = Util.ToTorchTensor(a);
-        var tB = Util.ToTorchTensor(b);
+        var tA = a.ToTorchTensor();
+        var tB = b.ToTorchTensor();
 
         Assert.Equal(
             torch.cat(new[] { tA, tB }, 0),
@@ -73,7 +73,7 @@ public class EvaluatorTest
 
         var result = Const.FromSpan<int>(Enumerable.Range(0, 5).ToArray(), new Shape(new[] { 1, 1, 1, 5 })); TypeInference.InferenceType(strides);
         TypeInference.InferenceType(result);
-        var tResult = Util.ToTorchTensor(result);
+        var tResult = result.ToTorchTensor();
         Assert.Equal(
             tResult,
             Evaluator.Eval(Tensors.Slice(input, begin, end, axes, strides)

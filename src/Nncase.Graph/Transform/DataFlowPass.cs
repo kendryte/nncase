@@ -34,4 +34,36 @@ namespace Nncase.Transform
             }
         }
     }
+
+    public sealed class ShapeInferPass : FunctionPass
+    {
+        public readonly List<PatternRule> rules = new()
+        {
+            new Transform.DataFlow.Rules.FoldConstCall(),
+            new Transform.DataFlow.Rules.FoldShapeOp(),
+        };
+
+        public ShapeInferPass(string name) : base(name)
+        {
+        }
+
+        protected override void RunCore(Function function, RunPassOptions options)
+        {
+
+            if (options.DumpIR)
+            {
+                IRPrinter.DumpFunctionAsIL(Path.Combine(options.DumpDir, Name), function, "Before");
+            }
+
+            while (!TypeInference.InferenceType(function))
+            {
+                DataFlowRewrite.Rewrite(function, rules);
+            }
+            if (options.DumpIR)
+            {
+                IRPrinter.DumpFunctionAsIL(Path.Combine(options.DumpDir, Name), function, "After");
+            }
+        }
+
+    }
 }

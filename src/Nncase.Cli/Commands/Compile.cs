@@ -11,6 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
 using Nncase.Transform;
+using Nncase.Transform.DataFlow.Rules;
 
 namespace Nncase.Cli.Commands
 {
@@ -64,9 +65,24 @@ namespace Nncase.Cli.Commands
             var module = ImportModel(options);
             DumpModule(module, "ir_import");
 
+        }
+
+        public void InferShape(Module module,CompileOptions options)
+        {
+            Console.WriteLine("Infer Shape...");
             var pmgr = new PassManager(module.Entry, new RunPassOptions(null, options.DumpIr, options.DumpDir));
-            pmgr.Add(new EGraphPass("eoptimize"));
-            pmgr.Run();
+            //var constFold = new DataFlowPass("infer_shape");
+            //constFold.Add(new FoldConstCall());
+            //constFold.Add(new FoldShapeOp());
+            //pmgr.Add(constFold);
+
+            //while (!TypeInference.InferenceType(module.Entry))
+            //{
+            //    pmgr.Run();
+            //}
+            //pmgr.Add(new EGraphPass("eoptimize"));
+            //pmgr.Run();
+
         }
 
         public Module ImportModel(CompileOptions options) =>

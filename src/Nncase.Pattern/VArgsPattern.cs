@@ -72,10 +72,10 @@ namespace Nncase.Pattern
 
         // 默认只生成一次
         public static VArgsPattern IsVArgsRepeat(Action<int, List<ExprPattern>> SetUp)
-          => new RepeatVArgsPattern(SetUp, (match, param) =>
+          => new RepeatVArgsPattern(SetUp, (matched, paramPatterns) =>
           {
-              if (match == false)
-                  param.Clear();
+              if (!matched)
+                  paramPatterns.Clear();
           });
 
         public static VArgsPattern IsVArgsRepeat(Action<int, List<ExprPattern>> SetUp, Action<bool, List<ExprPattern>> TearDown)

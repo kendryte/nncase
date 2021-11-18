@@ -83,7 +83,7 @@ namespace Nncase.Evaluator.Ops
 
         public override torch.Tensor VisitLeaf(Const expr)
         {
-            return Util.ToTorchTensor(expr);
+            return expr.ToTorchTensor();
         }
         
         public override torch.Tensor VisitLeaf(Op expr)

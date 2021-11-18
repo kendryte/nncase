@@ -1,14 +1,19 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
 using Nncase.IR;
 using TorchSharp;
 
 namespace Nncase.Evaluator
 {
-    public class Util
+    public static class TorchExtentsion
     {
-        public static torch.Tensor ToTorchTensor(Const expr)
+        public static Const ToConst(this torch.Tensor tensor) => 
+            new Const(new TensorType(ToDataType(tensor.dtype), new Shape(tensor.shape)), 
+                tensor.bytes.ToArray());
+        public static torch.Tensor ToTorchTensor(this Const expr)
         {
             // null checked type
             var dtype = (expr.CheckedType as TensorType).DType;
@@ -31,7 +36,8 @@ namespace Nncase.Evaluator
                     DataType.Bool => torch.tensor(expr.ToScalar<bool>(), ToTorchDataType(dtype)),
                     // DataType.String => torch.tensor(expr.ToScalar<>(), ToTorchDataType(dtype)),
                     _ => throw new ArgumentOutOfRangeException("Unsupported conversion for datatype to torch.ScalarType")
-                };            }
+                };
+            }
             else
             {
                 var shape = expr.CheckedShape.ToList().Select(x => (long)x.FixedValue).ToArray();
@@ -55,7 +61,7 @@ namespace Nncase.Evaluator
                 };
             }
         }
-        
+
         private static readonly Dictionary<DataType, torch.ScalarType> _dataTypesToTorchType = new()
         {
             { DataType.UInt8, torch.ScalarType.Byte },
@@ -64,10 +70,18 @@ namespace Nncase.Evaluator
             { DataType.Float64, torch.ScalarType.Float64 },
             { DataType.Bool, torch.ScalarType.Bool },
         };
-
-        public static torch.ScalarType ToTorchDataType(DataType dt)
+        private static readonly Dictionary<torch.ScalarType, DataType> _TorchTypeTodataTypes = new()
         {
-            return _dataTypesToTorchType[dt];
-        }
+            { torch.ScalarType.Byte, DataType.UInt8 },
+            { torch.ScalarType.Int32, DataType.Int32 },
+            { torch.ScalarType.Float32, DataType.Float32 },
+            { torch.ScalarType.Float64, DataType.Float64 },
+            { torch.ScalarType.Bool, DataType.Bool },
+        };
+
+        public static torch.ScalarType ToTorchDataType(DataType dt) => _dataTypesToTorchType[dt];
+
+
+        public static DataType ToDataType(torch.ScalarType dt) => _TorchTypeTodataTypes[dt];
     }
 }
