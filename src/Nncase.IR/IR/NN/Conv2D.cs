@@ -92,5 +92,15 @@ namespace Nncase.IR.NN
             }
             return input with { Shape = new Shape(outshape) };
         }
+
+        public CostModel GetCostModel(CostModelContext context, Shape input, Shape weights, Shape bias,
+            Shape stride, Shape padding, Shape dilation, Shape groups, Shape output)
+        {
+            // https://stackoverflow.com/questions/56138754/formula-to-compute-the-number-of-macs-in-a-convolutional-neural-network
+            // weights: [output, input, H, W]
+            // todo:check shape is fixed in GetCostModel outer
+            var macCount = (weights.Prod() * input[0] * output[2] * output[3]).FixedValue;
+            return new CostModel(macCount);
+        }
     }
 }
