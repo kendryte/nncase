@@ -5,7 +5,7 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="libtorch-cpu-win-x64" Version="1.10.0.1" />
+      <PackageReference Include="libtorch-cpu" Version="1.10.0.1" />
       <PackageReference Include="TorchSharp" Version="0.95.3" />
     </ItemGroup>
 
