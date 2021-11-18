@@ -38,7 +38,7 @@ public class EGraphRewriteTest : IDisposable
         // rule  (? + 0) => (?)
         Func<Expr, Expr> nawPass = x => x;
 
-        var EResults = EGraphMatcher.MatchEGraph(egraph, pattern);
+        var EResults = EGraphMatcher.Match(egraph, pattern);
         EGraphPrinter.DumpEgraphAsDot(egraph, EResults, $"{Name}_Ematch");
         Assert.Single(EResults);
         var wcxv = EResults[0][wcx];
@@ -57,7 +57,7 @@ public class EGraphRewriteTest : IDisposable
         Expr expr = ((Const)10 * 11) * 12;
         var eGraph = new EGraph(expr);
         var rule = new Rule.Reassociate();
-        EGraphReWrite.ReWriteEGraph(eGraph, rule);
+        EGraphReWriter.ReWrite(eGraph, rule);
         // Assert.Equal(newExpr, 10 * ((Const)11 * 12));
     }
 

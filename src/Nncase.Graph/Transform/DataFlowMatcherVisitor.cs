@@ -26,24 +26,41 @@ namespace Nncase.Transform
         }
     }
 
-
-    public sealed class DataFlowMatcher
+    public static class DataFlowMatcher
     {
-
-        private readonly Dictionary<ExprPattern, bool> _patMemo = new();
-        private readonly Dictionary<VArgsPattern, bool> _vargspatMemo = new();
-
-        public readonly ContextEnv Env = new();
-
+        /// <summary>
+        /// Match the Expr with Pattern
+        /// </summary>
+        /// <param name="expr"></param>
+        /// <param name="pattern"></param>
+        /// <returns></returns>
         public static List<IMatchResult> Match(Expr expr, ExprPattern pattern)
         {
             var results = new List<IMatchResult>();
-            var matcher = new DataFlowMatcher();
+            var matcher = new DataFlowMatcherVisitor();
             if (matcher.Visit(pattern, expr))
                 results.Add(new DFMatchResult(expr, matcher.Env));
             return results;
         }
+    }
 
+
+    internal sealed class DataFlowMatcherVisitor
+    {
+
+        private readonly Dictionary<ExprPattern, bool> _patMemo = new();
+        
+        private readonly Dictionary<VArgsPattern, bool> _vargspatMemo = new();
+
+
+        public readonly ContextEnv Env = new();
+
+        /// <summary>
+        /// visit expr
+        /// </summary>
+        /// <param name="pattern"></param>
+        /// <param name="expr"></param>
+        /// <returns></returns>
         public bool Visit(ExprPattern pattern, Expr expr)
         {
             return (pattern, expr) switch
@@ -59,6 +76,12 @@ namespace Nncase.Transform
             };
         }
 
+        /// <summary>
+        /// visit var pattern
+        /// </summary>
+        /// <param name="pattern"></param>
+        /// <param name="expr"></param>
+        /// <returns></returns>
         public bool Visit(VarPattern pattern, Expr expr)
         {
             if (!_patMemo.TryGetValue(pattern, out var result))
@@ -69,6 +92,13 @@ namespace Nncase.Transform
             return result;
         }
 
+
+        /// <summary>
+        /// visit call pattern
+        /// </summary>
+        /// <param name="pattern"></param>
+        /// <param name="expr"></param>
+        /// <returns></returns>
         public bool Visit(CallPattern pattern, Call expr)
         {
             if (!_patMemo.TryGetValue(pattern, out var result))
@@ -81,6 +111,12 @@ namespace Nncase.Transform
             return result;
         }
 
+        /// <summary>
+        /// visit function pattern
+        /// </summary>
+        /// <param name="pattern"></param>
+        /// <param name="expr"></param>
+        /// <returns></returns>
         public bool Visit(ConstPattern pattern, Const expr)
         {
             if (!_patMemo.TryGetValue(pattern, out var result))
@@ -92,6 +128,12 @@ namespace Nncase.Transform
         }
 
 
+        /// <summary>
+        /// visit function pattern
+        /// </summary>
+        /// <param name="pattern"></param>
+        /// <param name="expr"></param>
+        /// <returns></returns>
         public bool Visit(FunctionPattern pattern, Function expr)
         {
             if (!_patMemo.TryGetValue(pattern, out var result))
@@ -104,6 +146,12 @@ namespace Nncase.Transform
             return result;
         }
 
+        /// <summary>
+        /// visit op pattern
+        /// </summary>
+        /// <param name="pattern"></param>
+        /// <param name="expr"></param>
+        /// <returns></returns>
         public bool Visit(OpPattern pattern, Op expr)
         {
             if (!_patMemo.TryGetValue(pattern, out var result))
@@ -114,6 +162,12 @@ namespace Nncase.Transform
             return result;
         }
 
+        /// <summary>
+        /// visit tuple pattern
+        /// </summary>
+        /// <param name="pattern"></param>
+        /// <param name="expr"></param>
+        /// <returns></returns>
         public bool Visit(TuplePattern pattern, Tuple expr)
         {
             if (!_patMemo.TryGetValue(pattern, out var result))
@@ -126,6 +180,12 @@ namespace Nncase.Transform
             return result;
         }
 
+        /// <summary>
+        /// visit vargs pattern
+        /// </summary>
+        /// <param name="patterns"></param>
+        /// <param name="exprs"></param>
+        /// <returns></returns>
         public bool Visit(VArgsPattern patterns, IRArray<Expr> exprs)
         {
             if (!_vargspatMemo.TryGetValue(patterns, out var result))
@@ -136,6 +196,12 @@ namespace Nncase.Transform
             return result;
         }
 
+        /// <summary>
+        ///  visit wildcard pattern
+        /// </summary>
+        /// <param name="pattern"></param>
+        /// <param name="expr"></param>
+        /// <returns></returns>
         public bool Visit(WildCardPattern pattern, Expr expr)
         {
             if (!_patMemo.TryGetValue(pattern, out var result))
@@ -146,7 +212,12 @@ namespace Nncase.Transform
             return result;
         }
 
-
+        /// <summary>
+        /// visit var pattern
+        /// </summary>
+        /// <param name="pattern"></param>
+        /// <param name="expr"></param>
+        /// <returns></returns>
         public bool VisitLeaf(VarPattern pattern, Expr expr)
         {
             if (pattern.MatchLeaf(expr))
@@ -157,6 +228,13 @@ namespace Nncase.Transform
             return false;
         }
 
+        
+        /// <summary>
+        /// visit call pattern
+        /// </summary>
+        /// <param name="pattern"></param>
+        /// <param name="expr"></param>
+        /// <returns></returns>
         public bool VisitLeaf(CallPattern pattern, Call expr)
         {
             if (_patMemo[pattern.Target] &&
@@ -169,6 +247,12 @@ namespace Nncase.Transform
             return false;
         }
 
+        /// <summary>
+        /// visit const pattern
+        /// </summary>
+        /// <param name="pattern"></param>
+        /// <param name="expr"></param>
+        /// <returns></returns>
         public bool VisitLeaf(ConstPattern pattern, Const expr)
         {
             if (pattern.MatchLeaf(expr))
@@ -179,6 +263,12 @@ namespace Nncase.Transform
             return false;
         }
 
+        /// <summary>
+        /// visit Function pattern
+        /// </summary>
+        /// <param name="pattern"></param>
+        /// <param name="expr"></param>
+        /// <returns></returns>
         public bool VisitLeaf(FunctionPattern pattern, Function expr)
         {
             if (_patMemo[pattern.Body] &&
@@ -191,6 +281,12 @@ namespace Nncase.Transform
             return false;
         }
 
+        /// <summary>
+        /// visit op pattern
+        /// </summary>
+        /// <param name="pattern"></param>
+        /// <param name="expr"></param>
+        /// <returns></returns>
         public bool VisitLeaf(OpPattern pattern, Op expr)
         {
             if (pattern.MatchLeaf(expr))
@@ -201,6 +297,12 @@ namespace Nncase.Transform
             return false;
         }
 
+        /// <summary>
+        /// visit tuple pattern
+        /// </summary>
+        /// <param name="pattern"></param>
+        /// <param name="expr"></param>
+        /// <returns></returns>
         public bool VisitLeaf(TuplePattern pattern, Tuple expr)
         {
             if (pattern.MatchLeaf(expr) &&
@@ -212,6 +314,12 @@ namespace Nncase.Transform
             return false;
         }
 
+        /// <summary>
+        /// visit Vargs Pattern
+        /// </summary>
+        /// <param name="patterns"></param>
+        /// <param name="exprs"></param>
+        /// <returns></returns>
         public bool VisitLeaf(VArgsPattern patterns, IRArray<Expr> exprs)
         {
             if (!patterns.MatchLeaf(exprs))
@@ -228,6 +336,12 @@ namespace Nncase.Transform
             return result;
         }
 
+        /// <summary>
+        ///  visit wildcard pattern
+        /// </summary>
+        /// <param name="pattern"></param>
+        /// <param name="expr"></param>
+        /// <returns></returns>
         public bool VisitLeaf(WildCardPattern pattern, Expr expr)
         {
             Env.Add(pattern, expr);

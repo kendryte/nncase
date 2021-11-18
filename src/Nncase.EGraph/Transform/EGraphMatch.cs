@@ -13,7 +13,7 @@ namespace Nncase.Transform
 
     public static class EGraphMatcher
     {
-        public static List<IMatchResult> MatchEGraph(Dictionary<EClass, List<ENode>> eClasses, params ExprPattern[] patterns)
+        public static List<IMatchResult> Match(Dictionary<EClass, List<ENode>> eClasses, params ExprPattern[] patterns)
         {
             var matcher = new EGraphMatchVisitor(eClasses);
             var matchResults = new List<IMatchResult>();
@@ -31,13 +31,13 @@ namespace Nncase.Transform
             return matchResults;
         }
 
-        public static List<IMatchResult> MatchEGraph(EGraph eGraph, ExprPattern pattern) => MatchEGraph(eGraph.EClasses(), pattern);
+        public static List<IMatchResult> Match(EGraph eGraph, ExprPattern pattern) => Match(eGraph.EClasses(), pattern);
 
-        public static List<IMatchResult> MatchEGraph(Expr expr, ExprPattern pattern)
+        public static List<IMatchResult> Match(Expr expr, ExprPattern pattern)
         {
             var g = new EGraph();
             g.Add(expr);
-            return MatchEGraph(g, pattern);
+            return Match(g, pattern);
         }
     }
 

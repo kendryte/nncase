@@ -6,13 +6,23 @@ using Nncase.IR.Math;
 
 namespace Nncase.Pattern
 {
-
+    /// <summary>
+    /// Base Record For Pattern
+    /// </summary>
+    /// <param name="Id"></param>
     public abstract partial record ExprPattern(int Id)
     {
         private static int _globalPatIndex = 0;
 
+        /// <summary>
+        /// Initializes a new instance of the <see cref="ExprPattern"/> class.
+        /// </summary>
         public ExprPattern() : this(_globalPatIndex++) { }
 
+        /// <summary>
+        /// Convert Expr to Pattern
+        /// </summary>
+        /// <param name="expr"></param>
         public static implicit operator ExprPattern(Expr expr) => expr switch
         {
             (Var var) => new VarPattern(var),
@@ -24,8 +34,16 @@ namespace Nncase.Pattern
             _ => throw new NotImplementedException($"Can't Convert The Expr {expr.GetType().Name} To ExprPattern")
         };
 
+        /// <summary>
+        /// Pattern for CheckedType
+        /// </summary>
         public TypePattern? CheckedTypePat { get; set; }
 
+        /// <summary>
+        /// Match The Expr Type
+        /// </summary>
+        /// <param name="expr"></param>
+        /// <returns> is Matched </returns>
         public bool MatchCheckedType(Expr expr) => (expr.CheckedType, this.CheckedTypePat) switch
         {
             (null, null) => true,
@@ -34,6 +52,12 @@ namespace Nncase.Pattern
             (IRType type, TypePattern pat) => pat.MatchLeaf(type)
         };
 
+
+        /// <summary>
+        /// Match The Expr
+        /// </summary>
+        /// <param name="expr"></param>
+        /// <returns> is matched </returns>
         public virtual bool MatchLeaf(Expr expr) => (this, expr) switch
         {
             (VarPattern varPat, Var var) => varPat.MatchLeaf(var),
@@ -46,16 +70,33 @@ namespace Nncase.Pattern
             (_, _) => false
         };
 
+        /// <summary>
+        /// Add the Type Patten For Current Pattern
+        /// </summary>
+        /// <param name="Cond"></param>
+        /// <returns> this </returns>
         public ExprPattern IsSomeType(Func<IRType, bool> Cond)
         {
             CheckedTypePat = new TypePattern(Cond);
             return this;
         }
 
+        /// <summary>
+        /// Add type Pattern
+        /// </summary>
+        /// <returns> this </returns>
         public ExprPattern IsAny() => IsSomeType(x => x == AnyType.Default);
 
+        /// <summary>
+        /// Add type Pattern
+        /// </summary>
+        /// <returns> this </returns>
         public ExprPattern IsTensor() => IsSomeType(x => x is TensorType);
 
+        /// <summary>
+        /// Add type Pattern
+        /// </summary>
+        /// <returns> this </returns>
         public ExprPattern IsScalar() => IsSomeType(x => x switch
                      {
 
@@ -66,6 +107,12 @@ namespace Nncase.Pattern
 
     public static partial class Utility
     {
+        /// <summary>
+        /// Get the current expr checked Shape
+        /// </summary>
+        /// <param name="expr"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
         public static List<Dimension> GetShape(Expr expr) => expr.CheckedType switch
         {
             TensorType type => new List<Dimension>(type.Shape),

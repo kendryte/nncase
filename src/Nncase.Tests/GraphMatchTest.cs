@@ -19,7 +19,7 @@ namespace Nncase.Tests
     public class UnitTestDataFlowMatch
     {
         [Fact]
-        public void TestMatchCallCommutive()
+        public void TestMatchDataFlowCallCommutive()
         {
             Var x = "x", y = "y";
             var addpat = IsBinary(BinaryOp.Add, IsVar(), IsVar());
@@ -31,7 +31,7 @@ namespace Nncase.Tests
         }
 
         [Fact]
-        public void TestMatchNoCallCommutive()
+        public void TestMatchDataFlowNoCallCommutive()
         {
             Var x = "x", y = "y";
             var addpat = IsBinary(BinaryOp.Sub, x, y);
@@ -43,7 +43,7 @@ namespace Nncase.Tests
         }
 
         [Fact]
-        public void TestMatchCall()
+        public void TestMatchDataFlowCall()
         {
             Var x = "x", y = "y";
             var addpat = IsBinary(BinaryOp.Add, IsWildCard(), IsWildCard());
@@ -55,7 +55,7 @@ namespace Nncase.Tests
         }
 
         [Fact]
-        public void TestNoMatchFunc()
+        public void TestNoMatchDataFlowFunc()
         {
             Var x = "x", y = "y";
             var pat = IsBinary(BinaryOp.Add, IsWildCard(), IsWildCard());
@@ -63,7 +63,7 @@ namespace Nncase.Tests
         }
 
         [Fact]
-        public void TestMatchConst()
+        public void TestMatchDataFlowConst()
         {
             Var x = "x", y = "y";
             var pat = IsBinary(BinaryOp.Sub, IsWildCard(), IsConst());
@@ -71,7 +71,7 @@ namespace Nncase.Tests
         }
 
         [Fact]
-        public void TestMatchTuple()
+        public void TestMatchDataFlowTuple()
         {
             Var x = "x", y = "y";
             var z = x + y;

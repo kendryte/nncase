@@ -10,18 +10,18 @@ using Nncase.Pattern;
 namespace Nncase.Transform
 {
 
-    public static class EGraphReWrite
+    public static class EGraphReWriter
     {
-        public static EGraph ReWriteEGraph(EGraph eGraph, params PatternRule[] Rules) => ReWriteEGraph(eGraph, new List<PatternRule>(Rules));
+        public static EGraph ReWrite(EGraph eGraph, params PatternRule[] Rules) => ReWrite(eGraph, new List<PatternRule>(Rules));
 
-        public static EGraph ReWriteEGraph(EGraph eGraph, List<PatternRule> Rules, bool DumpMatches = false, string prefix = "")
+        public static EGraph ReWrite(EGraph eGraph, List<PatternRule> Rules, bool DumpMatches = false, string prefix = "")
         {
             var eClass = eGraph.EClasses();
             var matches = new List<(PatternRule, IMatchResult)> { };
             // batch pattern match
             foreach (var rule in Rules)
             {
-                var results = EGraphMatcher.MatchEGraph(eClass, rule.Patterns);
+                var results = EGraphMatcher.Match(eClass, rule.Patterns);
                 foreach (var result in results)
                 {
                     matches.Add((rule, result));

@@ -230,7 +230,7 @@ namespace Nncase.Tests
             Var x = "x", y = "y";
             Expr expr = x + (y + 1);
 
-            var res = EGraphMatcher.MatchEGraph(expr, pat);
+            var res = EGraphMatcher.Match(expr, pat);
             Assert.Single(res);
             Assert.IsType<Var>(res[0][wcx]);
             Assert.IsType<Var>(res[0][wcy]);
@@ -243,7 +243,7 @@ namespace Nncase.Tests
             var pat = wcx + (wcy + IsConst(1));
             Var x = "x", y = "y";
             Expr expr = x + (y + 1);
-            var res = EGraphMatcher.MatchEGraph(expr, pat);
+            var res = EGraphMatcher.Match(expr, pat);
             Assert.Single(res);
         }
 
@@ -259,7 +259,7 @@ namespace Nncase.Tests
             var g = new EGraph();
             g.Add(e);
 
-            var matchs = EGraphMatcher.MatchEGraph(g, pat);
+            var matchs = EGraphMatcher.Match(g, pat);
             Assert.Single(matchs);
             var result = matchs[0];
             Assert.Equal(result[wc1], wce1);
@@ -275,14 +275,14 @@ namespace Nncase.Tests
             var px = IsWildCard();
             var py = IsBinary(op => op is (BinaryOp.Add or BinaryOp.Sub), px, 10);
 
-            var matchs = EGraphMatcher.MatchEGraph(y, py);
+            var matchs = EGraphMatcher.Match(y, py);
             Assert.Single(matchs);
 
-            var matchs2 = EGraphMatcher.MatchEGraph(y1, py);
+            var matchs2 = EGraphMatcher.Match(y1, py);
             Assert.Equal(2, matchs2.Count);
 
             var py1 = IsUnary(UnaryOp.Abs, px);
-            Assert.Empty(EGraphMatcher.MatchEGraph(y1, py1));
+            Assert.Empty(EGraphMatcher.Match(y1, py1));
         }
 
         [Fact]
@@ -299,10 +299,10 @@ namespace Nncase.Tests
 
             ExprPattern pat_2 = new FunctionPattern(x - y, wc1, wc2);
 
-            var res_1 = EGraphMatcher.MatchEGraph(func, pat_1);
+            var res_1 = EGraphMatcher.Match(func, pat_1);
             Assert.Single(res_1);
 
-            var res_2 = EGraphMatcher.MatchEGraph(func, pat_2);
+            var res_2 = EGraphMatcher.Match(func, pat_2);
             Assert.Empty(res_2);
         }
 
@@ -338,7 +338,7 @@ namespace Nncase.Tests
             )), 0);
 
 
-            var eMatches = EGraphMatcher.MatchEGraph(expr, vpat);
+            var eMatches = EGraphMatcher.Match(expr, vpat);
             Assert.Single(eMatches);
             var eMatch = eMatches[0];
             Assert.Equal(eMatch[wcs[0]], tuple[0]);
@@ -377,7 +377,7 @@ namespace Nncase.Tests
             )), wcaxis);
 
 
-            var eMatches = EGraphMatcher.MatchEGraph(expr, vpat);
+            var eMatches = EGraphMatcher.Match(expr, vpat);
             Assert.Single(eMatches);
             var eMatch = eMatches[0];
             Assert.Equal(eMatch[wccons[0]], tuple_rhs[0]);
@@ -413,7 +413,7 @@ namespace Nncase.Tests
             var pattern = Concat(IsTuple(wcvargs), wcaxis);
 
 
-            var results = EGraphMatcher.MatchEGraph(expr, pattern);
+            var results = EGraphMatcher.Match(expr, pattern);
             Assert.Single(results);
             var result = results[0];
             Assert.Equal(result[wcin[0]], x);

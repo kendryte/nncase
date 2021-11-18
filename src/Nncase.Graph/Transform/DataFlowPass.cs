@@ -27,7 +27,7 @@ namespace Nncase.Transform
             {
                 IRPrinter.DumpFunctionAsIL(Path.Combine(options.DumpDir, Name), function, "Before");
             }
-            DataFlowRewrite.RewriteDataFlow(function, Rules);
+            DataFlowRewrite.Rewrite(function, Rules);
             if (options.DumpIR)
             {
                 IRPrinter.DumpFunctionAsIL(Path.Combine(options.DumpDir, Name), function, "After");

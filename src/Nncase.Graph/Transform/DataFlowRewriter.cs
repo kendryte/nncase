@@ -16,7 +16,7 @@ namespace Nncase.Transform
 
     public static class DataFlowRewrite
     {
-        public static Expr RewriteDataFlow(Expr pre, List<PatternRule> Rules)
+        public static Expr Rewrite(Expr pre, List<PatternRule> Rules)
         {
             var visitor = new DataFlowReWriteVisitor();
             var post = pre;

@@ -5,7 +5,19 @@ namespace Nncase.Pattern
 {
     public interface IMatchResult
     {
+        /// <summary>
+        /// get the pattern matched expr
+        /// </summary>
+        /// <param name="pattern"></param>
+        /// <returns></returns>
         public Expr this[ExprPattern pattern] { get; }
+
+        /// <summary>
+        /// get the type cast expr
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="expr"></param>
+        /// <returns></returns>
         public T GetExpr<T>(ExprPattern expr) where T : Expr;
         public Expr GetRoot();
         public T GetRoot<T>() where T : Expr;
