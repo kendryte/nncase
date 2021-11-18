@@ -156,7 +156,7 @@ namespace Nncase
         public static DataType FromType<T>()
             where T : unmanaged
             => FromType(typeof(T));
-
+        
         public static int GetLength(DataType dataType) => _DataTypeToLengths[dataType];
 
         /// <summary>

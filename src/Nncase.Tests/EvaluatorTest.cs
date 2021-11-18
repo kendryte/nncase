@@ -1,4 +1,5 @@
 using System.Linq;
+using NetFabric.Hyperlinq;
 using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.IR.F;
@@ -47,5 +48,28 @@ public class EvaluatorTest
         Assert.Equal(
             torch.cat(new[] {tA, tB}, 0),
             Evaluator.Eval(Tensors.Concat(inputList, 0)));
+    }
+
+    [Fact]
+    public void TestSlice()
+    {
+        var input = Const.FromSpan<int>(Enumerable.Range(0, 120).ToArray(), new Shape(new[] {2, 3, 4, 5}));
+        var begin = Const.FromSpan<int>(new[] {0, 0, 0, 0}, new Shape(new[] {4}));
+        var end = Const.FromSpan<int>(new[] {1, 1, 1, 5}, new Shape(new[] {4}));
+        var axes = Const.FromSpan<int>(new[] {0, 1, 2, 3}, new Shape(new[] {4}));
+        var strides = Const.FromSpan<int>(new[] {1, 1, 1, 1}, new Shape(new[] {4}));
+        TypeInference.InferenceType(input);
+        TypeInference.InferenceType(begin);
+        TypeInference.InferenceType(end);
+        TypeInference.InferenceType(axes);
+        TypeInference.InferenceType(strides);
+        
+        var result = Const.FromSpan<int>(Enumerable.Range(0, 5).ToArray(), new Shape(new[] {1, 1, 1, 5}));        TypeInference.InferenceType(strides);
+        TypeInference.InferenceType(result);
+        var tResult = Util.ToTorchTensor(result);
+        Assert.Equal(
+            tResult,
+            Evaluator.Eval(Tensors.Slice(input, begin, end, axes, strides)
+            ));
     }
 }
