@@ -11,7 +11,7 @@ namespace Nncase.Transform
 
     using ContextEnv = Dictionary<ExprPattern, Expr>;
 
-    public record MatchResult(Expr Root, ContextEnv Context) : IMatchResult
+    public record DFMatchResult(Expr Root, ContextEnv Context) : IMatchResult
     {
         public Expr this[ExprPattern expr] => Context[expr];
 
@@ -27,7 +27,7 @@ namespace Nncase.Transform
     }
 
 
-    internal sealed class DataFlowMatcher
+    public sealed class DataFlowMatcher
     {
 
         private readonly Dictionary<ExprPattern, bool> _patMemo = new();
@@ -35,23 +35,26 @@ namespace Nncase.Transform
 
         public readonly ContextEnv Env = new();
 
-        public static (bool, ContextEnv) Match(Expr expr, ExprPattern pattern)
+        public static List<IMatchResult> Match(Expr expr, ExprPattern pattern)
         {
+            var results = new List<IMatchResult>();
             var matcher = new DataFlowMatcher();
-            return (matcher.Visit(pattern, expr), matcher.Env);
+            if (matcher.Visit(pattern, expr))
+                results.Add(new DFMatchResult(expr, matcher.Env));
+            return results;
         }
 
         public bool Visit(ExprPattern pattern, Expr expr)
         {
             return (pattern, expr) switch
             {
-                (VarPattern varPat, Var var) => varPat.MatchLeaf(var) ? Visit(varPat, var) : false,
-                (ConstPattern constPat, Const con) => constPat.MatchLeaf(con) ? Visit(constPat, con) : false,
-                (FunctionPattern functionPat, Function func) => functionPat.MatchLeaf(func) ? Visit(functionPat, func) : false,
-                (CallPattern callPat, Call call) => callPat.MatchLeaf(call) ? Visit(callPat, call) : false,
-                (TuplePattern tuplePat, Tuple tuple) => tuplePat.MatchLeaf(tuple) ? Visit(tuplePat, tuple) : false,
-                (OpPattern opPat, Op op) => opPat.MatchLeaf(op) ? Visit(opPat, op) : false,
-                (WildCardPattern wildCard, _) => wildCard.MatchLeaf(expr) ? Visit(wildCard, expr) : false,
+                (VarPattern varPat, Var var) => Visit(varPat, var),
+                (ConstPattern constPat, Const con) => Visit(constPat, con),
+                (FunctionPattern functionPat, Function func) => Visit(functionPat, func),
+                (CallPattern callPat, Call call) => Visit(callPat, call),
+                (TuplePattern tuplePat, Tuple tuple) => Visit(tuplePat, tuple),
+                (OpPattern opPat, Op op) => Visit(opPat, op),
+                (WildCardPattern wildCard, _) => Visit(wildCard, expr),
                 (_, _) => false
             };
         }
@@ -61,7 +64,7 @@ namespace Nncase.Transform
             if (!_patMemo.TryGetValue(pattern, out var result))
             {
                 result = VisitLeaf(pattern, expr);
-                _patMemo.Add(expr, result);
+                _patMemo.Add(pattern, result);
             }
             return result;
         }
@@ -73,7 +76,7 @@ namespace Nncase.Transform
                 Visit(pattern.Target, expr.Target);
                 Visit(pattern.Parameters, expr.Parameters);
                 result = VisitLeaf(pattern, expr);
-                _patMemo.Add(expr, result);
+                _patMemo.Add(pattern, result);
             }
             return result;
         }
@@ -83,7 +86,7 @@ namespace Nncase.Transform
             if (!_patMemo.TryGetValue(pattern, out var result))
             {
                 result = VisitLeaf(pattern, expr);
-                _patMemo.Add(expr, result);
+                _patMemo.Add(pattern, result);
             }
             return result;
         }
@@ -96,7 +99,7 @@ namespace Nncase.Transform
                 Visit(pattern.Parameters, expr.Parameters);
                 Visit(pattern.Body, expr.Body);
                 result = VisitLeaf(pattern, expr);
-                _patMemo.Add(expr, result);
+                _patMemo.Add(pattern, result);
             }
             return result;
         }
@@ -106,7 +109,7 @@ namespace Nncase.Transform
             if (!_patMemo.TryGetValue(pattern, out var result))
             {
                 result = VisitLeaf(pattern, expr);
-                _patMemo.Add(expr, result);
+                _patMemo.Add(pattern, result);
             }
             return result;
         }
@@ -117,7 +120,7 @@ namespace Nncase.Transform
             {
                 Visit(pattern.Fields, expr.Fields);
                 result = VisitLeaf(pattern, expr);
-                _patMemo.Add(expr, result);
+                _patMemo.Add(pattern, result);
             }
 
             return result;
@@ -133,17 +136,32 @@ namespace Nncase.Transform
             return result;
         }
 
+        public bool Visit(WildCardPattern pattern, Expr expr)
+        {
+            if (!_patMemo.TryGetValue(pattern, out var result))
+            {
+                result = VisitLeaf(pattern, expr);
+                _patMemo.Add(pattern, result);
+            }
+            return result;
+        }
+
 
         public bool VisitLeaf(VarPattern pattern, Expr expr)
         {
-            Env.Add(pattern, expr);
-            return true;
+            if (pattern.MatchLeaf(expr))
+            {
+                Env.Add(pattern, expr);
+                return true;
+            }
+            return false;
         }
 
         public bool VisitLeaf(CallPattern pattern, Call expr)
         {
             if (_patMemo[pattern.Target] &&
-               _vargspatMemo[pattern.Parameters])
+               _vargspatMemo[pattern.Parameters] &&
+               pattern.MatchLeaf(expr))
             {
                 Env.Add(pattern, expr);
                 return true;
@@ -153,14 +171,19 @@ namespace Nncase.Transform
 
         public bool VisitLeaf(ConstPattern pattern, Const expr)
         {
-            Env.Add(pattern, expr);
-            return true;
+            if (pattern.MatchLeaf(expr))
+            {
+                Env.Add(pattern, expr);
+                return true;
+            }
+            return false;
         }
 
         public bool VisitLeaf(FunctionPattern pattern, Function expr)
         {
             if (_patMemo[pattern.Body] &&
-              _vargspatMemo[pattern.Parameters])
+              _vargspatMemo[pattern.Parameters] &&
+              pattern.MatchLeaf(expr))
             {
                 Env.Add(pattern, expr);
                 return true;
@@ -170,13 +193,18 @@ namespace Nncase.Transform
 
         public bool VisitLeaf(OpPattern pattern, Op expr)
         {
-            Env.Add(pattern, expr);
-            return true;
+            if (pattern.MatchLeaf(expr))
+            {
+                Env.Add(pattern, expr);
+                return true;
+            }
+            return false;
         }
 
         public bool VisitLeaf(TuplePattern pattern, Tuple expr)
         {
-            if (_vargspatMemo[pattern.Fields])
+            if (pattern.MatchLeaf(expr) &&
+             _vargspatMemo[pattern.Fields])
             {
                 Env.Add(pattern, expr);
                 return true;
@@ -197,61 +225,13 @@ namespace Nncase.Transform
                     break;
             }
             patterns.MatchEnd(result);
-            if (result)
-                _vargspatMemo.Add(patterns, result);
             return result;
         }
+
+        public bool VisitLeaf(WildCardPattern pattern, Expr expr)
+        {
+            Env.Add(pattern, expr);
+            return true;
+        }
     }
-
-    // internal sealed class DataFlowMutator : ExprVisitor<Expr, bool>
-    // {
-
-    //     public ExprPattern Pattern { get; set; } = IsWildCard();
-
-    //     public static Expr ReWrite(Expr pre, PatternRule[] rules)
-    //     {
-    //         var post = pre;
-    //         var last = post;
-    //         var mutator = new DataFlowMutator();
-    //         var equal = true;
-    //         do
-    //         {
-    //             equal = true;
-    //             foreach (var rule in rules)
-    //             {
-    //                 foreach (var pattern in rule.Patterns)
-    //                 {
-    //                     last = post;
-    //                     mutator.Pattern = pattern;
-    //                     post = mutator.Visit(last);
-    //                     equal = post == last;
-    //                     if (!equal)
-    //                         break;
-    //                 }
-    //                 if (!equal)
-    //                     break;
-    //             }
-    //         } while (!equal);
-    //         return post;
-    //     }
-
-    //     public override Expr VisitLeaf(Expr expr)
-    //     {
-    //         return (Pattern, expr) switch
-    //         {
-    //             (VarPattern varPat, Var var) => VisitLeaf(var),
-    //             (ConstPattern constPat, Const con) => VisitLeaf(con),
-    //             (FunctionPattern functionPat, Function func) => VisitLeaf(func),
-    //             (CallPattern callPat, Call call) => VisitLeaf(call),
-    //             (TuplePattern tuplePat, Tuple tuple) => VisitLeaf(tuple),
-    //             (OpPattern opPat, Op op) => VisitLeaf(op),
-    //             _ => DefaultVisitLeaf(expr),
-    //         };
-    //     }
-    //     // public override Expr VisitLeaf(Const expr)
-    //     // {
-    //     //     ((ConstPattern)Pattern).MatchLeaf(expr);
-    //     //     // if ()
-    //     // }
-    // }
 }

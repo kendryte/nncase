@@ -27,6 +27,15 @@ namespace Nncase.IR
             visitor.Visit(function);
         }
 
+        public static void DumpFunctionAsIL(string dumpPath, Function function, string prefix = "")
+        {
+            var nprefix = prefix.Any() ? prefix + "_" : prefix;
+            using var dumpFile = File.Open(Path.Combine(dumpPath, $"{nprefix}{function.Name}.il"), FileMode.Create);
+            using var dumpWriter = new StreamWriter(dumpFile);
+            var visitor = new ILDumpVisitor(dumpWriter);
+            visitor.Visit(function);
+        }
+
         public static void DumpExprAsIL(TextWriter textWriter, Expr expr)
         {
             var visitor = new ILDumpVisitor(textWriter);

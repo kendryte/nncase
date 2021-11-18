@@ -10,12 +10,11 @@ using static Nncase.IR.F.Tensors;
 using static Nncase.Pattern.Utility;
 using static Nncase.Pattern.F.Math;
 using static Nncase.Pattern.F.Tensors;
-using static Nncase.Transform.EGraphMatcher;
 using static Nncase.IR.Utility;
 
 namespace Nncase.Tests
 {
-    public class UnitTestEGraphPattern
+    public class UnitTestEGraphMatch
     {
 
         [Fact]
@@ -220,62 +219,32 @@ namespace Nncase.Tests
 
     }
 
-    public class UnitTestGraphMatch : IDisposable
+    public class UnitTestGraphMatch
     {
-
-        private readonly EGraph eGraph;
-        public UnitTestGraphMatch()
-        {
-            eGraph = new EGraph();
-        }
-
-        public void Dispose()
-        {
-        }
 
         [Fact]
         public void TestWildCardRecursion()
         {
-            eGraph.Clear();
             WildCardPattern wcx = "x", wcy = "y";
-
             var pat = wcx + (wcy + IsConst(1));
-
             Var x = "x", y = "y";
             Expr expr = x + (y + 1);
 
-            eGraph.Add(expr);
-
-            var res = EGraphMatcher.EMatch(eGraph, pat);
-
+            var res = EGraphMatcher.MatchEGraph(expr, pat);
             Assert.Single(res);
-            Assert.Contains(wcx, res[0].Context.Keys);
-            Assert.Contains(wcy, res[0].Context.Keys);
+            Assert.IsType<Var>(res[0][wcx]);
+            Assert.IsType<Var>(res[0][wcy]);
         }
 
         [Fact]
         public void TestWildCardRecursion2()
         {
-            eGraph.Clear();
             WildCardPattern wcx = "x", wcy = "y";
             var pat = wcx + (wcy + IsConst(1));
-
             Var x = "x", y = "y";
             Expr expr = x + (y + 1);
-
-            eGraph.Add(expr);
-
-            var res = EGraphMatcher.EMatch(eGraph, pat);
-
+            var res = EGraphMatcher.MatchEGraph(expr, pat);
             Assert.Single(res);
-            Assert.Contains(wcx, res[0].Context.Keys);
-            Assert.Contains(wcy, res[0].Context.Keys);
-        }
-
-        [Fact]
-        public void TestWildCardRecursionWithVArgs()
-        {
-
         }
 
         [Fact]
@@ -290,17 +259,15 @@ namespace Nncase.Tests
             var g = new EGraph();
             g.Add(e);
 
-            var matchs = EMatch(g, pat);
+            var matchs = EGraphMatcher.MatchEGraph(g, pat);
             Assert.Single(matchs);
             var result = matchs[0];
-            Assert.Contains(wc1, result.Context.Keys);
             Assert.Equal(result[wc1], wce1);
         }
 
         [Fact]
         public void TestMatchOpOR()
         {
-            eGraph.Clear();
             var x = new Var("a");
             var y = x + 10;
             var y1 = y - 10;
@@ -308,23 +275,19 @@ namespace Nncase.Tests
             var px = IsWildCard();
             var py = IsBinary(op => op is (BinaryOp.Add or BinaryOp.Sub), px, 10);
 
-
-            eGraph.Add(y);
-            var matchs = EMatch(eGraph, py);
+            var matchs = EGraphMatcher.MatchEGraph(y, py);
             Assert.Single(matchs);
-            eGraph.Add(y1);
 
-            var matchs2 = EMatch(eGraph, py);
+            var matchs2 = EGraphMatcher.MatchEGraph(y1, py);
             Assert.Equal(2, matchs2.Count);
 
             var py1 = IsUnary(UnaryOp.Abs, px);
-            Assert.Empty(EMatch(eGraph, py1));
+            Assert.Empty(EGraphMatcher.MatchEGraph(y1, py1));
         }
 
         [Fact]
         public void MatchFunction()
         {
-            eGraph.Clear();
             Var x = "x";
             Var y = "y";
 
@@ -336,21 +299,16 @@ namespace Nncase.Tests
 
             ExprPattern pat_2 = new FunctionPattern(x - y, wc1, wc2);
 
-            eGraph.Add(func);
-            var res_1 = EMatch(eGraph, pat_1);
+            var res_1 = EGraphMatcher.MatchEGraph(func, pat_1);
             Assert.Single(res_1);
 
-            Assert.Contains(wc1, res_1[0].Context.Keys);
-            Assert.Contains(wc2, res_1[0].Context.Keys);
-
-            var res_2 = EMatch(eGraph, pat_2);
+            var res_2 = EGraphMatcher.MatchEGraph(func, pat_2);
             Assert.Empty(res_2);
         }
 
         [Fact]
         public void TestMatchVArgs()
         {
-            eGraph.Clear();
 
             WildCardPattern wc = "x";
             List<ExprPattern> wcs = new();
@@ -379,9 +337,8 @@ namespace Nncase.Tests
             }
             )), 0);
 
-            eGraph.Add(expr);
 
-            var eMatches = EMatch(eGraph, vpat);
+            var eMatches = EGraphMatcher.MatchEGraph(expr, vpat);
             Assert.Single(eMatches);
             var eMatch = eMatches[0];
             Assert.Equal(eMatch[wcs[0]], tuple[0]);
@@ -392,7 +349,6 @@ namespace Nncase.Tests
         [Fact]
         public void TestMatchVArgsTwice()
         {
-            eGraph.Clear();
 
             ConstPattern wcaxis = IsConst();
             List<ConstPattern> wccons = new();
@@ -420,9 +376,8 @@ namespace Nncase.Tests
             }
             )), wcaxis);
 
-            eGraph.Add(expr);
 
-            var eMatches = EMatch(eGraph, vpat);
+            var eMatches = EGraphMatcher.MatchEGraph(expr, vpat);
             Assert.Single(eMatches);
             var eMatch = eMatches[0];
             Assert.Equal(eMatch[wccons[0]], tuple_rhs[0]);
@@ -433,7 +388,6 @@ namespace Nncase.Tests
         [Fact]
         public void TestMatchVArgsRecursion()
         {
-            eGraph.Clear();
 
             Var x = "x";
             Const y = 4;
@@ -458,9 +412,8 @@ namespace Nncase.Tests
             });
             var pattern = Concat(IsTuple(wcvargs), wcaxis);
 
-            eGraph.Add(expr);
 
-            var results = EMatch(eGraph, pattern);
+            var results = EGraphMatcher.MatchEGraph(expr, pattern);
             Assert.Single(results);
             var result = results[0];
             Assert.Equal(result[wcin[0]], x);
@@ -469,6 +422,5 @@ namespace Nncase.Tests
             Assert.Equal(result[wcperm], perm);
             Assert.Equal(result[wcaxis], (Const)0);
         }
-
     }
 }

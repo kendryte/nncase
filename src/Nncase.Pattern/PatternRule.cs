@@ -10,8 +10,13 @@ namespace Nncase.Pattern
     {
         public virtual ExprPattern[] Patterns => new ExprPattern[] { Pattern };
 
-        public ExprPattern Pattern { get; set; }
+        public ExprPattern Pattern { get; set; } = new InvalidPattern();
 
         public virtual Expr? GetRePlace(IMatchResult result) => throw new NotImplementedException("Not Implement GetRePlace!");
+    }
+
+    public sealed class InvalidRule : PatternRule
+    {
+
     }
 }

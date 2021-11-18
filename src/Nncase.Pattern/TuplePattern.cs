@@ -27,5 +27,21 @@ namespace Nncase.Pattern
 
         public static TuplePattern IsTuple(VArgsPattern Fields) => new TuplePattern(Fields);
 
+        public static TuplePattern IsTuple() => IsTuple(IsVArgsRepeat((n, param) =>
+            {
+                for (int i = 0; i < n; i++)
+                {
+                    param.Add(IsWildCard());
+                }
+            },
+            (match, param) =>
+            {
+                if (!match)
+                {
+                    param.Clear();
+                }
+            }
+            ));
+
     }
 }

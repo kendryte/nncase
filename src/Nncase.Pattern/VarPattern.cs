@@ -10,10 +10,12 @@ using static Nncase.IR.Utility;
 
 namespace Nncase.Pattern
 {
-    public sealed record VarPattern(string Name, TypePattern Type) : ExprPattern
+    public sealed record VarPattern(string Name, Func<Var, bool> Cond) : ExprPattern
     {
 
-        public VarPattern(Var var) : this($"var", new TypePattern(var.TypeAnnotation)) { }
+        public VarPattern(string Name, TypePattern Type) : this(Name, v => Type.MatchLeaf(v.TypeAnnotation)) { }
+
+        public VarPattern(Var var) : this($"var", v => v == var) { }
 
         public VarPattern()
             : this($"var", new TypePattern(AnyType.Default))
@@ -24,7 +26,7 @@ namespace Nncase.Pattern
 
         public bool MatchLeaf(Var var)
         {
-            return Type.MatchLeaf(var.TypeAnnotation) && MatchCheckedType(var);
+            return Cond(var) && MatchCheckedType(var);
         }
     }
     public static partial class Utility

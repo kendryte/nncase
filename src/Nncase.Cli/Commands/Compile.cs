@@ -32,6 +32,10 @@ namespace Nncase.Cli.Commands
         /// Gets or sets target.
         /// </summary>
         public string Target { get; set; }
+
+        public bool DumpIr { get; set; }
+
+        public string DumpDir { get; set; }
     }
 
     /// <summary>
@@ -48,6 +52,8 @@ namespace Nncase.Cli.Commands
             AddArgument(new Argument("input-file"));
             AddOption(new Option<string>(new[] { "-t", "--target" }, "target architecture, e.g. cpu, k210") { IsRequired = true });
             AddOption(new Option<string>(new[] { "-i", "--input-format" }, "input format, e.g. tflite") { IsRequired = true });
+            AddOption(new Option<bool>("--dump-ir", () => false, "dump ir to .dot, default is False") { IsRequired = false });
+            AddOption(new Option<string>("--dump-dir", () => ".", "dump to directory, default is .") { IsRequired = false });
 
             Handler = CommandHandler.Create<CompileOptions>(Run);
         }
@@ -58,7 +64,7 @@ namespace Nncase.Cli.Commands
             var module = ImportModel(options);
             DumpModule(module, "ir_import");
 
-            var pmgr = new PassManager(module.Entry, new RunPassOptions(null));
+            var pmgr = new PassManager(module.Entry, new RunPassOptions(null, options.DumpIr, options.DumpDir));
             pmgr.Add(new EGraphPass("eoptimize"));
             pmgr.Run();
         }

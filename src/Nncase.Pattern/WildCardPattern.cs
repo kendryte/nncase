@@ -16,6 +16,11 @@ namespace Nncase.Pattern
         public override bool MatchLeaf(Expr expr) => MatchCheckedType(expr);
     }
 
+    public sealed record InvalidPattern : ExprPattern
+    {
+
+    }
+
     public static partial class Utility
     {
         public static WildCardPattern IsWildCard() => new WildCardPattern();

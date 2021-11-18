@@ -1,13 +1,46 @@
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using Nncase.IR;
 using Nncase.Pattern;
+using Nncase.IR;
+using System;
+using System.Linq;
 
 namespace Nncase.Transform
 {
-    using EContextEnv = Dictionary<ExprPattern, ENode>;
     using Tuple = IR.Tuple;
+
+    using EContextEnv = Dictionary<ExprPattern, ENode>;
+
+
+    public static class EGraphMatcher
+    {
+        public static List<IMatchResult> MatchEGraph(Dictionary<EClass, List<ENode>> eClasses, params ExprPattern[] patterns)
+        {
+            var matcher = new EGraphMatchVisitor(eClasses);
+            var matchResults = new List<IMatchResult>();
+            foreach (var pattern in patterns)
+            {
+                foreach (var (eclass, enodes) in matcher.eClasses)
+                {
+                    var (matchIdx, env) = matcher.MatchEclass(pattern, enodes, new EContextEnv());
+                    if (matchIdx != -1)
+                    {
+                        matchResults.Add(new EMatchResult(enodes[matchIdx], env));
+                    }
+                }
+            }
+            return matchResults;
+        }
+
+        public static List<IMatchResult> MatchEGraph(EGraph eGraph, ExprPattern pattern) => MatchEGraph(eGraph.EClasses(), pattern);
+
+        public static List<IMatchResult> MatchEGraph(Expr expr, ExprPattern pattern)
+        {
+            var g = new EGraph();
+            g.Add(expr);
+            return MatchEGraph(g, pattern);
+        }
+    }
+
 
     public record EMatchResult(ENode Root, EContextEnv Context) : IMatchResult
     {
@@ -26,11 +59,11 @@ namespace Nncase.Transform
         }
     }
 
-    public sealed class EGraphMatcher
+    internal sealed class EGraphMatchVisitor
     {
         public Dictionary<EClass, List<ENode>> eClasses;
 
-        public EGraphMatcher(Dictionary<EClass, List<ENode>> eclasses)
+        public EGraphMatchVisitor(Dictionary<EClass, List<ENode>> eclasses)
         {
             eClasses = eclasses;
         }
@@ -165,25 +198,6 @@ namespace Nncase.Transform
             }
             return (-1, env);
         }
-
-        public static List<EMatchResult> EMatch(Dictionary<EClass, List<ENode>> eClasses, params ExprPattern[] patterns)
-        {
-            var matcher = new EGraphMatcher(eClasses);
-            var matchResults = new List<EMatchResult>(); // 保存了每个eclassid和入参信息.
-            foreach (var pattern in patterns)
-            {
-                foreach (var (eclass, enodes) in matcher.eClasses)
-                {
-                    var (matchIdx, env) = matcher.MatchEclass(pattern, enodes, new EContextEnv());
-                    if (matchIdx != -1)
-                    {
-                        matchResults.Add(new EMatchResult(enodes[matchIdx], env));
-                    }
-                }
-            }
-            return matchResults;
-        }
-
-        public static List<EMatchResult> EMatch(EGraph eGraph, ExprPattern pattern) => EMatch(eGraph.EClasses(), pattern);
     }
+
 }
