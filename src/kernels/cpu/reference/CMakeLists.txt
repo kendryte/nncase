@@ -25,5 +25,6 @@ set(SRCS batch_to_space.cpp
          resize_image.cpp
          transpose.cpp
          slice.cpp
-         unary.cpp)
+         unary.cpp
+         ternary.cpp)
 target_sources(kernels PRIVATE ${SRCS})

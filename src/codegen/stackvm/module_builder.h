@@ -39,6 +39,7 @@
 #include <nncase/ir/ops/resize_image.h>
 #include <nncase/ir/ops/slice.h>
 #include <nncase/ir/ops/table_lookup.h>
+#include <nncase/ir/ops/ternary.h>
 #include <nncase/ir/ops/transpose.h>
 #include <nncase/ir/ops/unary.h>
 #include <nncase/ir/placeholders.h>
