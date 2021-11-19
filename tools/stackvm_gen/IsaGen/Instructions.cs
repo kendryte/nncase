@@ -167,7 +167,8 @@ namespace IsaGen
         RANDOM_NORMAL,
         RANDOM_UNIFORM,
         REDUCE,
-        REDUCEARG,
+        REDUCE_ARG,
+        REDUCE_PROD,
         REDUCE_WINDOW2D,
         RESIZE_IMAGE,
         SLICE,
@@ -1685,7 +1686,7 @@ namespace IsaGen
         [Description("ReduceArg")]
         public class ReduceArgInstruction : TensorInstruction
         {
-            public override TensorFunction Function => TensorFunction.REDUCEARG;
+            public override TensorFunction Function => TensorFunction.REDUCE_ARG;
 
             [DisplayName("datatype_src")]
             [Description("Input datatype")]
@@ -1722,6 +1723,34 @@ namespace IsaGen
             [DisplayName("select_last_idx")]
             [Description("select last index")]
             public bool SelectLastIdx { get; set; }
+        }
+
+        [DisplayName("TENSOR.REDUCE_PROD")]
+        [Category("Tensor Instructions")]
+        [Description("ReduceProd")]
+        public class ReduceProdInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.REDUCE_PROD;
+
+            [DisplayName("rshape_src")]
+            [Description("Source shape register")]
+            public byte RshapeSrc { get; set; }
+
+            [DisplayName("rstride_src")]
+            [Description("Source stride register")]
+            public byte RstrideSrc { get; set; }
+
+            [DisplayName("rstride_dest")]
+            [Description("Dest stride register")]
+            public byte RstrideDest { get; set; }
+
+            [DisplayName("rshape_axes")]
+            [Description("Axes shape register")]
+            public byte RshapeAxes { get; set; }
+
+            [DisplayName("keep_dims")]
+            [Description("Keep dimensions")]
+            public bool KeepDims { get; set; }
         }
 
         [DisplayName("TENSOR.REDUCE_WINDOW2D")]

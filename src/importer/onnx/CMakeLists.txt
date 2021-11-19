@@ -37,6 +37,7 @@ set(ONNX_IMPORTER_OPS_SOURCES
     ops/random.cpp
     ops/reduce.cpp
     ops/reduce_arg.cpp
+    ops/reduce_prod.cpp
     ops/reshape.cpp
     ops/resize.cpp
     ops/shape.cpp
