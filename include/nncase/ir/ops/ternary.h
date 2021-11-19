@@ -28,14 +28,11 @@ public:
     input_connector &input_c() { return input_at(2); }
     output_connector &output() { return output_at(0); }
 
-    value_range<float> fused_activation() const noexcept { return fused_activation_; }
-
     ternary(datatype_t input_a_type, datatype_t input_bc_type, shape_t input_a_shape, shape_t input_b_shape, shape_t input_c_shape);
 
 protected:
     bool properties_equal(node &other) const override;
 
 private:
-    value_range<float> fused_activation_;
 };
 }
