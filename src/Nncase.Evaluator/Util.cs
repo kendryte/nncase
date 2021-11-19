@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using Nncase.IR;
 using TorchSharp;
@@ -11,6 +12,10 @@ namespace Nncase.Evaluator
         public static torch.Tensor ToTorchTensor(Const expr)
         {
             // null checked type
+            if (expr.CheckedType is null || expr.CheckedType is not TensorType)
+            {
+                throw new InvalidDataException("Expr checked type is not a valid TensorType in evaluator");
+            }
             var dtype = (expr.CheckedType as TensorType).DType;
             if (expr.ValueType.IsScalar)
             {
