@@ -16,7 +16,7 @@
 #include <nncase/ir/ops/constant.h>
 #include <nncase/ir/ops/conv2d.h>
 #include <nncase/ir/visitor.h>
-#include <nncase/transforms/neutral/fold_conv2d_biasadd.h>
+#include <nncase/transforms/neutral/fold_conv2d_binary.h>
 
 using namespace nncase;
 using namespace nncase::ir;
@@ -82,6 +82,86 @@ void fold_conv2d_biasadd_transform::process(transform_context &context)
 
     new_conv->input().connect(*context.inputs[0]->connection());
     new_conv->weights().connect(*context.inputs[1]->connection());
+    new_conv->bias().connect(new_bias->output());
+    new_conv->name(old_conv->name());
+
+    auto inputs = context.outputs[0]->connections();
+    for (auto &in : dup(inputs))
+        in->connect(new_conv->output());
+}
+
+bool fold_conv2d_mul_transform::on_try_match(node &node, transform_context &context)
+{
+    conv2d *conv = nullptr;
+    binary *mul = nullptr;
+    constant *c = nullptr;
+    constant *weights = nullptr;
+    constant *bias = nullptr;
+    if ((conv = node_cast<conv2d>(node))
+        && (conv->fused_activation() == value_range<float>::full())
+        && (weights = try_get_direct_parent<constant>(*conv, 1))
+        && (bias = try_get_direct_parent<constant>(*conv, 2))
+        && (mul = try_get_direct_child<binary>(*conv))
+        && (mul->binary_op() == binary_mul)
+        && (c = try_get_direct_parent<constant>(*mul)))
+    {
+        auto &c_shape = c->output().shape();
+        if ((c_shape.size() == 3
+                && c_shape == shape_t { (size_t)conv->output_channels(), 1, 1 })
+            || (c_shape.size() == 4
+                && c_shape == shape_t { 1, (size_t)conv->output_channels(), 1, 1 }))
+        {
+            context.inputs.emplace_back(&conv->input());
+            context.outputs.emplace_back(&mul->output());
+
+            context.matched_nodes.emplace_back(conv);
+            context.matched_nodes.emplace_back(mul);
+            context.matched_nodes.emplace_back(c);
+            context.matched_nodes.emplace_back(weights);
+            context.matched_nodes.emplace_back(bias);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void fold_conv2d_mul_transform::process(transform_context &context)
+{
+    auto old_conv = node_cast<conv2d>(*context.matched_nodes[0]);
+    auto old_mul = node_cast<binary>(*context.matched_nodes[1]);
+    auto old_c_node = node_cast<constant>(*context.matched_nodes[2]);
+    auto old_weights_node = node_cast<constant>(*context.matched_nodes[3]);
+    auto old_bias_node = node_cast<constant>(*context.matched_nodes[4]);
+
+    auto old_c = as_span<const float>(old_c_node->data());
+    auto old_weights = as_span<const float>(old_weights_node->data());
+    auto old_bias = as_span<const float>(old_bias_node->data());
+
+    // update weights & bias
+    size_t channels = old_conv->output_channels();
+    size_t weights_per_channel = old_weights.size() / channels;
+    std::vector<float> weights(old_weights.begin(), old_weights.end());
+    std::vector<float> bias(old_bias.begin(), old_bias.end());
+    for (size_t i = 0; i < channels; i++)
+    {
+        auto scale = old_c[i];
+        for (size_t j = 0; j < weights_per_channel; j++)
+            weights[i * weights_per_channel + j] *= scale;
+        bias[i] *= scale;
+    }
+
+    // create new weights & bias
+    auto new_weights = context.graph.emplace<constant>(dt_float32, old_weights_node->output().shape(), weights);
+    new_weights->name(old_weights_node->name());
+    auto new_bias = context.graph.emplace<constant>(dt_float32, old_bias_node->output().shape(), bias);
+    new_bias->name(old_bias_node->name());
+
+    // create new conv2d
+    auto new_conv = context.graph.emplace<conv2d>(old_conv->input().shape(), old_conv->weights().shape(), old_conv->groups(), old_conv->padding_h(), old_conv->padding_w(), old_conv->stride_h(), old_conv->stride_w(), old_conv->dilation_h(), old_conv->dilation_w(), old_mul->fused_activation());
+
+    new_conv->input().connect(*context.inputs[0]->connection());
+    new_conv->weights().connect(new_weights->output());
     new_conv->bias().connect(new_bias->output());
     new_conv->name(old_conv->name());
 

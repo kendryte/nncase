@@ -6,21 +6,26 @@ target_sources(ir PRIVATE
     conv2d.cpp
     conv2d_transpose.cpp
     convert.cpp
+    cumsum.cpp
     fused_unary.cpp
     matmul.cpp
     transpose.cpp
     reduce.cpp
     reduce_arg.cpp
+    reduce_prod.cpp
     reduce_window2d.cpp
     binary.cpp
     concat.cpp
     clamp.cpp
     constant.cpp
+    hardmax.cpp
     quantize.cpp
     dequantize.cpp
     unary.cpp
     pad.cpp
     bitcast.cpp
+    random_normal.cpp
+    random_uniform.cpp
     resize_image.cpp
     slice.cpp
     table_lookup.cpp

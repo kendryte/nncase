@@ -181,6 +181,18 @@ result<void> kernels::reduce_arg(reduce_arg_op_t op, const float *input, T *outp
     return cpu::reference::reduce_arg(op, input, output, in_shape, in_strides, out_strides, axis, keep_dims, select_last_idx, context);
 }
 
+template result<void> kernels::reduce_prod<float>(const float *input, float *output, const runtime_shape_t &in_shape,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides,
+    const runtime_shape_t &axes, bool keep_dims) noexcept;
+
+template <typename T>
+result<void> kernels::reduce_prod(const T *input, T *output, const runtime_shape_t &in_shape,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides,
+    const runtime_shape_t &axes, bool keep_dims) noexcept
+{
+    return cpu::reference::reduce_prod(input, output, in_shape, in_strides, out_strides, axes, keep_dims);
+}
+
 #define DISPATCH_RESIZE(resize_fun)                                                                                                                          \
     runtime_shape_t out_shape { in_shape[0], in_shape[1], static_cast<size_t>(out_h), static_cast<size_t>(out_w) };                                          \
     if (is_contiguous(in_shape, in_strides) && is_contiguous(out_shape, out_strides))                                                                        \
@@ -251,4 +263,40 @@ result<void> kernels::gather_nd(datatype_t in_type, const gsl::byte *input, gsl:
     {
         return cpu::reference::gather_nd(in_type, input, output, in_shape, out_shape, in_strides, out_strides, indices, indices_shape, batch_dims, context);
     }
+}
+
+template result<void> kernels::cumsum<float>(const float *input, float *output, const runtime_shape_t &in_shape,
+    int32_t axis, bool exclusive, bool reverse) noexcept;
+
+template <typename T>
+result<void> kernels::cumsum(const T *input, T *output, const runtime_shape_t &in_shape,
+    int32_t axis, bool exclusive, bool reverse) noexcept
+{
+    return cpu::reference::cumsum(input, output, in_shape, axis, exclusive, reverse);
+}
+
+template result<void> kernels::hardmax<float>(const float *input, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides,
+    float *output, int32_t axis) noexcept;
+
+template <typename T>
+result<void> kernels::hardmax(const T *input, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides,
+    T *output, int32_t axis) noexcept
+{
+    return cpu::reference::hardmax(input, in_shape, in_strides, output, axis);
+}
+
+template result<void> kernels::random_normal<float>(float *output, const runtime_shape_t &out_shape, float mean, float std, float seed) noexcept;
+
+template <typename T>
+result<void> kernels::random_normal(T *output, const runtime_shape_t &out_shape, float mean, float std, float seed) noexcept
+{
+    return cpu::reference::random_normal(output, out_shape, mean, std, seed);
+}
+
+template result<void> kernels::random_uniform<float>(float *output, const runtime_shape_t &out_shape, float low, float high, float seed) noexcept;
+
+template <typename T>
+result<void> kernels::random_uniform(T *output, const runtime_shape_t &out_shape, float low, float high, float seed) noexcept
+{
+    return cpu::reference::random_uniform(output, out_shape, low, high, seed);
 }

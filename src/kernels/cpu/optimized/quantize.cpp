@@ -82,5 +82,6 @@ result<void> optimized::quantize(datatype_t in_type, datatype_t out_type, const 
     const runtime_shape_t &in_shape, NNCASE_UNUSED const runtime_shape_t &in_strides, NNCASE_UNUSED const runtime_shape_t &out_strides, float scale, float bias, NNCASE_UNUSED kernel_context &context) noexcept
 {
     QUANTIZE_IMPL(float, uint8_t)
+    QUANTIZE_IMPL(float, int8_t)
     return err(std::errc::not_supported);
 }

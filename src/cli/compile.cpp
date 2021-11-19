@@ -33,6 +33,8 @@ compile_command::compile_command(lyra::cli &cli)
                          .add_argument(lyra::opt(use_mse_quant_w_).name("--use-mse-quant-w").optional().help("use min mse algorithm to refine weights quantilization or not, default is " + std::to_string(use_mse_quant_w_)))
                          .add_argument(lyra::opt(dataset_, "dataset path").name("--dataset").optional().help("calibration dataset, used in post quantization"))
                          .add_argument(lyra::opt(dataset_format_, "dataset format").name("--dataset-format").optional().help("datset format: e.g. image|raw, default is " + dataset_format_))
+                         .add_argument(lyra::opt(dump_range_dataset_, "dataset path").name("--dump-range-dataset").optional().help("dump import op range dataset"))
+                         .add_argument(lyra::opt(dump_range_dataset_format_, "dataset format").name("--dump-range-dataset-format").optional().help("datset format: e.g. image|raw, default is " + dump_range_dataset_format_))
                          .add_argument(lyra::opt(calibrate_method_, "calibrate method").name("--calibrate-method").optional().help("calibrate method: e.g. no_clip|l2|kld_m0|kld_m1|kld_m2|cdf, default is " + calibrate_method_))
                          .add_argument(lyra::opt(preprocess_).name("--preprocess").optional().help("enable preprocess, default is " + std::to_string(preprocess_)))
                          .add_argument(lyra::opt(swapRB_).name("--swapRB").optional().help("swap red and blue channel, default is " + std::to_string(swapRB_)))
@@ -45,6 +47,7 @@ compile_command::compile_command(lyra::cli &cli)
                          .add_argument(lyra::opt(output_type_, "output type").name("--output-type").optional().help("output type, e.g float32|uint8, default is " + output_type_))
                          .add_argument(lyra::opt(input_layout_, "input layout").name("--input-layout").optional().help("input layout, e.g NCHW|NHWC, default is " + input_layout_))
                          .add_argument(lyra::opt(output_layout_, "output layout").name("--output-layout").optional().help("output layout, e.g NCHW|NHWC, default is " + output_layout_))
+                         .add_argument(lyra::opt(tcu_num_, "tcu number").name("--tcu-num").optional().help("tcu number, e.g 1|2|3|4, default is " + std::to_string(tcu_num_)))
                          .add_argument(lyra::opt(is_fpga_).name("--is-fpga").optional().help("use fpga parameters, default is " + std::to_string(is_fpga_)))
                          .add_argument(lyra::opt(dump_ir_).name("--dump-ir").optional().help("dump ir to .dot, default is " + std::to_string(dump_ir_)))
                          .add_argument(lyra::opt(dump_asm_).name("--dump-asm").optional().help("dump assembly, default is " + std::to_string(dump_asm_)))
@@ -95,6 +98,7 @@ void compile_command::run()
     c_options.use_mse_quant_w = use_mse_quant_w_;
     c_options.input_layout = input_layout_;
     c_options.output_layout = output_layout_;
+    c_options.tcu_num = tcu_num_;
     c_options.letterbox_value = letterbox_value_;
     if (c_options.preprocess)
     {
@@ -164,6 +168,18 @@ void compile_command::run()
         ptq_options.calibrate_method = calibrate_method_;
         compiler->use_ptq(ptq_options);
     }
+
+    if (!dump_range_dataset_.empty())
+    {
+        nncase::dump_range_dataset_options dump_range_options;
+        dump_range_options.dataset = dump_range_dataset_;
+        dump_range_options.dataset_format = dump_range_dataset_format_;
+        dump_range_options.calibrate_method = calibrate_method_;
+        compiler->dump_range_options(dump_range_options);
+    }
+
+    if (dump_import_op_range_ && dump_range_dataset_.empty())
+        throw std::runtime_error("Dump range dataset has not been set.");
 
     compiler->compile();
 

@@ -42,7 +42,7 @@ result<void> reduce_arg_impl(TReducer &&reducer, float init_value,
         return ok();
     }));
 
-    // collact all min/max indices
+    // collect all min/max indices
     std::unordered_map<size_t, std::vector<TOutput>> out_map;
     try_(apply(in_shape, [&](const runtime_shape_t &index) -> result<void> {
         const auto src = input[offset(in_strides, index)];

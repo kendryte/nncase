@@ -101,7 +101,8 @@ void add_copy_to_slice_pass::run_core(graph &graph, [[maybe_unused]] nncase::tar
     auto alias_visitor = make_relay_ir_visitor([&](node &node) {
         slice *s;
         if ((s = node_cast<slice>(node))
-            && (s->attributes() & node_attr_action) == 0)
+            && (s->attributes() & node_attr_action) == 0
+            && is_simple_slice(s->begin(), s->end(), s->strides(), s->input().shape()))
         {
             auto outputs = dup(s->output().connections());
             if (std::any_of(outputs.begin(), outputs.end(), [](input_connector *in) { return in->owner().runtime_opcode() != op_copy; }))
@@ -276,7 +277,8 @@ void alias_bitcast_buffer_pass::run_core(graph &graph, [[maybe_unused]] nncase::
 
                 size_t offset = 0;
                 // input & rdata should remain locations
-                if (in_buf.memory_location() == mem_input || in_buf.memory_location() == mem_rdata)
+                if (in_buf.memory_location() == mem_input || in_buf.memory_location() == mem_rdata
+                    || (input.attributes() & cnctr_attr_buffer_slice))
                 {
                     // owner is input, parent shape is bitcast's
                     out_buf.parent() = { &in_buf, offset, b->output().shape() };

@@ -121,6 +121,7 @@ class OnnxTestRunner(TestRunner):
                 onnx_type.shape.dim, [1, 3, 224, 224])]
             self.inputs.append(input_dict)
             self.calibs.append(copy.deepcopy(input_dict))
+            self.dump_range_data.append(copy.deepcopy(input_dict))
 
         # output
         for e in onnx_model.graph.output:

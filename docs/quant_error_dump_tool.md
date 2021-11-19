@@ -78,31 +78,59 @@ if __name__ == '__main__':
 ```
 
 **quant error dump output:**
+
 layer name: tfl.conv_2d/in_tp/store   cosine: 1
+
 layer name: tfl.conv_2d/conv/conv2d   cosine: 1.00038
+
 layer name: tfl.depthwise_conv_2d_0/conv2d   cosine: 0.998613
+
 layer name: tfl.conv_2d1/conv/conv2d   cosine: 0.994524
+
 layer name: tfl.depthwise_conv_2d1_0/conv2d   cosine: 1.00007
+
 layer name: tfl.conv_2d2/conv/conv2d   cosine: 0.999273
+
 layer name: tfl.depthwise_conv_2d2_0/conv2d   cosine: 0.999846
+
 layer name: tfl.conv_2d3/conv/conv2d   cosine: 0.999506
+
 layer name: tfl.depthwise_conv_2d3_0/conv2d   cosine: 0.999811
+
 layer name: tfl.conv_2d4/conv/conv2d   cosine: 0.999844
+
 layer name: tfl.depthwise_conv_2d4_0/conv2d   cosine: 0.999612
+
 layer name: tfl.conv_2d5/conv/conv2d   cosine: 0.999411
+
 layer name: tfl.depthwise_conv_2d5_0/conv2d   cosine: 0.999816
+
 layer name: tfl.conv_2d6/conv/conv2d   cosine: 0.999474
+
 layer name: tfl.depthwise_conv_2d6_0/conv2d   cosine: 0.999033
+
 layer name: tfl.conv_2d7/conv/conv2d   cosine: 0.999206
+
 layer name: tfl.depthwise_conv_2d7_0/conv2d   cosine: 0.999221
+
 layer name: tfl.conv_2d8/conv/conv2d   cosine: 0.999041
+
 layer name: tfl.depthwise_conv_2d8_0/conv2d   cosine: 0.999057
+
 layer name: tfl.conv_2d9/conv/conv2d   cosine: 0.99843
+
 layer name: tfl.depthwise_conv_2d9_0/conv2d   cosine: 0.998911
+
 layer name: tfl.conv_2d10/conv/conv2d   cosine: 0.997248
+
 layer name: tfl.depthwise_conv_2d10_0/conv2d   cosine: 0.998415
+
 layer name: tfl.conv_2d11/conv/conv2d   cosine: 0.996701
+
 layer name: tfl.depthwise_conv_2d11_0/conv2d   cosine: 0.999639
+
 layer name: tfl.conv_2d12/conv/conv2d   cosine: 0.997942
+
 layer name: tfl.depthwise_conv_2d12_0/conv2d   cosine: 0.999106
+
 layer name: StatefulPartitionedCall:0/conv/conv2d   cosine: 0.972087

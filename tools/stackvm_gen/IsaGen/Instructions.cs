@@ -153,17 +153,22 @@ namespace IsaGen
         CONV2D_TRANSPOSE,
         CONVERT,
         COPY,
+        CUMSUM,
         DEQUANTIZE,
         GATHER,
         GATHER_ND,
+        HARDMAX,
         LOGISTIC,
         LUT1D,
         MATMUL,
         ONEHOT,
         PAD,
         QUANTIZE,
+        RANDOM_NORMAL,
+        RANDOM_UNIFORM,
         REDUCE,
-        REDUCEARG,
+        REDUCE_ARG,
+        REDUCE_PROD,
         REDUCE_WINDOW2D,
         RESIZE_IMAGE,
         SLICE,
@@ -1312,6 +1317,34 @@ namespace IsaGen
             public byte RstrideDest { get; set; }
         }
 
+        [DisplayName("TENSOR.CUMSUM")]
+        [Category("Tensor Instructions")]
+        [Description("CumSum")]
+        public class CumSumInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.CUMSUM;
+
+            [DisplayName("datatype")]
+            [Description("Input/Output datatype")]
+            public DataType DataType { get; set; }
+
+            [DisplayName("rshape_src")]
+            [Description("Source shape register")]
+            public byte RshapeSrc { get; set; }
+
+            [DisplayName("axis")]
+            [Description("Axis")]
+            public int Axis { get; set; }
+
+            [DisplayName("exclusive")]
+            [Description("Exclusive")]
+            public bool Exclusive { get; set; }
+
+            [DisplayName("reverse")]
+            [Description("Reverse")]
+            public bool Reverse { get; set; }
+        }
+
         [DisplayName("TENSOR.DEQUANTIZE")]
         [Category("Tensor Instructions")]
         [Description("Dequantize")]
@@ -1410,6 +1443,30 @@ namespace IsaGen
             [DisplayName("batch_dims")]
             [Description("Batch Dims")]
             public byte Batchdims { get; set; }
+        }
+
+        [DisplayName("TENSOR.HARDMAX")]
+        [Category("Tensor Instructions")]
+        [Description("Hardmax")]
+        public class HardmaxInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.HARDMAX;
+
+            [DisplayName("datatype")]
+            [Description("Input/Output datatype")]
+            public DataType DataType { get; set; }
+
+            [DisplayName("rshape_src")]
+            [Description("Source shape register")]
+            public byte RshapeSrc { get; set; }
+
+            [DisplayName("rstride_src")]
+            [Description("Source stride register")]
+            public byte RstrideSrc { get; set; }
+
+            [DisplayName("axis")]
+            [Description("Axis")]
+            public int Axis { get; set; }
         }
 
         [DisplayName("TENSOR.LUT1D")]
@@ -1532,6 +1589,62 @@ namespace IsaGen
             public byte RstrideDest { get; set; }
         }
 
+        [DisplayName("TENSOR.RANDOM_NORMAL")]
+        [Category("Tensor Instructions")]
+        [Description("RandomNormal")]
+        public class RandomNormalInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.RANDOM_NORMAL;
+
+            [DisplayName("datatype_dest")]
+            [Description("Output datatype")]
+            public DataType DataTypeDest { get; set; }
+
+            [DisplayName("rshape_dest")]
+            [Description("output shape register")]
+            public byte RshapeDest { get; set; }
+
+            [DisplayName("mean")]
+            [Description("Mean")]
+            public float Mean { get; set; }
+
+            [DisplayName("std")]
+            [Description("Std")]
+            public float Std { get; set; }
+
+            [DisplayName("seed")]
+            [Description("Seed")]
+            public float Seed { get; set; }
+        }
+
+        [DisplayName("TENSOR.RANDOM_UNIFORM")]
+        [Category("Tensor Instructions")]
+        [Description("RandomUniform")]
+        public class RandomUniformInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.RANDOM_UNIFORM;
+
+            [DisplayName("datatype_dest")]
+            [Description("Output datatype")]
+            public DataType DataTypeDest { get; set; }
+
+            [DisplayName("rshape_dest")]
+            [Description("output shape register")]
+            public byte RshapeDest { get; set; }
+
+            [DisplayName("low")]
+            [Description("Low")]
+            public float Low { get; set; }
+
+            [DisplayName("high")]
+            [Description("High")]
+            public float High { get; set; }
+
+            [DisplayName("seed")]
+            [Description("Seed")]
+            public float Seed { get; set; }
+        }
+
         [DisplayName("TENSOR.REDUCE")]
         [Category("Tensor Instructions")]
         [Description("Reduce")]
@@ -1573,7 +1686,7 @@ namespace IsaGen
         [Description("ReduceArg")]
         public class ReduceArgInstruction : TensorInstruction
         {
-            public override TensorFunction Function => TensorFunction.REDUCEARG;
+            public override TensorFunction Function => TensorFunction.REDUCE_ARG;
 
             [DisplayName("datatype_src")]
             [Description("Input datatype")]
@@ -1609,7 +1722,35 @@ namespace IsaGen
 
             [DisplayName("select_last_idx")]
             [Description("select last index")]
-            public bool select_last_idx { get; set; }
+            public bool SelectLastIdx { get; set; }
+        }
+
+        [DisplayName("TENSOR.REDUCE_PROD")]
+        [Category("Tensor Instructions")]
+        [Description("ReduceProd")]
+        public class ReduceProdInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.REDUCE_PROD;
+
+            [DisplayName("rshape_src")]
+            [Description("Source shape register")]
+            public byte RshapeSrc { get; set; }
+
+            [DisplayName("rstride_src")]
+            [Description("Source stride register")]
+            public byte RstrideSrc { get; set; }
+
+            [DisplayName("rstride_dest")]
+            [Description("Dest stride register")]
+            public byte RstrideDest { get; set; }
+
+            [DisplayName("rshape_axes")]
+            [Description("Axes shape register")]
+            public byte RshapeAxes { get; set; }
+
+            [DisplayName("keep_dims")]
+            [Description("Keep dimensions")]
+            public bool KeepDims { get; set; }
         }
 
         [DisplayName("TENSOR.REDUCE_WINDOW2D")]

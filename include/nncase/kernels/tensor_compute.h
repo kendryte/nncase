@@ -74,6 +74,11 @@ NNCASE_API result<void> reduce_arg(reduce_arg_op_t op, const float *input, T *ou
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides,
     const runtime_shape_t &axis, bool keep_dims, bool select_last_index, kernel_context &context = default_kernel_context()) noexcept;
 
+template <typename T>
+result<void> reduce_prod(const T *input, T *output, const runtime_shape_t &in_shape,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides,
+    const runtime_shape_t &axes, bool keep_dims) noexcept;
+
 NNCASE_API result<void> resize_bilinear(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, int32_t out_h, int32_t out_w, bool align_corners, bool half_pixel_centers,
     kernel_context &context = default_kernel_context()) noexcept;
@@ -91,4 +96,19 @@ NNCASE_API result<void> gather(datatype_t in_type, const gsl::byte *input, gsl::
 
 NNCASE_API result<void> gather_nd(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape, const runtime_shape_t &out_shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const int32_t *indices, const runtime_shape_t &indices_shape, int32_t batch_dims, kernel_context &context = default_kernel_context()) noexcept;
+
+template <typename T>
+NNCASE_API result<void> cumsum(const T *input, T *output, const runtime_shape_t &in_shape,
+    int32_t axis, bool exclusive, bool reverse) noexcept;
+
+template <typename T>
+NNCASE_API result<void> hardmax(const T *input, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides,
+    T *output, int32_t axis) noexcept;
+
+template <typename T>
+NNCASE_API result<void> random_normal(T *output, const runtime_shape_t &out_shape, float mean, float std, float seed) noexcept;
+
+template <typename T>
+NNCASE_API result<void> random_uniform(T *output, const runtime_shape_t &out_shape, float low, float high, float seed) noexcept;
+
 END_NS_NNCASE_KERNELS

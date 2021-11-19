@@ -15,6 +15,7 @@ set(ONNX_IMPORTER_OPS_SOURCES
     ops/constantofshape.cpp
     ops/conv.cpp
     ops/cast.cpp
+    ops/cumsum.cpp
     ops/depthtospace.cpp
     ops/dequantizelinear.cpp
     ops/dropout.cpp
@@ -23,6 +24,7 @@ set(ONNX_IMPORTER_OPS_SOURCES
     ops/gather_nd.cpp
     ops/gemm.cpp
     ops/flatten.cpp
+    ops/hardmax.cpp
     ops/identity.cpp
     ops/instancenorm.cpp
     ops/lpnorm.cpp
@@ -31,13 +33,18 @@ set(ONNX_IMPORTER_OPS_SOURCES
     ops/onehot.cpp
     ops/pad.cpp
     ops/pool.cpp
+    ops/quantizelinear.cpp
+    ops/random.cpp
     ops/reduce.cpp
     ops/reduce_arg.cpp
+    ops/reduce_prod.cpp
     ops/reshape.cpp
     ops/resize.cpp
     ops/shape.cpp
+    ops/size.cpp
     ops/slice.cpp
     ops/softmax.cpp
+    ops/spacetodepth.cpp
     ops/split.cpp
     ops/squeeze.cpp
     ops/sum.cpp

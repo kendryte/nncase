@@ -64,6 +64,8 @@ private:
     std::string dump_dir_;
     std::string dataset_;
     std::string dataset_format_ = "image";
+    std::string dump_range_dataset_;
+    std::string dump_range_dataset_format_ = "image";
     std::string calibrate_method_ = "no_clip";
     std::string input_type_ = "default";
     std::string output_type_ = "float32";
@@ -76,6 +78,8 @@ private:
     std::vector<float> std_ = { 1.f, 1.f, 1.f };
     std::vector<float> input_range_;
     float letterbox_value_;
+    // 0 means do not config tcu num.
+    uint32_t tcu_num_ = 0;
     std::vector<int32_t> input_shape_;
 
     std::string cli_mean_ = "0. 0. 0.";

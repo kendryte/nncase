@@ -17,10 +17,12 @@
 #include <nncase/schedule/buffer_allocator.h>
 #include <nncase/targets/neutral_target.h>
 #include <nncase/transforms/neutral/add_quant_checkpoints.h>
+#include <nncase/transforms/neutral/binary_motion.h>
 #include <nncase/transforms/neutral/dequantize_motion.h>
 #include <nncase/transforms/neutral/fold_bitcast.h>
 #include <nncase/transforms/neutral/fold_constant.h>
-#include <nncase/transforms/neutral/fold_conv2d_biasadd.h>
+#include <nncase/transforms/neutral/fold_conv2d_binary.h>
+#include <nncase/transforms/neutral/fold_convert.h>
 #include <nncase/transforms/neutral/fold_dilated_conv2d.h>
 #include <nncase/transforms/neutral/fold_pad.h>
 #include <nncase/transforms/neutral/fold_quantize.h>
@@ -107,6 +109,9 @@ void neutral_target::add_default_transforms(ir::transforms::transform_pass &pass
 
     pass.emplace<fold_bitcast_transform>();
 
+    pass.emplace<fold_convert_transform>();
+    pass.emplace<fold_nop_convert_transform>();
+
     pass.emplace<remove_nonsense_binary>();
     pass.emplace<strided_slice_to_pad_transform>();
 
@@ -120,7 +125,10 @@ void neutral_target::add_default_transforms(ir::transforms::transform_pass &pass
     pass.emplace<fuse_clamp_conv2d_transpose_transform>();
     pass.emplace<fuse_clamp_binary_transform>();
 
+    pass.emplace<binary_reduce_window2d_motion_up_transform>();
+
     pass.emplace<fold_conv2d_biasadd_transform>();
+    pass.emplace<fold_conv2d_mul_transform>();
     pass.emplace<transpose_reduce_motion_transform>();
     pass.emplace<transpose_unary_motion_transform>();
     pass.emplace<simplify_reduce_transform>();
@@ -146,7 +154,7 @@ void neutral_target::fold_pad_conv_transform(ir::transforms::transform_pass &pas
     pass.emplace<fold_pad_pad_transform>();
     pass.emplace<fuse_pad_conv2d_transform>();
     pass.emplace<fold_nop_pad_transform>();
-    pass.emplace<pad_to_maxpool_transform>();
+    // pass.emplace<pad_to_maxpool_transform>();
 }
 
 void neutral_target::fold_dilated_conv_transform(ir::transforms::transform_pass &pass, [[maybe_unused]] bool add_constant_folding)

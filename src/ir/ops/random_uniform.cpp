@@ -12,18 +12,21 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#pragma once
-#include "../transform.h"
+#include <nncase/ir/op_utils.h>
+#include <nncase/ir/ops/random_uniform.h>
+#include <xtensor/xarray.hpp>
 
-namespace nncase::ir::transforms
-{
-class NNCASE_API fold_conv2d_biasadd_transform : public transform
-{
-public:
-    void process(transform_context &context) override;
+using namespace nncase;
+using namespace nncase::ir;
 
-protected:
-    bool skip_self_contained_check() const noexcept override { return true; }
-    bool on_try_match(ir::node &node, transform_context &context) override;
-};
+random_uniform::random_uniform(datatype_t output_type, shape_t output_shape, float low, float high, float seed)
+    : low_(low), high_(high), seed_(seed)
+{
+    add_output("output", output_type, output_shape);
+}
+
+bool random_uniform::properties_equal(node &other) const
+{
+    auto &r = static_cast<random_uniform &>(other);
+    return (low() == r.low()) && (high() == r.high()) && (seed() == r.seed());
 }

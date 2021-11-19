@@ -40,6 +40,8 @@ case: # case的配置，应该是一个多层次的
   importer_opt:
     kwargs: null
   compile_opt:
+    tcu_num: 0
+    is_fpga: false
     dump_asm: true
     dump_ir: true
     dump_quant_error: false
@@ -62,6 +64,11 @@ case: # case的配置，应该是一个多层次的
     kwargs: null
     numbers: 1
     batch_size: 10
+  generate_dump_range_data:
+    name: generate_random
+    kwargs: null
+    numbers: 1
+    batch_size: 10
   eval:
     - name: target
       values:
@@ -69,6 +76,7 @@ case: # case的配置，应该是一个多层次的
         #- vulkan
         - k210
         - k510
+        - k230
     - name: ptq
       values:
         - false
@@ -80,6 +88,7 @@ case: # case的配置，应该是一个多层次的
         #- vulkan
         - k210
         - k510
+        - k230
     - name: ptq
       values:
         - false

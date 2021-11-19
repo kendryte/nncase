@@ -381,9 +381,10 @@ result<void> stackvm_runtime_function::visit(const stpaddings_op_t &op) noexcept
 
     for (size_t i = 0; i < paddings.size(); i++)
     {
+        try_var(interior, stack_.pop());
         try_var(after, stack_.pop());
         try_var(before, stack_.pop());
-        paddings[op.rank - i - 1] = { before.as_i4(), after.as_i4() };
+        paddings[op.rank - i - 1] = { before.as_i4(), after.as_i4(), interior.as_i4() };
     }
 
     return module().paddings_reg(op.rpaddings, std::move(paddings));

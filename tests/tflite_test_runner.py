@@ -52,6 +52,7 @@ class TfliteTestRunner(TestRunner):
             input_dict['model_shape'] = item['shape']
             self.inputs.append(input_dict)
             self.calibs.append(copy.deepcopy(input_dict))
+            self.dump_range_data.append(copy.deepcopy(input_dict))
 
         for item in interp.get_output_details():
             output_dict = {}

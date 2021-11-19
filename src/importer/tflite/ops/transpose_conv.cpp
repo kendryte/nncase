@@ -50,7 +50,7 @@ DEFINE_TFLITE_LOWER(TRANSPOSE_CONV)
     auto pad_h = get_windowed_padding(out_h, f_h, stride_h, dilation_h, options.padding() == tflite::Padding_SAME);
     auto pad_w = get_windowed_padding(out_w, f_w, stride_w, dilation_w, options.padding() == tflite::Padding_SAME);
     auto conv = graph_.emplace<conv2d_transpose>(pre_trans->output().shape(), weights_trans->output().shape(), out_shape, 1,
-        pad_h, pad_w, stride_h, stride_w, dilation_h, dilation_w, value_range<float>::full());
+        pad_h, pad_w, 0, 0, stride_h, stride_w, dilation_h, dilation_w, value_range<float>::full());
     conv->name(get_tensor(op.outputs(), 0).name()->string_view());
 
     conv->input().connect(pre_trans->output());

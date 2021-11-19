@@ -24,16 +24,21 @@
 #include <nncase/ir/ops/conv2d.h>
 #include <nncase/ir/ops/conv2d_transpose.h>
 #include <nncase/ir/ops/convert.h>
+#include <nncase/ir/ops/cumsum.h>
 #include <nncase/ir/ops/dequantize.h>
 #include <nncase/ir/ops/fused_unary.h>
 #include <nncase/ir/ops/gather.h>
 #include <nncase/ir/ops/gather_nd.h>
+#include <nncase/ir/ops/hardmax.h>
 #include <nncase/ir/ops/matmul.h>
 #include <nncase/ir/ops/onehot.h>
 #include <nncase/ir/ops/pad.h>
 #include <nncase/ir/ops/quantize.h>
+#include <nncase/ir/ops/random_normal.h>
+#include <nncase/ir/ops/random_uniform.h>
 #include <nncase/ir/ops/reduce.h>
 #include <nncase/ir/ops/reduce_arg.h>
+#include <nncase/ir/ops/reduce_prod.h>
 #include <nncase/ir/ops/reduce_window2d.h>
 #include <nncase/ir/ops/resize_image.h>
 #include <nncase/ir/ops/slice.h>
@@ -250,11 +255,22 @@ void register_neutral_evaluators()
 
     register_evaluator(op_quantize, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<quantize &>(node);
-
         auto input = context.memory_at(rnode.input()).buffer().as_span<float>();
-        auto output = context.memory_at(rnode.output()).buffer().as_span<uint8_t>();
-
-        neutral::quantize(input.data(), output.data(), xt::compute_size(rnode.input().shape()), rnode.quant_param());
+        switch (rnode.output().type())
+        {
+#define QUANTIZE(type)                                                                                                \
+    case type:                                                                                                        \
+    {                                                                                                                 \
+        auto output = context.memory_at(rnode.output()).buffer().as_span<to_cpp_type_t<type>>();                      \
+        neutral::quantize(input.data(), output.data(), xt::compute_size(rnode.input().shape()), rnode.quant_param()); \
+        break;                                                                                                        \
+    }
+            QUANTIZE(dt_uint8)
+            QUANTIZE(dt_int8)
+        default:
+            assert(false && "not supported type!");
+#undef QUANTIZE
+        }
     });
 
     register_evaluator(op_reduce, [](ir::node &node, function_evaluate_context &context) {
@@ -296,6 +312,20 @@ void register_neutral_evaluators()
         default:
             std::cerr << "unsupported dtype for reduce_arg: " + std::string(datatype_names(output_type));
         }
+    });
+
+    register_evaluator(op_reduce_prod, [](ir::node &node, function_evaluate_context &context) {
+        auto &rnode = static_cast<reduce_prod &>(node);
+
+        assert(rnode.input().type() == dt_float32);
+        auto input = context.memory_at(rnode.input());
+        auto output = context.memory_at(rnode.output());
+        auto input_mem = input.buffer().as_span<float>();
+        auto output_mem = output.buffer().as_span<float>();
+
+        kernels::reduce_prod(input_mem.data(), output_mem.data(), input.shape(),
+            input.strides(), output.strides(), to(rnode.axis()), rnode.keep_dims())
+            .unwrap_or_throw();
     });
 
     register_evaluator(op_reduce_window2d, [](ir::node &node, function_evaluate_context &context) {
@@ -434,6 +464,9 @@ void register_neutral_evaluators()
         case unary_rsqrt:
             unary([](auto a) { return 1.f / sqrtf(a); });
             break;
+        case unary_sign:
+            unary([](auto a) { return (0 < a) - (a < 0); });
+            break;
         case unary_sin:
             unary([](auto a) { return sinf(a); });
             break;
@@ -538,6 +571,74 @@ void register_neutral_evaluators()
         kernels::onehot(output.datatype(), indices_mem, output_mem, indices.shape(), output.shape(),
             output.strides(), depth_mem, off_value_mem, on_value_mem, rnode.axis(), rnode.mode())
             .unwrap_or_throw();
+    });
+
+    register_evaluator(op_cumsum, [](ir::node &node, function_evaluate_context &context) {
+        auto &rnode = static_cast<cumsum &>(node);
+        auto datatype = rnode.input().type();
+        auto input = context.memory_at(rnode.input());
+        auto output = context.memory_at(rnode.output());
+
+        switch (datatype)
+        {
+        case dt_float32:
+            kernels::cumsum(input.buffer().as_span<float>().data(), output.buffer().as_span<float>().data(),
+                input.shape(), rnode.axis(), rnode.exclusive(), rnode.reverse())
+                .unwrap_or_throw();
+            break;
+        default:
+            throw std::runtime_error("unsupported dtype for cumsum: " + std::string(datatype_names(datatype)));
+        }
+    });
+
+    register_evaluator(op_hardmax, [](ir::node &node, function_evaluate_context &context) {
+        auto &rnode = static_cast<hardmax &>(node);
+        auto datatype = rnode.input().type();
+        auto input = context.memory_at(rnode.input());
+        auto output = context.memory_at(rnode.output());
+
+        switch (datatype)
+        {
+        case dt_float32:
+            kernels::hardmax(input.buffer().as_span<float>().data(), input.shape(), input.strides(),
+                output.buffer().as_span<float>().data(), rnode.axis())
+                .unwrap_or_throw();
+            break;
+        default:
+            throw std::runtime_error("unsupported dtype for hardmax: " + std::string(datatype_names(datatype)));
+        }
+    });
+
+    register_evaluator(op_random_normal, [](ir::node &node, function_evaluate_context &context) {
+        auto &rnode = static_cast<random_normal &>(node);
+        auto datatype = rnode.output().type();
+        auto output = context.memory_at(rnode.output());
+
+        switch (datatype)
+        {
+        case dt_float32:
+            kernels::random_normal(output.buffer().as_span<float>().data(), output.shape(), rnode.mean(), rnode.std(), rnode.seed())
+                .unwrap_or_throw();
+            break;
+        default:
+            throw std::runtime_error("unsupported dtype for random_normal: " + std::string(datatype_names(datatype)));
+        }
+    });
+
+    register_evaluator(op_random_uniform, [](ir::node &node, function_evaluate_context &context) {
+        auto &rnode = static_cast<random_uniform &>(node);
+        auto datatype = rnode.output().type();
+        auto output = context.memory_at(rnode.output());
+
+        switch (datatype)
+        {
+        case dt_float32:
+            kernels::random_uniform(output.buffer().as_span<float>().data(), output.shape(), rnode.low(), rnode.high(), rnode.seed())
+                .unwrap_or_throw();
+            break;
+        default:
+            throw std::runtime_error("unsupported dtype for random_uniform: " + std::string(datatype_names(datatype)));
+        }
     });
 }
 

@@ -14,40 +14,84 @@
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
 
 import pytest
-import torch
+import onnx
+from onnx import helper
+from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
 
 
-def _make_module():
+def _make_module(in_shape, axis, op_version):
+    inputs = []
+    outputs = []
+    initializers = []
+    attributes_dict = {}
+    nodes = []
 
-    class SoftmaxModule(torch.nn.Module):
-        def __init__(self):
-            super(SoftmaxModule, self).__init__()
-            self.softmax = torch.nn.Softmax()
+    # input
+    input = helper.make_tensor_value_info('input', TensorProto.FLOAT, in_shape)
+    inputs.append('input')
 
-        def forward(self, x):
-            x = self.softmax(x)
-            return x
+    # output
+    output = helper.make_tensor_value_info('output', TensorProto.FLOAT, in_shape)
+    outputs.append('output')
 
-    return SoftmaxModule()
+    # axis
+    if axis is not None:
+        attributes_dict['axis'] = axis
+
+    # Softmax node
+    node = onnx.helper.make_node(
+        'Softmax',
+        inputs=inputs,
+        outputs=outputs,
+        **attributes_dict
+    )
+    nodes.append(node)
+
+    graph_def = helper.make_graph(
+        nodes,
+        'test-model',
+        [input],
+        [output],
+        initializer=initializers)
+
+    op = onnx.OperatorSetIdProto()
+    op.version = op_version
+    model_def = helper.make_model(graph_def, producer_name='onnx', opset_imports=[op])
+
+    return model_def
 
 
 in_shapes = [
-    [1],
-    [1, 1001],
-    [1, 1, 1001],
-    [1, 3, 224, 224]
+    [1, 3, 16, 16],
 ]
 
+axes = [
+    None,
+    1,
+    2,
+    3,
+    -1,
+    -2,
+    -3,
+]
+
+op_versions = [
+    1,
+    11,
+    13
+]
 
 @pytest.mark.parametrize('in_shape', in_shapes)
-def test_softmax(in_shape, request):
-    module = _make_module()
+@pytest.mark.parametrize('axis', axes)
+@pytest.mark.parametrize('op_version', op_versions)
+def test_softmax(in_shape, axis, op_version, request):
+    if (op_version in [1, 11] and axis in [None, 1, -3]) or op_version == 13:
+        model_def = _make_module(in_shape, axis, op_version)
 
-    runner = OnnxTestRunner(request.node.name)
-    model_file = runner.from_torch(module, in_shape)
-    runner.run(model_file)
-
+        runner = OnnxTestRunner(request.node.name)
+        model_file = runner.from_onnx_helper(model_def)
+        runner.run(model_file)
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_softmax.py'])

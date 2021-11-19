@@ -82,9 +82,10 @@ result<void> stackvm_runtime_function::pc_relative(intptr_t offset) noexcept
 
 result<padding> stackvm_runtime_function::pop_padding() noexcept
 {
+    try_var(interior, stack_.pop());
     try_var(after, stack_.pop());
     try_var(before, stack_.pop());
-    return ok(padding { before.as_i4(), after.as_i4() });
+    return ok(padding { before.as_i4(), after.as_i4(), interior.as_i4() });
 }
 
 result<uintptr_t> stackvm_runtime_function::pop_addr() noexcept
