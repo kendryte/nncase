@@ -35,13 +35,13 @@ namespace Nncase.IR.Tensors
             if (context.GetArgument(this, Perm) is Const perm_con)
             {
                 var permt = perm_con.ToTensor<int>();
-                var inshape = input.Shape;
-                var outshape = inshape.ToArray();
-                foreach (var i in Enumerable.Range(0, inshape.Rank))
+                var inShape = input.Shape;
+                var outShape = inShape.ToArray();
+                foreach (var i in Enumerable.Range(0, inShape.Rank))
                 {
-                    outshape[permt[i]] = inshape[i];
+                    outShape[permt[i]] = inShape[i];
                 }
-                return input with { Shape = outshape };
+                return input with { Shape = outShape };
             }
             return input with { Shape = new Shape(Enumerable.Repeat(Dimension.Unknown, input.Shape.Rank)) };
         }

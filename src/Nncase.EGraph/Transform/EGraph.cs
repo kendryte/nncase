@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 
 
@@ -56,6 +57,22 @@ namespace Nncase.Transform
             Parent = Parent.Find();
             return Parent;
         }
+
+        public List<ENode> Nodes()
+        {
+            return Used.Select(n => n.Item1).ToList();
+        }
+
+        public List<T> Select<T>(System.Func<ENode, T> func)
+        {
+            var list = new List<T>();
+            foreach (var n in Nodes())
+            {
+                list.Add(func.Invoke(n));
+            }
+
+            return list;
+        }
     }
 
     /// <summary>
@@ -70,6 +87,17 @@ namespace Nncase.Transform
 
         private List<EClass> _worklist = new List<EClass>();
 
+        public List<T> Select<T>(System.Func<EClass, T> func)
+        {
+            var list = new List<T>();
+            foreach (var (eClass, _) in EClasses())
+            {
+                list.Add(func.Invoke(eClass));
+            }
+
+            return list;
+        }
+        
         public Dictionary<EClass, List<ENode>> EClasses()
         {
             var eclasses = new Dictionary<EClass, List<ENode>>();
