@@ -73,6 +73,7 @@
 | ReduceMax | ✅ |
 | ReduceMean | ✅ |
 | ReduceMin | ✅ |
+| ReduceProd | ✅ |
 | ReduceSum | ✅ |
 | ReduceSumSquare | ✅ |
 | Relu | ✅ |

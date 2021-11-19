@@ -29,6 +29,7 @@ set(SRCS runtime_module.cpp
          ops/tensor.random_uniform.cpp
          ops/tensor.reduce.cpp
          ops/tensor.reduce_arg.cpp
+         ops/tensor.reduce_prod.cpp
          ops/tensor.reduce_window2d.cpp
          ops/tensor.resize_image.cpp
          ops/tensor.slice.cpp
