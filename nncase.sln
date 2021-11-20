@@ -32,6 +32,7 @@ EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nncase.Tests", "src\Nncase.Tests\Nncase.Tests.csproj", "{91EF1A8E-A34E-489F-A69C-73FFCBF31804}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nncase.Evaluator", "src\Nncase.Evaluator\Nncase.Evaluator.csproj", "{918A1D28-E49F-4269-BD14-D5E1D5937641}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nncase.Pattern", "src\Nncase.Pattern\Nncase.Pattern.csproj", "{553D9D13-747D-415D-955E-0E002959891B}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nncase.Graph", "src\Nncase.Graph\Nncase.Graph.csproj", "{5600CF6C-72FC-424B-9788-EB87DE1715E0}"
