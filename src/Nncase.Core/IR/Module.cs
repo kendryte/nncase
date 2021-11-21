@@ -41,8 +41,14 @@ namespace Nncase.IR
         /// <param name="function">Function to add.</param>
         public void Add(Function function)
         {
-            TypeInference.InferenceType(function);
             _functions.Add(function);
+        }
+
+        public void Update(Function entry)
+        {
+            _functions.RemoveAt(_functions.IndexOf(Entry));
+            _functions.Add(entry);
+            Entry = entry;
         }
     }
 }

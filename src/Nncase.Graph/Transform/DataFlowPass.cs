@@ -2,6 +2,7 @@ using Nncase.IR;
 using System.Collections.Generic;
 using Nncase.Pattern;
 using System.IO;
+using System;
 
 namespace Nncase.Transform
 {
@@ -21,17 +22,18 @@ namespace Nncase.Transform
             }
         }
 
-        protected override void RunCore(Function function, RunPassOptions options)
+        protected override Function RunCore(Function pre, RunPassOptions options)
         {
             if (options.DumpIR)
             {
-                IRPrinter.DumpFunctionAsIL(Path.Combine(options.DumpDir, Name), function, "Before");
+                IRPrinter.DumpFunctionAsIL(Path.Combine(options.DumpDir, Name), pre, "Before");
             }
-            DataFlowRewrite.Rewrite(function, Rules);
+            Function post = (Function)DataFlowRewrite.Rewrite(pre, Rules);
             if (options.DumpIR)
             {
-                IRPrinter.DumpFunctionAsIL(Path.Combine(options.DumpDir, Name), function, "After");
+                IRPrinter.DumpFunctionAsIL(Path.Combine(options.DumpDir, Name), post, "After");
             }
+            return post;
         }
     }
 
@@ -40,29 +42,38 @@ namespace Nncase.Transform
         public readonly List<PatternRule> rules = new()
         {
             new Transform.DataFlow.Rules.FoldConstCall(),
+            new Transform.DataFlow.Rules.FoldConstFunction(),
             new Transform.DataFlow.Rules.FoldShapeOp(),
         };
 
-        public ShapeInferPass(string name) : base(name)
+        public ShapeInferPass() : base("ShapeInfer")
         {
         }
 
-        protected override void RunCore(Function function, RunPassOptions options)
+        protected override Function RunCore(Function pre, RunPassOptions options)
         {
-
             if (options.DumpIR)
             {
-                IRPrinter.DumpFunctionAsIL(Path.Combine(options.DumpDir, Name), function, "Before");
+                IRPrinter.DumpFunctionAsIL(Path.Combine(options.DumpDir, Name), pre, "Before");
             }
-
-            while (!TypeInference.InferenceType(function))
+            Function post;
+            while (true)
             {
-                DataFlowRewrite.Rewrite(function, rules);
+                post = (Function)DataFlowRewrite.Rewrite(pre, rules);
+                if (post == pre)
+                {
+                    if (!TypeInference.InferenceType(post))
+                        throw new InvalidOperationException("Can't InferShape For This Model!");
+                    else
+                        break;
+                }
+                pre = post;
             }
             if (options.DumpIR)
             {
-                IRPrinter.DumpFunctionAsIL(Path.Combine(options.DumpDir, Name), function, "After");
+                IRPrinter.DumpFunctionAsIL(Path.Combine(options.DumpDir, Name), post, "After");
             }
+            return post;
         }
 
     }

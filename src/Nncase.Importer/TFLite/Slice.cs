@@ -28,7 +28,7 @@ namespace Nncase.Importer.TFLite
             var (end, strides) = GetInputExprs(op, 0, 1);
             var options = op.BuiltinOptionsAsStridedSliceOptions();
             if (options.BeginMask != 0 || options.EndMask != 0 || options.EllipsisMask != 0
-                || options.NewAxisMask != 0 || options.ShrinkAxisMask != 0)
+                || options.NewAxisMask != 0)
             {
                 throw new NotSupportedException("Unsupported StrideSlice no 0 mask");
             }

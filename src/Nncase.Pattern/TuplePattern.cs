@@ -42,6 +42,6 @@ namespace Nncase.Pattern
                 }
             }
             ));
-
+        public static TuplePattern IsConstTuple() => IsTuple(IsVArgsRepeat(IsConst()));
     }
 }

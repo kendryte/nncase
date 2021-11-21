@@ -70,7 +70,24 @@ namespace Nncase.Pattern
         public static VArgsPattern IsVArgs(params ExprPattern[] Parameters)
           => new FixedVArgsPattern(Parameters);
 
-        // 默认只生成一次
+        /// <summary>
+        /// Create repeated Vargs by template pattern, eg. give the const pattern as Template, will match {Const(),...Const()}
+        /// </summary>
+        /// <param name="template">the ExprPattern as template</param>
+        /// <returns>VArgsPattern</returns>
+        public static VArgsPattern IsVArgsRepeat(ExprPattern template) => IsVArgsRepeat((n, paramPatterns) =>
+        {
+            for (int i = 0; i < n; i++)
+            {
+                paramPatterns.Add(i == 0 ? template : template.Copy());
+            }
+        });
+
+        /// <summary>
+        /// Create repeated Vargs match pattern, it will manual clear the inner container.
+        /// </summary>
+        /// <param name="SetUp">the int mean matched params nums, list<pattern> is inner params contianer.</param>
+        /// <returns>VArgsPattern</returns>
         public static VArgsPattern IsVArgsRepeat(Action<int, List<ExprPattern>> SetUp)
           => new RepeatVArgsPattern(SetUp, (matched, paramPatterns) =>
           {
@@ -78,6 +95,12 @@ namespace Nncase.Pattern
                   paramPatterns.Clear();
           });
 
+        /// <summary>
+        /// Create repeated Vargs match pattern
+        /// </summary>
+        /// <param name="SetUp">the int mean matched params nums, list<pattern> is inner params contianer.</param>
+        /// <param name="TearDown">the bool mean current matched state, if match failure your can clear the inner params contianer.</param>
+        /// <returns>VArgsPattern</returns>
         public static VArgsPattern IsVArgsRepeat(Action<int, List<ExprPattern>> SetUp, Action<bool, List<ExprPattern>> TearDown)
           => new RepeatVArgsPattern(SetUp, TearDown);
     }

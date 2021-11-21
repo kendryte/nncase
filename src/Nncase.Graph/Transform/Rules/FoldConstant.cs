@@ -17,20 +17,19 @@ namespace Nncase.Transform.DataFlow.Rules
     {
         public FoldConstCall()
         {
-            Pattern = IsCall(IsWildCard(), IsVArgsRepeat((n, pats) =>
-             {
-                 foreach (var i in Enumerable.Range(0, n))
-                 {
-                     pats.Add(IsConst());
-                 }
-             }));
+            Pattern = IsCall(IsWildCard(), IsVArgsRepeat(IsAlt(IsConst(), IsConstTuple())));
         }
 
-        public override Expr? GetRePlace(IMatchResult result)
+        public override Expr? GetRePlace(IMatchResult result) => Evaluator.Evaluator.Eval(result[Pattern]).ToConst();
+    }
+
+    public class FoldConstFunction : PatternRule
+    {
+        public FoldConstFunction()
         {
-            var expr = result[Pattern];
-            return Evaluator.Evaluator.Eval(expr).ToConst();
+            Pattern = IsFunction(IsWildCard(), IsVArgsRepeat(IsAlt(IsConst(), IsConstTuple())));
         }
+        public override Expr? GetRePlace(IMatchResult result) => Evaluator.Evaluator.Eval(result[Pattern]).ToConst();
     }
 
     public class FoldShapeOp : PatternRule

@@ -34,16 +34,15 @@ namespace Nncase.Transform
         /// </summary>
         /// <param name="function">Target function.</param>
         /// <param name="options">Options.</param>
-        public void Run(Function function, RunPassOptions options)
-        {
-            RunCore(function, options);
-        }
+        public Function Run(Function function, RunPassOptions options)
+            => RunCore(function, options);
+
 
         /// <summary>
         /// Run pass implementation for derived class.
         /// </summary>
         /// <param name="function">Target function.</param>
         /// <param name="options">Options.</param>
-        protected abstract void RunCore(Function function, RunPassOptions options);
+        protected abstract Function RunCore(Function function, RunPassOptions options);
     }
 }

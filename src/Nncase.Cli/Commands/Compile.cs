@@ -63,26 +63,20 @@ namespace Nncase.Cli.Commands
         {
             Console.WriteLine($"Target: {options.Target}");
             var module = ImportModel(options);
+            if (!TypeInference.InferenceType(module.Entry))
+            {
+                InferShape(module, options);
+            }
             DumpModule(module, "ir_import");
-
         }
 
-        public void InferShape(Module module,CompileOptions options)
+        public void InferShape(Module module, CompileOptions options)
         {
             Console.WriteLine("Infer Shape...");
-            var pmgr = new PassManager(module.Entry, new RunPassOptions(null, options.DumpIr, options.DumpDir));
-            //var constFold = new DataFlowPass("infer_shape");
-            //constFold.Add(new FoldConstCall());
-            //constFold.Add(new FoldShapeOp());
-            //pmgr.Add(constFold);
-
-            //while (!TypeInference.InferenceType(module.Entry))
-            //{
-            //    pmgr.Run();
-            //}
-            //pmgr.Add(new EGraphPass("eoptimize"));
-            //pmgr.Run();
-
+            var pmgr = new PassManager(module, new RunPassOptions(null, options.DumpIr, options.DumpDir));
+            var constFold = new ShapeInferPass();
+            pmgr.Add(constFold);
+            pmgr.Run();
         }
 
         public Module ImportModel(CompileOptions options) =>

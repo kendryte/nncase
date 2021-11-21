@@ -103,6 +103,12 @@ namespace Nncase.Pattern
                          TensorType xt => xt.IsScalar,
                          _ => false
                      });
+
+        /// <summary>
+        /// Copy The **New** ExprPattern. NOTE the new pattern have different Id with old one, The there not equal.
+        /// </summary>
+        /// <returns> ExprPattern </returns>
+        public ExprPattern Copy() => this with { Id = _globalPatIndex++ };
     };
 
     public static partial class Utility

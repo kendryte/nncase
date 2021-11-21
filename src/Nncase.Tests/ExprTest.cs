@@ -31,6 +31,14 @@ public class UnitTestExpr
     }
 
     [Fact]
+    public void TestTupleGetHashCode()
+    {
+        var expr = new Tuple((Const)1 * (Const)2, (Const)1.0f + (Const)2.4f);
+        var d = new HashSet<Expr>() { (Const)1.3f };
+        d.TryGetValue(expr, out var result);
+    }
+
+    [Fact]
     public void TestBinaryAddEqualWithCheckType()
     {
         var a = (Const)(1.1f) + (Const)(1.1f);

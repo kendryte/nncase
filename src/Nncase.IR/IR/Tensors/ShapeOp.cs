@@ -21,7 +21,7 @@ namespace Nncase.IR.Tensors
         public static readonly ParameterInfo Input = new(typeof(ShapeOp), 0, "input");
 
         /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context)
+        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input)
         {
             return new TensorType(DataType.Int32, new Shape(new[] { 1 }));
         }

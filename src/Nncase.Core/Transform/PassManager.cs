@@ -15,18 +15,18 @@ namespace Nncase.Transform
     /// </summary>
     public class PassManager
     {
-        private readonly Function _function;
+        private readonly Module _module;
         private readonly RunPassOptions _options;
         private readonly List<FunctionPass> _passes = new List<FunctionPass>();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="PassManager"/> class.
         /// </summary>
-        /// <param name="function">Function.</param>
+        /// <param name="module">Module.</param>
         /// <param name="options">Options.</param>
-        public PassManager(Function function, RunPassOptions options)
+        public PassManager(Module module, RunPassOptions options)
         {
-            _function = function;
+            _module = module;
             _options = options;
         }
 
@@ -46,7 +46,7 @@ namespace Nncase.Transform
         {
             foreach (var pass in _passes)
             {
-                pass.Run(_function, _options);
+                _module.Update(pass.Run(_module.Entry, _options));
             }
         }
     }

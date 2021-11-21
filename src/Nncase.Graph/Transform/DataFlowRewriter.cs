@@ -16,7 +16,7 @@ namespace Nncase.Transform
 
     public static class DataFlowRewrite
     {
-        public static Expr Rewrite(Expr pre, List<PatternRule> Rules)
+        private static Expr RewriteImpl(Expr pre, IEnumerable<PatternRule> Rules)
         {
             var visitor = new DataFlowReWriteVisitor();
             var post = pre;
@@ -41,5 +41,10 @@ namespace Nncase.Transform
             } while (!visitor.isMatched);
             return post;
         }
+
+        public static Expr Rewrite(Expr pre, params PatternRule[] Rules) => RewriteImpl(pre, Rules);
+        
+        public static Expr Rewrite(Expr pre, IEnumerable<PatternRule> Rules) => RewriteImpl(pre, Rules);
     }
+
 }

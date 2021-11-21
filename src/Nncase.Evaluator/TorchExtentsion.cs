@@ -11,17 +11,12 @@ namespace Nncase.Evaluator
 {
     public static class TorchExtentsion
     {
-        public static Const ToConst(this torch.Tensor tensor) => 
-            new Const(new TensorType(ToDataType(tensor.dtype), new Shape(tensor.shape)), 
+        public static Const ToConst(this torch.Tensor tensor) =>
+            new Const(new TensorType(ToDataType(tensor.dtype), new Shape(tensor.shape)),
                 tensor.bytes.ToArray());
         public static torch.Tensor ToTorchTensor(this Const expr)
         {
-            // null checked type
-            if (expr.CheckedType is null || expr.CheckedType is not TensorType)
-            {
-                throw new InvalidDataException("Expr checked type is not a valid TensorType in evaluator");
-            }
-            var dtype = (expr.CheckedType as TensorType).DType;
+            var dtype = expr.ValueType.DType;
             if (expr.ValueType.IsScalar)
             {
                 return dtype switch

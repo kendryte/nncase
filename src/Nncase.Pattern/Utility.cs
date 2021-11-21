@@ -14,6 +14,15 @@ namespace Nncase.Pattern
 {
     public static partial class Utility
     {
+
+        /// <summary>
+        /// Get Alternative pattern
+        /// </summary>
+        /// <param name="lhs"></param>
+        /// <param name="rhs"></param>
+        /// <returns>OrPattern</returns>
+        public static OrPattern IsAlt(ExprPattern lhs, ExprPattern rhs) => new OrPattern(lhs, rhs);
+
         public static BinaryWrapper IsBinary(Func<BinaryOp, bool> OpTypeCond, ExprPattern lhs, ExprPattern rhs) =>
                   new BinaryWrapper(new CallPattern(new BinaryPattern(binary => OpTypeCond(binary.BinaryOp)), lhs, rhs));
 

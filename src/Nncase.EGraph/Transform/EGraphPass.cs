@@ -25,10 +25,11 @@ namespace Nncase.Transform
         }
 
         /// <inheritdoc/>
-        protected override void RunCore(Function function, RunPassOptions options)
+        protected override Function RunCore(Function function, RunPassOptions options)
         {
-            var graph = new EGraph();
-            graph.Add(function);
+            // var graph = new EGraph();
+            // graph.Add(function);
+            return function;
         }
     }
 }
