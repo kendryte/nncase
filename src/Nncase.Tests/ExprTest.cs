@@ -99,7 +99,6 @@ public class UnitTestExpr
         Assert.Equal(con, con1);
     }
 
-
     [Fact]
     public void TestConstToDenseTenor()
     {
@@ -110,6 +109,24 @@ public class UnitTestExpr
         Assert.Equal(3, t[2]);
         Assert.Equal(4, t[3]);
         Assert.Equal(5, t[4]);
+        var t2 = con.ToTensor<long>();
+        Assert.Equal(1, t2[0]);
+        Assert.Equal(2, t2[1]);
+        Assert.Equal(3, t2[2]);
+        Assert.Equal(4, t2[3]);
+        Assert.Equal(5, t2[4]);
+        var t3 = con.ToTensor<byte>();
+        Assert.Equal(1, t2[0]);
+        Assert.Equal(2, t2[1]);
+        Assert.Equal(3, t2[2]);
+        Assert.Equal(4, t2[3]);
+        Assert.Equal(5, t2[4]);
+        var t4 = con.ToTensor<float>();
+        Assert.Equal(1.0f, t2[0]);
+        Assert.Equal(2.0f, t2[1]);
+        Assert.Equal(3.0f, t2[2]);
+        Assert.Equal(4.0f, t2[3]);
+        Assert.Equal(5.0f, t2[4]);
     }
 
     [Fact]

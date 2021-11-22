@@ -26,7 +26,7 @@ namespace Nncase.Evaluator.Ops
         {
             return _exprMemo[GetArgumentExpr(op, parameter)];
         }
-        
+
         public torch.Tensor GetArgument(Expr expr)
         {
             return _exprMemo[expr];
@@ -46,7 +46,7 @@ namespace Nncase.Evaluator.Ops
 
         public Const GetArgumentConst(Op op, ParameterInfo parameter)
         {
-            if(GetArgumentExpr(op, parameter) is Const constValue)
+            if (GetArgumentExpr(op, parameter) is Const constValue)
             {
                 return constValue;
             }
@@ -56,7 +56,7 @@ namespace Nncase.Evaluator.Ops
             }
         }
     }
-    
+
     public sealed partial class EvaluatorVisitor : ExprVisitor<torch.Tensor, IRType>
     {
         private EvaluatorContext _context;
@@ -65,7 +65,7 @@ namespace Nncase.Evaluator.Ops
         {
             _context = new EvaluatorContext(ExpressionMemo);
         }
-        
+
         public override torch.Tensor VisitLeaf(Call expr)
         {
             _context.CurrentCall = expr;
@@ -77,6 +77,9 @@ namespace Nncase.Evaluator.Ops
                 Slice sl => VisitSlice(sl),
                 Transpose tr => VisitTranspose(tr),
                 Unary un => VisitUnary(un),
+                Pad pd => VisitPad(pd),
+                Stack st => VisitStack(st),
+                Cast ct => VisitCast(ct),
                 _ => throw new NotImplementedException()
             };
         }
@@ -85,7 +88,7 @@ namespace Nncase.Evaluator.Ops
         {
             return expr.ToTorchTensor();
         }
-        
+
         public override torch.Tensor VisitLeaf(Op expr)
         {
             // todo:maybe a problem
@@ -96,15 +99,21 @@ namespace Nncase.Evaluator.Ops
         {
             return torch.empty(1, 1);
         }
-        
+
         public override torch.Tensor VisitLeaf(IR.Tuple expr)
         {
             return torch.empty(1, 1);
         }
-        
-        public override torch.Tensor VisitLeaf(Var expr)
+
+        public override torch.Tensor VisitLeaf(Var expr) => expr.CheckedType switch
         {
-            return torch.empty(1, 1);
-        }
+            TensorType ttype =>
+              ttype.IsScalar switch
+              {
+                  true => torch.empty(new long[] { 1 }),
+                  false => torch.empty(expr.CheckedShape.Select(x => (long)x.FixedValue).ToArray())
+              },
+            _ => torch.empty(1, 1)
+        };
     }
 }

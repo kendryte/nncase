@@ -6,6 +6,7 @@ using Nncase.IR.F;
 using TorchSharp;
 using Xunit;
 using static TorchSharp.torch;
+using torchF = TorchSharp.torch.nn.functional;
 using Tuple = Nncase.IR.Tuple;
 
 
@@ -78,5 +79,47 @@ public class EvaluatorTest
             tResult,
             Evaluator.Eval(Tensors.Slice(input, begin, end, axes, strides)
             ));
+    }
+
+    [Fact]
+    public void TestPad()
+    {
+        var tinput = torch.randn(1, 1, 2, 3);
+        var input = tinput.ToConst();
+        var pads = Const.FromSpan<int>(new[] { 1, 1, 2, 2 }, new Shape(new[] { 2, 2 }));
+        var value = Const.FromScalar<float>(1.0f);
+        var expr = Tensors.Pad(input, pads, Nncase.PadMode.Constant, value);
+        TypeInference.InferenceType(expr);
+        var result = Evaluator.Eval(expr);
+        Assert.Equal(torchF.pad(tinput, new long[] { 2, 2, 1, 1 }, PaddingModes.Constant, 1.0f), result);
+    }
+
+    [Fact]
+    public void TestPad2()
+    {
+        var tinput = torch.randn(1, 1, 2, 3);
+        var input = tinput.ToConst();
+        var pads = Const.FromSpan<int>(new[] { 1, 2, 2, 4, 5, 6 }, new Shape(new[] { 3, 2 }));
+        var value = Const.FromScalar<float>(2.0f);
+        var expr = Tensors.Pad(input, pads, Nncase.PadMode.Constant, value);
+        TypeInference.InferenceType(expr);
+        var result = Evaluator.Eval(expr);
+        Assert.Equal(torchF.pad(tinput, new long[] { 5, 6, 2, 4, 1, 2 }, PaddingModes.Constant, 2.0f), result);
+    }
+
+    [Fact]
+    public void TestStackAndCast()
+    {
+        var padh_before = Tensors.Cast(Const.FromSpan<float>(new[] { 1.0f }), Nncase.DataType.Int32);
+        var padh_after = Tensors.Cast(Const.FromSpan<float>(new[] { 2.0f }), Nncase.DataType.Int32);
+        var padw_before = Tensors.Cast(Const.FromSpan<float>(new[] { 3.0f }), Nncase.DataType.Int32);
+        var padw_after = Tensors.Cast(Const.FromSpan<float>(new[] { 4.0f }), Nncase.DataType.Int32);
+        
+        var expr = Tensors.Stack(new Tuple(
+          Tensors.Concat(new Tuple(padh_before, padh_after), 0),
+          Tensors.Concat(new Tuple(padw_before, padw_after), 0)), 0);
+        TypeInference.InferenceType(expr);
+        var result = Evaluator.Eval(expr);
+        Assert.Equal(torch.tensor(new[] { 1, 2, 3, 4 }, new long[] { 2, 2 }), result);
     }
 }

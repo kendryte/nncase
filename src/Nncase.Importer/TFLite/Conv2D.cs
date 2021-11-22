@@ -26,8 +26,8 @@ namespace Nncase.Importer.TFLite
             var dilationW = options.DilationWFactor;
             var padH = GetWindowedPadding(inH, fH, strideH, dilationH, options.Padding == tflite.Padding.SAME);
             var padW = GetWindowedPadding(inW, fW, strideW, dilationW, options.Padding == tflite.Padding.SAME);
-            var stride = Const.FromSpan<int>(new[] {strideH, strideW}, new[] {2});
-            var dilation = Const.FromSpan<int>(new[] {dilationH, dilationW}, new[] {2});
+            var stride = Const.FromSpan<int>(new[] { strideH, strideW }, new[] { 2 });
+            var dilation = Const.FromSpan<int>(new[] { dilationH, dilationW }, new[] { 2 });
             var padding = Util.ConcatPadding(padH, padW);
             var clamp = ToFloatClampRange(options.FusedActivationFunction);
             return Util.NCHWToNHWC(F.Math.Clamp(
@@ -49,8 +49,8 @@ namespace Nncase.Importer.TFLite
             var dilationW = options.DilationWFactor;
             var padH = GetWindowedPadding(inH, fH, strideH, dilationH, options.Padding == tflite.Padding.SAME);
             var padW = GetWindowedPadding(inW, fW, strideW, dilationW, options.Padding == tflite.Padding.SAME);
-            var stride = Const.FromSpan<int>(new[] {strideH, strideW}, new[] {2});
-            var dilation = Const.FromSpan<int>(new[] {dilationH, dilationW}, new[] {2});
+            var stride = Const.FromSpan<int>(new[] { strideH, strideW }, new[] { 2 });
+            var dilation = Const.FromSpan<int>(new[] { dilationH, dilationW }, new[] { 2 });
             var padding = Util.ConcatPadding(padH, padW);
             var depthMul = options.DepthMultiplier;
             if (depthMul != 1)
@@ -89,9 +89,9 @@ namespace Nncase.Importer.TFLite
         {
             var effectiveFilterSize = ((filter - 1) * dilation) + 1;
             var padding = F.Math.Max(0, ((outputSize - 1) * stride) + effectiveFilterSize - inputSize);
-            return new[] { padding / 2, padding - (padding / 2) };
+            return new[] { F.Tensors.Cast(padding / 2, DataType.Int32), F.Tensors.Cast(padding - (padding / 2), DataType.Int32) };
         }
-        
+
         private static Expr[] GetWindowedPadding(Expr inputSize, Expr filter, Expr stride, Expr dilation, bool same)
         {
             var outputSize = GetWindowedOutputSize(inputSize, filter, stride, dilation, same, false);

@@ -32,9 +32,9 @@ namespace Nncase
         {
             // return [[padh_before, padh_after],
             //         [padw_before, padw_after]]
-            return F.Tensors.Concat(new Tuple(
+            return F.Tensors.Stack(new Tuple(
               F.Tensors.Concat(new Tuple(padH), 0),
-              F.Tensors.Concat(new Tuple(padW), 0)), 1);
+              F.Tensors.Concat(new Tuple(padW), 0)), 0);
         }
     }
 }

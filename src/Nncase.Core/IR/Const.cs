@@ -99,7 +99,7 @@ namespace Nncase.IR
         public static implicit operator Const(bool value) => FromScalar(value);
 
 
-        private DenseTensor<T> ToTensor<T>(DataType destType)
+        private DenseTensor<T> CastToTensor<T>(DataType srcType)
           where T : unmanaged
         {
             var src = (byte[])Data;
@@ -108,7 +108,7 @@ namespace Nncase.IR
             var dest = new T[n];
             for (int i = 0; i < n; i++)
             {
-                dest[i] = DataTypes.ToScalar<T>(destType, src, src_stride * i);
+                dest[i] = DataTypes.CastToScalar<T>(srcType, src, src_stride * i);
             }
             return new DenseTensor<T>(dest, ValueType.IsScalar ? new[] { 1 } : ValueType.Shape);
         }
@@ -121,12 +121,15 @@ namespace Nncase.IR
             if (srcType == destType)
                 return new DenseTensor<T>(Data.ToMemory<T>(), ValueType.IsScalar ? new[] { 1 } : ValueType.Shape);
             else
-                return ToTensor<T>(destType);
+                return CastToTensor<T>(srcType);
         }
 
         public T ToScalar<T>()
           where T : unmanaged
-          => ValueType.IsScalar ? DataTypes.ToScalar<T>(DataTypes.FromType<T>(), Data, 0) :
+          => ValueType.IsScalar ?
+            (DataTypes.FromType<T>() == ValueType.DType ?
+                 DataTypes.ToScalar<T>(ValueType.DType, Data, 0) :
+                 DataTypes.CastToScalar<T>(ValueType.DType, Data, 0)) :
           throw new InvalidCastException($"This Const is Not Scalar!");
 
         /// <summary>

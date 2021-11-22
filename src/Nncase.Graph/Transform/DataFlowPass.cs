@@ -52,14 +52,19 @@ namespace Nncase.Transform
 
         protected override Function RunCore(Function pre, RunPassOptions options)
         {
-            if (options.DumpIR)
-            {
-                IRPrinter.DumpFunctionAsIL(Path.Combine(options.DumpDir, Name), pre, "Before");
-            }
             Function post;
+            int count = 0;
+            var dumpPath = Path.Combine(options.DumpDir, Name);
             while (true)
             {
+                if (options.DumpIR)
+                    IRPrinter.DumpFunctionAsIL(dumpPath, pre, $"{count}_Before");
+
                 post = (Function)DataFlowRewrite.Rewrite(pre, rules);
+
+                if (options.DumpIR)
+                    IRPrinter.DumpFunctionAsIL(dumpPath, post, $"{count++}_After");
+
                 if (post == pre)
                 {
                     if (!TypeInference.InferenceType(post))
@@ -68,10 +73,6 @@ namespace Nncase.Transform
                         break;
                 }
                 pre = post;
-            }
-            if (options.DumpIR)
-            {
-                IRPrinter.DumpFunctionAsIL(Path.Combine(options.DumpDir, Name), post, "After");
             }
             return post;
         }
