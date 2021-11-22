@@ -101,3 +101,4 @@
 | Transpose | ✅ |
 | Upsample | ✅ |
 | Unsqueeze | ✅ |
+| Where | ✅ |
