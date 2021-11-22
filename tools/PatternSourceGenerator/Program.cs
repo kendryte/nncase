@@ -292,7 +292,7 @@ namespace PatternGenerator
                 .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
 
             var @record = RecordDeclaration(Token(SyntaxKind.RecordKeyword), "OpPattern")
-                          .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.AbstractKeyword))
+                          .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.AbstractKeyword),Token(SyntaxKind.PartialKeyword))
                           .AddBaseListTypes(SimpleBaseType(ParseTypeName("ExprPattern")))
                           .WithOpenBraceToken(Token(SyntaxKind.OpenBraceToken))
                           .AddMembers(matchMethod)

@@ -15,14 +15,11 @@ namespace Nncase.IR.Tensors
     {
         public static ParameterInfo Input = new(typeof(UnSqueeze), 0, "input");
 
-        public static ParameterInfo Dim = new(typeof(UnSqueeze), 1, "dim", IsScalar(IsIntegral()));
+        public static ParameterInfo Dim = new(typeof(UnSqueeze), 1, "dim", IsScalar() & IsIntegral());
 
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType dim)
         {
-            if (!Dim.CheckType(dim))
-                return new InvalidType("The dim Should be Scalar");
-
             if (context.GetArgument(this, Dim) is Const tdims)
             {
                 var dimv = tdims.ToScalar<int>();

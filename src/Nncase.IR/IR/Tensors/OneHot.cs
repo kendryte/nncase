@@ -42,27 +42,7 @@ namespace Nncase.IR.Tensors
         
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType indices, TensorType depth, TensorType on_value, TensorType off_value, TensorType axis)
-        {
-            if (!Depth.CheckType(depth))
-            {
-                return new InvalidType("OneHot depth must be scalar");
-            }
-            
-            if (!OnValue.CheckType(on_value))
-            {
-                return new InvalidType("OneHot on_value must be scalar");
-            }
-            
-            if (!OffValue.CheckType(off_value))
-            {
-                return new InvalidType("OneHot off_value must be scalar");
-            }
-            
-            if (!Axis.CheckType(axis))
-            {
-                return new InvalidType("OneHot axis must be scalar");
-            }
-            
+        {         
             // indices_shape[:axis] + [depth] + indices_shape[axis:]
             if (context.GetArgument(this, Axis) is Const axisValue
                 && context.GetArgument(this, Depth) is Const depthValue)

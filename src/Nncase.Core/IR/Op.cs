@@ -17,22 +17,29 @@ namespace Nncase.IR
     /// </summary>
     public sealed class ParameterInfo
     {
+        /// <summary>
+        /// the parameter info ownertype
+        /// </summary>
         public Type OwnerType { get; }
-
+        /// <summary>
+        /// parameter index num
+        /// </summary>
         public int Index { get; }
-
+        /// <summary>
+        /// name
+        /// </summary>
         public string Name { get; }
+        /// <summary>
+        /// this paramter's type condition
+        /// </summary>
+        public TypePattern Pattern { get; } = IsIRType();
 
-        public TypePattern Pattern { get; } = IsType();
-
+        /// <summary>
+        /// Check current type by pattern
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns> check success </returns>
         public bool CheckType(IRType type) => Pattern.MatchLeaf(type);
-
-        public bool CheckTypeThrow(IRType type) =>
-          Pattern.MatchLeaf(type) ?
-            true :
-            throw new TypeInferenceInterruptException(
-              new InvalidType($"The {Name} Type or Shape Is InValid!")
-            );
 
         public ParameterInfo(Type ownerType, int index, string name)
         {
@@ -73,7 +80,7 @@ namespace Nncase.IR
 
         public override int GetHashCode()
         {
-            return EqualityComparer<Type>.Default.GetHashCode(EqualityContract);
+            return _hashcode ??= EqualityComparer<Type>.Default.GetHashCode(EqualityContract);
         }
 
         /// <summary>
@@ -84,9 +91,7 @@ namespace Nncase.IR
         internal IRType InferInvokeResultTypeNoThrow(ITypeInferenceContext context)
         {
             var thistype = this.GetType();
-            var properties = thistype.GetFields(
-              BindingFlags.Public |
-              BindingFlags.Static);
+            var properties = thistype.GetFields(BindingFlags.Public | BindingFlags.Static);
 
             var typeinferFunc = thistype.GetMethod("InferInvokeResultType") ??
                throw new InvalidProgramException("The Ops Must Have `InferInvokeResultType` method!");
@@ -99,20 +104,13 @@ namespace Nncase.IR
                     ?? throw new InvalidProgramException($"Can't Get The ParameterInfo {info.Name}"));
                 var targetType = inferTypedict[paraminfo.Name];
                 var paramActualType = context.GetArgumentType(this, paraminfo);
-                try
-                {
-                    var paramTensorType = Convert.ChangeType(paramActualType, targetType);
-                    paraminfo.CheckTypeThrow(paramTensorType as TensorType);
-                    targetParams.Add(paramTensorType);
-                }
-                catch (System.InvalidCastException)
-                {
-                    return new InvalidType($"The Param {paraminfo.Name} Require {targetType} But Give The {paramActualType}!");
-                }
+                if (!targetType.IsAssignableFrom(paramActualType?.GetType()))
+                    return new InvalidType($"The {paraminfo.OwnerType.GetType().Name} {paraminfo.Name} Requrie {targetType.Name}!");
+                if (!paraminfo.CheckType(paramActualType))
+                    return new InvalidType($"The {paraminfo.OwnerType.GetType().Name} {paraminfo.Name} Requrie <{paraminfo.Pattern.Reason}>!");
+                targetParams.Add(paramActualType);
             }
-
-            return ((IRType)(typeinferFunc.Invoke(this, targetParams.ToArray())
-                             ?? throw new InvalidProgramException("The InferInvokeResultType Function must return IRType!")));
+            return (IRType)(typeinferFunc.Invoke(this, targetParams.ToArray()))!;
         }
     }
 }

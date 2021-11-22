@@ -53,6 +53,7 @@ namespace Nncase.IR
         /// </summary>
         public bool IsFullyInferenced { get; private set; } = true;
 
+        /// <inheritdoc/>
         public override IRType VisitLeaf(Call expr)
         {
             _context.CurrentCall = expr;
@@ -67,6 +68,7 @@ namespace Nncase.IR
             return type;
         }
 
+        /// <inheritdoc/>
         public override IRType VisitLeaf(Const expr)
         {
             var type = expr.ValueType;
@@ -74,6 +76,7 @@ namespace Nncase.IR
             return type;
         }
 
+        /// <inheritdoc/>
         public override IRType VisitLeaf(Function expr)
         {
             var paramTypes = expr.Parameters.Select(Visit).ToArray();
@@ -81,7 +84,7 @@ namespace Nncase.IR
             SetCheckedType(expr, type);
             return type;
         }
-
+        /// <inheritdoc/>
         public override IRType VisitLeaf(Op expr)
         {
             var paramTypes = expr.Parameters.Select(_ => (IRType)AnyType.Default).ToArray();
@@ -89,7 +92,7 @@ namespace Nncase.IR
             SetCheckedType(expr, type);
             return type;
         }
-
+        /// <inheritdoc/>
         public override IRType VisitLeaf(Tuple expr)
         {
             var fieldTypes = expr.Fields.Select(Visit).ToArray();
@@ -97,7 +100,7 @@ namespace Nncase.IR
             SetCheckedType(expr, type);
             return type;
         }
-
+        /// <inheritdoc/>
         public override IRType VisitLeaf(Var expr)
         {
             var type = expr.TypeAnnotation ?? AnyType.Default;
@@ -105,6 +108,11 @@ namespace Nncase.IR
             return type;
         }
 
+        /// <summary>
+        /// set expr's current type
+        /// </summary>
+        /// <param name="expr"></param>
+        /// <param name="type"></param>
         private void SetCheckedType(Expr expr, IRType type)
         {
             expr.CheckedType = type;

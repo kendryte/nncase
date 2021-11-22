@@ -19,7 +19,7 @@ namespace Nncase.IR.Tensors
         /// <summary>
         /// Gets input.
         /// </summary>
-        public static readonly ParameterInfo Input = new(typeof(ResizeImage), 0, "input", HasRank(r => r >= 2));
+        public static readonly ParameterInfo Input = new(typeof(ResizeImage), 0, "input", HasRank(r => r >= 2, "RanK >= 2"));
 
         /// <summary>
         /// Gets new_size.
@@ -41,11 +41,6 @@ namespace Nncase.IR.Tensors
            TensorType input, TensorType new_size,
            TensorType align_corners, TensorType half_pixel_centers)
         {
-            Input.CheckTypeThrow(input);
-            NewSize.CheckTypeThrow(new_size);
-            AlignCorners.CheckTypeThrow(align_corners);
-            HalfPixelCenters.CheckTypeThrow(half_pixel_centers);
-
             var out_shape = input.Shape.ToArray();
             if (context.GetArgument(this, NewSize) is Const new_size_con)
             {

@@ -49,12 +49,6 @@ namespace Nncase.IR.Tensors
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType initValue, TensorType filter, TensorType stride, TensorType padding, TensorType dilation)
         {
-            Input.CheckTypeThrow(input);
-            InitValue.CheckTypeThrow(initValue);
-            Filter.CheckTypeThrow(filter);
-            Stride.CheckTypeThrow(stride);
-            Padding.CheckTypeThrow(padding);
-            Dilation.CheckTypeThrow(dilation);
             var outshape = input.Shape.ToList();
             if (
             context.GetArgument(this, Filter) is Const filter_con &&

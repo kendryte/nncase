@@ -20,9 +20,6 @@ namespace Nncase.IR.Tensors
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType pads, TensorType value)
         {
-            Input.CheckTypeThrow(input);
-            Pads.CheckTypeThrow(pads);
-            Value.CheckTypeThrow(value);
             if (context.GetArgument(this, Pads) is Const paddings)
             {
                 var (padH, padW) = Paddings.GetPaddingFromConst(paddings);

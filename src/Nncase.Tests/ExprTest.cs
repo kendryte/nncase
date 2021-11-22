@@ -39,6 +39,18 @@ public class UnitTestExpr
     }
 
     [Fact]
+    public void TestTupleGetHash()
+    {
+        var a = new Tuple((Const)1 * (Const)2);
+        var b = new Tuple(a, a, a, a);
+        var c = new Tuple(b, b, b, b);
+        var d = new Tuple(c, c, c, c);
+        var expr = new Tuple(d, d, d, d);
+        var set = new HashSet<Expr>();
+        set.Add(expr);
+    }
+
+    [Fact]
     public void TestBinaryAddEqualWithCheckType()
     {
         var a = (Const)(1.1f) + (Const)(1.1f);

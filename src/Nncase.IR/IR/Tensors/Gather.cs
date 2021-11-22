@@ -34,11 +34,6 @@ namespace Nncase.IR.Tensors
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType axis, TensorType index)
         {
-            if (!Axis.CheckType(axis))
-            {
-                return new InvalidType("Gather axis must be scalar");
-            }
-
             if (context.GetArgument(this, Axis) is Const axisValue)
             {
                 // input_shape[:axis] + index_shape + input_shape[axis + 1:]

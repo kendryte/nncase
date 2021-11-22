@@ -25,9 +25,6 @@ namespace Nncase.IR.Tensors
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType axis,
           TensorType initValue, TensorType keepDims)
         {
-            Axis.CheckTypeThrow(axis);
-            InitValue.CheckTypeThrow(initValue);
-            KeepDims.CheckTypeThrow(keepDims);
             if (context.GetArgument(this, KeepDims) is Const keepDims_con &&
                 context.GetArgument(this, Axis) is Const axis_con)
             {

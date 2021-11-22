@@ -36,11 +36,6 @@ namespace Nncase.IR.Tensors
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType batch_dims, TensorType index)
         {
-            if (!BatchDims.CheckType(batch_dims))
-            {
-                return new InvalidType("GatherND batch_dims must be scalar");
-            }
-
             if (context.GetArgument(this, BatchDims) is Const batchDimsValue)
             {
                 var lastIndexDims = index.Shape.Last();

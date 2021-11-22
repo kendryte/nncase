@@ -45,10 +45,20 @@ namespace Nncase.IR.Tensors
                 return Dimension.Unknown;
             }
         }
-        
+
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TupleType inputs, TensorType axis)
         {
+            foreach (var (i, input) in Enumerable.Range(0, inputs.Count).Select(i => (i, inputs[i])))
+            {
+                if (input is not TensorType)
+                {
+                    if (input is InvalidType)
+                        return input;
+                    else
+                        return new InvalidType($"The ConCat Item[{i}] Must Be TensorType But Get {input.GetType().Name}");
+                }
+            }
             var input0 = inputs[0] as TensorType;
             InvalidType? invalidType = null;
             var axisValue = (context.GetArgument(this, Axis) as Const).ToScalar<int>();
@@ -76,7 +86,7 @@ namespace Nncase.IR.Tensors
                 }
             });
             var shape = new Shape(shapeValue);
-            return (IRType) invalidType?? new TensorType(input0.DType, shape);
+            return (IRType)invalidType ?? new TensorType(input0.DType, shape);
         }
     }
 }

@@ -24,7 +24,7 @@ namespace Nncase.IR.Tensors
         /// <summary>
         /// Gets axis.
         /// </summary>
-        public static readonly ParameterInfo Axis = new(typeof(Split), 1, "axis", IsScalar(IsIntegral()));
+        public static readonly ParameterInfo Axis = new(typeof(Split), 1, "axis", IsScalar() & IsIntegral());
 
         /// <summary>
         /// Gets sections.
@@ -34,11 +34,6 @@ namespace Nncase.IR.Tensors
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType axis, TensorType sections)
         {
-            if (!Axis.CheckType(axis))
-                return new InvalidType("The Axis Must Be Scalar");
-            if (!Sections.CheckType(sections))
-                return new InvalidType("The Sections Rank Must Equal 1");
-
             if (context.GetArgument(this, Axis) is Const axis_con &&
                 context.GetArgument(this, Sections) is Const sections_con)
             {

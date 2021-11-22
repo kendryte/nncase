@@ -15,6 +15,11 @@ namespace Nncase.Pattern
         private static int _globalPatIndex = 0;
 
         /// <summary>
+        /// hashcode cache, for speedup get hashcode
+        /// </summary>
+        protected int? _hashcode;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="ExprPattern"/> class.
         /// </summary>
         public ExprPattern() : this(_globalPatIndex++) { }
@@ -70,47 +75,42 @@ namespace Nncase.Pattern
             (_, _) => false
         };
 
-        /// <summary>
-        /// Add the Type Patten For Current Pattern
-        /// </summary>
-        /// <param name="Cond"></param>
-        /// <returns> this </returns>
-        public ExprPattern IsSomeType(Func<IRType, bool> Cond)
+
+        private ExprPattern SetTypePattern(TypePattern pattern)
         {
-            CheckedTypePat = new TypePattern(Cond);
+            CheckedTypePat = pattern;
             return this;
         }
+        /// <summary>
+        /// Add type Pattern
+        /// </summary>
+        /// <returns> this </returns>
+        public ExprPattern IsIRType() => SetTypePattern(IR.Utility.IsIRType());
+
 
         /// <summary>
         /// Add type Pattern
         /// </summary>
         /// <returns> this </returns>
-        public ExprPattern IsAny() => IsSomeType(x => x == AnyType.Default);
+        public ExprPattern IsTensor() => SetTypePattern(IR.Utility.IsTensor());
 
         /// <summary>
         /// Add type Pattern
         /// </summary>
         /// <returns> this </returns>
-        public ExprPattern IsTensor() => IsSomeType(x => x is TensorType);
-
-        /// <summary>
-        /// Add type Pattern
-        /// </summary>
-        /// <returns> this </returns>
-        public ExprPattern IsScalar() => IsSomeType(x => x switch
-                     {
-
-                         TensorType xt => xt.IsScalar,
-                         _ => false
-                     });
+        public ExprPattern IsScalar() => SetTypePattern(IR.Utility.IsScalar());
 
         /// <summary>
         /// Copy The **New** ExprPattern. NOTE the new pattern have different Id with old one, The there not equal.
         /// </summary>
         /// <returns> ExprPattern </returns>
         public ExprPattern Copy() => this with { Id = _globalPatIndex++ };
-    };
 
+        public override int GetHashCode() => _hashcode ??=
+          HashCode.Combine(
+         EqualityComparer<Type>.Default.GetHashCode(EqualityContract),
+         EqualityComparer<int>.Default.GetHashCode(Id));
+    }
     public static partial class Utility
     {
         /// <summary>

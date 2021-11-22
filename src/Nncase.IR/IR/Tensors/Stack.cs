@@ -15,13 +15,11 @@ namespace Nncase.IR.Tensors
     {
         public static ParameterInfo Inputs = new(typeof(Stack), 0, "inputs");
 
-        public static ParameterInfo Axis = new(typeof(Stack), 1, "axis", IsScalar(IsIntegral()));
+        public static ParameterInfo Axis = new(typeof(Stack), 1, "axis", IsScalar() & IsIntegral());
 
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TupleType inputs, TensorType axis)
         {
-            if (!Axis.CheckType(axis))
-                return new InvalidType("The Axis Must Be Integral Scalar!");
             if (context.GetArgument(this, Axis) is Const axis_con)
             {
                 var axis_v = axis_con.ToScalar<int>();

@@ -16,17 +16,7 @@ namespace Nncase.IR.Tensors
 
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType zero_point, TensorType scale)
-        {
-            if (!ZeroPoint.CheckType(zero_point))
-            {
-                return new InvalidType("DeQuantize zero_point must be scalar");
-            }
-
-            if (!Scale.CheckType(scale))
-            {
-                return new InvalidType("DeQuantize scale must be scalar");
-            }
-            
+        {          
             return new TensorType(TargetType, input.Shape);
         }
     }

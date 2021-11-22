@@ -15,13 +15,11 @@ namespace Nncase.IR.Tensors
     {
         public static ParameterInfo Input = new(typeof(Squeeze), 0, "input");
 
-        public static ParameterInfo Dim = new(typeof(Squeeze), 1, "dim", IsScalar(IsIntegral()));
+        public static ParameterInfo Dim = new(typeof(Squeeze), 1, "dim", IsScalar() & IsIntegral());
 
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType dim)
         {
-            if (!Dim.CheckType(dim))
-                return new InvalidType("The Perm RanK Must Equal 1");
             if (context.GetArgument(this, Dim) is Const dim_con)
             {
                 var dim_v = dim_con.ToScalar<int>();

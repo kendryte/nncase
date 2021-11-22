@@ -23,8 +23,6 @@ namespace Nncase.IR.Tensors
 
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType block_shape, TensorType paddings)
         {
-            BlockShape.CheckTypeThrow(block_shape);
-            Paddings.CheckTypeThrow(paddings);
             if (context.GetArgument(this, BlockShape) is Const block_shape_con &&
                  context.GetArgument(this, Paddings) is Const paddings_con)
             {

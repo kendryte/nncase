@@ -119,7 +119,7 @@ namespace Nncase.IR
             var srcType = ValueType.DType;
             var destType = DataTypes.FromType<T>();
             if (srcType == destType)
-                return new DenseTensor<T>(Data.ToMemory<T>(), ValueType.Shape);
+                return new DenseTensor<T>(Data.ToMemory<T>(), ValueType.IsScalar ? new[] { 1 } : ValueType.Shape);
             else
                 return ToTensor<T>(destType);
         }
@@ -164,7 +164,7 @@ namespace Nncase.IR
         public static Const FromTensor<T>(DenseTensor<T> ts)
           where T : unmanaged
           => FromSpan<T>(ts.Buffer.Span, new Shape(ts.Dimensions.ToArray()));
-          
+
         public static Const FromTensor<T>(Tensor<T> ts)
           where T : unmanaged
           => FromTensor<T>(ts.ToDenseTensor());

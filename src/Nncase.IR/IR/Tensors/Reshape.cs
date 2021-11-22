@@ -30,7 +30,6 @@ namespace Nncase.IR.Tensors
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType shape)
         {
-            Shape.CheckTypeThrow(shape);
             if (context.GetArgument(this, Shape) is Const shape_con)
             {
                 return input with { Shape = new IR.Shape(shape_con.ToTensor<int>()) };

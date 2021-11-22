@@ -15,6 +15,9 @@ namespace Nncase.IR
     /// </summary>
     public abstract partial record Expr
     {
+
+        protected int? _hashcode;
+
         /// <summary>
         /// Gets or sets checked type.
         /// </summary>
@@ -34,7 +37,7 @@ namespace Nncase.IR
 
         public override int GetHashCode()
         {
-            return EqualityComparer<Type>.Default.GetHashCode(EqualityContract);
+            return _hashcode ??= EqualityComparer<Type>.Default.GetHashCode(EqualityContract);
         }
 
         public override string ToString()
@@ -44,6 +47,5 @@ namespace Nncase.IR
             IRPrinter.DumpExprAsIL(writer, this);
             return builder.ToString();
         }
-
     }
 }

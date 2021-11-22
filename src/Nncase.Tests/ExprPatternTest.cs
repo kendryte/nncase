@@ -11,12 +11,34 @@ using static Nncase.Pattern.Utility;
 using static Nncase.Pattern.F.Math;
 using static Nncase.Pattern.F.Tensors;
 using static Nncase.IR.Utility;
+using Nncase.Pattern.Math;
 
 namespace Nncase.Tests
 {
 
     public class UnitTestExprPattern
     {
+
+        [Fact]
+        public void TestPatternEqual()
+        {
+            ExprPattern p1 = IsWildCard();
+            int p1hash = p1.GetHashCode();
+            ExprPattern p2 = IsBinary(IsConst(), IsConst());
+            Assert.NotEqual(p1, p2);
+            ExprPattern p3 = p1.IsScalar();
+            int p3hash = p3.GetHashCode();
+            Assert.Equal(p1hash, p3hash);
+
+            OpPattern op1 = new UnaryPattern();
+            OpPattern op2 = new BinaryPattern();
+            OpPattern op3 = new BinaryPattern();
+            Assert.NotEqual(op1, op2);
+            Assert.NotEqual(op1.GetHashCode(), op2.GetHashCode());
+            Assert.NotEqual(op2, op3);
+            Assert.NotEqual(op2.GetHashCode(), op3.GetHashCode());
+        }
+
         [Fact]
         public void TestVarPattern()
         {

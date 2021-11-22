@@ -63,11 +63,12 @@ namespace Nncase.Cli.Commands
         {
             Console.WriteLine($"Target: {options.Target}");
             var module = ImportModel(options);
+            DumpModule(module, options, "ir_import");
             if (!TypeInference.InferenceType(module.Entry))
             {
                 InferShape(module, options);
             }
-            DumpModule(module, "ir_import");
+            DumpModule(module, options, "ir_infertype");
         }
 
         public void InferShape(Module module, CompileOptions options)
@@ -89,13 +90,13 @@ namespace Nncase.Cli.Commands
               _ => throw new NotImplementedException($"Not Implement {options.InputFormat} Impoter!")
           };
 
-        private void DumpModule(Module module, string prefix)
+        private void DumpModule(Module module, CompileOptions options, string prefix)
         {
-            var dumpPath = Path.Combine("dump", prefix);
+            var dumpPath = Path.Combine(options.DumpDir, "dump", prefix);
             Directory.CreateDirectory(dumpPath);
 
             var func = module.Entry;
-            using var dumpFile = File.Open(Path.Combine(dumpPath, $"{func.Name}.il"), FileMode.Create);
+            using var dumpFile = File.Open(Path.Combine(dumpPath, $"{func.Name}.il"), FileMode.OpenOrCreate);
             using var dumpWriter = new StreamWriter(dumpFile);
             IRPrinter.DumpFunctionAsIL(dumpWriter, func);
         }

@@ -10,11 +10,13 @@ namespace Nncase.IR
 {
     public struct IRArray<T> : IStructuralEquatable, IEquatable<IRArray<T>>, IReadOnlyList<T>, IEnumerable<T>, IList<T>
     {
+        private int _hashcode;
         private readonly ImmutableArray<T> _array;
 
         public IRArray(ImmutableArray<T> array)
         {
             _array = array;
+            _hashcode = HashCode.Combine(StructuralComparisons.StructuralEqualityComparer.GetHashCode(_array));
         }
 
         public T this[int index] => ((IReadOnlyList<T>)_array)[index];
@@ -72,7 +74,7 @@ namespace Nncase.IR
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(StructuralComparisons.StructuralEqualityComparer.GetHashCode(_array));
+            return _hashcode;
         }
 
         public int IndexOf(T item)

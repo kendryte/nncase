@@ -56,13 +56,6 @@ namespace Nncase.IR.NN
           TensorType input, TensorType weights, TensorType bias,
           TensorType stride, TensorType padding, TensorType dilation, TensorType groups)
         {
-            Input.CheckTypeThrow(input);
-            Weights.CheckTypeThrow(weights);
-            Bias.CheckTypeThrow(bias);
-            Stride.CheckTypeThrow(stride);
-            Padding.CheckTypeThrow(padding);
-            Dilation.CheckTypeThrow(dilation);
-            Groups.CheckTypeThrow(groups);
             var outshape = input.Shape.ToList();
             outshape[1] = weights.Shape[0];
             if (
