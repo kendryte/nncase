@@ -30,6 +30,21 @@ slice::slice(datatype_t type, shape_t input_shape, axis_t begin, axis_t end, axi
 {
     add_input("input", type, input_shape);
     add_output("output", type, get_strided_slice_output_shape(begin_, end_, strides_, ellipsis_mask_, new_axis_mask_));
+
+    for (size_t i = 0; i < input_shape.size(); i++)
+    {
+        if (begin_[i] >= input_shape[i])
+        {
+            throw std::invalid_argument("Invalid slice begin " + std::to_string(begin_[i])
+                + ", while dim is " + std::to_string(input_shape[i]));
+        }
+
+        if (end_[i] > input_shape[i])
+        {
+            throw std::invalid_argument("Invalid slice end " + std::to_string(begin_[i])
+                + ", while dim is " + std::to_string(input_shape[i]));
+        }
+    }
 }
 
 slice::slice(datatype_t type, shape_t input_shape, axis_t begin, axis_t end)
