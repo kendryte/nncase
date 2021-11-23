@@ -74,29 +74,29 @@ def _make_module(in_shape, sequence_len, batch_axis, time_axis):
     return model_def
 
 in_shapes = [
-    [2, 3, 2, 2],
-    # [2, 3, 16, 16]
+    [2, 3, 2, 2]
 ]
 
 sequence_lens = [
-    [2, 1, 2]
-    # [1, 1],
-    # [1, 2],
-    # [1, 1, 1],
-    # [1, 2, 3],
-    # [3, 3, 3],
+    [1, 1],
+    [1, 2],
+    [2, 2],
+    [3, 3],
+    [1, 1, 1],
+    [1, 2, 2],
+    [2, 2, 2],
 ]
 
 batch_axes = [
-    None,
-    # 0,
+    # None,
+    0,
     # 1
 ]
 
 time_axes = [
-    None,
+    # None,
     # 0,
-    # 1
+    1
 ]
 
 @pytest.mark.parametrize('in_shape', in_shapes)
@@ -104,13 +104,12 @@ time_axes = [
 @pytest.mark.parametrize('batch_axis', batch_axes)
 @pytest.mark.parametrize('time_axis', time_axes)
 def test_reverse_sequence(in_shape, sequence_len, batch_axis, time_axis, request):
-    # if batch_axis != time_axis:
-    model_def = _make_module(in_shape, sequence_len, batch_axis, time_axis)
+    if (batch_axis in [None, 1] and time_axis in [None, 0] and in_shape[1] == len(sequence_len)) or (batch_axis == 0 and time_axis == 1 and in_shape[0] == len(sequence_len)):
+        model_def = _make_module(in_shape, sequence_len, batch_axis, time_axis)
 
-    runner = OnnxTestRunner(request.node.name)
-    # runner = OnnxTestRunner(request.node.name, ['k510'])
-    model_file = runner.from_onnx_helper(model_def)
-    runner.run(model_file)
+        runner = OnnxTestRunner(request.node.name)
+        model_file = runner.from_onnx_helper(model_def)
+        runner.run(model_file)
 
 
 if __name__ == "__main__":
