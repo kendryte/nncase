@@ -20,7 +20,7 @@ from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
 import numpy as np
 
-def _make_module(in_shape, repeat):
+def _make_module(in_shape, axis, repeat, op_version):
     inputs = []
     outputs = []
     initializers = []
@@ -31,15 +31,38 @@ def _make_module(in_shape, repeat):
     input = helper.make_tensor_value_info('input', TensorProto.FLOAT, in_shape)
     inputs.append('input')
 
-    # repeats
-    rep = helper.make_tensor(
-        'repeats',
-        TensorProto.INT64,
-        dims=[len(repeat)],
-        vals=repeat
-    )
-    initializers.append(rep)
-    inputs.append('repeats')
+    # other inputs according to op_version
+    if (op_version == 1):
+        # tile
+        tiles_tensor = helper.make_tensor(
+            'tiles',
+            TensorProto.INT64,
+            dims=[len(repeat)],
+            vals=repeat
+        )
+        initializers.append(tiles_tensor)
+        inputs.append('tiles')
+
+        # axis
+        axis_tensor = helper.make_tensor(
+            'axis',
+            TensorProto.INT64,
+            dims=[len(axis)],
+            vals=axis
+        )
+        initializers.append(axis_tensor)
+        inputs.append('axis')
+    else:
+        # op_version 6/11
+        # repeats
+        repeats_tensor = helper.make_tensor(
+            'repeats',
+            TensorProto.INT64,
+            dims=[len(repeat)],
+            vals=repeat
+        )
+        initializers.append(repeats_tensor)
+        inputs.append('repeats')
 
     # output
     out_shape = np.tile(np.ones(in_shape), tuple(repeat)).shape
@@ -62,7 +85,9 @@ def _make_module(in_shape, repeat):
         initializer=initializers
     )
 
-    model_def = helper.make_model(graph_def, producer_name='onnx')
+    op = onnx.OperatorSetIdProto()
+    op.version = op_version
+    model_def = helper.make_model(graph_def, producer_name='onnx', opset_imports=[op])
 
     return model_def
 
@@ -70,7 +95,16 @@ in_shapes = [
     [1, 3, 16, 16]
 ]
 
+axes = [
+    [0],
+    [1],
+    [2],
+    [3]
+]
+
 repeats = [
+    [1],
+    [2],
     [1, 1, 1, 1],
     [1, 1, 1, 2],
     [1, 1, 3, 2],
@@ -78,14 +112,24 @@ repeats = [
     [3, 2, 3, 2],
 ]
 
-@pytest.mark.parametrize('in_shape', in_shapes)
-@pytest.mark.parametrize('repeat', repeats)
-def test_tile(in_shape, repeat, request):
-    model_def = _make_module(in_shape, repeat)
+op_versions = [
+    # Type 'tensor(int64)' of input parameter (tiles) of operator (Tile) in node () is invalid.
+    # 1,
+    6,
+    11
+]
 
-    runner = OnnxTestRunner(request.node.name)
-    model_file = runner.from_onnx_helper(model_def)
-    runner.run(model_file)
+@pytest.mark.parametrize('in_shape', in_shapes)
+@pytest.mark.parametrize('axis', axes)
+@pytest.mark.parametrize('repeat', repeats)
+@pytest.mark.parametrize('op_version', op_versions)
+def test_tile(in_shape, axis, repeat, op_version, request):
+    if ((op_version == 1 and len(repeat) == 1) or (op_version in [6, 11] and len(in_shape) == len(repeat))):
+        model_def = _make_module(in_shape, axis, repeat, op_version)
+
+        runner = OnnxTestRunner(request.node.name)
+        model_file = runner.from_onnx_helper(model_def)
+        runner.run(model_file)
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_tile.py'])

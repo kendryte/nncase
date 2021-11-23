@@ -28,26 +28,47 @@ using namespace onnx;
 
 void onnx_importer::convert_op_Tile(const NodeProto &node)
 {
-    assert(node.input().size() == 2);
+    assert(node.input().size() >= 2);
     assert(node.output().size() == 1);
     const auto &op_name { generate_name(node) };
 
     // input
     const auto &input = node.input()[0];
-    auto input_shape = get_shape(input);
-    assert(input_shape.size() >= 2);
     const datatype_t input_type = get_datatype(input).value();
+    auto input_shape = get_shape(input);
+    auto input_shape_size = input_shape.size();
 
+    // output
     const auto &output = node.output()[0];
 
     // repeats
-    auto repeats = get_constant_value<int, int64_t>(node.input()[1]);
-    assert(repeats.size() == input_shape.size());
+    std::vector<int> repeats(input_shape_size, 1);
+
+    // opset 1
+    if (node.input().size() == 3)
+    {
+        // tile
+        auto tile = get_constant_value<int, int64_t>(node.input()[1]);
+        assert(tile.size() == 1);
+
+        // axis
+        auto axes = get_constant_value<int, int64_t>(node.input()[2]);
+        assert(axes.size() == 1);
+        auto axis = real_axis(axes[0], input_shape_size);
+
+        repeats[axis] = tile[0];
+    }
+    else
+    {
+        // opset 6/11
+        repeats = get_constant_value<int, int64_t>(node.input()[1]);
+        assert(repeats.size() == input_shape_size);
+    }
 
     auto cur_shape = input_shape;
     concat *pcat = nullptr;
     std::vector<shape_t> concat_shapes;
-    int32_t end = input_shape.size() - 1;
+    int32_t end = repeats.size() - 1;
     for (auto i = end; i >= 0; i--)
     {
         // skip the repeats[i] == 1
