@@ -58,6 +58,7 @@ struct compile_options
     std::string input_layout = "NCHW";
     std::string output_layout = "NCHW";
     uint32_t tcu_num = 0;
+    bool do_letterbox = false;
 };
 
 struct import_options

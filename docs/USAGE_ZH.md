@@ -67,7 +67,8 @@ py::class_<compile_options>(m, "CompileOptions")
     .def_readwrite("dump_asm", &compile_options::dump_asm)
     .def_readwrite("dump_quant_error", &compile_options::dump_quant_error)
     .def_readwrite("dump_dir", &compile_options::dump_dir)
-    .def_readwrite("benchmark_only", &compile_options::benchmark_only);
+    .def_readwrite("benchmark_only", &compile_options::benchmark_only)
+    .def_readwrite("do_letterbox", &compile_options::do_letterbox);
 ```
 
 各属性说明如下
@@ -96,6 +97,7 @@ py::class_<compile_options>(m, "CompileOptions")
 | dump_quant_error | bool   | 否       | 指定是否dump量化前后的模型误差                               |
 | dump_dir         | string | 否       | 前面指定dump_ir等开关后, 这里指定dump的目录, 默认为空字符串  |
 | benchmark_only   | bool   | 否       | 指定kmodel是否只用于benchmark, 默认为False                   |
+| do_letterbox     | bool   | 否       | 指定是否需要在预处理中加入letterbox操作, 默认为False         |
 
 > 1. mean和std为浮点数进行normalize的参数，用户可以自由指定.
 > 2. input range为浮点数的范围，即如果输入数据类型为uint8，则input range为反量化到浮点之后的范围（可以不为0~1），可以自由指定.
@@ -127,6 +129,7 @@ compile_options.letterbox_value = 114. # pad what you want
 compile_options.dump_ir = True
 compile_options.dump_asm = True
 compile_options.dump_dir = 'tmp'
+compile_options.do_letterbox = True
 ```
 
 ### ImportOptions
@@ -641,6 +644,7 @@ def main():
     compile_options.dump_ir = True
     compile_options.dump_asm = True
     compile_options.dump_dir = 'tmp'
+    compile_options.do_letterbox = True
 
     # compiler
     compiler = nncase.Compiler(compile_options)

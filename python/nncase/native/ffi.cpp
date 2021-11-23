@@ -156,7 +156,8 @@ PYBIND11_MODULE(_nncase, m)
         .def_readwrite("dump_quant_error", &compile_options::dump_quant_error)
         .def_readwrite("dump_import_op_range", &compile_options::dump_import_op_range)
         .def_readwrite("dump_dir", &compile_options::dump_dir)
-        .def_readwrite("benchmark_only", &compile_options::benchmark_only);
+        .def_readwrite("benchmark_only", &compile_options::benchmark_only)
+        .def_readwrite("do_letterbox", &compile_options::do_letterbox);
 
     py::class_<import_options>(m, "ImportOptions")
         .def(py::init())
