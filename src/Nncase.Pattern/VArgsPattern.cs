@@ -70,9 +70,9 @@ namespace Nncase.Pattern
             if (!Parameters.Any())
             {
                 SetUp(other.Count(), Parameters);
-                return false;
+                return true;
             }
-            return true;
+            return false;
         }
     }
 
