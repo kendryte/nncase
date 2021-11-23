@@ -7,16 +7,6 @@ namespace Nncase
 {
     public class Util
     {
-        public static Expr NHWCToNCHW(in Expr input)
-        {
-            return F.Tensors.Transpose(input, new[] { 0, 3, 1, 2 });
-        }
-
-        public static Expr NCHWToNHWC(in Expr input)
-        {
-            return F.Tensors.Transpose(input, new[] { 0, 2, 3, 1 });
-        }
-
         public static Expr ShapeIndex(in Expr shape, int index)
         {
             return F.Tensors.Slice(shape, index, index + 1, 1);

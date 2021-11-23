@@ -30,8 +30,8 @@ namespace Nncase.Importer.TFLite
             var dilation = Const.FromSpan<int>(new[] { dilationH, dilationW }, new[] { 2 });
             var padding = Util.ConcatPadding(padH, padW);
             var clamp = ToFloatClampRange(options.FusedActivationFunction);
-            return Util.NCHWToNHWC(F.Math.Clamp(
-                F.NN.Conv2D(Util.NHWCToNCHW(input), Util.NHWCToNCHW(weights), bias, padding, stride, dilation,
+            return F.Tensors.NCHWToNHWC(F.Math.Clamp(
+                F.NN.Conv2D(F.Tensors.NHWCToNCHW(input), F.Tensors.NHWCToNCHW(weights), bias, padding, stride, dilation,
                     PadMode.Constant, 1),
                 clamp.Min, clamp.Max));
         }
@@ -60,8 +60,8 @@ namespace Nncase.Importer.TFLite
             }
 
             var clamp = ToFloatClampRange(options.FusedActivationFunction);
-            return Util.NCHWToNHWC(F.Math.Clamp(
-                F.NN.Conv2D(Util.NHWCToNCHW(input), Util.NHWCToNCHW(weights), bias, padding, stride, dilation,
+            return F.Tensors.NCHWToNHWC(F.Math.Clamp(
+                F.NN.Conv2D(F.Tensors.NHWCToNCHW(input), F.Tensors.NHWCToNCHW(weights), bias, padding, stride, dilation,
                     PadMode.Constant, 1),
                 clamp.Min, clamp.Max));
         }

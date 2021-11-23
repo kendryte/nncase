@@ -37,7 +37,6 @@ namespace Nncase.Transform
     /// </summary>
     public sealed class EClass
     {
-
         public EClass(int id)
         {
             Id = id;
@@ -97,7 +96,7 @@ namespace Nncase.Transform
 
             return list;
         }
-        
+
         public Dictionary<EClass, List<ENode>> EClasses()
         {
             var eclasses = new Dictionary<EClass, List<ENode>>();
@@ -232,8 +231,8 @@ namespace Nncase.Transform
 
             public override EClass VisitLeaf(Call expr)
             {
-                var children = new[] { Visit(expr.Target) }.Concat(
-                    from p in expr.Parameters select Visit(p)).ToArray();
+                var children = new[] { ExpressionMemo[expr.Target] }.Concat(
+                    from p in expr.Parameters select ExpressionMemo[p]).ToArray();
                 return _graph.AddENode(expr, children);
             }
 
@@ -244,13 +243,14 @@ namespace Nncase.Transform
 
             public override EClass VisitLeaf(Function expr)
             {
-                var children = new[] { Visit(expr.Body) }.Concat(from p in expr.Parameters select Visit(p)).ToArray();
+                var children = new[] { ExpressionMemo[expr.Body] }.Concat(
+                  from p in expr.Parameters select ExpressionMemo[p]).ToArray();
                 return _graph.AddENode(expr, children);
             }
 
             public override EClass VisitLeaf(IR.Tuple expr)
             {
-                var children = (from p in expr.Fields select Visit(p)).ToArray();
+                var children = (from p in expr.Fields select ExpressionMemo[p]).ToArray();
                 return _graph.AddENode(expr, children);
             }
 

@@ -6,6 +6,10 @@ using System;
 
 namespace Nncase.Transform
 {
+
+    /// <summary>
+    /// dataflow pass
+    /// </summary>
     public sealed class DataFlowPass : FunctionPass
     {
         public readonly List<PatternRule> Rules = new();
@@ -22,14 +26,15 @@ namespace Nncase.Transform
             }
         }
 
+        /// <inheritdoc/>
         protected override Function RunCore(Function pre, RunPassOptions options)
         {
-            if (options.DumpIR)
+            if (options.DumpLevel > 0)
             {
                 IRPrinter.DumpFunctionAsIL(Path.Combine(options.DumpDir, Name), pre, "Before");
             }
             Function post = (Function)DataFlowRewrite.Rewrite(pre, Rules);
-            if (options.DumpIR)
+            if (options.DumpLevel > 0)
             {
                 IRPrinter.DumpFunctionAsIL(Path.Combine(options.DumpDir, Name), post, "After");
             }
@@ -50,6 +55,7 @@ namespace Nncase.Transform
         {
         }
 
+        /// <inheritdoc/>
         protected override Function RunCore(Function pre, RunPassOptions options)
         {
             Function post;
@@ -57,12 +63,12 @@ namespace Nncase.Transform
             var dumpPath = Path.Combine(options.DumpDir, Name);
             while (true)
             {
-                if (options.DumpIR)
+                if (options.DumpLevel > 0)
                     IRPrinter.DumpFunctionAsIL(dumpPath, pre, $"{count}_Before");
 
                 post = (Function)DataFlowRewrite.Rewrite(pre, rules);
 
-                if (options.DumpIR)
+                if (options.DumpLevel > 0)
                     IRPrinter.DumpFunctionAsIL(dumpPath, post, $"{count++}_After");
 
                 if (post == pre)

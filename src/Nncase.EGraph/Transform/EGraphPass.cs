@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
+using Nncase.Pattern;
 
 namespace Nncase.Transform
 {
@@ -16,6 +17,12 @@ namespace Nncase.Transform
     public class EGraphPass : FunctionPass
     {
         /// <summary>
+        /// Save rules
+        /// </summary>
+        public readonly List<PatternRule> Rules = new();
+
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="EGraphPass"/> class.
         /// </summary>
         /// <param name="name">Name.</param>
@@ -24,11 +31,25 @@ namespace Nncase.Transform
         {
         }
 
+        /// <summary>
+        /// add rules
+        /// </summary>
+        /// <param name="rules"></param>
+        public void Add(params PatternRule[] rules)
+        {
+            foreach (var rule in rules)
+            {
+                Rules.Add(rule);
+            }
+        }
+
         /// <inheritdoc/>
         protected override Function RunCore(Function function, RunPassOptions options)
         {
-            // var graph = new EGraph();
-            // graph.Add(function);
+            options.SetName(Name);
+            var graph = new EGraph();
+            graph.Add(function);
+            EGraphReWriter.ReWrite(graph, Rules, options);
             return function;
         }
     }

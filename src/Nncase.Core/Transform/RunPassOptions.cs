@@ -15,11 +15,12 @@ namespace Nncase.Transform
         /// Initializes a new instance of the <see cref="RunPassOptions"/> class.
         /// </summary>
         /// <param name="target">Target.</param>
-        public RunPassOptions(ITarget target, bool dumpIr, string dumpDir)
+        public RunPassOptions(ITarget target, int dumpLevel, string dumpDir)
         {
             Target = target;
-            DumpIR = dumpIr;
+            DumpLevel = dumpLevel;
             DumpDir = dumpDir;
+            PassName = "";
         }
 
         /// <summary>
@@ -27,8 +28,12 @@ namespace Nncase.Transform
         /// </summary>
         public ITarget Target { get; }
 
-        public bool DumpIR { private set; get; }
+        public int DumpLevel { private set; get; }
 
         public string DumpDir { private set; get; }
+
+        public string PassName { private set; get; }
+
+        public RunPassOptions SetName(string name) { PassName = name; return this; }
     }
 }

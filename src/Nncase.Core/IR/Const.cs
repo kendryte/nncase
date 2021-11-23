@@ -175,8 +175,20 @@ namespace Nncase.IR
         public static Const FromTensor(DenseTensor<int> ts)
           => FromSpan<int>(ts.Buffer.Span, new Shape(ts.Dimensions.ToArray()));
 
+        /// <summary>
+        /// convert shape to const expr
+        /// </summary>
+        /// <param name="shape"></param>
+        /// <returns></returns>
         public static Const FromShape(Shape shape) => FromSpan<int>(shape.Select(x => x.FixedValue).ToArray(), new[] { shape.Rank });
 
+        /// <summary>
+        /// get the const expr with specific shape 
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="shape"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
         public static Const FromShape<T>(Shape shape, T value)
          where T : unmanaged => FromTensor<T>(new DenseTensor<T>(Enumerable.Repeat<T>(value, shape.Size).ToArray(), shape));
     }

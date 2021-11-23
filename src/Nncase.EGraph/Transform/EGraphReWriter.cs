@@ -12,13 +12,21 @@ namespace Nncase.Transform
 
     public static class EGraphReWriter
     {
-        public static EGraph ReWrite(EGraph eGraph, params PatternRule[] Rules) => ReWrite(eGraph, new List<PatternRule>(Rules));
+        public static EGraph ReWrite(EGraph eGraph, PatternRule Rules, RunPassOptions options) => ReWrite(eGraph, new List<PatternRule>() { Rules }, options);
 
-        public static EGraph ReWrite(EGraph eGraph, List<PatternRule> Rules, bool DumpMatches = false, string prefix = "")
+        public static EGraph ReWrite(EGraph eGraph, params PatternRule[] Rules) => ReWrite(eGraph, new List<PatternRule>(Rules), new RunPassOptions(null, 2, "EGraphPass"));
+
+        /// <summary>
+        /// run egraph rewrite
+        /// </summary>
+        /// <param name="eGraph"></param>
+        /// <param name="Rules"></param>
+        /// <param name="options"></param>
+        /// <returns></returns>
+        public static EGraph ReWrite(EGraph eGraph, List<PatternRule> Rules, RunPassOptions options)
         {
             var eClass = eGraph.EClasses();
             var matches = new List<(PatternRule, IMatchResult)> { };
-            // batch pattern match
             foreach (var rule in Rules)
             {
                 var results = EGraphMatcher.Match(eClass, rule.Patterns);
@@ -26,11 +34,10 @@ namespace Nncase.Transform
                 {
                     matches.Add((rule, result));
                 }
-                if (DumpMatches)
-                    EGraphPrinter.DumpEgraphAsDot(eGraph, results, Path.Combine(prefix, $"{rule.GetType().Name}_Matches"));
+                if (options.DumpLevel > 1)
+                    EGraphPrinter.DumpEgraphAsDot(eGraph, results,
+                     Path.Combine(options.DumpDir, options.PassName, "Matches", $"{rule.GetType().Name}_{eGraph.Version}"));
             }
-            // batch subset 
-            Console.WriteLine($"VERSION {eGraph.Version}");
             foreach (var (rule, result) in matches)
             {
                 var replaceExpr = rule.GetRePlace(result);
@@ -39,10 +46,10 @@ namespace Nncase.Transform
                 var neweClass = eGraph.Add(replaceExpr);
                 eGraph.Merge(neweClass, eGraph.Nodes[((EMatchResult)result).Root]);
             }
-            // batch rebuild
             eGraph.ReBuild();
-            // if (dumpIr_)
-            //     EGraphPrinter.DumpEgraphAsDot(eGraph, Path.Combine(_prefix, $"Version_{eGraph.Version}"));
+            if (options.DumpLevel > 1)
+                EGraphPrinter.DumpEgraphAsDot(eGraph,
+                 Path.Combine(options.DumpDir, options.PassName, "Rebuild", $"{eGraph.Version}"));
             return eGraph;
         }
     }

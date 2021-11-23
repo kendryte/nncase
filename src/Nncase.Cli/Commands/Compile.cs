@@ -34,7 +34,7 @@ namespace Nncase.Cli.Commands
         /// </summary>
         public string Target { get; set; }
 
-        public bool DumpIr { get; set; }
+        public int DumpLevel { get; set; }
 
         public string DumpDir { get; set; }
     }
@@ -53,7 +53,7 @@ namespace Nncase.Cli.Commands
             AddArgument(new Argument("input-file"));
             AddOption(new Option<string>(new[] { "-t", "--target" }, "target architecture, e.g. cpu, k210") { IsRequired = true });
             AddOption(new Option<string>(new[] { "-i", "--input-format" }, "input format, e.g. tflite") { IsRequired = true });
-            AddOption(new Option<bool>("--dump-ir", () => false, "dump ir to .dot, default is False") { IsRequired = false });
+            AddOption(new Option<int>("--dump-level", () => 0, "dump ir to .il, default is 0") { IsRequired = false });
             AddOption(new Option<string>("--dump-dir", () => ".", "dump to directory, default is .") { IsRequired = false });
 
             Handler = CommandHandler.Create<CompileOptions>(Run);
@@ -74,7 +74,7 @@ namespace Nncase.Cli.Commands
         public void InferShape(Module module, CompileOptions options)
         {
             Console.WriteLine("Infer Shape...");
-            var pmgr = new PassManager(module, new RunPassOptions(null, options.DumpIr, options.DumpDir));
+            var pmgr = new PassManager(module, new RunPassOptions(null, options.DumpLevel, options.DumpDir));
             var constFold = new ShapeInferPass();
             pmgr.Add(constFold);
             pmgr.Run();

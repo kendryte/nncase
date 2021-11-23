@@ -18,6 +18,11 @@ namespace Nncase.IR.F
     {
         public static Call Transpose(Expr input, Expr perm) => new Call(new Transpose(), input, perm);
 
+        public static Expr NHWCToNCHW(Expr input) => Transpose(input, new[] { 0, 3, 1, 2 });
+
+        public static Expr NCHWToNHWC(Expr input) => Transpose(input, new[] { 0, 2, 3, 1 });
+
+
         public static Call Broadcast(Expr input, Expr shape) => new Call(new Broadcast(), input, shape);
 
         public static Call Cast(Expr input, DataType newType) => new Call(new Cast(newType), input);
@@ -32,7 +37,9 @@ namespace Nncase.IR.F
 
         public static Call OneHot(OneHotMode oneHotMode, Expr indices, Expr depth, Expr onValue, Expr offValue, Expr axis) => new Call(new OneHot(oneHotMode), indices, depth, onValue, offValue, axis);
 
+        /// <summary>
         /// Pads is Const tensor, shape = [channels, 2(before, after)]
+        /// </summary>
         public static Call Pad(Expr input, Expr pads, PadMode mode, Expr value) => new Call(new Pad(mode), input, pads, value);
 
         public static Call Reduce(ReduceOp reduceOp, Expr input, Expr axis, Expr initValue, Expr keepDims) => new Call(new Reduce(reduceOp), input, axis, initValue, keepDims);
@@ -51,7 +58,7 @@ namespace Nncase.IR.F
             new Call(new ReduceWindow2D(reduceOp), input, initValue, filter, stride, padding, dilation);
 
         public static Call Reshape(Expr input, Expr shape) => new Call(new Reshape(), input, shape);
-        
+
         public static Call ShapeOp(Expr input) => new Call(new ShapeOp(), input);
 
         ///https://github.com/onnx/onnx/blob/master/docs/Operators.md#slice
@@ -64,12 +71,12 @@ namespace Nncase.IR.F
             var strides = axes with { Data = new IRBytes(DataTypes.GetBytes<int>(Enumerable.Repeat(1, rank).ToArray())) };
             return new Call(new Slice(), input, begins, ends, axes, strides);
         }
-        
+
         public static Call Stack(Expr inputs, Expr axis) => new Call(new Stack(), inputs, axis);
-        
+
         /// squeeze input by give dims
         public static Call Squeeze(Expr input, Expr dims) => new Call(new Squeeze(), input, dims);
-        
+
         public static Call UnSqueeze(Expr input, Expr dims) => new Call(new UnSqueeze(), input, dims);
 
         public static Call Quantize(Expr input, Expr zeroPoint, Expr scale, DataType targetType) => new Call(new Quantize(targetType), input, zeroPoint, scale);

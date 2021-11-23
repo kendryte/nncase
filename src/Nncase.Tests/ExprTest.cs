@@ -16,6 +16,14 @@ public class UnitTestExpr
         Assert.True(a);
         var b = (Const)(1.1f) == (Const)(1.2f);
         Assert.False(b);
+
+        var va = (Const)(new[] { 1, 2, 3, 4 });
+        var vb = (Const)(new[] { 1, 2, 3, 4 });
+        Assert.Equal(va, vb);
+        Assert.Equal(va.ValueType.Shape.GetHashCode(), vb.ValueType.Shape.GetHashCode());
+        Assert.Equal(va.ValueType.GetHashCode(), vb.ValueType.GetHashCode());
+        Assert.Equal(va.Data.GetHashCode(), vb.Data.GetHashCode());
+        Assert.Equal(va.GetHashCode(), vb.GetHashCode());
     }
 
     [Fact]

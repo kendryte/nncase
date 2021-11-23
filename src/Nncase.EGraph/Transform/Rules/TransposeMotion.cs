@@ -6,6 +6,8 @@ using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
 using Nncase.Pattern;
+using Nncase.Pattern.Tensors;
+using Nncase.Pattern.Math;
 using static Nncase.Pattern.F.Math;
 using static Nncase.Pattern.F.Tensors;
 using static Nncase.Pattern.Utility;
@@ -15,37 +17,75 @@ using static Nncase.IR.Utility;
 
 namespace Nncase.Transform.Rule
 {
+
+    /// <summary>
+    /// Motion Transpose with Binary
+    /// binary(transpose(a,p),transpose(b,p)) => transpose(binary(a,b),p)
+    /// </summary>
+    /// 
     public class TransposeBinaryMotion : PatternRule
     {
-        private WildCardPattern wx = "x", wy = "y", wperm = "perm";
-        private WildCardPattern wbin = new();
+        private ConstPattern conpat;
+        private TransposeWrapper transRhs;
+        private TransposeWrapper transLhs;
+        private BinaryWrapper binary;
+
+        /// <summary>
+        /// <see cref="TransposeBinaryMotion"/>
+        /// </summary>
         public TransposeBinaryMotion()
         {
-            Pattern = IsBinary(Transpose(wx, wperm), Transpose(wy, wperm));
+            conpat = IsConst();
+            transLhs = Transpose(IsWildCard(), conpat);
+            transRhs = Transpose(IsWildCard(), conpat);
+            binary = IsBinary(transLhs, transRhs);
+            Pattern = binary;
         }
 
+        /// <inheritdoc/>
         public override Expr GetRePlace(IMatchResult result)
         {
-            var (x, y, perm) = result[wx, wy, wperm];
-            var bin = (Binary)result.GetRoot();
-            return Transpose(new Call(new Binary(bin.BinaryOp), x, y), perm);
+            transRhs.Bind(result);
+            transLhs.Bind(result);
+            binary.Bind(result);
+            return Transpose(Binary(binary.BinaryOp, transLhs.Input(), transRhs.Input()), result[conpat]);
         }
     }
 
-    public class TransposeConstantBinaryMotion : PatternRule
+    /// <summary>
+    /// binary(transpose(a, p), const) =>  transpose(binary(a, const), p)
+    /// </summary>
+    public class TransposeConstBinaryMotionLeft : PatternRule
     {
-        protected WildCardPattern wx = "x";
-        protected ConstPattern wperm = IsConst(IsTensor()), wcon = IsConst();
+        TransposeWrapper transpose = Transpose(IsWildCard(), IsConst());
+        ConstPattern con = IsConst();
 
-        protected Expr x;
-        protected Const con, perm;
-        protected Binary binary;
+        BinaryWrapper binary;
 
-        protected Shape newShape;
-        protected Const newCon;
+        /// <summary>
+        /// <see cref="TransposeConstBinaryMotionLeft"/>
+        /// </summary>
+        public TransposeConstBinaryMotionLeft()
+        {
+            Pattern = binary = IsBinary(transpose, con);
+        }
 
+        /// <inheritdoc/>
+        public override Expr? GetRePlace(IMatchResult result)
+        {
+            binary.Bind(result);
+            transpose.Bind(result);
+            var newCon = GetNewConst(result[con], transpose.Perm<Const>());
+            return Transpose(Binary(binary.BinaryOp, transpose.Input(), newCon), transpose.Perm());
+        }
 
-        public Shape GetNewConstShape(Const oldCon, Const oldPerm)
+        /// <summary>
+        /// Get the permed const with new shape
+        /// </summary>
+        /// <param name="oldCon"></param>
+        /// <param name="oldPerm"></param>
+        /// <returns> new const expr</returns>
+        public static Const GetNewConst(Const oldCon, Const oldPerm)
         {
             var perm = oldPerm.ToTensor<int>();
             var expand_dim = perm.Length - perm[(int)perm.Length - 1] - 1;
@@ -55,48 +95,36 @@ namespace Nncase.Transform.Rule
                 for (int i = 0; i < expand_dim; i++)
                     shape.Add(1);
             }
-            return new Shape(shape);
-        }
-
-        public void ParserResult(IMatchResult result)
-        {
-            x = result[wx];
-            con = (Const)result[wcon];
-            perm = (Const)result[wperm];
-            binary = (Binary)result.GetRoot();
-            newShape = GetNewConstShape((Const)con, (Const)perm);
-            newCon = con with { ValueType = (TensorType)con.ValueType with { Shape = newShape } };
+            var newShape = new Shape(shape);
+            return oldCon with { ValueType = oldCon.ValueType with { Shape = newShape } };
         }
     }
-
-    public class TransposeConstantBinaryMotionLeft : TransposeConstantBinaryMotion
+    /// <summary>
+    /// binary(const, transpose(a, p)) =>  transpose(binary(const, a), p)
+    /// </summary>
+    public class TransposeConstBinaryMotionRight : PatternRule
     {
-        public TransposeConstantBinaryMotionLeft()
+        TransposeWrapper transpose = Transpose(IsWildCard(), IsConst());
+        ConstPattern con = IsConst();
+
+        BinaryWrapper binary;
+        /// <summary>
+        /// <see cref="TransposeConstBinaryMotionRight"/>
+        /// </summary>
+        public TransposeConstBinaryMotionRight()
         {
-            Pattern = IsBinary(Transpose(wx, wperm), wcon);
+            Pattern = binary = IsBinary(con, transpose);
         }
 
+        /// <inheritdoc/>
         public override Expr GetRePlace(IMatchResult result)
         {
-            ParserResult(result);
-            return Transpose(new Call(new Binary(binary.BinaryOp), x, newCon), perm);
+            binary.Bind(result);
+            transpose.Bind(result);
+            var newCon = TransposeConstBinaryMotionLeft.GetNewConst(result[con], transpose.Perm<Const>());
+            return Transpose(Binary(binary.BinaryOp, newCon, transpose.Input()), transpose.Perm());
         }
     }
-
-    public class TransposeConstantBinaryMotionRight : TransposeConstantBinaryMotion
-    {
-        public TransposeConstantBinaryMotionRight()
-        {
-            Pattern = IsBinary(wcon, Transpose(wx, wperm));
-        }
-
-        public override Expr GetRePlace(IMatchResult result)
-        {
-            ParserResult(result);
-            return Transpose(new Call(new Binary(binary.BinaryOp), newCon, x), perm);
-        }
-    }
-
 
     public class TransposeConcatMotion : PatternRule
     {

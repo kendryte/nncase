@@ -5,20 +5,34 @@ using Nncase.IR;
 using Nncase.Transform;
 using Nncase.Pattern;
 using static Nncase.IR.F.Math;
+using static Nncase.IR.F.Tensors;
+using static Nncase.IR.F.NN;
 using Rule = Nncase.Transform.Rule;
 using static Nncase.Pattern.F.Math;
+using static Nncase.Pattern.F.NN;
+using static Nncase.Pattern.F.Tensors;
 using static Nncase.Pattern.Utility;
 using System.IO;
+using System.Runtime.CompilerServices;
+
 
 
 public class EGraphRewriteTest : IDisposable
 {
-    private string dumpPath;
+    private RunPassOptions _options;
+
     public EGraphRewriteTest()
     {
-        var TestName = System.Reflection.MethodBase.GetCurrentMethod().Name;
-        dumpPath = Path.Combine("test_ouput", TestName);
-        Directory.CreateDirectory(dumpPath);
+        var TestName = this.GetType().Name;
+        string dumpDir = Path.Combine(GetThisFilePath(), "..", "..", "..", "tests_output");
+        dumpDir = Path.GetFullPath(dumpDir);
+        Directory.CreateDirectory(dumpDir);
+        _options = new RunPassOptions(null, 3, dumpDir);
+    }
+
+    private static string GetThisFilePath([CallerFilePath] string path = null)
+    {
+        return path;
     }
 
     [Fact]
@@ -57,8 +71,22 @@ public class EGraphRewriteTest : IDisposable
         Expr expr = ((Const)10 * 11) * 12;
         var eGraph = new EGraph(expr);
         var rule = new Rule.Reassociate();
-        EGraphReWriter.ReWrite(eGraph, rule);
+        EGraphReWriter.ReWrite(eGraph, rule, _options.SetName("Reassociate"));
         // Assert.Equal(newExpr, 10 * ((Const)11 * 12));
+    }
+
+
+    [Fact]
+    public void TestTransposeBinaryMotion()
+    {
+        Call c0 = (Call)NHWCToNCHW(Const.FromShape<int>(new[] { 2, 2, 3, 4 }, 1));
+        Call c1 = (Call)NHWCToNCHW(Const.FromShape<int>(new[] { 2, 2, 1, 1 }, 1));
+        Assert.Equal(c0.Parameters[1].GetHashCode(), c1.Parameters[1].GetHashCode());
+
+        Expr expr = c0 + c1;
+        var eGraph = new EGraph(expr);
+        EGraphPrinter.DumpEgraphAsDot(eGraph, Path.Combine(_options.DumpDir, "ir_import"));
+        EGraphReWriter.ReWrite(eGraph, new Rule.TransposeBinaryMotion(), _options.SetName("TransposeBinaryMotion"));
     }
 
     public void Dispose()
