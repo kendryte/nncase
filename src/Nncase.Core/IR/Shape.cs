@@ -3,8 +3,8 @@
 
 using System;
 using System.Collections;
+using System.Collections.Immutable;
 using System.Collections.Generic;
-using System.Collections.ObjectModel;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -41,9 +41,11 @@ namespace Nncase.IR
     /// <summary>
     /// Tensor shape.
     /// </summary>
-    public sealed class Shape : IReadOnlyList<Dimension>, IEquatable<Shape?>
+    public sealed class Shape : IStructuralEquatable, IReadOnlyList<Dimension>, IEquatable<Shape>, IEnumerable<Dimension>
     {
-        private ReadOnlyCollection<Dimension> _dimensions;
+        private readonly ImmutableArray<Dimension> _dimensions;
+
+        private int _hashcode;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="Shape"/> class.
@@ -52,7 +54,8 @@ namespace Nncase.IR
         public Shape(IEnumerable<Dimension> dimensions)
         {
             Kind = KindOf(dimensions);
-            _dimensions = dimensions.ToList().AsReadOnly();
+            _dimensions = dimensions.ToImmutableArray();
+            _hashcode = HashCode.Combine(StructuralComparisons.StructuralEqualityComparer.GetHashCode(_dimensions));
         }
 
         /// <summary>
@@ -62,7 +65,8 @@ namespace Nncase.IR
         public Shape(IEnumerable<long> dimensions)
         {
             Kind = ShapeKind.Fixed;
-            _dimensions = dimensions.Select(x => new Dimension((int)x)).ToList().AsReadOnly();
+            _dimensions = dimensions.Select(x => new Dimension((int)x)).ToImmutableArray();
+            _hashcode = HashCode.Combine(StructuralComparisons.StructuralEqualityComparer.GetHashCode(_dimensions));
         }
 
         /// <summary>
@@ -72,23 +76,15 @@ namespace Nncase.IR
         public Shape(IEnumerable<int> dimensions)
         {
             Kind = ShapeKind.Fixed;
-            _dimensions = dimensions.AsValueEnumerable().Select(x => new Dimension(x)).ToList().AsReadOnly();
+            _dimensions = dimensions.AsValueEnumerable().Select(x => new Dimension(x)).ToImmutableArray();
+            _hashcode = HashCode.Combine(StructuralComparisons.StructuralEqualityComparer.GetHashCode(_dimensions));
         }
 
         private Shape(ShapeKind kind, IEnumerable<Dimension> dimensions)
         {
             Kind = kind;
-            _dimensions = dimensions.ToList().AsReadOnly();
-        }
-
-        public static bool operator ==(Shape? left, Shape? right)
-        {
-            return EqualityComparer<Shape>.Default.Equals(left, right);
-        }
-
-        public static bool operator !=(Shape? left, Shape? right)
-        {
-            return !(left == right);
+            _dimensions = dimensions.ToImmutableArray();
+            _hashcode = HashCode.Combine(StructuralComparisons.StructuralEqualityComparer.GetHashCode(_dimensions));
         }
 
         /// <summary>
@@ -144,53 +140,49 @@ namespace Nncase.IR
         /// <summary>
         /// Gets a value indicating whether scalar.
         /// </summary>
-        public bool IsScalar => IsFixed && _dimensions.Count == 0;
+        public bool IsScalar => IsFixed && _dimensions.Length == 0;
 
         /// <summary>
         /// Gets rank.
         /// </summary>
-        public int Rank => _dimensions.Count;
+        public int Rank => _dimensions.Length;
 
+        /// <summary>
+        /// Get Total Elements
+        /// </summary>
         public int Size => Enumerable.Range(0, Rank).Aggregate(1, (size, i) => size * _dimensions[i].FixedValue);
 
-        int IReadOnlyCollection<Dimension>.Count => Rank;
+        public int Count => ((IReadOnlyCollection<Dimension>)_dimensions).Count;
 
-        /// <inheritdoc/>
-        public Dimension this[int index] => _dimensions[index];
-
-        /// <summary>
-        /// Searches for the specified item and returns the zero-based index of the first occurrence.
-        /// </summary>
-        /// <param name="item">The item to find.</param>
-        /// <returns>The founded index or -1.</returns>
-        public int IndexOf(Dimension item) => _dimensions.IndexOf(item);
+        public Dimension this[int index] => ((IReadOnlyList<Dimension>)_dimensions)[index];
 
         /// <summary>
-        /// Determine whether the item is in the <seealso cref="Shape"/>.
+        /// Get Pord
         /// </summary>
-        /// <param name="item">The item to find.</param>
-        /// <returns>true if value is found, otherwise false.</returns>
-        public bool Contains(Dimension item) => _dimensions.Contains(item);
-
-        /// <summary>
-        /// Copy all dimensions to an array.
-        /// </summary>
-        /// <param name="array">The destination array.</param>
-        /// <param name="arrayIndex">The zero-based index in array at which copying begins.</param>
-        public void CopyTo(Dimension[] array, int arrayIndex) => _dimensions.CopyTo(array, arrayIndex);
-
+        /// <returns></returns>
         public Dimension Prod()
         {
             return _dimensions.Aggregate(new Dimension(1), (x, y) => x * y);
         }
-        
+        /// <summary>
+        /// return new shape after insert dim
+        /// </summary>
+        /// <param name="index"></param>
+        /// <param name="dim"></param>
+        /// <returns></returns>
         public Shape InsertAndClone(int index, Dimension dim)
         {
             var l = _dimensions.ToList();
             l.Insert(index, dim);
             return new Shape(l);
         }
-        
+
+        /// <summary>
+        /// return new shape after insert dim
+        /// </summary>
+        /// <param name="index"></param>
+        /// <param name="dims"></param>
+        /// <returns></returns>
         public Shape InsertAndClone(int index, IEnumerable<Dimension> dims)
         {
             var l = _dimensions.ToList();
@@ -200,11 +192,6 @@ namespace Nncase.IR
             }
             return new Shape(l);
         }
-        /// <summary>
-        /// Get enumerator.
-        /// </summary>
-        /// <returns>The enumerator.</returns>
-        public IEnumerator<Dimension> GetEnumerator() => _dimensions.GetEnumerator();
 
         /// <inheritdoc/>
         public override string ToString()
@@ -212,32 +199,44 @@ namespace Nncase.IR
             return $"[{string.Join(',', _dimensions)}]";
         }
 
-        IEnumerator<Dimension> IEnumerable<Dimension>.GetEnumerator() => GetEnumerator();
-
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
-
         private static ShapeKind KindOf(IEnumerable<Dimension> dimensions)
         {
             return dimensions.Any(x => x.IsUnknown) ? ShapeKind.HasUnknownDimension : ShapeKind.Fixed;
         }
 
-        public override bool Equals(object? obj)
+        public int GetHashCode(IEqualityComparer comparer)
         {
-            return Equals(obj as Shape);
-        }
-
-        public bool Equals(Shape? other)
-        {
-            if (other is null)
-            {
-                return false;
-            }
-            return _dimensions.SequenceEqual(other._dimensions);
+            return ((IStructuralEquatable)_dimensions).GetHashCode(comparer);
         }
 
         public override int GetHashCode()
         {
-            return HashCode.Combine(StructuralComparisons.StructuralEqualityComparer.GetHashCode(_dimensions));
+            return _hashcode;
+        }
+
+        public IEnumerator<Dimension> GetEnumerator()
+        {
+            return ((IEnumerable<Dimension>)_dimensions).GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return ((IEnumerable)_dimensions).GetEnumerator();
+        }
+
+        public bool Equals(object? other, IEqualityComparer comparer)
+        {
+            return ((IStructuralEquatable)_dimensions).Equals(other, comparer);
+        }
+
+        public bool Equals(Shape other)
+        {
+            return StructuralComparisons.StructuralEqualityComparer.Equals(_dimensions, other._dimensions);
+        }
+
+        public override bool Equals(object? other)
+        {
+            return other is Shape shape && Equals(shape);
         }
 
         public static implicit operator ReadOnlySpan<int>(Shape shape) => shape._dimensions.Select(x => (int)(x.Value ?? -1)).ToArray();

@@ -5,7 +5,7 @@ using System.Numerics.Tensors;
 using System.Collections.Generic;
 using System.Linq;
 using System.Collections.Immutable;
-
+using System.Collections;
 
 public class UnitTestExpr
 {
@@ -20,9 +20,6 @@ public class UnitTestExpr
         var va = (Const)(new[] { 1, 2, 3, 4 });
         var vb = (Const)(new[] { 1, 2, 3, 4 });
         Assert.Equal(va, vb);
-        Assert.Equal(va.ValueType.Shape.GetHashCode(), vb.ValueType.Shape.GetHashCode());
-        Assert.Equal(va.ValueType.GetHashCode(), vb.ValueType.GetHashCode());
-        Assert.Equal(va.Data.GetHashCode(), vb.Data.GetHashCode());
         Assert.Equal(va.GetHashCode(), vb.GetHashCode());
     }
 
