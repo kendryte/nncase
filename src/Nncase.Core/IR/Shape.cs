@@ -241,6 +241,10 @@ namespace Nncase.IR
 
         public static implicit operator ReadOnlySpan<int>(Shape shape) => shape._dimensions.Select(x => (int)(x.Value ?? -1)).ToArray();
 
+        public static bool operator ==(Shape lhs, Shape rhs) { return lhs.Equals(rhs); }
+        
+        public static bool operator !=(Shape lhs, Shape rhs) { return !(lhs == rhs); }
+        
         public static implicit operator Shape(Dimension[] dimensions) => new Shape(dimensions);
 
         public static implicit operator Shape(int[] dimensions) => new Shape(dimensions);
