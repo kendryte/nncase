@@ -38,12 +38,14 @@ namespace Nncase.Transform
                     if (visitor.isMatched)
                         break;
                 }
-            } while (!visitor.isMatched);
+                if (!visitor.isMatched)
+                    break;
+            } while (true);
             return post;
         }
 
         public static Expr Rewrite(Expr pre, params PatternRule[] Rules) => RewriteImpl(pre, Rules);
-        
+
         public static Expr Rewrite(Expr pre, IEnumerable<PatternRule> Rules) => RewriteImpl(pre, Rules);
     }
 
