@@ -9,7 +9,7 @@ namespace Nncase
     {
         public static Expr ShapeIndex(in Expr shape, int index)
         {
-            return F.Tensors.Slice(shape, index, index + 1, 1);
+            return F.Tensors.Slice(shape, new[] { index }, new[] { index + 1 }, 1);
         }
 
         public static (Expr, Expr) GetHW(in Expr input)

@@ -44,7 +44,7 @@ namespace Nncase.IR.NN
         /// <summary>
         /// Gets Dilation.
         /// </summary>
-        public static readonly ParameterInfo Dilation = new(typeof(Conv2D), 5, "dilation", HasRank(2) & IsIntegral());
+        public static readonly ParameterInfo Dilation = new(typeof(Conv2D), 5, "dilation", HasRank(1) & IsIntegral());
 
         /// <summary>
         /// Gets Groups.

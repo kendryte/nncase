@@ -31,7 +31,7 @@ namespace Nncase.Importer.TFLite
             var padding = Util.ConcatPadding(padH, padW);
             var clamp = ToFloatClampRange(options.FusedActivationFunction);
             return F.Tensors.NCHWToNHWC(F.Math.Clamp(
-                F.NN.Conv2D(F.Tensors.NHWCToNCHW(input), F.Tensors.NHWCToNCHW(weights), bias, padding, stride, dilation,
+                F.NN.Conv2D(F.Tensors.NHWCToNCHW(input), F.Tensors.NHWCToNCHW(weights), bias, stride, padding, dilation,
                     PadMode.Constant, 1),
                 clamp.Min, clamp.Max));
         }
@@ -92,7 +92,7 @@ namespace Nncase.Importer.TFLite
             return new[] { F.Tensors.Cast(padding / 2, DataType.Int32), F.Tensors.Cast(padding - (padding / 2), DataType.Int32) };
         }
 
-        private static Expr[] GetWindowedPadding(Expr inputSize, Expr filter, Expr stride, Expr dilation, bool same)
+        public static Expr[] GetWindowedPadding(Expr inputSize, Expr filter, Expr stride, Expr dilation, bool same)
         {
             var outputSize = GetWindowedOutputSize(inputSize, filter, stride, dilation, same, false);
             return GetWindowedPaddingValue(inputSize, outputSize, filter, stride, dilation);
