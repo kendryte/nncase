@@ -79,6 +79,7 @@
 | Relu | ✅ |
 | Reshape | ✅ |
 | Resize | ✅ |
+| ReverseSequence | ✅ |
 | Round | ✅ |
 | Selu | ✅ |
 | Shape | ✅ |

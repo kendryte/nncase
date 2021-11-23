@@ -40,6 +40,7 @@ set(ONNX_IMPORTER_OPS_SOURCES
     ops/reduce_prod.cpp
     ops/reshape.cpp
     ops/resize.cpp
+    ops/reverse_sequence.cpp
     ops/shape.cpp
     ops/size.cpp
     ops/slice.cpp

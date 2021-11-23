@@ -103,7 +103,7 @@ void neutral_target::add_default_transforms(ir::transforms::transform_pass &pass
 
     pass.emplace<fold_nop_pad_transform>();
     pass.emplace<fold_nop_bitcast_transform>();
-    pass.emplace<fold_slice_slice_transform>();
+    // pass.emplace<fold_slice_slice_transform>();
     pass.emplace<fold_pad_pad_transform>();
     pass.emplace<fold_pad_strided_slice_transform>();
 
@@ -113,7 +113,7 @@ void neutral_target::add_default_transforms(ir::transforms::transform_pass &pass
     pass.emplace<fold_nop_convert_transform>();
 
     pass.emplace<remove_nonsense_binary>();
-    pass.emplace<strided_slice_to_pad_transform>();
+    // pass.emplace<strided_slice_to_pad_transform>();
 
     pass.emplace<transpose_binary_motion_transform>();
     pass.emplace<transpose_constant_binary_motion_transform>();
