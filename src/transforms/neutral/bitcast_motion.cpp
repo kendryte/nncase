@@ -33,16 +33,16 @@ bool bitcast_clamp_motion_transform::on_try_match(node &node, transform_context 
                 && low->output().shape().size() == 1
                 && (high = node_cast<constant>(cl->input_high().connection()->owner()))
                 && high->output().shape().size() == 1)
-                {
-                    context.inputs.emplace_back(&bc->input());
-                    context.outputs.emplace_back(&cl->output());
+            {
+                context.inputs.emplace_back(&bc->input());
+                context.outputs.emplace_back(&cl->output());
 
-                    context.matched_nodes.emplace_back(bc);
-                    context.matched_nodes.emplace_back(cl);
-                    context.matched_nodes.emplace_back(low);
-                    context.matched_nodes.emplace_back(high);
-                    return true;
-                }
+                context.matched_nodes.emplace_back(bc);
+                context.matched_nodes.emplace_back(cl);
+                context.matched_nodes.emplace_back(low);
+                context.matched_nodes.emplace_back(high);
+                return true;
+            }
         }
     }
 
