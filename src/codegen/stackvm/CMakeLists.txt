@@ -26,6 +26,7 @@ set(SRCS module_builder.cpp
          ops/resize_image.cpp
          ops/slice.cpp
          ops/table_lookup1d.cpp
+         ops/ternary.cpp
          ops/transpose.cpp
          ops/unary.cpp)
 
