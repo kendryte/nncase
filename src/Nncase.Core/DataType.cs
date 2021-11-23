@@ -233,5 +233,19 @@ namespace Nncase
             DataType.Bool => (T)Convert.ChangeType((object)BitConverter.ToBoolean(bytes, start), typeof(T)),
             _ => throw new InvalidCastException($"Can't Cast the {srcType.ToString()}!")
         };
+
+        public static bool IsIntegral(DataType srcType) => srcType switch
+        {
+            (DataType.Bool or
+             DataType.Int64 or DataType.Int32 or DataType.Int16 or DataType.Int8 or 
+             DataType.UInt64 or DataType.UInt32 or DataType.UInt16 or DataType.UInt8) => true,
+            _ => false
+        };
+
+        public static bool IsFloat(DataType srcType) => srcType switch
+        {
+            (DataType.BFloat16 or DataType.Float16 or DataType.Float32 or DataType.Float64) => true,
+            _ => false
+        };
     }
 }

@@ -191,5 +191,26 @@ namespace Nncase.IR
         /// <returns></returns>
         public static Const FromShape<T>(Shape shape, T value)
          where T : unmanaged => FromTensor<T>(new DenseTensor<T>(Enumerable.Repeat<T>(value, shape.Size).ToArray(), shape));
+
+        public override string ToString()
+        {
+            string str = ValueType.DType.ToString();
+            if (ValueType.IsScalar)
+            {
+                if (DataTypes.IsIntegral(ValueType.DType))
+                {
+                    str = ToScalar<int>().ToString();
+                }
+                else if (DataTypes.IsFloat(ValueType.DType))
+                {
+                    str = ToScalar<float>().ToString();
+                }
+            }
+            else
+            {
+                str += $" {ValueType.Shape}";
+            }
+            return str;
+        }
     }
 }

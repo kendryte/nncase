@@ -89,6 +89,10 @@ public class EGraphRewriteTest : IDisposable
         EGraphReWriter.ReWrite(eGraph, new Rule.TransposeBinaryMotion(), _options.SetName("TransposeBinaryMotion"));
     }
 
+    [Fact]
+    public void TestTransposeBinaryConstLeftRight()
+    { }
+
     public void Dispose()
     {
     }

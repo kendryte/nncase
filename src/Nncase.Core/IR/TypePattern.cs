@@ -81,10 +81,7 @@ namespace Nncase.IR
         public static TypePattern IsIntegral() => new TypePattern(
           x => x switch
           {
-              TensorType ttype => ttype.DType is (
-                DataType.Bool or
-                DataType.UInt8 or DataType.UInt16 or DataType.UInt32 or DataType.UInt64 or
-                DataType.Int8 or DataType.Int16 or DataType.Int32 or DataType.Int64),
+              TensorType ttype => DataTypes.IsIntegral(ttype.DType),
               _ => false
           }, "IsIntegral"
         );
@@ -92,8 +89,7 @@ namespace Nncase.IR
         public static TypePattern IsFloat() => new TypePattern(
           x => x switch
           {
-              TensorType ttype => ttype.DType is (
-                DataType.BFloat16 or DataType.Float16 or DataType.Float32 or DataType.Float64),
+              TensorType ttype => DataTypes.IsFloat(ttype.DType),
               _ => false
           }, "IsFloat"
         );

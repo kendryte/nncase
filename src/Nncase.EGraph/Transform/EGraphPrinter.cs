@@ -17,6 +17,8 @@ using GiGraph.Dot.Types.Colors;
 using GiGraph.Dot.Types.Records;
 using GiGraph.Dot.Types.Edges;
 using Nncase.IR.Math;
+using Nncase.IR.Tensors;
+using Nncase.IR.NN;
 
 namespace Nncase.Transform
 {
@@ -113,40 +115,9 @@ namespace Nncase.Transform
                 return expr.GetType().Name;
             }
 
-            public override string Visit(Const expr)
-            {
-                string name = expr.GetType().Name;
-                if (expr.CheckedType is not null)
-                {
-                    return name;
-                }
-                if (expr.ValueType is TensorType)
-                {
-                    if (((TensorType)expr.ValueType).IsScalar)
-                    {
-                        object data = ((TensorType)expr.ValueType).DType switch
-                        {
-                            DataType.Bool => BitConverter.ToBoolean(expr.Data),
-                            DataType.Int16 => BitConverter.ToInt16(expr.Data),
-                            DataType.Int32 => BitConverter.ToInt32(expr.Data),
-                            DataType.Int64 => BitConverter.ToInt64(expr.Data),
-                            DataType.UInt16 => BitConverter.ToUInt16(expr.Data),
-                            DataType.UInt32 => BitConverter.ToUInt32(expr.Data),
-                            DataType.UInt64 => BitConverter.ToUInt64(expr.Data),
-                            DataType.Float64 => BitConverter.ToDouble(expr.Data),
-                            DataType.Float32 => BitConverter.ToSingle(expr.Data),
-                            _ => "InVaild"
-                        };
-                        name += " " + data.ToString();
-                    }
-                }
-                return name;
-            }
+            public override string Visit(Const expr) => expr.ToString();
 
-            public override string Visit(Function expr)
-            {
-                return expr.GetType().Name;
-            }
+            public override string Visit(Function expr) => expr.GetType().Name;
 
             public override string Visit(Op expr)
             {
@@ -154,15 +125,12 @@ namespace Nncase.Transform
                 {
                     Unary op => op.UnaryOp.ToString(),
                     Binary op => op.BinaryOp.ToString(),
+                    Reduce op => "Reduce" + op.ReduceOp.ToString(),
                     _ => expr.GetType().Name,
                 };
             }
 
-            public override string Visit(Var expr)
-            {
-
-                return expr.GetType().Name + " " + expr.Name;
-            }
+            public override string Visit(Var expr) => expr.GetType().Name + " " + expr.Name;
 
             public override string VisitType(AnyType type) => "any";
 

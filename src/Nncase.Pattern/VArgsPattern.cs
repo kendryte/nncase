@@ -9,6 +9,14 @@ namespace Nncase.Pattern
 
     public abstract record VArgsPattern()
     {
+
+        public virtual int Count => this switch
+        {
+            FixedVArgsPattern fixPat => fixPat.Parameters.Count,
+            RepeatVArgsPattern repeatPat => repeatPat.Parameters.Count,
+            _ => throw new NotImplementedException($"Can't Handle the Type {this.GetType().Name}!")
+        };
+
         public virtual ExprPattern this[int index] => this switch
         {
             FixedVArgsPattern fixPat => fixPat[index],
@@ -60,7 +68,10 @@ namespace Nncase.Pattern
         public override bool MatchLeaf<T>(IEnumerable<T> other)
         {
             if (!Parameters.Any())
+            {
                 SetUp(other.Count(), Parameters);
+                return false;
+            }
             return true;
         }
     }

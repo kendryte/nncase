@@ -370,7 +370,10 @@ namespace Nncase.Transform
         public bool VisitLeaf(VArgsPattern patterns, IRArray<Expr> exprs)
         {
             if (!patterns.MatchLeaf(exprs))
+            {
+                patterns.MatchEnd(false);
                 return false;
+            }
             bool result = true;
             foreach (var (i, expr) in (from i in Enumerable.Range(0, exprs.Count)
                                        select (i, exprs[i])))

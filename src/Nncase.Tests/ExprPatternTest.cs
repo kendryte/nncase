@@ -190,6 +190,15 @@ namespace Nncase.Tests
         }
 
         [Fact]
+        public void TestVArgsPatternFunc()
+        {
+            var pat = IsVArgsRepeat(IsConst());
+            IR.Tuple expr = new IR.Tuple(1, 2, 3, 4, 5, 6);
+            pat.MatchLeaf(expr.Fields);
+            Assert.Equal(pat.Count, expr.Fields.Count);
+        }
+
+        [Fact]
         public void TestAltPattern()
         {
             var lhs = IsWildCard();
