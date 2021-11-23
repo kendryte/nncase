@@ -42,26 +42,26 @@ void onnx_importer::convert_op_Tile(const NodeProto &node)
     const auto &output = node.output()[0];
 
     // repeats
-    std::vector<int> repeats(input_shape_size, 1);
+    std::vector<int32_t> repeats(input_shape_size, 1);
 
     // opset 1
     if (node.input().size() == 3)
     {
         // tile
-        auto tile = get_constant_value<int, int64_t>(node.input()[1]);
+        auto tile = get_constant_value<float, float>(node.input()[1]);
         assert(tile.size() == 1);
 
         // axis
-        auto axes = get_constant_value<int, int64_t>(node.input()[2]);
+        auto axes = get_constant_value<float, float>(node.input()[2]);
         assert(axes.size() == 1);
-        auto axis = real_axis(axes[0], input_shape_size);
+        auto axis = real_axis(static_cast<int32_t>(axes[0]), input_shape_size);
 
-        repeats[axis] = tile[0];
+        repeats[axis] = static_cast<int32_t>(tile[0]);
     }
     else
     {
         // opset 6/11
-        repeats = get_constant_value<int, int64_t>(node.input()[1]);
+        repeats = get_constant_value<int32_t, int64_t>(node.input()[1]);
         assert(repeats.size() == input_shape_size);
     }
 

@@ -19,6 +19,7 @@ from onnx import helper
 from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
 import numpy as np
+import copy
 
 def _make_module(in_shape, axis, repeat, op_version):
     inputs = []
@@ -36,22 +37,35 @@ def _make_module(in_shape, axis, repeat, op_version):
         # tile
         tiles_tensor = helper.make_tensor(
             'tiles',
-            TensorProto.INT64,
-            dims=[len(repeat)],
+            TensorProto.FLOAT,
+            dims=[1],
             vals=repeat
         )
-        initializers.append(tiles_tensor)
         inputs.append('tiles')
+        tiles_node = helper.make_node(
+            'Constant',
+            inputs=[],
+            outputs=['tiles'],
+            value=tiles_tensor
+        )
+        nodes.append(tiles_node)
 
         # axis
         axis_tensor = helper.make_tensor(
             'axis',
-            TensorProto.INT64,
-            dims=[len(axis)],
+            TensorProto.FLOAT,
+            dims=[1],
             vals=axis
         )
-        initializers.append(axis_tensor)
         inputs.append('axis')
+        axis_node = helper.make_node(
+            'Constant',
+            inputs=[],
+            outputs=['axis'],
+            value=axis_tensor
+        )
+        nodes.append(axis_node)
+
     else:
         # op_version 6/11
         # repeats
@@ -65,7 +79,11 @@ def _make_module(in_shape, axis, repeat, op_version):
         inputs.append('repeats')
 
     # output
-    out_shape = np.tile(np.ones(in_shape), tuple(repeat)).shape
+    if op_version == 1:
+        out_shape = copy.deepcopy(in_shape)
+        out_shape[axis[0]] *= repeat[0]
+    else:
+        out_shape = np.tile(np.ones(in_shape), tuple(repeat)).shape
     output = helper.make_tensor_value_info('output', TensorProto.FLOAT, out_shape)
     outputs.append('output')
 
@@ -113,7 +131,7 @@ repeats = [
 ]
 
 op_versions = [
-    # Type 'tensor(int64)' of input parameter (tiles) of operator (Tile) in node () is invalid.
+    # NOT_IMPLEMENTED : Could not find an implementation for the node Tile(1)
     # 1,
     6,
     11
