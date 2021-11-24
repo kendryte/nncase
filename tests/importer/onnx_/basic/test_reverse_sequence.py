@@ -88,14 +88,14 @@ sequence_lens = [
 ]
 
 batch_axes = [
-    # None,
+    None,
     0,
-    # 1
+    1
 ]
 
 time_axes = [
-    # None,
-    # 0,
+    None,
+    0,
     1
 ]
 
@@ -110,7 +110,6 @@ def test_reverse_sequence(in_shape, sequence_len, batch_axis, time_axis, request
         runner = OnnxTestRunner(request.node.name)
         model_file = runner.from_onnx_helper(model_def)
         runner.run(model_file)
-
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_reverse_sequence.py'])

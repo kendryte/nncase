@@ -39,7 +39,7 @@ slice::slice(datatype_t type, shape_t input_shape, axis_t begin, axis_t end, axi
                 + ", while dim is " + std::to_string(input_shape[i]));
         }
 
-        if (end_[i] > input_shape[i])
+        if (end_[i] > static_cast<int32_t>(input_shape[i]))
         {
             throw std::invalid_argument("Invalid slice end " + std::to_string(begin_[i])
                 + ", while dim is " + std::to_string(input_shape[i]));
