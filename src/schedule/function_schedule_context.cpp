@@ -190,6 +190,7 @@ void function_schedule_context::analyze_buffer_alias()
     pmgr.add_pass<alias_slice_buffer_pass>();
     pmgr.add_pass<alias_bitcast_buffer_pass>();
     pmgr.add_pass<alias_concat_buffer_pass>();
+    pmgr.add_pass<alias_bitcast_buffer_pass>();
     pmgr.run();
 }
 
@@ -319,8 +320,9 @@ void function_schedule_context::dump(const std::filesystem::path &dump_dir)
     {
         auto alloc = buf.allocation();
 
-        writer << fmt::format("%{} : {} @{}[{}, {}]",
+        writer << fmt::format("%{}({})\t : {} @{}[{}, {}]\n",
             buf.id(),
+            buf.owner().owner().owner().name(),
             fmt_shape(buf.owner()),
             to_string(buf.owner().memory_location()),
             alloc.start,
