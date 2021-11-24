@@ -26,7 +26,7 @@ namespace
 {
 template <class T>
 result<void> slice_impl(const T *input, T *output, const runtime_shape_t &in_shape,
-    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const runtime_shape_t &begins, const runtime_shape_t &ends, const runtime_axis_t &strides,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const runtime_shape_t &begins, const runtime_axis_t &ends, const runtime_axis_t &strides,
     NNCASE_UNUSED kernel_context &context) noexcept
 {
     return apply(in_shape, [&](const runtime_shape_t &index) -> result<void> {
@@ -36,12 +36,12 @@ result<void> slice_impl(const T *input, T *output, const runtime_shape_t &in_sha
             const auto stride = strides[i];
             if (stride > 0)
             {
-                if (index[i] < begins[i] || index[i] >= ends[i])
+                if (index[i] < begins[i] || index[i] >= static_cast<size_t>(ends[i]))
                     return ok();
             }
             else
             {
-                if (index[i] <= ends[i] || index[i] > begins[i])
+                if (static_cast<int32_t>(index[i]) <= ends[i] || index[i] > begins[i])
                     return ok();
             }
 
@@ -62,7 +62,7 @@ result<void> slice_impl(const T *input, T *output, const runtime_shape_t &in_sha
         return slice_impl(reinterpret_cast<const type *>(input), reinterpret_cast<type *>(output), in_shape, in_strides, out_strides, begins, ends, strides, context)
 
 result<void> reference::slice(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape,
-    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const runtime_shape_t &begins, const runtime_shape_t &ends, const runtime_axis_t &strides,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const runtime_shape_t &begins, const runtime_axis_t &ends, const runtime_axis_t &strides,
     kernel_context &context) noexcept
 {
     switch (runtime::get_bytes(type))

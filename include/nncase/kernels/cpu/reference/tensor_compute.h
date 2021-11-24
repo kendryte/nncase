@@ -85,7 +85,7 @@ NNCASE_API result<void> resize_nearest_neighbor(datatype_t type, const gsl::byte
     kernel_context &context) noexcept;
 
 NNCASE_API result<void> slice(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape,
-    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const runtime_shape_t &begins, const runtime_shape_t &ends, const runtime_axis_t &strides,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const runtime_shape_t &begins, const runtime_axis_t &ends, const runtime_axis_t &strides,
     kernel_context &context) noexcept;
 
 NNCASE_API result<void> gather(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape, const runtime_shape_t &out_shape,
@@ -107,5 +107,11 @@ NNCASE_API result<void> random_normal(T *output, const runtime_shape_t &out_shap
 
 template <typename T>
 NNCASE_API result<void> random_uniform(T *output, const runtime_shape_t &out_shape, float low, float high, float seed) noexcept;
+
+template <typename T>
+NNCASE_API result<void> ternary(const float *input_a, const T *input_b, const T *input_c, T *output,
+    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
+    const runtime_shape_t &in_b_strides, const runtime_shape_t &in_c_shape, const runtime_shape_t &in_c_strides,
+    const runtime_shape_t &out_strides) noexcept;
 
 END_NS_NNCASE_KERNELS_CPU_REF

@@ -175,6 +175,7 @@ namespace IsaGen
         SOFTMAX,
         SPACE_TO_BATCH,
         TAKE,
+        TERNARY,
         TRANSPOSE,
         UNARY,
     }
@@ -1883,6 +1884,46 @@ namespace IsaGen
             [DisplayName("rstrides")]
             [Description("Strides shape register")]
             public byte Strides { get; set; }
+        }
+
+        [DisplayName("TENSOR.TERNARY")]
+        [Category("Tensor Instructions")]
+        [Description("Ternary")]
+        public class TernaryInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.TERNARY;
+
+            [DisplayName("datatype")]
+            [Description("Datatype")]
+            public DataType DataType { get; set; }
+
+            [DisplayName("rshape_src1")]
+            [Description("Source1 shape register")]
+            public byte RshapeSrc1 { get; set; }
+
+            [DisplayName("rstride_src1")]
+            [Description("Source1 stride register")]
+            public byte RstrideSrc1 { get; set; }
+
+            [DisplayName("rshape_src2")]
+            [Description("Source2 shape register")]
+            public byte RshapeSrc2 { get; set; }
+
+            [DisplayName("rstride_src2")]
+            [Description("Source2 stride register")]
+            public byte RstrideSrc2 { get; set; }
+
+            [DisplayName("rshape_src3")]
+            [Description("Source3 shape register")]
+            public byte RshapeSrc3 { get; set; }
+
+            [DisplayName("rstride_src3")]
+            [Description("Source3 stride register")]
+            public byte RstrideSrc3 { get; set; }
+
+            [DisplayName("rstride_dest")]
+            [Description("Dest stride register")]
+            public byte RstrideDest { get; set; }
         }
 
         [DisplayName("TENSOR.UNARY")]

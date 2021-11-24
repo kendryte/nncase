@@ -43,6 +43,7 @@
 #include <nncase/ir/ops/resize_image.h>
 #include <nncase/ir/ops/slice.h>
 #include <nncase/ir/ops/table_lookup.h>
+#include <nncase/ir/ops/ternary.h>
 #include <nncase/ir/ops/transpose.h>
 #include <nncase/ir/ops/unary.h>
 #include <nncase/ir/runtime_type_utils.h>
@@ -385,8 +386,30 @@ void register_neutral_evaluators()
         auto output_mem = output.buffer();
 
         kernels::slice(input.datatype(), input_mem.data(), output_mem.data(), input.shape(),
-            input.strides(), output.strides(), to(rnode.begin()), to(rnode.end()), to<int32_t>(rnode.strides()))
+            input.strides(), output.strides(), to(rnode.begin()), to<int32_t>(rnode.end()), to<int32_t>(rnode.strides()))
             .unwrap_or_throw();
+    });
+
+    register_evaluator(op_ternary, [](ir::node &node, function_evaluate_context &context) {
+        auto &rnode = static_cast<ternary &>(node);
+
+        auto input_a = context.memory_at(rnode.input_a());
+        auto input_b = context.memory_at(rnode.input_b());
+        auto input_c = context.memory_at(rnode.input_c());
+        auto output = context.memory_at(rnode.output());
+
+        auto output_type = rnode.output().type();
+        switch (output_type)
+        {
+        case dt_float32:
+            kernels::ternary(input_a.buffer().as_span<float>().data(), input_b.buffer().as_span<float>().data(),
+                input_c.buffer().as_span<float>().data(), output.buffer().as_span<float>().data(), input_a.shape(), input_a.strides(),
+                input_b.shape(), input_b.strides(), input_c.shape(), input_c.strides(), output.strides())
+                .unwrap_or_throw();
+            break;
+        default:
+            std::cerr << "unsupported dtype for ternary: " + std::string(datatype_names(output_type));
+        }
     });
 
     register_evaluator(op_transpose, [](ir::node &node, function_evaluate_context &context) {

@@ -18,6 +18,7 @@
 #include <nncase/targets/neutral_target.h>
 #include <nncase/transforms/neutral/add_quant_checkpoints.h>
 #include <nncase/transforms/neutral/binary_motion.h>
+#include <nncase/transforms/neutral/bitcast_motion.h>
 #include <nncase/transforms/neutral/dequantize_motion.h>
 #include <nncase/transforms/neutral/fold_bitcast.h>
 #include <nncase/transforms/neutral/fold_constant.h>
@@ -103,7 +104,7 @@ void neutral_target::add_default_transforms(ir::transforms::transform_pass &pass
 
     pass.emplace<fold_nop_pad_transform>();
     pass.emplace<fold_nop_bitcast_transform>();
-    pass.emplace<fold_slice_slice_transform>();
+    // pass.emplace<fold_slice_slice_transform>();
     pass.emplace<fold_pad_pad_transform>();
     pass.emplace<fold_pad_strided_slice_transform>();
 
@@ -120,6 +121,7 @@ void neutral_target::add_default_transforms(ir::transforms::transform_pass &pass
     pass.emplace<transpose_concat_motion_transform>();
     pass.emplace<transpose_pad_motion_transform>();
     pass.emplace<transpose_clamp_motion_transform>();
+    pass.emplace<bitcast_clamp_motion_transform>();
 
     pass.emplace<fuse_clamp_conv2d_transform>();
     pass.emplace<fuse_clamp_conv2d_transpose_transform>();

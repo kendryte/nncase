@@ -121,7 +121,7 @@ gsl::byte *get_tensor_begin(runtime_tensor &t)
     return map.buffer().begin();
 }
 
-runtime_shape_t shape_sub(runtime_shape_t begin, runtime_shape_t end)
+runtime_shape_t shape_sub(runtime_shape_t begin, runtime_axis_t end)
 {
     runtime_shape_t v;
     for (size_t i = 0; i < begin.size(); ++i)
