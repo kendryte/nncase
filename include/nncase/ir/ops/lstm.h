@@ -29,6 +29,8 @@ public:
     input_connector &w_rc() { return input_at(3); }
     input_connector &b_rc() { return input_at(4); }
     input_connector &w_static() { return input_at(5); }
+    input_connector &initial_h() { return input_at(6); }
+    input_connector &initial_c() { return input_at(7); }
     output_connector &output() { return output_at(0); }
 
     int32_t num_output() const noexcept { return num_output_; }
@@ -36,6 +38,7 @@ public:
     std::string framework() const noexcept { return framework_; }
 
     lstm(shape_t input_shape, shape_t w_xc_shape, shape_t b_xc_shape, shape_t w_rc_shape, shape_t b_rc_shape, int32_t num_output, bool has_static, std::string framework);
+    lstm(shape_t input_shape, shape_t w_xc_shape, shape_t b_xc_shape, shape_t w_rc_shape, shape_t b_rc_shape, shape_t initial_h_shape, shape_t initial_c_shape, int32_t num_output, bool has_static, std::string framework);
 
 protected:
     bool properties_equal(node &other) const override;

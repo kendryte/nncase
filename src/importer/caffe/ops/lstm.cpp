@@ -47,7 +47,7 @@ DEFINE_CAFFE_LOWER(LSTM)
     auto b_xc_shape = get_shape(op_data.blobs(1).shape());
     if (w_xc_shape.size() == 2)
     {
-        w_xc_shape.insert(0, 1);
+        w_xc_shape = shape_t { 1, w_xc_shape[0], w_xc_shape[1] };
     }
 
     if (op_data.blobs_size() == 4)
@@ -63,7 +63,7 @@ DEFINE_CAFFE_LOWER(LSTM)
 
     if (w_rc_shape.size() == 2)
     {
-        w_rc_shape.insert(0, 1);
+        w_rc_shape = shape_t { 1, w_rc_shape[0], w_rc_shape[1] };
     }
 
     std::vector<float> blob_w_xc_vec(blob_w_xc.begin(), blob_w_xc.end());
