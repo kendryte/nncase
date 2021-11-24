@@ -65,8 +65,7 @@ py::class_<compile_options>(m, "CompileOptions")
     .def_readwrite("dump_asm", &compile_options::dump_asm)
     .def_readwrite("dump_quant_error", &compile_options::dump_quant_error)
     .def_readwrite("dump_dir", &compile_options::dump_dir)
-    .def_readwrite("benchmark_only", &compile_options::benchmark_only)
-    .def_readwrite("do_letterbox", &compile_options::do_letterbox);
+    .def_readwrite("benchmark_only", &compile_options::benchmark_only);
 ```
 
 The details of all attributes are following.
@@ -95,7 +94,6 @@ The details of all attributes are following.
 | dump_quant_error | bool      | N          | Specify whether dump quantization error, False by default.   |
 | dump_dir         | string    | N          | Specify dump directory                                       |
 | benchmark_only   | bool      | N          | Specify whether the generated kmodel is used for benchmark, False by default. |
-| do_letterbox     | bool      | N          | Specify whether add letterbox operation in preprocess, False by default. |
 
 > 1. Both mean and std are floating numbers to normalize.
 > 2. input_range is the range for floating numbers. If the input_type is uint8, input_range means the dequantized range of uint8.
@@ -125,7 +123,6 @@ compile_options.letterbox_value = 114. # pad what you want
 compile_options.dump_ir = True
 compile_options.dump_asm = True
 compile_options.dump_dir = 'tmp'
-compilr_options.do_letterbox = True
 ```
 
 ### ImportOptions
@@ -638,7 +635,6 @@ def main():
     compile_options.dump_ir = True
     compile_options.dump_asm = True
     compile_options.dump_dir = 'tmp'
-    compile_options.do_letterbox = True
 
     # compiler
     compiler = nncase.Compiler(compile_options)

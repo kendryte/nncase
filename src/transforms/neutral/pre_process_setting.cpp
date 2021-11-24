@@ -105,7 +105,7 @@ void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::targ
              * input_type:  pad value different 
              *  //input_range:{min, max} caculate pad value //uint8 pad 114, float pad min+(max-min)*(114/255)
              **/
-            if (do_letterbox_)
+            if (input_shape_.size() != 0)
             {
                 if (!new_shape.empty() && in_node->output().shape() != new_shape)
                 {

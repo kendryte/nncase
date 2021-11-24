@@ -8,9 +8,6 @@ case: # case的配置，应该是一个多层次的
     - name: swapRB
       values:
         - false
-    - name: do_letterbox
-      values:
-        - true
     - name: input_shape
       values:
         - [1,3,224,224]

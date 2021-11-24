@@ -234,10 +234,8 @@ class TestRunner(metaclass=ABCMeta):
         process_letterbox['input_range'] = config['input_range']
         process_letterbox['model_shape'] = self.inputs[0]['model_shape'] if self.inputs else config['input_shape']
         process_letterbox['input_type'] = config['input_type']
-        process_letterbox['input_shape'] = config['input_shape'] if config['do_letterbox'] else process_letterbox['model_shape']
-        process_letterbox['do_letterbox'] = config['do_letterbox']
+        process_letterbox['input_shape'] = config['input_shape'] if config['input_shape'] != [] else process_letterbox['model_shape'][0]
         process_letterbox['letterbox_value'] = config['letterbox_value']
-
         # norm
         process_norm = {}
         data = {}
@@ -294,7 +292,7 @@ class TestRunner(metaclass=ABCMeta):
 
                 # LetterBox
                 if 'input_range' in item.keys() and 'input_shape' in item.keys() and 'model_shape' in item.keys():
-                    if item['do_letterbox']:
+                    if item['input_shape'] != []:
                         model_shape: List = []
                         if self.model_type == "onnx" or self.model_type == "caffe":
                             model_shape = [1, item['model_shape'][2],
@@ -580,10 +578,9 @@ class TestRunner(metaclass=ABCMeta):
         compile_options.quant_type = cfg.compile_opt.quant_type
         compile_options.w_quant_type = cfg.compile_opt.w_quant_type
         compile_options.swapRB = preprocess['swapRB']
-        compile_options.input_shape = preprocess['input_shape'] if self.pre_process[3]['do_letterbox'] else self.pre_process[3]['model_shape']
+        compile_options.input_shape = self.pre_process[3]['input_shape'] if self.pre_process[3]['input_shape'] != [] else self.pre_process[3]['model_shape']
         compile_options.input_range = preprocess['input_range']
         compile_options.preprocess = preprocess['preprocess']
-        compile_options.do_letterbox = preprocess['do_letterbox']
         compile_options.mean = preprocess['mean']
         compile_options.std = preprocess['std']
         compile_options.input_layout = preprocess['input_layout']
@@ -644,7 +641,7 @@ class TestRunner(metaclass=ABCMeta):
             i = 0
             for input in inputs:
                 shape = []
-                if preprocess_opt['preprocess'] and preprocess_opt['input_shape'] != [] and len(preprocess_opt['input_shape']) == 4 and preprocess_opt['do_letterbox'] == True:
+                if preprocess_opt['preprocess'] and preprocess_opt['input_shape'] != [] and len(preprocess_opt['input_shape']) == 4:
                     shape = copy.deepcopy(preprocess_opt['input_shape'])
                 else:
                     shape = copy.deepcopy(input['model_shape'])

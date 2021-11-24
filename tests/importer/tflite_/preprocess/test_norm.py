@@ -57,9 +57,6 @@ case:
     - name: swapRB
       values:
         - false
-    - name: do_letterbox
-      values:
-        - true
     - name: input_shape
       values:
         - [1,224,224,3]

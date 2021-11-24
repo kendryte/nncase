@@ -361,7 +361,7 @@ private:
     {
         using namespace ir::transforms;
         run_passes("pre_process", graph, [&]([[maybe_unused]] const module_type_t &module_type, ir::transforms::pass_manager &pmgr) { pmgr.add_pass<pre_process_transform>(
-                                                                                                                                          cmp_options.mean, cmp_options.std, cmp_options.input_range, cmp_options.input_shape, cmp_options.swapRB, input_layout_, cmp_options.input_type, cmp_options.quant_type, real_inlayout_, cmp_options.do_letterbox, cmp_options.letterbox_value); });
+                                                                                                                                          cmp_options.mean, cmp_options.std, cmp_options.input_range, cmp_options.input_shape, cmp_options.swapRB, input_layout_, cmp_options.input_type, cmp_options.quant_type, real_inlayout_, cmp_options.letterbox_value); });
     }
     void post_process(ir::graph &graph, compile_options &cmp_options)
     {
