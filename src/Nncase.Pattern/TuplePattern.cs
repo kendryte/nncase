@@ -20,6 +20,15 @@ namespace Nncase.Pattern
             return MatchCheckedType(tuple);
         }
 
+        public override ExprPattern Copy() =>
+          this with { Id = _globalPatIndex++, Fields = Fields.Copy() };
+
+        public override void Clear()
+        {
+            Fields.Clear();
+        }
+
+
     }
     public static partial class Utility
     {
@@ -42,6 +51,6 @@ namespace Nncase.Pattern
                 }
             }
             ));
-        public static TuplePattern IsConstTuple() => IsTuple(IsVArgsRepeat(IsConst()));
+        public static TuplePattern IsConstTuple() => IsTuple(IsVArgsRepeat(() => IsConst()));
     }
 }

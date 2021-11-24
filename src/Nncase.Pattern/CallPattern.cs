@@ -28,6 +28,15 @@ namespace Nncase.Pattern
         {
         }
 
+        public override ExprPattern Copy() =>
+          this with { Id = _globalPatIndex++, Target = Target.Copy(), Parameters = Parameters.Copy() };
+
+        public override void Clear()
+        {
+            Target.Clear();
+            Parameters.Clear();
+        }
+
     }
 
     public static partial class Utility

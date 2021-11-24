@@ -9,8 +9,9 @@ namespace Nncase.CostModel
     {
         private Cost VisitTranspose(Transpose transpose)
         {
-            var arithm = _context.CurrentCallResultTensorType().Shape.Prod().FixedValue;
-            return new Cost();
+            var type = _context.CurrentCallResultTensorType();
+            var arithm = type.Shape.Prod().FixedValue;
+            return new Cost(arithm, arithm * DataTypes.GetLength(type.DType));
         }
     }
 }

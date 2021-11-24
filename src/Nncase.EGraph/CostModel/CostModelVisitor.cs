@@ -2,8 +2,6 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Nncase;
-using Nncase.CostModel;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
@@ -12,100 +10,15 @@ using Nncase.Transform;
 
 namespace Nncase.CostModel
 {
-    // todo:refactor, many copy
-    public sealed class EGraphCostModelContext
-    {
-        private readonly Dictionary<ENode, Cost> _eNodeCosts;
-        private readonly Dictionary<EClass, Cost> _eClassCosts;
-
-        public EGraphCostModelContext(Dictionary<ENode, Cost> eNodeCosts, Dictionary<EClass, Cost> eClassCosts)
-        {
-            _eNodeCosts = eNodeCosts;
-            _eClassCosts = eClassCosts;
-        }
-
-        public Cost GetArgument(ENode eNode) => _eNodeCosts[eNode];
-        
-        public Cost GetArgument(EClass eClass) => _eClassCosts[eClass];
-    }
-    
-    public class EGraphVisitor<ENodeResultType, EClassResultType, EGraphResultType>
-    {
-        private readonly Dictionary<ENode, ENodeResultType> _eNodeMemo;
-        private readonly Dictionary<EClass, EClassResultType> _eClassMemo;
-        
-        public Dictionary<ENode, ENodeResultType> ENodeMemo;
-        
-        public Dictionary<EClass, EClassResultType> EClassMemo;
-
-        public virtual ENodeResultType VisitLeaf(ENode eNode) => throw new NotImplementedException();
-        
-        public virtual EClassResultType VisitLeaf(EClass eClass) => throw new NotImplementedException();
-        
-        public virtual EGraphResultType VisitLeaf(EGraph eGraph) => throw new NotImplementedException();
-        
-        private ENodeResultType Visit(ENode eNode)
-        {
-            if (!_eNodeMemo.TryGetValue(eNode, out var result))
-            {
-                result = VisitLeaf(eNode);
-                _eNodeMemo.Add(eNode, result);
-            }
-
-            return result;
-        }
-
-        private EClassResultType Visit(EClass eClass)
-        {
-            if (!_eClassMemo.TryGetValue(eClass, out var result))
-            {
-                eClass.Select(Visit);
-                result = VisitLeaf(eClass);
-                _eClassMemo.Add(eClass, result);
-            }
-
-            return result;
-        }
-        
-        private EGraphResultType Visit(EGraph eGraph)
-        {
-            eGraph.Select(Visit);
-            return VisitLeaf(eGraph);
-        }
-    }
-
-    public sealed class EGraphCostModelVisitor : EGraphVisitor<Cost, Cost, Cost>
-    {
-        private EGraphCostModelContext _context;
-        
-        public EGraphCostModelVisitor()
-        {
-            _context = new EGraphCostModelContext(ENodeMemo, EClassMemo);
-        }
-        
-        public override Cost VisitLeaf(ENode eNode)
-        {
-            // todo: maybe error
-            var exprVisitor = new ExprCostModelVisitor();
-            return exprVisitor.Visit(eNode.Expr);
-        }
-
-        public override Cost VisitLeaf(EClass eClass)
-        {
-            return eClass.Select(x => _context.GetArgument(x)).Min();
-        }
-
-        public override Cost VisitLeaf(EGraph eGraph)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
     public class ExprCostModelContext
     {
-        public Call? CurrentCall { get; set; }
+        public virtual Call? CurrentCall { get; set; }
 
-        public Expr GetArgument(Op op, ParameterInfo parameter)
+        public Dictionary<Expr, Cost> ExpressionMemo { get; set; } = new();
+
+        public virtual Call GetCurrentCall() => CurrentCall ?? throw new InvalidOperationException("Current call is not set.");
+
+        public virtual Expr GetArgument(Op op, ParameterInfo parameter)
         {
             if (op.GetType() == parameter.OwnerType)
             {
@@ -117,9 +30,9 @@ namespace Nncase.CostModel
             }
         }
 
-        public Const GetArgumentConst(Op op, ParameterInfo parameter)
+        public virtual Const GetArgumentConst(Op op, ParameterInfo parameter)
         {
-            if(GetArgument(op, parameter) is Const constValue)
+            if (GetArgument(op, parameter) is Const constValue)
             {
                 return constValue;
             }
@@ -129,72 +42,213 @@ namespace Nncase.CostModel
             }
         }
 
-        public TensorType GetTensorType(Expr expr)
+        public virtual TensorType GetTensorType(Expr expr)
         {
-            var resultType = expr.CheckedType?? throw new InvalidOperationException($"Expr {expr} don't have CheckedType.");
-            return resultType is TensorType resultTensorType ? 
+            var resultType = expr.CheckedType ?? throw new InvalidOperationException($"Expr {expr} don't have CheckedType.");
+            return resultType is TensorType resultTensorType ?
                 resultTensorType :
                 throw new InvalidOperationException($"Expr {expr} is not a TensorType.");
         }
 
-        public TensorType GetArgumentType(Op op, ParameterInfo parameter) =>
+        public virtual TensorType GetArgumentType(Op op, ParameterInfo parameter) =>
             GetTensorType(GetArgument(op, parameter));
 
-        public TensorType CurrentCallResultTensorType()
+        public virtual TensorType CurrentCallResultTensorType()
         {
             return GetTensorType(CurrentCall ?? throw new ArgumentException($"Current Call {CurrentCall} is null"));
         }
-        
-        private Call GetCurrentCall() => CurrentCall ?? throw new InvalidOperationException("Current call is not set.");
+
+        public virtual Cost GetCostFromMemo(Expr expr, int i) => ExpressionMemo[expr];
     }
-    
+
+    public sealed class EGraphCostModelContext : ExprCostModelContext
+    {
+        public readonly Dictionary<ENode, Cost> _eNodeCosts;
+        public readonly Dictionary<EClass, Cost> _eClassCosts;
+
+        public Dictionary<EClass, List<ENode>> _eClasses;
+
+        /// <summary>
+        /// find the expr's Enode for ExprCostVisitor.
+        /// </summary>
+        public readonly Dictionary<Expr, ENode> _exprMaps;
+
+        public Cost TotalCost = Cost.Inf();
+
+        public EGraphCostModelContext(Dictionary<ENode, Cost> eNodeCosts, Dictionary<EClass, Cost> eClassCosts)
+        {
+            _eNodeCosts = eNodeCosts;
+            _eClassCosts = eClassCosts;
+            _exprMaps = new();
+        }
+
+        public override Cost GetCostFromMemo(Expr expr, int i)
+        {
+            return _eClassCosts[_exprMaps[expr].Children[i]];
+        }
+    }
+
+    public class EGraphVisitor<ENodeResultType, EClassResultType, EGraphResultType>
+    {
+        private readonly Dictionary<ENode, ENodeResultType> _eNodeMemo = new();
+        private readonly Dictionary<EClass, EClassResultType> _eClassMemo = new();
+
+        public Dictionary<ENode, ENodeResultType> ENodeMemo { get => _eNodeMemo; }
+
+        public Dictionary<EClass, EClassResultType> EClassMemo { get => _eClassMemo; }
+
+        public virtual ENodeResultType VisitLeaf(ENode eNode) => throw new NotImplementedException();
+
+        public virtual EClassResultType VisitLeaf(EClass eClass) => throw new NotImplementedException();
+
+        public virtual EGraphResultType VisitLeaf(EGraph eGraph) => throw new NotImplementedException();
+
+        protected virtual ENodeResultType Visit(ENode eNode) => throw new NotImplementedException();
+
+        protected virtual EClassResultType Visit(EClass eClass) => throw new NotImplementedException();
+
+        protected virtual EGraphResultType Visit(EGraph eGraph)
+        {
+            return VisitLeaf(eGraph);
+        }
+    }
+
+    public sealed class EGraphCostModelVisitor : EGraphVisitor<Cost, Cost, Dictionary<EClass, (Cost, ENode)>>
+    {
+        private EGraphCostModelContext _context;
+        public readonly ExprCostModelVisitor ExprVisitor;
+
+        public EGraphCostModelVisitor()
+        {
+            _context = new EGraphCostModelContext(ENodeMemo, EClassMemo);
+            ExprVisitor = new ExprCostModelVisitor(_context);
+        }
+        private bool Changed = true;
+
+        protected override Cost Visit(EClass eClass)
+        {
+            return _context._eClassCosts[eClass];
+        }
+
+        protected override Cost Visit(ENode eNode)
+        {
+            if (eNode.Children.Count == 0)
+            {
+                if (!_context._eNodeCosts.TryGetValue(eNode, out var leaf_result))
+                {   // when chileren=0, expr will be op/const/var
+                    // we can get cost directly
+                    leaf_result = ExprVisitor.VisitLeaf(eNode.Expr);
+                    _context._eNodeCosts.Add(eNode, leaf_result);
+                }
+                return leaf_result;
+            }
+            eNode.Children.Select(Visit);
+            // visit call/func/tuple
+            var result = VisitLeaf(eNode);
+            _context._eNodeCosts[eNode] = result;
+            return result;
+        }
+
+        public override Cost VisitLeaf(ENode eNode)
+        {
+            _context.CurrentCall = (eNode.Expr is Call call ? call : null);
+            return ExprVisitor.VisitLeaf(eNode.Expr);
+        }
+
+        public override Dictionary<EClass, (Cost, ENode)> VisitLeaf(EGraph eGraph)
+        {
+            _context._eClasses = eGraph.EClasses();
+            var eClassSeq = eGraph.TopSort(_context._eClasses);
+
+            // make expr map
+            foreach (var (_, eNodes) in _context._eClasses)
+            {
+                foreach (var eNode in eNodes)
+                {
+                    _context._exprMaps.Add(eNode.Expr, eNode);
+                }
+            }
+
+            while (Changed)
+            {
+                foreach (var eClass in eClassSeq)
+                {
+                  foreach (var eNode in _context._eClasses[eClass])
+                  {
+                      
+                  }
+                }
+            }
+
+            // while (Changed)
+            // {
+            //     Changed = false;
+            //     foreach (var (eClass, eNodes) in _context._eClasses)
+            //     {
+            //         var new_cost = eNodes.Select(Visit).Min()!;
+            //         if (EClassMemo[eClass] != new_cost)
+            //         {
+            //             Changed = true;
+            //         }
+            //         EClassMemo[eClass] = new_cost;
+            //     }
+            // }
+            var CostEnv = new Dictionary<EClass, (Cost, ENode)>();
+            return CostEnv;
+        }
+    }
+
     public sealed partial class ExprCostModelVisitor : ExprVisitor<Cost, IRType>
     {
         private readonly ExprCostModelContext _context;
+
         public ExprCostModelVisitor()
         {
             _context = new ExprCostModelContext();
+            _context.ExpressionMemo = ExpressionMemo;
+        }
+
+        public ExprCostModelVisitor(ExprCostModelContext context)
+        {
+            _context = context;
+            _context.ExpressionMemo = ExpressionMemo;
         }
 
         public override Cost VisitLeaf(Call expr)
         {
             _context.CurrentCall = expr;
-            return expr.Target switch
-            {
-                Binary bn => VisitBinary(bn),
-                // Concat con => VisitConcat(con),
-                Conv2D conv => VisitConv2D(conv),
-                // Slice sl => VisitSlice(sl),
-                // Transpose tr => VisitTranspose(tr),
-                Unary un => VisitUnary(un),
-                ShapeOp => throw new InvalidDataException("ShapeOp should be eliminate before CostModelVisitor"),
-                _ => throw new NotImplementedException()
-            };
+            return _context.GetCostFromMemo(expr.Target, 0) +
+               expr.Target switch
+               {
+                   Binary bn => VisitBinary(bn),
+                   // Concat con => VisitConcat(con),
+                   Conv2D conv => VisitConv2D(conv),
+                   // Slice sl => VisitSlice(sl),
+                   // Transpose tr => VisitTranspose(tr),
+                   Unary un => VisitUnary(un),
+                   ShapeOp => throw new InvalidDataException("ShapeOp should be eliminate before CostModelVisitor"),
+                   _ => throw new NotImplementedException()
+               };
         }
 
-        public override Cost VisitLeaf(Const expr)
-        {
-            return new Cost();
-        }
-        
-        public override Cost VisitLeaf(Op expr)
-        {
-            return new Cost();
-        }
+        public override Cost VisitLeaf(Const expr) =>
+         new Cost(0, expr.CheckedShape.Size *
+             DataTypes.GetLength(expr.ValueType.DType));
 
-        public override Cost VisitLeaf(Function expr)
-        {
-            return new Cost();
-        }
-        
-        public override Cost VisitLeaf(IR.Tuple expr)
-        {
-            return new Cost();
-        }
-        
-        public override Cost VisitLeaf(Var expr)
-        {
-            return new Cost();
-        }
+
+        public override Cost VisitLeaf(Op expr) => new Cost(1);
+
+        public override Cost VisitLeaf(Function expr) =>
+          _context.GetCostFromMemo(expr.Body, 0) +
+           expr.Parameters.Select((p, i) => _context.GetCostFromMemo(p, 1 + i))
+            .Aggregate((l, r) => l + r) + new Cost(1);
+
+
+        public override Cost VisitLeaf(IR.Tuple expr) =>
+          expr.Fields.Select((p, i) => _context.GetCostFromMemo(p, i)).
+            Aggregate((l, r) => l + r);
+
+        public override Cost VisitLeaf(Var expr) => new Cost();
+
     }
 }

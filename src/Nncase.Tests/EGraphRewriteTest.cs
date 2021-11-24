@@ -87,11 +87,14 @@ public class EGraphRewriteTest : IDisposable
         var eGraph = new EGraph(expr);
         EGraphPrinter.DumpEgraphAsDot(eGraph, Path.Combine(_options.DumpDir, "ir_import"));
         EGraphReWriter.ReWrite(eGraph, new Rule.TransposeBinaryMotion(), _options.SetName("TransposeBinaryMotion"));
+        
     }
 
     [Fact]
-    public void TestTransposeBinaryConstLeftRight()
-    { }
+    public void TestTransposeBinaryAll()
+    {
+
+    }
 
     public void Dispose()
     {

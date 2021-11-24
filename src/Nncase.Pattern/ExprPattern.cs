@@ -12,7 +12,7 @@ namespace Nncase.Pattern
     /// <param name="Id"></param>
     public abstract partial record ExprPattern(int Id)
     {
-        private static int _globalPatIndex = 0;
+        protected static int _globalPatIndex = 0;
 
         /// <summary>
         /// hashcode cache, for speedup get hashcode
@@ -102,15 +102,45 @@ namespace Nncase.Pattern
 
         /// <summary>
         /// Copy The **New** ExprPattern. NOTE the new pattern have different Id with old one, The there not equal.
+        /// <remark> this copy not recursive </remark>
         /// </summary>
         /// <returns> ExprPattern </returns>
-        public ExprPattern Copy() => this with { Id = _globalPatIndex++ };
+        public virtual ExprPattern Copy() => this switch
+        {
+            (FunctionPattern Funcpat) => Funcpat.Copy(),
+            (TuplePattern tuplePat) => tuplePat.Copy(),
+            (CallPattern callPat) => callPat.Copy(),
+            (OrPattern orPat) => orPat.Copy(),
+            _ => this with { Id = _globalPatIndex++ }
+        };
+
+        public virtual void Clear()
+        {
+            switch (this)
+            {
+                case (FunctionPattern Funcpat):
+                    Funcpat.Clear();
+                    break;
+                case (TuplePattern tuplePat):
+                    tuplePat.Clear();
+                    break;
+                case (CallPattern callPat):
+                    callPat.Clear();
+                    break;
+                case (OrPattern orPat):
+                    orPat.Clear();
+                    break;
+                default:
+                    break;
+            }
+        }
 
         public override int GetHashCode() => _hashcode ??=
           HashCode.Combine(
          EqualityComparer<Type>.Default.GetHashCode(EqualityContract),
          EqualityComparer<int>.Default.GetHashCode(Id));
     }
+
     public static partial class Utility
     {
         /// <summary>

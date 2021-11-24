@@ -42,6 +42,31 @@ namespace Nncase.Pattern
                     break;
             }
         }
+
+        public virtual VArgsPattern Copy() => this switch
+        {
+            FixedVArgsPattern fixedPat => fixedPat.Copy(),
+            RepeatVArgsPattern repeatPat => repeatPat.Copy(),
+            _ => this with { }
+        };
+
+        public virtual void Clear()
+        {
+            switch (this)
+            {
+                case (FixedVArgsPattern fixedPat):
+                    foreach (var p in fixedPat.Parameters)
+                    {
+                        p.Clear();
+                    }
+                    break;
+                case (RepeatVArgsPattern repeatPat):
+                    repeatPat.MatchEnd(false);
+                    break;
+                default:
+                    break;
+            }
+        }
     }
 
     public sealed record FixedVArgsPattern(IRArray<ExprPattern> Parameters) : VArgsPattern
@@ -54,6 +79,10 @@ namespace Nncase.Pattern
 
         public override bool MatchLeaf<T>(IEnumerable<T> other) => Parameters.Count == other.Count();
 
+        public override VArgsPattern Copy()
+        {
+            return this with { Parameters = (from p in Parameters select p.Copy()).ToImmutableArray() };
+        }
     }
 
     public sealed record RepeatVArgsPattern(Action<int, List<ExprPattern>> SetUp, Action<bool, List<ExprPattern>> TearDown) : VArgsPattern
@@ -74,6 +103,11 @@ namespace Nncase.Pattern
             }
             return false;
         }
+
+        public override VArgsPattern Copy()
+        {
+            return this with { };
+        }
     }
 
     public partial class Utility
@@ -84,13 +118,13 @@ namespace Nncase.Pattern
         /// <summary>
         /// Create repeated Vargs by template pattern, eg. give the const pattern as Template, will match {Const(),...Const()}
         /// </summary>
-        /// <param name="template">the ExprPattern as template</param>
+        /// <param name="creator">dynamic creator for generator ExprPattern as template</param>
         /// <returns>VArgsPattern</returns>
-        public static VArgsPattern IsVArgsRepeat(ExprPattern template) => IsVArgsRepeat((n, paramPatterns) =>
+        public static VArgsPattern IsVArgsRepeat(Func<ExprPattern> creator) => IsVArgsRepeat((n, paramPatterns) =>
         {
             for (int i = 0; i < n; i++)
             {
-                paramPatterns.Add(i == 0 ? template : template.Copy());
+                paramPatterns.Add(creator());
             }
         });
 

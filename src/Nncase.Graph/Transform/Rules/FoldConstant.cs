@@ -17,7 +17,7 @@ namespace Nncase.Transform.DataFlow.Rules
     {
         public FoldConstCall()
         {
-            Pattern = IsCall(IsWildCard(), IsVArgsRepeat(IsAlt(IsConst(), IsConstTuple())));
+            Pattern = IsCall(IsWildCard(), IsVArgsRepeat(() => IsAlt(IsConst(), IsConstTuple())));
         }
 
         public override Expr? GetRePlace(IMatchResult result) => Evaluator.Evaluator.Eval(result[Pattern]).ToConst();
@@ -27,7 +27,7 @@ namespace Nncase.Transform.DataFlow.Rules
     {
         public FoldConstFunction()
         {
-            Pattern = IsFunction(IsWildCard(), IsVArgsRepeat(IsAlt(IsConst(), IsConstTuple())));
+            Pattern = IsFunction(IsWildCard(), IsVArgsRepeat(() => IsAlt(IsConst(), IsConstTuple())));
         }
         public override Expr? GetRePlace(IMatchResult result) => Evaluator.Evaluator.Eval(result[Pattern]).ToConst();
     }

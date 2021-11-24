@@ -25,6 +25,19 @@ namespace Nncase.Pattern
         }
 
         public bool MatchLeaf(Function func) => MatchCheckedType(func);
+
+        public override ExprPattern Copy() => this with
+        {
+            Id = _globalPatIndex++,
+            Body = Body.Copy(),
+            Parameters = Parameters.Copy()
+        };
+
+        public override void Clear()
+        {
+            Body.Clear();
+            Parameters.Clear();
+        }
     }
     public static partial class Utility
     {

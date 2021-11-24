@@ -45,6 +45,10 @@ namespace Nncase.Transform
 
         public EClass? Parent = null;
 
+        /// <summary>
+        /// NOTE the Used mean which Enode use this EClass. eg. z = x + y. the EClass's Used will add {(z, z's eclass id)}.
+        /// <remark> It's Not mean this EClass's Nodes </remark>
+        /// </summary>
         public readonly List<(ENode, EClass)> Used = new List<(ENode, EClass)>();
 
         public EClass Find()
@@ -56,22 +60,6 @@ namespace Nncase.Transform
             Parent = Parent.Find();
             return Parent;
         }
-
-        public List<ENode> Nodes()
-        {
-            return Used.Select(n => n.Item1).ToList();
-        }
-
-        public List<T> Select<T>(System.Func<ENode, T> func)
-        {
-            var list = new List<T>();
-            foreach (var n in Nodes())
-            {
-                list.Add(func.Invoke(n));
-            }
-
-            return list;
-        }
     }
 
     /// <summary>
@@ -79,6 +67,9 @@ namespace Nncase.Transform
     /// </summary>
     public sealed class EGraph
     {
+        /// <summary>
+        /// record each Enode's Eclass
+        /// </summary>
         private readonly Dictionary<ENode, EClass> _hascons = new Dictionary<ENode, EClass>();
 
         private readonly List<EClass> _classes = new List<EClass>();
@@ -86,17 +77,10 @@ namespace Nncase.Transform
 
         private List<EClass> _worklist = new List<EClass>();
 
-        public List<T> Select<T>(System.Func<EClass, T> func)
-        {
-            var list = new List<T>();
-            foreach (var (eClass, _) in EClasses())
-            {
-                list.Add(func.Invoke(eClass));
-            }
-
-            return list;
-        }
-
+        /// <summary>
+        /// the all EClass and it's 
+        /// </summary>
+        /// <returns></returns>
         public Dictionary<EClass, List<ENode>> EClasses()
         {
             var eclasses = new Dictionary<EClass, List<ENode>>();
@@ -110,6 +94,10 @@ namespace Nncase.Transform
             }
             return eclasses;
         }
+
+        /// <summary>
+        /// <see cref="_hascons"/>
+        /// </summary>
         public Dictionary<ENode, EClass> Nodes => _hascons;
 
         public int Version => _version;
@@ -153,7 +141,12 @@ namespace Nncase.Transform
             return eclass;
         }
 
-
+        /// <summary>
+        /// merge two equal Eclass
+        /// </summary>
+        /// <param name="to"></param>
+        /// <param name="from"></param>
+        /// <returns></returns>
         public bool Merge(EClass to, EClass from)
         {
             to = to.Find();
@@ -173,6 +166,9 @@ namespace Nncase.Transform
             return true;
         }
 
+        /// <summary>
+        /// After merge, we use rebuild get new dep information
+        /// </summary>
         public void ReBuild()
         {
             while (_worklist.Count > 0)
@@ -218,6 +214,46 @@ namespace Nncase.Transform
             {
                 eclass.Find().Used.Add((item.Key, item.Value));
             }
+        }
+
+
+        /// <summary>
+        /// <see cref="TopSort(Dictionary{EClass, List{ENode}})"/>
+        /// </summary>
+        /// <returns></returns>
+        public EClass[] TopSort() => TopSort(EClasses());
+
+        /// <summary>
+        /// Get Top Sorted EGraph Datastruce.
+        /// </summary>
+        /// <returns> the Eclass array, the root eclass is first one </returns>
+        public EClass[] TopSort(Dictionary<EClass, List<ENode>> eClasses)
+        {
+            void dfs(EClass eclass, Dictionary<EClass, bool> visited, List<EClass> paths)
+            {
+                visited[eclass] = true;
+                foreach (var (_, used_eclass) in eclass.Used)
+                {
+                    if (!visited[eclass])
+                        dfs(used_eclass, visited, paths);
+                }
+                paths.Add(eclass); // put the root node into first
+            }
+
+            var visited = new Dictionary<EClass, bool>();
+            foreach (var (k, _) in eClasses)
+            {
+                visited[k] = false;
+            }
+            var paths = new List<EClass>();
+            foreach (var (eclass, is_visited) in visited)
+            {
+                if (!is_visited)
+                {
+                    dfs(eclass, visited, paths);
+                }
+            }
+            return paths.ToArray();
         }
 
         private sealed class ENodeConverter : ExprVisitor<EClass, IRType>

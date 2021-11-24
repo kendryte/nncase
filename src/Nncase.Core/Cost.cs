@@ -9,9 +9,13 @@ namespace Nncase
         {
             return Arith * 2 + Memory;
         }
-        
+
         public static bool operator >(Cost lhs, Cost rhs) => lhs.Compute() > rhs.Compute();
 
         public static bool operator <(Cost lhs, Cost rhs) => lhs.Compute() < rhs.Compute();
+
+        public static Cost operator +(Cost lhs, Cost rhs) => new Cost(lhs.Arith + rhs.Arith, lhs.Memory + rhs.Memory);
+
+        public static Cost Inf() => new Cost(long.MaxValue, long.MaxValue);
     }
 }

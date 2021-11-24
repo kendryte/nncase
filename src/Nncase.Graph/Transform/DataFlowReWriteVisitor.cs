@@ -26,7 +26,9 @@ namespace Nncase.Transform
             if (matchs.Count == 1)
             {
                 isMatched = true;
-                return Rule.GetRePlace(matchs[0]) ?? expr;
+                var res = Rule.GetRePlace(matchs[0]);
+                Pattern.Clear();
+                return res ?? expr;
             }
             return expr;
         }

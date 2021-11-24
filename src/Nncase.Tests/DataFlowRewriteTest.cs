@@ -31,13 +31,14 @@ namespace Nncase.Tests
             return binary.Rhs() + binary.Lhs();
         }
     }
+    
     public class UnitTestExpressionsRewrite
     {
 
         [Fact]
         public void TestGetExpressions()
         {
-            Expression dd = (ConstPattern x, ExprPattern y) => x + y;
+            // Expression dd = (ConstPattern x, ExprPattern y) => x + y;
         }
 
     }

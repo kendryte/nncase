@@ -83,5 +83,38 @@ namespace Nncase.Tests
             var tuplepat2 = IsTuple();
             Assert.Single(Match(tuple, tuplepat2));
         }
+
+        [Fact]
+        public void TestNotMatchFoldConstCall()
+        {
+            var rule = new Transform.DataFlow.Rules.FoldConstCall();
+            Var x = "x";
+            var z = x + 1;
+            Assert.Empty(Match(z, rule.Pattern));
+        }
+
+        [Fact]
+        public void TestMatchFoldConstCallTwice()
+        {
+            var rule = new Transform.DataFlow.Rules.FoldConstCall();
+
+            var z = Concat(new IR.Tuple((Const)2, (Const)1, (Const)2), 0);
+            Assert.Single(Match(z, rule.Pattern));
+            rule.Pattern.Clear();
+            Assert.Single(Match(z, rule.Pattern));
+        }
+
+        [Fact]
+        public void TestMatchFoldConstCallTwiceFalse()
+        {
+            var rule = new Transform.DataFlow.Rules.FoldConstCall();
+
+            var z = Concat(new IR.Tuple((Var)"x", (Const)1, (Const)2), 0);
+            Assert.Empty(Match(z, rule.Pattern));
+
+            rule.Pattern.Clear();
+            var z1 = Concat(new IR.Tuple((Const)4.0f, (Const)1.0f, (Const)1, (Const)2), 0);
+            Assert.Single(Match(z1, rule.Pattern));
+        }
     }
 }
