@@ -42,6 +42,7 @@ compile_command::compile_command(lyra::cli &cli)
                          .add_argument(lyra::opt(cli_std_, "normalize std").name("--std").optional().help("normalize std, default is " + cli_std_))
                          .add_argument(lyra::opt(cli_input_range_, "input range").name("--input-range").optional().help("float range after preprocess"))
                          .add_argument(lyra::opt(cli_input_shape_, "input shape").name("--input-shape").optional().help("shape for input data"))
+                         .add_argument(lyra::opt(do_letterbox_).name("do letterbox").optional().help("do letterbox, default is " + std::to_string(do_letterbox_)))
                          .add_argument(lyra::opt(letterbox_value_, "letter box value").name("--letterbox-value").optional().help("letter box pad value, default is " + std::to_string(letterbox_value_)))
                          .add_argument(lyra::opt(input_type_, "input type").name("--input-type").optional().help("input type, e.g float32|uint8|default, default is " + input_type_))
                          .add_argument(lyra::opt(output_type_, "output type").name("--output-type").optional().help("output type, e.g float32|uint8, default is " + output_type_))
@@ -100,6 +101,7 @@ void compile_command::run()
     c_options.output_layout = output_layout_;
     c_options.tcu_num = tcu_num_;
     c_options.letterbox_value = letterbox_value_;
+    c_options.do_letterbox = do_letterbox_;
     if (c_options.preprocess)
     {
         if (c_options.input_shape.empty())
