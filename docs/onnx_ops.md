@@ -98,6 +98,7 @@
 | Sub | ✅ |
 | Sum | ✅ |
 | Tanh | ✅ |
+| Tile | ✅ |
 | Transpose | ✅ |
 | Upsample | ✅ |
 | Unsqueeze | ✅ |
