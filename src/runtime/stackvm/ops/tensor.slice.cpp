@@ -30,5 +30,5 @@ result<void> stackvm_runtime_function::visit(const tensor_slice_op_t &op) noexce
     try_var(ends, module().shape_reg(op.rends));
     try_var(strides, module().shape_reg(op.rstrides));
 
-    return kernels::slice(op.datatype, reinterpret_cast<const gsl::byte *>(input), reinterpret_cast<gsl::byte *>(output), shape, in_strides, out_strides, begins, ends, as_runtime_axis(strides), module().kernel_context());
+    return kernels::slice(op.datatype, reinterpret_cast<const gsl::byte *>(input), reinterpret_cast<gsl::byte *>(output), shape, in_strides, out_strides, begins, as_runtime_axis(ends), as_runtime_axis(strides), module().kernel_context());
 }
