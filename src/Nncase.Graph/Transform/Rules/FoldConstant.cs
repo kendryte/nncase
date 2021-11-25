@@ -19,8 +19,13 @@ namespace Nncase.Transform.DataFlow.Rules
         {
             Pattern = IsCall(IsWildCard(), IsVArgsRepeat(() => IsAlt(IsConst(), IsConstTuple())));
         }
-
-        public override Expr? GetRePlace(IMatchResult result) => Evaluator.Evaluator.Eval(result[Pattern]).ToConst();
+        
+        public override Expr? GetRePlace(IMatchResult result)
+        {
+            var expr = result[Pattern];
+            var dt = expr.CheckedDataType;
+            return Evaluator.Evaluator.Eval(expr).to_type(dt.ToTorchType()).ToConst();
+        }
     }
 
     public class FoldConstFunction : PatternRule
