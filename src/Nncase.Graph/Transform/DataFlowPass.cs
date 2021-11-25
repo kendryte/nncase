@@ -47,7 +47,7 @@ namespace Nncase.Transform
         public readonly List<PatternRule> rules = new()
         {
             new Transform.DataFlow.Rules.FoldConstCall(),
-            new Transform.DataFlow.Rules.FoldConstFunction(),
+            // new Transform.DataFlow.Rules.FoldConstFunction(),
             new Transform.DataFlow.Rules.FoldShapeOp(),
         };
 
