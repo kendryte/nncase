@@ -61,7 +61,7 @@ namespace Nncase.Importer.TFLite
 
             var clamp = ToFloatClampRange(options.FusedActivationFunction);
             return F.Tensors.NCHWToNHWC(F.Math.Clamp(
-                F.NN.Conv2D(F.Tensors.NHWCToNCHW(input), F.Tensors.NHWCToNCHW(weights), bias, padding, stride, dilation,
+                F.NN.Conv2D(F.Tensors.NHWCToNCHW(input), F.Tensors.NHWCToNCHW(weights), bias, stride, padding, dilation,
                     PadMode.Constant, 1),
                 clamp.Min, clamp.Max));
         }

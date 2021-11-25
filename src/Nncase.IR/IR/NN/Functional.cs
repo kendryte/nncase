@@ -18,7 +18,7 @@ namespace Nncase.IR.F
 
         public static Call Conv2D(Expr input, Expr weights, Expr bias, Expr stride, Expr padding, Expr dilation, PadMode padMode, Expr groups) => new Call(new Conv2D(padMode), input, weights, bias, stride, padding, dilation, groups);
 
-        public static Call Conv2DTranspose(Expr input, Expr weights, Expr bias, Expr outShape, Expr padding, Expr stride, Expr dilation, PadMode padMode, Expr groups) => new Call(new Conv2DTranspose(padMode), input, weights, bias, outShape, padding, stride, dilation, groups);
+        public static Call Conv2DTranspose(Expr input, Expr weights, Expr bias, Expr outShape, Expr stride, Expr padding, Expr dilation, PadMode padMode, Expr groups) => new Call(new Conv2DTranspose(padMode), input, weights, bias, outShape, stride, padding, dilation, groups);
 
         public static Call LeakyRelu(Expr input) => new Call(new LeakyRelu(), input);
 

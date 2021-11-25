@@ -32,7 +32,7 @@ namespace Nncase.Importer.TFLite
             var padding = Util.ConcatPadding(padH, padW);
             var clamp = ValueRange<float>.Full;
             return F.Tensors.NCHWToNHWC(F.Math.Clamp(
-                F.NN.Conv2DTranspose(F.Tensors.NHWCToNCHW(input), F.Tensors.NHWCToNCHW(weights), bias, F.Tensors.NHWCToNCHW(outShape), padding, stride, dilation, PadMode.Constant, 1),
+                F.NN.Conv2DTranspose(F.Tensors.NHWCToNCHW(input), F.Tensors.NHWCToNCHW(weights), bias, F.Tensors.NHWCToNCHW(outShape), stride, padding, dilation, PadMode.Constant, 1),
                 clamp.Min, clamp.Max));
         }
     }
