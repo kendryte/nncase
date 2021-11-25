@@ -24,12 +24,12 @@ namespace Nncase.IR.Tensors
         /// <summary>
         /// Get initValue.
         /// </summary>
-        public static readonly ParameterInfo InitValue = new(typeof(Reduce), 1, "initValue", IsScalar());
+        public static readonly ParameterInfo InitValue = new(typeof(ReduceWindow2D), 1, "initValue", IsScalar());
 
         /// <summary>
         /// Get filter.
         /// </summary>
-        public static readonly ParameterInfo Filter = new(typeof(Reduce), 2, "filter", HasRank(1) & IsIntegral());
+        public static readonly ParameterInfo Filter = new(typeof(ReduceWindow2D), 2, "filter", HasRank(1) & IsIntegral());
 
         /// <summary>
         /// Gets Stride.

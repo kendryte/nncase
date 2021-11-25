@@ -7,6 +7,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Nncase.IR.Utility;
 
 namespace Nncase.IR.Math
 {
@@ -23,15 +24,15 @@ namespace Nncase.IR.Math
         /// <summary>
         /// Gets min.
         /// </summary>
-        public static readonly ParameterInfo Min = new(typeof(Clamp), 1, "min");
+        public static readonly ParameterInfo Min = new(typeof(Clamp), 1, "min", IsScalar());
 
         /// <summary>
         /// Gets max.
         /// </summary>
-        public static readonly ParameterInfo Max = new(typeof(Clamp), 2, "max");
+        public static readonly ParameterInfo Max = new(typeof(Clamp), 2, "max", IsScalar());
 
         /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType min, TensorType max) => TypeInference.BroadcastType(input, min, max);
+        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType min, TensorType max) =>input;
 
     }
 }
