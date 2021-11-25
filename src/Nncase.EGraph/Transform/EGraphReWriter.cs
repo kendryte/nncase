@@ -14,8 +14,6 @@ namespace Nncase.Transform
     {
         public static EGraph ReWrite(EGraph eGraph, PatternRule Rules, RunPassOptions options) => ReWrite(eGraph, new List<PatternRule>() { Rules }, options);
 
-        public static EGraph ReWrite(EGraph eGraph, params PatternRule[] Rules) => ReWrite(eGraph, new List<PatternRule>(Rules), new RunPassOptions(null, 2, "EGraphPass"));
-
         /// <summary>
         /// run egraph rewrite
         /// </summary>
@@ -23,33 +21,44 @@ namespace Nncase.Transform
         /// <param name="Rules"></param>
         /// <param name="options"></param>
         /// <returns></returns>
-        public static EGraph ReWrite(EGraph eGraph, List<PatternRule> Rules, RunPassOptions options)
+        public static EGraph ReWrite(EGraph eGraph, IEnumerable<PatternRule> Rules, RunPassOptions options)
         {
             var eClass = eGraph.EClasses();
             var matches = new List<(PatternRule, IMatchResult)> { };
-            foreach (var rule in Rules)
+            var last_version = eGraph.Version;
+            do
             {
-                var results = EGraphMatcher.Match(eClass, rule.Patterns);
-                foreach (var result in results)
+                foreach (var rule in Rules)
                 {
-                    matches.Add((rule, result));
+                    var results = EGraphMatcher.Match(eClass, rule.Patterns);
+                    foreach (var result in results)
+                    {
+                        matches.Add((rule, result));
+                    }
+                    if (options.DumpLevel > 1)
+                        EGraphPrinter.DumpEgraphAsDot(eGraph, results,
+                         Path.Combine(options.DumpDir, options.PassName, "Matches", $"{rule.GetType().Name}_V{eGraph.Version}"));
                 }
+                foreach (var (rule, result) in matches)
+                {
+                    var replaceExpr = rule.GetRePlace(result);
+                    if (replaceExpr is null)
+                        continue;
+                    if (!TypeInference.InferenceType(replaceExpr))
+                        throw new InvalidOperationException("Can't Inference The Replace Expr Type!");
+                    eGraph.Add(replaceExpr, out var neweClass);
+                    eGraph.Merge(neweClass, eGraph.Nodes[((EMatchResult)result).Root]);
+                }
+                matches.Clear();
+                if (last_version == eGraph.Version)
+                    break;
+                else
+                    last_version = eGraph.Version;
+                eGraph.ReBuild();
                 if (options.DumpLevel > 1)
-                    EGraphPrinter.DumpEgraphAsDot(eGraph, results,
-                     Path.Combine(options.DumpDir, options.PassName, "Matches", $"{rule.GetType().Name}_{eGraph.Version}"));
-            }
-            foreach (var (rule, result) in matches)
-            {
-                var replaceExpr = rule.GetRePlace(result);
-                if (replaceExpr is null)
-                    continue;
-                var neweClass = eGraph.Add(replaceExpr);
-                eGraph.Merge(neweClass, eGraph.Nodes[((EMatchResult)result).Root]);
-            }
-            eGraph.ReBuild();
-            if (options.DumpLevel > 1)
-                EGraphPrinter.DumpEgraphAsDot(eGraph,
-                 Path.Combine(options.DumpDir, options.PassName, "Rebuild", $"{eGraph.Version}"));
+                    EGraphPrinter.DumpEgraphAsDot(eGraph,
+                     Path.Combine(options.DumpDir, options.PassName, "Rebuild", $"V{eGraph.Version}"));
+            } while (true);
             return eGraph;
         }
     }

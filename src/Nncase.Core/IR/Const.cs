@@ -158,7 +158,6 @@ namespace Nncase.IR
         /// </summary>
         /// <typeparam name="T">CLR type.</typeparam>
         /// <param name="span">Span.</param>
-        /// <param name="shape">Shape.</param>
         /// <returns>Created constant expression.</returns>
         public static Const FromSpan<T>(ReadOnlySpan<T> span)
             where T : unmanaged
@@ -211,6 +210,6 @@ namespace Nncase.IR
                 str += $" {ValueType.Shape}";
             }
             return str;
-        }
+        } 
     }
 }

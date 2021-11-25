@@ -30,12 +30,18 @@ namespace Nncase.Transform
         {
             return new ENode(Expr, (from c in Children select c.Find()).ToArray());
         }
+
+        public override string ToString()
+        {
+            var str = String.Join(", ", Children.Select(x => x.Id));
+            return $"{Expr.GetType().Name} ({str})";
+        }
     }
 
     /// <summary>
     /// EClass.
     /// </summary>
-    public sealed class EClass
+    public sealed partial class EClass
     {
         public EClass(int id)
         {
@@ -60,12 +66,14 @@ namespace Nncase.Transform
             Parent = Parent.Find();
             return Parent;
         }
+
+        public override string ToString() => $"{Id} -> {Parent?.Id}";
     }
 
     /// <summary>
     /// EGraph.
     /// </summary>
-    public sealed class EGraph
+    public sealed partial class EGraph
     {
         /// <summary>
         /// record each Enode's Eclass
@@ -105,18 +113,24 @@ namespace Nncase.Transform
 
         public EGraph() { }
 
-        public EGraph(Expr expr) => Add(expr);
+        public EGraph(Expr expr) => Add(expr, out var eClass);
 
         /// <summary>
-        /// Add enode.
+        /// add expr, get the eclass id
         /// </summary>
-        /// <param name="expr">Expression.</param>
-        /// <returns>Corresponding eclass.</returns>
-        public EClass Add(Expr expr)
+        /// <param name="expr"></param>
+        /// <param name="eClass"></param>
+        public void Add(Expr expr, out EClass eClass)
         {
             var converter = new ENodeConverter(this);
-            return converter.Visit(expr);
+            eClass = converter.Visit(expr);
         }
+        
+        /// <summary>
+        /// <see cref="Add(Expr, out EClass)"/>
+        /// </summary>
+        /// <param name="expr"></param>
+        public void Add(Expr expr) => Add(expr, out var eClass);
 
         public void Clear()
         {
@@ -218,7 +232,7 @@ namespace Nncase.Transform
 
 
         /// <summary>
-        /// <see cref="TopSort(Dictionary{EClass, List{ENode}})"/>
+        /// <see cref="TopSort(IReadOnlyDictionary<EClass, List<ENode>>)"/>
         /// </summary>
         /// <returns></returns>
         public EClass[] TopSort() => TopSort(EClasses());
@@ -227,7 +241,7 @@ namespace Nncase.Transform
         /// Get Top Sorted EGraph Datastruce.
         /// </summary>
         /// <returns> the Eclass array, the root eclass is first one </returns>
-        public EClass[] TopSort(Dictionary<EClass, List<ENode>> eClasses)
+        public EClass[] TopSort(IReadOnlyDictionary<EClass, List<ENode>> eClasses)
         {
             void dfs(EClass eclass, Dictionary<EClass, bool> visited, List<EClass> paths)
             {
@@ -237,7 +251,7 @@ namespace Nncase.Transform
                     if (!visited[eclass])
                         dfs(used_eclass, visited, paths);
                 }
-                paths.Add(eclass); // put the root node into first
+                paths.Add(eclass); // put the root node into last
             }
 
             var visited = new Dictionary<EClass, bool>();

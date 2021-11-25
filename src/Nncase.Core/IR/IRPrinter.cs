@@ -43,6 +43,14 @@ namespace Nncase.IR
             visitor.Visit(expr);
         }
 
+        public static string DumpExprAsIL(this Expr expr)
+        {
+            var builder = new StringBuilder();
+            var writer = new StringWriter(builder);
+            DumpExprAsIL(writer, expr);
+            return builder.ToString();
+        }
+
         private class ILDumpVisitor : ExprFunctor<string, string>
         {
             private readonly TextWriter _textWriter;

@@ -14,8 +14,6 @@ using static Nncase.IR.Utility;
 
 namespace Nncase.Tests
 {
-
-
     public class UnitTestGraphMatch
     {
 
@@ -218,6 +216,32 @@ namespace Nncase.Tests
             Assert.Equal(result[wcin[2]], z);
             Assert.Equal(result[wcperm], perm);
             Assert.Equal(result[wcaxis], (Const)0);
+        }
+
+        [Fact]
+        public void TestMatchSameConstPatternTwice()
+        {
+            var x = (Const)1;
+            Expr expr = (x * x) + 12 - x;
+            var xpat = IsConst();
+            var result = EGraphMatcher.Match(expr, IsBinary(xpat, xpat));
+            Assert.Single(result);
+
+            var result2 = EGraphMatcher.Match((x * 2) + 12 - x, IsBinary(xpat, xpat));
+            Assert.Empty(result2);
+        }
+
+        [Fact]
+        public void TestMatchSameWildCardPatternTwice()
+        {
+            var x = (Const)1;
+            Expr expr = (x * x) + 12 - x;
+            var xpat = IsWildCard();
+            var result = EGraphMatcher.Match(expr, IsBinary(xpat, xpat));
+            Assert.Single(result);
+
+            var result2 = EGraphMatcher.Match((x * 2) + 12 - x, IsBinary(xpat, xpat));
+            Assert.Empty(result2);
         }
     }
 }

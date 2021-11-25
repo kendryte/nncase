@@ -11,7 +11,7 @@ namespace Nncase.CostModel
         {
             var type = _context.CurrentCallResultTensorType();
             var arithm = type.Shape.Prod().FixedValue;
-            return new Cost(arithm, arithm * DataTypes.GetLength(type.DType));
+            return new Cost(arithm, DataTypes.GetLength(type.DType));
         }
     }
 }

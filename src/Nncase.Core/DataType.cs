@@ -100,6 +100,12 @@ namespace Nncase
         /// </summary>
         [Display(Name = "str")]
         String,
+
+        /// <summary>
+        /// Invalid.
+        /// </summary>
+        [Display(Name = "Invalid")]
+        Invalid,
     }
 
     /// <summary>

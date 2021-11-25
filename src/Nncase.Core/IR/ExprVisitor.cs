@@ -299,5 +299,14 @@ namespace Nncase.IR
         {
             throw new NotImplementedException($"Unhandled visit leaf routine for {type.GetType()}.");
         }
+
+        /// <summary>
+        /// clear the Memo!
+        /// </summary>
+        public virtual void Clear()
+        {
+            _exprMemo.Clear();
+            _typeMemo.Clear();
+        }
     }
 }

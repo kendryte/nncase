@@ -84,12 +84,12 @@ namespace Nncase.Tests
             EGraph graph = new EGraph();
             Var a = new Var("a");
             Expr b = a * 2 / 2;
-            var bId = graph.Add(b);
+            graph.Add(b, out var bId);
             EGraphPrinter.DumpEgraphAsDot(graph, "exampleMerge1.dot");
             Expr c = a * 1;
-            var cId = graph.Add(c);
+            graph.Add(c, out var cId);
             EGraphPrinter.DumpEgraphAsDot(graph, "exampleMerge2.dot");
-            var dId = graph.Add(Exp(b) + 3);
+            graph.Add(Exp(b) + 3, out var dId);
             EGraphPrinter.DumpEgraphAsDot(graph, "exampleMerge3.dot");
 
             graph.Merge(cId, bId);

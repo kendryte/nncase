@@ -1,5 +1,6 @@
 using Nncase;
 using Nncase.IR.Math;
+using Nncase.IR;
 
 namespace Nncase.CostModel
 {
@@ -8,8 +9,9 @@ namespace Nncase.CostModel
         private Cost VisitBinary(Binary binary)
         {
             // todo:broadcast
-            var arithm = _context.CurrentCallResultTensorType().Shape.Prod().FixedValue;
-            var rhsValue = _context.GetArgumentConst(binary, Binary.Rhs);
+            var type = _context.CurrentCallResultTensorType();
+            var arithm = type.Shape.Prod().FixedValue;
+            // var rhsValue = _context.GetArgumentConst(binary, Binary.Rhs);
             return new Cost(
                 binary.BinaryOp switch
                 {
@@ -20,7 +22,7 @@ namespace Nncase.CostModel
                     // BinaryOp.Mod => expr,
                     // BinaryOp.Min => expr,
                     // BinaryOp.Max => expr,
-                    BinaryOp.Pow => arithm * rhsValue.ToScalar<int>(),
+                    // BinaryOp.Pow => arithm * rhsValue.ToScalar<int>(), // todo when egraph how to get const?
                     // BinaryOp.BitwiseAnd => expr,
                     // BinaryOp.BitwiseOr => expr,
                     // BinaryOp.BitwiseXor => expr,

@@ -56,21 +56,21 @@ namespace Nncase.IR
         /// <summary>
         /// Initialize a scalar tensor type.
         /// </summary>
-        /// <param name="dataType">Data type.</param>
+        /// <param name="DType">Data type.</param>
         /// <returns>The scalar tensor type.</returns>
         public static TensorType Scalar(DataType DType) => new(DType, Shape.Scalar);
 
         /// <summary>
         /// Initialize an unranked tensor type.
         /// </summary>
-        /// <param name="dataType">Data type.</param>
+        /// <param name="DType">Data type.</param>
         /// <returns>The unranked tensor type.</returns>
         public static TensorType Unranked(DataType DType) => new(DType, Shape.Unranked);
 
         /// <summary>
         /// Initialize an invalid tensor type.
         /// </summary>
-        /// <param name="dataType">Data type.</param>
+        /// <param name="DType">Data type.</param>
         /// <returns>The invalid tensor type.</returns>
         public static TensorType Invalid(DataType DType) => new(DType, Shape.Invalid);
     }

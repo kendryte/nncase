@@ -69,8 +69,6 @@ namespace Nncase.IR
                              orderby param.Index
                              select param).ToArray();
 
-        public override Shape CheckedShape => base.CheckedShape;
-
         public override int Rank => base.Rank;
 
         public virtual bool Equals(Op? other)

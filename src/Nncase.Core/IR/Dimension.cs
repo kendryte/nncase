@@ -117,19 +117,19 @@ namespace Nncase.IR
             (true, true) => lhs.FixedValue + rhs.FixedValue,
             (_, _) => Dimension.Unknown
         };
-        
+
         public static Dimension operator -(Dimension lhs, Dimension rhs) => (lhs.IsFixed, lhs.IsFixed) switch
         {
             (true, true) => lhs.FixedValue - rhs.FixedValue,
             (_, _) => Dimension.Unknown
         };
-        
+
         public static Dimension operator *(Dimension lhs, Dimension rhs) => (lhs.IsFixed, lhs.IsFixed) switch
         {
             (true, true) => lhs.FixedValue * rhs.FixedValue,
             (_, _) => Dimension.Unknown
         };
-        
+
         public static Dimension operator /(Dimension lhs, Dimension rhs) => (lhs.IsFixed, lhs.IsFixed) switch
         {
             (true, true) => lhs.FixedValue / rhs.FixedValue,

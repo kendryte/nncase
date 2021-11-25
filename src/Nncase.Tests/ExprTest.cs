@@ -37,9 +37,30 @@ public class UnitTestExpr
         var b = (Const)(1.1f);
         a.CheckedType = a.ValueType;
         Assert.True(a == b);
+        Assert.Equal(a, b);
         var d = new HashSet<Const>();
         d.Add(a);
         Assert.Contains(b, d);
+    }
+
+    [Fact]
+    public void TestCallEqualWithCheckType()
+    {
+        var a = (Const)(1.1f) + (Const)(1.3f);
+        var b = (Const)(1.1f) + (Const)(1.3f);
+        TypeInference.InferenceType(a);
+        Assert.True(a == b);
+        Assert.Equal(a, b);
+        Assert.Equal(a.GetHashCode(), b.GetHashCode());
+    }
+
+    [Fact]
+    public void TestCallNotEqualWithCheckType()
+    {
+        var a = (Const)(1.1f) + (Const)(1.3f);
+        var b = (Const)(1.1f) + (Const)(1.2f);
+        TypeInference.InferenceType(a);
+        Assert.NotEqual(a, b);
     }
 
     [Fact]
@@ -60,6 +81,18 @@ public class UnitTestExpr
         var expr = new Tuple(d, d, d, d);
         var set = new HashSet<Expr>();
         set.Add(expr);
+    }
+
+    [Fact]
+    public void TestTupleGetHashDifference()
+    {
+        Expr a = (Const)1;
+        Expr b = (Const)3;
+        Assert.NotEqual(a, b);
+        int ahash1 = a.GetHashCode();
+        int ahash2 = ((Const)a).GetHashCode();
+        Assert.Equal(ahash1, ahash2);
+        var set = new HashSet<Expr>();
     }
 
     [Fact]

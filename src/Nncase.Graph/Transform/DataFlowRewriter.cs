@@ -23,7 +23,6 @@ namespace Nncase.Transform
             var last = post;
             do
             {
-                visitor.Clear();
                 foreach (var rule in Rules)
                 {
                     visitor.Rule = rule;
@@ -31,6 +30,7 @@ namespace Nncase.Transform
                     {
                         visitor.Pattern = pattern;
                         last = post;
+                        visitor.Clear();
                         post = visitor.Visit(last);
                         if (visitor.isMatched)
                             break;

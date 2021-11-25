@@ -15,9 +15,10 @@ namespace Nncase.Transform
 
         public bool isMatched { private set; get; } = false;
 
-        public void Clear()
+        public override void Clear()
         {
             isMatched = false;
+            base.Clear();
         }
 
         private Expr MatchCurExpr(Expr expr)

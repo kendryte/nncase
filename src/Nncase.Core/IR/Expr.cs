@@ -15,25 +15,24 @@ namespace Nncase.IR
     /// </summary>
     public abstract partial record Expr
     {
-
         protected int? _hashcode;
 
         /// <summary>
         /// Gets or sets checked type.
         /// </summary>
-        public IRType? CheckedType { get; set; }
+        public IRType? CheckedType { get; set; } = null;
 
         public virtual Shape CheckedShape => CheckedType switch
         {
             TensorType type => type.Shape,
-            _ => throw new InvalidOperationException("Only The Expr Have CheckedType Can Get It's Shape")
+            _ => Shape.Invalid
         };
 
         public DataType CheckedDataType => CheckedType switch
         {
             // todo:more info
             TensorType type => type.DType,
-            _ => throw new InvalidOperationException("Expr don't have a valid tensor type")
+            _ =>  DataType.Invalid
         };
         
         public virtual int Rank => CheckedShape.Rank;
