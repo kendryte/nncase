@@ -78,10 +78,20 @@ namespace Nncase.IR
                 return TensorType.Invalid(dataType);
             }
 
-            // If any input is not fixed, result is unranked
-            if (inputs.Any(x => !x.Shape.IsFixed))
+            // If any input is not unranked, result is unranked
+            if (inputs.Any(x => x.Shape.IsUnranked))
             {
                 return TensorType.Unranked(dataType);
+            }
+
+            // If any input is not fixed, result is not fixed
+            if (inputs.Any(x => !x.Shape.IsFixed))
+            {
+                // todo:
+                // 1. multi same rank
+                // 2. can broadcast rank -> biggest shape
+                // 3. invalid rank
+                return inputs.OrderByDescending(x => x.Shape.Rank).First();
             }
 
             var outputRank = inputs.Select(x => x.Shape.Rank).Max();
