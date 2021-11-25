@@ -105,9 +105,9 @@ namespace Nncase.IR
                 var targetType = inferTypedict[paraminfo.Name];
                 var paramActualType = context.GetArgumentType(this, paraminfo);
                 if (!targetType.IsAssignableFrom(paramActualType?.GetType()))
-                    return new InvalidType($"The {paraminfo.OwnerType.Name} {paraminfo.Name} Requrie {targetType.Name}!");
+                    return new InvalidType($"The {paraminfo.OwnerType.Name} {paraminfo.Name} Requrie {targetType.Name}, But {paramActualType?.GetType()}!");
                 if (!paraminfo.CheckType(paramActualType))
-                    return new InvalidType($"The {paraminfo.OwnerType.Name} {paraminfo.Name} Requrie <{paraminfo.Pattern.Reason}>!");
+                    return new InvalidType($"The {paraminfo.OwnerType.Name} {paraminfo.Name} Requrie <{paraminfo.Pattern.Reason}>, But {paramActualType}!");
                 targetParams.Add(paramActualType);
             }
             return (IRType)(typeinferFunc.Invoke(this, targetParams.ToArray()))!;

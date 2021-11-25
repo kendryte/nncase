@@ -156,7 +156,7 @@ namespace Nncase.IR
             public override string VisitType(CallableType type) =>
                 $"({string.Join(", ", type.Parameters.Select(VisitType))}) -> {VisitType(type.ReturnType)}";
 
-            public override string VisitType(InvalidType type) => "invalid";
+            public override string VisitType(InvalidType type) => $"invalid:{type.Reason}";
 
             public override string VisitType(TensorType type) =>
                 $"{DataTypes.GetDisplayName(type.DType)}{type.Shape}";
