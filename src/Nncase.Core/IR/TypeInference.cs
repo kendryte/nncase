@@ -106,7 +106,10 @@ namespace Nncase.IR
                     var inExtend = outputRank - inShape.Rank;
                     var inDimIndex = dimIndex - inExtend;
                     var inDim = inDimIndex < 0 ? 1 : inShape[inDimIndex].Value!.Value;
-                    Debug.Assert(inDim != 0, "Input dimension should not be 0.");
+                    if (inDim == 0)
+                    {
+                        throw new InvalidOperationException("Input dimension should not be 0.");
+                    }
                     inputDims[i] = inDim;
                 }
 
