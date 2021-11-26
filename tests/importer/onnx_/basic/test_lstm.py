@@ -34,72 +34,88 @@ def _make_module(model_shape, h_0_shape, c_0_shape):
     return LstmModule()
 
 
-# D = 1
-# num_layers = 3
-# batch_size = 1
-# hidden_size = 5
-# input_size = 10
-# length = 3
-# # D*num_layers, N, Hcell: hidden_size
-# c_0_shapes = [
-#     [D * num_layers, batch_size, hidden_size]
-# ]
+D = 1
+num_layers = 1
+batch_size = 1
+hidden_size = 5
+input_size = 3
+length = 1
+# D*num_layers, N, Hcell: hidden_size
+c_0_shapes = [
+    [D * num_layers, batch_size, hidden_size]
+]
 
-# # D*num_layers, N, Hout
-# # D: if bidirectional is True : 2
-# #    else : 1
-# # Hout:  if proj_size > 0 : proj_size
-# #        else : hidden_size
-# h_0_shapes = [
-#     [D * num_layers, batch_size, hidden_size]
-# ]
+# D*num_layers, N, Hout
+# D: if bidirectional is True : 2
+#    else : 1
+# Hout:  if proj_size > 0 : proj_size
+#        else : hidden_size
+h_0_shapes = [
+    [D * num_layers, batch_size, hidden_size]
+]
 
-# # L:length,  N:batch_size,, Hin:input_size
-# inputs_shapes = [
-#     [length, batch_size, input_size]
-# ]
+# L:length,  N:batch_size,, Hin:input_size
+inputs_shapes = [
+    [length, batch_size, input_size]
+]
 
-# # input_size, hidden_size, num_layers
-# model_shapes = [
-#     [input_size, hidden_size, num_layers]
-# ]
-
-D = [1]
-num_layers = [1, 3]
-batch_size = [1]
-hidden_size = [5]
-input_size = [10]
-length = [1, 2, 3]
+# input_size, hidden_size, num_layers
+model_shapes = [
+    [input_size, hidden_size, num_layers]
+]
 
 
-@pytest.mark.parametrize('D', D)
-@pytest.mark.parametrize('num_layers', num_layers)
-@pytest.mark.parametrize('batch_size', batch_size)
-@pytest.mark.parametrize('hidden_size', hidden_size)
-@pytest.mark.parametrize('input_size', input_size)
-@pytest.mark.parametrize('length', length)
-def test_lstm(D, num_layers, batch_size, hidden_size, input_size, length, request):
-    c_0_shapes = [
-        D * num_layers, batch_size, hidden_size
-    ]
-
-    h_0_shapes = [
-        D * num_layers, batch_size, hidden_size
-    ]
-
-    inputs_shapes = [
-        length, batch_size, input_size
-    ]
-
-    model_shapes = [
-        input_size, hidden_size, num_layers
-    ]
+# @pytest.mark.parametrize('D', D)
+# @pytest.mark.parametrize('num_layers', num_layers)
+@pytest.mark.parametrize('c_0_shapes', c_0_shapes)
+@pytest.mark.parametrize('h_0_shapes', h_0_shapes)
+@pytest.mark.parametrize('inputs_shapes', inputs_shapes)
+@pytest.mark.parametrize('model_shapes', model_shapes)
+def test_lstm(c_0_shapes, h_0_shapes, inputs_shapes, model_shapes, request):
 
     module = _make_module(model_shapes, h_0_shapes, c_0_shapes)
 
     runner = OnnxTestRunner(request.node.name)
     model_file = runner.from_torch(module, inputs_shapes)
     runner.run(model_file)
+
+
+# D = [1]
+# num_layers = [1]
+# batch_size = [1]
+# hidden_size = [5]
+# input_size = [10]
+# length = [2]
+
+
+# @pytest.mark.parametrize('D', D)
+# @pytest.mark.parametrize('num_layers', num_layers)
+# @pytest.mark.parametrize('batch_size', batch_size)
+# @pytest.mark.parametrize('hidden_size', hidden_size)
+# @pytest.mark.parametrize('input_size', input_size)
+# @pytest.mark.parametrize('length', length)
+# def test_lstm(D, num_layers, batch_size, hidden_size, input_size, length, request):
+#     c_0_shapes = [
+#         D * num_layers, batch_size, hidden_size
+#     ]
+
+#     h_0_shapes = [
+#         D * num_layers, batch_size, hidden_size
+#     ]
+
+#     inputs_shapes = [
+#         length, batch_size, input_size
+#     ]
+
+#     model_shapes = [
+#         input_size, hidden_size, num_layers
+#     ]
+
+#     module = _make_module(model_shapes, h_0_shapes, c_0_shapes)
+
+#     runner = OnnxTestRunner(request.node.name)
+#     model_file = runner.from_torch(module, inputs_shapes)
+#     runner.run(model_file)
 
 
 if __name__ == "__main__":

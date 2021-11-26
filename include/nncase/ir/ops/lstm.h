@@ -28,9 +28,9 @@ public:
     input_connector &b_xc() { return input_at(2); }
     input_connector &w_rc() { return input_at(3); }
     input_connector &b_rc() { return input_at(4); }
-    input_connector &w_static() { return input_at(5); }
-    input_connector &initial_h() { return input_at(6); }
-    input_connector &initial_c() { return input_at(7); }
+    input_connector &initial_h() { return input_at(5); }
+    input_connector &initial_c() { return input_at(6); }
+    input_connector &w_static() { return input_at(7); }
     output_connector &output() { return output_at(0); }
 
     int32_t num_output() const noexcept { return num_output_; }

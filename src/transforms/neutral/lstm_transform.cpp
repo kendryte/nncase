@@ -86,13 +86,15 @@ output_connector *local_tanh(output_connector *x, transform_context &context, st
 
 bool lstm_transform::on_try_match(node &node, transform_context &context)
 {
-    constant *w_xc, *b_xc, *w_rc, *b_rc;
+    constant *w_xc, *b_xc, *w_rc, *b_rc, *init_h, *init_c;
     if (auto old_lstm = node_cast<lstm>(node))
     {
         if ((w_xc = try_get_direct_parent<constant>(*old_lstm, 1))
             && (b_xc = try_get_direct_parent<constant>(*old_lstm, 2))
             && (w_rc = try_get_direct_parent<constant>(*old_lstm, 3))
-            && (b_rc = try_get_direct_parent<constant>(*old_lstm, 4)))
+            && (b_rc = try_get_direct_parent<constant>(*old_lstm, 4))
+            && (init_h = try_get_direct_parent<constant>(*old_lstm, 5))
+            && (init_c = try_get_direct_parent<constant>(*old_lstm, 6)))
         {
             context.inputs.emplace_back(&old_lstm->input());
             context.inputs.emplace_back(&old_lstm->w_xc());
@@ -105,9 +107,11 @@ bool lstm_transform::on_try_match(node &node, transform_context &context)
             context.matched_nodes.emplace_back(b_xc);
             context.matched_nodes.emplace_back(w_rc);
             context.matched_nodes.emplace_back(b_rc);
+            context.matched_nodes.emplace_back(init_h);
+            context.matched_nodes.emplace_back(init_c);
             if (old_lstm->has_static())
             {
-                if (auto w_static = try_get_direct_parent<constant>(*old_lstm, 5))
+                if (auto w_static = try_get_direct_parent<constant>(*old_lstm, 7))
                 {
                     context.inputs.emplace_back(&old_lstm->input());
                     context.matched_nodes.emplace_back(w_static);
@@ -137,6 +141,8 @@ void lstm_transform::process(transform_context &context)
     auto &b_xc = static_cast<constant &>(*context.matched_nodes[2]);
     auto &w_rc = static_cast<constant &>(*context.matched_nodes[3]);
     auto &b_rc = static_cast<constant &>(*context.matched_nodes[4]);
+    auto &init_h = static_cast<constant &>(*context.matched_nodes[5]);
+    auto &init_c = static_cast<constant &>(*context.matched_nodes[6]);
 
     //weights bitcast去掉directions
     auto bitc_wxc = context.graph.emplace<bitcast>(dt_float32, w_xc.output().shape(), shape_t { w_xc.output().shape()[1], w_xc.output().shape()[2] });
@@ -174,10 +180,12 @@ void lstm_transform::process(transform_context &context)
     tp_wrc->input().connect(bitc_wrc->output());
 
     std::vector<float> constant_data((int)bitcast_wxc_post->output().shape()[1] * (int)bitcast_wxc_post->output().shape()[2] / 4, 0.f);
-    auto c_0 = context.graph.emplace<constant>(dt_float32, shape_t { 1, bitcast_wxc_post->output().shape()[1], bitcast_wxc_post->output().shape()[2] / 4 }, constant_data);
-    auto h_0 = context.graph.emplace<constant>(dt_float32, shape_t { 1, bitcast_wxc_post->output().shape()[1], bitcast_wxc_post->output().shape()[2] / 4 }, constant_data);
+    auto c_0 = context.graph.emplace<bitcast>(dt_float32, init_c.output().shape(), shape_t { 1, bitcast_wxc_post->output().shape()[1], bitcast_wxc_post->output().shape()[2] / 4 });
+    auto h_0 = context.graph.emplace<bitcast>(dt_float32, init_h.output().shape(), shape_t { 1, bitcast_wxc_post->output().shape()[1], bitcast_wxc_post->output().shape()[2] / 4 });
     c_0->name(old_lstm.name() + "_c_0");
     h_0->name(old_lstm.name() + "_h_0");
+    c_0->input().connect(init_c.output());
+    h_0->input().connect(init_h.output());
     auto c_ = &c_0->output();
     auto h_ = &h_0->output();
 
