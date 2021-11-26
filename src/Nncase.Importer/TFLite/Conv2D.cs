@@ -5,6 +5,7 @@ using System;
 using System.IO;
 using System.Linq;
 using Nncase.IR;
+using Nncase.IR.Tensors;
 using F = Nncase.IR.F;
 using TensorType = tflite.TensorType;
 using Tuple = Nncase.IR.Tuple;
@@ -80,7 +81,10 @@ namespace Nncase.Importer.TFLite
             var effectiveFilterSize = ((filter - 1) * dilation) + 1;
             var falseBranch = ceilMode
                 ? ((size - effectiveFilterSize + stride) / stride)
-                : F.Math.Ceil((size - effectiveFilterSize + stride) / stride);
+                : F.Tensors.Cast(F.Math.Ceil(
+                    F.Tensors.Cast((size - effectiveFilterSize + stride), DataType.Float32) / 
+                    F.Tensors.Cast(stride, DataType.Float32)),
+                    DataType.Int32);
             var trueBranch = (size + stride - 1) / stride;
             return same ? trueBranch : falseBranch;
         }
