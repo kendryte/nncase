@@ -27,6 +27,7 @@
     <ProjectReference Include="..\Nncase.Core\Nncase.Core.csproj" />
     <ProjectReference Include="..\Nncase.IR\Nncase.IR.csproj" />
     <ProjectReference Include="..\Nncase.Pattern\Nncase.Pattern.csproj" />
+    <ProjectReference Include="..\Nncase.Evaluator\Nncase.Evaluator.csproj" />
   </ItemGroup>
 
   <ItemGroup>
