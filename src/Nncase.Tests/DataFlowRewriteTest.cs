@@ -184,7 +184,6 @@ namespace Nncase.Tests
             var runOptions = new RunPassOptions(null, 3, "../../../tests_output/TestComplexFoldConstCall");
             var pF = new Function(padding, input);
             TypeInference.InferenceType(padding);
-            var foldPaddings = new ShapeInferPass().Run(pF, runOptions);
             // TypeInference.InferenceType(fold_padding);
             //
             // IRPrinter.DumpFunctionAsIL(Path.Combine("tests_output/TestConstXmul1", "Test"), new Function(padding, input), "Before");
@@ -194,11 +193,12 @@ namespace Nncase.Tests
             var conv = NN.Conv2D(NHWCToNCHW(input), NHWCToNCHW(weights), bias, stride, padding,
                 dilation,
                 PadMode.Constant, 1);
-
-            var convPost = RunShapeInferPass(conv);
-            Assert.True(TypeInference.InferenceType(convPost));
-            
             var convAfterTranspose = NCHWToNHWC(Clamp(conv, 0, 1));
+
+            var postConvAfterTranspose = RunShapeInferPass(convAfterTranspose);
+            Assert.True(TypeInference.InferenceType(postConvAfterTranspose));
+            Assert.Equal(new Shape(1, 240, 320, 16), postConvAfterTranspose.CheckedShape);
+            
             var mul = Binary(BinaryOp.Mul, 1, convAfterTranspose);
             var max = Binary(BinaryOp.Max, convAfterTranspose, mul);
             Assert.True(TypeInference.InferenceType(mul));
@@ -209,9 +209,10 @@ namespace Nncase.Tests
             var rPadH = TFLiteImporter.GetWindowedPadding(rInH, 2, 2, dilationH, true);
             var rPadW = TFLiteImporter.GetWindowedPadding(rInW, 2, 2, dilationW, true);
             var rPadding = Util.ConcatPadding(rPadH, rPadW);
-            var reduce = ReduceWindow2D(ReduceOp.Max, max, initValue, doubleV, doubleV, rPadding, dilation);
+            var reduce = NCHWToNHWC(ReduceWindow2D(ReduceOp.Max, NHWCToNCHW(max), initValue, doubleV, doubleV, rPadding, dilation));
             var post = RunShapeInferPass(reduce);
             Assert.True(TypeInference.InferenceType(post));
+            Assert.Equal(new Shape(1, 120, 160, 16), post.CheckedShape);
         }
     }
 }
