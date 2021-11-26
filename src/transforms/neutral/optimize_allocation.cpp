@@ -337,7 +337,6 @@ void alias_slice_buffer_pass::run_core(graph &graph, [[maybe_unused]] nncase::ta
                 auto &out_buf = context.logical_buffer_map().at(&s->output());
 
                 size_t offset = ir::get_bytes(in_buf->type()) * xt::element_offset<size_t>(to_strides(s->input().shape()), s->begin().begin(), s->begin().end());
-
                 out_buf->parent() = { in_buf, offset, s->output().shape() };
                 out_buf->strides_shape() = s->input().shape();
                 out_buf->memory_location() = in_buf->memory_location();
