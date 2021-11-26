@@ -158,7 +158,10 @@ namespace Nncase.IR
 
         public int Count => ((IReadOnlyCollection<Dimension>)_dimensions).Count;
 
-        public Dimension this[int index] => ((IReadOnlyList<Dimension>)_dimensions)[index];
+        public Dimension this[int index] => 
+            index >= 0 
+                ? ((IReadOnlyList<Dimension>)_dimensions)[index] 
+                : ((IReadOnlyList<Dimension>)_dimensions)[Rank + index];
 
         /// <summary>
         /// Get Pord

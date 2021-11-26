@@ -37,6 +37,16 @@ namespace Nncase.Tests.ReWrite
             Directory.CreateDirectory(dumpDir);
             passOptions = new RunPassOptions(null, 3, dumpDir);
         }
+        
+        public Expr RunShapeInferPass(Expr expr, params Expr[] parameters)
+        {
+            var f = new Function(expr, parameters);
+            TypeInference.InferenceType(f);
+            return new ShapeInferPass().Run(f, passOptions.SetName("RunShapeInferPass")).Body;
+        }
+        
+        public Expr ApplyFoldConstCallRewrite(Expr expr) =>
+            DataFlowRewrite.Rewrite(expr, new Transform.DataFlow.Rules.FoldConstCall());
     }
 
     public interface IRewriteCase

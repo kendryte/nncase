@@ -21,6 +21,7 @@ using Nncase.Evaluator;
 using Nncase.Importer.TFLite;
 using Nncase.IR.F;
 using Nncase.IR.NN;
+using Nncase.Tests.ReWrite;
 using Nncase.Transform.DataFlow.Rules;
 using Nncase.Transform.Rule;
 using Binary = Nncase.IR.Math.Binary;
@@ -54,7 +55,7 @@ namespace Nncase.Tests
 
     }
 
-    public class UnitTestDataFlowRewrite
+    public class UnitTestDataFlowRewrite : RewriteTest
     {
         [Fact]
         public void TestSwapXY()
@@ -74,11 +75,9 @@ namespace Nncase.Tests
             var pre = ShapeOp(lhs + rhs);
             TypeInference.InferenceType(pre);
             var post = DataFlowRewrite.Rewrite(pre, new Transform.DataFlow.Rules.FoldShapeOp());
-            Assert.Equal(new[] {1, 6, 3}, ExprToArray<int>(post));
+            Assert.Equal(new[] {1, 6, 3}, post.ToTensor<int>().ToArray());
         }
-
-        public Expr ApplyFoldConstCallRewrite(Expr expr) =>
-            DataFlowRewrite.Rewrite(expr, new Transform.DataFlow.Rules.FoldConstCall());
+        
         [Fact]
         public void TestFoldConstCall()
         {
@@ -101,12 +100,6 @@ namespace Nncase.Tests
             Assert.IsType<Const>(post);
             Assert.Equal(torch.cat(new[] { lhs, rhs }, 1), Evaluator.Evaluator.Eval(post));
         }
-
-        public T ExprToScalar<T>(Expr expr) where T : unmanaged => (expr as Const).ToScalar<T>();
-
-        public T Dim1ExprToScalar<T>(Expr expr) where T : unmanaged => ExprToArray<T>(expr)[0];
-        
-        public T[] ExprToArray<T>(Expr expr) where T : unmanaged => (expr as Const).ToTensor<T>().ToArray();
         
         [Fact]
         public void TestFoldConstCallType()
@@ -119,7 +112,7 @@ namespace Nncase.Tests
             Assert.True(TypeInference.InferenceType(post));
             Assert.Equal(expr.CheckedType, post.CheckedType);
             var res = 1 * 2 + 3;
-            Assert.Equal(ExprToScalar<int>(post), res);
+            Assert.Equal(post.ToScalar<int>(), res);
             
             var cast_to_i64 = Cast(expr, DataType.Int64);
             Assert.True(TypeInference.InferenceType(cast_to_i64));
@@ -129,23 +122,17 @@ namespace Nncase.Tests
             
             var cat = Stack(new Tuple(cast_to_i32, cast_to_i32), 0);
             Assert.True(TypeInference.InferenceType(cat));
+            var old_dtype = cat.CheckedDataType;
             var after_cat = ApplyFoldConstCallRewrite(cat);
             
             Assert.Equal(
                 (after_cat as Const).ToTensor<int>().ToArray(),
                 new[] {res, res});
+            Assert.Equal(old_dtype, after_cat.CheckedDataType);
         }
 
-        public Expr RunShapeInferPass(Expr expr, params Expr[] parameters)
-        {
-            var runOptions = new RunPassOptions(null, 3, "../../../tests_output/TestComplexFoldConstCall");
-            var f = new Function(expr, parameters);
-            TypeInference.InferenceType(f);
-            return new ShapeInferPass().Run(f, runOptions).Body;
-        }
-        
         [Fact]
-        public void TestFoldPaddingCompute()
+        public void TestRewriteSameAsShapeInferPass()
         {
             var input = new Var("input", new TensorType(DataType.Int32, new Shape(new[] {1, 3, 240, 320})));
             Assert.True(TypeInference.InferenceType(input));
@@ -154,16 +141,38 @@ namespace Nncase.Tests
                 new PatternRule[]{ new Transform.DataFlow.Rules.FoldShapeOp()});
             var shapePass = RunShapeInferPass(computeShape, input);
             Assert.Equal(shapeRewrite, shapePass);
-            
+        }
+    }
+
+    public class DataFlowRewriteAndInferIntegrateTest : RewriteTest
+    {
+        public T Dim1ExprToScalar<T>(Expr expr) where T : unmanaged => (expr as Const).ToTensor<T>().ToArray()[0];
+
+        [Fact]
+        public void TestPaddingCompute()
+        {
+            var input = new Var("input", new TensorType(DataType.Int32, new Shape(1, 3, 240, 320)));
+            var weights = Const.FromSpan<int>(Enumerable.Range(0, 3 * 3 * 3 * 16).ToArray(), new Shape(new[] { 16, 3, 3, 3 }));
             var (inH, inW) = Util.GetHW(input);
-            var inHExprAfterFold = RunShapeInferPass(inH, input);
-            var inWExprAfterFold = RunShapeInferPass(inW, input);
-            Assert.Equal(240, Dim1ExprToScalar<int>(inHExprAfterFold));
-            Assert.Equal(320, Dim1ExprToScalar<int>(inWExprAfterFold));
+            var (fH, fW) = Util.GetHW(weights);
+            var inHPost = RunShapeInferPass(inH);
+            var inWPost = RunShapeInferPass(inW);
+            Assert.Equal(240, Dim1ExprToScalar<int>(inHPost));
+            Assert.Equal(320, Dim1ExprToScalar<int>(inWPost));
+            var strideH = 1;
+            var strideW = 1;
+            var dilationH = 1;
+            var dilationW = 1;
+            var padH = TFLiteImporter.GetWindowedPadding(inH, fH, strideH, dilationH, true);
+            var padW = TFLiteImporter.GetWindowedPadding(inW, fW, strideW, dilationW, true);
+            var padding = Util.ConcatPadding(padH, padW);
+            Assert.True(TypeInference.InferenceType(padding));
+            var paddingPost = RunShapeInferPass(padding, input);
+            Assert.True(paddingPost is Const);
         }
         
         [Fact]
-        public void TestComplexFoldConstCall()
+        public void TestYolo20MinStructure()
         {
             var input = new Var("input", new TensorType(DataType.Int32, new Shape(new[] { 1, 240, 320, 3 })));
             var weights = Const.FromSpan<int>(Enumerable.Range(0, 3 * 3 * 3 * 16).ToArray(), new Shape(new[] { 16, 3, 3, 3 }));
@@ -180,16 +189,6 @@ namespace Nncase.Tests
             var dilation = Const.FromSpan<int>(new[] { dilationH, dilationW }, new[] { 2 });
             var padding = Util.ConcatPadding(padH, padW);
 
-
-            var runOptions = new RunPassOptions(null, 3, "../../../tests_output/TestComplexFoldConstCall");
-            var pF = new Function(padding, input);
-            TypeInference.InferenceType(padding);
-            // TypeInference.InferenceType(fold_padding);
-            //
-            // IRPrinter.DumpFunctionAsIL(Path.Combine("tests_output/TestConstXmul1", "Test"), new Function(padding, input), "Before");
-            // IRPrinter.DumpFunctionAsIL(Path.Combine("tests_output/TestConstXmul1", "Test"), new Function(fold_padding, input), "After");
-            //
-            
             var conv = NN.Conv2D(NHWCToNCHW(input), NHWCToNCHW(weights), bias, stride, padding,
                 dilation,
                 PadMode.Constant, 1);
@@ -202,8 +201,9 @@ namespace Nncase.Tests
             var mul = Binary(BinaryOp.Mul, 1, convAfterTranspose);
             var max = Binary(BinaryOp.Max, convAfterTranspose, mul);
             Assert.True(TypeInference.InferenceType(mul));
-            var doubleV = Const.FromSpan<int>(new[] { 2, 2 }, new[] { 2 });
             
+            // ReduceWindow2D
+            var doubleV = Const.FromSpan<int>(new[] { 2, 2 }, new[] { 2 });
             var initValue = (Const) 0;
             var (rInH, rInW) = Util.GetHW(max);
             var rPadH = TFLiteImporter.GetWindowedPadding(rInH, 2, 2, dilationH, true);
