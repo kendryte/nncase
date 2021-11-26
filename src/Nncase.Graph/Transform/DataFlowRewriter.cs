@@ -33,7 +33,10 @@ namespace Nncase.Transform
                         visitor.Clear();
                         post = visitor.Visit(last);
                         if (visitor.isMatched)
+                        {
+                            TypeInference.InferenceType(post);
                             break;
+                        }
                     }
                     if (visitor.isMatched)
                         break;
