@@ -74,4 +74,29 @@ namespace Nncase.IR
         }
     }
 
+    public static class ExprExtension
+    {
+        /// call these function when you make sure you understand
+        /// that expr is what you want, although it will check
+        public static T ToScalar<T>(this Expr expr)
+            where T : unmanaged => expr switch
+        {
+            // todo:print more expr info
+            Const c => c.CheckedShape.IsScalar
+                ? c.ToScalar<T>()
+                : throw new InvalidOperationException("Expr is not a scalar"),
+            _ => throw new InvalidOperationException("Expr is not a Const"),
+        };
+        
+        public static DenseTensor<T> ToTensor<T>(this Expr expr)
+            where T : unmanaged => expr switch
+        {
+            // todo:print more expr info
+            Const c => c.CheckedShape.IsScalar && c.CheckedShape.IsFixed 
+                ? c.ToTensor<T>()
+                : throw new InvalidOperationException("Expr is not a fixed shape tensor"),
+            _ => throw new InvalidOperationException("Expr is not a Const"),
+        };
+    }
+
 }
