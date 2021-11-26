@@ -103,8 +103,10 @@ namespace Nncase.Tests
         }
 
         public T ExprToScalar<T>(Expr expr) where T : unmanaged => (expr as Const).ToScalar<T>();
+
+        public T Dim1ExprToScalar<T>(Expr expr) where T : unmanaged => ExprToArray<T>(expr)[0];
         
-        public Array ExprToArray<T>(Expr expr) where T : unmanaged => (expr as Const).ToTensor<T>().ToArray();
+        public T[] ExprToArray<T>(Expr expr) where T : unmanaged => (expr as Const).ToTensor<T>().ToArray();
         
         [Fact]
         public void TestFoldConstCallType()
@@ -149,19 +151,15 @@ namespace Nncase.Tests
             Assert.True(TypeInference.InferenceType(input));
             var computeShape = ShapeOp(input);
             var shapeRewrite = DataFlowRewrite.Rewrite(computeShape, 
-                new PatternRule[]{ new Transform.DataFlow.Rules.FoldShapeOp(),
-                        new Transform.DataFlow.Rules.FoldConstFunction(),
-                        new Transform.DataFlow.Rules.FoldConstCall()});
+                new PatternRule[]{ new Transform.DataFlow.Rules.FoldShapeOp()});
             var shapePass = RunShapeInferPass(computeShape, input);
             Assert.Equal(shapeRewrite, shapePass);
+            
             var (inH, inW) = Util.GetHW(input);
-            var hExpr = Util.ShapeIndex(ShapeOp(input), 2);
-            var hExprAfterFold = RunShapeInferPass(hExpr, input);
-            // Assert.Equal(240, ExprToScalar<int>(hExprAfterFold));
-            // var inHExprAfterFold = RunShapeInferPass(inH, input);
-            // var inWExprAfterFold = RunShapeInferPass(inW, input);
-            // Assert.Equal(240, ExprToScalar<int>(inHExprAfterFold));
-            // Assert.Equal(320, ExprToScalar<int>(inWExprAfterFold));
+            var inHExprAfterFold = RunShapeInferPass(inH, input);
+            var inWExprAfterFold = RunShapeInferPass(inW, input);
+            Assert.Equal(240, Dim1ExprToScalar<int>(inHExprAfterFold));
+            Assert.Equal(320, Dim1ExprToScalar<int>(inWExprAfterFold));
         }
         
         [Fact]
@@ -186,7 +184,7 @@ namespace Nncase.Tests
             var runOptions = new RunPassOptions(null, 3, "../../../tests_output/TestComplexFoldConstCall");
             var pF = new Function(padding, input);
             TypeInference.InferenceType(padding);
-            var fold_padding = new ShapeInferPass().Run(pF, runOptions);
+            var foldPaddings = new ShapeInferPass().Run(pF, runOptions);
             // TypeInference.InferenceType(fold_padding);
             //
             // IRPrinter.DumpFunctionAsIL(Path.Combine("tests_output/TestConstXmul1", "Test"), new Function(padding, input), "Before");
@@ -196,10 +194,14 @@ namespace Nncase.Tests
             var conv = NN.Conv2D(NHWCToNCHW(input), NHWCToNCHW(weights), bias, stride, padding,
                 dilation,
                 PadMode.Constant, 1);
-            var tr = NCHWToNHWC(Clamp(conv, 0, 1));
-            var bn = Binary(BinaryOp.Mul, 1, tr);
-            var max = Binary(BinaryOp.Max, conv, bn);
-            Assert.True(TypeInference.InferenceType(bn));
+
+            var convPost = RunShapeInferPass(conv);
+            Assert.True(TypeInference.InferenceType(convPost));
+            
+            var convAfterTranspose = NCHWToNHWC(Clamp(conv, 0, 1));
+            var mul = Binary(BinaryOp.Mul, 1, convAfterTranspose);
+            var max = Binary(BinaryOp.Max, convAfterTranspose, mul);
+            Assert.True(TypeInference.InferenceType(mul));
             var doubleV = Const.FromSpan<int>(new[] { 2, 2 }, new[] { 2 });
             
             var initValue = (Const) 0;
@@ -208,9 +210,7 @@ namespace Nncase.Tests
             var rPadW = TFLiteImporter.GetWindowedPadding(rInW, 2, 2, dilationW, true);
             var rPadding = Util.ConcatPadding(rPadH, rPadW);
             var reduce = ReduceWindow2D(ReduceOp.Max, max, initValue, doubleV, doubleV, rPadding, dilation);
-            var f = new Function(reduce, input);
-            TypeInference.InferenceType(f);
-            var post = new ShapeInferPass().Run(f,  runOptions);
+            var post = RunShapeInferPass(reduce);
             Assert.True(TypeInference.InferenceType(post));
         }
     }

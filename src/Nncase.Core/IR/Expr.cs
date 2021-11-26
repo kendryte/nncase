@@ -25,14 +25,14 @@ namespace Nncase.IR
         public virtual Shape CheckedShape => CheckedType switch
         {
             TensorType type => type.Shape,
-            _ => Shape.Invalid
+            _ => throw new InvalidOperationException("Only The Expr Have CheckedType Can Get It's Shape")
         };
 
         public DataType CheckedDataType => CheckedType switch
         {
             // todo:more info
             TensorType type => type.DType,
-            _ =>  DataType.Invalid
+            _ => throw new InvalidOperationException("Expr don't have a valid tensor type")
         };
         
         public virtual int Rank => CheckedShape.Rank;
