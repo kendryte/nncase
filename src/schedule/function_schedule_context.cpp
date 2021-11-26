@@ -132,7 +132,7 @@ void function_schedule_context::generate_compute_sequence()
     auto alloc_visitor = make_relay_ir_visitor([&](node &node) {
         if (node.runtime_opcode() == op_input_node)
             used_inputs.emplace(&node);
-        else if (node.attributes() & node_attr_action)
+        else if (mod_sched_.model_sched().skip_buffer_alias() || (node.attributes() & node_attr_action))
             compute_sequence.emplace_back(&node);
     });
 
