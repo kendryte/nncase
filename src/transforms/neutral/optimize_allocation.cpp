@@ -60,9 +60,8 @@ void make_slice_no_action_pass::run_core(graph &graph, [[maybe_unused]] nncase::
     auto alias_visitor = make_relay_ir_visitor([&](node &node) {
         if (auto s = node_cast<slice>(node))
         {
-            auto &strides = s->strides();
             if ((s->attributes() & node_attr_action)
-                && std::all_of(strides.begin(), strides.end(), [](int32_t stride) { return stride == 1; }))
+                && is_simple_slice(s->begin(), s->end(), s->strides(), s->input().shape()))
             {
                 auto &out = s->output();
                 out.attributes(out.attributes() | cnctr_attr_buffer_slice | cnctr_attr_no_layout_strides | cnctr_attr_no_buffer_fusion);
