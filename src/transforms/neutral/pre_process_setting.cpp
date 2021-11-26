@@ -105,45 +105,48 @@ void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::targ
              * input_type:  pad value different 
              *  //input_range:{min, max} caculate pad value //uint8 pad 114, float pad min+(max-min)*(114/255)
              **/
-            if (!new_shape.empty() && in_node->output().shape() != new_shape)
+            if (input_shape_.size() != 0)
             {
-                std::cout << " |Letterbox:" << std::endl;
-                size_t model_h;
-                size_t model_w;
-                if (real_inlayout_ == "NHWC")
+                if (!new_shape.empty() && in_node->output().shape() != new_shape)
                 {
-                    model_h = in_node->output().shape()[1];
-                    model_w = in_node->output().shape()[2];
+                    std::cout << " |Letterbox:" << std::endl;
+                    size_t model_h;
+                    size_t model_w;
+                    if (real_inlayout_ == "NHWC")
+                    {
+                        model_h = in_node->output().shape()[1];
+                        model_w = in_node->output().shape()[2];
+                    }
+                    else
+                    {
+                        model_h = in_node->output().shape()[2];
+                        model_w = in_node->output().shape()[3];
+                    }
+
+                    auto H = mid_ptr->shape()[2];
+                    auto W = mid_ptr->shape()[3];
+
+                    float ratio = std::min(model_h / float(H), model_w / float(W));
+                    std::vector<padding> pad_size { 4, padding { 0, 0 } };
+                    auto resize_H = std::round(H * ratio);
+                    auto resize_W = std::round(W * ratio);
+
+                    int pad_H = model_h - resize_H;
+                    int pad_W = model_w - resize_W;
+                    std::array<int32_t, 2> resize_shape { (int32_t)resize_H, (int32_t)resize_W };
+
+                    pad_size[2] = { int(std::round(pad_H / 2 - 0.1)), pad_H - int(std::round(pad_H / 2 - 0.1)) };
+                    pad_size[3] = { int(std::round(pad_W / 2 - 0.1)), pad_W - int(std::round(pad_W / 2 - 0.1)) };
+
+                    scalar pad_value = letterbox_value_;
+                    auto input_resize = graph.emplace<resize_image>(mid_ptr->type(), image_resize_bilinear, mid_ptr->shape(), resize_shape, false, true);
+                    auto letter_box_pad = graph.emplace<pad>(input_resize->output().type(), input_resize->output().shape(), pad_size, pad_constant, pad_value);
+                    input_resize->name("letterbox_resize");
+                    letter_box_pad->name("letterbox_pad");
+                    input_resize->input().connect(*mid_ptr);
+                    letter_box_pad->input().connect(input_resize->output());
+                    mid_ptr = &letter_box_pad->output();
                 }
-                else
-                {
-                    model_h = in_node->output().shape()[2];
-                    model_w = in_node->output().shape()[3];
-                }
-
-                auto H = mid_ptr->shape()[2];
-                auto W = mid_ptr->shape()[3];
-
-                float ratio = std::min(model_h / float(H), model_w / float(W));
-                std::vector<padding> pad_size { 4, padding { 0, 0 } };
-                auto resize_H = std::round(H * ratio);
-                auto resize_W = std::round(W * ratio);
-
-                int pad_H = model_h - resize_H;
-                int pad_W = model_w - resize_W;
-                std::array<int32_t, 2> resize_shape { (int32_t)resize_H, (int32_t)resize_W };
-
-                pad_size[2] = { int(std::round(pad_H / 2 - 0.1)), pad_H - int(std::round(pad_H / 2 - 0.1)) };
-                pad_size[3] = { int(std::round(pad_W / 2 - 0.1)), pad_W - int(std::round(pad_W / 2 - 0.1)) };
-
-                scalar pad_value = letterbox_value_;
-                auto input_resize = graph.emplace<resize_image>(mid_ptr->type(), image_resize_bilinear, mid_ptr->shape(), resize_shape, false, true);
-                auto letter_box_pad = graph.emplace<pad>(input_resize->output().type(), input_resize->output().shape(), pad_size, pad_constant, pad_value);
-                input_resize->name("letterbox_resize");
-                letter_box_pad->name("letterbox_pad");
-                input_resize->input().connect(*mid_ptr);
-                letter_box_pad->input().connect(input_resize->output());
-                mid_ptr = &letter_box_pad->output();
             }
 
             //normalize : mean scale input_layout

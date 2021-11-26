@@ -232,11 +232,10 @@ class TestRunner(metaclass=ABCMeta):
         # letter box
         process_letterbox = {}
         process_letterbox['input_range'] = config['input_range']
-        process_letterbox['input_shape'] = config['input_shape']
         process_letterbox['model_shape'] = self.inputs[0]['model_shape'] if self.inputs else config['input_shape']
         process_letterbox['input_type'] = config['input_type']
+        process_letterbox['input_shape'] = config['input_shape'] if config['input_shape'] != [] else process_letterbox['model_shape']
         process_letterbox['letterbox_value'] = config['letterbox_value']
-
         # norm
         process_norm = {}
         data = {}
@@ -293,29 +292,30 @@ class TestRunner(metaclass=ABCMeta):
 
                 # LetterBox
                 if 'input_range' in item.keys() and 'input_shape' in item.keys() and 'model_shape' in item.keys():
-                    model_shape: List = []
-                    if self.model_type == "onnx" or self.model_type == "caffe":
-                        model_shape = [1, item['model_shape'][2],
-                                       item['model_shape'][3], item['model_shape'][1]]
-                    else:
-                        model_shape = item['model_shape']
-                    if model_shape[1] != data.shape[1] or model_shape[2] != data.shape[2]:
-                        in_h, in_w = data.shape[1], data.shape[2]
-                        model_h, model_w = model_shape[1], model_shape[2]
-                        ratio = min(model_h / in_h, model_w / in_w)
-                        resize_shape = data.shape[0], round(in_h * ratio), round(in_w * ratio), 3
-                        resize_data = cv2.resize(data[0], (resize_shape[2],
-                                                           resize_shape[1]), interpolation=cv2.INTER_LINEAR)
-                        dh = model_shape[1] - resize_shape[1]
-                        dw = model_shape[2] - resize_shape[2]
-                        dh /= 2
-                        dw /= 2
-                        resize_data = np.array(resize_data, dtype=np.float32)
-                        data = cv2.copyMakeBorder(resize_data, round(dh - 0.1), round(model_h - resize_shape[1] - round(dh - 0.1)), round(dw - 0.1), round(
-                            model_w - resize_shape[2] - round(dw - 0.1)), cv2.BORDER_CONSTANT, value=(item['letterbox_value'], item['letterbox_value'], item['letterbox_value']))
+                    if item['input_shape'] != []:
+                        model_shape: List = []
+                        if self.model_type == "onnx" or self.model_type == "caffe":
+                            model_shape = [1, item['model_shape'][2],
+                                           item['model_shape'][3], item['model_shape'][1]]
+                        else:
+                            model_shape = item['model_shape']
+                        if model_shape[1] != data.shape[1] or model_shape[2] != data.shape[2]:
+                            in_h, in_w = data.shape[1], data.shape[2]
+                            model_h, model_w = model_shape[1], model_shape[2]
+                            ratio = min(model_h / in_h, model_w / in_w)
+                            resize_shape = data.shape[0], round(in_h * ratio), round(in_w * ratio), 3
+                            resize_data = cv2.resize(data[0], (resize_shape[2],
+                                                               resize_shape[1]), interpolation=cv2.INTER_LINEAR)
+                            dh = model_shape[1] - resize_shape[1]
+                            dw = model_shape[2] - resize_shape[2]
+                            dh /= 2
+                            dw /= 2
+                            resize_data = np.array(resize_data, dtype=np.float32)
+                            data = cv2.copyMakeBorder(resize_data, round(dh - 0.1), round(model_h - resize_shape[1] - round(dh - 0.1)), round(dw - 0.1), round(
+                                model_w - resize_shape[2] - round(dw - 0.1)), cv2.BORDER_CONSTANT, value=(item['letterbox_value'], item['letterbox_value'], item['letterbox_value']))
 
-                        data = np.array(data, dtype=np.float32)
-                        data = np.expand_dims(data, 0)
+                            data = np.array(data, dtype=np.float32)
+                            data = np.expand_dims(data, 0)
 
                 # Normalize
                 if 'norm' in item.keys():
@@ -578,7 +578,7 @@ class TestRunner(metaclass=ABCMeta):
         compile_options.quant_type = cfg.compile_opt.quant_type
         compile_options.w_quant_type = cfg.compile_opt.w_quant_type
         compile_options.swapRB = preprocess['swapRB']
-        compile_options.input_shape = preprocess['input_shape']
+        compile_options.input_shape = self.pre_process[3]['input_shape'] if self.pre_process[3]['input_shape'] != [] else self.pre_process[3]['model_shape']
         compile_options.input_range = preprocess['input_range']
         compile_options.preprocess = preprocess['preprocess']
         compile_options.mean = preprocess['mean']
