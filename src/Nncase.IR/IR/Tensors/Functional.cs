@@ -54,7 +54,7 @@ namespace Nncase.IR.F
         public static Call ResizeImage(ImageResizeMode resizeMode, Expr input, Expr newSize, Expr alignCorners, Expr halfPixelCenters) => new Call(new ResizeImage(resizeMode), input, newSize, alignCorners, halfPixelCenters);
 
         public static Call ReduceWindow2D(ReduceOp reduceOp, Expr input, Expr initValue, Expr filter, Expr stride, Expr padding, Expr dilation) =>
-            new Call(new ReduceWindow2D(reduceOp), input, initValue, filter, stride, padding, dilation);
+            new Call(new ReduceWindow2D(reduceOp), input, initValue, filter, stride, padding, dilation, false);
 
         public static Call Reshape(Expr input, Expr shape) => new Call(new Reshape(), input, shape);
 

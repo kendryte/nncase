@@ -79,7 +79,7 @@ namespace Nncase.Importer.TFLite
         private static Expr GetWindowedOutputSize(Expr size, Expr filter, Expr stride, Expr dilation, bool same, bool ceilMode)
         {
             var effectiveFilterSize = ((filter - 1) * dilation) + 1;
-            var falseBranch = ceilMode
+            var falseBranch = !ceilMode
                 ? ((size - effectiveFilterSize + stride) / stride)
                 : F.Tensors.Cast(F.Math.Ceil(
                     F.Tensors.Cast((size - effectiveFilterSize + stride), DataType.Float32) / 

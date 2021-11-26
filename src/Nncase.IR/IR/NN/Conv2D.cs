@@ -74,9 +74,9 @@ namespace Nncase.IR.NN
                 var ts_dilation = dilation_con.ToTensor<int>();
                 var groups_v = groups_con.ToScalar<int>();
 
-                outshape[2] = GetWindowedOutputSize(input.Shape[2].FixedValue,
+                outshape[2] = GetWindowedOutputSize(input.Shape[2].FixedValue + ts_padding[0, 0] + ts_padding[0, 1],
                   weights.Shape[2].FixedValue, ts_stride[0], ts_dilation[0], false);
-                outshape[3] = GetWindowedOutputSize(input.Shape[3].FixedValue,
+                outshape[3] = GetWindowedOutputSize(input.Shape[3].FixedValue + ts_padding[1, 0] + ts_padding[1, 1],
                   weights.Shape[3].FixedValue, ts_stride[1], ts_dilation[1], false);
             }
             else

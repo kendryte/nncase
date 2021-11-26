@@ -119,7 +119,7 @@ namespace Nncase.IR
 
                 // 3. Dims before 1 are all same or 1 is not found, it's ok to broadcast
                 if ((firstOneIndex == -1 && inputDims.AsValueEnumerable().Distinct().Count() == 1) ||
-                    inputDims[..firstOneIndex].AsValueEnumerable().All(x => x == expectedDim))
+                    ((firstOneIndex != -1) && inputDims[..firstOneIndex].AsValueEnumerable().All(x => x == expectedDim)))
                 {
                     outputShape[dimIndex] = expectedDim;
                 }
