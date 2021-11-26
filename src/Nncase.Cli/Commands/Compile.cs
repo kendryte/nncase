@@ -69,6 +69,7 @@ namespace Nncase.Cli.Commands
                 InferShape(module, options);
             }
             DumpModule(module, options, "ir_infertype");
+            Console.WriteLine("Compile successful!");
         }
 
         public void InferShape(Module module, CompileOptions options)
