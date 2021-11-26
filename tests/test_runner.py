@@ -234,7 +234,7 @@ class TestRunner(metaclass=ABCMeta):
         process_letterbox['input_range'] = config['input_range']
         process_letterbox['model_shape'] = self.inputs[0]['model_shape'] if self.inputs else config['input_shape']
         process_letterbox['input_type'] = config['input_type']
-        process_letterbox['input_shape'] = config['input_shape'] if config['input_shape'] != [] else process_letterbox['model_shape']
+        process_letterbox['input_shape'] = config['input_shape']
         process_letterbox['letterbox_value'] = config['letterbox_value']
         # norm
         process_norm = {}
