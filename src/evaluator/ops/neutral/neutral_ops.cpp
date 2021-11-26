@@ -386,7 +386,7 @@ void register_neutral_evaluators()
         auto output_mem = output.buffer();
 
         kernels::slice(input.datatype(), input_mem.data(), output_mem.data(), input.shape(),
-            input.strides(), output.strides(), to(rnode.begin()), to(rnode.end()), to<int32_t>(rnode.strides()))
+            input.strides(), output.strides(), to(rnode.begin()), to<int32_t>(rnode.end()), to<int32_t>(rnode.strides()))
             .unwrap_or_throw();
     });
 
