@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.IO;
 
 namespace Nncase.Transform
 {
@@ -35,5 +36,7 @@ namespace Nncase.Transform
         public string PassName { private set; get; }
 
         public RunPassOptions SetName(string name) { PassName = name; return this; }
+
+        public string FullDumpDir { get => Path.Combine(DumpDir, PassName); }
     }
 }

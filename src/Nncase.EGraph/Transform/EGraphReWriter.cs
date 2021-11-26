@@ -37,7 +37,7 @@ namespace Nncase.Transform
                     }
                     if (options.DumpLevel > 1)
                         EGraphPrinter.DumpEgraphAsDot(eGraph, results,
-                         Path.Combine(options.DumpDir, options.PassName, "Matches", $"{rule.GetType().Name}_V{eGraph.Version}"));
+                         Path.Combine(options.DumpDir, options.PassName, "Matches", $"V{eGraph.Version}_{rule.GetType().Name}"));
                 }
                 foreach (var (rule, result) in matches)
                 {

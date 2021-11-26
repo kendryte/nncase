@@ -1,4 +1,6 @@
 using System;
+using System.Linq;
+using System.IO;
 using Xunit;
 using Nncase.Pattern;
 using Nncase.Transform;
@@ -12,8 +14,47 @@ using static Nncase.Pattern.F.Math;
 using static Nncase.Pattern.F.Tensors;
 using static Nncase.IR.Utility;
 
-namespace Nncase.Tests
+namespace Nncase.Tests.ReWrite
 {
+
+    public class EGraphMatchTestFactory : RewriteTest
+    {
+
+        public static IEnumerable<object[]> Data =>
+          new List<object[]>
+          {
+             new object[] {"FoldNopTransposeCase1", new FoldNopTransposeCase1().PreExpr, new Transform.Rule.FoldTranspose(), new[]{ 1} },
+          };
+
+        [Theory]
+        [MemberData(nameof(DataOne))]
+        public void RunOne(string Name, Expr Pre, PatternRule Rule, int[] targets) => RunCore(Name, Pre, Rule, targets);
+
+        public static IEnumerable<object[]> DataOne => Data.Take(1);
+
+        public void RunCore(string Name, Expr Pre, PatternRule Rule, int[] targets)
+        {
+            passOptions.SetName($"EGraphMatchTest/{Name}");
+            Assert.True(Pre.InferenceType());
+            var eGraph = new EGraph();
+            eGraph.Add(Pre, out var root);
+            EGraphPrinter.DumpEgraphAsDot(eGraph, Path.Combine(passOptions.FullDumpDir, $"pre"));
+            Pre.DumpExprAsIL("pre", passOptions.FullDumpDir);
+            foreach (var (pat, target) in Rule.Patterns.Zip(targets))
+            {
+                var results = EGraphMatcher.Match(eGraph, pat);
+                Assert.Equal(target, results.Count);
+                if (passOptions.DumpLevel > 1)
+                    EGraphPrinter.DumpEgraphAsDot(eGraph, results,
+                     Path.Combine(passOptions.FullDumpDir, $"V{eGraph.Version}"));
+            }
+        }
+
+        [Theory]
+        [MemberData(nameof(Data))]
+        public void RunAll(string Name, Expr Pre, PatternRule Rule, int[] targets) => RunCore(Name, Pre, Rule, targets);
+    }
+
     public class UnitTestGraphMatch
     {
 

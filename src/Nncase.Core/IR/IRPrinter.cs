@@ -51,6 +51,20 @@ namespace Nncase.IR
             return builder.ToString();
         }
 
+        public static void DumpExprAsIL(this Expr expr, string name, string dumpPath)
+        {
+            Directory.CreateDirectory(dumpPath);
+            using var dumpFile = File.Open($"{dumpPath}/{name}.il", FileMode.OpenOrCreate);
+            using var writer = new StreamWriter(dumpFile);
+            DumpExprAsIL(writer, expr);
+        }
+
+        public static string DumpTypeAsIL(this IRType type)
+        {
+            var visitor = new ILDumpVisitor(null);
+            return visitor.VisitType(type);
+        }
+
         private class ILDumpVisitor : ExprFunctor<string, string>
         {
             private readonly TextWriter _textWriter;

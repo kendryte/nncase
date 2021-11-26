@@ -14,6 +14,8 @@ using static Nncase.Pattern.Utility;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.Tensors;
 using static Nncase.IR.Utility;
+using Nncase.Evaluator;
+using TorchSharp;
 
 namespace Nncase.Transform.Rule
 {
@@ -88,15 +90,9 @@ namespace Nncase.Transform.Rule
         public static Const GetNewConst(Const oldCon, Const oldPerm)
         {
             var perm = oldPerm.ToTensor<int>();
-            var expand_dim = perm.Length - perm[(int)perm.Length - 1] - 1;
-            var shape = oldCon.CheckedShape.ToList();
-            if (shape[0] != 1)
-            {
-                for (int i = 0; i < expand_dim; i++)
-                    shape.Add(1);
-            }
-            var newShape = new Shape(shape);
-            return oldCon with { ValueType = oldCon.ValueType with { Shape = newShape } };
+            var new_perm = perm.Select((p, i) => (p, i)).OrderBy(k => k.p).Select(k => (long)k.i);
+            var ts = oldCon.ToTorchTensor();
+            return torch.permute(ts, new_perm.ToArray()).ToConst();
         }
     }
     /// <summary>

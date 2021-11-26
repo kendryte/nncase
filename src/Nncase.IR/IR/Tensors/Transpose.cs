@@ -36,7 +36,7 @@ namespace Nncase.IR.Tensors
                 var outShape = inShape.ToArray();
                 foreach (var i in Enumerable.Range(0, inShape.Rank))
                 {
-                    outShape[permt[i]] = inShape[i];
+                    outShape[i] = inShape[permt[i]];
                 }
                 return input with { Shape = outShape };
             }

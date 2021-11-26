@@ -1,16 +1,25 @@
 using Nncase;
 using Nncase.IR.Math;
 using Nncase.IR;
+using System.Linq;
+using System;
 
 namespace Nncase.CostModel
 {
     public sealed partial class ExprCostModelVisitor
     {
+        /// <summary>
+        /// Compute binary cost by broadcast rule, if can broadcast the min dimension will have more memory loctiaity, so arithm should reduce.
+        /// </summary>
+        /// <param name="binary"></param>
+        /// <returns></returns>
         private Cost VisitBinary(Binary binary)
         {
             // todo:broadcast
-            var type = _context.CurrentCallResultTensorType();
-            var arithm = type.Shape.Prod().FixedValue;
+            var lhs = _context.GetArgumentType(binary, Binary.Lhs) as TensorType;
+            var rhs = _context.GetArgumentType(binary, Binary.Rhs) as TensorType;
+            var arithm = Math.Min(lhs.Shape.Prod().FixedValue,
+                                  rhs.Shape.Prod().FixedValue);
             // var rhsValue = _context.GetArgumentConst(binary, Binary.Rhs);
             return new Cost(
                 binary.BinaryOp switch

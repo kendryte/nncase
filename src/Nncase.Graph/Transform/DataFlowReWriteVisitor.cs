@@ -6,13 +6,18 @@ using Nncase.IR;
 
 namespace Nncase.Transform
 {
-
+    /// <summary>
+    /// DataFlowReWriteVisitor. 
+    /// </summary>
     internal sealed class DataFlowReWriteVisitor : ExprVisitor<Expr, IRType>
     {
         public ExprPattern Pattern { set; get; } = new InvalidPattern();
 
         public PatternRule Rule { set; get; } = new InvalidRule();
 
+        /// <summary>
+        /// a flag for fast exit, we can use it to know this rewrite results.
+        /// </summary>
         public bool isMatched { private set; get; } = false;
 
         public override void Clear()
@@ -21,6 +26,11 @@ namespace Nncase.Transform
             base.Clear();
         }
 
+        /// <summary>
+        /// MatchCurExpr, in each node we try match pattern .
+        /// </summary>
+        /// <param name="expr"></param>
+        /// <returns></returns>
         private Expr MatchCurExpr(Expr expr)
         {
             var matchs = DataFlowMatcher.Match(expr, Pattern);
@@ -34,11 +44,13 @@ namespace Nncase.Transform
             return expr;
         }
 
+        /// <inheritdoc/>
         public override Expr DefaultVisitLeaf(Expr expr)
         {
             return MatchCurExpr(expr);
         }
 
+        /// <inheritdoc/>
         public override Expr VisitLeaf(Call expr)
         {
             if (!isMatched)
@@ -52,6 +64,7 @@ namespace Nncase.Transform
             };
         }
 
+        /// <inheritdoc/>
         public override Expr VisitLeaf(Function expr)
         {
             if (!isMatched)
@@ -65,6 +78,7 @@ namespace Nncase.Transform
             };
         }
 
+        /// <inheritdoc/>
         public override Expr VisitLeaf(Tuple expr)
         {
             if (!isMatched)

@@ -193,7 +193,7 @@ namespace Nncase.IR
 
         public override string ToString()
         {
-            string str = ValueType.DType.ToString();
+            string str = DataTypes.GetDisplayName(ValueType.DType);
             if (ValueType.IsScalar)
             {
                 if (DataTypes.IsIntegral(ValueType.DType))
@@ -210,6 +210,6 @@ namespace Nncase.IR
                 str += $" {ValueType.Shape}";
             }
             return str;
-        } 
+        }
     }
 }

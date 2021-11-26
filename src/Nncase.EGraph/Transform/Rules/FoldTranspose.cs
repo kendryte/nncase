@@ -29,7 +29,7 @@ namespace Nncase.Transform.Rule
             if (perm1.Rank == perm2.Rank)
             {
                 var perm = new DenseTensor<int>(perm1.Dimensions);
-                for (int i = 0; i < perm1.Rank; i++)
+                for (int i = 0; i < perm1.Length; i++)
                 {
                     perm[i] = perm1[perm2[i]];
                 }
@@ -51,7 +51,7 @@ namespace Nncase.Transform.Rule
         {
             tp.Bind(result);
             var perm = tp.Perm<Const>().ToTensor<int>();
-            if (Enumerable.Range(0, (int)tp.Input().CheckedShape.Rank).All(dim => perm[dim] == dim))
+            if (Enumerable.Range(0, (int)perm.Length).All(dim => perm[dim] == dim))
             {
                 return tp.Input();
             }

@@ -1,7 +1,9 @@
 using System;
 using Nncase;
+using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
+using System.Linq;
 
 namespace Nncase.CostModel
 {
@@ -10,8 +12,27 @@ namespace Nncase.CostModel
         private Cost VisitTranspose(Transpose transpose)
         {
             var type = _context.CurrentCallResultTensorType();
-            var arithm = type.Shape.Prod().FixedValue;
-            return new Cost(arithm, DataTypes.GetLength(type.DType));
+            var perm = _context.GetArgumentConst(transpose, Transpose.Perm).ToTensor<int>();
+            int arithm = -1;
+            foreach (var (i, p) in Enumerable.Range(0, (int)perm.Length).Zip(perm))
+            {
+                if (arithm != -1)
+                    break;
+                if (i == p)
+                    continue;
+                // find axis which transpose start. 
+                // the inner axis have more weights.
+                foreach (var j in Enumerable.Range(i + 1, (int)perm.Length))
+                {
+                    if (perm[j] == i)
+                    {
+                        arithm = type.Shape.Skip(i).Aggregate(new Dimension(1), (x, y) => x * y).FixedValue * ((int)perm.Length - i);
+                        break;
+                    }
+
+                }
+            }
+            return new(arithm == -1 ? 1 : arithm, DataTypes.GetLength(type.DType));
         }
     }
 }

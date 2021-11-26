@@ -34,7 +34,7 @@ namespace Nncase.Tests.CostModel
             var egraph = new EGraph();
             egraph.Add(expr, out var root);
             EGraphReWriter.ReWrite(egraph, new DemoRuleXmul1(), passOptions.SetName("TestConstXmul1"));
-            var new_expr = egraph.Extract(root);
+            var new_expr = egraph.Extract(root, passOptions);
             Console.WriteLine(new_expr.DumpExprAsIL());
             Console.WriteLine(lhs.DumpExprAsIL());
             Assert.Equal(lhs, new_expr);

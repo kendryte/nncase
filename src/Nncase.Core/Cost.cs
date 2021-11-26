@@ -28,10 +28,18 @@ namespace Nncase
         private static ulong SafeAdd(ulong lhs, ulong rhs) =>
           (ulong.MaxValue - lhs) > rhs ? lhs + rhs : ulong.MaxValue;
 
+
+
         public static Cost operator +(Cost lhs, Cost rhs) =>
           new Cost(Cost.SafeAdd(lhs.Arith, rhs.Arith),
                   Cost.SafeAdd(lhs.Memory, rhs.Memory));
 
         public static Cost Inf => new Cost(ulong.MaxValue, ulong.MaxValue);
+
+        public override string? ToString()
+        {
+            string str(ulong x) => x == ulong.MaxValue ? "Inf" : x.ToString();
+            return $"<{str(Arith)},{str(Memory)}>";
+        }
     }
 }

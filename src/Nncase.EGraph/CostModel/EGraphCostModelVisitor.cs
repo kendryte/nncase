@@ -42,19 +42,30 @@ namespace Nncase.CostModel
             return _eClassCosts[_exprMaps[expr].Children[i]];
         }
 
+
+        private EClass GetParentEClass(Expr expr) => _eHashCon[_exprMaps[expr]].Find();
+
         public override TensorType CurrentCallResultTensorType() =>
-          CheckTensorType(_eClassType[_eHashCon[_exprMaps[CurrentCall]]]);
+          CheckTensorType(_eClassType[GetParentEClass(CurrentCall)]);
 
         public override Const GetArgumentConst(Op op, ParameterInfo parameter)
         {
-            throw new NotImplementedException("GetArgumentConst");
+            var curEclass = _exprMaps[CurrentCall].Children[parameter.Index + 1];
+            foreach (var node in _eClasses[curEclass])
+            {
+                if (node.Expr is Const c)
+                {
+                    return c;
+                }
+            }
+            throw new InvalidOperationException("This EClass Does Not Have Const Enode!");
         }
 
         public override TensorType GetArgumentType(Op op, ParameterInfo parameter)
         {
             if (op.GetType() == parameter.OwnerType)
             {
-                return _eClassType[_exprMaps[CurrentCall].Children[parameter.Index]] switch
+                return _eClassType[_exprMaps[CurrentCall].Children[parameter.Index + 1]] switch
                 {
                     TensorType ttype => ttype,
                     _ => throw new InvalidOperationException($"Expr is not a TensorType.")
@@ -63,7 +74,7 @@ namespace Nncase.CostModel
             throw new InvalidOperationException($"The {op.GetType().Name} has now parameter {parameter.Name}!");
         }
 
-        public override TensorType GetTensorType(Expr expr) => CheckTensorType(_eClassType[_eHashCon[_exprMaps[expr]]]);
+        public override TensorType GetTensorType(Expr expr) => CheckTensorType(_eClassType[GetParentEClass(expr)]);
 
         private TensorType CheckTensorType(IRType type) => type switch
         {

@@ -29,7 +29,7 @@ namespace Nncase.Transform
             foreach (var matchResult in matches)
             {
                 var (root, env) = (EMatchResult)matchResult;
-                var eclassCluster = _classes[eGraph.Nodes[root]];
+                var eclassCluster = _classes[eGraph.Nodes[root].Find()];
                 Color color = KnownColors[random.Next(KnownColors.Length - 1)];
                 eclassCluster.Nodes.Add($"m{eclassCluster.Id}_{count}", node =>
                 {
@@ -40,7 +40,7 @@ namespace Nncase.Transform
                 foreach (var (pattern, wcNode) in env)
                 {
                     EClass matcheClass = eGraph.Nodes[wcNode];
-                    var childeclassCluster = _classes[matcheClass];
+                    var childeclassCluster = _classes[matcheClass.Find()];
                     childeclassCluster.Nodes.Add($"m{matcheClass.Id}_{count}", node =>
                     {
                         node.Label = $"m {count}";
@@ -57,8 +57,8 @@ namespace Nncase.Transform
         public static DotGraph DumpEgraphAsDot(EGraph eGraph, List<IMatchResult> matches, string file)
         {
             var printer = new EGraphPrinter();
-            var g = printer.ConvertEGraphAsDot(eGraph, matches);
-            return printer.SaveToFile(g, file);
+            printer.ConvertEGraphAsDot(eGraph, matches);
+            return printer.SaveToFile(file);
         }
 
     }

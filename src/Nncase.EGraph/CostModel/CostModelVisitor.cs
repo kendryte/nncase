@@ -90,7 +90,7 @@ namespace Nncase.CostModel
                 // Concat con => VisitConcat(con),
                 Conv2D conv => VisitConv2D(conv),
                 // Slice sl => VisitSlice(sl),
-                // Transpose tr => VisitTranspose(tr),
+                Transpose tr => VisitTranspose(tr),
                 Unary un => VisitUnary(un),
                 ShapeOp => throw new InvalidDataException("ShapeOp should be eliminate before CostModelVisitor"),
                 _ => throw new NotImplementedException()

@@ -28,17 +28,23 @@ namespace Nncase.Transform
 
         private readonly Dictionary<EClass, DotCluster> _classes = new Dictionary<EClass, DotCluster>();
 
+        public readonly DotGraph dotGraph;
+
+        public EGraphPrinter()
+        {
+            dotGraph = new(directed: true);
+            dotGraph.Clusters.AllowEdgeClipping = true;
+        }
+
         public DotGraph ConvertEGraphAsDot(EGraph eGraph)
         {
 
             DotDumpVisitor visitor = new DotDumpVisitor();
-            var g = new DotGraph(directed: true);
-            g.Clusters.AllowEdgeClipping = true;
 
             foreach (var (eClass, eNodes) in eGraph.EClasses())
             {
                 // make eClass as cluster
-                var eclassCluster = g.Clusters.Add($"{eClass.Id}", cluster =>
+                var eclassCluster = dotGraph.Clusters.Add($"{eClass.Id}", cluster =>
                {
                    cluster.Style.BorderStyle = DotBorderStyle.Dotted;
                    cluster.Label = $"{eClass.Id}";
@@ -68,11 +74,23 @@ namespace Nncase.Transform
 
                     var exprNode = eclassCluster.Nodes.Add(exprId);
 
-                    exprNode.ToRecordNode(new DotRecord(args));
+                    // display the output type 
+                    if (enode.Expr is Call or Function or Var)
+                    {
+                        exprNode.ToRecordNode(rb =>
+                        {
+                            rb.AppendFlippedRecord(new DotRecord(args)).AppendFlippedRecord(enode.Expr.CheckedType?.DumpTypeAsIL() ?? "None");
+                        }, true);
+                    }
+                    else
+                    {
+                        exprNode.ToRecordNode(new DotRecord(args));
+                    }
+
                     for (int i = 0; i < enode.Children.Count; i++)
                     {
                         // var pnode =  from pnode in select
-                        g.Edges.Add($"{enode.Children[i].Find().Id}" + "dummy", exprNode, edge =>
+                        dotGraph.Edges.Add($"{enode.Children[i].Find().Id}" + "dummy", exprNode, edge =>
                          {
                              edge.Tail.ClusterId = $"{enode.Children[i].Id}";
                              edge.Head.Endpoint.Port = new DotEndpointPort($"P{i}");
@@ -80,10 +98,10 @@ namespace Nncase.Transform
                     }
                 }
             }
-            return g;
+            return dotGraph;
         }
 
-        public DotGraph SaveToFile(DotGraph g, string file)
+        public DotGraph SaveToFile(string file)
         {
 
             if (!file.EndsWith(".dot"))
@@ -95,16 +113,16 @@ namespace Nncase.Transform
             {
                 Directory.CreateDirectory(dirName);
             }
-            g.Build();
-            g.SaveToFile(file);
-            return g;
+            dotGraph.Build();
+            dotGraph.SaveToFile(file);
+            return dotGraph;
         }
 
         public static DotGraph DumpEgraphAsDot(EGraph eGraph, string file)
         {
             var printer = new EGraphPrinter();
-            var g = printer.ConvertEGraphAsDot(eGraph);
-            return printer.SaveToFile(g, file);
+            printer.ConvertEGraphAsDot(eGraph);
+            return printer.SaveToFile(file);
         }
 
 
@@ -131,20 +149,6 @@ namespace Nncase.Transform
             }
 
             public override string Visit(Var expr) => expr.GetType().Name + " " + expr.Name;
-
-            public override string VisitType(AnyType type) => "any";
-
-            public override string VisitType(CallableType type) =>
-                $"({string.Join(", ", type.Parameters.Select(VisitType))}) -> {VisitType(type.ReturnType)}";
-
-            public override string VisitType(InvalidType type) => "invalid";
-
-            public override string VisitType(TensorType type) =>
-                $"{DataTypes.GetDisplayName(type.DType)}{type.Shape}";
-
-            public override string VisitType(TupleType type) =>
-                $"({string.Join(", ", type.Fields.Select(VisitType))})";
-
         }
     }
 }

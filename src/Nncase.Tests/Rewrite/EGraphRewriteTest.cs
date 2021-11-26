@@ -1,5 +1,6 @@
 using Xunit;
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using Nncase.IR;
 using Nncase.Transform;
@@ -13,11 +14,55 @@ using static Nncase.Pattern.F.NN;
 using static Nncase.Pattern.F.Tensors;
 using static Nncase.Pattern.Utility;
 using System.IO;
-using System.Runtime.CompilerServices;
 
 
 namespace Nncase.Tests.ReWrite
 {
+
+    using Evaluator = Evaluator.Evaluator;
+
+
+
+
+    public class EGraphRewriteTestFactory : RewriteTest
+    {
+        public static IEnumerable<object[]> Data =>
+          new List<object[]>
+          {
+             new object[] { new FoldNopTransposeCase1() },
+             new object[] { new FoldTransposeCase() },
+             new object[] { new TransposeConstBinaryCase() },
+          };
+
+        [Theory]
+        [MemberData(nameof(DataOne))]
+        public void RunOne(IRewriteCase Case) => RunCore(Case);
+
+        public static IEnumerable<object[]> DataOne => Data.Take(1);
+
+        public void RunCore(IRewriteCase Case)
+        {
+            passOptions.SetName($"EGraphRewriteTest/{Case.Name}");
+            Expr pre = Case.PreExpr;
+            Assert.True(pre.InferenceType());
+            var eGraph = new EGraph();
+            eGraph.Add(pre, out var root);
+            EGraphPrinter.DumpEgraphAsDot(eGraph, Path.Combine(passOptions.FullDumpDir, $"pre"));
+            pre.DumpExprAsIL("pre", passOptions.FullDumpDir);
+
+            EGraphReWriter.ReWrite(eGraph, Case.Rules, passOptions);
+            var post = eGraph.Extract(root, passOptions);
+            Assert.True(post.InferenceType());
+            Assert.Equal(Evaluator.Eval(pre), Evaluator.Eval(post));
+            post.DumpExprAsIL("post", passOptions.FullDumpDir);
+        }
+
+        [Theory]
+        [MemberData(nameof(Data))]
+        public void RunAll(IRewriteCase Case) => RunCore(Case);
+
+    }
+
     public class EGraphRewriteTest : RewriteTest
     {
 
@@ -54,8 +99,8 @@ namespace Nncase.Tests.ReWrite
         [Fact]
         public void TestReassociate()
         {
-            Expr expr = ((Const)10 * 11) * 12;
-            var eGraph = new EGraph(expr);
+            Expr pre = ((Const)10 * 11) * 12;
+            var eGraph = new EGraph(pre);
             var rule = new Rule.Reassociate();
             EGraphReWriter.ReWrite(eGraph, rule, passOptions.SetName("Reassociate"));
             // Assert.Equal(newExpr, 10 * ((Const)11 * 12));
@@ -65,23 +110,24 @@ namespace Nncase.Tests.ReWrite
         [Fact]
         public void TestTransposeBinaryMotion()
         {
+            passOptions.SetName("TransposeBinaryMotion");
             Call c0 = (Call)NHWCToNCHW(Const.FromShape<int>(new[] { 2, 2, 3, 4 }, 1));
             Call c1 = (Call)NHWCToNCHW(Const.FromShape<int>(new[] { 2, 2, 1, 1 }, 1));
             Assert.Equal(c0.Parameters[1].GetHashCode(), c1.Parameters[1].GetHashCode());
 
-            Expr expr = c0 + c1;
-            var eGraph = new EGraph(expr);
-            EGraphPrinter.DumpEgraphAsDot(eGraph, Path.Combine(passOptions.DumpDir, "ir_import"));
-            EGraphReWriter.ReWrite(eGraph, new Rule.TransposeBinaryMotion(), passOptions.SetName("TransposeBinaryMotion"));
+            Expr pre = c0 + c1;
 
+            Assert.True(pre.InferenceType());
+            var eGraph = new EGraph();
+            eGraph.Add(pre, out var root);
+            pre.DumpExprAsIL("pre", passOptions.FullDumpDir);
+
+            EGraphReWriter.ReWrite(eGraph, new Rule.TransposeBinaryMotion(), passOptions);
+
+            var post = eGraph.Extract(root, passOptions);
+            Assert.Equal(Evaluator.Eval(pre), Evaluator.Eval(post));
+            post.DumpExprAsIL("post", passOptions.FullDumpDir);
         }
-
-        [Fact]
-        public void TestTransposeBinaryAll()
-        {
-
-        }
-
     }
 
 }

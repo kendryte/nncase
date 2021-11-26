@@ -137,7 +137,7 @@ namespace Nncase.IR
         /// </summary>
         /// <param name="expr">Expression.</param>
         /// <returns>Is fully inferenced.</returns>
-        public static bool InferenceType(Expr expr)
+        public static bool InferenceType(this Expr expr)
         {
             var inferVisitor = new TypeInferenceVisitor();
             inferVisitor.Visit(expr);
