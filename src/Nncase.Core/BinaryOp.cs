@@ -83,7 +83,17 @@ namespace Nncase
         /// Logical xor.
         /// </summary>
         LogicalXor,
+
+        /// <summary>
+        /// Left Shift
+        /// </summary>
+        LeftShift,
+
+        /// <summary>
+        /// Right Shift
+        /// </summary>
+        RightShift,
     }
 
-    
+
 }

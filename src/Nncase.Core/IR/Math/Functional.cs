@@ -281,6 +281,22 @@ namespace Nncase.IR.F
         public static Call LogicalXor(Expr lhs, Expr rhs) => Binary(BinaryOp.LogicalXor, lhs, rhs);
 
         /// <summary>
+        /// Call left shift.
+        /// </summary>
+        /// <param name="lhs">Left operand.</param>
+        /// <param name="rhs">Right operand.</param>
+        /// <returns>Result expression.</returns>
+        public static Call LeftShift(Expr lhs, Expr rhs) => Binary(BinaryOp.LeftShift, lhs, rhs);
+
+        /// <summary>
+        /// Call right shift.
+        /// </summary>
+        /// <param name="lhs">Left operand.</param>
+        /// <param name="rhs">Right operand.</param>
+        /// <returns>Result expression.</returns>
+        public static Call RightShift(Expr lhs, Expr rhs) => Binary(BinaryOp.RightShift, lhs, rhs);
+
+        /// <summary>
         /// Call floor div.
         /// </summary>
         /// <param name="lhs">Left operand.</param>

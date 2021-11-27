@@ -180,7 +180,7 @@ namespace Nncase.CostModel
         public override Dictionary<EClass, (Cost, ENode)> Visit(EGraph eGraph)
         {
             _context._eClasses = eGraph.EClasses();
-            _context._eHashCon = eGraph.Nodes;
+            _context._eHashCon = eGraph.HashCons;
 
             var eClassSeq = eGraph.TopSort(_context._eClasses);
 

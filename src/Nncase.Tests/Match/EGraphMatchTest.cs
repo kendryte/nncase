@@ -23,6 +23,7 @@ namespace Nncase.Tests.ReWrite
         public static IEnumerable<object[]> Data =>
           new List<object[]>
           {
+             new object[] {"FoldNopTransposeCase2", new FoldNopTransposeCase2().PreExpr, new Transform.Rule.FoldTranspose(), new[]{ 1} },
              new object[] {"FoldNopTransposeCase1", new FoldNopTransposeCase1().PreExpr, new Transform.Rule.FoldTranspose(), new[]{ 1} },
           };
 

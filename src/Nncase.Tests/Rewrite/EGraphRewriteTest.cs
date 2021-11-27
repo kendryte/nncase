@@ -21,14 +21,13 @@ namespace Nncase.Tests.ReWrite
 
     using Evaluator = Evaluator.Evaluator;
 
-
-
-
     public class EGraphRewriteTestFactory : RewriteTest
     {
         public static IEnumerable<object[]> Data =>
           new List<object[]>
           {
+             new object[] { new FoldNopTransposeCase3() },
+             new object[] { new FoldNopTransposeCase2() },
              new object[] { new FoldNopTransposeCase1() },
              new object[] { new FoldTransposeCase() },
              new object[] { new TransposeConstBinaryCase() },
@@ -90,7 +89,7 @@ namespace Nncase.Tests.ReWrite
             Assert.Equal(wcxv, lhs);
             egraph.Add(nawPass(wcxv), out var to_eid);
 
-            egraph.Merge(to_eid, egraph.Nodes[((EMatchResult)EResults[0]).Root]);
+            egraph.Merge(to_eid, egraph.HashCons[((EMatchResult)EResults[0]).Root]);
             EGraphPrinter.DumpEgraphAsDot(egraph, $"{Name}_Merge");
             egraph.ReBuild();
             EGraphPrinter.DumpEgraphAsDot(egraph, $"{Name}_ReBuild");

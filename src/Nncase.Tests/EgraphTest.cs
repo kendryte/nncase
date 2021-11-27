@@ -1,14 +1,33 @@
 using System;
+using System.IO;
+using System.Linq;
 using Xunit;
 using Nncase.Transform;
 using Nncase.IR;
 using static Nncase.IR.F.Math;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 
 namespace Nncase.Tests
 {
     public class UnitTestEGraph
     {
+        public RunPassOptions passOptions;
+
+        private static string GetThisFilePath([CallerFilePath] string path = null)
+        {
+            return path;
+        }
+
+        public UnitTestEGraph()
+        {
+            var TestName = this.GetType().Name;
+            string dumpDir = Path.Combine(GetThisFilePath(), "..", "..", "..", "tests_output");
+            dumpDir = Path.GetFullPath(dumpDir);
+            Directory.CreateDirectory(dumpDir);
+            passOptions = new RunPassOptions(null, 3, dumpDir);
+        }
+
         [Fact]
         public void TestConstEqual()
         {
@@ -42,6 +61,15 @@ namespace Nncase.Tests
             EGraph graph = new EGraph();
             graph.Add(a);
         }
+
+        [Fact]
+        public void TestENodeHash()
+        {
+            Expr a = 1 + IR.F.Math.Exp(2);
+            EGraph graph = new EGraph();
+            graph.Add(a);
+        }
+
 
         [Fact]
         public void TestEgraphDump()
@@ -111,6 +139,64 @@ namespace Nncase.Tests
             Expr e3 = e2 - 10 + 100; /* will match in subset */
             var g = new EGraph();
             g.Add(e3);
+        }
+
+        [Fact]
+        public void TestRebuildCanonicalizeEclass()
+        {
+            // When (x*2)+1 match x<<1, the (x*2)<==(x<<1) will be merge, 
+            // but after rebuid, (x*2) is not in worklist, 
+            // so it's eclass in hashcon will not be update
+            // should fix it.
+            passOptions.SetName("EGraphTest/TestRebuildCanonicalizeEclass");
+            var g = new EGraph();
+            Var x = "x";
+            g.Add(x * 2, out var e1);
+            g.Add(x << 1, out var e2);
+            g.Add(((x * 2) + 1) + 3, out var root);
+            EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.FullDumpDir, "before"));
+            g.Merge(e1, e2);
+            EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.FullDumpDir, "merge"));
+            g.ReBuild();
+            EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.FullDumpDir, "rebuild"));
+            foreach (var (enode, eclass) in g.HashCons)
+            {
+                Assert.Equal(eclass, eclass.Find());
+            }
+        }
+
+        [Fact]
+        public void TestRebuildUpdateUsed()
+        {
+            passOptions.SetName("EGraphTest/TestRebuildUpdateUsed");
+            var g = new EGraph();
+            Var x = "x";
+            var expr1 = x * 2;
+            var expr2 = x << 1;
+            var expr3 = x * 4;
+            var expr4 = x * 2 * 2;
+            var y = (x * 2) * (x * 4);
+            g.Add(expr1, out var e1);
+            g.Add(expr2, out var e2);
+            g.Add(expr3, out var e3);
+            g.Add(expr4, out var e4);
+            g.Add(y, out var root);
+            EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.FullDumpDir, "before"));
+            g.Merge(e2, e1);
+            EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.FullDumpDir, "merge_lhs"));
+            g.ReBuild();
+            EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.FullDumpDir, "rebuild_lhs"));
+            g.Merge(e4, e3);
+            EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.FullDumpDir, "merge_rhs"));
+            g.ReBuild();
+            EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.FullDumpDir, "rebuild_rhs"));
+            foreach (var (enode, eclass) in g.HashCons)
+            {
+                foreach (var child in enode.Children)
+                {
+                    Assert.Contains(enode, child.Used.Select(kv => kv.Item1));
+                }
+            }
         }
 
     }

@@ -22,13 +22,27 @@ namespace Nncase.Transform
         {
             foreach (var children in Children)
             {
-                children.Used.Add((this, eClass));
+                children.Used.Add((this, eClass.Find()));
             }
         }
 
         public ENode Canonicalize()
         {
-            return new ENode(Expr, (from c in Children select c.Find()).ToArray());
+            var children = (from c in Children select c.Find()).ToArray();
+            return new ENode(Expr, children);
+        }
+
+        public (ENode, List<EClass>) Canonicalize(EClass TargeteClass)
+        {
+            var todos = new List<EClass>();
+            EClass find_other_parents(EClass child)
+            {
+                var neweClass = child.Find();
+                if (neweClass != TargeteClass)
+                    todos.Add(neweClass);
+                return neweClass;
+            }
+            return (new ENode(Expr, Children.Select(find_other_parents).ToArray()), todos);
         }
 
         public override string ToString()
@@ -80,10 +94,21 @@ namespace Nncase.Transform
         /// </summary>
         private readonly Dictionary<ENode, EClass> _hascons = new Dictionary<ENode, EClass>();
 
-        private readonly List<EClass> _classes = new List<EClass>();
+        // private readonly List<EClass> _classes = new List<EClass>();
         private int _version = 0;
 
-        private List<EClass> _worklist = new List<EClass>();
+        private int _globalEclassId = 0;
+
+        /// <summary>
+        /// save which node has been merged,
+        /// we should update it's eclass in hashcon;
+        /// </summary>
+        private readonly List<ENode> _mergedlist = new();
+
+        /// <summary>
+        /// which eclass should be repair
+        /// </summary>
+        private readonly List<EClass> _worklist = new();
 
         /// <summary>
         /// the all EClass and it's 
@@ -94,19 +119,23 @@ namespace Nncase.Transform
             var eclasses = new Dictionary<EClass, List<ENode>>();
             foreach (var (enode, eclass) in _hascons)
             {
+                // NOTE when do Find in here, maybe some enode's child id haven't update.
                 var parentEclass = eclass.Find();
+                // if (parentEclass != eclass) { _mergedlist.Add(enode); }
                 if (!eclasses.ContainsKey(parentEclass))
                     eclasses.Add(parentEclass, new List<ENode> { enode });
                 else
                     eclasses[parentEclass].Add(enode);
             }
+            // foreach (var enode in _mergedlist) { _hascons[enode] = _hascons[enode].Find(); }
+            // _mergedlist.Clear();
             return eclasses;
         }
 
         /// <summary>
         /// <see cref="_hascons"/>
         /// </summary>
-        public Dictionary<ENode, EClass> Nodes => _hascons;
+        public IReadOnlyDictionary<ENode, EClass> HashCons => _hascons;
 
         public int Version => _version;
 
@@ -125,7 +154,7 @@ namespace Nncase.Transform
             var converter = new ENodeConverter(this);
             eClass = converter.Visit(expr);
         }
-        
+
         /// <summary>
         /// <see cref="Add(Expr, out EClass)"/>
         /// </summary>
@@ -137,7 +166,7 @@ namespace Nncase.Transform
             _worklist.Clear();
             _version = 0;
             _hascons.Clear();
-            _classes.Clear();
+            // _classes.Clear();
         }
 
         private EClass AddENode(Expr expr, IRArray<EClass> children)
@@ -146,13 +175,11 @@ namespace Nncase.Transform
             ENode enode = new ENode(expr, children);
             if (!_hascons.TryGetValue(enode, out var eclass))
             {
-                eclass = new EClass(_classes.Count);
+                eclass = new EClass(_globalEclassId++);
                 enode.AddUsed(eclass);
-
                 _hascons.Add(enode, eclass);
-                _classes.Add(eclass);
             }
-            return eclass;
+            return eclass.Find();
         }
 
         /// <summary>
@@ -188,8 +215,8 @@ namespace Nncase.Transform
             while (_worklist.Count > 0)
             {
                 // remove same eclass avoid duplicate repair
-                var todos = _worklist.Select(x => x.Find()).Distinct();
-                _worklist = new List<EClass>();
+                var todos = _worklist.Select(x => x.Find()).Distinct().ToArray();
+                _worklist.Clear();
                 foreach (var eclass in todos)
                 {
                     RePair(eclass);
@@ -200,34 +227,42 @@ namespace Nncase.Transform
         private void RePair(EClass eclass)
         {
             // copy and reset the used, will reassgin new used
-            var used = new List<(ENode, EClass)>(eclass.Used);
+            var oldUsed = new List<(ENode, EClass)>(eclass.Used);
             eclass.Used.Clear();
-            foreach (var (pnode, pclass) in used)
+            foreach (var (pnode, pclass) in oldUsed)
             {   // update the parent node.
                 if (_hascons.ContainsKey(pnode))
-                {
                     _hascons.Remove(pnode);
-                }
-                var newPnode = pnode.Canonicalize();
+                // TODO we update the enode, should put this new node to it's child eclass's oldUsed. 
+                // Then when that eclass be repaired, it will update this new enode.  
+                var (newPnode, newParents) = pnode.Canonicalize(eclass);
                 var newPclass = pclass.Find();
-                _hascons.Add(newPnode, newPclass);
+                if (!_hascons.TryGetValue(newPnode, out var result))
+                {
+                    _hascons.Add(newPnode, newPclass); // update this node to it's child's used 
+                    newParents.ForEach(parent => parent.Used.Add((newPnode, newPclass)));
+                }
+                else if (result != newPclass)
+                {
+                    throw new InvalidProgramException($"The ENode {newPnode}'s Eclass is {_hascons[newPnode]} but will set to {newPclass}!");
+                }
             }
-            /* when merge eclass, eg. x+0 => x, the x's class will have the Node (x+0), then update the Node (x+0)ˆ, the newPclass will have (x+0) and (x+0)ˆ  */
+            /* Eg. [(x*2)+1] and [(x<<1)+1], when (x*2) <== (x<<1), 
+               the [(x*2)+1] and [(x<<1)+1] will got same new enode,
+                so we should merge them.
+             */
             var newUsed = new Dictionary<ENode, EClass>();
-            foreach (var (pnode, pclass) in used)
+            foreach (var (pnode, pclass) in oldUsed)
             {
                 var newPnode = pnode.Canonicalize();
                 if (newUsed.ContainsKey(newPnode))
                 {
                     Merge(pclass, newUsed[newPnode]);
                 }
-                newUsed.Add(newPnode, _hascons[newPnode]);
+                newUsed[newPnode] = _hascons[newPnode];
             }
             // reassgin current eclass's Used.
-            foreach (var item in newUsed)
-            {
-                eclass.Find().Used.Add((item.Key, item.Value));
-            }
+            eclass.Find().Used.AddRange(newUsed.Select(kv => (kv.Key, kv.Value)));
         }
 
 

@@ -19,7 +19,7 @@ namespace Nncase.CostModel
         {
             _eGraph = eGraph;
             _context = context;
-            foreach (var (enode, eclass) in _eGraph.Nodes)
+            foreach (var (enode, eclass) in _eGraph.HashCons)
             {
                 _exprMap[enode.Expr] = enode;
             }
@@ -27,9 +27,9 @@ namespace Nncase.CostModel
 
         public (Cost, ENode) this[EClass eClass] => _context[eClass.Find()];
 
-        public Cost this[Expr expr] => _context[_eGraph.Nodes[_exprMap[expr]].Find()].Item1;
+        public Cost this[Expr expr] => _context[_eGraph.HashCons[_exprMap[expr]].Find()].Item1;
 
-        public EClass this[ENode eNode] => _eGraph.Nodes[eNode];
+        public EClass this[ENode eNode] => _eGraph.HashCons[eNode];
 
     }
 }

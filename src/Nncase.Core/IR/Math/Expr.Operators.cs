@@ -99,5 +99,21 @@ namespace Nncase.IR
         /// <param name="rhs">Right operand.</param>
         /// <returns>Result.</returns>
         public static Call operator ^(Expr lhs, Expr rhs) => BitwiseXor(lhs, rhs);
+
+        /// <summary>
+        /// Binary left shift.
+        /// </summary>
+        /// <param name="lhs">Left operand.</param>
+        /// <param name="rhs">Right operand.</param>
+        /// <returns>Result.</returns>
+        public static Call operator <<(Expr lhs, int rhs) => LeftShift(lhs, rhs);
+
+        /// <summary>
+        /// Binary right shift.
+        /// </summary>
+        /// <param name="lhs">Left operand.</param>
+        /// <param name="rhs">Right operand.</param>
+        /// <returns>Result.</returns>
+        public static Call operator >>(Expr lhs, int rhs) => LeftShift(lhs, rhs);
     }
 }

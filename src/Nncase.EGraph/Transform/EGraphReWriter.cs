@@ -23,14 +23,14 @@ namespace Nncase.Transform
         /// <returns></returns>
         public static EGraph ReWrite(EGraph eGraph, IEnumerable<PatternRule> Rules, RunPassOptions options)
         {
-            var eClass = eGraph.EClasses();
             var matches = new List<(PatternRule, IMatchResult)> { };
             var last_version = eGraph.Version;
             do
             {
+                var eClasses = eGraph.EClasses();
                 foreach (var rule in Rules)
                 {
-                    var results = EGraphMatcher.Match(eClass, rule.Patterns);
+                    var results = EGraphMatcher.Match(eClasses, rule.Patterns);
                     foreach (var result in results)
                     {
                         matches.Add((rule, result));
@@ -47,7 +47,10 @@ namespace Nncase.Transform
                     if (!TypeInference.InferenceType(replaceExpr))
                         throw new InvalidOperationException("Can't Inference The Replace Expr Type!");
                     eGraph.Add(replaceExpr, out var neweClass);
-                    eGraph.Merge(neweClass, eGraph.Nodes[((EMatchResult)result).Root]);
+                    var oldeClass = eGraph.HashCons[((EMatchResult)result).Root].Find();
+                    if (options.DumpLevel == 3)
+                        Console.WriteLine($"Version {eGraph.Version} : Merge {{{oldeClass}}} to {{{neweClass}}}");
+                    eGraph.Merge(neweClass, oldeClass);
                 }
                 matches.Clear();
                 if (last_version == eGraph.Version)
@@ -58,6 +61,16 @@ namespace Nncase.Transform
                 if (options.DumpLevel > 1)
                     EGraphPrinter.DumpEgraphAsDot(eGraph,
                      Path.Combine(options.DumpDir, options.PassName, "Rebuild", $"V{eGraph.Version}"));
+                if (options.DumpLevel == 3)
+                {
+                    foreach (var (_, eclass) in eGraph.HashCons)
+                    {
+                        if (eclass.Parent is not null)
+                        {
+                            // throw new InvalidProgramException("EGraph Rebuild Logic Error!");
+                        }
+                    }
+                }
             } while (true);
             return eGraph;
         }

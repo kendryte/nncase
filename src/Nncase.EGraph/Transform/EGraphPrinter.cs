@@ -26,22 +26,41 @@ namespace Nncase.Transform
     public partial class EGraphPrinter
     {
 
-        private readonly Dictionary<EClass, DotCluster> _classes = new Dictionary<EClass, DotCluster>();
+        private readonly Dictionary<EClass, DotCluster> ClusterMaps = new Dictionary<EClass, DotCluster>();
+
+        private readonly IReadOnlyDictionary<EClass, List<ENode>> EClasses;
+
+        private readonly Dictionary<EClass, string> OpMaps = new();
+
+        private readonly EGraph eGraph;
+
+        private readonly DotDumpVisitor visitor = new DotDumpVisitor();
 
         public readonly DotGraph dotGraph;
 
-        public EGraphPrinter()
+        public EGraphPrinter(EGraph _eGraph)
         {
             dotGraph = new(directed: true);
             dotGraph.Clusters.AllowEdgeClipping = true;
+            eGraph = _eGraph;
+            EClasses = _eGraph.EClasses();
+            foreach (var (eclass, enodes) in EClasses)
+            {
+                if (enodes.Count == 1 && enodes[0].Expr is Op op)
+                {
+                    if (!OpMaps.TryGetValue(eclass, out var name))
+                    {
+                        name = visitor.Visit(op);
+                        OpMaps.Add(eclass, name);
+                    }
+                }
+            }
         }
 
-        public DotGraph ConvertEGraphAsDot(EGraph eGraph)
+        public DotGraph ConvertEGraphAsDot()
         {
 
-            DotDumpVisitor visitor = new DotDumpVisitor();
-
-            foreach (var (eClass, eNodes) in eGraph.EClasses())
+            foreach (var (eClass, eNodes) in eGraph.EClasses().Where(pair => !OpMaps.ContainsKey(pair.Key)))
             {
                 // make eClass as cluster
                 var eclassCluster = dotGraph.Clusters.Add($"{eClass.Id}", cluster =>
@@ -50,7 +69,7 @@ namespace Nncase.Transform
                    cluster.Label = $"{eClass.Id}";
                    cluster.LabelAlignment.Horizontal = GiGraph.Dot.Types.Alignment.DotHorizontalAlignment.Left;
                });
-                _classes.Add(eClass, eclassCluster);
+                ClusterMaps.Add(eClass, eclassCluster);
 
                 eclassCluster.Nodes.Add(new DotNode(eclassCluster.Id + "dummy"), node =>
                   {
@@ -67,9 +86,12 @@ namespace Nncase.Transform
                     var args = new List<DotRecordTextField> {
                       new DotRecordTextField(visitor.Visit(enode.Expr), "Type") };
 
-                    for (int i = 0; i < enode.Children.Count; i++)
+                    foreach (var (child, i) in enode.Children.Select((c, i) => (c, i)))
                     {
-                        args.Add(new DotRecordTextField($"{enode.Children[i].Find().Id}", $"P{i}"));
+                        var label = $"{child.Find().Id}";
+                        if (OpMaps.ContainsKey(child))
+                            label = OpMaps[child];
+                        args.Add(new DotRecordTextField(label, $"P{i}"));
                     }
 
                     var exprNode = eclassCluster.Nodes.Add(exprId);
@@ -89,6 +111,8 @@ namespace Nncase.Transform
 
                     for (int i = 0; i < enode.Children.Count; i++)
                     {
+                        if (OpMaps.ContainsKey(enode.Children[i]))
+                            continue;
                         // var pnode =  from pnode in select
                         dotGraph.Edges.Add($"{enode.Children[i].Find().Id}" + "dummy", exprNode, edge =>
                          {
@@ -120,11 +144,10 @@ namespace Nncase.Transform
 
         public static DotGraph DumpEgraphAsDot(EGraph eGraph, string file)
         {
-            var printer = new EGraphPrinter();
-            printer.ConvertEGraphAsDot(eGraph);
+            var printer = new EGraphPrinter(eGraph);
+            printer.ConvertEGraphAsDot();
             return printer.SaveToFile(file);
         }
-
 
         private class DotDumpVisitor : ExprFunctor<string, string>
         {

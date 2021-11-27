@@ -24,7 +24,7 @@ namespace Nncase.Transform
             var nodeMap = new Dictionary<ENode, DotNode>();
             foreach (var (eclass, (cost, enode)) in Costs.Context)
             {
-                foreach (var dotnode in _classes[eclass].Nodes.Where((nd => ((DotNode)nd).Id == enode.Expr.GetHashCode().ToString())))
+                foreach (var dotnode in ClusterMaps[eclass].Nodes.Where((nd => ((DotNode)nd).Id == enode.Expr.GetHashCode().ToString())))
                 {
                     nodeMap.Add(enode, (DotNode)dotnode);
                     dotnode.Color = Color.DarkRed;
@@ -40,6 +40,8 @@ namespace Nncase.Transform
                 curNode.Color = Color.RoyalBlue;
                 foreach (var (child, i) in curEnode.Children.Select((c, i) => (c, i)))
                 {
+                    if (OpMaps.ContainsKey(child))
+                        continue;
                     var paramEnode = Costs[child].Item2;
                     var paramNode = nodeMap[paramEnode];
                     dfs(Costs[paramEnode].Find());
@@ -57,8 +59,8 @@ namespace Nncase.Transform
 
         public static DotGraph DumpEgraphAsDot(EGraph eGraph, CostModel.EGraphCosts Costs, EClass entry, string file)
         {
-            var printer = new EGraphPrinter();
-            printer.ConvertEGraphAsDot(eGraph);
+            var printer = new EGraphPrinter(eGraph);
+            printer.ConvertEGraphAsDot();
             printer.AttachEGraphCost(Costs, entry);
             return printer.SaveToFile(file);
         }

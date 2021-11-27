@@ -20,6 +20,16 @@ using Nncase.Evaluator;
 
 namespace Nncase.Tests.ReWrite
 {
+    public static class DummyOp
+    {
+        public static Call Conv2D(Expr input, int in_channels, int out_channels, int kernel = 3, int stride = 1)
+        {
+            var weights = torch.rand(new long[] { (long)out_channels, (long)in_channels, (long)kernel, (long)kernel }).ToConst();
+            var bias = torch.rand(new long[(long)out_channels]).ToConst();
+            return IR.F.NN.Conv2D(input, weights, bias, new[] { stride, stride }, Const.FromSpan<int>(new[] { 1, 1, 1, 1 }, new[] { 2, 2 }), new[] { 1, 1 }, PadMode.Constant, 1);
+        }
+    }
+
     public class RewriteTest
     {
         public RunPassOptions passOptions;
@@ -49,18 +59,18 @@ namespace Nncase.Tests.ReWrite
             DataFlowRewrite.Rewrite(expr, new Transform.DataFlow.Rules.FoldConstCall());
     }
 
-    public interface IRewriteCase
+    public abstract class IRewriteCase
     {
-        public string Name { get => "Test" + this.GetType().Name; }
+        public virtual string Name { get => "Test" + this.GetType().Name; }
 
-        public Expr PreExpr { get; }
+        public virtual Expr PreExpr { get; }
 
-        public IEnumerable<PatternRule> Rules { get; }
+        public virtual IEnumerable<PatternRule> Rules { get; }
     }
 
     public sealed class TransposeConstBinaryCase : IRewriteCase
     {
-        public Expr PreExpr
+        public override Expr PreExpr
         {
             get
             {
@@ -71,7 +81,7 @@ namespace Nncase.Tests.ReWrite
             }
         }
 
-        public IEnumerable<PatternRule> Rules => new PatternRule[]{
+        public override IEnumerable<PatternRule> Rules => new PatternRule[]{
           new Transform.Rule.TransposeConstBinaryMotionLeft(),
           new Transform.Rule.TransposeConstBinaryMotionRight(),
         };
@@ -79,7 +89,7 @@ namespace Nncase.Tests.ReWrite
 
     public class FoldTransposeCase : IRewriteCase
     {
-        public Expr PreExpr
+        public override Expr PreExpr
         {
             get
             {
@@ -91,7 +101,7 @@ namespace Nncase.Tests.ReWrite
             }
         }
 
-        public IEnumerable<PatternRule> Rules => new PatternRule[]{
+        public override IEnumerable<PatternRule> Rules => new PatternRule[]{
           new Transform.Rule.FoldTranspose(),
         };
     }
@@ -99,9 +109,9 @@ namespace Nncase.Tests.ReWrite
     /// <summary>
     /// a simple noptranspose case, for the match test
     /// </summary>
-    public sealed class FoldNopTransposeCase1 : IRewriteCase
+    public class FoldNopTransposeCase1 : IRewriteCase
     {
-        public Expr PreExpr
+        public override Expr PreExpr
         {
             get
             {
@@ -112,16 +122,64 @@ namespace Nncase.Tests.ReWrite
                 return e;
             }
         }
-        public IEnumerable<PatternRule> Rules => new PatternRule[]{
+        public override IEnumerable<PatternRule> Rules => new PatternRule[]{
           new Transform.Rule.FoldTranspose(),
         };
     }
 
-    public sealed class FoldNopTransposeCase2 : FoldTransposeCase
+    public class FoldNopTransposeCase2 : IRewriteCase
     {
-        public IEnumerable<PatternRule> Rules => new PatternRule[]{
+        public override Expr PreExpr
+        {
+            get
+            {
+                var input = torch.rand(1, 3, 1, 2).ToConst();
+                var b = NHWCToNCHW(input);
+                var rhs = b + torch.rand(1, 2, 3, 4).ToConst();
+                var lhs = NCHWToNHWC(b) - torch.rand(1, 3, 1, 2).ToConst();
+                var e = lhs + NCHWToNHWC(rhs);
+                return e;
+            }
+        }
+        public override IEnumerable<PatternRule> Rules => new PatternRule[]{
           new Transform.Rule.FoldTranspose(),
           new Transform.Rule.FoldNopTranspose(),
+        };
+    }
+
+    public sealed class FoldNopTransposeCase3 : FoldNopTransposeCase2
+    {
+        public override IEnumerable<PatternRule> Rules => new PatternRule[]{
+          new Transform.Rule.FoldTranspose(),
+          new Transform.Rule.FoldNopTranspose(),
+          new Transform.Rule.TransposeBinaryMotion(),
+          new Transform.Rule.TransposeConstBinaryMotionLeft(),
+          new Transform.Rule.TransposeConstBinaryMotionRight(),
+        };
+    }
+
+    /// <summary>
+    /// transpose demo
+    /// </summary>
+    public sealed class TransposeDemoCase : IRewriteCase
+    {
+        public override Expr PreExpr
+        {
+            get
+            {
+                var input = torch.rand(1, 28, 28, 3).ToConst();
+                var conv1 = NCHWToNHWC(DummyOp.Conv2D(NCHWToNHWC(input), 3, out_channels: 8, 3, 2));
+                var lhs = NCHWToNHWC(DummyOp.Conv2D(NCHWToNHWC(conv1), 8, out_channels: 3, 3, 1));
+                var rhs = conv1 + torch.rand(new long[] { 1, 28, 1, 3 }).ToConst();
+                return lhs + rhs;
+            }
+        }
+        public override IEnumerable<PatternRule> Rules => new PatternRule[]{
+          new Transform.Rule.FoldTranspose(),
+          new Transform.Rule.FoldNopTranspose(),
+          new Transform.Rule.TransposeBinaryMotion(),
+          new Transform.Rule.TransposeConstBinaryMotionLeft(),
+          new Transform.Rule.TransposeConstBinaryMotionRight(),
         };
     }
 
