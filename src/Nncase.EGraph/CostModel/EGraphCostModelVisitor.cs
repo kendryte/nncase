@@ -14,10 +14,44 @@ using Nncase.Transform;
 
 namespace Nncase.CostModel
 {
+    public class EGraphVisitor<ENodeResultType, EClassResultType, EGraphResultType>
+    {
+        private readonly Dictionary<ENode, ENodeResultType> _eNodeMemo = new();
+        private readonly Dictionary<EClass, EClassResultType> _eClassMemo = new();
+
+        public Dictionary<ENode, ENodeResultType> ENodeMemo { get => _eNodeMemo; }
+
+        public Dictionary<EClass, EClassResultType> EClassMemo { get => _eClassMemo; }
+
+        public virtual ENodeResultType VisitLeaf(ENode eNode) => throw new NotImplementedException();
+
+        public virtual EClassResultType VisitLeaf(EClass eClass) => throw new NotImplementedException();
+
+        public virtual EGraphResultType VisitLeaf(EGraph eGraph) => throw new NotImplementedException();
+
+        public virtual ENodeResultType Visit(ENode eNode) => throw new NotImplementedException();
+
+        public virtual EClassResultType Visit(EClass eClass) => throw new NotImplementedException();
+
+        public virtual EGraphResultType Visit(EGraph eGraph)
+        {
+            return VisitLeaf(eGraph);
+        }
+    }
+
+    public sealed record ENodeCost(Cost Partial, Cost Total)
+    {
+    }
+
+    public sealed record EClassCost(bool Locked, Cost Total)
+    {
+
+    }
+
     public sealed class EGraphCostModelContext : ExprCostModelContext
     {
-        public readonly Dictionary<ENode, Cost> _eNodeCosts;
-        public readonly Dictionary<EClass, Cost> _eClassCosts;
+        public readonly Dictionary<ENode, ENodeCost> _eNodeCosts;
+        public readonly Dictionary<EClass, EClassCost> _eClassCosts;
         public IReadOnlyDictionary<EClass, List<ENode>> _eClasses;
         public IReadOnlyDictionary<ENode, EClass> _eHashCon;
         public readonly Dictionary<EClass, IRType> _eClassType;
@@ -28,7 +62,7 @@ namespace Nncase.CostModel
         /// </summary>
         public readonly Dictionary<Expr, ENode> _exprMaps;
 
-        public EGraphCostModelContext(Dictionary<ENode, Cost> eNodeCosts, Dictionary<EClass, Cost> eClassCosts)
+        public EGraphCostModelContext(Dictionary<ENode, ENodeCost> eNodeCosts, Dictionary<EClass, EClassCost> eClassCosts)
         {
             _eNodeCosts = eNodeCosts;
             _eClassCosts = eClassCosts;
@@ -39,7 +73,7 @@ namespace Nncase.CostModel
 
         public override Cost GetCostFromMemo(Expr expr, int i)
         {
-            return _eClassCosts[_exprMaps[expr].Children[i]];
+            return _eClassCosts[_exprMaps[expr].Children[i]].Total;
         }
 
 
@@ -83,32 +117,7 @@ namespace Nncase.CostModel
         };
     }
 
-    public class EGraphVisitor<ENodeResultType, EClassResultType, EGraphResultType>
-    {
-        private readonly Dictionary<ENode, ENodeResultType> _eNodeMemo = new();
-        private readonly Dictionary<EClass, EClassResultType> _eClassMemo = new();
-
-        public Dictionary<ENode, ENodeResultType> ENodeMemo { get => _eNodeMemo; }
-
-        public Dictionary<EClass, EClassResultType> EClassMemo { get => _eClassMemo; }
-
-        public virtual ENodeResultType VisitLeaf(ENode eNode) => throw new NotImplementedException();
-
-        public virtual EClassResultType VisitLeaf(EClass eClass) => throw new NotImplementedException();
-
-        public virtual EGraphResultType VisitLeaf(EGraph eGraph) => throw new NotImplementedException();
-
-        public virtual ENodeResultType Visit(ENode eNode) => throw new NotImplementedException();
-
-        public virtual EClassResultType Visit(EClass eClass) => throw new NotImplementedException();
-
-        public virtual EGraphResultType Visit(EGraph eGraph)
-        {
-            return VisitLeaf(eGraph);
-        }
-    }
-
-    public sealed class EGraphCostModelVisitor : EGraphVisitor<Cost, Cost, Dictionary<EClass, (Cost, ENode)>>
+    public sealed class EGraphCostModelVisitor : EGraphVisitor<ENodeCost, EClassCost, Dictionary<EClass, (Cost, ENode)>>
     {
         private EGraphCostModelContext _context;
         public readonly ExprCostModelVisitor ExprVisitor;
@@ -118,71 +127,71 @@ namespace Nncase.CostModel
             _context = new EGraphCostModelContext(ENodeMemo, EClassMemo);
             ExprVisitor = new ExprCostModelVisitor(_context);
         }
+
         private bool Changed = true;
 
-        public override Cost Visit(EClass eClass)
+        public string Indent = "";
+
+        public override EClassCost Visit(EClass eClass)
         {
-            if (!_context._eClassCosts.TryGetValue(eClass, out var result))
+            var old_cost = EClassMemo[eClass];
+            if (old_cost.Locked)
+                return old_cost;
+            _context._eClasses[eClass].ForEach(node => Visit(node));
+            var new_cost = VisitLeaf(eClass);
+            if (old_cost.Total != new_cost.Total)
             {
-                _context._eClasses[eClass].ForEach(node => Visit(node));
-                result = VisitLeaf(eClass);
-                _context._eClassCosts.Add(eClass, result);
+                Changed = true;
+                EClassMemo[eClass] = old_cost with { Total = new_cost.Total };
             }
-            return result;
+            return new_cost;
         }
 
-        public override Cost VisitLeaf(EClass eClass)
+        public override EClassCost VisitLeaf(EClass eClass)
         {
-            var min = Cost.Inf;
             var ENodes = _context._eClasses[eClass];
+            var min = Cost.Inf;
             ENode minNode = ENodes[0];
             foreach (var (eNode, i) in Enumerable.Range(0, ENodes.Count).Select(i => (ENodes[i], i)))
             {
-                if (min > _context._eNodeCosts[eNode])
+                if (min > _context._eNodeCosts[eNode].Total)
                 {
-                    min = _context._eNodeCosts[eNode];
+                    min = _context._eNodeCosts[eNode].Total;
                     minNode = eNode;
                 }
             }
+            /* if is leaf eclass, wo can lock it */
+            var eClassCost = new EClassCost((ENodes.Count == 1 && minNode.Children.Count == 0),
+                                            ENodeMemo[minNode].Total);
             _context.CostEnv[eClass] = (min, minNode);
-            return min;
+            return eClassCost;
         }
 
-        public override Cost Visit(ENode eNode)
+        public override ENodeCost Visit(ENode eNode)
         {
-            if (!_context._eNodeCosts.TryGetValue(eNode, out var result))
+            if (!ENodeMemo.TryGetValue(eNode, out var result))
             {
-
-                foreach (var child in eNode.Children)
-                {
-                    // avoid [x*1 , x]
-                    if (_context._eHashCon[eNode] != child)
-                    {
-                        Visit(child);
-                    }
-                }
                 result = VisitLeaf(eNode);
-                _context._eNodeCosts.Add(eNode, result);
             }
+            var total = result.Partial;
+            foreach (var child in eNode.Children)
+            {
+                total += EClassMemo[child].Total;
+            }
+            ENodeMemo[eNode] = result with { Total = total };
             return result;
         }
 
-        public override Cost VisitLeaf(ENode eNode)
+        public override ENodeCost VisitLeaf(ENode eNode)
         {
-            var leaf_cost = ExprVisitor.VisitLeaf(eNode.Expr);
-            foreach (var child in eNode.Children)
-            {
-                leaf_cost += ((_context._eHashCon[eNode] != child) ? _context._eClassCosts[child] : Cost.Inf);
-            }
-            return leaf_cost;
+            var partial = ExprVisitor.VisitLeaf(eNode.Expr);
+            return new ENodeCost(partial, Cost.Inf);
         }
 
         public override Dictionary<EClass, (Cost, ENode)> Visit(EGraph eGraph)
         {
             _context._eClasses = eGraph.EClasses();
             _context._eHashCon = eGraph.HashCons;
-
-            var eClassSeq = eGraph.TopSort(_context._eClasses);
 
             // make expr map and eclass shape map
             foreach (var (eClass, eNodes) in _context._eClasses)
@@ -200,18 +209,22 @@ namespace Nncase.CostModel
                     throw new InvalidProgramException("The Same EClass Must Have Same IRType!");
                 }
                 _context._eClassType[eClass] = vaild_types[0];
+                EClassMemo[eClass] = new EClassCost(false, Cost.Inf);
             }
 
-            /* run core */
-            foreach (var eClass in eClassSeq)
-            {
-                Visit(eClass);
-            }
             return VisitLeaf(eGraph);
         }
 
         public override Dictionary<EClass, (Cost, ENode)> VisitLeaf(EGraph eGraph)
         {
+            while (Changed)
+            {
+                Changed = false;
+                foreach (var (eClass, eNodes) in _context._eClasses)
+                {
+                    Visit(eClass);
+                }
+            }
             return _context.CostEnv;
         }
     }
