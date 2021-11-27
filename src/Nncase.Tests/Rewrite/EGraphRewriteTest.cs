@@ -109,7 +109,7 @@ namespace Nncase.Tests.ReWrite
         [Fact]
         public void TestTransposeBinaryMotion()
         {
-            passOptions.SetName("TransposeBinaryMotion");
+            passOptions.SetName("EGraphRewriteTest/TransposeBinaryMotion");
             Call c0 = (Call)NHWCToNCHW(Const.FromShape<int>(new[] { 2, 2, 3, 4 }, 1));
             Call c1 = (Call)NHWCToNCHW(Const.FromShape<int>(new[] { 2, 2, 1, 1 }, 1));
             Assert.Equal(c0.Parameters[1].GetHashCode(), c1.Parameters[1].GetHashCode());

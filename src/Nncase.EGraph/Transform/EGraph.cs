@@ -16,6 +16,11 @@ namespace Nncase.Transform
     public sealed record ENode(Expr Expr, IRArray<EClass> Children)
     {
         /// <summary>
+        /// speedup hashcode calc
+        /// </summary>
+        private int? _hashcode;
+
+        /// <summary>
         /// Add current enode information to childrens. 
         /// </summary>
         public void AddUsed(EClass eClass)
@@ -43,6 +48,35 @@ namespace Nncase.Transform
                 return neweClass;
             }
             return (new ENode(Expr, Children.Select(find_other_parents).ToArray()), todos);
+        }
+
+        private int HashVisit(Expr expr) => expr switch
+        {
+            Call call => EqualityComparer<Type>.Default.GetHashCode(typeof(Call)),
+            IR.Tuple tuple => EqualityComparer<Type>.Default.GetHashCode(typeof(IR.Tuple)),
+            Function function => EqualityComparer<Type>.Default.GetHashCode(typeof(Function)),
+            _ => expr.GetHashCode()
+        };
+
+        private bool EqualVisit(Expr expr) => expr switch
+        {
+            Call call => Expr is Call,
+            IR.Tuple tuple => Expr is IR.Tuple,
+            Function function => Expr is Function,
+            _ => Expr.Equals(expr)
+        };
+
+        public bool Equals(ENode? other)
+        {
+            return !(other is null) && other.GetHashCode() == GetHashCode();
+        }
+
+        public override int GetHashCode()
+        {
+            return _hashcode ??= HashCode.Combine(
+            EqualityComparer<Type>.Default.GetHashCode(EqualityContract),
+            EqualityComparer<IRArray<EClass>>.Default.GetHashCode(Children),
+            HashVisit(Expr));
         }
 
         public override string ToString()

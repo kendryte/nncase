@@ -33,7 +33,7 @@ namespace Nncase.Tests.CostModel
             TypeInference.InferenceType(expr);
             var egraph = new EGraph();
             egraph.Add(expr, out var root);
-            EGraphReWriter.ReWrite(egraph, new DemoRuleXmul1(), passOptions.SetName("TestConstXmul1"));
+            EGraphReWriter.ReWrite(egraph, new DemoRuleXmul1(), passOptions.SetName("EGraphCostModelTest/TestConstXmul1"));
             var new_expr = egraph.Extract(root, passOptions);
             Console.WriteLine(new_expr.DumpExprAsIL());
             Console.WriteLine(lhs.DumpExprAsIL());

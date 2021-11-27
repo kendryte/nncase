@@ -60,7 +60,7 @@ namespace Nncase.Transform
         public DotGraph ConvertEGraphAsDot()
         {
 
-            foreach (var (eClass, eNodes) in eGraph.EClasses().Where(pair => !OpMaps.ContainsKey(pair.Key)))
+            foreach (var (eClass, eNodes) in EClasses.Where(pair => !OpMaps.ContainsKey(pair.Key)))
             {
                 // make eClass as cluster
                 var eclassCluster = dotGraph.Clusters.Add($"{eClass.Id}", cluster =>

@@ -5,6 +5,7 @@ using Xunit;
 using Nncase.Transform;
 using Nncase.IR;
 using static Nncase.IR.F.Math;
+using Nncase.IR.Math;
 using System.Collections.Generic;
 using System.Runtime.CompilerServices;
 
@@ -63,11 +64,69 @@ namespace Nncase.Tests
         }
 
         [Fact]
-        public void TestENodeHash()
+        public void TestENodeVarHash()
         {
-            Expr a = 1 + IR.F.Math.Exp(2);
-            EGraph graph = new EGraph();
-            graph.Add(a);
+            var node1 = new ENode((Var)"x", new EClass[] { });
+            var node2 = new ENode((Var)"x", new EClass[] { });
+            var node3 = new ENode((Var)"y", new EClass[] { });
+            Assert.Equal(node1, node2);
+            Assert.Equal(node1.GetHashCode(), node2.GetHashCode());
+            Assert.NotEqual(node1, node3);
+            Assert.NotEqual(node1.GetHashCode(), node3.GetHashCode());
+        }
+
+        [Fact]
+        public void TestENodeConstHash()
+        {
+            var node1 = new ENode((Const)1, new EClass[] { });
+            var node2 = new ENode((Const)1, new EClass[] { });
+            var node3 = new ENode((Const)11, new EClass[] { });
+            Assert.Equal(node1, node2);
+            Assert.Equal(node1.GetHashCode(), node2.GetHashCode());
+            Assert.NotEqual(node1, node3);
+            Assert.NotEqual(node1.GetHashCode(), node3.GetHashCode());
+        }
+
+        [Fact]
+        public void TestENodeOpHash()
+        {
+            var node1 = new ENode((Op)new Binary(BinaryOp.Add), new EClass[] { });
+            var node2 = new ENode((Op)new Binary(BinaryOp.Add), new EClass[] { });
+            var node3 = new ENode((Op)new Unary(UnaryOp.Abs), new EClass[] { });
+            Assert.Equal(node1, node2);
+            Assert.Equal(node1.GetHashCode(), node2.GetHashCode());
+            Assert.NotEqual(node1, node3);
+            Assert.NotEqual(node1.GetHashCode(), node3.GetHashCode());
+        }
+
+        [Fact]
+        public void TestENodeCallHash()
+        { // when the expr have same eclass args, but their expr is not
+          // the Enode must be equal
+            var eclass = new EClass(1);
+            var call1 = Binary(BinaryOp.Add, 4, 4);
+            var call2 = Binary(BinaryOp.Add, ((Const)1 + 3), ((Const)2 + 2));
+            var node1 = new ENode(call1, new[] { eclass, eclass });
+            var node2 = new ENode(call2, new[] { eclass, eclass });
+            Assert.Equal(node1.GetHashCode(), node2.GetHashCode());
+            Assert.Equal(node1, node2);
+        }
+
+        [Fact]
+        public void TestENodeCallHashEGraph()
+        {
+            var egraph = new EGraph();
+            var call1 = Binary(BinaryOp.Add, 4, 4);
+            var call2 = Binary(BinaryOp.Add, ((Const)1 + 3), ((Const)2 + 2));
+            egraph.Add((Const)4, out var e1);
+            egraph.Add(((Const)1 + 3), out var e2);
+            egraph.Add(((Const)2 + 2), out var e3);
+            egraph.Add(call1, out var e4);
+            egraph.Merge(e1, e2);
+            egraph.Merge(e1, e3);
+            egraph.ReBuild();
+            egraph.Add(call2, out var e5);
+            Assert.Equal(e5.Find(), e4.Find());
         }
 
 
@@ -161,7 +220,7 @@ namespace Nncase.Tests
             EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.FullDumpDir, "rebuild"));
             foreach (var (enode, eclass) in g.HashCons)
             {
-                Assert.Equal(eclass, eclass.Find());
+                Assert.Equal(eclass.Find(), eclass.Find());
             }
         }
 
