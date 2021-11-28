@@ -25,7 +25,7 @@ namespace Nncase.Tests.ReWrite
         public static Call Conv2D(Expr input, int in_channels, int out_channels, int kernel = 3, int stride = 1)
         {
             var weights = torch.rand(new long[] { (long)out_channels, (long)in_channels, (long)kernel, (long)kernel }).ToConst();
-            var bias = torch.rand(new long[(long)out_channels]).ToConst();
+            var bias = torch.rand(new long[] { (long)out_channels }).ToConst();
             return IR.F.NN.Conv2D(input, weights, bias, new[] { stride, stride }, Const.FromSpan<int>(new[] { 1, 1, 1, 1 }, new[] { 2, 2 }), new[] { 1, 1 }, PadMode.Constant, 1);
         }
     }
@@ -147,7 +147,7 @@ namespace Nncase.Tests.ReWrite
         };
     }
 
-    public sealed class FoldNopTransposeCase3 : FoldNopTransposeCase2
+    public class FoldNopTransposeCase3 : FoldNopTransposeCase2
     {
         public override IEnumerable<PatternRule> Rules => new PatternRule[]{
           new Transform.Rule.FoldTranspose(),
@@ -158,10 +158,31 @@ namespace Nncase.Tests.ReWrite
         };
     }
 
+    public class ClassicDemo : IRewriteCase
+    {
+        public override Expr PreExpr
+        {
+            get
+            {
+                var x = (Const)1234;
+                return (x * 2) / 2;
+            }
+        }
+        public override IEnumerable<PatternRule> Rules => new PatternRule[]{
+          new Transform.Rule.Xmul2(),
+          new Transform.Rule.Xmul1(),
+          new Transform.Rule.ReassociateDiv(),
+          new Transform.Rule.ReassociateMul(),
+          new Transform.Rule.ReassociateXY(),
+          new Transform.Rule.XDivX(),
+        };
+    }
+
+
     /// <summary>
     /// transpose demo
     /// </summary>
-    public sealed class TransposeDemoCase : IRewriteCase
+    public sealed class TransposeDemoCase : FoldNopTransposeCase3
     {
         public override Expr PreExpr
         {
@@ -174,13 +195,6 @@ namespace Nncase.Tests.ReWrite
                 return lhs + rhs;
             }
         }
-        public override IEnumerable<PatternRule> Rules => new PatternRule[]{
-          new Transform.Rule.FoldTranspose(),
-          new Transform.Rule.FoldNopTranspose(),
-          new Transform.Rule.TransposeBinaryMotion(),
-          new Transform.Rule.TransposeConstBinaryMotionLeft(),
-          new Transform.Rule.TransposeConstBinaryMotionRight(),
-        };
     }
 
 }

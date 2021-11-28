@@ -276,7 +276,7 @@ namespace Nncase.Transform
                     _hascons.Add(newPnode, newPclass); // update this node to it's child's used 
                     newParents.ForEach(parent => parent.Used.Add((newPnode, newPclass)));
                 }
-                else if (result != newPclass)
+                else if (result.Find() != newPclass)
                 {
                     throw new InvalidProgramException($"The ENode {newPnode}'s Eclass is {_hascons[newPnode]} but will set to {newPclass}!");
                 }

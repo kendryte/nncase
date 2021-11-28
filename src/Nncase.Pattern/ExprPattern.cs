@@ -76,7 +76,7 @@ namespace Nncase.Pattern
         };
 
 
-        private ExprPattern SetTypePattern(TypePattern pattern)
+        public ExprPattern SetTypePattern(TypePattern pattern)
         {
             CheckedTypePat = pattern;
             return this;

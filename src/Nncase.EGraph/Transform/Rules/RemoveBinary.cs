@@ -8,24 +8,6 @@ using static Nncase.IR.F.Tensors;
 
 namespace Nncase.Transform.Rule
 {
-    public sealed class Reassociate : PatternRule
-    {
-        private WildCardPattern wx = "x", wy = "y", wz = "z";
-
-        public Reassociate()
-        {
-
-            Pattern = (wx * wy) * wz;
-        }
-
-
-        public override Expr GetRePlace(IMatchResult result)
-        {
-            var (x, y, z) = result[wx, wy, wz];
-            return x * (y * z);
-        }
-    }
-
     public sealed class RemoveNoSenceBinary : PatternRule
     {
         private BinaryWrapper binary;

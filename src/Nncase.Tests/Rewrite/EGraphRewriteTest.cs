@@ -26,6 +26,8 @@ namespace Nncase.Tests.ReWrite
         public static IEnumerable<object[]> Data =>
           new List<object[]>
           {
+             new object[] { new TransposeDemoCase() },
+             new object[] { new ClassicDemo() },
              new object[] { new FoldNopTransposeCase3() },
              new object[] { new FoldNopTransposeCase2() },
              new object[] { new FoldNopTransposeCase1() },
@@ -43,11 +45,12 @@ namespace Nncase.Tests.ReWrite
         {
             passOptions.SetName($"EGraphRewriteTest/{Case.Name}");
             Expr pre = Case.PreExpr;
-            Assert.True(pre.InferenceType());
+            var infered = pre.InferenceType();
+            pre.DumpExprAsIL("pre", passOptions.FullDumpDir);
+            Assert.True(infered);
             var eGraph = new EGraph();
             eGraph.Add(pre, out var root);
             EGraphPrinter.DumpEgraphAsDot(eGraph, Path.Combine(passOptions.FullDumpDir, $"pre"));
-            pre.DumpExprAsIL("pre", passOptions.FullDumpDir);
 
             EGraphReWriter.ReWrite(eGraph, Case.Rules, passOptions);
             var post = eGraph.Extract(root, passOptions);
@@ -100,9 +103,27 @@ namespace Nncase.Tests.ReWrite
         {
             Expr pre = ((Const)10 * 11) * 12;
             var eGraph = new EGraph(pre);
-            var rule = new Rule.Reassociate();
+            var rule = new Rule.ReassociateMul();
             EGraphReWriter.ReWrite(eGraph, rule, passOptions.SetName("Reassociate"));
             // Assert.Equal(newExpr, 10 * ((Const)11 * 12));
+        }
+
+
+        [Fact]
+        public void TestClassicDemo()
+        {
+            passOptions.SetName("EGraphTest/TestClassicDemo");
+            var g = new EGraph();
+            Var x = "x";
+            g.Add(x * 2, out var e1);
+            g.Add((x * 2) / 2, out var root);
+            EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.FullDumpDir, "befroe"));
+            g.Add(x << 1, out var e2);
+            EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.FullDumpDir, "added"));
+            g.Merge(e2, e1);
+            EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.FullDumpDir, "merge"));
+            g.ReBuild();
+            EGraphPrinter.DumpEgraphAsDot(g, Path.Combine(passOptions.FullDumpDir, "rebuild"));
         }
 
 

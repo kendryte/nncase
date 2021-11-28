@@ -16,7 +16,7 @@ namespace Nncase.Evaluator.Ops
                 BinaryOp.Add => a + b,
                 BinaryOp.Sub => a - b,
                 BinaryOp.Mul => a * b,
-                BinaryOp.Div => a / b,
+                BinaryOp.Div => torch.div(a, b).to_type(_context.CurrentCall.CheckedDataType.ToTorchType()),
                 BinaryOp.Mod => a % b,
                 BinaryOp.Min => torch.minimum(a, b),
                 BinaryOp.Max => torch.maximum(a, b),
