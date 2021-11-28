@@ -339,7 +339,7 @@ void lstm_transform::process(transform_context &context)
             auto in_sigmoid = local_sigmoid(gate_output_ptr, context, std::to_string(i));
             auto in_tanh = local_tanh(gate_output_ptr, context, std::to_string(i));
 
-            // slice the in_sidmoid into i_t, f_t, o_t, g_t
+            // slice the in_sidmoid into i_t, o_t, f_t, g_t
             // i_t
             auto i_t = context.graph.emplace<slice>(in_sigmoid->type(), in_sigmoid->shape(),
                 axis_t { 0, 0, 0 * (int32_t)c_->shape()[2] }, axis_t { (int32_t)in_sigmoid->shape()[0], (int32_t)in_sigmoid->shape()[1], (int32_t)c_->shape()[2] });
