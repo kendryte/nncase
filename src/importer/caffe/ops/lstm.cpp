@@ -71,10 +71,17 @@ DEFINE_CAFFE_LOWER(LSTM)
     std::vector<float> blob_w_rc_vec(blob_w_rc.begin(), blob_w_rc.end());
     std::vector<float> blob_b_rc_vec((int)b_rc_shape[0], 0.f);
 
+    // create init_h init_c
+    std::vector<float> init_const(w_rc_shape[2], 0.f);
+    auto init_h = graph_.emplace<constant>(dt_float32, shape_t{1,1,w_rc_shape[2]}, init_const);
+    auto init_c = graph_.emplace<constant>(dt_float32, shape_t{1,1,w_rc_shape[2]}, init_const);
+    init_h->name(op.name() + "init_h");
+    init_c->name(op.name() + "init_c");
+
     if (input.shape().size() != 3)
     {
         auto rshape = graph_.emplace<bitcast>(dt_float32, input.shape(), dt_float32, axis_t { (int32_t)input.shape()[0], (int32_t)input.shape()[1] / (int32_t)param.num_output(), (int32_t)param.num_output() });
-        auto node = graph_.emplace<lstm>(rshape->output().shape(), w_xc_shape, b_xc_shape, w_rc_shape, b_rc_shape, n_output, has_static, "caffe");
+        auto node = graph_.emplace<lstm>(rshape->output().shape(), w_xc_shape, b_xc_shape, w_rc_shape, b_rc_shape, init_h->output().shape(), init_c->output().shape(), n_output, has_static, "caffe");
         node->name(op.name() + "/lstm");
         input_tensors_.emplace(&rshape->input(), input_name);
         node->input().connect(rshape->output());
@@ -93,6 +100,8 @@ DEFINE_CAFFE_LOWER(LSTM)
         node->b_xc().connect(b_xc_const->output());
         node->w_rc().connect(w_rc_const->output());
         node->b_rc().connect(b_rc_const->output());
+        node->initial_h().connect(init_h->output());
+        node->initial_c().connect(init_c->output());
 
         if (has_static)
         {
@@ -108,7 +117,7 @@ DEFINE_CAFFE_LOWER(LSTM)
     }
     else
     {
-        auto node = graph_.emplace<lstm>(input.shape(), w_xc_shape, b_xc_shape, w_rc_shape, b_rc_shape, n_output, has_static, "caffe");
+        auto node = graph_.emplace<lstm>(input.shape(), w_xc_shape, b_xc_shape, w_rc_shape, b_rc_shape, init_h->output().shape(), init_c->output().shape(), n_output, has_static, "caffe");
         node->name(op.name() + "/lstm");
         input_tensors_.emplace(&node->input(), input_name);
 
@@ -126,6 +135,8 @@ DEFINE_CAFFE_LOWER(LSTM)
         node->b_xc().connect(b_xc_const->output());
         node->w_rc().connect(w_rc_const->output());
         node->b_rc().connect(b_rc_const->output());
+        node->initial_h().connect(init_h->output());
+        node->initial_c().connect(init_c->output());
 
         if (has_static)
         {

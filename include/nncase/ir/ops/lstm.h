@@ -37,7 +37,6 @@ public:
     bool has_static() const noexcept { return has_static_; }
     std::string framework() const noexcept { return framework_; }
 
-    lstm(shape_t input_shape, shape_t w_xc_shape, shape_t b_xc_shape, shape_t w_rc_shape, shape_t b_rc_shape, int32_t num_output, bool has_static, std::string framework);
     lstm(shape_t input_shape, shape_t w_xc_shape, shape_t b_xc_shape, shape_t w_rc_shape, shape_t b_rc_shape, shape_t initial_h_shape, shape_t initial_c_shape, int32_t num_output, bool has_static, std::string framework);
 
 protected:

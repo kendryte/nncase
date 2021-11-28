@@ -181,17 +181,10 @@ void lstm_transform::process(transform_context &context)
 
     // if model doesn't has init h&c , init it with zero
     std::vector<float> constant_data((int)bitcast_wxc_post->output().shape()[1] * (int)bitcast_wxc_post->output().shape()[2] / 4, 0.f);
-    constant *init_h, *init_c;
-    if (context.matched_nodes.size() == 7)
-    {
-        init_h = &static_cast<constant &>(*context.matched_nodes[5]);
-        init_c = &static_cast<constant &>(*context.matched_nodes[6]);
-    }
-    else
-    {
-        init_h = context.graph.emplace<constant>(dt_float32, shape_t { 1, bitcast_wxc_post->output().shape()[1], bitcast_wxc_post->output().shape()[2] / 4 }, constant_data);
-        init_c = context.graph.emplace<constant>(dt_float32, shape_t { 1, bitcast_wxc_post->output().shape()[1], bitcast_wxc_post->output().shape()[2] / 4 }, constant_data);
-    }
+
+    auto init_h = &static_cast<constant &>(*context.matched_nodes[5]);
+    auto init_c = &static_cast<constant &>(*context.matched_nodes[6]);
+  
     auto c_0 = context.graph.emplace<bitcast>(dt_float32, init_c->output().shape(), shape_t { 1, bitcast_wxc_post->output().shape()[1], bitcast_wxc_post->output().shape()[2] / 4 });
     auto h_0 = context.graph.emplace<bitcast>(dt_float32, init_h->output().shape(), shape_t { 1, bitcast_wxc_post->output().shape()[1], bitcast_wxc_post->output().shape()[2] / 4 });
     c_0->name(old_lstm.name() + "_c_0");
@@ -260,87 +253,152 @@ void lstm_transform::process(transform_context &context)
         auto gate_output_ptr = &gate_input->output();
         if (old_lstm.framework() == "caffe")
         {
-            std::vector<shape_t> suit_for_framework;
-            std::vector<int32_t> caffe_sequence { 0, 2, 1, 3 };
-            for (size_t index = 0; index < 4; index++)
-            {
-                suit_for_framework.push_back(shape_t { (size_t)gate_input->output().shape()[0], (size_t)gate_input->output().shape()[1], (size_t)c_->shape()[2] });
-            }
-            auto framework_concat = context.graph.emplace<concat>(dt_float32, suit_for_framework, 2);
-            framework_concat->name(old_lstm.name() + "/fit_framework_concat");
-            for (auto index : caffe_sequence)
-            {
-                auto slice_gate_output = context.graph.emplace<slice>(dt_float32, gate_input->output().shape(),
-                    axis_t { 0, 0, index * (int32_t)c_->shape()[2] },
-                    axis_t { (int32_t)gate_input->output().shape()[0], (int32_t)gate_input->output().shape()[1], (index + 1) * (int32_t)c_->shape()[2] });
-                slice_gate_output->name(old_lstm.name() + "/slice_gate");
-                slice_gate_output->input().connect(*gate_output_ptr);
-                framework_concat->input_at(index).connect(slice_gate_output->output());
-            }
-            gate_output_ptr = &framework_concat->output();
+            // std::vector<shape_t> suit_for_framework;
+            // std::vector<int32_t> caffe_sequence { 0, 2, 1, 3 };
+            // for (size_t index = 0; index < 4; index++)
+            // {
+            //     suit_for_framework.push_back(shape_t { (size_t)gate_input->output().shape()[0], (size_t)gate_input->output().shape()[1], (size_t)c_->shape()[2] });
+            // }
+            // auto framework_concat = context.graph.emplace<concat>(dt_float32, suit_for_framework, 2);
+            // framework_concat->name(old_lstm.name() + "/fit_framework_concat");
+            // for (auto index : caffe_sequence)
+            // {
+            //     auto slice_gate_output = context.graph.emplace<slice>(dt_float32, gate_input->output().shape(),
+            //         axis_t { 0, 0, index * (int32_t)c_->shape()[2] },
+            //         axis_t { (int32_t)gate_input->output().shape()[0], (int32_t)gate_input->output().shape()[1], (index + 1) * (int32_t)c_->shape()[2] });
+            //     slice_gate_output->name(old_lstm.name() + "/slice_gate");
+            //     slice_gate_output->input().connect(*gate_output_ptr);
+            //     framework_concat->input_at(index).connect(slice_gate_output->output());
+            // }
+            // gate_output_ptr = &framework_concat->output();
+             // get gate_output
+            auto in_sigmoid = local_sigmoid(gate_output_ptr, context, std::to_string(i));
+            auto in_tanh = local_tanh(gate_output_ptr, context, std::to_string(i));
+
+            // slice the in_sidmoid into i_t, f_t, o_t, g_t
+            // i_t
+            auto i_t = context.graph.emplace<slice>(in_sigmoid->type(), in_sigmoid->shape(),
+                axis_t { 0, 0, 0 * (int32_t)c_->shape()[2] }, axis_t { (int32_t)in_sigmoid->shape()[0], (int32_t)in_sigmoid->shape()[1], (int32_t)c_->shape()[2] });
+            i_t->name(old_lstm.name() + "/i_t_" + std::to_string(i));
+            i_t->input().connect(*in_sigmoid);
+
+            // o_t
+            auto o_t = context.graph.emplace<slice>(in_sigmoid->type(), in_sigmoid->shape(),
+                axis_t { 0, 0, 2 * (int32_t)c_->shape()[2] }, axis_t { (int32_t)in_sigmoid->shape()[0], (int32_t)in_sigmoid->shape()[1], 3 * (int32_t)c_->shape()[2] });
+            o_t->name(old_lstm.name() + "/o_t_" + std::to_string(i));
+            o_t->input().connect(*in_sigmoid);
+
+            // f_t
+            auto f_t = context.graph.emplace<slice>(in_sigmoid->type(), in_sigmoid->shape(),
+                axis_t { 0, 0, 1 * (int32_t)c_->shape()[2] }, axis_t { (int32_t)in_sigmoid->shape()[0], (int32_t)in_sigmoid->shape()[1], 2 * (int32_t)c_->shape()[2] });
+            f_t->name(old_lstm.name() + "/f_t_" + std::to_string(i));
+            f_t->input().connect(*in_sigmoid);
+
+            // g_t
+            auto g_t = context.graph.emplace<slice>(in_tanh->type(), in_tanh->shape(),
+                axis_t { 0, 0, 3 * (int32_t)c_->shape()[2] }, axis_t { (int32_t)in_sigmoid->shape()[0], (int32_t)in_sigmoid->shape()[1], 4 * (int32_t)c_->shape()[2] });
+            g_t->name(old_lstm.name() + "/g_t_" + std::to_string(i));
+            g_t->input().connect(*in_tanh);
+
+            //c_t = cont_ * (f * c_) + (i * g)
+            auto f_c_mul = context.graph.emplace<binary>(binary_mul, c_->shape(), f_t->output().shape(), value_range<float>::full());
+            f_c_mul->name(old_lstm.name() + "/f_c_mul_" + std::to_string(i));
+            f_c_mul->input_a().connect(*c_);
+            f_c_mul->input_b().connect(f_t->output());
+
+            auto c_f_c_mul = context.graph.emplace<binary>(binary_mul, cont_->output().shape(), f_c_mul->output().shape(), value_range<float>::full());
+            c_f_c_mul->name(old_lstm.name() + "/c_f_c_mul_" + std::to_string(i));
+            c_f_c_mul->input_a().connect(cont_->output());
+            c_f_c_mul->input_b().connect(f_c_mul->output());
+
+            auto i_g_mul = context.graph.emplace<binary>(binary_mul, i_t->output().shape(), g_t->output().shape(), value_range<float>::full());
+            i_g_mul->name(old_lstm.name() + "/i_g_mul_" + std::to_string(i));
+            i_g_mul->input_a().connect(i_t->output());
+            i_g_mul->input_b().connect(g_t->output());
+
+            auto c_t = context.graph.emplace<binary>(binary_add, c_f_c_mul->output().shape(), i_g_mul->output().shape(), value_range<float>::full());
+            c_t->name(old_lstm.name() + "/c_t_" + std::to_string(i));
+            c_t->input_a().connect(c_f_c_mul->output());
+            c_t->input_b().connect(i_g_mul->output());
+
+            //h_t = o_t * tanh(c_t)
+            auto tanh_c_t = local_tanh(&c_t->output(), context, std::to_string(i));
+            auto h_t = context.graph.emplace<binary>(binary_mul, o_t->output().shape(), tanh_c_t->shape(), value_range<float>::full());
+            h_t->name(old_lstm.name() + "/h_t_" + std::to_string(i));
+            h_t->input_a().connect(o_t->output());
+            h_t->input_b().connect(*tanh_c_t);
+
+            h_concat->input_at(i).connect(h_t->output());
+            // update c_, h_
+            c_ = &c_t->output();
+            h_ = &h_t->output();
+        }
+        else
+        {
+            // get gate_output
+            auto in_sigmoid = local_sigmoid(gate_output_ptr, context, std::to_string(i));
+            auto in_tanh = local_tanh(gate_output_ptr, context, std::to_string(i));
+
+            // slice the in_sidmoid into i_t, f_t, o_t, g_t
+            // i_t
+            auto i_t = context.graph.emplace<slice>(in_sigmoid->type(), in_sigmoid->shape(),
+                axis_t { 0, 0, 0 * (int32_t)c_->shape()[2] }, axis_t { (int32_t)in_sigmoid->shape()[0], (int32_t)in_sigmoid->shape()[1], (int32_t)c_->shape()[2] });
+            i_t->name(old_lstm.name() + "/i_t_" + std::to_string(i));
+            i_t->input().connect(*in_sigmoid);
+
+            // o_t
+            auto o_t = context.graph.emplace<slice>(in_sigmoid->type(), in_sigmoid->shape(),
+                axis_t { 0, 0, 1 * (int32_t)c_->shape()[2] }, axis_t { (int32_t)in_sigmoid->shape()[0], (int32_t)in_sigmoid->shape()[1], 2 * (int32_t)c_->shape()[2] });
+            o_t->name(old_lstm.name() + "/o_t_" + std::to_string(i));
+            o_t->input().connect(*in_sigmoid);
+
+            // f_t
+            auto f_t = context.graph.emplace<slice>(in_sigmoid->type(), in_sigmoid->shape(),
+                axis_t { 0, 0, 2 * (int32_t)c_->shape()[2] }, axis_t { (int32_t)in_sigmoid->shape()[0], (int32_t)in_sigmoid->shape()[1], 3 * (int32_t)c_->shape()[2] });
+            f_t->name(old_lstm.name() + "/f_t_" + std::to_string(i));
+            f_t->input().connect(*in_sigmoid);
+
+            // g_t
+            auto g_t = context.graph.emplace<slice>(in_tanh->type(), in_tanh->shape(),
+                axis_t { 0, 0, 3 * (int32_t)c_->shape()[2] }, axis_t { (int32_t)in_sigmoid->shape()[0], (int32_t)in_sigmoid->shape()[1], 4 * (int32_t)c_->shape()[2] });
+            g_t->name(old_lstm.name() + "/g_t_" + std::to_string(i));
+            g_t->input().connect(*in_tanh);
+
+            //c_t = cont_ * (f * c_) + (i * g)
+            auto f_c_mul = context.graph.emplace<binary>(binary_mul, c_->shape(), f_t->output().shape(), value_range<float>::full());
+            f_c_mul->name(old_lstm.name() + "/f_c_mul_" + std::to_string(i));
+            f_c_mul->input_a().connect(*c_);
+            f_c_mul->input_b().connect(f_t->output());
+
+            auto c_f_c_mul = context.graph.emplace<binary>(binary_mul, cont_->output().shape(), f_c_mul->output().shape(), value_range<float>::full());
+            c_f_c_mul->name(old_lstm.name() + "/c_f_c_mul_" + std::to_string(i));
+            c_f_c_mul->input_a().connect(cont_->output());
+            c_f_c_mul->input_b().connect(f_c_mul->output());
+
+            auto i_g_mul = context.graph.emplace<binary>(binary_mul, i_t->output().shape(), g_t->output().shape(), value_range<float>::full());
+            i_g_mul->name(old_lstm.name() + "/i_g_mul_" + std::to_string(i));
+            i_g_mul->input_a().connect(i_t->output());
+            i_g_mul->input_b().connect(g_t->output());
+
+            auto c_t = context.graph.emplace<binary>(binary_add, c_f_c_mul->output().shape(), i_g_mul->output().shape(), value_range<float>::full());
+            c_t->name(old_lstm.name() + "/c_t_" + std::to_string(i));
+            c_t->input_a().connect(c_f_c_mul->output());
+            c_t->input_b().connect(i_g_mul->output());
+
+            //h_t = o_t * tanh(c_t)
+            auto tanh_c_t = local_tanh(&c_t->output(), context, std::to_string(i));
+            auto h_t = context.graph.emplace<binary>(binary_mul, o_t->output().shape(), tanh_c_t->shape(), value_range<float>::full());
+            h_t->name(old_lstm.name() + "/h_t_" + std::to_string(i));
+            h_t->input_a().connect(o_t->output());
+            h_t->input_b().connect(*tanh_c_t);
+
+            h_concat->input_at(i).connect(h_t->output());
+            // update c_, h_
+            c_ = &c_t->output();
+            h_ = &h_t->output();
         }
 
-        // get gate_output
-        auto in_sigmoid = local_sigmoid(gate_output_ptr, context, std::to_string(i));
-        auto in_tanh = local_tanh(gate_output_ptr, context, std::to_string(i));
-
-        // slice the in_sidmoid into i_t, f_t, o_t, g_t
-        // i_t
-        auto i_t = context.graph.emplace<slice>(in_sigmoid->type(), in_sigmoid->shape(),
-            axis_t { 0, 0, 0 * (int32_t)c_->shape()[2] }, axis_t { (int32_t)in_sigmoid->shape()[0], (int32_t)in_sigmoid->shape()[1], (int32_t)c_->shape()[2] });
-        i_t->name(old_lstm.name() + "/i_t_" + std::to_string(i));
-        i_t->input().connect(*in_sigmoid);
-
-        // o_t
-        auto o_t = context.graph.emplace<slice>(in_sigmoid->type(), in_sigmoid->shape(),
-            axis_t { 0, 0, 1 * (int32_t)c_->shape()[2] }, axis_t { (int32_t)in_sigmoid->shape()[0], (int32_t)in_sigmoid->shape()[1], 2 * (int32_t)c_->shape()[2] });
-        o_t->name(old_lstm.name() + "/o_t_" + std::to_string(i));
-        o_t->input().connect(*in_sigmoid);
-
-        // f_t
-        auto f_t = context.graph.emplace<slice>(in_sigmoid->type(), in_sigmoid->shape(),
-            axis_t { 0, 0, 2 * (int32_t)c_->shape()[2] }, axis_t { (int32_t)in_sigmoid->shape()[0], (int32_t)in_sigmoid->shape()[1], 3 * (int32_t)c_->shape()[2] });
-        f_t->name(old_lstm.name() + "/f_t_" + std::to_string(i));
-        f_t->input().connect(*in_sigmoid);
-
-        // g_t
-        auto g_t = context.graph.emplace<slice>(in_tanh->type(), in_tanh->shape(),
-            axis_t { 0, 0, 3 * (int32_t)c_->shape()[2] }, axis_t { (int32_t)in_sigmoid->shape()[0], (int32_t)in_sigmoid->shape()[1], 4 * (int32_t)c_->shape()[2] });
-        g_t->name(old_lstm.name() + "/g_t_" + std::to_string(i));
-        g_t->input().connect(*in_tanh);
-
-        //c_t = cont_ * (f * c_) + (i * g)
-        auto f_c_mul = context.graph.emplace<binary>(binary_mul, c_->shape(), f_t->output().shape(), value_range<float>::full());
-        f_c_mul->name(old_lstm.name() + "/f_c_mul_" + std::to_string(i));
-        f_c_mul->input_a().connect(*c_);
-        f_c_mul->input_b().connect(f_t->output());
-
-        auto c_f_c_mul = context.graph.emplace<binary>(binary_mul, cont_->output().shape(), f_c_mul->output().shape(), value_range<float>::full());
-        c_f_c_mul->name(old_lstm.name() + "/c_f_c_mul_" + std::to_string(i));
-        c_f_c_mul->input_a().connect(cont_->output());
-        c_f_c_mul->input_b().connect(f_c_mul->output());
-
-        auto i_g_mul = context.graph.emplace<binary>(binary_mul, i_t->output().shape(), g_t->output().shape(), value_range<float>::full());
-        i_g_mul->name(old_lstm.name() + "/i_g_mul_" + std::to_string(i));
-        i_g_mul->input_a().connect(i_t->output());
-        i_g_mul->input_b().connect(g_t->output());
-
-        auto c_t = context.graph.emplace<binary>(binary_add, c_f_c_mul->output().shape(), i_g_mul->output().shape(), value_range<float>::full());
-        c_t->name(old_lstm.name() + "/c_t_" + std::to_string(i));
-        c_t->input_a().connect(c_f_c_mul->output());
-        c_t->input_b().connect(i_g_mul->output());
-
-        //h_t = o_t * tanh(c_t)
-        auto tanh_c_t = local_tanh(&c_t->output(), context, std::to_string(i));
-        auto h_t = context.graph.emplace<binary>(binary_mul, o_t->output().shape(), tanh_c_t->shape(), value_range<float>::full());
-        h_t->name(old_lstm.name() + "/h_t_" + std::to_string(i));
-        h_t->input_a().connect(o_t->output());
-        h_t->input_b().connect(*tanh_c_t);
-
-        h_concat->input_at(i).connect(h_t->output());
-        // update c_, h_
-        c_ = &c_t->output();
-        h_ = &h_t->output();
+        
     }
 
     for (auto &in : dup(inputs))
