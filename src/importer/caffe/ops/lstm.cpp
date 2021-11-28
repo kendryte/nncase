@@ -73,8 +73,8 @@ DEFINE_CAFFE_LOWER(LSTM)
 
     // create init_h init_c
     std::vector<float> init_const(w_rc_shape[2], 0.f);
-    auto init_h = graph_.emplace<constant>(dt_float32, shape_t{1,1,w_rc_shape[2]}, init_const);
-    auto init_c = graph_.emplace<constant>(dt_float32, shape_t{1,1,w_rc_shape[2]}, init_const);
+    auto init_h = graph_.emplace<constant>(dt_float32, shape_t { 1, 1, w_rc_shape[2] }, init_const);
+    auto init_c = graph_.emplace<constant>(dt_float32, shape_t { 1, 1, w_rc_shape[2] }, init_const);
     init_h->name(op.name() + "init_h");
     init_c->name(op.name() + "init_c");
 
