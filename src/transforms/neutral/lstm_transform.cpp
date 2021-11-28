@@ -184,7 +184,7 @@ void lstm_transform::process(transform_context &context)
 
     auto init_h = &static_cast<constant &>(*context.matched_nodes[5]);
     auto init_c = &static_cast<constant &>(*context.matched_nodes[6]);
-  
+
     auto c_0 = context.graph.emplace<bitcast>(dt_float32, init_c->output().shape(), shape_t { 1, bitcast_wxc_post->output().shape()[1], bitcast_wxc_post->output().shape()[2] / 4 });
     auto h_0 = context.graph.emplace<bitcast>(dt_float32, init_h->output().shape(), shape_t { 1, bitcast_wxc_post->output().shape()[1], bitcast_wxc_post->output().shape()[2] / 4 });
     c_0->name(old_lstm.name() + "_c_0");
@@ -271,7 +271,7 @@ void lstm_transform::process(transform_context &context)
             //     framework_concat->input_at(index).connect(slice_gate_output->output());
             // }
             // gate_output_ptr = &framework_concat->output();
-             // get gate_output
+            // get gate_output
             auto in_sigmoid = local_sigmoid(gate_output_ptr, context, std::to_string(i));
             auto in_tanh = local_tanh(gate_output_ptr, context, std::to_string(i));
 
@@ -397,8 +397,6 @@ void lstm_transform::process(transform_context &context)
             c_ = &c_t->output();
             h_ = &h_t->output();
         }
-
-        
     }
 
     for (auto &in : dup(inputs))

@@ -19,7 +19,6 @@
 using namespace nncase;
 using namespace nncase::ir;
 
-
 lstm::lstm(shape_t input_shape, shape_t w_xc_shape, shape_t b_xc_shape, shape_t w_rc_shape, shape_t b_rc_shape, shape_t initial_h_shape, shape_t initial_c_shape, int32_t num_output, bool has_static, std::string framework)
     : num_output_(num_output), has_static_(has_static), framework_(framework)
 {
