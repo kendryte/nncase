@@ -21,54 +21,76 @@ from onnx_test_runner import OnnxTestRunner
 
 
 def _make_module(in_shape, alpha, beta, bias, size):
+    inputs = []
+    outputs = []
+    initializers = []
+    attributes_dict = {}
+    nodes = []
+
+    # input
     input = helper.make_tensor_value_info('input', TensorProto.FLOAT, in_shape)
+    inputs.append('input')
+
+    # output
     output = helper.make_tensor_value_info('output', TensorProto.FLOAT, in_shape)
+    outputs.append('output')
+
+    # alpha
+    if alpha is not None:
+        attributes_dict['alpha'] = alpha
+
+    # beta
+    if beta is not None:
+        attributes_dict['beta'] = beta
+
+    # bias
+    if bias is not None:
+        attributes_dict['bias'] = bias
+
+    attributes_dict['size'] = size
 
     node = onnx.helper.make_node(
         'LRN',
         inputs=['input'],
         outputs=['output'],
-        alpha=alpha,
-        beta=beta,
-        bias=bias,
-        size=size
+        **attributes_dict
     )
+    nodes.append(node)
 
     graph_def = helper.make_graph(
-        [node],
+        nodes,
         'test-model',
         [input],
-        [output]
+        [output],
+        initializer=initializers
     )
 
-    model_def = helper.make_model(graph_def, producer_name='kendryte')
+    model_def = helper.make_model(graph_def, producer_name='onnx')
 
     return model_def
 
 
 in_shapes = [
-    [1, 3, 60, 72],
-    [1, 3, 224, 224]
+    [1, 3, 16, 16],
 ]
 
 alphas = [
-    0.00009999999747378752,
+    None,
     0.22
 ]
 
 betas = [
+    None,
     0.20,
-    0.75
 ]
 
 biases = [
+    None,
     0.75,
-    1.0
 ]
 
 sizes = [
     3,
-    5
 ]
 
 
