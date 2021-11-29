@@ -17,7 +17,7 @@ namespace Nncase.Importer.TFLite
         {
             var input = GetInputExprs(op, 0);
             var (begin, size) = GetInputExprs(op, 1, 2);
-            var end = F.Tensors.ShapeOp(begin) + F.Tensors.ShapeOp(size);
+            var end = begin + size;
             var tensor = GetInputTensor(op, 1);
             return F.Tensors.Slice(input, begin, end, tensor.ShapeLength);
         }
@@ -25,7 +25,7 @@ namespace Nncase.Importer.TFLite
         private Expr VisitStrideSlice(in tflite.Operator op)
         {
             var (input, begin) = GetInputExprs(op, 0, 1);
-            var (end, strides) = GetInputExprs(op, 0, 1);
+            var (end, strides) = GetInputExprs(op, 2, 3);
             var options = op.BuiltinOptionsAsStridedSliceOptions();
             if (options.BeginMask != 0 || options.EndMask != 0 || options.EllipsisMask != 0
                 || options.NewAxisMask != 0)

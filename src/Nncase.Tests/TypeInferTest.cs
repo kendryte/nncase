@@ -31,4 +31,34 @@ public class UnitTestTypeInfer
         Assert.False(TypeInference.InferenceType(c));
     }
 
+    [Fact]
+    public void TestInferPad()
+    {
+        var a = new Var(new TensorType(DataType.Float32, new Shape(1, 3, 224, 224)));
+        var pads = Const.FromSpan<int>(new[] {0, 0, 1, 1, 2, 2, 3, 3}, new Shape(4, 2));
+        var pad = Pad(a, pads, PadMode.Constant, 1);
+        Assert.True(TypeInference.InferenceType(pad));
+        Assert.Equal(pad.CheckedShape, new Shape(1, 5, 228, 230));
+    }
+
+    [Fact]
+    public void TestSlice()
+    {
+        var input = Const.FromSpan<int>(new[] {1, 7, 7, 75});
+        var begin = Const.FromSpan<int>(new[] {0});
+        var end = Const.FromSpan<int>(new[] {1});
+        var stride = Const.FromSpan<int>(new[] {1});
+        var axis = Const.FromSpan<int>(new[] {0});
+        var s = Slice(input, begin, end, axis, stride);
+        Assert.True(TypeInference.InferenceType(s));
+        Assert.Equal(new Shape(1), s.CheckedShape);
+        // var input = Const.FromSpan<int>(new[] {1, 7, 7, 768});
+        // var begin = Const.FromSpan<int>(new[] {1});
+        // var end = Const.FromSpan<int>(new[] {3});
+        // var stride = Const.FromSpan<int>(new[] {1});
+        // var axis = Const.FromSpan<int>(new[] {0});
+        // var s = Slice(input, begin, end, axis, stride);
+        // Assert.True(TypeInference.InferenceType(s));
+        // Assert.Equal(s.CheckedShape, new Shape(2));
+    }
 }

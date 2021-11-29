@@ -52,7 +52,7 @@ namespace Nncase.IR.Tensors
                 context.GetArgument(this, Strides) is Const strides_con
                 )
             {
-                var outshape = new List<Dimension>();
+                var outShape = new List<Dimension>();
                 var ts_begins = begins_con.ToTensor<int>();
                 var ts_ends = ends_con.ToTensor<int>();
                 var ts_strides = strides_con.ToTensor<int>();
@@ -67,12 +67,20 @@ namespace Nncase.IR.Tensors
                         begin = begin >= 0 ? begin : old + begin;
                         end = end >= 0 ? end : old + begin;
                         stride = stride >= 0 ? stride : -stride;
-                        outshape.Add((end - begin) / stride);
+                        outShape.Add((end - begin) / stride);
                     }
                     else
-                        outshape.Add(Dimension.Unknown);
+                        outShape.Add(Dimension.Unknown);
                 }
-                return input with { Shape = new Shape(outshape) };
+
+                if (outShape.Count == 1 && outShape[0] == 1)
+                {
+                    return TensorType.Scalar(input.DType);
+                }
+                else
+                {
+                    return input with { Shape = new Shape(outShape) };
+                }
             }
             return new InvalidType("Can't Infer Shape With Dynamic Input!");
         }
