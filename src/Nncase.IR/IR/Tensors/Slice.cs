@@ -72,8 +72,7 @@ namespace Nncase.IR.Tensors
                     else
                         outShape.Add(Dimension.Unknown);
                 }
-
-                if (outShape.Count == 1 && outShape[0] == 1)
+                if (input.Shape.Rank == 1 && outShape.Count == 1)
                 {
                     return TensorType.Scalar(input.DType);
                 }

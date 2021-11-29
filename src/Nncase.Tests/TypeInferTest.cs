@@ -51,7 +51,7 @@ public class UnitTestTypeInfer
         var axis = Const.FromSpan<int>(new[] {0});
         var s = Slice(input, begin, end, axis, stride);
         Assert.True(TypeInference.InferenceType(s));
-        Assert.Equal(new Shape(1), s.CheckedShape);
+        Assert.Equal(Shape.Scalar, s.CheckedShape);
         // var input = Const.FromSpan<int>(new[] {1, 7, 7, 768});
         // var begin = Const.FromSpan<int>(new[] {1});
         // var end = Const.FromSpan<int>(new[] {3});
