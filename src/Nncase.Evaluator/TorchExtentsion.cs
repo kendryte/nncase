@@ -27,49 +27,27 @@ namespace Nncase.Evaluator
         public static torch.Tensor ToTorchTensor(this Const expr)
         {
             var dtype = expr.ValueType.DType;
-            if (expr.ValueType.IsScalar)
+            var shape = expr.CheckedShape.IsScalar
+                ? new long[] {1}
+                : expr.CheckedShape.ToList().Select(x => (long)x.FixedValue).ToArray();
+            return dtype switch
             {
-                return dtype switch
-                {
-                    DataType.Int8 => torch.tensor(expr.ToScalar<sbyte>(), ToTorchType(dtype)),
-                    DataType.Int16 => torch.tensor(expr.ToScalar<short>(), ToTorchType(dtype)),
-                    DataType.Int32 => torch.tensor(expr.ToScalar<int>(), ToTorchType(dtype)),
-                    DataType.Int64 => torch.tensor(expr.ToScalar<long>(), ToTorchType(dtype)),
-                    DataType.UInt8 => torch.tensor(expr.ToScalar<byte>(), ToTorchType(dtype)),
-                    // DataType.UInt16 => torch.tensor(expr.ToScalar<ushort>(), ToTorchType(dtype)),
-                    // DataType.UInt32 => torch.tensor(expr.ToScalar<uint>(), ToTorchType(dtype)),
-                    // DataType.UInt64 => torch.tensor(expr.ToScalar<ulong>(), ToTorchType(dtype)),
-                    // DataType.Float16 => torch.tensor(expr.ToScalar<Float16>(), ToTorchType(dtype)),
-                    DataType.Float32 => torch.tensor(expr.ToScalar<float>(), ToTorchType(dtype)),
-                    DataType.Float64 => torch.tensor(expr.ToScalar<double>(), ToTorchType(dtype)),
-                    // DataType.BFloat16 => torch.tensor(expr.ToScalar<BFloat16>(), ToTorchType(dtype)),
-                    DataType.Bool => torch.tensor(expr.ToScalar<bool>(), ToTorchType(dtype)),
-                    // DataType.String => torch.tensor(expr.ToScalar<>(), ToTorchType(dtype)),
-                    _ => throw new ArgumentOutOfRangeException("Unsupported conversion for datatype to torch.ScalarType")
-                };
-            }
-            else
-            {
-                var shape = expr.CheckedShape.ToList().Select(x => (long)x.FixedValue).ToArray();
-                return dtype switch
-                {
-                    DataType.Int8 => torch.tensor(expr.ToTensor<sbyte>(), shape, ToTorchType(dtype)),
-                    DataType.Int16 => torch.tensor(expr.ToTensor<short>(), shape, ToTorchType(dtype)),
-                    DataType.Int32 => torch.tensor(expr.ToTensor<int>(), shape, ToTorchType(dtype)),
-                    DataType.Int64 => torch.tensor(expr.ToTensor<long>(), shape, ToTorchType(dtype)),
-                    DataType.UInt8 => torch.tensor(expr.ToTensor<byte>(), shape, ToTorchType(dtype)),
-                    // DataType.UInt16 => torch.tensor(expr.ToTensor<ushort>(), shape, ToTorchType(dtype)),
-                    // DataType.UInt32 => torch.tensor(expr.ToTensor<uint>(), shape, ToTorchType(dtype)),
-                    // DataType.UInt64 => torch.tensor(expr.ToTensor<ulong>(), shape, ToTorchType(dtype)),
-                    // DataType.Float16 => torch.tensor(expr.ToTensor<Float16>(), shape, ToTorchType(dtype)),
-                    DataType.Float32 => torch.tensor(expr.ToTensor<float>(), shape, ToTorchType(dtype)),
-                    DataType.Float64 => torch.tensor(expr.ToTensor<double>(), shape, ToTorchType(dtype)),
-                    // DataType.BFloat16 => torch.tensor(expr.ToTensor<BFloat16>(), shape, ToTorchType(dtype)),
-                    DataType.Bool => torch.tensor(expr.ToTensor<bool>(), shape, ToTorchType(dtype)),
-                    // DataType.String => torch.tensor(expr.ToTensor<>(), shape, ToTorchType(dtype)),
-                    _ => throw new ArgumentOutOfRangeException("Unsupported conversion for datatype to torch.ScalarType")
-                };
-            }
+                DataType.Int8 => torch.tensor(expr.ToTensor<sbyte>(), shape, ToTorchType(dtype)),
+                DataType.Int16 => torch.tensor(expr.ToTensor<short>(), shape, ToTorchType(dtype)),
+                DataType.Int32 => torch.tensor(expr.ToTensor<int>(), shape, ToTorchType(dtype)),
+                DataType.Int64 => torch.tensor(expr.ToTensor<long>(), shape, ToTorchType(dtype)),
+                DataType.UInt8 => torch.tensor(expr.ToTensor<byte>(), shape, ToTorchType(dtype)),
+                // DataType.UInt16 => torch.tensor(expr.ToTensor<ushort>(), shape, ToTorchType(dtype)),
+                // DataType.UInt32 => torch.tensor(expr.ToTensor<uint>(), shape, ToTorchType(dtype)),
+                // DataType.UInt64 => torch.tensor(expr.ToTensor<ulong>(), shape, ToTorchType(dtype)),
+                // DataType.Float16 => torch.tensor(expr.ToTensor<Float16>(), shape, ToTorchType(dtype)),
+                DataType.Float32 => torch.tensor(expr.ToTensor<float>(), shape, ToTorchType(dtype)),
+                DataType.Float64 => torch.tensor(expr.ToTensor<double>(), shape, ToTorchType(dtype)),
+                // DataType.BFloat16 => torch.tensor(expr.ToTensor<BFloat16>(), shape, ToTorchType(dtype)),
+                DataType.Bool => torch.tensor(expr.ToTensor<bool>(), shape, ToTorchType(dtype)),
+                // DataType.String => torch.tensor(expr.ToTensor<>(), shape, ToTorchType(dtype)),
+                _ => throw new ArgumentOutOfRangeException("Unsupported conversion for datatype to torch.ScalarType")
+            };
         }
 
         private static readonly Dictionary<DataType, torch.ScalarType> _dataTypesToTorchType = new()
