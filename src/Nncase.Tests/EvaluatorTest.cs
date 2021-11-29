@@ -68,18 +68,13 @@ namespace Nncase.Tests.Evaluator
             var end = Const.FromSpan<int>(new[] { 1, 1, 1, 5 }, new Shape(new[] { 4 }));
             var axes = Const.FromSpan<int>(new[] { 0, 1, 2, 3 }, new Shape(new[] { 4 }));
             var strides = Const.FromSpan<int>(new[] { 1, 1, 1, 1 }, new Shape(new[] { 4 }));
-            TypeInference.InferenceType(input);
-            TypeInference.InferenceType(begin);
-            TypeInference.InferenceType(end);
-            TypeInference.InferenceType(axes);
-            TypeInference.InferenceType(strides);
-
-            var result = Const.FromSpan<int>(Enumerable.Range(0, 5).ToArray(), new Shape(new[] { 1, 1, 1, 5 })); TypeInference.InferenceType(strides);
-            TypeInference.InferenceType(result);
+            var result = Const.FromSpan<int>(Enumerable.Range(0, 5).ToArray(), new Shape(new[] { 1, 1, 1, 5 }));
             var tResult = result.ToTorchTensor();
+            var expr = Tensors.Slice(input, begin, end, axes, strides);
+            Assert.True(expr.InferenceType());
             Assert.Equal(
                 tResult,
-                Tensors.Slice(input, begin, end, axes, strides).Eval()
+                expr.Eval()
                 );
         }
 

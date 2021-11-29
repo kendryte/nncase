@@ -23,6 +23,18 @@ namespace Nncase.Transform
             DumpDir = dumpDir;
             PassName = "";
         }
+        /// <summary>
+        /// copy construct
+        /// </summary>
+        /// <param name="other"></param>
+        public RunPassOptions(RunPassOptions other)
+        {
+            Target = other.Target;
+            DumpLevel = other.DumpLevel;
+            DumpDir = other.DumpDir;
+            PassName = other.PassName;
+        }
+
 
         /// <summary>
         /// Gets target.
@@ -37,6 +49,10 @@ namespace Nncase.Transform
 
         public RunPassOptions SetName(string name) { PassName = name; return this; }
 
+        public RunPassOptions SetDir(string path) { DumpDir = path; return this; }
+
         public string FullDumpDir { get => Path.Combine(DumpDir, PassName); }
+
+        public static RunPassOptions Invalid => new RunPassOptions(null, -1, "");
     }
 }

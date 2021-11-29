@@ -20,6 +20,12 @@ namespace Nncase.Evaluator
 
         public static Const ToConst(this torch.Tensor tensor, Shape shape)
         {
+            if (shape.Prod().FixedValue != tensor.numel())
+            {
+                throw new InvalidCastException($"The Target Shape Prod {shape.Prod().FixedValue} != {tensor.numel()}!");
+            }
+            if (!tensor.is_contiguous())
+                tensor = tensor.contiguous();
             return new Const(new TensorType(ToDataType(tensor.dtype), shape),
                 tensor.bytes.ToArray());
         }
@@ -28,7 +34,7 @@ namespace Nncase.Evaluator
         {
             var dtype = expr.ValueType.DType;
             var shape = expr.CheckedShape.IsScalar
-                ? new long[] {1}
+                ? new long[] { 1 }
                 : expr.CheckedShape.ToList().Select(x => (long)x.FixedValue).ToArray();
             return dtype switch
             {

@@ -49,19 +49,30 @@ namespace Nncase.IR.Tensors
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TupleType inputs, TensorType axis)
         {
+            bool? allScalar = null;
+            DataType? allDType = null;
             foreach (var (i, input) in Enumerable.Range(0, inputs.Count).Select(i => (i, inputs[i])))
             {
-                if (input is not TensorType)
+                var type = input as TensorType;
+                if (type is null)
                 {
                     if (input is InvalidType)
                         return input;
                     else
                         return new InvalidType($"The ConCat Item[{i}] Must Be TensorType But Get {input.GetType().Name}");
                 }
+                allScalar = (allScalar ?? type.IsScalar) & type.IsScalar;
+                allDType ??= type.DType;
+                if (allDType != type.DType)
+                    return new InvalidType($"The ConCat Item[{i}] Must Be {allDType} But Get {type.DType}");
             }
-            var input0 = inputs[0] as TensorType;
+            var input0 = (TensorType)inputs[0];
+            if (allScalar == true && allDType is not null)
+            {
+                return new TensorType(allDType.Value, new[] { inputs.Count });
+            }
             InvalidType? invalidType = null;
-            var axisValue = (context.GetArgument(this, Axis) as Const).ToScalar<int>();
+            var axisValue = ((Const)context.GetArgument(this, Axis)).ToScalar<int>();
             var shapeValue = Enumerable.Range(0, input0.Shape.Rank).Select(i =>
             {
                 if (i == axisValue)
@@ -73,10 +84,10 @@ namespace Nncase.IR.Tensors
                 {
                     var allAxisDimIsSame = inputs.Fields.Aggregate(
                         true,
-                        (prod, next) => prod && (next as TensorType).Shape[i].IsFixed);
+                        (prod, next) => prod && ((TensorType)next).Shape[i].IsFixed);
                     if (allAxisDimIsSame)
                     {
-                        return (inputs[0] as TensorType).Shape[0];
+                        return ((TensorType)inputs[0]).Shape[i];
                     }
                     else
                     {

@@ -48,15 +48,16 @@ namespace Nncase.Tests.ReWrite
             passOptions = new RunPassOptions(null, 3, dumpDir);
         }
 
-        public Expr RunShapeInferPass(Expr expr, params Expr[] parameters)
+        public Expr RunShapeInferPass(string name, Expr expr, params Expr[] parameters)
         {
             var f = new Function(expr, parameters);
-            TypeInference.InferenceType(f);
-            return new ShapeInferPass().Run(f, passOptions.SetName("RunShapeInferPass")).Body;
+            var result = TypeInference.InferenceType(f);
+            f.DumpExprAsIL("before", Path.Combine(passOptions.FullDumpDir, $"ShapeInfer_{name}"));
+            return new ShapeInferPass($"ShapeInfer_{name}").Run(f, passOptions).Body;
         }
 
         public Expr ApplyFoldConstCallRewrite(Expr expr) =>
-            DataFlowRewrite.Rewrite(expr, new Transform.DataFlow.Rules.FoldConstCall());
+            DataFlowRewrite.Rewrite(expr, new[] { new Transform.DataFlow.Rules.FoldConstCall() }, passOptions);
     }
 
     public abstract class IRewriteCase

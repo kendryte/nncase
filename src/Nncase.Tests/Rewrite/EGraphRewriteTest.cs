@@ -21,6 +21,11 @@ namespace Nncase.Tests.ReWrite
 {
     public class EGraphRewriteTestFactory : RewriteTest
     {
+        public EGraphRewriteTestFactory() : base()
+        {
+            passOptions.SetDir(Path.Combine(passOptions.FullDumpDir, "EGraphRewriteTestFactory"));
+        }
+
         private static IEnumerable<object[]> Data =>
           new List<object[]>
           {
@@ -39,7 +44,7 @@ namespace Nncase.Tests.ReWrite
 
         public void RunCore(IRewriteCase Case)
         {
-            passOptions.SetName($"EGraphRewriteTest/{Case.Name}");
+            passOptions.SetName($"{Case.Name}");
             Expr pre = Case.PreExpr;
             var infered = pre.InferenceType();
             pre.DumpExprAsIL("pre", passOptions.FullDumpDir);
@@ -66,6 +71,11 @@ namespace Nncase.Tests.ReWrite
 
     public class EGraphRewriteTest : RewriteTest
     {
+
+        public EGraphRewriteTest() : base()
+        {
+            passOptions.SetDir(Path.Combine(passOptions.FullDumpDir, "EGraphRewriteTest"));
+        }
 
         [Fact]
         public void RewriteNoSenceAdd()
@@ -129,7 +139,7 @@ namespace Nncase.Tests.ReWrite
         [Fact]
         public void TestTransposeBinaryMotion()
         {
-            passOptions.SetName("EGraphRewriteTest/TransposeBinaryMotion");
+            passOptions.SetName("TransposeBinaryMotion");
             Call c0 = (Call)NHWCToNCHW(Const.FromShape<int>(new[] { 2, 2, 3, 4 }, 1));
             Call c1 = (Call)NHWCToNCHW(Const.FromShape<int>(new[] { 2, 2, 1, 1 }, 1));
             Assert.Equal(c0.Parameters[1].GetHashCode(), c1.Parameters[1].GetHashCode());
@@ -144,6 +154,7 @@ namespace Nncase.Tests.ReWrite
             EGraphReWriter.ReWrite(eGraph, new Rule.TransposeBinaryMotion(), passOptions);
 
             var post = eGraph.Extract(root, passOptions);
+            Assert.True(post.InferenceType());
             Assert.Equal((pre.Eval()), (post.Eval()));
             post.DumpExprAsIL("post", passOptions.FullDumpDir);
         }

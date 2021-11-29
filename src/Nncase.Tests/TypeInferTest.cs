@@ -53,7 +53,7 @@ public class UnitTestTypeInfer
         var s = Slice(input, begin, end, axis, stride);
         Assert.True(TypeInference.InferenceType(s));
         var post = s.Eval().ToConst();
-        Assert.Equal(new Shape(1), post.CheckedShape);
+        Assert.Equal(s.CheckedShape, post.CheckedShape);
     }
 
     [Fact]

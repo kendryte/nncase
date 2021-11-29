@@ -4,6 +4,7 @@ using NetFabric.Hyperlinq;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
 using TorchSharp;
+using Nncase;
 
 using torchF = TorchSharp.torch.nn.functional;
 namespace Nncase.Evaluator.Ops
@@ -13,7 +14,8 @@ namespace Nncase.Evaluator.Ops
         private torch.Tensor VisitShape(ShapeOp shape)
         {
             var input = _context.GetArgument(shape, ShapeOp.Input);
-            return input.shape;
+            var dtype = _context.CurrentCallResultTensorType().DType.ToTorchType();
+            return ((torch.Tensor)input.shape).to_type(dtype);
         }
     }
 }

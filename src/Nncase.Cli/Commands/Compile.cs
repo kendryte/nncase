@@ -99,7 +99,7 @@ namespace Nncase.Cli.Commands
             var func = module.Entry;
             using var dumpFile = File.Open(Path.Combine(dumpPath, $"{func.Name}.il"), FileMode.OpenOrCreate);
             using var dumpWriter = new StreamWriter(dumpFile);
-            IRPrinter.DumpFunctionAsIL(dumpWriter, func);
+            IRPrinter.DumpFunctionAsIL(func, dumpWriter);
         }
     }
 }

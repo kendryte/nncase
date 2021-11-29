@@ -20,13 +20,12 @@ namespace Nncase.Transform.DataFlow.Rules
         {
             Pattern = IsCall(IsWildCard(), IsVArgsRepeat(() => IsAlt(IsConst(), IsConstTuple())));
         }
-        
+
         public override Expr? GetRePlace(IMatchResult result)
         {
             var expr = result[Pattern];
             var tensor = expr.Eval();
-            var callSlice = (expr is Call call) && (call.Target == new Slice());
-            return callSlice ? tensor.ToConst(expr.CheckedShape) : tensor.ToConst();
+            return tensor.ToConst(expr.CheckedShape);
         }
     }
 
@@ -36,7 +35,7 @@ namespace Nncase.Transform.DataFlow.Rules
         {
             Pattern = IsFunction(IsWildCard(), IsVArgsRepeat(() => IsAlt(IsConst(), IsConstTuple())));
         }
-        public override Expr? GetRePlace(IMatchResult result) => Evaluator.Evaluator.Eval(result[Pattern]).ToConst();
+        public override Expr? GetRePlace(IMatchResult result) => result[Pattern].Eval().ToConst();
     }
 
     public class FoldShapeOp : PatternRule

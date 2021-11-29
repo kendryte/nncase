@@ -31,12 +31,12 @@ namespace Nncase.Transform
         {
             if (options.DumpLevel > 0)
             {
-                IRPrinter.DumpFunctionAsIL(Path.Combine(options.DumpDir, Name), pre, "Before");
+                IRPrinter.DumpFunctionAsIL(pre, "Before", Path.Combine(options.FullDumpDir, Name));
             }
-            Function post = (Function)DataFlowRewrite.Rewrite(pre, Rules);
+            Function post = (Function)DataFlowRewrite.Rewrite(pre, Rules, options);
             if (options.DumpLevel > 0)
             {
-                IRPrinter.DumpFunctionAsIL(Path.Combine(options.DumpDir, Name), post, "After");
+                IRPrinter.DumpFunctionAsIL(post, "After", Path.Combine(options.FullDumpDir, Name));
             }
             return post;
         }
@@ -51,7 +51,7 @@ namespace Nncase.Transform
             new Transform.DataFlow.Rules.FoldShapeOp(),
         };
 
-        public ShapeInferPass() : base("ShapeInfer")
+        public ShapeInferPass(string name = "ShapeInfer") : base(name)
         {
         }
 
@@ -60,17 +60,11 @@ namespace Nncase.Transform
         {
             Function post;
             int count = 0;
-            var dumpPath = Path.Combine(options.DumpDir, Name);
+            RunPassOptions new_options = new(options);
+            new_options.SetDir(options.FullDumpDir);
             while (true)
             {
-                if (options.DumpLevel > 0)
-                    IRPrinter.DumpFunctionAsIL(dumpPath, pre, $"{count}_Before");
-
-                post = (Function)DataFlowRewrite.Rewrite(pre, rules);
-
-                if (options.DumpLevel > 0)
-                    IRPrinter.DumpFunctionAsIL(dumpPath, post, $"{count++}_After");
-
+                post = (Function)DataFlowRewrite.Rewrite(pre, rules, new_options.SetName($"{Name}/Run_{count}"));
                 if (post == pre)
                 {
                     if (!TypeInference.InferenceType(post))

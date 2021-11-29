@@ -14,8 +14,8 @@ namespace Nncase.Evaluator
                 throw new InvalidOperationException("Expr in Evaluator need a valid type");
             }
             var evaluatorVisitor = new EvaluatorVisitor();
-            var result = evaluatorVisitor.Visit(expr).to_type(expr.CheckedDataType.ToTorchType());
-            return result;
+            var result = evaluatorVisitor.Visit(expr);
+            return expr.CheckedShape.IsScalar ? result.view(new long[] { }) : result;
         }
     }
 }

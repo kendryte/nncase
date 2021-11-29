@@ -21,17 +21,17 @@ namespace Nncase.IR
         /// </summary>
         /// <param name="textWriter">Text writer.</param>
         /// <param name="function">Function.</param>
-        public static void DumpFunctionAsIL(TextWriter textWriter, Function function)
+        public static void DumpFunctionAsIL(Function function, TextWriter textWriter)
         {
             var visitor = new ILDumpVisitor(textWriter);
             visitor.Visit(function);
         }
 
-        public static void DumpFunctionAsIL(string dumpPath, Function function, string prefix = "")
+        public static void DumpFunctionAsIL(Function function, string prefix, string dumpPath)
         {
             var nprefix = prefix.Any() ? prefix + "_" : prefix;
             Directory.CreateDirectory(dumpPath);
-            using var dumpFile = File.Open(Path.Combine(dumpPath, $"{nprefix}{function.Name}.il"), FileMode.Create);
+            using var dumpFile = File.Open(Path.Combine(dumpPath, $"{nprefix}{function.Name}.il"), FileMode.OpenOrCreate);
             using var dumpWriter = new StreamWriter(dumpFile);
             var visitor = new ILDumpVisitor(dumpWriter);
             visitor.Visit(function);

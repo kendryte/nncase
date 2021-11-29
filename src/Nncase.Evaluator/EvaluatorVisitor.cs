@@ -55,6 +55,18 @@ namespace Nncase.Evaluator.Ops
                 throw new InvalidOperationException($"Op:{op} Parameter:{parameter} is not const");
             }
         }
+
+        public TensorType GetTensorType(Expr expr)
+        {
+            var resultType = expr.CheckedType ?? throw new InvalidOperationException($"Expr {expr} don't have CheckedType.");
+            return resultType is TensorType resultTensorType ?
+                resultTensorType :
+                throw new InvalidOperationException($"Expr {expr} is not a TensorType.");
+        }
+
+
+        public TensorType CurrentCallResultTensorType() => GetTensorType(CurrentCall);
+
     }
 
     public sealed partial class EvaluatorVisitor : ExprVisitor<torch.Tensor, IRType>

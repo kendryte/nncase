@@ -57,13 +57,19 @@ namespace Nncase.Tests
 
     public class UnitTestDataFlowRewrite : RewriteTest
     {
+        public UnitTestDataFlowRewrite() : base()
+        {
+            passOptions.SetDir(Path.Combine(passOptions.FullDumpDir, "UnitTestDataFlowRewrite"));
+        }
+
         [Fact]
         public void TestSwapXY()
         {
             var lhs = (Var)"x";
             var rhs = (Const)1;
             var pre = (lhs + rhs) * 10;
-            var post = DataFlowRewrite.Rewrite(pre, new SwapXY());
+
+            var post = DataFlowRewrite.Rewrite(pre, new[] { new SwapXY() }, RunPassOptions.Invalid);
             Assert.Equal(post, (rhs + lhs) * 10);
         }
 
@@ -74,13 +80,14 @@ namespace Nncase.Tests
             var rhs = torch.rand(1, 6, 3, torch.ScalarType.Float32).ToConst();
             var pre = ShapeOp(lhs + rhs);
             Assert.True(TypeInference.InferenceType(pre));
-            var post = DataFlowRewrite.Rewrite(pre, new Transform.DataFlow.Rules.FoldShapeOp());
+            var post = DataFlowRewrite.Rewrite(pre, new[] { new Transform.DataFlow.Rules.FoldShapeOp() }, RunPassOptions.Invalid);
             Assert.Equal(new[] { 1, 6, 3 }, post.ToTensor<int>().ToArray());
         }
 
         [Fact]
         public void TestFoldConstCall()
         {
+            passOptions.SetName("TestFoldConstCall");
             var lhs = torch.rand(2, 1, 3, torch.ScalarType.Float32);
             var rhs = torch.rand(2, 6, 3, torch.ScalarType.Float32);
             var pre = lhs.ToConst() + rhs.ToConst();
@@ -92,6 +99,7 @@ namespace Nncase.Tests
         [Fact]
         public void TestFoldConstCallTuple()
         {
+            passOptions.SetName("TestFoldConstCallTuple");
             var lhs = torch.rand(2, 1, 3, torch.ScalarType.Float32);
             var rhs = torch.rand(2, 6, 3, torch.ScalarType.Float32);
             var pre = Concat(new IR.Tuple(lhs.ToConst(), rhs.ToConst()), 1);
@@ -100,12 +108,13 @@ namespace Nncase.Tests
             Assert.IsType<Const>(post);
             Assert.Equal(torch.cat(new[] { lhs, rhs }, 1), post.Eval());
         }
-        
+
         [Fact]
         public void TestFoldConstCallType()
         {
-            var a = (Const) 1;
-            var b = (Const) 2;
+            passOptions.SetName("TestFoldConstCallType");
+            var a = (Const)1;
+            var b = (Const)2;
             var expr = a * b + 3;
             Assert.True(TypeInference.InferenceType(expr));
             var post = ApplyFoldConstCallRewrite(expr);
@@ -113,50 +122,58 @@ namespace Nncase.Tests
             Assert.Equal(expr.CheckedType, post.CheckedType);
             var res = 1 * 2 + 3;
             Assert.Equal(post.ToScalar<int>(), res);
-            
+
             var cast_to_i64 = Cast(expr, DataType.Int64);
             Assert.True(TypeInference.InferenceType(cast_to_i64));
-            
+
             var cast_to_i32 = Cast(cast_to_i64, DataType.Int32);
             Assert.True(TypeInference.InferenceType(cast_to_i32));
-            
+
             var cat = Stack(new Tuple(cast_to_i32, cast_to_i32), 0);
             Assert.True(TypeInference.InferenceType(cat));
             var old_dtype = cat.CheckedDataType;
             var after_cat = ApplyFoldConstCallRewrite(cat);
-            
+
             Assert.Equal(
                 (after_cat as Const).ToTensor<int>().ToArray(),
-                new[] {res, res});
+                new[] { res, res });
             Assert.Equal(old_dtype, after_cat.CheckedDataType);
         }
 
         [Fact]
         public void TestRewriteSameAsShapeInferPass()
         {
+            passOptions.SetName("SameAsShapeInferPass");
             var input = new Var("input", new TensorType(DataType.Int32, new Shape(new[] { 1, 3, 240, 320 })));
             Assert.True(TypeInference.InferenceType(input));
             var computeShape = ShapeOp(input);
             var shapeRewrite = DataFlowRewrite.Rewrite(computeShape,
-                new PatternRule[] { new Transform.DataFlow.Rules.FoldShapeOp() });
-            var shapePass = RunShapeInferPass(computeShape, input);
+                new PatternRule[] { new Transform.DataFlow.Rules.FoldShapeOp() }, RunPassOptions.Invalid);
+            var shapePass = RunShapeInferPass("", computeShape, input);
             Assert.Equal(shapeRewrite, shapePass);
         }
     }
 
     public class DataFlowRewriteAndInferIntegrateTest : RewriteTest
     {
+        public DataFlowRewriteAndInferIntegrateTest() : base()
+        {
+            passOptions.SetDir(Path.Combine(passOptions.FullDumpDir, "DataFlowRewriteAndInferIntegrateTest"));
+        }
+
+
         public T Dim1ExprToScalar<T>(Expr expr) where T : unmanaged => (expr as Const).ToTensor<T>().ToArray()[0];
 
         [Fact]
         public void TestPaddingCompute()
         {
+            passOptions.SetName("TestPaddingCompute");
             var input = new Var("input", new TensorType(DataType.Int32, new Shape(1, 3, 240, 320)));
             var weights = Const.FromSpan<int>(Enumerable.Range(0, 3 * 3 * 3 * 16).ToArray(), new Shape(new[] { 16, 3, 3, 3 }));
             var (inH, inW) = Util.GetHW(input);
             var (fH, fW) = Util.GetHW(weights);
-            var inHPost = RunShapeInferPass(inH);
-            var inWPost = RunShapeInferPass(inW);
+            var inHPost = RunShapeInferPass("inH", inH);
+            var inWPost = RunShapeInferPass("inW", inW);
             Assert.Equal(240, inHPost.ToScalar<int>());
             Assert.Equal(320, inWPost.ToScalar<int>());
             var strideH = 1;
@@ -167,13 +184,14 @@ namespace Nncase.Tests
             var padW = TFLiteImporter.GetWindowedPadding(inW, fW, strideW, dilationW, true);
             var padding = Util.ConcatPadding(padH, padW);
             Assert.True(TypeInference.InferenceType(padding));
-            var paddingPost = RunShapeInferPass(padding, input);
+            var paddingPost = RunShapeInferPass("padding", padding, input);
             Assert.True(paddingPost is Const);
         }
 
         [Fact]
         public void TestYolo20MinStructure()
         {
+            passOptions.SetName("TestYolo20MinStructure");
             var input = new Var("input", new TensorType(DataType.Int32, new Shape(new[] { 1, 240, 320, 3 })));
             var weights = Const.FromSpan<int>(Enumerable.Range(0, 3 * 3 * 3 * 16).ToArray(), new Shape(new[] { 16, 3, 3, 3 }));
             var bias = Const.FromSpan<int>(Enumerable.Range(0, 16).ToArray());
@@ -194,7 +212,7 @@ namespace Nncase.Tests
                 PadMode.Constant, 1);
             var convAfterTranspose = NCHWToNHWC(Clamp(conv, 0, 1));
 
-            var postConvAfterTranspose = RunShapeInferPass(convAfterTranspose);
+            var postConvAfterTranspose = RunShapeInferPass("convAfterTranspose", convAfterTranspose);
             Assert.True(TypeInference.InferenceType(postConvAfterTranspose));
             Assert.Equal(new Shape(1, 240, 320, 16), postConvAfterTranspose.CheckedShape);
 
@@ -209,7 +227,7 @@ namespace Nncase.Tests
             var rPadW = TFLiteImporter.GetWindowedPadding(rInW, 2, 2, dilationW, true);
             var rPadding = Util.ConcatPadding(rPadH, rPadW);
             var reduce = NCHWToNHWC(ReduceWindow2D(ReduceOp.Max, NHWCToNCHW(max), initValue, doubleV, doubleV, rPadding, dilation));
-            var post = RunShapeInferPass(reduce);
+            var post = RunShapeInferPass("reduce", reduce);
             Assert.True(TypeInference.InferenceType(post));
             Assert.Equal(new Shape(1, 120, 160, 16), post.CheckedShape);
         }
@@ -217,10 +235,11 @@ namespace Nncase.Tests
         [Fact]
         public void SliceForShapeIndex()
         {
+            passOptions.SetName("SliceForShapeIndex");
             var input = new Var(new TensorType(DataType.Float32, new Shape(1, 7, 7, 75)));
             var slice = Util.ShapeIndex(ShapeOp(input), 1);
             TypeInference.InferenceType(slice);
-            var post = RunShapeInferPass(slice);
+            var post = RunShapeInferPass("slice", slice);
             Assert.True(TypeInference.InferenceType(post));
             Assert.True(post is Const);
             Assert.Equal(Shape.Scalar, post.CheckedShape);
