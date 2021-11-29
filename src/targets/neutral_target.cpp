@@ -104,7 +104,7 @@ void neutral_target::add_default_transforms(ir::transforms::transform_pass &pass
 
     pass.emplace<fold_nop_pad_transform>();
     pass.emplace<fold_nop_bitcast_transform>();
-    // pass.emplace<fold_slice_slice_transform>();
+    pass.emplace<fold_slice_slice_transform>();
     pass.emplace<fold_pad_pad_transform>();
     pass.emplace<fold_pad_strided_slice_transform>();
 
@@ -185,6 +185,7 @@ void neutral_target::register_target_independent_passes(const module_type_t &typ
         //lstm_transform
         {
             transform_pass p("lstm_transform");
+            p.emplace<fold_constant_transform>();
             p.emplace<lstm_transform>();
             pass_mgr.add_pass(std::move(p));
         }
