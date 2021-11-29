@@ -98,14 +98,14 @@ namespace Nncase.Tests
             Assert.True(TypeInference.InferenceType(pre));
             var post = ApplyFoldConstCallRewrite(pre);
             Assert.IsType<Const>(post);
-            Assert.Equal(torch.cat(new[] { lhs, rhs }, 1), post.Eval());
+            Assert.Equal(torch.cat(new[] { lhs, rhs }, 1), Evaluator.Evaluator.Eval(post));
         }
-
+        
         [Fact]
         public void TestFoldConstCallType()
         {
-            var a = (Const)1;
-            var b = (Const)2;
+            var a = (Const) 1;
+            var b = (Const) 2;
             var expr = a * b + 3;
             Assert.True(TypeInference.InferenceType(expr));
             var post = ApplyFoldConstCallRewrite(expr);
@@ -113,21 +113,21 @@ namespace Nncase.Tests
             Assert.Equal(expr.CheckedType, post.CheckedType);
             var res = 1 * 2 + 3;
             Assert.Equal(post.ToScalar<int>(), res);
-
+            
             var cast_to_i64 = Cast(expr, DataType.Int64);
             Assert.True(TypeInference.InferenceType(cast_to_i64));
-
+            
             var cast_to_i32 = Cast(cast_to_i64, DataType.Int32);
             Assert.True(TypeInference.InferenceType(cast_to_i32));
-
+            
             var cat = Stack(new Tuple(cast_to_i32, cast_to_i32), 0);
             Assert.True(TypeInference.InferenceType(cat));
             var old_dtype = cat.CheckedDataType;
             var after_cat = ApplyFoldConstCallRewrite(cat);
-
+            
             Assert.Equal(
                 (after_cat as Const).ToTensor<int>().ToArray(),
-                new[] { res, res });
+                new[] {res, res});
             Assert.Equal(old_dtype, after_cat.CheckedDataType);
         }
 
@@ -213,6 +213,18 @@ namespace Nncase.Tests
             var post = RunShapeInferPass(reduce);
             Assert.True(TypeInference.InferenceType(post));
             Assert.Equal(new Shape(1, 120, 160, 16), post.CheckedShape);
+        }
+
+        [Fact]
+        public void SliceShapeOp()
+        {
+            var input = new Var(new TensorType(DataType.Float32, new Shape(1, 7, 7, 75)));
+            var slice = Util.ShapeIndex(ShapeOp(input), 1);
+            TypeInference.InferenceType(slice);
+            var post = RunShapeInferPass(slice);
+            Assert.True(TypeInference.InferenceType(post));
+            Assert.True(post is Const);
+            Assert.Equal(Shape.Scalar, post.CheckedShape);
         }
     }
 }
