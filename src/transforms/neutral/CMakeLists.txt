@@ -3,7 +3,10 @@
 target_sources(transforms PRIVATE
     add_quant_checkpoints.cpp
     add_to_conv2d.cpp
+    binary_motion.cpp
+    bitcast_motion.cpp
     fold_constant.cpp
+    fold_conv2d_binary.cpp
     fold_bitcast.cpp
     fold_clamp.cpp
     fold_transpose.cpp
@@ -25,7 +28,6 @@ target_sources(transforms PRIVATE
     convert_motion.cpp
     clamp_to_binary.cpp
     take_to_slice.cpp
-    fold_conv2d_biasadd.cpp
     remove_convert.cpp
     remove_binary.cpp
     add_quant_motion.cpp

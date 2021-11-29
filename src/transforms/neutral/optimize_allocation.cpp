@@ -60,9 +60,8 @@ void make_slice_no_action_pass::run_core(graph &graph, [[maybe_unused]] nncase::
     auto alias_visitor = make_relay_ir_visitor([&](node &node) {
         if (auto s = node_cast<slice>(node))
         {
-            auto &strides = s->strides();
             if ((s->attributes() & node_attr_action)
-                && std::all_of(strides.begin(), strides.end(), [](int32_t stride) { return stride == 1; }))
+                && is_simple_slice(s->begin(), s->end(), s->strides(), s->input().shape()))
             {
                 auto &out = s->output();
                 out.attributes(out.attributes() | cnctr_attr_buffer_slice | cnctr_attr_no_layout_strides | cnctr_attr_no_buffer_fusion);
@@ -277,8 +276,8 @@ void alias_bitcast_buffer_pass::run_core(graph &graph, [[maybe_unused]] nncase::
 
                 size_t offset = 0;
                 // input & rdata should remain locations
-                if (in_buf.memory_location() == mem_input || in_buf.memory_location() == mem_rdata
-                    || (input.attributes() & cnctr_attr_buffer_slice))
+                if (in_buf.memory_location() == mem_input || in_buf.memory_location() == mem_rdata || in_buf.memory_location() == mem_output
+                    || (input.attributes() & cnctr_attr_buffer_slice) || (in_buf.parent() && in_buf.parent()->parent != &out_buf))
                 {
                     // owner is input, parent shape is bitcast's
                     out_buf.parent() = { &in_buf, offset, b->output().shape() };
@@ -317,6 +316,7 @@ void alias_concat_buffer_pass::run_core([[maybe_unused]] graph &graph, [[maybe_u
                 auto &in_buf = context.logical_buffer_map().at(in->connection());
                 in_buf->parent() = { out_buf, offset, c->output().shape() };
                 in_buf->strides_shape() = c->output().shape();
+                in_buf->memory_location() = out_buf->memory_location();
                 cnt_begin[axis] += in->shape()[axis];
                 offset = ir::get_bytes(in_buf->type()) * xt::element_offset<size_t>(to_strides(in_buf->parent()->shape), cnt_begin.begin(), cnt_begin.end());
             }
@@ -337,7 +337,6 @@ void alias_slice_buffer_pass::run_core(graph &graph, [[maybe_unused]] nncase::ta
                 auto &out_buf = context.logical_buffer_map().at(&s->output());
 
                 size_t offset = ir::get_bytes(in_buf->type()) * xt::element_offset<size_t>(to_strides(s->input().shape()), s->begin().begin(), s->begin().end());
-
                 out_buf->parent() = { in_buf, offset, s->output().shape() };
                 out_buf->strides_shape() = s->input().shape();
                 out_buf->memory_location() = in_buf->memory_location();
