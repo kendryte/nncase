@@ -71,6 +71,11 @@ NNCASE_API result<void> reduce_arg(reduce_arg_op_t op, const float *input, T *ou
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides,
     const runtime_shape_t &axis, bool keep_dims, bool select_last_idx, kernel_context &context) noexcept;
 
+template <typename T>
+result<void> reduce_prod(const T *input, T *output, const runtime_shape_t &in_shape,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides,
+    const runtime_shape_t &axes, bool keep_dims) noexcept;
+
 NNCASE_API result<void> resize_bilinear(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, int32_t out_h, int32_t out_w, bool align_corners, bool half_pixel_centers,
     kernel_context &context) noexcept;
@@ -80,7 +85,7 @@ NNCASE_API result<void> resize_nearest_neighbor(datatype_t type, const gsl::byte
     kernel_context &context) noexcept;
 
 NNCASE_API result<void> slice(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape,
-    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const runtime_shape_t &begins, const runtime_shape_t &ends, const runtime_axis_t &strides,
+    const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const runtime_shape_t &begins, const runtime_axis_t &ends, const runtime_axis_t &strides,
     kernel_context &context) noexcept;
 
 NNCASE_API result<void> gather(datatype_t type, const gsl::byte *input, gsl::byte *output, const runtime_shape_t &in_shape, const runtime_shape_t &out_shape,
@@ -96,5 +101,17 @@ NNCASE_API result<void> cumsum(const T *input, T *output, const runtime_shape_t 
 template <typename T>
 NNCASE_API result<void> hardmax(const T *input, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides,
     T *output, int32_t axis) noexcept;
+
+template <typename T>
+NNCASE_API result<void> random_normal(T *output, const runtime_shape_t &out_shape, float mean, float std, float seed) noexcept;
+
+template <typename T>
+NNCASE_API result<void> random_uniform(T *output, const runtime_shape_t &out_shape, float low, float high, float seed) noexcept;
+
+template <typename T>
+NNCASE_API result<void> ternary(const float *input_a, const T *input_b, const T *input_c, T *output,
+    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
+    const runtime_shape_t &in_b_strides, const runtime_shape_t &in_c_shape, const runtime_shape_t &in_c_strides,
+    const runtime_shape_t &out_strides) noexcept;
 
 END_NS_NNCASE_KERNELS_CPU_REF

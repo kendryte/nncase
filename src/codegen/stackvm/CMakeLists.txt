@@ -17,12 +17,16 @@ set(SRCS module_builder.cpp
          ops/onehot.cpp
          ops/pad.cpp
          ops/quantize.cpp
+         ops/random_normal.cpp
+         ops/random_uniform.cpp
          ops/reduce.cpp
          ops/reduce_arg.cpp
+         ops/reduce_prod.cpp
          ops/reduce_window2d.cpp
          ops/resize_image.cpp
          ops/slice.cpp
          ops/table_lookup1d.cpp
+         ops/ternary.cpp
          ops/transpose.cpp
          ops/unary.cpp)
 

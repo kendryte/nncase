@@ -48,6 +48,7 @@ public:
     void emit_log() { emit_opcode(runtime::nnil_log); }
     void emit_neg() { emit_opcode(runtime::nnil_neg); }
     void emit_rsqrt() { emit_opcode(runtime::nnil_rsqrt); }
+    void emit_sign() { emit_opcode(runtime::nnil_sign); }
     void emit_sin() { emit_opcode(runtime::nnil_sin); }
     void emit_sqrt() { emit_opcode(runtime::nnil_sqrt); }
     void emit_square() { emit_opcode(runtime::nnil_square); }

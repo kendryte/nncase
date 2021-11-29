@@ -141,7 +141,7 @@ void fuse_clamp_conv2d_transpose_transform::process(transform_context &context)
     auto act = combine(old_conv.fused_activation(), old_low, old_high);
 
     auto conv = context.graph.emplace<conv2d_transpose>(output.shape(), old_conv.weights().shape(), old_conv.output().shape(), old_conv.groups(),
-        old_conv.padding_h(), old_conv.padding_w(), old_conv.stride_h(), old_conv.stride_w(), old_conv.dilation_h(), old_conv.dilation_w(),
+        old_conv.padding_h(), old_conv.padding_w(), old_conv.output_padding_h(), old_conv.output_padding_w(), old_conv.stride_h(), old_conv.stride_w(), old_conv.dilation_h(), old_conv.dilation_w(),
         act);
     conv->name(old_conv.name());
     conv->weights().connect(weights);

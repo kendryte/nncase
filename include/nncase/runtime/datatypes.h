@@ -111,6 +111,7 @@ struct padding
 {
     int32_t before;
     int32_t after;
+    int32_t interior = 0;
 
     int32_t sum() const noexcept { return before + after; }
 
@@ -251,6 +252,7 @@ typedef enum _unary_op
     unary_neg,
     unary_round,
     unary_rsqrt,
+    unary_sign,
     unary_sin,
     unary_sqrt,
     unary_square,
@@ -285,6 +287,8 @@ inline std::string unary_op_to_string(unary_op_t op)
         return "unary_round";
     case unary_rsqrt:
         return "unary_rsqrt";
+    case unary_sign:
+        return "unary_sign";
     case unary_sin:
         return "unary_sin";
     case unary_sqrt:

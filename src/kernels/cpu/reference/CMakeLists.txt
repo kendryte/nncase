@@ -17,11 +17,14 @@ set(SRCS batch_to_space.cpp
          onehot.cpp
          pad.cpp
          quantize.cpp
+         random.cpp
          reduce.cpp
          reduce_arg.cpp
+         reduce_prod.cpp
          reduce_window.cpp
          resize_image.cpp
          transpose.cpp
          slice.cpp
-         unary.cpp)
+         unary.cpp
+         ternary.cpp)
 target_sources(kernels PRIVATE ${SRCS})

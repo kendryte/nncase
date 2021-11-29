@@ -37,13 +37,15 @@ public:
     int32_t groups() const noexcept { return groups_; }
     padding padding_h() const noexcept { return padding_h_; }
     padding padding_w() const noexcept { return padding_w_; }
+    int32_t output_padding_h() const noexcept { return output_padding_h_; }
+    int32_t output_padding_w() const noexcept { return output_padding_w_; }
     int32_t stride_h() const noexcept { return stride_h_; }
     int32_t stride_w() const noexcept { return stride_w_; }
     int32_t dilation_h() const noexcept { return dilation_h_; }
     int32_t dilation_w() const noexcept { return dilation_w_; }
     value_range<float> fused_activation() const noexcept { return fused_activation_; }
 
-    conv2d_transpose(shape_t input_shape, shape_t weights_shape, shape_t output_shape, int32_t groups, padding padding_h, padding padding_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w, value_range<float> fused_activation);
+    conv2d_transpose(shape_t input_shape, shape_t weights_shape, shape_t output_shape, int32_t groups, padding padding_h, padding padding_w, int32_t output_padding_h, int32_t output_padding_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w, value_range<float> fused_activation);
 
 protected:
     bool properties_equal(node &other) const override;
@@ -52,6 +54,8 @@ private:
     int32_t groups_;
     padding padding_h_;
     padding padding_w_;
+    int32_t output_padding_h_;
+    int32_t output_padding_w_;
     int32_t stride_h_;
     int32_t stride_w_;
     int32_t dilation_h_;

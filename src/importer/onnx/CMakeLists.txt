@@ -33,20 +33,29 @@ set(ONNX_IMPORTER_OPS_SOURCES
     ops/onehot.cpp
     ops/pad.cpp
     ops/pool.cpp
+    ops/quantizelinear.cpp
+    ops/random.cpp
     ops/reduce.cpp
     ops/reduce_arg.cpp
+    ops/reduce_prod.cpp
     ops/reshape.cpp
     ops/resize.cpp
+    ops/reverse_sequence.cpp
     ops/shape.cpp
+    ops/size.cpp
     ops/slice.cpp
     ops/softmax.cpp
+    ops/spacetodepth.cpp
     ops/split.cpp
     ops/squeeze.cpp
     ops/sum.cpp
+    ops/tile.cpp
     ops/transpose.cpp
     ops/unary.cpp
     ops/upsample.cpp
     ops/unsqueeze.cpp
+    ops/lstm.cpp
+    ops/where.cpp
     )
 
 add_library(onnx_importer ${ONNX_IMPORTER_SOURCES} ${ONNX_IMPORTER_OPS_SOURCES})

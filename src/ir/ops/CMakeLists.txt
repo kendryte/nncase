@@ -12,6 +12,7 @@ target_sources(ir PRIVATE
     transpose.cpp
     reduce.cpp
     reduce_arg.cpp
+    reduce_prod.cpp
     reduce_window2d.cpp
     binary.cpp
     concat.cpp
@@ -23,6 +24,8 @@ target_sources(ir PRIVATE
     unary.cpp
     pad.cpp
     bitcast.cpp
+    random_normal.cpp
+    random_uniform.cpp
     resize_image.cpp
     slice.cpp
     table_lookup.cpp
@@ -35,4 +38,5 @@ target_sources(ir PRIVATE
     onehot.cpp
     lstm.cpp
     gather_nd.cpp
-    onehot.cpp)
+    onehot.cpp
+    ternary.cpp)

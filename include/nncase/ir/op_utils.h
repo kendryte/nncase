@@ -237,7 +237,7 @@ inline shape_t get_padded_shape(const shape_t &in_shape, const xt::svector<paddi
 {
     auto new_shape = in_shape;
     for (size_t i = 0; i < in_shape.size(); i++)
-        new_shape[i] = size_t(int32_t(new_shape[i]) + paddings[i].sum());
+        new_shape[i] = size_t(int32_t(new_shape[i]) + paddings[i].sum() + (new_shape[i] - 1) * paddings[i].interior);
     return new_shape;
 }
 

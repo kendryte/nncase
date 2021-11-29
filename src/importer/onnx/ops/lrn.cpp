@@ -36,12 +36,22 @@ void onnx_importer::convert_op_LRN(const NodeProto &node)
     const datatype_t input_type = get_datatype(input).value();
     const shape_t &input_shape = get_shape(input);
 
+    // size
     auto size_value = get_attribute<int>(node, "size").value();
-    auto alpha = graph_.emplace<constant>(get_attribute<float>(node, "alpha").value() / size_value);
+
+    // alpha
+    auto alpha_value = get_attribute<float>(node, "alpha").value_or(0.0001);
+    auto alpha = graph_.emplace<constant>(alpha_value / size_value);
     alpha->name(op_name + ".alpha(LRN)");
-    auto beta = graph_.emplace<constant>(get_attribute<float>(node, "beta").value());
+
+    // beta
+    auto beta_value = get_attribute<float>(node, "beta").value_or(0.75);
+    auto beta = graph_.emplace<constant>(beta_value);
     beta->name(op_name + ".beta(LRN)");
-    auto bias = graph_.emplace<constant>(get_attribute<float>(node, "bias").value());
+
+    // bias
+    auto bias_value = get_attribute<float>(node, "bias").value_or(1.0);
+    auto bias = graph_.emplace<constant>(bias_value);
     bias->name(op_name + ".bias(LRN)");
 
     auto square = graph_.emplace<unary>(unary_square, input_shape);
@@ -64,7 +74,7 @@ void onnx_importer::convert_op_LRN(const NodeProto &node)
         sl->input().connect(square->output());
 
         auto r_sum = graph_.emplace<reduce>(reduce_sum, sl->output().shape(), axis_t { 1 }, 0.f, true);
-        sl->name(op_name + ".reduce_sum_" + std::to_string(i) + "(LRN)");
+        r_sum->name(op_name + ".reduce_sum_" + std::to_string(i) + "(LRN)");
         r_sum->input().connect(sl->output());
         con->input_at(i).connect(r_sum->output());
     }
