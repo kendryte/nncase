@@ -15,7 +15,7 @@ namespace Nncase.Importer.TFLite
     {
         private Expr VisitPad(in tflite.Operator op)
         {
-            // paddings is a Expr, Shape=[channels, 2(before, after)]
+            // paddings is a Expr, Shape=[Rank, 2(before, after)]
             var (input, paddings) = GetInputExprs(op, 0, 1);
             var pad_value = GetInputTensor(op, 0).Type switch
             {

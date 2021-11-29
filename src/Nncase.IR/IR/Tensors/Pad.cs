@@ -4,6 +4,7 @@
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.IO;
 using System.Linq;
 using System.Numerics.Tensors;
 using System.Text;
@@ -44,7 +45,7 @@ namespace Nncase.IR.Tensors
                 int channel = tpads.Dimensions[0];
                 for (int i = 0; i < channel; i++)
                 {
-                    newShape[newShape.Count - channel + i] = tpads[i, 0] + tpads[i, 1];
+                    newShape[newShape.Count - channel + i] += tpads[i, 0] + tpads[i, 1];
                 }
                 return new TensorType(input.DType, new Shape(newShape));
             }
