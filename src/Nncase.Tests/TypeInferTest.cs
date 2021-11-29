@@ -4,6 +4,7 @@ using Nncase.IR;
 using System.Numerics.Tensors;
 using System.Collections.Generic;
 using System.Linq;
+using Nncase.Evaluator;
 using static Nncase.IR.F.Math;
 using static Nncase.IR.F.NN;
 using static Nncase.IR.F.Tensors;
@@ -51,14 +52,20 @@ public class UnitTestTypeInfer
         var axis = Const.FromSpan<int>(new[] {0});
         var s = Slice(input, begin, end, axis, stride);
         Assert.True(TypeInference.InferenceType(s));
-        Assert.Equal(Shape.Scalar, s.CheckedShape);
-        // var input = Const.FromSpan<int>(new[] {1, 7, 7, 768});
-        // var begin = Const.FromSpan<int>(new[] {1});
-        // var end = Const.FromSpan<int>(new[] {3});
-        // var stride = Const.FromSpan<int>(new[] {1});
-        // var axis = Const.FromSpan<int>(new[] {0});
-        // var s = Slice(input, begin, end, axis, stride);
-        // Assert.True(TypeInference.InferenceType(s));
-        // Assert.Equal(s.CheckedShape, new Shape(2));
+        var post = s.Eval().ToConst();
+        Assert.Equal(new Shape(1), post.CheckedShape);
+    }
+
+    [Fact]
+    public void SliceShapeOp()
+    {
+        var begin = new[] { 1 };
+        var end = new[] { 3 };
+        var stride = new[] { 1 };
+        var axes = new[] { 0 };
+        var slice = Slice(new Shape(1, 7, 7, 768), begin, end, axes, stride);
+        TypeInference.InferenceType(slice);
+        var post = slice.Eval().ToConst();
+        Assert.Equal(new Shape(2), post.CheckedShape);
     }
 }

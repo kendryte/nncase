@@ -157,8 +157,8 @@ namespace Nncase.Tests
             var (fH, fW) = Util.GetHW(weights);
             var inHPost = RunShapeInferPass(inH);
             var inWPost = RunShapeInferPass(inW);
-            Assert.Equal(240, Dim1ExprToScalar<int>(inHPost));
-            Assert.Equal(320, Dim1ExprToScalar<int>(inWPost));
+            Assert.Equal(240, inHPost.ToScalar<int>());
+            Assert.Equal(320, inWPost.ToScalar<int>());
             var strideH = 1;
             var strideW = 1;
             var dilationH = 1;
@@ -200,7 +200,6 @@ namespace Nncase.Tests
 
             var mul = Binary(BinaryOp.Mul, 1, convAfterTranspose);
             var max = Binary(BinaryOp.Max, convAfterTranspose, mul);
-            Assert.True(TypeInference.InferenceType(mul));
 
             // ReduceWindow2D
             var doubleV = Const.FromSpan<int>(new[] { 2, 2 }, new[] { 2 });
@@ -216,7 +215,7 @@ namespace Nncase.Tests
         }
 
         [Fact]
-        public void SliceShapeOp()
+        public void SliceForShapeIndex()
         {
             var input = new Var(new TensorType(DataType.Float32, new Shape(1, 7, 7, 75)));
             var slice = Util.ShapeIndex(ShapeOp(input), 1);

@@ -24,7 +24,9 @@ namespace Nncase.Transform.DataFlow.Rules
         public override Expr? GetRePlace(IMatchResult result)
         {
             var expr = result[Pattern];
-            return Evaluator.Evaluator.Eval(expr).ToConst();
+            var tensor = expr.Eval();
+            var callSlice = (expr is Call call) && (call.Target == new Slice());
+            return callSlice ? tensor.ToConst(expr.CheckedShape) : tensor.ToConst();
         }
     }
 
