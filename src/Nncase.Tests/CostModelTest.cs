@@ -17,7 +17,7 @@ namespace Nncase.Tests
             var a = (Const)7;
             var exprVisitor = new ExprCostModelVisitor();
             Assert.True(a.InferenceType());
-            Assert.Equal(new Cost(), exprVisitor.Visit(a));
+            Assert.Equal(new Cost(0, 4), exprVisitor.Visit(a));
         }
 
         [Fact]

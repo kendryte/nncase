@@ -32,6 +32,7 @@ namespace Nncase.Tests.ReWrite
         public void RunOne(string Name, Expr Pre, PatternRule Rule, int[] targets) => RunCore(Name, Pre, Rule, targets);
 
         public static IEnumerable<object[]> DataOne => Data.Take(1);
+        public static IEnumerable<object[]> DataAll => Data.Skip(1);
 
         public void RunCore(string Name, Expr Pre, PatternRule Rule, int[] targets)
         {
@@ -52,7 +53,7 @@ namespace Nncase.Tests.ReWrite
         }
 
         [Theory]
-        [MemberData(nameof(Data))]
+        [MemberData(nameof(DataAll))]
         public void RunAll(string Name, Expr Pre, PatternRule Rule, int[] targets) => RunCore(Name, Pre, Rule, targets);
     }
 

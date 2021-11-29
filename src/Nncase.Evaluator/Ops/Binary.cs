@@ -11,12 +11,12 @@ namespace Nncase.Evaluator.Ops
         {
             var a = _context.GetArgument(binary, Binary.Lhs);
             var b = _context.GetArgument(binary, Binary.Rhs);
-            return binary.BinaryOp switch
+            return (binary.BinaryOp switch
             {
                 BinaryOp.Add => a + b,
                 BinaryOp.Sub => a - b,
                 BinaryOp.Mul => a * b,
-                BinaryOp.Div => torch.div(a, b).to_type(_context.CurrentCall.CheckedDataType.ToTorchType()),
+                BinaryOp.Div => a / b,
                 BinaryOp.Mod => a % b,
                 BinaryOp.Min => torch.minimum(a, b),
                 BinaryOp.Max => torch.maximum(a, b),
@@ -28,7 +28,7 @@ namespace Nncase.Evaluator.Ops
                 BinaryOp.LogicalOr => torch.logical_or(a, b),
                 BinaryOp.LogicalXor => torch.logical_xor(a, b),
                 _ => throw new ArgumentOutOfRangeException()
-            };
+            }).to_type(_context.CurrentCall.CheckedDataType.ToTorchType());
         }
     }
 }

@@ -47,14 +47,14 @@ namespace Nncase.Tests.ReWrite
             Directory.CreateDirectory(dumpDir);
             passOptions = new RunPassOptions(null, 3, dumpDir);
         }
-        
+
         public Expr RunShapeInferPass(Expr expr, params Expr[] parameters)
         {
             var f = new Function(expr, parameters);
             TypeInference.InferenceType(f);
             return new ShapeInferPass().Run(f, passOptions.SetName("RunShapeInferPass")).Body;
         }
-        
+
         public Expr ApplyFoldConstCallRewrite(Expr expr) =>
             DataFlowRewrite.Rewrite(expr, new Transform.DataFlow.Rules.FoldConstCall());
     }
@@ -189,9 +189,9 @@ namespace Nncase.Tests.ReWrite
             get
             {
                 var input = torch.rand(1, 28, 28, 3).ToConst();
-                var conv1 = NCHWToNHWC(DummyOp.Conv2D(NCHWToNHWC(input), 3, out_channels: 8, 3, 2));
-                var lhs = NCHWToNHWC(DummyOp.Conv2D(NCHWToNHWC(conv1), 8, out_channels: 3, 3, 1));
-                var rhs = conv1 + torch.rand(new long[] { 1, 28, 1, 3 }).ToConst();
+                var conv1 = NCHWToNHWC(DummyOp.Conv2D(NHWCToNCHW(input), 3, out_channels: 8, 3, 2));
+                var lhs = NCHWToNHWC(DummyOp.Conv2D(NHWCToNCHW(conv1), 8, out_channels: 8, 3, 1));
+                var rhs = conv1 + torch.rand(new long[] { 1, 14, 14, 8 }).ToConst();
                 return lhs + rhs;
             }
         }

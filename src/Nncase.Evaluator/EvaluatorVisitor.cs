@@ -80,6 +80,7 @@ namespace Nncase.Evaluator.Ops
                 Pad pd => VisitPad(pd),
                 Stack st => VisitStack(st),
                 Cast ct => VisitCast(ct),
+                Conv2D conv => VisitConv2D(conv),
                 _ => throw new NotImplementedException()
             };
         }

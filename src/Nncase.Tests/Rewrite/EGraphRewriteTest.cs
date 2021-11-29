@@ -14,16 +14,14 @@ using static Nncase.Pattern.F.NN;
 using static Nncase.Pattern.F.Tensors;
 using static Nncase.Pattern.Utility;
 using System.IO;
+using Nncase.Evaluator;
 
 
 namespace Nncase.Tests.ReWrite
 {
-
-    using Evaluator = Evaluator.Evaluator;
-
     public class EGraphRewriteTestFactory : RewriteTest
     {
-        public static IEnumerable<object[]> Data =>
+        private static IEnumerable<object[]> Data =>
           new List<object[]>
           {
              new object[] { new TransposeDemoCase() },
@@ -39,8 +37,6 @@ namespace Nncase.Tests.ReWrite
         [MemberData(nameof(DataOne))]
         public void RunOne(IRewriteCase Case) => RunCore(Case);
 
-        public static IEnumerable<object[]> DataOne => Data.Take(1);
-
         public void RunCore(IRewriteCase Case)
         {
             passOptions.SetName($"EGraphRewriteTest/{Case.Name}");
@@ -55,14 +51,17 @@ namespace Nncase.Tests.ReWrite
             EGraphReWriter.ReWrite(eGraph, Case.Rules, passOptions);
             var post = eGraph.Extract(root, passOptions);
             Assert.True(post.InferenceType());
-            Assert.Equal(Evaluator.Eval(pre), Evaluator.Eval(post));
             post.DumpExprAsIL("post", passOptions.FullDumpDir);
+            Assert.Equal((pre.Eval()), (post.Eval()));
         }
 
         [Theory]
-        [MemberData(nameof(Data))]
+        [MemberData(nameof(DataAll))]
         public void RunAll(IRewriteCase Case) => RunCore(Case);
 
+
+        public static IEnumerable<object[]> DataOne => Data.Take(1);
+        public static IEnumerable<object[]> DataAll => Data.Skip(1);
     }
 
     public class EGraphRewriteTest : RewriteTest
@@ -145,7 +144,7 @@ namespace Nncase.Tests.ReWrite
             EGraphReWriter.ReWrite(eGraph, new Rule.TransposeBinaryMotion(), passOptions);
 
             var post = eGraph.Extract(root, passOptions);
-            Assert.Equal(Evaluator.Eval(pre), Evaluator.Eval(post));
+            Assert.Equal((pre.Eval()), (post.Eval()));
             post.DumpExprAsIL("post", passOptions.FullDumpDir);
         }
     }

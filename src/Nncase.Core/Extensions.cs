@@ -92,7 +92,7 @@ namespace Nncase.IR
             where T : unmanaged => expr switch
         {
             // todo:print more expr info
-            Const c => c.CheckedShape.IsScalar && c.CheckedShape.IsFixed 
+            Const c => (!c.CheckedShape.IsScalar) && c.CheckedShape.IsFixed 
                 ? c.ToTensor<T>()
                 : throw new InvalidOperationException("Expr is not a fixed shape tensor"),
             _ => throw new InvalidOperationException("Expr is not a Const"),
