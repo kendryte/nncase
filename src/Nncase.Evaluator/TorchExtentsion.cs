@@ -15,8 +15,13 @@ namespace Nncase.Evaluator
         {
             if (!tensor.is_contiguous())
                 tensor = tensor.contiguous();
-            return new Const(new TensorType(ToDataType(tensor.dtype), new Shape(tensor.shape)),
-                    tensor.bytes.ToArray());
+            return tensor.ToConst(new Shape(tensor.shape));
+        }
+
+        public static Const ToConst(this torch.Tensor tensor, Shape shape)
+        {
+            return new Const(new TensorType(ToDataType(tensor.dtype), shape),
+                tensor.bytes.ToArray());
         }
 
         public static torch.Tensor ToTorchTensor(this Const expr)

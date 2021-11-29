@@ -1,4 +1,5 @@
-﻿using Nncase.Evaluator.Ops;
+﻿using System;
+using Nncase.Evaluator.Ops;
 using Nncase.IR;
 using TorchSharp;
 
@@ -8,9 +9,13 @@ namespace Nncase.Evaluator
     {
         public static torch.Tensor Eval(this Expr expr)
         {
+            if (expr.CheckedType is null or InvalidType)
+            {
+                throw new InvalidOperationException("Expr in Evaluator need a valid type");
+            }
             var evaluatorVisitor = new EvaluatorVisitor();
-            return evaluatorVisitor.Visit(expr);
-            // todo:torch.Tensor to nncase Tensor
+            var result = evaluatorVisitor.Visit(expr).to_type(expr.CheckedDataType.ToTorchType());
+            return result;
         }
     }
 }

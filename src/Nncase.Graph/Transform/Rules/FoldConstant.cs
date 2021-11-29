@@ -10,6 +10,7 @@ using static Nncase.Pattern.F.NN;
 using static Nncase.Pattern.Utility;
 using Nncase.IR;
 using Nncase.Evaluator;
+using Nncase.IR.Tensors;
 
 namespace Nncase.Transform.DataFlow.Rules
 {
@@ -23,8 +24,7 @@ namespace Nncase.Transform.DataFlow.Rules
         public override Expr? GetRePlace(IMatchResult result)
         {
             var expr = result[Pattern];
-            var dt = expr.CheckedDataType;
-            return Evaluator.Evaluator.Eval(expr).to_type(dt.ToTorchType()).ToConst();
+            return Evaluator.Evaluator.Eval(expr).ToConst();
         }
     }
 
