@@ -104,7 +104,7 @@ void neutral_target::add_default_transforms(ir::transforms::transform_pass &pass
 
     pass.emplace<fold_nop_pad_transform>();
     pass.emplace<fold_nop_bitcast_transform>();
-    // pass.emplace<fold_slice_slice_transform>();
+    pass.emplace<fold_slice_slice_transform>();
     pass.emplace<fold_pad_pad_transform>();
     pass.emplace<fold_pad_strided_slice_transform>();
 
