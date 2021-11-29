@@ -43,7 +43,8 @@ namespace Nncase.IR
         {
             if (value == 0)
             {
-                throw new InvalidOperationException("Dimension should not be 0");
+                Console.WriteLine("zero dimension");
+                // throw new InvalidOperationException("Dimension should not be 0");
             }
             Kind = DimensionKind.Fixed;
             Value = value;
@@ -121,6 +122,8 @@ namespace Nncase.IR
             (true, true) => lhs.FixedValue + rhs.FixedValue,
             (_, _) => Dimension.Unknown
         };
+
+        public static Dimension operator +(Dimension lhs, int rhs) => lhs.IsFixed ? lhs.FixedValue + rhs : Unknown;
 
         public static Dimension operator -(Dimension lhs, Dimension rhs) => (lhs.IsFixed, lhs.IsFixed) switch
         {
