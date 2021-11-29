@@ -13,60 +13,102 @@
 # limitations under the License.
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
 
+import math
 import pytest
-import torch
+import onnx
+from onnx import helper
+from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
+import numpy as np
 
 
-def _make_module(dim, keepdim):
+def _make_module(in_shape, reduce_op, axes, keepdims):
+    inputs = []
+    outputs = []
+    initializers = []
+    attributes_dict = {}
+    nodes = []
 
-    class ReduceModule(torch.nn.Module):
-        def __init__(self):
-            super(ReduceModule, self).__init__()
+    # input
+    input = helper.make_tensor_value_info('input', TensorProto.FLOAT, in_shape)
+    inputs.append('input')
 
-        def forward(self, x):
-            outs = []
-            outs.append(torch.max(x, dim, keepdim)[0])
-            outs.append(torch.min(x, dim, keepdim)[0])
+    # output
+    kd = 1 if keepdims is None else keepdims
+    data = np.ones(in_shape)
+    out_shape = np.prod(data, axis=tuple(axes), keepdims=kd).shape
+    output = helper.make_tensor_value_info('output', TensorProto.FLOAT, out_shape)
+    outputs.append('output')
 
-            # depend on Gather op
-            # outs.append(torch.mean(x, dim, keepdim)[0])
-            # outs.append(torch.sum(x, dim, keepdim)[0])
+    # axes
+    attributes_dict['axes'] = axes
 
-            return outs
+    # keepdims
+    if keepdims is not None:
+        attributes_dict['keepdims'] = keepdims
 
-    return ReduceModule()
+    node = onnx.helper.make_node(
+        reduce_op,
+        inputs=inputs,
+        outputs=outputs,
+        **attributes_dict
+    )
+    nodes.append(node)
+
+    # graph
+    graph_def = helper.make_graph(
+        nodes,
+        'test-model',
+        [input],
+        [output],
+        initializer=initializers)
+
+    model_def = helper.make_model(graph_def, producer_name='onnx')
+    return model_def
 
 
 in_shapes = [
+    [1, 3, 16, 16]
+]
+
+reduce_ops = [
+    'ReduceMax',
+    'ReduceMean',
+    'ReduceMin',
+    'ReduceProd'
+]
+
+axes_list = [
     [1],
-    [3, 4],
-    [3, 4, 5],
-    [1, 3, 224, 224]
+    [2],
+    [3],
+    [-1],
+    [-2],
+    [-3],
+    [2, 3],
+    [-2, -1],
+    [1, 2, 3],
+    [-1, -2, -3],
+    [0, 1, 2, 3],
+    [-1, -2, -3, -4]
 ]
 
-dims = [
-    0,
-    1,
-    2,
-    3
-]
-
-keepdims = [
-    False,
-    True
+keepdims_lists = [
+    None,
+    0
 ]
 
 
 @pytest.mark.parametrize('in_shape', in_shapes)
-@pytest.mark.parametrize('dim', dims)
-@pytest.mark.parametrize('keepdim', keepdims)
-def test_reduce(in_shape, dim, keepdim, request):
-    if len(in_shape) > dim:
-        module = _make_module(dim, keepdim)
+@pytest.mark.parametrize('reduce_op', reduce_ops)
+@pytest.mark.parametrize('axes', axes_list)
+@pytest.mark.parametrize('keepdims', keepdims_lists)
+def test_reduce(in_shape, reduce_op, axes, keepdims, request):
+    if len(axes) <= len(in_shape):
+        model_def = _make_module(in_shape, reduce_op, axes, keepdims)
 
         runner = OnnxTestRunner(request.node.name)
-        model_file = runner.from_torch(module, in_shape)
+        model_file = runner.from_onnx_helper(model_def)
         runner.run(model_file)
 
 
