@@ -93,6 +93,14 @@ namespace Nncase.IR
               _ => false
           }, "IsFloat"
         );
+        
+        public static TypePattern IsBool() => new TypePattern(
+            x => x switch
+            {
+                TensorType ttype => ttype.DType == DataType.Bool,
+                _ => false
+            }, "IsBool"
+        );
 
         public static int GetWindowedOutputSize(int size, int filter, int stride, int dilation, bool same, bool ceilMode = false)
         {

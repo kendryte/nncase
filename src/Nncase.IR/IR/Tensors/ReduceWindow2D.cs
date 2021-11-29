@@ -49,7 +49,7 @@ namespace Nncase.IR.Tensors
         /// <summary>
         /// Gets CeilMode.
         /// </summary>
-        public static readonly ParameterInfo CeilMode = new(typeof(ReduceWindow2D), 6, "ceilMode");
+        public static readonly ParameterInfo CeilMode = new(typeof(ReduceWindow2D), 6, "ceilMode", IsBool());
 
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType initValue, TensorType filter, TensorType stride, TensorType padding, TensorType dilation, TensorType ceilMode)
