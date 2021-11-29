@@ -132,7 +132,7 @@ void function_schedule_context::generate_compute_sequence()
     auto alloc_visitor = make_relay_ir_visitor([&](node &node) {
         if (node.runtime_opcode() == op_input_node)
             used_inputs.emplace(&node);
-        else if (node.attributes() & node_attr_action)
+        else if (mod_sched_.model_sched().skip_buffer_alias() || (node.attributes() & node_attr_action))
             compute_sequence.emplace_back(&node);
     });
 
@@ -190,6 +190,7 @@ void function_schedule_context::analyze_buffer_alias()
     pmgr.add_pass<alias_slice_buffer_pass>();
     pmgr.add_pass<alias_bitcast_buffer_pass>();
     pmgr.add_pass<alias_concat_buffer_pass>();
+    pmgr.add_pass<alias_bitcast_buffer_pass>();
     pmgr.run();
 }
 
@@ -319,8 +320,9 @@ void function_schedule_context::dump(const std::filesystem::path &dump_dir)
     {
         auto alloc = buf.allocation();
 
-        writer << fmt::format("%{} : {} @{}[{}, {}]",
+        writer << fmt::format("%{}({})\t : {} @{}[{}, {}]\n",
             buf.id(),
+            buf.owner().owner().owner().name(),
             fmt_shape(buf.owner()),
             to_string(buf.owner().memory_location()),
             alloc.start,

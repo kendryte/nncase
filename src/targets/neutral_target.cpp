@@ -185,6 +185,7 @@ void neutral_target::register_target_independent_passes(const module_type_t &typ
         //lstm_transform
         {
             transform_pass p("lstm_transform");
+            p.emplace<fold_constant_transform>();
             p.emplace<lstm_transform>();
             pass_mgr.add_pass(std::move(p));
         }

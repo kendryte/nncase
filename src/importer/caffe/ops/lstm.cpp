@@ -45,6 +45,11 @@ DEFINE_CAFFE_LOWER(LSTM)
     auto blob_b_xc = load_tensor<1>(op_data.blobs(1));
     auto w_xc_shape = get_shape(op_data.blobs(0).shape());
     auto b_xc_shape = get_shape(op_data.blobs(1).shape());
+    if (w_xc_shape.size() == 2)
+    {
+        w_xc_shape = shape_t { 1, w_xc_shape[0], w_xc_shape[1] };
+    }
+
     if (op_data.blobs_size() == 4)
     {
         has_static = true;
@@ -52,32 +57,51 @@ DEFINE_CAFFE_LOWER(LSTM)
         static_shape = get_shape(op_data.blobs(2).shape());
         blob_w_static_vec.assign(blob_w_static.begin(), blob_w_static.end());
     }
-    auto blob_w_hc = op_data.blobs_size() == 4 ? load_tensor<2>(op_data.blobs(3)) : load_tensor<2>(op_data.blobs(2));
-    auto w_hc_shape = op_data.blobs_size() == 4 ? get_shape(op_data.blobs(3).shape()) : get_shape(op_data.blobs(2).shape());
+    auto blob_w_rc = op_data.blobs_size() == 4 ? load_tensor<2>(op_data.blobs(3)) : load_tensor<2>(op_data.blobs(2));
+    auto w_rc_shape = op_data.blobs_size() == 4 ? get_shape(op_data.blobs(3).shape()) : get_shape(op_data.blobs(2).shape());
+    auto b_rc_shape = b_xc_shape;
+
+    if (w_rc_shape.size() == 2)
+    {
+        w_rc_shape = shape_t { 1, w_rc_shape[0], w_rc_shape[1] };
+    }
 
     std::vector<float> blob_w_xc_vec(blob_w_xc.begin(), blob_w_xc.end());
     std::vector<float> blob_b_xc_vec(blob_b_xc.begin(), blob_b_xc.end());
-    std::vector<float> blob_w_hc_vec(blob_w_hc.begin(), blob_w_hc.end());
+    std::vector<float> blob_w_rc_vec(blob_w_rc.begin(), blob_w_rc.end());
+    std::vector<float> blob_b_rc_vec((int)b_rc_shape[0], 0.f);
+
+    // create init_h init_c
+    std::vector<float> init_const(w_rc_shape[2], 0.f);
+    auto init_h = graph_.emplace<constant>(dt_float32, shape_t { 1, 1, w_rc_shape[2] }, init_const);
+    auto init_c = graph_.emplace<constant>(dt_float32, shape_t { 1, 1, w_rc_shape[2] }, init_const);
+    init_h->name(op.name() + "init_h");
+    init_c->name(op.name() + "init_c");
 
     if (input.shape().size() != 3)
     {
         auto rshape = graph_.emplace<bitcast>(dt_float32, input.shape(), dt_float32, axis_t { (int32_t)input.shape()[0], (int32_t)input.shape()[1] / (int32_t)param.num_output(), (int32_t)param.num_output() });
-        auto node = graph_.emplace<lstm>(rshape->output().shape(), w_xc_shape, b_xc_shape, w_hc_shape, n_output, has_static);
+        auto node = graph_.emplace<lstm>(rshape->output().shape(), w_xc_shape, b_xc_shape, w_rc_shape, b_rc_shape, init_h->output().shape(), init_c->output().shape(), n_output, has_static, "caffe");
         node->name(op.name() + "/lstm");
         input_tensors_.emplace(&rshape->input(), input_name);
         node->input().connect(rshape->output());
 
         auto w_xc_const = graph_.emplace<constant>(dt_float32, w_xc_shape, blob_w_xc_vec);
         auto b_xc_const = graph_.emplace<constant>(dt_float32, b_xc_shape, blob_b_xc_vec);
-        auto w_hc_const = graph_.emplace<constant>(dt_float32, w_hc_shape, blob_w_hc_vec);
+        auto w_rc_const = graph_.emplace<constant>(dt_float32, w_rc_shape, blob_w_rc_vec);
+        auto b_rc_const = graph_.emplace<constant>(dt_float32, b_rc_shape, blob_b_rc_vec);
 
         w_xc_const->name(op.name() + "/w_xc_const");
         b_xc_const->name(op.name() + "/b_xc_const");
-        w_hc_const->name(op.name() + "/w_hc_const");
+        w_rc_const->name(op.name() + "/w_rc_const");
+        b_rc_const->name(op.name() + "/b_rc_const");
 
         node->w_xc().connect(w_xc_const->output());
         node->b_xc().connect(b_xc_const->output());
-        node->w_hc().connect(w_hc_const->output());
+        node->w_rc().connect(w_rc_const->output());
+        node->b_rc().connect(b_rc_const->output());
+        node->initial_h().connect(init_h->output());
+        node->initial_c().connect(init_c->output());
 
         if (has_static)
         {
@@ -93,21 +117,26 @@ DEFINE_CAFFE_LOWER(LSTM)
     }
     else
     {
-        auto node = graph_.emplace<lstm>(input.shape(), w_xc_shape, b_xc_shape, w_hc_shape, n_output, has_static);
+        auto node = graph_.emplace<lstm>(input.shape(), w_xc_shape, b_xc_shape, w_rc_shape, b_rc_shape, init_h->output().shape(), init_c->output().shape(), n_output, has_static, "caffe");
         node->name(op.name() + "/lstm");
         input_tensors_.emplace(&node->input(), input_name);
 
         auto w_xc_const = graph_.emplace<constant>(dt_float32, w_xc_shape, blob_w_xc_vec);
         auto b_xc_const = graph_.emplace<constant>(dt_float32, b_xc_shape, blob_b_xc_vec);
-        auto w_hc_const = graph_.emplace<constant>(dt_float32, w_hc_shape, blob_w_hc_vec);
+        auto w_rc_const = graph_.emplace<constant>(dt_float32, w_rc_shape, blob_w_rc_vec);
+        auto b_rc_const = graph_.emplace<constant>(dt_float32, b_rc_shape, blob_b_rc_vec);
 
         w_xc_const->name(op.name() + "/w_xc_const");
         b_xc_const->name(op.name() + "/b_xc_const");
-        w_hc_const->name(op.name() + "/w_hc_const");
+        w_rc_const->name(op.name() + "/w_rc_const");
+        b_rc_const->name(op.name() + "/b_rc_const");
 
         node->w_xc().connect(w_xc_const->output());
         node->b_xc().connect(b_xc_const->output());
-        node->w_hc().connect(w_hc_const->output());
+        node->w_rc().connect(w_rc_const->output());
+        node->b_rc().connect(b_rc_const->output());
+        node->initial_h().connect(init_h->output());
+        node->initial_c().connect(init_c->output());
 
         if (has_static)
         {

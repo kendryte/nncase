@@ -54,6 +54,7 @@ set(ONNX_IMPORTER_OPS_SOURCES
     ops/unary.cpp
     ops/upsample.cpp
     ops/unsqueeze.cpp
+    ops/lstm.cpp
     ops/where.cpp
     )
 

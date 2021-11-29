@@ -63,7 +63,7 @@ case: # case的配置，应该是一个多层次的
     name: generate_random
     kwargs: null
     numbers: 1
-    batch_size: 10
+    batch_size: 50
   generate_dump_range_data:
     name: generate_random
     kwargs: null
