@@ -28,6 +28,9 @@ static inline bool no_slice(slice *rp, size_t i)
 
 static inline bool can_merge(slice *rp1, slice *rp2)
 {
+    if (std::any_of(rp1->strides().begin(), rp1->strides().end(), [](int32_t dim) { return dim < 0; }) || std::any_of(rp2->strides().begin(), rp2->strides().end(), [](int32_t dim) { return dim < 0; }))
+        return false;
+
     bool ret = true;
     for (size_t i = 0; i < rp1->strides().size(); i++)
     {
@@ -51,9 +54,9 @@ bool fold_slice_slice_transform::on_try_match(node &node, transform_context &con
 
                 context.matched_nodes.emplace_back(rp1);
                 context.matched_nodes.emplace_back(rp2);
-            }
 
-            return true;
+                return true;
+            }
         }
     }
 
