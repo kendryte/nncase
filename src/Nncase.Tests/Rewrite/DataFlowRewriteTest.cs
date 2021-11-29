@@ -98,7 +98,7 @@ namespace Nncase.Tests
             Assert.True(TypeInference.InferenceType(pre));
             var post = ApplyFoldConstCallRewrite(pre);
             Assert.IsType<Const>(post);
-            Assert.Equal(torch.cat(new[] { lhs, rhs }, 1), Evaluator.Evaluator.Eval(post));
+            Assert.Equal(torch.cat(new[] { lhs, rhs }, 1), post.Eval());
         }
         
         [Fact]
