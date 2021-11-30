@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net5.0</TargetFramework>
+        <RootNamespace>Onnx.Proto</RootNamespace>
+    </PropertyGroup>
+
+    <ItemGroup>
+        <PackageReference Include="Google.Protobuf" Version="3.11.2" />
+        <PackageReference Include="Grpc.Tools" Version="2.26.0">
+            <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+            <PrivateAssets>all</PrivateAssets>
+        </PackageReference>
+        <Protobuf Include="*.proto3" OutputDir="%(RelativePath)" CompileOutputs="false" GrpcServices="None" />
+    </ItemGroup>
+</Project>
