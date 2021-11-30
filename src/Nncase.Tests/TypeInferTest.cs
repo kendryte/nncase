@@ -57,7 +57,7 @@ public class UnitTestTypeInfer
     }
 
     [Fact]
-    public void SliceShapeOp()
+    public void TestSliceShapeOp()
     {
         var begin = new[] { 1 };
         var end = new[] { 3 };
@@ -67,5 +67,23 @@ public class UnitTestTypeInfer
         TypeInference.InferenceType(slice);
         var post = slice.Eval().ToConst();
         Assert.Equal(new Shape(2), post.CheckedShape);
+    }
+
+    [Fact]
+    public void TestStack()
+    {
+        var a = (Const)1;
+        var b = (Const)1;
+        var c = (Const)1;
+        var s = Stack(new Tuple(a, b, c), 0);
+        TypeInference.InferenceType(s);
+        Assert.Equal(new Shape(3), s.CheckedShape);
+        
+        var x = Const.FromSpan<int>(new[] {1, 2});
+        var y = Const.FromSpan<int>(new[] {1, 2});
+        var z = Const.FromSpan<int>(new[] {1, 2});
+        var ss = Stack(new Tuple(x, y, z), 1);
+        TypeInference.InferenceType(ss);
+        Assert.Equal(new Shape(2, 3), ss.CheckedShape);
     }
 }
