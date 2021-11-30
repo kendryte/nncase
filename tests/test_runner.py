@@ -585,7 +585,6 @@ class TestRunner(metaclass=ABCMeta):
         compile_options.std = preprocess['std']
         compile_options.input_layout = preprocess['input_layout']
         compile_options.output_layout = preprocess['output_layout']
-        compile_options.tcu_num = cfg.compile_opt.tcu_num
         compiler = nncase.Compiler(compile_options)
         self.import_model(compiler, model_content, import_options)
 
