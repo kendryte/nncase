@@ -59,7 +59,6 @@ py::class_<compile_options>(m, "CompileOptions")
     .def_readwrite("output_type", &compile_options::output_type)
     .def_readwrite("input_layout", &compile_options::input_layout)
     .def_readwrite("output_layout", &compile_options::output_layout)
-    .def_readwrite("tcu_num", &compile_options::tcu_num)
     .def_readwrite("is_fpga", &compile_options::is_fpga)
     .def_readwrite("dump_ir", &compile_options::dump_ir)
     .def_readwrite("dump_asm", &compile_options::dump_asm)
@@ -87,7 +86,6 @@ The details of all attributes are following.
 | output_type      | string    | N          | Specify the data type of output data, 'float32' by default.  |
 | input_layout     | string    | N          | Specify the layout of input data, such as 'NCHW', 'NHWC'.  Nncase will insert transpose operation if input_layout is different with the layout of model. |
 | output_layout    | string    | N          | Specify the layout of output data, such as 'NCHW', 'NHWC'.  Nncase will insert transpose operation if output_layout is different with the layout of model. |
-| tcu_num          | int       | N          | Specify the number of TCU. 0 by default, means do not configure the number of TCU. |
 | is_fpga          | bool      | N          | Specify the generated kmodel is used for fpga or not, False by default. |
 | dump_ir          | bool      | N          | Specify whether dump IR, False by default.                   |
 | dump_asm         | bool      | N          | Specify whether dump asm file, False by default.             |
