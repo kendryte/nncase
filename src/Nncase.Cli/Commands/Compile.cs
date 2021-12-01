@@ -88,6 +88,7 @@ namespace Nncase.Cli.Commands
           options.InputFormat switch
           {
               "tflite" => Importers.ImportTFLite(content),
+              "onnx" => Importers.ImportOnnx(content),
               _ => throw new NotImplementedException($"Not Implement {options.InputFormat} Impoter!")
           };
 

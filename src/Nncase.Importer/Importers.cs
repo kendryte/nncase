@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.Importer;
 using Nncase.Importer.TFLite;
 using Nncase.IR;
 
@@ -30,6 +31,13 @@ namespace Nncase
             return importer.Import();
         }
 
+        public static Module ImportOnnx(Stream onnx)
+        {
+            var model = new byte[onnx.Length];
+            onnx.Read(model);
+            var importer = new OnnxImporter(model);
+            return importer.Import();
+        }
         /// <summary>
         /// Import tflite model.
         /// </summary>
