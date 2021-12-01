@@ -109,7 +109,7 @@ void pre_process_transform::run_core(graph &graph, [[maybe_unused]] nncase::targ
             if (in_node->output().shape() != new_shape)
             {
                 if ((real_inlayout_ == "NHWC" && in_node->output().shape() != shape_t { new_shape[0], new_shape[2], new_shape[3], new_shape[1] })
-                    ||(real_inlayout_ == "NCHW" && in_node->output().shape() != shape_t { new_shape[0], new_shape[3], new_shape[1], new_shape[2] }))
+                    || (real_inlayout_ == "NCHW" && in_node->output().shape() != shape_t { new_shape[0], new_shape[3], new_shape[1], new_shape[2] }))
                 {
                     std::cout << " |Letterbox:" << std::endl;
                     size_t model_h;
