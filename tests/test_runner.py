@@ -648,15 +648,19 @@ class TestRunner(metaclass=ABCMeta):
             i = 0
             for input in inputs:
                 shape = []
-                if preprocess_opt['preprocess'] and preprocess_opt['input_shape'] != [] and len(preprocess_opt['input_shape']) == 4:
-                    shape = copy.deepcopy(preprocess_opt['input_shape'])
-                else:
-                    if self.model_type == "tflite" and preprocess_opt['input_layout'] == "NCHW":
-                        shape = copy.deepcopy(np.array([input['model_shape'][0],input['model_shape'][3],input['model_shape'][1],input['model_shape'][2]]))
-                    elif self.model_type != "tflite" and preprocess_opt['input_layout'] == "NHWC":
-                        shape = copy.deepcopy(np.array([input['model_shape'][0],input['model_shape'][2],input['model_shape'][3],input['model_shape'][1]]))
+                if preprocess_opt['preprocess']:
+                    if preprocess_opt['input_shape'] != []:
+                        assert(len(preprocess_opt['input_shape']) == 4)
+                        shape = copy.deepcopy(preprocess_opt['input_shape'])
                     else:
-                        shape = copy.deepcopy(input['model_shape'])
+                        if self.model_type == "tflite" and preprocess_opt['input_layout'] == "NCHW":
+                            shape = copy.deepcopy(np.array([input['model_shape'][0],input['model_shape'][3],input['model_shape'][1],input['model_shape'][2]]))
+                        elif self.model_type != "tflite" and preprocess_opt['input_layout'] == "NHWC":
+                            shape = copy.deepcopy(np.array([input['model_shape'][0],input['model_shape'][2],input['model_shape'][3],input['model_shape'][1]]))
+                        else:
+                            shape = copy.deepcopy(input['model_shape'])
+                else:
+                    shape = copy.deepcopy(input['model_shape'])
                 if shape[0] != cfg.batch_size:
                     shape[0] *= cfg.batch_size
                 data = DataFactory[cfg.name](shape, input['dtype'], n, cfg.batch_size, **cfg.kwargs)
