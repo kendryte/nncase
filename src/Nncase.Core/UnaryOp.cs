@@ -20,6 +20,16 @@ namespace Nncase
         Abs,
 
         /// <summary>
+        /// Acos.
+        /// </summary>
+        Acos,
+        
+        /// <summary>
+        /// Asin.
+        /// </summary>
+        Asin,
+        
+        /// <summary>
         /// Ceil.
         /// </summary>
         Ceil,
