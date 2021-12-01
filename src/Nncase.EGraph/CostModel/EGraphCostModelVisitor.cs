@@ -69,6 +69,8 @@ namespace Nncase.CostModel
             _exprMaps = new();
             _eClassType = new();
             CostEnv = new();
+            _eClasses = new Dictionary<EClass, List<ENode>>();
+            _eHashCon = new Dictionary<ENode, EClass>();
         }
 
         public override Cost GetCostFromMemo(Expr expr, int i)

@@ -301,7 +301,7 @@ namespace Nncase.Transform
 
 
         /// <summary>
-        /// <see cref="TopSort(IReadOnlyDictionary<EClass, List<ENode>>)"/>
+        /// <see cref="TopSort(IReadOnlyDictionary&lt;EClass, List&lt;ENode&gt;&gt;)"/>
         /// </summary>
         /// <returns></returns>
         public EClass[] TopSort() => TopSort(EClasses());

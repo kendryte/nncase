@@ -61,18 +61,25 @@ namespace Nncase.Cli.Commands
 
         public void Run(CompileOptions options)
         {
+
+            var module = ImportModule(File.OpenRead(options.InputFile), options);
+        }
+
+        public Module ImportModule(Stream content, CompileOptions options)
+        {
             Console.WriteLine($"Target: {options.Target}");
-            var module = ImportModel(options);
+            var module = ImportModel(content, options);
             DumpModule(module, options, "ir_import");
             if (!TypeInference.InferenceType(module.Entry))
             {
                 InferShape(module, options);
             }
             DumpModule(module, options, "ir_infertype");
-            Console.WriteLine("Compile successful!");
+            Console.WriteLine("ImportModule successful!");
+            return module;
         }
 
-        public void InferShape(Module module, CompileOptions options)
+        private void InferShape(Module module, CompileOptions options)
         {
             Console.WriteLine("Infer Shape...");
             var pmgr = new PassManager(module, new RunPassOptions(null, options.DumpLevel, options.DumpDir));
@@ -81,10 +88,7 @@ namespace Nncase.Cli.Commands
             pmgr.Run();
         }
 
-        public Module ImportModel(CompileOptions options) =>
-          ImportModel(File.OpenRead(options.InputFile), options);
-
-        public Module ImportModel(Stream content, CompileOptions options) =>
+        private Module ImportModel(Stream content, CompileOptions options) =>
           options.InputFormat switch
           {
               "tflite" => Importers.ImportTFLite(content),

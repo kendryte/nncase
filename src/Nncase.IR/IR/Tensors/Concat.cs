@@ -33,12 +33,12 @@ namespace Nncase.IR.Tensors
         {
             var allAxisDimIsFixed = inputs.Fields.Aggregate(
                 true,
-                (prod, next) => prod && (next as TensorType).Shape[axisValue].IsFixed);
+                (prod, next) => prod && ((TensorType)next).Shape[axisValue].IsFixed);
             if (allAxisDimIsFixed)
             {
                 return inputs.Fields.Aggregate(
                     0,
-                    (prod, next) => prod + (next as TensorType).Shape[axisValue].FixedValue);
+                    (prod, next) => prod + ((TensorType)next).Shape[axisValue].FixedValue);
             }
             else
             {
@@ -97,7 +97,7 @@ namespace Nncase.IR.Tensors
                 }
             });
             var shape = new Shape(shapeValue);
-            return (IRType)invalidType ?? new TensorType(input0.DType, shape);
+            return (invalidType as IRType) ?? new TensorType(input0.DType, shape);
         }
     }
 }

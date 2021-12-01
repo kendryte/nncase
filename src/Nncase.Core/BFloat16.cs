@@ -83,7 +83,7 @@ namespace Nncase
         /// </summary>
         /// <param name="obj">An System.Object.</param>
         /// <returns>true if obj is BFloat16 its value is equal to this instance; otherwise, false.</returns>
-        public override bool Equals(object obj)
+        public override bool Equals(object? obj)
         {
             bool result = false;
             if (obj is BFloat16)

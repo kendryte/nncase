@@ -19,7 +19,7 @@
 #include <nncase/runtime/runtime_tensor.h>
 
 void slice(runtime_tensor &input, runtime_tensor &output,
-    const runtime_shape_t &begins, const runtime_shape_t &ends,
+    const runtime_shape_t &begins, const runtime_axis_t &ends,
     const runtime_axis_t &strides, OpType type)
 {
     if (type == OpType::Ref)
@@ -57,7 +57,7 @@ void slice(runtime_tensor &input, runtime_tensor &output,
 class SliceTest : public ::testing::TestWithParam<
                       std::tuple<
                           runtime_shape_t, runtime_shape_t, // input shape, input strides bias
-                          runtime_shape_t, runtime_shape_t, // begin end
+                          runtime_shape_t, runtime_axis_t, // begin end
                           runtime_shape_t, runtime_axis_t>> // out strides bias, strides
 {
 public:
@@ -83,7 +83,8 @@ public:
 
     runtime_tensor input, output_ref, output_opt;
     // Tensor<uint32_t> input, output_ref, output_opt;
-    runtime_shape_t begins, ends;
+    runtime_shape_t begins;
+    runtime_axis_t ends;
     runtime_axis_t strides;
 };
 
@@ -104,9 +105,9 @@ INSTANTIATE_TEST_SUITE_P(
             runtime_shape_t { 1, 1, 1, 1 },
             runtime_shape_t { 2, 2, 2, 2 }),
         testing::Values(
-            runtime_shape_t { 3, 3, 3, 3 }, // end
-            runtime_shape_t { 3, 3, 8, 6 },
-            runtime_shape_t { 7, 4, 8, 6 }),
+            runtime_axis_t { 3, 3, 3, 3 }, // end
+            runtime_axis_t { 3, 3, 8, 6 },
+            runtime_axis_t { 7, 4, 8, 6 }),
         testing::Values(
             runtime_shape_t { 0, 0, 0, 0 }, // output strides offset
             runtime_shape_t { 3, 3, 3, 3 }),
@@ -134,9 +135,9 @@ INSTANTIATE_TEST_SUITE_P(
             runtime_shape_t { 1, 1, 1 },
             runtime_shape_t { 2, 2, 2 }),
         testing::Values(
-            runtime_shape_t { 3, 3, 3 }, // end
-            runtime_shape_t { 3, 7, 4 },
-            runtime_shape_t { 7, 8, 6 }),
+            runtime_axis_t { 3, 3, 3 }, // end
+            runtime_axis_t { 3, 7, 4 },
+            runtime_axis_t { 7, 8, 6 }),
         testing::Values(
             runtime_shape_t { 0, 0, 0 },
             runtime_shape_t { 3, 3, 3 }), // output strides offset
@@ -163,9 +164,9 @@ INSTANTIATE_TEST_SUITE_P(
             runtime_shape_t { 1, 1 },
             runtime_shape_t { 2, 2 }),
         testing::Values(
-            runtime_shape_t { 3, 3 }, // end
-            runtime_shape_t { 7, 4 },
-            runtime_shape_t { 8, 6 }),
+            runtime_axis_t { 3, 3 }, // end
+            runtime_axis_t { 7, 4 },
+            runtime_axis_t { 8, 6 }),
         testing::Values(
             runtime_shape_t { 0, 0 },
             runtime_shape_t { 3, 3 }), // output strides offset
@@ -188,9 +189,9 @@ INSTANTIATE_TEST_SUITE_P(
             runtime_shape_t { 1 }, // begin
             runtime_shape_t { 3 }),
         testing::Values(
-            runtime_shape_t { 5 }, // end
-            runtime_shape_t { 10 },
-            runtime_shape_t { 19 }),
+            runtime_axis_t { 5 }, // end
+            runtime_axis_t { 10 },
+            runtime_axis_t { 19 }),
         testing::Values(
             runtime_shape_t { 0 },
             runtime_shape_t { 3 }), // output strides offset

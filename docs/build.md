@@ -6,7 +6,7 @@
 5. Python Test
 
 - Install dependencies
-  
+  PythonNet对于选择coreclr的功能目前只有dev版本才可使用,因此需要手动下载安装.
   ```sh
   git clone https://github.com/pythonnet/pythonnet
   cd pythonnet
@@ -14,7 +14,7 @@
   pip install -e .
   ```
 
-  If you need change the defualt runtime, modify the `pythonnet/__init__.py` line 18:
+  当安装pythonnet后,可以直接修改`pythonnet/__init__.py` line 18选择需要的runtime:
   ```python
   def set_default_runtime() -> None:
       set_runtime(clr_loader.get_coreclr("your-path-to/runtimeconfig.json"))
@@ -24,7 +24,7 @@
       #     set_runtime(clr_loader.get_mono())
   ```
 
-  example for  `runtimeconfig.json`
+  the example of `runtimeconfig.json`
   ```json
   {
     "runtimeOptions": {
@@ -37,16 +37,12 @@
   }
   ```
 
-- Setup Dotnet DLL Path
-
-  NOTE change the env to your lib path.
+- 设置dotnet dll Path
+  由于不同pc上安装的dotnet package不同,因此开发Nncase时需要手动提供DLL PATH.
   ```sh
-  export NNCASE_CORE_DLL="/Users/lisa/Documents/nncase/src/Nncase.Core/bin/Debug/net6.0/Nncase.Core.dll"
-  export NNCASE_IMPORTER_DLL="/Users/lisa/Documents/nncase/src/Nncase.Importer/bin/Debug/net6.0/Nncase.Importer.dll"
-  export NNCASE_CLI_DLL="/Users/lisa/Documents/nncase/src/Nncase.Cli/bin/Debug/net6.0/Nncase.Cli.dll"
-  export FLATBUFFERS_DLL="/Users/lisa/.nuget/packages/nncase.flatbuffers/2.0.0/lib/netstandard2.1/FlatBuffers.dll"
-  export HYPERLINQ_DLL="/Users/lisa/.nuget/packages/netfabric.hyperlinq/3.0.0-beta48/lib/net6.0/NetFabric.Hyperlinq.dll"
-  export HYPERLINQ_ABS_DLL="/Users/lisa/.nuget/packages/netfabric.hyperlinq.abstractions/1.3.0/lib/netstandard2.1/NetFabric.Hyperlinq.Abstractions.dll"
+  "PYTHONPATH": "${workspaceFolder}/python:${workspaceFolder}/tests:${env:PYTHONPATH}",
+  "PYTHONNET_PYDLL": "/Users/lisa/mambaforge/lib/libpython3.9.dylib",
+  "NNCASE_CLI": "${workspaceFolder}/bin/Nncase.Cli/net6.0",
   ```
 
 - Run tests

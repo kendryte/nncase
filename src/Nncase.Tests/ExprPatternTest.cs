@@ -11,7 +11,6 @@ using static Nncase.Pattern.Utility;
 using static Nncase.Pattern.F.Math;
 using static Nncase.Pattern.F.Tensors;
 using static Nncase.IR.Utility;
-using Nncase.Pattern.Math;
 
 namespace Nncase.Tests
 {

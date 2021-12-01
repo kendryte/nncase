@@ -61,7 +61,9 @@ namespace Nncase.IR
 
         public static string DumpTypeAsIL(this IRType type)
         {
-            var visitor = new ILDumpVisitor(null);
+            var builder = new StringBuilder();
+            using var writer = new StringWriter(builder);
+            var visitor = new ILDumpVisitor(writer);
             return visitor.VisitType(type);
         }
 

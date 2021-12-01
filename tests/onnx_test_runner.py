@@ -10,8 +10,9 @@ from test_runner import *
 
 
 class OnnxTestRunner(TestRunner):
-    def __init__(self, case_name, targets=None, overwirte_configs: dict = None):
-        super().__init__(case_name, targets, overwirte_configs)
+    def __init__(self, case_name, targets=None, overwrite_configs: dict = None):
+        super().__init__(case_name, targets, overwrite_configs)
+        self.model_type = "onnx"
 
     def from_torch(self, module, in_shape, opset_version=11):
         # export model
@@ -35,6 +36,11 @@ class OnnxTestRunner(TestRunner):
         return model_file
 
     def run(self, model_file):
+        if model_file.startswith('examples'):
+            model_file = os.path.join(os.path.dirname(__file__), '..', model_file)
+        elif model_file.startswith('onnx-models'):
+            model_file = os.path.join(os.getenv('ONNX_MODELS_DIR'),
+                                      model_file[len('onnx-models/'):])
         if self.case_dir != os.path.dirname(model_file):
             new_file = os.path.join(self.case_dir, 'test.onnx')
             shutil.copy(model_file, new_file)
@@ -111,12 +117,23 @@ class OnnxTestRunner(TestRunner):
             input_dict['dtype'] = onnx.mapping.TENSOR_TYPE_TO_NP_TYPE[onnx_type.elem_type]
             input_dict['shape'] = [(i.dim_value if i.dim_value != 0 else d) for i, d in zip(
                 onnx_type.shape.dim, [1, 3, 224, 224])]
+            input_dict['model_shape'] = [(i.dim_value if i.dim_value != 0 else d) for i, d in zip(
+                onnx_type.shape.dim, [1, 3, 224, 224])]
             self.inputs.append(input_dict)
-            self.calibs.append(input_dict.copy())
+            self.calibs.append(copy.deepcopy(input_dict))
+            self.dump_range_data.append(copy.deepcopy(input_dict))
 
         # output
+        for e in onnx_model.graph.output:
+            output_dict = {}
+            onnx_type = e.type.tensor_type
+            output_dict['name'] = e.name
+            output_dict['dtype'] = onnx.mapping.TENSOR_TYPE_TO_NP_TYPE[onnx_type.elem_type]
+            output_dict['model_shape'] = [i.dim_value for i in onnx_type.shape.dim]
+            print(output_dict)
+            self.outputs.append(output_dict)
 
-    def cpu_infer(self, case_dir: str, model_file: bytes):
+    def cpu_infer(self, case_dir: str, model_file: bytes, type: str):
         # create session
         try:
             print('[onnx]: using simplified model')
@@ -138,7 +155,8 @@ class OnnxTestRunner(TestRunner):
 
         input_dict = {}
         for input in self.inputs:
-            input_dict[input['name']] = input['data']
+            input_dict[input['name']] = self.transform_input(
+                self.data_pre_process(input['data']), "float32", "CPU")
 
         outputs = sess.run(None, input_dict)
         i = 0
@@ -149,3 +167,6 @@ class OnnxTestRunner(TestRunner):
             output.tofile(bin_file)
             self.totxtfile(text_file, output)
             i += 1
+
+    def import_model(self, compiler, model_content, import_options):
+        compiler.import_onnx(model_content, import_options)

@@ -46,7 +46,7 @@ namespace Nncase.Transform
         {
             foreach (var pass in _passes)
             {
-                _module.Update(pass.Run(_module.Entry, _options));
+                _module.Update(pass.Run(_module.Entry!, _options));
             }
         }
     }

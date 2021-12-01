@@ -1,11 +1,13 @@
 using System;
 using System.Collections.Generic;
+using System.Collections;
 using System.Linq;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
 using Nncase.IR.Tensors;
 using TorchSharp;
+#nullable enable
 
 namespace Nncase.Evaluator.Ops
 {
@@ -14,9 +16,12 @@ namespace Nncase.Evaluator.Ops
         public Call? CurrentCall;
         private readonly Dictionary<Expr, torch.Tensor> _exprMemo;
 
-        public EvaluatorContext(Dictionary<Expr, torch.Tensor> exprMemo)
+        public readonly Dictionary<Var, torch.Tensor> Inputs;
+
+        public EvaluatorContext(Dictionary<Expr, torch.Tensor> exprMemo, Dictionary<Var, torch.Tensor> inputs)
         {
             _exprMemo = exprMemo;
+            Inputs = inputs;
         }
 
         private Call GetCurrentCall() =>
@@ -64,24 +69,25 @@ namespace Nncase.Evaluator.Ops
                 throw new InvalidOperationException($"Expr {expr} is not a TensorType.");
         }
 
-
-        public TensorType CurrentCallResultTensorType() => GetTensorType(CurrentCall);
+        public TensorType CurrentCallResultTensorType() => GetTensorType(CurrentCall!);
 
     }
 
     public sealed partial class EvaluatorVisitor : ExprVisitor<torch.Tensor, IRType>
     {
-        private EvaluatorContext _context;
+        private readonly EvaluatorContext _context;
 
-        public EvaluatorVisitor()
+        public EvaluatorVisitor(Dictionary<Var, torch.Tensor> inputs)
         {
-            _context = new EvaluatorContext(ExpressionMemo);
+            _context = new EvaluatorContext(ExpressionMemo, inputs);
         }
+
+        private torch.Tensor _fixShape(Expr expr, torch.Tensor tensor) => expr.CheckedShape.IsScalar ? tensor.view(new long[] { }) : tensor;
 
         public override torch.Tensor VisitLeaf(Call expr)
         {
             _context.CurrentCall = expr;
-            return expr.Target switch
+            return _fixShape(expr, expr.Target switch
             {
                 Binary bn => VisitBinary(bn),
                 Concat con => VisitConcat(con),
@@ -90,11 +96,11 @@ namespace Nncase.Evaluator.Ops
                 Transpose tr => VisitTranspose(tr),
                 Unary un => VisitUnary(un),
                 Pad pd => VisitPad(pd),
-                Stack st => VisitStack(st),
+                IR.Tensors.Stack st => VisitStack(st),
                 Cast ct => VisitCast(ct),
                 Conv2D conv => VisitConv2D(conv),
                 _ => throw new NotImplementedException()
-            };
+            });
         }
 
         public override torch.Tensor VisitLeaf(Const expr)
@@ -118,15 +124,21 @@ namespace Nncase.Evaluator.Ops
             return torch.empty(1, 1);
         }
 
-        public override torch.Tensor VisitLeaf(Var expr) => expr.CheckedType switch
+        public override torch.Tensor VisitLeaf(Var expr)
         {
-            TensorType ttype =>
-              ttype.IsScalar switch
-              {
-                  true => torch.empty(new long[] { 1 }),
-                  false => torch.empty(expr.CheckedShape.Select(x => (long)x.FixedValue).ToArray())
-              },
-            _ => torch.empty(1, 1)
-        };
+            if (!_context.Inputs.TryGetValue(expr, out var result))
+            {
+                throw new InvalidProgramException($"Must Set Input For Var {expr.Name}!");
+            }
+            if (result is null)
+                throw new InvalidProgramException($"Must Set Input For Var {expr.Name}!");
+            var target = new TensorType(result.dtype.ToDataType(), new Shape(result.shape));
+            if (target != expr.CheckedType)
+            {
+                throw new InvalidProgramException(
+                  $"The Var {expr.Name} Require {expr.CheckedType} But Give {target}");
+            }
+            return result;
+        }
     }
 }

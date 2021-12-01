@@ -30,11 +30,19 @@ namespace Nncase.Evaluator
                 tensor.bytes.ToArray());
         }
 
+        /// <summary>
+        /// wrapper for python use
+        /// </summary>
+        /// <param name="tensor"></param>
+        /// <returns></returns>
+        public static byte[] ToSpan(this torch.Tensor tensor) => tensor.bytes.ToArray();
+
         public static torch.Tensor ToTorchTensor(this Const expr)
         {
+          // torch.as_tensor()
             var dtype = expr.ValueType.DType;
             var shape = expr.CheckedShape.IsScalar
-                ? new long[] { 1 }
+                ? new long[] { }
                 : expr.CheckedShape.ToList().Select(x => (long)x.FixedValue).ToArray();
             return dtype switch
             {

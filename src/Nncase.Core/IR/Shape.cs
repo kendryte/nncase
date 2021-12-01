@@ -158,9 +158,9 @@ namespace Nncase.IR
 
         public int Count => ((IReadOnlyCollection<Dimension>)_dimensions).Count;
 
-        public Dimension this[int index] => 
-            index >= 0 
-                ? ((IReadOnlyList<Dimension>)_dimensions)[index] 
+        public Dimension this[int index] =>
+            index >= 0
+                ? ((IReadOnlyList<Dimension>)_dimensions)[index]
                 : ((IReadOnlyList<Dimension>)_dimensions)[Rank + index];
 
         /// <summary>
@@ -238,9 +238,9 @@ namespace Nncase.IR
             return ((IStructuralEquatable)_dimensions).Equals(other, comparer);
         }
 
-        public bool Equals(Shape other)
+        public bool Equals(Shape? other)
         {
-            return StructuralComparisons.StructuralEqualityComparer.Equals(_dimensions, other._dimensions);
+            return other is not null && StructuralComparisons.StructuralEqualityComparer.Equals(_dimensions, other._dimensions);
         }
 
         public override bool Equals(object? other)

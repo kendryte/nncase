@@ -13,9 +13,11 @@ namespace Nncase.Transform
     public class RunPassOptions
     {
         /// <summary>
-        /// Initializes a new instance of the <see cref="RunPassOptions"/> class.
+        /// constructor
         /// </summary>
-        /// <param name="target">Target.</param>
+        /// <param name="target"> target device </param>
+        /// <param name="dumpLevel"> int level </param>
+        /// <param name="dumpDir"> dir </param>
         public RunPassOptions(ITarget target, int dumpLevel, string dumpDir)
         {
             Target = target;
@@ -53,6 +55,6 @@ namespace Nncase.Transform
 
         public string FullDumpDir { get => Path.Combine(DumpDir, PassName); }
 
-        public static RunPassOptions Invalid => new RunPassOptions(null, -1, "");
+        public static RunPassOptions Invalid => new RunPassOptions(null!, -1, "");
     }
 }

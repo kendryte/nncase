@@ -131,7 +131,7 @@ namespace Nncase.Pattern
         /// <summary>
         /// Create repeated Vargs match pattern, it will manual clear the inner container.
         /// </summary>
-        /// <param name="SetUp">the int mean matched params nums, list<pattern> is inner params contianer.</param>
+        /// <param name="SetUp">the int mean matched params nums, list[pattern] is inner params contianer. </param>
         /// <returns>VArgsPattern</returns>
         public static VArgsPattern IsVArgsRepeat(Action<int, List<ExprPattern>> SetUp)
           => new RepeatVArgsPattern(SetUp, (matched, paramPatterns) =>
@@ -143,7 +143,7 @@ namespace Nncase.Pattern
         /// <summary>
         /// Create repeated Vargs match pattern
         /// </summary>
-        /// <param name="SetUp">the int mean matched params nums, list<pattern> is inner params contianer.</param>
+        /// <param name="SetUp">the int mean matched params nums, list[pattern] is inner params contianer.</param>
         /// <param name="TearDown">the bool mean current matched state, if match failure your can clear the inner params contianer.</param>
         /// <returns>VArgsPattern</returns>
         public static VArgsPattern IsVArgsRepeat(Action<int, List<ExprPattern>> SetUp, Action<bool, List<ExprPattern>> TearDown)

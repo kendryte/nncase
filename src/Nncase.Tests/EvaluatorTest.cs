@@ -19,10 +19,8 @@ namespace Nncase.Tests.Evaluator
         {
             var a = (Const)7f;
             var tA = tensor(7f);
-
             var expr = -a;
             TypeInference.InferenceType(expr);
-
             Assert.Equal(
                 -tA,
                 expr.Eval());

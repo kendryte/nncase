@@ -46,7 +46,7 @@ namespace Nncase.IR
 
         public void Update(Function entry)
         {
-            _functions.RemoveAt(_functions.IndexOf(Entry));
+            _functions.RemoveAt(_functions.IndexOf(Entry!));
             _functions.Add(entry);
             Entry = entry;
         }

@@ -6,8 +6,50 @@ running: # 每个case运行时的处理配置
   preprocess: null
   postprocess: null
 case: # case的配置，应该是一个多层次的
-  compile_opt:
+  preprocess_opt:
+    - name: preprocess
+      values:
+        - false
+    - name: swapRB
+      values:
+        - false
+    - name: input_shape
+      values:
+        - [1,224,224,3]
+    - name: mean
+      values:
+        - [0,0,0]
+    - name: std
+      values:
+        - [1,1,1]
+    - name: input_range
+      values:
+        - [0,255]
+    - name: input_type
+      values:
+        - uint8
+    - name: input_layout
+      values:
+        - NHWC
+    - name: output_layout
+      values:
+        - NHWC
+    - name: letterbox_value
+      values:
+        - 0.
+  importer_opt:
     kwargs: null
+  compile_opt:
+    tcu_num: 0
+    is_fpga: false
+    dump_asm: true
+    dump_ir: true
+    dump_quant_error: false
+    dump_import_op_range: false
+    quant_type: 'uint8'
+    w_quant_type: 'uint8'
+    use_mse_quant_w: true
+
   ptq_opt:
     kwargs:
       input_mean: 0.5
@@ -21,18 +63,32 @@ case: # case的配置，应该是一个多层次的
     name: generate_random
     kwargs: null
     numbers: 1
+    batch_size: 50
+  generate_dump_range_data:
+    name: generate_random
+    kwargs: null
+    numbers: 1
     batch_size: 10
   eval:
     - name: target
       values:
         - cpu
+        #- vulkan
+        - k210
+        - k510
+        - k230
     - name: ptq
       values:
         - false
+        - true
   infer:
     - name: target
       values:
         - cpu
+        #- vulkan
+        - k210
+        - k510
+        - k230
     - name: ptq
       values:
         - false
@@ -45,7 +101,8 @@ judge:
     matchs: null
   specifics:
     - matchs:
-        target: [cpu, vulkan, k210, k510]
+        #target: [cpu, vulkan, k210, k510]
+        target: [cpu, k210, k510]
         ptq: true
       threshold: 0.98
     - matchs:
