@@ -33,9 +33,9 @@ def _make_module(v_shape):
 
 
 lhs_shapes = [
-    [1, 3, 112, 128],
-    [1, 3, 224, 224],
-    [1, 3, 304, 320]
+    [1, 3, 28, 32],
+    [1, 3, 56, 56],
+    [1, 3, 76, 80]
 ]
 
 rhs_shapes = [
@@ -45,7 +45,7 @@ rhs_shapes = [
 
 @pytest.mark.parametrize('lhs_shape', lhs_shapes)
 @pytest.mark.parametrize('rhs_shape', rhs_shapes)
-def test_letterbox(lhs_shape, rhs_shape, request):
+def test_letterbox1(lhs_shape, rhs_shape, request):
     module = _make_module(rhs_shape)
     overwrite_cfg = """
 case: 
@@ -58,7 +58,7 @@ case:
         - false
     - name: input_shape
       values:
-        - [1,3,224,224]
+        - [1,3,56,56]
     - name: mean
       values:
         - [0,0,0]
@@ -88,4 +88,4 @@ case:
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_letterbox.py'])
+    pytest.main(['-vv', 'test_letterbox1.py'])
