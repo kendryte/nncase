@@ -578,7 +578,15 @@ class TestRunner(metaclass=ABCMeta):
         compile_options.quant_type = cfg.compile_opt.quant_type
         compile_options.w_quant_type = cfg.compile_opt.w_quant_type
         compile_options.swapRB = preprocess['swapRB']
-        compile_options.input_shape = self.pre_process[3]['input_shape'] if self.pre_process[3]['input_shape'] != [] else self.pre_process[3]['model_shape']
+        if self.pre_process[3]['input_shape'] != []:
+            compile_options.input_shape = self.pre_process[3]['input_shape']
+        else:
+            if self.model_type == "tflite" and preprocess['input_layout'] == "NCHW":
+                compile_options.input_shape = np.array([self.pre_process[3]['model_shape'][0],self.pre_process[3]['model_shape'][3],self.pre_process[3]['model_shape'][1],self.pre_process[3]['model_shape'][2]])
+            elif self.model_type != "tflite" and preprocess['input_layout'] == "NHWC":
+                compile_options.input_shape = np.array([self.pre_process[3]['model_shape'][0],self.pre_process[3]['model_shape'][2],self.pre_process[3]['model_shape'][3],self.pre_process[3]['model_shape'][1]])
+            else:
+                compile_options.input_shape = self.pre_process[3]['model_shape']
         compile_options.input_range = preprocess['input_range']
         compile_options.preprocess = preprocess['preprocess']
         compile_options.mean = preprocess['mean']
@@ -643,7 +651,12 @@ class TestRunner(metaclass=ABCMeta):
                 if preprocess_opt['preprocess'] and preprocess_opt['input_shape'] != [] and len(preprocess_opt['input_shape']) == 4:
                     shape = copy.deepcopy(preprocess_opt['input_shape'])
                 else:
-                    shape = copy.deepcopy(input['model_shape'])
+                    if self.model_type == "tflite" and preprocess_opt['input_layout'] == "NCHW":
+                        shape = copy.deepcopy(np.array([input['model_shape'][0],input['model_shape'][3],input['model_shape'][1],input['model_shape'][2]]))
+                    elif self.model_type != "tflite" and preprocess_opt['input_layout'] == "NHWC":
+                        shape = copy.deepcopy(np.array([input['model_shape'][0],input['model_shape'][2],input['model_shape'][3],input['model_shape'][1]]))
+                    else:
+                        shape = copy.deepcopy(input['model_shape'])
                 if shape[0] != cfg.batch_size:
                     shape[0] *= cfg.batch_size
                 data = DataFactory[cfg.name](shape, input['dtype'], n, cfg.batch_size, **cfg.kwargs)

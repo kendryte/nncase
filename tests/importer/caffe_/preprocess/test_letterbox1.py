@@ -53,8 +53,8 @@ i_channels = [
 
 i_sizes = [
     [26, 28],
-    [224, 224],
-    [306, 320]
+    [56, 56],
+    [76, 80]
 ]
 
 operations = [
@@ -66,7 +66,7 @@ operations = [
 @pytest.mark.parametrize('i_channel', i_channels)
 @pytest.mark.parametrize('i_size', i_sizes)
 @pytest.mark.parametrize('operation', operations)
-def test_letterbox(n, i_channel, i_size, operation, request):
+def test_letterbox1(n, i_channel, i_size, operation, request):
     overwrite_cfg = """
 case: 
   preprocess_opt:
@@ -78,7 +78,7 @@ case:
         - false
     - name: input_shape
       values:
-        - [1,3,224,224]
+        - [1,3,56,56]
     - name: mean
       values:
         - [0,0,0]
@@ -112,4 +112,4 @@ case:
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_letterbox.py'])
+    pytest.main(['-vv', 'test_letterbox1.py'])
