@@ -50,7 +50,6 @@ struct target_options
     std::string inference_type;
     float weights_quantize_threshold;
     uint32_t output_quantize_threshold;
-    uint32_t tcu_num;
     bool quantize_binary;
     bool is_fpga;
 };
