@@ -289,6 +289,5 @@ RC*
 wheelhouse/
 .cache
 .env
-Directory.Build.props
 Directory.Build.targets
 NuGet.Config
