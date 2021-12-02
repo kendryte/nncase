@@ -1,4 +1,6 @@
+using System;
 using System.IO;
+using System.Linq;
 using LanguageExt;
 using Onnx;
 
@@ -6,27 +8,58 @@ namespace Nncase.Importer
 {
     public sealed partial class OnnxImporter
     {
-        Option<AttributeProto> FindAttr(NodeProto n, string attr)
+        Option<T> GetAttr<T>(NodeProto n, string attr, AttributeProto.Types.AttributeType type, Func<AttributeProto, T> func)
         {
-            return n.Attribute.Find(x => x.Name == attr);
-        }
-        
-        float GetFloatAttribute(NodeProto n, string attr)
-        {
-            return FindAttr(n, attr)
-                .Match(
+            return n.Attribute
+                .Find(x => x.Name == attr)
+                .Map(
                     x =>
                     {
-                        if (x.Type == AttributeProto.Types.AttributeType.Float)
+                        if (x.Type == type)
                         {
-                            return x.F;
+                            return func(x);
                         }
                         else
                         {
-                            throw new InvalidDataException($"Find {attr} but type is mismatch, expect float, buf {x.Type}");
+                            throw new InvalidDataException(
+                                $"Find {attr} but type is mismatch, expect float, buf {x.Type}");
                         }
-                    },
+                    });
+        }
+
+        T GetAttrSafe<T>(NodeProto n, string attr, AttributeProto.Types.AttributeType type,
+            Func<AttributeProto, T> func, T defaultValue)
+        {
+            return GetAttr(n, attr, type, func).Match(x => x, () => defaultValue);
+        }
+        
+        T GetAttrUnSafe<T>(NodeProto n, string attr, AttributeProto.Types.AttributeType type,
+            Func<AttributeProto, T> func)
+        {
+            return GetAttr(n, attr, type, func)
+                .Match(
+                    x => x,
                     () => throw new InvalidDataException($"Cannot find node attr {attr} in node {n}"));
+        }
+        
+        long GetIntAttribute(NodeProto n, string attr, long defaultValue)
+        {
+            return GetAttrSafe(n, attr, AttributeProto.Types.AttributeType.Int, x => x.I, defaultValue);
+        }
+        
+        float GetFloatAttribute(NodeProto n, string attr, float defaultValue)
+        {
+            return GetAttrSafe(n, attr, AttributeProto.Types.AttributeType.Float, x => x.F, defaultValue);
+        }
+
+        bool GetBoolAttribute(NodeProto n, string attr, bool defaultValue)
+        {
+            return GetIntAttribute(n, attr, defaultValue ? 1 : 0) != 0;
+        }
+
+        long[] GetAxisAttribute(NodeProto n, string attr)
+        {
+            return GetAttrUnSafe(n, attr, AttributeProto.Types.AttributeType.Ints, x => x.Ints.ToArray());
         }
     }
 }

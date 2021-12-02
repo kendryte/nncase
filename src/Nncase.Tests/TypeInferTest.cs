@@ -86,4 +86,46 @@ public class UnitTestTypeInfer
         TypeInference.InferenceType(ss);
         Assert.Equal(new Shape(2, 3), ss.CheckedShape);
     }
+
+    void AssertInferShape(Expr expr, params int[] shapeDimensions)
+    {
+        AssertInferShape(expr, new Shape(shapeDimensions));
+    }
+    
+    void AssertInferShape(Expr expr, Shape shape)
+    {
+        Assert.True(TypeInference.InferenceType(expr));
+        Assert.Equal(expr.CheckedShape, shape);
+    }
+    
+    [Fact]
+    public void TestReduceArgTypeInfer()
+    {
+        var input = new Var("v", new TensorType(DataType.Float32, new Shape(4, 5, 6, 7)));
+        AssertInferShape(
+            ReduceArg(ReduceArgOp.ArgMax, input, 0, false, false),
+            5, 6, 7);
+        AssertInferShape(
+            ReduceArg(ReduceArgOp.ArgMax, input, 1, false, false),
+            4, 6, 7);
+        AssertInferShape(
+            ReduceArg(ReduceArgOp.ArgMax, input, 2, false, false),
+            4, 5, 7);
+        AssertInferShape(
+            ReduceArg(ReduceArgOp.ArgMax, input, 3, false, false),
+            4, 5, 6);
+        
+        AssertInferShape(
+            ReduceArg(ReduceArgOp.ArgMax, input, 0, true, false),
+            1, 5, 6, 7);
+        AssertInferShape(
+            ReduceArg(ReduceArgOp.ArgMax, input, 1, true, false),
+            4, 1, 6, 7);
+        AssertInferShape(
+            ReduceArg(ReduceArgOp.ArgMax, input, 2, true, false),
+            4, 5, 1, 7);
+        AssertInferShape(
+            ReduceArg(ReduceArgOp.ArgMax, input, 3, true, false),
+            4, 5, 6, 1);
+    }
 }

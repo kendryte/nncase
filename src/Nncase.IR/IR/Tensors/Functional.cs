@@ -42,6 +42,8 @@ namespace Nncase.IR.F
         public static Call Pad(Expr input, Expr pads, PadMode mode, Expr value) => new Call(new Pad(mode), input, pads, value);
 
         public static Call Reduce(ReduceOp reduceOp, Expr input, Expr axis, Expr initValue, Expr keepDims) => new Call(new Reduce(reduceOp), input, axis, initValue, keepDims);
+        
+        public static Call ReduceArg(ReduceArgOp reduceArgOp, Expr input, Expr axis, Expr keepDims, Expr selectLastIndex) => new Call(new ReduceArg(reduceArgOp), input, axis, keepDims, selectLastIndex);
 
         public static Call ReduceMean(Expr input, Expr axis, Expr initValue, Expr keepDims) => Reduce(ReduceOp.Mean, input, axis, initValue, keepDims);
 

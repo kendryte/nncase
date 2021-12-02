@@ -77,7 +77,7 @@ namespace Nncase.IR
           },
           "IsScalar"
         );
-
+        
         public static TypePattern IsIntegral() => new TypePattern(
           x => x switch
           {
@@ -102,6 +102,10 @@ namespace Nncase.IR
             }, "IsBool"
         );
 
+        public static TypePattern IsIntegralScalar() => IsScalar() & IsIntegral();
+        
+        public static TypePattern IsBoolScalar() => IsScalar() & IsIntegral();
+        
         public static int GetWindowedOutputSize(int size, int filter, int stride, int dilation, bool same, bool ceilMode = false)
         {
             var effective_filter_size = (filter - 1) * dilation + 1;
