@@ -35,6 +35,11 @@ namespace Nncase
         Asin,
         
         /// <summary>
+        /// Asin.
+        /// </summary>
+        Asinh,
+
+        /// <summary>
         /// Ceil.
         /// </summary>
         Ceil,

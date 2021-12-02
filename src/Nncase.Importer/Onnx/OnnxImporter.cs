@@ -176,6 +176,12 @@ namespace Nncase.Importer
         {
             return (GetInputExpr(n, index1), GetInputExpr(n, index2));
         }
+
+        // about op set: https://github.com/onnx/onnx/issues/3678
+        private long GetOpSet(string domain)
+        {
+            return _opSetMap[domain];
+        }
         
         private void Visit(NodeProto op)
         {
@@ -188,9 +194,9 @@ namespace Nncase.Importer
                 "ArgMax" => VisitReduceArg(op, ReduceArgOp.ArgMax),
                 "ArgMin" => VisitReduceArg(op, ReduceArgOp.ArgMin),
                 "Asin" => VisitUnary(op, UnaryOp.Asin),
-                // "Asinh" => VisitAsinh(op),
+                "Asinh" => VisitUnary(op, UnaryOp.Asinh),
                 "Add" => VisitBinary(op, BinaryOp.Add),
-                // "AveragePool" => VisitAveragePool(op),
+                "AveragePool" => VisitReduceWindow2D(op, ReduceOp.Mean, 0f),
                 // "BatchNormalization" => VisitBatchNormalization(op),
                 // "Cast" => VisitCast(op),
                 "Ceil" => VisitUnary(op, UnaryOp.Ceil),
@@ -216,8 +222,8 @@ namespace Nncase.Importer
                 // "Gather" => VisitGather(op),
                 // "GatherND" => VisitGatherND(op),
                 // "Gemm" => VisitGemm(op),
-                // "GlobalAveragePool" => VisitGlobalAveragePool(op),
-                // "GlobalMaxPool" => VisitGlobalMaxPool(op),
+                "GlobalAveragePool" => VisitReduceWindow2D(op, ReduceOp.Mean, float.MinValue, true),
+                "GlobalMaxPool" => VisitReduceWindow2D(op, ReduceOp.Max, float.MinValue, true),
                 // "Hardmax" => VisitHardmax(op),
                 // "HardSigmoid" => VisitHardSigmoid(op),
                 // "HardSwish" => VisitHardSwish(op),
@@ -229,7 +235,7 @@ namespace Nncase.Importer
                 // "LogSoftmax" => VisitLogSoftmax(op),
                 // "LRN" => VisitLRN(op),
                 // "MatMul" => VisitMatMul(op),
-                // "MaxPool" => VisitMaxPool(op),
+                "MaxPool" => VisitReduceWindow2D(op, ReduceOp.Max, float.MinValue),
                 "Max" => VisitBinary(op, BinaryOp.Max),
                 "Min" => VisitBinary(op, BinaryOp.Min),
                 "Mul" => VisitBinary(op, BinaryOp.Mul),

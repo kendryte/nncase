@@ -59,7 +59,29 @@ namespace Nncase.Importer
 
         long[] GetAxisAttribute(NodeProto n, string attr)
         {
+            return GetIntsAttribute(n, attr);
+        }
+
+        long[] GetIntsAttribute(NodeProto n, string attr)
+        {
             return GetAttrUnSafe(n, attr, AttributeProto.Types.AttributeType.Ints, x => x.Ints.ToArray());
+        }
+        
+        long[] GetIntsAttribute(NodeProto n, string attr, int[] defaultValue)
+        {
+            return GetAttrSafe(n, attr, AttributeProto.Types.AttributeType.Ints, x => x.Ints.ToArray(),
+                defaultValue.Select(x => (long)x).ToArray());
+        }
+
+        long[] GetIntsAttribute(NodeProto n, string attr, int defaultValue, int count)
+        {
+            return GetAttrSafe(n, attr, AttributeProto.Types.AttributeType.Ints, x => x.Ints.ToArray(), 
+                Enumerable.Repeat<long>(defaultValue, count).ToArray());
+        }
+        
+        string GetStringAttribute(NodeProto n, string attr, string defaultValue)
+        {
+            return GetAttrSafe(n, attr, AttributeProto.Types.AttributeType.String, x => x.S.ToString(), defaultValue);
         }
     }
 }

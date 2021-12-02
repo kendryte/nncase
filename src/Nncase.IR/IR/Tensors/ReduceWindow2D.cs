@@ -42,24 +42,23 @@ namespace Nncase.IR.Tensors
         public static readonly ParameterInfo Padding = new(typeof(ReduceWindow2D), 4, "padding", HasRank(2) & IsIntegral());
 
         /// <summary>
-        /// Gets Dilation.
-        /// </summary>
-        public static readonly ParameterInfo Dilation = new(typeof(ReduceWindow2D), 5, "dilation", HasRank(1) & IsIntegral());
-        
-        /// <summary>
         /// Gets CeilMode.
         /// </summary>
         public static readonly ParameterInfo CeilMode = new(typeof(ReduceWindow2D), 6, "ceilMode", IsBool());
 
+        /// <summary>
+        /// Gets CountIncludePad.
+        /// </summary>
+        public static readonly ParameterInfo CountIncludePad = new(typeof(ReduceWindow2D), 6, "countIncludePad", IsBool());
+
         /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType initValue, TensorType filter, TensorType stride, TensorType padding, TensorType dilation, TensorType ceilMode)
+        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType initValue, TensorType filter, TensorType stride, TensorType padding, TensorType ceilMode, TensorType countIncludePad)
         {
             var outshape = input.Shape.ToList();
             if (
             context.GetArgument(this, Filter) is Const filter_con &&
             context.GetArgument(this, Stride) is Const stride_con &&
             context.GetArgument(this, Padding) is Const padding_con &&
-            context.GetArgument(this, Dilation) is Const dilation_con &&
             context.GetArgument(this, CeilMode) is Const ceilModeValue
             )
             {
@@ -67,11 +66,10 @@ namespace Nncase.IR.Tensors
                 var ts_stride = stride_con.ToTensor<int>();
                 var ceilModeV = ceilModeValue.ToScalar<bool>();
                 var ts_padding = padding_con.ToTensor<int>();
-                var ts_dilation = dilation_con.ToTensor<int>();
                 var padh = ts_padding[0, 0] + ts_padding[0, 1];
                 var padw = ts_padding[1, 0] + ts_padding[1, 1];
-                outshape[2] = input.Shape[2].IsUnknown ? Dimension.Unknown : GetWindowedOutputSize(input.Shape[2].FixedValue + padh, ts_filter[0], ts_stride[0], ts_dilation[0], false, ceilModeV);
-                outshape[3] = input.Shape[3].IsUnknown ? Dimension.Unknown : GetWindowedOutputSize(input.Shape[3].FixedValue + padw, ts_filter[1], ts_stride[1], ts_dilation[1], false, ceilModeV);
+                outshape[2] = input.Shape[2].IsUnknown ? Dimension.Unknown : GetWindowedOutputSize(input.Shape[2].FixedValue + padh, ts_filter[0], ts_stride[0], 1, false, ceilModeV);
+                outshape[3] = input.Shape[3].IsUnknown ? Dimension.Unknown : GetWindowedOutputSize(input.Shape[3].FixedValue + padw, ts_filter[1], ts_stride[1], 1, false, ceilModeV);
 
                 return input with { Shape = new Shape(outshape) };
             }

@@ -226,7 +226,7 @@ namespace Nncase.Tests
             var rPadH = TFLiteImporter.GetWindowedPadding(rInH, 2, 2, dilationH, true);
             var rPadW = TFLiteImporter.GetWindowedPadding(rInW, 2, 2, dilationW, true);
             var rPadding = Util.ConcatPadding(rPadH, rPadW);
-            var reduce = NCHWToNHWC(ReduceWindow2D(ReduceOp.Max, NHWCToNCHW(max), initValue, doubleV, doubleV, rPadding, dilation));
+            var reduce = NCHWToNHWC(ReduceWindow2D(ReduceOp.Max, NHWCToNCHW(max), initValue, doubleV, doubleV, rPadding, dilation, false));
             var post = RunShapeInferPass("reduce", reduce);
             Assert.True(TypeInference.InferenceType(post));
             Assert.Equal(new Shape(1, 120, 160, 16), post.CheckedShape);
