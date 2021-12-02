@@ -25,6 +25,11 @@ namespace Nncase
         Acos,
         
         /// <summary>
+        /// Acosh.
+        /// </summary>
+        Acosh,
+        
+        /// <summary>
         /// Asin.
         /// </summary>
         Asin,
