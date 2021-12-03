@@ -355,6 +355,8 @@ namespace PatternGenerator
             { "LogicalAnd", "Binary" },
             { "LogicalOr", "Binary" },
             { "LogicalXor", "Binary" },
+            { "LeftShift", "Binary" },
+            { "RightShift", "Binary" },
             { "FloorDiv", "Unary" },
             { "FloorMod", "Binary" },
             { "ReduceMean", "Reduce" },

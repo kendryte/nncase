@@ -251,6 +251,20 @@ namespace Nncase.Pattern.F
         /// <returns>Result expression.</returns>
         public static BinaryWrapper LogicalXor(ExprPattern lhs, ExprPattern rhs) => Binary(BinaryOp.LogicalXor, lhs, rhs);
         /// <summary>
+        /// CallPattern left shift.
+        /// </summary>
+        /// <param name = "lhs">Left operand.</param>
+        /// <param name = "rhs">Right operand.</param>
+        /// <returns>Result expression.</returns>
+        public static BinaryWrapper LeftShift(ExprPattern lhs, ExprPattern rhs) => Binary(BinaryOp.LeftShift, lhs, rhs);
+        /// <summary>
+        /// CallPattern right shift.
+        /// </summary>
+        /// <param name = "lhs">Left operand.</param>
+        /// <param name = "rhs">Right operand.</param>
+        /// <returns>Result expression.</returns>
+        public static BinaryWrapper RightShift(ExprPattern lhs, ExprPattern rhs) => Binary(BinaryOp.RightShift, lhs, rhs);
+        /// <summary>
         /// CallPattern floor div.
         /// </summary>
         /// <param name = "lhs">Left operand.</param>
@@ -268,8 +282,8 @@ namespace Nncase.Pattern.F
 
     public static partial class NN
     {
-        public static Conv2DWrapper Conv2D(ExprPattern input, ExprPattern weights, ExprPattern bias, ExprPattern padding, ExprPattern stride, ExprPattern dilation, PadMode padMode, ExprPattern groups) => new Conv2DWrapper(new CallPattern(new Conv2DPattern(padMode), input, weights, bias, padding, stride, dilation, groups));
-        public static Conv2DTransposeWrapper Conv2DTranspose(ExprPattern input, ExprPattern weights, ExprPattern bias, ExprPattern outShape, ExprPattern padding, ExprPattern stride, ExprPattern dilation, PadMode padMode, ExprPattern groups) => new Conv2DTransposeWrapper(new CallPattern(new Conv2DTransposePattern(padMode), input, weights, bias, outShape, padding, stride, dilation, groups));
+        public static Conv2DWrapper Conv2D(ExprPattern input, ExprPattern weights, ExprPattern bias, ExprPattern stride, ExprPattern padding, ExprPattern dilation, PadMode padMode, ExprPattern groups) => new Conv2DWrapper(new CallPattern(new Conv2DPattern(padMode), input, weights, bias, stride, padding, dilation, groups));
+        public static Conv2DTransposeWrapper Conv2DTranspose(ExprPattern input, ExprPattern weights, ExprPattern bias, ExprPattern outShape, ExprPattern stride, ExprPattern padding, ExprPattern dilation, PadMode padMode, ExprPattern groups) => new Conv2DTransposeWrapper(new CallPattern(new Conv2DTransposePattern(padMode), input, weights, bias, outShape, stride, padding, dilation, groups));
         public static LeakyReluWrapper LeakyRelu(ExprPattern input) => new LeakyReluWrapper(new CallPattern(new LeakyReluPattern(), input));
         public static L2NormalizationWrapper L2Normalization(ExprPattern input) => new L2NormalizationWrapper(new CallPattern(new L2NormalizationPattern(), input));
         public static ReluWrapper Relu(ExprPattern input) => new ReluWrapper(new CallPattern(new ReluPattern(), input));
@@ -283,6 +297,8 @@ namespace Nncase.Pattern.F
     public static partial class Tensors
     {
         public static TransposeWrapper Transpose(ExprPattern input, ExprPattern perm) => new TransposeWrapper(new CallPattern(new TransposePattern(), input, perm));
+        public static ExprPattern NHWCToNCHW(ExprPattern input) => Transpose(input, new[]{0, 3, 1, 2});
+        public static ExprPattern NCHWToNHWC(ExprPattern input) => Transpose(input, new[]{0, 2, 3, 1});
         public static BroadcastWrapper Broadcast(ExprPattern input, ExprPattern shape) => new BroadcastWrapper(new CallPattern(new BroadcastPattern(), input, shape));
         public static CastWrapper Cast(ExprPattern input, DataType newType) => new CastWrapper(new CallPattern(new CastPattern(newType), input));
         public static ConcatWrapper Concat(TuplePattern input, ExprPattern axis) => new ConcatWrapper(new CallPattern(new ConcatPattern(), input, axis));
@@ -290,7 +306,9 @@ namespace Nncase.Pattern.F
         public static GatherNDWrapper GatherND(ExprPattern input, ExprPattern axis, ExprPattern batch_dims, ExprPattern index) => new GatherNDWrapper(new CallPattern(new GatherNDPattern(), input, axis, batch_dims, index));
         public static MatMulWrapper MatMul(ExprPattern input, ExprPattern other) => new MatMulWrapper(new CallPattern(new MatMulPattern(), input, other));
         public static OneHotWrapper OneHot(OneHotMode oneHotMode, ExprPattern indices, ExprPattern depth, ExprPattern onValue, ExprPattern offValue, ExprPattern axis) => new OneHotWrapper(new CallPattern(new OneHotPattern(oneHotMode), indices, depth, onValue, offValue, axis));
+        /// <summary>
         /// Pads is Const tensor, shape = [channels, 2(before, after)]
+        /// </summary>
         public static PadWrapper Pad(ExprPattern input, ExprPattern pads, PadMode mode, ExprPattern value) => new PadWrapper(new CallPattern(new PadPattern(mode), input, pads, value));
         public static ReduceWrapper Reduce(ReduceOp reduceOp, ExprPattern input, ExprPattern axis, ExprPattern initValue, ExprPattern keepDims) => new ReduceWrapper(new CallPattern(new ReducePattern(reduceOp), input, axis, initValue, keepDims));
         public static ReduceWrapper ReduceMean(ExprPattern input, ExprPattern axis, ExprPattern initValue, ExprPattern keepDims) => Reduce(ReduceOp.Mean, input, axis, initValue, keepDims);
@@ -298,7 +316,7 @@ namespace Nncase.Pattern.F
         public static ReduceWrapper ReduceMax(ExprPattern input, ExprPattern axis, ExprPattern initValue, ExprPattern keepDims) => Reduce(ReduceOp.Min, input, axis, initValue, keepDims);
         public static ReduceWrapper ReduceSum(ExprPattern input, ExprPattern axis, ExprPattern initValue, ExprPattern keepDims) => Reduce(ReduceOp.Sum, input, axis, initValue, keepDims);
         public static ResizeImageWrapper ResizeImage(ImageResizeMode resizeMode, ExprPattern input, ExprPattern newSize, ExprPattern alignCorners, ExprPattern halfPixelCenters) => new ResizeImageWrapper(new CallPattern(new ResizeImagePattern(resizeMode), input, newSize, alignCorners, halfPixelCenters));
-        public static ReduceWindow2DWrapper ReduceWindow2D(ReduceOp reduceOp, ExprPattern input, ExprPattern initValue, ExprPattern filter, ExprPattern stride, ExprPattern padding, ExprPattern dilation) => new ReduceWindow2DWrapper(new CallPattern(new ReduceWindow2DPattern(reduceOp), input, initValue, filter, stride, padding, dilation));
+        public static ReduceWindow2DWrapper ReduceWindow2D(ReduceOp reduceOp, ExprPattern input, ExprPattern initValue, ExprPattern filter, ExprPattern stride, ExprPattern padding, ExprPattern dilation) => new ReduceWindow2DWrapper(new CallPattern(new ReduceWindow2DPattern(reduceOp), input, initValue, filter, stride, padding, dilation, false));
         public static ReshapeWrapper Reshape(ExprPattern input, ExprPattern shape) => new ReshapeWrapper(new CallPattern(new ReshapePattern(), input, shape));
         public static ShapeOpWrapper ShapeOp(ExprPattern input) => new ShapeOpWrapper(new CallPattern(new ShapeOpPattern(), input));
         ///https://github.com/onnx/onnx/blob/master/docs/Operators.md#slice

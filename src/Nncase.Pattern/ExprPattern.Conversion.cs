@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using Nncase.IR;
 
 namespace Nncase.Pattern
 {
@@ -36,5 +37,10 @@ namespace Nncase.Pattern
         public static implicit operator ExprPattern(BFloat16 value) => (ConstPattern)value;
 
         public static implicit operator ExprPattern(bool value) => (ConstPattern)value;
+
+        public static implicit operator ExprPattern(int[] span) => Const.FromSpan<int>(span);
+        
+        public static implicit operator ExprPattern(float[] span) => Const.FromSpan<float>(span);
+
     }
 }

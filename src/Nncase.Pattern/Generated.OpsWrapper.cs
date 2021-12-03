@@ -1,4 +1,3 @@
-#pragma warning disable 1591
 using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
@@ -575,6 +574,12 @@ namespace Nncase.Pattern.Tensors
         public Expr Dilation() => GetCast<Expr>(DilationPat());
         public T Dilation<T>()
             where T : Expr => GetCast<T>(DilationPat());
+        public ExprPattern CeilModePat() => Pattern[ReduceWindow2D.CeilMode];
+        public T CeilModePat<T>()
+            where T : ExprPattern => (T)CeilModePat();
+        public Expr CeilMode() => GetCast<Expr>(CeilModePat());
+        public T CeilMode<T>()
+            where T : Expr => GetCast<T>(CeilModePat());
         public ReduceOp ReduceOp => ((ReduceWindow2D)GetCast<Call>(this).Target).ReduceOp;
         public static implicit operator CallPattern(ReduceWindow2DWrapper warper) => warper.Pattern;
     }
