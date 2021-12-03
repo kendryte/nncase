@@ -50,6 +50,11 @@ namespace Nncase
         Cos,
 
         /// <summary>
+        /// Cosh.
+        /// </summary>
+        Cosh,
+        
+        /// <summary>
         /// Exp.
         /// </summary>
         Exp,

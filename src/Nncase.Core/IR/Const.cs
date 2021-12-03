@@ -124,6 +124,10 @@ namespace Nncase.IR
                 return CastToTensor<T>(srcType);
         }
 
+        public T[] ToArray<T>()
+            where T : unmanaged
+            => ToTensor<T>().ToArray();
+        
         public T ToScalar<T>()
           where T : unmanaged
           => ValueType.IsScalar ?

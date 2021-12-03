@@ -22,11 +22,11 @@ namespace Nncase.Importer
             var kernelShape = isGlobal
                 ? Util.GetHW(input).Map((h, w) => (Expr) F.Tensors.Concat(new Tuple(h, w), 0))
                 : Const.FromSpan<long>(GetIntsAttribute(op, "kernel_shape"));
-            var pads = Const.FromSpan<long>(GetIntsAttribute(op, "pads"), new Shape(2, 2));
-            var strides = GetIntsAttribute(op, "stride", 0, 4);
+            var pads = GetPadsAttribute(op);
+            var strides = GetStrideAttribute(op);
             return F.Tensors.ReduceWindow2D(reduceOp, input, initValue,
                 kernelShape,
-                Const.FromSpan<long>(strides),
+                strides,
                 pads,
                 ceilMode,
                 countIncludePad);

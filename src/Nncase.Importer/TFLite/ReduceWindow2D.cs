@@ -19,8 +19,8 @@ namespace Nncase.Importer.TFLite
             var filterW = option.FilterWidth;
             var strideH = option.StrideH;
             var strideW = option.StrideW;
-            var padH = GetWindowedPadding(inH, filterH, strideH, 1, option.Padding == tflite.Padding.SAME);
-            var padW = GetWindowedPadding(inW, filterW, strideW, 1, option.Padding == tflite.Padding.SAME);
+            var padH = Util.GetWindowedPadding(inH, filterH, strideH, 1, option.Padding == tflite.Padding.SAME);
+            var padW = Util.GetWindowedPadding(inW, filterW, strideW, 1, option.Padding == tflite.Padding.SAME);
             var filter = Const.FromSpan<int>(new[] { filterH, filterW }, new[] { 2 });
             var stride = Const.FromSpan<int>(new[] { strideH, strideW }, new[] { 2 });
             var padding = Util.ConcatPadding(padH, padW);
