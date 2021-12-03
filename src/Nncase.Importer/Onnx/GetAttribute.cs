@@ -42,6 +42,11 @@ namespace Nncase.Importer
                     () => throw new InvalidDataException($"Cannot find node attr {attr} in node {n}"));
         }
         
+        long GetIntAttribute(NodeProto n, string attr)
+        {
+            return GetAttrUnSafe(n, attr, AttributeProto.Types.AttributeType.Int, x => x.I);
+        }
+        
         long GetIntAttribute(NodeProto n, string attr, long defaultValue)
         {
             return GetAttrSafe(n, attr, AttributeProto.Types.AttributeType.Int, x => x.I, defaultValue);
@@ -82,6 +87,11 @@ namespace Nncase.Importer
         string GetStringAttribute(NodeProto n, string attr, string defaultValue)
         {
             return GetAttrSafe(n, attr, AttributeProto.Types.AttributeType.String, x => x.S.ToString(), defaultValue);
+        }
+        
+        string GetStringAttribute(NodeProto n, string attr)
+        {
+            return GetAttrUnSafe(n, attr, AttributeProto.Types.AttributeType.String, x => x.S.ToString());
         }
     }
 }

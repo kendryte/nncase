@@ -106,6 +106,8 @@ namespace Nncase.IR
         
         public static TypePattern IsBoolScalar() => IsScalar() & IsIntegral();
         
+        public static TypePattern IsFloatScalar() => IsScalar() & IsFloat();
+        
         public static int GetWindowedOutputSize(int size, int filter, int stride, int dilation, bool same, bool ceilMode = false)
         {
             var effective_filter_size = (filter - 1) * dilation + 1;

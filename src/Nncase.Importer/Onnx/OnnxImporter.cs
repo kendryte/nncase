@@ -7,6 +7,7 @@ using System.Linq;
 using Nncase.IR;
 using Google.Protobuf;
 using Google.Protobuf.Collections;
+using LanguageExt;
 using NetFabric.Hyperlinq;
 using Nncase.IR.Math;
 using Onnx;
@@ -183,6 +184,11 @@ namespace Nncase.Importer
             return _opSetMap[domain];
         }
         
+        private long GetOpSet(NodeProto node)
+        {
+            return _opSetMap[node.Domain];
+        }
+        
         private void Visit(NodeProto op)
         {
             var output = op.OpType switch
@@ -197,10 +203,10 @@ namespace Nncase.Importer
                 "Asinh" => VisitUnary(op, UnaryOp.Asinh),
                 "Add" => VisitBinary(op, BinaryOp.Add),
                 "AveragePool" => VisitReduceWindow2D(op, ReduceOp.Mean, 0f),
-                // "BatchNormalization" => VisitBatchNormalization(op),
-                // "Cast" => VisitCast(op),
+                "BatchNormalization" => VisitBatchNormalization(op),
+                "Cast" => VisitCast(op),
                 "Ceil" => VisitUnary(op, UnaryOp.Ceil),
-                // "Celu" => VisitCelu(op),
+                "Celu" => VisitCelu(op),
                 // "Clip" => VisitClip(op),
                 // "Concat" => VisitConcat(op),
                 // "Constant" => VisitConstant(op),
@@ -228,8 +234,8 @@ namespace Nncase.Importer
                 // "HardSigmoid" => VisitHardSigmoid(op),
                 // "HardSwish" => VisitHardSwish(op),
                 // "Identity" => VisitIdentity(op),
-                // "InstanceNormalization" => VisitInstanceNormalization(op),
-                // "LpNormalization" => VisitLpNormalization(op),
+                "InstanceNormalization" => VisitInstanceNormalization(op),
+                "LpNormalization" => VisitLpNormalization(op),
                 // "LeakyRelu" => VisitLeakyRelu(op),
                 "Log" => VisitUnary(op, UnaryOp.Log),
                 // "LogSoftmax" => VisitLogSoftmax(op),
