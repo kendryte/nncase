@@ -286,6 +286,9 @@ namespace Nncase.Pattern.F
         public static Conv2DTransposeWrapper Conv2DTranspose(ExprPattern input, ExprPattern weights, ExprPattern bias, ExprPattern outShape, ExprPattern stride, ExprPattern padding, ExprPattern dilation, PadMode padMode, ExprPattern groups) => new Conv2DTransposeWrapper(new CallPattern(new Conv2DTransposePattern(padMode), input, weights, bias, outShape, stride, padding, dilation, groups));
         public static LeakyReluWrapper LeakyRelu(ExprPattern input) => new LeakyReluWrapper(new CallPattern(new LeakyReluPattern(), input));
         public static L2NormalizationWrapper L2Normalization(ExprPattern input) => new L2NormalizationWrapper(new CallPattern(new L2NormalizationPattern(), input));
+        public static BatchNormalizationWrapper BatchNormalization(ExprPattern input, ExprPattern eps, ExprPattern mom) => new BatchNormalizationWrapper(new CallPattern(new BatchNormalizationPattern(), input, eps, mom));
+        public static InstanceNormalizationWrapper InstanceNormalization(ExprPattern input, ExprPattern eps) => new InstanceNormalizationWrapper(new CallPattern(new InstanceNormalizationPattern(), input, eps));
+        public static LpNormalizationWrapper LpNormalization(ExprPattern input, ExprPattern axis, ExprPattern p) => new LpNormalizationWrapper(new CallPattern(new LpNormalizationPattern(), input, axis, p));
         public static ReluWrapper Relu(ExprPattern input) => new ReluWrapper(new CallPattern(new ReluPattern(), input));
         public static Relu6Wrapper Relu6(ExprPattern input) => new Relu6Wrapper(new CallPattern(new Relu6Pattern(), input));
         public static PReluWrapper PRelu(ExprPattern input) => new PReluWrapper(new CallPattern(new PReluPattern(), input));
@@ -311,12 +314,13 @@ namespace Nncase.Pattern.F
         /// </summary>
         public static PadWrapper Pad(ExprPattern input, ExprPattern pads, PadMode mode, ExprPattern value) => new PadWrapper(new CallPattern(new PadPattern(mode), input, pads, value));
         public static ReduceWrapper Reduce(ReduceOp reduceOp, ExprPattern input, ExprPattern axis, ExprPattern initValue, ExprPattern keepDims) => new ReduceWrapper(new CallPattern(new ReducePattern(reduceOp), input, axis, initValue, keepDims));
+        public static ReduceArgWrapper ReduceArg(ReduceArgOp reduceArgOp, ExprPattern input, ExprPattern axis, ExprPattern keepDims, ExprPattern selectLastIndex) => new ReduceArgWrapper(new CallPattern(new ReduceArgPattern(reduceArgOp), input, axis, keepDims, selectLastIndex));
         public static ReduceWrapper ReduceMean(ExprPattern input, ExprPattern axis, ExprPattern initValue, ExprPattern keepDims) => Reduce(ReduceOp.Mean, input, axis, initValue, keepDims);
         public static ReduceWrapper ReduceMin(ExprPattern input, ExprPattern axis, ExprPattern initValue, ExprPattern keepDims) => Reduce(ReduceOp.Min, input, axis, initValue, keepDims);
         public static ReduceWrapper ReduceMax(ExprPattern input, ExprPattern axis, ExprPattern initValue, ExprPattern keepDims) => Reduce(ReduceOp.Min, input, axis, initValue, keepDims);
         public static ReduceWrapper ReduceSum(ExprPattern input, ExprPattern axis, ExprPattern initValue, ExprPattern keepDims) => Reduce(ReduceOp.Sum, input, axis, initValue, keepDims);
         public static ResizeImageWrapper ResizeImage(ImageResizeMode resizeMode, ExprPattern input, ExprPattern newSize, ExprPattern alignCorners, ExprPattern halfPixelCenters) => new ResizeImageWrapper(new CallPattern(new ResizeImagePattern(resizeMode), input, newSize, alignCorners, halfPixelCenters));
-        public static ReduceWindow2DWrapper ReduceWindow2D(ReduceOp reduceOp, ExprPattern input, ExprPattern initValue, ExprPattern filter, ExprPattern stride, ExprPattern padding, ExprPattern dilation) => new ReduceWindow2DWrapper(new CallPattern(new ReduceWindow2DPattern(reduceOp), input, initValue, filter, stride, padding, dilation, false));
+        public static ReduceWindow2DWrapper ReduceWindow2D(ReduceOp reduceOp, ExprPattern input, ExprPattern initValue, ExprPattern filter, ExprPattern stride, ExprPattern padding, ExprPattern ceilMode, ExprPattern countIncludePad) => new ReduceWindow2DWrapper(new CallPattern(new ReduceWindow2DPattern(reduceOp), input, initValue, filter, stride, padding, ceilMode, countIncludePad));
         public static ReshapeWrapper Reshape(ExprPattern input, ExprPattern shape) => new ReshapeWrapper(new CallPattern(new ReshapePattern(), input, shape));
         public static ShapeOpWrapper ShapeOp(ExprPattern input) => new ShapeOpWrapper(new CallPattern(new ShapeOpPattern(), input));
         ///https://github.com/onnx/onnx/blob/master/docs/Operators.md#slice

@@ -41,7 +41,7 @@ namespace PatternGenerator
             var records = from record in root.DescendantNodes().OfType<RecordDeclarationSyntax>()
                           select record;
             foreach (var record in records)
-            {
+            {   /// NOTE the record must has ()
                 if (record.ParameterList is null)
                     continue;
                 var op = new OpInfo()
@@ -101,7 +101,11 @@ namespace PatternGenerator
     public static class Generator
     {
 
-
+        /// <summary>
+        /// 从
+        /// </summary>
+        /// <param name="receiver"></param>
+        /// <param name="filePath"></param>
         private static void GenerateWrappers(Receiver receiver, string filePath)
         {
             var baseType = ParseTypeName("PatternWrapper");
@@ -292,7 +296,7 @@ namespace PatternGenerator
                 .WithSemicolonToken(Token(SyntaxKind.SemicolonToken));
 
             var @record = RecordDeclaration(Token(SyntaxKind.RecordKeyword), "OpPattern")
-                          .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.AbstractKeyword),Token(SyntaxKind.PartialKeyword))
+                          .AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.AbstractKeyword), Token(SyntaxKind.PartialKeyword))
                           .AddBaseListTypes(SimpleBaseType(ParseTypeName("ExprPattern")))
                           .WithOpenBraceToken(Token(SyntaxKind.OpenBraceToken))
                           .AddMembers(matchMethod)

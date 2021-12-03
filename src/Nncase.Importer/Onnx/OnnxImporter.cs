@@ -206,7 +206,7 @@ namespace Nncase.Importer
                 "BatchNormalization" => VisitBatchNormalization(op),
                 "Cast" => VisitCast(op),
                 "Ceil" => VisitUnary(op, UnaryOp.Ceil),
-                "Celu" => VisitCelu(op),
+                // "Celu" => VisitCelu(op),
                 // "Clip" => VisitClip(op),
                 // "Concat" => VisitConcat(op),
                 // "Constant" => VisitConstant(op),

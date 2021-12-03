@@ -162,6 +162,42 @@ namespace Nncase.Pattern.NN
         }
     }
 
+    public sealed record BatchNormalizationPattern(Func<BatchNormalization, bool> Cond) : OpPattern
+    {
+        public BatchNormalizationPattern(BatchNormalization batchnormalization): this(x => x == batchnormalization)
+        {
+        }
+
+        public bool MatchLeaf(BatchNormalization batchnormalization) => Cond(batchnormalization) && MatchCheckedType(batchnormalization);
+        public BatchNormalizationPattern(): this((BatchNormalization x) => true)
+        {
+        }
+    }
+
+    public sealed record InstanceNormalizationPattern(Func<InstanceNormalization, bool> Cond) : OpPattern
+    {
+        public InstanceNormalizationPattern(InstanceNormalization instancenormalization): this(x => x == instancenormalization)
+        {
+        }
+
+        public bool MatchLeaf(InstanceNormalization instancenormalization) => Cond(instancenormalization) && MatchCheckedType(instancenormalization);
+        public InstanceNormalizationPattern(): this((InstanceNormalization x) => true)
+        {
+        }
+    }
+
+    public sealed record LpNormalizationPattern(Func<LpNormalization, bool> Cond) : OpPattern
+    {
+        public LpNormalizationPattern(LpNormalization lpnormalization): this(x => x == lpnormalization)
+        {
+        }
+
+        public bool MatchLeaf(LpNormalization lpnormalization) => Cond(lpnormalization) && MatchCheckedType(lpnormalization);
+        public LpNormalizationPattern(): this((LpNormalization x) => true)
+        {
+        }
+    }
+
     public sealed record SoftMaxPattern(Func<SoftMax, bool> Cond) : OpPattern
     {
         public SoftMaxPattern(SoftMax softmax): this(x => x == softmax)
@@ -353,6 +389,22 @@ namespace Nncase.Pattern.Tensors
         }
 
         public ReducePattern(ReduceOp ReduceOp): this((Reduce x) => ReduceOp == x.ReduceOp)
+        {
+        }
+    }
+
+    public sealed record ReduceArgPattern(Func<ReduceArg, bool> Cond) : OpPattern
+    {
+        public ReduceArgPattern(ReduceArg reducearg): this(x => x == reducearg)
+        {
+        }
+
+        public bool MatchLeaf(ReduceArg reducearg) => Cond(reducearg) && MatchCheckedType(reducearg);
+        public ReduceArgPattern(): this((ReduceArg x) => true)
+        {
+        }
+
+        public ReduceArgPattern(ReduceArgOp ReduceArgOp): this((ReduceArg x) => ReduceArgOp == x.ReduceArgOp)
         {
         }
     }

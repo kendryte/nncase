@@ -235,6 +235,69 @@ namespace Nncase.Pattern.NN
         public static implicit operator CallPattern(L2NormalizationWrapper warper) => warper.Pattern;
     }
 
+    public sealed record BatchNormalizationWrapper(CallPattern Pattern) : PatternWrapper
+    {
+        public ExprPattern InputPat() => Pattern[BatchNormalization.Input];
+        public T InputPat<T>()
+            where T : ExprPattern => (T)InputPat();
+        public Expr Input() => GetCast<Expr>(InputPat());
+        public T Input<T>()
+            where T : Expr => GetCast<T>(InputPat());
+        public ExprPattern EpsilonPat() => Pattern[BatchNormalization.Epsilon];
+        public T EpsilonPat<T>()
+            where T : ExprPattern => (T)EpsilonPat();
+        public Expr Epsilon() => GetCast<Expr>(EpsilonPat());
+        public T Epsilon<T>()
+            where T : Expr => GetCast<T>(EpsilonPat());
+        public ExprPattern MomentumPat() => Pattern[BatchNormalization.Momentum];
+        public T MomentumPat<T>()
+            where T : ExprPattern => (T)MomentumPat();
+        public Expr Momentum() => GetCast<Expr>(MomentumPat());
+        public T Momentum<T>()
+            where T : Expr => GetCast<T>(MomentumPat());
+        public static implicit operator CallPattern(BatchNormalizationWrapper warper) => warper.Pattern;
+    }
+
+    public sealed record InstanceNormalizationWrapper(CallPattern Pattern) : PatternWrapper
+    {
+        public ExprPattern InputPat() => Pattern[InstanceNormalization.Input];
+        public T InputPat<T>()
+            where T : ExprPattern => (T)InputPat();
+        public Expr Input() => GetCast<Expr>(InputPat());
+        public T Input<T>()
+            where T : Expr => GetCast<T>(InputPat());
+        public ExprPattern EpsilonPat() => Pattern[InstanceNormalization.Epsilon];
+        public T EpsilonPat<T>()
+            where T : ExprPattern => (T)EpsilonPat();
+        public Expr Epsilon() => GetCast<Expr>(EpsilonPat());
+        public T Epsilon<T>()
+            where T : Expr => GetCast<T>(EpsilonPat());
+        public static implicit operator CallPattern(InstanceNormalizationWrapper warper) => warper.Pattern;
+    }
+
+    public sealed record LpNormalizationWrapper(CallPattern Pattern) : PatternWrapper
+    {
+        public ExprPattern InputPat() => Pattern[LpNormalization.Input];
+        public T InputPat<T>()
+            where T : ExprPattern => (T)InputPat();
+        public Expr Input() => GetCast<Expr>(InputPat());
+        public T Input<T>()
+            where T : Expr => GetCast<T>(InputPat());
+        public ExprPattern AxisPat() => Pattern[LpNormalization.Axis];
+        public T AxisPat<T>()
+            where T : ExprPattern => (T)AxisPat();
+        public Expr Axis() => GetCast<Expr>(AxisPat());
+        public T Axis<T>()
+            where T : Expr => GetCast<T>(AxisPat());
+        public ExprPattern PPat() => Pattern[LpNormalization.P];
+        public T PPat<T>()
+            where T : ExprPattern => (T)PPat();
+        public Expr P() => GetCast<Expr>(PPat());
+        public T P<T>()
+            where T : Expr => GetCast<T>(PPat());
+        public static implicit operator CallPattern(LpNormalizationWrapper warper) => warper.Pattern;
+    }
+
     public sealed record SoftMaxWrapper(CallPattern Pattern) : PatternWrapper
     {
         public ExprPattern InputPat() => Pattern[SoftMax.Input];
@@ -536,6 +599,36 @@ namespace Nncase.Pattern.Tensors
         public static implicit operator CallPattern(ReduceWrapper warper) => warper.Pattern;
     }
 
+    public sealed record ReduceArgWrapper(CallPattern Pattern) : PatternWrapper
+    {
+        public ExprPattern InputPat() => Pattern[ReduceArg.Input];
+        public T InputPat<T>()
+            where T : ExprPattern => (T)InputPat();
+        public Expr Input() => GetCast<Expr>(InputPat());
+        public T Input<T>()
+            where T : Expr => GetCast<T>(InputPat());
+        public ExprPattern AxisPat() => Pattern[ReduceArg.Axis];
+        public T AxisPat<T>()
+            where T : ExprPattern => (T)AxisPat();
+        public Expr Axis() => GetCast<Expr>(AxisPat());
+        public T Axis<T>()
+            where T : Expr => GetCast<T>(AxisPat());
+        public ExprPattern KeepDimsPat() => Pattern[ReduceArg.KeepDims];
+        public T KeepDimsPat<T>()
+            where T : ExprPattern => (T)KeepDimsPat();
+        public Expr KeepDims() => GetCast<Expr>(KeepDimsPat());
+        public T KeepDims<T>()
+            where T : Expr => GetCast<T>(KeepDimsPat());
+        public ExprPattern SelectLastIndexPat() => Pattern[ReduceArg.SelectLastIndex];
+        public T SelectLastIndexPat<T>()
+            where T : ExprPattern => (T)SelectLastIndexPat();
+        public Expr SelectLastIndex() => GetCast<Expr>(SelectLastIndexPat());
+        public T SelectLastIndex<T>()
+            where T : Expr => GetCast<T>(SelectLastIndexPat());
+        public ReduceArgOp ReduceArgOp => ((ReduceArg)GetCast<Call>(this).Target).ReduceArgOp;
+        public static implicit operator CallPattern(ReduceArgWrapper warper) => warper.Pattern;
+    }
+
     public sealed record ReduceWindow2DWrapper(CallPattern Pattern) : PatternWrapper
     {
         public ExprPattern InputPat() => Pattern[ReduceWindow2D.Input];
@@ -568,18 +661,18 @@ namespace Nncase.Pattern.Tensors
         public Expr Padding() => GetCast<Expr>(PaddingPat());
         public T Padding<T>()
             where T : Expr => GetCast<T>(PaddingPat());
-        public ExprPattern DilationPat() => Pattern[ReduceWindow2D.Dilation];
-        public T DilationPat<T>()
-            where T : ExprPattern => (T)DilationPat();
-        public Expr Dilation() => GetCast<Expr>(DilationPat());
-        public T Dilation<T>()
-            where T : Expr => GetCast<T>(DilationPat());
         public ExprPattern CeilModePat() => Pattern[ReduceWindow2D.CeilMode];
         public T CeilModePat<T>()
             where T : ExprPattern => (T)CeilModePat();
         public Expr CeilMode() => GetCast<Expr>(CeilModePat());
         public T CeilMode<T>()
             where T : Expr => GetCast<T>(CeilModePat());
+        public ExprPattern CountIncludePadPat() => Pattern[ReduceWindow2D.CountIncludePad];
+        public T CountIncludePadPat<T>()
+            where T : ExprPattern => (T)CountIncludePadPat();
+        public Expr CountIncludePad() => GetCast<Expr>(CountIncludePadPat());
+        public T CountIncludePad<T>()
+            where T : Expr => GetCast<T>(CountIncludePadPat());
         public ReduceOp ReduceOp => ((ReduceWindow2D)GetCast<Call>(this).Target).ReduceOp;
         public static implicit operator CallPattern(ReduceWindow2DWrapper warper) => warper.Pattern;
     }

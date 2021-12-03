@@ -3,7 +3,7 @@ using static Nncase.IR.Utility;
 
 namespace Nncase.IR.NN
 {
-    public sealed record L2Normalization : Op
+    public sealed record L2Normalization() : Op
     {
         /// <summary>
         /// Gets input.
@@ -14,7 +14,7 @@ namespace Nncase.IR.NN
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input) => input;
     }
     
-    public sealed record BatchNormalization : Op
+    public sealed record BatchNormalization() : Op
     {
         /// <summary>
         /// Gets input.
@@ -35,7 +35,7 @@ namespace Nncase.IR.NN
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType epsilon, TensorType momentum) => input;
     }
     
-    public sealed record InstanceNormalization : Op
+    public sealed record InstanceNormalization() : Op
     {
         /// <summary>
         /// Gets input.
@@ -51,7 +51,7 @@ namespace Nncase.IR.NN
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType epsilon) => input;
     }
     
-    public sealed record LpNormalization : Op
+    public sealed record LpNormalization() : Op
     {
         /// <summary>
         /// Gets input.
