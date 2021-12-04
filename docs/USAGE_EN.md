@@ -1,3 +1,5 @@
+[TOC]
+
 # Overview
 
 nncase provides both python wheel package and ncc client to compile your neural models.
@@ -720,6 +722,13 @@ if __name__ == '__main__':
 
 ```
 
+
+## Depoly nncase runtime
+
+### K210
+
+1. Download `k210-runtime.zip` from [Release](https://github.com/kendryte/nncase/releases) page.
+2. Unzip to your [kendryte-standalone-sdk](https://github.com/kendryte/kendryte-standalone-sdk) 's `lib/nncase/v1` directory.
 
 
 ## nncase inference APIs
