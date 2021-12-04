@@ -723,7 +723,7 @@ if __name__ == '__main__':
 ```
 
 
-## Depoly nncase runtime
+## Deploy nncase runtime
 
 ### K210
 
