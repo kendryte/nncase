@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio Version 16
-VisualStudioVersion = 16.0.31702.278
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31912.275
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nncase.Cli", "src\Nncase.Cli\Nncase.Cli.csproj", "{660FD7A4-00E7-42EA-A119-64FB0125A7D7}"
 EndProject
@@ -29,17 +29,19 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nncase.EGraph", "src\Nncase
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{E5A4516C-4080-4346-991D-57A7AA76ADA6}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nncase.Tests", "src\Nncase.Tests\Nncase.Tests.csproj", "{91EF1A8E-A34E-489F-A69C-73FFCBF31804}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nncase.Tests", "src\Nncase.Tests\Nncase.Tests.csproj", "{91EF1A8E-A34E-489F-A69C-73FFCBF31804}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nncase.Evaluator", "src\Nncase.Evaluator\Nncase.Evaluator.csproj", "{918A1D28-E49F-4269-BD14-D5E1D5937641}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nncase.Evaluator", "src\Nncase.Evaluator\Nncase.Evaluator.csproj", "{918A1D28-E49F-4269-BD14-D5E1D5937641}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nncase.Pattern", "src\Nncase.Pattern\Nncase.Pattern.csproj", "{553D9D13-747D-415D-955E-0E002959891B}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nncase.Pattern", "src\Nncase.Pattern\Nncase.Pattern.csproj", "{553D9D13-747D-415D-955E-0E002959891B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nncase.Graph", "src\Nncase.Graph\Nncase.Graph.csproj", "{5600CF6C-72FC-424B-9788-EB87DE1715E0}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nncase.Graph", "src\Nncase.Graph\Nncase.Graph.csproj", "{5600CF6C-72FC-424B-9788-EB87DE1715E0}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "onnx", "onnx", "{93F45C01-DAFF-4EC4-9BD4-2542FF937D9E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Onnx.Protobuf", "third_party\onnx\Onnx.Protobuf.csproj", "{0214547A-FA3D-455A-8B22-8673CA1E4496}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Onnx.Protobuf", "third_party\onnx\Onnx.Protobuf.csproj", "{0214547A-FA3D-455A-8B22-8673CA1E4496}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Nncase.Tir", "src\Nncase.Tir\Nncase.Tir.csproj", "{35E88945-6397-40B5-BE14-8567201FE53D}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -91,6 +93,10 @@ Global
 		{0214547A-FA3D-455A-8B22-8673CA1E4496}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0214547A-FA3D-455A-8B22-8673CA1E4496}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0214547A-FA3D-455A-8B22-8673CA1E4496}.Release|Any CPU.Build.0 = Release|Any CPU
+		{35E88945-6397-40B5-BE14-8567201FE53D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{35E88945-6397-40B5-BE14-8567201FE53D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{35E88945-6397-40B5-BE14-8567201FE53D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{35E88945-6397-40B5-BE14-8567201FE53D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -109,6 +115,7 @@ Global
 		{5600CF6C-72FC-424B-9788-EB87DE1715E0} = {BCA74168-F015-4B5B-B4CD-C83AE06B9822}
 		{93F45C01-DAFF-4EC4-9BD4-2542FF937D9E} = {FEAF8697-E12C-4A11-AAA2-D29043CDDF78}
 		{0214547A-FA3D-455A-8B22-8673CA1E4496} = {93F45C01-DAFF-4EC4-9BD4-2542FF937D9E}
+		{35E88945-6397-40B5-BE14-8567201FE53D} = {BCA74168-F015-4B5B-B4CD-C83AE06B9822}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B251C48E-7D05-4662-8DFF-20843CB2DB99}

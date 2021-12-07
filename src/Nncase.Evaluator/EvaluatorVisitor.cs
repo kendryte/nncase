@@ -7,7 +7,7 @@ using Nncase.IR.Math;
 using Nncase.IR.NN;
 using Nncase.IR.Tensors;
 using TorchSharp;
-#nullable enable
+
 
 namespace Nncase.Evaluator.Ops
 {

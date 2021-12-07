@@ -3,7 +3,6 @@
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
     <CodeAnalysisRuleSet>$(SolutionDir)/tools/StyleCopAnalyzers.ruleset</CodeAnalysisRuleSet>
-    <DocumentationFile>$(OutputPath)/Nncase.Core.xml</DocumentationFile>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
