@@ -31,8 +31,6 @@ namespace Nncase.IR.Tensors
         /// </summary>
         public static readonly ParameterInfo Index = new(typeof(GatherND), 2, "index");
         
-        public static readonly ParameterInfo Axis = new(typeof(GatherND), 3, "axis");
-
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType batch_dims, TensorType index)
         {

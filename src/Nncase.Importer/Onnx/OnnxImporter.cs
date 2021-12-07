@@ -173,9 +173,9 @@ namespace Nncase.Importer
             }
         }
 
-        private (Expr, Expr) GetInputExprs(NodeProto n, int index1, int index2)
+        private (Expr, Expr) GetInputExprs(NodeProto n, int index0, int index1)
         {
-            return (GetInputExpr(n, index1), GetInputExpr(n, index2));
+            return (GetInputExpr(n, index0), GetInputExpr(n, index1));
         }
 
         // about op set: https://github.com/onnx/onnx/issues/3678
@@ -215,25 +215,25 @@ namespace Nncase.Importer
                 "ConvTranspose" => VisitConv2DTranspose(op),
                 "Cos" => VisitUnary(op, UnaryOp.Cos),
                 "Cosh" => VisitUnary(op, UnaryOp.Cosh),
-                // "CumSum" => VisitCumSum(op),
-                // "DepthToSpace" => VisitDepthToSpace(op),
+                "CumSum" => VisitCumSum(op),
+                "DepthToSpace" => VisitDepthToSpace(op),
                 // "DequantizeLinear" => VisitDequantizeLinear(op),
                 "Div" => VisitBinary(op, BinaryOp.Div),
-                // "Dropout" => VisitDropout(op),
-                // "Elu" => VisitElu(op),
+                "Dropout" => VisitDropout(op),
+                "Elu" => VisitElu(op),
                 "Exp" => VisitUnary(op, UnaryOp.Exp),
-                // "Expand" => VisitExpand(op),
-                // "Flatten" => VisitFlatten(op),
+                "Expand" => VisitExpand(op),
+                "Flatten" => VisitFlatten(op),
                 "Floor" => VisitUnary(op, UnaryOp.Floor),
-                // "Gather" => VisitGather(op),
-                // "GatherND" => VisitGatherND(op),
-                // "Gemm" => VisitGemm(op),
+                "Gather" => VisitGather(op),
+                "GatherND" => VisitGatherND(op),
+                "Gemm" => VisitGemm(op),
                 "GlobalAveragePool" => VisitReduceWindow2D(op, ReduceOp.Mean, float.MinValue, true),
                 "GlobalMaxPool" => VisitReduceWindow2D(op, ReduceOp.Max, float.MinValue, true),
-                // "Hardmax" => VisitHardmax(op),
-                // "HardSigmoid" => VisitHardSigmoid(op),
-                // "HardSwish" => VisitHardSwish(op),
-                // "Identity" => VisitIdentity(op),
+                "Hardmax" => VisitHardmax(op),
+                "HardSigmoid" => VisitHardSigmoid(op),
+                "HardSwish" => VisitHardSwish(op),
+                "Identity" => VisitIdentity(op),
                 "InstanceNormalization" => VisitInstanceNormalization(op),
                 "LpNormalization" => VisitLpNormalization(op),
                 "LeakyRelu" => VisitLeakyRelu(op),

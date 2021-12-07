@@ -100,4 +100,52 @@ namespace Nncase.IR.NN
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType alpha) => input;
     }
+    
+    public sealed record Elu() : Op
+    {
+        /// <summary>
+        /// Gets input.
+        /// </summary>
+        public static readonly ParameterInfo Input = new(typeof(LeakyRelu), 0, "input");
+
+        /// <summary>
+        /// Gets Alpha.
+        /// </summary>
+        public static readonly ParameterInfo Alpha = new(typeof(LeakyRelu), 1, "alpha", IsFloatScalar());
+
+        /// <inheritdoc/>
+        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType alpha) => input;
+    }
+    
+    public sealed record HardSwish() : Op
+    {
+        /// <summary>
+        /// Gets input.
+        /// </summary>
+        public static readonly ParameterInfo Input = new(typeof(HardSwish), 0, "input");
+        
+        /// <inheritdoc/>
+        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input) => input;
+    }
+    
+    public sealed record HardSigmoid() : Op
+    {
+        /// <summary>
+        /// Gets input.
+        /// </summary>
+        public static readonly ParameterInfo Input = new(typeof(HardSigmoid), 0, "input");
+
+        /// <summary>
+        /// Gets alpha.
+        /// </summary>
+        public static readonly ParameterInfo Alpha = new(typeof(HardSigmoid), 1, "alpha", IsFloatScalar());
+        
+        /// <summary>
+        /// Gets beta.
+        /// </summary>
+        public static readonly ParameterInfo Beta = new(typeof(HardSigmoid), 2, "beta", IsFloatScalar());
+        
+        /// <inheritdoc/>
+        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType alpha, TensorType beta) => input;
+    }
 }

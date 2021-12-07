@@ -21,6 +21,8 @@ namespace Nncase.IR.F
         public static Call Celu(Expr input, Expr alpha) => new Call(new Celu(), input, alpha);
         
         public static Call Conv2DTranspose(Expr input, Expr weights, Expr bias, Expr outShape, Expr stride, Expr padding, Expr dilation, PadMode padMode, Expr groups) => new Call(new Conv2DTranspose(padMode), input, weights, bias, outShape, stride, padding, dilation, groups);
+        
+        public static Call Elu(Expr input, Expr alpha) => new Call(new Elu(), input, alpha);
 
         public static Call LeakyRelu(Expr input) => new Call(new LeakyRelu(), input);
 
@@ -32,6 +34,10 @@ namespace Nncase.IR.F
         
         public static Call LpNormalization(Expr input, Expr axis, Expr p) => new Call(new LpNormalization(), input, axis, p);
 
+        public static Call HardSigmoid(Expr input, Expr alpha, Expr beta) => new Call(new HardSigmoid(), input, alpha, beta);
+        
+        public static Call HardSwish(Expr input) => new Call(new HardSwish(), input);
+        
         public static Call Relu(Expr input) => new Call(new Relu(), input);
 
         public static Call Relu6(Expr input) => new Call(new Relu6(), input);

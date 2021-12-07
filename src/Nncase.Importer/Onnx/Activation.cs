@@ -8,13 +8,20 @@ namespace Nncase.Importer
 {
     public partial class OnnxImporter
     {
+        private Expr VisitElu(NodeProto op)
+        {
+            var input = GetInputExpr(op, 0);
+            var alpha = GetFloatAttribute(op, "alpha", 1.0f);
+            return F.NN.Elu(input, alpha);
+        }
+        
         private Expr VisitCelu(NodeProto op)
         {
             var input = GetInputExpr(op, 0);
             var alpha = GetFloatAttribute(op, "alpha", 1.0f);
             return F.NN.Celu(input, alpha);
         }
-        
+
         private Expr VisitRelu(NodeProto op)
         {
             var input = GetInputExpr(op, 0);
@@ -37,6 +44,20 @@ namespace Nncase.Importer
         {
             var input = GetInputExpr(op, 0);
             return F.NN.Selu(input);
+        }
+
+        private Expr VisitHardSigmoid(NodeProto op)
+        {
+            var input = GetInputExpr(op, 0);
+            var alpha = GetFloatAttribute(op, "alpha", 0.2f);
+            var beta = GetFloatAttribute(op, "alpha", 0.5f);
+            return F.NN.HardSigmoid(input, alpha, beta);
+        }
+
+        private Expr VisitHardSwish(NodeProto op)
+        {
+            var input = GetInputExpr(op, 0);
+            return F.NN.HardSwish(input);
         }
     }
 }

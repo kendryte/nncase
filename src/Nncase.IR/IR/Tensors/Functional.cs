@@ -27,10 +27,14 @@ namespace Nncase.IR.F
         public static Call Cast(Expr input, DataType newType) => new Call(new Cast(newType), input);
 
         public static Call Concat(Tuple input, Expr axis) => new Call(new Concat(), input, axis);
+        
+        public static Call CumSum(Expr input, Expr axis, Expr exclusive, Expr reverse) => new Call(new CumSum(), input, axis, exclusive, reverse);
+        
+        public static Call Hardmax(Expr input, Expr axis) => new Call(new CumSum(), input, axis);
 
         public static Call Gather(Expr input, Expr axis, Expr index) => new Call(new Gather(), input, axis, index);
 
-        public static Call GatherND(Expr input, Expr axis, Expr batch_dims, Expr index) => new Call(new GatherND(), input, axis, batch_dims, index);
+        public static Call GatherND(Expr input, Expr batch_dims, Expr index) => new Call(new GatherND(), input, batch_dims, index);
 
         public static Call MatMul(Expr input, Expr other) => new Call(new MatMul(), input, other);
 
