@@ -16,7 +16,7 @@ namespace Nncase.Importer
             var mode = GetStringAttribute(op, "mode", "DCR");
 
             var shape0 = Util.ShapeIndex(input, 0);
-            var shape1 = Util.ShapeIndex(input, 0);
+            var shape1 = Util.ShapeIndex(input, 1);
             var shape2 = Util.ShapeIndex(input, 2);
             var shape3 = Util.ShapeIndex(input, 3);
             var depth = shape1 / (blockSize * blockSize);

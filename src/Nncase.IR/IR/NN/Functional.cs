@@ -51,7 +51,11 @@ namespace Nncase.IR.F
 
         public static Call Sigmoid(Expr expr) => new Call(new Sigmoid(), expr);
 
-        public static Call SoftMax(Expr expr) => new Call(new SoftMax(), expr);
+        public static Call SoftMax(Expr expr, Expr axis) => new Call(new SoftMax(), expr, axis);
+        
+        public static Call SoftPlus(Expr expr) => new Call(new SoftPlus(), expr);
+        
+        public static Call SoftSign(Expr expr) => new Call(new SoftSign(), expr);
 
         public static Call LogSoftMax(Expr expr, Expr axis) => new Call(new LogSoftMax(), expr, axis);
     }

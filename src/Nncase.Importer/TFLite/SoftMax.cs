@@ -12,7 +12,7 @@ namespace Nncase.Importer.TFLite
         private Expr VisitSoftMax(in tflite.Operator op)
         {
             var input = GetInputExprs(op, 0);
-            return F.NN.SoftMax(input);
+            return F.NN.SoftMax(input, -1);
         }
         
         private Expr VisitLogSoftMax(in tflite.Operator op)

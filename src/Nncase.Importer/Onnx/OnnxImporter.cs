@@ -149,6 +149,11 @@ namespace Nncase.Importer
             }
         }
 
+        private Expr GetSingleInputExpr(NodeProto n)
+        {
+            return GetInputExpr(n, 0);
+        }
+        
         private (Expr, Expr) GetInputExprs(NodeProto n, int index0, int index1)
         {
             return (GetInputExpr(n, index0), GetInputExpr(n, index1));
