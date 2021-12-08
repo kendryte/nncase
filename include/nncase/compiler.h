@@ -57,7 +57,6 @@ struct compile_options
     bool use_mse_quant_w = false;
     std::string input_layout = "NCHW";
     std::string output_layout = "NCHW";
-    uint32_t tcu_num = 0;
 };
 
 struct import_options

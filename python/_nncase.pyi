@@ -24,7 +24,6 @@ class CompileOptions:
     input_layout: str
     output_layout: str
     letterbox_value: float
-    tcu_num: int
     def __init__(self) -> None: ...
 
 

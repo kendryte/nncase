@@ -353,7 +353,6 @@ private:
     {
         target_ = plugin_loader::create_target(type);
         target_->options().is_fpga = compile_options_.is_fpga;
-        target_->options().tcu_num = compile_options_.tcu_num;
         target_->register_evaluator_ops();
     }
 

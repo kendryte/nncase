@@ -11,45 +11,42 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-"""System test: test binary"""
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
 
 import pytest
-import tensorflow as tf
+import torch
 import numpy as np
-from tflite_test_runner import TfliteTestRunner
+from onnx_test_runner import OnnxTestRunner
 
 
-def _make_module(in_shape, v_shape):
-    class BinaryModule(tf.Module):
+def _make_module(v_shape):
+    class BinaryModule(torch.nn.Module):
         def __init__(self):
-            super(BinaryModule).__init__()
-            self.v = tf.constant(np.random.rand(*v_shape).astype(np.float32))
+            super(BinaryModule, self).__init__()
+            self.v = torch.from_numpy(np.ones_like(*v_shape).astype(np.uint8))
 
-        @tf.function(input_signature=[tf.TensorSpec(in_shape, tf.float32)])
-        def __call__(self, x):
-            outs = x + self.v
+        def forward(self, x):
+            x = torch.add(x, self.v)
+            return x
 
-            return outs
     return BinaryModule()
 
 
 lhs_shapes = [
-    [1, 112, 128, 3],
-    [1, 224, 224, 3],
-    [1, 304, 320, 3]
+    [1, 3, 28, 32],
+    [1, 3, 56, 56],
+    [1, 3, 76, 80]
 ]
 
 rhs_shapes = [
-    [1],
-
+    [1]
 ]
 
 
 @pytest.mark.parametrize('lhs_shape', lhs_shapes)
 @pytest.mark.parametrize('rhs_shape', rhs_shapes)
-def test_letterbox(lhs_shape, rhs_shape, request):
-    module = _make_module(lhs_shape, rhs_shape)
+def test_letterbox3(lhs_shape, rhs_shape, request):
+    module = _make_module(rhs_shape)
     overwrite_cfg = """
 case: 
   preprocess_opt:
@@ -61,7 +58,7 @@ case:
         - false
     - name: input_shape
       values:
-        - [1,224,224,3]
+        - []
     - name: mean
       values:
         - [0,0,0]
@@ -76,19 +73,19 @@ case:
         - uint8
     - name: input_layout
       values:
-        - NHWC
+        - NCHW
     - name: output_layout
       values:
-        - NHWC
+        - NCHW
     - name: letter_value
       values:
         - 114.
 """
 
-    runner = TfliteTestRunner(request.node.name, overwrite_configs=overwrite_cfg)
-    model_file = runner.from_tensorflow(module)
+    runner = OnnxTestRunner(request.node.name, overwrite_configs=overwrite_cfg)
+    model_file = runner.from_torch(module, lhs_shape)
     runner.run(model_file)
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_letterbox.py'])
+    pytest.main(['-vv', 'test_letterbox3.py'])

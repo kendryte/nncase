@@ -61,7 +61,6 @@ py::class_<compile_options>(m, "CompileOptions")
     .def_readwrite("output_type", &compile_options::output_type)
     .def_readwrite("input_layout", &compile_options::input_layout)
     .def_readwrite("output_layout", &compile_options::output_layout)
-    .def_readwrite("tcu_num", &compile_options::tcu_num)
     .def_readwrite("is_fpga", &compile_options::is_fpga)
     .def_readwrite("dump_ir", &compile_options::dump_ir)
     .def_readwrite("dump_asm", &compile_options::dump_asm)
@@ -89,7 +88,6 @@ py::class_<compile_options>(m, "CompileOptions")
 | output_type      | string | 否       | 指定输出数据的类型, 如'float32', 'uint8'(仅用于指定量化情况下), 默认为'float32' |
 | input_layout     | string | 否       | 指定输入数据的layout, 如'NCHW', 'NHWC'. 若输入数据layout与模型本身layout不同, nncase会插入transpose进行转换 |
 | output_layout    | string | 否       | 指定输出数据的layout, 如'NCHW', 'NHWC'. 若输出数据layout与模型本身layout不同, nncase会插入transpose进行转换 |
-| tcu_num          | int    | 否       | 指定tcu的个数. 默认值为0, 表示不配置.                        |
 | is_fpga          | bool   | 否       | 指定kmodel是否用于fpga, 默认为False                          |
 | dump_ir          | bool   | 否       | 指定是否dump IR, 默认为False                                 |
 | dump_asm         | bool   | 否       | 指定是否dump asm汇编文件, 默认为False                        |
@@ -729,8 +727,15 @@ if __name__ == '__main__':
 ```
 
 
+## 部署 nncase runtime
 
-## nncase推理模型APIs
+### K210
+
+1. 从 [Release](https://github.com/kendryte/nncase/releases) 页面下载 `k210-runtime.zip`。 
+2. 解压到 [kendryte-standalone-sdk](https://github.com/kendryte/kendryte-standalone-sdk) 's `lib/nncase/v1` 目录。
+
+
+## nncase 推理模型APIs
 
 除了编译模型APIs, nncase还提供了推理模型的APIs, 在PC上可推理前面编译生成的kmodel,  用来验证nncase推理结果和相应深度学习框架的runtime的结果是否一致等.
 
