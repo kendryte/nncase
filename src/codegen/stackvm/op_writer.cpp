@@ -637,4 +637,3 @@ void op_builder::tensor_transpose_(datatype_t datatype, uint8_t rshape_src, uint
 {
     op_writer<tensor_transpose_op_t>()(tensor_transpose_op_t(datatype, rshape_src, rstride_src, rstride_dest, rshape_perm), writer_);
 }
-
