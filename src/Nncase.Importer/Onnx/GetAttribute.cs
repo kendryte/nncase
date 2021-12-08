@@ -85,6 +85,12 @@ namespace Nncase.Importer
             return GetAttrOption(n, attr, AttributeType.Ints, x => x.Ints.ToArray());
         }
         
+        Option<long> GetOptionIntAttribute(NodeProto n, string attr)
+        {
+            return GetAttrOption(n, attr, AttributeType.Int, x => x.I);
+        }
+
+        
         long[] GetIntsAttribute(NodeProto n, string attr, int[] defaultValue)
         {
             return GetAttrSafe(n, attr, AttributeType.Ints, x => x.Ints.ToArray(),

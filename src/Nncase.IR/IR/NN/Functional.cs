@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR.NN;
+using Nncase.IR.Tensors;
 
 namespace Nncase.IR.F
 {
@@ -34,6 +35,8 @@ namespace Nncase.IR.F
         
         public static Call LpNormalization(Expr input, Expr axis, Expr p) => new Call(new LpNormalization(), input, axis, p);
 
+        public static Call LRN(Expr input, Expr alpha, Expr beta, Expr bias, Expr size) => new Call(new LRN(), input, alpha, beta, bias, size);
+        
         public static Call HardSigmoid(Expr input, Expr alpha, Expr beta) => new Call(new HardSigmoid(), input, alpha, beta);
         
         public static Call HardSwish(Expr input) => new Call(new HardSwish(), input);
@@ -50,6 +53,6 @@ namespace Nncase.IR.F
 
         public static Call SoftMax(Expr expr) => new Call(new SoftMax(), expr);
 
-        public static Call LogSoftMax(Expr expr) => new Call(new LogSoftMax(), expr);
+        public static Call LogSoftMax(Expr expr, Expr axis) => new Call(new LogSoftMax(), expr, axis);
     }
 }

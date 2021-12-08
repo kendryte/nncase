@@ -45,6 +45,18 @@ namespace Nncase.IR.F
         /// </summary>
         public static Call Pad(Expr input, Expr pads, PadMode mode, Expr value) => new Call(new Pad(mode), input, pads, value);
 
+        public static Call RandomNormal(DataType type, Expr mean, Expr scale, Expr seed, Expr shape) =>
+            new Call(new RandomNormal(type), mean, scale, seed, shape);
+        
+        public static Call RandomNormalLike(DataType type, Expr input, Expr mean, Expr scale, Expr seed) =>
+            new Call(new RandomNormal(type), input, mean, scale, seed);
+        
+        public static Call RandomUniform(DataType type, Expr high, Expr low, Expr seed, Expr shape) =>
+            new Call(new RandomUniform(type), high, low, seed, shape);
+        
+        public static Call RandomUniformLike(DataType type, Expr input, Expr high, Expr low, Expr seed) =>
+            new Call(new RandomUniformLike(type), input, high, low, seed);
+
         public static Call Reduce(ReduceOp reduceOp, Expr input, Expr axis, Expr initValue, Expr keepDims) => new Call(new Reduce(reduceOp), input, axis, initValue, keepDims);
         
         public static Call ReduceArg(ReduceArgOp reduceArgOp, Expr input, Expr axis, Expr keepDims, Expr selectLastIndex) => new Call(new ReduceArg(reduceArgOp), input, axis, keepDims, selectLastIndex);

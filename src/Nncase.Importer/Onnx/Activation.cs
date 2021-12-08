@@ -46,6 +46,12 @@ namespace Nncase.Importer
             return F.NN.Selu(input);
         }
 
+        private Expr VisitSigmoid(NodeProto op)
+        {
+            var input = GetInputExpr(op, 0);
+            return F.NN.Sigmoid(input);
+        }
+        
         private Expr VisitHardSigmoid(NodeProto op)
         {
             var input = GetInputExpr(op, 0);

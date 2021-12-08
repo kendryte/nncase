@@ -7,7 +7,6 @@ using System.Linq;
 using Nncase.IR;
 using Google.Protobuf;
 using Google.Protobuf.Collections;
-using LanguageExt;
 using NetFabric.Hyperlinq;
 using Nncase.IR.Math;
 using Onnx;
@@ -37,7 +36,7 @@ namespace Nncase.Importer
         private readonly GraphProto _graph;
         private readonly Dictionary<string, long> _opSetMap;
         private Dictionary<string, Expr> _outputTensors;
-        private string[] _constTensors;
+        private Dictionary<string, TensorProto> _constTensors;
 
         public OnnxImporter(byte[] onnxModel)
         {
@@ -86,12 +85,12 @@ namespace Nncase.Importer
         }
         public Module Import()
         {
-            _constTensors = _graph.Initializer.Select(tensor => tensor.Name).ToArray();
-            
+            _constTensors = _graph.Initializer
+                .ToDictionary(tensor => tensor.Name, tensor => tensor);
+
             _outputTensors = _graph.Input
-                .Filter(n => !_constTensors.Contains(n.Name))
-                .Select(n => new {Name = n.Name, Value = new Var(n.Name, GetIRType(n))}).
-                ToDictionary(pair => pair.Name, pair => (Expr)pair.Value);
+                .Filter(n => !_constTensors.ContainsKey(n.Name))
+                .ToDictionary(n => n.Name, n => (Expr) new Var(n.Name, GetIRType(n)));
 
             var createdInputs = _outputTensors.Values.ToArray();
             _graph.Node.ToList().ForEach(Visit);
@@ -110,30 +109,7 @@ namespace Nncase.Importer
             module.Entry = mainFunc;
             return module;
         }
-        
-        private DataType GetDataType(ValueInfoProto v)
-        {
-            return GetDataType(v.Type.TensorType.ElemType);
-        }
 
-        private DataType GetDataType(TensorProto tensor)
-        {
-            return GetDataType(tensor.DataType);
-        }
-        
-        private DataType GetDataType(int onnxTypeIndex)
-        {
-            var dType = (TensorProto.Types.DataType) onnxTypeIndex;
-            if (_typeMap.ContainsKey(dType))
-            {
-                return _typeMap[dType];
-            }
-            else
-            {
-                throw new InvalidDataException($"Not supported Datatype {dType}");
-            }
-        }
-        
         public Shape GetShape(ValueInfoProto v)
         {
             var shape = v.Type.TensorType.Shape.Dim.Select(x => x.DimValue);
@@ -176,6 +152,20 @@ namespace Nncase.Importer
         private (Expr, Expr) GetInputExprs(NodeProto n, int index0, int index1)
         {
             return (GetInputExpr(n, index0), GetInputExpr(n, index1));
+        }
+
+        private Option<Expr> GetOptionInputExpr(NodeProto n, int index)
+        {
+            if (n.Input.Count <= index)
+            {
+                return Option.None;
+            }
+            return Option.Some(GetInputExpr(n, index));
+        }
+
+        private (Option<Expr>, Option<Expr>) GetOptionInputExprs(NodeProto n, int index0, int index1)
+        {
+            return (GetOptionInputExpr(n, index0), GetOptionInputExpr(n, 1));
         }
 
         // about op set: https://github.com/onnx/onnx/issues/3678
@@ -238,41 +228,41 @@ namespace Nncase.Importer
                 "LpNormalization" => VisitLpNormalization(op),
                 "LeakyRelu" => VisitLeakyRelu(op),
                 "Log" => VisitUnary(op, UnaryOp.Log),
-                // "LogSoftmax" => VisitLogSoftmax(op),
-                // "LRN" => VisitLRN(op),
-                // "MatMul" => VisitMatMul(op),
+                "LogSoftmax" => VisitLogSoftmax(op),
+                "LRN" => VisitLRN(op),
+                "MatMul" => VisitMatMul(op),
                 "MaxPool" => VisitReduceWindow2D(op, ReduceOp.Max, float.MinValue),
                 "Max" => VisitBinary(op, BinaryOp.Max),
                 "Min" => VisitBinary(op, BinaryOp.Min),
                 "Mul" => VisitBinary(op, BinaryOp.Mul),
                 "Neg" => VisitUnary(op, UnaryOp.Neg),
                 // "OneHot" => VisitOneHot(op),
-                // "Pad" => VisitPad(op),
+                "Pad" => VisitPad(op),
                 "Pow" => VisitBinary(op, BinaryOp.Pow),
                 "PRelu" => VisitPRelu(op),
                 // "QuantizeLinear" => VisitQuantizeLinear(op),
-                // "RandomNormal" => VisitRandomNormal(op),
-                // "RandomNormalLike" => VisitRandomNormalLike(op),
-                // "RandomUniform" => VisitRandomUniform(op),
-                // "RandomUniformLike" => VisitRandomUniformLike(op),
-                // "ReduceL1" => VisitReduceL1(op),
-                // "ReduceL2" => VisitReduceL2(op),
-                // "ReduceLogSum" => VisitReduceLogSum(op),
-                // "ReduceLogSumExp" => VisitReduceLogSumExp(op),
+                "RandomNormal" => VisitRandomNormal(op),
+                "RandomNormalLike" => VisitRandomNormalLike(op),
+                "RandomUniform" => VisitRandomUniform(op),
+                "RandomUniformLike" => VisitRandomUniformLike(op),
+                "ReduceL1" => VisitReduceL1(op),
+                "ReduceL2" => VisitReduceL2(op),
+                "ReduceLogSum" => VisitReduceLogSum(op),
+                "ReduceLogSumExp" => VisitReduceLogSumExp(op),
                 "ReduceMax" => VisitReduce(op, ReduceOp.Max, float.MinValue),
                 "ReduceMean" => VisitReduce(op, ReduceOp.Mean, 0f),
                 "ReduceMin" => VisitReduce(op, ReduceOp.Min, float.MaxValue),
                 "ReduceSum" => VisitReduce(op, ReduceOp.Sum, 0f),
-                // "ReduceSumSquare" => VisitReduceSumSquare(op),
+                "ReduceSumSquare" => VisitReduceSumSquare(op),
                 "Relu" => VisitRelu(op),
-                // "Reshape" => VisitReshape(op),
+                "Reshape" => VisitReshape(op),
                 // "Resize" => VisitResize(op),
                 "Round" => VisitUnary(op, UnaryOp.Round),
                 "Selu" => VisitSelu(op),
                 // "Shape" => VisitShape(op),
                 "Sin" => VisitUnary(op, UnaryOp.Sin),
-                // "Sinh" => VisitSinh(op),
-                // "Sigmoid" => VisitSigmoid(op),
+                "Sinh" => VisitUnary(op, UnaryOp.Sinh),
+                "Sigmoid" => VisitSigmoid(op),
                 // "Size" => VisitSize(op),
                 // "Slice" => VisitSlice(op),
                 // "Softmax" => VisitSoftmax(op),

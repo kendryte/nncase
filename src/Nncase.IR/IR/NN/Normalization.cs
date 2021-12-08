@@ -71,4 +71,35 @@ namespace Nncase.IR.NN
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType axis, TensorType p) => input;
     }
+    
+    public sealed record LRN() : Op
+    {
+        /// <summary>
+        /// Gets input.
+        /// </summary>
+        public static readonly ParameterInfo Input = new(typeof(L2Normalization), 0, "input");
+
+        /// <summary>
+        /// Gets axis.
+        /// </summary>
+        public static readonly ParameterInfo Alpha = new(typeof(L2Normalization), 1, "alpha", IsFloatScalar());
+        
+        /// <summary>
+        /// Gets beta.
+        /// </summary>
+        public static readonly ParameterInfo Beta = new(typeof(L2Normalization), 2, "beta", IsFloatScalar());
+
+        /// <summary>
+        /// Gets bias.
+        /// </summary>
+        public static readonly ParameterInfo Bias = new(typeof(L2Normalization), 3, "bias", IsFloatScalar());
+        
+        /// <summary>
+        /// Gets size.
+        /// </summary>
+        public static readonly ParameterInfo Size = new(typeof(L2Normalization), 4, "size", IsIntegralScalar());
+
+        /// <inheritdoc/>
+        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType axis, TensorType p) => input;
+    }
 }

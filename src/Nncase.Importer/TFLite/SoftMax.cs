@@ -18,7 +18,7 @@ namespace Nncase.Importer.TFLite
         private Expr VisitLogSoftMax(in tflite.Operator op)
         {
             var input = GetInputExprs(op, 0);
-            return F.NN.LogSoftMax(input);
+            return F.NN.LogSoftMax(input, -1);
         }
     }
 }

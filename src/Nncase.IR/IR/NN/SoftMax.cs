@@ -24,10 +24,12 @@ namespace Nncase.IR.NN
         /// </summary>
         public static readonly ParameterInfo Input = new(typeof(LogSoftMax), 0, "input");
 
+        /// <summary>
+        /// Gets axis.
+        /// </summary>
+        public static readonly ParameterInfo Axis = new(typeof(LogSoftMax), 1, "axis", IsIntegralScalar());
+
         /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input)
-        {
-            return input;
-        }
+        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType axis) => input;
     }
 }

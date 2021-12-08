@@ -88,6 +88,11 @@ namespace Nncase
         /// Sine.
         /// </summary>
         Sin,
+        
+        /// <summary>
+        /// Sinh.
+        /// </summary>
+        Sinh,
 
         /// <summary>
         /// Sqrt.
