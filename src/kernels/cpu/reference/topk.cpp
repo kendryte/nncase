@@ -85,19 +85,23 @@ void quick_select(std::vector<std::pair<T, size_t>> &nums, int64_t lo, int64_t h
 
 }
 
-template result<void> reference::topk<float>(const float *input, float *output_values, NNCASE_UNUSED int64_t *output_indices,
+template result<void> reference::topk<float>(const float *input, float *output_values, int64_t *output_indices,
     const runtime_shape_t &in_shape, const runtime_shape_t &in_strides,
-    NNCASE_UNUSED const runtime_shape_t &output_values_shape, const runtime_shape_t &output_values_strides,
-    NNCASE_UNUSED const runtime_shape_t &output_indices_shape, NNCASE_UNUSED const runtime_shape_t &output_indices_strides,
+    const runtime_shape_t &output_values_shape, const runtime_shape_t &output_values_strides,
+    const runtime_shape_t &output_indices_shape, const runtime_shape_t &output_indices_strides,
     const int64_t k, const int32_t axis, const bool largest, const bool sorted) noexcept;
 
 template <typename T>
-result<void> reference::topk(const T *input, T *output_values, NNCASE_UNUSED int64_t *output_indices,
+result<void> reference::topk(const T *input, T *output_values, int64_t *output_indices,
     const runtime_shape_t &in_shape, const runtime_shape_t &in_strides,
-    NNCASE_UNUSED const runtime_shape_t &output_values_shape, const runtime_shape_t &output_values_strides,
-    NNCASE_UNUSED const runtime_shape_t &output_indices_shape, NNCASE_UNUSED const runtime_shape_t &output_indices_strides,
+    const runtime_shape_t &output_values_shape, const runtime_shape_t &output_values_strides,
+    const runtime_shape_t &output_indices_shape, const runtime_shape_t &output_indices_strides,
     const int64_t k, const int32_t axis, const bool largest, const bool sorted) noexcept
 {
+    (void)output_values_shape;
+    (void)output_indices_shape;
+    (void)output_indices_strides;
+
     std::map<size_t, std::vector<std::pair<T, size_t>>> map;
 
     try_(apply(in_shape, [&](const runtime_shape_t &index) -> result<void> {
@@ -130,7 +134,7 @@ result<void> reference::topk(const T *input, T *output_values, NNCASE_UNUSED int
                 std::priority_queue<std::pair<T, size_t>, std::vector<std::pair<T, size_t>>, std::greater<std::pair<T, size_t>>> pq;
                 for (auto &p : e.second)
                 {
-                    if (pq.size() < k)
+                    if (pq.size() < static_cast<size_t>(k))
                     {
                         pq.push(p);
                     }
@@ -155,7 +159,7 @@ result<void> reference::topk(const T *input, T *output_values, NNCASE_UNUSED int
                 std::priority_queue<std::pair<T, size_t>, std::vector<std::pair<T, size_t>>, std::less<std::pair<T, size_t>>> pq;
                 for (auto &p : e.second)
                 {
-                    if (pq.size() < k)
+                    if (pq.size() < static_cast<size_t>(k))
                     {
                         pq.push(p);
                     }
