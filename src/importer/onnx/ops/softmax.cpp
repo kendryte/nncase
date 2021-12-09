@@ -39,13 +39,14 @@ void onnx_importer::convert_op_Softmax(const NodeProto &node)
     int64_t default_axis = opset_version >= 13 ? -1 : 1;
     auto axis_value = static_cast<int>(get_attribute<int64_t>(node, "axis").value_or(default_axis));
     auto axis = static_cast<int>(real_axis(axis_value, input_shape.size()));
-    axis_t axes { axis };
 
     // opset 1/11
     // 1. The input should be reshaped as 2d tenor to compute Softmax.
     // 2. The output should be reshaped as original shape of input.
     if (opset_version < 13)
     {
+        axis_t axes { 1 };
+
         shape_t new_shape;
         size_t dim = 1;
         for (auto i = 0; i < axis; i++)
@@ -92,6 +93,7 @@ void onnx_importer::convert_op_Softmax(const NodeProto &node)
     }
     else
     {
+        axis_t axes { axis };
         auto rmax = graph_.emplace<reduce>(reduce_max, input_shape, axes, std::numeric_limits<float>::lowest(), true);
         rmax->name(op_name + ".rmax(Softmax)");
 
