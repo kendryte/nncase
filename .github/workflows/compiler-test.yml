@@ -97,6 +97,8 @@ jobs:
       env:
         PYTHONPATH: /tmp/nncase/lib:/tmp/nncase/python:${{github.workspace}}/tests
         ONNX_MODELS_DIR: /compiler/github-runner/onnx-models
+        TFLITE_MODELS_DIR: /compiler/github-runner/tflite-models
+        DATASET_DIR: /compiler/share
       run: |
         pytest tests/other --doctest-modules --junitxml=test_results/other.xml
         pytest tests/importer --doctest-modules --junitxml=test_results/importer.xml

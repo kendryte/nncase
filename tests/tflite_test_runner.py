@@ -34,6 +34,9 @@ class TfliteTestRunner(TestRunner):
     def run(self, model_file):
         if model_file.startswith('examples'):
             model_file = os.path.join(os.path.dirname(__file__), '..', model_file)
+        elif model_file.startswith('tflite-models'):
+            model_file = os.path.join(os.getenv('TFLITE_MODELS_DIR'),
+                                      model_file[len('tflite-models/'):])
         if self.case_dir != os.path.dirname(model_file):
             shutil.copy(model_file, self.case_dir)
             model_file = os.path.join(
@@ -76,11 +79,12 @@ class TfliteTestRunner(TestRunner):
                         topk.append((in_data[1], get_topK('cpu', 1, data)[0]))
                 if os.path.exists(os.path.join(case_dir, "cpu_dataset.txt")):
                     os.remove(os.path.join(case_dir, "cpu_dataset.txt"))
-                with open(os.path.join(case_dir, "cpu_dataset.txt"), 'a') as f:
+                self.output_paths.append((
+                    os.path.join(case_dir, 'cpu_result.bin'),
+                    os.path.join(case_dir, 'cpu_result.txt')))
+                with open(self.output_paths[-1][1], 'a') as f:
                     for i in range(len(topk)):
                         f.write(topk[i][0].split('/')[-1] + " " + str(topk[i][1]) + '\n')
-                # fit for random test
-                self.output_paths.append(os.path.join(case_dir, "cpu_dataset.txt"))
         else:
             for input in self.inputs:
                 interp.set_tensor(input["index"], self.data_pre_process(input['data']))
