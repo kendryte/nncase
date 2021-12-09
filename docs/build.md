@@ -15,6 +15,7 @@
   ```
 
   当安装pythonnet后,可以直接修改`pythonnet/__init__.py` line 18选择需要的runtime:
+
   ```python
   def set_default_runtime() -> None:
       set_runtime(clr_loader.get_coreclr("your-path-to/runtimeconfig.json"))
@@ -23,6 +24,8 @@
       # else:
       #     set_runtime(clr_loader.get_mono())
   ```
+  注释掉原有的set_runtime并且添加上自己的设置代码
+  其中runtimeconfig.json需要绝对路径
 
   the example of `runtimeconfig.json`
   ```json
@@ -36,6 +39,7 @@
     }
   }
   ```
+  framework中的版本号是dotnet runtime的版本号，可以通过dotnet --info查看
 
 - 设置dotnet dll Path
   由于不同pc上安装的dotnet package不同,因此开发Nncase时需要手动提供DLL PATH.

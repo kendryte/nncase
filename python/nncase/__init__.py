@@ -17,6 +17,7 @@ from __future__ import annotations
 import clr
 import sys
 import os
+import shutil
 
 
 def _add_dllpath():
@@ -33,6 +34,13 @@ def _add_dllpath():
                 "TorchSharp"]:
         clr.AddReference(os.path.join(nncase_cli_path, dll))
 
+    naive_path = os.path.join(nncase_cli_path, 'runtimes', sys.platform + '-x64', 'native')
+    for root, dirs, files in os.walk(naive_path):
+        for file in files:
+            dll_file = os.path.join(naive_path, file)
+            target_file = os.path.join(nncase_cli_path, file)
+            if not os.path.exists(target_file):
+                shutil.copy(dll_file, target_file)
 
 _add_dllpath()
 from io import BytesIO
@@ -251,10 +259,10 @@ class Compiler:
         pass
 
     def import_caffe(self, model: bytes, prototxt: bytes) -> None:
-        NotImplementedError("import_caffe")
+        raise NotImplementedError("import_caffe")
 
     def import_onnx(self, model: bytes, options: ImportOptions) -> None:
-        NotImplementedError("import_onnx")
+        raise NotImplementedError("import_onnx")
 
     def import_tflite(self, model_content: bytes, options: ImportOptions) -> None:
         self._compile_options.InputFormat = "tflite"
@@ -262,10 +270,10 @@ class Compiler:
             MemoryStream(model_content), self._compile_options))
 
     def use_ptq(self, ptq_dataset_options: PTQTensorOptions) -> None:
-        NotImplementedError("use_ptq")
+        raise NotImplementedError("use_ptq")
 
     def dump_range_options(self) -> DumpRangeTensorOptions:
-        NotImplementedError("dump_range_options")
+        raise NotImplementedError("dump_range_options")
 
 
 def test_target(target: str):
