@@ -30,7 +30,7 @@ namespace Nncase.IR.F
         
         public static Call CumSum(Expr input, Expr axis, Expr exclusive, Expr reverse) => new Call(new CumSum(), input, axis, exclusive, reverse);
         
-        public static Call Hardmax(Expr input, Expr axis) => new Call(new CumSum(), input, axis);
+        public static Call HardMax(Expr input, Expr axis) => new Call(new CumSum(), input, axis);
 
         public static Call Gather(Expr input, Expr axis, Expr index) => new Call(new Gather(), input, axis, index);
 
@@ -89,7 +89,7 @@ namespace Nncase.IR.F
             return new Call(new Slice(), input, begins, ends, axes, strides);
         }
 
-        public static Call Size(Expr input) => ReduceSum(ShapeOp(input), 0, 0, false);
+        public static Expr Size(Expr input) => ReduceSum(ShapeOp(input), 0, 0, false);
         
         public static Call Stack(Expr inputs, Expr axis) => new Call(new Stack(), inputs, axis);
 

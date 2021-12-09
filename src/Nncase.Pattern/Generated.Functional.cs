@@ -283,18 +283,26 @@ namespace Nncase.Pattern.F
     public static partial class NN
     {
         public static Conv2DWrapper Conv2D(ExprPattern input, ExprPattern weights, ExprPattern bias, ExprPattern stride, ExprPattern padding, ExprPattern dilation, PadMode padMode, ExprPattern groups) => new Conv2DWrapper(new CallPattern(new Conv2DPattern(padMode), input, weights, bias, stride, padding, dilation, groups));
+        public static CeluWrapper Celu(ExprPattern input, ExprPattern alpha) => new CeluWrapper(new CallPattern(new CeluPattern(), input, alpha));
         public static Conv2DTransposeWrapper Conv2DTranspose(ExprPattern input, ExprPattern weights, ExprPattern bias, ExprPattern outShape, ExprPattern stride, ExprPattern padding, ExprPattern dilation, PadMode padMode, ExprPattern groups) => new Conv2DTransposeWrapper(new CallPattern(new Conv2DTransposePattern(padMode), input, weights, bias, outShape, stride, padding, dilation, groups));
+        public static EluWrapper Elu(ExprPattern input, ExprPattern alpha) => new EluWrapper(new CallPattern(new EluPattern(), input, alpha));
         public static LeakyReluWrapper LeakyRelu(ExprPattern input) => new LeakyReluWrapper(new CallPattern(new LeakyReluPattern(), input));
         public static L2NormalizationWrapper L2Normalization(ExprPattern input) => new L2NormalizationWrapper(new CallPattern(new L2NormalizationPattern(), input));
         public static BatchNormalizationWrapper BatchNormalization(ExprPattern input, ExprPattern eps, ExprPattern mom) => new BatchNormalizationWrapper(new CallPattern(new BatchNormalizationPattern(), input, eps, mom));
         public static InstanceNormalizationWrapper InstanceNormalization(ExprPattern input, ExprPattern eps) => new InstanceNormalizationWrapper(new CallPattern(new InstanceNormalizationPattern(), input, eps));
         public static LpNormalizationWrapper LpNormalization(ExprPattern input, ExprPattern axis, ExprPattern p) => new LpNormalizationWrapper(new CallPattern(new LpNormalizationPattern(), input, axis, p));
+        public static LRNWrapper LRN(ExprPattern input, ExprPattern alpha, ExprPattern beta, ExprPattern bias, ExprPattern size) => new LRNWrapper(new CallPattern(new LRNPattern(), input, alpha, beta, bias, size));
+        public static HardSigmoidWrapper HardSigmoid(ExprPattern input, ExprPattern alpha, ExprPattern beta) => new HardSigmoidWrapper(new CallPattern(new HardSigmoidPattern(), input, alpha, beta));
+        public static HardSwishWrapper HardSwish(ExprPattern input) => new HardSwishWrapper(new CallPattern(new HardSwishPattern(), input));
         public static ReluWrapper Relu(ExprPattern input) => new ReluWrapper(new CallPattern(new ReluPattern(), input));
         public static Relu6Wrapper Relu6(ExprPattern input) => new Relu6Wrapper(new CallPattern(new Relu6Pattern(), input));
         public static PReluWrapper PRelu(ExprPattern input) => new PReluWrapper(new CallPattern(new PReluPattern(), input));
+        public static SeluWrapper Selu(ExprPattern input) => new SeluWrapper(new CallPattern(new SeluPattern(), input));
         public static SigmoidWrapper Sigmoid(ExprPattern expr) => new SigmoidWrapper(new CallPattern(new SigmoidPattern(), expr));
-        public static SoftMaxWrapper SoftMax(ExprPattern expr) => new SoftMaxWrapper(new CallPattern(new SoftMaxPattern(), expr));
-        public static LogSoftMaxWrapper LogSoftMax(ExprPattern expr) => new LogSoftMaxWrapper(new CallPattern(new LogSoftMaxPattern(), expr));
+        public static SoftMaxWrapper SoftMax(ExprPattern expr, ExprPattern axis) => new SoftMaxWrapper(new CallPattern(new SoftMaxPattern(), expr, axis));
+        public static SoftPlusWrapper SoftPlus(ExprPattern expr) => new SoftPlusWrapper(new CallPattern(new SoftPlusPattern(), expr));
+        public static SoftSignWrapper SoftSign(ExprPattern expr) => new SoftSignWrapper(new CallPattern(new SoftSignPattern(), expr));
+        public static LogSoftMaxWrapper LogSoftMax(ExprPattern expr, ExprPattern axis) => new LogSoftMaxWrapper(new CallPattern(new LogSoftMaxPattern(), expr, axis));
     }
 
     public static partial class Tensors
@@ -305,14 +313,20 @@ namespace Nncase.Pattern.F
         public static BroadcastWrapper Broadcast(ExprPattern input, ExprPattern shape) => new BroadcastWrapper(new CallPattern(new BroadcastPattern(), input, shape));
         public static CastWrapper Cast(ExprPattern input, DataType newType) => new CastWrapper(new CallPattern(new CastPattern(newType), input));
         public static ConcatWrapper Concat(TuplePattern input, ExprPattern axis) => new ConcatWrapper(new CallPattern(new ConcatPattern(), input, axis));
+        public static CumSumWrapper CumSum(ExprPattern input, ExprPattern axis, ExprPattern exclusive, ExprPattern reverse) => new CumSumWrapper(new CallPattern(new CumSumPattern(), input, axis, exclusive, reverse));
+        public static HardMaxWrapper HardMax(ExprPattern input, ExprPattern axis) => new HardMaxWrapper(new CallPattern(new CumSumPattern(), input, axis));
         public static GatherWrapper Gather(ExprPattern input, ExprPattern axis, ExprPattern index) => new GatherWrapper(new CallPattern(new GatherPattern(), input, axis, index));
-        public static GatherNDWrapper GatherND(ExprPattern input, ExprPattern axis, ExprPattern batch_dims, ExprPattern index) => new GatherNDWrapper(new CallPattern(new GatherNDPattern(), input, axis, batch_dims, index));
+        public static GatherNDWrapper GatherND(ExprPattern input, ExprPattern batch_dims, ExprPattern index) => new GatherNDWrapper(new CallPattern(new GatherNDPattern(), input, batch_dims, index));
         public static MatMulWrapper MatMul(ExprPattern input, ExprPattern other) => new MatMulWrapper(new CallPattern(new MatMulPattern(), input, other));
         public static OneHotWrapper OneHot(OneHotMode oneHotMode, ExprPattern indices, ExprPattern depth, ExprPattern onValue, ExprPattern offValue, ExprPattern axis) => new OneHotWrapper(new CallPattern(new OneHotPattern(oneHotMode), indices, depth, onValue, offValue, axis));
         /// <summary>
         /// Pads is Const tensor, shape = [channels, 2(before, after)]
         /// </summary>
         public static PadWrapper Pad(ExprPattern input, ExprPattern pads, PadMode mode, ExprPattern value) => new PadWrapper(new CallPattern(new PadPattern(mode), input, pads, value));
+        public static RandomNormalWrapper RandomNormal(DataType type, ExprPattern mean, ExprPattern scale, ExprPattern seed, ExprPattern shape) => new RandomNormalWrapper(new CallPattern(new RandomNormalPattern(type), mean, scale, seed, shape));
+        public static RandomNormalLikeWrapper RandomNormalLike(DataType type, ExprPattern input, ExprPattern mean, ExprPattern scale, ExprPattern seed) => new RandomNormalLikeWrapper(new CallPattern(new RandomNormalPattern(type), input, mean, scale, seed));
+        public static RandomUniformWrapper RandomUniform(DataType type, ExprPattern high, ExprPattern low, ExprPattern seed, ExprPattern shape) => new RandomUniformWrapper(new CallPattern(new RandomUniformPattern(type), high, low, seed, shape));
+        public static RandomUniformLikeWrapper RandomUniformLike(DataType type, ExprPattern input, ExprPattern high, ExprPattern low, ExprPattern seed) => new RandomUniformLikeWrapper(new CallPattern(new RandomUniformLikePattern(type), input, high, low, seed));
         public static ReduceWrapper Reduce(ReduceOp reduceOp, ExprPattern input, ExprPattern axis, ExprPattern initValue, ExprPattern keepDims) => new ReduceWrapper(new CallPattern(new ReducePattern(reduceOp), input, axis, initValue, keepDims));
         public static ReduceArgWrapper ReduceArg(ReduceArgOp reduceArgOp, ExprPattern input, ExprPattern axis, ExprPattern keepDims, ExprPattern selectLastIndex) => new ReduceArgWrapper(new CallPattern(new ReduceArgPattern(reduceArgOp), input, axis, keepDims, selectLastIndex));
         public static ReduceWrapper ReduceMean(ExprPattern input, ExprPattern axis, ExprPattern initValue, ExprPattern keepDims) => Reduce(ReduceOp.Mean, input, axis, initValue, keepDims);
@@ -332,6 +346,7 @@ namespace Nncase.Pattern.F
             return new SliceWrapper(new CallPattern(new SlicePattern(), input, begins, ends, axes, strides));
         }
 
+        public static ExprPattern Size(ExprPattern input) => ReduceSum(ShapeOp(input), 0, 0, false);
         public static StackWrapper Stack(ExprPattern inputs, ExprPattern axis) => new StackWrapper(new CallPattern(new StackPattern(), inputs, axis));
         /// squeeze input by give dims
         public static SqueezeWrapper Squeeze(ExprPattern input, ExprPattern dims) => new SqueezeWrapper(new CallPattern(new SqueezePattern(), input, dims));
