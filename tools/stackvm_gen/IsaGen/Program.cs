@@ -180,6 +180,8 @@ namespace IsaGen
                 return 32;
             else if (t == typeof(float))
                 return 32;
+            else if (t == typeof(long))
+                return 64;
             // Bits
             else
                 return uint.Parse(t.Name.Substring(3));
@@ -201,6 +203,8 @@ namespace IsaGen
                 return "int16_t";
             else if (t == typeof(int))
                 return "int32_t";
+            else if (t == typeof(long))
+                return "int64_t";
             else if (t == typeof(float))
                 return "float";
             // Bits

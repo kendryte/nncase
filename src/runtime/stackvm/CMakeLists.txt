@@ -34,6 +34,7 @@ set(SRCS runtime_module.cpp
          ops/tensor.resize_image.cpp
          ops/tensor.slice.cpp
          ops/tersor.ternary.cpp
+         ops/tensor.topk.cpp
          ops/tensor.transpose.cpp
          ops/tensor.unary.cpp)
 
