@@ -278,8 +278,7 @@ bool remove_non_simple_copy_from_slice_transform::on_try_match(node &node, trans
         auto inputs = cp->output().connections();
         if (is_copy_slice(s->strides())
             && !is_simple_slice(s->begin(), s->end(), s->strides(), s->input().shape())
-            && std::all_of(inputs.begin(), inputs.end(), [](input_connector *in) {
-                return (in->attributes() & cnctr_attr_no_layout_strides) == 0; }))
+            && std::all_of(inputs.begin(), inputs.end(), [](input_connector *in) { return (in->attributes() & cnctr_attr_no_layout_strides) == 0; }))
         {
             context.inputs.emplace_back(&cp->input());
             context.outputs.emplace_back(&cp->output());
