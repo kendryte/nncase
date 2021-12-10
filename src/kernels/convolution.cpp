@@ -27,7 +27,7 @@ result<void> kernels::conv2d(const float *input, const float *weights, const flo
     const runtime_shape_t &bias_strides, const runtime_shape_t &out_strides, const padding &padding_h, const padding &padding_w,
     int32_t groups, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w, value_range<float> fused_activation, kernel_context &context) noexcept
 {
-    const auto batch = in_shape[0], in_channels = in_shape[1], in_h = in_shape[2], in_w = in_shape[3], out_channels = w_shape[0];
+    const auto batch = in_shape[0], in_h = in_shape[2], in_w = in_shape[3], out_channels = w_shape[0];
     const auto filter_h = (int32_t)w_shape[2];
     const auto filter_w = (int32_t)w_shape[3];
     const auto out_h = kernels::detail::get_windowed_output_size(in_h, filter_h, stride_h, dilation_h, padding_h);
@@ -35,7 +35,7 @@ result<void> kernels::conv2d(const float *input, const float *weights, const flo
 
     if (is_contiguous(in_shape, in_strides)
         && is_contiguous(w_shape, w_strides)
-        && is_contiguous({ batch, w_shape[0], out_h, out_w }, w_strides)
+        && is_contiguous({ batch, out_channels, out_h, out_w }, w_strides)
         && dilation_h == 1
         && dilation_w == 1)
     {
