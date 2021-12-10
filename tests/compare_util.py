@@ -54,15 +54,17 @@ def top1(gt_path, result_path):
     with open(label_file, 'r') as label_f, open(gt_path, 'r') as gt_f, open(result_path, 'r') as result_f:
         # get label result
         for line in label_f.readlines():
-            label_dict[line.strip('\n').split(' ')[0]] = line.strip('\n').split(' ')[1]
+            label_dict[line.strip('\n').split(' ')[0]] = int(line.strip('\n').split(' ')[1])
 
         # get cpu result or no_ptq result
         for line in gt_f.readlines():
-            gt_data_dict[line.strip('\n').split(' ')[0]] = line.strip('\n').split(' ')[1] + num_classes_flag
+            gt_data_dict[line.strip('\n').split(' ')[0]] = int(
+                line.strip('\n').split(' ')[1]) + num_classes_flag
 
         # get infer result
         for line in result_f.readlines():
-            result_data_dict[line.strip('\n').split(' ')[0]] = line.strip('\n').split(' ')[1] + num_classes_flag
+            result_data_dict[line.strip('\n').split(' ')[0]] = int(
+                line.strip('\n').split(' ')[1]) + num_classes_flag
 
     gt_result = 0
     for key, value in gt_data_dict.items():
