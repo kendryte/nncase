@@ -19,7 +19,7 @@ from tflite_test_runner import TfliteTestRunner
 
 def test_mobilenetv1(request):
     overwrite_cfg = open(
-        'tests/models/tflite-model-zoo/vision/classification/test_config.yml', 'r', encoding="utf8").read()
+        'tests/models/tflite-model-zoo/vision/classification/dataset_test_config.yml', 'r', encoding="utf8").read()
     runner = TfliteTestRunner(request.node.name, overwrite_configs=overwrite_cfg)
     model_file = 'tflite-models/mobilenetv1/model_f32.tflite'
     runner.run(model_file)
