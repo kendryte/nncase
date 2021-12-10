@@ -73,7 +73,7 @@ case: # case的配置，应该是一个多层次的
   eval:
     - name: target
       values:
-        # - cpu
+        - cpu
         #- vulkan
         # - k210
         - k510
@@ -85,7 +85,7 @@ case: # case的配置，应该是一个多层次的
   infer:
     - name: target
       values:
-        # - cpu
+        - cpu
         #- vulkan
         # - k210
         - k510
@@ -97,16 +97,16 @@ case: # case的配置，应该是一个多层次的
 judge:
   common: &judge_common
     simarity_name:  top1
-    threshold: 0.999
+    threshold: 0.01
     log_hist: true
     matchs: null
   specifics:
     - matchs:
         #target: [cpu, vulkan, k210, k510]
-        target: [cpu, k210, k510]
+        target: [cpu, k510]
         ptq: true
-      threshold: 0.98
+      threshold: 0.015
     - matchs:
-        target: [k510]
+        target: [cpu, k510]
         ptq: false
-      threshold: 0.99
+      threshold: 0.02

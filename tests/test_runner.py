@@ -391,10 +391,10 @@ class TestRunner(metaclass=ABCMeta):
                 else:
                     print("WARN: target[{0}] not found".format(t))
             return new_targets
-        self.cfg.case.eval[0].values = _validate_targets(
-            targets if targets else self.cfg.case.eval[0].values)
-        self.cfg.case.infer[0].values = _validate_targets(
-            targets if targets else self.cfg.case.infer[0].values)
+        self.cfg.case.eval[0].update({"values": _validate_targets(
+            targets if targets else self.cfg.case.eval[0].values)})
+        self.cfg.case.infer[0].update({"values": _validate_targets(
+            targets if targets else self.cfg.case.infer[0].values)})
 
     def run(self, model_path: Union[List[str], str]):
         # TODO add mulit process pool
