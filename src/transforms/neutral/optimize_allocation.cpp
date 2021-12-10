@@ -64,7 +64,7 @@ void make_slice_no_action_pass::run_core(graph &graph, [[maybe_unused]] nncase::
                 && is_copy_slice(s->strides()))
             {
                 auto &out = s->output();
-                out.attributes(out.attributes() | cnctr_attr_buffer_slice | cnctr_attr_no_layout_strides | cnctr_attr_no_buffer_fusion);
+                out.attributes(out.attributes() | cnctr_attr_buffer_slice | cnctr_attr_no_buffer_fusion);
                 s->attributes(s->attributes() & ~node_attr_action);
             }
         }
@@ -199,7 +199,7 @@ bool remove_exclusive_copy_to_concat_transform::on_try_match(node &node, transfo
         auto is_simple_concat = (c->axis() == 0 || std::all_of(c_inputs[0]->shape().begin(), c_inputs[0]->shape().begin() + c->axis(), [](size_t dim) { return dim == 1; }));
         if (input->memory_location() == mem_data
             && ((input->attributes() & (cnctr_attr_no_buffer_fusion | cnctr_attr_buffer_slice)) == 0)
-            && is_simple_concat)
+            && (is_simple_concat || (input->attributes() & (cnctr_attr_no_layout_strides)) == 0))
         {
             context.inputs.emplace_back(&cp->input());
             context.outputs.emplace_back(&cp->output());
@@ -258,6 +258,45 @@ void remove_simple_copy_from_slice_transform::process(transform_context &context
     auto inputs = context.outputs[0]->connections();
 
     output.attributes(output.attributes() | cnctr_attr_no_layout_strides);
+    for (auto &in : dup(inputs))
+        in->connect(output);
+}
+
+bool remove_non_simple_copy_from_slice_transform::on_try_match(node &node, transform_context &context)
+{
+    slice *s;
+    copy *cp;
+
+    if ((s = node_cast<slice>(node))
+        && ((s->attributes() & node_attr_action) == 0)
+        && (cp = try_get_direct_child<copy>(*s))
+        && !try_get_direct_child<output_node>(*cp)
+        && !try_get_direct_child<concat>(*cp)
+        && (cp->output().attributes() & cnctr_attr_no_layout_strides) == 0
+        && (s->output().attributes() & cnctr_attr_no_layout_strides) == 0)
+    {
+        auto inputs = cp->output().connections();
+        if (is_copy_slice(s->strides())
+            && !is_simple_slice(s->begin(), s->end(), s->strides(), s->input().shape())
+            && std::all_of(inputs.begin(), inputs.end(), [](input_connector *in) {
+                return (in->attributes() & cnctr_attr_no_layout_strides) == 0; }))
+        {
+            context.inputs.emplace_back(&cp->input());
+            context.outputs.emplace_back(&cp->output());
+
+            context.matched_nodes.emplace_back(cp);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void remove_non_simple_copy_from_slice_transform::process(transform_context &context)
+{
+    auto &output = *context.inputs[0]->connection();
+    auto inputs = context.outputs[0]->connections();
+
     for (auto &in : dup(inputs))
         in->connect(output);
 }
