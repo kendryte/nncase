@@ -61,7 +61,7 @@ void make_slice_no_action_pass::run_core(graph &graph, [[maybe_unused]] nncase::
         if (auto s = node_cast<slice>(node))
         {
             if ((s->attributes() & node_attr_action)
-                && is_simple_slice(s->begin(), s->end(), s->strides(), s->input().shape()))
+                && is_copy_slice(s->strides()))
             {
                 auto &out = s->output();
                 out.attributes(out.attributes() | cnctr_attr_buffer_slice | cnctr_attr_no_layout_strides | cnctr_attr_no_buffer_fusion);
@@ -101,7 +101,7 @@ void add_copy_to_slice_pass::run_core(graph &graph, [[maybe_unused]] nncase::tar
         slice *s;
         if ((s = node_cast<slice>(node))
             && (s->attributes() & node_attr_action) == 0
-            && is_simple_slice(s->begin(), s->end(), s->strides(), s->input().shape()))
+            && is_copy_slice(s->strides()))
         {
             auto outputs = dup(s->output().connections());
             if (std::any_of(outputs.begin(), outputs.end(), [](input_connector *in) { return in->owner().runtime_opcode() != op_copy; }))

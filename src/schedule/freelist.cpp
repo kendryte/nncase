@@ -42,21 +42,23 @@ void freelist::free(const memory_span &node)
 
 memory_span freelist::allocate(size_t size)
 {
+    if (!size)
+        return {};
+
     auto free = reserve(size);
 
     if (free == free_nodes_.end())
         throw std::runtime_error("Allocator has ran out of memory");
 
     auto node = free->second;
+    free_nodes_.erase(free);
 
-    if (free->second.size == size)
+    if (node.size != size)
     {
-        free_nodes_.erase(free);
-    }
-    else
-    {
-        free->second.size -= size;
-        node.start = free->second.end();
+        auto new_free = node.size - size;
+        auto new_start = node.start + size;
+        free_nodes_.emplace(new_start, memory_span { new_start, new_free });
+
         node.size = size;
     }
 
@@ -66,7 +68,8 @@ memory_span freelist::allocate(size_t size)
 freelist::free_nodes_t::iterator freelist::reserve(size_t size)
 {
     auto free = std::find_if(free_nodes_.begin(), free_nodes_.end(),
-        [=](const std::pair<size_t, memory_span> &node) {
+        [=](const std::pair<size_t, memory_span> &node)
+        {
             return node.second.size >= size;
         });
 
