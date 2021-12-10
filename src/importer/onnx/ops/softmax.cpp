@@ -192,7 +192,6 @@ void onnx_importer::convert_op_LogSoftmax(const NodeProto &node)
     {
         // opset 13
         axis_t axes { axis };
-
         auto rmax = graph_.emplace<reduce>(reduce_max, input_shape, axes, std::numeric_limits<float>::lowest(), true);
         rmax->name(op_name + ".rmax(LogSoftmax)");
 
