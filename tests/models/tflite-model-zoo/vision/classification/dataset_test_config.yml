@@ -66,10 +66,11 @@ case: # case的配置，应该是一个多层次的
     numbers: 1
     batch_size: 1
   generate_dump_range_data:
-    name: generate_random
-    kwargs: null
+    name: generate_imagenet_dataset
+    kwargs:
+      dir_path: "ImageNet/ImageNet_1000_first"
     numbers: 1
-    batch_size: 10
+    batch_size: 1
   eval:
     - name: target
       values:
