@@ -40,8 +40,7 @@ memory_location_t decide_memory_location(ir::output_connector &conn, [[maybe_unu
         return conn.memory_location();
 
     auto inputs = conn.connections();
-    if (std::any_of(inputs.begin(), inputs.end(), [](input_connector *conn)
-            { return conn->owner().runtime_opcode() == op_output_node; }))
+    if (std::any_of(inputs.begin(), inputs.end(), [](input_connector *conn) { return conn->owner().runtime_opcode() == op_output_node; }))
         return mem_output;
 
     //if (opcode == op_call && conn.memory_location() == mem_data)
@@ -130,13 +129,12 @@ void function_schedule_context::end_schedule()
 void function_schedule_context::generate_compute_sequence()
 {
     std::unordered_set<node *> used_inputs;
-    auto alloc_visitor = make_relay_ir_visitor([&](node &node)
-        {
-            if (node.runtime_opcode() == op_input_node)
-                used_inputs.emplace(&node);
-            else if (mod_sched_.model_sched().skip_buffer_alias() || (node.attributes() & node_attr_action))
-                compute_sequence.emplace_back(&node);
-        });
+    auto alloc_visitor = make_relay_ir_visitor([&](node &node) {
+        if (node.runtime_opcode() == op_input_node)
+            used_inputs.emplace(&node);
+        else if (mod_sched_.model_sched().skip_buffer_alias() || (node.attributes() & node_attr_action))
+            compute_sequence.emplace_back(&node);
+    });
 
     alloc_visitor.visit(outputs_);
 
@@ -160,26 +158,25 @@ void function_schedule_context::make_logical_buffers(caller_context &caller_ctx)
     lr.current_age(caller_ctx.lifetime.current_age());
 
     // 2. Estimate buffer lifetime
-    auto alloc_visitor = make_relay_ir_visitor([&](node &node)
+    auto alloc_visitor = make_relay_ir_visitor([&](node &node) {
+        for (auto out : node.outputs())
+            lr.allocate(*out, decide_memory_location(*out, skip_buffer_alias));
+
+        lr.grow_age();
+
+        if (auto c = node_cast<call>(node))
         {
-            for (auto out : node.outputs())
-                lr.allocate(*out, decide_memory_location(*out, skip_buffer_alias));
+            caller_context new_caller_ctx { lr };
+            mod_sched_.model_sched().visit_function(c->target(), new_caller_ctx);
+        }
 
-            lr.grow_age();
-
-            if (auto c = node_cast<call>(node))
-            {
-                caller_context new_caller_ctx { lr };
-                mod_sched_.model_sched().visit_function(c->target(), new_caller_ctx);
-            }
-
-            for (auto in : node.inputs())
-            {
-                auto out = in->connection();
-                assert(out);
-                lr.release(*out);
-            }
-        });
+        for (auto in : node.inputs())
+        {
+            auto out = in->connection();
+            assert(out);
+            lr.release(*out);
+        }
+    });
     alloc_visitor.visit(outputs_);
 
     // 3. Adjust caller's age to now
@@ -262,8 +259,7 @@ void function_schedule_context::allocate_physical_buffers()
     orders.reserve(physical_buffers_.size());
     for (auto &b : physical_buffers_)
         orders.emplace_back(&b);
-    std::sort(orders.begin(), orders.end(), [](const physical_buffer *lhs, const physical_buffer *rhs)
-        { return lhs->lifetime().birth < rhs->lifetime().birth; });
+    std::sort(orders.begin(), orders.end(), [](const physical_buffer *lhs, const physical_buffer *rhs) { return lhs->lifetime().birth < rhs->lifetime().birth; });
 
     for (auto &b : orders)
     {
@@ -280,29 +276,28 @@ void function_schedule_context::assign_allocations()
     for (auto &b : physical_buffers_)
         b.allocation() = memory_span { allocators_.at(b.owner().memory_location())->allocations().at(&b) };
 
-    auto alloc_visitor = make_relay_ir_visitor([&](node &node)
+    auto alloc_visitor = make_relay_ir_visitor([&](node &node) {
+        for (auto out : node.outputs())
         {
-            for (auto out : node.outputs())
-            {
-                auto &lbuf = *logical_buffer_map_.at(out);
-                auto &owner = lbuf.physical()->owner();
-                auto &memory = lbuf.physical()->allocation();
+            auto &lbuf = *logical_buffer_map_.at(out);
+            auto &owner = lbuf.physical()->owner();
+            auto &memory = lbuf.physical()->allocation();
 
-                // TODO: take account of subbuffer
-                buffer_allocation alloc {};
-                alloc.memory_location = owner.memory_location();
-                alloc.type = lbuf.type();
-                alloc.size = allocators_.at(alloc.memory_location)->get_size_in_bytes(lbuf);
-                alloc.shape = lbuf.shape();
-                assert(lbuf.strides_shape().size());
-                alloc.strides_shape = lbuf.strides_shape();
-                alloc.strides = to_strides(alloc.strides_shape);
-                alloc.start = memory.start;
-                alloc.start += *lbuf.absolute_offset();
+            // TODO: take account of subbuffer
+            buffer_allocation alloc {};
+            alloc.memory_location = owner.memory_location();
+            alloc.type = lbuf.type();
+            alloc.size = allocators_.at(alloc.memory_location)->get_size_in_bytes(lbuf);
+            alloc.shape = lbuf.shape();
+            assert(lbuf.strides_shape().size());
+            alloc.strides_shape = lbuf.strides_shape();
+            alloc.strides = to_strides(alloc.strides_shape);
+            alloc.start = memory.start;
+            alloc.start += *lbuf.absolute_offset();
 
-                module->allocations.emplace(out, alloc);
-            }
-        });
+            module->allocations.emplace(out, alloc);
+        }
+    });
     alloc_visitor.visit(outputs_);
 }
 
@@ -311,8 +306,7 @@ void function_schedule_context::dump(const std::filesystem::path &dump_dir)
     {
         std::ofstream writer(dump_dir / (graph->escaped_name() + ".sched"));
 
-        auto fmt_shape = [&](const logical_buffer &buf)
-        {
+        auto fmt_shape = [&](const logical_buffer &buf) {
             auto alloc = module->allocations.at(&buf.owner());
             return fmt::format("<{} {} {} bytes of {}>",
                 datatype_names(buf.type()),

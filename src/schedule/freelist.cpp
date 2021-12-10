@@ -68,8 +68,7 @@ memory_span freelist::allocate(size_t size)
 freelist::free_nodes_t::iterator freelist::reserve(size_t size)
 {
     auto free = std::find_if(free_nodes_.begin(), free_nodes_.end(),
-        [=](const std::pair<size_t, memory_span> &node)
-        {
+        [=](const std::pair<size_t, memory_span> &node) {
             return node.second.size >= size;
         });
 
