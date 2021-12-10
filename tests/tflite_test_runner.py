@@ -80,8 +80,8 @@ class TfliteTestRunner(TestRunner):
                 if os.path.exists(os.path.join(case_dir, "cpu_dataset.txt")):
                     os.remove(os.path.join(case_dir, "cpu_dataset.txt"))
                 self.output_paths.append((
-                    os.path.join(case_dir, 'cpu_result.bin'),
-                    os.path.join(case_dir, 'cpu_result.txt')))
+                    os.path.join(case_dir, 'cpu_result_0.bin'),
+                    os.path.join(case_dir, 'cpu_result_0.txt')))
                 with open(self.output_paths[-1][1], 'a') as f:
                     for i in range(len(topk)):
                         f.write(topk[i][0].split('/')[-1] + " " + str(topk[i][1]) + '\n')

@@ -593,12 +593,12 @@ class TestRunner(metaclass=ABCMeta):
                 input_tensor = nncase.RuntimeTensor.from_numpy(in_data[0])
                 input_tensor.copy_to(evaluator.get_input_tensor(0))
                 evaluator.run()
-                result = evaluator.get_output_tensor(i).to_numpy()
+                result = evaluator.get_output_tensor(0).to_numpy()
                 topk.append((in_data[1], get_topK(kwargs['target'], 1, result)))
             gnne_txt = "gnne_no_ptq" if kwargs['ptq'] is False else "gnne_ptq"
             eval_output_paths.append((
-                os.path.join(eval_dir, gnne_txt) + '.bin',
-                os.path.join(eval_dir, gnne_txt) + '.txt'))
+                os.path.join(eval_dir, gnne_txt) + '_0.bin',
+                os.path.join(eval_dir, gnne_txt) + '_0.txt'))
             result.tofile(eval_output_paths[-1][0])
             with open(eval_output_paths[-1][1], 'a') as f:
                 for i in range(len(topk)):
@@ -695,8 +695,8 @@ class TestRunner(metaclass=ABCMeta):
                 topk.append((in_data[1], get_topK(kwargs['target'], 1, result)))
             gnne_txt = "gnne_no_ptq" if kwargs['ptq'] is False else "gnne_ptq"
             infer_output_paths.append((
-                os.path.join(infer_dir, gnne_txt) + '.bin',
-                os.path.join(infer_dir, gnne_txt) + '.txt'))
+                os.path.join(infer_dir, gnne_txt) + '_0.bin',
+                os.path.join(infer_dir, gnne_txt) + '_0.txt'))
             result.tofile(infer_output_paths[-1][0])
             with open(infer_output_paths[-1][1], 'a') as f:
                 for i in range(len(topk)):
@@ -799,7 +799,7 @@ class TestRunner(metaclass=ABCMeta):
                 'Pass' if judge else 'Fail', kw_names, j)
             result = simarity_info + result_info
             # print(result) temp disable
-            with open(os.path.join(self.case_dir, 'test_result.txt'), 'a+') as f:
+            with open(os.path.join(self.case_dir, 'test_result_{}.txt').format(i), 'a+') as f:
                 f.write(result)
             i = i + 1
             if not judge:
