@@ -177,6 +177,7 @@ namespace IsaGen
         TAKE,
         TERNARY,
         TRANSPOSE,
+        TOPK,
         UNARY,
     }
 
@@ -1924,6 +1925,58 @@ namespace IsaGen
             [DisplayName("rstride_dest")]
             [Description("Dest stride register")]
             public byte RstrideDest { get; set; }
+        }
+
+        [DisplayName("TENSOR.TOPK")]
+        [Category("Tensor Instructions")]
+        [Description("Topk")]
+        public class TopKInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.TOPK;
+
+            [DisplayName("datatype")]
+            [Description("Datatype")]
+            public DataType DataType { get; set; }
+
+            [DisplayName("rshape_src")]
+            [Description("Source shape register")]
+            public byte RshapeSrc { get; set; }
+
+            [DisplayName("rstride_src")]
+            [Description("Source stride register")]
+            public byte RstrideSrc { get; set; }
+
+            [DisplayName("rshape_dest1")]
+            [Description("Dest1 shape register")]
+            public byte RshapeDest1 { get; set; }
+
+            [DisplayName("rstride_dest1")]
+            [Description("Dest1 stride register")]
+            public byte RstrideDest1 { get; set; }
+
+            [DisplayName("rshape_dest2")]
+            [Description("Dest2 shape register")]
+            public byte RshapeDest2 { get; set; }
+
+            [DisplayName("rstride_dest2")]
+            [Description("Dest2 stride register")]
+            public byte RstrideDest2 { get; set; }
+
+            [DisplayName("k")]
+            [Description("K")]
+            public long K { get; set; }
+
+            [DisplayName("axis")]
+            [Description("Axis")]
+            public int Axis { get; set; }
+
+            [DisplayName("largest")]
+            [Description("Largest")]
+            public bool Largest { get; set; }
+
+            [DisplayName("sorted")]
+            [Description("Sorted")]
+            public bool Sorted { get; set; }
         }
 
         [DisplayName("TENSOR.UNARY")]
