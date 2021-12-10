@@ -86,12 +86,11 @@ op_versions = [
 @pytest.mark.parametrize('axis', axes)
 @pytest.mark.parametrize('op_version', op_versions)
 def test_softmax(in_shape, axis, op_version, request):
-    if (op_version in [1, 11] and axis in [None, 1, -3]) or op_version == 13:
-        model_def = _make_module(in_shape, axis, op_version)
+    model_def = _make_module(in_shape, axis, op_version)
 
-        runner = OnnxTestRunner(request.node.name)
-        model_file = runner.from_onnx_helper(model_def)
-        runner.run(model_file)
+    runner = OnnxTestRunner(request.node.name)
+    model_file = runner.from_onnx_helper(model_def)
+    runner.run(model_file)
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_softmax.py'])
