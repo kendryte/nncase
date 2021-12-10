@@ -133,7 +133,7 @@ class OnnxTestRunner(TestRunner):
             print(output_dict)
             self.outputs.append(output_dict)
 
-    def cpu_infer(self, case_dir: str, model_file: bytes, type: str):
+    def cpu_infer(self, case_dir: str, model_file: bytes, type: str, mode: str):
         # create session
         try:
             print('[onnx]: using simplified model')
