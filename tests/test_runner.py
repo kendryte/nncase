@@ -163,10 +163,14 @@ def generate_image_dataset(shape: List[int], dtype: np.dtype,
     else:
         img_paths.append(dir_path)
     imgs = []
+    transpose_flag = False
+    if shape[1] == 3:
+        transpose_flag = True
+        shape = [shape[0], shape[2], shape[3], shape[1]]
     for p in img_paths[batch_index * batch_size:
                        (batch_index + 1) * batch_size]:
         img = cv2.imread(p)
-        img = preproc(img, shape[1:3], False)  # img [h,w,c] rgb,
+        img = preproc(img, shape[1:3], transpose_flag)  # img [h,w,c] rgb,
         imgs.append(img)
     return np.stack(imgs)
 
