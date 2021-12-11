@@ -169,10 +169,10 @@ public:
         END_IMPORT()
     }
 
-    void import_pnnx(std::span<const uint8_t> paramfile, std::span<const uint8_t> binfile, const import_options &options) override
+    void import_pnnx(std::string parampath, std::string binpath, const import_options &options) override
     {
         BEGIN_IMPORT()
-        importer::import_pnnx(graph_, paramfile, binfile, imp_options, real_inlayout_, real_outlayout_);
+        importer::import_pnnx(graph_, parampath, binpath, imp_options, real_inlayout_, real_outlayout_);
         END_IMPORT()
     }
 

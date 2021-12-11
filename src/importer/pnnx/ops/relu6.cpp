@@ -19,6 +19,7 @@
 #include <nncase/ir/graph.h>
 #include <nncase/ir/op_utils.h>
 #include <nncase/ir/ops/binary.h>
+#include <nncase/ir/ops/clamp.h>
 #include <nncase/ir/ops/constant.h>
 #include <nncase/ir/placeholders.h>
 #include <stdexcept>
@@ -28,25 +29,28 @@ using namespace nncase::importer;
 using namespace nncase::ir;
 using namespace pnnx;
 
-void nncase::importer::pnnx_importer::convert_op_F_relu(const Operator &op)
+void nncase::importer::pnnx_importer::convert_op_F_relu6(const Operator &op)
 {
     const auto &op_name = op.name;
 
     auto in_shape = op.inputs[0]->get_shape();
 
     auto zero = graph_.emplace<constant>(0.f);
-    zero->name(op_name + ".zero(ReLU)");
+    zero->name(op_name + ".zero(ReLU6)");
+    auto six = graph_.emplace<constant>(6.f);
+    six->name(op_name + ".six(ReLU6)");
 
-    auto max = graph_.emplace<binary>(binary_max, in_shape, zero->output().shape(), value_range<float>::full());
-    max->name(op_name + ".max(ReLU)");
+    auto clamp_op = graph_.emplace<clamp>(in_shape, zero->output().shape(), six->output().shape());
+    clamp_op->name(op_name + ".clamp(ReLU6)");
 
-    max->input_b().connect(zero->output());
+    clamp_op->input_low().connect(zero->output());
+    clamp_op->input_high().connect(six->output());
 
-    input_tensors_.emplace(&max->input_a(), op.inputs[0]->name);
-    output_tensors_.emplace(op.outputs[0]->name, &max->output());
+    input_tensors_.emplace(&clamp_op->input(), op.inputs[0]->name);
+    output_tensors_.emplace(op.outputs[0]->name, &clamp_op->output());
 }
 
-void nncase::importer::pnnx_importer::convert_op_nn_ReLU(const Operator &op)
+void nncase::importer::pnnx_importer::convert_op_nn_ReLU6(const Operator &op)
 {
-    convert_op_F_relu(op);
+    convert_op_F_relu6(op);
 }

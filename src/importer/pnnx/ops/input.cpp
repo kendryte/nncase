@@ -18,9 +18,6 @@
 #include <cassert>
 #include <nncase/ir/graph.h>
 #include <nncase/ir/op_utils.h>
-#include <nncase/ir/ops/binary.h>
-#include <nncase/ir/ops/bitcast.h>
-#include <nncase/ir/ops/constant.h>
 #include <nncase/ir/placeholders.h>
 #include <stdexcept>
 
@@ -29,16 +26,18 @@ using namespace nncase::importer;
 using namespace nncase::ir;
 using namespace pnnx;
 
-void nncase::importer::pnnx_importer::convert_op_Input(const Operator &op)
+void nncase::importer::pnnx_importer::convert_op_pnnx_Input(const Operator &op)
 {
     const auto &op_name = op.name;
 
-    shape_t in_shape; // = op.outputs[0]->shape;
-    for (auto v : op.outputs[0]->shape)
-        in_shape.push_back(v);
+    const int count = op.outputs.size();
+    for (int i = 0; i < count; i++)
+    {
+        shape_t in_shape = op.outputs[i]->get_shape();
 
-    auto node = graph_.emplace<input_node>(dt_float32, in_shape);
-    node->name(op_name + "(Input)");
+        auto node = graph_.emplace<input_node>(dt_float32, in_shape);
+        node->name(op_name + "." + op.outputs[i]->name + "(Input)");
 
-    output_tensors_.emplace(op.outputs[0]->name, &node->output());
+        output_tensors_.emplace(op.outputs[i]->name, &node->output());
+    }
 }

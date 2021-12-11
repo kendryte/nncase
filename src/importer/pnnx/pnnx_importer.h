@@ -36,7 +36,7 @@ namespace importer
     class pnnx_importer
     {
     public:
-        pnnx_importer(std::span<const uint8_t> paramfile, std::span<const uint8_t> binfile, ir::graph &graph);
+        pnnx_importer(std::string parampath, std::string binpath, ir::graph &graph);
 
         void import(const struct import_options &options, std::string &real_inlayout, std::string &real_outlayout);
 
@@ -49,8 +49,7 @@ namespace importer
 
     private:
         ir::graph &graph_;
-        std::span<const uint8_t> paramfile;
-        std::span<const uint8_t> binfile;
+        pnnx::Graph pnnx_graph_;
         std::unordered_map<ir::input_connector *, std::string> input_tensors_;
         std::unordered_map<std::string, ir::output_connector *> output_tensors_;
     };

@@ -1,4 +1,8 @@
-DEFINE_OPCODE(pnnx.Input, Input)
-DEFINE_OPCODE(pnnx.Output, Output)
+DEFINE_OPCODE(pnnx.Input, pnnx_Input)
+DEFINE_OPCODE(pnnx.Output, pnnx_Output)
 
-DEFINE_OPCODE(nn.ReLU, ReLU)
+DEFINE_OPCODE(F.relu, F_relu)
+DEFINE_OPCODE(F.relu6, F_relu6)
+
+DEFINE_OPCODE(nn.ReLU, nn_ReLU)
+DEFINE_OPCODE(nn.ReLU6, nn_ReLU6)

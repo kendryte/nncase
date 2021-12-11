@@ -20,6 +20,8 @@
 #include <string>
 #include <vector>
 
+#include "nncase/ir/ir_types.h"
+
 namespace pnnx
 {
 
@@ -130,6 +132,14 @@ public:
 
     Attribute(const std::initializer_list<int> &shape, const std::vector<float> &t);
 
+    nncase::ir::shape_t get_shape() const
+    {
+        nncase::ir::shape_t s;
+        for (auto v : shape)
+            s.push_back(v);
+        return s;
+    }
+
     // 0=null 1=f32 2=f64 3=f16 4=i32 5=i64 6=i16 7=i8 8=u8
     int type;
     std::vector<int> shape;
@@ -142,6 +152,14 @@ class Operand
 {
 public:
     void remove_consumer(const Operator *c);
+
+    nncase::ir::shape_t get_shape() const
+    {
+        nncase::ir::shape_t s;
+        for (auto v : shape)
+            s.push_back(v);
+        return s;
+    }
 
     std::string name;
 

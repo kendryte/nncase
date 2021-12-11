@@ -11,13 +11,8 @@ set(PNNX_IMPORTER_OPS_SOURCES
     ops/input.cpp
     ops/output.cpp
     ops/relu.cpp
-    #ops/concat.cpp
-    #ops/convolution.cpp
-    #ops/innerproduct.cpp
-    #ops/input.cpp
-    #ops/pooling.cpp
-    #ops/softmax.cpp
-    #ops/split.cpp
+    ops/relu6.cpp
+    #ops/conv2d.cpp
     )
 
 add_library(pnnx_importer ${PNNX_IMPORTER_SOURCES} ${PNNX_IMPORTER_OPS_SOURCES})

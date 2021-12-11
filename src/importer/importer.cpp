@@ -37,7 +37,7 @@ void nncase::importer::import_caffe(ir::graph &graph, std::span<const uint8_t> m
     caffe_importer(model, prototxt, graph).import(real_inlayout, real_outlayout);
 }
 
-void nncase::importer::import_pnnx(ir::graph &graph, std::span<const uint8_t> paramfile, std::span<const uint8_t> binfile, const import_options &options, std::string &real_inlayout, std::string &real_outlayout)
+void nncase::importer::import_pnnx(ir::graph &graph, std::string parampath, std::string binpath, const import_options &options, std::string &real_inlayout, std::string &real_outlayout)
 {
-    pnnx_importer(paramfile, binfile, graph).import(options, real_inlayout, real_outlayout);
+    pnnx_importer(parampath, binpath, graph).import(options, real_inlayout, real_outlayout);
 }

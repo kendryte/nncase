@@ -22,7 +22,7 @@ using namespace nncase::cli;
 compile_command::compile_command(lyra::cli &cli)
 {
     cli.add_argument(lyra::command("compile", [this](const lyra::group &) { this->run(); })
-                         .add_argument(lyra::opt(input_format_, "input format").name("-i").name("--input-format").required().help("input format, e.g. tflite|onnx|caffe"))
+                         .add_argument(lyra::opt(input_format_, "input format").name("-i").name("--input-format").required().help("input format, e.g. tflite|onnx|caffe|pnnx"))
                          .add_argument(lyra::opt(target_name_, "target").name("-t").name("--target").required().help("target architecture, e.g. cpu|k210|k510"))
                          .add_argument(lyra::arg(input_filename_, "input file").required().help("input file"))
                          .add_argument(lyra::opt(input_prototxt_, "input prototxt").name("--input-prototxt").optional().help("input prototxt"))
@@ -155,11 +155,9 @@ void compile_command::run()
     }
     else if (input_format_ == "pnnx")
     {
-        auto file_data = read_file(input_filename_);
         std::filesystem::path input_bin_filename_ = input_filename_;
         input_bin_filename_.replace_extension("bin");
-        auto bin_data = read_file(input_bin_filename_);
-        compiler->import_pnnx(file_data, bin_data, i_options);
+        compiler->import_pnnx(input_filename_, input_bin_filename_, i_options);
     }
     else
     {
