@@ -26,9 +26,10 @@ using namespace nncase;
 using namespace nncase::importer;
 using namespace nncase::ir;
 
-namespace pnnx {
+namespace pnnx
+{
 
-void chain_multi_output(Graph& graph)
+void chain_multi_output(Graph &graph)
 {
     for (;;)
     {
@@ -36,7 +37,7 @@ void chain_multi_output(Graph& graph)
 
         for (int i = (int)graph.ops.size() - 1; i >= 0; i--)
         {
-            Operator* op = graph.ops[i];
+            Operator *op = graph.ops[i];
 
             if (op->type != "pnnx.Output")
                 continue;
@@ -47,12 +48,12 @@ void chain_multi_output(Graph& graph)
             bool match_tuple_expr_output = false;
             for (int j = 0; j < (int)op->inputs.size(); j++)
             {
-                Operand* r = op->inputs[j];
+                Operand *r = op->inputs[j];
 
                 if (r->consumers.size() != 1)
                     continue;
 
-                Operator* op0 = r->producer;
+                Operator *op0 = r->producer;
 
                 if (op0->type == "prim::TupleConstruct")
                 {
@@ -61,7 +62,7 @@ void chain_multi_output(Graph& graph)
                 else if (op0->type == "pnnx.Expression")
                 {
                     const int op_expr_input_count = (int)op0->inputs.size();
-                    const std::string& expr = op0->params.at("expr").s;
+                    const std::string &expr = op0->params.at("expr").s;
 
                     std::string pattern_expr = "[";
                     for (int k = 0; k < op_expr_input_count; k++)
@@ -83,13 +84,13 @@ void chain_multi_output(Graph& graph)
                     continue;
 
                 // chain op0 as output and delete op0
-                std::vector<Operand*> new_inputs;
+                std::vector<Operand *> new_inputs;
                 for (int k = 0; k < j; k++)
                 {
                     new_inputs.push_back(op->inputs[k]);
                 }
 
-                for (Operand* r : op0->inputs)
+                for (Operand *r : op0->inputs)
                 {
                     r->remove_consumer(op0);
                     r->consumers.push_back(op);
@@ -106,7 +107,7 @@ void chain_multi_output(Graph& graph)
                 op0->inputs.clear();
                 op0->outputs.clear();
 
-                Operand* op0_out = op0->outputs[0];
+                Operand *op0_out = op0->outputs[0];
                 op0_out->producer = 0;
                 op0_out->consumers.clear();
 
