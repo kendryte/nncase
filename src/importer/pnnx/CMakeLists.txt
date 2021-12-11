@@ -12,7 +12,7 @@ set(PNNX_IMPORTER_OPS_SOURCES
     ops/output.cpp
     ops/relu.cpp
     ops/relu6.cpp
-    #ops/conv2d.cpp
+    ops/conv2d.cpp
     )
 
 add_library(pnnx_importer ${PNNX_IMPORTER_SOURCES} ${PNNX_IMPORTER_OPS_SOURCES})

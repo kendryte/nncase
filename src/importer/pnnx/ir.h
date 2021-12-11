@@ -140,6 +140,11 @@ public:
         return s;
     }
 
+    std::span<const float> get_data() const
+    {
+        return std::span<const float> { (float *)data.data(), (size_t)data.size() / sizeof(float) };
+    }
+
     // 0=null 1=f32 2=f64 3=f16 4=i32 5=i64 6=i16 7=i8 8=u8
     int type;
     std::vector<int> shape;

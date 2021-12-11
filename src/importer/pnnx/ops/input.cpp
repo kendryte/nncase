@@ -33,7 +33,7 @@ void nncase::importer::pnnx_importer::convert_op_pnnx_Input(const Operator &op)
     const int count = op.outputs.size();
     for (int i = 0; i < count; i++)
     {
-        shape_t in_shape = op.outputs[i]->get_shape();
+        auto in_shape = op.outputs[i]->get_shape();
 
         auto node = graph_.emplace<input_node>(dt_float32, in_shape);
         node->name(op_name + "." + op.outputs[i]->name + "(Input)");
