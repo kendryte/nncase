@@ -28,7 +28,7 @@ using namespace nncase::importer;
 using namespace nncase::ir;
 using namespace pnnx;
 
-void nncase::importer::pnnx_importer::convert_op_ReLU(const Operator& op)
+void nncase::importer::pnnx_importer::convert_op_ReLU(const Operator &op)
 {
     const auto &op_name = op.name;
 

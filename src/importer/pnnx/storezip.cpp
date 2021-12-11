@@ -14,13 +14,14 @@
 
 #include "storezip.h"
 
-#include <stdio.h>
-#include <stdint.h>
 #include <map>
+#include <stdint.h>
+#include <stdio.h>
 #include <string>
 #include <vector>
 
-namespace pnnx {
+namespace pnnx
+{
 
 // https://stackoverflow.com/questions/1537964/visual-c-equivalent-of-gccs-attribute-packed
 #ifdef _MSC_VER
@@ -94,7 +95,7 @@ static uint32_t CRC32(uint32_t x, unsigned char ch)
     return (x >> 8) ^ CRC32_TABLE[(x ^ ch) & 0xff];
 }
 
-static uint32_t CRC32_buffer(const unsigned char* data, int len)
+static uint32_t CRC32_buffer(const unsigned char *data, int len)
 {
     uint32_t x = 0xffffffff;
 
@@ -114,7 +115,7 @@ StoreZipReader::~StoreZipReader()
     close();
 }
 
-int StoreZipReader::open(const std::string& path)
+int StoreZipReader::open(const std::string &path)
 {
     close();
 
@@ -129,14 +130,14 @@ int StoreZipReader::open(const std::string& path)
     {
         // peek signature
         uint32_t signature;
-        int nread = fread((char*)&signature, sizeof(signature), 1, fp);
+        int nread = fread((char *)&signature, sizeof(signature), 1, fp);
         if (nread != 1)
             break;
 
         if (signature == 0x04034b50)
         {
             local_file_header lfh;
-            fread((char*)&lfh, sizeof(lfh), 1, fp);
+            fread((char *)&lfh, sizeof(lfh), 1, fp);
 
             if (lfh.flag & 0x08)
             {
@@ -153,7 +154,7 @@ int StoreZipReader::open(const std::string& path)
             // file name
             std::string name;
             name.resize(lfh.file_name_length);
-            fread((char*)name.data(), name.size(), 1, fp);
+            fread((char *)name.data(), name.size(), 1, fp);
 
             // skip extra field
             fseek(fp, lfh.extra_field_length, SEEK_CUR);
@@ -171,7 +172,7 @@ int StoreZipReader::open(const std::string& path)
         else if (signature == 0x02014b50)
         {
             central_directory_file_header cdfh;
-            fread((char*)&cdfh, sizeof(cdfh), 1, fp);
+            fread((char *)&cdfh, sizeof(cdfh), 1, fp);
 
             // skip file name
             fseek(fp, cdfh.file_name_length, SEEK_CUR);
@@ -185,7 +186,7 @@ int StoreZipReader::open(const std::string& path)
         else if (signature == 0x06054b50)
         {
             end_of_central_directory_record eocdr;
-            fread((char*)&eocdr, sizeof(eocdr), 1, fp);
+            fread((char *)&eocdr, sizeof(eocdr), 1, fp);
 
             // skip comment
             fseek(fp, eocdr.comment_length, SEEK_CUR);
@@ -200,7 +201,7 @@ int StoreZipReader::open(const std::string& path)
     return 0;
 }
 
-size_t StoreZipReader::get_file_size(const std::string& name)
+size_t StoreZipReader::get_file_size(const std::string &name)
 {
     if (filemetas.find(name) == filemetas.end())
     {
@@ -211,7 +212,7 @@ size_t StoreZipReader::get_file_size(const std::string& name)
     return filemetas[name].size;
 }
 
-int StoreZipReader::read_file(const std::string& name, char* data)
+int StoreZipReader::read_file(const std::string &name, char *data)
 {
     if (filemetas.find(name) == filemetas.end())
     {
@@ -251,7 +252,7 @@ StoreZipWriter::~StoreZipWriter()
     close();
 }
 
-int StoreZipWriter::open(const std::string& path)
+int StoreZipWriter::open(const std::string &path)
 {
     close();
 
@@ -265,14 +266,14 @@ int StoreZipWriter::open(const std::string& path)
     return 0;
 }
 
-int StoreZipWriter::write_file(const std::string& name, const char* data, size_t size)
+int StoreZipWriter::write_file(const std::string &name, const char *data, size_t size)
 {
     int offset = ftell(fp);
 
     uint32_t signature = 0x04034b50;
-    fwrite((char*)&signature, sizeof(signature), 1, fp);
+    fwrite((char *)&signature, sizeof(signature), 1, fp);
 
-    uint32_t crc32 = CRC32_buffer((const unsigned char*)data, size);
+    uint32_t crc32 = CRC32_buffer((const unsigned char *)data, size);
 
     local_file_header lfh;
     lfh.version = 0;
@@ -286,9 +287,9 @@ int StoreZipWriter::write_file(const std::string& name, const char* data, size_t
     lfh.file_name_length = name.size();
     lfh.extra_field_length = 0;
 
-    fwrite((char*)&lfh, sizeof(lfh), 1, fp);
+    fwrite((char *)&lfh, sizeof(lfh), 1, fp);
 
-    fwrite((char*)name.c_str(), name.size(), 1, fp);
+    fwrite((char *)name.c_str(), name.size(), 1, fp);
 
     fwrite(data, size, 1, fp);
 
@@ -310,10 +311,10 @@ int StoreZipWriter::close()
 
     int offset = ftell(fp);
 
-    for (const StoreZipMeta& szm : filemetas)
+    for (const StoreZipMeta &szm : filemetas)
     {
         uint32_t signature = 0x02014b50;
-        fwrite((char*)&signature, sizeof(signature), 1, fp);
+        fwrite((char *)&signature, sizeof(signature), 1, fp);
 
         central_directory_file_header cdfh;
         cdfh.version_made = 0;
@@ -333,16 +334,16 @@ int StoreZipWriter::close()
         cdfh.external_file_attrs = 0;
         cdfh.lfh_offset = szm.lfh_offset;
 
-        fwrite((char*)&cdfh, sizeof(cdfh), 1, fp);
+        fwrite((char *)&cdfh, sizeof(cdfh), 1, fp);
 
-        fwrite((char*)szm.name.c_str(), szm.name.size(), 1, fp);
+        fwrite((char *)szm.name.c_str(), szm.name.size(), 1, fp);
     }
 
     int offset2 = ftell(fp);
 
     {
         uint32_t signature = 0x06054b50;
-        fwrite((char*)&signature, sizeof(signature), 1, fp);
+        fwrite((char *)&signature, sizeof(signature), 1, fp);
 
         end_of_central_directory_record eocdr;
         eocdr.disk_number = 0;
@@ -353,7 +354,7 @@ int StoreZipWriter::close()
         eocdr.cd_offset = offset;
         eocdr.comment_length = 0;
 
-        fwrite((char*)&eocdr, sizeof(eocdr), 1, fp);
+        fwrite((char *)&eocdr, sizeof(eocdr), 1, fp);
     }
 
     fclose(fp);

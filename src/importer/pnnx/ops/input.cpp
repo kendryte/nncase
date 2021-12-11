@@ -29,11 +29,11 @@ using namespace nncase::importer;
 using namespace nncase::ir;
 using namespace pnnx;
 
-void nncase::importer::pnnx_importer::convert_op_Input(const Operator& op)
+void nncase::importer::pnnx_importer::convert_op_Input(const Operator &op)
 {
     const auto &op_name = op.name;
 
-    shape_t in_shape;// = op.outputs[0]->shape;
+    shape_t in_shape; // = op.outputs[0]->shape;
     for (auto v : op.outputs[0]->shape)
         in_shape.push_back(v);
 

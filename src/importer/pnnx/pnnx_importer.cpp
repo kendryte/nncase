@@ -51,11 +51,11 @@ public:
     FILE *fp;
 };
 
-void pnnx_importer::import(const struct import_options &/*options*/, std::string &/*real_inlayout*/, std::string &/*real_outlayout*/)
+void pnnx_importer::import(const struct import_options & /*options*/, std::string & /*real_inlayout*/, std::string & /*real_outlayout*/)
 {
     // load param
-//     auto param_mem = (const unsigned char *)paramfile.data();
-//     auto bin_mem = (const unsigned char *)binfile.data();
+    //     auto param_mem = (const unsigned char *)paramfile.data();
+    //     auto bin_mem = (const unsigned char *)binfile.data();
 
     std::string parampath((const char *)paramfile.data());
     std::string binpath((const char *)binfile.data());
@@ -63,7 +63,7 @@ void pnnx_importer::import(const struct import_options &/*options*/, std::string
     pnnx::Graph pnnx_graph;
     pnnx_graph.load(parampath, binpath);
 
-    for (const pnnx::Operator* op : pnnx_graph.ops)
+    for (const pnnx::Operator *op : pnnx_graph.ops)
     {
         convert_op(*op);
     }
@@ -96,8 +96,8 @@ void pnnx_importer::import(const struct import_options &/*options*/, std::string
 
 void pnnx_importer::convert_op(const pnnx::Operator &op)
 {
-#define DEFINE_OPCODE(opcode, opcode2)      \
-    if (op.type == #opcode##sv) \
+#define DEFINE_OPCODE(opcode, opcode2) \
+    if (op.type == #opcode##sv)        \
         return convert_op_##opcode2(op);
 #include "opcode.def"
 #undef DEFINE_OPCODE

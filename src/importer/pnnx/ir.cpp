@@ -14,71 +14,104 @@
 
 #include "ir.h"
 
-#include <stdint.h>
-#include <string.h>
 #include <algorithm>
 #include <fstream>
 #include <sstream>
-#include <string>
 #include <stack>
+#include <stdint.h>
+#include <string.h>
+#include <string>
 
 #include "storezip.h"
 
-namespace pnnx {
-
-static const char* type_to_string(int type)
+namespace pnnx
 {
-    if (type == 1) return "f32";
-    if (type == 2) return "f64";
-    if (type == 3) return "f16";
-    if (type == 4) return "i32";
-    if (type == 5) return "i64";
-    if (type == 6) return "i16";
-    if (type == 7) return "i8";
-    if (type == 8) return "u8";
+
+static const char *type_to_string(int type)
+{
+    if (type == 1)
+        return "f32";
+    if (type == 2)
+        return "f64";
+    if (type == 3)
+        return "f16";
+    if (type == 4)
+        return "i32";
+    if (type == 5)
+        return "i64";
+    if (type == 6)
+        return "i16";
+    if (type == 7)
+        return "i8";
+    if (type == 8)
+        return "u8";
     return "null";
 }
 
-static const char* type_to_numpy_string(int type)
+static const char *type_to_numpy_string(int type)
 {
-    if (type == 1) return "float32";
-    if (type == 2) return "float64";
-    if (type == 3) return "float16";
-    if (type == 4) return "int32";
-    if (type == 5) return "int64";
-    if (type == 6) return "int16";
-    if (type == 7) return "int8";
-    if (type == 8) return "uint8";
+    if (type == 1)
+        return "float32";
+    if (type == 2)
+        return "float64";
+    if (type == 3)
+        return "float16";
+    if (type == 4)
+        return "int32";
+    if (type == 5)
+        return "int64";
+    if (type == 6)
+        return "int16";
+    if (type == 7)
+        return "int8";
+    if (type == 8)
+        return "uint8";
     return "null";
 }
 
 static size_t type_to_elemsize(int type)
 {
-    if (type == 1) return 4;
-    if (type == 2) return 8;
-    if (type == 3) return 2;
-    if (type == 4) return 4;
-    if (type == 5) return 8;
-    if (type == 6) return 2;
-    if (type == 7) return 1;
-    if (type == 8) return 1;
+    if (type == 1)
+        return 4;
+    if (type == 2)
+        return 8;
+    if (type == 3)
+        return 2;
+    if (type == 4)
+        return 4;
+    if (type == 5)
+        return 8;
+    if (type == 6)
+        return 2;
+    if (type == 7)
+        return 1;
+    if (type == 8)
+        return 1;
     return 0; // null
 }
 
-static int string_to_type(const char* s)
+static int string_to_type(const char *s)
 {
-    if (strcmp(s, "f32") == 0) return 1;
-    if (strcmp(s, "f64") == 0) return 2;
-    if (strcmp(s, "f16") == 0) return 3;
-    if (strcmp(s, "i32") == 0) return 4;
-    if (strcmp(s, "i64") == 0) return 5;
-    if (strcmp(s, "i16") == 0) return 6;
-    if (strcmp(s, "i8") == 0) return 7;
-    if (strcmp(s, "u8") == 0) return 8;
+    if (strcmp(s, "f32") == 0)
+        return 1;
+    if (strcmp(s, "f64") == 0)
+        return 2;
+    if (strcmp(s, "f16") == 0)
+        return 3;
+    if (strcmp(s, "i32") == 0)
+        return 4;
+    if (strcmp(s, "i64") == 0)
+        return 5;
+    if (strcmp(s, "i16") == 0)
+        return 6;
+    if (strcmp(s, "i8") == 0)
+        return 7;
+    if (strcmp(s, "u8") == 0)
+        return 8;
     return 0; // null
 }
 
-Attribute::Attribute(const std::initializer_list<int>& _shape, const std::vector<float>& t)
+Attribute::Attribute(const std::initializer_list<int> &_shape, const std::vector<float> &t)
 {
     type = 1;
     shape = _shape;
@@ -92,11 +125,11 @@ Attribute::Attribute(const std::initializer_list<int>& _shape, const std::vector
         }
 
         data.resize(size * type_to_elemsize(type));
-        memcpy((void*)data.data(), (const void*)t.data(), data.size());
+        memcpy((void *)data.data(), (const void *)t.data(), data.size());
     }
 }
 
-Parameter Parameter::parse_from_string(const std::string& value)
+Parameter Parameter::parse_from_string(const std::string &value)
 {
     Parameter p;
     p.type = 0;
@@ -185,27 +218,27 @@ Graph::~Graph()
     operands.clear();
 }
 
-Graph::Graph(const Graph& /*rhs*/)
+Graph::Graph(const Graph & /*rhs*/)
 {
 }
 
-Graph& Graph::operator=(const Graph& /*rhs*/)
+Graph &Graph::operator=(const Graph & /*rhs*/)
 {
     return *this;
 }
 
-static void load_parameter(Operator* op, const std::string& key, const std::string& value)
+static void load_parameter(Operator *op, const std::string &key, const std::string &value)
 {
     op->params[key] = Parameter::parse_from_string(value);
 }
 
-static void load_input_key(Operator* op, const std::string& key, const std::string& value)
+static void load_input_key(Operator *op, const std::string &key, const std::string &value)
 {
     op->inputnames.resize(op->inputs.size());
 
     for (size_t i = 0; i < op->inputs.size(); i++)
     {
-        const Operand* oprand = op->inputs[i];
+        const Operand *oprand = op->inputs[i];
         if (oprand->name == value)
         {
             op->inputnames[i] = key;
@@ -214,9 +247,9 @@ static void load_input_key(Operator* op, const std::string& key, const std::stri
     }
 }
 
-static void load_shape(Operator* op, const std::string& key, const std::string& value)
+static void load_shape(Operator *op, const std::string &key, const std::string &value)
 {
-    Operand* operand = 0;
+    Operand *operand = 0;
     for (auto r : op->inputs)
     {
         if (r->name == key)
@@ -270,9 +303,9 @@ static void load_shape(Operator* op, const std::string& key, const std::string& 
     }
 }
 
-static void load_attribute(Operator* op, const std::string& key, const std::string& value, StoreZipReader& szr)
+static void load_attribute(Operator *op, const std::string &key, const std::string &value, StoreZipReader &szr)
 {
-    Attribute& a = op->attrs[key];
+    Attribute &a = op->attrs[key];
 
     // type
     std::string typestr = value.substr(value.find_last_of(')') + 1);
@@ -323,10 +356,10 @@ static void load_attribute(Operator* op, const std::string& key, const std::stri
     }
 
     a.data.resize(bytesize);
-    szr.read_file(filename, (char*)a.data.data());
+    szr.read_file(filename, (char *)a.data.data());
 }
 
-int Graph::load(const std::string& parampath, const std::string& binpath)
+int Graph::load(const std::string &parampath, const std::string &binpath)
 {
     std::ifstream is(parampath, std::ios::in | std::ios::binary);
     if (!is.good())
@@ -374,14 +407,14 @@ int Graph::load(const std::string& parampath, const std::string& binpath)
 
         iss >> type >> name >> input_count >> output_count;
 
-        Operator* op = new_operator(type, name);
+        Operator *op = new_operator(type, name);
 
         for (int j = 0; j < input_count; j++)
         {
             std::string operand_name;
             iss >> operand_name;
 
-            Operand* r = get_operand(operand_name);
+            Operand *r = get_operand(operand_name);
             r->consumers.push_back(op);
             op->inputs.push_back(r);
         }
@@ -391,7 +424,7 @@ int Graph::load(const std::string& parampath, const std::string& binpath)
             std::string operand_name;
             iss >> operand_name;
 
-            Operand* r = new_operand(operand_name);
+            Operand *r = new_operand(operand_name);
             r->producer = op;
             op->outputs.push_back(r);
         }
@@ -434,9 +467,9 @@ int Graph::load(const std::string& parampath, const std::string& binpath)
     return 0;
 }
 
-int Graph::save(const std::string& parampath, const std::string& binpath)
+int Graph::save(const std::string &parampath, const std::string &binpath)
 {
-    FILE* paramfp = fopen(parampath.c_str(), "wb");
+    FILE *paramfp = fopen(parampath.c_str(), "wb");
     if (!paramfp)
     {
         fprintf(stderr, "fopen %s failed\n", parampath.c_str());
@@ -456,25 +489,25 @@ int Graph::save(const std::string& parampath, const std::string& binpath)
     // op count and oprand count
     fprintf(paramfp, "%d %d\n", (int)ops.size(), (int)operands.size());
 
-    for (const Operator* op : ops)
+    for (const Operator *op : ops)
     {
         fprintf(paramfp, "%-24s %-24s %d %d", op->type.c_str(), op->name.c_str(), (int)op->inputs.size(), (int)op->outputs.size());
 
-        for (const Operand* oprand : op->inputs)
+        for (const Operand *oprand : op->inputs)
         {
             fprintf(paramfp, " %s", oprand->name.c_str());
         }
 
-        for (const Operand* oprand : op->outputs)
+        for (const Operand *oprand : op->outputs)
         {
             fprintf(paramfp, " %s", oprand->name.c_str());
         }
 
-        for (const auto& it : op->params)
+        for (const auto &it : op->params)
         {
             fprintf(paramfp, " %s=", it.first.c_str());
 
-            const Parameter& param = it.second;
+            const Parameter &param = it.second;
             if (param.type == 0)
             {
                 fprintf(paramfp, "None");
@@ -533,11 +566,11 @@ int Graph::save(const std::string& parampath, const std::string& binpath)
             }
         }
 
-        for (const auto& it : op->attrs)
+        for (const auto &it : op->attrs)
         {
             fprintf(paramfp, " @%s=", it.first.c_str());
 
-            const Attribute& attr = it.second;
+            const Attribute &attr = it.second;
             fprintf(paramfp, "(");
             for (int i = 0; i < (int)attr.shape.size() - 1; i++)
             {
@@ -560,12 +593,12 @@ int Graph::save(const std::string& parampath, const std::string& binpath)
                 if (op->inputnames[i].empty())
                     continue;
 
-                const Operand* oprand = op->inputs[i];
+                const Operand *oprand = op->inputs[i];
                 fprintf(paramfp, " $%s=%s", op->inputnames[i].c_str(), oprand->name.c_str());
             }
         }
 
-        for (const Operand* oprand : op->inputs)
+        for (const Operand *oprand : op->inputs)
         {
             if (oprand->shape.empty())
                 continue;
@@ -592,7 +625,7 @@ int Graph::save(const std::string& parampath, const std::string& binpath)
             fprintf(paramfp, type_to_string(oprand->type));
         }
 
-        for (const Operand* oprand : op->outputs)
+        for (const Operand *oprand : op->outputs)
         {
             if (oprand->shape.empty())
                 continue;
@@ -627,7 +660,7 @@ int Graph::save(const std::string& parampath, const std::string& binpath)
     return 0;
 }
 
-static std::string sanitize_identifier(const std::string& s)
+static std::string sanitize_identifier(const std::string &s)
 {
     std::string ss = s;
     for (size_t i = 0; i < ss.size(); i++)
@@ -639,7 +672,7 @@ static std::string sanitize_identifier(const std::string& s)
     return ss;
 }
 
-static std::string expand_expression(const Operator* op)
+static std::string expand_expression(const Operator *op)
 {
     std::string expr = op->params.at("expr").s;
 
@@ -681,7 +714,7 @@ static std::string expand_expression(const Operator* op)
     std::stack<std::string> exprstack;
     for (int i = (int)tokens.size() - 1; i >= 0; i--)
     {
-        const std::string& t = tokens[i];
+        const std::string &t = tokens[i];
 
         if (t == "size")
         {
@@ -696,10 +729,14 @@ static std::string expand_expression(const Operator* op)
         else if (t == "int" || t == "sqrt" || t == "rsqrt" || t == "neg")
         {
             std::string unaryop;
-            if (t == "int") unaryop = "int";
-            if (t == "sqrt") unaryop = "torch.sqrt";
-            if (t == "rsqrt") unaryop = "torch.rsqrt";
-            if (t == "neg") unaryop = "torch.neg";
+            if (t == "int")
+                unaryop = "int";
+            if (t == "sqrt")
+                unaryop = "torch.sqrt";
+            if (t == "rsqrt")
+                unaryop = "torch.rsqrt";
+            if (t == "neg")
+                unaryop = "torch.neg";
 
             std::string a = exprstack.top();
             exprstack.pop();
@@ -720,11 +757,16 @@ static std::string expand_expression(const Operator* op)
         else if (t == "add" || t == "sub" || t == "mul" || t == "div" || t == "floor_divide")
         {
             std::string binaryop;
-            if (t == "add") binaryop = "+";
-            if (t == "sub") binaryop = "-";
-            if (t == "mul") binaryop = "*";
-            if (t == "div") binaryop = "/";
-            if (t == "floor_divide") binaryop = "//";
+            if (t == "add")
+                binaryop = "+";
+            if (t == "sub")
+                binaryop = "-";
+            if (t == "mul")
+                binaryop = "*";
+            if (t == "div")
+                binaryop = "/";
+            if (t == "floor_divide")
+                binaryop = "//";
 
             std::string a = exprstack.top();
             exprstack.pop();
@@ -779,7 +821,7 @@ static std::string expand_expression(const Operator* op)
     return r;
 }
 
-static std::string make_slice_expression(const Operator* op)
+static std::string make_slice_expression(const Operator *op)
 {
     for (size_t j = 0; j < op->inputnames.size(); j++)
     {
@@ -878,9 +920,9 @@ static std::string make_slice_expression(const Operator* op)
     return r;
 }
 
-int Graph::python(const std::string& pypath, const std::string& pnnxbinpath)
+int Graph::python(const std::string &pypath, const std::string &pnnxbinpath)
 {
-    FILE* pyfp = fopen(pypath.c_str(), "wb");
+    FILE *pyfp = fopen(pypath.c_str(), "wb");
     if (!pyfp)
     {
         fprintf(stderr, "fopen %s failed\n", pypath.c_str());
@@ -904,7 +946,7 @@ int Graph::python(const std::string& pypath, const std::string& pnnxbinpath)
 
     // module
     {
-        for (const Operator* op : ops)
+        for (const Operator *op : ops)
         {
             if (op->type.substr(0, 3) != "nn.")
                 continue;
@@ -918,7 +960,7 @@ int Graph::python(const std::string& pypath, const std::string& pnnxbinpath)
             }
 
             int param_index = 0;
-            for (const auto& it : op->params)
+            for (const auto &it : op->params)
             {
                 if (op->type == "nn.quantized.Conv2d" || op->type == "nn.quantized.Linear")
                 {
@@ -928,7 +970,7 @@ int Graph::python(const std::string& pypath, const std::string& pnnxbinpath)
 
                 fprintf(pyfp, "%s=", it.first.c_str());
 
-                const Parameter& param = it.second;
+                const Parameter &param = it.second;
                 if (param.type == 0)
                 {
                     fprintf(pyfp, "None");
@@ -1015,14 +1057,14 @@ int Graph::python(const std::string& pypath, const std::string& pnnxbinpath)
     {
         fprintf(pyfp, "        archive = zipfile.ZipFile('%s', 'r')\n", pnnxbinpath.c_str());
 
-        for (const Operator* op : ops)
+        for (const Operator *op : ops)
         {
             if (op->type.substr(0, 3) != "nn.")
                 continue;
 
             if (op->type == "nn.quantized.Conv2d" || op->type == "nn.quantized.Linear")
             {
-                for (const auto& it : op->attrs)
+                for (const auto &it : op->attrs)
                 {
                     if (it.first == "weight" || it.first == "bias")
                     {
@@ -1034,7 +1076,7 @@ int Graph::python(const std::string& pypath, const std::string& pnnxbinpath)
                         continue;
                     }
 
-                    const Attribute& attr = it.second;
+                    const Attribute &attr = it.second;
                     for (size_t i = 0; i < attr.shape.size(); i++)
                     {
                         fprintf(pyfp, "%d", attr.shape[i]);
@@ -1052,7 +1094,7 @@ int Graph::python(const std::string& pypath, const std::string& pnnxbinpath)
                 continue;
             }
 
-            for (const auto& it : op->attrs)
+            for (const auto &it : op->attrs)
             {
                 if (it.first == "running_mean" || it.first == "running_var")
                 {
@@ -1063,7 +1105,7 @@ int Graph::python(const std::string& pypath, const std::string& pnnxbinpath)
                     fprintf(pyfp, "        self.%s.%s = self.load_pnnx_bin_as_parameter(archive, '%s.%s', (", sanitize_identifier(op->name).c_str(), it.first.c_str(), op->name.c_str(), it.first.c_str());
                 }
 
-                const Attribute& attr = it.second;
+                const Attribute &attr = it.second;
                 for (size_t i = 0; i < attr.shape.size(); i++)
                 {
                     fprintf(pyfp, "%d", attr.shape[i]);
@@ -1102,7 +1144,7 @@ int Graph::python(const std::string& pypath, const std::string& pnnxbinpath)
     {
         fprintf(pyfp, "    def forward(self");
 
-        for (const Operator* op : ops)
+        for (const Operator *op : ops)
         {
             if (op->type != "pnnx.Input")
                 continue;
@@ -1115,7 +1157,7 @@ int Graph::python(const std::string& pypath, const std::string& pnnxbinpath)
 
     // forward body
     {
-        for (const Operator* op : ops)
+        for (const Operator *op : ops)
         {
             if (op->type == "pnnx.Input" || op->type == "pnnx.Output")
                 continue;
@@ -1150,7 +1192,7 @@ int Graph::python(const std::string& pypath, const std::string& pnnxbinpath)
                 }
                 else
                 {
-                    const std::vector<int>& shape = op->params.at("shape").ai;
+                    const std::vector<int> &shape = op->params.at("shape").ai;
                     for (size_t i = 0; i < shape.size(); i++)
                     {
                         fprintf(pyfp, "%d", shape[i]);
@@ -1170,7 +1212,7 @@ int Graph::python(const std::string& pypath, const std::string& pnnxbinpath)
                 }
                 else
                 {
-                    const std::vector<int>& sizes = op->params.at("sizes").ai;
+                    const std::vector<int> &sizes = op->params.at("sizes").ai;
                     for (size_t i = 0; i < sizes.size(); i++)
                     {
                         fprintf(pyfp, "%d", sizes[i]);
@@ -1332,7 +1374,7 @@ int Graph::python(const std::string& pypath, const std::string& pnnxbinpath)
                 }
 
                 int i = 0;
-                for (const auto& it : op->params)
+                for (const auto &it : op->params)
                 {
                     if (op->type.substr(0, 7) == "Tensor." && i == 0)
                     {
@@ -1345,7 +1387,7 @@ int Graph::python(const std::string& pypath, const std::string& pnnxbinpath)
 
                     i++;
 
-                    const Parameter& param = it.second;
+                    const Parameter &param = it.second;
                     if (param.type == 0)
                     {
                         fprintf(pyfp, "None");
@@ -1433,7 +1475,7 @@ int Graph::python(const std::string& pypath, const std::string& pnnxbinpath)
 
         int output_count = 0;
         {
-            for (const Operator* op : ops)
+            for (const Operator *op : ops)
             {
                 if (op->type == "pnnx.Output")
                     output_count++;
@@ -1441,7 +1483,7 @@ int Graph::python(const std::string& pypath, const std::string& pnnxbinpath)
         }
 
         int output_index = 0;
-        for (const Operator* op : ops)
+        for (const Operator *op : ops)
         {
             if (op->type != "pnnx.Output")
                 continue;
@@ -1467,12 +1509,12 @@ int Graph::python(const std::string& pypath, const std::string& pnnxbinpath)
         fprintf(pyfp, "    torch.manual_seed(0)\n");
 
         std::vector<std::string> input_names;
-        for (const Operator* op : ops)
+        for (const Operator *op : ops)
         {
             if (op->type != "pnnx.Input")
                 continue;
 
-            const Operand* r = op->outputs[0];
+            const Operand *r = op->outputs[0];
             std::string input_name = std::string("v_") + sanitize_identifier(r->name);
             fprintf(pyfp, "    %s = torch.rand(", input_name.c_str());
 
@@ -1521,12 +1563,12 @@ int Graph::python(const std::string& pypath, const std::string& pnnxbinpath)
         fprintf(pyfp, "    torch.manual_seed(0)\n");
 
         std::vector<std::string> input_names;
-        for (const Operator* op : ops)
+        for (const Operator *op : ops)
         {
             if (op->type != "pnnx.Input")
                 continue;
 
-            const Operand* r = op->outputs[0];
+            const Operand *r = op->outputs[0];
             std::string input_name = std::string("v_") + sanitize_identifier(r->name);
             fprintf(pyfp, "    %s = torch.rand(", input_name.c_str());
 
@@ -1567,7 +1609,7 @@ int Graph::python(const std::string& pypath, const std::string& pnnxbinpath)
     return 0;
 }
 
-static bool string_is_positive_integer(const std::string& t)
+static bool string_is_positive_integer(const std::string &t)
 {
     for (size_t i = 0; i < t.size(); i++)
     {
@@ -1578,7 +1620,7 @@ static bool string_is_positive_integer(const std::string& t)
     return true;
 }
 
-int Graph::parse(const std::string& param)
+int Graph::parse(const std::string &param)
 {
     std::istringstream is(param);
     if (!is.good())
@@ -1619,14 +1661,14 @@ int Graph::parse(const std::string& param)
 
         iss >> type >> name >> input_count >> output_count;
 
-        Operator* op = new_operator(type, name);
+        Operator *op = new_operator(type, name);
 
         for (int j = 0; j < input_count; j++)
         {
             std::string operand_name;
             iss >> operand_name;
 
-            Operand* r = get_operand(operand_name);
+            Operand *r = get_operand(operand_name);
             r->consumers.push_back(op);
             op->inputs.push_back(r);
         }
@@ -1636,7 +1678,7 @@ int Graph::parse(const std::string& param)
             std::string operand_name;
             iss >> operand_name;
 
-            Operand* r = new_operand(operand_name);
+            Operand *r = new_operand(operand_name);
             r->producer = op;
             op->outputs.push_back(r);
         }
@@ -1679,41 +1721,41 @@ int Graph::parse(const std::string& param)
     return 0;
 }
 
-void Operand::remove_consumer(const Operator* c)
+void Operand::remove_consumer(const Operator *c)
 {
     auto it = std::find(consumers.begin(), consumers.end(), c);
     consumers.erase(it);
 }
 
-Operator* Graph::new_operator(const std::string& type, const std::string& name)
+Operator *Graph::new_operator(const std::string &type, const std::string &name)
 {
-    Operator* op = new Operator;
+    Operator *op = new Operator;
     op->type = type;
     op->name = name;
     ops.push_back(op);
     return op;
 }
 
-Operator* Graph::new_operator_before(const std::string& type, const std::string& name, const Operator* cur)
+Operator *Graph::new_operator_before(const std::string &type, const std::string &name, const Operator *cur)
 {
-    Operator* op = new Operator;
+    Operator *op = new Operator;
     op->type = type;
     op->name = name;
     ops.insert(std::find(ops.begin(), ops.end(), cur), op);
     return op;
 }
 
-Operand* Graph::new_operand(const std::string& name)
+Operand *Graph::new_operand(const std::string &name)
 {
-    Operand* r = new Operand;
+    Operand *r = new Operand;
     r->name = name;
     operands.push_back(r);
     return r;
 }
 
-Operand* Graph::get_operand(const std::string& name)
+Operand *Graph::get_operand(const std::string &name)
 {
-    for (Operand* r : operands)
+    for (Operand *r : operands)
     {
         if (r->name == name)
             return r;
