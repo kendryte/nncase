@@ -580,7 +580,7 @@ int Graph::save(const std::string &parampath, const std::string &binpath)
                 fprintf(paramfp, "%d", attr.shape[attr.shape.size() - 1]);
             fprintf(paramfp, ")");
 
-            fprintf(paramfp, type_to_string(attr.type));
+            fprintf(paramfp, "%s", type_to_string(attr.type));
 
             std::string filename = op->name + "." + it.first;
             szw.write_file(filename, attr.data.data(), attr.data.size());
@@ -622,7 +622,7 @@ int Graph::save(const std::string &parampath, const std::string &binpath)
             }
             fprintf(paramfp, ")");
 
-            fprintf(paramfp, type_to_string(oprand->type));
+            fprintf(paramfp, "%s", type_to_string(oprand->type));
         }
 
         for (const Operand *oprand : op->outputs)
@@ -649,7 +649,7 @@ int Graph::save(const std::string &parampath, const std::string &binpath)
             }
             fprintf(paramfp, ")");
 
-            fprintf(paramfp, type_to_string(oprand->type));
+            fprintf(paramfp, "%s", type_to_string(oprand->type));
         }
 
         fprintf(paramfp, "\n");
