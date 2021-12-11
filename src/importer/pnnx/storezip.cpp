@@ -130,14 +130,16 @@ int StoreZipReader::open(const std::string &path)
     {
         // peek signature
         uint32_t signature;
-        int nread = fread((char *)&signature, sizeof(signature), 1, fp);
+        size_t nread = fread((char *)&signature, sizeof(signature), 1, fp);
         if (nread != 1)
             break;
 
         if (signature == 0x04034b50)
         {
             local_file_header lfh;
-            (void)fread((char *)&lfh, sizeof(lfh), 1, fp);
+            nread = fread((char *)&lfh, sizeof(lfh), 1, fp);
+            if (nread != 1)
+                break;
 
             if (lfh.flag & 0x08)
             {
@@ -154,7 +156,9 @@ int StoreZipReader::open(const std::string &path)
             // file name
             std::string name;
             name.resize(lfh.file_name_length);
-            (void)fread((char *)name.data(), name.size(), 1, fp);
+            nread = fread((char *)name.data(), name.size(), 1, fp);
+            if (nread != 1)
+                break;
 
             // skip extra field
             fseek(fp, lfh.extra_field_length, SEEK_CUR);
@@ -172,7 +176,9 @@ int StoreZipReader::open(const std::string &path)
         else if (signature == 0x02014b50)
         {
             central_directory_file_header cdfh;
-            (void)fread((char *)&cdfh, sizeof(cdfh), 1, fp);
+            nread = fread((char *)&cdfh, sizeof(cdfh), 1, fp);
+            if (nread != 1)
+                break;
 
             // skip file name
             fseek(fp, cdfh.file_name_length, SEEK_CUR);
@@ -186,7 +192,9 @@ int StoreZipReader::open(const std::string &path)
         else if (signature == 0x06054b50)
         {
             end_of_central_directory_record eocdr;
-            (void)fread((char *)&eocdr, sizeof(eocdr), 1, fp);
+            nread = fread((char *)&eocdr, sizeof(eocdr), 1, fp);
+            if (nread != 1)
+                break;
 
             // skip comment
             fseek(fp, eocdr.comment_length, SEEK_CUR);
@@ -224,7 +232,9 @@ int StoreZipReader::read_file(const std::string &name, char *data)
     size_t size = filemetas[name].size;
 
     fseek(fp, offset, SEEK_SET);
-    (void)fread(data, size, 1, fp);
+    size_t nread = fread(data, size, 1, fp);
+    if (nread != 1)
+        return -1;
 
     return 0;
 }
