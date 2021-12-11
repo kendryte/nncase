@@ -1,0 +1,4 @@
+DEFINE_OPCODE(pnnx.Input, Input)
+DEFINE_OPCODE(pnnx.Output, Output)
+
+DEFINE_OPCODE(nn.ReLU, ReLU)

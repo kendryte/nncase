@@ -169,6 +169,13 @@ public:
         END_IMPORT()
     }
 
+    void import_pnnx(std::span<const uint8_t> paramfile, std::span<const uint8_t> binfile, const import_options &options) override
+    {
+        BEGIN_IMPORT()
+        importer::import_pnnx(graph_, paramfile, binfile, imp_options, real_inlayout_, real_outlayout_);
+        END_IMPORT()
+    }
+
     void use_ptq(ptq_dataset_options options) override
     {
         ptq_options_ = std::move(options);

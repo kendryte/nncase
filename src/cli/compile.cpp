@@ -153,6 +153,14 @@ void compile_command::run()
         auto input_prototxt = read_file(input_prototxt_);
         compiler->import_caffe(file_data, input_prototxt);
     }
+    else if (input_format_ == "pnnx")
+    {
+        auto file_data = read_file(input_filename_);
+        std::filesystem::path input_bin_filename_ = input_filename_;
+        input_bin_filename_.replace_extension("bin");
+        auto bin_data = read_file(input_bin_filename_);
+        compiler->import_pnnx(file_data, bin_data, i_options);
+    }
     else
     {
         throw std::invalid_argument("Invalid input format: " + input_format_);
