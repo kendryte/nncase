@@ -157,7 +157,7 @@ void compile_command::run()
     {
         std::filesystem::path input_bin_filename_ = input_filename_;
         input_bin_filename_.replace_extension("bin");
-        compiler->import_pnnx(input_filename_.string(), input_bin_filename_.string(), i_options);
+        compiler->import_pnnx(input_filename_, input_bin_filename_.string(), i_options);
     }
     else
     {

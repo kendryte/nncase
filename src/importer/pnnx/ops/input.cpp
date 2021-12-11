@@ -30,14 +30,13 @@ void nncase::importer::pnnx_importer::convert_op_pnnx_Input(const Operator &op)
 {
     const auto &op_name = op.name;
 
-    const int count = op.outputs.size();
-    for (int i = 0; i < count; i++)
+    for (auto r : op.outputs)
     {
-        auto in_shape = op.outputs[i]->get_shape();
+        auto in_shape = r->get_shape();
 
         auto node = graph_.emplace<input_node>(dt_float32, in_shape);
-        node->name(op_name + "." + op.outputs[i]->name + "(Input)");
+        node->name(op_name + "." + r->name + "(Input)");
 
-        output_tensors_.emplace(op.outputs[i]->name, &node->output());
+        output_tensors_.emplace(r->name, &node->output());
     }
 }
