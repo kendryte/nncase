@@ -11,11 +11,12 @@ using static Nncase.Pattern.Utility;
 using static Nncase.Pattern.F.Math;
 using static Nncase.Pattern.F.Tensors;
 using static Nncase.IR.Utility;
+using System.Linq.Expressions;
 
 namespace Nncase.Tests
 {
 
-    public class UnitTestExprPattern
+    public class TestExprPattern
     {
 
         [Fact]
@@ -253,6 +254,16 @@ namespace Nncase.Tests
             var pat = IsWildCard();
             var pat2 = IsWildCard().Copy();
             Assert.NotEqual(pat, pat2);
+        }
+
+        [Fact]
+        public void TestBuildExprFromPattern()
+        {
+            ConstPattern c0 = IsConst(), c1 = IsConst();
+            var x = IsWildCard();
+            var pat = x + c0;
+            var res = x - c0;
+            var ped = c0 == 0;
         }
     }
 }

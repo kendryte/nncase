@@ -102,7 +102,14 @@ namespace Nncase.IR
                     return name;
                 }
 
-                name = $"const({(expr.CheckedType is null ? string.Empty : VisitType(expr.CheckedType))})";
+                if (expr.CheckedType is TensorType ttype && ttype.IsScalar)
+                {
+                    name = $"const({expr} : {(expr.CheckedType is null ? string.Empty : VisitType(expr.CheckedType))})";
+                }
+                else
+                {
+                    name = $"const({(expr.CheckedType is null ? string.Empty : VisitType(expr.CheckedType))})";
+                }
                 _names.Add(expr, name);
                 return name;
             }

@@ -10,7 +10,8 @@ namespace Nncase.Evaluator
     {
         internal static (EvaluatorVisitor, torch.Tensor) EvalImpl(Expr expr, Dictionary<Var, torch.Tensor> inputs)
         {
-            if (expr.CheckedType is null or InvalidType)
+            if (expr.CheckedType is null) expr.InferenceType();
+            if (expr.CheckedType is InvalidType)
                 throw new InvalidOperationException("Expr in Evaluator need a valid type");
 
             var evaluatorVisitor = new EvaluatorVisitor(inputs);
@@ -52,7 +53,20 @@ namespace Nncase.Evaluator
             }
             else
             {
-                throw new NotImplementedException($"Can't Support Eval {expr.GetType().Name} with inputs!");
+                switch (expr)
+                {
+                    case (IR.Tuple tuple):
+                        foreach (var item in tuple.Fields)
+                        {
+                            if (item is IR.Tuple)
+                                throw new NotImplementedException("Can't Support Return Tuple[Tuple[x,y,...]]!");
+                            result.Add(visitor.ExpressionMemo[item]);
+                        }
+                        break;
+                    default:
+                        result.Add(visitor.ExpressionMemo[expr]);
+                        break;
+                }
             }
             return result;
         }

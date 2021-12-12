@@ -15,10 +15,11 @@ namespace Nncase.IR
     public sealed record Const(TensorType ValueType, IRBytes Data) : Expr
     {
 
-        public override Shape CheckedShape => ValueType.Shape;
-
-        public override int Rank => ValueType.Shape.Rank;
-
+        public override IRType? CheckedType
+        {
+            get => ValueType;
+            set { _checkedType = value == ValueType ? _checkedType = value : throw new InvalidOperationException("Can't Set CheckType != ValueType"); }
+        }
 
         /// <summary>
         /// Create constant from a <see cref="byte"/>.
@@ -98,7 +99,18 @@ namespace Nncase.IR
         /// <param name="value">Value.</param>
         public static implicit operator Const(bool value) => FromScalar(value);
 
+        /// <summary>
+        /// Create constant from <see cref="string"/>
+        /// </summary>
+        /// <param name="value"></param>
+        public static implicit operator Const(string value) => FromSpan<char>(value);
 
+        /// <summary>
+        /// <see cref="ToTensor{T}"/>
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="srcType"></param>
+        /// <returns></returns>
         private DenseTensor<T> CastToTensor<T>(DataType srcType)
           where T : unmanaged
         {
@@ -113,6 +125,11 @@ namespace Nncase.IR
             return new DenseTensor<T>(dest, ValueType.IsScalar ? new[] { 1 } : ValueType.Shape);
         }
 
+        /// <summary>
+        /// cast to target type dense tensor
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns> tensor </returns>
         public DenseTensor<T> ToTensor<T>()
            where T : unmanaged
         {
@@ -124,23 +141,58 @@ namespace Nncase.IR
                 return CastToTensor<T>(srcType);
         }
 
+        /// <summary>
+        /// convert target type scalar
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns> scalar </returns>
+        /// <exception cref="InvalidCastException"></exception>
         public T ToScalar<T>()
           where T : unmanaged
-          => ValueType.IsScalar ?
+          => ValueType.IsScalar && ValueType.DType.Lanes == 1 ?
             (DataTypes.FromType<T>() == ValueType.DType ?
                  DataTypes.ToScalar<T>(ValueType.DType, Data, 0) :
                  DataTypes.CastToScalar<T>(ValueType.DType, Data, 0)) :
           throw new InvalidCastException($"This Const is Not Scalar!");
 
         /// <summary>
+        /// cast to string.
+        /// </summary>
+        /// <returns> string </returns>
+        /// <exception cref="InvalidCastException"></exception>
+        public string ToStr() => ValueType.DType switch
+        {
+            { ElemType: ElemType.String, Lanes: 1 } => System.Text.Encoding.Default.GetString(Data),
+            _ => throw new InvalidCastException($"This Const is Not String!")
+        };
+
+        /// <summary>
         /// Create constant from a scalar.
         /// </summary>
         /// <typeparam name="T">CLR type.</typeparam>
         /// <param name="value">Value.</param>
+        /// <param name="lanes"> lanes </param>
         /// <returns>Created constant expression.</returns>
-        public static Const FromScalar<T>(T value)
+        public static Const FromScalar<T>(T value, int lanes = 1)
             where T : unmanaged
-            => new(TensorType.Scalar(DataTypes.FromType<T>()), DataTypes.GetBytes(value));
+            => new(TensorType.Scalar(DataTypes.FromType<T>() with { Lanes = lanes }), RepeatBytes(DataTypes.GetBytes(value), lanes));
+
+        /// <summary>
+        /// repeat bytes
+        /// </summary>
+        /// <param name="bytes"></param>
+        /// <param name="lanes"></param>
+        /// <returns></returns>
+        private static byte[] RepeatBytes(byte[] bytes, int lanes)
+        {
+            if (lanes == 1) return bytes;
+            var ret = new byte[lanes * bytes.Length];
+            for (int i = 0; i < lanes; i++)
+            {
+                bytes.CopyTo(ret, i * bytes.Length);
+            }
+            return ret;
+        }
 
         /// <summary>
         /// Create constant from a span.

@@ -15,19 +15,64 @@ using Nncase.Pattern;
 namespace Nncase.Transform
 {
 
+    /// <summary>
+    /// rewrite method
+    /// </summary>
     public static class DataFlowRewrite
     {
+        /// <summary>
+        /// callback for rewrite start
+        /// </summary>
+        /// <param name="expr"></param>
+        /// <param name="options"></param>
+        /// <param name="count"></param>
+        private static void OnRewriteStart(Expr expr, RunPassOptions options, int count)
+        {
+            switch (options.DumpLevel)
+            {
+                case >= 2:
+                    IRPrinter.DumpExprAsIL(expr, $"{count}_Start", Path.Combine(options.FullDumpDir, "Rewrite"));
+                    break;
+                case >= 1:
+                    expr.DumpExprAsIL();
+                    break;
+                default:
+                    break;
+
+            }
+        }
+
+        /// <summary>
+        /// call back for rewrite end
+        /// </summary>
+        /// <param name="expr"></param>
+        /// <param name="options"></param>
+        /// <param name="count"></param>
+        private static void OnRewriteEnd(Expr expr, RunPassOptions options, int count)
+        {
+            switch (options.DumpLevel)
+            {
+                case >= 2:
+                    IRPrinter.DumpExprAsIL(expr, $"{count}_End", Path.Combine(options.FullDumpDir, "Rewrite"));
+                    break;
+                case >= 1:
+                    expr.DumpExprAsIL();
+                    break;
+                default:
+                    break;
+
+            }
+        }
+
         private static Expr RewriteImpl(Expr pre, IEnumerable<PatternRule> Rules, RunPassOptions options)
         {
             var visitor = new DataFlowReWriteVisitor();
             var post = pre;
             var last = post;
             int count = 0;
-            var dumpPath = Path.Combine(options.FullDumpDir, "Rewrite");
             do
             {
-                if (options.DumpLevel > 2)
-                    IRPrinter.DumpExprAsIL(pre, $"{count}_Before", dumpPath);
+                OnRewriteStart(last, options, count);
                 foreach (var rule in Rules)
                 {
                     visitor.Rule = rule;
@@ -46,8 +91,7 @@ namespace Nncase.Transform
                     if (visitor.isMatched)
                         break;
                 }
-                if (options.DumpLevel > 2)
-                    IRPrinter.DumpExprAsIL(post, $"{count++}_After", dumpPath);
+                OnRewriteEnd(post, options, count++);
                 if (!visitor.isMatched)
                     break;
             } while (true);

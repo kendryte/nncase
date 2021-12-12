@@ -7,7 +7,7 @@ using Nncase.IR;
 namespace Nncase.Pattern
 {
 
-    public abstract record VArgsPattern()
+    public abstract record VArgsPattern() : IEnumerable<ExprPattern>
     {
 
         public virtual int Count => this switch
@@ -67,6 +67,15 @@ namespace Nncase.Pattern
                     break;
             }
         }
+
+        public IEnumerator<ExprPattern> GetEnumerator() => this switch
+        {
+            FixedVArgsPattern fixedPat => fixedPat.Parameters.GetEnumerator(),
+            RepeatVArgsPattern repeatPat => repeatPat.Parameters.GetEnumerator(),
+            _ => throw new InvalidCastException($"Can't Get {this.GetType().Name} As Enumerator!")
+        };
+
+        IEnumerator IEnumerable.GetEnumerator() => this.GetEnumerator();
     }
 
     public sealed record FixedVArgsPattern(IRArray<ExprPattern> Parameters) : VArgsPattern

@@ -12,8 +12,14 @@ namespace Nncase.IR
     /// <summary>
     /// Variable expression.
     /// </summary>
-    public sealed record Var(string Name, IRType TypeAnnotation) : Expr
+    public record Var(string Name, IRType TypeAnnotation) : Expr
     {
+        public override IRType? CheckedType
+        {
+            get => TypeAnnotation;
+            set { _checkedType = value == TypeAnnotation ? value : throw new InvalidOperationException("Can't Set CheckType != TypeAnnotation"); }
+        }
+
         private static int _globalVarIndex = 0;
 
         /// <summary>
@@ -38,6 +44,25 @@ namespace Nncase.IR
         {
         }
 
+        /// <summary>
+        /// get any var
+        /// </summary>
+        /// <param name="Name"></param>
         public static implicit operator Var(string Name) => new Var(Name, AnyType.Default);
+
+        /// <summary>
+        /// get scalar var
+        /// </summary>
+        /// <param name="Name"></param>
+        public static Var Scalar(string Name, DataType Dtype) => new Var(Name, new TensorType(Dtype, Shape.Scalar));
+
+        /// <summary>
+        /// get handle var
+        /// </summary>
+        /// <param name="Name"></param>
+        /// <param name="Dtype"></param>
+        /// <param name="Scope"></param>
+        /// <returns> var </returns>
+        public static Var Handle(string Name, DataType Dtype, string Scope = "") => new Var(Name, new PointerType(Dtype, Scope));
     }
 }

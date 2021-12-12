@@ -27,8 +27,49 @@ using Nncase.Transform.Rule;
 using Binary = Nncase.IR.Math.Binary;
 using Tuple = Nncase.IR.Tuple;
 
-namespace Nncase.Tests
+namespace Nncase.Tests.ReWrite
 {
+
+    public class DataFlowRewriteTestFactory : RewriteTest
+    {
+        public DataFlowRewriteTestFactory() : base()
+        {
+            passOptions.SetDir(Path.Combine(passOptions.FullDumpDir, "DataFlowRewriteTestFactory"));
+        }
+
+        private static IEnumerable<object[]> Data =>
+          new List<object[]>
+          {
+             new object[] { new SizeVarMul1Case() },
+          };
+
+        [Theory]
+        [MemberData(nameof(DataOne))]
+        public void RunOne(IRewriteCase Case) => RunCore(Case);
+
+        public void RunCore(IRewriteCase Case)
+        {
+            passOptions.SetName($"{Case.Name}");
+            Expr pre = Case.PreExpr;
+            var infered = pre.InferenceType();
+            pre.DumpExprAsIL("pre", passOptions.FullDumpDir);
+            Assert.True(infered);
+            var post = DataFlowRewrite.Rewrite(pre, Case.Rules, passOptions);
+            Assert.True(post.InferenceType());
+            post.DumpExprAsIL("post", passOptions.FullDumpDir);
+            Assert.Equal(Case.PostExpr, post);
+        }
+
+        [Theory]
+        [MemberData(nameof(DataAll))]
+        public void RunAll(IRewriteCase Case) => RunCore(Case);
+
+
+        public static IEnumerable<object[]> DataOne => Data.Take(1);
+        public static IEnumerable<object[]> DataAll => Data.Skip(1);
+    }
+
+
 
     internal class SwapXY : PatternRule
     {

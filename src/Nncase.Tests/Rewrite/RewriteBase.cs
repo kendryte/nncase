@@ -62,11 +62,30 @@ namespace Nncase.Tests.ReWrite
 
     public abstract class IRewriteCase
     {
+        /// <summary>
+        /// Get Name
+        /// </summary>
         public virtual string Name { get => "Test" + this.GetType().Name; }
 
+        /// <summary>
+        /// Get Pre Expr
+        /// </summary>
         public virtual Expr PreExpr { get; }
 
+        /// <summary>
+        /// Get Post Expr
+        /// </summary>
+        public virtual Expr PostExpr { get; }
+
+        /// <summary>
+        /// get rules
+        /// </summary>
         public virtual IEnumerable<PatternRule> Rules { get; }
+
+        /// <summary>
+        /// the eval inputs dict
+        /// </summary>
+        public virtual Dictionary<Var, torch.Tensor> Inputs { get; } = new();
     }
 
     public sealed class TransposeConstBinaryCase : IRewriteCase

@@ -43,6 +43,11 @@ namespace Nncase.Transform
         /// </summary>
         public ITarget Target { get; }
 
+        /// <summary>
+        /// Dump level 0 = do nothing
+        /// Dump level 1 = print to std output
+        /// Dump level 2 = print dump to file
+        /// </summary>
         public int DumpLevel { private set; get; }
 
         public string DumpDir { private set; get; }

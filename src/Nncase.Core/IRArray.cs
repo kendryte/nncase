@@ -13,11 +13,26 @@ namespace Nncase.IR
         private int _hashcode;
         private readonly ImmutableArray<T> _array;
 
+        /// <summary>
+        /// default new a ir array;
+        /// </summary>
+        public IRArray()
+        {
+            _array = ImmutableArray<T>.Empty;
+            _hashcode = HashCode.Combine(StructuralComparisons.StructuralEqualityComparer.GetHashCode(_array));
+        }
+
+        /// <summary>
+        /// construct Ir Array with array.
+        /// </summary>
+        /// <param name="array"></param>
         public IRArray(ImmutableArray<T> array)
         {
             _array = array;
             _hashcode = HashCode.Combine(StructuralComparisons.StructuralEqualityComparer.GetHashCode(_array));
         }
+
+        public IRArray(IEnumerable<T> enumerable) : this(enumerable.ToImmutableArray()) { }
 
         public T this[int index] => ((IReadOnlyList<T>)_array)[index];
 

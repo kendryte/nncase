@@ -54,6 +54,12 @@ namespace Nncase.IR
         public bool IsFullyInferenced { get; private set; } = true;
 
         /// <inheritdoc/>
+        public override IRType VisitLeaf(Expr expr)
+        {
+            return expr.CheckedType ?? base.VisitLeaf(expr);
+        }
+
+        /// <inheritdoc/>
         public override IRType VisitLeaf(Call expr)
         {
             _context.CurrentCall = expr;

@@ -69,7 +69,7 @@ namespace Nncase.IR.Tensors
             var input0 = (TensorType)inputs[0];
             if (allScalar == true && allDType is not null)
             {
-                return new TensorType(allDType.Value, new[] { inputs.Count });
+                return new TensorType(allDType, new[] { inputs.Count });
             }
             InvalidType? invalidType = null;
             var axisValue = ((Const)context.GetArgument(this, Axis)).ToScalar<int>();
