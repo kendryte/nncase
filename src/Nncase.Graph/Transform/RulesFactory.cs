@@ -4,6 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.Pattern;
+using Nncase.Pattern.Math;
+using Nncase.IR.Math;
 using static Nncase.Pattern.F.Math;
 using static Nncase.Pattern.F.Tensors;
 using static Nncase.Pattern.F.NN;
@@ -42,10 +44,11 @@ namespace Nncase.Transform
         }
 
         /// <inheritdoc/>
-        public override Expr VisitLeaf(OpPattern pattern)
+        public override Expr VisitLeaf(OpPattern pattern) => pattern switch
         {
-            return _result[pattern];
-        }
+            BinaryPattern binary => new Binary(binary.BinaryOp!.Value),
+            _ => throw new NotSupportedException($"Not Support Convert {pattern.GetType().Name}!")
+        };
 
         /// <inheritdoc/>
         public override Expr VisitLeaf(TuplePattern pattern)

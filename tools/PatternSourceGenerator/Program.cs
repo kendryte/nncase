@@ -193,8 +193,21 @@ namespace PatternGenerator
                     var members = (from param in op.Params
                                    let pname = param.Identifier.ValueText
                                    let ptype = param.Type
-                                   select ParseMemberDeclaration($"public {name}({ptype} {pname}) : this(({op.Name} x) => {pname} == x.{pname}) {{ }}")
+                                   select ParseMemberDeclaration($"public {name}({ptype} {pname}) : this(({op.Name} x) => {pname} == x.{pname}) {{ this.{pname} = {pname}; }}")
                     );
+
+                    var fields = (from param in op.Params
+                                  let pname = param.Identifier.ValueText
+                                  let ptype = param.Type
+                                  select ParseMemberDeclaration($"public {ptype}? {pname} = null;")
+                    );
+
+                    string init_fields = String.Join("\n",
+                      (from param in op.Params
+                       let pname = param.Identifier.ValueText
+                       let ptype = param.Type
+                       select ($"this.{pname} = {op.Name.ToLower()}.{pname};")
+                    ));
 
                     var pattern = RecordDeclaration(Token(SyntaxKind.RecordKeyword), name).
                     AddModifiers(Token(SyntaxKind.PublicKeyword), Token(SyntaxKind.SealedKeyword)).
@@ -205,10 +218,11 @@ namespace PatternGenerator
                     AddBaseListTypes(baseType).
                     WithOpenBraceToken(Token(SyntaxKind.OpenBraceToken)).
                     AddMembers(
-                      ParseMemberDeclaration($"public {name}({op.Name} {op.Name.ToLower()}) : this(x => x == {op.Name.ToLower()}) {{ }}"),
+                      ParseMemberDeclaration($"public {name}({op.Name} {op.Name.ToLower()}) : this(x => x == {op.Name.ToLower()}) {{ {init_fields} }}"),
                       ParseMemberDeclaration($"public bool MatchLeaf({op.Name} {op.Name.ToLower()}) => Cond({op.Name.ToLower()}) && MatchCheckedType({op.Name.ToLower()});"),
                       ParseMemberDeclaration($"public {name}() : this(({op.Name} x) => true) {{ }}")
                     ).
+                    AddMembers(fields.ToArray()).
                     AddMembers(members.ToArray()).
                     WithCloseBraceToken(Token(SyntaxKind.CloseBraceToken));
 
@@ -361,12 +375,18 @@ namespace PatternGenerator
             { "LogicalXor", "Binary" },
             { "LeftShift", "Binary" },
             { "RightShift", "Binary" },
+            { "Equal", "Compare" },
+            { "NotEqual", "Compare" },
+            { "LessThan", "Compare" },
+            { "LessEqual", "Compare" },
+            { "GreaterEqual", "Compare" },
+            { "GreaterThan", "Compare" },
             { "FloorDiv", "Unary" },
             { "FloorMod", "Binary" },
             { "ReduceMean", "Reduce" },
             { "ReduceMin", "Reduce" },
             { "ReduceMax", "Reduce" },
-            { "ReduceSum", "Reduce" },
+            { "ReduceSum", "Reduce" }
         };
 
         public static void GenerateFuncs(Receiver receiver, string filePath)

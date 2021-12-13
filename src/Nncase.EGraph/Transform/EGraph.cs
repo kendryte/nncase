@@ -185,6 +185,7 @@ namespace Nncase.Transform
         /// <param name="eClass"></param>
         public void Add(Expr expr, out EClass eClass)
         {
+            if (expr.CheckedType is null) { expr.InferenceType(); }
             var converter = new ENodeConverter(this);
             eClass = converter.Visit(expr);
         }

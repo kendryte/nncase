@@ -81,7 +81,11 @@ namespace Nncase.Tests.TIR
         [Fact]
         public void TestBufferVLoad()
         {
-
+            var m = new SizeVar("m");
+            var n = new SizeVar("n");
+            var Ab = TBuffer.Decl((m, n), DataType.Float32, elem_offset: 100);
+            var load = Ab.VLoad((2, 3));
+            Testing.AssertExprEqual(load[Load.Index], 100 + ((2 * n) + 3));
         }
     }
 }

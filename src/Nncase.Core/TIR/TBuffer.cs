@@ -244,6 +244,16 @@ namespace Nncase.TIR
             return F.TOps.Load(dtype, Handle, CalcLoadOffset(begin, dtype), null);
         }
 
+        /// <summary>
+        /// Generate a Stmt that store value into begin index.
+        /// </summary>
+        /// <param name="begin">The beginning index in unit of Buffer.dtype</param>
+        /// <param name="value">The value to be stored.</param>
+        /// <returns>The corresponding store stmt.</returns>
+        public Stmt VStore(IR.Tuple begin, Expr value)
+        {
+        }
+
         public Expr CalcElemOffset(IR.Tuple index)
         {
             var base_offset = ElemOffset;

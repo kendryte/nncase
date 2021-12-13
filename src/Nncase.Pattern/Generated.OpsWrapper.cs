@@ -52,6 +52,24 @@ namespace Nncase.Pattern.Math
         public static implicit operator CallPattern(ClampWrapper warper) => warper.Pattern;
     }
 
+    public sealed record CompareWrapper(CallPattern Pattern) : PatternWrapper
+    {
+        public ExprPattern LhsPat() => Pattern[Compare.Lhs];
+        public T LhsPat<T>()
+            where T : ExprPattern => (T)LhsPat();
+        public Expr Lhs() => GetCast<Expr>(LhsPat());
+        public T Lhs<T>()
+            where T : Expr => GetCast<T>(LhsPat());
+        public ExprPattern RhsPat() => Pattern[Compare.Rhs];
+        public T RhsPat<T>()
+            where T : ExprPattern => (T)RhsPat();
+        public Expr Rhs() => GetCast<Expr>(RhsPat());
+        public T Rhs<T>()
+            where T : Expr => GetCast<T>(RhsPat());
+        public CompareOp CompareOp => ((Compare)GetCast<Call>(this).Target).CompareOp;
+        public static implicit operator CallPattern(CompareWrapper warper) => warper.Pattern;
+    }
+
     public sealed record UnaryWrapper(CallPattern Pattern) : PatternWrapper
     {
         public ExprPattern InputPat() => Pattern[Unary.Input];

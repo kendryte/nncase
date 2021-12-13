@@ -313,46 +313,55 @@ namespace Nncase.IR.F
         public static Call FloorMod(Expr lhs, Expr rhs) => Sub(lhs, (FloorDiv(lhs, rhs) * rhs));
 
         /// <summary>
+        /// Call compare.
+        /// </summary>
+        /// <param name="compareOp">Compare operator.</param>
+        /// <param name="lhs">Left operand.</param>
+        /// <param name="rhs">Right operand.</param>
+        /// <returns>Result expression.</returns>
+        public static Call Compare(CompareOp compareOp, Expr lhs, Expr rhs) => new Call(new Compare(compareOp), lhs, rhs);
+
+        /// <summary>
         /// Call equal
         /// </summary>
         /// <param name="lhs"></param>
         /// <param name="rhs"></param>
         /// <returns>result</returns>
-        public static Call Equal(Expr lhs, Expr rhs) => new Call(new Compare(CompareOp.EQ), lhs, rhs);
+        public static Call Equal(Expr lhs, Expr rhs) => Compare(CompareOp.EQ, lhs, rhs);
         /// <summary>
         /// call not equal
         /// </summary>
         /// <param name="lhs"></param>
         /// <param name="rhs"></param>
         /// <returns></returns>
-        public static Call NotEqual(Expr lhs, Expr rhs) => new Call(new Compare(CompareOp.NE), lhs, rhs);
+        public static Call NotEqual(Expr lhs, Expr rhs) => Compare(CompareOp.NE, lhs, rhs);
         /// <summary>
         /// call less than
         /// </summary>
         /// <param name="lhs"></param>
         /// <param name="rhs"></param>
         /// <returns></returns>
-        public static Call LessThan(Expr lhs, Expr rhs) => new Call(new Compare(CompareOp.LT), lhs, rhs);
+        public static Call LessThan(Expr lhs, Expr rhs) => Compare(CompareOp.LT, lhs, rhs);
         /// <summary>
         /// call less equal
         /// </summary>
         /// <param name="lhs"></param>
         /// <param name="rhs"></param>
         /// <returns></returns>
-        public static Call LessEqual(Expr lhs, Expr rhs) => new Call(new Compare(CompareOp.LE), lhs, rhs);
+        public static Call LessEqual(Expr lhs, Expr rhs) => Compare(CompareOp.LE, lhs, rhs);
         /// <summary>
         /// call greater equal
         /// </summary>
         /// <param name="lhs"></param>
         /// <param name="rhs"></param>
         /// <returns></returns>
-        public static Call GreaterEqual(Expr lhs, Expr rhs) => new Call(new Compare(CompareOp.GT), lhs, rhs);
+        public static Call GreaterEqual(Expr lhs, Expr rhs) => Compare(CompareOp.GT, lhs, rhs);
         /// <summary>
         /// call greater than
         /// </summary>
         /// <param name="lhs"></param>
         /// <param name="rhs"></param>
         /// <returns></returns>
-        public static Call GreaterThan(Expr lhs, Expr rhs) => new Call(new Compare(CompareOp.GE), lhs, rhs);
+        public static Call GreaterThan(Expr lhs, Expr rhs) => Compare(CompareOp.GE, lhs, rhs);
     }
 }

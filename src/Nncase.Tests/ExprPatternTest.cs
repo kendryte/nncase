@@ -182,6 +182,7 @@ namespace Nncase.Tests
             );
 
             var tuple = new IR.Tuple(1, new IR.Tuple(6, 7, 8), 3, 4);
+            tuple.InferenceType();
             Assert.True(pattern.MatchLeaf(tuple.Fields));
             Assert.True(pattern[0].MatchLeaf(tuple[0]));
             Assert.True(pattern[1].MatchLeaf(tuple[1]));
@@ -208,6 +209,8 @@ namespace Nncase.Tests
             Const y = (Const)2;
             var z1 = x + y;
             var z2 = x * y;
+            z1.InferenceType();
+            z2.InferenceType();
             Assert.True(is_op_call.MatchLeaf(z1));
             Assert.True(is_op_call.Target.MatchLeaf(z2.Target));
 

@@ -15,6 +15,7 @@ namespace Nncase.Pattern.Math
     {
         public BinaryPattern(Binary binary): this(x => x == binary)
         {
+            this.BinaryOp = binary.BinaryOp;
         }
 
         public bool MatchLeaf(Binary binary) => Cond(binary) && MatchCheckedType(binary);
@@ -22,8 +23,10 @@ namespace Nncase.Pattern.Math
         {
         }
 
+        public BinaryOp? BinaryOp = null;
         public BinaryPattern(BinaryOp BinaryOp): this((Binary x) => BinaryOp == x.BinaryOp)
         {
+            this.BinaryOp = BinaryOp;
         }
     }
 
@@ -39,10 +42,30 @@ namespace Nncase.Pattern.Math
         }
     }
 
+    public sealed record ComparePattern(Func<Compare, bool> Cond) : OpPattern
+    {
+        public ComparePattern(Compare compare): this(x => x == compare)
+        {
+            this.CompareOp = compare.CompareOp;
+        }
+
+        public bool MatchLeaf(Compare compare) => Cond(compare) && MatchCheckedType(compare);
+        public ComparePattern(): this((Compare x) => true)
+        {
+        }
+
+        public CompareOp? CompareOp = null;
+        public ComparePattern(CompareOp CompareOp): this((Compare x) => CompareOp == x.CompareOp)
+        {
+            this.CompareOp = CompareOp;
+        }
+    }
+
     public sealed record UnaryPattern(Func<Unary, bool> Cond) : OpPattern
     {
         public UnaryPattern(Unary unary): this(x => x == unary)
         {
+            this.UnaryOp = unary.UnaryOp;
         }
 
         public bool MatchLeaf(Unary unary) => Cond(unary) && MatchCheckedType(unary);
@@ -50,8 +73,10 @@ namespace Nncase.Pattern.Math
         {
         }
 
+        public UnaryOp? UnaryOp = null;
         public UnaryPattern(UnaryOp UnaryOp): this((Unary x) => UnaryOp == x.UnaryOp)
         {
+            this.UnaryOp = UnaryOp;
         }
     }
 }
@@ -122,6 +147,7 @@ namespace Nncase.Pattern.NN
     {
         public Conv2DPattern(Conv2D conv2d): this(x => x == conv2d)
         {
+            this.PadMode = conv2d.PadMode;
         }
 
         public bool MatchLeaf(Conv2D conv2d) => Cond(conv2d) && MatchCheckedType(conv2d);
@@ -129,8 +155,10 @@ namespace Nncase.Pattern.NN
         {
         }
 
+        public PadMode? PadMode = null;
         public Conv2DPattern(PadMode PadMode): this((Conv2D x) => PadMode == x.PadMode)
         {
+            this.PadMode = PadMode;
         }
     }
 
@@ -138,6 +166,7 @@ namespace Nncase.Pattern.NN
     {
         public Conv2DTransposePattern(Conv2DTranspose conv2dtranspose): this(x => x == conv2dtranspose)
         {
+            this.PadMode = conv2dtranspose.PadMode;
         }
 
         public bool MatchLeaf(Conv2DTranspose conv2dtranspose) => Cond(conv2dtranspose) && MatchCheckedType(conv2dtranspose);
@@ -145,8 +174,10 @@ namespace Nncase.Pattern.NN
         {
         }
 
+        public PadMode? PadMode = null;
         public Conv2DTransposePattern(PadMode PadMode): this((Conv2DTranspose x) => PadMode == x.PadMode)
         {
+            this.PadMode = PadMode;
         }
     }
 
@@ -253,6 +284,7 @@ namespace Nncase.Pattern.Tensors
     {
         public CastPattern(Cast cast): this(x => x == cast)
         {
+            this.NewType = cast.NewType;
         }
 
         public bool MatchLeaf(Cast cast) => Cond(cast) && MatchCheckedType(cast);
@@ -260,8 +292,10 @@ namespace Nncase.Pattern.Tensors
         {
         }
 
+        public DataType? NewType = null;
         public CastPattern(DataType NewType): this((Cast x) => NewType == x.NewType)
         {
+            this.NewType = NewType;
         }
     }
 
@@ -281,6 +315,7 @@ namespace Nncase.Pattern.Tensors
     {
         public DeQuantizePattern(DeQuantize dequantize): this(x => x == dequantize)
         {
+            this.TargetType = dequantize.TargetType;
         }
 
         public bool MatchLeaf(DeQuantize dequantize) => Cond(dequantize) && MatchCheckedType(dequantize);
@@ -288,8 +323,10 @@ namespace Nncase.Pattern.Tensors
         {
         }
 
+        public DataType? TargetType = null;
         public DeQuantizePattern(DataType TargetType): this((DeQuantize x) => TargetType == x.TargetType)
         {
+            this.TargetType = TargetType;
         }
     }
 
@@ -333,6 +370,7 @@ namespace Nncase.Pattern.Tensors
     {
         public OneHotPattern(OneHot onehot): this(x => x == onehot)
         {
+            this.OneHotMode = onehot.OneHotMode;
         }
 
         public bool MatchLeaf(OneHot onehot) => Cond(onehot) && MatchCheckedType(onehot);
@@ -340,8 +378,10 @@ namespace Nncase.Pattern.Tensors
         {
         }
 
+        public OneHotMode? OneHotMode = null;
         public OneHotPattern(OneHotMode OneHotMode): this((OneHot x) => OneHotMode == x.OneHotMode)
         {
+            this.OneHotMode = OneHotMode;
         }
     }
 
@@ -349,6 +389,7 @@ namespace Nncase.Pattern.Tensors
     {
         public PadPattern(Pad pad): this(x => x == pad)
         {
+            this.PadMode = pad.PadMode;
         }
 
         public bool MatchLeaf(Pad pad) => Cond(pad) && MatchCheckedType(pad);
@@ -356,8 +397,10 @@ namespace Nncase.Pattern.Tensors
         {
         }
 
+        public PadMode? PadMode = null;
         public PadPattern(PadMode PadMode): this((Pad x) => PadMode == x.PadMode)
         {
+            this.PadMode = PadMode;
         }
     }
 
@@ -365,6 +408,7 @@ namespace Nncase.Pattern.Tensors
     {
         public QuantizePattern(Quantize quantize): this(x => x == quantize)
         {
+            this.TargetType = quantize.TargetType;
         }
 
         public bool MatchLeaf(Quantize quantize) => Cond(quantize) && MatchCheckedType(quantize);
@@ -372,8 +416,10 @@ namespace Nncase.Pattern.Tensors
         {
         }
 
+        public DataType? TargetType = null;
         public QuantizePattern(DataType TargetType): this((Quantize x) => TargetType == x.TargetType)
         {
+            this.TargetType = TargetType;
         }
     }
 
@@ -381,6 +427,7 @@ namespace Nncase.Pattern.Tensors
     {
         public ReducePattern(Reduce reduce): this(x => x == reduce)
         {
+            this.ReduceOp = reduce.ReduceOp;
         }
 
         public bool MatchLeaf(Reduce reduce) => Cond(reduce) && MatchCheckedType(reduce);
@@ -388,8 +435,10 @@ namespace Nncase.Pattern.Tensors
         {
         }
 
+        public ReduceOp? ReduceOp = null;
         public ReducePattern(ReduceOp ReduceOp): this((Reduce x) => ReduceOp == x.ReduceOp)
         {
+            this.ReduceOp = ReduceOp;
         }
     }
 
@@ -397,6 +446,7 @@ namespace Nncase.Pattern.Tensors
     {
         public ReduceArgPattern(ReduceArg reducearg): this(x => x == reducearg)
         {
+            this.ReduceArgOp = reducearg.ReduceArgOp;
         }
 
         public bool MatchLeaf(ReduceArg reducearg) => Cond(reducearg) && MatchCheckedType(reducearg);
@@ -404,8 +454,10 @@ namespace Nncase.Pattern.Tensors
         {
         }
 
+        public ReduceArgOp? ReduceArgOp = null;
         public ReduceArgPattern(ReduceArgOp ReduceArgOp): this((ReduceArg x) => ReduceArgOp == x.ReduceArgOp)
         {
+            this.ReduceArgOp = ReduceArgOp;
         }
     }
 
@@ -413,6 +465,7 @@ namespace Nncase.Pattern.Tensors
     {
         public ReduceWindow2DPattern(ReduceWindow2D reducewindow2d): this(x => x == reducewindow2d)
         {
+            this.ReduceOp = reducewindow2d.ReduceOp;
         }
 
         public bool MatchLeaf(ReduceWindow2D reducewindow2d) => Cond(reducewindow2d) && MatchCheckedType(reducewindow2d);
@@ -420,8 +473,10 @@ namespace Nncase.Pattern.Tensors
         {
         }
 
+        public ReduceOp? ReduceOp = null;
         public ReduceWindow2DPattern(ReduceOp ReduceOp): this((ReduceWindow2D x) => ReduceOp == x.ReduceOp)
         {
+            this.ReduceOp = ReduceOp;
         }
     }
 
@@ -441,6 +496,7 @@ namespace Nncase.Pattern.Tensors
     {
         public ResizeImagePattern(ResizeImage resizeimage): this(x => x == resizeimage)
         {
+            this.ResizeMode = resizeimage.ResizeMode;
         }
 
         public bool MatchLeaf(ResizeImage resizeimage) => Cond(resizeimage) && MatchCheckedType(resizeimage);
@@ -448,8 +504,10 @@ namespace Nncase.Pattern.Tensors
         {
         }
 
+        public ImageResizeMode? ResizeMode = null;
         public ResizeImagePattern(ImageResizeMode ResizeMode): this((ResizeImage x) => ResizeMode == x.ResizeMode)
         {
+            this.ResizeMode = ResizeMode;
         }
     }
 

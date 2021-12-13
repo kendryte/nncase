@@ -246,7 +246,7 @@ namespace Nncase
         /// <returns>The display name.</returns>
         public static string GetDisplayName(DataType dataType)
         {
-            return typeof(DataType).GetField(Enum.GetName(dataType.ElemType)!)!.GetCustomAttribute<DisplayAttribute>()?.GetName() ?? dataType.ToString();
+            return typeof(ElemType).GetField(Enum.GetName(dataType.ElemType)!)!.GetCustomAttribute<DisplayAttribute>()?.GetName() ?? dataType.ToString();
         }
 
         public static T ToScalar<T>(DataType srcType, byte[] bytes, int start = 0)

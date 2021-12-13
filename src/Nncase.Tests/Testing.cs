@@ -26,6 +26,7 @@ namespace Nncase.Tests
             {
                 _simplifyPass.Add(SimplifyFactory.SimplifyAdd());
                 _simplifyPass.Add(SimplifyFactory.SimplifyMul());
+                _simplifyPass.Add(new FoldConstCall());
             }
             var f = new Function(expr, new Expr[] { });
             var result = f.InferenceType();

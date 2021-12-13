@@ -17,7 +17,11 @@ namespace Nncase.Transform.DataFlow.Rules
         private static readonly List<PatternRule> _simplifyAdd = new()
         {
             Rewrite(x + 0, x),
-            Rewrite(0 + x, x)
+            Rewrite(0 + x, x),
+            Rewrite((x + c0) + c1, x + (c0 + c1)),
+            Rewrite((c0 + x) + c1, x + (c0 + c1)),
+            Rewrite(c1 + (x + c0), x + (c0 + c1)),
+            Rewrite(c1 + (c0 + x), x + (c0 + c1)),
         };
 
         public static List<PatternRule> SimplifyAdd()
