@@ -41,6 +41,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "onnx", "onnx", "{93F45C01-D
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Onnx.Protobuf", "third_party\onnx\Onnx.Protobuf.csproj", "{0214547A-FA3D-455A-8B22-8673CA1E4496}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Nncase.CodeGen", "src\Nncase.CodeGen\Nncase.CodeGen.csproj", "{0B580057-DCBD-4ED6-B932-0F54C59D89A6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -91,6 +93,10 @@ Global
 		{0214547A-FA3D-455A-8B22-8673CA1E4496}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0214547A-FA3D-455A-8B22-8673CA1E4496}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0214547A-FA3D-455A-8B22-8673CA1E4496}.Release|Any CPU.Build.0 = Release|Any CPU
+		{0B580057-DCBD-4ED6-B932-0F54C59D89A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{0B580057-DCBD-4ED6-B932-0F54C59D89A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{0B580057-DCBD-4ED6-B932-0F54C59D89A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{0B580057-DCBD-4ED6-B932-0F54C59D89A6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -109,6 +115,7 @@ Global
 		{5600CF6C-72FC-424B-9788-EB87DE1715E0} = {BCA74168-F015-4B5B-B4CD-C83AE06B9822}
 		{93F45C01-DAFF-4EC4-9BD4-2542FF937D9E} = {FEAF8697-E12C-4A11-AAA2-D29043CDDF78}
 		{0214547A-FA3D-455A-8B22-8673CA1E4496} = {93F45C01-DAFF-4EC4-9BD4-2542FF937D9E}
+		{0B580057-DCBD-4ED6-B932-0F54C59D89A6} = {BCA74168-F015-4B5B-B4CD-C83AE06B9822}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {B251C48E-7D05-4662-8DFF-20843CB2DB99}
