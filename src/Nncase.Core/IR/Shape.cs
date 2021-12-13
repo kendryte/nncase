@@ -200,6 +200,11 @@ namespace Nncase.IR
             return new Shape(l);
         }
 
+        public List<int> ToValueList()
+        {
+            return _dimensions.Select(dim => dim.FixedValue).ToList();
+        }
+        
         /// <inheritdoc/>
         public override string ToString() => Kind switch
         {

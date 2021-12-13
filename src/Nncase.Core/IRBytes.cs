@@ -20,6 +20,12 @@ namespace Nncase.IR
             _array = array;
         }
 
+        // used for python
+        public byte[] Data()
+        {
+            return _array;
+        }
+        
         public bool Equals(object? other, IEqualityComparer comparer)
         {
             return ((IStructuralEquatable)_array).Equals(other, comparer);

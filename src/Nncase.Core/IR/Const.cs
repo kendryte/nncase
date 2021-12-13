@@ -17,6 +17,8 @@ namespace Nncase.IR
 
         public override Shape CheckedShape => ValueType.Shape;
 
+        public DataType CheckedDataType => ValueType.DType;
+        
         public override int Rank => ValueType.Shape.Rank;
 
 

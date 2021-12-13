@@ -17,6 +17,7 @@ from __future__ import annotations
 import clr
 import sys
 import os
+import subprocess
 import shutil
 
 
@@ -34,15 +35,24 @@ def _add_dllpath():
                 "TorchSharp"]:
         clr.AddReference(os.path.join(nncase_cli_path, dll))
 
-    naive_path = os.path.join(nncase_cli_path, 'runtimes', sys.platform + '-x64', 'native')
-    for root, dirs, files in os.walk(naive_path):
-        for file in files:
-            dll_file = os.path.join(naive_path, file)
-            target_file = os.path.join(nncase_cli_path, file)
-            if not os.path.exists(target_file):
-                shutil.copy(dll_file, target_file)
+    # TorchSharp dependencies
+    # naive_path = os.path.join(nncase_cli_path, 'runtimes', sys.platform + '-x64', 'native')
+    # for root, dirs, files in os.walk(naive_path):
+    #     for file in files:
+    #         dll_file = os.path.join(naive_path, file)
+    #         target_file = os.path.join(nncase_cli_path, file)
+    #         if not os.path.exists(target_file):
+    #             shutil.copy(dll_file, target_file)
+
+# when python call TorchSharp, need torch lib
+
+    # torch_info = subprocess.getoutput("pip show torch").split('\n')
+    # lib_root_path = [x for x in torch_info if x.startswith('Location')][0].split(' ')[1]
+    # os.environ['PYTHONPATH'] += f":{os.path.join(lib_root_path, 'torch', 'lib')}"
 
 _add_dllpath()
+# _add_libtorch()
+
 from io import BytesIO
 import numpy as np
 from typing import Any, List, Dict, Tuple, Union
@@ -60,7 +70,6 @@ from System import (Array, Byte,
                     Double,
                     Single)
 import Nncase as _nncase
-from TorchSharp import torch as _torch
 
 
 class ImportOptions:
@@ -82,8 +91,8 @@ class PTQTensorOptions:
 
 
 class RuntimeTensor:
-    _arr: _torch.Tensor
-    netTypemap = {
+    _arr: np.ndarray
+    netTypeMap = {
         np.int8: SByte,
         np.int16: Int16,
         np.int32: Int32,
@@ -93,26 +102,22 @@ class RuntimeTensor:
         np.float32: Single,
         np.float64: Double,
     }
-    npTypemap = {
-        np.bool8: _torch.ScalarType.Bool,
-        np.int8: _torch.ScalarType.Int8,
-        np.int16: _torch.ScalarType.Int16,
-        np.int32: _torch.ScalarType.Int32,
-        np.int64: _torch.ScalarType.Int64,
-        np.uint8: _torch.ScalarType.Byte,
-        np.float16: _torch.ScalarType.Float16,
-        np.float32: _torch.ScalarType.Float32,
-        np.float64: _torch.ScalarType.Float64,
+    
+    npToDataTypeMap = {
+        np.bool8: _nncase.DataType.Bool,
+        np.int8: _nncase.DataType.Int8,
+        np.int16: _nncase.DataType.Int16,
+        np.int32: _nncase.DataType.Int32,
+        np.int64: _nncase.DataType.Int64,
+        np.uint8: _nncase.DataType.UInt8,
+        np.float16: _nncase.DataType.Float16,
+        np.float32: _nncase.DataType.Float32,
+        np.float64: _nncase.DataType.Float64,
     }
 
-    torchTypemap = {v: k for k, v in npTypemap.items()}
-
-    def __init__(self, arr: Union[np.ndarray, _torch.Tensor]) -> None:
-        if isinstance(arr, np.ndarray):
-            arr = _torch.tensor(
-                Array[self.netTypemap[arr.dtype.type]](arr.ravel().tolist()),
-                Array[Int64](arr.shape),
-                self.npTypemap[arr.dtype.type])
+    toNpDataTypeMap = {v:k for k, v in npToDataTypeMap.items()}
+    
+    def __init__(self, arr: np.ndarray) -> None:
         self._arr = arr
 
     def copy_to(self, to: RuntimeTensor) -> None:
@@ -123,13 +128,16 @@ class RuntimeTensor:
         return RuntimeTensor(arr)
 
     def to_numpy(self) -> np.ndarray:
-        if (not self._arr.is_contiguous()):
-            self._arr = self._arr.contiguous()
-        arr_bytes = _nncase.Evaluator.TorchExtentsion.ToSpan(self._arr)
-        return np.frombuffer(arr_bytes, dtype=self.torchTypemap[self._arr.dtype]).reshape(self._arr.shape)
+        arr_bytes = self._arr.Data.Data()
+        shape = self._arr.CheckedShape.ToValueList()
+        return np.frombuffer(arr_bytes, dtype=self.toNpDataTypeMap[self._arr.CheckedDataType]).reshape(shape)
 
-    def to_nncase(self) -> _torch.Tensor:
-        return self._arr
+    def to_nncase(self) -> np.ndarray:
+        dtype = self.npToDataTypeMap[self._arr.dtype.type]
+        shape = _nncase.IR.Shape(list(self._arr.shape))
+        tensorType = _nncase.IR.TensorType(dtype, shape)
+        data = _nncase.IR.IRBytes(self._arr.tobytes())
+        return _nncase.IR.Const(tensorType, data)
 
     @ property
     def dtype(self) -> dtype:
@@ -205,7 +213,7 @@ class GraphEvaluator:
         return self._outputs[index]
 
     def run(self):
-        inputs = Dictionary[_nncase.IR.Var, _torch.Tensor]()
+        inputs = Dictionary[_nncase.IR.Var, _nncase.IR.Const]()
         for k, v in zip(self._module.params, self._inputs):
             inputs[k] = v.to_nncase()
         results = _nncase.Evaluator.Evaluator.Eval(self._module.entry, inputs)
@@ -261,9 +269,11 @@ class Compiler:
     def import_caffe(self, model: bytes, prototxt: bytes) -> None:
         raise NotImplementedError("import_caffe")
 
-    def import_onnx(self, model: bytes, options: ImportOptions) -> None:
-        raise NotImplementedError("import_onnx")
-
+    def import_onnx(self, model_content: bytes, options: ImportOptions) -> None:
+        self._compile_options.InputFormat = "onnx"
+        self._module = Module(self._compiler.ImportModule(
+            MemoryStream(model_content), self._compile_options))
+        
     def import_tflite(self, model_content: bytes, options: ImportOptions) -> None:
         self._compile_options.InputFormat = "tflite"
         self._module = Module(self._compiler.ImportModule(
