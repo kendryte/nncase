@@ -14,39 +14,81 @@
 # pylint: disable=invalid-name, unused-argument, import-outside-toplevel
 
 import pytest
-import torch
+import onnx
+from onnx import helper
+from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
+import numpy as np
+import copy
 
+def _make_module(in_a_shape, in_b_shape):
+    inputs = []
+    outputs = []
+    initializers = []
+    attributes_dict = {}
+    nodes = []
 
-def _make_module(shape):
+    # input A
+    input = helper.make_tensor_value_info('A', TensorProto.FLOAT, in_a_shape)
+    inputs.append('A')
 
-    class MatmulModule(torch.nn.Module):
-        def __init__(self):
-            super(MatmulModule, self).__init__()
-            self.y = torch.randn(*shape)
+    # input B
+    B = helper.make_tensor(
+        'B',
+        TensorProto.FLOAT,
+        dims=in_b_shape,
+        vals=np.random.randn(*in_b_shape).astype(np.float32).flatten().tolist()
+    )
+    initializers.append(B)
+    inputs.append('B')
 
-        def forward(self, x):
-            x = torch.matmul(x, self.y)
+    # output
+    data_a = np.ones(in_a_shape)
+    data_b = np.ones(in_b_shape)
+    out_shape = np.matmul(data_a, data_b).shape
 
-            return x
+    output = helper.make_tensor_value_info('output', TensorProto.FLOAT, out_shape)
+    outputs.append('output')
 
-    return MatmulModule()
+    node = onnx.helper.make_node(
+        'MatMul',
+        inputs=inputs,
+        outputs=outputs,
+        **attributes_dict
+    )
+    nodes.append(node)
 
+    graph_def = helper.make_graph(
+        nodes,
+        'test-model',
+        [input],
+        [output],
+        initializer=initializers
+    )
 
-in_shapes = [
-    [[1, 2], [2, 1]],
-    [[3, 4], [4, 5]]
+    model_def = helper.make_model(graph_def, producer_name='onnx')
+
+    return model_def
+
+in_a_shapes = [
+    [16],
+    [16, 16],
+    [1, 3, 16, 16]
 ]
 
+in_b_shapes = [
+    [16],
+    [16, 16]
+]
 
-@pytest.mark.parametrize('in_shape', in_shapes)
-def test_matmul(in_shape, request):
-    module = _make_module(in_shape[1])
+@pytest.mark.parametrize('in_a_shape', in_a_shapes)
+@pytest.mark.parametrize('in_b_shape', in_b_shapes)
+def test_matmul(in_a_shape, in_b_shape, request):
+    model_def = _make_module(in_a_shape, in_b_shape)
 
     runner = OnnxTestRunner(request.node.name)
-    model_file = runner.from_torch(module, in_shape[0])
+    model_file = runner.from_onnx_helper(model_def)
     runner.run(model_file)
-
 
 if __name__ == "__main__":
     pytest.main(['-vv', 'test_matmul.py'])
