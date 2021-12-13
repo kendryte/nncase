@@ -7,19 +7,19 @@ namespace Nncase.TIR
     /// </summary>
     /// <param name="Min">beginning of the nodes</param>
     /// <param name="Extent">the extend of range</param>
-    public sealed record TRange(Expr Min, Expr Extent)
+    public sealed record Range(Expr Min, Expr Extent)
     {
         /// <summary>
-        /// <see cref="TRange"/>
+        /// <see cref="Range"/>
         /// </summary>
         /// <param name="tuple"> value tuple </param>
-        public TRange(ValueTuple<int, int> tuple) : this(tuple.Item1, tuple.Item2) { }
+        public Range(ValueTuple<int, int> tuple) : this(tuple.Item1, tuple.Item2) { }
 
         /// <summary>
-        /// <see cref="TRange"/>
+        /// <see cref="Range"/>
         /// </summary>
         /// <param name="tuple"> value tuple </param>
-        public static implicit operator TRange(ValueTuple<int, int> tuple) => new TRange(tuple.Item1, tuple.Item2);
+        public static implicit operator Range(ValueTuple<int, int> tuple) => new Range(tuple.Item1, tuple.Item2);
     }
 
     /// <summary>
@@ -31,7 +31,7 @@ namespace Nncase.TIR
     /// <param name="Var">The looping variable </param>
     /// <param name="IterType">The type of the IterVar </param>
     /// <param name="ThreadTag"> additional tag on the iteration variable, set this if this is binded already to a known thread tag. </param>
-    public sealed record IterVar(TRange Dom, Var Var, IterMode IterMode, string ThreadTag = "")
+    public sealed record IterVar(Range Dom, Var Var, IterMode IterMode, string ThreadTag = "")
     {
         public override string ToString()
         {

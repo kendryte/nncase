@@ -80,8 +80,8 @@ namespace Nncase.Tests.TIR
             var ift = new IfThenElse((Const)false, new Evaluate(11), nop);
             Assert.Equal(ift.Else, nop);
 
-            var bf = TBuffer.Decl((1, 2, 3));
-            var pf = new Prefetch(bf, new TRange[] { });
+            var bf = Buffer.Decl((1, 2, 3));
+            var pf = new Prefetch(bf, new Range[] { });
             Assert.IsType<Prefetch>(pf);
         }
     }

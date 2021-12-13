@@ -44,7 +44,7 @@ namespace Nncase.TIR
     ///  normal statements, making buffer_map as first class citizen of PrimFunc
     ///  will make program analysis much easier.
     /// </param>
-    public sealed record TFunc(IRArray<Var> Params, Stmt Body, Dictionary<Var, TBuffer> BufferMap) : Expr
+    public sealed record TFunc(IRArray<Var> Params, Stmt Body, Dictionary<Var, Buffer> BufferMap) : Expr
     {
         public TFunc(IRArray<Var> Params, Stmt Body) : this(Params, Body, new()) { }
     }

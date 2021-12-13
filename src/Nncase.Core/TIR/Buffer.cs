@@ -42,7 +42,7 @@ namespace Nncase.TIR
     ///     then the resulting function becomes fully generic.
     /// </remarks>
     /// </summary>
-    public sealed record TBuffer
+    public sealed record Buffer
     {
         /// <summary>
         /// The pointer to the head of the data
@@ -92,7 +92,7 @@ namespace Nncase.TIR
         /// This is only needed if user want to specify their own buffer layout.
         /// 
         /// See the note below for detailed discussion on usage of buffer.
-        ///  <see cref="TBuffer"/>
+        ///  <see cref="Buffer"/>
         /// </summary>
         /// <param name="shape">The shape of the buffer.</param>
         /// <param name="dtype">The data type of the buffer.</param>
@@ -123,7 +123,7 @@ namespace Nncase.TIR
         ///   TVM maps buffer[i][j][k] -> buffer[i][0][k] if dimension j's shape equals 1.
         /// </param>
         /// <returns>Buffer</returns>
-        public static TBuffer Decl(IR.Tuple shape, DataType? dtype = null, string name = "buffer", Var? data = null, IR.Tuple? strides = null, Expr? elem_offset = null, string scope = "", int data_alignment = -1, int offset_factor = 0, BufferMode buffer_mode = BufferMode.Default)
+        public static Buffer Decl(IR.Tuple shape, DataType? dtype = null, string name = "buffer", Var? data = null, IR.Tuple? strides = null, Expr? elem_offset = null, string scope = "", int data_alignment = -1, int offset_factor = 0, BufferMode buffer_mode = BufferMode.Default)
         {
             dtype ??= DataType.Float32;
             strides ??= new();
@@ -150,13 +150,13 @@ namespace Nncase.TIR
             {
                 strides = new IR.Tuple(shape.Fields.Select(e => new Var("stride", TensorType.Scalar(e.CheckedDataType))).ToArray());
             }
-            return new TBuffer(shape, name, data, strides, elem_offset, scope, data_alignment, offset_factor, buffer_mode);
+            return new Buffer(shape, name, data, strides, elem_offset, scope, data_alignment, offset_factor, buffer_mode);
         }
 
         /// <summary>
         /// <see cref="Decl(IR.Tuple, DataType, string, Var?, IRArray{Expr}?, Expr?, string, int, int, BufferMode)"/>
         /// </summary>
-        private TBuffer(IR.Tuple shape, string name, Var data, IR.Tuple strides, Expr elem_offset, string scope, int data_alignment, int offset_factor, BufferMode buffer_mode)
+        private Buffer(IR.Tuple shape, string name, Var data, IR.Tuple strides, Expr elem_offset, string scope, int data_alignment, int offset_factor, BufferMode buffer_mode)
         {
             Handle = data;
             Shape = shape;

@@ -17,10 +17,10 @@ namespace Nncase.Tests.TIR
             var n = new SizeVar("n");
             var l = new SizeVar("l");
 
-            var Ab = TBuffer.Decl((m, n), DataType.Float32);
-            var Bb = TBuffer.Decl((n, l), DataType.Float32);
+            var Ab = Buffer.Decl((m, n), DataType.Float32);
+            var Bb = Buffer.Decl((n, l), DataType.Float32);
 
-            Assert.IsType<TBuffer>(Ab);
+            Assert.IsType<Buffer>(Ab);
             Assert.Equal(Ab.Dtype, DataType.Float32);
             Assert.Equal(Ab.Shape[0], m);
             Assert.Equal(Ab.Shape[1], n);
@@ -35,7 +35,7 @@ namespace Nncase.Tests.TIR
               { n,  torch.tensor(1) },
               { m,  torch.tensor(3) },
             };
-            var Ab = TBuffer.Decl((m, n),
+            var Ab = Buffer.Decl((m, n),
                           DataType.Float32,
                           strides: (n + 1, 1));
             var aptr = Ab.AccessPtr(AccessMode.ReadWrite);
@@ -52,7 +52,7 @@ namespace Nncase.Tests.TIR
               { n,  torch.tensor(1) },
               { m,  torch.tensor(3) },
             };
-            var Ab = TBuffer.Decl((m, n),
+            var Ab = Buffer.Decl((m, n),
                           DataType.Float32,
                           strides: (n + 1, 1));
             var aptr = Ab.AccessPtr(AccessMode.ReadWrite, offset: 100);
@@ -70,10 +70,10 @@ namespace Nncase.Tests.TIR
         {
             var m = new SizeVar("m");
             var n = new SizeVar("n");
-            var Ab = TBuffer.Decl((m, n), DataType.Float32);
+            var Ab = Buffer.Decl((m, n), DataType.Float32);
             var aptr = Ab.AccessPtr(AccessMode.ReadWrite, offset: 100);
             Testing.AssertExprEqual(aptr.Parameters[2], m * n - 100);
-            var Bb = TBuffer.Decl((m, n), DataType.Float32, strides: (n + 1, 1));
+            var Bb = Buffer.Decl((m, n), DataType.Float32, strides: (n + 1, 1));
             var bptr = Bb.AccessPtr(AccessMode.ReadWrite, offset: 100);
             Testing.AssertExprEqual(bptr.Parameters[2], Bb.Strides[0] * m - 100);
         }
@@ -83,7 +83,7 @@ namespace Nncase.Tests.TIR
         {
             var m = new SizeVar("m");
             var n = new SizeVar("n");
-            var Ab = TBuffer.Decl((m, n), DataType.Float32, elem_offset: 100);
+            var Ab = Buffer.Decl((m, n), DataType.Float32, elem_offset: 100);
             var load = Ab.VLoad((2, 3));
             Testing.AssertExprEqual(load[Load.Index], 100 + ((2 * n) + 3));
         }

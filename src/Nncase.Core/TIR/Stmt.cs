@@ -90,7 +90,7 @@ namespace Nncase.TIR
     /// <param name="Buffer">The buffer variable.</param>
     /// <param name="Value">The value to be stored.</param>
     /// <param name="Indices">The indices location to be stored.</param>
-    public sealed record BufferStore(TBuffer Buffer, Expr Value, IRArray<Expr> Indices) : Stmt { }
+    public sealed record BufferStore(Buffer Buffer, Expr Value, IRArray<Expr> Indices) : Stmt { }
 
     /// <summary>
     /// Annotate the region where the buffer need to
@@ -106,7 +106,7 @@ namespace Nncase.TIR
     /// <param name="Bounds">Bounds to be realized</param>
     /// <param name="Condition">Only realize if condition holds.</param>
     /// <param name="Body">The body of realization.</param>
-    public sealed record BufferRealize(TBuffer Buffer, IRArray<TRange> Bounds, Expr Condition, Stmt Body) : Stmt
+    public sealed record BufferRealize(Buffer Buffer, IRArray<Range> Bounds, Expr Condition, Stmt Body) : Stmt
     { }
     /// <summary>
     /// Store value into mult-dimensional array that will be read by the consumer
@@ -137,7 +137,7 @@ namespace Nncase.TIR
     /// <param name="Condition">Only realize if condition holds.</param>
     /// <param name="Body">The body of realization.</param>
     /// <param name="StorageScope">The storage scope associated with this realization.</param>
-    public sealed record ProducerRealizeNode(DataProducer Producer, IRArray<TRange> Bounds, Expr Condition, Stmt Body, string StorageScope) : Stmt
+    public sealed record ProducerRealizeNode(DataProducer Producer, IRArray<Range> Bounds, Expr Condition, Stmt Body, string StorageScope) : Stmt
     { }
 
     /// <summary>
@@ -287,7 +287,7 @@ namespace Nncase.TIR
     /// </summary>
     /// <param name="Buffer">The function to be prefetched.</param>
     /// <param name="Bounds">Bounds to be prefetched.</param>
-    public sealed record Prefetch(TBuffer Buffer, IRArray<TRange> Bounds) : Stmt
+    public sealed record Prefetch(Buffer Buffer, IRArray<Range> Bounds) : Stmt
     { }
 
     /// <summary>
@@ -295,14 +295,14 @@ namespace Nncase.TIR
     /// </summary>
     /// <param name="Buffer">The buffer of the buffer region.</param>
     /// <param name="Region">The region array of the buffer region.</param>
-    public sealed record BufferRegion(TBuffer Buffer, IRArray<TRange> Region) : Stmt
+    public sealed record BufferRegion(Buffer Buffer, IRArray<Range> Region) : Stmt
     {
         /// <summary>
         /// Create a BufferRegion which is full region of the given buffer.
         /// </summary>
         /// <param name="Buf">The buffer to generate full BufferRegion.</param>
         /// <returns>The BufferRegion which covers all region of the given buffer</returns>
-        public static BufferRegion Full(TBuffer Buf) => new BufferRegion(Buf, new(Buf.Shape.Select(extent => new TRange(0, extent))));
+        public static BufferRegion Full(Buffer Buf) => new BufferRegion(Buf, new(Buf.Shape.Select(extent => new Range(0, extent))));
 
         /// <summary>
         /// Create a BufferRegion which is a single point of the given buffer.
@@ -310,7 +310,7 @@ namespace Nncase.TIR
         /// <param name="Buf">The buffer to generate single point BufferRegion.</param>
         /// <param name="Indices">The access point indices of the buffer</param>
         /// <returns>The BufferRegion which is the single point of the given buffer.</returns>
-        public static BufferRegion FromPoint(TBuffer Buf, IRArray<Expr> Indices) => new BufferRegion(Buf, new(Indices.Select(index => new TRange(index, 1))));
+        public static BufferRegion FromPoint(Buffer Buf, IRArray<Expr> Indices) => new BufferRegion(Buf, new(Indices.Select(index => new Range(index, 1))));
     }
 
     /// <summary>
@@ -324,7 +324,7 @@ namespace Nncase.TIR
     /// </summary> 
     /// <param name="Buffer">The target buffer.</param>
     /// <param name="Source">The source buffer region.</param>
-    public sealed record MatchBufferRegion(TBuffer Buffer, BufferRegion Source) : Stmt
+    public sealed record MatchBufferRegion(Buffer Buffer, BufferRegion Source) : Stmt
     { }
 
     /// <summary>
@@ -361,7 +361,7 @@ namespace Nncase.TIR
     /// <param name="Alloc_Buffers"> The buffer allocated in the block. </param>
     /// <param name="Match_Buffers"> The match buffer regions. </param>
     /// <param name="Annotations">The annotation of the block. </param>
-    public sealed record Block(IRArray<IterVar> Iter_Vars, IRArray<BufferRegion> Reads, IRArray<BufferRegion> Writes, string Name_Hint, Stmt Body, Stmt? Init, IRArray<TBuffer> Alloc_Buffers, IRArray<MatchBufferRegion> Match_Buffers, Dictionary<string, object> Annotations) : Stmt { }
+    public sealed record Block(IRArray<IterVar> Iter_Vars, IRArray<BufferRegion> Reads, IRArray<BufferRegion> Writes, string Name_Hint, Stmt Body, Stmt? Init, IRArray<Buffer> Alloc_Buffers, IRArray<MatchBufferRegion> Match_Buffers, Dictionary<string, object> Annotations) : Stmt { }
 
     /// <summary>
     /// A block realization node represents execution of the block at the binding values.

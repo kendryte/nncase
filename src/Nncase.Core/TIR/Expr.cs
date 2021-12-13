@@ -28,7 +28,7 @@ namespace Nncase.TIR
 
     public sealed record Select(Expr Condition, Expr TrueValue, Expr FalseValue) : Expr { }
 
-    public sealed record BufferLoad(TBuffer Buffer, IRArray<Expr> Indices) : Expr
+    public sealed record BufferLoad(Buffer Buffer, IRArray<Expr> Indices) : Expr
     {
         public override string ToString()
         {
