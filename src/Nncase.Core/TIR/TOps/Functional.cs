@@ -24,19 +24,15 @@ namespace Nncase.TIR.F
         ///   auto buffer = static_cast<float*>(buffer_var);
         ///   auto loaded_val = float32x3(buffer[index.v0], buffer[index.v1], buffer[index.v2]);
         /// </example>
+        /// TODO add load with different type
         /// </summary>
-        /// <param name="load_dtype">load data type</param>
         /// <param name="buffer_handle">The buffer handle variable in the load expression.</param>
         /// <param name="index">The index in the load.</param>
         /// <param name="predicate">The load predicate.</param>
-        public static Call Load(DataType load_dtype, Var buffer_handle, Expr index, Expr? predicate)
+        public static Call Load(Var buffer_handle, Expr index, Expr? predicate = null)
         {
-            int lanes = 1;
-            if (buffer_handle.TypeAnnotation is PointerType ptype)
-            {
-                lanes = ptype.DType.Lanes;
-            }
-            return new Call(new Load(load_dtype), buffer_handle, index, predicate ?? Const.FromScalar(1, lanes));
+
+            return new Call(new Load(), buffer_handle, index, predicate ?? MakeConst<int>(1, LanesOp(buffer_handle)));
         }
 
         /// <summary>
@@ -56,6 +52,28 @@ namespace Nncase.TIR.F
         public static Call Ramp(Expr base_offset, Expr stride, int lanes)
         {
             return new Call(new Ramp(lanes), base_offset, stride);
+        }
+
+        /// <summary>
+        /// make a const by value and lanes.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="value"></param>
+        /// <param name="lanes"></param>
+        /// <returns></returns>
+        public static Call MakeConst<T>(T value, Expr lanes)
+        {
+            return new Call(new MakeConst<T>(value), lanes);
+        }
+
+        /// <summary>
+        /// get the current expr's lanes
+        /// </summary>
+        /// <param name="input"></param>
+        /// <returns></returns>
+        public static Call LanesOp(Expr input)
+        {
+            return new Call(new LanesOp(), input);
         }
     }
 }

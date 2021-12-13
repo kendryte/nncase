@@ -233,15 +233,10 @@ namespace Nncase.TIR
         /// </remarks>
         /// </summary>
         /// <param name="begin"> the index of data begin</param>
-        /// <param name="dtype"> the data type be loaded, we can load single value with lanes </param>
         /// <returns> the corresponding load expr. </returns>
-        public Call VLoad(IR.Tuple begin, DataType? dtype = null)
+        public Call VLoad(IR.Tuple begin)
         {
-            dtype ??= Dtype;
-            // TODO need consider the load bool as 8 bits;
-            var compat = dtype.CompatibleWith(Dtype);
-            if (!compat) { throw new InvalidOperationException(compat.Reason); }
-            return F.TOps.Load(dtype, Handle, CalcLoadOffset(begin, dtype), null);
+            return F.TOps.Load(Handle, CalcOffset(begin), null);
         }
 
         /// <summary>
@@ -252,6 +247,7 @@ namespace Nncase.TIR
         /// <returns>The corresponding store stmt.</returns>
         public Stmt VStore(IR.Tuple begin, Expr value)
         {
+            return new Store(Handle, value, CalcOffset(begin), null);
         }
 
         public Expr CalcElemOffset(IR.Tuple index)
@@ -307,19 +303,10 @@ namespace Nncase.TIR
         /// compute the load value offset in buffer
         /// </summary>
         /// <param name="index"></param>
-        /// <param name="dtype"></param>
         /// <returns></returns>
-        public Expr CalcLoadOffset(IR.Tuple index, DataType dtype)
+        public Expr CalcOffset(IR.Tuple index)
         {
             var offset = CalcElemOffset(index);
-            if (this.Dtype.Lanes != 1)
-            {
-                offset = offset * (Const)this.Dtype.Lanes;
-            }
-            if (dtype.Lanes != 1)
-            {
-                return F.TOps.Ramp(offset, 1, dtype.Lanes);
-            }
             return offset;
         }
     }

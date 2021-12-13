@@ -28,7 +28,7 @@ namespace Nncase.Tests.TIR
             var rhs = Equal(Var.Scalar("x", DataType.Float32), (Const)1);
             var s = new Select(lhs, rhs, (Const)1);
             var buffer_var = Var.Handle("x", DataType.Float32);
-            var ld = TOps.Load(DataType.Float32, buffer_var, 1, lhs);
+            var ld = TOps.Load(buffer_var, 1, lhs);
             Assert.Equal(ld[Load.BufferHandle], buffer_var);
 
             var ramp = TOps.Ramp(1, 2, 3);
@@ -70,7 +70,7 @@ namespace Nncase.Tests.TIR
             Assert.Equal(fr.Min.ToScalar<int>(), 0);
 
             var st = new Store(buf_var, 1, 10, (Const)1);
-            Assert.Equal(st.BufferVar, buf_var);
+            Assert.Equal(st.BufferHandle, buf_var);
             Assert.Equal(st.Index.ToScalar<int>(), 10);
 
             var alc = new Allocate(buf_var, new Expr[] { 1, 2, 3 }, (Const)true, nop);
@@ -84,7 +84,5 @@ namespace Nncase.Tests.TIR
             var pf = new Prefetch(bf, new TRange[] { });
             Assert.IsType<Prefetch>(pf);
         }
-
-
     }
 }

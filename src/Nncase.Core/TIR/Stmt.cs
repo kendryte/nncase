@@ -30,25 +30,56 @@ namespace Nncase.TIR
     /// <param name="Message">Error message when assertion failed.</param>
     /// <param name="Body">Body which this assertion holds true. Will be executed after the assertion.</param>
     public sealed record AssertStmt(Expr Condition, Expr Message, Stmt Body) : Stmt { }
+
     /// <summary>
-    /// Store value to the buffer.
-    /// Equivalent to ((DType*)buffer_var)[index] = value.
-    /// where DType is the type specified by type().element_of().
-    /// <example>
-    /// if type = float32x3, then the store will corresponds to
-    /// <code>
-    ///  auto buffer = static_cast<float*>(buffer_var);
-    ///  buffer[index.v0] = value.v0;
-    ///  buffer[index.v1] = value.v1;
-    ///  buffer[index.v2] = value.v2;
-    /// </code>
-    /// </example>
+    /// Store
     /// </summary>
-    /// <param name="BufferVar">The buffer variable.</param>
-    /// <param name="Value">The value to be stored.</param>
-    /// <param name="Index">The index locations to be stored.</param>
-    /// <param name="Predicate">The predicate to mask which lanes would be stored.</param>
-    public sealed record Store(Var BufferVar, Expr Value, Expr Index, Expr Predicate) : Stmt { }
+    public sealed record Store : Stmt
+    {
+        /// <summary>
+        ///The buffer variable.
+        /// </summary>
+        public Var BufferHandle;
+        /// <summary>
+        ///The value to be stored.
+        /// </summary>
+        public Expr Value;
+        /// <summary>
+        ///The index locations to be stored.
+        /// </summary>
+        public Expr Index;
+        /// <summary>
+        ///The predicate to mask which lanes would be stored.
+        /// </summary>
+        public Expr Predicate;
+
+        /// <summary>
+        /// Store value to the buffer.
+        /// Equivalent to ((DType*)buffer_var)[index] = value.
+        /// where DType is the type specified by type().element_of().
+        /// <example>
+        /// if type = float32x3, then the store will corresponds to
+        /// <code>
+        ///  auto buffer = static_cast<float*>(buffer_var);
+        ///  buffer[index.v0] = value.v0;
+        ///  buffer[index.v1] = value.v1;
+        ///  buffer[index.v2] = value.v2;
+        /// </code>
+        /// </example>
+        /// </summary>
+        /// <param name="buffer_handle">The buffer Variable.</param>
+        /// <param name="value">The value we want to store.</param>
+        /// <param name="index">he index in the store expression.</param>
+        /// <param name="predicate">The store predicate.</param>
+        public Store(Var buffer_handle, Expr value, Expr index, Expr? predicate = null)
+        {
+            predicate ??= F.TOps.MakeConst<int>(1, F.TOps.LanesOp(buffer_handle));
+            BufferHandle = buffer_handle;
+            Value = value;
+            Index = index;
+            Predicate = predicate;
+        }
+    }
 
     /// <summary>
     /// Store value to the high dimension buffer.

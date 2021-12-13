@@ -3,10 +3,9 @@ using System;
 namespace Nncase.TIR
 {
     /// <summary>
-    /// <seealso cref="F.TOps.Load(DataType, Var, Expr, Expr?)"/>
+    /// <seealso cref="F.TOps.Load(Var, Expr, Expr?)"/>
     /// </summary>
-    /// <param name="LoadType"> Load value's DataType </param>
-    public sealed record Load(DataType LoadType) : Op
+    public sealed record Load() : Op
     {
         /// <summary>
         /// The pointer variable in the load expression.
@@ -26,15 +25,7 @@ namespace Nncase.TIR
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, PointerType bufferHandle, TensorType index, TensorType predicate)
         {
-            if (predicate.DType != LoadType)
-            {
-                return new InvalidType($"The Predicate {predicate.DType} != LoadType {LoadType}");
-            }
-            if (!LoadType.CompatibleWith(bufferHandle.DType))
-            {
-                return new InvalidType($"The LoadType {predicate.DType} not Compatible With bufferHandle {bufferHandle.DType}");
-            }
-            return TensorType.Scalar(LoadType);
+            return TensorType.Scalar(bufferHandle.DType);
         }
     }
 
