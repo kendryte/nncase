@@ -14,15 +14,6 @@ namespace Nncase.IR
         private readonly ImmutableArray<T> _array;
 
         /// <summary>
-        /// default new a ir array;
-        /// </summary>
-        public IRArray()
-        {
-            _array = ImmutableArray<T>.Empty;
-            _hashcode = HashCode.Combine(StructuralComparisons.StructuralEqualityComparer.GetHashCode(_array));
-        }
-
-        /// <summary>
         /// construct Ir Array with array.
         /// </summary>
         /// <param name="array"></param>
