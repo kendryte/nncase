@@ -72,13 +72,14 @@ def _make_module(in_a_shape, in_b_shape):
 
 in_a_shapes = [
     [16],
-    [16, 16],
-    [1, 3, 16, 16]
+    [12, 16],
+    [3, 12, 16],
+    [1, 3, 12, 16]
 ]
 
 in_b_shapes = [
     [16],
-    [16, 16]
+    [16, 14]
 ]
 
 @pytest.mark.parametrize('in_a_shape', in_a_shapes)
