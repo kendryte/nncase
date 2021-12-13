@@ -125,6 +125,8 @@ bool lstm_transform::on_try_match(node &node, transform_context &context)
             }
 
             context.outputs.emplace_back(&old_lstm->output());
+            context.outputs.emplace_back(&old_lstm->output_h());
+            context.outputs.emplace_back(&old_lstm->output_c());
 
             return true;
         }
@@ -137,6 +139,8 @@ void lstm_transform::process(transform_context &context)
 {
     auto &output = *context.inputs[0]->connection();
     auto inputs = context.outputs[0]->connections();
+    auto connect_h = context.outputs[1]->connections();
+    auto connect_c = context.outputs[2]->connections();
 
     auto &old_lstm = static_cast<lstm &>(*context.matched_nodes[0]);
     auto &w_xc = static_cast<constant &>(*context.matched_nodes[1]);
@@ -401,4 +405,8 @@ void lstm_transform::process(transform_context &context)
 
     for (auto &in : dup(inputs))
         in->connect(h_concat->output());
+    for (auto &in : dup(connect_h))
+        in->connect(*h_);
+    for (auto &in : dup(connect_c))
+        in->connect(*c_);
 }
