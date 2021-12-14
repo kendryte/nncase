@@ -508,7 +508,7 @@ class TestRunner(metaclass=ABCMeta):
                 compile_options, model_content, dict_args, preprocess_opt)
             judge, result = self.compare_results(
                 self.output_paths, eval_output_paths, dict_args)
-            # assert(judge), 'Fault result in eval' + result
+            assert(judge), 'Fault result in eval' + result
 
     def run_inference(self, cfg, case_dir, import_options, compile_options, model_content, preprocess_opt):
         names, args = TestRunner.split_value(cfg.infer)
@@ -523,7 +523,7 @@ class TestRunner(metaclass=ABCMeta):
                 compile_options, model_content, dict_args, preprocess_opt)
             judge, result = self.compare_results(
                 self.output_paths, infer_output_paths, dict_args)
-            # assert(judge), 'Fault result in infer' + result
+            assert(judge), 'Fault result in infer' + result
 
     @staticmethod
     def split_value(kwcfg: List[Dict[str, str]]) -> Tuple[List[str], List[str]]:
@@ -691,20 +691,31 @@ class TestRunner(metaclass=ABCMeta):
         infer_output_paths: List[np.ndarray] = []
         if cfg.generate_inputs.name == "generate_imagenet_dataset":
             # for i in range(len(self.inputs)):
-            topk = []
-            for in_data in self.inputs[0]['data']:
+            def sim_run(sim, in_data):
                 sim.set_input_tensor(0, nncase.RuntimeTensor.from_numpy(in_data[0]))
                 sim.run()
                 result = sim.get_output_tensor(0).to_numpy()
-                topk.append((in_data[1], get_topK(kwargs['target'], 1, result)))
+                lock.acquire()
+                tmp = []
+                tmp.append((in_data[1], get_topK(kwargs['target'], 1, result)))
+                tmp.tofile(infer_output_paths[-1][0])
+                with open(infer_output_paths[-1][1], 'a') as f:
+                    for i in range(len(tmp)):
+                        f.write(tmp[i][0].split("/")[-1] + " " + str(tmp[i][1][0]) + '\n')
+                lock.release()
+
+            import multiprocessing
+            p = multiprocessing.Pool(30)
+            lock = multiprocessing.Lock()
             gnne_txt = "gnne_no_ptq" if kwargs['ptq'] is False else "gnne_ptq"
             infer_output_paths.append((
                 os.path.join(infer_dir, gnne_txt) + '_0.bin',
                 os.path.join(infer_dir, gnne_txt) + '_0.txt'))
-            result.tofile(infer_output_paths[-1][0])
-            with open(infer_output_paths[-1][1], 'a') as f:
-                for i in range(len(topk)):
-                    f.write(topk[i][0].split("/")[-1] + " " + str(topk[i][1][0]) + '\n')
+            for in_data in self.inputs[0]['data']:
+                input_data = copy.deepcopy(in_data)
+                p.apply_async(sim_run, (sim, input_data, infer_output_paths, lock))
+                del input_data
+
         else:
             for i in range(len(self.inputs)):
                 data = self.transform_input(

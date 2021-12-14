@@ -58,13 +58,13 @@ case: # case的配置，应该是一个多层次的
     kwargs: 
       dir_path: "ImageNet/ImageNet_1000_first"
     numbers: 1
-    batch_size: 1
+    batch_size: 1000
   generate_calibs:
     name: generate_imagenet_dataset
     kwargs:
       dir_path: "ImageNet/ImageNet_1000_first"
     numbers: 1
-    batch_size: 1
+    batch_size: 100
   generate_dump_range_data:
     name: generate_imagenet_dataset
     kwargs:
