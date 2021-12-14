@@ -455,6 +455,7 @@ void onnx_importer::convert_op_Trilu(const NodeProto &node)
     const auto &input = node.input()[0];
     const datatype_t input_type = get_datatype(input).value();
     auto input_shape = get_shape(input);
+    assert(input_shape.size() >= 2);
     const auto &output = node.output()[0];
 
     // upper

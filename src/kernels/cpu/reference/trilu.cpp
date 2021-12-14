@@ -12,8 +12,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <iostream>
-#include <limits>
 #include <nncase/kernels/cpu/reference/tensor_compute.h>
 #include <nncase/kernels/kernel_utils.h>
 #include <nncase/runtime/runtime_op_utility.h>
@@ -29,27 +27,25 @@ template result<void> reference::trilu<float>(const float *input, float *output,
 template <typename T>
 result<void> reference::trilu(const T *input, T *output, const runtime_shape_t &in_shape, const bool upper, const int64_t k) noexcept
 {
-    std::cout << "input = " << (void *)input << ", output = " << (void *)output << ", in_shape = " << in_shape[0] << ", upper = " << upper << " k = " << k << std::endl;
-
     // copy input to output
     memcpy(static_cast<void *>(output), static_cast<const void *>(input), compute_size(in_shape) * sizeof(T));
 
     size_t ndim = in_shape.size();
+    assert(ndim >= 2);
     int64_t batch_size = 1;
-    for (int64_t i = 0; i < ndim - 2; ++i)
+    for (size_t i = 0; i < ndim - 2; ++i)
     {
         batch_size *= in_shape[i];
     }
 
     int64_t matrix_h = static_cast<int64_t>(in_shape[ndim - 2]);
     int64_t matrix_w = static_cast<int64_t>(in_shape[ndim - 1]);
-
     int64_t num_matrix_elems = matrix_h * matrix_w;
-    // auto* Y_data = reinterpret_cast<T*>(Y->MutableDataRaw());
+
+    // zero the specific diagonal
     for (int64_t b = 0; b < batch_size; b++)
     {
         auto p = output + (b * num_matrix_elems);
-
         if (upper)
         {
             int64_t start_i = k > 0 ? 0 : 1 - k;
@@ -68,7 +64,7 @@ result<void> reference::trilu(const T *input, T *output, const runtime_shape_t &
             {
                 for (int64_t j = std::max(static_cast<int64_t>(0), i + k + 1); j < matrix_w; j++)
                 {
-                    p[i * matrix_w + j] = 0;
+                    p[i * matrix_w + j] = static_cast<T>(0);
                 }
             }
         }
