@@ -68,6 +68,23 @@ void update_absolute_offset(logical_buffer &buffer)
         buffer.absolute_offset() = 0;
     }
 }
+
+void update_strides_shape(logical_buffer &buffer)
+{
+    if (buffer.strides_shape())
+        return;
+
+    if (buffer.strides_parent())
+    {
+        auto &parent_buffer = *buffer.strides_parent();
+        update_strides_shape(parent_buffer);
+        buffer.strides_shape() = parent_buffer.strides_shape();
+    }
+    else
+    {
+        buffer.strides_shape() = buffer.shape();
+    }
+}
 }
 
 function_schedule_context::function_schedule_context(ir::graph &graph, module_schedule_context &mod_sched)
@@ -197,7 +214,10 @@ void function_schedule_context::analyze_buffer_alias()
 void function_schedule_context::update_offset()
 {
     for (auto &bp : logical_buffers_)
+    {
         update_absolute_offset(bp);
+        update_strides_shape(bp);
+    }
 }
 
 void function_schedule_context::fix_lifetime()
@@ -289,8 +309,8 @@ void function_schedule_context::assign_allocations()
             alloc.type = lbuf.type();
             alloc.size = allocators_.at(alloc.memory_location)->get_size_in_bytes(lbuf);
             alloc.shape = lbuf.shape();
-            assert(lbuf.strides_shape().size());
-            alloc.strides_shape = lbuf.strides_shape();
+            assert(lbuf.strides_shape());
+            alloc.strides_shape = *lbuf.strides_shape();
             alloc.strides = to_strides(alloc.strides_shape);
             alloc.start = memory.start;
             alloc.start += *lbuf.absolute_offset();
@@ -312,7 +332,7 @@ void function_schedule_context::dump(const std::filesystem::path &dump_dir)
                 datatype_names(buf.type()),
                 ir::to_string(buf.shape()),
                 alloc.size,
-                ir::to_string(buf.strides_shape()));
+                ir::to_string(*buf.strides_shape()));
         };
 
         // 1. allocation

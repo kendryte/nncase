@@ -319,7 +319,7 @@ void alias_bitcast_buffer_pass::run_core(graph &graph, [[maybe_unused]] nncase::
                 {
                     // owner is input, parent shape is bitcast's
                     out_buf.parent() = { &in_buf, offset, b->output().shape() };
-                    out_buf.strides_shape() = b->output().shape();
+                    out_buf.strides_parent() = nullptr;
                 }
                 else
                 {
@@ -327,7 +327,7 @@ void alias_bitcast_buffer_pass::run_core(graph &graph, [[maybe_unused]] nncase::
 
                     // owner transfered to output
                     in_buf.parent() = { &out_buf, offset, b->output().shape() };
-                    in_buf.strides_shape() = input.shape();
+                    in_buf.strides_parent() = nullptr;
                 }
             }
         }
@@ -353,7 +353,7 @@ void alias_concat_buffer_pass::run_core([[maybe_unused]] graph &graph, [[maybe_u
             {
                 auto &in_buf = context.logical_buffer_map().at(in->connection());
                 in_buf->parent() = { out_buf, offset, c->output().shape() };
-                in_buf->strides_shape() = c->output().shape();
+                in_buf->strides_parent() = out_buf;
                 in_buf->memory_location() = out_buf->memory_location();
                 cnt_begin[axis] += in->shape()[axis];
                 offset = ir::get_bytes(in_buf->type()) * xt::element_offset<size_t>(to_strides(in_buf->parent()->shape), cnt_begin.begin(), cnt_begin.end());
@@ -376,7 +376,7 @@ void alias_slice_buffer_pass::run_core(graph &graph, [[maybe_unused]] nncase::ta
 
                 size_t offset = ir::get_bytes(in_buf->type()) * xt::element_offset<size_t>(to_strides(s->input().shape()), s->begin().begin(), s->begin().end());
                 out_buf->parent() = { in_buf, offset, s->output().shape() };
-                out_buf->strides_shape() = s->input().shape();
+                out_buf->strides_parent() = in_buf;
                 out_buf->memory_location() = in_buf->memory_location();
             }
         }
