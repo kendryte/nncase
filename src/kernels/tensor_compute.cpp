@@ -332,3 +332,11 @@ result<void> kernels::topk(const T *input, T *output_values, int64_t *output_ind
     return cpu::reference::topk(input, output_values, output_indices, in_shape, in_strides, output_values_shape, output_values_strides,
         output_indices_shape, output_indices_strides, k, axis, largest, sorted);
 }
+
+template result<void> kernels::trilu<float>(const float *input, float *output, const runtime_shape_t &in_shape, const bool upper, const int64_t k) noexcept;
+
+template <typename T>
+result<void> kernels::trilu(const T *input, T *output, const runtime_shape_t &in_shape, const bool upper, const int64_t k) noexcept
+{
+    return cpu::reference::trilu(input, output, in_shape, upper, k);
+}

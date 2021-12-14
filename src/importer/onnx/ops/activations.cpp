@@ -20,6 +20,7 @@
 #include <nncase/ir/ops/clamp.h>
 #include <nncase/ir/ops/constant.h>
 #include <nncase/ir/ops/reduce.h>
+#include <nncase/ir/ops/trilu.h>
 #include <nncase/ir/ops/unary.h>
 
 using namespace nncase;
@@ -442,6 +443,37 @@ void onnx_importer::convert_op_Selu(const NodeProto &node)
     input_tensors_.emplace(&exp->input(), input);
     input_tensors_.emplace(&max->input_a(), input);
     output_tensors_.emplace(output, &mul2->output());
+}
+
+void onnx_importer::convert_op_Trilu(const NodeProto &node)
+{
+    auto input_size = node.input().size();
+    assert(input_size >= 1);
+    assert(node.output().size() == 1);
+
+    const auto &op_name { generate_name(node) };
+    const auto &input = node.input()[0];
+    const datatype_t input_type = get_datatype(input).value();
+    auto input_shape = get_shape(input);
+    const auto &output = node.output()[0];
+
+    // upper
+    bool upper = get_attribute<int>(node, "upper").value_or(1);
+
+    // k
+    int64_t k = 0;
+    if (input_size > 1)
+    {
+        auto v = get_constant_value<int64_t>(node.input()[1]);
+        assert(v.size() == 1);
+        k = v[0];
+    }
+
+    auto op = graph_.emplace<trilu>(input_type, input_shape, upper, k);
+    op->name(op_name + "/trilu");
+
+    input_tensors_.emplace(&op->input(), input);
+    output_tensors_.emplace(output, &op->output());
 }
 
 // y = ln(exp(x) + 1)
