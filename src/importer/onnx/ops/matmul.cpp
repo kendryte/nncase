@@ -66,7 +66,7 @@ void onnx_importer::convert_op_MatMul(const NodeProto &node)
             new_a_shape[0] *= input_a_shape[i];
             new_output_shape.push_back(input_a_shape[i]);
         }
-        new_a_shape.push_back(input_a_shape[input_a_shape.size() - 1]);
+        new_a_shape.push_back(input_a_shape.back());
     }
 
     auto bc_a = graph_.emplace<bitcast>(input_type, input_a_shape, new_a_shape);
