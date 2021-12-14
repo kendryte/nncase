@@ -676,6 +676,7 @@ class TestRunner(metaclass=ABCMeta):
             if cfg.generate_calibs.name == "generate_imagenet_dataset":
                 ptq_options.set_tensor_data(np.asarray(
                     [sample['data'] for sample in self.calibs]).tobytes())
+                ptq_options.calibrate_method = self.cfg.case.compile_opt.quant_method
             else:
                 ptq_options.set_tensor_data(np.asarray(
                     [self.transform_input(sample['data'], preprocess['input_type'], "infer") for sample in self.calibs]).tobytes())
