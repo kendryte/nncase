@@ -1,11 +1,25 @@
-setup: # 整个runner期间的超参数配置
-  root: tests_output
-  numworkers: 8
-  log_txt: true
-running: # 每个case运行时的处理配置
-  preprocess: null
-  postprocess: null
-case: # case的配置，应该是一个多层次的
+# Copyright 2019-2021 Canaan Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# pylint: disable=invalid-name, unused-argument, import-outside-toplevel
+
+import pytest
+from tflite_test_runner import TfliteTestRunner
+
+
+def test_resnet50_v2(request):
+    overwrite_cfg = """
+case: 
   preprocess_opt:
     - name: preprocess
       values:
@@ -48,7 +62,7 @@ case: # case的配置，应该是一个多层次的
     quant_type: 'uint8'
     w_quant_type: 'uint8'
     use_mse_quant_w: true
-    quant_method: "cdf"
+    quant_method: "l2"
 
   ptq_opt:
     kwargs:
@@ -76,22 +90,15 @@ case: # case的配置，应该是一个多层次的
     - name: target
       values:
         - cpu
-        #- vulkan
-        # - k210
         - k510
-        # - k230
     - name: ptq
       values:
         - false
-        # - true
   infer:
     - name: target
       values:
         - cpu
-        #- vulkan
-        # - k210
         - k510
-        # - k230
     - name: ptq
       values:
         - false
@@ -104,11 +111,20 @@ judge:
     matchs: null
   specifics:
     - matchs:
-        #target: [cpu, vulkan, k210, k510]
         target: [cpu, k510]
         ptq: true
-      threshold: 0.015
+      threshold: 0.01
     - matchs:
         target: [cpu, k510]
         ptq: false
-      threshold: 0.02
+      threshold: 0.01
+
+    """
+    runner = TfliteTestRunner(
+        request.node.name, overwrite_configs=overwrite_cfg, targets=['cpu', 'k510'])
+    model_file = 'tflite-models/resnet50_v2/model_f32.tflite'
+    runner.run(model_file)
+
+
+if __name__ == "__main__":
+    pytest.main(['-vv', 'test_resnet50_v2.py'])

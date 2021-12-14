@@ -49,7 +49,7 @@ def top1(gt_path, result_path):
     # 1000 class: 0;
     # 1001 class: 1;
     num_classes_flag = 1
-    if case_name in ['vgg']:
+    if case_name in ['vgg16']:
         num_classes_flag = 0
     with open(label_file, 'r') as label_f, open(gt_path, 'r') as gt_f, open(result_path, 'r') as result_f:
         # get label result
@@ -77,7 +77,7 @@ def top1(gt_path, result_path):
 
     label_precent_result = gt_result / len(gt_data_dict)
     percent_result = infer_result / len(result_data_dict)
-    return abs(label_precent_result - percent_result)
+    return label_precent_result - percent_result
 
 
 simarity_func = {
