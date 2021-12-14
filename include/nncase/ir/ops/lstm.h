@@ -32,6 +32,8 @@ public:
     input_connector &initial_c() { return input_at(6); }
     input_connector &w_static() { return input_at(7); }
     output_connector &output() { return output_at(0); }
+    output_connector &output_h() { return output_at(1); }
+    output_connector &output_c() { return output_at(2); }
 
     int32_t num_output() const noexcept { return num_output_; }
     bool has_static() const noexcept { return has_static_; }
