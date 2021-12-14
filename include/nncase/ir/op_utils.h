@@ -300,9 +300,14 @@ inline shape_t get_strided_slice_output_shape(const axis_t &begin, const axis_t 
     return new_shape.size() ? new_shape : shape_t { 1 };
 }
 
+inline bool is_copy_slice(const axis_t &strides)
+{
+    return std::all_of(strides.begin(), strides.end(), [](int32_t stride) { return stride == 1; });
+}
+
 inline bool is_simple_slice(const axis_t &begin, const axis_t &end, const axis_t &strides, const shape_t &input_shape)
 {
-    if (!std::all_of(strides.begin(), strides.end(), [](int32_t stride) { return stride == 1; }))
+    if (!is_copy_slice(strides))
         return false;
 
     bool is_simple_slice = true;

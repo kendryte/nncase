@@ -61,10 +61,10 @@ void make_slice_no_action_pass::run_core(graph &graph, [[maybe_unused]] nncase::
         if (auto s = node_cast<slice>(node))
         {
             if ((s->attributes() & node_attr_action)
-                && is_simple_slice(s->begin(), s->end(), s->strides(), s->input().shape()))
+                && is_copy_slice(s->strides()))
             {
                 auto &out = s->output();
-                out.attributes(out.attributes() | cnctr_attr_buffer_slice | cnctr_attr_no_layout_strides | cnctr_attr_no_buffer_fusion);
+                out.attributes(out.attributes() | cnctr_attr_buffer_slice | cnctr_attr_no_buffer_fusion);
                 s->attributes(s->attributes() & ~node_attr_action);
             }
         }
@@ -101,7 +101,7 @@ void add_copy_to_slice_pass::run_core(graph &graph, [[maybe_unused]] nncase::tar
         slice *s;
         if ((s = node_cast<slice>(node))
             && (s->attributes() & node_attr_action) == 0
-            && is_simple_slice(s->begin(), s->end(), s->strides(), s->input().shape()))
+            && is_copy_slice(s->strides()))
         {
             auto outputs = dup(s->output().connections());
             if (std::any_of(outputs.begin(), outputs.end(), [](input_connector *in) { return in->owner().runtime_opcode() != op_copy; }))
@@ -199,7 +199,7 @@ bool remove_exclusive_copy_to_concat_transform::on_try_match(node &node, transfo
         auto is_simple_concat = (c->axis() == 0 || std::all_of(c_inputs[0]->shape().begin(), c_inputs[0]->shape().begin() + c->axis(), [](size_t dim) { return dim == 1; }));
         if (input->memory_location() == mem_data
             && ((input->attributes() & (cnctr_attr_no_buffer_fusion | cnctr_attr_buffer_slice)) == 0)
-            && is_simple_concat)
+            && (is_simple_concat || (input->attributes() & (cnctr_attr_no_layout_strides)) == 0))
         {
             context.inputs.emplace_back(&cp->input());
             context.outputs.emplace_back(&cp->output());
@@ -262,6 +262,44 @@ void remove_simple_copy_from_slice_transform::process(transform_context &context
         in->connect(output);
 }
 
+bool remove_non_simple_copy_from_slice_transform::on_try_match(node &node, transform_context &context)
+{
+    slice *s;
+    copy *cp;
+
+    if ((s = node_cast<slice>(node))
+        && ((s->attributes() & node_attr_action) == 0)
+        && (cp = try_get_direct_child<copy>(*s))
+        && !try_get_direct_child<output_node>(*cp)
+        && !try_get_direct_child<concat>(*cp)
+        && (cp->output().attributes() & cnctr_attr_no_layout_strides) == 0
+        && (s->output().attributes() & cnctr_attr_no_layout_strides) == 0)
+    {
+        auto inputs = cp->output().connections();
+        if (is_copy_slice(s->strides())
+            && !is_simple_slice(s->begin(), s->end(), s->strides(), s->input().shape())
+            && std::all_of(inputs.begin(), inputs.end(), [](input_connector *in) { return (in->attributes() & cnctr_attr_no_layout_strides) == 0; }))
+        {
+            context.inputs.emplace_back(&cp->input());
+            context.outputs.emplace_back(&cp->output());
+
+            context.matched_nodes.emplace_back(cp);
+            return true;
+        }
+    }
+
+    return false;
+}
+
+void remove_non_simple_copy_from_slice_transform::process(transform_context &context)
+{
+    auto &output = *context.inputs[0]->connection();
+    auto inputs = context.outputs[0]->connections();
+
+    for (auto &in : dup(inputs))
+        in->connect(output);
+}
+
 void alias_bitcast_buffer_pass::run_core(graph &graph, [[maybe_unused]] nncase::target &target, const run_pass_options &options)
 {
     auto &context = *options.schedule_context;
@@ -281,7 +319,7 @@ void alias_bitcast_buffer_pass::run_core(graph &graph, [[maybe_unused]] nncase::
                 {
                     // owner is input, parent shape is bitcast's
                     out_buf.parent() = { &in_buf, offset, b->output().shape() };
-                    out_buf.strides_shape() = b->output().shape();
+                    out_buf.strides_parent() = nullptr;
                 }
                 else
                 {
@@ -289,7 +327,7 @@ void alias_bitcast_buffer_pass::run_core(graph &graph, [[maybe_unused]] nncase::
 
                     // owner transfered to output
                     in_buf.parent() = { &out_buf, offset, b->output().shape() };
-                    in_buf.strides_shape() = input.shape();
+                    in_buf.strides_parent() = nullptr;
                 }
             }
         }
@@ -315,7 +353,7 @@ void alias_concat_buffer_pass::run_core([[maybe_unused]] graph &graph, [[maybe_u
             {
                 auto &in_buf = context.logical_buffer_map().at(in->connection());
                 in_buf->parent() = { out_buf, offset, c->output().shape() };
-                in_buf->strides_shape() = c->output().shape();
+                in_buf->strides_parent() = out_buf;
                 in_buf->memory_location() = out_buf->memory_location();
                 cnt_begin[axis] += in->shape()[axis];
                 offset = ir::get_bytes(in_buf->type()) * xt::element_offset<size_t>(to_strides(in_buf->parent()->shape), cnt_begin.begin(), cnt_begin.end());
@@ -338,7 +376,7 @@ void alias_slice_buffer_pass::run_core(graph &graph, [[maybe_unused]] nncase::ta
 
                 size_t offset = ir::get_bytes(in_buf->type()) * xt::element_offset<size_t>(to_strides(s->input().shape()), s->begin().begin(), s->begin().end());
                 out_buf->parent() = { in_buf, offset, s->output().shape() };
-                out_buf->strides_shape() = s->input().shape();
+                out_buf->strides_parent() = in_buf;
                 out_buf->memory_location() = in_buf->memory_location();
             }
         }
