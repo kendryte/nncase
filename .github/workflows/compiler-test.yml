@@ -87,7 +87,7 @@ jobs:
       working-directory: ${{github.workspace}}
       shell: bash
       run: |
-        pip install pytest
+        pip install pytest pytest-xdist
         mkdir test_results
 
     - name: Test
@@ -100,12 +100,13 @@ jobs:
         TFLITE_MODELS_DIR: /compiler/github-runner/tflite-models
         DATASET_DIR: /compiler/share
       run: |
-        # pytest tests/other --doctest-modules --junitxml=test_results/other.xml
-        # pytest tests/importer --doctest-modules --junitxml=test_results/importer.xml
-        # pytest tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
-        # pytest tests/graph_partition --doctest-modules --junitxml=test_results/graph_partition.xml
+        
         pytest tests/models --doctest-modules --junitxml=test_results/models.xml
-        # pytest tests/examples --doctest-modules --junitxml=test_results/examples.xml
+        pytest -n 30 tests/examples --doctest-modules --junitxml=test_results/examples.xml
+        pytest -n 30 tests/other --doctest-modules --junitxml=test_results/other.xml
+        pytest -n 30 tests/importer --doctest-modules --junitxml=test_results/importer.xml
+        pytest -n 30 tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
+        pytest -n 30 tests/graph_partition --doctest-modules --junitxml=test_results/graph_partition.xml
 
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action@v1
