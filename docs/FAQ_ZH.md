@@ -19,7 +19,8 @@
     - 非对称 paddings 或 valid paddings 卷积, nncase 会在其前后添加必要的 Pad 和 Crop。
     - 普通 Conv2D 和 DepthwiseConv2D，卷积核为 1x1 或 3x3，但 stride 不是 1 或 2. nncase 会把它分解为 KPUConv2D 和一个 StridedSlice (可能还需要 Pad)。
     - MatMul, nncase 会把它替换为一个 Pad(到 4x4)+ KPUConv2D(1x1 卷积和) + Crop(到 1x1)。
-    - TransposeConv2D, nncase 会把它替换为一个 SpaceToBatch + KPUConv2D + BatchToSpace。
+    - DilatedConv2D, nncase 会把它替换为一个 SpaceToBatch + KPUConv2D + BatchToSpace。
+    - TransposeConv2D, nncase 会把它替换为一个 Pad + KPUConv2D。
 
 ### 编译模型
 1. Fatal: Not supported tflite opcode: DEQUANTIZE

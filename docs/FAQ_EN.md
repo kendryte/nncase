@@ -19,7 +19,8 @@
     - Convolutions of asymmetric paddings or valid paddings, nncase will add necessary Pad   and Crop ops around it.
     - Normal Conv2D and DepthwiseConv2D of 1x1 or 3x3 filters but stride is not 1 or 2.   nncase will divide it to KPUConv2D and a StridedSlice (Pad ops maybe necessary).
     - MatMul, nncase will replace it with a Pad(to 4x4)+ KPUConv2D(1x1 filters) + Crop(to 1x1)  .
-    - TransposeConv2D, nncase will replace it with a SpaceToBatch + KPUConv2D + BatchToSpace.
+    - DilatedConv2D, nncase will replace it with a SpaceToBatch + KPUConv2D + BatchToSpace.
+    - TransposeConv2D, nncase will replace it with a Pad + KPUConv2D.
 
 ### Compile models
 1. Fatal: Not supported tflite opcode: DEQUANTIZE
