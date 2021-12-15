@@ -17,7 +17,7 @@ import pytest
 from tflite_test_runner import TfliteTestRunner
 
 
-def test_resnet50_v2(request):
+def test_vgg16(request):
     overwrite_cfg = """
 case: 
   preprocess_opt:
@@ -122,9 +122,9 @@ judge:
     """
     runner = TfliteTestRunner(
         request.node.name, overwrite_configs=overwrite_cfg, targets=['cpu', 'k510'])
-    model_file = 'tflite-models/resnet50_v2/model_f32.tflite'
+    model_file = 'tflite-models/vgg16/model_f32.tflite'
     runner.run(model_file)
 
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_resnet50_v2.py'])
+    pytest.main(['-vv', 'test_vgg16.py'])
