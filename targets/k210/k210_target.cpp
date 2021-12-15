@@ -106,8 +106,7 @@ void k210_target::register_target_dependent_passes([[maybe_unused]] const module
 void k210_target::register_quantize_annotation_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr)
 {
     {
-        transform_pass p("annotate_kpu");
-        p.emplace<add_to_conv2d_transform>();
+        transform_pass p("annotate_kpu1");
         p.emplace<eliminate_dilated_conv2d_transform>();
         p.emplace<fake_kpu_conv2d_transform>();
         p.emplace<strided_slice_motion_transform>();
@@ -117,6 +116,17 @@ void k210_target::register_quantize_annotation_passes(const module_type_t &type,
     }
 
     neutral_target::register_quantize_annotation_passes(type, pass_mgr);
+
+    {
+        transform_pass p("annotate_kpu2");
+        p.emplace<add_to_conv2d_transform>();
+        p.emplace<eliminate_dilated_conv2d_transform>();
+        p.emplace<fake_kpu_conv2d_transform>();
+        p.emplace<strided_slice_motion_transform>();
+        p.emplace<fuse_fake_kpu_conv2d_strided_slice_transform>();
+        add_default_transforms(p);
+        pass_mgr.add_pass(std::move(p));
+    }
 
     {
         transform_pass p("fused_unary_motion");
