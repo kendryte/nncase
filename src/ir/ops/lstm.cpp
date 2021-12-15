@@ -33,6 +33,8 @@ lstm::lstm(shape_t input_shape, shape_t w_xc_shape, shape_t b_xc_shape, shape_t 
         add_input("w_static", dt_float32, shape_t { w_xc_shape[1], w_xc_shape[2] });
 
     add_output("output", dt_float32, shape_t { input_shape[0], input_shape[1], (size_t)num_output });
+    add_output("output_h", dt_float32, initial_h_shape);
+    add_output("output_c", dt_float32, initial_c_shape);
 }
 
 bool lstm::properties_equal(node &other) const

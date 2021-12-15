@@ -35,8 +35,8 @@ void onnx_importer::convert_op_LSTM(const NodeProto &node)
     const auto &initial_h = node.input()[5];
     const auto &initial_c = node.input()[6];
     const auto &output = node.output()[0];
-    // [[maybe_unused]] const auto &output_h = node.output()[1];
-    // [[maybe_unused]] const auto &output_c = node.output()[2];
+    [[maybe_unused]] const auto &output_h = node.output()[1];
+    [[maybe_unused]] const auto &output_c = node.output()[2];
     // [[maybe_unused]] const auto &sequence_lens = node.input()[4];
     // auto static_shape = shape_t { 1, 1, 1, 1 };
 
@@ -78,4 +78,6 @@ void onnx_importer::convert_op_LSTM(const NodeProto &node)
     input_tensors_.emplace(&lstm_node->input_at(6), initial_c);
 
     output_tensors_.emplace(output, &bitc_out->output());
+    output_tensors_.emplace(output_h, &lstm_node->output_h());
+    output_tensors_.emplace(output_c, &lstm_node->output_c());
 }
