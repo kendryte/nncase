@@ -31,6 +31,10 @@ namespace Nncase.IR
         {
         }
 
+        /// <summary>
+        /// <see cref="Var"/>
+        /// </summary>
+        /// <param name="Name"></param>
         public Var(string Name)
             : this(Name, AnyType.Default)
         {

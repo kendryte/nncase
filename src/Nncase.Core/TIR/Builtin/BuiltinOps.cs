@@ -2,12 +2,18 @@ using Nncase.IR;
 
 namespace Nncase.TIR.Builtin
 {
-    /// <summary>
-    /// Return value.
-    /// </summary>
-    public sealed record Ret() : Op
+
+    [System.AttributeUsage(System.AttributeTargets.All, Inherited = false, AllowMultiple = true)]
+    public sealed class CallEffectAttribute : System.Attribute
     {
-        public static readonly ParameterInfo Input = new(typeof(Ret), 0, "input");
+        private CallEffectMode _mode;
+
+        public CallEffectMode Mode => _mode;
+
+        public CallEffectAttribute(CallEffectMode mode)
+        {
+            _mode = mode;
+        }
     }
 
     /// <summary>
@@ -113,7 +119,7 @@ namespace Nncase.TIR.Builtin
     ///  Fused multiply add
     ///
     ///  Type fma(a, b, c) {
-    ///    return a /// b + c;
+    ///    return a // b + c;
     ///  }
     /// </summary>
     public sealed record fma() : Op { }

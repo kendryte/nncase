@@ -26,6 +26,25 @@ namespace Nncase.TIR
         }
     }
 
+
+    /// <summary>
+    /// The container of Exprs.
+    /// Represent a sequence of Expr.
+    /// </summary>
+    /// <param name="Bodys">internal sequence content.</param>
+    public sealed record Sequential(IRArray<Expr> Bodys) : Expr
+    {
+        public int Count => Bodys.Count;
+        public Expr this[int index] => Bodys[index];
+    }
+
+
+    /// <summary>
+    /// select the value and return it, the true and false must have same type!
+    /// </summary>
+    /// <param name="Condition"></param>
+    /// <param name="TrueValue"></param>
+    /// <param name="FalseValue"></param>
     public sealed record Select(Expr Condition, Expr TrueValue, Expr FalseValue) : Expr { }
 
     public sealed record BufferLoad(Buffer Buffer, IRArray<Expr> Indices) : Expr
@@ -33,6 +52,57 @@ namespace Nncase.TIR
         public override string ToString()
         {
             return $"{Buffer.Name}[{Util.PrintList(Indices)}]";
+        }
+    }
+
+
+    /// <summary>
+    /// Store, return unit
+    /// </summary>
+    public sealed record Store : Expr
+    {
+        /// <summary>
+        ///The buffer variable.
+        /// </summary>
+        public Var BufferHandle;
+        /// <summary>
+        ///The value to be stored.
+        /// </summary>
+        public Expr Value;
+        /// <summary>
+        ///The index locations to be stored.
+        /// </summary>
+        public Expr Index;
+        /// <summary>
+        ///The predicate to mask which lanes would be stored.
+        /// </summary>
+        public Expr Predicate;
+
+        /// <summary>
+        /// Store value to the buffer.
+        /// Equivalent to ((DType*)buffer_var)[index] = value.
+        /// where DType is the type specified by type().element_of().
+        /// <example>
+        /// if type = float32x3, then the store will corresponds to
+        /// <code>
+        ///  auto buffer = static_cast<float*>(buffer_var);
+        ///  buffer[index.v0] = value.v0;
+        ///  buffer[index.v1] = value.v1;
+        ///  buffer[index.v2] = value.v2;
+        /// </code>
+        /// </example>
+        /// </summary>
+        /// <param name="buffer_handle">The buffer Variable.</param>
+        /// <param name="value">The value we want to store.</param>
+        /// <param name="index">he index in the store expression.</param>
+        /// <param name="predicate">The store predicate.</param>
+        public Store(Var buffer_handle, Expr value, Expr index, Expr? predicate = null)
+        {
+            predicate ??= F.TOps.MakeConst<int>(1, F.TOps.LanesOp(buffer_handle));
+            BufferHandle = buffer_handle;
+            Value = value;
+            Index = index;
+            Predicate = predicate;
         }
     }
 
@@ -65,7 +135,7 @@ namespace Nncase.TIR
     }
 
     /// <summary>
-    /// Let binding. Bind var to value then evaluate body.
+    /// Let binding. Bind var to value then evaluate body. return unit
     /// </summary>
     /// <param name="Var"> The variable. </param>
     /// <param name="Value"> The value to be binded. </param>
@@ -76,6 +146,45 @@ namespace Nncase.TIR
         {
             return $"(let {Var.Name} = {Value} in {Body})";
         }
+    }
+
+    /// <summary>
+    /// A While loop
+    /// <code>
+    ///   while (condition) { body }
+    /// </code>
+    /// </summary>
+    /// <param name="Condition">The termination condition.</param>
+    /// <param name="Body">The body of the while loop.</param>
+    public sealed record While(Expr Condition, Sequential Body) : Expr
+    { }
+
+    /// <summary>
+    /// A for loop, with poissible type annotations.
+    /// <example>
+    /// <code>
+    ///   for (loop_var = min; loop_var < min + extent; ++loop_var) {
+    ///     body
+    ///    }
+    /// </code>
+    /// </example>
+    /// </summary>
+    /// <param name="LoopVar">The loop variable.</param>
+    /// <param name="Min">The minimum value of iteration.</param>
+    /// <param name="Extent">The extent of the iteration.</param>
+    /// <param name="Kind">The kind of the for loop.</param>
+    /// <param name="Body">The body of the for loop.</param>
+    /// <param name="ThreadBinding"> Only valid when kind == ForKind::kThreadBinding The context thread that this loop variable bounds to.</param>
+    public sealed record For(Var LoopVar, Expr Min, Expr Extent, ForMode Kind, Sequential Body, IterVar? ThreadBinding = null) : Expr
+    {
+
+        /// <summary>
+        ///   These annotations can be used as auxiliary hint
+        ///  to future transformations. An annotation should
+        ///  not change the control flow semantics of the loop
+        ///  and can be ignored in most passes.
+        /// </summary>
+        public readonly Dictionary<string, object> Annotations = new();
     }
 
     /// <summary>
@@ -200,30 +309,6 @@ namespace Nncase.TIR
         public override string ToString()
         {
             return $"reduction(combiner= {Combiner}, source= {Source}, init= {Init}, axis= {Axis}, where= {Condition}, value_index= {ValueIndex})";
-        }
-    }
-
-
-    /// <summary>
-    /// Any shape.
-    /// </summary>
-    public sealed record Any() : Expr
-    {
-        /// <summary>
-        /// Convert to var.
-        /// </summary>
-        /// <returns></returns>
-        public Var ToVar() { return new Var("any_dim", new TensorType(DataType.Int32, Shape.Scalar)); }
-
-        /// <summary>
-        /// Convert to SizeVar.
-        /// </summary>
-        /// <returns></returns>
-        public SizeVar ToSizeVar() { return new SizeVar("any_dim", DataType.Int32); }
-
-        public override string ToString()
-        {
-            return "?";
         }
     }
 }

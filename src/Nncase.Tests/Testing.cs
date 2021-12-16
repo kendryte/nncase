@@ -9,13 +9,35 @@ using System.IO;
 
 namespace Nncase.Tests
 {
-
     public static class Testing
     {
 
+        /// <summary>
+        /// static get tests_outputs path
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
         private static string GetDumpPath([CallerFilePath] string path = null)
         {
             return Path.GetFullPath(Path.Combine(path, "..", "..", "..", "tests_output"));
+        }
+
+        /// <summary>
+        /// <see cref="GetDumpPath(string)"/>
+        /// </summary>
+        /// <returns></returns>
+        public static string GetTestsOuputPath(string name = "")
+        {
+            var path = GetDumpPath();
+            if (name.Length != 0)
+            {
+                path = Path.Combine(path, name);
+                if (!Directory.Exists(path))
+                {
+                    Directory.CreateDirectory(path);
+                }
+            }
+            return path;
         }
 
         private static readonly DataFlowPass _simplifyPass = new("SimplifyAll");

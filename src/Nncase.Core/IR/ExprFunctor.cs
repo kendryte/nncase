@@ -31,6 +31,7 @@ namespace Nncase.IR
                 Call call => Visit(call),
                 Tuple tuple => Visit(tuple),
                 Op op => Visit(op),
+                TIR.Sequential seq => Visit(seq),
                 _ => DefaultVisit(expr),
             };
         }
@@ -69,6 +70,13 @@ namespace Nncase.IR
         /// <param name="expr">Variable expression.</param>
         /// <returns>Result.</returns>
         public virtual TExprResult Visit(Tuple expr) => DefaultVisit(expr);
+
+        /// <summary>
+        /// Visit Sequential expression.
+        /// </summary>
+        /// <param name="expr">Variable expression.</param>
+        /// <returns>Result.</returns>
+        public virtual TExprResult Visit(TIR.Sequential expr) => DefaultVisit(expr);
 
         /// <summary>
         /// Visit operator expression.

@@ -44,10 +44,22 @@ namespace Nncase.TIR
     ///  normal statements, making buffer_map as first class citizen of PrimFunc
     ///  will make program analysis much easier.
     /// </param>
-    public sealed record TFunc(IRArray<Var> Params, Stmt Body, Dictionary<Var, Buffer> BufferMap) : Expr
-    {
-        public TFunc(IRArray<Var> Params, Stmt Body) : this(Params, Body, new()) { }
-    }
+    // public sealed record PrimFunction(string Name, Stmt Body, IRArray<Expr> Params, Dictionary<Var, Buffer> BufferMap) : Expr
+    // {
+    //     private static int _globalFuncIndex = 0;
+
+    //     /// <summary>
+    //     /// <see cref="PrimFunction"/>
+    //     /// </summary>
+    //     /// <param name="Body"></param>
+    //     /// <param name="Params"></param>
+    //     public PrimFunction(Stmt Body, IRArray<Expr> Params) : this($"func_{_globalFuncIndex++}", Body, Params, new()) { }
+
+    //     /// <summary>
+    //     /// The Attrs
+    //     /// </summary>
+    //     public Attr Attrs;
+    // }
 
     /// <summary>
     /// Describes one parameter that should be linked into the generated module.
@@ -59,8 +71,8 @@ namespace Nncase.TIR
     /// </summary>
     /// <param name="Id">Unique numeric identifier used by runtimes to lookup this parameter.</param>
     /// <param name="Param">Parameter data which should get linked into the final module.</param>
-    public sealed record LinkedParam(int Id, object Param)
-    {
-    }
+    // public sealed record LinkedParam(int Id, object Param)
+    // {
+    // }
 
 }

@@ -29,6 +29,7 @@ namespace Nncase.IR
                 TensorType t => VisitType(t),
                 TupleType t => VisitType(t),
                 CallableType t => VisitType(t),
+                PointerType t => VisitType(t),
                 _ => DefaultVisitType(type),
             };
         }
@@ -62,11 +63,18 @@ namespace Nncase.IR
         public virtual TResult VisitType(TupleType type) => DefaultVisitType(type);
 
         /// <summary>
-        /// Visit tuple expression.
+        /// Visit callable type.
         /// </summary>
         /// <param name="type">Callable type.</param>
         /// <returns>Result.</returns>
         public virtual TResult VisitType(CallableType type) => DefaultVisitType(type);
+
+        /// <summary>
+        /// Visit pointer type expression.
+        /// </summary>
+        /// <param name="type">Callable type.</param>
+        /// <returns>Result.</returns>
+        public virtual TResult VisitType(PointerType type) => DefaultVisitType(type);
 
         /// <summary>
         /// Default visit routine.

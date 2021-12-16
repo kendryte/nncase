@@ -17,6 +17,11 @@ namespace Nncase.IR
     /// </summary>
     public abstract record IRType
     {
+        /// <summary>
+        /// convert the datatype to scalar type
+        /// </summary>
+        /// <param name="dataType"></param>
+        public static implicit operator IRType(DataType dataType) => TensorType.Scalar(dataType);
     }
 
     /// <summary>

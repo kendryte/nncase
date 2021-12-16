@@ -18,7 +18,7 @@ namespace Nncase.Transform
         /// <param name="target"> target device </param>
         /// <param name="dumpLevel"> int level </param>
         /// <param name="dumpDir"> dir </param>
-        public RunPassOptions(ITarget target, int dumpLevel, string dumpDir)
+        public RunPassOptions(Target target, int dumpLevel, string dumpDir)
         {
             Target = target;
             DumpLevel = dumpLevel;
@@ -41,7 +41,7 @@ namespace Nncase.Transform
         /// <summary>
         /// Gets target.
         /// </summary>
-        public ITarget Target { get; }
+        public Target Target { get; }
 
         /// <summary>
         /// Dump level 0 = do nothing

@@ -245,7 +245,7 @@ namespace Nncase.TIR
         /// <param name="begin">The beginning index in unit of Buffer.dtype</param>
         /// <param name="value">The value to be stored.</param>
         /// <returns>The corresponding store stmt.</returns>
-        public Stmt VStore(IR.Tuple begin, Expr value)
+        public Expr VStore(IR.Tuple begin, Expr value)
         {
             return new Store(Handle, value, CalcOffset(begin), null);
         }
