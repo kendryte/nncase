@@ -8,9 +8,13 @@ namespace Nncase.CodeGen
     public class RTModule
     {
         /// <summary>
+        /// source code
+        /// </summary>
+        private string _source = "";
+        /// <summary>
         /// get source code
         /// </summary>
-        public virtual string Source { get; protected set; }
+        public virtual string Source { get => _source; set => _source = value; }
     }
 
     public static class CodeGen

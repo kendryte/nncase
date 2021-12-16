@@ -60,9 +60,9 @@ namespace Nncase.Tests.ReWrite
             Assert.Equal(Case.PostExpr, post);
         }
 
-        [Theory]
-        [MemberData(nameof(DataAll))]
-        public void RunAll(IRewriteCase Case) => RunCore(Case);
+        // [Theory]
+        // [MemberData(nameof(DataAll))]
+        // public void RunAll(IRewriteCase Case) => RunCore(Case);
 
 
         public static IEnumerable<object[]> DataOne => Data.Take(1);

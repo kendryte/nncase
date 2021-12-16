@@ -1,7 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
-    <PropertyGroup>
-        <TargetFramework>net5.0</TargetFramework>
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <RootNamespace>Nncase</RootNamespace>
 		<Nullable>enable</Nullable>
 	</PropertyGroup>
 

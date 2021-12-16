@@ -50,7 +50,7 @@ namespace Nncase.CodeGen.Builder
         {
             var sb = new StringBuilder();
             var visior = new CSourceBuildVisior(new StringWriter(sb));
-            var rt = new CSourceRTModule(visior.Visit(mod.Entry));
+            var rt = new CSourceRTModule(visior.Visit(mod.Entry!));
             return rt;
         }
     }
@@ -75,7 +75,7 @@ namespace Nncase.CodeGen.Builder
             var target = Visit(expr.Target);
             var args = expr.Parameters.Select(Visit).ToArray();
             name = AllocateTempVar(expr);
-            var type = VisitType(expr.CheckedType);
+            var type = VisitType(expr.CheckedType!);
             if (expr.Target is IR.Math.Binary bin && bin.BinaryOp is (BinaryOp.Add or BinaryOp.Sub or BinaryOp.Mul or BinaryOp.Div))
             {
                 Ident().Write($"{name} = ({args[0]} {target} {args[1]});");
@@ -92,6 +92,7 @@ namespace Nncase.CodeGen.Builder
         public override string Visit(Const expr)
         {
             if (_names.TryGetValue(expr, out var name)) { return name; }
+            name = "";
 
             if (expr.CheckedType is TensorType ttype && ttype.IsScalar)
             {
@@ -123,7 +124,7 @@ namespace Nncase.CodeGen.Builder
             _names.Add(expr, name);
 
             // 1. Function signature
-            Ident().Write($"{VisitType(expr.CheckedType)} {name}({string.Join(", ", expr.Parameters.Select(Visit))})");
+            Ident().Write($"{VisitType(expr.CheckedType!)} {name}({string.Join(", ", expr.Parameters.Select(Visit))})");
             _textWriter.WriteLine(" {");
             // 2. Function body
             _identLevel++;
