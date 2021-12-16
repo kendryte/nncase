@@ -16,7 +16,10 @@ import yaml
 from PIL import Image
 
 from compare_util import compare
-from vgg_preprocess import preprocess_image
+from importer.onnx_ import model
+# from models.preprocess.preprocess import *
+from models.preprocess.preprocess import preprocess
+# import models.preprocess.preprocess
 
 
 class Edict:
@@ -103,6 +106,7 @@ def get_topK(info, k, result):
 
 def generate_random(shape: List[int], dtype: np.dtype,
                     number: int, batch_size: int,
+                    case_dir: str,
                     abs: bool = False) -> np.ndarray:
     if dtype == np.uint8:
         data = np.random.randint(0, 256, shape)
@@ -132,6 +136,7 @@ def _cast_bfloat16_then_float32(values: np.array):
 
 def generate_image_dataset(shape: List[int], dtype: np.dtype,
                            batch_index: int, batch_size: int,
+                           case_dir: str,
                            dir_path: str) -> np.ndarray:
     """ read image from folder, return the rgb image with padding, dtype = float32, range = [0,255]. same as k210 carmera.
     """
@@ -177,6 +182,7 @@ def generate_image_dataset(shape: List[int], dtype: np.dtype,
 
 def generate_imagenet_dataset(shape: List[int], dtype: np.dtype,
                               batch_index: int, batch_size: int,
+                              case_dir: str,
                               dir_path: str) -> np.ndarray:
     """ read image from folder, return the rgb image with padding, dtype = float32, range = [0,255]. same as k210 carmera.
     """
@@ -192,7 +198,8 @@ def generate_imagenet_dataset(shape: List[int], dtype: np.dtype,
     for p in img_paths[0:batch_size]:
         img_data = Image.open(p).convert('RGB')
         img_data = np.asarray(img_data, dtype=dtype)
-        data = preprocess_image(img_data, 224, 224, False, 256, 256, False)
+        model = case_dir.split('/')[-2]
+        data = preprocess(model, img_data, shape)
         data = np.expand_dims(data, axis=0)
         imgs.append((data, p))
     return imgs
@@ -229,6 +236,7 @@ class TestRunner(metaclass=ABCMeta):
         self.dump_range_data_paths: List[Tuple[str, str]] = []
         self.output_paths: List[Tuple[str, str]] = []
         self.model_type: str = ""
+        self.model_path: str = ""
         self.pre_process: List[Dict] = []
 
         self.num_pattern = re.compile("(\d+)")
@@ -410,6 +418,7 @@ class TestRunner(metaclass=ABCMeta):
             case_dir = os.path.dirname(model_path)
         elif isinstance(model_path, list):
             case_dir = os.path.dirname(model_path[0])
+        self.model_path = case_dir
         self.run_single(self.cfg.case, case_dir, model_path)
 
     def process_model_path_name(self, model_path: str) -> str:
@@ -768,7 +777,8 @@ class TestRunner(metaclass=ABCMeta):
                     shape = copy.deepcopy(input['model_shape'])
                 if shape[0] != cfg.batch_size:
                     shape[0] *= cfg.batch_size
-                data = DataFactory[cfg.name](shape, input['dtype'], n, cfg.batch_size, **cfg.kwargs)
+                data = DataFactory[cfg.name](shape, input['dtype'], n,
+                                             cfg.batch_size, self.model_path, **cfg.kwargs)
 
                 if cfg.name != "generate_imagenet_dataset":
                     path_list.append(
