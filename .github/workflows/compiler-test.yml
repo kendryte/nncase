@@ -102,10 +102,10 @@ jobs:
       run: |
         
         pytest tests/models --doctest-modules --junitxml=test_results/models.xml
-        pytest -n 30 tests/other --doctest-modules --junitxml=test_results/other.xml
-        pytest -n 30 tests/importer --doctest-modules --junitxml=test_results/importer.xml
-        pytest -n 30 tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
-        pytest -n 30 tests/graph_partition --doctest-modules --junitxml=test_results/graph_partition.xml
+        pytest -n 20 tests/other --doctest-modules --junitxml=test_results/other.xml
+        pytest -n 20 tests/importer --doctest-modules --junitxml=test_results/importer.xml
+        pytest -n 20 tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
+        pytest -n 20 tests/graph_partition --doctest-modules --junitxml=test_results/graph_partition.xml
 
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action@v1
