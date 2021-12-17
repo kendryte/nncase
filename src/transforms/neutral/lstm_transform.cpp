@@ -32,9 +32,9 @@ using namespace nncase::ir::transforms;
 
 output_connector *local_sigmoid(output_connector *x, transform_context &context, std::string i)
 {
-    std::vector<float> one_data(xt::compute_size(x->shape()), 1.f);
+    std::vector<float> one_data(1, 1.f);
 
-    auto one = context.graph.emplace<constant>(dt_float32, x->shape(), one_data);
+    auto one = context.graph.emplace<constant>(dt_float32, shape_t { 1 }, one_data);
     auto neg_ = context.graph.emplace<unary>(unary_neg, x->shape());
     auto exp_ = context.graph.emplace<unary>(unary_exp, neg_->output().shape());
     auto add_ = context.graph.emplace<binary>(binary_add, exp_->output().shape(), one->output().shape(), value_range<float>::full());
@@ -58,11 +58,11 @@ output_connector *local_sigmoid(output_connector *x, transform_context &context,
 
 output_connector *local_tanh(output_connector *x, transform_context &context, std::string i)
 {
-    std::vector<float> one_data(xt::compute_size(x->shape()), 1.f);
-    std::vector<float> two_data(xt::compute_size(x->shape()), 2.f);
+    std::vector<float> one_data(1, 1.f);
+    std::vector<float> two_data(1, 2.f);
 
-    auto two_ = context.graph.emplace<constant>(dt_float32, x->shape(), two_data);
-    auto one_ = context.graph.emplace<constant>(dt_float32, x->shape(), one_data);
+    auto two_ = context.graph.emplace<constant>(dt_float32, shape_t { 1 }, two_data);
+    auto one_ = context.graph.emplace<constant>(dt_float32, shape_t { 1 }, one_data);
     auto mul_1 = context.graph.emplace<binary>(binary_mul, x->shape(), two_->output().shape(), value_range<float>::full());
     one_->name(x->owner().name() + "/tanh_one_" + i);
     two_->name(x->owner().name() + "/tanh_two_" + i);
