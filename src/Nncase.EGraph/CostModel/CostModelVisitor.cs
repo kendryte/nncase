@@ -92,6 +92,7 @@ namespace Nncase.CostModel
                 // Slice sl => VisitSlice(sl),
                 Transpose tr => VisitTranspose(tr),
                 Unary un => VisitUnary(un),
+                Reshape re => new Cost(1, 0),
                 ShapeOp => throw new InvalidDataException("ShapeOp should be eliminate before CostModelVisitor"),
                 _ => throw new NotImplementedException()
             };

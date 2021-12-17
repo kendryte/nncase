@@ -25,6 +25,7 @@ namespace Nncase.Transform
         {
             var matches = new List<(PatternRule, IMatchResult)> { };
             var last_version = eGraph.Version;
+            int count = 0;
             do
             {
                 var eClasses = eGraph.EClasses();
@@ -35,9 +36,9 @@ namespace Nncase.Transform
                     {
                         matches.Add((rule, result));
                     }
-                    if (options.DumpLevel > 1)
+                    if (options.DumpLevel > 1 && results.Count != 0)
                         EGraphPrinter.DumpEgraphAsDot(eGraph, results,
-                         Path.Combine(options.DumpDir, options.PassName, "Matches", $"V{eGraph.Version}_{rule.GetType().Name}"));
+                         Path.Combine(options.DumpDir, options.PassName, "Matches", $"V{eGraph.Version}_{count++}_{rule.GetType().Name}"));
                 }
                 foreach (var (rule, result) in matches)
                 {

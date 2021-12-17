@@ -99,6 +99,7 @@ namespace Nncase.Evaluator.Ops
                 IR.Tensors.Stack st => VisitStack(st),
                 Cast ct => VisitCast(ct),
                 Conv2D conv => VisitConv2D(conv),
+                Reshape re => VisitReshape(re),
                 _ => throw new NotImplementedException()
             });
         }

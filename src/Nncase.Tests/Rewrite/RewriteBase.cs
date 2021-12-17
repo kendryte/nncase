@@ -88,6 +88,24 @@ namespace Nncase.Tests.ReWrite
         };
     }
 
+    public sealed class FoldReshapeCase : IRewriteCase
+    {
+        public override Expr PreExpr
+        {
+            get
+            {
+                var input = torch.rand(1, 3, 1, 2).ToConst();
+                var b = Reshape(input, (Const)new[] { 1, 1, 1, 6 });
+                var c = Reshape(input, (Const)new[] { 1, 1, 3, 2 });
+                return c;
+            }
+        }
+
+        public override IEnumerable<PatternRule> Rules => new PatternRule[]{
+          new Transform.Rule.FoldReshape(),
+        };
+    }
+
     public class FoldTransposeCase : IRewriteCase
     {
         public override Expr PreExpr
