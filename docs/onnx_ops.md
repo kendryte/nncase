@@ -103,6 +103,7 @@
 | Tile | ✅ |
 | TopK | ✅ |
 | Transpose | ✅ |
+| Trilu | ✅ |
 | Upsample | ✅ |
 | Unsqueeze | ✅ |
 | Where | ✅ |

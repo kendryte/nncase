@@ -13,25 +13,21 @@
  * limitations under the License.
  */
 #include <nncase/ir/op_utils.h>
-#include <nncase/ir/ops/topk.h>
+#include <nncase/ir/ops/trilu.h>
 #include <xtensor/xarray.hpp>
 
 using namespace nncase;
 using namespace nncase::ir;
 
-topk::topk(datatype_t input_type, shape_t input_shape, int64_t k, int32_t axis, bool largest, bool sorted)
-    : k_(k), axis_(normalize_axis(input_shape, axis)), largest_(largest), sorted_(sorted)
+trilu::trilu(datatype_t input_type, shape_t input_shape, bool upper, int64_t k)
+    : upper_(upper), k_(k)
 {
-    shape_t output_shape = input_shape;
-    output_shape[axis_] = k;
-
     add_input("input", input_type, input_shape);
-    add_output("output_values", input_type, output_shape);
-    add_output("output_indices", dt_int64, output_shape);
+    add_output("output", input_type, input_shape);
 }
 
-bool topk::properties_equal(node &other) const
+bool trilu::properties_equal(node &other) const
 {
-    auto &r = static_cast<topk &>(other);
-    return k() == r.k() && axis() == r.axis() && largest() == r.largest() && sorted() == r.sorted();
+    auto &r = static_cast<trilu &>(other);
+    return upper() == r.upper() && k() == r.k();
 }

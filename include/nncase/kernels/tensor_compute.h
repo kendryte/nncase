@@ -124,4 +124,7 @@ NNCASE_API result<void> topk(const T *input, T *output_values, int64_t *output_i
     const runtime_shape_t &output_indices_shape, const runtime_shape_t &output_indices_strides,
     const int64_t k, const int32_t axis, const bool largest, const bool sorted) noexcept;
 
+template <typename T>
+NNCASE_API result<void> trilu(const T *input, T *output, const runtime_shape_t &in_shape, const bool upper, const int64_t k) noexcept;
+
 END_NS_NNCASE_KERNELS
