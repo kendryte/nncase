@@ -176,7 +176,7 @@ def generate_image_dataset(shape: List[int], dtype: np.dtype,
                        (batch_index + 1) * batch_size]:
         img = cv2.imread(p)
         img = preproc(img, shape[1:3], transpose_flag)  # img [h,w,c] rgb,
-        imgs.append(img)
+        imgs.append(img / 255.0)
     return np.stack(imgs)
 
 
@@ -307,6 +307,8 @@ class TestRunner(metaclass=ABCMeta):
 
     def data_pre_process(self, data):
         data = copy.deepcopy(data)
+        if self.pre_process[3]['input_type'] == "float32":
+            data = np.asarray(data, dtype=np.float32)
         if self.pre_process[0]['preprocess'] and len(data.shape) == 4:
             if self.pre_process[-1]['input_layout'] == 'NCHW':
                 data = np.transpose(data, [0, 2, 3, 1])
@@ -619,8 +621,11 @@ class TestRunner(metaclass=ABCMeta):
 
         else:
             for i in range(len(self.inputs)):
-                input_tensor = nncase.RuntimeTensor.from_numpy(
-                    self.transform_input(self.data_pre_process(self.inputs[i]['data']), "float32", "CPU"))
+                data = self.transform_input(self.data_pre_process(
+                    self.inputs[i]['data']), "float32", "CPU")
+                input_tensor = nncase.RuntimeTensor.from_numpy(data)
+                if preprocess['preprocess']:
+                    self.totxtfile(os.path.join(case_dir, f'eval_input.txt'), data)
                 input_tensor.copy_to(evaluator.get_input_tensor(i))
                 evaluator.run()
 
@@ -731,7 +736,7 @@ class TestRunner(metaclass=ABCMeta):
                 data = self.transform_input(
                     self.inputs[i]['data'], preprocess['input_type'], "infer")
                 dtype = preprocess['input_type']
-                if preprocess['preprocess'] and dtype != 'float32':
+                if preprocess['preprocess']:
                     data.tofile(os.path.join(case_dir, f'input_{i}_{dtype}.bin'))
                     self.totxtfile(os.path.join(case_dir, f'input_{i}_{dtype}.txt'), data)
 
