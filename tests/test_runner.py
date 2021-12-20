@@ -15,6 +15,7 @@ import copy
 import cv2
 import numpy as np
 import yaml
+import uuid
 
 
 class Edict:
@@ -174,7 +175,7 @@ class TestRunner(metaclass=ABCMeta):
         self.cfg = self.validte_config(config)
 
         case_name = case_name.replace('[', '_').replace(']', '_')
-        self.case_dir = os.path.join(self.cfg.setup.root, case_name)
+        self.case_dir = os.path.join(self.cfg.setup.root, case_name + '-' + str(uuid.uuid4()))
         self.clear(self.case_dir)
 
         self.validate_targets(targets)
