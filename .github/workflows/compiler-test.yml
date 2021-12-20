@@ -1,0 +1,114 @@
+name: compiler-test
+
+on: [push, pull_request]
+
+env:
+  BUILD_TYPE: Release
+
+jobs:
+  build:
+    runs-on: [self-hosted]
+
+    steps:
+    - uses: actions/checkout@v2
+          
+    - name: Setup Python
+      uses: actions/setup-python@v2.2.1
+      with:
+        python-version: 3.7
+
+    - name: Install Conan
+      shell: bash
+      run: |
+        pip install conan
+
+    - name: Configure Conan
+      if: runner.os == 'Linux'
+      shell: bash
+      run: |
+        conan profile update settings.compiler.libcxx=libstdc++11 default
+
+    - name: Create Build Environment
+      run: cmake -E make_directory ${{github.workspace}}/build
+
+    - name: Configure CMake
+      env:
+        CC: gcc-10
+        CXX: g++-10
+      if: runner.os == 'Linux'
+      shell: bash
+      working-directory: ${{github.workspace}}/build
+      run: cmake -G Ninja $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=ON -DPython3_ROOT_DIR=${pythonLocation}
+
+    - name: Configure CMake
+      if: runner.os != 'Linux'
+      shell: bash
+      working-directory: ${{github.workspace}}/build
+      run: cmake -G Ninja $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DBUILD_TESTING=ON -DPython3_ROOT_DIR=${pythonLocation}
+
+    - name: Build
+      shell: bash
+      working-directory: ${{github.workspace}}/build
+      run: |
+        cmake --build . --config $BUILD_TYPE
+
+    - name: Install
+      shell: bash
+      working-directory: ${{github.workspace}}/build
+      run: cmake --install . --prefix /tmp/nncase
+
+    - name: CTest
+      shell: bash
+      working-directory: ${{github.workspace}}/build/tests/kernels
+      run: ctest -C $BUILD_TYPE
+
+  test-compiler:
+    needs: [build]
+    runs-on: [self-hosted]
+
+    steps:
+    - uses: actions/checkout@v2
+          
+    - name: Setup Python
+      uses: actions/setup-python@v2.2.1
+      with:
+        python-version: 3.7
+        
+    - name: Install Python Packages
+      if: runner.os != 'Macos'
+      shell: bash
+      run: |
+        pip install conan tensorflow==2.5.0 matplotlib pillow onnx==1.9.0 onnx-simplifier==0.3.6 onnxoptimizer==0.2.6 onnxruntime==1.8.0 opencv-python
+        pip install torch==1.9.0+cpu torchvision==0.10.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
+        pip install kendryte_caffe
+        pip install pytest
+      
+    - name: Create Test Environment
+      working-directory: ${{github.workspace}}
+      shell: bash
+      run: |
+        pip install pytest pytest-xdist
+        mkdir test_results
+
+    - name: Test
+      working-directory: ${{github.workspace}}
+      if: runner.os != 'Windows'
+      shell: bash
+      env:
+        PYTHONPATH: /tmp/nncase/lib:/tmp/nncase/python:${{github.workspace}}/tests
+        ONNX_MODELS_DIR: /compiler/github-runner/onnx-models
+        TFLITE_MODELS_DIR: /compiler/github-runner/tflite-models
+        DATASET_DIR: /compiler/share
+      run: |
+        pytest -n 20 tests/other --doctest-modules --junitxml=test_results/other.xml
+        pytest -n 20 tests/importer --doctest-modules --junitxml=test_results/importer.xml
+        pytest -n 20 tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
+        pytest -n 20 tests/graph_partition --doctest-modules --junitxml=test_results/graph_partition.xml
+        pytest tests/models/onnx-model-zoo --doctest-modules --junitxml=test_results/models.xml
+        pytest tests/examples --doctest-modules --junitxml=test_results/examples.xml
+
+    - name: Publish Test Results
+      uses: EnricoMi/publish-unit-test-result-action@v1
+      if: always() && runner.os == 'Linux'
+      with:
+        files: test_results/*.xml
