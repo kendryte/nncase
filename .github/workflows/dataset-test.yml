@@ -1,4 +1,4 @@
-name: compiler-test
+name: dataset-test
 
 on: 
   schedule:
