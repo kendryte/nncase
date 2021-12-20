@@ -2,7 +2,7 @@ name: compiler-test
 
 on: 
   push:
-    schedule:
+  schedule:
     - cron: '13 8 * * *'
 
 env:
