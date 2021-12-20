@@ -1,8 +1,6 @@
 name: compiler-test
 
 on: 
-  branches:
-    - feature/dataset_test
     schedule:
     - cron: '38 7 * * *'
 
