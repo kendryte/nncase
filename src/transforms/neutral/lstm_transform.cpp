@@ -32,9 +32,9 @@ using namespace nncase::ir::transforms;
 
 output_connector *local_sigmoid(output_connector *x, transform_context &context, std::string i)
 {
-    std::vector<float> one_data(xt::compute_size(x->shape()), 1.f);
+    std::vector<float> one_data(1, 1.f);
 
-    auto one = context.graph.emplace<constant>(dt_float32, x->shape(), one_data);
+    auto one = context.graph.emplace<constant>(dt_float32, shape_t { 1 }, one_data);
     auto neg_ = context.graph.emplace<unary>(unary_neg, x->shape());
     auto exp_ = context.graph.emplace<unary>(unary_exp, neg_->output().shape());
     auto add_ = context.graph.emplace<binary>(binary_add, exp_->output().shape(), one->output().shape(), value_range<float>::full());
@@ -58,11 +58,11 @@ output_connector *local_sigmoid(output_connector *x, transform_context &context,
 
 output_connector *local_tanh(output_connector *x, transform_context &context, std::string i)
 {
-    std::vector<float> one_data(xt::compute_size(x->shape()), 1.f);
-    std::vector<float> two_data(xt::compute_size(x->shape()), 2.f);
+    std::vector<float> one_data(1, 1.f);
+    std::vector<float> two_data(1, 2.f);
 
-    auto two_ = context.graph.emplace<constant>(dt_float32, x->shape(), two_data);
-    auto one_ = context.graph.emplace<constant>(dt_float32, x->shape(), one_data);
+    auto two_ = context.graph.emplace<constant>(dt_float32, shape_t { 1 }, two_data);
+    auto one_ = context.graph.emplace<constant>(dt_float32, shape_t { 1 }, one_data);
     auto mul_1 = context.graph.emplace<binary>(binary_mul, x->shape(), two_->output().shape(), value_range<float>::full());
     one_->name(x->owner().name() + "/tanh_one_" + i);
     two_->name(x->owner().name() + "/tanh_two_" + i);
@@ -111,6 +111,11 @@ bool lstm_transform::on_try_match(node &node, transform_context &context)
                 context.matched_nodes.emplace_back(init_h);
                 context.matched_nodes.emplace_back(init_c);
             }
+            else
+            {
+                context.inputs.emplace_back(&old_lstm->initial_h());
+                context.inputs.emplace_back(&old_lstm->initial_c());
+            }
             if (old_lstm->has_static())
             {
                 if (auto w_static = try_get_direct_parent<constant>(*old_lstm, 7))
@@ -125,6 +130,8 @@ bool lstm_transform::on_try_match(node &node, transform_context &context)
             }
 
             context.outputs.emplace_back(&old_lstm->output());
+            context.outputs.emplace_back(&old_lstm->output_h());
+            context.outputs.emplace_back(&old_lstm->output_c());
 
             return true;
         }
@@ -137,6 +144,8 @@ void lstm_transform::process(transform_context &context)
 {
     auto &output = *context.inputs[0]->connection();
     auto inputs = context.outputs[0]->connections();
+    auto connect_h = context.outputs[1]->connections();
+    auto connect_c = context.outputs[2]->connections();
 
     auto &old_lstm = static_cast<lstm &>(*context.matched_nodes[0]);
     auto &w_xc = static_cast<constant &>(*context.matched_nodes[1]);
@@ -182,22 +191,33 @@ void lstm_transform::process(transform_context &context)
     // if model doesn't has init h&c , init it with zero
     std::vector<float> constant_data((int)bitcast_wxc_post->output().shape()[1] * (int)bitcast_wxc_post->output().shape()[2] / 4, 0.f);
 
-    auto init_h = &static_cast<constant &>(*context.matched_nodes[5]);
-    auto init_c = &static_cast<constant &>(*context.matched_nodes[6]);
+    output_connector *tmp_init_h = nullptr, *tmp_init_c = nullptr;
+    if (context.matched_nodes.size() == 7)
+    {
+        auto init_h = &static_cast<constant &>(*context.matched_nodes[5]);
+        auto init_c = &static_cast<constant &>(*context.matched_nodes[6]);
+        auto c_0 = context.graph.emplace<bitcast>(dt_float32, init_c->output().shape(), shape_t { 1, bitcast_wxc_post->output().shape()[1], bitcast_wxc_post->output().shape()[2] / 4 });
+        auto h_0 = context.graph.emplace<bitcast>(dt_float32, init_h->output().shape(), shape_t { 1, bitcast_wxc_post->output().shape()[1], bitcast_wxc_post->output().shape()[2] / 4 });
+        c_0->name(old_lstm.name() + "_c_0");
+        h_0->name(old_lstm.name() + "_h_0");
+        c_0->input().connect(init_c->output());
+        h_0->input().connect(init_h->output());
+        tmp_init_h = &h_0->output();
+        tmp_init_c = &c_0->output();
+    }
+    else
+    {
+        tmp_init_h = &*context.inputs[5]->connection();
+        tmp_init_c = &*context.inputs[6]->connection();
+    }
 
-    auto c_0 = context.graph.emplace<bitcast>(dt_float32, init_c->output().shape(), shape_t { 1, bitcast_wxc_post->output().shape()[1], bitcast_wxc_post->output().shape()[2] / 4 });
-    auto h_0 = context.graph.emplace<bitcast>(dt_float32, init_h->output().shape(), shape_t { 1, bitcast_wxc_post->output().shape()[1], bitcast_wxc_post->output().shape()[2] / 4 });
-    c_0->name(old_lstm.name() + "_c_0");
-    h_0->name(old_lstm.name() + "_h_0");
-    c_0->input().connect(init_c->output());
-    h_0->input().connect(init_h->output());
-    auto c_ = &c_0->output();
-    auto h_ = &h_0->output();
+    auto c_ = tmp_init_c;
+    auto h_ = tmp_init_h;
 
     std::vector<shape_t> lstm_h_s;
     for (size_t i = 0; i < (size_t)output.shape()[0]; i++)
     {
-        lstm_h_s.push_back(h_0->output().shape());
+        lstm_h_s.push_back(h_->shape());
     }
     //h_concat
     auto h_concat = context.graph.emplace<concat>(dt_float32, lstm_h_s, 0);
@@ -401,4 +421,8 @@ void lstm_transform::process(transform_context &context)
 
     for (auto &in : dup(inputs))
         in->connect(h_concat->output());
+    for (auto &in : dup(connect_h))
+        in->connect(*h_);
+    for (auto &in : dup(connect_c))
+        in->connect(*c_);
 }

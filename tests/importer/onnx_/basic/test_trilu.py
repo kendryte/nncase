@@ -18,9 +18,10 @@ import onnx
 from onnx import helper
 from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
+import numpy as np
+import copy
 
-
-def _make_module(in_shape, axis, op_version):
+def _make_module(in_shape, k, upper):
     inputs = []
     outputs = []
     initializers = []
@@ -31,17 +32,28 @@ def _make_module(in_shape, axis, op_version):
     input = helper.make_tensor_value_info('input', TensorProto.FLOAT, in_shape)
     inputs.append('input')
 
+    # k input
+    if k is not None:
+        k_tensor = helper.make_tensor(
+            'K',
+            TensorProto.INT64,
+            dims=[1],
+            vals=[k]
+        )
+        initializers.append(k_tensor)
+        inputs.append('K')
+
     # output
     output = helper.make_tensor_value_info('output', TensorProto.FLOAT, in_shape)
     outputs.append('output')
 
-    # axis
-    if axis is not None:
-        attributes_dict['axis'] = axis
+    # upper
+    if upper is not None:
+        attributes_dict['upper'] = upper
 
-    # LogSoftmax node
+    # Trilu node
     node = onnx.helper.make_node(
-        'LogSoftmax',
+        'Trilu',
         inputs=inputs,
         outputs=outputs,
         **attributes_dict
@@ -53,44 +65,42 @@ def _make_module(in_shape, axis, op_version):
         'test-model',
         [input],
         [output],
-        initializer=initializers)
+        initializer=initializers
+    )
 
-    op = onnx.OperatorSetIdProto()
-    op.version = op_version
-    model_def = helper.make_model(graph_def, producer_name='onnx', opset_imports=[op])
+    model_def = helper.make_model(graph_def, producer_name='onnx')
 
     return model_def
 
-
 in_shapes = [
-    [1, 3, 16, 16],
+    [2, 3, 16, 16]
 ]
 
-axes = [
+ks = [
+    None,
+    -1,
+    1,
+    -4,
+    4,
+    -18,
+    18
+]
+
+uppers = [
     None,
     1,
-    2,
-    3,
-    -1,
-    -2,
-    -3,
-]
-
-op_versions = [
-    1,
-    11,
-    13
+    0
 ]
 
 @pytest.mark.parametrize('in_shape', in_shapes)
-@pytest.mark.parametrize('axis', axes)
-@pytest.mark.parametrize('op_version', op_versions)
-def test_logsoftmax(in_shape, axis, op_version, request):
-    model_def = _make_module(in_shape, axis, op_version)
+@pytest.mark.parametrize('k', ks)
+@pytest.mark.parametrize('upper', uppers)
+def test_trilu(in_shape, k, upper, request):
+    model_def = _make_module(in_shape, k, upper)
 
     runner = OnnxTestRunner(request.node.name)
     model_file = runner.from_onnx_helper(model_def)
     runner.run(model_file)
 
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_logsoftmax.py'])
+    pytest.main(['-vv', 'test_trilu.py'])

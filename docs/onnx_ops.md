@@ -51,6 +51,7 @@
 | Log | ✅ |
 | LogSoftmax | ✅ |
 | LRN | ✅ |
+| LSTM | ✅ |
 | MatMul | ✅ |
 | MaxPool | ✅ |
 | Max | ✅ |
@@ -100,7 +101,9 @@
 | Sum | ✅ |
 | Tanh | ✅ |
 | Tile | ✅ |
+| TopK | ✅ |
 | Transpose | ✅ |
+| Trilu | ✅ |
 | Upsample | ✅ |
 | Unsqueeze | ✅ |
 | Where | ✅ |

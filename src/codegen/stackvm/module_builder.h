@@ -40,7 +40,9 @@
 #include <nncase/ir/ops/slice.h>
 #include <nncase/ir/ops/table_lookup.h>
 #include <nncase/ir/ops/ternary.h>
+#include <nncase/ir/ops/topk.h>
 #include <nncase/ir/ops/transpose.h>
+#include <nncase/ir/ops/trilu.h>
 #include <nncase/ir/ops/unary.h>
 #include <nncase/ir/placeholders.h>
 #include <nncase/schedule/scheduler.h>

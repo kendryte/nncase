@@ -117,4 +117,14 @@ NNCASE_API result<void> ternary(const float *input_a, const T *input_b, const T 
     const runtime_shape_t &in_b_strides, const runtime_shape_t &in_c_shape, const runtime_shape_t &in_c_strides,
     const runtime_shape_t &out_strides) noexcept;
 
+template <typename T>
+NNCASE_API result<void> topk(const T *input, T *output_values, int64_t *output_indices,
+    const runtime_shape_t &in_shape, const runtime_shape_t &in_strides,
+    const runtime_shape_t &output_values_shape, const runtime_shape_t &output_values_strides,
+    const runtime_shape_t &output_indices_shape, const runtime_shape_t &output_indices_strides,
+    const int64_t k, const int32_t axis, const bool largest, const bool sorted) noexcept;
+
+template <typename T>
+NNCASE_API result<void> trilu(const T *input, T *output, const runtime_shape_t &in_shape, const bool upper, const int64_t k) noexcept;
+
 END_NS_NNCASE_KERNELS

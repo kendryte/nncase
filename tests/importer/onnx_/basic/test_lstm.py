@@ -19,17 +19,21 @@ import numpy as np
 from onnx_test_runner import OnnxTestRunner
 
 
-def _make_module(model_shape, h_0_shape, c_0_shape):
+def _make_module(model_shape, h_0_shape, c_0_shape, num_lstm):
     class LstmModule(torch.nn.Module):
         def __init__(self):
             super(LstmModule, self).__init__()
             # self.h_0 = torch.from_numpy(np.zeros(h_0_shape).astype(np.float32))
             # self.c_0 = torch.from_numpy(np.zeros(c_0_shape).astype(np.float32))
             self.lstm = torch.nn.LSTM(*model_shape)
+            self.lstm2 = torch.nn.LSTM(model_shape[1], model_shape[1], model_shape[2])
 
         def forward(self, x):
-            # return self.lstm(x, (self.h_0, self.c_0))[0]
-            return self.lstm(x, )[0]
+            if(num_lstm == 1):
+                return self.lstm(x)[0]
+            else:
+                y, (y_h, y_c) = self.lstm(x)
+                return self.lstm2(y, (y_h, y_c))[0]
 
     return LstmModule()
 
@@ -37,10 +41,10 @@ def _make_module(model_shape, h_0_shape, c_0_shape):
 D = [1]
 num_layers = [1, 3, 5]
 batch_size = [1]
-hidden_size = [5, 8]
-input_size = [10, 23]
-length = [2, 4]
-
+hidden_size = [5, 7]
+input_size = [3, 6]
+length = [2, 3]
+num_lstm = [1, 2]
 
 
 @pytest.mark.parametrize('D', D)
@@ -49,7 +53,8 @@ length = [2, 4]
 @pytest.mark.parametrize('hidden_size', hidden_size)
 @pytest.mark.parametrize('input_size', input_size)
 @pytest.mark.parametrize('length', length)
-def test_lstm(D, num_layers, batch_size, hidden_size, input_size, length, request):
+@pytest.mark.parametrize('num_lstm', num_lstm)
+def test_lstm(D, num_layers, batch_size, hidden_size, input_size, length, num_lstm, request):
     c_0_shapes = [
         D * num_layers, batch_size, hidden_size
     ]
@@ -66,7 +71,7 @@ def test_lstm(D, num_layers, batch_size, hidden_size, input_size, length, reques
         input_size, hidden_size, num_layers
     ]
 
-    module = _make_module(model_shapes, h_0_shapes, c_0_shapes)
+    module = _make_module(model_shapes, h_0_shapes, c_0_shapes, num_lstm)
 
     runner = OnnxTestRunner(request.node.name)
     model_file = runner.from_torch(module, inputs_shapes)

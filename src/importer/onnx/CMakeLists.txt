@@ -50,6 +50,7 @@ set(ONNX_IMPORTER_OPS_SOURCES
     ops/squeeze.cpp
     ops/sum.cpp
     ops/tile.cpp
+    ops/topk.cpp
     ops/transpose.cpp
     ops/unary.cpp
     ops/upsample.cpp

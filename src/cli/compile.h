@@ -50,6 +50,8 @@ private:
                     throw std::runtime_error("not supported arguments type");
                 }
             }
+            if (pos == cli_opt.cend())
+                break;
             last_pos = pos + 1;
         } while (pos != cli_opt.cend());
     }
