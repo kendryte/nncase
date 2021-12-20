@@ -98,6 +98,15 @@ protected:
     bool on_try_match(ir::node &node, transform_context &context) override;
 };
 
+class NNCASE_API remove_non_simple_copy_from_slice_transform : public transform
+{
+public:
+    void process(transform_context &context) override;
+
+protected:
+    bool on_try_match(ir::node &node, transform_context &context) override;
+};
+
 class NNCASE_API alias_bitcast_buffer_pass : public graph_pass
 {
 public:

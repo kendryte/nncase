@@ -39,4 +39,6 @@ target_sources(ir PRIVATE
     lstm.cpp
     gather_nd.cpp
     onehot.cpp
-    ternary.cpp)
+    ternary.cpp
+    topk.cpp
+    trilu.cpp)
