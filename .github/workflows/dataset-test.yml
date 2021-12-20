@@ -2,7 +2,7 @@ name: compiler-test
 
 on: 
   schedule:
-  - cron: '38 7 * * *'
+  - cron: '48 7 * * *'
 
 env:
   BUILD_TYPE: Release
