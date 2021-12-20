@@ -1,9 +1,8 @@
 name: compiler-test
 
 on: 
-  push:
   schedule:
-    - cron: '21 8 * * *'
+    - cron: '25 8 * * *'
 
 env:
   BUILD_TYPE: Release
