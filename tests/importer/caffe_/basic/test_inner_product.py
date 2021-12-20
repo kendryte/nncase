@@ -70,8 +70,7 @@ transposes = [
 def test_inner_product(in_shape, num_output, axis, transpose, request):
     if axis < len(in_shape):
         runner = CaffeTestRunner(request.node.name)
-        model_path = os.path.join(os.getcwd(), 'tests_output',
-                                  request.node.name.replace('[', '_').replace(']', '_'))
+        model_path = runner.case_dir
         _make_module(model_path, in_shape, num_output, axis, transpose)
         model_file = [os.path.join(model_path, 'test.prototxt'),
                       os.path.join(model_path, 'test.caffemodel')]

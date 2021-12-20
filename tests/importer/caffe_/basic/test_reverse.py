@@ -55,8 +55,7 @@ axes = [
 def test_reverse(in_shape, axis, request):
     if axis < len(in_shape):
         runner = CaffeTestRunner(request.node.name, ['cpu', 'k210'])
-        model_path = os.path.join(os.getcwd(), 'tests_output',
-                                  request.node.name.replace('[', '_').replace(']', '_'))
+        model_path = runner.case_dir
         _make_module(model_path, in_shape, axis)
         model_file = [os.path.join(model_path, 'test.prototxt'),
                       os.path.join(model_path, 'test.caffemodel')]
