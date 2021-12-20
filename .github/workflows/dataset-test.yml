@@ -1,8 +1,11 @@
 name: compiler-test
 
 on: 
+  push:
+    branches:
+      - feature/dataset_test
   schedule:
-  - cron: '2 8 * * *'
+  - cron: '8 8 * * *'
 
 env:
   BUILD_TYPE: Release
