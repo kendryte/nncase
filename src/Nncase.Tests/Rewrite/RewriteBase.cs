@@ -18,7 +18,7 @@ using TorchSharp;
 using Nncase.Evaluator;
 
 
-namespace Nncase.Tests.ReWrite
+namespace Nncase.Tests.ReWriteTest
 {
     public static class DummyOp
     {

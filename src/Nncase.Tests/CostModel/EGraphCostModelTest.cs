@@ -5,10 +5,10 @@ using Xunit;
 using Nncase.Transform;
 using Nncase.Pattern;
 using static Nncase.Pattern.Utility;
-using Nncase.Tests.ReWrite;
+using Nncase.Tests.ReWriteTest;
 using System;
 
-namespace Nncase.Tests.CostModel
+namespace Nncase.Tests.CostModelTest
 {
 
     public class EGraphCostModelTest : RewriteTest

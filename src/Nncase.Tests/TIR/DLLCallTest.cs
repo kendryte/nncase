@@ -9,7 +9,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Reflection.Emit;
 
-namespace Nncase.Tests.TIR
+namespace Nncase.Tests.TIRTest
 {
     public class DLLCallTest
     {
@@ -27,7 +27,9 @@ namespace Nncase.Tests.TIR
             Assert.NotNull(cls_type.GetMember("declf"));
             Assert.NotNull(cls_type.GetNestedType("declf"));
             var t = cls_type.GetNestedType("declf");
-            Assert.Equal(t.BaseType, typeof(MulticastDelegate));
+            Assert.Equal(typeof(MulticastDelegate), t.BaseType);
+            ConstructorInfo ctor = t.GetConstructors()[0];
+            Console.Write(ctor.GetMethodImplementationFlags());
             Console.Write(t.BaseType);
         }
 
@@ -47,26 +49,24 @@ namespace Nncase.Tests.TIR
             Console.WriteLine(created_class.GetMember("delfunc"));
         }
 
-        public Type GetDynmicClassType()
+        public Type GetDynamicDeleType()
         {
             AssemblyName aName = new AssemblyName("DynamicAssemblyExample");
             AssemblyBuilder ab = AssemblyBuilder.DefineDynamicAssembly(aName, AssemblyBuilderAccess.RunAndCollect);
             ModuleBuilder mb = ab.DefineDynamicModule(aName.Name);
-            TypeBuilder tb = mb.DefineType("MyDynamicType", TypeAttributes.Public);
-            TypeBuilder nesttb = tb.DefineNestedType("DynamicDelegate", TypeAttributes.NestedPublic | TypeAttributes.Sealed, typeof(MulticastDelegate));
-            var ctor = nesttb.DefineConstructor(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, CallingConventions.Standard | CallingConventions.HasThis, new[] { typeof(object), typeof(IntPtr) });
+            TypeBuilder tb = mb.DefineType("MyDynamicType", TypeAttributes.Public | TypeAttributes.Sealed, typeof(MulticastDelegate));
+            ConstructorBuilder ctor = tb.DefineConstructor(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName | MethodAttributes.RTSpecialName, CallingConventions.Standard | CallingConventions.HasThis, new[] { typeof(object), typeof(IntPtr) });
+            ctor.SetImplementationFlags(MethodImplAttributes.Runtime | MethodImplAttributes.Managed);
 
-            ILGenerator ctorIL = ctor.GetILGenerator();
-            ctorIL.Emit(OpCodes.Ldarg_0);
-            ctorIL.Emit(OpCodes.Ldarg_1);
-            ctorIL.Emit(OpCodes.Ret);
+            var invoke = tb.DefineMethod("Invoke", MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.HideBySig | MethodAttributes.NewSlot, CallingConventions.Standard | CallingConventions.HasThis, typeof(float), new[] { typeof(float), typeof(float) });
+            invoke.SetImplementationFlags(MethodImplAttributes.Runtime | MethodImplAttributes.Managed);
 
-            var invoke = nesttb.DefineMethod("Invoke", MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.HideBySig | MethodAttributes.NewSlot, CallingConventions.Standard | CallingConventions.HasThis, typeof(float), new[] { typeof(float), typeof(float) });
-            var beginInvoke = nesttb.DefineMethod("BeginInvoke", MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.HideBySig | MethodAttributes.NewSlot, CallingConventions.Standard | CallingConventions.HasThis, typeof(IAsyncResult), new[] { typeof(float), typeof(float), typeof(IAsyncResult), typeof(object) });
+            var beginInvoke = tb.DefineMethod("BeginInvoke", MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.HideBySig | MethodAttributes.NewSlot, CallingConventions.Standard | CallingConventions.HasThis, typeof(IAsyncResult), new[] { typeof(float), typeof(float), typeof(IAsyncResult), typeof(object) });
+            beginInvoke.SetImplementationFlags(MethodImplAttributes.Runtime | MethodImplAttributes.Managed);
 
-            var endInvoke = nesttb.DefineMethod("EndInvoke", MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.HideBySig | MethodAttributes.NewSlot, CallingConventions.Standard | CallingConventions.HasThis, typeof(float), new[] { typeof(IAsyncResult) });
-            var created_class = tb.CreateType();
-            return created_class;
+            var endInvoke = tb.DefineMethod("EndInvoke", MethodAttributes.Public | MethodAttributes.Virtual | MethodAttributes.HideBySig | MethodAttributes.NewSlot, CallingConventions.Standard | CallingConventions.HasThis, typeof(float), new[] { typeof(IAsyncResult) });
+            endInvoke.SetImplementationFlags(MethodImplAttributes.Runtime | MethodImplAttributes.Managed);
+            return tb.CreateType();
         }
 
         [Fact]
@@ -78,19 +78,21 @@ namespace Nncase.Tests.TIR
             {
                 return;
             }
-            var path = Testing.GetTestsOuputPath("DLLCallTest/TestSimpleAdd");
+            var path = Testing.GetDumpDirPath("DLLCallTest/TestSimpleAdd");
             var src_path = Path.Combine(path, "main.c");
             var lib_path = Path.Combine(path, "main.dylib");
-            using var file = File.Open(src_path, FileMode.OpenOrCreate, FileAccess.Write);
-            var writer = new StreamWriter(file);
-            writer.Write(@"
+            using (var file = File.Open(src_path, FileMode.OpenOrCreate, FileAccess.Write))
+            {
+                using (var writer = new StreamWriter(file))
+                {
+                    writer.Write(@"
 float fadd(float a, float b)
 {
   return a + b;
 }");
-            writer.Close();
+                }
+            }
             var p = Process.Start("gcc", $"{src_path} -fPIC -shared -arch {arch} -o {lib_path}");
-            // await p.Exited()
 
             var lib_ptr = NativeLibrary.Load(lib_path);
             var func_ptr = NativeLibrary.GetExport(lib_ptr, "fadd");
@@ -101,12 +103,10 @@ float fadd(float a, float b)
             var r = func.DynamicInvoke(1, 2);
             Assert.Equal(3.0f, r);
 
-            var dy_cls = GetDynmicClassType();
-            var dy_dele = dy_cls.GetNestedType("DynamicDelegate");
-            var func2 = Marshal.GetDelegateForFunctionPointer(func_ptr, mtype);
-            var r2 = func.DynamicInvoke(2, 3);
+            var dy_dele = GetDynamicDeleType();
+            var func2 = Marshal.GetDelegateForFunctionPointer(func_ptr, dy_dele);
+            var r2 = func2.DynamicInvoke(2, 3);
             Assert.Equal(5.0f, r2);
-
         }
     }
 

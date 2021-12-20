@@ -4,7 +4,7 @@ using Xunit;
 using Nncase.TIR.F;
 using static Nncase.IR.F.Math;
 
-namespace Nncase.Tests.TIR
+namespace Nncase.Tests.TIRTest
 {
     /// <summary>
     /// test the tir construct define
@@ -21,31 +21,31 @@ namespace Nncase.Tests.TIR
               null, new Expr[] { 1 },
               new[] { new IterVar((0, 1), "x", IterMode.CommReduce) },
               null, 0);
-            Assert.Equal(r.Combiner, null);
-            Assert.Equal(r.ValueIndex, 0);
+            Assert.Null(r.Combiner);
+            Assert.Equal(0, r.ValueIndex);
 
             var lhs = Var.Scalar("x", DataType.Float32) > (Const)1;
             var rhs = Equal(Var.Scalar("x", DataType.Float32), (Const)1);
             var s = new Select(lhs, rhs, (Const)1);
             var buffer_var = Var.Handle("x", DataType.Float32);
-            var ld = TOps.Load(buffer_var, 1, lhs);
-            Assert.Equal(ld[Load.BufferHandle], buffer_var);
+            var ld = TOp.Load(buffer_var, 1);
+            Assert.Equal(ld[Load.Handle], buffer_var);
 
-            var ramp = TOps.Ramp(1, 2, 3);
-            Assert.Equal(ramp[Ramp.BaseOffset].ToScalar<int>(), 1);
-            Assert.Equal(ramp[Ramp.Stride].ToScalar<int>(), 2);
+            var ramp = TOp.Ramp(1, 2, 3);
+            Assert.Equal(1, ramp[Ramp.Offset].ToScalar<int>());
+            Assert.Equal(2, ramp[Ramp.Stride].ToScalar<int>());
 
 
             var bc = new Broadcast(1000, 10);
-            Assert.Equal(bc.Value.ToScalar<int>(), 1000);
+            Assert.Equal(1000, bc.Value.ToScalar<int>());
 
             var sf = new Shuffle(new Expr[] { x }, new Expr[] { 2 });
             Assert.Equal(sf.Vectors[0], x);
-            Assert.Equal(sf.Indices[0].ToScalar<int>(), 2);
+            Assert.Equal(2, sf.Indices[0].ToScalar<int>());
 
             var lt = new Let(x, 10.0f, x);
             Assert.Equal(lt.Var, x);
-            Assert.Equal(lt.Value.ToScalar<float>(), 10.0f);
+            Assert.Equal(10.0f, lt.Value.ToScalar<float>());
             Assert.Equal(lt.Body, x);
         }
 

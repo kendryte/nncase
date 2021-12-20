@@ -19,7 +19,7 @@ using Nncase.Pattern;
 using Nncase.IR;
 using Nncase.Evaluator;
 
-namespace Nncase.Tests.ReWrite
+namespace Nncase.Tests.ReWriteTest
 {
     public sealed class SizeVarMul1Case : IRewriteCase
     {

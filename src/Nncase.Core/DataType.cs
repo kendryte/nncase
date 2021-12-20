@@ -168,6 +168,19 @@ namespace Nncase
             { typeof(char).TypeHandle, DataType.String },
         };
 
+        private static readonly Dictionary<DataType, Type> _dataTypesToType = new()
+        {
+            { DataType.Bool, typeof(bool) },
+            { DataType.Int8, typeof(sbyte) },
+            { DataType.UInt8, typeof(byte) },
+            { DataType.Int32, typeof(int) },
+            { DataType.UInt32, typeof(uint) },
+            { DataType.Int64, typeof(long) },
+            { DataType.UInt64, typeof(ulong) },
+            { DataType.Float32, typeof(float) },
+            { DataType.Float64, typeof(double) },
+        };
+
         private static readonly Dictionary<ElemType, int> _ElemTypeToLengths = new()
         {
             { ElemType.Bool, 1 },
@@ -198,6 +211,20 @@ namespace Nncase
             }
 
             throw new ArgumentOutOfRangeException("Unsupported CLR type: " + t.FullName);
+        }
+
+        /// <summary>
+        /// Get data type convert to CLR type.
+        /// </summary>
+        /// <param name="t"> Nncase datatype</param>
+        /// <returns>CLR type instance.</returns>
+        public static Type ToType(DataType t)
+        {
+            if (_dataTypesToType.TryGetValue(t, out var type))
+            {
+                return type;
+            }
+            throw new ArgumentOutOfRangeException("Unsupported DataType type: " + t);
         }
 
         /// <summary>

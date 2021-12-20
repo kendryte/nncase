@@ -97,7 +97,7 @@ namespace Nncase.TIR
         /// <param name="shape">The shape of the buffer.</param>
         /// <param name="dtype">The data type of the buffer.</param>
         /// <param name="name">The name of the buffer.</param>
-        /// <param name="data">The data pointer in the buffer.</param>
+        /// <param name="data_handle">The data pointer in the buffer.</param>
         /// <param name="strides">The stride of the buffer.</param>
         /// <param name="elem_offset">
         ///   The beginning offset of the array to data.
@@ -123,7 +123,7 @@ namespace Nncase.TIR
         ///   TVM maps buffer[i][j][k] -> buffer[i][0][k] if dimension j's shape equals 1.
         /// </param>
         /// <returns>Buffer</returns>
-        public static Buffer Decl(IR.Tuple shape, DataType? dtype = null, string name = "buffer", Var? data = null, IR.Tuple? strides = null, Expr? elem_offset = null, string scope = "", int data_alignment = -1, int offset_factor = 0, BufferMode buffer_mode = BufferMode.Default)
+        public static Buffer Decl(IR.Tuple shape, DataType? dtype = null, string name = "buffer", Var? data_handle = null, IR.Tuple? strides = null, Expr? elem_offset = null, string scope = "", int data_alignment = -1, int offset_factor = 0, BufferMode buffer_mode = BufferMode.Default)
         {
             dtype ??= DataType.Float32;
             strides ??= new();
@@ -131,9 +131,9 @@ namespace Nncase.TIR
             {
                 elem_offset = Var.Scalar($"{name}_elem_offset", shape[0].CheckedDataType);
             }
-            if (data is null)
+            if (data_handle is null)
             {
-                data = Var.Handle(name, dtype, scope);
+                data_handle = Var.Handle(name, dtype, scope);
             }
 
             elem_offset ??= (Const)0;
@@ -150,7 +150,7 @@ namespace Nncase.TIR
             {
                 strides = new IR.Tuple(shape.Fields.Select(e => new Var("stride", TensorType.Scalar(e.CheckedDataType))).ToArray());
             }
-            return new Buffer(shape, name, data, strides, elem_offset, scope, data_alignment, offset_factor, buffer_mode);
+            return new Buffer(shape, name, data_handle, strides, elem_offset, scope, data_alignment, offset_factor, buffer_mode);
         }
 
         /// <summary>
@@ -234,10 +234,10 @@ namespace Nncase.TIR
         /// </summary>
         /// <param name="begin"> the index of data begin</param>
         /// <returns> the corresponding load expr. </returns>
-        public Call VLoad(IR.Tuple begin)
-        {
-            return F.TOps.Load(Handle, CalcOffset(begin), null);
-        }
+        // public Call VLoad(IR.Tuple begin)
+        // {
+        //     return F.TOp.Load(Handle, CalcOffset(begin), null);
+        // }
 
         /// <summary>
         /// Generate a Stmt that store value into begin index.
@@ -245,10 +245,10 @@ namespace Nncase.TIR
         /// <param name="begin">The beginning index in unit of Buffer.dtype</param>
         /// <param name="value">The value to be stored.</param>
         /// <returns>The corresponding store stmt.</returns>
-        public Expr VStore(IR.Tuple begin, Expr value)
-        {
-            return new Store(Handle, value, CalcOffset(begin), null);
-        }
+        // public Expr VStore(IR.Tuple begin, Expr value)
+        // {
+        //     return new Store(Handle, value, CalcOffset(begin), null);
+        // }
 
         public Expr CalcElemOffset(IR.Tuple index)
         {
@@ -308,6 +308,69 @@ namespace Nncase.TIR
         {
             var offset = CalcElemOffset(index);
             return offset;
+        }
+
+        /// <summary>
+        /// convert the indices to int expr
+        /// </summary>
+        /// <param name="indices"></param>
+        /// <returns> finally index. </returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        private Expr linearIndices(IEnumerable<Expr> indices)
+        {
+            if (indices.Count() != Shape.Count)
+            {
+                throw new InvalidOperationException($"Index Size {indices.Count()} Does Not Match Shape Size {Shape.Count}!");
+            }
+            Expr dim_size = 1;
+            Expr lidx = 0;
+            foreach (var (dim, idx) in Enumerable.Zip(Shape.Reverse(), indices.Reverse()))
+            {
+                lidx = lidx + (idx * dim_size);
+                dim_size = dim_size * dim;
+            }
+            return lidx;
+        }
+        /// <summary>
+        /// Load the Value
+        /// </summary>
+        /// <param name="indices"> index </param>
+        /// <returns> the load Expression. </returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        public Expr this[params Expr[] indices]
+        {
+            get
+            {
+                var index = linearIndices(indices);
+                if (Dtype.Lanes > 1)
+                {
+                    index = F.TOp.Ramp(index * Dtype.Lanes, 1, Dtype.Lanes);
+                }
+                return F.TOp.Load(Handle, index);
+            }
+            set
+            {
+                throw new InvalidOperationException("Your Should Use The Buf.Store([i,j,k],value) For Index Store!");
+            }
+        }
+
+        /// <summary>
+        /// Elem Set, Because we can't return the store expression in the property setter!
+        /// </summary>
+        /// <param name="indices_with_value"> the last element is value, others are index</param>
+        /// <returns> Store expression </returns>
+        public Expr Store(params Expr[] indices_with_value)
+        {
+            if (indices_with_value.Length <= 1)
+            {
+                throw new InvalidOperationException("The Buffer Store Must Have Index and Value !");
+            }
+            var index = linearIndices(indices_with_value.SkipLast(1));
+            if (Dtype.Lanes > 1)
+            {
+                index = F.TOp.Ramp(index * Dtype.Lanes, 1, Dtype.Lanes);
+            }
+            return F.TOp.Store(Handle, indices_with_value.Last(), index);
         }
     }
 

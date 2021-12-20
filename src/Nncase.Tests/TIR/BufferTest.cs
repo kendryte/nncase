@@ -6,7 +6,7 @@ using Nncase.Evaluator;
 using System.Collections.Generic;
 using TorchSharp;
 
-namespace Nncase.Tests.TIR
+namespace Nncase.Tests.TIRTest
 {
     public class TBufferTest
     {
@@ -56,7 +56,7 @@ namespace Nncase.Tests.TIR
                           DataType.Float32,
                           strides: (n + 1, 1));
             var aptr = Ab.AccessPtr(AccessMode.ReadWrite, offset: 100);
-            Assert.Equal(((AccessPtr)aptr.Target).AccessMode, AccessMode.ReadWrite);
+            Assert.Equal(AccessMode.ReadWrite, ((AccessPtr)aptr.Target).AccessMode);
 
             var v = new SizeVar(DType: ElemType.Int32);
 
@@ -78,14 +78,14 @@ namespace Nncase.Tests.TIR
             Testing.AssertExprEqual(bptr.Parameters[2], Bb.Strides[0] * m - 100);
         }
 
-        [Fact]
-        public void TestBufferVLoad()
-        {
-            var m = new SizeVar("m");
-            var n = new SizeVar("n");
-            var Ab = Buffer.Decl((m, n), DataType.Float32, elem_offset: 100);
-            var load = Ab.VLoad((2, 3));
-            Testing.AssertExprEqual(load[Load.Index], 100 + ((2 * n) + 3));
-        }
+        // [Fact]
+        // public void TestBufferVLoad()
+        // {
+        //     var m = new SizeVar("m");
+        //     var n = new SizeVar("n");
+        //     var Ab = Buffer.Decl((m, n), DataType.Float32, elem_offset: 100);
+        //     var load = Ab.VLoad((2, 3));
+        //     Testing.AssertExprEqual(load[Load.Index], 100 + ((2 * n) + 3));
+        // }
     }
 }

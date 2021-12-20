@@ -21,13 +21,13 @@ using Nncase.Evaluator;
 using Nncase.Importer.TFLite;
 using Nncase.IR.F;
 using Nncase.IR.NN;
-using Nncase.Tests.ReWrite;
+using Nncase.Tests.ReWriteTest;
 using Nncase.Transform.DataFlow.Rules;
 using Nncase.Transform.Rule;
 using Binary = Nncase.IR.Math.Binary;
 using Tuple = Nncase.IR.Tuple;
 
-namespace Nncase.Tests.ReWrite
+namespace Nncase.Tests.ReWriteTest
 {
 
     public class DataFlowRewriteTestFactory : RewriteTest
@@ -47,7 +47,7 @@ namespace Nncase.Tests.ReWrite
         [MemberData(nameof(DataOne))]
         public void RunOne(IRewriteCase Case) => RunCore(Case);
 
-        public void RunCore(IRewriteCase Case)
+        protected void RunCore(IRewriteCase Case)
         {
             passOptions.SetName($"{Case.Name}");
             Expr pre = Case.PreExpr;

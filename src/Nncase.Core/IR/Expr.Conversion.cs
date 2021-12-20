@@ -98,8 +98,6 @@ namespace Nncase.IR
         public static implicit operator Expr(int[] span) => Const.FromSpan<int>(span);
         public static implicit operator Expr(float[] span) => Const.FromSpan<float>(span);
 
-        public static implicit operator Expr(string str) => Const.FromSpan<char>(str);
-
         public static implicit operator Expr(ReadOnlySpan<int> span) => Const.FromSpan<int>(span);
 
         public static implicit operator Expr(ReadOnlySpan<float> span) => Const.FromSpan<float>(span);

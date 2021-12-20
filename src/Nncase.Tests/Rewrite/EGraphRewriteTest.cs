@@ -17,7 +17,7 @@ using System.IO;
 using Nncase.Evaluator;
 
 
-namespace Nncase.Tests.ReWrite
+namespace Nncase.Tests.ReWriteTest
 {
     public class EGraphRewriteTestFactory : RewriteTest
     {
@@ -42,7 +42,7 @@ namespace Nncase.Tests.ReWrite
         [MemberData(nameof(DataOne))]
         public void RunOne(IRewriteCase Case) => RunCore(Case);
 
-        public void RunCore(IRewriteCase Case)
+        protected void RunCore(IRewriteCase Case)
         {
             passOptions.SetName($"{Case.Name}");
             Expr pre = Case.PreExpr;

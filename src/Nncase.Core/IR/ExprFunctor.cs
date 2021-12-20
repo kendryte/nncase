@@ -32,6 +32,7 @@ namespace Nncase.IR
                 Tuple tuple => Visit(tuple),
                 Op op => Visit(op),
                 TIR.Sequential seq => Visit(seq),
+                TIR.For @for => Visit(@for),
                 _ => DefaultVisit(expr),
             };
         }
@@ -72,18 +73,25 @@ namespace Nncase.IR
         public virtual TExprResult Visit(Tuple expr) => DefaultVisit(expr);
 
         /// <summary>
-        /// Visit Sequential expression.
-        /// </summary>
-        /// <param name="expr">Variable expression.</param>
-        /// <returns>Result.</returns>
-        public virtual TExprResult Visit(TIR.Sequential expr) => DefaultVisit(expr);
-
-        /// <summary>
         /// Visit operator expression.
         /// </summary>
         /// <param name="expr">Operator expression.</param>
         /// <returns>Result.</returns>
         public virtual TExprResult Visit(Op expr) => DefaultVisit(expr);
+
+        /// <summary>
+        /// Visit Sequential expression.
+        /// </summary>
+        /// <param name="expr">Sequential expression.</param>
+        /// <returns>Result.</returns>
+        public virtual TExprResult Visit(TIR.Sequential expr) => DefaultVisit(expr);
+
+        /// <summary>
+        /// Visit For expression.
+        /// </summary>
+        /// <param name="expr">For expression.</param>
+        /// <returns>Result.</returns>
+        public virtual TExprResult Visit(TIR.For expr) => DefaultVisit(expr);
 
         /// <summary>
         /// Default visit routine.

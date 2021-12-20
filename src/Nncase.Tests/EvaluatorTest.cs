@@ -137,7 +137,7 @@ namespace Nncase.Tests.Evaluator
         public void TestConv2D_1()
         {
             var input = torch.rand(1, 28, 28, 3).ToConst();
-            var conv1 = Tensors.NCHWToNHWC(ReWrite.DummyOp.Conv2D(Tensors.NHWCToNCHW(input), 3, out_channels: 8, 3, 2));
+            var conv1 = Tensors.NCHWToNHWC(ReWriteTest.DummyOp.Conv2D(Tensors.NHWCToNCHW(input), 3, out_channels: 8, 3, 2));
             Assert.True(conv1.InferenceType());
             Assert.Equal(new long[] { 1, 14, 14, 8 }, conv1.Eval().shape);
         }

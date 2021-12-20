@@ -26,10 +26,11 @@ namespace Nncase.TIR
     ///  Iteration Variable,
     ///  represents an iteration over an integer interval.
     /// </summary>
-    /// <param name="Dom">the domain of iteration, if known, can be None
-    ///  For the intermediate schedule node, before schedule.</param>
+    /// <param name="Dom">
+    ///  the domain of iteration, if known, can be None For the intermediate schedule node, before schedule.
+    /// </param>
     /// <param name="Var">The looping variable </param>
-    /// <param name="IterType">The type of the IterVar </param>
+    /// <param name="IterMode">The type of the IterVar </param>
     /// <param name="ThreadTag"> additional tag on the iteration variable, set this if this is binded already to a known thread tag. </param>
     public sealed record IterVar(Range Dom, Var Var, IterMode IterMode, string ThreadTag = "")
     {
@@ -47,10 +48,15 @@ namespace Nncase.TIR
     /// <param name="DType"></param>
     public sealed record SizeVar(string Name, DataType DType) : Var(Name, new TensorType(DType, Shape.Scalar))
     {
+
         /// <summary>
         /// <see cref="SizeVar"/>
         /// </summary>
-        public SizeVar(string Name = "int32", ElemType DType = ElemType.Int32) : this(Name, new DataType(DType, 1)) { }
+        /// <param name="Name"></param>
+        /// <param name="DType"></param>        
+        public SizeVar(string Name = "i", ElemType DType = ElemType.Int32) : this(Name, new DataType(DType, 1)) { }
+
+        public static implicit operator SizeVar(string Name) => new SizeVar(Name, ElemType.Int32);
 
         public override string ToString()
         {

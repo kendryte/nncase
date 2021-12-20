@@ -191,7 +191,7 @@ namespace Nncase
         /// <param name="fast_math_reassoc"></param>
         /// <param name="opt_level"></param>
         public TargetKindLLVM(List<string>? keys = null, string? tag = null, string? device = null, string? model = null, List<string>? libs = null, Target? host = null, int? from_device = null,
-          List<string>? mattr = null, string? mcpu = null, string? mtriple = null, string? mfloat_abi = null, string? mabi = null, bool? system_lib = null, string? runtime = null, bool? link_params = false, bool? unpacked_api = null, string? interface_api = null, bool? fast_math = null, bool? fast_math_nnan = null, bool? fast_math_ninf = null, bool? fast_math_nsz = null, bool? fast_math_arcp = null, bool? fast_math_contract = null, bool? fast_math_reassoc = null, int? opt_level = null) : base("llvm", DeviceType.CPU, new() { "cpu" }, tag, device, model, libs, host, from_device)
+          List<string>? mattr = null, string? mcpu = null, string? mtriple = null, string? mfloat_abi = null, string? mabi = null, bool? system_lib = null, string? runtime = null, bool? link_params = false, bool? unpacked_api = null, string? interface_api = null, bool? fast_math = null, bool? fast_math_nnan = null, bool? fast_math_ninf = null, bool? fast_math_nsz = null, bool? fast_math_arcp = null, bool? fast_math_contract = null, bool? fast_math_reassoc = null, int? opt_level = null) : base("llvm", DeviceType.CPU, new() { "Cpu" }, tag, device, model, libs, host, from_device)
         {
             Mattr = mattr;
             Mcpu = mcpu;
@@ -211,6 +211,31 @@ namespace Nncase
             FastMathContract = fast_math_contract;
             FastMathReassoc = fast_math_reassoc;
             OptLevel = opt_level;
+        }
+    }
+
+    public class TargetKindCSource : TargetKind
+    {
+        public bool? SystemLib;
+        public bool? LinkParams = false;
+        public string? Runtime;
+        public string? Mcpu;
+        public string? March;
+        public string? Executor;
+        public int? WorkspaceByteAlignment;
+        public bool? UnpackedApi;
+        public string? InterfaceApi;
+        public TargetKindCSource(List<string>? keys = null, string? tag = null, string? device = null, string? model = null, List<string>? libs = null, Target? host = null, int? from_device = null, bool? system_lib = null, bool? link_params = false, string? runtime = null, string? mcpu = null, string? march = null, string? executor = null, int? workspace_byte_alignment = null, bool? unpacked_api = null, string? interface_api = null) : base("CSource", DeviceType.CPU, new() { "Cpu" }, tag, device, model, libs, host, from_device)
+        {
+            SystemLib = system_lib;
+            LinkParams = link_params;
+            Runtime = runtime;
+            Mcpu = mcpu;
+            March = march;
+            Executor = executor;
+            WorkspaceByteAlignment = workspace_byte_alignment;
+            UnpackedApi = unpacked_api;
+            InterfaceApi = interface_api;
         }
     }
 
@@ -276,7 +301,16 @@ namespace Nncase
                 throw new InvalidOperationException($"Can't Find Cpu {name}!");
             }
             targetKind.Device = "arm_cpu";
-            return new(targetKind, new() { "cpu", "arm_cpu" }, new());
+            return new(targetKind, new() { "Cpu", "arm_cpu" }, new());
+        }
+
+        /// <summary>
+        /// the c source host target
+        /// </summary>
+        /// <returns></returns>
+        public static Target CSourceHost()
+        {
+            return new(new TargetKindCSource(device: "Host"), new() { "Cpu" }, new());
         }
     }
 }

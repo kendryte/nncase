@@ -5,7 +5,7 @@ using Nncase.TIR.F;
 using static Nncase.IR.F.Math;
 using System;
 
-namespace Nncase.Tests.TIR
+namespace Nncase.Tests.TIRTest
 {
     /// <summary>
     /// test the tir construct define

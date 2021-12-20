@@ -14,6 +14,6 @@ namespace Nncase.CodeGen.Builder
         /// <param name="mod"></param>
         /// <param name="target"></param>
         /// <returns></returns>
-        public RTModule Build(Module mod, Target target);
+        public IRTModule Build(Module mod, Target target);
     }
 }

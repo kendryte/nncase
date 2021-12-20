@@ -17,21 +17,25 @@ namespace Nncase.Tests
         /// </summary>
         /// <param name="path"></param>
         /// <returns></returns>
-        private static string GetDumpPath([CallerFilePath] string path = null)
+        private static string GetNncsaeDumpDirPath([CallerFilePath] string path = null)
         {
             return Path.GetFullPath(Path.Combine(path, "..", "..", "..", "tests_output"));
         }
 
         /// <summary>
-        /// <see cref="GetDumpPath(string)"/>
+        /// get the nncase `tests_ouput` path
+        /// <remarks>
+        /// you can set the subPath for get the `xxx/tests_output/subPath`
+        /// </remarks>
         /// </summary>
-        /// <returns></returns>
-        public static string GetTestsOuputPath(string name = "")
+        /// <param name="subDir">sub directory.</param>
+        /// <returns> full path string. </returns>
+        public static string GetDumpDirPath(string subDir = "")
         {
-            var path = GetDumpPath();
-            if (name.Length != 0)
+            var path = GetNncsaeDumpDirPath();
+            if (subDir.Length != 0)
             {
-                path = Path.Combine(path, name);
+                path = Path.Combine(path, subDir);
                 if (!Directory.Exists(path))
                 {
                     Directory.CreateDirectory(path);
@@ -54,11 +58,11 @@ namespace Nncase.Tests
             var result = f.InferenceType();
             RunPassOptions options = RunPassOptions.Invalid;
 
-            var dumpPath = Path.Combine(GetDumpPath(), member, "Simplify");
+            var dumpPath = Path.Combine(GetNncsaeDumpDirPath(), member, "Simplify");
             int dup = 1;
             while (Directory.Exists(dumpPath))
             {
-                dumpPath = Path.Combine(GetDumpPath(), member, $"Simplify_{++dup}");
+                dumpPath = Path.Combine(GetNncsaeDumpDirPath(), member, $"Simplify_{++dup}");
             }
             options = new RunPassOptions(null, 2, dumpPath);
 
@@ -70,8 +74,8 @@ namespace Nncase.Tests
             var res = Equals(Simplify(lhs, member), Simplify(rhs, member));
             if (!res)
             {
-                lhs.DumpExprAsIL("Lhs", Path.Combine(GetDumpPath(), member));
-                rhs.DumpExprAsIL("Rhs", Path.Combine(GetDumpPath(), member));
+                lhs.DumpExprAsIL("Lhs", Path.Combine(GetNncsaeDumpDirPath(), member));
+                rhs.DumpExprAsIL("Rhs", Path.Combine(GetNncsaeDumpDirPath(), member));
             }
             Assert.True(res);
         }

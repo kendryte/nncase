@@ -31,11 +31,26 @@ namespace Nncase.TIR
     /// The container of Exprs.
     /// Represent a sequence of Expr.
     /// </summary>
-    /// <param name="Bodys">internal sequence content.</param>
-    public sealed record Sequential(IRArray<Expr> Bodys) : Expr
+    public sealed record Sequential : Expr
     {
-        public int Count => Bodys.Count;
-        public Expr this[int index] => Bodys[index];
+        public Sequential(params Expr[] exprs)
+        {
+            Fields = exprs.ToArray();
+        }
+        /// <summary>
+        /// internal sequence content.
+        /// </summary>
+        public IRArray<Expr> Fields;
+        /// <summary>
+        /// bodys count
+        /// </summary>
+        public int Count => Fields.Count;
+        /// <summary>
+        /// get expr in body
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
+        public Expr this[int index] => Fields[index];
     }
 
 
@@ -55,56 +70,6 @@ namespace Nncase.TIR
         }
     }
 
-
-    /// <summary>
-    /// Store, return unit
-    /// </summary>
-    public sealed record Store : Expr
-    {
-        /// <summary>
-        ///The buffer variable.
-        /// </summary>
-        public Var BufferHandle;
-        /// <summary>
-        ///The value to be stored.
-        /// </summary>
-        public Expr Value;
-        /// <summary>
-        ///The index locations to be stored.
-        /// </summary>
-        public Expr Index;
-        /// <summary>
-        ///The predicate to mask which lanes would be stored.
-        /// </summary>
-        public Expr Predicate;
-
-        /// <summary>
-        /// Store value to the buffer.
-        /// Equivalent to ((DType*)buffer_var)[index] = value.
-        /// where DType is the type specified by type().element_of().
-        /// <example>
-        /// if type = float32x3, then the store will corresponds to
-        /// <code>
-        ///  auto buffer = static_cast<float*>(buffer_var);
-        ///  buffer[index.v0] = value.v0;
-        ///  buffer[index.v1] = value.v1;
-        ///  buffer[index.v2] = value.v2;
-        /// </code>
-        /// </example>
-        /// </summary>
-        /// <param name="buffer_handle">The buffer Variable.</param>
-        /// <param name="value">The value we want to store.</param>
-        /// <param name="index">he index in the store expression.</param>
-        /// <param name="predicate">The store predicate.</param>
-        public Store(Var buffer_handle, Expr value, Expr index, Expr? predicate = null)
-        {
-            predicate ??= F.TOps.MakeConst<int>(1, F.TOps.LanesOp(buffer_handle));
-            BufferHandle = buffer_handle;
-            Value = value;
-            Index = index;
-            Predicate = predicate;
-        }
-    }
 
     /// <summary>
     /// Load value from the result produced by the producer.
@@ -172,11 +137,19 @@ namespace Nncase.TIR
     /// <param name="LoopVar">The loop variable.</param>
     /// <param name="Min">The minimum value of iteration.</param>
     /// <param name="Extent">The extent of the iteration.</param>
-    /// <param name="Kind">The kind of the for loop.</param>
-    /// <param name="Body">The body of the for loop.</param>
-    /// <param name="ThreadBinding"> Only valid when kind == ForKind::kThreadBinding The context thread that this loop variable bounds to.</param>
-    public sealed record For(Var LoopVar, Expr Min, Expr Extent, ForMode Kind, Sequential Body, IterVar? ThreadBinding = null) : Expr
+    /// <param name="Mode">The kind of the for loop.</param>
+    public sealed record For(Var LoopVar, Expr Min, Expr Extent, ForMode Mode) : Expr
     {
+
+        /// <summary>
+        /// The body of the for loop.
+        /// </summary>
+        public Sequential? Body = null;
+
+        /// <summary>
+        /// Only valid when kind == ForKind::kThreadBinding The context thread that this loop variable bounds to.
+        /// </summary>
+        public IterVar? ThreadBinding = null;
 
         /// <summary>
         ///   These annotations can be used as auxiliary hint
@@ -185,6 +158,17 @@ namespace Nncase.TIR
         ///  and can be ignored in most passes.
         /// </summary>
         public readonly Dictionary<string, object> Annotations = new();
+
+        /// <summary>
+        /// Create a for iteration scope.
+        /// </summary>
+        /// <param name="begin">The min iteration scope.</param>
+        /// <param name="end">The end iteration scope</param>
+        /// <param name="name">The name of iteration variable, if no input names,
+        /// using typical index names i, j, k, then i_nidx</param>
+        /// <param name="dtype">The data type of iteration variable.</param>
+        /// <param name="mode">The special tag on the for loop.</param>
+        public For(Expr begin, Expr end, string name = "i", ElemType dtype = ElemType.Int32, ForMode mode = ForMode.Serial) : this(new Var(name, TensorType.Scalar(dtype)), begin, end, mode) { }
     }
 
     /// <summary>

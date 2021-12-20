@@ -20,9 +20,15 @@ namespace Nncase.IR
         /// <summary>
         /// Initializes a new instance of the <see cref="Module"/> class.
         /// </summary>
-        public Module()
+        /// <param name="main"> main func</param>
+        public Module(Function? main = null)
         {
             _functions = new List<Function>();
+            Entry = main;
+            if (main is not null)
+            {
+                _functions.Add(main);
+            }
         }
 
         /// <summary>
@@ -44,6 +50,10 @@ namespace Nncase.IR
             _functions.Add(function);
         }
 
+        /// <summary>
+        /// update the entry function defination
+        /// </summary>
+        /// <param name="entry">the entry function defination.</param>
         public void Update(Function entry)
         {
             _functions.RemoveAt(_functions.IndexOf(Entry!));
