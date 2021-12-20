@@ -19,17 +19,17 @@ namespace Nncase.IR.NN
         /// <summary>
         /// Gets input.
         /// </summary>
-        public static readonly ParameterInfo Input = new(typeof(L2Normalization), 0, "input");
+        public static readonly ParameterInfo Input = new(typeof(BatchNormalization), 0, "input");
 
         /// <summary>
         /// Gets Epsilon.
         /// </summary>
-        public static readonly ParameterInfo Epsilon = new(typeof(L2Normalization), 1, "epsilon", IsFloatScalar());
+        public static readonly ParameterInfo Epsilon = new(typeof(BatchNormalization), 1, "epsilon", IsFloatScalar());
 
         /// <summary>
         /// Gets Momentum.
         /// </summary>
-        public static readonly ParameterInfo Momentum = new(typeof(L2Normalization), 2, "momentum", IsFloatScalar());
+        public static readonly ParameterInfo Momentum = new(typeof(BatchNormalization), 2, "momentum", IsFloatScalar());
 
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType epsilon, TensorType momentum) => input;

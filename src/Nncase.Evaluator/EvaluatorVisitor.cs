@@ -89,17 +89,23 @@ namespace Nncase.Evaluator.Ops
             _context.CurrentCall = expr;
             return _fixShape(expr, expr.Target switch
             {
+                BatchNormalization b => VisitBatchNormalization(b),
                 Binary bn => VisitBinary(bn),
+                Broadcast b => VisitBroadcast(b),
+                Cast ct => VisitCast(ct),
+                Celu c => VisitCelu(c),
                 Concat con => VisitConcat(con),
+                Conv2D conv => VisitConv2D(conv),
+                Expand e => VisitExpand(e),
+                Pad pd => VisitPad(pd),
+                ReduceArg r => VisitReduceArg(r),
+                Reshape rs => VisitReshape(rs),
                 ShapeOp sp => VisitShape(sp),
                 Slice sl => VisitSlice(sl),
+                IR.Tensors.Stack st => VisitStack(st),
                 Transpose tr => VisitTranspose(tr),
                 Unary un => VisitUnary(un),
-                Pad pd => VisitPad(pd),
-                IR.Tensors.Stack st => VisitStack(st),
-                Cast ct => VisitCast(ct),
-                Conv2D conv => VisitConv2D(conv),
-                _ => throw new NotImplementedException()
+                _ => throw new NotImplementedException($"{expr.Target}")
             });
         }
 

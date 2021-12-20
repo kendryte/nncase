@@ -13,8 +13,13 @@ namespace Nncase.Evaluator.Ops
             return unary.UnaryOp switch
             {
                 UnaryOp.Abs => torch.abs(i),
+                UnaryOp.Acos => torch.acos(i),
+                UnaryOp.Acosh => torch.acosh(i),
+                UnaryOp.Asin => torch.asin(i),
+                UnaryOp.Asinh => torch.asinh(i),
                 UnaryOp.Ceil => torch.ceil(i),
                 UnaryOp.Cos => torch.cos(i),
+                UnaryOp.Cosh => torch.cosh(i),
                 UnaryOp.Exp => torch.exp(i),
                 UnaryOp.Floor => torch.floor(i),
                 UnaryOp.Log => torch.log(i),
@@ -22,6 +27,7 @@ namespace Nncase.Evaluator.Ops
                 UnaryOp.Round => torch.round(i),
                 UnaryOp.Rsqrt => torch.rsqrt(i),
                 UnaryOp.Sin => torch.sin(i),
+                UnaryOp.Sinh => torch.sinh(i),
                 UnaryOp.Sqrt => torch.sqrt(i),
                 UnaryOp.Square => torch.square(i),
                 UnaryOp.Tanh => torch.tanh(i),

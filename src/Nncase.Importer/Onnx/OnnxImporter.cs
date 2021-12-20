@@ -57,8 +57,8 @@ namespace Nncase.Importer
             var shape = GetShape(tensor);
             var type = GetDataType(tensor);
             var dt = (TensorProto.Types.DataType)tensor.DataType;
-            // todo:external data and default data test
-            if (tensor.DataLocation == TensorProto.Types.DataLocation.Default)
+            // should not use tensor.DataLocation to distinguish whether it is RawData
+            if (tensor.RawData.ToByteArray().Length() != 0)
             {
                 return new Const(new TensorType(type, shape), tensor.RawData.ToByteArray());
             }
@@ -139,14 +139,11 @@ namespace Nncase.Importer
             {
                 return expr;
             }
-            else
-            {
-                return _graph.Initializer
+            return _graph.Initializer
                     .Find(x => x.Name == id)
                     .Match(
                         GetConst,
                         () => throw new InvalidDataException($"Cannot load tensor data (tensor:{id})."));
-            }
         }
 
         private Expr GetSingleInputExpr(NodeProto n)

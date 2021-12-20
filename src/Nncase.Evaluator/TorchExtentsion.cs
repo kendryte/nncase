@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 using TorchSharp;
 
@@ -44,6 +45,7 @@ namespace Nncase.Evaluator
             var shape = expr.CheckedShape.IsScalar
                 ? new long[] { }
                 : expr.CheckedShape.ToList().Select(x => (long)x.FixedValue).ToArray();
+
             return dtype switch
             {
                 DataType.Int8 => torch.tensor(expr.ToTensor<sbyte>(), shape, ToTorchType(dtype)),
@@ -54,7 +56,7 @@ namespace Nncase.Evaluator
                 // DataType.UInt16 => torch.tensor(expr.ToTensor<ushort>(), shape, ToTorchType(dtype)),
                 // DataType.UInt32 => torch.tensor(expr.ToTensor<uint>(), shape, ToTorchType(dtype)),
                 // DataType.UInt64 => torch.tensor(expr.ToTensor<ulong>(), shape, ToTorchType(dtype)),
-                // DataType.Float16 => torch.tensor(expr.ToTensor<Float16>(), shape, ToTorchType(dtype)),
+                DataType.Float16 => torch.tensor(expr.HalfToFloat(), shape, ToTorchType(dtype)),
                 DataType.Float32 => torch.tensor(expr.ToTensor<float>(), shape, ToTorchType(dtype)),
                 DataType.Float64 => torch.tensor(expr.ToTensor<double>(), shape, ToTorchType(dtype)),
                 // DataType.BFloat16 => torch.tensor(expr.ToTensor<BFloat16>(), shape, ToTorchType(dtype)),

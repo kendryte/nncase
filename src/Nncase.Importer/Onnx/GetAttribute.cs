@@ -105,12 +105,12 @@ namespace Nncase.Importer
         
         string GetStringAttribute(NodeProto n, string attr, string defaultValue)
         {
-            return GetAttrSafe(n, attr, AttributeType.String, x => x.S.ToString(), defaultValue);
+            return GetAttrSafe(n, attr, AttributeType.String, x => x.S.ToStringUtf8(), defaultValue);
         }
         
         string GetStringAttribute(NodeProto n, string attr)
         {
-            return GetAttrUnSafe(n, attr, AttributeType.String, x => x.S.ToString());
+            return GetAttrUnSafe(n, attr, AttributeType.String, x => x.S.ToStringUtf8());
         }
 
         TensorProto GetTensorProtoAttribute(NodeProto n, string attr)

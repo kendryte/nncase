@@ -46,6 +46,7 @@ namespace Nncase.IR.Tensors
             {
                 var shape = input.Shape.ToList();
                 var axisIndex = axisValue.ToScalar<int>();
+                axisIndex = axisIndex >= 0 ? axisIndex : input.Shape.Rank + axisIndex;
                 if (keepDimsValue.ToScalar<bool>())
                 {
                     shape[axisIndex] = 1;

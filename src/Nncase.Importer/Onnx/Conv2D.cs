@@ -14,7 +14,7 @@ namespace Nncase.Importer
         private Expr VisitConv2D(in NodeProto op)
         {
             var (input, weights) = GetInputExprs(op, 0, 1);
-            var bias = GetBias(op, input);
+            var bias = GetBias(op, weights);
             var autoPad = GetStringAttribute(op, "auto_pad", "NOTSET");
 
             var dilation = GetDilationsAttribute(op);
@@ -41,11 +41,11 @@ namespace Nncase.Importer
             return Const.FromSpan<long>(GetIntsAttribute(op, "dilations", new[] {1, 1}));
         }
         
-        private Expr GetBias(NodeProto op, Expr input)
+        private Expr GetBias(NodeProto op, Expr weights)
         {
             return op.Input.Count > 2
                 ? GetInputExpr(op, 2)
-                : F.Tensors.Broadcast(0f, Util.ShapeIndex(input, 3));
+                : F.Tensors.Expand(0f, Util.ShapeIndex(weights, 0));
         }
         
         private Expr AutoPad(NodeProto op, string autoPad, Expr input, Expr weights,

@@ -30,6 +30,8 @@ namespace Nncase.IR.F
         
         public static Call CumSum(Expr input, Expr axis, Expr exclusive, Expr reverse) => new Call(new CumSum(), input, axis, exclusive, reverse);
         
+        public static Call Expand(Expr input, Expr shape) => new Call(new Expand(), input, shape);
+        
         public static Call HardMax(Expr input, Expr axis) => new Call(new CumSum(), input, axis);
 
         public static Call Gather(Expr input, Expr axis, Expr index) => new Call(new Gather(), input, axis, index);

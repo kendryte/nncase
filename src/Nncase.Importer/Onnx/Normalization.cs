@@ -1,7 +1,10 @@
 // Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
+using System;
 using Nncase.IR;
+using Nncase.IR.Math;
+using Nncase.IR.Tensors;
 using Onnx;
 using F = Nncase.IR.F;
 
@@ -9,12 +12,31 @@ namespace Nncase.Importer
 {
     public partial class OnnxImporter
     {
+        private Expr BroadCastValueByChannel(Expr v)
+        {
+            return F.Tensors.Broadcast(
+                v, F.Tensors.Concat(
+                    new IR.Tuple(F.Tensors.ShapeOp(v), new[] { 1 }, new[] { 1 }), 0));
+        }
+        
         private Expr VisitBatchNormalization(in NodeProto op)
         {
-            var input = GetInputExpr(op, 0);
+            var x = GetInputExpr(op, 0);
+            var (scale, b) = GetInputExprs(op, 1, 2);
+            var (mean, var) = GetInputExprs(op, 3, 4);
             var eps = GetFloatAttribute(op, "epsilon", 1e-05f);
             var mom = GetFloatAttribute(op, "momentum", 0.9f);
-            return F.NN.BatchNormalization(input, eps, mom);
+            var input_mean = BroadCastValueByChannel(mean);
+            var bias = BroadCastValueByChannel(b);
+            return (x - input_mean) / F.Math.Sqrt(var + eps) * scale + bias;
+            // var y = F.NN.BatchNormalization(input, eps, mom);
+            // return y;
+            // return op.Output.Count switch
+            // {
+            //     1 => new Tuple(y),
+            //     2 => new Tuple(y, rm),
+            //     3 => new Tuple(y, rm, rv)
+            // };
         }
 
         private Expr VisitInstanceNormalization(in NodeProto op)
