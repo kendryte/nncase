@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,16 +18,7 @@ namespace Nncase.IR
     {
         protected int? _hashcode;
 
-        /// <summary>
-        /// Gets or sets checked type.
-        /// </summary>
-        protected IRType? _checkedType { get; set; } = null;
-
-        public virtual IRType? CheckedType
-        {
-            get => _checkedType;
-            set { _checkedType = value; }
-        }
+        public IRType? CheckedType = null;
 
         public Shape CheckedShape => CheckedType switch
         {

@@ -107,6 +107,12 @@ namespace Nncase.CodeGen.Compiler
                 true => DataTypes.ToType(ttype.DType),
                 false => throw new NotSupportedException("TensorType is Tensor!")
             },
+            TupleType ttype => (ttype == TupleType.Void) switch
+            {
+                true => typeof(void),
+                false => throw new NotSupportedException($"Can't Support the {ttype}!")
+            },
+            PointerType ptype => DataTypes.ToType(ptype.DType).MakeArrayType(),
             _ => throw new NotSupportedException($"IRType is {iRType}!")
         };
 

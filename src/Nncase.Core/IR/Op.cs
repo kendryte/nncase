@@ -69,10 +69,6 @@ namespace Nncase.IR
                              orderby param.Index
                              select param).ToArray();
 
-        /// <summary>
-        /// The op default is Anytype, Can't assgin it to other type.
-        /// </summary>
-        public override IRType? CheckedType { get => AnyType.Default; set { } }
 
         public virtual bool Equals(Op? other)
         {

@@ -15,12 +15,6 @@ namespace Nncase.IR
     public sealed record Const(TensorType ValueType, IRBytes Data) : Expr
     {
 
-        public override IRType? CheckedType
-        {
-            get => ValueType;
-            set { _checkedType = value == ValueType ? _checkedType = value : throw new InvalidOperationException("Can't Set CheckType != ValueType"); }
-        }
-
         /// <summary>
         /// Create constant from a <see cref="byte"/>.
         /// </summary>

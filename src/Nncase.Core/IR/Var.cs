@@ -14,11 +14,6 @@ namespace Nncase.IR
     /// </summary>
     public record Var(string Name, IRType TypeAnnotation) : Expr
     {
-        public override IRType? CheckedType
-        {
-            get => TypeAnnotation;
-            set { _checkedType = value == TypeAnnotation ? value : throw new InvalidOperationException("Can't Set CheckType != TypeAnnotation"); }
-        }
 
         private static int _globalVarIndex = 0;
 

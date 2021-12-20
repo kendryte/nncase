@@ -88,6 +88,7 @@ namespace Nncase.IR
             /// current writer.
             /// </summary>
             TextWriter Writer;
+            TextWriter rootWriter;
             /// <summary>
             /// stack container
             /// </summary>
@@ -103,6 +104,7 @@ namespace Nncase.IR
             /// <param name="textWriter"></param>
             public ScopeWriter(TextWriter textWriter)
             {
+                rootWriter = textWriter;
                 Writer = textWriter;
             }
 
@@ -111,30 +113,24 @@ namespace Nncase.IR
             /// </summary>
             public void Push()
             {
-                if (Scopes.Count == 0)
-                {
-                    Scopes.Push((new StringBuilder(), Writer));
-                }
-                else
-                {
-                    var builder = new StringBuilder();
-                    var writer = new StringWriter(builder);
-                    Scopes.Push((builder, writer));
-                    Writer = writer;
-                }
+                StringBuilder builder = new StringBuilder();
+                TextWriter writer = new StringWriter(builder);
+                Scopes.Push((builder, writer));
+                Writer = writer;
             }
+
             /// <summary>
             /// get current frame string
             /// </summary>
             /// <returns></returns>
             /// <exception cref="InvalidOperationException"></exception>
-            public string Pop()
+            public StringBuilder Pop()
             {
-                if (Scopes.Count == 1) throw new InvalidOperationException("You Can't Pop Root Scope!");
                 var (builder, writer) = Scopes.Pop();
                 writer.Dispose();
-                Writer = Scopes.Peek().Item2;
-                return builder.ToString();
+                if (Scopes.Count == 0) { Writer = rootWriter; }
+                else { Writer = Scopes.Peek().Item2; }
+                return builder;
             }
 
             /// <summary>
@@ -143,17 +139,29 @@ namespace Nncase.IR
             /// <param name="value"></param>
             public void IndWrite(string? value) => Indent().Write(value);
 
+            public void IndWrite(StringBuilder? value) => Indent().Write(value);
+
             /// <summary>
             /// insert indent and write line.
             /// </summary>
             /// <param name="value"></param>
             public void IndWriteLine(string? value = null) => Indent().WriteLine(value);
 
+            public void IndWriteLine(StringBuilder? value) => Indent().WriteLine(value);
+
             /// <summary>
             /// Append the current line tail, without the indent.
             /// </summary>
             /// <param name="value"></param>
             public void Append(string value) => Writer.Write(value);
+            public void Append(StringBuilder value) => Writer.Write(value);
+
+            /// <summary>
+            /// Append the current line tail, without the indent, but add new line
+            /// </summary>
+            /// <param name="value"></param>
+            public void AppendLine(string value) => Writer.WriteLine(value);
+            public void AppendLine(StringBuilder value) => Writer.WriteLine(value);
 
             /// <summary>
             /// insert the indent
@@ -252,20 +260,15 @@ namespace Nncase.IR
 
                 name = $"%{expr.Name}";
                 _names.Add(expr, name);
-
+                Scope.Push();
                 // 1. Function signature
                 Scope.IndWrite($"{name} = fn({string.Join(", ", expr.Parameters.Select(Visit))})");
-                AppendCheckedType(expr.CheckedType);
-                Scope.IndWriteLine(" {");
-
+                AppendCheckedType(expr.CheckedType, " {\n");
                 // 2. Function body
-                using (Scope.IndentUp())
-                {
-                    var body = Visit(expr.Body);
-                    Scope.IndWriteLine(body);
-                }
+                using (Scope.IndentUp()) { var body = Visit(expr.Body); }
                 // 3. Function closing
                 Scope.IndWriteLine("}");
+                Scope.IndWrite(Scope.Pop());
                 return name;
             }
             /// <inheritdoc/>
@@ -305,9 +308,8 @@ namespace Nncase.IR
                 // the for loop will not used by other expression, so we need save the whole `For` il
                 Scope.Push();
                 // 1. For Loop signature
-                Scope.Append($"For {expr.Mode}(var {Visit(expr.LoopVar)} in (Min {Visit(expr.Min)}, Max {Visit(expr.Extent)})");
-                AppendCheckedType(expr.CheckedType);
-                Scope.IndWriteLine(" {");
+                Scope.Append($"For {expr.Mode}({Visit(expr.LoopVar)} in Range({Visit(expr.Min)}, {Visit(expr.Extent)})");
+                AppendCheckedType(expr.CheckedType, " {\n");
                 // 2. For Body
                 using (Scope.IndentUp())
                 {
@@ -325,10 +327,9 @@ namespace Nncase.IR
             {
                 if (_names.TryGetValue(expr, out var name)) { return name; }
                 Scope.Push();
-                // 1. For Loop signature
+                // 1. Sequential signature
                 Scope.Append($"Sequential");
-                AppendCheckedType(expr.CheckedType);
-                Scope.IndWriteLine(" {");
+                AppendCheckedType(expr.CheckedType, " {\n");
                 // 2. For Body
                 using (Scope.IndentUp())
                 {

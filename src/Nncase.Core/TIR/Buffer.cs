@@ -53,7 +53,7 @@ namespace Nncase.TIR
         /// <summary>
         /// data type in the content of the tensor
         /// </summary>
-        public DataType Dtype => Handle.CheckedDataType;
+        public DataType Dtype => ((PointerType)Handle.TypeAnnotation).DType;
 
         /// <summary>
         /// The shape of the buffer

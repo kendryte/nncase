@@ -120,18 +120,8 @@ namespace Nncase.IR
             IRType type;
             foreach (var (ftype, i) in expr.Fields.Select((field, i) => (Visit(field), i)))
             {
-                if (ftype is InvalidType)
-                {
-                    type = new InvalidType($"The Fields At {i} is Invaild!");
-                    SetCheckedType(expr, type);
-                    return type;
-                };
-                if (ftype is AnyType any)
-                {
-                    type = any;
-                    SetCheckedType(expr, type);
-                    return type;
-                }
+                if (ftype is InvalidType) { type = new InvalidType($"The Fields At {i} is Invaild!"); SetCheckedType(expr, type); return type; };
+                if (ftype is AnyType any) { type = any; SetCheckedType(expr, type); return type; }
             }
             type = TupleType.Void;
             SetCheckedType(expr, type);
@@ -141,55 +131,16 @@ namespace Nncase.IR
         public override IRType VisitLeaf(For expr)
         {
             IRType type;
-            if (Visit(expr.Min) is InvalidType)
-            {
-                type = new InvalidType("The Min Is Invaild!");
-                SetCheckedType(expr, type);
-                return type;
-            }
-            if (Visit(expr.Extent) is InvalidType)
-            {
-                type = new InvalidType("The Extent Is Invaild!");
-                SetCheckedType(expr, type);
-                return type;
-            }
-            if (Visit(expr.LoopVar) is InvalidType)
-            {
-                type = new InvalidType("The LoopVar Is Invaild!");
-                SetCheckedType(expr, type);
-                return type;
-            }
-            if (Visit(expr.Body!) is InvalidType)
-            {
-                type = new InvalidType("The Body Is Invaild!");
-                SetCheckedType(expr, type);
-                return type;
-            }
-            if (Visit(expr.Min) is AnyType mintype)
-            {
-                type = mintype;
-                SetCheckedType(expr, type);
-                return type;
-            }
-            if (Visit(expr.Extent) is AnyType extype)
-            {
-                type = extype;
-                SetCheckedType(expr, type);
-                return type;
-            }
-            if (Visit(expr.LoopVar) is AnyType lptype)
-            {
-                type = lptype;
-                SetCheckedType(expr, type);
-                return type;
-            }
-            if (Visit(expr.Body!) is AnyType bdtype)
-            {
-                type = bdtype;
-                SetCheckedType(expr, type);
-                return type;
-            }
+            if (Visit(expr.Min) is InvalidType) { type = new InvalidType("The Min Is Invaild!"); goto Finally; }
+            if (Visit(expr.Extent) is InvalidType) { type = new InvalidType("The Extent Is Invaild!"); goto Finally; }
+            if (Visit(expr.LoopVar) is InvalidType) { type = new InvalidType("The LoopVar Is Invaild!"); goto Finally; }
+            if (Visit(expr.Body!) is InvalidType) { type = new InvalidType("The Body Is Invaild!"); goto Finally; }
+            if (Visit(expr.Min) is AnyType mintype) { type = mintype; goto Finally; }
+            if (Visit(expr.Extent) is AnyType extype) { type = extype; goto Finally; }
+            if (Visit(expr.LoopVar) is AnyType lptype) { type = lptype; goto Finally; }
+            if (Visit(expr.Body!) is AnyType bdtype) { type = bdtype; goto Finally; }
             type = TupleType.Void;
+        Finally:
             SetCheckedType(expr, type);
             return type;
         }

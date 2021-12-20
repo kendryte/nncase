@@ -6,6 +6,8 @@ using System.Text;
 using System.Runtime.InteropServices;
 using Nncase.IR;
 using Nncase.CodeGen.Compiler;
+using Nncase.TIR;
+using System.Collections;
 
 namespace Nncase.CodeGen.Builder
 {
@@ -100,7 +102,12 @@ namespace Nncase.CodeGen.Builder
         /// <param name="args">input args</param>
         /// <returns> results </returns>
         /// <exception cref="InvalidOperationException"></exception>
-        public object? Invoke(params object?[]? args) => Entry?.Handle.DynamicInvoke(args) ?? throw new InvalidOperationException("This RTModule Have No Entry Function!");
+        public object? Invoke(params object?[]? args)
+        {
+            if (Entry is null)
+                throw new InvalidOperationException("This RTModule Have No Entry Function!");
+            return Entry.Handle.DynamicInvoke(args);
+        }
     }
 
     /// <summary>
@@ -142,8 +149,29 @@ namespace Nncase.CodeGen.Builder
             Type = type;
             Name = name;
         }
-
         public override string ToString() => $"{Type} {Name}";
+    }
+
+    internal class CSymbolParamList : IParameterList<CSymbol>, IEnumerable<CSymbol>
+    {
+        CSymbol[] Symbols;
+        public CSymbolParamList(CSymbol[] symbols)
+        {
+            Symbols = symbols;
+        }
+
+        public CSymbol this[ParameterInfo parameter] => Symbols[parameter.Index];
+        public CSymbol this[int index] => Symbols[index];
+
+        public IEnumerator<CSymbol> GetEnumerator()
+        {
+            return ((IEnumerable<CSymbol>)Symbols).GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return Symbols.GetEnumerator();
+        }
     }
 
     /// <summary>
@@ -161,12 +189,40 @@ namespace Nncase.CodeGen.Builder
         /// <summary>
         /// symbols name memo
         /// </summary>
-        readonly Dictionary<Expr, CSymbol> _names = new();
+        readonly Dictionary<Expr, CSymbol> _names = new(new RecordRefComparer<Expr>());
 
         /// <summary>
         /// ssa var id count
         /// </summary>
         int _localId = 0;
+
+        int __inlineCount = 0;
+        bool Isinlined => __inlineCount > 0;
+
+        class InlineManager : IDisposable
+        {
+            CSourceHostBuildVisior Parent;
+            public InlineManager(CSourceHostBuildVisior parent)
+            {
+                Parent = parent;
+                Parent.__inlineCount++;
+            }
+            public void Dispose()
+            {
+                Parent.__inlineCount--;
+            }
+        }
+        /// <summary>
+        /// control weather inline the code when the temp var for call.
+        /// <example>
+        /// if inlineRepr == false:
+        ///   %1 = a + b;
+        ///   %2 = %1 + c;
+        /// if inlineRepr = true:
+        ///   (a + b) + c;
+        /// </example>
+        /// </summary>
+        InlineManager Inline() => new InlineManager(this);
 
         /// <summary>
         /// <see cref="CSourceHostBuildVisior"/>
@@ -175,26 +231,62 @@ namespace Nncase.CodeGen.Builder
         public CSourceHostBuildVisior(TextWriter textWriter)
         {
             srcScope = new IRPrinter.ScopeWriter(textWriter);
+            // insert some declare
+            srcScope.IndWriteLine("#include <stdint.h>");
         }
 
         /// <inheritdoc/>
         public override CSymbol Visit(Call expr)
         {
+            /// TODO find better way for emit load
+            /// <example>
+            /// %2 = A[1];
+            /// A[1] = %2 + 1;
+            /// A[1] = %2 + 2; NOTE origin is A[1] = A[1] + 2
+            /// NOTE so we miss the immediate load expr.
+            /// </example>
             if (_names.TryGetValue(expr, out var symbol)) { return symbol; }
-            symbol = AllocateTempVar(expr);
-            _names.Add(expr, symbol);
-            var target = Visit(expr.Target);
-            var args = expr.Parameters.Select(Visit).ToArray();
+            if (!Isinlined && expr.CheckedType != TupleType.Void)
+            {
+                symbol = AllocateTempVar(expr);
+                _names.Add(expr, symbol);
+            }
+            CSymbol target;
+            CSymbolParamList args;
+            using (Inline())
+            {
+                target = Visit(expr.Target);
+                args = new CSymbolParamList(expr.Parameters.Select(Visit).ToArray());
+            }
             var type = VisitType(expr.CheckedType!);
-            if (expr.Target is IR.Math.Binary bin && bin.BinaryOp is (BinaryOp.Add or BinaryOp.Sub or BinaryOp.Mul or BinaryOp.Div))
+            string partialRepr = "";
+            switch (expr.Target)
             {
-                srcScope.IndWriteLine($"{symbol} = ({args[0].Name} {target.Name} {args[1].Name});");
+                case Load:
+                    partialRepr = $"{args[Load.Handle].Name}[{args[Load.Index].Name}]";
+                    break;
+                case Store:
+                    symbol.Name = $"{args[Store.Handle].Name}[{args[Store.Index].Name}]";
+                    symbol.Type = "";
+                    partialRepr = $"{args[Store.Value].Name}";
+                    break;
+                case IR.Math.Binary:
+                    if (((IR.Math.Binary)(expr.Target)).BinaryOp is (BinaryOp.Add or BinaryOp.Sub or BinaryOp.Mul or BinaryOp.Div))
+                    {
+                        partialRepr = ($"({args[0].Name} {target.Name} {args[1].Name})");
+                    }
+                    else { goto default; }
+                    break;
+                default:
+                    partialRepr = $"{target.Name}({string.Join(", ", args.Select(x => x.Name))})";
+                    break;
             }
-            else
+            if (!Isinlined)
             {
-                srcScope.IndWriteLine($"{symbol} = {target.Name}({string.Join(", ", args.Select(x => x.Name))})");
+                srcScope.IndWriteLine($"{symbol} = {partialRepr};");
+                return symbol;
             }
-            return symbol;
+            return new("Invail Call", partialRepr);
         }
 
         /// <inheritdoc/>
@@ -229,20 +321,22 @@ namespace Nncase.CodeGen.Builder
             symbol.Type = "InvalidFunc";
             _names.Add(expr, symbol);
 
+            srcScope.Push();
             // 1. Function signature
-            srcScope.IndWriteLine($"{VisitType(expr.CheckedType!)} {symbol.Name}({string.Join(", ", expr.Parameters.Select(Visit))})");
-            srcScope.IndWriteLine(" {");
+            srcScope.IndWriteLine($"{VisitType(expr.CheckedType!)} {symbol.Name}({string.Join(", ", expr.Parameters.Select(Visit))}) {{");
             // 2. Function body
             using (srcScope.IndentUp())
             {
                 var body = Visit(expr.Body);
-                if (expr.CheckedType != TupleType.Void)
+                if (expr.CheckedType is CallableType ctype && ctype.ReturnType != TupleType.Void)
                 {
                     srcScope.IndWriteLine($"return {body.Name};");
                 }
             }
             // 3. Function closing
             srcScope.IndWriteLine("}");
+            // 4. write whole code
+            srcScope.IndWrite(srcScope.Pop());
             return symbol;
         }
 
@@ -251,7 +345,9 @@ namespace Nncase.CodeGen.Builder
         {
             return expr switch
             {
-                IR.Math.Binary op => new("Invalid", op.BinaryOp.toC()),
+                IR.Math.Binary op => new("Invalid Binary", op.BinaryOp.toC()),
+                TIR.Store op => new("Invalid Store", "Invalid Store"),
+                TIR.Load op => new("Invalid Load", "Invalid Load"),
                 _ => throw new NotSupportedException($"{expr.GetType().Name}")
             };
         }
@@ -263,6 +359,34 @@ namespace Nncase.CodeGen.Builder
             symbol = new(VisitType(expr.CheckedType!), expr.Name);
             _names.Add(expr, symbol);
             return symbol;
+        }
+        /// <inheritdoc/>
+        public override CSymbol Visit(For expr)
+        {
+            srcScope.Push();
+            // 1. For Loop signature
+            var loopVar = Visit(expr.LoopVar);
+            using (Inline())
+            {
+                srcScope.AppendLine($"for ({loopVar} = {Visit(expr.Min).Name}; {loopVar.Name} < {Visit(expr.Extent).Name}; {loopVar.Name}++) {{");
+            }
+            // 2. For Body
+            using (srcScope.IndentUp()) { Visit(expr.Body!); }
+            // 3. For closing
+            srcScope.IndWriteLine("}");
+
+            // 4. extact whole code and write it.
+            srcScope.IndWrite(srcScope.Pop());
+            return new("Invalid For", "Invalid For");
+        }
+
+        /// <inheritdoc/>
+        public override CSymbol Visit(Sequential expr)
+        {
+            srcScope.Push();
+            foreach (var item in expr.Fields) { Visit(item); }
+            srcScope.Append(srcScope.Pop());
+            return new("Invalid Sequential", "Invalid Sequential");
         }
 
         /// <inheritdoc/>
@@ -285,7 +409,7 @@ namespace Nncase.CodeGen.Builder
             {
                 throw new NotSupportedException($"{type}");
             }
-            return $"({type.DType.toC()}*)";
+            return $"{type.DType.toC()}*";
         }
 
         /// <inheritdoc/>
@@ -298,6 +422,6 @@ namespace Nncase.CodeGen.Builder
         /// </summary>
         /// <param name="expr"></param>
         /// <returns></returns>
-        private CSymbol AllocateTempVar(Call expr) => new(VisitType(expr.CheckedType!), $"tmpV_{_localId++}");
+        private CSymbol AllocateTempVar(Call expr) => new(VisitType(expr.CheckedType!), $"_{_localId++}");
     }
 }

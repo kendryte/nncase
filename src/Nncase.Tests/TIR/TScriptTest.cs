@@ -98,12 +98,10 @@ namespace Nncase.Tests.TIRTest
         [Fact]
         public void TestExpressionToTIR()
         {
-            // TIR.SizeVar n = "n", m = "m";
-            var A = TIR.Buffer.Decl((10, 20));
-            var B = TIR.Buffer.Decl((20, 30));
-            // Expression simple = (int n, int m) => (n + m); TODO how to emit assgin op?
-            // var shape = ()
-            // var R = TIR.IterVar()
+            TIR.SizeVar n = "n", m = "m", k = "k";
+            var A = TIR.Buffer.Decl((n, m));
+            var B = TIR.Buffer.Decl((m, k));
+            var C = TIR.Buffer.Decl((m, k));
             Expression matmul = (int i, int j, int k) => (A[i, j] * B[j, k]);
         }
 
@@ -115,7 +113,7 @@ namespace Nncase.Tests.TIRTest
         public void TestRelectVisitor()
         {
             var v = new TestSimpleVisior();
-            
+
         }
     }
 }

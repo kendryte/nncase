@@ -9,6 +9,20 @@ using System.Threading.Tasks;
 
 namespace Nncase.IR
 {
+
+    public class RecordRefComparer<T> : IEqualityComparer<T>
+    {
+        bool IEqualityComparer<T>.Equals(T? x, T? y)
+        {
+            return object.ReferenceEquals(x, y);
+        }
+
+        int IEqualityComparer<T>.GetHashCode(T obj)
+        {
+            return System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(obj);
+        }
+    }
+
     /// <summary>
     /// Expression visitor.
     /// </summary>
@@ -16,7 +30,7 @@ namespace Nncase.IR
     /// <typeparam name="TTypeResult">Type visit result type.</typeparam>
     public abstract class ExprVisitor<TExprResult, TTypeResult> : ExprFunctor<TExprResult, TTypeResult>
     {
-        private readonly Dictionary<Expr, TExprResult> _exprMemo = new Dictionary<Expr, TExprResult>();
+        private readonly Dictionary<Expr, TExprResult> _exprMemo = new Dictionary<Expr, TExprResult>(new RecordRefComparer<Expr>());
         private readonly Dictionary<IRType, TTypeResult> _typeMemo = new Dictionary<IRType, TTypeResult>();
 
         /// <summary>
