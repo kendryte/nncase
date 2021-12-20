@@ -369,6 +369,9 @@ class TestRunner(metaclass=ABCMeta):
         elif isinstance(model_path, list):
             case_dir = os.path.dirname(model_path[0])
         self.run_single(self.cfg.case, case_dir, model_path)
+        in_ci = os.getenv('CI', False)
+        if in_ci:
+            shutil.rmtree(case_dir)
 
     def process_model_path_name(self, model_path: str) -> str:
         if Path(model_path).is_file():
@@ -377,13 +380,8 @@ class TestRunner(metaclass=ABCMeta):
         return model_path
 
     def clear(self, case_dir):
-        in_ci = os.getenv('CI', False)
-        if in_ci:
-            if os.path.exists(self.cfg.setup.root):
-                shutil.rmtree(self.cfg.setup.root)
-        else:
-            if os.path.exists(case_dir):
-                shutil.rmtree(case_dir)
+        if os.path.exists(case_dir):
+            shutil.rmtree(case_dir)
         os.makedirs(case_dir)
 
     @ abstractmethod
