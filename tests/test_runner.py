@@ -173,9 +173,13 @@ class TestRunner(metaclass=ABCMeta):
             config = Edict(cfg)
         config = self.update_config(config, overwrite_configs)
         self.cfg = self.validte_config(config)
+        self.in_ci = os.getenv('CI', False)
 
         case_name = case_name.replace('[', '_').replace(']', '_')
-        self.case_dir = os.path.join(self.cfg.setup.root, case_name + '-' + str(uuid.uuid4()))
+        if self.in_ci:
+            self.case_dir = os.path.join(self.cfg.setup.root, case_name + '-' + str(uuid.uuid4()))
+        else:
+            self.case_dir = os.path.join(self.cfg.setup.root, case_name)
         self.clear(self.case_dir)
 
         self.validate_targets(targets)
@@ -370,8 +374,7 @@ class TestRunner(metaclass=ABCMeta):
         elif isinstance(model_path, list):
             case_dir = os.path.dirname(model_path[0])
         self.run_single(self.cfg.case, case_dir, model_path)
-        in_ci = os.getenv('CI', False)
-        if in_ci:
+        if self.in_ci:
             shutil.rmtree(case_dir)
 
     def process_model_path_name(self, model_path: str) -> str:
