@@ -319,7 +319,9 @@ void alias_bitcast_buffer_pass::run_core(graph &graph, [[maybe_unused]] nncase::
                 {
                     // owner is input, parent shape is bitcast's
                     out_buf.parent() = { &in_buf, offset, b->output().shape() };
-                    out_buf.strides_parent() = nullptr;
+                    out_buf.strides_parent() = is_axis0_squeeze_or_expand_dim_bitcast(in_buf.shape(), out_buf.shape())
+                        ? &in_buf
+                        : nullptr;
                 }
                 else
                 {
@@ -327,7 +329,9 @@ void alias_bitcast_buffer_pass::run_core(graph &graph, [[maybe_unused]] nncase::
 
                     // owner transfered to output
                     in_buf.parent() = { &out_buf, offset, b->output().shape() };
-                    in_buf.strides_parent() = nullptr;
+                    in_buf.strides_parent() = is_axis0_squeeze_or_expand_dim_bitcast(in_buf.shape(), out_buf.shape())
+                        ? &out_buf
+                        : nullptr;
                 }
             }
         }
