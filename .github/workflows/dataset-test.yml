@@ -2,7 +2,7 @@ name: dataset-test
 
 on: 
   schedule:
-    - cron: '30 12 * * *'
+    - cron: '30 3 * * *'
 
 env:
   BUILD_TYPE: Release
