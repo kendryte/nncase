@@ -27,5 +27,6 @@ set(SRCS batch_to_space.cpp
          ternary.cpp
          topk.cpp
          transpose.cpp
+         trilu.cpp
          unary.cpp)
 target_sources(kernels PRIVATE ${SRCS})

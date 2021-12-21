@@ -18,9 +18,10 @@ import onnx
 from onnx import helper
 from onnx import AttributeProto, TensorProto, GraphProto
 from onnx_test_runner import OnnxTestRunner
+import numpy as np
+import copy
 
-
-def _make_module(in_shape, alpha, gamma):
+def _make_module(in_shape, k, upper):
     inputs = []
     outputs = []
     initializers = []
@@ -31,21 +32,28 @@ def _make_module(in_shape, alpha, gamma):
     input = helper.make_tensor_value_info('input', TensorProto.FLOAT, in_shape)
     inputs.append('input')
 
+    # k input
+    if k is not None:
+        k_tensor = helper.make_tensor(
+            'K',
+            TensorProto.INT64,
+            dims=[1],
+            vals=[k]
+        )
+        initializers.append(k_tensor)
+        inputs.append('K')
+
     # output
     output = helper.make_tensor_value_info('output', TensorProto.FLOAT, in_shape)
     outputs.append('output')
 
-    # alpha
-    if alpha is not None:
-        attributes_dict['alpha'] = alpha
+    # upper
+    if upper is not None:
+        attributes_dict['upper'] = upper
 
-    # gamma
-    if gamma is not None:
-        attributes_dict['gamma'] = gamma
-
-    # Selu node
+    # Trilu node
     node = onnx.helper.make_node(
-        'Selu',
+        'Trilu',
         inputs=inputs,
         outputs=outputs,
         **attributes_dict
@@ -57,37 +65,42 @@ def _make_module(in_shape, alpha, gamma):
         'test-model',
         [input],
         [output],
-        initializer=initializers)
+        initializer=initializers
+    )
 
     model_def = helper.make_model(graph_def, producer_name='onnx')
 
     return model_def
 
-
 in_shapes = [
-    [1, 3, 16, 16]
+    [2, 3, 16, 16]
 ]
 
-alphas = [
+ks = [
     None,
-    1.5
+    -1,
+    1,
+    -4,
+    4,
+    -18,
+    18
 ]
 
-gammas = [
+uppers = [
     None,
-    1.5
+    1,
+    0
 ]
 
 @pytest.mark.parametrize('in_shape', in_shapes)
-@pytest.mark.parametrize('alpha', alphas)
-@pytest.mark.parametrize('gamma', gammas)
-def test_selu(in_shape, alpha, gamma, request):
-    model_def = _make_module(in_shape, alpha, gamma)
+@pytest.mark.parametrize('k', ks)
+@pytest.mark.parametrize('upper', uppers)
+def test_trilu(in_shape, k, upper, request):
+    model_def = _make_module(in_shape, k, upper)
 
     runner = OnnxTestRunner(request.node.name)
     model_file = runner.from_onnx_helper(model_def)
     runner.run(model_file)
 
-
 if __name__ == "__main__":
-    pytest.main(['-vv', 'test_selu.py'])
+    pytest.main(['-vv', 'test_trilu.py'])

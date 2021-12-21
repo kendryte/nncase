@@ -176,8 +176,9 @@ namespace IsaGen
         SPACE_TO_BATCH,
         TAKE,
         TERNARY,
-        TRANSPOSE,
         TOPK,
+        TRANSPOSE,
+        TRILU,
         UNARY,
     }
 
@@ -1977,6 +1978,30 @@ namespace IsaGen
             [DisplayName("sorted")]
             [Description("Sorted")]
             public bool Sorted { get; set; }
+        }
+
+        [DisplayName("TENSOR.TRILU")]
+        [Category("Tensor Instructions")]
+        [Description("Trilu")]
+        public class TriluInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.TRILU;
+
+            [DisplayName("datatype")]
+            [Description("Datatype")]
+            public DataType DataType { get; set; }
+
+            [DisplayName("rshape_src")]
+            [Description("Source shape register")]
+            public byte RshapeSrc { get; set; }
+
+            [DisplayName("upper")]
+            [Description("Upper")]
+            public bool Upper { get; set; }
+
+            [DisplayName("k")]
+            [Description("K")]
+            public long K { get; set; }
         }
 
         [DisplayName("TENSOR.UNARY")]

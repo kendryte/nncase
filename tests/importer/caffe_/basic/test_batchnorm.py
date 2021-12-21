@@ -67,8 +67,7 @@ eps = [
 @pytest.mark.parametrize('eps', eps)
 def test_batchnorm(n, i_channel, i_size, eps, request):
     runner = CaffeTestRunner(request.node.name)
-    model_path = os.path.join(os.getcwd(), 'tests_output',
-                              request.node.name.replace('[', '_').replace(']', '_'))
+    model_path = runner.case_dir
     _make_module(model_path, n, i_channel, i_size, eps)
     model_file = [os.path.join(model_path, 'test.prototxt'),
                   os.path.join(model_path, 'test.caffemodel')]

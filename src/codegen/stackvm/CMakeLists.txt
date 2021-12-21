@@ -29,6 +29,7 @@ set(SRCS module_builder.cpp
          ops/ternary.cpp
          ops/topk.cpp
          ops/transpose.cpp
+         ops/trilu.cpp
          ops/unary.cpp)
 
 add_library(codegen_stackvm OBJECT ${SRCS})

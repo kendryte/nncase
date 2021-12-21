@@ -87,7 +87,7 @@ jobs:
       working-directory: ${{github.workspace}}
       shell: bash
       run: |
-        pip install pytest
+        pip install pytest pytest-xdist
         mkdir test_results
 
     - name: Test
@@ -98,10 +98,10 @@ jobs:
         PYTHONPATH: /tmp/nncase/lib:/tmp/nncase/python:${{github.workspace}}/tests
         ONNX_MODELS_DIR: /compiler/github-runner/onnx-models
       run: |
-        pytest tests/other --doctest-modules --junitxml=test_results/other.xml
-        pytest tests/importer --doctest-modules --junitxml=test_results/importer.xml
-        pytest tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
-        pytest tests/graph_partition --doctest-modules --junitxml=test_results/graph_partition.xml
+        pytest -n 20 tests/other --doctest-modules --junitxml=test_results/other.xml
+        pytest -n 20 tests/importer --doctest-modules --junitxml=test_results/importer.xml
+        pytest -n 20 tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
+        pytest -n 20 tests/graph_partition --doctest-modules --junitxml=test_results/graph_partition.xml
         pytest tests/models --doctest-modules --junitxml=test_results/models.xml
         pytest tests/examples --doctest-modules --junitxml=test_results/examples.xml
 
