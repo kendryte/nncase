@@ -67,8 +67,7 @@ slice_points = [
 @pytest.mark.parametrize('slice_point', slice_points)
 def test_slice(n, i_channel, i_size, axis, slice_point, request):
     runner = CaffeTestRunner(request.node.name, ['cpu', 'k210'])
-    model_path = os.path.join(os.getcwd(), 'tests_output',
-                              request.node.name.replace('[', '_').replace(']', '_'))
+    model_path = runner.case_dir
     _make_module(model_path, n, i_channel, i_size, axis, slice_point)
     model_file = [os.path.join(model_path, 'test.prototxt'),
                   os.path.join(model_path, 'test.caffemodel')]
