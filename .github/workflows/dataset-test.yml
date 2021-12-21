@@ -103,7 +103,7 @@ jobs:
         DATASET_DIR: /compiler/share
       run: |
         
-        pytest tests/models/tflite-model-zoo --doctest-modules --junitxml=test_results/models-dataset.xml
+        pytest -n 2 tests/models/tflite-model-zoo --doctest-modules --junitxml=test_results/models-dataset.xml
 
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action@v1
