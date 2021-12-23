@@ -371,7 +371,7 @@ namespace Nncase.CodeGen.Builder
                 srcScope.AppendLine($"for ({loopVar} = {Visit(expr.Min).Name}; {loopVar.Name} < {Visit(expr.Extent).Name}; {loopVar.Name}++) {{");
             }
             // 2. For Body
-            using (srcScope.IndentUp()) { Visit(expr.Body!); }
+            using (srcScope.IndentUp()) { Visit(expr.LoopBody!); }
             // 3. For closing
             srcScope.IndWriteLine("}");
 

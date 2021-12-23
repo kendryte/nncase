@@ -28,10 +28,10 @@ namespace Nncase.Tests.TIRTest
             var rhs = Equal(Var.Scalar("x", DataType.Float32), (Const)1);
             var s = new Select(lhs, rhs, (Const)1);
             var buffer_var = Var.Handle("x", DataType.Float32);
-            var ld = TOp.Load(buffer_var, 1);
+            var ld = TIR.T.Load(buffer_var, 1);
             Assert.Equal(ld[Load.Handle], buffer_var);
 
-            var ramp = TOp.Ramp(1, 2, 3);
+            var ramp = TIR.T.Ramp(1, 2, 3);
             Assert.Equal(1, ramp[Ramp.Offset].ToScalar<int>());
             Assert.Equal(2, ramp[Ramp.Stride].ToScalar<int>());
 

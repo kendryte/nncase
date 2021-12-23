@@ -42,22 +42,10 @@ namespace Nncase.TIR
 
 
     /// <summary>
-    /// a named variable represents a tensor index size
+    /// <see cref="T.SizeVar(string, ElemType)"/>
     /// </summary>
-    /// <param name="Name"></param>
-    /// <param name="DType"></param>
     public sealed record SizeVar(string Name, DataType DType) : Var(Name, new TensorType(DType, Shape.Scalar))
     {
-
-        /// <summary>
-        /// <see cref="SizeVar"/>
-        /// </summary>
-        /// <param name="Name"></param>
-        /// <param name="DType"></param>        
-        public SizeVar(string Name = "i", ElemType DType = ElemType.Int32) : this(Name, new DataType(DType, 1)) { }
-
-        public static implicit operator SizeVar(string Name) => new SizeVar(Name, ElemType.Int32);
-
         public override string ToString()
         {
             return $"{{{Name}>=0}}";

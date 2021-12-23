@@ -12,7 +12,7 @@ using static Nncase.IR.Utility;
 namespace Nncase.TIR
 {
     /// <summary>
-    /// <see cref="F.TOp.Load(Var, Expr)"/>
+    /// <see cref="T.Load(Var, Expr)"/>
     /// </summary>
     public record Load() : Op
     {
@@ -29,7 +29,7 @@ namespace Nncase.TIR
     }
 
     /// <summary>
-    /// <see cref="F.TOp.Ramp(Expr, Expr, int)"/>
+    /// <see cref="T.Ramp(Expr, Expr, int)"/>
     /// </summary>
     public record Ramp(int Lanes) : Op
     {
@@ -77,7 +77,6 @@ namespace Nncase.TIR
             }
             return TupleType.Void;
         }
-
 
     }
 

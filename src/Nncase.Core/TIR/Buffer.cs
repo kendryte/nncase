@@ -236,7 +236,7 @@ namespace Nncase.TIR
         /// <returns> the corresponding load expr. </returns>
         // public Call VLoad(IR.Tuple begin)
         // {
-        //     return F.TOp.Load(Handle, CalcOffset(begin), null);
+        //     return T.Load(Handle, CalcOffset(begin), null);
         // }
 
         /// <summary>
@@ -344,9 +344,9 @@ namespace Nncase.TIR
                 var index = linearIndices(indices);
                 if (Dtype.Lanes > 1)
                 {
-                    index = F.TOp.Ramp(index * Dtype.Lanes, 1, Dtype.Lanes);
+                    index = T.Ramp(index * Dtype.Lanes, 1, Dtype.Lanes);
                 }
-                return F.TOp.Load(Handle, index);
+                return T.Load(Handle, index);
             }
             set
             {
@@ -368,9 +368,9 @@ namespace Nncase.TIR
             var index = linearIndices(indices_with_value.SkipLast(1));
             if (Dtype.Lanes > 1)
             {
-                index = F.TOp.Ramp(index * Dtype.Lanes, 1, Dtype.Lanes);
+                index = T.Ramp(index * Dtype.Lanes, 1, Dtype.Lanes);
             }
-            return F.TOp.Store(Handle, indices_with_value.Last(), index);
+            return T.Store(Handle, indices_with_value.Last(), index);
         }
     }
 

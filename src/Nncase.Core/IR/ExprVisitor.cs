@@ -146,7 +146,7 @@ namespace Nncase.IR
                 Visit(expr.LoopVar);
                 Visit(expr.Min);
                 Visit(expr.Extent);
-                Visit(expr.Body ?? throw new InvalidOperationException("The For Expr Must Have Body!"));
+                Visit(expr.LoopBody ?? throw new InvalidOperationException("The For Expr Must Have Body!"));
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);
             }

@@ -18,6 +18,11 @@ namespace Nncase.IR
         private static int _globalVarIndex = 0;
 
         /// <summary>
+        /// get the global var index
+        /// </summary>
+        private int GlobalVarIndex => _globalVarIndex;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="Var"/> class.
         /// </summary>
         /// <param name="typeAnnotation">Type annotation.</param>

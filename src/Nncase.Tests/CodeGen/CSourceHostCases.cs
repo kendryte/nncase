@@ -4,6 +4,8 @@ using Nncase.CodeGen;
 using System;
 using System.Linq;
 using System.Collections.Generic;
+using System.Numerics.Tensors;
+using Nncase.TIR;
 
 namespace Nncase.Tests.CodeGenTest
 {
@@ -39,7 +41,6 @@ namespace Nncase.Tests.CodeGenTest
 
     public class ForCase : ICodeGenCase
     {
-
         void RefFunc(int[] A, int n)
         {
             for (int i = 0; i < n; i++)
@@ -68,19 +69,52 @@ namespace Nncase.Tests.CodeGenTest
 
         public Function GetEntry()
         {
-            var n = new TIR.SizeVar("n");
+            var n = T.SizeVar("n");
             var A = TIR.Buffer.Decl(new(n), DataType.Int32, "A");
-            var i = new Var("i", TensorType.Scalar(ElemType.Int32));
-            var j = new Var("j", TensorType.Scalar(ElemType.Int32));
-            var out_for = new TIR.For(i, 0, n, TIR.ForMode.Serial);
-            var in_for = new TIR.For(j, 0, 10, TIR.ForMode.Serial);
-            in_for.Body = new TIR.Sequential(A.Store(i, A[i] + j));
-            out_for.Body = new TIR.Sequential(
+            var out_for =
+             T.Serial(out var i, 0, n).Body(
               A.Store(i, A[i] + 1),
-              in_for
+              T.Serial(out var j, 0, n).Body(
+                A.Store(i, A[i] + j)
+              )
             );
             return new Function(out_for, A.Handle, n);
         }
     }
 
+    public class ForGridCase : ICodeGenCase
+    {
+
+        void RefFunc(int[] A, int n, int m)
+        {
+            for (int i = 0; i < n; i++)
+            {
+                for (int j = 0; j < m; j++)
+                {
+                    A[i * n + j] = i + j;
+                }
+            }
+        }
+
+        public void CompareEqual(IRTModule rtmod)
+        {
+            int n = 10, m = 20;
+            var A1 = new DenseTensor<int>(new[] { n, m }).ToArray();
+            var A2 = new DenseTensor<int>(new[] { n, m }).ToArray();
+            RefFunc(A1, n, m);
+            rtmod.Invoke(A2, n, m);
+            Assert.True(Enumerable.Range(0, n * m).All(i => A1[i] == A2[i]));
+        }
+
+        public Function GetEntry()
+        {
+            var n = T.SizeVar("n");
+            var m = T.SizeVar("m");
+            var A = TIR.Buffer.Decl((n, m), DataType.Int32, "A");
+            var out_for = T.Grid(out var i, out var j, (n, m)).Body(
+               A.Store(i, j, i + j)
+            );
+            return new Function(out_for, A.Handle, n, m);
+        }
+    }
 }

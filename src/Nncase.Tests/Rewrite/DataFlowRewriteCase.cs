@@ -23,7 +23,7 @@ namespace Nncase.Tests.ReWriteTest
 {
     public sealed class SizeVarMul1Case : IRewriteCase
     {
-        private SizeVar v = new("i");
+        private SizeVar v = T.SizeVar("i");
 
         public override Expr PreExpr => (v * 1) * 2;
         public override Expr PostExpr => v * 2;

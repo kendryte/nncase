@@ -8,13 +8,24 @@ using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
 
-namespace Nncase.TIR.F
+namespace Nncase.TIR
 {
     /// <summary>
     /// Tir functional Ops helper.
     /// </summary>
-    public static class TOp
+    public static class T
     {
+        private static readonly Dictionary<char, int> globalLoopVarIndex = new()
+        {
+            { 'i', 0 },
+            { 'j', 0 },
+            { 'k', 0 },
+            { 'l', 0 },
+        };
+
+        private static readonly Dictionary<string, int> globalSizeVarIndex = new()
+        {
+        };
 
         /// <summary>
         ///  Construct a vector with lanes elements
@@ -100,5 +111,101 @@ namespace Nncase.TIR.F
         // {
         //     return new Call(new LanesOp(), input);
         // }
+
+
+        static Var GetUniqueLoopVar()
+        {
+            KeyValuePair<char, int> func(KeyValuePair<char, int> l, KeyValuePair<char, int> r)
+            {
+                if (l.Value == r.Value)
+                {
+                    return l.Key < r.Key ? l : r;
+                }
+                return l.Value < r.Value ? l : r;
+            }
+            var name = globalLoopVarIndex.Aggregate(func).Key;
+            return GetUniqueLoopVar(name);
+        }
+
+        static Var GetUniqueLoopVar(char name)
+        {
+            int count = globalLoopVarIndex[name];
+            globalLoopVarIndex[name]++;
+            return new Var($"{name}_{count}", TensorType.Scalar(DataType.Int32));
+        }
+
+        /// <summary>
+        /// get the Serial For
+        /// </summary>
+        /// <param name="loop_var">out index var.</param>
+        /// <param name="begin">begin expr.</param>
+        /// <param name="end">end expr.</param>
+        /// <returns> the for loop </returns>
+        public static For Serial(out Var loop_var, Expr begin, Expr end)
+        {
+            loop_var = GetUniqueLoopVar();
+            return new For(loop_var, begin, end, ForMode.Serial);
+        }
+
+        /// <summary>
+        /// GridWrapper for collect the for item.
+        /// </summary>
+        public class GridWrapper
+        {
+            public For[] ForList;
+            public GridWrapper(params For[] for_list)
+            {
+                ForList = for_list;
+            }
+            /// <summary>
+            /// Wrapper Body method
+            /// <see cref="For.Body(Expr[])"/>
+            /// </summary>
+            /// <param name="exprs"></param>
+            /// <returns> the outter for loop instance. </returns>
+            public For Body(params Expr[] exprs)
+            {
+                ForList.Last().Body(exprs);
+                return ForList.First();
+            }
+        }
+
+        /// <summary>
+        ///   for i, j in T.grid(16, 16):
+        ///     with T.block():
+        ///       vi, vj = T.axis.remap("SS", [i, j])
+        ///       B[vi, vj] = A[vi, vj]
+        /// </summary>
+        /// <param name="i">outer index var.</param>
+        /// <param name="j">inner index var.</param>
+        /// <param name="ends">end exprs.</param>
+        /// <returns>the inner for loop.</returns>
+        public static GridWrapper Grid(out Var i, out Var j, (Expr i, Expr j) ends)
+        {
+            i = GetUniqueLoopVar('i');
+            j = GetUniqueLoopVar('j');
+            var for_i = new For(i, 0, ends.i, ForMode.Serial);
+            var for_j = new For(j, 0, ends.j, ForMode.Serial);
+            for_i.Body(for_j);
+            return new GridWrapper(for_i, for_j);
+        }
+
+        /// <summary>
+        /// a named variable represents a tensor index size
+        /// </summary>
+        /// <param name="Name"></param>
+        /// <param name="DType"></param>        
+        public static SizeVar SizeVar(string Name, ElemType DType = ElemType.Int32)
+        {
+            string newName = Name;
+            if (!globalSizeVarIndex.TryGetValue(Name, out var i))
+            {
+                i = 0;
+                globalSizeVarIndex.Add(Name, i);
+                return new SizeVar(Name, new DataType(DType, 1));
+            }
+            globalSizeVarIndex[Name]++;
+            return new SizeVar($"{Name}_{i}", new DataType(DType, 1));
+        }
     }
 }

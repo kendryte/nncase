@@ -13,9 +13,9 @@ namespace Nncase.Tests.TIRTest
         [Fact]
         public void TestBuffer()
         {
-            var m = new SizeVar("m");
-            var n = new SizeVar("n");
-            var l = new SizeVar("l");
+            var m = T.SizeVar("m");
+            var n = T.SizeVar("n");
+            var l = T.SizeVar("l");
 
             var Ab = Buffer.Decl((m, n), DataType.Float32);
             var Bb = Buffer.Decl((n, l), DataType.Float32);
@@ -29,8 +29,8 @@ namespace Nncase.Tests.TIRTest
         [Fact]
         public void TestBufferAccessPtr()
         {
-            var m = new SizeVar("m");
-            var n = new SizeVar("n");
+            var m = T.SizeVar("m");
+            var n = T.SizeVar("n");
             var dict = new Dictionary<Var, torch.Tensor>() {
               { n,  torch.tensor(1) },
               { m,  torch.tensor(3) },
@@ -46,8 +46,8 @@ namespace Nncase.Tests.TIRTest
         [Fact]
         public void TestBufferAccessPtrOffset()
         {
-            var m = new SizeVar("m");
-            var n = new SizeVar("n");
+            var m = T.SizeVar("m");
+            var n = T.SizeVar("n");
             var dict = new Dictionary<Var, torch.Tensor>() {
               { n,  torch.tensor(1) },
               { m,  torch.tensor(3) },
@@ -58,7 +58,7 @@ namespace Nncase.Tests.TIRTest
             var aptr = Ab.AccessPtr(AccessMode.ReadWrite, offset: 100);
             Assert.Equal(AccessMode.ReadWrite, ((AccessPtr)aptr.Target).AccessMode);
 
-            var v = new SizeVar(DType: ElemType.Int32);
+            var v = T.SizeVar("v");
 
             var aptr2 = Ab.AccessPtr(AccessMode.ReadWrite, offset: 100 + 100 + v);
 
@@ -68,8 +68,8 @@ namespace Nncase.Tests.TIRTest
         [Fact]
         public void TestBufferAccessPtrExtent()
         {
-            var m = new SizeVar("m");
-            var n = new SizeVar("n");
+            var m = T.SizeVar("m");
+            var n = T.SizeVar("n");
             var Ab = Buffer.Decl((m, n), DataType.Float32);
             var aptr = Ab.AccessPtr(AccessMode.ReadWrite, offset: 100);
             Testing.AssertExprEqual(aptr.Parameters[2], m * n - 100);
@@ -81,8 +81,8 @@ namespace Nncase.Tests.TIRTest
         // [Fact]
         // public void TestBufferVLoad()
         // {
-        //     var m = new SizeVar("m");
-        //     var n = new SizeVar("n");
+        //     var m = T.SizeVar("m");
+        //     var n = T.SizeVar("n");
         //     var Ab = Buffer.Decl((m, n), DataType.Float32, elem_offset: 100);
         //     var load = Ab.VLoad((2, 3));
         //     Testing.AssertExprEqual(load[Load.Index], 100 + ((2 * n) + 3));

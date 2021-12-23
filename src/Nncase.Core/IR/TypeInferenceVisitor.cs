@@ -134,11 +134,11 @@ namespace Nncase.IR
             if (Visit(expr.Min) is InvalidType) { type = new InvalidType("The Min Is Invaild!"); goto Finally; }
             if (Visit(expr.Extent) is InvalidType) { type = new InvalidType("The Extent Is Invaild!"); goto Finally; }
             if (Visit(expr.LoopVar) is InvalidType) { type = new InvalidType("The LoopVar Is Invaild!"); goto Finally; }
-            if (Visit(expr.Body!) is InvalidType) { type = new InvalidType("The Body Is Invaild!"); goto Finally; }
+            if (Visit(expr.LoopBody!) is InvalidType) { type = new InvalidType("The Body Is Invaild!"); goto Finally; }
             if (Visit(expr.Min) is AnyType mintype) { type = mintype; goto Finally; }
             if (Visit(expr.Extent) is AnyType extype) { type = extype; goto Finally; }
             if (Visit(expr.LoopVar) is AnyType lptype) { type = lptype; goto Finally; }
-            if (Visit(expr.Body!) is AnyType bdtype) { type = bdtype; goto Finally; }
+            if (Visit(expr.LoopBody!) is AnyType bdtype) { type = bdtype; goto Finally; }
             type = TupleType.Void;
         Finally:
             SetCheckedType(expr, type);

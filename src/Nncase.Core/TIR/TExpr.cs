@@ -1,4 +1,5 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -31,26 +32,25 @@ namespace Nncase.TIR
     /// The container of Exprs.
     /// Represent a sequence of Expr.
     /// </summary>
-    public sealed record Sequential : Expr
+    public sealed record Sequential : Expr, IEnumerable<Expr>
     {
-        public Sequential(params Expr[] exprs)
-        {
-            Fields = exprs.ToArray();
-        }
+        readonly IRArrayList<Expr> _fields;
         /// <summary>
         /// internal sequence content.
         /// </summary>
-        public IRArray<Expr> Fields;
-        /// <summary>
-        /// bodys count
-        /// </summary>
-        public int Count => Fields.Count;
-        /// <summary>
-        /// get expr in body
-        /// </summary>
-        /// <param name="index"></param>
-        /// <returns></returns>
-        public Expr this[int index] => Fields[index];
+        public IRArrayList<Expr> Fields => _fields;
+
+        public void Add(Expr item) => _fields.Add(item);
+
+        public IEnumerator<Expr> GetEnumerator()
+        {
+            return ((IEnumerable<Expr>)_fields).GetEnumerator();
+        }
+
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return ((IEnumerable)_fields).GetEnumerator();
+        }
     }
 
 
@@ -124,6 +124,9 @@ namespace Nncase.TIR
     public sealed record While(Expr Condition, Sequential Body) : Expr
     { }
 
+
+
+
     /// <summary>
     /// A for loop, with poissible type annotations.
     /// <example>
@@ -140,12 +143,23 @@ namespace Nncase.TIR
     /// <param name="Mode">The kind of the for loop.</param>
     public sealed record For(Var LoopVar, Expr Min, Expr Extent, ForMode Mode) : Expr
     {
-
         /// <summary>
         /// The body of the for loop.
         /// </summary>
-        public Sequential? Body = null;
+        public readonly Sequential LoopBody = new();
 
+        /// <summary>
+        /// Add the expr items to body
+        /// </summary>
+        /// <param name="exprs"></param>
+        public Expr Body(params Expr[] exprs)
+        {
+            foreach (var e in exprs)
+            {
+                LoopBody.Add(e);
+            }
+            return this;
+        }
         /// <summary>
         /// Only valid when kind == ForKind::kThreadBinding The context thread that this loop variable bounds to.
         /// </summary>
@@ -166,9 +180,15 @@ namespace Nncase.TIR
         /// <param name="end">The end iteration scope</param>
         /// <param name="name">The name of iteration variable, if no input names,
         /// using typical index names i, j, k, then i_nidx</param>
-        /// <param name="dtype">The data type of iteration variable.</param>
         /// <param name="mode">The special tag on the for loop.</param>
-        public For(Expr begin, Expr end, string name = "i", ElemType dtype = ElemType.Int32, ForMode mode = ForMode.Serial) : this(new Var(name, TensorType.Scalar(dtype)), begin, end, mode) { }
+        // public For(out Var loopVar, Expr begin, Expr end,
+        //            string name = "i", ForMode mode = ForMode.Serial)
+        // {
+        //     loopVar = LoopVar = new Var(name, TensorType.Scalar(ElemType.Int32));
+        //     Min = begin;
+        //     Extent = end;
+        //     Mode = mode;
+        // }
     }
 
     /// <summary>
