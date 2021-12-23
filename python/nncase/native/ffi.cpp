@@ -42,6 +42,8 @@ namespace
 #include <Windows.h>
 void LaunchDebugger()
 {
+    if (IsDebuggerPresent())
+        return;
     // Get System directory, typically c:\windows\system32
     std::wstring systemDir(MAX_PATH + 1, '\0');
     UINT nChars = GetSystemDirectoryW(&systemDir[0], systemDir.length());
@@ -127,7 +129,6 @@ PYBIND11_MODULE(_nncase, m)
     m.doc() = "nncase Library";
     m.attr("__version__") = NNCASE_VERSION NNCASE_VERSION_SUFFIX;
 
-    // LaunchDebugger();
     py::class_<std::filesystem::path>(m, "Path")
         .def(py::init<std::string>());
     py::implicitly_convertible<std::string, std::filesystem::path>();
@@ -228,6 +229,7 @@ PYBIND11_MODULE(_nncase, m)
     m.def("test_target", [](std::string name) {
         try
         {
+            // LaunchDebugger();
             auto target = plugin_loader::create_target(name);
             return true;
         }
