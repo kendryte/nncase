@@ -54,7 +54,7 @@ namespace Nncase.IR.NN
         /// <summary>
         /// Gets Groups.
         /// </summary>
-        public static readonly ParameterInfo Groups = new(typeof(Conv2DTranspose), 76, "groups");
+        public static readonly ParameterInfo Groups = new(typeof(Conv2DTranspose), 7, "groups");
         
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType weights, TensorType bias,

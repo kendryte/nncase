@@ -29,14 +29,6 @@ namespace Nncase.Importer
             var input_mean = BroadCastValueByChannel(mean);
             var bias = BroadCastValueByChannel(b);
             return (x - input_mean) / F.Math.Sqrt(var + eps) * scale + bias;
-            // var y = F.NN.BatchNormalization(input, eps, mom);
-            // return y;
-            // return op.Output.Count switch
-            // {
-            //     1 => new Tuple(y),
-            //     2 => new Tuple(y, rm),
-            //     3 => new Tuple(y, rm, rv)
-            // };
         }
 
         private Expr VisitInstanceNormalization(in NodeProto op)
@@ -61,7 +53,7 @@ namespace Nncase.Importer
             var alpha = GetFloatAttribute(op, "alpha", 0.0001f);
             var beta = GetFloatAttribute(op, "beta", 0.75f);
             var bias = GetFloatAttribute(op, "bias", 1.0f);
-            var size = GetIntAttribute(op, "int");
+            var size = GetIntAttribute(op, "size");
             return F.NN.LRN(input, alpha, beta, bias, size);
         } 
     }

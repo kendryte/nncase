@@ -165,6 +165,11 @@ namespace Nncase.Importer
             return Option.Some(GetInputExpr(n, index));
         }
 
+        private Expr GetOptionInputExpr(NodeProto n, int index, Expr defaultExpr)
+        {
+            return GetOptionInputExpr(n, index).Or(defaultExpr);
+        }
+        
         private (Option<Expr>, Option<Expr>) GetOptionInputExprs(NodeProto n, int index0, int index1)
         {
             return (GetOptionInputExpr(n, index0), GetOptionInputExpr(n, 1));
@@ -267,7 +272,7 @@ namespace Nncase.Importer
                 "Sigmoid" => VisitSigmoid(op),
                 // "Size" => VisitSize(op),
                 // "Slice" => VisitSlice(op),
-                // "Softmax" => VisitSoftmax(op),
+                "Softmax" => VisitSoftmax(op),
                 // "Softplus" => VisitSoftplus(op),
                 // "Softsign" => VisitSoftsign(op),
                 // "SpaceToDepth" => VisitSpaceToDepth(op),

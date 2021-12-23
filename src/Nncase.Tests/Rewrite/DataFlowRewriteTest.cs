@@ -152,6 +152,15 @@ namespace Nncase.Tests
             var shapePass = RunShapeInferPass("", computeShape, input);
             Assert.Equal(shapeRewrite, shapePass);
         }
+        
+        [Fact]
+        public void TestFoldExpand()
+        {
+            var weights = new Var("weights", new TensorType(DataType.Float32, new Shape(1, 3, 224, 224)));
+            var expand = Expand(0f, Util.ShapeIndex(weights, 0));
+            var s = RunShapeInferPass("", expand, weights);
+            Assert.True(s is Const);
+        }
     }
 
     public class DataFlowRewriteAndInferIntegrateTest : RewriteTest

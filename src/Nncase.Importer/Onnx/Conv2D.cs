@@ -28,24 +28,29 @@ namespace Nncase.Importer
         // only used for 2D
         private Const GetPadsAttribute(NodeProto op)
         {
-            return Const.FromSpan<long>(GetIntsAttribute(op, "pads", 0, 4), new Shape(2, 2));
+            // h before, w before, h after, w after
+            // todo: padding size == 2?
+            var paddings = GetIntsAttribute(op, "pads", 0, 4);
+            var paddingsValue = new long[] {paddings[1], paddings[3], paddings[0], paddings[2]};
+            return Const.FromSpan<long>(paddingsValue, new Shape(2, 2));
         }
 
         private Const GetStrideAttribute(NodeProto op)
         {
-            return Const.FromSpan<long>(GetIntsAttribute(op, "stride", 1, 4));
+            return Const.FromSpan<long>(GetIntsAttribute(op, "strides", 1, 2));
         }
 
         private Const GetDilationsAttribute(NodeProto op)
         {
-            return Const.FromSpan<long>(GetIntsAttribute(op, "dilations", new[] {1, 1}));
+            return Const.FromSpan<long>(GetIntsAttribute(op, "dilations", new[] { 1, 1 }));
         }
         
-        private Expr GetBias(NodeProto op, Expr weights)
+        private Expr GetBias(NodeProto op, Expr weights, bool isConvTranspose = false)
         {
+            var biasSizeIndex = isConvTranspose ? 1 : 0; 
             return op.Input.Count > 2
                 ? GetInputExpr(op, 2)
-                : F.Tensors.Expand(0f, Util.ShapeIndex(weights, 0));
+                : F.Tensors.Expand(0f, Util.ShapeIndex(weights, biasSizeIndex));
         }
         
         private Expr AutoPad(NodeProto op, string autoPad, Expr input, Expr weights,

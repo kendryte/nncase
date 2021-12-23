@@ -14,7 +14,14 @@ namespace Nncase.Evaluator.Ops
         {
             var input = _context.GetArgument(expand, Expand.Input);
             var shape = _context.GetArgumentConst(expand, Expand.Shape).ToArray<long>();
-            return input.expand(shape);
+            // When the value of onnx is 1, the value of torch is -1
+            var torchShape = shape.Select(x => x == 1 ? -1 : x).ToArray();
+            if (torchShape.Length < input.shape.Length)
+            {
+                // [-1]*n.Concat(TorchShape)
+                torchShape = Enumerable.Repeat(-1L, input.shape.Length - torchShape.Length).Concat(torchShape).ToArray();
+            }
+            return input.expand(torchShape);
         }
     }
 }

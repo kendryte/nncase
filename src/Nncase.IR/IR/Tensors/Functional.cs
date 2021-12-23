@@ -32,7 +32,9 @@ namespace Nncase.IR.F
         
         public static Call Expand(Expr input, Expr shape) => new Call(new Expand(), input, shape);
         
-        public static Call HardMax(Expr input, Expr axis) => new Call(new CumSum(), input, axis);
+        public static Call Flatten(Expr input, Expr axis) => new Call(new Flatten(), input, axis);
+        
+        public static Call HardMax(Expr input, Expr axis) => new Call(new HardMax(), input, axis);
 
         public static Call Gather(Expr input, Expr axis, Expr index) => new Call(new Gather(), input, axis, index);
 

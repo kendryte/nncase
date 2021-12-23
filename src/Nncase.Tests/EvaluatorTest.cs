@@ -86,7 +86,8 @@ namespace Nncase.Tests.Evaluator
             var expr = Tensors.Pad(input, pads, Nncase.PadMode.Constant, value);
             TypeInference.InferenceType(expr);
             var result = expr.Eval();
-            Assert.Equal(torchF.pad(tinput, new long[] { 2, 2, 1, 1 }, PaddingModes.Constant, 1.0f), result);
+            var p = torchF.pad(tinput, new long[] {2, 3, 1, 4}, PaddingModes.Constant, 1.0f);
+            Assert.Equal(p, result);
         }
 
         [Fact]
@@ -124,7 +125,7 @@ namespace Nncase.Tests.Evaluator
             var weights = torch.randn(8, 4, 3, 3);
             var inputs = torch.randn(1, 4, 5, 5);
             var bias = torch.rand(8);
-            var output = torchF.conv2d(inputs, weights, bias, padding: new long[] { 1, 1 });
+            var output = torchF.conv2d(torchF.pad(inputs, new long[]{1, 0, 0, 0}), weights, bias, padding: new long[] { 1, 1 });
 
             var expr = NN.Conv2D(inputs.ToConst(), weights.ToConst(), bias.ToConst(),
                      stride: new[] { 1, 1 }, padding: Const.FromSpan<int>(new int[] { 1, 1, 1, 1 }, new[] { 2, 2 }),
