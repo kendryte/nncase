@@ -102,7 +102,7 @@ jobs:
         pytest -n 20 tests/importer --doctest-modules --junitxml=test_results/importer.xml
         pytest -n 20 tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
         pytest -n 20 tests/graph_partition --doctest-modules --junitxml=test_results/graph_partition.xml
-        pytest tests/models --doctest-modules --junitxml=test_results/models.xml
+        pytest -n 10 tests/models/onnx-model-zoo --doctest-modules --junitxml=test_results/models.xml
         pytest tests/examples --doctest-modules --junitxml=test_results/examples.xml
 
     - name: Publish Test Results
