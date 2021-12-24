@@ -32,6 +32,7 @@ set(SRCS runtime_module.cpp
          ops/tensor.reduce_prod.cpp
          ops/tensor.reduce_window2d.cpp
          ops/tensor.resize_image.cpp
+         ops/tensor.sigmoid.cpp
          ops/tensor.slice.cpp
          ops/tersor.ternary.cpp
          ops/tensor.topk.cpp

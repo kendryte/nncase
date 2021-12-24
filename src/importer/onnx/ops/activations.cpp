@@ -20,6 +20,7 @@
 #include <nncase/ir/ops/clamp.h>
 #include <nncase/ir/ops/constant.h>
 #include <nncase/ir/ops/reduce.h>
+#include <nncase/ir/ops/sigmoid.h>
 #include <nncase/ir/ops/trilu.h>
 #include <nncase/ir/ops/unary.h>
 
@@ -136,8 +137,10 @@ void onnx_importer::convert_op_Sigmoid(const NodeProto &node)
     const auto &input = node.input()[0];
     const auto &output = node.output()[0];
     auto in_shape = get_shape(input);
+    const datatype_t input_type = get_datatype(input).value();
     const auto &op_name { generate_name(node) };
 
+#if 0
     auto one = graph_.emplace<constant>(1.f);
     one->name(op_name + ".one(Sigmoid)");
 
@@ -161,6 +164,12 @@ void onnx_importer::convert_op_Sigmoid(const NodeProto &node)
 
     input_tensors_.emplace(&neg->input(), input);
     output_tensors_.emplace(output, &div->output());
+#else
+    auto s = graph_.emplace<sigmoid>(input_type, in_shape);
+    s->name(op_name + ".(Sigmoid)");
+    input_tensors_.emplace(&s->input(), input);
+    output_tensors_.emplace(output, &s->output());
+#endif
 }
 
 void onnx_importer::convert_op_HardSigmoid(const NodeProto &node)

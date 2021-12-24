@@ -41,6 +41,7 @@
 #include <nncase/ir/ops/reduce_prod.h>
 #include <nncase/ir/ops/reduce_window2d.h>
 #include <nncase/ir/ops/resize_image.h>
+#include <nncase/ir/ops/sigmoid.h>
 #include <nncase/ir/ops/slice.h>
 #include <nncase/ir/ops/table_lookup.h>
 #include <nncase/ir/ops/ternary.h>
@@ -376,6 +377,25 @@ void register_neutral_evaluators()
                 input.shape(), input.strides(), output.strides(), new_size[0], new_size[1],
                 rnode.align_corners(), rnode.half_pixel_centers())
                 .unwrap_or_throw();
+        }
+    });
+
+    register_evaluator(op_sigmoid, [](ir::node &node, function_evaluate_context &context) {
+        auto &rnode = static_cast<sigmoid &>(node);
+
+        auto input = context.memory_at(rnode.input());
+        auto output = context.memory_at(rnode.output());
+
+        auto output_type = rnode.output().type();
+        switch (output_type)
+        {
+        case dt_float32:
+            kernels::sigmoid(input.buffer().as_span<float>().data(), output.buffer().as_span<float>().data(), input.shape(),
+                input.strides())
+                .unwrap_or_throw();
+            break;
+        default:
+            std::cerr << "unsupported dtype for sigmoid: " + std::string(datatype_names(output_type));
         }
     });
 
