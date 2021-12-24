@@ -157,6 +157,8 @@ namespace Nncase.Tests
         public void TestFoldExpand()
         {
             var weights = new Var("weights", new TensorType(DataType.Float32, new Shape(1, 3, 224, 224)));
+            var t = Util.ShapeIndex(weights, 0);
+            t.InferenceType();
             var expand = Expand(0f, Util.ShapeIndex(weights, 0));
             var s = RunShapeInferPass("", expand, weights);
             Assert.True(s is Const);
