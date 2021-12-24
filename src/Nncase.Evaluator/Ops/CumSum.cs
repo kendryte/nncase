@@ -15,8 +15,8 @@ namespace Nncase.Evaluator.Ops
             var input = _context.GetArgument(cumSum, CumSum.Input);
             // in onnx, CumSum.Axis is a input tensor with one value
             var dim = _context.GetArgumentConst(cumSum, CumSum.Axis).ToTensor<long>()[0];
-            var exclusive = _context.GetArgumentConst(cumSum, CumSum.Exclusive).ToScalar<bool>();
-            var reverse = _context.GetArgumentConst(cumSum, CumSum.Reverse).ToScalar<bool>();
+            var exclusive = _context.GetArgumentConstScalar<bool>(cumSum, CumSum.Exclusive);
+            var reverse = _context.GetArgumentConstScalar<bool>(cumSum, CumSum.Reverse);
             return input.cumsum(dim);
         }
     }

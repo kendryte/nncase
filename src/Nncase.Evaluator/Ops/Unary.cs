@@ -28,6 +28,7 @@ namespace Nncase.Evaluator.Ops
                 UnaryOp.Rsqrt => torch.rsqrt(i),
                 UnaryOp.Sin => torch.sin(i),
                 UnaryOp.Sinh => torch.sinh(i),
+                UnaryOp.Sign=> torch.sign(i),
                 UnaryOp.Sqrt => torch.sqrt(i),
                 UnaryOp.Square => torch.square(i),
                 UnaryOp.Tanh => torch.tanh(i),

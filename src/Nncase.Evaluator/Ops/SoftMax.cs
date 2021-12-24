@@ -19,5 +19,17 @@ namespace Nncase.Evaluator.Ops
             var dim = _context.GetArgumentConst(softMax, SoftMax.Axis).ToScalar<int>();
             return torchF.softmax(input, dim);
         }
+        
+        private torch.Tensor VisitSoftPlus(SoftPlus softPlus)
+        {
+            var input = _context.GetArgument(softPlus, SoftPlus.Input);
+            return input.softplus();
+        }
+        
+        // private torch.Tensor VisitSoftSign(SoftSign softSign)
+        // {
+        //     var input = _context.GetArgument(softSign, SoftSign.Input);
+        //     torch.nn.
+        // }
     }
 }

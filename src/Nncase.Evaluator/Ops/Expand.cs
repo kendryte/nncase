@@ -13,6 +13,10 @@ namespace Nncase.Evaluator.Ops
         private torch.Tensor VisitExpand(Expand expand)
         {
             var input = _context.GetArgument(expand, Expand.Input);
+            if (input.shape.Length == 0)
+            {
+                input = input.reshape(1L);
+            }
             var shape = _context.GetArgumentConst(expand, Expand.Shape).ToArray<long>();
             // When the value of onnx is 1, the value of torch is -1
             var torchShape = shape.Select(x => x == 1 ? -1 : x).ToArray();

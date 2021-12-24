@@ -106,6 +106,8 @@ namespace Nncase.IR.F
 
         public static Call DeQuantize(Expr input, Expr zeroPoint, Expr scale, DataType targetType) => new Call(new DeQuantize(targetType), input, zeroPoint, scale);
 
+        public static Call Rank(Expr input) => ShapeOp(ShapeOp(input));
+        
         // same like tensorflow
         public static Call SpaceToBatch(Expr input, Expr blockShape, Expr paddings) => new Call(new SpaceToBatch(), input, blockShape, paddings);
 

@@ -6,11 +6,8 @@ using System.IO;
 using System.Linq;
 using Nncase.IR;
 using Google.Protobuf;
-using Google.Protobuf.Collections;
-using NetFabric.Hyperlinq;
-using Nncase.IR.Math;
+using LanguageExt;
 using Onnx;
-using static Google.Protobuf.MessageParser;
 
 namespace Nncase.Importer
 {
@@ -87,7 +84,7 @@ namespace Nncase.Importer
         {
             _constTensors = _graph.Initializer
                 .ToDictionary(tensor => tensor.Name, tensor => tensor);
-
+            
             _outputTensors = _graph.Input
                 .Filter(n => !_constTensors.ContainsKey(n.Name))
                 .ToDictionary(n => n.Name, n => (Expr) new Var(n.Name, GetIRType(n)));
@@ -160,9 +157,9 @@ namespace Nncase.Importer
         {
             if (n.Input.Count <= index)
             {
-                return Option.None;
+                return Option<Expr>.None;
             }
-            return Option.Some(GetInputExpr(n, index));
+            return Option<Expr>.Some(GetInputExpr(n, index));
         }
 
         private Expr GetOptionInputExpr(NodeProto n, int index, Expr defaultExpr)
@@ -266,23 +263,24 @@ namespace Nncase.Importer
                 // "Resize" => VisitResize(op),
                 "Round" => VisitUnary(op, UnaryOp.Round),
                 "Selu" => VisitSelu(op),
-                // "Shape" => VisitShape(op),
+                "Shape" => VisitShape(op),
                 "Sin" => VisitUnary(op, UnaryOp.Sin),
                 "Sinh" => VisitUnary(op, UnaryOp.Sinh),
                 "Sigmoid" => VisitSigmoid(op),
-                // "Size" => VisitSize(op),
-                // "Slice" => VisitSlice(op),
+                "Sign" => VisitUnary(op, UnaryOp.Sign),
+                "Size" => VisitSize(op),
+                "Slice" => VisitSlice(op),
                 "Softmax" => VisitSoftmax(op),
-                // "Softplus" => VisitSoftplus(op),
-                // "Softsign" => VisitSoftsign(op),
+                "Softplus" => VisitSoftplus(op),
+                "Softsign" => VisitSoftsign(op),
                 // "SpaceToDepth" => VisitSpaceToDepth(op),
-                // "Split" => VisitSplit(op),
+                "Split" => VisitSplit(op),
                 "Sqrt" => VisitUnary(op, UnaryOp.Sqrt),
                 // "Squeeze" => VisitSqueeze(op),
                 "Sub" => VisitBinary(op, BinaryOp.Sub),
-                // "Sum" => VisitSum(op),
+                "Sum" => VisitSum(op),
                 "Tanh" => VisitUnary(op, UnaryOp.Tanh),
-                // "Transpose" => VisitTranspose(op),
+                "Transpose" => VisitTranspose(op),
                 // "Upsample" => VisitUpsample(op),
                 // "Unsqueeze" => VisitUnsqueeze(op),
                 _ => throw new NotSupportedException($"Not Supported onnx op {op.OpType}")

@@ -56,11 +56,17 @@ namespace Nncase.IR.Tensors
                 var ts_begins = begins_con.ToTensor<int>();
                 var ts_ends = ends_con.ToTensor<int>();
                 var ts_strides = strides_con.ToTensor<int>();
-                foreach (var axis in axes_con.ToTensor<int>())
+                // foreach (var axisV in axes_con.ToTensor<int>())
+                var axesTensor = axes_con.ToTensor<int>();
+                for (int i = 0; i < axesTensor.Length; i++)
                 {
-                    var begin = ts_begins[axis];
-                    var end = ts_ends[axis];
-                    var stride = ts_strides[axis];
+                    var axisV = axesTensor[i];
+                    var axis = axisV < 0
+                        ? axisV + input.Shape.Rank
+                        : axisV;
+                    var begin = ts_begins[i];
+                    var end = ts_ends[i];
+                    var stride = ts_strides[i];
                     if (input.Shape[axis].IsFixed)
                     {
                         var old = input.Shape[axis].FixedValue;

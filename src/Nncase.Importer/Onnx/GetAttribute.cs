@@ -2,6 +2,7 @@ using System;
 using System.IO;
 using System.Linq;
 using LanguageExt;
+using Nncase.IR;
 using Onnx;
 using static Onnx.AttributeProto.Types;
 
@@ -79,6 +80,11 @@ namespace Nncase.Importer
         {
             return GetAttrUnSafe(n, attr, AttributeType.Ints, x => x.Ints.ToArray());
         }
+
+        Const GetConstIntsAttribute(NodeProto n, string attr)
+        {
+            return Const.FromSpan<long>(GetIntsAttribute(n, attr));
+        }
         
         Option<long[]> GetOptionIntsAttribute(NodeProto n, string attr)
         {
@@ -90,7 +96,6 @@ namespace Nncase.Importer
             return GetAttrOption(n, attr, AttributeType.Int, x => x.I);
         }
 
-        
         long[] GetIntsAttribute(NodeProto n, string attr, int[] defaultValue)
         {
             return GetAttrSafe(n, attr, AttributeType.Ints, x => x.Ints.ToArray(),
