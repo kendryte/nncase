@@ -11,7 +11,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-          
+
     - name: Setup Python
       uses: actions/setup-python@v2.2.1
       with:
@@ -68,12 +68,12 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-          
+
     - name: Setup Python
       uses: actions/setup-python@v2.2.1
       with:
         python-version: 3.7
-        
+
     - name: Install Python Packages
       if: runner.os != 'Macos'
       shell: bash
@@ -82,7 +82,7 @@ jobs:
         pip install torch==1.9.0+cpu torchvision==0.10.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
         pip install kendryte_caffe
         pip install pytest
-      
+
     - name: Create Test Environment
       working-directory: ${{github.workspace}}
       shell: bash
@@ -102,6 +102,7 @@ jobs:
         pytest -n 50 tests/importer --doctest-modules --junitxml=test_results/importer.xml
         pytest -n 50 tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
         pytest -n 50 tests/graph_partition --doctest-modules --junitxml=test_results/graph_partition.xml
+        pytest -n 50 tests/transform --doctest-modules --junitxml=test_results/transform.xml
         pytest -n 30 tests/models/onnx-model-zoo --doctest-modules --junitxml=test_results/models.xml
         pytest tests/examples --doctest-modules --junitxml=test_results/examples.xml
 
