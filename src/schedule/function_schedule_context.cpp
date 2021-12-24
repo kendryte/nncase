@@ -69,6 +69,28 @@ void update_absolute_offset(logical_buffer &buffer)
     }
 }
 
+// see also: is_axis0_squeeze_or_expand_dim_bitcast
+shape_t make_compatible_strides(const shape_t &strides, size_t shape_size)
+{
+    if (strides.size() == shape_size)
+        return strides;
+    shape_t new_strides;
+    if (strides.size() > shape_size)
+    {
+        for (size_t i = strides.size() - shape_size; i < strides.size(); i++)
+            new_strides.push_back(strides[i]);
+    }
+    else
+    {
+        for (size_t i = 0; i < shape_size - strides.size(); i++)
+            new_strides.push_back(1);
+        for (size_t i = 0; i < strides.size(); i++)
+            new_strides.push_back(strides[i]);
+    }
+
+    return new_strides;
+}
+
 void update_strides_shape(logical_buffer &buffer)
 {
     if (buffer.strides_shape())
@@ -78,7 +100,7 @@ void update_strides_shape(logical_buffer &buffer)
     {
         auto &parent_buffer = *buffer.strides_parent();
         update_strides_shape(parent_buffer);
-        buffer.strides_shape() = parent_buffer.strides_shape();
+        buffer.strides_shape() = make_compatible_strides(*parent_buffer.strides_shape(), buffer.shape().size());
     }
     else
     {
