@@ -122,6 +122,23 @@ namespace Nncase.Tests.ReWrite
         };
     }
 
+    public sealed class FoldNopClampCase : IRewriteCase
+    {
+        public override Expr PreExpr
+        {
+            get
+            {
+                var input = torch.rand(1, 3, 1, 2).ToConst();
+                var b = Clamp(input, Single.MinValue, Single.MaxValue);
+                return b;
+            }
+        }
+
+        public override IEnumerable<PatternRule> Rules => new PatternRule[]{
+          new Transform.Rule.FoldNopClamp(),
+        };
+    }
+
     public class FoldTransposeCase : IRewriteCase
     {
         public override Expr PreExpr

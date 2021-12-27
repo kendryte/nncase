@@ -21,7 +21,7 @@ namespace Nncase.Transform.Rule
         ConstPattern wcmin = IsConst(IsScalar());
         ConstPattern wcmax = IsConst(IsScalar());
 
-        FoldNopClamp()
+        public FoldNopClamp()
         {
             Pattern = Clamp(wcin, wcmin, wcmax);
         }
