@@ -40,12 +40,12 @@ namespace Nncase.Tests.ReWriteTest
         private static IEnumerable<object[]> Data =>
           new List<object[]>
           {
-             new object[] { new SizeVarMul1Case() },
+             new object[] {},
           };
 
-        [Theory]
-        [MemberData(nameof(DataOne))]
-        public void RunOne(IRewriteCase Case) => RunCore(Case);
+        // [Theory]
+        // [MemberData(nameof(DataOne))]
+        // public void RunOne(IRewriteCase Case) => RunCore(Case);
 
         protected void RunCore(IRewriteCase Case)
         {

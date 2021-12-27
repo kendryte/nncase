@@ -70,15 +70,15 @@ namespace Nncase.Tests.CodeGenTest
         public Function GetEntry()
         {
             var n = T.SizeVar("n");
-            var A = TIR.Buffer.Decl(new(n), DataType.Int32, "A");
+            var A = TIR.T.DeclBuffer(new(n), DataType.Int32, "A");
             var out_for =
-             T.Serial(out var i, 0, n).Body(
-              A.Store(i, A[i] + 1),
-              T.Serial(out var j, 0, n).Body(
-                A.Store(i, A[i] + j)
+             T.Serial(out var i, n, out _).Add(
+              T.Store(A[i], A[i] + 1),
+              T.Serial(out var j, n, out _).Add(
+                T.Store(A[i], A[i] + j)
               )
             );
-            return new Function(out_for, A.Handle, n);
+            return T.PrimFunc("main", A.Handle, n).Add(out_for);
         }
     }
 
@@ -110,11 +110,11 @@ namespace Nncase.Tests.CodeGenTest
         {
             var n = T.SizeVar("n");
             var m = T.SizeVar("m");
-            var A = TIR.Buffer.Decl((n, m), DataType.Int32, "A");
-            var out_for = T.Grid(out var i, out var j, (n, m)).Body(
-               A.Store(i, j, i + j)
+            var A = TIR.T.DeclBuffer((n, m), DataType.Int32, "A");
+            var out_for = T.Grid(out var i, out var j, (n, m)).Add(
+               T.Store(A[i * n + j], i + j)
             );
-            return new Function(out_for, A.Handle, n, m);
+            return T.PrimFunc("main", A.Handle, n, m).Add(out_for);
         }
     }
 }

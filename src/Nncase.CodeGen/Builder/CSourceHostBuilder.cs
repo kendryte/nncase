@@ -16,15 +16,6 @@ namespace Nncase.CodeGen.Builder
     /// </summary>
     internal static class NameConverter
     {
-        public static string toC(this BinaryOp binaryOp) => binaryOp switch
-        {
-            BinaryOp.Add => "+",
-            BinaryOp.Sub => "-",
-            BinaryOp.Mul => "*",
-            BinaryOp.Div => "/",
-            _ => throw new NotSupportedException($"{binaryOp}")
-        };
-
         public static string toC(this DataType dataType) => dataType.ElemType switch
         {
             ElemType.Int8 => "int8_t",
@@ -345,7 +336,7 @@ namespace Nncase.CodeGen.Builder
         {
             return expr switch
             {
-                IR.Math.Binary op => new("Invalid Binary", op.BinaryOp.toC()),
+                IR.Math.Binary op => new("Invalid Binary", op.ToLiteral()),
                 TIR.Store op => new("Invalid Store", "Invalid Store"),
                 TIR.Load op => new("Invalid Load", "Invalid Load"),
                 _ => throw new NotSupportedException($"{expr.GetType().Name}")
@@ -368,10 +359,10 @@ namespace Nncase.CodeGen.Builder
             var loopVar = Visit(expr.LoopVar);
             using (Inline())
             {
-                srcScope.AppendLine($"for ({loopVar} = {Visit(expr.Min).Name}; {loopVar.Name} < {Visit(expr.Extent).Name}; {loopVar.Name}++) {{");
+                srcScope.AppendLine($"for ({loopVar} = {Visit(expr.Dom.Min).Name}; {loopVar.Name} < {Visit(expr.Dom.Max).Name}; {loopVar.Name}++) {{");
             }
             // 2. For Body
-            using (srcScope.IndentUp()) { Visit(expr.LoopBody!); }
+            using (srcScope.IndentUp()) { Visit(expr.Body!); }
             // 3. For closing
             srcScope.IndWriteLine("}");
 
@@ -403,7 +394,7 @@ namespace Nncase.CodeGen.Builder
         }
 
         /// <inheritdoc/>
-        public override string VisitType(PointerType type)
+        public override string VisitType(HandleType type)
         {
             if (type.DType.Lanes != 1)
             {

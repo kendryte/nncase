@@ -21,7 +21,7 @@ namespace Nncase.TIR
         public static readonly ParameterInfo Index = new(typeof(Load), 1, "index", IsIntegral(DataType.Int32) & (IsScalar() | HasRank(1)));
 
         /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context, PointerType handle, TensorType index)
+        public IRType InferInvokeResultType(ITypeInferenceContext context, HandleType handle, TensorType index)
         {
             int lanes = index.IsScalar ? 1 : index.Shape[0].FixedValue;
             return new TensorType(handle.DType with { Lanes = lanes }, Shape.Scalar);
@@ -54,17 +54,19 @@ namespace Nncase.TIR
         ///The buffer variable handle.
         /// </summary>
         public static readonly ParameterInfo Handle = new(typeof(Store), 0, "handle");
-        /// <summary>
-        ///The value to be stored.
-        /// </summary>
-        public static readonly ParameterInfo Value = new(typeof(Store), 1, "value");
+
         /// <summary>
         ///The index locations to be stored.
         /// </summary>
-        public static readonly ParameterInfo Index = new(typeof(Store), 2, "index", IsIntegral(DataType.Int32));
+        public static readonly ParameterInfo Index = new(typeof(Store), 1, "index", IsIntegral(DataType.Int32));
+
+        /// <summary>
+        ///The value to be stored.
+        /// </summary>
+        public static readonly ParameterInfo Value = new(typeof(Store), 2, "value");
 
         /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context, PointerType handle, TensorType value, TensorType index)
+        public IRType InferInvokeResultType(ITypeInferenceContext context, HandleType handle, TensorType index, TensorType value)
         {
             var lanes = index.IsScalar ? 1 : index.Shape[0].FixedValue;
             if (handle.DType != value.DType)
@@ -77,7 +79,6 @@ namespace Nncase.TIR
             }
             return TupleType.Void;
         }
-
+        
     }
-
 }

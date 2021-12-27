@@ -2,6 +2,7 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Runtime.CompilerServices;
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
@@ -55,12 +56,6 @@ namespace Nncase.IR
         public bool IsFullyInferenced { get; private set; } = true;
 
         /// <inheritdoc/>
-        public override IRType VisitLeaf(Expr expr)
-        {
-            return expr.CheckedType ?? base.VisitLeaf(expr);
-        }
-
-        /// <inheritdoc/>
         public override IRType VisitLeaf(Call expr)
         {
             _context.CurrentCall = expr;
@@ -91,6 +86,7 @@ namespace Nncase.IR
             SetCheckedType(expr, type);
             return type;
         }
+
         /// <inheritdoc/>
         public override IRType VisitLeaf(Op expr)
         {
@@ -99,6 +95,7 @@ namespace Nncase.IR
             SetCheckedType(expr, type);
             return type;
         }
+
         /// <inheritdoc/>
         public override IRType VisitLeaf(Tuple expr)
         {
@@ -107,6 +104,7 @@ namespace Nncase.IR
             SetCheckedType(expr, type);
             return type;
         }
+
         /// <inheritdoc/>
         public override IRType VisitLeaf(Var expr)
         {
@@ -114,33 +112,117 @@ namespace Nncase.IR
             SetCheckedType(expr, type);
             return type;
         }
+
+        /// <summary>
+        /// Verify the expression sub field type is valid.
+        /// </summary>
+        /// <param name="parent"></param>
+        /// <param name="expr"></param>
+        /// <param name="exprMsg"></param>
+        void VerifySubField(Expr parent, Expr expr, TypePattern? pattern = null, [CallerArgumentExpression("expr")] string? exprMsg = null)
+        {
+            pattern ??= Utility.IsIRType();
+            if (parent.CheckedType is null)
+            {
+                if (expr.CheckedType is InvalidType)
+                {
+                    SetCheckedType(parent, new InvalidType($"The {exprMsg} Is Invalid!"));
+                }
+                if (expr.CheckedType is AnyType any)
+                {
+                    SetCheckedType(parent, any);
+                }
+                if (!pattern.MatchLeaf(expr.CheckedType))
+                {
+                    SetCheckedType(parent, new InvalidType($"The {exprMsg} Require {pattern.Reason}"));
+                }
+            }
+        }
+
+        /// <inheritdoc/>
+        public override IRType VisitLeaf(IterVar expr)
+        {
+            VerifySubField(expr, expr.Value);
+            VerifySubField(expr, expr.Dom.Min);
+            VerifySubField(expr, expr.Dom.Max);
+            if (expr.CheckedType is not null) { return expr.CheckedType; }
+            var type = expr.TypeAnnotation;
+            SetCheckedType(expr, type);
+            return type;
+        }
+
         /// <inheritdoc/>
         public override IRType VisitLeaf(Sequential expr)
         {
             IRType type;
-            foreach (var (ftype, i) in expr.Fields.Select((field, i) => (Visit(field), i)))
+            foreach (var i in Enumerable.Range(0, expr.Fields.Count))
             {
-                if (ftype is InvalidType) { type = new InvalidType($"The Fields At {i} is Invaild!"); SetCheckedType(expr, type); return type; };
-                if (ftype is AnyType any) { type = any; SetCheckedType(expr, type); return type; }
+                VerifySubField(expr, expr.Fields[i], Utility.IsUnit());
             }
+            if (expr.CheckedType is not null) { return expr.CheckedType; }
             type = TupleType.Void;
             SetCheckedType(expr, type);
             return type;
         }
+
         /// <inheritdoc/>
         public override IRType VisitLeaf(For expr)
         {
             IRType type;
-            if (Visit(expr.Min) is InvalidType) { type = new InvalidType("The Min Is Invaild!"); goto Finally; }
-            if (Visit(expr.Extent) is InvalidType) { type = new InvalidType("The Extent Is Invaild!"); goto Finally; }
-            if (Visit(expr.LoopVar) is InvalidType) { type = new InvalidType("The LoopVar Is Invaild!"); goto Finally; }
-            if (Visit(expr.LoopBody!) is InvalidType) { type = new InvalidType("The Body Is Invaild!"); goto Finally; }
-            if (Visit(expr.Min) is AnyType mintype) { type = mintype; goto Finally; }
-            if (Visit(expr.Extent) is AnyType extype) { type = extype; goto Finally; }
-            if (Visit(expr.LoopVar) is AnyType lptype) { type = lptype; goto Finally; }
-            if (Visit(expr.LoopBody!) is AnyType bdtype) { type = bdtype; goto Finally; }
+            VerifySubField(expr, expr.Dom.Min, Utility.IsIntegralScalar());
+            VerifySubField(expr, expr.Dom.Max, Utility.IsIntegralScalar());
+            VerifySubField(expr, expr.LoopVar, Utility.IsIntegralScalar());
+            VerifySubField(expr, expr.Body, Utility.IsUnit());
+            if (expr.CheckedType is not null) { return expr.CheckedType; }
             type = TupleType.Void;
-        Finally:
+            SetCheckedType(expr, type);
+            return type;
+        }
+
+        /// <inheritdoc/>
+        public override IRType VisitLeaf(Block expr)
+        {
+            IRType type;
+            foreach (var i in Enumerable.Range(0, expr.IterVarPairs.Count))
+            {
+                VerifySubField(expr, expr.IterVarPairs[i].iterVar, Utility.IsIntegralScalar());
+                VerifySubField(expr, expr.IterVarPairs[i].loopVar, Utility.IsIntegralScalar());
+            }
+            VerifySubField(expr, expr.InitBody, Utility.IsUnit());
+            VerifySubField(expr, expr.Body, Utility.IsUnit());
+            VerifySubField(expr, expr.Predicate, Utility.IsIntegralScalar());
+            if (expr.CheckedType is not null) { return expr.CheckedType; }
+            type = TupleType.Void;
+            SetCheckedType(expr, type);
+            return type;
+        }
+
+        public override IRType VisitLeaf(BufferLoad expr)
+        {
+            VerifySubField(expr, expr.Buffer.Handle, Utility.IsHandle());
+            foreach (var i in Enumerable.Range(0, expr.Indices.Count)) { VerifySubField(expr, expr.Indices[i], Utility.IsIntegralScalar()); }
+            if (expr.CheckedType is not null) { return expr.CheckedType; }
+            var type = TensorType.Scalar(((HandleType)expr.Buffer.Handle.CheckedType!).DType);
+            SetCheckedType(expr, type);
+            return type;
+        }
+
+        public override IRType VisitLeaf(BufferStore expr)
+        {
+            VerifySubField(expr, expr.Buffer.Handle, Utility.IsHandle());
+            foreach (var i in Enumerable.Range(0, expr.Indices.Count)) { VerifySubField(expr, expr.Indices[i], Utility.IsIntegralScalar()); }
+            VerifySubField(expr, expr.Value, Utility.IsScalar());
+
+            if (expr.CheckedType is not null) { return expr.CheckedType; }
+            IRType type;
+            if (expr.Value.CheckedDataType != expr.Buffer.Handle.CheckedDataType)
+            {
+                type = new InvalidType("The Value Type Is Not Equal Buffer Handle Type");
+            }
+            else
+            {
+                type = TupleType.Void;
+            }
             SetCheckedType(expr, type);
             return type;
         }

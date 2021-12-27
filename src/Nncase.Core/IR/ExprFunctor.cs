@@ -31,8 +31,12 @@ namespace Nncase.IR
                 Call call => Visit(call),
                 Tuple tuple => Visit(tuple),
                 Op op => Visit(op),
+                TIR.IterVar itvar => Visit(itvar),
                 TIR.Sequential seq => Visit(seq),
                 TIR.For @for => Visit(@for),
+                TIR.Block block => Visit(block),
+                TIR.BufferLoad bload => Visit(bload),
+                TIR.BufferStore bstore => Visit(bstore),
                 _ => DefaultVisit(expr),
             };
         }
@@ -80,6 +84,13 @@ namespace Nncase.IR
         public virtual TExprResult Visit(Op expr) => DefaultVisit(expr);
 
         /// <summary>
+        /// Visit IterVar expression.
+        /// </summary>
+        /// <param name="expr">IterVar expression.</param>
+        /// <returns>Result.</returns>
+        public virtual TExprResult Visit(TIR.IterVar expr) => DefaultVisit(expr);
+
+        /// <summary>
         /// Visit Sequential expression.
         /// </summary>
         /// <param name="expr">Sequential expression.</param>
@@ -92,6 +103,27 @@ namespace Nncase.IR
         /// <param name="expr">For expression.</param>
         /// <returns>Result.</returns>
         public virtual TExprResult Visit(TIR.For expr) => DefaultVisit(expr);
+
+        /// <summary>
+        /// Visit block expression.
+        /// </summary>
+        /// <param name="expr">block expression.</param>
+        /// <returns>Result.</returns>
+        public virtual TExprResult Visit(TIR.Block expr) => DefaultVisit(expr);
+
+        /// <summary>
+        /// Visit BufferLoad expression.
+        /// </summary>
+        /// <param name="expr">BufferLoad expression.</param>
+        /// <returns>Result.</returns>
+        public virtual TExprResult Visit(TIR.BufferLoad expr) => DefaultVisit(expr);
+
+        /// <summary>
+        /// Visit BufferStore expression.
+        /// </summary>
+        /// <param name="expr">BufferStore expression.</param>
+        /// <returns>Result.</returns>
+        public virtual TExprResult Visit(TIR.BufferStore expr) => DefaultVisit(expr);
 
         /// <summary>
         /// Default visit routine.

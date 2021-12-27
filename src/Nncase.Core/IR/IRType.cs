@@ -122,6 +122,6 @@ namespace Nncase.IR
     /// </summary>
     /// <param name="DType">The type of the element which the pointer points to.</param>
     /// <param name="StorageScope">The storage scope of the pointer</param>
-    public sealed record PointerType(DataType DType, string StorageScope) : IRType
+    public sealed record HandleType(DataType DType, string StorageScope) : IRType
     { }
 }

@@ -77,6 +77,22 @@ namespace Nncase.IR
           }, "IsTensor"
         );
 
+        /// <summary>
+        /// The void unit 
+        /// </summary>
+        /// <returns></returns>
+        public static TypePattern IsUnit() => new TypePattern(
+          x => x == TupleType.Void, "IsUnit"
+        );
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public static TypePattern IsHandle() => new TypePattern(
+          x => x is HandleType, "IsHandle"
+        );
+
         public static TypePattern IsScalar() => new TypePattern(
           x => x switch
           {

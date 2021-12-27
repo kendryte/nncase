@@ -10,46 +10,72 @@ using Nncase.IR;
 namespace Nncase.TIR
 {
 
-    internal static class Util
-    {
-        public static string PrintList<T>(IRArray<T> Exprs)
-        {
-            string ret = "";
-            foreach (var (i, expr) in Enumerable.Range(0, Exprs.Count).Zip(Exprs))
-            {
-                ret += $"{expr}";
-                if (i < Exprs.Count - 1)
-                {
-                    ret += ", ";
-                }
-            }
-            return ret;
-        }
-    }
+    /// <summary>
+    /// The Nop Expresstion, When We build the Ir, It's like the return the Void Value. We will skip it when print Ir/lower.  
+    /// </summary>
+    public sealed record Nop : Expr { }
 
 
     /// <summary>
     /// The container of Exprs.
     /// Represent a sequence of Expr.
     /// </summary>
-    public sealed record Sequential : Expr, IEnumerable<Expr>
+    public sealed record Sequential(IRArrayList<Expr> Fields) : Expr, IList<Expr>
     {
-        readonly IRArrayList<Expr> _fields;
-        /// <summary>
-        /// internal sequence content.
-        /// </summary>
-        public IRArrayList<Expr> Fields => _fields;
 
-        public void Add(Expr item) => _fields.Add(item);
+        public Sequential() : this(new IRArrayList<Expr>()) { }
+
+        public Expr this[int index] { get => ((IList<Expr>)Fields)[index]; set => ((IList<Expr>)Fields)[index] = value; }
+
+        public int Count => ((ICollection<Expr>)Fields).Count;
+
+        public bool IsReadOnly => ((ICollection<Expr>)Fields).IsReadOnly;
+
+        public void Add(Expr item) => Fields.Add(item);
+
+        public void Clear()
+        {
+            ((ICollection<Expr>)Fields).Clear();
+        }
+
+        public bool Contains(Expr item)
+        {
+            return ((ICollection<Expr>)Fields).Contains(item);
+        }
+
+        public void CopyTo(Expr[] array, int arrayIndex)
+        {
+            ((ICollection<Expr>)Fields).CopyTo(array, arrayIndex);
+        }
 
         public IEnumerator<Expr> GetEnumerator()
         {
-            return ((IEnumerable<Expr>)_fields).GetEnumerator();
+            return ((IEnumerable<Expr>)Fields).GetEnumerator();
+        }
+
+        public int IndexOf(Expr item)
+        {
+            return ((IList<Expr>)Fields).IndexOf(item);
+        }
+
+        public void Insert(int index, Expr item)
+        {
+            ((IList<Expr>)Fields).Insert(index, item);
+        }
+
+        public bool Remove(Expr item)
+        {
+            return ((ICollection<Expr>)Fields).Remove(item);
+        }
+
+        public void RemoveAt(int index)
+        {
+            ((IList<Expr>)Fields).RemoveAt(index);
         }
 
         IEnumerator IEnumerable.GetEnumerator()
         {
-            return ((IEnumerable)_fields).GetEnumerator();
+            return ((IEnumerable)Fields).GetEnumerator();
         }
     }
 
@@ -61,15 +87,6 @@ namespace Nncase.TIR
     /// <param name="TrueValue"></param>
     /// <param name="FalseValue"></param>
     public sealed record Select(Expr Condition, Expr TrueValue, Expr FalseValue) : Expr { }
-
-    public sealed record BufferLoad(Buffer Buffer, IRArray<Expr> Indices) : Expr
-    {
-        public override string ToString()
-        {
-            return $"{Buffer.Name}[{Util.PrintList(Indices)}]";
-        }
-    }
-
 
     /// <summary>
     /// Load value from the result produced by the producer.
@@ -84,10 +101,6 @@ namespace Nncase.TIR
     /// <param name="Indices">The location arguments.</param>
     public sealed record ProducerLoad(DataProducer Producer, IRArray<Expr> Indices) : Expr
     {
-        public override string ToString()
-        {
-            return $"{Producer.GetNameHint()}[{Util.PrintList(Indices)}]";
-        }
     }
 
     /// <summary>
@@ -124,8 +137,25 @@ namespace Nncase.TIR
     public sealed record While(Expr Condition, Sequential Body) : Expr
     { }
 
-
-
+    /// <summary>
+    /// The Expr With Body
+    /// </summary>
+    /// <param name="Body" The body of the for loop. </param>
+    public abstract record BodyExpr(Sequential Body) : Expr
+    {
+        /// <summary>
+        /// Add the expr items to body
+        /// </summary>
+        /// <param name="exprs"></param>
+        public Expr Add(params Expr[] exprs)
+        {
+            foreach (var e in exprs)
+            {
+                Body.Add(e);
+            }
+            return this;
+        }
+    }
 
     /// <summary>
     /// A for loop, with poissible type annotations.
@@ -138,57 +168,17 @@ namespace Nncase.TIR
     /// </example>
     /// </summary>
     /// <param name="LoopVar">The loop variable.</param>
-    /// <param name="Min">The minimum value of iteration.</param>
-    /// <param name="Extent">The extent of the iteration.</param>
+    /// <param name="Dom">The dom of for range.</param>
     /// <param name="Mode">The kind of the for loop.</param>
-    public sealed record For(Var LoopVar, Expr Min, Expr Extent, ForMode Mode) : Expr
+    public sealed record For(Var LoopVar, Range Dom, ForMode Mode, Sequential Body) : BodyExpr(Body)
     {
-        /// <summary>
-        /// The body of the for loop.
-        /// </summary>
-        public readonly Sequential LoopBody = new();
+        public For(Var LoopVar, Range Dom, ForMode Mode) : this(LoopVar, Dom, Mode, new()) { }
 
         /// <summary>
-        /// Add the expr items to body
+        /// implcit cast to Var, so we can get the Loop it selp and it's loop var
         /// </summary>
-        /// <param name="exprs"></param>
-        public Expr Body(params Expr[] exprs)
-        {
-            foreach (var e in exprs)
-            {
-                LoopBody.Add(e);
-            }
-            return this;
-        }
-        /// <summary>
-        /// Only valid when kind == ForKind::kThreadBinding The context thread that this loop variable bounds to.
-        /// </summary>
-        public IterVar? ThreadBinding = null;
-
-        /// <summary>
-        ///   These annotations can be used as auxiliary hint
-        ///  to future transformations. An annotation should
-        ///  not change the control flow semantics of the loop
-        ///  and can be ignored in most passes.
-        /// </summary>
-        public readonly Dictionary<string, object> Annotations = new();
-
-        /// <summary>
-        /// Create a for iteration scope.
-        /// </summary>
-        /// <param name="begin">The min iteration scope.</param>
-        /// <param name="end">The end iteration scope</param>
-        /// <param name="name">The name of iteration variable, if no input names,
-        /// using typical index names i, j, k, then i_nidx</param>
-        /// <param name="mode">The special tag on the for loop.</param>
-        // public For(out Var loopVar, Expr begin, Expr end,
-        //            string name = "i", ForMode mode = ForMode.Serial)
-        // {
-        //     loopVar = LoopVar = new Var(name, TensorType.Scalar(ElemType.Int32));
-        //     Min = begin;
-        //     Extent = end;
-        //     Mode = mode;
-        // }
+        /// <param name="loop"></param>
+        public static implicit operator Var(For loop) => loop.LoopVar;
     }
 
     /// <summary>
@@ -200,20 +190,11 @@ namespace Nncase.TIR
     /// <param name="Indices">The indices of each element. </param>
     public sealed record Shuffle(IRArray<Expr> Vectors, IRArray<Expr> Indices) : Expr
     {
-        public override string ToString()
-        {
-            return $"shuffle({Util.PrintList(Vectors)},{Util.PrintList(Indices)})";
-        }
     }
 
-
-    // Reduce operator
-    /*!
-     * \brief A commutative reducer node to represent a commutative
-     *  binary operator with identity element
-     */
     /// <summary>
-    /// 
+    /// A commutative reducer node to represent a commutative
+    ///  binary operator with identity element
     /// </summary>
     /// <param name="Lhs">The left argument of reducer </param>
     /// <param name="Rhs">The right argument of reducer </param>
@@ -286,7 +267,7 @@ namespace Nncase.TIR
         public Reduction(CommReducer? combiner, IRArray<Expr> source, IRArray<IterVar> axis,
                Expr? condition = null, int value_index = 0, IRArray<Expr>? init = null)
         {
-            if (!axis.All(x => x.IterMode == IterMode.CommReduce))
+            if (!axis.All(x => x.Mode == IterMode.CommReduce))
                 throw new InvalidOperationException("Can only take axis created by reduce_axis");
             if (condition is null)
                 condition = (Const)1;
@@ -315,4 +296,142 @@ namespace Nncase.TIR
             return $"reduction(combiner= {Combiner}, source= {Source}, init= {Init}, axis= {Axis}, where= {Condition}, value_index= {ValueIndex})";
         }
     }
+
+    /// <summary>
+    /// Representing the region of multi-dimensional buffer access.
+    /// </summary>
+    /// <param name="Buffer">The buffer of the buffer region.</param>
+    /// <param name="Region">The region array of the buffer region.</param>
+    public sealed record BufferRegion(Buffer Buffer, IRArray<Range> Region)
+    {
+        /// <summary>
+        /// Create a BufferRegion which is full region of the given buffer.
+        /// </summary>
+        /// <param name="Buf">The buffer to generate full BufferRegion.</param>
+        /// <returns>The BufferRegion which covers all region of the given buffer</returns>
+        public static BufferRegion Full(Buffer Buf) => new BufferRegion(Buf, new(Buf.Shape.Select(extent => new Range(0, extent))));
+
+        /// <summary>
+        /// Create a BufferRegion which is a single point of the given buffer.
+        /// </summary>
+        /// <param name="Buf">The buffer to generate single point BufferRegion.</param>
+        /// <param name="Indices">The access point indices of the buffer</param>
+        /// <returns>The BufferRegion which is the single point of the given buffer.</returns>
+        public static BufferRegion FromPoint(Buffer Buf, IRArray<Expr> Indices) => new BufferRegion(Buf, new(Indices.Select(index => new Range(index, 1))));
+    }
+
+    /// <summary>
+    /// Match introduces a constraint that the source buffer region can be remapped to the data
+    /// layout specified by the buffer field. The constraint can be checked in later part of lowering (or
+    /// optionally during runtime).
+    ///
+    /// MatchBufferRegion provides a mechanism to represent data layout and compactness constraints in
+    /// low-level hardware primitives in the IR and defer the check after the sequence of
+    /// transformations.
+    /// </summary> 
+    /// <param name="Buffer">The target buffer.</param>
+    /// <param name="Source">The source buffer region.</param>
+    public sealed record MatchBufferRegion(Buffer Buffer, BufferRegion Source)
+    { }
+
+    /// <summary>
+    /// A block is a basic schedule unit in TIR.
+    /// <remarks>
+    /// Block's body is parameterized by iter vars.
+    /// </remarks>
+    /// <code>
+    ///   with T.block(name):
+    ///   v0 = T.axis.S(domain, value0)
+    ///   v1 = T.axis.R(domain, value1)
+    ///   ...
+    ///   T.reads([buffer0[start:end, ...], ...])
+    ///   T.writes([buffer1[start:end, ...], ...])
+    ///   T.where(predicate)
+    ///   buffer2 = T.alloc_buffer(shape, dtype)
+    ///   buffer3 = T.match_buffer(source_buffer[start:end, ...])
+    ///   T.attr({attr_key: attr_value, ...})
+    ///   with T.init():
+    ///      init body
+    ///    body
+    /// </code>
+    /// </summary>
+    /// <param name="Name"> The name_hint of the block.</param>
+    /// <param name="Body"> block body </param>
+    /// <param name="InitBody">the Block init statement.</param>
+    /// <param name="IterVarPairs">The {iter variables :  corresponding values of the iter vars} of the block.</param>
+    /// <param name="Reads">The read buffer regions of the block.</param>
+    /// <param name="Writes">The write buffer regions of the block.</param>
+    /// <param name="AllocBuffers">The buffer allocated in the block.</param>
+    /// <param name="Predicate">The predicate of the block realization, the block will only be executed when the predicate is true.</param>
+    public sealed record Block(string Name, Sequential Body, Sequential InitBody,
+                                IRArrayList<(IterVar iterVar, Var loopVar)> IterVarPairs,
+                                IRArrayList<BufferRegion> Reads,
+                                IRArrayList<BufferRegion> Writes,
+                                IRArrayList<Buffer> AllocBuffers, Expr Predicate) : BodyExpr(Body)
+    {
+
+        /// <summary>
+        /// <see cref="Block"/>
+        /// </summary>
+        /// <param name="Name">block name.</param>
+        public Block(string Name) : this(Name, new(), new(), new(), new(), new(), new(), true) { }
+
+        public Block Remap(out IterVar vi, out IterVar vj, (For i, For j) loops, string iter_types)
+        {
+
+            var toMode = (char x) => x switch
+            {
+                'S' => IterMode.DataPar,
+                'R' => IterMode.CommReduce,
+                _ => throw new NotSupportedException("Only Support \"S\" (for Spatial) or \"R\" ( Reduce)"),
+            };
+
+            if (iter_types.Length != 2)
+            {
+                throw new InvalidOperationException("The iter_types Length Must Equal 2!");
+            }
+
+            vi = new IterVar(TensorType.Scalar(DataType.Int32), loops.i.Dom, toMode(iter_types[0]), loops.i.LoopVar);
+            vj = new IterVar(TensorType.Scalar(DataType.Int32), loops.j.Dom, toMode(iter_types[0]), loops.j.LoopVar);
+            IterVarPairs.Add((vi, loops.i.LoopVar));
+            IterVarPairs.Add((vj, loops.j.LoopVar));
+            return this;
+        }
+
+        /// <summary>
+        /// set the init feilds
+        /// </summary>
+        /// <param name="exprs"></param>
+        /// <returns></returns>
+        public Block Init(params Expr[] exprs)
+        {
+            foreach (var item in exprs)
+            {
+                InitBody.Add(item);
+            }
+            return this;
+        }
+
+    }
+
+    /// <summary>
+    /// Buffer store node.
+    /// </summary>
+    /// <param name="Buffer">The buffer.</param>
+    /// <param name="Indices">The value we to be stored.</param>
+    /// <param name="Value">The indices location to be stored.</param>
+    public sealed record BufferStore(Buffer Buffer, IRArray<Expr> Indices, Expr Value) : Expr
+    {
+
+    }
+
+    /// <summary>
+    /// Buffer load node.
+    /// </summary>
+    /// <param name="Buffer">The buffer to be loaded.</param>
+    /// <param name="Indices">The buffer indices.</param>
+    public sealed record BufferLoad(Buffer Buffer, IRArray<Expr> Indices) : Expr
+    {
+    }
+
 }

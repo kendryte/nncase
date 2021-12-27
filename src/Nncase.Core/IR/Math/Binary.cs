@@ -30,5 +30,21 @@ namespace Nncase.IR.Math
         {
             return TypeInference.BroadcastType(lhs, rhs);
         }
+
+        /// <summary>
+        /// convert Binary Op to literal.
+        /// <example>
+        ///   BinaryOp.Add => "+"
+        /// </example>
+        /// </summary>
+        /// <returns></returns>
+        public string ToLiteral() => BinaryOp switch
+        {
+            BinaryOp.Add => "+",
+            BinaryOp.Sub => "-",
+            BinaryOp.Mul => "*",
+            BinaryOp.Div => "/",
+            _ => throw new NotSupportedException($"{BinaryOp}")
+        };
     }
 }

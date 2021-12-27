@@ -10,6 +10,13 @@ namespace Nncase.IR
 {
     public struct IRArrayList<T> : IStructuralEquatable, IEquatable<IRArrayList<T>>, IReadOnlyList<T>, IEnumerable<T>, IList<T>
     {
+        public IRArrayList() { _list = new(); }
+
+        public IRArrayList(IEnumerable<T> array)
+        {
+            _list = new(array);
+        }
+
         private readonly List<T> _list;
 
         public T this[int index] { get => ((IList<T>)_list)[index]; set => ((IList<T>)_list)[index] = value; }

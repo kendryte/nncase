@@ -9,6 +9,41 @@ using System.Threading.Tasks;
 
 namespace Nncase.IR
 {
+    internal static partial class NameAlloc
+    {
+        static readonly Dictionary<string, int> VarMaps = new();
+
+        /// <summary>
+        /// get unique var name, avoid the confilct name.
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
+        public static string GetUniqueVarName(string name)
+        {
+            if (!VarMaps.TryGetValue(name, out var count))
+            {
+                count = 0;
+                VarMaps.Add(name, count);
+                return name;
+            }
+            while (VarMaps.ContainsKey(name + ++count)) { };
+            name = name + count;
+            VarMaps[name] = 0;
+            return name;
+        }
+
+        /// <summary>
+        /// add the exits name into dict.
+        /// </summary>
+        /// <param name="name"></param>
+        public static void AddName(string name)
+        {
+            if (!VarMaps.ContainsKey(name))
+            {
+                VarMaps[name] = 0;
+            }
+        }
+    }
     /// <summary>
     /// Variable expression.
     /// </summary>
@@ -67,6 +102,13 @@ namespace Nncase.IR
         /// <param name="Dtype"></param>
         /// <param name="Scope"></param>
         /// <returns> var </returns>
-        public static Var Handle(string Name, DataType Dtype, string Scope = "") => new Var(Name, new PointerType(Dtype, Scope));
+        public static Var Handle(string Name, DataType Dtype, string Scope = "") => new Var(Name, new HandleType(Dtype, Scope));
+
+        /// <summary>
+        /// get the size var. it can be used in tensor shape. like n>=0, m>=0.
+        /// </summary>
+        /// <param name="Name"></param>
+        /// <returns></returns>
+        public static Var SizeVar(string Name) => Scalar(Name, ElemType.Int32);
     }
 }

@@ -31,7 +31,7 @@ namespace Nncase.IR
         /// <param name="target">Call target.</param>
         /// <param name="parameters">Parameters.</param>
         public Call(Expr target, params Expr[] parameters)
-            : this(target, ImmutableArray.Create(parameters))
+            : this(target, new IRArray<Expr>(parameters.ToImmutableArray()))
         {
         }
 

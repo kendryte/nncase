@@ -7,7 +7,7 @@ namespace Nncase.TIR
 {
 
     /// <summary>
-    /// The buffer
+    /// The low level memory buffer,
     /// <example>
     ///     Here's an example of how broadcast buffer can be used to define a symbolic broadcast operation,
     ///   <code>
@@ -53,110 +53,49 @@ namespace Nncase.TIR
         /// <summary>
         /// data type in the content of the tensor
         /// </summary>
-        public DataType Dtype => ((PointerType)Handle.TypeAnnotation).DType;
+        public DataType Dtype => ((HandleType)Handle.TypeAnnotation).DType;
 
         /// <summary>
         /// The shape of the buffer
         /// </summary>
         public IR.Tuple Shape;
+        
         /// <summary>
         /// optional name of the buffer 
         /// </summary>
         public string Name;
+
         /// <summary>
         /// The strides of each dimension
         ///  This can be an empty array, indicating array is contiguous
         /// </summary>
         public IR.Tuple Strides;
+
         /// <summary>
         /// The offset in terms of number of dtype elements (including lanes)
         /// </summary>
         public Expr ElemOffset;
+
         /// <summary>
         /// Alignment requirement of data pointer in bytes.
         /// </summary>
         public int DataAlignment;
+
         /// <summary>
         /// Factor of elem_offset field,
         ///  elem_offset is guaranteed to be multiple of offset_factor.
         /// </summary>
         public int OffsetFactor;
+        
         /// <summary>
         /// buffer type
         /// </summary>
         public BufferMode BufferMode;
 
         /// <summary>
-        /// Declare a new symbolic buffer.
-        /// Normally buffer is created automatically during lower and build.
-        /// This is only needed if user want to specify their own buffer layout.
-        /// 
-        /// See the note below for detailed discussion on usage of buffer.
-        ///  <see cref="Buffer"/>
+        /// <see cref="T.DeclBuffer(IR.Tuple, DataType?, string, Var?, IR.Tuple?, Expr?, string, int, int, BufferMode)"/>
         /// </summary>
-        /// <param name="shape">The shape of the buffer.</param>
-        /// <param name="dtype">The data type of the buffer.</param>
-        /// <param name="name">The name of the buffer.</param>
-        /// <param name="data_handle">The data pointer in the buffer.</param>
-        /// <param name="strides">The stride of the buffer.</param>
-        /// <param name="elem_offset">
-        ///   The beginning offset of the array to data.
-        ///   In terms of number of elements of dtype.
-        /// </param>
-        /// <param name="scope">
-        ///   The storage scope of the buffer, if not global.
-        ///   If scope equals empty string, it means it is global memory.
-        /// </param>
-        /// <param name="data_alignment">
-        ///   The alignment of data pointer in bytes.
-        ///   If -1 is passed, the alignment will be set to TVM's internal default.
-        /// </param>
-        /// <param name="offset_factor">
-        ///   The factor of elem_offset field, when set,
-        ///   elem_offset is required to be multiple of offset_factor.
-        ///   If 0 is pssed, the alignment will be set to 1.
-        ///   if non-zero is passed, we will created a Var for elem_offset if elem_offset is not None.
-        /// </param>
-        /// <param name="buffer_mode">
-        ///   auto_broadcast buffer allows one to implement broadcast computation
-        ///   without considering whether dimension size equals to one.
-        ///   TVM maps buffer[i][j][k] -> buffer[i][0][k] if dimension j's shape equals 1.
-        /// </param>
-        /// <returns>Buffer</returns>
-        public static Buffer Decl(IR.Tuple shape, DataType? dtype = null, string name = "buffer", Var? data_handle = null, IR.Tuple? strides = null, Expr? elem_offset = null, string scope = "", int data_alignment = -1, int offset_factor = 0, BufferMode buffer_mode = BufferMode.Default)
-        {
-            dtype ??= DataType.Float32;
-            strides ??= new();
-            if (offset_factor != 0 && elem_offset is null)
-            {
-                elem_offset = Var.Scalar($"{name}_elem_offset", shape[0].CheckedDataType);
-            }
-            if (data_handle is null)
-            {
-                data_handle = Var.Handle(name, dtype, scope);
-            }
-
-            elem_offset ??= (Const)0;
-            if (data_alignment <= 0)
-            {
-                data_alignment = 128;
-            }
-            if (offset_factor == 0)
-            {
-                offset_factor = 1;
-            }
-
-            if (buffer_mode == BufferMode.AutoBroadcast && shape.Count > 0 && strides is null)
-            {
-                strides = new IR.Tuple(shape.Fields.Select(e => new Var("stride", TensorType.Scalar(e.CheckedDataType))).ToArray());
-            }
-            return new Buffer(shape, name, data_handle, strides, elem_offset, scope, data_alignment, offset_factor, buffer_mode);
-        }
-
-        /// <summary>
-        /// <see cref="Decl(IR.Tuple, DataType, string, Var?, IRArray{Expr}?, Expr?, string, int, int, BufferMode)"/>
-        /// </summary>
-        private Buffer(IR.Tuple shape, string name, Var data, IR.Tuple strides, Expr elem_offset, string scope, int data_alignment, int offset_factor, BufferMode buffer_mode)
+        public Buffer(IR.Tuple shape, string name, Var data, IR.Tuple strides, Expr elem_offset, string scope, int data_alignment, int offset_factor, BufferMode buffer_mode)
         {
             Handle = data;
             Shape = shape;
@@ -225,30 +164,6 @@ namespace Nncase.TIR
 
             return new Call(new Builtin.AccessPtr(accType, access_mode), Handle, elem_offset, extent);
         }
-
-        /// <summary>
-        /// got the expr of load value from begin index
-        /// <remarks>
-        /// the only load single value
-        /// </remarks>
-        /// </summary>
-        /// <param name="begin"> the index of data begin</param>
-        /// <returns> the corresponding load expr. </returns>
-        // public Call VLoad(IR.Tuple begin)
-        // {
-        //     return T.Load(Handle, CalcOffset(begin), null);
-        // }
-
-        /// <summary>
-        /// Generate a Stmt that store value into begin index.
-        /// </summary>
-        /// <param name="begin">The beginning index in unit of Buffer.dtype</param>
-        /// <param name="value">The value to be stored.</param>
-        /// <returns>The corresponding store stmt.</returns>
-        // public Expr VStore(IR.Tuple begin, Expr value)
-        // {
-        //     return new Store(Handle, value, CalcOffset(begin), null);
-        // }
 
         public Expr CalcElemOffset(IR.Tuple index)
         {
@@ -331,17 +246,35 @@ namespace Nncase.TIR
             }
             return lidx;
         }
+
         /// <summary>
-        /// Load the Value
+        /// Iter Var subscript create BufferLoad
         /// </summary>
         /// <param name="indices"> index </param>
-        /// <returns> the load Expression. </returns>
+        /// <returns> the Bufferload Expression. </returns>
         /// <exception cref="InvalidOperationException"></exception>
-        public Expr this[params Expr[] indices]
+        public Expr this[params IterVar[] indices]
         {
             get
             {
-                var index = linearIndices(indices);
+                return new BufferLoad(this, indices);
+            }
+            set
+            {
+                throw new InvalidOperationException("Your Should Use Like T.Store(Buf[i,j,k],value) !");
+            }
+        }
+
+        /// <summary>
+        /// if use expr index, will create Load 
+        /// </summary>
+        /// <param name="index"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidOperationException"></exception>
+        public Expr this[Expr index]
+        {
+            get
+            {
                 if (Dtype.Lanes > 1)
                 {
                     index = T.Ramp(index * Dtype.Lanes, 1, Dtype.Lanes);
@@ -350,7 +283,7 @@ namespace Nncase.TIR
             }
             set
             {
-                throw new InvalidOperationException("Your Should Use The Buf.Store([i,j,k],value) For Index Store!");
+                throw new InvalidOperationException("Your Should Use Like T.Store(Buf[i,j,k],value) !");
             }
         }
 
@@ -359,19 +292,19 @@ namespace Nncase.TIR
         /// </summary>
         /// <param name="indices_with_value"> the last element is value, others are index</param>
         /// <returns> Store expression </returns>
-        public Expr Store(params Expr[] indices_with_value)
-        {
-            if (indices_with_value.Length <= 1)
-            {
-                throw new InvalidOperationException("The Buffer Store Must Have Index and Value !");
-            }
-            var index = linearIndices(indices_with_value.SkipLast(1));
-            if (Dtype.Lanes > 1)
-            {
-                index = T.Ramp(index * Dtype.Lanes, 1, Dtype.Lanes);
-            }
-            return T.Store(Handle, indices_with_value.Last(), index);
-        }
+        // public Expr Store(params Expr[] indices_with_value)
+        // {
+        //     if (indices_with_value.Length <= 1)
+        //     {
+        //         throw new InvalidOperationException("The Buffer Store Must Have Index and Value !");
+        //     }
+        //     var index = linearIndices(indices_with_value.SkipLast(1));
+        //     if (Dtype.Lanes > 1)
+        //     {
+        //         index = T.Ramp(index * Dtype.Lanes, 1, Dtype.Lanes);
+        //     }
+        //     return T.Store(Handle, indices_with_value.Last(), index);
+        // }
     }
 
     public interface DataProducer
