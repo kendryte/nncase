@@ -16,8 +16,6 @@ namespace Nncase.Importer
     {
         private Expr VisitConstant(in NodeProto op)
         {
-            var input = GetInputExpr(op, 0);
-
             var tensorValue = GetAttr(op, "value", AttributeType.Tensor, x => x.T);
             if (tensorValue)
             {

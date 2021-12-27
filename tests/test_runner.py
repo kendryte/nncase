@@ -547,7 +547,7 @@ class TestRunner(metaclass=ABCMeta):
             input_tensor: nncase.RuntimeTensor = nncase.RuntimeTensor.from_numpy(
                 self.transform_input(self.data_pre_process(self.inputs[i]['data']), "float32", "CPU"))
             input_tensor.copy_to(evaluator.get_input_tensor(i))
-            evaluator.run()
+        evaluator.run()
 
         for i in range(evaluator.outputs_size):
             result = evaluator.get_output_tensor(i).to_numpy()

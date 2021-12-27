@@ -30,7 +30,11 @@ namespace Nncase.IR.F
         
         public static Call CumSum(Expr input, Expr axis, Expr exclusive, Expr reverse) => new Call(new CumSum(), input, axis, exclusive, reverse);
         
-        public static Call HardMax(Expr input, Expr axis) => new Call(new CumSum(), input, axis);
+        public static Call Expand(Expr input, Expr shape) => new Call(new Expand(), input, shape);
+        
+        public static Call Flatten(Expr input, Expr axis) => new Call(new Flatten(), input, axis);
+        
+        public static Call HardMax(Expr input, Expr axis) => new Call(new HardMax(), input, axis);
 
         public static Call Gather(Expr input, Expr axis, Expr index) => new Call(new Gather(), input, axis, index);
 
@@ -102,6 +106,8 @@ namespace Nncase.IR.F
 
         public static Call DeQuantize(Expr input, Expr zeroPoint, Expr scale, DataType targetType) => new Call(new DeQuantize(targetType), input, zeroPoint, scale);
 
+        public static Call Rank(Expr input) => ShapeOp(ShapeOp(input));
+        
         // same like tensorflow
         public static Call SpaceToBatch(Expr input, Expr blockShape, Expr paddings) => new Call(new SpaceToBatch(), input, blockShape, paddings);
 

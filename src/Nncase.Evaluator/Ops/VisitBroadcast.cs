@@ -10,11 +10,12 @@ namespace Nncase.Evaluator.Ops
 {
     public sealed partial class EvaluatorVisitor
     {
-        private torch.Tensor VisitReshape(Reshape reshape)
+        private torch.Tensor VisitBroadcast(Broadcast b)
         {
-            var input = _context.GetArgument(reshape, Reshape.Input);
-            var shape = _context.GetArgumentConst(reshape, Reshape.Shape).ToArray<long>();
-            return input.reshape(shape);
+            var input = _context.GetArgument(b, Broadcast.Input);
+            var shape = _context.GetArgumentConst(b, Broadcast.Shape);
+            var s = shape.ToArray<long>();
+            return input.broadcast_to(s);
         }
     }
 }

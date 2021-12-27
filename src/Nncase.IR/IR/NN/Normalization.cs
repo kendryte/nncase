@@ -19,17 +19,17 @@ namespace Nncase.IR.NN
         /// <summary>
         /// Gets input.
         /// </summary>
-        public static readonly ParameterInfo Input = new(typeof(L2Normalization), 0, "input");
+        public static readonly ParameterInfo Input = new(typeof(BatchNormalization), 0, "input");
 
         /// <summary>
         /// Gets Epsilon.
         /// </summary>
-        public static readonly ParameterInfo Epsilon = new(typeof(L2Normalization), 1, "epsilon", IsFloatScalar());
+        public static readonly ParameterInfo Epsilon = new(typeof(BatchNormalization), 1, "epsilon", IsFloatScalar());
 
         /// <summary>
         /// Gets Momentum.
         /// </summary>
-        public static readonly ParameterInfo Momentum = new(typeof(L2Normalization), 2, "momentum", IsFloatScalar());
+        public static readonly ParameterInfo Momentum = new(typeof(BatchNormalization), 2, "momentum", IsFloatScalar());
 
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType epsilon, TensorType momentum) => input;
@@ -40,12 +40,12 @@ namespace Nncase.IR.NN
         /// <summary>
         /// Gets input.
         /// </summary>
-        public static readonly ParameterInfo Input = new(typeof(L2Normalization), 0, "input");
+        public static readonly ParameterInfo Input = new(typeof(InstanceNormalization), 0, "input");
 
         /// <summary>
         /// Gets Epsilon.
         /// </summary>
-        public static readonly ParameterInfo Epsilon = new(typeof(L2Normalization), 1, "epsilon", IsFloatScalar());
+        public static readonly ParameterInfo Epsilon = new(typeof(InstanceNormalization), 1, "epsilon", IsFloatScalar());
 
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType epsilon) => input;
@@ -56,12 +56,12 @@ namespace Nncase.IR.NN
         /// <summary>
         /// Gets input.
         /// </summary>
-        public static readonly ParameterInfo Input = new(typeof(L2Normalization), 0, "input");
+        public static readonly ParameterInfo Input = new(typeof(LpNormalization), 0, "input");
 
         /// <summary>
         /// Gets Axis.
         /// </summary>
-        public static readonly ParameterInfo Axis = new(typeof(L2Normalization), 1, "axis", IsIntegralScalar());
+        public static readonly ParameterInfo Axis = new(typeof(LpNormalization), 1, "axis", IsIntegralScalar());
         
         /// <summary>
         /// Gets P.
@@ -77,29 +77,30 @@ namespace Nncase.IR.NN
         /// <summary>
         /// Gets input.
         /// </summary>
-        public static readonly ParameterInfo Input = new(typeof(L2Normalization), 0, "input");
+        public static readonly ParameterInfo Input = new(typeof(LRN), 0, "input");
 
         /// <summary>
         /// Gets axis.
         /// </summary>
-        public static readonly ParameterInfo Alpha = new(typeof(L2Normalization), 1, "alpha", IsFloatScalar());
+        public static readonly ParameterInfo Alpha = new(typeof(LRN), 1, "alpha", IsFloatScalar());
         
         /// <summary>
         /// Gets beta.
         /// </summary>
-        public static readonly ParameterInfo Beta = new(typeof(L2Normalization), 2, "beta", IsFloatScalar());
+        public static readonly ParameterInfo Beta = new(typeof(LRN), 2, "beta", IsFloatScalar());
 
         /// <summary>
         /// Gets bias.
         /// </summary>
-        public static readonly ParameterInfo Bias = new(typeof(L2Normalization), 3, "bias", IsFloatScalar());
+        public static readonly ParameterInfo Bias = new(typeof(LRN), 3, "bias", IsFloatScalar());
         
         /// <summary>
         /// Gets size.
         /// </summary>
-        public static readonly ParameterInfo Size = new(typeof(L2Normalization), 4, "size", IsIntegralScalar());
+        public static readonly ParameterInfo Size = new(typeof(LRN), 4, "size", IsIntegralScalar());
 
         /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType axis, TensorType p) => input;
+        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, 
+            TensorType alpha, TensorType beta, TensorType bias, TensorType size) => input;
     }
 }

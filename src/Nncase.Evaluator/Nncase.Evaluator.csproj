@@ -5,8 +5,8 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <PackageReference Include="libtorch-cpu" Version="1.10.0.1" />
-      <PackageReference Include="TorchSharp" Version="0.95.3" />
+      <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.10.0" />
+      <PackageReference Include="Nncase.TorchSharp" Version="0.95.4" />
     </ItemGroup>
 
     <ItemGroup>

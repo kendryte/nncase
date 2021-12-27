@@ -24,7 +24,7 @@ namespace Nncase.IR.Tensors
         /// <summary>
         /// Gets axis.
         /// </summary>
-        public static readonly ParameterInfo Axis = new(typeof(CumSum), 1, "axis", IsBoolScalar());
+        public static readonly ParameterInfo Axis = new(typeof(CumSum), 1, "axis");
 
         /// <summary>
         /// Gets exclusive.

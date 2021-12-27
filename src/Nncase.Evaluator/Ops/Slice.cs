@@ -15,15 +15,17 @@ namespace Nncase.Evaluator.Ops
             var input = _context.GetArgument(sl, Slice.Input);
             var begins = _context.GetArgument(sl, Slice.Begins);
             var ends = _context.GetArgument(sl, Slice.Ends);
-            var axes = _context.GetArgument(sl, Slice.Axes);
+            var axes = _context.GetArgumentConstArray<int>(sl, Slice.Axes)
+                .Select(x => x < 0 ? x + input.shape.Rank : x);
             var strides = _context.GetArgument(sl, Slice.Strides);
-            
+
+            var axesIndex = 0;
             var indices = Enumerable.Range(0, input.shape.Length).Select(i =>
-                axes.data<int>().Contains(i)? 
+                axes.Contains(i)?
                     torch.TensorIndex.Slice(
-                        GetItem(begins, i),
-                        GetItem(ends, i),
-                        GetItem(strides, i)):
+                        GetItem(begins, axesIndex),
+                        GetItem(ends, axesIndex),
+                        GetItem(strides, axesIndex++)):
                     torch.TensorIndex.Slice()
             ).ToArray();
             return input[indices];

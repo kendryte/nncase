@@ -124,6 +124,7 @@ namespace Nncase
             { typeof(ulong).TypeHandle, DataType.UInt64 },
             { typeof(float).TypeHandle, DataType.Float32 },
             { typeof(double).TypeHandle, DataType.Float64 },
+            { typeof(BFloat16).TypeHandle, DataType.Float16 }
         };
 
         private static readonly Dictionary<DataType, int> _DataTypeToLengths = new()
@@ -235,11 +236,15 @@ namespace Nncase
             DataType.Float64 => (T)Convert.ChangeType((object)BitConverter.ToDouble(bytes, start), typeof(T)),
             DataType.Float32 => (T)Convert.ChangeType((object)BitConverter.ToSingle(bytes, start), typeof(T)),
             DataType.BFloat16 => (T)Convert.ChangeType((object)(new BFloat16(bytes[start])), typeof(T)),
-            DataType.Float16 => (T)Convert.ChangeType((object)(Half)(bytes[start]), typeof(T)),
             DataType.Bool => (T)Convert.ChangeType((object)BitConverter.ToBoolean(bytes, start), typeof(T)),
             _ => throw new InvalidCastException($"Can't Cast the {srcType.ToString()}!")
         };
 
+        public static Half CastToScalar(byte[] bytes, int start = 0)
+        {
+            return BitConverter.ToHalf(bytes, start);
+        }
+        
         public static bool IsIntegral(DataType srcType) => srcType switch
         {
             (DataType.Bool or

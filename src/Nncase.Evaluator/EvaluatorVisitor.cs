@@ -49,15 +49,29 @@ namespace Nncase.Evaluator.Ops
             }
         }
 
+        public T GetArgumentConstScalar<T>(Op op, ParameterInfo parameter)
+            where T : unmanaged
+        {
+            return GetArgumentConst(op, parameter).ToScalar<T>();
+        }
+
+        public T[] GetArgumentConstArray<T>(Op op, ParameterInfo parameter)
+            where T : unmanaged
+        {
+            return GetArgumentConst(op, parameter).ToArray<T>();
+        }
+
         public Const GetArgumentConst(Op op, ParameterInfo parameter)
         {
-            if (GetArgumentExpr(op, parameter) is Const constValue)
+            var expr = GetArgumentExpr(op, parameter);
+            if (expr is Const constValue)
             {
                 return constValue;
             }
             else
             {
-                throw new InvalidOperationException($"Op:{op} Parameter:{parameter} is not const");
+                // maybe a valid type but not const
+                return GetArgument(expr).ToConst();
             }
         }
 
@@ -89,18 +103,44 @@ namespace Nncase.Evaluator.Ops
             _context.CurrentCall = expr;
             return _fixShape(expr, expr.Target switch
             {
+                // todo:reflect to visit f
+                BatchNormalization b => VisitBatchNormalization(b),
                 Binary bn => VisitBinary(bn),
+                Broadcast b => VisitBroadcast(b),
+                Cast ct => VisitCast(ct),
+                Celu c => VisitCelu(c),
                 Concat con => VisitConcat(con),
+                Conv2D conv => VisitConv2D(conv),
+                Conv2DTranspose c => VisitConv2DTranspose(c),
+                CumSum c => VisitCumSum(c),
+                Elu e => VisitElu(e),
+                Expand e => VisitExpand(e),
+                Flatten f => VisitFlatten(f),
+                Gather g => VisitGather(g),
+                HardSigmoid h => VisitHardSigmoid(h),
+                HardSwish h => VisitHardSwish(h),
+                InstanceNormalization i => VisitInstanceNormalization(i),
+                LeakyRelu l => VisitLeakyRelu(l),
+                LogSoftMax l => VisitLogSoftMax(l),
+                LRN l => VisitLRN(l),
+                MatMul m => VisitMatMul(m),
+                Pad pd => VisitPad(pd),
+                // Reduce r => VisitReduce(r), 
+                ReduceArg r => VisitReduceArg(r),
+                ReduceWindow2D r => VisitReduceWindow2D(r),
+                Relu r => VisitRelu(r),
+                Reshape rs => VisitReshape(rs),
+                Selu s => VisitSelu(s),
                 ShapeOp sp => VisitShape(sp),
+                Sigmoid s => VisitSigmoid(s),
                 Slice sl => VisitSlice(sl),
+                SoftMax s => VisitSoftMax(s),
+                SoftPlus s => VisitSoftPlus(s),
+                // SoftSign s => VisitSoftSign(s),
+                IR.Tensors.Stack st => VisitStack(st),
                 Transpose tr => VisitTranspose(tr),
                 Unary un => VisitUnary(un),
-                Pad pd => VisitPad(pd),
-                IR.Tensors.Stack st => VisitStack(st),
-                Cast ct => VisitCast(ct),
-                Conv2D conv => VisitConv2D(conv),
-                Reshape re => VisitReshape(re),
-                _ => throw new NotImplementedException()
+                _ => throw new NotImplementedException($"{expr.Target}")
             });
         }
 

@@ -31,6 +31,10 @@ namespace Nncase.IR.Tensors
         {
             if (context.GetArgument(this, Perm) is Const perm_con)
             {
+                if (input.Shape.IsUnranked)
+                {
+                    return new InvalidType("Transpose input should not be Unranked");
+                }
                 var permt = perm_con.ToTensor<int>();
                 var inShape = input.Shape;
                 var outShape = inShape.ToArray();

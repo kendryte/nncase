@@ -7,36 +7,34 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using NetFabric.Hyperlinq;
 
 namespace Nncase.IR.Tensors
 {
     /// <summary>
-    /// Broadcast expression.
+    /// Expand expression.
     /// </summary>
-    public sealed record Broadcast() : Op
+    public sealed record Expand() : Op
     {
         /// <summary>
         /// Gets input.
         /// </summary>
-        public static readonly ParameterInfo Input = new(typeof(Broadcast), 0, "input");
+        public static readonly ParameterInfo Input = new(typeof(Expand), 0, "input");
 
         /// <summary>
         /// Gets input.
         /// </summary>
-        public static readonly ParameterInfo Shape = new(typeof(Broadcast), 1, "shape");
-
+        public static readonly ParameterInfo Shape = new(typeof(Expand), 1, "shape");
+        
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType shape)
         {
-            var shapeValue = context.GetArgument(this, Shape);
-            if (shapeValue is Const constShapeValue && input.Shape.IsFixed)
+            if (context.GetArgument(this, Shape) is Const constShape)
             {
-                return TypeInference.BroadcastType(input, new TensorType(input.DType, constShapeValue.ToArray<int>()));
+                return new TensorType(input.DType, constShape.ToArray<int>());
             }
             else
             {
-                return new InvalidType("Broadcast shape is unknown");
+                return new InvalidType("Expand Shape need const value");
             }
         }
     }

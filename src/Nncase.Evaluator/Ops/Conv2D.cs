@@ -17,6 +17,7 @@ namespace Nncase.Evaluator.Ops
             var weights = _context.GetArgument(conv, Conv2D.Weights);
             var bias = _context.GetArgument(conv, Conv2D.Bias);
             var stride = _context.GetArgumentConst(conv, Conv2D.Stride).ToTensor<long>();
+            // [w:[left right] h:[top bottom]]
             var pad = _context.GetArgumentConst(conv, Conv2D.Padding).ToTensor<long>();
             var dilation = _context.GetArgumentConst(conv, Conv2D.Dilation).ToTensor<long>();
             var groups = _context.GetArgumentConst(conv, Conv2D.Groups).ToScalar<long>();
@@ -24,8 +25,12 @@ namespace Nncase.Evaluator.Ops
             {
                 throw new NotImplementedException($"Conv2D with {conv.PadMode}!");
             }
+            // pad in TorchSharp will reorder
+            // when pad.Count == 4, [0, 2, 1, 3]
+            // order should be passed: left top right bottom
+            var afterPad = torchF.pad(input, new long[] { pad[0, 0], pad[1, 0], pad[0, 1], pad[1, 1] });
             return torchF.conv2d(
-              torchF.pad(input, new long[] { pad[1, 0], pad[1, 1], pad[0, 0], pad[0, 1] }),
+                afterPad,
               weights, bias,
               strides: new long[] { stride[0], stride[1] },
               dilation: new long[] { dilation[0], dilation[1] },

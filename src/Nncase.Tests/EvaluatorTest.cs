@@ -127,8 +127,8 @@ namespace Nncase.Tests.Evaluator
             var output = torchF.conv2d(inputs, weights, bias, padding: new long[] { 1, 1 });
 
             var expr = NN.Conv2D(inputs.ToConst(), weights.ToConst(), bias.ToConst(),
-                     stride: new[] { 1, 1 }, padding: Const.FromSpan<int>(new int[] { 1, 1, 1, 1 }, new[] { 2, 2 }),
-                     dilation: new[] { 1, 1 }, Nncase.PadMode.Constant, 1);
+                stride: new[] { 1, 1 }, padding: Const.FromSpan<int>(new int[] { 1, 1, 1, 1 }, new[] { 2, 2 }),
+                dilation: new[] { 1, 1 }, Nncase.PadMode.Constant, 1);
             Assert.True(expr.InferenceType());
             Assert.Equal(output, expr.Eval());
         }

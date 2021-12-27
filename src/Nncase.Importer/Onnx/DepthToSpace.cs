@@ -12,7 +12,7 @@ namespace Nncase.Importer
         private Expr VisitDepthToSpace(in NodeProto op)
         {
             var input = GetInputExpr(op, 0);
-            var blockSize = GetIntAttribute(op, "blocksize");
+            var blockSize = (int)GetIntAttribute(op, "blocksize");
             var mode = GetStringAttribute(op, "mode", "DCR");
 
             var shape0 = Util.ShapeIndex(input, 0);

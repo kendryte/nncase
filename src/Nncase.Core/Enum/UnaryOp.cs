@@ -95,6 +95,11 @@ namespace Nncase
         Sinh,
 
         /// <summary>
+        /// Sign.
+        /// </summary>
+        Sign,
+        
+        /// <summary>
         /// Sqrt.
         /// </summary>
         Sqrt,
