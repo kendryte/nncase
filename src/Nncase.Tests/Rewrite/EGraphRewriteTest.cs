@@ -29,6 +29,7 @@ namespace Nncase.Tests.ReWrite
         private static IEnumerable<object[]> Data =>
           new List<object[]>
           {
+             new object[] { new FoldNopReshapeCase() },
              new object[] { new FoldReshapeCase() },
              new object[] { new TransposeDemoCase() },
              new object[] { new ClassicDemo() },

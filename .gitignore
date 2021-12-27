@@ -291,3 +291,4 @@ wheelhouse/
 .env
 Directory.Build.targets
 NuGet.Config
+*local*

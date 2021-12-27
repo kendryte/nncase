@@ -36,7 +36,7 @@ namespace Nncase.Transform.Rule
         WildCardPattern wcin = "input";
         ConstPattern wcshape = IsConst(IsTensor() & IsIntegral());
 
-        FoldNopReshape()
+        public FoldNopReshape()
         {
             Pattern = Reshape(wcin, wcshape);
         }
