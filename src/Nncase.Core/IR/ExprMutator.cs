@@ -133,5 +133,25 @@ namespace Nncase.IR
                 Predicate = Visit(expr.Predicate)
             };
         }
+
+        /// <inheritdoc/>
+        public override Expr Visit(TIR.BufferStore expr)
+        {
+            return expr with
+            {
+                Indices = new(expr.Indices.Select(Visit)),
+                Value = Visit(expr.Value)
+            };
+        }
+
+        /// <inheritdoc/>
+        public override Expr Visit(TIR.BufferLoad expr)
+        {
+            return expr with
+            {
+                Indices = new(expr.Indices.Select(Visit))
+            };
+        }
+
     }
 }

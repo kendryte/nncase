@@ -1,8 +1,9 @@
+using System.Linq;
 using System.IO;
 using System.Collections.Generic;
 using System;
-using Nncase.IR;
 using Nncase.TIR;
+using Nncase.IR;
 
 namespace Nncase.Transform.TIRPass
 {
@@ -26,9 +27,16 @@ namespace Nncase.Transform.TIRPass
 
         public override Expr Visit(Block expr)
         {
-            var newblk = (Block)base.Visit(expr);
-            newblk.IterVarBinds.Clear();
-            return newblk;
+            return expr with
+            {
+                Body = (TIR.Sequential)Visit(expr.Body),
+                InitBody = (TIR.Sequential)Visit(expr.InitBody),
+                IterVarBinds = new(),
+                Reads = new(expr.Reads.Select(VisitBufferRegion)),
+                Writes = new(expr.Writes.Select(VisitBufferRegion)),
+                AllocBuffers = new(expr.AllocBuffers.Select(VisitBuffer)),
+                Predicate = Visit(expr.Predicate)
+            };
         }
     }
 }

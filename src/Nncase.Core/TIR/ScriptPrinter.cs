@@ -137,6 +137,7 @@ namespace Nncase.TIR
                 {
                     Unary op => op.UnaryOp.ToString(),
                     Binary op => op.ToLiteral(),
+                    IR.Tensors.Cast op => DataTypes.GetDisplayName(op.NewType),
                     _ => expr.GetType().Name,
                 });
             }
