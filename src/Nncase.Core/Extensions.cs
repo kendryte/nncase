@@ -98,5 +98,4 @@ namespace Nncase.IR
             _ => throw new InvalidOperationException("Expr is not a Const"),
         };
     }
-
 }

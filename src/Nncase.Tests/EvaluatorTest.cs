@@ -3,12 +3,12 @@ using NetFabric.Hyperlinq;
 using Nncase.Evaluator;
 using Nncase.IR;
 using Nncase.IR.F;
+using Nncase.IR.Tensors;
 using TorchSharp;
 using Xunit;
 using static TorchSharp.torch;
 using torchF = TorchSharp.torch.nn.functional;
 using Tuple = Nncase.IR.Tuple;
-
 
 namespace Nncase.Tests.Evaluator
 {
@@ -140,6 +140,24 @@ namespace Nncase.Tests.Evaluator
             var conv1 = Tensors.NCHWToNHWC(ReWrite.DummyOp.Conv2D(Tensors.NHWCToNCHW(input), 3, out_channels: 8, 3, 2));
             Assert.True(conv1.InferenceType());
             Assert.Equal(new long[] { 1, 14, 14, 8 }, conv1.Eval().shape);
+        }
+
+        [Fact]
+        public void TestProd()
+        {
+            var input = Const.FromSpan<int>(new[] {1, 2, 3, 4});
+            var prod = Tensors.Prod(input);
+            prod.InferenceType();
+            Assert.Equal(1 * 2 * 3 * 4, prod.Eval().ToConst().ToScalar<int>());
+        }
+
+        [Fact]
+        public void TestSize()
+        {
+            var input = torch.rand(1, 3, 224, 224).ToConst();
+            var size = Tensors.Size(input);
+            size.InferenceType();
+            Assert.Equal(1 * 3 * 224 * 224, size.Eval().ToConst().ToScalar<int>());
         }
     }
 }

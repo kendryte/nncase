@@ -255,5 +255,38 @@ namespace Nncase.Tests
             Assert.True(post is Const);
             Assert.Equal(Shape.Scalar, post.CheckedShape);
         }
+        
+        [Fact]
+        public void SoftMaxImporterProcess()
+        {
+            var input = new Var(new TensorType(DataType.Float32, new Shape(1, 3, 224, 224)));
+            var axis = -1;
+            var inShape = ShapeOp(input);
+            Expr axisExprBefore = axis < 0
+                ? axis + Rank(input)
+                : Const.FromSpan<int>(new[] {axis});
+            axisExprBefore.InferenceType();
+            var axisExpr = RunShapeInferPass("Axis", axisExprBefore, input);
+            Assert.Equal(3, axisExpr.ToTensor<int>()[0]);
+            var firstSliceBefore = Slice(inShape, new[] {0}, axisExpr, 1);
+            firstSliceBefore.InferenceType();
+            var firstSlice = RunShapeInferPass("firstSlice", firstSliceBefore, input);
+            Assert.Equal(new[] { 1, 3, 224 }, ((Const)firstSlice).ToArray<int>());
+            var firstSizeBefore = Prod(firstSlice);
+            firstSizeBefore.InferenceType();
+            var firstSize = RunShapeInferPass("firstSize", firstSizeBefore, input);
+            Assert.Equal(1 * 3 * 224, firstSize.ToScalar<int>());
+            var secondBefore = Prod(Slice(inShape, axisExpr, Rank(input), 1));
+            var secondSize = RunShapeInferPass("secondSize", secondBefore, input);
+            Assert.Equal(224, secondSize.ToScalar<int>());
+            var beforeShape = Concat(new Tuple(firstSize, secondSize), 0);
+            var afterShape = ShapeOp(input);
+            var softMax = Reshape(
+                NN.SoftMax(
+                    Reshape(input, beforeShape),
+                    axis),
+                afterShape);
+            Assert.True(softMax.InferenceType());
+        }
     }
 }

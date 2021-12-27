@@ -6,7 +6,8 @@ using LanguageExt.UnsafeValueAccess;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using Onnx;
-using F = Nncase.IR.F;
+using static Nncase.IR.F.Tensors;
+using static Nncase.IR.F.NN;
 
 namespace Nncase.Importer
 {
@@ -19,50 +20,69 @@ namespace Nncase.Importer
                 : SoftmaxV13(op);
         }
 
-        private Expr SoftmaxV1(in NodeProto op)
+        private Expr SoftmaxV1Process(in NodeProto op, Func<Expr, Expr, Expr> f)
+        {
+            var input = GetSingleInputExpr(op);
+            var axis = (int)GetIntAttribute(op, "axis", 1);
+            var inShape = ShapeOp(input);
+            Expr axisExpr = axis < 0
+                ? axis + Rank(input)
+                : Const.FromSpan<int>(new[] {axis});
+            var first = Prod(Slice(inShape, new[] {0}, axisExpr, 1));
+            var second = Prod(Slice(inShape, axisExpr, Rank(input) , 1));
+            var beforeShape = Concat(new IR.Tuple(first, second), 0);
+            var afterShape = ShapeOp(input);
+            return Reshape(
+                f(
+                    Reshape(input, beforeShape),
+                    1),
+                afterShape);
+        }
+
+        private Expr SoftmaxV13Process(in NodeProto op, Func<Expr, Expr, Expr> f)
         {
             var input = GetSingleInputExpr(op);
             var axis = GetIntAttribute(op, "axis", -1);
-            var inShape = F.Tensors.ShapeOp(input);
-            Expr axisExpr = axis < 0
-                ? axis + F.Tensors.Rank(input)
-                : axis;
-            // todo:axis < 0?
-            var first = F.Tensors.Size(F.Tensors.Slice(inShape, new[] {0}, new[] {(int)axis}, 1));
-            var second = F.Tensors.Size(F.Tensors.Slice(inShape, new[] {(int)axis}, F.Tensors.Rank(input) - 1, 1));
-            var beforeShape = F.Tensors.Concat(new IR.Tuple(first, second), 0);
-            var afterShape = F.Tensors.ShapeOp(input);
-            return F.Tensors.Reshape(
-                F.NN.SoftMax(
-                    F.Tensors.Reshape(input, beforeShape),
-                    axis),
-                afterShape);
+            return f(input, axis);
+        }
+        
+        private Expr SoftmaxV1(in NodeProto op)
+        {
+            return SoftmaxV1Process(op, SoftMax);
         }
 
         private Expr SoftmaxV13(in NodeProto op)
         {
-            var input = GetSingleInputExpr(op);
-            var axis = GetIntAttribute(op, "axis", -1);
-            return F.NN.SoftMax(input, axis);
+            return SoftmaxV13Process(op, SoftMax);
         }
 
         private Expr VisitLogSoftmax(in NodeProto op)
         {
-            var input = GetInputExpr(op, 0);
-            var axis = GetIntAttribute(op, "axis", -1);
-            return F.NN.LogSoftMax(input, axis);
+            return GetOpSet(op) < 13
+                ? LogSoftmaxV1(op)
+                : LogSoftmaxV13(op);
         }
 
+        private Expr LogSoftmaxV1(in NodeProto op)
+        {
+            return SoftmaxV1Process(op, LogSoftMax);
+        }
+
+        private Expr LogSoftmaxV13(in NodeProto op)
+        {
+            return SoftmaxV13Process(op, LogSoftMax);
+        }
+        
         private Expr VisitSoftplus(in NodeProto op)
         {
             var input = GetSingleInputExpr(op);
-            return F.NN.SoftPlus(input);
+            return SoftPlus(input);
         }
 
         private Expr VisitSoftsign(in NodeProto op)
         {
             var input = GetSingleInputExpr(op);
-            return F.NN.SoftSign(input);
+            return SoftSign(input);
         }
     }
 }

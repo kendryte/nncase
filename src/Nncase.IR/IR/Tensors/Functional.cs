@@ -49,6 +49,8 @@ namespace Nncase.IR.F
         /// </summary>
         public static Call Pad(Expr input, Expr pads, PadMode mode, Expr value) => new Call(new Pad(mode), input, pads, value);
 
+        public static Call Prod(Expr input) => new Call(new Prod(), input);
+        
         public static Call RandomNormal(DataType type, Expr mean, Expr scale, Expr seed, Expr shape) =>
             new Call(new RandomNormal(type), mean, scale, seed, shape);
         
@@ -93,7 +95,7 @@ namespace Nncase.IR.F
             return new Call(new Slice(), input, begins, ends, axes, strides);
         }
 
-        public static Expr Size(Expr input) => ReduceSum(ShapeOp(input), 0, 0, false);
+        public static Expr Size(Expr input) => new Call(new Size(), input);
         
         public static Call Stack(Expr inputs, Expr axis) => new Call(new Stack(), inputs, axis);
 
