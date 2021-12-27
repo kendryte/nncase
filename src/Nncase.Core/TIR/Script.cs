@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
+using System.Runtime.CompilerServices;
 
 namespace Nncase.TIR
 {
@@ -179,10 +180,8 @@ namespace Nncase.TIR
         /// <returns>the inner for loop.</returns>
         public static GridWrapper Grid(out Var i, out Var j, (Expr i, Expr j) ends)
         {
-            i = new Var(TensorType.Scalar(DataType.Int32));
-            j = new Var(TensorType.Scalar(DataType.Int32));
-            var for_i = new For(i, ends.i, ForMode.Serial);
-            var for_j = new For(j, ends.j, ForMode.Serial);
+            var for_i = T.Serial(out i, ends.i);
+            var for_j = T.Serial(out j, ends.j);
             for_i.Add(for_j);
             return new GridWrapper(for_i, for_j);
         }
@@ -274,10 +273,10 @@ namespace Nncase.TIR
             return new Buffer(shape, name, data_handle, strides, elem_offset, scope, data_alignment, offset_factor, buffer_mode);
         }
 
-        public class FunctionWrapper
+        public class FunctionBuilder
         {
             readonly Function func;
-            public FunctionWrapper(Function func)
+            public FunctionBuilder(Function func)
             {
                 this.func = func;
             }
@@ -311,7 +310,7 @@ namespace Nncase.TIR
         /// <param name="name"></param>
         /// <param name="parameters"></param>
         /// <returns></returns>
-        public static FunctionWrapper PrimFunc(string name, params Expr[] parameters)
+        public static FunctionBuilder PrimFunc(string name, params Expr[] parameters)
         {
             return new(new Function(name, new Sequential(), parameters));
         }
@@ -326,9 +325,5 @@ namespace Nncase.TIR
         {
             return Var.Handle(name, dtype);
         }
-
-        // public static Expr Cast(Expr input) => IR.F.
-
-
     }
 }

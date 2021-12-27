@@ -123,9 +123,9 @@ namespace Nncase.IR
             {
                 Body = (TIR.Sequential)Visit(expr.Body),
                 InitBody = (TIR.Sequential)Visit(expr.InitBody),
-                IterVarPairs = new(expr.IterVarPairs.Select(t => (
+                IterVarBinds = new(expr.IterVarBinds.Select(t => (
                  (TIR.IterVar)Visit(t.iterVar),
-                 (Var)Visit(t.loopVar)
+                 t.loop
                 ))),
                 Reads = new(expr.Reads.Select(VisitBufferRegion)),
                 Writes = new(expr.Writes.Select(VisitBufferRegion)),

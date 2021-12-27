@@ -88,6 +88,7 @@ namespace Nncase.IR
             /// current writer.
             /// </summary>
             TextWriter Writer;
+
             TextWriter rootWriter;
 
             /// <summary>
@@ -196,6 +197,15 @@ namespace Nncase.IR
             /// <param name="value"></param>
             public void AppendLine(string value) => Writer.WriteLine(value);
             public void AppendLine(StringBuilder value) => Writer.WriteLine(value);
+
+            /// <summary>
+            /// remove last char.
+            /// </summary>
+            public void RemoveLast()
+            {
+                var sb = ScopeStack.Peek().Item1;
+                sb.Remove(sb.Length - 1, 1);
+            }
 
             /// <summary>
             /// insert the indent
@@ -401,6 +411,7 @@ namespace Nncase.IR
 
             /// <inheritdoc/>
             public override string VisitType(AnyType type) => "any";
+
             /// <inheritdoc/>
             public override string VisitType(CallableType type) =>
                 $"({string.Join(", ", type.Parameters.Select(VisitType))}) -> {VisitType(type.ReturnType)}";
@@ -409,9 +420,11 @@ namespace Nncase.IR
             /// <inheritdoc/>
             public override string VisitType(TensorType type) =>
                 $"{DataTypes.GetDisplayName(type.DType)}{type.Shape}";
+
             /// <inheritdoc/>
             public override string VisitType(TupleType type) =>
                 $"({string.Join(", ", type.Fields.Select(VisitType))})";
+
             /// <inheritdoc/>
             public override string VisitType(HandleType type)
             {

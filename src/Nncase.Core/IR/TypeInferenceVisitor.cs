@@ -82,7 +82,7 @@ namespace Nncase.IR
         public override IRType VisitLeaf(Function expr)
         {
             var paramTypes = expr.Parameters.Select(Visit).ToArray();
-            var type = new CallableType(Visit(expr.Body), ImmutableArray.Create(paramTypes));
+            var type = new CallableType(expr.Body is Sequential seq ? Visit(seq) : Visit(expr.Body), ImmutableArray.Create(paramTypes));
             SetCheckedType(expr, type);
             return type;
         }
@@ -157,7 +157,7 @@ namespace Nncase.IR
             IRType type;
             foreach (var i in Enumerable.Range(0, expr.Fields.Count))
             {
-                VerifySubField(expr, expr.Fields[i], Utility.IsUnit());
+                VerifySubField(expr, expr.Fields[i]);
             }
             if (expr.CheckedType is not null) { return expr.CheckedType; }
             type = TupleType.Void;
@@ -183,10 +183,10 @@ namespace Nncase.IR
         public override IRType VisitLeaf(Block expr)
         {
             IRType type;
-            foreach (var i in Enumerable.Range(0, expr.IterVarPairs.Count))
+            foreach (var i in Enumerable.Range(0, expr.IterVarBinds.Count))
             {
-                VerifySubField(expr, expr.IterVarPairs[i].iterVar, Utility.IsIntegralScalar());
-                VerifySubField(expr, expr.IterVarPairs[i].loopVar, Utility.IsIntegralScalar());
+                VerifySubField(expr, expr.IterVarBinds[i].iterVar, Utility.IsIntegralScalar());
+                VerifySubField(expr, expr.IterVarBinds[i].loop.LoopVar, Utility.IsIntegralScalar());
             }
             VerifySubField(expr, expr.InitBody, Utility.IsUnit());
             VerifySubField(expr, expr.Body, Utility.IsUnit());

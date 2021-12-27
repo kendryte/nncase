@@ -278,7 +278,7 @@ namespace Nncase.TIR
                 if (!init.Value.All(x => (
                   x is ProducerLoad) ||
                    ((x is Const con) &&
-                    (con.IsIntImm() || con.IsFloatImm()))))
+                    (Utility.IsFloatScalar().MatchLeaf(con.CheckedType) || Utility.IsIntegralScalar().MatchLeaf(con.CheckedType)))))
                 {
                     throw new InvalidOperationException("init can only be a IntImm, FloatImm or ProducerLoad");
                 }
@@ -358,13 +358,13 @@ namespace Nncase.TIR
     /// <param name="Name"> The name_hint of the block.</param>
     /// <param name="Body"> block body </param>
     /// <param name="InitBody">the Block init statement.</param>
-    /// <param name="IterVarPairs">The {iter variables :  corresponding values of the iter vars} of the block.</param>
+    /// <param name="IterVarBinds">The {iter variables :  corresponding values of the iter vars} of the block.</param>
     /// <param name="Reads">The read buffer regions of the block.</param>
     /// <param name="Writes">The write buffer regions of the block.</param>
     /// <param name="AllocBuffers">The buffer allocated in the block.</param>
     /// <param name="Predicate">The predicate of the block realization, the block will only be executed when the predicate is true.</param>
     public sealed record Block(string Name, Sequential Body, Sequential InitBody,
-                                IRArrayList<(IterVar iterVar, Var loopVar)> IterVarPairs,
+                                IRArrayList<(IterVar iterVar, For loop)> IterVarBinds,
                                 IRArrayList<BufferRegion> Reads,
                                 IRArrayList<BufferRegion> Writes,
                                 IRArrayList<Buffer> AllocBuffers, Expr Predicate) : BodyExpr(Body)
@@ -376,9 +376,8 @@ namespace Nncase.TIR
         /// <param name="Name">block name.</param>
         public Block(string Name) : this(Name, new(), new(), new(), new(), new(), new(), true) { }
 
-        public Block Remap(out IterVar vi, out IterVar vj, (For i, For j) loops, string iter_types)
+        public Block Remap(out IterVar vi, For fi, char iter_type)
         {
-
             var toMode = (char x) => x switch
             {
                 'S' => IterMode.DataPar,
@@ -386,16 +385,15 @@ namespace Nncase.TIR
                 _ => throw new NotSupportedException("Only Support \"S\" (for Spatial) or \"R\" ( Reduce)"),
             };
 
-            if (iter_types.Length != 2)
-            {
-                throw new InvalidOperationException("The iter_types Length Must Equal 2!");
-            }
-
-            vi = new IterVar(TensorType.Scalar(DataType.Int32), loops.i.Dom, toMode(iter_types[0]), loops.i.LoopVar);
-            vj = new IterVar(TensorType.Scalar(DataType.Int32), loops.j.Dom, toMode(iter_types[0]), loops.j.LoopVar);
-            IterVarPairs.Add((vi, loops.i.LoopVar));
-            IterVarPairs.Add((vj, loops.j.LoopVar));
+            vi = new IterVar(TensorType.Scalar(DataType.Int32), fi.Dom, toMode(iter_type), fi.LoopVar);
+            IterVarBinds.Add((vi, fi));
             return this;
+        }
+
+        public Block Remap(out IterVar vi, out IterVar vj, (For i, For j) loops, string iter_types)
+        {
+            return Remap(out vi, loops.i, iter_types[0]).
+            Remap(out vj, loops.j, iter_types[1]);
         }
 
         /// <summary>

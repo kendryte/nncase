@@ -19,14 +19,15 @@ namespace Nncase.Transform.TIRPass
 
     class ConvertBlocksToOpaque : ExprMatutor
     {
-        // public override Expr Visit(Var expr)
-        // {
-        // }
+        public override Expr Visit(IterVar expr)
+        {
+            return expr.Value;
+        }
 
         public override Expr Visit(Block expr)
         {
             var newblk = (Block)base.Visit(expr);
-            newblk.IterVarPairs.Clear();
+            newblk.IterVarBinds.Clear();
             return newblk;
         }
     }

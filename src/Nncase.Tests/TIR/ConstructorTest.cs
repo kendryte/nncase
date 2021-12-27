@@ -1,8 +1,10 @@
 using Xunit;
 using System.IO;
 using static Nncase.IR.F.Math;
+using static Nncase.IR.F.Tensors;
 using Nncase.TIR;
 using Nncase.IR;
+
 
 
 namespace Nncase.Tests.TIRTest
@@ -63,15 +65,18 @@ namespace Nncase.Tests.TIRTest
                 T.Serial(out var j, m, out var fj).Add(
                   T.Block("init").
                   Remap(out var vi, out var vj, (fi, fj), "SS").
-                  Init(T.Store(A[vi, vj], 1)).Add(
-                    T.Store(A[vi, vj], vi + vj)
+                  Init(
+                    T.Store(A[vi, vj], 1.0f)
+                  ).Add(
+                    T.Store(A[vi, vj], Cast(vi + vj, DataType.Float32))
                   )
                 )
-              )
+              ),
+              n + m
             );
+            func.InferenceType();
             var dumpPath = Path.Combine(DumpDirPath, "TestBlockConstructor");
             func.DumpAsScript("pre", dumpPath);
-            Assert.True(func.InferenceType());
         }
     }
 }

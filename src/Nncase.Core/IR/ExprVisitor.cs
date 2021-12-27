@@ -173,10 +173,10 @@ namespace Nncase.IR
         {
             if (!_exprMemo.TryGetValue(expr, out var result))
             {
-                foreach (var (iterVar, loopVar) in expr.IterVarPairs)
+                foreach (var (iterVar, loop) in expr.IterVarBinds)
                 {
                     Visit(iterVar);
-                    Visit(loopVar);
+                    Visit(loop.LoopVar);
                 }
                 Visit(expr.InitBody);
                 Visit(expr.Body);

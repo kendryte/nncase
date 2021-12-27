@@ -56,9 +56,9 @@ namespace Nncase.TIR
         /// 1. each visit method create a new scope 
         /// 2. each block expr write it's string with indent!
         /// 3. each leaf expr eg. const/var write without indent!
-        /// 4. each method write final without newline!
+        /// 4. each method write without newline!
         /// </summary>
-        private class ScriptDumpVisitor : ExprFunctor<StringBuilder, StringBuilder>
+        private class ScriptDumpVisitor : ExprFunctor<StringBuilder, string>
         {
             private readonly IRPrinter.ScopeWriter Scope;
 
@@ -101,7 +101,7 @@ namespace Nncase.TIR
                 if (Docs.TryGetValue(expr, out var doc)) { return doc; }
                 if (expr.ValueType is TensorType ttype && ttype.IsScalar)
                 {
-                    doc = new($"{expr}{(expr.ValueType is null ? "?" : VisitType(expr.ValueType))}");
+                    doc = new($"{expr}");
                 }
                 else
                 {
@@ -117,9 +117,12 @@ namespace Nncase.TIR
                 if (Docs.TryGetValue(expr, out var doc)) { return doc; }
                 Scope.Push();
                 // 1. Function signature
-                Scope.IndWrite($"def {expr.Name}({string.Join(", ", expr.Parameters.Select(Visit))})");
+
+                Scope.IndWrite($"T.PrimFunc(\"{expr.Name}\", {string.Join(", ", expr.Parameters.Select(Visit))}).Add(");
+                Scope.Append(" // " + VisitType(expr.CheckedType!));
                 // 2. Function body
                 Scope.Append(Visit(expr.Body));
+                Scope.IndWrite(");");
                 doc = Scope.Pop();
                 Docs.Add(expr, doc);
                 // 3. only write all doc into root scope
@@ -176,10 +179,12 @@ namespace Nncase.TIR
                 // the for loop will not used by other expression, so we need save the whole `For` il
                 Scope.Push();
                 // 1. For Loop signature
-                Scope.Append($"for {VisitLoopVar(expr.LoopVar)} in range({Visit(expr.Dom.Min)}, {Visit(expr.Dom.Max)})");
-                if (expr.Mode != ForMode.Serial) { Scope.Append($" \"{expr.Mode}\""); }
+                var i_name = VisitLoopVar(expr.LoopVar);
+                Scope.Append($"T.{expr.Mode}(out var {i_name}, new Range({Visit(expr.Dom.Min)}, {Visit(expr.Dom.Max)}), out var f{i_name}).Add(");
+                Scope.Append(" // " + VisitType(expr.CheckedType!));
                 // 2. For Body
                 Scope.Append(Visit(expr.Body));
+                Scope.IndWrite(")");
                 doc = Scope.Pop();
                 Docs.Add(expr, doc);
                 return doc;
@@ -189,7 +194,7 @@ namespace Nncase.TIR
             {
                 if (Docs.TryGetValue(expr, out var doc)) { return doc; }
                 Scope.Push();
-                Scope.AppendLine(":");
+                Scope.AppendLine("");
                 // 1. Foreach Body
                 using (Scope.IndentUp())
                 {
@@ -208,17 +213,19 @@ namespace Nncase.TIR
             {
                 if (Docs.TryGetValue(expr, out var doc)) { return doc; }
                 Scope.Push();
-                Scope.AppendLine($"with block(\"{expr.Name}\"):");
-                foreach (var (iterVar, bindVar) in expr.IterVarPairs)
+                // 1. write head
+                Scope.AppendLine($"T.Block(\"{expr.Name}\").");
+                // 2. write iter var bind
+                foreach (var (iterVar, loop) in expr.IterVarBinds)
                 {
                     string mode_doc = string.Empty;
                     switch (iterVar.Mode)
                     {
                         case IterMode.DataPar:
-                            mode_doc = "range";
+                            mode_doc = "S";
                             break;
                         case IterMode.CommReduce:
-                            mode_doc = "reduce";
+                            mode_doc = "R";
                             break;
                         case IterMode.Ordered:
                             mode_doc = "scan";
@@ -229,23 +236,33 @@ namespace Nncase.TIR
                         default:
                             throw new NotSupportedException($"{iterVar.Mode}");
                     }
-                    Scope.IndWriteLine($"  {VisitSymbolVar(iterVar, bindVar)} = bind({Visit(iterVar.Value)}, {mode_doc}({Visit(iterVar.Dom.Min)}, {Visit(iterVar.Dom.Max)}))");
+                    Scope.IndWriteLine($"Remap(out var {VisitSymbolVar(iterVar, loop.LoopVar)}, f{VisitLoopVar(loop.LoopVar)}, \'{mode_doc}\').");
                 }
+                // 3. write init body
+                if (expr.InitBody.Count > 0)
+                {
+                    Scope.IndWrite("Init().(");
+                    using (Scope.IndentUp())
+                    {
+                        Scope.Append(Visit(expr.InitBody));
+                    }
+                    Scope.IndWrite(").");
+                }
+                else
+                {
+                    Scope.RemoveLast();
+                }
+                // 4. wirte body
+                Scope.Append("Add(");
+                Scope.AppendLine(" // " + VisitType(expr.CheckedType!));
                 using (Scope.IndentUp())
                 {
-                    if (expr.InitBody.Count > 0)
-                    {
-                        Scope.IndWrite("with init()");
-                        using (Scope.IndentUp())
-                        {
-                            Scope.Append(Visit(expr.InitBody));
-                        }
-                    }
                     foreach (var item in expr.Body)
                     {
                         Scope.IndWriteLine(Visit(item));
                     }
                 }
+                Scope.IndWrite(")");
                 doc = Scope.Pop();
                 Docs.Add(expr, doc);
                 return doc;
@@ -271,19 +288,32 @@ namespace Nncase.TIR
                 return doc;
             }
 
-            /// <inheritdoc/>
-            public override StringBuilder VisitType(TensorType type)
-            {
-                if (DataTypes.IsFloat(type.DType)) return new("f");
-                if (DataTypes.IsIntegral(type.DType)) return new("");
-                throw new NotSupportedException($"{type.DType}");
-            }
-
             public override StringBuilder Visit(IterVar expr)
             {
                 if (Docs.TryGetValue(expr, out var doc)) { return doc; }
                 throw new InvalidOperationException("The IterVar Must Assgin Name In Visit(Block), You Need Check The IterVar Binding!");
             }
+
+            /// <inheritdoc/>
+            public override string VisitType(TensorType type) =>
+                $"{DataTypes.GetDisplayName(type.DType)}{type.Shape}";
+
+            /// <inheritdoc/>
+            public override string VisitType(CallableType type) =>
+                $"({string.Join(", ", type.Parameters.Select(VisitType))}) -> {VisitType(type.ReturnType)}";
+
+            /// <inheritdoc/>
+            public override string VisitType(TupleType type) =>
+                $"({string.Join(", ", type.Fields.Select(VisitType))})";
+
+            /// <inheritdoc/>
+            public override string VisitType(HandleType type)
+            {
+                return $"Handle:{DataTypes.GetDisplayName(type.DType)}";
+            }
+
+            /// <inheritdoc/>
+            public override string VisitType(InvalidType type) => $"Invalid:{type.Reason}";
         }
     }
 }
