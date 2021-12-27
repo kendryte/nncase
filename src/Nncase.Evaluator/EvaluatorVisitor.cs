@@ -140,6 +140,7 @@ namespace Nncase.Evaluator.Ops
                 IR.Tensors.Stack st => VisitStack(st),
                 Transpose tr => VisitTranspose(tr),
                 Unary un => VisitUnary(un),
+                Clamp cl => VisitClamp(cl),
                 _ => throw new NotImplementedException($"{expr.Target}")
             });
         }
