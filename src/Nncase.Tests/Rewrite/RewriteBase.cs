@@ -57,7 +57,7 @@ namespace Nncase.Tests.ReWriteTest
         }
 
         public Expr ApplyFoldConstCallRewrite(Expr expr) =>
-            DataFlowRewrite.Rewrite(expr, new[] { new Transform.DataFlow.Rules.FoldConstCall() }, passOptions);
+            DataFlowRewrite.Rewrite(expr, new[] { new Transform.Rule.FoldConstCall() }, passOptions);
     }
 
     public abstract class IRewriteCase

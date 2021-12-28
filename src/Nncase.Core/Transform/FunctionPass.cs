@@ -44,5 +44,22 @@ namespace Nncase.Transform
         /// <param name="function">Target function.</param>
         /// <param name="options">Options.</param>
         protected abstract Function RunCore(Function function, RunPassOptions options);
+
+        /// <summary>
+        /// the callback function you can custom process func with run pass options
+        /// </summary>
+        /// <param name="func"> func without run pass</param>
+        /// <param name="options"></param>
+        protected virtual void OnPassStart(Function func, RunPassOptions options)
+        {
+        }
+
+        /// <summary>
+        /// the callback function you can custom process func with run pass options
+        /// </summary>
+        /// <param name="func"> func with rewrited. </param>
+        /// <param name="options"></param>
+        protected virtual void OnPassEnd(Function func, RunPassOptions options)
+        {}
     }
 }

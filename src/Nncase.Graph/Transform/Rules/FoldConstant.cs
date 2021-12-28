@@ -12,7 +12,7 @@ using Nncase.IR;
 using Nncase.Evaluator;
 using Nncase.IR.Tensors;
 
-namespace Nncase.Transform.DataFlow.Rules
+namespace Nncase.Transform.Rule
 {
     public class FoldConstCall : PatternRule
     {

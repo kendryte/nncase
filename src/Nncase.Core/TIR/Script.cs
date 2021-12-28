@@ -246,7 +246,7 @@ namespace Nncase.TIR
         public static Buffer DeclBuffer(IR.Tuple shape, DataType? dtype = null, string name = "buffer", Var? data_handle = null, IR.Tuple? strides = null, Expr? elem_offset = null, string scope = "", int data_alignment = -1, int offset_factor = 0, BufferMode buffer_mode = BufferMode.Default)
         {
             dtype ??= DataType.Float32;
-            strides ??= new();
+
             if (offset_factor != 0 && elem_offset is null)
             {
                 elem_offset = Var.Scalar($"{name}_elem_offset", shape[0].CheckedDataType);
@@ -259,17 +259,20 @@ namespace Nncase.TIR
             elem_offset ??= (Const)0;
             if (data_alignment <= 0)
             {
-                data_alignment = 128;
+                data_alignment = 128; // TODO add useage.
             }
             if (offset_factor == 0)
             {
                 offset_factor = 1;
             }
 
-            if (buffer_mode == BufferMode.AutoBroadcast && shape.Count > 0 && strides is null)
-            {
-                strides = new(shape.Select(e => new Var("stride", TensorType.Scalar(e.CheckedDataType))));
-            }
+            // compute the default stride.
+            Expr acc = 1;
+            Expr prod(Expr dim) { acc = dim * acc; return acc; }
+            strides ??= new(new Expr[] { 1 }.Concat(
+              Enumerable.Range(0, shape.Count - 1).Reverse().Select(i => prod(shape[i + 1]))
+            ).Reverse());
+
             return new Buffer(shape, name, data_handle, strides, elem_offset, scope, data_alignment, offset_factor, buffer_mode);
         }
 
@@ -324,6 +327,57 @@ namespace Nncase.TIR
         public static Var Handle(string name, DataType dtype)
         {
             return Var.Handle(name, dtype);
+        }
+
+        public class IfThenElseBuilder
+        {
+            readonly Sequential ThenBranch;
+            readonly Sequential ElseBranch;
+            readonly Expr Condition;
+            public IfThenElseBuilder(Expr condition)
+            {
+                ThenBranch = new();
+                ElseBranch = new();
+                Condition = condition;
+            }
+
+            public IfThenElseBuilder Then(params Expr[] exprs)
+            {
+                foreach (var item in exprs)
+                {
+                    ThenBranch.Add(item);
+                }
+                return this;
+            }
+
+            public IfThenElseBuilder Else(params Expr[] exprs)
+            {
+                foreach (var item in exprs)
+                {
+                    ElseBranch.Add(item);
+                }
+                return this;
+            }
+
+            public IfThenElse ToExpr()
+            {
+                return new IfThenElse(Condition, ThenBranch, ElseBranch);
+            }
+
+            public static implicit operator Expr(IfThenElseBuilder builder)
+            {
+                return builder.ToExpr();
+            }
+        }
+
+        /// <summary>
+        /// rethen the IfThenElseBuilder. 
+        /// </summary>
+        /// <param name="condition"></param>
+        /// <returns></returns>
+        public static IfThenElseBuilder If(Expr condition)
+        {
+            return new(condition);
         }
     }
 }

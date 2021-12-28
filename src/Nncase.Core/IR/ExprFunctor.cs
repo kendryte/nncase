@@ -37,6 +37,7 @@ namespace Nncase.IR
                 TIR.Block block => Visit(block),
                 TIR.BufferLoad bload => Visit(bload),
                 TIR.BufferStore bstore => Visit(bstore),
+                TIR.IfThenElse ift => Visit(ift),
                 _ => DefaultVisit(expr),
             };
         }
@@ -124,6 +125,13 @@ namespace Nncase.IR
         /// <param name="expr">BufferStore expression.</param>
         /// <returns>Result.</returns>
         public virtual TExprResult Visit(TIR.BufferStore expr) => DefaultVisit(expr);
+
+        /// <summary>
+        /// Visit IfThenElse expression.
+        /// </summary>
+        /// <param name="expr">IfThenElse expression.</param>
+        /// <returns>Result.</returns>
+        public virtual TExprResult Visit(TIR.IfThenElse expr) => DefaultVisit(expr);
 
         /// <summary>
         /// Default visit routine.

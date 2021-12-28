@@ -11,7 +11,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR;
 using Nncase.Transform;
-using Nncase.Transform.DataFlow.Rules;
+
 
 namespace Nncase.Cli.Commands
 {

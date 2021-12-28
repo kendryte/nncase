@@ -6,7 +6,7 @@ using static Nncase.Transform.RulesFactory;
 using Nncase.Evaluator;
 
 
-namespace Nncase.Transform.DataFlow.Rules
+namespace Nncase.Transform.Rule
 {
     public static partial class SimplifyFactory
     {

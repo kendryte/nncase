@@ -5,20 +5,12 @@ using System;
 using Nncase.TIR;
 using Nncase.IR;
 
-namespace Nncase.Transform.TIRPass
+namespace Nncase.Transform.Mutator
 {
-    public class ConvertBlocksToOpaquePass : FunctionPass
-    {
-        public ConvertBlocksToOpaquePass() : base("LowerBufferLoad") { }
-
-        /// <inheritdoc/>
-        protected override Function RunCore(Function function, RunPassOptions options)
-        {
-            return (Function)new ConvertBlocksToOpaque().Visit(function);
-        }
-    }
-
-    class ConvertBlocksToOpaque : ExprMatutor
+    /// <summary>
+    /// Substitute all the block vars with the PrimExprs they are bound to, indicated by the corresponding iter_values in BlockRealize, for opaque blocks by removing all . the iter_values in BlockRealize and iter_vars in Block.
+    /// </summary>
+    public class ConvertBlocksToOpaque : ExprMutator
     {
         public override Expr Visit(IterVar expr)
         {
@@ -31,7 +23,7 @@ namespace Nncase.Transform.TIRPass
             {
                 Body = (TIR.Sequential)Visit(expr.Body),
                 InitBody = (TIR.Sequential)Visit(expr.InitBody),
-                IterVarBinds = new(),
+                IterVars = new(),
                 Reads = new(expr.Reads.Select(VisitBufferRegion)),
                 Writes = new(expr.Writes.Select(VisitBufferRegion)),
                 AllocBuffers = new(expr.AllocBuffers.Select(VisitBuffer)),

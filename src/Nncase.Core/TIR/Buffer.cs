@@ -59,7 +59,7 @@ namespace Nncase.TIR
         /// The shape of the buffer
         /// </summary>
         public IR.Tuple Shape;
-        
+
         /// <summary>
         /// optional name of the buffer 
         /// </summary>
@@ -86,7 +86,7 @@ namespace Nncase.TIR
         ///  elem_offset is guaranteed to be multiple of offset_factor.
         /// </summary>
         public int OffsetFactor;
-        
+
         /// <summary>
         /// buffer type
         /// </summary>
@@ -165,88 +165,6 @@ namespace Nncase.TIR
             return new Call(new Builtin.AccessPtr(accType, access_mode), Handle, elem_offset, extent);
         }
 
-        public Expr CalcElemOffset(IR.Tuple index)
-        {
-            var base_offset = ElemOffset;
-            if (Strides.Count == 0)
-            {
-                if (Shape.Count == 0 && index.Count == 1)
-                {
-                    // if is scalar, only can index 0
-                    if (!(index[0] is Const con && con.ToScalar<int>() == 0))
-                    {
-                        throw new InvalidOperationException($"The Scalar Only Can Index 0, But You Give {index[0]}");
-                    }
-                }
-                else
-                {
-                    if (Shape.Count != index.Count)
-                    {
-                        throw new InvalidOperationException($"The Index {index.Count} Not Match Shape {Shape.Count}");
-                    }
-                    if (index.Count > 0)
-                    {
-                        var offset = index[0];
-                        for (int i = 1; i < index.Count; i++)
-                        {
-                            offset = (offset * Shape[i]) + index[i];
-                        }
-                        base_offset = base_offset + offset;
-                    }
-                }
-            }
-            else
-            {
-                if (Strides.Count != index.Count)
-                {
-                    throw new InvalidOperationException($"The Index {index.Count} Not Match Strides {Strides.Count}");
-                }
-                if ((Const)0 == base_offset)
-                    base_offset = index[0] * Strides[0];
-                else
-                    base_offset = base_offset + (index[0] * Strides[0]);
-                if (index.Count > 0)
-                {
-                    for (int i = 1; i < index.Count; i++)
-                        base_offset = base_offset + (index[i] * Strides[0]);
-                }
-            }
-            return base_offset;
-        }
-
-        /// <summary>
-        /// compute the load value offset in buffer
-        /// </summary>
-        /// <param name="index"></param>
-        /// <returns></returns>
-        public Expr CalcOffset(IR.Tuple index)
-        {
-            var offset = CalcElemOffset(index);
-            return offset;
-        }
-
-        /// <summary>
-        /// convert the indices to int expr
-        /// </summary>
-        /// <param name="indices"></param>
-        /// <returns> finally index. </returns>
-        /// <exception cref="InvalidOperationException"></exception>
-        private Expr linearIndices(IEnumerable<Expr> indices)
-        {
-            if (indices.Count() != Shape.Count)
-            {
-                throw new InvalidOperationException($"Index Size {indices.Count()} Does Not Match Shape Size {Shape.Count}!");
-            }
-            Expr dim_size = 1;
-            Expr lidx = 0;
-            foreach (var (dim, idx) in Enumerable.Zip(Shape.Reverse(), indices.Reverse()))
-            {
-                lidx = lidx + (idx * dim_size);
-                dim_size = dim_size * dim;
-            }
-            return lidx;
-        }
-
         /// <summary>
         /// Iter Var subscript create BufferLoad
         /// </summary>
@@ -288,23 +206,66 @@ namespace Nncase.TIR
         }
 
         /// <summary>
-        /// Elem Set, Because we can't return the store expression in the property setter!
+        /// value load.
         /// </summary>
-        /// <param name="indices_with_value"> the last element is value, others are index</param>
-        /// <returns> Store expression </returns>
-        // public Expr Store(params Expr[] indices_with_value)
-        // {
-        //     if (indices_with_value.Length <= 1)
-        //     {
-        //         throw new InvalidOperationException("The Buffer Store Must Have Index and Value !");
-        //     }
-        //     var index = linearIndices(indices_with_value.SkipLast(1));
-        //     if (Dtype.Lanes > 1)
-        //     {
-        //         index = T.Ramp(index * Dtype.Lanes, 1, Dtype.Lanes);
-        //     }
-        //     return T.Store(Handle, indices_with_value.Last(), index);
-        // }
+        /// <param name="indices"></param>
+        /// <returns></returns>
+        public Expr VLoad(IRArray<Expr> indices)
+        {
+            return T.Load(Handle, LoadOffset(indices));
+        }
+        
+        /// <summary>
+        /// value store.
+        /// </summary>
+        /// <param name="indices"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public Expr VStore(IRArray<Expr> indices, Expr value)
+        {
+            return T.Store(Handle, LoadOffset(indices), value);
+        }
+
+
+        /// <summary>
+        /// IndicesOffset only calc the element based offset. 
+        /// NOTE it's ignore the data's lanes.
+        /// </summary>
+        /// <param name="indices"> expr indices. </param>
+        /// <returns></returns>
+        public Expr IndicesOffset(IRArray<Expr> indices)
+        {
+            var offset = ElemOffset;
+            if (indices.Count != Strides.Count || indices.Count != Shape.Count)
+            {
+                throw new InvalidOperationException("The indices Length Not Equal Stride Or Shape!");
+            }
+            for (int i = 0; i < indices.Count; i++)
+            {
+                offset = offset + indices[i] * Strides[i];
+            }
+            return offset;
+        }
+
+        /// <summary>
+        /// get the load value index
+        /// NOTE we will consider about the lanes.
+        /// </summary>
+        /// <param name="indices"> the indices expr.</param>
+        /// <returns>the new index expression.</returns>
+        Expr LoadOffset(IRArray<Expr> indices)
+        {
+            var offset = IndicesOffset(indices);
+            if (Dtype.Lanes != 1)
+            {   // 🌰 the tensor A is [3,4] f32x3, we load A[1,1]
+                // the A[1,1] element offset is 5 
+                // the A[1,1] memory offset is 5x3
+                offset = offset * (Const)Dtype.Lanes;
+                // then we need continuous loading 3 x float32
+                return T.Ramp(offset, 1, Dtype.Lanes);
+            }
+            return offset;
+        }
     }
 
     public interface DataProducer

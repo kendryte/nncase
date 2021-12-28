@@ -183,10 +183,9 @@ namespace Nncase.IR
         public override IRType VisitLeaf(Block expr)
         {
             IRType type;
-            foreach (var i in Enumerable.Range(0, expr.IterVarBinds.Count))
+            foreach (var i in Enumerable.Range(0, expr.IterVars.Count))
             {
-                VerifySubField(expr, expr.IterVarBinds[i].iterVar, Utility.IsIntegralScalar());
-                VerifySubField(expr, expr.IterVarBinds[i].loop.LoopVar, Utility.IsIntegralScalar());
+                VerifySubField(expr, expr.IterVars[i], Utility.IsIntegralScalar());
             }
             VerifySubField(expr, expr.InitBody, Utility.IsUnit());
             VerifySubField(expr, expr.Body, Utility.IsUnit());
@@ -223,6 +222,18 @@ namespace Nncase.IR
             {
                 type = TupleType.Void;
             }
+            SetCheckedType(expr, type);
+            return type;
+        }
+        
+        /// <inheritdoc/>
+        public override IRType VisitLeaf(IfThenElse expr)
+        {
+            VerifySubField(expr, expr.Condition, Utility.IsIntegralScalar());
+            VerifySubField(expr, expr.Then, Utility.IsUnit());
+            VerifySubField(expr, expr.Else, Utility.IsUnit());
+            if (expr.CheckedType is not null) { return expr.CheckedType; }
+            IRType type = TupleType.Void;
             SetCheckedType(expr, type);
             return type;
         }

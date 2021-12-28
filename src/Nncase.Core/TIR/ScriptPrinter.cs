@@ -54,9 +54,22 @@ namespace Nncase.TIR
         /// <summary>
         /// NOTE: 
         /// 1. each visit method create a new scope 
-        /// 2. each block expr write it's string with indent!
-        /// 3. each leaf expr eg. const/var write without indent!
-        /// 4. each method write without newline!
+        /// 2. each block expr's start with newline and indent
+        /// 
+        /// <example>
+        /// `indent` if (x){
+        /// `indent` <- the current block start from here.
+        /// `indent` }<- end without new line.
+        /// </example>
+        /// 
+        /// 3. each block expr's end without newline
+        /// <example>
+        /// `indent` if (x){
+        /// `indent` `indent` x++;
+        /// `indent` }<- end without new line.
+        /// </example>
+        /// 
+        /// 4. in block expr, each line expr like const/var write without indent!
         /// </summary>
         private class ScriptDumpVisitor : ExprFunctor<StringBuilder, string>
         {
@@ -155,21 +168,13 @@ namespace Nncase.TIR
             /// visit loop var , we will assgin the var new name.
             /// </summary>
             /// <param name="expr"></param>
+            /// <param name="prefix"> the prefix for this var name.</param>
             /// <returns></returns>
-            public StringBuilder VisitLoopVar(Var expr)
+            public StringBuilder VisitLoopVar(Expr expr, string prefix = "")
             {
                 if (Docs.TryGetValue(expr, out var doc)) { return doc; }
-                doc = new(Scope.GetUniqueLoopVarName(expr));
+                doc = new(Scope.GetUniqueLoopVarName(expr, prefix));
                 Docs.Add(expr, doc);
-                return doc;
-            }
-
-            public StringBuilder VisitSymbolVar(IterVar symoblVar, Var bindVar)
-            {
-                if (Docs.TryGetValue(symoblVar, out var doc)) { return doc; }
-                var bdoc = VisitLoopVar(bindVar);
-                doc = new($"v{bdoc}");
-                Docs.Add(symoblVar, doc);
                 return doc;
             }
 
@@ -181,7 +186,7 @@ namespace Nncase.TIR
                 Scope.Push();
                 // 1. For Loop signature
                 var i_name = VisitLoopVar(expr.LoopVar);
-                Scope.Append($"T.{expr.Mode}(out var {i_name}, new Range({Visit(expr.Dom.Min)}, {Visit(expr.Dom.Max)}), out var f{i_name}).Add(");
+                Scope.Append($"T.{expr.Mode}(out var {i_name}, ({Visit(expr.Dom.Min)}, {Visit(expr.Dom.Max)}), out var f{i_name}).Add(");
                 Scope.Append(" // " + VisitType(expr.CheckedType!));
                 // 2. For Body
                 Scope.Append(Visit(expr.Body));
@@ -217,7 +222,7 @@ namespace Nncase.TIR
                 // 1. write head
                 Scope.AppendLine($"T.Block(\"{expr.Name}\").");
                 // 2. write iter var bind
-                foreach (var (iterVar, loop) in expr.IterVarBinds)
+                foreach (var iterVar in expr.IterVars)
                 {
                     string mode_doc = string.Empty;
                     switch (iterVar.Mode)
@@ -237,7 +242,8 @@ namespace Nncase.TIR
                         default:
                             throw new NotSupportedException($"{iterVar.Mode}");
                     }
-                    Scope.IndWriteLine($"Remap(out var {VisitSymbolVar(iterVar, loop.LoopVar)}, f{VisitLoopVar(loop.LoopVar)}, \'{mode_doc}\').");
+                    // Scope.IndWriteLine($"Remap(out var {VisitSymbolVar(iterVar, loop.LoopVar)}, f{VisitLoopVar(loop.LoopVar)}, \'{mode_doc}\').");
+                    Scope.IndWriteLine($"Bind(out var {Visit(iterVar)}, ({Visit(iterVar.Dom.Min)}, {Visit(iterVar.Dom.Max)}), IterMode.{iterVar.Mode}, {Visit(iterVar.Value)}).");
                 }
                 // 3. write init body
                 if (expr.InitBody.Count > 0)
@@ -289,10 +295,43 @@ namespace Nncase.TIR
                 return doc;
             }
 
+            /// <inheritdoc/>
             public override StringBuilder Visit(IterVar expr)
             {
                 if (Docs.TryGetValue(expr, out var doc)) { return doc; }
-                throw new InvalidOperationException("The IterVar Must Assgin Name In Visit(Block), You Need Check The IterVar Binding!");
+                return VisitLoopVar(expr, "v");
+            }
+
+            /// <inheritdoc/>
+            public override StringBuilder Visit(IfThenElse expr)
+            {
+                if (Docs.TryGetValue(expr, out var doc)) { return doc; }
+                Scope.Push();
+                Scope.Append($"T.If({Visit(expr.Condition)}).Then(");
+                Scope.AppendLine($" // {VisitType(expr.CheckedType!)}");
+                using (Scope.IndentUp())
+                {
+                    foreach (var item in (Sequential)expr.Then)
+                    {
+                        Scope.IndWriteLine(Visit(item));
+                    }
+                }
+                Scope.IndWrite(")");
+                if (((Sequential)expr.Else).Count > 0)
+                {
+                    Scope.AppendLine(".Then(");
+                    using (Scope.IndentUp())
+                    {
+                        foreach (var item in (Sequential)expr.Else)
+                        {
+                            Scope.IndWriteLine(Visit(item));
+                        }
+                    }
+                    Scope.IndWrite(")");
+                }
+                doc = Scope.Pop();
+                Docs.Add(expr, doc);
+                return doc;
             }
 
             /// <inheritdoc/>

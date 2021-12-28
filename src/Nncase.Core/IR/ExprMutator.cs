@@ -14,7 +14,7 @@ namespace Nncase.IR
     /// <summary>
     /// Expression matutor.
     /// </summary>
-    public abstract class ExprMatutor : ExprFunctor<Expr, IRType>
+    public abstract class ExprMutator : ExprFunctor<Expr, IRType>
     {
         RecordRefComparer<Expr> comparer = new();
 
@@ -121,16 +121,15 @@ namespace Nncase.IR
         {
             return expr with
             {
-                Body = (TIR.Sequential)Visit(expr.Body),
+                // the block realize 
                 InitBody = (TIR.Sequential)Visit(expr.InitBody),
-                IterVarBinds = new(expr.IterVarBinds.Select(t => (
-                 (TIR.IterVar)Visit(t.iterVar),
-                 t.loop
-                ))),
+                Predicate = Visit(expr.Predicate),
+                IterVars = VisitArrayList(expr.IterVars, x => (TIR.IterVar)Visit(x)),
+                // the block internal.
+                Body = (TIR.Sequential)Visit(expr.Body),
                 Reads = new(expr.Reads.Select(VisitBufferRegion)),
                 Writes = new(expr.Writes.Select(VisitBufferRegion)),
                 AllocBuffers = new(expr.AllocBuffers.Select(VisitBuffer)),
-                Predicate = Visit(expr.Predicate)
             };
         }
 
@@ -139,7 +138,7 @@ namespace Nncase.IR
         {
             return expr with
             {
-                Indices = new(expr.Indices.Select(Visit)),
+                Indices = VisitArray(expr.Indices, Visit),
                 Value = Visit(expr.Value)
             };
         }
@@ -149,8 +148,18 @@ namespace Nncase.IR
         {
             return expr with
             {
-                Indices = new(expr.Indices.Select(Visit))
+                Indices = VisitArray(expr.Indices, Visit),
             };
+        }
+
+        public virtual IRArrayList<TResult> VisitArrayList<TInput, TResult>(IRArrayList<TInput> arrayList, Func<TInput, TResult> visitor)
+        {
+            return new(arrayList.Select(visitor));
+        }
+
+        public virtual IRArray<TResult> VisitArray<TInput, TResult>(IRArray<TInput> array, Func<TInput, TResult> visitor)
+        {
+            return new(array.Select(visitor));
         }
 
     }

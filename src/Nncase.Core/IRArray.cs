@@ -10,11 +10,27 @@ namespace Nncase.IR
 {
     public struct IRArrayList<T> : IStructuralEquatable, IEquatable<IRArrayList<T>>, IReadOnlyList<T>, IEnumerable<T>, IList<T>
     {
+        /// <summary>
+        /// create empty
+        /// </summary>
         public IRArrayList() { _list = new(); }
 
+        /// <summary>
+        /// create by IEnumerable
+        /// </summary>
+        /// <param name="array"></param>
         public IRArrayList(IEnumerable<T> array)
         {
             _list = new(array);
+        }
+
+        /// <summary>
+        /// create by list.
+        /// </summary>
+        /// <param name="array"></param>
+        public IRArrayList(List<T> array)
+        {
+            _list = array;
         }
 
         private readonly List<T> _list;

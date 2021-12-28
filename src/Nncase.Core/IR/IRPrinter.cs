@@ -109,18 +109,12 @@ namespace Nncase.IR
             /// <summary>
             /// record the all var name's in this scope and parent's scope.
             /// </summary>
-            readonly Dictionary<Var, string> GlobalVarNameMap = new();
+            readonly Dictionary<Expr, string> GlobalVarNameMap = new();
 
             /// <summary>
             /// record the all name used count.
             /// </summary>
-            readonly Dictionary<string, int> GlobalNameUseMap = new()
-            {
-                { "i", 0 },
-                { "j", 0 },
-                { "k", 0 },
-                { "l", 0 },
-            };
+            readonly Dictionary<string, int> GlobalNameUseMap = new();
 
             /// <summary>
             /// the scopes var name stack
@@ -163,7 +157,7 @@ namespace Nncase.IR
                 if (ScopeStack.Count == 0) { Writer = rootWriter; }
                 else { Writer = ScopeStack.Peek().Item2; }
 
-                foreach (var name in VarNameStack.Pop()) { GlobalVarNameMap.Remove(name); }
+                foreach (var name in VarNameStack.Pop()) { GlobalNameUseMap[name]--; }
                 // VarNameList
                 return builder;
             }
@@ -261,17 +255,30 @@ namespace Nncase.IR
             /// get the unique loop var name, it allocate orderby i,j,k,l,i0,j0,k0...
             /// </summary>
             /// <param name="loopVar"></param>
+            /// <param name="prefix"></param>
             /// <returns></returns>
-            public string GetUniqueLoopVarName(Var loopVar)
+            public string GetUniqueLoopVarName(Expr loopVar, string prefix)
             {
                 if (GlobalVarNameMap.TryGetValue(loopVar, out var name))
                 {
                     return name;
                 }
-                var hint = (from p in new[] { "i", "j", "k", "l" }
-                            let count = GlobalNameUseMap[p]
+
+                int TryGetDefault(string name)
+                {
+                    if (!GlobalNameUseMap.TryGetValue(name, out var count))
+                    {
+                        count = 0;
+                        GlobalNameUseMap.Add(name, count);
+                    }
+                    return count;
+                }
+
+                var hint = (from c in new[] { "i", "j", "k", "l" }
+                            let nc = prefix + c
+                            let count = TryGetDefault(nc)
                             orderby count
-                            select p).First();
+                            select nc).First();
                 var usecount = GlobalNameUseMap[hint];
                 name = hint + (usecount == 0 ? string.Empty : usecount);
                 GlobalNameUseMap[hint]++;

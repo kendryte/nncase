@@ -1,4 +1,5 @@
 using Xunit;
+using System;
 using System.Linq;
 using System.IO;
 using System.Collections.Generic;
@@ -12,11 +13,13 @@ namespace Nncase.Tests.TIRTest
 {
     public class TransformTest
     {
-        string DumpDirPath = Testing.GetDumpDirPath("TIR/ScheduleTest");
+        string DumpDirPath = Testing.GetDumpDirPath("TIR/TransformTest");
 
         private static IEnumerable<object[]> Data =>
           new List<object[]>
           {
+            new object[] { new FlattenBufferCase() },
+            new object[] { new LowerBlockInitCase() },
             new object[] { new ConvertBlocksToOpaqueCase() }
           };
 
@@ -27,21 +30,51 @@ namespace Nncase.Tests.TIRTest
         protected void RunCore(ITransfromCase Case)
         {
             var dumpDirPath = Path.Combine(DumpDirPath, Case.GetType().Name);
+            var options = new RunPassOptions(null, 2, dumpDirPath);
 
             var entry = Case.GetEntry();
             var inferResult = entry.InferenceType();
             entry.DumpAsScript("pre", dumpDirPath);
             Assert.True(inferResult);
 
-            var post_entry = Case.RunPass(entry);
+            var post_entry = Case.Pass.Run(entry, options);
             post_entry.DumpAsScript("post", dumpDirPath);
         }
         public static IEnumerable<object[]> DataOne => Data.Take(1);
     }
 
+    public class LowerBlockInitCase : ConvertBlocksToOpaqueCase
+    {
+        public LowerBlockInitCase()
+        {
+            Pass.Add(
+                  new Transform.Mutator.LowerBlockInit()
+            );
+        }
+    }
+
+
+    public class FlattenBufferCase : ConvertBlocksToOpaqueCase
+    {
+        public FlattenBufferCase()
+        {
+            Pass.Add(
+                new Transform.Mutator.LowerBlockInit(),
+                new Transform.Mutator.ConvertBlocksToOpaque(),
+                new Transform.Mutator.FlattenBuffer()
+              );
+        }
+    }
+
     public class ConvertBlocksToOpaqueCase : ITransfromCase
     {
-        public Function GetEntry()
+        public ConvertBlocksToOpaqueCase()
+        {
+            Pass.Add(
+              new Transform.Mutator.ConvertBlocksToOpaque()
+            );
+        }
+        public override Function GetEntry()
         {
             var n = T.SizeVar("n");
             var m = T.SizeVar("m");
@@ -62,20 +95,14 @@ namespace Nncase.Tests.TIRTest
             );
             return func;
         }
-
-        public Function RunPass(Function function)
-        {
-            var pass = new Transform.TIRPass.ConvertBlocksToOpaquePass();
-            return pass.Run(function, RunPassOptions.Invalid);
-        }
     }
 
-
-
-    public interface ITransfromCase
+    public abstract class ITransfromCase
     {
-        public Function GetEntry();
-
-        public Function RunPass(Function function);
+        public TIRPass Pass = new("TIRPass");
+        public virtual Function GetEntry()
+        {
+            throw new NotImplementedException("GetEntry");
+        }
     }
 }

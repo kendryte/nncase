@@ -56,8 +56,16 @@ namespace Nncase.Transform
 
         public RunPassOptions SetName(string name) { PassName = name; return this; }
 
+        /// <summary>
+        /// set the dumpDir
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
         public RunPassOptions SetDir(string path) { DumpDir = path; return this; }
 
+        /// <summary>
+        /// return "{DumpDir}/{PassName}"
+        /// </summary>
         public string FullDumpDir { get => Path.Combine(DumpDir, PassName); }
 
         public static RunPassOptions Invalid => new RunPassOptions(null!, -1, "");

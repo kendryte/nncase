@@ -22,7 +22,7 @@ using Nncase.Importer.TFLite;
 using Nncase.IR.F;
 using Nncase.IR.NN;
 using Nncase.Tests.ReWriteTest;
-using Nncase.Transform.DataFlow.Rules;
+
 using Nncase.Transform.Rule;
 using Binary = Nncase.IR.Math.Binary;
 using Tuple = Nncase.IR.Tuple;
@@ -121,7 +121,7 @@ namespace Nncase.Tests.ReWriteTest
             var rhs = torch.rand(1, 6, 3, torch.ScalarType.Float32).ToConst();
             var pre = ShapeOp(lhs + rhs);
             Assert.True(TypeInference.InferenceType(pre));
-            var post = DataFlowRewrite.Rewrite(pre, new[] { new Transform.DataFlow.Rules.FoldShapeOp() }, RunPassOptions.Invalid);
+            var post = DataFlowRewrite.Rewrite(pre, new[] { new Transform.Rule.FoldShapeOp() }, RunPassOptions.Invalid);
             Assert.Equal(new[] { 1, 6, 3 }, post.ToTensor<int>().ToArray());
         }
 
@@ -189,7 +189,7 @@ namespace Nncase.Tests.ReWriteTest
             Assert.True(TypeInference.InferenceType(input));
             var computeShape = ShapeOp(input);
             var shapeRewrite = DataFlowRewrite.Rewrite(computeShape,
-                new PatternRule[] { new Transform.DataFlow.Rules.FoldShapeOp() }, RunPassOptions.Invalid);
+                new PatternRule[] { new Transform.Rule.FoldShapeOp() }, RunPassOptions.Invalid);
             var shapePass = RunShapeInferPass("", computeShape, input);
             Assert.Equal(shapeRewrite, shapePass);
         }

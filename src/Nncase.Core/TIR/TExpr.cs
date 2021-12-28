@@ -27,6 +27,33 @@ namespace Nncase.TIR
 
         public Expr this[int index] { get => ((IList<Expr>)Fields)[index]; set => ((IList<Expr>)Fields)[index] = value; }
 
+        /// <summary>
+        /// Flatten nested sequential
+        /// </summary>
+        /// <param name="exprs"></param>
+        /// <returns>flattend exprs.</returns>
+        public static Sequential Flatten(params Expr[] exprs)
+        {
+            List<Expr> seqs = new();
+            void doflatten(Expr expr)
+            {
+                switch (expr)
+                {
+                    case Sequential seq:
+                        foreach (var item in seq) { doflatten(item); }
+                        break;
+                    default:
+                        seqs.Add(expr);
+                        break;
+                }
+            }
+            foreach (var item in exprs)
+            {
+                doflatten(item);
+            }
+            return new Sequential(new IRArrayList<Expr>(seqs));
+        }
+
         public int Count => ((ICollection<Expr>)Fields).Count;
 
         public bool IsReadOnly => ((ICollection<Expr>)Fields).IsReadOnly;
@@ -358,13 +385,13 @@ namespace Nncase.TIR
     /// <param name="Name"> The name_hint of the block.</param>
     /// <param name="Body"> block body </param>
     /// <param name="InitBody">the Block init statement.</param>
-    /// <param name="IterVarBinds">The {iter variables :  corresponding values of the iter vars} of the block.</param>
+    /// <param name="IterVars">The List Exprs contain the IterVars</param>
     /// <param name="Reads">The read buffer regions of the block.</param>
     /// <param name="Writes">The write buffer regions of the block.</param>
     /// <param name="AllocBuffers">The buffer allocated in the block.</param>
     /// <param name="Predicate">The predicate of the block realization, the block will only be executed when the predicate is true.</param>
     public sealed record Block(string Name, Sequential Body, Sequential InitBody,
-                                IRArrayList<(IterVar iterVar, For loop)> IterVarBinds,
+                                IRArrayList<IterVar> IterVars,
                                 IRArrayList<BufferRegion> Reads,
                                 IRArrayList<BufferRegion> Writes,
                                 IRArrayList<Buffer> AllocBuffers, Expr Predicate) : BodyExpr(Body)
@@ -376,6 +403,15 @@ namespace Nncase.TIR
         /// <param name="Name">block name.</param>
         public Block(string Name) : this(Name, new(), new(), new(), new(), new(), new(), true) { }
 
+
+        /// <summary>
+        /// bind the itervar with for loop 
+        /// </summary>
+        /// <param name="vi"></param>
+        /// <param name="fi"></param>
+        /// <param name="iter_type"></param>
+        /// <returns></returns>
+        /// <exception cref="NotSupportedException"></exception>
         public Block Remap(out IterVar vi, For fi, char iter_type)
         {
             var toMode = (char x) => x switch
@@ -384,16 +420,28 @@ namespace Nncase.TIR
                 'R' => IterMode.CommReduce,
                 _ => throw new NotSupportedException("Only Support \"S\" (for Spatial) or \"R\" ( Reduce)"),
             };
-
-            vi = new IterVar(TensorType.Scalar(DataType.Int32), fi.Dom, toMode(iter_type), fi.LoopVar);
-            IterVarBinds.Add((vi, fi));
-            return this;
+            return Bind(out vi, fi.Dom, toMode(iter_type), fi.LoopVar);
         }
 
         public Block Remap(out IterVar vi, out IterVar vj, (For i, For j) loops, string iter_types)
         {
             return Remap(out vi, loops.i, iter_types[0]).
             Remap(out vj, loops.j, iter_types[1]);
+        }
+
+        /// <summary>
+        /// create the iterVar and bind the value
+        /// </summary>
+        /// <param name="vi"></param>
+        /// <param name="dom"></param>
+        /// <param name="mode"></param>
+        /// <param name="value"></param>
+        /// <returns></returns>
+        public Block Bind(out IterVar vi, Range dom, IterMode mode, Expr value)
+        {
+            vi = new IterVar(TensorType.Scalar(DataType.Int32), dom, mode, value);
+            IterVars.Add(vi);
+            return this;
         }
 
         /// <summary>
@@ -432,4 +480,14 @@ namespace Nncase.TIR
     {
     }
 
+    /// <summary>
+    /// if(xxx) then { zzz } else { yyy }
+    /// </summary>
+    /// <param name="Condition"></param>
+    /// <param name="Then"> Sequential. </param>
+    /// <param name="Else"> Sequential. </param>
+    public sealed record IfThenElse(Expr Condition, Expr Then, Expr Else) : Expr
+    {
+        public IfThenElse(Expr Condition, Expr Then) : this(Condition, Then, new Sequential()) { }
+    }
 }

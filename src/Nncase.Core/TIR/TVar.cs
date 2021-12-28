@@ -13,7 +13,7 @@ namespace Nncase.TIR
         /// <see cref="Range"/>
         /// </summary>
         /// <param name="tuple"> value tuple </param>
-        public static implicit operator Range((int, int) tuple) => new Range(tuple.Item1, tuple.Item2);
+        public static implicit operator Range((Expr, Expr) tuple) => new Range(tuple.Item1, tuple.Item2);
 
         /// <summary>
         /// <see cref="Range"/>

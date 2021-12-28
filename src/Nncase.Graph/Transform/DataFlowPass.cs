@@ -35,7 +35,7 @@ namespace Nncase.Transform
         /// </summary>
         /// <param name="func"> func without run pass</param>
         /// <param name="options"></param>
-        public virtual void OnPassStart(Function func, RunPassOptions options)
+        protected override void OnPassStart(Function func, RunPassOptions options)
         {
             switch (options.DumpLevel)
             {
@@ -56,7 +56,7 @@ namespace Nncase.Transform
         /// </summary>
         /// <param name="func"> func with rewrited. </param>
         /// <param name="options"></param>
-        public virtual void OnPassEnd(Function func, RunPassOptions options)
+        protected override void OnPassEnd(Function func, RunPassOptions options)
         {
             switch (options.DumpLevel)
             {
@@ -87,8 +87,8 @@ namespace Nncase.Transform
 
         public ShapeInferPass(string name = "ShapeInfer") : base(name)
         {
-            Rules.Add(new Transform.DataFlow.Rules.FoldConstCall());
-            Rules.Add(new Transform.DataFlow.Rules.FoldShapeOp());
+            Rules.Add(new Transform.Rule.FoldConstCall());
+            Rules.Add(new Transform.Rule.FoldShapeOp());
         }
 
         /// <inheritdoc/>

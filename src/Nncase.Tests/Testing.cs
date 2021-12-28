@@ -1,11 +1,9 @@
-using Nncase.Evaluator;
-using Nncase.IR;
-using Nncase.Transform;
-using Nncase.Transform.DataFlow.Rules;
 using Xunit;
 using System.Runtime.CompilerServices;
 using System.IO;
-
+using Nncase.Transform;
+using Nncase.IR;
+using Nncase.Evaluator;
 
 namespace Nncase.Tests
 {
@@ -50,9 +48,9 @@ namespace Nncase.Tests
         {
             if (_simplifyPass.Rules.Count == 0)
             {
-                _simplifyPass.Add(SimplifyFactory.SimplifyAdd());
-                _simplifyPass.Add(SimplifyFactory.SimplifyMul());
-                _simplifyPass.Add(new FoldConstCall());
+                _simplifyPass.Add(Transform.Rule.SimplifyFactory.SimplifyAdd());
+                _simplifyPass.Add(Transform.Rule.SimplifyFactory.SimplifyMul());
+                _simplifyPass.Add(new Transform.Rule.FoldConstCall());
             }
             var f = new Function(expr, new Expr[] { });
             var result = f.InferenceType();
