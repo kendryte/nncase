@@ -43,11 +43,19 @@ void split_to_slice_transform::process(transform_context &context)
     auto &output = *context.inputs[0]->connection();
     std::vector<std::span<input_connector *const>> inputs_vec = {};
     for (size_t i = 0; i < context.outputs.size(); i++)
+    {
+        if (context.outputs[i]->connections().size() == 0)
+            continue;
         inputs_vec.push_back(context.outputs[i]->connections());
+    }
 
     auto &old_split = static_cast<split &>(*context.matched_nodes[0]);
     std::vector<size_t> indices_or_sections = old_split.indices_or_sections();
     int32_t axis = old_split.axis();
+    if (axis == -1)
+    {
+        axis = output.shape().size() + axis;
+    }
     bool is_indices = old_split.is_indices();
 
     std::vector<slice *> new_slices = {};
@@ -94,7 +102,7 @@ void split_to_slice_transform::process(transform_context &context)
     {
         assert(indices_or_sections.size() == 1);
         assert(output.shape()[axis] % indices_or_sections[0] == 0);
-
+        std::cout << "axis :\t" << axis << std::endl;
         for (size_t i = 0; i < indices_or_sections[0]; i++)
         {
             end[axis] += output.shape()[axis] / indices_or_sections[0];
@@ -104,12 +112,18 @@ void split_to_slice_transform::process(transform_context &context)
     }
 
     for (size_t i = 0; i < new_slices.size(); i++)
+    {
+        std::cout << "stage 1" << std::endl;
+
         new_slices[i]->input().connect(output);
+    }
 
     for (size_t i = 0; i < inputs_vec.size(); i++)
     {
+        std::cout << "stage 2" << std::endl;
         for (auto &in : dup(inputs_vec[i]))
         {
+            std::cout << "stage 3" << std::endl;
             in->connect(new_slices[i]->output());
         }
     }
