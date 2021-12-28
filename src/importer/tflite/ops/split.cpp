@@ -32,7 +32,6 @@ DEFINE_TFLITE_LOWER(SPLIT)
     {
         auto &output_split = get_tensor(op.outputs(), i);
         auto shape = get_shape(output_split.shape());
-        std::cout << "shape :" << shape[0] << "," << shape[1] << "," << shape[2] << "," << shape[3] << std::endl;
         output_shapes[i] = shape;
     }
     std::vector<size_t> indices { size_t(num_splits) };
