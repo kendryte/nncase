@@ -176,7 +176,7 @@ def generate_image_dataset(shape: List[int], dtype: np.dtype,
                        (batch_index + 1) * batch_size]:
         img = cv2.imread(p)
         img = preproc(img, shape[1:3], transpose_flag)  # img [h,w,c] rgb,
-        imgs.append(img / 255.0)
+        imgs.append(img.astype(np.float32) / 255.)
     return np.stack(imgs)
 
 
@@ -324,18 +324,16 @@ class TestRunner(metaclass=ABCMeta):
             for item in self.pre_process:
                 # dequantize
                 if 'range' in item.keys() and 'input_type' in item.keys():
-                    Q_max, Q_min = 0, 0
+                    Q_max, Q_min = item['range'][1], item['range'][0]
                     if item['input_type'] == 'uint8':
-                        Q_max, Q_min = 255, 0
-                    # elif item['input_type'] == 'int8':
-                    #     Q_max, Q_min = 127, -128
+                        range_min, range_max = 0, 255
+                    elif item['input_type'] == 'int8':
+                        range_min, range_max = -128, 127
                     else:
-                        continue
-                    scale = (item['range'][1] - item['range'][0]) / (Q_max - Q_min)
-                    bias = round((item['range'][1] * Q_min - item['range'][0] *
-                                  Q_max) / (item['range'][1] - item['range'][0]))
-                    data = data * scale
-                    data = data - bias
+                        range_min, range_max = 0, 1
+                    scale = (range_max - range_min) / (Q_max - Q_min)
+                    bias = round((range_max * Q_min - range_min * Q_max) / (range_max - range_min))
+                    data = data / scale + bias
 
                 # swapRB
                 if 'swapRB' in item.keys():
@@ -831,7 +829,7 @@ class TestRunner(metaclass=ABCMeta):
                 'Pass' if judge else 'Fail', kw_names, j)
             result = simarity_info + result_info
             # print(result) temp disable
-            with open(os.path.join(self.case_dir, 'test_result_{}.txt').format(i), 'a+') as f:
+            with open(os.path.join(self.case_dir, 'test_result.txt'), 'a+') as f:
                 f.write(result)
             i = i + 1
             if not judge:
