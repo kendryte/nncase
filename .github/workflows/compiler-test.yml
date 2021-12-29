@@ -105,8 +105,3 @@ jobs:
         pytest -n 30 tests/models/onnx-model-zoo --doctest-modules --junitxml=test_results/models.xml
         pytest tests/examples --doctest-modules --junitxml=test_results/examples.xml
 
-    - name: Publish Test Results
-      uses: EnricoMi/publish-unit-test-result-action@v1
-      if: always() && runner.os == 'Linux'
-      with:
-        files: test_results/*.xml
