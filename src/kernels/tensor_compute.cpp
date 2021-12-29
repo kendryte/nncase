@@ -301,6 +301,15 @@ result<void> kernels::random_uniform(T *output, const runtime_shape_t &out_shape
     return cpu::reference::random_uniform(output, out_shape, low, high, seed);
 }
 
+template result<void> kernels::sigmoid<float>(const float *input, float *output, const runtime_shape_t &in_shape,
+    const runtime_shape_t &in_strides) noexcept;
+
+template <typename T>
+result<void> kernels::sigmoid(const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides) noexcept
+{
+    return cpu::reference::sigmoid(input, output, in_shape, in_strides);
+}
+
 template result<void> kernels::ternary<float>(const float *input_a, const float *input_b, const float *input_c, float *output,
     const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
     const runtime_shape_t &in_b_strides, const runtime_shape_t &in_c_shape, const runtime_shape_t &in_c_strides,
