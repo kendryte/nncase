@@ -6,26 +6,43 @@ using System.Linq;
 using System.Collections.Generic;
 using System.Numerics.Tensors;
 using Nncase.TIR;
+using Nncase.Transform;
 
 namespace Nncase.Tests.CodeGenTest
 {
-    public interface ICodeGenCase
+
+    class EmptyPass : FunctionPass
+    {
+        public EmptyPass() : base("EmptyPass") { }
+        protected override Function RunCore(Function function, RunPassOptions options)
+        {
+            return function;
+        }
+    }
+
+    public abstract class ICodeGenCase
     {
         /// <summary>
         /// get the entry function
         /// </summary>
         /// <returns></returns>
-        public Function GetEntry();
+        public abstract Function GetEntry();
+
         /// <summary>
         /// custom equal compare method
         /// </summary>
         /// <param name="rtmod"></param>
-        public void CompareEqual(IRTModule rtmod);
+        public abstract void CompareEqual(IRTModule rtmod);
+
+        public virtual FunctionPass GetPass()
+        {
+            return new EmptyPass();
+        }
     }
 
     public class SubCase : ICodeGenCase
     {
-        public Function GetEntry()
+        public override Function GetEntry()
         {
             var x = new Var("x", TensorType.Scalar(ElemType.Float32));
             var y = new Var("y", TensorType.Scalar(ElemType.Float32));
@@ -33,7 +50,7 @@ namespace Nncase.Tests.CodeGenTest
             return func;
         }
 
-        public void CompareEqual(IRTModule rtmod)
+        public override void CompareEqual(IRTModule rtmod)
         {
             Assert.Equal(2.3f - 2.1f, rtmod.Invoke(2.3f, 2.1f));
         }
@@ -54,7 +71,7 @@ namespace Nncase.Tests.CodeGenTest
         }
 
         /// <inheritdoc/>
-        public void CompareEqual(IRTModule rtmod)
+        public override void CompareEqual(IRTModule rtmod)
         {
             var rand = new Random();
             int n = 12;
@@ -67,7 +84,7 @@ namespace Nncase.Tests.CodeGenTest
             Assert.True(Enumerable.Range(0, n).All(i => A1[i] == A2[i]));
         }
 
-        public Function GetEntry()
+        public override Function GetEntry()
         {
             var n = T.SizeVar("n");
             var A = TIR.T.DeclBuffer(new(n), DataType.Int32, "A");
@@ -96,7 +113,7 @@ namespace Nncase.Tests.CodeGenTest
             }
         }
 
-        public void CompareEqual(IRTModule rtmod)
+        public override void CompareEqual(IRTModule rtmod)
         {
             int n = 10, m = 20;
             var A1 = new DenseTensor<int>(new[] { n, m }).ToArray();
@@ -106,7 +123,7 @@ namespace Nncase.Tests.CodeGenTest
             Assert.True(Enumerable.Range(0, n * m).All(i => A1[i] == A2[i]));
         }
 
-        public Function GetEntry()
+        public override Function GetEntry()
         {
             var n = T.SizeVar("n");
             var m = T.SizeVar("m");
@@ -115,6 +132,65 @@ namespace Nncase.Tests.CodeGenTest
                T.Store(A[i * n + j], i + j)
             );
             return T.PrimFunc("main", A.Handle, n, m).Add(out_for);
+        }
+    }
+
+    public class BlockCase : ICodeGenCase
+    {
+
+        public override Function GetEntry()
+        {
+            var n = T.SizeVar("n");
+            var m = T.SizeVar("m");
+            var A = T.DeclBuffer((n, m), name: "A");
+            var func = T.PrimFunc("func", A.Handle, n, m).Add(
+              T.Serial(out var i, n, out var fi).Add(
+                T.Serial(out var j, m, out var fj).Add(
+                  T.Block("init").
+                  Remap(out var vi, out var vj, (fi, fj), "SS").
+                  Init(
+                    T.Store(A[vi, vj], 1.0f)
+                  ).Add(
+                    T.Store(A[vi, vj], IR.F.Tensors.Cast(vi + vj, DataType.Float32))
+                  )
+                )
+              ),
+              n + m
+            );
+            return func;
+        }
+
+        public int RefFunc(float[] A, int n, int m)
+        {
+            for (int i = 0; i < n; i++)
+            {
+                for (int j = 0; j < m; j++)
+                {
+                    A[i * m + j] = i + j;
+                }
+            }
+            return n + m;
+        }
+
+        public override void CompareEqual(IRTModule rtmod)
+        {
+            int n = 10, m = 12;
+            var A1 = new float[n * m];
+            var A2 = new float[n * m];
+            var r1 = RefFunc(A1, n, m);
+            var r2 = rtmod.Invoke(A1, n, m);
+            Assert.Equal(r1, r2);
+        }
+
+        public override FunctionPass GetPass()
+        {
+            var pass = new TIRPass("TIRPass");
+            pass.Add(
+                new Transform.Mutator.LowerBlockInit(),
+                new Transform.Mutator.ConvertBlocksToOpaque(),
+                new Transform.Mutator.FlattenBuffer()
+            );
+            return pass;
         }
     }
 }

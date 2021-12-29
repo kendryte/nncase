@@ -1,10 +1,12 @@
 using Xunit;
-using Nncase.IR;
-using Nncase.CodeGen;
-using System;
-using System.IO;
 using System.Linq;
+using System.IO;
 using System.Collections.Generic;
+using System;
+using Nncase.IR;
+using Nncase.TIR;
+using Nncase.CodeGen;
+using Nncase.Transform;
 
 namespace Nncase.Tests.CodeGenTest
 {
@@ -16,6 +18,7 @@ namespace Nncase.Tests.CodeGenTest
         static IEnumerable<object[]> Data =>
           new List<object[]>
           {
+              new object[] { new BlockCase() },
               new object[] { new ForCase() },
               new object[] { new SubCase() },
           };
@@ -27,12 +30,21 @@ namespace Nncase.Tests.CodeGenTest
         protected void RunCore(ICodeGenCase Case)
         {
             var dumpDirPath = Testing.GetDumpDirPath($"CodeGenTest/CSourceHostTest/{Case.GetType().Name}");
+            var opt = new RunPassOptions(null, 2, dumpDirPath);
+            // 1. get function
+
             var entry = Case.GetEntry();
             var inferResult = entry.InferenceType();
-            entry.DumpExprAsIL("pre", dumpDirPath);
+            entry.DumpAsScript("pre", dumpDirPath);
             Assert.True(inferResult);
 
+            // 2. run passes
             var mod = new Module(entry);
+            var pmr = new PassManager(mod, opt);
+            pmr.Add(Case.GetPass());
+            pmr.Run();
+
+            // 3. build re module and compare the function call
             var rtmod = mod.Build(_target);
             rtmod.DumpSource("code", dumpDirPath);
             rtmod.Compile();

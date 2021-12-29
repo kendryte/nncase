@@ -146,13 +146,16 @@ namespace Nncase.TIR
             /// <inheritdoc/>
             public override StringBuilder Visit(Op expr)
             {
-                return new(expr switch
+                if (Docs.TryGetValue(expr, out var doc)) { return doc; }
+                doc = new(expr switch
                 {
                     Unary op => op.UnaryOp.ToString(),
                     Binary op => op.ToLiteral(),
                     IR.Tensors.Cast op => DataTypes.GetDisplayName(op.NewType),
                     _ => expr.GetType().Name,
                 });
+                Docs.Add(expr, doc);
+                return doc;
             }
 
             /// <inheritdoc/>

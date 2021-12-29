@@ -40,13 +40,16 @@ namespace Nncase.Transform
         }
 
         /// <summary>
-        /// Run passes.
+        /// Run passes and update the module funciton.
         /// </summary>
         public void Run()
         {
-            foreach (var pass in _passes)
+            foreach (var i in Enumerable.Range(0, _module.Functions.Count))
             {
-                _module.Update(pass.Run(_module.Entry!, _options));
+                foreach (var pass in _passes)
+                {
+                    _module.Update(i, pass.Run(_module.Functions[i], _options));
+                }
             }
         }
     }

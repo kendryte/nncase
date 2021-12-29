@@ -75,12 +75,23 @@ namespace Nncase.CodeGen.Compiler
         /// <returns> outPath </returns>
         public string Compile(string sourcePath, string outPath)
         {
-            using (var proc = new Process())
+            var errMsg = new StringBuilder();
+            using (var errWriter = new StringWriter(errMsg))
             {
-                proc.StartInfo.FileName = Exe;
-                proc.StartInfo.Arguments = $"{sourcePath} -fPIC -shared -arch {Arch} -o {outPath}";
-                proc.Start();
-                proc.WaitForExit();
+                using (var proc = new Process())
+                {
+                    proc.StartInfo.FileName = Exe;
+                    proc.StartInfo.Arguments = $"{sourcePath} -fPIC -shared -arch {Arch} -o {outPath}";
+                    proc.StartInfo.RedirectStandardError = true;
+                    proc.ErrorDataReceived += (sender, e) => errWriter.WriteLine(e.Data);
+                    proc.Start();
+                    proc.BeginErrorReadLine();
+                    proc.WaitForExit();
+                    if (proc.ExitCode != 0)
+                    {
+                        throw new InvalidOperationException(errMsg.ToString());
+                    }
+                }
             }
             return outPath;
         }

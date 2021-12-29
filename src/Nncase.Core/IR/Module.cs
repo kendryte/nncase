@@ -21,14 +21,15 @@ namespace Nncase.IR
         /// Initializes a new instance of the <see cref="Module"/> class.
         /// </summary>
         /// <param name="main"> main func</param>
-        public Module(Function? main = null)
+        public Module(Function main)
         {
-            _functions = new List<Function>();
-            Entry = main;
-            if (main is not null)
-            {
-                _functions.Add(main);
-            }
+            _functions = new();
+            _functions.Add(main);
+        }
+
+        public Module()
+        {
+            _functions = new();
         }
 
         /// <summary>
@@ -39,7 +40,20 @@ namespace Nncase.IR
         /// <summary>
         /// Gets or sets entry function.
         /// </summary>
-        public Function? Entry { get; set; }
+        public Function? Entry
+        {
+            get => _functions.Count > 0 ? _functions.First() : null;
+            set
+            {
+                if (value is not null)
+                {
+                    if (_functions.Count > 0)
+                        _functions[0] = value;
+                    else
+                        _functions.Add(value);
+                }
+            }
+        }
 
         /// <summary>
         /// Add function.
@@ -53,12 +67,12 @@ namespace Nncase.IR
         /// <summary>
         /// update the entry function defination
         /// </summary>
-        /// <param name="entry">the entry function defination.</param>
-        public void Update(Function entry)
+        /// <param name="i">function index.</param>
+        /// <param name="function">the entry function defination.</param>
+        public void Update(int i, Function function)
         {
-            _functions.RemoveAt(_functions.IndexOf(Entry!));
-            _functions.Add(entry);
-            Entry = entry;
+            _functions.RemoveAt(i);
+            _functions.Add(function);
         }
     }
 }

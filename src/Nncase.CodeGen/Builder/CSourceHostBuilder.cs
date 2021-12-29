@@ -18,6 +18,7 @@ namespace Nncase.CodeGen.Builder
     {
         public static string toC(this DataType dataType) => dataType.ElemType switch
         {
+            ElemType.Bool => "bool",
             ElemType.Int8 => "int8_t",
             ElemType.Int16 => "int16_t",
             ElemType.Int32 => "int32_t",
@@ -134,13 +135,13 @@ namespace Nncase.CodeGen.Builder
     internal struct CSymbol
     {
         public string Type;
-        public string Name;
-        public CSymbol(string type, string name)
+        public StringBuilder Doc;
+        public CSymbol(string type, StringBuilder doc)
         {
             Type = type;
-            Name = name;
+            Doc = doc;
         }
-        public override string ToString() => $"{Type} {Name}";
+        public override string ToString() => $"{Type} {Doc}";
     }
 
     internal class CSymbolParamList : IParameterList<CSymbol>, IEnumerable<CSymbol>
@@ -175,45 +176,12 @@ namespace Nncase.CodeGen.Builder
         /// source writer .
         /// TODO we need the decl writer
         /// </summary>
-        readonly IRPrinter.ScopeWriter srcScope;
+        readonly IRPrinter.ScopeWriter Scope;
 
         /// <summary>
         /// symbols name memo
         /// </summary>
-        readonly Dictionary<Expr, CSymbol> _names = new(new RecordRefComparer<Expr>());
-
-        /// <summary>
-        /// ssa var id count
-        /// </summary>
-        int _localId = 0;
-
-        int __inlineCount = 0;
-        bool Isinlined => __inlineCount > 0;
-
-        class InlineManager : IDisposable
-        {
-            CSourceHostBuildVisior Parent;
-            public InlineManager(CSourceHostBuildVisior parent)
-            {
-                Parent = parent;
-                Parent.__inlineCount++;
-            }
-            public void Dispose()
-            {
-                Parent.__inlineCount--;
-            }
-        }
-        /// <summary>
-        /// control weather inline the code when the temp var for call.
-        /// <example>
-        /// if inlineRepr == false:
-        ///   %1 = a + b;
-        ///   %2 = %1 + c;
-        /// if inlineRepr = true:
-        ///   (a + b) + c;
-        /// </example>
-        /// </summary>
-        InlineManager Inline() => new InlineManager(this);
+        readonly Dictionary<Expr, CSymbol> Symbols = new(new RecordRefComparer<Expr>());
 
         /// <summary>
         /// <see cref="CSourceHostBuildVisior"/>
@@ -221,167 +189,188 @@ namespace Nncase.CodeGen.Builder
         /// <param name="textWriter"></param>
         public CSourceHostBuildVisior(TextWriter textWriter)
         {
-            srcScope = new IRPrinter.ScopeWriter(textWriter);
+            Scope = new IRPrinter.ScopeWriter(textWriter);
             // insert some declare
-            srcScope.IndWriteLine("#include <stdint.h>");
+            Scope.IndWriteLine("#include <stdint.h>");
         }
 
         /// <inheritdoc/>
         public override CSymbol Visit(Call expr)
         {
-            /// TODO find better way for emit load
-            /// <example>
-            /// %2 = A[1];
-            /// A[1] = %2 + 1;
-            /// A[1] = %2 + 2; NOTE origin is A[1] = A[1] + 2
-            /// NOTE so we miss the immediate load expr.
-            /// </example>
-            if (_names.TryGetValue(expr, out var symbol)) { return symbol; }
-            if (!Isinlined && expr.CheckedType != TupleType.Void)
-            {
-                symbol = AllocateTempVar(expr);
-                _names.Add(expr, symbol);
-            }
-            CSymbol target;
-            CSymbolParamList args;
-            using (Inline())
-            {
-                target = Visit(expr.Target);
-                args = new CSymbolParamList(expr.Parameters.Select(Visit).ToArray());
-            }
+            if (Symbols.TryGetValue(expr, out var symbol)) { return symbol; }
+            var target = Visit(expr.Target);
+            var args = new CSymbolParamList(expr.Parameters.Select(Visit).ToArray());
             var type = VisitType(expr.CheckedType!);
-            string partialRepr = "";
+            Scope.Push();
             switch (expr.Target)
             {
-                case Load:
-                    partialRepr = $"{args[Load.Handle].Name}[{args[Load.Index].Name}]";
+                case IR.Math.Binary:
+                    Scope.Append($"({args[0].Doc} {target.Doc} {args[1].Doc})");
                     break;
                 case Store:
-                    symbol.Name = $"{args[Store.Handle].Name}[{args[Store.Index].Name}]";
-                    symbol.Type = "";
-                    partialRepr = $"{args[Store.Value].Name}";
+                    Scope.Append($"{args[Store.Handle].Doc}[{args[Store.Index].Doc}] = {args[Store.Value].Doc}");
                     break;
-                case IR.Math.Binary:
-                    if (((IR.Math.Binary)(expr.Target)).BinaryOp is (BinaryOp.Add or BinaryOp.Sub or BinaryOp.Mul or BinaryOp.Div))
-                    {
-                        partialRepr = ($"({args[0].Name} {target.Name} {args[1].Name})");
-                    }
-                    else { goto default; }
+                case Load:
+                    Scope.Append($"{args[Store.Handle].Doc}[{args[Store.Index].Doc}]");
+                    break;
+                case IR.Tensors.Cast:
+                    Scope.Append($"(({type}){args[IR.Tensors.Cast.Input].Doc})");
                     break;
                 default:
-                    partialRepr = $"{target.Name}({string.Join(", ", args.Select(x => x.Name))})";
+                    Scope.Append($"{target.Doc}({string.Join(", ", args.Select(x => x.Doc))})");
                     break;
             }
-            if (!Isinlined)
-            {
-                srcScope.IndWriteLine($"{symbol} = {partialRepr};");
-                return symbol;
-            }
-            return new("Invail Call", partialRepr);
+            symbol = new(type, Scope.Pop());
+            Symbols.Add(expr, symbol);
+            return symbol;
         }
 
         /// <inheritdoc/>
         public override CSymbol Visit(Const expr)
         {
-            if (_names.TryGetValue(expr, out var symbol)) { return symbol; }
-
+            if (Symbols.TryGetValue(expr, out var symbol)) { return symbol; }
             if (expr.CheckedType is TensorType ttype && ttype.IsScalar)
             {
-                if (DataTypes.IsIntegral(ttype.DType))
-                {
-                    symbol = new("Invalid", expr.ToScalar<int>().ToString());
-                }
-                else if (DataTypes.IsFloat(ttype.DType))
-                {
-                    symbol = new("Invalid", expr.ToScalar<float>().ToString());
-                };
+                symbol = new(VisitType(ttype), new($"{expr}"));
             }
             else
             {
                 throw new NotSupportedException($"Not Support {expr.CheckedType} Const");
             }
-            _names.Add(expr, symbol);
+            Symbols.Add(expr, symbol);
             return symbol;
         }
 
         /// <inheritdoc/>
         public override CSymbol Visit(Function expr)
         {
-            if (_names.TryGetValue(expr, out var symbol)) { return symbol; }
-            symbol.Name = expr.Name;
-            symbol.Type = "InvalidFunc";
-            _names.Add(expr, symbol);
-
-            srcScope.Push();
+            if (Symbols.TryGetValue(expr, out var symbol)) { return symbol; }
+            var retType = VisitType(((CallableType)expr.CheckedType!).ReturnType);
+            Scope.Push();
             // 1. Function signature
-            srcScope.IndWriteLine($"{VisitType(expr.CheckedType!)} {symbol.Name}({string.Join(", ", expr.Parameters.Select(Visit))}) {{");
+            Scope.IndWrite($"{retType} {expr.Name}({string.Join(", ", expr.Parameters.Select(Visit))}) {{");
             // 2. Function body
-            using (srcScope.IndentUp())
+            using (Scope.IndentUp())
             {
-                var body = Visit(expr.Body);
-                if (expr.CheckedType is CallableType ctype && ctype.ReturnType != TupleType.Void)
-                {
-                    srcScope.IndWriteLine($"return {body.Name};");
-                }
+                Scope.Append(Visit(expr.Body).Doc);
             }
             // 3. Function closing
-            srcScope.IndWriteLine("}");
+            Scope.IndWrite("}");
+            symbol = new(CallableTypeToPtr((CallableType)expr.CheckedType!, expr.Name), Scope.Pop());
             // 4. write whole code
-            srcScope.IndWrite(srcScope.Pop());
+            Scope.IndWrite(symbol.Doc);
             return symbol;
         }
 
         /// <inheritdoc/>
         public override CSymbol Visit(Op expr)
         {
-            return expr switch
+            if (Symbols.TryGetValue(expr, out var symbol)) { return symbol; }
+            symbol = new("Invalid Op", new(expr switch
             {
-                IR.Math.Binary op => new("Invalid Binary", op.ToLiteral()),
-                TIR.Store op => new("Invalid Store", "Invalid Store"),
-                TIR.Load op => new("Invalid Load", "Invalid Load"),
+                IR.Math.Binary op => op.ToLiteral(),
+                TIR.Store op => "Store",
+                TIR.Load op => "Load",
+                IR.Tensors.Cast op => op.NewType.toC(),
                 _ => throw new NotSupportedException($"{expr.GetType().Name}")
-            };
+            }));
+            Symbols.Add(expr, symbol);
+            return symbol;
         }
 
         /// <inheritdoc/>
         public override CSymbol Visit(Var expr)
         {
-            if (_names.TryGetValue(expr, out var symbol)) { return symbol; }
-            symbol = new(VisitType(expr.CheckedType!), expr.Name);
-            _names.Add(expr, symbol);
+            if (Symbols.TryGetValue(expr, out var symbol)) { return symbol; }
+            symbol = new(VisitType(expr.CheckedType!), new(expr.Name));
+            Symbols.Add(expr, symbol);
             return symbol;
         }
+
+        /// <summary>
+        /// assgin the loop var better name.
+        /// </summary>
+        public CSymbol VisitLoopVar(Expr expr, string prefix = "")
+        {
+            if (Symbols.TryGetValue(expr, out var symbol)) { return symbol; }
+            symbol = new(VisitType(expr.CheckedType!), new(Scope.GetUniqueLoopVarName(expr, prefix)));
+            Symbols.Add(expr, symbol);
+            return symbol;
+        }
+
         /// <inheritdoc/>
         public override CSymbol Visit(For expr)
         {
-            srcScope.Push();
+            if (Symbols.TryGetValue(expr, out var symbol)) { return symbol; }
+            Scope.Push();
             // 1. For Loop signature
-            var loopVar = Visit(expr.LoopVar);
-            using (Inline())
-            {
-                srcScope.AppendLine($"for ({loopVar} = {Visit(expr.Dom.Min).Name}; {loopVar.Name} < {Visit(expr.Dom.Max).Name}; {loopVar.Name}++) {{");
-            }
+            var loopVar = VisitLoopVar(expr.LoopVar);
+            Scope.Append($"for ({loopVar} = {Visit(expr.Dom.Min).Doc}; {loopVar.Doc} < {Visit(expr.Dom.Max).Doc}; {loopVar.Doc}++) {{");
             // 2. For Body
-            using (srcScope.IndentUp()) { Visit(expr.Body!); }
+            Scope.Append(Visit(expr.Body).Doc);
             // 3. For closing
-            srcScope.IndWriteLine("}");
-
-            // 4. extact whole code and write it.
-            srcScope.IndWrite(srcScope.Pop());
-            return new("Invalid For", "Invalid For");
+            Scope.IndWrite("}");
+            symbol = new(VisitType(expr.CheckedType!), Scope.Pop());
+            Symbols.Add(expr, symbol);
+            return symbol;
         }
 
         /// <inheritdoc/>
         public override CSymbol Visit(Sequential expr)
         {
-            srcScope.Push();
-            foreach (var item in expr.Fields) { Visit(item); }
-            srcScope.Append(srcScope.Pop());
-            return new("Invalid Sequential", "Invalid Sequential");
+            if (Symbols.TryGetValue(expr, out var symbol)) { return symbol; }
+            Scope.Push();
+            Scope.AppendLine("");
+            using (Scope.IndentUp())
+            {
+                foreach (var i in Enumerable.Range(0, expr.Fields.Count))
+                {
+                    if (i == expr.Fields.Count - 1 &&
+                        expr.Fields[i].CheckedType is TensorType)
+                    {
+                        Scope.IndWrite("return ");
+                    }
+                    else
+                    {
+                        Scope.IndWrite(string.Empty);
+                    }
+                    Scope.Append(Visit(expr.Fields[i]).Doc);
+                    if (expr.Fields[i] is Call)
+                    {
+                        Scope.AppendLine(";");
+                    }
+                    else
+                    {
+                        Scope.AppendLine(string.Empty);
+                    }
+                }
+            }
+            symbol = new(VisitType(expr.CheckedType!), Scope.Pop());
+            Symbols.Add(expr, symbol);
+            return symbol;
         }
 
         /// <inheritdoc/>
-        public override string VisitType(CallableType type) => VisitType(type.ReturnType);
+        public override CSymbol Visit(IfThenElse expr)
+        {
+            if (Symbols.TryGetValue(expr, out var symbol)) { return symbol; }
+            Scope.Push();
+            Scope.Append($"if({Visit(expr.Condition).Doc}) {{");
+            Scope.Append(Visit(expr.Then).Doc);
+            Scope.IndWrite("} else {");
+            Scope.Append(Visit(expr.Else).Doc);
+            Scope.IndWrite("}");
+            symbol = new(VisitType(expr.CheckedType!), Scope.Pop());
+            Symbols.Add(expr, symbol);
+            return symbol;
+        }
+
+        /// <inheritdoc/>
+        /// <example>
+        /// void (*fun_ptr)(int)
+        /// </example>
+        public string CallableTypeToPtr(CallableType type, string name) => $"{VisitType(type.ReturnType)} (*{name}_ptr)({string.Join(",", type.Parameters.Select(VisitType))})";
+
 
         /// <inheritdoc/>
         public override string VisitType(TensorType type)
@@ -407,12 +396,5 @@ namespace Nncase.CodeGen.Builder
         public override string VisitType(TupleType type) => type == TupleType.Void ?
           "void" :
           throw new InvalidProgramException($"The C Source Must Not Have TupleType {type}!");
-
-        /// <summary>
-        /// make ssa tempvar
-        /// </summary>
-        /// <param name="expr"></param>
-        /// <returns></returns>
-        private CSymbol AllocateTempVar(Call expr) => new(VisitType(expr.CheckedType!), $"_{_localId++}");
     }
 }

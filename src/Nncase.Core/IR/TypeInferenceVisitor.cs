@@ -82,7 +82,7 @@ namespace Nncase.IR
         public override IRType VisitLeaf(Function expr)
         {
             var paramTypes = expr.Parameters.Select(Visit).ToArray();
-            var type = new CallableType(expr.Body is Sequential seq ? Visit(seq) : Visit(expr.Body), ImmutableArray.Create(paramTypes));
+            var type = new CallableType(expr.Body is Sequential seq ? Visit(seq.Last()) : Visit(expr.Body), ImmutableArray.Create(paramTypes));
             SetCheckedType(expr, type);
             return type;
         }
@@ -225,7 +225,7 @@ namespace Nncase.IR
             SetCheckedType(expr, type);
             return type;
         }
-        
+
         /// <inheritdoc/>
         public override IRType VisitLeaf(IfThenElse expr)
         {

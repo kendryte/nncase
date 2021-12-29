@@ -45,9 +45,9 @@ namespace Nncase.Transform
             var post = pre;
             RunPassOptions new_options = new(options);
             new_options.SetDir(options.FullDumpDir);
-            foreach (var mutator in Mutators)
+            foreach (var (mutator, i) in Mutators.Select((item, i) => (item, i)))
             {
-                new_options.SetName(mutator.GetType().Name);
+                new_options.SetName(i + "_" + mutator.GetType().Name);
                 OnPassStart(pre, new_options);
                 post = (Function)mutator.Visit(pre);
                 post.InferenceType();

@@ -154,8 +154,14 @@ namespace Nncase.IR
             {
                 var (builder, writer) = ScopeStack.Pop();
                 writer.Dispose();
-                if (ScopeStack.Count == 0) { Writer = rootWriter; }
-                else { Writer = ScopeStack.Peek().Item2; }
+                if (ScopeStack.Count == 0)
+                {
+                    Writer = rootWriter;
+                }
+                else
+                {
+                    Writer = ScopeStack.Peek().Item2;
+                }
 
                 foreach (var name in VarNameStack.Pop()) { GlobalNameUseMap[name]--; }
                 // VarNameList
