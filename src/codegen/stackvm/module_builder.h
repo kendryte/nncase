@@ -37,6 +37,7 @@
 #include <nncase/ir/ops/reduce_prod.h>
 #include <nncase/ir/ops/reduce_window2d.h>
 #include <nncase/ir/ops/resize_image.h>
+#include <nncase/ir/ops/sigmoid.h>
 #include <nncase/ir/ops/slice.h>
 #include <nncase/ir/ops/table_lookup.h>
 #include <nncase/ir/ops/ternary.h>

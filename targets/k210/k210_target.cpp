@@ -33,6 +33,7 @@
 #include <nncase/transforms/neutral/fold_quantize.h>
 #include <nncase/transforms/neutral/fold_transpose.h>
 #include <nncase/transforms/neutral/fuse_pad.h>
+#include <nncase/transforms/neutral/split_sigmoid.h>
 #include <nncase/transforms/neutral/transpose_motion.h>
 #include <nncase/transforms/pass.h>
 
@@ -90,6 +91,12 @@ void k210_target::register_evaluator_ops()
 
 void k210_target::register_target_dependent_passes([[maybe_unused]] const module_type_t &type, [[maybe_unused]] ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] bool use_ptq)
 {
+    {
+        transform_pass p("sigmoid_lowering");
+        p.emplace<split_sigmoid_transform>();
+        pass_mgr.add_pass(std::move(p));
+    }
+
     {
         transform_pass p("strided_slice_lowering");
         p.emplace<strided_slice_conv2d_pool>();

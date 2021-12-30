@@ -39,6 +39,7 @@ target_sources(ir PRIVATE
     lstm.cpp
     gather_nd.cpp
     onehot.cpp
+    sigmoid.cpp
     ternary.cpp
     topk.cpp
     trilu.cpp)
