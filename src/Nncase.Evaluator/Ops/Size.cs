@@ -13,7 +13,7 @@ namespace Nncase.Evaluator.Ops
     {
         private torch.Tensor VisitSize(Size size)
         {
-            var input = _context.GetArgument(size, Size.Input);
+            var input = _context.GetTorchArgument(size, Size.Input);
             var v = (Const)((int)input.numel());
             return v.ToTorchTensor();
         }

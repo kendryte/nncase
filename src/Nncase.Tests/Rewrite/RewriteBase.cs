@@ -50,6 +50,7 @@ namespace Nncase.Tests.ReWrite
 
         public Expr RunShapeInferPass(string name, Expr expr, params Expr[] parameters)
         {
+            expr.InferenceType();
             var f = new Function(expr, parameters);
             var result = TypeInference.InferenceType(f);
             f.DumpExprAsIL("before", Path.Combine(passOptions.FullDumpDir, $"ShapeInfer_{name}"));

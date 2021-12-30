@@ -4,6 +4,7 @@
 using System;
 using Nncase.IR;
 using Nncase.IR.Math;
+using Nncase.IR.NN;
 using Nncase.IR.Tensors;
 using Onnx;
 using F = Nncase.IR.F;
@@ -12,9 +13,9 @@ namespace Nncase.Importer
 {
     public partial class OnnxImporter
     {
-        private Expr BroadCastValueByChannel(Expr v)
+        public static Expr ReshapeToByChannel(Expr v)
         {
-            return F.Tensors.Broadcast(
+            return F.Tensors.Reshape(
                 v, F.Tensors.Concat(
                     new IR.Tuple(F.Tensors.ShapeOp(v), new[] { 1 }, new[] { 1 }), 0));
         }
@@ -26,9 +27,10 @@ namespace Nncase.Importer
             var (mean, var) = GetInputExprs(op, 3, 4);
             var eps = GetFloatAttribute(op, "epsilon", 1e-05f);
             var mom = GetFloatAttribute(op, "momentum", 0.9f);
-            var input_mean = BroadCastValueByChannel(mean);
-            var bias = BroadCastValueByChannel(b);
-            return (x - input_mean) / F.Math.Sqrt(var + eps) * scale + bias;
+            var input_mean = ReshapeToByChannel(mean);
+            var bias = ReshapeToByChannel(b);
+            // return F.NN.BatchNormalization(x, eps, mom) * scale + bias;
+            return (x - input_mean) / ReshapeToByChannel(F.Math.Sqrt(var + eps)) * scale + bias;
         }
 
         private Expr VisitInstanceNormalization(in NodeProto op)
@@ -36,7 +38,7 @@ namespace Nncase.Importer
             var input = GetInputExpr(op, 0);
             var (scale, bias) = GetInputExprs(op, 1, 2);
             var eps = GetFloatAttribute(op, "epsilon", 1e-05f);
-            return F.NN.InstanceNormalization(input, eps) * scale + bias;
+            return F.NN.InstanceNormalization(input, eps) * ReshapeToByChannel(scale) + ReshapeToByChannel(bias);
         }
 
         private Expr VisitLpNormalization(in NodeProto op)

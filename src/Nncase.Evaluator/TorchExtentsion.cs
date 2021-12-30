@@ -14,6 +14,7 @@ namespace Nncase.Evaluator
     {
         public static Const ToConst(this torch.Tensor tensor)
         {
+            
             if (!tensor.is_contiguous())
                 tensor = tensor.contiguous();
             return tensor.ToConst(new Shape(tensor.shape));
@@ -45,7 +46,7 @@ namespace Nncase.Evaluator
             var shape = expr.CheckedShape.IsScalar
                 ? new long[] { }
                 : expr.CheckedShape.ToList().Select(x => (long)x.FixedValue).ToArray();
-
+            
             return dtype switch
             {
                 DataType.Int8 => torch.tensor(expr.ToTensor<sbyte>(), shape, ToTorchType(dtype)),

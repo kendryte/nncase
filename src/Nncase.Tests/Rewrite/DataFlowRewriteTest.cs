@@ -18,6 +18,7 @@ using static Nncase.Pattern.F.Tensors;
 using static Nncase.IR.Utility;
 using TorchSharp;
 using Nncase.Evaluator;
+using Nncase.Importer;
 using Nncase.Importer.TFLite;
 using Nncase.IR.F;
 using Nncase.IR.NN;
@@ -25,6 +26,7 @@ using Nncase.Tests.ReWrite;
 using Nncase.Transform.DataFlow.Rules;
 using Nncase.Transform.Rule;
 using Binary = Nncase.IR.Math.Binary;
+using Broadcast = Nncase.IR.Tensors.Broadcast;
 using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Tests
@@ -287,6 +289,25 @@ namespace Nncase.Tests
                     axis),
                 afterShape);
             Assert.True(softMax.InferenceType());
+        }
+        
+        [Fact]
+        public void TestReshapeToByChannel()
+        {
+            var v = Const.FromSpan<int>(new[] {1, 2, 3});
+            var shape = Concat(
+                new IR.Tuple(ShapeOp(v), new[] {1}, new[] {1}), 0);
+            var afterShape = RunShapeInferPass("Shape", shape);
+            Assert.True(afterShape.InferenceType());
+            Assert.Equal(new[] {3, 1, 1}, afterShape);
+            var b = Reshape(v, afterShape);
+            b.InferenceType();
+            Assert.Equal(new[] { 3, 1, 1 }, b.Eval().ToConst().CheckedShape.ToValueList());
+
+            var a = OnnxImporter.ReshapeToByChannel(v);
+            var after = RunShapeInferPass("ReshapeToByChannel", a);
+            Assert.True(after.InferenceType());
+            Assert.Equal(new[] { 3L, 1, 1 }, after.Eval().shape);
         }
     }
 }

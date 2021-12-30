@@ -12,7 +12,7 @@ namespace Nncase.Evaluator.Ops
     {
         private torch.Tensor VisitCumSum(CumSum cumSum)
         {
-            var input = _context.GetArgument(cumSum, CumSum.Input);
+            var input = _context.GetTorchArgument(cumSum, CumSum.Input);
             // in onnx, CumSum.Axis is a input tensor with one value
             var dim = _context.GetArgumentConst(cumSum, CumSum.Axis).ToTensor<long>()[0];
             var exclusive = _context.GetArgumentConstScalar<bool>(cumSum, CumSum.Exclusive);

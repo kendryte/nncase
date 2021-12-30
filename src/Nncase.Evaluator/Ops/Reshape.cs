@@ -12,7 +12,7 @@ namespace Nncase.Evaluator.Ops
     {
         private torch.Tensor VisitReshape(Reshape reshape)
         {
-            var input = _context.GetArgument(reshape, Reshape.Input);
+            var input = _context.GetTorchArgument(reshape, Reshape.Input);
             var shape = _context.GetArgumentConst(reshape, Reshape.Shape).ToArray<long>();
             return input.reshape(shape);
         }

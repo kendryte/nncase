@@ -12,7 +12,7 @@ namespace Nncase.Evaluator.Ops
     {
         private torch.Tensor VisitReduce(Reduce reduce)
         {
-            var input = _context.GetArgument(reduce, Reduce.Input);
+            var input = _context.GetTorchArgument(reduce, Reduce.Input);
             var dims = _context.GetArgumentConstArray<long>(reduce, Reduce.Axis);
             var keepDims = _context.GetArgumentConstScalar<bool>(reduce, Reduce.KeepDims);
             var initValue = _context.GetArgumentConstScalar<float>(reduce, Reduce.InitValue);

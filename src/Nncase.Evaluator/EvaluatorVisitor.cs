@@ -14,11 +14,11 @@ namespace Nncase.Evaluator.Ops
     public sealed class EvaluatorContext
     {
         public Call? CurrentCall;
-        private readonly Dictionary<Expr, torch.Tensor> _exprMemo;
+        private readonly Dictionary<Expr, Const> _exprMemo;
 
-        public readonly Dictionary<Var, torch.Tensor> Inputs;
+        public readonly Dictionary<Var, Const> Inputs;
 
-        public EvaluatorContext(Dictionary<Expr, torch.Tensor> exprMemo, Dictionary<Var, torch.Tensor> inputs)
+        public EvaluatorContext(Dictionary<Expr, Const> exprMemo, Dictionary<Var, Const> inputs)
         {
             _exprMemo = exprMemo;
             Inputs = inputs;
@@ -27,12 +27,22 @@ namespace Nncase.Evaluator.Ops
         private Call GetCurrentCall() =>
             CurrentCall ?? throw new InvalidOperationException("Current call is not set in evaluator.");
 
-        public torch.Tensor GetArgument(Op op, ParameterInfo parameter)
+        public torch.Tensor GetTorchArgument(Op op, ParameterInfo parameter)
         {
-            return _exprMemo[GetArgumentExpr(op, parameter)];
+            return GetArgumentConst(op, parameter).ToTorchTensor();
         }
 
-        public torch.Tensor GetArgument(Expr expr)
+        public torch.Tensor GetTorchArgument(Expr expr)
+        {
+            return GetArgument(expr).ToTorchTensor();
+        }
+        
+        public Tensorflow.Tensor GetTFArgument(Op op, ParameterInfo parameter)
+        {
+            return GetArgumentConst(op, parameter).ToTFTensor();
+        }
+
+        public Const GetArgument(Expr expr)
         {
             return _exprMemo[expr];
         }
@@ -71,7 +81,7 @@ namespace Nncase.Evaluator.Ops
             else
             {
                 // maybe a valid type but not const
-                return GetArgument(expr).ToConst();
+                return GetArgument(expr);
             }
         }
 
@@ -87,21 +97,22 @@ namespace Nncase.Evaluator.Ops
 
     }
 
-    public sealed partial class EvaluatorVisitor : ExprVisitor<torch.Tensor, IRType>
+    public sealed partial class EvaluatorVisitor : ExprVisitor<Const, IRType>
     {
         private readonly EvaluatorContext _context;
 
-        public EvaluatorVisitor(Dictionary<Var, torch.Tensor> inputs)
+        public EvaluatorVisitor(Dictionary<Var, Const> inputs)
         {
             _context = new EvaluatorContext(ExpressionMemo, inputs);
         }
 
-        private torch.Tensor _fixShape(Expr expr, torch.Tensor tensor) => expr.CheckedShape.IsScalar ? tensor.view(new long[] { }) : tensor;
+        // when torch return a scalar, scalar's shape is {0}
+        private static torch.Tensor _fixShape(Expr expr, torch.Tensor tensor) => expr.CheckedShape.IsScalar ? tensor.view(new long[] { }) : tensor;
 
-        public override torch.Tensor VisitLeaf(Call expr)
+        public override Const VisitLeaf(Call expr)
         {
             _context.CurrentCall = expr;
-            return _fixShape(expr, expr.Target switch
+            var result = expr.Target switch
             {
                 // todo:reflect to visit f
                 BatchNormalization b => VisitBatchNormalization(b),
@@ -117,7 +128,6 @@ namespace Nncase.Evaluator.Ops
                 Expand e => VisitExpand(e),
                 Flatten f => VisitFlatten(f),
                 Gather g => VisitGather(g),
-                HardSigmoid h => VisitHardSigmoid(h),
                 HardSwish h => VisitHardSwish(h),
                 InstanceNormalization i => VisitInstanceNormalization(i),
                 LeakyRelu l => VisitLeakyRelu(l),
@@ -144,31 +154,32 @@ namespace Nncase.Evaluator.Ops
                 Unary un => VisitUnary(un),
                 Clamp cl => VisitClamp(cl),
                 _ => throw new NotImplementedException($"{expr.Target}")
-            });
+            };
+            return _fixShape(expr, result).ToConst();
         }
 
-        public override torch.Tensor VisitLeaf(Const expr)
+        public override Const VisitLeaf(Const expr)
         {
-            return expr.ToTorchTensor();
+            return expr;
         }
 
-        public override torch.Tensor VisitLeaf(Op expr)
+        public override Const VisitLeaf(Op expr)
         {
             // todo:maybe a problem
-            return torch.empty(1, 1);
+            return Const.FromScalar(0);
         }
 
-        public override torch.Tensor VisitLeaf(Function expr)
+        public override Const VisitLeaf(Function expr)
         {
-            return torch.empty(1, 1);
+            return Const.FromScalar(0);
         }
 
-        public override torch.Tensor VisitLeaf(IR.Tuple expr)
+        public override Const VisitLeaf(IR.Tuple expr)
         {
-            return torch.empty(1, 1);
+            return Const.FromScalar(0);
         }
 
-        public override torch.Tensor VisitLeaf(Var expr)
+        public override Const VisitLeaf(Var expr)
         {
             if (!_context.Inputs.TryGetValue(expr, out var result))
             {
@@ -176,11 +187,10 @@ namespace Nncase.Evaluator.Ops
             }
             if (result is null)
                 throw new InvalidProgramException($"Must Set Input For Var {expr.Name}!");
-            var target = new TensorType(result.dtype.ToDataType(), new Shape(result.shape));
-            if (target != expr.CheckedType)
+            if (result.CheckedType != expr.CheckedType)
             {
                 throw new InvalidProgramException(
-                  $"The Var {expr.Name} Require {expr.CheckedType} But Give {target}");
+                  $"The Var {expr.Name} Require {expr.CheckedType} But Give {result.CheckedType}");
             }
             return result;
         }

@@ -12,13 +12,12 @@ namespace Nncase.Evaluator.Ops
     {
         private torch.Tensor VisitSlice(Slice sl)
         {
-            var input = _context.GetArgument(sl, Slice.Input);
-            var begins = _context.GetArgument(sl, Slice.Begins);
-            var ends = _context.GetArgument(sl, Slice.Ends);
+            var input = _context.GetTorchArgument(sl, Slice.Input);
+            var begins = _context.GetTorchArgument(sl, Slice.Begins);
+            var ends = _context.GetTorchArgument(sl, Slice.Ends);
             var axes = _context.GetArgumentConstArray<int>(sl, Slice.Axes)
                 .Select(x => x < 0 ? x + input.shape.Rank : x);
-            var strides = _context.GetArgument(sl, Slice.Strides);
-
+            var strides = _context.GetTorchArgument(sl, Slice.Strides);
             var axesIndex = 0;
             var indices = Enumerable.Range(0, input.shape.Length).Select(i =>
                 axes.Contains(i)?

@@ -12,7 +12,7 @@ namespace Nncase.Evaluator.Ops
     {
         private torch.Tensor VisitExpand(Expand expand)
         {
-            var input = _context.GetArgument(expand, Expand.Input);
+            var input = _context.GetTorchArgument(expand, Expand.Input);
             if (input.shape.Length == 0)
             {
                 input = input.reshape(1L);

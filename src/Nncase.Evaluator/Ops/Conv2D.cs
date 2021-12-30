@@ -13,9 +13,9 @@ namespace Nncase.Evaluator.Ops
     {
         private torch.Tensor VisitConv2D(Conv2D conv)
         {
-            var input = _context.GetArgument(conv, Conv2D.Input);
-            var weights = _context.GetArgument(conv, Conv2D.Weights);
-            var bias = _context.GetArgument(conv, Conv2D.Bias);
+            var input = _context.GetTorchArgument(conv, Conv2D.Input);
+            var weights = _context.GetTorchArgument(conv, Conv2D.Weights);
+            var bias = _context.GetTorchArgument(conv, Conv2D.Bias);
             var stride = _context.GetArgumentConst(conv, Conv2D.Stride).ToTensor<long>();
             // [w:[left right] h:[top bottom]]
             var pad = _context.GetArgumentConst(conv, Conv2D.Padding).ToTensor<long>();

@@ -9,7 +9,7 @@ namespace Nncase.Evaluator.Ops
     {
         private torch.Tensor VisitUnary(Unary unary)
         {
-            var i = _context.GetArgument(unary, Unary.Input);
+            var i = _context.GetTorchArgument(unary, Unary.Input);
             return unary.UnaryOp switch
             {
                 UnaryOp.Abs => torch.abs(i),

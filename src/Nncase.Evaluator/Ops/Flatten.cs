@@ -12,7 +12,7 @@ namespace Nncase.Evaluator.Ops
     {
         private torch.Tensor VisitFlatten(Flatten flatten)
         {
-            var input = _context.GetArgument(flatten, Flatten.Input);
+            var input = _context.GetTorchArgument(flatten, Flatten.Input);
             var dim = _context.GetArgumentConst(flatten, Flatten.Axis).ToScalar<int>();
             var v = torch.nn.Flatten(0, dim);
             return v.forward(input);

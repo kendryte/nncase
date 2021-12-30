@@ -9,7 +9,7 @@ namespace Nncase.Evaluator.Ops
     {
         private torch.Tensor VisitReduceWindow2D(ReduceWindow2D r)
         {
-            var input = _context.GetArgument(r, ReduceWindow2D.Input);
+            var input = _context.GetTorchArgument(r, ReduceWindow2D.Input);
             var kernelSize = _context.GetArgumentConstArray<long>(r, ReduceWindow2D.Filter);
             var stride = _context.GetArgumentConstArray<long>(r, ReduceWindow2D.Stride);
             var padding = _context.GetArgumentConstArray<long>(r, ReduceWindow2D.Padding);

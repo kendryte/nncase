@@ -12,7 +12,7 @@ namespace Nncase.Evaluator.Ops
     {
         private torch.Tensor VisitBroadcast(Broadcast b)
         {
-            var input = _context.GetArgument(b, Broadcast.Input);
+            var input = _context.GetTorchArgument(b, Broadcast.Input);
             var shape = _context.GetArgumentConst(b, Broadcast.Shape);
             var s = shape.ToArray<long>();
             return input.broadcast_to(s);

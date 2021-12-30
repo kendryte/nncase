@@ -15,8 +15,8 @@ namespace Nncase.Evaluator.Ops
         private torch.Tensor VisitStack(Stack stack)
         {
             var inputs = _context.GetArgumentExpr(stack, Stack.Inputs);
-            var axis = _context.GetArgument(stack, Stack.Axis);
-            var inputTensors = (inputs as IR.Tuple).Select(x => _context.GetArgument(x)).ToArray();
+            var axis = _context.GetTorchArgument(stack, Stack.Axis);
+            var inputTensors = (inputs as IR.Tuple).Select(x => _context.GetTorchArgument(x)).ToArray();
             return torch.stack(inputTensors, axis.ToScalar().ToInt64());
         }
     }

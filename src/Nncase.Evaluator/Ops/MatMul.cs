@@ -8,8 +8,8 @@ namespace Nncase.Evaluator.Ops
     {
         private torch.Tensor VisitMatMul(MatMul matMul)
         {
-            var input = _context.GetArgument(matMul, MatMul.Input);
-            var other = _context.GetArgument(matMul, MatMul.Other);
+            var input = _context.GetTorchArgument(matMul, MatMul.Input);
+            var other = _context.GetTorchArgument(matMul, MatMul.Other);
             return input.matmul(other);
         }
     }

@@ -12,7 +12,7 @@ namespace Nncase.Evaluator.Ops
     {
         private torch.Tensor VisitGather(Gather gather)
         {
-            var input = _context.GetArgument(gather, Gather.Input);
+            var input = _context.GetTorchArgument(gather, Gather.Input);
             var axis = _context.GetArgumentConst(gather, Gather.Axis).ToScalar<int>();
             var index = _context.GetArgumentConst(gather, Gather.Index).ToArray<int>();
             return torch.cat(index.Select(i => input.select(axis, i)).ToList(), 0);

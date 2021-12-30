@@ -13,7 +13,7 @@ namespace Nncase.Evaluator.Ops
     {
         private torch.Tensor VisitProd(Prod prod)
         {
-            var input = _context.GetArgument(prod, Prod.Input);
+            var input = _context.GetTorchArgument(prod, Prod.Input);
             var size = input.shape.Aggregate(1L, (sum, v) => sum * v);
             var v = input.reshape(size).cumprod(0)[size - 1];
             return v;

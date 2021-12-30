@@ -205,6 +205,11 @@ namespace Nncase.IR
             return _dimensions.Select(dim => dim.FixedValue).ToList();
         }
         
+        public int[] ToValueArray()
+        {
+            return _dimensions.Select(dim => dim.FixedValue).ToArray();
+        }
+        
         /// <inheritdoc/>
         public override string ToString() => Kind switch
         {

@@ -14,7 +14,7 @@ namespace Nncase.Evaluator.Ops
     {
         private torch.Tensor VisitPad(Pad pad)
         {
-            var input = _context.GetArgument(pad, Pad.Input);
+            var input = _context.GetTorchArgument(pad, Pad.Input);
             var pads = _context.GetArgumentConst(pad, Pad.Pads).ToTensor<long>();
             var value = _context.GetArgumentConst(pad, Pad.Value).ToScalar<double>();
             List<long> torch_pads = new();
