@@ -21,11 +21,11 @@ using namespace nncase::ir;
 
 DEFINE_TFLITE_LOWER(SPLIT)
 {
-    [[maybe_unused]] auto &input = get_tensor(op.inputs(), 1);
+    auto &input = get_tensor(op.inputs(), 1);
     auto axis = load_array<int32_t>(get_tensor(op.inputs(), 0));
     auto &options = *op.builtin_options_as_SplitOptions();
 
-    [[maybe_unused]] auto num_splits = options.num_splits();
+    auto num_splits = options.num_splits();
 
     std::vector<shape_t> output_shapes(op.outputs()->size());
     for (size_t i = 0; i < op.outputs()->size(); i++)
