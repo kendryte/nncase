@@ -301,6 +301,16 @@ result<void> kernels::random_uniform(T *output, const runtime_shape_t &out_shape
     return cpu::reference::random_uniform(output, out_shape, low, high, seed);
 }
 
+template result<void> kernels::roi_align<float>(const float *input, const float *rois, int64_t *batch_indices, float *output, const runtime_shape_t &in_shape,
+    const runtime_shape_t &out_shape, roi_align_mode_t mode, float spatial_scale, int64_t sampling_ratio) noexcept;
+
+template <typename T>
+result<void> kernels::roi_align(const T *input, const T *rois, int64_t *batch_indices, T *output, const runtime_shape_t &in_shape,
+    const runtime_shape_t &out_shape, roi_align_mode_t mode, float spatial_scale, int64_t sampling_ratio) noexcept
+{
+    return cpu::reference::roi_align(input, rois, batch_indices, output, in_shape, out_shape, mode, spatial_scale, sampling_ratio);
+}
+
 template result<void> kernels::sigmoid<float>(const float *input, float *output, const runtime_shape_t &in_shape,
     const runtime_shape_t &in_strides) noexcept;
 
