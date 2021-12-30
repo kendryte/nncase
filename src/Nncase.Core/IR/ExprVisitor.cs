@@ -161,7 +161,7 @@ namespace Nncase.IR
                 Visit(expr.LoopVar);
                 Visit(expr.Dom.Min);
                 Visit(expr.Dom.Max);
-                Visit(expr.Body ?? throw new InvalidOperationException("The For Expr Must Have Body!"));
+                Visit(expr.Body);
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);
             }
@@ -173,13 +173,10 @@ namespace Nncase.IR
         {
             if (!_exprMemo.TryGetValue(expr, out var result))
             {
-                foreach (var iterVar in expr.IterVars)
-                {
-                    Visit(iterVar);
-                }
                 Visit(expr.InitBody);
-                Visit(expr.Body);
                 Visit(expr.Predicate);
+                foreach (var iterVar in expr.IterVars) { Visit(iterVar); }
+                Visit(expr.Body);
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);
             }
@@ -191,7 +188,6 @@ namespace Nncase.IR
         {
             if (!_exprMemo.TryGetValue(expr, out var result))
             {
-                Visit(expr.Buffer.Handle);
                 foreach (var index in expr.Indices) { Visit(index); }
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);

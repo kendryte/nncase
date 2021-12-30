@@ -100,6 +100,9 @@ namespace Nncase.TIR
                     case TIR.Load load:
                         Scope.Append($"{args[0]}[{args[1]}]");
                         break;
+                    case IR.Tensors.Cast cast:
+                        Scope.Append($"{target}({args[0]}, {cast.NewType})");
+                        break;
                     default:
                         Scope.Append($"{target}({string.Join<StringBuilder>(", ", args)})");
                         break;
@@ -151,7 +154,7 @@ namespace Nncase.TIR
                 {
                     Unary op => op.UnaryOp.ToString(),
                     Binary op => op.ToLiteral(),
-                    IR.Tensors.Cast op => DataTypes.GetDisplayName(op.NewType),
+                    IR.Tensors.Cast op => "Cast",
                     _ => expr.GetType().Name,
                 });
                 Docs.Add(expr, doc);

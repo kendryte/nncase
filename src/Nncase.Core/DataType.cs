@@ -142,6 +142,11 @@ namespace Nncase
         /// <param name="other"></param>
         /// <returns></returns>
         public Compatible CompatibleWith(DataType other) => new Compatible((this.ElemType == other.ElemType && this.Lanes % other.Lanes == 0), $"this {this} != other {other}");
+
+        public override string? ToString()
+        {
+            return ("DataType." + ElemType) + (Lanes == 1 ? string.Empty : Lanes.ToString());
+        }
     }
 
     public sealed record Compatible(bool IsCompatible, string Reason)

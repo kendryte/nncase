@@ -128,10 +128,12 @@ namespace Nncase.Tests.CodeGenTest
             var n = T.SizeVar("n");
             var m = T.SizeVar("m");
             var A = TIR.T.DeclBuffer((n, m), DataType.Int32, "A");
-            var out_for = T.Grid(out var i, out var j, (n, m)).Add(
-               T.Store(A[i * n + j], i + j)
+            var func = T.PrimFunc("main", A.Handle, n, m).Add(
+              T.Grid(out var i, out var j, (n, m)).Add(
+                T.Store(A[i * n + j], i + j)
+              )
             );
-            return T.PrimFunc("main", A.Handle, n, m).Add(out_for);
+            return func;
         }
     }
 
@@ -144,18 +146,15 @@ namespace Nncase.Tests.CodeGenTest
             var m = T.SizeVar("m");
             var A = T.DeclBuffer((n, m), name: "A");
             var func = T.PrimFunc("func", A.Handle, n, m).Add(
-              T.Serial(out var i, n, out var fi).Add(
-                T.Serial(out var j, m, out var fj).Add(
-                  T.Block("init").
-                  Remap(out var vi, out var vj, (fi, fj), "SS").
-                  Init(
-                    T.Store(A[vi, vj], 1.0f)
-                  ).Add(
-                    T.Store(A[vi, vj], IR.F.Tensors.Cast(vi + vj, DataType.Float32))
-                  )
-                )
-              ),
-              n + m
+            T.Grid(out var i, out var j, (n, m), out var lp).Add(
+              T.Block("init").Remap(out var vi, out var vj, (lp.i, lp.j), "SS").
+              Init(
+                T.Store(A[vi, vj], 1.0f)
+              ).Add(
+                T.Store(A[vi, vj], IR.F.Tensors.Cast(vi + vj, DataType.Float32))
+              )
+            ),
+            n + m
             );
             return func;
         }

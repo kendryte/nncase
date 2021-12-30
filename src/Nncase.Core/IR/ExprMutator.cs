@@ -14,29 +14,42 @@ namespace Nncase.IR
     /// <summary>
     /// Expression matutor.
     /// </summary>
-    public abstract class ExprMutator : ExprFunctor<Expr, IRType>
+    public abstract class ExprMutator : ExprVisitor<Expr, IRType>
     {
-        RecordRefComparer<Expr> comparer = new();
+        /// <summary>
+        /// for speedup the Mutator, If is Mutated we need Mutate recursive.
+        /// </summary>
+        protected bool IsMutated = false;
+
+        /// <summary>
+        /// the default visit the  Original leaf expr, we can hook it.
+        /// </summary>
+        /// <param name="expr"></param>
+        /// <returns></returns>
+        public virtual Expr DefaultVisitLeafOrigin(Expr expr) => expr;
 
         /// <inheritdoc/>
-        public override Expr Visit(Call expr)
+        public override Expr VisitLeaf(Call expr)
         {
+            if (!IsMutated) return DefaultVisitLeafOrigin(expr);
             return expr with
             {
                 Target = Visit(expr.Target),
-                Parameters = new(expr.Parameters.Select(Visit)),
+                Parameters = Mutate(expr.Parameters, Visit)
             };
         }
 
         /// <inheritdoc/>
-        public override Expr Visit(Const expr)
+        public override Expr VisitLeaf(Const expr)
         {
+            if (!IsMutated) return DefaultVisitLeafOrigin(expr);
             return expr;
         }
 
         /// <inheritdoc/>
-        public override Expr Visit(Function expr)
+        public override Expr VisitLeaf(Function expr)
         {
+            if (!IsMutated) return DefaultVisitLeafOrigin(expr);
             return expr with
             {
                 Body = Visit(expr.Body),
@@ -45,15 +58,16 @@ namespace Nncase.IR
         }
 
         /// <inheritdoc/>
-        public override Expr Visit(Op expr)
+        public override Expr VisitLeaf(Op expr)
         {
+            if (!IsMutated) return DefaultVisitLeafOrigin(expr);
             return expr;
         }
 
         /// <inheritdoc/>
-        public override Expr Visit(Tuple expr)
+        public override Expr VisitLeaf(Tuple expr)
         {
-
+            if (!IsMutated) return DefaultVisitLeafOrigin(expr);
             return expr with
             {
                 Fields = new(expr.Fields.Select(Visit)),
@@ -61,39 +75,100 @@ namespace Nncase.IR
         }
 
         /// <inheritdoc/>
-        public override Expr Visit(Var expr)
+        public override Expr VisitLeaf(Var expr)
         {
+            if (!IsMutated) return DefaultVisitLeafOrigin(expr);
             return expr;
         }
 
         /// <inheritdoc/>
-        public override Expr Visit(TIR.IterVar expr)
+        public override Expr VisitLeaf(TIR.IterVar expr)
         {
-            return expr;
-        }
-
-        /// <inheritdoc/>
-        public override Expr Visit(TIR.Sequential expr)
-        {
+            if (!IsMutated) return DefaultVisitLeafOrigin(expr);
             return expr with
             {
-                Fields = new(expr.Fields.Select(Visit)),
+                Dom = Mutate(expr.Dom),
+                Value = Visit(expr.Value)
             };
         }
 
         /// <inheritdoc/>
-        public override Expr Visit(TIR.For expr)
+        public override Expr VisitLeaf(TIR.Sequential expr)
         {
+            if (!IsMutated) return DefaultVisitLeafOrigin(expr);
+            return expr with
+            {
+                Fields = MutateArray(expr.Fields, Visit),
+            };
+        }
+
+        /// <inheritdoc/>
+        public override Expr VisitLeaf(TIR.For expr)
+        {
+            if (!IsMutated) return DefaultVisitLeafOrigin(expr);
             return expr with
             {
                 LoopVar = (Var)Visit(expr.LoopVar),
-                Dom = VisitRange(expr.Dom),
+                Dom = Mutate(expr.Dom),
                 Body = (TIR.Sequential)Visit(expr.Body),
             };
         }
 
-        public virtual TIR.Range VisitRange(TIR.Range range)
+        public override Expr VisitLeaf(TIR.Block expr)
         {
+            if (!IsMutated) return DefaultVisitLeafOrigin(expr);
+            return expr with
+            {
+                // the block realize 
+                InitBody = (TIR.Sequential)Visit(expr.InitBody),
+                Predicate = Visit(expr.Predicate),
+                IterVars = MutateArray(expr.IterVars, x => (TIR.IterVar)Visit(x)),
+                // the block internal.
+                Body = (TIR.Sequential)Visit(expr.Body),
+                Reads = MutateArray(expr.Reads, Mutate),
+                Writes = MutateArray(expr.Writes, Mutate)
+            };
+        }
+
+        /// <inheritdoc/>
+        public override Expr VisitLeaf(TIR.BufferStore expr)
+        {
+            if (!IsMutated) return DefaultVisitLeafOrigin(expr);
+            return expr with
+            {
+                Value = Visit(expr.Value),
+                Indices = Mutate(expr.Indices, Visit),
+            };
+        }
+
+        /// <inheritdoc/>
+        public override Expr VisitLeaf(TIR.BufferLoad expr)
+        {
+            if (!IsMutated) return DefaultVisitLeafOrigin(expr);
+            return expr with
+            {
+                Indices = Mutate(expr.Indices, Visit)
+            };
+        }
+
+        public virtual IRArrayList<TResult> MutateArray<TInput, TResult>(IRArrayList<TInput> arrayList, Func<TInput, TResult> visitor)
+        {
+            return new(arrayList.Select(visitor));
+        }
+
+        public virtual IRArray<TResult> Mutate<TInput, TResult>(IRArray<TInput> array, Func<TInput, TResult> visitor)
+        {
+            return new(array.Select(visitor));
+        }
+
+        /// <summary>
+        /// visit range.
+        /// </summary>
+        /// <param name="range"></param>
+        /// <returns></returns>
+        public virtual TIR.Range Mutate(TIR.Range range)
+        {
+            if (!IsMutated) return range;
             return range with
             {
                 Min = Visit(range.Min),
@@ -101,66 +176,18 @@ namespace Nncase.IR
             };
         }
 
-        public virtual TIR.BufferRegion VisitBufferRegion(TIR.BufferRegion region)
+        /// <summary>
+        /// visit the buffer region
+        /// </summary>
+        /// <param name="region"></param>
+        /// <returns></returns>
+        public virtual TIR.BufferRegion Mutate(TIR.BufferRegion region)
         {
-            return region;
-        }
-
-        public virtual TIR.Buffer VisitBuffer(TIR.Buffer buffer)
-        {
-            return buffer with
+            if (!IsMutated) return region;
+            return region with
             {
-                Handle = (Var)Visit(buffer.Handle),
-                Shape = (IR.Tuple)Visit(buffer.Shape),
-                Strides = (IR.Tuple)Visit(buffer.Strides),
-                ElemOffset = Visit(buffer.ElemOffset)
+                Region = Mutate(region.Region, Mutate),
             };
         }
-
-        public override Expr Visit(TIR.Block expr)
-        {
-            return expr with
-            {
-                // the block realize 
-                InitBody = (TIR.Sequential)Visit(expr.InitBody),
-                Predicate = Visit(expr.Predicate),
-                IterVars = VisitArrayList(expr.IterVars, x => (TIR.IterVar)Visit(x)),
-                // the block internal.
-                Body = (TIR.Sequential)Visit(expr.Body),
-                Reads = new(expr.Reads.Select(VisitBufferRegion)),
-                Writes = new(expr.Writes.Select(VisitBufferRegion)),
-                AllocBuffers = new(expr.AllocBuffers.Select(VisitBuffer)),
-            };
-        }
-
-        /// <inheritdoc/>
-        public override Expr Visit(TIR.BufferStore expr)
-        {
-            return expr with
-            {
-                Indices = VisitArray(expr.Indices, Visit),
-                Value = Visit(expr.Value)
-            };
-        }
-
-        /// <inheritdoc/>
-        public override Expr Visit(TIR.BufferLoad expr)
-        {
-            return expr with
-            {
-                Indices = VisitArray(expr.Indices, Visit),
-            };
-        }
-
-        public virtual IRArrayList<TResult> VisitArrayList<TInput, TResult>(IRArrayList<TInput> arrayList, Func<TInput, TResult> visitor)
-        {
-            return new(arrayList.Select(visitor));
-        }
-
-        public virtual IRArray<TResult> VisitArray<TInput, TResult>(IRArray<TInput> array, Func<TInput, TResult> visitor)
-        {
-            return new(array.Select(visitor));
-        }
-
     }
 }

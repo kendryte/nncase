@@ -12,7 +12,7 @@ namespace Nncase.Transform.Mutator
     public class LowerBlockInit : ExprMutator
     {
         /// <inheritdoc/>
-        public override Expr Visit(Block expr)
+        public override Expr VisitLeaf(Block expr)
         {
             if (expr.InitBody.Count == 0)
             {

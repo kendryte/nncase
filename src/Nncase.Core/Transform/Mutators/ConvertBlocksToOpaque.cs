@@ -12,22 +12,25 @@ namespace Nncase.Transform.Mutator
     /// </summary>
     public class ConvertBlocksToOpaque : ExprMutator
     {
-        public override Expr Visit(IterVar expr)
+        /// <inheritdoc/>
+        public override Expr VisitLeaf(IterVar expr)
         {
             return expr.Value;
         }
 
-        public override Expr Visit(Block expr)
+        /// <inheritdoc/>
+        public override Expr VisitLeaf(Block expr)
         {
             return expr with
             {
-                Body = (TIR.Sequential)Visit(expr.Body),
+                // the block realize 
                 InitBody = (TIR.Sequential)Visit(expr.InitBody),
+                Predicate = Visit(expr.Predicate),
                 IterVars = new(),
-                Reads = new(expr.Reads.Select(VisitBufferRegion)),
-                Writes = new(expr.Writes.Select(VisitBufferRegion)),
-                AllocBuffers = new(expr.AllocBuffers.Select(VisitBuffer)),
-                Predicate = Visit(expr.Predicate)
+                // the block internal.
+                Body = (TIR.Sequential)Visit(expr.Body),
+                Reads = MutateArray(expr.Reads, Mutate),
+                Writes = MutateArray(expr.Writes, Mutate)
             };
         }
     }

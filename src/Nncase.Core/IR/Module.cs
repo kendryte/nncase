@@ -69,10 +69,10 @@ namespace Nncase.IR
         /// </summary>
         /// <param name="i">function index.</param>
         /// <param name="function">the entry function defination.</param>
-        public void Update(int i, Function function)
+        public void Update(int i, Expr function)
         {
             _functions.RemoveAt(i);
-            _functions.Add(function);
+            _functions.Add((Function)function);
         }
     }
 }

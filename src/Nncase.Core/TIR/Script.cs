@@ -187,6 +187,22 @@ namespace Nncase.TIR
         }
 
         /// <summary>
+        /// get grid with loops
+        /// </summary>
+        /// <param name="i"></param>
+        /// <param name="j"></param>
+        /// <param name="ends"></param>
+        /// <param name="loops"></param>
+        /// <returns></returns>
+        public static GridWrapper Grid(out Var i, out Var j, (Expr i, Expr j) ends, out (For i, For j) loops)
+        {
+            T.Serial(out i, ends.i, out loops.i);
+            T.Serial(out j, ends.j, out loops.j);
+            loops.i.Add(loops.j);
+            return new GridWrapper(loops.i, loops.j);
+        }
+
+        /// <summary>
         /// a named variable represents a tensor index size
         /// </summary>
         /// <param name="name"></param>        

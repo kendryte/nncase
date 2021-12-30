@@ -13,15 +13,14 @@ namespace Nncase.Transform.Mutator
     public class FlattenBuffer : ExprMutator
     {
         /// <inheritdoc/>
-        public override Expr Visit(Block expr)
+        public override Expr VisitLeaf(Block expr)
         {
             if (expr.IterVars.Count != 0)
                 throw new InvalidOperationException("Non-opaque blocks are not allowed in FlattenBuffer. Please call pass ConvertBlocksToOpaque before.");
             // 1. Visit the body
             var nbody = Visit(expr.Body);
-            IRArrayList<BufferRegion> nreads = new(expr.Reads.Select(VisitBufferRegion));
-            IRArrayList<BufferRegion> nwrites = new(expr.Writes.Select(VisitBufferRegion));
-            IRArrayList<TIR.Buffer> nbufs = new(expr.AllocBuffers.Select(VisitBuffer));
+            IRArrayList<BufferRegion> nreads = new(expr.Reads.Select(Mutate));
+            IRArrayList<BufferRegion> nwrites = new(expr.Writes.Select(Mutate));
             var npredicate = Visit(expr.Predicate);
             if (npredicate != (Const)1)
             {
@@ -37,28 +36,15 @@ namespace Nncase.Transform.Mutator
         }
 
         /// <inheritdoc/>
-        public override Expr Visit(For expr)
+        public override Expr VisitLeaf(BufferLoad expr)
         {
-            // Step 1. Update unit loop info.
-            var min = Visit(expr.Dom.Min);
-            var max = Visit(expr.Dom.Max);
-            // Step 2. Visit recursively
-            var body = Visit(expr.Body);
-            return new For(expr.LoopVar, new(min, max), expr.Mode, (Sequential)body);
+            return expr.Buffer.VLoad(Mutate(expr.Indices, Visit));
         }
 
         /// <inheritdoc/>
-        public override Expr Visit(BufferLoad expr)
+        public override Expr VisitLeaf(BufferStore expr)
         {
-            var load = (BufferLoad)base.Visit(expr);
-            return expr.Buffer.VLoad(load.Indices);
-        }
-
-        /// <inheritdoc/>
-        public override Expr Visit(BufferStore expr)
-        {
-            var store = (BufferStore)base.Visit(expr);
-            return expr.Buffer.VStore(store.Indices, store.Value);
+            return expr.Buffer.VStore(Mutate(expr.Indices, Visit), Visit(expr.Value));
         }
     }
 }
