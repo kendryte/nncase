@@ -43,6 +43,7 @@ namespace Nncase.Tests
         public void TestVarPattern()
         {
             Var e = new Var("x", AnyType.Default);
+            Assert.False(e.InferenceType());
             ExprPattern ep = e;
             Assert.IsType<VarPattern>(ep);
             Assert.True(ep.MatchLeaf(e));
@@ -52,6 +53,7 @@ namespace Nncase.Tests
         public void TestConstantPattern()
         {
             var con = (Const)(1.1f);
+            Assert.True(con.InferenceType());
             ExprPattern cp1 = con;
             Assert.IsType<ConstPattern>(cp1);
 
@@ -104,7 +106,7 @@ namespace Nncase.Tests
         public void TestCallPattern()
         {
             var e = (Const)1 + Exp(10);
-
+            Assert.True(e.InferenceType());
             var wc1 = IsWildCard();
             var wc2 = IsWildCard();
             var c = wc1 + wc2;

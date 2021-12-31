@@ -37,20 +37,20 @@ namespace Nncase.Tests.TIRTest
             Assert.Equal(ld[Load.Handle], buffer_var);
 
             var ramp = TIR.T.Ramp(1, 2, 3);
-            Assert.Equal(1, ramp[Ramp.Offset].ToScalar<int>());
-            Assert.Equal(2, ramp[Ramp.Stride].ToScalar<int>());
+            Assert.Equal((Const)1, ramp[Ramp.Offset]);
+            Assert.Equal((Const)2, ramp[Ramp.Stride]);
 
 
             var bc = new Broadcast(1000, 10);
-            Assert.Equal(1000, bc.Value.ToScalar<int>());
+            Assert.Equal((Const)1000, bc.Value);
 
             var sf = new Shuffle(new Expr[] { x }, new Expr[] { 2 });
             Assert.Equal(sf.Vectors[0], x);
-            Assert.Equal(2, sf.Indices[0].ToScalar<int>());
+            Assert.Equal((Const)2, sf.Indices[0]);
 
             var lt = new Let(x, 10.0f, x);
             Assert.Equal(lt.Var, x);
-            Assert.Equal(10.0f, lt.Value.ToScalar<float>());
+            Assert.Equal((Const)10.0f, lt.Value);
             Assert.Equal(lt.Body, x);
         }
 

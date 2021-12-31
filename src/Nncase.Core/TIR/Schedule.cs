@@ -17,10 +17,10 @@ namespace Nncase.TIR
         }
 
         /// <inheritdoc/>
-        public override Expr DefaultVisitLeafOrigin(Expr expr)
+        public override Expr DefaultMutateLeaf(Expr expr)
         {
             var mexpr = Maper(expr);
-            if (mexpr is not null) { IsMutated = true; return mexpr; }
+            if (mexpr is not null) { return mexpr; }
             return expr;
         }
     }
@@ -33,6 +33,12 @@ namespace Nncase.TIR
         Func<Var, Expr?> VarMaper;
 
         readonly Dictionary<Block, Block> OpaqueBlocks;
+
+        /// <summary>
+        /// <see cref="SubstituteVarAndCollectOpaqueBlock"/>
+        /// </summary>
+        /// <param name="varMaper"></param>
+        /// <param name="opaque_blocks"></param>
         public SubstituteVarAndCollectOpaqueBlock(Func<Var, Expr?> varMaper,
                                               Dictionary<Block, Block> opaque_blocks)
         {
@@ -41,7 +47,7 @@ namespace Nncase.TIR
         }
 
         /// <inheritdoc/>
-        public override Expr VisitLeaf(Var expr)
+        public override Expr MutateLeaf(Var expr)
         {
             if (VarMaper(expr) is var nexpr && nexpr is not null)
             {

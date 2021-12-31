@@ -13,13 +13,13 @@ namespace Nncase.Transform.Mutator
     public class ConvertBlocksToOpaque : ExprMutator
     {
         /// <inheritdoc/>
-        public override Expr VisitLeaf(IterVar expr)
-        {
+        public override Expr MutateLeaf(IterVar expr)
+        { 
             return expr.Value;
         }
 
         /// <inheritdoc/>
-        public override Expr VisitLeaf(Block expr)
+        public override Expr MutateLeaf(Block expr)
         {
             return expr with
             {
@@ -29,8 +29,8 @@ namespace Nncase.Transform.Mutator
                 IterVars = new(),
                 // the block internal.
                 Body = (TIR.Sequential)Visit(expr.Body),
-                Reads = MutateArray(expr.Reads, Mutate),
-                Writes = MutateArray(expr.Writes, Mutate)
+                Reads = MutateArray(expr.Reads, MutateLeaf),
+                Writes = MutateArray(expr.Writes, MutateLeaf)
             };
         }
     }

@@ -17,39 +17,38 @@ namespace Nncase.IR
     public abstract class ExprMutator : ExprVisitor<Expr, IRType>
     {
         /// <summary>
-        /// for speedup the Mutator, If is Mutated we need Mutate recursive.
+        /// for speedup the Mutator, If is Mutated we need MutateLeaf recursive.
         /// </summary>
         protected bool IsMutated = false;
-
-        /// <summary>
-        /// the default visit the  Original leaf expr, we can hook it.
-        /// </summary>
-        /// <param name="expr"></param>
-        /// <returns></returns>
-        public virtual Expr DefaultVisitLeafOrigin(Expr expr) => expr;
 
         /// <inheritdoc/>
         public override Expr VisitLeaf(Call expr)
         {
-            if (!IsMutated) return DefaultVisitLeafOrigin(expr);
+            var nexpr = MutateLeaf(expr);
+            if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
+            if (!IsMutated) return expr;
             return expr with
             {
                 Target = Visit(expr.Target),
-                Parameters = Mutate(expr.Parameters, Visit)
+                Parameters = MutateArray(expr.Parameters, Visit)
             };
         }
 
         /// <inheritdoc/>
         public override Expr VisitLeaf(Const expr)
         {
-            if (!IsMutated) return DefaultVisitLeafOrigin(expr);
+            var nexpr = MutateLeaf(expr);
+            if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
+            if (!IsMutated) return expr;
             return expr;
         }
 
         /// <inheritdoc/>
         public override Expr VisitLeaf(Function expr)
         {
-            if (!IsMutated) return DefaultVisitLeafOrigin(expr);
+            var nexpr = MutateLeaf(expr);
+            if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
+            if (!IsMutated) return expr;
             return expr with
             {
                 Body = Visit(expr.Body),
@@ -60,14 +59,18 @@ namespace Nncase.IR
         /// <inheritdoc/>
         public override Expr VisitLeaf(Op expr)
         {
-            if (!IsMutated) return DefaultVisitLeafOrigin(expr);
+            var nexpr = MutateLeaf(expr);
+            if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
+            if (!IsMutated) return expr;
             return expr;
         }
 
         /// <inheritdoc/>
         public override Expr VisitLeaf(Tuple expr)
         {
-            if (!IsMutated) return DefaultVisitLeafOrigin(expr);
+            var nexpr = MutateLeaf(expr);
+            if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
+            if (!IsMutated) return expr;
             return expr with
             {
                 Fields = new(expr.Fields.Select(Visit)),
@@ -77,17 +80,21 @@ namespace Nncase.IR
         /// <inheritdoc/>
         public override Expr VisitLeaf(Var expr)
         {
-            if (!IsMutated) return DefaultVisitLeafOrigin(expr);
+            var nexpr = MutateLeaf(expr);
+            if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
+            if (!IsMutated) return expr;
             return expr;
         }
 
         /// <inheritdoc/>
         public override Expr VisitLeaf(TIR.IterVar expr)
         {
-            if (!IsMutated) return DefaultVisitLeafOrigin(expr);
+            var nexpr = MutateLeaf(expr);
+            if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
+            if (!IsMutated) return expr;
             return expr with
             {
-                Dom = Mutate(expr.Dom),
+                Dom = MutateLeaf(expr.Dom),
                 Value = Visit(expr.Value)
             };
         }
@@ -95,7 +102,9 @@ namespace Nncase.IR
         /// <inheritdoc/>
         public override Expr VisitLeaf(TIR.Sequential expr)
         {
-            if (!IsMutated) return DefaultVisitLeafOrigin(expr);
+            var nexpr = MutateLeaf(expr);
+            if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
+            if (!IsMutated) return expr;
             return expr with
             {
                 Fields = MutateArray(expr.Fields, Visit),
@@ -105,18 +114,22 @@ namespace Nncase.IR
         /// <inheritdoc/>
         public override Expr VisitLeaf(TIR.For expr)
         {
-            if (!IsMutated) return DefaultVisitLeafOrigin(expr);
+            var nexpr = MutateLeaf(expr);
+            if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
+            if (!IsMutated) return expr;
             return expr with
             {
                 LoopVar = (Var)Visit(expr.LoopVar),
-                Dom = Mutate(expr.Dom),
+                Dom = MutateLeaf(expr.Dom),
                 Body = (TIR.Sequential)Visit(expr.Body),
             };
         }
 
         public override Expr VisitLeaf(TIR.Block expr)
         {
-            if (!IsMutated) return DefaultVisitLeafOrigin(expr);
+            var nexpr = MutateLeaf(expr);
+            if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
+            if (!IsMutated) return expr;
             return expr with
             {
                 // the block realize 
@@ -125,48 +138,162 @@ namespace Nncase.IR
                 IterVars = MutateArray(expr.IterVars, x => (TIR.IterVar)Visit(x)),
                 // the block internal.
                 Body = (TIR.Sequential)Visit(expr.Body),
-                Reads = MutateArray(expr.Reads, Mutate),
-                Writes = MutateArray(expr.Writes, Mutate)
+                Reads = MutateArray(expr.Reads, MutateLeaf),
+                Writes = MutateArray(expr.Writes, MutateLeaf)
             };
         }
 
         /// <inheritdoc/>
         public override Expr VisitLeaf(TIR.BufferStore expr)
         {
-            if (!IsMutated) return DefaultVisitLeafOrigin(expr);
+            var nexpr = MutateLeaf(expr);
+            if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
+            if (!IsMutated) return expr;
             return expr with
             {
                 Value = Visit(expr.Value),
-                Indices = Mutate(expr.Indices, Visit),
+                Indices = MutateArray(expr.Indices, Visit),
             };
         }
 
         /// <inheritdoc/>
         public override Expr VisitLeaf(TIR.BufferLoad expr)
         {
-            if (!IsMutated) return DefaultVisitLeafOrigin(expr);
+            var nexpr = MutateLeaf(expr);
+            if (!object.ReferenceEquals(expr, nexpr)) { IsMutated = true; return nexpr; }
+            if (!IsMutated) return expr;
             return expr with
             {
-                Indices = Mutate(expr.Indices, Visit)
+                Indices = MutateArray(expr.Indices, Visit)
             };
         }
 
+        /// <summary>
+        /// defulat mutate leaf is not mutate
+        /// </summary>
+        /// <param name="expr"></param>
+        /// <returns></returns>
+        public virtual Expr DefaultMutateLeaf(Expr expr) => expr;
+
+        /// <summary>
+        /// mutate the call
+        /// </summary>
+        /// <param name="expr"></param>
+        /// <returns></returns>
+        public virtual Expr MutateLeaf(Call expr) => DefaultMutateLeaf(expr);
+
+
+        /// <summary>
+        /// mutate the const
+        /// </summary>
+        /// <param name="expr"></param>
+        /// <returns></returns>
+        public virtual Expr MutateLeaf(Const expr) => DefaultMutateLeaf(expr);
+
+        /// <summary>
+        /// mutate the function
+        /// </summary>
+        /// <param name="expr"></param>
+        /// <returns></returns>
+        public virtual Expr MutateLeaf(Function expr) => DefaultMutateLeaf(expr);
+
+        /// <summary>
+        /// mutate the op
+        /// </summary>
+        /// <param name="expr"></param>
+        /// <returns></returns>
+        public virtual Expr MutateLeaf(Op expr) => DefaultMutateLeaf(expr);
+
+        /// <summary>
+        /// mutate the tuple
+        /// </summary>
+        /// <param name="expr"></param>
+        /// <returns></returns>
+        public virtual Expr MutateLeaf(Tuple expr) => DefaultMutateLeaf(expr);
+
+        /// <summary>
+        /// mutate the var
+        /// </summary>
+        /// <param name="expr"></param>
+        /// <returns></returns>
+        public virtual Expr MutateLeaf(Var expr) => DefaultMutateLeaf(expr);
+
+        /// <summary>
+        /// mutate the itervar
+        /// </summary>
+        /// <param name="expr"></param>
+        /// <returns></returns>
+        public virtual Expr MutateLeaf(TIR.IterVar expr) => DefaultMutateLeaf(expr);
+
+        /// <summary>
+        /// mutate the sequential
+        /// </summary>
+        /// <param name="expr"></param>
+        /// <returns></returns>
+        public virtual Expr MutateLeaf(TIR.Sequential expr) => DefaultMutateLeaf(expr);
+
+        /// <summary>
+        /// mutate the for
+        /// </summary>
+        /// <param name="expr"></param>
+        /// <returns></returns>
+        public virtual Expr MutateLeaf(TIR.For expr) => DefaultMutateLeaf(expr);
+
+        /// <summary>
+        /// mutate the block
+        /// </summary>
+        /// <param name="expr"></param>
+        /// <returns></returns>
+        public virtual Expr MutateLeaf(TIR.Block expr) => DefaultMutateLeaf(expr);
+
+
+        /// <summary>
+        /// mutate the bufferstore
+        /// </summary>
+        /// <param name="expr"></param>
+        /// <returns></returns>
+        public virtual Expr MutateLeaf(TIR.BufferStore expr) => DefaultMutateLeaf(expr);
+
+        /// <summary>
+        /// mutate the buffer load
+        /// </summary>
+        /// <param name="expr"></param>
+        /// <returns></returns>
+        public virtual Expr MutateLeaf(TIR.BufferLoad expr) => DefaultMutateLeaf(expr);
+
+
+        /// <summary>
+        /// mutate irarray list
+        /// </summary>
+        /// <typeparam name="TInput"></typeparam>
+        /// <typeparam name="TResult"></typeparam>
+        /// <param name="arrayList"></param>
+        /// <param name="visitor"></param>
+        /// <returns></returns>
         public virtual IRArrayList<TResult> MutateArray<TInput, TResult>(IRArrayList<TInput> arrayList, Func<TInput, TResult> visitor)
         {
             return new(arrayList.Select(visitor));
         }
 
-        public virtual IRArray<TResult> Mutate<TInput, TResult>(IRArray<TInput> array, Func<TInput, TResult> visitor)
+        /// <summary>
+        /// Mutate IRArray
+        /// </summary>
+        /// <typeparam name="TInput"></typeparam>
+        /// <typeparam name="TResult"></typeparam>
+        /// <param name="array"></param>
+        /// <param name="visitor"></param>
+        /// <returns></returns>
+        public virtual IRArray<TResult> MutateArray<TInput, TResult>(IRArray<TInput> array, Func<TInput, TResult> visitor)
         {
             return new(array.Select(visitor));
         }
 
         /// <summary>
-        /// visit range.
+        /// mutate range.
         /// </summary>
         /// <param name="range"></param>
         /// <returns></returns>
-        public virtual TIR.Range Mutate(TIR.Range range)
+        public virtual TIR.Range MutateLeaf(TIR.Range range)
         {
             if (!IsMutated) return range;
             return range with
@@ -177,16 +304,16 @@ namespace Nncase.IR
         }
 
         /// <summary>
-        /// visit the buffer region
+        /// mutate the buffer region
         /// </summary>
         /// <param name="region"></param>
         /// <returns></returns>
-        public virtual TIR.BufferRegion Mutate(TIR.BufferRegion region)
+        public virtual TIR.BufferRegion MutateLeaf(TIR.BufferRegion region)
         {
             if (!IsMutated) return region;
             return region with
             {
-                Region = Mutate(region.Region, Mutate),
+                Region = MutateArray(region.Region, MutateLeaf),
             };
         }
     }

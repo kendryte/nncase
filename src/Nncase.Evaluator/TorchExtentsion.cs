@@ -41,9 +41,9 @@ namespace Nncase.Evaluator
         {
             // torch.as_tensor()
             var dtype = expr.ValueType.DType;
-            var shape = expr.CheckedShape.IsScalar
+            var shape = expr.ValueType.IsScalar
                 ? new long[] { }
-                : expr.CheckedShape.ToList().Select(x => (long)x.FixedValue).ToArray();
+                : expr.ValueType.Shape.ToList().Select(x => (long)x.FixedValue).ToArray();
             return dtype switch
             {
                 { ElemType: ElemType.Int8, Lanes: 1 } => torch.tensor(expr.ToTensor<sbyte>(), shape, ToTorchType(dtype)),

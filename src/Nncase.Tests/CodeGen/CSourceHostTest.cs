@@ -65,7 +65,7 @@ namespace Nncase.Tests.CodeGenTest
         {
             var x = new Var("x", TensorType.Scalar(ElemType.Float32));
             var y = new Var("y", TensorType.Scalar(ElemType.Float32));
-            var func = new Function(x + y, x, y);
+            var func = new Function(new Sequential() { x + y }, x, y);
             var mod = new Module(func);
             var rtmod = mod.Build(_target);
             Console.WriteLine(rtmod.SourceText);

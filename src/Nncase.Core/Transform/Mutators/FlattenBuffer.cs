@@ -13,14 +13,14 @@ namespace Nncase.Transform.Mutator
     public class FlattenBuffer : ExprMutator
     {
         /// <inheritdoc/>
-        public override Expr VisitLeaf(Block expr)
+        public override Expr MutateLeaf(Block expr)
         {
             if (expr.IterVars.Count != 0)
                 throw new InvalidOperationException("Non-opaque blocks are not allowed in FlattenBuffer. Please call pass ConvertBlocksToOpaque before.");
             // 1. Visit the body
             var nbody = Visit(expr.Body);
-            IRArrayList<BufferRegion> nreads = new(expr.Reads.Select(Mutate));
-            IRArrayList<BufferRegion> nwrites = new(expr.Writes.Select(Mutate));
+            IRArrayList<BufferRegion> nreads = new(expr.Reads.Select(MutateLeaf));
+            IRArrayList<BufferRegion> nwrites = new(expr.Writes.Select(MutateLeaf));
             var npredicate = Visit(expr.Predicate);
             if (npredicate != (Const)1)
             {
@@ -36,15 +36,15 @@ namespace Nncase.Transform.Mutator
         }
 
         /// <inheritdoc/>
-        public override Expr VisitLeaf(BufferLoad expr)
+        public override Expr MutateLeaf(BufferLoad expr)
         {
-            return expr.Buffer.VLoad(Mutate(expr.Indices, Visit));
+            return expr.Buffer.VLoad(MutateArray(expr.Indices, Visit));
         }
 
         /// <inheritdoc/>
-        public override Expr VisitLeaf(BufferStore expr)
+        public override Expr MutateLeaf(BufferStore expr)
         {
-            return expr.Buffer.VStore(Mutate(expr.Indices, Visit), Visit(expr.Value));
+            return expr.Buffer.VStore(MutateArray(expr.Indices, Visit), Visit(expr.Value));
         }
     }
 }

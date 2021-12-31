@@ -18,14 +18,15 @@ namespace Nncase.Tests.TIRTest
         private static IEnumerable<object[]> Data =>
           new List<object[]>
           {
+            new object[] { new ConvertBlocksToOpaqueCase() },
             new object[] { new FlattenBufferCase() },
             new object[] { new LowerBlockInitCase() },
-            new object[] { new ConvertBlocksToOpaqueCase() }
           };
 
         [Theory]
         [MemberData(nameof(DataOne))]
         public void RunOne(ITransfromCase Case) => RunCore(Case);
+
 
         protected void RunCore(ITransfromCase Case)
         {
@@ -40,7 +41,13 @@ namespace Nncase.Tests.TIRTest
             var post_entry = Case.Pass.Run(entry, options);
             post_entry.DumpAsScript("post", dumpDirPath);
         }
+
+        [Theory]
+        [MemberData(nameof(DataAll))]
+        public void RunAll(ITransfromCase Case) => RunCore(Case);
+        
         public static IEnumerable<object[]> DataOne => Data.Take(1);
+        public static IEnumerable<object[]> DataAll => Data.Skip(1);
     }
 
     public class LowerBlockInitCase : ConvertBlocksToOpaqueCase

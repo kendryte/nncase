@@ -65,18 +65,18 @@ namespace Nncase.Tests.TIRTest
             Testing.AssertExprEqual(aptr2.Parameters[1], 200 + v);
         }
 
-        [Fact]
-        public void TestBufferAccessPtrExtent()
-        {
-            var m = T.SizeVar("m");
-            var n = T.SizeVar("n");
-            var Ab = T.DeclBuffer((m, n), DataType.Float32);
-            var aptr = Ab.AccessPtr(AccessMode.ReadWrite, offset: 100);
-            Testing.AssertExprEqual(aptr.Parameters[2], m * n - 100);
-            var Bb = T.DeclBuffer((m, n), DataType.Float32, strides: (n + 1, 1));
-            var bptr = Bb.AccessPtr(AccessMode.ReadWrite, offset: 100);
-            Testing.AssertExprEqual(bptr.Parameters[2], Bb.Strides[0] * m - 100);
-        }
+        // [Fact]
+        // public void TestBufferAccessPtrExtent()
+        // {
+        //     var m = T.SizeVar("m");
+        //     var n = T.SizeVar("n");
+        //     var Ab = T.DeclBuffer((m, n), DataType.Float32);
+        //     var aptr = Ab.AccessPtr(AccessMode.ReadWrite, offset: 100);
+        //     Testing.AssertExprEqual(aptr.Parameters[2], m * n - 100);
+        //     var Bb = T.DeclBuffer((m, n), DataType.Float32, strides: (n + 1, 1));
+        //     var bptr = Bb.AccessPtr(AccessMode.ReadWrite, offset: 100);
+        //     Testing.AssertExprEqual(bptr.Parameters[2], Bb.Strides[0] * m - 100);
+        // }
 
         // [Fact]
         // public void TestBufferVLoad()
