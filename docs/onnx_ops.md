@@ -81,6 +81,7 @@
 | Reshape | ✅ |
 | Resize | ✅ |
 | ReverseSequence | ✅ |
+| RoiAlign | ✅ |
 | Round | ✅ |
 | Selu | ✅ |
 | Shape | ✅ |
