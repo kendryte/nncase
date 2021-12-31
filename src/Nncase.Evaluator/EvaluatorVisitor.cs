@@ -187,7 +187,7 @@ namespace Nncase.Evaluator.Ops
             }
             if (result is null)
                 throw new InvalidProgramException($"Must Set Input For Var {expr.Name}!");
-            if (result.CheckedType != expr.CheckedType)
+            if (result.ValueType != expr.CheckedType)
             {
                 throw new InvalidProgramException(
                   $"The Var {expr.Name} Require {expr.CheckedType} But Give {result.CheckedType}");

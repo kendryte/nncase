@@ -20,7 +20,7 @@ namespace Nncase.IR
 
         public IRType? CheckedType = null;
 
-        public Shape CheckedShape => CheckedType switch
+        public Shape CheckedShape => (CheckedType ?? ((Const)this).ValueType) switch
         {
             TensorType type => type.Shape,
             _ => throw new InvalidOperationException("Only The Expr Have CheckedType Can Get It's Shape")
