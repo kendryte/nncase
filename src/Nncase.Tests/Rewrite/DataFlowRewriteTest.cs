@@ -221,8 +221,8 @@ namespace Nncase.Tests.ReWriteTest
             var strideW = 1;
             var dilationH = 1;
             var dilationW = 1;
-            var padH = TFLiteImporter.GetWindowedPadding(inH, fH, strideH, dilationH, true);
-            var padW = TFLiteImporter.GetWindowedPadding(inW, fW, strideW, dilationW, true);
+            var padH = Util.GetWindowedPadding(inH, fH, strideH, dilationH, true);
+            var padW = Util.GetWindowedPadding(inW, fW, strideW, dilationW, true);
             var padding = Util.ConcatPadding(padH, padW);
             Assert.True(TypeInference.InferenceType(padding));
             var paddingPost = RunShapeInferPass("padding", padding, input);
@@ -242,8 +242,8 @@ namespace Nncase.Tests.ReWriteTest
             var strideW = 1;
             var dilationH = 1;
             var dilationW = 1;
-            var padH = TFLiteImporter.GetWindowedPadding(inH, fH, strideH, dilationH, true);
-            var padW = TFLiteImporter.GetWindowedPadding(inW, fW, strideW, dilationW, true);
+            var padH = Util.GetWindowedPadding(inH, fH, strideH, dilationH, true);
+            var padW = Util.GetWindowedPadding(inW, fW, strideW, dilationW, true);
             var stride = Const.FromSpan<int>(new[] { strideH, strideW }, new[] { 2 });
             var dilation = Const.FromSpan<int>(new[] { dilationH, dilationW }, new[] { 2 });
             var padding = Util.ConcatPadding(padH, padW);
@@ -264,8 +264,8 @@ namespace Nncase.Tests.ReWriteTest
             var doubleV = Const.FromSpan<int>(new[] { 2, 2 }, new[] { 2 });
             var initValue = (Const)0;
             var (rInH, rInW) = Util.GetHW(max);
-            var rPadH = TFLiteImporter.GetWindowedPadding(rInH, 2, 2, dilationH, true);
-            var rPadW = TFLiteImporter.GetWindowedPadding(rInW, 2, 2, dilationW, true);
+            var rPadH = Util.GetWindowedPadding(rInH, 2, 2, dilationH, true);
+            var rPadW = Util.GetWindowedPadding(rInW, 2, 2, dilationW, true);
             var rPadding = Util.ConcatPadding(rPadH, rPadW);
             var reduce = NCHWToNHWC(ReduceWindow2D(ReduceOp.Max, NHWCToNCHW(max), initValue, doubleV, doubleV, rPadding, dilation, false));
             var post = RunShapeInferPass("reduce", reduce);
@@ -278,7 +278,7 @@ namespace Nncase.Tests.ReWriteTest
         {
             passOptions.SetName("SliceForShapeIndex");
             var input = new Var(new TensorType(DataType.Float32, new Shape(1, 7, 7, 75)));
-            var slice = Util.ShapeIndex(ShapeOp(input), 1);
+            var slice = Util.ShapeIndex(input, 1);
             TypeInference.InferenceType(slice);
             var post = RunShapeInferPass("slice", slice);
             Assert.True(TypeInference.InferenceType(post));

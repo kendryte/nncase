@@ -25,8 +25,8 @@ namespace Nncase.Importer.TFLite
             var strideW = options.StrideW;
             var dilationH = 1;
             var dilationW = 1;
-            var padH = GetWindowedPadding(inH, fH, strideH, dilationH, options.Padding == tflite.Padding.SAME);
-            var padW = GetWindowedPadding(inW, fW, strideW, dilationW, options.Padding == tflite.Padding.SAME);
+            var padH = Util.GetWindowedPadding(inH, fH, strideH, dilationH, options.Padding == tflite.Padding.SAME);
+            var padW = Util.GetWindowedPadding(inW, fW, strideW, dilationW, options.Padding == tflite.Padding.SAME);
             var stride = Const.FromSpan<int>(new[] { strideH, strideW }, new[] { 2 });
             var dilation = Const.FromSpan<int>(new[] { dilationH, dilationW }, new[] { 2 });
             var padding = Util.ConcatPadding(padH, padW);

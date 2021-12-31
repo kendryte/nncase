@@ -27,10 +27,14 @@ namespace Nncase.IR.F
         public static Call Cast(Expr input, DataType newType) => new Call(new Cast(newType), input);
 
         public static Call Concat(Tuple input, Expr axis) => new Call(new Concat(), input, axis);
+        
+        public static Call CumSum(Expr input, Expr axis, Expr exclusive, Expr reverse) => new Call(new CumSum(), input, axis, exclusive, reverse);
+        
+        public static Call HardMax(Expr input, Expr axis) => new Call(new CumSum(), input, axis);
 
         public static Call Gather(Expr input, Expr axis, Expr index) => new Call(new Gather(), input, axis, index);
 
-        public static Call GatherND(Expr input, Expr axis, Expr batch_dims, Expr index) => new Call(new GatherND(), input, axis, batch_dims, index);
+        public static Call GatherND(Expr input, Expr batch_dims, Expr index) => new Call(new GatherND(), input, batch_dims, index);
 
         public static Call MatMul(Expr input, Expr other) => new Call(new MatMul(), input, other);
 
@@ -40,6 +44,18 @@ namespace Nncase.IR.F
         /// Pads is Const tensor, shape = [channels, 2(before, after)]
         /// </summary>
         public static Call Pad(Expr input, Expr pads, PadMode mode, Expr value) => new Call(new Pad(mode), input, pads, value);
+
+        public static Call RandomNormal(DataType type, Expr mean, Expr scale, Expr seed, Expr shape) =>
+            new Call(new RandomNormal(type), mean, scale, seed, shape);
+        
+        public static Call RandomNormalLike(DataType type, Expr input, Expr mean, Expr scale, Expr seed) =>
+            new Call(new RandomNormal(type), input, mean, scale, seed);
+        
+        public static Call RandomUniform(DataType type, Expr high, Expr low, Expr seed, Expr shape) =>
+            new Call(new RandomUniform(type), high, low, seed, shape);
+        
+        public static Call RandomUniformLike(DataType type, Expr input, Expr high, Expr low, Expr seed) =>
+            new Call(new RandomUniformLike(type), input, high, low, seed);
 
         public static Call Reduce(ReduceOp reduceOp, Expr input, Expr axis, Expr initValue, Expr keepDims) => new Call(new Reduce(reduceOp), input, axis, initValue, keepDims);
         
@@ -73,6 +89,8 @@ namespace Nncase.IR.F
             return new Call(new Slice(), input, begins, ends, axes, strides);
         }
 
+        public static Expr Size(Expr input) => ReduceSum(ShapeOp(input), 0, 0, false);
+        
         public static Call Stack(Expr inputs, Expr axis) => new Call(new Stack(), inputs, axis);
 
         /// squeeze input by give dims

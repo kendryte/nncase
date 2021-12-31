@@ -25,8 +25,8 @@ namespace Nncase.Importer.TFLite
             var strideW = options.StrideW;
             var dilationH = options.DilationHFactor;
             var dilationW = options.DilationWFactor;
-            var padH = GetWindowedPadding(inH, fH, strideH, dilationH, options.Padding == tflite.Padding.SAME);
-            var padW = GetWindowedPadding(inW, fW, strideW, dilationW, options.Padding == tflite.Padding.SAME);
+            var padH = Util.GetWindowedPadding(inH, fH, strideH, dilationH, options.Padding == tflite.Padding.SAME);
+            var padW = Util.GetWindowedPadding(inW, fW, strideW, dilationW, options.Padding == tflite.Padding.SAME);
             var stride = Const.FromSpan<int>(new[] { strideH, strideW }, new[] { 2 });
             var dilation = Const.FromSpan<int>(new[] { dilationH, dilationW }, new[] { 2 });
             var padding = Util.ConcatPadding(padH, padW);
@@ -48,8 +48,8 @@ namespace Nncase.Importer.TFLite
             var strideW = options.StrideW;
             var dilationH = options.DilationHFactor;
             var dilationW = options.DilationWFactor;
-            var padH = GetWindowedPadding(inH, fH, strideH, dilationH, options.Padding == tflite.Padding.SAME);
-            var padW = GetWindowedPadding(inW, fW, strideW, dilationW, options.Padding == tflite.Padding.SAME);
+            var padH = Util.GetWindowedPadding(inH, fH, strideH, dilationH, options.Padding == tflite.Padding.SAME);
+            var padW = Util.GetWindowedPadding(inW, fW, strideW, dilationW, options.Padding == tflite.Padding.SAME);
             var stride = Const.FromSpan<int>(new[] { strideH, strideW }, new[] { 2 });
             var dilation = Const.FromSpan<int>(new[] { dilationH, dilationW }, new[] { 2 });
             var padding = Util.ConcatPadding(padH, padW);
@@ -75,31 +75,5 @@ namespace Nncase.Importer.TFLite
             tflite.ActivationFunctionType.RELU6 => (0f, 6f),
             _ => throw new NotSupportedException("Unsupported Activation:" + func),
         };
-
-        private static Expr GetWindowedOutputSize(Expr size, Expr filter, Expr stride, Expr dilation, bool same, bool ceilMode)
-        {
-            var effectiveFilterSize = ((filter - 1) * dilation) + 1;
-            var falseBranch = !ceilMode
-                ? ((size - effectiveFilterSize + stride) / stride)
-                : F.Tensors.Cast(F.Math.Ceil(
-                    F.Tensors.Cast((size - effectiveFilterSize + stride), DataType.Float32) / 
-                    F.Tensors.Cast(stride, DataType.Float32)),
-                    DataType.Int32);
-            var trueBranch = (size + stride - 1) / stride;
-            return same ? trueBranch : falseBranch;
-        }
-
-        private static Expr[] GetWindowedPaddingValue(Expr inputSize, Expr outputSize, Expr filter, Expr stride, Expr dilation)
-        {
-            var effectiveFilterSize = ((filter - 1) * dilation) + 1;
-            var padding = F.Math.Max(0, ((outputSize - 1) * stride) + effectiveFilterSize - inputSize);
-            return new[] { F.Tensors.Cast(padding / 2, DataType.Int32), F.Tensors.Cast(padding - (padding / 2), DataType.Int32) };
-        }
-
-        public static Expr[] GetWindowedPadding(Expr inputSize, Expr filter, Expr stride, Expr dilation, bool same)
-        {
-            var outputSize = GetWindowedOutputSize(inputSize, filter, stride, dilation, same, false);
-            return GetWindowedPaddingValue(inputSize, outputSize, filter, stride, dilation);
-        }
     }
 }

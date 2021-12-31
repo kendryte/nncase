@@ -14,6 +14,9 @@ namespace Nncase.IR
     /// </summary>
     public sealed record Const(TensorType ValueType, IRBytes Data) : Expr
     {
+       
+        public override int Rank => ValueType.Shape.Rank;
+
 
         /// <summary>
         /// Create constant from a <see cref="byte"/>.
@@ -141,6 +144,10 @@ namespace Nncase.IR
         /// <typeparam name="T"></typeparam>
         /// <returns> scalar </returns>
         /// <exception cref="InvalidCastException"></exception>
+        public T[] ToArray<T>()
+            where T : unmanaged
+            => ToTensor<T>().ToArray();
+        
         public T ToScalar<T>()
           where T : unmanaged
           => ValueType.IsScalar && ValueType.DType.Lanes == 1 ?

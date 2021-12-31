@@ -7,6 +7,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR.NN;
+using Nncase.IR.Tensors;
 
 namespace Nncase.IR.F
 {
@@ -18,7 +19,11 @@ namespace Nncase.IR.F
 
         public static Call Conv2D(Expr input, Expr weights, Expr bias, Expr stride, Expr padding, Expr dilation, PadMode padMode, Expr groups) => new Call(new Conv2D(padMode), input, weights, bias, stride, padding, dilation, groups);
 
+        public static Call Celu(Expr input, Expr alpha) => new Call(new Celu(), input, alpha);
+        
         public static Call Conv2DTranspose(Expr input, Expr weights, Expr bias, Expr outShape, Expr stride, Expr padding, Expr dilation, PadMode padMode, Expr groups) => new Call(new Conv2DTranspose(padMode), input, weights, bias, outShape, stride, padding, dilation, groups);
+        
+        public static Call Elu(Expr input, Expr alpha) => new Call(new Elu(), input, alpha);
 
         public static Call LeakyRelu(Expr input) => new Call(new LeakyRelu(), input);
 
@@ -30,16 +35,28 @@ namespace Nncase.IR.F
         
         public static Call LpNormalization(Expr input, Expr axis, Expr p) => new Call(new LpNormalization(), input, axis, p);
 
+        public static Call LRN(Expr input, Expr alpha, Expr beta, Expr bias, Expr size) => new Call(new LRN(), input, alpha, beta, bias, size);
+        
+        public static Call HardSigmoid(Expr input, Expr alpha, Expr beta) => new Call(new HardSigmoid(), input, alpha, beta);
+        
+        public static Call HardSwish(Expr input) => new Call(new HardSwish(), input);
+        
         public static Call Relu(Expr input) => new Call(new Relu(), input);
 
         public static Call Relu6(Expr input) => new Call(new Relu6(), input);
 
         public static Call PRelu(Expr input) => new Call(new PRelu(), input);
+        
+        public static Call Selu(Expr input) => new Call(new Selu(), input);
 
         public static Call Sigmoid(Expr expr) => new Call(new Sigmoid(), expr);
 
-        public static Call SoftMax(Expr expr) => new Call(new SoftMax(), expr);
+        public static Call SoftMax(Expr expr, Expr axis) => new Call(new SoftMax(), expr, axis);
+        
+        public static Call SoftPlus(Expr expr) => new Call(new SoftPlus(), expr);
+        
+        public static Call SoftSign(Expr expr) => new Call(new SoftSign(), expr);
 
-        public static Call LogSoftMax(Expr expr) => new Call(new LogSoftMax(), expr);
+        public static Call LogSoftMax(Expr expr, Expr axis) => new Call(new LogSoftMax(), expr, axis);
     }
 }

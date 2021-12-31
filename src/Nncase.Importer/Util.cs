@@ -1,21 +1,23 @@
+using System;
 using System.Collections.Generic;
 using Nncase.IR;
 using F = Nncase.IR.F;
 using System.Linq;
+using Nncase.IR.Tensors;
+using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase
 {
     public class Util
     {
-        public static Expr ShapeIndex(in Expr shape, int index)
+        public static Expr ShapeIndex(in Expr input, int index)
         {
-            return F.Tensors.Slice(shape, new[] { index }, new[] { index + 1 }, 1);
+            return F.Tensors.Slice(F.Tensors.ShapeOp(input), new[] { index }, new[] { index + 1 }, 1);
         }
 
         public static (Expr, Expr) GetHW(in Expr input)
         {
-            var shape = F.Tensors.ShapeOp(input);
-            return (ShapeIndex(shape, 2), ShapeIndex(shape, 3));
+            return (ShapeIndex(input, 2), ShapeIndex(input, 3));
         }
 
         public static Expr ConcatPadding(Expr[] padH, Expr[] padW)
@@ -25,6 +27,49 @@ namespace Nncase
             return F.Tensors.Stack(new Tuple(
               F.Tensors.Concat(new Tuple(padH), 0),
               F.Tensors.Concat(new Tuple(padW), 0)), 0);
+        }
+        
+        private static Expr GetWindowedOutputSize(Expr size, Expr filter, Expr stride, Expr dilation, bool same, bool ceilMode)
+        {
+            var effectiveFilterSize = ((filter - 1) * dilation) + 1;
+            var falseBranch = !ceilMode
+                ? ((size - effectiveFilterSize + stride) / stride)
+                : F.Tensors.Cast(F.Math.Ceil(
+                        F.Tensors.Cast((size - effectiveFilterSize + stride), DataType.Float32) / 
+                        F.Tensors.Cast(stride, DataType.Float32)),
+                    DataType.Int32);
+            var trueBranch = (size + stride - 1) / stride;
+            return same ? trueBranch : falseBranch;
+        }
+
+        private static Expr[] GetWindowedPaddingValue(Expr inputSize, Expr outputSize, Expr filter, Expr stride, Expr dilation, bool lower)
+        {
+            var effectiveFilterSize = ((filter - 1) * dilation) + 1;
+            var padding = F.Math.Max(0, ((outputSize - 1) * stride) + effectiveFilterSize - inputSize);
+            var before = F.Tensors.Cast(padding / 2, DataType.Int32);
+            var after = F.Tensors.Cast(padding - (padding / 2), DataType.Int32);
+            if (lower)
+            {
+                return new[] { F.Math.Max(before, after), F.Math.Min(before, after) };
+            }
+            return new[] { before, after };
+        }
+
+        // todo:refactor and set private this
+        public static Expr[] GetWindowedPadding(Expr inputSize, Expr filter, Expr stride, Expr dilation, bool same, bool lower = false)
+        {
+            var outputSize = GetWindowedOutputSize(inputSize, filter, stride, dilation, same, false);
+            return GetWindowedPaddingValue(inputSize, outputSize, filter, stride, dilation, lower);
+        }
+
+        // lower used for onnx when auto_pad attr is SAME_LOWER
+        public static Expr GetPaddings(Expr input, Expr weights, long[] stride, long[] dilation, bool same, bool lower = false)
+        {
+            var (inH, inW) = GetHW(input);
+            var (fH, fW) = GetHW(weights);
+            var padH = GetWindowedPadding(inH, fH, stride[0], dilation[0], same, lower);
+            var padW = GetWindowedPadding(inW, fW, stride[1], dilation[1], same, lower);
+            return ConcatPadding(padH, padW);
         }
     }
 }

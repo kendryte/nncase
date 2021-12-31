@@ -32,5 +32,15 @@ namespace Nncase.Importer
             var p = GetIntAttribute(op, "p", 2);
             return F.NN.LpNormalization(input, axis, p);
         }
+
+        private Expr VisitLRN(in NodeProto op)
+        {
+            var input = GetInputExpr(op, 0);
+            var alpha = GetFloatAttribute(op, "alpha", 0.0001f);
+            var beta = GetFloatAttribute(op, "beta", 0.75f);
+            var bias = GetFloatAttribute(op, "bias", 1.0f);
+            var size = GetIntAttribute(op, "int");
+            return F.NN.LRN(input, alpha, beta, bias, size);
+        } 
     }
 }

@@ -50,6 +50,11 @@ namespace Nncase
         Cos,
 
         /// <summary>
+        /// Cosh.
+        /// </summary>
+        Cosh,
+        
+        /// <summary>
         /// Exp.
         /// </summary>
         Exp,
@@ -83,6 +88,11 @@ namespace Nncase
         /// Sine.
         /// </summary>
         Sin,
+        
+        /// <summary>
+        /// Sinh.
+        /// </summary>
+        Sinh,
 
         /// <summary>
         /// Sqrt.

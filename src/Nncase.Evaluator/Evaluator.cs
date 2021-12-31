@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Numerics.Tensors;
 using Nncase.Evaluator.Ops;
 using Nncase.IR;
 using TorchSharp;
@@ -30,8 +32,9 @@ namespace Nncase.Evaluator
             _ => EvalImpl(expr, new()).Item2
         };
 
-        public static List<torch.Tensor> Eval(this Expr expr, Dictionary<Var, torch.Tensor> inputs)
+        public static List<Const> Eval(this Expr expr, Dictionary<Var, Const> args)
         {
+            var inputs = args.ToDictionary(pair => pair.Key, pair => pair.Value.ToTorchTensor());
             var visitor = EvalImpl(expr, inputs).Item1;
             var result = new List<torch.Tensor>();
             if (expr is Function func)
@@ -68,7 +71,7 @@ namespace Nncase.Evaluator
                         break;
                 }
             }
-            return result;
+            return result.Select(t => t.ToConst()).ToList();
         }
     }
 }

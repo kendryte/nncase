@@ -143,6 +143,66 @@ namespace Nncase.Pattern.NN
         }
     }
 
+    public sealed record CeluPattern(Func<Celu, bool> Cond) : OpPattern
+    {
+        public CeluPattern(Celu celu): this(x => x == celu)
+        {
+        }
+
+        public bool MatchLeaf(Celu celu) => Cond(celu) && MatchCheckedType(celu);
+        public CeluPattern(): this((Celu x) => true)
+        {
+        }
+    }
+
+    public sealed record SeluPattern(Func<Selu, bool> Cond) : OpPattern
+    {
+        public SeluPattern(Selu selu): this(x => x == selu)
+        {
+        }
+
+        public bool MatchLeaf(Selu selu) => Cond(selu) && MatchCheckedType(selu);
+        public SeluPattern(): this((Selu x) => true)
+        {
+        }
+    }
+
+    public sealed record EluPattern(Func<Elu, bool> Cond) : OpPattern
+    {
+        public EluPattern(Elu elu): this(x => x == elu)
+        {
+        }
+
+        public bool MatchLeaf(Elu elu) => Cond(elu) && MatchCheckedType(elu);
+        public EluPattern(): this((Elu x) => true)
+        {
+        }
+    }
+
+    public sealed record HardSwishPattern(Func<HardSwish, bool> Cond) : OpPattern
+    {
+        public HardSwishPattern(HardSwish hardswish): this(x => x == hardswish)
+        {
+        }
+
+        public bool MatchLeaf(HardSwish hardswish) => Cond(hardswish) && MatchCheckedType(hardswish);
+        public HardSwishPattern(): this((HardSwish x) => true)
+        {
+        }
+    }
+
+    public sealed record HardSigmoidPattern(Func<HardSigmoid, bool> Cond) : OpPattern
+    {
+        public HardSigmoidPattern(HardSigmoid hardsigmoid): this(x => x == hardsigmoid)
+        {
+        }
+
+        public bool MatchLeaf(HardSigmoid hardsigmoid) => Cond(hardsigmoid) && MatchCheckedType(hardsigmoid);
+        public HardSigmoidPattern(): this((HardSigmoid x) => true)
+        {
+        }
+    }
+
     public sealed record Conv2DPattern(Func<Conv2D, bool> Cond) : OpPattern
     {
         public Conv2DPattern(Conv2D conv2d): this(x => x == conv2d)
@@ -229,14 +289,14 @@ namespace Nncase.Pattern.NN
         }
     }
 
-    public sealed record SoftMaxPattern(Func<SoftMax, bool> Cond) : OpPattern
+    public sealed record LRNPattern(Func<LRN, bool> Cond) : OpPattern
     {
-        public SoftMaxPattern(SoftMax softmax): this(x => x == softmax)
+        public LRNPattern(LRN lrn): this(x => x == lrn)
         {
         }
 
-        public bool MatchLeaf(SoftMax softmax) => Cond(softmax) && MatchCheckedType(softmax);
-        public SoftMaxPattern(): this((SoftMax x) => true)
+        public bool MatchLeaf(LRN lrn) => Cond(lrn) && MatchCheckedType(lrn);
+        public LRNPattern(): this((LRN x) => true)
         {
         }
     }
@@ -249,6 +309,42 @@ namespace Nncase.Pattern.NN
 
         public bool MatchLeaf(LogSoftMax logsoftmax) => Cond(logsoftmax) && MatchCheckedType(logsoftmax);
         public LogSoftMaxPattern(): this((LogSoftMax x) => true)
+        {
+        }
+    }
+
+    public sealed record SoftMaxPattern(Func<SoftMax, bool> Cond) : OpPattern
+    {
+        public SoftMaxPattern(SoftMax softmax): this(x => x == softmax)
+        {
+        }
+
+        public bool MatchLeaf(SoftMax softmax) => Cond(softmax) && MatchCheckedType(softmax);
+        public SoftMaxPattern(): this((SoftMax x) => true)
+        {
+        }
+    }
+
+    public sealed record SoftPlusPattern(Func<SoftPlus, bool> Cond) : OpPattern
+    {
+        public SoftPlusPattern(SoftPlus softplus): this(x => x == softplus)
+        {
+        }
+
+        public bool MatchLeaf(SoftPlus softplus) => Cond(softplus) && MatchCheckedType(softplus);
+        public SoftPlusPattern(): this((SoftPlus x) => true)
+        {
+        }
+    }
+
+    public sealed record SoftSignPattern(Func<SoftSign, bool> Cond) : OpPattern
+    {
+        public SoftSignPattern(SoftSign softsign): this(x => x == softsign)
+        {
+        }
+
+        public bool MatchLeaf(SoftSign softsign) => Cond(softsign) && MatchCheckedType(softsign);
+        public SoftSignPattern(): this((SoftSign x) => true)
         {
         }
     }
@@ -311,6 +407,18 @@ namespace Nncase.Pattern.Tensors
         }
     }
 
+    public sealed record CumSumPattern(Func<CumSum, bool> Cond) : OpPattern
+    {
+        public CumSumPattern(CumSum cumsum): this(x => x == cumsum)
+        {
+        }
+
+        public bool MatchLeaf(CumSum cumsum) => Cond(cumsum) && MatchCheckedType(cumsum);
+        public CumSumPattern(): this((CumSum x) => true)
+        {
+        }
+    }
+
     public sealed record DeQuantizePattern(Func<DeQuantize, bool> Cond) : OpPattern
     {
         public DeQuantizePattern(DeQuantize dequantize): this(x => x == dequantize)
@@ -350,6 +458,18 @@ namespace Nncase.Pattern.Tensors
 
         public bool MatchLeaf(GatherND gathernd) => Cond(gathernd) && MatchCheckedType(gathernd);
         public GatherNDPattern(): this((GatherND x) => true)
+        {
+        }
+    }
+
+    public sealed record HardMaxPattern(Func<HardMax, bool> Cond) : OpPattern
+    {
+        public HardMaxPattern(HardMax hardmax): this(x => x == hardmax)
+        {
+        }
+
+        public bool MatchLeaf(HardMax hardmax) => Cond(hardmax) && MatchCheckedType(hardmax);
+        public HardMaxPattern(): this((HardMax x) => true)
         {
         }
     }
@@ -420,6 +540,70 @@ namespace Nncase.Pattern.Tensors
         public QuantizePattern(DataType TargetType): this((Quantize x) => TargetType == x.TargetType)
         {
             this.TargetType = TargetType;
+        }
+    }
+
+    public sealed record RandomNormalPattern(Func<RandomNormal, bool> Cond) : OpPattern
+    {
+        public RandomNormalPattern(RandomNormal randomnormal): this(x => x == randomnormal)
+        {
+        }
+
+        public bool MatchLeaf(RandomNormal randomnormal) => Cond(randomnormal) && MatchCheckedType(randomnormal);
+        public RandomNormalPattern(): this((RandomNormal x) => true)
+        {
+        }
+
+        public RandomNormalPattern(DataType Type): this((RandomNormal x) => Type == x.Type)
+        {
+        }
+    }
+
+    public sealed record RandomNormalLikePattern(Func<RandomNormalLike, bool> Cond) : OpPattern
+    {
+        public RandomNormalLikePattern(RandomNormalLike randomnormallike): this(x => x == randomnormallike)
+        {
+        }
+
+        public bool MatchLeaf(RandomNormalLike randomnormallike) => Cond(randomnormallike) && MatchCheckedType(randomnormallike);
+        public RandomNormalLikePattern(): this((RandomNormalLike x) => true)
+        {
+        }
+
+        public RandomNormalLikePattern(DataType Type): this((RandomNormalLike x) => Type == x.Type)
+        {
+        }
+    }
+
+    public sealed record RandomUniformPattern(Func<RandomUniform, bool> Cond) : OpPattern
+    {
+        public RandomUniformPattern(RandomUniform randomuniform): this(x => x == randomuniform)
+        {
+        }
+
+        public bool MatchLeaf(RandomUniform randomuniform) => Cond(randomuniform) && MatchCheckedType(randomuniform);
+        public RandomUniformPattern(): this((RandomUniform x) => true)
+        {
+        }
+
+        public RandomUniformPattern(DataType Type): this((RandomUniform x) => Type == x.Type)
+        {
+        }
+    }
+
+    public sealed record RandomUniformLikePattern(Func<RandomUniformLike, bool> Cond) : OpPattern
+    {
+        public RandomUniformLikePattern(RandomUniformLike randomuniformlike): this(x => x == randomuniformlike)
+        {
+        }
+
+        public bool MatchLeaf(RandomUniformLike randomuniformlike) => Cond(randomuniformlike) && MatchCheckedType(randomuniformlike);
+        public RandomUniformLikePattern(): this((RandomUniformLike x) => true)
+        {
+        }
+
+        public RandomUniformLikePattern(DataType Type): this((RandomUniformLike x) => Type == x.Type)
+        {
         }
     }
 
