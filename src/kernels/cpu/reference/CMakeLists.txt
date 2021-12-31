@@ -23,6 +23,7 @@ set(SRCS batch_to_space.cpp
          reduce_prod.cpp
          reduce_window.cpp
          resize_image.cpp
+         roi_align.cpp
          sigmoid.cpp
          slice.cpp
          ternary.cpp

@@ -325,6 +325,12 @@ typedef enum _pad_mode
     pad_edge
 } pad_mode_t;
 
+typedef enum _roi_align_mode
+{
+    roi_align_avg,
+    roi_align_max
+} roi_align_mode_t;
+
 typedef struct _quant_param
 {
     int32_t zero_point;
