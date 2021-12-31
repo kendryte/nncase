@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using NetFabric.Hyperlinq;
 using Nncase.IR;
 using TorchSharp;
 
@@ -13,6 +14,7 @@ namespace Nncase.Evaluator
     {
         public static Const ToConst(this torch.Tensor tensor)
         {
+            
             if (!tensor.is_contiguous())
                 tensor = tensor.contiguous();
             return tensor.ToConst(new Shape(tensor.shape));

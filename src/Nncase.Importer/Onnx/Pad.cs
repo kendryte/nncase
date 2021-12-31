@@ -12,15 +12,30 @@ namespace Nncase.Importer
     {
         private Expr VisitPad(in NodeProto op)
         {
-            // when op set is 2, Pads and PadMode are a attr
-            var (input, pads) = GetInputExprs(op, 0, 1);
-            var padMode = GetPadMode(op); 
-            var padValue = op.Input.Count == 3
-                ? GetInputExpr(op, 2)
-                : 0;
-            return F.Tensors.Pad(input, pads, PadMode.Constant, padValue);
+            return GetOpSet(op) < 11
+                ? PadV2(op)
+                : PadV11(op);
         }
 
+        private Expr PadV2(in NodeProto op)
+        {
+            var input = GetInputExpr(op, 0);
+            var padMode = GetPadMode(op);
+            var pads = GetIntsAttribute(op, "pads");
+            var paddings = Const.FromSpan<long>(pads, new Shape(pads.Length / 2, 2));
+            var value = GetFloatAttribute(op, "value", 0f);
+            return F.Tensors.Pad(input, paddings, padMode, value);
+        }
+        
+        private Expr PadV11(in NodeProto op)
+        {
+            // todo:pads shape
+            var (input, pads) = GetInputExprs(op, 0, 1);
+            var padMode = GetPadMode(op);
+            var padValue = GetOptionInputExpr(op, 2, 0);
+            return F.Tensors.Pad(input, pads, padMode, padValue);
+        }
+        
         private PadMode GetPadMode(in NodeProto op)
         {
             var mode = GetStringAttribute(op, "mode", "constant");

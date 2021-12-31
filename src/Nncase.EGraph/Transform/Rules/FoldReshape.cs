@@ -20,7 +20,7 @@ namespace Nncase.Transform.Rule
         WildCardPattern wcin = "input";
         WildCardPattern shape1 = "sp1", shape2 = "sp2";
 
-        FoldReshape()
+        public FoldReshape()
         {
             Pattern = Reshape(Reshape(wcin, shape1), shape2);
         }
@@ -36,7 +36,7 @@ namespace Nncase.Transform.Rule
         WildCardPattern wcin = "input";
         ConstPattern wcshape = IsConst(IsTensor() & IsIntegral());
 
-        FoldNopReshape()
+        public FoldNopReshape()
         {
             Pattern = Reshape(wcin, wcshape);
         }

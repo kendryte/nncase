@@ -171,19 +171,7 @@ namespace Nncase
             { typeof(float).TypeHandle, DataType.Float32 },
             { typeof(double).TypeHandle, DataType.Float64 },
             { typeof(char).TypeHandle, DataType.String },
-        };
-
-        private static readonly Dictionary<DataType, Type> _dataTypesToType = new()
-        {
-            { DataType.Bool, typeof(bool) },
-            { DataType.Int8, typeof(sbyte) },
-            { DataType.UInt8, typeof(byte) },
-            { DataType.Int32, typeof(int) },
-            { DataType.UInt32, typeof(uint) },
-            { DataType.Int64, typeof(long) },
-            { DataType.UInt64, typeof(ulong) },
-            { DataType.Float32, typeof(float) },
-            { DataType.Float64, typeof(double) },
+            { typeof(BFloat16).TypeHandle, DataType.Float16 }
         };
 
         private static readonly Dictionary<ElemType, int> _ElemTypeToLengths = new()
@@ -336,6 +324,11 @@ namespace Nncase
               _ => false
           } && Lanes == srcType.Lanes;
 
+        public static Half CastToScalar(byte[] bytes, int start = 0)
+        {
+            return BitConverter.ToHalf(bytes, start);
+        }
+        
         public static bool IsFloat(DataType srcType, int Lanes = 1) => srcType.ElemType switch
         {
             (ElemType.BFloat16 or ElemType.Float16 or ElemType.Float32 or ElemType.Float64) => true,

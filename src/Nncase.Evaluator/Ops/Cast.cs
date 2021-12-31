@@ -12,7 +12,7 @@ namespace Nncase.Evaluator.Ops
     {
         private torch.Tensor VisitCast(Cast cast)
         {
-            var input = _context.GetArgument(cast, Cast.Input);
+            var input = _context.GetTorchArgument(cast, Cast.Input);
             return input.to_type(cast.NewType.ToTorchType());
         }
     }

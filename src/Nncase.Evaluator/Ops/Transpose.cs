@@ -12,7 +12,7 @@ namespace Nncase.Evaluator.Ops
     {
         private torch.Tensor VisitTranspose(Transpose tr)
         {
-            var input = _context.GetArgument(tr, Transpose.Input);
+            var input = _context.GetTorchArgument(tr, Transpose.Input);
             var perm = _context.GetArgumentConst(tr, Transpose.Perm);
             return input.permute(perm.ToTensor<long>().ToArray());
         }

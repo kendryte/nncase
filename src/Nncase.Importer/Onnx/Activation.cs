@@ -2,7 +2,9 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 using Nncase.IR;
 using Onnx;
-using F = Nncase.IR.F;
+using static Nncase.IR.F.Tensors;
+using static Nncase.IR.F.NN;
+using static Nncase.IR.F.Math;
 
 namespace Nncase.Importer
 {
@@ -12,58 +14,60 @@ namespace Nncase.Importer
         {
             var input = GetInputExpr(op, 0);
             var alpha = GetFloatAttribute(op, "alpha", 1.0f);
-            return F.NN.Elu(input, alpha);
+            return Elu(input, alpha);
         }
         
         private Expr VisitCelu(NodeProto op)
         {
             var input = GetInputExpr(op, 0);
             var alpha = GetFloatAttribute(op, "alpha", 1.0f);
-            return F.NN.Celu(input, alpha);
+            return Celu(input, alpha);
         }
 
         private Expr VisitRelu(NodeProto op)
         {
             var input = GetInputExpr(op, 0);
-            return F.NN.Relu(input);
+            return Relu(input);
         }
         
         private Expr VisitLeakyRelu(NodeProto op)
         {
             var input = GetInputExpr(op, 0);
-            return F.NN.LeakyRelu(input);
+            return LeakyRelu(input);
         }
         
         private Expr VisitPRelu(NodeProto op)
         {
-            var input = GetInputExpr(op, 0);
-            return F.NN.PRelu(input);
+            var (input, slope) = GetInputExprs(op, 0, 1);
+            return Max(input, input * slope);
         }
         
         private Expr VisitSelu(NodeProto op)
         {
-            var input = GetInputExpr(op, 0);
-            return F.NN.Selu(input);
+            var x = GetInputExpr(op, 0);
+            var alpha = GetFloatAttribute(op, "alpha", 1.67326319217681884765625F);
+            var gamma = GetFloatAttribute(op, "gamma", 1.05070102214813232421875F);
+            return gamma * (alpha * Min(Exp(x) - 1F, 0F) + Max(x, 0F));
         }
 
         private Expr VisitSigmoid(NodeProto op)
         {
             var input = GetInputExpr(op, 0);
-            return F.NN.Sigmoid(input);
+            return Sigmoid(input);
         }
         
         private Expr VisitHardSigmoid(NodeProto op)
         {
-            var input = GetInputExpr(op, 0);
+            var x = GetInputExpr(op, 0);
             var alpha = GetFloatAttribute(op, "alpha", 0.2f);
             var beta = GetFloatAttribute(op, "alpha", 0.5f);
-            return F.NN.HardSigmoid(input, alpha, beta);
+            return Max(0F, Min(1F, alpha * x + beta));
         }
 
         private Expr VisitHardSwish(NodeProto op)
         {
             var input = GetInputExpr(op, 0);
-            return F.NN.HardSwish(input);
+            return HardSwish(input);
         }
     }
 }

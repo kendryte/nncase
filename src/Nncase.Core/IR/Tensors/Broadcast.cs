@@ -7,6 +7,7 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using NetFabric.Hyperlinq;
 
 namespace Nncase.IR.Tensors
 {
@@ -29,19 +30,9 @@ namespace Nncase.IR.Tensors
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType shape)
         {
             var shapeValue = context.GetArgument(this, Shape);
-            if (shapeValue is Const && input.Shape.IsFixed)
+            if (shapeValue is Const constShapeValue && input.Shape.IsFixed)
             {
-                for (var i = input.Shape.Rank; i > 0; --i)
-                {
-                    var shapeShapeValue = shape.Shape[shape.Shape.Rank - i].FixedValue;
-                    var inputShapeValue = input.Shape[input.Shape.Rank - i].FixedValue;
-                    if (shapeShapeValue != inputShapeValue && inputShapeValue != 1)
-                    {
-                        return new InvalidType("Broadcast input shape and param shape is not match");
-                    }
-                }
-
-                return shape;
+                return TypeInference.BroadcastType(input, new TensorType(input.DType, constShapeValue.ToArray<int>()));
             }
             else
             {

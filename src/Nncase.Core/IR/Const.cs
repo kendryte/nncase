@@ -127,6 +127,19 @@ namespace Nncase.IR
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns> tensor </returns>
+        public DenseTensor<float> HalfToFloat()
+        {
+            var src = (byte[])Data;
+            var src_stride = DataTypes.GetLength(ValueType.DType);
+            var n = src.Length / src_stride;
+            var dest = new float[n];
+            for (int i = 0; i < n; i++)
+            {
+                dest[i] = (float)DataTypes.CastToScalar(src, src_stride * i);
+            }
+            return new DenseTensor<float>(dest, ValueType.IsScalar ? new[] { 1 } : ValueType.Shape);
+        }
+
         public DenseTensor<T> ToTensor<T>()
            where T : unmanaged
         {

@@ -14,7 +14,7 @@ namespace Nncase.Evaluator.Ops
         {
             var inputs = _context.GetArgumentExpr(cat, Concat.Input);
             var axis = _context.GetArgumentConst(cat, Concat.Axis).ToScalar<int>();
-            var inputTensors = ((IR.Tuple)inputs).Select(x => expandDim(_context.GetArgument(x))).ToArray();
+            var inputTensors = (inputs as IR.Tuple).Select(x => expandDim(_context.GetTorchArgument(x))).ToArray();
             return torch.cat(inputTensors, axis);
         }
 

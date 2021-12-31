@@ -13,7 +13,7 @@ namespace Nncase.Evaluator.Ops
     {
         private torch.Tensor VisitShape(ShapeOp shape)
         {
-            var input = _context.GetArgument(shape, ShapeOp.Input);
+            var input = _context.GetTorchArgument(shape, ShapeOp.Input);
             var dtype = _context.CurrentCallResultTensorType().DType.ToTorchType();
             return ((torch.Tensor)input.shape).to_type(dtype);
         }

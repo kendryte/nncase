@@ -10,7 +10,7 @@ namespace Nncase.Evaluator
 {
     public static class Evaluator
     {
-        internal static (EvaluatorVisitor, torch.Tensor) EvalImpl(Expr expr, Dictionary<Var, torch.Tensor> inputs)
+        internal static (EvaluatorVisitor, Const) EvalImpl(Expr expr, Dictionary<Var, Const> inputs)
         {
             if (expr.CheckedType is null) expr.InferenceType();
             if (expr.CheckedType is InvalidType)
@@ -26,17 +26,16 @@ namespace Nncase.Evaluator
             IR.Tuple tuple => throw new NotImplementedException("Can't Eval a Tuple!"),
             Function func => func.Body is IR.Tuple ?
                 throw new NotImplementedException("Can't Eval Function With Retrun Tuple!") :
-                EvalImpl(func, new()).Item2,
+                EvalImpl(func, new()).Item2.ToTorchTensor(),
             Op op => throw new NotImplementedException("Can't Eval a Op!"),
             Var v => throw new NotImplementedException("Can't Eval a Var!"),
-            _ => EvalImpl(expr, new()).Item2
+            _ => EvalImpl(expr, new()).Item2.ToTorchTensor()
         };
 
-        public static List<Const> Eval(this Expr expr, Dictionary<Var, Const> args)
+        public static List<Const> Eval(this Expr expr, Dictionary<Var, Const> inputs)
         {
-            var inputs = args.ToDictionary(pair => pair.Key, pair => pair.Value.ToTorchTensor());
             var visitor = EvalImpl(expr, inputs).Item1;
-            var result = new List<torch.Tensor>();
+            var result = new List<Const>();
             if (expr is Function func)
             {
                 switch (func.Body)
@@ -71,7 +70,7 @@ namespace Nncase.Evaluator
                         break;
                 }
             }
-            return result.Select(t => t.ToConst()).ToList();
+            return result;
         }
     }
 }

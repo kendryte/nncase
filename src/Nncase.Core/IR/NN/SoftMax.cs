@@ -29,7 +29,7 @@ namespace Nncase.IR.NN
         /// <summary>
         /// Gets axis.
         /// </summary>
-        public static readonly ParameterInfo Axis = new(typeof(LogSoftMax), 1, "axis", IsIntegralScalar());
+        public static readonly ParameterInfo Axis = new(typeof(SoftMax), 1, "axis", IsIntegralScalar());
 
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType axis) => input;
@@ -40,7 +40,7 @@ namespace Nncase.IR.NN
         /// <summary>
         /// Gets input.
         /// </summary>
-        public static readonly ParameterInfo Input = new(typeof(SoftMax), 0, "input");
+        public static readonly ParameterInfo Input = new(typeof(SoftPlus), 0, "input");
 
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input) => input;
@@ -51,7 +51,7 @@ namespace Nncase.IR.NN
         /// <summary>
         /// Gets input.
         /// </summary>
-        public static readonly ParameterInfo Input = new(typeof(SoftMax), 0, "input");
+        public static readonly ParameterInfo Input = new(typeof(SoftSign), 0, "input");
 
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input) => input;

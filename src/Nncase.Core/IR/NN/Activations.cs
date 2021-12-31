@@ -74,12 +74,12 @@ namespace Nncase.IR.NN
         /// <summary>
         /// Gets input.
         /// </summary>
-        public static readonly ParameterInfo Input = new(typeof(LeakyRelu), 0, "input");
+        public static readonly ParameterInfo Input = new(typeof(Celu), 0, "input");
 
         /// <summary>
         /// Gets Alpha.
         /// </summary>
-        public static readonly ParameterInfo Alpha = new(typeof(LeakyRelu), 1, "alpha", IsFloatScalar());
+        public static readonly ParameterInfo Alpha = new(typeof(Celu), 1, "alpha", IsFloatScalar());
 
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType alpha) => input;
@@ -90,12 +90,12 @@ namespace Nncase.IR.NN
         /// <summary>
         /// Gets input.
         /// </summary>
-        public static readonly ParameterInfo Input = new(typeof(LeakyRelu), 0, "input");
+        public static readonly ParameterInfo Input = new(typeof(Selu), 0, "input");
 
         /// <summary>
         /// Gets Alpha.
         /// </summary>
-        public static readonly ParameterInfo Alpha = new(typeof(LeakyRelu), 1, "alpha", IsFloatScalar());
+        public static readonly ParameterInfo Alpha = new(typeof(Selu), 1, "alpha", IsFloatScalar());
 
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType alpha) => input;
@@ -106,12 +106,12 @@ namespace Nncase.IR.NN
         /// <summary>
         /// Gets input.
         /// </summary>
-        public static readonly ParameterInfo Input = new(typeof(LeakyRelu), 0, "input");
+        public static readonly ParameterInfo Input = new(typeof(Elu), 0, "input");
 
         /// <summary>
         /// Gets Alpha.
         /// </summary>
-        public static readonly ParameterInfo Alpha = new(typeof(LeakyRelu), 1, "alpha", IsFloatScalar());
+        public static readonly ParameterInfo Alpha = new(typeof(Elu), 1, "alpha", IsFloatScalar());
 
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType alpha) => input;

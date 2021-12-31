@@ -12,9 +12,8 @@ namespace Nncase.Importer
     {
         private Expr VisitExpand(in NodeProto op)
         {
-            // broadcast rule of expand is similar to broadcast but not same
             var (input, shape) = GetInputExprs(op, 0, 1);
-            return input * F.Tensors.Broadcast(1, shape);
+            return F.Tensors.Expand(input, shape);
         }
     }
 }

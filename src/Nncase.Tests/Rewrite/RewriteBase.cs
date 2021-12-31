@@ -50,6 +50,7 @@ namespace Nncase.Tests.ReWriteTest
 
         public Expr RunShapeInferPass(string name, Expr expr, params Expr[] parameters)
         {
+            expr.InferenceType();
             var f = new Function(expr, parameters);
             var result = TypeInference.InferenceType(f);
             f.DumpExprAsIL("before", Path.Combine(passOptions.FullDumpDir, $"ShapeInfer_{name}"));
@@ -104,6 +105,57 @@ namespace Nncase.Tests.ReWriteTest
         public override IEnumerable<PatternRule> Rules => new PatternRule[]{
           new Transform.Rule.TransposeConstBinaryMotionLeft(),
           new Transform.Rule.TransposeConstBinaryMotionRight(),
+        };
+    }
+
+    public sealed class FoldReshapeCase : IRewriteCase
+    {
+        public override Expr PreExpr
+        {
+            get
+            {
+                var input = torch.rand(1, 3, 1, 2).ToConst();
+                var b = Reshape(input, (Const)new[] { 1, 1, 1, 6 });
+                var c = Reshape(input, (Const)new[] { 1, 1, 3, 2 });
+                return c;
+            }
+        }
+
+        public override IEnumerable<PatternRule> Rules => new PatternRule[]{
+          new Transform.Rule.FoldReshape(),
+        };
+    }
+    public sealed class FoldNopReshapeCase : IRewriteCase
+    {
+        public override Expr PreExpr
+        {
+            get
+            {
+                var input = torch.rand(1, 3, 1, 2).ToConst();
+                var b = Reshape(input, (Const)new[] { 1, 3, 1, 2 });
+                return b;
+            }
+        }
+
+        public override IEnumerable<PatternRule> Rules => new PatternRule[]{
+          new Transform.Rule.FoldNopReshape(),
+        };
+    }
+
+    public sealed class FoldNopClampCase : IRewriteCase
+    {
+        public override Expr PreExpr
+        {
+            get
+            {
+                var input = torch.rand(1, 3, 1, 2).ToConst();
+                var b = Clamp(input, Single.MinValue, Single.MaxValue);
+                return b;
+            }
+        }
+
+        public override IEnumerable<PatternRule> Rules => new PatternRule[]{
+          new Transform.Rule.FoldNopClamp(),
         };
     }
 

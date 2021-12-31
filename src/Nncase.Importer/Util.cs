@@ -67,8 +67,8 @@ namespace Nncase
         {
             var (inH, inW) = GetHW(input);
             var (fH, fW) = GetHW(weights);
-            var padH = GetWindowedPadding(inH, fH, stride[0], dilation[0], same, lower);
-            var padW = GetWindowedPadding(inW, fW, stride[1], dilation[1], same, lower);
+            var padH = GetWindowedPadding(inH, fH, (int)stride[0], (int)dilation[0], same, lower);
+            var padW = GetWindowedPadding(inW, fW, (int)stride[1], (int)dilation[1], same, lower);
             return ConcatPadding(padH, padW);
         }
     }

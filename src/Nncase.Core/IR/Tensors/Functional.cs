@@ -30,7 +30,11 @@ namespace Nncase.IR.F
         
         public static Call CumSum(Expr input, Expr axis, Expr exclusive, Expr reverse) => new Call(new CumSum(), input, axis, exclusive, reverse);
         
-        public static Call HardMax(Expr input, Expr axis) => new Call(new CumSum(), input, axis);
+        public static Call Expand(Expr input, Expr shape) => new Call(new Expand(), input, shape);
+        
+        public static Call Flatten(Expr input, Expr axis) => new Call(new Flatten(), input, axis);
+        
+        public static Call HardMax(Expr input, Expr axis) => new Call(new HardMax(), input, axis);
 
         public static Call Gather(Expr input, Expr axis, Expr index) => new Call(new Gather(), input, axis, index);
 
@@ -45,6 +49,8 @@ namespace Nncase.IR.F
         /// </summary>
         public static Call Pad(Expr input, Expr pads, PadMode mode, Expr value) => new Call(new Pad(mode), input, pads, value);
 
+        public static Call Prod(Expr input) => new Call(new Prod(), input);
+        
         public static Call RandomNormal(DataType type, Expr mean, Expr scale, Expr seed, Expr shape) =>
             new Call(new RandomNormal(type), mean, scale, seed, shape);
         
@@ -89,7 +95,7 @@ namespace Nncase.IR.F
             return new Call(new Slice(), input, begins, ends, axes, strides);
         }
 
-        public static Expr Size(Expr input) => ReduceSum(ShapeOp(input), 0, 0, false);
+        public static Expr Size(Expr input) => new Call(new Size(), input);
         
         public static Call Stack(Expr inputs, Expr axis) => new Call(new Stack(), inputs, axis);
 
@@ -102,6 +108,8 @@ namespace Nncase.IR.F
 
         public static Call DeQuantize(Expr input, Expr zeroPoint, Expr scale, DataType targetType) => new Call(new DeQuantize(targetType), input, zeroPoint, scale);
 
+        public static Call Rank(Expr input) => ShapeOp(ShapeOp(input));
+        
         // same like tensorflow
         public static Call SpaceToBatch(Expr input, Expr blockShape, Expr paddings) => new Call(new SpaceToBatch(), input, blockShape, paddings);
 

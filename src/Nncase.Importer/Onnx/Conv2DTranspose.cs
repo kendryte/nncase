@@ -4,7 +4,9 @@
 using System;
 using System.IO;
 using System.Linq;
+using LanguageExt.UnsafeValueAccess;
 using Nncase.IR;
+using Nncase.IR.Tensors;
 using Onnx;
 using F = Nncase.IR.F;
 
@@ -15,28 +17,28 @@ namespace Nncase.Importer
         private Expr VisitConv2DTranspose(in NodeProto op)
         {
             var (input, weights) = GetInputExprs(op, 0, 1);
-            var bias = GetBias(op, input);
-            var autoPad = GetStringAttribute(op, "auto_pad", "NOTSET");
+            var bias = GetBias(op, weights, true);
+            var strides = GetStrideAttribute(op);
             var dilation = GetDilationsAttribute(op);
             var group = GetIntAttribute(op, "group", 1);
-
-            throw new NotImplementedException();
-            // if not present, should be inferred from input W
-            var kernelShape = GetOptionIntsAttribute(op, "kernel_shape");
+            var autoPad = GetStringAttribute(op, "auto_pad", "NOTSET");
             //If "output_shape" is explicitly provided, "output_padding" does not contribute additional size to "output_shape"
             var outputPadding = GetIntsAttribute(op, "output_paddings", new[] { 0, 0 });
             // If output_shape is specified, pads values are ignored.
-            var outputShape = GetOptionIntsAttribute(op, "output_shape");
             
-            var strides = GetStrideAttribute(op);
-
-            var outShape = 1;
+            var outputShape = GetOptionIntsAttribute(op, "output_shape");
             // 1.ignored pads
             // 2.output_padding not effect
             if (outputShape)
             {
+                // compute outShape
+            }
+            else
+            {
                 
             }
+
+            var outShape = 1;
             var pads = AutoPad(op, autoPad, input, weights, strides.ToArray<long>(), dilation.ToArray<long>());
             return F.NN.Conv2DTranspose(input, weights, bias, outShape, strides, pads, dilation, PadMode.Constant, group);
         }
