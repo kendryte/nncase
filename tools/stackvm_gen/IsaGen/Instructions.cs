@@ -171,12 +171,16 @@ namespace IsaGen
         REDUCE_PROD,
         REDUCE_WINDOW2D,
         RESIZE_IMAGE,
+        ROI_ALIGN,
+        SIGMOID,
         SLICE,
         SOFTMAX,
         SPACE_TO_BATCH,
         TAKE,
         TERNARY,
+        TOPK,
         TRANSPOSE,
+        TRILU,
         UNARY,
     }
 
@@ -240,6 +244,13 @@ namespace IsaGen
     [EnumName("unary_op_t")]
     [Browsable(false)]
     public enum UnaryOp
+    {
+    }
+
+   [BitLength(8)]
+    [EnumName("roi_align_mode_t")]
+    [Browsable(false)]
+    public enum RoiAlignMode
     {
     }
 
@@ -1850,6 +1861,58 @@ namespace IsaGen
             public ImageResizeMode ImageResizeMode { get; set; }
         }
 
+        [DisplayName("TENSOR.ROI_ALIGN")]
+        [Category("Tensor Instructions")]
+        [Description("RoiAlign")]
+        public class RoiAlignInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.ROI_ALIGN;
+
+            [DisplayName("datatype")]
+            [Description("Datatype")]
+            public DataType DataType { get; set; }
+
+            [DisplayName("rshape_src")]
+            [Description("Source shape register")]
+            public byte RshapeSrc { get; set; }
+
+            [DisplayName("rshape_dest")]
+            [Description("Dest shape register")]
+            public byte RshapeDest { get; set; }
+
+            [DisplayName("mode")]
+            [Description("Mode")]
+            public RoiAlignMode mode { get; set; }
+
+            [DisplayName("spatial_scale")]
+            [Description("Spatial Scale")]
+            public float SpatialScale { get; set; }
+
+            [DisplayName("sampling_ratio")]
+            [Description("Sampling Ratio")]
+            public long SamplingRatio { get; set; }
+        }
+
+        [DisplayName("TENSOR.SIGMOID")]
+        [Category("Tensor Instructions")]
+        [Description("Sigmoid")]
+        public class SigmoidInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.SIGMOID;
+
+            [DisplayName("datatype")]
+            [Description("Datatype")]
+            public DataType DataType { get; set; }
+
+            [DisplayName("rshape_src")]
+            [Description("Source shape register")]
+            public byte RshapeSrc { get; set; }
+
+            [DisplayName("rstride_src")]
+            [Description("Source stride register")]
+            public byte RstrideSrc { get; set; }
+        }
+
         [DisplayName("TENSOR.SLICE")]
         [Category("Tensor Instructions")]
         [Description("Slice")]
@@ -1924,6 +1987,82 @@ namespace IsaGen
             [DisplayName("rstride_dest")]
             [Description("Dest stride register")]
             public byte RstrideDest { get; set; }
+        }
+
+        [DisplayName("TENSOR.TOPK")]
+        [Category("Tensor Instructions")]
+        [Description("Topk")]
+        public class TopKInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.TOPK;
+
+            [DisplayName("datatype")]
+            [Description("Datatype")]
+            public DataType DataType { get; set; }
+
+            [DisplayName("rshape_src")]
+            [Description("Source shape register")]
+            public byte RshapeSrc { get; set; }
+
+            [DisplayName("rstride_src")]
+            [Description("Source stride register")]
+            public byte RstrideSrc { get; set; }
+
+            [DisplayName("rshape_dest1")]
+            [Description("Dest1 shape register")]
+            public byte RshapeDest1 { get; set; }
+
+            [DisplayName("rstride_dest1")]
+            [Description("Dest1 stride register")]
+            public byte RstrideDest1 { get; set; }
+
+            [DisplayName("rshape_dest2")]
+            [Description("Dest2 shape register")]
+            public byte RshapeDest2 { get; set; }
+
+            [DisplayName("rstride_dest2")]
+            [Description("Dest2 stride register")]
+            public byte RstrideDest2 { get; set; }
+
+            [DisplayName("k")]
+            [Description("K")]
+            public long K { get; set; }
+
+            [DisplayName("axis")]
+            [Description("Axis")]
+            public int Axis { get; set; }
+
+            [DisplayName("largest")]
+            [Description("Largest")]
+            public bool Largest { get; set; }
+
+            [DisplayName("sorted")]
+            [Description("Sorted")]
+            public bool Sorted { get; set; }
+        }
+
+        [DisplayName("TENSOR.TRILU")]
+        [Category("Tensor Instructions")]
+        [Description("Trilu")]
+        public class TriluInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.TRILU;
+
+            [DisplayName("datatype")]
+            [Description("Datatype")]
+            public DataType DataType { get; set; }
+
+            [DisplayName("rshape_src")]
+            [Description("Source shape register")]
+            public byte RshapeSrc { get; set; }
+
+            [DisplayName("upper")]
+            [Description("Upper")]
+            public bool Upper { get; set; }
+
+            [DisplayName("k")]
+            [Description("K")]
+            public long K { get; set; }
         }
 
         [DisplayName("TENSOR.UNARY")]

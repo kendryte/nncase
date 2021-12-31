@@ -225,14 +225,14 @@ void onnx_importer::convert_op_ConvTranspose(const NodeProto &node)
                 const auto &paddings_values = paddings_attr.value();
                 if (paddings_values.size() > 1)
                 {
-                    paddings[0].before = dilations[0] * (weight_shape[2] - 1) - paddings_values[0];
-                    paddings[1].before = dilations[1] * (weight_shape[3] - 1) - paddings_values[1];
+                    paddings[0].before = paddings_values[0];
+                    paddings[1].before = paddings_values[1];
                 }
 
                 if (paddings_values.size() > 3)
                 {
-                    paddings[0].after = dilations[0] * (weight_shape[2] - 1) - paddings_values[2];
-                    paddings[1].after = dilations[1] * (weight_shape[3] - 1) - paddings_values[3];
+                    paddings[0].after = paddings_values[2];
+                    paddings[1].after = paddings_values[3];
                 }
             }
         }

@@ -24,10 +24,14 @@ set(SRCS module_builder.cpp
          ops/reduce_prod.cpp
          ops/reduce_window2d.cpp
          ops/resize_image.cpp
+         ops/roi_align.cpp
          ops/slice.cpp
+         ops/sigmoid.cpp
          ops/table_lookup1d.cpp
          ops/ternary.cpp
+         ops/topk.cpp
          ops/transpose.cpp
+         ops/trilu.cpp
          ops/unary.cpp)
 
 add_library(codegen_stackvm OBJECT ${SRCS})

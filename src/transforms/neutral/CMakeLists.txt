@@ -40,4 +40,5 @@ target_sources(transforms PRIVATE
     space_to_batch_transform.cpp
     pre_process_setting.cpp
     post_process_transform.cpp
+    split_sigmoid.cpp
     )

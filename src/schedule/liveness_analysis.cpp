@@ -31,7 +31,6 @@ void lifetime_recorder::allocate(ir::output_connector &conn, memory_location_t l
         logical_buffer buffer(next_buffer_id_++, conn, location);
         buffer.lifetime().birth = cnt_age_;
         buffer.lifetime().used_count = conn.connections().size();
-        buffer.strides_shape() = buffer.shape();
         buffer_map_.emplace(&conn, &buffers_.emplace_back(buffer));
     }
 }

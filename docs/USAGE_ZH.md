@@ -727,8 +727,15 @@ if __name__ == '__main__':
 ```
 
 
+## 部署 nncase runtime
 
-## nncase推理模型APIs
+### K210
+
+1. 从 [Release](https://github.com/kendryte/nncase/releases) 页面下载 `k210-runtime.zip`。 
+2. 解压到 [kendryte-standalone-sdk](https://github.com/kendryte/kendryte-standalone-sdk) 's `lib/nncase/v1` 目录。
+
+
+## nncase 推理模型APIs
 
 除了编译模型APIs, nncase还提供了推理模型的APIs, 在PC上可推理前面编译生成的kmodel,  用来验证nncase推理结果和相应深度学习框架的runtime的结果是否一致等.
 

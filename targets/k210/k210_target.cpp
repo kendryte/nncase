@@ -33,6 +33,7 @@
 #include <nncase/transforms/neutral/fold_quantize.h>
 #include <nncase/transforms/neutral/fold_transpose.h>
 #include <nncase/transforms/neutral/fuse_pad.h>
+#include <nncase/transforms/neutral/split_sigmoid.h>
 #include <nncase/transforms/neutral/transpose_motion.h>
 #include <nncase/transforms/pass.h>
 
@@ -91,6 +92,12 @@ void k210_target::register_evaluator_ops()
 void k210_target::register_target_dependent_passes([[maybe_unused]] const module_type_t &type, [[maybe_unused]] ir::transforms::pass_manager &pass_mgr, [[maybe_unused]] bool use_ptq)
 {
     {
+        transform_pass p("sigmoid_lowering");
+        p.emplace<split_sigmoid_transform>();
+        pass_mgr.add_pass(std::move(p));
+    }
+
+    {
         transform_pass p("strided_slice_lowering");
         p.emplace<strided_slice_conv2d_pool>();
         pass_mgr.add_pass(std::move(p));
@@ -106,8 +113,7 @@ void k210_target::register_target_dependent_passes([[maybe_unused]] const module
 void k210_target::register_quantize_annotation_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr)
 {
     {
-        transform_pass p("annotate_kpu");
-        p.emplace<add_to_conv2d_transform>();
+        transform_pass p("annotate_kpu1");
         p.emplace<eliminate_dilated_conv2d_transform>();
         p.emplace<fake_kpu_conv2d_transform>();
         p.emplace<strided_slice_motion_transform>();
@@ -117,6 +123,17 @@ void k210_target::register_quantize_annotation_passes(const module_type_t &type,
     }
 
     neutral_target::register_quantize_annotation_passes(type, pass_mgr);
+
+    {
+        transform_pass p("annotate_kpu2");
+        p.emplace<add_to_conv2d_transform>();
+        p.emplace<eliminate_dilated_conv2d_transform>();
+        p.emplace<fake_kpu_conv2d_transform>();
+        p.emplace<strided_slice_motion_transform>();
+        p.emplace<fuse_fake_kpu_conv2d_strided_slice_transform>();
+        add_default_transforms(p);
+        pass_mgr.add_pass(std::move(p));
+    }
 
     {
         transform_pass p("fused_unary_motion");

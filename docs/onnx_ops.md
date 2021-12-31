@@ -51,6 +51,7 @@
 | Log | ✅ |
 | LogSoftmax | ✅ |
 | LRN | ✅ |
+| LSTM | ✅ |
 | MatMul | ✅ |
 | MaxPool | ✅ |
 | Max | ✅ |
@@ -80,6 +81,7 @@
 | Reshape | ✅ |
 | Resize | ✅ |
 | ReverseSequence | ✅ |
+| RoiAlign | ✅ |
 | Round | ✅ |
 | Selu | ✅ |
 | Shape | ✅ |
@@ -100,7 +102,9 @@
 | Sum | ✅ |
 | Tanh | ✅ |
 | Tile | ✅ |
+| TopK | ✅ |
 | Transpose | ✅ |
+| Trilu | ✅ |
 | Upsample | ✅ |
 | Unsqueeze | ✅ |
 | Where | ✅ |

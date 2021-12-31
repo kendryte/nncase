@@ -41,10 +41,14 @@
 #include <nncase/ir/ops/reduce_prod.h>
 #include <nncase/ir/ops/reduce_window2d.h>
 #include <nncase/ir/ops/resize_image.h>
+#include <nncase/ir/ops/roi_align.h>
+#include <nncase/ir/ops/sigmoid.h>
 #include <nncase/ir/ops/slice.h>
 #include <nncase/ir/ops/table_lookup.h>
 #include <nncase/ir/ops/ternary.h>
+#include <nncase/ir/ops/topk.h>
 #include <nncase/ir/ops/transpose.h>
+#include <nncase/ir/ops/trilu.h>
 #include <nncase/ir/ops/unary.h>
 #include <nncase/ir/runtime_type_utils.h>
 #include <nncase/kernels/convolution.h>
@@ -377,6 +381,47 @@ void register_neutral_evaluators()
         }
     });
 
+    register_evaluator(op_roi_align, [](ir::node &node, function_evaluate_context &context) {
+        auto &rnode = static_cast<roi_align &>(node);
+
+        auto input = context.memory_at(rnode.input());
+        auto rois = context.memory_at(rnode.rois());
+        auto batch_indices = context.memory_at(rnode.batch_indices());
+        auto output = context.memory_at(rnode.output());
+
+        auto input_type = rnode.input().type();
+        switch (input_type)
+        {
+        case dt_float32:
+            kernels::roi_align(input.buffer().as_span<float>().data(), rois.buffer().as_span<float>().data(),
+                batch_indices.buffer().as_span<int64_t>().data(), output.buffer().as_span<float>().data(), input.shape(), output.shape(),
+                rnode.mode(), rnode.spatial_scale(), rnode.sampling_ratio())
+                .unwrap_or_throw();
+            break;
+        default:
+            std::cerr << "unsupported dtype for roi_align: " + std::string(datatype_names(input_type));
+        }
+    });
+
+    register_evaluator(op_sigmoid, [](ir::node &node, function_evaluate_context &context) {
+        auto &rnode = static_cast<sigmoid &>(node);
+
+        auto input = context.memory_at(rnode.input());
+        auto output = context.memory_at(rnode.output());
+
+        auto output_type = rnode.output().type();
+        switch (output_type)
+        {
+        case dt_float32:
+            kernels::sigmoid(input.buffer().as_span<float>().data(), output.buffer().as_span<float>().data(), input.shape(),
+                input.strides())
+                .unwrap_or_throw();
+            break;
+        default:
+            std::cerr << "unsupported dtype for sigmoid: " + std::string(datatype_names(output_type));
+        }
+    });
+
     register_evaluator(op_slice, [](ir::node &node, function_evaluate_context &context) {
         auto &rnode = static_cast<slice &>(node);
 
@@ -661,6 +706,46 @@ void register_neutral_evaluators()
             break;
         default:
             throw std::runtime_error("unsupported dtype for random_uniform: " + std::string(datatype_names(datatype)));
+        }
+    });
+
+    register_evaluator(op_topk, [](ir::node &node, function_evaluate_context &context) {
+        auto &rnode = static_cast<topk &>(node);
+        auto datatype = rnode.input().type();
+        auto input = context.memory_at(rnode.input());
+        auto output_values = context.memory_at(rnode.output_a());
+        auto output_indices = context.memory_at(rnode.output_b());
+
+        switch (datatype)
+        {
+        case dt_float32:
+            kernels::topk(input.buffer().as_span<float>().data(), output_values.buffer().as_span<float>().data(),
+                output_indices.buffer().as_span<int64_t>().data(),
+                input.shape(), input.strides(), output_values.shape(), output_values.strides(),
+                output_indices.shape(), output_indices.strides(),
+                rnode.k(), rnode.axis(), rnode.largest(), rnode.sorted())
+                .unwrap_or_throw();
+            break;
+        default:
+            throw std::runtime_error("unsupported dtype for topk: " + std::string(datatype_names(datatype)));
+        }
+    });
+
+    register_evaluator(op_trilu, [](ir::node &node, function_evaluate_context &context) {
+        auto &rnode = static_cast<trilu &>(node);
+        auto datatype = rnode.input().type();
+        auto input = context.memory_at(rnode.input());
+        auto output = context.memory_at(rnode.output());
+
+        switch (datatype)
+        {
+        case dt_float32:
+            kernels::trilu(input.buffer().as_span<float>().data(), output.buffer().as_span<float>().data(),
+                input.shape(), rnode.upper(), rnode.k())
+                .unwrap_or_throw();
+            break;
+        default:
+            throw std::runtime_error("unsupported dtype for topk: " + std::string(datatype_names(datatype)));
         }
     });
 }

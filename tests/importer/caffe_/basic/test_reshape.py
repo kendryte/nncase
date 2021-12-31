@@ -50,8 +50,7 @@ out_shapes = [
 @pytest.mark.parametrize('out_shape', out_shapes)
 def test_reshape(in_shape, out_shape, request):
     runner = CaffeTestRunner(request.node.name)
-    model_path = os.path.join(os.getcwd(), 'tests_output',
-                              request.node.name.replace('[', '_').replace(']', '_'))
+    model_path = runner.case_dir
     _make_module(model_path, in_shape, out_shape)
     model_file = [os.path.join(model_path, 'test.prototxt'),
                   os.path.join(model_path, 'test.caffemodel')]

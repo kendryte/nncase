@@ -265,19 +265,35 @@ public:
                 if (compile_options_.dump_ir)
                     f.open(compile_options_.dump_dir / "layer_quant_error.txt");
 
+                bool has_quant_map = false;
                 for (uint32_t i = 0; i < quant_eval_quantizer->quant_buffers_insert_order().size(); i++)
                 {
                     auto quant_layer_connector = quant_eval_quantizer->quant_buffers_insert_order()[i];
-                    auto data_size = kernels::detail::compute_size(quant_layer_connector->shape());
                     if (quant_layer_connector->owner().get_output_connectors_quant_map().size() != 0)
+                        has_quant_map = true;
+                }
+
+                if (has_quant_map)
+                {
+                    for (uint32_t i = 0; i < quant_eval_quantizer->quant_buffers_insert_order().size(); i++)
                     {
-                        std::string layer_name = quant_layer_connector->owner().get_node_name_before_quant();
-                        std::cout << "layer name: " << layer_name << "   cosine: " << cosine(eval_quantizer->output_buffers()[quant_layer_connector->owner().get_output_connectors_quant_map()[quant_layer_connector]].data(), quant_eval_quantizer->output_buffers()[quant_layer_connector].data(), data_size) << std::endl;
-                        if (compile_options_.dump_ir)
-                            f << "layer name: " << layer_name << "   cosine: " << cosine(eval_quantizer->output_buffers()[quant_layer_connector->owner().get_output_connectors_quant_map()[quant_layer_connector]].data(), quant_eval_quantizer->output_buffers()[quant_layer_connector].data(), data_size) << std::endl;
+                        auto quant_layer_connector = quant_eval_quantizer->quant_buffers_insert_order()[i];
+                        auto data_size = kernels::detail::compute_size(quant_layer_connector->shape());
+                        if (quant_layer_connector->owner().get_output_connectors_quant_map().size() != 0)
+                        {
+                            std::string layer_name = quant_layer_connector->owner().get_node_name_before_quant();
+                            std::cout << "layer name: " << layer_name << "   cosine: " << cosine(eval_quantizer->output_buffers()[quant_layer_connector->owner().get_output_connectors_quant_map()[quant_layer_connector]].data(), quant_eval_quantizer->output_buffers()[quant_layer_connector].data(), data_size) << std::endl;
+                            if (compile_options_.dump_ir)
+                                f << "layer name: " << layer_name << "   cosine: " << cosine(eval_quantizer->output_buffers()[quant_layer_connector->owner().get_output_connectors_quant_map()[quant_layer_connector]].data(), quant_eval_quantizer->output_buffers()[quant_layer_connector].data(), data_size) << std::endl;
+                        }
                     }
-                    else
+                }
+                else
+                {
+                    for (uint32_t i = 0; i < quant_eval_quantizer->quant_buffers_insert_order().size(); i++)
                     {
+                        auto quant_layer_connector = quant_eval_quantizer->quant_buffers_insert_order()[i];
+                        auto data_size = kernels::detail::compute_size(quant_layer_connector->shape());
                         std::string layer_name = quant_layer_connector->owner().name();
                         if (quant_layer_connector->owner().runtime_opcode() != ir::op_pad)
                         {
@@ -414,6 +430,7 @@ private:
             transform_pass pass("optimize_copy");
             pass.emplace<remove_exclusive_copy_to_output_transform>();
             pass.emplace<remove_simple_copy_from_slice_transform>();
+            pass.emplace<remove_non_simple_copy_from_slice_transform>();
             pass.emplace<remove_exclusive_copy_to_concat_transform>();
             pmgr.add_pass(std::move(pass));
         });

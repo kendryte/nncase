@@ -301,6 +301,25 @@ result<void> kernels::random_uniform(T *output, const runtime_shape_t &out_shape
     return cpu::reference::random_uniform(output, out_shape, low, high, seed);
 }
 
+template result<void> kernels::roi_align<float>(const float *input, const float *rois, int64_t *batch_indices, float *output, const runtime_shape_t &in_shape,
+    const runtime_shape_t &out_shape, roi_align_mode_t mode, float spatial_scale, int64_t sampling_ratio) noexcept;
+
+template <typename T>
+result<void> kernels::roi_align(const T *input, const T *rois, int64_t *batch_indices, T *output, const runtime_shape_t &in_shape,
+    const runtime_shape_t &out_shape, roi_align_mode_t mode, float spatial_scale, int64_t sampling_ratio) noexcept
+{
+    return cpu::reference::roi_align(input, rois, batch_indices, output, in_shape, out_shape, mode, spatial_scale, sampling_ratio);
+}
+
+template result<void> kernels::sigmoid<float>(const float *input, float *output, const runtime_shape_t &in_shape,
+    const runtime_shape_t &in_strides) noexcept;
+
+template <typename T>
+result<void> kernels::sigmoid(const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides) noexcept
+{
+    return cpu::reference::sigmoid(input, output, in_shape, in_strides);
+}
+
 template result<void> kernels::ternary<float>(const float *input_a, const float *input_b, const float *input_c, float *output,
     const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
     const runtime_shape_t &in_b_strides, const runtime_shape_t &in_c_shape, const runtime_shape_t &in_c_strides,
@@ -314,4 +333,29 @@ result<void> kernels::ternary(const float *input_a, const T *input_b, const T *i
 {
     return cpu::reference::ternary(input_a, input_b, input_c, output, in_a_shape, in_a_strides, in_b_shape, in_b_strides,
         in_c_shape, in_c_strides, out_strides);
+}
+
+template result<void> kernels::topk<float>(const float *input, float *output_values, int64_t *output_indices,
+    const runtime_shape_t &in_shape, const runtime_shape_t &in_strides,
+    const runtime_shape_t &output_values_shape, const runtime_shape_t &output_values_strides,
+    const runtime_shape_t &output_indices_shape, const runtime_shape_t &output_indices_strides,
+    const int64_t k, const int32_t axis, const bool largest, const bool sorted) noexcept;
+
+template <typename T>
+result<void> kernels::topk(const T *input, T *output_values, int64_t *output_indices,
+    const runtime_shape_t &in_shape, const runtime_shape_t &in_strides,
+    const runtime_shape_t &output_values_shape, const runtime_shape_t &output_values_strides,
+    const runtime_shape_t &output_indices_shape, const runtime_shape_t &output_indices_strides,
+    const int64_t k, const int32_t axis, const bool largest, const bool sorted) noexcept
+{
+    return cpu::reference::topk(input, output_values, output_indices, in_shape, in_strides, output_values_shape, output_values_strides,
+        output_indices_shape, output_indices_strides, k, axis, largest, sorted);
+}
+
+template result<void> kernels::trilu<float>(const float *input, float *output, const runtime_shape_t &in_shape, const bool upper, const int64_t k) noexcept;
+
+template <typename T>
+result<void> kernels::trilu(const T *input, T *output, const runtime_shape_t &in_shape, const bool upper, const int64_t k) noexcept
+{
+    return cpu::reference::trilu(input, output, in_shape, upper, k);
 }

@@ -19,7 +19,7 @@ import numpy as np
 from tflite_test_runner import TfliteTestRunner
 
 
-def _make_module():
+def _make_module1():
     class Module(tf.Module):
         def __init__(self):
             super(Module).__init__()
@@ -36,8 +36,29 @@ def _make_module():
     return Module()
 
 
-def test_bitcast_concat(request):
-    module = _make_module()
+def _make_module2():
+    class Module(tf.Module):
+        def __init__(self):
+            super(Module).__init__()
+
+        @tf.function(input_signature=[tf.TensorSpec([1, 4, 4, 3], tf.float32)])
+        def __call__(self, x):
+            out1 = tf.reshape(tf.math.abs(x), [1, -1, 3])
+            out2 = tf.reshape(tf.math.exp(x), [1, -1, 3])
+            return tf.concat([out1, out2], axis=2)
+    return Module()
+
+
+def test_bitcast_concat1(request):
+    module = _make_module1()
+
+    runner = TfliteTestRunner(request.node.name)
+    model_file = runner.from_tensorflow(module)
+    runner.run(model_file)
+
+
+def test_bitcast_concat2(request):
+    module = _make_module2()
 
     runner = TfliteTestRunner(request.node.name)
     model_file = runner.from_tensorflow(module)

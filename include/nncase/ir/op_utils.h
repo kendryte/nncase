@@ -300,9 +300,14 @@ inline shape_t get_strided_slice_output_shape(const axis_t &begin, const axis_t 
     return new_shape.size() ? new_shape : shape_t { 1 };
 }
 
+inline bool is_copy_slice(const axis_t &strides)
+{
+    return std::all_of(strides.begin(), strides.end(), [](int32_t stride) { return stride == 1; });
+}
+
 inline bool is_simple_slice(const axis_t &begin, const axis_t &end, const axis_t &strides, const shape_t &input_shape)
 {
-    if (!std::all_of(strides.begin(), strides.end(), [](int32_t stride) { return stride == 1; }))
+    if (!is_copy_slice(strides))
         return false;
 
     bool is_simple_slice = true;
@@ -329,6 +334,14 @@ inline bool is_simple_slice(const axis_t &begin, const axis_t &end, const axis_t
     }
 
     return is_simple_slice;
+}
+
+inline bool is_axis0_squeeze_or_expand_dim_bitcast(const shape_t &in_shape, const shape_t &out_shape)
+{
+    auto in_begin = std::find_if_not(in_shape.begin(), in_shape.end(), [](size_t dim) { return dim == 1; });
+    auto out_begin = std::find_if_not(out_shape.begin(), out_shape.end(), [](size_t dim) { return dim == 1; });
+    return std::distance(in_begin, in_shape.end()) == std::distance(out_begin, out_shape.end())
+        && std::equal(in_begin, in_shape.end(), out_begin);
 }
 
 template <class U, class T>
