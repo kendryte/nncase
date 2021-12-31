@@ -197,7 +197,7 @@ def test_conv_transpose(in_shape, kernel_output_channel, bias_shape, auto_pad_mo
         model_def = _make_module(in_shape, kernel_output_channel, bias_shape,
                                  auto_pad_mode, dilation, group, kernel_shape, output_padding, pad, stride)
 
-        runner = OnnxTestRunner(request.node.name, ['k210'])
+        runner = OnnxTestRunner(request.node.name)
         model_file = runner.from_onnx_helper(model_def)
         runner.run(model_file)
 

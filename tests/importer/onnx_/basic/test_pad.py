@@ -123,7 +123,7 @@ def _make_module(in_shape, padding, constant_value, mode, op_version, value_form
 
 
 in_shapes = [
-    [1, 3, 56, 56],
+    [1, 3, 24, 24],
 ]
 
 paddings = [

@@ -35,7 +35,7 @@ def _make_module(in_shape, axis):
 
 
 in_shapes = [
-    [1, 3, 224, 224]
+    [1, 3, 48, 48]
 ]
 
 axes = [

@@ -80,8 +80,8 @@ def _make_module(in_shape, epsilon):
 
 
 in_shapes = [
-    [1, 16, 56, 56],
-    [1, 256, 56, 56]
+    [1, 8, 24, 24],
+    [1, 64, 28, 28]
 ]
 
 epsilons = [

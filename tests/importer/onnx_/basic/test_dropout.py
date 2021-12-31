@@ -54,7 +54,7 @@ def _make_module(in_shape, ratio):
 
 in_shapes = [
     [1, 3, 60, 72],
-    [1, 3, 224, 224]
+    [1, 3, 48, 48]
 ]
 
 ratios = [
