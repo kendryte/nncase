@@ -174,6 +174,19 @@ namespace Nncase
             { typeof(BFloat16).TypeHandle, DataType.Float16 }
         };
 
+        private static readonly Dictionary<DataType, Type> _dataTypesToType = new()
+        {
+            { DataType.Bool, typeof(bool) },
+            { DataType.Int8, typeof(sbyte) },
+            { DataType.UInt8, typeof(byte) },
+            { DataType.Int32, typeof(int) },
+            { DataType.UInt32, typeof(uint) },
+            { DataType.Int64, typeof(long) },
+            { DataType.UInt64, typeof(ulong) },
+            { DataType.Float32, typeof(float) },
+            { DataType.Float64, typeof(double) },
+        };
+
         private static readonly Dictionary<ElemType, int> _ElemTypeToLengths = new()
         {
             { ElemType.Bool, 1 },
@@ -315,6 +328,11 @@ namespace Nncase
             _ => throw new InvalidCastException($"Can't Cast the {srcType.ToString()}!")
         };
 
+        public static Half CastToScalar(byte[] bytes, int start = 0)
+        {
+            return BitConverter.ToHalf(bytes, start);
+        }
+
         public static bool IsIntegral(DataType srcType, int Lanes = 1) =>
           srcType.ElemType switch
           {
@@ -324,11 +342,6 @@ namespace Nncase
               _ => false
           } && Lanes == srcType.Lanes;
 
-        public static Half CastToScalar(byte[] bytes, int start = 0)
-        {
-            return BitConverter.ToHalf(bytes, start);
-        }
-        
         public static bool IsFloat(DataType srcType, int Lanes = 1) => srcType.ElemType switch
         {
             (ElemType.BFloat16 or ElemType.Float16 or ElemType.Float32 or ElemType.Float64) => true,

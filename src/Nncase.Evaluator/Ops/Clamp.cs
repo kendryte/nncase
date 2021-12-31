@@ -12,7 +12,7 @@ namespace Nncase.Evaluator.Ops
     {
         private torch.Tensor VisitClamp(Clamp clamp)
         {
-            var input = _context.GetArgument(clamp, Clamp.Input);
+            var input = _context.GetTorchArgument(clamp, Clamp.Input);
             var min = _context.GetArgumentConst(clamp, Clamp.Min).ToArray<float>();
             var max = _context.GetArgumentConst(clamp, Clamp.Max).ToArray<float>();
             return torch.clamp(input, min, max);
