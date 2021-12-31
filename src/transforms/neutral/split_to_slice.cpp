@@ -48,10 +48,6 @@ void split_to_slice_transform::process(transform_context &context)
     auto &old_split = static_cast<split &>(*context.matched_nodes[0]);
     std::vector<size_t> indices_or_sections = old_split.indices_or_sections();
     int32_t axis = old_split.axis();
-    if (axis == -1)
-    {
-        axis = output.shape().size() + axis;
-    }
     bool is_indices = old_split.is_indices();
 
     std::vector<slice *> new_slices = {};
