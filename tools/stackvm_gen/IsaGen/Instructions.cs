@@ -171,6 +171,7 @@ namespace IsaGen
         REDUCE_PROD,
         REDUCE_WINDOW2D,
         RESIZE_IMAGE,
+        SIGMOID,
         SLICE,
         SOFTMAX,
         SPACE_TO_BATCH,
@@ -1850,6 +1851,26 @@ namespace IsaGen
             [DisplayName("image_resize_mode")]
             [Description("Image Resize Mode")]
             public ImageResizeMode ImageResizeMode { get; set; }
+        }
+
+        [DisplayName("TENSOR.SIGMOID")]
+        [Category("Tensor Instructions")]
+        [Description("Sigmoid")]
+        public class SigmoidInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.SIGMOID;
+
+            [DisplayName("datatype")]
+            [Description("Datatype")]
+            public DataType DataType { get; set; }
+
+            [DisplayName("rshape_src")]
+            [Description("Source shape register")]
+            public byte RshapeSrc { get; set; }
+
+            [DisplayName("rstride_src")]
+            [Description("Source stride register")]
+            public byte RstrideSrc { get; set; }
         }
 
         [DisplayName("TENSOR.SLICE")]
