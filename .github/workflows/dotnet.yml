@@ -25,6 +25,6 @@ jobs:
     - name: Build
       run: dotnet build --no-restore
     - name: Test
-      run: |
-         echo "${{github.workspace}}/src/Nncase.Tests/bin/Debug/net6.0/runtimes/linux-x64/native" >> $GITHUB_PATH 
-         dotnet test --no-build --verbosity normal
+      env: 
+        LD_LIBRARY_PATH: "${{github.workspace}}/src/Nncase.Tests/bin/Debug/net6.0/runtimes/linux-x64/native;${{github.workspace}}/src/Nncase.Cli/bin/Debug/net6.0/runtimes/linux-x64/native"
+      run: dotnet test --no-build --verbosity normal
