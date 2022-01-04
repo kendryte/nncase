@@ -74,7 +74,7 @@ namespace Nncase.Tests.TIRTest
         {
 
             var arch = RuntimeInformation.OSArchitecture == Architecture.Arm64 ? "arm64" : "x86_64";
-            if (!(RuntimeInformation.IsOSPlatform(OSPlatform.Linux) || RuntimeInformation.IsOSPlatform(OSPlatform.OSX)))
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
             {
                 return;
             }

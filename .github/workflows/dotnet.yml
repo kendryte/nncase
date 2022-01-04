@@ -12,7 +12,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:
-        os: [ubuntu-18.04,windows-2019,macos-10.15]
+        os: [ubuntu-18.04] #,windows-2019,macos-10.15]
 
     steps:
     - uses: actions/checkout@v2
@@ -25,4 +25,6 @@ jobs:
     - name: Build
       run: dotnet build --no-restore
     - name: Test
-      run: dotnet test --no-build --verbosity normal
+      run: |
+         echo "${{github.workspace}}/src/Nncase.Tests/bin/Debug/net6.0/runtimes/linux-x64/native" >> $GITHUB_PATH 
+         dotnet test --no-build --verbosity normal
