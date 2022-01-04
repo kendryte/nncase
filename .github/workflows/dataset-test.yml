@@ -1,6 +1,7 @@
 name: dataset-test
 
 on: 
+  push:
   schedule:
     - cron: '50 6 * * *'
 
