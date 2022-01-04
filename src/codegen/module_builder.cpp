@@ -393,8 +393,7 @@ void module_builder::write_binary(binary_writer &writer)
 
 void module_builder::write_function_binary(binary_writer &writer, const schedule::function_schedule_result &function_sched)
 {
-    auto write_shape = [&](const shape_t &shape)
-    {
+    auto write_shape = [&](const shape_t &shape) {
         writer.write((uint32_t)shape.size());
         for (auto dim : shape)
             writer.write((uint32_t)dim);
