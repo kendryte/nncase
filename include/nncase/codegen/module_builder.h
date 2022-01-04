@@ -90,6 +90,7 @@ public:
     virtual std::unique_ptr<section_decompiler> create_decompiler(std::string_view section_name);
 
 protected:
+    section *find_section(std::string_view section_name);
     void merge_to_rdata_section(std::string_view from);
     function_call_id function_id(ir::graph *graph);
     void set_current_entry_point(std::streampos pos);
