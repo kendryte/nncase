@@ -47,7 +47,7 @@ case: # case的配置，应该是一个多层次的
     dump_import_op_range: false
     quant_type: 'uint8'
     w_quant_type: 'uint8'
-    use_mse_quant_w: false
+    use_mse_quant_w: true
     quant_method: "l2"
 
   ptq_opt:
@@ -57,26 +57,25 @@ case: # case的配置，应该是一个多层次的
   generate_inputs:
     name: generate_imagenet_dataset
     kwargs: 
-      dir_path: "/home/curio/dataset/MINIImageNet_20"
+      dir_path: "ImageNet/ImageNet_1000_first"
     numbers: 1
-    batch_size: 4
+    batch_size: 100
   generate_calibs:
     name: generate_imagenet_dataset
     kwargs:
-      dir_path: "/home/curio/dataset/MINIImageNet_20"
+      dir_path: "ImageNet/ImageNet_1000_first"
     numbers: 1
-    batch_size: 2
+    batch_size: 10
   generate_dump_range_data:
     name: generate_imagenet_dataset
     kwargs:
-      dir_path: "/home/curio/dataset/MINIImageNet_2"
+      dir_path: "ImageNet/ImageNet_1000_first"
     numbers: 1
     batch_size: 1
   eval:
     - name: target
       values:
-        # - cpu
-        # - k210
+        - cpu
         - k510
     - name: ptq
       values:
@@ -84,8 +83,7 @@ case: # case的配置，应该是一个多层次的
   infer:
     - name: target
       values:
-        # - cpu
-        # - k210
+        - cpu
         - k510
     - name: ptq
       values:
@@ -99,10 +97,10 @@ judge:
     matchs: null
   specifics:
     - matchs:
-        target: [cpu ,k510]
+        target: [cpu, k210 ,k510]
         ptq: true
       threshold: 0.015
     - matchs:
-        target: [cpu, k510]
+        target: [cpu, k210, k510]
         ptq: false
       threshold: 0.02
