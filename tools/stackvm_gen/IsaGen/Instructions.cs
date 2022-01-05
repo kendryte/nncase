@@ -155,6 +155,7 @@ namespace IsaGen
         COPY,
         CUMSUM,
         DEQUANTIZE,
+        EQUAL,
         GATHER,
         GATHER_ND,
         HARDMAX,
@@ -1379,6 +1380,38 @@ namespace IsaGen
             [DisplayName("rstride_src")]
             [Description("Source stride register")]
             public byte RstrideSrc { get; set; }
+
+            [DisplayName("rstride_dest")]
+            [Description("Dest stride register")]
+            public byte RstrideDest { get; set; }
+        }
+
+        [DisplayName("TENSOR.EQUAL")]
+        [Category("Tensor Instructions")]
+        [Description("Equal")]
+        public class EqualInstruction : TensorInstruction
+        {
+            public override TensorFunction Function => TensorFunction.EQUAL;
+
+            [DisplayName("datatype")]
+            [Description("Datatype")]
+            public DataType DataType { get; set; }
+
+            [DisplayName("rshape_src1")]
+            [Description("Source1 shape register")]
+            public byte RshapeSrc1 { get; set; }
+
+            [DisplayName("rstride_src1")]
+            [Description("Source1 stride register")]
+            public byte RstrideSrc1 { get; set; }
+
+            [DisplayName("rshape_src2")]
+            [Description("Source2 shape register")]
+            public byte RshapeSrc2 { get; set; }
+
+            [DisplayName("rstride_src2")]
+            [Description("Source2 stride register")]
+            public byte RstrideSrc2 { get; set; }
 
             [DisplayName("rstride_dest")]
             [Description("Dest stride register")]

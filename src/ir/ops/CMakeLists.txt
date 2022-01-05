@@ -7,6 +7,7 @@ target_sources(ir PRIVATE
     conv2d_transpose.cpp
     convert.cpp
     cumsum.cpp
+    equal.cpp
     fused_unary.cpp
     matmul.cpp
     transpose.cpp
