@@ -27,7 +27,6 @@
     <ProjectReference Include="..\..\third_party\tflite\TFLite.Schema.csproj" />
     <ProjectReference Include="..\..\third_party\onnx\Onnx.Protobuf.csproj" />
     <ProjectReference Include="..\Nncase.Core\Nncase.Core.csproj" />
-    <ProjectReference Include="..\Nncase.IR\Nncase.IR.csproj" />
   </ItemGroup>
 
 </Project>

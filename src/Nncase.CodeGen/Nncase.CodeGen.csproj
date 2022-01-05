@@ -8,7 +8,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Nncase.Core\Nncase.Core.csproj" />
-    <ProjectReference Include="..\Nncase.IR\Nncase.IR.csproj" />
   </ItemGroup>
 
 
