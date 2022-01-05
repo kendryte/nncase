@@ -1,647 +1,177 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
+using System.Runtime.InteropServices;
+using System.Text;
+
 namespace Nncase.IO
 {
-
-    //
-    // 摘要:
-    //     Writes primitive types in binary to a stream and supports writing strings in
-    //     a specific encoding.
-    public class BitWriter : IAsyncDisposable, IDisposable
+    public class BitWriter
     {
-        /// <summary>
-        /// Holds the underlying stream.
-        /// </summary>
-        protected Stream OutStream;
+        public readonly StringBuilder BinString;
 
-        //
-        // 摘要:
-        //     Gets the underlying stream of the System.IO.BinaryWriter.
-        //
-        // 返回结果:
-        //     The underlying stream associated with the BinaryWriter.
-        public virtual Stream BaseStream
+        /// <summary>
+        /// number of bit
+        /// </summary>
+        public int Length
         {
             get
             {
-                throw null;
+                return BinString.Length;
             }
         }
 
-        //
-        // 摘要:
-        //     Initializes a new instance of the System.IO.BinaryWriter class that writes to a stream.
-        protected BitWriter()
+        /// <summary>
+        /// create a BitWriter
+        /// </summary>
+        public BitWriter()
         {
-            OutStream= new MemoryStream();
+            BinString = new StringBuilder();
         }
 
-        //
-        // 摘要:
-        //     Initializes a new instance of the System.IO.BinaryWriter class based on the specified
-        //     stream and using UTF-8 encoding.
-        //
-        // 参数:
-        //   output:
-        //     The output stream.
-        //
-        // 异常:
-        //   T:System.ArgumentException:
-        //     The stream does not support writing or is already closed.
-        //
-        //   T:System.ArgumentNullException:
-        //     output is null.
-        public BitWriter(Stream output)
+        /// <summary>
+        /// create a BitWriter
+        /// </summary>
+        /// <param name="bitLength">bit length</param>
+        public BitWriter(int bitLength)
         {
-            OutStream = output;
+            var add = 8 - bitLength % 8;
+            BinString = new StringBuilder(bitLength + add);
         }
 
-        //
-        // 摘要:
-        //     Initializes a new instance of the System.IO.BinaryWriter class based on the specified
-        //     stream and character encoding.
-        //
-        // 参数:
-        //   output:
-        //     The output stream.
-        //
-        //   encoding:
-        //     The character encoding to use.
-        //
-        // 异常:
-        //   T:System.ArgumentException:
-        //     The stream does not support writing or is already closed.
-        //
-        //   T:System.ArgumentNullException:
-        //     output or encoding is null.
-        public BitWriter(Stream output, Encoding encoding)
+        /// <summary>
+        /// write byte to bit stream
+        /// </summary>
+        /// <param name="b">byte value</param>
+        /// <param name="bitLength">length in the bit stream</param>
+        public void Write(byte b, int bitLength = 8)
         {
-            throw new NotImplementedException();
+            var bin = Convert.ToString(b, 2);
+            AppendBinString(bin, bitLength);
         }
 
-        //
-        // 摘要:
-        //     Initializes a new instance of the System.IO.BinaryWriter class based on the specified
-        //     stream and character encoding, and optionally leaves the stream open.
-        //
-        // 参数:
-        //   output:
-        //     The output stream.
-        //
-        //   encoding:
-        //     The character encoding to use.
-        //
-        //   leaveOpen:
-        //     true to leave the stream open after the System.IO.BinaryWriter object is disposed;
-        //     otherwise, false.
-        //
-        // 异常:
-        //   T:System.ArgumentException:
-        //     The stream does not support writing or is already closed.
-        //
-        //   T:System.ArgumentNullException:
-        //     output or encoding is null.
-        public BitWriter(Stream output, Encoding encoding, bool leaveOpen)
+        /// <summary>
+        /// write int to bit stream
+        /// </summary>
+        /// <param name="i">int value</param>
+        /// <param name="bitLength">length in the bit stream</param>
+        public void Write(int i, int bitLength = 16)
         {
-            throw new NotSupportedException();
+            var bin = Convert.ToString(i, 2);
+            AppendBinString(bin, bitLength);
         }
 
-        //
-        // 摘要:
-        //     Closes the current System.IO.BinaryWriter and the underlying stream.
-        public virtual void Close()
+        /// <summary>
+        /// write int to bit stream
+        /// </summary>
+        /// <param name="i">int value</param>
+        /// <param name="bitLength">length in the bit stream</param>
+        public void Write(long i, int bitLength = 64)
         {
+            var bin = Convert.ToString(i, 2);
+            AppendBinString(bin, bitLength);
         }
 
-        //
-        // 摘要:
-        //     Releases all resources used by the current instance of the System.IO.BinaryWriter
-        //     class.
-        public void Dispose()
+
+        /// <summary>
+        /// write char to bit stream
+        /// </summary>
+        /// <param name="c">char value</param>
+        /// <param name="bitLength">length in the bit  stream</param>
+        public void Write(char c, int bitLength = 7)
         {
+            var b = Convert.ToByte(c);
+            var bin = Convert.ToString(b, 2);
+            AppendBinString(bin, bitLength);
         }
 
-        //
-        // 摘要:
-        //     Releases the unmanaged resources used by the System.IO.BinaryWriter and optionally
-        //     releases the managed resources.
-        //
-        // 参数:
-        //   disposing:
-        //     true to release both managed and unmanaged resources; false to release only unmanaged
-        //     resources.
-        protected virtual void Dispose(bool disposing)
+        /// <summary>
+        /// wirte bool value to bit stream
+        /// </summary>
+        /// <param name="b">bool value</param>
+        /// <param name="bitLength">length int the bit stream</param>
+        public void Write(bool b, int bitLength = 1)
         {
+            var bin = b ? "1" : "0";
+            AppendBinString(bin, bitLength);
         }
 
-        //
-        // 摘要:
-        //     Asynchronously releases all resources used by the current instance of the System.IO.BinaryWriter
-        //     class.
-        //
-        // 返回结果:
-        //     A task that represents the asynchronous dispose operation.
-        public virtual ValueTask DisposeAsync()
+        /// <summary>
+        /// write binary string to bit stream
+        /// </summary>
+        /// <param name="bin">binary string</param>
+        public void WriteBinaryString(string bin)
         {
-            throw null;
+            BinString.Append(bin);
         }
 
-        //
-        // 摘要:
-        //     Clears all buffers for the current writer and causes any buffered data to be
-        //     written to the underlying device.
-        public virtual void Flush()
+        /// <summary>
+        /// get bytes in the writer stream, 8 bit align
+        /// </summary>
+        /// <returns></returns>
+        public byte[] GetBytes()
         {
+            var bin = GetBinString();
+            var len = bin.Length / 8;
+            var result = new byte[len];
+
+            for (int i = 0; i < len; i++)
+            {
+                var bits = bin.Substring(i * 8, 8);
+                result[i] = Convert.ToByte(bits, 2);
+            }
+
+            return result;
         }
 
-        //
-        // 摘要:
-        //     Sets the position within the current stream.
-        //
-        // 参数:
-        //   offset:
-        //     A byte offset relative to origin.
-        //
-        //   origin:
-        //     A field of System.IO.SeekOrigin indicating the reference point from which the
-        //     new position is to be obtained.
-        //
-        // 返回结果:
-        //     The position with the current stream.
-        //
-        // 异常:
-        //   T:System.IO.IOException:
-        //     The file pointer was moved to an invalid location.
-        //
-        //   T:System.ArgumentException:
-        //     The System.IO.SeekOrigin value is invalid.
-        public virtual long Seek(int offset, SeekOrigin origin)
+        /// <summary>
+        /// get binary string in the writer stream, 8 bit align
+        /// </summary>
+        /// <returns></returns>
+        public string GetBinString()
         {
-            throw null;
+            var add = GetAdditionalBits();
+            return BinString.ToString() + add;
         }
 
-        //
-        // 摘要:
-        //     Writes a one-byte Boolean value to the current stream, with 0 representing false
-        //     and 1 representing true.
-        //
-        // 参数:
-        //   value:
-        //     The Boolean value to write (0 or 1).
-        //
-        // 异常:
-        //   T:System.IO.IOException:
-        //     An I/O error occurs.
-        //
-        //   T:System.ObjectDisposedException:
-        //     The stream is closed.
-        public virtual void Write(bool value)
+        private void AppendBinString(string bin, int bitLength)
         {
+            if (bin.Length > bitLength)
+                throw new Exception("len is too short");
+            var add = bitLength - bin.Length;
+            for (int i = 0; i < add; i++)
+            {
+                BinString.Append('0');
+            }
+            BinString.Append(bin);
         }
 
-        //
-        // 摘要:
-        //     Writes an unsigned byte to the current stream and advances the stream position
-        //     by one byte.
-        //
-        // 参数:
-        //   value:
-        //     The unsigned byte to write.
-        //
-        // 异常:
-        //   T:System.IO.IOException:
-        //     An I/O error occurs.
-        //
-        //   T:System.ObjectDisposedException:
-        //     The stream is closed.
-        public virtual void Write(byte value)
+        private string GetAdditionalBits()
         {
+            var add = 8 - BinString.Length % 8;
+            if (add == 0) return string.Empty;
+
+            var result = new StringBuilder(add);
+            for (int i = 0; i < add; i++)
+            {
+                result.Append('0');
+            }
+            return result.ToString();
         }
 
-        //
-        // 摘要:
-        //     Writes a byte array to the underlying stream.
-        //
-        // 参数:
-        //   buffer:
-        //     A byte array containing the data to write.
-        //
-        // 异常:
-        //   T:System.IO.IOException:
-        //     An I/O error occurs.
-        //
-        //   T:System.ObjectDisposedException:
-        //     The stream is closed.
-        //
-        //   T:System.ArgumentNullException:
-        //     buffer is null.
-        public virtual void Write(byte[] buffer)
+        /// <summary>
+        /// get the binary bytes.
+        /// </summary>
+        /// <returns> the bytes. </returns>
+        public Byte[] ToBytes()
         {
-        }
-
-        //
-        // 摘要:
-        //     Writes a region of a byte array to the current stream.
-        //
-        // 参数:
-        //   buffer:
-        //     A byte array containing the data to write.
-        //
-        //   index:
-        //     The index of the first byte to read from buffer and to write to the stream.
-        //
-        //   count:
-        //     The number of bytes to read from buffer and to write to the stream.
-        //
-        // 异常:
-        //   T:System.ArgumentException:
-        //     The buffer length minus index is less than count.
-        //
-        //   T:System.ArgumentNullException:
-        //     buffer is null.
-        //
-        //   T:System.ArgumentOutOfRangeException:
-        //     index or count is negative.
-        //
-        //   T:System.IO.IOException:
-        //     An I/O error occurs.
-        //
-        //   T:System.ObjectDisposedException:
-        //     The stream is closed.
-        public virtual void Write(byte[] buffer, int index, int count)
-        {
-        }
-
-        //
-        // 摘要:
-        //     Writes a Unicode character to the current stream and advances the current position
-        //     of the stream in accordance with the Encoding used and the specific characters
-        //     being written to the stream.
-        //
-        // 参数:
-        //   ch:
-        //     The non-surrogate, Unicode character to write.
-        //
-        // 异常:
-        //   T:System.IO.IOException:
-        //     An I/O error occurs.
-        //
-        //   T:System.ObjectDisposedException:
-        //     The stream is closed.
-        //
-        //   T:System.ArgumentException:
-        //     ch is a single surrogate character.
-        public virtual void Write(char ch)
-        {
-        }
-
-        //
-        // 摘要:
-        //     Writes a character array to the current stream and advances the current position
-        //     of the stream in accordance with the Encoding used and the specific characters
-        //     being written to the stream.
-        //
-        // 参数:
-        //   chars:
-        //     A character array containing the data to write.
-        //
-        // 异常:
-        //   T:System.ArgumentNullException:
-        //     chars is null.
-        //
-        //   T:System.ObjectDisposedException:
-        //     The stream is closed.
-        //
-        //   T:System.IO.IOException:
-        //     An I/O error occurs.
-        public virtual void Write(char[] chars)
-        {
-        }
-
-        //
-        // 摘要:
-        //     Writes a section of a character array to the current stream, and advances the
-        //     current position of the stream in accordance with the Encoding used and perhaps
-        //     the specific characters being written to the stream.
-        //
-        // 参数:
-        //   chars:
-        //     A character array containing the data to write.
-        //
-        //   index:
-        //     The index of the first character to read from chars and to write to the stream.
-        //
-        //   count:
-        //     The number of characters to read from chars and to write to the stream.
-        //
-        // 异常:
-        //   T:System.ArgumentException:
-        //     The buffer length minus index is less than count.
-        //
-        //   T:System.ArgumentNullException:
-        //     chars is null.
-        //
-        //   T:System.ArgumentOutOfRangeException:
-        //     index or count is negative.
-        //
-        //   T:System.IO.IOException:
-        //     An I/O error occurs.
-        //
-        //   T:System.ObjectDisposedException:
-        //     The stream is closed.
-        public virtual void Write(char[] chars, int index, int count)
-        {
-        }
-
-        //
-        // 摘要:
-        //     Writes a decimal value to the current stream and advances the stream position
-        //     by sixteen bytes.
-        //
-        // 参数:
-        //   value:
-        //     The decimal value to write.
-        //
-        // 异常:
-        //   T:System.IO.IOException:
-        //     An I/O error occurs.
-        //
-        //   T:System.ObjectDisposedException:
-        //     The stream is closed.
-        public virtual void Write(decimal value)
-        {
-        }
-
-        //
-        // 摘要:
-        //     Writes an eight-byte floating-point value to the current stream and advances
-        //     the stream position by eight bytes.
-        //
-        // 参数:
-        //   value:
-        //     The eight-byte floating-point value to write.
-        //
-        // 异常:
-        //   T:System.IO.IOException:
-        //     An I/O error occurs.
-        //
-        //   T:System.ObjectDisposedException:
-        //     The stream is closed.
-        public virtual void Write(double value)
-        {
-        }
-
-        //
-        // 摘要:
-        //     Writes an two-byte floating-point value to the current stream and advances the
-        //     stream position by two bytes.
-        //
-        // 参数:
-        //   value:
-        //     The two-byte floating-point value to write.
-        //
-        // 异常:
-        //   T:System.IO.IOException:
-        //     An I/O error occurs.
-        //
-        //   T:System.ObjectDisposedException:
-        //     The stream is closed.
-        public virtual void Write(Half value)
-        {
-        }
-
-        //
-        // 摘要:
-        //     Writes a two-byte signed integer to the current stream and advances the stream
-        //     position by two bytes.
-        //
-        // 参数:
-        //   value:
-        //     The two-byte signed integer to write.
-        //
-        // 异常:
-        //   T:System.IO.IOException:
-        //     An I/O error occurs.
-        //
-        //   T:System.ObjectDisposedException:
-        //     The stream is closed.
-        public virtual void Write(short value)
-        {
-        }
-
-        //
-        // 摘要:
-        //     Writes a four-byte signed integer to the current stream and advances the stream
-        //     position by four bytes.
-        //
-        // 参数:
-        //   value:
-        //     The four-byte signed integer to write.
-        //
-        // 异常:
-        //   T:System.IO.IOException:
-        //     An I/O error occurs.
-        //
-        //   T:System.ObjectDisposedException:
-        //     The stream is closed.
-        public virtual void Write(int value)
-        {
-        }
-
-        //
-        // 摘要:
-        //     Writes an eight-byte signed integer to the current stream and advances the stream
-        //     position by eight bytes.
-        //
-        // 参数:
-        //   value:
-        //     The eight-byte signed integer to write.
-        //
-        // 异常:
-        //   T:System.IO.IOException:
-        //     An I/O error occurs.
-        //
-        //   T:System.ObjectDisposedException:
-        //     The stream is closed.
-        public virtual void Write(long value)
-        {
-        }
-
-        //
-        // 摘要:
-        //     Writes a span of bytes to the current stream.
-        //
-        // 参数:
-        //   buffer:
-        //     The span of bytes to write.
-        public virtual void Write(ReadOnlySpan<byte> buffer)
-        {
-        }
-
-        //
-        // 摘要:
-        //     Writes a span of characters to the current stream, and advances the current position
-        //     of the stream in accordance with the Encoding used and perhaps the specific characters
-        //     being written to the stream.
-        //
-        // 参数:
-        //   chars:
-        //     A span of chars to write.
-        public virtual void Write(ReadOnlySpan<char> chars)
-        {
-        }
-
-        //
-        // 摘要:
-        //     Writes a signed byte to the current stream and advances the stream position by
-        //     one byte.
-        //
-        // 参数:
-        //   value:
-        //     The signed byte to write.
-        //
-        // 异常:
-        //   T:System.IO.IOException:
-        //     An I/O error occurs.
-        //
-        //   T:System.ObjectDisposedException:
-        //     The stream is closed.
-        [CLSCompliant(false)]
-        public virtual void Write(sbyte value)
-        {
-        }
-
-        //
-        // 摘要:
-        //     Writes a four-byte floating-point value to the current stream and advances the
-        //     stream position by four bytes.
-        //
-        // 参数:
-        //   value:
-        //     The four-byte floating-point value to write.
-        //
-        // 异常:
-        //   T:System.IO.IOException:
-        //     An I/O error occurs.
-        //
-        //   T:System.ObjectDisposedException:
-        //     The stream is closed.
-        public virtual void Write(float value)
-        {
-        }
-
-        //
-        // 摘要:
-        //     Writes a length-prefixed string to this stream in the current encoding of the
-        //     System.IO.BinaryWriter, and advances the current position of the stream in accordance
-        //     with the encoding used and the specific characters being written to the stream.
-        //
-        // 参数:
-        //   value:
-        //     The value to write.
-        //
-        // 异常:
-        //   T:System.IO.IOException:
-        //     An I/O error occurs.
-        //
-        //   T:System.ArgumentNullException:
-        //     value is null.
-        //
-        //   T:System.ObjectDisposedException:
-        //     The stream is closed.
-        public virtual void Write(string value)
-        {
-        }
-
-        //
-        // 摘要:
-        //     Writes a two-byte unsigned integer to the current stream and advances the stream
-        //     position by two bytes.
-        //
-        // 参数:
-        //   value:
-        //     The two-byte unsigned integer to write.
-        //
-        // 异常:
-        //   T:System.IO.IOException:
-        //     An I/O error occurs.
-        //
-        //   T:System.ObjectDisposedException:
-        //     The stream is closed.
-        [CLSCompliant(false)]
-        public virtual void Write(ushort value)
-        {
-        }
-
-        //
-        // 摘要:
-        //     Writes a four-byte unsigned integer to the current stream and advances the stream
-        //     position by four bytes.
-        //
-        // 参数:
-        //   value:
-        //     The four-byte unsigned integer to write.
-        //
-        // 异常:
-        //   T:System.IO.IOException:
-        //     An I/O error occurs.
-        //
-        //   T:System.ObjectDisposedException:
-        //     The stream is closed.
-        [CLSCompliant(false)]
-        public virtual void Write(uint value)
-        {
-        }
-
-        //
-        // 摘要:
-        //     Writes an eight-byte unsigned integer to the current stream and advances the
-        //     stream position by eight bytes.
-        //
-        // 参数:
-        //   value:
-        //     The eight-byte unsigned integer to write.
-        //
-        // 异常:
-        //   T:System.IO.IOException:
-        //     An I/O error occurs.
-        //
-        //   T:System.ObjectDisposedException:
-        //     The stream is closed.
-        [CLSCompliant(false)]
-        public virtual void Write(ulong value)
-        {
-        }
-
-        //
-        // 摘要:
-        //     Writes a 32-bit integer in a compressed format.
-        //
-        // 参数:
-        //   value:
-        //     The 32-bit integer to be written.
-        //
-        // 异常:
-        //   T:System.IO.EndOfStreamException:
-        //     The end of the stream is reached.
-        //
-        //   T:System.ObjectDisposedException:
-        //     The stream is closed.
-        //
-        //   T:System.IO.IOException:
-        //     The stream is closed.
-        public void Write7BitEncodedInt(int value)
-        {
-        }
-
-        //
-        // 摘要:
-        //     Writes out a number 7 bits at a time.
-        //
-        // 参数:
-        //   value:
-        //     The value to write.
-        public void Write7BitEncodedInt64(long value)
-        {
+            var binString = GetBinString();
+            int numOfBytes = binString.Length / 8;
+            var bytes = new byte[numOfBytes];
+            for (int i = 0; i < numOfBytes; ++i)
+            {
+                bytes[i] = Convert.ToByte(binString.Substring(8 * i, 8), 2);
+            }
+            return bytes;
         }
     }
 }
