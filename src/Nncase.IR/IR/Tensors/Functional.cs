@@ -8,6 +8,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
+using Range = Nncase.IR.Tensors.Range;
 
 namespace Nncase.IR.F
 {
@@ -62,7 +63,9 @@ namespace Nncase.IR.F
         
         public static Call RandomUniformLike(DataType type, Expr input, Expr high, Expr low, Expr seed) =>
             new Call(new RandomUniformLike(type), input, high, low, seed);
-
+        
+        public static Call Range(Expr begin, Expr end, Expr step) => new Call(new Range(), begin, end, step);
+        
         public static Call Reduce(ReduceOp reduceOp, Expr input, Expr axis, Expr initValue, Expr keepDims) => new Call(new Reduce(reduceOp), input, axis, initValue, keepDims);
         
         public static Call ReduceArg(ReduceArgOp reduceArgOp, Expr input, Expr axis, Expr keepDims, Expr selectLastIndex) => new Call(new ReduceArg(reduceArgOp), input, axis, keepDims, selectLastIndex);
@@ -95,6 +98,8 @@ namespace Nncase.IR.F
             return new Call(new Slice(), input, begins, ends, axes, strides);
         }
 
+        public static Expr SliceIndex(Expr input, int index) => Slice(input, new[] { index }, new[] { index + 1 }, 1);
+        
         public static Expr Size(Expr input) => new Call(new Size(), input);
         
         public static Call Stack(Expr inputs, Expr axis) => new Call(new Stack(), inputs, axis);
@@ -108,7 +113,7 @@ namespace Nncase.IR.F
 
         public static Call DeQuantize(Expr input, Expr zeroPoint, Expr scale, DataType targetType) => new Call(new DeQuantize(targetType), input, zeroPoint, scale);
 
-        public static Call Rank(Expr input) => ShapeOp(ShapeOp(input));
+        public static Expr Rank(Expr input) => Slice(ShapeOp(ShapeOp(input)), new[] { 0 }, new[] { 1 }, 1);
         
         // same like tensorflow
         public static Call SpaceToBatch(Expr input, Expr blockShape, Expr paddings) => new Call(new SpaceToBatch(), input, blockShape, paddings);

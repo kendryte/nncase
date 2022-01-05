@@ -107,7 +107,8 @@ namespace Nncase.Evaluator.Ops
         }
 
         // when torch return a scalar, scalar's shape is {0}
-        private static torch.Tensor _fixShape(Expr expr, torch.Tensor tensor) => expr.CheckedShape.IsScalar ? tensor.view(new long[] { }) : tensor;
+        private static torch.Tensor _fixShape(Expr expr, torch.Tensor tensor) =>
+            expr.CheckedShape.IsScalar ? tensor.view(new long[] { }) : tensor;
 
         public override Const VisitLeaf(Call expr)
         {
@@ -123,11 +124,9 @@ namespace Nncase.Evaluator.Ops
                 Concat con => VisitConcat(con),
                 Conv2D conv => VisitConv2D(conv),
                 Conv2DTranspose c => VisitConv2DTranspose(c),
-                CumSum c => VisitCumSum(c),
                 Elu e => VisitElu(e),
                 Expand e => VisitExpand(e),
                 Flatten f => VisitFlatten(f),
-                Gather g => VisitGather(g),
                 HardSwish h => VisitHardSwish(h),
                 InstanceNormalization i => VisitInstanceNormalization(i),
                 LeakyRelu l => VisitLeakyRelu(l),
@@ -136,7 +135,7 @@ namespace Nncase.Evaluator.Ops
                 MatMul m => VisitMatMul(m),
                 Pad pd => VisitPad(pd),
                 Prod p => VisitProd(p),
-                Reduce r => VisitReduce(r), 
+                IR.Tensors.Range r => VisitRange(r),
                 ReduceArg r => VisitReduceArg(r),
                 ReduceWindow2D r => VisitReduceWindow2D(r),
                 Relu r => VisitRelu(r),
@@ -153,9 +152,23 @@ namespace Nncase.Evaluator.Ops
                 Transpose tr => VisitTranspose(tr),
                 Unary un => VisitUnary(un),
                 Clamp cl => VisitClamp(cl),
-                _ => throw new NotImplementedException($"{expr.Target}")
+                _ => TFOps(expr.Target)
             };
             return _fixShape(expr, result).ToConst();
+        }
+
+        private torch.Tensor TFOps(Expr target)
+        {
+            var result = target switch
+            {
+                CumSum c => VisitCumSum(c),
+                Gather g => VisitGather(g),
+                GatherND g => VisitGatherND(g),
+                OneHot o => VisitOneHot(o),
+                Reduce r => VisitReduce(r),
+                _ => throw new NotImplementedException($"{target}")
+            };
+            return result.ToConst().ToTorchTensor();
         }
 
         public override Const VisitLeaf(Const expr)
@@ -187,11 +200,6 @@ namespace Nncase.Evaluator.Ops
             }
             if (result is null)
                 throw new InvalidProgramException($"Must Set Input For Var {expr.Name}!");
-            if (result.CheckedType != expr.CheckedType)
-            {
-                throw new InvalidProgramException(
-                  $"The Var {expr.Name} Require {expr.CheckedType} But Give {result.CheckedType}");
-            }
             return result;
         }
     }

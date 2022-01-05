@@ -1,7 +1,9 @@
+using System;
 using System.Collections.Generic;
 using NetFabric.Hyperlinq;
 using Nncase.IR;
 using Tensorflow;
+using Tensorflow.NumPy;
 using Shape = Tensorflow.Shape;
 
 namespace Nncase.Evaluator
@@ -16,36 +18,38 @@ namespace Nncase.Evaluator
                 tensor.BufferToArray());
         }
 
-        public static Tensor ToTFTensor(this Const tensor)
+        public static NDArray ToTFTensor(this Const tensor)
         {
+            var span = new Span<byte>(tensor.Data.Data());
+            var dt = tensor.CheckedDataType.ToTFType();
             var shape = new Shape(tensor.CheckedShape.ToValueArray());
-            return new Tensor(tensor.Data.Data(), shape, tensor.CheckedDataType.ToTFType());
+            return new NDArray(tensor.Data.Data(), shape, dt);
         }
 
         private static readonly Dictionary<DataType, TF_DataType> _dataTypesToTorchType = new()
         {
-            {DataType.Bool, TF_DataType.DtBoolRef},
-            {DataType.Int8, TF_DataType.DtInt8Ref},
-            {DataType.Int16, TF_DataType.DtInt16Ref},
-            {DataType.Int32, TF_DataType.DtInt32Ref},
-            {DataType.Int64, TF_DataType.DtInt64Ref},
-            {DataType.UInt8, TF_DataType.DtUint8Ref},
-            {DataType.Float16, TF_DataType.DtHalfRef},
-            {DataType.Float32, TF_DataType.DtFloatRef},
-            {DataType.Float64, TF_DataType.DtDoubleRef},
+            {DataType.Bool, TF_DataType.TF_BOOL},
+            {DataType.Int8, TF_DataType.TF_INT8},
+            {DataType.Int16, TF_DataType.TF_INT16},
+            {DataType.Int32, TF_DataType.TF_INT32},
+            {DataType.Int64, TF_DataType.TF_INT64},
+            {DataType.UInt8, TF_DataType.TF_UINT8},
+            {DataType.Float16, TF_DataType.TF_HALF},
+            {DataType.Float32, TF_DataType.TF_FLOAT},
+            {DataType.Float64, TF_DataType.TF_DOUBLE},
         };
 
         private static readonly Dictionary<TF_DataType, DataType> _TorchTypeTodataTypes = new()
         {
-            {TF_DataType.DtBoolRef, DataType.Bool},
-            {TF_DataType.DtInt8Ref, DataType.Int8},
-            {TF_DataType.DtInt16Ref, DataType.Int16},
-            {TF_DataType.DtInt32Ref, DataType.Int32},
-            {TF_DataType.DtInt64Ref, DataType.Int64},
-            {TF_DataType.DtUint8Ref, DataType.UInt8},
-            {TF_DataType.DtHalfRef, DataType.Float16},
-            {TF_DataType.DtFloatRef, DataType.Float32},
-            {TF_DataType.DtDoubleRef, DataType.Float64},
+            {TF_DataType.TF_BOOL, DataType.Bool},
+            {TF_DataType.TF_INT8, DataType.Int8},
+            {TF_DataType.TF_INT16, DataType.Int16},
+            {TF_DataType.TF_INT32, DataType.Int32},
+            {TF_DataType.TF_INT64, DataType.Int64},
+            {TF_DataType.TF_UINT8, DataType.UInt8},
+            {TF_DataType.TF_HALF, DataType.Float16},
+            {TF_DataType.TF_FLOAT, DataType.Float32},
+            {TF_DataType.TF_DOUBLE, DataType.Float64},
         };
         
         public static TF_DataType ToTFType(this DataType dt) => _dataTypesToTorchType[dt];

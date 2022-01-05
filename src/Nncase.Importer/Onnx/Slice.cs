@@ -23,11 +23,7 @@ namespace Nncase.Importer
         private Expr SliceV1(in NodeProto op)
         {
             var input = GetSingleInputExpr(op);
-            // todo:default is all axis, 0-size-1
-            var axes = GetOptionIntsAttribute(op, "axes");
-            Expr axesExpr = axes
-                .Map(x => (Expr)Const.FromSpan<long>(x))
-                .Or(ComputeAxes(input));
+            Expr axesExpr = GetAxesAttribute(op, input);
             var starts = GetConstIntsAttribute(op, "starts");
             var ends = GetConstIntsAttribute(op, "ends");
             return F.Tensors.Slice(input, starts, ends, axesExpr, ExpandOneToRank(input, 1));
@@ -37,7 +33,7 @@ namespace Nncase.Importer
         {
             var input = GetInputExpr(op, 0);
             var (starts, ends) = GetInputExprs(op, 1, 2);
-            var axes = GetOptionInputExpr(op, 3).Or(ComputeAxes(input));
+            var axes = GetOptionInputExpr(op, 3).Or(ComputeDefaultAxes(input));
             var steps = GetOptionInputExpr(op, 4).Or(ExpandOneToRank(input, 1));
             return F.Tensors.Slice(input, starts, ends, axes, steps);
         }
@@ -45,17 +41,6 @@ namespace Nncase.Importer
         private Call ExpandOneToRank(Expr input, Expr value, int rankOffset = 0)
         {
             return F.Tensors.Expand(value, F.Tensors.Rank(input) - rankOffset);
-        }
-
-        private Call ComputeAxes(Expr input)
-        {
-            var multiRankOne = ExpandOneToRank(input, 1, 1);
-            // todo:replace this with exclusive true
-            return F.Tensors.Concat(
-                new IR.Tuple(
-                    Const.FromSpan<long>(new[] { 0L }), 
-                    F.Tensors.CumSum(multiRankOne, 0, false, false)),
-                0);
         }
     }
 }

@@ -15,9 +15,9 @@ namespace Nncase.Importer
     {
         private Expr VisitSum(NodeProto op)
         {
-            return Enumerable.Range(0, op.Input.Count)
+            return Enumerable.Range(1, op.Input.Count - 1)
                 .Select(x => GetInputExpr(op, x))
-                .Fold((Expr)0, (sum, x) => F.Math.Binary(BinaryOp.Add, sum, x));
+                .Fold(GetInputExpr(op, 0), (sum, x) => F.Math.Binary(BinaryOp.Add, sum, x));
         }
     }
 }

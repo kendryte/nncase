@@ -36,8 +36,10 @@ namespace Nncase.IR.Tensors
         {
             if (context.GetArgument(this, Axis) is Const axisValue)
             {
+                var axisV = axisValue.ToScalar<int>();
+                axisV = axisV < 0 ? axisV + input.Shape.Rank : axisV;
                 // input_shape[:axis] + index_shape + input_shape[axis + 1:]
-                var newShape = input.Shape.InsertAndClone(axisValue.ToScalar<int>(), index.Shape);
+                var newShape = input.Shape.InsertAndClone(axisV, index.Shape);
                 return new TensorType(input.DType, newShape);
             }
             else
