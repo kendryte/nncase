@@ -154,22 +154,23 @@ class OnnxTestRunner(TestRunner):
                 sess = ort.InferenceSession(model_file)
 
         if mode is "dataset":
-            topk = []
             for input in self.inputs:
                 input_dict = {}
                 for in_data in input['data']:
-                    input_dict[input['name']] = (input["index"], self.data_pre_process(in_data[0]))
-                outputs = sess.run(None, input_dict)
-                for output in outputs:
-                    topk.append((in_data[1], get_topK('cpu', 1, output)[0]))
-                if os.path.exists(os.path.join(case_dir, "cpu_dataset.txt")):
-                    os.remove(os.path.join(case_dir, "cpu_dataset.txt"))
-                self.output_paths.append((
-                    os.path.join(case_dir, 'cpu_result_0.bin'),
-                    os.path.join(case_dir, 'cpu_result_0.txt')))
-                with open(self.output_paths[-1][1], 'a') as f:
-                    for i in range(len(topk)):
-                        f.write(topk[i][0].split('/')[-1] + " " + str(topk[i][1]) + '\n')
+                    topk = []
+                    input_dict[input['name']] = self.transform_input(
+                        self.data_pre_process(in_data[0]), "float32", "CPU")
+                    outputs = sess.run(None, input_dict)
+                    for output in outputs:
+                        topk.append((in_data[1], get_topK('cpu', 1, output)[0]))
+                    if os.path.exists(os.path.join(case_dir, "cpu_dataset.txt")):
+                        os.remove(os.path.join(case_dir, "cpu_dataset.txt"))
+                    self.output_paths.append((
+                        os.path.join(case_dir, 'cpu_result_0.bin'),
+                        os.path.join(case_dir, 'cpu_result_0.txt')))
+                    with open(self.output_paths[-1][1], 'a') as f:
+                        for i in range(len(topk)):
+                            f.write(topk[i][0].split('/')[-1] + " " + str(topk[i][1]) + '\n')
         else:
             input_dict = {}
             for input in self.inputs:

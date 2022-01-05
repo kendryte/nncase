@@ -1,10 +1,12 @@
-from array import array
 import copy
+import multiprocessing
 import os
 import re
 import shutil
 import struct
+import uuid
 from abc import ABCMeta, abstractmethod
+from array import array
 from itertools import product
 from pathlib import Path
 from typing import Any, Dict, List, Tuple, Union
@@ -16,10 +18,9 @@ import yaml
 from PIL import Image
 
 from compare_util import compare
+from dataset_utils import *
 from importer.onnx_ import model
 from models.preprocess.preprocess import preprocess
-
-import uuid
 
 
 class Edict:
@@ -94,14 +95,6 @@ class Edict:
                     setattr(self, name, new_value)
             else:
                 setattr(self, name, new_value)
-
-
-def get_topK(info, k, result):
-    tmp = copy.deepcopy(result)
-    predictions = np.squeeze(tmp)
-    topK = predictions.argsort()[-k:]
-    print('{0}: top_{1} = {2}'.format(info, k, topK))
-    return topK
 
 
 def generate_random(shape: List[int], dtype: np.dtype,
@@ -184,9 +177,10 @@ def generate_imagenet_dataset(shape: List[int], dtype: np.dtype,
                               batch_index: int, batch_size: int,
                               case_dir: str,
                               dir_path: str) -> np.ndarray:
-    """ read image from folder, return the rgb image with padding, dtype = float32, range = [0,255]. same as k210 carmera.
+    """ 
+    shape: [N,H,W,C] 
     """
-    dir_path = os.path.join(os.getenv('DATASET_DIR'), dir_path)
+    dir_path = os.path.join(os.getenv('DATASET_DIR') if os.getenv('DATASET_DIR') else '', dir_path)
     assert(os.path.isdir(dir_path) or os.path.exists(dir_path))
 
     img_paths = []
@@ -247,7 +241,7 @@ class TestRunner(metaclass=ABCMeta):
 
     def transform_input(self, values: np.array, type: str, stage: str):
         values = copy.deepcopy(values)
-        if(len(values.shape) == 4 and self.pre_process[0]['preprocess']):
+        if(len(values.shape) == 4 and (self.pre_process[0]['preprocess'] or self.cfg.case.generate_inputs.name != "generate_random")):
             if stage == "CPU":
                 # onnx \ caffe
                 if (self.model_type == "onnx" or self.model_type == "caffe"):
@@ -700,37 +694,25 @@ class TestRunner(metaclass=ABCMeta):
         kmodel = compiler.gencode_tobytes()
         with open(os.path.join(infer_dir, 'test.kmodel'), 'wb') as f:
             f.write(kmodel)
-        sim = nncase.Simulator()
-        sim.load_model(kmodel)
+
         infer_output_paths: List[np.ndarray] = []
         if cfg.generate_inputs.name == "generate_imagenet_dataset":
-            # for i in range(len(self.inputs)):
-            def sim_run(sim, in_data):
-                sim.set_input_tensor(0, nncase.RuntimeTensor.from_numpy(in_data[0]))
-                sim.run()
-                result = sim.get_output_tensor(0).to_numpy()
-                lock.acquire()
-                tmp = []
-                tmp.append((in_data[1], get_topK(kwargs['target'], 1, result)))
-                tmp.tofile(infer_output_paths[-1][0])
-                with open(infer_output_paths[-1][1], 'a') as f:
-                    for i in range(len(tmp)):
-                        f.write(tmp[i][0].split("/")[-1] + " " + str(tmp[i][1][0]) + '\n')
-                lock.release()
-
-            import multiprocessing
-            p = multiprocessing.Pool(30)
-            lock = multiprocessing.Lock()
             gnne_txt = "gnne_no_ptq" if kwargs['ptq'] is False else "gnne_ptq"
             infer_output_paths.append((
-                os.path.join(infer_dir, gnne_txt) + '_0.bin',
-                os.path.join(infer_dir, gnne_txt) + '_0.txt'))
+                os.path.join(infer_dir, gnne_txt) + '.bin',
+                os.path.join(infer_dir, gnne_txt) + '.txt'))
+            p = multiprocessing.Pool(30)
+            result = []
             for in_data in self.inputs[0]['data']:
                 input_data = copy.deepcopy(in_data)
-                p.apply_async(sim_run, (sim, input_data, infer_output_paths, lock))
-                del input_data
+                p.apply_async(sim_run, args=(
+                    kmodel, input_data, infer_output_paths, kwargs['target'], self.model_type))
+            p.close()
+            p.join()
 
         else:
+            sim = nncase.Simulator()
+            sim.load_model(kmodel)
             for i in range(len(self.inputs)):
                 data = self.transform_input(
                     self.inputs[i]['data'], preprocess['input_type'], "infer")
@@ -781,6 +763,8 @@ class TestRunner(metaclass=ABCMeta):
                     shape = copy.deepcopy(input['model_shape'])
                 if shape[0] != cfg.batch_size:
                     shape[0] *= cfg.batch_size
+                if self.model_type != "tflite" and cfg.name == "generate_imagenet_dataset":
+                    shape = shape[0], shape[2], shape[3], shape[1]
                 data = DataFactory[cfg.name](shape, input['dtype'], n,
                                              cfg.batch_size, self.model_path, **cfg.kwargs)
 
