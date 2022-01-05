@@ -20,6 +20,7 @@ set(ONNX_IMPORTER_OPS_SOURCES
     ops/dequantizelinear.cpp
     ops/dropout.cpp
     ops/expand.cpp
+    ops/equal.cpp
     ops/gather.cpp
     ops/gather_nd.cpp
     ops/gemm.cpp

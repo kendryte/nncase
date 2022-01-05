@@ -102,6 +102,26 @@ result<void> kernels::dequantize(datatype_t in_type, datatype_t out_type, const 
     return cpu::reference::dequantize(in_type, out_type, input, output, in_shape, in_strides, out_strides, scale, bias, context);
 }
 
+template result<void> kernels::equal<uint8_t>(const uint8_t *input_a, const uint8_t *input_b, bool *output,
+    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
+    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_strides) noexcept;
+
+template result<void> kernels::equal<float>(const float *input_a, const float *input_b, bool *output,
+    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
+    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_strides) noexcept;
+
+template result<void> kernels::equal<int64_t>(const int64_t *input_a, const int64_t *input_b, bool *output,
+    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
+    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_strides) noexcept;
+
+template <typename T>
+result<void> kernels::equal(const T *input_a, const T *input_b, bool *output,
+    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
+    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_strides) noexcept
+{
+    return cpu::reference::equal(input_a, input_b, output, in_a_shape, in_a_strides, in_b_shape, in_b_strides, out_strides);
+}
+
 result<void> kernels::lut1d(datatype_t type, const gsl::byte *input, const gsl::byte *table, gsl::byte *output, const runtime_shape_t &shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const scalar &min, const scalar &max) noexcept
 {
