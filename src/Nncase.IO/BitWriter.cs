@@ -1,177 +1,110 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
 
 namespace Nncase.IO
 {
-    public class BitWriter
+    public ref struct BitWriter
     {
-        public readonly StringBuilder BinString;
+        Span<byte> _data;
+        ulong _buffer;
+        ulong _avail;
 
-        /// <summary>
-        /// number of bit
-        /// </summary>
-        public int Length
+        public BitWriter(Span<byte> data)
         {
-            get
+            _data = data;
+            _buffer = 0;
+            _avail = sizeof(ulong) * 8;
+        }
+
+        void Write(ReadOnlySpan<byte> src, int bits)
+        {
+            while (bits > 0)
             {
-                return BinString.Length;
+                var to_write = Math.Min(bits, 8);
+                write_bits_le8(src[0], to_write);
+                src = src.Slice(1);
+                bits -= to_write;
             }
         }
 
         /// <summary>
-        /// create a BitWriter
+        /// writhe the unmanaged value.
         /// </summary>
-        public BitWriter()
+        /// <typeparam name="T"></typeparam>
+        /// <param name="value"></param>
+        /// <param name="bits"></param>
+        public void Write<T>(T value, int bits) where T : unmanaged
         {
-            BinString = new StringBuilder();
+            Write(MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref value, 1)), bits);
         }
 
         /// <summary>
-        /// create a BitWriter
+        /// Flush the unwrited value.
         /// </summary>
-        /// <param name="bitLength">bit length</param>
-        public BitWriter(int bitLength)
+        public void Flush()
         {
-            var add = 8 - bitLength % 8;
-            BinString = new StringBuilder(bitLength + add);
+            var write_bytes = (buffer_written_bits() + 7) / 8;
+            if (write_bytes != 0)
+            {
+                Debug.Assert(_data.Length >= write_bytes);
+                var bufferSpan = MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref _buffer, 1));
+                for (int i = 0; i < write_bytes; i++)
+                {
+                    _data[i] = bufferSpan[i];
+                }
+                _data = _data.Slice(write_bytes);
+                _buffer = 0;
+                _avail = sizeof(ulong) * 8;
+            }
         }
 
         /// <summary>
-        /// write byte to bit stream
+        /// write the value less then 8
         /// </summary>
-        /// <param name="b">byte value</param>
-        /// <param name="bitLength">length in the bit stream</param>
-        public void Write(byte b, int bitLength = 8)
+        /// <param name="value"></param>
+        /// <param name="bits"></param>
+        void write_bits_le8(byte value, int bits)
         {
-            var bin = Convert.ToString(b, 2);
-            AppendBinString(bin, bitLength);
+            Debug.Assert(bits <= 8);
+            reserve_buffer_8();
+            ulong new_value = value & (((ulong)(1) << bits) - 1);
+            _buffer = _buffer | (new_value << buffer_written_bits());
+            _avail -= (ulong)bits;
         }
 
         /// <summary>
-        /// write int to bit stream
+        /// create the new buffer for wirte
         /// </summary>
-        /// <param name="i">int value</param>
-        /// <param name="bitLength">length in the bit stream</param>
-        public void Write(int i, int bitLength = 16)
+        void reserve_buffer_8()
         {
-            var bin = Convert.ToString(i, 2);
-            AppendBinString(bin, bitLength);
+            if (_avail < 8)
+            {
+                var write_bytes = buffer_written_bits() / 8;
+                Debug.Assert(_data.Length >= write_bytes);
+                var bufferSpan = MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref _buffer, 1));
+                for (int i = 0; i < write_bytes; i++)
+                {
+                    _data[i] = bufferSpan[i];
+                }
+                _data = _data.Slice(write_bytes);
+                if (write_bytes == sizeof(ulong))
+                    _buffer = 0;
+                else
+                    _buffer >>= write_bytes * 8;
+                _avail += (ulong)write_bytes * 8;
+            }
         }
 
         /// <summary>
-        /// write int to bit stream
-        /// </summary>
-        /// <param name="i">int value</param>
-        /// <param name="bitLength">length in the bit stream</param>
-        public void Write(long i, int bitLength = 64)
-        {
-            var bin = Convert.ToString(i, 2);
-            AppendBinString(bin, bitLength);
-        }
-
-
-        /// <summary>
-        /// write char to bit stream
-        /// </summary>
-        /// <param name="c">char value</param>
-        /// <param name="bitLength">length in the bit  stream</param>
-        public void Write(char c, int bitLength = 7)
-        {
-            var b = Convert.ToByte(c);
-            var bin = Convert.ToString(b, 2);
-            AppendBinString(bin, bitLength);
-        }
-
-        /// <summary>
-        /// wirte bool value to bit stream
-        /// </summary>
-        /// <param name="b">bool value</param>
-        /// <param name="bitLength">length int the bit stream</param>
-        public void Write(bool b, int bitLength = 1)
-        {
-            var bin = b ? "1" : "0";
-            AppendBinString(bin, bitLength);
-        }
-
-        /// <summary>
-        /// write binary string to bit stream
-        /// </summary>
-        /// <param name="bin">binary string</param>
-        public void WriteBinaryString(string bin)
-        {
-            BinString.Append(bin);
-        }
-
-        /// <summary>
-        /// get bytes in the writer stream, 8 bit align
+        /// get current written bits.
         /// </summary>
         /// <returns></returns>
-        public byte[] GetBytes()
+        int buffer_written_bits()
         {
-            var bin = GetBinString();
-            var len = bin.Length / 8;
-            var result = new byte[len];
-
-            for (int i = 0; i < len; i++)
-            {
-                var bits = bin.Substring(i * 8, 8);
-                result[i] = Convert.ToByte(bits, 2);
-            }
-
-            return result;
-        }
-
-        /// <summary>
-        /// get binary string in the writer stream, 8 bit align
-        /// </summary>
-        /// <returns></returns>
-        public string GetBinString()
-        {
-            var add = GetAdditionalBits();
-            return BinString.ToString() + add;
-        }
-
-        private void AppendBinString(string bin, int bitLength)
-        {
-            if (bin.Length > bitLength)
-                throw new Exception("len is too short");
-            var add = bitLength - bin.Length;
-            for (int i = 0; i < add; i++)
-            {
-                BinString.Append('0');
-            }
-            BinString.Append(bin);
-        }
-
-        private string GetAdditionalBits()
-        {
-            var add = 8 - BinString.Length % 8;
-            if (add == 0) return string.Empty;
-
-            var result = new StringBuilder(add);
-            for (int i = 0; i < add; i++)
-            {
-                result.Append('0');
-            }
-            return result.ToString();
-        }
-
-        /// <summary>
-        /// get the binary bytes.
-        /// </summary>
-        /// <returns> the bytes. </returns>
-        public Byte[] ToBytes()
-        {
-            var binString = GetBinString();
-            int numOfBytes = binString.Length / 8;
-            var bytes = new byte[numOfBytes];
-            for (int i = 0; i < numOfBytes; ++i)
-            {
-                bytes[i] = Convert.ToByte(binString.Substring(8 * i, 8), 2);
-            }
-            return bytes;
+            return (int)(sizeof(ulong) * 8 - _avail);
         }
     }
 }
