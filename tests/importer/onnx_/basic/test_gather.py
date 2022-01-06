@@ -29,21 +29,33 @@ def result_shape(p_shape, i_shape, axis=0):
 
 
 def _make_module(in_shape, indices, axis):
+    initializers = []
+    attributes_dict = {}
+
     input = helper.make_tensor_value_info('input', TensorProto.FLOAT, in_shape)
+
     i_shape = list(np.array(indices).shape)
     indices = helper.make_tensor('indices', TensorProto.INT64, np.array(
         indices).shape, np.array(indices).flatten().tolist())
-    output = helper.make_tensor_value_info(
-        'output', TensorProto.FLOAT, result_shape(in_shape, i_shape, axis))
-    initializers = []
     initializers.append(indices)
+
+    # axis
+    if axis is not None:
+        attributes_dict['axis'] = axis
+        default_axis = axis
+    else:
+        default_axis = 0
+
+    output = helper.make_tensor_value_info(
+        'output', TensorProto.FLOAT, result_shape(in_shape, i_shape, default_axis))
 
     node = onnx.helper.make_node(
         'Gather',
         inputs=['input', 'indices'],
         outputs=['output'],
-        axis=axis
+        **attributes_dict
     )
+
     graph_def = helper.make_graph(
         [node],
         'test-model',
@@ -52,10 +64,11 @@ def _make_module(in_shape, indices, axis):
         initializer=initializers
     )
 
-    return helper.make_model(graph_def, producer_name='kendryte')
+    return helper.make_model(graph_def, producer_name='onnx')
 
 
 in_shapes_indices_dim = [
+    ([11], [1, 3, 10, 0, 2], None),
     ([11], [1, 3, 10, 0, 2], 0),
     ([11], [[2, 4], [1, 3]], 0),
     ([7, 5], [1, 3], 0),

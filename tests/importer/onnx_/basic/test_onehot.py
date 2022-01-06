@@ -28,11 +28,16 @@ def onnx_make_tensor(name, type, val):
 
 def get_onehot_shape(indices, axis, depth):
     indices_shape = list(np.array(indices).shape)
-    # return indices[:axis] + [depth] + indices[axis:]
+    if axis is None:
+        axis = -1
+    if axis < 0:
+        axis = axis + len(indices_shape) + 1
     return indices_shape[:axis] + [depth] + indices_shape[axis:]
 
 
 def _make_module(indices, depth, axis):
+    attributes_dict = {}
+
     out_shape = get_onehot_shape(indices, axis, depth)
     indices = onnx_make_tensor('indices', TensorProto.INT64, indices)
     # indices = helper.make_tensor_value_info('indices', TensorProto.INT64, indices)
@@ -42,11 +47,15 @@ def _make_module(indices, depth, axis):
     output = helper.make_tensor_value_info('output', TensorProto.FLOAT, out_shape)
     initializers = [indices, depth]
 
+    # axis
+    if axis is not None:
+        attributes_dict['axis'] = axis
+
     node = onnx.helper.make_node(
         'OneHot',
         inputs=['indices', 'depth', 'values'],
         outputs=['output'],
-        axis=axis
+        **attributes_dict
     )
     graph_def = helper.make_graph(
         [node],
@@ -56,10 +65,11 @@ def _make_module(indices, depth, axis):
         initializer=initializers
     )
 
-    return helper.make_model(graph_def, producer_name='kendryte')
+    return helper.make_model(graph_def, producer_name='onnx')
 
 
 indices_depth_axis = [
+    ([3, 2, 4, 0], 5, None),
     ([3, 2, 4, 0], 5, 0),
     ([3, 2, 4, 0], 5, 1),
     ([[0, 2, 1, 1], [1, 1, 0, 0]], 3, 0),
