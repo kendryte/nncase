@@ -46,6 +46,11 @@ NNCASE_API result<void> dequantize(datatype_t in_type, datatype_t out_type, cons
     const runtime_shape_t &in_shape, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, float scale, float bias,
     kernel_context &context) noexcept;
 
+template <typename T>
+NNCASE_API result<void> equal(const T *input_a, const T *input_b, bool *output,
+    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
+    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_strides) noexcept;
+
 NNCASE_API result<void> lut1d(datatype_t type, const gsl::byte *input, const gsl::byte *table, gsl::byte *output, const runtime_shape_t &shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const scalar &min, const scalar &max) noexcept;
 
@@ -107,6 +112,10 @@ NNCASE_API result<void> random_normal(T *output, const runtime_shape_t &out_shap
 
 template <typename T>
 NNCASE_API result<void> random_uniform(T *output, const runtime_shape_t &out_shape, float low, float high, float seed) noexcept;
+
+template <typename T>
+NNCASE_API result<void> roi_align(const T *input, const T *rois, int64_t *batch_indices, T *output, const runtime_shape_t &in_shape,
+    const runtime_shape_t &out_shape, roi_align_mode_t mode, float spatial_scale, int64_t sampling_ratio) noexcept;
 
 template <typename T>
 NNCASE_API result<void> sigmoid(const T *input, T *output, const runtime_shape_t &in_shape, const runtime_shape_t &in_strides) noexcept;

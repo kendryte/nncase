@@ -13,24 +13,20 @@
  * limitations under the License.
  */
 #include <nncase/ir/op_utils.h>
-#include <nncase/ir/ops/split.h>
+#include <nncase/ir/ops/equal.h>
 #include <xtensor/xarray.hpp>
 
 using namespace nncase;
 using namespace nncase::ir;
 
-split::split(datatype_t type, shape_t input_shape, std::vector<shape_t> outputs_shape, std::vector<size_t> indices_or_sections, int32_t axis, bool is_indices)
-    : indices_or_sections_(indices_or_sections)
-    , axis_(axis < 0 ? input_shape.size() + axis : axis)
-    , is_indices_(is_indices)
+equal::equal(datatype_t input_type, shape_t input_a_shape, shape_t input_b_shape)
 {
-    add_input("input", type, input_shape);
-    for (size_t i = 0; i < outputs_shape.size(); i++)
-        add_output("output", type, outputs_shape[i]);
+    add_input("input_a", input_type, input_a_shape);
+    add_input("input_b", input_type, input_b_shape);
+    add_output("output", dt_uint8, get_binary_output_shape(input_a_shape, input_b_shape));
 }
 
-bool split::properties_equal(node &other) const
+bool equal::properties_equal([[maybe_unused]] node &other) const
 {
-    auto &r = static_cast<split &>(other);
-    return indices_or_sections() == r.indices_or_sections() && axis() == r.axis() && is_indices() == r.is_indices();
+    return false;
 }

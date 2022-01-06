@@ -29,7 +29,8 @@ set(SRCS tflite_importer.cpp
          ops/gather.cpp
          ops/gather_nd.cpp
          ops/onehot.cpp
-         ops/log_softmax.cpp)
+         ops/log_softmax.cpp
+         ops/split.cpp)
 
 add_library(tflite_importer OBJECT ${SRCS})
 target_link_libraries(tflite_importer PUBLIC ir flatbuffers)

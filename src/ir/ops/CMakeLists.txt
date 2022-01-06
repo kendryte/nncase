@@ -7,6 +7,7 @@ target_sources(ir PRIVATE
     conv2d_transpose.cpp
     convert.cpp
     cumsum.cpp
+    equal.cpp
     fused_unary.cpp
     matmul.cpp
     transpose.cpp
@@ -39,6 +40,7 @@ target_sources(ir PRIVATE
     lstm.cpp
     gather_nd.cpp
     onehot.cpp
+    roi_align.cpp
     sigmoid.cpp
     ternary.cpp
     topk.cpp

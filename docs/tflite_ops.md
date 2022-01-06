@@ -70,3 +70,4 @@
 | ONE_HOT | ✅ |
 | SQUARED_DIFFERENCE | ✅ |
 | LOG_SOFTMAX | ✅ |
+| SPLIT | ✅ |

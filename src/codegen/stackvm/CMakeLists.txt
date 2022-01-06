@@ -11,6 +11,7 @@ set(SRCS module_builder.cpp
          ops/copy.cpp
          ops/cumsum.cpp
          ops/dequantize.cpp
+         ops/equal.cpp
          ops/gather.cpp
          ops/gather_nd.cpp
          ops/hardmax.cpp
@@ -24,6 +25,7 @@ set(SRCS module_builder.cpp
          ops/reduce_prod.cpp
          ops/reduce_window2d.cpp
          ops/resize_image.cpp
+         ops/roi_align.cpp
          ops/slice.cpp
          ops/sigmoid.cpp
          ops/table_lookup1d.cpp

@@ -34,6 +34,7 @@
 | Elu | ✅ |
 | Exp | ✅ |
 | Expand | ✅ |
+| Equal | ✅ |
 | Flatten | ✅ |
 | Floor | ✅ |
 | Gather | ✅ |
@@ -81,6 +82,7 @@
 | Reshape | ✅ |
 | Resize | ✅ |
 | ReverseSequence | ✅ |
+| RoiAlign | ✅ |
 | Round | ✅ |
 | Selu | ✅ |
 | Shape | ✅ |
