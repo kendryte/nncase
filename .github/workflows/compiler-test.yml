@@ -87,7 +87,7 @@ jobs:
       working-directory: ${{github.workspace}}
       shell: bash
       run: |
-        pip install pytest pytest-xdist
+        pip install pytest pytest-xdist pytest-parallel
         mkdir test_results
 
     - name: Test
@@ -101,11 +101,11 @@ jobs:
         DATASET_DIR: /compiler/share
       run: |
 
-        pytest -n 50 tests/other --doctest-modules --junitxml=test_results/other.xml
-        pytest -n 50 tests/importer --doctest-modules --junitxml=test_results/importer.xml
-        pytest -n 50 tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
-        pytest -n 50 tests/graph_partition --doctest-modules --junitxml=test_results/graph_partition.xml
-        pytest -n 50 tests/transform --doctest-modules --junitxml=test_results/transform.xml
-        pytest -n 30 tests/models/onnx-model-zoo --doctest-modules --junitxml=test_results/models.xml
+        pytest --workers 50 --tests-per-worker 3 tests/other --doctest-modules --junitxml=test_results/other.xml
+        pytest --workers 50 --tests-per-worker 3 tests/importer --doctest-modules --junitxml=test_results/importer.xml
+        pytest --workers 50 --tests-per-worker 3 tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
+        pytest --workers 50 --tests-per-worker 3 tests/graph_partition --doctest-modules --junitxml=test_results/graph_partition.xml
+        pytest --workers 50 --tests-per-worker 3 tests/transform --doctest-modules --junitxml=test_results/transform.xml
+        pytest --workers 30 tests/models/onnx-model-zoo --doctest-modules --junitxml=test_results/models.xml
         pytest tests/examples --doctest-modules --junitxml=test_results/examples.xml
 
