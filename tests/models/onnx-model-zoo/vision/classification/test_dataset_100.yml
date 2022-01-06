@@ -97,7 +97,7 @@ judge:
     matchs: null
   specifics:
     - matchs:
-        target: [cpu, k210 ,k510]
+        target: [ k210 ,k510]
         ptq: true
       threshold: 0.015
     - matchs:

@@ -244,7 +244,7 @@ class TestRunner(metaclass=ABCMeta):
         if(len(values.shape) == 4 and (self.pre_process[0]['preprocess'] or self.cfg.case.generate_inputs.name != "generate_random")):
             if stage == "CPU":
                 # onnx \ caffe
-                if (self.model_type == "onnx" or self.model_type == "caffe"):
+                if ((self.model_type == "onnx" or self.model_type == "caffe") and self.inputs[0]['model_shape'][1] == 3):
                     values = np.transpose(values, [0, 3, 1, 2])
 
             if type == 'float32':
@@ -706,7 +706,7 @@ class TestRunner(metaclass=ABCMeta):
             for in_data in self.inputs[0]['data']:
                 input_data = copy.deepcopy(in_data)
                 p.apply_async(sim_run, args=(
-                    kmodel, input_data, infer_output_paths, kwargs['target'], self.model_type))
+                    kmodel, input_data, infer_output_paths, kwargs['target'], self.model_type, self.inputs[0]['model_shape']))
             p.close()
             p.join()
 
@@ -763,7 +763,7 @@ class TestRunner(metaclass=ABCMeta):
                     shape = copy.deepcopy(input['model_shape'])
                 if shape[0] != cfg.batch_size:
                     shape[0] *= cfg.batch_size
-                if self.model_type != "tflite" and cfg.name == "generate_imagenet_dataset":
+                if shape[1] == 3:
                     shape = shape[0], shape[2], shape[3], shape[1]
                 data = DataFactory[cfg.name](shape, input['dtype'], n,
                                              cfg.batch_size, self.model_path, **cfg.kwargs)
