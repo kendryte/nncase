@@ -133,7 +133,6 @@ namespace Nncase.Evaluator.Ops
                 LogSoftMax l => VisitLogSoftMax(l),
                 LRN l => VisitLRN(l),
                 MatMul m => VisitMatMul(m),
-                Pad pd => VisitPad(pd),
                 Prod p => VisitProd(p),
                 IR.Tensors.Range r => VisitRange(r),
                 ReduceArg r => VisitReduceArg(r),
@@ -166,6 +165,9 @@ namespace Nncase.Evaluator.Ops
                 GatherND g => VisitGatherND(g),
                 OneHot o => VisitOneHot(o),
                 Reduce r => VisitReduce(r),
+                Pad pd => VisitPad(pd),
+                Squeeze s => VisitSqueeze(s),
+                UnSqueeze u => VisitUnSqueeze(u),
                 _ => throw new NotImplementedException($"{target}")
             };
             return result.ToConst().ToTorchTensor();

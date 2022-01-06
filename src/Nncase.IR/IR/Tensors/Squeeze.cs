@@ -15,21 +15,27 @@ namespace Nncase.IR.Tensors
     {
         public static ParameterInfo Input = new(typeof(Squeeze), 0, "input");
 
-        public static ParameterInfo Dim = new(typeof(Squeeze), 1, "dim", IsScalar() & IsIntegral());
+        public static ParameterInfo Dim = new(typeof(Squeeze), 1, "dim", HasRank(1) & IsIntegral());
 
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType dim)
         {
             if (context.GetArgument(this, Dim) is Const dim_con)
             {
-                var dim_v = dim_con.ToScalar<int>();
+                var dims = dim_con.ToArray<int>();
                 var outshape = input.Shape.ToList();
-                if (outshape[dim_v].IsFixed && outshape[dim_v].FixedValue == 1)
+                foreach (var dimValue in dims)
                 {
-                    outshape.RemoveAt(dim_v);
-                    return input with { Shape = new Shape(outshape) };
+                    if (outshape[dimValue].IsFixed && outshape[dimValue] == 1)
+                    {
+                        outshape[dimValue] = int.MaxValue;
+                    }
+                    else
+                    {
+                        return new InvalidType("The Shape[dim] is not 1!");
+                    }
                 }
-                return new InvalidType("The Shape[dim] is not 1!");
+                return input with { Shape = new Shape(outshape.Filter(x => x != int.MaxValue )) };
             }
             return input with { Shape = new Shape(Enumerable.Repeat(Dimension.Unknown, input.Shape.Count() - 1)) };
         }

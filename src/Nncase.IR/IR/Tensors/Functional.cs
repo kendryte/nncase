@@ -85,6 +85,9 @@ namespace Nncase.IR.F
 
         public static Call Reshape(Expr input, Expr shape) => new Call(new Reshape(), input, shape);
 
+        public static Call ReverseSequence(Expr input, Expr seqLens, Expr batchAxis, Expr timeAxis) =>
+            new Call(new ReverseSequence(), input, seqLens, batchAxis, timeAxis);
+        
         public static Call ShapeOp(Expr input) => new Call(new ShapeOp(), input);
 
         ///https://github.com/onnx/onnx/blob/master/docs/Operators.md#slice

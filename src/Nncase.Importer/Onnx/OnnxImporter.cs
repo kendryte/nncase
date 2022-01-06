@@ -274,16 +274,16 @@ namespace Nncase.Importer
                 "Softmax" => VisitSoftmax(op),
                 "Softplus" => VisitSoftplus(op),
                 "Softsign" => VisitSoftsign(op),
-                // "SpaceToDepth" => VisitSpaceToDepth(op),
+                "SpaceToDepth" => VisitSpaceToDepth(op),
                 "Split" => VisitSplit(op),
                 "Sqrt" => VisitUnary(op, UnaryOp.Sqrt),
-                // "Squeeze" => VisitSqueeze(op),
+                "Squeeze" => VisitSqueeze(op),
                 "Sub" => VisitBinary(op, BinaryOp.Sub),
                 "Sum" => VisitSum(op),
                 "Tanh" => VisitUnary(op, UnaryOp.Tanh),
                 "Transpose" => VisitTranspose(op),
                 // "Upsample" => VisitUpsample(op),
-                // "Unsqueeze" => VisitUnsqueeze(op),
+                "Unsqueeze" => VisitUnsqueeze(op),
                 _ => throw new NotSupportedException($"Not Supported onnx op {op.OpType}")
             };
 

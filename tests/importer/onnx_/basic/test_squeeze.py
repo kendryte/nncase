@@ -37,8 +37,8 @@ def _make_module(in_shape, out_channel, kernel_size, dim):
 
 
 in_shapes = [
-    [1, 4, 60, 72],
-    [1, 3, 224, 224]
+    [1, 4, 30, 36],
+    [1, 3, 24, 24]
 ]
 
 out_channels = [

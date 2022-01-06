@@ -15,19 +15,22 @@ namespace Nncase.IR.Tensors
     {
         public static ParameterInfo Input = new(typeof(UnSqueeze), 0, "input");
 
-        public static ParameterInfo Dim = new(typeof(UnSqueeze), 1, "dim", IsScalar() & IsIntegral());
+        public static ParameterInfo Dim = new(typeof(UnSqueeze), 1, "dim", HasRank(1) & IsIntegral());
 
         /// <inheritdoc/>
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType dim)
         {
             if (context.GetArgument(this, Dim) is Const tdims)
             {
-                var dimv = tdims.ToScalar<int>();
+                var dimsValue = tdims.ToTensor<int>();
                 var outshape = input.Shape.ToList();
-                if (dimv >= 0)
-                    outshape.Insert(dimv, 1);
-                else
-                    outshape.Insert(outshape.Count + dimv, 1);
+                foreach (var dimV in dimsValue)
+                {
+                    if (dimV >= 0)
+                        outshape.Insert(dimV, 1);
+                    else
+                        outshape.Insert(input.Shape.Rank + dimV, 1);
+                }
                 return input with { Shape = new Shape(outshape) };
             }
             return input with { Shape = new Shape(Enumerable.Repeat(Dimension.Unknown, input.Shape.Rank + 1)) };
