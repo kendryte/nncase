@@ -765,7 +765,7 @@ class TestRunner(metaclass=ABCMeta):
                     shape = copy.deepcopy(input['model_shape'])
                 if shape[0] != cfg.batch_size:
                     shape[0] *= cfg.batch_size
-                if shape[1] == 3 and cfg.name == "generate_imagenet_dataset":
+                if self.model_type != "tflite" and cfg.name == "generate_imagenet_dataset" and shape[1] == 3:
                     shape = shape[0], shape[2], shape[3], shape[1]
                 data = DataFactory[cfg.name](shape, input['dtype'], n,
                                              cfg.batch_size, self.model_path, **cfg.kwargs)
