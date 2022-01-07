@@ -44,7 +44,9 @@ def top1(gt_path, result_path):
     gt_data_dict = {}
     result_data_dict = {}
     if(result_path.split('/')[4] == "ptq"):
-        gt_res = os.path.join(result_path.replace("/ptq/", "/noptq/").replace("_ptq", "_no_ptq"))
+        gt_path = os.path.join(result_path.replace("/ptq/", "/noptq/").replace("_ptq", "_no_ptq"))
+    elif(result_path.split('/')[4] == "noptq" and result_path.split('/')[3] == "k510"):
+        gt_path = os.path.join(result_path.replace("k510", "cpu"))
 
     # 1000 class: 0;
     # 1001 class: 1;
@@ -77,6 +79,15 @@ def top1(gt_path, result_path):
 
     label_precent_result = gt_result / len(gt_data_dict)
     percent_result = infer_result / len(result_data_dict)
+
+    path = result_path.split("/")[3:5]
+    with open(os.path.join("tests_output", "dataset_test_result.txt"), 'a+') as f:
+
+        if path in [["cpu", "ptq"], ["k510", "noptq"], ["k510", "ptq"]]:
+            f.write("{}:{}\t".format("{}_{}".format(*path), percent_result))
+        else:
+            f.write("\n\n{}\n".format(gt_path.split("/")[1][5:]))
+            f.write("framework:{}\t".format(label_precent_result))
     return label_precent_result - percent_result
 
 
@@ -96,16 +107,10 @@ def compare(result_path: Tuple[str, str],
             threshold: float = 0.99,
             hist: bool = True) -> bool:
     # NOTE the result_path is Tuple[ bin_path, txt_path ]
-    # if simarity_name == "top1":
-    #     simarity = top1(ground_truth_path, result_path)
-    #     simarity_info = f"\n{simarity_name} similarity = {simarity}, threshold = {threshold}\n"
-    # else:
+
     ground_truth_path_bin, ground_truth_path_txt = ground_truth_path
     result_path_bin, result_path_txt = result_path
-    # if simarity_name == "top1":
-    #     result = top1(ground_truth_path_txt, result_path_txt, result_path_txt.split('/')[3])
-    #     simarity_info = f"\n{simarity_name} similarity = {simarity}, threshold = {threshold}\n"
-    # else:
+
     if 'npy' in ground_truth_path_bin:  # bfloat16
         # gt, pred = bytes.fromhex(gt.strip()), bytes.fromhex(pred.strip())
         # gt, pred = struct.unpack('>H', gt)[0], struct.unpack('>H', pred)[0]

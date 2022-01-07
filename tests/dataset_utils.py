@@ -8,7 +8,6 @@ def get_topK(info, k, result):
     tmp = copy.deepcopy(result)
     predictions = np.squeeze(tmp)
     topK = predictions.argsort()[-k:]
-    print('{0}: top_{1} = {2}'.format(info, k, topK))
     return topK
 
 
