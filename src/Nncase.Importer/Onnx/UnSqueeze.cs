@@ -20,9 +20,7 @@ namespace Nncase.Importer
         private Expr UnsqueezeV1(in NodeProto op)
         {
             var input = GetInputExpr(op, 0);
-            var axes = GetOptionIntsAttribute(op, "axes")
-                .Match(x => Const.FromSpan<long>(x),
-                    () => SqueezeAxes(input));
+            var axes = Const.FromSpan<long>(GetIntsAttribute(op, "axes"));
             return UnSqueeze(input, axes);
         }
         

@@ -116,6 +116,7 @@ namespace Nncase.IR.F
 
         public static Call DeQuantize(Expr input, Expr zeroPoint, Expr scale, DataType targetType) => new Call(new DeQuantize(targetType), input, zeroPoint, scale);
 
+        // return a scalar
         public static Expr Rank(Expr input) => Slice(ShapeOp(ShapeOp(input)), new[] { 0 }, new[] { 1 }, 1);
         
         // same like tensorflow

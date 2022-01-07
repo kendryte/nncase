@@ -1,4 +1,5 @@
 using System.Linq;
+using Nncase.IR;
 using Nncase.IR.Tensors;
 using static Tensorflow.Binding;
 
@@ -10,10 +11,15 @@ namespace Nncase.Evaluator.Ops
         private Tensorflow.Tensor VisitUnSqueeze(UnSqueeze unSqueeze)
         {
             var input = _context.GetTFArgument(unSqueeze, UnSqueeze.Input);
-            var dims = _context.GetArgumentConst(unSqueeze, UnSqueeze.Dim).ToArray<int>().Select(x => x < 0? x + (int)input.shape.size : x).ToArray();
+            var dims = _context.GetArgumentConst(unSqueeze, UnSqueeze.Dim)
+                .ToArray<int>()
+                .Select(
+                    x => Util.PositiveIndex(x, input.shape.rank
+                    ))
+                .ToArray();
             foreach (var dim in dims)
             {
-                input = tf.expand_dims(input, dim);
+                input = tf.expand_dims(input, Util.PositiveIndex(dim, input.shape.rank));
             }
 
             return input;

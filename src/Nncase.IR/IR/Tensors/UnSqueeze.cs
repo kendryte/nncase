@@ -23,15 +23,19 @@ namespace Nncase.IR.Tensors
             if (context.GetArgument(this, Dim) is Const tdims)
             {
                 var dimsValue = tdims.ToTensor<int>();
-                var outshape = input.Shape.ToList();
-                foreach (var dimV in dimsValue)
+                var outShape = input.Shape.ToList();
+                foreach (var dimVal in dimsValue)
                 {
-                    if (dimV >= 0)
-                        outshape.Insert(dimV, 1);
-                    else
-                        outshape.Insert(input.Shape.Rank + dimV, 1);
+                    var dimV = Util.PositiveIndex(dimVal, input);
+                    if (dimV < 0)
+                    {
+                        for (int i = dimV; i < 0; i++)
+                        {
+                            outShape.Insert(0, 1);                            
+                        }
+                    }
                 }
-                return input with { Shape = new Shape(outshape) };
+                return input with { Shape = new Shape(outShape) };
             }
             return input with { Shape = new Shape(Enumerable.Repeat(Dimension.Unknown, input.Shape.Rank + 1)) };
         }

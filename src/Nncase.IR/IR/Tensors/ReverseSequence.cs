@@ -31,9 +31,8 @@ namespace Nncase.IR.Tensors
         public static readonly ParameterInfo TimeAxis = new(typeof(ReverseSequence), 3, "time_axis",  IsIntegralScalar());
 
         /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input)
-        {
-            return input;
-        }
+        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType seq_lens,
+            TensorType batch_axis, TensorType time_axis)
+            => input;
     }
 }

@@ -262,6 +262,7 @@ namespace Nncase.Importer
                 "Relu" => VisitRelu(op),
                 "Reshape" => VisitReshape(op),
                 // "Resize" => VisitResize(op),
+                "ReverseSequence" => VisitReverseSequence(op),
                 "Round" => VisitUnary(op, UnaryOp.Round),
                 "Selu" => VisitSelu(op),
                 "Shape" => VisitShape(op),
