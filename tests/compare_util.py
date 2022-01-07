@@ -88,6 +88,7 @@ def top1(gt_path, result_path):
         else:
             f.write("\n\n{}\n".format(gt_path.split("/")[1][5:]))
             f.write("framework:{}\t".format(label_precent_result))
+            f.write("{}:{}\t".format("{}_{}".format(*path), percent_result))
     return label_precent_result - percent_result
 
 
