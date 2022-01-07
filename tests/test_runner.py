@@ -703,7 +703,7 @@ class TestRunner(metaclass=ABCMeta):
             infer_output_paths.append((
                 os.path.join(infer_dir, gnne_txt) + '.bin',
                 os.path.join(infer_dir, gnne_txt) + '.txt'))
-            p = multiprocessing.Pool(30)
+            p = multiprocessing.Pool(100)
             result = []
             for in_data in self.inputs[0]['data']:
                 input_data = copy.deepcopy(in_data)

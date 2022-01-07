@@ -3,6 +3,7 @@ name: dataset-test
 on: 
   schedule:
     - cron: '0 17 * * 6'
+    # 1:00 am
 
 env:
   BUILD_TYPE: Release
@@ -104,6 +105,7 @@ jobs:
       run: |
         
         pytest -n 2 tests/models/tflite-model-zoo --doctest-modules --junitxml=test_results/models-dataset.xml
+        cat tests_output/dataset_test_result.txt
 
     - name: Publish Test Results
       uses: EnricoMi/publish-unit-test-result-action@v1
