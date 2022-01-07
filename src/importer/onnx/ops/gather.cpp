@@ -34,7 +34,11 @@ void onnx_importer::convert_op_Gather(const NodeProto &node)
     const auto indices_shape = get_shape(indices);
     const auto out_shape = get_shape(output);
 
-    auto axis = get_positive_axis(node, input_shape.size());
+    auto axis = get_attribute<int32_t>(node, "axis").value_or(0);
+    if (axis < 0)
+    {
+        axis += static_cast<int32_t>(input_shape.size());
+    }
 
     auto ga = graph_.emplace<gather>(input_type, input_shape, indices_shape, out_shape, axis);
     input_convert_to_type(ga->indices(), indices, dt_int32);

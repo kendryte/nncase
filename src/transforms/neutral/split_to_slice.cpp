@@ -94,7 +94,6 @@ void split_to_slice_transform::process(transform_context &context)
     {
         assert(indices_or_sections.size() == 1);
         assert(output.shape()[axis] % indices_or_sections[0] == 0);
-
         for (size_t i = 0; i < indices_or_sections[0]; i++)
         {
             end[axis] += output.shape()[axis] / indices_or_sections[0];

@@ -97,12 +97,6 @@ private:
         return get_positive<T>(axis_attr.value(), max_size);
     }
 
-    template <class T = int32_t>
-    T get_positive_axis(const onnx::NodeProto &node, size_t max_size)
-    {
-        return get_positive_attr(node, max_size, "axis");
-    }
-
     void add_convert(ir::input_connector &next_input, const std::string &onnx_input, datatype_t to_type);
 
     void input_convert_to_type(ir::input_connector &next_input, const std::string &onnx_input, datatype_t to_type);

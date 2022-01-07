@@ -34,6 +34,7 @@
 | Elu | ✅ |
 | Exp | ✅ |
 | Expand | ✅ |
+| Equal | ✅ |
 | Flatten | ✅ |
 | Floor | ✅ |
 | Gather | ✅ |

@@ -48,6 +48,11 @@ NNCASE_API result<void> dequantize(datatype_t in_type, datatype_t out_type, cons
     const runtime_shape_t &in_shape, const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, float scale, float bias,
     kernel_context &context = default_kernel_context()) noexcept;
 
+template <typename T>
+NNCASE_API result<void> equal(const T *input_a, const T *input_b, bool *output,
+    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_a_strides, const runtime_shape_t &in_b_shape,
+    const runtime_shape_t &in_b_strides, const runtime_shape_t &out_strides) noexcept;
+
 NNCASE_API result<void> lut1d(datatype_t type, const gsl::byte *input, const gsl::byte *table, gsl::byte *output, const runtime_shape_t &shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const scalar &min, const scalar &max) noexcept;
 

@@ -18,6 +18,7 @@ set(SRCS runtime_module.cpp
          ops/tensor.copy.cpp
          ops/tensor.cumsum.cpp
          ops/tensor.dequantize.cpp
+         ops/tensor.equal.cpp
          ops/tensor.gather.cpp
          ops/tensor.gather_nd.cpp
          ops/tensor.hardmax.cpp
