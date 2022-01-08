@@ -13,23 +13,30 @@ namespace Nncase.IR
     /// <summary>
     /// Module.
     /// </summary>
-    public sealed class Module
+    public sealed class IRModule
     {
         private List<Function> _functions;
+        
+        /// <summary>
+        /// the index of the entry function.
+        /// </summary>
+        int _entryIndex;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Module"/> class.
+        /// Initializes a new instance of the <see cref="IRModule"/> class.
         /// </summary>
         /// <param name="main"> main func</param>
-        public Module(Function main)
+        public IRModule(Function main)
         {
             _functions = new();
             _functions.Add(main);
+            _entryIndex = 0;
         }
 
-        public Module()
+        public IRModule()
         {
             _functions = new();
+            _entryIndex = -1;
         }
 
         /// <summary>
@@ -42,15 +49,18 @@ namespace Nncase.IR
         /// </summary>
         public Function? Entry
         {
-            get => _functions.Count > 0 ? _functions.First() : null;
+            get => _entryIndex == -1 ? null : Functions[_entryIndex];
             set
             {
-                if (value is not null)
+                if (value is null) _entryIndex = -1;
+                else
                 {
-                    if (_functions.Count > 0)
-                        _functions[0] = value;
-                    else
+                    _entryIndex = _functions.IndexOf(value);
+                    if (_entryIndex == -1)
+                    {
                         _functions.Add(value);
+                        _entryIndex = _functions.Count - 1;
+                    }
                 }
             }
         }

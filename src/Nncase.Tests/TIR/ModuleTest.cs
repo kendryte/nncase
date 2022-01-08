@@ -22,7 +22,7 @@ namespace Nncase.Tests.TIRTest
             var func = new Function(output, lhs, rhs);
             func.InferenceType();
             Console.Write(func.DumpExprAsIL());
-            var mod = new Module();
+            var mod = new IRModule();
             mod.Add(func);
             mod.Entry = func;
         }

@@ -23,7 +23,7 @@ namespace Nncase
         /// </summary>
         /// <param name="tflite">tflite model stream.</param>
         /// <returns>Imported IR module.</returns>
-        public static Module ImportTFLite(Stream tflite)
+        public static IRModule ImportTFLite(Stream tflite)
         {
             var model = new byte[tflite.Length];
             tflite.Read(model);
@@ -31,7 +31,7 @@ namespace Nncase
             return importer.Import();
         }
 
-        public static Module ImportOnnx(Stream onnx)
+        public static IRModule ImportOnnx(Stream onnx)
         {
             var model = new byte[onnx.Length];
             onnx.Read(model);
@@ -43,7 +43,7 @@ namespace Nncase
         /// </summary>
         /// <param name="tfliteFileName">tflite model file name.</param>
         /// <returns>Imported IR module.</returns>
-        public static Module ImportTFLite(string tfliteFileName)
+        public static IRModule ImportTFLite(string tfliteFileName)
         {
             using (var model = File.OpenRead(tfliteFileName))
             {

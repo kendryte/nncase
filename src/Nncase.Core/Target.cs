@@ -3,314 +3,128 @@
 
 using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Reflection;
+using System.Runtime.CompilerServices;
+using Nncase.Schedule;
 
 namespace Nncase
 {
     /// <summary>
-    /// The device type in Device.
-    /// </summary>
-    public enum DeviceType
-    {
-        /// <summary>
-        /// CPU device 
-        /// </summary>
-        CPU,
-        /// <summary>
-        /// CUDA GPU device 
-        /// </summary>
-        CUDA,
-        /// <summary>
-        /// Pinned CUDA CPU memory by cudaMallocHost
-        /// </summary>
-        CUDAHost,
-        /// <summary>
-        /// OpenCL devices. 
-        /// </summary>
-        OpenCL,
-        /// <summary>
-        /// Vulkan buffer for next generation graphics. 
-        /// </summary>
-        Vulkan,
-        /// <summary>
-        /// Metal for Apple GPU. 
-        /// </summary>
-        Metal,
-        /// <summary>
-        /// Verilog simulator buffer 
-        /// </summary>
-        VPI,
-        /// <summary>
-        /// ROCm GPUs for AMD GPUs 
-        /// </summary>
-        ROCM,
-        /// <summary>
-        /// Reserved extension device type,
-        /// used for quickly test extension device
-        /// The semantics can differ depending on the implementation.
-        /// </summary>
-        ExtDev,
-    }
-
-    /// <summary>
-    /// Target kind, specifies the kind of the target
-    /// </summary>
-    public abstract class TargetKindBase
-    {
-        /// <summary>
-        ///  Name of the target kind
-        /// </summary>
-        public string Name;
-        /// <summary>
-        ///  Device type of target kind
-        /// </summary>
-        public DeviceType DeviceType;
-        /// <summary>
-        ///  Default keys of the target
-        /// </summary>
-        public List<string> DefaultKeys;
-        /// <summary>
-        ///  Function used to preprocess on target creation
-        /// </summary>
-        public Action<int> Preprocessor;
-
-        public TargetKindBase(string name, DeviceType deviceType)
-        {
-            Name = name;
-            DeviceType = deviceType;
-            DefaultKeys = new();
-            void fun(int x) { }
-            Preprocessor = fun;
-        }
-    }
-
-    public class TargetKind : TargetKindBase
-    {
-        /// <summary>
-        /// keys
-        /// </summary>
-        public List<string>? DefulatKeys;
-        /// <summary>
-        /// tag
-        /// </summary>
-        public string? Tag;
-        /// <summary>
-        /// device
-        /// </summary>
-        public string? Device;
-        /// <summary>
-        /// dl model
-        /// </summary>
-        public string? Model;
-        /// <summary>
-        /// use libs
-        /// </summary>
-        public List<string>? Libs;
-        /// <summary>
-        /// host taget
-        /// </summary>
-        public Target? Host;
-        /// <summary>
-        /// from smoe device
-        /// </summary>
-        public int? FromDevice;
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="name"></param>
-        /// <param name="deviceType"></param>
-        /// <param name="default_keys"></param>
-        /// <param name="tag"></param>
-        /// <param name="device"></param>
-        /// <param name="model"></param>
-        /// <param name="libs"></param>
-        /// <param name="host"></param>
-        /// <param name="from_device"></param>
-        public TargetKind(string name, DeviceType deviceType, List<string>? default_keys, string? tag, string? device, string? model,
-                         List<string>? libs, Target? host, int? from_device) : base(name, deviceType)
-        {
-            DefulatKeys = default_keys;
-            Tag = tag;
-            Device = device;
-            Model = model;
-            Libs = libs;
-            Host = host;
-            FromDevice = from_device;
-        }
-
-    }
-
-
-    public class TargetKindLLVM : TargetKind
-    {
-        public List<string>? Mattr;
-        public string? Mcpu;
-        public string? Mtriple;
-        public string? MfloatAbi;
-        public string? Mabi;
-        public bool? SystemLib;
-        public string? Runtime;
-        public bool? LinkParams;
-        public bool? UnpackedApi;
-        public string? InterfaceApi;
-        public bool? FastMath;
-        public bool? FastMathNnan;
-        public bool? FastMathNinf;
-        public bool? FastMathNsz;
-        public bool? FastMathArcp;
-        public bool? FastMathContract;
-        public bool? FastMathReassoc;
-        public int? OptLevel;
-
-        /// <summary>
-        /// consturct targetkind llvm
-        /// </summary>
-        /// <param name="keys"></param>
-        /// <param name="tag"></param>
-        /// <param name="device"></param>
-        /// <param name="model"></param>
-        /// <param name="libs"></param>
-        /// <param name="host"></param>
-        /// <param name="from_device"></param>
-        /// <param name="mattr"></param>
-        /// <param name="mcpu"></param>
-        /// <param name="mtriple"></param>
-        /// <param name="mfloat_abi"></param>
-        /// <param name="mabi"></param>
-        /// <param name="system_lib"></param>
-        /// <param name="runtime"></param>
-        /// <param name="link_params"></param>
-        /// <param name="unpacked_api"></param>
-        /// <param name="interface_api"></param>
-        /// <param name="fast_math"></param>
-        /// <param name="fast_math_nnan"></param>
-        /// <param name="fast_math_ninf"></param>
-        /// <param name="fast_math_nsz"></param>
-        /// <param name="fast_math_arcp"></param>
-        /// <param name="fast_math_contract"></param>
-        /// <param name="fast_math_reassoc"></param>
-        /// <param name="opt_level"></param>
-        public TargetKindLLVM(List<string>? keys = null, string? tag = null, string? device = null, string? model = null, List<string>? libs = null, Target? host = null, int? from_device = null,
-          List<string>? mattr = null, string? mcpu = null, string? mtriple = null, string? mfloat_abi = null, string? mabi = null, bool? system_lib = null, string? runtime = null, bool? link_params = false, bool? unpacked_api = null, string? interface_api = null, bool? fast_math = null, bool? fast_math_nnan = null, bool? fast_math_ninf = null, bool? fast_math_nsz = null, bool? fast_math_arcp = null, bool? fast_math_contract = null, bool? fast_math_reassoc = null, int? opt_level = null) : base("llvm", DeviceType.CPU, new() { "Cpu" }, tag, device, model, libs, host, from_device)
-        {
-            Mattr = mattr;
-            Mcpu = mcpu;
-            Mtriple = mtriple;
-            MfloatAbi = mfloat_abi;
-            Mabi = mabi;
-            SystemLib = system_lib;
-            Runtime = runtime;
-            LinkParams = link_params;
-            UnpackedApi = unpacked_api;
-            InterfaceApi = interface_api;
-            FastMath = fast_math;
-            FastMathNnan = fast_math_nnan;
-            FastMathNinf = fast_math_ninf;
-            FastMathNsz = fast_math_nsz;
-            FastMathArcp = fast_math_arcp;
-            FastMathContract = fast_math_contract;
-            FastMathReassoc = fast_math_reassoc;
-            OptLevel = opt_level;
-        }
-    }
-
-    public class TargetKindCSource : TargetKind
-    {
-        public bool? SystemLib;
-        public bool? LinkParams = false;
-        public string? Runtime;
-        public string? Mcpu;
-        public string? March;
-        public string? Executor;
-        public int? WorkspaceByteAlignment;
-        public bool? UnpackedApi;
-        public string? InterfaceApi;
-        public TargetKindCSource(List<string>? keys = null, string? tag = null, string? device = null, string? model = null, List<string>? libs = null, Target? host = null, int? from_device = null, bool? system_lib = null, bool? link_params = false, string? runtime = null, string? mcpu = null, string? march = null, string? executor = null, int? workspace_byte_alignment = null, bool? unpacked_api = null, string? interface_api = null) : base("CSource", DeviceType.CPU, new() { "Cpu" }, tag, device, model, libs, host, from_device)
-        {
-            SystemLib = system_lib;
-            LinkParams = link_params;
-            Runtime = runtime;
-            Mcpu = mcpu;
-            March = march;
-            Executor = executor;
-            WorkspaceByteAlignment = workspace_byte_alignment;
-            UnpackedApi = unpacked_api;
-            InterfaceApi = interface_api;
-        }
-    }
-
-    /// <summary>
     /// Target.
     /// </summary>
-    public sealed class Target
+    public interface ITarget
     {
-        /// <summary>
-        /// The kind of the target device
-        /// </summary>
-        public TargetKind Kind { get; }
 
         /// <summary>
-        /// Target host information, must be Target type
+        /// get the target kind.
         /// </summary>
-        Target? Host { get; }
+        public string Kind { get; set; }
 
         /// <summary>
-        /// Tag of the the target, can be empty
+        /// Collection of Options
         /// </summary>
-        string Tag { get; }
-
-        /// <summary>
-        /// Keys for this target
-        /// </summary>
-        public List<string> Keys { get; }
+        Dictionary<string, object> Options { get; set; }
 
         /// <summary>
         /// Collection of attributes
         /// </summary>
-        Dictionary<string, object> Attrs { get; }
-
+        Dictionary<string, object> Attrs { get; set; }
 
         /// <summary>
-        /// constructor for target
+        /// config the options
         /// </summary>
-        /// <param name="kind"></param>
-        /// <param name="keys"></param>
-        /// <param name="attrs"></param>
-        /// <param name="tag"></param>
-        /// <param name="host"></param>
-        public Target(TargetKind kind, List<string> keys, Dictionary<string, object> attrs, string tag = "", Target? host = null)
+        public void ConfigOptions();
+
+        /// <summary>
+        /// config the attrs
+        /// </summary>
+        public void ConfigAttrs();
+
+        /// <summary>
+        /// get the current target schedule
+        /// </summary>
+        /// <param name="main_module"></param>
+        /// <param name="target"></param>
+        /// <returns></returns>
+        public IScheduler CreateScheduler(IR.IRModule main_module, ITarget target);
+
+        /// <summary>
+        /// create the target runtime model. 
+        /// <example>
+        /// we will have different runtime model like CSource/KModel or other format.
+        /// </example>
+        /// </summary>
+        /// <returns> the <see cref="CodeGen.IRTModel"/> </returns>
+        public CodeGen.IRTModel CreateModel(Schedule.SchedModelResult result);
+
+        /// <summary>
+        /// create the target runtime module
+        /// <example>
+        /// we will have k510/stackvm/k210 module.
+        /// </example>
+        /// </summary>
+        /// <returns> the module builder. </returns>
+        public abstract CodeGen.IRTModule CreateModule(
+          CodeGen.ModuleType moduleType,
+           Schedule.SchedModuleResult ModuleResult,
+            Schedule.SchedModelResult modelResult);
+
+    }
+
+    public static class PluginLoader
+    {
+
+        static string getPath([CallerFilePath] string path = null)
         {
-            Kind = kind;
-            Keys = keys;
-            Attrs = attrs;
-            Host = host;
-            Tag = tag;
+            return path;
         }
 
-        /// <summary>
-        /// Returns a ARM CPU target.
-        /// This function will also download pre-tuned op parameters when there is none.
-        /// </summary>
-        /// <param name="name"></param>
-        /// <returns></returns>
-        public static Target ArmCpu(string name)
+        static ITarget GetTargetFromAssembly(string target_type, string dll_path)
         {
-            Dictionary<string, TargetKind> table = new() { { "m1", new TargetKindLLVM(mtriple: "arm64-apple-darwin21.1.0") } };
-            if (!table.TryGetValue(name, out var targetKind))
+            var assembly = Assembly.LoadFrom(dll_path);
+            var targetType = typeof(ITarget);
+            foreach (var eType in assembly.ExportedTypes)
             {
-                throw new InvalidOperationException($"Can't Find Cpu {name}!");
+                if (targetType.IsAssignableFrom(eType))
+                {
+                    var target = Activator.CreateInstance(eType);
+                    if (target is not null)
+                    {
+                        return (ITarget)target;
+                    }
+                    else
+                    {
+                        throw new InvalidProgramException($"Can't Create The Instance From {eType.Name}");
+                    }
+                }
             }
-            targetKind.Device = "arm_cpu";
-            return new(targetKind, new() { "Cpu", "arm_cpu" }, new());
+            throw new InvalidProgramException($"Can't Find The Derived Target Class From {dll_path}!");
+        }
+
+        static ITarget? FindFromProject(string target_type, string dll_name)
+        {
+            var cur_path = getPath();
+            var dll_path = Path.GetFullPath(Path.Combine(cur_path, "../..", $"Nncase.Targets.{target_type}", "bin/Debug/net6.0", dll_name));
+            if (File.Exists(dll_path))
+            {
+                return GetTargetFromAssembly(target_type, dll_path);
+            }
+            return null;
         }
 
         /// <summary>
-        /// the c source host target
+        /// load the target from the dll
         /// </summary>
+        /// <param name="target_type"></param>
         /// <returns></returns>
-        public static Target CSourceHost()
+        public static ITarget CreateTarget(string target_type)
         {
-            return new(new TargetKindCSource(device: "Host"), new() { "Cpu" }, new());
+            var dll_name = $"Nncase.Targets.{target_type}.dll";
+            // Setp 1. find the Nncase.Target Bin directory
+            var target = FindFromProject(target_type, dll_name);
+            if (target is not null) return target;
+            throw new InvalidProgramException($"Can't Find The Target {target_type}!");
         }
     }
 }

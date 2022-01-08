@@ -60,7 +60,7 @@ namespace Nncase.Importer.TFLite
         /// Import an IR module from tflite model.
         /// </summary>
         /// <returns>Imported IR module.</returns>
-        public Module Import()
+        public IRModule Import()
         {
             // 1. Create inputs
             var inputsCount = _subGraph.InputsLength;
@@ -87,7 +87,7 @@ namespace Nncase.Importer.TFLite
             var outputTuple = new IR.Tuple(ImmutableArray.Create(outputs));
             var mainFunc = new Function("main", outputTuple, created_inputs);
 
-            var module = new Module();
+            var module = new IRModule();
             module.Add(mainFunc);
             module.Entry = mainFunc;
             return module;

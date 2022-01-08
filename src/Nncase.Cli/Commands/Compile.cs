@@ -65,7 +65,7 @@ namespace Nncase.Cli.Commands
             var module = ImportModule(File.OpenRead(options.InputFile), options);
         }
 
-        public Module ImportModule(Stream content, CompileOptions options)
+        public IRModule ImportModule(Stream content, CompileOptions options)
         {
             Console.WriteLine($"Target: {options.Target}");
             var module = ImportModel(content, options);
@@ -79,7 +79,7 @@ namespace Nncase.Cli.Commands
             return module;
         }
 
-        private void InferShape(Module module, CompileOptions options)
+        private void InferShape(IRModule module, CompileOptions options)
         {
             Console.WriteLine("Infer Shape...");
             var pmgr = new PassManager(module, new RunPassOptions(null, options.DumpLevel, options.DumpDir));
@@ -88,7 +88,7 @@ namespace Nncase.Cli.Commands
             pmgr.Run();
         }
 
-        private Module ImportModel(Stream content, CompileOptions options) =>
+        private IRModule ImportModel(Stream content, CompileOptions options) =>
           options.InputFormat switch
           {
               "tflite" => Importers.ImportTFLite(content),
@@ -96,7 +96,7 @@ namespace Nncase.Cli.Commands
               _ => throw new NotImplementedException($"Not Implement {options.InputFormat} Impoter!")
           };
 
-        private void DumpModule(Module module, CompileOptions options, string prefix)
+        private void DumpModule(IRModule module, CompileOptions options, string prefix)
         {
             var dumpPath = Path.Combine(options.DumpDir, "dump", prefix);
             Directory.CreateDirectory(dumpPath);

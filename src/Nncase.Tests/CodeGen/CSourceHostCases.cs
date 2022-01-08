@@ -32,7 +32,7 @@ namespace Nncase.Tests.CodeGenTest
         /// custom equal compare method
         /// </summary>
         /// <param name="rtmod"></param>
-        public abstract void CompareEqual(IRTModule rtmod);
+        public abstract void CompareEqual(IRTModel rtmod);
 
         public virtual FunctionPass GetPass()
         {
@@ -50,7 +50,7 @@ namespace Nncase.Tests.CodeGenTest
             return func;
         }
 
-        public override void CompareEqual(IRTModule rtmod)
+        public override void CompareEqual(IRTModel rtmod)
         {
             Assert.Equal(2.3f - 2.1f, rtmod.Invoke(2.3f, 2.1f));
         }
@@ -71,7 +71,7 @@ namespace Nncase.Tests.CodeGenTest
         }
 
         /// <inheritdoc/>
-        public override void CompareEqual(IRTModule rtmod)
+        public override void CompareEqual(IRTModel rtmod)
         {
             var rand = new Random();
             int n = 12;
@@ -113,7 +113,7 @@ namespace Nncase.Tests.CodeGenTest
             }
         }
 
-        public override void CompareEqual(IRTModule rtmod)
+        public override void CompareEqual(IRTModel rtmod)
         {
             int n = 10, m = 20;
             var A1 = new DenseTensor<int>(new[] { n, m }).ToArray();
@@ -171,7 +171,7 @@ namespace Nncase.Tests.CodeGenTest
             return n + m;
         }
 
-        public override void CompareEqual(IRTModule rtmod)
+        public override void CompareEqual(IRTModel rtmod)
         {
             int n = 10, m = 12;
             var A1 = new float[n * m];

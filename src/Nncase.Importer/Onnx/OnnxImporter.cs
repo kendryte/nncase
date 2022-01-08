@@ -80,7 +80,7 @@ namespace Nncase.Importer
                 };
             }
         }
-        public Module Import()
+        public IRModule Import()
         {
             _constTensors = _graph.Initializer
                 .ToDictionary(tensor => tensor.Name, tensor => tensor);
@@ -97,11 +97,11 @@ namespace Nncase.Importer
             return MakeMainModule(outputs, createdInputs);
         }
 
-        private Module MakeMainModule(Expr[] body, IRArray<Expr> parameter)
+        private IRModule MakeMainModule(Expr[] body, IRArray<Expr> parameter)
         {
             var outputTuple = new IR.Tuple(ImmutableArray.Create(body));
             var mainFunc = new Function("main", outputTuple, parameter);
-            var module = new Module();
+            var module = new IRModule();
             module.Add(mainFunc);
             module.Entry = mainFunc;
             return module;

@@ -12,14 +12,21 @@ namespace Nncase.IO
         ulong _buffer;
         ulong _avail;
 
-        public BitWriter(Span<byte> data)
+        public BitWriter(Span<byte> data, ulong bitoffset = 0)
         {
             _data = data;
             _buffer = 0;
             _avail = sizeof(ulong) * 8;
+            if (bitoffset != 0)
+            {
+                _data = _data.Slice((int)(bitoffset / 8));
+                bitoffset %= 8;
+                _buffer = _data[0] & (((ulong)1 << (int)bitoffset) - 1);
+                _avail -= bitoffset;
+            }
         }
 
-        void Write(ReadOnlySpan<byte> src, int bits)
+        void WriteArray(ReadOnlySpan<byte> src, int bits)
         {
             while (bits > 0)
             {
@@ -38,7 +45,7 @@ namespace Nncase.IO
         /// <param name="bits"></param>
         public void Write<T>(T value, int bits) where T : unmanaged
         {
-            Write(MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref value, 1)), bits);
+            WriteArray(MemoryMarshal.AsBytes(MemoryMarshal.CreateReadOnlySpan(ref value, 1)), bits);
         }
 
         /// <summary>

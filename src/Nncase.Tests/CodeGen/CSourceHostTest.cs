@@ -13,7 +13,7 @@ namespace Nncase.Tests.CodeGenTest
 
     public class CSourceHostTest
     {
-        Target _target = Target.CSourceHost();
+        ITarget _target = null; //Target.CSourceHost();
 
         static IEnumerable<object[]> Data =>
           new List<object[]>
@@ -39,15 +39,15 @@ namespace Nncase.Tests.CodeGenTest
             Assert.True(inferResult);
 
             // 2. run passes
-            var mod = new Module(entry);
+            var mod = new IRModule(entry);
             var pmr = new PassManager(mod, opt);
             pmr.Add(Case.GetPass());
             pmr.Run();
 
             // 3. build re module and compare the function call
             var rtmod = mod.Build(_target);
-            rtmod.DumpSource("code", dumpDirPath);
-            rtmod.Compile();
+            rtmod.Dump("code", dumpDirPath);
+            rtmod.Serialize();
             Case.CompareEqual(rtmod);
         }
 
@@ -66,10 +66,10 @@ namespace Nncase.Tests.CodeGenTest
             var x = new Var("x", TensorType.Scalar(ElemType.Float32));
             var y = new Var("y", TensorType.Scalar(ElemType.Float32));
             var func = new Function(new Sequential() { x + y }, x, y);
-            var mod = new Module(func);
+            var mod = new IRModule(func);
             var rtmod = mod.Build(_target);
-            Console.WriteLine(rtmod.SourceText);
-            rtmod.Compile();
+            Console.WriteLine(rtmod.Source);
+            rtmod.Serialize();
             Assert.Equal(3.5f, rtmod.Invoke(1.2f, 2.3f));
         }
     }

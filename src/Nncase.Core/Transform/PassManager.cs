@@ -15,7 +15,7 @@ namespace Nncase.Transform
     /// </summary>
     public class PassManager
     {
-        private readonly Module _module;
+        private readonly IRModule _module;
         private readonly RunPassOptions _options;
         private readonly List<FunctionPass> _passes = new List<FunctionPass>();
 
@@ -24,7 +24,7 @@ namespace Nncase.Transform
         /// </summary>
         /// <param name="module">Module.</param>
         /// <param name="options">Options.</param>
-        public PassManager(Module module, RunPassOptions options)
+        public PassManager(IRModule module, RunPassOptions options)
         {
             _module = module;
             _options = options;
