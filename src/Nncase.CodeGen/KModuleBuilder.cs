@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using Nncase.IO;
 
-namespace Nncase.CodeGen.KModel;
+namespace Nncase.CodeGen;
 
 
 public interface SectionDecompiler

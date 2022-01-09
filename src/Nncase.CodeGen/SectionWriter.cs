@@ -8,7 +8,7 @@ using System.Text;
 using Nncase.IR;
 using Nncase.TIR;
 
-namespace Nncase.CodeGen.KModel;
+namespace Nncase.CodeGen;
 
 
 public struct SymbolRef

@@ -24,12 +24,12 @@ namespace Nncase
         /// <summary>
         /// Collection of Options
         /// </summary>
-        Dictionary<string, object> Options { get; set; }
+        public Dictionary<string, object> Options { get; set; }
 
         /// <summary>
         /// Collection of attributes
         /// </summary>
-        Dictionary<string, object> Attrs { get; set; }
+        public Dictionary<string, object> Attrs { get; set; }
 
         /// <summary>
         /// config the options
@@ -45,9 +45,8 @@ namespace Nncase
         /// get the current target schedule
         /// </summary>
         /// <param name="main_module"></param>
-        /// <param name="target"></param>
         /// <returns></returns>
-        public IScheduler CreateScheduler(IR.IRModule main_module, ITarget target);
+        public IScheduler CreateScheduler(IR.IRModule main_module);
 
         /// <summary>
         /// create the target runtime model. 
@@ -56,7 +55,7 @@ namespace Nncase
         /// </example>
         /// </summary>
         /// <returns> the <see cref="CodeGen.IRTModel"/> </returns>
-        public CodeGen.IRTModel CreateModel(Schedule.SchedModelResult result);
+        public CodeGen.IRTModel CreateRTModel(Schedule.SchedModelResult result);
 
         /// <summary>
         /// create the target runtime module
@@ -65,21 +64,36 @@ namespace Nncase
         /// </example>
         /// </summary>
         /// <returns> the module builder. </returns>
-        public abstract CodeGen.IRTModule CreateModule(
+        public abstract CodeGen.IRTModule CreateRTModule(
           CodeGen.ModuleType moduleType,
            Schedule.SchedModuleResult ModuleResult,
             Schedule.SchedModelResult modelResult);
 
     }
 
+    /// <summary>
+    /// the Load the Plugin targets. 
+    /// </summary>
     public static class PluginLoader
     {
 
+        /// <summary>
+        /// get current file path
+        /// </summary>
+        /// <param name="path"></param>
+        /// <returns></returns>
         static string getPath([CallerFilePath] string path = null)
         {
             return path;
         }
 
+        /// <summary>
+        /// find the ITarget Class from the Assembly Dll.
+        /// </summary>
+        /// <param name="target_type"></param>
+        /// <param name="dll_path"></param>
+        /// <returns></returns>
+        /// <exception cref="InvalidProgramException"></exception>
         static ITarget GetTargetFromAssembly(string target_type, string dll_path)
         {
             var assembly = Assembly.LoadFrom(dll_path);
@@ -102,13 +116,24 @@ namespace Nncase
             throw new InvalidProgramException($"Can't Find The Derived Target Class From {dll_path}!");
         }
 
+        /// <summary>
+        /// find the dll from current project targets.
+        /// </summary>
+        /// <param name="target_type"></param>
+        /// <param name="dll_name"></param>
+        /// <returns></returns>
         static ITarget? FindFromProject(string target_type, string dll_name)
         {
             var cur_path = getPath();
-            var dll_path = Path.GetFullPath(Path.Combine(cur_path, "../..", $"Nncase.Targets.{target_type}", "bin/Debug/net6.0", dll_name));
-            if (File.Exists(dll_path))
+            foreach (var buildType in new[] { "Debug", "Release" })
             {
-                return GetTargetFromAssembly(target_type, dll_path);
+                var dll_path = Path.GetFullPath(
+                  Path.Combine(cur_path, "../../../targets", $"Nncase.Targets.{target_type}",
+                              $"bin/{buildType}/net6.0", dll_name));
+                if (File.Exists(dll_path))
+                {
+                    return GetTargetFromAssembly(target_type, dll_path);
+                }
             }
             return null;
         }
@@ -121,7 +146,7 @@ namespace Nncase
         public static ITarget CreateTarget(string target_type)
         {
             var dll_name = $"Nncase.Targets.{target_type}.dll";
-            // Setp 1. find the Nncase.Target Bin directory
+            // Setp 1. find the targets/Nncase.Target.xxx Bin directory
             var target = FindFromProject(target_type, dll_name);
             if (target is not null) return target;
             throw new InvalidProgramException($"Can't Find The Target {target_type}!");

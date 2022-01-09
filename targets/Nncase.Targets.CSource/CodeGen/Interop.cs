@@ -6,7 +6,7 @@ using System.Reflection.Emit;
 using System.Runtime.InteropServices;
 using Nncase.IR;
 
-namespace Nncase.CodeGen.Source;
+namespace Nncase.CodeGen;
 
 /// <summary>
 /// <see cref="DynamicAssemble(string)"/>

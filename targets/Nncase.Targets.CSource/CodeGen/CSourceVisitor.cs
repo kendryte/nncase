@@ -9,7 +9,7 @@ using System.Text;
 using Nncase.IR;
 using Nncase.TIR;
 
-namespace Nncase.CodeGen.Source;
+namespace Nncase.CodeGen;
 
 /// <summary>
 /// convert the type/op to c name

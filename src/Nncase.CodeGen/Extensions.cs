@@ -1,22 +1,63 @@
 using Nncase.IR;
-namespace Nncase.CodeGen
+namespace Nncase.CodeGen;
+
+/// <summary>
+/// static class for codegen collection
+/// </summary>
+public static class CodeGenExtension
 {
     /// <summary>
-    /// static class for codegen collection
+    /// schedule and build the IRModule to RTModel
     /// </summary>
-    public static class CodeGenExtension
+    /// <param name="mod"> input module </param>
+    /// <param name="target"> target information </param>
+    /// <returns> the runtime model instance </returns>
+    public static IRTModel ToRTModel(this IRModule mod, ITarget target)
     {
-        /// <summary>
-        /// schedule and build the IRModule to RTModel
-        /// </summary>
-        /// <param name="mod"> input module </param>
-        /// <param name="target"> target information </param>
-        /// <returns> the runtime model instance </returns>
-        public static IRTModel Build(this IRModule mod, ITarget target)
-        {
-            var sch = target.CreateScheduler(mod, target);
-            var schr = sch.Schedule();
-            return target.CreateModel(schr);
-        }
+        var sch = target.CreateScheduler(mod);
+        var schr = sch.Schedule();
+        return target.CreateRTModel(schr);
     }
+}
+
+public static class BinaryWriterExtension
+{
+    /// <summary>
+    /// write the byte 0 into the stream.
+    /// </summary>
+    /// <param name="writer"></param>
+    /// <param name="alignment"></param>
+    /// <returns></returns>
+    public static long AlignPosition(this BinaryWriter writer, long alignment)
+    {
+        var pos = writer.BaseStream.Position;
+        var rem = pos % alignment;
+        if (rem != 0)
+        {
+            var off = alignment - rem;
+            for (int i = 0; i < off; i++)
+            {
+                writer.Write((byte)0);
+            }
+            return off;
+        }
+        return 0;
+    }
+
+
+    public static long Position(this BinaryWriter writer)
+    {
+        return writer.BaseStream.Position;
+    }
+
+    public static long Position(this BinaryWriter writer, long pos)
+    {
+        return writer.Seek((int)pos, SeekOrigin.Begin);
+    }
+
+    public static void Skip(this BinaryWriter writer, ulong len)
+    {
+        writer.Seek((int)len, SeekOrigin.Current);
+    }
+
 }

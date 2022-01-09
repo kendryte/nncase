@@ -1,19 +1,18 @@
-using Xunit;
-using System.Linq;
-using System.IO;
-using System.Collections.Generic;
 using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using Nncase.CodeGen;
 using Nncase.IR;
 using Nncase.TIR;
-using Nncase.CodeGen;
 using Nncase.Transform;
+using Xunit;
 
 namespace Nncase.Tests.CodeGenTest
 {
-
     public class CSourceHostTest
     {
-        ITarget _target = null; //Target.CSourceHost();
+        ITarget _target = PluginLoader.CreateTarget("CSource");
 
         static IEnumerable<object[]> Data =>
           new List<object[]>
@@ -45,9 +44,9 @@ namespace Nncase.Tests.CodeGenTest
             pmr.Run();
 
             // 3. build re module and compare the function call
-            var rtmod = mod.Build(_target);
-            rtmod.Dump("code", dumpDirPath);
+            var rtmod = mod.ToRTModel(_target);
             rtmod.Serialize();
+            rtmod.Dump("code", dumpDirPath);
             Case.CompareEqual(rtmod);
         }
 
@@ -67,10 +66,17 @@ namespace Nncase.Tests.CodeGenTest
             var y = new Var("y", TensorType.Scalar(ElemType.Float32));
             var func = new Function(new Sequential() { x + y }, x, y);
             var mod = new IRModule(func);
-            var rtmod = mod.Build(_target);
+            var rtmod = mod.ToRTModel(_target);
             Console.WriteLine(rtmod.Source);
             rtmod.Serialize();
             Assert.Equal(3.5f, rtmod.Invoke(1.2f, 2.3f));
+        }
+
+        [Fact]
+        public void TestCreateTarget()
+        {
+            var target = PluginLoader.CreateTarget("CSource");
+            Assert.Equal("CSource", target.Kind);
         }
     }
 }
