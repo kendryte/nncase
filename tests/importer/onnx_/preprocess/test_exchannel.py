@@ -75,7 +75,7 @@ case:
     - name: output_layout
       values:
         - NCHW
-    - name: letter_value
+    - name: letterbox_value
       values:
         - 0.
 """

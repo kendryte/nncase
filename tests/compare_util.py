@@ -36,11 +36,68 @@ def segment_close(gt: np.ndarray, pred: np.ndarray):
     return ret
 
 
+def top1(gt_path, result_path):
+    label_file = os.path.join(os.getcwd(), "tests", "val.txt")
+    case_name = gt_path.split('/')[-2]
+
+    label_dict = {}
+    gt_data_dict = {}
+    result_data_dict = {}
+    if(result_path.split('/')[4] == "ptq"):
+        gt_path = os.path.join(result_path.replace("/ptq/", "/noptq/").replace("_ptq", "_no_ptq"))
+    elif(result_path.split('/')[4] == "noptq" and result_path.split('/')[3] == "k510"):
+        gt_path = os.path.join(result_path.replace("k510", "cpu"))
+
+    # 1000 class: 0;
+    # 1001 class: 1;
+    num_classes_flag = 1
+    if case_name in ['vgg16']:
+        num_classes_flag = 0
+    with open(label_file, 'r') as label_f, open(gt_path, 'r') as gt_f, open(result_path, 'r') as result_f:
+        # get label result
+        for line in label_f.readlines():
+            label_dict[line.strip('\n').split(' ')[0]] = int(line.strip('\n').split(' ')[1])
+
+        # get cpu result or no_ptq result
+        for line in gt_f.readlines():
+            gt_data_dict[line.strip('\n').split(' ')[0]] = int(
+                line.strip('\n').split(' ')[1]) + num_classes_flag
+
+        # get infer result
+        for line in result_f.readlines():
+            result_data_dict[line.strip('\n').split(' ')[0]] = int(
+                line.strip('\n').split(' ')[1]) + num_classes_flag
+
+    gt_result = 0
+    for key, value in gt_data_dict.items():
+        if (int(value) == int(label_dict[key])):
+            gt_result += 1
+    infer_result = 0
+    for key, value in result_data_dict.items():
+        if (int(value) == int(gt_data_dict[key])):
+            infer_result += 1
+
+    label_precent_result = gt_result / len(gt_data_dict)
+    percent_result = infer_result / len(result_data_dict)
+
+    path = result_path.split("/")[3:5]
+    with open(os.path.join("tests_output", "dataset_test_result.txt"), 'a+') as f:
+
+        if path in [["cpu", "ptq"], ["k510", "noptq"], ["k510", "ptq"]]:
+            f.write("{}:{}\t".format("{}_{}".format(*path), percent_result))
+        else:
+            f.write("\n\n{}\n".format(gt_path.split("/")[1][5:]))
+            f.write("framework:{}\t".format(label_precent_result))
+            f.write("{}:{}\t".format("{}_{}".format(*path), percent_result))
+    return label_precent_result - percent_result
+
+
 simarity_func = {
     'cosine': cosine,
     'euclidean': euclidean,
     'allclose': np.allclose,
-    'segment': segment_close
+    'segment': segment_close,
+    'top1': top1
 }
 
 
@@ -51,12 +108,17 @@ def compare(result_path: Tuple[str, str],
             threshold: float = 0.99,
             hist: bool = True) -> bool:
     # NOTE the result_path is Tuple[ bin_path, txt_path ]
-    ground_truth_path_bin, ground_truth_path_txt = result_path
-    result_path_bin, result_path_txt = ground_truth_path
+
+    ground_truth_path_bin, ground_truth_path_txt = ground_truth_path
+    result_path_bin, result_path_txt = result_path
+
     if 'npy' in ground_truth_path_bin:  # bfloat16
         # gt, pred = bytes.fromhex(gt.strip()), bytes.fromhex(pred.strip())
         # gt, pred = struct.unpack('>H', gt)[0], struct.unpack('>H', pred)[0]
         raise NotImplemented("need support bfloat16 judge!")
+    elif simarity_name == "top1":
+        simarity = top1(ground_truth_path_txt, result_path_txt)
+        simarity_info = f"\n{simarity_name} similarity = {simarity}, threshold = {threshold}\n"
     else:
         gt_arr = np.fromfile(ground_truth_path_bin, dtype).astype(np.float32)
         pred_arr = np.fromfile(result_path_bin, dtype).astype(np.float32)

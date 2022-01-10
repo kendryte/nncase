@@ -1,3 +1,24 @@
+# Copyright 2019-2021 Canaan Inc.
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+# pylint: disable=invalid-name, unused-argument, import-outside-toplevel
+
+import pytest
+from tflite_test_runner import TfliteTestRunner
+
+
+def test_mobilenetv2(request):
+    overwrite_cfg = """
 setup: # 整个runner期间的超参数配置
   root: tests_output
   numworkers: 8
@@ -48,64 +69,69 @@ case: # case的配置，应该是一个多层次的
     quant_type: 'uint8'
     w_quant_type: 'uint8'
     use_mse_quant_w: true
-    quant_method: "no_clip"
+    quant_method: "cdf"
 
   ptq_opt:
     kwargs:
       input_mean: 0.5
       input_std: 0.5
   generate_inputs:
-    name: generate_random
-    kwargs: null
+    name: generate_imagenet_dataset
+    kwargs: 
+      dir_path: "ImageNet/ImageNet_1000_first"
+    numbers: 1
+    batch_size: 1000
+  generate_calibs:
+    name: generate_imagenet_dataset
+    kwargs:
+      dir_path: "ImageNet/ImageNet_1000_first"
+    numbers: 1
+    batch_size: 100
+  generate_dump_range_data:
+    name: generate_imagenet_dataset
+    kwargs:
+      dir_path: "ImageNet/ImageNet_1000_first"
     numbers: 1
     batch_size: 1
-  generate_calibs:
-    name: generate_random
-    kwargs: null
-    numbers: 1
-    batch_size: 50
-  generate_dump_range_data:
-    name: generate_random
-    kwargs: null
-    numbers: 1
-    batch_size: 10
   eval:
     - name: target
       values:
         - cpu
-        #- vulkan
-        - k210
         - k510
-        - k230
     - name: ptq
       values:
         - false
-        - true
   infer:
     - name: target
       values:
         - cpu
-        #- vulkan
-        - k210
         - k510
-        - k230
     - name: ptq
       values:
         - false
         - true
 judge:
   common: &judge_common
-    simarity_name:  cosine
-    threshold: 0.999
+    simarity_name:  top1
+    threshold: 0.01
     log_hist: true
     matchs: null
   specifics:
     - matchs:
-        #target: [cpu, vulkan, k210, k510]
-        target: [cpu, k210, k510]
+        target: [cpu, k510]
         ptq: true
-      threshold: 0.98
+      threshold: 0.015
     - matchs:
-        target: [k510]
+        target: [cpu, k510]
         ptq: false
-      threshold: 0.99
+      threshold: 0.02
+
+    """
+    runner = TfliteTestRunner(
+        request.node.name, overwrite_configs=overwrite_cfg, targets=['cpu', 'k510'])
+    model_file = 'tflite-models/mobilenetv2/model_f32.tflite'
+    runner.run(model_file)
+
+
+if __name__ == "__main__":
+    pytest.main(['-vv', 'test_mobilenetv2.py'])

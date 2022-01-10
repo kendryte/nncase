@@ -1,6 +1,9 @@
-name: compiler-test
+name: dataset-test
 
-on: [push, pull_request]
+on: 
+  schedule:
+    - cron: '0 17 * * 6'
+    # 1:00 am
 
 env:
   BUILD_TYPE: Release
@@ -11,7 +14,7 @@ jobs:
 
     steps:
     - uses: actions/checkout@v2
-
+          
     - name: Setup Python
       uses: actions/setup-python@v2.2.1
       with:
@@ -62,18 +65,18 @@ jobs:
       working-directory: ${{github.workspace}}/build/tests/kernels
       run: ctest -C $BUILD_TYPE
 
-  test-compiler:
+  dataset-test:
     needs: [build]
     runs-on: [self-hosted]
 
     steps:
     - uses: actions/checkout@v2
-
+          
     - name: Setup Python
       uses: actions/setup-python@v2.2.1
       with:
         python-version: 3.7
-
+        
     - name: Install Python Packages
       if: runner.os != 'Macos'
       shell: bash
@@ -82,7 +85,7 @@ jobs:
         pip install torch==1.9.0+cpu torchvision==0.10.0+cpu -f https://download.pytorch.org/whl/torch_stable.html
         pip install kendryte_caffe
         pip install pytest
-
+      
     - name: Create Test Environment
       working-directory: ${{github.workspace}}
       shell: bash
@@ -100,13 +103,12 @@ jobs:
         TFLITE_MODELS_DIR: /compiler/github-runner/tflite-models
         DATASET_DIR: /compiler/share
       run: |
-
-        pytest -n 50 --dist=load tests/other --doctest-modules --junitxml=test_results/other.xml
-        pytest -n 50 --dist=load tests/importer --doctest-modules --junitxml=test_results/importer.xml
-        pytest -n 50 --dist=load tests/schedule --doctest-modules --junitxml=test_results/schedule.xml
-        pytest -n 50 --dist=load tests/graph_partition --doctest-modules --junitxml=test_results/graph_partition.xml
-        pytest -n 50 --dist=load tests/transform --doctest-modules --junitxml=test_results/transform.xml
-        pytest -n 2 tests/models/onnx-model-zoo --doctest-modules --junitxml=test_results/models.xml
-        pytest tests/examples --doctest-modules --junitxml=test_results/examples.xml
+        
+        pytest -n 8 tests/models/tflite-model-zoo --doctest-modules --junitxml=test_results/models-dataset.xml
         cat tests_output/dataset_test_result.txt
 
+    - name: Publish Test Results
+      uses: EnricoMi/publish-unit-test-result-action@v1
+      if: always() && runner.os == 'Linux'
+      with:
+        files: test_results/*.xml

@@ -48,64 +48,59 @@ case: # case的配置，应该是一个多层次的
     quant_type: 'uint8'
     w_quant_type: 'uint8'
     use_mse_quant_w: true
-    quant_method: "no_clip"
+    quant_method: "l2"
 
   ptq_opt:
     kwargs:
       input_mean: 0.5
       input_std: 0.5
   generate_inputs:
-    name: generate_random
-    kwargs: null
+    name: generate_imagenet_dataset
+    kwargs: 
+      dir_path: "ImageNet/ImageNet_1000_first"
     numbers: 1
-    batch_size: 1
+    batch_size: 100
   generate_calibs:
-    name: generate_random
-    kwargs: null
-    numbers: 1
-    batch_size: 50
-  generate_dump_range_data:
-    name: generate_random
-    kwargs: null
+    name: generate_imagenet_dataset
+    kwargs:
+      dir_path: "ImageNet/ImageNet_1000_first"
     numbers: 1
     batch_size: 10
+  generate_dump_range_data:
+    name: generate_imagenet_dataset
+    kwargs:
+      dir_path: "ImageNet/ImageNet_1000_first"
+    numbers: 1
+    batch_size: 1
   eval:
     - name: target
       values:
         - cpu
-        #- vulkan
-        - k210
         - k510
-        - k230
     - name: ptq
       values:
         - false
-        - true
   infer:
     - name: target
       values:
         - cpu
-        #- vulkan
-        - k210
         - k510
-        - k230
     - name: ptq
       values:
         - false
         - true
 judge:
   common: &judge_common
-    simarity_name:  cosine
-    threshold: 0.999
+    simarity_name:  top1
+    threshold: 0.01
     log_hist: true
     matchs: null
   specifics:
     - matchs:
-        #target: [cpu, vulkan, k210, k510]
-        target: [cpu, k210, k510]
+        target: [cpu]
         ptq: true
-      threshold: 0.98
+      threshold: 0.02
     - matchs:
-        target: [k510]
+        target: [cpu, k510]
         ptq: false
-      threshold: 0.99
+      threshold: 0.02
