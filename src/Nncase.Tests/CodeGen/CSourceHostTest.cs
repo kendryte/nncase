@@ -67,8 +67,8 @@ namespace Nncase.Tests.CodeGenTest
             var func = new Function(new Sequential() { x + y }, x, y);
             var mod = new IRModule(func);
             var rtmod = mod.ToRTModel(_target);
-            Console.WriteLine(rtmod.Source);
             rtmod.Serialize();
+            Console.WriteLine(rtmod.Source);
             Assert.Equal(3.5f, rtmod.Invoke(1.2f, 2.3f));
         }
 
