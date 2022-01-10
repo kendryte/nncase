@@ -50,9 +50,9 @@ namespace Nncase.Tests.CodeGenTest
             Case.CompareEqual(rtmod);
         }
 
-        // [Theory]
-        // [MemberData(nameof(DataAll))]
-        // public void RunAll(ICodeGenCase Case) => RunCore(Case);
+        [Theory]
+        [MemberData(nameof(DataAll))]
+        public void RunAll(ICodeGenCase Case) => RunCore(Case);
 
         public static IEnumerable<object[]> DataOne => Data.Take(1);
         public static IEnumerable<object[]> DataAll => Data.Skip(1);
