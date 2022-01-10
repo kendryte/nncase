@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<package >
+  <metadata>
+    <id>Nncase.Cli</id>
+    <version>1.0.0</version>
+    <title>$title$</title>
+    <authors>Canaan Inc.</authors>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <license type="expression">Apache</license>
+    <!-- <icon>icon.png</icon> -->
+    <projectUrl>http://project_url_here_or_delete_this_line/</projectUrl>
+    <description>Nncase</description>
+    <releaseNotes>Summary of changes made in this release of the package.</releaseNotes>
+    <copyright>$copyright$</copyright>
+    <tags>Tag1 Tag2</tags>
+  </metadata>
+  <files>
+     <file src="bin\Release\net6.0\Nncase.*.dll" target="lib\net6.0" />
+  </files>
+</package>

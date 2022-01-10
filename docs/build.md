@@ -55,3 +55,10 @@
   cd nncase
   pytest tests
   ```
+
+## 打包📦
+
+```sh
+cd src/Nncase.Cli
+dotnet pack --configuration release /p:NuspecFile=Nncase.Cli.nuspec
+```
