@@ -57,6 +57,9 @@ namespace Nncase.IR
 
     /// <summary>
     /// Operator expression.
+    /// we will Reflection the specific method to extent the function,
+    /// so your need impl the method as follows:
+    /// 1. InferInvokeResultType(ITypeInferenceContext context, IRType arg1, IRType arg2, ...)
     /// </summary>
     public abstract record Op() : Expr
     {
@@ -69,7 +72,6 @@ namespace Nncase.IR
                              orderby param.Index
                              select param).ToArray();
 
-        public override int Rank => base.Rank;
 
         public virtual bool Equals(Op? other)
         {

@@ -40,9 +40,9 @@ namespace Nncase.Pattern
         };
 
         /// <summary>
-        /// Pattern for CheckedType
+        /// Pattern for CheckedType, defulat match IR Type
         /// </summary>
-        public TypePattern? CheckedTypePat { get; set; }
+        public TypePattern CheckedTypePat { get; set; } = IR.Utility.IsIRType();
 
         /// <summary>
         /// Match The Expr Type
@@ -139,6 +139,12 @@ namespace Nncase.Pattern
           HashCode.Combine(
          EqualityComparer<Type>.Default.GetHashCode(EqualityContract),
          EqualityComparer<int>.Default.GetHashCode(Id));
+
+        protected virtual bool PrintMembers(System.Text.StringBuilder builder)
+        {
+            builder.Append(this.DumpAsIL());
+            return true;
+        }
     }
 
     public static partial class Utility

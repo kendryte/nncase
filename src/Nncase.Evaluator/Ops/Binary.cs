@@ -30,7 +30,7 @@ namespace Nncase.Evaluator.Ops
                 BinaryOp.LogicalOr => torch.logical_or(a, b),
                 BinaryOp.LogicalXor => torch.logical_xor(a, b),
                 _ => throw new ArgumentOutOfRangeException()
-            }).to_type(_context.CurrentCall.CheckedDataType.ToTorchType());
+            }).to_type(_context.CurrentCall!.CheckedDataType.ToTorchType());
         }
     }
 }

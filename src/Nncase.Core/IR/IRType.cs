@@ -17,6 +17,11 @@ namespace Nncase.IR
     /// </summary>
     public abstract record IRType
     {
+        /// <summary>
+        /// convert the datatype to scalar type
+        /// </summary>
+        /// <param name="dataType"></param>
+        public static implicit operator IRType(DataType dataType) => TensorType.Scalar(dataType);
     }
 
     /// <summary>
@@ -107,4 +112,16 @@ namespace Nncase.IR
     /// Callable type.
     /// </summary>
     public sealed record CallableType(IRType ReturnType, IRArray<IRType> Parameters) : IRType;
+
+
+    /// <summary>
+    /// Low-level raw pointer type.
+    /// PointerType represents type hints in the TIR to be
+    /// passed to the final code generator.
+    /// PointerType should not occur in the high-level analysis.
+    /// </summary>
+    /// <param name="DType">The type of the element which the pointer points to.</param>
+    /// <param name="StorageScope">The storage scope of the pointer</param>
+    public sealed record HandleType(DataType DType, string StorageScope) : IRType
+    { }
 }

@@ -14,7 +14,7 @@ using static Nncase.Pattern.F.Math;
 using static Nncase.Pattern.F.Tensors;
 using static Nncase.IR.Utility;
 
-namespace Nncase.Tests.ReWrite
+namespace Nncase.Tests.ReWriteTest
 {
 
     public class EGraphMatchTestFactory : RewriteTest
@@ -34,7 +34,7 @@ namespace Nncase.Tests.ReWrite
         public static IEnumerable<object[]> DataOne => Data.Take(1);
         public static IEnumerable<object[]> DataAll => Data.Skip(1);
 
-        public void RunCore(string Name, Expr Pre, PatternRule Rule, int[] targets)
+        protected void RunCore(string Name, Expr Pre, PatternRule Rule, int[] targets)
         {
             passOptions.SetName($"EGraphMatchTest/{Name}");
             Assert.True(Pre.InferenceType());

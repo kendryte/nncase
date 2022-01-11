@@ -9,6 +9,20 @@ using System.Threading.Tasks;
 
 namespace Nncase.IR
 {
+
+    public class RecordRefComparer<T> : IEqualityComparer<T>
+    {
+        bool IEqualityComparer<T>.Equals(T? x, T? y)
+        {
+            return object.ReferenceEquals(x, y);
+        }
+
+        int IEqualityComparer<T>.GetHashCode(T obj)
+        {
+            return System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(obj);
+        }
+    }
+
     /// <summary>
     /// Expression visitor.
     /// </summary>
@@ -16,7 +30,7 @@ namespace Nncase.IR
     /// <typeparam name="TTypeResult">Type visit result type.</typeparam>
     public abstract class ExprVisitor<TExprResult, TTypeResult> : ExprFunctor<TExprResult, TTypeResult>
     {
-        private readonly Dictionary<Expr, TExprResult> _exprMemo = new Dictionary<Expr, TExprResult>();
+        private readonly Dictionary<Expr, TExprResult> _exprMemo = new Dictionary<Expr, TExprResult>(new RecordRefComparer<Expr>());
         private readonly Dictionary<IRType, TTypeResult> _typeMemo = new Dictionary<IRType, TTypeResult>();
 
         /// <summary>
@@ -80,7 +94,6 @@ namespace Nncase.IR
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);
             }
-
             return result;
         }
 
@@ -97,7 +110,6 @@ namespace Nncase.IR
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);
             }
-
             return result;
         }
 
@@ -109,7 +121,105 @@ namespace Nncase.IR
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);
             }
+            return result;
+        }
 
+        /// <inheritdoc/>
+        public sealed override TExprResult Visit(TIR.IterVar expr)
+        {
+            if (!_exprMemo.TryGetValue(expr, out var result))
+            {
+                Visit(expr.Value);
+                Visit(expr.Dom.Min);
+                Visit(expr.Dom.Max);
+                result = VisitLeaf(expr);
+                _exprMemo.Add(expr, result);
+            }
+            return result;
+        }
+
+        /// <inheritdoc/>
+        public sealed override TExprResult Visit(TIR.Sequential expr)
+        {
+            if (!_exprMemo.TryGetValue(expr, out var result))
+            {
+                foreach (var item in expr.Fields)
+                {
+                    Visit(item);
+                }
+                result = VisitLeaf(expr);
+                _exprMemo.Add(expr, result);
+            }
+            return result;
+        }
+
+        /// <inheritdoc/>
+        public sealed override TExprResult Visit(TIR.For expr)
+        {
+            if (!_exprMemo.TryGetValue(expr, out var result))
+            {
+                Visit(expr.LoopVar);
+                Visit(expr.Dom.Min);
+                Visit(expr.Dom.Max);
+                Visit(expr.Body);
+                result = VisitLeaf(expr);
+                _exprMemo.Add(expr, result);
+            }
+            return result;
+        }
+
+        /// <inheritdoc/>
+        public sealed override TExprResult Visit(TIR.Block expr)
+        {
+            if (!_exprMemo.TryGetValue(expr, out var result))
+            {
+                Visit(expr.InitBody);
+                Visit(expr.Predicate);
+                foreach (var iterVar in expr.IterVars) { Visit(iterVar); }
+                Visit(expr.Body);
+                result = VisitLeaf(expr);
+                _exprMemo.Add(expr, result);
+            }
+            return result;
+        }
+
+        /// <inheritdoc/>
+        public sealed override TExprResult Visit(TIR.BufferLoad expr)
+        {
+            if (!_exprMemo.TryGetValue(expr, out var result))
+            {
+                foreach (var index in expr.Indices) { Visit(index); }
+                result = VisitLeaf(expr);
+                _exprMemo.Add(expr, result);
+            }
+            return result;
+        }
+
+        /// <inheritdoc/>
+        public sealed override TExprResult Visit(TIR.BufferStore expr)
+        {
+            if (!_exprMemo.TryGetValue(expr, out var result))
+            {
+                Visit(expr.Buffer.Handle);
+                foreach (var index in expr.Indices) { Visit(index); }
+                Visit(expr.Value);
+                result = VisitLeaf(expr);
+                _exprMemo.Add(expr, result);
+            }
+            return result;
+        }
+
+        /// <inheritdoc/>
+        public sealed override TExprResult Visit(TIR.IfThenElse expr)
+        {
+            if (!_exprMemo.TryGetValue(expr, out var result))
+            {
+                Visit(expr.Condition);
+                Visit(expr.Then);
+                Visit(expr.Else);
+                result = VisitLeaf(expr);
+                _exprMemo.Add(expr, result);
+            }
             return result;
         }
 
@@ -128,6 +238,12 @@ namespace Nncase.IR
                 Call call => VisitLeaf(call),
                 Tuple tuple => VisitLeaf(tuple),
                 Op op => VisitLeaf(op),
+                TIR.Sequential seq => VisitLeaf(seq),
+                TIR.For @for => VisitLeaf(@for),
+                TIR.Block block => VisitLeaf(block),
+                TIR.BufferLoad bufload => VisitLeaf(bufload),
+                TIR.BufferStore bufstore => VisitLeaf(bufstore),
+                TIR.IfThenElse ift => VisitLeaf(ift),
                 _ => DefaultVisitLeaf(expr),
             };
         }
@@ -173,6 +289,56 @@ namespace Nncase.IR
         /// <param name="expr">Operator expression.</param>
         /// <returns>Result.</returns>
         public virtual TExprResult VisitLeaf(Op expr) => DefaultVisitLeaf(expr);
+
+        /// <summary>
+        /// Visit leaf IterVar expression.
+        /// </summary>
+        /// <param name="expr">IterVar expression.</param>
+        /// <returns>Result.</returns>
+        public virtual TExprResult VisitLeaf(TIR.IterVar expr) => DefaultVisitLeaf(expr);
+
+        /// <summary>
+        /// Visit leaf sequential expression.
+        /// </summary>
+        /// <param name="expr">sequential expression.</param>
+        /// <returns>Result.</returns>
+        public virtual TExprResult VisitLeaf(TIR.Sequential expr) => DefaultVisitLeaf(expr);
+
+        /// <summary>
+        /// Visit leaf For expression.
+        /// </summary>
+        /// <param name="expr">For expression.</param>
+        /// <returns>Result.</returns>
+        public virtual TExprResult VisitLeaf(TIR.For expr) => DefaultVisitLeaf(expr);
+
+        /// <summary>
+        /// Visit leaf Block expression.
+        /// </summary>
+        /// <param name="expr">Block expression.</param>
+        /// <returns>Result.</returns>
+        public virtual TExprResult VisitLeaf(TIR.Block expr) => DefaultVisitLeaf(expr);
+
+        /// <summary>
+        /// Visit leaf BufferLoad expression.
+        /// </summary>
+        /// <param name="expr">BufferLoad expression.</param>
+        /// <returns>Result.</returns>
+        public virtual TExprResult VisitLeaf(TIR.BufferLoad expr) => DefaultVisitLeaf(expr);
+
+        /// <summary>
+        /// Visit leaf BufferRead expression.
+        /// </summary>
+        /// <param name="expr">BufferRead expression.</param>
+        /// <returns>Result.</returns>
+        public virtual TExprResult VisitLeaf(TIR.BufferStore expr) => DefaultVisitLeaf(expr);
+
+        /// <summary>
+        /// Visit leaf IfThenElse expression.
+        /// </summary>
+        /// <param name="expr">IfThenElse expression.</param>
+        /// <returns>Result.</returns>
+        public virtual TExprResult VisitLeaf(TIR.IfThenElse expr) => DefaultVisitLeaf(expr);
+
 
         /// <summary>
         /// Default leaf visit routine.
@@ -255,6 +421,18 @@ namespace Nncase.IR
             return result;
         }
 
+        /// <inheritdoc/>
+        public sealed override TTypeResult VisitType(HandleType type)
+        {
+            if (!_typeMemo.TryGetValue(type, out var result))
+            {
+                result = VisitTypeLeaf(type);
+                _typeMemo.Add(type, result);
+            }
+
+            return result;
+        }
+
         /// <summary>
         /// Visit any type leaf.
         /// </summary>
@@ -289,6 +467,13 @@ namespace Nncase.IR
         /// <param name="type">Callable type.</param>
         /// <returns>Result.</returns>
         public virtual TTypeResult VisitTypeLeaf(CallableType type) => DefaultVisitTypeLeaf(type);
+
+        /// <summary>
+        /// Visit pointer type leaf.
+        /// </summary>
+        /// <param name="type">pointer type.</param>
+        /// <returns>Result.</returns>
+        public virtual TTypeResult VisitTypeLeaf(HandleType type) => DefaultVisitTypeLeaf(type);
 
         /// <summary>
         /// Default visit leaf routine.

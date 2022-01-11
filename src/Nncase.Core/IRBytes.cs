@@ -2,12 +2,12 @@
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
 using System;
+using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
-using System.Runtime.InteropServices;
+using System.Collections.ObjectModel;
 using System.Runtime.CompilerServices;
-// using Microsoft.Toolkit.HighPerformance;
-using System.Buffers;
+using System.Runtime.InteropServices;
 
 namespace Nncase.IR
 {
@@ -20,12 +20,19 @@ namespace Nncase.IR
             _array = array;
         }
 
-        // used for python
-        public byte[] Data()
-        {
-            return _array;
-        }
-        
+        /// <summary>
+        /// get raw byte data for readonly interface
+        /// </summary>
+        /// <returns></returns>
+        public ReadOnlySpan<byte> Array => _array;
+
+        /// <summary>
+        /// get raw byte data for c/python interface
+        /// todo maybe need remove it, because we need pervent modify the raw data.
+        /// </summary>
+        /// <returns></returns>
+        public byte[] Data() => _array;
+
         public bool Equals(object? other, IEqualityComparer comparer)
         {
             return ((IStructuralEquatable)_array).Equals(other, comparer);

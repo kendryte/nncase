@@ -22,15 +22,56 @@ using Nncase.Importer;
 using Nncase.Importer.TFLite;
 using Nncase.IR.F;
 using Nncase.IR.NN;
-using Nncase.Tests.ReWrite;
-using Nncase.Transform.DataFlow.Rules;
+using Nncase.Tests.ReWriteTest;
+
 using Nncase.Transform.Rule;
 using Binary = Nncase.IR.Math.Binary;
 using Broadcast = Nncase.IR.Tensors.Broadcast;
 using Tuple = Nncase.IR.Tuple;
 
-namespace Nncase.Tests
+namespace Nncase.Tests.ReWriteTest
 {
+
+    public class DataFlowRewriteTestFactory : RewriteTest
+    {
+        public DataFlowRewriteTestFactory() : base()
+        {
+            passOptions.SetDir(Path.Combine(passOptions.FullDumpDir, "DataFlowRewriteTestFactory"));
+        }
+
+        private static IEnumerable<object[]> Data =>
+          new List<object[]>
+          {
+             new object[] {},
+          };
+
+        // [Theory]
+        // [MemberData(nameof(DataOne))]
+        // public void RunOne(IRewriteCase Case) => RunCore(Case);
+
+        protected void RunCore(IRewriteCase Case)
+        {
+            passOptions.SetName($"{Case.Name}");
+            Expr pre = Case.PreExpr;
+            var infered = pre.InferenceType();
+            pre.DumpExprAsIL("pre", passOptions.FullDumpDir);
+            Assert.True(infered);
+            var post = DataFlowRewrite.Rewrite(pre, Case.Rules, passOptions);
+            Assert.True(post.InferenceType());
+            post.DumpExprAsIL("post", passOptions.FullDumpDir);
+            Assert.Equal(Case.PostExpr, post);
+        }
+
+        // [Theory]
+        // [MemberData(nameof(DataAll))]
+        // public void RunAll(IRewriteCase Case) => RunCore(Case);
+
+
+        public static IEnumerable<object[]> DataOne => Data.Take(1);
+        public static IEnumerable<object[]> DataAll => Data.Skip(1);
+    }
+
+
 
     internal class SwapXY : PatternRule
     {
@@ -82,7 +123,7 @@ namespace Nncase.Tests
             var rhs = torch.rand(1, 6, 3, torch.ScalarType.Float32).ToConst();
             var pre = ShapeOp(lhs + rhs);
             Assert.True(TypeInference.InferenceType(pre));
-            var post = DataFlowRewrite.Rewrite(pre, new[] { new Transform.DataFlow.Rules.FoldShapeOp() }, RunPassOptions.Invalid);
+            var post = DataFlowRewrite.Rewrite(pre, new[] { new Transform.Rule.FoldShapeOp() }, RunPassOptions.Invalid);
             Assert.Equal(new[] { 1, 6, 3 }, post.ToTensor<int>().ToArray());
         }
 
@@ -150,7 +191,7 @@ namespace Nncase.Tests
             Assert.True(TypeInference.InferenceType(input));
             var computeShape = ShapeOp(input);
             var shapeRewrite = DataFlowRewrite.Rewrite(computeShape,
-                new PatternRule[] { new Transform.DataFlow.Rules.FoldShapeOp() }, RunPassOptions.Invalid);
+                new PatternRule[] { new Transform.Rule.FoldShapeOp() }, RunPassOptions.Invalid);
             var shapePass = RunShapeInferPass("", computeShape, input);
             Assert.Equal(shapeRewrite, shapePass);
         }

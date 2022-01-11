@@ -3,7 +3,6 @@
   <PropertyGroup>
     <TargetFramework>net6.0</TargetFramework>
     <RootNamespace>Nncase</RootNamespace>
-    <CodeAnalysisRuleSet>$(SolutionDir)/tools/StyleCopAnalyzers.ruleset</CodeAnalysisRuleSet>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
@@ -20,7 +19,6 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Nncase.Core\Nncase.Core.csproj" />
-    <ProjectReference Include="..\Nncase.IR\Nncase.IR.csproj" />
   </ItemGroup>
 
 </Project>

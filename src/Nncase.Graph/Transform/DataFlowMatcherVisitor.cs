@@ -36,6 +36,7 @@ namespace Nncase.Transform
         /// <returns> bool </returns>
         public static List<IMatchResult> Match(Expr expr, ExprPattern pattern)
         {
+            if (expr.CheckedType is null) { expr.InferenceType(); }
             var results = new List<IMatchResult>();
             var matcher = new DataFlowMatcherVisitor();
             if (matcher.Visit(pattern, expr))

@@ -9,7 +9,20 @@ namespace Nncase.Pattern
 
     public sealed record ConstPattern(Func<Const, bool> Cond) : ExprPattern
     {
-        public ConstPattern(Const expr) : this(x => x == expr) { }
+        /// <summary>
+        /// <see cref="Target"/>
+        /// </summary>
+        private readonly Const? _target = null;
+
+        /// <summary>
+        /// save the target const for match, we can print it for debug.
+        /// </summary>
+        public Const? Target { get => _target; }
+
+        public ConstPattern(Const expr) : this(x => x == expr)
+        {
+            _target = expr;
+        }
 
         public static implicit operator ConstPattern(byte value) => new ConstPattern((Const)value);
 
@@ -55,7 +68,7 @@ namespace Nncase.Pattern
         public static ConstPattern IsConst(Func<float, bool> cond) => new ConstPattern(
           x =>
           {
-              if (x.ValueType.DType is (DataType.BFloat16 or DataType.Float16 or DataType.Float32 or DataType.Float64))
+              if (DataTypes.IsFloat(x.ValueType.DType))
               {
                   if (x.ValueType.IsScalar)
                       return cond(x.ToScalar<float>());
@@ -68,7 +81,7 @@ namespace Nncase.Pattern
         public static ConstPattern IsConst(Func<int, bool> cond) => new ConstPattern(
           x =>
           {
-              if (x.ValueType.DType is (DataType.Int8 or DataType.Int16 or DataType.Int32 or DataType.Int64 or DataType.UInt8 or DataType.UInt16 or DataType.UInt32 or DataType.UInt64))
+              if (DataTypes.IsIntegral(x.ValueType.DType))
               {
                   if (x.ValueType.IsScalar)
                       return cond(x.ToScalar<int>());

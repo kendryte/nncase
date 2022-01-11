@@ -10,10 +10,20 @@ using System.Threading.Tasks;
 
 namespace Nncase.IR
 {
+
+    /// <summary>
+    /// the interface that we can use parameterinfo the parameter
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public interface IParameterList<T>
+    {
+        public T this[ParameterInfo parameter] { get; }
+    }
+
     /// <summary>
     /// Call expression.
     /// </summary>
-    public sealed record Call(Expr Target, IRArray<Expr> Parameters) : Expr
+    public sealed record Call(Expr Target, IRArray<Expr> Parameters) : Expr, IParameterList<Expr>
     {
         /// <summary>
         /// Initializes a new instance of the <see cref="Call"/> class.
@@ -21,7 +31,7 @@ namespace Nncase.IR
         /// <param name="target">Call target.</param>
         /// <param name="parameters">Parameters.</param>
         public Call(Expr target, params Expr[] parameters)
-            : this(target, ImmutableArray.Create(parameters))
+            : this(target, new IRArray<Expr>(parameters.ToImmutableArray()))
         {
         }
 

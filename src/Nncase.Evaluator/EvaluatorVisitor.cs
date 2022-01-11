@@ -7,7 +7,7 @@ using Nncase.IR.Math;
 using Nncase.IR.NN;
 using Nncase.IR.Tensors;
 using TorchSharp;
-#nullable enable
+
 
 namespace Nncase.Evaluator.Ops
 {
@@ -158,9 +158,9 @@ namespace Nncase.Evaluator.Ops
         {
             var result = target switch
             {
-                BatchNormalization b => VisitBatchNormalization(b),
+                // BatchNormalization b => VisitBatchNormalization(b),
                 CumSum c => VisitCumSum(c),
-                Conv2DTranspose c => VisitConv2DTranspose(c),
+                // Conv2DTranspose c => VisitConv2DTranspose(c),
                 Gather g => VisitGather(g),
                 GatherND g => VisitGatherND(g),
                 OneHot o => VisitOneHot(o),
@@ -205,6 +205,11 @@ namespace Nncase.Evaluator.Ops
             }
             if (result is null)
                 throw new InvalidProgramException($"Must Set Input For Var {expr.Name}!");
+            if (result.ValueType != expr.CheckedType)
+            {
+                throw new InvalidProgramException(
+                  $"The Var {expr.Name} Require {expr.CheckedType} But Give {result.CheckedType}");
+            }
             return result;
         }
     }

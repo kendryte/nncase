@@ -36,7 +36,7 @@ public class UnitTestTypeInfer
     public void TestInferPad()
     {
         var a = new Var(new TensorType(DataType.Float32, new Shape(1, 3, 224, 224)));
-        var pads = Const.FromSpan<int>(new[] {0, 0, 1, 1, 2, 2, 3, 3}, new Shape(4, 2));
+        var pads = Const.FromSpan<int>(new[] { 0, 0, 1, 1, 2, 2, 3, 3 }, new Shape(4, 2));
         var pad = Pad(a, pads, PadMode.Constant, 1);
         Assert.True(TypeInference.InferenceType(pad));
         Assert.Equal(pad.CheckedShape, new Shape(1, 5, 228, 230));
@@ -45,14 +45,15 @@ public class UnitTestTypeInfer
     [Fact]
     public void TestSlice()
     {
-        var input = Const.FromSpan<int>(new[] {1, 7, 7, 75});
-        var begin = Const.FromSpan<int>(new[] {0});
-        var end = Const.FromSpan<int>(new[] {1});
-        var stride = Const.FromSpan<int>(new[] {1});
-        var axis = Const.FromSpan<int>(new[] {0});
+        var input = Const.FromSpan<int>(new[] { 1, 7, 7, 75 });
+        var begin = Const.FromSpan<int>(new[] { 0 });
+        var end = Const.FromSpan<int>(new[] { 1 });
+        var stride = Const.FromSpan<int>(new[] { 1 });
+        var axis = Const.FromSpan<int>(new[] { 0 });
         var s = Slice(input, begin, end, axis, stride);
         Assert.True(TypeInference.InferenceType(s));
         var post = s.Eval().ToConst();
+        Assert.True(post.InferenceType());
         Assert.Equal(s.CheckedShape, post.CheckedShape);
     }
 
@@ -66,6 +67,7 @@ public class UnitTestTypeInfer
         var slice = Slice(new Shape(1, 7, 7, 768), begin, end, axes, stride);
         TypeInference.InferenceType(slice);
         var post = slice.Eval().ToConst();
+        Assert.True(post.InferenceType());
         Assert.Equal(new Shape(2), post.CheckedShape);
     }
 
@@ -78,10 +80,10 @@ public class UnitTestTypeInfer
         var s = Stack(new Tuple(a, b, c), 0);
         TypeInference.InferenceType(s);
         Assert.Equal(new Shape(3), s.CheckedShape);
-        
-        var x = Const.FromSpan<int>(new[] {1, 2});
-        var y = Const.FromSpan<int>(new[] {1, 2});
-        var z = Const.FromSpan<int>(new[] {1, 2});
+
+        var x = Const.FromSpan<int>(new[] { 1, 2 });
+        var y = Const.FromSpan<int>(new[] { 1, 2 });
+        var z = Const.FromSpan<int>(new[] { 1, 2 });
         var ss = Stack(new Tuple(x, y, z), 1);
         TypeInference.InferenceType(ss);
         Assert.Equal(new Shape(2, 3), ss.CheckedShape);
@@ -91,13 +93,13 @@ public class UnitTestTypeInfer
     {
         AssertInferShape(expr, new Shape(shapeDimensions));
     }
-    
+
     void AssertInferShape(Expr expr, Shape shape)
     {
         Assert.True(TypeInference.InferenceType(expr));
         Assert.Equal(expr.CheckedShape, shape);
     }
-    
+
     [Fact]
     public void TestReduceArgTypeInfer()
     {
@@ -114,7 +116,7 @@ public class UnitTestTypeInfer
         AssertInferShape(
             ReduceArg(ReduceArgOp.ArgMax, input, 3, false, false),
             4, 5, 6);
-        
+
         AssertInferShape(
             ReduceArg(ReduceArgOp.ArgMax, input, 0, true, false),
             1, 5, 6, 7);

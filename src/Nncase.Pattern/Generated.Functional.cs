@@ -278,6 +278,56 @@ namespace Nncase.Pattern.F
         /// <param name = "rhs">Right operand.</param>
         /// <returns>Result expression.</returns>
         public static BinaryWrapper FloorMod(ExprPattern lhs, ExprPattern rhs) => Sub(lhs, (FloorDiv(lhs, rhs) * rhs));
+        /// <summary>
+        /// CallPattern compare.
+        /// </summary>
+        /// <param name = "compareOp">Compare operator.</param>
+        /// <param name = "lhs">Left operand.</param>
+        /// <param name = "rhs">Right operand.</param>
+        /// <returns>Result expression.</returns>
+        public static CompareWrapper Compare(CompareOp compareOp, ExprPattern lhs, ExprPattern rhs) => new CompareWrapper(new CallPattern(new ComparePattern(compareOp), lhs, rhs));
+        /// <summary>
+        /// CallPattern equal
+        /// </summary>
+        /// <param name = "lhs"></param>
+        /// <param name = "rhs"></param>
+        /// <returns>result</returns>
+        public static CompareWrapper Equal(ExprPattern lhs, ExprPattern rhs) => Compare(CompareOp.EQ, lhs, rhs);
+        /// <summary>
+        /// call not equal
+        /// </summary>
+        /// <param name = "lhs"></param>
+        /// <param name = "rhs"></param>
+        /// <returns></returns>
+        public static CompareWrapper NotEqual(ExprPattern lhs, ExprPattern rhs) => Compare(CompareOp.NE, lhs, rhs);
+        /// <summary>
+        /// call less than
+        /// </summary>
+        /// <param name = "lhs"></param>
+        /// <param name = "rhs"></param>
+        /// <returns></returns>
+        public static CompareWrapper LessThan(ExprPattern lhs, ExprPattern rhs) => Compare(CompareOp.LT, lhs, rhs);
+        /// <summary>
+        /// call less equal
+        /// </summary>
+        /// <param name = "lhs"></param>
+        /// <param name = "rhs"></param>
+        /// <returns></returns>
+        public static CompareWrapper LessEqual(ExprPattern lhs, ExprPattern rhs) => Compare(CompareOp.LE, lhs, rhs);
+        /// <summary>
+        /// call greater equal
+        /// </summary>
+        /// <param name = "lhs"></param>
+        /// <param name = "rhs"></param>
+        /// <returns></returns>
+        public static CompareWrapper GreaterEqual(ExprPattern lhs, ExprPattern rhs) => Compare(CompareOp.GT, lhs, rhs);
+        /// <summary>
+        /// call greater than
+        /// </summary>
+        /// <param name = "lhs"></param>
+        /// <param name = "rhs"></param>
+        /// <returns></returns>
+        public static CompareWrapper GreaterThan(ExprPattern lhs, ExprPattern rhs) => Compare(CompareOp.GE, lhs, rhs);
     }
 
     public static partial class NN

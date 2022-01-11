@@ -28,6 +28,7 @@ namespace Nncase
         /// Multiply.
         /// </summary>
         Mul,
+        
 
         /// <summary>
         /// Divide.

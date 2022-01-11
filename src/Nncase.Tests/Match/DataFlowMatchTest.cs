@@ -87,7 +87,7 @@ namespace Nncase.Tests
         [Fact]
         public void TestNotMatchFoldConstCall()
         {
-            var rule = new Transform.DataFlow.Rules.FoldConstCall();
+            var rule = new Transform.Rule.FoldConstCall();
             Var x = "x";
             var z = x + 1;
             Assert.Empty(Match(z, rule.Pattern));
@@ -96,7 +96,7 @@ namespace Nncase.Tests
         [Fact]
         public void TestMatchFoldConstCallTwice()
         {
-            var rule = new Transform.DataFlow.Rules.FoldConstCall();
+            var rule = new Transform.Rule.FoldConstCall();
 
             var z = Concat(new IR.Tuple((Const)2, (Const)1, (Const)2), 0);
             Assert.Single(Match(z, rule.Pattern));
@@ -107,7 +107,7 @@ namespace Nncase.Tests
         [Fact]
         public void TestMatchFoldConstCallTwiceFalse()
         {
-            var rule = new Transform.DataFlow.Rules.FoldConstCall();
+            var rule = new Transform.Rule.FoldConstCall();
 
             var z = Concat(new IR.Tuple((Var)"x", (Const)1, (Const)2), 0);
             Assert.Empty(Match(z, rule.Pattern));

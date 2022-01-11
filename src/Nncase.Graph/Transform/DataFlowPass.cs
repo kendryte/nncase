@@ -10,7 +10,7 @@ namespace Nncase.Transform
     /// <summary>
     /// dataflow pass
     /// </summary>
-    public sealed class DataFlowPass : FunctionPass
+    public class DataFlowPass : FunctionPass
     {
         public readonly List<PatternRule> Rules = new();
 
@@ -18,41 +18,77 @@ namespace Nncase.Transform
         {
         }
 
-        public void Add(params PatternRule[] rules)
+        /// <summary>
+        /// add the pattern rules
+        /// </summary>
+        /// <param name="rules"></param>
+        public void Add(params PatternRule[] rules) => Rules.AddRange(rules);
+
+        /// <summary>
+        /// <see cref="Add(PatternRule[])"/>
+        /// </summary>
+        /// <param name="rules"></param>
+        public void Add(IEnumerable<PatternRule> rules) => Rules.AddRange(rules);
+
+        /// <summary>
+        /// the callback function you can custom process func with run pass options
+        /// </summary>
+        /// <param name="func"> func without run pass</param>
+        /// <param name="options"></param>
+        protected override void OnPassStart(Function func, RunPassOptions options)
         {
-            foreach (var rule in rules)
+            switch (options.DumpLevel)
             {
-                Rules.Add(rule);
+                case >= 2:
+                    IRPrinter.DumpFunctionAsIL(func, "Start", Path.Combine(options.FullDumpDir, Name));
+                    break;
+                case >= 1:
+                    Console.WriteLine($"On {Name} Pass Start:");
+                    func.DumpExprAsIL();
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        /// <summary>
+        /// the callback function you can custom process func with run pass options
+        /// </summary>
+        /// <param name="func"> func with rewrited. </param>
+        /// <param name="options"></param>
+        protected override void OnPassEnd(Function func, RunPassOptions options)
+        {
+            switch (options.DumpLevel)
+            {
+                case >= 2:
+                    IRPrinter.DumpFunctionAsIL(func, "End", Path.Combine(options.FullDumpDir, Name));
+                    break;
+                case >= 1:
+                    Console.WriteLine($"On {Name} Pass End:");
+                    func.DumpExprAsIL();
+                    break;
+                default:
+                    break;
             }
         }
 
         /// <inheritdoc/>
         protected override Function RunCore(Function pre, RunPassOptions options)
         {
-            if (options.DumpLevel > 0)
-            {
-                IRPrinter.DumpFunctionAsIL(pre, "Before", Path.Combine(options.FullDumpDir, Name));
-            }
+            OnPassStart(pre, options);
             Function post = (Function)DataFlowRewrite.Rewrite(pre, Rules, options);
-            if (options.DumpLevel > 0)
-            {
-                IRPrinter.DumpFunctionAsIL(post, "After", Path.Combine(options.FullDumpDir, Name));
-            }
+            OnPassEnd(post, options);
             return post;
         }
     }
 
-    public sealed class ShapeInferPass : FunctionPass
+    public sealed class ShapeInferPass : DataFlowPass
     {
-        public readonly List<PatternRule> rules = new()
-        {
-            new Transform.DataFlow.Rules.FoldConstCall(),
-            // new Transform.DataFlow.Rules.FoldConstFunction(),
-            new Transform.DataFlow.Rules.FoldShapeOp(),
-        };
 
         public ShapeInferPass(string name = "ShapeInfer") : base(name)
         {
+            Rules.Add(new Transform.Rule.FoldConstCall());
+            Rules.Add(new Transform.Rule.FoldShapeOp());
         }
 
         /// <inheritdoc/>
@@ -64,7 +100,7 @@ namespace Nncase.Transform
             new_options.SetDir(options.FullDumpDir);
             while (true)
             {
-                post = (Function)DataFlowRewrite.Rewrite(pre, rules, new_options.SetName($"{Name}/Run_{count}"));
+                post = (Function)DataFlowRewrite.Rewrite(pre, Rules, new_options.SetName($"{Name}/Run_{count}"));
                 if (post == pre)
                 {
                     if (!TypeInference.InferenceType(post))

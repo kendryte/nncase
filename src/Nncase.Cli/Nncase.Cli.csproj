@@ -3,7 +3,6 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net6.0</TargetFramework>
-    <CodeAnalysisRuleSet>$(SolutionDir)/tools/StyleCopAnalyzers.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,6 +22,9 @@
     <ProjectReference Include="..\Nncase.EGraph\Nncase.EGraph.csproj" />
     <ProjectReference Include="..\Nncase.Graph\Nncase.Graph.csproj" />
     <ProjectReference Include="..\Nncase.Importer\Nncase.Importer.csproj" />
+    <ProjectReference Include="..\Nncase.IO\Nncase.IO.csproj" />
+    <ProjectReference Include="..\Nncase.CodeGen\Nncase.CodeGen.csproj" />
+    <ProjectReference Include="..\Nncase.Schedule\Nncase.Schedule.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -43,7 +43,7 @@ namespace Nncase.IR.Tensors
                     // todo: test
                         outshape[ax] = 0;
                 }
-                return input with { Shape = new Shape(outshape.Filter(x => x != -1)) };
+                return input with { Shape = new Shape(outshape.Where(x => x != -1)) };
             }
             return new InvalidType("Can't Infer Shape With Dynamic Input!");
         }

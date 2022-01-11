@@ -3,6 +3,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Collections;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -17,12 +18,9 @@ namespace Nncase.IR
     {
         protected int? _hashcode;
 
-        /// <summary>
-        /// Gets or sets checked type.
-        /// </summary>
-        public IRType? CheckedType { get; set; } = null;
+        public IRType? CheckedType = null;
 
-        public virtual Shape CheckedShape => CheckedType switch
+        public Shape CheckedShape => (CheckedType ?? ((Const)this).ValueType) switch
         {
             TensorType type => type.Shape,
             _ => throw new InvalidOperationException("Only The Expr Have CheckedType Can Get It's Shape")
@@ -32,9 +30,10 @@ namespace Nncase.IR
         {
             // todo:more info
             TensorType type => type.DType,
+            HandleType type => type.DType,
             _ => throw new InvalidOperationException("Expr don't have a valid tensor type")
         };
-        
+
         public virtual int Rank => CheckedShape.Rank;
 
         public virtual bool Equals(Expr? other)
@@ -47,12 +46,10 @@ namespace Nncase.IR
             return _hashcode ??= EqualityComparer<Type>.Default.GetHashCode(EqualityContract);
         }
 
-        public override string ToString()
+        protected virtual bool PrintMembers(StringBuilder builder)
         {
-            var builder = new StringBuilder();
-            var writer = new StringWriter(builder);
-            IRPrinter.DumpExprAsIL(writer, this);
-            return builder.ToString();
+            builder.Append(this.DumpExprAsIL());
+            return true;
         }
     }
 }

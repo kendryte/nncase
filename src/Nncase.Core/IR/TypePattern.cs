@@ -15,9 +15,17 @@ namespace Nncase.IR
         public TypePattern(TupleType ValueType) : this(x => (x == ValueType), $"Type = {ValueType.ToString()}") { }
         public TypePattern(CallableType ValueType) : this(x => (x == ValueType), $"Type = {ValueType.ToString()}") { }
 
-        public bool MatchLeaf(IRType ValueType)
+        public bool MatchLeaf(IRType? ValueType) => ValueType is not null ? Cond(ValueType) : false;
+
+        /// <summary>
+        /// Check the irtype, if not equal, throw exception 
+        /// </summary>
+        /// <param name="ValueType"></param>
+        /// <exception cref="InvalidOperationException"></exception>
+        public void Check(IRType? ValueType)
         {
-            return Cond(ValueType);
+            if (!MatchLeaf(ValueType))
+                throw new InvalidOperationException($"Requrie <{Reason}>, But {ValueType}!");
         }
 
         public static TypePattern operator &(TypePattern lhs, TypePattern rhs) => new TypePattern(x => lhs.Cond(x) && rhs.Cond(x), $"<{lhs.Reason}> And <{rhs.Reason}>");
@@ -53,7 +61,7 @@ namespace Nncase.IR
           inshape =>
             inshape.Rank == target_shape.Rank &&
             inshape.Zip(target_shape).All(
-              (dim) => dim.Second == Dimension.Unknown ? true : dim.Second == dim.First
+              (dim) => dim.Item2 == Dimension.Unknown ? true : dim.Item2 == dim.Item1
             ), $"Shape = {target_shape.ToString()}");
 
         public static TypePattern HasRank(Func<int, bool> cond, string reason) => HasShape(
@@ -69,6 +77,22 @@ namespace Nncase.IR
           }, "IsTensor"
         );
 
+        /// <summary>
+        /// The void unit 
+        /// </summary>
+        /// <returns></returns>
+        public static TypePattern IsUnit() => new TypePattern(
+          x => x == TupleType.Void, "IsUnit"
+        );
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <returns></returns>
+        public static TypePattern IsHandle() => new TypePattern(
+          x => x is HandleType, "IsHandle"
+        );
+
         public static TypePattern IsScalar() => new TypePattern(
           x => x switch
           {
@@ -77,13 +101,29 @@ namespace Nncase.IR
           },
           "IsScalar"
         );
-        
+
+        public static TypePattern IsIntegral(DataType dataType) => new TypePattern(
+          x => x switch
+          {
+              TensorType ttype => ttype.DType == dataType,
+              _ => false
+          }, $"IsIntegral {dataType}"
+        );
+
         public static TypePattern IsIntegral() => new TypePattern(
           x => x switch
           {
               TensorType ttype => DataTypes.IsIntegral(ttype.DType),
               _ => false
           }, "IsIntegral"
+        );
+
+        public static TypePattern IsFloat(DataType dataType) => new TypePattern(
+          x => x switch
+          {
+              TensorType ttype => ttype.DType == dataType,
+              _ => false
+          }, $"IsFloat {dataType}"
         );
 
         public static TypePattern IsFloat() => new TypePattern(
@@ -93,7 +133,7 @@ namespace Nncase.IR
               _ => false
           }, "IsFloat"
         );
-        
+
         public static TypePattern IsBool() => new TypePattern(
             x => x switch
             {
@@ -103,11 +143,11 @@ namespace Nncase.IR
         );
 
         public static TypePattern IsIntegralScalar() => IsScalar() & IsIntegral();
-        
+
         public static TypePattern IsBoolScalar() => IsScalar() & IsIntegral();
-        
+
         public static TypePattern IsFloatScalar() => IsScalar() & IsFloat();
-        
+
         public static int GetWindowedOutputSize(int size, int filter, int stride, int dilation, bool same, bool ceilMode = false)
         {
             var effective_filter_size = (filter - 1) * dilation + 1;
@@ -123,7 +163,7 @@ namespace Nncase.IR
                 }
                 else
                 {
-                    return (int)System.Math.Ceiling(((float) (size - effective_filter_size + stride) / stride));
+                    return (int)System.Math.Ceiling(((float)(size - effective_filter_size + stride) / stride));
                 }
             }
         }

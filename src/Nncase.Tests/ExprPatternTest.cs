@@ -11,11 +11,12 @@ using static Nncase.Pattern.Utility;
 using static Nncase.Pattern.F.Math;
 using static Nncase.Pattern.F.Tensors;
 using static Nncase.IR.Utility;
+using System.Linq.Expressions;
 
 namespace Nncase.Tests
 {
 
-    public class UnitTestExprPattern
+    public class TestExprPattern
     {
 
         [Fact]
@@ -42,6 +43,7 @@ namespace Nncase.Tests
         public void TestVarPattern()
         {
             Var e = new Var("x", AnyType.Default);
+            Assert.False(e.InferenceType());
             ExprPattern ep = e;
             Assert.IsType<VarPattern>(ep);
             Assert.True(ep.MatchLeaf(e));
@@ -51,6 +53,7 @@ namespace Nncase.Tests
         public void TestConstantPattern()
         {
             var con = (Const)(1.1f);
+            Assert.True(con.InferenceType());
             ExprPattern cp1 = con;
             Assert.IsType<ConstPattern>(cp1);
 
@@ -103,7 +106,7 @@ namespace Nncase.Tests
         public void TestCallPattern()
         {
             var e = (Const)1 + Exp(10);
-
+            Assert.True(e.InferenceType());
             var wc1 = IsWildCard();
             var wc2 = IsWildCard();
             var c = wc1 + wc2;
@@ -181,6 +184,7 @@ namespace Nncase.Tests
             );
 
             var tuple = new IR.Tuple(1, new IR.Tuple(6, 7, 8), 3, 4);
+            tuple.InferenceType();
             Assert.True(pattern.MatchLeaf(tuple.Fields));
             Assert.True(pattern[0].MatchLeaf(tuple[0]));
             Assert.True(pattern[1].MatchLeaf(tuple[1]));
@@ -207,6 +211,8 @@ namespace Nncase.Tests
             Const y = (Const)2;
             var z1 = x + y;
             var z2 = x * y;
+            z1.InferenceType();
+            z2.InferenceType();
             Assert.True(is_op_call.MatchLeaf(z1));
             Assert.True(is_op_call.Target.MatchLeaf(z2.Target));
 
@@ -253,6 +259,16 @@ namespace Nncase.Tests
             var pat = IsWildCard();
             var pat2 = IsWildCard().Copy();
             Assert.NotEqual(pat, pat2);
+        }
+
+        [Fact]
+        public void TestBuildExprFromPattern()
+        {
+            ConstPattern c0 = IsConst(), c1 = IsConst();
+            var x = IsWildCard();
+            var pat = x + c0;
+            var res = x - c0;
+            var ped = c0 == 0;
         }
     }
 }

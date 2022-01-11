@@ -13,9 +13,9 @@ using System.Threading.Tasks;
 namespace Nncase
 {
     /// <summary>
-    /// Data type.
+    /// Single Elem type.
     /// </summary>
-    public enum DataType : byte
+    public enum ElemType : byte
     {
         /// <summary>
         /// Int8.
@@ -109,6 +109,52 @@ namespace Nncase
     }
 
     /// <summary>
+    /// The storge data Type, for simd/npu/gpu we need support packed ElemType
+    /// <example>
+    /// float32*4
+    /// int8*2
+    /// </example>
+    /// </summary>
+    /// <param name="ElemType"></param>
+    /// <param name="Lanes"></param>
+    public sealed record DataType(ElemType ElemType, int Lanes = 1)
+    {
+        public static implicit operator DataType(ElemType ElemType) => new DataType(ElemType, 1);
+        public static DataType Int8 => ElemType.Int8;
+        public static DataType Int16 => ElemType.Int16;
+        public static DataType Int32 => ElemType.Int32;
+        public static DataType Int64 => ElemType.Int64;
+        public static DataType UInt8 => ElemType.UInt8;
+        public static DataType UInt16 => ElemType.UInt16;
+        public static DataType UInt32 => ElemType.UInt32;
+        public static DataType UInt64 => ElemType.UInt64;
+        public static DataType Float16 => ElemType.Float16;
+        public static DataType Float32 => ElemType.Float32;
+        public static DataType Float64 => ElemType.Float64;
+        public static DataType BFloat16 => ElemType.BFloat16;
+        public static DataType Bool => ElemType.Bool;
+        public static DataType String => ElemType.String;
+        public static DataType Invalid => ElemType.Invalid;
+
+        /// <summary>
+        /// check current compatible with other datatype
+        /// </summary>
+        /// <param name="other"></param>
+        /// <returns></returns>
+        public Compatible CompatibleWith(DataType other) => new Compatible((this.ElemType == other.ElemType && this.Lanes % other.Lanes == 0), $"this {this} != other {other}");
+
+        public override string? ToString()
+        {
+            return ("DataType." + ElemType) + (Lanes == 1 ? string.Empty : Lanes.ToString());
+        }
+    }
+
+    public sealed record Compatible(bool IsCompatible, string Reason)
+    {
+        public static implicit operator bool(Compatible compatible) => compatible.IsCompatible;
+    }
+
+    /// <summary>
     /// Data type helper.
     /// </summary>
     public static class DataTypes
@@ -124,24 +170,38 @@ namespace Nncase
             { typeof(ulong).TypeHandle, DataType.UInt64 },
             { typeof(float).TypeHandle, DataType.Float32 },
             { typeof(double).TypeHandle, DataType.Float64 },
+            { typeof(char).TypeHandle, DataType.String },
             { typeof(BFloat16).TypeHandle, DataType.Float16 }
         };
 
-        private static readonly Dictionary<DataType, int> _DataTypeToLengths = new()
+        private static readonly Dictionary<DataType, Type> _dataTypesToType = new()
         {
-            { DataType.Bool, 1 },
-            { DataType.UInt8, 1 },
-            { DataType.UInt16, 2 },
-            { DataType.UInt32, 4 },
-            { DataType.UInt64, 8 },
-            { DataType.Int8, 1 },
-            { DataType.Int16, 2 },
-            { DataType.Int32, 4 },
-            { DataType.Int64, 8 },
-            { DataType.Float16, 2 },
-            { DataType.BFloat16, 2 },
-            { DataType.Float32, 4 },
-            { DataType.Float64, 8 }
+            { DataType.Bool, typeof(bool) },
+            { DataType.Int8, typeof(sbyte) },
+            { DataType.UInt8, typeof(byte) },
+            { DataType.Int32, typeof(int) },
+            { DataType.UInt32, typeof(uint) },
+            { DataType.Int64, typeof(long) },
+            { DataType.UInt64, typeof(ulong) },
+            { DataType.Float32, typeof(float) },
+            { DataType.Float64, typeof(double) },
+        };
+
+        private static readonly Dictionary<ElemType, int> _ElemTypeToLengths = new()
+        {
+            { ElemType.Bool, 1 },
+            { ElemType.UInt8, 1 },
+            { ElemType.UInt16, 2 },
+            { ElemType.UInt32, 4 },
+            { ElemType.UInt64, 8 },
+            { ElemType.Int8, 1 },
+            { ElemType.Int16, 2 },
+            { ElemType.Int32, 4 },
+            { ElemType.Int64, 8 },
+            { ElemType.Float16, 2 },
+            { ElemType.BFloat16, 2 },
+            { ElemType.Float32, 4 },
+            { ElemType.Float64, 8 }
         };
 
         /// <summary>
@@ -160,6 +220,20 @@ namespace Nncase
         }
 
         /// <summary>
+        /// Get data type convert to CLR type.
+        /// </summary>
+        /// <param name="t"> Nncase datatype</param>
+        /// <returns>CLR type instance.</returns>
+        public static Type ToType(DataType t)
+        {
+            if (_dataTypesToType.TryGetValue(t, out var type))
+            {
+                return type;
+            }
+            throw new ArgumentOutOfRangeException("Unsupported DataType type: " + t);
+        }
+
+        /// <summary>
         /// Get data type from CLR type.
         /// </summary>
         /// <typeparam name="T">CLR type.</typeparam>
@@ -168,7 +242,15 @@ namespace Nncase
             where T : unmanaged
             => FromType(typeof(T));
 
-        public static int GetLength(DataType dataType) => _DataTypeToLengths[dataType];
+        /// <summary>
+        /// get data type total bytes lengths.
+        /// <example>
+        /// GetLength(float32) => 4
+        /// </example>
+        /// </summary>
+        /// <param name="dataType"></param>
+        /// <returns></returns>
+        public static int GetLength(DataType dataType) => _ElemTypeToLengths[dataType.ElemType] * dataType.Lanes;
 
         /// <summary>
         /// Convert unmanaged type to bytes.
@@ -197,27 +279,32 @@ namespace Nncase
         /// <returns>The display name.</returns>
         public static string GetDisplayName(DataType dataType)
         {
-            return typeof(DataType).GetField(Enum.GetName(dataType)!)!.GetCustomAttribute<DisplayAttribute>()?.GetName() ?? dataType.ToString();
+            var name = typeof(ElemType).GetField(Enum.GetName(dataType.ElemType)!)!.GetCustomAttribute<DisplayAttribute>()?.GetName() ?? dataType.ToString();
+            if (dataType.Lanes > 1)
+            {
+                name += $"x{dataType.Lanes}";
+            }
+            return name;
         }
 
         public static T ToScalar<T>(DataType srcType, byte[] bytes, int start = 0)
           where T : unmanaged
           => srcType switch
           {
-              DataType.Int64 => (T)(object)BitConverter.ToInt64(bytes, start),
-              DataType.Int32 => (T)(object)BitConverter.ToInt32(bytes, start),
-              DataType.Int16 => (T)(object)BitConverter.ToInt16(bytes, start),
-              DataType.Int8 => (T)(object)bytes[start],
-              DataType.UInt64 => (T)(object)BitConverter.ToUInt64(bytes, start),
-              DataType.UInt32 => (T)(object)BitConverter.ToUInt32(bytes, start),
-              DataType.UInt16 => (T)(object)BitConverter.ToUInt16(bytes, start),
-              DataType.UInt8 => (T)(object)bytes[start],
-              DataType.Float64 => (T)(object)BitConverter.ToDouble(bytes, start),
-              DataType.Float32 => (T)(object)BitConverter.ToSingle(bytes, start),
-              DataType.BFloat16 => (T)(object)(new BFloat16(bytes[start])),
-              DataType.Float16 => (T)(object)(Half)(bytes[start]),
-              DataType.Bool => (T)(object)BitConverter.ToBoolean(bytes, start),
-              DataType.String => (T)(object)BitConverter.ToString(bytes, start),
+              { ElemType: ElemType.Int64, Lanes: 1 } => (T)(object)BitConverter.ToInt64(bytes, start),
+              { ElemType: ElemType.Int32, Lanes: 1 } => (T)(object)BitConverter.ToInt32(bytes, start),
+              { ElemType: ElemType.Int16, Lanes: 1 } => (T)(object)BitConverter.ToInt16(bytes, start),
+              { ElemType: ElemType.Int8, Lanes: 1 } => (T)(object)bytes[start],
+              { ElemType: ElemType.UInt64, Lanes: 1 } => (T)(object)BitConverter.ToUInt64(bytes, start),
+              { ElemType: ElemType.UInt32, Lanes: 1 } => (T)(object)BitConverter.ToUInt32(bytes, start),
+              { ElemType: ElemType.UInt16, Lanes: 1 } => (T)(object)BitConverter.ToUInt16(bytes, start),
+              { ElemType: ElemType.UInt8, Lanes: 1 } => (T)(object)bytes[start],
+              { ElemType: ElemType.Float64, Lanes: 1 } => (T)(object)BitConverter.ToDouble(bytes, start),
+              { ElemType: ElemType.Float32, Lanes: 1 } => (T)(object)BitConverter.ToSingle(bytes, start),
+              { ElemType: ElemType.BFloat16, Lanes: 1 } => (T)(object)(new BFloat16(bytes[start])),
+              { ElemType: ElemType.Float16, Lanes: 1 } => (T)(object)(Half)(bytes[start]),
+              { ElemType: ElemType.Bool, Lanes: 1 } => (T)(object)BitConverter.ToBoolean(bytes, start),
+              { ElemType: ElemType.String, Lanes: 1 } => (T)(object)BitConverter.ToString(bytes, start),
               _ => throw new InvalidCastException($"Can't Convert the {srcType.ToString()}!")
           };
 
@@ -225,18 +312,19 @@ namespace Nncase
         where T : unmanaged
         => srcType switch
         {
-            DataType.Int64 => (T)Convert.ChangeType((object)BitConverter.ToInt64(bytes, start), typeof(T)),
-            DataType.Int32 => (T)Convert.ChangeType((object)BitConverter.ToInt32(bytes, start), typeof(T)),
-            DataType.Int16 => (T)Convert.ChangeType((object)BitConverter.ToInt16(bytes, start), typeof(T)),
-            DataType.Int8 => (T)Convert.ChangeType((object)bytes[start], typeof(T)),
-            DataType.UInt64 => (T)Convert.ChangeType((object)BitConverter.ToUInt64(bytes, start), typeof(T)),
-            DataType.UInt32 => (T)Convert.ChangeType((object)BitConverter.ToUInt32(bytes, start), typeof(T)),
-            DataType.UInt16 => (T)Convert.ChangeType((object)BitConverter.ToUInt16(bytes, start), typeof(T)),
-            DataType.UInt8 => (T)Convert.ChangeType((object)bytes[start], typeof(T)),
-            DataType.Float64 => (T)Convert.ChangeType((object)BitConverter.ToDouble(bytes, start), typeof(T)),
-            DataType.Float32 => (T)Convert.ChangeType((object)BitConverter.ToSingle(bytes, start), typeof(T)),
-            DataType.BFloat16 => (T)Convert.ChangeType((object)(new BFloat16(bytes[start])), typeof(T)),
-            DataType.Bool => (T)Convert.ChangeType((object)BitConverter.ToBoolean(bytes, start), typeof(T)),
+            { ElemType: ElemType.Int64, Lanes: 1 } => (T)Convert.ChangeType((object)BitConverter.ToInt64(bytes, start), typeof(T)),
+            { ElemType: ElemType.Int32, Lanes: 1 } => (T)Convert.ChangeType((object)BitConverter.ToInt32(bytes, start), typeof(T)),
+            { ElemType: ElemType.Int16, Lanes: 1 } => (T)Convert.ChangeType((object)BitConverter.ToInt16(bytes, start), typeof(T)),
+            { ElemType: ElemType.Int8, Lanes: 1 } => (T)Convert.ChangeType((object)bytes[start], typeof(T)),
+            { ElemType: ElemType.UInt64, Lanes: 1 } => (T)Convert.ChangeType((object)BitConverter.ToUInt64(bytes, start), typeof(T)),
+            { ElemType: ElemType.UInt32, Lanes: 1 } => (T)Convert.ChangeType((object)BitConverter.ToUInt32(bytes, start), typeof(T)),
+            { ElemType: ElemType.UInt16, Lanes: 1 } => (T)Convert.ChangeType((object)BitConverter.ToUInt16(bytes, start), typeof(T)),
+            { ElemType: ElemType.UInt8, Lanes: 1 } => (T)Convert.ChangeType((object)bytes[start], typeof(T)),
+            { ElemType: ElemType.Float64, Lanes: 1 } => (T)Convert.ChangeType((object)BitConverter.ToDouble(bytes, start), typeof(T)),
+            { ElemType: ElemType.Float32, Lanes: 1 } => (T)Convert.ChangeType((object)BitConverter.ToSingle(bytes, start), typeof(T)),
+            { ElemType: ElemType.BFloat16, Lanes: 1 } => (T)Convert.ChangeType((object)(new BFloat16(bytes[start])), typeof(T)),
+            { ElemType: ElemType.Float16, Lanes: 1 } => (T)Convert.ChangeType((object)(Half)(bytes[start]), typeof(T)),
+            { ElemType: ElemType.Bool, Lanes: 1 } => (T)Convert.ChangeType((object)BitConverter.ToBoolean(bytes, start), typeof(T)),
             _ => throw new InvalidCastException($"Can't Cast the {srcType.ToString()}!")
         };
 
@@ -244,19 +332,20 @@ namespace Nncase
         {
             return BitConverter.ToHalf(bytes, start);
         }
-        
-        public static bool IsIntegral(DataType srcType) => srcType switch
-        {
-            (DataType.Bool or
-             DataType.Int64 or DataType.Int32 or DataType.Int16 or DataType.Int8 or 
-             DataType.UInt64 or DataType.UInt32 or DataType.UInt16 or DataType.UInt8) => true,
-            _ => false
-        };
 
-        public static bool IsFloat(DataType srcType) => srcType switch
+        public static bool IsIntegral(DataType srcType, int Lanes = 1) =>
+          srcType.ElemType switch
+          {
+              (ElemType.Bool or
+               ElemType.Int64 or ElemType.Int32 or ElemType.Int16 or ElemType.Int8 or
+               ElemType.UInt64 or ElemType.UInt32 or ElemType.UInt16 or ElemType.UInt8) => true,
+              _ => false
+          } && Lanes == srcType.Lanes;
+
+        public static bool IsFloat(DataType srcType, int Lanes = 1) => srcType.ElemType switch
         {
-            (DataType.BFloat16 or DataType.Float16 or DataType.Float32 or DataType.Float64) => true,
+            (ElemType.BFloat16 or ElemType.Float16 or ElemType.Float32 or ElemType.Float64) => true,
             _ => false
-        };
+        } && Lanes == srcType.Lanes;
     }
 }

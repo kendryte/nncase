@@ -13,16 +13,30 @@ namespace Nncase.IR
     /// <summary>
     /// Module.
     /// </summary>
-    public sealed class Module
+    public sealed class IRModule
     {
         private List<Function> _functions;
+        
+        /// <summary>
+        /// the index of the entry function.
+        /// </summary>
+        int _entryIndex;
 
         /// <summary>
-        /// Initializes a new instance of the <see cref="Module"/> class.
+        /// Initializes a new instance of the <see cref="IRModule"/> class.
         /// </summary>
-        public Module()
+        /// <param name="main"> main func</param>
+        public IRModule(Function main)
         {
-            _functions = new List<Function>();
+            _functions = new();
+            _functions.Add(main);
+            _entryIndex = 0;
+        }
+
+        public IRModule()
+        {
+            _functions = new();
+            _entryIndex = -1;
         }
 
         /// <summary>
@@ -33,7 +47,23 @@ namespace Nncase.IR
         /// <summary>
         /// Gets or sets entry function.
         /// </summary>
-        public Function? Entry { get; set; }
+        public Function? Entry
+        {
+            get => _entryIndex == -1 ? null : Functions[_entryIndex];
+            set
+            {
+                if (value is null) _entryIndex = -1;
+                else
+                {
+                    _entryIndex = _functions.IndexOf(value);
+                    if (_entryIndex == -1)
+                    {
+                        _functions.Add(value);
+                        _entryIndex = _functions.Count - 1;
+                    }
+                }
+            }
+        }
 
         /// <summary>
         /// Add function.
@@ -44,11 +74,15 @@ namespace Nncase.IR
             _functions.Add(function);
         }
 
-        public void Update(Function entry)
+        /// <summary>
+        /// update the entry function defination
+        /// </summary>
+        /// <param name="i">function index.</param>
+        /// <param name="function">the entry function defination.</param>
+        public void Update(int i, Expr function)
         {
-            _functions.RemoveAt(_functions.IndexOf(Entry!));
-            _functions.Add(entry);
-            Entry = entry;
+            _functions.RemoveAt(i);
+            _functions.Add((Function)function);
         }
     }
 }

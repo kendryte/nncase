@@ -41,27 +41,26 @@ namespace Nncase.Evaluator
 
         public static torch.Tensor ToTorchTensor(this Const expr)
         {
-          // torch.as_tensor()
+            // torch.as_tensor()
             var dtype = expr.ValueType.DType;
-            var shape = expr.CheckedShape.IsScalar
+            var shape = expr.ValueType.IsScalar
                 ? new long[] { }
-                : expr.CheckedShape.ToList().Select(x => (long)x.FixedValue).ToArray();
-            
+                : expr.ValueType.Shape.ToList().Select(x => (long)x.FixedValue).ToArray();
             return dtype switch
             {
-                DataType.Int8 => torch.tensor(expr.ToTensor<sbyte>(), shape, ToTorchType(dtype)),
-                DataType.Int16 => torch.tensor(expr.ToTensor<short>(), shape, ToTorchType(dtype)),
-                DataType.Int32 => torch.tensor(expr.ToTensor<int>(), shape, ToTorchType(dtype)),
-                DataType.Int64 => torch.tensor(expr.ToTensor<long>(), shape, ToTorchType(dtype)),
-                DataType.UInt8 => torch.tensor(expr.ToTensor<byte>(), shape, ToTorchType(dtype)),
+                { ElemType: ElemType.Int8, Lanes: 1 } => torch.tensor(expr.ToTensor<sbyte>(), shape, ToTorchType(dtype)),
+                { ElemType: ElemType.Int16, Lanes: 1 } => torch.tensor(expr.ToTensor<short>(), shape, ToTorchType(dtype)),
+                { ElemType: ElemType.Int32, Lanes: 1 } => torch.tensor(expr.ToTensor<int>(), shape, ToTorchType(dtype)),
+                { ElemType: ElemType.Int64, Lanes: 1 } => torch.tensor(expr.ToTensor<long>(), shape, ToTorchType(dtype)),
+                { ElemType: ElemType.UInt8, Lanes: 1 } => torch.tensor(expr.ToTensor<byte>(), shape, ToTorchType(dtype)),
                 // DataType.UInt16 => torch.tensor(expr.ToTensor<ushort>(), shape, ToTorchType(dtype)),
                 // DataType.UInt32 => torch.tensor(expr.ToTensor<uint>(), shape, ToTorchType(dtype)),
                 // DataType.UInt64 => torch.tensor(expr.ToTensor<ulong>(), shape, ToTorchType(dtype)),
-                DataType.Float16 => torch.tensor(expr.HalfToFloat(), shape, ToTorchType(dtype)),
-                DataType.Float32 => torch.tensor(expr.ToTensor<float>(), shape, ToTorchType(dtype)),
-                DataType.Float64 => torch.tensor(expr.ToTensor<double>(), shape, ToTorchType(dtype)),
-                // DataType.BFloat16 => torch.tensor(expr.ToTensor<BFloat16>(), shape, ToTorchType(dtype)),
-                DataType.Bool => torch.tensor(expr.ToTensor<bool>(), shape, ToTorchType(dtype)),
+                // DataType.Float16 => torch.tensor(expr.ToTensor<Float16>(), shape, ToTorchType(dtype)),
+                { ElemType: ElemType.Float32, Lanes: 1 } => torch.tensor(expr.ToTensor<float>(), shape, ToTorchType(dtype)),
+                { ElemType: ElemType.Float64, Lanes: 1 } => torch.tensor(expr.ToTensor<double>(), shape, ToTorchType(dtype)),
+                // {ElemType:ElemType.BFloat16,Lanes:1} => torch.tensor(expr.ToTensor<BFloat16>(), shape, ToTorchType(dtype)),
+                { ElemType: ElemType.Bool, Lanes: 1 } => torch.tensor(expr.ToTensor<bool>(), shape, ToTorchType(dtype)),
                 // DataType.String => torch.tensor(expr.ToTensor<>(), shape, ToTorchType(dtype)),
                 _ => throw new ArgumentOutOfRangeException("Unsupported conversion for datatype to torch.ScalarType")
             };

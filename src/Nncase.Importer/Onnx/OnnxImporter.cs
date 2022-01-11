@@ -80,13 +80,13 @@ namespace Nncase.Importer
                 };
             }
         }
-        public Module Import()
+        public IRModule Import()
         {
             _constTensors = _graph.Initializer
                 .ToDictionary(tensor => tensor.Name, tensor => tensor);
             
             _outputTensors = _graph.Input
-                .Filter(n => !_constTensors.ContainsKey(n.Name))
+                .Where(n => !_constTensors.ContainsKey(n.Name))
                 .ToDictionary(n => n.Name, n => (Expr) new Var(n.Name, GetIRType(n)));
 
             var createdInputs = _outputTensors.Values.ToArray();
@@ -97,11 +97,11 @@ namespace Nncase.Importer
             return MakeMainModule(outputs, createdInputs);
         }
 
-        private Module MakeMainModule(Expr[] body, IRArray<Expr> parameter)
+        private IRModule MakeMainModule(Expr[] body, IRArray<Expr> parameter)
         {
             var outputTuple = new IR.Tuple(ImmutableArray.Create(body));
             var mainFunc = new Function("main", outputTuple, parameter);
-            var module = new Module();
+            var module = new IRModule();
             module.Add(mainFunc);
             module.Entry = mainFunc;
             return module;
