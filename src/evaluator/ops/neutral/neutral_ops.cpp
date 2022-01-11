@@ -541,6 +541,9 @@ void register_neutral_evaluators()
         case unary_log:
             unary([](auto a) { return logf(a); });
             break;
+        case unary_logical_not:
+            unary([](auto a) { return !a; });
+            break;
         case unary_neg:
             unary([](auto a) { return -a; });
             break;
