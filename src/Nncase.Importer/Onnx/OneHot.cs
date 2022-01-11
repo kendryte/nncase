@@ -3,18 +3,18 @@
 
 using Nncase.IR;
 using Onnx;
-using F = Nncase.IR.F;
+using static Nncase.IR.F.Tensors;
 
 namespace Nncase.Importer
 {
     public partial class OnnxImporter
     {
-        // private Expr VisitOneHot(in NodeProto op)
-        // {
-        //     var (indices, depth) = GetInputExprs(op, 0, 1);
-        //     var values = GetInputExpr(op, 2);
-        //     var axis = GetIntAttribute(op, "axis", -1);
-        //     return F.Tensors.OneHot(OneHotMode.Normal, indices, depth, values, axis);
-        // }
+        private Expr VisitOneHot(in NodeProto op)
+        {
+            var (indices, depth) = GetInputExprs(op, 0, 1);
+            var values = GetInputExpr(op, 2);
+            var axis = GetIntAttribute(op, "axis", -1);
+            return OneHot(OneHotMode.Normal, indices, depth, SliceIndex(values, 1), SliceIndex(values, 0), axis);
+        }
     }
 }

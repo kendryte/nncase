@@ -1,7 +1,11 @@
 using Nncase.IR.NN;
+using Tensorflow;
+using Tensorflow.Keras;
+using Tensorflow.Operations;
 using TorchSharp;
-
+using static Tensorflow.Binding;
 using torchF = TorchSharp.torch.nn.functional;
+
 namespace Nncase.Evaluator.Ops
 {
     public sealed partial class EvaluatorVisitor
@@ -26,10 +30,11 @@ namespace Nncase.Evaluator.Ops
             return input.softplus();
         }
         
-        // private torch.Tensor VisitSoftSign(SoftSign softSign)
-        // {
-        //     var input = _context.GetArgument(softSign, SoftSign.Input);
-        //     torch.nn.
-        // }
+        private Tensorflow.Tensor VisitSoftSign(SoftSign softSign)
+        {
+            var input = _context.GetTFArgument(softSign, SoftSign.Input);
+            // Tensorflow.Net no this interface
+            return tf.Context.ExecuteOp("Softsign", null, new ExecuteOpArgs(input));
+        }
     }
 }

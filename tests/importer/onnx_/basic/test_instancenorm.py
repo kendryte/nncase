@@ -56,7 +56,7 @@ def _make_module(in_shape, epsilon):
 
 
 in_shapes = [
-    [1, 3, 56, 56]
+    [1, 3, 28, 28]
 ]
 
 epsilons = [

@@ -1,21 +1,19 @@
-using System;
 using System.Linq;
 using NetFabric.Hyperlinq;
-using Nncase.IR.Math;
 using Nncase.IR.Tensors;
-using TorchSharp;
+using static Tensorflow.Binding;
 
 using torchF = TorchSharp.torch.nn.functional;
 namespace Nncase.Evaluator.Ops
 {
     public sealed partial class EvaluatorVisitor
     {
-        private torch.Tensor VisitGather(Gather gather)
+        private Tensorflow.Tensor VisitGather(Gather gather)
         {
-            var input = _context.GetTorchArgument(gather, Gather.Input);
+            var input = _context.GetTFArgument(gather, Gather.Input);
             var axis = _context.GetArgumentConst(gather, Gather.Axis).ToScalar<int>();
-            var index = _context.GetArgumentConst(gather, Gather.Index).ToArray<int>();
-            return torch.cat(index.Select(i => input.select(axis, i)).ToList(), 0);
+            var index = _context.GetTFArgument(gather, Gather.Index);
+            return tf.gather(input, index, axis: axis);
         }
     }
 }

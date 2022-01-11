@@ -5,6 +5,7 @@ using LanguageExt;
 using Nncase.IR;
 using Onnx;
 using static Onnx.AttributeProto.Types;
+using F = Nncase.IR.F;
 
 namespace Nncase.Importer
 {
@@ -71,9 +72,16 @@ namespace Nncase.Importer
             return GetIntAttribute(n, attr, defaultValue ? 1 : 0) != 0;
         }
 
-        long[] GetAxisAttribute(NodeProto n, string attr)
+        private Call ComputeDefaultAxes(Expr input)
         {
-            return GetIntsAttribute(n, attr);
+            return F.Tensors.Range(0, F.Tensors.Rank(input), 1);
+        }
+        
+        Expr GetAxesAttribute(NodeProto n, Expr input)
+        {
+            return GetOptionIntsAttribute(n, "axes")
+                .Map(x => (Expr)Const.FromSpan<long>(x))
+                .Or(ComputeDefaultAxes(input));
         }
 
         long[] GetIntsAttribute(NodeProto n, string attr)

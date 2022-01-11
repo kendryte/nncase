@@ -5,6 +5,7 @@ namespace Nncase
         Mean,
         Min,
         Max,
-        Sum
+        Sum,
+        Prod
     }
 }

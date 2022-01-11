@@ -61,7 +61,7 @@ namespace Nncase.IR
           inshape =>
             inshape.Rank == target_shape.Rank &&
             inshape.Zip(target_shape).All(
-              (dim) => dim.Second == Dimension.Unknown ? true : dim.Second == dim.First
+              (dim) => dim.Item2 == Dimension.Unknown ? true : dim.Item2 == dim.Item1
             ), $"Shape = {target_shape.ToString()}");
 
         public static TypePattern HasRank(Func<int, bool> cond, string reason) => HasShape(

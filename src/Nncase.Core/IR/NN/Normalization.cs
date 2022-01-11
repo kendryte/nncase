@@ -22,17 +22,38 @@ namespace Nncase.IR.NN
         public static readonly ParameterInfo Input = new(typeof(BatchNormalization), 0, "input");
 
         /// <summary>
-        /// Gets Epsilon.
+        /// Gets scale.
         /// </summary>
-        public static readonly ParameterInfo Epsilon = new(typeof(BatchNormalization), 1, "epsilon", IsFloatScalar());
+        public static readonly ParameterInfo Scale = new(typeof(BatchNormalization), 1, "scale", IsFloatScalar());
 
         /// <summary>
-        /// Gets Momentum.
+        /// Gets bias.
         /// </summary>
-        public static readonly ParameterInfo Momentum = new(typeof(BatchNormalization), 2, "momentum", IsFloatScalar());
+        public static readonly ParameterInfo Bias = new(typeof(BatchNormalization), 2, "bias", IsFloatScalar());
+        
+        /// <summary>
+        /// Gets input_mean.
+        /// </summary>
+        public static readonly ParameterInfo InputMean = new(typeof(BatchNormalization), 3, "input_mean", IsFloatScalar());
 
+        /// <summary>
+        /// Gets input_var.
+        /// </summary>
+        public static readonly ParameterInfo InputVar = new(typeof(BatchNormalization), 4, "input_var", IsFloatScalar());
+
+        /// <summary>
+        /// Gets epsilon.
+        /// </summary>
+        public static readonly ParameterInfo Epsilon = new(typeof(BatchNormalization), 5, "epsilon", IsFloatScalar());
+
+        /// <summary>
+        /// Gets momentum.
+        /// </summary>
+        public static readonly ParameterInfo Momentum = new(typeof(BatchNormalization), 6, "momentum", IsFloatScalar());
+        
         /// <inheritdoc/>
-        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType epsilon, TensorType momentum) => input;
+        public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType scale, TensorType bias, 
+            TensorType input_mean, TensorType input_var, TensorType epsilon, TensorType momentum) => input;
     }
     
     public sealed record InstanceNormalization() : Op

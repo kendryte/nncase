@@ -1,10 +1,11 @@
+
 using System;
-using System.Linq;
 using System.Collections.Generic;
-using NetFabric.Hyperlinq;
-using Nncase.IR.Math;
+using System.Linq;
 using Nncase.IR.Tensors;
-using TorchSharp;
+using Tensorflow;
+using Tensorflow.NumPy;
+using static Tensorflow.Binding;
 
 using torchF = TorchSharp.torch.nn.functional;
 
@@ -12,18 +13,22 @@ namespace Nncase.Evaluator.Ops
 {
     public sealed partial class EvaluatorVisitor
     {
-        private torch.Tensor VisitPad(Pad pad)
+        private Tensorflow.Tensor VisitPad(Pad pad)
         {
-            var input = _context.GetTorchArgument(pad, Pad.Input);
-            var pads = _context.GetArgumentConst(pad, Pad.Pads).ToTensor<long>();
-            var value = _context.GetArgumentConst(pad, Pad.Value).ToScalar<double>();
-            List<long> torch_pads = new();
-            for (int i = pads.Dimensions[0] - 1; i >= 0; i--)
+            var input = _context.GetTFArgument(pad, Pad.Input);
+            var pads = _context.GetTFArgument(pad, Pad.Pads);
+            var constant_values = _context.GetArgumentConst(pad, Pad.Value).ToScalar<int>();
+            var mode = pad.PadMode switch
             {
-                torch_pads.Add(pads[i, 0]);
-                torch_pads.Add(pads[i, 1]);
-            }
-            return torchF.pad(input, torch_pads.ToArray(), pad.PadMode.ToTorch(), value);
+                PadMode.Constant => "CONSTANT",
+                PadMode.Reflect => "REFLECT",
+                PadMode.Symmetric => "SYMMETRIC",
+                PadMode.Edge => "EDGE",
+                _ => throw new ArgumentOutOfRangeException()
+            };
+            return tf.Context.ExecuteOp("Pad", null,
+                new ExecuteOpArgs(input, pads, mode, constant_values));
+            // return tf.pad(input, pads, mode: mode, constant_values:constant_values);
         }
     }
 }

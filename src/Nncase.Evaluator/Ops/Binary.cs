@@ -1,6 +1,7 @@
 using System;
 using Nncase.IR.Math;
 using TorchSharp;
+using static Tensorflow.Binding;
 
 using torchF = TorchSharp.torch.nn.functional;
 namespace Nncase.Evaluator.Ops
@@ -9,6 +10,7 @@ namespace Nncase.Evaluator.Ops
     {
         private torch.Tensor VisitBinary(Binary binary)
         {
+            var res = tf.constant(1) * tf.constant(2);
             var a = _context.GetTorchArgument(binary, Binary.Lhs);
             var b = _context.GetTorchArgument(binary, Binary.Rhs);
             return (binary.BinaryOp switch

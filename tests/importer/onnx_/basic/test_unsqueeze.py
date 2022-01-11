@@ -75,9 +75,9 @@ def _make_module(in_shape, axes, op_version):
 
 
 in_shapes = [
-    [224],
-    [224, 224],
-    [3, 224, 224]
+    [24],
+    [24, 24],
+    [3, 24, 24]
 ]
 
 axes_list = [

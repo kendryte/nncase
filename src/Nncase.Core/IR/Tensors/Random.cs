@@ -32,7 +32,7 @@ namespace Nncase.IR.Tensors
         {
             if (context.GetArgument(this, Shape) is Const shapeValue)
             {
-                return new TensorType(Type, new Shape(shapeValue.ToScalar<int>()));
+                return new TensorType(Type, new Shape(shapeValue.ToArray<int>()));
             }
             else
             {
@@ -100,7 +100,7 @@ namespace Nncase.IR.Tensors
         {
             if (context.GetArgument(this, Shape) is Const shapeValue)
             {
-                return new TensorType(Type, new Shape(shapeValue.ToScalar<int>()));
+                return new TensorType(Type, new Shape(shapeValue.ToArray<int>()));
             }
             else
             {

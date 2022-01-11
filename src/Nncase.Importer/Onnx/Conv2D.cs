@@ -26,13 +26,20 @@ namespace Nncase.Importer
         }
         
         // only used for 2D
-        private Const GetPadsAttribute(NodeProto op)
+        private Expr GetPadsAttribute(NodeProto op)
         {
             // h before, w before, h after, w after
             // todo: padding size == 2?
             var paddings = GetIntsAttribute(op, "pads", 0, 4);
+            var padsValue = new long[paddings.Length];
+            var count = paddings.Length / 2;
+            for (int i = 0; i < count; ++i)
+            {
+                padsValue[2 * i] = paddings[count - 1 - i];
+                padsValue[2 * i + 1] = paddings[paddings.Length - 1 - i];
+            }
             var paddingsValue = new long[] {paddings[1], paddings[3], paddings[0], paddings[2]};
-            return Const.FromSpan<long>(paddingsValue, new Shape(2, 2));
+            return Const.FromSpan<long>(padsValue, new Shape(count, 2));
         }
 
         private Const GetStrideAttribute(NodeProto op)
