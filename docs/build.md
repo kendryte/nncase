@@ -61,7 +61,7 @@
 ```sh
 rm -rf ~/.nuget/packages/nncase.cli # clean cache
 cd src/Nncase.Cli
-dotnet pack -c Release
+dotnet pack -c Release # Debug
 ```
 
 如果本地安装nncase包，需要在目标项目根目录下添加`NuGet.Config`文件配置`Nuget`源
