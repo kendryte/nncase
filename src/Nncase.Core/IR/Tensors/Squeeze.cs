@@ -7,7 +7,6 @@ using System.Collections.Immutable;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using LanguageExt;
 using static Nncase.IR.Utility;
 
 namespace Nncase.IR.Tensors
@@ -36,7 +35,7 @@ namespace Nncase.IR.Tensors
                         return new InvalidType("The Shape[dim] is not 1!");
                     }
                 }
-                return input with { Shape = new Shape(outshape.Filter(x => x != int.MaxValue )) };
+                return input with { Shape = new Shape(outshape.Where(x => x != int.MaxValue )) };
             }
             return input with { Shape = new Shape(Enumerable.Repeat(Dimension.Unknown, input.Shape.Count() - 1)) };
         }
