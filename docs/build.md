@@ -59,6 +59,21 @@
 ## 打包📦
 
 ```sh
+rm -rf ~/.nuget/packages/nncase.cli # clean cache
 cd src/Nncase.Cli
-dotnet pack --configuration release /p:NuspecFile=Nncase.Cli.nuspec
+dotnet pack -c Release
+```
+
+如果本地安装nncase包，需要在目标项目根目录下添加`NuGet.Config`文件配置`Nuget`源
+```xml
+<?xml version="1.0" encoding="utf-8"?>
+<configuration>
+  <packageSources>
+    <add key="nuget.org" value="https://api.nuget.org/v3/index.json" protocolVersion="3" />
+    <add key="nncase" value="your-path/bin/packages/xxxx" />
+  </packageSources>
+  <activePackageSource>
+    <add key="nncase" value="your-path/bin/packages/xxxx" />
+  </activePackageSource>
+</configuration>
 ```
