@@ -116,14 +116,13 @@ namespace Nncase.Evaluator.Ops
             var result = expr.Target switch
             {
                 // todo:reflect to visit f
-                BatchNormalization b => VisitBatchNormalization(b),
+                // BatchNormalization b => VisitBatchNormalization(b),
                 Binary bn => VisitBinary(bn),
                 Broadcast b => VisitBroadcast(b),
                 Cast ct => VisitCast(ct),
                 Celu c => VisitCelu(c),
                 Concat con => VisitConcat(con),
                 Conv2D conv => VisitConv2D(conv),
-                Conv2DTranspose c => VisitConv2DTranspose(c),
                 Elu e => VisitElu(e),
                 Expand e => VisitExpand(e),
                 Flatten f => VisitFlatten(f),
@@ -146,7 +145,6 @@ namespace Nncase.Evaluator.Ops
                 Slice sl => VisitSlice(sl),
                 SoftMax s => VisitSoftMax(s),
                 SoftPlus s => VisitSoftPlus(s),
-                // SoftSign s => VisitSoftSign(s),
                 IR.Tensors.Stack st => VisitStack(st),
                 Transpose tr => VisitTranspose(tr),
                 Unary un => VisitUnary(un),
@@ -160,13 +158,18 @@ namespace Nncase.Evaluator.Ops
         {
             var result = target switch
             {
+                BatchNormalization b => VisitBatchNormalization(b),
                 CumSum c => VisitCumSum(c),
+                Conv2DTranspose c => VisitConv2DTranspose(c),
                 Gather g => VisitGather(g),
                 GatherND g => VisitGatherND(g),
                 OneHot o => VisitOneHot(o),
-                Reduce r => VisitReduce(r),
                 Pad pd => VisitPad(pd),
+                RandomNormal r => VisitRandomNormal(r),
+                Reduce r => VisitReduce(r),
+                ReverseSequence r => VisitReverseSequence(r),
                 Squeeze s => VisitSqueeze(s),
+                SoftSign s => VisitSoftSign(s),
                 UnSqueeze u => VisitUnSqueeze(u),
                 _ => throw new NotImplementedException($"{target}")
             };

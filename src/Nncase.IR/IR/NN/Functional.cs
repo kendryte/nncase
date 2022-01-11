@@ -29,7 +29,9 @@ namespace Nncase.IR.F
 
         public static Call L2Normalization(Expr input) => new Call(new L2Normalization(), input);
 
-        public static Call BatchNormalization(Expr input, Expr eps, Expr mom) => new Call(new BatchNormalization(), input, eps, mom);
+        public static Call BatchNormalization(Expr input, Expr scale, Expr bias,
+            Expr input_mean, Expr input_var, Expr epsilon, Expr momentum) => new Call(
+            new BatchNormalization(), input, scale, bias, input_mean, input_var, epsilon, momentum);
         
         public static Call InstanceNormalization(Expr input, Expr eps) => new Call(new InstanceNormalization(), input, eps);
         

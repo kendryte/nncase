@@ -1,7 +1,10 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using Nncase.IR.Tensors;
+using Tensorflow;
+using Tensorflow.NumPy;
 using static Tensorflow.Binding;
 
 using torchF = TorchSharp.torch.nn.functional;
@@ -14,8 +17,8 @@ namespace Nncase.Evaluator.Ops
         {
             var input = _context.GetTFArgument(pad, Pad.Input);
             var pads = _context.GetTFArgument(pad, Pad.Pads);
-            var value = _context.GetArgumentConst(pad, Pad.Value).ToScalar<int>();
-            var mod = pad.PadMode switch
+            var constant_values = _context.GetArgumentConst(pad, Pad.Value).ToScalar<int>();
+            var mode = pad.PadMode switch
             {
                 PadMode.Constant => "CONSTANT",
                 PadMode.Reflect => "REFLECT",
@@ -23,7 +26,9 @@ namespace Nncase.Evaluator.Ops
                 PadMode.Edge => "EDGE",
                 _ => throw new ArgumentOutOfRangeException()
             };
-            return tf.pad(input, pads, mod, constant_values:value);
+            return tf.Context.ExecuteOp("Pad", null,
+                new ExecuteOpArgs(input, pads, mode, constant_values));
+            // return tf.pad(input, pads, mode: mode, constant_values:constant_values);
         }
     }
 }

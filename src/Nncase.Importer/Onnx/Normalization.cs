@@ -27,10 +27,8 @@ namespace Nncase.Importer
             var (mean, var) = GetInputExprs(op, 3, 4);
             var eps = GetFloatAttribute(op, "epsilon", 1e-05f);
             var mom = GetFloatAttribute(op, "momentum", 0.9f);
-            var input_mean = ReshapeToByChannel(mean);
             var bias = ReshapeToByChannel(b);
-            // return F.NN.BatchNormalization(x, eps, mom) * scale + bias;
-            return (x - input_mean) / ReshapeToByChannel(F.Math.Sqrt(var + eps)) * scale + bias;
+            return F.NN.BatchNormalization(x, scale, bias, mean, var, eps, mom);
         }
 
         private Expr VisitInstanceNormalization(in NodeProto op)

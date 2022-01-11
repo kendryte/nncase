@@ -4,7 +4,7 @@
 using System;
 using Nncase.IR;
 using Onnx;
-using F = Nncase.IR.F;
+using static Nncase.IR.F.Tensors;
 
 namespace Nncase.Importer
 {
@@ -17,23 +17,43 @@ namespace Nncase.Importer
                 : PadV11(op);
         }
 
+        private Expr TransposePadding(Expr padding)
+        {
+            return Transpose(padding, new[] {1, 0});
+        }
+        
         private Expr PadV2(in NodeProto op)
         {
             var input = GetInputExpr(op, 0);
             var padMode = GetPadMode(op);
             var pads = GetIntsAttribute(op, "pads");
-            var paddings = Const.FromSpan<long>(pads, new Shape(pads.Length / 2, 2));
+            var paddings = Const.FromSpan<long>(pads, new Shape(2, pads.Length / 2));
             var value = GetFloatAttribute(op, "value", 0f);
-            return F.Tensors.Pad(input, paddings, padMode, value);
+            return Pad(input, TransposePadding(paddings), padMode, value);
+        }
+
+        private Expr ReshapePadding(Expr pads)
+        {
+            return Reshape(pads,
+                Concat(
+                    new IR.Tuple(
+                        new[] {2},
+                        ShapeOp(pads) / 2),
+                    0));
         }
         
         private Expr PadV11(in NodeProto op)
         {
             // todo:pads shape
             var (input, pads) = GetInputExprs(op, 0, 1);
+            var reshapePads = ReshapePadding(pads);
             var padMode = GetPadMode(op);
-            var padValue = GetOptionInputExpr(op, 2, 0);
-            return F.Tensors.Pad(input, pads, padMode, padValue);
+            // GetInputExpr will get a Tensor with shape [1], but padValue is a scalar 
+            var padValue = GetOptionInputExpr(op, 2)
+                .Match(
+                    x => SliceIndex(x, 0),
+                    () => 0);
+            return Pad(input, TransposePadding(reshapePads), padMode, padValue);
         }
         
         private PadMode GetPadMode(in NodeProto op)
