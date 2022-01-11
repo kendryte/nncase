@@ -18,6 +18,8 @@
 #include <nncase/ir/graph.h>
 #include <nncase/ir/ops/binary.h>
 #include <nncase/ir/ops/constant.h>
+#include <nncase/ir/ops/dequantize.h>
+#include <nncase/ir/ops/quantize.h>
 #include <nncase/ir/ops/unary.h>
 
 using namespace nncase;
@@ -78,6 +80,43 @@ void onnx_importer::convert_op_Log(const onnx::NodeProto &node)
 void onnx_importer::convert_op_Neg(const onnx::NodeProto &node)
 {
     convert_unary(node, unary_neg);
+}
+
+void onnx_importer::convert_op_Not(const onnx::NodeProto &node)
+{
+    assert(node.input().size() == 1);
+    assert(node.output().size() == 1);
+    const auto &op_name { generate_name(node) };
+
+    // input
+    const auto &input = node.input()[0];
+    const auto input_type = get_datatype(input).value();
+    assert(input_type == dt_uint8);
+    auto input_shape = get_shape(input);
+
+    // output
+    const auto &output = node.output()[0];
+    const auto output_type = get_datatype(output).value();
+    assert(output_type == dt_uint8);
+
+    // dequantize
+    quant_param_t qparam { 0, 1.f };
+    auto dequant = graph_.emplace<dequantize>(input_type, input_shape, dt_float32, qparam);
+    dequant->name(op_name + "/dequant");
+
+    // unary
+    auto unary_op = unary_logical_not;
+    auto op = graph_.emplace<unary>(unary_op, dequant->output().shape());
+    op->name(op_name + '(' + unary_op_to_string(unary_op) + ')');
+    op->input().connect(dequant->output());
+
+    // quantize
+    auto quant = graph_.emplace<quantize>(dt_float32, op->output().shape(), output_type, qparam);
+    quant->name(op_name + "/quant");
+    quant->input().connect(op->output());
+
+    input_tensors_.emplace(&dequant->input(), input);
+    output_tensors_.emplace(output, &quant->output());
 }
 
 void onnx_importer::convert_op_Round(const onnx::NodeProto &node)
