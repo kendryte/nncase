@@ -56,34 +56,8 @@ namespace Nncase.IR.NN
           TensorType input, TensorType weights, TensorType bias,
           TensorType stride, TensorType padding, TensorType dilation, TensorType groups)
         {
-            var outshape = input.Shape.ToList();
-            outshape[1] = weights.Shape[0];
-            if (
-            context.GetArgument(this, Stride) is Const stride_con &&
-            context.GetArgument(this, Padding) is Const padding_con &&
-            context.GetArgument(this, Dilation) is Const dilation_con &&
-            context.GetArgument(this, Groups) is Const groups_con &&
-            input.Shape[2].IsFixed &&
-            input.Shape[3].IsFixed &&
-            weights.Shape[2].IsFixed &&
-            weights.Shape[3].IsFixed
-            )
-            {
-                var ts_stride = stride_con.ToTensor<int>();
-                var ts_padding = padding_con.ToTensor<int>();
-                var ts_dilation = dilation_con.ToTensor<int>();
-                var groups_v = groups_con.ToScalar<int>();
-
-                outshape[2] = GetWindowedOutputSize(input.Shape[2].FixedValue + ts_padding[0, 0] + ts_padding[0, 1],
-                  weights.Shape[2].FixedValue, ts_stride[0], ts_dilation[0], false);
-                outshape[3] = GetWindowedOutputSize(input.Shape[3].FixedValue + ts_padding[1, 0] + ts_padding[1, 1],
-                  weights.Shape[3].FixedValue, ts_stride[1], ts_dilation[1], false);
-            }
-            else
-            {
-                outshape[2] = outshape[3] = Dimension.Unknown;
-            }
-            return input with { Shape = new Shape(outshape) };
+            var args = context.GetArguments(this, Stride, Padding, Dilation, Groups);
+            return TypeInference.Conv2DType(input, weights, args[0], args[1], args[2], args[3]);
         }
     }
 }

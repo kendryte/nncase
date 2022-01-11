@@ -9,6 +9,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using NetFabric.Hyperlinq;
+using static Nncase.IR.Utility;
 
 namespace Nncase.IR
 {
@@ -54,6 +55,18 @@ namespace Nncase.IR
             };
         }
 
+        /// <summary>
+        /// Inference type of the expression tree.
+        /// </summary>
+        /// <param name="expr">Expression.</param>
+        /// <returns>Is fully inferenced.</returns>
+        public static bool InferenceType(this Expr expr)
+        {
+            var inferVisitor = new TypeInferenceVisitor();
+            inferVisitor.Visit(expr);
+            return inferVisitor.IsFullyInferenced;
+        }
+        
         /// <summary>
         /// Broadcast input shapes.
         /// </summary>
@@ -134,17 +147,40 @@ namespace Nncase.IR
 
             return new TensorType(dataType, new Shape(outputShape));
         }
-
+        
         /// <summary>
-        /// Inference type of the expression tree.
+        /// Conv2D Type Infer.
         /// </summary>
-        /// <param name="expr">Expression.</param>
-        /// <returns>Is fully inferenced.</returns>
-        public static bool InferenceType(this Expr expr)
+        public static IRType Conv2DType(TensorType input, TensorType weights, Expr stride, Expr padding, Expr dilation, Expr groups)
         {
-            var inferVisitor = new TypeInferenceVisitor();
-            inferVisitor.Visit(expr);
-            return inferVisitor.IsFullyInferenced;
+            var outShape = input.Shape.ToList();
+            outShape[1] = weights.Shape[0];
+            if (
+                stride is Const stride_con &&
+                padding is Const padding_con &&
+                dilation is Const dilation_con &&
+                groups is Const groups_con &&
+                input.Shape[2].IsFixed &&
+                input.Shape[3].IsFixed &&
+                weights.Shape[2].IsFixed &&
+                weights.Shape[3].IsFixed
+            )
+            {
+                var ts_stride = stride_con.ToTensor<int>();
+                var ts_padding = padding_con.ToTensor<int>();
+                var ts_dilation = dilation_con.ToTensor<int>();
+                var groups_v = groups_con.ToScalar<int>();
+
+                outShape[2] = GetWindowedOutputSize(input.Shape[2].FixedValue + ts_padding[0, 0] + ts_padding[0, 1],
+                    weights.Shape[2].FixedValue, ts_stride[0], ts_dilation[0], false);
+                outShape[3] = GetWindowedOutputSize(input.Shape[3].FixedValue + ts_padding[1, 0] + ts_padding[1, 1],
+                    weights.Shape[3].FixedValue, ts_stride[1], ts_dilation[1], false);
+            }
+            else
+            {
+                outShape[2] = outShape[3] = Dimension.Unknown;
+            }
+            return input with { Shape = new Shape(outShape) };
         }
     }
 }

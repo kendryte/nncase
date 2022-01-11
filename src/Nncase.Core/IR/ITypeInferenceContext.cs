@@ -23,6 +23,14 @@ namespace Nncase.IR
         Expr GetArgument(Op op, ParameterInfo parameter);
 
         /// <summary>
+        /// Get arguments expression.
+        /// </summary>
+        /// <param name="op">Operator.</param>
+        /// <param name="paramsInfo">ParamsInfo.</param>
+        /// <returns>The arguments expression.</returns>
+        Expr[] GetArguments(Op op, params ParameterInfo[] paramsInfo);
+        
+        /// <summary>
         /// Get argument type.
         /// </summary>
         /// <param name="op">Operator.</param>

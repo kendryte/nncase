@@ -35,6 +35,11 @@ namespace Nncase.IR
             }
         }
 
+        public Expr[] GetArguments(Op op, params ParameterInfo[] paramsInfo)
+        {
+            return paramsInfo.Select(info => GetArgument(op, info)).ToArray();
+        }
+        
         public IRType GetArgumentType(Op op, ParameterInfo parameter) =>
             _exprMemo[GetArgument(op, parameter)];
 

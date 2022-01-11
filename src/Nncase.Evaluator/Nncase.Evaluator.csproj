@@ -6,6 +6,7 @@
 
     <ItemGroup>
       <PackageReference Include="TorchSharp" Version="0.95.4" />
+      <PackageReference Include="libtorch-cpu" Version="1.10.0.1" />
       <PackageReference Include="SciSharp.TensorFlow.Redist" Version="2.7.0" />
       <PackageReference Include="TensorFlow.NET" Version="0.60.5" />
     </ItemGroup>
