@@ -38,15 +38,10 @@ protected:
 class NNCASE_API remove_concat_convert : public transform
 {
 public:
-    remove_concat_convert(datatype_t dt) noexcept
-        : quant_type_(dt) { }
     void process(transform_context &context) override;
 
 protected:
     bool skip_self_contained_check() const noexcept override { return true; }
     bool on_try_match(ir::node &node, transform_context &context) override;
-
-private:
-    datatype_t quant_type_;
 };
 }
