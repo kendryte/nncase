@@ -1,13 +1,6 @@
 // Copyright (c) Canaan Inc. All rights reserved.
 // Licensed under the Apache license. See LICENSE file in the project root for full license information.
 
-using System;
-using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-using NetFabric.Hyperlinq;
 using static Nncase.IR.Utility;
 
 namespace Nncase.IR.Tensors
@@ -26,26 +19,8 @@ namespace Nncase.IR.Tensors
         public IRType InferInvokeResultType(ITypeInferenceContext context, TensorType input, TensorType axis,
           TensorType initValue, TensorType keepDims)
         {
-            if (context.GetArgument(this, KeepDims) is Const keepDims_con &&
-                context.GetArgument(this, Axis) is Const axis_con)
-            {
-                // todo:refactor
-                var axes = axis_con.ToArray<int>();
-                var outshape = input.Shape.ToValueArray();
-                foreach (var a in axes)
-                {
-                    var ax = a < 0
-                        ? a + input.Shape.Rank
-                        : a;
-                    if (keepDims_con.ToScalar<int>() == 1)
-                        outshape[ax] = 1;
-                    else
-                    // todo: test
-                        outshape[ax] = 0;
-                }
-                return input with { Shape = new Shape(outshape.Where(x => x != -1)) };
-            }
-            return new InvalidType("Can't Infer Shape With Dynamic Input!");
+            var args = context.GetArguments(this, KeepDims, Axis);
+            return TypeInference.ReduceType(input, args[0], args[1]);
         }
     }
 }

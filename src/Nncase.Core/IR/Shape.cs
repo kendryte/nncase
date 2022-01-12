@@ -80,7 +80,7 @@ namespace Nncase.IR
             _hashcode = HashCode.Combine(StructuralComparisons.StructuralEqualityComparer.GetHashCode(_dimensions));
         }
 
-        public Shape(params int[] dimensions)
+        public Shape(params Dimension[] dimensions)
             : this(dimensions.AsValueEnumerable())
         { }
 

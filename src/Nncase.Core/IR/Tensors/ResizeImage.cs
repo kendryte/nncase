@@ -41,38 +41,8 @@ namespace Nncase.IR.Tensors
            TensorType input, TensorType new_size,
            TensorType align_corners, TensorType half_pixel_centers)
         {
-            var out_shape = input.Shape.ToArray();
-            if (context.GetArgument(this, NewSize) is Const new_size_con)
-            {
-                var ts_new_size = new_size_con.ToTensor<int>();
-                switch (out_shape.Length)
-                {
-                    case 2 or 3:
-                        out_shape[0] = ts_new_size[0];
-                        out_shape[1] = ts_new_size[1];
-                        break;
-                    case > 3:
-                        out_shape[^3] = ts_new_size[0];
-                        out_shape[^2] = ts_new_size[1];
-                        break;
-                }
-            }
-            else
-            {
-
-                switch (out_shape.Length)
-                {
-                    case 2 or 3:
-                        out_shape[0] = Dimension.Unknown;
-                        out_shape[1] = Dimension.Unknown;
-                        break;
-                    case > 3:
-                        out_shape[^3] = Dimension.Unknown;
-                        out_shape[^2] = Dimension.Unknown;
-                        break;
-                }
-            }
-            return input with { Shape = new Shape(out_shape) };
+            var newSize = context.GetArgument(this, NewSize);
+            return TypeInference.ResizeType(input,newSize);
         }
     }
 }

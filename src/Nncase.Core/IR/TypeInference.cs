@@ -156,8 +156,8 @@ namespace Nncase.IR
             var outShape = input.Shape.ToList();
             outShape[1] = weights.Shape[0];
             if (
-                stride is Const stride_con &&
-                padding is Const padding_con &&
+                stride is Const strideValue &&
+                padding is Const paddingValue &&
                 dilation is Const dilation_con &&
                 groups is Const groups_con &&
                 input.Shape[2].IsFixed &&
@@ -166,8 +166,8 @@ namespace Nncase.IR
                 weights.Shape[3].IsFixed
             )
             {
-                var ts_stride = stride_con.ToTensor<int>();
-                var ts_padding = padding_con.ToTensor<int>();
+                var ts_stride = strideValue.ToTensor<int>();
+                var ts_padding = paddingValue.ToTensor<int>();
                 var ts_dilation = dilation_con.ToTensor<int>();
                 var groups_v = groups_con.ToScalar<int>();
 
@@ -181,6 +181,140 @@ namespace Nncase.IR
                 outShape[2] = outShape[3] = Dimension.Unknown;
             }
             return input with { Shape = new Shape(outShape) };
+        }
+
+        /// <summary>
+        /// Pad Type Infer.
+        /// </summary>
+        public static IRType PadType(TensorType input, Expr pads)
+        {
+            if (pads is Const paddings)
+            {
+                var tpads = paddings.ToTensor<int>();
+                var newShape = input.Shape.ToList();
+                int channel = tpads.Dimensions[0];
+                for (int i = 0; i < channel; i++)
+                {
+                    newShape[newShape.Count - channel + i] += tpads[i, 0] + tpads[i, 1];
+                }
+                return new TensorType(input.DType, new Shape(newShape));
+            }
+            else
+            {
+                return new InvalidType("Pad paddings is dynamic, can't infer shape");
+            }
+        }
+
+        /// <summary>
+        /// ReduceWindow2D Type Infer.
+        /// </summary>
+        public static IRType ReduceWindow2DType(TensorType input, Expr filter, Expr stride, Expr padding, Expr ceilMode)
+        {
+            var outShape = input.Shape.ToList();
+            if (
+                filter is Const filterValue &&
+                stride is Const strideValue &&
+                padding is Const paddingValue &&
+                ceilMode is Const ceilModeValue
+            )
+            {
+                var ts_filter = filterValue.ToTensor<int>();
+                var ts_stride = strideValue.ToTensor<int>();
+                var ceilModeV = ceilModeValue.ToScalar<bool>();
+                var ts_padding = paddingValue.ToTensor<int>();
+                var padh = ts_padding[0, 0] + ts_padding[0, 1];
+                var padw = ts_padding[1, 0] + ts_padding[1, 1];
+                outShape[2] = input.Shape[2].IsUnknown ? Dimension.Unknown : GetWindowedOutputSize(input.Shape[2].FixedValue + padh, ts_filter[0], ts_stride[0], 1, false, ceilModeV);
+                outShape[3] = input.Shape[3].IsUnknown ? Dimension.Unknown : GetWindowedOutputSize(input.Shape[3].FixedValue + padw, ts_filter[1], ts_stride[1], 1, false, ceilModeV);
+
+                return input with { Shape = new Shape(outShape) };
+            }
+            return new InvalidType("Can't Infer Shape With Dynamic Input!");
+        }
+
+        /// <summary>
+        /// Reduce Type Infer.
+        /// </summary>
+        public static IRType ReduceType(TensorType input, Expr keepDims, Expr axis)
+        {
+            if (keepDims is Const keepDimsValue &&
+                axis is Const axisValue)
+            {
+                var axes = axisValue.ToArray<int>();
+                var outShape = input.Shape.ToValueArray();
+                foreach (var a in axes)
+                {
+                    var ax = Util.PositiveIndex(a, input);
+                    if (keepDimsValue.ToScalar<int>() == 1)
+                        outShape[ax] = 1;
+                    else
+                        // todo: test
+                        outShape[ax] = 0;
+                }
+                return input with { Shape = new Shape(outShape.Where(x => x != -1)) };
+            }
+            return new InvalidType("Can't Infer Shape With Dynamic Input!");
+        }
+
+        /// <summary>
+        /// Transpose Type Infer.
+        /// </summary>
+        public static IRType TransposeType(TensorType input, Expr perm)
+        {
+            if (perm is Const permValue)
+            {
+                if (input.Shape.IsUnranked)
+                {
+                    return new InvalidType("Transpose input should not be Unranked");
+                }
+                var permt = permValue.ToTensor<int>();
+                var inShape = input.Shape;
+                var outShape = inShape.ToArray();
+                foreach (var i in Enumerable.Range(0, inShape.Rank))
+                {
+                    outShape[i] = inShape[permt[i]];
+                }
+                return input with { Shape = outShape };
+            }
+            return input with { Shape = new Shape(Enumerable.Repeat(Dimension.Unknown, input.Shape.Rank)) };
+        }
+
+        /// <summary>
+        /// Resize Type Infer.
+        /// </summary>
+        public static IRType ResizeType(TensorType input, Expr newSize)
+        {
+            var out_shape = input.Shape.ToArray();
+            if (newSize is Const new_size_con)
+            {
+                var ts_new_size = new_size_con.ToTensor<int>();
+                switch (out_shape.Length)
+                {
+                    case 2 or 3:
+                        out_shape[0] = ts_new_size[0];
+                        out_shape[1] = ts_new_size[1];
+                        break;
+                    case > 3:
+                        out_shape[^3] = ts_new_size[0];
+                        out_shape[^2] = ts_new_size[1];
+                        break;
+                }
+            }
+            else
+            {
+                switch (out_shape.Length)
+                {
+                    case 2 or 3:
+                        out_shape[0] = Dimension.Unknown;
+                        out_shape[1] = Dimension.Unknown;
+                        break;
+                    case > 3:
+                        out_shape[^3] = Dimension.Unknown;
+                        out_shape[^2] = Dimension.Unknown;
+                        break;
+                }
+            }
+            return input with { Shape = new Shape(out_shape) };
         }
     }
 }
