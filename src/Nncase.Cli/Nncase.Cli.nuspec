@@ -16,5 +16,6 @@
   </metadata>
   <files>
      <file src="bin\$configuration$\net6.0\Nncase.*.dll" target="lib\net6.0" />
+     <file src="bin\$configuration$\net6.0\Nncase.*.xml" target="lib\net6.0" />
   </files>
 </package>
