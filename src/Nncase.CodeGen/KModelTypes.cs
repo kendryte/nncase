@@ -69,6 +69,7 @@ public struct SharedMempoolDesc
 [StructLayout(LayoutKind.Sequential)]
 public struct SectionHeader
 {
+    [MarshalAs(UnmanagedType.ByValArray, SizeConst = (int)ModelInfo.MAX_SECTION_NAME_LENGTH)]
     public char[] Name = new char[ModelInfo.MAX_SECTION_NAME_LENGTH];
     public uint Flags;
     public uint BodyStart;

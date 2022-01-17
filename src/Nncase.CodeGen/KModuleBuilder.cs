@@ -441,7 +441,7 @@ public abstract class BaseRTKModule : IRTModule
         foreach (var mem in _moduleResult.MaxUsages)
         {
             var desc = new MemPoolDesc { Location = mem.Key, Size = (uint)mem.Value };
-            writer.Write(CodeGenUtil.StructToBytes(desc));
+            writer.Write(CodeGenUtil.StructToBytes<MemPoolDesc>(desc));
         }
 
         // functions
@@ -471,7 +471,7 @@ public abstract class BaseRTKModule : IRTModule
 
             // Skip section sec_header
             var sec_header_pos = writer.BaseStream.Position;
-            writer.Seek(Marshal.SizeOf(sec_header), SeekOrigin.Current);
+            writer.Seek(Marshal.SizeOf<SectionHeader>(), SeekOrigin.Current);
 
             if (finded is false)
             {
@@ -482,7 +482,7 @@ public abstract class BaseRTKModule : IRTModule
             // write section sec_header
             var sec_end_pos = writer.BaseStream.Position;
             writer.Seek((int)sec_header_pos, SeekOrigin.Begin);
-            writer.Write(CodeGenUtil.StructToBytes(sec_header));
+            writer.Write(CodeGenUtil.StructToBytes<SectionHeader>(sec_header));
             writer.Seek((int)sec_end_pos, SeekOrigin.Begin);
         }
 
@@ -501,7 +501,7 @@ public abstract class BaseRTKModule : IRTModule
         header.Sections = (uint)_sectionWriters.Count;
         header.Reserved0 = 0;
         writer.Position(header_pos);
-        writer.Write(CodeGenUtil.StructToBytes(header));
+        writer.Write(CodeGenUtil.StructToBytes<ModuleHeader>(header));
         writer.Position(end_pos);
     }
 
@@ -543,12 +543,12 @@ public abstract class BaseRTKModule : IRTModule
         writer.Skip((ulong)Marshal.SizeOf<FunctionHeader>());
 
         // inputs
-        writer.Write(CodeGenUtil.StructToBytes(inputs));
+        foreach (var input in inputs) { writer.Write(CodeGenUtil.StructToBytes<Schedule.MemoryRange>(input)); }
         foreach (var shape in input_shapes)
             writeShape(shape);
 
         // outputs
-        writer.Write(CodeGenUtil.StructToBytes(outputs));
+        foreach (var output in outputs) { writer.Write(CodeGenUtil.StructToBytes<Schedule.MemoryRange>(output)); }
         foreach (var shape in output_shapes)
             writeShape(shape);
 
@@ -568,7 +568,7 @@ public abstract class BaseRTKModule : IRTModule
             TextSize = (uint)(_functionTextEnd[function_sched] - _entryPoints[function_sched]),
         };
         writer.Position(header_pos);
-        writer.Write(CodeGenUtil.StructToBytes(header));
+        writer.Write(CodeGenUtil.StructToBytes<FunctionHeader>(header));
         writer.Position(end_pos);
     }
 

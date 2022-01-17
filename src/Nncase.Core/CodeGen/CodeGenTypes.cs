@@ -20,11 +20,10 @@ namespace Nncase.CodeGen
     public static class ModelInfo
     {
         public static uint IDENTIFIER => BitConverter.ToUInt32(Encoding.UTF8.GetBytes("KDML"), 0);
-        public static uint VERSION = 5;
-
-        public static uint SECTION_MERGED_INTO_RDATA = 1;
-        public static uint MAX_SECTION_NAME_LENGTH = 16;
-        public static uint MAX_MODULE_TYPE_LENGTH = 16;
+        public const uint VERSION = 5;
+        public const uint SECTION_MERGED_INTO_RDATA = 1;
+        public const uint MAX_SECTION_NAME_LENGTH = 16;
+        public const uint MAX_MODULE_TYPE_LENGTH = 16;
     }
 
     /// <summary>
@@ -33,6 +32,7 @@ namespace Nncase.CodeGen
     [StructLayout(LayoutKind.Sequential)]
     public struct ModuleType
     {
+        [MarshalAs(UnmanagedType.ByValArray, SizeConst = (int)ModelInfo.MAX_MODULE_TYPE_LENGTH)]
         char[] Types = new char[ModelInfo.MAX_MODULE_TYPE_LENGTH];
 
         /// <summary>

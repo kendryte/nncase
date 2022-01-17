@@ -42,28 +42,28 @@ namespace Nncase.Evaluator.Ops
             var target = (Op)expr.Target;
             return GetEvaluator(target).Visit(_context, target);
         }
-
+        /// <inheritdoc/>
         public override Const VisitLeaf(Const expr)
         {
             return expr;
         }
-
+        /// <inheritdoc/>
         public override Const VisitLeaf(Op expr)
         {
             // todo:maybe a problem
             return Const.FromScalar(0);
         }
-
+        /// <inheritdoc/>
         public override Const VisitLeaf(Function expr)
         {
             return Const.FromScalar(0);
         }
-
+        /// <inheritdoc/>
         public override Const VisitLeaf(IR.Tuple expr)
         {
             return Const.FromScalar(0);
         }
-
+        /// <inheritdoc/>
         public override Const VisitLeaf(Var expr)
         {
             if (!_context.Inputs.TryGetValue(expr, out var result))

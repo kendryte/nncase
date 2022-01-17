@@ -7,8 +7,8 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using Nncase.IR.Math;
 using Nncase.IR;
+using Nncase.IR.Math;
 
 namespace Nncase.TIR
 {
@@ -17,7 +17,11 @@ namespace Nncase.TIR
     /// </summary>
     public static class ScriptPrinter
     {
-
+        /// <summary>
+        /// dump the ir as t script
+        /// </summary>
+        /// <param name="textWriter"></param>
+        /// <param name="expr"></param>
         static void DumpAsScript(TextWriter textWriter, Expr expr)
         {
             var visitor = new ScriptDumpVisitor(textWriter);
