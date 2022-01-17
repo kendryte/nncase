@@ -21,34 +21,42 @@ from onnx_test_runner import OnnxTestRunner
 import numpy as np
 import copy
 
-def _make_module(in_a_shape, in_b_shape):
+def _make_module(in_a_shape, in_b_shape, b_format):
     inputs = []
+    inputs_value_info = []
     outputs = []
+    outputs_value_info = []
     initializers = []
     attributes_dict = {}
     nodes = []
 
     # input A
-    input = helper.make_tensor_value_info('A', TensorProto.FLOAT, in_a_shape)
+    input_a = helper.make_tensor_value_info('A', TensorProto.FLOAT, in_a_shape)
     inputs.append('A')
+    inputs_value_info.append(input_a)
 
     # input B
-    B = helper.make_tensor(
-        'B',
-        TensorProto.FLOAT,
-        dims=in_b_shape,
-        vals=np.random.randn(*in_b_shape).astype(np.float32).flatten().tolist()
-    )
-    initializers.append(B)
-    inputs.append('B')
+    if b_format == 'constant':
+        B = helper.make_tensor(
+            'B',
+            TensorProto.FLOAT,
+            dims=in_b_shape,
+            vals=np.random.randn(*in_b_shape).astype(np.float32).flatten().tolist()
+        )
+        initializers.append(B)
+        inputs.append('B')
+    else:
+        input_b = helper.make_tensor_value_info('B', TensorProto.FLOAT, in_b_shape)
+        inputs.append('B')
+        inputs_value_info.append(input_b)
 
     # output
     data_a = np.ones(in_a_shape)
     data_b = np.ones(in_b_shape)
     out_shape = np.matmul(data_a, data_b).shape
-
     output = helper.make_tensor_value_info('output', TensorProto.FLOAT, out_shape)
     outputs.append('output')
+    outputs_value_info.append(output)
 
     node = onnx.helper.make_node(
         'MatMul',
@@ -61,8 +69,8 @@ def _make_module(in_a_shape, in_b_shape):
     graph_def = helper.make_graph(
         nodes,
         'test-model',
-        [input],
-        [output],
+        inputs_value_info,
+        outputs_value_info,
         initializer=initializers
     )
 
@@ -70,22 +78,51 @@ def _make_module(in_a_shape, in_b_shape):
 
     return model_def
 
-in_a_shapes = [
-    [16],
-    [12, 16],
-    [3, 12, 16],
-    [1, 3, 12, 16]
+
+in_shapes = [
+    [[6], [6]],
+    [[6], [6, 3]],
+    [[6], [1, 6, 3]],
+    [[6], [3, 6, 3]],
+    [[6], [2, 3, 6, 3]],
+
+    [[4, 6], [6]],
+    [[4, 6], [6, 3]],
+    [[4, 6], [1, 6, 3]],
+    [[4, 6], [3, 6, 3]],
+    [[4, 6], [2, 3, 6, 3]],
+
+    [[1, 4, 6], [6]],
+    [[1, 4, 6], [6, 3]],
+    [[1, 4, 6], [1, 6, 3]],
+    [[1, 4, 6], [3, 6, 3]],
+    [[1, 4, 6], [2, 3, 6, 3]],
+
+    [[3, 4, 6], [6]],
+    [[3, 4, 6], [6, 3]],
+    [[3, 4, 6], [1, 6, 3]],
+    [[3, 4, 6], [3, 6, 3]],
+    # we don't support such broadcast now
+    # [[3, 4, 6], [2, 3, 6, 3]],
+
+    [[2, 3, 4, 6], [6]],
+    [[2, 3, 4, 6], [6, 3]],
+    [[2, 3, 4, 6], [1, 6, 3]],
+    # we don't support such broadcast now
+    # [[2, 3, 4, 6], [3, 6, 3]],
+    [[2, 3, 4, 6], [2, 3, 6, 3]],
 ]
 
-in_b_shapes = [
-    [16],
-    [16, 14]
+b_formats = [
+    'constant',
+    'non_constant',
 ]
 
-@pytest.mark.parametrize('in_a_shape', in_a_shapes)
-@pytest.mark.parametrize('in_b_shape', in_b_shapes)
-def test_matmul(in_a_shape, in_b_shape, request):
-    model_def = _make_module(in_a_shape, in_b_shape)
+@pytest.mark.parametrize('in_shape', in_shapes)
+@pytest.mark.parametrize('b_format', b_formats)
+def test_matmul(in_shape, b_format, request):
+    in_a_shape, in_b_shape = in_shape
+    model_def = _make_module(in_a_shape, in_b_shape, b_format)
 
     runner = OnnxTestRunner(request.node.name)
     model_file = runner.from_onnx_helper(model_def)
