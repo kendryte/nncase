@@ -394,24 +394,26 @@ public abstract class BaseRTKModule : IRTModule
     }
     private void WriteSymbolRefs()
     {
-        var rdata_writer = _sectionWriters[".rdata"];
-        foreach (var section in _sectionWriters)
+        if (_sectionWriters.TryGetValue(".rdata", out var rdata_writer))
         {
-            foreach (var refs in section.Value.Writer.SymbolRefs)
+            foreach (var section in _sectionWriters)
             {
-                Span<byte> srcSpan;
-                if (_rdataSectionMerges.TryGetValue(section.Key, out var info))
+                foreach (var refs in section.Value.Writer.SymbolRefs)
                 {
-                    srcSpan = rdata_writer.Body.AsSpan((int)info.Start, (int)info.Size);
-                }
-                else
-                {
-                    srcSpan = section.Value.Body;
-                }
+                    Span<byte> srcSpan;
+                    if (_rdataSectionMerges.TryGetValue(section.Key, out var info))
+                    {
+                        srcSpan = rdata_writer.Body.AsSpan((int)info.Start, (int)info.Size);
+                    }
+                    else
+                    {
+                        srcSpan = section.Value.Body;
+                    }
 
-                var subSpan = srcSpan.Slice((int)refs.Streampos);
-                var bw = new BitWriter(subSpan, refs.Bitoffset);
-                bw.Write(_symbolOffsets[refs.Name].Offset, (int)refs.Length);
+                    var subSpan = srcSpan.Slice((int)refs.Streampos);
+                    var bw = new BitWriter(subSpan, refs.Bitoffset);
+                    bw.Write(_symbolOffsets[refs.Name].Offset, (int)refs.Length);
+                }
             }
         }
     }

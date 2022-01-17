@@ -23,6 +23,7 @@
         <dependency id="GiGraph.Dot" version="2.0.0" exclude="Build,Analyzers" />
         <dependency id="NetFabric.Hyperlinq" version="3.0.0-beta48" exclude="Build,Analyzers" />
         <dependency id="ValueTaskSupplement" version="1.1.0" exclude="Build,Analyzers" />
+        <dependency id="Microsoft.Toolkit.HighPerformance" version="7.1.1" exclude="Build,Analyzers" />
       </group>
     </dependencies>
   </metadata>
