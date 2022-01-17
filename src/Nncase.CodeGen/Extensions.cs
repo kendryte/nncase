@@ -20,6 +20,9 @@ public static class CodeGenExtension
     }
 }
 
+/// <summary>
+/// BinaryWriterExtension
+/// </summary>
 public static class BinaryWriterExtension
 {
     /// <summary>
@@ -44,17 +47,32 @@ public static class BinaryWriterExtension
         return 0;
     }
 
-
+    /// <summary>
+    /// get current position
+    /// </summary>
+    /// <param name="writer"></param>
+    /// <returns></returns>
     public static long Position(this BinaryWriter writer)
     {
         return writer.BaseStream.Position;
     }
 
+    /// <summary>
+    /// move the wirter to target position
+    /// </summary>
+    /// <param name="writer"></param>
+    /// <param name="pos"></param>
+    /// <returns></returns>
     public static long Position(this BinaryWriter writer, long pos)
     {
         return writer.Seek((int)pos, SeekOrigin.Begin);
     }
 
+    /// <summary>
+    /// skip the length
+    /// </summary>
+    /// <param name="writer"></param>
+    /// <param name="len"></param>
     public static void Skip(this BinaryWriter writer, ulong len)
     {
         writer.Seek((int)len, SeekOrigin.Current);

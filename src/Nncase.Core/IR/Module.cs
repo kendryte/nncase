@@ -16,7 +16,7 @@ namespace Nncase.IR
     public sealed class IRModule
     {
         private List<Function> _functions;
-        
+
         /// <summary>
         /// the index of the entry function.
         /// </summary>
@@ -33,6 +33,9 @@ namespace Nncase.IR
             _entryIndex = 0;
         }
 
+        /// <summary>
+        /// the default IrModule ctor
+        /// </summary>
         public IRModule()
         {
             _functions = new();

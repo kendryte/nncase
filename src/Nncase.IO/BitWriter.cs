@@ -6,12 +6,20 @@ using System.Text;
 
 namespace Nncase.IO
 {
+    /// <summary>
+    /// the bit writer
+    /// </summary>
     public ref struct BitWriter
     {
         Span<byte> _data;
         ulong _buffer;
         ulong _avail;
 
+        /// <summary>
+        /// ctor
+        /// </summary>
+        /// <param name="data"> the ouput stream.</param>
+        /// <param name="bitoffset">start bit offset.</param>
         public BitWriter(Span<byte> data, ulong bitoffset = 0)
         {
             _data = data;

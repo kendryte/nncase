@@ -11,6 +11,9 @@ using Nncase.TIR;
 namespace Nncase.CodeGen;
 
 
+/// <summary>
+/// the kmodule Serialized result
+/// </summary>
 public class KModuleSerializeResult : ISerializeResult
 {
     public uint Alignment;
@@ -20,6 +23,9 @@ public class KModuleSerializeResult : ISerializeResult
     }
 }
 
+/// <summary>
+/// the kmodel Serialized result
+/// </summary>
 public class KModelSerializeResult : ISerializeResult
 {
     public int ModelSize;
@@ -29,6 +35,9 @@ public class KModelSerializeResult : ISerializeResult
     }
 }
 
+/// <summary>
+/// the kmodel format runtime model
+/// </summary>
 public class RTKModel : IRTModel
 {
 
@@ -37,6 +46,11 @@ public class RTKModel : IRTModel
     bool isSerialized;
     KModelSerializeResult serializeResult;
 
+    /// <summary>
+    /// create the kmodel
+    /// </summary>
+    /// <param name="result"></param>
+    /// <param name="target"></param>
     public RTKModel(Schedule.SchedModelResult result, ITarget target)
     {
         Target = target;
@@ -47,22 +61,25 @@ public class RTKModel : IRTModel
         isSerialized = false;
         serializeResult = new(0);
     }
-
+    /// <inheritdoc/>
     public ITarget Target { get; set; }
+    /// <inheritdoc/>
     public Schedule.SchedModelResult modelResult { get; set; }
+    /// <inheritdoc/>
     public string Source { get; set; }
+    /// <inheritdoc/>
     public string SourceExt { get => "kmodel"; set { } }
-
+    /// <inheritdoc/>
     public IRTFunction? Entry { get; set; }
-
+    /// <inheritdoc/>
     public IReadOnlyList<IRTModule> Modules => modules;
-
+    /// <inheritdoc/>
     public void Dump(string name, string dumpDirPath)
     {
         if (isSerialized)
             File.Copy(sourcePath, Path.Combine(dumpDirPath, $"{name}.{SourceExt}"));
     }
-
+    /// <inheritdoc/>
     public object? Invoke(params object?[]? args)
     {
         throw new NotImplementedException();
@@ -123,25 +140,4 @@ public class RTKModel : IRTModel
         serializeResult.ModelSize = ((int)(end_pos - begin_pos));
         return serializeResult;
     }
-
-
 }
-
-// public class StackVMRTModule : IRTModule
-// {
-//     public ModuleType ModuleType { get; set; }
-//     public string Source { get; set; }
-//     public string SourceExt { get; set; }
-
-//     public IReadOnlyList<IRTFunction> Functions;
-
-//     public void Dump(string name, string dumpDirPath)
-//     {
-//         throw new NotImplementedException();
-//     }
-
-//     public ISerializeResult Serialize()
-//     {
-//         throw new NotImplementedException();
-//     }
-// }

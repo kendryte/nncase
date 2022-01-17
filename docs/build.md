@@ -61,7 +61,11 @@
 ```sh
 rm -rf ~/.nuget/packages/nncase.cli # clean cache
 cd src/Nncase.Cli
-dotnet pack -c Release # Debug
+dotnet pack -c Release -p:NuspecFile=Nncase.Cli.nuspec
+```
+如果你需要调试当前包,则使用如下命令(同时调试器修改选项`"suppressJITOptimizations": true`):
+```sh
+dotnet pack -c Debug -p:NuspecFile=Nncase.Cli.Symbols.nuspec
 ```
 
 如果本地安装nncase包，需要在目标项目根目录下添加`NuGet.Config`文件配置`Nuget`源

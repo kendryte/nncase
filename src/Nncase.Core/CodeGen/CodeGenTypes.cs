@@ -35,6 +35,11 @@ namespace Nncase.CodeGen
     {
         char[] Types = new char[ModelInfo.MAX_MODULE_TYPE_LENGTH];
 
+        /// <summary>
+        /// create the modult type by name
+        /// </summary>
+        /// <param name="name"></param>
+        /// <returns></returns>
         public static ModuleType Create(string name)
         {
             var mt = new ModuleType();
@@ -168,23 +173,5 @@ namespace Nncase.CodeGen
         /// get the all runtime function
         /// </summary>
         public IReadOnlyList<IRTModule> Modules { get; }
-    }
-
-    /// <summary>
-    /// The Module Builder
-    /// we can directly builder a RTModule
-    /// <example>
-    /// k510/stackvm/netural
-    /// </example>
-    /// </summary>
-    public interface IModuleBuilder
-    {
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="schedModule"></param>
-        /// <param name="target"></param>
-        /// <returns></returns>
-        public IRTModule Build(Schedule.SchedModuleResult schedModule, ITarget target);
     }
 }

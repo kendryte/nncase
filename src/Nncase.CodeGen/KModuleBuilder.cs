@@ -7,29 +7,61 @@ using Nncase.IO;
 
 namespace Nncase.CodeGen;
 
-
-public interface SectionDecompiler
+/// <summary>
+/// the section decompiler
+/// </summary>
+public interface ISectionDecompiler
 {
+    /// <summary>
+    /// need impl by sub class
+    /// </summary>
+    /// <param name="input"></param>
+    /// <param name="symbols"></param>
+    /// <param name="ostream"></param>
     void Decompile(ReadOnlySpan<byte> input, ReadOnlySpan<Symbol> symbols, Stream ostream);
 }
 
+/// <summary>
+/// save the funtion index
+/// </summary>
 public struct FunctionCallId
 {
+    /// <summary>
+    /// module index
+    /// </summary>
     public int ModuleId;
+    /// <summary>
+    /// function index
+    /// </summary>
     public int FunctionId;
 }
 
 /// <summary>
-/// the kmodel's module define
+/// the kmodel's module base class define
 /// </summary>
 public abstract class BaseRTKModule : IRTModule
 {
 
+    /// <summary>
+    /// each kmodule have one or more scetion
+    /// </summary>
     protected class Section
     {
+        /// <summary>
+        /// writer
+        /// </summary>
         public readonly SectionWriter Writer;
+        /// <summary>
+        /// the contents
+        /// </summary>
         public readonly MemoryStream Output;
+        /// <summary>
+        /// the byte of contents
+        /// </summary>
         public byte[] Body;
+        /// <summary>
+        /// builder
+        /// </summary>
         public Section()
         {
             Output = new();
@@ -38,33 +70,59 @@ public abstract class BaseRTKModule : IRTModule
         }
     };
 
+    /// <summary>
+    /// merge info
+    /// </summary>
     protected struct RdataMergeInfo
     {
+        /// <summary>
+        /// start index
+        /// </summary>
         public ulong Start;
+        /// <summary>
+        /// length
+        /// </summary>
         public ulong Size;
     }
 
-
-    public BaseRTKModule(uint alignment, string module_name,
-             Schedule.SchedModuleResult ModuleResult,
+    /// <summary>
+    /// builder
+    /// </summary>
+    /// <param name="ModuleResult"></param>
+    /// <param name="modelResult"></param>
+    public BaseRTKModule(Schedule.SchedModuleResult ModuleResult,
             Schedule.SchedModelResult modelResult)
     {
-        _alignment = alignment;
-        _moduleName = module_name;
         _modelResult = modelResult;
         _moduleResult = ModuleResult;
+        _currentFunction = modelResult.Entry!;
+        _symbolOffsets = new();
+        _entryPoints = new();
+        _functionTextEnd = new();
     }
 
-    public uint Alignment => _alignment;
+    /// <summary>
+    /// get the Alignment
+    /// </summary>
+    public abstract uint Alignment { get; }
 
     // todo public void config_dump(const std::filesystem::path &dump_dir, bool dump_asm); 
-    public void Build(BinaryWriter writer) { }
 
+    /// <summary>
+    /// allocation buffer for node, just get it from sched result.
+    /// </summary>
+    /// <param name="conn"></param>
+    /// <returns></returns>
     public Schedule.BufferAllocation Allocation(IR.Expr conn)
     {
         return _moduleResult.Allocations[conn];
     }
 
+    /// <summary>
+    /// get max mem usage
+    /// </summary>
+    /// <param name="location"></param>
+    /// <returns></returns>
     public ulong MaxUsage(Schedule.MemoryLocation location)
     {
         if (_moduleResult.MaxUsages.TryGetValue(location, out var value))
@@ -74,6 +132,11 @@ public abstract class BaseRTKModule : IRTModule
         return 0;
     }
 
+    /// <summary>
+    /// give the section name get the writer
+    /// </summary>
+    /// <param name="section_name"></param>
+    /// <returns></returns>
     public SectionWriter Writer(string section_name)
     {
         if (!_sectionWriters.TryGetValue(section_name, out var section))
@@ -84,13 +147,29 @@ public abstract class BaseRTKModule : IRTModule
         return section.Writer;
     }
 
-    public ModuleType ModuleType { get; set; }
+    /// <inheritdoc/>
+    public abstract ModuleType ModuleType { get; set; }
+    /// <summary>
+    /// the module verison
+    /// </summary>
     public abstract uint ModuleVersion { get; }
-    public abstract string Source { get; set; }
-    public abstract string SourceExt { get; set; }
+    /// <inheritdoc/>
+    public string Source { get; set; } = string.Empty;
+    /// <inheritdoc/>
+    public string SourceExt { get => "kmodule"; set { } }
+    /// <inheritdoc/>
     public abstract IReadOnlyList<IRTFunction> Functions { get; }
-
-    public abstract SectionDecompiler CreateDecompiler(string section_name);
+    /// <summary>
+    /// get the Decompiler
+    /// </summary>
+    /// <param name="section_name"></param>
+    /// <returns></returns>
+    public abstract ISectionDecompiler GetDecompiler(string section_name);
+    /// <summary>
+    /// get section by name
+    /// </summary>
+    /// <param name="section_name"></param>
+    /// <returns></returns>
     protected Section? FindSection(string section_name)
     {
         if (!_sectionWriters.TryGetValue(section_name, out var section))
@@ -99,7 +178,22 @@ public abstract class BaseRTKModule : IRTModule
         }
         return section;
     }
-    protected void MergeToRdataSection(string from) { }
+
+    /// <summary>
+    /// merget rdata section
+    /// </summary>
+    /// <param name="from"></param>
+    protected void MergeToRdataSection(string from)
+    {
+        _rdataSectionMerges.Add(from, new());
+    }
+
+    /// <summary>
+    /// get current function id.
+    /// </summary>
+    /// <param name="expr"></param>
+    /// <returns></returns>
+    /// <exception cref="InvalidProgramException"></exception>
     protected FunctionCallId FunctionId(IR.Expr expr)
     {
         for (int i = 0; i < _modelResult.Modules.Count; i++)
@@ -113,24 +207,60 @@ public abstract class BaseRTKModule : IRTModule
         }
         throw new InvalidProgramException("Can't find expr in modules");
     }
+
+    /// <summary>
+    /// seth the entry function start pos 
+    /// </summary>
+    /// <param name="pos"></param>
     protected void SetCurrentEntryPoint(long pos)
     {
         _entryPoints[_currentFunction] = (ulong)pos;
     }
+
+    /// <summary>
+    /// set the current function end pos
+    /// </summary>
+    /// <param name="pos"></param>
     protected void SetCurrentFunctionTextEnd(long pos)
     {
         _functionTextEnd[_currentFunction] = (ulong)pos;
     }
 
-    // for each module custom implment
+    /// <summary>
+    /// the callback BeginEmitModule
+    /// </summary>
     protected abstract void BeginEmitModule();
+    /// <summary>
+    /// the callback BeginEmit func
+    /// </summary>
+    /// <param name="function"></param>
     protected abstract void BeginEmitFunction(Schedule.SchedFunctionResult function);
+    /// <summary>
+    /// the call back end emit func
+    /// </summary>
+    /// <param name="function"></param>
     protected abstract void EndEmitFunction(Schedule.SchedFunctionResult function);
-    protected abstract void Emit(IR.Expr node);
+    /// <summary>
+    /// the emit 
+    /// </summary>
+    /// <param name="node"></param>
+    protected abstract void Emit(IR.Function node);
+    /// <summary>
+    /// the call back end emit module 
+    /// </summary>
     protected abstract void EndEmitModule();
 
+    /// <summary>
+    /// get the code section writer
+    /// </summary>
+    protected abstract SectionWriter TextWriter { get; }
 
+
+    /// <summary>
+    /// the dict contains the expr type which can not emit to binary.
+    /// </summary>
     protected static HashSet<RuntimeTypeHandle> s_nonRuntimeOps = new() { typeof(IR.Var).TypeHandle };
+
     private List<IR.Expr> GenerateCurrentRuntimeOps()
     {
         List<IR.Expr> runtime_ops = new();
@@ -149,12 +279,8 @@ public abstract class BaseRTKModule : IRTModule
         foreach (var func_sched in _moduleResult.Functions)
         {
             _currentFunction = func_sched;
-            var runtime_ops = GenerateCurrentRuntimeOps();
             BeginEmitFunction(_currentFunction);
-            foreach (var item in runtime_ops)
-            {
-                Emit(item);
-            }
+            Emit(_currentFunction.Function);
             EndEmitFunction(_currentFunction);
 
             if (!_entryPoints.ContainsKey(_currentFunction))
@@ -173,7 +299,7 @@ public abstract class BaseRTKModule : IRTModule
 
     private void Decompile(string stage, string section_name, ReadOnlySpan<byte> input, ReadOnlySpan<Symbol> symbols)
     {
-        if (CreateDecompiler(section_name) is var decompiler && decompiler is not null)
+        if (GetDecompiler(section_name) is var decompiler && decompiler is not null)
         {
             var ostream = new MemoryStream();
             decompiler.Decompile(input, symbols, ostream);
@@ -212,7 +338,7 @@ public abstract class BaseRTKModule : IRTModule
             {
                 if (_sectionWriters.TryGetValue(merge_p.Key, out var section))
                 {
-                    rdata_writer.AlignPosition(_alignment);
+                    rdata_writer.AlignPosition(Alignment);
                     var start = rdata_writer.BaseStream.Position;
                     rdata_writer.Write(section.Output.ToArray());
                     var size = rdata_writer.BaseStream.Position - start;
@@ -347,7 +473,7 @@ public abstract class BaseRTKModule : IRTModule
 
             if (finded is false)
             {
-                sec_header.BodyStart = (uint)writer.AlignPosition(_alignment);
+                sec_header.BodyStart = (uint)writer.AlignPosition(Alignment);
                 writer.Write(section.Value.Body);// write content
             }
 
@@ -444,11 +570,30 @@ public abstract class BaseRTKModule : IRTModule
         writer.Position(end_pos);
     }
 
-    public abstract void Dump(string name, string dumpDirPath);
-    public abstract ISerializeResult Serialize();
+    /// <inheritdoc/>
+    public void Dump(string name, string dumpDirPath)
+    {
+        if (!_isSerialized) Serialize();
+        File.Copy(_sourcePath, Path.Join(dumpDirPath, name + '.' + SourceExt));
+    }
+    /// <inheritdoc/>
+    public ISerializeResult Serialize()
+    {
+        if (!_isSerialized)
+        {
+            _sourcePath = CodeGenUtil.GetTempFileName(SourceExt);
+            using var f = new FileStream(_sourcePath, FileMode.OpenOrCreate, FileAccess.ReadWrite);
+            using var bw = new BinaryWriter(f, Encoding.Default, true);
+            Compile();
+            Link();
+            WriteBinary(bw);
+            _isSerialized = true;
+        }
+        return new KModuleSerializeResult(Alignment);
+    }
 
-    private uint _alignment;
-    private string _moduleName;
+    private bool _isSerialized = false;
+    private string _sourcePath = string.Empty;
     private readonly Schedule.SchedModelResult _modelResult;
     private readonly Schedule.SchedModuleResult _moduleResult;
     private Schedule.SchedFunctionResult _currentFunction;

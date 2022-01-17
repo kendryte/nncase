@@ -18,6 +18,9 @@ namespace Nncase
 
         /// <summary>
         /// get the target kind.
+        /// <remarks>
+        /// we use the kind find the 
+        /// </remarks>
         /// </summary>
         public string Kind { get; set; }
 
@@ -34,19 +37,19 @@ namespace Nncase
         /// <summary>
         /// config the options
         /// </summary>
-        public void ConfigOptions();
+        public abstract void ConfigOptions();
 
         /// <summary>
         /// config the attrs
         /// </summary>
-        public void ConfigAttrs();
+        public abstract void ConfigAttrs();
 
         /// <summary>
         /// get the current target schedule
         /// </summary>
         /// <param name="main_module"></param>
         /// <returns></returns>
-        public IScheduler CreateScheduler(IR.IRModule main_module);
+        public abstract IScheduler CreateScheduler(IR.IRModule main_module);
 
         /// <summary>
         /// create the target runtime model. 
@@ -58,10 +61,9 @@ namespace Nncase
         public CodeGen.IRTModel CreateRTModel(Schedule.SchedModelResult result);
 
         /// <summary>
-        /// create the target runtime module
-        /// <example>
-        /// we will have k510/stackvm/k210 module.
-        /// </example>
+        /// create the target runtime module, we will call this method when build rtmodel.
+        /// if you have the cross-architecture model, you can overvide this module, 
+        /// eg. the k510/stackvm/k210 subclass from kmodelTarget,
         /// </summary>
         /// <returns> the module builder. </returns>
         public abstract CodeGen.IRTModule CreateRTModule(

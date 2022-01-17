@@ -15,11 +15,6 @@ public class CSourceScheduler : IScheduler
 
     public SchedModelResult Schedule(bool skip_buffer_alias = false)
     {
-        return new SchedModelResult()
-        {
-            ParentModule = this.ParentModule,
-            Modules = new(),
-            Entry = new(),
-        };
+        return new SchedModelResult(this.ParentModule);
     }
 }

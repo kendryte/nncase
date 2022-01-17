@@ -10,13 +10,21 @@ using System.Threading.Tasks;
 namespace Nncase.IR
 {
 
+    /// <summary>
+    /// the ref comparer for the record, becase the record default compare by value
+    /// when we visit expr Dag, it's will skip same value but different expr. 
+    /// so the ref comparer is important for visitor. 
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
     public class RecordRefComparer<T> : IEqualityComparer<T>
     {
+        /// <inheritdoc/>
         bool IEqualityComparer<T>.Equals(T? x, T? y)
         {
             return object.ReferenceEquals(x, y);
         }
 
+        /// <inheritdoc/>
         int IEqualityComparer<T>.GetHashCode(T obj)
         {
             return System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(obj);
