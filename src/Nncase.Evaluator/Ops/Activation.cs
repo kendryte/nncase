@@ -1,57 +1,70 @@
-using System;
-using System.Linq;
-using NetFabric.Hyperlinq;
-using Nncase.IR.Math;
+using Nncase.IR;
 using Nncase.IR.NN;
-using Nncase.IR.Tensors;
-using TorchSharp;
-
 using torchF = TorchSharp.torch.nn.functional;
+
 namespace Nncase.Evaluator.Ops
 {
-    public sealed partial class EvaluatorVisitor
+    public class CeluEvaluator : IEvaluator<Celu>
     {
-        private torch.Tensor VisitCelu(Celu celu)
+        public static Const Visit(EvaluatorContext context, Celu celu)
         {
-            var input = _context.GetTorchArgument(celu, Celu.Input);
-            return input.celu();
+            var input = context.GetTorchArgument(celu, Celu.Input);
+            return input.celu().ToConst();
         }
-        
-        private torch.Tensor VisitElu(Elu elu)
-        {
-            var input = _context.GetTorchArgument(elu, Elu.Input);
-            var alpha = _context.GetArgumentConst(elu, Elu.Alpha).ToScalar<double>();
-            return torchF.elu(input, alpha);
-        }
+    }
 
-        private torch.Tensor VisitHardSwish(HardSwish hardSwish)
+    public class EluEvaluator : IEvaluator<Elu>
+    {
+        public static Const Visit(EvaluatorContext context, Elu elu)
         {
-            var input = _context.GetTorchArgument(hardSwish, HardSwish.Input);
-            return input.hardswish();
+            var input = context.GetTorchArgument(elu, Elu.Input);
+            var alpha = context.GetArgumentConst(elu, Elu.Alpha).ToScalar<double>();
+            return torchF.elu(input, alpha).ToConst();
         }
+    }
 
-        private torch.Tensor VisitLeakyRelu(LeakyRelu leakyRelu)
+    public class HardSwishEvaluator : IEvaluator<HardSwish>
+    {
+        public static Const Visit(EvaluatorContext context, HardSwish hardSwish)
         {
-            var input = _context.GetTorchArgument(leakyRelu, LeakyRelu.Input);
-            return input.leaky_relu(0.01);
+            var input = context.GetTorchArgument(hardSwish, HardSwish.Input);
+            return input.hardswish().ToConst();
         }
-        
-        private torch.Tensor VisitRelu(Relu relu)
+    }
+
+    public class LeakyReluEvaluator : IEvaluator<LeakyRelu>
+    {
+        public static Const Visit(EvaluatorContext context, LeakyRelu leakyRelu)
         {
-            var input = _context.GetTorchArgument(relu, Relu.Input);
-            return input.relu();
+            var input = context.GetTorchArgument(leakyRelu, LeakyRelu.Input);
+            return input.leaky_relu(0.01).ToConst();
         }
-        
-        private torch.Tensor VisitSelu(Selu selu)
+    }
+
+    public class ReluEvaluator : IEvaluator<Relu>
+    {
+        public static Const Visit(EvaluatorContext context, Relu relu)
         {
-            var input = _context.GetTorchArgument(selu, Selu.Input);
-            return input.selu();
+            var input = context.GetTorchArgument(relu, Relu.Input);
+            return input.relu().ToConst();
         }
-        
-        private torch.Tensor VisitSigmoid(Sigmoid sigmoid)
+    }
+
+    public class SeluEvaluator : IEvaluator<Selu>
+    {
+        public static Const Visit(EvaluatorContext context, Selu selu)
         {
-            var input = _context.GetTorchArgument(sigmoid, Sigmoid.Input);
-            return input.sigmoid();
+            var input = context.GetTorchArgument(selu, Selu.Input);
+            return input.selu().ToConst();
+        }
+    }
+
+    public class SigmoidEvaluator : IEvaluator<Sigmoid>
+    {
+        public static Const Visit(EvaluatorContext context, Sigmoid sigmoid)
+        {
+            var input = context.GetTorchArgument(sigmoid, Sigmoid.Input);
+            return input.sigmoid().ToConst();
         }
     }
 }

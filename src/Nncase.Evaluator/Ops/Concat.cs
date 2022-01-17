@@ -4,21 +4,22 @@ using NetFabric.Hyperlinq;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
 using TorchSharp;
+using Nncase.IR;
 
 using torchF = TorchSharp.torch.nn.functional;
 namespace Nncase.Evaluator.Ops
 {
-    public sealed partial class EvaluatorVisitor
+    public class ConcatEvaluator : IEvaluator<Concat>
     {
-        private torch.Tensor VisitConcat(Concat cat)
+        public static Const Visit(EvaluatorContext context, Concat cat)
         {
-            var inputs = _context.GetArgumentExpr(cat, Concat.Input);
-            var axis = _context.GetArgumentConst(cat, Concat.Axis).ToScalar<int>();
-            var inputTensors = (inputs as IR.Tuple).Select(x => expandDim(_context.GetTorchArgument(x))).ToArray();
-            return torch.cat(inputTensors, axis);
+            var inputs = context.GetArgumentExpr(cat, Concat.Input);
+            var axis = context.GetArgumentConst(cat, Concat.Axis).ToScalar<int>();
+            var inputTensors = (inputs as IR.Tuple).Select(x => expandDim(context.GetTorchArgument(x))).ToArray();
+            return torch.cat(inputTensors, axis).ToConst();
         }
 
-        internal torch.Tensor expandDim(torch.Tensor tensor)
+        internal static torch.Tensor expandDim(torch.Tensor tensor)
         {
             if (!tensor.shape.Any())
                 return tensor.view(new long[] { 1 });

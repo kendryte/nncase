@@ -2,11 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.Collections;
 using System.Linq;
+using Autofac;
+using Autofac.Core;
 using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.NN;
 using Nncase.IR.Tensors;
 using TorchSharp;
+using Nncase.IR;
 
 
 namespace Nncase.Evaluator.Ops
@@ -113,67 +116,14 @@ namespace Nncase.Evaluator.Ops
         public override Const VisitLeaf(Call expr)
         {
             _context.CurrentCall = expr;
-            var result = expr.Target switch
+            var target = expr.Target;
+            var o = Evaluator.Container.Resolve(typeof(IEvaluator<>).MakeGenericType(target.GetType()));
+            var method = o.GetType().GetMethod("Visit");
+            if (method == null)
             {
-                // todo:reflect to visit f
-                // BatchNormalization b => VisitBatchNormalization(b),
-                Binary bn => VisitBinary(bn),
-                Broadcast b => VisitBroadcast(b),
-                Cast ct => VisitCast(ct),
-                Celu c => VisitCelu(c),
-                Concat con => VisitConcat(con),
-                Conv2D conv => VisitConv2D(conv),
-                Elu e => VisitElu(e),
-                Expand e => VisitExpand(e),
-                Flatten f => VisitFlatten(f),
-                HardSwish h => VisitHardSwish(h),
-                InstanceNormalization i => VisitInstanceNormalization(i),
-                LeakyRelu l => VisitLeakyRelu(l),
-                LogSoftMax l => VisitLogSoftMax(l),
-                LRN l => VisitLRN(l),
-                MatMul m => VisitMatMul(m),
-                Prod p => VisitProd(p),
-                IR.Tensors.Range r => VisitRange(r),
-                ReduceArg r => VisitReduceArg(r),
-                ReduceWindow2D r => VisitReduceWindow2D(r),
-                Relu r => VisitRelu(r),
-                Reshape rs => VisitReshape(rs),
-                Selu s => VisitSelu(s),
-                ShapeOp sp => VisitShape(sp),
-                Sigmoid s => VisitSigmoid(s),
-                Size s => VisitSize(s),
-                Slice sl => VisitSlice(sl),
-                SoftMax s => VisitSoftMax(s),
-                SoftPlus s => VisitSoftPlus(s),
-                IR.Tensors.Stack st => VisitStack(st),
-                Transpose tr => VisitTranspose(tr),
-                Unary un => VisitUnary(un),
-                Clamp cl => VisitClamp(cl),
-                _ => TFOps(expr.Target)
-            };
-            return _fixShape(expr, result).ToConst();
-        }
-
-        private torch.Tensor TFOps(Expr target)
-        {
-            var result = target switch
-            {
-                // BatchNormalization b => VisitBatchNormalization(b),
-                CumSum c => VisitCumSum(c),
-                // Conv2DTranspose c => VisitConv2DTranspose(c),
-                Gather g => VisitGather(g),
-                GatherND g => VisitGatherND(g),
-                OneHot o => VisitOneHot(o),
-                Pad pd => VisitPad(pd),
-                RandomNormal r => VisitRandomNormal(r),
-                Reduce r => VisitReduce(r),
-                ReverseSequence r => VisitReverseSequence(r),
-                Squeeze s => VisitSqueeze(s),
-                SoftSign s => VisitSoftSign(s),
-                UnSqueeze u => VisitUnSqueeze(u),
-                _ => throw new NotImplementedException($"{target}")
-            };
-            return result.ToConst().ToTorchTensor();
+                throw new NotSupportedException($"Evaluator {target} not implement or no method visit");
+            }
+            return (Const)method.Invoke(null, new object[] {_context, target});
         }
 
         public override Const VisitLeaf(Const expr)

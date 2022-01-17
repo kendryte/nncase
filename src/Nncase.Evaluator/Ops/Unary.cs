@@ -1,16 +1,17 @@
 using System;
 using Nncase.IR.Math;
 using TorchSharp;
+using Nncase.IR;
 
 using torchF = TorchSharp.torch.nn.functional;
 namespace Nncase.Evaluator.Ops
 {
-    public sealed partial class EvaluatorVisitor
+    public class UnaryEvaluator : IEvaluator<Unary>
     {
-        private torch.Tensor VisitUnary(Unary unary)
+        public static Const Visit(EvaluatorContext context, Unary unary)
         {
-            var i = _context.GetTorchArgument(unary, Unary.Input);
-            return unary.UnaryOp switch
+            var i = context.GetTorchArgument(unary, Unary.Input);
+            var result = unary.UnaryOp switch
             {
                 UnaryOp.Abs => torch.abs(i),
                 UnaryOp.Acos => torch.acos(i),
@@ -36,6 +37,7 @@ namespace Nncase.Evaluator.Ops
                 UnaryOp.LogicalNot => torch.logical_not(i),
                 _ => throw new ArgumentOutOfRangeException()
             };
+            return result.ToConst();
         }
     }
 }

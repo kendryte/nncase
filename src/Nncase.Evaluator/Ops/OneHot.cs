@@ -5,13 +5,14 @@ using Nncase.IR.Tensors;
 using Tensorflow;
 using Tensorflow.NumPy;
 using static Tensorflow.Binding;
+using Nncase.IR;
 
 using torchF = TorchSharp.torch.nn.functional;
 namespace Nncase.Evaluator.Ops
 {
-    public sealed partial class EvaluatorVisitor
+    public class OneHotEvaluator : IEvaluator<OneHot>
     {
-        private static Tensor one_hot(
+        internal static Tensor one_hot(
             Tensor indices,
             Tensor depth,
             Tensor on_value = null,
@@ -39,22 +40,22 @@ namespace Nncase.Evaluator.Ops
             }));
         }
 
-        private Tensorflow.Tensor VisitOneHot(OneHot oneHot)
+        private Const Visit(EvaluatorContext context, OneHot oneHot)
         {
-            var depth = _context.GetArgumentConstScalar<int>(oneHot, OneHot.Depth);
-            var rawIndices = _context.GetTFArgument(oneHot, OneHot.Indices);
+            var depth = context.GetArgumentConstScalar<int>(oneHot, OneHot.Depth);
+            var rawIndices = context.GetTFArgument(oneHot, OneHot.Indices);
             var afterIndices = rawIndices.ToConst().ToArray<int>().Select(x => x < 0 ? x + depth : x).ToArray();
             var indices = new NDArray(afterIndices, rawIndices.shape);
-            var onValue = _context.GetTFArgument(oneHot, OneHot.OnValue);
-            var offValue = _context.GetTFArgument(oneHot, OneHot.OffValue);
-            var axis = _context.GetArgumentConstScalar<int>(oneHot, OneHot.Axis);
+            var onValue = context.GetTFArgument(oneHot, OneHot.OnValue);
+            var offValue = context.GetTFArgument(oneHot, OneHot.OffValue);
+            var axis = context.GetArgumentConstScalar<int>(oneHot, OneHot.Axis);
             return one_hot(
                 indices, 
                 ops.convert_to_tensor((object) depth),
                 onValue,
                 offValue,
                 TF_DataType.TF_FLOAT, 
-                axis);
+                axis).ToConst();
         }
     }
 }

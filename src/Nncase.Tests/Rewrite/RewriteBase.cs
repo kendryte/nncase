@@ -15,6 +15,7 @@ using static Nncase.Pattern.Utility;
 using System.IO;
 using System.Runtime.CompilerServices;
 using TorchSharp;
+using Nncase.IR;
 using Nncase.Evaluator;
 
 

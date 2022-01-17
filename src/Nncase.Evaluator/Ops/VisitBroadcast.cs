@@ -4,18 +4,19 @@ using NetFabric.Hyperlinq;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
 using TorchSharp;
+using Nncase.IR;
 
 using torchF = TorchSharp.torch.nn.functional;
 namespace Nncase.Evaluator.Ops
 {
-    public sealed partial class EvaluatorVisitor
+    public class BroadcastEvaluator : IEvaluator<Broadcast>
     {
-        private torch.Tensor VisitBroadcast(Broadcast b)
+        public static Const Visit(EvaluatorContext context, Broadcast b)
         {
-            var input = _context.GetTorchArgument(b, Broadcast.Input);
-            var shape = _context.GetArgumentConst(b, Broadcast.Shape);
+            var input = context.GetTorchArgument(b, Broadcast.Input);
+            var shape = context.GetArgumentConst(b, Broadcast.Shape);
             var s = shape.ToArray<long>();
-            return input.broadcast_to(s);
+            return input.broadcast_to(s).ToConst();
         }
     }
 }

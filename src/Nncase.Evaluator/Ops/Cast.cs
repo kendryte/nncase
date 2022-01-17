@@ -1,19 +1,15 @@
-using System;
-using System.Linq;
-using NetFabric.Hyperlinq;
-using Nncase.IR.Math;
 using Nncase.IR.Tensors;
-using TorchSharp;
+using Nncase.IR;
 
 using torchF = TorchSharp.torch.nn.functional;
 namespace Nncase.Evaluator.Ops
 {
-    public sealed partial class EvaluatorVisitor
+    public class CastEvaluator : IEvaluator<Cast>
     {
-        private torch.Tensor VisitCast(Cast cast)
+        public static Const Visit(EvaluatorContext context, Cast cast)
         {
-            var input = _context.GetTorchArgument(cast, Cast.Input);
-            return input.to_type(cast.NewType.ToTorchType());
+            var input = context.GetTorchArgument(cast, Cast.Input);
+            return input.to_type(cast.NewType.ToTorchType()).ToConst();
         }
     }
 }

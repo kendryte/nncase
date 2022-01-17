@@ -2,24 +2,25 @@ using System;
 using Nncase.IR.Tensors;
 using Tensorflow;
 using static Tensorflow.Binding;
+using Nncase.IR;
 
 namespace Nncase.Evaluator.Ops
 {
-    public sealed partial class EvaluatorVisitor
+    public class ReverseSequenceEvaluator : IEvaluator<ReverseSequence>
     {
-        private Tensor VisitReverseSequence(ReverseSequence random)
+        private Const Visit(EvaluatorContext context, ReverseSequence random)
         {
-            var input = _context.GetTFArgument(random, ReverseSequence.Input);
-            var seqLens = _context.GetTFArgument(random, ReverseSequence.SeqLens);
-            var batchAxis = _context.GetArgumentConstScalar<int>(random, ReverseSequence.BatchAxis);
-            var timeAxis = _context.GetArgumentConstScalar<int>(random, ReverseSequence.TimeAxis);
+            var input = context.GetTFArgument(random, ReverseSequence.Input);
+            var seqLens = context.GetTFArgument(random, ReverseSequence.SeqLens);
+            var batchAxis = context.GetArgumentConstScalar<int>(random, ReverseSequence.BatchAxis);
+            var timeAxis = context.GetArgumentConstScalar<int>(random, ReverseSequence.TimeAxis);
             return tf.Context.ExecuteOp("ReverseSequence", null,
                 new ExecuteOpArgs(input, seqLens)
                     .SetAttributes(new
                     {
                         seq_dim = timeAxis,
                         batch_dim = batchAxis
-                    }));
+                    }))[0].ToConst();
         }
     }
 }

@@ -5,19 +5,20 @@ using NetFabric.Hyperlinq;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
 using TorchSharp;
+using Nncase.IR;
 
 using torchF = TorchSharp.torch.nn.functional;
 
 namespace Nncase.Evaluator.Ops
 {
-    public sealed partial class EvaluatorVisitor
+    public class StackEvaluator : IEvaluator<Stack>
     {
-        private torch.Tensor VisitStack(Stack stack)
+        public static Const Visit(EvaluatorContext context, Stack stack)
         {
-            var inputs = _context.GetArgumentExpr(stack, Stack.Inputs);
-            var axis = _context.GetTorchArgument(stack, Stack.Axis);
-            var inputTensors = (inputs as IR.Tuple).Select(x => _context.GetTorchArgument(x)).ToArray();
-            return torch.stack(inputTensors, axis.ToScalar().ToInt64());
+            var inputs = context.GetArgumentExpr(stack, Stack.Inputs);
+            var axis = context.GetTorchArgument(stack, Stack.Axis);
+            var inputTensors = (inputs as IR.Tuple).Select(x => context.GetTorchArgument(x)).ToArray();
+            return torch.stack(inputTensors, axis.ToScalar().ToInt64()).ToConst();
         }
     }
 }

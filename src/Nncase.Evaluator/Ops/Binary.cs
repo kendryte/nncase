@@ -1,18 +1,19 @@
 using System;
 using Nncase.IR.Math;
 using TorchSharp;
+using Nncase.IR;
 using static Tensorflow.Binding;
 
 using torchF = TorchSharp.torch.nn.functional;
 namespace Nncase.Evaluator.Ops
 {
-    public sealed partial class EvaluatorVisitor
+    public class BinaryEvaluator : IEvaluator<Binary>
     {
-        private torch.Tensor VisitBinary(Binary binary)
+        public static Const Visit(EvaluatorContext context, Binary binary)
         {
             var res = tf.constant(1) * tf.constant(2);
-            var a = _context.GetTorchArgument(binary, Binary.Lhs);
-            var b = _context.GetTorchArgument(binary, Binary.Rhs);
+            var a = context.GetTorchArgument(binary, Binary.Lhs);
+            var b = context.GetTorchArgument(binary, Binary.Rhs);
             return (binary.BinaryOp switch
             {
                 BinaryOp.Add => a + b,
@@ -30,7 +31,7 @@ namespace Nncase.Evaluator.Ops
                 BinaryOp.LogicalOr => torch.logical_or(a, b),
                 BinaryOp.LogicalXor => torch.logical_xor(a, b),
                 _ => throw new ArgumentOutOfRangeException()
-            }).to_type(_context.CurrentCall!.CheckedDataType.ToTorchType());
+            }).to_type(context.CurrentCall!.CheckedDataType.ToTorchType()).ToConst();
         }
     }
 }

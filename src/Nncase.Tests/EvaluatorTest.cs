@@ -5,6 +5,7 @@ using Nncase.IR;
 using Nncase.IR.F;
 using Nncase.IR.Tensors;
 using TorchSharp;
+using Nncase.IR;
 using Xunit;
 using static TorchSharp.torch;
 using torchF = TorchSharp.torch.nn.functional;

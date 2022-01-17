@@ -5,18 +5,19 @@ using Nncase.IR;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
 using TorchSharp;
+using Nncase.IR;
 
 using torchF = TorchSharp.torch.nn.functional;
 namespace Nncase.Evaluator.Ops
 {
-    public sealed partial class EvaluatorVisitor
+    public class ProdEvaluator : IEvaluator<Prod>
     {
-        private torch.Tensor VisitProd(Prod prod)
+        public static Const Visit(EvaluatorContext context, Prod prod)
         {
-            var input = _context.GetTorchArgument(prod, Prod.Input);
+            var input = context.GetTorchArgument(prod, Prod.Input);
             var size = input.shape.Aggregate(1L, (sum, v) => sum * v);
             var v = input.reshape(size).cumprod(0)[size - 1];
-            return v;
+            return v.ToConst();
         }
     }
 }

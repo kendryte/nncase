@@ -4,17 +4,18 @@ using NetFabric.Hyperlinq;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
 using TorchSharp;
+using Nncase.IR;
 
 using torchF = TorchSharp.torch.nn.functional;
 namespace Nncase.Evaluator.Ops
 {
-    public sealed partial class EvaluatorVisitor
+    public class ReshapeEvaluator : IEvaluator<Reshape>
     {
-        private torch.Tensor VisitReshape(Reshape reshape)
+        public static Const Visit(EvaluatorContext context, Reshape reshape)
         {
-            var input = _context.GetTorchArgument(reshape, Reshape.Input);
-            var shape = _context.GetArgumentConst(reshape, Reshape.Shape).ToArray<long>();
-            return input.reshape(shape);
+            var input = context.GetTorchArgument(reshape, Reshape.Input);
+            var shape = context.GetArgumentConst(reshape, Reshape.Shape).ToArray<long>();
+            return input.reshape(shape).ToConst();
         }
     }
 }

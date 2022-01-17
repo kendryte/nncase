@@ -5,29 +5,30 @@ using NetFabric.Hyperlinq;
 using Nncase.IR.Math;
 using Nncase.IR.Tensors;
 using TorchSharp;
+using Nncase.IR;
 
 namespace Nncase.Evaluator.Ops
 {
-    public sealed partial class EvaluatorVisitor
+    public class ReduceArgEvaluator : IEvaluator<ReduceArg>
     {
-        private torch.Tensor VisitReduceArg(ReduceArg reduceArg)
+        public static Const Visit(EvaluatorContext context, ReduceArg reduceArg)
         {
-            var input = _context.GetTorchArgument(reduceArg, ReduceArg.Input);
-            var axis = _context.GetArgumentConst(reduceArg, ReduceArg.Axis).ToScalar<int>();
-            var keepDims = _context.GetArgumentConst(reduceArg, ReduceArg.KeepDims).ToScalar<bool>();
-            var selectLastIndex = _context.GetArgumentConst(reduceArg, ReduceArg.SelectLastIndex).ToScalar<bool>();
+            var input = context.GetTorchArgument(reduceArg, ReduceArg.Input);
+            var axis = context.GetArgumentConst(reduceArg, ReduceArg.Axis).ToScalar<int>();
+            var keepDims = context.GetArgumentConst(reduceArg, ReduceArg.KeepDims).ToScalar<bool>();
+            var selectLastIndex = context.GetArgumentConst(reduceArg, ReduceArg.SelectLastIndex).ToScalar<bool>();
             if (selectLastIndex)
             {
                 throw new NotImplementedException();
             }
             else
             {
-                return reduceArg.ReduceArgOp switch
+                return (reduceArg.ReduceArgOp switch
                 {
                     ReduceArgOp.ArgMax => input.argmax(axis, keepDims),
                     ReduceArgOp.ArgMin => input.argmin(axis, keepDims),
                     _ => throw new NotSupportedException("Not Supported ReduceArgOp")
-                };
+                }).ToConst();
             }
         }
     }

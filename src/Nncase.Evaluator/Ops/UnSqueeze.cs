@@ -2,16 +2,17 @@ using System.Linq;
 using Nncase.IR;
 using Nncase.IR.Tensors;
 using static Tensorflow.Binding;
+using Nncase.IR;
 
 using torchF = TorchSharp.torch.nn.functional;
 namespace Nncase.Evaluator.Ops
 {
-    public sealed partial class EvaluatorVisitor
+    public class UnSqueezeEvaluator : IEvaluator<UnSqueeze>
     {
-        private Tensorflow.Tensor VisitUnSqueeze(UnSqueeze unSqueeze)
+        private Const Visit(EvaluatorContext context, UnSqueeze unSqueeze)
         {
-            var input = _context.GetTFArgument(unSqueeze, UnSqueeze.Input);
-            var dims = _context.GetArgumentConst(unSqueeze, UnSqueeze.Dim)
+            var input = context.GetTFArgument(unSqueeze, UnSqueeze.Input);
+            var dims = context.GetArgumentConst(unSqueeze, UnSqueeze.Dim)
                 .ToArray<int>()
                 .Select(
                     x => Util.PositiveIndex(x, input.shape.rank
@@ -22,7 +23,7 @@ namespace Nncase.Evaluator.Ops
                 input = tf.expand_dims(input, Util.PositiveIndex(dim, input.shape.rank));
             }
 
-            return input;
+            return input.ToConst();
         }
     }
 }

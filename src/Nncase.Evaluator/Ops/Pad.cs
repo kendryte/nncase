@@ -6,18 +6,19 @@ using Nncase.IR.Tensors;
 using Tensorflow;
 using Tensorflow.NumPy;
 using static Tensorflow.Binding;
+using Nncase.IR;
 
 using torchF = TorchSharp.torch.nn.functional;
 
 namespace Nncase.Evaluator.Ops
 {
-    public sealed partial class EvaluatorVisitor
+    public class PadEvaluator : IEvaluator<Pad>
     {
-        private Tensorflow.Tensor VisitPad(Pad pad)
+        private Const Visit(EvaluatorContext context, Pad pad)
         {
-            var input = _context.GetTFArgument(pad, Pad.Input);
-            var pads = _context.GetTFArgument(pad, Pad.Pads);
-            var constant_values = _context.GetArgumentConst(pad, Pad.Value).ToScalar<int>();
+            var input = context.GetTFArgument(pad, Pad.Input);
+            var pads = context.GetTFArgument(pad, Pad.Pads);
+            var constant_values = context.GetArgumentConst(pad, Pad.Value).ToScalar<int>();
             var mode = pad.PadMode switch
             {
                 PadMode.Constant => "CONSTANT",
@@ -27,8 +28,8 @@ namespace Nncase.Evaluator.Ops
                 _ => throw new ArgumentOutOfRangeException()
             };
             return tf.Context.ExecuteOp("Pad", null,
-                new ExecuteOpArgs(input, pads, mode, constant_values));
-            // return tf.pad(input, pads, mode: mode, constant_values:constant_values);
+                new ExecuteOpArgs(input, pads, mode, constant_values))[0].ToConst();
+            // return tf.pad(input, pads, mode: mode, constant_values:constant_values).ToConst();
         }
     }
 }

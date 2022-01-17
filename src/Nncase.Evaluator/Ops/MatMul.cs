@@ -1,16 +1,17 @@
 using Nncase.IR.Tensors;
 using TorchSharp;
+using Nncase.IR;
 
 using torchF = TorchSharp.torch.nn.functional;
 namespace Nncase.Evaluator.Ops
 {
-    public sealed partial class EvaluatorVisitor
+    public class MatMulEvaluator : IEvaluator<MatMul>
     {
-        private torch.Tensor VisitMatMul(MatMul matMul)
+        public static Const Visit(EvaluatorContext context, MatMul matMul)
         {
-            var input = _context.GetTorchArgument(matMul, MatMul.Input);
-            var other = _context.GetTorchArgument(matMul, MatMul.Other);
-            return input.matmul(other);
+            var input = context.GetTorchArgument(matMul, MatMul.Input);
+            var other = context.GetTorchArgument(matMul, MatMul.Other);
+            return input.matmul(other).ToConst();
         }
     }
 }

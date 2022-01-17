@@ -16,6 +16,7 @@ using static Nncase.IR.F.Tensors;
 using static Nncase.IR.Utility;
 using Nncase.Evaluator;
 using TorchSharp;
+using Nncase.IR;
 
 namespace Nncase.Transform.Rule
 {

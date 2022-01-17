@@ -14,6 +14,7 @@ using Nncase.IR;
 using Nncase.Evaluator;
 using Nncase.IR.Tensors;
 using TorchSharp;
+using Nncase.IR;
 
 namespace Nncase.Transform
 {
