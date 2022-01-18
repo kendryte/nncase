@@ -56,6 +56,10 @@ NNCASE_API result<void> equal(const T *input_a, const T *input_b, bool *output,
 NNCASE_API result<void> lut1d(datatype_t type, const gsl::byte *input, const gsl::byte *table, gsl::byte *output, const runtime_shape_t &shape,
     const runtime_shape_t &in_strides, const runtime_shape_t &out_strides, const scalar &min, const scalar &max) noexcept;
 
+template <typename T>
+NNCASE_API result<void> matmul(const T *input_a, const T *input_b, const T *bias, T *output,
+    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_b_shape, value_range<float> fused_activation) noexcept;
+
 NNCASE_API result<void> onehot(datatype_t type, const int32_t *indices, gsl::byte *output, const runtime_shape_t &indices_shape, const runtime_shape_t &out_shape,
     const runtime_shape_t &out_strides, gsl::byte *depth, gsl::byte *off_value, gsl::byte *on_value, size_t axis, onehot_mode_t mode,
     kernel_context &context = default_kernel_context()) noexcept;

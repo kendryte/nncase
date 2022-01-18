@@ -53,6 +53,7 @@ result<void> reference::unary(unary_op_t op, const float *input, float *output, 
         UNARY_IMPL(unary_exp, expf);
         UNARY_IMPL(unary_floor, floorf);
         UNARY_IMPL(unary_log, logf);
+        UNARY_IMPL(unary_logical_not, [](float v) { return !v; });
         UNARY_IMPL(unary_neg, std::negate<float>());
         UNARY_IMPL(unary_round, roundf);
         UNARY_IMPL(unary_rsqrt, [](float v) { return 1.f / sqrtf(v); });

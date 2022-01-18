@@ -59,6 +59,7 @@
 | Min | ✅ |
 | Mul | ✅ |
 | Neg | ✅ |
+| Not | ✅ |
 | OneHot | ✅ |
 | Pad | ✅ |
 | Pow | ✅ |

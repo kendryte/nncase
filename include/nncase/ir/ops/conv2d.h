@@ -35,6 +35,7 @@ public:
     int32_t input_channels() const noexcept { return (int32_t)weights().shape()[1] * groups(); }
     int32_t output_channels() const noexcept { return (int32_t)weights().shape()[0]; }
     int32_t groups() const noexcept { return groups_; }
+    bool is_depthwise() const noexcept { return input_channels() == output_channels() && output_channels() == groups() && groups() != 1; }
     padding padding_h() const noexcept { return padding_h_; }
     padding padding_w() const noexcept { return padding_w_; }
     int32_t stride_h() const noexcept { return stride_h_; }

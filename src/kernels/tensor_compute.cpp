@@ -128,6 +128,16 @@ result<void> kernels::lut1d(datatype_t type, const gsl::byte *input, const gsl::
     return cpu::reference::lut1d(type, input, table, output, shape, in_strides, out_strides, min, max);
 }
 
+template result<void> kernels::matmul<float>(const float *input_a, const float *input_b, const float *bias, float *output,
+    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_b_shape, value_range<float> fused_activation) noexcept;
+
+template <typename T>
+result<void> kernels::matmul(const T *input_a, const T *input_b, const T *bias, T *output,
+    const runtime_shape_t &in_a_shape, const runtime_shape_t &in_b_shape, value_range<float> fused_activation) noexcept
+{
+    return cpu::reference::matmul(input_a, input_b, bias, output, in_a_shape, in_b_shape, fused_activation);
+}
+
 result<void> kernels::onehot(datatype_t type, const int32_t *indices, gsl::byte *output, const runtime_shape_t &indices_shape, const runtime_shape_t &out_shape,
     const runtime_shape_t &out_strides, gsl::byte *depth, gsl::byte *off_value, gsl::byte *on_value, size_t axis, onehot_mode_t mode, kernel_context &context) noexcept
 {
