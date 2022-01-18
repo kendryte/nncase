@@ -60,14 +60,14 @@ namespace Nncase.Tests.TIRTest
             var n = T.SizeVar("n");
             var m = T.SizeVar("m");
             var A = T.DeclBuffer((n, m), name: "A");
-            var func = T.PrimFunc("func", A.Handle, n, m).Add(
-              T.Serial(out var i, n, out var fi).Add(
-                T.Serial(out var j, m, out var fj).Add(
+            var func = T.PrimFunc("func", A.Handle, n, m).Body(
+              T.Serial(out var i, n, out var fi).Body(
+                T.Serial(out var j, m, out var fj).Body(
                   T.Block("init").
                   Remap(out var vi, out var vj, (fi, fj), "SS").
                   Init(
                     T.Store(A[vi, vj], 1.0f)
-                  ).Add(
+                  ).Body(
                     T.Store(A[vi, vj], Cast(vi + vj, DataType.Float32))
                   )
                 )

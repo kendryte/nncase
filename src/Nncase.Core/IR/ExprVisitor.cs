@@ -169,7 +169,7 @@ namespace Nncase.IR
                 Visit(expr.LoopVar);
                 Visit(expr.Dom.Min);
                 Visit(expr.Dom.Max);
-                Visit(expr.Body);
+                Visit(expr.Sequence);
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);
             }
@@ -181,10 +181,10 @@ namespace Nncase.IR
         {
             if (!_exprMemo.TryGetValue(expr, out var result))
             {
-                Visit(expr.InitBody);
+                Visit(expr.InitSequence);
                 Visit(expr.Predicate);
                 foreach (var iterVar in expr.IterVars) { Visit(iterVar); }
-                Visit(expr.Body);
+                Visit(expr.Sequence);
                 result = VisitLeaf(expr);
                 _exprMemo.Add(expr, result);
             }

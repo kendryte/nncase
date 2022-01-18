@@ -18,7 +18,7 @@ namespace Nncase.Transform.Mutator
             if (expr.IterVars.Count != 0)
                 throw new InvalidOperationException("Non-opaque blocks are not allowed in FlattenBuffer. Please call pass ConvertBlocksToOpaque before.");
             // 1. Visit the body
-            var nbody = Visit(expr.Body);
+            var nbody = Visit(expr.Sequence);
             IRArrayList<BufferRegion> nreads = new(expr.Reads.Select(MutateLeaf));
             IRArrayList<BufferRegion> nwrites = new(expr.Writes.Select(MutateLeaf));
             var npredicate = Visit(expr.Predicate);
