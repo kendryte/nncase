@@ -38,7 +38,7 @@ DEFINE_CAFFE_LOWER(Eltwise)
         std::vector<ir::node *> muls;
         for (size_t i = 0; i < inputs.size() - 1; i++)
         {
-            auto mul = graph_.emplace<binary>(binary_mul, inputs[0]->shape(), inputs[0]->shape(), value_range<float>::full());
+            auto mul = graph_.emplace<binary>(binary_mul, dt_float32, inputs[0]->shape(), inputs[0]->shape(), value_range<float>::full());
             mul->name(op.name() + "/mul");
             if (i == 0)
             {
@@ -60,7 +60,7 @@ DEFINE_CAFFE_LOWER(Eltwise)
         std::vector<ir::node *> adds;
         for (size_t i = 0; i < inputs.size() - 1; i++)
         {
-            auto add = graph_.emplace<binary>(binary_add, inputs[0]->shape(), inputs[0]->shape(), value_range<float>::full());
+            auto add = graph_.emplace<binary>(binary_add, dt_float32, inputs[0]->shape(), inputs[0]->shape(), value_range<float>::full());
             add->name(op.name() + "/add");
             if (i == 0)
             {
@@ -111,7 +111,7 @@ DEFINE_CAFFE_LOWER(Eltwise)
         std::vector<ir::node *> maxes;
         for (size_t i = 0; i < inputs.size() - 1; i++)
         {
-            auto max = graph_.emplace<binary>(binary_max, inputs[0]->shape(), inputs[0]->shape(), value_range<float>::full());
+            auto max = graph_.emplace<binary>(binary_max, dt_float32, inputs[0]->shape(), inputs[0]->shape(), value_range<float>::full());
             max->name(op.name() + "/max");
             if (i == 0)
             {

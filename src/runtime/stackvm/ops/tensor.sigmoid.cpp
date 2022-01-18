@@ -27,12 +27,13 @@ result<void> stackvm_runtime_function::visit(const tensor_sigmoid_op_t &op) noex
     try_var(input, pop_addr());
     try_var(in_shape, module().shape_reg(op.rshape_src));
     try_var(in_stride, module().shape_reg(op.rstride_src));
+    try_var(out_stride, module().shape_reg(op.rstride_dest));
 
     switch (op.datatype)
     {
     case dt_float32:
         return kernels::sigmoid(reinterpret_cast<const float *>(input), reinterpret_cast<float *>(output),
-            in_shape, in_stride);
+            in_shape, in_stride, out_stride);
         break;
     default:
         std::cerr << "unsupported dtype for sigmoid: " + std::string(datatype_names(op.datatype));

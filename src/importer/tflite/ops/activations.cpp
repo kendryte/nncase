@@ -31,7 +31,7 @@ DEFINE_TFLITE_LOWER(RELU)
 
     auto zero = graph_.emplace<constant>(0.f);
     zero->name(get_tensor(op.outputs(), 0).name()->string_view());
-    auto max = graph_.emplace<binary>(binary_max, in_shape, zero->output().shape(), value_range<float>::full());
+    auto max = graph_.emplace<binary>(binary_max, to_data_type(input.type()), in_shape, zero->output().shape(), value_range<float>::full());
     max->name(get_tensor(op.outputs(), 0).name()->string_view());
     max->input_b().connect(zero->output());
     if (input.type() != tflite::TensorType_FLOAT32)
@@ -64,15 +64,16 @@ DEFINE_TFLITE_LOWER(PRELU)
     auto &output = get_tensor(op.outputs(), 0);
 
     auto in_shape = get_shape(input.shape());
+    auto input_type = to_data_type(input.type());
     auto slope_shape = get_shape(slope.shape());
 
     auto zero = graph_.emplace<constant>(0.f);
     zero->name(output.name()->string_view());
 
-    auto pos = graph_.emplace<binary>(binary_max, in_shape, zero->output().shape(), value_range<float>::full());
-    auto neg = graph_.emplace<binary>(binary_min, in_shape, zero->output().shape(), value_range<float>::full());
-    auto mul = graph_.emplace<binary>(binary_mul, neg->output().shape(), slope_shape, value_range<float>::full());
-    auto add = graph_.emplace<binary>(binary_add, pos->output().shape(), mul->output().shape(), value_range<float>::full());
+    auto pos = graph_.emplace<binary>(binary_max, input_type, in_shape, zero->output().shape(), value_range<float>::full());
+    auto neg = graph_.emplace<binary>(binary_min, input_type, in_shape, zero->output().shape(), value_range<float>::full());
+    auto mul = graph_.emplace<binary>(binary_mul, input_type, neg->output().shape(), slope_shape, value_range<float>::full());
+    auto add = graph_.emplace<binary>(binary_add, input_type, pos->output().shape(), mul->output().shape(), value_range<float>::full());
 
     pos->name(std::string(output.name()->string_view()) + "/pos");
     neg->name(std::string(output.name()->string_view()) + "/neg");
@@ -119,10 +120,11 @@ DEFINE_TFLITE_LOWER(LEAKY_RELU)
     auto &output = get_tensor(op.outputs(), 0);
     auto &options = *op.builtin_options_as_LeakyReluOptions();
     auto in_shape = get_shape(input.shape());
+    auto input_type = to_data_type(input.type());
 
     auto alpha = graph_.emplace<constant>(options.alpha());
-    auto mul = graph_.emplace<binary>(binary_mul, in_shape, alpha->output().shape(), value_range<float>::full());
-    auto max = graph_.emplace<binary>(binary_max, in_shape, mul->output().shape(), value_range<float>::full());
+    auto mul = graph_.emplace<binary>(binary_mul, input_type, in_shape, alpha->output().shape(), value_range<float>::full());
+    auto max = graph_.emplace<binary>(binary_max, input_type, in_shape, mul->output().shape(), value_range<float>::full());
     alpha->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/alpha");
     mul->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/mul");
     max->name(std::string(get_tensor(op.outputs(), 0).name()->string_view()) + "/max");

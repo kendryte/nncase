@@ -33,7 +33,7 @@ void onnx_importer::convert_op_LRN(const NodeProto &node)
     const auto &op_name { generate_name(node) };
 
     const std::string &input = node.input()[0];
-    const datatype_t input_type = get_datatype(input).value();
+    const auto input_type = get_datatype(input).value();
     const shape_t &input_shape = get_shape(input);
 
     // size
@@ -79,13 +79,13 @@ void onnx_importer::convert_op_LRN(const NodeProto &node)
         con->input_at(i).connect(r_sum->output());
     }
 
-    auto mul = graph_.emplace<binary>(binary_mul, alpha->output().shape(), con->output().shape(), value_range<float>::full());
+    auto mul = graph_.emplace<binary>(binary_mul, input_type, alpha->output().shape(), con->output().shape(), value_range<float>::full());
     mul->name(op_name + ".mul(LRN)");
-    auto add = graph_.emplace<binary>(binary_add, mul->output().shape(), bias->output().shape(), value_range<float>::full());
+    auto add = graph_.emplace<binary>(binary_add, input_type, mul->output().shape(), bias->output().shape(), value_range<float>::full());
     add->name(op_name + ".add(LRN)");
-    auto pow = graph_.emplace<binary>(binary_pow, add->output().shape(), beta->output().shape(), value_range<float>::full());
+    auto pow = graph_.emplace<binary>(binary_pow, input_type, add->output().shape(), beta->output().shape(), value_range<float>::full());
     pow->name(op_name + ".pow(LRN)");
-    auto div = graph_.emplace<binary>(binary_div, input_shape, pow->output().shape(), value_range<float>::full());
+    auto div = graph_.emplace<binary>(binary_div, input_type, input_shape, pow->output().shape(), value_range<float>::full());
     div->name(op_name + ".div(LRN)");
 
     mul->input_a().connect(alpha->output());

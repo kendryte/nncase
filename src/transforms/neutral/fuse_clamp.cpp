@@ -196,7 +196,7 @@ void fuse_clamp_binary_transform::process(transform_context &context)
 
     auto act = combine(old_b.fused_activation(), old_low, old_high);
 
-    auto b = context.graph.emplace<binary>(old_b.binary_op(), output_a.shape(), output_b.shape(), act);
+    auto b = context.graph.emplace<binary>(old_b.binary_op(), output_a.type(), output_a.shape(), output_b.shape(), act);
     b->name(old_b.name());
 
     b->input_a().connect(output_a);

@@ -39,7 +39,7 @@ void onnx_importer::convert_op_Expand(const NodeProto &node)
     auto ones = xt::ones<float>(shape);
     std::vector<float> ones_vec { ones.begin(), ones.end() };
     auto con = graph_.emplace<constant>(input_type, shape, ones_vec);
-    auto op = graph_.emplace<binary>(binary_mul, input_shape, shape, value_range<float>::full());
+    auto op = graph_.emplace<binary>(binary_mul, input_type, input_shape, shape, value_range<float>::full());
     op->name(generate_name(node) + "(Expand)");
 
     op->input_b().connect(con->output());

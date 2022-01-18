@@ -33,6 +33,10 @@ result<void> stackvm_runtime_function::visit(const tensor_cumsum_op_t &op) noexc
         return kernels::cumsum(reinterpret_cast<const float *>(input), reinterpret_cast<float *>(output),
             in_shape, op.axis, op.exclusive, op.reverse);
         break;
+    case dt_int32:
+        return kernels::cumsum(reinterpret_cast<const int32_t *>(input), reinterpret_cast<int32_t *>(output),
+            in_shape, op.axis, op.exclusive, op.reverse);
+        break;
     default:
         std::cerr << "unsupported dtype for cumsum: " + std::string(datatype_names(op.datatype));
         return err(std::errc::invalid_argument);

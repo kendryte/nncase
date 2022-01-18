@@ -72,8 +72,9 @@ void onnx_importer::convert_binary(const onnx::NodeProto &node, const binary_op_
     const auto &output = node.output()[0];
 
     auto input_a_shape = get_shape(input_a);
+    const auto input_type = get_datatype(input_a).value();
     auto input_b_shape = get_shape(input_b);
-    auto op = graph_.emplace<binary>(binary_op, input_a_shape, input_b_shape, value_range<float>::full());
+    auto op = graph_.emplace<binary>(binary_op, input_type, input_a_shape, input_b_shape, value_range<float>::full());
     op->name(op_name + '(' + binary_op_to_string(binary_op) + ')');
 
     input_tensors_.emplace(&op->input_a(), input_a);
@@ -103,7 +104,7 @@ void onnx_importer::convert_op_logical(const onnx::NodeProto &node, const binary
     auto deq_b = graph_.emplace<dequantize>(get_datatype(input_b).value(), get_shape(input_b), dt_float32, qparam);
     deq_b->name(op_name + "/deq_b");
 
-    auto op = graph_.emplace<binary>(binary_op, deq_a->output().shape(), deq_b->output().shape(), value_range<float>::full());
+    auto op = graph_.emplace<binary>(binary_op, deq_a->output().type(), deq_a->output().shape(), deq_b->output().shape(), value_range<float>::full());
     op->name(op_name + '(' + binary_op_to_string(binary_op) + ')');
     op->input_a().connect(deq_a->output());
     op->input_b().connect(deq_b->output());

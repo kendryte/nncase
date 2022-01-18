@@ -84,7 +84,7 @@ void fuse_one_unary_transform::process(transform_context &context)
     subgraph.emplace_back(fused_unary_op::make_ldx());
     subgraph.emplace_back(fused_unary_op::make_unary(old_u.unary_op(), { 0 }));
 
-    auto f_u = context.graph.emplace<fused_unary>(std::move(subgraph), output.shape());
+    auto f_u = context.graph.emplace<fused_unary>(std::move(subgraph), output.type(), output.shape());
     f_u->name(output.name() + "_F");
 
     f_u->input().connect(output);
@@ -142,7 +142,7 @@ void fuse_one_binary_transform::process(transform_context &context)
         subgraph.emplace_back(fused_unary_op::make_clamp({ 2 }, { 3 }, { 4 }));
     }
 
-    auto f_u = context.graph.emplace<fused_unary>(std::move(subgraph), output.shape());
+    auto f_u = context.graph.emplace<fused_unary>(std::move(subgraph), output.type(), output.shape());
     f_u->name(output.name() + "_F");
 
     f_u->input().connect(output);
@@ -175,7 +175,7 @@ void fuse_two_fused_unary_transform::process(transform_context &context)
     auto &old_f2 = static_cast<fused_unary &>(*context.matched_nodes[1]);
 
     auto subgraph = concat_subgraph(old_f1.subgraph(), old_f2.subgraph());
-    auto f_u = context.graph.emplace<fused_unary>(std::move(subgraph), old_f1.input().shape());
+    auto f_u = context.graph.emplace<fused_unary>(std::move(subgraph), output.type(), old_f1.input().shape());
     f_u->name(output.name() + "_F");
 
     f_u->input().connect(output);
@@ -241,7 +241,7 @@ void fuse_one_fused_unary_with_binary_transform::process(transform_context &cont
         subgraph.emplace_back(fused_unary_op::make_clamp({ cur_id }, { cur_id + 1 }, { cur_id + 2 }));
     }
 
-    auto f_u = context.graph.emplace<fused_unary>(std::move(subgraph), output.shape());
+    auto f_u = context.graph.emplace<fused_unary>(std::move(subgraph), output.type(), output.shape());
     f_u->name(output.name() + "_F");
 
     f_u->input().connect(output);
@@ -294,7 +294,7 @@ void fuse_two_fused_unary_with_binary_transform::process(transform_context &cont
         subgraph.emplace_back(fused_unary_op::make_clamp({ cur_id }, { cur_id + 1 }, { cur_id + 2 }));
     }
 
-    auto f_u = context.graph.emplace<fused_unary>(std::move(subgraph), output.shape());
+    auto f_u = context.graph.emplace<fused_unary>(std::move(subgraph), output.type(), output.shape());
     f_u->name(output.name() + "_F");
 
     f_u->input().connect(output);

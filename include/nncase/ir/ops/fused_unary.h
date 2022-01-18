@@ -139,7 +139,7 @@ public:
     output_connector &output() { return output_at(0); }
     std::vector<fused_unary_op> &subgraph() noexcept { return subgraph_; }
 
-    fused_unary(std::vector<fused_unary_op> subgraph, shape_t in_shape);
+    fused_unary(std::vector<fused_unary_op> subgraph, datatype_t in_type, shape_t in_shape);
 
 protected:
     bool properties_equal(node &other) const override;

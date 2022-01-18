@@ -1968,6 +1968,10 @@ namespace IsaGen
             [DisplayName("rstride_src")]
             [Description("Source stride register")]
             public byte RstrideSrc { get; set; }
+
+            [DisplayName("rstride_dest")]
+            [Description("Dest stride register")]
+            public byte RstrideDest { get; set; }
         }
 
         [DisplayName("TENSOR.SLICE")]

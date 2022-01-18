@@ -24,6 +24,8 @@ using namespace nncase::kernels::cpu::reference;
 
 template result<void> reference::cumsum<float>(const float *input, float *output, const runtime_shape_t &in_shape,
     int32_t axis, bool exclusive, bool reverse) noexcept;
+template result<void> reference::cumsum<int32_t>(const int32_t *input, int32_t *output, const runtime_shape_t &in_shape,
+    int32_t axis, bool exclusive, bool reverse) noexcept;
 
 template <typename T>
 result<void> reference::cumsum(const T *input, T *output, const runtime_shape_t &in_shape,
@@ -57,7 +59,7 @@ result<void> reference::cumsum(const T *input, T *output, const runtime_shape_t 
 
         for (size_t inner_index = 0; inner_index < inner; inner_index++)
         {
-            float accumulator = 0;
+            T accumulator = 0;
             size_t inner_index_adj;
             if (reverse)
                 inner_index_adj = (inner - 1) - inner_index;
