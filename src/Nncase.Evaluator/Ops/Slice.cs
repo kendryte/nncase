@@ -11,7 +11,7 @@ namespace Nncase.Evaluator.Ops
 {
     public class SliceEvaluator : IEvaluator<Slice>
     {
-        public static Const Visit(EvaluatorContext context, Slice sl)
+        public Const Visit(EvaluatorContext context, Slice sl)
         {
             var input = context.GetTorchArgument(sl, Slice.Input);
             var begins = context.GetTorchArgument(sl, Slice.Begins);

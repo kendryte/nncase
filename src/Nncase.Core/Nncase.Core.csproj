@@ -9,6 +9,9 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="CommonServiceLocator" Version="2.0.6" />
+    <PackageReference Include="Autofac.Extras.CommonServiceLocator" Version="6.0.1" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="5.0.0" />
     <PackageReference Include="Microsoft.Toolkit.HighPerformance" Version="7.1.1" />
     <PackageReference Include="NetFabric.Hyperlinq" Version="3.0.0-beta48" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.2.0-beta.354">
@@ -18,6 +21,11 @@
     <PackageReference Include="System.Numerics.Tensors" Version="6.0.0-rc.2.21480.5" />
     <PackageReference Include="ValueTaskSupplement" Version="1.1.0" />
     <PackageReference Include="Microsoft.Toolkit.HighPerformance" Version="7.1.1" />
+
+    <PackageReference Include="TorchSharp" Version="0.95.4" />
+    <PackageReference Include="libtorch-cpu" Version="1.10.0.1" />
+    <PackageReference Include="SciSharp.TensorFlow.Redist" Version="2.7.0" />
+    <PackageReference Include="TensorFlow.NET" Version="0.60.5" />
   </ItemGroup>
 
   <ItemGroup>

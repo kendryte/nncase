@@ -1,4 +1,11 @@
+using System.IO;
 using System.Linq;
+using Autofac;
+using Autofac.Extras.CommonServiceLocator;
+using CommonServiceLocator;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using NetFabric.Hyperlinq;
 using Nncase.Evaluator;
 using Nncase.IR;
@@ -15,6 +22,13 @@ namespace Nncase.Tests.Evaluator
 {
     public class EvaluatorTest
     {
+        public EvaluatorTest(IHost host)
+        {
+            var t = host.Services.GetRequiredService<IComponentContext>();
+            var csl = new AutofacServiceLocator(t);
+            ServiceLocator.SetLocatorProvider(() => csl);
+        }
+
         [Fact]
         public void TestUnary()
         {

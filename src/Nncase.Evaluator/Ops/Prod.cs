@@ -12,7 +12,7 @@ namespace Nncase.Evaluator.Ops
 {
     public class ProdEvaluator : IEvaluator<Prod>
     {
-        public static Const Visit(EvaluatorContext context, Prod prod)
+        public Const Visit(EvaluatorContext context, Prod prod)
         {
             var input = context.GetTorchArgument(prod, Prod.Input);
             var size = input.shape.Aggregate(1L, (sum, v) => sum * v);

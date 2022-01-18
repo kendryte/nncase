@@ -6,7 +6,7 @@ namespace Nncase.Evaluator.Ops
 {
     public class RangeEvaluator : IEvaluator<Range>
     {
-        public static Const Visit(EvaluatorContext context, Range range)
+        public Const Visit(EvaluatorContext context, Range range)
         {
             var begin = context.GetArgumentConstScalar<int>(range, Range.Begin);
             var end = context.GetArgumentConstScalar<int>(range, Range.End);

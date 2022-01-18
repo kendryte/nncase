@@ -12,7 +12,7 @@ namespace Nncase.Evaluator.Ops
 {
     public class Conv2DEvaluator : IEvaluator<Conv2D>
     {
-        public static Const Visit(EvaluatorContext context, Conv2D conv)
+        public Const Visit(EvaluatorContext context, Conv2D conv)
         {
             var input = context.GetTorchArgument(conv, Conv2D.Input);
             var weights = context.GetTorchArgument(conv, Conv2D.Weights);

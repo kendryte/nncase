@@ -7,7 +7,7 @@ namespace Nncase.Evaluator.Ops
 {
     public class SqueezeEvaluator : IEvaluator<Squeeze>
     {
-        private Const Visit(EvaluatorContext context, Squeeze squeeze)
+        public Const Visit(EvaluatorContext context, Squeeze squeeze)
         {
             var input = context.GetTFArgument(squeeze, Squeeze.Input);
             var dims = context.GetArgumentConst(squeeze, Squeeze.Dim).ToArray<int>();

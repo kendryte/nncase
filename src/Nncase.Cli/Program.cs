@@ -6,11 +6,16 @@ using System.CommandLine.Builder;
 using System.CommandLine.Hosting;
 using System.CommandLine.Parsing;
 using System.IO;
+using System.Reflection;
 using System.Threading.Tasks;
+using Autofac;
+using Autofac.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
+using Nncase.Evaluator;
+using Nncase.Evaluator.Ops;
 
 namespace Nncase.Cli
 {
@@ -24,14 +29,28 @@ namespace Nncase.Cli
                     host =>
                     {
                         host.ConfigureAppConfiguration(ConfigureAppConfiguration)
-                        .ConfigureServices(ConfigureServices)
-                        .ConfigureLogging(ConfigureLogging)
-                        .UseConsoleLifetime();
+                            .UseServiceProviderFactory(new AutofacServiceProviderFactory())
+                            .ConfigureContainer<ContainerBuilder>(ConfigureContainer)
+                            .ConfigureServices(ConfigureServices)
+                            .ConfigureLogging(ConfigureLogging)
+                            .UseConsoleLifetime();
                     })
                 .UseDefaults()
                 .Build().InvokeAsync(args);
         }
 
+        private static Assembly LoadTarget(string targetType, string path)
+        {
+            // add all dll which can be searched
+            return Assembly.LoadFrom(path);
+        }
+        
+        private static void ConfigureContainer(ContainerBuilder builder)
+        {
+            // var assembly = LoadTarget("K510", ".");
+            builder.RegisterAssemblyModules(typeof(EvaluatorVisitor).Assembly);
+        }
+        
         private static void ConfigureServices(HostBuilderContext context, IServiceCollection services)
         {
             services.AddLogging();

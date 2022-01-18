@@ -13,7 +13,7 @@ namespace Nncase.Evaluator.Ops
 {
     public class BatchNormalizationEvaluator : IEvaluator<BatchNormalization>
     {
-        public static Const Visit(EvaluatorContext context, BatchNormalization batchNorm)
+        public Const Visit(EvaluatorContext context, BatchNormalization batchNorm)
         {
             var input = context.GetTorchArgument(batchNorm, BatchNormalization.Input);
             var eps = context.GetArgumentConst(batchNorm, BatchNormalization.Epsilon);
@@ -25,7 +25,7 @@ namespace Nncase.Evaluator.Ops
 
     public class InstanceNormalizationEvaluator : IEvaluator<InstanceNormalization>
     {
-        public static Const Visit(EvaluatorContext context, InstanceNormalization i)
+        public Const Visit(EvaluatorContext context, InstanceNormalization i)
         {
             var input = context.GetTorchArgument(i, InstanceNormalization.Input);
             var eps = context.GetArgumentConst(i, InstanceNormalization.Epsilon).ToScalar<float>();
@@ -36,7 +36,7 @@ namespace Nncase.Evaluator.Ops
 
     public class LRNEvaluator : IEvaluator<LRN>
     {
-        public static Const Visit(EvaluatorContext context, LRN l)
+        public Const Visit(EvaluatorContext context, LRN l)
         {
             var input = context.GetTorchArgument(l, LRN.Input);
             var size = context.GetArgumentConstScalar<long>(l, LRN.Size);

@@ -12,7 +12,7 @@ namespace Nncase.Evaluator.Ops
 {
     public class LogSoftMaxEvaluator : IEvaluator<LogSoftMax>
     {
-        public static Const Visit(EvaluatorContext context, LogSoftMax logSoftMax)
+        public Const Visit(EvaluatorContext context, LogSoftMax logSoftMax)
         {
             var input = context.GetTorchArgument(logSoftMax, LogSoftMax.Input);
             var dim = context.GetArgumentConst(logSoftMax, LogSoftMax.Axis).ToScalar<int>();
@@ -22,7 +22,7 @@ namespace Nncase.Evaluator.Ops
 
     public class SoftMaxEvaluator : IEvaluator<SoftMax>
     {
-        public static Const Visit(EvaluatorContext context, SoftMax softMax)
+        public Const Visit(EvaluatorContext context, SoftMax softMax)
         {
             var input = context.GetTorchArgument(softMax, SoftMax.Input);
             var dim = context.GetArgumentConst(softMax, SoftMax.Axis).ToScalar<int>();
@@ -32,7 +32,7 @@ namespace Nncase.Evaluator.Ops
 
     public class SoftPlusEvaluator : IEvaluator<SoftPlus>
     {
-        public static Const Visit(EvaluatorContext context, SoftPlus softPlus)
+        public Const Visit(EvaluatorContext context, SoftPlus softPlus)
         {
             var input = context.GetTorchArgument(softPlus, SoftPlus.Input);
             return input.softplus().ToConst();
@@ -40,7 +40,7 @@ namespace Nncase.Evaluator.Ops
     }
     public class SoftSignEvaluator : IEvaluator<SoftSign>
     {
-    private Const Visit(EvaluatorContext context, SoftSign softSign)
+    public Const Visit(EvaluatorContext context, SoftSign softSign)
         {
             var input = context.GetTFArgument(softSign, SoftSign.Input);
             // Tensorflow.Net no this interface

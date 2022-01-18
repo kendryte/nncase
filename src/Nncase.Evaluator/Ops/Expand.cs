@@ -11,7 +11,7 @@ namespace Nncase.Evaluator.Ops
 {
     public class ExpandEvaluator : IEvaluator<Expand>
     {
-        public static Const Visit(EvaluatorContext context, Expand expand)
+        public Const Visit(EvaluatorContext context, Expand expand)
         {
             var input = context.GetTorchArgument(expand, Expand.Input);
             if (input.shape.Length == 0)

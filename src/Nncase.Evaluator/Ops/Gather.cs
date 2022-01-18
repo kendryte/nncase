@@ -9,7 +9,7 @@ namespace Nncase.Evaluator.Ops
 {
     public class GatherEvaluator : IEvaluator<Gather>
     {
-        private Const Visit(EvaluatorContext context, Gather gather)
+        public Const Visit(EvaluatorContext context, Gather gather)
         {
             var input = context.GetTFArgument(gather, Gather.Input);
             var axis = context.GetArgumentConst(gather, Gather.Axis).ToScalar<int>();

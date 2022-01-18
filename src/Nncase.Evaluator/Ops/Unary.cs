@@ -8,7 +8,7 @@ namespace Nncase.Evaluator.Ops
 {
     public class UnaryEvaluator : IEvaluator<Unary>
     {
-        public static Const Visit(EvaluatorContext context, Unary unary)
+        public Const Visit(EvaluatorContext context, Unary unary)
         {
             var i = context.GetTorchArgument(unary, Unary.Input);
             var result = unary.UnaryOp switch

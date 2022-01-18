@@ -6,7 +6,7 @@ namespace Nncase.Evaluator.Ops
 {
     public class CastEvaluator : IEvaluator<Cast>
     {
-        public static Const Visit(EvaluatorContext context, Cast cast)
+        public Const Visit(EvaluatorContext context, Cast cast)
         {
             var input = context.GetTorchArgument(cast, Cast.Input);
             return input.to_type(cast.NewType.ToTorchType()).ToConst();

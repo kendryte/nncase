@@ -6,7 +6,7 @@ namespace Nncase.Evaluator.Ops
 {
     public class CeluEvaluator : IEvaluator<Celu>
     {
-        public static Const Visit(EvaluatorContext context, Celu celu)
+        public Const Visit(EvaluatorContext context, Celu celu)
         {
             var input = context.GetTorchArgument(celu, Celu.Input);
             return input.celu().ToConst();
@@ -15,7 +15,7 @@ namespace Nncase.Evaluator.Ops
 
     public class EluEvaluator : IEvaluator<Elu>
     {
-        public static Const Visit(EvaluatorContext context, Elu elu)
+        public Const Visit(EvaluatorContext context, Elu elu)
         {
             var input = context.GetTorchArgument(elu, Elu.Input);
             var alpha = context.GetArgumentConst(elu, Elu.Alpha).ToScalar<double>();
@@ -25,7 +25,7 @@ namespace Nncase.Evaluator.Ops
 
     public class HardSwishEvaluator : IEvaluator<HardSwish>
     {
-        public static Const Visit(EvaluatorContext context, HardSwish hardSwish)
+        public Const Visit(EvaluatorContext context, HardSwish hardSwish)
         {
             var input = context.GetTorchArgument(hardSwish, HardSwish.Input);
             return input.hardswish().ToConst();
@@ -34,7 +34,7 @@ namespace Nncase.Evaluator.Ops
 
     public class LeakyReluEvaluator : IEvaluator<LeakyRelu>
     {
-        public static Const Visit(EvaluatorContext context, LeakyRelu leakyRelu)
+        public Const Visit(EvaluatorContext context, LeakyRelu leakyRelu)
         {
             var input = context.GetTorchArgument(leakyRelu, LeakyRelu.Input);
             return input.leaky_relu(0.01).ToConst();
@@ -43,7 +43,7 @@ namespace Nncase.Evaluator.Ops
 
     public class ReluEvaluator : IEvaluator<Relu>
     {
-        public static Const Visit(EvaluatorContext context, Relu relu)
+        public Const Visit(EvaluatorContext context, Relu relu)
         {
             var input = context.GetTorchArgument(relu, Relu.Input);
             return input.relu().ToConst();
@@ -52,7 +52,7 @@ namespace Nncase.Evaluator.Ops
 
     public class SeluEvaluator : IEvaluator<Selu>
     {
-        public static Const Visit(EvaluatorContext context, Selu selu)
+        public Const Visit(EvaluatorContext context, Selu selu)
         {
             var input = context.GetTorchArgument(selu, Selu.Input);
             return input.selu().ToConst();
@@ -61,7 +61,7 @@ namespace Nncase.Evaluator.Ops
 
     public class SigmoidEvaluator : IEvaluator<Sigmoid>
     {
-        public static Const Visit(EvaluatorContext context, Sigmoid sigmoid)
+        public Const Visit(EvaluatorContext context, Sigmoid sigmoid)
         {
             var input = context.GetTorchArgument(sigmoid, Sigmoid.Input);
             return input.sigmoid().ToConst();

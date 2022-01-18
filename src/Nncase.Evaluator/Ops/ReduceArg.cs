@@ -11,7 +11,7 @@ namespace Nncase.Evaluator.Ops
 {
     public class ReduceArgEvaluator : IEvaluator<ReduceArg>
     {
-        public static Const Visit(EvaluatorContext context, ReduceArg reduceArg)
+        public Const Visit(EvaluatorContext context, ReduceArg reduceArg)
         {
             var input = context.GetTorchArgument(reduceArg, ReduceArg.Input);
             var axis = context.GetArgumentConst(reduceArg, ReduceArg.Axis).ToScalar<int>();

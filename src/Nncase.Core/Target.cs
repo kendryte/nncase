@@ -4,12 +4,54 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Runtime.CompilerServices;
+using Nncase.IR;
 using Nncase.Schedule;
+using TorchSharp;
+using ParameterInfo = Nncase.IR.ParameterInfo;
 
 namespace Nncase
 {
+    public interface IEvaluator
+    {
+        public Const Visit(EvaluatorContext ctx, Op target);
+    }
+    
+    public interface IEvaluator<T> : IEvaluator
+        where T: Op
+    {
+        public Const Visit(EvaluatorContext ctx, T target);
+
+        Const IEvaluator.Visit(EvaluatorContext ctx, Op target)
+        {
+            return Visit(ctx, (T)target);
+        }
+    }
+
+    public class TargetFactory
+    {
+        public TargetFactory(ITarget[] targets)
+        {
+        }
+
+        public ITarget GetTarget(string target)
+        {
+            return _targets.First(t => t.Kind == target);
+        }
+
+        private ITarget[] _targets;
+    }
+
+    public enum TargetKind
+    {
+        CSource,
+        K210,
+        K510,
+        K230
+    }
+    
     /// <summary>
     /// Target.
     /// </summary>

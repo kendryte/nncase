@@ -14,7 +14,7 @@ namespace Nncase.Evaluator.Ops
 {
     public class PadEvaluator : IEvaluator<Pad>
     {
-        private Const Visit(EvaluatorContext context, Pad pad)
+        public Const Visit(EvaluatorContext context, Pad pad)
         {
             var input = context.GetTFArgument(pad, Pad.Input);
             var pads = context.GetTFArgument(pad, Pad.Pads);

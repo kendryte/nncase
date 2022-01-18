@@ -9,7 +9,7 @@ namespace Nncase.Evaluator.Ops
 {
     public class UnSqueezeEvaluator : IEvaluator<UnSqueeze>
     {
-        private Const Visit(EvaluatorContext context, UnSqueeze unSqueeze)
+        public Const Visit(EvaluatorContext context, UnSqueeze unSqueeze)
         {
             var input = context.GetTFArgument(unSqueeze, UnSqueeze.Input);
             var dims = context.GetArgumentConst(unSqueeze, UnSqueeze.Dim)

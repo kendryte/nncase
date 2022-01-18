@@ -5,6 +5,7 @@ using System.Linq;
 using System.Numerics.Tensors;
 using System.Reflection;
 using Autofac;
+using Microsoft.Extensions.Hosting;
 using Nncase.Evaluator.Ops;
 using Nncase.IR;
 using TorchSharp;
@@ -13,15 +14,12 @@ using IContainer = Autofac.IContainer;
 
 namespace Nncase.Evaluator
 {
-    public interface IEvaluator<T> {}
-    
     public static class Evaluator
     {
-        public static IContainer Container;
-
-        public static IEnumerable<Type> GetAllEvaluator()
+        public static IEnumerable<Type> GetAllEvaluator(Type type)
         {
-            return Assembly.GetExecutingAssembly()
+            return type
+                .Assembly
                 .GetTypes()
                 .Where(
                     t => t
@@ -29,25 +27,9 @@ namespace Nncase.Evaluator
                         .Any(
                             x => x.IsGenericType && x.GetGenericTypeDefinition() == typeof(IEvaluator<>)));
         }
-
-        internal static void RegisterAll(IEnumerable<Type> evaluators)
-        {
-            var builder = new ContainerBuilder();
-            foreach (var evaluator in evaluators)
-            {
-                builder.RegisterType(evaluator).AsImplementedInterfaces();
-            }
-            Container = builder.Build();
-        }
-
-        public static void AutoRegister()
-        {
-            RegisterAll(GetAllEvaluator());
-        }
         
         internal static (EvaluatorVisitor, Const) EvalImpl(Expr expr, Dictionary<Var, Const> inputs)
         {
-            Container.Init(AutoRegister);
             if (expr.CheckedType is null) expr.InferenceType();
             if (expr.CheckedType is InvalidType)
                 throw new InvalidOperationException("Expr in Evaluator need a valid type");

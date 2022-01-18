@@ -8,6 +8,8 @@ using System.Collections.Immutable;
 using System.Collections;
 using System.Linq.Expressions;
 using System;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Options;
 
 namespace Nncase.Tests
 {

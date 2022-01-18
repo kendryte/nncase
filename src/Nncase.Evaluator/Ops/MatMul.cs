@@ -7,7 +7,7 @@ namespace Nncase.Evaluator.Ops
 {
     public class MatMulEvaluator : IEvaluator<MatMul>
     {
-        public static Const Visit(EvaluatorContext context, MatMul matMul)
+        public Const Visit(EvaluatorContext context, MatMul matMul)
         {
             var input = context.GetTorchArgument(matMul, MatMul.Input);
             var other = context.GetTorchArgument(matMul, MatMul.Other);

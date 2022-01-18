@@ -10,9 +10,9 @@ using Nncase;
 using torchF = TorchSharp.torch.nn.functional;
 namespace Nncase.Evaluator.Ops
 {
-    public class ShapeEvaluator : IEvaluator<Shape>
+    public class ShapeEvaluator : IEvaluator<ShapeOp>
     {
-        public static Const Visit(EvaluatorContext context, ShapeOp shape)
+        public Const Visit(EvaluatorContext context, ShapeOp shape)
         {
             var input = context.GetTorchArgument(shape, ShapeOp.Input);
             var dtype = context.CurrentCallResultTensorType().DType.ToTorchType();

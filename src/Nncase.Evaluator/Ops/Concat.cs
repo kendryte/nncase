@@ -11,7 +11,7 @@ namespace Nncase.Evaluator.Ops
 {
     public class ConcatEvaluator : IEvaluator<Concat>
     {
-        public static Const Visit(EvaluatorContext context, Concat cat)
+        public Const Visit(EvaluatorContext context, Concat cat)
         {
             var inputs = context.GetArgumentExpr(cat, Concat.Input);
             var axis = context.GetArgumentConst(cat, Concat.Axis).ToScalar<int>();

@@ -12,7 +12,7 @@ namespace Nncase.Evaluator.Ops
 {
     public class SizeEvaluator : IEvaluator<Size>
     {
-        public static Const Visit(EvaluatorContext context, Size size)
+        public Const Visit(EvaluatorContext context, Size size)
         {
             var input = context.GetTorchArgument(size, Size.Input);
             var v = (Const)((int)input.numel());

@@ -11,7 +11,7 @@ namespace Nncase.Evaluator.Ops
 {
     public class ReduceEvaluator : IEvaluator<Reduce>
     {
-        private Const Visit(EvaluatorContext context, Reduce reduce)
+        public Const Visit(EvaluatorContext context, Reduce reduce)
         {
             var input = context.GetTFArgument(reduce, Reduce.Input);
             var axis = context.GetArgumentConstArray<long>(reduce, Reduce.Axis);

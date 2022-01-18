@@ -11,7 +11,7 @@ namespace Nncase.Evaluator.Ops
 {
     public class ReshapeEvaluator : IEvaluator<Reshape>
     {
-        public static Const Visit(EvaluatorContext context, Reshape reshape)
+        public Const Visit(EvaluatorContext context, Reshape reshape)
         {
             var input = context.GetTorchArgument(reshape, Reshape.Input);
             var shape = context.GetArgumentConst(reshape, Reshape.Shape).ToArray<long>();

@@ -6,9 +6,9 @@ using Nncase.IR;
 
 namespace Nncase.Evaluator.Ops
 {
-    public class RandomEvaluator : IEvaluator<Random>
+    public class RandomEvaluator : IEvaluator<RandomNormal>
     {
-        private Const Visit(EvaluatorContext context, RandomNormal random)
+        public Const Visit(EvaluatorContext context, RandomNormal random)
         {
             var shape = context.GetArgumentConst(random, RandomNormal.Shape).ToArray<int>();
             var mean = context.GetArgumentConstScalar<float>(random, RandomNormal.Mean);

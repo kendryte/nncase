@@ -13,7 +13,7 @@ namespace Nncase.Evaluator.Ops
                 new ExecuteOpArgs(input, indices));
         }
 
-        private Const Visit(EvaluatorContext context, GatherND gatherND)
+        public Const Visit(EvaluatorContext context, GatherND gatherND)
         {
             var input = context.GetTFArgument(gatherND, GatherND.Input);
             var indices = context.GetTFArgument(gatherND, GatherND.Index);

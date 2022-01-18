@@ -6,12 +6,16 @@ using System.Collections.Generic;
 using System.CommandLine;
 using System.CommandLine.Invocation;
 using System.IO;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using Autofac;
+using Autofac.Extras.CommonServiceLocator;
+using CommonServiceLocator;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Nncase.Evaluator;
+using Nncase.Evaluator.Ops;
 using Nncase.IR;
+using Nncase.IR.Tensors;
 using Nncase.Transform;
-
 
 namespace Nncase.Cli.Commands
 {
@@ -56,12 +60,19 @@ namespace Nncase.Cli.Commands
             AddOption(new Option<int>("--dump-level", () => 0, "dump ir to .il, default is 0") { IsRequired = false });
             AddOption(new Option<string>("--dump-dir", () => ".", "dump to directory, default is .") { IsRequired = false });
 
-            Handler = CommandHandler.Create<CompileOptions>(Run);
+            Handler = CommandHandler.Create<CompileOptions, IHost>(Run);
         }
 
-        public void Run(CompileOptions options)
+        internal void InitLocatorProvider(IHost host)
         {
-
+            var t = host.Services.GetRequiredService<IComponentContext>();
+            var csl = new AutofacServiceLocator(t);
+            ServiceLocator.SetLocatorProvider(() => csl);
+        }
+        
+        public void Run(CompileOptions options, IHost host)
+        {
+            InitLocatorProvider(host);
             var module = ImportModule(File.OpenRead(options.InputFile), options);
         }
 

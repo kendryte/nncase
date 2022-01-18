@@ -8,7 +8,7 @@ namespace Nncase.Evaluator.Ops
 {
     public class ReverseSequenceEvaluator : IEvaluator<ReverseSequence>
     {
-        private Const Visit(EvaluatorContext context, ReverseSequence random)
+        public Const Visit(EvaluatorContext context, ReverseSequence random)
         {
             var input = context.GetTFArgument(random, ReverseSequence.Input);
             var seqLens = context.GetTFArgument(random, ReverseSequence.SeqLens);

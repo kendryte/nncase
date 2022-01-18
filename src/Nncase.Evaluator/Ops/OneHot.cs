@@ -40,7 +40,7 @@ namespace Nncase.Evaluator.Ops
             }));
         }
 
-        private Const Visit(EvaluatorContext context, OneHot oneHot)
+        public Const Visit(EvaluatorContext context, OneHot oneHot)
         {
             var depth = context.GetArgumentConstScalar<int>(oneHot, OneHot.Depth);
             var rawIndices = context.GetTFArgument(oneHot, OneHot.Indices);

@@ -13,7 +13,7 @@ namespace Nncase.Evaluator.Ops
 {
     public class StackEvaluator : IEvaluator<Stack>
     {
-        public static Const Visit(EvaluatorContext context, Stack stack)
+        public Const Visit(EvaluatorContext context, Stack stack)
         {
             var inputs = context.GetArgumentExpr(stack, Stack.Inputs);
             var axis = context.GetTorchArgument(stack, Stack.Axis);

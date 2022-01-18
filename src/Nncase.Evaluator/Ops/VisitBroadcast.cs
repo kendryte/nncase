@@ -11,7 +11,7 @@ namespace Nncase.Evaluator.Ops
 {
     public class BroadcastEvaluator : IEvaluator<Broadcast>
     {
-        public static Const Visit(EvaluatorContext context, Broadcast b)
+        public Const Visit(EvaluatorContext context, Broadcast b)
         {
             var input = context.GetTorchArgument(b, Broadcast.Input);
             var shape = context.GetArgumentConst(b, Broadcast.Shape);

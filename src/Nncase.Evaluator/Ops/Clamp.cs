@@ -11,7 +11,7 @@ namespace Nncase.Evaluator.Ops
 {
     public class ClampEvaluator : IEvaluator<Clamp>
     {
-        public static Const Visit(EvaluatorContext context, Clamp clamp)
+        public Const Visit(EvaluatorContext context, Clamp clamp)
         {
             var input = context.GetTorchArgument(clamp, Clamp.Input);
             var min = context.GetArgumentConst(clamp, Clamp.Min).ToArray<float>();

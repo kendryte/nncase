@@ -9,7 +9,7 @@ namespace Nncase.Evaluator.Ops
 {
     public class BinaryEvaluator : IEvaluator<Binary>
     {
-        public static Const Visit(EvaluatorContext context, Binary binary)
+        public Const Visit(EvaluatorContext context, Binary binary)
         {
             var res = tf.constant(1) * tf.constant(2);
             var a = context.GetTorchArgument(binary, Binary.Lhs);

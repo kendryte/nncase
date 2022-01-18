@@ -6,7 +6,7 @@ namespace Nncase.Evaluator.Ops
 {
     public class CumSumEvaluator : IEvaluator<CumSum>
     {
-        private Const Visit(EvaluatorContext context, CumSum cumSum)
+        public Const Visit(EvaluatorContext context, CumSum cumSum)
         {
             var input = context.GetTFArgument(cumSum, CumSum.Input);
             // in onnx, CumSum.Axis is a input tensor with one value

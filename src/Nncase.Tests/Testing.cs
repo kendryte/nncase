@@ -19,6 +19,11 @@ namespace Nncase.Tests
         {
             return Path.GetFullPath(Path.Combine(path, "..", "..", "..", "tests_output"));
         }
+        
+        public static string GetTestingFilePath([CallerFilePath] string path = null)
+        {
+            return path;
+        }
 
         /// <summary>
         /// get the nncase `tests_ouput` path

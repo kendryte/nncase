@@ -11,7 +11,7 @@ namespace Nncase.Evaluator.Ops
 {
     public class FlattenEvaluator : IEvaluator<Flatten>
     {
-        public static Const Visit(EvaluatorContext context, Flatten flatten)
+        public Const Visit(EvaluatorContext context, Flatten flatten)
         {
             var input = context.GetTorchArgument(flatten, Flatten.Input);
             var dim = context.GetArgumentConst(flatten, Flatten.Axis).ToScalar<int>();

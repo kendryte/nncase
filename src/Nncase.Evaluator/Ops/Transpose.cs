@@ -11,7 +11,7 @@ namespace Nncase.Evaluator.Ops
 {
     public class TransposeEvaluator : IEvaluator<Transpose>
     {
-        public static Const Visit(EvaluatorContext context, Transpose tr)
+        public Const Visit(EvaluatorContext context, Transpose tr)
         {
             var input = context.GetTorchArgument(tr, Transpose.Input);
             var perm = context.GetArgumentConst(tr, Transpose.Perm);

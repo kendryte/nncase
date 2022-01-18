@@ -9,7 +9,7 @@ namespace Nncase.Evaluator.Ops
 {
     public class ReduceWindow2DEvaluator : IEvaluator<ReduceWindow2D>
     {
-        public static Const Visit(EvaluatorContext context, ReduceWindow2D r)
+        public Const Visit(EvaluatorContext context, ReduceWindow2D r)
         {
             var input = context.GetTorchArgument(r, ReduceWindow2D.Input);
             var kernelSize = context.GetArgumentConstArray<long>(r, ReduceWindow2D.Filter);
