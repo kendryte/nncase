@@ -392,7 +392,7 @@ namespace Nncase.IR
                 // 2. For Body
                 using (Scope.IndentUp())
                 {
-                    Visit(expr.Body!);
+                    Visit(expr.Sequence!);
                 }
                 // 3. For closing
                 Scope.IndWriteLine("}");

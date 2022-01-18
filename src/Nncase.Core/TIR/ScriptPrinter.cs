@@ -199,7 +199,7 @@ namespace Nncase.TIR
                 Scope.Append($"T.{expr.Mode}(out var {i_name}, ({Visit(expr.Dom.Min)}, {Visit(expr.Dom.Max)}), out var f{i_name}).Add(");
                 Scope.Append(" // " + VisitType(expr.CheckedType!));
                 // 2. For Body
-                Scope.Append(Visit(expr.Body));
+                Scope.Append(Visit(expr.Sequence));
                 Scope.IndWrite(")");
                 doc = Scope.Pop();
                 Docs.Add(expr, doc);
@@ -256,12 +256,12 @@ namespace Nncase.TIR
                     Scope.IndWriteLine($"Bind(out var {Visit(iterVar)}, ({Visit(iterVar.Dom.Min)}, {Visit(iterVar.Dom.Max)}), IterMode.{iterVar.Mode}, {Visit(iterVar.Value)}).");
                 }
                 // 3. write init body
-                if (expr.InitBody.Count > 0)
+                if (expr.InitSequence.Count > 0)
                 {
                     Scope.IndWrite("Init().(");
                     using (Scope.IndentUp())
                     {
-                        Scope.Append(Visit(expr.InitBody));
+                        Scope.Append(Visit(expr.InitSequence));
                     }
                     Scope.IndWrite(").");
                 }
@@ -274,7 +274,7 @@ namespace Nncase.TIR
                 Scope.AppendLine(" // " + VisitType(expr.CheckedType!));
                 using (Scope.IndentUp())
                 {
-                    foreach (var item in expr.Body)
+                    foreach (var item in expr.Sequence)
                     {
                         Scope.IndWriteLine(Visit(item));
                     }

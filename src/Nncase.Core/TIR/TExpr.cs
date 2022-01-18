@@ -160,25 +160,21 @@ namespace Nncase.TIR
     /// </code>
     /// </summary>
     /// <param name="Condition">The termination condition.</param>
-    /// <param name="Body">The body of the while loop.</param>
-    public sealed record While(Expr Condition, Sequential Body) : Expr
+    /// <param name="Bodys">The body of the while loop.</param>
+    public sealed record While(Expr Condition, Sequential Bodys) : Expr
     { }
 
     /// <summary>
     /// The Expr With Body
     /// </summary>
-    /// <param name="Body" The body of the for loop. </param>
-    public abstract record BodyExpr(Sequential Body) : Expr
+    /// <param name="Sequence" The body of the for loop. </param>
+    public abstract record BodyExpr(Sequential Sequence) : Expr
     {
-        /// <summary>
-        /// Add the expr items to body
-        /// </summary>
-        /// <param name="exprs"></param>
-        public Expr Add(params Expr[] exprs)
+        public BodyExpr Body(params Expr[] exprs)
         {
-            foreach (var e in exprs)
+            foreach (var item in exprs)
             {
-                Body.Add(e);
+                Sequence.Add(item);
             }
             return this;
         }
@@ -197,7 +193,7 @@ namespace Nncase.TIR
     /// <param name="LoopVar">The loop variable.</param>
     /// <param name="Dom">The dom of for range.</param>
     /// <param name="Mode">The kind of the for loop.</param>
-    public sealed record For(Var LoopVar, Range Dom, ForMode Mode, Sequential Body) : BodyExpr(Body)
+    public sealed record For(Var LoopVar, Range Dom, ForMode Mode, Sequential Sequence) : BodyExpr(Sequence)
     {
         public For(Var LoopVar, Range Dom, ForMode Mode) : this(LoopVar, Dom, Mode, new()) { }
 
@@ -383,18 +379,18 @@ namespace Nncase.TIR
     /// </code>
     /// </summary>
     /// <param name="Name"> The name_hint of the block.</param>
-    /// <param name="Body"> block body </param>
-    /// <param name="InitBody">the Block init statement.</param>
+    /// <param name="Sequence"> block body </param>
+    /// <param name="InitSequence">the Block init statement.</param>
     /// <param name="IterVars">The List Exprs contain the IterVars</param>
     /// <param name="Reads">The read buffer regions of the block.</param>
     /// <param name="Writes">The write buffer regions of the block.</param>
     /// <param name="AllocBuffers">The buffer allocated in the block.</param>
     /// <param name="Predicate">The predicate of the block realization, the block will only be executed when the predicate is true.</param>
-    public sealed record Block(string Name, Sequential Body, Sequential InitBody,
+    public sealed record Block(string Name, Sequential Sequence, Sequential InitSequence,
                                 IRArrayList<IterVar> IterVars,
                                 IRArrayList<BufferRegion> Reads,
                                 IRArrayList<BufferRegion> Writes,
-                                IRArrayList<Buffer> AllocBuffers, Expr Predicate) : BodyExpr(Body)
+                                IRArrayList<Buffer> AllocBuffers, Expr Predicate) : BodyExpr(Sequence)
     {
 
         /// <summary>
@@ -449,13 +445,13 @@ namespace Nncase.TIR
         /// </summary>
         /// <param name="exprs"></param>
         /// <returns></returns>
-        public Block Init(params Expr[] exprs)
+        public T.BodyExprBuilder<Block> Init(params Expr[] exprs)
         {
             foreach (var item in exprs)
             {
-                InitBody.Add(item);
+                InitSequence.Add(item);
             }
-            return this;
+            return new(this);
         }
 
     }

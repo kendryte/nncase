@@ -1,4 +1,3 @@
-using System;
 using Xunit;
 using Nncase.Pattern;
 using Nncase.Transform;
@@ -6,7 +5,6 @@ using Nncase.IR;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Numerics.Tensors;
 using NetFabric.Hyperlinq;
 using Nncase.Pattern.Math;
@@ -15,19 +13,10 @@ using static Nncase.IR.F.Tensors;
 using static Nncase.Pattern.Utility;
 using static Nncase.Pattern.F.Math;
 using static Nncase.Pattern.F.Tensors;
-using static Nncase.IR.Utility;
 using TorchSharp;
-using Nncase.IR;
 using Nncase.Evaluator;
 using Nncase.Importer;
-using Nncase.Importer.TFLite;
 using Nncase.IR.F;
-using Nncase.IR.NN;
-using Nncase.Tests.ReWriteTest;
-
-using Nncase.Transform.Rule;
-using Binary = Nncase.IR.Math.Binary;
-using Broadcast = Nncase.IR.Tensors.Broadcast;
 using Tuple = Nncase.IR.Tuple;
 
 namespace Nncase.Tests.ReWriteTest

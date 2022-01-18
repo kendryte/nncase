@@ -14,16 +14,16 @@ namespace Nncase.Transform.Mutator
         /// <inheritdoc/>
         public override Expr VisitLeaf(Block expr)
         {
-            if (expr.InitBody.Count == 0)
+            if (expr.InitSequence.Count == 0)
             {
                 return base.Visit(expr);
             }
-            var initbody = Lowering(expr.InitBody, expr.IterVars);
-            var body = Visit(expr.Body);
+            var initbody = Lowering(expr.InitSequence, expr.IterVars);
+            var body = Visit(expr.Sequence);
             return expr with
             {
-                InitBody = new(),
-                Body = Sequential.Flatten(initbody, body)
+                InitSequence = new(),
+                Sequence = Sequential.Flatten(initbody, body)
             };
         }
 

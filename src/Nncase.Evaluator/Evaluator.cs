@@ -8,8 +8,8 @@ using Autofac;
 using Microsoft.Extensions.Hosting;
 using Nncase.Evaluator.Ops;
 using Nncase.IR;
-using TorchSharp;
 using Nncase.IR;
+using TorchSharp;
 using IContainer = Autofac.IContainer;
 
 namespace Nncase.Evaluator
@@ -39,6 +39,12 @@ namespace Nncase.Evaluator
             return (evaluatorVisitor, result);
         }
 
+        /// <summary>
+        /// just run this expr
+        /// </summary>
+        /// <param name="expr"></param>
+        /// <returns></returns>
+        /// <exception cref="NotImplementedException"></exception>
         public static torch.Tensor Eval(this Expr expr) => expr switch
         {
             IR.Tuple tuple => throw new NotImplementedException("Can't Eval a Tuple!"),

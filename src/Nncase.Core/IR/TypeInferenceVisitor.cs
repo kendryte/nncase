@@ -177,7 +177,7 @@ namespace Nncase.IR
             VerifySubField(expr, expr.Dom.Min, Utility.IsIntegralScalar());
             VerifySubField(expr, expr.Dom.Max, Utility.IsIntegralScalar());
             VerifySubField(expr, expr.LoopVar, Utility.IsIntegralScalar());
-            VerifySubField(expr, expr.Body, Utility.IsUnit());
+            VerifySubField(expr, expr.Sequence, Utility.IsUnit());
             if (expr.CheckedType is not null) { return expr.CheckedType; }
             type = TupleType.Void;
             SetCheckedType(expr, type);
@@ -192,8 +192,8 @@ namespace Nncase.IR
             {
                 VerifySubField(expr, expr.IterVars[i], Utility.IsIntegralScalar());
             }
-            VerifySubField(expr, expr.InitBody, Utility.IsUnit());
-            VerifySubField(expr, expr.Body, Utility.IsUnit());
+            VerifySubField(expr, expr.InitSequence, Utility.IsUnit());
+            VerifySubField(expr, expr.Sequence, Utility.IsUnit());
             VerifySubField(expr, expr.Predicate, Utility.IsIntegralScalar());
             if (expr.CheckedType is not null) { return expr.CheckedType; }
             type = TupleType.Void;

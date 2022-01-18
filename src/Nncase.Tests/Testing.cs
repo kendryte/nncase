@@ -1,9 +1,13 @@
-using Xunit;
-using System.Runtime.CompilerServices;
 using System.IO;
-using Nncase.Transform;
-using Nncase.IR;
+using System.Runtime.CompilerServices;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using Nncase.Evaluator;
+using Nncase.IR;
+using Nncase.Transform;
+using Xunit;
 
 namespace Nncase.Tests
 {
@@ -20,6 +24,11 @@ namespace Nncase.Tests
             return Path.GetFullPath(Path.Combine(path, "..", "..", "..", "tests_output"));
         }
         
+        public static string GetTestingFilePath([CallerFilePath] string path = null)
+        {
+            return path;
+        }
+
         public static string GetTestingFilePath([CallerFilePath] string path = null)
         {
             return path;
@@ -83,5 +92,4 @@ namespace Nncase.Tests
             Assert.True(res);
         }
     }
-
 }
