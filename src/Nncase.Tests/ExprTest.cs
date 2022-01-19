@@ -4,9 +4,11 @@ using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
 using System.Linq.Expressions;
-using System;
+using System.Numerics.Tensors;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using Nncase.IR;
+using Xunit;
 
 namespace Nncase.Tests
 {

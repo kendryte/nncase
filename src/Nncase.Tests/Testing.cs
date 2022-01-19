@@ -29,11 +29,6 @@ namespace Nncase.Tests
             return path;
         }
 
-        public static string GetTestingFilePath([CallerFilePath] string path = null)
-        {
-            return path;
-        }
-
         /// <summary>
         /// get the nncase `tests_ouput` path
         /// <remarks>
