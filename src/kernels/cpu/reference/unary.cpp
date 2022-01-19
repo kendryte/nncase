@@ -46,14 +46,18 @@ result<void> reference::unary(unary_op_t op, const float *input, float *output, 
     switch (op)
     {
         UNARY_IMPL(unary_abs, fabsf);
+        UNARY_IMPL(unary_acos, acosf);
+        UNARY_IMPL(unary_asin, asinf);
         UNARY_IMPL(unary_ceil, ceilf);
         UNARY_IMPL(unary_cos, cosf);
         UNARY_IMPL(unary_exp, expf);
         UNARY_IMPL(unary_floor, floorf);
         UNARY_IMPL(unary_log, logf);
+        UNARY_IMPL(unary_logical_not, [](float v) { return !v; });
         UNARY_IMPL(unary_neg, std::negate<float>());
         UNARY_IMPL(unary_round, roundf);
         UNARY_IMPL(unary_rsqrt, [](float v) { return 1.f / sqrtf(v); });
+        UNARY_IMPL(unary_sign, [](float v) { return (0.f < v) - (v < 0.f); });
         UNARY_IMPL(unary_sin, sinf);
         UNARY_IMPL(unary_sqrt, sqrtf);
         UNARY_IMPL(unary_square, [](float v) { return v * v; });

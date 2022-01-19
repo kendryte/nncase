@@ -26,7 +26,7 @@ public:
     evaluator(evaluator &&) = default;
 
     void enable_ptq(target &target, ir::calibrate_method calib_method);
-    void evaluate();
+    void evaluate(eval_step step = nncase::ir::eval_step::after_import, size_t stage = 0, bool record_output_buffers = false);
 
     ir::quantizer *quantizer(const module_type_t &module_type);
     void begin_collect_distribution();

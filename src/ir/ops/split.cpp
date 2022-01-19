@@ -21,7 +21,7 @@ using namespace nncase::ir;
 
 split::split(datatype_t type, shape_t input_shape, std::vector<shape_t> outputs_shape, std::vector<size_t> indices_or_sections, int32_t axis, bool is_indices)
     : indices_or_sections_(indices_or_sections)
-    , axis_(axis)
+    , axis_(axis < 0 ? input_shape.size() + axis : axis)
     , is_indices_(is_indices)
 {
     add_input("input", type, input_shape);

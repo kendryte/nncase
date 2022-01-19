@@ -113,8 +113,11 @@ onnx_importer::onnx_importer(std::span<const uint8_t> model, ir::graph &graph)
         throw std::runtime_error("Invalid ONNX model");
 }
 
-void onnx_importer::import(const struct import_options &options)
+void onnx_importer::import(const struct import_options &options, std::string &real_inlayout, std::string &real_outlayout)
 {
+    for (auto &opset : model_.opset_import())
+        opset_map_.emplace(opset.domain(), opset.version());
+
     const auto &graph = model_.graph();
 
     for (const auto &node : graph.node())
@@ -144,6 +147,7 @@ void onnx_importer::import(const struct import_options &options)
         node->name(input_name);
 
         output_tensors_.emplace(input_name, &node->output());
+        real_inlayout = "NCHW";
     }
 
     // create outputs
@@ -162,6 +166,7 @@ void onnx_importer::import(const struct import_options &options)
 
             input_tensors_.emplace(&node->input(), output_name);
         }
+        real_outlayout = "NCHW";
     }
     else
     {
@@ -205,6 +210,23 @@ void onnx_importer::convert_op(const NodeProto &node)
 #undef DEFINE_OPCODE
 
     throw runtime_error("Not supported ONNX opcode: " + op_type);
+}
+
+int64_t onnx_importer::get_opset_version(std::string domain) const
+{
+    if (opset_map_.empty())
+    {
+        return 1;
+    }
+    else if (opset_map_.size() == 1)
+    {
+        return opset_map_.begin()->second;
+    }
+    else
+    {
+        assert(opset_map_.count(domain));
+        return opset_map_.at(domain);
+    }
 }
 
 optional<ValueInfoProto> onnx_importer::find_value_info(const string &value) const
@@ -328,11 +350,18 @@ optional<datatype_t> onnx_importer::get_datatype(const TensorProto_DataType data
     case TensorProto_DataType_FLOAT:
         return dt_float32;
 
-    case TensorProto_DataType_FLOAT16:
-        return dt_float16;
-
     case TensorProto_DataType_UINT8:
+    case TensorProto_DataType_BOOL:
         return dt_uint8;
+
+    case TensorProto_DataType_INT8:
+        return dt_int8;
+
+    case TensorProto_DataType_UINT16:
+        return dt_uint16;
+
+    case TensorProto_DataType_INT16:
+        return dt_int16;
 
     case TensorProto_DataType_INT32:
         return dt_int32;
@@ -340,7 +369,23 @@ optional<datatype_t> onnx_importer::get_datatype(const TensorProto_DataType data
     case TensorProto_DataType_INT64:
         return dt_int64;
 
+    case TensorProto_DataType_FLOAT16:
+        return dt_float16;
+
+    case TensorProto_DataType_DOUBLE:
+        return dt_float64;
+
+    case TensorProto_DataType_UINT32:
+        return dt_uint32;
+
+    case TensorProto_DataType_UINT64:
+        return dt_uint64;
+
+    case TensorProto_DataType_BFLOAT16:
+        return dt_bfloat16;
+
     default:
+        std::cerr << "unsupported onnx data type: " << datatype << std::endl;
         return optional<datatype_t> {};
     }
 }
@@ -766,6 +811,19 @@ xt::xarray<int64_t> onnx_importer::to<xt::xarray<int64_t>>(const onnx::TensorPro
 }
 
 template <>
+std::vector<int32_t> onnx_importer::to<std::vector<int32_t>>(const onnx::TensorProto &tensor)
+{
+    if (!tensor.int32_data().empty())
+    {
+        return std::vector<int32_t> { tensor.int32_data().begin(), tensor.int32_data().end() };
+    }
+    else
+    {
+        return raw_to_vector<int32_t, int32_t>(tensor);
+    }
+}
+
+template <>
 std::vector<int64_t> onnx_importer::to<std::vector<int64_t>>(const onnx::TensorProto &tensor)
 {
     if (!tensor.int64_data().empty())
@@ -788,6 +846,32 @@ std::vector<float> onnx_importer::to<std::vector<float>>(const onnx::TensorProto
     else
     {
         return raw_to_vector<float, float>(tensor);
+    }
+}
+
+template <>
+std::vector<uint8_t> onnx_importer::to<std::vector<uint8_t>>(const onnx::TensorProto &tensor)
+{
+    if (!tensor.int32_data().empty())
+    {
+        return std::vector<uint8_t> { std::begin(tensor.int32_data()), std::end(tensor.int32_data()) };
+    }
+    else
+    {
+        return raw_to_vector<uint8_t, int32_t>(tensor);
+    }
+}
+
+template <>
+std::vector<int8_t> onnx_importer::to<std::vector<int8_t>>(const onnx::TensorProto &tensor)
+{
+    if (!tensor.int32_data().empty())
+    {
+        return std::vector<int8_t> { std::begin(tensor.int32_data()), std::end(tensor.int32_data()) };
+    }
+    else
+    {
+        return raw_to_vector<int8_t, int32_t>(tensor);
     }
 }
 

@@ -26,7 +26,6 @@ if (NOT BUILDING_RUNTIME)
     find_package(libzippp REQUIRED)
     find_package(inja REQUIRED)
     find_package(shaderc REQUIRED)
-    find_package(range-v3 REQUIRED)
 endif ()
 
 if (BUILD_TESTING)

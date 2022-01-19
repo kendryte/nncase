@@ -116,6 +116,7 @@ protected:
     virtual void process(const std::vector<uint8_t> &src, float *dest, const xt::dynamic_shape<size_t> &shape, std::string layout) = 0;
     virtual void process(const std::vector<uint8_t> &src, uint8_t *dest, const xt::dynamic_shape<size_t> &shape, std::string layout) = 0;
     virtual void process(const std::vector<uint8_t> &src, int8_t *dest, const xt::dynamic_shape<size_t> &shape, std::string layout) = 0;
+    virtual bool do_normalize() const noexcept { return true; }
 
 private:
     template <class T>
@@ -130,6 +131,7 @@ private:
             process(file, batch.data(), batch.shape(), input_layout_);
 
             std::span<const std::filesystem::path> filenames(filenames_.data() + start, filenames_.data() + from);
+
             return data_batch<T> { std::move(batch), filenames };
         }
 
@@ -162,5 +164,6 @@ protected:
     void process(const std::vector<uint8_t> &src, float *dest, const xt::dynamic_shape<size_t> &shape, std::string layout) override;
     void process(const std::vector<uint8_t> &src, uint8_t *dest, const xt::dynamic_shape<size_t> &shape, std::string layout) override;
     void process(const std::vector<uint8_t> &src, int8_t *dest, const xt::dynamic_shape<size_t> &shape, std::string layout) override;
+    bool do_normalize() const noexcept override { return false; }
 };
 }

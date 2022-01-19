@@ -14,11 +14,12 @@
  */
 #include "../caffe_importer.h"
 #include <functional>
-#include <hlir/ops/conv2d.h>
+#include <nncase/ir/ops/constant.h>
+#include <nncase/ir/ops/conv2d.h>
 
 using namespace nncase;
 using namespace nncase::importer;
-using namespace nncase::hlir;
+using namespace nncase::ir;
 using namespace caffe;
 
 DEFINE_CAFFE_LOWER(Convolution)
@@ -27,22 +28,38 @@ DEFINE_CAFFE_LOWER(Convolution)
 
     typedef uint32_t (ConvolutionParameter::*arr_func_t)(int32_t) const;
 
-    auto &input = *output_tensors_.at(op.bottom(0));
+    // check if there are bn/scale/relu above
+    std::string input_name = get_real_input_names(op)[0];
+
+    auto &input = *output_tensors_.at(input_name);
+
+    auto op_data = get_op_data(op, caffemodel);
+
     auto &param = op.convolution_param();
     auto pad_h = (int32_t)get_or_default(std::bind(arr_func_t(&ConvolutionParameter::pad), &param, _1), param.pad_size(), 0, param.pad_h());
     auto pad_w = (int32_t)get_or_default(std::bind(arr_func_t(&ConvolutionParameter::pad), &param, _1), param.pad_size(), 1, param.pad_w());
     auto groups = param.group();
-    auto stride_h = get_or_default(std::bind(arr_func_t(&ConvolutionParameter::stride), &param, _1), param.stride_size(), 0, param.stride_h());
-    auto stride_w = get_or_default(std::bind(arr_func_t(&ConvolutionParameter::stride), &param, _1), param.stride_size(), 1, param.stride_w());
+    auto stride_h = get_or_default(std::bind(arr_func_t(&ConvolutionParameter::stride), &param, _1), param.stride_size(), 0, 1);
+    auto stride_w = get_or_default(std::bind(arr_func_t(&ConvolutionParameter::stride), &param, _1), param.stride_size(), 1, 1);
     auto dilation_h = get_or_default(std::bind(arr_func_t(&ConvolutionParameter::dilation), &param, _1), param.dilation_size(), 0, 1);
     auto dilation_w = get_or_default(std::bind(arr_func_t(&ConvolutionParameter::dilation), &param, _1), param.dilation_size(), 1, 1);
 
-    auto weights = load_tensor<4>(op.blobs(0));
-    auto bias = load_tensor<1>(op.blobs(1));
+    auto weights = load_tensor<4>(op_data.blobs(0));
+    auto bias = load_tensor<1>(op_data.blobs(1));
 
-    auto node = graph_.emplace<conv2d>(input.shape(), weights, bias, groups, padding { pad_h, pad_h }, padding { pad_w, pad_w },
-        stride_h, stride_w, dilation_h, dilation_w, value_range<float>::full());
+    auto node = graph_.emplace<conv2d>(input.shape(), get_shape(op_data.blobs(0).shape()), groups, padding { pad_h, pad_h }, padding { pad_w, pad_w },
+        (int32_t)stride_h, (int32_t)stride_w, (int32_t)dilation_h, (int32_t)dilation_w, value_range<float>::full());
+    node->name(op.name() + "/conv");
 
-    input_tensors_.emplace(&node->input(), op.bottom(0));
+    std::vector<float> weights_vec(weights.begin(), weights.end());
+    std::vector<float> bias_vec(bias.begin(), bias.end());
+    auto weights_const = graph_.emplace<constant>(dt_float32, get_shape(op_data.blobs(0).shape()), weights_vec);
+    weights_const->name(op.name() + "/weights_const");
+    auto bias_const = graph_.emplace<constant>(dt_float32, get_shape(op_data.blobs(1).shape()), bias_vec);
+    bias_const->name(op.name() + "/bias_const");
+
+    input_tensors_.emplace(&node->input(), input_name);
+    node->weights().connect(weights_const->output());
+    node->bias().connect(bias_const->output());
     output_tensors_.emplace(op.top(0), &node->output());
 }

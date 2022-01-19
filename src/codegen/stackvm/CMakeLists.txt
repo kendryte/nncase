@@ -9,18 +9,31 @@ set(SRCS module_builder.cpp
          ops/conv2d.cpp
          ops/convert.cpp
          ops/copy.cpp
+         ops/cumsum.cpp
          ops/dequantize.cpp
+         ops/equal.cpp
          ops/gather.cpp
          ops/gather_nd.cpp
+         ops/hardmax.cpp
+         ops/matmul.cpp
          ops/onehot.cpp
          ops/pad.cpp
          ops/quantize.cpp
+         ops/random_normal.cpp
+         ops/random_uniform.cpp
          ops/reduce.cpp
+         ops/reduce_arg.cpp
+         ops/reduce_prod.cpp
          ops/reduce_window2d.cpp
          ops/resize_image.cpp
+         ops/roi_align.cpp
          ops/slice.cpp
+         ops/sigmoid.cpp
          ops/table_lookup1d.cpp
+         ops/ternary.cpp
+         ops/topk.cpp
          ops/transpose.cpp
+         ops/trilu.cpp
          ops/unary.cpp)
 
 add_library(codegen_stackvm OBJECT ${SRCS})

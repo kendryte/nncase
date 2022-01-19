@@ -29,6 +29,7 @@ namespace nncase::ir::transforms
     };
 
 DEFINE_FP_MOTION(conv2d)
+DEFINE_FP_MOTION(conv2d_transpose)
 DEFINE_FP_MOTION(binary)
 
 #undef DEFINE_FP_MOTION

@@ -47,7 +47,7 @@ host_memory_block &host_memory_block::operator=(host_memory_block &&other) noexc
 }
 
 host_runtime_tensor_impl::host_runtime_tensor_impl(datatype_t datatype, runtime_shape_t shape, runtime_shape_t strides, host_memory_block memory_block)
-    : datatype_(datatype), shape_(std::move(shape)), strides_(std::move(strides)), memory_block_(std::move(memory_block))
+    : datatype_(datatype), shape_(std::move(shape)), strides_(std::move(strides)), memory_block_(std::move(memory_block)), quant_({ 0, 1 })
 {
 }
 
@@ -66,6 +66,14 @@ const runtime_shape_t &host_runtime_tensor_impl::strides() const noexcept
 runtime_tensor_type &host_runtime_tensor_impl::tensor_type() const noexcept
 {
     return host_runtime_tensor_type_;
+}
+const quant_param_t &host_runtime_tensor_impl::quant_param() const noexcept
+{
+    return quant_;
+}
+void host_runtime_tensor_impl::quant_param(const quant_param_t &quant) noexcept
+{
+    quant_ = quant;
 }
 
 bool host_runtime_tensor_impl::can_copy_from_different_type(NNCASE_UNUSED const runtime_tensor_impl &src) const noexcept

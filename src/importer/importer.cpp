@@ -12,7 +12,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-//#include "onnx/onnx_importer.h"
+#include "caffe/caffe_importer.h"
+#include "onnx/onnx_importer.h"
 #include "tflite/tflite_importer.h"
 #include <nncase/importer/importer.h>
 
@@ -20,12 +21,17 @@ using namespace nncase;
 using namespace nncase::importer;
 using namespace nncase::ir;
 
-module_t nncase::importer::import_tflite(std::span<const uint8_t> model, const import_options &options)
+void nncase::importer::import_tflite(ir::graph &graph, std::span<const uint8_t> model, const import_options &options, std::string &real_inlayout, std::string &real_outlayout)
 {
-    return tflite_importer(model).import(options);
+    tflite_importer(model, graph).import(options, real_inlayout, real_outlayout);
 }
 
-//void nncase::importer::import_onnx(ir::graph &graph, std::span<const uint8_t> model, const import_options &options)
-//{
-//    onnx_importer(model, graph).import(options);
-//}
+void nncase::importer::import_onnx(ir::graph &graph, std::span<const uint8_t> model, const import_options &options, std::string &real_inlayout, std::string &real_outlayout)
+{
+    onnx_importer(model, graph).import(options, real_inlayout, real_outlayout);
+}
+
+void nncase::importer::import_caffe(ir::graph &graph, std::span<const uint8_t> model, std::span<const uint8_t> prototxt, std::string &real_inlayout, std::string &real_outlayout)
+{
+    caffe_importer(model, prototxt, graph).import(real_inlayout, real_outlayout);
+}

@@ -14,31 +14,12 @@
  */
 #pragma once
 #include <nncase/runtime/datatypes.h>
+#include <nncase/runtime/debug.h>
 #include <pybind11/numpy.h>
 #include <pybind11/pybind11.h>
 
-#if gsl_CPP17_OR_GREATER
-#include <nncase/ir/debug.h>
-#endif
-
 namespace nncase
 {
-#if !gsl_CPP17_OR_GREATER
-std::string datatype_names(datatype_t dt)
-{
-    switch (dt)
-    {
-#define DEFINE_DATATYPE(id, t, name, value) \
-    case dt_##id:                           \
-        return #name;
-#include <nncase/runtime/datatypes.def>
-#undef DEFINE_DATATYPE
-    default:
-        throw std::invalid_argument("invalid datatype");
-    }
-}
-#endif
-
 pybind11::dtype to_dtype(datatype_t type)
 {
     namespace py = pybind11;
@@ -76,7 +57,7 @@ datatype_t from_dtype(pybind11::dtype dtype)
 {
     namespace py = pybind11;
 
-    if (dtype.is(py::dtype::of<uint8_t>()))
+    if (dtype.is(py::dtype::of<uint8_t>()) || dtype.is(py::dtype::of<bool>()))
         return dt_uint8;
     else if (dtype.is(py::dtype::of<uint16_t>()))
         return dt_uint16;

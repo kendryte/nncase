@@ -12,21 +12,23 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-//#include "nncase/ir/quantizer.h"
+#include "nncase/ir/quantizer.h"
 #include <fstream>
 #include <magic_enum.hpp>
 #include <nncase/codegen/model_builder.h>
 #include <nncase/compiler.h>
 #include <nncase/data/dataset.h>
 #include <nncase/importer/importer.h>
-#include <nncase/io_utils.h>
 #include <nncase/ir/debug.h>
 #include <nncase/ir/evaluator.h>
+#include <nncase/kernels/neutral/neutral_kernels.h>
 #include <nncase/runtime/datatypes.h>
+#include <nncase/runtime/debug.h>
 #include <nncase/transforms/neutral/add_quant_motion.h>
-#include <nncase/transforms/neutral/fold_io_quant_motion.h>
 #include <nncase/transforms/neutral/optimize_allocation.h>
 #include <nncase/transforms/neutral/optimize_benchmark.h>
+#include <nncase/transforms/neutral/post_process_transform.h>
+#include <nncase/transforms/neutral/pre_process_setting.h>
 #include <nncase/transforms/pass.h>
 #include <variant>
 
@@ -35,6 +37,20 @@ using namespace nncase::data;
 using namespace nncase::runtime;
 using namespace nncase::ir;
 
+static float dot(float *v1, float *v2, size_t size)
+{
+    float ret = 0.f;
+    for (size_t i = 0; i < size; i++)
+    {
+        ret += v1[i] * v2[i];
+    }
+    return ret;
+}
+
+static float cosine(float *v1, float *v2, size_t size)
+{
+    return dot(v1, v2, size) / ((sqrt(dot(v1, v1, size)) * sqrt(dot(v2, v2, size))));
+}
 namespace
 {
 calibrate_method to_calibrate_method(std::string name)
@@ -52,61 +68,31 @@ calibrate_method to_calibrate_method(std::string name)
     return calibrate_method::no_clip;
 }
 
-datatype_t to_datatype_method(std::string name)
-{
-    if (name == "int8")
-        return datatype_t::dt_int8;
-    else if (name == "int16")
-        return datatype_t::dt_int16;
-    else if (name == "int32")
-        return datatype_t::dt_int32;
-    else if (name == "int64")
-        return datatype_t::dt_int64;
-    else if (name == "uint8")
-        return datatype_t::dt_uint8;
-    else if (name == "uint16")
-        return datatype_t::dt_uint16;
-    else if (name == "uint32")
-        return datatype_t::dt_uint32;
-    else if (name == "uint64")
-        return datatype_t::dt_uint64;
-    else if (name == "float16")
-        return datatype_t::dt_float16;
-    else if (name == "float32")
-        return datatype_t::dt_float32;
-    else if (name == "float64")
-        return datatype_t::dt_float64;
-    else if (name == "bfloat16")
-        return datatype_t::dt_bfloat16;
-    else
-        throw std::runtime_error("Unsupported data type");
-}
-
 void do_dump_graph(ir::graph &graph, std::ostream &output)
 {
     output << "digraph \"graph\" {\n";
     output << "node [shape=\"record\"]\n";
 
-    //for (auto &&node : graph.nodes())
-    //{
-    //    if (node->runtime_opcode() != ir::op_constant)
-    //        output << "\"" << node->name() << "\" [label=\"{" << node->runtime_opcode().name << "}\"]\n";
-    //}
+    for (auto &&node : graph.nodes())
+    {
+        if (node->runtime_opcode() != ir::op_constant)
+            output << "\"" << node->name() << "\" [label=\"{" << node->runtime_opcode().name << "}\"]\n";
+    }
 
-    //for (auto &&node : graph.nodes())
-    //{
-    //    if (node->runtime_opcode() != ir::op_constant)
-    //    {
-    //        for (auto out : node->outputs())
-    //        {
-    //            auto shape = std::string(datatype_names(out->type())) + ir::to_string(out->shape());
-    //            for (auto &&conn : out->connections())
-    //            {
-    //                output << "\"" << node->name() << "\"->\"" << conn->owner().name() << "\" [label=\"" << shape << "\"]\n";
-    //            }
-    //        }
-    //    }
-    //}
+    for (auto &&node : graph.nodes())
+    {
+        if (node->runtime_opcode() != ir::op_constant)
+        {
+            for (auto out : node->outputs())
+            {
+                auto shape = std::string(datatype_names(out->type())) + ir::to_string(out->shape());
+                for (auto &&conn : out->connections())
+                {
+                    output << "\"" << node->name() << "\"->\"" << conn->owner().name() << "\" [label=\"" << shape << "\"]\n";
+                }
+            }
+        }
+    }
 
     output << "}" << std::endl;
 }
@@ -148,14 +134,11 @@ public:
 
     nncase::target &target() noexcept override { return *target_; }
 
-#define BEGIN_IMPORT()                                 \
-    std::cout << "1. Import graph..." << std::endl;    \
-                                                       \
-    importer::import_options imp_options;              \
-    imp_options.input_layout = options.input_layout;   \
-    imp_options.output_layout = options.output_layout; \
-    imp_options.output_arrays = options.output_arrays; \
-    input_layout_ = options.input_layout;
+#define BEGIN_IMPORT()                              \
+    std::cout << "1. Import graph..." << std::endl; \
+                                                    \
+    importer::import_options imp_options;           \
+    imp_options.output_arrays = options.output_arrays;
 
 #define END_IMPORT()                                                  \
     if (compile_options_.dump_ir)                                     \
@@ -168,15 +151,22 @@ public:
     void import_tflite(std::span<const uint8_t> model, const import_options &options) override
     {
         BEGIN_IMPORT()
-        importer::import_tflite(graph_, model, imp_options);
+        importer::import_tflite(graph_, model, imp_options, real_inlayout_, real_outlayout_);
         END_IMPORT()
     }
 
     void import_onnx(std::span<const uint8_t> model, const import_options &options) override
     {
-        //BEGIN_IMPORT()
-        //importer::import_onnx(graph_, model, imp_options);
-        //END_IMPORT()
+        BEGIN_IMPORT()
+        importer::import_onnx(graph_, model, imp_options, real_inlayout_, real_outlayout_);
+        END_IMPORT()
+    }
+
+    void import_caffe(std::span<const uint8_t> model, std::span<const uint8_t> prototxt) override
+    {
+        std::cout << "1. Import graph..." << std::endl;
+        importer::import_caffe(graph_, model, prototxt, real_inlayout_, real_outlayout_);
+        END_IMPORT()
     }
 
     void use_ptq(ptq_dataset_options options) override
@@ -191,6 +181,16 @@ public:
         use_ptq_ = true;
     }
 
+    void dump_range_options(dump_range_dataset_options options) override
+    {
+        dump_range_options_ = std::move(options);
+    }
+
+    void dump_range_options(dump_range_tensor_options options) override
+    {
+        dump_range_options_ = std::move(options);
+    }
+
     void compile() override
     {
         if (use_ptq_)
@@ -202,6 +202,31 @@ public:
         {
             if (compile_options_.input_type == "default")
                 compile_options_.input_type = "float32";
+        }
+        if (compile_options_.preprocess)
+        {
+            std::cout << "1.1 Pre-process..." << std::endl;
+            input_layout_ = compile_options_.input_layout;
+            pre_process(graph_, compile_options_);
+            post_process(graph_, compile_options_);
+        }
+
+        if (compile_options_.dump_import_op_range)
+        {
+            std::ofstream f;
+            auto evaluator_import = run_calibration(graph_, nncase::ir::eval_step::after_import);
+            quantizer *eval_import_quantizer = evaluator_import.quantizer(graph_.module_type());
+            if (compile_options_.dump_ir)
+                f.open(compile_options_.dump_dir / "origin_layer_data_range.txt");
+            std::cout << "Collected ranges:" << std::endl;
+            for (uint32_t i = 0; i < eval_import_quantizer->ranges_insert_order().size(); i++)
+            {
+                auto quant_layer_connector = eval_import_quantizer->ranges_insert_order()[i];
+                auto ranges_map = eval_import_quantizer->ranges();
+                std::cout << "node name: " << quant_layer_connector->owner().name() << "   range min: " << ranges_map[quant_layer_connector].min << "   range max: " << ranges_map[quant_layer_connector].max << std::endl;
+                f << "node name: " << quant_layer_connector->owner().name() << "   range min: " << ranges_map[quant_layer_connector].min << "   range max: " << ranges_map[quant_layer_connector].max << std::endl;
+            }
+            f.close();
         }
 
         std::cout << "2. Optimize target independent..." << std::endl;
@@ -216,13 +241,75 @@ public:
             add_quantize_annotation(graph_);
 
             std::cout << "4.2. Run calibration..." << std::endl;
-            auto evaluator = run_calibration(graph_);
+            auto evaluator = run_calibration(graph_, nncase::ir::eval_step::after_calib);
+            quantizer *eval_quantizer = evaluator.quantizer(graph_.module_type());
 
             std::cout << "4.3. Quantize graph..." << std::endl;
             quantize_graph(graph_, evaluator);
+
+            if (compile_options_.dump_quant_error)
+            {
+                std::cout << "4.4. Evaluate quantized graph..." << std::endl;
+                char target_name[MAX_MODULE_TYPE_LENGTH];
+                memset(target_name, '\0', sizeof(target_name));
+                char *p = const_cast<char *>(compile_options_.target.c_str());
+                strcpy(target_name, p);
+                if (strcmp(target_name, "cpu"))
+                    graph_.set_module_type(to_module_type(target_name));
+
+                auto quant_evaluator = run_calibration(graph_, nncase::ir::eval_step::after_quant);
+                quantizer *quant_eval_quantizer = quant_evaluator.quantizer(graph_.module_type());
+
+                std::cout << "4.5. Summarize accumulated quant error for layer output..." << std::endl;
+                std::ofstream f;
+                if (compile_options_.dump_ir)
+                    f.open(compile_options_.dump_dir / "layer_quant_error.txt");
+
+                bool has_quant_map = false;
+                for (uint32_t i = 0; i < quant_eval_quantizer->quant_buffers_insert_order().size(); i++)
+                {
+                    auto quant_layer_connector = quant_eval_quantizer->quant_buffers_insert_order()[i];
+                    if (quant_layer_connector->owner().get_output_connectors_quant_map().size() != 0)
+                        has_quant_map = true;
+                }
+
+                if (has_quant_map)
+                {
+                    for (uint32_t i = 0; i < quant_eval_quantizer->quant_buffers_insert_order().size(); i++)
+                    {
+                        auto quant_layer_connector = quant_eval_quantizer->quant_buffers_insert_order()[i];
+                        auto data_size = kernels::detail::compute_size(quant_layer_connector->shape());
+                        if (quant_layer_connector->owner().get_output_connectors_quant_map().size() != 0)
+                        {
+                            std::string layer_name = quant_layer_connector->owner().get_node_name_before_quant();
+                            std::cout << "layer name: " << layer_name << "   cosine: " << cosine(eval_quantizer->output_buffers()[quant_layer_connector->owner().get_output_connectors_quant_map()[quant_layer_connector]].data(), quant_eval_quantizer->output_buffers()[quant_layer_connector].data(), data_size) << std::endl;
+                            if (compile_options_.dump_ir)
+                                f << "layer name: " << layer_name << "   cosine: " << cosine(eval_quantizer->output_buffers()[quant_layer_connector->owner().get_output_connectors_quant_map()[quant_layer_connector]].data(), quant_eval_quantizer->output_buffers()[quant_layer_connector].data(), data_size) << std::endl;
+                        }
+                    }
+                }
+                else
+                {
+                    for (uint32_t i = 0; i < quant_eval_quantizer->quant_buffers_insert_order().size(); i++)
+                    {
+                        auto quant_layer_connector = quant_eval_quantizer->quant_buffers_insert_order()[i];
+                        auto data_size = kernels::detail::compute_size(quant_layer_connector->shape());
+                        std::string layer_name = quant_layer_connector->owner().name();
+                        if (quant_layer_connector->owner().runtime_opcode() != ir::op_pad)
+                        {
+                            std::cout << "layer name: " << layer_name << "   cosine: " << cosine(eval_quantizer->output_buffers()[quant_layer_connector].data(), quant_eval_quantizer->output_buffers()[quant_layer_connector].data(), data_size) << std::endl;
+                            if (compile_options_.dump_ir)
+                                f << "layer name: " << layer_name << "   cosine: " << cosine(eval_quantizer->output_buffers()[quant_layer_connector].data(), quant_eval_quantizer->output_buffers()[quant_layer_connector].data(), data_size) << std::endl;
+                        }
+                    }
+                }
+                if (compile_options_.dump_ir)
+                    f.close();
+            }
         }
 
         std::cout << "5. Optimize target dependent after quantization..." << std::endl;
+        graph_.set_module_type(to_module_type("stackvm"));
         optimize_target_dependent_after_quant(graph_);
 
         std::cout << "6. Optimize modules..." << std::endl;
@@ -244,6 +331,12 @@ public:
         {
             std::cout << "3. Optimize target dependent..." << std::endl;
             optimize_target_dependent(graph_, use_ptq_);
+
+            if (use_ptq_)
+            {
+                std::cout << "4.1. Add quantize annotation..." << std::endl;
+                add_quantize_annotation(graph_);
+            }
         }
 
         return graph_;
@@ -275,9 +368,21 @@ private:
     void set_target(std::string_view type)
     {
         target_ = plugin_loader::create_target(type);
-        target_options_.is_fpga = compile_options_.is_fpga;
-
+        target_->options().is_fpga = compile_options_.is_fpga;
         target_->register_evaluator_ops();
+    }
+
+    void pre_process(ir::graph &graph, compile_options &cmp_options)
+    {
+        using namespace ir::transforms;
+        run_passes("pre_process", graph, [&]([[maybe_unused]] const module_type_t &module_type, ir::transforms::pass_manager &pmgr) { pmgr.add_pass<pre_process_transform>(
+                                                                                                                                          cmp_options.mean, cmp_options.std, cmp_options.input_range, cmp_options.input_shape, cmp_options.swapRB, input_layout_, cmp_options.input_type, cmp_options.quant_type, real_inlayout_, cmp_options.letterbox_value); });
+    }
+    void post_process(ir::graph &graph, compile_options &cmp_options)
+    {
+        using namespace ir::transforms;
+        run_passes("post_process", graph, [&]([[maybe_unused]] const module_type_t &module_type, ir::transforms::pass_manager &pmgr) { pmgr.add_pass<post_process_transform>(
+                                                                                                                                           cmp_options.output_layout, cmp_options.output_type, real_outlayout_); });
     }
 
     void optimize_target_independent(ir::graph &graph)
@@ -291,6 +396,7 @@ private:
         using namespace ir::transforms;
 
         run_passes("mark_noaction", graph, [&]([[maybe_unused]] const module_type_t &module_type, ir::transforms::pass_manager &pmgr) {
+            pmgr.add_pass<make_slice_no_action_pass>();
             pmgr.add_pass<make_concat_no_action_pass>();
             pmgr.add_pass<make_bitcast_no_action_pass>();
         });
@@ -318,10 +424,13 @@ private:
 
         run_passes("buffer_fusion", graph, [&]([[maybe_unused]] const module_type_t &module_type, ir::transforms::pass_manager &pmgr) {
             pmgr.add_pass<add_copy_to_concat_pass>();
+            pmgr.add_pass<add_copy_to_slice_pass>();
             pmgr.add_pass<add_copy_to_output_pass>();
 
             transform_pass pass("optimize_copy");
             pass.emplace<remove_exclusive_copy_to_output_transform>();
+            pass.emplace<remove_simple_copy_from_slice_transform>();
+            pass.emplace<remove_non_simple_copy_from_slice_transform>();
             pass.emplace<remove_exclusive_copy_to_concat_transform>();
             pmgr.add_pass(std::move(pass));
         });
@@ -358,22 +467,6 @@ private:
             ir::transforms::pass_manager pmgr(graph, *target_);
             auto quant = evaluator.quantizer(graph.module_type());
 
-            if (!compile_options_.use_dataset_as_input_stat)
-            {
-                float input_mean, input_std;
-                std::visit([&](auto &options) {
-                    input_mean = options.input_mean;
-                    input_std = options.input_std;
-                },
-                    ptq_options_);
-
-                auto min = (0.f - input_mean) / input_std;
-                auto max = (1.f - input_mean) / input_std;
-                value_range<float> input_range { min, max };
-                quant->set(graph.inputs()[0]->output(), input_range);
-                quant->record(graph.inputs()[0]->output(), input_range);
-            }
-
             // broadcast quant ranges
             std::unordered_set<node_opcode> opcodes;
             target_->add_quantization_broadcast(opcodes);
@@ -381,20 +474,14 @@ private:
 
             ir::transforms::transform_pass p("process i&o node");
 
-            if (use_ptq_)
-            {
-                if (compile_options_.input_type != "float32")
-                    p.emplace<nncase::ir::transforms::add_input_dequantize_transform>(to_datatype_method(compile_options_.input_type));
-
-                if (compile_options_.output_type != "float32")
-                    p.emplace<nncase::ir::transforms::add_output_quantize_transform>(to_datatype_method(compile_options_.output_type));
-                pmgr.add_pass(std::move(p));
-            }
+            if (compile_options_.output_type != "float32")
+                p.emplace<nncase::ir::transforms::add_output_quantize_transform>(parse_datatype_str(compile_options_.output_type));
+            pmgr.add_pass(std::move(p));
 
             pmgr.quantizer(quant);
             if (compile_options_.dump_ir)
                 pmgr.dump_dir(compile_options_.dump_dir);
-            target_->register_quantize_passes(graph.module_type(), pmgr, to_datatype_method(compile_options_.quant_type), to_datatype_method(compile_options_.w_quant_type));
+            target_->register_quantize_passes(graph.module_type(), pmgr, parse_datatype_str(compile_options_.quant_type), compile_options_.w_quant_type, compile_options_.use_mse_quant_w);
             pmgr.run();
             dump_graph(graph, "quantize");
         };
@@ -404,77 +491,126 @@ private:
             graph_runner(*subgraph);
     }
 
-    ir::evaluator run_calibration(ir::graph &graph)
+    ir::evaluator run_calibration(ir::graph &graph, eval_step step)
     {
         schedule::scheduler sched(*target_, graph, graph.outputs());
         if (compile_options_.dump_ir)
         {
-            auto dump_path = compile_options_.dump_dir / "calibration";
+            auto dump_path = step == nncase::ir::eval_step::after_import ? compile_options_.dump_dir / "after_import" : (step == nncase::ir::eval_step::after_calib ? compile_options_.dump_dir / "after_calibration" : compile_options_.dump_dir / "after_quantize");
             std::filesystem::create_directories(dump_path);
             sched.config_dump(dump_path);
         }
 
         auto sched_result = sched.schedule(true);
         ir::evaluator evaluator(sched_result);
-        auto calib_method = std::visit([](auto &options) { return to_calibrate_method(options.calibrate_method); },
-            ptq_options_);
 
-        evaluator.enable_ptq(*target_, calib_method);
+        if (step != eval_step::after_import)
+        {
+            auto calib_method = std::visit([](auto &options) { return to_calibrate_method(options.calibrate_method); }, ptq_options_);
+            evaluator.enable_ptq(*target_, calib_method);
+        }
+        else
+        {
+            auto calib_method = std::visit([](auto &options) { return to_calibrate_method(options.calibrate_method); }, dump_range_options_);
+            evaluator.enable_ptq(*target_, calib_method);
+        }
 
         if (graph.inputs().size() != 1)
-            throw std::invalid_argument("PTQ only support models that have single 1 input");
+            throw std::invalid_argument("Collect ranges only support models that have single 1 input");
 
-        if (ptq_options_.index() == 0)
+        if (step != eval_step::after_import)
         {
-            auto &options = std::get<ptq_dataset_options>(ptq_options_);
-            auto &in_shape = graph.inputs()[0]->output().shape();
-            xt::dynamic_shape<size_t> dataset_in_shape(in_shape.begin(), in_shape.end());
-            std::unique_ptr<dataset> ds;
-            if (options.dataset_format == "image")
-                ds = std::make_unique<image_dataset>(options.dataset, dataset_in_shape, input_layout_, options.input_mean, options.input_std);
-            else if (options.dataset_format == "raw")
-                ds = std::make_unique<raw_dataset>(options.dataset, dataset_in_shape, options.input_mean, options.input_std);
-            else
-                throw std::runtime_error("Invalid calibration dataset format: " + options.dataset_format);
-
-            auto in_type = graph.inputs()[0]->output().type();
-            switch (in_type)
+            if (ptq_options_.index() == 0)
             {
-            case dt_float32:
-                run_calibration_eval<float>(options, *ds, evaluator);
-                break;
-            case dt_uint8:
-                run_calibration_eval<uint8_t>(options, *ds, evaluator);
-                break;
-            case dt_int8:
-                run_calibration_eval<int8_t>(options, *ds, evaluator);
-                break;
-            default:
-                throw std::runtime_error("Unsupported input datatype: " + std::string(datatype_names(in_type)));
+                auto &options = std::get<ptq_dataset_options>(ptq_options_);
+                auto &in_shape = graph.inputs()[0]->output().shape();
+                xt::dynamic_shape<size_t> dataset_in_shape(in_shape.begin(), in_shape.end());
+                std::unique_ptr<dataset> ds;
+                if (options.dataset_format == "image")
+                    ds = std::make_unique<image_dataset>(options.dataset, dataset_in_shape, compile_options_.input_layout);
+                else if (options.dataset_format == "raw")
+                    ds = std::make_unique<raw_dataset>(options.dataset, dataset_in_shape);
+                else
+                    throw std::runtime_error("Invalid calibration dataset format: " + options.dataset_format);
+
+                auto in_type = graph.inputs()[0]->output().type();
+                switch (in_type)
+                {
+                case dt_float32:
+                    run_calibration_eval<float, ptq_dataset_options>(options, *ds, evaluator, step);
+                    break;
+                case dt_uint8:
+                    run_calibration_eval<uint8_t, ptq_dataset_options>(options, *ds, evaluator, step);
+                    break;
+                case dt_int8:
+                    run_calibration_eval<int8_t, ptq_dataset_options>(options, *ds, evaluator, step);
+                    break;
+                default:
+                    throw std::runtime_error("Unsupported input datatype: " + std::string(datatype_names(in_type)));
+                }
+            }
+            else
+            {
+                auto &options = std::get<ptq_tensor_options>(ptq_options_);
+                run_calibration_eval<ptq_tensor_options>(options, evaluator, step);
             }
         }
         else
         {
-            auto &options = std::get<ptq_tensor_options>(ptq_options_);
-            run_calibration_eval(options, evaluator);
+            if (dump_range_options_.index() == 0)
+            {
+                auto &options = std::get<dump_range_dataset_options>(dump_range_options_);
+                auto &in_shape = graph.inputs()[0]->output().shape();
+                xt::dynamic_shape<size_t> dataset_in_shape(in_shape.begin(), in_shape.end());
+                std::unique_ptr<dataset> ds;
+                if (options.dataset_format == "image")
+                    ds = std::make_unique<image_dataset>(options.dataset, dataset_in_shape, compile_options_.input_layout);
+                else if (options.dataset_format == "raw")
+                    ds = std::make_unique<raw_dataset>(options.dataset, dataset_in_shape);
+                else
+                    throw std::runtime_error("Invalid calibration dataset format: " + options.dataset_format);
+
+                auto in_type = graph.inputs()[0]->output().type();
+                switch (in_type)
+                {
+                case dt_float32:
+                    run_calibration_eval<float, dump_range_dataset_options>(options, *ds, evaluator, step);
+                    break;
+                case dt_uint8:
+                    run_calibration_eval<uint8_t, dump_range_dataset_options>(options, *ds, evaluator, step);
+                    break;
+                case dt_int8:
+                    run_calibration_eval<int8_t, dump_range_dataset_options>(options, *ds, evaluator, step);
+                    break;
+                default:
+                    throw std::runtime_error("Unsupported input datatype: " + std::string(datatype_names(in_type)));
+                }
+            }
+            else
+            {
+                auto &options = std::get<dump_range_tensor_options>(dump_range_options_);
+                run_calibration_eval<dump_range_tensor_options>(options, evaluator, step);
+            }
         }
 
         return evaluator;
     }
 
-    template <class T>
-    void run_calibration_eval(ptq_dataset_options &options, dataset &dataset, ir::evaluator &evaluator)
+    template <class T, class TOpt>
+    void run_calibration_eval(TOpt &options, dataset &dataset, ir::evaluator &evaluator, eval_step step)
     {
+        std::string step_str = step == nncase::ir::eval_step::after_import ? "1" : (step == nncase::ir::eval_step::after_calib ? "4.2" : "4.4");
         const size_t max_stages = options.calibrate_method == "no_clip" ? 1 : 2;
+
         for (size_t stage = 0; stage < max_stages; stage++)
         {
             if (stage == 0)
             {
-                std::cout << "4.2.1 Collecting ranges..." << std::endl;
+                std::cout << step_str + ".1. Collecting ranges..." << std::endl;
             }
             else
             {
-                std::cout << "4.2.2 Collecting distribution..." << std::endl;
+                std::cout << step_str + ".2. Collecting distribution..." << std::endl;
                 evaluator.begin_collect_distribution();
             }
 
@@ -485,7 +621,7 @@ private:
                 auto &tensor = it->tensor;
                 std::memcpy(input_buffer.data(), tensor.data(), input_buffer.size_bytes());
 
-                evaluator.evaluate();
+                evaluator.evaluate(step, stage, compile_options_.dump_quant_error);
                 evaluator.end_sample();
                 if (options.progress)
                     options.progress(i++, dataset.total_size());
@@ -493,24 +629,26 @@ private:
 
             if (stage == 1)
             {
-                std::cout << "4.2.3. Find optimal quantization ranges..." << std::endl;
+                std::cout << step_str + ".3. Find optimal quantization ranges..." << std::endl;
                 evaluator.end_collect_distribution(options.progress);
             }
         }
     }
 
-    void run_calibration_eval(ptq_tensor_options &options, ir::evaluator &evaluator)
+    template <class TOpt>
+    void run_calibration_eval(TOpt &options, ir::evaluator &evaluator, eval_step step)
     {
+        std::string step_str = step == nncase::ir::eval_step::after_import ? "1" : (step == nncase::ir::eval_step::after_calib ? "4.2" : "4.4");
         const size_t max_stages = options.calibrate_method == "no_clip" ? 1 : 2;
         for (size_t stage = 0; stage < max_stages; stage++)
         {
             if (stage == 0)
             {
-                std::cout << "4.2.1 Collecting ranges..." << std::endl;
+                std::cout << step_str + ".1. Collecting ranges..." << std::endl;
             }
             else
             {
-                std::cout << "4.2.2 Collecting distribution..." << std::endl;
+                std::cout << step_str + ".2. Collecting distribution..." << std::endl;
                 evaluator.begin_collect_distribution();
             }
 
@@ -519,7 +657,7 @@ private:
                 auto input_buffer = evaluator.input_at(0).buffer();
                 std::memcpy(input_buffer.data(), options.tensor_data.data() + i * input_buffer.size_bytes(), input_buffer.size_bytes());
 
-                evaluator.evaluate();
+                evaluator.evaluate(step, stage, compile_options_.dump_quant_error);
                 evaluator.end_sample();
                 if (options.progress)
                     options.progress(i++, options.samples_count);
@@ -527,7 +665,7 @@ private:
 
             if (stage == 1)
             {
-                std::cout << "4.2.3. Find optimal quantization ranges..." << std::endl;
+                std::cout << step_str + ".3. Find optimal quantization ranges..." << std::endl;
                 evaluator.end_collect_distribution(options.progress);
             }
         }
@@ -605,11 +743,13 @@ private:
 private:
     ir::graph graph_;
     compile_options compile_options_;
-    target_options target_options_;
     std::string input_layout_;
     std::variant<ptq_dataset_options, ptq_tensor_options> ptq_options_;
+    std::variant<dump_range_dataset_options, dump_range_tensor_options> dump_range_options_;
     bool use_ptq_ = false;
     std::unique_ptr<nncase::target> target_;
+    std::string real_inlayout_ = "";
+    std::string real_outlayout_ = "";
 };
 }
 

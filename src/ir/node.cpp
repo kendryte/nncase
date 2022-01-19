@@ -12,9 +12,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include <nncase/ir/expr.h>
 #include <nncase/ir/node.h>
-#include <nncase/ir/var.h>
 #include <nncase/runtime/stackvm/runtime_module.h>
 
 using namespace nncase;

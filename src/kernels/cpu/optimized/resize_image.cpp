@@ -115,6 +115,112 @@ result<void> resize_nearest_neighbor_impl(const T *input, T *output, const runti
     }
     return ok();
 }
+
+inline result<void> gnne_resize_nearest_neighbor(const bfloat16 *input, bfloat16 *output,
+    const runtime_shape_t &in_shape, NNCASE_UNUSED const runtime_shape_t &in_strides,
+    NNCASE_UNUSED const runtime_shape_t &out_strides, int32_t out_h, int32_t out_w, NNCASE_UNUSED bool align_corners, NNCASE_UNUSED bool half_pixel_centers, NNCASE_UNUSED kernel_context &context)
+{
+    if (align_corners || half_pixel_centers)
+    {
+        return err(std::errc::not_supported);
+    }
+
+    auto height_scale = (float)in_shape[2] / out_h;
+    auto width_scale = (float)in_shape[3] / out_w;
+
+    const auto in_image_size = in_shape[2] * in_shape[3];
+    const auto out_image_size = out_h * out_w;
+    for (size_t batch = 0; batch < in_shape[0]; batch++)
+    {
+        auto *begin_input_ptr = input + batch * in_shape[1] * in_image_size;
+        auto *begin_output_ptr = output + batch * in_shape[1] * out_image_size;
+#ifdef NNCASE_OPENMP
+#pragma omp parallel for num_threads(kernels::default_kernel_context().num_threads)
+#endif
+        for (size_t oc = 0; oc < in_shape[1]; oc++)
+        {
+            auto *input_ptr = begin_input_ptr + oc * in_image_size;
+            auto *output_ptr = begin_output_ptr + oc * out_image_size;
+
+            for (int oy = 0; oy < out_h; oy++)
+            {
+                auto in_y = std::min((int32_t)floorf(oy * height_scale), (int32_t)in_shape[2] - 1);
+                auto *in_row = input_ptr + in_y * in_shape[3];
+
+                for (int ox = 0; ox < out_w; ox++)
+                {
+                    auto in_x = std::min((int32_t)floorf(ox * width_scale), (int32_t)in_shape[3] - 1);
+                    *output_ptr++ = in_row[in_x];
+                }
+            }
+        }
+    }
+    return ok();
+}
+
+inline result<void> resize_bilinear_impl(const bfloat16 *input, bfloat16 *output, const runtime_shape_t &in_shape, NNCASE_UNUSED const runtime_shape_t &in_strides,
+    NNCASE_UNUSED const runtime_shape_t &out_strides,
+    int32_t out_h, int32_t out_w, bool align_corners,
+    NNCASE_UNUSED bool half_pixel_centers,
+    NNCASE_UNUSED kernel_context &context)
+{
+    if (half_pixel_centers)
+    {
+        return err(std::errc::not_supported);
+    }
+
+    auto height_scale = (float)in_shape[2] / out_h;
+    auto width_scale = (float)in_shape[3] / out_w;
+    if (align_corners && out_h > 1)
+        height_scale = (float)(in_shape[2] - 1) / (out_h - 1);
+    if (align_corners && out_w > 1)
+        width_scale = (float)(in_shape[3] - 1) / (out_w - 1);
+
+    const auto in_img_size = in_shape[2] * in_shape[3];
+    const auto out_img_size = out_w * out_h;
+
+    for (size_t batch = 0; batch < in_shape[0]; batch++)
+    {
+        auto in_batch = input + (size_t)batch * in_shape[1] * in_img_size;
+        auto *begin_output_ptr = output + batch * in_shape[1] * out_w * out_h;
+#ifdef NNCASE_OPENMP
+#pragma omp parallel for num_threads(kernels::default_kernel_context().num_threads)
+#endif
+        for (size_t oc = 0; oc < in_shape[1]; oc++)
+        {
+            auto in_c = in_batch + (size_t)oc * in_img_size;
+            auto *output_ptr = begin_output_ptr + oc * out_img_size;
+            for (int oy = 0; oy < out_h; oy++)
+            {
+                auto in_y = oy * height_scale;
+                auto in_y0 = (int)floorf(in_y);
+                auto in_y1 = std::min(in_y0 + 1, (int32_t)in_shape[2] - 1);
+
+                for (int ox = 0; ox < out_w; ox++)
+                {
+                    auto in_x = ox * width_scale;
+                    auto in_x0 = (int)floorf(in_x);
+                    auto in_x1 = std::min(in_x0 + 1, (int32_t)in_shape[3] - 1);
+
+                    auto v0 = in_c[in_y0 * in_shape[3] + in_x0];
+                    auto v1 = in_c[in_y1 * in_shape[3] + in_x0];
+                    auto v2 = in_c[in_y0 * in_shape[3] + in_x1];
+                    auto v3 = in_c[in_y1 * in_shape[3] + in_x1];
+
+                    auto a0 = (1 - (in_y - in_y0)) * (1 - (in_x - in_x0));
+                    auto a1 = (in_y - in_y0) * (1 - (in_x - in_x0));
+                    auto a2 = (1 - (in_y - in_y0)) * (in_x - in_x0);
+                    auto a3 = (in_y - in_y0) * (in_x - in_x0);
+
+                    *output_ptr = bfloat16::round_to_bfloat16(v0 * a0 + v1 * a1 + v2 * a2 + v3 * a3);
+                    ++output_ptr;
+                }
+            }
+        }
+    }
+    return ok();
+}
+
 }
 
 #define FP_OR_Q_IMPL(type, KERNEL)            \
@@ -122,6 +228,8 @@ result<void> resize_nearest_neighbor_impl(const T *input, T *output, const runti
     {                                         \
     case dt_float32:                          \
         return KERNEL(float);                 \
+    case dt_bfloat16:                         \
+        return KERNEL(bfloat16);              \
     case dt_int8:                             \
     case dt_uint8:                            \
         return KERNEL(uint8_t);               \

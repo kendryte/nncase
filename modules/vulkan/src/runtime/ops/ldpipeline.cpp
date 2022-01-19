@@ -47,7 +47,7 @@ result<void> vulkan_runtime_function::visit(const ldpipeline_op_t &op) noexcept
 
     vk::ComputePipelineCreateInfo comp_ppl_cinfo({}, { {}, vk::ShaderStageFlagBits::eCompute, shader, "main" }, ppl_layout);
     try_var(pipeline, vk::to_result(module().device().createComputePipeline({}, comp_ppl_cinfo)));
-    try_(module().add_pipeline(pipeline));
+    module().device().destroyShaderModule(shader);
 
     vk::DescriptorSetAllocateInfo desc_alloc_info(module().buffer_desc_pool(), desc_layout);
     try_var(desc_sets, vk::to_result(module().device().allocateDescriptorSets(desc_alloc_info)));
@@ -74,6 +74,7 @@ result<void> vulkan_runtime_function::visit(const ldpipeline_op_t &op) noexcept
 
     module().device().updateDescriptorSets(write_descs, {});
 
+    try_(module().add_pipeline(pipeline, ppl_layout, desc_layout));
     cmd_buffer_.bindPipeline(vk::PipelineBindPoint::eCompute, pipeline);
     cmd_buffer_.bindDescriptorSets(vk::PipelineBindPoint::eCompute, ppl_layout, 0, desc_sets, {});
     return ok();

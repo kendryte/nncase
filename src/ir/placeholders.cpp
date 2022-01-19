@@ -19,5 +19,6 @@ using namespace nncase::ir;
 
 // Workaround for error LNK2019 unresolved external symbol "__declspec(dllimport) const nncase::ir::ignore_node::`vftable'"
 #ifdef _MSC_VER
-static ignore_node dummy(dt_float32, shape_t { 1 });
+static ignore_node dummy1(dt_float32, shape_t { 1 });
+static uninitialized dummy2(dt_float32, shape_t { 1 });
 #endif
