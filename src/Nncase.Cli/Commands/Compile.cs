@@ -74,6 +74,9 @@ namespace Nncase.Cli.Commands
         {
             InitLocatorProvider(host);
             var module = ImportModule(File.OpenRead(options.InputFile), options);
+            var a = (Const) 1;
+            var b = (Const) 1;
+            var c = a + b;
         }
 
         public IRModule ImportModule(Stream content, CompileOptions options)

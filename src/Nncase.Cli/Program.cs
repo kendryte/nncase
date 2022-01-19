@@ -6,6 +6,7 @@ using System.CommandLine.Builder;
 using System.CommandLine.Hosting;
 using System.CommandLine.Parsing;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Autofac;
@@ -39,16 +40,40 @@ namespace Nncase.Cli
                 .Build().InvokeAsync(args);
         }
 
-        private static Assembly LoadTarget(string targetType, string path)
+        private static Assembly[] GetAssemblies(string path)
         {
-            // add all dll which can be searched
-            return Assembly.LoadFrom(path);
+            var dllPattern = "Nncase*.dll";
+            return new DirectoryInfo(path)
+                .GetFiles(dllPattern)
+                .Select(f => Assembly.LoadFrom(f.FullName))
+                .ToArray();
+        }
+        
+        private static Assembly[] LoadDLL()
+        {
+            var path = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+            var assemblies = GetAssemblies(path);
+            var targetPath = System.Environment.GetEnvironmentVariable("NNCASE_TARGET_PATH");
+            if (targetPath is null)
+            {
+                // todo:log
+                Console.WriteLine("NNCASE_TARGET_PATH is not setted");
+                return assemblies;
+            }
+            else
+            {
+                var targetAssemblies = targetPath.Split(":")
+                    .Aggregate(
+                        new Assembly[] { },
+                        (sum, targetPath) => sum.Concat(GetAssemblies(targetPath)).ToArray());
+                return assemblies.Concat(targetAssemblies).ToArray();
+            }
         }
         
         private static void ConfigureContainer(ContainerBuilder builder)
         {
-            // var assembly = LoadTarget("K510", ".");
-            builder.RegisterAssemblyModules(typeof(EvaluatorVisitor).Assembly);
+            var assemblies = LoadDLL();
+            builder.RegisterAssemblyModules(assemblies);
         }
         
         private static void ConfigureServices(HostBuilderContext context, IServiceCollection services)
