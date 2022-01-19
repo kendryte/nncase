@@ -13,16 +13,30 @@
  * limitations under the License.
  */
 #pragma once
-#include "target.h"
+#include <nncase/targets/target.h>
 
-namespace nncase::targets {
-class NNCASE_API neutral_target : public target {
-  public:
+namespace nncase::targets
+{
+class NNCASE_API neutral_target : public target
+{
+public:
     using target::target;
 
-    void
-    configure_passes_pre_schedule(ir::transforms::pass_manager &pmgr) override;
+    void register_allocators(const module_type_t &type, schedule::allocator_map_t &allocators, std::vector<std::shared_ptr<schedule::buffer_allocator>> &allocator_holders) override;
+    void register_evaluator_ops() override;
+    void register_target_independent_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr) override;
+    void register_target_dependent_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr, bool use_ptq) override;
+    void register_quantize_annotation_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr) override;
+    void register_quantize_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr, datatype_t quant_type, std::string_view w_quant_type, bool use_mse_quant_w) override;
+    void register_allocation_passes(const module_type_t &type, ir::transforms::pass_manager &pass_mgr) override;
+    void add_quantization_broadcast(std::unordered_set<ir::node_opcode> &opcodes) override;
 
-  protected:
+protected:
+    void move_transpose_transform(ir::transforms::transform_pass &pass, bool add_constant_folding = true);
+    void fold_pad_conv_transform(ir::transforms::transform_pass &pass, bool add_constant_folding = true);
+    void fold_dilated_conv_transform(ir::transforms::transform_pass &pass, bool add_constant_folding = true);
+    void add_default_transforms(ir::transforms::transform_pass &pass, bool add_constant_folding = true);
+
+    std::unique_ptr<target_options> on_create_options() override;
 };
-} // namespace nncase::targets
+}

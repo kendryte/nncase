@@ -31,7 +31,7 @@ using namespace nncase::ir::transforms;
 
 namespace
 {
-memory_location_t decide_memory_location(ir::output_connector &conn, bool skip_buffer_alias) noexcept
+memory_location_t decide_memory_location(ir::output_connector &conn, [[maybe_unused]] bool skip_buffer_alias) noexcept
 {
     auto &opcode = conn.owner().runtime_opcode();
     if (opcode == op_input_node)
@@ -40,11 +40,8 @@ memory_location_t decide_memory_location(ir::output_connector &conn, bool skip_b
         return conn.memory_location();
 
     auto inputs = conn.connections();
-    if (skip_buffer_alias)
-    {
-        if (std::any_of(inputs.begin(), inputs.end(), [](input_connector *conn) { return conn->owner().runtime_opcode() == op_output_node; }))
-            return mem_output;
-    }
+    if (std::any_of(inputs.begin(), inputs.end(), [](input_connector *conn) { return conn->owner().runtime_opcode() == op_output_node; }))
+        return mem_output;
 
     //if (opcode == op_call && conn.memory_location() == mem_data)
     //    return mem_shared_data;
@@ -53,6 +50,62 @@ memory_location_t decide_memory_location(ir::output_connector &conn, bool skip_b
     //    return mem_shared_data;
 
     return conn.memory_location();
+}
+
+void update_absolute_offset(logical_buffer &buffer)
+{
+    if (buffer.absolute_offset())
+        return;
+
+    if (buffer.parent())
+    {
+        auto &parent_buffer = *buffer.parent()->parent;
+        update_absolute_offset(parent_buffer);
+        buffer.absolute_offset() = buffer.parent()->offset + *parent_buffer.absolute_offset();
+    }
+    else
+    {
+        buffer.absolute_offset() = 0;
+    }
+}
+
+// see also: is_axis0_squeeze_or_expand_dim_bitcast
+shape_t make_compatible_strides(const shape_t &strides, size_t shape_size)
+{
+    if (strides.size() == shape_size)
+        return strides;
+    shape_t new_strides;
+    if (strides.size() > shape_size)
+    {
+        for (size_t i = strides.size() - shape_size; i < strides.size(); i++)
+            new_strides.push_back(strides[i]);
+    }
+    else
+    {
+        for (size_t i = 0; i < shape_size - strides.size(); i++)
+            new_strides.push_back(1);
+        for (size_t i = 0; i < strides.size(); i++)
+            new_strides.push_back(strides[i]);
+    }
+
+    return new_strides;
+}
+
+void update_strides_shape(logical_buffer &buffer)
+{
+    if (buffer.strides_shape())
+        return;
+
+    if (buffer.strides_parent())
+    {
+        auto &parent_buffer = *buffer.strides_parent();
+        update_strides_shape(parent_buffer);
+        buffer.strides_shape() = make_compatible_strides(*parent_buffer.strides_shape(), buffer.shape().size());
+    }
+    else
+    {
+        buffer.strides_shape() = buffer.shape();
+    }
 }
 }
 
@@ -118,7 +171,7 @@ void function_schedule_context::generate_compute_sequence()
     auto alloc_visitor = make_relay_ir_visitor([&](node &node) {
         if (node.runtime_opcode() == op_input_node)
             used_inputs.emplace(&node);
-        else if (node.attributes() & node_attr_action)
+        else if (mod_sched_.model_sched().skip_buffer_alias() || (node.attributes() & node_attr_action))
             compute_sequence.emplace_back(&node);
     });
 
@@ -173,49 +226,20 @@ void function_schedule_context::analyze_buffer_alias()
 {
     pass_manager pmgr(*graph, mod_sched_.model_sched().target());
     pmgr.schedule_context(this);
+    pmgr.add_pass<alias_slice_buffer_pass>();
     pmgr.add_pass<alias_bitcast_buffer_pass>();
     pmgr.add_pass<alias_concat_buffer_pass>();
+    pmgr.add_pass<alias_bitcast_buffer_pass>();
     pmgr.run();
 }
 
 void function_schedule_context::update_offset()
 {
-    auto visitor = make_relay_ir_visitor<bfs_ir_pre_order_visitor>([&](node &node) {
-        if (auto b = node_cast<bitcast>(node))
-        {
-            if (b->attributes() & node_attr_action)
-                return;
-
-            auto &in_buf = logical_buffer_map_.at(b->input().connection());
-            auto &out_buf = logical_buffer_map_.at(&b->output());
-
-            if (in_buf->memory_location() == mem_data && in_buf->parent() && out_buf->parent())
-            {
-                in_buf->parent()->offset += out_buf->parent()->offset;
-            }
-        }
-        else if (auto c = node_cast<concat>(node))
-        {
-            if (c->attributes() & node_attr_action)
-                return;
-
-            auto &out_buf = logical_buffer_map_.at(&c->output());
-
-            for (auto &in : c->inputs())
-            {
-                auto in_buf = logical_buffer_map_.at(in->connection());
-                if (in_buf->parent() && out_buf->parent())
-                {
-                    in_buf->parent()->offset += out_buf->parent()->offset;
-                }
-            }
-        }
-        // TODO: slice
-        // else if (auto s = node_cast<slice>(node))
-        // {
-        // }
-    });
-    visitor.visit(outputs_);
+    for (auto &bp : logical_buffers_)
+    {
+        update_absolute_offset(bp);
+        update_strides_shape(bp);
+    }
 }
 
 void function_schedule_context::fix_lifetime()
@@ -307,14 +331,11 @@ void function_schedule_context::assign_allocations()
             alloc.type = lbuf.type();
             alloc.size = allocators_.at(alloc.memory_location)->get_size_in_bytes(lbuf);
             alloc.shape = lbuf.shape();
-            assert(lbuf.strides_shape().size());
-            alloc.strides_shape = lbuf.strides_shape();
+            assert(lbuf.strides_shape());
+            alloc.strides_shape = *lbuf.strides_shape();
             alloc.strides = to_strides(alloc.strides_shape);
             alloc.start = memory.start;
-            if (lbuf.parent())
-            {
-                alloc.start += lbuf.parent()->offset;
-            }
+            alloc.start += *lbuf.absolute_offset();
 
             module->allocations.emplace(out, alloc);
         }
@@ -324,203 +345,229 @@ void function_schedule_context::assign_allocations()
 
 void function_schedule_context::dump(const std::filesystem::path &dump_dir)
 {
-    std::ofstream writer(dump_dir / (graph->escaped_name() + ".sched"));
-
-    auto fmt_shape = [&](const logical_buffer &buf) {
-        auto alloc = module->allocations.at(&buf.owner());
-        return fmt::format("<{} {} {} bytes of {}>",
-            datatype_names(buf.type()),
-            ir::to_string(buf.shape()),
-            alloc.size,
-            ir::to_string(buf.strides_shape()));
-    };
-
-    // 1. allocation
-    writer << ".physical_buffer" << std::endl;
-    for (auto &buf : physical_buffers_)
     {
-        auto alloc = buf.allocation();
+        std::ofstream writer(dump_dir / (graph->escaped_name() + ".sched"));
 
-        writer << fmt::format("%{} : {} @{}[{}, {}]",
-            buf.id(),
-            fmt_shape(buf.owner()),
-            to_string(buf.owner().memory_location()),
-            alloc.start,
-            alloc.end())
-               << std::endl;
-    }
+        auto fmt_shape = [&](const logical_buffer &buf) {
+            auto alloc = module->allocations.at(&buf.owner());
+            return fmt::format("<{} {} {} bytes of {}>",
+                datatype_names(buf.type()),
+                ir::to_string(buf.shape()),
+                alloc.size,
+                ir::to_string(*buf.strides_shape()));
+        };
 
-    // 2. compute sequence
-    writer << std::endl
-           << ".compute_sequence" << std::endl;
-
-    //auto print_inputs = [&]()
-
-    // 2.1 function name
-    writer << "fn " << graph->escaped_name() << "(";
-
-    // 2.2 inputs
-    {
-        bool comma = false;
-        for (auto in : graph->inputs())
+        // 1. allocation
+        writer << ".physical_buffer" << std::endl;
+        for (auto &buf : physical_buffers_)
         {
-            if (!comma)
-                comma = true;
-            else
-                writer << ", ";
+            auto alloc = buf.allocation();
 
-            auto &lbuf = *logical_buffer_map_.at(&in->output());
-            auto &pbuf = *lbuf.physical();
-            writer << '%' << pbuf.id();
+            writer << fmt::format("%{}({})\t : {} @{}[{}, {}] life({}, {})",
+                buf.id(),
+                buf.owner().owner().owner().name(),
+                fmt_shape(buf.owner()),
+                to_string(buf.owner().memory_location()),
+                alloc.start,
+                alloc.end(),
+                buf.lifetime().birth,
+                buf.lifetime().end())
+                   << std::endl;
         }
-    }
 
-    writer << ") : (";
+        // 2. compute sequence
+        writer << std::endl
+               << ".compute_sequence" << std::endl;
 
-    // 2.2 input shapes
-    {
-        bool comma = false;
-        for (auto in : graph->inputs())
-        {
-            if (!comma)
-                comma = true;
-            else
-                writer << ", ";
+        //auto print_inputs = [&]()
 
-            auto &lbuf = *logical_buffer_map_.at(&in->output());
-            writer << fmt_shape(lbuf);
-        }
-    }
+        // 2.1 function name
+        writer << "fn " << graph->escaped_name() << "(";
 
-    writer << ") -> (";
-    // 2.3 output shapes
-    {
-        bool comma = false;
-        for (auto in : graph->outputs())
-        {
-            if (!comma)
-                comma = true;
-            else
-                writer << ", ";
-
-            auto &lbuf = *logical_buffer_map_.at(in->input().connection());
-            writer << fmt_shape(lbuf);
-        }
-    }
-
-    writer << ")" << std::endl;
-
-#define IDENT "    "
-
-    // 2.4 body
-    writer << '{' << std::endl;
-
-    for (auto node : compute_sequence)
-    {
-        // 2.4.1 outputs
-        if (node->runtime_opcode() != op_output_node)
+        // 2.2 inputs
         {
             bool comma = false;
-            for (auto out : node->outputs())
+            for (auto in : graph->inputs())
             {
                 if (!comma)
                     comma = true;
                 else
                     writer << ", ";
 
-                auto &lbuf = *logical_buffer_map_.at(out);
+                auto &lbuf = *logical_buffer_map_.at(&in->output());
                 auto &pbuf = *lbuf.physical();
-                auto &alloc = module->allocations.at(out);
-                auto pbuf_alloc = pbuf.allocation();
-                if (alloc.size == pbuf_alloc.size)
-                    writer << IDENT << fmt::format("%{}", pbuf.id());
-                else
-                    writer << IDENT << fmt::format("%{}[{}, {}]", pbuf.id(), alloc.start - pbuf_alloc.start, alloc.linear_end() - pbuf_alloc.start);
-            }
-
-            // 2.4.2 inst name
-            writer << " = " << node->runtime_opcode().name << "(";
-        }
-        else
-        {
-            writer << IDENT << "return ";
-        }
-
-        // 2.4.3 inputs
-        {
-            bool comma = false;
-            for (auto in : node->inputs())
-            {
-                if (!comma)
-                    comma = true;
-                else
-                    writer << ", ";
-
-                auto &lbuf = *logical_buffer_map_.at(in->connection());
-                auto &pbuf = *lbuf.physical();
-                auto &alloc = module->allocations.at(in->connection());
-                auto pbuf_alloc = pbuf.allocation();
-                if (alloc.size == pbuf.allocation().size)
-                    writer << fmt::format("%{}", pbuf.id());
-                else
-                    writer << fmt::format("%{}[{}, {}]",
-                        pbuf.id(),
-                        alloc.start - pbuf_alloc.start,
-                        alloc.linear_end() - pbuf_alloc.start);
+                writer << '%' << pbuf.id();
             }
         }
 
-        if (node->runtime_opcode() == op_output_node)
-        {
-            writer << " : (";
-        }
-        else
-        {
-            writer << ") : (";
-        }
+        writer << ") : (";
 
-        // 2.4.4 input shapes
+        // 2.2 input shapes
         {
             bool comma = false;
-            for (auto in : node->inputs())
+            for (auto in : graph->inputs())
             {
                 if (!comma)
                     comma = true;
                 else
                     writer << ", ";
 
-                auto &lbuf = *logical_buffer_map_.at(in->connection());
+                auto &lbuf = *logical_buffer_map_.at(&in->output());
                 writer << fmt_shape(lbuf);
             }
         }
 
-        if (node->runtime_opcode() == op_output_node)
-        {
-            writer << ")" << std::endl;
-            continue;
-        }
-        else
-        {
-            writer << ") -> (";
-        }
-
-        // 2.4.5 output shapes
+        writer << ") -> (";
+        // 2.3 output shapes
         {
             bool comma = false;
-            for (auto out : node->outputs())
+            for (auto in : graph->outputs())
             {
                 if (!comma)
                     comma = true;
                 else
                     writer << ", ";
 
-                auto &lbuf = *logical_buffer_map_.at(out);
+                auto &lbuf = *logical_buffer_map_.at(in->input().connection());
                 writer << fmt_shape(lbuf);
             }
         }
 
         writer << ")" << std::endl;
+
+#define IDENT "    "
+
+        // 2.4 body
+        writer << '{' << std::endl;
+
+        for (auto node : compute_sequence)
+        {
+            // 2.4.1 outputs
+            if (node->runtime_opcode() != op_output_node)
+            {
+                bool comma = false;
+                for (auto out : node->outputs())
+                {
+                    if (!comma)
+                        comma = true;
+                    else
+                        writer << ", ";
+
+                    auto &lbuf = *logical_buffer_map_.at(out);
+                    auto &pbuf = *lbuf.physical();
+                    auto &alloc = module->allocations.at(out);
+                    auto pbuf_alloc = pbuf.allocation();
+                    if (alloc.size == pbuf_alloc.size)
+                        writer << IDENT << fmt::format("%{}", pbuf.id());
+                    else
+                        writer << IDENT << fmt::format("%{}[{}, {}]", pbuf.id(), alloc.start - pbuf_alloc.start, alloc.linear_end() - pbuf_alloc.start);
+                }
+
+                // 2.4.2 inst name
+                writer << " = " << node->runtime_opcode().name << "(";
+            }
+            else
+            {
+                writer << IDENT << "return ";
+            }
+
+            // 2.4.3 inputs
+            {
+                bool comma = false;
+                for (auto in : node->inputs())
+                {
+                    if (!comma)
+                        comma = true;
+                    else
+                        writer << ", ";
+
+                    auto &lbuf = *logical_buffer_map_.at(in->connection());
+                    auto &pbuf = *lbuf.physical();
+                    auto &alloc = module->allocations.at(in->connection());
+                    auto pbuf_alloc = pbuf.allocation();
+                    if (alloc.size == pbuf.allocation().size)
+                        writer << fmt::format("%{}", pbuf.id());
+                    else
+                        writer << fmt::format("%{}[{}, {}]",
+                            pbuf.id(),
+                            alloc.start - pbuf_alloc.start,
+                            alloc.linear_end() - pbuf_alloc.start);
+                }
+            }
+
+            if (node->runtime_opcode() == op_output_node)
+            {
+                writer << " : (";
+            }
+            else
+            {
+                writer << ") : (";
+            }
+
+            // 2.4.4 input shapes
+            {
+                bool comma = false;
+                for (auto in : node->inputs())
+                {
+                    if (!comma)
+                        comma = true;
+                    else
+                        writer << ", ";
+
+                    auto &lbuf = *logical_buffer_map_.at(in->connection());
+                    writer << fmt_shape(lbuf);
+                }
+            }
+
+            if (node->runtime_opcode() == op_output_node)
+            {
+                writer << ")" << std::endl;
+                continue;
+            }
+            else
+            {
+                writer << ") -> (";
+            }
+
+            // 2.4.5 output shapes
+            {
+                bool comma = false;
+                for (auto out : node->outputs())
+                {
+                    if (!comma)
+                        comma = true;
+                    else
+                        writer << ", ";
+
+                    auto &lbuf = *logical_buffer_map_.at(out);
+                    writer << fmt_shape(lbuf);
+                }
+            }
+
+            writer << ")" << std::endl;
+        }
+
+        writer << '}' << std::endl;
     }
 
-    writer << '}' << std::endl;
+    {
+        std::ofstream writer(dump_dir / (graph->escaped_name() + ".lifetime"));
+
+        writer << ".physical_buffer" << std::endl;
+        for (auto &buf : physical_buffers_)
+        {
+            if (buf.owner().memory_location() == mem_data)
+            {
+                auto alloc = buf.allocation();
+
+                writer << fmt::format("%{} {} {} {} {}",
+                    buf.id(),
+                    alloc.start,
+                    alloc.end(),
+                    buf.lifetime().birth,
+                    buf.lifetime().end())
+                       << std::endl;
+            }
+        }
+    }
 }

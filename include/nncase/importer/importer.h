@@ -14,7 +14,7 @@
  */
 #pragma once
 #include <filesystem>
-#include <nncase/ir/module.h>
+#include <nncase/ir/graph.h>
 #include <span>
 #include <unordered_map>
 #include <vector>
@@ -23,11 +23,10 @@ namespace nncase::importer
 {
 struct import_options
 {
-    std::string input_layout = "NCHW";
-    std::string output_layout = "NCHW";
     std::span<const std::string> output_arrays;
 };
 
-NNCASE_API ir::module_t import_tflite(std::span<const uint8_t> model, const import_options &options);
-//ir::module import_onnx(std::span<const uint8_t> model, const import_options &options);
+void import_tflite(ir::graph &graph, std::span<const uint8_t> model, const import_options &options, std::string &real_inlayout, std::string &real_outlayout);
+void import_onnx(ir::graph &graph, std::span<const uint8_t> model, const import_options &options, std::string &real_inlayout, std::string &real_outlayout);
+void import_caffe(ir::graph &graph, std::span<const uint8_t> model, std::span<const uint8_t> prototxt, std::string &real_inlayout, std::string &real_outlayout);
 }

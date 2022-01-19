@@ -13,37 +13,28 @@
  * limitations under the License.
  */
 #pragma once
+#include "graph.h"
 #include "ir_types.h"
-#include "module.h"
 #include <filesystem>
 #include <map>
 #include <string>
 
-namespace nncase {
-constexpr std::string_view datatype_names(datatype_t dt) {
-    switch (dt) {
-#define DEFINE_DATATYPE(id, t, name, value)                                    \
-    case dt_##id:                                                              \
-        return #name;
-#include <nncase/runtime/datatypes.def>
-#undef DEFINE_DATATYPE
-    default:
-        throw std::invalid_argument("invalid datatype");
-    }
+namespace nncase
+{
+inline std::string to_string(const padding &value)
+{
+    return "{" + std::to_string(value.before) + ", " + std::to_string(value.after) + "}";
 }
 
-inline std::string to_string(const padding &value) {
-    return "{" + std::to_string(value.before) + ", " +
-           std::to_string(value.after) + "}";
+inline std::string to_string(const quant_param_t &value)
+{
+    return "(q - " + std::to_string(value.zero_point) + ") * " + std::to_string(value.scale);
 }
 
-inline std::string to_string(const quant_param_t &value) {
-    return "(q - " + std::to_string(value.zero_point) + ") * " +
-           std::to_string(value.scale);
-}
-
-inline std::string to_string(memory_location_t location) {
-    switch (location) {
+inline std::string to_string(memory_location_t location)
+{
+    switch (location)
+    {
     case mem_input:
         return "input";
     case mem_output:
@@ -58,53 +49,52 @@ inline std::string to_string(memory_location_t location) {
 }
 
 template <typename Tv, typename T>
-static size_t index_of(const Tv &v, const T &e) {
-    for (size_t i = 0; i < v.size(); i++) {
-        if (&v[i] == &e) {
+static size_t index_of(const Tv &v, const T &e)
+{
+    for (size_t i = 0; i < v.size(); i++)
+    {
+        if (&v[i] == &e)
+        {
             return i;
         }
     }
     return SIZE_MAX;
 }
 
-namespace ir {
-inline std::string to_string(const dim_t &dim) {
-    return dim.is_fixed() ? std::to_string(dim.value) : "?";
-}
-
-inline std::string to_string(const shape_t &shape) {
-    std::string str{'['};
-    if (shape.is_invalid()) {
-        str += "invalid";
-    } else if (shape.is_unranked()) {
-        str += '*';
-    } else {
-        for (size_t i = 0; i < shape.rank(); i++) {
-            if (i != 0) {
+namespace ir
+{
+    inline std::string to_string(const shape_t &shape)
+    {
+        std::string str { '[' };
+        for (size_t i = 0; i < shape.size(); i++)
+        {
+            if (i != 0)
+            {
                 str.append(",");
             }
-            str.append(to_string(shape[i]));
+            str.append(std::to_string(shape[i]));
         }
+
+        str += ']';
+        return str;
     }
 
-    str += ']';
-    return str;
-}
-
-inline std::string to_string(const axis_t &axis) {
-    std::string str{'['};
-    for (size_t i = 0; i < axis.size(); i++) {
-        if (i != 0) {
-            str.append(",");
+    inline std::string to_string(const axis_t &axis)
+    {
+        std::string str { '[' };
+        for (size_t i = 0; i < axis.size(); i++)
+        {
+            if (i != 0)
+            {
+                str.append(",");
+            }
+            str.append(std::to_string(axis[i]));
         }
-        str.append(std::to_string(axis[i]));
+
+        str += ']';
+        return str;
     }
 
-    str += ']';
-    return str;
+    NNCASE_API void dump_graph(const ir::graph &src_graph, const std::filesystem::path &dst_path);
 }
-
-NNCASE_API void dump_function(const ir::function &func,
-                              const std::filesystem::path &dst_path);
-} // namespace ir
-} // namespace nncase
+}

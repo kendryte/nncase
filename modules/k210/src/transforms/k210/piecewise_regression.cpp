@@ -35,11 +35,7 @@ std::vector<segment> piecewise_regression::fit(std::vector<point> &points) const
     {
         const auto &p0 = points[i];
         const auto &p1 = points[i + 1];
-        // remove if
-        if (std::isnan(p0.y) || std::isnan(p1.y))
-        {
-            continue;
-        }
+        assert(std::isfinite(p0.y) && std::isfinite(p1.y));
         segments.push_back({ p0.x, p1.x, (p1.y - p0.y) / (p1.x - p0.x), p0.y });
     }
 

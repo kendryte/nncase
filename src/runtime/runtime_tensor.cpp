@@ -26,6 +26,7 @@ namespace
 {
 runtime_shape_t empty_shape;
 runtime_tensor_type empty_runtime_tensor_type { "empty" };
+quant_param_t empty_quant_param {};
 }
 
 runtime_tensor::runtime_tensor() noexcept
@@ -42,6 +43,19 @@ datatype_t runtime_tensor::datatype() const noexcept
     if (impl_)
         return impl_->datatype();
     return (datatype_t)0;
+}
+
+const quant_param_t &runtime_tensor::quant_param() const noexcept
+{
+    if (impl_)
+        return impl_->quant_param();
+    return empty_quant_param;
+}
+
+void runtime_tensor::quant_param(const quant_param_t &quant) const noexcept
+{
+    if (impl_)
+        impl_->quant_param(quant);
 }
 
 const runtime_shape_t &runtime_tensor::shape() const noexcept

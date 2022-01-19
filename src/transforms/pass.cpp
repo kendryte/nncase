@@ -22,20 +22,104 @@ using namespace nncase;
 using namespace nncase::ir;
 using namespace nncase::ir::transforms;
 
-void function_pass::run(const function &func, const run_pass_options &options) {
-    run_core(func, options);
-    if (options.dump_dir) {
-        auto dump_path = *options.dump_dir / "passes" / name();
+namespace
+{
+class transform_apply_visitor : public dfs_ir_post_order_visitor
+{
+public:
+    using dfs_ir_post_order_visitor::visit;
+    ir::graph *graph;
+    ir::quantizer *quantizer;
+    nncase::target *target;
+    std::optional<std::filesystem::path> dump_dir;
+    bool need_retry = false;
+    transforms::transform *transform;
+
+protected:
+    bool visit(node &node) override
+    {
+        auto context = transform->create_context(*graph, *target);
+        context->quantizer = quantizer;
+        context->dump_dir = dump_dir;
+
+        if (transform->try_match(node, *context))
+        {
+            transform->process(*context);
+            need_retry = true;
+            return true;
+        }
+
+        return false;
+    }
+};
+}
+
+void pass::run(graph &graph, target &target, const run_pass_options &options)
+{
+    run_core(graph, target, options);
+    graph.cse();
+    static int pass_index = 0;
+    if (options.dump_dir)
+    {
+        auto pass_name = std::to_string(pass_index++) + "_" + dump_name_;
+        auto dump_path = *options.dump_dir / "passes" / pass_name;
         std::filesystem::create_directories(dump_path);
-        ir::dump_function(func, dump_path);
+        ir::dump_graph(graph, dump_path);
     }
 }
 
-function_pass &pass_manager::emplace(std::unique_ptr<function_pass> pass) {
-    return *passes_.emplace_back(std::move(pass));
+void transform_pass::run_core(graph &graph, target &target, const run_pass_options &options)
+{
+    transform_apply_visitor visitor;
+    visitor.graph = &graph;
+    visitor.target = &target;
+    visitor.dump_dir = options.dump_dir;
+    visitor.quantizer = options.quantizer;
+    bool next_pass = false;
+
+    do
+    {
+        next_pass = false;
+
+        for (size_t idx = 0; idx < transforms_.size(); idx++)
+        {
+            auto &&transform = transforms_[idx];
+            visitor.transform = transform.get();
+            visitor.need_retry = false;
+            visitor.visit(graph);
+
+            if (visitor.need_retry)
+            {
+                next_pass = true;
+                graph.dce();
+                break;
+            }
+        }
+    } while (next_pass);
 }
 
-void pass_manager::run() {
+void pass_manager::dump_dir(const std::filesystem::path &dir)
+{
+    dump_dir_ = dir;
+}
+
+void pass_manager::quantizer(ir::quantizer *q)
+{
+    quantizer_ = q;
+}
+
+void pass_manager::schedule_context(schedule::function_schedule_context *c)
+{
+    schedule_context_ = c;
+}
+
+void pass_manager::run()
+{
+    run_pass_options options;
+    options.dump_dir = dump_dir_;
+    options.quantizer = quantizer_;
+    options.schedule_context = schedule_context_;
+
     for (auto &pass : passes_)
-        pass->run(func_, options_);
+        pass->run(graph_, target_, options);
 }

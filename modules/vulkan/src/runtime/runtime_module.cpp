@@ -24,6 +24,10 @@ using namespace nncase;
 using namespace nncase::runtime;
 using namespace nncase::runtime::vulkan;
 
+namespace
+{
+}
+
 vulkan_runtime_module::~vulkan_runtime_module()
 {
     free_vulkan_resources();
@@ -37,7 +41,7 @@ result<void> vulkan_runtime_module::initialize_before_functions(runtime_module_i
     descriptors_ = descs[1];
     shader_ = context.section(".shader");
 
-    try_(initialize_vulkan());
+    checked_try(initialize_vulkan());
 
     // TODO: Load rdata
     //rdata_ = context.section(".rdata");
@@ -46,38 +50,20 @@ result<void> vulkan_runtime_module::initialize_before_functions(runtime_module_i
 
 result<void> vulkan_runtime_module::initialize_vulkan() noexcept
 {
-    try_(initialize_vulkan_instance());
-    try_(initialize_vulkan_device());
-    try_(initialize_vulkan_memory());
-    return ok();
-}
-
-result<void> vulkan_runtime_module::initialize_vulkan_instance() noexcept
-{
-    vk::ApplicationInfo app_info("nncase.runtime", 1, "nncase", 1, VK_API_VERSION_1_1);
-    vk::InstanceCreateInfo create_info({}, &app_info);
-    try_set(instance_, vk::to_result(vk::createInstance(create_info)));
+    checked_try_set(ctx_, vulkan_context::get());
+    checked_try(initialize_vulkan_device());
+    checked_try(initialize_vulkan_memory());
     return ok();
 }
 
 result<void> vulkan_runtime_module::initialize_vulkan_device() noexcept
 {
-    try_set(physical_device_, select_physical_device());
-    auto queue_families = physical_device_.getQueueFamilyProperties();
-    try_set(compute_queue_index_, select_queue_family(queue_families, { vk::QueueFlagBits::eCompute, vk::QueueFlagBits::eGraphics, vk::QueueFlagBits::eTransfer }));
-
-    float priorities[] = { 0.0f };
-    vk::DeviceQueueCreateInfo queue_create_info({}, compute_queue_index_, 1, priorities);
-    vk::DeviceCreateInfo device_create_info({}, queue_create_info);
-    try_set(device_, vk::to_result(physical_device_.createDevice(device_create_info)));
-    compute_queue_ = device_.getQueue(compute_queue_index_, 0);
-
     vk::DescriptorPoolSize descp_size(vk::DescriptorType::eStorageBuffer, descriptors_);
     vk::DescriptorPoolCreateInfo descp_cinfo({}, descriptor_sets_, descp_size);
-    try_set(buffer_desc_pool_, vk::to_result(device_.createDescriptorPool(descp_cinfo)));
+    checked_try_set(buffer_desc_pool_, vk::to_result(device().createDescriptorPool(descp_cinfo)));
 
-    vk::CommandPoolCreateInfo cmdp_cinfo({}, compute_queue_index_);
-    try_set(cmd_pool_, vk::to_result(device_.createCommandPool(cmdp_cinfo)));
+    vk::CommandPoolCreateInfo cmdp_cinfo({}, compute_queue_index());
+    try_set(cmd_pool_, vk::to_result(device().createCommandPool(cmdp_cinfo)));
     return ok();
 }
 
@@ -86,100 +72,48 @@ result<void> vulkan_runtime_module::initialize_vulkan_memory() noexcept
     auto data_mem = mempool(mem_data);
     if (data_mem.size)
     {
-        try_set(data_buffer_, allocate_vulkan_buffer(data_mem.size));
-        try_set(data_mem_, allocate_vulkan_memory({ {}, vk::MemoryPropertyFlagBits::eDeviceLocal, {} }, data_buffer_));
-        try_(bind_vulkan_buffer(data_buffer_, data_mem_));
+        checked_try_set(data_buffer_, allocate_vulkan_buffer(data_mem.size));
+        checked_try_set(data_mem_, allocate_vulkan_memory({ {}, vk::MemoryPropertyFlagBits::eDeviceLocal, {} }, data_buffer_));
+        checked_try(bind_vulkan_buffer(data_buffer_, data_mem_));
     }
     return ok();
 }
 
 result<vk::DeviceMemory> vulkan_runtime_module::allocate_vulkan_memory(const select_options<vk::MemoryPropertyFlagBits> &options, vk::Buffer buffer) noexcept
 {
-    auto req = device_.getBufferMemoryRequirements(buffer);
-    auto properties = physical_device_.getMemoryProperties();
-    try_var(type_index, select_memory_type(properties, options, req.size));
+    auto req = device().getBufferMemoryRequirements(buffer);
+    auto properties = ctx_->physical_device().getMemoryProperties();
+    checked_try_var(type_index, select_memory_type(properties, options, req.size));
     vk::MemoryAllocateInfo allocate(req.size, static_cast<uint32_t>(type_index));
-    return vk::to_result(device_.allocateMemory(allocate));
+    return vk::to_result(device().allocateMemory(allocate));
 }
 
 result<vk::Buffer> vulkan_runtime_module::allocate_vulkan_buffer(size_t required_size) noexcept
 {
+    auto queue_index = compute_queue_index();
     vk::BufferCreateInfo info({}, (vk::DeviceSize)required_size,
-        vk::BufferUsageFlagBits::eStorageBuffer, vk::SharingMode::eExclusive, 1, &compute_queue_index_);
-    return vk::to_result(device_.createBuffer(info));
+        vk::BufferUsageFlagBits::eStorageBuffer, vk::SharingMode::eExclusive, 1, &queue_index);
+    return vk::to_result(device().createBuffer(info));
 }
 
 result<void> vulkan_runtime_module::bind_vulkan_buffer(vk::Buffer buffer, vk::DeviceMemory memory) noexcept
 {
-    return vk::to_result(device_.bindBufferMemory(buffer, memory, 0));
+    return vk::to_result(device().bindBufferMemory(buffer, memory, 0));
 }
 
-result<void> vulkan_runtime_module::add_pipeline(vk::Pipeline pipeline) noexcept
+result<void> vulkan_runtime_module::add_pipeline(vk::Pipeline pipeline, vk::PipelineLayout pipeline_layout, vk::DescriptorSetLayout set_layout) noexcept
 {
     try
     {
         pipelines_owner_.emplace_back(pipeline);
+        pipeline_layouts_owner_.emplace_back(pipeline_layout);
+        descriptor_set_layouts_owner_.emplace_back(set_layout);
         return ok();
     }
     catch (const std::bad_alloc &)
     {
         return err(std::errc::not_enough_memory);
     }
-}
-
-result<vk::PhysicalDevice> vulkan_runtime_module::select_physical_device() noexcept
-{
-    vk::PhysicalDevice *intergrated = nullptr;
-
-    try_var(devices, vk::to_result(instance_.enumeratePhysicalDevices()));
-    for (auto &device : devices)
-    {
-        auto properties = device.getProperties();
-        if (properties.deviceType == vk::PhysicalDeviceType::eDiscreteGpu)
-            return ok(device);
-        else if (properties.deviceType == vk::PhysicalDeviceType::eIntegratedGpu)
-            intergrated = &device;
-    }
-
-    if (intergrated)
-        return ok(*intergrated);
-    else if (!devices.empty())
-        return ok(devices.front());
-    else
-        return err(std::errc::no_such_device);
-}
-
-result<uint32_t> vulkan_runtime_module::select_queue_family(const std::vector<vk::QueueFamilyProperties> &families, const select_options<vk::QueueFlagBits> options) noexcept
-{
-    // 1. try required & preferred & !not_preferred
-    for (uint32_t i = 0; i < families.size(); i++)
-    {
-        auto flags = families[i].queueFlags;
-        if ((flags & options.requried) == options.requried
-            && (flags & options.preferred) == options.preferred
-            && !(flags & options.not_preferred))
-            return ok(i);
-    }
-
-    // 2. try required & preferred
-    for (uint32_t i = 0; i < families.size(); i++)
-    {
-        auto flags = families[i].queueFlags;
-        if ((flags & options.requried) == options.requried
-            && (flags & options.preferred) == options.preferred)
-            return ok(i);
-    }
-
-    // 3. try required
-    for (uint32_t i = 0; i < families.size(); i++)
-    {
-        auto flags = families[i].queueFlags;
-        if ((flags & options.requried) == options.requried)
-            return ok(i);
-    }
-
-    std::cerr << "Cannot find available queue: " << to_string(options.requried) << std::endl;
-    return err(std::errc::no_such_device);
 }
 
 result<size_t> vulkan_runtime_module::select_memory_type(const vk::PhysicalDeviceMemoryProperties &properties, const select_options<vk::MemoryPropertyFlagBits> &options, size_t required_size) noexcept
@@ -228,14 +162,19 @@ void vulkan_runtime_module::free_vulkan_resources() noexcept
     for (auto &func : functions())
         func.reset();
 
-    device_.destroyCommandPool(cmd_pool_);
-    device_.destroyDescriptorPool(buffer_desc_pool_);
-    for (auto p : pipelines_owner_)
-        device_.destroyPipeline(p);
-    device_.destroyBuffer(data_buffer_);
-    device_.freeMemory(data_mem_);
-    device_.destroy({});
-    instance_.destroy({});
+    if (device())
+    {
+        device().destroyCommandPool(cmd_pool_);
+        device().destroyDescriptorPool(buffer_desc_pool_);
+        for (auto p : pipelines_owner_)
+            device().destroyPipeline(p);
+        for (auto p : pipeline_layouts_owner_)
+            device().destroyPipelineLayout(p);
+        for (auto p : descriptor_set_layouts_owner_)
+            device().destroyDescriptorSetLayout(p);
+        device().destroyBuffer(data_buffer_);
+        device().freeMemory(data_mem_);
+    }
 }
 
 result<std::unique_ptr<runtime_function>> vulkan_runtime_module::create_function() noexcept

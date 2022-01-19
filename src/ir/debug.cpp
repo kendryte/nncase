@@ -14,62 +14,48 @@
  */
 #include <fstream>
 #include <nncase/ir/debug.h>
-#include <nncase/ir/math/binary.h>
-#include <nncase/ir/math/unary.h>
-#include <nncase/ir/type_visitor.h>
+#include <nncase/ir/ops/constant.h>
 #include <nncase/ir/visitor.h>
 #include <nncase/version.h>
 #include <onnx.pb.h>
-#include <ostream>
-#include <queue>
-#include <range/v3/range/conversion.hpp>
-#include <range/v3/view/transform.hpp>
-#include <sstream>
-#include <string>
 #include <unordered_map>
-#include <vector>
 
 using namespace nncase;
 using namespace nncase::ir;
 using namespace google::protobuf;
 
-namespace {
-std::unordered_map<datatype_t, int32> onnx_types_map{
-    {dt_int8, onnx::TensorProto_DataType_INT8},
-    {dt_int16, onnx::TensorProto_DataType_INT16},
-    {dt_int32, onnx::TensorProto_DataType_INT32},
-    {dt_int64, onnx::TensorProto_DataType_INT64},
-    {dt_uint8, onnx::TensorProto_DataType_UINT8},
-    {dt_uint16, onnx::TensorProto_DataType_UINT16},
-    {dt_uint32, onnx::TensorProto_DataType_UINT32},
-    {dt_uint64, onnx::TensorProto_DataType_UINT64},
-    {dt_float16, onnx::TensorProto_DataType_FLOAT16},
-    {dt_float32, onnx::TensorProto_DataType_FLOAT},
-    {dt_float64, onnx::TensorProto_DataType_DOUBLE},
-    {dt_bfloat16, onnx::TensorProto_DataType_BFLOAT16},
-    {dt_bool, onnx::TensorProto_DataType_BOOL},
-    {dt_string, onnx::TensorProto_DataType_STRING}};
+namespace
+{
+std::unordered_map<datatype_t, int32> onnx_types_map {
+    { dt_int8, onnx::TensorProto_DataType_INT8 },
+    { dt_int16, onnx::TensorProto_DataType_INT16 },
+    { dt_int32, onnx::TensorProto_DataType_INT32 },
+    { dt_int64, onnx::TensorProto_DataType_INT64 },
+    { dt_uint8, onnx::TensorProto_DataType_UINT8 },
+    { dt_uint16, onnx::TensorProto_DataType_UINT16 },
+    { dt_uint32, onnx::TensorProto_DataType_UINT32 },
+    { dt_uint64, onnx::TensorProto_DataType_UINT64 },
+    { dt_float16, onnx::TensorProto_DataType_FLOAT16 },
+    { dt_float32, onnx::TensorProto_DataType_FLOAT },
+    { dt_float64, onnx::TensorProto_DataType_DOUBLE },
+    { dt_bfloat16, onnx::TensorProto_DataType_BFLOAT16 }
+};
 
-int32 to_pb(datatype_t dt) {
+int32 to_pb(datatype_t dt)
+{
     assert(onnx_types_map.contains(dt));
     return onnx_types_map.at(dt);
 }
 
-void to_pb([[maybe_unused]] onnx::TypeProto_Tensor *dst,
-           [[maybe_unused]] const type &src) {
-    // dst->set_elem_type(to_pb(src.elem_type()));
-    // if (src.shape().is_fixed() || src.shape().has_unknown_dim()) {
-    //    auto shape_proto = dst->mutable_shape();
-    //    for (auto dim : src.shape()) {
-    //        shape_proto->add_dim()->set_dim_value(dim.is_fixed() ? dim.value
-    //                                                             : -1);
-    //    }
-    //}
+void to_pb(onnx::TensorShapeProto *dst, const shape_t &src)
+{
+    for (auto dim : src)
+        dst->add_dim()->set_dim_value((int64)dim);
+}
 }
 
-void dump_function_pb(const ir::function &func,
-                      const std::filesystem::path &dst_path) {
-
+void ir::dump_graph(const graph &src_graph, const std::filesystem::path &dst_path)
+{
     GOOGLE_PROTOBUF_VERIFY_VERSION;
 
     onnx::ModelProto model;
@@ -77,35 +63,42 @@ void dump_function_pb(const ir::function &func,
     model.set_producer_version(NNCASE_VERSION);
 
     auto gp = model.mutable_graph();
-    gp->set_name(func->name());
+    gp->set_name(src_graph.name());
 
     // 1. inputs
-    for (auto in : func->parameters()) {
+    for (auto in : src_graph.inputs())
+    {
         auto inp = gp->add_input();
         inp->set_name(in->name());
         auto type = inp->mutable_type();
-        to_pb(type->mutable_tensor_type(), in->type_annotation());
+        auto ttype = type->mutable_tensor_type();
+        ttype->set_elem_type(to_pb(in->output().type()));
+        to_pb(ttype->mutable_shape(), in->output().shape());
     }
 
     // 2. outputs
-    // for (auto out : src_graph.outputs()) {
-    //    auto outp = gp->add_output();
-    //    outp->set_name(out->name());
-    //    auto type = outp->mutable_type();
-    //    auto ttype = type->mutable_tensor_type();
-    //    ttype->set_elem_type(to_pb(out->input().type()));
-    //    to_pb(ttype->mutable_shape(), out->input().shape());
-    //}
+    for (auto out : src_graph.outputs())
+    {
+        auto outp = gp->add_output();
+        outp->set_name(out->name());
+        auto type = outp->mutable_type();
+        auto ttype = type->mutable_tensor_type();
+        ttype->set_elem_type(to_pb(out->input().type()));
+        to_pb(ttype->mutable_shape(), out->input().shape());
+    }
 
     // 3. nodes
-    /*for (auto &n : src_graph.nodes()) {
-        if (n->runtime_opcode() != op_input_node &&
-            n->runtime_opcode() != op_output_node) {
+    for (auto &n : src_graph.nodes())
+    {
+        if (n->runtime_opcode() != op_input_node
+            && n->runtime_opcode() != op_output_node)
+        {
             auto np = gp->add_node();
             np->set_name(n->name());
             np->set_op_type(std::string(n->runtime_opcode().name));
 
-            if (auto c = node_cast<constant>(*n)) {
+            if (auto c = node_cast<constant>(*n))
+            {
                 auto valuep = np->add_attribute();
                 valuep->set_name("value");
                 valuep->set_type(onnx::AttributeProto_AttributeType_TENSOR);
@@ -115,18 +108,20 @@ void dump_function_pb(const ir::function &func,
                 for (auto dim : c->output().shape())
                     tp->add_dims((int64)dim);
                 tp->set_raw_data(c->data().data(), c->data().size());
-            } else {
+            }
+            else
+            {
                 auto att_md = np->add_attribute();
                 att_md->set_name("module_type");
                 att_md->add_strings(n->module_type().data());
 
                 auto att_act = np->add_attribute();
                 att_act->set_name("action");
-                att_act->add_strings(
-                    (n->attributes() & node_attr_action) ? "true" : "false");
+                att_act->add_strings((n->attributes() & node_attr_action) ? "true" : "false");
             }
 
-            for (auto in : n->inputs()) {
+            for (auto in : n->inputs())
+            {
                 auto out = in->connection();
                 if (out->owner().outputs().size() == 1)
                     np->add_input(out->owner().name());
@@ -134,14 +129,17 @@ void dump_function_pb(const ir::function &func,
                     np->add_input(out->owner().name() + ":" + out->name());
             }
 
-            for (auto out : n->outputs()) {
+            for (auto out : n->outputs())
+            {
                 std::string name;
-                for (auto in : out->connections()) {
+                for (auto in : out->connections())
+                {
                     if (in->owner().runtime_opcode() == op_output_node)
                         name = in->owner().name();
                 }
 
-                if (name.empty()) {
+                if (name.empty())
+                {
                     if (n->outputs().size() == 1)
                         name = n->name();
                     else
@@ -157,208 +155,12 @@ void dump_function_pb(const ir::function &func,
                 to_pb(ttype->mutable_shape(), out->shape());
             }
         }
-    }*/
+    }
 
-    auto filename = dst_path / (func->name() + ".nnir.pb");
+    auto filename = dst_path / (src_graph.escaped_name() + ".nnir.pb");
     auto dirname = filename.parent_path();
     if (!std::filesystem::exists(dirname))
         std::filesystem::create_directories(dirname);
     std::ofstream ofile(filename, std::ios::out | std::ios::binary);
     model.SerializeToOstream(&ofile);
-}
-
-#define RETURN_IF_VISITED()                                                    \
-    {                                                                          \
-        auto it = names_.find(ex.get());                                       \
-        if (it != names_.end())                                                \
-            return it->second;                                                 \
-    }
-
-class il_dump_visitor : public expr_functor<std::string>,
-                        private type_functor<std::string> {
-  public:
-    using expr_functor::visit;
-    using type_functor::visit_type;
-
-    il_dump_visitor(std::ostream &os) : os_(os) {}
-
-    std::string visit(const function &ex) override {
-        RETURN_IF_VISITED();
-        auto name = "%" + ex->name();
-        // 1. Function signature
-        {
-            in_function_body_ = false;
-            names_.emplace(ex.get(), name);
-            ident() << name << " = fn (";
-            size_t i = 0;
-            for (auto &par : ex->parameters()) {
-                os_ << visit(par);
-                if (++i != ex->parameters().size())
-                    os_ << ", ";
-            }
-            os_ << ")";
-            if (!ex->checked_type().empty())
-                os_ << ": " << visit_type(ex->checked_type());
-            os_ << " {" << std::endl;
-        }
-
-        // 2. Function body
-        {
-            in_function_body_ = true;
-            ident_level_++;
-            auto result = visit(ex->body());
-            ident() << result << std::endl;
-            ident_level_--;
-        }
-
-        // 3. Function closing
-        ident() << "}" << std::endl;
-        return name;
-    }
-
-    std::string visit(const var &ex) override {
-        RETURN_IF_VISITED();
-        auto name = "%" + ex->name();
-        names_.emplace(ex.get(), name);
-        if (!ex->type_annotation().empty())
-            name += ": " + visit_type(ex->type_annotation());
-        return name;
-    }
-
-    std::string visit(const op &ex) override {
-        if (auto u = ex.as<math::unary>()) {
-            return unary_op_to_string((*u)->unary_op());
-        }
-        if (auto b = ex.as<math::binary>()) {
-            return binary_op_to_string((*b)->binary_op());
-        }
-        return std::string(ex->runtime_kind().name);
-    }
-
-    std::string visit(const constant &ex) override {
-        RETURN_IF_VISITED();
-        std::stringstream ss;
-        ss << "const(";
-        if (!ex->checked_type().empty())
-            ss << visit_type(ex->checked_type());
-        ss << ")";
-        auto name = ss.str();
-        names_.emplace(ex.get(), name);
-        return name;
-    }
-
-    std::string visit(const call &ex) override {
-        RETURN_IF_VISITED();
-        auto target = visit(ex->target());
-        auto args = ex->arguments() |
-                    ranges::views::transform(
-                        [this](const expr &arg) { return visit(arg); }) |
-                    ranges::to<std::vector>();
-        auto &name = alloc_temp_var(ex);
-        ident() << name << " = " << target << "(";
-        size_t i = 0;
-        for (auto &arg : args) {
-            os_ << arg;
-            if (++i != args.size())
-                os_ << ", ";
-        }
-        os_ << ")";
-        if (!ex->checked_type().empty())
-            os_ << ": " << visit_type(ex->checked_type());
-        os_ << std::endl;
-        return name;
-    }
-
-    std::string visit(const tuple &ex) override {
-        RETURN_IF_VISITED();
-        auto fields = ex->fields() |
-                      ranges::views::transform(
-                          [this](const expr &field) { return visit(field); }) |
-                      ranges::to<std::vector>();
-        auto &name = alloc_temp_var(ex);
-        ident() << name << " = (";
-        size_t i = 0;
-        for (auto &field : fields) {
-            os_ << field;
-            if (++i != fields.size())
-                os_ << ", ";
-        }
-        os_ << ")";
-        if (!ex->checked_type().empty())
-            os_ << ": " << visit_type(ex->checked_type());
-        os_ << std::endl;
-        return name;
-    }
-
-    std::string visit_type(const any_type &t) override { return "any"; }
-
-    std::string visit_type(const invalid_type &t) override { return "invalid"; }
-
-    std::string visit_type(const tuple_type &t) override {
-        std::stringstream ss;
-        ss << "(";
-        size_t i = 0;
-        for (auto &field : t->fields()) {
-            ss << visit_type(field);
-            if (++i != t->fields().size())
-                ss << ", ";
-        }
-        ss << ")";
-        return ss.str();
-    }
-
-    std::string visit_type(const tensor_type &t) override {
-        return std::string(datatype_names(t->dtype())) + to_string(t->shape());
-    }
-
-    std::string visit_type(const callable_type &t) override {
-        std::stringstream ss;
-        ss << "(";
-        size_t i = 0;
-        for (auto &par : t->parameters()) {
-            ss << visit_type(par);
-            if (++i != t->parameters().size())
-                ss << ", ";
-        }
-        ss << ") -> " << visit_type(t->return_type());
-        return ss.str();
-    }
-
-  private:
-    std::ostream &ident() {
-        for (size_t i = 0; i < ident_level_; i++)
-            os_ << "  ";
-        return os_;
-    }
-
-    const std::string &alloc_temp_var(const expr &ex) {
-        auto name = "%" + std::to_string(local_id_++);
-        return names_.emplace(ex.get(), name).first->second;
-    }
-
-  private:
-    size_t ident_level_ = 0;
-    bool in_function_body_;
-    std::unordered_map<expr_node *, std::string> names_;
-    std::ostream &os_;
-    size_t local_id_ = 0;
-};
-
-void dump_function_il(const ir::function &func,
-                      const std::filesystem::path &dst_path) {
-    auto filename = dst_path / (func->name() + ".nnir.il");
-    auto dirname = filename.parent_path();
-    if (!std::filesystem::exists(dirname))
-        std::filesystem::create_directories(dirname);
-
-    std::ofstream ofile(filename, std::ios::out);
-    il_dump_visitor dumper(ofile);
-    dumper(func);
-}
-} // namespace
-
-void ir::dump_function(const ir::function &func,
-                       const std::filesystem::path &dst_path) {
-    dump_function_pb(func, dst_path);
-    dump_function_il(func, dst_path);
 }

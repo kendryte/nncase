@@ -39,6 +39,8 @@ public:
     }
 
     void emit_abs() { emit_opcode(runtime::nnil_abs); }
+    void emit_acos() { emit_opcode(runtime::nnil_acos); }
+    void emit_asin() { emit_opcode(runtime::nnil_asin); }
     void emit_ceil() { emit_opcode(runtime::nnil_ceil); }
     void emit_cos() { emit_opcode(runtime::nnil_cos); }
     void emit_exp() { emit_opcode(runtime::nnil_exp); }
@@ -46,6 +48,7 @@ public:
     void emit_log() { emit_opcode(runtime::nnil_log); }
     void emit_neg() { emit_opcode(runtime::nnil_neg); }
     void emit_rsqrt() { emit_opcode(runtime::nnil_rsqrt); }
+    void emit_sign() { emit_opcode(runtime::nnil_sign); }
     void emit_sin() { emit_opcode(runtime::nnil_sin); }
     void emit_sqrt() { emit_opcode(runtime::nnil_sqrt); }
     void emit_square() { emit_opcode(runtime::nnil_square); }

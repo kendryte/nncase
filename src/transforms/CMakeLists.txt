@@ -1,13 +1,11 @@
-﻿cmake_minimum_required (VERSION 3.16)
+﻿cmake_minimum_required (VERSION 3.8)
 
-set(SRCS egraph.cpp
-         egraph_pass.cpp
-         egraph_pattern.cpp
+set(SRCS transform.cpp
          pass.cpp)
 
 add_library(transforms OBJECT ${SRCS})
-#target_link_libraries(transforms PUBLIC ir evaluator)
-target_link_libraries(transforms PUBLIC ir)
+target_include_directories(transforms PUBLIC include)
+target_link_libraries(transforms PUBLIC ir evaluator)
 set_target_properties(transforms PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-#add_subdirectory(neutral)
+add_subdirectory(neutral)

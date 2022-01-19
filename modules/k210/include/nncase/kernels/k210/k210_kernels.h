@@ -135,7 +135,9 @@ void kpu_conv2d(const uint8_t *input, int64_t *workspace, uint8_t *output, const
                             }
                         }
 
-                        *out_it++ = value + (arg_x * sum_x >> shift_x) + (arg_w * sum_w >> shift_w) + arg_add * g_ic;
+                        auto alu_out = value + (arg_x * sum_x >> shift_x) + (arg_w * sum_w >> shift_w) + arg_add * g_ic;
+                        assert(runtime::within_range<36>(alu_out));
+                        *out_it++ = alu_out;
                     }
                 }
             }
@@ -152,6 +154,7 @@ void kpu_conv2d(const uint8_t *input, int64_t *workspace, uint8_t *output, const
             for (size_t i = 0; i < channel_size; i++)
             {
                 auto value = (*src_it++ * bn.mul >> bn.shift) + bn.add;
+                assert(runtime::within_range<36>(value));
                 auto &seg = *std::find_if(activation.rbegin(), activation.rend(), [value](const runtime::k210::kpu_activation_segment &seg) { return value > seg.start_x; });
                 auto act_value = runtime::carry_shift<int64_t, true>((value - seg.start_x) * seg.mul, seg.shift) + seg.add;
                 *out_it++ = (uint8_t)kernels::detail::clamp(act_value, int64_t(0), int64_t(255));

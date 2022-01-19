@@ -58,7 +58,10 @@ void image_dataset::process(const std::vector<uint8_t> &src, float *dest, const 
     auto img = cv::imdecode(src, cv::IMREAD_COLOR);
 
     cv::Mat f_img;
-    img.convertTo(f_img, CV_32F);
+    if ((img.type() & CV_32F) == 0)
+        img.convertTo(f_img, CV_32F, 1.0 / 255.0);
+    else
+        img.convertTo(f_img, CV_32F);
 
     cv::Mat dest_img;
     if (layout == "NHWC")
@@ -123,7 +126,10 @@ void image_dataset::process(const std::vector<uint8_t> &src, uint8_t *dest, cons
     auto img = cv::imdecode(src, cv::IMREAD_COLOR);
 
     cv::Mat f_img;
-    img.convertTo(f_img, CV_8U);
+    if ((img.type() & CV_8U) == 0)
+        img.convertTo(f_img, CV_8U);
+    else
+        img.convertTo(f_img, CV_8U);
 
     cv::Mat dest_img;
     if (layout == "NHWC")
@@ -188,7 +194,10 @@ void image_dataset::process(const std::vector<uint8_t> &src, int8_t *dest, const
     auto img = cv::imdecode(src, cv::IMREAD_COLOR);
 
     cv::Mat f_img;
-    img.convertTo(f_img, CV_8S);
+    if ((img.type() & CV_8S) == 0)
+        img.convertTo(f_img, CV_8S);
+    else
+        img.convertTo(f_img, CV_8S);
 
     cv::Mat dest_img;
     if (layout == "NHWC")

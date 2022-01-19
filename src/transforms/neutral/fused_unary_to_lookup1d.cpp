@@ -80,8 +80,8 @@ void fused_unary_to_lookup1d_transform::process(transform_context &context)
     auto &old_fu = static_cast<fused_unary &>(*context.matched_nodes[0]);
 
     auto &quantizer = *context.quantizer;
-    auto iq_p = quantizer.get_quant_param(quantizer.get(output), 8);
-    auto yq_p = quantizer.get_quant_param(quantizer.get(old_fu.output()), 8);
+    auto iq_p = quantizer.get_quant_param(quantizer.get(output), 8, quantizer::quant_mode::unsigned_mode);
+    auto yq_p = quantizer.get_quant_param(quantizer.get(old_fu.output()), 8, quantizer::quant_mode::unsigned_mode);
 
     auto q = context.graph.emplace<quantize>(output.type(), output.shape(), dt_uint8, iq_p);
     q->name(output.owner().name() + "/quantize");
@@ -90,6 +90,8 @@ void fused_unary_to_lookup1d_transform::process(transform_context &context)
     auto lut = context.graph.emplace<table_lookup1d>(dt_uint8, q->output().shape(), 256);
     lut->name(old_fu.name());
     auto deq = context.graph.emplace<dequantize>(dt_uint8, old_fu.output().shape(), output.type(), yq_p);
+    deq->record_output_connectors_quant_map(deq->output_at(0), old_fu.output_at(0));
+    deq->record_node_name_before_quant(old_fu.name());
     deq->name(old_fu.name() + "/dequantize");
     link(old_fu.output(), deq->output(), &quantizer);
     lut->input().connect(q->output());

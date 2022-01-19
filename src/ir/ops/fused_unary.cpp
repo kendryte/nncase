@@ -89,6 +89,12 @@ void fused_unary::compile_graph(const std::vector<fused_unary_op> &subgraph, cod
             case unary_abs:
                 builder.emit_abs();
                 break;
+            case unary_acos:
+                builder.emit_acos();
+                break;
+            case unary_asin:
+                builder.emit_asin();
+                break;
             case unary_ceil:
                 builder.emit_ceil();
                 break;
@@ -112,6 +118,9 @@ void fused_unary::compile_graph(const std::vector<fused_unary_op> &subgraph, cod
                 break;
             case unary_rsqrt:
                 builder.emit_rsqrt();
+                break;
+            case unary_sign:
+                builder.emit_sign();
                 break;
             case unary_sin:
                 builder.emit_sin();

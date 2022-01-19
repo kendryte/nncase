@@ -18,16 +18,16 @@
 using namespace nncase;
 using namespace nncase::ir;
 
-conv2d_transpose::conv2d_transpose(shape_t input_shape, shape_t weights_shape, shape_t output_shape, int32_t groups, padding padding_h, padding padding_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w, value_range<float> fused_activation)
-    : groups_(groups), padding_h_(padding_h), padding_w_(padding_w), stride_h_(stride_h), stride_w_(stride_w), dilation_h_(dilation_h), dilation_w_(dilation_w), fused_activation_(fused_activation)
+conv2d_transpose::conv2d_transpose(shape_t input_shape, shape_t weights_shape, shape_t output_shape, int32_t groups, padding padding_h, padding padding_w, int32_t output_padding_h, int32_t output_padding_w, int32_t stride_h, int32_t stride_w, int32_t dilation_h, int32_t dilation_w, value_range<float> fused_activation)
+    : groups_(groups), padding_h_(padding_h), padding_w_(padding_w), output_padding_h_(output_padding_h), output_padding_w_(output_padding_w), stride_h_(stride_h), stride_w_(stride_w), dilation_h_(dilation_h), dilation_w_(dilation_w), fused_activation_(fused_activation)
 {
     add_input("input", dt_float32, input_shape);
     add_input("weights", dt_float32, weights_shape);
     add_input("bias", dt_float32, shape_t { (size_t)output_channels() });
     add_output("output", dt_float32, output_shape);
 
-    if (get_windowed_output_size((int32_t)output_shape[2] + padding_h_.sum(), filter_h(), stride_h_, dilation_h_, false) != input_shape[2]
-        || get_windowed_output_size((int32_t)output_shape[3] + padding_w_.sum(), filter_w(), stride_w_, dilation_w_, false) != input_shape[3])
+    if (get_windowed_output_size((int32_t)output_shape[2] + padding_h_.sum() - output_padding_h_, filter_h(), stride_h_, dilation_h_, false) != input_shape[2]
+        || get_windowed_output_size((int32_t)output_shape[3] + padding_w_.sum() - output_padding_w_, filter_w(), stride_w_, dilation_w_, false) != input_shape[3])
         throw std::runtime_error("Invalid conv2d transpose shape");
 }
 

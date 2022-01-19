@@ -28,6 +28,9 @@ public:
     virtual const runtime_shape_t &shape() const noexcept = 0;
     virtual const runtime_shape_t &strides() const noexcept = 0;
     virtual runtime_tensor_type &tensor_type() const noexcept = 0;
+    virtual const quant_param_t &quant_param() const noexcept = 0;
+    virtual void quant_param(const quant_param_t &quant_param) noexcept = 0;
+
     bool is_host() const noexcept;
     bool is_contiguous() const noexcept;
 

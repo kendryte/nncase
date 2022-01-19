@@ -65,6 +65,14 @@ section_writer &module_builder::writer(std::string_view section_name)
     return it->second.writer;
 }
 
+module_builder::section *module_builder::find_section(std::string_view section_name)
+{
+    auto it = section_writer_.find(section_name);
+    if (it == section_writer_.end())
+        return nullptr;
+    return &it->second;
+}
+
 std::vector<nncase::ir::node *> module_builder::generate_current_runtime_ops()
 {
     std::vector<nncase::ir::node *> runtime_ops;
@@ -76,8 +84,9 @@ std::vector<nncase::ir::node *> module_builder::generate_current_runtime_ops()
 
     if (dump_asm_)
     {
-        std::ofstream file(dump_dir_ / current_function_->graph->escaped_name() / "runtime_ops.txt");
-        std::filesystem::create_directories(dump_dir_);
+        auto func_dump_dir = dump_dir_ / current_function_->graph->escaped_name();
+        std::filesystem::create_directories(func_dump_dir);
+        std::ofstream file(func_dump_dir / "runtime_ops.txt");
         for (auto node : runtime_ops)
             file << "[" << node->runtime_opcode().name << "] "
                  << node->name() << std::endl;
