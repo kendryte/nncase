@@ -64,7 +64,7 @@ void transpose_binary_motion_transform::process(transform_context &context)
     auto &old_tp = static_cast<transpose &>(*context.matched_nodes[0]);
     auto &old_bin = static_cast<binary &>(*context.matched_nodes[2]);
 
-    auto bin = context.graph.emplace<binary>(old_bin.binary_op(), output_a.shape(), output_b.shape(), old_bin.fused_activation());
+    auto bin = context.graph.emplace<binary>(old_bin.binary_op(), output_a.type(), output_a.shape(), output_b.shape(), old_bin.fused_activation());
     bin->name(old_bin.name());
     auto tp = context.graph.emplace<transpose>(bin->output().type(), bin->output().shape(), old_tp.perm());
     tp->name(old_tp.name());
@@ -136,14 +136,14 @@ void transpose_constant_binary_motion_transform::process(transform_context &cont
     binary *bin;
     if (old_bin.input_a().connection()->owner().runtime_opcode() == op_constant)
     {
-        bin = context.graph.emplace<binary>(old_bin.binary_op(), con->output().shape(), output.shape(), old_bin.fused_activation());
+        bin = context.graph.emplace<binary>(old_bin.binary_op(), output.type(), con->output().shape(), output.shape(), old_bin.fused_activation());
         bin->name(old_bin.name());
         bin->input_a().connect(con->output());
         bin->input_b().connect(output);
     }
     else
     {
-        bin = context.graph.emplace<binary>(old_bin.binary_op(), output.shape(), con->output().shape(), old_bin.fused_activation());
+        bin = context.graph.emplace<binary>(old_bin.binary_op(), output.type(), output.shape(), con->output().shape(), old_bin.fused_activation());
         bin->name(old_bin.name());
         bin->input_a().connect(output);
         bin->input_b().connect(con->output());

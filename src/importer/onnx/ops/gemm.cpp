@@ -68,11 +68,12 @@ void onnx_importer::convert_op_Gemm(const NodeProto &node)
         transB_op->name(op_name + ".transpose_B(Gemm)");
 
     const auto &As_shape = transA ? transA_op->output().shape() : get_shape(input_A);
+    const auto input_type = get_datatype(input_A).value();
     const auto &Bs_shape = transB ? transB_op->output().shape() : get_shape(input_B);
 
     auto alpha = graph_.emplace<constant>(alpha_value);
     alpha->name(op_name + ".alpha(Gemm)");
-    auto alpha_A_op = graph_.emplace<binary>(binary_mul, alpha->output().shape(), As_shape, value_range<float>::full());
+    auto alpha_A_op = graph_.emplace<binary>(binary_mul, input_type, alpha->output().shape(), As_shape, value_range<float>::full());
     alpha_A_op->name(op_name + ".mul_A(Gemm)");
     auto A_B_op = graph_.emplace<matmul>(alpha_A_op->output().shape(), Bs_shape, value_range<float>::full());
     A_B_op->name(op_name + ".matmul(Gemm)");
@@ -112,9 +113,9 @@ void onnx_importer::convert_op_Gemm(const NodeProto &node)
         auto beta = graph_.emplace<constant>(beta_value);
         beta->name(op_name + ".beta(Gemm)");
         const auto &input_C = node.input()[2];
-        auto beta_C_op = graph_.emplace<binary>(binary_mul, beta->output().shape(), get_shape(input_C), value_range<float>::full());
+        auto beta_C_op = graph_.emplace<binary>(binary_mul, input_type, beta->output().shape(), get_shape(input_C), value_range<float>::full());
         beta_C_op->name(op_name + ".mul_C(Gemm)");
-        auto add_betaC_op = graph_.emplace<binary>(binary_add, A_B_op->output().shape(), beta_C_op->output().shape(), value_range<float>::full());
+        auto add_betaC_op = graph_.emplace<binary>(binary_add, input_type, A_B_op->output().shape(), beta_C_op->output().shape(), value_range<float>::full());
         add_betaC_op->name(op_name + ".add_betaC(Gemm)");
 
         beta_C_op->input_a().connect(beta->output());

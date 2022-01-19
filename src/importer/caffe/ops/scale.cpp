@@ -38,7 +38,7 @@ DEFINE_CAFFE_LOWER(Scale)
 
         auto gamma_const = graph_.emplace<constant>(dt_float32, shape_t { 1, input.shape()[1], 1, 1 }, gamma_vec_c);
         gamma_const->name(op.name() + "/gamma_const");
-        auto mul = graph_.emplace<binary>(binary_mul, input.shape(), gamma_const->output().shape(), value_range<float>::full());
+        auto mul = graph_.emplace<binary>(binary_mul, dt_float32, input.shape(), gamma_const->output().shape(), value_range<float>::full());
 
         mul->input_b().connect(gamma_const->output());
 
@@ -68,7 +68,7 @@ DEFINE_CAFFE_LOWER(Scale)
 
             auto beta_const = graph_.emplace<constant>(dt_float32, shape_t { 1, input.shape()[1], 1, 1 }, beta_vec_c);
             beta_const->name(op.name() + "/beta_const");
-            auto add = graph_.emplace<binary>(binary_add, mul->output().shape(), beta_const->output().shape(), value_range<float>::full());
+            auto add = graph_.emplace<binary>(binary_add, dt_float32, mul->output().shape(), beta_const->output().shape(), value_range<float>::full());
             if (op.bottom(0) == op.top(0))
             {
                 // inplace op, user op need this name

@@ -40,10 +40,11 @@ void onnx_importer::convert_op_Relu(const NodeProto &node)
     const auto &output = node.output()[0];
 
     auto in_shape = get_shape(input);
+    const auto input_type = get_datatype(input).value();
 
     auto zero = graph_.emplace<constant>(0.f);
     zero->name(op_name + ".zero(Relu)");
-    auto max = graph_.emplace<binary>(binary_max, in_shape, zero->output().shape(), value_range<float>::full());
+    auto max = graph_.emplace<binary>(binary_max, input_type, in_shape, zero->output().shape(), value_range<float>::full());
     max->name(generate_name(node) + ".max(Relu)");
 
     max->input_b().connect(zero->output());
@@ -62,15 +63,16 @@ void onnx_importer::convert_op_LeakyRelu(const NodeProto &node)
     const auto &input = node.input()[0];
     const auto &output = node.output()[0];
     auto &&in_shape = get_shape(input);
+    const auto input_type = get_datatype(input).value();
 
     const auto alpha_value = get_attribute<float>(node, "alpha").value_or(0.01f);
     const auto &alpha = graph_.emplace<constant>(alpha_value);
 
     alpha->name(op_name + ".alpha(LeakyRelu)");
 
-    auto mul = graph_.emplace<binary>(binary_mul, in_shape, alpha->output().shape(), value_range<float>::full());
+    auto mul = graph_.emplace<binary>(binary_mul, input_type, in_shape, alpha->output().shape(), value_range<float>::full());
     mul->name(op_name + ".mul(LeakyRelu)");
-    auto max = graph_.emplace<binary>(binary_max, in_shape, mul->output().shape(), value_range<float>::full());
+    auto max = graph_.emplace<binary>(binary_max, input_type, in_shape, mul->output().shape(), value_range<float>::full());
     max->name(op_name + ".max(LeakyRelu)");
 
     mul->input_b().connect(alpha->output());
@@ -93,6 +95,7 @@ void onnx_importer::convert_op_PRelu(const NodeProto &node)
     const auto &output = node.output()[0];
 
     auto in_shape = get_shape(input);
+    const auto input_type = get_datatype(input).value();
     auto slope_shape = get_shape(slope);
 
     constant *alpha = nullptr;
@@ -115,9 +118,9 @@ void onnx_importer::convert_op_PRelu(const NodeProto &node)
     }
     assert(alpha != nullptr);
 
-    auto mul = graph_.emplace<binary>(binary_mul, in_shape, alpha->output().shape(), value_range<float>::full());
+    auto mul = graph_.emplace<binary>(binary_mul, input_type, in_shape, alpha->output().shape(), value_range<float>::full());
     mul->name(op_name + ".mul(PRelu)");
-    auto max = graph_.emplace<binary>(binary_max, in_shape, mul->output().shape(), value_range<float>::full());
+    auto max = graph_.emplace<binary>(binary_max, input_type, in_shape, mul->output().shape(), value_range<float>::full());
     max->name(op_name + ".max(PRelu)");
 
     mul->input_b().connect(alpha->output());
@@ -137,7 +140,7 @@ void onnx_importer::convert_op_Sigmoid(const NodeProto &node)
     const auto &input = node.input()[0];
     const auto &output = node.output()[0];
     auto in_shape = get_shape(input);
-    const datatype_t input_type = get_datatype(input).value();
+    const auto input_type = get_datatype(input).value();
     const auto &op_name { generate_name(node) };
 
 #if 0
@@ -150,10 +153,10 @@ void onnx_importer::convert_op_Sigmoid(const NodeProto &node)
     auto exp = graph_.emplace<unary>(unary_exp, in_shape);
     exp->name(op_name + ".exp(Sigmoid)");
 
-    auto add = graph_.emplace<binary>(binary_add, one->output().shape(), in_shape, value_range<float>::nonnegative());
+    auto add = graph_.emplace<binary>(binary_add, input_type, one->output().shape(), in_shape, value_range<float>::nonnegative());
     add->name(op_name + ".add(Sigmoid)");
 
-    auto div = graph_.emplace<binary>(binary_div, one->output().shape(), in_shape, value_range<float>::nonnegative());
+    auto div = graph_.emplace<binary>(binary_div, input_type, one->output().shape(), in_shape, value_range<float>::nonnegative());
     div->name(op_name + ".div(Sigmoid)");
 
     exp->input().connect(neg->output());
@@ -180,6 +183,7 @@ void onnx_importer::convert_op_HardSigmoid(const NodeProto &node)
     const auto &input = node.input()[0];
     const auto &output = node.output()[0];
     auto in_shape = get_shape(input);
+    const auto input_type = get_datatype(input).value();
 
     const auto &op_name { generate_name(node) };
 
@@ -188,24 +192,24 @@ void onnx_importer::convert_op_HardSigmoid(const NodeProto &node)
     const auto &alpha = graph_.emplace<constant>(alpha_value);
     alpha->name(op_name + ".alpha(HardSigmoid)");
 
-    auto mul = graph_.emplace<binary>(binary_mul, in_shape, alpha->output().shape(), value_range<float>::full());
+    auto mul = graph_.emplace<binary>(binary_mul, input_type, in_shape, alpha->output().shape(), value_range<float>::full());
     mul->name(op_name + ".mul(HardSigmoid)");
 
     const auto beta_value = get_attribute<float>(node, "beta").value_or(0.5);
     const auto &beta = graph_.emplace<constant>(beta_value);
     beta->name(op_name + ".beta(HardSigmoid)");
 
-    auto sum = graph_.emplace<binary>(binary_add, mul->output().shape(), beta->output().shape(), value_range<float>::full());
+    auto sum = graph_.emplace<binary>(binary_add, input_type, mul->output().shape(), beta->output().shape(), value_range<float>::full());
     sum->name(op_name + ".sum(HardSigmoid)");
 
     auto one = graph_.emplace<constant>(1.f);
     one->name(op_name + ".one(HardSigmoid)");
-    auto min = graph_.emplace<binary>(binary_min, sum->output().shape(), one->output().shape(), value_range<float>::full());
+    auto min = graph_.emplace<binary>(binary_min, input_type, sum->output().shape(), one->output().shape(), value_range<float>::full());
     min->name(op_name + ".min(HardSigmoid)");
 
     auto zero = graph_.emplace<constant>(0.f);
     zero->name(op_name + ".zero(HardSigmoid)");
-    auto max = graph_.emplace<binary>(binary_max, min->output().shape(), zero->output().shape(), value_range<float>::full());
+    auto max = graph_.emplace<binary>(binary_max, input_type, min->output().shape(), zero->output().shape(), value_range<float>::full());
     max->name(generate_name(node) + ".max(HardSigmoid)");
 
     mul->input_b().connect(alpha->output());
@@ -228,6 +232,7 @@ void onnx_importer::convert_op_HardSwish(const NodeProto &node)
     const auto &input = node.input()[0];
     const auto &output = node.output()[0];
     auto in_shape = get_shape(input);
+    const auto input_type = get_datatype(input).value();
 
     const auto &op_name { generate_name(node) };
 
@@ -235,26 +240,26 @@ void onnx_importer::convert_op_HardSwish(const NodeProto &node)
     const auto &alpha = graph_.emplace<constant>(1.0f / 6);
     alpha->name(op_name + ".alpha(HardSwish)");
 
-    auto mul_1 = graph_.emplace<binary>(binary_mul, in_shape, alpha->output().shape(), value_range<float>::full());
+    auto mul_1 = graph_.emplace<binary>(binary_mul, input_type, in_shape, alpha->output().shape(), value_range<float>::full());
     mul_1->name(op_name + ".mul_1(HardSwish)");
 
     const auto &beta = graph_.emplace<constant>(0.5f);
     beta->name(op_name + ".beta(HardSwish)");
 
-    auto add = graph_.emplace<binary>(binary_add, mul_1->output().shape(), beta->output().shape(), value_range<float>::full());
+    auto add = graph_.emplace<binary>(binary_add, input_type, mul_1->output().shape(), beta->output().shape(), value_range<float>::full());
     add->name(op_name + ".add(HardSwish)");
 
     auto one = graph_.emplace<constant>(1.f);
     one->name(op_name + ".one(HardSwish)");
-    auto min = graph_.emplace<binary>(binary_min, add->output().shape(), one->output().shape(), value_range<float>::full());
+    auto min = graph_.emplace<binary>(binary_min, input_type, add->output().shape(), one->output().shape(), value_range<float>::full());
     min->name(op_name + ".min(HardSwish)");
 
     auto zero = graph_.emplace<constant>(0.f);
     zero->name(op_name + ".zero(HardSwish)");
-    auto max = graph_.emplace<binary>(binary_max, min->output().shape(), zero->output().shape(), value_range<float>::full());
+    auto max = graph_.emplace<binary>(binary_max, input_type, min->output().shape(), zero->output().shape(), value_range<float>::full());
     max->name(generate_name(node) + ".max(HardSwish)");
 
-    auto mul_2 = graph_.emplace<binary>(binary_mul, in_shape, max->output().shape(), value_range<float>::full());
+    auto mul_2 = graph_.emplace<binary>(binary_mul, input_type, in_shape, max->output().shape(), value_range<float>::full());
     mul_2->name(op_name + ".mul_2(HardSwish)");
 
     mul_1->input_b().connect(alpha->output());
@@ -283,6 +288,7 @@ void onnx_importer::convert_op_Elu(const NodeProto &node)
     const auto &input = node.input()[0];
     const auto &output = node.output()[0];
     auto in_shape = get_shape(input);
+    const auto input_type = get_datatype(input).value();
 
     const auto alpha_value = get_attribute<float>(node, "alpha").value_or(1.0f);
     auto alpha = graph_.emplace<constant>(alpha_value);
@@ -294,22 +300,22 @@ void onnx_importer::convert_op_Elu(const NodeProto &node)
     auto one = graph_.emplace<constant>(1.f);
     one->name(op_name + ".one(Elu)");
 
-    auto sub = graph_.emplace<binary>(binary_sub, exp->output().shape(), one->output().shape(), value_range<float>::full());
+    auto sub = graph_.emplace<binary>(binary_sub, input_type, exp->output().shape(), one->output().shape(), value_range<float>::full());
     sub->name(op_name + ".sub(Elu)");
 
     auto zero = graph_.emplace<constant>(0.f);
     zero->name(op_name + ".zero(Elu)");
 
-    auto min = graph_.emplace<binary>(binary_min, sub->output().shape(), zero->output().shape(), value_range<float>::full());
+    auto min = graph_.emplace<binary>(binary_min, input_type, sub->output().shape(), zero->output().shape(), value_range<float>::full());
     min->name(op_name + ".min(Elu)");
 
-    auto mul = graph_.emplace<binary>(binary_mul, min->output().shape(), alpha->output().shape(), value_range<float>::full());
+    auto mul = graph_.emplace<binary>(binary_mul, input_type, min->output().shape(), alpha->output().shape(), value_range<float>::full());
     mul->name(op_name + ".mul(Elu)");
 
-    auto max = graph_.emplace<binary>(binary_max, in_shape, zero->output().shape(), value_range<float>::full());
+    auto max = graph_.emplace<binary>(binary_max, input_type, in_shape, zero->output().shape(), value_range<float>::full());
     max->name(op_name + ".max(Elu)");
 
-    auto add = graph_.emplace<binary>(binary_add, mul->output().shape(), max->output().shape(), value_range<float>::full());
+    auto add = graph_.emplace<binary>(binary_add, input_type, mul->output().shape(), max->output().shape(), value_range<float>::full());
     add->name(op_name + ".add(Elu)");
 
     sub->input_a().connect(exp->output());
@@ -337,6 +343,7 @@ void onnx_importer::convert_op_Celu(const NodeProto &node)
     const auto &input = node.input()[0];
     const auto &output = node.output()[0];
     auto in_shape = get_shape(input);
+    const auto input_type = get_datatype(input).value();
 
     // alpha
     const auto alpha_value = get_attribute<float>(node, "alpha").value_or(1.0f);
@@ -346,10 +353,10 @@ void onnx_importer::convert_op_Celu(const NodeProto &node)
     auto zero = graph_.emplace<constant>(0.f);
     zero->name(op_name + ".zero(Celu)");
 
-    auto max = graph_.emplace<binary>(binary_max, in_shape, zero->output().shape(), value_range<float>::nonnegative());
+    auto max = graph_.emplace<binary>(binary_max, input_type, in_shape, zero->output().shape(), value_range<float>::nonnegative());
     max->name(op_name + ".max(Celu)");
 
-    auto div = graph_.emplace<binary>(binary_div, in_shape, alpha->output().shape(), value_range<float>::full());
+    auto div = graph_.emplace<binary>(binary_div, input_type, in_shape, alpha->output().shape(), value_range<float>::full());
     div->name(op_name + ".div(Celu)");
 
     auto exp = graph_.emplace<unary>(unary_exp, div->output().shape());
@@ -358,16 +365,16 @@ void onnx_importer::convert_op_Celu(const NodeProto &node)
     auto one = graph_.emplace<constant>(1.f);
     one->name(op_name + ".one(Celu)");
 
-    auto sub = graph_.emplace<binary>(binary_sub, exp->output().shape(), one->output().shape(), value_range<float>::full());
+    auto sub = graph_.emplace<binary>(binary_sub, input_type, exp->output().shape(), one->output().shape(), value_range<float>::full());
     sub->name(op_name + ".sub(Celu)");
 
-    auto mul = graph_.emplace<binary>(binary_mul, sub->output().shape(), alpha->output().shape(), value_range<float>::full());
+    auto mul = graph_.emplace<binary>(binary_mul, input_type, sub->output().shape(), alpha->output().shape(), value_range<float>::full());
     mul->name(op_name + ".mul(Celu)");
 
-    auto min = graph_.emplace<binary>(binary_min, mul->output().shape(), zero->output().shape(), value_range<float>::full());
+    auto min = graph_.emplace<binary>(binary_min, input_type, mul->output().shape(), zero->output().shape(), value_range<float>::full());
     min->name(op_name + ".min(Celu)");
 
-    auto add = graph_.emplace<binary>(binary_add, max->output().shape(), min->output().shape(), value_range<float>::full());
+    auto add = graph_.emplace<binary>(binary_add, input_type, max->output().shape(), min->output().shape(), value_range<float>::full());
     add->name(op_name + ".add(Celu)");
 
     max->input_b().connect(zero->output());
@@ -399,6 +406,7 @@ void onnx_importer::convert_op_Selu(const NodeProto &node)
     const auto &input = node.input()[0];
     const auto &output = node.output()[0];
     auto in_shape = get_shape(input);
+    const auto input_type = get_datatype(input).value();
 
     // alpha
     const auto alpha_value = get_attribute<float>(node, "alpha").value_or(1.67326319217681884765625f);
@@ -416,25 +424,25 @@ void onnx_importer::convert_op_Selu(const NodeProto &node)
     auto one = graph_.emplace<constant>(1.f);
     one->name(op_name + ".one(Selu)");
 
-    auto sub = graph_.emplace<binary>(binary_sub, exp->output().shape(), one->output().shape(), value_range<float>::full());
+    auto sub = graph_.emplace<binary>(binary_sub, input_type, exp->output().shape(), one->output().shape(), value_range<float>::full());
     sub->name(op_name + ".sub(Selu)");
 
     auto zero = graph_.emplace<constant>(0.f);
     zero->name(op_name + ".zero(Selu)");
 
-    auto min = graph_.emplace<binary>(binary_min, sub->output().shape(), zero->output().shape(), value_range<float>::full());
+    auto min = graph_.emplace<binary>(binary_min, input_type, sub->output().shape(), zero->output().shape(), value_range<float>::full());
     min->name(op_name + ".min(Selu)");
 
-    auto mul1 = graph_.emplace<binary>(binary_mul, min->output().shape(), alpha->output().shape(), value_range<float>::full());
+    auto mul1 = graph_.emplace<binary>(binary_mul, input_type, min->output().shape(), alpha->output().shape(), value_range<float>::full());
     mul1->name(op_name + ".mul1(Selu)");
 
-    auto max = graph_.emplace<binary>(binary_max, in_shape, zero->output().shape(), value_range<float>::full());
+    auto max = graph_.emplace<binary>(binary_max, input_type, in_shape, zero->output().shape(), value_range<float>::full());
     max->name(op_name + ".max(Selu)");
 
-    auto add = graph_.emplace<binary>(binary_add, mul1->output().shape(), max->output().shape(), value_range<float>::full());
+    auto add = graph_.emplace<binary>(binary_add, input_type, mul1->output().shape(), max->output().shape(), value_range<float>::full());
     add->name(op_name + ".add(Selu)");
 
-    auto mul2 = graph_.emplace<binary>(binary_mul, add->output().shape(), gamma->output().shape(), value_range<float>::full());
+    auto mul2 = graph_.emplace<binary>(binary_mul, input_type, add->output().shape(), gamma->output().shape(), value_range<float>::full());
     mul2->name(op_name + ".mul2(Selu)");
 
     sub->input_a().connect(exp->output());
@@ -495,6 +503,7 @@ void onnx_importer::convert_op_Softplus(const NodeProto &node)
     const auto &input = node.input()[0];
     const auto &output = node.output()[0];
     auto in_shape = get_shape(input);
+    const auto input_type = get_datatype(input).value();
     const auto &op_name { generate_name(node) };
 
     auto one = graph_.emplace<constant>(1.f);
@@ -503,7 +512,7 @@ void onnx_importer::convert_op_Softplus(const NodeProto &node)
     auto exp = graph_.emplace<unary>(unary_exp, in_shape);
     exp->name(op_name + ".exp(Softplus)");
 
-    auto add = graph_.emplace<binary>(binary_add, in_shape, one->output().shape(), value_range<float>::nonnegative());
+    auto add = graph_.emplace<binary>(binary_add, input_type, in_shape, one->output().shape(), value_range<float>::nonnegative());
     add->name(op_name + ".add(Softplus)");
 
     auto log = graph_.emplace<unary>(unary_log, add->output().shape());
@@ -526,6 +535,7 @@ void onnx_importer::convert_op_Softsign(const NodeProto &node)
     const auto &input = node.input()[0];
     const auto &output = node.output()[0];
     auto in_shape = get_shape(input);
+    const auto input_type = get_datatype(input).value();
     const auto &op_name { generate_name(node) };
 
     auto one = graph_.emplace<constant>(1.f);
@@ -534,10 +544,10 @@ void onnx_importer::convert_op_Softsign(const NodeProto &node)
     auto abs = graph_.emplace<unary>(unary_abs, in_shape);
     abs->name(op_name + ".exp(SoftSign)");
 
-    auto add = graph_.emplace<binary>(binary_add, in_shape, one->output().shape(), value_range<float>::nonnegative());
+    auto add = graph_.emplace<binary>(binary_add, input_type, in_shape, one->output().shape(), value_range<float>::nonnegative());
     add->name(op_name + ".add(SoftSign)");
 
-    auto div = graph_.emplace<binary>(binary_div, in_shape, add->output().shape(), value_range<float>::nonnegative());
+    auto div = graph_.emplace<binary>(binary_div, input_type, in_shape, add->output().shape(), value_range<float>::nonnegative());
     div->name(op_name + ".div(SoftSign)");
 
     add->input_a().connect(abs->output());

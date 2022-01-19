@@ -44,9 +44,9 @@ void clamp_to_binary_transform::process(transform_context &context)
     auto &high = *context.inputs[2]->connection();
     auto inputs = context.outputs[0]->connections();
 
-    auto max = context.graph.emplace<binary>(binary_max, output.shape(), low.shape(), value_range<float>::full());
+    auto max = context.graph.emplace<binary>(binary_max, output.type(), output.shape(), low.shape(), value_range<float>::full());
     max->name(context.matched_nodes[0]->name());
-    auto min = context.graph.emplace<binary>(binary_min, max->output().shape(), high.shape(), value_range<float>::full());
+    auto min = context.graph.emplace<binary>(binary_min, max->output().type(), max->output().shape(), high.shape(), value_range<float>::full());
     min->name(context.matched_nodes[0]->name());
 
     max->input_a().connect(output);

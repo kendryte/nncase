@@ -30,7 +30,7 @@ public:
     binary_op_t binary_op() const noexcept { return binary_op_; }
     value_range<float> fused_activation() const noexcept { return fused_activation_; }
 
-    binary(binary_op_t binary_op, shape_t input_a_shape, shape_t input_b_shape, value_range<float> input_fused_activation);
+    binary(binary_op_t binary_op, datatype_t input_type, shape_t input_a_shape, shape_t input_b_shape, value_range<float> input_fused_activation);
 
 protected:
     bool properties_equal(node &other) const override;

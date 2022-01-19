@@ -56,13 +56,13 @@ DEFINE_CAFFE_LOWER(BatchNorm)
     auto eps_const = graph_.emplace<constant>(dt_float32, shape_t { 1, 1, 1, 1 }, eps_vec);
     eps_const->name(op.name() + "/eps_const");
 
-    auto sub = graph_.emplace<binary>(binary_sub, input.shape(), means_const->output().shape(), value_range<float>::full());
+    auto sub = graph_.emplace<binary>(binary_sub, dt_float32, input.shape(), means_const->output().shape(), value_range<float>::full());
     sub->name(op.name() + "/sub");
-    auto add = graph_.emplace<binary>(binary_add, variants_const->output().shape(), eps_const->output().shape(), value_range<float>::full());
+    auto add = graph_.emplace<binary>(binary_add, dt_float32, variants_const->output().shape(), eps_const->output().shape(), value_range<float>::full());
     add->name(op.name() + "/add");
     auto sqrt = graph_.emplace<unary>(unary_sqrt, add->output().shape());
     sqrt->name(op.name() + "/sqrt");
-    auto div = graph_.emplace<binary>(binary_div, sub->output().shape(), sqrt->output().shape(), value_range<float>::full());
+    auto div = graph_.emplace<binary>(binary_div, dt_float32, sub->output().shape(), sqrt->output().shape(), value_range<float>::full());
     if (op.bottom(0) == op.top(0))
     {
         // inplace op, user op need this name
