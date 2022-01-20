@@ -109,6 +109,10 @@ inline runtime_shape_t get_binary_output_shape(const runtime_shape_t &input_a_sh
             out_shape.push_back(in_b);
         else if (in_b == 1)
             out_shape.push_back(in_a);
+        else if (in_a % in_b == 0)
+            out_shape.push_back(in_a);
+        else if (in_b % in_a == 0)
+            out_shape.push_back(in_b);
         else
             assert(!"inputs are not compatible to broadcast");
     }
